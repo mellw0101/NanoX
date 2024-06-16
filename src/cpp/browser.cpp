@@ -8,7 +8,7 @@
 #    include <string.h>
 #    include <unistd.h>
 
-static char** filelist = NULL;
+static char **filelist = NULL;
 /* The list of files to display in the file browser. */
 static size_t list_length = 0;
 /* The number of files in the list. */
@@ -26,23 +26,21 @@ static size_t selected = 0;
  * width of the widest filename plus ten, and set 'piles' to the number of
  * files that can be displayed per screen row.  And sort the list too. */
 void
-read_the_list(const char* path, DIR* dir)
+read_the_list(const char *path, DIR *dir)
 {
     size_t               path_len = strlen(path);
-    const struct dirent* entry;
+    const struct dirent *entry;
     size_t               widest = 0;
     size_t               index  = 0;
 
     /* Find the width of the widest filename in the current folder. */
     while ((entry = readdir(dir)) != NULL)
     {
-        size_t span = breadth(entry->d_name);
-
+        u64 span = breadth(entry->d_name);
         if (span > widest)
         {
             widest = span;
         }
-
         index++;
     }
 
@@ -67,7 +65,7 @@ read_the_list(const char* path, DIR* dir)
     list_length = index;
     index       = 0;
 
-    filelist = RE_CAST(char**, nmalloc(list_length * sizeof(char*)));
+    filelist = RE_CAST(char **, nmalloc(list_length * sizeof(char *)));
 
     while ((entry = readdir(dir)) != NULL && index < list_length)
     {
@@ -77,7 +75,7 @@ read_the_list(const char* path, DIR* dir)
             continue;
         }
 
-        filelist[index] = RE_CAST(char*, nmalloc(path_len + strlen(entry->d_name) + 1));
+        filelist[index] = RE_CAST(char *, nmalloc(path_len + strlen(entry->d_name) + 1));
         sprintf(filelist[index], "%s%s", path, entry->d_name);
 
         index++;
@@ -88,7 +86,7 @@ read_the_list(const char* path, DIR* dir)
     list_length = index;
 
     /* Sort the list of names. */
-    qsort(filelist, list_length, sizeof(char*), diralphasort);
+    qsort(filelist, list_length, sizeof(char *), diralphasort);
 
     /* Calculate how many files fit on a line -- feigning room for two
      * spaces beyond the right edge, and adding two spaces of padding
@@ -100,7 +98,7 @@ read_the_list(const char* path, DIR* dir)
 
 /* Reselect the given file or directory name, if it still exists. */
 void
-reselect(const char* name)
+reselect(const char *name)
 {
     size_t looking_at = 0;
 
@@ -134,7 +132,7 @@ browser_refresh(void)
     /* The current row and column while the list is getting displayed. */
     int the_row = 0, the_column = 0;
     /* The row and column of the selected item. */
-    char* info;
+    char *info;
     /* The additional information that we'll display about a file. */
 
     titlebar(present_path);
@@ -142,7 +140,7 @@ browser_refresh(void)
 
     for (size_t index = selected - selected % (usable_rows * piles); index < list_length && row < usable_rows; index++)
     {
-        const char* thename = tail(filelist[index]);
+        const char *thename = tail(filelist[index]);
         /* The filename we display, minus the path. */
         size_t namelen = breadth(thename);
         /* The length of the filename in columns. */
@@ -154,7 +152,7 @@ browser_refresh(void)
         bool dots = (COLS >= 15 && namelen >= gauge - infomaxlen);
         /* Whether to put an ellipsis before the filename?  We don't
          * waste space on dots when there are fewer than 15 columns. */
-        char* disp = display_string(thename, dots ? namelen + infomaxlen + 4 - gauge : 0, gauge, FALSE, FALSE);
+        char *disp = display_string(thename, dots ? namelen + infomaxlen + 4 - gauge : 0, gauge, FALSE, FALSE);
         /* The filename (or a fragment of it) in displayable format.
          * When a fragment, account for dots plus one space padding. */
         struct stat state;
@@ -211,7 +209,7 @@ browser_refresh(void)
             off_t result = state.st_size;
             char  modifier;
 
-            info = RE_CAST(char*, nmalloc(infomaxlen + 1));
+            info = RE_CAST(char *, nmalloc(infomaxlen + 1));
 
             /* Massage the file size into a human-readable form. */
             if (state.st_size < (1 << 10))
@@ -289,7 +287,7 @@ browser_refresh(void)
 
 /* Look for the given needle in the list of files, forwards or backwards. */
 void
-findfile(const char* needle, bool forwards)
+findfile(const char *needle, bool forwards)
 {
     size_t began_at = selected;
 
@@ -338,15 +336,15 @@ findfile(const char* needle, bool forwards)
 void
 search_filename(bool forwards)
 {
-    char* thedefault;
+    char *thedefault;
     int   response;
 
     /* If something was searched for before, show it between square brackets. */
     if (*last_search != '\0')
     {
-        char* disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
+        char *disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
 
-        thedefault = RE_CAST(char*, nmalloc(strlen(disp) + 7));
+        thedefault = RE_CAST(char *, nmalloc(strlen(disp) + 7));
         /* We use (COLS / 3) here because we need to see more on the line. */
         sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > COLS / 3) ? "..." : "");
         free(disp);
@@ -425,11 +423,11 @@ to_last_file(void)
 
 /* Strip one element from the end of path, and return the stripped path.
  * The returned string is dynamically allocated, and should be freed. */
-char*
-strip_last_component(const char* path)
+char *
+strip_last_component(const char *path)
 {
-    char* copy       = copy_of(path);
-    char* last_slash = strrchr(copy, '/');
+    char *copy       = copy_of(path);
+    char *last_slash = strrchr(copy, '/');
 
     if (last_slash != NULL)
     {
@@ -451,21 +449,21 @@ strip_last_component(const char* path)
 /// @returns
 /// - ( char* ) - The name of the file that the user picked
 /// - ( NULL ) - if none.
-char*
-browse(char* path)
+char *
+browse(char *path)
 {
     // The name of the currently selected file, or of the directory we
     // were in before backing up to "..".
-    char* present_name = NULL;
+    char *present_name = NULL;
 
     // The number of the selected file before the current selected file.
     size_t old_selected;
 
     // The directory whose contents we are showing.
-    DIR* dir;
+    DIR *dir;
 
     // The name of the file that the user picked, or NULL if none.
-    char* chosen = NULL;
+    char *chosen = NULL;
 
 // We come here when the user refreshes or selects a new directory.
 read_directory_contents:
@@ -555,7 +553,7 @@ read_directory_contents:
                 if (get_mouseinput(&mouse_y, &mouse_x, TRUE) == 0 && wmouse_trafo(midwin, &mouse_y, &mouse_x, FALSE))
                 {
                     selected =
-                    selected - selected % (usable_rows * piles) + (mouse_y * piles) + (mouse_x / (gauge + 2));
+                        selected - selected % (usable_rows * piles) + (mouse_y * piles) + (mouse_x / (gauge + 2));
 
                     /* When beyond end-of-row, select the preceding filename. */
                     if (mouse_x > piles * (gauge + 2))
@@ -737,7 +735,7 @@ read_directory_contents:
                 /* If the given path is relative, join it with the current path. */
                 if (*path != '/')
                 {
-                    path = RE_CAST(char*, nrealloc(path, strlen(present_path) + strlen(answer) + 1));
+                    path = RE_CAST(char *, nrealloc(path, strlen(present_path) + strlen(answer) + 1));
                     sprintf(path, "%s%s", present_path, answer);
                 }
 
@@ -873,10 +871,10 @@ read_directory_contents:
 /// @returns
 /// - ( char* ) - The name of the file that the user picked
 /// - ( NULL ) - if none.
-char*
-browse_in(const char* inpath)
+char *
+browse_in(const char *inpath)
 {
-    char*       path = real_dir_from_tilde(inpath);
+    char       *path = real_dir_from_tilde(inpath);
     struct stat fileinfo;
 
     /* If path is not a directory, try to strip a filename from it; if then
