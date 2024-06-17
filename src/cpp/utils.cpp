@@ -21,39 +21,34 @@
 
 #include "../include/prototypes.h"
 
-#include <errno.h>
-#ifdef HAVE_PWD_H
-#    include <pwd.h>
-#endif
-#include <string.h>
+#include <cerrno>
+#include <cstring>
+#include <pwd.h>
 #include <unistd.h>
 
 /* Return the user's home directory.  We use $HOME, and if that fails,
  * we fall back on the home directory of the effective user ID. */
 void
-get_homedir(void)
+get_homedir()
 {
-    if (homedir == NULL)
+    if (homedir == nullptr)
     {
-        const char* homenv = getenv("HOME");
+        const s8 *homenv = getenv("HOME");
 
-#ifdef HAVE_PWD_H
-        /* When HOME isn't set, or when we're root, get the home directory
-         * from the password file instead. */
-        if (homenv == NULL || geteuid() == ROOT_UID)
+        // When HOME isn't set,or when we're root,
+        // get the home directory from the password file instead.
+        if (homenv == nullptr || geteuid() == ROOT_UID)
         {
-            const struct passwd* userage = getpwuid(geteuid());
-
-            if (userage != NULL)
+            const passwd *userage = getpwuid(geteuid());
+            if (userage != nullptr)
             {
                 homenv = userage->pw_dir;
             }
         }
-#endif
 
-        /* Only set homedir if some home directory could be determined,
-         * otherwise keep homedir NULL. */
-        if (homenv != NULL && *homenv != '\0')
+        // Only set homedir if some home directory could be determined,
+        // otherwise keep homedir nullpre.
+        if (homenv != nullptr && *homenv != '\0')
         {
             homedir = copy_of(homenv);
         }
@@ -61,10 +56,10 @@ get_homedir(void)
 }
 
 /* Return the filename part of the given path. */
-const char*
-tail(const char* path)
+const char *
+tail(const char *path)
 {
-    const char* slash = strrchr(path, '/');
+    const char *slash = strrchr(path, '/');
 
     if (slash == NULL)
     {
@@ -77,11 +72,11 @@ tail(const char* path)
 }
 
 /* Return a copy of the two given strings, welded together. */
-char*
-concatenate(const char* path, const char* name)
+char *
+concatenate(const char *path, const char *name)
 {
     size_t pathlen = strlen(path);
-    char*  joined  = RE_CAST(char*, nmalloc(pathlen + strlen(name) + 1));
+    char  *joined  = RE_CAST(char *, nmalloc(pathlen + strlen(name) + 1));
 
     strcpy(joined, path);
     strcpy(joined + pathlen, name);
@@ -148,10 +143,10 @@ digits(ssize_t n)
 /* Read an integer from the given string.  If it parses okay,
  * store it in *result and return TRUE; otherwise, return FALSE. */
 bool
-parse_num(const char* string, ssize_t* result)
+parse_num(const char *string, ssize_t *result)
 {
     ssize_t value;
-    char*   excess;
+    char   *excess;
 
     /* Clear the error number so that we can check it afterward. */
     errno = 0;
@@ -172,10 +167,10 @@ parse_num(const char* string, ssize_t* result)
  * from the given string and store the number(s) in *line (and *column).
  * Return FALSE on a failed parsing, and TRUE otherwise. */
 bool
-parse_line_column(const char* string, ssize_t* line, ssize_t* column)
+parse_line_column(const char *string, ssize_t *line, ssize_t *column)
 {
-    const char* comma;
-    char*       firstpart;
+    const char *comma;
+    char       *firstpart;
     bool        retval;
 
     while (*string == ' ')
@@ -209,7 +204,7 @@ parse_line_column(const char* string, ssize_t* line, ssize_t* column)
 
 /* In the given string, recode each embedded NUL as a newline. */
 void
-recode_NUL_to_LF(char* string, size_t length)
+recode_NUL_to_LF(char *string, size_t length)
 {
     while (length > 0)
     {
@@ -225,9 +220,9 @@ recode_NUL_to_LF(char* string, size_t length)
 /* In the given string, recode each embedded newline as a NUL,
  * and return the number of bytes in the string. */
 size_t
-recode_LF_to_NUL(char* string)
+recode_LF_to_NUL(char *string)
 {
-    char* beginning = string;
+    char *beginning = string;
 
     while (*string != '\0')
     {
@@ -244,7 +239,7 @@ recode_LF_to_NUL(char* string)
 #if !defined(ENABLE_TINY) || defined(ENABLE_TABCOMP) || defined(ENABLE_BROWSER)
 /* Free the memory of the given array, which should contain len elements. */
 void
-free_chararray(char** array, size_t len)
+free_chararray(char **array, size_t len)
 {
     if (array == NULL)
     {
@@ -264,10 +259,10 @@ free_chararray(char** array, size_t len)
 /* Is the word starting at the given position in 'text' and of the given
  * length a separate word?  That is: is it not part of a longer word? */
 bool
-is_separate_word(size_t position, size_t length, const char* text)
+is_separate_word(size_t position, size_t length, const char *text)
 {
-    const char* before = text + step_left(text, position);
-    const char* after  = text + position + length;
+    const char *before = text + step_left(text, position);
+    const char *after  = text + position + length;
 
     /* If the word starts at the beginning of the line OR the character before
      * the word isn't a letter, and if the word ends at the end of the line OR
@@ -276,44 +271,47 @@ is_separate_word(size_t position, size_t length, const char* text)
 }
 #endif /* ENABLE_SPELLER */
 
-/* Return the position of the needle in the haystack, or NULL if not found.
- * When searching backwards, we will find the last match that starts no later
- * than the given start; otherwise, we find the first match starting no earlier
- * than start.  If we are doing a regexp search, and we find a match, we fill
- * in the global variable regmatches with at most 9 subexpression matches. */
-const char*
-strstrwrapper(const char* haystack, const char* needle, const char* start)
+// Return the position of the needle in the haystack, or NULL if not found.
+// When searching backwards, we will find the last match that starts no later
+// than the given start; otherwise, we find the first match starting no earlier
+// than start.  If we are doing a regexp search, and we find a match, we fill
+// in the global variable regmatches with at most 9 subexpression matches.
+const s8 *
+strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const start)
 {
-    if (ISSET(USE_REGEXP))
+    if ISSET (USE_REGEXP)
     {
-        if (ISSET(BACKWARDS_SEARCH))
+        if ISSET (BACKWARDS_SEARCH)
         {
-            size_t last_find, ceiling, far_end;
-            size_t floor = 0, next_rung = 0;
-            /* The start of the search range, and the next start. */
+            u64 last_find, ceiling, far_end;
 
-            if (regexec(&search_regexp, haystack, 1, regmatches, 0) != 0)
+            // The start of the search range,
+            // and the next start.
+            u64 floor = 0, next_rung = 0;
+
+            if (regexec(&search_regexp, haystack, 1, regmatches, 0))
             {
-                return NULL;
+                return nullptr;
             }
 
             far_end   = strlen(haystack);
             ceiling   = start - haystack;
             last_find = regmatches[0].rm_so;
 
-            /* A result beyond the search range also means: no match. */
+            // A result beyond the search range also means: no match.
             if (last_find > ceiling)
             {
-                return NULL;
+                return nullptr;
             }
 
-            /* Move the start-of-range forward until there is no more match;
-             * then the last match found is the first match backwards. */
+            // Move the start-of-range forward until there is no more match;
+            // then the last match found is the first match backwards.
             while (regmatches[0].rm_so <= ceiling)
             {
                 floor     = next_rung;
                 last_find = regmatches[0].rm_so;
-                /* If this is the last possible match, don't try to advance. */
+
+                // If this is the last possible match, don't try to advance.
                 if (last_find == ceiling)
                 {
                     break;
@@ -321,29 +319,29 @@ strstrwrapper(const char* haystack, const char* needle, const char* start)
                 next_rung           = step_right(haystack, last_find);
                 regmatches[0].rm_so = next_rung;
                 regmatches[0].rm_eo = far_end;
-                if (regexec(&search_regexp, haystack, 1, regmatches, REG_STARTEND) != 0)
+                if (regexec(&search_regexp, haystack, 1, regmatches, REG_STARTEND))
                 {
                     break;
                 }
             }
 
-            /* Find the last match again, to get possible submatches. */
+            // Find the last match again, to get possible submatches.
             regmatches[0].rm_so = floor;
             regmatches[0].rm_eo = far_end;
-            if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND) != 0)
+            if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND))
             {
-                return NULL;
+                return nullptr;
             }
 
             return haystack + regmatches[0].rm_so;
         }
 
-        /* Do a forward regex search from the starting point. */
+        // Do a forward regex search from the starting point.
         regmatches[0].rm_so = start - haystack;
         regmatches[0].rm_eo = strlen(haystack);
-        if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND) != 0)
+        if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND))
         {
-            return NULL;
+            return nullptr;
         }
         else
         {
@@ -351,9 +349,9 @@ strstrwrapper(const char* haystack, const char* needle, const char* start)
         }
     }
 
-    if (ISSET(CASE_SENSITIVE))
+    if ISSET (CASE_SENSITIVE)
     {
-        if (ISSET(BACKWARDS_SEARCH))
+        if ISSET (BACKWARDS_SEARCH)
         {
             return revstrstr(haystack, needle, start);
         }
@@ -363,7 +361,7 @@ strstrwrapper(const char* haystack, const char* needle, const char* start)
         }
     }
 
-    if (ISSET(BACKWARDS_SEARCH))
+    if ISSET (BACKWARDS_SEARCH)
     {
         return mbrevstrcasestr(haystack, needle, start);
     }
@@ -373,13 +371,13 @@ strstrwrapper(const char* haystack, const char* needle, const char* start)
     }
 }
 
-/* Allocate the given amount of memory and return a pointer to it. */
-void*
-nmalloc(size_t howmuch)
+// Allocate the given amount of memory and return a pointer to it.
+void *
+nmalloc(const u64 howmuch)
 {
-    void* section = malloc(howmuch);
+    void *const section = malloc(howmuch);
 
-    if (section == NULL)
+    if (section == nullptr)
     {
         die(_("Nano is out of memory!\n"));
     }
@@ -387,13 +385,13 @@ nmalloc(size_t howmuch)
     return section;
 }
 
-/* Reallocate the given section of memory to have the given size. */
-void*
-nrealloc(void* section, size_t howmuch)
+// Reallocate the given section of memory to have the given size.
+void *
+nrealloc(void *section, const u64 howmuch)
 {
     section = realloc(section, howmuch);
 
-    if (section == NULL)
+    if (section == nullptr)
     {
         die(_("Nano is out of memory!\n"));
     }
@@ -401,14 +399,14 @@ nrealloc(void* section, size_t howmuch)
     return section;
 }
 
-/* Return an appropriately reallocated dest string holding a copy of src.
- * Usage: "dest = mallocstrcpy(dest, src);". */
-char*
-mallocstrcpy(char* dest, const char* src)
+// Return an appropriately reallocated dest string holding a copy of src.
+// Usage: "dest = mallocstrcpy(dest, src);".
+s8 *
+mallocstrcpy(s8 *&dest, const s8 *const &src)
 {
-    size_t count = strlen(src) + 1;
+    u64 count = strlen(src) + 1;
 
-    dest = RE_CAST(char*, nrealloc(dest, count));
+    dest = RE_CAST(char *, nrealloc(dest, count));
     strncpy(dest, src, count);
 
     return dest;
@@ -416,25 +414,25 @@ mallocstrcpy(char* dest, const char* src)
 
 // Return an allocated copy of the first count characters
 // of the given string, and NUL-terminate the copy.
-char*
-measured_copy(const char* string, size_t count)
+s8 *
+measured_copy(const s8 *const &string, const u64 count)
 {
-    char* thecopy = RE_CAST(char*, nmalloc(count + 1));
+    s8 *const thecopy = RE_CAST(s8 *, nmalloc(count + 1));
     memcpy(thecopy, string, count);
     thecopy[count] = '\0';
     return thecopy;
 }
 
-/* Return an allocated copy of the given string. */
-char*
-copy_of(const char* string)
+// Return an allocated copy of the given string.
+s8 *
+copy_of(const s8 *const &string)
 {
     return measured_copy(string, strlen(string));
 }
 
-/* Free the string at dest and return the string at src. */
-char*
-free_and_assign(char* dest, char* src)
+// Free the string at dest and return the string at src.
+s8 *
+free_and_assign(s8 *const &dest, s8 *const &src)
 {
     free(dest);
     return src;
@@ -471,9 +469,9 @@ xplustabs(void)
 /* Return the index in text of the character that (when displayed) will
  * not overshoot the given column. */
 size_t
-actual_x(const char* text, size_t column)
+actual_x(const char *text, size_t column)
 {
-    const char* start = text;
+    const char *start = text;
     /* From where we start walking through the text. */
     size_t width = 0;
     /* The current accumulated span, in columns. */
@@ -496,7 +494,7 @@ actual_x(const char* text, size_t column)
 /* A strnlen() with tabs and multicolumn characters factored in:
  * how many columns wide are the first maxlen bytes of text? */
 size_t
-wideness(const char* text, size_t maxlen)
+wideness(const char *text, size_t maxlen)
 {
     size_t width = 0;
 
@@ -523,21 +521,19 @@ wideness(const char* text, size_t maxlen)
 
 /* Return the number of columns that the given text occupies. */
 size_t
-breadth(const char* text)
+breadth(const s8 *text)
 {
-    size_t span = 0;
-
+    u64 span = 0;
     while (*text != '\0')
     {
         text += advance_over(text, &span);
     }
-
     return span;
 }
 
-/* Append a new magic line to the end of the buffer. */
+// Append a new magic line to the end of the buffer.
 void
-new_magicline(void)
+new_magicline()
 {
     openfile->filebot->next       = make_new_node(openfile->filebot);
     openfile->filebot->next->data = copy_of("");
@@ -545,11 +541,10 @@ new_magicline(void)
     openfile->totsize++;
 }
 
-#if !defined(NANO_TINY) || defined(ENABLE_HELP)
-/* Remove the magic line from the end of the buffer, if there is one and
- * it isn't the only line in the file. */
+// Remove the magic line from the end of the buffer, if there is one and
+// it isn't the only line in the file.
 void
-remove_magicline(void)
+remove_magicline()
 {
     if (openfile->filebot->data[0] == '\0' && openfile->filebot != openfile->filetop)
     {
@@ -563,21 +558,19 @@ remove_magicline(void)
         openfile->totsize--;
     }
 }
-#endif
 
-#ifndef NANO_TINY
-/* Return TRUE when the mark is before or at the cursor, and FALSE otherwise. */
+// Return TRUE when the mark is before or at the cursor, and false otherwise.
 bool
 mark_is_before_cursor(void)
 {
-    return (openfile->mark->lineno < openfile->current->lineno ||
+    return ((openfile->mark->lineno < openfile->current->lineno) ||
             (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
 }
 
-/* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates"
- * of the marked region. */
+// Return in (top, top_x) and (bot, bot_x) the start and end "coordinates"
+// of the marked region.
 void
-get_region(linestruct** top, size_t* top_x, linestruct** bot, size_t* bot_x)
+get_region(linestruct **const &top, u64 *const &top_x, linestruct **const &bot, u64 *const &bot_x)
 {
     if (mark_is_before_cursor())
     {
@@ -595,11 +588,11 @@ get_region(linestruct** top, size_t* top_x, linestruct** bot, size_t* bot_x)
     }
 }
 
-/* Get the set of lines to work on -- either just the current line, or the
- * first to last lines of the marked region.  When the cursor (or mark) is
- * at the start of the last line of the region, exclude that line. */
+// Get the set of lines to work on -- either just the current line, or the
+// first to last lines of the marked region.  When the cursor (or mark) is
+// at the start of the last line of the region, exclude that line.
 void
-get_range(linestruct** top, linestruct** bot)
+get_range(linestruct **const &top, linestruct **const &bot)
 {
     if (!openfile->mark)
     {
@@ -608,7 +601,7 @@ get_range(linestruct** top, linestruct** bot)
     }
     else
     {
-        size_t top_x, bot_x;
+        u64 top_x, bot_x;
 
         get_region(top, &top_x, bot, &bot_x);
 
@@ -618,18 +611,17 @@ get_range(linestruct** top, linestruct** bot)
         }
         else
         {
-            also_the_last = TRUE;
+            also_the_last = true;
         }
     }
 }
-#endif /* !NANO_TINY */
 
 #if !defined(NANO_TINY) || defined(ENABLE_SPELLER) || defined(ENABLE_LINTER) || defined(ENABLE_FORMATTER)
 /* Return a pointer to the line that has the given line number. */
-linestruct*
+linestruct *
 line_from_number(ssize_t number)
 {
-    linestruct* line = openfile->current;
+    linestruct *line = openfile->current;
 
     if (line->lineno > number)
     {
@@ -652,9 +644,9 @@ line_from_number(ssize_t number)
 
 /* Count the number of characters from begin to end, and return it. */
 size_t
-number_of_characters_in(const linestruct* begin, const linestruct* end)
+number_of_characters_in(const linestruct *begin, const linestruct *end)
 {
-    const linestruct* line;
+    const linestruct *line;
     size_t            count = 0;
 
     /* Sum the number of characters (plus a newline) in each line. */

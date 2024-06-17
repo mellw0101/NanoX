@@ -19,13 +19,11 @@
  *                                                                        *
  **************************************************************************/
 
-#include <cerrno>
-#include <libintl.h>
 #include "../include/prototypes.h"
 
 #ifdef ENABLE_COLOR
-// #    include <errno.h>
 #    ifdef HAVE_MAGIC_H
+#        include <cerrno>
 #        include <magic.h>
 #    endif
 #    include <string.h>
@@ -43,15 +41,13 @@ static bool defaults_allowed = false;
 void
 set_interface_colorpairs()
 {
-#    ifdef HAVE_USE_DEFAULT_COLORS
-    /* Ask ncurses to allow -1 to mean "default color". */
+    // Ask ncurses to allow -1 to mean "default color".
     defaults_allowed = (use_default_colors() == OK);
-#    endif
 
     /* Initialize the color pairs for nano's interface elements. */
     for (size_t index = 0; index < NUMBER_OF_ELEMENTS; index++)
     {
-        colortype* combo = color_combo[index];
+        colortype *combo = color_combo[index];
 
         if (combo != NULL)
         {
@@ -110,15 +106,15 @@ set_interface_colorpairs()
     }
 }
 
-/* Assign a pair number to each of the foreground/background color combinations
- * in the given syntax, giving identical combinations the same number. */
+// Assign a pair number to each of the foreground/background color combinations
+// in the given syntax, giving identical combinations the same number. */
 void
-set_syntax_colorpairs(syntaxtype* sntx)
+set_syntax_colorpairs(syntaxtype *const &sntx)
 {
-    short      number = NUMBER_OF_ELEMENTS;
-    colortype* older;
+    s16        number = NUMBER_OF_ELEMENTS;
+    colortype *older;
 
-    for (colortype* ink = sntx->color; ink != NULL; ink = ink->next)
+    for (colortype *ink = sntx->color; ink != nullptr; ink = ink->next)
     {
         if (!defaults_allowed)
         {
@@ -145,14 +141,14 @@ set_syntax_colorpairs(syntaxtype* sntx)
     }
 }
 
-/* Initialize the color pairs for the current syntax. */
+// Initialize the color pairs for the current syntax.
 void
-prepare_palette(void)
+prepare_palette()
 {
     short number = NUMBER_OF_ELEMENTS;
 
     /* For each unique pair number, tell ncurses the combination of colors. */
-    for (colortype* ink = openfile->syntax->color; ink != NULL; ink = ink->next)
+    for (colortype *ink = openfile->syntax->color; ink != NULL; ink = ink->next)
     {
         if (ink->pairnum > number)
         {
@@ -164,37 +160,36 @@ prepare_palette(void)
     have_palette = TRUE;
 }
 
-/* Try to match the given shibboleth string with one of the regexes in
- * the list starting at head.  Return TRUE upon success. */
+// Try to match the given shibboleth string with one of the regexes in
+// the list starting at head.  Return TRUE upon success.
 bool
-found_in_list(regexlisttype* head, const char* shibboleth)
+found_in_list(regexlisttype *const &head, const s8 *shibboleth)
 {
-    for (regexlisttype* item = head; item != NULL; item = item->next)
+    for (regexlisttype *item = head; item != nullptr; item = item->next)
     {
-        if (regexec(item->one_rgx, shibboleth, 0, NULL, 0) == 0)
+        if (regexec(item->one_rgx, shibboleth, 0, nullptr, 0) == 0)
         {
-            return TRUE;
+            return true;
         }
     }
-
-    return FALSE;
+    return false;
 }
 
 /* Find a syntax that applies to the current buffer, based upon filename
  * or buffer content, and load and prime this syntax when needed. */
 void
-find_and_prime_applicable_syntax(void)
+find_and_prime_applicable_syntax()
 {
-    syntaxtype* sntx = NULL;
+    syntaxtype *sntx = nullptr;
 
     /* If the rcfiles were not read, or contained no syntaxes, get out. */
-    if (syntaxes == NULL)
+    if (syntaxes == nullptr)
     {
         return;
     }
 
     /* If we specified a syntax-override string, use it. */
-    if (syntaxstr != NULL)
+    if (syntaxstr != nullptr)
     {
         /* An override of "none" is like having no syntax at all. */
         if (strcmp(syntaxstr, "none") == 0)
@@ -218,16 +213,16 @@ find_and_prime_applicable_syntax(void)
 
     /* If no syntax-override string was specified, or it didn't match,
      * try finding a syntax based on the filename (extension). */
-    if (sntx == NULL && !inhelp)
+    if (sntx == nullptr && !inhelp)
     {
-        char* fullname = get_full_path(openfile->filename);
+        char *fullname = get_full_path(openfile->filename);
 
-        if (fullname == NULL)
+        if (fullname == nullptr)
         {
             fullname = mallocstrcpy(fullname, openfile->filename);
         }
 
-        for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
+        for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
         {
             if (found_in_list(sntx->extensions, fullname))
             {
@@ -241,7 +236,7 @@ find_and_prime_applicable_syntax(void)
     /* If the filename didn't match anything, try the first line. */
     if (sntx == NULL && !inhelp)
     {
-        for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
+        for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
         {
             if (found_in_list(sntx->headers, openfile->filetop->data))
             {
@@ -252,11 +247,11 @@ find_and_prime_applicable_syntax(void)
 
 #    ifdef HAVE_LIBMAGIC
     /* If we still don't have an answer, try using magic (when requested). */
-    if (sntx == NULL && !inhelp && ISSET(USE_MAGIC))
+    if (sntx == nullptr && !inhelp && ISSET(USE_MAGIC))
     {
         struct stat fileinfo;
-        magic_t     cookie      = NULL;
-        const char* magicstring = NULL;
+        magic_t     cookie      = nullptr;
+        const char *magicstring = nullptr;
 
         if (stat(openfile->filename, &fileinfo) == 0)
         {
@@ -266,7 +261,7 @@ find_and_prime_applicable_syntax(void)
                                 MAGIC_DEBUG | MAGIC_CHECK |
 #        endif
                                 MAGIC_ERROR);
-            if (cookie == NULL || magic_load(cookie, NULL) < 0)
+            if (cookie == nullptr || magic_load(cookie, nullptr) < 0)
             {
                 statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
             }
@@ -300,7 +295,7 @@ find_and_prime_applicable_syntax(void)
 #    endif /* HAVE_LIBMAGIC */
 
     /* If nothing at all matched, see if there is a default syntax. */
-    if (sntx == NULL && !inhelp)
+    if (sntx == nullptr && !inhelp)
     {
         for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
         {
@@ -324,12 +319,12 @@ find_and_prime_applicable_syntax(void)
 /* Determine whether the matches of multiline regexes are still the same,
  * and if not, schedule a screen refresh, so things will be repainted. */
 void
-check_the_multis(linestruct* line)
+check_the_multis(linestruct *const &line)
 {
-    const colortype* ink;
+    const colortype *ink;
     bool             astart, anend;
     regmatch_t       startmatch, endmatch;
-    char*            afterstart;
+    char            *afterstart;
 
     /* If there is no syntax or no multiline regex, there is nothing to do. */
     if (!openfile->syntax || openfile->syntax->multiscore == 0)
@@ -404,11 +399,11 @@ check_the_multis(linestruct* line)
 /* Precalculate the multi-line start and end regex info so we can
  * speed up rendering (with any hope at all...). */
 void
-precalc_multicolorinfo(void)
+precalc_multicolorinfo()
 {
-    const colortype* ink;
+    const colortype *ink;
     regmatch_t       startmatch, endmatch;
-    linestruct *     line, *tailline;
+    linestruct      *line, *tailline;
 
     if (!openfile->syntax || openfile->syntax->multiscore == 0 || ISSET(NO_SYNTAX))
     {
@@ -426,7 +421,7 @@ precalc_multicolorinfo(void)
     {
         if (!line->multidata)
         {
-            line->multidata = RE_CAST(short*, nmalloc(openfile->syntax->multiscore * sizeof(short)));
+            line->multidata = RE_CAST(short *, nmalloc(openfile->syntax->multiscore * sizeof(short)));
         }
     }
 

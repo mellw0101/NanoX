@@ -5,51 +5,43 @@
 
 #include <Mlib/def.h>
 
-#ifdef NEED_XOPEN_SOURCE_EXTENDED
-#    ifndef _XOPEN_SOURCE_EXTENDED
-#        define _XOPEN_SOURCE_EXTENDED 1
-#    endif
+#ifndef _XOPEN_SOURCE_EXTENDED
+#    define _XOPEN_SOURCE_EXTENDED 1
 #endif
+
 
 #if defined(__HAIKU__) && !defined(_DEFAULT_SOURCE)
 #    define _DEFAULT_SOURCE 1
 #endif
 
-#ifdef __TANDEM
-// Tandem NonStop Kernel support.
-#    include <floss.h>
-#    define ROOT_UID 65535
-#else
-#    define ROOT_UID 0
-#endif
+#define ROOT_UID 0
 
-#ifdef HAVE_LIMITS_H
-#    include <limits.h>
-#endif
+// We are using limits instead of limits.h,
+// because limits.h is for c and limits is for c++
+// we alse include linux/limits.h as this is a linux project
+#include <limits>
+#include <linux/limits.h>
 
-/* Set a default value for PATH_MAX if there isn't one. */
-#ifndef PATH_MAX
-#    define PATH_MAX 4096
-#endif
-
-#ifdef HAVE_SYS_PARAM_H
-#    include <sys/param.h>
-#endif
-
+#include <csignal>
+#include <cstdlib>
 #include <dirent.h>
 #include <regex.h>
-#include <signal.h>
-#include <stdlib.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 
-/* Prefer wide ncurses over normal ncurses over curses. */
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#    include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSES_H)
-#    include <ncurses.h>
-#else
-#    include <curses.h>
-#endif
+/// @brief
+/// - Since we are using a staticly compiled version of ncurses-6.3, we will include the header file from the lib
+/// directory.
+/// @c Original CODE:
+/// - // Prefer wide ncurses over normal ncurses over curses.
+/// - #if defined(HAVE_NCURSESW_NCURSES_H)
+/// - #include <ncursesw/ncurses.h>
+/// - #elif defined(HAVE_NCURSES_H)
+/// - #    include <ncurses.h>
+/// - #else
+/// - #    include <curses.h>
+/// - #endif
+#include <ncursesw/ncurses.h>
 
 /* Native language support. */
 #ifdef ENABLE_NLS
@@ -62,6 +54,7 @@
 #    define _(string)                    (char *)(string)
 #    define P_(singular, plural, number) (number == 1 ? singular : plural)
 #endif
+
 /* For marking a string on which gettext() will be called later. */
 #define gettext_noop(string) (string)
 #define N_(string)           gettext_noop(string)
@@ -93,11 +86,11 @@
 #define ISSET(flag)       ((FLAGS(flag) & FLAGMASK(flag)) != 0)
 #define TOGGLE(flag)      FLAGS(flag) ^= FLAGMASK(flag)
 
-#define BACKWARD          FALSE
-#define FORWARD           TRUE
+#define BACKWARD          false
+#define FORWARD           true
 
-#define YESORNO           FALSE
-#define YESORALLORNO      TRUE
+#define YESORNO           false
+#define YESORALLORNO      true
 
 #define YES               1
 #define ALL               2
@@ -129,7 +122,7 @@
 #endif
 
 /* The default width of a tab in spaces. */
-#define WIDTH_OF_TAB              8
+#define WIDTH_OF_TAB              4
 
 /* The default number of columns from end of line where wrapping occurs. */
 #define COLUMNS_FROM_EOL          8
@@ -476,51 +469,34 @@ typedef struct syntaxtype
 
 typedef struct lintstruct
 {
-    ssize_t lineno;
-    /* Line number of the error. */
-    ssize_t colno;
-    /* Column # of the error. */
-    char *msg;
-    /* Error message text. */
-    char *filename;
-    /* Filename. */
-    struct lintstruct *next;
-    /* Next error. */
-    struct lintstruct *prev;
-    /* Previous error. */
+    lintstruct *next; // Next error.
+    lintstruct *prev; // Previous error.
+
+    s64 lineno;       // Line number of the error.
+    s64 colno;        // Column # of the error.
+    s8 *msg;          // Error message text.
+    s8 *filename;     // Filename.
 } lintstruct;
 
-/* More structure types. */
+// More structure types.
 typedef struct linestruct
 {
-    char *data;
-    /* The text of this line. */
-    ssize_t lineno;
-    /* The number of this line. */
-    struct linestruct *next;
-    /* Next node. */
-    struct linestruct *prev;
-    /* Previous node. */
-#ifdef ENABLE_COLOR
-    short *multidata;
-    /* Array of which multi-line regexes apply to this line. */
-#endif
-#ifndef NANO_TINY
-    bool has_anchor;
-    /* Whether the user has placed an anchor at this line. */
-#endif
+    linestruct *next; // Next node.
+    linestruct *prev; // Previous node.
+
+    s8  *data;        // The text of this line.
+    s64  lineno;      // The number of this line.
+    s16 *multidata;   // Array of which multi-line regexes apply to this line.
+    bool has_anchor;  // Whether the user has placed an anchor at this line.
 } linestruct;
 
 typedef struct groupstruct
 {
-    ssize_t top_line;
-    /* First line of group. */
-    ssize_t bottom_line;
-    /* Last line of group. */
-    char **indentations;
-    /* String data used to restore the affected lines; one per line. */
-    struct groupstruct *next;
-    /* The next group, if any. */
+    groupstruct *next; // The next group, if any.
+
+    s64  top_line;     // First line of group.
+    s64  bottom_line;  // Last line of group.
+    s8 **indentations; // String data used to restore the affected lines; one per line.
 } groupstruct;
 
 typedef struct undostruct

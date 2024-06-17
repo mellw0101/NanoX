@@ -2,10 +2,9 @@
 
 #ifdef ENABLE_BROWSER
 
-#    include <errno.h>
-#    include <libintl.h>
-#    include <stdint.h>
-#    include <string.h>
+#    include <cerrno>
+#    include <cstdint>
+#    include <cstring>
 #    include <unistd.h>
 
 static char **filelist = NULL;

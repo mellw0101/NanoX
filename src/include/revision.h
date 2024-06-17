@@ -1,1 +1,1 @@
-#define REVISION "NOT_NANO_v0.0.1"
+#define REVISION "v0.0.1"

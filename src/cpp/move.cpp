@@ -33,7 +33,7 @@ to_last_line(void)
 
 /* Determine the actual current chunk and the target column. */
 void
-get_edge_and_target(size_t* leftedge, size_t* target_column)
+get_edge_and_target(size_t *leftedge, size_t *target_column)
 {
 #ifndef NANO_TINY
     if (ISSET(SOFTWRAP))
@@ -56,7 +56,7 @@ get_edge_and_target(size_t* leftedge, size_t* target_column)
 // on a tab, prevent the cursor from falling back a row when moving forward,
 // or from skipping a row when moving backward, by incrementing the index.
 size_t
-proper_x(linestruct* line, size_t* leftedge, bool forward, size_t column, bool* shifted)
+proper_x(linestruct *line, size_t *leftedge, bool forward, size_t column, bool *shifted)
 {
     size_t index = actual_x(line->data, column);
 
@@ -86,19 +86,19 @@ proper_x(linestruct* line, size_t* leftedge, bool forward, size_t column, bool* 
 // Adjust the values for current_x and placewewant in case we have landed in
 // the middle of a tab that crosses a row boundary.
 void
-set_proper_index_and_pww(size_t* leftedge, size_t target, bool forward)
+set_proper_index_and_pww(size_t *leftedge, size_t target, bool forward)
 {
     size_t was_edge = *leftedge;
     bool   shifted  = FALSE;
 
     openfile->current_x =
-    proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
+        proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
 
     /* If the index was incremented, try going to the target column. */
     if (shifted || *leftedge < was_edge)
     {
         openfile->current_x =
-        proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
+            proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
     }
 
     openfile->placewewant = *leftedge + target;
@@ -241,7 +241,7 @@ do_center(void)
 #ifdef ENABLE_JUSTIFY
 /* Move to the first beginning of a paragraph before the current line. */
 void
-do_para_begin(linestruct** line)
+do_para_begin(linestruct **line)
 {
     if ((*line)->prev != NULL)
     {
@@ -256,7 +256,7 @@ do_para_begin(linestruct** line)
 
 /* Move down to the last line of the first found paragraph. */
 void
-do_para_end(linestruct** line)
+do_para_end(linestruct **line)
 {
     while ((*line)->next != NULL && !inpar(*line))
     {
@@ -273,7 +273,7 @@ do_para_end(linestruct** line)
 void
 to_para_begin(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
 
     do_para_begin(&openfile->current);
     openfile->current_x = 0;
@@ -285,7 +285,7 @@ to_para_begin(void)
 void
 to_para_end(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
 
     do_para_end(&openfile->current);
 
@@ -312,7 +312,7 @@ to_para_end(void)
 void
 to_prev_block(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
     bool        is_text = FALSE, seen_text = FALSE;
 
     /* Skip backward until first blank line after some nonblank line(s). */
@@ -337,7 +337,7 @@ to_prev_block(void)
 void
 to_next_block(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
     bool        is_white    = white_string(openfile->current->data);
     bool        seen_white  = is_white;
 
@@ -496,7 +496,7 @@ do_next_word(bool after_ends)
 void
 to_prev_word(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
 
     do_prev_word();
 
@@ -508,7 +508,7 @@ to_prev_word(void)
 void
 to_next_word(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
 
     do_next_word(ISSET(AFTER_ENDS));
 
@@ -521,7 +521,7 @@ to_next_word(void)
 void
 do_home(void)
 {
-    linestruct* was_current     = openfile->current;
+    linestruct *was_current     = openfile->current;
     size_t      was_column      = xplustabs();
     bool        moved_off_chunk = TRUE;
 #ifndef NANO_TINY
@@ -599,7 +599,7 @@ do_home(void)
 void
 do_end(void)
 {
-    linestruct* was_current     = openfile->current;
+    linestruct *was_current     = openfile->current;
     size_t      was_column      = xplustabs();
     size_t      line_len        = strlen(openfile->current->data);
     bool        moved_off_chunk = TRUE;
@@ -662,7 +662,7 @@ do_end(void)
 void
 do_up(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
     size_t      leftedge, target_column;
 
     get_edge_and_target(&leftedge, &target_column);
@@ -692,7 +692,7 @@ do_up(void)
 void
 do_down(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
     size_t      leftedge, target_column;
 
     get_edge_and_target(&leftedge, &target_column);
@@ -756,7 +756,7 @@ do_scroll_down(void)
          ||
          (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) > chunk_for(openfile->firstcolumn, openfile->edittop)))
 #    endif
-         ))
+             ))
         edit_scroll(FORWARD);
 }
 #endif /* !NANO_TINY || ENABLE_HELP */
@@ -765,7 +765,7 @@ do_scroll_down(void)
 void
 do_left(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
 
     if (openfile->current_x > 0)
     {
@@ -790,7 +790,7 @@ do_left(void)
 void
 do_right(void)
 {
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
 
     if (openfile->current->data[openfile->current_x] != '\0')
     {

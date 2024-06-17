@@ -7,6 +7,7 @@
 #define ENABLE_LINTER           1
 #define ENABLE_COLOR            1
 #define HAVE_USE_DEFAULT_COLORS 1
+#define PROJECT_NAME            "NanoX"
 #define PACKAGE                 "not-nano"
 #define PACKAGE_STRING          "Not Nano v0.0.1"
 #define PACKAGE_VERSION         "0.0.1"
@@ -37,3 +38,6 @@
 #define HAVE_KEY_DEFINED        1
 #define HAVE_CHMOD              1
 #define HAVE_CHOWN              1
+#define HAVE_SYS_PARAM_H        1
+#define HAVE_LIMITS_H           1
+#define HAVE_TERMIOS_H          1

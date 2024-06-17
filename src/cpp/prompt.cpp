@@ -787,7 +787,7 @@ ask_user(bool withall, const s8 *question)
         if (!ISSET(NO_HELP))
         {
             // Temporary string for (translated) " Y", " N" and " A".
-            char shortstr[MAXCHARLEN + 2];
+            s8 shortstr[MAXCHARLEN + 2];
 
             // The keystroke that is bound to the Cancel function.
             const keystruct *cancelshortcut = first_sc_for(MYESNO, do_cancel);
@@ -832,13 +832,12 @@ ask_user(bool withall, const s8 *question)
         // When not replacing, show the cursor while waiting for a key.
         kbinput = get_kbinput(footwin, !withall);
 
-#ifndef NANO_TINY
         if (kbinput == KEY_WINCH)
         {
             continue;
         }
 
-        /* Accept first character of an external paste and ignore the rest. */
+        // Accept first character of an external paste and ignore the rest. */
         if (bracketed_paste)
         {
             kbinput = get_kbinput(footwin, BLIND);
@@ -847,52 +846,51 @@ ask_user(bool withall, const s8 *question)
         {
             get_kbinput(footwin, BLIND);
         }
-#endif
 
-#ifdef ENABLE_NLS
-        letter[index++] = (unsigned char)kbinput;
-#    ifdef ENABLE_UTF8
-        /* If the received code is a UTF-8 starter byte, get also the
-         * continuation bytes and assemble them into one letter. */
+        letter[index++] = (u8)kbinput;
+
+        // If the received code is a UTF-8 starter byte, get also the
+        // continuation bytes and assemble them into one letter.
         if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7)
         {
-            int extras = (kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0);
+            s32 extras = (kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0);
 
             while (extras <= waiting_keycodes() && extras-- > 0)
             {
-                letter[index++] = (unsigned char)get_kbinput(footwin, !withall);
+                letter[index++] = static_cast<u8>(get_kbinput(footwin, !withall));
             }
         }
-#    endif
+
         letter[index] = '\0';
 
         /* See if the typed letter is in the Yes, No, or All strings. */
-        if (strstr(yesstr, letter) != NULL)
+        if (strstr(yesstr, letter) != nullptr)
         {
             choice = YES;
         }
-        else if (strstr(nostr, letter) != NULL)
+        else if (strstr(nostr, letter) != nullptr)
         {
             choice = NO;
         }
-        else if (withall && strstr(allstr, letter) != NULL)
+        else if (withall && strstr(allstr, letter) != nullptr)
         {
             choice = ALL;
         }
         else
-#endif /* ENABLE_NLS */
-            if (strchr("Yy", kbinput) != NULL)
+        {
+            if (strchr("Yy", kbinput) != nullptr)
             {
                 choice = YES;
             }
-            else if (strchr("Nn", kbinput) != NULL)
+            else if (strchr("Nn", kbinput) != nullptr)
             {
                 choice = NO;
             }
-            else if (withall && strchr("Aa", kbinput) != NULL)
+            else if (withall && strchr("Aa", kbinput) != nullptr)
             {
                 choice = ALL;
             }
+        }
 
         if (choice != UNDECIDED)
         {
@@ -900,7 +898,7 @@ ask_user(bool withall, const s8 *question)
         }
 
         shortcut = get_shortcut(kbinput);
-        function = (shortcut ? shortcut->func : NULL);
+        function = (shortcut ? shortcut->func : nullptr);
 
         if (function == do_cancel)
         {
@@ -910,38 +908,36 @@ ask_user(bool withall, const s8 *question)
         {
             full_refresh();
         }
-#ifndef NANO_TINY
         else if (function == do_toggle && shortcut->toggle == NO_HELP)
         {
             TOGGLE(NO_HELP);
             window_init();
-            titlebar(NULL);
-            focusing = FALSE;
+            titlebar(nullptr);
+            focusing = false;
             edit_refresh();
-            focusing = TRUE;
+            focusing = true;
         }
-#endif
-        /* Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too. */
+        // Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too.
         else if (kbinput == '\x0E' || (kbinput == '\x11' && !ISSET(MODERN_BINDINGS)) ||
                  (kbinput == '\x18' && ISSET(MODERN_BINDINGS)))
         {
             choice = NO;
         }
-        /* And interpret ^Y as "Yes". */
+        // And interpret ^Y as "Yes".
         else if (kbinput == '\x19')
         {
             choice = YES;
         }
-#ifdef ENABLE_MOUSE
         else if (kbinput == KEY_MOUSE)
         {
-            int mouse_x, mouse_y;
-            /* We can click on the Yes/No/All shortcuts to select an answer. */
-            if (get_mouseinput(&mouse_y, &mouse_x, FALSE) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE) &&
+            s32 mouse_x, mouse_y;
+
+            // We can click on the Yes/No/All shortcuts to select an answer.
+            if (get_mouseinput(&mouse_y, &mouse_x, false) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, false) &&
                 mouse_x < (width * 2) && mouse_y > 0)
             {
-                int x = mouse_x / width;
-                int y = mouse_y - 1;
+                s32 x = mouse_x / width;
+                s32 y = mouse_y - 1;
 
                 /* x == 0 means Yes or No, y == 0 means Yes or All. */
                 choice = -2 * x * y + x - y + 1;
@@ -952,12 +948,10 @@ ask_user(bool withall, const s8 *question)
                 }
             }
         }
-#endif
         else
         {
             beep();
         }
     }
-
     return choice;
 }
