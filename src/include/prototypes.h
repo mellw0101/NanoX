@@ -3,131 +3,18 @@
 
 /* All external variables.  See global.c for their descriptions. */
 
-#ifndef NANO_TINY
 extern volatile sig_atomic_t the_window_resized;
-#endif
-
-extern bool on_a_vt;
-extern bool shifted_metas;
-
-extern bool meta_key;
-extern bool shift_held;
-extern bool mute_modifiers;
-extern bool bracketed_paste;
-
-extern bool we_are_running;
-extern bool more_than_one;
-extern bool report_size;
-extern bool ran_a_tool;
-
-extern bool inhelp;
-extern s8  *title;
-
-extern bool focusing;
-
-extern bool as_an_at;
-
-extern bool control_C_was_pressed;
-
-extern message_type lastmessage;
-
-extern linestruct *pletion_line;
-
-extern bool also_the_last;
-
-extern s8 *answer;
-
-extern s8 *last_search;
-extern int didfind;
-
-extern s8 *present_path;
-
-extern unsigned flags[4];
-
-extern int controlleft, controlright;
-extern int controlup, controldown;
-extern int controlhome, controlend;
-#ifndef NANO_TINY
-extern int controldelete, controlshiftdelete;
-extern int shiftleft, shiftright;
-extern int shiftup, shiftdown;
-extern int shiftcontrolleft, shiftcontrolright;
-extern int shiftcontrolup, shiftcontroldown;
-extern int shiftcontrolhome, shiftcontrolend;
-extern int altleft, altright;
-extern int altup, altdown;
-extern int althome, altend;
-extern int altpageup, altpagedown;
-extern int altinsert, altdelete;
-extern int shiftaltleft, shiftaltright;
-extern int shiftaltup, shiftaltdown;
-#endif
-extern int mousefocusin, mousefocusout;
-
-#ifdef ENABLED_WRAPORJUSTIFY
-extern ssize_t fill;
-extern size_t  wrap_at;
-#endif
 
 extern WINDOW *topwin;
 extern WINDOW *midwin;
 extern WINDOW *footwin;
-extern int     editwinrows;
-extern int     editwincols;
-extern int     margin;
-extern int     sidebar;
-#ifndef NANO_TINY
-extern int    *bardata;
-extern ssize_t stripe_column;
-extern int     cycling_aim;
-#endif
-
-extern linestruct *cutbuffer;
-extern linestruct *cutbottom;
-extern bool        keep_cutbuffer;
-
-extern openfilestruct *openfile;
-#ifdef ENABLE_MULTIBUFFER
-extern openfilestruct *startfile;
-#endif
-
-#ifndef NANO_TINY
-extern s8 *matchbrackets;
-extern s8 *whitespace;
-extern int whitelen[2];
-#endif
-
-extern const s8 *exit_tag;
-extern const s8 *close_tag;
-#ifdef ENABLE_JUSTIFY
-extern char   *punct;
-extern char   *brackets;
-extern char   *quotestr;
-extern regex_t quotereg;
-#endif
-
-extern char *word_chars;
-
-extern ssize_t tabsize;
-
-extern s8 *backup_dir;
-extern s8 *operating_dir;
-
-extern s8 *alt_speller;
 
 extern syntaxtype *syntaxes;
-extern s8         *syntaxstr;
-extern bool        have_palette;
-extern bool        rescind_colors;
-extern bool        perturbed;
-extern bool        recook;
 
-extern bool refresh_needed;
+extern openfilestruct *openfile;
+extern openfilestruct *startfile;
 
-extern s32         currmenu;
-extern keystruct  *sclist;
-extern funcstruct *allfuncs;
-extern funcstruct *exitfunc;
+extern message_type lastmessage;
 
 extern linestruct *search_history;
 extern linestruct *replace_history;
@@ -138,6 +25,95 @@ extern linestruct *replacetop;
 extern linestruct *replacebot;
 extern linestruct *executetop;
 extern linestruct *executebot;
+extern linestruct *cutbuffer;
+extern linestruct *cutbottom;
+extern linestruct *pletion_line;
+
+extern unsigned flags[4];
+
+
+extern s64 fill;
+
+extern s32 didfind;
+extern s32 controlleft, controlright;
+extern s32 controlup, controldown;
+extern s32 controlhome, controlend;
+extern s32 controldelete, controlshiftdelete;
+extern s32 shiftleft, shiftright;
+extern s32 shiftup, shiftdown;
+extern s32 shiftcontrolleft, shiftcontrolright;
+extern s32 shiftcontrolup, shiftcontroldown;
+extern s32 shiftcontrolhome, shiftcontrolend;
+extern s32 altleft, altright;
+extern s32 altup, altdown;
+extern s32 althome, altend;
+extern s32 altpageup, altpagedown;
+extern s32 altinsert, altdelete;
+extern s32 shiftaltleft, shiftaltright;
+extern s32 shiftaltup, shiftaltdown;
+extern s32 mousefocusin, mousefocusout;
+extern s32 editwinrows;
+extern s32 editwincols;
+extern s32 margin;
+extern s32 sidebar;
+extern s32 cycling_aim;
+
+extern s32 *bardata;
+extern s32  whitelen[2];
+
+extern s8 *title;
+extern s8 *answer;
+extern s8 *last_search;
+extern s8 *present_path;
+extern s8 *matchbrackets;
+extern s8 *whitespace;
+extern s8 *punct;
+extern s8 *brackets;
+extern s8 *quotestr;
+extern s8 *word_chars;
+extern s8 *backup_dir;
+extern s8 *operating_dir;
+extern s8 *alt_speller;
+extern s8 *syntaxstr;
+
+extern const s8 *exit_tag;
+extern const s8 *close_tag;
+
+extern bool on_a_vt;
+extern bool shifted_metas;
+extern bool meta_key;
+extern bool shift_held;
+extern bool mute_modifiers;
+extern bool bracketed_paste;
+extern bool we_are_running;
+extern bool more_than_one;
+extern bool report_size;
+extern bool ran_a_tool;
+extern bool inhelp;
+extern bool focusing;
+extern bool as_an_at;
+extern bool control_C_was_pressed;
+extern bool also_the_last;
+extern bool keep_cutbuffer;
+extern bool have_palette;
+extern bool rescind_colors;
+extern bool perturbed;
+extern bool recook;
+extern bool refresh_needed;
+
+extern u64 wrap_at;
+
+extern s64 stripe_column;
+extern s64 tabsize;
+
+extern regex_t quotereg;
+
+
+extern s32         currmenu;
+extern keystruct  *sclist;
+extern funcstruct *allfuncs;
+extern funcstruct *exitfunc;
+
 
 extern regex_t    search_regexp;
 extern regmatch_t regmatches[10];
@@ -202,27 +178,21 @@ void precalc_multicolorinfo();
 
 /* Most functions in cut.c. */
 void expunge(undo_type action);
-void do_delete(void);
-void do_backspace(void);
-#ifndef NANO_TINY
-void chop_previous_word(void);
-void chop_next_word(void);
-#endif
+void do_delete();
+void do_backspace();
+void chop_previous_word();
+void chop_next_word();
 void extract_segment(linestruct *top, u64 top_x, linestruct *bot, size_t bot_x);
 void ingraft_buffer(linestruct *topline);
 void copy_from_buffer(linestruct *somebuffer);
-#ifndef NANO_TINY
-void cut_marked_region(void);
-#endif
+void cut_marked_region();
 void do_snip(bool marked, bool until_eof, bool append);
-void cut_text(void);
-#ifndef NANO_TINY
-void cut_till_eof(void);
-void zap_text(void);
-void copy_marked_region(void);
-#endif
-void copy_text(void);
-void paste_text(void);
+void cut_text();
+void cut_till_eof();
+void zap_text();
+void copy_marked_region();
+void copy_text();
+void paste_text();
 
 /* Most functions in files.c. */
 void make_new_buffer(void);
@@ -439,84 +409,58 @@ void to_next_anchor(void);
 #endif
 
 /* Most functions in text.c. */
-#ifndef NANO_TINY
-void do_mark(void);
-#endif
-void do_tab(void);
-#ifndef NANO_TINY
-void do_indent(void);
-void do_unindent(void);
-#endif
-#ifdef ENABLE_COMMENT
-void do_comment(void);
-#endif
-void do_undo(void);
-void do_redo(void);
-void do_enter(void);
-#ifndef NANO_TINY
-void discard_until(const undostruct *thisitem);
-void add_undo(undo_type action, const char *message);
-void update_multiline_undo(ssize_t lineno, char *indentation);
-void update_undo(undo_type action);
-#endif /* !NANO_TINY */
-#ifdef ENABLE_WRAPPING
-void do_wrap(void);
-#endif
-#if defined(ENABLE_HELP) || defined(ENABLED_WRAPORJUSTIFY)
+void    do_mark(void);
+void    do_tab(void);
+void    do_indent(void);
+void    do_unindent(void);
+void    do_comment(void);
+void    do_undo(void);
+void    do_redo(void);
+void    do_enter(void);
+void    discard_until(const undostruct *thisitem);
+void    add_undo(undo_type action, const char *message);
+void    update_multiline_undo(ssize_t lineno, char *indentation);
+void    update_undo(undo_type action);
+void    do_wrap(void);
 ssize_t break_line(const char *textstart, ssize_t goal, bool snap_at_nl);
-#endif
-#if !defined(NANO_TINY) || defined(ENABLED_WRAPORJUSTIFY)
-size_t indent_length(const char *line);
-#endif
-#ifdef ENABLE_JUSTIFY
-size_t quote_length(const char *line);
-bool   begpar(const linestruct *const line, int depth);
-bool   inpar(const linestruct *const line);
-void   do_justify(void);
-void   do_full_justify(void);
-#endif
-#ifdef ENABLE_SPELLER
-void do_spell(void);
-#endif
-#ifdef ENABLE_LINTER
-void do_linter(void);
-#endif
-#ifdef ENABLE_FORMATTER
-void do_formatter(void);
-#endif
-#ifndef NANO_TINY
-void count_lines_words_and_characters(void);
-#endif
-void do_verbatim_input(void);
-#ifdef ENABLE_WORDCOMPLETION
-void complete_a_word(void);
-#endif
+size_t  indent_length(const char *line);
+size_t  quote_length(const char *line);
+bool    begpar(const linestruct *const line, int depth);
+bool    inpar(const linestruct *const line);
+void    do_justify(void);
+void    do_full_justify(void);
+void    do_spell(void);
+void    do_linter(void);
+void    do_formatter(void);
+void    count_lines_words_and_characters(void);
+void    do_verbatim_input(void);
+void    complete_a_word(void);
 
 /* All functions in utils.c. */
-void        get_homedir(void);
-const char *tail(const char *path);
-char       *concatenate(const char *path, const char *name);
-int         digits(s64 n);
-bool        parse_num(const char *str, s64 *result);
-bool        parse_line_column(const char *str, s64 *line, s64 *column);
-void        recode_NUL_to_LF(char *string, u64 length);
-u64         recode_LF_to_NUL(char *string);
-void        free_chararray(char **array, u64 len);
-bool        is_separate_word(u64 position, u64 length, const char *buf);
-const char *strstrwrapper(const char *haystack, const char *needle, const char *start);
-void       *nmalloc(const u64 howmuch);
-void       *nrealloc(void *ptr, const u64 howmuch);
-s8         *measured_copy(const s8 *const &string, u64 count);
-s8         *mallocstrcpy(s8 *&dest, const s8 *const &src);
-s8         *copy_of(const s8 *const &string);
-s8         *free_and_assign(s8 *const &dest, s8 *const &src);
-u64         get_page_start(u64 column);
-u64         xplustabs();
-u64         actual_x(const s8 *text, size_t column);
-u64         wideness(const s8 *text, size_t maxlen);
-u64         breadth(const s8 *text);
-void        new_magicline();
-void        remove_magicline();
+void      get_homedir();
+const s8 *tail(const s8 *path);
+char     *concatenate(const char *path, const char *name);
+int       digits(s64 n);
+bool      parse_num(const char *str, s64 *result);
+bool      parse_line_column(const char *str, s64 *line, s64 *column);
+void      recode_NUL_to_LF(char *string, u64 length);
+u64       recode_LF_to_NUL(char *string);
+void      free_chararray(char **array, u64 len);
+bool      is_separate_word(u64 position, u64 length, const char *buf);
+const s8 *strstrwrapper(const char *haystack, const char *needle, const char *start);
+void     *nmalloc(const u64 howmuch);
+void     *nrealloc(void *ptr, const u64 howmuch);
+s8       *measured_copy(const s8 *const &string, u64 count);
+s8       *mallocstrcpy(s8 *&dest, const s8 *const &src);
+s8       *copy_of(const s8 *const &string);
+s8       *free_and_assign(s8 *const &dest, s8 *const &src);
+u64       get_page_start(u64 column);
+u64       xplustabs();
+u64       actual_x(const s8 *text, size_t column);
+u64       wideness(const s8 *text, size_t maxlen);
+u64       breadth(const s8 *text);
+void      new_magicline();
+void      remove_magicline();
 
 bool        mark_is_before_cursor();
 void        get_region(linestruct **const &top, u64 *const &top_x, linestruct **const &bot, u64 *const &bot_x);

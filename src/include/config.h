@@ -8,8 +8,8 @@
 #define ENABLE_COLOR            1
 #define HAVE_USE_DEFAULT_COLORS 1
 #define PROJECT_NAME            "NanoX"
-#define PACKAGE                 "not-nano"
-#define PACKAGE_STRING          "Not Nano v0.0.1"
+#define PACKAGE                 PROJECT_NAME
+#define PACKAGE_STRING          "NanoX v0.0.1"
 #define PACKAGE_VERSION         "0.0.1"
 #define VERSION                 "0.0.1"
 #define PKGDATADIR              "/usr/local/share/nano"

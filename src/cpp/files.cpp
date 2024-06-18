@@ -1,55 +1,27 @@
-/**************************************************************************
- *   files.c  --  This file is part of GNU nano.                          *
- *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
- *   Copyright (C) 2015-2022 Benno Schulenberg                            *
- *                                                                        *
- *   GNU nano is free software: you can redistribute it and/or modify     *
- *   it under the terms of the GNU General Public License as published    *
- *   by the Free Software Foundation, either version 3 of the License,    *
- *   or (at your option) any later version.                               *
- *                                                                        *
- *   GNU nano is distributed in the hope that it will be useful,          *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty          *
- *   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.              *
- *   See the GNU General Public License for more details.                 *
- *                                                                        *
- *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
- *                                                                        *
- **************************************************************************/
-
+/// @file @c files.cpp
 #include "../include/prototypes.h"
 
 #include <Mlib/def.h>
 
-#include <errno.h>
+#include <cerrno>
+#include <cstring>
 #include <fcntl.h>
 #include <libgen.h>
-#include <libintl.h>
-#ifdef HAVE_PWD_H
-#    include <pwd.h>
-#endif
-#include <string.h>
+#include <pwd.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #define RW_FOR_ALL (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
-#ifndef HAVE_FSYNC
-#    define fsync(...) 0
-#endif
-
-/* Add an item to the circular list of openfile structs. */
+// Add an item to the circular list of openfile structs.
 void
-make_new_buffer(void)
+make_new_buffer()
 {
-    openfilestruct *newnode = RE_CAST(openfilestruct *, nmalloc(sizeof(openfilestruct)));
+    openfilestruct *const newnode = static_cast<openfilestruct *>(nmalloc(sizeof(openfilestruct)));
 
-#ifdef ENABLE_MULTIBUFFER
-    if (openfile == NULL)
+    if (openfile == nullptr)
     {
-        /* Make the first buffer the only element in the list. */
+        // Make the first buffer the only element in the list.
         newnode->prev = newnode;
         newnode->next = newnode;
 
@@ -57,7 +29,7 @@ make_new_buffer(void)
     }
     else
     {
-        /* Add the new buffer after the current one in the list. */
+        // Add the new buffer after the current one in the list.
         newnode->prev        = openfile;
         newnode->next        = openfile->next;
         openfile->next->prev = newnode;
@@ -67,60 +39,45 @@ make_new_buffer(void)
         exitfunc->tag = close_tag;
         more_than_one = !inhelp || more_than_one;
     }
-#endif
-    /* Make the new buffer the current one, and start initializing it. */
+
+    // Make the new buffer the current one, and start initializing it.
     openfile = newnode;
 
-    openfile->filename = copy_of("");
-
-    openfile->filetop       = make_new_node(NULL);
+    openfile->filename      = copy_of("");
+    openfile->filetop       = make_new_node(nullptr);
     openfile->filetop->data = copy_of("");
     openfile->filebot       = openfile->filetop;
-
-    openfile->current     = openfile->filetop;
-    openfile->current_x   = 0;
-    openfile->placewewant = 0;
-    openfile->cursor_row  = 0;
-
-    openfile->edittop     = openfile->filetop;
-    openfile->firstcolumn = 0;
-
-    openfile->totsize  = 0;
-    openfile->modified = FALSE;
-#ifdef ENABLE_WRAPPING
-    openfile->spillage_line = NULL;
-#endif
-#ifndef NANO_TINY
-    openfile->mark     = NULL;
-    openfile->softmark = FALSE;
-
-    openfile->fmt = UNSPECIFIED;
-
-    openfile->undotop      = NULL;
-    openfile->current_undo = NULL;
-    openfile->last_saved   = NULL;
-    openfile->last_action  = OTHER;
-
-    openfile->statinfo      = NULL;
-    openfile->lock_filename = NULL;
-#endif
-#ifdef ENABLE_MULTIBUFFER
-    openfile->errormessage = NULL;
-#endif
-#ifdef ENABLE_COLOR
-    openfile->syntax = NULL;
-#endif
+    openfile->current       = openfile->filetop;
+    openfile->current_x     = 0;
+    openfile->placewewant   = 0;
+    openfile->cursor_row    = 0;
+    openfile->edittop       = openfile->filetop;
+    openfile->firstcolumn   = 0;
+    openfile->totsize       = 0;
+    openfile->modified      = false;
+    openfile->spillage_line = nullptr;
+    openfile->mark          = nullptr;
+    openfile->softmark      = false;
+    openfile->fmt           = UNSPECIFIED;
+    openfile->undotop       = nullptr;
+    openfile->current_undo  = nullptr;
+    openfile->last_saved    = nullptr;
+    openfile->last_action   = OTHER;
+    openfile->statinfo      = nullptr;
+    openfile->lock_filename = nullptr;
+    openfile->errormessage  = nullptr;
+    openfile->syntax        = nullptr;
 }
 
-/* Return the given file name in a way that fits within the given space. */
-char *
-crop_to_fit(const char *name, int room)
+// Return the given file name in a way that fits within the given space.
+s8 *
+crop_to_fit(const s8 *name, const s32 room)
 {
-    char *clipped;
+    s8 *clipped;
 
     if (breadth(name) <= room)
     {
-        return display_string(name, 0, room, FALSE, FALSE);
+        return display_string(name, 0, room, false, false);
     }
 
     if (room < 4)
@@ -128,9 +85,9 @@ crop_to_fit(const char *name, int room)
         return copy_of("_");
     }
 
-    clipped = display_string(name, breadth(name) - room + 3, room, FALSE, FALSE);
+    clipped = display_string(name, breadth(name) - room + 3, room, false, false);
 
-    clipped = RE_CAST(char *, nrealloc(clipped, strlen(clipped) + 4));
+    clipped = static_cast<s8 *>(nrealloc(clipped, strlen(clipped) + 4));
     memmove(clipped + 3, clipped, strlen(clipped) + 1);
     clipped[0] = '.';
     clipped[1] = '.';
@@ -139,54 +96,49 @@ crop_to_fit(const char *name, int room)
     return clipped;
 }
 
-#ifndef NANO_TINY
-/* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
+// Delete the lock file.  Return TRUE on success, and FALSE otherwise.
 bool
-delete_lockfile(const char *lockfilename)
+delete_lockfile(const s8 *lockfilename)
 {
     if (unlink(lockfilename) < 0 && errno != ENOENT)
     {
         statusline(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
-        return FALSE;
+        return false;
     }
-    else
-    {
-        return TRUE;
-    }
+    return true;
 }
 
-#    define LOCKSIZE     1024
-#    define SKIPTHISFILE (char *)-1
+#define LOCKSIZE     1024
+#define SKIPTHISFILE (s8 *)-1
 
-const char *locking_prefix = ".";
-const char *locking_suffix = ".swp";
+const s8 *locking_prefix = ".";
+const s8 *locking_suffix = ".swp";
 
-/* Write a lock file, under the given lockfilename.  This always annihilates an
- * existing version of that file.  Return TRUE on success; FALSE otherwise. */
+// Write a lock file, under the given lockfilename.  This always annihilates an
+// existing version of that file.  Return TRUE on success; FALSE otherwise.
 bool
-write_lockfile(const char *lockfilename, const char *filename, bool modified)
+write_lockfile(const s8 *lockfilename, const s8 *filename, const bool modified)
 {
-#    if defined(HAVE_PWD_H) && defined(HAVE_GETEUID)
-    pid_t          mypid   = getpid();
-    uid_t          myuid   = geteuid();
-    struct passwd *mypwuid = getpwuid(myuid);
-    char           myhostname[32];
-    int            fd;
-    FILE          *filestream = NULL;
-    char          *lockdata;
-    size_t         wroteamt;
+    s32     mypid   = getpid();
+    uid_t   myuid   = geteuid();
+    passwd *mypwuid = getpwuid(myuid);
+    s8      myhostname[32];
+    s32     fd;
+    FILE   *filestream = nullptr;
+    s8     *lockdata;
+    u64     wroteamt;
 
-    if (mypwuid == NULL)
+    if (mypwuid == nullptr)
     {
         /* TRANSLATORS: Keep the next seven messages at most 76 characters. */
         statusline(MILD, _("Couldn't determine my identity for lock file"));
-        return FALSE;
+        return false;
     }
 
     if (gethostname(myhostname, 31) < 0 && errno != ENAMETOOLONG)
     {
         statusline(MILD, _("Couldn't determine hostname: %s"), strerror(errno));
-        return FALSE;
+        return false;
     }
     else
     {
@@ -207,37 +159,40 @@ write_lockfile(const char *lockfilename, const char *filename, bool modified)
         filestream = fdopen(fd, "wb");
     }
 
-    if (filestream == NULL)
+    if (filestream == nullptr)
     {
         statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
         if (fd > 0)
         {
             close(fd);
         }
-        return FALSE;
+        return false;
     }
 
-    lockdata = nmalloc(LOCKSIZE);
+    lockdata = static_cast<s8 *>(nmalloc(LOCKSIZE));
     memset(lockdata, 0, LOCKSIZE);
 
-    /* This is the lock data we will store (other bytes remain 0x00):
-     *
-     *   bytes 0-1     - 0x62 0x30
-     *   bytes 2-11    - name of program that created the lock
-     *   bytes 24-27   - PID (little endian) of creator process
-     *   bytes 28-43   - username of the user who created the lock
-     *   bytes 68-99   - hostname of machine from where the lock was created
-     *   bytes 108-876 - filename that the lock is for
-     *   byte 1007     - 0x55 if file is modified
-     *
-     * Nano does not write the page size (bytes 12-15), nor the modification
-     * time (bytes 16-19), nor the inode of the relevant file (bytes 20-23).
-     * Nano also does not use all available space for user name (40 bytes),
-     * host name (40 bytes), and file name (890 bytes).  Nor does nano write
-     * some byte-order-checking numbers (bytes 1008-1022). */
+    /**
+        This is the lock data we will store (other bytes remain 0x00):
+
+            bytes 0-1     - 0x62 0x30
+            bytes 2-11    - name of program that created the lock
+            bytes 24-27   - PID (little endian) of creator process
+            bytes 28-43   - username of the user who created the lock
+            bytes 68-99   - hostname of machine from where the lock was created
+            bytes 108-876 - filename that the lock is for
+            byte 1007     - 0x55 if file is modified
+
+        Nano does not write the page size (bytes 12-15), nor the modification
+        time (bytes 16-19), nor the inode of the relevant file (bytes 20-23).
+        Nano also does not use all available space for user name (40 bytes),
+        host name (40 bytes), and file name (890 bytes).  Nor does nano write
+        some byte-order-checking numbers (bytes 1008-1022).
+    */
     lockdata[0] = 0x62;
     lockdata[1] = 0x30;
-    /* It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway. */
+
+    // It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway.
     snprintf(&lockdata[2], 11, "nano %s", VERSION);
     lockdata[24] = mypid % 256;
     lockdata[25] = (mypid / 256) % 256;
@@ -255,23 +210,23 @@ write_lockfile(const char *lockfilename, const char *filename, bool modified)
     if (fclose(filestream) == EOF || wroteamt < LOCKSIZE)
     {
         statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
-        return FALSE;
+        return false;
     }
-#    endif
-    return TRUE;
+    return true;
 }
 
 /* First check if a lock file already exists.  If so, and ask_the_user is TRUE,
  * then ask whether to open the corresponding file anyway.  Return SKIPTHISFILE
  * when the user answers "No", return the name of the lock file on success, and
  * return NULL on failure. */
-char *
-do_lockfile(const char *filename, bool ask_the_user)
+s8 *
+do_lockfile(const s8 *filename, const bool ask_the_user)
 {
-    char       *namecopy     = copy_of(filename);
-    char       *secondcopy   = copy_of(filename);
-    size_t      locknamesize = strlen(filename) + strlen(locking_prefix) + strlen(locking_suffix) + 3;
-    char       *lockfilename = RE_CAST(char *, nmalloc(locknamesize));
+    s8 *namecopy     = copy_of(filename);
+    s8 *secondcopy   = copy_of(filename);
+    u64 locknamesize = strlen(filename) + strlen(locking_prefix) + strlen(locking_suffix) + 3;
+    s8 *lockfilename = static_cast<s8 *>(nmalloc(locknamesize));
+
     struct stat fileinfo;
 
     snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy),
@@ -385,7 +340,6 @@ stat_with_alloc(const char *filename, struct stat **pstat)
         *pstat = NULL;
     }
 }
-#endif /* !NANO_TINY */
 
 /* Verify that the containing directory of the given filename exists. */
 bool

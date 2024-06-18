@@ -172,7 +172,14 @@ display_rcfile_errors(void)
 
 #define MAXSIZE (PATH_MAX + 200)
 
-/* Store the given error message in a linked list, to be printed upon exit. */
+/// @name @c jot_error
+/// @brief
+///  -  Store the given error message in a linked list, to be printed upon exit.
+/// @param msg
+///  -  The error message, possibly with @c printf-style format specifiers.
+/// @param ...
+///  -  The arguments to be inserted into the format specifiers.
+/// @returns @c void
 void
 jot_error(const s8 *msg, ...)
 {
@@ -212,14 +219,14 @@ jot_error(const s8 *msg, ...)
     length += vsnprintf(textbuf + length, MAXSIZE - length, _(msg), ap);
     va_end(ap);
 
-    error->data = RE_CAST(s8 *, nmalloc(length + 1));
+    error->data = static_cast<s8 *>(nmalloc(length + 1));
     sprintf(error->data, "%s", textbuf);
 }
 
 // Interpret a function string given in the rc file, and return a
 // shortcut record with the corresponding function filled in.
 keystruct *
-strtosc(const char *input)
+strtosc(const s8 *input)
 {
     keystruct *s = RE_CAST(keystruct *, nmalloc(sizeof(keystruct)));
 
@@ -702,12 +709,12 @@ strtosc(const char *input)
 }
 
 #define NUMBER_OF_MENUS 16
-char *menunames[NUMBER_OF_MENUS] = {_("main"),    _("search"),      _("replace"),  _("replacewith"),
-                                    _("yesno"),   _("gotoline"),    _("writeout"), _("insert"),
-                                    _("execute"), _("help"),        _("spell"),    _("linter"),
-                                    _("browser"), _("whereisfile"), _("gotodir"),  _("all")};
+s8 *menunames[NUMBER_OF_MENUS] = {_("main"),    _("search"),      _("replace"),  _("replacewith"),
+                                  _("yesno"),   _("gotoline"),    _("writeout"), _("insert"),
+                                  _("execute"), _("help"),        _("spell"),    _("linter"),
+                                  _("browser"), _("whereisfile"), _("gotodir"),  _("all")};
 
-int menusymbols[NUMBER_OF_MENUS] = {
+s32 menusymbols[NUMBER_OF_MENUS] = {
     MMAIN,    MWHEREIS, MREPLACE, MREPLACEWITH, MYESNO,   MGOTOLINE,    MWRITEFILE, MINSERTFILE,
     MEXECUTE, MHELP,    MSPELL,   MLINTER,      MBROWSER, MWHEREISFILE, MGOTODIR,   MMOST | MBROWSER | MHELP | MYESNO};
 
@@ -1656,9 +1663,9 @@ parse_rule(char *ptr, int rex_flags)
 
 /* Set the colors for the given interface element to the given combination. */
 void
-set_interface_color(int element, char *combotext)
+set_interface_color(s32 element, s8 *combotext)
 {
-    colortype *trio = RE_CAST(colortype *, nmalloc(sizeof(colortype)));
+    colortype *trio = static_cast<colortype *>(nmalloc(sizeof(colortype)));
 
     if (parse_combination(combotext, &trio->fg, &trio->bg, &trio->attributes))
     {
@@ -1677,7 +1684,7 @@ void
 grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
 {
     regexlisttype *lastthing, *newthing;
-    const char    *regexstring;
+    const s8      *regexstring;
 
     if (!opensyntax)
     {
@@ -1860,21 +1867,19 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
     while ((length = getline(&buffer, &size, rcstream)) > 0)
     {
         char *ptr, *keyword, *option, *argument;
-#ifdef ENABLE_COLOR
-        bool drop_open = FALSE;
-#endif
-        int    set = 0;
+
+        bool   drop_open = false;
+        int    set       = 0;
         size_t i;
 
         lineno++;
 
-#ifdef ENABLE_COLOR
         /* If doing a full parse, skip to after the 'syntax' command. */
         if (just_syntax && !intros_only && lineno <= live_syntax->lineno)
         {
             continue;
         }
-#endif
+
         /* Strip the terminating newline and possibly a carriage return. */
         if (buffer[length - 1] == '\n')
         {
@@ -1886,7 +1891,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         }
 
         ptr = buffer;
-        while (isblank((unsigned char)*ptr))
+        while (isblank(static_cast<u8>(*ptr)))
         {
             ptr++;
         }
@@ -1901,7 +1906,6 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         keyword = ptr;
         ptr     = parse_next_word(ptr);
 
-#ifdef ENABLE_COLOR
         /* Handle extending first... */
         if (!just_syntax && strcmp(keyword, "extendsyntax") == 0)
         {
@@ -1990,12 +1994,12 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         }
         else if (strcmp(keyword, "magic") == 0)
         {
-#    ifdef HAVE_LIBMAGIC
+#ifdef HAVE_LIBMAGIC
             if (intros_only)
             {
                 grab_and_store("magic", ptr, &live_syntax->magics);
             }
-#    endif
+#endif
         }
         else if (just_syntax && (strcmp(keyword, "set") == 0 || strcmp(keyword, "unset") == 0 ||
                                  strcmp(keyword, "bind") == 0 || strcmp(keyword, "unbind") == 0 ||
@@ -2027,13 +2031,15 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             continue;
         }
         else if (parse_syntax_commands(keyword, ptr))
+        {
             ;
+        }
         else if (strcmp(keyword, "include") == 0)
         {
             parse_includes(ptr);
         }
         else
-#endif /* ENABLE_COLOR */
+        {
             if (strcmp(keyword, "set") == 0)
             {
                 set = 1;
@@ -2044,23 +2050,23 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
             else if (strcmp(keyword, "bind") == 0)
             {
-                parse_binding(ptr, TRUE);
+                parse_binding(ptr, true);
             }
             else if (strcmp(keyword, "unbind") == 0)
             {
-                parse_binding(ptr, FALSE);
+                parse_binding(ptr, false);
             }
             else if (intros_only)
             {
                 jot_error(N_("Command \"%s\" not understood"), keyword);
             }
+        }
 
-#ifdef ENABLE_COLOR
         if (drop_open)
         {
-            opensyntax = FALSE;
+            opensyntax = false;
         }
-#endif
+
         if (set == 0)
         {
             continue;
@@ -2127,7 +2133,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         ptr = parse_argument(ptr);
 
         /* When in a UTF-8 locale, ignore arguments with invalid sequences. */
-        if (using_utf8() && mbstowcs(NULL, argument, 0) == (size_t)-1)
+        if (using_utf8() && mbstowcs(nullptr, argument, 0) == (size_t)-1)
         {
             jot_error(N_("Argument is not a valid multibyte string"));
             continue;

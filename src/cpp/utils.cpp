@@ -1,24 +1,4 @@
-/**************************************************************************
- *   utils.c  --  This file is part of GNU nano.                          *
- *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
- *   Copyright (C) 2016, 2017, 2019 Benno Schulenberg                     *
- *                                                                        *
- *   GNU nano is free software: you can redistribute it and/or modify     *
- *   it under the terms of the GNU General Public License as published    *
- *   by the Free Software Foundation, either version 3 of the License,    *
- *   or (at your option) any later version.                               *
- *                                                                        *
- *   GNU nano is distributed in the hope that it will be useful,          *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty          *
- *   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.              *
- *   See the GNU General Public License for more details.                 *
- *                                                                        *
- *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
- *                                                                        *
- **************************************************************************/
-
+/// @file utils.cpp
 #include "../include/prototypes.h"
 
 #include <cerrno>
@@ -26,8 +6,8 @@
 #include <pwd.h>
 #include <unistd.h>
 
-/* Return the user's home directory.  We use $HOME, and if that fails,
- * we fall back on the home directory of the effective user ID. */
+// Return the user's home directory.  We use $HOME, and if that fails,
+// we fall back on the home directory of the effective user ID.
 void
 get_homedir()
 {
@@ -55,13 +35,13 @@ get_homedir()
     }
 }
 
-/* Return the filename part of the given path. */
-const char *
-tail(const char *path)
+// Return the filename part of the given path.
+const s8 *
+tail(const s8 *path)
 {
-    const char *slash = strrchr(path, '/');
+    const s8 *slash = strrchr(path, '/');
 
-    if (slash == NULL)
+    if (slash == nullptr)
     {
         return path;
     }
@@ -71,12 +51,12 @@ tail(const char *path)
     }
 }
 
-/* Return a copy of the two given strings, welded together. */
-char *
-concatenate(const char *path, const char *name)
+// Return a copy of the two given strings, welded together.
+s8 *
+concatenate(const s8 *path, const s8 *name)
 {
-    size_t pathlen = strlen(path);
-    char  *joined  = RE_CAST(char *, nmalloc(pathlen + strlen(name) + 1));
+    u64 pathlen = strlen(path);
+    s8 *joined  = static_cast<s8 *>(nmalloc(pathlen + strlen(name) + 1));
 
     strcpy(joined, path);
     strcpy(joined + pathlen, name);
@@ -84,9 +64,9 @@ concatenate(const char *path, const char *name)
     return joined;
 }
 
-/* Return the number of digits that the given integer n takes up. */
-int
-digits(ssize_t n)
+// Return the number of digits that the given integer n takes up.
+s32
+digits(s64 n)
 {
     if (n < 100000)
     {
@@ -140,13 +120,13 @@ digits(ssize_t n)
     }
 }
 
-/* Read an integer from the given string.  If it parses okay,
- * store it in *result and return TRUE; otherwise, return FALSE. */
+// Read an integer from the given string.  If it parses okay,
+// store it in *result and return TRUE; otherwise, return FALSE.
 bool
-parse_num(const char *string, ssize_t *result)
+parse_num(const s8 *string, s64 *result)
 {
     ssize_t value;
-    char   *excess;
+    s8     *excess;
 
     /* Clear the error number so that we can check it afterward. */
     errno = 0;
@@ -155,23 +135,23 @@ parse_num(const char *string, ssize_t *result)
 
     if (errno == ERANGE || *string == '\0' || *excess != '\0')
     {
-        return FALSE;
+        return false;
     }
 
     *result = value;
 
-    return TRUE;
+    return true;
 }
 
-/* Read one number (or two numbers separated by comma, period, or colon)
- * from the given string and store the number(s) in *line (and *column).
- * Return FALSE on a failed parsing, and TRUE otherwise. */
+// Read one number (or two numbers separated by comma, period, or colon)
+// from the given string and store the number(s) in *line (and *column).
+// Return FALSE on a failed parsing, and TRUE otherwise. */
 bool
-parse_line_column(const char *string, ssize_t *line, ssize_t *column)
+parse_line_column(const s8 *string, s64 *line, s64 *column)
 {
-    const char *comma;
-    char       *firstpart;
-    bool        retval;
+    const s8 *comma;
+    s8       *firstpart;
+    bool      retval;
 
     while (*string == ' ')
     {
@@ -202,9 +182,9 @@ parse_line_column(const char *string, ssize_t *line, ssize_t *column)
     return retval;
 }
 
-/* In the given string, recode each embedded NUL as a newline. */
+// In the given string, recode each embedded NUL as a newline.
 void
-recode_NUL_to_LF(char *string, size_t length)
+recode_NUL_to_LF(s8 *string, u64 length)
 {
     while (length > 0)
     {
@@ -217,12 +197,12 @@ recode_NUL_to_LF(char *string, size_t length)
     }
 }
 
-/* In the given string, recode each embedded newline as a NUL,
- * and return the number of bytes in the string. */
-size_t
-recode_LF_to_NUL(char *string)
+// In the given string, recode each embedded newline as a NUL,
+// and return the number of bytes in the string.
+u64
+recode_LF_to_NUL(s8 *string)
 {
-    char *beginning = string;
+    s8 *beginning = string;
 
     while (*string != '\0')
     {
@@ -233,7 +213,7 @@ recode_LF_to_NUL(char *string)
         string++;
     }
 
-    return (string - beginning);
+    return static_cast<u64>(string - beginning);
 }
 
 #if !defined(ENABLE_TINY) || defined(ENABLE_TABCOMP) || defined(ENABLE_BROWSER)
@@ -255,7 +235,6 @@ free_chararray(char **array, size_t len)
 }
 #endif
 
-#ifdef ENABLE_SPELLER
 /* Is the word starting at the given position in 'text' and of the given
  * length a separate word?  That is: is it not part of a longer word? */
 bool
@@ -269,7 +248,6 @@ is_separate_word(size_t position, size_t length, const char *text)
      * the character after the word isn't a letter, we have a whole word. */
     return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
 }
-#endif /* ENABLE_SPELLER */
 
 // Return the position of the needle in the haystack, or NULL if not found.
 // When searching backwards, we will find the last match that starts no later
@@ -466,19 +444,20 @@ xplustabs(void)
     return wideness(openfile->current->data, openfile->current_x);
 }
 
-/* Return the index in text of the character that (when displayed) will
- * not overshoot the given column. */
-size_t
+// Return the index in text of the character that (when displayed) will
+// not overshoot the given column.
+u64
 actual_x(const char *text, size_t column)
 {
-    const char *start = text;
     /* From where we start walking through the text. */
-    size_t width = 0;
+    const s8 *start = text;
+
     /* The current accumulated span, in columns. */
+    u64 width = 0;
 
     while (*text != '\0')
     {
-        int charlen = advance_over(text, &width);
+        s32 charlen = advance_over(text, &width);
 
         if (width > column)
         {
@@ -602,9 +581,7 @@ get_range(linestruct **const &top, linestruct **const &bot)
     else
     {
         u64 top_x, bot_x;
-
         get_region(top, &top_x, bot, &bot_x);
-
         if (bot_x == 0 && *bot != *top && !also_the_last)
         {
             *bot = (*bot)->prev;
@@ -616,7 +593,6 @@ get_range(linestruct **const &top, linestruct **const &bot)
     }
 }
 
-#if !defined(NANO_TINY) || defined(ENABLE_SPELLER) || defined(ENABLE_LINTER) || defined(ENABLE_FORMATTER)
 /* Return a pointer to the line that has the given line number. */
 linestruct *
 line_from_number(ssize_t number)
@@ -640,10 +616,9 @@ line_from_number(ssize_t number)
 
     return line;
 }
-#endif
 
-/* Count the number of characters from begin to end, and return it. */
-size_t
+// Count the number of characters from begin to end, and return it.
+u64
 number_of_characters_in(const linestruct *begin, const linestruct *end)
 {
     const linestruct *line;

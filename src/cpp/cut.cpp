@@ -1,7 +1,7 @@
 /// @file @c cut.cpp
 #include "../include/prototypes.h"
 
-#include <string.h>
+#include <cstring>
 
 // Delete the character at the current position, and
 // add or update an undo item for the given action.
@@ -49,7 +49,7 @@ expunge(undo_type action)
     }
     else if (openfile->current != openfile->filebot)
     {
-        linestruct* joining = openfile->current->next;
+        linestruct *joining = openfile->current->next;
 
         /* If there is a magic line, and we're before it: don't eat it. */
         if (joining == openfile->filebot && openfile->current_x != 0 && !ISSET(NO_NEWLINES))
@@ -77,7 +77,7 @@ expunge(undo_type action)
 #endif
         /* Add the content of the next line to that of the current one. */
         openfile->current->data =
-        (char*)nrealloc(openfile->current->data, strlen(openfile->current->data) + strlen(joining->data) + 1);
+            (char *)nrealloc(openfile->current->data, strlen(openfile->current->data) + strlen(joining->data) + 1);
         strcat(openfile->current->data, joining->data);
 
         unlink_node(joining);
@@ -114,41 +114,34 @@ expunge(undo_type action)
 // Delete the character under the cursor plus any succeeding zero-widths,
 // or, when the mark is on and --zap is active, delete the marked region.
 void
-do_delete(void)
+do_delete()
 {
-#ifndef NANO_TINY
     if (openfile->mark && ISSET(LET_THEM_ZAP))
     {
         zap_text();
     }
     else
-#endif
     {
         expunge(DEL);
-#ifdef ENABLE_UTF8
         while (openfile->current->data[openfile->current_x] != '\0' &&
                is_zerowidth(openfile->current->data + openfile->current_x))
         {
             expunge(DEL);
         }
-#endif
     }
 }
 
-/* Backspace over one character.  That is, move the cursor left one
- * character, and then delete the character under the cursor.  Or,
- * when mark is on and --zap is active, delete the marked region. */
+// Backspace over one character.  That is, move the cursor left one
+// character, and then delete the character under the cursor.  Or,
+// when mark is on and --zap is active, delete the marked region.
 void
 do_backspace(void)
 {
-#ifndef NANO_TINY
     if (openfile->mark && ISSET(LET_THEM_ZAP))
     {
         zap_text();
     }
-    else
-#endif
-    if (openfile->current_x > 0)
+    else if (openfile->current_x > 0)
     {
         openfile->current_x = step_left(openfile->current->data, openfile->current_x);
         expunge(BACK);
@@ -189,17 +182,17 @@ is_cuttable(bool test_cliff)
     }
 }
 
-#ifndef NANO_TINY
+
 /* Delete text from the cursor until the first start of a word to
  * the left, or to the right when forward is TRUE. */
 void
 chop_word(bool forward)
 {
     /* Remember the current cursor position. */
-    linestruct* is_current   = openfile->current;
+    linestruct *is_current   = openfile->current;
     size_t      is_current_x = openfile->current_x;
     /* Remember where the cutbuffer is, then make it seem blank. */
-    linestruct* is_cutbuffer = cutbuffer;
+    linestruct *is_cutbuffer = cutbuffer;
 
     cutbuffer = NULL;
 
@@ -265,29 +258,28 @@ chop_previous_word(void)
     }
 }
 
-/* Delete a word rightward. */
+// Delete a word rightward.
 void
-chop_next_word(void)
+chop_next_word()
 {
-    openfile->mark = NULL;
+    openfile->mark = nullptr;
 
-    if (is_cuttable(TRUE))
+    if (is_cuttable(true))
     {
         chop_word(FORWARD);
     }
 }
-#endif /* !NANO_TINY */
 
 /* Excise the text between the given two points and add it to the cutbuffer. */
 void
-extract_segment(linestruct* top, size_t top_x, linestruct* bot, size_t bot_x)
+extract_segment(linestruct *top, size_t top_x, linestruct *bot, size_t bot_x)
 {
     linestruct *taken, *last;
     bool        edittop_inside = (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
 #ifndef NANO_TINY
     bool same_line = (openfile->mark == top);
     bool post_marked =
-    (openfile->mark && (openfile->mark->lineno > top->lineno || (same_line && openfile->mark_x > top_x)));
+        (openfile->mark && (openfile->mark->lineno > top->lineno || (same_line && openfile->mark_x > top_x)));
     static bool inherited_anchor = FALSE;
     bool        had_anchor       = top->has_anchor;
 
@@ -298,7 +290,7 @@ extract_segment(linestruct* top, size_t top_x, linestruct* bot, size_t bot_x)
 
     if (top != bot)
     {
-        for (linestruct* line = top->next; line != bot->next; line = line->next)
+        for (linestruct *line = top->next; line != bot->next; line = line->next)
         {
             had_anchor |= line->has_anchor;
         }
@@ -349,7 +341,7 @@ extract_segment(linestruct* top, size_t top_x, linestruct* bot, size_t bot_x)
             bot->next->prev = top;
         }
 
-        top->data = (char*)nrealloc(top->data, top_x + strlen(bot->data + bot_x) + 1);
+        top->data = (char *)nrealloc(top->data, top_x + strlen(bot->data + bot_x) + 1);
         strcpy(top->data + top_x, bot->data + bot_x);
 
         last              = bot;
@@ -374,7 +366,7 @@ extract_segment(linestruct* top, size_t top_x, linestruct* bot, size_t bot_x)
     }
     else
     {
-        cutbottom->data = (char*)nrealloc(cutbottom->data, strlen(cutbottom->data) + strlen(taken->data) + 1);
+        cutbottom->data = (char *)nrealloc(cutbottom->data, strlen(cutbottom->data) + strlen(taken->data) + 1);
         strcat(cutbottom->data, taken->data);
 #ifndef NANO_TINY
         cutbottom->has_anchor = taken->has_anchor && !inherited_anchor;
@@ -428,17 +420,17 @@ extract_segment(linestruct* top, size_t top_x, linestruct* bot, size_t bot_x)
 /* Meld the buffer that starts at topline into the current file buffer
  * at the current cursor position. */
 void
-ingraft_buffer(linestruct* topline)
+ingraft_buffer(linestruct *topline)
 {
-    linestruct* line     = openfile->current;
+    linestruct *line     = openfile->current;
     size_t      length   = strlen(line->data);
     size_t      extralen = strlen(topline->data);
     size_t      xpos     = openfile->current_x;
-    char*       tailtext = copy_of(line->data + xpos);
+    char       *tailtext = copy_of(line->data + xpos);
 #ifndef NANO_TINY
     bool mark_follows = (openfile->mark == line && !mark_is_before_cursor());
 #endif
-    linestruct* botline = topline;
+    linestruct *botline = topline;
 
     while (botline->next != NULL)
     {
@@ -456,7 +448,7 @@ ingraft_buffer(linestruct* topline)
     if (extralen > 0)
     {
         /* Insert the text of topline at the current cursor position. */
-        line->data = (char*)nrealloc(line->data, length + extralen + 1);
+        line->data = (char *)nrealloc(line->data, length + extralen + 1);
         memmove(line->data + xpos + extralen, line->data + xpos, length - xpos + 1);
         strncpy(line->data + xpos, topline->data, extralen);
     }
@@ -483,7 +475,7 @@ ingraft_buffer(linestruct* topline)
         /* Add the text after the cursor position at the end of botline. */
         length        = strlen(botline->data);
         extralen      = strlen(tailtext);
-        botline->data = (char*)nrealloc(botline->data, length + extralen + 1);
+        botline->data = (char *)nrealloc(botline->data, length + extralen + 1);
         strcpy(botline->data + length, tailtext);
 
         /* Put the cursor at the end of the grafted text. */
@@ -522,12 +514,12 @@ ingraft_buffer(linestruct* topline)
 
 /* Meld a copy of the given buffer into the current file buffer. */
 void
-copy_from_buffer(linestruct* somebuffer)
+copy_from_buffer(linestruct *somebuffer)
 {
 #ifdef ENABLE_COLOR
     size_t threshold = openfile->edittop->lineno + editwinrows - 1;
 #endif
-    linestruct* the_copy = copy_buffer(somebuffer);
+    linestruct *the_copy = copy_buffer(somebuffer);
 
     ingraft_buffer(the_copy);
 
@@ -566,7 +558,7 @@ cut_marked_region(void)
 void
 do_snip(bool marked, bool until_eof, bool append)
 {
-    linestruct* line = openfile->current;
+    linestruct *line = openfile->current;
 
 #ifndef NANO_TINY
     keep_cutbuffer &= (openfile->last_action != COPY);
@@ -688,7 +680,7 @@ void
 zap_text(void)
 {
     /* Remember the current cutbuffer so it can be restored after the zap. */
-    linestruct* was_cutbuffer = cutbuffer;
+    linestruct *was_cutbuffer = cutbuffer;
 
     if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && openfile->mark == NULL))
     {
@@ -718,7 +710,7 @@ void
 copy_marked_region(void)
 {
     linestruct *topline, *botline, *afterline;
-    char *      was_datastart, saved_byte;
+    char       *was_datastart, saved_byte;
     size_t      top_x, bot_x;
 
     get_region(&topline, &top_x, &botline, &bot_x);
@@ -760,8 +752,8 @@ copy_text(void)
     bool        at_eol       = (openfile->current->data[openfile->current_x] == '\0');
     bool        sans_newline = (ISSET(NO_NEWLINES) && openfile->current->next == NULL);
     size_t      from_x       = (ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0;
-    linestruct* was_current  = openfile->current;
-    linestruct* addition;
+    linestruct *was_current  = openfile->current;
+    linestruct *addition;
 
 #ifndef NANO_TINY
     if (openfile->mark || openfile->last_action != COPY)
@@ -861,7 +853,7 @@ paste_text(void)
 {
 #if defined(ENABLE_WRAPPING) || !defined(NANO_TINY)
     /* Remember where the paste started. */
-    linestruct* was_current = openfile->current;
+    linestruct *was_current = openfile->current;
 #endif
 #ifndef NANO_TINY
     bool had_anchor = was_current->has_anchor;
@@ -890,7 +882,7 @@ paste_text(void)
 
 #ifndef NANO_TINY
     /* Wipe any anchors in the pasted text, so that they don't proliferate. */
-    for (linestruct* line = was_current; line != openfile->current->next; line = line->next)
+    for (linestruct *line = was_current; line != openfile->current->next; line = line->next)
     {
         line->has_anchor = FALSE;
     }

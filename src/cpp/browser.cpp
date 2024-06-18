@@ -7,8 +7,8 @@
 #    include <cstring>
 #    include <unistd.h>
 
-static char **filelist = NULL;
 /* The list of files to display in the file browser. */
+static char **filelist    = nullptr;
 static size_t list_length = 0;
 /* The number of files in the list. */
 static size_t usable_rows = 0;

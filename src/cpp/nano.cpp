@@ -33,8 +33,14 @@ static termios original_state;
 // Containers for the original and the temporary handler for SIGINT.
 static struct sigaction oldaction, newaction;
 
-// Create a new linestruct node.
-// Note that we do NOT set prevnode->next.
+/// @name @c make_new_buffer
+/// @brief
+/// - Create a new linestruct node.
+/// - Note that we do NOT set prevnode->next.
+/// @param prevnode [linestruct *const &]
+/// - The previous node in the linked list.
+/// @returns
+/// - A pointer to the new node.
 linestruct *
 make_new_node(linestruct *const &prevnode)
 {
@@ -321,16 +327,16 @@ do_exit()
     }
 }
 
-/* Save the current buffer under the given name (or "nano.<pid>" when nameless)
- * with suffix ".save".  If needed, the name is further suffixed to be unique. */
+// Save the current buffer under the given name (or "nano.<pid>" when nameless)
+// with suffix ".save".  If needed, the name is further suffixed to be unique.
 void
-emergency_save(const char *filename)
+emergency_save(const s8 *filename)
 {
-    char *plainname, *targetname;
+    s8 *plainname, *targetname;
 
     if (*filename == '\0')
     {
-        plainname = RE_CAST(char *, nmalloc(28));
+        plainname = static_cast<s8 *>(nmalloc(28));
         sprintf(plainname, "nano.%u", getpid());
     }
     else
@@ -344,7 +350,7 @@ emergency_save(const char *filename)
     {
         fprintf(stderr, _("\nToo many .save files\n"));
     }
-    else if (write_file(targetname, NULL, SPECIAL, EMERGENCY, NONOTES))
+    else if (write_file(targetname, nullptr, SPECIAL, EMERGENCY, NONOTES))
     {
         fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
     }
@@ -353,69 +359,86 @@ emergency_save(const char *filename)
     free(plainname);
 }
 
-/* Die gracefully -- by restoring the terminal state and saving any buffers
- * that were modified. */
+// Die gracefully -- by restoring the terminal state and saving any buffers
+// that were modified.
+
+
+/// name @c die
+/// @brief
+///  - This function is used to terminate the program execution and display a
+///  dying message.
+///  - It performs the following
+///  - STEPS:
+///   1. Checks if it's the second time the function is called.
+///    - If so, it exits the program with exit code 11.
+///   2. Restores the terminal settings.
+///   3. Displays any errors from the rcfile.
+///   4. Displays the dying message by formatting the given message and
+///   arguments.
+///   5. Deletes any lock files associated with open files.
+///   6. Saves modified buffers if not in restricted mode.
+///   7. Exits the program with EXIT_FAILURE.
+/// @param msg ( const s8 * )
+///  - The format string for the dying message.
+/// @param ... ( __VA_ARGS__ )
+///  - Additional arguments to be formatted into the dying message.
+/// @returns @c void
 void
-die(const char *msg, ...)
+die(const s8 *msg, ...)
 {
     openfilestruct *firstone = openfile;
-    static int      stabs    = 0;
+    static s32      stabs    = 0;
     va_list         ap;
 
-    /* When dying for a second time, just give up. */
+    // When dying for a second time, just give up.
     if (++stabs > 1)
     {
         exit(11);
     }
 
     restore_terminal();
-
-#ifdef ENABLE_NANORC
     display_rcfile_errors();
-#endif
 
-    /* Display the dying message. */
+    // Display the dying message.
     va_start(ap, msg);
     vfprintf(stderr, msg, ap);
     va_end(ap);
 
     while (openfile)
     {
-#ifndef NANO_TINY
-        /* If the current buffer has a lock file, remove it. */
+        // If the current buffer has a lock file, remove it.
         if (openfile->lock_filename)
         {
             delete_lockfile(openfile->lock_filename);
         }
-#endif
-        /* When modified, save the current buffer.  But not when in restricted
-         * mode, as it would write a file not mentioned on the command line. */
+
+        // When modified, save the current buffer.
+        // not when in restricted mode, as it would
+        // write a file not mentioned on the command line.
         if (openfile->modified && !ISSET(RESTRICTED))
         {
             emergency_save(openfile->filename);
         }
 
-#ifdef ENABLE_MULTIBUFFER
         openfile = openfile->next;
-#endif
         if (openfile == firstone)
         {
             break;
         }
     }
 
-    /* Abandon the building. */
-    exit(1);
+    // Abandon the building.
+    exit(EXIT_FAILURE);
 }
 
 /* Initialize the three window portions nano uses. */
 void
-window_init(void)
+window_init()
 {
     /* When resizing, first delete the existing windows. */
-    if (midwin != NULL)
+    if (midwin != nullptr)
     {
-        if (topwin != NULL)
+        if (topwin != nullptr)
         {
             delwin(topwin);
         }
@@ -423,22 +446,23 @@ window_init(void)
         delwin(footwin);
     }
 
-    topwin = NULL;
+    topwin = nullptr;
 
-    /* If the terminal is very flat, don't set up a title bar. */
+    // If the terminal is very flat, don't set up a title bar.
     if (LINES < 3)
     {
         editwinrows = (ISSET(ZERO) ? LINES : 1);
-        /* Set up two subwindows.  If the terminal is just one line,
-         * edit window and status-bar window will cover each other. */
+
+        // Set up two subwindows.  If the terminal is just one line,
+        // edit window and status-bar window will cover each other.
         midwin  = newwin(editwinrows, COLS, 0, 0);
         footwin = newwin(1, COLS, LINES - 1, 0);
     }
     else
     {
-        int minimum    = (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5);
-        int toprows    = ((ISSET(EMPTY_LINE) && LINES > minimum) ? 2 : 1);
-        int bottomrows = ((ISSET(NO_HELP) || LINES < minimum) ? 1 : 3);
+        s32 minimum    = (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5);
+        s32 toprows    = ((ISSET(EMPTY_LINE) && LINES > minimum) ? 2 : 1);
+        s32 bottomrows = ((ISSET(NO_HELP) || LINES < minimum) ? 1 : 3);
 
         if (ISSET(MINIBAR) || ISSET(ZERO))
         {
@@ -447,7 +471,7 @@ window_init(void)
 
         editwinrows = LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0);
 
-        /* Set up the normal three subwindows. */
+        // Set up the normal three subwindows.
         if (toprows > 0)
         {
             topwin = newwin(toprows, COLS, 0, 0);
@@ -456,18 +480,17 @@ window_init(void)
         footwin = newwin(bottomrows, COLS, LINES - bottomrows, 0);
     }
 
-    /* In case the terminal shrunk, make sure the status line is clear. */
+    // In case the terminal shrunk, make sure the status line is clear.
     wnoutrefresh(footwin);
 
-    /* When not disabled, turn escape-sequence translation on. */
+    // When not disabled, turn escape-sequence translation on.
     if (!ISSET(RAW_SEQUENCES))
     {
-        keypad(midwin, TRUE);
-        keypad(footwin, TRUE);
+        keypad(midwin, true);
+        keypad(footwin, true);
     }
 
-#ifdef ENABLED_WRAPORJUSTIFY
-    /* Set up the wrapping point, accounting for screen width when negative. */
+    // Set up the wrapping point, accounting for screen width when negative.
     if (COLS + fill < 0)
     {
         wrap_at = 0;
@@ -480,7 +503,6 @@ window_init(void)
     {
         wrap_at = fill;
     }
-#endif
 }
 
 void
@@ -541,8 +563,10 @@ usage()
 
     // TRANSLATORS: The next two strings are part of the --help output.
     // It's best to keep its lines within 80 characters.
-    printf(_("To place the cursor on a specific line of a file, put the line number with\n"
-             "a '+' before the filename.  The column number can be added after a comma.\n"));
+    printf(_("To place the cursor on a specific line of a file, put the line "
+             "number with\n"
+             "a '+' before the filename.  The column number can be added after "
+             "a comma.\n"));
 
     // TRANSLATORS: The next three are column headers of the --help output.
     printf(_("When a filename is '-', nano reads data from standard input.\n\n"));
@@ -632,22 +656,21 @@ usage()
 }
 
 /// @name @c version
-/// - Display the version number of this nano, a copyright notice, some contact
-/// - information, and the configuration options this nano was compiled with.
-/// @returns
-/// - void
+/// @brief
+///  - Display the version number of this nano, a copyright notice, some contact
+///  - information, and the configuration options this nano was compiled with.
+/// @returns @c void
 void
 version()
 {
-#ifdef REVISION
-    printf(" 'NanoX' is a Fork of 'GNU nano' from git source code made into cpp, %s\n", REVISION);
-#else
+
+    printf(" 'NanoX' is a Fork of 'GNU nano' from git source code made into "
+           "cpp, %s\n",
+           REVISION);
     printf(_(" NanoX, version %s\n"), VERSION);
-#endif
-#ifndef NANO_TINY
-    /* TRANSLATORS: The %s is the year of the latest release. */
+
+    // TRANSLATORS: The %s is the year of the latest release.
     printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
-#endif
     printf(_(" Compiled options:"));
 
 #ifdef NANO_TINY
@@ -1216,28 +1239,24 @@ enable_kb_interrupt(void)
 
 /* Disable the terminal's XON/XOFF flow-control characters. */
 void
-disable_flow_control(void)
+disable_flow_control()
 {
-#ifdef HAVE_TERMIOS_H
     struct termios settings;
 
     tcgetattr(0, &settings);
     settings.c_iflag &= ~IXON;
     tcsetattr(0, TCSANOW, &settings);
-#endif
 }
 
 /* Enable the terminal's XON/XOFF flow-control characters. */
 void
-enable_flow_control(void)
+enable_flow_control()
 {
-#ifdef HAVE_TERMIOS_H
     struct termios settings;
 
     tcgetattr(0, &settings);
     settings.c_iflag |= IXON;
     tcsetattr(0, TCSANOW, &settings);
-#endif
 }
 
 /* Set up the terminal state.  Put the terminal in raw mode (read one
@@ -1273,10 +1292,10 @@ terminal_init(void)
 
 /* Ask ncurses for a keycode, or assign a default one. */
 int
-get_keycode(const char *keyname, const int standard)
+get_keycode(const s8 *keyname, const s32 standard)
 {
-    const char *keyvalue = tigetstr(keyname);
-    if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue))
+    const s8 *keyvalue = tigetstr(keyname);
+    if (keyvalue != 0 && keyvalue != (s8 *)-1 && key_defined(keyvalue))
     {
         return key_defined(keyvalue);
     }
@@ -1295,9 +1314,9 @@ get_keycode(const char *keyname, const int standard)
 /// @returns
 /// - void
 void
-confirm_margin(void)
+confirm_margin()
 {
-    int needed_margin = digits(openfile->filebot->lineno) + 1;
+    s32 needed_margin = digits(openfile->filebot->lineno) + 1;
 
     /* When not requested or space is too tight, suppress line numbers. */
     if (!ISSET(LINE_NUMBERS) || needed_margin > COLS - 4)
@@ -1319,7 +1338,6 @@ confirm_margin(void)
         refresh_needed = true;
     }
 }
-// #endif /* ENABLE_LINENUMBERS */
 
 // Say that an unbound key was struck, and if possible which one.
 void
@@ -1378,13 +1396,12 @@ unbound_key(s32 code)
     set_blankdelay_to_one();
 }
 
-#ifdef ENABLE_MOUSE
-/* Handle a mouse click on the edit window or the shortcut list. */
-int
-do_mouse(void)
+// Handle a mouse click on the edit window or the shortcut list.
+s32
+do_mouse()
 {
-    int click_row, click_col;
-    int retval = get_mouseinput(&click_row, &click_col, TRUE);
+    s32 click_row, click_col;
+    s32 retval = get_mouseinput(&click_row, &click_col, TRUE);
 
     /* If the click is wrong or already handled, we're done. */
     if (retval != 0)
@@ -1398,7 +1415,7 @@ do_mouse(void)
         linestruct *was_current = openfile->current;
         ssize_t     row_count   = click_row - openfile->cursor_row;
         size_t      leftedge;
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
         size_t was_x = openfile->current_x;
 
         if (ISSET(SOFTWRAP))
@@ -1406,7 +1423,7 @@ do_mouse(void)
             leftedge = leftedge_for(xplustabs(), openfile->current);
         }
         else
-#    endif
+#endif
             leftedge = get_page_start(xplustabs());
 
         /* Move current up or down to the row that was clicked on. */
@@ -1421,7 +1438,7 @@ do_mouse(void)
 
         openfile->current_x = actual_x(openfile->current->data, actual_last_column(leftedge, click_col));
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
         /* Clicking there where the cursor is toggles the mark. */
         if (row_count == 0 && openfile->current_x == was_x)
         {
@@ -1432,7 +1449,7 @@ do_mouse(void)
             }
         }
         else
-#    endif
+#endif
             /* The cursor moved; clean the cutbuffer on the next cut. */
             keep_cutbuffer = FALSE;
 
@@ -1442,19 +1459,15 @@ do_mouse(void)
     /* No more handling is needed. */
     return 2;
 }
-#endif /* ENABLE_MOUSE */
 
 /* Return TRUE when the given function is a cursor-moving command. */
 bool
 wanted_to_move(void (*func)(void))
 {
     return (func == do_left || func == do_right || func == do_up || func == do_down || func == do_home ||
-            func == do_end || func == to_prev_word || func == to_next_word ||
-#ifdef ENABLE_JUSTIFY
-            func == to_para_begin || func == to_para_end ||
-#endif
-            func == to_prev_block || func == to_next_block || func == do_page_up || func == do_page_down ||
-            func == to_first_line || func == to_last_line);
+            func == do_end || func == to_prev_word || func == to_next_word || func == to_para_begin ||
+            func == to_para_end || func == to_prev_block || func == to_next_block || func == do_page_up ||
+            func == do_page_down || func == to_first_line || func == to_last_line);
 }
 
 // Return TRUE when the given function makes a change -- no good for view mode.
@@ -1548,11 +1561,11 @@ inject(s8 *burst, u64 count)
     if (openfile->last_action != ADD || openfile->current_undo->tail_lineno != thisline->lineno ||
         openfile->current_undo->tail_x != openfile->current_x)
     {
-        add_undo(ADD, NULL);
+        add_undo(ADD, nullptr);
     }
 
-    /* Make room for the new bytes and copy them into the line. */
-    thisline->data = RE_CAST(char *, nrealloc(thisline->data, datalen + count + 1));
+    // Make room for the new bytes and copy them into the line.
+    thisline->data = static_cast<s8 *>(nrealloc(thisline->data, datalen + count + 1));
     memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
             datalen - openfile->current_x + 1);
     strncpy(thisline->data + openfile->current_x, burst, count);
@@ -1620,41 +1633,46 @@ inject(s8 *burst, u64 count)
     }
 }
 
-/* Read in a keystroke, and execute its command or insert it into the buffer. */
+/// @name @c process_a_keystroke
+/// @brief
+/// - Read in a keystroke, and execute its command or insert it into the buffer.
+/// @returns
+/// - @c void
+/// TODO: -> Move to a better place
 void
-process_a_keystroke(void)
+process_a_keystroke()
 {
-    int input;
-    /* The keystroke we read in: a character or a shortcut. */
-    static char *puddle = NULL;
-    /* The input buffer for actual characters. */
-    static size_t capacity = 12;
-    /* The size of the input buffer; gets doubled whenever needed. */
-    static size_t depth = 0;
-    /* The length of the input buffer. */
-#ifndef NANO_TINY
-    linestruct *was_mark = openfile->mark;
-#endif
-    static bool      give_a_hint = TRUE;
+    // The keystroke we read in: a character or a shortcut.
+    s32 input;
+
+    // The input buffer for actual characters.
+    static s8 *puddle = nullptr;
+
+    // The size of the input buffer; gets doubled whenever needed.
+    static u64 capacity = 12;
+
+    // The length of the input buffer.
+    static u64 depth = 0;
+
+    linestruct      *was_mark    = openfile->mark;
+    static bool      give_a_hint = true;
     const keystruct *shortcut;
     functionptrtype  function;
 
-    /* Read in a keystroke, and show the cursor while waiting. */
-    input = get_kbinput(midwin, VISIBLE);
-
+    // Read in a keystroke, and show the cursor while waiting.
+    input       = get_kbinput(midwin, VISIBLE);
     lastmessage = VACUUM;
 
-#ifndef NANO_TINY
+    // When the input is a window resize, do nothing.
     if (input == KEY_WINCH)
     {
         return;
     }
-#endif
-#ifdef ENABLE_MOUSE
+    // When the input is a mouse click, handle it.
     if (input == KEY_MOUSE)
     {
-        /* If the user clicked on a shortcut, read in the key code that it was
-         * converted into.  Else the click has been handled or was invalid. */
+        // If the user clicked on a shortcut, read in the key code that it was
+        // converted into.  Else the click has been handled or was invalid.
         if (do_mouse() == 1)
         {
             input = get_kbinput(midwin, BLIND);
@@ -1664,49 +1682,50 @@ process_a_keystroke(void)
             return;
         }
     }
-#endif
 
-    /* Check for a shortcut in the main list. */
+    // Check for a shortcut in the main list.
     shortcut = get_shortcut(input);
-    function = (shortcut ? shortcut->func : NULL);
+    function = (shortcut ? shortcut->func : nullptr);
 
-    /* If not a command, discard anything that is not a normal character byte. */
+    // If not a command, discard anything that is not a normal character byte.
     if (!function)
     {
+        // When the input is a function key, execute the function it is bound
+        // to.
         if (input < 0x20 || input > 0xFF || meta_key)
         {
             unbound_key(input);
         }
-        else if (ISSET(VIEW_MODE))
+        else if ISSET (VIEW_MODE)
         {
             print_view_warning();
         }
         else
         {
-#ifndef NANO_TINY
             if (openfile->mark && openfile->softmark)
             {
-                openfile->mark = NULL;
-                refresh_needed = TRUE;
+                openfile->mark = nullptr;
+                refresh_needed = true;
             }
-#endif
-            // When the input buffer (plus room for terminating NUL) is full,
-            // extend it; otherwise, if it does not exist yet, create it.
+
+            // When the input buffer (plus room for terminating NULL)
+            // is full, extend it;
+            // otherwise, if it does not exist yet, create it.
             if (depth + 1 == capacity)
             {
                 capacity = 2 * capacity;
-                puddle   = RE_CAST(char *, nrealloc(puddle, capacity));
+                puddle   = static_cast<s8 *>(nrealloc(puddle, capacity));
             }
             else if (!puddle)
             {
-                puddle = RE_CAST(char *, nmalloc(capacity));
+                puddle = static_cast<s8 *>(nmalloc(capacity));
             }
-            puddle[depth++] = (char)input;
+            puddle[depth++] = static_cast<s8>(input);
         }
     }
 
-    /* If there are gathered bytes and we have a command or no other key codes
-     * are waiting, it's time to insert these bytes into the edit buffer. */
+    // If there are gathered bytes and we have a command or no other key codes
+    // are waiting, it's time to insert these bytes into the edit buffer.
     if (depth > 0 && (function || waiting_keycodes() == 0))
     {
         puddle[depth] = '\0';
@@ -1714,17 +1733,15 @@ process_a_keystroke(void)
         depth = 0;
     }
 
-#ifndef NANO_TINY
     if (function != do_cycle)
     {
         cycling_aim = 0;
     }
-#endif
 
     if (!function)
     {
-        pletion_line   = NULL;
-        keep_cutbuffer = FALSE;
+        pletion_line   = nullptr;
+        keep_cutbuffer = false;
         return;
     }
 
@@ -1738,74 +1755,67 @@ process_a_keystroke(void)
         !ISSET(NO_HELP))
     {
         statusbar(_("^W = Ctrl+W    M-W = Alt+W"));
-        give_a_hint = FALSE;
+        give_a_hint = false;
     }
     else if (meta_key)
     {
-        give_a_hint = FALSE;
+        give_a_hint = false;
     }
 
-    /* When not cutting or copying text, drop the cutbuffer the next time. */
+    // When not cutting or copying text, drop the cutbuffer the next time.
     if (function != cut_text && function != copy_text)
     {
-#ifndef NANO_TINY
         if (function != zap_text)
-#endif
-            keep_cutbuffer = FALSE;
+        {
+            keep_cutbuffer = false;
+        }
     }
 
-#ifdef ENABLE_WORDCOMPLETION
     if (function != complete_a_word)
     {
-        pletion_line = NULL;
+        pletion_line = nullptr;
     }
-#endif
-#ifdef ENABLE_NANORC
     if (function == (functionptrtype)implant)
     {
         implant(shortcut->expansion);
         return;
     }
-#endif
-#ifndef NANO_TINY
     if (function == do_toggle)
     {
         toggle_this(shortcut->toggle);
         if (shortcut->toggle == CUT_FROM_CURSOR)
         {
-            keep_cutbuffer = FALSE;
+            keep_cutbuffer = false;
         }
         return;
     }
 
     linestruct *was_current = openfile->current;
-    size_t      was_x       = openfile->current_x;
+    u64         was_x       = openfile->current_x;
 
-    /* If Shifted movement occurs, set the mark. */
+    // If Shifted movement occurs, set the mark.
     if (shift_held && !openfile->mark)
     {
         openfile->mark     = openfile->current;
         openfile->mark_x   = openfile->current_x;
-        openfile->softmark = TRUE;
+        openfile->softmark = true;
     }
-#endif
 
-    /* Execute the function of the shortcut. */
+    // Execute the function of the shortcut.
     function();
 
-#ifndef NANO_TINY
-    /* When the marked region changes without Shift being held,
-     * discard a soft mark.  And when the set of lines changes,
-     * reset the "last line too" flag. */
+    // When the marked region changes without Shift being held,
+    // discard a soft mark.  And when the set of lines changes,
+    // reset the "last line too" flag.
     if (openfile->mark && openfile->softmark && !shift_held &&
         (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)))
     {
-        openfile->mark = NULL;
-        refresh_needed = TRUE;
+        openfile->mark = nullptr;
+        refresh_needed = true;
     }
     else if (openfile->current != was_current)
     {
-        also_the_last = FALSE;
+        also_the_last = false;
     }
 
     if (bracketed_paste)
@@ -1815,91 +1825,56 @@ process_a_keystroke(void)
 
     if (ISSET(STATEFLAGS) && openfile->mark != was_mark)
     {
-        titlebar(NULL);
+        titlebar(nullptr);
     }
-#endif
 }
 
-int
-main(int argc, char **argv)
+s32
+main(s32 argc, s8 **argv)
 {
-    int stdin_flags, optchr;
-#ifdef ENABLE_NANORC
-    bool ignore_rcfiles = FALSE;
+    s32 stdin_flags, optchr;
+
     /* Whether to ignore the nanorc files. */
-#endif
-#if defined(ENABLED_WRAPORJUSTIFY) && defined(ENABLE_NANORC)
-    bool fill_used = FALSE;
+    bool ignore_rcfiles = false;
+
     /* Was the fill option used on the command line? */
-#endif
-#ifdef ENABLE_WRAPPING
-    int hardwrap = -2;
+    bool fill_used = false;
+
     /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
-#endif
-#ifdef ENABLE_JUSTIFY
-    int quoterc;
+    s32 hardwrap = -2;
+
     /* Whether the quoting regex was compiled successfully. */
-#endif
+    s32 quoterc;
+
     const struct option long_options[] = {
         {      "boldtext", 0, NULL, 'D'},
-#ifdef ENABLE_MULTIBUFFER
         {   "multibuffer", 0, NULL, 'F'},
-#endif
-#ifdef ENABLE_NANORC
         { "ignorercfiles", 0, NULL, 'I'},
-#endif
         {  "rawsequences", 0, NULL, 'K'},
-#ifdef ENABLED_WRAPORJUSTIFY
         {    "trimblanks", 0, NULL, 'M'},
-#endif
-#ifdef ENABLE_JUSTIFY
         {      "quotestr", 1, NULL, 'Q'},
-#endif
         {    "restricted", 0, NULL, 'R'},
         {    "quickblank", 0, NULL, 'U'},
         {       "version", 0, NULL, 'V'},
-#ifdef ENABLE_COLOR
         {        "syntax", 1, NULL, 'Y'},
-#endif
-#ifdef ENABLE_WRAPPING
         {"breaklonglines", 0, NULL, 'b'},
-#endif
         {  "constantshow", 0, NULL, 'c'},
         {  "rebinddelete", 0, NULL, 'd'},
-#ifdef ENABLE_NANORC
         {        "rcfile", 1, NULL, 'f'},
-#endif
-#if defined(ENABLE_BROWSER) || defined(ENABLE_HELP)
         {    "showcursor", 0, NULL, 'g'},
-#endif
         {          "help", 0, NULL, 'h'},
-#ifdef ENABLE_LINENUMBERS
         {   "linenumbers", 0, NULL, 'l'},
-#endif
-#ifdef ENABLE_MOUSE
         {         "mouse", 0, NULL, 'm'},
-#endif
-#ifdef ENABLE_OPERATINGDIR
         {  "operatingdir", 1, NULL, 'o'},
-#endif
         {      "preserve", 0, NULL, 'p'},
-#ifdef ENABLED_WRAPORJUSTIFY
         {          "fill", 1, NULL, 'r'},
-#endif
-#ifdef ENABLE_SPELLER
         {       "speller", 1, NULL, 's'},
-#endif
         {    "saveonexit", 0, NULL, 't'},
         {          "view", 0, NULL, 'v'},
-#ifdef ENABLE_WRAPPING
         {        "nowrap", 0, NULL, 'w'},
-#endif
         {        "nohelp", 0, NULL, 'x'},
-#ifdef ENABLE_COLOR
         {  "listsyntaxes", 0, NULL, 'z'},
-#endif
         {"modernbindings", 0, NULL, '/'},
-#ifndef NANO_TINY
         {     "smarthome", 0, NULL, 'A'},
         {        "backup", 0, NULL, 'B'},
         {     "backupdir", 1, NULL, 'C'},
@@ -1929,52 +1904,44 @@ main(int argc, char **argv)
         {    "stateflags", 0, NULL, '%'},
         {       "minibar", 0, NULL, '_'},
         {          "zero", 0, NULL, '0'},
-#endif
 #ifdef HAVE_LIBMAGIC
         {         "magic", 0, NULL, '!'},
 #endif
         {            NULL, 0, NULL,   0}
     };
 
-#ifdef __linux__
+
     struct vt_stat dummy;
 
     /* Check whether we're running on a Linux console. */
-    on_a_vt = (ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy) == 0);
-#endif
+    on_a_vt = !ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy);
 
     /* Back up the terminal settings so that they can be restored. */
     tcgetattr(STDIN_FILENO, &original_state);
 
-#if defined(F_GETFL) && defined(F_SETFL)
+
     /* Get the state of standard input and ensure it uses blocking mode. */
     stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     if (stdin_flags != -1)
     {
         fcntl(STDIN_FILENO, F_SETFL, stdin_flags & ~O_NONBLOCK);
     }
-#endif
 
-#ifdef ENABLE_UTF8
     /* If setting the locale is successful and it uses UTF-8, we will
      * need to use the multibyte functions for text processing. */
     if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
     {
         utf8_init();
     }
-#else
     setlocale(LC_ALL, "");
-#endif
 
-#ifdef ENABLE_NLS
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
-#endif
 
-    /* Set a sensible default, different from what Pico does. */
+    // Set a sensible default, different from what Pico does.
     SET(NO_WRAP);
 
-    /* If the executable's name starts with 'r', activate restricted mode. */
+    // If the executable's name starts with 'r', activate restricted mode.
     if (*(tail(argv[0])) == 'r')
     {
         SET(RESTRICTED);
@@ -1983,11 +1950,10 @@ main(int argc, char **argv)
     while ((optchr = getopt_long(argc, argv,
                                  "ABC:DEFGHIJ:KLMNOPQ:RST:UVWX:Y:Z"
                                  "abcdef:ghijklmno:pqr:s:tuvwxyz!@%_0/",
-                                 long_options, NULL)) > 0)
+                                 long_options, nullptr)) > 0)
     {
         switch (optchr)
         {
-#ifndef NANO_TINY
             case 'A' :
                 SET(SMART_HOME);
                 break;
@@ -1997,80 +1963,56 @@ main(int argc, char **argv)
             case 'C' :
                 backup_dir = mallocstrcpy(backup_dir, optarg);
                 break;
-#endif
             case 'D' :
                 SET(BOLD_TEXT);
                 break;
-#ifndef NANO_TINY
             case 'E' :
                 SET(TABS_TO_SPACES);
                 break;
-#endif
-#ifdef ENABLE_MULTIBUFFER
             case 'F' :
                 SET(MULTIBUFFER);
                 break;
-#endif
-#ifndef NANO_TINY
             case 'G' :
                 SET(LOCKING);
                 break;
-#endif
-#ifdef ENABLE_HISTORIES
             case 'H' :
                 SET(HISTORYLOG);
                 break;
-#endif
-#ifdef ENABLE_NANORC
             case 'I' :
-                ignore_rcfiles = TRUE;
+                ignore_rcfiles = true;
                 break;
-#endif
-#ifndef NANO_TINY
             case 'J' :
                 if (!parse_num(optarg, &stripe_column) || stripe_column <= 0)
                 {
                     fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
                     fprintf(stderr, "\n");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
                 break;
-#endif
             case 'K' :
                 SET(RAW_SEQUENCES);
                 break;
-#ifndef NANO_TINY
             case 'L' :
                 SET(NO_NEWLINES);
                 break;
-#endif
-#ifdef ENABLED_WRAPORJUSTIFY
             case 'M' :
                 SET(TRIM_BLANKS);
                 break;
-#endif
-#ifndef NANO_TINY
             case 'N' :
                 SET(NO_CONVERT);
                 break;
             case 'O' :
                 SET(BOOKSTYLE);
                 break;
-#endif
-#ifdef ENABLE_HISTORIES
             case 'P' :
                 SET(POSITIONLOG);
                 break;
-#endif
-#ifdef ENABLE_JUSTIFY
             case 'Q' :
                 quotestr = mallocstrcpy(quotestr, optarg);
                 break;
-#endif
             case 'R' :
                 SET(RESTRICTED);
                 break;
-#ifndef NANO_TINY
             case 'S' :
                 SET(SOFTWRAP);
                 break;
@@ -2079,67 +2021,51 @@ main(int argc, char **argv)
                 {
                     fprintf(stderr, _("Requested tab size \"%s\" is invalid"), optarg);
                     fprintf(stderr, "\n");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
                 break;
-#endif
             case 'U' :
                 SET(QUICK_BLANK);
                 break;
             case 'V' :
                 version();
-                exit(0);
-#ifndef NANO_TINY
+                exit(EXIT_SUCCESS);
             case 'W' :
                 SET(WORD_BOUNDS);
                 break;
             case 'X' :
                 word_chars = mallocstrcpy(word_chars, optarg);
                 break;
-#endif
-#ifdef ENABLE_COLOR
             case 'Y' :
                 syntaxstr = mallocstrcpy(syntaxstr, optarg);
                 break;
-#endif
-#ifndef NANO_TINY
             case 'Z' :
                 SET(LET_THEM_ZAP);
                 break;
             case 'a' :
                 SET(AT_BLANKS);
                 break;
-#endif
-#ifdef ENABLE_WRAPPING
             case 'b' :
                 hardwrap = 1;
                 break;
-#endif
             case 'c' :
                 SET(CONSTANT_SHOW);
                 break;
             case 'd' :
                 SET(REBIND_DELETE);
                 break;
-#ifndef NANO_TINY
             case 'e' :
                 SET(EMPTY_LINE);
                 break;
-#endif
-#ifdef ENABLE_NANORC
             case 'f' :
                 custom_nanorc = mallocstrcpy(custom_nanorc, optarg);
                 break;
-#endif
-#if defined(ENABLE_BROWSER) || defined(ENABLE_HELP)
             case 'g' :
                 SET(SHOW_CURSOR);
                 break;
-#endif
             case 'h' :
                 usage();
-                exit(0);
-#ifndef NANO_TINY
+                exit(EXIT_SUCCESS);
             case 'i' :
                 SET(AUTOINDENT);
                 break;
@@ -2149,36 +2075,24 @@ main(int argc, char **argv)
             case 'k' :
                 SET(CUT_FROM_CURSOR);
                 break;
-#endif
-#ifdef ENABLE_LINENUMBERS
             case 'l' :
                 SET(LINE_NUMBERS);
                 break;
-#endif
-#ifdef ENABLE_MOUSE
             case 'm' :
                 SET(USE_MOUSE);
                 break;
-#endif
-#ifndef NANO_TINY
             case 'n' :
                 SET(NOREAD_MODE);
                 break;
-#endif
-#ifdef ENABLE_OPERATINGDIR
             case 'o' :
                 operating_dir = mallocstrcpy(operating_dir, optarg);
                 break;
-#endif
             case 'p' :
                 SET(PRESERVE);
                 break;
-#ifndef NANO_TINY
             case 'q' :
                 SET(INDICATOR);
                 break;
-#endif
-#ifdef ENABLED_WRAPORJUSTIFY
             case 'r' :
                 if (!parse_num(optarg, &fill))
                 {
@@ -2186,41 +2100,29 @@ main(int argc, char **argv)
                     fprintf(stderr, "\n");
                     exit(1);
                 }
-#    ifdef ENABLE_NANORC
                 fill_used = TRUE;
-#    endif
                 break;
-#endif
-#ifdef ENABLE_SPELLER
             case 's' :
                 alt_speller = mallocstrcpy(alt_speller, optarg);
                 break;
-#endif
             case 't' :
                 SET(SAVE_ON_EXIT);
                 break;
-#ifndef NANO_TINY
             case 'u' :
                 SET(MAKE_IT_UNIX);
                 break;
-#endif
             case 'v' :
                 SET(VIEW_MODE);
                 break;
-#ifdef ENABLE_WRAPPING
             case 'w' :
                 hardwrap = 0;
                 break;
-#endif
             case 'x' :
                 SET(NO_HELP);
                 break;
-#ifndef NANO_TINY
             case 'y' :
                 SET(AFTER_ENDS);
                 break;
-#endif
-#ifdef ENABLE_COLOR
             case 'z' :
                 if (!ignore_rcfiles)
                 {
@@ -2231,13 +2133,9 @@ main(int argc, char **argv)
                     list_syntax_names();
                 }
                 exit(0);
-#endif
-#ifdef HAVE_LIBMAGIC
             case '!' :
                 SET(USE_MAGIC);
                 break;
-#endif
-#ifndef NANO_TINY
             case '@' :
                 SET(COLON_PARSING);
                 break;
@@ -2250,136 +2148,112 @@ main(int argc, char **argv)
             case '0' :
                 SET(ZERO);
                 break;
-#endif
             case '/' :
                 SET(MODERN_BINDINGS);
                 break;
             default :
                 printf(_("Type '%s -h' for a list of available options.\n"), argv[0]);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     }
 
-    /* Curses needs TERM; if it is unset, try falling back to a VT220. */
-    if (getenv("TERM") == NULL)
+    // Curses needs TERM; if it is unset, try falling back to a VT220.
+    if (getenv("TERM") == nullptr)
     {
-        putenv((char *)"TERM=vt220");
+        putenv((s8 *)"TERM=vt220");
     }
 
-    /* Enter into curses mode.  Abort if this fails. */
-    if (initscr() == NULL)
+    // Enter into curses mode.  Abort if this fails.
+    if (initscr() == nullptr)
     {
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
-#ifdef ENABLE_COLOR
-    /* If the terminal can do colors, tell ncurses to switch them on. */
+    // If the terminal can do colors, tell ncurses to switch them on.
     if (has_colors())
     {
         start_color();
     }
 
     /* When requested, suppress the default spotlight and error colors. */
-    rescind_colors = (getenv("NO_COLOR") != NULL);
-#endif
+    rescind_colors = (getenv("NO_COLOR") != nullptr);
 
-    /* Set up the function and shortcut lists.  This needs to be done
-     * before reading the rcfile, to be able to rebind/unbind keys. */
+    // Set up the function and shortcut lists.  This needs to be done
+    // before reading the rcfile, to be able to rebind/unbind keys.
     shortcut_init();
 
-#ifdef ENABLE_NANORC
     if (!ignore_rcfiles)
     {
         /* Back up the command-line options that take an argument. */
-#    ifdef ENABLED_WRAPORJUSTIFY
-        ssize_t fill_cmdline = fill;
-#    endif
-#    ifndef NANO_TINY
-        char   *backup_dir_cmdline = backup_dir;
-        char   *word_chars_cmdline = word_chars;
-        size_t  stripeclm_cmdline  = stripe_column;
-        ssize_t tabsize_cmdline    = tabsize;
-#    endif
-#    ifdef ENABLE_OPERATINGDIR
-        char *operating_dir_cmdline = operating_dir;
-#    endif
-#    ifdef ENABLE_JUSTIFY
-        char *quotestr_cmdline = quotestr;
-#    endif
-#    ifdef ENABLE_SPELLER
-        char *alt_speller_cmdline = alt_speller;
-#    endif
+        s64 fill_cmdline          = fill;
+        u64 stripeclm_cmdline     = stripe_column;
+        s64 tabsize_cmdline       = tabsize;
+        s8 *backup_dir_cmdline    = backup_dir;
+        s8 *word_chars_cmdline    = word_chars;
+        s8 *operating_dir_cmdline = operating_dir;
+        s8 *quotestr_cmdline      = quotestr;
+        s8 *alt_speller_cmdline   = alt_speller;
 
         /* Back up the command-line flags. */
-        unsigned flags_cmdline[sizeof(flags) / sizeof(flags[0])];
+        u32 flags_cmdline[sizeof(flags) / sizeof(flags[0])];
         memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
 
         /* Clear the string options, to not overwrite the specified ones. */
-#    ifndef NANO_TINY
-        backup_dir = NULL;
-        word_chars = NULL;
-#    endif
-#    ifdef ENABLE_OPERATINGDIR
-        operating_dir = NULL;
-#    endif
-#    ifdef ENABLE_JUSTIFY
-        quotestr = NULL;
-#    endif
-#    ifdef ENABLE_SPELLER
-        alt_speller = NULL;
-#    endif
+        backup_dir    = nullptr;
+        word_chars    = nullptr;
+        operating_dir = nullptr;
+        quotestr      = nullptr;
+        alt_speller   = nullptr;
+
         /* Now process the system's and the user's nanorc file, if any. */
         do_rcfiles();
 
         /* If the backed-up command-line options have a value, restore them. */
-#    ifdef ENABLED_WRAPORJUSTIFY
         if (fill_used)
         {
             fill = fill_cmdline;
         }
-#    endif
-#    ifndef NANO_TINY
+
         if (backup_dir_cmdline != NULL)
         {
             free(backup_dir);
             backup_dir = backup_dir_cmdline;
         }
-        if (word_chars_cmdline != NULL)
+
+        if (word_chars_cmdline != nullptr)
         {
             free(word_chars);
             word_chars = word_chars_cmdline;
         }
+
         if (stripeclm_cmdline > 0)
         {
             stripe_column = stripeclm_cmdline;
         }
+
         if (tabsize_cmdline != -1)
         {
             tabsize = tabsize_cmdline;
         }
-#    endif
-#    ifdef ENABLE_OPERATINGDIR
-        if (operating_dir_cmdline != NULL || ISSET(RESTRICTED))
+
+        if (operating_dir_cmdline != nullptr || ISSET(RESTRICTED))
         {
             free(operating_dir);
             operating_dir = operating_dir_cmdline;
         }
-#    endif
-#    ifdef ENABLE_JUSTIFY
-        if (quotestr_cmdline != NULL)
+
+        if (quotestr_cmdline != nullptr)
         {
             free(quotestr);
             quotestr = quotestr_cmdline;
         }
-#    endif
-#    ifdef ENABLE_SPELLER
-        if (alt_speller_cmdline != NULL)
+
+        if (alt_speller_cmdline != nullptr)
         {
             free(alt_speller);
             alt_speller = alt_speller_cmdline;
         }
         strip_leading_blanks_from(alt_speller);
-#    endif
 
         /* If an rcfile undid the default setting, copy it to the new flag. */
         if (!ISSET(NO_WRAP))
@@ -2393,9 +2267,7 @@ main(int argc, char **argv)
             flags[i] |= flags_cmdline[i];
         }
     }
-#endif /* ENABLE_NANORC */
 
-#ifdef ENABLE_WRAPPING
     if (hardwrap == 0)
     {
         UNSET(BREAK_LONG_LINES);
@@ -2404,44 +2276,40 @@ main(int argc, char **argv)
     {
         SET(BREAK_LONG_LINES);
     }
-#endif
 
     /* If the user wants bold instead of reverse video for hilited text... */
-    if (ISSET(BOLD_TEXT))
+    if ISSET (BOLD_TEXT)
     {
         hilite_attribute = A_BOLD;
     }
 
     /* When in restricted mode, disable backups and history files, since they
      * would allow writing to files not specified on the command line. */
-    if (ISSET(RESTRICTED))
+    if ISSET (RESTRICTED)
     {
         UNSET(MAKE_BACKUP);
-#ifdef ENABLE_NANORC
         UNSET(HISTORYLOG);
         UNSET(POSITIONLOG);
-#endif
     }
 
     /* When getting untranslated escape sequences, the mouse cannot be used. */
-    if (ISSET(RAW_SEQUENCES))
+    if ISSET (RAW_SEQUENCES)
     {
         UNSET(USE_MOUSE);
     }
 
     /* When --modernbindings is used, ^Q and ^S need to be functional. */
-    if (ISSET(MODERN_BINDINGS))
+    if ISSET (MODERN_BINDINGS)
     {
         UNSET(PRESERVE);
     }
 
     /* When suppressing title bar or minibar, suppress also the help lines. */
-    if (ISSET(ZERO))
+    if ISSET (ZERO)
     {
         SET(NO_HELP);
     }
 
-#ifdef ENABLE_HISTORIES
     /* Initialize the pointers for the Search/Replace/Execute histories. */
     history_init();
 
@@ -2454,44 +2322,40 @@ main(int argc, char **argv)
     }
 
     /* If the user wants history persistence, read the relevant files. */
-    if (ISSET(HISTORYLOG))
+    if ISSET (HISTORYLOG)
     {
         load_history();
     }
-    if (ISSET(POSITIONLOG))
+
+    if ISSET (POSITIONLOG)
     {
         load_poshistory();
     }
-#endif
 
-#ifndef NANO_TINY
     /* If a backup directory was specified and we're not in restricted mode,
      * verify it is an existing folder, so backup files can be saved there. */
-    if (backup_dir != NULL && !ISSET(RESTRICTED))
+    if (backup_dir != nullptr && !ISSET(RESTRICTED))
     {
         init_backup_dir();
     }
-#endif
-#ifdef ENABLE_OPERATINGDIR
+
     /* Set up the operating directory.  This entails chdir()ing there,
      * so that file reads and writes will be based there. */
-    if (operating_dir != NULL)
+    if (operating_dir != nullptr)
     {
         init_operating_dir();
     }
-#endif
 
-#ifdef ENABLE_JUSTIFY
     /* Set the default value for things that weren't specified. */
-    if (punct == NULL)
+    if (punct == nullptr)
     {
         punct = copy_of("!.?");
     }
-    if (brackets == NULL)
+    if (brackets == nullptr)
     {
         brackets = copy_of("\"')>]}");
     }
-    if (quotestr == NULL)
+    if (quotestr == nullptr)
     {
         quotestr = copy_of("^([ \t]*([!#%:;>|}]|/{2}))+");
     }
@@ -2500,8 +2364,8 @@ main(int argc, char **argv)
     quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
     if (quoterc != 0)
     {
-        size_t size    = regerror(quoterc, &quotereg, NULL, 0);
-        char  *message = RE_CAST(char *, nmalloc(size));
+        u64 size    = regerror(quoterc, &quotereg, nullptr, 0);
+        s8 *message = static_cast<s8 *>(nmalloc(size));
 
         regerror(quoterc, &quotereg, message, size);
         die(_("Bad quoting regex \"%s\": %s\n"), quotestr, message);
@@ -2510,7 +2374,6 @@ main(int argc, char **argv)
     {
         free(quotestr);
     }
-#endif
 
 #ifdef ENABLE_SPELLER
     /* If we don't have an alternative spell checker after reading the
@@ -2613,47 +2476,38 @@ main(int argc, char **argv)
 #endif
 
     /* Ask ncurses for the key codes for most modified editing keys. */
-    controlleft  = get_keycode("kLFT5", CONTROL_LEFT);
-    controlright = get_keycode("kRIT5", CONTROL_RIGHT);
-    controlup    = get_keycode("kUP5", CONTROL_UP);
-    controldown  = get_keycode("kDN5", CONTROL_DOWN);
-
-    controlhome = get_keycode("kHOM5", CONTROL_HOME);
-    controlend  = get_keycode("kEND5", CONTROL_END);
-#ifndef NANO_TINY
+    controlleft        = get_keycode("kLFT5", CONTROL_LEFT);
+    controlright       = get_keycode("kRIT5", CONTROL_RIGHT);
+    controlup          = get_keycode("kUP5", CONTROL_UP);
+    controldown        = get_keycode("kDN5", CONTROL_DOWN);
+    controlhome        = get_keycode("kHOM5", CONTROL_HOME);
+    controlend         = get_keycode("kEND5", CONTROL_END);
     controldelete      = get_keycode("kDC5", CONTROL_DELETE);
     controlshiftdelete = get_keycode("kDC6", CONTROL_SHIFT_DELETE);
-
-    shiftup   = get_keycode("kUP", SHIFT_UP);
-    shiftdown = get_keycode("kDN", SHIFT_DOWN);
-
-    shiftcontrolleft  = get_keycode("kLFT6", SHIFT_CONTROL_LEFT);
-    shiftcontrolright = get_keycode("kRIT6", SHIFT_CONTROL_RIGHT);
-    shiftcontrolup    = get_keycode("kUP6", SHIFT_CONTROL_UP);
-    shiftcontroldown  = get_keycode("kDN6", SHIFT_CONTROL_DOWN);
-
-    shiftcontrolhome = get_keycode("kHOM6", SHIFT_CONTROL_HOME);
-    shiftcontrolend  = get_keycode("kEND6", SHIFT_CONTROL_END);
-
-    altleft  = get_keycode("kLFT3", ALT_LEFT);
-    altright = get_keycode("kRIT3", ALT_RIGHT);
-    altup    = get_keycode("kUP3", ALT_UP);
-    altdown  = get_keycode("kDN3", ALT_DOWN);
-
-    althome     = get_keycode("kHOM3", ALT_HOME);
-    altend      = get_keycode("kEND3", ALT_END);
-    altpageup   = get_keycode("kPRV3", ALT_PAGEUP);
-    altpagedown = get_keycode("kNXT3", ALT_PAGEDOWN);
-    altinsert   = get_keycode("kIC3", ALT_INSERT);
-    altdelete   = get_keycode("kDC3", ALT_DELETE);
-
-    shiftaltleft  = get_keycode("kLFT4", SHIFT_ALT_LEFT);
-    shiftaltright = get_keycode("kRIT4", SHIFT_ALT_RIGHT);
-    shiftaltup    = get_keycode("kUP4", SHIFT_ALT_UP);
-    shiftaltdown  = get_keycode("kDN4", SHIFT_ALT_DOWN);
-#endif
-    mousefocusin  = get_keycode("kxIN", FOCUS_IN);
-    mousefocusout = get_keycode("kxOUT", FOCUS_OUT);
+    shiftup            = get_keycode("kUP", SHIFT_UP);
+    shiftdown          = get_keycode("kDN", SHIFT_DOWN);
+    shiftcontrolleft   = get_keycode("kLFT6", SHIFT_CONTROL_LEFT);
+    shiftcontrolright  = get_keycode("kRIT6", SHIFT_CONTROL_RIGHT);
+    shiftcontrolup     = get_keycode("kUP6", SHIFT_CONTROL_UP);
+    shiftcontroldown   = get_keycode("kDN6", SHIFT_CONTROL_DOWN);
+    shiftcontrolhome   = get_keycode("kHOM6", SHIFT_CONTROL_HOME);
+    shiftcontrolend    = get_keycode("kEND6", SHIFT_CONTROL_END);
+    altleft            = get_keycode("kLFT3", ALT_LEFT);
+    altright           = get_keycode("kRIT3", ALT_RIGHT);
+    altup              = get_keycode("kUP3", ALT_UP);
+    altdown            = get_keycode("kDN3", ALT_DOWN);
+    althome            = get_keycode("kHOM3", ALT_HOME);
+    altend             = get_keycode("kEND3", ALT_END);
+    altpageup          = get_keycode("kPRV3", ALT_PAGEUP);
+    altpagedown        = get_keycode("kNXT3", ALT_PAGEDOWN);
+    altinsert          = get_keycode("kIC3", ALT_INSERT);
+    altdelete          = get_keycode("kDC3", ALT_DELETE);
+    shiftaltleft       = get_keycode("kLFT4", SHIFT_ALT_LEFT);
+    shiftaltright      = get_keycode("kRIT4", SHIFT_ALT_RIGHT);
+    shiftaltup         = get_keycode("kUP4", SHIFT_ALT_UP);
+    shiftaltdown       = get_keycode("kDN4", SHIFT_ALT_DOWN);
+    mousefocusin       = get_keycode("kxIN", FOCUS_IN);
+    mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
 
     /* Disable the type-ahead checking that ncurses normally does. */
     typeahead(-1);
@@ -2666,17 +2520,15 @@ main(int argc, char **argv)
     /* Read the files mentioned on the command line into new buffers. */
     while (optind < argc && (!openfile || read_them_all))
     {
-        ssize_t givenline = 0, givencol = 0;
-#ifndef NANO_TINY
-        char *searchstring = NULL;
-#endif
+        s64 givenline = 0, givencol = 0;
+        s8 *searchstring = nullptr;
+
         /* If there's a +LINE[,COLUMN] argument here, eat it up. */
         if (optind < argc - 1 && argv[optind][0] == '+')
         {
-#ifndef NANO_TINY
-            int n = 1;
+            s32 n = 1;
 
-            while (isalpha((unsigned char)argv[optind][n]))
+            while (isalpha(static_cast<u8>(argv[optind][n])))
             {
                 switch (argv[optind][n++])
                 {
@@ -2714,9 +2566,9 @@ main(int argc, char **argv)
                 optind++;
             }
             else
-#endif
-                /* When there is nothing after the "+", understand it as go-to-EOF,
-                 * otherwise parse and store the given number(s).*/
+            {
+                /* When there is nothing after the "+", understand it as
+                 * go-to-EOF, otherwise parse and store the given number(s).*/
                 if (argv[optind++][1] == '\0')
                 {
                     givenline = -1;
@@ -2725,11 +2577,11 @@ main(int argc, char **argv)
                 {
                     statusline(ALERT, _("Invalid line or column number"));
                 }
+            }
         }
 
-#ifndef NANO_TINY
-        /* If the filename is a dash, read from standard input; otherwise,
-         * open the file; skip positioning the cursor if either failed. */
+        // If the filename is a dash, read from standard input; otherwise,
+        // open the file; skip positioning the cursor if either failed.
         if (strcmp(argv[optind], "-") == 0)
         {
             optind++;
@@ -2739,10 +2591,8 @@ main(int argc, char **argv)
             }
         }
         else
-#endif
         {
-            char *filename = argv[optind++];
-#ifndef NANO_TINY
+            s8         *filename = argv[optind++];
             struct stat fileinfo;
 
             /* If the filename contains a colon and this file does not exist,
@@ -2756,14 +2606,17 @@ main(int argc, char **argv)
                 char *coda = filename + strlen(filename);
             maybe_two:
                 while (--coda > filename + 1 && ('0' <= *coda && *coda <= '9'))
+                {
                     ;
+                }
                 if (*coda == ':' && ('0' <= *(coda + 1) && *(coda + 1) <= '9'))
                 {
                     *coda = '\0';
                     if (stat(filename, &fileinfo) < 0)
                     {
                         *coda = ':';
-                        /* If this was the first colon, look for a second one. */
+                        /* If this was the first colon, look for a second one.
+                         */
                         if (!strchr(coda + 1, ':'))
                         {
                             goto maybe_two;
@@ -2775,7 +2628,6 @@ main(int argc, char **argv)
                     }
                 }
             }
-#endif
             if (!open_buffer(filename, TRUE))
             {
                 continue;
@@ -2785,16 +2637,15 @@ main(int argc, char **argv)
         /* If a position was given on the command line, go there. */
         if (givenline != 0 || givencol != 0)
         {
-            goto_line_and_column(givenline, givencol, FALSE, FALSE);
+            goto_line_and_column(givenline, givencol, false, false);
         }
-#ifndef NANO_TINY
-        else if (searchstring != NULL)
+        else if (searchstring != nullptr)
         {
-            if (ISSET(USE_REGEXP))
+            if ISSET (USE_REGEXP)
             {
                 regexp_init(searchstring);
             }
-            if (!findnextstr(searchstring, FALSE, JUSTFIND, NULL, ISSET(BACKWARDS_SEARCH), openfile->filetop, 0))
+            if (!findnextstr(searchstring, false, JUSTFIND, nullptr, ISSET(BACKWARDS_SEARCH), openfile->filetop, 0))
             {
                 not_found_msg(searchstring);
             }
@@ -2804,46 +2655,43 @@ main(int argc, char **argv)
             }
             openfile->placewewant = xplustabs();
             adjust_viewport(CENTERING);
-            if (ISSET(USE_REGEXP))
+            if ISSET (USE_REGEXP)
             {
                 tidy_up_after_search();
             }
             free(last_search);
             last_search  = searchstring;
-            searchstring = NULL;
+            searchstring = nullptr;
         }
-#endif
-#ifdef ENABLE_HISTORIES
         else if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
         {
-            ssize_t savedline, savedcol;
-            /* If edited before, restore the last cursor position. */
+            s64 savedline, savedcol;
+
+            // If edited before, restore the last cursor position.
             if (has_old_position(argv[optind - 1], &savedline, &savedcol))
             {
-                goto_line_and_column(savedline, savedcol, FALSE, FALSE);
+                goto_line_and_column(savedline, savedcol, false, false);
             }
         }
-#endif
     }
 
-    /* After handling the files on the command line, allow inserting files. */
+    // After handling the files on the command line, allow inserting files.
     UNSET(NOREAD_MODE);
 
-    /* Nano is a hands-on editor -- it needs a keyboard. */
+    // Nano is a hands-on editor -- it needs a keyboard.
     if (!isatty(STDIN_FILENO))
     {
         die(_("Standard input is not a terminal\n"));
     }
 
-    /* If no filenames were given, or all of them were invalid things like
-     * directories, then open a blank buffer and allow editing.  Otherwise,
-     * switch from the last opened file to the next, that is: the first. */
-    if (openfile == NULL)
+    // If no filenames were given, or all of them were invalid things like
+    // directories, then open a blank buffer and allow editing.  Otherwise,
+    // switch from the last opened file to the next, that is: the first.
+    if (openfile == nullptr)
     {
-        open_buffer("", TRUE);
+        open_buffer("", true);
         UNSET(VIEW_MODE);
     }
-#ifdef ENABLE_MULTIBUFFER
     else
     {
         openfile = openfile->next;
@@ -2851,77 +2699,66 @@ main(int argc, char **argv)
         {
             mention_name_and_linecount();
         }
-        if (ISSET(VIEW_MODE))
+        if ISSET (VIEW_MODE)
         {
             SET(MULTIBUFFER);
         }
     }
-#else
     if (optind < argc)
     {
         die(_("Can open just one file\n"));
     }
-#endif
 
     prepare_for_display();
 
-#ifdef ENABLE_NANORC
-    if (startup_problem != NULL)
+    if (startup_problem != nullptr)
     {
         statusline(ALERT, "%s", startup_problem);
     }
 
-#    define NOTREBOUND first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07
-#else
-#    define NOTREBOUND TRUE
-#endif
-
-#ifdef ENABLE_HELP
+    //
+    /// THIS: -> #define NOTREBOUND first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07
+    /// Is form nano c source code
+    /// We will not use this for now as it is not needed
     if (*openfile->filename == '\0' && openfile->totsize == 0 && openfile->next == openfile && !ISSET(NO_HELP) &&
-        NOTREBOUND)
+        (first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07))
     {
-        statusbar(_("Welcome to nano.  For basic help, type Ctrl+G."));
+        statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
     }
-#endif
 
-#ifdef ENABLE_LINENUMBERS
-    /* Set the margin to an impossible value to force re-evaluation. */
-    margin = 12345;
-#endif
+    // Set the margin to an impossible value to force re-evaluation.
+    margin         = 12345;
+    we_are_running = true;
 
-    we_are_running = TRUE;
-
-    while (TRUE)
+    //
+    // TODO : This is the main loop of the editor.
+    while (true)
     {
-#ifdef ENABLE_LINENUMBERS
         confirm_margin();
-#endif
-#ifdef __linux__
         if (on_a_vt && waiting_keycodes() == 0)
         {
-            mute_modifiers = FALSE;
+            mute_modifiers = false;
         }
-#endif
         if (currmenu != MMAIN)
         {
             bottombars(MMAIN);
         }
 
-#ifndef NANO_TINY
         if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1 && lastmessage < REMARK)
         {
             minibar();
         }
         else
-#endif
-            /* Update the displayed current cursor position only when there
-             * is no message and no keys are waiting in the input buffer. */
+        {
+            // Update the displayed current cursor position only when there
+            // is no message and no keys are waiting in the input buffer.
             if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && waiting_keycodes() == 0)
             {
                 report_cursor_position();
             }
+        }
 
-        as_an_at = TRUE;
+        as_an_at = true;
 
         if ((refresh_needed && LINES > 1) || (LINES == 1 && lastmessage <= HUSH))
         {
@@ -2932,9 +2769,8 @@ main(int argc, char **argv)
             place_the_cursor();
         }
 
-#ifndef NANO_TINY
-        /* In barless mode, either redraw a relevant status message,
-         * or overwrite a minor, redundant one. */
+        // In barless mode, either redraw a relevant status message,
+        // or overwrite a minor, redundant one.
         if (ISSET(ZERO) && lastmessage > HUSH)
         {
             if (openfile->cursor_row == editwinrows - 1 && LINES > 1)
@@ -2950,15 +2786,14 @@ main(int argc, char **argv)
         {
             wredrawln(midwin, editwinrows - 1, 1);
         }
-#endif
 
         errno    = 0;
-        focusing = TRUE;
+        focusing = true;
 
-        /* Forget any earlier cursor position at the prompt. */
+        // Forget any earlier cursor position at the prompt.
         put_cursor_at_end_of_answer();
 
-        /* Read in and interpret a single keystroke. */
+        // Read in and interpret a single keystroke.
         process_a_keystroke();
     }
 }
