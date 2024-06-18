@@ -18,12 +18,6 @@
 
 #include <sys/vt.h>
 
-#ifdef ENABLE_MULTIBUFFER
-#    define read_them_all true
-#else
-#    define read_them_all false
-#endif
-
 // Used to store the user's original mouse click interval.
 static s32 oldinterval = -1;
 
@@ -33,14 +27,20 @@ static termios original_state;
 // Containers for the original and the temporary handler for SIGINT.
 static struct sigaction oldaction, newaction;
 
-/// @name @c make_new_buffer
+//
+/// @name
+///  -  @c make_new_node
+///
 /// @brief
-/// - Create a new linestruct node.
-/// - Note that we do NOT set prevnode->next.
+///  -  Create a new linestruct node.
+///  -  Note that we do NOT set @p prevnode->next.
+///
 /// @param prevnode [linestruct *const &]
-/// - The previous node in the linked list.
-/// @returns
-/// - A pointer to the new node.
+///  -  The previous node in the linked list.
+///
+/// @returns ( linestruct * )
+///  -  A pointer to the new node.
+//
 linestruct *
 make_new_node(linestruct *const &prevnode)
 {
@@ -68,7 +68,7 @@ splice_node(linestruct *const &afterthis, linestruct *const &newnode)
     }
     afterthis->next = newnode;
 
-    /* Update filebot when inserting a node at the end of file. */
+    // Update filebot when inserting a node at the end of file.
     if (openfile && openfile->filebot == afterthis)
     {
         openfile->filebot = newnode;
@@ -231,7 +231,17 @@ restore_terminal()
     tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
-// Exit normally: restore terminal state and report any startup errors.
+
+//
+/// @name
+///  -  @c finish
+///
+/// @brief
+///  -  Exit normally: restore terminal state and report any startup errors.
+///
+/// @returns
+///  -  @c void
+//
 void
 finish()
 {
@@ -254,7 +264,16 @@ finish()
     exit(EXIT_SUCCESS);
 }
 
-// Close the current buffer, and terminate nano if it is the only buffer.
+//
+/// @name
+///  -  @c close_buffer
+///
+/// @brief
+///  -  Close the current buffer, freeing its memory.
+///
+/// @returns
+///  -  @c void
+//
 void
 close_and_go()
 {
@@ -359,30 +378,21 @@ emergency_save(const s8 *filename)
     free(plainname);
 }
 
-// Die gracefully -- by restoring the terminal state and saving any buffers
-// that were modified.
-
-
-/// name @c die
+//
+/// @name @c die
+///
 /// @brief
-///  - This function is used to terminate the program execution and display a
-///  dying message.
-///  - It performs the following
-///  - STEPS:
-///   1. Checks if it's the second time the function is called.
-///    - If so, it exits the program with exit code 11.
-///   2. Restores the terminal settings.
-///   3. Displays any errors from the rcfile.
-///   4. Displays the dying message by formatting the given message and
-///   arguments.
-///   5. Deletes any lock files associated with open files.
-///   6. Saves modified buffers if not in restricted mode.
-///   7. Exits the program with EXIT_FAILURE.
+///  -  Die gracefully,
+///     by restoring the terminal state and saving any buffers that were modified.
+///
 /// @param msg ( const s8 * )
 ///  - The format string for the dying message.
+///
 /// @param ... ( __VA_ARGS__ )
 ///  - Additional arguments to be formatted into the dying message.
+///
 /// @returns @c void
+//
 void
 die(const s8 *msg, ...)
 {
@@ -412,9 +422,11 @@ die(const s8 *msg, ...)
             delete_lockfile(openfile->lock_filename);
         }
 
+        //
         // When modified, save the current buffer.
         // not when in restricted mode, as it would
         // write a file not mentioned on the command line.
+        //
         if (openfile->modified && !ISSET(RESTRICTED))
         {
             emergency_save(openfile->filename);
@@ -506,16 +518,16 @@ window_init()
 }
 
 void
-disable_mouse_support(void)
+disable_mouse_support()
 {
-    mousemask(0, NULL);
+    mousemask(0, nullptr);
     mouseinterval(oldinterval);
 }
 
 void
-enable_mouse_support(void)
+enable_mouse_support()
 {
-    mousemask(ALL_MOUSE_EVENTS, NULL);
+    mousemask(ALL_MOUSE_EVENTS, nullptr);
     oldinterval = mouseinterval(50);
 }
 
@@ -1098,12 +1110,12 @@ regenerate_screen(void)
 
 /* Invert the given global flag and adjust things for its new value. */
 void
-toggle_this(int flag)
+toggle_this(s32 flag)
 {
     bool enabled = !ISSET(flag);
 
     TOGGLE(flag);
-    focusing = FALSE;
+    focusing = false;
 
     switch (flag)
     {
@@ -1201,27 +1213,23 @@ toggle_this(int flag)
 void
 disable_extended_io(void)
 {
-#ifdef HAVE_TERMIOS_H
     struct termios settings = {0};
 
     tcgetattr(0, &settings);
     settings.c_lflag &= ~IEXTEN;
     settings.c_oflag &= ~OPOST;
     tcsetattr(0, TCSANOW, &settings);
-#endif
 }
 
 /* Stop ^C from generating a SIGINT. */
 void
 disable_kb_interrupt(void)
 {
-#ifdef HAVE_TERMIOS_H
     struct termios settings = {0};
 
     tcgetattr(0, &settings);
     settings.c_lflag &= ~ISIG;
     tcsetattr(0, TCSANOW, &settings);
-#endif
 }
 
 /* Make ^C generate a SIGINT. */
@@ -2454,26 +2462,23 @@ main(s32 argc, s8 **argv)
         interface_color_pair[FUNCTION_TAG]  = A_NORMAL;
     }
 
-    /* Set up the terminal state. */
+    // Set up the terminal state.
     terminal_init();
 
-    /* Create the three subwindows, based on the current screen dimensions. */
+    // Create the three subwindows, based on the current screen dimensions.
     window_init();
     curs_set(0);
 
-#ifndef NANO_TINY
     sidebar = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
-    bardata = RE_CAST(int *, nrealloc(bardata, LINES * sizeof(int)));
-#endif
+    bardata = static_cast<s32 *>(nrealloc(bardata, LINES * sizeof(s32)));
+
     editwincols = COLS - sidebar;
 
-    /* Set up the signal handlers. */
+    // Set up the signal handlers.
     signal_init();
 
-#ifdef ENABLE_MOUSE
-    /* Initialize mouse support. */
+    // Initialize mouse support.
     mouse_init();
-#endif
 
     /* Ask ncurses for the key codes for most modified editing keys. */
     controlleft        = get_keycode("kLFT5", CONTROL_LEFT);
@@ -2516,9 +2521,8 @@ main(s32 argc, s8 **argv)
     /* Tell ncurses to pass the Esc key quickly. */
     set_escdelay(50);
 #endif
-
     /* Read the files mentioned on the command line into new buffers. */
-    while (optind < argc && (!openfile || read_them_all))
+    while (optind < argc && (!openfile || true))
     {
         s64 givenline = 0, givencol = 0;
         s8 *searchstring = nullptr;
@@ -2603,7 +2607,7 @@ main(s32 argc, s8 **argv)
             if (ISSET(COLON_PARSING) && !givenline && strchr(filename, ':') && !givencol &&
                 stat(filename, &fileinfo) < 0)
             {
-                char *coda = filename + strlen(filename);
+                s8 *coda = filename + strlen(filename);
             maybe_two:
                 while (--coda > filename + 1 && ('0' <= *coda && *coda <= '9'))
                 {
@@ -2615,8 +2619,7 @@ main(s32 argc, s8 **argv)
                     if (stat(filename, &fileinfo) < 0)
                     {
                         *coda = ':';
-                        /* If this was the first colon, look for a second one.
-                         */
+                        // If this was the first colon, look for a second one.
                         if (!strchr(coda + 1, ':'))
                         {
                             goto maybe_two;
@@ -2628,13 +2631,13 @@ main(s32 argc, s8 **argv)
                     }
                 }
             }
-            if (!open_buffer(filename, TRUE))
+            if (!open_buffer(filename, true))
             {
                 continue;
             }
         }
 
-        /* If a position was given on the command line, go there. */
+        // If a position was given on the command line, go there.
         if (givenline != 0 || givencol != 0)
         {
             goto_line_and_column(givenline, givencol, false, false);

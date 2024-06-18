@@ -572,14 +572,13 @@ prepare_for_display(void)
     refresh_needed = TRUE;
 }
 
-#ifdef ENABLE_MULTIBUFFER
 /* Show name of current buffer and its number of lines on the status bar. */
 void
 mention_name_and_linecount(void)
 {
     size_t count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0' ? 1 : 0);
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     if (ISSET(MINIBAR))
     {
         report_size = TRUE;
@@ -598,7 +597,7 @@ mention_name_and_linecount(void)
                    openfile->fmt == DOS_FILE ? _("DOS") : _("Mac"));
     }
     else
-#    endif
+#endif
         statusline(HUSH, P_("%s -- %zu line", "%s -- %zu lines", count),
                    openfile->filename[0] == '\0' ? _("New Buffer") : tail(openfile->filename), count);
 }
@@ -614,11 +613,11 @@ redecorate_after_switch(void)
         return;
     }
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     /* While in a different buffer, the width of the screen may have changed,
      * so make sure that the starting column for the first row is fitting. */
     ensure_firstcolumn_is_aligned();
-#    endif
+#endif
 
     /* Update title bar and multiline info to match the current buffer. */
     prepare_for_display();
@@ -659,9 +658,25 @@ switch_to_next_buffer(void)
     redecorate_after_switch();
 }
 
-/* Remove the current buffer from the circular list of buffers. */
+//
+/// @name
+///  -  @c close_buffer
+///
+/// @brief
+///  -  Remove the current buffer from the circular list of buffers.
+///
+/// @details
+///  -  When just one buffer remains open, show "Exit" in the help lines.
+///  -  Free the undo stack.
+///  -  Free the error message.
+///  -  Free the lock filename.
+///  -  Free the stat info.
+///
+/// @returns
+///  -  @c void
+//
 void
-close_buffer(void)
+close_buffer()
 {
     openfilestruct *orphan = openfile;
 
@@ -675,29 +690,31 @@ close_buffer(void)
 
     free(orphan->filename);
     free_lines(orphan->filetop);
-#    ifndef NANO_TINY
+
     free(orphan->statinfo);
     free(orphan->lock_filename);
-    /* Free the undo stack. */
-    discard_until(NULL);
-#    endif
+
+    // Free the undo stack.
+    discard_until(nullptr);
     free(orphan->errormessage);
 
     openfile = orphan->prev;
     if (openfile == orphan)
     {
-        openfile = NULL;
+        openfile = nullptr;
     }
 
     free(orphan);
 
-    /* When just one buffer remains open, show "Exit" in the help lines. */
+    //
+    /// When just one buffer remains open,
+    /// show "Exit" in the help lines.
+    //
     if (openfile && openfile == openfile->next)
     {
         exitfunc->tag = exit_tag;
     }
 }
-#endif /* ENABLE_MULTIBUFFER */
 
 /* Encode any NUL bytes in the given line of text (of the given length),
  * and return a dynamically allocated copy of the resultant string. */

@@ -685,8 +685,26 @@ revstrcasestr(const char *haystack, const char *needle, const char *pointer)
     return NULL;
 }
 
-/* This function is equivalent to strcasestr() for multibyte strings,
- * except in that it scans the string in reverse, starting at pointer. */
+//
+/// @name @c mbrevstrcasestr
+///
+/// @brief
+///  -  This function is equivalent to strcasestr() for multibyte strings,
+///  -  except in that it scans the string in reverse, starting at pointer.
+///
+/// @param haystack
+///  - The string in which to search.
+///
+/// @param needle
+///  - The string to find.
+///
+/// @param pointer
+///  - The position in the string to start searching from.
+///
+/// @returns
+///  - ( char* ) - A pointer to the first occurrence of the string in the string
+///  - ( NULL )  - if the string is not found.
+//
 s8 *
 mbrevstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
 {
@@ -726,44 +744,47 @@ mbrevstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
     }
 }
 
-#if !defined(NANO_TINY) || defined(ENABLE_JUSTIFY)
-
+//
 /// @name @c mbstrchr
+///
 /// @brief
 /// - This function is equivalent to strchr() for multibyte strings.
 /// - It is used to find the first occurrence of a character in a string.
 /// - The character to find is given as a multibyte string.
 /// - The function is used in justify.c to find the first space in a line.
+///
 /// @param string
 /// - The string in which to search.
+///
 /// @param chr
 /// - The character to find.
+///
 /// @returns
 /// - ( char* ) - A pointer to the first occurrence of the character in the string
-/// - ( NULL ) - if the character is not found.
-char *
-mbstrchr(const char *string, const char *chr)
+/// - ( NULL )  - if the character is not found.
+//
+s8 *
+mbstrchr(const s8 *string, const s8 *chr)
 {
-#    ifdef ENABLE_UTF8
     if (use_utf8)
     {
-        bool    bad_s = FALSE, bad_c = FALSE;
+        bool    bad_s = false, bad_c = false;
         wchar_t ws, wc;
 
         if (mbtowide(&wc, chr) < 0)
         {
-            wc    = (unsigned char)*chr;
-            bad_c = TRUE;
+            wc    = static_cast<u8>(*chr);
+            bad_c = true;
         }
 
         while (*string != '\0')
         {
-            int symlen = mbtowide(&ws, string);
+            s32 symlen = mbtowide(&ws, string);
 
             if (symlen < 0)
             {
-                ws    = (unsigned char)*string;
-                bad_s = TRUE;
+                ws    = static_cast<u8>(*string);
+                bad_s = true;
             }
 
             if (ws == wc && bad_s == bad_c)
@@ -776,33 +797,36 @@ mbstrchr(const char *string, const char *chr)
 
         if (*string == '\0')
         {
-            return NULL;
+            return nullptr;
         }
 
-        return (char *)string;
+        return const_cast<s8 *>(string);
     }
     else
-#    endif
-        return strchr((char *)string, *chr);
+    {
+        return strchr(const_cast<s8 *>(string), *chr);
+    }
 }
 
-#endif /* !NANO_TINY || ENABLE_JUSTIFY */
-
-#ifndef NANO_TINY
-
+//
 /// @name @c mbstrpbrk
+///
 /// @brief
 /// - Locate, in the given string, the first occurrence of any of
 /// - the characters in accept, searching forward.
+///
 /// @param string
 /// - The string in which to search.
+///
 /// @param accept
 /// - The set of characters to find.
+///
 /// @returns
 /// - ( char* ) - A pointer to the first occurrence of any of the characters in the string
-/// - ( NULL ) - if none of the characters are found.
-char *
-mbstrpbrk(const char *string, const char *accept)
+/// - ( NULL )  - if none of the characters are found.
+//
+s8 *
+mbstrpbrk(const s8 *string, const s8 *accept)
 {
     while (*string != '\0')
     {
@@ -845,7 +869,6 @@ mbrevstrpbrk(const char *head, const char *accept, const char *pointer)
         pointer = head + step_left(head, pointer - head);
     }
 }
-#endif /* !NANO_TINY */
 
 #if defined(ENABLE_NANORC) && (!defined(NANO_TINY) || defined(ENABLE_JUSTIFY))
 /* Return TRUE if the given string contains at least one blank character. */

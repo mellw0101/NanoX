@@ -1,34 +1,12 @@
-/**************************************************************************
- *   rcfile.c  --  This file is part of GNU nano.                         *
- *                                                                        *
- *   Copyright (C) 2001-2011, 2013-2024 Free Software Foundation, Inc.    *
- *   Copyright (C) 2014 Mike Frysinger                                    *
- *   Copyright (C) 2019 Brand Huntsman                                    *
- *   Copyright (C) 2014-2021 Benno Schulenberg                            *
- *                                                                        *
- *   GNU nano is free software: you can redistribute it and/or modify     *
- *   it under the terms of the GNU General Public License as published    *
- *   by the Free Software Foundation, either version 3 of the License,    *
- *   or (at your option) any later version.                               *
- *                                                                        *
- *   GNU nano is distributed in the hope that it will be useful,          *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty          *
- *   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.              *
- *   See the GNU General Public License for more details.                 *
- *                                                                        *
- *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
- *                                                                        *
- **************************************************************************/
-
+/// @file rcfile.cpp
 #include "../include/prototypes.h"
 
 #ifdef ENABLE_NANORC
 
-#    include <ctype.h>
-#    include <errno.h>
+#    include <cctype>
+#    include <cerrno>
+#    include <cstring>
 #    include <glob.h>
-#    include <string.h>
 #    include <unistd.h>
 
 #    ifndef RCFILE_NAME
@@ -783,11 +761,11 @@ parse_next_word(char *ptr)
  * one.  If the next word starts with a ", we say that it ends with the
  * last " of the line.  Otherwise, we interpret it as usual, so that the
  * arguments can contain "'s too. */
-char *
-parse_argument(char *ptr)
+s8 *
+parse_argument(s8 *ptr)
 {
-    const char *ptr_save   = ptr;
-    char       *last_quote = NULL;
+    const s8 *ptr_save   = ptr;
+    s8       *last_quote = nullptr;
 
     if (*ptr != '"')
     {
@@ -802,16 +780,16 @@ parse_argument(char *ptr)
         }
     }
 
-    if (last_quote == NULL)
+    if (last_quote == nullptr)
     {
         jot_error(N_("Argument '%s' has an unterminated \""), ptr_save);
-        return NULL;
+        return nullptr;
     }
 
     *last_quote = '\0';
     ptr         = last_quote + 1;
 
-    while (isblank((unsigned char)*ptr))
+    while (isblank(static_cast<u8>(*ptr)))
     {
         ptr++;
     }
@@ -970,9 +948,8 @@ begin_new_syntax(char *ptr)
 
 /* Verify that a syntax definition contains at least one color command. */
 void
-check_for_nonempty_syntax(void)
+check_for_nonempty_syntax()
 {
-#ifdef ENABLE_COLOR
     if (opensyntax && !seen_color_command)
     {
         size_t current_lineno = lineno;
@@ -982,8 +959,7 @@ check_for_nonempty_syntax(void)
         lineno = current_lineno;
     }
 
-    opensyntax = FALSE;
-#endif
+    opensyntax = false;
 }
 
 /* Return TRUE when the given function is present in almost all menus. */
@@ -1200,31 +1176,30 @@ parse_binding(char *ptr, bool dobind)
     sclist      = newsc;
 }
 
-/* Verify that the given file exists, is not a folder nor a device. */
+// Verify that the given file exists, is not a folder nor a device.
 bool
-is_good_file(char *file)
+is_good_file(s8 *file)
 {
     struct stat rcinfo;
 
-    /* First check that the file exists and is readable. */
+    // First check that the file exists and is readable.
     if (access(file, R_OK) != 0)
     {
-        return FALSE;
+        return false;
     }
 
-    /* If the thing exists, it may be neither a directory nor a device. */
+    // If the thing exists, it may be neither a directory nor a device.
     if (stat(file, &rcinfo) != -1 && (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode)))
     {
         jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
-        return FALSE;
+        return false;
     }
     else
     {
-        return TRUE;
+        return true;
     }
 }
 
-#ifdef ENABLE_COLOR
 /* Partially parse the syntaxes in the given file, or (when syntax
  * is not NULL) fully parse one specific syntax from the file. */
 void
@@ -1340,11 +1315,29 @@ parse_includes(char *ptr)
     free(expanded);
 }
 
-/* Return the index of the color that is closest to the given RGB levels,
- * assuming that the terminal uses the 6x6x6 color cube of xterm-256color.
- * When red == green == blue, return an index in the xterm gray scale. */
-short
-closest_index_color(short red, short green, short blue)
+//
+/// @name
+///  - @c closest_index_color
+///
+/// @brief
+///  -  Return the index of the color that is closest to the given RGB levels,
+///     assuming that the terminal uses the 6x6x6 color cube of xterm-256color.
+///     When red == green == blue, return an index in the xterm gray scale.
+///
+/// @param red ( short )
+///  -  The red color level.
+///
+/// @param green ( short )
+///  -  The green color level.
+///
+/// @param blue ( short )
+///  -  The blue color level.
+///
+/// @returns ( short )
+///  -  The index of the color that is closest to the given RGB levels.
+//
+s16
+closest_index_color(s16 red, s16 green, s16 blue)
 {
     /* Translation table, from 16 intended color levels to 6 available levels. */
     static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
@@ -1366,52 +1359,52 @@ closest_index_color(short red, short green, short blue)
     }
 }
 
-#    define COLORCOUNT 34
+#define COLORCOUNT 34
 
-const char hues[COLORCOUNT][8] = {
-    "red",    "green", "blue",  "yellow", "cyan",   "magenta", "white", "black",   "normal", "pink", "purple", "mauve",
-    "lagoon", "mint",  "lime",  "peach",  "orange", "latte",   "rosy",  "beet",    "plum",   "sea",  "sky",    "slate",
-    "teal",   "sage",  "brown", "ocher",  "sand",   "tawny",   "brick", "crimson", "grey",   "gray"};
+const s8 hues[COLORCOUNT][8] = {"red",   "green",  "blue",  "yellow", "cyan",    "magenta", "white", "black",  "normal",
+                                "pink",  "purple", "mauve", "lagoon", "mint",    "lime",    "peach", "orange", "latte",
+                                "rosy",  "beet",   "plum",  "sea",    "sky",     "slate",   "teal",  "sage",   "brown",
+                                "ocher", "sand",   "tawny", "brick",  "crimson", "grey",    "gray"};
 
-short indices[COLORCOUNT] = {COLOR_RED,
-                             COLOR_GREEN,
-                             COLOR_BLUE,
-                             COLOR_YELLOW,
-                             COLOR_CYAN,
-                             COLOR_MAGENTA,
-                             COLOR_WHITE,
-                             COLOR_BLACK,
-                             THE_DEFAULT,
-                             204,
-                             163,
-                             134,
-                             38,
-                             48,
-                             148,
-                             215,
-                             208,
-                             137,
-                             175,
-                             127,
-                             98,
-                             32,
-                             111,
-                             66,
-                             35,
-                             107,
-                             100,
-                             142,
-                             186,
-                             136,
-                             166,
-                             161,
-                             COLOR_BLACK + 8,
-                             COLOR_BLACK + 8};
+s16 indices[COLORCOUNT] = {COLOR_RED,
+                           COLOR_GREEN,
+                           COLOR_BLUE,
+                           COLOR_YELLOW,
+                           COLOR_CYAN,
+                           COLOR_MAGENTA,
+                           COLOR_WHITE,
+                           COLOR_BLACK,
+                           THE_DEFAULT,
+                           204,
+                           163,
+                           134,
+                           38,
+                           48,
+                           148,
+                           215,
+                           208,
+                           137,
+                           175,
+                           127,
+                           98,
+                           32,
+                           111,
+                           66,
+                           35,
+                           107,
+                           100,
+                           142,
+                           186,
+                           136,
+                           166,
+                           161,
+                           COLOR_BLACK + 8,
+                           COLOR_BLACK + 8};
 
 /* Return the short value corresponding to the given color name, and set
  * vivid to TRUE for a lighter color, and thick for a heavier typeface. */
 short
-color_to_short(const char *colorname, bool *vivid, bool *thick)
+color_to_short(const s8 *colorname, bool *vivid, bool *thick)
 {
     if (strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
@@ -1434,7 +1427,7 @@ color_to_short(const char *colorname, bool *vivid, bool *thick)
 
     if (colorname[0] == '#' && strlen(colorname) == 4)
     {
-        unsigned short r, g, b;
+        u16 r, g, b;
 
         if (*vivid)
         {
@@ -1495,9 +1488,9 @@ parse_combination(char *combotext, short *fg, short *bg, int *attributes)
 
     if (strncmp(combotext, "italic", 6) == 0)
     {
-#    ifdef A_ITALIC
+#ifdef A_ITALIC
         *attributes |= A_ITALIC;
-#    endif
+#endif
         if (combotext[6] != ',')
         {
             jot_error(N_("An attribute requires a subsequent comma"));
@@ -1795,9 +1788,9 @@ parse_syntax_commands(char *keyword, char *ptr)
     }
     else if (strcmp(keyword, "comment") == 0)
     {
-#    ifdef ENABLE_COMMENT
+#ifdef ENABLE_COMMENT
         pick_up_name("comment", ptr, &live_syntax->comment);
-#    endif
+#endif
     }
     else if (strcmp(keyword, "tabgives") == 0)
     {
@@ -1820,24 +1813,25 @@ parse_syntax_commands(char *keyword, char *ptr)
 
     return TRUE;
 }
-#endif /* ENABLE_COLOR */
 
-// Verify that the user has not unmapped every shortcut for a
-// function that we consider 'vital' (such as "Exit").
+//
+/// Verify that the user has not unmapped every shortcut for a
+/// function that we consider 'vital' (such as "Exit").
+//
 static void
 check_vitals_mapped()
 {
-#define VITALS 4
+    static constexpr s8 VITALS   = 4;
     void (*vitals[VITALS])(void) = {do_exit, do_exit, do_exit, do_cancel};
-    int inmenus[VITALS]          = {MMAIN, MBROWSER, MHELP, MYESNO};
+    s32 inmenus[VITALS]          = {MMAIN, MBROWSER, MHELP, MYESNO};
 
-    for (int v = 0; v < VITALS; v++)
+    for (s32 v = 0; v < VITALS; v++)
     {
-        for (funcstruct *f = allfuncs; f != NULL; f = f->next)
+        for (funcstruct *f = allfuncs; f != nullptr; f = f->next)
         {
             if (f->func == vitals[v] && (f->menus & inmenus[v]))
             {
-                if (first_sc_for(inmenus[v], f->func) == NULL)
+                if (first_sc_for(inmenus[v], f->func) == nullptr)
                 {
                     jot_error(N_("No key is bound to function '%s' in menu '%s'. "
                                  " Exiting.\n"),
@@ -1854,23 +1848,61 @@ check_vitals_mapped()
     }
 }
 
-// Parse the rcfile, once it has been opened successfully at rcstream,
-// and close it afterwards.  If just_syntax is TRUE, allow the file to
-// to contain only color syntax commands.
+static s32
+checkForColorOptions(const std::string &keyword)
+{
+    static std::unordered_map<std::string, s32> colorOptionsMap = {
+        {    "titlecolor",     TITLE_BAR},
+        {   "numbercolor",   LINE_NUMBER},
+        {   "stripecolor",  GUIDE_STRIPE},
+        { "scrollercolor",    SCROLL_BAR},
+        { "selectedcolor", SELECTED_TEXT},
+        {"spotlightcolor",   SPOTLIGHTED},
+        {     "minicolor",  MINI_INFOBAR},
+        {   "promptcolor",    PROMPT_BAR},
+        {   "statuscolor",    STATUS_BAR},
+        {    "errorcolor", ERROR_MESSAGE},
+        {      "keycolor",     KEY_COMBO},
+        { "functioncolor",  FUNCTION_TAG}
+    };
+    auto it = colorOptionsMap.find(keyword);
+    return it != colorOptionsMap.end() ? it->second : INT32_MAX;
+}
+
+//
+/// @name
+///  -  @c parse_rcfile
+///
+/// @brief
+///  -  Parse the rcfile, once it has been opened successfully at rcstream,
+///     and close it afterwards.  If just_syntax is TRUE, allow the file to
+///     to contain only color syntax commands.
+///
+/// @param rcstream ( FILE * )
+///  -  The file stream to read from.
+///
+/// @param just_syntax ( bool )
+///  -  Whether to parse only the syntax commands.
+///
+/// @param intros_only ( bool )
+///  -  Whether to parse only the syntax prologue.
+///
+/// @returns ( void )
+//
 void
 parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 {
-    char   *buffer = NULL;
-    size_t  size   = 0;
-    ssize_t length;
+    s8 *buffer = nullptr;
+    u64 size   = 0;
+    s64 length = 0;
 
     while ((length = getline(&buffer, &size, rcstream)) > 0)
     {
-        char *ptr, *keyword, *option, *argument;
+        s8 *ptr, *keyword, *option, *argument;
 
-        bool   drop_open = false;
-        int    set       = 0;
-        size_t i;
+        bool drop_open = false;
+        s32  set       = 0;
+        u64  i;
 
         lineno++;
 
@@ -1910,7 +1942,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         if (!just_syntax && strcmp(keyword, "extendsyntax") == 0)
         {
             augmentstruct *newitem, *extra;
-            char          *syntaxname = ptr;
+            s8            *syntaxname = ptr;
             syntaxtype    *sntx;
 
             check_for_nonempty_syntax();
@@ -1925,7 +1957,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 }
             }
 
-            if (sntx == NULL)
+            if (sntx == nullptr)
             {
                 jot_error(N_("Could not find syntax \"%s\" to extend"), syntaxname);
                 continue;
@@ -2026,7 +2058,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
             if (strstr("icolor", keyword))
             {
-                seen_color_command = TRUE;
+                seen_color_command = true;
             }
             continue;
         }
@@ -2084,7 +2116,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         ptr    = parse_next_word(ptr);
 
         /* Find the just parsed option name among the existing names. */
-        for (i = 0; rcopts[i].name != NULL; i++)
+        for (i = 0; rcopts[i].name != nullptr; i++)
         {
             if (strcmp(option, rcopts[i].name) == 0)
             {
@@ -2092,7 +2124,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
         }
 
-        if (rcopts[i].name == NULL)
+        if (rcopts[i].name == nullptr)
         {
             jot_error(N_("Unknown option: %s"), option);
             continue;
@@ -2132,61 +2164,32 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         }
         ptr = parse_argument(ptr);
 
-        /* When in a UTF-8 locale, ignore arguments with invalid sequences. */
-        if (using_utf8() && mbstowcs(nullptr, argument, 0) == (size_t)-1)
+        // When in a UTF-8 locale, ignore arguments with invalid sequences.
+        if (using_utf8() && mbstowcs(nullptr, argument, 0) == (u64)-1)
         {
             jot_error(N_("Argument is not a valid multibyte string"));
             continue;
         }
-        if (strcmp(option, "titlecolor") == 0)
+
+        //
+        /// Check for color options.
+        /// This uses a unordered map to check for
+        /// color options and return the corresponding
+        /// index as apposed to the previous implementation
+        /// used by GNU for the original Nano that
+        /// used a series of if else statements.
+        /// This is a more efficient way to check for
+        /// color options.
+        ///
+        /// @see checkForColorOptions
+        //
+        const s32 colorOption = checkForColorOptions(option);
+        if (colorOption != INT32_MAX)
         {
-            set_interface_color(TITLE_BAR, argument);
+            set_interface_color(colorOption, argument);
         }
-        else if (strcmp(option, "numbercolor") == 0)
-        {
-            set_interface_color(LINE_NUMBER, argument);
-        }
-        else if (strcmp(option, "stripecolor") == 0)
-        {
-            set_interface_color(GUIDE_STRIPE, argument);
-        }
-        else if (strcmp(option, "scrollercolor") == 0)
-        {
-            set_interface_color(SCROLL_BAR, argument);
-        }
-        else if (strcmp(option, "selectedcolor") == 0)
-        {
-            set_interface_color(SELECTED_TEXT, argument);
-        }
-        else if (strcmp(option, "spotlightcolor") == 0)
-        {
-            set_interface_color(SPOTLIGHTED, argument);
-        }
-        else if (strcmp(option, "minicolor") == 0)
-        {
-            set_interface_color(MINI_INFOBAR, argument);
-        }
-        else if (strcmp(option, "promptcolor") == 0)
-        {
-            set_interface_color(PROMPT_BAR, argument);
-        }
-        else if (strcmp(option, "statuscolor") == 0)
-        {
-            set_interface_color(STATUS_BAR, argument);
-        }
-        else if (strcmp(option, "errorcolor") == 0)
-        {
-            set_interface_color(ERROR_MESSAGE, argument);
-        }
-        else if (strcmp(option, "keycolor") == 0)
-        {
-            set_interface_color(KEY_COMBO, argument);
-        }
-        else if (strcmp(option, "functioncolor") == 0)
-        {
-            set_interface_color(FUNCTION_TAG, argument);
-        }
-        else if (strcmp(option, "operatingdir") == 0)
+
+        if (strcmp(option, "operatingdir") == 0)
         {
             operating_dir = mallocstrcpy(operating_dir, argument);
         }
@@ -2300,9 +2303,9 @@ parse_one_nanorc()
 {
     FILE *rcstream = fopen(nanorc, "rb");
 
-    /* If opening the file succeeded, parse it.  Otherwise, only
-     * complain if the file actually exists. */
-    if (rcstream != NULL)
+    // If opening the file succeeded, parse it.  Otherwise, only
+    // complain if the file actually exists.
+    if (rcstream != nullptr)
     {
         parse_rcfile(rcstream, FALSE, TRUE);
     }
@@ -2315,9 +2318,9 @@ parse_one_nanorc()
 bool
 have_nanorc(const s8 *path, const s8 *name)
 {
-    if (path == NULL)
+    if (path == nullptr)
     {
-        return FALSE;
+        return false;
     }
 
     free(nanorc);
@@ -2326,10 +2329,18 @@ have_nanorc(const s8 *path, const s8 *name)
     return is_good_file(nanorc);
 }
 
-// Process the nanorc file that was specified on the command line (if any),
-// and otherwise the system-wide rcfile followed by the user's rcfile.
+//
+/// @name
+///  - @c do_rcfiles
+///
+/// @brief
+///  -  Process the nanorc file that was specified on the command line (if any),
+///  -  and otherwise the system-wide rcfile followed by the user's rcfile.
+///
+/// @returns ( void )
+//
 void
-do_rcfiles(void)
+do_rcfiles()
 {
     if (custom_nanorc)
     {

@@ -26,8 +26,11 @@
 #include <cstdlib>
 #include <dirent.h>
 #include <regex.h>
+#include <string>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <unordered_map>
+#include <vector>
 
 /// @brief
 /// - Since we are using a staticly compiled version of ncurses-6.3, we will
@@ -286,7 +289,10 @@ typedef enum
     STATIONARY
 } update_type;
 
-// The kinds of undo actions.  ADD...REPLACE must come first.
+//
+/// The kinds of undo actions.
+/// ADD...REPLACE must come first.
+//
 typedef enum
 {
     ADD,
@@ -295,17 +301,13 @@ typedef enum
     DEL,
     JOIN,
     REPLACE,
-#ifdef ENABLE_WRAPPING
     SPLIT_BEGIN,
     SPLIT_END,
-#endif
     INDENT,
     UNINDENT,
-#ifdef ENABLE_COMMENT
     COMMENT,
     UNCOMMENT,
     PREFLIGHT,
-#endif
     ZAP,
     CUT,
     CUT_TO_EOF,
@@ -461,13 +463,12 @@ typedef struct lintstruct
 // More structure types.
 typedef struct linestruct
 {
-    linestruct *next; // Next node.
-    linestruct *prev; // Previous node.
-
-    s8  *data;        // The text of this line.
-    s64  lineno;      // The number of this line.
-    s16 *multidata;   // Array of which multi-line regexes apply to this line.
-    bool has_anchor;  // Whether the user has placed an anchor at this line.
+    linestruct *next;       // Next node.
+    linestruct *prev;       // Previous node.
+    s8         *data;       // The text of this line.
+    s64         lineno;     // The number of this line.
+    s16        *multidata;  // Array of which multi-line regexes apply to this line.
+    bool        has_anchor; // Whether the user has placed an anchor at this line.
 } linestruct;
 
 typedef struct groupstruct

@@ -36,5 +36,4 @@
     "editor.lineHeight": 20,  // Adjust this to your preferred line height
     "terminal.integrated.fontFamily": "'JetBrains Mono', 'Droid Sans Mono', 'monospace', 'Droid Sans Fallback'",
     "terminal.integrated.fontWeight": "400",  // Use 600 for semi-bold in terminal
-    "git.confirmSync": false,
 }

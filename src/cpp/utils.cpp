@@ -377,14 +377,16 @@ nrealloc(void *section, const u64 howmuch)
     return section;
 }
 
-// Return an appropriately reallocated dest string holding a copy of src.
-// Usage: "dest = mallocstrcpy(dest, src);".
+//
+/// Return an appropriately reallocated dest string holding a copy of src.
+/// Usage: "dest = mallocstrcpy(dest, src);".
+//
 s8 *
 mallocstrcpy(s8 *&dest, const s8 *const &src)
 {
-    u64 count = strlen(src) + 1;
+    const u64 count = strlen(src) + 1;
 
-    dest = RE_CAST(char *, nrealloc(dest, count));
+    dest = static_cast<char *>(nrealloc(dest, count));
     strncpy(dest, src, count);
 
     return dest;

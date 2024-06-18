@@ -2304,7 +2304,7 @@ set_blankdelay_to_one(void)
 ///  -  Whether the text is a prompt.
 /// @returns @c char *
 ///  -  The displayable string.
-/// TODO : ( This function displays a string ) Make this function more readable.
+/// TODO : ( This function makes a string that is displayeble ) Make this function more readable.
 s8 *
 display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
 {
@@ -2374,12 +2374,12 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
 #    define ZEROWIDTH_CHAR (is_zerowidth(text))
 #else
 #    define ISO8859_CHAR   ((u8) * text > 0x9F)
-#    define ZEROWIDTH_CHAR FALSE
+#    define ZEROWIDTH_CHAR false
 #endif
 
     while (*text != '\0' && (column < beyond || ZEROWIDTH_CHAR))
     {
-        /* A plain printable ASCII character is one byte, one column. */
+        // A plain printable ASCII character is one byte, one column.
         if (((s8)*text > 0x20 && *text != DEL_CODE) || ISO8859_CHAR)
         {
             converted[index++] = *(text++);
@@ -2387,42 +2387,43 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
             continue;
         }
 
-        /* Show a space as a visible character, or as a space. */
+        // Show a space as a visible character, or as a space.
         if (*text == ' ')
         {
-#ifndef NANO_TINY
-            if (ISSET(WHITESPACE_DISPLAY))
+            if ISSET (WHITESPACE_DISPLAY)
             {
-                for (int i = whitelen[0]; i < whitelen[0] + whitelen[1];)
+                for (s32 i = whitelen[0]; i < whitelen[0] + whitelen[1];)
                 {
                     converted[index++] = whitespace[i++];
                 }
             }
             else
-#endif
+            {
                 converted[index++] = ' ';
+            }
             column++;
             text++;
             continue;
         }
 
-        /* Show a tab as a visible character plus spaces, or as just spaces. */
+        // Show a tab as a visible character plus spaces, or as just spaces.
         if (*text == '\t')
         {
-#ifndef NANO_TINY
             if (ISSET(WHITESPACE_DISPLAY) &&
                 (index > 0 || !isdata || !ISSET(SOFTWRAP) || column % tabsize == 0 || column == start_col))
             {
-                for (int i = 0; i < whitelen[0];)
+                for (s32 i = 0; i < whitelen[0];)
                 {
                     converted[index++] = whitespace[i++];
                 }
             }
             else
-#endif
+            {
                 converted[index++] = ' ';
+            }
             column++;
-            /* Fill the tab up with the required number of spaces. */
+
+            // Fill the tab up with the required number of spaces.
             while (column % tabsize != 0 && column < beyond)
             {
                 converted[index++] = ' ';
@@ -2432,7 +2433,7 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
             continue;
         }
 
-        /* Represent a control character with a leading caret. */
+        // Represent a control character with a leading caret.
         if (is_cntrl_char(text))
         {
             converted[index++] = '^';
@@ -2442,14 +2443,13 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
             continue;
         }
 
-#ifdef ENABLE_UTF8
-        int     charlength, charwidth;
+        s32     charlength, charwidth;
         wchar_t wc;
 
-        /* Convert a multibyte character to a single code. */
+        // Convert a multibyte character to a single code.
         charlength = mbtowide(&wc, text);
 
-        /* Represent an invalid character with the Replacement Character. */
+        // Represent an invalid character with the Replacement Character.
         if (charlength < 0)
         {
             converted[index++] = '\xEF';
@@ -2460,27 +2460,26 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
             continue;
         }
 
-        /* Determine whether the character takes zero, one, or two columns. */
+        // Determine whether the character takes zero, one, or two columns.
         charwidth = wcwidth(wc);
 
-        /* Watch the number of zero-widths, to keep ample memory reserved. */
+        // Watch the number of zero-widths, to keep ample memory reserved.
         if (charwidth == 0 && --stowaways == 0)
         {
             stowaways = 40;
             allocsize += stowaways * MAXCHARLEN;
-            converted = RE_CAST(char *, nrealloc(converted, allocsize));
+            converted = static_cast<s8 *>(nrealloc(converted, allocsize));
         }
 
-#    ifdef __linux__
-        /* On a Linux console, skip zero-width characters, as it would show
-         * them WITH a width, thus messing up the display.  See bug #52954. */
+        // On a Linux console, skip zero-width characters, as it would show
+        // them WITH a width, thus messing up the display.  See bug #52954.
         if (on_a_vt && charwidth == 0)
         {
             text += charlength;
             continue;
         }
-#    endif
-        /* For any valid character, just copy its bytes. */
+
+        // For any valid character, just copy its bytes.
         for (; charlength > 0; charlength--)
         {
             converted[index++] = *(text++);
@@ -2488,40 +2487,36 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
 
         /* If the codepoint is unassigned, assume a width of one. */
         column += (charwidth < 0 ? 1 : charwidth);
-#endif /* ENABLE_UTF8 */
     }
 
     /* If there is more text than can be shown, make room for the ">". */
     if (column > beyond || (*text != '\0' && (isprompt || (isdata && !ISSET(SOFTWRAP)))))
     {
-#ifdef ENABLE_UTF8
         do
         {
             index = step_left(converted, index);
         }
         while (is_zerowidth(converted + index));
 
-        /* Display the left half of a two-column character as '['. */
+        // Display the left half of a two-column character as '['.
         if (is_doublewidth(converted + index))
         {
             converted[index++] = '[';
         }
-#else
-        index--;
-#endif
-        has_more = TRUE;
+
+        has_more = true;
     }
     else
     {
-        has_more = FALSE;
+        has_more = false;
     }
 
     is_shorter = (column < beyond);
 
-    /* Null-terminate the converted string. */
+    // Null-terminate the converted string.
     converted[index] = '\0';
 
-    /* Remember what part of the original text is covered by converted. */
+    // Remember what part of the original text is covered by converted.
     from_x = start_x;
     till_x = text - origin;
 
@@ -2794,7 +2789,7 @@ minibar()
 
     if (openfile->filename[0] != '\0')
     {
-        as_an_at = FALSE;
+        as_an_at = false;
         thename  = display_string(openfile->filename, 0, COLS, FALSE, FALSE);
     }
     else
@@ -2812,13 +2807,13 @@ minibar()
         padding = 0;
     }
 
-    /* Display the name of the current file (dottifying it if it doesn't fit),
-     * plus a star when the file has been modified. */
+    // Display the name of the current file (dottifying it if it doesn't fit),
+    // plus a star when the file has been modified.
     if (COLS > 4)
     {
         if (namewidth > COLS - 2)
         {
-            char *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, FALSE, FALSE);
+            s8 *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, false, false);
             mvwaddstr(footwin, 0, 0, "...");
             waddstr(footwin, shortname);
             free(shortname);
@@ -2831,13 +2826,13 @@ minibar()
         waddstr(footwin, openfile->modified ? " *" : "  ");
     }
 
-    /* Right after reading or writing a file, display its number of lines;
-     * otherwise, when there are multiple buffers, display an [x/n] counter. */
+    // Right after reading or writing a file, display its number of lines;
+    // otherwise, when there are multiple buffers, display an [x/n] counter.
     if (report_size && COLS > 35)
     {
-        size_t count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0');
+        u64 count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0');
 
-        number_of_lines = RE_CAST(char *, nmalloc(49));
+        number_of_lines = static_cast<s8 *>(nmalloc(49));
         if (openfile->fmt == NIX_FILE || openfile->fmt == UNSPECIFIED)
         {
             sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
@@ -2856,93 +2851,82 @@ minibar()
         {
             tallywidth = 0;
         }
-        report_size = FALSE;
+        report_size = false;
     }
-#ifdef ENABLE_MULTIBUFFER
     else if (openfile->next != openfile && COLS > 35)
     {
-        ranking = ranking = RE_CAST(char *, nmalloc(24));
+        ranking = ranking = static_cast<s8 *>(nmalloc(24));
         sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
         if (namewidth + placewidth + breadth(ranking) + 32 < COLS)
         {
             waddstr(footwin, ranking);
         }
     }
-#endif
 
-    /* Display the line/column position of the cursor. */
+    // Display the line/column position of the cursor.
     if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + placewidth + 32 < COLS)
     {
         mvwaddstr(footwin, 0, COLS - 27 - placewidth, location);
     }
 
-    /* Display the hexadecimal code of the character under the cursor,
-     * plus the codes of up to two succeeding zero-width characters. */
+    // Display the hexadecimal code of the character under the cursor,
+    // plus the codes of up to two succeeding zero-width characters.
     if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + 28 < COLS)
     {
-        char *this_position = openfile->current->data + openfile->current_x;
+        s8 *this_position = openfile->current->data + openfile->current_x;
 
         if (*this_position == '\0')
         {
-            sprintf(hexadecimal, openfile->current->next ?
-#ifdef ENABLE_UTF8
-                                                         using_utf8() ? "U+000A" :
-#endif
-                                                                      "  0x0A"
-                                                         : "  ----");
+            sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
         }
         else if (*this_position == '\n')
         {
             sprintf(hexadecimal, "  0x00");
         }
-#ifdef ENABLE_UTF8
-        else if ((unsigned char)*this_position < 0x80 && using_utf8())
+        else if (static_cast<u8>(*this_position) < 0x80 && using_utf8())
         {
-            sprintf(hexadecimal, "U+%04X", (unsigned char)*this_position);
+            sprintf(hexadecimal, "U+%04X", static_cast<u8>(*this_position));
         }
         else if (using_utf8() && mbtowide(&widecode, this_position) > 0)
         {
-            sprintf(hexadecimal, "U+%04X", (int)widecode);
+            sprintf(hexadecimal, "U+%04X", static_cast<s32>(widecode));
         }
-#endif
         else
         {
-            sprintf(hexadecimal, "  0x%02X", (unsigned char)*this_position);
+            sprintf(hexadecimal, "  0x%02X", static_cast<u8>(*this_position));
         }
 
         mvwaddstr(footwin, 0, COLS - 23, hexadecimal);
 
-#ifdef ENABLE_UTF8
         successor = this_position + char_length(this_position);
 
         if (*this_position && *successor && is_zerowidth(successor) && mbtowide(&widecode, successor) > 0)
         {
-            sprintf(hexadecimal, "|%04X", (int)widecode);
+            sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
             waddstr(footwin, hexadecimal);
 
             successor += char_length(successor);
 
             if (is_zerowidth(successor) && mbtowide(&widecode, successor) > 0)
             {
-                sprintf(hexadecimal, "|%04X", (int)widecode);
+                sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
                 waddstr(footwin, hexadecimal);
             }
         }
         else
         {
-            successor = NULL;
+            successor = nullptr;
         }
-#endif
     }
 
-    /* Display the state of three flags, and the state of macro and mark. */
+    // Display the state of three flags, and the state of macro and mark.
     if (ISSET(STATEFLAGS) && !successor && namewidth + tallywidth + 14 + 2 * padding < COLS)
     {
         wmove(footwin, 0, COLS - 11 - padding);
         show_states_at(footwin);
     }
 
-    /* Display how many percent the current line is into the file. */
+    // Display how many percent the current line is into the file.
     if (namewidth + 6 < COLS)
     {
         sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
@@ -3077,13 +3061,13 @@ statusline(message_type importance, const s8 *msg, ...)
     }
     wattroff(footwin, colorpair);
 
-#ifdef USING_OLDER_LIBVTE
-    /* Defeat a VTE/Konsole bug, where the cursor can go off-limits. */
-    if (ISSET(CONSTANT_SHOW) && ISSET(NO_HELP))
-    {
-        wmove(footwin, 0, 0);
-    }
-#endif
+    // #ifdef USING_OLDER_LIBVTE
+    //     /* Defeat a VTE/Konsole bug, where the cursor can go off-limits. */
+    //     if (ISSET(CONSTANT_SHOW) && ISSET(NO_HELP))
+    //     {
+    //         wmove(footwin, 0, 0);
+    //     }
+    // #endif
 
     /* Push the message to the screen straightaway. */
     wrefresh(footwin);
@@ -3095,9 +3079,9 @@ statusline(message_type importance, const s8 *msg, ...)
     countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
 }
 
-/* Display a normal message on the status bar, quietly. */
+// Display a normal message on the status bar, quietly.
 void
-statusbar(const char *msg)
+statusbar(const s8 *msg)
 {
     statusline(HUSH, msg);
 }
