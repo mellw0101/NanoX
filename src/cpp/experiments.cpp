@@ -75,3 +75,125 @@
 //     }
 //     return INT32_MAX;
 // }
+
+
+// #include <cstring>
+// #include <iostream>
+
+// class String
+// {
+// private:
+//     char* data;
+//     size_t length;
+
+// public:
+//     // Default constructor
+//     String()
+//     {
+//         data = new char[1];
+//         data[0] = '\0';
+//         length = 0;
+//     }
+
+//     // Constructor with C-string
+//     String(const char* str)
+//     {
+//         length = std::strlen(str);
+//         data = new char[length + 1];
+//         std::strcpy(data, str);
+//     }
+
+//     // Copy constructor
+//     String(const String& other)
+//     {
+//         length = other.length;
+//         data = new char[length + 1];
+//         std::strcpy(data, other.data);
+//     }
+
+//     // Move constructor
+//     String(String&& other) noexcept
+//     {
+//         data = other.data;
+//         length = other.length;
+//         other.data = nullptr;
+//         other.length = 0;
+//     }
+
+//     // Destructor
+//     ~String()
+//     {
+//         delete[] data;
+//     }
+
+//     // Copy assignment operator
+//     String& operator=(const String& other)
+//     {
+//         if (this == &other)
+//         {
+//             return *this;
+//         }
+
+//         delete[] data;
+
+//         length = other.length;
+//         data = new char[length + 1];
+//         std::strcpy(data, other.data);
+
+//         return *this;
+//     }
+
+//     // Move assignment operator
+//     String& operator=(String&& other) noexcept
+//     {
+//         if (this == &other)
+//         {
+//             return *this;
+//         }
+
+//         delete[] data;
+
+//         data = other.data;
+//         length = other.length;
+//         other.data = nullptr;
+//         other.length = 0;
+
+//         return *this;
+//     }
+
+//     // Concatenation operator
+//     String operator+(const String& other) const
+//     {
+//         String result;
+//         result.length = length + other.length;
+//         result.data = new char[result.length + 1];
+
+//         std::strcpy(result.data, data);
+//         std::strcat(result.data, other.data);
+
+//         return result;
+//     }
+
+//     // Access operator
+//     char& operator[](size_t index)
+//     {
+//         return data[index];
+//     }
+
+//     const char& operator[](size_t index) const
+//     {
+//         return data[index];
+//     }
+
+//     // Get length of the string
+//     size_t size() const
+//     {
+//         return length;
+//     }
+
+//     // Get C-string
+//     const char* c_str() const
+//     {
+//         return data;
+//     }
+// };

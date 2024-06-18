@@ -677,10 +677,8 @@ usage()
 void
 version()
 {
-    printf(" 'NanoX' is a Fork of 'GNU nano' from git source code made into "
-           "cpp, %s\n",
-           REVISION);
     printf(_(" NanoX, version %s\n"), VERSION);
+    printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code converted into C++\n", REVISION);
 
     // TRANSLATORS: The %s is the year of the latest release.
     printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
@@ -1839,6 +1837,12 @@ process_a_keystroke()
 }
 
 //
+/// This function is used to check if the given string is a valid command
+/// it returns the command id if it is a valid command, otherwise it returns 0
+/// @param str : The string to check
+/// It uses a unordered map to check the string against the commands
+/// NOTE: that the returned value is a unsigned 32bit integer representing a bit flag.
+///
 /// TODO : Finish this function, add all options
 //
 static const u32
@@ -2091,6 +2095,7 @@ main(s32 argc, s8 **argv)
 
     // Set a sensible default, different from what Pico does.
     SET(NO_WRAP);
+    SET(LET_THEM_ZAP);
 
     // If the executable's name starts with 'r', activate restricted mode.
     if (*(tail(argv[0])) == 'r')

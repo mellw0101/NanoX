@@ -417,7 +417,7 @@ mallocstrcpy(s8 *&dest, const s8 *const &src)
 s8 *
 measured_copy(const s8 *const &string, const u64 count)
 {
-    s8 *const thecopy = RE_CAST(s8 *, nmalloc(count + 1));
+    s8 *const thecopy = static_cast<s8 *>(nmalloc(count + 1));
     memcpy(thecopy, string, count);
     thecopy[count] = '\0';
     return thecopy;
@@ -469,7 +469,7 @@ xplustabs(void)
 // Return the index in text of the character that (when displayed) will
 // not overshoot the given column.
 u64
-actual_x(const char *text, size_t column)
+actual_x(const s8 *text, u64 column)
 {
     /* From where we start walking through the text. */
     const s8 *start = text;

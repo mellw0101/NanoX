@@ -37,7 +37,7 @@ bool ran_a_tool = FALSE;
 
 bool inhelp = FALSE;
 /* Whether we are in the help viewer. */
-char* title = NULL;
+char *title = NULL;
 /* When not NULL: the title of the current help text. */
 
 bool refresh_needed = FALSE;
@@ -55,22 +55,22 @@ bool control_C_was_pressed = FALSE;
 message_type lastmessage = VACUUM;
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
 
-linestruct* pletion_line = NULL;
+linestruct *pletion_line = NULL;
 /* The line where the last completion was found, if any. */
 
 bool also_the_last = FALSE;
 /* Whether indenting/commenting should include the last line of
  * the marked region. */
 
-char* answer = NULL;
+char *answer = NULL;
 /* The answer string used by the status-bar prompt. */
 
-char* last_search = NULL;
+char *last_search = NULL;
 /* The last string we searched for. */
 int didfind = 0;
 /* Whether the last search found something. */
 
-char* present_path = NULL;
+char *present_path = NULL;
 /* The current browser directory when trying to do tab completion. */
 
 unsigned flags[4] = {0, 0, 0, 0};
@@ -97,13 +97,13 @@ size_t wrap_at = 0;
 /* The actual column where we will wrap lines, based on fill. */
 #endif
 
-WINDOW* topwin = NULL;
+WINDOW *topwin = NULL;
 /* The top portion of the screen, showing the version number of nano,
  * the name of the file, and whether the buffer was modified. */
-WINDOW* midwin = NULL;
+WINDOW *midwin = NULL;
 /* The middle portion of the screen: the edit window, showing the
  * contents of the current buffer, the file we are editing. */
-WINDOW* footwin = NULL;
+WINDOW *footwin = NULL;
 /* The bottom portion of the screen, where status-bar messages,
  * the status-bar prompt, and a list of shortcuts are shown. */
 int editwinrows = 0;
@@ -115,7 +115,7 @@ int margin = 0;
 int sidebar = 0;
 /* Becomes 1 when the indicator "scroll bar" must be shown. */
 #ifndef NANO_TINY
-int* bardata = NULL;
+int *bardata = NULL;
 /* An array of characters that together depict the scrollbar. */
 ssize_t stripe_column = 0;
 /* The column at which a vertical bar will be drawn. */
@@ -124,66 +124,66 @@ int cycling_aim = 0;
  * to the top of the viewport (1), or to the bottom (2). */
 #endif
 
-linestruct* cutbuffer = NULL;
+linestruct *cutbuffer = NULL;
 /* The buffer where we store cut text. */
-linestruct* cutbottom = NULL;
+linestruct *cutbottom = NULL;
 /* The last line in the cutbuffer. */
 bool keep_cutbuffer = FALSE;
 /* Whether to add to the cutbuffer instead of clearing it first. */
 
-openfilestruct* openfile = NULL;
+openfilestruct *openfile = NULL;
 /* The list of all open file buffers. */
 #ifdef ENABLE_MULTIBUFFER
-openfilestruct* startfile = NULL;
+openfilestruct *startfile = NULL;
 /* The first open buffer. */
 #endif
 
 #ifndef NANO_TINY
-char* matchbrackets = NULL;
+char *matchbrackets = NULL;
 /* The opening and closing brackets that bracket searches can find. */
-char* whitespace = NULL;
+char *whitespace = NULL;
 /* The characters used when visibly showing tabs and spaces. */
 int whitelen[2];
 /* The length in bytes of these characters. */
 #endif // NANO_TINY
 
 #ifdef ENABLE_JUSTIFY
-char* punct = NULL;
+char *punct = NULL;
 /* The closing punctuation that can end sentences. */
-char* brackets = NULL;
+char *brackets = NULL;
 /* The closing brackets that can follow closing punctuation and
  * can end sentences. */
-char* quotestr = NULL;
+char *quotestr = NULL;
 /* The quoting string.  The default value is set in main(). */
 regex_t quotereg;
 /* The compiled regular expression from the quoting string. */
 #endif // ENABLE_JUSTIFY
 
-char* word_chars = NULL;
+char *word_chars = NULL;
 /* Nonalphanumeric characters that also form words. */
 
 ssize_t tabsize = -1;
 /* The width of a tab in spaces.  The default is set in main(). */
 
 #ifndef NANO_TINY
-char* backup_dir = NULL;
+char *backup_dir = NULL;
 /* The directory where we store backup files. */
 #endif // NANO_TINY
 
 #ifdef ENABLE_OPERATINGDIR
-char* operating_dir = NULL;
+char *operating_dir = NULL;
 /* The path to our confining "operating" directory, when given. */
 #endif // ENABLE_OPERATINGDIR
 
 #ifdef ENABLE_SPELLER
-char* alt_speller = NULL;
+char *alt_speller = NULL;
 /* The command to use for the alternate spell checker. */
 #endif
 
 #ifdef ENABLE_COLOR
-syntaxtype* syntaxes = NULL;
+syntaxtype *syntaxes = NULL;
 /* The global list of color syntaxes. */
-char* syntaxstr = NULL;
+char *syntaxstr = NULL;
 /* The color syntax name specified on the command line. */
 bool have_palette = FALSE;
 /* Whether the colors for the current syntax have been initialized. */
@@ -195,35 +195,39 @@ bool recook = FALSE;
 /* Whether the multidata should be recalculated. */
 #endif
 
-int currmenu = MMOST;
 /* The currently active menu, initialized to a dummy value. */
-keystruct* sclist = NULL;
-/* The start of the shortcuts list. */
-funcstruct* allfuncs = NULL;
-/* The start of the functions list. */
-funcstruct* tailfunc;
-/* The last function in the list. */
-funcstruct* exitfunc;
-/* A pointer to the special Exit/Close item. */
+int currmenu = MMOST;
 
-linestruct* search_history = NULL;
+/* The start of the shortcuts list. */
+keystruct *sclist = NULL;
+
+/* The start of the functions list. */
+funcstruct *allfuncs = NULL;
+
+/* The last function in the list. */
+funcstruct *tailfunc;
+
+/* A pointer to the special Exit/Close item. */
+funcstruct *exitfunc;
+
+linestruct *search_history = NULL;
 /* The current item in the list of strings that were searched for. */
-linestruct* replace_history = NULL;
+linestruct *replace_history = NULL;
 /* The current item in the list of replace strings. */
-linestruct* execute_history = NULL;
+linestruct *execute_history = NULL;
 /* The current item in the list of commands that were run with ^T. */
 
 #ifdef ENABLE_HISTORIES
-linestruct* searchtop = NULL;
+linestruct *searchtop = NULL;
 /* The oldest item in the list of search strings. */
-linestruct* searchbot = NULL;
+linestruct *searchbot = NULL;
 /* The empty item at the end of the list of search strings. */
 
-linestruct* replacetop = NULL;
-linestruct* replacebot = NULL;
+linestruct *replacetop = NULL;
+linestruct *replacebot = NULL;
 
-linestruct* executetop = NULL;
-linestruct* executebot = NULL;
+linestruct *executetop = NULL;
+linestruct *executebot = NULL;
 #endif
 
 regex_t search_regexp;
@@ -235,28 +239,28 @@ regmatch_t regmatches[10];
 int hilite_attribute = A_REVERSE;
 /* The curses attribute we use to highlight something. */
 #ifdef ENABLE_COLOR
-colortype* color_combo[NUMBER_OF_ELEMENTS] = {NULL};
+colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
 /* The color combinations for interface elements given in the rcfile. */
 #endif
 int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 /* The processed color pairs for the interface elements. */
 
-char* homedir = NULL;
+char *homedir = NULL;
 /* The user's home directory, from $HOME or /etc/passwd. */
-char* statedir = NULL;
+char *statedir = NULL;
 /* The directory for nano's history files. */
 
 #if defined(ENABLE_NANORC) || defined(ENABLE_HISTORIES)
-char* startup_problem = NULL;
+char *startup_problem = NULL;
 /* An error message (if any) about nanorc files or history files. */
 #endif
 #ifdef ENABLE_NANORC
-char* custom_nanorc = NULL;
+char *custom_nanorc = NULL;
 /* The argument of the --rcfile option, when given. */
 
-char* commandname = NULL;
+char *commandname = NULL;
 /* The name (of a function) between braces in a string bind. */
-keystruct* planted_shortcut = NULL;
+keystruct *planted_shortcut = NULL;
 /* The function that the above name resolves to, if any. */
 #endif
 
@@ -395,9 +399,9 @@ do_cancel(void)
 
 /* Add a function to the linked list of functions. */
 void
-add_to_funcs(void (*function)(void), int menus, const char* tag, const char* phrase, bool blank_after)
+add_to_funcs(void (*function)(), int menus, const char *tag, const char *phrase, bool blank_after)
 {
-    funcstruct* f = RE_CAST(funcstruct*, nmalloc(sizeof(funcstruct)));
+    funcstruct *const f = static_cast<funcstruct *>(nmalloc(sizeof(funcstruct)));
 
     if (allfuncs == NULL)
     {
@@ -422,7 +426,7 @@ add_to_funcs(void (*function)(void), int menus, const char* tag, const char* phr
 /* Parse the given keystring and return the corresponding keycode,
  * or return -1 when the string is invalid. */
 int
-keycode_from_string(const char* keystring)
+keycode_from_string(const char *keystring)
 {
     if (keystring[0] == '^')
     {
@@ -510,13 +514,13 @@ show_curses_version(void)
 
 /* Add a key combo to the linked list of shortcuts. */
 void
-add_to_sclist(int menus, const char* scstring, const int keycode, void (*function)(void), int toggle)
+add_to_sclist(int menus, const char *scstring, const int keycode, void (*function)(void), int toggle)
 {
-    static keystruct* tailsc;
+    static keystruct *tailsc;
 #ifndef NANO_TINY
     static int counter = 0;
 #endif
-    keystruct* sc = RE_CAST(keystruct*, nmalloc(sizeof(keystruct)));
+    keystruct *sc = RE_CAST(keystruct *, nmalloc(sizeof(keystruct)));
 
     /* Start the list, or tack on the next item. */
     if (sclist == NULL)
@@ -548,10 +552,10 @@ add_to_sclist(int menus, const char* scstring, const int keycode, void (*functio
 
 /* Return the first shortcut in the list of shortcuts that
  * matches the given function in the given menu. */
-const keystruct*
+const keystruct *
 first_sc_for(int menu, void (*function)(void))
 {
-    for (keystruct* sc = sclist; sc != NULL; sc = sc->next)
+    for (keystruct *sc = sclist; sc != NULL; sc = sc->next)
     {
         if ((sc->menus & menu) && sc->func == function && sc->keystr[0])
         {
@@ -566,7 +570,7 @@ first_sc_for(int menu, void (*function)(void))
 size_t
 shown_entries_for(int menu)
 {
-    funcstruct* item    = allfuncs;
+    funcstruct *item    = allfuncs;
     size_t      maximum = ((COLS + 40) / 20) * 2;
     size_t      count   = 0;
 
@@ -588,8 +592,12 @@ shown_entries_for(int menu)
     return count;
 }
 
-/* Return the first shortcut in the current menu that matches the given input. */
-const keystruct*
+//
+/// Return the first shortcut in the current menu that matches the given input.
+///
+/// TODO : ( get_shortcut ) Figure out how this works
+//
+const keystruct *
 get_shortcut(const int keycode)
 {
     /* Plain characters and upper control codes cannot be shortcuts. */
@@ -604,21 +612,17 @@ get_shortcut(const int keycode)
         return NULL;
     }
 
-#ifndef NANO_TINY
     /* During a paste at a prompt, ignore all command keycodes. */
     if (bracketed_paste && keycode != BRACKETED_PASTE_MARKER)
     {
         return NULL;
     }
-#endif
-#ifdef ENABLE_NANORC
     if (keycode == PLANTED_A_COMMAND)
     {
         return planted_shortcut;
     }
-#endif
 
-    for (keystruct* sc = sclist; sc != NULL; sc = sc->next)
+    for (const keystruct *sc = sclist; sc != NULL; sc = sc->next)
     {
         if ((sc->menus & currmenu) && keycode == sc->keycode)
         {
@@ -633,7 +637,7 @@ get_shortcut(const int keycode)
 functionptrtype
 func_from_key(const int keycode)
 {
-    const keystruct* sc = get_shortcut(keycode);
+    const keystruct *sc = get_shortcut(keycode);
 
     return (sc) ? sc->func : NULL;
 }
@@ -696,8 +700,8 @@ toggle_numbers(void)
 
 /* These two tags are used elsewhere too, so they are global. */
 /* TRANSLATORS: Try to keep the next two strings at most 10 characters. */
-const char* exit_tag  = N_("Exit");
-const char* close_tag = N_("Close");
+const char *exit_tag  = N_("Exit");
+const char *close_tag = N_("Close");
 
 /* Initialize the list of functions and the list of shortcuts. */
 void
@@ -706,154 +710,154 @@ shortcut_init(void)
 #ifdef ENABLE_HELP
     /* TRANSLATORS: The next long series of strings are shortcut descriptions;
      * they are best kept shorter than 56 characters, but may be longer. */
-    const char* cancel_gist    = N_("Cancel the current function");
-    const char* help_gist      = N_("Display this help text");
-    const char* exit_gist      = N_("Close the current buffer / Exit from nano");
-    const char* writeout_gist  = N_("Write the current buffer (or the marked region) to disk");
-    const char* readfile_gist  = N_("Insert another file into current buffer (or into new buffer)");
-    const char* whereis_gist   = N_("Search forward for a string or a regular expression");
-    const char* wherewas_gist  = N_("Search backward for a string or a regular expression");
-    const char* cut_gist       = N_("Cut current line (or marked region) and store it in cutbuffer");
-    const char* copy_gist      = N_("Copy current line (or marked region) and store it in cutbuffer");
-    const char* paste_gist     = N_("Paste the contents of cutbuffer at current cursor position");
-    const char* cursorpos_gist = N_("Display the position of the cursor");
+    const char *cancel_gist    = N_("Cancel the current function");
+    const char *help_gist      = N_("Display this help text");
+    const char *exit_gist      = N_("Close the current buffer / Exit from nano");
+    const char *writeout_gist  = N_("Write the current buffer (or the marked region) to disk");
+    const char *readfile_gist  = N_("Insert another file into current buffer (or into new buffer)");
+    const char *whereis_gist   = N_("Search forward for a string or a regular expression");
+    const char *wherewas_gist  = N_("Search backward for a string or a regular expression");
+    const char *cut_gist       = N_("Cut current line (or marked region) and store it in cutbuffer");
+    const char *copy_gist      = N_("Copy current line (or marked region) and store it in cutbuffer");
+    const char *paste_gist     = N_("Paste the contents of cutbuffer at current cursor position");
+    const char *cursorpos_gist = N_("Display the position of the cursor");
 #    ifdef ENABLE_SPELLER
-    const char* spell_gist = N_("Invoke the spell checker, if available");
+    const char *spell_gist = N_("Invoke the spell checker, if available");
 #    endif
-    const char* replace_gist  = N_("Replace a string or a regular expression");
-    const char* gotoline_gist = N_("Go to line and column number");
+    const char *replace_gist  = N_("Replace a string or a regular expression");
+    const char *gotoline_gist = N_("Go to line and column number");
 #    ifndef NANO_TINY
-    const char* bracket_gist  = N_("Go to the matching bracket");
-    const char* mark_gist     = N_("Mark text starting from the cursor position");
-    const char* zap_gist      = N_("Throw away the current line (or marked region)");
-    const char* indent_gist   = N_("Indent the current line (or marked lines)");
-    const char* unindent_gist = N_("Unindent the current line (or marked lines)");
-    const char* undo_gist     = N_("Undo the last operation");
-    const char* redo_gist     = N_("Redo the last undone operation");
+    const char *bracket_gist  = N_("Go to the matching bracket");
+    const char *mark_gist     = N_("Mark text starting from the cursor position");
+    const char *zap_gist      = N_("Throw away the current line (or marked region)");
+    const char *indent_gist   = N_("Indent the current line (or marked lines)");
+    const char *unindent_gist = N_("Unindent the current line (or marked lines)");
+    const char *undo_gist     = N_("Undo the last operation");
+    const char *redo_gist     = N_("Redo the last undone operation");
 #    endif
-    const char* back_gist      = N_("Go back one character");
-    const char* forward_gist   = N_("Go forward one character");
-    const char* prevword_gist  = N_("Go back one word");
-    const char* nextword_gist  = N_("Go forward one word");
-    const char* prevline_gist  = N_("Go to previous line");
-    const char* nextline_gist  = N_("Go to next line");
-    const char* home_gist      = N_("Go to beginning of current line");
-    const char* end_gist       = N_("Go to end of current line");
-    const char* prevblock_gist = N_("Go to previous block of text");
-    const char* nextblock_gist = N_("Go to next block of text");
+    const char *back_gist      = N_("Go back one character");
+    const char *forward_gist   = N_("Go forward one character");
+    const char *prevword_gist  = N_("Go back one word");
+    const char *nextword_gist  = N_("Go forward one word");
+    const char *prevline_gist  = N_("Go to previous line");
+    const char *nextline_gist  = N_("Go to next line");
+    const char *home_gist      = N_("Go to beginning of current line");
+    const char *end_gist       = N_("Go to end of current line");
+    const char *prevblock_gist = N_("Go to previous block of text");
+    const char *nextblock_gist = N_("Go to next block of text");
 #    ifdef ENABLE_JUSTIFY
-    const char* parabegin_gist = N_("Go to beginning of paragraph; then of previous paragraph");
-    const char* paraend_gist   = N_("Go just beyond end of paragraph; then of next paragraph");
+    const char *parabegin_gist = N_("Go to beginning of paragraph; then of previous paragraph");
+    const char *paraend_gist   = N_("Go just beyond end of paragraph; then of next paragraph");
 #    endif
 #    ifndef NANO_TINY
-    const char* toprow_gist    = N_("Go to first row in the viewport");
-    const char* bottomrow_gist = N_("Go to last row in the viewport");
-    const char* center_gist    = N_("Center the line where the cursor is");
-    const char* cycle_gist     = N_("Push the cursor line to the center, then top, then bottom");
+    const char *toprow_gist    = N_("Go to first row in the viewport");
+    const char *bottomrow_gist = N_("Go to last row in the viewport");
+    const char *center_gist    = N_("Center the line where the cursor is");
+    const char *cycle_gist     = N_("Push the cursor line to the center, then top, then bottom");
 #    endif
-    const char* prevpage_gist  = N_("Go one screenful up");
-    const char* nextpage_gist  = N_("Go one screenful down");
-    const char* firstline_gist = N_("Go to the first line of the file");
-    const char* lastline_gist  = N_("Go to the last line of the file");
+    const char *prevpage_gist  = N_("Go one screenful up");
+    const char *nextpage_gist  = N_("Go one screenful down");
+    const char *firstline_gist = N_("Go to the first line of the file");
+    const char *lastline_gist  = N_("Go to the last line of the file");
 #    if !defined(NANO_TINY) || defined(ENABLE_HELP)
-    const char* scrollup_gist   = N_("Scroll up one line without moving the cursor textually");
-    const char* scrolldown_gist = N_("Scroll down one line without moving the cursor textually");
+    const char *scrollup_gist   = N_("Scroll up one line without moving the cursor textually");
+    const char *scrolldown_gist = N_("Scroll down one line without moving the cursor textually");
 #    endif
 #    ifdef ENABLE_MULTIBUFFER
-    const char* prevfile_gist = N_("Switch to the previous file buffer");
-    const char* nextfile_gist = N_("Switch to the next file buffer");
+    const char *prevfile_gist = N_("Switch to the previous file buffer");
+    const char *nextfile_gist = N_("Switch to the next file buffer");
 #    endif
-    const char* verbatim_gist  = N_("Insert the next keystroke verbatim");
-    const char* tab_gist       = N_("Insert a tab at the cursor position (or indent marked lines)");
-    const char* enter_gist     = N_("Insert a newline at the cursor position");
-    const char* delete_gist    = N_("Delete the character under the cursor");
-    const char* backspace_gist = N_("Delete the character to the left of the cursor");
+    const char *verbatim_gist  = N_("Insert the next keystroke verbatim");
+    const char *tab_gist       = N_("Insert a tab at the cursor position (or indent marked lines)");
+    const char *enter_gist     = N_("Insert a newline at the cursor position");
+    const char *delete_gist    = N_("Delete the character under the cursor");
+    const char *backspace_gist = N_("Delete the character to the left of the cursor");
 #    ifndef NANO_TINY
-    const char* chopwordleft_gist  = N_("Delete backward from cursor to word start");
-    const char* chopwordright_gist = N_("Delete forward from cursor to next word start");
-    const char* cuttilleof_gist    = N_("Cut from the cursor position to the end of the file");
+    const char *chopwordleft_gist  = N_("Delete backward from cursor to word start");
+    const char *chopwordright_gist = N_("Delete forward from cursor to next word start");
+    const char *cuttilleof_gist    = N_("Cut from the cursor position to the end of the file");
 #    endif
 #    ifdef ENABLE_JUSTIFY
-    const char* justify_gist     = N_("Justify the current paragraph");
-    const char* fulljustify_gist = N_("Justify the entire file");
+    const char *justify_gist     = N_("Justify the current paragraph");
+    const char *fulljustify_gist = N_("Justify the entire file");
 #    endif
 #    ifndef NANO_TINY
-    const char* wordcount_gist = N_("Count the number of lines, words, and characters");
-    const char* suspend_gist   = N_("Suspend the editor (return to the shell)");
+    const char *wordcount_gist = N_("Count the number of lines, words, and characters");
+    const char *suspend_gist   = N_("Suspend the editor (return to the shell)");
 #    endif
-    const char* refresh_gist = N_("Refresh (redraw) the current screen");
+    const char *refresh_gist = N_("Refresh (redraw) the current screen");
 #    ifdef ENABLE_WORDCOMPLETION
-    const char* completion_gist = N_("Try and complete the current word");
+    const char *completion_gist = N_("Try and complete the current word");
 #    endif
 #    ifdef ENABLE_COMMENT
-    const char* comment_gist = N_("Comment/uncomment the current line (or marked lines)");
+    const char *comment_gist = N_("Comment/uncomment the current line (or marked lines)");
 #    endif
-    const char* savefile_gist = N_("Save file without prompting");
-    const char* findprev_gist = N_("Search next occurrence backward");
-    const char* findnext_gist = N_("Search next occurrence forward");
+    const char *savefile_gist = N_("Save file without prompting");
+    const char *findprev_gist = N_("Search next occurrence backward");
+    const char *findnext_gist = N_("Search next occurrence forward");
 #    ifndef NANO_TINY
-    const char* recordmacro_gist = N_("Start/stop recording a macro");
-    const char* runmacro_gist    = N_("Run the last recorded macro");
-    const char* anchor_gist      = N_("Place or remove an anchor at the current line");
-    const char* prevanchor_gist  = N_("Jump backward to the nearest anchor");
-    const char* nextanchor_gist  = N_("Jump forward to the nearest anchor");
+    const char *recordmacro_gist = N_("Start/stop recording a macro");
+    const char *runmacro_gist    = N_("Run the last recorded macro");
+    const char *anchor_gist      = N_("Place or remove an anchor at the current line");
+    const char *prevanchor_gist  = N_("Jump backward to the nearest anchor");
+    const char *nextanchor_gist  = N_("Jump forward to the nearest anchor");
 #    endif
-    const char* case_gist    = N_("Toggle the case sensitivity of the search");
-    const char* reverse_gist = N_("Reverse the direction of the search");
-    const char* regexp_gist  = N_("Toggle the use of regular expressions");
+    const char *case_gist    = N_("Toggle the case sensitivity of the search");
+    const char *reverse_gist = N_("Reverse the direction of the search");
+    const char *regexp_gist  = N_("Toggle the use of regular expressions");
 #    ifdef ENABLE_HISTORIES
-    const char* older_gist = N_("Recall the previous search/replace string");
-    const char* newer_gist = N_("Recall the next search/replace string");
+    const char *older_gist = N_("Recall the previous search/replace string");
+    const char *newer_gist = N_("Recall the next search/replace string");
 #    endif
 #    ifndef NANO_TINY
-    const char* dos_gist     = N_("Toggle the use of DOS format");
-    const char* mac_gist     = N_("Toggle the use of Mac format");
-    const char* append_gist  = N_("Toggle appending");
-    const char* prepend_gist = N_("Toggle prepending");
-    const char* backup_gist  = N_("Toggle backing up of the original file");
-    const char* execute_gist = N_("Execute a function or an external command");
-    const char* pipe_gist    = N_("Pipe the current buffer (or marked region) to the command");
+    const char *dos_gist     = N_("Toggle the use of DOS format");
+    const char *mac_gist     = N_("Toggle the use of Mac format");
+    const char *append_gist  = N_("Toggle appending");
+    const char *prepend_gist = N_("Toggle prepending");
+    const char *backup_gist  = N_("Toggle backing up of the original file");
+    const char *execute_gist = N_("Execute a function or an external command");
+    const char *pipe_gist    = N_("Pipe the current buffer (or marked region) to the command");
 #        ifdef ENABLE_HISTORIES
-    const char* older_command_gist = N_("Recall the previous command");
-    const char* newer_command_gist = N_("Recall the next command");
+    const char *older_command_gist = N_("Recall the previous command");
+    const char *newer_command_gist = N_("Recall the next command");
 #        endif
-    const char* convert_gist = N_("Do not convert from DOS/Mac format");
+    const char *convert_gist = N_("Do not convert from DOS/Mac format");
 #    endif
 #    ifdef ENABLE_MULTIBUFFER
-    const char* newbuffer_gist = N_("Toggle the use of a new buffer");
+    const char *newbuffer_gist = N_("Toggle the use of a new buffer");
 #    endif
-    const char* discardbuffer_gist = N_("Close buffer without saving it");
+    const char *discardbuffer_gist = N_("Close buffer without saving it");
 #    ifdef ENABLE_BROWSER
-    const char* tofiles_gist     = N_("Go to file browser");
-    const char* exitbrowser_gist = N_("Exit from the file browser");
-    const char* firstfile_gist   = N_("Go to the first file in the list");
-    const char* lastfile_gist    = N_("Go to the last file in the list");
-    const char* backfile_gist    = N_("Go to the previous file in the list");
-    const char* forwardfile_gist = N_("Go to the next file in the list");
+    const char *tofiles_gist     = N_("Go to file browser");
+    const char *exitbrowser_gist = N_("Exit from the file browser");
+    const char *firstfile_gist   = N_("Go to the first file in the list");
+    const char *lastfile_gist    = N_("Go to the last file in the list");
+    const char *backfile_gist    = N_("Go to the previous file in the list");
+    const char *forwardfile_gist = N_("Go to the next file in the list");
 #        ifndef NANO_TINY
-    const char* browserlefthand_gist  = N_("Go to lefthand column");
-    const char* browserrighthand_gist = N_("Go to righthand column");
-    const char* browsertoprow_gist    = N_("Go to first row in this column");
-    const char* browserbottomrow_gist = N_("Go to last row in this column");
+    const char *browserlefthand_gist  = N_("Go to lefthand column");
+    const char *browserrighthand_gist = N_("Go to righthand column");
+    const char *browsertoprow_gist    = N_("Go to first row in this column");
+    const char *browserbottomrow_gist = N_("Go to last row in this column");
 #        endif
-    const char* browserwhereis_gist  = N_("Search forward for a string");
-    const char* browserwherewas_gist = N_("Search backward for a string");
-    const char* browserrefresh_gist  = N_("Refresh the file list");
-    const char* gotodir_gist         = N_("Go to directory");
+    const char *browserwhereis_gist  = N_("Search forward for a string");
+    const char *browserwherewas_gist = N_("Search backward for a string");
+    const char *browserrefresh_gist  = N_("Refresh the file list");
+    const char *gotodir_gist         = N_("Go to directory");
 #    endif
 #    ifdef ENABLE_LINTER
-    const char* lint_gist     = N_("Invoke the linter, if available");
-    const char* prevlint_gist = N_("Go to previous linter msg");
-    const char* nextlint_gist = N_("Go to next linter msg");
+    const char *lint_gist     = N_("Invoke the linter, if available");
+    const char *prevlint_gist = N_("Go to previous linter msg");
+    const char *nextlint_gist = N_("Go to next linter msg");
 #    endif
 #    ifdef ENABLE_FORMATTER
-    const char* formatter_gist = N_("Invoke a program to format/arrange/manipulate the buffer");
+    const char *formatter_gist = N_("Invoke a program to format/arrange/manipulate the buffer");
 #    endif
 #endif /* ENABLE_HELP */
 
     /* If Backspace is not ^H, then ^H can be used for Help. */
-    char* bsp_string = tgetstr("kb", NULL);
-    char* help_key   = (bsp_string && *bsp_string != 0x08) ? (char*)"^H" : (char*)"^N";
+    char *bsp_string = tgetstr("kb", NULL);
+    char *help_key   = (bsp_string && *bsp_string != 0x08) ? (char *)"^H" : (char *)"^N";
 
 #ifdef ENABLE_HELP
 #    define WHENHELP(description) description
@@ -963,9 +967,9 @@ shortcut_init(void)
 
 #ifdef ENABLE_HISTORIES
     add_to_funcs(
-    get_older_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Older"), WHENHELP(older_gist), TOGETHER);
-    add_to_funcs(
-    get_newer_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Newer"), WHENHELP(newer_gist), BLANKAFTER);
+        get_older_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Older"), WHENHELP(older_gist), TOGETHER);
+    add_to_funcs(get_newer_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Newer"), WHENHELP(newer_gist),
+                 BLANKAFTER);
 #    ifndef NANO_TINY
     add_to_funcs(get_older_item, MEXECUTE, N_("Older"), WHENHELP(older_command_gist), TOGETHER);
     add_to_funcs(get_newer_item, MEXECUTE, N_("Newer"), WHENHELP(newer_command_gist), BLANKAFTER);
@@ -1524,9 +1528,9 @@ shortcut_init(void)
     add_to_sclist(MWHEREIS | MGOTOLINE, SLASH_OR_DASH, 0, flip_goto, 0);
 #ifdef ENABLE_HISTORIES
     add_to_sclist(
-    MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^P", 0, get_older_item, 0);
+        MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^P", 0, get_older_item, 0);
     add_to_sclist(
-    MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^N", 0, get_newer_item, 0);
+        MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^N", 0, get_newer_item, 0);
 #    ifdef ENABLE_UTF8
     if (using_utf8())
     {
@@ -1538,8 +1542,8 @@ shortcut_init(void)
     else
 #    endif
     {
-        add_to_sclist(
-        MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Up", KEY_UP, get_older_item, 0);
+        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Up", KEY_UP,
+                      get_older_item, 0);
         add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Down", KEY_DOWN,
                       get_newer_item, 0);
     }
@@ -1642,7 +1646,7 @@ shortcut_init(void)
 
 #ifndef NANO_TINY
 /* Return the textual description that corresponds to the given flag. */
-const char*
+const char *
 epithet_of_flag(int flag)
 {
     switch (flag)

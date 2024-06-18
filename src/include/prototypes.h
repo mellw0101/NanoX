@@ -366,20 +366,15 @@ int    do_prompt(int menu, const char *provided, linestruct **history_list, void
 s32    ask_user(bool withall, const s8 *question);
 
 /* Most functions in rcfile.c. */
-#if defined(ENABLE_NANORC) || defined(ENABLE_HISTORIES)
-void display_rcfile_errors(void);
-void jot_error(const char *msg, ...);
-#endif
-#ifdef ENABLE_NANORC
+void       set_interface_color(s32 element, s8 *combotext);
+void       display_rcfile_errors(void);
+void       jot_error(const char *msg, ...);
 keystruct *strtosc(const char *input);
-#    ifdef ENABLE_COLOR
-void parse_one_include(char *file, syntaxtype *syntax);
-void grab_and_store(const char *kind, char *ptr, regexlisttype **storage);
-bool parse_syntax_commands(char *keyword, char *ptr);
-#    endif
-void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
-void do_rcfiles(void);
-#endif /* ENABLE_NANORC */
+void       parse_one_include(char *file, syntaxtype *syntax);
+void       grab_and_store(const char *kind, char *ptr, regexlisttype **storage);
+bool       parse_syntax_commands(char *keyword, char *ptr);
+void       parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
+void       do_rcfiles(void);
 
 /* Most functions in search.c. */
 bool    regexp_init(const char *regexp);

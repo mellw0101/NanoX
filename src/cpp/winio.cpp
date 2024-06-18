@@ -1358,7 +1358,6 @@ parse_kbinput(WINDOW *frame)
                     return CONTROL_RIGHT;
                 case 'D' :
                     return CONTROL_LEFT;
-#ifndef NANO_TINY
                 case 'a' :
                     shift_held = TRUE;
                     return KEY_PPAGE;
@@ -1371,7 +1370,6 @@ parse_kbinput(WINDOW *frame)
                 case 'd' :
                     shift_held = TRUE;
                     return KEY_END;
-#endif
             }
         }
         else if (waiting_codes && nextcodes[0] != ESC_CODE && (keycode == '[' || keycode == 'O'))
@@ -1727,6 +1725,9 @@ parse_kbinput(WINDOW *frame)
             return KEY_NPAGE;
         /* When requested, swap meanings of keycodes for <Bsp> and <Del>. */
         case DEL_CODE :
+        //
+        /// TODO : This is backspace.
+        //
         case KEY_BACKSPACE :
             return (ISSET(REBIND_DELETE) ? KEY_DC : KEY_BACKSPACE);
         case KEY_DC :
@@ -1755,9 +1756,7 @@ parse_kbinput(WINDOW *frame)
 #ifdef KEY_RESIZE /* SunOS 5.7-5.9 doesn't know KEY_RESIZE. */
         case KEY_RESIZE :
 #endif
-#ifndef NANO_TINY
         case KEY_FRESH :
-#endif
             return ERR; /* Ignore this keystroke. */
     }
 

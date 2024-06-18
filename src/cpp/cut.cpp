@@ -134,6 +134,7 @@ do_delete()
 // Backspace over one character.  That is, move the cursor left one
 // character, and then delete the character under the cursor.  Or,
 // when mark is on and --zap is active, delete the marked region.
+/// TODO : (do_backspace) NEEDED
 void
 do_backspace(void)
 {
@@ -535,8 +536,11 @@ copy_from_buffer(linestruct *somebuffer)
 #endif
 }
 
-#ifndef NANO_TINY
-/* Move all marked text from the current buffer into the cutbuffer. */
+//
+/// Move all marked text from the current buffer into the cutbuffer. */
+///
+/// TODO : (cut_marked_region) NEEDED
+//
 void
 cut_marked_region(void)
 {
@@ -549,7 +553,6 @@ cut_marked_region(void)
 
     openfile->placewewant = xplustabs();
 }
-#endif
 
 /* Move text from the current buffer into the cutbuffer.
  * If until_eof is TRUE, move all text from the current cursor
@@ -628,29 +631,24 @@ do_snip(bool marked, bool until_eof, bool append)
 void
 cut_text(void)
 {
-#ifndef NANO_TINY
     if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && openfile->mark == NULL))
     {
         return;
     }
 
-    /* Only add a new undo item when the current item is not a CUT or when
-     * the current cut is not contiguous with the previous cutting. */
+    //
+    /// Only add a new undo item when the current item is not a CUT or when
+    /// the current cut is not contiguous with the previous cutting.
+    //
     if (openfile->last_action != CUT || !keep_cutbuffer)
     {
-        keep_cutbuffer = FALSE;
-        add_undo(CUT, NULL);
+        keep_cutbuffer = false;
+        add_undo(CUT, nullptr);
     }
 
     do_snip(openfile->mark != NULL, FALSE, FALSE);
 
     update_undo(CUT);
-#else
-    if (is_cuttable(FALSE))
-    {
-        do_snip(FALSE, FALSE, FALSE);
-    }
-#endif
     wipe_statusbar();
 }
 
