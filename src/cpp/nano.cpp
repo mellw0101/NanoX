@@ -665,6 +665,8 @@ usage()
     print_opt("-_", "--minibar", N_("Show a feedback bar at the bottom"));
     print_opt("-0", "--zero", N_("Hide all bars, use whole terminal"));
     print_opt("-/", "--modernbindings", N_("Use better-known key bindings"));
+
+    exit(EXIT_SUCCESS);
 }
 
 /// @name @c version
@@ -675,7 +677,6 @@ usage()
 void
 version()
 {
-
     printf(" 'NanoX' is a Fork of 'GNU nano' from git source code made into "
            "cpp, %s\n",
            REVISION);
@@ -809,6 +810,8 @@ version()
     printf(" --disable-utf8");
 #endif
     printf("\n");
+
+    exit(EXIT_SUCCESS);
 }
 
 // List the names of the available syntaxes.
@@ -1110,7 +1113,7 @@ regenerate_screen(void)
 
 /* Invert the given global flag and adjust things for its new value. */
 void
-toggle_this(s32 flag)
+toggle_this(const s32 flag)
 {
     bool enabled = !ISSET(flag);
 
@@ -1139,7 +1142,7 @@ toggle_this(s32 flag)
                 statusline(AHEM, _("Too tiny"));
                 TOGGLE(flag);
             }
-            else if (ISSET(ZERO))
+            else if ISSET (ZERO)
             {
                 SET(CONSTANT_SHOW);
                 toggle_this(ZERO);
@@ -1187,9 +1190,9 @@ toggle_this(s32 flag)
         {
             return;
         }
-        if (ISSET(STATEFLAGS))
+        if ISSET (STATEFLAGS)
         {
-            titlebar(NULL);
+            titlebar(nullptr);
         }
     }
 
@@ -1236,13 +1239,11 @@ disable_kb_interrupt(void)
 void
 enable_kb_interrupt(void)
 {
-#ifdef HAVE_TERMIOS_H
     struct termios settings = {0};
 
     tcgetattr(0, &settings);
     settings.c_lflag |= ISIG;
     tcsetattr(0, TCSANOW, &settings);
-#endif
 }
 
 /* Disable the terminal's XON/XOFF flow-control characters. */
@@ -1837,10 +1838,152 @@ process_a_keystroke()
     }
 }
 
+//
+/// TODO : Finish this function, add all options
+//
+static const u32
+checkCliCmd(const std::string &str)
+{
+    static const std::unordered_map<std::string, const u32> map = {
+        {              "-I",   CLI_OPT_IGNORERCFILE},
+        { "--ignorercfiles",   CLI_OPT_IGNORERCFILE},
+        {              "-V",        CLI_OPT_VERSION},
+        {       "--version",        CLI_OPT_VERSION},
+        {              "-h",           CLI_OPT_HELP},
+        {          "--help",           CLI_OPT_HELP},
+        {              "-Y",         CLI_OPT_SYNTAX},
+        {        "--syntax",         CLI_OPT_SYNTAX},
+        {              "-X",      CLI_OPT_WORDCHARS},
+        {     "--wordchars",      CLI_OPT_WORDCHARS},
+        {              "-f",         CLI_OPT_RCFILE},
+        {        "--rcfile",         CLI_OPT_RCFILE},
+        {              "-T",        CLI_OPT_TABSIZE},
+        {       "--tabsize",        CLI_OPT_TABSIZE},
+        {        "--rcfile",         CLI_OPT_RCFILE},
+        {              "-o",   CLI_OPT_OPERATINGDIR},
+        {  "--operatingdir",   CLI_OPT_OPERATINGDIR},
+        {              "-r",           CLI_OPT_FILL},
+        {          "--fill",           CLI_OPT_FILL},
+        {              "-s",        CLI_OPT_SPELLER},
+        {       "--speller",        CLI_OPT_SPELLER},
+        {              "-z",     CLI_OPT_LISTSYNTAX},
+        {  "--listsyntaxes",     CLI_OPT_LISTSYNTAX},
+        {"--breaklonglines", CLI_OPT_BREAKLONGLINES},
+    };
+    const auto it = map.find(str);
+    return it != map.end() ? it->second : static_cast<u32>(0);
+}
+
+static const u32
+checkFlag(const std::string &str)
+{
+    static const std::unordered_map<std::string, const u32> map = {
+        {              "-A",      SMART_HOME},
+        {     "--smarthome",      SMART_HOME},
+        {              "-B",     MAKE_BACKUP},
+        {        "--backup",     MAKE_BACKUP},
+        {              "-C", INSECURE_BACKUP},
+        {     "--backupdir", INSECURE_BACKUP},
+        {              "-D",       BOLD_TEXT},
+        {      "--boldtext",       BOLD_TEXT},
+        {              "-E",  TABS_TO_SPACES},
+        {  "--tabstospaces",  TABS_TO_SPACES},
+        {              "-F",     MULTIBUFFER},
+        {   "--multibuffer",     MULTIBUFFER},
+        {              "-G",         LOCKING},
+        {       "--locking",         LOCKING},
+        {              "-H",      HISTORYLOG},
+        {    "--historylog",      HISTORYLOG},
+        {              "-J",         NO_WRAP},
+        {   "--guidestripe",         NO_WRAP},
+        {              "-K",   RAW_SEQUENCES},
+        {  "--rawsequences",   RAW_SEQUENCES},
+        {              "-L",     NO_NEWLINES},
+        {    "--nonewlines",     NO_NEWLINES},
+        {              "-M",     TRIM_BLANKS},
+        {    "--trimblanks",     TRIM_BLANKS},
+        {              "-N",      NO_CONVERT},
+        {     "--noconvert",      NO_CONVERT},
+        {              "-O",       BOOKSTYLE},
+        {     "--bookstyle",       BOOKSTYLE},
+        {              "-P",     POSITIONLOG},
+        {   "--positionlog",     POSITIONLOG},
+        {              "-Q",       NO_SYNTAX},
+        {      "--quotestr",       NO_SYNTAX},
+        {              "-R",      RESTRICTED},
+        {    "--restricted",      RESTRICTED},
+        {              "-S",        SOFTWRAP},
+        {      "--softwrap",        SOFTWRAP},
+        {              "-U",     QUICK_BLANK},
+        {    "--quickblank",     QUICK_BLANK},
+        {              "-W",     WORD_BOUNDS},
+        {    "--wordbounds",     WORD_BOUNDS},
+        {              "-Y",  CLI_OPT_SYNTAX},
+        {        "--syntax",  CLI_OPT_SYNTAX},
+        {              "-Z",    LET_THEM_ZAP},
+        {           "--zap",    LET_THEM_ZAP},
+        {              "-a",       AT_BLANKS},
+        {      "--atblanks",       AT_BLANKS},
+        {              "-c",   CONSTANT_SHOW},
+        {  "--constantshow",   CONSTANT_SHOW},
+        {              "-d",   REBIND_DELETE},
+        {  "--rebinddelete",   REBIND_DELETE},
+        {              "-e",      EMPTY_LINE},
+        {     "--emptyline",      EMPTY_LINE},
+        {              "-g",     SHOW_CURSOR},
+        {    "--showcursor",     SHOW_CURSOR},
+        {              "-h",         NO_HELP},
+        {          "--help",         NO_HELP},
+        {              "-i",      AUTOINDENT},
+        {    "--autoindent",      AUTOINDENT},
+        {              "-j", JUMPY_SCROLLING},
+        {"--jumpyscrolling", JUMPY_SCROLLING},
+        {              "-k", CUT_FROM_CURSOR},
+        { "--cutfromcursor", CUT_FROM_CURSOR},
+        {              "-l",    LINE_NUMBERS},
+        {   "--linenumbers",    LINE_NUMBERS},
+        {              "-m",       USE_MOUSE},
+        {         "--mouse",       USE_MOUSE},
+        {              "-n",     NOREAD_MODE},
+        {        "--noread",     NOREAD_MODE},
+        {              "-p",        PRESERVE},
+        {      "--preserve",        PRESERVE},
+        {              "-q",       INDICATOR},
+        {     "--indicator",       INDICATOR},
+        {              "-t",    SAVE_ON_EXIT},
+        {    "--saveonexit",    SAVE_ON_EXIT},
+        {              "-u",    MAKE_IT_UNIX},
+        {          "--unix",    MAKE_IT_UNIX},
+        {              "-v",       VIEW_MODE},
+        {          "--view",       VIEW_MODE},
+        {              "-w",         NO_WRAP},
+        {        "--nowrap",         NO_WRAP},
+        {              "-x",         NO_HELP},
+        {        "--nohelp",         NO_HELP},
+        {              "-y",      AFTER_ENDS},
+        {     "--afterends",      AFTER_ENDS},
+        {               "/", MODERN_BINDINGS},
+        {"--modernbindings", MODERN_BINDINGS},
+        {               "@",   COLON_PARSING},
+        {  "--colonparsing",   COLON_PARSING},
+        {               "%",      STATEFLAGS},
+        {    "--stateflags",      STATEFLAGS},
+        {               "_",         MINIBAR},
+        {       "--minibar",         MINIBAR},
+        {               "0",            ZERO},
+        {          "--zero",            ZERO},
+        {               "!",       USE_MAGIC},
+        {         "--magic",       USE_MAGIC},
+    };
+    const auto it = map.find(str);
+    return it != map.end() ? it->second : static_cast<u32>(0);
+}
+
 s32
 main(s32 argc, s8 **argv)
 {
-    s32 stdin_flags, optchr;
+    s32 stdin_flags;
+    // , optchr;
 
     /* Whether to ignore the nanorc files. */
     bool ignore_rcfiles = false;
@@ -1854,69 +1997,69 @@ main(s32 argc, s8 **argv)
     /* Whether the quoting regex was compiled successfully. */
     s32 quoterc;
 
-    const struct option long_options[] = {
-        {      "boldtext", 0, NULL, 'D'},
-        {   "multibuffer", 0, NULL, 'F'},
-        { "ignorercfiles", 0, NULL, 'I'},
-        {  "rawsequences", 0, NULL, 'K'},
-        {    "trimblanks", 0, NULL, 'M'},
-        {      "quotestr", 1, NULL, 'Q'},
-        {    "restricted", 0, NULL, 'R'},
-        {    "quickblank", 0, NULL, 'U'},
-        {       "version", 0, NULL, 'V'},
-        {        "syntax", 1, NULL, 'Y'},
-        {"breaklonglines", 0, NULL, 'b'},
-        {  "constantshow", 0, NULL, 'c'},
-        {  "rebinddelete", 0, NULL, 'd'},
-        {        "rcfile", 1, NULL, 'f'},
-        {    "showcursor", 0, NULL, 'g'},
-        {          "help", 0, NULL, 'h'},
-        {   "linenumbers", 0, NULL, 'l'},
-        {         "mouse", 0, NULL, 'm'},
-        {  "operatingdir", 1, NULL, 'o'},
-        {      "preserve", 0, NULL, 'p'},
-        {          "fill", 1, NULL, 'r'},
-        {       "speller", 1, NULL, 's'},
-        {    "saveonexit", 0, NULL, 't'},
-        {          "view", 0, NULL, 'v'},
-        {        "nowrap", 0, NULL, 'w'},
-        {        "nohelp", 0, NULL, 'x'},
-        {  "listsyntaxes", 0, NULL, 'z'},
-        {"modernbindings", 0, NULL, '/'},
-        {     "smarthome", 0, NULL, 'A'},
-        {        "backup", 0, NULL, 'B'},
-        {     "backupdir", 1, NULL, 'C'},
-        {  "tabstospaces", 0, NULL, 'E'},
-        {       "locking", 0, NULL, 'G'},
-        {    "historylog", 0, NULL, 'H'},
-        {   "guidestripe", 1, NULL, 'J'},
-        {    "nonewlines", 0, NULL, 'L'},
-        {     "noconvert", 0, NULL, 'N'},
-        {     "bookstyle", 0, NULL, 'O'},
-        {   "positionlog", 0, NULL, 'P'},
-        {      "softwrap", 0, NULL, 'S'},
-        {       "tabsize", 1, NULL, 'T'},
-        {    "wordbounds", 0, NULL, 'W'},
-        {     "wordchars", 1, NULL, 'X'},
-        {           "zap", 0, NULL, 'Z'},
-        {      "atblanks", 0, NULL, 'a'},
-        {     "emptyline", 0, NULL, 'e'},
-        {    "autoindent", 0, NULL, 'i'},
-        {"jumpyscrolling", 0, NULL, 'j'},
-        { "cutfromcursor", 0, NULL, 'k'},
-        {        "noread", 0, NULL, 'n'},
-        {     "indicator", 0, NULL, 'q'},
-        {          "unix", 0, NULL, 'u'},
-        {     "afterends", 0, NULL, 'y'},
-        {  "colonparsing", 0, NULL, '@'},
-        {    "stateflags", 0, NULL, '%'},
-        {       "minibar", 0, NULL, '_'},
-        {          "zero", 0, NULL, '0'},
-#ifdef HAVE_LIBMAGIC
-        {         "magic", 0, NULL, '!'},
-#endif
-        {            NULL, 0, NULL,   0}
-    };
+    //     const struct option long_options[] = {
+    //         {      "boldtext", 0, NULL, 'D'},
+    //         {   "multibuffer", 0, NULL, 'F'},
+    //         { "ignorercfiles", 0, NULL, 'I'},
+    //         {  "rawsequences", 0, NULL, 'K'},
+    //         {    "trimblanks", 0, NULL, 'M'},
+    //         {      "quotestr", 1, NULL, 'Q'},
+    //         {    "restricted", 0, NULL, 'R'},
+    //         {    "quickblank", 0, NULL, 'U'},
+    //         {       "version", 0, NULL, 'V'},
+    //         {        "syntax", 1, NULL, 'Y'},
+    //         {"breaklonglines", 0, NULL, 'b'},
+    //         {  "constantshow", 0, NULL, 'c'},
+    //         {  "rebinddelete", 0, NULL, 'd'},
+    //         {        "rcfile", 1, NULL, 'f'},
+    //         {    "showcursor", 0, NULL, 'g'},
+    //         {          "help", 0, NULL, 'h'},
+    //         {   "linenumbers", 0, NULL, 'l'},
+    //         {         "mouse", 0, NULL, 'm'},
+    //         {  "operatingdir", 1, NULL, 'o'},
+    //         {      "preserve", 0, NULL, 'p'},
+    //         {          "fill", 1, NULL, 'r'},
+    //         {       "speller", 1, NULL, 's'},
+    //         {    "saveonexit", 0, NULL, 't'},
+    //         {          "view", 0, NULL, 'v'},
+    //         {        "nowrap", 0, NULL, 'w'},
+    //         {        "nohelp", 0, NULL, 'x'},
+    //         {  "listsyntaxes", 0, NULL, 'z'},
+    //         {"modernbindings", 0, NULL, '/'},
+    //         {     "smarthome", 0, NULL, 'A'},
+    //         {        "backup", 0, NULL, 'B'},
+    //         {     "backupdir", 1, NULL, 'C'},
+    //         {  "tabstospaces", 0, NULL, 'E'},
+    //         {       "locking", 0, NULL, 'G'},
+    //         {    "historylog", 0, NULL, 'H'},
+    //         {   "guidestripe", 1, NULL, 'J'},
+    //         {    "nonewlines", 0, NULL, 'L'},
+    //         {     "noconvert", 0, NULL, 'N'},
+    //         {     "bookstyle", 0, NULL, 'O'},
+    //         {   "positionlog", 0, NULL, 'P'},
+    //         {      "softwrap", 0, NULL, 'S'},
+    //         {       "tabsize", 1, NULL, 'T'},
+    //         {    "wordbounds", 0, NULL, 'W'},
+    //         {     "wordchars", 1, NULL, 'X'},
+    //         {           "zap", 0, NULL, 'Z'},
+    //         {      "atblanks", 0, NULL, 'a'},
+    //         {     "emptyline", 0, NULL, 'e'},
+    //         {    "autoindent", 0, NULL, 'i'},
+    //         {"jumpyscrolling", 0, NULL, 'j'},
+    //         { "cutfromcursor", 0, NULL, 'k'},
+    //         {        "noread", 0, NULL, 'n'},
+    //         {     "indicator", 0, NULL, 'q'},
+    //         {          "unix", 0, NULL, 'u'},
+    //         {     "afterends", 0, NULL, 'y'},
+    //         {  "colonparsing", 0, NULL, '@'},
+    //         {    "stateflags", 0, NULL, '%'},
+    //         {       "minibar", 0, NULL, '_'},
+    //         {          "zero", 0, NULL, '0'},
+    // #ifdef HAVE_LIBMAGIC
+    //         {         "magic", 0, NULL, '!'},
+    // #endif
+    //         {            NULL, 0, NULL,   0}
+    //     };
 
 
     struct vt_stat dummy;
@@ -1955,215 +2098,284 @@ main(s32 argc, s8 **argv)
         SET(RESTRICTED);
     }
 
-    while ((optchr = getopt_long(argc, argv,
-                                 "ABC:DEFGHIJ:KLMNOPQ:RST:UVWX:Y:Z"
-                                 "abcdef:ghijklmno:pqr:s:tuvwxyz!@%_0/",
-                                 long_options, nullptr)) > 0)
+    for (s32 i = 1; i < argc; ++i)
     {
-        switch (optchr)
+        const u32 flag = checkFlag(argv[i]);
+        flag ? SET(flag) : 0;
+
+        const u32 cliCmd = checkCliCmd(argv[i]);
+        cliCmd &CLI_OPT_VERSION ? version() : void();
+        cliCmd &CLI_OPT_HELP ? usage() : void();
+        cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = true : 0;
+        cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = mallocstrcpy(backup_dir, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = mallocstrcpy(word_chars, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = mallocstrcpy(custom_nanorc, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_OPERATINGDIR ? (i++ < argc) ? operating_dir = mallocstrcpy(operating_dir, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
+        cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = mallocstrcpy(alt_speller, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
+        if (cliCmd & CLI_OPT_LISTSYNTAX)
         {
-            case 'A' :
-                SET(SMART_HOME);
-                break;
-            case 'B' :
-                SET(MAKE_BACKUP);
-                break;
-            case 'C' :
-                backup_dir = mallocstrcpy(backup_dir, optarg);
-                break;
-            case 'D' :
-                SET(BOLD_TEXT);
-                break;
-            case 'E' :
-                SET(TABS_TO_SPACES);
-                break;
-            case 'F' :
-                SET(MULTIBUFFER);
-                break;
-            case 'G' :
-                SET(LOCKING);
-                break;
-            case 'H' :
-                SET(HISTORYLOG);
-                break;
-            case 'I' :
-                ignore_rcfiles = true;
-                break;
-            case 'J' :
-                if (!parse_num(optarg, &stripe_column) || stripe_column <= 0)
-                {
-                    fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
-                    fprintf(stderr, "\n");
-                    exit(EXIT_FAILURE);
-                }
-                break;
-            case 'K' :
-                SET(RAW_SEQUENCES);
-                break;
-            case 'L' :
-                SET(NO_NEWLINES);
-                break;
-            case 'M' :
-                SET(TRIM_BLANKS);
-                break;
-            case 'N' :
-                SET(NO_CONVERT);
-                break;
-            case 'O' :
-                SET(BOOKSTYLE);
-                break;
-            case 'P' :
-                SET(POSITIONLOG);
-                break;
-            case 'Q' :
-                quotestr = mallocstrcpy(quotestr, optarg);
-                break;
-            case 'R' :
-                SET(RESTRICTED);
-                break;
-            case 'S' :
-                SET(SOFTWRAP);
-                break;
-            case 'T' :
-                if (!parse_num(optarg, &tabsize) || tabsize <= 0)
-                {
-                    fprintf(stderr, _("Requested tab size \"%s\" is invalid"), optarg);
-                    fprintf(stderr, "\n");
-                    exit(EXIT_FAILURE);
-                }
-                break;
-            case 'U' :
-                SET(QUICK_BLANK);
-                break;
-            case 'V' :
-                version();
-                exit(EXIT_SUCCESS);
-            case 'W' :
-                SET(WORD_BOUNDS);
-                break;
-            case 'X' :
-                word_chars = mallocstrcpy(word_chars, optarg);
-                break;
-            case 'Y' :
-                syntaxstr = mallocstrcpy(syntaxstr, optarg);
-                break;
-            case 'Z' :
-                SET(LET_THEM_ZAP);
-                break;
-            case 'a' :
-                SET(AT_BLANKS);
-                break;
-            case 'b' :
-                hardwrap = 1;
-                break;
-            case 'c' :
-                SET(CONSTANT_SHOW);
-                break;
-            case 'd' :
-                SET(REBIND_DELETE);
-                break;
-            case 'e' :
-                SET(EMPTY_LINE);
-                break;
-            case 'f' :
-                custom_nanorc = mallocstrcpy(custom_nanorc, optarg);
-                break;
-            case 'g' :
-                SET(SHOW_CURSOR);
-                break;
-            case 'h' :
-                usage();
-                exit(EXIT_SUCCESS);
-            case 'i' :
-                SET(AUTOINDENT);
-                break;
-            case 'j' :
-                SET(JUMPY_SCROLLING);
-                break;
-            case 'k' :
-                SET(CUT_FROM_CURSOR);
-                break;
-            case 'l' :
-                SET(LINE_NUMBERS);
-                break;
-            case 'm' :
-                SET(USE_MOUSE);
-                break;
-            case 'n' :
-                SET(NOREAD_MODE);
-                break;
-            case 'o' :
-                operating_dir = mallocstrcpy(operating_dir, optarg);
-                break;
-            case 'p' :
-                SET(PRESERVE);
-                break;
-            case 'q' :
-                SET(INDICATOR);
-                break;
-            case 'r' :
-                if (!parse_num(optarg, &fill))
+            if (!ignore_rcfiles)
+            {
+                do_rcfiles();
+            }
+            if (syntaxes)
+            {
+                list_syntax_names();
+            }
+            exit(EXIT_SUCCESS);
+        }
+        if (cliCmd & CLI_OPT_FILL)
+        {
+            if (i++ < argc)
+            {
+                if (!parseNum(argv[i], fill) || fill <= 0)
                 {
                     fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
                     fprintf(stderr, "\n");
                     exit(1);
                 }
-                fill_used = TRUE;
-                break;
-            case 's' :
-                alt_speller = mallocstrcpy(alt_speller, optarg);
-                break;
-            case 't' :
-                SET(SAVE_ON_EXIT);
-                break;
-            case 'u' :
-                SET(MAKE_IT_UNIX);
-                break;
-            case 'v' :
-                SET(VIEW_MODE);
-                break;
-            case 'w' :
-                hardwrap = 0;
-                break;
-            case 'x' :
-                SET(NO_HELP);
-                break;
-            case 'y' :
-                SET(AFTER_ENDS);
-                break;
-            case 'z' :
-                if (!ignore_rcfiles)
+                fill_used = true;
+            }
+        }
+        if (cliCmd & CLI_OPT_TABSIZE)
+        {
+            if (i++ < argc)
+            {
+                if (!parseNum(argv[i], tabsize) || tabsize <= 0)
                 {
-                    do_rcfiles();
+                    fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
+                    fprintf(stderr, "\n");
+                    exit(EXIT_FAILURE);
                 }
-                if (syntaxes)
+                continue;
+            }
+        }
+        if (cliCmd & CLI_OPT_GUIDESTRIPE)
+        {
+            if (argc < i++)
+            {
+                if (!parseNum(argv[i], stripe_column) || stripe_column <= 0)
                 {
-                    list_syntax_names();
+                    fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
+                    fprintf(stderr, "\n");
+                    exit(EXIT_FAILURE);
                 }
-                exit(0);
-            case '!' :
-                SET(USE_MAGIC);
-                break;
-            case '@' :
-                SET(COLON_PARSING);
-                break;
-            case '%' :
-                SET(STATEFLAGS);
-                break;
-            case '_' :
-                SET(MINIBAR);
-                break;
-            case '0' :
-                SET(ZERO);
-                break;
-            case '/' :
-                SET(MODERN_BINDINGS);
-                break;
-            default :
-                printf(_("Type '%s -h' for a list of available options.\n"), argv[0]);
-                exit(EXIT_FAILURE);
+            }
         }
     }
+
+    // while ((optchr = getopt_long(argc, argv,
+    //                              "ABC:DEFGHIJ:KLMNOPQ:RST:UVWX:Y:Z"
+    //                              "abcdef:ghijklmno:pqr:s:tuvwxyz!@%_0/",
+    //                              long_options, nullptr)) > 0)
+    // {
+    //     switch (optchr)
+    //     {
+    //         case 'A' :
+    //             SET(SMART_HOME);
+    //             break;
+    //         case 'B' :
+    //             SET(MAKE_BACKUP);
+    //             break;
+    //         case 'C' :
+    //             backup_dir = mallocstrcpy(backup_dir, optarg);
+    //             break;
+    //         case 'D' :
+    //             SET(BOLD_TEXT);
+    //             break;
+    //         case 'E' :
+    //             SET(TABS_TO_SPACES);
+    //             break;
+    //         case 'F' :
+    //             SET(MULTIBUFFER);
+    //             break;
+    //         case 'G' :
+    //             SET(LOCKING);
+    //             break;
+    //         case 'H' :
+    //             SET(HISTORYLOG);
+    //             break;
+    //         case 'I' :
+    //             ignore_rcfiles = true;
+    //             break;
+    //         case 'J' :
+    //             if (!parseNum(optarg, stripe_column) || stripe_column <= 0)
+    //             {
+    //                 fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
+    //                 fprintf(stderr, "\n");
+    //                 exit(EXIT_FAILURE);
+    //             }
+    //             break;
+    //         case 'K' :
+    //             SET(RAW_SEQUENCES);
+    //             break;
+    //         case 'L' :
+    //             SET(NO_NEWLINES);
+    //             break;
+    //         case 'M' :
+    //             SET(TRIM_BLANKS);
+    //             break;
+    //         case 'N' :
+    //             SET(NO_CONVERT);
+    //             break;
+    //         case 'O' :
+    //             SET(BOOKSTYLE);
+    //             break;
+    //         case 'P' :
+    //             SET(POSITIONLOG);
+    //             break;
+    //         case 'Q' :
+    //             quotestr = mallocstrcpy(quotestr, optarg);
+    //             break;
+    //         case 'R' :
+    //             SET(RESTRICTED);
+    //             break;
+    //         case 'S' :
+    //             SET(SOFTWRAP);
+    //             break;
+    //         case 'T' :
+    //             if (!parseNum(optarg, tabsize) || tabsize <= 0)
+    //             {
+    //                 fprintf(stderr, _("Requested tab size \"%s\" is invalid"), optarg);
+    //                 fprintf(stderr, "\n");
+    //                 exit(EXIT_FAILURE);
+    //             }
+    //             break;
+    //         case 'U' :
+    //             SET(QUICK_BLANK);
+    //             break;
+    //         case 'V' :
+    //             version();
+    //             exit(EXIT_SUCCESS);
+    //         case 'W' :
+    //             SET(WORD_BOUNDS);
+    //             break;
+    //         case 'X' :
+    //             word_chars = mallocstrcpy(word_chars, optarg);
+    //             break;
+    //         case 'Y' :
+    //             syntaxstr = mallocstrcpy(syntaxstr, optarg);
+    //             break;
+    //         case 'Z' :
+    //             SET(LET_THEM_ZAP);
+    //             break;
+    //         case 'a' :
+    //             SET(AT_BLANKS);
+    //             break;
+    //         case 'b' :
+    //             hardwrap = 1;
+    //             break;
+    //         case 'c' :
+    //             SET(CONSTANT_SHOW);
+    //             break;
+    //         case 'd' :
+    //             SET(REBIND_DELETE);
+    //             break;
+    //         case 'e' :
+    //             SET(EMPTY_LINE);
+    //             break;
+    //         case 'f' :
+    //             custom_nanorc = mallocstrcpy(custom_nanorc, optarg);
+    //             break;
+    //         case 'g' :
+    //             SET(SHOW_CURSOR);
+    //             break;
+    //         case 'h' :
+    //             usage();
+    //             exit(EXIT_SUCCESS);
+    //         case 'i' :
+    //             SET(AUTOINDENT);
+    //             break;
+    //         case 'j' :
+    //             SET(JUMPY_SCROLLING);
+    //             break;
+    //         case 'k' :
+    //             SET(CUT_FROM_CURSOR);
+    //             break;
+    //         case 'l' :
+    //             SET(LINE_NUMBERS);
+    //             break;
+    //         case 'm' :
+    //             SET(USE_MOUSE);
+    //             break;
+    //         case 'n' :
+    //             SET(NOREAD_MODE);
+    //             break;
+    //         case 'o' :
+    //             operating_dir = mallocstrcpy(operating_dir, optarg);
+    //             break;
+    //         case 'p' :
+    //             SET(PRESERVE);
+    //             break;
+    //         case 'q' :
+    //             SET(INDICATOR);
+    //             break;
+    //         case 'r' :
+    //             if (!parseNum(optarg, fill))
+    //             {
+    //                 fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
+    //                 fprintf(stderr, "\n");
+    //                 exit(1);
+    //             }
+    //             fill_used = TRUE;
+    //             break;
+    //         case 's' :
+    //             alt_speller = mallocstrcpy(alt_speller, optarg);
+    //             break;
+    //         case 't' :
+    //             SET(SAVE_ON_EXIT);
+    //             break;
+    //         case 'u' :
+    //             SET(MAKE_IT_UNIX);
+    //             break;
+    //         case 'v' :
+    //             SET(VIEW_MODE);
+    //             break;
+    //         case 'w' :
+    //             hardwrap = 0;
+    //             break;
+    //         case 'x' :
+    //             SET(NO_HELP);
+    //             break;
+    //         case 'y' :
+    //             SET(AFTER_ENDS);
+    //             break;
+    //         case 'z' :
+    //             if (!ignore_rcfiles)
+    //             {
+    //                 do_rcfiles();
+    //             }
+    //             if (syntaxes)
+    //             {
+    //                 list_syntax_names();
+    //             }
+    //             exit(0);
+    //         case '!' :
+    //             SET(USE_MAGIC);
+    //             break;
+    //         case '@' :
+    //             SET(COLON_PARSING);
+    //             break;
+    //         case '%' :
+    //             SET(STATEFLAGS);
+    //             break;
+    //         case '_' :
+    //             SET(MINIBAR);
+    //             break;
+    //         case '0' :
+    //             SET(ZERO);
+    //             break;
+    //         case '/' :
+    //             SET(MODERN_BINDINGS);
+    //             break;
+    //         default :
+    //             printf(_("Type '%s -h' for a list of available options.\n"), argv[0]);
+    //             exit(EXIT_FAILURE);
+    //     }
+    // }
 
     // Curses needs TERM; if it is unset, try falling back to a VT220.
     if (getenv("TERM") == nullptr)
@@ -2355,18 +2567,10 @@ main(s32 argc, s8 **argv)
     }
 
     /* Set the default value for things that weren't specified. */
-    if (punct == nullptr)
-    {
-        punct = copy_of("!.?");
-    }
-    if (brackets == nullptr)
-    {
-        brackets = copy_of("\"')>]}");
-    }
-    if (quotestr == nullptr)
-    {
-        quotestr = copy_of("^([ \t]*([!#%:;>|}]|/{2}))+");
-    }
+    (punct == nullptr) ? punct = copy_of("!.?") : 0;
+    (brackets == nullptr) ? brackets = copy_of("\"')>]}") : 0;
+    (quotestr == nullptr) ? quotestr = copy_of("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
+
 
     /* Compile the quoting regex, and exit when it's invalid. */
     quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
@@ -2596,6 +2800,19 @@ main(s32 argc, s8 **argv)
         }
         else
         {
+            const u32 flag   = checkFlag(argv[optind]);
+            const u32 cliCmd = checkCliCmd(argv[optind]);
+            if (cliCmd)
+            {
+                optind += 2;
+                continue;
+            }
+            if (flag)
+            {
+                optind++;
+                continue;
+            }
+
             s8         *filename = argv[optind++];
             struct stat fileinfo;
 

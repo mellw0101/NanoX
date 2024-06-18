@@ -596,3 +596,37 @@ typedef struct completionstruct
 
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"
+
+enum ConfigOption : const s32
+{
+    OPERATINGDIR     = (1 << 0),
+    FILL             = (1 << 1),
+    MATCHBRACKETS    = (1 << 2),
+    WHITESPACE       = (1 << 3),
+    PUNCT            = (1 << 4),
+    BRACKETS         = (1 << 5),
+    QUOTESTR         = (1 << 6),
+    SPELLER          = (1 << 7),
+    BACKUPDIR        = (1 << 8),
+    WORDCHARS        = (1 << 9),
+    GUIDESTRIPE      = (1 << 10),
+    CONF_OPT_TABSIZE = (1 << 11)
+};
+
+enum CliOptions : const u32
+{
+    CLI_OPT_IGNORERCFILE   = (1 << 0),
+    CLI_OPT_VERSION        = (1 << 1),
+    CLI_OPT_HELP           = (1 << 2),
+    CLI_OPT_SYNTAX         = (1 << 3),
+    CLI_OPT_RCFILE         = (1 << 4),
+    CLI_OPT_GUIDESTRIPE    = (1 << 5),
+    CLI_OPT_WORDCHARS      = (1 << 6),
+    CLI_OPT_TABSIZE        = (1 << 7),
+    CLI_OPT_OPERATINGDIR   = (1 << 8),
+    CLI_OPT_FILL           = (1 << 9),
+    CLI_OPT_SPELLER        = (1 << 10),
+    CLI_OPT_LISTSYNTAX     = (1 << 11),
+    CLI_OPT_BACKUPDIR      = (1 << 12),
+    CLI_OPT_BREAKLONGLINES = (1 << 13),
+};

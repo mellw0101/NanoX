@@ -441,7 +441,7 @@ void      get_homedir();
 const s8 *tail(const s8 *path);
 char     *concatenate(const char *path, const char *name);
 int       digits(s64 n);
-bool      parse_num(const char *str, s64 *result);
+bool      parseNum(const std::string &string, int64_t &result);
 bool      parse_line_column(const char *str, s64 *line, s64 *column);
 void      recode_NUL_to_LF(char *string, u64 length);
 u64       recode_LF_to_NUL(char *string);

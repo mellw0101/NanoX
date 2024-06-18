@@ -120,26 +120,46 @@ digits(s64 n)
     }
 }
 
-// Read an integer from the given string.  If it parses okay,
-// store it in *result and return TRUE; otherwise, return FALSE.
-bool
-parse_num(const s8 *string, s64 *result)
-{
-    ssize_t value;
-    s8     *excess;
+//
+/// Original code: From GNU nano 8.0.1
+/*
+    // Read an integer from the given string.  If it parses okay,
+    // store it in *result and return TRUE; otherwise, return FALSE.
+    bool
+    parse_num(const s8 *string, s64 *result)
+    {
+        ssize_t value;
+        s8     *excess;
 
-    /* Clear the error number so that we can check it afterward. */
+        // Clear the error number so that we can check it afterward.
+        errno = 0;
+
+        value = (ssize_t)strtol(string, &excess, 10);
+
+        if (errno == ERANGE || *string == '\0' || *excess != '\0')
+        {
+            return false;
+        }
+
+        *result = value;
+
+        return true;
+    }
+*/
+bool
+parseNum(const std::string &string, s64 &result)
+{
+    s8 *end;
     errno = 0;
 
-    value = (ssize_t)strtol(string, &excess, 10);
+    long long value = std::strtoll(&string[0], &end, 10);
 
-    if (errno == ERANGE || *string == '\0' || *excess != '\0')
+    if (errno == ERANGE || *end != '\0' || string[0] == '\0')
     {
         return false;
     }
 
-    *result = value;
-
+    result = static_cast<s64>(value);
     return true;
 }
 
@@ -160,12 +180,12 @@ parse_line_column(const s8 *string, s64 *line, s64 *column)
 
     comma = strpbrk(string, ",.:");
 
-    if (comma == NULL)
+    if (comma == nullptr)
     {
-        return parse_num(string, line);
+        return parseNum(string, *line);
     }
 
-    retval = parse_num(comma + 1, column);
+    retval = parseNum(comma + 1, *column);
 
     if (comma == string)
     {
@@ -175,7 +195,7 @@ parse_line_column(const s8 *string, s64 *line, s64 *column)
     firstpart                 = copy_of(string);
     firstpart[comma - string] = '\0';
 
-    retval = parse_num(firstpart, line) && retval;
+    retval = parseNum(firstpart, *line) && retval;
 
     free(firstpart);
 

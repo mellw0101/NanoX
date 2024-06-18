@@ -1,74 +1,46 @@
 /// @file rcfile.cpp
 #include "../include/prototypes.h"
 
-#ifdef ENABLE_NANORC
 
-#    include <cctype>
-#    include <cerrno>
-#    include <cstring>
-#    include <glob.h>
-#    include <unistd.h>
+#include <cctype>
+#include <cerrno>
+#include <cstring>
+#include <glob.h>
+#include <unistd.h>
 
-#    ifndef RCFILE_NAME
-#        define HOME_RC_NAME ".nanorc"
-#        define RCFILE_NAME  "nanorc"
-#    else
-#        define HOME_RC_NAME RCFILE_NAME
-#    endif
+#ifndef RCFILE_NAME
+#    define HOME_RC_NAME ".nanorc"
+#    define RCFILE_NAME  "nanorc"
+#else
+#    define HOME_RC_NAME RCFILE_NAME
+#endif
 
 static const rcoption rcopts[] = {
     {             "boldtext",        BOLD_TEXT},
-#    ifdef ENABLE_JUSTIFY
     {             "brackets",                0},
-#    endif
-#    ifdef ENABLE_WRAPPING
     {       "breaklonglines", BREAK_LONG_LINES},
-#    endif
     {        "casesensitive",   CASE_SENSITIVE},
     {         "constantshow",    CONSTANT_SHOW},
-#    ifdef ENABLED_WRAPORJUSTIFY
     {                 "fill",                0},
-#    endif
-#    ifdef ENABLE_HISTORIES
     {           "historylog",       HISTORYLOG},
-#    endif
-#    ifdef ENABLE_LINENUMBERS
     {          "linenumbers",     LINE_NUMBERS},
-#    endif
-#    ifdef HAVE_LIBMAGIC
     {                "magic",        USE_MAGIC},
-#    endif
-#    ifdef ENABLE_MOUSE
     {                "mouse",        USE_MOUSE},
-#    endif
-#    ifdef ENABLE_MULTIBUFFER
     {          "multibuffer",      MULTIBUFFER},
-#    endif
     {               "nohelp",          NO_HELP},
     {           "nonewlines",      NO_NEWLINES},
-#    ifdef ENABLE_WRAPPING
     {               "nowrap",          NO_WRAP}, /* Deprecated; remove in 2027. */
-#    endif
-#    ifdef ENABLE_OPERATINGDIR
     {         "operatingdir",                0},
-#    endif
-#    ifdef ENABLE_HISTORIES
     {          "positionlog",      POSITIONLOG},
-#    endif
     {             "preserve",         PRESERVE},
-#    ifdef ENABLE_JUSTIFY
     {                "punct",                0},
     {             "quotestr",                0},
-#    endif
     {           "quickblank",      QUICK_BLANK},
     {         "rawsequences",    RAW_SEQUENCES},
     {         "rebinddelete",    REBIND_DELETE},
     {               "regexp",       USE_REGEXP},
     {           "saveonexit",     SAVE_ON_EXIT},
-#    ifdef ENABLE_SPELLER
     {              "speller",                0},
-#    endif
-#    ifndef NANO_TINY
     {            "afterends",       AFTER_ENDS},
     {"allow_insecure_backup",  INSECURE_BACKUP},
     {             "atblanks",        AT_BLANKS},
@@ -99,8 +71,6 @@ static const rcoption rcopts[] = {
     {            "wordchars",                0},
     {                  "zap",     LET_THEM_ZAP},
     {                 "zero",             ZERO},
-#    endif
-#    ifdef ENABLE_COLOR
     {           "titlecolor",                0},
     {          "numbercolor",                0},
     {          "stripecolor",                0},
@@ -113,26 +83,28 @@ static const rcoption rcopts[] = {
     {           "errorcolor",                0},
     {             "keycolor",                0},
     {        "functioncolor",                0},
-#    endif
     {                   NULL,                0}
 };
 
-static size_t lineno = 0;
 /* The line number of the last encountered error. */
-static char *nanorc = NULL;
+static size_t lineno = 0;
+
 /* The path to the rcfile we're parsing. */
-#    ifdef ENABLE_COLOR
-static bool opensyntax = FALSE;
+static char *nanorc = NULL;
+
 /* Whether we're allowed to add to the last syntax.  When a file ends,
  * or when a new syntax command is seen, this bool becomes FALSE. */
-static syntaxtype *live_syntax;
+static bool opensyntax = FALSE;
+
 /* The syntax that is currently being parsed. */
-static bool seen_color_command = FALSE;
+static syntaxtype *live_syntax;
+
 /* Whether a syntax definition contains any color commands. */
-static colortype *lastcolor = NULL;
+static bool seen_color_command = FALSE;
+
 /* The end of the color list for the current syntax. */
-#    endif
-#endif /* ENABLE_NANORC */
+static colortype *lastcolor = NULL;
+
 
 static linestruct *errors_head = nullptr;
 static linestruct *errors_tail = nullptr;
@@ -140,7 +112,7 @@ static linestruct *errors_tail = nullptr;
 
 /* Send the gathered error messages (if any) to the terminal. */
 void
-display_rcfile_errors(void)
+display_rcfile_errors()
 {
     for (linestruct *error = errors_head; error != nullptr; error = error->next)
     {
@@ -150,14 +122,20 @@ display_rcfile_errors(void)
 
 #define MAXSIZE (PATH_MAX + 200)
 
+//
 /// @name @c jot_error
+///
 /// @brief
 ///  -  Store the given error message in a linked list, to be printed upon exit.
+///
 /// @param msg
 ///  -  The error message, possibly with @c printf-style format specifiers.
+///
 /// @param ...
 ///  -  The arguments to be inserted into the format specifiers.
+///
 /// @returns @c void
+//
 void
 jot_error(const s8 *msg, ...)
 {
@@ -964,7 +942,7 @@ check_for_nonempty_syntax()
 
 /* Return TRUE when the given function is present in almost all menus. */
 bool
-is_universal(void (*func)(void))
+is_universal(void (*func)())
 {
     return (func == do_left || func == do_right || func == do_home || func == do_end ||
 #ifndef NANO_TINY
@@ -1848,10 +1826,23 @@ check_vitals_mapped()
     }
 }
 
+//
+/// @name
+///  -  @c checkForColorOptions
+///
+/// @brief
+///  -  Check for the color options in the rcfile.
+///
+/// @param keyword ( const std::string & )
+///  -  The keyword to check for.
+///
+/// @returns ( s32 )
+///  -  The color option.
+//
 static s32
 checkForColorOptions(const std::string &keyword)
 {
-    static std::unordered_map<std::string, s32> colorOptionsMap = {
+    static const std::unordered_map<std::string, const s32> colorOptionsMap = {
         {    "titlecolor",     TITLE_BAR},
         {   "numbercolor",   LINE_NUMBER},
         {   "stripecolor",  GUIDE_STRIPE},
@@ -1865,8 +1856,29 @@ checkForColorOptions(const std::string &keyword)
         {      "keycolor",     KEY_COMBO},
         { "functioncolor",  FUNCTION_TAG}
     };
-    auto it = colorOptionsMap.find(keyword);
+    const auto it = colorOptionsMap.find(keyword);
     return it != colorOptionsMap.end() ? it->second : INT32_MAX;
+}
+
+static u32
+checkForConfigOptions(const std::string &keyWord)
+{
+    static const std::unordered_map<std::string, const u32> map = {
+        { "operatingdir",     OPERATINGDIR},
+        {         "fill",             FILL},
+        {"matchbrackets",    MATCHBRACKETS},
+        {   "whitespace",       WHITESPACE},
+        {        "punct",            PUNCT},
+        {     "brackets",         BRACKETS},
+        {     "quotestr",         QUOTESTR},
+        {      "speller",          SPELLER},
+        {    "backupdir",        BACKUPDIR},
+        {    "wordchars",        WORDCHARS},
+        {  "guidestripe",      GUIDESTRIPE},
+        {      "tabsize", CONF_OPT_TABSIZE}
+    };
+    const auto it = map.find(keyWord);
+    return it != map.end() ? it->second : static_cast<u32>(0);
 }
 
 //
@@ -1889,6 +1901,9 @@ checkForColorOptions(const std::string &keyword)
 ///
 /// @returns ( void )
 //
+/// TODO : This function is too long and needs to be refactored.
+///        It is also convoluted and hard to follow.
+//
 void
 parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 {
@@ -1896,6 +1911,9 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
     u64 size   = 0;
     s64 length = 0;
 
+    //
+    /// TODO : This is the main loop for rcfile parsing. FIX IT
+    //
     while ((length = getline(&buffer, &size, rcstream)) > 0)
     {
         s8 *ptr, *keyword, *option, *argument;
@@ -2184,24 +2202,33 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         /// @see checkForColorOptions
         //
         const s32 colorOption = checkForColorOptions(option);
-        if (colorOption != INT32_MAX)
-        {
-            set_interface_color(colorOption, argument);
-        }
+        (colorOption == INT32_MAX) ? void() : set_interface_color(colorOption, argument);
 
-        if (strcmp(option, "operatingdir") == 0)
+        //
+        /// Check for configuration options.
+        /// This uses a unordered map and a
+        /// enum with bit mask values like (1 << 0)
+        /// for the first enum, (1 << 1) for the second and so on.
+        /// This way we can check for configuration options using bitwise operations.
+        /// This is a far more efficient way to check for configuration options
+        /// then using strcmp for each option.
+        ///
+        /// @see checkForConfigOptions
+        //
+        const u32 configOption = checkForConfigOptions(option);
+        if (configOption & OPERATINGDIR)
         {
             operating_dir = mallocstrcpy(operating_dir, argument);
         }
-        else if (strcmp(option, "fill") == 0)
+        else if (configOption & FILL)
         {
-            if (!parse_num(argument, &fill))
+            if (!parseNum(argument, fill))
             {
                 jot_error(N_("Requested fill size \"%s\" is invalid"), argument);
                 fill = -COLUMNS_FROM_EOL;
             }
         }
-        else if (strcmp(option, "matchbrackets") == 0)
+        else if (configOption & MATCHBRACKETS)
         {
             if (has_blank_char(argument))
             {
@@ -2216,7 +2243,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 matchbrackets = mallocstrcpy(matchbrackets, argument);
             }
         }
-        else if (strcmp(option, "whitespace") == 0)
+        else if (configOption & WHITESPACE)
         {
             if (mbstrlen(argument) != 2 || breadth(argument) != 2)
             {
@@ -2229,7 +2256,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 whitelen[1] = char_length(whitespace + whitelen[0]);
             }
         }
-        else if (strcmp(option, "punct") == 0)
+        else if (configOption & PUNCT)
         {
             if (has_blank_char(argument))
             {
@@ -2240,7 +2267,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 punct = mallocstrcpy(punct, argument);
             }
         }
-        else if (strcmp(option, "brackets") == 0)
+        else if (configOption & BRACKETS)
         {
             if (has_blank_char(argument))
             {
@@ -2251,33 +2278,33 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 brackets = mallocstrcpy(brackets, argument);
             }
         }
-        else if (strcmp(option, "quotestr") == 0)
+        else if (configOption & QUOTESTR)
         {
             quotestr = mallocstrcpy(quotestr, argument);
         }
-        else if (strcmp(option, "speller") == 0)
+        else if (configOption & SPELLER)
         {
             alt_speller = mallocstrcpy(alt_speller, argument);
         }
-        else if (strcmp(option, "backupdir") == 0)
+        else if (configOption & BACKUPDIR)
         {
             backup_dir = mallocstrcpy(backup_dir, argument);
         }
-        else if (strcmp(option, "wordchars") == 0)
+        else if (configOption & WORDCHARS)
         {
             word_chars = mallocstrcpy(word_chars, argument);
         }
-        else if (strcmp(option, "guidestripe") == 0)
+        else if (configOption & GUIDESTRIPE)
         {
-            if (!parse_num(argument, &stripe_column) || stripe_column <= 0)
+            if (!parseNum(argument, stripe_column) || stripe_column <= 0)
             {
                 jot_error(N_("Guide column \"%s\" is invalid"), argument);
                 stripe_column = 0;
             }
         }
-        else if (strcmp(option, "tabsize") == 0)
+        else if (configOption & CONF_OPT_TABSIZE)
         {
-            if (!parse_num(argument, &tabsize) || tabsize <= 0)
+            if (!parseNum(argument, tabsize) || tabsize <= 0)
             {
                 jot_error(N_("Requested tab size \"%s\" is invalid"), argument);
                 tabsize = -1;
