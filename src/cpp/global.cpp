@@ -1,74 +1,93 @@
 #include "../include/prototypes.h"
 
 #include <Mlib/def.h>
-#include <ctype.h>
-#include <string.h>
+#include <cctype>
+#include <cstring>
 #include <strings.h>
 #include <term.h>
 
-/* Global variables. */
-#ifndef NANO_TINY
-volatile sig_atomic_t the_window_resized = FALSE;
-/* Set to TRUE by the handler whenever a SIGWINCH occurs. */
-#endif
+//  Global variables.
 
-bool on_a_vt = FALSE;
-/* Whether we're running on a Linux console (a VT). */
-bool shifted_metas = FALSE;
-/* Whether any Sh-M-<letter> combo has been bound. */
-
+//
+//  Set to TRUE by the handler whenever a SIGWINCH occurs.
+//
+volatile sig_atomic_t the_window_resized = false;
+//
+//  Whether we're running on a Linux console (a VT). */
+//
+bool on_a_vt = false;
+//
+//  Whether any Sh-M-<letter> combo has been bound.
+//
+bool shifted_metas = false;
+//
+//  Whether the current keystroke is a Meta key.
+//
 bool meta_key;
-/* Whether the current keystroke is a Meta key. */
+//
+//  Whether Shift was being held together with a movement key.
+//
 bool shift_held;
-/* Whether Shift was being held together with a movement key. */
-bool mute_modifiers = FALSE;
-/* Whether to ignore modifier keys while running a macro or string bind. */
-bool bracketed_paste = FALSE;
-/* Whether text is being pasted into nano from outside. */
+//
+//  Whether to ignore modifier keys while running a macro or string bind.
+//
+bool mute_modifiers = false;
+//
+//  Whether text is being pasted into nano from outside.
+//
+bool bracketed_paste = false;
+//
+//  Becomes TRUE as soon as all options and files have been read.
+//
+bool we_are_running = false;
+//
+//  Whether more than one buffer is or has been open.
+//
+bool more_than_one = false;
 
-bool we_are_running = FALSE;
-/* Becomes TRUE as soon as all options and files have been read. */
-bool more_than_one = FALSE;
-/* Whether more than one buffer is or has been open. */
-bool report_size = TRUE;
 /* Whether to show the number of lines when the minibar is used. */
-bool ran_a_tool = FALSE;
+bool report_size = TRUE;
+
 /* Whether a tool has been run at the Execute-Command prompt. */
+bool ran_a_tool = false;
 
-bool inhelp = FALSE;
 /* Whether we are in the help viewer. */
-char *title = NULL;
-/* When not NULL: the title of the current help text. */
+bool inhelp = false;
 
-bool refresh_needed = FALSE;
+/* When not NULL: the title of the current help text. */
+char *title = NULL;
+
 /* Did a command mangle enough of the buffer that we should
  * repaint the screen? */
-bool focusing = TRUE;
+bool refresh_needed = false;
+
 /* Whether an update of the edit window should center the cursor. */
+bool focusing = TRUE;
 
-bool as_an_at = TRUE;
 /* Whether a 0x0A byte should be shown as a ^@ instead of a ^J. */
+bool as_an_at = TRUE;
 
-bool control_C_was_pressed = FALSE;
 /* Whether Ctrl+C was pressed (when a keyboard interrupt is enabled). */
+bool control_C_was_pressed = false;
 
-message_type lastmessage = VACUUM;
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
+message_type lastmessage = VACUUM;
 
-linestruct *pletion_line = NULL;
 /* The line where the last completion was found, if any. */
+linestruct *pletion_line = NULL;
 
-bool also_the_last = FALSE;
 /* Whether indenting/commenting should include the last line of
  * the marked region. */
+bool also_the_last = false;
 
-char *answer = NULL;
 /* The answer string used by the status-bar prompt. */
+char *answer = NULL;
 
-char *last_search = NULL;
 /* The last string we searched for. */
-int didfind = 0;
+char *last_search = NULL;
+
 /* Whether the last search found something. */
+int didfind = 0;
 
 char *present_path = NULL;
 /* The current browser directory when trying to do tab completion. */
@@ -78,7 +97,6 @@ unsigned flags[4] = {0, 0, 0, 0};
 
 int controlleft, controlright, controlup, controldown;
 int controlhome, controlend;
-#ifndef NANO_TINY
 int controldelete, controlshiftdelete;
 int shiftleft, shiftright, shiftup, shiftdown;
 int shiftcontrolleft, shiftcontrolright, shiftcontrolup, shiftcontroldown;
@@ -87,113 +105,117 @@ int altleft, altright, altup, altdown;
 int althome, altend, altpageup, altpagedown;
 int altinsert, altdelete;
 int shiftaltleft, shiftaltright, shiftaltup, shiftaltdown;
-#endif
 int mousefocusin, mousefocusout;
 
-#ifdef ENABLED_WRAPORJUSTIFY
-ssize_t fill = -COLUMNS_FROM_EOL;
 /* The relative column where we will wrap lines. */
-size_t wrap_at = 0;
-/* The actual column where we will wrap lines, based on fill. */
-#endif
+ssize_t fill = -COLUMNS_FROM_EOL;
 
-WINDOW *topwin = NULL;
+/* The actual column where we will wrap lines, based on fill. */
+size_t wrap_at = 0;
+
 /* The top portion of the screen, showing the version number of nano,
  * the name of the file, and whether the buffer was modified. */
-WINDOW *midwin = NULL;
+WINDOW *topwin = NULL;
+
 /* The middle portion of the screen: the edit window, showing the
  * contents of the current buffer, the file we are editing. */
-WINDOW *footwin = NULL;
+WINDOW *midwin = NULL;
+
 /* The bottom portion of the screen, where status-bar messages,
  * the status-bar prompt, and a list of shortcuts are shown. */
-int editwinrows = 0;
+WINDOW *footwin = NULL;
+
 /* How many rows does the edit window take up? */
-int editwincols = -1;
+int editwinrows = 0;
+
 /* The number of usable columns in the edit window: COLS - margin. */
-int margin = 0;
+int editwincols = -1;
+
 /* The amount of space reserved at the left for line numbers. */
-int sidebar = 0;
+int margin = 0;
+
 /* Becomes 1 when the indicator "scroll bar" must be shown. */
-#ifndef NANO_TINY
-int *bardata = NULL;
+int sidebar = 0;
+
 /* An array of characters that together depict the scrollbar. */
-ssize_t stripe_column = 0;
+int *bardata = NULL;
+
 /* The column at which a vertical bar will be drawn. */
-int cycling_aim = 0;
+ssize_t stripe_column = 0;
+
 /* Whether to center the line with the cursor (0), push it
  * to the top of the viewport (1), or to the bottom (2). */
-#endif
+int cycling_aim = 0;
 
-linestruct *cutbuffer = NULL;
 /* The buffer where we store cut text. */
-linestruct *cutbottom = NULL;
+linestruct *cutbuffer = NULL;
+
 /* The last line in the cutbuffer. */
-bool keep_cutbuffer = FALSE;
+linestruct *cutbottom = NULL;
+
 /* Whether to add to the cutbuffer instead of clearing it first. */
+bool keep_cutbuffer = FALSE;
 
-openfilestruct *openfile = NULL;
 /* The list of all open file buffers. */
-#ifdef ENABLE_MULTIBUFFER
-openfilestruct *startfile = NULL;
+openfilestruct *openfile = NULL;
+
 /* The first open buffer. */
-#endif
+openfilestruct *startfile = NULL;
 
-#ifndef NANO_TINY
-char *matchbrackets = NULL;
 /* The opening and closing brackets that bracket searches can find. */
-char *whitespace = NULL;
-/* The characters used when visibly showing tabs and spaces. */
-int whitelen[2];
-/* The length in bytes of these characters. */
-#endif  // NANO_TINY
+char *matchbrackets = NULL;
 
-#ifdef ENABLE_JUSTIFY
-char *punct = NULL;
+/* The characters used when visibly showing tabs and spaces. */
+char *whitespace = NULL;
+
+/* The length in bytes of these characters. */
+int whitelen[2];
+
 /* The closing punctuation that can end sentences. */
-char *brackets = NULL;
+char *punct = NULL;
+
 /* The closing brackets that can follow closing punctuation and
  * can end sentences. */
-char *quotestr = NULL;
+char *brackets = NULL;
+
 /* The quoting string.  The default value is set in main(). */
-regex_t quotereg;
+char *quotestr = NULL;
+
 /* The compiled regular expression from the quoting string. */
-#endif  // ENABLE_JUSTIFY
+regex_t quotereg;
 
-char *word_chars = NULL;
 /* Nonalphanumeric characters that also form words. */
+char *word_chars = NULL;
 
-ssize_t tabsize = -1;
 /* The width of a tab in spaces.  The default is set in main(). */
+ssize_t tabsize = -1;
 
-#ifndef NANO_TINY
-char *backup_dir = NULL;
 /* The directory where we store backup files. */
-#endif  // NANO_TINY
+char *backup_dir = NULL;
 
-#ifdef ENABLE_OPERATINGDIR
-char *operating_dir = NULL;
 /* The path to our confining "operating" directory, when given. */
-#endif  // ENABLE_OPERATINGDIR
+char *operating_dir = NULL;
 
-#ifdef ENABLE_SPELLER
-char *alt_speller = NULL;
 /* The command to use for the alternate spell checker. */
-#endif
+char *alt_speller = NULL;
 
-#ifdef ENABLE_COLOR
-syntaxtype *syntaxes = NULL;
 /* The global list of color syntaxes. */
-char *syntaxstr = NULL;
+syntaxtype *syntaxes = NULL;
+
 /* The color syntax name specified on the command line. */
-bool have_palette = FALSE;
+char *syntaxstr = NULL;
+
 /* Whether the colors for the current syntax have been initialized. */
-bool rescind_colors = FALSE;
+bool have_palette = FALSE;
+
 /* Becomes TRUE when NO_COLOR is set in the environment. */
-bool perturbed = FALSE;
+bool rescind_colors = FALSE;
+
 /* Whether the multiline-coloring situation has changed. */
-bool recook = FALSE;
+bool perturbed = FALSE;
+
 /* Whether the multidata should be recalculated. */
-#endif
+bool recook = FALSE;
 
 /* The currently active menu, initialized to a dummy value. */
 int currmenu = MMOST;
@@ -210,72 +232,82 @@ funcstruct *tailfunc;
 /* A pointer to the special Exit/Close item. */
 funcstruct *exitfunc;
 
-linestruct *search_history = NULL;
 /* The current item in the list of strings that were searched for. */
-linestruct *replace_history = NULL;
-/* The current item in the list of replace strings. */
-linestruct *execute_history = NULL;
-/* The current item in the list of commands that were run with ^T. */
+linestruct *search_history = NULL;
 
-#ifdef ENABLE_HISTORIES
-linestruct *searchtop = NULL;
+/* The current item in the list of replace strings. */
+linestruct *replace_history = NULL;
+
+/* The current item in the list of commands that were run with ^T. */
+linestruct *execute_history = NULL;
+
 /* The oldest item in the list of search strings. */
-linestruct *searchbot = NULL;
+linestruct *searchtop = NULL;
+
 /* The empty item at the end of the list of search strings. */
+linestruct *searchbot = NULL;
 
 linestruct *replacetop = NULL;
 linestruct *replacebot = NULL;
 
 linestruct *executetop = NULL;
 linestruct *executebot = NULL;
-#endif
 
-regex_t search_regexp;
 /* The compiled regular expression to use in searches. */
-regmatch_t regmatches[10];
+regex_t search_regexp;
+
 /* The match positions for parenthetical subexpressions, 10
  * maximum, used in regular expression searches. */
+regmatch_t regmatches[10];
 
-int hilite_attribute = A_REVERSE;
 /* The curses attribute we use to highlight something. */
-#ifdef ENABLE_COLOR
-colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
+int hilite_attribute = A_REVERSE;
+
 /* The color combinations for interface elements given in the rcfile. */
-#endif
-int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
+colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
+
 /* The processed color pairs for the interface elements. */
+int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 
-char *homedir = NULL;
 /* The user's home directory, from $HOME or /etc/passwd. */
-char *statedir = NULL;
+char *homedir = NULL;
+
 /* The directory for nano's history files. */
+char *statedir = NULL;
 
-#if defined(ENABLE_NANORC) || defined(ENABLE_HISTORIES)
-char *startup_problem = NULL;
 /* An error message (if any) about nanorc files or history files. */
-#endif
-#ifdef ENABLE_NANORC
-char *custom_nanorc = NULL;
+char *startup_problem = NULL;
+
 /* The argument of the --rcfile option, when given. */
+char *custom_nanorc = NULL;
 
-char *commandname = NULL;
 /* The name (of a function) between braces in a string bind. */
-keystruct *planted_shortcut = NULL;
+char *commandname = NULL;
+
 /* The function that the above name resolves to, if any. */
-#endif
+keystruct *planted_shortcut = NULL;
 
-bool spotlighted = FALSE;
 /* Whether any text is spotlighted. */
-size_t light_from_col = 0;
-/* Where the spotlighted text starts. */
-size_t light_to_col = 0;
-/* Where the spotlighted text ends. */
+bool spotlighted = FALSE;
 
-/* To make the functions and shortcuts lists clearer. */
-#define VIEW       TRUE /* Is allowed in view mode. */
-#define NOVIEW     FALSE
-#define BLANKAFTER TRUE /* A blank line after this one. */
-#define TOGETHER   FALSE
+/* Where the spotlighted text starts. */
+size_t light_from_col = 0;
+
+/* Where the spotlighted text ends. */
+size_t light_to_col = 0;
+
+//  To make the functions and shortcuts lists clearer.
+
+//
+//  Is allowed in view mode.
+//
+#define VIEW       true
+#define NOVIEW     false
+//
+//  A blank line after this one.
+//
+#define BLANKAFTER true
+#define TOGETHER   false
 
 /* Empty functions, for the most part corresponding to toggles. */
 void
@@ -393,30 +425,32 @@ flip_convert(void)
 }
 
 void
-flip_newbuffer(void)
+flip_newbuffer()
 {
     ;
 }
 
 void
-discard_buffer(void)
+discard_buffer()
 {
     ;
 }
 
 void
-do_cancel(void)
+do_cancel()
 {
     ;
 }
 
-/* Add a function to the linked list of functions. */
+//
+//  Add a function to the linked list of functions.
+//
 void
-add_to_funcs(void (*function)(), int menus, const char *tag, const char *phrase, bool blank_after)
+add_to_funcs(void (*function)(), s32 menus, const s8 *tag, const s8 *phrase, bool blank_after)
 {
-    funcstruct *const f = static_cast<funcstruct *>(nmalloc(sizeof(funcstruct)));
+    funcstruct *f = static_cast<funcstruct *>(nmalloc(sizeof(funcstruct)));
 
-    if (allfuncs == NULL)
+    if (allfuncs == nullptr)
     {
         allfuncs = f;
     }
@@ -426,20 +460,20 @@ add_to_funcs(void (*function)(), int menus, const char *tag, const char *phrase,
     }
     tailfunc = f;
 
-    f->next  = NULL;
-    f->func  = function;
-    f->menus = menus;
-    f->tag   = tag;
-#ifdef ENABLE_HELP
+    f->next        = nullptr;
+    f->func        = function;
+    f->menus       = menus;
+    f->tag         = tag;
     f->phrase      = phrase;
     f->blank_after = blank_after;
-#endif
 }
 
-/* Parse the given keystring and return the corresponding keycode,
- * or return -1 when the string is invalid. */
-int
-keycode_from_string(const char *keystring)
+//
+//  Parse the given keystring and return the corresponding keycode,
+//  or return -1 when the string is invalid.
+//
+s32
+keycode_from_string(const s8 *keystring)
 {
     if (keystring[0] == '^')
     {
@@ -485,14 +519,12 @@ keycode_from_string(const char *keystring)
         {
             return -1;
         }
-#ifdef ENABLE_NANORC
     }
     else if (strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) && (keystring[5] | 0x20) <= 'z' &&
              keystring[6] == '\0')
     {
         shifted_metas = TRUE;
         return (keystring[5] & 0x5F);
-#endif
     }
     else if (keystring[0] == 'F')
     {
@@ -517,26 +549,26 @@ keycode_from_string(const char *keystring)
     }
 }
 
-#if defined(ENABLE_EXTRA) && defined(NCURSES_VERSION_PATCH)
 void
-show_curses_version(void)
+show_curses_version()
 {
     statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
-#endif
 
-/* Add a key combo to the linked list of shortcuts. */
+//
+//  Add a key combo to the linked list of shortcuts.
+//
 void
-add_to_sclist(int menus, const char *scstring, const int keycode, void (*function)(void), int toggle)
+add_to_sclist(s32 menus, const s8 *scstring, const s32 keycode, void (*function)(), s32 toggle)
 {
     static keystruct *tailsc;
-#ifndef NANO_TINY
-    static int counter = 0;
-#endif
-    keystruct *sc = RE_CAST(keystruct *, nmalloc(sizeof(keystruct)));
+    static int        counter = 0;
+    keystruct        *sc      = RE_CAST(keystruct *, nmalloc(sizeof(keystruct)));
 
-    /* Start the list, or tack on the next item. */
-    if (sclist == NULL)
+    //
+    //  Start the list, or tack on the next item.
+    //
+    if (sclist == nullptr)
     {
         sclist = sc;
     }
@@ -544,19 +576,22 @@ add_to_sclist(int menus, const char *scstring, const int keycode, void (*functio
     {
         tailsc->next = sc;
     }
-    sc->next = NULL;
+    sc->next = nullptr;
 
-    /* Fill in the data. */
-    sc->menus = menus;
-    sc->func  = function;
-#ifndef NANO_TINY
+    //
+    //  Fill in the data.
+    //
+    sc->menus  = menus;
+    sc->func   = function;
     sc->toggle = toggle;
-    /* When not the same toggle as the previous one, increment the ID. */
+
+    //
+    //  When not the same toggle as the previous one, increment the ID.
+    //
     if (toggle)
     {
         sc->ordinal = (tailsc->toggle == toggle) ? counter : ++counter;
     }
-#endif
     sc->keystr  = scstring;
     sc->keycode = (keycode ? keycode : keycode_from_string(scstring));
 
@@ -566,17 +601,16 @@ add_to_sclist(int menus, const char *scstring, const int keycode, void (*functio
 /* Return the first shortcut in the list of shortcuts that
  * matches the given function in the given menu. */
 const keystruct *
-first_sc_for(int menu, void (*function)(void))
+first_sc_for(int menu, void (*function)())
 {
-    for (keystruct *sc = sclist; sc != NULL; sc = sc->next)
+    for (keystruct *sc = sclist; sc != nullptr; sc = sc->next)
     {
         if ((sc->menus & menu) && sc->func == function && sc->keystr[0])
         {
             return sc;
         }
     }
-
-    return NULL;
+    return nullptr;
 }
 
 /* Return the number of entries that can be shown in the given menu. */
@@ -655,12 +689,13 @@ func_from_key(const int keycode)
     return (sc) ? sc->func : NULL;
 }
 
-#if defined(ENABLE_BROWSER) || defined(ENABLE_HELP)
-/* Return the function that is bound to the given key in the file browser or
- * the help viewer.  Accept also certain plain characters, for compatibility
- * with Pico or to mimic 'less' and similar text viewers. */
+//
+//  Return the function that is bound to the given key in the file browser or
+//  the help viewer.  Accept also certain plain characters, for compatibility
+//  with Pico or to mimic 'less' and similar text viewers.
+//
 functionptrtype
-interpret(const int keycode)
+interpret(const s32 keycode)
 {
     if (!meta_key)
     {
@@ -673,7 +708,7 @@ interpret(const int keycode)
             return do_findnext;
         }
 
-        switch (tolower(keycode))
+        switch (std::tolower(keycode))
         {
             case 'b' :
             case '-' :
@@ -683,10 +718,8 @@ interpret(const int keycode)
             case 'w' :
             case '/' :
                 return do_search_forward;
-#    ifdef ENABLE_BROWSER
             case 'g' :
                 return goto_dir;
-#    endif
             case '?' :
                 return do_help;
             case 's' :
@@ -700,19 +733,11 @@ interpret(const int keycode)
 
     return func_from_key(keycode);
 }
-#endif /* ENABLE_BROWSER || ENABLE_HELP */
 
-#if defined(NANO_TINY) && defined(ENABLE_LINENUMBERS)
-/* Allow toggling line numbers also in the tiny version. */
-void
-toggle_numbers(void)
-{
-    TOGGLE(LINE_NUMBERS);
-}
-#endif
-
-/* These two tags are used elsewhere too, so they are global. */
-/* TRANSLATORS: Try to keep the next two strings at most 10 characters. */
+//
+//  These two tags are used elsewhere too, so they are global.
+//  TRANSLATORS: Try to keep the next two strings at most 10 characters.
+//
 const char *exit_tag  = N_("Exit");
 const char *close_tag = N_("Close");
 

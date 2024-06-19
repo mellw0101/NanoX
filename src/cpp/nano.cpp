@@ -1562,16 +1562,21 @@ inject(s8 *burst, u64 count)
 void
 process_a_keystroke()
 {
-    // The keystroke we read in: a character or a shortcut.
+    //
+    //  The keystroke we read in: a character or a shortcut.
+    //
     s32 input;
-
-    // The input buffer for actual characters.
+    //
+    //  The input buffer for actual characters.
+    //
     static s8 *puddle = nullptr;
-
-    // The size of the input buffer; gets doubled whenever needed.
+    //
+    //  The size of the input buffer; gets doubled whenever needed.
+    //
     static u64 capacity = 12;
-
-    // The length of the input buffer.
+    //
+    //  The length of the input buffer.
+    //
     static u64 depth = 0;
 
     linestruct      *was_mark    = openfile->mark;
@@ -1579,16 +1584,22 @@ process_a_keystroke()
     const keystruct *shortcut;
     functionptrtype  function;
 
-    // Read in a keystroke, and show the cursor while waiting.
+    //
+    //  Read in a keystroke, and show the cursor while waiting.
+    //
     input       = get_kbinput(midwin, VISIBLE);
     lastmessage = VACUUM;
 
-    // When the input is a window resize, do nothing.
+    //
+    //  When the input is a window resize, do nothing.
+    //
     if (input == KEY_WINCH)
     {
         return;
     }
-    // When the input is a mouse click, handle it.
+    //
+    //  When the input is a mouse click, handle it.
+    //
     if (input == KEY_MOUSE)
     {
         // If the user clicked on a shortcut, read in the key code that it was
@@ -1603,15 +1614,21 @@ process_a_keystroke()
         }
     }
 
-    // Check for a shortcut in the main list.
+    //
+    //  Check for a shortcut in the main list.
+    //
     shortcut = get_shortcut(input);
     function = (shortcut ? shortcut->func : nullptr);
 
-    // If not a command, discard anything that is not a normal character byte.
+    //
+    //  If not a command, discard anything that is not a normal character byte.
+    //
     if (!function)
     {
-        // When the input is a function key, execute the function it is bound
-        // to.
+        //
+        //  When the input is a function key,
+        //  execute the function it is bound to.
+        //
         if (input < 0x20 || input > 0xFF || meta_key)
         {
             unbound_key(input);
@@ -1628,9 +1645,11 @@ process_a_keystroke()
                 refresh_needed = true;
             }
 
-            // When the input buffer (plus room for terminating NULL)
-            // is full, extend it;
-            // otherwise, if it does not exist yet, create it.
+            //
+            //  When the input buffer (plus room for terminating NUL)
+            //  is full, extend it;
+            //  otherwise, if it does not exist yet, create it.
+            //
             if (depth + 1 == capacity)
             {
                 capacity = 2 * capacity;
@@ -1999,7 +2018,7 @@ main(s32 argc, s8 **argv)
     //  If setting the locale is successful and it uses UTF-8, we will
     //  need to use the multibyte functions for text processing.
     //
-    if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
+    if (setlocale(LC_ALL, "") && std::strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
     {
         utf8_init();
     }
