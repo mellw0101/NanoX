@@ -9,7 +9,6 @@
 #    define _XOPEN_SOURCE_EXTENDED 1
 #endif
 
-
 #if defined(__HAIKU__) && !defined(_DEFAULT_SOURCE)
 #    define _DEFAULT_SOURCE 1
 #endif
@@ -153,7 +152,6 @@
 /* The start regex matches on an earlier line, the end regex on this one. */
 #define JUSTONTHIS                (1 << 5)
 /* Both the start and end regexes match within this line. */
-
 
 /* Basic control codes. */
 #define ESC_CODE                  0x1B
@@ -396,17 +394,17 @@ enum
 /* Structure types. */
 typedef struct colortype
 {
-    s16 id;           // An ordinal number (if this color combo is for a multiline regex).
-    s16 fg;           // This combo's foreground color.
-    s16 bg;           // This combo's background color.
-    s16 pairnum;      // The pair number for this foreground/background color
-                      // combination.
-    s32 attributes;   // Pair number and brightness composed into ready-to-use
-                      // attributes.
+    s16 id;            // An ordinal number (if this color combo is for a multiline regex).
+    s16 fg;            // This combo's foreground color.
+    s16 bg;            // This combo's background color.
+    s16 pairnum;       // The pair number for this foreground/background color
+                       // combination.
+    s32 attributes;    // Pair number and brightness composed into ready-to-use
+                       // attributes.
 
-    regex_t   *start; // The compiled regular expression for 'start=', or the only one.
-    regex_t   *end;   // The compiled regular expression for 'end=', if any.
-    colortype *next;  // Next color combination.
+    regex_t   *start;  // The compiled regular expression for 'start=', or the only one.
+    regex_t   *end;    // The compiled regular expression for 'end=', if any.
+    colortype *next;   // Next color combination.
 } colortype;
 
 typedef struct regexlisttype
@@ -429,56 +427,56 @@ typedef struct augmentstruct
 
 typedef struct syntaxtype
 {
-    char *name;                   // The name of this syntax.
-    char *filename;               // File where the syntax is defined, or NULL if not an
-                                  // included file.
-    size_t         lineno;        // The line number where the 'syntax' command was found.
-    augmentstruct *augmentations; // List of extendsyntax commands to apply when loaded.
-    regexlisttype *extensions;    // The list of extensions that this syntax applies to.
-    regexlisttype *headers;       // The list of headerlines that this syntax applies to.
-    regexlisttype *magics;        // The list of libmagic results that this syntax applies to.
-    char          *linter;        // The command with which to lint this type of file.
-    char          *formatter;     // The command with which to format/modify/arrange this
-                                  // type of file.
-    char *tabstring;              // What the Tab key should produce; NULL for default
-                                  // behavior.
-    char *comment;                // The line comment prefix (and postfix) for this type of
-                                  // file.
-    colortype  *color;            // The colors and their regexes used in this syntax.
-    short       multiscore;       // How many multiline regex strings this syntax has.
-    syntaxtype *next;             // Next syntax.
+    char *name;                    // The name of this syntax.
+    char *filename;                // File where the syntax is defined, or NULL if not an
+                                   // included file.
+    size_t         lineno;         // The line number where the 'syntax' command was found.
+    augmentstruct *augmentations;  // List of extendsyntax commands to apply when loaded.
+    regexlisttype *extensions;     // The list of extensions that this syntax applies to.
+    regexlisttype *headers;        // The list of headerlines that this syntax applies to.
+    regexlisttype *magics;         // The list of libmagic results that this syntax applies to.
+    char          *linter;         // The command with which to lint this type of file.
+    char          *formatter;      // The command with which to format/modify/arrange this
+                                   // type of file.
+    char *tabstring;               // What the Tab key should produce; NULL for default
+                                   // behavior.
+    char *comment;                 // The line comment prefix (and postfix) for this type of
+                                   // file.
+    colortype  *color;             // The colors and their regexes used in this syntax.
+    short       multiscore;        // How many multiline regex strings this syntax has.
+    syntaxtype *next;              // Next syntax.
 } syntaxtype;
 
 typedef struct lintstruct
 {
-    lintstruct *next; // Next error.
-    lintstruct *prev; // Previous error.
+    lintstruct *next;  // Next error.
+    lintstruct *prev;  // Previous error.
 
-    s64 lineno;       // Line number of the error.
-    s64 colno;        // Column # of the error.
-    s8 *msg;          // Error message text.
-    s8 *filename;     // Filename.
+    s64 lineno;        // Line number of the error.
+    s64 colno;         // Column # of the error.
+    s8 *msg;           // Error message text.
+    s8 *filename;      // Filename.
 } lintstruct;
 
 // More structure types.
 typedef struct linestruct
 {
-    linestruct *next;       // Next node.
-    linestruct *prev;       // Previous node.
-    s8         *data;       // The text of this line.
-    s64         lineno;     // The number of this line.
-    s16        *multidata;  // Array of which multi-line regexes apply to this line.
-    bool        has_anchor; // Whether the user has placed an anchor at this line.
+    linestruct *next;        // Next node.
+    linestruct *prev;        // Previous node.
+    s8         *data;        // The text of this line.
+    s64         lineno;      // The number of this line.
+    s16        *multidata;   // Array of which multi-line regexes apply to this line.
+    bool        has_anchor;  // Whether the user has placed an anchor at this line.
 } linestruct;
 
 typedef struct groupstruct
 {
-    groupstruct *next; // The next group, if any.
+    groupstruct *next;  // The next group, if any.
 
-    s64  top_line;     // First line of group.
-    s64  bottom_line;  // Last line of group.
-    s8 **indentations; // String data used to restore the affected lines; one
-                       // per line.
+    s64  top_line;      // First line of group.
+    s64  bottom_line;   // Last line of group.
+    s8 **indentations;  // String data used to restore the affected lines; one
+                        // per line.
 } groupstruct;
 
 typedef struct undostruct
@@ -509,7 +507,6 @@ typedef struct undostruct
     /* A pointer to the undo item of the preceding action. */
 } undostruct;
 
-
 typedef struct poshiststruct
 {
     char *filename;
@@ -524,57 +521,56 @@ typedef struct poshiststruct
 
 typedef struct openfilestruct
 {
-    char       *filename;      // The file's name.
-    linestruct *filetop;       // The file's first line.
-    linestruct *filebot;       // The file's last line.
-    linestruct *edittop;       // The current top of the edit window for this file.
-    linestruct *current;       // The current line for this file.
-    size_t      totsize;       // The file's total number of characters.
-    size_t      firstcolumn;   // The starting column of the top line of the edit
-                               // window When not in softwrap mode, it's always zero.
-    size_t       current_x;    // The file's x-coordinate position.
-    size_t       placewewant;  // The file's x position we would like.
-    ssize_t      cursor_row;   // The row in the edit window that the cursor is on.
-    struct stat *statinfo;     // The file's stat information from when it was
-                               // opened or last saved.
-    linestruct *spillage_line; // The line for prepending stuff to during
-                               // automatic hard-wrapping.
-    linestruct *mark;          // The line in the file where the mark is set; NULL if not set.
-    size_t      mark_x;        // The mark's x position in the above line.
-    bool        softmark;      // Whether a marked region was made by holding Shift.
-    format_type fmt;           // The file's format -- Unix or DOS or Mac.
-    char       *lock_filename; // The path of the lockfile, if we created one.
-    undostruct *undotop;       // The top of the undo list.
-    undostruct *current_undo;  // The current (i.e. next) level of undo.
-    undostruct *last_saved;    // The undo item at which the file was last saved.
-    undo_type   last_action;   // The type of the last action the user performed.
-    bool        modified;      // Whether the file has been modified.
-    syntaxtype *syntax;        // The syntax that applies to this file, if any.
-    char       *errormessage;  // The ALERT message (if any) that occurred when opening
-                               // the file.
-    openfilestruct *next;      // The next open file, if any.
-    openfilestruct *prev;      // The preceding open file, if any.
+    char       *filename;       // The file's name.
+    linestruct *filetop;        // The file's first line.
+    linestruct *filebot;        // The file's last line.
+    linestruct *edittop;        // The current top of the edit window for this file.
+    linestruct *current;        // The current line for this file.
+    size_t      totsize;        // The file's total number of characters.
+    size_t      firstcolumn;    // The starting column of the top line of the edit
+                                // window When not in softwrap mode, it's always zero.
+    size_t       current_x;     // The file's x-coordinate position.
+    size_t       placewewant;   // The file's x position we would like.
+    ssize_t      cursor_row;    // The row in the edit window that the cursor is on.
+    struct stat *statinfo;      // The file's stat information from when it was
+                                // opened or last saved.
+    linestruct *spillage_line;  // The line for prepending stuff to during
+                                // automatic hard-wrapping.
+    linestruct *mark;           // The line in the file where the mark is set; NULL if not set.
+    size_t      mark_x;         // The mark's x position in the above line.
+    bool        softmark;       // Whether a marked region was made by holding Shift.
+    format_type fmt;            // The file's format -- Unix or DOS or Mac.
+    char       *lock_filename;  // The path of the lockfile, if we created one.
+    undostruct *undotop;        // The top of the undo list.
+    undostruct *current_undo;   // The current (i.e. next) level of undo.
+    undostruct *last_saved;     // The undo item at which the file was last saved.
+    undo_type   last_action;    // The type of the last action the user performed.
+    bool        modified;       // Whether the file has been modified.
+    syntaxtype *syntax;         // The syntax that applies to this file, if any.
+    char       *errormessage;   // The ALERT message (if any) that occurred when opening
+                                // the file.
+    openfilestruct *next;       // The next open file, if any.
+    openfilestruct *prev;       // The preceding open file, if any.
 } openfilestruct;
-
 
 typedef struct rcoption
 {
-    const s8 *name; // The name of the rcfile option.
-    long      flag; // The flag associated with it, if any.
+    const s8 *name;  // The name of the rcfile option.
+    long      flag;  // The flag associated with it, if any.
 } rcoption;
 
 typedef struct keystruct
 {
-    const s8 *keystr;     // The string that describes the keystroke, like "^C" or "M-R".
-    s32       keycode;    // The integer that, together with meta, identifies the
-                          // keystroke.
-    s32 menus;            // The menus in which this keystroke is bound.
-    void (*func)();       // The function to which this keystroke is bound.
-    s32 toggle;           // If a toggle, what we're toggling.
-    s32 ordinal;          // The how-manieth toggle this is, in order to be able to
-                          // keep them in sequence.
-    s8        *expansion; // The string of keycodes to which this shortcut is expanded.
-    keystruct *next;      // Next in the list.
+    const s8 *keystr;      // The string that describes the keystroke, like "^C" or "M-R".
+    s32       keycode;     // The integer that, together with meta, identifies the
+                           // keystroke.
+    s32 menus;             // The menus in which this keystroke is bound.
+    void (*func)();        // The function to which this keystroke is bound.
+    s32 toggle;            // If a toggle, what we're toggling.
+    s32 ordinal;           // The how-manieth toggle this is, in order to be able to
+                           // keep them in sequence.
+    s8        *expansion;  // The string of keycodes to which this shortcut is expanded.
+    keystruct *next;       // Next in the list.
 } keystruct;
 
 typedef struct funcstruct

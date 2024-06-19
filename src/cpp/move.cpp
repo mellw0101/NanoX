@@ -1,6 +1,6 @@
 #include "../include/prototypes.h"
 
-#include <string.h>
+#include <cstring>
 
 /* Move to the first line of the file. */
 void
@@ -593,30 +593,33 @@ do_home(void)
     }
 }
 
-/* Move to the end of the current line (or softwrapped chunk).
- * When softwrapping and already at the end of a chunk, go to the
- * end of the full line. */
+//
+//  Move to the end of the current line (or softwrapped chunk).
+//  When softwrapping and already at the end of a chunk, go to the
+//  end of the full line.
+//
 void
-do_end(void)
+do_end()
 {
     linestruct *was_current     = openfile->current;
-    size_t      was_column      = xplustabs();
-    size_t      line_len        = strlen(openfile->current->data);
-    bool        moved_off_chunk = TRUE;
+    u64         was_column      = xplustabs();
+    u64         line_len        = std::strlen(openfile->current->data);
+    bool        moved_off_chunk = true;
 
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
-        bool   kickoff    = TRUE;
-        bool   last_chunk = FALSE;
-        size_t leftedge   = leftedge_for(was_column, openfile->current);
-        size_t rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk);
-        size_t right_x;
+        bool kickoff    = true;
+        bool last_chunk = false;
+        u64  leftedge   = leftedge_for(was_column, openfile->current);
+        u64  rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk);
+        u64  right_x;
 
-        /* If we're on the last chunk, we're already at the end of the line.
-         * Otherwise, we're one column past the end of the line.  Shifting
-         * backwards one column might put us in the middle of a multi-column
-         * character, but actual_x() will fix that. */
+        //
+        //  If we're on the last chunk, we're already at the end of the line.
+        //  Otherwise, we're one column past the end of the line.  Shifting
+        //  backwards one column might put us in the middle of a multi-column
+        //  character, but actual_x() will fix that.
+        //
         if (!last_chunk)
         {
             rightedge--;
@@ -638,8 +641,9 @@ do_end(void)
         }
     }
     else
-#endif
+    {
         openfile->current_x = line_len;
+    }
 
     if (moved_off_chunk)
     {

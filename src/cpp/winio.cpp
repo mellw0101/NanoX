@@ -2944,9 +2944,12 @@ minibar()
     free(ranking);
 }
 
-// Display the given message on the status bar, but only if its importance
-// is higher than that of a message that is already there.
-// TODO : This function is a mess, FIX IT.
+//
+//  Display the given message on the status bar, but only if its importance
+//  is higher than that of a message that is already there.
+//
+//  TODO : This function is a mess, FIX IT.
+//
 void
 statusline(message_type importance, const s8 *msg, ...)
 {
@@ -3255,43 +3258,46 @@ place_the_cursor(void)
  */
 #define PAINT_LIMIT 2000
 
-/* Draw the given text on the given row of the edit window.  line is the
- * line to be drawn, and converted is the actual string to be written with
- * tabs and control characters replaced by strings of regular characters.
- * from_col is the column number of the first character of this "page". */
+//
+//  Draw the given text on the given row of the edit window.  line is the
+//  line to be drawn, and converted is the actual string to be written with
+//  tabs and control characters replaced by strings of regular characters.
+//  from_col is the column number of the first character of this "page".
+//
+//  TODO : ( draw_row ) NEEDED
 void
 draw_row(int row, const char *converted, linestruct *line, size_t from_col)
 {
-#ifdef ENABLE_LINENUMBERS
     /* If line numbering is switched on, put a line number in front of
      * the text -- but only for the parts that are not softwrapped. */
     if (margin > 0)
     {
         wattron(midwin, interface_color_pair[LINE_NUMBER]);
-#    ifndef NANO_TINY
         if (ISSET(SOFTWRAP) && from_col != 0)
         {
             mvwprintw(midwin, row, 0, "%*s", margin - 1, " ");
         }
         else
-#    endif
+        {
             mvwprintw(midwin, row, 0, "%*zd", margin - 1, line->lineno);
+        }
         wattroff(midwin, interface_color_pair[LINE_NUMBER]);
-#    ifndef NANO_TINY
         if (line->has_anchor && (from_col == 0 || !ISSET(SOFTWRAP)))
-#        ifdef ENABLE_UTF8
+        {
             if (using_utf8())
             {
                 wprintw(midwin, "\xE2\xAC\xA5"); /* black medium diamond */
             }
             else
-#        endif
+            {
                 wprintw(midwin, "+");
+            }
+        }
         else
-#    endif
+        {
             wprintw(midwin, " ");
+        }
     }
-#endif /* ENABLE_LINENUMBERS */
 
     /* First simply write the converted line -- afterward we'll add colors
      * and the marking highlight on just the pieces that need it. */
@@ -3303,14 +3309,11 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
         wclrtoeol(midwin);
     }
 
-#ifndef NANO_TINY
     if (sidebar)
     {
         mvwaddch(midwin, row, COLS - 1, bardata[row]);
     }
-#endif
 
-#ifdef ENABLE_COLOR
     /* If there are color rules (and coloring is turned on), apply them. */
     if (openfile->syntax && !ISSET(NO_SYNTAX))
     {
@@ -3495,9 +3498,7 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
             }
         }
     }
-#endif /* ENABLE_COLOR */
 
-#ifndef NANO_TINY
     if (stripe_column > from_col && !inhelp && (sequel_column == 0 || stripe_column <= sequel_column) &&
         stripe_column <= from_col + editwincols)
     {
@@ -3510,12 +3511,12 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
         {
             charlen       = collect_char(converted + target_x, striped_char);
             target_column = wideness(converted, target_x);
-#    ifdef USING_OLDER_LIBVTE
+#ifdef USING_OLDER_LIBVTE
         }
         else if (target_column + 1 == editwincols)
         {
             /* Defeat a VTE bug -- see https://sv.gnu.org/bugs/?55896. */
-#        ifdef ENABLE_UTF8
+#    ifdef ENABLE_UTF8
             if (using_utf8())
             {
                 striped_char[0] = '\xC2';
@@ -3523,9 +3524,9 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
                 charlen         = 2;
             }
             else
-#        endif
-                striped_char[0] = '.';
 #    endif
+                striped_char[0] = '.';
+#endif
         }
         else
         {
@@ -3552,7 +3553,7 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
         int paintlen = -1;
         /* The number of characters to paint.  Negative means "all". */
 
-        get_region(&top, &top_x, &bot, &bot_x);
+        get_region(top, top_x, bot, bot_x);
 
         if (top->lineno < line->lineno || top_x < from_x)
         {
@@ -3589,7 +3590,6 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
             wattroff(midwin, interface_color_pair[SELECTED_TEXT]);
         }
     }
-#endif /* !NANO_TINY */
 }
 
 /* Redraw the given line so that the character at the given index is visible
@@ -3693,7 +3693,7 @@ update_softwrapped_line(linestruct *line)
 
     while (!end_of_line && row < editwinrows)
     {
-        to_col = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line);
+        to_col = get_softwrap_breakpoint(line->data, from_col, kickoff, end_of_line);
 
         sequel_column = (end_of_line) ? 0 : to_col;
 
@@ -3799,7 +3799,7 @@ go_forward_chunks(int nrows, linestruct **line, size_t *leftedge)
         {
             bool end_of_line = FALSE;
 
-            current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
+            current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, kickoff, end_of_line);
 
             if (!end_of_line)
             {
@@ -3961,70 +3961,94 @@ edit_scroll(bool direction)
     }
 }
 
-#ifndef NANO_TINY
-/* Get the column number after leftedge where we can break the given linedata,
- * and return it.  (This will always be at most editwincols after leftedge.)
- * When kickoff is TRUE, start at the beginning of the linedata; otherwise,
- * continue from where the previous call left off.  Set end_of_line to TRUE
- * when end-of-line is reached while searching for a possible breakpoint. */
-size_t
-get_softwrap_breakpoint(const char *linedata, size_t leftedge, bool *kickoff, bool *end_of_line)
+//
+//  Get the column number after leftedge where we can break the given linedata,
+//  and return it.  (This will always be at most editwincols after leftedge.)
+//  When kickoff is TRUE, start at the beginning of the linedata; otherwise,
+//  continue from where the previous call left off.  Set end_of_line to TRUE
+//  when end-of-line is reached while searching for a possible breakpoint.
+//
+u64
+get_softwrap_breakpoint(const s8 *linedata, u64 leftedge, bool &kickoff, bool &end_of_line)
 {
+    //
+    //  Pointer at the current character in this line's data.
+    //
     static const char *text;
-    /* Pointer at the current character in this line's data. */
-    static size_t column;
-    /* Column position that corresponds to the above pointer. */
-    size_t rightside = leftedge + editwincols;
-    /* The place at or before which text must be broken. */
-    size_t breaking_col = rightside;
-    /* The column where text can be broken, when there's no better. */
-    size_t last_blank_col = 0;
-    /* The column position of the last seen whitespace character. */
-    const char *farthest_blank = NULL;
-    /* A pointer to the last seen whitespace character in text. */
+    //
+    // Column position that corresponds to the above pointer. */
+    //
+    static u64 column;
+    //
+    //  The place at or before which text must be broken.
+    //
+    u64 rightside = leftedge + editwincols;
+    //
+    // The column where text can be broken, when there's no better.
+    //
+    u64 breaking_col = rightside;
+    //
+    //  The column position of the last seen whitespace character.
+    //
+    u64 last_blank_col = 0;
+    //
+    //  A pointer to the last seen whitespace character in text.
+    //
+    const char *farthest_blank = nullptr;
 
-    /* Initialize the static variables when it's another line. */
-    if (*kickoff)
+    //
+    //  Initialize the static variables when it's another line.
+    //
+    if (kickoff)
     {
-        text     = linedata;
-        column   = 0;
-        *kickoff = FALSE;
+        text    = linedata;
+        column  = 0;
+        kickoff = false;
     }
 
-    /* First find the place in text where the current chunk starts. */
+    //
+    //  First find the place in text where the current chunk starts.
+    //
     while (*text != '\0' && column < leftedge)
     {
-        text += advance_over(text, &column);
+        text += advance_over(text, column);
     }
 
-    /* Now find the place in text where this chunk should end. */
+    //
+    //  Now find the place in text where this chunk should end.
+    //
     while (*text != '\0' && column <= rightside)
     {
-        /* When breaking at blanks, do it *before* the target column. */
+        //
+        //  When breaking at blanks, do it *before* the target column.
+        //
         if (ISSET(AT_BLANKS) && is_blank_char(text) && column < rightside)
         {
             farthest_blank = text;
             last_blank_col = column;
         }
-
         breaking_col = (*text == '\t' ? rightside : column);
-        text += advance_over(text, &column);
+        text += advance_over(text, column);
     }
 
-    /* If we didn't overshoot the limit, we've found a breaking point;
-     * and we've reached EOL if we didn't even *reach* the limit. */
+    //
+    //  If we didn't overshoot the limit, we've found a breaking point;
+    //  and we've reached EOL if we didn't even *reach* the limit.
+    //
     if (column <= rightside)
     {
-        *end_of_line = (column < rightside);
+        end_of_line = (column < rightside);
         return column;
     }
 
-    /* If we're softwrapping at blanks and we found at least one blank, break
-     * after that blank -- if it doesn't overshoot the screen's edge. */
-    if (farthest_blank != NULL)
+    //
+    //  If we're softwrapping at blanks and we found at least one blank, break
+    //  after that blank -- if it doesn't overshoot the screen's edge.
+    //
+    if (farthest_blank != nullptr)
     {
-        size_t aftertheblank = last_blank_col;
-        size_t onestep       = advance_over(farthest_blank, &aftertheblank);
+        u64 aftertheblank = last_blank_col;
+        u64 onestep       = advance_over(farthest_blank, aftertheblank);
 
         if (aftertheblank <= rightside)
         {
@@ -4033,34 +4057,40 @@ get_softwrap_breakpoint(const char *linedata, size_t leftedge, bool *kickoff, bo
             return aftertheblank;
         }
 
-        /* If it's a tab that overshoots, break at the screen's edge. */
+        //
+        //  If it's a tab that overshoots, break at the screen's edge.
+        //
         if (*farthest_blank == '\t')
         {
             breaking_col = rightside;
         }
     }
 
-    /* Otherwise, break at the last character that doesn't overshoot. */
+    //
+    //  Otherwise, break at the last character that doesn't overshoot.
+    //
     return (editwincols > 1) ? breaking_col : column - 1;
 }
 
 /* Return the row number of the softwrapped chunk in the given line that the
  * given column is on, relative to the first row (zero-based).  If leftedge
  * isn't NULL, return in it the leftmost column of the chunk. */
-size_t
-get_chunk_and_edge(size_t column, linestruct *line, size_t *leftedge)
+u64
+get_chunk_and_edge(u64 column, linestruct *line, u64 *leftedge)
 {
-    size_t current_chunk = 0;
-    bool   end_of_line   = FALSE;
-    bool   kickoff       = TRUE;
-    size_t start_col     = 0;
-    size_t end_col;
+    u64 current_chunk = 0;
+    u64 start_col     = 0;
+    u64 end_col;
 
-    while (TRUE)
+    bool end_of_line = false;
+    bool kickoff     = true;
+
+    while (true)
     {
-        end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line);
-
-        /* When the column is in range or we reached end-of-line, we're done. */
+        end_col = get_softwrap_breakpoint(line->data, start_col, kickoff, end_of_line);
+        //
+        //  When the column is in range or we reached end-of-line, we're done.
+        //
         if (end_of_line || (start_col <= column && column < end_col))
         {
             if (leftedge != NULL)
@@ -4120,7 +4150,6 @@ ensure_firstcolumn_is_aligned(void)
     /* If smooth scrolling is on, make sure the viewport doesn't center. */
     focusing = FALSE;
 }
-#endif /* !NANO_TINY */
 
 /* When in softwrap mode, and the given column is on or after the breakpoint of
  * a softwrapped chunk, shift it back to the last column before the breakpoint.
@@ -4134,7 +4163,7 @@ actual_last_column(size_t leftedge, size_t column)
     {
         bool   kickoff    = TRUE;
         bool   last_chunk = FALSE;
-        size_t end_col = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge;
+        size_t end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk) - leftedge;
 
         /* If we're not on the last chunk, we're one column past the end of
          * the row.  Shifting back one column might put us in the middle of
@@ -4467,8 +4496,8 @@ spotlight_softwrapped(size_t from_col, size_t to_col)
     ssize_t row;
     size_t  leftedge = leftedge_for(from_col, openfile->current);
     size_t  break_col;
-    bool    end_of_line = FALSE;
-    bool    kickoff     = TRUE;
+    bool    end_of_line = false;
+    bool    kickoff     = true;
     char   *word;
 
     place_the_cursor();
@@ -4476,7 +4505,7 @@ spotlight_softwrapped(size_t from_col, size_t to_col)
 
     while (row < editwinrows)
     {
-        break_col = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &end_of_line);
+        break_col = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, end_of_line);
 
         /* If the highlighting ends on this chunk, we can stop after it. */
         if (break_col >= to_col)

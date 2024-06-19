@@ -13,37 +13,37 @@
 #endif
 #include <clocale>
 #include <cstring>
+#include <sys/vt.h>
 #include <termios.h>
 #include <unistd.h>
 
-#include <sys/vt.h>
 //
-// Used to store the user's original mouse click interval.
+//  Used to store the user's original mouse click interval.
 //
 static s32 oldinterval = -1;
 //
-// The original settings of the user's terminal.
+//  The original settings of the user's terminal.
 //
 static termios original_state;
 //
-// Containers for the original and the temporary handler for SIGINT.
+//  Containers for the original and the temporary handler for SIGINT.
 //
 static struct sigaction oldaction, newaction;
 
-//
-/// @name
-///  -  @c make_new_node
 ///
-/// @brief
-///  -  Create a new linestruct node.
-///  -  Note that we do NOT set @p prevnode->next.
+///  @name
+///    -  @c make_new_node
 ///
-/// @param prevnode [linestruct *const &]
-///  -  The previous node in the linked list.
+///  @brief
+///    -  Create a new linestruct node.
+///    -  Note that we do NOT set @p prevnode->next.
 ///
-/// @returns ( linestruct * )
-///  -  A pointer to the new node.
-//
+///  @param prevnode [linestruct *const &]
+///    -  The previous node in the linked list.
+///
+///  @returns ( linestruct * )
+///    -  A pointer to the new node.
+///
 linestruct *
 make_new_node(linestruct *prevnode)
 {
@@ -80,7 +80,9 @@ splice_node(linestruct *afterthis, linestruct *newnode)
     }
 }
 
-// Free the data structures in the given node.
+//
+//  Free the data structures in the given node.
+//
 void
 delete_node(linestruct *line)
 {
@@ -96,12 +98,14 @@ delete_node(linestruct *line)
         openfile->spillage_line = nullptr;
     }
 
-    free(line->data);
-    free(line->multidata);
-    free(line);
+    std::free(line->data);
+    std::free(line->multidata);
+    std::free(line);
 }
 
-// Disconnect a node from a linked list of linestructs and delete it.
+//
+//  Disconnect a node from a linked list of linestructs and delete it.
+//
 void
 unlink_node(linestruct *line)
 {
@@ -123,7 +127,9 @@ unlink_node(linestruct *line)
     delete_node(line);
 }
 
-// Free an entire linked list of linestructs.
+//
+//  Free an entire linked list of linestructs.
+//
 void
 free_lines(linestruct *src)
 {
@@ -141,11 +147,13 @@ free_lines(linestruct *src)
     delete_node(src);
 }
 
-// Make a copy of a linestruct node.
+//
+//  Make a copy of a linestruct node.
+//
 linestruct *
 copy_node(const linestruct *src)
 {
-    linestruct *const dst = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
+    linestruct *dst = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
 
     dst->data       = copy_of(src->data);
     dst->multidata  = nullptr;
@@ -180,7 +188,9 @@ copy_buffer(const linestruct *src)
     return head;
 }
 
-// Renumber the lines in a buffer, from the given line onwards.
+//
+//  Renumber the lines in a buffer, from the given line onwards.
+//
 void
 renumber_from(linestruct *line)
 {
@@ -236,16 +246,8 @@ restore_terminal()
     tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
-
 //
-/// @name
-///  -  @c finish
-///
-/// @brief
-///  -  Exit normally: restore terminal state and report any startup errors.
-///
-/// @returns
-///  -  @c void
+//  Exit normally: restore terminal state and report any startup errors.
 //
 void
 finish()
@@ -674,11 +676,17 @@ usage()
     exit(EXIT_SUCCESS);
 }
 
-/// @name @c version
+//
+/// @name
+///  -  @c version
+///
 /// @brief
-///  - Display the version number of this nano, a copyright notice, some contact
-///  - information, and the configuration options this nano was compiled with.
-/// @returns @c void
+///  -  Display the version number of this nano, a copyright notice, some contact
+///  -  information, and the configuration options this nano was compiled with.
+///
+/// @returns
+///  -  @c void
+//
 void
 version()
 {
@@ -687,133 +695,13 @@ version()
 
     // TRANSLATORS: The %s is the year of the latest release.
     printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
-    printf(_(" Compiled options:"));
 
-#ifdef NANO_TINY
-    printf(" --enable-tiny");
-#    ifdef ENABLE_BROWSER
-    printf(" --enable-browser");
-#    endif
-#    ifdef ENABLE_COLOR
-    printf(" --enable-color");
-#    endif
-#    ifdef ENABLE_EXTRA
-    printf(" --enable-extra");
-#    endif
-#    ifdef ENABLE_FORMATTER
-    printf(" --enable-formatter");
-#    endif
-#    ifdef ENABLE_HELP
-    printf(" --enable-help");
-#    endif
-#    ifdef ENABLE_HISTORIES
-    printf(" --enable-histories");
-#    endif
-#    ifdef ENABLE_JUSTIFY
-    printf(" --enable-justify");
-#    endif
-#    ifdef HAVE_LIBMAGIC
-    printf(" --enable-libmagic");
-#    endif
-#    ifdef ENABLE_LINENUMBERS
-    printf(" --enable-linenumbers");
-#    endif
-#    ifdef ENABLE_LINTER
-    printf(" --enable-linter");
-#    endif
-#    ifdef ENABLE_MOUSE
-    printf(" --enable-mouse");
-#    endif
-#    ifdef ENABLE_NANORC
-    printf(" --enable-nanorc");
-#    endif
-#    ifdef ENABLE_MULTIBUFFER
-    printf(" --enable-multibuffer");
-#    endif
-#    ifdef ENABLE_OPERATINGDIR
-    printf(" --enable-operatingdir");
-#    endif
-#    ifdef ENABLE_SPELLER
-    printf(" --enable-speller");
-#    endif
-#    ifdef ENABLE_TABCOMP
-    printf(" --enable-tabcomp");
-#    endif
-#    ifdef ENABLE_WRAPPING
-    printf(" --enable-wrapping");
-#    endif
-#else /* !NANO_TINY */
-#    ifndef ENABLE_BROWSER
-    printf(" --disable-browser");
-#    endif
-#    ifndef ENABLE_COLOR
-    printf(" --disable-color");
-#    endif
-#    ifndef ENABLE_COMMENT
-    printf(" --disable-comment");
-#    endif
-#    ifndef ENABLE_EXTRA
-    printf(" --disable-extra");
-#    endif
-#    ifndef ENABLE_FORMATTER
-    printf(" --disable-formatter");
-#    endif
-#    ifndef ENABLE_HELP
-    printf(" --disable-help");
-#    endif
-#    ifndef ENABLE_HISTORIES
-    printf(" --disable-histories");
-#    endif
-#    ifndef ENABLE_JUSTIFY
-    printf(" --disable-justify");
-#    endif
-#    ifndef HAVE_LIBMAGIC
-    printf(" --disable-libmagic");
-#    endif
-#    ifndef ENABLE_LINENUMBERS
-    printf(" --disable-linenumbers");
-#    endif
-#    ifndef ENABLE_LINTER
-    printf(" --disable-linter");
-#    endif
-#    ifndef ENABLE_MOUSE
-    printf(" --disable-mouse");
-#    endif
-#    ifndef ENABLE_MULTIBUFFER
-    printf(" --disable-multibuffer");
-#    endif
-#    ifndef ENABLE_NANORC
-    printf(" --disable-nanorc");
-#    endif
-#    ifndef ENABLE_OPERATINGDIR
-    printf(" --disable-operatingdir");
-#    endif
-#    ifndef ENABLE_SPELLER
-    printf(" --disable-speller");
-#    endif
-#    ifndef ENABLE_TABCOMP
-    printf(" --disable-tabcomp");
-#    endif
-#    ifndef ENABLE_WORDCOMPLETION
-    printf(" --disable-wordcomp");
-#    endif
-#    ifndef ENABLE_WRAPPING
-    printf(" --disable-wrapping");
-#    endif
-#endif // !NANO_TINY
 #ifdef DEBUG
+    printf(_(" Compiled options:"));
     printf(" --enable-debug");
 #endif
-#ifndef ENABLE_NLS
-    printf(" --disable-nls");
-#endif
-#ifdef ENABLE_UTF8
-    printf(" --enable-utf8");
-#else
-    printf(" --disable-utf8");
-#endif
-    printf("\n");
 
+    printf("\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -837,21 +725,29 @@ list_syntax_names()
     printf("\n");
 }
 
-// Register that Ctrl+C was pressed during some system call.
+//
+/// Register that Ctrl+C was pressed during some system call.
+//
 void
 make_a_note(s32 signal)
 {
     control_C_was_pressed = true;
 }
 
-// Make ^C interrupt a system call and set a flag.
+//
+//  Make ^C interrupt a system call and set a flag.
+//
 void
 install_handler_for_Ctrl_C()
 {
-    // Enable the generation of a SIGINT when ^C is pressed.
+    //
+    //  Enable the generation of a SIGINT when ^C is pressed.
+    //
     enable_kb_interrupt();
 
-    // Set up a signal handler so that pressing ^C will set a flag.
+    //
+    //  Set up a signal handler so that pressing ^C will set a flag.
+    //
     newaction.sa_handler = make_a_note;
     newaction.sa_flags   = 0;
     sigaction(SIGINT, &newaction, &oldaction);
@@ -918,9 +814,8 @@ scoop_stdin()
     /* Read the input into a new buffer, undoably. */
     make_new_buffer();
     read_file(stream, 0, "stdin", FALSE);
-#ifdef ENABLE_COLOR
+
     find_and_prime_applicable_syntax();
-#endif
 
     /* Restore the original ^C handler. */
     restore_handler_for_Ctrl_C();
@@ -993,7 +888,6 @@ handle_hupterm(s32 signal)
 {
     die(_("Received SIGHUP or SIGTERM\n"));
 }
-
 
 #if !defined(DEBUG)
 //
@@ -1232,7 +1126,7 @@ disable_extended_io(void)
 
 /* Stop ^C from generating a SIGINT. */
 void
-disable_kb_interrupt(void)
+disable_kb_interrupt()
 {
     struct termios settings = {0};
 
@@ -1274,16 +1168,18 @@ enable_flow_control()
     tcsetattr(0, TCSANOW, &settings);
 }
 
-/* Set up the terminal state.  Put the terminal in raw mode (read one
- * character at a time, disable the special control keys, and disable
- * the flow control characters), disable translation of carriage return
- * (^M) into newline (^J) so that we can tell the difference between the
- * Enter key and Ctrl-J, and disable echoing of characters as they're
- * typed.  Finally, disable extended input and output processing, and,
- * if we're not in preserve mode, reenable interpretation of the flow
- * control characters. */
+//
+///  Set up the terminal state.  Put the terminal in raw mode (read one
+///  character at a time, disable the special control keys, and disable
+///  the flow control characters), disable translation of carriage return
+///  (^M) into newline (^J) so that we can tell the difference between the
+///  Enter key and Ctrl-J, and disable echoing of characters as they're
+///  typed.  Finally, disable extended input and output processing, and,
+///  if we're not in preserve mode, reenable interpretation of the flow
+///  control characters.
+//
 void
-terminal_init(void)
+terminal_init()
 {
     raw();
     nonl();
@@ -1298,14 +1194,14 @@ terminal_init(void)
 
     disable_kb_interrupt();
 
-#ifndef NANO_TINY
     /* Tell the terminal to enable bracketed pastes. */
     printf("\x1B[?2004h");
     fflush(stdout);
-#endif
 }
 
-/* Ask ncurses for a keycode, or assign a default one. */
+//
+//  Ask ncurses for a keycode, or assign a default one.
+//
 int
 get_keycode(const s8 *keyname, const s32 standard)
 {
@@ -1314,20 +1210,27 @@ get_keycode(const s8 *keyname, const s32 standard)
     {
         return key_defined(keyvalue);
     }
+
 #ifdef DEBUG
     if (!ISSET(RAW_SEQUENCES))
     {
         fprintf(stderr, "Using fallback keycode for %s\n", keyname);
     }
 #endif
+
     return standard;
 }
 
-/// @name confirm_margin
-/// @brief
-/// - Ensure that the margin can accommodate the buffer's highest line number.
-/// @returns
-/// - void
+///
+///  @name
+///    -  @c confirm_margin
+///
+///  @brief
+///    -  Ensure that the margin can accommodate the buffer's highest line number.
+///
+///  @returns
+///    -  @c void
+///
 void
 confirm_margin()
 {
@@ -1430,18 +1333,20 @@ do_mouse()
         linestruct *was_current = openfile->current;
         ssize_t     row_count   = click_row - openfile->cursor_row;
         size_t      leftedge;
-#ifndef NANO_TINY
-        size_t was_x = openfile->current_x;
+        size_t      was_x = openfile->current_x;
 
         if (ISSET(SOFTWRAP))
         {
             leftedge = leftedge_for(xplustabs(), openfile->current);
         }
         else
-#endif
+        {
             leftedge = get_page_start(xplustabs());
+        }
 
-        /* Move current up or down to the row that was clicked on. */
+        //
+        // Move current up or down to the row that was clicked on.
+        //
         if (row_count < 0)
         {
             go_back_chunks(-row_count, &openfile->current, &leftedge);
@@ -1530,7 +1435,7 @@ suck_up_input_and_paste_it(void)
         }
     }
 
-    if (ISSET(VIEW_MODE))
+    if ISSET (VIEW_MODE)
     {
         print_view_warning();
     }
@@ -2073,7 +1978,6 @@ main(s32 argc, s8 **argv)
     //         {            NULL, 0, NULL,   0}
     //     };
 
-
     struct vt_stat dummy;
 
     /* Check whether we're running on a Linux console. */
@@ -2082,16 +1986,19 @@ main(s32 argc, s8 **argv)
     /* Back up the terminal settings so that they can be restored. */
     tcgetattr(STDIN_FILENO, &original_state);
 
-
-    /* Get the state of standard input and ensure it uses blocking mode. */
+    //
+    //  Get the state of standard input and ensure it uses blocking mode.
+    //
     stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     if (stdin_flags != -1)
     {
         fcntl(STDIN_FILENO, F_SETFL, stdin_flags & ~O_NONBLOCK);
     }
 
-    /* If setting the locale is successful and it uses UTF-8, we will
-     * need to use the multibyte functions for text processing. */
+    //
+    //  If setting the locale is successful and it uses UTF-8, we will
+    //  need to use the multibyte functions for text processing.
+    //
     if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
     {
         utf8_init();
@@ -2101,11 +2008,17 @@ main(s32 argc, s8 **argv)
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
 
-    // Set a sensible default, different from what Pico does.
+    //
+    //  Set the default values for some flags.
+    //
     SET(NO_WRAP);
     SET(LET_THEM_ZAP);
+    SET(MODERN_BINDINGS);
+    SET(AUTOINDENT);
 
-    // If the executable's name starts with 'r', activate restricted mode.
+    //
+    //  If the executable's name starts with 'r', activate restricted mode.
+    //
     if (*(tail(argv[0])) == 'r')
     {
         SET(RESTRICTED);
@@ -2394,6 +2307,7 @@ main(s32 argc, s8 **argv)
     if (getenv("TERM") == nullptr)
     {
         putenv((s8 *)"TERM=vt220");
+        setenv("TERM", "vt220", 1);
     }
 
     // Enter into curses mode.  Abort if this fails.
@@ -2583,7 +2497,6 @@ main(s32 argc, s8 **argv)
     (punct == nullptr) ? punct = copy_of("!.?") : 0;
     (brackets == nullptr) ? brackets = copy_of("\"')>]}") : 0;
     (quotestr == nullptr) ? quotestr = copy_of("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
-
 
     /* Compile the quoting regex, and exit when it's invalid. */
     quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);

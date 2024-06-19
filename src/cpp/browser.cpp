@@ -20,10 +20,12 @@ static int gauge = 0;
 static size_t selected = 0;
 /* The currently selected filename in the list; zero-based. */
 
-/* Fill 'filelist' with the names of the files in the given directory, set
- * 'list_length' to the number of names in that list, set 'gauge' to the
- * width of the widest filename plus ten, and set 'piles' to the number of
- * files that can be displayed per screen row.  And sort the list too. */
+//
+//  Fill 'filelist' with the names of the files in the given directory, set
+//  'list_length' to the number of names in that list, set 'gauge' to the
+//  width of the widest filename plus ten, and set 'piles' to the number of
+//  files that can be displayed per screen row.  And sort the list too. */
+//
 void
 read_the_list(const char *path, DIR *dir)
 {
@@ -290,9 +292,11 @@ findfile(const char *needle, bool forwards)
 {
     size_t began_at = selected;
 
-    /* Iterate through the list of filenames, until a match is found or
-     * we've come back to the point where we started. */
-    while (TRUE)
+    //
+    // Iterate through the list of filenames, until a match is found or
+    // we've come back to the point where we started.
+    //
+    while (true)
     {
         if (forwards)
         {
@@ -321,7 +325,9 @@ findfile(const char *needle, bool forwards)
             return;
         }
 
-        /* When we're back at the starting point without any match... */
+        //
+        //  When we're back at the starting point without any match...
+        //
         if (selected == began_at)
         {
             not_found_msg(needle);

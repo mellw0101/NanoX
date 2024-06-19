@@ -236,7 +236,6 @@ recode_LF_to_NUL(s8 *string)
     return static_cast<u64>(string - beginning);
 }
 
-#if !defined(ENABLE_TINY) || defined(ENABLE_TABCOMP) || defined(ENABLE_BROWSER)
 /* Free the memory of the given array, which should contain len elements. */
 void
 free_chararray(char **array, size_t len)
@@ -253,7 +252,6 @@ free_chararray(char **array, size_t len)
 
     free(array);
 }
-#endif
 
 /* Is the word starting at the given position in 'text' and of the given
  * length a separate word?  That is: is it not part of a longer word? */
@@ -373,13 +371,11 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
 void *
 nmalloc(const u64 howmuch)
 {
-    void *const section = malloc(howmuch);
-
+    void *section = std::malloc(howmuch);
     if (section == nullptr)
     {
         die(_("Nano is out of memory!\n"));
     }
-
     return section;
 }
 
@@ -387,7 +383,7 @@ nmalloc(const u64 howmuch)
 void *
 nrealloc(void *section, const u64 howmuch)
 {
-    section = realloc(section, howmuch);
+    section = std::realloc(section, howmuch);
 
     if (section == nullptr)
     {
@@ -398,16 +394,16 @@ nrealloc(void *section, const u64 howmuch)
 }
 
 //
-/// Return an appropriately reallocated dest string holding a copy of src.
-/// Usage: "dest = mallocstrcpy(dest, src);".
+//  Return an appropriately reallocated dest string holding a copy of src.
+//  Usage: "dest = mallocstrcpy(dest, src);".
 //
 s8 *
 mallocstrcpy(s8 *dest, const s8 *src)
 {
-    const u64 count = strlen(src) + 1;
+    const u64 count = std::strlen(src) + 1;
 
-    dest = static_cast<char *>(nrealloc(dest, count));
-    strncpy(dest, src, count);
+    dest = static_cast<s8 *>(nrealloc(dest, count));
+    std::strncpy(dest, src, count);
 
     return dest;
 }
@@ -417,7 +413,7 @@ mallocstrcpy(s8 *dest, const s8 *src)
 s8 *
 measured_copy(const s8 *string, const u64 count)
 {
-    s8 *const thecopy = static_cast<s8 *>(nmalloc(count + 1));
+    s8 *thecopy = static_cast<s8 *>(nmalloc(count + 1));
     memcpy(thecopy, string, count);
     thecopy[count] = '\0';
     return thecopy;
@@ -427,20 +423,22 @@ measured_copy(const s8 *string, const u64 count)
 s8 *
 copy_of(const s8 *string)
 {
-    return measured_copy(string, strlen(string));
+    return measured_copy(string, std::strlen(string));
 }
 
 // Free the string at dest and return the string at src.
 s8 *
 free_and_assign(s8 *dest, s8 *src)
 {
-    free(dest);
+    std::free(dest);
     return src;
 }
 
-/* When not softwrapping, nano scrolls the current line horizontally by
- * chunks ("pages").  Return the column number of the first character
- * displayed in the edit window when the cursor is at the given column. */
+//
+//  When not softwrapping, nano scrolls the current line horizontally by
+//  chunks ("pages").  Return the column number of the first character
+//  displayed in the edit window when the cursor is at the given column.
+//
 size_t
 get_page_start(size_t column)
 {
@@ -466,73 +464,78 @@ xplustabs(void)
     return wideness(openfile->current->data, openfile->current_x);
 }
 
-// Return the index in text of the character that (when displayed) will
-// not overshoot the given column.
+//
+//  Return the index in text of the character that (when displayed) will
+//  not overshoot the given column.
+//
 u64
 actual_x(const s8 *text, u64 column)
 {
-    /* From where we start walking through the text. */
+    //
+    //  From where we start walking through the text.
+    //
     const s8 *start = text;
-
-    /* The current accumulated span, in columns. */
+    //
+    //  The current accumulated span, in columns.
+    //
     u64 width = 0;
 
     while (*text != '\0')
     {
-        s32 charlen = advance_over(text, &width);
-
+        s32 charlen = advance_over(text, width);
         if (width > column)
         {
             break;
         }
-
         text += charlen;
     }
 
-    return (text - start);
+    return static_cast<u64>(text - start);
 }
 
-/* A strnlen() with tabs and multicolumn characters factored in:
- * how many columns wide are the first maxlen bytes of text? */
-size_t
-wideness(const char *text, size_t maxlen)
+//
+//  A strnlen() with tabs and multicolumn characters factored in:
+//  how many columns wide are the first maxlen bytes of text?
+//
+u64
+wideness(const s8 *text, u64 maxlen)
 {
-    size_t width = 0;
-
     if (maxlen == 0)
     {
         return 0;
     }
 
+    u64 width = 0;
     while (*text != '\0')
     {
-        size_t charlen = advance_over(text, &width);
-
+        u64 charlen = static_cast<u64>(advance_over(text, width));
         if (maxlen <= charlen)
         {
             break;
         }
-
         maxlen -= charlen;
         text += charlen;
     }
-
     return width;
 }
 
-/* Return the number of columns that the given text occupies. */
+//
+//  Return the number of columns that the given text occupies.
+//
 size_t
 breadth(const s8 *text)
 {
     u64 span = 0;
     while (*text != '\0')
     {
-        text += advance_over(text, &span);
+        text += advance_over(text, span);
     }
     return span;
 }
 
-// Append a new magic line to the end of the buffer.
+//
+//  Append a new magic line to the end of the buffer.
+//
 void
 new_magicline()
 {
@@ -542,8 +545,10 @@ new_magicline()
     openfile->totsize++;
 }
 
-// Remove the magic line from the end of the buffer, if there is one and
-// it isn't the only line in the file.
+//
+//  Remove the magic line from the end of the buffer, if there is one and
+//  it isn't the only line in the file.
+//
 void
 remove_magicline()
 {
@@ -555,58 +560,64 @@ remove_magicline()
         }
         openfile->filebot = openfile->filebot->prev;
         delete_node(openfile->filebot->next);
-        openfile->filebot->next = NULL;
+        openfile->filebot->next = nullptr;
         openfile->totsize--;
     }
 }
 
-// Return TRUE when the mark is before or at the cursor, and false otherwise.
+//
+//  Return 'true' when the mark is before or at the cursor, and false otherwise.
+//
 bool
-mark_is_before_cursor(void)
+mark_is_before_cursor()
 {
-    return ((openfile->mark->lineno < openfile->current->lineno) ||
+    return (openfile->mark->lineno < openfile->current->lineno ||
             (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
 }
 
-// Return in (top, top_x) and (bot, bot_x) the start and end "coordinates"
-// of the marked region.
+//
+//  Return in (top, top_x) and (bot, bot_x) the start and end "coordinates"
+//  of the marked region.
+//
 void
-get_region(linestruct **top, u64 *top_x, linestruct **bot, u64 *bot_x)
+get_region(linestruct *&top, u64 &top_x, linestruct *&bot, u64 &bot_x)
 {
     if (mark_is_before_cursor())
     {
-        *top   = openfile->mark;
-        *top_x = openfile->mark_x;
-        *bot   = openfile->current;
-        *bot_x = openfile->current_x;
+        top   = openfile->mark;
+        top_x = openfile->mark_x;
+        bot   = openfile->current;
+        bot_x = openfile->current_x;
     }
     else
     {
-        *bot   = openfile->mark;
-        *bot_x = openfile->mark_x;
-        *top   = openfile->current;
-        *top_x = openfile->current_x;
+        bot   = openfile->mark;
+        bot_x = openfile->mark_x;
+        top   = openfile->current;
+        top_x = openfile->current_x;
     }
 }
 
-// Get the set of lines to work on -- either just the current line, or the
-// first to last lines of the marked region.  When the cursor (or mark) is
-// at the start of the last line of the region, exclude that line.
+//
+//  Get the set of lines to work on -- either just the current line, or the
+//  first to last lines of the marked region.  When the cursor (or mark) is
+//  at the start of the last line of the region, exclude that line.
+//
 void
-get_range(linestruct **top, linestruct **bot)
+get_range(linestruct *&top, linestruct *&bot)
 {
     if (!openfile->mark)
     {
-        *top = openfile->current;
-        *bot = openfile->current;
+        top = openfile->current;
+        bot = openfile->current;
     }
     else
     {
         u64 top_x, bot_x;
-        get_region(top, &top_x, bot, &bot_x);
-        if (bot_x == 0 && *bot != *top && !also_the_last)
+        get_region(top, top_x, bot, bot_x);
+        if (bot_x == 0 && bot != top && !also_the_last)
         {
-            *bot = (*bot)->prev;
+            bot = (bot)->prev;
         }
         else
         {
@@ -617,7 +628,7 @@ get_range(linestruct **top, linestruct **bot)
 
 /* Return a pointer to the line that has the given line number. */
 linestruct *
-line_from_number(ssize_t number)
+line_from_number(s64 number)
 {
     linestruct *line = openfile->current;
 

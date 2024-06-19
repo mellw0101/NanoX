@@ -399,61 +399,62 @@ collect_char(const char *string, char *thechar)
     return charlen;
 }
 
-/* Return the length (in bytes) of the character at the start of
- * the given string, and add this character's width to *column. */
-int
-advance_over(const char *string, size_t *column)
+//
+//  Return the length (in bytes) of the character at the start of
+//  the given string, and add this character's width to *column. */
+//
+s32
+advance_over(const s8 *string, u64 &column)
 {
-#ifdef ENABLE_UTF8
-    if ((signed char)*string < 0 && use_utf8)
+    if (static_cast<s8>(*string) < 0 && use_utf8)
     {
-        /* A UTF-8 upper control code has two bytes and takes two columns. */
-        if (((unsigned char)string[0] == 0xC2 && (signed char)string[1] < -96))
+        //
+        //  A UTF-8 upper control code has two bytes and takes two columns.
+        //
+        if (static_cast<u8>(string[0]) == 0xC2 && static_cast<s8>(string[1]) < -96)
         {
-            *column += 2;
+            column += 2;
             return 2;
         }
         else
         {
             wchar_t wc;
-            int     charlen = mbtowide(&wc, string);
 
+            s32 charlen = mbtowide(&wc, string);
             if (charlen < 0)
             {
-                *column += 1;
+                column += 1;
                 return 1;
             }
+            s32 width = wcwidth(wc);
 
-            int width = wcwidth(wc);
-
-#    if defined(__OpenBSD__)
+#if defined(__OpenBSD__)
             *column += (width < 0 || wc >= 0xF0000) ? 1 : width;
-#    else
-            *column += (width < 0) ? 1 : width;
-#    endif
+#else
+            column += (width < 0) ? 1 : width;
+#endif
             return charlen;
         }
     }
-#endif
 
-    if ((unsigned char)*string < 0x20)
+    if (static_cast<u8>(*string) < 0x20)
     {
         if (*string == '\t')
         {
-            *column += tabsize - *column % tabsize;
+            column += tabsize - column % tabsize;
         }
         else
         {
-            *column += 2;
+            column += 2;
         }
     }
-    else if (0x7E < (unsigned char)*string && (unsigned char)*string < 0xA0)
+    else if (0x7E < static_cast<u8>(*string) && static_cast<u8>(*string) < 0xA0)
     {
-        *column += 2;
+        column += 2;
     }
     else
     {
-        *column += 1;
+        column += 1;
     }
 
     return 1;

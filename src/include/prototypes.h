@@ -31,7 +31,6 @@ extern linestruct *pletion_line;
 
 extern unsigned flags[4];
 
-
 extern s64 fill;
 
 extern s32 didfind;
@@ -108,12 +107,10 @@ extern s64 tabsize;
 
 extern regex_t quotereg;
 
-
 extern s32         currmenu;
 extern keystruct  *sclist;
 extern funcstruct *allfuncs;
 extern funcstruct *exitfunc;
-
 
 extern regex_t    search_regexp;
 extern regmatch_t regmatches[10];
@@ -154,7 +151,7 @@ bool is_zerowidth(const s8 *ch);
 s32  char_length(const s8 *const &pointer);
 u64  mbstrlen(const s8 *pointer);
 s32  collect_char(const s8 *string, s8 *thechar);
-s32  advance_over(const s8 *string, u64 *column);
+s32  advance_over(const s8 *string, u64 &column);
 u64  step_left(const s8 *buf, u64 pos);
 u64  step_right(const s8 *buf, u64 pos);
 s32  mbstrcasecmp(const s8 *s1, const s8 *s2);
@@ -199,15 +196,13 @@ void make_new_buffer(void);
 #ifndef NANO_TINY
 bool delete_lockfile(const char *lockfilename);
 #endif
-bool open_buffer(const char *filename, bool new_one);
-void set_modified(void);
-void prepare_for_display(void);
-#ifdef ENABLE_MULTIBUFFER
-void mention_name_and_linecount(void);
-void switch_to_prev_buffer(void);
-void switch_to_next_buffer(void);
-void close_buffer(void);
-#endif
+bool  open_buffer(const char *filename, bool new_one);
+void  set_modified(void);
+void  prepare_for_display(void);
+void  mention_name_and_linecount(void);
+void  switch_to_prev_buffer(void);
+void  switch_to_next_buffer(void);
+void  close_buffer(void);
 void  read_file(FILE *f, int fd, const char *filename, bool undoable);
 int   open_file(const char *filename, bool new_one, FILE **f);
 char *get_next_filename(const char *name, const char *suffix);
@@ -253,44 +248,34 @@ void        shortcut_init(void);
 const char *epithet_of_flag(int flag);
 
 /* Some functions in help.c. */
-#ifdef ENABLE_HELP
-void wrap_help_text_into_buffer(void);
-#endif
-void do_help(void);
+void wrap_help_text_into_buffer();
+void do_help();
 
 /* Most functions in history.c. */
-#ifdef ENABLE_HISTORIES
-void history_init(void);
-void reset_history_pointer_for(const linestruct *list);
-void update_history(linestruct **item, const char *text, bool avoid_duplicates);
-#    ifdef ENABLE_TABCOMP
+void  history_init(void);
+void  reset_history_pointer_for(const linestruct *list);
+void  update_history(linestruct **item, const char *text, bool avoid_duplicates);
 char *get_history_completion(linestruct **h, char *s, size_t len);
-#    endif
-bool have_statedir(void);
-void load_history(void);
-void save_history(void);
-void load_poshistory(void);
-void update_poshistory(void);
-bool has_old_position(const char *file, ssize_t *line, ssize_t *column);
-#endif
+bool  have_statedir(void);
+void  load_history(void);
+void  save_history(void);
+void  load_poshistory(void);
+void  update_poshistory(void);
+bool  has_old_position(const char *file, ssize_t *line, ssize_t *column);
 
 /* Most functions in move.c. */
 void to_first_line(void);
 void to_last_line(void);
 void do_page_up(void);
 void do_page_down(void);
-#ifndef NANO_TINY
 void to_top_row(void);
 void to_bottom_row(void);
 void do_cycle(void);
 void do_center(void);
-#endif
-#ifdef ENABLE_JUSTIFY
 void do_para_begin(linestruct **line);
 void do_para_end(linestruct **line);
 void to_para_begin(void);
 void to_para_end(void);
-#endif
 void to_prev_block(void);
 void to_next_block(void);
 void do_prev_word(void);
@@ -457,8 +442,8 @@ u64         breadth(const s8 *text);
 void        new_magicline();
 void        remove_magicline();
 bool        mark_is_before_cursor();
-void        get_region(linestruct **top, u64 *top_x, linestruct **bot, u64 *bot_x);
-void        get_range(linestruct **top, linestruct **bot);
+void        get_region(linestruct *&top, u64 &top_x, linestruct *&bot, u64 &bot_x);
+void        get_range(linestruct *&top, linestruct *&bot);
 u64         number_of_characters_in(const linestruct *begin, const linestruct *end);
 linestruct *line_from_number(s64 number);
 
@@ -494,7 +479,7 @@ int  go_back_chunks(int nrows, linestruct **line, size_t *leftedge);
 int  go_forward_chunks(int nrows, linestruct **line, size_t *leftedge);
 bool less_than_a_screenful(size_t was_lineno, size_t was_leftedge);
 void edit_scroll(bool direction);
-u64  get_softwrap_breakpoint(const s8 *linedata, size_t leftedge, bool *kickoff, bool *end_of_line);
+u64  get_softwrap_breakpoint(const s8 *linedata, size_t leftedge, bool &kickoff, bool &end_of_line);
 u64  get_chunk_and_edge(size_t column, linestruct *line, size_t *leftedge);
 u64  chunk_for(size_t column, linestruct *line);
 u64  leftedge_for(size_t column, linestruct *line);

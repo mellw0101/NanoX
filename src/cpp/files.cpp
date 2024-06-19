@@ -2430,7 +2430,6 @@ write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type me
     return true;
 }
 
-
 /* Write the marked region of the current buffer out to disk.
  * Return TRUE on success and FALSE on error. */
 bool
@@ -2441,7 +2440,7 @@ write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writin
     size_t      top_x, bot_x;
     bool        retval;
 
-    get_region(&topline, &top_x, &botline, &bot_x);
+    get_region(topline, top_x, botline, bot_x);
 
     /* When needed, prepare a magic end line for the region. */
     if (normal && bot_x > 0 && !ISSET(NO_NEWLINES))

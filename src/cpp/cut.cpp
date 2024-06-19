@@ -186,7 +186,6 @@ is_cuttable(bool test_cliff)
     }
 }
 
-
 /* Delete text from the cursor until the first start of a word to
  * the left, or to the right when forward is TRUE. */
 void
@@ -545,12 +544,12 @@ copy_from_buffer(linestruct *somebuffer)
 /// TODO : (cut_marked_region) NEEDED
 //
 void
-cut_marked_region(void)
+cut_marked_region()
 {
     linestruct *top, *bot;
-    size_t      top_x, bot_x;
+    u64         top_x, bot_x;
 
-    get_region(&top, &top_x, &bot, &bot_x);
+    get_region(top, top_x, bot, bot_x);
 
     extract_segment(top, top_x, bot, bot_x);
 
@@ -655,7 +654,6 @@ cut_text(void)
     wipe_statusbar();
 }
 
-#ifndef NANO_TINY
 /* Cut from the current cursor position to the end of the file. */
 void
 cut_till_eof(void)
@@ -678,7 +676,7 @@ cut_till_eof(void)
 
 /* Erase text (current line or marked region), sending it into oblivion. */
 void
-zap_text(void)
+zap_text()
 {
     /* Remember the current cutbuffer so it can be restored after the zap. */
     linestruct *was_cutbuffer = cutbuffer;
@@ -706,15 +704,19 @@ zap_text(void)
     cutbuffer = was_cutbuffer;
 }
 
-/* Make a copy of the marked region, putting it in the cutbuffer. */
+//
+//  Make a copy of the marked region, putting it in the cutbuffer.
+//
+//  TODO : (copy_marked_region) NEEDED, FIX IT, MODERNIZE IT
+//
 void
-copy_marked_region(void)
+copy_marked_region()
 {
     linestruct *topline, *botline, *afterline;
     char       *was_datastart, saved_byte;
     size_t      top_x, bot_x;
 
-    get_region(&topline, &top_x, &botline, &bot_x);
+    get_region(topline, top_x, botline, bot_x);
 
     openfile->last_action = OTHER;
     keep_cutbuffer        = FALSE;
@@ -742,7 +744,6 @@ copy_marked_region(void)
     botline->data[bot_x] = saved_byte;
     botline->next        = afterline;
 }
-#endif /* !NANO_TINY */
 
 /* Copy text from the current buffer into the cutbuffer.  The text is either
  * the marked region, the whole line, the text from cursor to end-of-line,
@@ -850,38 +851,33 @@ copy_text(void)
 
 /* Copy text from the cutbuffer into the current buffer. */
 void
-paste_text(void)
+paste_text()
 {
-#if defined(ENABLE_WRAPPING) || !defined(NANO_TINY)
     /* Remember where the paste started. */
-    linestruct *was_current = openfile->current;
-#endif
-#ifndef NANO_TINY
-    bool had_anchor = was_current->has_anchor;
-#endif
-    ssize_t was_lineno   = openfile->current->lineno;
-    size_t  was_leftedge = 0;
+    linestruct *was_current  = openfile->current;
+    bool        had_anchor   = was_current->has_anchor;
+    ssize_t     was_lineno   = openfile->current->lineno;
+    size_t      was_leftedge = 0;
 
-    if (cutbuffer == NULL)
+    if (!cutbuffer)
     {
         statusline(AHEM, _("Cutbuffer is empty"));
         return;
     }
 
-#ifndef NANO_TINY
-    add_undo(PASTE, NULL);
+    add_undo(PASTE, nullptr);
 
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
         was_leftedge = leftedge_for(xplustabs(), openfile->current);
     }
-#endif
 
-    /* Add a copy of the text in the cutbuffer to the current buffer
-     * at the current cursor position. */
+    //
+    // Add a copy of the text in the cutbuffer to the current buffer
+    // at the current cursor position.
+    //
     copy_from_buffer(cutbuffer);
 
-#ifndef NANO_TINY
     /* Wipe any anchors in the pasted text, so that they don't proliferate. */
     for (linestruct *line = was_current; line != openfile->current->next; line = line->next)
     {
@@ -889,29 +885,23 @@ paste_text(void)
     }
 
     was_current->has_anchor = had_anchor;
-
     update_undo(PASTE);
-#endif
 
-#ifdef ENABLE_WRAPPING
     /* When still on the same line and doing hard-wrapping, limit the width. */
     if (openfile->current == was_current && ISSET(BREAK_LONG_LINES))
     {
         do_wrap();
     }
-#endif
 
     /* If we pasted less than a screenful, don't center the cursor. */
     if (less_than_a_screenful(was_lineno, was_leftedge))
     {
         focusing = FALSE;
     }
-#ifdef ENABLE_COLOR
     else
     {
         precalc_multicolorinfo();
     }
-#endif
 
     /* Set the desired x position to where the pasted text ends. */
     openfile->placewewant = xplustabs();

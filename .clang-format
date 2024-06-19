@@ -65,7 +65,7 @@ InsertBraces: True
 InsertNewlineAtEOF: True
 MacroBlockBegin: ''
 MacroBlockEnd: ''
-MaxEmptyLinesToKeep: 2
+MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
 SpaceAfterCStyleCast: false
 SpaceAfterLogicalNot: false
@@ -78,7 +78,7 @@ SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceBeforeSquareBrackets: false
 SpaceInEmptyParentheses: false
-SpacesBeforeTrailingComments: 1
+SpacesBeforeTrailingComments: 2
 SpacesInAngles: false
 SpacesInContainerLiterals: true
 SpacesInConditionalStatement: False

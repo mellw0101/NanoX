@@ -106,7 +106,7 @@ do_indent(void)
     char       *indentation;
 
     // Use either all the marked lines or just the current line. */
-    get_range(&top, &bot);
+    get_range(top, bot);
 
     // Skip any leading empty lines.
     while (top != bot->next && top->data[0] == '\0')
@@ -265,7 +265,7 @@ do_unindent(void)
     linestruct *top, *bot, *line;
 
     /* Use either all the marked lines or just the current line. */
-    get_range(&top, &bot);
+    get_range(top, bot);
 
     /* Skip any leading lines that cannot be unindented. */
     while (top != bot->next && length_of_white(top->data) == 0)
@@ -419,7 +419,11 @@ comment_line(undo_type action, linestruct *line, const char *comment_seq)
     return FALSE;
 }
 
-// Comment or uncomment the current line or the marked lines.
+//
+//  Comment or uncomment the current line or the marked lines.
+//
+//  TODO : FIX SO COMMENTS ARE PLACED AT CURSOR POSITION NOT AT THE BEGINNING OF THE LINE
+//
 void
 do_comment(void)
 {
@@ -442,7 +446,7 @@ do_comment(void)
 #    endif
 
     /* Determine which lines to work on. */
-    get_range(&top, &bot);
+    get_range(top, bot);
 
     /* If only the magic line is selected, don't do anything. */
     if (top == bot && bot == openfile->filebot && !ISSET(NO_NEWLINES))
@@ -1639,7 +1643,7 @@ break_line(const char *textstart, ssize_t goal, bool snap_at_nl)
     /* Skip over leading whitespace, where a line should never be broken. */
     while (*pointer != '\0' && is_blank_char(pointer))
     {
-        pointer += advance_over(pointer, &column);
+        pointer += advance_over(pointer, column);
     }
 
     /* Find the last blank that does not overshoot the target column.
@@ -1657,7 +1661,7 @@ break_line(const char *textstart, ssize_t goal, bool snap_at_nl)
             break;
         }
 #    endif
-        pointer += advance_over(pointer, &column);
+        pointer += advance_over(pointer, column);
     }
 
     /* If the whole line displays shorter than goal, we're done. */
@@ -2103,7 +2107,7 @@ justify_text(bool whole_buffer)
         size_t      quot_len, fore_len, other_quot_len, other_white_len;
         linestruct *sampleline;
 
-        get_region(&startline, &start_x, &endline, &end_x);
+        get_region(startline, start_x, endline, end_x);
 
         /* When the marked region is empty, do nothing. */
         if (startline == endline && start_x == end_x)
@@ -2374,7 +2378,7 @@ justify_text(bool whole_buffer)
         statusline(REMARK, _("Justified selection"));
     }
     else
-#    endif // !NANO_TINY
+#    endif  // !NANO_TINY
         if (whole_buffer)
         {
             statusline(REMARK, _("Justified file"));
@@ -2673,7 +2677,7 @@ fix_spello(const char *word)
     /* If the mark is on, start at the beginning of the marked region. */
     if (openfile->mark)
     {
-        get_region(&top, &top_x, &bot, &bot_x);
+        get_region(top, top_x, bot, bot_x);
         /* If the region is marked normally, swap the end points, so that
          * (current, current_x) (where searching starts) is at the top. */
         if (right_side_up)
@@ -3485,8 +3489,11 @@ do_linter(void)
 }
 #endif /* ENABLE_LINTER */
 
-#ifdef ENABLE_FORMATTER
-/* Run a manipulation program on the contents of the buffer. */
+//
+//  Run a manipulation program on the contents of the buffer.
+//
+//  TODO : ( do formatter )
+//
 void
 do_formatter(void)
 {
@@ -3507,9 +3514,7 @@ do_formatter(void)
         return;
     }
 
-#    ifndef NANO_TINY
     openfile->mark = NULL;
-#    endif
 
     temp_name = safe_tempfile(&stream);
 
@@ -3530,7 +3535,6 @@ do_formatter(void)
     unlink(temp_name);
     free(temp_name);
 }
-#endif /* ENABLE_FORMATTER */
 
 #ifndef NANO_TINY
 /* Our own version of "wc".  Note that the character count is in
@@ -3549,7 +3553,7 @@ count_lines_words_and_characters(void)
      * region or the whole buffer.  Then compute the number of characters. */
     if (openfile->mark)
     {
-        get_region(&topline, &top_x, &botline, &bot_x);
+        get_region(topline, top_x, botline, bot_x);
 
         if (topline != botline)
         {
