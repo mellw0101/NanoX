@@ -17,14 +17,17 @@
 #include <unistd.h>
 
 #include <sys/vt.h>
-
+//
 // Used to store the user's original mouse click interval.
+//
 static s32 oldinterval = -1;
-
+//
 // The original settings of the user's terminal.
+//
 static termios original_state;
-
+//
 // Containers for the original and the temporary handler for SIGINT.
+//
 static struct sigaction oldaction, newaction;
 
 //
@@ -42,9 +45,9 @@ static struct sigaction oldaction, newaction;
 ///  -  A pointer to the new node.
 //
 linestruct *
-make_new_node(linestruct *const &prevnode)
+make_new_node(linestruct *prevnode)
 {
-    linestruct *const newnode = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
+    linestruct *newnode = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
 
     newnode->prev       = prevnode;
     newnode->next       = nullptr;
@@ -56,9 +59,11 @@ make_new_node(linestruct *const &prevnode)
     return newnode;
 }
 
+//
 // Splice a new node into an existing linked list of linestructs.
+//
 void
-splice_node(linestruct *const &afterthis, linestruct *const &newnode)
+splice_node(linestruct *afterthis, linestruct *newnode)
 {
     newnode->next = afterthis->next;
     newnode->prev = afterthis;
@@ -77,7 +82,7 @@ splice_node(linestruct *const &afterthis, linestruct *const &newnode)
 
 // Free the data structures in the given node.
 void
-delete_node(linestruct *const &line)
+delete_node(linestruct *line)
 {
     // If the first line on the screen gets deleted, step one back.
     if (line == openfile->edittop)
@@ -98,7 +103,7 @@ delete_node(linestruct *const &line)
 
 // Disconnect a node from a linked list of linestructs and delete it.
 void
-unlink_node(linestruct *const &line)
+unlink_node(linestruct *line)
 {
     if (line->prev != nullptr)
     {
@@ -138,7 +143,7 @@ free_lines(linestruct *src)
 
 // Make a copy of a linestruct node.
 linestruct *
-copy_node(const linestruct *const &src)
+copy_node(const linestruct *src)
 {
     linestruct *const dst = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
 
@@ -944,35 +949,36 @@ signal_init()
     /* Trap SIGHUP and SIGTERM because we want to write the file out. */
     deed.sa_handler = handle_hupterm;
 #ifdef SIGHUP
-    sigaction(SIGHUP, &deed, NULL);
+    sigaction(SIGHUP, &deed, nullptr);
 #endif
-    sigaction(SIGTERM, &deed, NULL);
+    sigaction(SIGTERM, &deed, nullptr);
 
 #ifndef NANO_TINY
 #    ifdef SIGWINCH
     /* Trap SIGWINCH because we want to handle window resizes. */
     deed.sa_handler = handle_sigwinch;
-    sigaction(SIGWINCH, &deed, NULL);
+    sigaction(SIGWINCH, &deed, nullptr);
 #    endif
 #    ifdef SIGTSTP
     /* Prevent the suspend handler from getting interrupted. */
     sigfillset(&deed.sa_mask);
     deed.sa_handler = suspend_nano;
-    sigaction(SIGTSTP, &deed, NULL);
+    sigaction(SIGTSTP, &deed, nullptr);
 #    endif
 #endif /* !NANO_TINY */
 #ifdef SIGCONT
     sigfillset(&deed.sa_mask);
     deed.sa_handler = continue_nano;
-    sigaction(SIGCONT, &deed, NULL);
+    sigaction(SIGCONT, &deed, nullptr);
 #endif
-
-#if !defined(NANO_TINY) && !defined(DEBUG)
-    if (getenv("NANO_NOCATCH") == NULL)
+#if !defined(DEBUG)
+    if (getenv("NANO_NOCATCH") == nullptr)
     {
-        /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
-         * the terminal to a usable state.  Reset these handlers to their
-         * defaults as soon as their signal fires. */
+        //
+        // Trap SIGSEGV and SIGABRT to save any changed buffers and reset
+        // the terminal to a usable state.  Reset these handlers to their
+        // defaults as soon as their signal fires.
+        //
         deed.sa_handler = handle_crash;
         deed.sa_flags |= SA_RESETHAND;
         sigaction(SIGSEGV, &deed, NULL);
@@ -988,12 +994,15 @@ handle_hupterm(s32 signal)
     die(_("Received SIGHUP or SIGTERM\n"));
 }
 
+
 #if !defined(DEBUG)
-// Handler for SIGSEGV (segfault) and SIGABRT (abort).
+//
+/// Handler for SIGSEGV (segfault) and SIGABRT (abort).
+//
 void
 handle_crash(s32 signal)
 {
-    die(_("Sorry! Nano crashed!  Code: %d.  Please report a bug.\n"), signal);
+    die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
 }
 #endif
 
@@ -1037,10 +1046,13 @@ continue_nano(s32 signal)
         enable_mouse_support();
     }
 
+    //
     /// Seams wierd to me that we assume the window was resized
     /// instead of checking, but it's the original code.
     /// COMMENT: -> // Perhaps the user resized the window while we slept.
+    ///
     /// TODO: -> Check if the window was resized instead.
+    //
     the_window_resized = true;
 
     /// This function call is originaly for NANO_TINY
@@ -1081,7 +1093,7 @@ handle_sigwinch(int signal)
 
 /* Reinitialize and redraw the screen completely. */
 void
-regenerate_screen(void)
+regenerate_screen()
 {
     /* Reset the trigger. */
     the_window_resized = FALSE;
@@ -1161,7 +1173,6 @@ toggle_this(const s32 flag)
             titlebar(NULL);
             refresh_needed = TRUE;
             break;
-#ifdef ENABLE_COLOR
         case NO_SYNTAX :
             precalc_multicolorinfo();
             refresh_needed = TRUE;
@@ -1174,12 +1185,9 @@ toggle_this(const s32 flag)
                 return;
             }
             break;
-#endif
-#ifdef ENABLE_MOUSE
         case USE_MOUSE :
             mouse_init();
             break;
-#endif
     }
 
     if (flag == AUTOINDENT || flag == BREAK_LONG_LINES || flag == SOFTWRAP)

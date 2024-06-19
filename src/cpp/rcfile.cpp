@@ -1752,45 +1752,121 @@ pick_up_name(const char *kind, char *ptr, char **storage)
     *storage = mallocstrcpy(*storage, ptr);
 }
 
-/* Handle the six syntax-only commands. */
-bool
-parse_syntax_commands(char *keyword, char *ptr)
+//
+/// @name  -  @c checkSyntaxCommand
+///
+/// @brief
+///  -  Check the syntax command using an unordered map.
+///
+/// @param str ( const std::string & )
+///  -  The string to check.
+///
+/// @returns ( u32 )  -  As a bitfield.
+///  -  The syntax option.
+//
+static const u32
+checkSyntaxCommand(const std::string &str)
 {
-    if (strcmp(keyword, "color") == 0)
+    static const std::unordered_map<std::string, const u32> map = {
+        {    "color",     SYNTAX_OPT_COLOR},
+        {   "icolor",    SYNTAX_OPT_ICOLOR},
+        {  "comment",   SYNTAX_OPT_COMMENT},
+        { "tabgives",  SYNTAX_OPT_TABGIVES},
+        {   "linter",    SYNTAX_OPT_LINTER},
+        {"formatter", SYNTAX_OPT_FORMATTER}
+    };
+    const auto it = map.find(str);
+    return it != map.end() ? it->second : static_cast<u32>(false);
+}
+
+//
+/// Old version of the syntax command parser, from nano source code uses strcmp.
+/// HERE:
+/*
+    //
+    // Handle the six syntax-only commands.
+    //
+    bool
+    parse_syntax_commands(s8 *keyword, s8 *ptr)
+    {
+        if (strcmp(keyword, "color") == 0)
+        {
+            parse_rule(ptr, NANO_REG_EXTENDED);
+        }
+        else if (strcmp(keyword, "icolor") == 0)
+        {
+            parse_rule(ptr, NANO_REG_EXTENDED | REG_ICASE);
+        }
+        else if (strcmp(keyword, "comment") == 0)
+        {
+    #ifdef ENABLE_COMMENT
+            pick_up_name("comment", ptr, &live_syntax->comment);
+    #endif
+        }
+        else if (strcmp(keyword, "tabgives") == 0)
+        {
+            pick_up_name("tabgives", ptr, &live_syntax->tabstring);
+        }
+        else if (strcmp(keyword, "linter") == 0)
+        {
+            pick_up_name("linter", ptr, &live_syntax->linter);
+            strip_leading_blanks_from(live_syntax->linter);
+        }
+        else if (strcmp(keyword, "formatter") == 0)
+        {
+            pick_up_name("formatter", ptr, &live_syntax->formatter);
+            strip_leading_blanks_from(live_syntax->formatter);
+        }
+        else
+        {
+            return FALSE;
+        }
+
+        return TRUE;
+    }
+*/
+//
+/// New version of the syntax command parser Uses a unordered map
+/// of std::string`s and u32`s ( as bitfields ).
+/// The use of bitfields enables the use of bitwise operations.
+//
+bool
+parse_syntax_commands(s8 *keyword, s8 *ptr)
+{
+    const u32 syntax_opt = checkSyntaxCommand(keyword);
+    if (syntax_opt == false)
+    {
+        return false;
+    }
+    if (syntax_opt & SYNTAX_OPT_COLOR)
     {
         parse_rule(ptr, NANO_REG_EXTENDED);
     }
-    else if (strcmp(keyword, "icolor") == 0)
+    else if (syntax_opt & SYNTAX_OPT_ICOLOR)
     {
         parse_rule(ptr, NANO_REG_EXTENDED | REG_ICASE);
     }
-    else if (strcmp(keyword, "comment") == 0)
+    else if (syntax_opt & SYNTAX_OPT_COMMENT)
     {
-#ifdef ENABLE_COMMENT
         pick_up_name("comment", ptr, &live_syntax->comment);
-#endif
     }
-    else if (strcmp(keyword, "tabgives") == 0)
+    else if (syntax_opt & SYNTAX_OPT_TABGIVES)
     {
         pick_up_name("tabgives", ptr, &live_syntax->tabstring);
     }
-    else if (strcmp(keyword, "linter") == 0)
+    else if (syntax_opt & SYNTAX_OPT_LINTER)
     {
         pick_up_name("linter", ptr, &live_syntax->linter);
         strip_leading_blanks_from(live_syntax->linter);
     }
-    else if (strcmp(keyword, "formatter") == 0)
+    else if (syntax_opt & SYNTAX_OPT_FORMATTER)
     {
         pick_up_name("formatter", ptr, &live_syntax->formatter);
         strip_leading_blanks_from(live_syntax->formatter);
     }
-    else
-    {
-        return FALSE;
-    }
-
-    return TRUE;
+    return true;
 }
+
 
 //
 /// Verify that the user has not unmapped every shortcut for a
@@ -1912,7 +1988,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
     s64 length = 0;
 
     //
-    /// TODO : This is the main loop for rcfile parsing. FIX IT
+    // TODO : This is the main loop for rcfile parsing. FIX IT
     //
     while ((length = getline(&buffer, &size, rcstream)) > 0)
     {

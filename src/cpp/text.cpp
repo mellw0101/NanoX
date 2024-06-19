@@ -622,7 +622,7 @@ do_undo(void)
             original_x    = (u->head_x == 0) ? u->tail_x : u->head_x;
             regain_from_x = (u->head_x == 0) ? 0 : u->tail_x;
             line->data =
-                RE_CAST(char *, nrealloc(line->data, strlen(line->data) + strlen(&u->strdata[regain_from_x]) + 1));
+                static_cast<char *>(nrealloc(line->data, strlen(line->data) + strlen(&u->strdata[regain_from_x]) + 1));
             strcat(line->data, &u->strdata[regain_from_x]);
             line->has_anchor |= line->next->has_anchor;
             unlink_node(line->next);
@@ -1110,7 +1110,7 @@ discard_until(const undostruct *thisitem)
 void
 add_undo(undo_type action, const char *message)
 {
-    undostruct *u        = RE_CAST(undostruct *, nmalloc(sizeof(undostruct)));
+    undostruct *u        = static_cast<undostruct *>(nmalloc(sizeof(undostruct)));
     linestruct *thisline = openfile->current;
 
     /* Initialize the newly allocated undo item. */

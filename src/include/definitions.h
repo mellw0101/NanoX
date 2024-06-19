@@ -429,24 +429,24 @@ typedef struct augmentstruct
 
 typedef struct syntaxtype
 {
-    char *name;                    // The name of this syntax.
-    char *filename;                // File where the syntax is defined, or NULL if not an
-                                   // included file.
-    size_t         lineno;         // The line number where the 'syntax' command was found.
-    augmentstruct *augmentations;  // List of extendsyntax commands to apply when loaded.
-    regexlisttype *extensions;     // The list of extensions that this syntax applies to.
-    regexlisttype *headers;        // The list of headerlines that this syntax applies to.
-    regexlisttype *magics;         // The list of libmagic results that this syntax applies to.
-    char          *linter;         // The command with which to lint this type of file.
-    char          *formatter;      // The command with which to format/modify/arrange this
-                                   // type of file.
-    char *tabstring;               // What the Tab key should produce; NULL for default
-                                   // behavior.
-    char *comment;                 // The line comment prefix (and postfix) for this type of
-                                   // file.
-    colortype         *color;      // The colors and their regexes used in this syntax.
-    short              multiscore; // How many multiline regex strings this syntax has.
-    struct syntaxtype *next;       // Next syntax.
+    char *name;                   // The name of this syntax.
+    char *filename;               // File where the syntax is defined, or NULL if not an
+                                  // included file.
+    size_t         lineno;        // The line number where the 'syntax' command was found.
+    augmentstruct *augmentations; // List of extendsyntax commands to apply when loaded.
+    regexlisttype *extensions;    // The list of extensions that this syntax applies to.
+    regexlisttype *headers;       // The list of headerlines that this syntax applies to.
+    regexlisttype *magics;        // The list of libmagic results that this syntax applies to.
+    char          *linter;        // The command with which to lint this type of file.
+    char          *formatter;     // The command with which to format/modify/arrange this
+                                  // type of file.
+    char *tabstring;              // What the Tab key should produce; NULL for default
+                                  // behavior.
+    char *comment;                // The line comment prefix (and postfix) for this type of
+                                  // file.
+    colortype  *color;            // The colors and their regexes used in this syntax.
+    short       multiscore;       // How many multiline regex strings this syntax has.
+    syntaxtype *next;             // Next syntax.
 } syntaxtype;
 
 typedef struct lintstruct
@@ -597,7 +597,7 @@ typedef struct completionstruct
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"
 
-enum ConfigOption : const s32
+enum ConfigOption : const u32
 {
     OPERATINGDIR     = (1 << 0),
     FILL             = (1 << 1),
@@ -629,4 +629,14 @@ enum CliOptions : const u32
     CLI_OPT_LISTSYNTAX     = (1 << 11),
     CLI_OPT_BACKUPDIR      = (1 << 12),
     CLI_OPT_BREAKLONGLINES = (1 << 13),
+};
+
+enum SyntaxCommandOpt : const u32
+{
+    SYNTAX_OPT_COLOR     = (1 << 0),
+    SYNTAX_OPT_ICOLOR    = (1 << 1),
+    SYNTAX_OPT_COMMENT   = (1 << 2),
+    SYNTAX_OPT_TABGIVES  = (1 << 3),
+    SYNTAX_OPT_LINTER    = (1 << 4),
+    SYNTAX_OPT_FORMATTER = (1 << 5)
 };

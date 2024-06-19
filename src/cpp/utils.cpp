@@ -402,7 +402,7 @@ nrealloc(void *section, const u64 howmuch)
 /// Usage: "dest = mallocstrcpy(dest, src);".
 //
 s8 *
-mallocstrcpy(s8 *&dest, const s8 *const &src)
+mallocstrcpy(s8 *dest, const s8 *src)
 {
     const u64 count = strlen(src) + 1;
 
@@ -415,7 +415,7 @@ mallocstrcpy(s8 *&dest, const s8 *const &src)
 // Return an allocated copy of the first count characters
 // of the given string, and NUL-terminate the copy.
 s8 *
-measured_copy(const s8 *const &string, const u64 count)
+measured_copy(const s8 *string, const u64 count)
 {
     s8 *const thecopy = static_cast<s8 *>(nmalloc(count + 1));
     memcpy(thecopy, string, count);
@@ -425,14 +425,14 @@ measured_copy(const s8 *const &string, const u64 count)
 
 // Return an allocated copy of the given string.
 s8 *
-copy_of(const s8 *const &string)
+copy_of(const s8 *string)
 {
     return measured_copy(string, strlen(string));
 }
 
 // Free the string at dest and return the string at src.
 s8 *
-free_and_assign(s8 *const &dest, s8 *const &src)
+free_and_assign(s8 *dest, s8 *src)
 {
     free(dest);
     return src;
@@ -571,7 +571,7 @@ mark_is_before_cursor(void)
 // Return in (top, top_x) and (bot, bot_x) the start and end "coordinates"
 // of the marked region.
 void
-get_region(linestruct **const &top, u64 *const &top_x, linestruct **const &bot, u64 *const &bot_x)
+get_region(linestruct **top, u64 *top_x, linestruct **bot, u64 *bot_x)
 {
     if (mark_is_before_cursor())
     {
@@ -593,7 +593,7 @@ get_region(linestruct **const &top, u64 *const &top_x, linestruct **const &bot, 
 // first to last lines of the marked region.  When the cursor (or mark) is
 // at the start of the last line of the region, exclude that line.
 void
-get_range(linestruct **const &top, linestruct **const &bot)
+get_range(linestruct **top, linestruct **bot)
 {
     if (!openfile->mark)
     {

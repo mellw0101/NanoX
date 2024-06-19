@@ -8,8 +8,12 @@
     "breadcrumbs.showTypeParameters": false,
     "editor.suggest.showTypeParameters": false,
     "clangd.arguments": [
+        "--background-index",
+        "--clang-tidy",
         "--header-insertion=never",
-        "--header-insertion-decorators"
+        "--header-insertion-decorators",
+        "--completion-style=detailed",
+        "--log=verbose"
     ],
     "clangd.enableCodeCompletion": true,
     "editor.semanticHighlighting.enabled": true,

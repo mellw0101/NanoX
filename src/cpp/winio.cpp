@@ -2553,11 +2553,13 @@ show_states_at(WINDOW *window)
 }
 #endif
 
-// If path is NULL, we're in normal editing mode, so display the current
-// version of nano, the current filename, and whether the current file
-// has been modified on the title bar.  If path isn't NULL, we're either
-// in the file browser or the help viewer, so show either the current
-// directory or the title of help text, that is: whatever is in path.
+//
+/// If path is NULL, we're in normal editing mode, so display the current
+/// version of nano, the current filename, and whether the current file
+/// has been modified on the title bar.  If path isn't NULL, we're either
+/// in the file browser or the help viewer, so show either the current
+/// directory or the title of help text, that is: whatever is in path.
+//
 void
 titlebar(const s8 *path)
 {
@@ -3088,7 +3090,7 @@ statusbar(const s8 *msg)
 /* Warn the user on the status bar and pause for a moment, so that the
  * message can be noticed and read. */
 void
-warn_and_briefly_pause(const char *msg)
+warn_and_briefly_pause(const s8 *msg)
 {
     blank_bottombars();
     statusline(ALERT, msg);
@@ -3096,17 +3098,21 @@ warn_and_briefly_pause(const char *msg)
     napms(1500);
 }
 
-/* Write a key's representation plus a minute description of its function
- * to the screen.  For example, the key could be "^C" and its tag "Cancel".
- * Key plus tag may occupy at most width columns. */
+//
+/// Write a key's representation plus a minute description of its function
+/// to the screen.  For example, the key could be "^C" and its tag "Cancel".
+/// Key plus tag may occupy at most width columns. */
+//
 void
-post_one_key(const char *keystroke, const char *tag, int width)
+post_one_key(const s8 *keystroke, const s8 *tag, s32 width)
 {
     wattron(footwin, interface_color_pair[KEY_COMBO]);
     waddnstr(footwin, keystroke, actual_x(keystroke, width));
     wattroff(footwin, interface_color_pair[KEY_COMBO]);
 
-    /* If the remaining space is too small, skip the description. */
+    //
+    // If the remaining space is too small, skip the description.
+    //
     width -= breadth(keystroke);
     if (width < 2)
     {
@@ -3119,10 +3125,12 @@ post_one_key(const char *keystroke, const char *tag, int width)
     wattroff(footwin, interface_color_pair[FUNCTION_TAG]);
 }
 
-/* Display the shortcut list corresponding to menu on the last two rows
- * of the bottom portion of the window. */
+//
+/// Display the shortcut list corresponding to menu on the last two rows
+/// of the bottom portion of the window. The shortcuts are shown in pairs,
+//
 void
-bottombars(int menu)
+bottombars(s32 menu)
 {
     size_t           index, number, itemwidth;
     const keystruct *s;

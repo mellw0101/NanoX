@@ -309,10 +309,10 @@ void do_left(void);
 void do_right(void);
 
 /* Most functions in nano.c. */
-linestruct *make_new_node(linestruct *const &prevnode);
-void        splice_node(linestruct *const &afterthis, linestruct *const &newnode);
-void        unlink_node(linestruct *const &line);
-void        delete_node(linestruct *const &line);
+linestruct *make_new_node(linestruct *prevnode);
+void        splice_node(linestruct *afterthis, linestruct *newnode);
+void        unlink_node(linestruct *line);
+void        delete_node(linestruct *line);
 linestruct *copy_buffer(const linestruct *src);
 void        free_lines(linestruct *src);
 void        renumber_from(linestruct *line);
@@ -332,8 +332,8 @@ void restore_handler_for_Ctrl_C(void);
 void reconnect_and_store_state(void);
 #endif
 void handle_hupterm(int signal);
-#ifndef DEBUG
-void handle_crash(int signal);
+#if !defined(DEBUG)
+void handle_crash(s32 signal);
 #endif
 void suspend_nano(int signal);
 void do_suspend(void);
@@ -372,7 +372,7 @@ void       jot_error(const char *msg, ...);
 keystruct *strtosc(const char *input);
 void       parse_one_include(char *file, syntaxtype *syntax);
 void       grab_and_store(const char *kind, char *ptr, regexlisttype **storage);
-bool       parse_syntax_commands(char *keyword, char *ptr);
+bool       parse_syntax_commands(s8 *keyword, s8 *ptr);
 void       parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
 void       do_rcfiles(void);
 
@@ -427,39 +427,38 @@ void    do_full_justify(void);
 void    do_spell(void);
 void    do_linter(void);
 void    do_formatter(void);
-void    count_lines_words_and_characters(void);
-void    do_verbatim_input(void);
-void    complete_a_word(void);
+void    count_lines_words_and_characters();
+void    do_verbatim_input();
+void    complete_a_word();
 
-/* All functions in utils.c. */
-void      get_homedir();
-const s8 *tail(const s8 *path);
-char     *concatenate(const char *path, const char *name);
-int       digits(s64 n);
-bool      parseNum(const std::string &string, int64_t &result);
-bool      parse_line_column(const char *str, s64 *line, s64 *column);
-void      recode_NUL_to_LF(char *string, u64 length);
-u64       recode_LF_to_NUL(char *string);
-void      free_chararray(char **array, u64 len);
-bool      is_separate_word(u64 position, u64 length, const char *buf);
-const s8 *strstrwrapper(const char *haystack, const char *needle, const char *start);
-void     *nmalloc(const u64 howmuch);
-void     *nrealloc(void *ptr, const u64 howmuch);
-s8       *measured_copy(const s8 *const &string, u64 count);
-s8       *mallocstrcpy(s8 *&dest, const s8 *const &src);
-s8       *copy_of(const s8 *const &string);
-s8       *free_and_assign(s8 *const &dest, s8 *const &src);
-u64       get_page_start(u64 column);
-u64       xplustabs();
-u64       actual_x(const s8 *text, size_t column);
-u64       wideness(const s8 *text, size_t maxlen);
-u64       breadth(const s8 *text);
-void      new_magicline();
-void      remove_magicline();
-
+/// All functions in @c utils.cpp
+void        get_homedir();
+const s8   *tail(const s8 *path);
+char       *concatenate(const char *path, const char *name);
+int         digits(s64 n);
+bool        parseNum(const std::string &string, int64_t &result);
+bool        parse_line_column(const char *str, s64 *line, s64 *column);
+void        recode_NUL_to_LF(char *string, u64 length);
+u64         recode_LF_to_NUL(char *string);
+void        free_chararray(char **array, u64 len);
+bool        is_separate_word(u64 position, u64 length, const char *buf);
+const s8   *strstrwrapper(const char *haystack, const char *needle, const char *start);
+void       *nmalloc(const u64 howmuch);
+void       *nrealloc(void *ptr, const u64 howmuch);
+s8         *measured_copy(const s8 *string, u64 count);
+s8         *mallocstrcpy(s8 *dest, const s8 *src);
+s8         *copy_of(const s8 *string);
+s8         *free_and_assign(s8 *dest, s8 *src);
+u64         get_page_start(u64 column);
+u64         xplustabs();
+u64         actual_x(const s8 *text, size_t column);
+u64         wideness(const s8 *text, size_t maxlen);
+u64         breadth(const s8 *text);
+void        new_magicline();
+void        remove_magicline();
 bool        mark_is_before_cursor();
-void        get_region(linestruct **const &top, u64 *const &top_x, linestruct **const &bot, u64 *const &bot_x);
-void        get_range(linestruct **const &top, linestruct **const &bot);
+void        get_region(linestruct **top, u64 *top_x, linestruct **bot, u64 *bot_x);
+void        get_range(linestruct **top, linestruct **bot);
 u64         number_of_characters_in(const linestruct *begin, const linestruct *end);
 linestruct *line_from_number(s64 number);
 
