@@ -2,6 +2,7 @@
 #include "../include/prototypes.h"
 #include "../include/revision.h"
 
+#include <Mlib/Profile.h>
 #include <cctype>
 #include <cstring>
 #include <cwchar>
@@ -1641,7 +1642,9 @@ parse_kbinput(WINDOW *frame)
                     return CONTROL_DELETE;
             }
         }
-        // Are both Shift and Alt being held?
+        //
+        //  Are both Shift and Alt being held?
+        //
         if ((modifiers & 0x09) == 0x09)
         {
             switch (keycode)
@@ -2221,9 +2224,11 @@ blank_edit(void)
     }
 }
 
-/* Blank the first line of the bottom portion of the screen. */
+//
+//  Blank the first line of the bottom portion of the screen.
+//
 void
-blank_statusbar(void)
+blank_statusbar()
 {
     blank_row(footwin, 0);
 }
@@ -2953,6 +2958,8 @@ minibar()
 void
 statusline(message_type importance, const s8 *msg, ...)
 {
+    Mlib::Profile::AutoTimer timer("statusline");
+
     bool       showed_whitespace = ISSET(WHITESPACE_DISPLAY);
     static u64 start_col         = 0;
 
@@ -2962,25 +2969,33 @@ statusline(message_type importance, const s8 *msg, ...)
 
     va_list ap;
 
-    // Drop all waiting keystrokes upon any kind of "error".
+    //
+    //  Drop all waiting keystrokes upon any kind of 'error'.
+    //
     if (importance >= AHEM)
     {
         waiting_codes = 0;
     }
 
-    /* Ignore a message with an importance that is lower than the last one. */
+    //
+    //  Ignore a message with an importance that is lower than the last one.
+    //
     if (importance < lastmessage && lastmessage > NOTICE)
     {
         return;
     }
 
-    // Construct the message out of all the arguments.
+    //
+    //  Construct the message out of all the arguments.
+    //
     compound = static_cast<s8 *>(nmalloc(MAXCHARLEN * COLS + 1));
     va_start(ap, msg);
     vsnprintf(compound, MAXCHARLEN * COLS + 1, msg, ap);
     va_end(ap);
 
-    // When not in curses mode, write the message to standard error.
+    //
+    //  When not in curses mode, write the message to standard error.
+    //
     if (isendwin())
     {
         fprintf(stderr, "\n%s\n", compound);
@@ -2994,14 +3009,18 @@ statusline(message_type importance, const s8 *msg, ...)
         openfile->errormessage = copy_of(compound);
     }
 
-    // On a one-row terminal, ensure that any changes in the edit window are
-    // written out first, to prevent them from overwriting the message.
+    //
+    //  On a one-row terminal, ensure that any changes in the edit window are
+    //  written out first, to prevent them from overwriting the message.
+    //
     if (LINES == 1 && importance < INFO)
     {
         wnoutrefresh(midwin);
     }
 
-    /* If there are multiple alert messages, add trailing dots to the first. */
+    //
+    //  If there are multiple alert messages, add trailing dots to the first.
+    //
     if (lastmessage == ALERT)
     {
         if (start_col > 4)
@@ -3073,13 +3092,17 @@ statusline(message_type importance, const s8 *msg, ...)
     //     }
     // #endif
 
-    /* Push the message to the screen straightaway. */
+    //
+    //  Push the message to the screen straightaway.
+    //
     wrefresh(footwin);
 
     free(compound);
     free(message);
 
-    /* When requested, wipe the status bar after just one keystroke. */
+    //
+    //  When requested, wipe the status bar after just one keystroke.
+    //
     countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
 }
 

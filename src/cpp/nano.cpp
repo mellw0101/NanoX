@@ -1,6 +1,7 @@
 #include "../include/prototypes.h"
 #include "../include/revision.h"
 
+#include <Mlib/Profile.h>
 #include <Mlib/def.h>
 
 #include <cctype>
@@ -1390,7 +1391,9 @@ wanted_to_move(void (*func)(void))
             func == do_page_down || func == to_first_line || func == to_last_line);
 }
 
-// Return TRUE when the given function makes a change -- no good for view mode.
+//
+//  Return TRUE when the given function makes a change -- no good for view mode.
+//
 bool
 changes_something(functionptrtype f)
 {
@@ -1454,7 +1457,7 @@ inject(s8 *burst, u64 count)
 {
     linestruct *thisline = openfile->current;
 
-    u64 datalen      = strlen(thisline->data);
+    u64 datalen      = std::strlen(thisline->data);
     u64 original_row = 0;
     u64 old_amount   = 0;
 
@@ -1476,8 +1479,10 @@ inject(s8 *burst, u64 count)
         }
     }
 
-    // Only add a new undo item when the current item is not an ADD or when
-    // the current typing is not contiguous with the previous typing.
+    //
+    //  Only add a new undo item when the current item is not an ADD or when
+    //  the current typing is not contiguous with the previous typing.
+    //
     if (openfile->last_action != ADD || openfile->current_undo->tail_lineno != thisline->lineno ||
         openfile->current_undo->tail_x != openfile->current_x)
     {
@@ -1553,12 +1558,11 @@ inject(s8 *burst, u64 count)
     }
 }
 
-/// @name @c process_a_keystroke
-/// @brief
-/// - Read in a keystroke, and execute its command or insert it into the buffer.
-/// @returns
-/// - @c void
-/// TODO: -> Move to a better place
+//
+//  Read in a keystroke, and execute its command or insert it into the buffer.
+//
+//  TODO: -> Move to a better place
+//
 void
 process_a_keystroke()
 {
@@ -1918,91 +1922,35 @@ checkFlag(const std::string &str)
 s32
 main(s32 argc, s8 **argv)
 {
+    Mlib::Profile::setupReportGeneration();
+
     s32 stdin_flags;
-    // , optchr;
-
-    /* Whether to ignore the nanorc files. */
+    //
+    //  Whether to ignore the nanorc files.
+    //
     bool ignore_rcfiles = false;
-
-    /* Was the fill option used on the command line? */
+    //
+    //  Was the fill option used on the command line?
+    //
     bool fill_used = false;
-
-    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
+    //
+    //  Becomes 0 when --nowrap and 1 when --breaklonglines is used.
+    //
     s32 hardwrap = -2;
-
-    /* Whether the quoting regex was compiled successfully. */
+    //
+    //  Whether the quoting regex was compiled successfully.
+    //
     s32 quoterc;
 
-    //     const struct option long_options[] = {
-    //         {      "boldtext", 0, NULL, 'D'},
-    //         {   "multibuffer", 0, NULL, 'F'},
-    //         { "ignorercfiles", 0, NULL, 'I'},
-    //         {  "rawsequences", 0, NULL, 'K'},
-    //         {    "trimblanks", 0, NULL, 'M'},
-    //         {      "quotestr", 1, NULL, 'Q'},
-    //         {    "restricted", 0, NULL, 'R'},
-    //         {    "quickblank", 0, NULL, 'U'},
-    //         {       "version", 0, NULL, 'V'},
-    //         {        "syntax", 1, NULL, 'Y'},
-    //         {"breaklonglines", 0, NULL, 'b'},
-    //         {  "constantshow", 0, NULL, 'c'},
-    //         {  "rebinddelete", 0, NULL, 'd'},
-    //         {        "rcfile", 1, NULL, 'f'},
-    //         {    "showcursor", 0, NULL, 'g'},
-    //         {          "help", 0, NULL, 'h'},
-    //         {   "linenumbers", 0, NULL, 'l'},
-    //         {         "mouse", 0, NULL, 'm'},
-    //         {  "operatingdir", 1, NULL, 'o'},
-    //         {      "preserve", 0, NULL, 'p'},
-    //         {          "fill", 1, NULL, 'r'},
-    //         {       "speller", 1, NULL, 's'},
-    //         {    "saveonexit", 0, NULL, 't'},
-    //         {          "view", 0, NULL, 'v'},
-    //         {        "nowrap", 0, NULL, 'w'},
-    //         {        "nohelp", 0, NULL, 'x'},
-    //         {  "listsyntaxes", 0, NULL, 'z'},
-    //         {"modernbindings", 0, NULL, '/'},
-    //         {     "smarthome", 0, NULL, 'A'},
-    //         {        "backup", 0, NULL, 'B'},
-    //         {     "backupdir", 1, NULL, 'C'},
-    //         {  "tabstospaces", 0, NULL, 'E'},
-    //         {       "locking", 0, NULL, 'G'},
-    //         {    "historylog", 0, NULL, 'H'},
-    //         {   "guidestripe", 1, NULL, 'J'},
-    //         {    "nonewlines", 0, NULL, 'L'},
-    //         {     "noconvert", 0, NULL, 'N'},
-    //         {     "bookstyle", 0, NULL, 'O'},
-    //         {   "positionlog", 0, NULL, 'P'},
-    //         {      "softwrap", 0, NULL, 'S'},
-    //         {       "tabsize", 1, NULL, 'T'},
-    //         {    "wordbounds", 0, NULL, 'W'},
-    //         {     "wordchars", 1, NULL, 'X'},
-    //         {           "zap", 0, NULL, 'Z'},
-    //         {      "atblanks", 0, NULL, 'a'},
-    //         {     "emptyline", 0, NULL, 'e'},
-    //         {    "autoindent", 0, NULL, 'i'},
-    //         {"jumpyscrolling", 0, NULL, 'j'},
-    //         { "cutfromcursor", 0, NULL, 'k'},
-    //         {        "noread", 0, NULL, 'n'},
-    //         {     "indicator", 0, NULL, 'q'},
-    //         {          "unix", 0, NULL, 'u'},
-    //         {     "afterends", 0, NULL, 'y'},
-    //         {  "colonparsing", 0, NULL, '@'},
-    //         {    "stateflags", 0, NULL, '%'},
-    //         {       "minibar", 0, NULL, '_'},
-    //         {          "zero", 0, NULL, '0'},
-    // #ifdef HAVE_LIBMAGIC
-    //         {         "magic", 0, NULL, '!'},
-    // #endif
-    //         {            NULL, 0, NULL,   0}
-    //     };
-
     struct vt_stat dummy;
-
-    /* Check whether we're running on a Linux console. */
+    //
+    //  Check whether we're running on a Linux console.
+    //
     on_a_vt = !ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy);
 
-    /* Back up the terminal settings so that they can be restored. */
+    //
+    //  Back up the terminal settings so that they can be restored.
+    //
     tcgetattr(STDIN_FILENO, &original_state);
 
     //
@@ -2112,224 +2060,18 @@ main(s32 argc, s8 **argv)
         }
     }
 
-    // while ((optchr = getopt_long(argc, argv,
-    //                              "ABC:DEFGHIJ:KLMNOPQ:RST:UVWX:Y:Z"
-    //                              "abcdef:ghijklmno:pqr:s:tuvwxyz!@%_0/",
-    //                              long_options, nullptr)) > 0)
-    // {
-    //     switch (optchr)
-    //     {
-    //         case 'A' :
-    //             SET(SMART_HOME);
-    //             break;
-    //         case 'B' :
-    //             SET(MAKE_BACKUP);
-    //             break;
-    //         case 'C' :
-    //             backup_dir = mallocstrcpy(backup_dir, optarg);
-    //             break;
-    //         case 'D' :
-    //             SET(BOLD_TEXT);
-    //             break;
-    //         case 'E' :
-    //             SET(TABS_TO_SPACES);
-    //             break;
-    //         case 'F' :
-    //             SET(MULTIBUFFER);
-    //             break;
-    //         case 'G' :
-    //             SET(LOCKING);
-    //             break;
-    //         case 'H' :
-    //             SET(HISTORYLOG);
-    //             break;
-    //         case 'I' :
-    //             ignore_rcfiles = true;
-    //             break;
-    //         case 'J' :
-    //             if (!parseNum(optarg, stripe_column) || stripe_column <= 0)
-    //             {
-    //                 fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
-    //                 fprintf(stderr, "\n");
-    //                 exit(EXIT_FAILURE);
-    //             }
-    //             break;
-    //         case 'K' :
-    //             SET(RAW_SEQUENCES);
-    //             break;
-    //         case 'L' :
-    //             SET(NO_NEWLINES);
-    //             break;
-    //         case 'M' :
-    //             SET(TRIM_BLANKS);
-    //             break;
-    //         case 'N' :
-    //             SET(NO_CONVERT);
-    //             break;
-    //         case 'O' :
-    //             SET(BOOKSTYLE);
-    //             break;
-    //         case 'P' :
-    //             SET(POSITIONLOG);
-    //             break;
-    //         case 'Q' :
-    //             quotestr = mallocstrcpy(quotestr, optarg);
-    //             break;
-    //         case 'R' :
-    //             SET(RESTRICTED);
-    //             break;
-    //         case 'S' :
-    //             SET(SOFTWRAP);
-    //             break;
-    //         case 'T' :
-    //             if (!parseNum(optarg, tabsize) || tabsize <= 0)
-    //             {
-    //                 fprintf(stderr, _("Requested tab size \"%s\" is invalid"), optarg);
-    //                 fprintf(stderr, "\n");
-    //                 exit(EXIT_FAILURE);
-    //             }
-    //             break;
-    //         case 'U' :
-    //             SET(QUICK_BLANK);
-    //             break;
-    //         case 'V' :
-    //             version();
-    //             exit(EXIT_SUCCESS);
-    //         case 'W' :
-    //             SET(WORD_BOUNDS);
-    //             break;
-    //         case 'X' :
-    //             word_chars = mallocstrcpy(word_chars, optarg);
-    //             break;
-    //         case 'Y' :
-    //             syntaxstr = mallocstrcpy(syntaxstr, optarg);
-    //             break;
-    //         case 'Z' :
-    //             SET(LET_THEM_ZAP);
-    //             break;
-    //         case 'a' :
-    //             SET(AT_BLANKS);
-    //             break;
-    //         case 'b' :
-    //             hardwrap = 1;
-    //             break;
-    //         case 'c' :
-    //             SET(CONSTANT_SHOW);
-    //             break;
-    //         case 'd' :
-    //             SET(REBIND_DELETE);
-    //             break;
-    //         case 'e' :
-    //             SET(EMPTY_LINE);
-    //             break;
-    //         case 'f' :
-    //             custom_nanorc = mallocstrcpy(custom_nanorc, optarg);
-    //             break;
-    //         case 'g' :
-    //             SET(SHOW_CURSOR);
-    //             break;
-    //         case 'h' :
-    //             usage();
-    //             exit(EXIT_SUCCESS);
-    //         case 'i' :
-    //             SET(AUTOINDENT);
-    //             break;
-    //         case 'j' :
-    //             SET(JUMPY_SCROLLING);
-    //             break;
-    //         case 'k' :
-    //             SET(CUT_FROM_CURSOR);
-    //             break;
-    //         case 'l' :
-    //             SET(LINE_NUMBERS);
-    //             break;
-    //         case 'm' :
-    //             SET(USE_MOUSE);
-    //             break;
-    //         case 'n' :
-    //             SET(NOREAD_MODE);
-    //             break;
-    //         case 'o' :
-    //             operating_dir = mallocstrcpy(operating_dir, optarg);
-    //             break;
-    //         case 'p' :
-    //             SET(PRESERVE);
-    //             break;
-    //         case 'q' :
-    //             SET(INDICATOR);
-    //             break;
-    //         case 'r' :
-    //             if (!parseNum(optarg, fill))
-    //             {
-    //                 fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
-    //                 fprintf(stderr, "\n");
-    //                 exit(1);
-    //             }
-    //             fill_used = TRUE;
-    //             break;
-    //         case 's' :
-    //             alt_speller = mallocstrcpy(alt_speller, optarg);
-    //             break;
-    //         case 't' :
-    //             SET(SAVE_ON_EXIT);
-    //             break;
-    //         case 'u' :
-    //             SET(MAKE_IT_UNIX);
-    //             break;
-    //         case 'v' :
-    //             SET(VIEW_MODE);
-    //             break;
-    //         case 'w' :
-    //             hardwrap = 0;
-    //             break;
-    //         case 'x' :
-    //             SET(NO_HELP);
-    //             break;
-    //         case 'y' :
-    //             SET(AFTER_ENDS);
-    //             break;
-    //         case 'z' :
-    //             if (!ignore_rcfiles)
-    //             {
-    //                 do_rcfiles();
-    //             }
-    //             if (syntaxes)
-    //             {
-    //                 list_syntax_names();
-    //             }
-    //             exit(0);
-    //         case '!' :
-    //             SET(USE_MAGIC);
-    //             break;
-    //         case '@' :
-    //             SET(COLON_PARSING);
-    //             break;
-    //         case '%' :
-    //             SET(STATEFLAGS);
-    //             break;
-    //         case '_' :
-    //             SET(MINIBAR);
-    //             break;
-    //         case '0' :
-    //             SET(ZERO);
-    //             break;
-    //         case '/' :
-    //             SET(MODERN_BINDINGS);
-    //             break;
-    //         default :
-    //             printf(_("Type '%s -h' for a list of available options.\n"), argv[0]);
-    //             exit(EXIT_FAILURE);
-    //     }
-    // }
-
-    // Curses needs TERM; if it is unset, try falling back to a VT220.
+    //
+    //  Curses needs TERM; if it is unset, try falling back to a VT220.
+    //
     if (getenv("TERM") == nullptr)
     {
         putenv((s8 *)"TERM=vt220");
         setenv("TERM", "vt220", 1);
     }
 
-    // Enter into curses mode.  Abort if this fails.
+    //
+    //  Enter into curses mode.  Abort if this fails.
+    //
     if (initscr() == nullptr)
     {
         exit(EXIT_FAILURE);
@@ -2341,11 +2083,15 @@ main(s32 argc, s8 **argv)
         start_color();
     }
 
-    /* When requested, suppress the default spotlight and error colors. */
+    //
+    //  When requested, suppress the default spotlight and error colors.
+    //
     rescind_colors = (getenv("NO_COLOR") != nullptr);
 
-    // Set up the function and shortcut lists.  This needs to be done
-    // before reading the rcfile, to be able to rebind/unbind keys.
+    //
+    //  Set up the function and shortcut lists.  This needs to be done
+    //  before reading the rcfile, to be able to rebind/unbind keys.
+    //
     shortcut_init();
 
     if (!ignore_rcfiles)
@@ -2443,40 +2189,48 @@ main(s32 argc, s8 **argv)
         SET(BREAK_LONG_LINES);
     }
 
-    /* If the user wants bold instead of reverse video for hilited text... */
+    //
+    //  If the user wants bold instead of reverse video for hilited text...
+    //
     if ISSET (BOLD_TEXT)
     {
         hilite_attribute = A_BOLD;
     }
-
-    /* When in restricted mode, disable backups and history files, since they
-     * would allow writing to files not specified on the command line. */
+    //
+    //  When in restricted mode, disable backups and history files, since they
+    //  would allow writing to files not specified on the command line.
+    //
     if ISSET (RESTRICTED)
     {
         UNSET(MAKE_BACKUP);
         UNSET(HISTORYLOG);
         UNSET(POSITIONLOG);
     }
-
-    /* When getting untranslated escape sequences, the mouse cannot be used. */
+    //
+    //  When getting untranslated escape sequences, the mouse cannot be used.
+    //
     if ISSET (RAW_SEQUENCES)
     {
         UNSET(USE_MOUSE);
     }
-
-    /* When --modernbindings is used, ^Q and ^S need to be functional. */
+    //
+    //  When --modernbindings is used, ^Q and ^S need to be functional.
+    //
     if ISSET (MODERN_BINDINGS)
     {
         UNSET(PRESERVE);
     }
-
-    /* When suppressing title bar or minibar, suppress also the help lines. */
+    //
+    //  When suppressing title bar or minibar, suppress also the help lines.
+    //
     if ISSET (ZERO)
     {
         SET(NO_HELP);
     }
 
-    /* Initialize the pointers for the Search/Replace/Execute histories. */
+    //
+    //  Initialize the pointers for the Search/Replace/Execute histories.
+    //
     history_init();
 
     /* If we need history files, verify that we have a directory for them,

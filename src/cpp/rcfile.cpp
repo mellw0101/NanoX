@@ -1,7 +1,7 @@
 /// @file rcfile.cpp
 #include "../include/prototypes.h"
 
-
+#include <Mlib/Profile.h>
 #include <cctype>
 #include <cerrno>
 #include <cstring>
@@ -105,7 +105,6 @@ static bool seen_color_command = FALSE;
 /* The end of the color list for the current syntax. */
 static colortype *lastcolor = NULL;
 
-
 static linestruct *errors_head = nullptr;
 static linestruct *errors_tail = nullptr;
 /* Beginning and end of a list of errors in rcfiles, if any. */
@@ -179,420 +178,503 @@ jot_error(const s8 *msg, ...)
     sprintf(error->data, "%s", textbuf);
 }
 
-// Interpret a function string given in the rc file, and return a
-// shortcut record with the corresponding function filled in.
+//
+//  Interpret a function string given in the rc file, and return a
+//  shortcut record with the corresponding function filled in.
+//
+//  TODO : Use a map instead of strcmp
+//
 keystruct *
 strtosc(const s8 *input)
 {
-    keystruct *s = RE_CAST(keystruct *, nmalloc(sizeof(keystruct)));
+    Mlib::Profile::AutoTimer timer {"strtosc"};
 
-#ifndef NANO_TINY
+    static const std::unordered_map<std::string, void (*)()> keyMap = {
+        {       "cancel",                        do_cancel},
+        {         "help",                          do_help},
+        {         "exit",                          do_exit},
+        {"discardbuffer",                   discard_buffer},
+        {     "writeout",                      do_writeout},
+        {     "savefile",                      do_savefile},
+        {       "insert",                    do_insertfile},
+        {      "whereis",                do_search_forward},
+        {     "wherewas",               do_search_backward},
+        { "findprevious",                  do_findprevious},
+        {     "findnext",                      do_findnext},
+        {      "replace",                       do_replace},
+        {          "cut",                         cut_text},
+        {         "copy",                        copy_text},
+        {        "paste",                       paste_text},
+        {      "execute",                       do_execute},
+        {"cutrestoffile",                     cut_till_eof},
+        {          "zap",                         zap_text},
+        {         "mark",                          do_mark},
+        {      "tospell",                         do_spell},
+        {      "speller",                         do_spell},
+        {       "linter",                        do_linter},
+        {    "formatter",                     do_formatter},
+        {     "location",           report_cursor_position},
+        {     "gotoline",                do_gotolinecolumn},
+        {      "justify",                       do_justify},
+        {  "fulljustify",                  do_full_justify},
+        {    "beginpara",                    to_para_begin},
+        {      "endpara",                      to_para_end},
+        {      "comment",                       do_comment},
+        {     "complete",                  complete_a_word},
+        {       "indent",                        do_indent},
+        {     "unindent",                      do_unindent},
+        { "chopwordleft",               chop_previous_word},
+        {"chopwordright",                   chop_next_word},
+        {  "findbracket",                  do_find_bracket},
+        {    "wordcount", count_lines_words_and_characters},
+        {  "recordmacro",                     record_macro},
+        {     "runmacro",                        run_macro},
+        {       "anchor",               put_or_lift_anchor},
+        {   "prevanchor",                   to_prev_anchor},
+        {   "nextanchor",                   to_next_anchor},
+        {         "undo",                          do_undo},
+        {         "redo",                          do_redo},
+        {      "suspend",                       do_suspend},
+        {         "left",                          do_left},
+        {         "back",                          do_left},
+        {        "right",                         do_right},
+        {      "forward",                         do_right},
+        {           "up",                            do_up},
+        {     "prevline",                            do_up},
+        {         "down",                          do_down},
+        {     "nextline",                          do_down},
+        {     "scrollup",                     do_scroll_up},
+        {   "scrolldown",                   do_scroll_down},
+        {     "prevword",                     to_prev_word},
+        {     "nextword",                     to_next_word},
+        {         "home",                          do_home},
+        {          "end",                           do_end},
+        {    "prevblock",                    to_prev_block},
+        {    "nextblock",                    to_next_block},
+        {       "pageup",                       do_page_up},
+        {     "prevpage",                       do_page_up},
+        {     "pagedown",                     do_page_down},
+        {     "nextpage",                     do_page_down},
+        {    "firstline",                    to_first_line},
+        {     "lastline",                     to_last_line},
+        {       "toprow",                       to_top_row},
+        {    "bottomrow",                    to_bottom_row},
+        {       "center",                        do_center},
+        {        "cycle",                         do_cycle},
+        {    "dosformat",                       dos_format},
+        {    "macformat",                       mac_format},
+        {       "append",                        append_it},
+        {      "prepend",                       prepend_it},
+        {       "backup",                       back_it_up},
+        {  "flipexecute",                     flip_execute},
+        {     "flippipe",                        flip_pipe},
+        {  "flipconvert",                     flip_convert},
+        {"flipnewbuffer",                   flip_newbuffer},
+        {     "flipgoto",                        flip_goto},
+        {  "flipreplace",                     flip_replace},
+        {     "flippipe",                        flip_pipe},
+        {  "flipconvert",                     flip_convert},
+        {"flipnewbuffer",                   flip_newbuffer},
+        {     "verbatim",                do_verbatim_input},
+        {          "tab",                           do_tab},
+        {        "enter",                         do_enter},
+        {       "delete",                        do_delete},
+        {    "backspace",                     do_backspace},
+        {      "refresh",                     full_refresh},
+        {     "casesens",                   case_sens_void},
+        {       "regexp",                      regexp_void},
+        {    "backwards",                   backwards_void},
+        {  "flipreplace",                     flip_replace},
+        {     "flipgoto",                        flip_goto},
+        {     "flippipe",                        flip_pipe},
+        {  "flipconvert",                     flip_convert},
+        {"flipnewbuffer",                   flip_newbuffer},
+        {      "tofiles",                         to_files},
+        {      "browser",                         to_files},
+        {      "gotodir",                         goto_dir},
+        {    "firstfile",                    to_first_file},
+        {     "lastfile",                     to_last_file}
+    };
+
+    keystruct *s = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
+
     s->toggle = 0;
-#endif
 
-    if (!strcmp(input, "cancel"))
-    {
-        s->func = do_cancel;
-    }
-#ifdef ENABLE_HELP
-    else if (!strcmp(input, "help"))
-    {
-        s->func = do_help;
-    }
-#endif
-    else if (!strcmp(input, "exit"))
-    {
-        s->func = do_exit;
-    }
-    else if (!strcmp(input, "discardbuffer"))
-    {
-        s->func = discard_buffer;
-    }
-    else if (!strcmp(input, "writeout"))
-    {
-        s->func = do_writeout;
-    }
-    else if (!strcmp(input, "savefile"))
-    {
-        s->func = do_savefile;
-    }
-    else if (!strcmp(input, "insert"))
-    {
-        s->func = do_insertfile;
-    }
-    else if (!strcmp(input, "whereis"))
-    {
-        s->func = do_search_forward;
-    }
-    else if (!strcmp(input, "wherewas"))
-    {
-        s->func = do_search_backward;
-    }
-    else if (!strcmp(input, "findprevious"))
-    {
-        s->func = do_findprevious;
-    }
-    else if (!strcmp(input, "findnext"))
-    {
-        s->func = do_findnext;
-    }
-    else if (!strcmp(input, "replace"))
-    {
-        s->func = do_replace;
-    }
-    else if (!strcmp(input, "cut"))
-    {
-        s->func = cut_text;
-    }
-    else if (!strcmp(input, "copy"))
-    {
-        s->func = copy_text;
-    }
-    else if (!strcmp(input, "paste"))
-    {
-        s->func = paste_text;
-    }
-#ifndef NANO_TINY
-    else if (!strcmp(input, "execute"))
-    {
-        s->func = do_execute;
-    }
-    else if (!strcmp(input, "cutrestoffile"))
-    {
-        s->func = cut_till_eof;
-    }
-    else if (!strcmp(input, "zap"))
-    {
-        s->func = zap_text;
-    }
-    else if (!strcmp(input, "mark"))
-    {
-        s->func = do_mark;
-    }
-#endif
-#ifdef ENABLE_SPELLER
-    else if (!strcmp(input, "tospell") || !strcmp(input, "speller"))
-    {
-        s->func = do_spell;
-    }
-#endif
-#ifdef ENABLE_LINTER
-    else if (!strcmp(input, "linter"))
-    {
-        s->func = do_linter;
-    }
-#endif
-#ifdef ENABLE_FORMATTER
-    else if (!strcmp(input, "formatter"))
-    {
-        s->func = do_formatter;
-    }
-#endif
-    else if (!strcmp(input, "location"))
-    {
-        s->func = report_cursor_position;
-    }
-    else if (!strcmp(input, "gotoline"))
-    {
-        s->func = do_gotolinecolumn;
-    }
-#ifdef ENABLE_JUSTIFY
-    else if (!strcmp(input, "justify"))
-    {
-        s->func = do_justify;
-    }
-    else if (!strcmp(input, "fulljustify"))
-    {
-        s->func = do_full_justify;
-    }
-    else if (!strcmp(input, "beginpara"))
-    {
-        s->func = to_para_begin;
-    }
-    else if (!strcmp(input, "endpara"))
-    {
-        s->func = to_para_end;
-    }
-#endif
-#ifdef ENABLE_COMMENT
-    else if (!strcmp(input, "comment"))
-    {
-        s->func = do_comment;
-    }
-#endif
-#ifdef ENABLE_WORDCOMPLETION
-    else if (!strcmp(input, "complete"))
-    {
-        s->func = complete_a_word;
-    }
-#endif
-#ifndef NANO_TINY
-    else if (!strcmp(input, "indent"))
-    {
-        s->func = do_indent;
-    }
-    else if (!strcmp(input, "unindent"))
-    {
-        s->func = do_unindent;
-    }
-    else if (!strcmp(input, "chopwordleft"))
-    {
-        s->func = chop_previous_word;
-    }
-    else if (!strcmp(input, "chopwordright"))
-    {
-        s->func = chop_next_word;
-    }
-    else if (!strcmp(input, "findbracket"))
-    {
-        s->func = do_find_bracket;
-    }
-    else if (!strcmp(input, "wordcount"))
-    {
-        s->func = count_lines_words_and_characters;
-    }
-    else if (!strcmp(input, "recordmacro"))
-    {
-        s->func = record_macro;
-    }
-    else if (!strcmp(input, "runmacro"))
-    {
-        s->func = run_macro;
-    }
-    else if (!strcmp(input, "anchor"))
-    {
-        s->func = put_or_lift_anchor;
-    }
-    else if (!strcmp(input, "prevanchor"))
-    {
-        s->func = to_prev_anchor;
-    }
-    else if (!strcmp(input, "nextanchor"))
-    {
-        s->func = to_next_anchor;
-    }
-    else if (!strcmp(input, "undo"))
-    {
-        s->func = do_undo;
-    }
-    else if (!strcmp(input, "redo"))
-    {
-        s->func = do_redo;
-    }
-    else if (!strcmp(input, "suspend"))
-    {
-        s->func = do_suspend;
-    }
-#endif
-    else if (!strcmp(input, "left") || !strcmp(input, "back"))
-    {
-        s->func = do_left;
-    }
-    else if (!strcmp(input, "right") || !strcmp(input, "forward"))
-    {
-        s->func = do_right;
-    }
-    else if (!strcmp(input, "up") || !strcmp(input, "prevline"))
-    {
-        s->func = do_up;
-    }
-    else if (!strcmp(input, "down") || !strcmp(input, "nextline"))
-    {
-        s->func = do_down;
-    }
-#if !defined(NANO_TINY) || defined(ENABLE_HELP)
-    else if (!strcmp(input, "scrollup"))
-    {
-        s->func = do_scroll_up;
-    }
-    else if (!strcmp(input, "scrolldown"))
-    {
-        s->func = do_scroll_down;
-    }
-#endif
-    else if (!strcmp(input, "prevword"))
-    {
-        s->func = to_prev_word;
-    }
-    else if (!strcmp(input, "nextword"))
-    {
-        s->func = to_next_word;
-    }
-    else if (!strcmp(input, "home"))
-    {
-        s->func = do_home;
-    }
-    else if (!strcmp(input, "end"))
-    {
-        s->func = do_end;
-    }
-    else if (!strcmp(input, "prevblock"))
-    {
-        s->func = to_prev_block;
-    }
-    else if (!strcmp(input, "nextblock"))
-    {
-        s->func = to_next_block;
-    }
-#ifndef NANO_TINY
-    else if (!strcmp(input, "toprow"))
-    {
-        s->func = to_top_row;
-    }
-    else if (!strcmp(input, "bottomrow"))
-    {
-        s->func = to_bottom_row;
-    }
-    else if (!strcmp(input, "center"))
-    {
-        s->func = do_center;
-    }
-    else if (!strcmp(input, "cycle"))
-    {
-        s->func = do_cycle;
-    }
-#endif
-    else if (!strcmp(input, "pageup") || !strcmp(input, "prevpage"))
-    {
-        s->func = do_page_up;
-    }
-    else if (!strcmp(input, "pagedown") || !strcmp(input, "nextpage"))
-    {
-        s->func = do_page_down;
-    }
-    else if (!strcmp(input, "firstline"))
-    {
-        s->func = to_first_line;
-    }
-    else if (!strcmp(input, "lastline"))
-    {
-        s->func = to_last_line;
-    }
-#ifdef ENABLE_MULTIBUFFER
-    else if (!strcmp(input, "prevbuf"))
-    {
-        s->func = switch_to_prev_buffer;
-    }
-    else if (!strcmp(input, "nextbuf"))
-    {
-        s->func = switch_to_next_buffer;
-    }
-#endif
-    else if (!strcmp(input, "verbatim"))
-    {
-        s->func = do_verbatim_input;
-    }
-    else if (!strcmp(input, "tab"))
-    {
-        s->func = do_tab;
-    }
-    else if (!strcmp(input, "enter"))
-    {
-        s->func = do_enter;
-    }
-    else if (!strcmp(input, "delete"))
-    {
-        s->func = do_delete;
-    }
-    else if (!strcmp(input, "backspace"))
-    {
-        s->func = do_backspace;
-    }
-    else if (!strcmp(input, "refresh"))
-    {
-        s->func = full_refresh;
-    }
-    else if (!strcmp(input, "casesens"))
-    {
-        s->func = case_sens_void;
-    }
-    else if (!strcmp(input, "regexp"))
-    {
-        s->func = regexp_void;
-    }
-    else if (!strcmp(input, "backwards"))
-    {
-        s->func = backwards_void;
-    }
-    else if (!strcmp(input, "flipreplace"))
-    {
-        s->func = flip_replace;
-    }
-    else if (!strcmp(input, "flipgoto"))
-    {
-        s->func = flip_goto;
-    }
-#ifdef ENABLE_HISTORIES
-    else if (!strcmp(input, "older"))
-    {
-        s->func = get_older_item;
-    }
-    else if (!strcmp(input, "newer"))
-    {
-        s->func = get_newer_item;
-    }
-#endif
-#ifndef NANO_TINY
-    else if (!strcmp(input, "dosformat"))
-    {
-        s->func = dos_format;
-    }
-    else if (!strcmp(input, "macformat"))
-    {
-        s->func = mac_format;
-    }
-    else if (!strcmp(input, "append"))
-    {
-        s->func = append_it;
-    }
-    else if (!strcmp(input, "prepend"))
-    {
-        s->func = prepend_it;
-    }
-    else if (!strcmp(input, "backup"))
-    {
-        s->func = back_it_up;
-    }
-    else if (!strcmp(input, "flipexecute"))
-    {
-        s->func = flip_execute;
-    }
-    else if (!strcmp(input, "flippipe"))
-    {
-        s->func = flip_pipe;
-    }
-    else if (!strcmp(input, "flipconvert"))
-    {
-        s->func = flip_convert;
-    }
-#endif
-#ifdef ENABLE_MULTIBUFFER
-    else if (!strcmp(input, "flipnewbuffer"))
-    {
-        s->func = flip_newbuffer;
-    }
-#endif
-#ifdef ENABLE_BROWSER
-    else if (!strcmp(input, "tofiles") || !strcmp(input, "browser"))
-    {
-        s->func = to_files;
-    }
-    else if (!strcmp(input, "gotodir"))
-    {
-        s->func = goto_dir;
-    }
-    else if (!strcmp(input, "firstfile"))
-    {
-        s->func = to_first_file;
-    }
-    else if (!strcmp(input, "lastfile"))
-    {
-        s->func = to_last_file;
+    // if (!strcmp(input, "cancel"))
+    // {
+    //     s->func = do_cancel;
+    // }
+    // else if (!strcmp(input, "help"))
+    // {
+    //     s->func = do_help;
+    // }
+    // else if (!strcmp(input, "exit"))
+    // {
+    //     s->func = do_exit;
+    // }
+    // else if (!strcmp(input, "discardbuffer"))
+    // {
+    //     s->func = discard_buffer;
+    // }
+    // else if (!strcmp(input, "writeout"))
+    // {
+    //     s->func = do_writeout;
+    // }
+    // else if (!strcmp(input, "savefile"))
+    // {
+    //     s->func = do_savefile;
+    // }
+    // else if (!strcmp(input, "insert"))
+    // {
+    //     s->func = do_insertfile;
+    // }
+    // else if (!strcmp(input, "whereis"))
+    // {
+    //     s->func = do_search_forward;
+    // }
+    // else if (!strcmp(input, "wherewas"))
+    // {
+    //     s->func = do_search_backward;
+    // }
+    // else if (!strcmp(input, "findprevious"))
+    // {
+    //     s->func = do_findprevious;
+    // }
+    // else if (!strcmp(input, "findnext"))
+    // {
+    //     s->func = do_findnext;
+    // }
+    // else if (!strcmp(input, "replace"))
+    // {
+    //     s->func = do_replace;
+    // }
+    // else if (!strcmp(input, "cut"))
+    // {
+    //     s->func = cut_text;
+    // }
+    // else if (!strcmp(input, "copy"))
+    // {
+    //     s->func = copy_text;
+    // }
+    // else if (!strcmp(input, "paste"))
+    // {
+    //     s->func = paste_text;
+    // }
+    // else if (!strcmp(input, "execute"))
+    // {
+    //     s->func = do_execute;
+    // }
+    // else if (!strcmp(input, "cutrestoffile"))
+    // {
+    //     s->func = cut_till_eof;
+    // }
+    // else if (!strcmp(input, "zap"))
+    // {
+    //     s->func = zap_text;
+    // }
+    // else if (!strcmp(input, "mark"))
+    // {
+    //     s->func = do_mark;
+    // }
+    // else if (!strcmp(input, "tospell") || !strcmp(input, "speller"))
+    // {
+    //     s->func = do_spell;
+    // }
+    // else if (!strcmp(input, "linter"))
+    // {
+    //     s->func = do_linter;
+    // }
+    // else if (!strcmp(input, "formatter"))
+    // {
+    //     s->func = do_formatter;
+    // }
+    // else if (!strcmp(input, "location"))
+    // {
+    //     s->func = report_cursor_position;
+    // }
+    // else if (!strcmp(input, "gotoline"))
+    // {
+    //     s->func = do_gotolinecolumn;
+    // }
+    // else if (!strcmp(input, "justify"))
+    // {
+    //     s->func = do_justify;
+    // }
+    // else if (!strcmp(input, "fulljustify"))
+    // {
+    //     s->func = do_full_justify;
+    // }
+    // else if (!strcmp(input, "beginpara"))
+    // {
+    //     s->func = to_para_begin;
+    // }
+    // else if (!strcmp(input, "endpara"))
+    // {
+    //     s->func = to_para_end;
+    // }
+    // else if (!strcmp(input, "comment"))
+    // {
+    //     s->func = do_comment;
+    // }
+    // else if (!strcmp(input, "complete"))
+    // {
+    //     s->func = complete_a_word;
+    // }
+    // else if (!strcmp(input, "indent"))
+    // {
+    //     s->func = do_indent;
+    // }
+    // else if (!strcmp(input, "unindent"))
+    // {
+    //     s->func = do_unindent;
+    // }
+    // else if (!strcmp(input, "chopwordleft"))
+    // {
+    //     s->func = chop_previous_word;
+    // }
+    // else if (!strcmp(input, "chopwordright"))
+    // {
+    //     s->func = chop_next_word;
+    // }
+    // else if (!strcmp(input, "findbracket"))
+    // {
+    //     s->func = do_find_bracket;
+    // }
+    // else if (!strcmp(input, "wordcount"))
+    // {
+    //     s->func = count_lines_words_and_characters;
+    // }
+    // else if (!strcmp(input, "recordmacro"))
+    // {
+    //     s->func = record_macro;
+    // }
+    // else if (!strcmp(input, "runmacro"))
+    // {
+    //     s->func = run_macro;
+    // }
+    // else if (!strcmp(input, "anchor"))
+    // {
+    //     s->func = put_or_lift_anchor;
+    // }
+    // else if (!strcmp(input, "prevanchor"))
+    // {
+    //     s->func = to_prev_anchor;
+    // }
+    // else if (!strcmp(input, "nextanchor"))
+    // {
+    //     s->func = to_next_anchor;
+    // }
+    // else if (!strcmp(input, "undo"))
+    // {
+    //     s->func = do_undo;
+    // }
+    // else if (!strcmp(input, "redo"))
+    // {
+    //     s->func = do_redo;
+    // }
+    // else if (!strcmp(input, "suspend"))
+    // {
+    //     s->func = do_suspend;
+    // }
+    // else if (!strcmp(input, "left") || !strcmp(input, "back"))
+    // {
+    //     s->func = do_left;
+    // }
+    // else if (!strcmp(input, "right") || !strcmp(input, "forward"))
+    // {
+    //     s->func = do_right;
+    // }
+    // else if (!strcmp(input, "up") || !strcmp(input, "prevline"))
+    // {
+    //     s->func = do_up;
+    // }
+    // else if (!strcmp(input, "down") || !strcmp(input, "nextline"))
+    // {
+    //     s->func = do_down;
+    // }
+    // else if (!strcmp(input, "scrollup"))
+    // {
+    //     s->func = do_scroll_up;
+    // }
+    // else if (!strcmp(input, "scrolldown"))
+    // {
+    //     s->func = do_scroll_down;
+    // }
+    // else if (!strcmp(input, "prevword"))
+    // {
+    //     s->func = to_prev_word;
+    // }
+    // else if (!strcmp(input, "nextword"))
+    // {
+    //     s->func = to_next_word;
+    // }
+    // else if (!strcmp(input, "home"))
+    // {
+    //     s->func = do_home;
+    // }
+    // else if (!strcmp(input, "end"))
+    // {
+    //     s->func = do_end;
+    // }
+    // else if (!strcmp(input, "prevblock"))
+    // {
+    //     s->func = to_prev_block;
+    // }
+    // else if (!strcmp(input, "nextblock"))
+    // {
+    //     s->func = to_next_block;
+    // }
+    // else if (!strcmp(input, "toprow"))
+    // {
+    //     s->func = to_top_row;
+    // }
+    // else if (!strcmp(input, "bottomrow"))
+    // {
+    //     s->func = to_bottom_row;
+    // }
+    // else if (!strcmp(input, "center"))
+    // {
+    //     s->func = do_center;
+    // }
+    // else if (!strcmp(input, "cycle"))
+    // {
+    //     s->func = do_cycle;
+    // }
+    // else if (!strcmp(input, "pageup") || !strcmp(input, "prevpage"))
+    // {
+    //     s->func = do_page_up;
+    // }
+    // else if (!strcmp(input, "pagedown") || !strcmp(input, "nextpage"))
+    // {
+    //     s->func = do_page_down;
+    // }
+    // else if (!strcmp(input, "firstline"))
+    // {
+    //     s->func = to_first_line;
+    // }
+    // else if (!strcmp(input, "lastline"))
+    // {
+    //     s->func = to_last_line;
+    // }
+    // else if (!strcmp(input, "prevbuf"))
+    // {
+    //     s->func = switch_to_prev_buffer;
+    // }
+    // else if (!strcmp(input, "nextbuf"))
+    // {
+    //     s->func = switch_to_next_buffer;
+    // }
+    // else if (!strcmp(input, "verbatim"))
+    // {
+    //     s->func = do_verbatim_input;
+    // }
+    // else if (!strcmp(input, "tab"))
+    // {
+    //     s->func = do_tab;
+    // }
+    // else if (!strcmp(input, "enter"))
+    // {
+    //     s->func = do_enter;
+    // }
+    // else if (!strcmp(input, "delete"))
+    // {
+    //     s->func = do_delete;
+    // }
+    // else if (!strcmp(input, "backspace"))
+    // {
+    //     s->func = do_backspace;
+    // }
+    // else if (!strcmp(input, "refresh"))
+    // {
+    //     s->func = full_refresh;
+    // }
+    // else if (!strcmp(input, "casesens"))
+    // {
+    //     s->func = case_sens_void;
+    // }
+    // else if (!strcmp(input, "regexp"))
+    // {
+    //     s->func = regexp_void;
+    // }
+    // else if (!strcmp(input, "backwards"))
+    // {
+    //     s->func = backwards_void;
+    // }
+    // else if (!strcmp(input, "flipreplace"))
+    // {
+    //     s->func = flip_replace;
+    // }
+    // else if (!strcmp(input, "flipgoto"))
+    // {
+    //     s->func = flip_goto;
+    // }
+    // else if (!strcmp(input, "older"))
+    // {
+    //     s->func = get_older_item;
+    // }
+    // else if (!strcmp(input, "newer"))
+    // {
+    //     s->func = get_newer_item;
+    // }
+    // else if (!strcmp(input, "dosformat"))
+    // {
+    //     s->func = dos_format;
+    // }
+    // else if (!strcmp(input, "macformat"))
+    // {
+    //     s->func = mac_format;
+    // }
+    // else if (!strcmp(input, "append"))
+    // {
+    //     s->func = append_it;
+    // }
+    // else if (!strcmp(input, "prepend"))
+    // {
+    //     s->func = prepend_it;
+    // }
+    // else if (!strcmp(input, "backup"))
+    // {
+    //     s->func = back_it_up;
+    // }
+    // else if (!strcmp(input, "flipexecute"))
+    // {
+    //     s->func = flip_execute;
+    // }
+    // else if (!strcmp(input, "flippipe"))
+    // {
+    //     s->func = flip_pipe;
+    // }
+    // else if (!strcmp(input, "flipconvert"))
+    // {
+    //     s->func = flip_convert;
+    // }
+    // else if (!strcmp(input, "flipnewbuffer"))
+    // {
+    //     s->func = flip_newbuffer;
+    // }
+    // else if (!strcmp(input, "tofiles") || !strcmp(input, "browser"))
+    // {
+    //     s->func = to_files;
+    // }
+    // else if (!strcmp(input, "gotodir"))
+    // {
+    //     s->func = goto_dir;
+    // }
+    // else if (!strcmp(input, "firstfile"))
+    // {
+    //     s->func = to_first_file;
+    // }
+    // else if (!strcmp(input, "lastfile"))
+    // {
+    //     s->func = to_last_file;
+    // }
+    const auto it = keyMap.find(input);
+    if (it != keyMap.end())
+    {
+        s->func = it->second;
     }
-#endif
     else
     {
-#ifndef NANO_TINY
         s->func = do_toggle;
         if (!strcmp(input, "nohelp"))
         {
@@ -610,22 +692,18 @@ strtosc(const s8 *input)
         {
             s->toggle = SOFTWRAP;
         }
-#    ifdef ENABLE_LINENUMBERS
         else if (!strcmp(input, "linenumbers"))
         {
             s->toggle = LINE_NUMBERS;
         }
-#    endif
         else if (!strcmp(input, "whitespacedisplay"))
         {
             s->toggle = WHITESPACE_DISPLAY;
         }
-#    ifdef ENABLE_COLOR
         else if (!strcmp(input, "nosyntax"))
         {
             s->toggle = NO_SYNTAX;
         }
-#    endif
         else if (!strcmp(input, "smarthome"))
         {
             s->toggle = SMART_HOME;
@@ -638,27 +716,22 @@ strtosc(const s8 *input)
         {
             s->toggle = CUT_FROM_CURSOR;
         }
-#    ifdef ENABLE_WRAPPING
         else if (!strcmp(input, "breaklonglines"))
         {
             s->toggle = BREAK_LONG_LINES;
         }
-#    endif
         else if (!strcmp(input, "tabstospaces"))
         {
             s->toggle = TABS_TO_SPACES;
         }
-#    ifdef ENABLE_MOUSE
         else if (!strcmp(input, "mouse"))
         {
             s->toggle = USE_MOUSE;
         }
-#    endif
         else
-#endif /* !NANO_TINY */
         {
             free(s);
-            return NULL;
+            return nullptr;
         }
     }
     return s;
@@ -1337,7 +1410,7 @@ closest_index_color(s16 red, s16 green, s16 blue)
     }
 }
 
-#define COLORCOUNT 34
+static constexpr u8 COLORCOUNT = 34;
 
 const s8 hues[COLORCOUNT][8] = {"red",   "green",  "blue",  "yellow", "cyan",    "magenta", "white", "black",  "normal",
                                 "pink",  "purple", "mauve", "lagoon", "mint",    "lime",    "peach", "orange", "latte",
@@ -1379,14 +1452,23 @@ s16 indices[COLORCOUNT] = {COLOR_RED,
                            COLOR_BLACK + 8,
                            COLOR_BLACK + 8};
 
-/* Return the short value corresponding to the given color name, and set
- * vivid to TRUE for a lighter color, and thick for a heavier typeface. */
+//
+//  Return the short value corresponding to the given color name, and set
+//  vivid to TRUE for a lighter color, and thick for a heavier typeface.
+//
+//  TODO : Use references instead of pointers
+//
 short
 color_to_short(const s8 *colorname, bool *vivid, bool *thick)
 {
     if (strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
-        /* Prefix "bright" is deprecated; remove in 2027. */
+        ///
+        ///  ORIGINALCOMMENT: ( From nano source code )
+        ///     Prefix "bright" is deprecated; remove in 2027.
+        ///
+        ///  Why in 3 years?  Why not now?
+        ///
         *vivid = TRUE;
         *thick = TRUE;
         colorname += 6;
@@ -1443,19 +1525,23 @@ color_to_short(const s8 *colorname, bool *vivid, bool *thick)
     return BAD_COLOR;
 }
 
-/* Parse the color name (or pair of color names) in the given string.
- * Return FALSE when any color name is invalid; otherwise return TRUE. */
+//
+//  Parse the color name (or pair of color names) in the given string.
+//  Return FALSE when any color name is invalid; otherwise return TRUE.
+//
+//  TODO : Use references instead of pointers
+//
 bool
-parse_combination(char *combotext, short *fg, short *bg, int *attributes)
+parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 {
-    bool  vivid, thick;
-    char *comma;
+    bool vivid, thick;
+    s8  *comma;
 
-    *attributes = A_NORMAL;
+    attributes = A_NORMAL;
 
-    if (strncmp(combotext, "bold", 4) == 0)
+    if (std::strncmp(combotext, "bold", 4) == 0)
     {
-        *attributes |= A_BOLD;
+        attributes |= A_BOLD;
         if (combotext[4] != ',')
         {
             jot_error(N_("An attribute requires a subsequent comma"));
@@ -1464,10 +1550,10 @@ parse_combination(char *combotext, short *fg, short *bg, int *attributes)
         combotext += 5;
     }
 
-    if (strncmp(combotext, "italic", 6) == 0)
+    if (std::strncmp(combotext, "italic", 6) == 0)
     {
 #ifdef A_ITALIC
-        *attributes |= A_ITALIC;
+        attributes |= A_ITALIC;
 #endif
         if (combotext[6] != ',')
         {
@@ -1486,48 +1572,50 @@ parse_combination(char *combotext, short *fg, short *bg, int *attributes)
 
     if (!comma || comma > combotext)
     {
-        *fg = color_to_short(combotext, &vivid, &thick);
-        if (*fg == BAD_COLOR)
+        fg = color_to_short(combotext, &vivid, &thick);
+        if (fg == BAD_COLOR)
         {
-            return FALSE;
+            return false;
         }
         if (vivid && !thick && COLORS > 8)
         {
-            *fg += 8;
+            fg += 8;
         }
         else if (vivid)
         {
-            *attributes |= A_BOLD;
+            attributes |= A_BOLD;
         }
     }
     else
     {
-        *fg = THE_DEFAULT;
+        fg = THE_DEFAULT;
     }
 
     if (comma)
     {
-        *bg = color_to_short(comma + 1, &vivid, &thick);
-        if (*bg == BAD_COLOR)
+        bg = color_to_short(comma + 1, &vivid, &thick);
+        if (bg == BAD_COLOR)
         {
-            return FALSE;
+            return false;
         }
         if (vivid && COLORS > 8)
         {
-            *bg += 8;
+            bg += 8;
         }
     }
     else
     {
-        *bg = THE_DEFAULT;
+        bg = THE_DEFAULT;
     }
 
-    return TRUE;
+    return true;
 }
 
-/* Parse the color specification that starts at ptr, and then the one or more
- * regexes that follow it.  For each valid regex (or start=/end= regex pair),
- * add a rule to the current syntax. */
+//
+//  Parse the color specification that starts at ptr, and then the one or more
+//  regexes that follow it.  For each valid regex (or start=/end= regex pair),
+//  add a rule to the current syntax.
+//
 void
 parse_rule(char *ptr, int rex_flags)
 {
@@ -1544,7 +1632,7 @@ parse_rule(char *ptr, int rex_flags)
     names = ptr;
     ptr   = parse_next_word(ptr);
 
-    if (!parse_combination(names, &fg, &bg, &attributes))
+    if (!parse_combination(names, fg, bg, attributes))
     {
         return;
     }
@@ -1638,7 +1726,7 @@ set_interface_color(s32 element, s8 *combotext)
 {
     colortype *trio = static_cast<colortype *>(nmalloc(sizeof(colortype)));
 
-    if (parse_combination(combotext, &trio->fg, &trio->bg, &trio->attributes))
+    if (parse_combination(combotext, trio->fg, trio->bg, trio->attributes))
     {
         free(color_combo[element]);
         color_combo[element] = trio;
@@ -1867,7 +1955,6 @@ parse_syntax_commands(s8 *keyword, s8 *ptr)
     return true;
 }
 
-
 //
 /// Verify that the user has not unmapped every shortcut for a
 /// function that we consider 'vital' (such as "Exit").
@@ -1983,6 +2070,8 @@ checkForConfigOptions(const std::string &keyWord)
 void
 parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 {
+    Mlib::Profile::AutoTimer timer("parse_rcfile");
+
     s8 *buffer = nullptr;
     u64 size   = 0;
     s64 length = 0;

@@ -340,11 +340,13 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 }
 #endif /* !NANO_TINY */
 
-#ifdef ENABLE_COMMENT
-// Test whether the given line can be uncommented, or add or remove a comment,
-// depending on action.  Return TRUE if the line is uncommentable, or when
-// anything was added or removed; FALSE otherwise.
-/// TODO : ( comment_line ) Change key to toggle comment
+//
+//  Test whether the given line can be uncommented, or add or remove a comment,
+//  depending on action.  Return TRUE if the line is uncommentable, or when
+//  anything was added or removed; FALSE otherwise.
+//
+//  TODO : ( comment_line ) Change key to toggle comment
+//
 bool
 comment_line(undo_type action, linestruct *line, const char *comment_seq)
 {
@@ -432,7 +434,7 @@ do_comment(void)
     linestruct *top, *bot, *line;
     bool        empty, all_empty = TRUE;
 
-#    ifdef ENABLE_COLOR
+#ifdef ENABLE_COLOR
     if (openfile->syntax)
     {
         comment_seq = openfile->syntax->comment;
@@ -443,7 +445,7 @@ do_comment(void)
         statusline(AHEM, _("Commenting is not supported for this file type"));
         return;
     }
-#    endif
+#endif
 
     /* Determine which lines to work on. */
     get_range(top, bot);
@@ -527,7 +529,6 @@ handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 
     refresh_needed = TRUE;
 }
-#endif /* ENABLE_COMMENT */
 
 #ifndef NANO_TINY
 #    define redo_paste undo_cut

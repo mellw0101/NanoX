@@ -1,6 +1,7 @@
 /// @file @c files.cpp
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <Mlib/def.h>
 
 #include <cerrno>
@@ -13,7 +14,9 @@
 
 #define RW_FOR_ALL (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
-// Add an item to the circular list of openfile structs.
+//
+//  Add an item to the circular list of openfile structs.
+//
 void
 make_new_buffer()
 {
@@ -69,7 +72,9 @@ make_new_buffer()
     openfile->syntax        = nullptr;
 }
 
-// Return the given file name in a way that fits within the given space.
+//
+//  Return the given file name in a way that fits within the given space.
+//
 s8 *
 crop_to_fit(const s8 *name, const s32 room)
 {
@@ -96,7 +101,9 @@ crop_to_fit(const s8 *name, const s32 room)
     return clipped;
 }
 
-// Delete the lock file.  Return TRUE on success, and FALSE otherwise.
+//
+//  Delete the lock file.  Return TRUE on success, and FALSE otherwise.
+//
 bool
 delete_lockfile(const s8 *lockfilename)
 {
@@ -341,9 +348,11 @@ stat_with_alloc(const char *filename, struct stat **pstat)
     }
 }
 
-/* Verify that the containing directory of the given filename exists. */
+//
+//  Verify that the containing directory of the given filename exists.
+//
 bool
-has_valid_path(const char *filename)
+has_valid_path(const s8 *filename)
 {
     char       *namecopy  = copy_of(filename);
     char       *parentdir = dirname(namecopy);
@@ -383,12 +392,10 @@ has_valid_path(const char *filename)
     {
         statusline(ALERT, _("Path '%s' is not accessible"), parentdir);
     }
-#ifndef NANO_TINY
     else if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && access(parentdir, W_OK) < 0)
     {
         statusline(MILD, _("Directory '%s' is not writable"), parentdir);
     }
-#endif
     else
     {
         validity = TRUE;
@@ -399,33 +406,46 @@ has_valid_path(const char *filename)
     return validity;
 }
 
-/* This does one of three things.  If the filename is "", it just creates
- * a new empty buffer.  When the filename is not empty, it reads that file
- * into a new buffer when requested, otherwise into the existing buffer. */
+//
+//  This does one of three things.  If the filename is "", it just creates
+//  a new empty buffer.  When the filename is not empty, it reads that file
+//  into a new buffer when requested, otherwise into the existing buffer.
+//
 bool
-open_buffer(const char *filename, bool new_one)
+open_buffer(const s8 *filename, bool new_one)
 {
-    char *realname;
-    /* The filename after tilde expansion. */
+    Mlib::Profile::AutoTimer timer("open_buffer");
+
+    //
+    //  The filename after tilde expansion.
+    //
+    s8 *realname;
+
     struct stat fileinfo;
-    int         descriptor = 0;
-    /* Code 0 means new file, -1 means failure, and else it's the fd. */
+
+    //
+    //  Code 0 means new file, -1 means failure, and else it's the fd.
+    //
+    s32 descriptor = 0;
+
     FILE *f;
 
-    /* Display newlines in filenames as ^J. */
+    //
+    //  Display newlines in filenames as ^J.
+    //
     as_an_at = FALSE;
 
-#ifdef ENABLE_OPERATINGDIR
     if (outside_of_confinement(filename, FALSE))
     {
         statusline(ALERT, _("Can't read file from outside of %s"), operating_dir);
         return FALSE;
     }
-#endif
 
     realname = real_dir_from_tilde(filename);
 
-    /* Don't try to open directories, character files, or block files. */
+    //
+    //  Don't try to open directories, character files, or block files.
+    //
     if (*filename != '\0' && stat(realname, &fileinfo) == 0)
     {
         if (S_ISDIR(fileinfo.st_mode))
@@ -440,19 +460,10 @@ open_buffer(const char *filename, bool new_one)
             free(realname);
             return FALSE;
         }
-#ifdef NANO_TINY
-        if (S_ISFIFO(fileinfo.st_mode))
-        {
-            statusline(ALERT, _("\"%s\" is a FIFO"), realname);
-            free(realname);
-            return FALSE;
-        }
-#elif defined(HAVE_GETEUID)
         if (new_one && !(fileinfo.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && geteuid() == ROOT_UID)
         {
             statusline(ALERT, _("%s is meant to be read-only"), realname);
         }
-#endif
     }
 
     /* When loading into a new buffer, first check the file's path is valid,
@@ -463,7 +474,6 @@ open_buffer(const char *filename, bool new_one)
 
         if (has_valid_path(realname))
         {
-#ifndef NANO_TINY
             if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && filename[0] != '\0')
             {
                 char *thelocksname = do_lockfile(realname, TRUE);
@@ -471,9 +481,7 @@ open_buffer(const char *filename, bool new_one)
                 /* When not overriding an existing lock, discard the buffer. */
                 if (thelocksname == SKIPTHISFILE)
                 {
-#    ifdef ENABLE_MULTIBUFFER
                     close_buffer();
-#    endif
                     free(realname);
                     return FALSE;
                 }
@@ -482,7 +490,6 @@ open_buffer(const char *filename, bool new_one)
                     openfile->lock_filename = thelocksname;
                 }
             }
-#endif /* NANO_TINY */
         }
     }
 
@@ -1132,7 +1139,6 @@ get_next_filename(const char *name, const char *suffix)
     return buf;
 }
 
-#ifndef NANO_TINY
 static pid_t pid_of_command = -1;
 /* The PID of a forked process -- needed when wanting to abort it. */
 static pid_t pid_of_sender = -1;
@@ -1144,7 +1150,6 @@ static bool should_pipe = FALSE;
 void
 cancel_the_command(int signal)
 {
-#    ifdef SIGKILL
     if (pid_of_command > 0)
     {
         kill(pid_of_command, SIGKILL);
@@ -1153,7 +1158,6 @@ cancel_the_command(int signal)
     {
         kill(pid_of_sender, SIGKILL);
     }
-#    endif
 }
 
 /* Send the text that starts at the given line to file descriptor fd. */
@@ -1192,7 +1196,6 @@ send_data(const linestruct *line, int fd)
 void
 execute_command(const char *command)
 {
-#    if defined(HAVE_FORK) && defined(HAVE_PIPE) && defined(HAVE_WAITPID)
     int from_fd[2], to_fd[2];
     /* The pipes through which text will be written and read. */
     struct sigaction oldaction, newaction = {{0}};
@@ -1273,7 +1276,6 @@ execute_command(const char *command)
 
         cutbuffer = NULL;
 
-#        ifdef ENABLE_MULTIBUFFER
         if (ISSET(MULTIBUFFER))
         {
             openfile = openfile->prev;
@@ -1287,7 +1289,6 @@ execute_command(const char *command)
             }
         }
         else
-#        endif
         {
             /* TRANSLATORS: This one goes with Undid/Redid messages. */
             add_undo(COUPLE_BEGIN, N_("filtering"));
@@ -1320,12 +1321,10 @@ execute_command(const char *command)
         close(to_fd[0]);
         close(to_fd[1]);
 
-#        ifdef ENABLE_MULTIBUFFER
         if (ISSET(MULTIBUFFER))
         {
             openfile = openfile->next;
         }
-#        endif
         free_lines(cutbuffer);
         cutbuffer = was_cutbuffer;
     }
@@ -1391,9 +1390,7 @@ execute_command(const char *command)
     /* Restore the terminal to its desired state, and disable
      * interpretation of the special control keys again. */
     terminal_init();
-#    endif
 }
-#endif /* NANO_TINY */
 
 // Insert a file into the current buffer (or into a new buffer).  But when
 // execute is TRUE, run a command in the shell and insert its output into
@@ -1638,7 +1635,10 @@ do_execute(void)
 char *
 get_full_path(const char *origpath)
 {
-    char       *untilded, *target, *slash;
+    Mlib::Profile::AutoTimer timer("get_full_path");
+
+    s8 *untilded, *target, *slash;
+
     struct stat fileinfo;
 
     if (origpath == NULL)

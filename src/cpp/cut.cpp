@@ -132,11 +132,11 @@ do_delete()
 }
 
 //
-/// Backspace over one character.  That is, move the cursor left one
-/// character, and then delete the character under the cursor.  Or,
-/// when mark is on and --zap is active, delete the marked region.
-///
-/// TODO : (do_backspace) NEEDED
+//  Backspace over one character.  That is, move the cursor left one
+//  character, and then delete the character under the cursor.  Or,
+//  when mark is on and --zap is active, delete the marked region.
+//
+//  TODO : (do_backspace) NEEDED
 //
 void
 do_backspace()
@@ -157,32 +157,28 @@ do_backspace()
     }
 }
 
-/* Return FALSE when a cut command would not actually cut anything: when
- * on an empty line at EOF, or when the mark covers zero characters, or
- * (when test_cliff is TRUE) when the magic line would be cut. */
+//
+//  Return 'false' when a cut command would not actually cut anything: when
+//  on an empty line at EOF, or when the mark covers zero characters, or
+//  (when test_cliff is 'true') when the magic line would be cut.
+//
 bool
 is_cuttable(bool test_cliff)
 {
     size_t from = (test_cliff) ? openfile->current_x : 0;
 
-    if ((openfile->current->next == NULL && openfile->current->data[from] == '\0'
-#ifndef NANO_TINY
-         && openfile->mark == NULL) ||
+    if ((openfile->current->next == nullptr && openfile->current->data[from] == '\0' && openfile->mark == nullptr) ||
         (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) ||
         (from > 0 && !ISSET(NO_NEWLINES) && openfile->current->data[from] == '\0' &&
-         openfile->current->next == openfile->filebot
-#endif
-         ))
+         openfile->current->next == openfile->filebot))
     {
-#ifndef NANO_TINY
         statusbar(_("Nothing was cut"));
-        openfile->mark = NULL;
-#endif
-        return FALSE;
+        openfile->mark = nullptr;
+        return false;
     }
     else
     {
-        return TRUE;
+        return true;
     }
 }
 
