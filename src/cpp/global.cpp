@@ -563,7 +563,7 @@ add_to_sclist(s32 menus, const s8 *scstring, const s32 keycode, void (*function)
 {
     static keystruct *tailsc;
     static int        counter = 0;
-    keystruct        *sc      = RE_CAST(keystruct *, nmalloc(sizeof(keystruct)));
+    keystruct        *sc      = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
 
     //
     //  Start the list, or tack on the next item.

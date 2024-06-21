@@ -4095,9 +4095,11 @@ get_softwrap_breakpoint(const s8 *linedata, u64 leftedge, bool &kickoff, bool &e
     return (editwincols > 1) ? breaking_col : column - 1;
 }
 
-/* Return the row number of the softwrapped chunk in the given line that the
- * given column is on, relative to the first row (zero-based).  If leftedge
- * isn't NULL, return in it the leftmost column of the chunk. */
+//
+//  Return the row number of the softwrapped chunk in the given line that the
+//  given column is on, relative to the first row (zero-based).  If leftedge
+//  isn't NULL, return in it the leftmost column of the chunk.
+//
 u64
 get_chunk_and_edge(u64 column, linestruct *line, u64 *leftedge)
 {

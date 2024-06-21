@@ -85,31 +85,40 @@ static const rcoption rcopts[] = {
     {        "functioncolor",                0},
     {                   NULL,                0}
 };
-
-/* The line number of the last encountered error. */
+//
+//  The line number of the last encountered error.
+//
 static size_t lineno = 0;
-
-/* The path to the rcfile we're parsing. */
-static char *nanorc = NULL;
-
-/* Whether we're allowed to add to the last syntax.  When a file ends,
- * or when a new syntax command is seen, this bool becomes FALSE. */
+//
+//  The path to the rcfile we're parsing. */
+//
+static s8 *nanorc = nullptr;
+//
+//  Whether we're allowed to add to the last syntax.  When a file ends,
+//  or when a new syntax command is seen, this bool becomes 'false'.
+//
 static bool opensyntax = FALSE;
-
-/* The syntax that is currently being parsed. */
+//
+//  The syntax that is currently being parsed.
+//
 static syntaxtype *live_syntax;
-
-/* Whether a syntax definition contains any color commands. */
+//
+//  Whether a syntax definition contains any color commands.
+//
 static bool seen_color_command = FALSE;
-
-/* The end of the color list for the current syntax. */
-static colortype *lastcolor = NULL;
-
+//
+//  The end of the color list for the current syntax.
+//
+static colortype *lastcolor = nullptr;
+//
+//  Beginning and end of a list of errors in rcfiles, if any.
+//
 static linestruct *errors_head = nullptr;
 static linestruct *errors_tail = nullptr;
-/* Beginning and end of a list of errors in rcfiles, if any. */
 
-/* Send the gathered error messages (if any) to the terminal. */
+//
+//  Send the gathered error messages (if any) to the terminal.
+//
 void
 display_rcfile_errors()
 {
@@ -187,7 +196,7 @@ jot_error(const s8 *msg, ...)
 keystruct *
 strtosc(const s8 *input)
 {
-    Mlib::Profile::AutoTimer timer {"strtosc"};
+    Mlib::Profile::AutoTimer timer("strtosc");
 
     static const std::unordered_map<std::string, void (*)()> keyMap = {
         {       "cancel",                        do_cancel},
@@ -737,49 +746,31 @@ strtosc(const s8 *input)
     return s;
 }
 
-#define NUMBER_OF_MENUS 16
-s8 *menunames[NUMBER_OF_MENUS] = {_("main"),    _("search"),      _("replace"),  _("replacewith"),
-                                  _("yesno"),   _("gotoline"),    _("writeout"), _("insert"),
-                                  _("execute"), _("help"),        _("spell"),    _("linter"),
-                                  _("browser"), _("whereisfile"), _("gotodir"),  _("all")};
+// constexpr s32
+// name_to_menu(const s8 *name)
+// {
+//     for (u8 index = 0; index < NUMBER_OF_MENUS; ++index)
+//     {
+//         if (str_equal(name, menunames[index]))
+//         {
+//             return menusymbols[index];
+//         }
+//     }
+//     return 0;
+// }
 
-s32 menusymbols[NUMBER_OF_MENUS] = {
-    MMAIN,    MWHEREIS, MREPLACE, MREPLACEWITH, MYESNO,   MGOTOLINE,    MWRITEFILE, MINSERTFILE,
-    MEXECUTE, MHELP,    MSPELL,   MLINTER,      MBROWSER, MWHEREISFILE, MGOTODIR,   MMOST | MBROWSER | MHELP | MYESNO};
-
-/* Return the symbol that corresponds to the given menu name. */
-int
-name_to_menu(const char *name)
-{
-    int index = -1;
-
-    while (++index < NUMBER_OF_MENUS)
-    {
-        if (strcmp(name, menunames[index]) == 0)
-        {
-            return menusymbols[index];
-        }
-    }
-
-    return 0;
-}
-
-/* Return the name that corresponds to the given menu symbol. */
-char *
-menu_to_name(int menu)
-{
-    int index = -1;
-
-    while (++index < NUMBER_OF_MENUS)
-    {
-        if (menusymbols[index] == menu)
-        {
-            return menunames[index];
-        }
-    }
-
-    return _("boooo");
-}
+// constexpr const s8 *
+// menu_to_name(s32 menu)
+// {
+//     for (u8 index = 0; index < NUMBER_OF_MENUS; ++index)
+//     {
+//         if (menusymbols[index] == menu)
+//         {
+//             return menunames[index];
+//         }
+//     }
+//     return "boooo";
+// }
 
 // Parse the next word from the string, null-terminate it, and return
 // a pointer to the first character after the null terminator.  The
@@ -1029,6 +1020,8 @@ is_universal(void (*func)())
 void
 parse_binding(char *ptr, bool dobind)
 {
+    Mlib::Profile::AutoTimer timer("parse_binding");
+
     char      *keyptr = NULL, *keycopy = NULL, *funcptr = NULL, *menuptr = NULL;
     int        keycode, menu, mask = 0;
     keystruct *newsc = NULL;
@@ -1097,8 +1090,8 @@ parse_binding(char *ptr, bool dobind)
         goto free_things;
     }
 
-    menu = name_to_menu(menuptr);
-    if (menu == 0)
+    menu = nameToMenu(menuptr);
+    if (!menu)
     {
         jot_error(N_("Unknown menu: %s"), menuptr);
         goto free_things;
@@ -1110,7 +1103,7 @@ parse_binding(char *ptr, bool dobind)
          * otherwise it is the name of a function. */
         if (*funcptr == '"')
         {
-            newsc            = RE_CAST(keystruct *, nmalloc(sizeof(keystruct)));
+            newsc            = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
             newsc->func      = (functionptrtype)implant;
             newsc->expansion = copy_of(funcptr + 1);
 #ifndef NANO_TINY
@@ -1563,7 +1556,7 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
         combotext += 7;
     }
 
-    comma = strchr(combotext, ',');
+    comma = std::strchr(combotext, ',');
 
     if (comma)
     {
@@ -1619,6 +1612,8 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 void
 parse_rule(char *ptr, int rex_flags)
 {
+    Mlib::Profile::AutoTimer timer("parse_rule");
+
     char *names, *regexstring;
     short fg, bg;
     int   attributes;
@@ -1852,7 +1847,7 @@ pick_up_name(const char *kind, char *ptr, char **storage)
 /// @returns ( u32 )  -  As a bitfield.
 ///  -  The syntax option.
 //
-static const u32
+static const u32 UNUSED
 checkSyntaxCommand(const std::string &str)
 {
     static const std::unordered_map<std::string, const u32> map = {
@@ -1921,7 +1916,9 @@ checkSyntaxCommand(const std::string &str)
 bool
 parse_syntax_commands(s8 *keyword, s8 *ptr)
 {
-    const u32 syntax_opt = checkSyntaxCommand(keyword);
+    Mlib::Profile::AutoTimer timer("parse_syntax_commands");
+
+    const u32 syntax_opt = retriveSyntaxOptionFromStr(keyword);
     if (syntax_opt == false)
     {
         return false;
@@ -1952,6 +1949,7 @@ parse_syntax_commands(s8 *keyword, s8 *ptr)
         pick_up_name("formatter", ptr, &live_syntax->formatter);
         strip_leading_blanks_from(live_syntax->formatter);
     }
+
     return true;
 }
 
@@ -1962,7 +1960,7 @@ parse_syntax_commands(s8 *keyword, s8 *ptr)
 static void
 check_vitals_mapped()
 {
-    static constexpr s8 VITALS   = 4;
+    constexpr s8 VITALS          = 4;
     void (*vitals[VITALS])(void) = {do_exit, do_exit, do_exit, do_cancel};
     s32 inmenus[VITALS]          = {MMAIN, MBROWSER, MHELP, MYESNO};
 
@@ -1976,7 +1974,7 @@ check_vitals_mapped()
                 {
                     jot_error(N_("No key is bound to function '%s' in menu '%s'. "
                                  " Exiting.\n"),
-                              f->tag, menu_to_name(inmenus[v]));
+                              f->tag, menuToName(inmenus[v]));
                     die(_("If needed, use nano with the -I option "
                           "to adjust your nanorc settings.\n"));
                 }
@@ -2002,7 +2000,7 @@ check_vitals_mapped()
 /// @returns ( s32 )
 ///  -  The color option.
 //
-static s32
+static s32 UNUSED
 checkForColorOptions(const std::string &keyword)
 {
     static const std::unordered_map<std::string, const s32> colorOptionsMap = {
@@ -2023,7 +2021,7 @@ checkForColorOptions(const std::string &keyword)
     return it != colorOptionsMap.end() ? it->second : INT32_MAX;
 }
 
-static u32
+static u32 UNUSED
 checkForConfigOptions(const std::string &keyWord)
 {
     static const std::unordered_map<std::string, const u32> map = {
@@ -2366,8 +2364,8 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         ///
         /// @see checkForColorOptions
         //
-        const s32 colorOption = checkForColorOptions(option);
-        (colorOption == INT32_MAX) ? void() : set_interface_color(colorOption, argument);
+        const u32 colorOption = retriveColorOptionFromStr(option);
+        (colorOption != u32_MAX) ? set_interface_color(colorOption, argument) : void();
 
         //
         /// Check for configuration options.
@@ -2380,8 +2378,12 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         ///
         /// @see checkForConfigOptions
         //
-        const u32 configOption = checkForConfigOptions(option);
-        if (configOption & OPERATINGDIR)
+        const u32 configOption = retriveConfigOptionFromStr(option);
+        if (!configOption)
+        {
+            ;
+        }
+        else if (configOption & OPERATINGDIR)
         {
             operating_dir = mallocstrcpy(operating_dir, argument);
         }

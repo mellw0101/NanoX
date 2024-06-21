@@ -228,28 +228,7 @@
 #define CURSOR_WAS_AT_HEAD        (1 << 5)
 #define HAD_ANCHOR_AT_START       (1 << 6)
 
-// Identifiers for the different menus.
-#define MMAIN                     (1 << 0)
-#define MWHEREIS                  (1 << 1)
-#define MREPLACE                  (1 << 2)
-#define MREPLACEWITH              (1 << 3)
-#define MGOTOLINE                 (1 << 4)
-#define MWRITEFILE                (1 << 5)
-#define MINSERTFILE               (1 << 6)
-#define MEXECUTE                  (1 << 7)
-#define MHELP                     (1 << 8)
-#define MSPELL                    (1 << 9)
-#define MBROWSER                  (1 << 10)
-#define MWHEREISFILE              (1 << 11)
-#define MGOTODIR                  (1 << 12)
-#define MYESNO                    (1 << 13)
-#define MLINTER                   (1 << 14)
-#define MFINDINHELP               (1 << 15)
-/* This is an abbreviation for all menus except Help and Browser and YesNo. */
-#define MMOST                                                                                                      \
-    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | \
-     MGOTODIR | MFINDINHELP | MSPELL | MLINTER)
-#define MSOME MMOST | MBROWSER
+#include "constexpr_utils.h"
 
 /* Enumeration types. */
 typedef enum
@@ -317,79 +296,79 @@ typedef enum
     OTHER
 } undo_type;
 
-// The elements of the interface that can be colored differently.
-enum
-{
-    TITLE_BAR = 0,
-    LINE_NUMBER,
-    GUIDE_STRIPE,
-    SCROLL_BAR,
-    SELECTED_TEXT,
-    SPOTLIGHTED,
-    MINI_INFOBAR,
-    PROMPT_BAR,
-    STATUS_BAR,
-    ERROR_MESSAGE,
-    KEY_COMBO,
-    FUNCTION_TAG,
-    NUMBER_OF_ELEMENTS
-};
+// // The elements of the interface that can be colored differently.
+// enum
+// {
+//     TITLE_BAR = 0,
+//     LINE_NUMBER,
+//     GUIDE_STRIPE,
+//     SCROLL_BAR,
+//     SELECTED_TEXT,
+//     SPOTLIGHTED,
+//     MINI_INFOBAR,
+//     PROMPT_BAR,
+//     STATUS_BAR,
+//     ERROR_MESSAGE,
+//     KEY_COMBO,
+//     FUNCTION_TAG,
+//     NUMBER_OF_ELEMENTS
+// };
 
 // Enumeration used in the flags array.  See the definition of FLAGMASK.
-enum
-{
-    DONTUSE = 0,
-    CASE_SENSITIVE,
-    CONSTANT_SHOW,
-    NO_HELP,
-    NO_WRAP,
-    AUTOINDENT,
-    VIEW_MODE,
-    USE_MOUSE,
-    USE_REGEXP,
-    SAVE_ON_EXIT,
-    CUT_FROM_CURSOR,
-    BACKWARDS_SEARCH,
-    MULTIBUFFER,
-    REBIND_DELETE,
-    RAW_SEQUENCES,
-    NO_CONVERT,
-    MAKE_BACKUP,
-    INSECURE_BACKUP,
-    NO_SYNTAX,
-    PRESERVE,
-    HISTORYLOG,
-    RESTRICTED,
-    SMART_HOME,
-    WHITESPACE_DISPLAY,
-    TABS_TO_SPACES,
-    QUICK_BLANK,
-    WORD_BOUNDS,
-    NO_NEWLINES,
-    BOLD_TEXT,
-    SOFTWRAP,
-    POSITIONLOG,
-    LOCKING,
-    NOREAD_MODE,
-    MAKE_IT_UNIX,
-    TRIM_BLANKS,
-    SHOW_CURSOR,
-    LINE_NUMBERS,
-    AT_BLANKS,
-    AFTER_ENDS,
-    LET_THEM_ZAP,
-    BREAK_LONG_LINES,
-    JUMPY_SCROLLING,
-    EMPTY_LINE,
-    INDICATOR,
-    BOOKSTYLE,
-    COLON_PARSING,
-    STATEFLAGS,
-    USE_MAGIC,
-    MINIBAR,
-    ZERO,
-    MODERN_BINDINGS
-};
+// enum
+// {
+//     DONTUSE = 0,
+//     CASE_SENSITIVE,
+//     CONSTANT_SHOW,
+//     NO_HELP,
+//     NO_WRAP,
+//     AUTOINDENT,
+//     VIEW_MODE,
+//     USE_MOUSE,
+//     USE_REGEXP,
+//     SAVE_ON_EXIT,
+//     CUT_FROM_CURSOR,
+//     BACKWARDS_SEARCH,
+//     MULTIBUFFER,
+//     REBIND_DELETE,
+//     RAW_SEQUENCES,
+//     NO_CONVERT,
+//     MAKE_BACKUP,
+//     INSECURE_BACKUP,
+//     NO_SYNTAX,
+//     PRESERVE,
+//     HISTORYLOG,
+//     RESTRICTED,
+//     SMART_HOME,
+//     WHITESPACE_DISPLAY,
+//     TABS_TO_SPACES,
+//     QUICK_BLANK,
+//     WORD_BOUNDS,
+//     NO_NEWLINES,
+//     BOLD_TEXT,
+//     SOFTWRAP,
+//     POSITIONLOG,
+//     LOCKING,
+//     NOREAD_MODE,
+//     MAKE_IT_UNIX,
+//     TRIM_BLANKS,
+//     SHOW_CURSOR,
+//     LINE_NUMBERS,
+//     AT_BLANKS,
+//     AFTER_ENDS,
+//     LET_THEM_ZAP,
+//     BREAK_LONG_LINES,
+//     JUMPY_SCROLLING,
+//     EMPTY_LINE,
+//     INDICATOR,
+//     BOOKSTYLE,
+//     COLON_PARSING,
+//     STATEFLAGS,
+//     USE_MAGIC,
+//     MINIBAR,
+//     ZERO,
+//     MODERN_BINDINGS
+// };
 
 /* Structure types. */
 typedef struct colortype
@@ -592,47 +571,3 @@ typedef struct completionstruct
 
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"
-
-enum ConfigOption : const u32
-{
-    OPERATINGDIR     = (1 << 0),
-    FILL             = (1 << 1),
-    MATCHBRACKETS    = (1 << 2),
-    WHITESPACE       = (1 << 3),
-    PUNCT            = (1 << 4),
-    BRACKETS         = (1 << 5),
-    QUOTESTR         = (1 << 6),
-    SPELLER          = (1 << 7),
-    BACKUPDIR        = (1 << 8),
-    WORDCHARS        = (1 << 9),
-    GUIDESTRIPE      = (1 << 10),
-    CONF_OPT_TABSIZE = (1 << 11)
-};
-
-enum CliOptions : const u32
-{
-    CLI_OPT_IGNORERCFILE   = (1 << 0),
-    CLI_OPT_VERSION        = (1 << 1),
-    CLI_OPT_HELP           = (1 << 2),
-    CLI_OPT_SYNTAX         = (1 << 3),
-    CLI_OPT_RCFILE         = (1 << 4),
-    CLI_OPT_GUIDESTRIPE    = (1 << 5),
-    CLI_OPT_WORDCHARS      = (1 << 6),
-    CLI_OPT_TABSIZE        = (1 << 7),
-    CLI_OPT_OPERATINGDIR   = (1 << 8),
-    CLI_OPT_FILL           = (1 << 9),
-    CLI_OPT_SPELLER        = (1 << 10),
-    CLI_OPT_LISTSYNTAX     = (1 << 11),
-    CLI_OPT_BACKUPDIR      = (1 << 12),
-    CLI_OPT_BREAKLONGLINES = (1 << 13),
-};
-
-enum SyntaxCommandOpt : const u32
-{
-    SYNTAX_OPT_COLOR     = (1 << 0),
-    SYNTAX_OPT_ICOLOR    = (1 << 1),
-    SYNTAX_OPT_COMMENT   = (1 << 2),
-    SYNTAX_OPT_TABGIVES  = (1 << 3),
-    SYNTAX_OPT_LINTER    = (1 << 4),
-    SYNTAX_OPT_FORMATTER = (1 << 5)
-};

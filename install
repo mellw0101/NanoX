@@ -1,0 +1,3 @@
+#!/bin/bash
+
+AmakeCpp --build --install --bin -lmagic /usr/lib/Mlib.a

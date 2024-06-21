@@ -45,7 +45,6 @@
 //     return S32MAX;
 // }
 
-
 // constexpr std::pair<std::string_view, s32> colorOptionsMapStringView[] __attribute__((unused)) = {
 //     {    "errorcolor", ERROR_MESSAGE},
 //     { "functioncolor",  FUNCTION_TAG},
@@ -75,7 +74,6 @@
 //     }
 //     return INT32_MAX;
 // }
-
 
 // #include <cstring>
 // #include <iostream>
@@ -196,4 +194,29 @@
 //     {
 //         return data;
 //     }
+// };
+
+// template <u64 Size>
+// struct constexprMap {
+//     std::array<MapEntry, Size> entries;
+
+//     constexpr constexprMap(std::array<MapEntry, Size> entries) : entries(entries) {}
+
+//     constexpr u32 getValue(std::string_view key) const {
+//         for (const auto& entry : entries) {
+//             if (entry.key == key) {
+//                 return entry.value;
+//             }
+//         }
+//         return 0; // Default value if the key is not found
+//     }
+// };
+// struct HashMapEntry
+// {
+//     constexpr HashMapEntry(std::string_view k, std::size_t v)
+//         : key(k)
+//         , value(v)
+//     {}
+//     std::string_view key;
+//     std::size_t      value;
 // };

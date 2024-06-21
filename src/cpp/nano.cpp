@@ -1781,7 +1781,7 @@ process_a_keystroke()
 ///
 /// TODO : Finish this function, add all options
 //
-static const u32
+static const u32 UNUSED
 checkCliCmd(const std::string &str)
 {
     static const std::unordered_map<std::string, const u32> map = {
@@ -1808,13 +1808,14 @@ checkCliCmd(const std::string &str)
         {       "--speller",        CLI_OPT_SPELLER},
         {              "-z",     CLI_OPT_LISTSYNTAX},
         {  "--listsyntaxes",     CLI_OPT_LISTSYNTAX},
+        {              "-b", CLI_OPT_BREAKLONGLINES},
         {"--breaklonglines", CLI_OPT_BREAKLONGLINES},
     };
     const auto it = map.find(str);
     return it != map.end() ? it->second : static_cast<u32>(0);
 }
 
-static const u32
+static const u32 UNUSED
 checkFlag(const std::string &str)
 {
     static const std::unordered_map<std::string, const u32> map = {
@@ -1858,8 +1859,6 @@ checkFlag(const std::string &str)
         {    "--quickblank",     QUICK_BLANK},
         {              "-W",     WORD_BOUNDS},
         {    "--wordbounds",     WORD_BOUNDS},
-        {              "-Y",  CLI_OPT_SYNTAX},
-        {        "--syntax",  CLI_OPT_SYNTAX},
         {              "-Z",    LET_THEM_ZAP},
         {           "--zap",    LET_THEM_ZAP},
         {              "-a",       AT_BLANKS},
@@ -1993,10 +1992,10 @@ main(s32 argc, s8 **argv)
 
     for (s32 i = 1; i < argc; ++i)
     {
-        const u32 flag = checkFlag(argv[i]);
+        const u16 flag = retriveFlagFromStr(argv[i]);
         flag ? SET(flag) : 0;
 
-        const u32 cliCmd = checkCliCmd(argv[i]);
+        const u32 cliCmd = retriveCliOptionFromStr(argv[i]);
         cliCmd &CLI_OPT_VERSION ? version() : void();
         cliCmd &CLI_OPT_HELP ? usage() : void();
         cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = true : 0;
@@ -2499,16 +2498,16 @@ main(s32 argc, s8 **argv)
         }
         else
         {
-            const u32 flag   = checkFlag(argv[optind]);
-            const u32 cliCmd = checkCliCmd(argv[optind]);
-            if (cliCmd)
-            {
-                optind += 2;
-                continue;
-            }
+            const u32 flag = retriveFlagFromStr(argv[optind]);
             if (flag)
             {
                 optind++;
+                continue;
+            }
+            const u32 cliCmd = retriveFlagFromStr(argv[optind]);
+            if (cliCmd)
+            {
+                optind += 2;
                 continue;
             }
 
