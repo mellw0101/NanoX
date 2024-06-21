@@ -220,3 +220,252 @@
 //     std::string_view key;
 //     std::size_t      value;
 // };
+
+// template <typename T, u64 N>
+//     struct Array
+//     {
+//         T data[N];
+
+//         constexpr Array()
+//             : data {}
+//         {}
+
+//         constexpr Array(const T (&arr)[N])
+//         {
+//             for (std::size_t i = 0; i < N; ++i)
+//             {
+//                 data[i] = arr[i];
+//             }
+//         }
+
+//         constexpr Array(const std::vector<T> &list)
+//         {
+//             std::size_t i = 0;
+//             for (const auto &elem : list)
+//             {
+//                 data[i++] = elem;
+//             }
+//         }
+
+//         constexpr T &
+//         operator[](std::size_t i)
+//         {
+//             return data[i];
+//         }
+
+//         constexpr const T &
+//         operator[](std::size_t i) const
+//         {
+//             return data[i];
+//         }
+
+//         constexpr std::size_t
+//         size() const
+//         {
+//             return N;
+//         }
+
+//         constexpr const T *
+//         begin() const
+//         {
+//             return data;
+//         }
+
+//         constexpr const T *
+//         end() const
+//         {
+//             return data + N;
+//         }
+//     };
+
+//     template <typename T, u64 N>
+//     constexpr bool
+//     operator==(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             if (lhs[i] != rhs[i])
+//             {
+//                 return false;
+//             }
+//         }
+//         return true;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr bool
+//     operator!=(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         return !(lhs == rhs);
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr bool
+//     operator<(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             if (lhs[i] < rhs[i])
+//             {
+//                 return true;
+//             }
+//             if (lhs[i] > rhs[i])
+//             {
+//                 return false;
+//             }
+//         }
+//         return false;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr bool
+//     operator>(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         return rhs < lhs;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr bool
+//     operator<=(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         return !(lhs > rhs);
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr bool
+//     operator>=(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         return !(lhs < rhs);
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator+(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] + rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator-(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] - rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator*(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] * rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator/(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] / rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator%(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] % rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator&(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] & rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator|(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] | rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator^(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] ^ rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator<<(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] << rhs[i];
+//         }
+//         return result;
+//     }
+
+//     template <typename T, u64 N>
+//     constexpr Array<T, N>
+//     operator>>(const Array<T, N> &lhs, const Array<T, N> &rhs)
+//     {
+//         Array<T, N> result;
+//         for (std::size_t i = 0; i < N; ++i)
+//         {
+//             result[i] = lhs[i] >> rhs[i];
+//         }
+//         return result;
+//     }
+
+//     //
+//     //  Deduction guide
+//     //
+//     template <typename T, std::size_t N>
+//     Array(const T (&)[N]) -> Array<T, N>;
+
+//     //
+//     //  Deduction guide for inferring the size
+//     //
+//     template <typename T, typename... U>
+//     Array(T, U...) -> Array<T, 1 + sizeof...(U)>;

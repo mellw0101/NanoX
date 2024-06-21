@@ -1,59 +1,6 @@
 /// \file constexpr_def.h
 #pragma once
-#include <Mlib/def.h>
-
-#include <array>
-#include <cstdint>
-#include <iostream>
-#include <stdexcept>
-#include <string>
-#include <string_view>
-#include <unordered_map>
-
-struct MapEntry
-{
-    std::string_view key;
-    u32              value;
-};
-
-template <u64 Size>
-using constexprMap = std::array<MapEntry, Size>;
-
-struct HashMapEntry
-{
-    u64 hash;
-    u16 value;
-};
-
-template <u64 Size>
-using constexprHashMap = std::array<HashMapEntry, Size>;
-
-constexpr u64
-fnv1a_32(const s8 *s, u64 count)
-{
-    constexpr u64 fnv_prime    = 16777619u;
-    constexpr u64 offset_basis = 2166136261u;
-
-    u64 hash = offset_basis;
-    for (u64 i = 0; i < count; ++i)
-    {
-        hash ^= s[i];
-        hash *= fnv_prime;
-    }
-    return hash;
-}
-
-constexpr u64
-hash_string(const char *s)
-{
-    return fnv1a_32(s, std::char_traits<s8>::length(s));
-}
-
-constexpr std::size_t
-operator"" _hash(const char *s, std::size_t)
-{
-    return hash_string(s);
-}
+#include <Mlib/constexpr.hpp>
 
 //
 //  Identifiers for color options.
@@ -72,24 +19,9 @@ constexpr u8 KEY_COMBO          = 10;
 constexpr u8 FUNCTION_TAG       = 11;
 constexpr u8 NUMBER_OF_ELEMENTS = 12;
 //
-//  The color options hash values.
-// //
-// constexpr u64 TITLE_BAR_HASH     = "titlecolor"_hash;
-// constexpr u64 LINE_NUMBER_HASH   = "numbercolor"_hash;
-// constexpr u64 GUIDE_STRIPE_HASH  = "stripecolor"_hash;
-// constexpr u64 SCROLL_BAR_HASH    = "scrollercolor"_hash;
-// constexpr u64 SELECTED_TEXT_HASH = "selectedcolor"_hash;
-// constexpr u64 SPOTLIGHTED_HASH   = "spotlightcolor"_hash;
-// constexpr u64 MINI_INFOBAR_HASH  = "minicolor"_hash;
-// constexpr u64 PROMPT_BAR_HASH    = "promptcolor"_hash;
-// constexpr u64 STATUS_BAR_HASH    = "statuscolor"_hash;
-// constexpr u64 ERROR_MESSAGE_HASH = "errorcolor"_hash;
-// constexpr u64 KEY_COMBO_HASH     = "keycolor"_hash;
-// constexpr u64 FUNCTION_TAG_HASH  = "functioncolor"_hash;
-// //
 //  The color options map.
 //
-constexpr constexprMap<12> colorOptionsMap = {
+CONSTEXPR_STRBITMAP<12> colorOptionMap = {
     {{"titlecolor", TITLE_BAR},
      {"numbercolor", LINE_NUMBER},
      {"stripecolor", GUIDE_STRIPE},
@@ -103,20 +35,6 @@ constexpr constexprMap<12> colorOptionsMap = {
      {"keycolor", KEY_COMBO},
      {"functioncolor", FUNCTION_TAG}}
 };
-// constexpr constexprHashMap<12> colorOptionHashMap = {
-//     {{TITLE_BAR_HASH, TITLE_BAR},
-//      {LINE_NUMBER_HASH, LINE_NUMBER},
-//      {GUIDE_STRIPE_HASH, GUIDE_STRIPE},
-//      {SCROLL_BAR_HASH, SCROLL_BAR},
-//      {SELECTED_TEXT_HASH, SELECTED_TEXT},
-//      {SPOTLIGHTED_HASH, SPOTLIGHTED},
-//      {MINI_INFOBAR_HASH, MINI_INFOBAR},
-//      {PROMPT_BAR_HASH, PROMPT_BAR},
-//      {STATUS_BAR_HASH, STATUS_BAR},
-//      {ERROR_MESSAGE_HASH, ERROR_MESSAGE},
-//      {KEY_COMBO_HASH, KEY_COMBO},
-//      {FUNCTION_TAG_HASH, FUNCTION_TAG}}
-// };
 
 //
 //  Identifiers for the different configuration options.
@@ -136,7 +54,7 @@ constexpr u16 CONF_OPT_TABSIZE = (1 << 11);
 //
 //  The configuration options map.
 //
-constexpr constexprMap<12> configOptionMap = {
+CONSTEXPR_STRBITMAP<12> configOptionMap = {
     {{"operatingdir", OPERATINGDIR},
      {"fill", FILL},
      {"matchbrackets", MATCHBRACKETS},
@@ -163,7 +81,7 @@ constexpr u8 SYNTAX_OPT_FORMATTER = (1 << 5);
 //
 //  The syntax options map.
 //
-constexpr constexprMap<6> syntaxOptionMap = {
+CONSTEXPR_STRBITMAP<6> syntaxOptionMap = {
     {{"color", SYNTAX_OPT_COLOR},
      {"icolor", SYNTAX_OPT_ICOLOR},
      {"comment", SYNTAX_OPT_COMMENT},
@@ -229,9 +147,8 @@ constexpr u8 MODERN_BINDINGS    = 50;
 //
 //  The flags map.
 //
-static const constexprMap<94> flagOptionsMap = {
-    {
-     {"-A", SMART_HOME},
+CONSTEXPR_STRBITMAP<94> flagOptionsMap = {
+    {{"-A", SMART_HOME},
      {"--smarthome", SMART_HOME},
      {"-B", MAKE_BACKUP},
      {"--backup", MAKE_BACKUP},
@@ -324,8 +241,7 @@ static const constexprMap<94> flagOptionsMap = {
      {"0", ZERO},
      {"--zero", ZERO},
      {"!", USE_MAGIC},
-     {"--magic", USE_MAGIC},
-     }
+     {"--magic", USE_MAGIC}}
 };
 
 //
@@ -348,7 +264,7 @@ constexpr u32 CLI_OPT_BREAKLONGLINES = (1 << 13);
 //
 //  The command line options map.
 //
-constexpr constexprMap<25> cliOptionMap = {
+CONSTEXPR_STRBITMAP<25> cliOptionMap = {
     {{"-I", CLI_OPT_IGNORERCFILE},
      {"--ignorercfiles", CLI_OPT_IGNORERCFILE},
      {"-V", CLI_OPT_VERSION},
@@ -404,7 +320,7 @@ constexpr u16 MSOME = MMOST | MBROWSER;
 //
 //  The menus map.
 //
-constexpr constexprMap<16> menuOptionMap = {
+CONSTEXPR_STRBITMAP<16> menuOptionMap = {
     {{"main", MMAIN},
      {"search", MWHEREIS},
      {"replace", MREPLACE},

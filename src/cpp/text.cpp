@@ -1,11 +1,12 @@
 /// @file text.cpp
 #include "../include/prototypes.h"
 
-#include <errno.h>
+#include <Mlib/Profile.h>
+#include <cerrno>
+#include <cstring>
+#include <ctime>
 #include <fcntl.h>
-#include <string.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
 
 #if defined(__APPLE__) && !defined(st_mtim)
@@ -257,11 +258,15 @@ unindent_a_line(linestruct *line, size_t indent_len)
     compensate_leftward(line, indent_len);
 }
 
-// Unindent the current line (or the marked lines) by tabsize columns.
-// The removed indent can be a mixture of spaces plus at most one tab.
+//
+//  Unindent the current line (or the marked lines) by tabsize columns.
+//  The removed indent can be a mixture of spaces plus at most one tab.
+//
 void
-do_unindent(void)
+do_unindent()
 {
+    Mlib::Profile::AutoTimer timer("do_unindent");
+
     linestruct *top, *bot, *line;
 
     /* Use either all the marked lines or just the current line. */
@@ -350,6 +355,8 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 bool
 comment_line(undo_type action, linestruct *line, const char *comment_seq)
 {
+    Mlib::Profile::AutoTimer timer("comment_line");
+
     size_t comment_seq_len = strlen(comment_seq);
 
     /* The postfix, if this is a bracketing type comment sequence. */

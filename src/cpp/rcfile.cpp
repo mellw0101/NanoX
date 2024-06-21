@@ -2345,39 +2345,18 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         }
         ptr = parse_argument(ptr);
 
-        // When in a UTF-8 locale, ignore arguments with invalid sequences.
+        //
+        //  When in a UTF-8 locale, ignore arguments with invalid sequences.
+        //
         if (using_utf8() && mbstowcs(nullptr, argument, 0) == (u64)-1)
         {
             jot_error(N_("Argument is not a valid multibyte string"));
             continue;
         }
 
-        //
-        /// Check for color options.
-        /// This uses a unordered map to check for
-        /// color options and return the corresponding
-        /// index as apposed to the previous implementation
-        /// used by GNU for the original Nano that
-        /// used a series of if else statements.
-        /// This is a more efficient way to check for
-        /// color options.
-        ///
-        /// @see checkForColorOptions
-        //
-        const u32 colorOption = retriveColorOptionFromStr(option);
+        const s32 colorOption = retriveColorOptionFromStr(option);
         (colorOption != u32_MAX) ? set_interface_color(colorOption, argument) : void();
 
-        //
-        /// Check for configuration options.
-        /// This uses a unordered map and a
-        /// enum with bit mask values like (1 << 0)
-        /// for the first enum, (1 << 1) for the second and so on.
-        /// This way we can check for configuration options using bitwise operations.
-        /// This is a far more efficient way to check for configuration options
-        /// then using strcmp for each option.
-        ///
-        /// @see checkForConfigOptions
-        //
         const u32 configOption = retriveConfigOptionFromStr(option);
         if (!configOption)
         {
