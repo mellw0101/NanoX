@@ -411,7 +411,7 @@ advance_over(const s8 *string, u64 &column)
         //
         //  A UTF-8 upper control code has two bytes and takes two columns.
         //
-        if (static_cast<u8>(string[0]) == 0xC2 && static_cast<s8>(string[1]) < -96)
+        if (static_cast<u8>(string[0]) == 0xC2 && static_cast<signed char>(string[1]) < -96)
         {
             column += 2;
             return 2;

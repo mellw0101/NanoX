@@ -353,6 +353,7 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 //  TODO : ( comment_line ) Change key to toggle comment
 //
 bool
+
 comment_line(undo_type action, linestruct *line, const char *comment_seq)
 {
     Mlib::Profile::AutoTimer timer("comment_line");

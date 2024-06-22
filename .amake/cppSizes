@@ -9,8 +9,8 @@ search.cpp:38337
 move.cpp:22546
 cut.cpp:25157
 history.cpp:18660
-text.cpp:116320
-chars.cpp:20061
+text.cpp:116321
+chars.cpp:20070
 global.cpp:62382
 rcfile.cpp:71332
 files.cpp:94192
