@@ -591,18 +591,21 @@ redo_cut(undostruct *u)
     cutbuffer = oldcutbuffer;
 }
 
-/* Undo the last thing(s) we did. */
+//
+//  Undo the last thing(s) we did.
+//
 void
-do_undo(void)
+do_undo()
 {
     undostruct *u = openfile->current_undo;
     linestruct *oldcutbuffer, *intruder;
-    linestruct *line = NULL;
-    size_t      original_x, regain_from_x;
-    char       *undidmsg = NULL;
-    char       *data;
+    linestruct *line = nullptr;
 
-    if (u == NULL)
+    u64 original_x, regain_from_x;
+    s8 *undidmsg = nullptr;
+    s8 *data;
+
+    if (u == nullptr)
     {
         statusline(AHEM, _("Nothing to undo"));
         return;
@@ -683,7 +686,6 @@ do_undo(void)
             line->data = data;
             goto_line_posx(u->head_lineno, u->head_x);
             break;
-#    ifdef ENABLE_WRAPPING
         case SPLIT_BEGIN :
             undidmsg = _("addition");
             break;
@@ -695,7 +697,6 @@ do_undo(void)
             }
             u = openfile->current_undo;
             break;
-#    endif
         case ZAP :
             undidmsg = _("erasure");
             undo_cut(u);
@@ -751,7 +752,6 @@ do_undo(void)
             handle_indent_action(u, TRUE, FALSE);
             undidmsg = _("unindent");
             break;
-#    ifdef ENABLE_COMMENT
         case COMMENT :
             handle_comment_action(u, TRUE, TRUE);
             undidmsg = _("comment");
@@ -760,7 +760,6 @@ do_undo(void)
             handle_comment_action(u, TRUE, FALSE);
             undidmsg = _("uncomment");
             break;
-#    endif
         default :
             break;
     }
@@ -772,23 +771,23 @@ do_undo(void)
 
     openfile->current_undo = openfile->current_undo->next;
     openfile->last_action  = OTHER;
-    openfile->mark         = NULL;
+    openfile->mark         = nullptr;
     openfile->placewewant  = xplustabs();
 
     openfile->totsize = u->wassize;
 
-#    ifdef ENABLE_COLOR
     if (u->type <= REPLACE)
     {
         check_the_multis(openfile->current);
     }
     else if (u->type == INSERT || u->type == COUPLE_BEGIN)
     {
-        recook = TRUE;
+        recook = true;
     }
-#    endif
 
-    /* When at the point where the buffer was last saved, unset "Modified". */
+    //
+    //  When at the point where the buffer was last saved, unset "Modified".
+    //
     if (openfile->current_undo == openfile->last_saved)
     {
         openfile->modified = FALSE;
@@ -1000,30 +999,37 @@ do_redo(void)
 }
 #endif /* !NANO_TINY */
 
-/* Break the current line at the cursor position. */
+//
+//  Break the current line at the cursor position.
+//
+//  TODO : Fix so if char before cursor is a ( '{', '[', '(' ) then it will break the line at the next line and insert
+//  the closing bracket
+//
 void
-do_enter(void)
+do_enter()
 {
-    linestruct *newnode = make_new_node(openfile->current);
-    size_t      extra   = 0;
-#ifndef NANO_TINY
+    linestruct *newnode    = make_new_node(openfile->current);
     linestruct *sampleline = openfile->current;
-    bool        allblanks  = FALSE;
 
-    if (ISSET(AUTOINDENT))
+    u64  extra     = 0;
+    bool allblanks = false;
+
+    if ISSET (AUTOINDENT)
     {
-#    ifdef ENABLE_JUSTIFY
-        /* When doing automatic long-line wrapping and the next line is
-         * in this same paragraph, use its indentation as the model. */
-        if (ISSET(BREAK_LONG_LINES) && sampleline->next != NULL && inpar(sampleline->next) &&
+        //
+        //  When doing automatic long-line wrapping and the next line is
+        //  in this same paragraph, use its indentation as the model.
+        //
+        if (ISSET(BREAK_LONG_LINES) && sampleline->next != nullptr && inpar(sampleline->next) &&
             !begpar(sampleline->next, 0))
         {
             sampleline = sampleline->next;
         }
-#    endif
         extra = indent_length(sampleline->data);
 
-        /* When breaking in the indentation, limit the automatic one. */
+        //
+        //  When breaking in the indentation, limit the automatic one.
+        //
         if (extra > openfile->current_x)
         {
             extra = openfile->current_x;
@@ -1033,41 +1039,49 @@ do_enter(void)
             allblanks = (indent_length(openfile->current->data) == extra);
         }
     }
-#endif /* NANO_TINY */
-    newnode->data = RE_CAST(char *, nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1));
-    strcpy(&newnode->data[extra], openfile->current->data + openfile->current_x);
-#ifndef NANO_TINY
-    /* Adjust the mark if it is on the current line after the cursor. */
+    newnode->data = static_cast<s8 *>(nmalloc(std::strlen(openfile->current->data + openfile->current_x) + extra + 1));
+    std::strcpy(&newnode->data[extra], openfile->current->data + openfile->current_x);
+
+    //
+    //  Adjust the mark if it is on the current line after the cursor.
+    //
     if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x)
     {
         openfile->mark = newnode;
         openfile->mark_x += extra - openfile->current_x;
     }
 
-    if (ISSET(AUTOINDENT))
+    if ISSET (AUTOINDENT)
     {
-        /* Copy the whitespace from the sample line to the new one. */
-        strncpy(newnode->data, sampleline->data, extra);
-        /* If there were only blanks before the cursor, trim them. */
+        //
+        //  Copy the whitespace from the sample line to the new one.
+        //
+        std::strncpy(newnode->data, sampleline->data, extra);
+        //
+        //  If there were only blanks before the cursor, trim them.
+        //
         if (allblanks)
         {
             openfile->current_x = 0;
         }
     }
-#endif
 
-    /* Make the current line end at the cursor position. */
+    //
+    //  Make the current line end at the cursor position.
+    //
     openfile->current->data[openfile->current_x] = '\0';
 
-#ifndef NANO_TINY
-    add_undo(ENTER, NULL);
-#endif
+    add_undo(ENTER, nullptr);
 
-    /* Insert the newly created line after the current one and renumber. */
+    //
+    //  Insert the newly created line after the current one and renumber.
+    //
     splice_node(openfile->current, newnode);
     renumber_from(newnode);
 
-    /* Put the cursor on the new line, after any automatic whitespace. */
+    //
+    //  Put the cursor on the new line, after any automatic whitespace.
+    //
     openfile->current     = newnode;
     openfile->current_x   = extra;
     openfile->placewewant = xplustabs();
@@ -1075,16 +1089,14 @@ do_enter(void)
     openfile->totsize++;
     set_modified();
 
-#ifndef NANO_TINY
     if (ISSET(AUTOINDENT) && !allblanks)
     {
         openfile->totsize += extra;
     }
     update_undo(ENTER);
-#endif
 
-    refresh_needed = TRUE;
-    focusing       = FALSE;
+    refresh_needed = true;
+    focusing       = false;
 }
 
 #ifndef NANO_TINY

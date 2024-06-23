@@ -8,6 +8,8 @@
 #include <glob.h>
 #include <unistd.h>
 
+using namespace Mlib;
+
 #ifndef RCFILE_NAME
 #    define HOME_RC_NAME ".nanorc"
 #    define RCFILE_NAME  "nanorc"
@@ -339,6 +341,8 @@ strtosc(const s8 *input)
 s8 *
 parse_next_word(s8 *ptr)
 {
+    Profile::AutoTimer timer("parse_next_word");
+
     while (!isblank((unsigned char)*ptr) && *ptr != '\0')
     {
         ptr++;
@@ -360,13 +364,17 @@ parse_next_word(s8 *ptr)
     return ptr;
 }
 
-/* Parse an argument, with optional quotes, after a keyword that takes
- * one.  If the next word starts with a ", we say that it ends with the
- * last " of the line.  Otherwise, we interpret it as usual, so that the
- * arguments can contain "'s too. */
+//
+//  Parse an argument, with optional quotes, after a keyword that takes
+//  one.  If the next word starts with a ", we say that it ends with the
+//  last " of the line.  Otherwise, we interpret it as usual, so that the
+//  arguments can contain "'s too.
+//
 s8 *
 parse_argument(s8 *ptr)
 {
+    Profile::AutoTimer timer("parse_argument");
+
     const s8 *ptr_save   = ptr;
     s8       *last_quote = nullptr;
 
@@ -443,18 +451,20 @@ parse_next_regex(char *ptr)
     return ptr;
 }
 
-/* Compile the given regular expression and store the result in packed (when
- * this pointer is not NULL).  Return TRUE when the expression is valid. */
+//
+//  Compile the given regular expression and store the result in packed (when
+//  this pointer is not NULL).  Return TRUE when the expression is valid.
+//
 bool
-compile(const char *expression, int rex_flags, regex_t **packed)
+compile(const s8 *expression, s32 rex_flags, regex_t **packed)
 {
-    regex_t *compiled = RE_CAST(regex_t *, nmalloc(sizeof(regex_t)));
-    int      outcome  = regcomp(compiled, expression, rex_flags);
+    regex_t *compiled = static_cast<regex_t *>(nmalloc(sizeof(regex_t)));
+    s32      outcome  = regcomp(compiled, expression, rex_flags);
 
     if (outcome != 0)
     {
-        size_t length  = regerror(outcome, compiled, NULL, 0);
-        char  *message = RE_CAST(char *, nmalloc(length));
+        u64 length  = regerror(outcome, compiled, nullptr, 0);
+        s8 *message = static_cast<s8 *>(nmalloc(length));
 
         regerror(outcome, compiled, message, length);
         jot_error(N_("Bad regex \"%s\": %s"), expression, message);
@@ -471,14 +481,18 @@ compile(const char *expression, int rex_flags, regex_t **packed)
     return (outcome == 0);
 }
 
-/* Parse the next syntax name and its possible extension regexes from the
- * line at ptr, and add it to the global linked list of color syntaxes. */
+//
+//  Parse the next syntax name and its possible extension regexes from the
+//  line at ptr, and add it to the global linked list of color syntaxes.
+//
 void
-begin_new_syntax(char *ptr)
+begin_new_syntax(s8 *ptr)
 {
-    char *nameptr = ptr;
+    s8 *nameptr = ptr;
 
-    /* Check that the syntax name is not empty. */
+    //
+    //  Check that the syntax name is not empty.
+    //
     if (*ptr == '\0' || (*ptr == '"' && (*(ptr + 1) == '\0' || *(ptr + 1) == '"')))
     {
         jot_error(N_("Missing syntax name"));
@@ -487,60 +501,71 @@ begin_new_syntax(char *ptr)
 
     ptr = parse_next_word(ptr);
 
-    /* Check that quotes around the name are either paired or absent. */
-    if ((*nameptr == '\x22') ^ (nameptr[strlen(nameptr) - 1] == '\x22'))
+    //
+    //  Check that quotes around the name are either paired or absent.
+    //
+    if ((*nameptr == '\x22') ^ (nameptr[std::strlen(nameptr) - 1] == '\x22'))
     {
         jot_error(N_("Unpaired quote in syntax name"));
         return;
     }
 
-    /* If the name is quoted, strip the quotes. */
+    //
+    //  If the name is quoted, strip the quotes.
+    //
     if (*nameptr == '\x22')
     {
         nameptr++;
         nameptr[strlen(nameptr) - 1] = '\0';
     }
 
-    /* Redefining the "none" syntax is not allowed. */
+    //
+    //  Redefining the "none" syntax is not allowed.
+    //
     if (strcmp(nameptr, "none") == 0)
     {
         jot_error(N_("The \"none\" syntax is reserved"));
         return;
     }
 
-    /* Initialize a new syntax struct. */
+    //
+    //  Initialize a new syntax struct.
+    //
     live_syntax                = RE_CAST(syntaxtype *, nmalloc(sizeof(syntaxtype)));
     live_syntax->name          = copy_of(nameptr);
     live_syntax->filename      = copy_of(nanorc);
     live_syntax->lineno        = lineno;
-    live_syntax->augmentations = NULL;
-    live_syntax->extensions    = NULL;
-    live_syntax->headers       = NULL;
-    live_syntax->magics        = NULL;
-    live_syntax->linter        = NULL;
-    live_syntax->formatter     = NULL;
-    live_syntax->tabstring     = NULL;
-#ifdef ENABLE_COMMENT
-    live_syntax->comment = copy_of(GENERAL_COMMENT_CHARACTER);
-#endif
-    live_syntax->color      = NULL;
-    live_syntax->multiscore = 0;
-
-    /* Hook the new syntax in at the top of the list. */
+    live_syntax->augmentations = nullptr;
+    live_syntax->extensions    = nullptr;
+    live_syntax->headers       = nullptr;
+    live_syntax->magics        = nullptr;
+    live_syntax->linter        = nullptr;
+    live_syntax->formatter     = nullptr;
+    live_syntax->tabstring     = nullptr;
+    live_syntax->comment       = copy_of(GENERAL_COMMENT_CHARACTER);
+    live_syntax->color         = nullptr;
+    live_syntax->multiscore    = 0;
+    //
+    //  Hook the new syntax in at the top of the list.
+    //
     live_syntax->next = syntaxes;
     syntaxes          = live_syntax;
 
-    opensyntax         = TRUE;
-    seen_color_command = FALSE;
+    opensyntax         = true;
+    seen_color_command = false;
 
-    /* The default syntax should have no associated extensions. */
-    if (strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
+    //
+    //  The default syntax should have no associated extensions.
+    //
+    if (std::strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept extensions"));
         return;
     }
 
-    /* If there seem to be extension regexes, pick them up. */
+    //
+    //  If there seem to be extension regexes, pick them up.
+    //
     if (*ptr != '\0')
     {
         grab_and_store("extension", ptr, &live_syntax->extensions);
@@ -563,16 +588,15 @@ check_for_nonempty_syntax()
     opensyntax = false;
 }
 
-/* Return TRUE when the given function is present in almost all menus. */
+//
+//  Return TRUE when the given function is present in almost all menus.
+//
 bool
 is_universal(void (*func)())
 {
-    return (func == do_left || func == do_right || func == do_home || func == do_end ||
-#ifndef NANO_TINY
-            func == to_prev_word || func == to_next_word ||
-#endif
-            func == do_delete || func == do_backspace || func == cut_text || func == paste_text || func == do_tab ||
-            func == do_enter || func == do_verbatim_input);
+    return (func == do_left || func == do_right || func == do_home || func == do_end || func == to_prev_word ||
+            func == to_next_word || func == do_delete || func == do_backspace || func == cut_text ||
+            func == paste_text || func == do_tab || func == do_enter || func == do_verbatim_input);
 }
 
 /* Bind or unbind a key combo, to or from a function. */

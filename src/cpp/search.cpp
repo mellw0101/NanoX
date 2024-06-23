@@ -1,24 +1,4 @@
-/**************************************************************************
- *   search.c  --  This file is part of GNU nano.                         *
- *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
- *   Copyright (C) 2015-2020, 2022 Benno Schulenberg                      *
- *                                                                        *
- *   GNU nano is free software: you can redistribute it and/or modify     *
- *   it under the terms of the GNU General Public License as published    *
- *   by the Free Software Foundation, either version 3 of the License,    *
- *   or (at your option) any later version.                               *
- *                                                                        *
- *   GNU nano is distributed in the hope that it will be useful,          *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty          *
- *   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.              *
- *   See the GNU General Public License for more details.                 *
- *                                                                        *
- *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
- *                                                                        *
- **************************************************************************/
-
+/// @file - search.cpp
 #include "../include/prototypes.h"
 
 #include <string.h>
@@ -902,18 +882,17 @@ ask_for_and_do_replacements(void)
     }
 }
 
-#if !defined(NANO_TINY) || defined(ENABLE_SPELLER) || defined(ENABLE_LINTER) || defined(ENABLE_FORMATTER)
-/* Go to the specified line and x position. */
+//
+//  Go to the specified line and x position.
+//
 void
-goto_line_posx(ssize_t linenumber, size_t pos_x)
+goto_line_posx(s64 linenumber, u64 pos_x)
 {
-#    ifdef ENABLE_COLOR
     if (linenumber > openfile->edittop->lineno + editwinrows ||
         (ISSET(SOFTWRAP) && linenumber > openfile->current->lineno))
     {
         recook |= perturbed;
     }
-#    endif
 
     if (linenumber < openfile->filebot->lineno)
     {
@@ -927,9 +906,8 @@ goto_line_posx(ssize_t linenumber, size_t pos_x)
     openfile->current_x   = pos_x;
     openfile->placewewant = xplustabs();
 
-    refresh_needed = TRUE;
+    refresh_needed = true;
 }
-#endif
 
 /* Go to the specified line and column, or ask for them if interactive
  * is TRUE.  In the latter case also update the screen afterwards.

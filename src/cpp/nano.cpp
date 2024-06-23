@@ -1,6 +1,7 @@
 #include "../include/prototypes.h"
 #include "../include/revision.h"
 
+#include <Mlib/Debug.h>
 #include <Mlib/Profile.h>
 #include <Mlib/def.h>
 
@@ -1776,6 +1777,12 @@ s32
 main(s32 argc, s8 **argv)
 {
     Mlib::Profile::setupReportGeneration();
+    LOUT.setOutputFile("/home/mellw/NanoX.log");
+    LoutI << "Starting nano" << '\n';
+
+    NETLOGGER->NET_DEBUG = true;
+    NETLOGGER->init("192.168.1.173", 23);
+    NETLOGGER->send_to_server("Starting nano");
 
     s32 stdin_flags;
     //
@@ -2189,20 +2196,22 @@ main(s32 argc, s8 **argv)
     last_search = copy_of("");
     UNSET(BACKWARDS_SEARCH);
 
-    /* If tabsize wasn't specified, set its default value. */
+    //
+    //  If tabsize wasn't specified, set its default value.
+    //
     if (tabsize == -1)
     {
         tabsize = WIDTH_OF_TAB;
     }
 
-#ifdef ENABLE_COLOR
-    /* On capable terminals, use colors, otherwise just reverse or bold.*/
+    //
+    //  On capable terminals, use colors, otherwise just reverse or bold.
+    //
     if (has_colors())
     {
         set_interface_colorpairs();
     }
     else
-#endif
     {
         interface_color_pair[TITLE_BAR]     = hilite_attribute;
         interface_color_pair[LINE_NUMBER]   = hilite_attribute;
@@ -2218,10 +2227,14 @@ main(s32 argc, s8 **argv)
         interface_color_pair[FUNCTION_TAG]  = A_NORMAL;
     }
 
-    // Set up the terminal state.
+    //
+    //  Set up the terminal state.
+    //
     terminal_init();
 
-    // Create the three subwindows, based on the current screen dimensions.
+    //
+    //  Create the three subwindows, based on the current screen dimensions.
+    //
     window_init();
     curs_set(0);
 
@@ -2230,13 +2243,17 @@ main(s32 argc, s8 **argv)
 
     editwincols = COLS - sidebar;
 
-    // Set up the signal handlers.
+    //
+    //  Set up the signal handlers.
+    //
     signal_init();
 
     // Initialize mouse support.
     mouse_init();
 
-    /* Ask ncurses for the key codes for most modified editing keys. */
+    //
+    //  Ask ncurses for the key codes for most modified editing keys.
+    //
     controlleft        = get_keycode("kLFT5", CONTROL_LEFT);
     controlright       = get_keycode("kRIT5", CONTROL_RIGHT);
     controlup          = get_keycode("kUP5", CONTROL_UP);
@@ -2568,4 +2585,8 @@ main(s32 argc, s8 **argv)
         // Read in and interpret a single keystroke.
         process_a_keystroke();
     }
+
+    LOUT.Destroy();
+    NETLOGGER->Destroy();
+    return 0;
 }

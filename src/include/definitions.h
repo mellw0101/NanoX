@@ -31,21 +31,11 @@
 #include <unordered_map>
 #include <vector>
 
-/// @brief
-/// - Since we are using a staticly compiled version of ncurses-6.3, we will
-/// include the header file from the lib directory.
-/// @c Original CODE:
-/// - // Prefer wide ncurses over normal ncurses over curses.
-/// - #if defined(HAVE_NCURSESW_NCURSES_H)
-/// - #include <ncursesw/ncurses.h>
-/// - #elif defined(HAVE_NCURSES_H)
-/// - #    include <ncurses.h>
-/// - #else
-/// - #    include <curses.h>
-/// - #endif
 #include <ncursesw/ncurses.h>
 
-/* Native language support. */
+//
+//  Native language support.
+//
 #ifdef ENABLE_NLS
 #    ifdef HAVE_LIBINTL_H
 #        include <libintl.h>
@@ -116,14 +106,18 @@
 #define PRUNE_DUPLICATE   TRUE
 #define IGNORE_DUPLICATES FALSE
 
+//
+//  In UTF-8 a valid character is at most four bytes long.
+//
 #ifdef ENABLE_UTF8
-/* In UTF-8 a valid character is at most four bytes long. */
 #    define MAXCHARLEN 4
 #else
 #    define MAXCHARLEN 1
 #endif
 
-/* The default width of a tab in spaces. */
+//
+//  The default width of a tab in spaces.
+//
 #define WIDTH_OF_TAB              4
 
 /* The default number of columns from end of line where wrapping occurs. */
@@ -136,7 +130,7 @@
 #define MAX_SEARCH_HISTORY        100
 
 /* The largest size_t number that doesn't have the high bit set. */
-#define HIGHEST_POSITIVE          ((~(size_t)0) >> 1)
+#define HIGHEST_POSITIVE          ((~(u64)0) >> 1)
 
 #define THE_DEFAULT               -1
 #define BAD_COLOR                 -2
@@ -153,11 +147,15 @@
 #define JUSTONTHIS                (1 << 5)
 /* Both the start and end regexes match within this line. */
 
-/* Basic control codes. */
+//
+//  Basic control codes.
+//
 #define ESC_CODE                  0x1B
 #define DEL_CODE                  0x7F
 
-/* Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses. */
+//
+//  Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses.
+//
 #define CONTROL_LEFT              0x401
 #define CONTROL_RIGHT             0x402
 #define CONTROL_UP                0x403
@@ -200,9 +198,11 @@
 #define FOCUS_IN                  0x491
 #define FOCUS_OUT                 0x499
 
-/* Special keycodes for when a string bind has been partially implanted
- * or has an unpaired opening brace, or when a function in a string bind
- * needs execution or a specified function name is invalid. */
+//
+//  Special keycodes for when a string bind has been partially implanted
+//  or has an unpaired opening brace, or when a function in a string bind
+//  needs execution or a specified function name is invalid.
+//
 #define MORE_PLANTS               0x4EA
 #define MISSING_BRACE             0x4EB
 #define PLANTED_A_COMMAND         0x4EC
@@ -220,17 +220,21 @@
 // A special keycode for when we get a SIGWINCH (a window resize).
 #define KEY_WINCH                 -2
 
-// Some extra flags for the undo function.
-#define WAS_BACKSPACE_AT_EOF      (1 << 1)
-#define WAS_WHOLE_LINE            (1 << 2)
-#define INCLUDED_LAST_LINE        (1 << 3)
-#define MARK_WAS_SET              (1 << 4)
-#define CURSOR_WAS_AT_HEAD        (1 << 5)
-#define HAD_ANCHOR_AT_START       (1 << 6)
+//
+//  Some extra flags for the undo function.
+//
+constexpr auto WAS_BACKSPACE_AT_EOF = (1 << 1);
+constexpr auto WAS_WHOLE_LINE       = (1 << 2);
+constexpr auto INCLUDED_LAST_LINE   = (1 << 3);
+constexpr auto MARK_WAS_SET         = (1 << 4);
+constexpr auto CURSOR_WAS_AT_HEAD   = (1 << 5);
+constexpr auto HAD_ANCHOR_AT_START  = (1 << 6);
 
 #include "constexpr_utils.h"
 
-/* Enumeration types. */
+//
+//  Enumeration types.
+//
 typedef enum
 {
     UNSPECIFIED,
@@ -267,8 +271,8 @@ typedef enum
 } update_type;
 
 //
-/// The kinds of undo actions.
-/// ADD...REPLACE must come first.
+//  The kinds of undo actions.
+//  ADD...REPLACE must come first.
 //
 typedef enum
 {
@@ -296,81 +300,9 @@ typedef enum
     OTHER
 } undo_type;
 
-// // The elements of the interface that can be colored differently.
-// enum
-// {
-//     TITLE_BAR = 0,
-//     LINE_NUMBER,
-//     GUIDE_STRIPE,
-//     SCROLL_BAR,
-//     SELECTED_TEXT,
-//     SPOTLIGHTED,
-//     MINI_INFOBAR,
-//     PROMPT_BAR,
-//     STATUS_BAR,
-//     ERROR_MESSAGE,
-//     KEY_COMBO,
-//     FUNCTION_TAG,
-//     NUMBER_OF_ELEMENTS
-// };
-
-// Enumeration used in the flags array.  See the definition of FLAGMASK.
-// enum
-// {
-//     DONTUSE = 0,
-//     CASE_SENSITIVE,
-//     CONSTANT_SHOW,
-//     NO_HELP,
-//     NO_WRAP,
-//     AUTOINDENT,
-//     VIEW_MODE,
-//     USE_MOUSE,
-//     USE_REGEXP,
-//     SAVE_ON_EXIT,
-//     CUT_FROM_CURSOR,
-//     BACKWARDS_SEARCH,
-//     MULTIBUFFER,
-//     REBIND_DELETE,
-//     RAW_SEQUENCES,
-//     NO_CONVERT,
-//     MAKE_BACKUP,
-//     INSECURE_BACKUP,
-//     NO_SYNTAX,
-//     PRESERVE,
-//     HISTORYLOG,
-//     RESTRICTED,
-//     SMART_HOME,
-//     WHITESPACE_DISPLAY,
-//     TABS_TO_SPACES,
-//     QUICK_BLANK,
-//     WORD_BOUNDS,
-//     NO_NEWLINES,
-//     BOLD_TEXT,
-//     SOFTWRAP,
-//     POSITIONLOG,
-//     LOCKING,
-//     NOREAD_MODE,
-//     MAKE_IT_UNIX,
-//     TRIM_BLANKS,
-//     SHOW_CURSOR,
-//     LINE_NUMBERS,
-//     AT_BLANKS,
-//     AFTER_ENDS,
-//     LET_THEM_ZAP,
-//     BREAK_LONG_LINES,
-//     JUMPY_SCROLLING,
-//     EMPTY_LINE,
-//     INDICATOR,
-//     BOOKSTYLE,
-//     COLON_PARSING,
-//     STATEFLAGS,
-//     USE_MAGIC,
-//     MINIBAR,
-//     ZERO,
-//     MODERN_BINDINGS
-// };
-
-/* Structure types. */
+//
+//  Structure types.
+//
 typedef struct colortype
 {
     s16 id;            // An ordinal number (if this color combo is for a multiline regex).
@@ -394,14 +326,10 @@ typedef struct regexlisttype
 
 typedef struct augmentstruct
 {
-    char *filename;
-    /* The file where the syntax is extended. */
-    ssize_t lineno;
-    /* The number of the line of the extendsyntax command. */
-    char *data;
-    /* The text of the line. */
-    struct augmentstruct *next;
-    /* Next node. */
+    s8            *filename;  //  The file where the syntax is extended.
+    s64            lineno;    //  The number of the line of the extendsyntax command.
+    s8            *data;      //  The text of the line.
+    augmentstruct *next;      //  Next node.
 } augmentstruct;
 
 typedef struct syntaxtype

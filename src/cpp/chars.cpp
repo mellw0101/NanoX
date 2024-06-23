@@ -1,16 +1,15 @@
 /// @file chars.cpp
 #include "../include/prototypes.h"
 
-// #include <cctype>
 #include <cstring>
 #include <cwchar>
 #include <cwctype>
 
-/// @name @c use_utf8
-/// @brief
-/// - Whether we've enabled UTF-8 support.
-/// - Initially set to @p false,
-/// - and then set to @p true by @see @c utf8_init().
+//
+//  Whether we've enabled UTF-8 support.
+//  Initially set to 'false',
+//  and then set to 'true' by utf8_init().
+//
 static bool use_utf8 = false;
 
 /// @name @c utf8_init
