@@ -128,7 +128,7 @@ display_rcfile_errors()
     }
 }
 
-#define MAXSIZE (PATH_MAX + 200)
+static constexpr auto MAXSIZE = (PATH_MAX + 200);
 
 //
 /// @name @c jot_error
@@ -309,374 +309,6 @@ strtosc(const s8 *input)
 
     s->toggle = 0;
 
-    // if (!strcmp(input, "cancel"))
-    // {
-    //     s->func = do_cancel;
-    // }
-    // else if (!strcmp(input, "help"))
-    // {
-    //     s->func = do_help;
-    // }
-    // else if (!strcmp(input, "exit"))
-    // {
-    //     s->func = do_exit;
-    // }
-    // else if (!strcmp(input, "discardbuffer"))
-    // {
-    //     s->func = discard_buffer;
-    // }
-    // else if (!strcmp(input, "writeout"))
-    // {
-    //     s->func = do_writeout;
-    // }
-    // else if (!strcmp(input, "savefile"))
-    // {
-    //     s->func = do_savefile;
-    // }
-    // else if (!strcmp(input, "insert"))
-    // {
-    //     s->func = do_insertfile;
-    // }
-    // else if (!strcmp(input, "whereis"))
-    // {
-    //     s->func = do_search_forward;
-    // }
-    // else if (!strcmp(input, "wherewas"))
-    // {
-    //     s->func = do_search_backward;
-    // }
-    // else if (!strcmp(input, "findprevious"))
-    // {
-    //     s->func = do_findprevious;
-    // }
-    // else if (!strcmp(input, "findnext"))
-    // {
-    //     s->func = do_findnext;
-    // }
-    // else if (!strcmp(input, "replace"))
-    // {
-    //     s->func = do_replace;
-    // }
-    // else if (!strcmp(input, "cut"))
-    // {
-    //     s->func = cut_text;
-    // }
-    // else if (!strcmp(input, "copy"))
-    // {
-    //     s->func = copy_text;
-    // }
-    // else if (!strcmp(input, "paste"))
-    // {
-    //     s->func = paste_text;
-    // }
-    // else if (!strcmp(input, "execute"))
-    // {
-    //     s->func = do_execute;
-    // }
-    // else if (!strcmp(input, "cutrestoffile"))
-    // {
-    //     s->func = cut_till_eof;
-    // }
-    // else if (!strcmp(input, "zap"))
-    // {
-    //     s->func = zap_text;
-    // }
-    // else if (!strcmp(input, "mark"))
-    // {
-    //     s->func = do_mark;
-    // }
-    // else if (!strcmp(input, "tospell") || !strcmp(input, "speller"))
-    // {
-    //     s->func = do_spell;
-    // }
-    // else if (!strcmp(input, "linter"))
-    // {
-    //     s->func = do_linter;
-    // }
-    // else if (!strcmp(input, "formatter"))
-    // {
-    //     s->func = do_formatter;
-    // }
-    // else if (!strcmp(input, "location"))
-    // {
-    //     s->func = report_cursor_position;
-    // }
-    // else if (!strcmp(input, "gotoline"))
-    // {
-    //     s->func = do_gotolinecolumn;
-    // }
-    // else if (!strcmp(input, "justify"))
-    // {
-    //     s->func = do_justify;
-    // }
-    // else if (!strcmp(input, "fulljustify"))
-    // {
-    //     s->func = do_full_justify;
-    // }
-    // else if (!strcmp(input, "beginpara"))
-    // {
-    //     s->func = to_para_begin;
-    // }
-    // else if (!strcmp(input, "endpara"))
-    // {
-    //     s->func = to_para_end;
-    // }
-    // else if (!strcmp(input, "comment"))
-    // {
-    //     s->func = do_comment;
-    // }
-    // else if (!strcmp(input, "complete"))
-    // {
-    //     s->func = complete_a_word;
-    // }
-    // else if (!strcmp(input, "indent"))
-    // {
-    //     s->func = do_indent;
-    // }
-    // else if (!strcmp(input, "unindent"))
-    // {
-    //     s->func = do_unindent;
-    // }
-    // else if (!strcmp(input, "chopwordleft"))
-    // {
-    //     s->func = chop_previous_word;
-    // }
-    // else if (!strcmp(input, "chopwordright"))
-    // {
-    //     s->func = chop_next_word;
-    // }
-    // else if (!strcmp(input, "findbracket"))
-    // {
-    //     s->func = do_find_bracket;
-    // }
-    // else if (!strcmp(input, "wordcount"))
-    // {
-    //     s->func = count_lines_words_and_characters;
-    // }
-    // else if (!strcmp(input, "recordmacro"))
-    // {
-    //     s->func = record_macro;
-    // }
-    // else if (!strcmp(input, "runmacro"))
-    // {
-    //     s->func = run_macro;
-    // }
-    // else if (!strcmp(input, "anchor"))
-    // {
-    //     s->func = put_or_lift_anchor;
-    // }
-    // else if (!strcmp(input, "prevanchor"))
-    // {
-    //     s->func = to_prev_anchor;
-    // }
-    // else if (!strcmp(input, "nextanchor"))
-    // {
-    //     s->func = to_next_anchor;
-    // }
-    // else if (!strcmp(input, "undo"))
-    // {
-    //     s->func = do_undo;
-    // }
-    // else if (!strcmp(input, "redo"))
-    // {
-    //     s->func = do_redo;
-    // }
-    // else if (!strcmp(input, "suspend"))
-    // {
-    //     s->func = do_suspend;
-    // }
-    // else if (!strcmp(input, "left") || !strcmp(input, "back"))
-    // {
-    //     s->func = do_left;
-    // }
-    // else if (!strcmp(input, "right") || !strcmp(input, "forward"))
-    // {
-    //     s->func = do_right;
-    // }
-    // else if (!strcmp(input, "up") || !strcmp(input, "prevline"))
-    // {
-    //     s->func = do_up;
-    // }
-    // else if (!strcmp(input, "down") || !strcmp(input, "nextline"))
-    // {
-    //     s->func = do_down;
-    // }
-    // else if (!strcmp(input, "scrollup"))
-    // {
-    //     s->func = do_scroll_up;
-    // }
-    // else if (!strcmp(input, "scrolldown"))
-    // {
-    //     s->func = do_scroll_down;
-    // }
-    // else if (!strcmp(input, "prevword"))
-    // {
-    //     s->func = to_prev_word;
-    // }
-    // else if (!strcmp(input, "nextword"))
-    // {
-    //     s->func = to_next_word;
-    // }
-    // else if (!strcmp(input, "home"))
-    // {
-    //     s->func = do_home;
-    // }
-    // else if (!strcmp(input, "end"))
-    // {
-    //     s->func = do_end;
-    // }
-    // else if (!strcmp(input, "prevblock"))
-    // {
-    //     s->func = to_prev_block;
-    // }
-    // else if (!strcmp(input, "nextblock"))
-    // {
-    //     s->func = to_next_block;
-    // }
-    // else if (!strcmp(input, "toprow"))
-    // {
-    //     s->func = to_top_row;
-    // }
-    // else if (!strcmp(input, "bottomrow"))
-    // {
-    //     s->func = to_bottom_row;
-    // }
-    // else if (!strcmp(input, "center"))
-    // {
-    //     s->func = do_center;
-    // }
-    // else if (!strcmp(input, "cycle"))
-    // {
-    //     s->func = do_cycle;
-    // }
-    // else if (!strcmp(input, "pageup") || !strcmp(input, "prevpage"))
-    // {
-    //     s->func = do_page_up;
-    // }
-    // else if (!strcmp(input, "pagedown") || !strcmp(input, "nextpage"))
-    // {
-    //     s->func = do_page_down;
-    // }
-    // else if (!strcmp(input, "firstline"))
-    // {
-    //     s->func = to_first_line;
-    // }
-    // else if (!strcmp(input, "lastline"))
-    // {
-    //     s->func = to_last_line;
-    // }
-    // else if (!strcmp(input, "prevbuf"))
-    // {
-    //     s->func = switch_to_prev_buffer;
-    // }
-    // else if (!strcmp(input, "nextbuf"))
-    // {
-    //     s->func = switch_to_next_buffer;
-    // }
-    // else if (!strcmp(input, "verbatim"))
-    // {
-    //     s->func = do_verbatim_input;
-    // }
-    // else if (!strcmp(input, "tab"))
-    // {
-    //     s->func = do_tab;
-    // }
-    // else if (!strcmp(input, "enter"))
-    // {
-    //     s->func = do_enter;
-    // }
-    // else if (!strcmp(input, "delete"))
-    // {
-    //     s->func = do_delete;
-    // }
-    // else if (!strcmp(input, "backspace"))
-    // {
-    //     s->func = do_backspace;
-    // }
-    // else if (!strcmp(input, "refresh"))
-    // {
-    //     s->func = full_refresh;
-    // }
-    // else if (!strcmp(input, "casesens"))
-    // {
-    //     s->func = case_sens_void;
-    // }
-    // else if (!strcmp(input, "regexp"))
-    // {
-    //     s->func = regexp_void;
-    // }
-    // else if (!strcmp(input, "backwards"))
-    // {
-    //     s->func = backwards_void;
-    // }
-    // else if (!strcmp(input, "flipreplace"))
-    // {
-    //     s->func = flip_replace;
-    // }
-    // else if (!strcmp(input, "flipgoto"))
-    // {
-    //     s->func = flip_goto;
-    // }
-    // else if (!strcmp(input, "older"))
-    // {
-    //     s->func = get_older_item;
-    // }
-    // else if (!strcmp(input, "newer"))
-    // {
-    //     s->func = get_newer_item;
-    // }
-    // else if (!strcmp(input, "dosformat"))
-    // {
-    //     s->func = dos_format;
-    // }
-    // else if (!strcmp(input, "macformat"))
-    // {
-    //     s->func = mac_format;
-    // }
-    // else if (!strcmp(input, "append"))
-    // {
-    //     s->func = append_it;
-    // }
-    // else if (!strcmp(input, "prepend"))
-    // {
-    //     s->func = prepend_it;
-    // }
-    // else if (!strcmp(input, "backup"))
-    // {
-    //     s->func = back_it_up;
-    // }
-    // else if (!strcmp(input, "flipexecute"))
-    // {
-    //     s->func = flip_execute;
-    // }
-    // else if (!strcmp(input, "flippipe"))
-    // {
-    //     s->func = flip_pipe;
-    // }
-    // else if (!strcmp(input, "flipconvert"))
-    // {
-    //     s->func = flip_convert;
-    // }
-    // else if (!strcmp(input, "flipnewbuffer"))
-    // {
-    //     s->func = flip_newbuffer;
-    // }
-    // else if (!strcmp(input, "tofiles") || !strcmp(input, "browser"))
-    // {
-    //     s->func = to_files;
-    // }
-    // else if (!strcmp(input, "gotodir"))
-    // {
-    //     s->func = goto_dir;
-    // }
-    // else if (!strcmp(input, "firstfile"))
-    // {
-    //     s->func = to_first_file;
-    // }
-    // else if (!strcmp(input, "lastfile"))
-    // {
-    //     s->func = to_last_file;
-    // }
     const auto it = keyMap.find(input);
     if (it != keyMap.end())
     {
@@ -684,58 +316,11 @@ strtosc(const s8 *input)
     }
     else
     {
-        s->func = do_toggle;
-        if (!strcmp(input, "nohelp"))
+        s->func           = do_toggle;
+        const auto toggle = retriveToggleOptionFromStr(input);
+        if (toggle)
         {
-            s->toggle = NO_HELP;
-        }
-        else if (!strcmp(input, "zero"))
-        {
-            s->toggle = ZERO;
-        }
-        else if (!strcmp(input, "constantshow"))
-        {
-            s->toggle = CONSTANT_SHOW;
-        }
-        else if (!strcmp(input, "softwrap"))
-        {
-            s->toggle = SOFTWRAP;
-        }
-        else if (!strcmp(input, "linenumbers"))
-        {
-            s->toggle = LINE_NUMBERS;
-        }
-        else if (!strcmp(input, "whitespacedisplay"))
-        {
-            s->toggle = WHITESPACE_DISPLAY;
-        }
-        else if (!strcmp(input, "nosyntax"))
-        {
-            s->toggle = NO_SYNTAX;
-        }
-        else if (!strcmp(input, "smarthome"))
-        {
-            s->toggle = SMART_HOME;
-        }
-        else if (!strcmp(input, "autoindent"))
-        {
-            s->toggle = AUTOINDENT;
-        }
-        else if (!strcmp(input, "cutfromcursor"))
-        {
-            s->toggle = CUT_FROM_CURSOR;
-        }
-        else if (!strcmp(input, "breaklonglines"))
-        {
-            s->toggle = BREAK_LONG_LINES;
-        }
-        else if (!strcmp(input, "tabstospaces"))
-        {
-            s->toggle = TABS_TO_SPACES;
-        }
-        else if (!strcmp(input, "mouse"))
-        {
-            s->toggle = USE_MOUSE;
+            s->toggle = toggle;
         }
         else
         {
@@ -746,37 +331,13 @@ strtosc(const s8 *input)
     return s;
 }
 
-// constexpr s32
-// name_to_menu(const s8 *name)
-// {
-//     for (u8 index = 0; index < NUMBER_OF_MENUS; ++index)
-//     {
-//         if (str_equal(name, menunames[index]))
-//         {
-//             return menusymbols[index];
-//         }
-//     }
-//     return 0;
-// }
-
-// constexpr const s8 *
-// menu_to_name(s32 menu)
-// {
-//     for (u8 index = 0; index < NUMBER_OF_MENUS; ++index)
-//     {
-//         if (menusymbols[index] == menu)
-//         {
-//             return menunames[index];
-//         }
-//     }
-//     return "boooo";
-// }
-
-// Parse the next word from the string, null-terminate it, and return
-// a pointer to the first character after the null terminator.  The
-// returned pointer will point to '\0' if we hit the end of the line.
-char *
-parse_next_word(char *ptr)
+//
+//  Parse the next word from the string, null-terminate it, and return
+//  a pointer to the first character after the null terminator.  The
+//  returned pointer will point to '\0' if we hit the end of the line.
+//
+s8 *
+parse_next_word(s8 *ptr)
 {
     while (!isblank((unsigned char)*ptr) && *ptr != '\0')
     {
@@ -839,7 +400,6 @@ parse_argument(s8 *ptr)
     return ptr;
 }
 
-#ifdef ENABLE_COLOR
 /* Advance over one regular expression in the line starting at ptr,
  * null-terminate it, and return a pointer to the succeeding text. */
 char *
@@ -960,9 +520,9 @@ begin_new_syntax(char *ptr)
     live_syntax->linter        = NULL;
     live_syntax->formatter     = NULL;
     live_syntax->tabstring     = NULL;
-#    ifdef ENABLE_COMMENT
+#ifdef ENABLE_COMMENT
     live_syntax->comment = copy_of(GENERAL_COMMENT_CHARACTER);
-#    endif
+#endif
     live_syntax->color      = NULL;
     live_syntax->multiscore = 0;
 
@@ -986,7 +546,6 @@ begin_new_syntax(char *ptr)
         grab_and_store("extension", ptr, &live_syntax->extensions);
     }
 }
-#endif /* ENABLE_COLOR */
 
 /* Verify that a syntax definition contains at least one color command. */
 void

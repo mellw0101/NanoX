@@ -109,7 +109,7 @@ set_interface_colorpairs()
 // Assign a pair number to each of the foreground/background color combinations
 // in the given syntax, giving identical combinations the same number. */
 void
-set_syntax_colorpairs(syntaxtype *const &sntx)
+set_syntax_colorpairs(syntaxtype *sntx)
 {
     s16        number = NUMBER_OF_ELEMENTS;
     colortype *older;
@@ -163,7 +163,7 @@ prepare_palette()
 // Try to match the given shibboleth string with one of the regexes in
 // the list starting at head.  Return TRUE upon success.
 bool
-found_in_list(regexlisttype *const &head, const s8 *shibboleth)
+found_in_list(regexlisttype *head, const s8 *shibboleth)
 {
     for (regexlisttype *item = head; item != nullptr; item = item->next)
     {
@@ -319,7 +319,7 @@ find_and_prime_applicable_syntax()
 // Determine whether the matches of multiline regexes are still the same,
 // and if not, schedule a screen refresh, so things will be repainted.
 void
-check_the_multis(linestruct *const &line)
+check_the_multis(linestruct *line)
 {
     const colortype *ink;
     bool             astart, anend;

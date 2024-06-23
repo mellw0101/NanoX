@@ -338,3 +338,20 @@ CONSTEXPR_STRBITMAP<16> menuOptionMap = {
      {"gotodir", MGOTODIR},
      {"all", MMOST | MBROWSER | MHELP | MYESNO}}
 };
+
+CONSTEXPR_STRBITMAP<14> toggleOptionMap = {
+    {{"nohelp", NO_HELP},
+     {"zero", ZERO},
+     {"constantshow", CONSTANT_SHOW},
+     {"replacewith", MREPLACEWITH},
+     {"softwrap", SOFTWRAP},
+     {"linenumbers", LINE_NUMBERS},
+     {"whitespacedisplay", WHITESPACE_DISPLAY},
+     {"nosyntax", NO_SYNTAX},
+     {"smarthome", SMART_HOME},
+     {"autoindent", AUTOINDENT},
+     {"cutfromcursor", CUT_FROM_CURSOR},
+     {"breaklonglines", BREAK_LONG_LINES},
+     {"tabstospaces", TABS_TO_SPACES},
+     {"mouse", USE_MOUSE}}
+};

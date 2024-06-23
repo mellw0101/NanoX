@@ -80,6 +80,19 @@ retriveCliOptionFromStr(std::string_view key)
     return 0;
 }
 
+constexpr u32
+retriveToggleOptionFromStr(std::string_view str)
+{
+    for (const auto &[key, value] : toggleOptionMap)
+    {
+        if (key == str)
+        {
+            return value;
+        }
+    }
+    return 0;
+}
+
 //
 //  Function to retrive the menu option from a string literal.
 //

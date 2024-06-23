@@ -170,7 +170,7 @@ void strip_leading_blanks_from(s8 *string);
 void set_interface_colorpairs();
 void prepare_palette();
 void find_and_prime_applicable_syntax();
-void check_the_multis(linestruct *const &line);
+void check_the_multis(linestruct *line);
 void precalc_multicolorinfo();
 
 /* Most functions in cut.c. */
