@@ -1780,7 +1780,7 @@ main(s32 argc, s8 **argv)
     LOUT.setOutputFile("/home/mellw/NanoX.log");
     LoutI << "Starting nano" << '\n';
 
-    NETLOGGER->NET_DEBUG = true;
+    NETLOGGER->enable();
     NETLOGGER->init("192.168.1.173", 23);
     NETLOGGER->send_to_server("Starting nano");
 
@@ -2587,6 +2587,6 @@ main(s32 argc, s8 **argv)
     }
 
     LOUT.Destroy();
-    NETLOGGER->Destroy();
+    NETLOGGER->destroy();
     return 0;
 }
