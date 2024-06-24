@@ -550,12 +550,10 @@ set_modified(void)
     openfile->modified = TRUE;
     titlebar(NULL);
 
-#ifndef NANO_TINY
     if (openfile->lock_filename != NULL)
     {
         write_lockfile(openfile->lock_filename, openfile->filename, TRUE);
     }
-#endif
 }
 
 /* Update the title bar and the multiline cache to match the current buffer. */

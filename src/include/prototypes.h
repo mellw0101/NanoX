@@ -405,7 +405,7 @@ void    update_multiline_undo(ssize_t lineno, char *indentation);
 void    update_undo(undo_type action);
 void    do_wrap(void);
 ssize_t break_line(const char *textstart, ssize_t goal, bool snap_at_nl);
-size_t  indent_length(const char *line);
+u64     indent_length(const s8 *line);
 size_t  quote_length(const char *line);
 bool    begpar(const linestruct *const line, int depth);
 bool    inpar(const linestruct *const line);

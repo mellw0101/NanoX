@@ -47,7 +47,7 @@ do_tab()
     }
     else if (openfile->syntax && openfile->syntax->tabstring)
     {
-        inject(openfile->syntax->tabstring, strlen(openfile->syntax->tabstring));
+        inject(openfile->syntax->tabstring, std::strlen(openfile->syntax->tabstring));
     }
     else if ISSET (TABS_TO_SPACES)
     {
@@ -1011,7 +1011,7 @@ do_redo(void)
 void
 do_enter()
 {
-    Profile::AutoTimer timer("do_enter");
+    PROFILE_FUNCTION;
 
     //
     //  Check the char at the 'openfile->current_x - 1' is valid
@@ -1019,9 +1019,91 @@ do_enter()
     if (openfile->current->data[openfile->current_x - 1])
     {
         s8 c = openfile->current->data[openfile->current_x - 1];
-        NETLOGGER << c << NETLOG_ENDL;
         if (c == '{')
-        {}
+        {
+            linestruct *new_node_middle = make_new_node(openfile->current);
+            linestruct *sample_line     = openfile->current;
+
+            bool allblanks = false;
+
+            u64 extra = indent_length(sample_line->data);
+            if (extra == openfile->current_x)
+            {
+                allblanks = (indent_length(openfile->current->data) == extra);
+            }
+
+            new_node_middle->data =
+                static_cast<s8 *>(nmalloc(std::strlen(openfile->current->data + openfile->current_x) + extra + 1));
+
+            std::strcpy(&new_node_middle->data[extra], openfile->current->data + openfile->current_x);
+            if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x)
+            {
+                openfile->mark = new_node_middle;
+                openfile->mark_x += extra - openfile->current_x;
+            }
+
+            std::strncpy(new_node_middle->data, sample_line->data, extra);
+
+            if (allblanks)
+            {
+                openfile->current_x = 0;
+            }
+
+            openfile->current->data[openfile->current_x] = '\0';
+            add_undo(ENTER, nullptr);
+
+            splice_node(openfile->current, new_node_middle);
+            renumber_from(new_node_middle);
+
+            openfile->current     = new_node_middle;
+            openfile->current_x   = extra;
+            openfile->placewewant = xplustabs();
+            openfile->totsize++;
+            set_modified();
+
+            if (ISSET(AUTOINDENT) && !allblanks)
+            {
+                openfile->totsize += extra;
+            }
+            update_undo(ENTER);
+
+            //
+            //  End of middleline and begining of making the end line for the closing bracket.
+            //
+            linestruct *new_node_end = make_new_node(openfile->current);
+
+            sample_line = openfile->current;
+            new_node_end->data =
+                static_cast<s8 *>(nmalloc(std::strlen(openfile->current->data + openfile->current_x) + extra + 1));
+            std::strcpy(&new_node_end->data[extra], openfile->current->data + openfile->current_x);
+            std::strncpy(new_node_end->data, sample_line->data, extra);
+
+            openfile->current->data[openfile->current_x] = '\0';
+            add_undo(ENTER, nullptr);
+
+            splice_node(openfile->current, new_node_end);
+            renumber_from(new_node_end);
+
+            openfile->current     = new_node_end;
+            openfile->current_x   = extra;
+            openfile->placewewant = xplustabs();
+            openfile->totsize++;
+
+            if (ISSET(AUTOINDENT) && !allblanks)
+            {
+                openfile->totsize += extra;
+            }
+
+            update_undo(ENTER);
+
+            do_up();
+            do_tab();
+
+            refresh_needed = true;
+            focusing       = false;
+
+            return;
+        }
     }
 
     linestruct *newnode    = make_new_node(openfile->current);
@@ -1757,19 +1839,19 @@ break_line(const s8 *textstart, s64 goal, bool snap_at_nl)
     return static_cast<s64>(lastblank - textstart);
 }
 
-/* Return the length of the indentation part of the given line.  The
- * "indentation" of a line is the leading consecutive whitespace. */
-size_t
-indent_length(const char *line)
+//
+//  Return the length of the indentation part of the given line.  The
+//  "indentation" of a line is the leading consecutive whitespace.
+//
+u64
+indent_length(const s8 *line)
 {
-    const char *start = line;
-
+    const s8 *start = line;
     while (*line != '\0' && is_blank_char(line))
     {
         line += char_length(line);
     }
-
-    return (line - start);
+    return static_cast<u64>(line - start);
 }
 
 //
@@ -1791,7 +1873,10 @@ quote_length(const s8 *line)
     return matches.rm_eo;
 }
 
-/* The maximum depth of recursion.  This must be an even number. */
+//
+//  The maximum depth of recursion.
+//  Note that this MUST be an even number.
+//
 constexpr auto RECURSION_LIMIT = 222;
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
@@ -3591,8 +3676,11 @@ do_formatter()
     free(temp_name);
 }
 
-/* Our own version of "wc".  Note that the character count is in
- * multibyte characters instead of single-byte characters. */
+//
+//  Our own version of "wc".
+//  Note that the character count is in multibyte
+//  characters instead of single-byte characters.
+//
 void
 count_lines_words_and_characters(void)
 {

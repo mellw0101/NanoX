@@ -68,25 +68,22 @@ is_alnum_char(const s8 *const &c)
 
 // Return TRUE when the given character is space or tab or other whitespace.
 bool
-is_blank_char(const char *c)
+is_blank_char(const s8 *c)
 {
-#ifdef ENABLE_UTF8
     wchar_t wc;
 
-    if ((signed char)*c >= 0)
+    if (static_cast<signed char>(*c) >= 0)
     {
         return (*c == ' ' || *c == '\t');
+        // return std::isspace(static_cast<u8> (*c));
     }
 
     if (mbtowide(&wc, c) < 0)
     {
-        return FALSE;
+        return false;
     }
 
-    return iswblank(wc);
-#else
-    return isblank((unsigned char)*c);
-#endif
+    return std::iswblank(wc);
 }
 
 /* Return TRUE when the given character is a control character. */

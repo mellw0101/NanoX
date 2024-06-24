@@ -1458,6 +1458,8 @@ suck_up_input_and_paste_it(void)
 void
 inject(s8 *burst, u64 count)
 {
+    PROFILE_FUNCTION;
+
     linestruct *thisline = openfile->current;
 
     u64 datalen      = std::strlen(thisline->data);
@@ -1836,6 +1838,17 @@ main(s32 argc, s8 **argv)
     NETLOGGER.enable();
     NETLOGGER.init("192.168.0.36", 23);
     NETLOGGER.send_to_server("Starting nano");
+
+    std::atexit(
+        []
+        {
+            std::vector<std::string> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
+            for (const auto &str : gprof_report)
+            {
+                NETLOGGER << str << NETLOG_ENDL;
+            }
+            NETLOGGER.send_to_server("\nExiting nano");
+        });
 
     s32 stdin_flags;
     //

@@ -8,10 +8,10 @@ search.cpp:36685
 move.cpp:22439
 cut.cpp:25157
 history.cpp:18660
-chars.cpp:20006
 rcfile.cpp:60701
-files.cpp:94192
 help.cpp:23158
-nano.cpp:73664
-text.cpp:115719
 global.cpp:61283
+nano.cpp:74017
+chars.cpp:20005
+files.cpp:94167
+text.cpp:118613
