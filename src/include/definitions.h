@@ -71,154 +71,170 @@
     while (0)
 
 /* Macros for flags, indexing each bit in a small array. */
-#define FLAGS(flag)       flags[((flag) / (sizeof(unsigned) * 8))]
-#define FLAGMASK(flag)    ((unsigned)1 << ((flag) % (sizeof(unsigned) * 8)))
-#define SET(flag)         FLAGS(flag) |= FLAGMASK(flag)
-#define UNSET(flag)       FLAGS(flag) &= ~FLAGMASK(flag)
-#define ISSET(flag)       ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-#define TOGGLE(flag)      FLAGS(flag) ^= FLAGMASK(flag)
+#define FLAGS(flag)    flags[((flag) / (sizeof(unsigned) * 8))]
+#define FLAGMASK(flag) ((unsigned)1 << ((flag) % (sizeof(unsigned) * 8)))
+#define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
+#define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
+#define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+#define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
 
-#define BACKWARD          false
-#define FORWARD           true
+constexpr auto BACKWARD = false;
+constexpr auto FORWARD  = true;
 
-#define YESORNO           false
-#define YESORALLORNO      true
+constexpr auto YESORNO      = false;
+constexpr auto YESORALLORNO = true;
 
-#define YES               1
-#define ALL               2
-#define NO                0
-#define CANCEL            -1
+constexpr auto YES    = 1;
+constexpr auto ALL    = 2;
+constexpr auto NO     = 0;
+constexpr auto CANCEL = -1;
 
-#define BLIND             FALSE
-#define VISIBLE           TRUE
+constexpr auto BLIND   = false;
+constexpr auto VISIBLE = true;
 
-#define JUSTFIND          0
-#define REPLACING         1
-#define INREGION          2
+constexpr auto JUSTFIND  = 0;
+constexpr auto REPLACING = 1;
+constexpr auto INREGION  = 2;
 
-#define NORMAL            TRUE
-#define SPECIAL           FALSE
-#define TEMPORARY         FALSE
+constexpr auto NORMAL    = true;
+constexpr auto SPECIAL   = false;
+constexpr auto TEMPORARY = false;
 
-#define ANNOTATE          TRUE
-#define NONOTES           FALSE
+constexpr auto ANNOTATE = true;
+constexpr auto NONOTES  = false;
 
-#define PRUNE_DUPLICATE   TRUE
-#define IGNORE_DUPLICATES FALSE
+constexpr auto PRUNE_DUPLICATE   = true;
+constexpr auto IGNORE_DUPLICATES = false;
 
-//
-//  In UTF-8 a valid character is at most four bytes long.
-//
-#ifdef ENABLE_UTF8
-#    define MAXCHARLEN 4
-#else
-#    define MAXCHARLEN 1
-#endif
+constexpr auto MAXCHARLEN = 4;
 
 //
 //  The default width of a tab in spaces.
 //
-#define WIDTH_OF_TAB              4
+constexpr auto WIDTH_OF_TAB = 4;
 
-/* The default number of columns from end of line where wrapping occurs. */
-#define COLUMNS_FROM_EOL          8
+//
+//  The default number of columns from end of line where wrapping occurs.
+//
+constexpr auto COLUMNS_FROM_EOL = 8;
 
-/* The default comment character when a syntax does not specify any. */
-#define GENERAL_COMMENT_CHARACTER "#"
+//
+//  The default comment character when a syntax does not specify any.
+//
+constexpr auto GENERAL_COMMENT_CHARACTER = "#";
 
-/* The maximum number of search/replace history strings saved. */
-#define MAX_SEARCH_HISTORY        100
+//
+//  The maximum number of search/replace history strings saved.
+//
+constexpr auto MAX_SEARCH_HISTORY = 100;
 
-/* The largest size_t number that doesn't have the high bit set. */
-#define HIGHEST_POSITIVE          ((~(u64)0) >> 1)
+//
+//  The largest size_t number that doesn't have the high bit set.
+//
+constexpr auto HIGHEST_POSITIVE = ((~(u64)0) >> 1);
 
-#define THE_DEFAULT               -1
-#define BAD_COLOR                 -2
+constexpr auto THE_DEFAULT = -1;
+constexpr auto BAD_COLOR   = -2;
 
-/* Flags for indicating how a multiline regex pair apply to a line. */
-#define NOTHING                   (1 << 1)
-/* The start/end regexes don't cover this line at all. */
-#define STARTSHERE                (1 << 2)
-/* The start regex matches on this line, the end regex on a later one. */
-#define WHOLELINE                 (1 << 3)
-/* The start regex matches on an earlier line, the end regex on a later one. */
-#define ENDSHERE                  (1 << 4)
-/* The start regex matches on an earlier line, the end regex on this one. */
-#define JUSTONTHIS                (1 << 5)
-/* Both the start and end regexes match within this line. */
+//  Flags for indicating how a multiline regex pair apply to a line.
+
+//
+//  The start/end regexes don't cover this line at all.
+//
+constexpr auto NOTHING = (1 << 1);
+//
+//  The start regex matches on this line, the end regex on a later one.
+//
+constexpr auto STARTSHERE = (1 << 2);
+//
+//  The start regex matches on an earlier line, the end regex on a later one.
+//
+constexpr auto WHOLELINE = (1 << 3);
+//
+//  The start regex matches on an earlier line, the end regex on this one.
+//
+constexpr auto ENDSHERE = (1 << 4);
+//
+//  Both the start and end regexes match within this line.
+//
+constexpr auto JUSTONTHIS = (1 << 5);
 
 //
 //  Basic control codes.
 //
-#define ESC_CODE                  0x1B
-#define DEL_CODE                  0x7F
+constexpr auto ESC_CODE = 0x1B;
+constexpr auto DEL_CODE = 0x7F;
 
 //
 //  Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses.
 //
-#define CONTROL_LEFT              0x401
-#define CONTROL_RIGHT             0x402
-#define CONTROL_UP                0x403
-#define CONTROL_DOWN              0x404
-#define CONTROL_HOME              0x405
-#define CONTROL_END               0x406
-#define CONTROL_DELETE            0x40D
-#define SHIFT_CONTROL_LEFT        0x411
-#define SHIFT_CONTROL_RIGHT       0x412
-#define SHIFT_CONTROL_UP          0x413
-#define SHIFT_CONTROL_DOWN        0x414
-#define SHIFT_CONTROL_HOME        0x415
-#define SHIFT_CONTROL_END         0x416
-#define CONTROL_SHIFT_DELETE      0x41D
-#define ALT_LEFT                  0x421
-#define ALT_RIGHT                 0x422
-#define ALT_UP                    0x423
-#define ALT_DOWN                  0x424
-#define ALT_HOME                  0x425
-#define ALT_END                   0x426
-#define ALT_PAGEUP                0x427
-#define ALT_PAGEDOWN              0x428
-#define ALT_INSERT                0x42C
-#define ALT_DELETE                0x42D
-#define SHIFT_ALT_LEFT            0x431
-#define SHIFT_ALT_RIGHT           0x432
-#define SHIFT_ALT_UP              0x433
-#define SHIFT_ALT_DOWN            0x434
+#define CONTROL_LEFT         0x401
+#define CONTROL_RIGHT        0x402
+#define CONTROL_UP           0x403
+#define CONTROL_DOWN         0x404
+#define CONTROL_HOME         0x405
+#define CONTROL_END          0x406
+#define CONTROL_DELETE       0x40D
+#define SHIFT_CONTROL_LEFT   0x411
+#define SHIFT_CONTROL_RIGHT  0x412
+#define SHIFT_CONTROL_UP     0x413
+#define SHIFT_CONTROL_DOWN   0x414
+#define SHIFT_CONTROL_HOME   0x415
+#define SHIFT_CONTROL_END    0x416
+#define CONTROL_SHIFT_DELETE 0x41D
+#define ALT_LEFT             0x421
+#define ALT_RIGHT            0x422
+#define ALT_UP               0x423
+#define ALT_DOWN             0x424
+#define ALT_HOME             0x425
+#define ALT_END              0x426
+#define ALT_PAGEUP           0x427
+#define ALT_PAGEDOWN         0x428
+#define ALT_INSERT           0x42C
+#define ALT_DELETE           0x42D
+#define SHIFT_ALT_LEFT       0x431
+#define SHIFT_ALT_RIGHT      0x432
+#define SHIFT_ALT_UP         0x433
+#define SHIFT_ALT_DOWN       0x434
 // #define SHIFT_LEFT 0x451
 // #define SHIFT_RIGHT 0x452
-#define SHIFT_UP                  0x453
-#define SHIFT_DOWN                0x454
-#define SHIFT_HOME                0x455
-#define SHIFT_END                 0x456
-#define SHIFT_PAGEUP              0x457
-#define SHIFT_PAGEDOWN            0x458
-#define SHIFT_DELETE              0x45D
-#define SHIFT_TAB                 0x45F
+#define SHIFT_UP             0x453
+#define SHIFT_DOWN           0x454
+#define SHIFT_HOME           0x455
+#define SHIFT_END            0x456
+#define SHIFT_PAGEUP         0x457
+#define SHIFT_PAGEDOWN       0x458
+#define SHIFT_DELETE         0x45D
+#define SHIFT_TAB            0x45F
 
-#define FOCUS_IN                  0x491
-#define FOCUS_OUT                 0x499
+#define FOCUS_IN             0x491
+#define FOCUS_OUT            0x499
 
 //
 //  Special keycodes for when a string bind has been partially implanted
 //  or has an unpaired opening brace, or when a function in a string bind
 //  needs execution or a specified function name is invalid.
 //
-#define MORE_PLANTS               0x4EA
-#define MISSING_BRACE             0x4EB
-#define PLANTED_A_COMMAND         0x4EC
-#define NO_SUCH_FUNCTION          0x4EF
-
-// A special keycode to signal the beginning and end of a bracketed paste.
-#define BRACKETED_PASTE_MARKER    0x4FB
-
-// A special keycode for when a key produces an unknown escape sequence.
-#define FOREIGN_SEQUENCE          0x4FC
-
-// A special keycode for plugging into the input stream after a suspension.
-#define KEY_FRESH                 0x4FE
-
-// A special keycode for when we get a SIGWINCH (a window resize).
-#define KEY_WINCH                 -2
+constexpr auto MORE_PLANTS       = 0x4EA;
+constexpr auto MISSING_BRACE     = 0x4EB;
+constexpr auto PLANTED_A_COMMAND = 0x4EC;
+constexpr auto NO_SUCH_FUNCTION  = 0x4EF;
+//
+//  A special keycode to signal the beginning and end of a bracketed paste.
+//
+constexpr auto BRACKETED_PASTE_MARKER = 0x4FB;
+//
+//  A special keycode for when a key produces an unknown escape sequence.
+//
+constexpr auto FOREIGN_SEQUENCE = 0x4FC;
+//
+//  A special keycode for plugging into the input stream after a suspension.
+//
+constexpr auto KEY_FRESH = 0x4FE;
+//
+//  A special keycode for when we get a SIGWINCH (a window resize).
+//
+constexpr auto KEY_WINCH = -2;
 
 //
 //  Some extra flags for the undo function.

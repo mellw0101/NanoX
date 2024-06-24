@@ -720,13 +720,14 @@ parse_binding(char *ptr, bool dobind)
         goto free_things;
     }
 
-    /* Limit the given menu to those where the function exists;
-     * first handle five special cases, then the general case. */
+    //
+    //  Limit the given menu to those where the function exists;
+    //  first handle five special cases, then the general case.
+    //
     if (is_universal(newsc->func))
     {
         menu &= MMOST | MBROWSER;
     }
-#ifndef NANO_TINY
     else if (newsc->func == do_toggle && newsc->toggle == NO_HELP)
     {
         menu &= (MMOST | MBROWSER | MYESNO) & ~MFINDINHELP;
@@ -735,7 +736,6 @@ parse_binding(char *ptr, bool dobind)
     {
         menu &= MMAIN;
     }
-#endif
     else if (newsc->func == full_refresh)
     {
         menu &= MMOST | MBROWSER | MHELP | MYESNO;
@@ -746,8 +746,10 @@ parse_binding(char *ptr, bool dobind)
     }
     else
     {
-        /* Tally up the menus where the function exists. */
-        for (funcstruct *f = allfuncs; f != NULL; f = f->next)
+        //
+        //  Tally up the menus where the function exists.
+        //
+        for (funcstruct *f = allfuncs; f != nullptr; f = f->next)
         {
             if (f->func == newsc->func)
             {
@@ -1315,8 +1317,10 @@ set_interface_color(s32 element, s8 *combotext)
     }
 }
 
-/* Read regex strings enclosed in double quotes from the line pointed at
- * by ptr, and store them quoteless in the passed storage place. */
+//
+//  Read regex strings enclosed in double quotes from the line pointed at
+//  by ptr, and store them quoteless in the passed storage place.
+//
 void
 grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
 {
@@ -1329,8 +1333,10 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
         return;
     }
 
-    /* The default syntax doesn't take any file matching stuff. */
-    if (strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
+    //
+    //  The default syntax doesn't take any file matching stuff.
+    //
+    if (std::strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept '%s' regexes"), kind);
         return;
@@ -1344,7 +1350,9 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
 
     lastthing = *storage;
 
-    /* If there was an earlier command, go to the last of those regexes. */
+    //
+    //  If there was an earlier command, go to the last of those regexes.
+    //
     while (lastthing != nullptr && lastthing->next != nullptr)
     {
         lastthing = lastthing->next;
@@ -1369,8 +1377,10 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
             continue;
         }
 
-        /* Copy the regex into a struct, and hook this in at the end. */
-        newthing          = RE_CAST(regexlisttype *, nmalloc(sizeof(regexlisttype)));
+        //
+        //  Copy the regex into a struct, and hook this in at the end.
+        //
+        newthing          = static_cast<regexlisttype *>(nmalloc(sizeof(regexlisttype)));
         newthing->one_rgx = packed_rgx;
         newthing->next    = nullptr;
 
@@ -1387,20 +1397,25 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
     }
 }
 
-/* Gather and store the string after a comment/linter command. */
+//
+//  Gather and store the string after a comment/linter command.
+//
 void
-pick_up_name(const char *kind, char *ptr, char **storage)
+pick_up_name(const s8 *kind, s8 *ptr, s8 **storage)
 {
+    PROFILE_FUNCTION;
+
     if (*ptr == '\0')
     {
         jot_error(N_("Missing argument after '%s'"), kind);
         return;
     }
-
-    /* If the argument starts with a quote, find the terminating quote. */
+    //
+    //  If the argument starts with a quote, find the terminating quote.
+    //
     if (*ptr == '"')
     {
-        char *look = ptr + strlen(ptr);
+        s8 *look = ptr + std::strlen(ptr);
 
         while (*look != '"')
         {
@@ -1414,35 +1429,7 @@ pick_up_name(const char *kind, char *ptr, char **storage)
         *look = '\0';
         ptr++;
     }
-
     *storage = mallocstrcpy(*storage, ptr);
-}
-
-//
-/// @name  -  @c checkSyntaxCommand
-///
-/// @brief
-///  -  Check the syntax command using an unordered map.
-///
-/// @param str ( const std::string & )
-///  -  The string to check.
-///
-/// @returns ( u32 )  -  As a bitfield.
-///  -  The syntax option.
-//
-static const u32 UNUSED
-checkSyntaxCommand(const std::string &str)
-{
-    static const std::unordered_map<std::string, const u32> map = {
-        {    "color",     SYNTAX_OPT_COLOR},
-        {   "icolor",    SYNTAX_OPT_ICOLOR},
-        {  "comment",   SYNTAX_OPT_COMMENT},
-        { "tabgives",  SYNTAX_OPT_TABGIVES},
-        {   "linter",    SYNTAX_OPT_LINTER},
-        {"formatter", SYNTAX_OPT_FORMATTER}
-    };
-    const auto it = map.find(str);
-    return it != map.end() ? it->second : static_cast<u32>(false);
 }
 
 //
@@ -1499,7 +1486,7 @@ checkSyntaxCommand(const std::string &str)
 bool
 parse_syntax_commands(s8 *keyword, s8 *ptr)
 {
-    Mlib::Profile::AutoTimer timer("parse_syntax_commands");
+    PROFILE_FUNCTION;
 
     const u32 syntax_opt = retriveSyntaxOptionFromStr(keyword);
     if (syntax_opt == false)
@@ -1536,16 +1523,18 @@ parse_syntax_commands(s8 *keyword, s8 *ptr)
     return true;
 }
 
+static constexpr s8 VITALS = 4;
 //
-/// Verify that the user has not unmapped every shortcut for a
-/// function that we consider 'vital' (such as "Exit").
+//  Verify that the user has not unmapped every shortcut for a
+//  function that we consider 'vital' (such as 'do_exit').
 //
 static void
 check_vitals_mapped()
 {
-    constexpr s8 VITALS          = 4;
-    void (*vitals[VITALS])(void) = {do_exit, do_exit, do_exit, do_cancel};
-    s32 inmenus[VITALS]          = {MMAIN, MBROWSER, MHELP, MYESNO};
+    PROFILE_FUNCTION;
+
+    void (*vitals[VITALS])() = {do_exit, do_exit, do_exit, do_cancel};
+    s32 inmenus[VITALS]      = {MMAIN, MBROWSER, MHELP, MYESNO};
 
     for (s32 v = 0; v < VITALS; v++)
     {
@@ -1568,61 +1557,6 @@ check_vitals_mapped()
             }
         }
     }
-}
-
-//
-/// @name
-///  -  @c checkForColorOptions
-///
-/// @brief
-///  -  Check for the color options in the rcfile.
-///
-/// @param keyword ( const std::string & )
-///  -  The keyword to check for.
-///
-/// @returns ( s32 )
-///  -  The color option.
-//
-static s32 UNUSED
-checkForColorOptions(const std::string &keyword)
-{
-    static const std::unordered_map<std::string, const s32> colorOptionsMap = {
-        {    "titlecolor",     TITLE_BAR},
-        {   "numbercolor",   LINE_NUMBER},
-        {   "stripecolor",  GUIDE_STRIPE},
-        { "scrollercolor",    SCROLL_BAR},
-        { "selectedcolor", SELECTED_TEXT},
-        {"spotlightcolor",   SPOTLIGHTED},
-        {     "minicolor",  MINI_INFOBAR},
-        {   "promptcolor",    PROMPT_BAR},
-        {   "statuscolor",    STATUS_BAR},
-        {    "errorcolor", ERROR_MESSAGE},
-        {      "keycolor",     KEY_COMBO},
-        { "functioncolor",  FUNCTION_TAG}
-    };
-    const auto it = colorOptionsMap.find(keyword);
-    return it != colorOptionsMap.end() ? it->second : INT32_MAX;
-}
-
-static u32 UNUSED
-checkForConfigOptions(const std::string &keyWord)
-{
-    static const std::unordered_map<std::string, const u32> map = {
-        { "operatingdir",     OPERATINGDIR},
-        {         "fill",             FILL},
-        {"matchbrackets",    MATCHBRACKETS},
-        {   "whitespace",       WHITESPACE},
-        {        "punct",            PUNCT},
-        {     "brackets",         BRACKETS},
-        {     "quotestr",         QUOTESTR},
-        {      "speller",          SPELLER},
-        {    "backupdir",        BACKUPDIR},
-        {    "wordchars",        WORDCHARS},
-        {  "guidestripe",      GUIDESTRIPE},
-        {      "tabsize", CONF_OPT_TABSIZE}
-    };
-    const auto it = map.find(keyWord);
-    return it != map.end() ? it->second : static_cast<u32>(0);
 }
 
 //
@@ -1651,7 +1585,7 @@ checkForConfigOptions(const std::string &keyWord)
 void
 parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 {
-    Mlib::Profile::AutoTimer timer("parse_rcfile");
+    PROFILE_FUNCTION;
 
     s8 *buffer = nullptr;
     u64 size   = 0;
@@ -1703,7 +1637,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         ptr     = parse_next_word(ptr);
 
         /* Handle extending first... */
-        if (!just_syntax && strcmp(keyword, "extendsyntax") == 0)
+        if (!just_syntax && std::strcmp(keyword, "extendsyntax") == 0)
         {
             augmentstruct *newitem, *extra;
             s8            *syntaxname = ptr;
@@ -1715,7 +1649,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 
             for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
             {
-                if (!strcmp(sntx->name, syntaxname))
+                if (strcmp(sntx->name, syntaxname) == 0)
                 {
                     break;
                 }
@@ -1731,8 +1665,10 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             argument = copy_of(ptr);
             ptr      = parse_next_word(ptr);
 
-            /* File-matching commands need to be processed immediately;
-             * other commands are stored for possible later processing. */
+            //
+            //  File-matching commands need to be processed immediately;
+            //  other commands are stored for possible later processing.
+            //
             if (strcmp(keyword, "header") == 0 || strcmp(keyword, "magic") == 0)
             {
                 free(argument);
@@ -1742,8 +1678,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
             else
             {
-                newitem = RE_CAST(augmentstruct *, nmalloc(sizeof(augmentstruct)));
-                ;
+                newitem = static_cast<augmentstruct *>(nmalloc(sizeof(augmentstruct)));
 
                 newitem->filename = copy_of(nanorc);
                 newitem->lineno   = lineno;
@@ -1879,7 +1814,9 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         option = ptr;
         ptr    = parse_next_word(ptr);
 
-        /* Find the just parsed option name among the existing names. */
+        //
+        //  Find the just parsed option name among the existing names.
+        //
         for (i = 0; rcopts[i].name != nullptr; i++)
         {
             if (strcmp(option, rcopts[i].name) == 0)
@@ -2033,7 +1970,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         }
         else if (configOption & CONF_OPT_TABSIZE)
         {
-            if (!parseNum(argument, tabsize) || tabsize <= 0)
+            if (parseNum(argument, tabsize) == 0 || tabsize <= 0)
             {
                 jot_error(N_("Requested tab size \"%s\" is invalid"), argument);
                 tabsize = -1;
@@ -2053,21 +1990,25 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
     return;
 }
 
-// Read and interpret one of the two nanorc files.
+//
+//  Read and interpret one of the two nanorc files.
+//
 void
 parse_one_nanorc()
 {
     FILE *rcstream = fopen(nanorc, "rb");
 
-    // If opening the file succeeded, parse it.  Otherwise, only
-    // complain if the file actually exists.
+    //
+    //  If opening the file succeeded, parse it.
+    //  Otherwise, only complain if the file actually exists.
+    //
     if (rcstream != nullptr)
     {
-        parse_rcfile(rcstream, FALSE, TRUE);
+        parse_rcfile(rcstream, false, true);
     }
     else if (errno != ENOENT)
     {
-        jot_error(N_("Error reading %s: %s"), nanorc, strerror(errno));
+        jot_error(N_("Error reading %s: %s"), nanorc, ERRNO_C_STR);
     }
 }
 

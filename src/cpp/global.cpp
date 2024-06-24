@@ -1,5 +1,6 @@
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <Mlib/def.h>
 #include <cctype>
 #include <cstring>
@@ -613,15 +614,17 @@ first_sc_for(int menu, void (*function)())
     return nullptr;
 }
 
-/* Return the number of entries that can be shown in the given menu. */
-size_t
-shown_entries_for(int menu)
+//
+//  Return the number of entries that can be shown in the given menu.
+//
+u64
+shown_entries_for(s32 menu)
 {
     funcstruct *item    = allfuncs;
     size_t      maximum = ((COLS + 40) / 20) * 2;
     size_t      count   = 0;
 
-    while (count < maximum && item != NULL)
+    while (count < maximum && item != nullptr)
     {
         if (item->menus & menu)
         {
@@ -630,8 +633,10 @@ shown_entries_for(int menu)
         item = item->next;
     }
 
-    /* When --saveonexit is not used, widen the grid of the WriteOut menu. */
-    if (menu == MWRITEFILE && item == NULL && first_sc_for(menu, discard_buffer) == NULL)
+    //
+    //  When --saveonexit is not used, widen the grid of the WriteOut menu.
+    //
+    if (menu == MWRITEFILE && item == nullptr && first_sc_for(menu, discard_buffer) == nullptr)
     {
         count--;
     }
@@ -640,36 +645,45 @@ shown_entries_for(int menu)
 }
 
 //
-/// Return the first shortcut in the current menu that matches the given input.
-///
-/// TODO : ( get_shortcut ) Figure out how this works
+//  Return the first shortcut in the current menu that matches the given input.
+//
+//  TODO : ( get_shortcut ) Figure out how this works
 //
 const keystruct *
-get_shortcut(const int keycode)
+get_shortcut(const s32 keycode)
 {
-    /* Plain characters and upper control codes cannot be shortcuts. */
+    PROFILE_FUNCTION;
+
+    //
+    //  Plain characters and upper control codes cannot be shortcuts.
+    //
     if (!meta_key && 0x20 <= keycode && keycode <= 0xFF)
     {
-        return NULL;
+        return nullptr;
     }
 
-    /* Lower control codes with Meta cannot be shortcuts either. */
+    //
+    //  Lower control codes with Meta cannot be shortcuts either.
+    //
     if (meta_key && keycode < 0x20)
     {
-        return NULL;
+        return nullptr;
     }
 
-    /* During a paste at a prompt, ignore all command keycodes. */
+    //
+    //  During a paste at a prompt, ignore all command keycodes.
+    //
     if (bracketed_paste && keycode != BRACKETED_PASTE_MARKER)
     {
-        return NULL;
+        return nullptr;
     }
+
     if (keycode == PLANTED_A_COMMAND)
     {
         return planted_shortcut;
     }
 
-    for (const keystruct *sc = sclist; sc != NULL; sc = sc->next)
+    for (const keystruct *sc = sclist; sc != nullptr; sc = sc->next)
     {
         if ((sc->menus & currmenu) && keycode == sc->keycode)
         {
@@ -677,16 +691,17 @@ get_shortcut(const int keycode)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
-/* Return a pointer to the function that is bound to the given key. */
+//
+//  Return a pointer to the function that is bound to the given key.
+//
 functionptrtype
-func_from_key(const int keycode)
+func_from_key(const s32 keycode)
 {
     const keystruct *sc = get_shortcut(keycode);
-
-    return (sc) ? sc->func : NULL;
+    return (sc) ? sc->func : nullptr;
 }
 
 //
@@ -753,374 +768,295 @@ const char *close_tag = N_("Close");
 void
 shortcut_init()
 {
-#ifdef ENABLE_HELP
-    /* TRANSLATORS: The next long series of strings are shortcut descriptions;
-     * they are best kept shorter than 56 characters, but may be longer. */
-    const char *cancel_gist    = N_("Cancel the current function");
-    const char *help_gist      = N_("Display this help text");
-    const char *exit_gist      = N_("Close the current buffer / Exit from nano");
-    const char *writeout_gist  = N_("Write the current buffer (or the marked region) to disk");
-    const char *readfile_gist  = N_("Insert another file into current buffer (or into new buffer)");
-    const char *whereis_gist   = N_("Search forward for a string or a regular expression");
-    const char *wherewas_gist  = N_("Search backward for a string or a regular expression");
-    const char *cut_gist       = N_("Cut current line (or marked region) and store it in cutbuffer");
-    const char *copy_gist      = N_("Copy current line (or marked region) and store it in cutbuffer");
-    const char *paste_gist     = N_("Paste the contents of cutbuffer at current cursor position");
-    const char *cursorpos_gist = N_("Display the position of the cursor");
-#    ifdef ENABLE_SPELLER
-    const char *spell_gist = N_("Invoke the spell checker, if available");
-#    endif
-    const char *replace_gist  = N_("Replace a string or a regular expression");
-    const char *gotoline_gist = N_("Go to line and column number");
-#    ifndef NANO_TINY
-    const char *bracket_gist  = N_("Go to the matching bracket");
-    const char *mark_gist     = N_("Mark text starting from the cursor position");
-    const char *zap_gist      = N_("Throw away the current line (or marked region)");
-    const char *indent_gist   = N_("Indent the current line (or marked lines)");
-    const char *unindent_gist = N_("Unindent the current line (or marked lines)");
-    const char *undo_gist     = N_("Undo the last operation");
-    const char *redo_gist     = N_("Redo the last undone operation");
-#    endif
-    const char *back_gist      = N_("Go back one character");
-    const char *forward_gist   = N_("Go forward one character");
-    const char *prevword_gist  = N_("Go back one word");
-    const char *nextword_gist  = N_("Go forward one word");
-    const char *prevline_gist  = N_("Go to previous line");
-    const char *nextline_gist  = N_("Go to next line");
-    const char *home_gist      = N_("Go to beginning of current line");
-    const char *end_gist       = N_("Go to end of current line");
-    const char *prevblock_gist = N_("Go to previous block of text");
-    const char *nextblock_gist = N_("Go to next block of text");
-#    ifdef ENABLE_JUSTIFY
-    const char *parabegin_gist = N_("Go to beginning of paragraph; then of previous paragraph");
-    const char *paraend_gist   = N_("Go just beyond end of paragraph; then of next paragraph");
-#    endif
-#    ifndef NANO_TINY
-    const char *toprow_gist    = N_("Go to first row in the viewport");
-    const char *bottomrow_gist = N_("Go to last row in the viewport");
-    const char *center_gist    = N_("Center the line where the cursor is");
-    const char *cycle_gist     = N_("Push the cursor line to the center, then top, then bottom");
-#    endif
-    const char *prevpage_gist  = N_("Go one screenful up");
-    const char *nextpage_gist  = N_("Go one screenful down");
-    const char *firstline_gist = N_("Go to the first line of the file");
-    const char *lastline_gist  = N_("Go to the last line of the file");
-#    if !defined(NANO_TINY) || defined(ENABLE_HELP)
-    const char *scrollup_gist   = N_("Scroll up one line without moving the cursor textually");
-    const char *scrolldown_gist = N_("Scroll down one line without moving the cursor textually");
-#    endif
-#    ifdef ENABLE_MULTIBUFFER
-    const char *prevfile_gist = N_("Switch to the previous file buffer");
-    const char *nextfile_gist = N_("Switch to the next file buffer");
-#    endif
-    const char *verbatim_gist  = N_("Insert the next keystroke verbatim");
-    const char *tab_gist       = N_("Insert a tab at the cursor position (or indent marked lines)");
-    const char *enter_gist     = N_("Insert a newline at the cursor position");
-    const char *delete_gist    = N_("Delete the character under the cursor");
-    const char *backspace_gist = N_("Delete the character to the left of the cursor");
-#    ifndef NANO_TINY
-    const char *chopwordleft_gist  = N_("Delete backward from cursor to word start");
-    const char *chopwordright_gist = N_("Delete forward from cursor to next word start");
-    const char *cuttilleof_gist    = N_("Cut from the cursor position to the end of the file");
-#    endif
-#    ifdef ENABLE_JUSTIFY
-    const char *justify_gist     = N_("Justify the current paragraph");
-    const char *fulljustify_gist = N_("Justify the entire file");
-#    endif
-#    ifndef NANO_TINY
-    const char *wordcount_gist = N_("Count the number of lines, words, and characters");
-    const char *suspend_gist   = N_("Suspend the editor (return to the shell)");
-#    endif
-    const char *refresh_gist = N_("Refresh (redraw) the current screen");
-#    ifdef ENABLE_WORDCOMPLETION
-    const char *completion_gist = N_("Try and complete the current word");
-#    endif
-#    ifdef ENABLE_COMMENT
-    const char *comment_gist = N_("Comment/uncomment the current line (or marked lines)");
-#    endif
-    const char *savefile_gist = N_("Save file without prompting");
-    const char *findprev_gist = N_("Search next occurrence backward");
-    const char *findnext_gist = N_("Search next occurrence forward");
-#    ifndef NANO_TINY
-    const char *recordmacro_gist = N_("Start/stop recording a macro");
-    const char *runmacro_gist    = N_("Run the last recorded macro");
-    const char *anchor_gist      = N_("Place or remove an anchor at the current line");
-    const char *prevanchor_gist  = N_("Jump backward to the nearest anchor");
-    const char *nextanchor_gist  = N_("Jump forward to the nearest anchor");
-#    endif
-    const char *case_gist    = N_("Toggle the case sensitivity of the search");
-    const char *reverse_gist = N_("Reverse the direction of the search");
-    const char *regexp_gist  = N_("Toggle the use of regular expressions");
-#    ifdef ENABLE_HISTORIES
-    const char *older_gist = N_("Recall the previous search/replace string");
-    const char *newer_gist = N_("Recall the next search/replace string");
-#    endif
-#    ifndef NANO_TINY
-    const char *dos_gist     = N_("Toggle the use of DOS format");
-    const char *mac_gist     = N_("Toggle the use of Mac format");
-    const char *append_gist  = N_("Toggle appending");
-    const char *prepend_gist = N_("Toggle prepending");
-    const char *backup_gist  = N_("Toggle backing up of the original file");
-    const char *execute_gist = N_("Execute a function or an external command");
-    const char *pipe_gist    = N_("Pipe the current buffer (or marked region) to the command");
-#        ifdef ENABLE_HISTORIES
-    const char *older_command_gist = N_("Recall the previous command");
-    const char *newer_command_gist = N_("Recall the next command");
-#        endif
-    const char *convert_gist = N_("Do not convert from DOS/Mac format");
-#    endif
-#    ifdef ENABLE_MULTIBUFFER
-    const char *newbuffer_gist = N_("Toggle the use of a new buffer");
-#    endif
-    const char *discardbuffer_gist = N_("Close buffer without saving it");
-#    ifdef ENABLE_BROWSER
-    const char *tofiles_gist     = N_("Go to file browser");
-    const char *exitbrowser_gist = N_("Exit from the file browser");
-    const char *firstfile_gist   = N_("Go to the first file in the list");
-    const char *lastfile_gist    = N_("Go to the last file in the list");
-    const char *backfile_gist    = N_("Go to the previous file in the list");
-    const char *forwardfile_gist = N_("Go to the next file in the list");
-#        ifndef NANO_TINY
-    const char *browserlefthand_gist  = N_("Go to lefthand column");
-    const char *browserrighthand_gist = N_("Go to righthand column");
-    const char *browsertoprow_gist    = N_("Go to first row in this column");
-    const char *browserbottomrow_gist = N_("Go to last row in this column");
-#        endif
-    const char *browserwhereis_gist  = N_("Search forward for a string");
-    const char *browserwherewas_gist = N_("Search backward for a string");
-    const char *browserrefresh_gist  = N_("Refresh the file list");
-    const char *gotodir_gist         = N_("Go to directory");
-#    endif
-#    ifdef ENABLE_LINTER
-    const char *lint_gist     = N_("Invoke the linter, if available");
-    const char *prevlint_gist = N_("Go to previous linter msg");
-    const char *nextlint_gist = N_("Go to next linter msg");
-#    endif
-#    ifdef ENABLE_FORMATTER
-    const char *formatter_gist = N_("Invoke a program to format/arrange/manipulate the buffer");
-#    endif
-#endif /* ENABLE_HELP */
+    PROFILE_FUNCTION;
 
-    /* If Backspace is not ^H, then ^H can be used for Help. */
-    char *bsp_string = tgetstr("kb", NULL);
-    char *help_key   = (bsp_string && *bsp_string != 0x08) ? (char *)"^H" : (char *)"^N";
+    //
+    //  TRANSLATORS: The next long series of strings are shortcut descriptions;
+    //  they are best kept shorter than 56 characters, but may be longer.
+    //
+    const s8 *cancel_gist           = N_("Cancel the current function");
+    const s8 *help_gist             = N_("Display this help text");
+    const s8 *exit_gist             = N_("Close the current buffer / Exit from nano");
+    const s8 *writeout_gist         = N_("Write the current buffer (or the marked region) to disk");
+    const s8 *readfile_gist         = N_("Insert another file into current buffer (or into new buffer)");
+    const s8 *whereis_gist          = N_("Search forward for a string or a regular expression");
+    const s8 *wherewas_gist         = N_("Search backward for a string or a regular expression");
+    const s8 *cut_gist              = N_("Cut current line (or marked region) and store it in cutbuffer");
+    const s8 *copy_gist             = N_("Copy current line (or marked region) and store it in cutbuffer");
+    const s8 *paste_gist            = N_("Paste the contents of cutbuffer at current cursor position");
+    const s8 *cursorpos_gist        = N_("Display the position of the cursor");
+    const s8 *spell_gist            = N_("Invoke the spell checker, if available");
+    const s8 *replace_gist          = N_("Replace a string or a regular expression");
+    const s8 *gotoline_gist         = N_("Go to line and column number");
+    const s8 *bracket_gist          = N_("Go to the matching bracket");
+    const s8 *mark_gist             = N_("Mark text starting from the cursor position");
+    const s8 *zap_gist              = N_("Throw away the current line (or marked region)");
+    const s8 *indent_gist           = N_("Indent the current line (or marked lines)");
+    const s8 *unindent_gist         = N_("Unindent the current line (or marked lines)");
+    const s8 *undo_gist             = N_("Undo the last operation");
+    const s8 *redo_gist             = N_("Redo the last undone operation");
+    const s8 *back_gist             = N_("Go back one character");
+    const s8 *forward_gist          = N_("Go forward one character");
+    const s8 *prevword_gist         = N_("Go back one word");
+    const s8 *nextword_gist         = N_("Go forward one word");
+    const s8 *prevline_gist         = N_("Go to previous line");
+    const s8 *nextline_gist         = N_("Go to next line");
+    const s8 *home_gist             = N_("Go to beginning of current line");
+    const s8 *end_gist              = N_("Go to end of current line");
+    const s8 *prevblock_gist        = N_("Go to previous block of text");
+    const s8 *nextblock_gist        = N_("Go to next block of text");
+    const s8 *parabegin_gist        = N_("Go to beginning of paragraph; then of previous paragraph");
+    const s8 *paraend_gist          = N_("Go just beyond end of paragraph; then of next paragraph");
+    const s8 *toprow_gist           = N_("Go to first row in the viewport");
+    const s8 *bottomrow_gist        = N_("Go to last row in the viewport");
+    const s8 *center_gist           = N_("Center the line where the cursor is");
+    const s8 *cycle_gist            = N_("Push the cursor line to the center, then top, then bottom");
+    const s8 *prevpage_gist         = N_("Go one screenful up");
+    const s8 *nextpage_gist         = N_("Go one screenful down");
+    const s8 *firstline_gist        = N_("Go to the first line of the file");
+    const s8 *lastline_gist         = N_("Go to the last line of the file");
+    const s8 *scrollup_gist         = N_("Scroll up one line without moving the cursor textually");
+    const s8 *scrolldown_gist       = N_("Scroll down one line without moving the cursor textually");
+    const s8 *prevfile_gist         = N_("Switch to the previous file buffer");
+    const s8 *nextfile_gist         = N_("Switch to the next file buffer");
+    const s8 *verbatim_gist         = N_("Insert the next keystroke verbatim");
+    const s8 *tab_gist              = N_("Insert a tab at the cursor position (or indent marked lines)");
+    const s8 *enter_gist            = N_("Insert a newline at the cursor position");
+    const s8 *delete_gist           = N_("Delete the character under the cursor");
+    const s8 *backspace_gist        = N_("Delete the character to the left of the cursor");
+    const s8 *chopwordleft_gist     = N_("Delete backward from cursor to word start");
+    const s8 *chopwordright_gist    = N_("Delete forward from cursor to next word start");
+    const s8 *cuttilleof_gist       = N_("Cut from the cursor position to the end of the file");
+    const s8 *justify_gist          = N_("Justify the current paragraph");
+    const s8 *fulljustify_gist      = N_("Justify the entire file");
+    const s8 *wordcount_gist        = N_("Count the number of lines, words, and characters");
+    const s8 *suspend_gist          = N_("Suspend the editor (return to the shell)");
+    const s8 *refresh_gist          = N_("Refresh (redraw) the current screen");
+    const s8 *completion_gist       = N_("Try and complete the current word");
+    const s8 *comment_gist          = N_("Comment/uncomment the current line (or marked lines)");
+    const s8 *savefile_gist         = N_("Save file without prompting");
+    const s8 *findprev_gist         = N_("Search next occurrence backward");
+    const s8 *findnext_gist         = N_("Search next occurrence forward");
+    const s8 *recordmacro_gist      = N_("Start/stop recording a macro");
+    const s8 *runmacro_gist         = N_("Run the last recorded macro");
+    const s8 *anchor_gist           = N_("Place or remove an anchor at the current line");
+    const s8 *prevanchor_gist       = N_("Jump backward to the nearest anchor");
+    const s8 *nextanchor_gist       = N_("Jump forward to the nearest anchor");
+    const s8 *case_gist             = N_("Toggle the case sensitivity of the search");
+    const s8 *reverse_gist          = N_("Reverse the direction of the search");
+    const s8 *regexp_gist           = N_("Toggle the use of regular expressions");
+    const s8 *older_gist            = N_("Recall the previous search/replace string");
+    const s8 *newer_gist            = N_("Recall the next search/replace string");
+    const s8 *dos_gist              = N_("Toggle the use of DOS format");
+    const s8 *mac_gist              = N_("Toggle the use of Mac format");
+    const s8 *append_gist           = N_("Toggle appending");
+    const s8 *prepend_gist          = N_("Toggle prepending");
+    const s8 *backup_gist           = N_("Toggle backing up of the original file");
+    const s8 *execute_gist          = N_("Execute a function or an external command");
+    const s8 *pipe_gist             = N_("Pipe the current buffer (or marked region) to the command");
+    const s8 *older_command_gist    = N_("Recall the previous command");
+    const s8 *newer_command_gist    = N_("Recall the next command");
+    const s8 *convert_gist          = N_("Do not convert from DOS/Mac format");
+    const s8 *newbuffer_gist        = N_("Toggle the use of a new buffer");
+    const s8 *discardbuffer_gist    = N_("Close buffer without saving it");
+    const s8 *tofiles_gist          = N_("Go to file browser");
+    const s8 *exitbrowser_gist      = N_("Exit from the file browser");
+    const s8 *firstfile_gist        = N_("Go to the first file in the list");
+    const s8 *lastfile_gist         = N_("Go to the last file in the list");
+    const s8 *backfile_gist         = N_("Go to the previous file in the list");
+    const s8 *forwardfile_gist      = N_("Go to the next file in the list");
+    const s8 *browserlefthand_gist  = N_("Go to lefthand column");
+    const s8 *browserrighthand_gist = N_("Go to righthand column");
+    const s8 *browsertoprow_gist    = N_("Go to first row in this column");
+    const s8 *browserbottomrow_gist = N_("Go to last row in this column");
+    const s8 *browserwhereis_gist   = N_("Search forward for a string");
+    const s8 *browserwherewas_gist  = N_("Search backward for a string");
+    const s8 *browserrefresh_gist   = N_("Refresh the file list");
+    const s8 *gotodir_gist          = N_("Go to directory");
+    const s8 *lint_gist             = N_("Invoke the linter, if available");
+    const s8 *prevlint_gist         = N_("Go to previous linter msg");
+    const s8 *nextlint_gist         = N_("Go to next linter msg");
+    const s8 *formatter_gist        = N_("Invoke a program to format/arrange/manipulate the buffer");
 
-#ifdef ENABLE_HELP
-#    define WHENHELP(description) description
-#else
-#    define WHENHELP(description) ""
-#endif
+    //
+    //  If Backspace is not ^H, then ^H can be used for Help.
+    //
+    s8 *bsp_string = tgetstr("kb", nullptr);
+    s8 *help_key   = (bsp_string && *bsp_string != 0x08) ? (s8 *)"^H" : (s8 *)"^N";
 
-    /* Start populating the different menus with functions. */
-#ifdef ENABLE_HELP
-    add_to_funcs(do_help, (MMOST | MBROWSER) & ~MFINDINHELP,
-                 /* TRANSLATORS: Try to keep the next thirteen strings at most 10 characters. */
-                 N_("Help"), WHENHELP(help_gist), TOGETHER);
-#endif
+#define WHENHELP(description) description
+
+    //  Start populating the different menus with functions.
+    //
+    //  TRANSLATORS: Try to keep the next thirteen strings at most 10 characters.
+    //
+
+    add_to_funcs(do_help, (MMOST | MBROWSER) & ~MFINDINHELP, N_("Help"), WHENHELP(help_gist), TOGETHER);
 
     add_to_funcs(do_cancel, ((MMOST & ~MMAIN) | MYESNO), N_("Cancel"), WHENHELP(cancel_gist), BLANKAFTER);
 
-    add_to_funcs(do_exit, MMAIN, exit_tag, WHENHELP(exit_gist), TOGETHER);
     /* Remember the entry for Exit, to be able to replace it with Close. */
+    add_to_funcs(do_exit, MMAIN, exit_tag, WHENHELP(exit_gist), TOGETHER);
     exitfunc = tailfunc;
 
-#ifdef ENABLE_BROWSER
     add_to_funcs(do_exit, MBROWSER, close_tag, WHENHELP(exitbrowser_gist), TOGETHER);
-#endif
-
-#ifndef ENABLE_HELP
-    add_to_funcs(full_refresh, MMAIN | MREPLACE, "Refresh", "x", 0);
-#    ifndef NANO_TINY
-    add_to_funcs(full_refresh, MINSERTFILE | MEXECUTE, "Refresh", "x", 0);
-#    endif
-    add_to_funcs(flip_goto, MWHEREIS, "Go To Line", "x", 0);
-    add_to_funcs(flip_goto, MGOTOLINE, "Go To Text", "x", 0);
-#endif
-
     add_to_funcs(do_writeout, MMAIN, N_("Write Out"), WHENHELP(writeout_gist), TOGETHER);
 
-#ifdef ENABLE_JUSTIFY
-    /* In restricted mode, replace Insert with Justify, when possible;
-     * otherwise, show Insert anyway, to keep the help items paired. */
+    //
+    //  In restricted mode, replace Insert with Justify, when possible;
+    //  otherwise, show Insert anyway, to keep the help items paired.
+    //
     if (!ISSET(RESTRICTED))
-#endif
+    {
         add_to_funcs(do_insertfile, MMAIN, N_("Read File"), WHENHELP(readfile_gist), BLANKAFTER);
-#ifdef ENABLE_JUSTIFY
+    }
     else
     {
         add_to_funcs(do_justify, MMAIN, N_("Justify"), WHENHELP(justify_gist), BLANKAFTER);
     }
-#endif
 
-#ifdef ENABLE_HELP
-    /* The description ("x") and blank_after (0) are irrelevant,
-     * because the help viewer does not have a help text. */
+    //
+    //  The description ("x") and blank_after (0) are irrelevant,
+    //  because the help viewer does not have a help text.
+    //
     add_to_funcs(full_refresh, MHELP, N_("Refresh"), "x", 0);
     add_to_funcs(do_exit, MHELP, close_tag, "x", 0);
-#endif
-
     add_to_funcs(do_search_forward, MMAIN | MHELP, N_("Where Is"), WHENHELP(whereis_gist), TOGETHER);
-
     add_to_funcs(do_replace, MMAIN, N_("Replace"), WHENHELP(replace_gist), TOGETHER);
-
-#ifdef NANO_TINY
-    add_to_funcs(do_search_backward, MHELP, "Where Was", WHENHELP(wherewas_gist), TOGETHER);
-
-    add_to_funcs(do_findprevious, MMAIN | MHELP, "Previous", WHENHELP(findprev_gist), TOGETHER);
-    add_to_funcs(do_findnext, MMAIN | MHELP, "Next", WHENHELP(findnext_gist), BLANKAFTER);
-#endif
-
     add_to_funcs(cut_text, MMAIN, N_("Cut"), WHENHELP(cut_gist), TOGETHER);
-
     add_to_funcs(paste_text, MMAIN, N_("Paste"), WHENHELP(paste_gist), BLANKAFTER);
 
     if (!ISSET(RESTRICTED))
     {
-#ifndef NANO_TINY
         add_to_funcs(do_execute, MMAIN, N_("Execute"), WHENHELP(execute_gist), TOGETHER);
-#endif
-#ifdef ENABLE_JUSTIFY
         add_to_funcs(do_justify, MMAIN, N_("Justify"), WHENHELP(justify_gist), BLANKAFTER);
-#endif
     }
 
-    add_to_funcs(report_cursor_position, MMAIN,
-                 /* TRANSLATORS: This refers to the position of the cursor. */
-                 N_("Location"), WHENHELP(cursorpos_gist), TOGETHER);
+    //
+    //  TRANSLATORS: This refers to the position of the cursor.
+    //
+    add_to_funcs(report_cursor_position, MMAIN, N_("Location"), WHENHELP(cursorpos_gist), TOGETHER);
 
-#if defined(NANO_TINY) || defined(ENABLE_JUSTIFY)
-    /* Conditionally placing this one here or further on, to keep the
-     * help items nicely paired in most conditions. */
+    //
+    //  Conditionally placing this one here or further on, to keep the
+    //  help items nicely paired in most conditions.
+    //
     add_to_funcs(do_gotolinecolumn, MMAIN, N_("Go To Line"), WHENHELP(gotoline_gist), BLANKAFTER);
-#endif
 
-#ifndef NANO_TINY
-    add_to_funcs(do_undo, MMAIN,
-                 /* TRANSLATORS: Try to keep the next ten strings at most 12 characters. */
-                 N_("Undo"), WHENHELP(undo_gist), TOGETHER);
+    //
+    //  TRANSLATORS: Try to keep the next ten strings at most 12 characters.
+    //
+    add_to_funcs(do_undo, MMAIN, N_("Undo"), WHENHELP(undo_gist), TOGETHER);
     add_to_funcs(do_redo, MMAIN, N_("Redo"), WHENHELP(redo_gist), BLANKAFTER);
-
     add_to_funcs(do_mark, MMAIN, N_("Set Mark"), WHENHELP(mark_gist), TOGETHER);
     add_to_funcs(copy_text, MMAIN, N_("Copy"), WHENHELP(copy_gist), BLANKAFTER);
-#endif
-
     add_to_funcs(case_sens_void, MWHEREIS | MREPLACE, N_("Case Sens"), WHENHELP(case_gist), TOGETHER);
     add_to_funcs(regexp_void, MWHEREIS | MREPLACE, N_("Reg.exp."), WHENHELP(regexp_gist), TOGETHER);
     add_to_funcs(backwards_void, MWHEREIS | MREPLACE, N_("Backwards"), WHENHELP(reverse_gist), BLANKAFTER);
-
     add_to_funcs(flip_replace, MWHEREIS, N_("Replace"), WHENHELP(replace_gist), BLANKAFTER);
     add_to_funcs(flip_replace, MREPLACE, N_("No Replace"), WHENHELP(whereis_gist), BLANKAFTER);
-
     add_to_funcs(
         get_older_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Older"), WHENHELP(older_gist), TOGETHER);
+
     add_to_funcs(get_newer_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Newer"), WHENHELP(newer_gist),
                  BLANKAFTER);
     add_to_funcs(get_older_item, MEXECUTE, N_("Older"), WHENHELP(older_command_gist), TOGETHER);
     add_to_funcs(get_newer_item, MEXECUTE, N_("Newer"), WHENHELP(newer_command_gist), BLANKAFTER);
 
-    add_to_funcs(goto_dir, MBROWSER,
-                 /* TRANSLATORS: Try to keep the next four strings at most 10 characters. */
-                 N_("Go To Dir"), WHENHELP(gotodir_gist), TOGETHER);
+    //
+    //  TODO : Try to keep the next four strings at most 10 characters.
+    //
+    add_to_funcs(goto_dir, MBROWSER, N_("Go To Dir"), WHENHELP(gotodir_gist), TOGETHER);
     add_to_funcs(full_refresh, MBROWSER, N_("Refresh"), WHENHELP(browserrefresh_gist), BLANKAFTER);
     add_to_funcs(do_search_forward, MBROWSER, N_("Where Is"), WHENHELP(browserwhereis_gist), TOGETHER);
     add_to_funcs(do_search_backward, MBROWSER, N_("Where Was"), WHENHELP(browserwherewas_gist), TOGETHER);
 
     add_to_funcs(do_findprevious, MBROWSER, N_("Previous"), WHENHELP(findprev_gist), TOGETHER);
     add_to_funcs(do_findnext, MBROWSER, N_("Next"), WHENHELP(findnext_gist), BLANKAFTER);
-
-    // #ifdef NANO_TINY
-    //     add_to_funcs(to_prev_word, MMAIN, "Prev Word", WHENHELP(prevword_gist), TOGETHER);
-    //     add_to_funcs(to_next_word, MMAIN, "Next Word", WHENHELP(nextword_gist), BLANKAFTER);
-    // #else
     add_to_funcs(do_find_bracket, MMAIN, N_("To Bracket"), WHENHELP(bracket_gist), BLANKAFTER);
 
-    /* TRANSLATORS: This starts a backward search. */
+    //
+    //  TODO : This starts a backward search.
+    //
     add_to_funcs(do_search_backward, MMAIN | MHELP, N_("Where Was"), WHENHELP(wherewas_gist), TOGETHER);
 
-    /* TRANSLATORS: This refers to searching the preceding occurrence. */
+    //
+    //  TODO : This refers to searching the preceding occurrence.
+    //
     add_to_funcs(do_findprevious, MMAIN | MHELP, N_("Previous"), WHENHELP(findprev_gist), TOGETHER);
     add_to_funcs(do_findnext, MMAIN | MHELP, N_("Next"), WHENHELP(findnext_gist), BLANKAFTER);
-    // #endif
 
-    /* TRANSLATORS: This means move the cursor one character back. */
+    //
+    //  TODO : This means move the cursor one character back.
+    //
     add_to_funcs(do_left, MMAIN, N_("Back"), WHENHELP(back_gist), TOGETHER);
     add_to_funcs(do_right, MMAIN, N_("Forward"), WHENHELP(forward_gist), TOGETHER);
     add_to_funcs(do_left, MBROWSER, N_("Back"), WHENHELP(backfile_gist), TOGETHER);
     add_to_funcs(do_right, MBROWSER, N_("Forward"), WHENHELP(forwardfile_gist), TOGETHER);
 
-    /* TRANSLATORS: Try to keep the next ten strings at most 12 characters. */
+    //
+    //  TODO : Try to keep the next ten strings at most 12 characters.
+    //
     add_to_funcs(to_prev_word, MMAIN, N_("Prev Word"), WHENHELP(prevword_gist), TOGETHER);
     add_to_funcs(to_next_word, MMAIN, N_("Next Word"), WHENHELP(nextword_gist), TOGETHER);
-
     add_to_funcs(do_home, MMAIN, N_("Home"), WHENHELP(home_gist), TOGETHER);
     add_to_funcs(do_end, MMAIN, N_("End"), WHENHELP(end_gist), BLANKAFTER);
-
     add_to_funcs(do_up, MMAIN | MBROWSER | MHELP, N_("Prev Line"), WHENHELP(prevline_gist), TOGETHER);
     add_to_funcs(do_down, MMAIN | MBROWSER | MHELP, N_("Next Line"), WHENHELP(nextline_gist), TOGETHER);
     add_to_funcs(do_scroll_up, MMAIN, N_("Scroll Up"), WHENHELP(scrollup_gist), TOGETHER);
     add_to_funcs(do_scroll_down, MMAIN, N_("Scroll Down"), WHENHELP(scrolldown_gist), BLANKAFTER);
-
     add_to_funcs(to_prev_block, MMAIN, N_("Prev Block"), WHENHELP(prevblock_gist), TOGETHER);
     add_to_funcs(to_next_block, MMAIN, N_("Next Block"), WHENHELP(nextblock_gist), TOGETHER);
 
-    /* TRANSLATORS: Try to keep these two strings at most 16 characters. */
+    //
+    //  TODO : Try to keep these two strings at most 16 characters.
+    //
     add_to_funcs(to_para_begin, MMAIN | MGOTOLINE, N_("Begin of Paragr."), WHENHELP(parabegin_gist), TOGETHER);
     add_to_funcs(to_para_end, MMAIN | MGOTOLINE, N_("End of Paragraph"), WHENHELP(paraend_gist), BLANKAFTER);
 
     add_to_funcs(to_top_row, MMAIN, N_("Top Row"), WHENHELP(toprow_gist), TOGETHER);
     add_to_funcs(to_bottom_row, MMAIN, N_("Bottom Row"), WHENHELP(bottomrow_gist), BLANKAFTER);
 
-    add_to_funcs(do_page_up, MMAIN | MHELP,
-                 /* TRANSLATORS: Try to keep the next six strings at most 12 characters. */
-                 N_("Prev Page"), WHENHELP(prevpage_gist), TOGETHER);
+    //
+    //  TODO : Try to keep the next six strings at most 12 characters.
+    //
+    add_to_funcs(do_page_up, MMAIN | MHELP, N_("Prev Page"), WHENHELP(prevpage_gist), TOGETHER);
     add_to_funcs(do_page_down, MMAIN | MHELP, N_("Next Page"), WHENHELP(nextpage_gist), TOGETHER);
-
     add_to_funcs(to_first_line, MMAIN | MHELP | MGOTOLINE, N_("First Line"), WHENHELP(firstline_gist), TOGETHER);
     add_to_funcs(to_last_line, MMAIN | MHELP | MGOTOLINE, N_("Last Line"), WHENHELP(lastline_gist), BLANKAFTER);
-
     add_to_funcs(switch_to_prev_buffer, MMAIN, N_("Prev File"), WHENHELP(prevfile_gist), TOGETHER);
     add_to_funcs(switch_to_next_buffer, MMAIN, N_("Next File"), WHENHELP(nextfile_gist), BLANKAFTER);
 
-    // #if !defined(NANO_TINY) && !defined(ENABLE_JUSTIFY)
-    //     add_to_funcs(do_gotolinecolumn, MMAIN, N_("Go To Line"), WHENHELP(gotoline_gist), BLANKAFTER);
-    // #endif
-
-    add_to_funcs(do_tab, MMAIN,
-                 /* TRANSLATORS: The next four strings are names of keyboard keys. */
-                 N_("Tab"), WHENHELP(tab_gist), TOGETHER);
+    //
+    //  TODO : The next four strings are names of keyboard keys.
+    //
+    add_to_funcs(do_tab, MMAIN, N_("Tab"), WHENHELP(tab_gist), TOGETHER);
     add_to_funcs(do_enter, MMAIN, N_("Enter"), WHENHELP(enter_gist), BLANKAFTER);
-
     add_to_funcs(do_backspace, MMAIN, N_("Backspace"), WHENHELP(backspace_gist), TOGETHER);
     add_to_funcs(do_delete, MMAIN, N_("Delete"), WHENHELP(delete_gist), BLANKAFTER);
 
-    add_to_funcs(chop_previous_word, MMAIN,
-                 /* TRANSLATORS: The next two strings refer to deleting words. */
-                 N_("Chop Left"), WHENHELP(chopwordleft_gist), TOGETHER);
+    //
+    //  TODO : The next two strings refer to deleting words.
+    //
+    add_to_funcs(chop_previous_word, MMAIN, N_("Chop Left"), WHENHELP(chopwordleft_gist), TOGETHER);
     add_to_funcs(chop_next_word, MMAIN, N_("Chop Right"), WHENHELP(chopwordright_gist), TOGETHER);
+
     add_to_funcs(cut_till_eof, MMAIN, N_("Cut Till End"), WHENHELP(cuttilleof_gist), BLANKAFTER);
-
     add_to_funcs(do_full_justify, MMAIN, N_("Full Justify"), WHENHELP(fulljustify_gist), TOGETHER);
-
     add_to_funcs(count_lines_words_and_characters, MMAIN, N_("Word Count"), WHENHELP(wordcount_gist), TOGETHER);
     add_to_funcs(copy_text, MMAIN, N_("Copy"), WHENHELP(copy_gist), BLANKAFTER);
-
     add_to_funcs(do_verbatim_input, MMAIN, N_("Verbatim"), WHENHELP(verbatim_gist), BLANKAFTER);
-
-    // #ifdef NANO_TINY
-    //     add_to_funcs(do_search_backward, MMAIN, "Where Was", WHENHELP(wherewas_gist), BLANKAFTER);
-    // #else
     add_to_funcs(do_indent, MMAIN, N_("Indent"), WHENHELP(indent_gist), TOGETHER);
     add_to_funcs(do_unindent, MMAIN, N_("Unindent"), WHENHELP(unindent_gist), BLANKAFTER);
-    // #endif
     add_to_funcs(do_comment, MMAIN, N_("Comment Lines"), WHENHELP(comment_gist), TOGETHER);
     add_to_funcs(complete_a_word, MMAIN, N_("Complete"), WHENHELP(completion_gist), BLANKAFTER);
-
     add_to_funcs(record_macro, MMAIN, N_("Record"), WHENHELP(recordmacro_gist), TOGETHER);
     add_to_funcs(run_macro, MMAIN, N_("Run Macro"), WHENHELP(runmacro_gist), BLANKAFTER);
 
-    add_to_funcs(zap_text, MMAIN,
-                 /* TRANSLATORS: This refers to deleting a line or marked region. */
-                 N_("Zap"), WHENHELP(zap_gist), BLANKAFTER);
+    //
+    //  TODO : This refers to deleting a line or marked region.
+    //
+    add_to_funcs(zap_text, MMAIN, N_("Zap"), WHENHELP(zap_gist), BLANKAFTER);
 
     add_to_funcs(put_or_lift_anchor, MMAIN, N_("Anchor"), WHENHELP(anchor_gist), TOGETHER);
     add_to_funcs(to_prev_anchor, MMAIN, N_("Up to anchor"), WHENHELP(prevanchor_gist), TOGETHER);
@@ -1131,8 +1067,10 @@ shortcut_init()
 
     add_to_funcs(do_formatter, MMAIN, N_("Formatter"), WHENHELP(formatter_gist), BLANKAFTER);
 
-    /* Although not allowed in restricted mode, keep execution rebindable. */
-    if (ISSET(RESTRICTED))
+    //
+    //  Although not allowed in restricted mode, keep execution rebindable.
+    //
+    if ISSET (RESTRICTED)
     {
         add_to_funcs(do_execute, MMAIN, N_("Execute"), WHENHELP(execute_gist), TOGETHER);
     }
@@ -1145,53 +1083,62 @@ shortcut_init()
 
     add_to_funcs(do_savefile, MMAIN, N_("Save"), WHENHELP(savefile_gist), BLANKAFTER);
 
-    /* Include the new-buffer toggle only when it can actually be used. */
+    //
+    //  Include the new-buffer toggle only when it can actually be used.
+    //
     if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE))
     {
         add_to_funcs(flip_newbuffer, MINSERTFILE | MEXECUTE, N_("New Buffer"), WHENHELP(newbuffer_gist), TOGETHER);
     }
     add_to_funcs(flip_pipe, MEXECUTE, N_("Pipe Text"), WHENHELP(pipe_gist), BLANKAFTER);
-    add_to_funcs(do_spell, MEXECUTE,
-                 /* TRANSLATORS: Try to keep the next four strings at most 12 characters. */
-                 N_("Spell Check"), WHENHELP(spell_gist), TOGETHER);
+
+    //
+    //  TRANSLATORS: Try to keep the next four strings at most 12 characters.
+    //
+    add_to_funcs(do_spell, MEXECUTE, N_("Spell Check"), WHENHELP(spell_gist), TOGETHER);
     add_to_funcs(do_linter, MEXECUTE, N_("Linter"), WHENHELP(lint_gist), BLANKAFTER);
     add_to_funcs(do_full_justify, MEXECUTE, N_("Full Justify"), WHENHELP(fulljustify_gist), TOGETHER);
     add_to_funcs(do_formatter, MEXECUTE, N_("Formatter"), WHENHELP(formatter_gist), BLANKAFTER);
+
     add_to_funcs(flip_goto, MWHEREIS, N_("Go To Line"), WHENHELP(gotoline_gist), BLANKAFTER);
     add_to_funcs(flip_goto, MGOTOLINE, N_("Go To Text"), WHENHELP(whereis_gist), BLANKAFTER);
     add_to_funcs(dos_format, MWRITEFILE, N_("DOS Format"), WHENHELP(dos_gist), TOGETHER);
     add_to_funcs(mac_format, MWRITEFILE, N_("Mac Format"), WHENHELP(mac_gist), TOGETHER);
 
-    /* If we're using restricted mode, the Append, Prepend, and Backup toggles
-     * are disabled.  The first and second are not useful as they only allow
-     * reduplicating the current file, and the third is not allowed as it
-     * would write to a file not specified on the command line. */
+    //
+    //  If we're using restricted mode, the Append, Prepend, and Backup toggles
+    //  are disabled.  The first and second are not useful as they only allow
+    //  reduplicating the current file, and the third is not allowed as it
+    //  would write to a file not specified on the command line.
+    //
     if (!ISSET(RESTRICTED))
     {
         add_to_funcs(append_it, MWRITEFILE, N_("Append"), WHENHELP(append_gist), TOGETHER);
         add_to_funcs(prepend_it, MWRITEFILE, N_("Prepend"), WHENHELP(prepend_gist), TOGETHER);
-
         add_to_funcs(back_it_up, MWRITEFILE, N_("Backup File"), WHENHELP(backup_gist), BLANKAFTER);
     }
-
     add_to_funcs(flip_convert, MINSERTFILE, N_("No Conversion"), WHENHELP(convert_gist), BLANKAFTER);
 
-    /* Command execution is only available when not in restricted mode. */
+    //
+    //  Command execution is only available when not in restricted mode.
+    //
     if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE))
     {
         add_to_funcs(flip_execute, MINSERTFILE, N_("Execute Command"), WHENHELP(execute_gist), BLANKAFTER);
     }
 
     add_to_funcs(cut_till_eof, MEXECUTE, N_("Cut Till End"), WHENHELP(cuttilleof_gist), BLANKAFTER);
-
     add_to_funcs(do_suspend, MEXECUTE, N_("Suspend"), WHENHELP(suspend_gist), BLANKAFTER);
 
-    /* The file browser is only available when not in restricted mode. */
+    //
+    //  The file browser is only available when not in restricted mode.
+    //
     if (!ISSET(RESTRICTED))
     {
-        add_to_funcs(to_files, MWRITEFILE | MINSERTFILE,
-                     /* TRANSLATORS: This invokes the file browser. */
-                     N_("Browse"), WHENHELP(tofiles_gist), BLANKAFTER);
+        //
+        //  TODO : This invokes the file browser.
+        //
+        add_to_funcs(to_files, MWRITEFILE | MINSERTFILE, N_("Browse"), WHENHELP(tofiles_gist), BLANKAFTER);
     }
 
     add_to_funcs(do_page_up, MBROWSER, N_("Prev Page"), WHENHELP(prevpage_gist), TOGETHER);
@@ -1205,14 +1152,18 @@ shortcut_init()
     add_to_funcs(to_prev_block, MBROWSER, N_("Top Row"), WHENHELP(browsertoprow_gist), TOGETHER);
     add_to_funcs(to_next_block, MBROWSER, N_("Bottom Row"), WHENHELP(browserbottomrow_gist), BLANKAFTER);
     add_to_funcs(discard_buffer, MWRITEFILE, N_("Discard buffer"), WHENHELP(discardbuffer_gist), BLANKAFTER);
-    add_to_funcs(do_page_up, MLINTER,
-                 /* TRANSLATORS: The next two strings may be up to 37 characters each. */
-                 N_("Previous Linter message"), WHENHELP(prevlint_gist), TOGETHER);
+
+    //
+    //  TODO : The next two strings may be up to 37 characters each.
+    //
+    add_to_funcs(do_page_up, MLINTER, N_("Previous Linter message"), WHENHELP(prevlint_gist), TOGETHER);
     add_to_funcs(do_page_down, MLINTER, N_("Next Linter message"), WHENHELP(nextlint_gist), TOGETHER);
 
 #define SLASH_OR_DASH (on_a_vt) ? "^-" : "^/"
 
-    /* Link key combos to functions in certain menus. */
+    //
+    //  Link key combos to functions in certain menus.
+    //
     add_to_sclist(MMOST | MBROWSER, "^M", '\r', do_enter, 0);
     add_to_sclist(MMOST | MBROWSER, "Enter", KEY_ENTER, do_enter, 0);
     add_to_sclist(MMOST, "^I", '\t', do_tab, 0);
@@ -1322,9 +1273,7 @@ shortcut_init()
     add_to_sclist(MMAIN, "M-PgDn", ALT_PAGEDOWN, to_next_anchor, 0);
     add_to_sclist(MMAIN, "M-\"", 0, put_or_lift_anchor, 0);
     add_to_sclist(MMAIN, "M-'", 0, to_next_anchor, 0);
-#ifdef ENABLE_WORDCOMPLETION
     add_to_sclist(MMAIN, "^]", 0, complete_a_word, 0);
-#endif
     add_to_sclist(MMAIN, (on_a_vt) ? "^-" : "^/", 0, do_comment, 0);
     add_to_sclist(MMAIN, "^_", 0, do_comment, 0);
     add_to_sclist(MMOST & ~MMAIN, "^B", 0, do_left, 0);
@@ -1408,18 +1357,31 @@ shortcut_init()
     add_to_sclist(MMAIN, "^L", 0, do_cycle, 0);
     add_to_sclist(MMOST | MBROWSER | MHELP | MYESNO, "^L", 0, full_refresh, 0);
 
-    /* Group of "Appearance" toggles. */
+    //
+    //  Group of "Appearance" toggles.
+    //
     add_to_sclist(MMAIN, "M-Z", 0, do_toggle, ZERO);
     add_to_sclist((MMOST | MBROWSER | MYESNO) & ~MFINDINHELP, "M-X", 0, do_toggle, NO_HELP);
     add_to_sclist(MMAIN, "M-C", 0, do_toggle, CONSTANT_SHOW);
     add_to_sclist(MMAIN, "M-S", 0, do_toggle, SOFTWRAP);
-    add_to_sclist(MMAIN, "M-$", 0, do_toggle, SOFTWRAP);      //  Legacy keystroke.
+    add_to_sclist(MMAIN, "M-$", 0, do_toggle, SOFTWRAP);
+
+    //
+    //  Legacy keystroke.
+    //
     add_to_sclist(MMAIN, "M-N", 0, do_toggle, LINE_NUMBERS);
-    add_to_sclist(MMAIN, "M-#", 0, do_toggle, LINE_NUMBERS);  //  Legacy keystroke.
+
+    //
+    //  Legacy keystroke.
+    //
+    add_to_sclist(MMAIN, "M-#", 0, do_toggle, LINE_NUMBERS);
+
     add_to_sclist(MMAIN, "M-P", 0, do_toggle, WHITESPACE_DISPLAY);
     add_to_sclist(MMAIN, "M-Y", 0, do_toggle, NO_SYNTAX);
 
-    /* Group of "Behavior" toggles. */
+    //
+    //  Group of 'Behavior' toggles.
+    //
     add_to_sclist(MMAIN, "M-H", 0, do_toggle, SMART_HOME);
     add_to_sclist(MMAIN, "M-I", 0, do_toggle, AUTOINDENT);
     add_to_sclist(MMAIN, "M-K", 0, do_toggle, CUT_FROM_CURSOR);
@@ -1474,8 +1436,11 @@ shortcut_init()
     }
     add_to_sclist(MWRITEFILE, "M-D", 0, dos_format, 0);
     add_to_sclist(MWRITEFILE, "M-M", 0, mac_format, 0);
-    /* Only when not in restricted mode, allow Appending, Prepending,
-     * making backups, and executing a command. */
+
+    //
+    //  Only when not in restricted mode, allow Appending, Prepending,
+    //  making backups, and executing a command.
+    //
     if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE))
     {
         add_to_sclist(MWRITEFILE, "M-A", 0, append_it, 0);
@@ -1484,28 +1449,35 @@ shortcut_init()
         add_to_sclist(MINSERTFILE | MEXECUTE, "^X", 0, flip_execute, 0);
     }
     add_to_sclist(MINSERTFILE, "M-N", 0, flip_convert, 0);
+
     if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE))
     {
         add_to_sclist(MINSERTFILE | MEXECUTE, "M-F", 0, flip_newbuffer, 0);
         add_to_sclist(MEXECUTE, "M-\\", 0, flip_pipe, 0);
     }
     add_to_sclist(MBROWSER | MHELP, "^C", 0, do_exit, 0);
-#ifdef ENABLE_BROWSER
-    /* Only when not in restricted mode, allow entering the file browser. */
+
+    //
+    //  Only when not in restricted mode, allow entering the file browser. */
+    //
     if (!ISSET(RESTRICTED))
     {
         add_to_sclist(MWRITEFILE | MINSERTFILE, "^T", 0, to_files, 0);
     }
-    /* Allow exiting the file browser with the same key as used for entry. */
+
+    //
+    //  Allow exiting the file browser with the same key as used for entry.
+    //
     add_to_sclist(MBROWSER, "^T", 0, do_exit, 0);
-#endif
-#ifdef ENABLE_HELP
-    /* Allow exiting the help viewer with the same keys as used for entry. */
+
+    //
+    // Allow exiting the help viewer with the same keys as used for entry. */
+    //
     add_to_sclist(MHELP, "^G", 0, do_exit, 0);
     add_to_sclist(MHELP, "F1", KEY_F(1), do_exit, 0);
     add_to_sclist(MHELP, "Home", KEY_HOME, to_first_line, 0);
     add_to_sclist(MHELP, "End", KEY_END, to_last_line, 0);
-#endif
+
 #ifdef ENABLE_LINTER
     add_to_sclist(MLINTER, "^X", 0, do_cancel, 0);
 #endif
@@ -1536,58 +1508,6 @@ shortcut_init()
 const s8 *
 epithet_of_flag(const s32 flag)
 {
-    //
-    // Old code from nano source
-    //
-    // switch (flag)
-    // {
-    //     case ZERO :
-    //         /* TRANSLATORS: The next thirteen strings are toggle descriptions;
-    //          * they are best kept shorter than 40 characters, but may be longer. */
-    //         return N_("Hidden interface");
-    //     case NO_HELP :
-    //         return N_("Help mode");
-    //     case CONSTANT_SHOW :
-    //         return N_("Constant cursor position display");
-    //     case SOFTWRAP :
-    //         return N_("Soft wrapping of overlong lines");
-    //     case LINE_NUMBERS :
-    //         return N_("Line numbering");
-    //     case WHITESPACE_DISPLAY :
-    //         return N_("Whitespace display");
-    //     case NO_SYNTAX :
-    //         return N_("Color syntax highlighting");
-    //     case SMART_HOME :
-    //         return N_("Smart home key");
-    //     case AUTOINDENT :
-    //         return N_("Auto indent");
-    //     case CUT_FROM_CURSOR :
-    //         return N_("Cut to end");
-    //     case BREAK_LONG_LINES :
-    //         return N_("Hard wrapping of overlong lines");
-    //     case TABS_TO_SPACES :
-    //         return N_("Conversion of typed tabs to spaces");
-    //     case USE_MOUSE :
-    //         return N_("Mouse support");
-    //     default :
-    //         return "Ehm...";
-    // }
-    //
-    static const std::unordered_map<s32, const std::string> map = {
-        {              ZERO,                   "Hidden interface"},
-        {           NO_HELP,                          "Help mode"},
-        {     CONSTANT_SHOW,   "Constant cursor position display"},
-        {          SOFTWRAP,    "Soft wrapping of overlong lines"},
-        {      LINE_NUMBERS,                     "Line numbering"},
-        {WHITESPACE_DISPLAY,                 "Whitespace display"},
-        {         NO_SYNTAX,          "Color syntax highlighting"},
-        {        SMART_HOME,                     "Smart home key"},
-        {        AUTOINDENT,                        "Auto indent"},
-        {   CUT_FROM_CURSOR,                         "Cut to end"},
-        {  BREAK_LONG_LINES,    "Hard wrapping of overlong lines"},
-        {    TABS_TO_SPACES, "Conversion of typed tabs to spaces"},
-        {         USE_MOUSE,                      "Mouse support"},
-    };
-    const auto it = map.find(flag);
-    return it != map.end() ? &it->second[0] : "Ehm...";
+    PROFILE_FUNCTION;
+    return &epithetOfFlagMap[flag].value[0];
 }

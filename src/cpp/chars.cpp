@@ -1,6 +1,7 @@
 /// @file chars.cpp
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <cstring>
 #include <cwchar>
 #include <cwctype>
@@ -12,40 +13,40 @@
 //
 static bool use_utf8 = false;
 
-/// @name @c utf8_init
-/// @brief
-/// - Enable UTF-8 support.
-/// @details
-/// - Modify the global variable @c use_utf8 to @p true
+//
+//  Enable UTF-8 support.
+//  Set the 'use_utf8' variable to 'true'.
+//
 void
 utf8_init()
 {
     use_utf8 = true;
 }
 
-// Is UTF-8 support enabled?
+//
+//  Checks if UTF-8 support has been enabled.
+//
 bool
 using_utf8()
 {
     return use_utf8;
 }
 
-// Return TRUE when the given character
-// is some kind of letter.
+//
+//  Return 'true' when the given character
+//  is some kind of letter.
+//
 bool
 is_alpha_char(const s8 *const &c)
 {
+    PROFILE_FUNCTION;
+
     wchar_t wc;
     if (mbtowide(&wc, c) < 0)
     {
         return false;
     }
     return iswalpha(wc);
-    /// The following line is commented out because
-    /// it is not used in the code.
-    /// it was used if not using UTF-8
-    /// Original CODE:
-    /// @c return @c isalpha((u8)*c);
 }
 
 // Return TRUE when the given character
@@ -70,6 +71,8 @@ is_alnum_char(const s8 *const &c)
 bool
 is_blank_char(const s8 *c)
 {
+    PROFILE_FUNCTION;
+
     wchar_t wc;
 
     if (static_cast<signed char>(*c) >= 0)
@@ -86,74 +89,80 @@ is_blank_char(const s8 *c)
     return std::iswblank(wc);
 }
 
-/* Return TRUE when the given character is a control character. */
+//
+//  Return 'true' when the given character is a control character.
+//
 bool
-is_cntrl_char(const char *c)
+is_cntrl_char(const s8 *c)
 {
-#ifdef ENABLE_UTF8
     if (use_utf8)
     {
         return ((c[0] & 0xE0) == 0 || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
     }
     else
-#endif
+    {
         return ((*c & 0x60) == 0 || *c == DEL_CODE);
+    }
 }
 
-/* Return TRUE when the given character is a punctuation character. */
+//
+//  Return 'true' when the given character is a punctuation character.
+//
 bool
-is_punct_char(const char *c)
+is_punct_char(const s8 *c)
 {
-#ifdef ENABLE_UTF8
     wchar_t wc;
     if (mbtowide(&wc, c) < 0)
     {
-        return FALSE;
+        return false;
     }
     return iswpunct(wc);
-#else
-    return ispunct((unsigned char)*c);
-#endif
 }
 
-// Return TRUE when the given character is word-forming (it is alphanumeric or
-// specified in 'wordchars', or it is punctuation when allow_punct is TRUE).
+//
+//  Return TRUE when the given character is word-forming (it is alphanumeric or
+//  specified in 'wordchars', or it is punctuation when allow_punct is TRUE).
+//
 bool
-is_word_char(const char *c, bool allow_punct)
+is_word_char(const s8 *c, bool allow_punct)
 {
     if (*c == '\0')
     {
-        return FALSE;
+        return false;
     }
 
     if (is_alnum_char(c))
     {
-        return TRUE;
+        return true;
     }
 
     if (allow_punct && is_punct_char(c))
     {
-        return TRUE;
+        return true;
     }
 
-    if (word_chars != NULL && *word_chars != '\0')
+    if (word_chars != nullptr && *word_chars != '\0')
     {
-        char symbol[MAXCHARLEN + 1];
-        int  symlen = collect_char(c, symbol);
+        s8  symbol[MAXCHARLEN + 1];
+        s32 symlen = collect_char(c, symbol);
 
         symbol[symlen] = '\0';
-        return (strstr(word_chars, symbol) != NULL);
+        return (std::strstr(word_chars, symbol) != nullptr);
     }
     else
     {
-        return FALSE;
+        return false;
     }
 }
 
-/* Return the visible representation of control character c. */
-char
-control_rep(const signed char c)
+//
+//  Return the visible representation of control character c.
+//
+s8
+control_rep(const SigS8 c)
 {
+    PROFILE_FUNCTION;
+
     if (c == DEL_CODE)
     {
         return '?';
@@ -172,20 +181,25 @@ control_rep(const signed char c)
     }
 }
 
-/* Return the visible representation of multibyte control character c. */
-char
-control_mbrep(const char *c, bool isdata)
+//
+//  Return the visible representation of multibyte control character c.
+//
+s8
+control_mbrep(const s8 *c, bool isdata)
 {
-    /* An embedded newline is an encoded NUL if it is data. */
+    PROFILE_FUNCTION;
+
+    //
+    //  An embedded newline is an encoded NUL if 'isdata' is true.
+    //
     if (*c == '\n' && (isdata || as_an_at))
     {
         return '@';
     }
 
-#ifdef ENABLE_UTF8
     if (use_utf8)
     {
-        if ((unsigned char)c[0] < 128)
+        if (static_cast<u8>(c[0]) < 128)
         {
             return control_rep(c[0]);
         }
@@ -195,20 +209,22 @@ control_mbrep(const char *c, bool isdata)
         }
     }
     else
-#endif
+    {
         return control_rep(*c);
+    }
 }
 
-#ifdef ENABLE_UTF8
-/* Convert the given multibyte sequence c to wide character wc, and return
- * the number of bytes in the sequence, or -1 for an invalid sequence. */
-int
-mbtowide(wchar_t *wc, const char *c)
+//
+//  Convert the given multibyte sequence c to wide character wc, and return
+//  the number of bytes in the sequence, or -1 for an invalid sequence.
+//
+s32
+mbtowide(wchar_t *wc, const s8 *c)
 {
-    if ((signed char)*c < 0 && use_utf8)
+    if (static_cast<SigS8>(*c) < 0 && use_utf8)
     {
-        unsigned char v1 = (unsigned char)c[0];
-        unsigned char v2 = (unsigned char)c[1] ^ 0x80;
+        u8 v1 = static_cast<u8>(c[0]);
+        u8 v2 = static_cast<u8>(c[1]) ^ 0x80;
 
         if (v2 > 0x3F || v1 < 0xC2)
         {
@@ -217,11 +233,11 @@ mbtowide(wchar_t *wc, const char *c)
 
         if (v1 < 0xE0)
         {
-            *wc = (((unsigned int)(v1 & 0x1F) << 6) | (unsigned int)v2);
+            *wc = ((static_cast<u32>(v1 & 0x1F) << 6) | static_cast<u32>(v2));
             return 2;
         }
 
-        unsigned char v3 = (unsigned char)c[2] ^ 0x80;
+        u8 v3 = static_cast<u8>(c[2]) ^ 0x80;
 
         if (v3 > 0x3F)
         {
@@ -232,7 +248,7 @@ mbtowide(wchar_t *wc, const char *c)
         {
             if ((v1 > 0xE0 || v2 >= 0x20) && (v1 != 0xED || v2 < 0x20))
             {
-                *wc = (((unsigned int)(v1 & 0x0F) << 12) | ((unsigned int)v2 << 6) | (unsigned int)v3);
+                *wc = ((static_cast<u32>(v1 & 0x0F) << 12) | (static_cast<u32>(v2) << 6) | static_cast<u32>(v3));
                 return 3;
             }
             else
@@ -241,7 +257,7 @@ mbtowide(wchar_t *wc, const char *c)
             }
         }
 
-        unsigned char v4 = (unsigned char)c[3] ^ 0x80;
+        u8 v4 = static_cast<u8>(c[3]) ^ 0x80;
 
         if (v4 > 0x3F || v1 > 0xF4)
         {
@@ -250,8 +266,8 @@ mbtowide(wchar_t *wc, const char *c)
 
         if ((v1 > 0xF0 || v2 >= 0x10) && (v1 != 0xF4 || v2 < 0x10))
         {
-            *wc = (((unsigned int)(v1 & 0x07) << 18) | ((unsigned int)v2 << 12) | ((unsigned int)v3 << 6) |
-                   (unsigned int)v4);
+            *wc = ((static_cast<u32>(v1 & 0x07) << 18) | (static_cast<u32>(v2) << 12) | (static_cast<u32>(v3) << 6) |
+                   static_cast<u32>(v4));
             return 4;
         }
         else
@@ -260,64 +276,77 @@ mbtowide(wchar_t *wc, const char *c)
         }
     }
 
-    *wc = (unsigned int)*c;
+    *wc = static_cast<u32>(*c);
     return 1;
 }
 
-/* Return TRUE when the given character occupies two cells. */
+//
+//  Return TRUE when the given character occupies two cells.
+//
 bool
-is_doublewidth(const char *ch)
+is_doublewidth(const s8 *ch)
 {
     wchar_t wc;
 
-    /* Only from U+1100 can code points have double width. */
-    if ((unsigned char)*ch < 0xE1 || !use_utf8)
+    //
+    //  Only from U+1100 can code points have double width.
+    //
+    if (static_cast<u8>(*ch) < 0xE1 || !use_utf8)
     {
-        return FALSE;
+        return false;
     }
 
     if (mbtowide(&wc, ch) < 0)
     {
-        return FALSE;
+        return false;
     }
 
     return (wcwidth(wc) == 2);
 }
 
-/* Return TRUE when the given character occupies zero cells. */
+//
+//  Return 'true' when the given character occupies zero cells.
+//
 bool
-is_zerowidth(const char *ch)
+is_zerowidth(const s8 *ch)
 {
+    PROFILE_FUNCTION;
+
     wchar_t wc;
 
-    /* Only from U+0300 can code points have zero width. */
-    if ((unsigned char)*ch < 0xCC || !use_utf8)
+    //
+    //  Only from U+0300 can code points have zero width.
+    //
+    if (static_cast<u8>(*ch) < 0xCC || !use_utf8)
     {
-        return FALSE;
+        return false;
     }
 
     if (mbtowide(&wc, ch) < 0)
     {
-        return FALSE;
+        return false;
     }
 
-#    if defined(__OpenBSD__)
+#if defined(__OpenBSD__)
     /* Work around an OpenBSD bug -- see https://sv.gnu.org/bugs/?60393. */
     if (wc >= 0xF0000)
     {
-        return FALSE;
+        return false;
     }
-#    endif
+#endif
 
     return (wcwidth(wc) == 0);
 }
-#endif /* ENABLE_UTF8 */
 
-// Return the number of bytes in the character that starts at *pointer.
+//
+//  Return the number of bytes in the character that starts at *pointer.
+//
 s32
 char_length(const s8 *const &pointer)
 {
-    if ((u8)*pointer > 0xC1 && use_utf8)
+    PROFILE_FUNCTION;
+
+    if (static_cast<u8>(*pointer) > 0xC1 && use_utf8)
     {
         const u8 c1 = static_cast<u8>(pointer[0]);
         const u8 c2 = static_cast<u8>(pointer[1]);
@@ -367,10 +396,14 @@ char_length(const s8 *const &pointer)
     return 1;
 }
 
-/* Return the number of (multibyte) characters in the given string. */
-size_t
-mbstrlen(const char *pointer)
+//
+//  Return the number of (multibyte) characters in the given string.
+//
+u64
+mbstrlen(const s8 *pointer)
 {
+    PROFILE_FUNCTION;
+
     size_t count = 0;
     while (*pointer != '\0')
     {
@@ -380,18 +413,20 @@ mbstrlen(const char *pointer)
     return count;
 }
 
-/* Return the length (in bytes) of the character at the start of the
- * given string, and return a copy of this character in *thechar. */
-int
-collect_char(const char *string, char *thechar)
+//
+//  Return the length (in bytes) of the character at the start of the
+//  given string, and return a copy of this character in *thechar.
+//
+s32
+collect_char(const s8 *str, s8 *c)
 {
-    int charlen = char_length(string);
+    PROFILE_FUNCTION;
 
+    s32 charlen = char_length(str);
     for (int i = 0; i < charlen; i++)
     {
-        thechar[i] = string[i];
+        c[i] = str[i];
     }
-
     return charlen;
 }
 
@@ -400,14 +435,16 @@ collect_char(const char *string, char *thechar)
 //  the given string, and add this character's width to *column. */
 //
 s32
-advance_over(const s8 *string, u64 &column)
+advance_over(const s8 *str, u64 &column)
 {
-    if (static_cast<s8>(*string) < 0 && use_utf8)
+    PROFILE_FUNCTION;
+
+    if (static_cast<s8>(*str) < 0 && use_utf8)
     {
         //
         //  A UTF-8 upper control code has two bytes and takes two columns.
         //
-        if (static_cast<u8>(string[0]) == 0xC2 && static_cast<signed char>(string[1]) < -96)
+        if (static_cast<u8>(str[0]) == 0xC2 && static_cast<signed char>(str[1]) < -96)
         {
             column += 2;
             return 2;
@@ -416,7 +453,7 @@ advance_over(const s8 *string, u64 &column)
         {
             wchar_t wc;
 
-            s32 charlen = mbtowide(&wc, string);
+            s32 charlen = mbtowide(&wc, str);
             if (charlen < 0)
             {
                 column += 1;
@@ -424,18 +461,18 @@ advance_over(const s8 *string, u64 &column)
             }
             s32 width = wcwidth(wc);
 
-#if defined(__OpenBSD__)
-            *column += (width < 0 || wc >= 0xF0000) ? 1 : width;
-#else
+            // #if defined(__OpenBSD__)
+            //             *column += (width < 0 || wc >= 0xF0000) ? 1 : width;
+            // #else
             column += (width < 0) ? 1 : width;
-#endif
+            // #endif
             return charlen;
         }
     }
 
-    if (static_cast<u8>(*string) < 0x20)
+    if (static_cast<u8>(*str) < 0x20)
     {
-        if (*string == '\t')
+        if (*str == '\t')
         {
             column += tabsize - column % tabsize;
         }
@@ -444,7 +481,7 @@ advance_over(const s8 *string, u64 &column)
             column += 2;
         }
     }
-    else if (0x7E < static_cast<u8>(*string) && static_cast<u8>(*string) < 0xA0)
+    else if (0x7E < static_cast<u8>(*str) && static_cast<u8>(*str) < 0xA0)
     {
         column += 2;
     }
@@ -456,15 +493,18 @@ advance_over(const s8 *string, u64 &column)
     return 1;
 }
 
-/* Return the index in buf of the beginning of the multibyte character
- * before the one at pos. */
-size_t
-step_left(const char *buf, size_t pos)
+//
+//  Return the index in buf of the beginning of
+//  the multibyte character before the one at pos.
+//
+u64
+step_left(const s8 *buf, u64 pos)
 {
-#ifdef ENABLE_UTF8
+    PROFILE_FUNCTION;
+
     if (use_utf8)
     {
-        size_t before, charlen = 0;
+        u64 before, charlen = 0;
 
         if (pos < 4)
         {
@@ -472,22 +512,24 @@ step_left(const char *buf, size_t pos)
         }
         else
         {
-            const char *ptr = buf + pos;
+            const s8 *ptr = buf + pos;
 
-            /* Probe for a valid starter byte in the preceding four bytes. */
-            if ((signed char)*(--ptr) > -65)
+            //
+            //  Probe for a valid starter byte in the preceding four bytes.
+            //
+            if (static_cast<SigS8>(*--ptr) > -65)
             {
                 before = pos - 1;
             }
-            else if ((signed char)*(--ptr) > -65)
+            else if (static_cast<SigS8>(*--ptr) > -65)
             {
                 before = pos - 2;
             }
-            else if ((signed char)*(--ptr) > -65)
+            else if (static_cast<SigS8>(*--ptr) > -65)
             {
                 before = pos - 3;
             }
-            else if ((signed char)*(--ptr) > -65)
+            else if (static_cast<SigS8>(*--ptr) > -65)
             {
                 before = pos - 4;
             }
@@ -497,8 +539,10 @@ step_left(const char *buf, size_t pos)
             }
         }
 
-        /* Move forward again until we reach the original character,
-         * so we know the length of its preceding character. */
+        //
+        //  Move forward again until we reach the original character,
+        //  so we know the length of its preceding character.
+        //
         while (before < pos)
         {
             charlen = char_length(buf + before);
@@ -508,29 +552,38 @@ step_left(const char *buf, size_t pos)
         return before - charlen;
     }
     else
-#endif
+    {
         return (pos == 0 ? 0 : pos - 1);
+    }
 }
 
-/* Return the index in buf of the beginning of the multibyte character
- * after the one at pos. */
-size_t
-step_right(const char *buf, size_t pos)
+//
+//  Return the index in buf of the beginning of the multibyte character
+//  after the one at pos.
+//
+u64
+step_right(const s8 *buf, u64 pos)
 {
     return pos + char_length(buf + pos);
 }
 
-/* This function is equivalent to strcasecmp() for multibyte strings. */
+//
+//  This function is equivalent to strcasecmp() for multibyte strings.
+//
 int
 mbstrcasecmp(const char *s1, const char *s2)
 {
     return mbstrncasecmp(s1, s2, HIGHEST_POSITIVE);
 }
 
-// This function is equivalent to strncasecmp() for multibyte strings.
+//
+//  This function is equivalent to strncasecmp() for multibyte strings.
+//
 s32
 mbstrncasecmp(const s8 *s1, const s8 *s2, u64 n)
 {
+    PROFILE_FUNCTION;
+
     if (use_utf8)
     {
         wchar_t wc1, wc2;

@@ -167,7 +167,9 @@ copy_node(const linestruct *src)
     return dst;
 }
 
-// Duplicate an entire linked list of linestructs.
+//
+//  Duplicate an entire linked list of linestructs.
+//
 linestruct *
 copy_buffer(const linestruct *src)
 {
@@ -207,14 +209,18 @@ renumber_from(linestruct *line)
     }
 }
 
-// Display a warning about a key disabled in view mode.
+//
+//  Display a warning about a key disabled in view mode.
+//
 void
 print_view_warning()
 {
     statusline(AHEM, _("Key is invalid in view mode"));
 }
 
-// When in restricted mode, show a warning and return TRUE.
+//
+//  When in restricted mode, show a warning and return 'true'.
+//
 bool
 in_restricted_mode()
 {
@@ -227,7 +233,9 @@ in_restricted_mode()
     return false;
 }
 
-// Say how the user can achieve suspension (when they typed ^Z).
+//
+//  Say how the user can achieve suspension (when they typed ^Z).
+//
 void
 suggest_ctrlT_ctrlZ()
 {
@@ -238,8 +246,10 @@ suggest_ctrlT_ctrlZ()
     }
 }
 
-// Make sure the cursor is visible, then exit from curses mode, disable
-// bracketed-paste mode, and restore the original terminal settings.
+//
+//  Make sure the cursor is visible, then exit from curses mode, disable
+//  bracketed-paste mode, and restore the original terminal settings.
+//
 void
 restore_terminal()
 {
@@ -256,12 +266,16 @@ restore_terminal()
 void
 finish()
 {
-    // Blank the status bar and (if applicable) the shortcut list.
+    //
+    //  Blank the status bar and (if applicable) the shortcut list.
+    //
     blank_statusbar();
     blank_bottombars();
     wrefresh(footwin);
 
-    // Deallocate the two or three subwindows.
+    //
+    //  Deallocate the two or three subwindows.
+    //
     if (topwin != nullptr)
     {
         delwin(topwin);
@@ -269,7 +283,9 @@ finish()
     delwin(midwin);
     delwin(footwin);
 
-    /* Switch the cursor on, exit from curses, and restore terminal settings. */
+    //
+    //  Switch the cursor on, exit from curses, and restore terminal settings.
+    //
     restore_terminal();
     display_rcfile_errors();
     exit(EXIT_SUCCESS);
@@ -297,7 +313,10 @@ close_and_go()
         update_poshistory();
     }
 
-    // If there is another buffer, close this one; otherwise just terminate.
+    //
+    //  If there is another buffer, close this one.
+    //  otherwise just terminate.
+    //
     if (openfile != openfile->next)
     {
         switch_to_next_buffer();
@@ -305,7 +324,9 @@ close_and_go()
         close_buffer();
         openfile = openfile->next;
 
-        // Adjust the count in the top bar.
+        //
+        //  Adjust the count in the top bar.
+        //
         titlebar(nullptr);
     }
     else
@@ -318,16 +339,21 @@ close_and_go()
     }
 }
 
-// Close the current buffer if it is unmodified; otherwise (when not doing
-// automatic saving), ask the user whether to save it, then close it and
-// exit, or return when the user cancelled.
+//
+//  Close the current buffer if it is unmodified.
+//  otherwise (when not doing automatic saving),
+//  ask the user whether to save it, then close it and exit,
+//  or return when the user cancelled.
+//
 void
 do_exit()
 {
     s32 choice;
 
-    // When unmodified, simply close.  Else, when doing automatic saving
-    // and the file has a name, simply save.  Otherwise, ask the user.
+    //
+    //  When unmodified, simply close.  Else, when doing automatic saving
+    //  and the file has a name, simply save.  Otherwise, ask the user.
+    //
     if (!openfile->modified || ISSET(VIEW_MODE))
     {
         choice = NO;
@@ -454,11 +480,15 @@ die(const s8 *msg, ...)
     exit(EXIT_FAILURE);
 }
 
-/* Initialize the three window portions nano uses. */
+//
+//  Initialize the three window portions nano uses.
+//
 void
 window_init()
 {
-    /* When resizing, first delete the existing windows. */
+    //
+    //  When resizing, first delete the existing windows.
+    //
     if (midwin != nullptr)
     {
         if (topwin != nullptr)
@@ -494,7 +524,9 @@ window_init()
 
         editwinrows = LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0);
 
-        // Set up the normal three subwindows.
+        //
+        //  Set up the normal three subwindows.
+        //
         if (toprows > 0)
         {
             topwin = newwin(toprows, COLS, 0, 0);
@@ -542,7 +574,9 @@ enable_mouse_support()
     oldinterval = mouseinterval(50);
 }
 
-// Switch mouse support on or off, as needed.
+//
+//  Switch mouse support on or off, as needed.
+//
 void
 mouse_init()
 {
@@ -556,7 +590,9 @@ mouse_init()
     }
 }
 
-// Print the usage line for the given option to the screen.
+//
+//  Print the usage line for the given option to the screen.
+//
 void
 print_opt(const s8 *shortflag, const s8 *longflag, const s8 *description)
 {

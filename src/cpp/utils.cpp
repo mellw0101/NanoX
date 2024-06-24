@@ -456,10 +456,12 @@ get_page_start(size_t column)
     }
 }
 
-/* Return the placewewant associated with current_x, i.e. the zero-based
- * column position of the cursor. */
+//
+//  Return the placewewant associated with current_x,
+//  i.e. the zero-based column position of the cursor.
+//
 size_t
-xplustabs(void)
+xplustabs()
 {
     return wideness(openfile->current->data, openfile->current_x);
 }

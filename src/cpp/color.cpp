@@ -397,8 +397,10 @@ check_the_multis(linestruct *line)
     }
 }
 
+//
 // Precalculate the multi-line start and end regex info so we can
 // speed up rendering (with any hope at all...).
+//
 void
 precalc_multicolorinfo()
 {

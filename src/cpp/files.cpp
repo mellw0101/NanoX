@@ -537,22 +537,24 @@ open_buffer(const s8 *filename, bool new_one)
     return TRUE;
 }
 
-/* Mark the current buffer as modified if it isn't already, and
- * then update the title bar to display the buffer's new status. */
+//
+//  Mark the current buffer as modified if it isn't already, and
+//  then update the title bar to display the buffer's new status.
+//
 void
-set_modified(void)
+set_modified()
 {
     if (openfile->modified)
     {
         return;
     }
 
-    openfile->modified = TRUE;
-    titlebar(NULL);
+    openfile->modified = true;
+    titlebar(nullptr);
 
-    if (openfile->lock_filename != NULL)
+    if (openfile->lock_filename != nullptr)
     {
-        write_lockfile(openfile->lock_filename, openfile->filename, TRUE);
+        write_lockfile(openfile->lock_filename, openfile->filename, true);
     }
 }
 
@@ -1412,11 +1414,14 @@ insert_a_file_or(bool execute)
 
     while (true)
     {
+        //
+        //  TRANSLATORS: The next six messages are prompts.
+        //
+
         if (execute)
         {
             if ISSET (MULTIBUFFER)
             {
-                // TRANSLATORS: The next six messages are prompts.
                 msg = _("Command to execute in new buffer");
             }
             else
@@ -1454,8 +1459,10 @@ insert_a_file_or(bool execute)
         response     = do_prompt(execute ? MEXECUTE : MINSERTFILE, given, execute ? &execute_history : nullptr,
                              edit_refresh, msg, operating_dir != nullptr ? operating_dir : "./");
 
-        // If we're in multibuffer mode and the filename or command is
-        // blank, open a new buffer instead of canceling.
+        //
+        //  If we're in multibuffer mode and the filename or command is
+        //  blank, open a new buffer instead of canceling.
+        //
         if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER)))
         {
             statusbar(_("Cancelled"));
@@ -1606,27 +1613,29 @@ insert_a_file_or(bool execute)
 #endif
 }
 
-/* If the current mode of operation allows it, go insert a file. */
+//
+//  If the current mode of operation allows it, go insert a file.
+//
 void
-do_insertfile(void)
+do_insertfile()
 {
     if (!in_restricted_mode())
     {
-        insert_a_file_or(FALSE);
+        insert_a_file_or(false);
     }
 }
 
-#ifndef NANO_TINY
-/* If the current mode of operation allows it, go prompt for a command. */
+//
+//  If the current mode of operation allows it, go prompt for a command.
+//
 void
-do_execute(void)
+do_execute()
 {
     if (!in_restricted_mode())
     {
-        insert_a_file_or(TRUE);
+        insert_a_file_or(true);
     }
 }
-#endif
 
 /* For the given bare path (or path plus filename), return the canonical,
  * absolute path (plus filename) when the path exists, and NULL when not. */
@@ -2477,41 +2486,42 @@ write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writin
     return retval;
 }
 
-/// @name @c write_it_out
-/// @brief
-/// - Write the current buffer (or marked region) to disk.
-/// @param exiting
-/// - Indicates whether the program is exiting.
-/// @param withprompt
-/// - ( true ) - ask for (confirmation of) the filename.
-/// - ( false ) - do not ask for a the filename.
-/// @details
-/// - Write the current buffer (or marked region) to disk.  If exiting is TRUE,
-/// - write the entire buffer regardless of whether the mark is on.  Do not ask
-/// - for a name when withprompt is FALSE (nor when doing save-on-exit and the
-/// - buffer already has a name).
-/// @returns @c s32(int)
-/// - ( 0 ) - if the operation is cancelled.
-/// - ( 1 ) - if the buffer is saved.
-/// - ( 2 ) - if the buffer is discarded.
+//
+//  Write the current buffer (or marked region) to disk.
+//  @param exiting - Indicates whether the program is exiting.
+//  - If exiting is 'true', write the entire buffer regardless of whether the mark is on.
+//  - Do not ask for a name when withprompt is 'false'.
+//  - Nor when doing save-on-exit and the buffer already has a name.
+//  @param withprompt
+//  - ( true ) - ask for (confirmation of) the filename.
+//  - ( false ) - do not ask for a the filename.
+//  @return s32 (int)
+//  - ( 0 ) - if the operation is cancelled.
+//  - ( 1 ) - if the buffer is saved.
+//  - ( 2 ) - if the buffer is discarded.
+//
 s32
 write_it_out(bool exiting, bool withprompt)
 {
+    PROFILE_FUNCTION;
+
     s8 *given;
 
-    // The filename we offer, or what the user typed so far.
+    //
+    //  The filename we offer, or what the user typed so far.
+    //
     bool maychange = (openfile->filename[0] == '\0');
-
-    // Whether it's okay to save the buffer under a different name.
+    //
+    //  Whether it's okay to save the buffer under a different name.
+    //
     kind_of_writing_type method      = OVERWRITE;
     static bool          did_credits = false;
-
-    // Display newlines in filenames as ^J.
+    //
+    //  Display newlines in filenames as ^J.
+    //
     as_an_at = false;
 
     given = copy_of((openfile->mark && !exiting) ? "" : openfile->filename);
-    ///  This is from @c NANO_TINY
-    /// @param given = @c copy_of(openfile->filename);
 
     while (true)
     {
@@ -2775,33 +2785,41 @@ write_it_out(bool exiting, bool withprompt)
     }
 }
 
-/* Write the current buffer to disk, or discard it. */
+//
+//  Write the current buffer to disk, or discard it.
+//
 void
-do_writeout(void)
+do_writeout()
 {
-    /* If the user chose to discard the buffer, close it. */
-    if (write_it_out(FALSE, TRUE) == 2)
+    //
+    //  If the user chose to discard the buffer, close it.
+    //
+    if (write_it_out(false, true) == 2)
     {
         close_and_go();
     }
 }
 
-/* If it has a name, write the current buffer to disk without prompting. */
+//
+//  If it has a name, write the current buffer to disk without prompting.
+//
 void
-do_savefile(void)
+do_savefile()
 {
-    if (write_it_out(FALSE, FALSE) == 2)
+    if (write_it_out(false, false) == 2)
     {
         close_and_go();
     }
 }
 
-/* Convert the tilde notation when the given path begins with ~/ or ~user/.
- * Return an allocated string containing the expanded path. */
-char *
-real_dir_from_tilde(const char *path)
+//
+//  Convert the tilde notation when the given path begins with ~/ or ~user/.
+//  Return an allocated string containing the expanded path.
+//
+s8 *
+real_dir_from_tilde(const s8 *path)
 {
-    char  *tilded, *retval;
+    s8    *tilded, *retval;
     size_t i = 1;
 
     if (*path != '~')
@@ -2822,7 +2840,6 @@ real_dir_from_tilde(const char *path)
     }
     else
     {
-#ifdef HAVE_PWD_H
         const struct passwd *userdata;
 
         tilded = measured_copy(path, i);
@@ -2831,16 +2848,13 @@ real_dir_from_tilde(const char *path)
         {
             userdata = getpwent();
         }
-        while (userdata && strcmp(userdata->pw_name, tilded + 1) != 0);
+        while (userdata && std::strcmp(userdata->pw_name, tilded + 1) != 0);
         endpwent();
 
-        if (userdata != NULL)
+        if (userdata != nullptr)
         {
             tilded = mallocstrcpy(tilded, userdata->pw_dir);
         }
-#else
-        tilded = copy_of("");
-#endif
     }
 
     retval = RE_CAST(char *, nmalloc(strlen(tilded) + strlen(path + i) + 1));
@@ -2851,15 +2865,16 @@ real_dir_from_tilde(const char *path)
     return retval;
 }
 
-#if defined(ENABLE_TABCOMP) || defined(ENABLE_BROWSER)
-/* Our sort routine for file listings.  Sort alphabetically and
- * case-insensitively, and sort directories before filenames. */
-int
+//
+//  Our sort routine for file listings.  Sort alphabetically and
+//  case-insensitively, and sort directories before filenames.
+//
+s32
 diralphasort(const void *va, const void *vb)
 {
     struct stat fileinfo;
-    const char *a      = *(const char *const *)va;
-    const char *b      = *(const char *const *)vb;
+    const s8   *a      = *(const char *const *)va;
+    const s8   *b      = *(const char *const *)vb;
     bool        aisdir = stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode);
     bool        bisdir = stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode);
 
@@ -2877,62 +2892,62 @@ diralphasort(const void *va, const void *vb)
     /* If two names are equivalent when ignoring case, compare them bytewise. */
     if (difference == 0)
     {
-        return strcmp(a, b);
+        return std::strcmp(a, b);
     }
     else
     {
         return difference;
     }
 }
-#endif
 
-#ifdef ENABLE_TABCOMP
-/* Return TRUE when the given path is a directory. */
+//
+//  Return TRUE when the given path is a directory.
+//
 bool
-is_dir(const char *path)
+is_dir(const s8 *path)
 {
-    char       *thepath = real_dir_from_tilde(path);
+    s8         *thepath = real_dir_from_tilde(path);
     struct stat fileinfo;
     bool        retval;
 
     retval = (stat(thepath, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
-
     free(thepath);
 
     return retval;
 }
 
-/* Try to complete the given fragment of given length to a username. */
-char **
-username_completion(const char *morsel, size_t length, size_t *num_matches)
+//
+//  Try to complete the given fragment of given length to a username.
+//
+s8 **
+username_completion(const s8 *morsel, u64 length, u64 *num_matches)
 {
-    char **matches = NULL;
-#    ifdef HAVE_PWD_H
+    s8                 **matches = nullptr;
     const struct passwd *userdata;
 
-    /* Iterate through the entries in the passwd file, and
-     * add each fitting username to the list of matches. */
-    while ((userdata = getpwent()) != NULL)
+    //
+    //  Iterate through the entries in the passwd file, and
+    //  add each fitting username to the list of matches.
+    //
+    while ((userdata = getpwent()) != nullptr)
     {
-        if (strncmp(userdata->pw_name, morsel + 1, length - 1) == 0)
+        if (std::strncmp(userdata->pw_name, morsel + 1, length - 1) == 0)
         {
-#        ifdef ENABLE_OPERATINGDIR
-            /* Skip directories that are outside of the allowed area. */
+            //
+            //  Skip directories that are outside of the allowed area.
+            //
             if (outside_of_confinement(userdata->pw_dir, TRUE))
             {
                 continue;
             }
-#        endif
-            matches               = nrealloc(matches, (*num_matches + 1) * sizeof(char *));
-            matches[*num_matches] = nmalloc(strlen(userdata->pw_name) + 2);
+
+            matches               = static_cast<s8 **>(nrealloc(matches, (*num_matches + 1) * sizeof(char *)));
+            matches[*num_matches] = static_cast<s8 *>(nmalloc(std::strlen(userdata->pw_name) + 2));
             sprintf(matches[*num_matches], "~%s", userdata->pw_name);
             ++(*num_matches);
         }
     }
-
     endpwent();
-#    endif
-
     return matches;
 }
 
@@ -2951,8 +2966,10 @@ username_completion(const char *morsel, size_t length, size_t *num_matches)
     This code may safely be consumed by a BSD or GPL license.
 */
 
-// Try to complete the given fragment to an existing filename.
-char **
+//
+//  Try to complete the given fragment to an existing filename.
+//
+s8 **
 filename_completion(const char *morsel, size_t *num_matches)
 {
     char                *dirname = copy_of(morsel);
@@ -3010,12 +3027,12 @@ filename_completion(const char *morsel, size_t *num_matches)
 
             sprintf(fullname, "%s%s", dirname, entry->d_name);
 
-#    ifdef ENABLE_OPERATINGDIR
+#ifdef ENABLE_OPERATINGDIR
             if (outside_of_confinement(fullname, TRUE))
             {
                 continue;
             }
-#    endif
+#endif
             if (currmenu == MGOTODIR && !is_dir(fullname))
             {
                 continue;
@@ -3035,8 +3052,10 @@ filename_completion(const char *morsel, size_t *num_matches)
     return matches;
 }
 
-// Do tab completion.  'place' is the position of the status-bar cursor, and
-// 'refresh_func' is the function to be called to refresh the edit window.
+//
+//  Do tab completion.  'place' is the position of the status-bar cursor, and
+//  'refresh_func' is the function to be called to refresh the edit window.
+//
 char *
 input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
 {
@@ -3211,4 +3230,3 @@ input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
 
     return morsel;
 }
-#endif /* ENABLE_TABCOMP */
