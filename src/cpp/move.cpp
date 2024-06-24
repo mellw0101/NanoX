@@ -31,23 +31,23 @@ to_last_line(void)
     focusing = FALSE;
 }
 
-/* Determine the actual current chunk and the target column. */
+//
+//  Determine the actual current chunk and the target column.
+//
 void
-get_edge_and_target(size_t *leftedge, size_t *target_column)
+get_edge_and_target(u64 &leftedge, u64 &target_column)
 {
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
-        size_t shim = editwincols * (1 + (tabsize / editwincols));
+        u64 shim = editwincols * (1 + (tabsize / editwincols));
 
-        *leftedge      = leftedge_for(xplustabs(), openfile->current);
-        *target_column = (openfile->placewewant + shim - *leftedge) % editwincols;
+        leftedge      = leftedge_for(xplustabs(), openfile->current);
+        target_column = (openfile->placewewant + shim - leftedge) % editwincols;
     }
     else
-#endif
     {
-        *leftedge      = 0;
-        *target_column = openfile->placewewant;
+        leftedge      = 0;
+        target_column = openfile->placewewant;
     }
 }
 
@@ -123,7 +123,7 @@ do_page_up(void)
     }
     else
 #endif
-        get_edge_and_target(&leftedge, &target_column);
+        get_edge_and_target(leftedge, target_column);
 
     /* Move up the required number of lines or chunks.  If we can't, we're
      * at the top of the file, so put the cursor there and get out. */
@@ -159,11 +159,11 @@ do_page_down(void)
     }
     else
 #endif
-        get_edge_and_target(&leftedge, &target_column);
+        get_edge_and_target(leftedge, target_column);
 
     /* Move down the required number of lines or chunks.  If we can't, we're
      * at the bottom of the file, so put the cursor there and get out. */
-    if (go_forward_chunks(mustmove, &openfile->current, &leftedge) > 0)
+    if (go_forward_chunks(mustmove, openfile->current, leftedge) > 0)
     {
         to_last_line();
         return;
@@ -183,7 +183,7 @@ to_top_row(void)
 {
     size_t leftedge, offset;
 
-    get_edge_and_target(&leftedge, &offset);
+    get_edge_and_target(leftedge, offset);
 
     openfile->current = openfile->edittop;
     leftedge          = openfile->firstcolumn;
@@ -199,12 +199,12 @@ to_bottom_row(void)
 {
     size_t leftedge, offset;
 
-    get_edge_and_target(&leftedge, &offset);
+    get_edge_and_target(leftedge, offset);
 
     openfile->current = openfile->edittop;
     leftedge          = openfile->firstcolumn;
 
-    go_forward_chunks(editwinrows - 1, &openfile->current, &leftedge);
+    go_forward_chunks(editwinrows - 1, openfile->current, leftedge);
     set_proper_index_and_pww(&leftedge, offset, TRUE);
 
     place_the_cursor();
@@ -662,22 +662,28 @@ do_end()
     }
 }
 
-/* Move the cursor to the preceding line or chunk. */
+//
+//  Move the cursor to the preceding line or chunk.
+//
 void
-do_up(void)
+do_up()
 {
+    u64 leftedge      = 0;
+    u64 target_column = 0;
+
     linestruct *was_current = openfile->current;
-    size_t      leftedge, target_column;
 
-    get_edge_and_target(&leftedge, &target_column);
+    get_edge_and_target(leftedge, target_column);
 
-    /* If we can't move up one line or chunk, we're at top of file. */
+    //
+    //  If we can't move up one line or chunk, we're at top of file.
+    //
     if (go_back_chunks(1, &openfile->current, &leftedge) > 0)
     {
         return;
     }
 
-    set_proper_index_and_pww(&leftedge, target_column, FALSE);
+    set_proper_index_and_pww(&leftedge, target_column, false);
 
     if (openfile->cursor_row == 0 && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP)))
     {
@@ -688,21 +694,27 @@ do_up(void)
         edit_redraw(was_current, FLOWING);
     }
 
-    /* <Up> should not change placewewant, so restore it. */
+    //
+    //  <Up> should not change placewewant, so restore it.
+    //
     openfile->placewewant = leftedge + target_column;
 }
 
-/* Move the cursor to next line or chunk. */
+//
+//  Move the cursor to next line or chunk.
+//
 void
-do_down(void)
+do_down()
 {
     linestruct *was_current = openfile->current;
     size_t      leftedge, target_column;
 
-    get_edge_and_target(&leftedge, &target_column);
+    get_edge_and_target(leftedge, target_column);
 
-    /* If we can't move down one line or chunk, we're at bottom of file. */
-    if (go_forward_chunks(1, &openfile->current, &leftedge) > 0)
+    //
+    //  If we can't move down one line or chunk, we're at bottom of file.
+    //
+    if (go_forward_chunks(1, openfile->current, leftedge) > 0)
     {
         return;
     }
@@ -723,13 +735,16 @@ do_down(void)
     openfile->placewewant = leftedge + target_column;
 }
 
-#if !defined(NANO_TINY) || defined(ENABLE_HELP)
-/* Scroll up one line or chunk without moving the cursor textwise. */
+//
+//  Scroll up one line or chunk without moving the cursor textwise.
+//
 void
-do_scroll_up(void)
+do_scroll_up()
 {
-    /* When the top of the file is onscreen, we can't scroll. */
-    if (openfile->edittop->prev == NULL && openfile->firstcolumn == 0)
+    //
+    //  When the top of the file is onscreen, we can't scroll.
+    //
+    if (openfile->edittop->prev == nullptr && openfile->firstcolumn == 0)
     {
         return;
     }
@@ -745,41 +760,41 @@ do_scroll_up(void)
     }
 }
 
-/* Scroll down one line or chunk without moving the cursor textwise. */
+//
+//  Scroll down one line or chunk without moving the cursor textwise.
+//
 void
-do_scroll_down(void)
+do_scroll_down()
 {
     if (openfile->cursor_row == 0)
     {
         do_down();
     }
 
-    if (editwinrows > 1 &&
-        (openfile->edittop->next != NULL
-#    ifndef NANO_TINY
-         ||
-         (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) > chunk_for(openfile->firstcolumn, openfile->edittop)))
-#    endif
-             ))
+    if (editwinrows > 1 && (openfile->edittop->next != nullptr ||
+                            (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
+                                                 chunk_for(openfile->firstcolumn, openfile->edittop)))))
+    {
         edit_scroll(FORWARD);
+    }
 }
-#endif /* !NANO_TINY || ENABLE_HELP */
 
-/* Move left one character. */
+//
+//  Move left one character.
+//
 void
-do_left(void)
+do_left()
 {
     linestruct *was_current = openfile->current;
 
     if (openfile->current_x > 0)
     {
         openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-#ifdef ENABLE_UTF8
+
         while (openfile->current_x > 0 && is_zerowidth(openfile->current->data + openfile->current_x))
         {
             openfile->current_x = step_left(openfile->current->data, openfile->current_x);
         }
-#endif
     }
     else if (openfile->current != openfile->filetop)
     {
@@ -790,22 +805,23 @@ do_left(void)
     edit_redraw(was_current, FLOWING);
 }
 
-/* Move right one character. */
+//
+//  Move right one character.
+//
 void
-do_right(void)
+do_right()
 {
     linestruct *was_current = openfile->current;
 
     if (openfile->current->data[openfile->current_x] != '\0')
     {
         openfile->current_x = step_right(openfile->current->data, openfile->current_x);
-#ifdef ENABLE_UTF8
+
         while (openfile->current->data[openfile->current_x] != '\0' &&
                is_zerowidth(openfile->current->data + openfile->current_x))
         {
             openfile->current_x = step_right(openfile->current->data, openfile->current_x);
         }
-#endif
     }
     else if (openfile->current != openfile->filebot)
     {

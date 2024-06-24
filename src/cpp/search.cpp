@@ -1023,7 +1023,7 @@ goto_line_and_column(ssize_t line, ssize_t column, bool retain_answer, bool inte
             linestruct *currentline = openfile->current;
             size_t      leftedge    = leftedge_for(xplustabs(), openfile->current);
 
-            rows_from_tail = (editwinrows / 2) - go_forward_chunks(editwinrows / 2, &currentline, &leftedge);
+            rows_from_tail = (editwinrows / 2) - go_forward_chunks(editwinrows / 2, currentline, leftedge);
         }
         else
 #endif

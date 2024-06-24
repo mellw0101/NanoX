@@ -388,7 +388,9 @@ void to_prev_anchor(void);
 void to_next_anchor(void);
 #endif
 
-/* Most functions in text.c. */
+//
+//  Most functions in 'text.cpp'.
+//
 void    do_mark(void);
 void    do_tab(void);
 void    do_indent(void);
@@ -416,7 +418,9 @@ void    count_lines_words_and_characters();
 void    do_verbatim_input();
 void    complete_a_word();
 
-/// All functions in @c utils.cpp
+//
+//  All functions in utils.cpp
+//
 void        get_homedir();
 const s8   *tail(const s8 *path);
 char       *concatenate(const char *path, const char *name);
@@ -476,7 +480,7 @@ int  update_line(linestruct *line, size_t index);
 int  update_softwrapped_line(linestruct *line);
 bool line_needs_update(const size_t old_column, const size_t new_column);
 int  go_back_chunks(int nrows, linestruct **line, size_t *leftedge);
-int  go_forward_chunks(int nrows, linestruct **line, size_t *leftedge);
+s32  go_forward_chunks(s32 nrows, linestruct *&line, u64 &leftedge);
 bool less_than_a_screenful(size_t was_lineno, size_t was_leftedge);
 void edit_scroll(bool direction);
 u64  get_softwrap_breakpoint(const s8 *linedata, size_t leftedge, bool &kickoff, bool &end_of_line);

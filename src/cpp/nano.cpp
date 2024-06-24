@@ -19,6 +19,8 @@
 #include <termios.h>
 #include <unistd.h>
 
+using namespace Mlib;
+
 //
 //  Used to store the user's original mouse click interval.
 //
@@ -32,20 +34,16 @@ static termios original_state;
 //
 static struct sigaction oldaction, newaction;
 
-///
-///  @name
-///    -  @c make_new_node
-///
-///  @brief
-///    -  Create a new linestruct node.
-///    -  Note that we do NOT set @p prevnode->next.
-///
-///  @param prevnode [linestruct *const &]
-///    -  The previous node in the linked list.
-///
-///  @returns ( linestruct * )
-///    -  A pointer to the new node.
-///
+//
+//  -  Create a new linestruct node.
+//  -  Note that we do NOT set 'prevnode->next'.
+//  -
+//  -  prevnode:
+//  -  The previous node in the linked list.
+//  -
+//  -  returns ( linestruct * )
+//  -  A pointer to the new node.
+//
 linestruct *
 make_new_node(linestruct *prevnode)
 {
@@ -69,13 +67,17 @@ splice_node(linestruct *afterthis, linestruct *newnode)
 {
     newnode->next = afterthis->next;
     newnode->prev = afterthis;
+
     if (afterthis->next != nullptr)
     {
         afterthis->next->prev = newnode;
     }
+
     afterthis->next = newnode;
 
-    // Update filebot when inserting a node at the end of file.
+    //
+    //  Update filebot when inserting a node at the end of file.
+    //
     if (openfile && openfile->filebot == afterthis)
     {
         openfile->filebot = newnode;
@@ -1355,7 +1357,7 @@ do_mouse()
         }
         else
         {
-            go_forward_chunks(row_count, &openfile->current, &leftedge);
+            go_forward_chunks(row_count, openfile->current, leftedge);
         }
 
         openfile->current_x = actual_x(openfile->current->data, actual_last_column(leftedge, click_col));
@@ -1584,8 +1586,9 @@ process_a_keystroke()
     //
     static u64 depth = 0;
 
-    linestruct      *was_mark    = openfile->mark;
-    static bool      give_a_hint = true;
+    linestruct      *was_mark              = openfile->mark;
+    static bool      give_a_hint           = true;
+    bool             was_open_bracket_char = false;
     const keystruct *shortcut;
     functionptrtype  function;
 
@@ -1665,15 +1668,64 @@ process_a_keystroke()
                 puddle = static_cast<s8 *>(nmalloc(capacity));
             }
             puddle[depth++] = static_cast<s8>(input);
+
+            //
+            //  TODO : Add closing brackets to the input buffer,
+            //  if the input is '(', '[', or '{'.
+            //
+            NETLOGGER << "input: " << input << NETLOG_ENDL;
+
+            //
+            //  Check for a bracketed input start.
+            //  Meaning a char that has a corresponding closing bracket.
+            //
+            if (input == '(' || input == '[' || input == '{' || input == '<' || input == '\'' || input == '"')
+            {
+                //
+                //  Insert the corresponding closing bracket character
+                //
+                if (input == '<')
+                {
+                    if (openfile->current->data[0] == '#')
+                    {
+                        puddle[depth++] = '>';
+
+                        //
+                        //  Set a flag to remember that an open bracket character was
+                        //  inserted into the input buffer.
+                        //
+                        was_open_bracket_char = true;
+                    }
+                }
+                else
+                {
+                    puddle[depth++] = static_cast<s8>(input == '('    ? ')'
+                                                      : input == '['  ? ']'
+                                                      : input == '"'  ? '"'
+                                                      : input == '\'' ? '\''
+                                                                      : '}');
+                    //
+                    //  Set a flag to remember that an open bracket character was
+                    //  inserted into the input buffer.
+                    //
+                    was_open_bracket_char = true;
+                }
+            }
         }
     }
 
-    // If there are gathered bytes and we have a command or no other key codes
-    // are waiting, it's time to insert these bytes into the edit buffer.
+    //
+    //  If there are gathered bytes and we have a command or no other key codes
+    //  are waiting, it's time to insert these bytes into the edit buffer.
+    //
     if (depth > 0 && (function || waiting_keycodes() == 0))
     {
         puddle[depth] = '\0';
         inject(puddle, depth);
+        if (was_open_bracket_char)
+        {
+            do_left();
+        }
         depth = 0;
     }
 
@@ -1776,13 +1828,14 @@ process_a_keystroke()
 s32
 main(s32 argc, s8 **argv)
 {
-    Mlib::Profile::setupReportGeneration();
-    LOUT.setOutputFile("/home/mellw/NanoX.log");
+    Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
+
+    LOUT.setOutputFile("/home/mellw/.NanoX.log");
     LoutI << "Starting nano" << '\n';
 
-    NETLOGGER->enable();
-    NETLOGGER->init("192.168.1.173", 23);
-    NETLOGGER->send_to_server("Starting nano");
+    NETLOGGER.enable();
+    NETLOGGER.init("192.168.0.36", 23);
+    NETLOGGER.send_to_server("Starting nano");
 
     s32 stdin_flags;
     //
@@ -1826,11 +1879,11 @@ main(s32 argc, s8 **argv)
     //  If setting the locale is successful and it uses UTF-8, we will
     //  need to use the multibyte functions for text processing.
     //
-    if (setlocale(LC_ALL, "") && std::strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
+    if (std::setlocale(LC_ALL, "") && std::strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
     {
         utf8_init();
     }
-    setlocale(LC_ALL, "");
+    std::setlocale(LC_ALL, "");
 
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
@@ -1923,7 +1976,7 @@ main(s32 argc, s8 **argv)
     //
     //  Curses needs TERM; if it is unset, try falling back to a VT220.
     //
-    if (getenv("TERM") == nullptr)
+    if (std::getenv("TERM") == nullptr)
     {
         putenv((s8 *)"TERM=vt220");
         setenv("TERM", "vt220", 1);
@@ -2586,7 +2639,7 @@ main(s32 argc, s8 **argv)
         process_a_keystroke();
     }
 
-    LOUT.Destroy();
-    NETLOGGER->destroy();
+    LOUT.destroy();
+    NETLOGGER.destroy();
     return 0;
 }

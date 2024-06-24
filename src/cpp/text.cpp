@@ -1,6 +1,7 @@
 /// @file text.cpp
 #include "../include/prototypes.h"
 
+#include <Mlib/Debug.h>
 #include <Mlib/Profile.h>
 #include <cerrno>
 #include <cstring>
@@ -12,6 +13,8 @@
 #if defined(__APPLE__) && !defined(st_mtim)
 #    define st_mtim st_mtimespec
 #endif
+
+using namespace Mlib;
 
 /* Toggle the mark. */
 void
@@ -435,14 +438,13 @@ comment_line(undo_type action, linestruct *line, const char *comment_seq)
 //  TODO : FIX SO COMMENTS ARE PLACED AT CURSOR POSITION NOT AT THE BEGINNING OF THE LINE
 //
 void
-do_comment(void)
+do_comment()
 {
-    const char *comment_seq = GENERAL_COMMENT_CHARACTER;
+    const s8   *comment_seq = GENERAL_COMMENT_CHARACTER;
     undo_type   action      = UNCOMMENT;
     linestruct *top, *bot, *line;
-    bool        empty, all_empty = TRUE;
+    bool        empty, all_empty = true;
 
-#ifdef ENABLE_COLOR
     if (openfile->syntax)
     {
         comment_seq = openfile->syntax->comment;
@@ -453,7 +455,6 @@ do_comment(void)
         statusline(AHEM, _("Commenting is not supported for this file type"));
         return;
     }
-#endif
 
     /* Determine which lines to work on. */
     get_range(top, bot);
@@ -479,10 +480,12 @@ do_comment(void)
         all_empty = all_empty && empty;
     }
 
-    /* If all selected lines are blank, we comment them. */
+    //
+    //  If all selected lines are blank, we comment them.
+    //
     action = all_empty ? COMMENT : action;
 
-    add_undo(action, NULL);
+    add_undo(action, nullptr);
 
     /* Store the comment sequence used for the operation, because it could
      * change when the file name changes; we need to know what it was. */
@@ -538,9 +541,8 @@ handle_comment_action(undostruct *u, bool undoing, bool add_comment)
     refresh_needed = TRUE;
 }
 
-#ifndef NANO_TINY
-#    define redo_paste undo_cut
-#    define undo_paste redo_cut
+#define redo_paste undo_cut
+#define undo_paste redo_cut
 
 /* Undo a cut, or redo a paste. */
 void
@@ -799,7 +801,9 @@ do_undo()
     }
 }
 
-/* Redo the last thing(s) we undid. */
+//
+//  Redo the last thing(s) we undid.
+//
 void
 do_redo(void)
 {
@@ -887,7 +891,7 @@ do_redo(void)
             line->data = data;
             goto_line_posx(u->head_lineno, u->head_x);
             break;
-#    ifdef ENABLE_WRAPPING
+#ifdef ENABLE_WRAPPING
         case SPLIT_BEGIN :
             openfile->current_undo = u;
             while (openfile->current_undo->type != SPLIT_END)
@@ -901,7 +905,7 @@ do_redo(void)
         case SPLIT_END :
             redidmsg = _("addition");
             break;
-#    endif
+#endif
         case ZAP :
             redidmsg = _("erasure");
             redo_cut(u);
@@ -949,7 +953,7 @@ do_redo(void)
             handle_indent_action(u, FALSE, FALSE);
             redidmsg = _("unindent");
             break;
-#    ifdef ENABLE_COMMENT
+#ifdef ENABLE_COMMENT
         case COMMENT :
             handle_comment_action(u, FALSE, TRUE);
             redidmsg = _("comment");
@@ -958,7 +962,7 @@ do_redo(void)
             handle_comment_action(u, FALSE, FALSE);
             redidmsg = _("uncomment");
             break;
-#    endif
+#endif
         default :
             break;
     }
@@ -975,7 +979,7 @@ do_redo(void)
 
     openfile->totsize = u->newsize;
 
-#    ifdef ENABLE_COLOR
+#ifdef ENABLE_COLOR
     if (u->type <= REPLACE)
     {
         check_the_multis(openfile->current);
@@ -984,7 +988,7 @@ do_redo(void)
     {
         recook = TRUE;
     }
-#    endif
+#endif
 
     /* When at the point where the buffer was last saved, unset "Modified". */
     if (openfile->current_undo == openfile->last_saved)
@@ -997,7 +1001,6 @@ do_redo(void)
         set_modified();
     }
 }
-#endif /* !NANO_TINY */
 
 //
 //  Break the current line at the cursor position.
@@ -1008,6 +1011,19 @@ do_redo(void)
 void
 do_enter()
 {
+    Profile::AutoTimer timer("do_enter");
+
+    //
+    //  Check the char at the 'openfile->current_x - 1' is valid
+    //
+    if (openfile->current->data[openfile->current_x - 1])
+    {
+        s8 c = openfile->current->data[openfile->current_x - 1];
+        NETLOGGER << c << NETLOG_ENDL;
+        if (c == '{')
+        {}
+    }
+
     linestruct *newnode    = make_new_node(openfile->current);
     linestruct *sampleline = openfile->current;
 
@@ -1057,6 +1073,7 @@ do_enter()
         //  Copy the whitespace from the sample line to the new one.
         //
         std::strncpy(newnode->data, sampleline->data, extra);
+
         //
         //  If there were only blanks before the cursor, trim them.
         //
@@ -1099,7 +1116,6 @@ do_enter()
     focusing       = false;
 }
 
-#ifndef NANO_TINY
 /* Discard undo items that are newer than the given one, or all if NULL. */
 void
 discard_until(const undostruct *thisitem)
@@ -1154,7 +1170,7 @@ add_undo(undo_type action, const char *message)
     /* Blow away any undone items. */
     discard_until(openfile->current_undo);
 
-#    ifdef ENABLE_WRAPPING
+#ifdef ENABLE_WRAPPING
     /* If some action caused automatic long-line wrapping, insert the
      * SPLIT_BEGIN item underneath that action's undo item.  Otherwise,
      * just add the new item to the top of the undo stack. */
@@ -1166,7 +1182,7 @@ add_undo(undo_type action, const char *message)
         openfile->undotop->next = u;
     }
     else
-#    endif
+#endif
     {
         u->next                = openfile->undotop;
         openfile->undotop      = u;
@@ -1226,11 +1242,11 @@ add_undo(undo_type action, const char *message)
                 u->xflags |= INCLUDED_LAST_LINE;
             }
             break;
-#    ifdef ENABLE_WRAPPING
+#ifdef ENABLE_WRAPPING
         case SPLIT_BEGIN :
         case SPLIT_END :
             break;
-#    endif
+#endif
         case CUT_TO_EOF :
             u->xflags |= (INCLUDED_LAST_LINE | CURSOR_WAS_AT_HEAD);
             if (openfile->current->has_anchor)
@@ -1292,10 +1308,10 @@ add_undo(undo_type action, const char *message)
             break;
         case INDENT :
         case UNINDENT :
-#    ifdef ENABLE_COMMENT
+#ifdef ENABLE_COMMENT
         case COMMENT :
         case UNCOMMENT :
-#    endif
+#endif
             break;
         default :
             die("Bad undo type -- please report a bug\n");
@@ -1401,11 +1417,11 @@ update_undo(undo_type action)
             break;
         case REPLACE :
             break;
-#    ifdef ENABLE_WRAPPING
+#ifdef ENABLE_WRAPPING
         case SPLIT_BEGIN :
         case SPLIT_END :
             break;
-#    endif
+#endif
         case ZAP :
         case CUT_TO_EOF :
         case CUT :
@@ -1460,9 +1476,7 @@ update_undo(undo_type action)
             die("Bad undo type -- please report a bug\n");
     }
 }
-#endif /* !NANO_TINY */
 
-#ifdef ENABLE_WRAPPING
 /* When the current line is overlong, hard-wrap it at the furthest possible
  * whitespace character, and prepend the excess part to an "overflow" line
  * (when it already exists, otherwise create one). */
@@ -1473,14 +1487,14 @@ do_wrap(void)
     /* The line to be wrapped, if needed and possible. */
     size_t line_len = strlen(line->data);
     /* The length of this line. */
-#    ifdef ENABLE_JUSTIFY
+#ifdef ENABLE_JUSTIFY
     size_t quot_len = quote_length(line->data);
     /* The length of the quoting part of this line. */
     size_t lead_len = quot_len + indent_length(line->data + quot_len);
     /* The length of the quoting part plus subsequent whitespace. */
-#    else
+#else
     size_t lead_len = indent_length(line->data);
-#    endif
+#endif
     size_t cursor_x = openfile->current_x;
     /* The current cursor position, for comparison with the wrap point. */
     ssize_t wrap_loc;
@@ -1509,17 +1523,17 @@ do_wrap(void)
         return;
     }
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     add_undo(SPLIT_BEGIN, NULL);
-#    endif
-#    ifdef ENABLE_JUSTIFY
+#endif
+#ifdef ENABLE_JUSTIFY
     bool autowhite = ISSET(AUTOINDENT);
 
     if (quot_len > 0)
     {
         UNSET(AUTOINDENT);
     }
-#    endif
+#endif
 
     /* The remainder is the text that will be wrapped to the next line. */
     remainder   = line->data + wrap_loc;
@@ -1537,24 +1551,24 @@ do_wrap(void)
         /* If the remainder doesn't end in a blank, add a space. */
         if (!is_blank_char(remainder + step_left(remainder, rest_length)))
         {
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
             add_undo(ADD, NULL);
-#    endif
+#endif
             line->data               = RE_CAST(char *, nrealloc(line->data, line_len + 2));
             line->data[line_len]     = ' ';
             line->data[line_len + 1] = '\0';
             rest_length++;
             openfile->totsize++;
             openfile->current_x++;
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
             update_undo(ADD);
-#    endif
+#endif
         }
 
         /* Join the next line to this one. */
         expunge(DEL);
 
-#    ifdef ENABLE_JUSTIFY
+#ifdef ENABLE_JUSTIFY
         /* If the leading part of the current line equals the leading part of
          * what was the next line, then strip this second leading part. */
         if (strncmp(line->data, line->data + openfile->current_x, lead_len) == 0)
@@ -1564,7 +1578,7 @@ do_wrap(void)
                 expunge(DEL);
             }
         }
-#    endif
+#endif
         /* Remove any extra blanks. */
         while (is_blank_char(&line->data[openfile->current_x]))
         {
@@ -1592,15 +1606,15 @@ do_wrap(void)
     /* Now split the line. */
     do_enter();
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     /* When wrapping a partially visible line, adjust start-of-screen. */
     if (openfile->edittop == line && openfile->firstcolumn > 0 && cursor_x >= wrap_loc)
     {
-        go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
+        go_forward_chunks(1, openfile->edittop, openfile->firstcolumn);
     }
-#    endif
+#endif
 
-#    ifdef ENABLE_JUSTIFY
+#ifdef ENABLE_JUSTIFY
     /* If the original line has quoting, copy it to the spillage line. */
     if (quot_len > 0)
     {
@@ -1613,16 +1627,16 @@ do_wrap(void)
 
         openfile->current_x += lead_len;
         openfile->totsize += lead_len;
-#        ifndef NANO_TINY
+#    ifndef NANO_TINY
         free(openfile->undotop->strdata);
         update_undo(ENTER);
-#        endif
+#    endif
         if (autowhite)
         {
             SET(AUTOINDENT);
         }
     }
-#    endif
+#endif
 
     openfile->spillage_line = openfile->current;
 
@@ -1638,69 +1652,81 @@ do_wrap(void)
 
     openfile->placewewant = xplustabs();
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     add_undo(SPLIT_END, NULL);
-#    endif
+#endif
 
     refresh_needed = TRUE;
 }
-#endif /* ENABLE_WRAPPING */
 
-#if defined(ENABLE_HELP) || defined(ENABLED_WRAPORJUSTIFY)
-/* Find the last blank in the given piece of text such that the display width
- * to that point is at most (goal + 1).  When there is no such blank, then find
- * the first blank.  Return the index of the last blank in that group of blanks.
- * When snap_at_nl is TRUE, a newline character counts as a blank too. */
-ssize_t
-break_line(const char *textstart, ssize_t goal, bool snap_at_nl)
+//
+//  Find the last blank in the given piece of text such that the display width
+//  to that point is at most (goal + 1).  When there is no such blank, then find
+//  the first blank.  Return the index of the last blank in that group of blanks.
+//  When snap_at_nl is TRUE, a newline character counts as a blank too.
+//
+s64
+break_line(const s8 *textstart, s64 goal, bool snap_at_nl)
 {
-    const char *lastblank = NULL;
-    /* The point where the last blank was found, if any. */
-    const char *pointer = textstart;
-    /* An iterator through the given line of text. */
-    size_t column = 0;
-    /* The column number that corresponds to the position of the pointer. */
+    //
+    //  The point where the last blank was found, if any.
+    //
+    const s8 *lastblank = nullptr;
+    //
+    //  An iterator through the given line of text.
+    //
+    const s8 *pointer = textstart;
+    //
+    //  The column number that corresponds to the position of the pointer.
+    //
+    u64 column = 0;
 
-    /* Skip over leading whitespace, where a line should never be broken. */
+    //
+    //  Skip over leading whitespace, where a line should never be broken.
+    //
     while (*pointer != '\0' && is_blank_char(pointer))
     {
         pointer += advance_over(pointer, column);
     }
 
-    /* Find the last blank that does not overshoot the target column.
-     * When treating a help text, do not break in the keystrokes area. */
-    while (*pointer != '\0' && ((ssize_t)column <= goal))
+    //
+    //  Find the last blank that does not overshoot the target column.
+    //  When treating a help text, do not break in the keystrokes area.
+    //
+    while (*pointer != '\0' && (static_cast<s64>(column) <= goal))
     {
         if (is_blank_char(pointer) && (!inhelp || column > 17 || goal < 40))
         {
             lastblank = pointer;
         }
-#    ifdef ENABLE_HELP
         else if (snap_at_nl && *pointer == '\n')
         {
             lastblank = pointer;
             break;
         }
-#    endif
         pointer += advance_over(pointer, column);
     }
 
-    /* If the whole line displays shorter than goal, we're done. */
-    if ((ssize_t)column <= goal)
+    //
+    //  If the whole line displays shorter than goal, we're done.
+    //
+    if (static_cast<s64>(column) <= goal)
     {
         return (pointer - textstart);
     }
 
-#    ifdef ENABLE_HELP
-    /* When wrapping a help text and no blank was found, force a line break. */
-    if (snap_at_nl && lastblank == NULL)
+    //
+    //  When wrapping a help text and no blank was found, force a line break.
+    //
+    if (snap_at_nl && lastblank == nullptr)
     {
         return step_left(textstart, pointer - textstart);
     }
-#    endif
 
-    /* If no blank was found within the goal width, seek one after it. */
-    while (lastblank == NULL)
+    //
+    //  If no blank was found within the goal width, seek one after it.
+    //
+    while (lastblank == nullptr)
     {
         if (*pointer == '\0')
         {
@@ -1719,18 +1745,18 @@ break_line(const char *textstart, ssize_t goal, bool snap_at_nl)
 
     pointer = lastblank + char_length(lastblank);
 
-    /* Skip any consecutive blanks after the last blank. */
+    //
+    //  Skip any consecutive blanks after the last blank.
+    //
     while (*pointer != '\0' && is_blank_char(pointer))
     {
         lastblank = pointer;
         pointer += char_length(pointer);
     }
 
-    return (lastblank - textstart);
+    return static_cast<s64>(lastblank - textstart);
 }
-#endif /* ENABLE_HELP || ENABLED_WRAPORJUSTIFY */
 
-#if !defined(NANO_TINY) || defined(ENABLED_WRAPORJUSTIFY)
 /* Return the length of the indentation part of the given line.  The
  * "indentation" of a line is the leading consecutive whitespace. */
 size_t
@@ -1745,16 +1771,17 @@ indent_length(const char *line)
 
     return (line - start);
 }
-#endif
 
-#ifdef ENABLE_JUSTIFY
-/* Return the length of the quote part of the given line.  The "quote part"
- * of a line is the largest initial substring matching the quoting regex. */
-size_t
-quote_length(const char *line)
+//
+//  Return the length of the quote part of the given line.
+//  The 'quote part' of a line is the largest initial
+//  substring matching the quoting regex.
+//
+u64
+quote_length(const s8 *line)
 {
     regmatch_t matches;
-    int        rc = regexec(&quotereg, line, 1, &matches, 0);
+    s32        rc = regexec(&quotereg, line, 1, &matches, 0);
 
     if (rc == REG_NOMATCH || matches.rm_so == (regoff_t)-1)
     {
@@ -1765,24 +1792,26 @@ quote_length(const char *line)
 }
 
 /* The maximum depth of recursion.  This must be an even number. */
-#    define RECURSION_LIMIT 222
+constexpr auto RECURSION_LIMIT = 222;
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
 bool
-begpar(const linestruct *const line, int depth)
+begpar(const linestruct *const line, s32 depth)
 {
-    size_t quot_len, indent_len, prev_dent_len;
+    u64 quot_len      = 0;
+    u64 indent_len    = 0;
+    u64 prev_dent_len = 0;
 
     /* The very first line counts as a BOP, even when it contains no text. */
-    if (line->prev == NULL)
+    if (line->prev == nullptr)
     {
-        return TRUE;
+        return true;
     }
 
     /* If recursion is going too deep, just say it's not a BOP. */
     if (depth > RECURSION_LIMIT)
     {
-        return FALSE;
+        return false;
     }
 
     quot_len   = quote_length(line->data);
@@ -1824,46 +1853,60 @@ begpar(const linestruct *const line, int depth)
     return !begpar(line->prev, depth + 1);
 }
 
-/* Return TRUE when the given line is part of a paragraph: when it
- * contains something more than quoting and leading whitespace. */
+//
+//  Return TRUE when the given line is part of a paragraph.
+//  A line is part of a paragraph if it contains something more
+//  than quoting and leading whitespace.
+//
 bool
 inpar(const linestruct *const line)
 {
-    size_t quot_len   = quote_length(line->data);
-    size_t indent_len = indent_length(line->data + quot_len);
+    u64 quot_len   = quote_length(line->data);
+    u64 indent_len = indent_length(line->data + quot_len);
 
     return (line->data[quot_len + indent_len] != '\0');
 }
 
-/* Find the first occurring paragraph in the forward direction.  Return TRUE
- * when a paragraph was found, and FALSE otherwise.  Furthermore, return the
- * first line and the number of lines of the paragraph. */
+//
+//  Find the first occurring paragraph in the forward direction.
+//  Return 'true' when a paragraph was found, and 'false' otherwise.
+//  Furthermore, return the first line and the number of lines of the paragraph.
+//
 bool
-find_paragraph(linestruct **firstline, size_t *const linecount)
+find_paragraph(linestruct *&firstline, u64 &linecount)
 {
-    linestruct *line = *firstline;
+    linestruct *line = firstline;
 
-    /* When not currently in a paragraph, move forward to a line that is. */
-    while (!inpar(line) && line->next != NULL)
+    //
+    //  When not currently in a paragraph, move forward to a line that is.
+    //
+    while (!inpar(line) && line->next != nullptr)
     {
         line = line->next;
     }
 
-    *firstline = line;
+    firstline = line;
 
-    /* Move down to the last line of the paragraph (if any). */
+    //
+    //  Move down to the last line of the paragraph (if any).
+    //
     do_para_end(&line);
 
-    /* When not in a paragraph now, there aren't any paragraphs left. */
+    //
+    //  When not in a paragraph now, there aren't any paragraphs left.
+    //
     if (!inpar(line))
     {
-        return FALSE;
+        return false;
     }
 
-    /* We found a paragraph; determine its number of lines. */
-    *linecount = line->lineno - (*firstline)->lineno + 1;
+    //
+    //  We found a paragraph.
+    //  Now we determine its number of lines.
+    //
+    linecount = line->lineno - firstline->lineno + 1;
 
-    return TRUE;
+    return true;
 }
 
 /* Concatenate into a single line all the lines of the paragraph that starts at
@@ -1891,9 +1934,9 @@ concat_paragraph(linestruct *line, size_t count)
 
         line->data = RE_CAST(char *, nrealloc(line->data, line_len + next_line_len - next_lead_len + 1));
         strcat(line->data, next_line->data + next_lead_len);
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
         line->has_anchor |= next_line->has_anchor;
-#    endif
+#endif
         unlink_node(next_line);
         count--;
     }
@@ -2031,13 +2074,13 @@ rewrap_paragraph(linestruct **line, char *lead_string, size_t lead_len)
         *line                    = (*line)->next;
     }
 
-#    ifdef ENABLE_COLOR
+#ifdef ENABLE_COLOR
     /* If the new paragraph exceeds the viewport, recalculate the multidata. */
     if ((*line)->lineno >= editwinrows)
     {
         recook = TRUE;
     }
-#    endif
+#endif
 
     /* When possible, go to the line after the rewrapped paragraph. */
     if ((*line)->next != NULL)
@@ -2081,8 +2124,8 @@ justify_paragraph(linestruct **line, size_t count)
     free(lead_string);
 }
 
-#    define ONE_PARAGRAPH FALSE
-#    define WHOLE_BUFFER  TRUE
+#define ONE_PARAGRAPH FALSE
+#define WHOLE_BUFFER  TRUE
 
 /* Justify the current paragraph, or the entire buffer when whole_buffer is
  * TRUE.  But if the mark is on, justify only the marked text instead. */
@@ -2103,7 +2146,7 @@ justify_text(bool whole_buffer)
     /* The old cutbuffer, so we can justify in the current cutbuffer. */
     linestruct *jusline;
     /* The line that we're justifying in the current cutbuffer. */
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     bool before_eol = FALSE;
     /* Whether the end of a marked region is before the end of its line. */
     char *primary_lead = NULL;
@@ -2218,7 +2261,7 @@ justify_text(bool whole_buffer)
         before_eol = endline->data[end_x] != '\0';
     }
     else
-#    endif /* NANO_TINY */
+#endif /* NANO_TINY */
     {
         /* When justifying the entire buffer, start at the top.  Otherwise, when
          * in a paragraph but not at its beginning, move back to its first line. */
@@ -2234,12 +2277,12 @@ justify_text(bool whole_buffer)
         /* Find the first line of the paragraph(s) to be justified.  If the
          * search fails, there is nothing to justify, and we will be on the
          * last line of the file, so put the cursor at the end of it. */
-        if (!find_paragraph(&openfile->current, &linecount))
+        if (!find_paragraph(openfile->current, linecount))
         {
             openfile->current_x = strlen(openfile->filebot->data);
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
             discard_until(openfile->undotop->next);
-#    endif
+#endif
             refresh_needed = TRUE;
             return;
         }
@@ -2278,13 +2321,13 @@ justify_text(bool whole_buffer)
         }
     }
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     add_undo(CUT, NULL);
-#    endif
+#endif
     /* Do the equivalent of a marked cut into an empty cutbuffer. */
     cutbuffer = NULL;
     extract_segment(startline, start_x, endline, end_x);
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     update_undo(CUT);
 
     if (openfile->mark)
@@ -2338,7 +2381,7 @@ justify_text(bool whole_buffer)
         focusing = FALSE;
     }
     else
-#    endif
+#endif
     {
         /* Prepare to justify the text we just put in the cutbuffer. */
         jusline = cutbuffer;
@@ -2349,11 +2392,11 @@ justify_text(bool whole_buffer)
         /* When justifying the entire buffer, find and justify all paragraphs. */
         if (whole_buffer)
         {
-            while (find_paragraph(&jusline, &linecount))
+            while (find_paragraph(jusline, linecount))
             {
                 justify_paragraph(&jusline, linecount);
 
-                if (jusline->next == NULL)
+                if (jusline->next == nullptr)
                 {
                     break;
                 }
@@ -2361,7 +2404,7 @@ justify_text(bool whole_buffer)
         }
     }
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     /* Wipe an anchor on the first paragraph if it was only inherited. */
     if (whole_buffer && !openfile->mark && !cutbuffer->has_anchor)
     {
@@ -2369,10 +2412,10 @@ justify_text(bool whole_buffer)
     }
 
     add_undo(PASTE, NULL);
-#    endif
+#endif
     /* Do the equivalent of a paste of the justified text. */
     ingraft_buffer(cutbuffer);
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     update_undo(PASTE);
 
     /* After justifying a backward-marked text, swap mark and cursor. */
@@ -2399,7 +2442,7 @@ justify_text(bool whole_buffer)
         statusline(REMARK, _("Justified selection"));
     }
     else
-#    endif  // !NANO_TINY
+#endif  // !NANO_TINY
         if (whole_buffer)
         {
             statusline(REMARK, _("Justified file"));
@@ -2433,34 +2476,33 @@ do_full_justify(void)
 {
     justify_text(WHOLE_BUFFER);
     ran_a_tool = TRUE;
-#    ifdef ENABLE_COLOR
+#ifdef ENABLE_COLOR
     recook = TRUE;
-#    endif
+#endif
 }
-#endif /* ENABLE_JUSTIFY */
 
-#if defined(ENABLE_SPELLER) || defined(ENABLE_LINTER) || defined(ENABLE_FORMATTER)
-/* Set up an argument list for executing the given command. */
+//
+//  Set up an argument list for executing the given command.
+//  This is the original version of the function
+//
 void
-construct_argument_list(char ***arguments, char *command, char *filename)
+construct_argument_list(s8 **&arguments, s8 *command, s8 *filename)
 {
-    char *copy_of_command = copy_of(command);
-    char *element         = strtok(copy_of_command, " ");
-    int   count           = 2;
+    s8 *copy_of_command = copy_of(command);
+    s8 *element         = std::strtok(copy_of_command, " ");
+    s32 count           = 2;
 
-    while (element != NULL)
+    while (element != nullptr)
     {
-        *arguments              = RE_CAST(s8 **, nrealloc(*arguments, ++count * sizeof(s8 *)));
-        (*arguments)[count - 3] = element;
-        element                 = strtok(NULL, " ");
+        arguments            = static_cast<s8 **>(nrealloc(arguments, ++count * sizeof(s8 *)));
+        arguments[count - 3] = element;
+        element              = std ::strtok(nullptr, " ");
     }
 
-    (*arguments)[count - 2] = filename;
-    (*arguments)[count - 1] = NULL;
+    arguments[count - 2] = filename;
+    arguments[count - 1] = nullptr;
 }
-#endif
 
-#if defined(ENABLE_SPELLER) || defined(ENABLE_FORMATTER)
 /* Open the specified file, and if that succeeds, remove the text of the marked
  * region or of the entire buffer and read the file contents into its place. */
 bool
@@ -2477,9 +2519,9 @@ replace_buffer(const char *filename, undo_type action, const char *operation)
         return FALSE;
     }
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     add_undo(COUPLE_BEGIN, operation);
-#    endif
+#endif
 
     /* When replacing the whole buffer, start cutting at the top. */
     if (action == CUT_TO_EOF)
@@ -2490,14 +2532,14 @@ replace_buffer(const char *filename, undo_type action, const char *operation)
 
     cutbuffer = NULL;
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     /* Cut either the marked region or the whole buffer. */
     add_undo(action, NULL);
     do_snip(openfile->mark != NULL, openfile->mark == NULL, FALSE);
     update_undo(action);
-#    else
+#else
     do_snip(FALSE, TRUE, FALSE);
-#    endif
+#endif
 
     /* Discard what was cut. */
     free_lines(cutbuffer);
@@ -2506,17 +2548,20 @@ replace_buffer(const char *filename, undo_type action, const char *operation)
     /* Insert the spell-checked file into the cleared area. */
     read_file(stream, descriptor, filename, TRUE);
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     add_undo(COUPLE_END, operation);
-#    endif
+#endif
     return TRUE;
 }
 
-/* Execute the given program, with the given temp file as last argument. */
+//
+//  Execute the given program, with the given temp file as last argument.
+//
 void
-treat(char *tempfile_name, char *theprogram, bool spelling)
+treat(s8 *tempfile_name, s8 *theprogram, bool spelling)
 {
-#    if defined(HAVE_FORK) && defined(HAVE_WAIT)
+    Profile::AutoTimer timer("treat");
+
     ssize_t       was_lineno = openfile->current->lineno;
     size_t        was_pww    = openfile->placewewant;
     size_t        was_x      = openfile->current_x;
@@ -2529,28 +2574,32 @@ treat(char *tempfile_name, char *theprogram, bool spelling)
     int           program_status, errornumber;
     bool          replaced = FALSE;
 
-    /* Stat the temporary file.  If that succeeds and its size is zero,
-     * there is nothing to do; otherwise, store its time of modification. */
+    //
+    //  Stat the temporary file.  If that succeeds and its size is zero,
+    //  there is nothing to do; otherwise, store its time of modification.
+    //
     if (stat(tempfile_name, &fileinfo) == 0)
     {
         if (fileinfo.st_size == 0)
         {
-#        ifndef NANO_TINY
             if (spelling && openfile->mark)
             {
                 statusline(AHEM, _("Selection is empty"));
             }
             else
-#        endif
+            {
                 statusline(AHEM, _("Buffer is empty"));
+            }
             return;
         }
 
-        timestamp_sec  = (long)fileinfo.st_mtim.tv_sec;
-        timestamp_nsec = (long)fileinfo.st_mtim.tv_nsec;
+        timestamp_sec  = static_cast<long>(fileinfo.st_mtim.tv_sec);
+        timestamp_nsec = static_cast<long>(fileinfo.st_mtim.tv_nsec);
     }
 
-    /* The spell checker needs the screen, so exit from curses mode. */
+    //
+    //  The spell checker needs the screen, so exit from curses mode.
+    //
     if (spelling)
     {
         endwin();
@@ -2560,7 +2609,7 @@ treat(char *tempfile_name, char *theprogram, bool spelling)
         statusbar(_("Invoking formatter..."));
     }
 
-    construct_argument_list(&arguments, theprogram, tempfile_name);
+    construct_argument_list(arguments, theprogram, tempfile_name);
 
     /* Fork a child process and run the given program in it. */
     if ((thepid = fork()) == 0)
@@ -2620,7 +2669,6 @@ treat(char *tempfile_name, char *theprogram, bool spelling)
         return;
     }
 
-#        ifndef NANO_TINY
     /* Replace the marked text (or entire text) with the corrected text. */
     if (spelling && openfile->mark)
     {
@@ -2644,10 +2692,11 @@ treat(char *tempfile_name, char *theprogram, bool spelling)
         openfile->mark = line_from_number(was_mark_lineno);
     }
     else
-#        endif
+    {
         replaced = replace_buffer(tempfile_name, CUT_TO_EOF,
                                   /* TRANSLATORS: The next two go with Undid/Redid messages. */
                                   (spelling ? N_("spelling correction") : N_("formatting")));
+    }
 
     /* Go back to the old position. */
     goto_line_posx(was_lineno, was_x);
@@ -2658,10 +2707,8 @@ treat(char *tempfile_name, char *theprogram, bool spelling)
 
     if (replaced)
     {
-#        ifndef NANO_TINY
         openfile->filetop->has_anchor = FALSE;
         update_undo(COUPLE_END);
-#        endif
     }
 
     openfile->placewewant = was_pww;
@@ -2675,11 +2722,8 @@ treat(char *tempfile_name, char *theprogram, bool spelling)
     {
         statusline(REMARK, _("Buffer has been processed"));
     }
-#    endif
 }
-#endif /* ENABLE_SPELLER || ENABLE_FORMATTER */
 
-#ifdef ENABLE_SPELLER
 /* Let the user edit the misspelled word.  Return FALSE if the user cancels. */
 bool
 fix_spello(const char *word)
@@ -2690,7 +2734,7 @@ fix_spello(const char *word)
     size_t      was_x           = openfile->current_x;
     bool        proceed         = FALSE;
     int         result;
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     bool        right_side_up = (openfile->mark && mark_is_before_cursor());
     linestruct *top, *bot;
     size_t      top_x, bot_x;
@@ -2710,7 +2754,7 @@ fix_spello(const char *word)
         }
     }
     else
-#    endif
+#endif
     /* Otherwise, start from the top of the file. */
     {
         openfile->current   = openfile->filetop;
@@ -2733,10 +2777,10 @@ fix_spello(const char *word)
         spotlighted    = TRUE;
         light_from_col = xplustabs();
         light_to_col   = light_from_col + breadth(word);
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
         linestruct *saved_mark = openfile->mark;
         openfile->mark         = NULL;
-#    endif
+#endif
         edit_refresh();
 
         put_cursor_at_end_of_answer();
@@ -2748,9 +2792,9 @@ fix_spello(const char *word)
 
         spotlighted = FALSE;
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
         openfile->mark = saved_mark;
-#    endif
+#endif
 
         /* If a replacement was given, go through all occurrences. */
         if (proceed && strcmp(word, answer) != 0)
@@ -2763,7 +2807,7 @@ fix_spello(const char *word)
         }
     }
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     if (openfile->mark)
     {
         /* Restore the (compensated) end points of the marked region. */
@@ -2781,7 +2825,7 @@ fix_spello(const char *word)
         }
     }
     else
-#    endif
+#endif
     {
         /* Restore the (compensated) cursor position. */
         openfile->current   = was_current;
@@ -2802,7 +2846,7 @@ fix_spello(const char *word)
 void
 do_int_speller(const char *tempfile_name)
 {
-#    if defined(HAVE_FORK) && defined(HAVE_WAITPID)
+#if defined(HAVE_FORK) && defined(HAVE_WAITPID)
     char    *misspellings, *pointer, *oneword;
     long     pipesize;
     size_t   buffersize, bytesread, totalread;
@@ -3018,7 +3062,7 @@ do_int_speller(const char *tempfile_name)
     {
         statusline(REMARK, _("Finished checking spelling"));
     }
-#    endif
+#endif
 }
 
 /* Spell check the current file.  If an alternate spell checker is
@@ -3045,13 +3089,13 @@ do_spell(void)
         return;
     }
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
     if (openfile->mark)
     {
         okay = write_region_to_file(temp_name, stream, TEMPORARY, OVERWRITE);
     }
     else
-#    endif
+#endif
         okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
 
     if (!okay)
@@ -3080,14 +3124,15 @@ do_spell(void)
     currmenu   = MMOST;
     shift_held = TRUE;
 }
-#endif /* ENABLE_SPELLER */
 
-#ifdef ENABLE_LINTER
-/* Run a linting program on the current buffer. */
+//
+//  Run a linting program on the current buffer.
+//
 void
-do_linter(void)
+do_linter()
 {
-#    if defined(HAVE_FORK) && defined(HAVE_WAITPID)
+    Profile::AutoTimer timer("do_linter");
+
     char       *lintings, *pointer, *onelint;
     long        pipesize;
     size_t      buffersize, bytesread, totalread;
@@ -3111,9 +3156,8 @@ do_linter(void)
         return;
     }
 
-#        ifndef NANO_TINY
     openfile->mark = NULL;
-#        endif
+
     edit_refresh();
 
     if (openfile->modified)
@@ -3160,7 +3204,7 @@ do_linter(void)
         close(lint_fd[0]);
         close(lint_fd[1]);
 
-        construct_argument_list(&lintargs, openfile->syntax->linter, openfile->filename);
+        construct_argument_list(lintargs, openfile->syntax->linter, openfile->filename);
 
         /* Start the linter program; we are using $PATH. */
         execvp(lintargs[0], lintargs);
@@ -3196,14 +3240,14 @@ do_linter(void)
     /* Read in the returned syntax errors. */
     totalread  = 0;
     buffersize = pipesize + 1;
-    lintings   = nmalloc(buffersize);
+    lintings   = static_cast<s8 *>(nmalloc(buffersize));
     pointer    = lintings;
 
     while ((bytesread = read(lint_fd[0], pointer, pipesize)) > 0)
     {
         totalread += bytesread;
         buffersize += pipesize;
-        lintings = nrealloc(lintings, buffersize);
+        lintings = static_cast<s8 *>(nrealloc(lintings, buffersize));
         pointer  = lintings + totalread;
     }
 
@@ -3257,7 +3301,7 @@ do_linter(void)
 
                             parsesuccess  = TRUE;
                             tmplint       = curlint;
-                            curlint       = nmalloc(sizeof(lintstruct));
+                            curlint       = static_cast<lintstruct *>(nmalloc(sizeof(lintstruct)));
                             curlint->next = NULL;
                             curlint->prev = tmplint;
                             if (curlint->prev != NULL)
@@ -3322,7 +3366,6 @@ do_linter(void)
         if (stat(curlint->filename, &lintfileinfo) != -1 &&
             (openfile->statinfo == NULL || openfile->statinfo->st_ino != lintfileinfo.st_ino))
         {
-#        ifdef ENABLE_MULTIBUFFER
             const openfilestruct *started_at = openfile;
 
             openfile = openfile->next;
@@ -3334,17 +3377,16 @@ do_linter(void)
 
             if (openfile->statinfo == NULL || openfile->statinfo->st_ino != lintfileinfo.st_ino)
             {
-                char *msg = nmalloc(1024 + strlen(curlint->filename));
-                int   choice;
-
+                s8 *msg = static_cast<s8 *>(nmalloc(1024 + strlen(curlint->filename)));
                 sprintf(msg,
                         _("This message is for unopened file %s,"
                           " open it in a new buffer?"),
                         curlint->filename);
-                choice   = ask_user(YESORNO, msg);
-                currmenu = MLINTER;
+
+                s32 choice = ask_user(YESORNO, msg);
                 free(msg);
 
+                currmenu = MLINTER;
                 if (choice == CANCEL)
                 {
                     statusbar(_("Cancelled"));
@@ -3356,7 +3398,6 @@ do_linter(void)
                 }
                 else
                 {
-#        endif
                     char       *dontwantfile = copy_of(curlint->filename);
                     lintstruct *restlint     = NULL;
 
@@ -3404,10 +3445,8 @@ do_linter(void)
                         curlint = restlint;
                         continue;
                     }
-#        ifdef ENABLE_MULTIBUFFER
                 }
             }
-#        endif
         }
 
         if (tmplint != curlint)
@@ -3418,9 +3457,7 @@ do_linter(void)
             openfile->current_x = actual_x(openfile->current->data, openfile->placewewant);
             titlebar(NULL);
             adjust_viewport(CENTERING);
-#        ifdef ENABLE_LINENUMBERS
             confirm_margin();
-#        endif
             edit_refresh();
             statusline(NOTICE, "%s", curlint->msg);
             bottombars(MLINTER);
@@ -3432,12 +3469,11 @@ do_linter(void)
 
         kbinput = get_kbinput(footwin, VISIBLE);
 
-#        ifndef NANO_TINY
         if (kbinput == KEY_WINCH)
         {
             continue;
         }
-#        endif
+
         function = func_from_key(kbinput);
         tmplint  = curlint;
 
@@ -3506,9 +3542,7 @@ do_linter(void)
     lastmessage = VACUUM;
     currmenu    = MMOST;
     titlebar(NULL);
-#    endif
 }
-#endif /* ENABLE_LINTER */
 
 //
 //  Run a manipulation program on the contents of the buffer.
@@ -3516,7 +3550,7 @@ do_linter(void)
 //  TODO : ( do formatter )
 //
 void
-do_formatter(void)
+do_formatter()
 {
     FILE *stream;
     char *temp_name;
@@ -3557,7 +3591,6 @@ do_formatter(void)
     free(temp_name);
 }
 
-#ifndef NANO_TINY
 /* Our own version of "wc".  Note that the character count is in
  * multibyte characters instead of single-byte characters. */
 void
@@ -3620,7 +3653,6 @@ count_lines_words_and_characters(void)
                P_("line", "lines", lines), words, P_("word", "words", words), chars,
                P_("character", "characters", chars));
 }
-#endif /* !NANO_TINY */
 
 // Get verbatim input.  This is used to insert a Unicode character by its
 // hexadecimal code, which is typed in by the user.  The function returns

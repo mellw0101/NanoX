@@ -3774,7 +3774,7 @@ go_back_chunks(int nrows, linestruct **line, size_t *leftedge)
 
             if (chunk >= i)
             {
-                return go_forward_chunks(chunk - i, line, leftedge);
+                return go_forward_chunks(chunk - i, *line, *leftedge);
             }
 
             if (*line == openfile->filetop)
@@ -3802,55 +3802,61 @@ go_back_chunks(int nrows, linestruct **line, size_t *leftedge)
     return i;
 }
 
-/* Try to move down nrows softwrapped chunks from the given line and the
- * given column (leftedge).  After moving, leftedge will be set to the
- * starting column of the current chunk.  Return the number of chunks we
- * couldn't move down, which will be zero if we completely succeeded. */
-int
-go_forward_chunks(int nrows, linestruct **line, size_t *leftedge)
+//
+//  Try to move down nrows softwrapped chunks from
+//  the given line and the given column (leftedge).
+//  After moving, leftedge will be set to the
+//  starting column of the current chunk.
+//  Return the number of chunks we couldn't move down,
+//  which will be zero if we completely succeeded.
+//
+s32
+go_forward_chunks(s32 nrows, linestruct *&line, u64 &leftedge)
 {
-    int i;
+    s32 i;
 
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
-        size_t current_leftedge = *leftedge;
-        bool   kickoff          = TRUE;
+        u64  current_leftedge = leftedge;
+        bool kickoff          = true;
 
         /* Advance through the requested number of chunks. */
         for (i = nrows; i > 0; i--)
         {
-            bool end_of_line = FALSE;
+            bool end_of_line = false;
 
-            current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, kickoff, end_of_line);
+            current_leftedge = get_softwrap_breakpoint(line->data, current_leftedge, kickoff, end_of_line);
 
             if (!end_of_line)
             {
                 continue;
             }
 
-            if (*line == openfile->filebot)
+            if (line == openfile->filebot)
             {
                 break;
             }
 
-            *line            = (*line)->next;
+            line             = line->next;
             current_leftedge = 0;
-            kickoff          = TRUE;
+            kickoff          = true;
         }
 
-        /* Only change leftedge when we actually could move. */
+        //
+        //  Only change leftedge when we actually could move.
+        //
         if (i < nrows)
         {
-            *leftedge = current_leftedge;
+            leftedge = current_leftedge;
         }
     }
     else
-#endif
-        for (i = nrows; i > 0 && (*line)->next != NULL; i--)
+    {
+        for (i = nrows; i > 0 && line->next; i--)
         {
-            *line = (*line)->next;
+            line = line->next;
         }
+    }
 
     return i;
 }
@@ -3931,7 +3937,7 @@ edit_scroll(bool direction)
     }
     else
     {
-        go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
+        go_forward_chunks(1, openfile->edittop, openfile->firstcolumn);
     }
 
     /* Actually scroll the text of the edit window one row up or down. */
@@ -3953,7 +3959,7 @@ edit_scroll(bool direction)
     /* If we scrolled forward, the bottom row needs to be redrawn. */
     if (direction == FORWARD)
     {
-        go_forward_chunks(editwinrows - nrows, &line, &leftedge);
+        go_forward_chunks(editwinrows - nrows, line, leftedge);
     }
 
 #ifndef NANO_TINY
@@ -4238,7 +4244,7 @@ current_is_below_screen(void)
         /* If current[current_x] is more than a screen's worth of lines after
          * edittop at column firstcolumn, it's below the screen. */
         return (
-            go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 &&
+            go_forward_chunks(editwinrows - 1 - SHIM, line, leftedge) == 0 &&
             (line->lineno < openfile->current->lineno ||
              (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
     }
