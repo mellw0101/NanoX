@@ -10,12 +10,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#if defined(__APPLE__) && !defined(st_mtim)
-#    define st_mtim st_mtimespec
-#endif
-
-using namespace Mlib;
-
 /* Toggle the mark. */
 void
 do_mark(void)
@@ -78,23 +72,31 @@ do_tab()
 void
 indent_a_line(linestruct *line, s8 *indentation)
 {
-    size_t length     = strlen(line->data);
-    size_t indent_len = strlen(indentation);
+    PROFILE_FUNCTION;
 
-    // If the requested indentation is empty, don't change the line.
+    u64 length     = std::strlen(line->data);
+    u64 indent_len = std::strlen(indentation);
+
+    //
+    //  If the requested indentation is empty, don't change the line.
+    //
     if (indent_len == 0)
     {
         return;
     }
 
-    // Add the fabricated indentation to the beginning of the line. */
-    line->data = RE_CAST(char *, nrealloc(line->data, length + indent_len + 1));
-    memmove(line->data + indent_len, line->data, length + 1);
-    memcpy(line->data, indentation, indent_len);
+    //
+    //  Add the fabricated indentation to the beginning of the line.
+    //
+    line->data = static_cast<s8 *>(nrealloc(line->data, length + indent_len + 1));
+    std::memmove(line->data + indent_len, line->data, length + 1);
+    std::memcpy(line->data, indentation, indent_len);
 
     openfile->totsize += indent_len;
 
-    // Compensate for the change in the current line. */
+    //
+    //  Compensate for the change in the current line.
+    //
     if (line == openfile->mark && openfile->mark_x > 0)
     {
         openfile->mark_x += indent_len;
@@ -154,7 +156,7 @@ do_indent()
         //
         if (ISSET(TABS_TO_SPACES))
         {
-            memset(indentation, ' ', tabsize);
+            std::memset(indentation, ' ', tabsize);
             indentation[tabsize] = '\0';
         }
         else
@@ -164,7 +166,7 @@ do_indent()
         }
     }
 
-    add_undo(INDENT, NULL);
+    add_undo(INDENT, nullptr);
 
     //
     //  Go through each of the lines, adding an indent to the non-empty ones,
@@ -172,7 +174,7 @@ do_indent()
     //
     for (line = top; line != bot->next; line = line->next)
     {
-        char *real_indent = (line->data[0] == '\0') ? (char *)"" : indentation;
+        s8 *real_indent = (line->data[0] == '\0') ? const_cast<s8 *>("") : indentation;
 
         indent_a_line(line, real_indent);
         update_multiline_undo(line->lineno, real_indent);
@@ -182,8 +184,8 @@ do_indent()
 
     set_modified();
     ensure_firstcolumn_is_aligned();
-    refresh_needed = TRUE;
-    shift_held     = TRUE;
+    refresh_needed = true;
+    shift_held     = true;
 }
 
 //
@@ -2638,17 +2640,19 @@ construct_argument_list(s8 **&arguments, s8 *command, s8 *filename)
     {
         arguments            = static_cast<s8 **>(nrealloc(arguments, ++count * sizeof(s8 *)));
         arguments[count - 3] = element;
-        element              = std ::strtok(nullptr, " ");
+        element              = std::strtok(nullptr, " ");
     }
 
     arguments[count - 2] = filename;
     arguments[count - 1] = nullptr;
 }
 
-/* Open the specified file, and if that succeeds, remove the text of the marked
- * region or of the entire buffer and read the file contents into its place. */
+//
+//  Open the specified file, and if that succeeds, remove the text of the marked
+//  region or of the entire buffer and read the file contents into its place.
+//
 bool
-replace_buffer(const char *filename, undo_type action, const char *operation)
+replace_buffer(const s8 *filename, undo_type action, const s8 *operation)
 {
     linestruct *was_cutbuffer = cutbuffer;
     int         descriptor;
@@ -2697,24 +2701,25 @@ replace_buffer(const char *filename, undo_type action, const char *operation)
 }
 
 //
-//  Execute the given program, with the given temp file as last argument.
+//  Execute the given program,
+//  with the given temp file as last argument.
 //
 void
 treat(s8 *tempfile_name, s8 *theprogram, bool spelling)
 {
-    Profile::AutoTimer timer("treat");
+    PROFILE_FUNCTION;
 
-    ssize_t       was_lineno = openfile->current->lineno;
-    size_t        was_pww    = openfile->placewewant;
-    size_t        was_x      = openfile->current_x;
-    bool          was_at_eol = (openfile->current->data[openfile->current_x] == '\0');
-    struct stat   fileinfo;
-    long          timestamp_sec  = 0;
-    long          timestamp_nsec = 0;
-    static char **arguments      = NULL;
-    pid_t         thepid;
-    int           program_status, errornumber;
-    bool          replaced = FALSE;
+    s64         was_lineno = openfile->current->lineno;
+    u64         was_pww    = openfile->placewewant;
+    u64         was_x      = openfile->current_x;
+    bool        was_at_eol = (openfile->current->data[openfile->current_x] == '\0');
+    struct stat fileinfo;
+    long        timestamp_sec  = 0;
+    long        timestamp_nsec = 0;
+    static s8 **arguments      = NULL;
+    pid_t       thepid;
+    int         program_status, errornumber;
+    bool        replaced = FALSE;
 
     //
     //  Stat the temporary file.  If that succeeds and its size is zero,
@@ -3275,7 +3280,7 @@ do_linter()
 {
     PROFILE_FUNCTION;
 
-    char       *lintings, *pointer, *onelint;
+    s8         *lintings, *pointer, *onelint;
     long        pipesize;
     size_t      buffersize, bytesread, totalread;
     bool        parsesuccess = FALSE;

@@ -292,64 +292,57 @@ void do_scroll_down(void);
 void do_left(void);
 void do_right(void);
 
-/* Most functions in nano.c. */
+//
+//  Most functions in 'nano.cpp'.
+//
 linestruct *make_new_node(linestruct *prevnode);
+linestruct *copy_buffer(const linestruct *src);
 void        splice_node(linestruct *afterthis, linestruct *newnode);
 void        unlink_node(linestruct *line);
 void        delete_node(linestruct *line);
-linestruct *copy_buffer(const linestruct *src);
 void        free_lines(linestruct *src);
 void        renumber_from(linestruct *line);
 void        print_view_warning(void);
 bool        in_restricted_mode(void);
-#ifndef NANO_TINY
-void suggest_ctrlT_ctrlZ(void);
-#endif
-void finish(void);
-void close_and_go(void);
-void do_exit(void);
-void die(const char *msg, ...);
-void window_init(void);
-void install_handler_for_Ctrl_C(void);
-void restore_handler_for_Ctrl_C(void);
-#ifndef NANO_TINY
-void reconnect_and_store_state(void);
-#endif
-void handle_hupterm(int signal);
-#if !defined(DEBUG)
-void handle_crash(s32 signal);
-#endif
-void suspend_nano(int signal);
-void do_suspend(void);
-void continue_nano(int signal);
-#if !defined(NANO_TINY) || defined(ENABLE_SPELLER) || defined(ENABLE_COLOR)
-void block_sigwinch(bool blockit);
-#endif
-#ifndef NANO_TINY
-void handle_sigwinch(int signal);
-void regenerate_screen(void);
-#endif
-void disable_kb_interrupt(void);
-void enable_kb_interrupt(void);
-void disable_flow_control(void);
-void enable_flow_control(void);
-void terminal_init(void);
-#ifdef ENABLE_LINENUMBERS
-void confirm_margin(void);
-#endif
-void unbound_key(int code);
-bool changes_something(functionptrtype f);
-void inject(char *burst, size_t count);
+void        suggest_ctrlT_ctrlZ(void);
+void        finish(void);
+void        close_and_go(void);
+void        do_exit(void);
+void        die(const char *msg, ...);
+void        window_init(void);
+void        install_handler_for_Ctrl_C(void);
+void        restore_handler_for_Ctrl_C(void);
+void        reconnect_and_store_state(void);
+void        handle_hupterm(int signal);
+void        handle_crash(s32 signal);
+void        suspend_nano(int signal);
+void        do_suspend(void);
+void        continue_nano(int signal);
+void        block_sigwinch(bool blockit);
+void        handle_sigwinch(int signal);
+void        regenerate_screen(void);
+void        disable_kb_interrupt(void);
+void        enable_kb_interrupt(void);
+void        disable_flow_control(void);
+void        enable_flow_control(void);
+void        terminal_init(void);
+void        confirm_margin(void);
+void        unbound_key(int code);
+bool        changes_something(functionptrtype f);
+void        inject(char *burst, u64 count);
 
-/* Most functions in prompt.c. */
-size_t get_statusbar_page_start(size_t base, size_t column);
-void   put_cursor_at_end_of_answer(void);
-void   add_or_remove_pipe_symbol_from_answer(void);
-int    do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg,
-                 ...);
-s32    ask_user(bool withall, const s8 *question);
+//
+//  Most functions in 'prompt.cpp'.
+//
+u64  get_statusbar_page_start(u64 base, u64 column);
+void put_cursor_at_end_of_answer();
+void add_or_remove_pipe_symbol_from_answer();
+s32  do_prompt(s32 menu, const s8 *provided, linestruct **history_list, void (*refresh_func)(), const s8 *msg, ...);
+s32  ask_user(bool withall, const s8 *question);
 
-/* Most functions in rcfile.c. */
+//
+//  Most functions in 'rcfile.cpp'.
+//
 void       set_interface_color(s32 element, s8 *combotext);
 void       display_rcfile_errors();
 void       jot_error(const s8 *msg, ...);
@@ -426,8 +419,8 @@ bool        parse_line_column(const s8 *str, s64 *line, s64 *column);
 void        recode_NUL_to_LF(char *string, u64 length);
 u64         recode_LF_to_NUL(char *string);
 void        free_chararray(char **array, u64 len);
-bool        is_separate_word(u64 position, u64 length, const char *buf);
-const s8   *strstrwrapper(const char *haystack, const char *needle, const char *start);
+bool        is_separate_word(u64 position, u64 length, const s8 *buf);
+const s8   *strstrwrapper(const s8 *haystack, const s8 *needle, const s8 *start);
 void       *nmalloc(const u64 howmuch);
 void       *nrealloc(void *ptr, const u64 howmuch);
 s8         *measured_copy(const s8 *string, u64 count);
