@@ -35,11 +35,16 @@ do_mark(void)
     }
 }
 
-// Insert a tab.  Or, if --tabstospaces is in effect, insert the number
-// of spaces that a tab would normally take up at this position.
+//
+//  Insert a tab.
+//  Or, if --tabstospaces is in effect, insert the number
+//  of spaces that a tab would normally take up at this position.
+//
 void
 do_tab()
 {
+    PROFILE_FUNCTION;
+
     // When <Tab> is pressed while a region is marked, indent the region.
     if (openfile->mark && openfile->mark != openfile->current)
     {
@@ -67,10 +72,11 @@ do_tab()
     }
 }
 
-#ifndef NANO_TINY
-// Add an indent to the given line.
+//
+//  Add an indent to the given line.
+//
 void
-indent_a_line(linestruct *line, char *indentation)
+indent_a_line(linestruct *line, s8 *indentation)
 {
     size_t length     = strlen(line->data);
     size_t indent_len = strlen(indentation);
@@ -100,40 +106,52 @@ indent_a_line(linestruct *line, char *indentation)
     }
 }
 
-// Indent the current line (or the marked lines) by tabsize columns.
-// This inserts either a tab character or a tab's worth of spaces,
-// depending on whether --tabstospaces is in effect.
+//
+//  Indent the current line (or the marked lines) by tabsize columns.
+//  This inserts either a tab character or a tab's worth of spaces,
+//  depending on whether --tabstospaces is in effect.
+//
 void
-do_indent(void)
+do_indent()
 {
-    linestruct *top, *bot, *line;
-    char       *indentation;
+    PROFILE_FUNCTION;
 
-    // Use either all the marked lines or just the current line. */
+    linestruct *top, *bot, *line;
+    s8         *indentation;
+
+    //
+    //  Use either all the marked lines or just the current line.
+    //
     get_range(top, bot);
 
-    // Skip any leading empty lines.
+    //
+    //  Skip any leading empty lines.
+    //
     while (top != bot->next && top->data[0] == '\0')
     {
         top = top->next;
     }
 
-    // If all lines are empty, there is nothing to do.
+    //
+    //  If all lines are empty,
+    //  there is nothing to do.
+    //
     if (top == bot->next)
     {
         return;
     }
 
-    indentation = RE_CAST(char *, nmalloc(tabsize + 1));
+    indentation = static_cast<s8 *>(nmalloc(tabsize + 1));
 
-#    ifdef ENABLE_COLOR
     if (openfile->syntax && openfile->syntax->tabstring)
     {
         indentation = mallocstrcpy(indentation, openfile->syntax->tabstring);
     }
     else
-#    endif
-        // Set the indentation to either a bunch of spaces or a single tab. */
+    {
+        //
+        //  Set the indentation to either a bunch of spaces or a single tab.
+        //
         if (ISSET(TABS_TO_SPACES))
         {
             memset(indentation, ' ', tabsize);
@@ -144,11 +162,14 @@ do_indent(void)
             indentation[0] = '\t';
             indentation[1] = '\0';
         }
+    }
 
     add_undo(INDENT, NULL);
 
-    // Go through each of the lines, adding an indent to the non-empty ones,
-    // and recording whatever was added in the undo item.
+    //
+    //  Go through each of the lines, adding an indent to the non-empty ones,
+    //  and recording whatever was added in the undo item.
+    //
     for (line = top; line != bot->next; line = line->next)
     {
         char *real_indent = (line->data[0] == '\0') ? (char *)"" : indentation;
@@ -165,17 +186,20 @@ do_indent(void)
     shift_held     = TRUE;
 }
 
+//
 // Return the number of bytes of whitespace at the start of the given text,
 // but at most a tab's worth.
-size_t
-length_of_white(const char *text)
+//
+u64
+length_of_white(const s8 *text)
 {
-    size_t white_count = 0;
+    PROFILE_FUNCTION;
 
-#    ifdef ENABLE_COLOR
+    u64 white_count = 0;
+
     if (openfile->syntax && openfile->syntax->tabstring)
     {
-        size_t thelength = strlen(openfile->syntax->tabstring);
+        u64 thelength = std::strlen(openfile->syntax->tabstring);
 
         while (text[white_count] == openfile->syntax->tabstring[white_count])
         {
@@ -187,9 +211,8 @@ length_of_white(const char *text)
 
         white_count = 0;
     }
-#    endif
 
-    while (TRUE)
+    while (true)
     {
         if (*text == '\t')
         {
@@ -210,10 +233,14 @@ length_of_white(const char *text)
     }
 }
 
+//
 // Adjust the positions of mark and cursor when they are on the given line.
+//
 void
-compensate_leftward(linestruct *line, size_t leftshift)
+compensate_leftward(linestruct *line, u64 leftshift)
 {
+    PROFILE_FUNCTION;
+
     if (line == openfile->mark)
     {
         if (openfile->mark_x < leftshift)
@@ -240,24 +267,33 @@ compensate_leftward(linestruct *line, size_t leftshift)
     }
 }
 
-// Remove an indent from the given line.
+//
+//  Remove an indent from the given line.
+//
 void
-unindent_a_line(linestruct *line, size_t indent_len)
+unindent_a_line(linestruct *line, u64 indent_len)
 {
-    size_t length = strlen(line->data);
+    u64 length = std::strlen(line->data);
 
-    /* If the indent is empty, don't change the line. */
+    //
+    //  If the indent is empty, don't change the line.
+    //
     if (indent_len == 0)
     {
         return;
     }
 
-    /* Remove the first tab's worth of whitespace from this line. */
-    memmove(line->data, line->data + indent_len, length - indent_len + 1);
+    //
+    //  Remove the first tab's worth of whitespace from this line.
+    //
+    std::memmove(line->data, line->data + indent_len, length - indent_len + 1);
 
     openfile->totsize -= indent_len;
 
-    /* Adjust the positions of mark and cursor, when they are affected. */
+    //
+    //  Adjust the positions of mark and cursor,
+    //  when they are affected.
+    //
     compensate_leftward(line, indent_len);
 }
 
@@ -346,7 +382,6 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 
     refresh_needed = TRUE;
 }
-#endif /* !NANO_TINY */
 
 //
 //  Test whether the given line can be uncommented, or add or remove a comment,
@@ -356,15 +391,17 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 //  TODO : ( comment_line ) Change key to toggle comment
 //
 bool
-
-comment_line(undo_type action, linestruct *line, const char *comment_seq)
+comment_line(undo_type action, linestruct *line, const s8 *comment_seq)
 {
-    Mlib::Profile::AutoTimer timer("comment_line");
+    PROFILE_FUNCTION;
 
-    size_t comment_seq_len = strlen(comment_seq);
+    size_t comment_seq_len = std::strlen(comment_seq);
 
-    /* The postfix, if this is a bracketing type comment sequence. */
-    const char *post_seq = strchr(comment_seq, '|');
+    //
+    //  The postfix,
+    //  if this is a bracketing type comment sequence.
+    //
+    const char *post_seq = std::strchr(comment_seq, '|');
 
     /* Length of prefix. */
     size_t pre_len = post_seq ? post_seq++ - comment_seq : comment_seq_len;
@@ -507,7 +544,9 @@ do_comment()
     shift_held     = TRUE;
 }
 
-/* Perform an undo or redo for a comment or uncomment action. */
+//
+//  Perform an undo or redo for a comment or uncomment action.
+//
 void
 handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 {
@@ -550,6 +589,8 @@ handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 void
 undo_cut(undostruct *u)
 {
+    PROFILE_FUNCTION;
+
     goto_line_posx(u->head_lineno, (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x);
 
     /* Clear an inherited anchor but not a user-placed one. */
@@ -582,6 +623,8 @@ undo_cut(undostruct *u)
 void
 redo_cut(undostruct *u)
 {
+    PROFILE_FUNCTION;
+
     linestruct *oldcutbuffer = cutbuffer;
 
     cutbuffer = nullptr;
