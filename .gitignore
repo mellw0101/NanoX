@@ -1,2 +1,5 @@
 /build/
+/build/bin/
+/build/lib/
+/build/obj/
 *.o
