@@ -614,7 +614,9 @@ print_opt(const s8 *shortflag, const s8 *longflag, const s8 *description)
     printf("%s\n", _(description));
 }
 
-// Explain how to properly use NanoX and its command-line options.
+//
+//  Explain how to properly use NanoX and its command-line options.
+//
 void
 usage()
 {
@@ -1152,9 +1154,11 @@ toggle_this(const s32 flag)
     statusline(REMARK, "%s %s", _(epithet_of_flag(flag)), enabled ? _("enabled") : _("disabled"));
 }
 
-/* Disable extended input and output processing in our terminal settings. */
+//
+//  Disable extended input and output processing in our terminal settings.
+//
 void
-disable_extended_io(void)
+disable_extended_io()
 {
     struct termios settings = {0};
 
@@ -1164,7 +1168,9 @@ disable_extended_io(void)
     tcsetattr(0, TCSANOW, &settings);
 }
 
-/* Stop ^C from generating a SIGINT. */
+//
+//  Stop ^C from generating a SIGINT.
+//
 void
 disable_kb_interrupt()
 {
@@ -1175,9 +1181,11 @@ disable_kb_interrupt()
     tcsetattr(0, TCSANOW, &settings);
 }
 
-/* Make ^C generate a SIGINT. */
+//
+//  Make ^C generate a SIGINT.
+//
 void
-enable_kb_interrupt(void)
+enable_kb_interrupt()
 {
     struct termios settings = {0};
 
@@ -1186,7 +1194,9 @@ enable_kb_interrupt(void)
     tcsetattr(0, TCSANOW, &settings);
 }
 
-/* Disable the terminal's XON/XOFF flow-control characters. */
+//
+//  Disable the terminal's XON/XOFF flow-control characters.
+//
 void
 disable_flow_control()
 {
@@ -1197,7 +1207,9 @@ disable_flow_control()
     tcsetattr(0, TCSANOW, &settings);
 }
 
-/* Enable the terminal's XON/XOFF flow-control characters. */
+//
+//  Enable the terminal's XON/XOFF flow-control characters.
+//
 void
 enable_flow_control()
 {
@@ -1242,7 +1254,7 @@ terminal_init()
 //
 //  Ask ncurses for a keycode, or assign a default one.
 //
-int
+s32
 get_keycode(const s8 *keyname, const s32 standard)
 {
     const s8 *keyvalue = tigetstr(keyname);
@@ -1261,22 +1273,19 @@ get_keycode(const s8 *keyname, const s32 standard)
     return standard;
 }
 
-///
-///  @name
-///    -  @c confirm_margin
-///
-///  @brief
-///    -  Ensure that the margin can accommodate the buffer's highest line number.
-///
-///  @returns
-///    -  @c void
-///
+//
+//  Ensure that the margin can accommodate the buffer's highest line number.
+//
 void
 confirm_margin()
 {
+    PROFILE_FUNCTION;
+
     s32 needed_margin = digits(openfile->filebot->lineno) + 1;
 
-    /* When not requested or space is too tight, suppress line numbers. */
+    //
+    //  When not requested or space is too tight, suppress line numbers.
+    //
     if (!ISSET(LINE_NUMBERS) || needed_margin > COLS - 4)
     {
         needed_margin = 0;
@@ -1288,16 +1297,22 @@ confirm_margin()
         margin      = needed_margin;
         editwincols = COLS - margin - sidebar;
 
-        // Ensure a proper starting column for the first screen row.
+        //
+        //  Ensure a proper starting column for the first screen row.
+        //
         ensure_firstcolumn_is_aligned();
         focusing = keep_focus;
 
-        // The margin has changed -- schedule a full refresh.
+        //
+        //  The margin has changed -- schedule a full refresh.
+        //
         refresh_needed = true;
     }
 }
 
-// Say that an unbound key was struck, and if possible which one.
+//
+//  Say that an unbound key was struck, and if possible which one.
+//
 void
 unbound_key(s32 code)
 {
@@ -1354,7 +1369,9 @@ unbound_key(s32 code)
     set_blankdelay_to_one();
 }
 
-// Handle a mouse click on the edit window or the shortcut list.
+//
+//  Handle a mouse click on the edit window or the shortcut list.
+//
 s32
 do_mouse()
 {
@@ -1420,9 +1437,11 @@ do_mouse()
     return 2;
 }
 
-/* Return TRUE when the given function is a cursor-moving command. */
+//
+//  Return TRUE when the given function is a cursor-moving command.
+//
 bool
-wanted_to_move(void (*func)(void))
+wanted_to_move(void (*func)())
 {
     return (func == do_left || func == do_right || func == do_up || func == do_down || func == do_home ||
             func == do_end || func == to_prev_word || func == to_next_word || func == to_para_begin ||
@@ -1443,10 +1462,14 @@ changes_something(functionptrtype f)
             f == complete_a_word || f == do_replace || f == do_verbatim_input);
 }
 
-// Read in all waiting input bytes and paste them into the buffer in one go.
+//
+//  Read in all waiting input bytes and paste them into the buffer in one go.
+//
 void
-suck_up_input_and_paste_it(void)
+suck_up_input_and_paste_it()
 {
+    PROFILE_FUNCTION;
+
     linestruct *was_cutbuffer = cutbuffer;
     linestruct *line          = make_new_node(nullptr);
     size_t      index         = 0;
@@ -1490,7 +1513,9 @@ suck_up_input_and_paste_it(void)
     cutbuffer = was_cutbuffer;
 }
 
-/* Insert the given short burst of bytes into the edit buffer. */
+//
+//  Insert the given short burst of bytes into the edit buffer.
+//
 void
 inject(s8 *burst, u64 count)
 {
@@ -1532,9 +1557,9 @@ inject(s8 *burst, u64 count)
 
     // Make room for the new bytes and copy them into the line.
     thisline->data = static_cast<s8 *>(nrealloc(thisline->data, datalen + count + 1));
-    memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
-            datalen - openfile->current_x + 1);
-    strncpy(thisline->data + openfile->current_x, burst, count);
+    std::memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
+                 datalen - openfile->current_x + 1);
+    std::strncpy(thisline->data + openfile->current_x, burst, count);
 
     // When the cursor is on the top row and not on the first chunk
     // of a line, adding text there might change the preceding chunk

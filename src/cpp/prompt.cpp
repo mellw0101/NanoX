@@ -1,33 +1,38 @@
 /// @file prompt.cpp
+#include <Mlib/def.h>
+#include <cstring>
 #include "../include/prototypes.h"
 
-#include <Mlib/def.h>
+//
+//  The prompt string used for status-bar questions.
+//
+static s8 *prompt = nullptr;
+//
+//  The cursor position in answer.
+//
+static u64 typing_x = HIGHEST_POSITIVE;
 
-#include <string.h>
-
-static char *prompt = NULL;
-/* The prompt string used for status-bar questions. */
-static size_t typing_x = HIGHEST_POSITIVE;
-/* The cursor position in answer. */
-
-/* Move to the beginning of the answer. */
+//
+//  Move to the beginning of the answer.
+//
 void
-do_statusbar_home(void)
+do_statusbar_home()
 {
     typing_x = 0;
 }
 
-/* Move to the end of the answer. */
+//
+//  Move to the end of the answer.
+//
 void
-do_statusbar_end(void)
+do_statusbar_end()
 {
-    typing_x = strlen(answer);
+    typing_x = std::strlen(answer);
 }
 
-#ifndef NANO_TINY
 /* Move to the previous word in the answer. */
 void
-do_statusbar_prev_word(void)
+do_statusbar_prev_word()
 {
     bool seen_a_word = FALSE, step_forward = FALSE;
 
@@ -40,10 +45,10 @@ do_statusbar_prev_word(void)
         {
             seen_a_word = TRUE;
         }
-#    ifdef ENABLE_UTF8
+#ifdef ENABLE_UTF8
         else if (is_zerowidth(answer + typing_x))
             ; /* skip */
-#    endif
+#endif
         else if (seen_a_word)
         {
             /* This is space now: we've overshot the start of the word. */
@@ -59,9 +64,11 @@ do_statusbar_prev_word(void)
     }
 }
 
-/* Move to the next word in the answer. */
+//
+//  Move to the next word in the answer.
+//
 void
-do_statusbar_next_word(void)
+do_statusbar_next_word()
 {
     bool seen_space = !is_word_char(answer + typing_x, FALSE);
     bool seen_word  = !seen_space;
@@ -80,10 +87,10 @@ do_statusbar_next_word(void)
             {
                 seen_word = TRUE;
             }
-#    ifdef ENABLE_UTF8
+#ifdef ENABLE_UTF8
             else if (is_zerowidth(answer + typing_x))
                 ; /* skip */
-#    endif
+#endif
             else if (seen_word)
             {
                 break;
@@ -91,11 +98,11 @@ do_statusbar_next_word(void)
         }
         else
         {
-#    ifdef ENABLE_UTF8
+#ifdef ENABLE_UTF8
             if (is_zerowidth(answer + typing_x))
                 ; /* skip */
             else
-#    endif
+#endif
                 /* If this is not a word character, then it's a separator; else
                  * if we've already seen a separator, then it's a word start. */
                 if (!is_word_char(answer + typing_x, FALSE))
@@ -109,11 +116,10 @@ do_statusbar_next_word(void)
         }
     }
 }
-#endif /* !NANO_TINY */
 
 /* Move left one character in the answer. */
 void
-do_statusbar_left(void)
+do_statusbar_left()
 {
     if (typing_x > 0)
     {
@@ -129,7 +135,7 @@ do_statusbar_left(void)
 
 /* Move right one character in the answer. */
 void
-do_statusbar_right(void)
+do_statusbar_right()
 {
     if (answer[typing_x] != '\0')
     {
@@ -145,7 +151,7 @@ do_statusbar_right(void)
 
 /* Backspace over one character in the answer. */
 void
-do_statusbar_backspace(void)
+do_statusbar_backspace()
 {
     if (typing_x > 0)
     {
@@ -156,27 +162,29 @@ do_statusbar_backspace(void)
     }
 }
 
-/* Delete one character in the answer. */
+//
+//  Delete one character in the answer.
+//
 void
-do_statusbar_delete(void)
+do_statusbar_delete()
 {
     if (answer[typing_x] != '\0')
     {
-        int charlen = char_length(answer + typing_x);
+        s32 charlen = char_length(answer + typing_x);
 
-        memmove(answer + typing_x, answer + typing_x + charlen, strlen(answer) - typing_x - charlen + 1);
-#ifdef ENABLE_UTF8
+        std::memmove(answer + typing_x, answer + typing_x + charlen, std::strlen(answer) - typing_x - charlen + 1);
         if (is_zerowidth(answer + typing_x))
         {
             do_statusbar_delete();
         }
-#endif
     }
 }
 
-/* Zap the part of the answer after the cursor, or the whole answer. */
+//
+//  Zap the part of the answer after the cursor, or the whole answer.
+//
 void
-lop_the_answer(void)
+lop_the_answer()
 {
     if (answer[typing_x] == '\0')
     {
@@ -186,10 +194,9 @@ lop_the_answer(void)
     answer[typing_x] = '\0';
 }
 
-#ifndef NANO_TINY
 /* Copy the current answer (if any) into the cutbuffer. */
 void
-copy_the_answer(void)
+copy_the_answer()
 {
     if (*answer)
     {
@@ -200,34 +207,40 @@ copy_the_answer(void)
     }
 }
 
-/* Paste the first line of the cutbuffer into the current answer. */
+//
+//  Paste the first line of the cutbuffer into the current answer.
+//
 void
-paste_into_answer(void)
+paste_into_answer()
 {
-    size_t pastelen = strlen(cutbuffer->data);
+    u64 pastelen = std::strlen(cutbuffer->data);
 
-    answer = RE_CAST(char *, nrealloc(answer, strlen(answer) + pastelen + 1));
+    answer = static_cast<s8 *>(nrealloc(answer, strlen(answer) + pastelen + 1));
     memmove(answer + typing_x + pastelen, answer + typing_x, strlen(answer) - typing_x + 1);
     strncpy(answer + typing_x, cutbuffer->data, pastelen);
 
     typing_x += pastelen;
 }
-#endif
 
-#ifdef ENABLE_MOUSE
-/* Handle a mouse click on the status-bar prompt or the shortcut list. */
-int
-do_statusbar_mouse(void)
+//
+//  Handle a mouse click on the status-bar prompt or the shortcut list.
+//
+s32
+do_statusbar_mouse()
 {
-    int click_row, click_col;
-    int retval = get_mouseinput(&click_row, &click_col, TRUE);
+    s32 click_row, click_col;
+    s32 retval = get_mouseinput(&click_row, &click_col, true);
 
-    /* We can click on the status-bar window text to move the cursor. */
-    if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, FALSE))
+    //
+    //  We can click on the status-bar window text to move the cursor.
+    //
+    if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, false))
     {
-        size_t start_col = breadth(prompt) + 2;
+        u64 start_col = breadth(prompt) + 2;
 
-        /* Move to where the click occurred. */
+        //
+        //  Move to where the click occurred.
+        //
         if (click_row == 0 && click_col >= start_col)
         {
             typing_x = actual_x(answer, get_statusbar_page_start(start_col, start_col + wideness(answer, typing_x)) +
@@ -237,14 +250,17 @@ do_statusbar_mouse(void)
 
     return retval;
 }
-#endif
 
-/* Insert the given short burst of bytes into the answer. */
+//
+//  Insert the given short burst of bytes into the answer.
+//
 void
-inject_into_answer(char *burst, size_t count)
+inject_into_answer(s8 *burst, u64 count)
 {
-    /* First encode any embedded NUL byte as 0x0A. */
-    for (size_t index = 0; index < count; index++)
+    //
+    //  First encode any embedded NUL byte as 0x0A.
+    //
+    for (u64 index = 0; index < count; index++)
     {
         if (burst[index] == '\0')
         {
@@ -252,7 +268,7 @@ inject_into_answer(char *burst, size_t count)
         }
     }
 
-    answer = RE_CAST(char *, nrealloc(answer, strlen(answer) + count + 1));
+    answer = static_cast<s8 *>(nrealloc(answer, strlen(answer) + count + 1));
     memmove(answer + typing_x + count, answer + typing_x, strlen(answer) - typing_x + 1);
     strncpy(answer + typing_x, burst, count);
 
@@ -704,7 +720,7 @@ do_prompt(s32 menu, const s8 *provided, linestruct **history_list, void (*refres
 #ifndef NANO_TINY
 redo_theprompt:
 #endif
-    prompt = RE_CAST(char *, nmalloc((COLS * MAXCHARLEN) + 1));
+    prompt = static_cast<s8 *>(nmalloc((COLS * MAXCHARLEN) + 1));
     va_start(ap, msg);
     vsnprintf(prompt, COLS * MAXCHARLEN, msg, ap);
     va_end(ap);
@@ -716,21 +732,20 @@ redo_theprompt:
     function = acquire_an_answer(&retval, &listed, history_list, refresh_func);
     free(prompt);
 
-#ifndef NANO_TINY
     if (retval == KEY_WINCH)
     {
         goto redo_theprompt;
     }
-#endif
 
-    /* Restore a possible previous prompt and maybe the typing position. */
+    //
+    //  Restore a possible previous prompt and maybe the typing position.
+    //
     prompt = saved_prompt;
-    if (function == do_cancel || function == do_enter ||
-#ifdef ENABLE_BROWSER
-        function == to_first_file || function == to_last_file ||
-#endif
+    if (function == do_cancel || function == do_enter || function == to_first_file || function == to_last_file ||
         function == to_first_line || function == to_last_line)
+    {
         typing_x = was_typing_x;
+    }
 
     /* Set the proper return value for Cancel and Enter. */
     if (function == do_cancel)
@@ -747,30 +762,33 @@ redo_theprompt:
         wipe_statusbar();
     }
 
-#ifdef ENABLE_TABCOMP
-    /* If possible filename completions are still listed, clear them off. */
+    //
+    //  If possible filename completions are still listed, clear them off.
+    //
     if (listed)
     {
         refresh_func();
     }
-#endif
 
     return retval;
 }
 
-#define UNDECIDED -2
-
-// Ask a simple Yes/No (and optionally All) question on the status bar
-// and return the choice -- either YES or NO or ALL or CANCEL.
+constexpr auto UNDECIDED = -2;
+//
+//  Ask a simple Yes/No (and optionally All) question on the status bar
+//  and return the choice -- either YES or NO or ALL or CANCEL.
+//
 s32
 ask_user(bool withall, const s8 *question)
 {
     s32 choice = UNDECIDED;
     s32 width  = 16;
 
-    // TRANSLATORS: For the next three strings, specify the starting letters
-    // of the translations for "Yes"/"No"/"All".  The first letter of each of
-    // these strings MUST be a single-byte letter; others may be multi-byte.
+    //
+    //  TRANSLATORS: For the next three strings, specify the starting letters
+    //  of the translations for "Yes"/"No"/"All".  The first letter of each of
+    //  these strings MUST be a single-byte letter; others may be multi-byte.
+    //
     const s8 *yesstr = _("Yy");
     const s8 *nostr  = _("Nn");
     const s8 *allstr = _("Aa");

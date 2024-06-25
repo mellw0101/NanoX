@@ -1,58 +1,66 @@
 /// @file - search.cpp
 #include "../include/prototypes.h"
 
-#include <string.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 
-static bool came_full_circle = FALSE;
-/* Have we reached the starting line again while searching? */
-static bool have_compiled_regexp = FALSE;
-/* Whether we have compiled a regular expression for the search. */
+//
+//  Have we reached the starting line again while searching?
+//
+static bool came_full_circle = false;
+//
+//  Whether we have compiled a regular expression for the search.
+//
+static bool have_compiled_regexp = false;
 
-/* Compile the given regular expression and store it in search_regexp.
- * Return TRUE if the expression is valid, and FALSE otherwise. */
+//
+//  Compile the given regular expression and store it in search_regexp.
+//  Return TRUE if the expression is valid, and FALSE otherwise.
+//
 bool
-regexp_init(const char *regexp)
+regexp_init(const s8 *regexp)
 {
-    int value = regcomp(&search_regexp, regexp, NANO_REG_EXTENDED | (ISSET(CASE_SENSITIVE) ? 0 : REG_ICASE));
+    s32 value = regcomp(&search_regexp, regexp, NANO_REG_EXTENDED | (ISSET(CASE_SENSITIVE) ? 0 : REG_ICASE));
 
-    /* If regex compilation failed, show the error message. */
+    //
+    //  If regex compilation failed, show the error message.
+    //
     if (value != 0)
     {
-        size_t len = regerror(value, &search_regexp, NULL, 0);
-        char  *str = RE_CAST(char *, nmalloc(len));
+        u64 len = regerror(value, &search_regexp, nullptr, 0);
+        s8 *str = static_cast<s8 *>(nmalloc(len));
 
         regerror(value, &search_regexp, str, len);
         statusline(AHEM, _("Bad regex \"%s\": %s"), regexp, str);
         free(str);
 
-        return FALSE;
+        return false;
     }
 
-    have_compiled_regexp = TRUE;
+    have_compiled_regexp = true;
 
-    return TRUE;
+    return true;
 }
 
-/* Free a compiled regular expression, if one was compiled; and schedule a
- * full screen refresh when the mark is on, in case the cursor has moved. */
+//
+//  Free a compiled regular expression, if one was compiled; and schedule a
+//  full screen refresh when the mark is on, in case the cursor has moved.
+//
 void
-tidy_up_after_search(void)
+tidy_up_after_search()
 {
     if (have_compiled_regexp)
     {
         regfree(&search_regexp);
-        have_compiled_regexp = FALSE;
+        have_compiled_regexp = false;
     }
-#ifndef NANO_TINY
+
     if (openfile->mark)
     {
-        refresh_needed = TRUE;
+        refresh_needed = true;
     }
-#endif
-#ifdef ENABLE_COLOR
+
     recook |= perturbed;
-#endif
 }
 
 /* Prepare the prompt and ask the user what to search for.  Keep looping
@@ -909,20 +917,26 @@ goto_line_posx(s64 linenumber, u64 pos_x)
     refresh_needed = true;
 }
 
-/* Go to the specified line and column, or ask for them if interactive
- * is TRUE.  In the latter case also update the screen afterwards.
- * Note that both the line and column number should be one-based. */
+//
+//  Go to the specified line and column, or ask for them if interactive
+//  is TRUE.  In the latter case also update the screen afterwards.
+//  Note that both the line and column number should be one-based.
+//
 void
-goto_line_and_column(ssize_t line, ssize_t column, bool retain_answer, bool interactive)
+goto_line_and_column(s64 line, s64 column, bool retain_answer, bool interactive)
 {
     if (interactive)
     {
-        /* Ask for the line and column. */
-        int response = do_prompt(MGOTOLINE, retain_answer ? answer : "", NULL,
-                                 /* TRANSLATORS: This is a prompt. */
-                                 edit_refresh, _("Enter line number, column number"));
+        //
+        //  Ask for the line and column.
+        //  TODO : This is a prompt.
+        //
+        s32 response = do_prompt(
+            MGOTOLINE, retain_answer ? answer : "", nullptr, edit_refresh, _("Enter line number, column number"));
 
-        /* If the user cancelled or gave a blank answer, get out. */
+        //
+        //  If the user cancelled or gave a blank answer, get out.
+        //
         if (response < 0)
         {
             statusbar(_("Cancelled"));
@@ -932,8 +946,10 @@ goto_line_and_column(ssize_t line, ssize_t column, bool retain_answer, bool inte
         if (func_from_key(response) == flip_goto)
         {
             UNSET(BACKWARDS_SEARCH);
-            /* Switch to searching but retain what the user typed so far. */
-            search_init(FALSE, TRUE);
+            //
+            //  Switch to searching but retain what the user typed so far.
+            //
+            search_init(false, true);
             return;
         }
 
@@ -1051,7 +1067,6 @@ do_gotolinecolumn(void)
     goto_line_and_column(openfile->current->lineno, openfile->placewewant + 1, FALSE, TRUE);
 }
 
-#ifndef NANO_TINY
 /* Search, starting from the current position, for any of the two characters
  * in bracket_pair.  If reverse is TRUE, search backwards, otherwise forwards.
  * Return TRUE when one of the brackets was found, and FALSE otherwise. */
@@ -1111,36 +1126,59 @@ find_a_bracket(bool reverse, const char *bracket_pair)
     return TRUE;
 }
 
-/* Search for a match to the bracket at the current cursor position, if
- * there is one. */
+//
+//  Search for a match to the bracket at the current cursor position,
+//  if there is one.
+//
 void
-do_find_bracket(void)
+do_find_bracket()
 {
-    linestruct *was_current   = openfile->current;
-    size_t      was_current_x = openfile->current_x;
-    /* The current cursor position, in case we don't find a complement. */
-    const char *ch;
-    /* The location in matchbrackets of the bracket under the cursor. */
-    int ch_len;
-    /* The length of ch in bytes. */
-    const char *wanted_ch;
-    /* The location in matchbrackets of the complementing bracket. */
-    int wanted_ch_len;
-    /* The length of wanted_ch in bytes. */
-    char bracket_pair[MAXCHARLEN * 2 + 1];
-    /* The pair of characters in ch and wanted_ch. */
-    size_t halfway = 0;
-    /* The index in matchbrackets where the closing brackets start. */
-    size_t charcount = mbstrlen(matchbrackets) / 2;
-    /* Half the number of characters in matchbrackets. */
-    size_t balance = 1;
-    /* The initial bracket count. */
+    linestruct *was_current = openfile->current;
+    //
+    //  The current cursor position,
+    //  in case we don't find a complement.
+    //
+    u64 was_current_x = openfile->current_x;
+    //
+    //  The location in matchbrackets of the bracket under the cursor.
+    //
+    const s8 *ch;
+    //
+    //  The length of ch in bytes.
+    //
+    s32 ch_len;
+    //
+    //  The location in matchbrackets of the complementing bracket.
+    //
+    const s8 *wanted_ch;
+    //
+    //  The length of wanted_ch in bytes.
+    //
+    s32 wanted_ch_len;
+    //
+    //  The pair of characters in ch and wanted_ch.
+    //
+    s8 bracket_pair[MAXCHARLEN * 2 + 1];
+    //
+    //  The index in matchbrackets where the closing brackets start.
+    //
+    u64 halfway = 0;
+    //
+    //  Half the number of characters in matchbrackets.
+    //
+    u64 charcount = mbstrlen(matchbrackets) / 2;
+    //
+    //  The initial bracket count.
+    //
+    u64 balance = 1;
+    //
+    //  The direction we search.
+    //
     bool reverse;
-    /* The direction we search. */
 
     ch = mbstrchr(matchbrackets, openfile->current->data + openfile->current_x);
 
-    if (ch == NULL)
+    if (ch == nullptr)
     {
         statusline(AHEM, _("Not a bracket"));
         return;
@@ -1175,14 +1213,14 @@ do_find_bracket(void)
     wanted_ch_len = char_length(wanted_ch);
 
     /* Copy the two complementary brackets into a single string. */
-    strncpy(bracket_pair, ch, ch_len);
-    strncpy(bracket_pair + ch_len, wanted_ch, wanted_ch_len);
+    std::strncpy(bracket_pair, ch, ch_len);
+    std::strncpy(bracket_pair + ch_len, wanted_ch, wanted_ch_len);
     bracket_pair[ch_len + wanted_ch_len] = '\0';
 
     while (find_a_bracket(reverse, bracket_pair))
     {
         /* Increment/decrement balance for an identical/other bracket. */
-        balance += (strncmp(openfile->current->data + openfile->current_x, ch, ch_len) == 0) ? 1 : -1;
+        balance += (std::strncmp(openfile->current->data + openfile->current_x, ch, ch_len) == 0) ? 1 : -1;
 
         /* When balance reached zero, we've found the complementary bracket. */
         if (balance == 0)
@@ -1199,9 +1237,12 @@ do_find_bracket(void)
     openfile->current_x = was_current_x;
 }
 
-/* Place an anchor at the current line when none exists, otherwise remove it. */
+//
+//  Place an anchor at the current line when none exists,
+//  otherwise remove it.
+//
 void
-put_or_lift_anchor(void)
+put_or_lift_anchor()
 {
     openfile->current->has_anchor = !openfile->current->has_anchor;
 
@@ -1217,7 +1258,10 @@ put_or_lift_anchor(void)
     }
 }
 
-/* Make the given line the current line, or report the anchoredness. */
+//
+//  Make the given line the current line,
+//  or report the anchoredness.
+//
 void
 go_to_and_confirm(linestruct *line)
 {
@@ -1227,13 +1271,11 @@ go_to_and_confirm(linestruct *line)
     {
         openfile->current   = line;
         openfile->current_x = 0;
-#    ifdef ENABLE_COLOR
         if (line->lineno > openfile->edittop->lineno + editwinrows ||
             (ISSET(SOFTWRAP) && line->lineno > was_current->lineno))
         {
             recook |= perturbed;
         }
-#    endif
         edit_redraw(was_current, CENTERING);
         statusbar(_("Jumped to anchor"));
     }
@@ -1247,9 +1289,11 @@ go_to_and_confirm(linestruct *line)
     }
 }
 
-/* Jump to the first anchor before the current line; wrap around at the top. */
+//
+//  Jump to the first anchor before the current line; wrap around at the top.
+//
 void
-to_prev_anchor(void)
+to_prev_anchor()
 {
     linestruct *line = openfile->current;
 
@@ -1262,9 +1306,11 @@ to_prev_anchor(void)
     go_to_and_confirm(line);
 }
 
-/* Jump to the first anchor after the current line; wrap around at the bottom. */
+//
+//  Jump to the first anchor after the current line; wrap around at the bottom.
+//
 void
-to_next_anchor(void)
+to_next_anchor()
 {
     linestruct *line = openfile->current;
 
@@ -1276,4 +1322,3 @@ to_next_anchor(void)
 
     go_to_and_confirm(line);
 }
-#endif /* !NANO_TINY */

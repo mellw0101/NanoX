@@ -513,5 +513,5 @@ typedef struct completionstruct
     completionstruct *next;
 } completionstruct;
 
-#define NANO_REG_EXTENDED 1
-#define SYSCONFDIR        "/etc"
+constexpr auto NANO_REG_EXTENDED = 1;
+#define SYSCONFDIR "/etc"

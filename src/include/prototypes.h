@@ -351,71 +351,68 @@ s32    ask_user(bool withall, const s8 *question);
 
 /* Most functions in rcfile.c. */
 void       set_interface_color(s32 element, s8 *combotext);
-void       display_rcfile_errors(void);
-void       jot_error(const char *msg, ...);
-keystruct *strtosc(const char *input);
-void       parse_one_include(char *file, syntaxtype *syntax);
-void       grab_and_store(const char *kind, char *ptr, regexlisttype **storage);
+void       display_rcfile_errors();
+void       jot_error(const s8 *msg, ...);
+keystruct *strtosc(const s8 *input);
+void       parse_one_include(s8 *file, syntaxtype *syntax);
+void       grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage);
 bool       parse_syntax_commands(s8 *keyword, s8 *ptr);
 void       parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
-void       do_rcfiles(void);
+void       do_rcfiles();
 
-/* Most functions in search.c. */
-bool    regexp_init(const char *regexp);
-void    tidy_up_after_search(void);
-int     findnextstr(const char *needle, bool whole_word_only, int modus, size_t *match_len, bool skipone,
-                    const linestruct *begin, size_t begin_x);
-void    do_search_forward(void);
-void    do_search_backward(void);
-void    do_findprevious(void);
-void    do_findnext(void);
-void    not_found_msg(const char *str);
-void    go_looking(void);
-ssize_t do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current,
-                        size_t *real_current_x);
-void    do_replace(void);
-void    ask_for_and_do_replacements(void);
-#if !defined(NANO_TINY) || defined(ENABLE_SPELLER) || defined(ENABLE_LINTER) || defined(ENABLE_FORMATTER)
-void goto_line_posx(ssize_t line, size_t pos_x);
-#endif
-void goto_line_and_column(ssize_t line, ssize_t column, bool retain_answer, bool interactive);
-void do_gotolinecolumn(void);
-#ifndef NANO_TINY
-void do_find_bracket(void);
-void put_or_lift_anchor(void);
-void to_prev_anchor(void);
-void to_next_anchor(void);
-#endif
+//
+//  Most functions in 'search.cpp'.
+//
+bool regexp_init(const s8 *regexp);
+void tidy_up_after_search();
+s32  findnextstr(const s8 *needle, bool whole_word_only, s32 modus, u64 *match_len, bool skipone,
+                 const linestruct *begin, u64 begin_x);
+void do_search_forward();
+void do_search_backward();
+void do_findprevious();
+void do_findnext();
+void not_found_msg(const s8 *str);
+void go_looking();
+s64  do_replace_loop(const s8 *needle, bool whole_word_only, const linestruct *real_current, u64 *real_current_x);
+void do_replace();
+void ask_for_and_do_replacements();
+void goto_line_posx(s64 line, u64 pos_x);
+void goto_line_and_column(s64 line, s64 column, bool retain_answer, bool interactive);
+void do_gotolinecolumn();
+void do_find_bracket();
+void put_or_lift_anchor();
+void to_prev_anchor();
+void to_next_anchor();
 
 //
 //  Most functions in 'text.cpp'.
 //
-void    do_mark(void);
-void    do_tab(void);
-void    do_indent(void);
-void    do_unindent(void);
-void    do_comment(void);
-void    do_undo(void);
-void    do_redo(void);
-void    do_enter(void);
-void    discard_until(const undostruct *thisitem);
-void    add_undo(undo_type action, const char *message);
-void    update_multiline_undo(ssize_t lineno, char *indentation);
-void    update_undo(undo_type action);
-void    do_wrap(void);
-ssize_t break_line(const char *textstart, ssize_t goal, bool snap_at_nl);
-u64     indent_length(const s8 *line);
-size_t  quote_length(const char *line);
-bool    begpar(const linestruct *const line, int depth);
-bool    inpar(const linestruct *const line);
-void    do_justify(void);
-void    do_full_justify(void);
-void    do_spell(void);
-void    do_linter(void);
-void    do_formatter(void);
-void    count_lines_words_and_characters();
-void    do_verbatim_input();
-void    complete_a_word();
+void do_mark();
+void do_tab();
+void do_indent();
+void do_unindent();
+void do_comment();
+void do_undo();
+void do_redo();
+void do_enter();
+void discard_until(const undostruct *thisitem);
+void add_undo(undo_type action, const s8 *message);
+void update_multiline_undo(s64 lineno, s8 *indentation);
+void update_undo(undo_type action);
+void do_wrap();
+s64  break_line(const s8 *textstart, s64 goal, bool snap_at_nl);
+u64  indent_length(const s8 *line);
+u64  quote_length(const s8 *line);
+bool begpar(const linestruct *const line, s32 depth);
+bool inpar(const linestruct *const line);
+void do_justify();
+void do_full_justify();
+void do_spell();
+void do_linter();
+void do_formatter();
+void count_lines_words_and_characters();
+void do_verbatim_input();
+void complete_a_word();
 
 //
 //  All functions in utils.cpp
@@ -425,7 +422,7 @@ const s8   *tail(const s8 *path);
 char       *concatenate(const char *path, const char *name);
 int         digits(s64 n);
 bool        parseNum(const std::string &string, int64_t &result);
-bool        parse_line_column(const char *str, s64 *line, s64 *column);
+bool        parse_line_column(const s8 *str, s64 *line, s64 *column);
 void        recode_NUL_to_LF(char *string, u64 length);
 u64         recode_LF_to_NUL(char *string);
 void        free_chararray(char **array, u64 len);

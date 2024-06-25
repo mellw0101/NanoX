@@ -2043,20 +2043,21 @@ get_verbatim_kbinput(WINDOW *frame, size_t *count)
     return bytes;
 }
 
-#ifdef ENABLE_MOUSE
-/* Handle any mouse event that may have occurred.  We currently handle
- * releases/clicks of the first mouse button.  If allow_shortcuts is
- * TRUE, releasing/clicking on a visible shortcut will put back the
- * keystroke associated with that shortcut.  If ncurses supports them,
- * we also handle presses of the fourth mouse button (upward rolls of
- * the mouse wheel) by putting back keystrokes to scroll up, and presses
- * of the fifth mouse button (downward rolls of the mouse wheel) by
- * putting back keystrokes to scroll down.  We also store the coordinates
- * of a mouse event that needs further handling in mouse_x and mouse_y.
- * Return -1 on error, 0 if the mouse event needs to be handled, 1 if it's
- * been handled by putting back keystrokes, or 2 if it's been ignored. */
-int
-get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts)
+//
+//  Handle any mouse event that may have occurred.  We currently handle
+//  releases/clicks of the first mouse button.  If allow_shortcuts is
+//  TRUE, releasing/clicking on a visible shortcut will put back the
+//  keystroke associated with that shortcut.  If ncurses supports them,
+//  we also handle presses of the fourth mouse button (upward rolls of
+//  the mouse wheel) by putting back keystrokes to scroll up, and presses
+//  of the fifth mouse button (downward rolls of the mouse wheel) by
+//  putting back keystrokes to scroll down.  We also store the coordinates
+//  of a mouse event that needs further handling in mouse_x and mouse_y.
+//  Return -1 on error, 0 if the mouse event needs to be handled, 1 if it's
+//  been handled by putting back keystrokes, or 2 if it's been ignored.
+//
+s32
+get_mouseinput(s32 *mouse_y, s32 *mouse_x, bool allow_shortcuts)
 {
     bool   in_middle, in_footer;
     MEVENT event;
@@ -2165,7 +2166,7 @@ get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts)
             return 0;
         }
     }
-#    if NCURSES_MOUSE_VERSION >= 2
+#if NCURSES_MOUSE_VERSION >= 2
     /* Handle "presses" of the fourth and fifth mouse buttons
      * (upward and downward rolls of the mouse wheel). */
     else if (event.bstate & (BUTTON4_PRESSED | BUTTON5_PRESSED))
@@ -2193,15 +2194,14 @@ get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts)
             return 2;
         }
     }
-#    endif
+#endif
     /* Ignore all other mouse events. */
     return 2;
 }
-#endif /* ENABLE_MOUSE */
 
 /* Move (in the given window) to the given row and wipe it clean. */
 void
-blank_row(WINDOW *window, int row)
+blank_row(WINDOW *window, s32 row)
 {
     wmove(window, row, 0);
     wclrtoeol(window);
@@ -2209,14 +2209,14 @@ blank_row(WINDOW *window, int row)
 
 /* Blank the first line of the top portion of the screen. */
 void
-blank_titlebar(void)
+blank_titlebar()
 {
     mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
 }
 
 /* Blank all lines of the middle portion of the screen (the edit window). */
 void
-blank_edit(void)
+blank_edit()
 {
     for (int row = 0; row < editwinrows; row++)
     {
@@ -2235,7 +2235,7 @@ blank_statusbar()
 
 /* Wipe the status bar clean and include this in the next screen update. */
 void
-wipe_statusbar(void)
+wipe_statusbar()
 {
     lastmessage = VACUUM;
 
@@ -2250,7 +2250,7 @@ wipe_statusbar(void)
 
 /* Blank out the two help lines (when they are present). */
 void
-blank_bottombars(void)
+blank_bottombars()
 {
     if (!ISSET(NO_HELP) && LINES > 5)
     {
@@ -2261,7 +2261,7 @@ blank_bottombars(void)
 
 /* When some number of keystrokes has been reached, wipe the status bar. */
 void
-blank_it_when_expired(void)
+blank_it_when_expired()
 {
     if (countdown == 0)
     {
@@ -2283,32 +2283,32 @@ blank_it_when_expired(void)
 
 /* Ensure that the status bar will be wiped upon the next keystroke. */
 void
-set_blankdelay_to_one(void)
+set_blankdelay_to_one()
 {
     countdown = 1;
 }
 
-/// @name @c display_string
-/// @brief
-///  -  Convert text into a string that can be displayed on screen.
-/// @details
-///  -  The caller wants to display text starting with the given column, and extending for at most span columns.
-///  -  The returned string is dynamically allocated, and should be freed.
-///  -  If isdata is TRUE, the caller might put "<" at the beginning or ">" at the end of the line if it's too long.
-///  -  If isprompt is TRUE, the caller might put ">" at the end of the line if it's too long.
-/// @param text ( const char * )
-///  -  The text to be displayed.
-/// @param column ( size_t )
-///  -  The column to start displaying the text.
-/// @param span ( size_t )
-///  -  The number of columns to display.
-/// @param isdata ( bool )
-///  -  Whether the text is data.
-/// @param isprompt ( bool )
-///  -  Whether the text is a prompt.
-/// @returns @c char *
-///  -  The displayable string.
-/// TODO : ( This function makes a string that is displayeble ) Make this function more readable.
+//
+//  Convert text into a string that can be displayed on screen.
+//  The caller wants to display text starting with the given column, and extending for at most span columns.
+//  The returned string is dynamically allocated, and should be freed.
+//  If isdata is TRUE, the caller might put "<" at the beginning or ">" at the end of the line if it's too long.
+//  If isprompt is TRUE, the caller might put ">" at the end of the line if it's too long.
+//  @param text ( const char * )
+//  -  The text to be displayed.
+//  @param column ( size_t )
+//  -  The column to start displaying the text.
+//  @param span ( size_t )
+//  -  The number of columns to display.
+//  @param isdata ( bool )
+//  -  Whether the text is data.
+//  @param isprompt ( bool )
+//  -  Whether the text is a prompt.
+//  @return (s8 *)
+//  -  The displayable string.
+//
+//  TODO : ( This function makes a string that is displayeble ) Make this function more readable.
+//
 s8 *
 display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
 {

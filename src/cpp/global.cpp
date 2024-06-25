@@ -4,7 +4,6 @@
 #include <Mlib/def.h>
 #include <cctype>
 #include <cstring>
-#include <strings.h>
 #include <term.h>
 
 //  Global variables.
@@ -366,61 +365,61 @@ goto_dir(void)
 }
 
 void
-do_nothing(void)
+do_nothing()
 {
     ;
 }
 
 void
-do_toggle(void)
+do_toggle()
 {
     ;
 }
 
 void
-dos_format(void)
+dos_format()
 {
     ;
 }
 
 void
-mac_format(void)
+mac_format()
 {
     ;
 }
 
 void
-append_it(void)
+append_it()
 {
     ;
 }
 
 void
-prepend_it(void)
+prepend_it()
 {
     ;
 }
 
 void
-back_it_up(void)
+back_it_up()
 {
     ;
 }
 
 void
-flip_execute(void)
+flip_execute()
 {
     ;
 }
 
 void
-flip_pipe(void)
+flip_pipe()
 {
     ;
 }
 
 void
-flip_convert(void)
+flip_convert()
 {
     ;
 }
@@ -449,6 +448,8 @@ do_cancel()
 void
 add_to_funcs(void (*function)(), s32 menus, const s8 *tag, const s8 *phrase, bool blank_after)
 {
+    PROFILE_FUNCTION;
+
     funcstruct *f = static_cast<funcstruct *>(nmalloc(sizeof(funcstruct)));
 
     if (allfuncs == nullptr)
@@ -476,6 +477,8 @@ add_to_funcs(void (*function)(), s32 menus, const s8 *tag, const s8 *phrase, boo
 s32
 keycode_from_string(const s8 *keystring)
 {
+    PROFILE_FUNCTION;
+
     if (keystring[0] == '^')
     {
         if (keystring[2] == '\0')
@@ -553,6 +556,8 @@ keycode_from_string(const s8 *keystring)
 void
 show_curses_version()
 {
+    PROFILE_FUNCTION;
+
     statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
 
@@ -562,6 +567,8 @@ show_curses_version()
 void
 add_to_sclist(s32 menus, const s8 *scstring, const s32 keycode, void (*function)(), s32 toggle)
 {
+    PROFILE_FUNCTION;
+
     static keystruct *tailsc;
     static int        counter = 0;
     keystruct        *sc      = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
@@ -599,11 +606,15 @@ add_to_sclist(s32 menus, const s8 *scstring, const s32 keycode, void (*function)
     tailsc = sc;
 }
 
-/* Return the first shortcut in the list of shortcuts that
- * matches the given function in the given menu. */
+//
+//  Return the first shortcut in the list of shortcuts that,
+//  matches the given function in the given menu.
+//
 const keystruct *
-first_sc_for(int menu, void (*function)())
+first_sc_for(s32 menu, void (*function)())
 {
+    PROFILE_FUNCTION;
+
     for (keystruct *sc = sclist; sc != nullptr; sc = sc->next)
     {
         if ((sc->menus & menu) && sc->func == function && sc->keystr[0])
@@ -620,6 +631,8 @@ first_sc_for(int menu, void (*function)())
 u64
 shown_entries_for(s32 menu)
 {
+    PROFILE_FUNCTION;
+
     funcstruct *item    = allfuncs;
     size_t      maximum = ((COLS + 40) / 20) * 2;
     size_t      count   = 0;

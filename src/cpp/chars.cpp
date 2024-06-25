@@ -49,8 +49,10 @@ is_alpha_char(const s8 *const &c)
     return iswalpha(wc);
 }
 
-// Return TRUE when the given character
-// is some kind of letter or a digit.
+//
+//  Return TRUE when the given character
+//  is some kind of letter or a digit.
+//
 bool
 is_alnum_char(const s8 *const &c)
 {
@@ -60,14 +62,11 @@ is_alnum_char(const s8 *const &c)
         return false;
     }
     return iswalnum(wc);
-    /// The following line is commented out because
-    /// it is not used in the code.
-    /// it was used if not using UTF-8
-    /// Original CODE:
-    /// @c return @c isalnum((u8)*c);
 }
 
-// Return TRUE when the given character is space or tab or other whitespace.
+//
+//  Return TRUE when the given character is space or tab or other whitespace.
+//
 bool
 is_blank_char(const s8 *c)
 {
@@ -659,30 +658,32 @@ mbstrncasecmp(const s8 *s1, const s8 *s2, u64 n)
     }
 }
 
-/* This function is equivalent to strcasestr() for multibyte strings. */
-char *
-mbstrcasestr(const char *haystack, const char *needle)
+//
+//  This function is equivalent to strcasestr() for multibyte strings.
+//
+s8 *
+mbstrcasestr(const s8 *haystack, const s8 *needle)
 {
-#ifdef ENABLE_UTF8
+    PROFILE_FUNCTION;
+
     if (use_utf8)
     {
-        size_t needle_len = mbstrlen(needle);
+        u64 needle_len = mbstrlen(needle);
 
         while (*haystack != '\0')
         {
             if (mbstrncasecmp(haystack, needle, needle_len) == 0)
             {
-                return (char *)haystack;
+                return const_cast<s8 *>(haystack);
             }
-
             haystack += char_length(haystack);
         }
-
-        return NULL;
+        return nullptr;
     }
     else
-#endif
-        return (char *)strcasestr(haystack, needle);
+    {
+        return const_cast<s8 *>(strcasestr(haystack, needle));
+    }
 }
 
 /* This function is equivalent to strstr(), except in that it scans the

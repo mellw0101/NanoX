@@ -1,6 +1,7 @@
 /// @file utils.cpp
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <cerrno>
 #include <cstring>
 #include <pwd.h>
@@ -473,6 +474,8 @@ xplustabs()
 u64
 actual_x(const s8 *text, u64 column)
 {
+    PROFILE_FUNCTION;
+
     //
     //  From where we start walking through the text.
     //
@@ -502,6 +505,8 @@ actual_x(const s8 *text, u64 column)
 u64
 wideness(const s8 *text, u64 maxlen)
 {
+    PROFILE_FUNCTION;
+
     if (maxlen == 0)
     {
         return 0;
@@ -527,6 +532,8 @@ wideness(const s8 *text, u64 maxlen)
 size_t
 breadth(const s8 *text)
 {
+    PROFILE_FUNCTION;
+
     u64 span = 0;
     while (*text != '\0')
     {

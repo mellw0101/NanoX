@@ -544,7 +544,9 @@ handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 #define redo_paste undo_cut
 #define undo_paste redo_cut
 
-/* Undo a cut, or redo a paste. */
+//
+//  Undo a cut, or redo a paste.
+//
 void
 undo_cut(undostruct *u)
 {
@@ -574,20 +576,22 @@ undo_cut(undostruct *u)
     }
 }
 
-/* Redo a cut, or undo a paste. */
+//
+//  Redo a cut, or undo a paste.
+//
 void
 redo_cut(undostruct *u)
 {
     linestruct *oldcutbuffer = cutbuffer;
 
-    cutbuffer = NULL;
+    cutbuffer = nullptr;
 
     openfile->mark   = line_from_number(u->head_lineno);
     openfile->mark_x = (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x;
 
     goto_line_posx(u->tail_lineno, u->tail_x);
 
-    do_snip(TRUE, FALSE, u->type == ZAP);
+    do_snip(true, false, u->type == ZAP);
 
     free_lines(cutbuffer);
     cutbuffer = oldcutbuffer;
@@ -599,6 +603,8 @@ redo_cut(undostruct *u)
 void
 do_undo()
 {
+    PROFILE_FUNCTION;
+
     undostruct *u = openfile->current_undo;
     linestruct *oldcutbuffer, *intruder;
     linestruct *line = nullptr;
@@ -805,8 +811,10 @@ do_undo()
 //  Redo the last thing(s) we undid.
 //
 void
-do_redo(void)
+do_redo()
 {
+    PROFILE_FUNCTION;
+
     undostruct *u                     = openfile->undotop;
     bool        suppress_modification = FALSE;
     linestruct *line                  = NULL;
@@ -1018,8 +1026,9 @@ do_enter()
     //
     if (openfile->current->data[openfile->current_x - 1])
     {
-        s8 c = openfile->current->data[openfile->current_x - 1];
-        if (c == '{')
+        s8 c_prev = openfile->current->data[openfile->current_x - 1];
+        s8 c_next = openfile->current->data[openfile->current_x];
+        if (c_prev == '{' && c_next == '}')
         {
             linestruct *new_node_middle = make_new_node(openfile->current);
             linestruct *sample_line     = openfile->current;
@@ -1994,44 +2003,49 @@ find_paragraph(linestruct *&firstline, u64 &linecount)
     return true;
 }
 
-/* Concatenate into a single line all the lines of the paragraph that starts at
- * *line and consists of 'count' lines, skipping the quoting and indentation on
- * all lines after the first. */
+//
+//  Concatenate into a single line all the lines of the paragraph that starts at
+//  *line and consists of 'count' lines, skipping the quoting and indentation on
+//  all lines after the first.
+//
 void
-concat_paragraph(linestruct *line, size_t count)
+concat_paragraph(linestruct *line, u64 count)
 {
     while (count > 1)
     {
-        linestruct *next_line     = line->next;
-        size_t      next_line_len = strlen(next_line->data);
-        size_t      next_quot_len = quote_length(next_line->data);
-        size_t      next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
-        size_t      line_len      = strlen(line->data);
+        linestruct *next_line = line->next;
 
-        /* We're just about to tack the next line onto this one.  If
-         * this line isn't empty, make sure it ends in a space. */
+        u64 next_line_len = std::strlen(next_line->data);
+        u64 next_quot_len = quote_length(next_line->data);
+        u64 next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
+        u64 line_len      = std::strlen(line->data);
+
+        //
+        //  We're just about to tack the next line onto this one.
+        //  If this line isn't empty, make sure it ends in a space.
+        //
         if (line_len > 0 && line->data[line_len - 1] != ' ')
         {
-            line->data             = RE_CAST(char *, nrealloc(line->data, line_len + 2));
+            line->data             = static_cast<s8 *>(nrealloc(line->data, line_len + 2));
             line->data[line_len++] = ' ';
             line->data[line_len]   = '\0';
         }
 
-        line->data = RE_CAST(char *, nrealloc(line->data, line_len + next_line_len - next_lead_len + 1));
-        strcat(line->data, next_line->data + next_lead_len);
-#ifndef NANO_TINY
+        line->data = static_cast<s8 *>(nrealloc(line->data, line_len + next_line_len - next_lead_len + 1));
+        std::strcat(line->data, next_line->data + next_lead_len);
         line->has_anchor |= next_line->has_anchor;
-#endif
         unlink_node(next_line);
         count--;
     }
 }
 
-/* Copy a character from one place to another. */
+//
+//  Copy a character from one place to another.
+//
 void
-copy_character(char **from, char **to)
+copy_character(s8 **from, s8 **to)
 {
-    int charlen = char_length(*from);
+    s32 charlen = char_length(*from);
 
     if (*from == *to)
     {
@@ -3216,7 +3230,7 @@ do_spell(void)
 void
 do_linter()
 {
-    Profile::AutoTimer timer("do_linter");
+    PROFILE_FUNCTION;
 
     char       *lintings, *pointer, *onelint;
     long        pipesize;

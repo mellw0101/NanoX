@@ -124,6 +124,8 @@ static linestruct *errors_tail = nullptr;
 void
 display_rcfile_errors()
 {
+    PROFILE_FUNCTION;
+
     for (linestruct *error = errors_head; error != nullptr; error = error->next)
     {
         fprintf(stderr, "%s\n", error->data);
@@ -149,6 +151,8 @@ static constexpr auto MAXSIZE = (PATH_MAX + 200);
 void
 jot_error(const s8 *msg, ...)
 {
+    PROFILE_FUNCTION;
+
     linestruct *error = make_new_node(errors_tail);
     va_list     ap;
 
@@ -189,6 +193,125 @@ jot_error(const s8 *msg, ...)
     sprintf(error->data, "%s", textbuf);
 }
 
+CONSTEXPR_MAP<std::string_view, functionptrtype, 104> keyMap = {
+    {{"cancel", do_cancel},
+     {"help", do_help},
+     {"exit", do_exit},
+     {"discardbuffer", discard_buffer},
+     {"writeout", do_writeout},
+     {"savefile", do_savefile},
+     {"insert", do_insertfile},
+     {"whereis", do_search_forward},
+     {"wherewas", do_search_backward},
+     {"findprevious", do_findprevious},
+     {"findnext", do_findnext},
+     {"replace", do_replace},
+     {"cut", cut_text},
+     {"copy", copy_text},
+     {"paste", paste_text},
+     {"execute", do_execute},
+     {"cutrestoffile", cut_till_eof},
+     {"zap", zap_text},
+     {"mark", do_mark},
+     {"tospell", do_spell},
+     {"speller", do_spell},
+     {"linter", do_linter},
+     {"formatter", do_formatter},
+     {"location", report_cursor_position},
+     {"gotoline", do_gotolinecolumn},
+     {"justify", do_justify},
+     {"fulljustify", do_full_justify},
+     {"beginpara", to_para_begin},
+     {"endpara", to_para_end},
+     {"comment", do_comment},
+     {"complete", complete_a_word},
+     {"indent", do_indent},
+     {"unindent", do_unindent},
+     {"chopwordleft", chop_previous_word},
+     {"chopwordright", chop_next_word},
+     {"findbracket", do_find_bracket},
+     {"wordcount", count_lines_words_and_characters},
+     {"recordmacro", record_macro},
+     {"runmacro", run_macro},
+     {"anchor", put_or_lift_anchor},
+     {"prevanchor", to_prev_anchor},
+     {"nextanchor", to_next_anchor},
+     {"undo", do_undo},
+     {"redo", do_redo},
+     {"suspend", do_suspend},
+     {"left", do_left},
+     {"back", do_left},
+     {"right", do_right},
+     {"forward", do_right},
+     {"up", do_up},
+     {"prevline", do_up},
+     {"down", do_down},
+     {"nextline", do_down},
+     {"scrollup", do_scroll_up},
+     {"scrolldown", do_scroll_down},
+     {"prevword", to_prev_word},
+     {"nextword", to_next_word},
+     {"home", do_home},
+     {"end", do_end},
+     {"prevblock", to_prev_block},
+     {"nextblock", to_next_block},
+     {"pageup", do_page_up},
+     {"prevpage", do_page_up},
+     {"pagedown", do_page_down},
+     {"nextpage", do_page_down},
+     {"firstline", to_first_line},
+     {"lastline", to_last_line},
+     {"toprow", to_top_row},
+     {"bottomrow", to_bottom_row},
+     {"center", do_center},
+     {"cycle", do_cycle},
+     {"dosformat", dos_format},
+     {"macformat", mac_format},
+     {"append", append_it},
+     {"prepend", prepend_it},
+     {"backup", back_it_up},
+     {"flipexecute", flip_execute},
+     {"flippipe", flip_pipe},
+     {"flipconvert", flip_convert},
+     {"flipnewbuffer", flip_newbuffer},
+     {"flipgoto", flip_goto},
+     {"flipreplace", flip_replace},
+     {"flippipe", flip_pipe},
+     {"flipconvert", flip_convert},
+     {"flipnewbuffer", flip_newbuffer},
+     {"verbatim", do_verbatim_input},
+     {"tab", do_tab},
+     {"enter", do_enter},
+     {"delete", do_delete},
+     {"backspace", do_backspace},
+     {"refresh", full_refresh},
+     {"casesens", case_sens_void},
+     {"regexp", regexp_void},
+     {"backwards", backwards_void},
+     {"flipreplace", flip_replace},
+     {"flipgoto", flip_goto},
+     {"flippipe", flip_pipe},
+     {"flipconvert", flip_convert},
+     {"flipnewbuffer", flip_newbuffer},
+     {"tofiles", to_files},
+     {"browser", to_files},
+     {"gotodir", goto_dir},
+     {"firstfile", to_first_file},
+     {"lastfile", to_last_file}}
+};
+constexpr auto
+retriveScFromStr(std::string_view str)
+{
+    for (const auto &[key, value] : keyMap)
+    {
+        if (key == str)
+        {
+            return value;
+        }
+    }
+    return (functionptrtype) nullptr;
+}
+
 //
 //  Interpret a function string given in the rc file, and return a
 //  shortcut record with the corresponding function filled in.
@@ -198,123 +321,16 @@ jot_error(const s8 *msg, ...)
 keystruct *
 strtosc(const s8 *input)
 {
-    Mlib::Profile::AutoTimer timer("strtosc");
-
-    static const std::unordered_map<std::string, void (*)()> keyMap = {
-        {       "cancel",                        do_cancel},
-        {         "help",                          do_help},
-        {         "exit",                          do_exit},
-        {"discardbuffer",                   discard_buffer},
-        {     "writeout",                      do_writeout},
-        {     "savefile",                      do_savefile},
-        {       "insert",                    do_insertfile},
-        {      "whereis",                do_search_forward},
-        {     "wherewas",               do_search_backward},
-        { "findprevious",                  do_findprevious},
-        {     "findnext",                      do_findnext},
-        {      "replace",                       do_replace},
-        {          "cut",                         cut_text},
-        {         "copy",                        copy_text},
-        {        "paste",                       paste_text},
-        {      "execute",                       do_execute},
-        {"cutrestoffile",                     cut_till_eof},
-        {          "zap",                         zap_text},
-        {         "mark",                          do_mark},
-        {      "tospell",                         do_spell},
-        {      "speller",                         do_spell},
-        {       "linter",                        do_linter},
-        {    "formatter",                     do_formatter},
-        {     "location",           report_cursor_position},
-        {     "gotoline",                do_gotolinecolumn},
-        {      "justify",                       do_justify},
-        {  "fulljustify",                  do_full_justify},
-        {    "beginpara",                    to_para_begin},
-        {      "endpara",                      to_para_end},
-        {      "comment",                       do_comment},
-        {     "complete",                  complete_a_word},
-        {       "indent",                        do_indent},
-        {     "unindent",                      do_unindent},
-        { "chopwordleft",               chop_previous_word},
-        {"chopwordright",                   chop_next_word},
-        {  "findbracket",                  do_find_bracket},
-        {    "wordcount", count_lines_words_and_characters},
-        {  "recordmacro",                     record_macro},
-        {     "runmacro",                        run_macro},
-        {       "anchor",               put_or_lift_anchor},
-        {   "prevanchor",                   to_prev_anchor},
-        {   "nextanchor",                   to_next_anchor},
-        {         "undo",                          do_undo},
-        {         "redo",                          do_redo},
-        {      "suspend",                       do_suspend},
-        {         "left",                          do_left},
-        {         "back",                          do_left},
-        {        "right",                         do_right},
-        {      "forward",                         do_right},
-        {           "up",                            do_up},
-        {     "prevline",                            do_up},
-        {         "down",                          do_down},
-        {     "nextline",                          do_down},
-        {     "scrollup",                     do_scroll_up},
-        {   "scrolldown",                   do_scroll_down},
-        {     "prevword",                     to_prev_word},
-        {     "nextword",                     to_next_word},
-        {         "home",                          do_home},
-        {          "end",                           do_end},
-        {    "prevblock",                    to_prev_block},
-        {    "nextblock",                    to_next_block},
-        {       "pageup",                       do_page_up},
-        {     "prevpage",                       do_page_up},
-        {     "pagedown",                     do_page_down},
-        {     "nextpage",                     do_page_down},
-        {    "firstline",                    to_first_line},
-        {     "lastline",                     to_last_line},
-        {       "toprow",                       to_top_row},
-        {    "bottomrow",                    to_bottom_row},
-        {       "center",                        do_center},
-        {        "cycle",                         do_cycle},
-        {    "dosformat",                       dos_format},
-        {    "macformat",                       mac_format},
-        {       "append",                        append_it},
-        {      "prepend",                       prepend_it},
-        {       "backup",                       back_it_up},
-        {  "flipexecute",                     flip_execute},
-        {     "flippipe",                        flip_pipe},
-        {  "flipconvert",                     flip_convert},
-        {"flipnewbuffer",                   flip_newbuffer},
-        {     "flipgoto",                        flip_goto},
-        {  "flipreplace",                     flip_replace},
-        {     "flippipe",                        flip_pipe},
-        {  "flipconvert",                     flip_convert},
-        {"flipnewbuffer",                   flip_newbuffer},
-        {     "verbatim",                do_verbatim_input},
-        {          "tab",                           do_tab},
-        {        "enter",                         do_enter},
-        {       "delete",                        do_delete},
-        {    "backspace",                     do_backspace},
-        {      "refresh",                     full_refresh},
-        {     "casesens",                   case_sens_void},
-        {       "regexp",                      regexp_void},
-        {    "backwards",                   backwards_void},
-        {  "flipreplace",                     flip_replace},
-        {     "flipgoto",                        flip_goto},
-        {     "flippipe",                        flip_pipe},
-        {  "flipconvert",                     flip_convert},
-        {"flipnewbuffer",                   flip_newbuffer},
-        {      "tofiles",                         to_files},
-        {      "browser",                         to_files},
-        {      "gotodir",                         goto_dir},
-        {    "firstfile",                    to_first_file},
-        {     "lastfile",                     to_last_file}
-    };
+    PROFILE_FUNCTION;
 
     keystruct *s = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
 
     s->toggle = 0;
 
-    const auto it = keyMap.find(input);
-    if (it != keyMap.end())
+    const auto it = retriveScFromStr(input);
+    if (it != nullptr)
     {
-        s->func = it->second;
+        s->func = it;
     }
     else
     {
@@ -341,7 +357,7 @@ strtosc(const s8 *input)
 s8 *
 parse_next_word(s8 *ptr)
 {
-    Profile::AutoTimer timer("parse_next_word");
+    PROFILE_FUNCTION;
 
     while (!isblank((unsigned char)*ptr) && *ptr != '\0')
     {
@@ -373,7 +389,7 @@ parse_next_word(s8 *ptr)
 s8 *
 parse_argument(s8 *ptr)
 {
-    Profile::AutoTimer timer("parse_argument");
+    PROFILE_FUNCTION;
 
     const s8 *ptr_save   = ptr;
     s8       *last_quote = nullptr;
@@ -408,12 +424,16 @@ parse_argument(s8 *ptr)
     return ptr;
 }
 
-/* Advance over one regular expression in the line starting at ptr,
- * null-terminate it, and return a pointer to the succeeding text. */
-char *
-parse_next_regex(char *ptr)
+//
+//  Advance over one regular expression in the line starting at ptr,
+//  null-terminate it, and return a pointer to the succeeding text.
+//
+s8 *
+parse_next_regex(s8 *ptr)
 {
-    char *starting_point = ptr;
+    PROFILE_FUNCTION;
+
+    s8 *starting_point = ptr;
 
     if (*(ptr - 1) != '"')
     {
@@ -458,6 +478,8 @@ parse_next_regex(char *ptr)
 bool
 compile(const s8 *expression, s32 rex_flags, regex_t **packed)
 {
+    PROFILE_FUNCTION;
+
     regex_t *compiled = static_cast<regex_t *>(nmalloc(sizeof(regex_t)));
     s32      outcome  = regcomp(compiled, expression, rex_flags);
 
@@ -488,6 +510,8 @@ compile(const s8 *expression, s32 rex_flags, regex_t **packed)
 void
 begin_new_syntax(s8 *ptr)
 {
+    PROFILE_FUNCTION;
+
     s8 *nameptr = ptr;
 
     //
@@ -576,6 +600,8 @@ begin_new_syntax(s8 *ptr)
 void
 check_for_nonempty_syntax()
 {
+    PROFILE_FUNCTION;
+
     if (opensyntax && !seen_color_command)
     {
         size_t current_lineno = lineno;
@@ -594,6 +620,8 @@ check_for_nonempty_syntax()
 bool
 is_universal(void (*func)())
 {
+    PROFILE_FUNCTION;
+
     return (func == do_left || func == do_right || func == do_home || func == do_end || func == to_prev_word ||
             func == to_next_word || func == do_delete || func == do_backspace || func == cut_text ||
             func == paste_text || func == do_tab || func == do_enter || func == do_verbatim_input);
@@ -603,7 +631,7 @@ is_universal(void (*func)())
 void
 parse_binding(char *ptr, bool dobind)
 {
-    Mlib::Profile::AutoTimer timer("parse_binding");
+    PROFILE_FUNCTION;
 
     char      *keyptr = NULL, *keycopy = NULL, *funcptr = NULL, *menuptr = NULL;
     int        keycode, menu, mask = 0;
@@ -682,8 +710,10 @@ parse_binding(char *ptr, bool dobind)
 
     if (dobind)
     {
-        /* If the thing to bind starts with a double quote, it is a string,
-         * otherwise it is the name of a function. */
+        //
+        //  If the thing to bind starts with a double quote, it is a string,
+        //  otherwise it is the name of a function.
+        //
         if (*funcptr == '"')
         {
             newsc            = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
@@ -809,6 +839,8 @@ parse_binding(char *ptr, bool dobind)
 bool
 is_good_file(s8 *file)
 {
+    PROFILE_FUNCTION;
+
     struct stat rcinfo;
 
     // First check that the file exists and is readable.
@@ -834,6 +866,8 @@ is_good_file(s8 *file)
 void
 parse_one_include(char *file, syntaxtype *syntax)
 {
+    PROFILE_FUNCTION;
+
     char          *was_nanorc = nanorc;
     size_t         was_lineno = lineno;
     augmentstruct *extra;
@@ -903,6 +937,8 @@ parse_one_include(char *file, syntaxtype *syntax)
 void
 parse_includes(char *ptr)
 {
+    PROFILE_FUNCTION;
+
     char  *pattern, *expanded;
     glob_t files;
     int    result;
@@ -968,6 +1004,8 @@ parse_includes(char *ptr)
 s16
 closest_index_color(s16 red, s16 green, s16 blue)
 {
+    PROFILE_FUNCTION;
+
     /* Translation table, from 16 intended color levels to 6 available levels. */
     static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
 
@@ -1039,6 +1077,8 @@ s16 indices[COLORCOUNT] = {COLOR_RED,
 short
 color_to_short(const s8 *colorname, bool *vivid, bool *thick)
 {
+    PROFILE_FUNCTION;
+
     if (strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
         ///
@@ -1112,6 +1152,8 @@ color_to_short(const s8 *colorname, bool *vivid, bool *thick)
 bool
 parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 {
+    PROFILE_FUNCTION;
+
     bool vivid, thick;
     s8  *comma;
 
@@ -1197,7 +1239,7 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 void
 parse_rule(char *ptr, int rex_flags)
 {
-    Mlib::Profile::AutoTimer timer("parse_rule");
+    PROFILE_FUNCTION;
 
     char *names, *regexstring;
     short fg, bg;
@@ -1433,55 +1475,8 @@ pick_up_name(const s8 *kind, s8 *ptr, s8 **storage)
 }
 
 //
-/// Old version of the syntax command parser, from nano source code uses strcmp.
-/// HERE:
-/*
-    //
-    // Handle the six syntax-only commands.
-    //
-    bool
-    parse_syntax_commands(s8 *keyword, s8 *ptr)
-    {
-        if (strcmp(keyword, "color") == 0)
-        {
-            parse_rule(ptr, NANO_REG_EXTENDED);
-        }
-        else if (strcmp(keyword, "icolor") == 0)
-        {
-            parse_rule(ptr, NANO_REG_EXTENDED | REG_ICASE);
-        }
-        else if (strcmp(keyword, "comment") == 0)
-        {
-    #ifdef ENABLE_COMMENT
-            pick_up_name("comment", ptr, &live_syntax->comment);
-    #endif
-        }
-        else if (strcmp(keyword, "tabgives") == 0)
-        {
-            pick_up_name("tabgives", ptr, &live_syntax->tabstring);
-        }
-        else if (strcmp(keyword, "linter") == 0)
-        {
-            pick_up_name("linter", ptr, &live_syntax->linter);
-            strip_leading_blanks_from(live_syntax->linter);
-        }
-        else if (strcmp(keyword, "formatter") == 0)
-        {
-            pick_up_name("formatter", ptr, &live_syntax->formatter);
-            strip_leading_blanks_from(live_syntax->formatter);
-        }
-        else
-        {
-            return FALSE;
-        }
-
-        return TRUE;
-    }
-*/
-//
-/// New version of the syntax command parser Uses a unordered map
-/// of std::string`s and u32`s ( as bitfields ).
-/// The use of bitfields enables the use of bitwise operations.
+//  Parse the syntax command in the given string,
+//  and set the syntax options accordingly.
 //
 bool
 parse_syntax_commands(s8 *keyword, s8 *ptr)
