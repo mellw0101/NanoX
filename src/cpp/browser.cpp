@@ -7,18 +7,30 @@
 #    include <cstring>
 #    include <unistd.h>
 
-/* The list of files to display in the file browser. */
-static char **filelist    = nullptr;
-static size_t list_length = 0;
-/* The number of files in the list. */
-static size_t usable_rows = 0;
-/* The number of screen rows we can use to display the list. */
-static int piles = 0;
-/* The number of files that we can display per screen row. */
-static int gauge = 0;
-/* The width of a 'pile' -- the widest filename plus ten. */
-static size_t selected = 0;
-/* The currently selected filename in the list; zero-based. */
+//
+//  The list of files to display in the file browser.
+//
+static s8 **filelist = nullptr;
+//
+//  The number of files in the list.
+//
+static u64 list_length = 0;
+//
+//  The number of screen rows we can use to display the list.
+//
+static u64 usable_rows = 0;
+//
+//  The number of files that we can display per screen row.
+//
+static s32 piles = 0;
+//
+//  The width of a 'pile' -- the widest filename plus ten.
+//
+static s32 gauge = 0;
+//
+//  The currently selected filename in the list; zero-based.
+//
+static u64 selected = 0;
 
 //
 //  Fill 'filelist' with the names of the files in the given directory, set
@@ -27,7 +39,7 @@ static size_t selected = 0;
 //  files that can be displayed per screen row.  And sort the list too. */
 //
 void
-read_the_list(const char *path, DIR *dir)
+read_the_list(const s8 *path, DIR *dir)
 {
     size_t               path_len = strlen(path);
     const struct dirent *entry;
@@ -97,20 +109,24 @@ read_the_list(const char *path, DIR *dir)
     usable_rows = editwinrows - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
 }
 
-/* Reselect the given file or directory name, if it still exists. */
+//
+//  Reselect the given file or directory name, if it still exists.
+//
 void
-reselect(const char *name)
+reselect(const s8 *name)
 {
     size_t looking_at = 0;
 
-    while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0)
+    while (looking_at < list_length && std::strcmp(filelist[looking_at], name) != 0)
     {
         looking_at++;
     }
 
-    /* If the sought name was found, select it; otherwise, just move
-     * the highlight so that the changed selection will be noticed,
-     * but make sure to stay within the current available range. */
+    //
+    //  If the sought name was found, select it; otherwise, just move
+    //  the highlight so that the changed selection will be noticed,
+    //  but make sure to stay within the current available range.
+    //
     if (looking_at < list_length)
     {
         selected = looking_at;
@@ -125,16 +141,24 @@ reselect(const char *name)
     }
 }
 
-/* Display at most a screenful of filenames from the gleaned filelist. */
+//
+//  Display at most a screenful of filenames from the gleaned filelist.
+//
 void
-browser_refresh(void)
+browser_refresh()
 {
-    int row = 0, col = 0;
-    /* The current row and column while the list is getting displayed. */
-    int the_row = 0, the_column = 0;
-    /* The row and column of the selected item. */
-    char *info;
-    /* The additional information that we'll display about a file. */
+    //
+    //  The current row and column while the list is getting displayed.
+    //
+    s32 row = 0, col = 0;
+    //
+    //  The row and column of the selected item.
+    //
+    s32 the_row = 0, the_column = 0;
+    //
+    //  The additional information that we'll display about a file.
+    //
+    s8 *info;
 
     titlebar(present_path);
     blank_edit();

@@ -1,45 +1,49 @@
 #include "../include/prototypes.h"
 
-#ifdef ENABLE_HELP
+#include <cstring>
 
-// #    include <errno.h>
-#    include <string.h>
+//
+//  The text displayed in the help window.
+//
+static s8 *help_text = nullptr;
+//
+//  The point in the help text just after the title.
+//
+static const s8 *start_of_body = nullptr;
+//
+//  The point in the help text where the shortcut descriptions begin.
+//
+static s8 *end_of_intro = nullptr;
+//
+//  The offset (in bytes) of the topleft of the shown help text.
+//
+static u64 location;
 
-static char* help_text = NULL;
-/* The text displayed in the help window. */
-static const char* start_of_body = NULL;
-/* The point in the help text just after the title. */
-static char* end_of_intro = NULL;
-/* The point in the help text where the shortcut descriptions begin. */
-static size_t location;
-/* The offset (in bytes) of the topleft of the shown help text. */
-
-/// @name @c help_init
-/// @brief
-/// - Allocate space for the help text for the current menu,
-/// - and concatenate the different pieces of text into it.
-/// @details
-/// - The help text is divided into three parts:
-///   - The untranslated introduction,
-///   - the untranslated function key list, and
-///   - the untranslated function key descriptions.
-/// - The function key list is built by iterating over all functions,
-///   - and for each function, iterating over all shortcuts.
-/// - The function key descriptions are built by iterating over all functions.
-/// @returns @c void
+//
+//  Allocate space for the help text for the current menu,
+//  and concatenate the different pieces of text into it.
+//  The help text is divided into three parts:
+//  - The untranslated introduction,
+//  - The untranslated function key list, and
+//  - The untranslated function key descriptions.
+//  The function key list is built by iterating over all functions,
+//  - and for each function, iterating over all shortcuts.
+//  The function key descriptions are built by iterating over all functions.
+// @return void
+//
 void
-help_init(void)
+help_init()
 {
     size_t allocsize = 0;
 
     // Space needed for help_text.
-    const char* htx[3];
+    const char *htx[3];
 
     // Untranslated help introduction.  We break it up into three chunks
     // in case the full string is too long for the compiler to handle.
-    const funcstruct* f;
-    const keystruct*  s;
-    char*             ptr;
+    const funcstruct *f;
+    const keystruct  *s;
+    char             *ptr;
 
     /* First, set up the initial help text for the current function. */
     if (currmenu & (MWHEREIS | MREPLACE))
@@ -266,7 +270,7 @@ help_init(void)
     }
 
     // Allocate memory for the help text.
-    help_text = RE_CAST(char*, nmalloc(allocsize + 1));
+    help_text = RE_CAST(char *, nmalloc(allocsize + 1));
 
     // Now add the text we want.
     strcpy(help_text, htx[0]);
@@ -365,13 +369,15 @@ help_init(void)
     }
 }
 
-/* Hard-wrap the concatenated help text, and write it into a new buffer. */
+//
+//  Hard-wrap the concatenated help text, and write it into a new buffer.
+//
 void
-wrap_help_text_into_buffer(void)
+wrap_help_text_into_buffer()
 {
     /* Avoid overtight and overwide paragraphs in the introductory text. */
     size_t      wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
-    const char* ptr            = start_of_body;
+    const char *ptr            = start_of_body;
     size_t      sum            = 0;
 
     make_new_buffer();
@@ -388,7 +394,7 @@ wrap_help_text_into_buffer(void)
     while (*ptr != '\0')
     {
         int   length, shim;
-        char* oneline;
+        char *oneline;
 
         if (ptr == end_of_intro)
         {
@@ -398,14 +404,14 @@ wrap_help_text_into_buffer(void)
         if (ptr < end_of_intro || *(ptr - 1) == '\n')
         {
             length  = break_line(ptr, wrapping_point, TRUE);
-            oneline = RE_CAST(char*, nmalloc(length + 1));
+            oneline = RE_CAST(char *, nmalloc(length + 1));
             shim    = (*(ptr + length - 1) == ' ') ? 0 : 1;
             snprintf(oneline, length + shim, "%s", ptr);
         }
         else
         {
             length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, TRUE);
-            oneline = RE_CAST(char*, nmalloc(length + 5));
+            oneline = RE_CAST(char *, nmalloc(length + 5));
             snprintf(oneline, length + 5, "\t\t  %s", ptr);
         }
 
@@ -432,9 +438,9 @@ wrap_help_text_into_buffer(void)
     openfile->current = openfile->filetop;
 
     remove_magicline();
-#    ifdef ENABLE_COLOR
+#ifdef ENABLE_COLOR
     find_and_prime_applicable_syntax();
-#    endif
+#endif
     prepare_for_display();
 
     /* Move to the position in the file where we were before. */
@@ -451,9 +457,11 @@ wrap_help_text_into_buffer(void)
     openfile->edittop = openfile->current;
 }
 
-/* Assemble a help text, display it, and allow scrolling through it. */
+//
+//  Assemble a help text, display it, and allow scrolling through it.
+//
 void
-show_help(void)
+show_help()
 {
     s32             kbinput = ERR;
     functionptrtype function;
@@ -464,14 +472,14 @@ show_help(void)
     // The menu we were called from.
     s32 was_margin  = margin;
     s64 was_tabsize = tabsize;
-    s8* was_syntax  = syntaxstr;
+    s8 *was_syntax  = syntaxstr;
 
     // The current answer when the user invokes help at the prompt.
-    s8* saved_answer = (answer != nullptr) ? copy_of(answer) : nullptr;
+    s8 *saved_answer = (answer != nullptr) ? copy_of(answer) : nullptr;
     u32 stash[sizeof(flags) / sizeof(flags[0])];
 
     // A storage place for the current flag settings.
-    linestruct* line;
+    linestruct *line;
     int         length;
 
     // Save the settings of all flags.
@@ -573,25 +581,25 @@ show_help(void)
         {
             function();
             bottombars(MHELP);
-#    ifdef ENABLE_NANORC
+#ifdef ENABLE_NANORC
         }
         else if (function == (functionptrtype)implant)
         {
             implant(first_sc_for(MHELP, function)->expansion);
-#    endif /* ENABLE_NANORC */
-#    ifdef ENABLE_MOUSE
+#endif /* ENABLE_NANORC */
+#ifdef ENABLE_MOUSE
         }
         else if (kbinput == KEY_MOUSE)
         {
             int dummy_row, dummy_col;
             get_mouseinput(&dummy_row, &dummy_col, TRUE);
-#    endif
-#    ifndef NANO_TINY
+#endif
+#ifndef NANO_TINY
         }
         else if (kbinput == KEY_WINCH)
         {
             ; /* Nothing to do. */
-#    endif
+#endif
         }
         else if (function == do_exit)
         {
@@ -621,15 +629,15 @@ show_help(void)
     /* Restore the settings of all flags. */
     memcpy(flags, stash, sizeof(flags));
 
-#    ifdef ENABLE_LINENUMBERS
+#ifdef ENABLE_LINENUMBERS
     margin      = was_margin;
     editwincols = COLS - margin - sidebar;
-#    endif
+#endif
     tabsize = was_tabsize;
-#    ifdef ENABLE_COLOR
+#ifdef ENABLE_COLOR
     syntaxstr    = was_syntax;
     have_palette = FALSE;
-#    endif
+#endif
 
     free(title);
     title = NULL;
@@ -651,24 +659,24 @@ show_help(void)
 
     bottombars(oldmenu);
 
-#    ifdef ENABLE_BROWSER
+#ifdef ENABLE_BROWSER
     if (oldmenu & (MBROWSER | MWHEREISFILE | MGOTODIR))
     {
         browser_refresh();
     }
     else
-#    endif
+#endif
     {
         titlebar(NULL);
         edit_refresh();
     }
 }
 
-#endif /* ENABLE_HELP */
-
-/* Start the help viewer, or indicate that there is no help. */
+//
+//  Start the help viewer, or indicate that there is no help.
+//
 void
-do_help(void)
+do_help()
 {
 #ifdef ENABLE_HELP
     show_help();

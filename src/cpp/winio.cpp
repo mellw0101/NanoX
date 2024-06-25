@@ -2527,7 +2527,6 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
     return converted;
 }
 
-#ifdef ENABLE_MULTIBUFFER
 /* Determine the sequence number of the given buffer in the circular list. */
 int
 buffer_number(openfilestruct *buffer)
@@ -2542,9 +2541,7 @@ buffer_number(openfilestruct *buffer)
 
     return count;
 }
-#endif
 
-#ifndef NANO_TINY
 /* Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
  * and soft-wrapping by showing corresponding letters in the given window. */
 void
@@ -2556,7 +2553,6 @@ show_states_at(WINDOW *window)
     waddstr(window, recording ? "R" : " ");
     waddstr(window, ISSET(SOFTWRAP) ? "S" : " ");
 }
-#endif
 
 //
 /// If path is NULL, we're in normal editing mode, so display the current
@@ -3233,8 +3229,7 @@ place_the_cursor(void)
     ssize_t row    = 0;
     size_t  column = xplustabs();
 
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
         linestruct *line = openfile->edittop;
         size_t      leftedge;
@@ -3253,7 +3248,6 @@ place_the_cursor(void)
         column -= leftedge;
     }
     else
-#endif
     {
         row = openfile->current->lineno - openfile->edittop->lineno;
         column -= get_page_start(column);
@@ -3263,12 +3257,10 @@ place_the_cursor(void)
     {
         wmove(midwin, row, margin + column);
     }
-#ifndef NANO_TINY
     else
     {
         statusline(ALERT, "Misplaced cursor -- please report a bug");
     }
-#endif
 
 #ifdef _CURSES_H_
     wnoutrefresh(midwin); /* Only needed for NetBSD curses. */
@@ -3277,10 +3269,11 @@ place_the_cursor(void)
     openfile->cursor_row = row;
 }
 
-/* The number of bytes after which to stop painting, to avoid major slowdowns.
- */
-#define PAINT_LIMIT 2000
-
+//
+//  The number of bytes after which to stop painting,
+//  to avoid major slowdowns.
+//
+static constexpr auto PAINT_LIMIT = 2000;
 //
 //  Draw the given text on the given row of the edit window.  line is the
 //  line to be drawn, and converted is the actual string to be written with
@@ -3666,7 +3659,6 @@ update_line(linestruct *line, size_t index)
     return 1;
 }
 
-#ifndef NANO_TINY
 /* Redraw all the chunks of the given line (as far as they fit onscreen),
  * unless it's edittop, which will be displayed from column firstcolumn.
  * Return the number of rows that were "consumed". */
@@ -3735,7 +3727,6 @@ update_softwrapped_line(linestruct *line)
 
     return (row - starting_row);
 }
-#endif
 
 /* Check whether the mark is on, or whether old_column and new_column are on
  * different "pages" (in softwrap mode, only the former applies), which means
@@ -3881,7 +3872,6 @@ less_than_a_screenful(size_t was_lineno, size_t was_leftedge)
         return (openfile->current->lineno - was_lineno < editwinrows);
 }
 
-#ifndef NANO_TINY
 /* Draw a "scroll bar" on the righthand side of the edit window. */
 void
 draw_scrollbar(void)
@@ -3919,7 +3909,6 @@ draw_scrollbar(void)
         mvwaddch(midwin, row, COLS - 1, bardata[row]);
     }
 }
-#endif
 
 /* Scroll the edit window one row in the given direction, and
  * draw the relevant content on the resultant blank row. */
@@ -4231,12 +4220,13 @@ current_is_above_screen(void)
 
 #define SHIM (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
 
-/* Return TRUE if current[current_x] is beyond the viewport. */
+//
+//  Return TRUE if current[current_x] is beyond the viewport.
+//
 bool
-current_is_below_screen(void)
+current_is_below_screen()
 {
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
         linestruct *line     = openfile->edittop;
         size_t      leftedge = openfile->firstcolumn;
@@ -4249,8 +4239,9 @@ current_is_below_screen(void)
              (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
     }
     else
-#endif
+    {
         return (openfile->current->lineno >= openfile->edittop->lineno + editwinrows - SHIM);
+    }
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */

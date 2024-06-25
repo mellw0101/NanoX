@@ -7,17 +7,23 @@
 #include <pwd.h>
 #include <unistd.h>
 
-// Return the user's home directory.  We use $HOME, and if that fails,
-// we fall back on the home directory of the effective user ID.
+//
+//  Return the user's home directory.  We use $HOME, and if that fails,
+//  we fall back on the home directory of the effective user ID.
+//
 void
 get_homedir()
 {
+    PROFILE_FUNCTION;
+
     if (homedir == nullptr)
     {
         const s8 *homenv = getenv("HOME");
 
-        // When HOME isn't set,or when we're root,
-        // get the home directory from the password file instead.
+        //
+        //  When HOME isn't set,or when we're root,
+        //  get the home directory from the password file instead.
+        //
         if (homenv == nullptr || geteuid() == ROOT_UID)
         {
             const passwd *userage = getpwuid(geteuid());
@@ -27,8 +33,10 @@ get_homedir()
             }
         }
 
-        // Only set homedir if some home directory could be determined,
-        // otherwise keep homedir nullpre.
+        //
+        //  Only set homedir if some home directory could be determined,
+        //  otherwise keep homedir nullpre.
+        //
         if (homenv != nullptr && *homenv != '\0')
         {
             homedir = copy_of(homenv);
@@ -36,11 +44,13 @@ get_homedir()
     }
 }
 
-// Return the filename part of the given path.
+//
+//  Return the filename part of the given path.
+//
 const s8 *
 tail(const s8 *path)
 {
-    const s8 *slash = strrchr(path, '/');
+    const s8 *slash = std::strrchr(path, '/');
 
     if (slash == nullptr)
     {
@@ -52,7 +62,9 @@ tail(const s8 *path)
     }
 }
 
-// Return a copy of the two given strings, welded together.
+//
+//  Return a copy of the two given strings, welded together.
+//
 s8 *
 concatenate(const s8 *path, const s8 *name)
 {
@@ -164,9 +176,11 @@ parseNum(const std::string &string, s64 &result)
     return true;
 }
 
-// Read one number (or two numbers separated by comma, period, or colon)
-// from the given string and store the number(s) in *line (and *column).
-// Return FALSE on a failed parsing, and TRUE otherwise. */
+//
+//  Read one number (or two numbers separated by comma, period, or colon)
+//  from the given string and store the number(s) in *line (and *column).
+//  Return FALSE on a failed parsing, and TRUE otherwise.
+//
 bool
 parse_line_column(const s8 *string, s64 *line, s64 *column)
 {
@@ -179,7 +193,7 @@ parse_line_column(const s8 *string, s64 *line, s64 *column)
         string++;
     }
 
-    comma = strpbrk(string, ",.:");
+    comma = std::strpbrk(string, ",.:");
 
     if (comma == nullptr)
     {
@@ -198,12 +212,14 @@ parse_line_column(const s8 *string, s64 *line, s64 *column)
 
     retval = parseNum(firstpart, *line) && retval;
 
-    free(firstpart);
+    std::free(firstpart);
 
     return retval;
 }
 
-// In the given string, recode each embedded NUL as a newline.
+//
+//  In the given string, recode each embedded NUL as a newline.
+//
 void
 recode_NUL_to_LF(s8 *string, u64 length)
 {
@@ -218,8 +234,10 @@ recode_NUL_to_LF(s8 *string, u64 length)
     }
 }
 
-// In the given string, recode each embedded newline as a NUL,
-// and return the number of bytes in the string.
+//
+//  In the given string, recode each embedded newline as a NUL,
+//  and return the number of bytes in the string.
+//
 u64
 recode_LF_to_NUL(s8 *string)
 {
@@ -237,42 +255,50 @@ recode_LF_to_NUL(s8 *string)
     return static_cast<u64>(string - beginning);
 }
 
-/* Free the memory of the given array, which should contain len elements. */
+//
+//  Free the memory of the given array, which should contain len elements.
+//
 void
-free_chararray(char **array, size_t len)
+free_chararray(s8 **array, u64 len)
 {
-    if (array == NULL)
+    if (array == nullptr)
     {
         return;
     }
 
     while (len > 0)
     {
-        free(array[--len]);
+        std::free(array[--len]);
     }
 
-    free(array);
+    std::free(array);
 }
 
-/* Is the word starting at the given position in 'text' and of the given
- * length a separate word?  That is: is it not part of a longer word? */
+//
+//  Is the word starting at the given position in 'text' and of the given
+//  length a separate word?  That is: is it not part of a longer word?
+//
 bool
-is_separate_word(size_t position, size_t length, const char *text)
+is_separate_word(u64 position, u64 length, const s8 *text)
 {
-    const char *before = text + step_left(text, position);
-    const char *after  = text + position + length;
+    const s8 *before = text + step_left(text, position);
+    const s8 *after  = text + position + length;
 
-    /* If the word starts at the beginning of the line OR the character before
-     * the word isn't a letter, and if the word ends at the end of the line OR
-     * the character after the word isn't a letter, we have a whole word. */
+    //
+    //  If the word starts at the beginning of the line OR the character before
+    //  the word isn't a letter, and if the word ends at the end of the line OR
+    //  the character after the word isn't a letter, we have a whole word.
+    //
     return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
 }
 
-// Return the position of the needle in the haystack, or NULL if not found.
-// When searching backwards, we will find the last match that starts no later
-// than the given start; otherwise, we find the first match starting no earlier
-// than start.  If we are doing a regexp search, and we find a match, we fill
-// in the global variable regmatches with at most 9 subexpression matches.
+//
+//  Return the position of the needle in the haystack, or NULL if not found.
+//  When searching backwards, we will find the last match that starts no later
+//  than the given start; otherwise, we find the first match starting no earlier
+//  than start.  If we are doing a regexp search, and we find a match, we fill
+//  in the global variable regmatches with at most 9 subexpression matches.
+//
 const s8 *
 strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const start)
 {
@@ -291,24 +317,30 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
                 return nullptr;
             }
 
-            far_end   = strlen(haystack);
+            far_end   = std::strlen(haystack);
             ceiling   = start - haystack;
             last_find = regmatches[0].rm_so;
 
-            // A result beyond the search range also means: no match.
+            //
+            //  A result beyond the search range also means: no match.
+            //
             if (last_find > ceiling)
             {
                 return nullptr;
             }
 
-            // Move the start-of-range forward until there is no more match;
-            // then the last match found is the first match backwards.
+            //
+            //  Move the start-of-range forward until there is no more match;
+            //  then the last match found is the first match backwards.
+            //
             while (regmatches[0].rm_so <= ceiling)
             {
                 floor     = next_rung;
                 last_find = regmatches[0].rm_so;
 
-                // If this is the last possible match, don't try to advance.
+                //
+                //  If this is the last possible match, don't try to advance.
+                //
                 if (last_find == ceiling)
                 {
                     break;
@@ -322,7 +354,9 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
                 }
             }
 
-            // Find the last match again, to get possible submatches.
+            //
+            //  Find the last match again, to get possible submatches.
+            //
             regmatches[0].rm_so = floor;
             regmatches[0].rm_eo = far_end;
             if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND))
@@ -333,7 +367,9 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
             return haystack + regmatches[0].rm_so;
         }
 
-        // Do a forward regex search from the starting point.
+        //
+        //  Do a forward regex search from the starting point.
+        //
         regmatches[0].rm_so = start - haystack;
         regmatches[0].rm_eo = strlen(haystack);
         if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND))
@@ -368,7 +404,9 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
     }
 }
 
-// Allocate the given amount of memory and return a pointer to it.
+//
+//  Allocate the given amount of memory and return a pointer to it.
+//
 void *
 nmalloc(const u64 howmuch)
 {
@@ -380,7 +418,9 @@ nmalloc(const u64 howmuch)
     return section;
 }
 
-// Reallocate the given section of memory to have the given size.
+//
+//  Reallocate the given section of memory to have the given size.
+//
 void *
 nrealloc(void *section, const u64 howmuch)
 {
@@ -409,25 +449,32 @@ mallocstrcpy(s8 *dest, const s8 *src)
     return dest;
 }
 
-// Return an allocated copy of the first count characters
-// of the given string, and NUL-terminate the copy.
+//
+//  Return an allocated copy of the first count characters
+//  of the given string, and NUL-terminate the copy.
+//
 s8 *
 measured_copy(const s8 *string, const u64 count)
 {
     s8 *thecopy = static_cast<s8 *>(nmalloc(count + 1));
-    memcpy(thecopy, string, count);
+    std::memcpy(thecopy, string, count);
     thecopy[count] = '\0';
+
     return thecopy;
 }
 
-// Return an allocated copy of the given string.
+//
+//  Return an allocated copy of the given string.
+//
 s8 *
 copy_of(const s8 *string)
 {
     return measured_copy(string, std::strlen(string));
 }
 
-// Free the string at dest and return the string at src.
+//
+//  Free the string at dest and return the string at src.
+//
 s8 *
 free_and_assign(s8 *dest, s8 *src)
 {
@@ -635,7 +682,9 @@ get_range(linestruct *&top, linestruct *&bot)
     }
 }
 
-/* Return a pointer to the line that has the given line number. */
+//
+//  Return a pointer to the line that has the given line number.
+//
 linestruct *
 line_from_number(s64 number)
 {
@@ -659,19 +708,25 @@ line_from_number(s64 number)
     return line;
 }
 
-// Count the number of characters from begin to end, and return it.
+//
+//  Count the number of characters from begin to end, and return it.
+//
 u64
 number_of_characters_in(const linestruct *begin, const linestruct *end)
 {
     const linestruct *line;
-    size_t            count = 0;
+    u64               count = 0;
 
-    /* Sum the number of characters (plus a newline) in each line. */
+    //
+    //  Sum the number of characters (plus a newline) in each line.
+    //
     for (line = begin; line != end->next; line = line->next)
     {
         count += mbstrlen(line->data) + 1;
     }
 
-    /* Do not count the final newline. */
+    //
+    //  Do not count the final newline.
+    //
     return (count - 1);
 }

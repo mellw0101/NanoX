@@ -19,8 +19,6 @@
 #include <termios.h>
 #include <unistd.h>
 
-using namespace Mlib;
-
 //
 //  Used to store the user's original mouse click interval.
 //
@@ -122,7 +120,9 @@ unlink_node(linestruct *line)
         line->next->prev = line->prev;
     }
 
-    // Update filebot when removing a node at the end of file.
+    //
+    //  Update filebot when removing a node at the end of file.
+    //
     if (openfile && openfile->filebot == line)
     {
         openfile->filebot = line->prev;
@@ -383,8 +383,11 @@ do_exit()
     }
 }
 
-// Save the current buffer under the given name (or "nano.<pid>" when nameless)
-// with suffix ".save".  If needed, the name is further suffixed to be unique.
+//
+//  Save the current buffer under the given name (or "nano.<pid>" when nameless)
+//  with suffix ".save".
+//  If needed, the name is further suffixed to be unique.
+//
 void
 emergency_save(const s8 *filename)
 {
@@ -1891,7 +1894,7 @@ process_a_keystroke()
 s32
 main(s32 argc, s8 **argv)
 {
-    Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
+    Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
 
     LOUT.setOutputFile("/home/mellw/.NanoX.log");
     LoutI << "Starting nano" << '\n';

@@ -443,7 +443,7 @@ advance_over(const s8 *str, u64 &column)
         //
         //  A UTF-8 upper control code has two bytes and takes two columns.
         //
-        if (static_cast<u8>(str[0]) == 0xC2 && static_cast<signed char>(str[1]) < -96)
+        if (static_cast<u8>(str[0]) == 0xC2 && static_cast<SigS8>(str[1]) < -96)
         {
             column += 2;
             return 2;
@@ -686,13 +686,16 @@ mbstrcasestr(const s8 *haystack, const s8 *needle)
     }
 }
 
-/* This function is equivalent to strstr(), except in that it scans the
- * string in reverse, starting at pointer. */
-char *
-revstrstr(const char *haystack, const char *needle, const char *pointer)
+//
+//  This function is equivalent to strstr(),
+//  except in that it scans the string in reverse,
+//  starting at pointer.
+//
+s8 *
+revstrstr(const s8 *haystack, const s8 *needle, const s8 *pointer)
 {
-    size_t needle_len = strlen(needle);
-    size_t tail_len   = strlen(pointer);
+    u64 needle_len = std::strlen(needle);
+    u64 tail_len   = std::strlen(pointer);
 
     if (tail_len < needle_len)
     {
@@ -701,23 +704,25 @@ revstrstr(const char *haystack, const char *needle, const char *pointer)
 
     while (pointer >= haystack)
     {
-        if (strncmp(pointer, needle, needle_len) == 0)
+        if (std::strncmp(pointer, needle, needle_len) == 0)
         {
-            return (char *)pointer;
+            return const_cast<s8 *>(pointer);
         }
         pointer--;
     }
 
-    return NULL;
+    return nullptr;
 }
 
-/* This function is equivalent to strcasestr(), except in that it scans
- * the string in reverse, starting at pointer. */
-char *
-revstrcasestr(const char *haystack, const char *needle, const char *pointer)
+//
+//  This function is equivalent to strcasestr(), except in that it scans
+//  the string in reverse, starting at pointer.
+//
+s8 *
+revstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
 {
-    size_t needle_len = strlen(needle);
-    size_t tail_len   = strlen(pointer);
+    u64 needle_len = std::strlen(needle);
+    u64 tail_len   = std::strlen(pointer);
 
     if (tail_len < needle_len)
     {
@@ -728,12 +733,12 @@ revstrcasestr(const char *haystack, const char *needle, const char *pointer)
     {
         if (strncasecmp(pointer, needle, needle_len) == 0)
         {
-            return (char *)pointer;
+            return const_cast<s8 *>(pointer);
         }
         pointer--;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 //
@@ -890,39 +895,44 @@ mbstrpbrk(const s8 *string, const s8 *accept)
     return NULL;
 }
 
-/* Locate, in the string that starts at head, the first occurrence of any of
- * the characters in accept, starting from pointer and searching backwards. */
-char *
-mbrevstrpbrk(const char *head, const char *accept, const char *pointer)
+//
+//  Locate, in the string that starts at head, the first occurrence of any of
+//  the characters in accept, starting from pointer and searching backwards.
+//
+s8 *
+mbrevstrpbrk(const s8 *head, const s8 *accept, const s8 *pointer)
 {
     if (*pointer == '\0')
     {
         if (pointer == head)
         {
-            return NULL;
+            return nullptr;
         }
         pointer = head + step_left(head, pointer - head);
     }
 
-    while (TRUE)
+    while (true)
     {
-        if (mbstrchr(accept, pointer) != NULL)
+        if (mbstrchr(accept, pointer) != nullptr)
         {
-            return (char *)pointer;
+            return const_cast<s8 *>(pointer);
         }
 
-        /* If we've reached the head of the string, we found nothing. */
+        //
+        //  If we've reached the head of the string, we found nothing.
+        //
         if (pointer == head)
         {
-            return NULL;
+            return nullptr;
         }
 
         pointer = head + step_left(head, pointer - head);
     }
 }
 
-#if defined(ENABLE_NANORC) && (!defined(NANO_TINY) || defined(ENABLE_JUSTIFY))
-/* Return TRUE if the given string contains at least one blank character. */
+//
+//  Return TRUE if the given string contains at least one blank character.
+//
 bool
 has_blank_char(const s8 *string)
 {
@@ -933,11 +943,12 @@ has_blank_char(const s8 *string)
 
     return *string;
 }
-#endif
 
-/* Return TRUE when the given string is empty or consists of only blanks. */
+//
+//  Return TRUE when the given string is empty or consists of only blanks.
+//
 bool
-white_string(const char *string)
+white_string(const s8 *string)
 {
     while (*string != '\0' && (is_blank_char(string) || *string == '\r'))
     {
@@ -947,14 +958,14 @@ white_string(const char *string)
     return !*string;
 }
 
-#if defined(ENABLE_SPELLER) || defined(ENABLE_COLOR)
-/* Remove leading whitespace from the given string. */
+//
+//  Remove leading whitespace from the given string.
+//
 void
-strip_leading_blanks_from(char *string)
+strip_leading_blanks_from(s8 *string)
 {
     while (string && (*string == ' ' || *string == '\t'))
     {
-        memmove(string, string + 1, strlen(string));
+        std::memmove(string, string + 1, std::strlen(string));
     }
 }
-#endif
