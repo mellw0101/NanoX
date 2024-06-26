@@ -40,14 +40,12 @@ using_utf8()
 bool
 is_alpha_char(const s8 *const &c)
 {
-    PROFILE_FUNCTION;
-
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
     {
         return false;
     }
-    return iswalpha(wc);
+    return std::iswalpha(wc);
 }
 
 //
@@ -62,7 +60,7 @@ is_alnum_char(const s8 *const &c)
     {
         return false;
     }
-    return iswalnum(wc);
+    return std::iswalnum(wc);
 }
 
 //
