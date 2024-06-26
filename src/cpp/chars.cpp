@@ -71,14 +71,11 @@ is_alnum_char(const s8 *const &c)
 bool
 is_blank_char(const s8 *c)
 {
-    PROFILE_FUNCTION;
-
     wchar_t wc;
 
-    if (static_cast<signed char>(*c) >= 0)
+    if (static_cast<SigS8>(*c) >= 0)
     {
         return (*c == ' ' || *c == '\t');
-        // return std::isspace(static_cast<u8> (*c));
     }
 
     if (mbtowide(wc, c) < 0)
@@ -97,7 +94,8 @@ is_cntrl_char(const s8 *c)
 {
     if (use_utf8)
     {
-        return ((c[0] & 0xE0) == 0 || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
+        return ((c[0] & 0xE0) == 0 || c[0] == DEL_CODE ||
+                (static_cast<SigS8>(c[0]) == -62 && static_cast<SigS8>(c[1]) < -96));
     }
     else
     {
@@ -344,8 +342,6 @@ is_zerowidth(const s8 *ch)
 s32
 char_length(const s8 *const &pointer)
 {
-    PROFILE_FUNCTION;
-
     if (static_cast<u8>(*pointer) > 0xC1 && use_utf8)
     {
         const u8 c1 = static_cast<u8>(pointer[0]);
@@ -402,9 +398,7 @@ char_length(const s8 *const &pointer)
 u64
 mbstrlen(const s8 *pointer)
 {
-    PROFILE_FUNCTION;
-
-    size_t count = 0;
+    u64 count = 0;
     while (*pointer != '\0')
     {
         pointer += char_length(pointer);
@@ -431,14 +425,12 @@ collect_char(const s8 *str, s8 *c)
 }
 
 //
-//  Return the length (in bytes) of the character at the start of
-//  the given string, and add this character's width to *column. */
+//  Return the length ( in bytes ) of the character at the start of
+//  the given string, and add this character's width to '*column'.
 //
 s32
 advance_over(const s8 *str, u64 &column)
 {
-    PROFILE_FUNCTION;
-
     if (static_cast<s8>(*str) < 0 && use_utf8)
     {
         //

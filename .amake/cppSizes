@@ -1,8 +1,6 @@
 utils.cpp:16021
 winio.cpp:143678
 prompt.cpp:26534
-color.cpp:16781
-nano.cpp:74800
 browser.cpp:28445
 experiments.cpp:12016
 search.cpp:36729
@@ -10,9 +8,11 @@ move.cpp:23590
 cut.cpp:25157
 history.cpp:18660
 text.cpp:119286
-chars.cpp:19899
 global.cpp:57211
 cpp.cpp:419
-rcfile.cpp:54234
 files.cpp:94926
 help.cpp:23486
+color.cpp:16489
+rcfile.cpp:53377
+nano.cpp:74777
+chars.cpp:19775

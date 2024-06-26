@@ -274,54 +274,54 @@ find_and_prime_applicable_syntax()
         }
     }
 
-    // #ifdef HAVE_LIBMAGIC
-    //     // If we still don't have an answer, try using magic (when requested).
-    //     if (sntx == nullptr && !inhelp && ISSET(USE_MAGIC))
-    //     {
-    //         struct stat fileinfo;
-    //         magic_t     cookie      = nullptr;
-    //         const s8   *magicstring = nullptr;
+#ifdef HAVE_LIBMAGIC
+    // If we still don't have an answer, try using magic (when requested).
+    if (sntx == nullptr && !inhelp && ISSET(USE_MAGIC))
+    {
+        struct stat fileinfo;
+        magic_t     cookie      = nullptr;
+        const s8   *magicstring = nullptr;
 
-    //         if (stat(openfile->filename, &fileinfo) == 0)
-    //         {
-    //             /* Open the magic database and get a diagnosis of the file. */
-    //             cookie = magic_open(MAGIC_SYMLINK |
-    // #    ifdef DEBUG
-    //                                 MAGIC_DEBUG | MAGIC_CHECK |
-    // #    endif
-    //                                 MAGIC_ERROR);
-    //             if (cookie == nullptr || magic_load(cookie, nullptr) < 0)
-    //             {
-    //                 statusline(ALERT, _("magic_load() failed: %s"), ERRNO_C_STR);
-    //             }
-    //             else
-    //             {
-    //                 magicstring = magic_file(cookie, openfile->filename);
-    //                 if (magicstring == nullptr)
-    //                 {
-    //                     statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
-    //                 }
-    //             }
-    //         }
+        if (stat(openfile->filename, &fileinfo) == 0)
+        {
+            /* Open the magic database and get a diagnosis of the file. */
+            cookie = magic_open(MAGIC_SYMLINK |
+#    ifdef DEBUG
+                                MAGIC_DEBUG | MAGIC_CHECK |
+#    endif
+                                MAGIC_ERROR);
+            if (cookie == nullptr || magic_load(cookie, nullptr) < 0)
+            {
+                statusline(ALERT, _("magic_load() failed: %s"), ERRNO_C_STR);
+            }
+            else
+            {
+                magicstring = magic_file(cookie, openfile->filename);
+                if (magicstring == nullptr)
+                {
+                    statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
+                }
+            }
+        }
 
-    //         /* Now try and find a syntax that matches the magic string. */
-    //         if (magicstring != nullptr)
-    //         {
-    //             for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
-    //             {
-    //                 if (found_in_list(sntx->magics, magicstring))
-    //                 {
-    //                     break;
-    //                 }
-    //             }
-    //         }
+        /* Now try and find a syntax that matches the magic string. */
+        if (magicstring != nullptr)
+        {
+            for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
+            {
+                if (found_in_list(sntx->magics, magicstring))
+                {
+                    break;
+                }
+            }
+        }
 
-    //         if (!stat(openfile->filename, &fileinfo))
-    //         {
-    //             magic_close(cookie);
-    //         }
-    //     }
-    // #endif
+        if (!stat(openfile->filename, &fileinfo))
+        {
+            magic_close(cookie);
+        }
+    }
+#endif
     //
     //  If nothing at all matched,
     //  see if there is a default syntax.
@@ -458,6 +458,8 @@ check_the_multis(linestruct *line)
 void
 precalc_multicolorinfo()
 {
+    PROFILE_FUNCTION;
+
     const colortype *ink;
     regmatch_t       startmatch, endmatch;
     linestruct      *line, *tailline;

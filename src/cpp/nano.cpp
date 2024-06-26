@@ -1360,8 +1360,6 @@ get_keycode(const s8 *const keyname, const s32 standard)
 void
 confirm_margin()
 {
-    PROFILE_FUNCTION;
-
     s32 needed_margin = digits(openfile->filebot->lineno) + 1;
 
     //

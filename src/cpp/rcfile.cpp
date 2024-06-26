@@ -124,15 +124,13 @@ static linestruct *errors_tail = nullptr;
 void
 display_rcfile_errors()
 {
-    PROFILE_FUNCTION;
-
     for (linestruct *error = errors_head; error != nullptr; error = error->next)
     {
         std::fprintf(stderr, "%s\n", error->data);
     }
 }
 
-static constexpr auto MAXSIZE = (PATH_MAX + 200);
+static constexpr u16 MAXSIZE = (PATH_MAX + 200);
 //
 /// @name @c jot_error
 ///
@@ -172,7 +170,7 @@ jot_error(const s8 *msg, ...)
     {
         if (nanorc != nullptr)
         {
-            snprintf(textbuf, MAXSIZE, _("Mistakes in '%s'"), nanorc);
+            std::snprintf(textbuf, MAXSIZE, _("Mistakes in '%s'"), nanorc);
             startup_problem = copy_of(textbuf);
         }
         else
@@ -182,14 +180,14 @@ jot_error(const s8 *msg, ...)
     }
     if (lineno > 0)
     {
-        length = snprintf(textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanorc, lineno);
+        length = std::snprintf(textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanorc, lineno);
     }
     va_start(ap, msg);
-    length += vsnprintf(textbuf + length, MAXSIZE - length, _(msg), ap);
+    length += std::vsnprintf(textbuf + length, MAXSIZE - length, _(msg), ap);
     va_end(ap);
 
     error->data = static_cast<s8 *>(nmalloc(length + 1));
-    sprintf(error->data, "%s", textbuf);
+    std::sprintf(error->data, "%s", textbuf);
 }
 
 CONSTEXPR_MAP<std::string_view, functionptrtype, 104> keyMap = {
@@ -341,7 +339,7 @@ strtosc(const s8 *input)
         }
         else
         {
-            free(s);
+            std::free(s);
             return nullptr;
         }
     }
@@ -356,9 +354,7 @@ strtosc(const s8 *input)
 s8 *
 parse_next_word(s8 *ptr)
 {
-    PROFILE_FUNCTION;
-
-    while (!isblank((unsigned char)*ptr) && *ptr != '\0')
+    while (!std::isblank((unsigned char)*ptr) && *ptr != '\0')
     {
         ptr++;
     }
@@ -368,10 +364,12 @@ parse_next_word(s8 *ptr)
         return ptr;
     }
 
-    /* Null-terminate and advance ptr. */
+    //
+    //  Null-terminate and advance ptr.
+    //
     *ptr++ = '\0';
 
-    while (isblank((unsigned char)*ptr))
+    while (std::isblank((unsigned char)*ptr))
     {
         ptr++;
     }
@@ -415,7 +413,7 @@ parse_argument(s8 *ptr)
     *last_quote = '\0';
     ptr         = last_quote + 1;
 
-    while (isblank(static_cast<u8>(*ptr)))
+    while (std::isblank(static_cast<u8>(*ptr)))
     {
         ptr++;
     }
@@ -437,11 +435,13 @@ parse_next_regex(s8 *ptr)
     if (*(ptr - 1) != '"')
     {
         jot_error(N_("Regex strings must begin and end with a \" character"));
-        return NULL;
+        return nullptr;
     }
 
-    /* Continue until the end of the line, or until a double quote followed
-     * by end-of-line or a blank. */
+    //
+    //  Continue until the end of the line, or until a double quote followed
+    //  by end-of-line or a blank.
+    //
     while (*ptr != '\0' && (*ptr != '"' || (ptr[1] != '\0' && !isblank((unsigned char)ptr[1]))))
     {
         ptr++;
@@ -595,21 +595,20 @@ begin_new_syntax(s8 *ptr)
     }
 }
 
-/* Verify that a syntax definition contains at least one color command. */
+//
+//  Verify that a syntax definition contains at least one color command.
+//
 void
 check_for_nonempty_syntax()
 {
-    PROFILE_FUNCTION;
-
     if (opensyntax && !seen_color_command)
     {
-        size_t current_lineno = lineno;
+        u64 current_lineno = lineno;
 
         lineno = live_syntax->lineno;
         jot_error(N_("Syntax \"%s\" has no color commands"), live_syntax->name);
         lineno = current_lineno;
     }
-
     opensyntax = false;
 }
 
@@ -932,15 +931,19 @@ parse_one_include(char *file, syntaxtype *syntax)
     lineno = was_lineno;
 }
 
-/* Expand globs in the passed name, and parse the resultant files. */
+//
+//  Expand globs in the passed name, and parse the resultant files.
+//
 void
-parse_includes(char *ptr)
+parse_includes(s8 *ptr)
 {
     PROFILE_FUNCTION;
 
-    char  *pattern, *expanded;
+    s8 *pattern;
+    s8 *expanded;
+
     glob_t files;
-    int    result;
+    s32    result;
 
     check_for_nonempty_syntax();
 
@@ -957,17 +960,24 @@ parse_includes(char *ptr)
         return;
     }
 
-    /* Expand a tilde first, then try to match the globbing pattern. */
+    //
+    //  Expand a tilde first,
+    //  then try to match the globbing pattern.
+    //
     expanded = real_dir_from_tilde(pattern);
-    result   = glob(expanded, GLOB_ERR | GLOB_NOCHECK, NULL, &files);
+    result   = glob(expanded, GLOB_ERR | GLOB_NOCHECK, nullptr, &files);
 
-    /* If there are matches, process each of them.  Otherwise, only
-     * report an error if it's something other than zero matches. */
+    //
+    //  If there are matches,
+    //  process each of them.
+    //  Otherwise,
+    //  only report an error if it's something other than zero matches.
+    //
     if (result == 0)
     {
-        for (size_t i = 0; i < files.gl_pathc; ++i)
+        for (u64 i = 0; i < files.gl_pathc; ++i)
         {
-            parse_one_include(files.gl_pathv[i], NULL);
+            parse_one_include(files.gl_pathv[i], nullptr);
         }
     }
     else if (result != GLOB_NOMATCH)
@@ -1027,45 +1037,42 @@ closest_index_color(s16 red, s16 green, s16 blue)
 
 static constexpr u8 COLORCOUNT = 34;
 
-const s8 hues[COLORCOUNT][8] = {"red",   "green",  "blue",  "yellow", "cyan",    "magenta", "white", "black",  "normal",
-                                "pink",  "purple", "mauve", "lagoon", "mint",    "lime",    "peach", "orange", "latte",
-                                "rosy",  "beet",   "plum",  "sea",    "sky",     "slate",   "teal",  "sage",   "brown",
-                                "ocher", "sand",   "tawny", "brick",  "crimson", "grey",    "gray"};
-
-s16 indices[COLORCOUNT] = {COLOR_RED,
-                           COLOR_GREEN,
-                           COLOR_BLUE,
-                           COLOR_YELLOW,
-                           COLOR_CYAN,
-                           COLOR_MAGENTA,
-                           COLOR_WHITE,
-                           COLOR_BLACK,
-                           THE_DEFAULT,
-                           204,
-                           163,
-                           134,
-                           38,
-                           48,
-                           148,
-                           215,
-                           208,
-                           137,
-                           175,
-                           127,
-                           98,
-                           32,
-                           111,
-                           66,
-                           35,
-                           107,
-                           100,
-                           142,
-                           186,
-                           136,
-                           166,
-                           161,
-                           COLOR_BLACK + 8,
-                           COLOR_BLACK + 8};
+CONSTEXPR_MAP<STRING_VIEW, s16, COLORCOUNT> huesIndiecesMap = {
+    {{"red", COLOR_RED},
+     {"green", COLOR_GREEN},
+     {"blue", COLOR_BLUE},
+     {"yellow", COLOR_YELLOW},
+     {"cyan", COLOR_CYAN},
+     {"magenta", COLOR_MAGENTA},
+     {"white", COLOR_WHITE},
+     {"black", COLOR_BLACK},
+     {"normal", THE_DEFAULT},
+     {"pink", 204},
+     {"purple", 163},
+     {"mauve", 134},
+     {"lagoon", 38},
+     {"mint", 48},
+     {"lime", 148},
+     {"peach", 215},
+     {"orange", 208},
+     {"latte", 137},
+     {"rosy", 175},
+     {"beet", 127},
+     {"plum", 98},
+     {"sea", 32},
+     {"sky", 111},
+     {"slate", 66},
+     {"teal", 35},
+     {"sage", 107},
+     {"brown", 100},
+     {"ocher", 142},
+     {"sand", 186},
+     {"tawny", 136},
+     {"brick", 166},
+     {"crimson", 161},
+     {"grey", COLOR_BLACK + 8},
+     {"gray", COLOR_BLACK + 8}}
+};
 
 //
 //  Return the short value corresponding to the given color name, and set
@@ -1074,55 +1081,47 @@ s16 indices[COLORCOUNT] = {COLOR_RED,
 //  TODO : Use references instead of pointers
 //
 short
-color_to_short(const s8 *colorname, bool *vivid, bool *thick)
+color_to_short(const s8 *colorname, bool &vivid, bool &thick)
 {
-    PROFILE_FUNCTION;
-
-    if (strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
+    if (Mlib::Constexpr::strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
-        ///
-        ///  ORIGINALCOMMENT: ( From nano source code )
-        ///     Prefix "bright" is deprecated; remove in 2027.
-        ///
-        ///  Why in 3 years?  Why not now?
-        ///
-        *vivid = TRUE;
-        *thick = TRUE;
+        vivid = true;
+        thick = true;
         colorname += 6;
     }
-    else if (strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
+    else if (Mlib::Constexpr::strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
     {
-        *vivid = TRUE;
-        *thick = FALSE;
+        vivid = true;
+        thick = false;
         colorname += 5;
     }
     else
     {
-        *vivid = FALSE;
-        *thick = FALSE;
+        vivid = false;
+        thick = false;
     }
 
-    if (colorname[0] == '#' && strlen(colorname) == 4)
+    if (colorname[0] == '#' && Mlib::Constexpr::strlen(colorname) == 4)
     {
         u16 r, g, b;
 
-        if (*vivid)
+        if (vivid)
         {
             jot_error(N_("Color '%s' takes no prefix"), colorname);
             return BAD_COLOR;
         }
 
-        if (sscanf(colorname, "#%1hX%1hX%1hX", &r, &g, &b) == 3)
+        if (std::sscanf(colorname, "#%1hX%1hX%1hX", &r, &g, &b) == 3)
         {
             return closest_index_color(r, g, b);
         }
     }
 
-    for (int index = 0; index < COLORCOUNT; index++)
+    for (s32 index = 0; index < COLORCOUNT; index++)
     {
-        if (strcmp(colorname, hues[index]) == 0)
+        if (Mlib::Constexpr::strcmp(colorname, &huesIndiecesMap[index].key[0]))
         {
-            if (index > 7 && *vivid)
+            if (index > 7 && vivid)
             {
                 jot_error(N_("Color '%s' takes no prefix"), colorname);
                 return BAD_COLOR;
@@ -1133,7 +1132,7 @@ color_to_short(const s8 *colorname, bool *vivid, bool *thick)
             }
             else
             {
-                return indices[index];
+                return huesIndiecesMap[index].value;
             }
         }
     }
@@ -1191,7 +1190,7 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 
     if (!comma || comma > combotext)
     {
-        fg = color_to_short(combotext, &vivid, &thick);
+        fg = color_to_short(combotext, vivid, thick);
         if (fg == BAD_COLOR)
         {
             return false;
@@ -1212,7 +1211,7 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 
     if (comma)
     {
-        bg = color_to_short(comma + 1, &vivid, &thick);
+        bg = color_to_short(comma + 1, vivid, thick);
         if (bg == BAD_COLOR)
         {
             return false;

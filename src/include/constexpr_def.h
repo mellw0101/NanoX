@@ -1,6 +1,7 @@
 /// \file constexpr_def.h
 #pragma once
 #include <Mlib/constexpr.hpp>
+#include <ncursesw/ncurses.h>
 
 //
 //  Identifiers for color options.

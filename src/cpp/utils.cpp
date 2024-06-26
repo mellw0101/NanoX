@@ -492,8 +492,8 @@ free_and_assign(s8 *dest, s8 *src)
 //  chunks ("pages").  Return the column number of the first character
 //  displayed in the edit window when the cursor is at the given column.
 //
-size_t
-get_page_start(size_t column)
+u64
+get_page_start(u64 column)
 {
     if (column == 0 || column + 2 < editwincols || ISSET(SOFTWRAP))
     {
@@ -513,7 +513,7 @@ get_page_start(size_t column)
 //  Return the placewewant associated with current_x,
 //  i.e. the zero-based column position of the cursor.
 //
-size_t
+u64
 xplustabs()
 {
     return wideness(openfile->current->data, openfile->current_x);
@@ -557,8 +557,6 @@ actual_x(const s8 *text, u64 column)
 u64
 wideness(const s8 *text, u64 maxlen)
 {
-    PROFILE_FUNCTION;
-
     if (maxlen == 0)
     {
         return 0;
@@ -581,7 +579,7 @@ wideness(const s8 *text, u64 maxlen)
 //
 //  Return the number of columns that the given text occupies.
 //
-size_t
+u64
 breadth(const s8 *text)
 {
     PROFILE_FUNCTION;
