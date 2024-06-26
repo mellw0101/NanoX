@@ -569,8 +569,8 @@ step_right(const s8 *buf, u64 pos)
 //
 //  This function is equivalent to strcasecmp() for multibyte strings.
 //
-int
-mbstrcasecmp(const char *s1, const char *s2)
+s32
+mbstrcasecmp(const s8 *s1, const s8 *s2)
 {
     return mbstrncasecmp(s1, s2, HIGHEST_POSITIVE);
 }
@@ -692,7 +692,7 @@ mbstrcasestr(const s8 *haystack, const s8 *needle)
 //  starting at pointer.
 //
 s8 *
-revstrstr(const s8 *haystack, const s8 *needle, const s8 *pointer)
+revstrstr(const s8 *const haystack, const s8 *const needle, const s8 *pointer)
 {
     u64 needle_len = std::strlen(needle);
     u64 tail_len   = std::strlen(pointer);

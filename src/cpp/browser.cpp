@@ -41,13 +41,15 @@ static u64 selected = 0;
 void
 read_the_list(const s8 *path, DIR *dir)
 {
-    size_t               path_len = strlen(path);
+    size_t               path_len = std::strlen(path);
     const struct dirent *entry;
     size_t               widest = 0;
     size_t               index  = 0;
 
-    /* Find the width of the widest filename in the current folder. */
-    while ((entry = readdir(dir)) != NULL)
+    //
+    //  Find the width of the widest filename in the current folder.
+    //
+    while ((entry = readdir(dir)) != nullptr)
     {
         u64 span = breadth(entry->d_name);
         if (span > widest)
@@ -57,15 +59,21 @@ read_the_list(const s8 *path, DIR *dir)
         index++;
     }
 
-    /* Reserve ten columns for blanks plus file size. */
+    //
+    //  Reserve ten columns for blanks plus file size.
+    //
     gauge = widest + 10;
 
-    /* If needed, make room for ".. (parent dir)". */
+    //
+    //  If needed, make room for ".. (parent dir)".
+    //
     if (gauge < 15)
     {
         gauge = 15;
     }
-    /* Make sure we're not wider than the window. */
+    //
+    //  Make sure we're not wider than the window.
+    //
     if (gauge > COLS)
     {
         gauge = COLS;
@@ -78,32 +86,40 @@ read_the_list(const s8 *path, DIR *dir)
     list_length = index;
     index       = 0;
 
-    filelist = RE_CAST(char **, nmalloc(list_length * sizeof(char *)));
+    filelist = static_cast<s8 **>(nmalloc(list_length * sizeof(s8 *)));
 
-    while ((entry = readdir(dir)) != NULL && index < list_length)
+    while ((entry = readdir(dir)) != nullptr && index < list_length)
     {
-        /* Don't show the useless dot item. */
-        if (strcmp(entry->d_name, ".") == 0)
+        //
+        //  Don't show the useless dot item.
+        //
+        if (std::strcmp(entry->d_name, ".") == 0)
         {
             continue;
         }
 
-        filelist[index] = RE_CAST(char *, nmalloc(path_len + strlen(entry->d_name) + 1));
-        sprintf(filelist[index], "%s%s", path, entry->d_name);
+        filelist[index] = static_cast<s8 *>(nmalloc(path_len + std::strlen(entry->d_name) + 1));
+        std::sprintf(filelist[index], "%s%s", path, entry->d_name);
 
         index++;
     }
 
-    /* Maybe the number of files in the directory decreased between
-     * the first time we scanned and the second time. */
+    //
+    //  Maybe the number of files in the directory decreased between
+    //  the first time we scanned and the second time.
+    //
     list_length = index;
 
-    /* Sort the list of names. */
-    qsort(filelist, list_length, sizeof(char *), diralphasort);
+    //
+    //  Sort the list of names.
+    //
+    std::qsort(filelist, list_length, sizeof(s8 *), diralphasort);
 
-    /* Calculate how many files fit on a line -- feigning room for two
-     * spaces beyond the right edge, and adding two spaces of padding
-     * between columns. */
+    //
+    //  Calculate how many files fit on a line -- feigning room for two
+    //  spaces beyond the right edge, and adding two spaces of padding
+    //  between columns.
+    //
     piles = (COLS + 2) / (gauge + 2);
 
     usable_rows = editwinrows - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
@@ -113,9 +129,9 @@ read_the_list(const s8 *path, DIR *dir)
 //  Reselect the given file or directory name, if it still exists.
 //
 void
-reselect(const s8 *name)
+reselect(const s8 *const name)
 {
-    size_t looking_at = 0;
+    u64 looking_at = 0;
 
     while (looking_at < list_length && std::strcmp(filelist[looking_at], name) != 0)
     {

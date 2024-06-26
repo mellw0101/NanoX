@@ -2887,9 +2887,11 @@ diralphasort(const void *va, const void *vb)
         return 1;
     }
 
-    int difference = mbstrcasecmp(a, b);
+    s32 difference = mbstrcasecmp(a, b);
 
-    /* If two names are equivalent when ignoring case, compare them bytewise. */
+    //
+    //  If two names are equivalent when ignoring case, compare them bytewise.
+    //
     if (difference == 0)
     {
         return std::strcmp(a, b);
@@ -2904,14 +2906,14 @@ diralphasort(const void *va, const void *vb)
 //  Return TRUE when the given path is a directory.
 //
 bool
-is_dir(const s8 *path)
+is_dir(const s8 *const path)
 {
     s8         *thepath = real_dir_from_tilde(path);
     struct stat fileinfo;
     bool        retval;
 
     retval = (stat(thepath, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
-    free(thepath);
+    std::free(thepath);
 
     return retval;
 }
@@ -2920,10 +2922,11 @@ is_dir(const s8 *path)
 //  Try to complete the given fragment of given length to a username.
 //
 s8 **
-username_completion(const s8 *morsel, u64 length, u64 *num_matches)
+username_completion(const s8 *morsel, u64 length, u64 &num_matches)
 {
-    s8                 **matches = nullptr;
-    const struct passwd *userdata;
+    s8 **matches = nullptr;
+
+    const passwd *userdata;
 
     //
     //  Iterate through the entries in the passwd file, and
@@ -2936,22 +2939,24 @@ username_completion(const s8 *morsel, u64 length, u64 *num_matches)
             //
             //  Skip directories that are outside of the allowed area.
             //
-            if (outside_of_confinement(userdata->pw_dir, TRUE))
+            if (outside_of_confinement(userdata->pw_dir, true))
             {
                 continue;
             }
 
-            matches               = static_cast<s8 **>(nrealloc(matches, (*num_matches + 1) * sizeof(char *)));
-            matches[*num_matches] = static_cast<s8 *>(nmalloc(std::strlen(userdata->pw_name) + 2));
-            sprintf(matches[*num_matches], "~%s", userdata->pw_name);
-            ++(*num_matches);
+            matches              = static_cast<s8 **>(nrealloc(matches, (num_matches + 1) * sizeof(char *)));
+            matches[num_matches] = static_cast<s8 *>(nmalloc(std::strlen(userdata->pw_name) + 2));
+            std::sprintf(matches[num_matches], "~%s", userdata->pw_name);
+            ++num_matches;
         }
     }
     endpwent();
     return matches;
 }
 
-/* 	The next two functions were adapted from busybox 0.46 (cmdedit.c).
+//
+/*
+    The next two functions were adapted from busybox 0.46 (cmdedit.c).
     Here is the tweaked notice from that file:
 
     Termios command-line History and Editing, originally intended for NetBSD.
@@ -2970,33 +2975,41 @@ username_completion(const s8 *morsel, u64 length, u64 *num_matches)
 //  Try to complete the given fragment to an existing filename.
 //
 s8 **
-filename_completion(const char *morsel, size_t *num_matches)
+filename_completion(const s8 *morsel, u64 &num_matches)
 {
-    char                *dirname = copy_of(morsel);
-    char                *slash, *filename;
-    size_t               filenamelen;
-    char                *fullname = NULL;
-    char               **matches  = NULL;
-    const struct dirent *entry;
-    DIR                 *dir;
+    s8  *dirname = copy_of(morsel);
+    s8  *slash, *filename;
+    u64  filenamelen;
+    s8  *fullname = nullptr;
+    s8 **matches  = nullptr;
+    DIR *dir;
 
-    /* If there's a / in the name, split out filename and directory parts. */
-    slash = strrchr(dirname, '/');
-    if (slash != NULL)
+    const dirent *entry;
+
+    //
+    //  If there's a '/' in the name,
+    //  split out filename and directory parts.
+    //
+    slash = std::strrchr(dirname, '/');
+    if (slash != nullptr)
     {
-        char *wasdirname = dirname;
+        s8 *wasdirname = dirname;
 
         filename = copy_of(++slash);
-        /* Cut off the filename part after the slash. */
+        //
+        //  Cut off the filename part after the slash.
+        //
         *slash  = '\0';
         dirname = real_dir_from_tilde(dirname);
-        /* A non-absolute path is relative to the current browser directory. */
+        //
+        //  A non-absolute path is relative to the current browser directory.
+        //
         if (dirname[0] != '/')
         {
-            dirname = RE_CAST(char *, nrealloc(dirname, strlen(present_path) + strlen(wasdirname) + 1));
-            sprintf(dirname, "%s%s", present_path, wasdirname);
+            dirname = static_cast<s8 *>(nrealloc(dirname, std::strlen(present_path) + std::strlen(wasdirname) + 1));
+            std::sprintf(dirname, "%s%s", present_path, wasdirname);
         }
-        free(wasdirname);
+        std::free(wasdirname);
     }
     else
     {
@@ -3006,48 +3019,48 @@ filename_completion(const char *morsel, size_t *num_matches)
 
     dir = opendir(dirname);
 
-    if (dir == NULL)
+    if (dir == nullptr)
     {
         beep();
-        free(filename);
-        free(dirname);
-        return NULL;
+        std::free(filename);
+        std::free(dirname);
+        return nullptr;
     }
 
-    filenamelen = strlen(filename);
+    filenamelen = std::strlen(filename);
 
-    /* Iterate through the filenames in the directory,
-     * and add each fitting one to the list of matches. */
-    while ((entry = readdir(dir)) != NULL)
+    //
+    //  Iterate through the filenames in the directory,
+    //  and add each fitting one to the list of matches.
+    //
+    while ((entry = readdir(dir)) != nullptr)
     {
-        if (strncmp(entry->d_name, filename, filenamelen) == 0 && strcmp(entry->d_name, ".") != 0 &&
-            strcmp(entry->d_name, "..") != 0)
+        if (std::strncmp(entry->d_name, filename, filenamelen) == 0 && std::strcmp(entry->d_name, ".") != 0 &&
+            std::strcmp(entry->d_name, "..") != 0)
         {
-            fullname = RE_CAST(char *, nrealloc(fullname, strlen(dirname) + strlen(entry->d_name) + 1));
+            fullname = static_cast<s8 *>(nrealloc(fullname, std::strlen(dirname) + std::strlen(entry->d_name) + 1));
 
-            sprintf(fullname, "%s%s", dirname, entry->d_name);
+            std::sprintf(fullname, "%s%s", dirname, entry->d_name);
 
-#ifdef ENABLE_OPERATINGDIR
-            if (outside_of_confinement(fullname, TRUE))
+            if (outside_of_confinement(fullname, true))
             {
                 continue;
             }
-#endif
             if (currmenu == MGOTODIR && !is_dir(fullname))
             {
                 continue;
             }
 
-            matches               = RE_CAST(char **, nrealloc(matches, (*num_matches + 1) * sizeof(char *)));
-            matches[*num_matches] = copy_of(entry->d_name);
-            ++(*num_matches);
+            matches              = static_cast<s8 **>(nrealloc(matches, (num_matches + 1) * sizeof(s8 *)));
+            matches[num_matches] = copy_of(entry->d_name);
+            ++num_matches;
         }
     }
 
     closedir(dir);
-    free(dirname);
-    free(filename);
-    free(fullname);
+    std::free(dirname);
+    std::free(filename);
+    std::free(fullname);
 
     return matches;
 }
@@ -3056,54 +3069,65 @@ filename_completion(const char *morsel, size_t *num_matches)
 //  Do tab completion.  'place' is the position of the status-bar cursor, and
 //  'refresh_func' is the function to be called to refresh the edit window.
 //
-char *
-input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
+s8 *
+input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
 {
-    size_t num_matches = 0;
-    char **matches     = NULL;
+    u64  num_matches = 0;
+    s8 **matches     = nullptr;
 
-    // If the cursor is not at the end of the fragment, do nothing.
+    //
+    //  If the cursor is not at the end of the fragment, do nothing.
+    //
     if (morsel[*place] != '\0')
     {
         beep();
         return morsel;
     }
 
-    // If the fragment starts with a tilde and contains no slash,
-    // then try completing it as a username.
-    if (morsel[0] == '~' && strchr(morsel, '/') == NULL)
+    //
+    //  If the fragment starts with a tilde and contains no slash,
+    //  then try completing it as a username.
+    //
+    if (morsel[0] == '~' && std::strchr(morsel, '/') == nullptr)
     {
-        matches = username_completion(morsel, *place, &num_matches);
+        matches = username_completion(morsel, *place, num_matches);
     }
 
-    /* If there are no matches yet, try matching against filenames. */
-    if (matches == NULL)
+    //
+    //  If there are no matches yet, try matching against filenames.
+    //
+    if (matches == nullptr)
     {
-        matches = filename_completion(morsel, &num_matches);
+        matches = filename_completion(morsel, num_matches);
     }
 
-    /* If possible completions were listed before but none will be listed now... */
-    if (*listed && num_matches < 2)
+    //
+    //  If possible completions were listed before but none will be listed now...
+    //
+    if (listed && num_matches < 2)
     {
         refresh_func();
-        *listed = FALSE;
+        listed = false;
     }
 
-    if (matches == NULL)
+    if (matches == nullptr)
     {
         beep();
         return morsel;
     }
 
-    const char *lastslash      = revstrstr(morsel, "/", morsel + *place);
-    size_t      length_of_path = (lastslash == NULL) ? 0 : lastslash - morsel + 1;
-    size_t      match, common_len = 0;
-    char       *shared, *glued;
-    char        char1[MAXCHARLEN], char2[MAXCHARLEN];
-    int         len1, len2;
+    const s8 *lastslash = revstrstr(morsel, "/", morsel + *place);
 
-    /* Determine the number of characters that all matches have in common. */
-    while (TRUE)
+    u64 length_of_path = (lastslash == nullptr) ? 0 : lastslash - morsel + 1;
+    u64 match, common_len = 0;
+    s8 *shared, *glued;
+    s8  char1[MAXCHARLEN], char2[MAXCHARLEN];
+    s32 len1, len2;
+
+    //
+    //  Determine the number of characters that all matches have in common.
+    //
+    while (true)
     {
         len1 = collect_char(matches[0] + common_len, char1);
 
@@ -3111,7 +3135,7 @@ input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
         {
             len2 = collect_char(matches[match] + common_len, char2);
 
-            if (len1 != len2 || strncmp(char1, char2, len2) != 0)
+            if (len1 != len2 || std::strncmp(char1, char2, len2) != 0)
             {
                 break;
             }
@@ -3125,28 +3149,32 @@ input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
         common_len += len1;
     }
 
-    shared = RE_CAST(char *, nmalloc(length_of_path + common_len + 1));
+    shared = static_cast<char *>(nmalloc(length_of_path + common_len + 1));
 
-    strncpy(shared, morsel, length_of_path);
-    strncpy(shared + length_of_path, matches[0], common_len);
+    std::strncpy(shared, morsel, length_of_path);
+    std::strncpy(shared + length_of_path, matches[0], common_len);
 
     common_len += length_of_path;
     shared[common_len] = '\0';
 
-    /* Cover also the case of the user specifying a relative path. */
-    glued = RE_CAST(char *, nmalloc(strlen(present_path) + common_len + 1));
-    sprintf(glued, "%s%s", present_path, shared);
+    //
+    //  Cover also the case of the user specifying a relative path.
+    //
+    glued = static_cast<s8 *>(nmalloc(strlen(present_path) + common_len + 1));
+    std::sprintf(glued, "%s%s", present_path, shared);
 
     if (num_matches == 1 && (is_dir(shared) || is_dir(glued)))
     {
         shared[common_len++] = '/';
     }
 
-    /* If the matches have something in common, copy that part. */
+    //
+    //  If the matches have something in common, copy that part.
+    //
     if (common_len != *place)
     {
-        morsel = RE_CAST(char *, nrealloc(morsel, common_len + 1));
-        strncpy(morsel, shared, common_len);
+        morsel = static_cast<s8 *>(nrealloc(morsel, common_len + 1));
+        std::strncpy(morsel, shared, common_len);
         morsel[common_len] = '\0';
         *place             = common_len;
     }
@@ -3155,25 +3183,29 @@ input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
         beep();
     }
 
-    /* If there is more than one possible completion, show a sorted list. */
+    //
+    //  If there is more than one possible completion, show a sorted list.
+    //
     if (num_matches > 1)
     {
-        int    lastrow      = editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
-        size_t longest_name = 0;
-        size_t nrows, ncols;
-        int    row;
+        s32 lastrow      = editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
+        u64 longest_name = 0;
+        u64 nrows, ncols;
+        s32 row;
 
-        if (!*listed)
+        if (!listed)
         {
             beep();
         }
 
-        qsort(matches, num_matches, sizeof(char *), diralphasort);
+        std::qsort(matches, num_matches, sizeof(s8 *), diralphasort);
 
-        /* Find the length of the longest name among the matches. */
+        //
+        //  Find the length of the longest name among the matches.
+        //
         for (match = 0; match < num_matches; match++)
         {
-            size_t namelen = breadth(matches[match]);
+            u64 namelen = breadth(matches[match]);
 
             if (namelen > longest_name)
             {
@@ -3186,21 +3218,27 @@ input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
             longest_name = COLS - 1;
         }
 
-        /* The columns of names will be separated by two spaces,
-         * but the last column will have just one space after it. */
+        //
+        //  The columns of names will be separated by two spaces,
+        //  but the last column will have just one space after it.
+        //
         ncols = (COLS + 1) / (longest_name + 2);
         nrows = (num_matches + ncols - 1) / ncols;
 
         row = (nrows < lastrow) ? lastrow - nrows : 0;
 
-        /* Blank the edit window and hide the cursor. */
+        //
+        //  Blank the edit window and hide the cursor.
+        //
         blank_edit();
         curs_set(0);
 
-        /* Now print the list of matches out there. */
+        //
+        //  Now print the list of matches out there.
+        //
         for (match = 0; match < num_matches; match++)
         {
-            char *disp;
+            s8 *disp;
 
             wmove(midwin, row, (longest_name + 2) * (match % ncols));
 
@@ -3212,7 +3250,7 @@ input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
 
             disp = display_string(matches[match], 0, longest_name, FALSE, FALSE);
             waddstr(midwin, disp);
-            free(disp);
+            std::free(disp);
 
             if ((match + 1) % ncols == 0)
             {
@@ -3221,12 +3259,12 @@ input_tab(char *morsel, size_t *place, void (*refresh_func)(void), bool *listed)
         }
 
         wnoutrefresh(midwin);
-        *listed = TRUE;
+        listed = true;
     }
 
     free_chararray(matches, num_matches);
-    free(glued);
-    free(shared);
+    std::free(glued);
+    std::free(shared);
 
     return morsel;
 }

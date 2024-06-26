@@ -88,13 +88,17 @@ splice_node(linestruct *afterthis, linestruct *newnode)
 void
 delete_node(linestruct *line)
 {
-    // If the first line on the screen gets deleted, step one back.
+    //
+    //  If the first line on the screen gets deleted, step one back.
+    //
     if (line == openfile->edittop)
     {
         openfile->edittop = line->prev;
     }
 
-    // If the spill-over line for hard-wrapping is deleted...
+    //
+    //  If the spill-over line for hard-wrapping is deleted...
+    //
     if (line == openfile->spillage_line)
     {
         openfile->spillage_line = nullptr;
@@ -255,7 +259,7 @@ restore_terminal()
 {
     curs_set(1);
     endwin();
-    printf("\x1B[?2004l");
+    std::printf("\x1B[?2004l");
     fflush(stdout);
     tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
@@ -396,7 +400,7 @@ emergency_save(const s8 *filename)
     if (*filename == '\0')
     {
         plainname = static_cast<s8 *>(nmalloc(28));
-        sprintf(plainname, "nano.%u", getpid());
+        std::sprintf(plainname, "nano.%u", getpid());
     }
     else
     {
@@ -407,15 +411,15 @@ emergency_save(const s8 *filename)
 
     if (*targetname == '\0')
     {
-        fprintf(stderr, _("\nToo many .save files\n"));
+        std::fprintf(stderr, _("\nToo many .save files\n"));
     }
     else if (write_file(targetname, nullptr, SPECIAL, EMERGENCY, NONOTES))
     {
-        fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
+        std::fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
     }
 
-    free(targetname);
-    free(plainname);
+    std::free(targetname);
+    std::free(plainname);
 }
 
 //
@@ -597,24 +601,24 @@ mouse_init()
 //  Print the usage line for the given option to the screen.
 //
 void
-print_opt(const s8 *shortflag, const s8 *longflag, const s8 *description)
+print_opt(const s8 *const shortflag, const s8 *const longflag, const s8 *const description)
 {
     s32 firstwidth  = breadth(shortflag);
     s32 secondwidth = breadth(longflag);
 
-    printf(" %s", shortflag);
+    std::printf(" %s", shortflag);
     if (firstwidth < 14)
     {
-        printf("%*s", 14 - firstwidth, " ");
+        std::printf("%*s", 14 - firstwidth, " ");
     }
 
-    printf(" %s", longflag);
+    std::printf(" %s", longflag);
     if (secondwidth < 24)
     {
-        printf("%*s", 24 - secondwidth, " ");
+        std::printf("%*s", 24 - secondwidth, " ");
     }
 
-    printf("%s\n", _(description));
+    std::printf("%s\n", _(description));
 }
 
 //
@@ -735,39 +739,43 @@ usage()
 void
 version()
 {
-    printf(_(" NanoX, version %s\n"), VERSION);
-    printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code converted into C++\n", REVISION);
+    std::printf(_(" NanoX, version %s\n"), VERSION);
+    std::printf(
+        " 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code, converted into C++\n", REVISION);
 
-    // TRANSLATORS: The %s is the year of the latest release.
-    printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
+    //
+    //  TRANSLATORS: The %s is the year of the latest release.
+    //
+    std::printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
 
 #ifdef DEBUG
-    printf(_(" Compiled options:"));
-    printf(" --enable-debug");
+    std::printf(_(" Compiled options:"));
+    std::printf(" --enable-debug");
 #endif
-
-    printf("\n");
-    exit(EXIT_SUCCESS);
+    std::printf("\n");
+    std::exit(EXIT_SUCCESS);
 }
 
-// List the names of the available syntaxes.
+//
+//  List the names of the available syntaxes.
+//
 void
 list_syntax_names()
 {
     s32 width = 0;
 
-    printf(_("Available syntaxes:\n"));
+    std::printf(_("Available syntaxes:\n"));
     for (syntaxtype *sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
     {
         if (width > 45)
         {
-            printf("\n");
+            std::printf("\n");
             width = 0;
         }
-        printf(" %s", sntx->name);
+        std::printf(" %s", sntx->name);
         width += wideness(sntx->name, 45 * 4);
     }
-    printf("\n");
+    std::printf("\n");
 }
 
 //
@@ -798,7 +806,9 @@ install_handler_for_Ctrl_C()
     sigaction(SIGINT, &newaction, &oldaction);
 }
 
-// Go back to ignoring ^C.
+//
+//  Go back to ignoring ^C.
+//
 void
 restore_handler_for_Ctrl_C()
 {
@@ -806,11 +816,13 @@ restore_handler_for_Ctrl_C()
     disable_kb_interrupt();
 }
 
-// Reconnect standard input to the tty, and store its state.
+//
+//  Reconnect standard input to the tty, and store its state.
+//
 void
 reconnect_and_store_state()
 {
-    int thetty = open("/dev/tty", O_RDONLY);
+    s32 thetty = open("/dev/tty", O_RDONLY);
 
     if (thetty < 0 || dup2(thetty, STDIN_FILENO) < 0)
     {
@@ -819,14 +831,18 @@ reconnect_and_store_state()
 
     close(thetty);
 
-    /* If input was not cut short, store the current state of the terminal. */
+    //
+    //  If input was not cut short, store the current state of the terminal.
+    //
     if (!control_C_was_pressed)
     {
         tcgetattr(STDIN_FILENO, &original_state);
     }
 }
 
-// Read whatever comes from standard input into a new buffer.
+//
+//  Read whatever comes from standard input into a new buffer.
+//
 bool
 scoop_stdin()
 {
@@ -834,35 +850,45 @@ scoop_stdin()
 
     restore_terminal();
 
-    /* When input comes from a terminal, show a helpful message. */
+    //
+    //  When input comes from a terminal, show a helpful message.
+    //
     if (isatty(STDIN_FILENO))
     {
-        fprintf(stderr, _("Reading data from keyboard; "
-                          "type ^D or ^D^D to finish.\n"));
+        std::fprintf(stderr, _("Reading data from keyboard; "
+                               "type ^D or ^D^D to finish.\n"));
     }
 
-    /* Open standard input. */
-    stream = fopen("/dev/stdin", "rb");
-    if (stream == NULL)
+    //
+    //  Open standard input.
+    //
+    stream = std::fopen("/dev/stdin", "rb");
+    if (stream == nullptr)
     {
-        int errnumber = errno;
+        const std::string_view errnoStr = ERRNO_C_STR;
 
         terminal_init();
         doupdate();
-        statusline(ALERT, _("Failed to open stdin: %s"), strerror(errnumber));
-        return FALSE;
+        statusline(ALERT, _("Failed to open stdin: %s"), errnoStr);
+        return false;
     }
 
-    /* Set up a signal handler so that ^C will stop the reading. */
+    //
+    //  Set up a signal handler so that ^C will stop the reading.
+    //
     install_handler_for_Ctrl_C();
 
-    /* Read the input into a new buffer, undoably. */
+    //
+    //  Read the input into a new buffer, undoably.
+    //
     make_new_buffer();
-    read_file(stream, 0, "stdin", FALSE);
+    read_file(stream, 0, "stdin", false);
 
     find_and_prime_applicable_syntax();
 
-    /* Restore the original ^C handler. */
+    //
+    //  Restore the original ^C handler.
+    //
     restore_handler_for_Ctrl_C();
 
     if (!ISSET(VIEW_MODE) && openfile->totsize > 0)
@@ -870,10 +896,12 @@ scoop_stdin()
         set_modified();
     }
 
-    return TRUE;
+    return true;
 }
 
-// Register half a dozen signal handlers.
+//
+//  Register half a dozen signal handlers.
+//
 void
 signal_init()
 {
@@ -927,7 +955,9 @@ signal_init()
 #endif
 }
 
-// Handler for SIGHUP (hangup) and SIGTERM (terminate).
+//
+//  Handler for SIGHUP (hangup) and SIGTERM (terminate).
+//
 void
 handle_hupterm(s32 signal)
 {
@@ -945,7 +975,9 @@ handle_crash(s32 signal)
 }
 #endif
 
-// Handler for SIGTSTP (suspend).
+//
+//  Handler for SIGTSTP (suspend).
+//
 void
 suspend_nano(s32 signal)
 {
@@ -964,7 +996,9 @@ suspend_nano(s32 signal)
     kill(0, SIGSTOP);
 }
 
-// When permitted, put nano to sleep.
+//
+//  When permitted, put nano to sleep.
+//
 void
 do_suspend()
 {
@@ -976,7 +1010,9 @@ do_suspend()
     ran_a_tool = true;
 }
 
-// Handler for SIGCONT (continue after suspend).
+//
+//  Handler for SIGCONT (continue after suspend).
+//
 void
 continue_nano(s32 signal)
 {
@@ -1002,7 +1038,9 @@ continue_nano(s32 signal)
     ungetch(KEY_FRESH);
 }
 
-// Block or unblock the SIGWINCH signal, depending on the blockit parameter.
+//
+//  Block or unblock the SIGWINCH signal, depending on the blockit parameter.
+//
 void
 block_sigwinch(bool blockit)
 {
@@ -1022,15 +1060,19 @@ block_sigwinch(bool blockit)
 #endif
 }
 
-/* Handler for SIGWINCH (window size change). */
+//
+//  Handler for SIGWINCH (window size change).
+//
 void
-handle_sigwinch(int signal)
+handle_sigwinch(s32 signal)
 {
     /* Let the input routine know that a SIGWINCH has occurred. */
     the_window_resized = TRUE;
 }
 
-/* Reinitialize and redraw the screen completely. */
+//
+//  Reinitialize and redraw the screen completely.
+//
 void
 regenerate_screen()
 {
@@ -1060,10 +1102,14 @@ regenerate_screen()
     }
 }
 
-/* Invert the given global flag and adjust things for its new value. */
+//
+//  Invert the given global flag and adjust things for its new value.
+//
 void
 toggle_this(const s32 flag)
 {
+    PROFILE_FUNCTION;
+
     bool enabled = !ISSET(flag);
 
     TOGGLE(flag);

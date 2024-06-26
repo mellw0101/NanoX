@@ -513,11 +513,11 @@ keycode_from_string(const s8 *keystring)
     {
         if (keystring[1] == '-' && keystring[3] == '\0')
         {
-            return tolower((unsigned char)keystring[2]);
+            return std::tolower(static_cast<u8>(keystring[2]));
         }
         if (strcasecmp(keystring, "M-Space") == 0)
         {
-            return (int)' ';
+            return static_cast<s32>(' ');
         }
         else
         {
@@ -527,12 +527,12 @@ keycode_from_string(const s8 *keystring)
     else if (strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) && (keystring[5] | 0x20) <= 'z' &&
              keystring[6] == '\0')
     {
-        shifted_metas = TRUE;
+        shifted_metas = true;
         return (keystring[5] & 0x5F);
     }
     else if (keystring[0] == 'F')
     {
-        int fn = atoi(&keystring[1]);
+        s32 fn = atoi(&keystring[1]);
         if (fn < 1 || fn > 24)
         {
             return -1;
@@ -633,9 +633,10 @@ shown_entries_for(s32 menu)
 {
     PROFILE_FUNCTION;
 
-    funcstruct *item    = allfuncs;
-    size_t      maximum = ((COLS + 40) / 20) * 2;
-    size_t      count   = 0;
+    funcstruct *item = allfuncs;
+
+    u64 maximum = ((COLS + 40) / 20) * 2;
+    u64 count   = 0;
 
     while (count < maximum && item != nullptr)
     {
@@ -766,8 +767,8 @@ interpret(const s32 keycode)
 //  These two tags are used elsewhere too, so they are global.
 //  TRANSLATORS: Try to keep the next two strings at most 10 characters.
 //
-const char *exit_tag  = N_("Exit");
-const char *close_tag = N_("Close");
+const s8 *exit_tag  = N_("Exit");
+const s8 *close_tag = N_("Close");
 
 //
 //  Initialize the list of functions and the list of shortcuts.

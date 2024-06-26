@@ -447,9 +447,11 @@ put_cursor_at_end_of_answer(void)
     typing_x = HIGHEST_POSITIVE;
 }
 
-// Redraw the prompt bar and place the cursor at the right spot.
+//
+//  Redraw the prompt bar and place the cursor at the right spot.
+//
 void
-draw_the_promptbar(void)
+draw_the_promptbar()
 {
     size_t base   = breadth(prompt) + 2;
     size_t column = base + wideness(answer, typing_x);
@@ -491,10 +493,11 @@ draw_the_promptbar(void)
     wnoutrefresh(footwin);
 }
 
-#ifndef NANO_TINY
-// Remove or add the pipe character at the answer's head.
+//
+//  Remove or add the pipe character at the answer's head.
+//
 void
-add_or_remove_pipe_symbol_from_answer(void)
+add_or_remove_pipe_symbol_from_answer()
 {
     if (answer[0] == '|')
     {
@@ -512,22 +515,26 @@ add_or_remove_pipe_symbol_from_answer(void)
         typing_x++;
     }
 }
-#endif
 
-/* Get a string of input at the status-bar prompt. */
+//
+//  Get a string of input at the status-bar prompt.
+//
 functionptrtype
-acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*refresh_func)(void))
+acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*refresh_func)())
 {
-#ifdef ENABLE_HISTORIES
-    char *stored_string = NULL;
-    /* Whatever the answer was before the user foraged into history. */
-#    ifdef ENABLE_TABCOMP
-    bool previous_was_tab = FALSE;
-    /* Whether the previous keystroke was an attempt at tab completion. */
-    size_t fragment_length = 0;
-    /* The length of the fragment that the user tries to tab complete. */
-#    endif
-#endif
+    //
+    //  Whatever the answer was before the user foraged into history.
+    //
+    s8 *stored_string = nullptr;
+    //
+    //  Whether the previous keystroke was an attempt at tab completion.
+    //
+    bool previous_was_tab = false;
+    //
+    //  The length of the fragment that the user tries to tab complete.
+    //
+    u64 fragment_length = 0;
+
     const keystruct *shortcut;
     functionptrtype  function;
     int              input;
@@ -600,7 +607,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*r
                 /* Allow tab completion of filenames, but not in restricted mode. */
                 if ((currmenu & (MINSERTFILE | MWRITEFILE | MGOTODIR)) && !ISSET(RESTRICTED))
                 {
-                    answer = input_tab(answer, &typing_x, refresh_func, listed);
+                    answer = input_tab(answer, &typing_x, refresh_func, *listed);
                 }
         }
         else
@@ -804,10 +811,14 @@ ask_user(bool withall, const s8 *question)
 
         if (!ISSET(NO_HELP))
         {
-            // Temporary string for (translated) " Y", " N" and " A".
+            //
+            //  Temporary string for (translated) " Y", " N" and " A".
+            //
             s8 shortstr[MAXCHARLEN + 2];
 
-            // The keystroke that is bound to the Cancel function.
+            //
+            //  The keystroke that is bound to the Cancel function.
+            //
             const keystruct *cancelshortcut = first_sc_for(MYESNO, do_cancel);
 
             if (COLS < 32)
