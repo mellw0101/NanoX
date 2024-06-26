@@ -2451,7 +2451,7 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
         wchar_t wc;
 
         // Convert a multibyte character to a single code.
-        charlength = mbtowide(&wc, text);
+        charlength = mbtowide(wc, text);
 
         // Represent an invalid character with the Replacement Character.
         if (charlength < 0)
@@ -2527,7 +2527,9 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
     return converted;
 }
 
-/* Determine the sequence number of the given buffer in the circular list. */
+//
+//  Determine the sequence number of the given buffer in the circular list. */
+//
 int
 buffer_number(openfilestruct *buffer)
 {
@@ -2564,31 +2566,44 @@ show_states_at(WINDOW *window)
 void
 titlebar(const s8 *path)
 {
-    // The width of the different title-bar elements, in columns.
+    PROFILE_FUNCTION;
+    //
+    //  The width of the different title-bar elements, in columns.
+    //
     u64 verlen, prefixlen, pathlen, statelen;
-
-    // The width that "Modified" would take up.
+    //
+    //  The width that "Modified" would take up.
+    //
     u64 pluglen = 0;
-
-    // The position at which the center part of the title bar starts.
+    //
+    //  The position at which the center part of the title bar starts.
+    //
     u64 offset = 0;
-
-    // What is shown in the top left corner.
+    //
+    //  What is shown in the top left corner.
+    //
     const s8 *upperleft = "";
-
-    // What is shown before the path -- "DIR:" or nothing.
+    //
+    //  What is shown before the path -- "DIR:" or nothing.
+    //
     const s8 *prefix = "";
-
-    // The state of the current buffer -- "Modified", "View", or "".
+    //
+    //  The state of the current buffer -- "Modified", "View", or "".
+    //
     const s8 *state = "";
-
-    // The presentable form of the pathname.
+    //
+    //  The presentable form of the pathname.
+    //
     s8 *caption;
-
-    // The buffer sequence number plus the total buffer count.
+    //
+    //  The buffer sequence number plus the total buffer count.
+    //
     s8 *ranking = nullptr;
 
-    // If the screen is too small, there is no title bar.
+    //
+    //  If the screen is too small,
+    //  there is no title bar.
+    //
     if (topwin == nullptr)
     {
         return;
@@ -2599,11 +2614,18 @@ titlebar(const s8 *path)
     blank_titlebar();
     as_an_at = false;
 
-    // Do as Pico: if there is not enough width available for all items,
-    // first sacrifice the version string, then eat up the side spaces,
-    // then sacrifice the prefix, and only then start dottifying.
+    //
+    //  Do as Pico:
+    //  - if there is not enough width available for all items,
+    //  - first sacrifice the version string,
+    //  - then eat up the side spaces,
+    //  - then sacrifice the prefix,
+    //  - and only then start dottifying.
+    //
 
-    // Figure out the path, prefix and state strings.
+    //
+    //  Figure out the path, prefix and state strings.
+    //
     if (currmenu == MLINTER)
     {
         // TRANSLATORS: The next five are "labels" in the title bar.
@@ -2620,8 +2642,10 @@ titlebar(const s8 *path)
         {
             if (!inhelp)
             {
-                // If there are/were multiple buffers,
-                // show which out of how many.
+                //
+                //  If there are/were multiple buffers,
+                //  show which out of how many.
+                //
                 if (more_than_one)
                 {
                     ranking = static_cast<s8 *>(nmalloc(24));
@@ -2889,7 +2913,7 @@ minibar()
         {
             sprintf(hexadecimal, "U+%04X", static_cast<u8>(*this_position));
         }
-        else if (using_utf8() && mbtowide(&widecode, this_position) > 0)
+        else if (using_utf8() && mbtowide(widecode, this_position) > 0)
         {
             sprintf(hexadecimal, "U+%04X", static_cast<s32>(widecode));
         }
@@ -2902,14 +2926,14 @@ minibar()
 
         successor = this_position + char_length(this_position);
 
-        if (*this_position && *successor && is_zerowidth(successor) && mbtowide(&widecode, successor) > 0)
+        if (*this_position && *successor && is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
         {
             sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
             waddstr(footwin, hexadecimal);
 
             successor += char_length(successor);
 
-            if (is_zerowidth(successor) && mbtowide(&widecode, successor) > 0)
+            if (is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
             {
                 sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
                 waddstr(footwin, hexadecimal);
@@ -3102,15 +3126,19 @@ statusline(message_type importance, const s8 *msg, ...)
     countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
 }
 
-// Display a normal message on the status bar, quietly.
+//
+//  Display a normal message on the status bar, quietly.
+//
 void
 statusbar(const s8 *msg)
 {
     statusline(HUSH, msg);
 }
 
-/* Warn the user on the status bar and pause for a moment, so that the
- * message can be noticed and read. */
+//
+//  Warn the user on the status bar and pause for a moment, so that the
+//  message can be noticed and read.
+//
 void
 warn_and_briefly_pause(const s8 *msg)
 {
@@ -3154,11 +3182,16 @@ post_one_key(const s8 *keystroke, const s8 *tag, s32 width)
 void
 bottombars(s32 menu)
 {
-    size_t           index, number, itemwidth;
+    u64 index     = 0;
+    u64 number    = 0;
+    u64 itemwidth = 0;
+
     const keystruct *s;
     funcstruct      *f;
 
-    /* Set the global variable to the given menu. */
+    //
+    //  Set the global variable to the given menu.
+    //
     currmenu = menu;
 
     if (ISSET(NO_HELP) || LINES < (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5))
@@ -3221,29 +3254,36 @@ bottombars(s32 menu)
     wrefresh(footwin);
 }
 
-/* Redetermine `cursor_row` from the position of current relative to edittop,
- * and put the cursor in the edit window at (cursor_row, "current_x"). */
+//
+//  Redetermine `cursor_row` from the position of current relative to edittop,
+//  and put the cursor in the edit window at (cursor_row, "current_x").
+//
 void
-place_the_cursor(void)
+place_the_cursor()
 {
-    ssize_t row    = 0;
-    size_t  column = xplustabs();
+    s64 row    = 0;
+    u64 column = xplustabs();
 
     if ISSET (SOFTWRAP)
     {
         linestruct *line = openfile->edittop;
-        size_t      leftedge;
+
+        u64 leftedge;
 
         row -= chunk_for(openfile->firstcolumn, openfile->edittop);
 
-        /* Calculate how many rows the lines from edittop to current use. */
-        while (line != NULL && line != openfile->current)
+        //
+        //  Calculate how many rows the lines from edittop to current use.
+        //
+        while (line != nullptr && line != openfile->current)
         {
             row += 1 + extra_chunks_in(line);
             line = line->next;
         }
 
-        /* Add the number of wraps in the current line before the cursor. */
+        //
+        //  Add the number of wraps in the current line before the cursor.
+        //
         row += get_chunk_and_edge(column, openfile->current, &leftedge);
         column -= leftedge;
     }

@@ -292,14 +292,19 @@ CONSTEXPR_STRBITMAP<25> cliOptionMap = {
      {"--breaklonglines", CLI_OPT_BREAKLONGLINES}}
 };
 
+constexpr auto NUMBER_OF_FLAGS          = 51;
+constexpr auto DEFAULT_RESPONSE_ON_NONE = "Ehm...";
 //
 //  This is a masterpiece of a map.
 //  I have succesfully made the way to get the description of a flag,
-//  instant and without any overhead, while using less memory then a unordered map.
+//  instant and without any overhead,
+//  while using less memory then a unordered map.
+//  .
+//  USAGE:
+//  - ( &epithetOfFlagMap[flag].value[0] ) will return the underlying ptr to the description of the flag
 //
-constexpr auto NUMBER_OF_FLAGS          = 51;
-constexpr auto DEFAULT_RESPONSE_ON_NONE = "Ehm...";
-
+//  The ( flag / description ) map.
+//
 CONSTEXPR_MAP<u32, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
     {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
      {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
@@ -415,3 +420,6 @@ CONSTEXPR_STRBITMAP<14> toggleOptionMap = {
      {"tabstospaces", TABS_TO_SPACES},
      {"mouse", USE_MOUSE}}
 };
+
+constexpr auto ERROR_MSG_OUT_OF_MEMORY         = "NanoX is out of memory!\n";
+constexpr auto ERROR_MSG_TO_MENY_DOT_SAVEFILES = "\nToo many .save files\n";

@@ -128,12 +128,11 @@ display_rcfile_errors()
 
     for (linestruct *error = errors_head; error != nullptr; error = error->next)
     {
-        fprintf(stderr, "%s\n", error->data);
+        std::fprintf(stderr, "%s\n", error->data);
     }
 }
 
 static constexpr auto MAXSIZE = (PATH_MAX + 200);
-
 //
 /// @name @c jot_error
 ///
@@ -476,7 +475,7 @@ parse_next_regex(s8 *ptr)
 //  this pointer is not NULL).  Return TRUE when the expression is valid.
 //
 bool
-compile(const s8 *expression, s32 rex_flags, regex_t **packed)
+compile(const s8 *expression, s32 rex_flags, regex_t *&packed)
 {
     PROFILE_FUNCTION;
 
@@ -490,14 +489,14 @@ compile(const s8 *expression, s32 rex_flags, regex_t **packed)
 
         regerror(outcome, compiled, message, length);
         jot_error(N_("Bad regex \"%s\": %s"), expression, message);
-        free(message);
+        std::free(message);
 
         regfree(compiled);
-        free(compiled);
+        std::free(compiled);
     }
     else
     {
-        *packed = compiled;
+        packed = compiled;
     }
 
     return (outcome == 0);
@@ -1284,7 +1283,7 @@ parse_rule(char *ptr, int rex_flags)
         ptr         = parse_next_regex(ptr);
 
         /* When there is no regex, or it is invalid, skip this line. */
-        if (ptr == NULL || !compile(regexstring, rex_flags, &start_rgx))
+        if (ptr == NULL || !compile(regexstring, rex_flags, start_rgx))
         {
             return;
         }
@@ -1303,7 +1302,7 @@ parse_rule(char *ptr, int rex_flags)
             ptr         = parse_next_regex(ptr + 5);
 
             /* When there is no valid end= regex, abandon the rule. */
-            if (ptr == NULL || !compile(regexstring, rex_flags, &end_rgx))
+            if (ptr == NULL || !compile(regexstring, rex_flags, end_rgx))
             {
                 regfree(start_rgx);
                 free(start_rgx);
@@ -1414,7 +1413,7 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
         }
 
         /* If the regex string is malformed, skip it. */
-        if (!compile(regexstring, NANO_REG_EXTENDED | REG_NOSUB, &packed_rgx))
+        if (!compile(regexstring, NANO_REG_EXTENDED | REG_NOSUB, packed_rgx))
         {
             continue;
         }

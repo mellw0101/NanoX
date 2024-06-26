@@ -411,7 +411,7 @@ emergency_save(const s8 *filename)
 
     if (*targetname == '\0')
     {
-        std::fprintf(stderr, _("\nToo many .save files\n"));
+        std::fprintf(stderr, ERROR_MSG_TO_MENY_DOT_SAVEFILES);
     }
     else if (write_file(targetname, nullptr, SPECIAL, EMERGENCY, NONOTES))
     {
@@ -423,44 +423,50 @@ emergency_save(const s8 *filename)
 }
 
 //
-/// @name @c die
-///
-/// @brief
-///  -  Die gracefully,
-///     by restoring the terminal state and saving any buffers that were modified.
-///
-/// @param msg ( const s8 * )
-///  - The format string for the dying message.
-///
-/// @param ... ( __VA_ARGS__ )
-///  - Additional arguments to be formatted into the dying message.
-///
-/// @returns @c void
+//  Die gracefully,
+//  - by restoring the terminal state and,
+//  - saving any buffers that were modified.
+//
+//  @param msg ( std::string_view )
+//  - The format string for the dying message.
+//
+//  @param ... ( __VA_ARGS__ )
+//  - Additional arguments to be formatted into the dying message.
+//
+//  @return void
 //
 void
-die(const s8 *msg, ...)
+die(std::string_view msg, ...)
 {
     openfilestruct *firstone = openfile;
     static s32      stabs    = 0;
     va_list         ap;
 
-    // When dying for a second time, just give up.
+    //
+    //  When dying for a second time,
+    //  just give up.
+    //
     if (++stabs > 1)
     {
-        exit(11);
+        std::exit(11);
     }
 
     restore_terminal();
     display_rcfile_errors();
 
-    // Display the dying message.
+    //
+    //  Display the dying message.
+    //
     va_start(ap, msg);
-    vfprintf(stderr, msg, ap);
+    std::vfprintf(stderr, &msg[0], ap);
     va_end(ap);
 
     while (openfile)
     {
-        // If the current buffer has a lock file, remove it.
+        //
+        //  If the current buffer has a lock file,
+        //  remove it.
+        //
         if (openfile->lock_filename)
         {
             delete_lockfile(openfile->lock_filename);
@@ -483,8 +489,10 @@ die(const s8 *msg, ...)
         }
     }
 
-    // Abandon the building.
-    exit(EXIT_FAILURE);
+    //
+    //  Abandon the building.
+    //
+    std::exit(FAILURE);
 }
 
 //
@@ -508,7 +516,10 @@ window_init()
 
     topwin = nullptr;
 
-    // If the terminal is very flat, don't set up a title bar.
+    //
+    //  If the terminal is very flat,
+    //  don't set up a title bar.
+    //
     if (LINES < 3)
     {
         editwinrows = (ISSET(ZERO) ? LINES : 1);
@@ -627,17 +638,19 @@ print_opt(const s8 *const shortflag, const s8 *const longflag, const s8 *const d
 void
 usage()
 {
-    printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
-
-    // TRANSLATORS: The next two strings are part of the --help output.
-    // It's best to keep its lines within 80 characters.
-    printf(_("To place the cursor on a specific line of a file, put the line "
-             "number with\n"
-             "a '+' before the filename.  The column number can be added after "
-             "a comma.\n"));
-
-    // TRANSLATORS: The next three are column headers of the --help output.
-    printf(_("When a filename is '-', nano reads data from standard input.\n\n"));
+    std::printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
+    //
+    //  TRANSLATORS: The next two strings are part of the --help output.
+    //  It's best to keep its lines within 80 characters.
+    //
+    std::printf(_("To place the cursor on a specific line of a file, put the line "
+                  "number with\n"
+                  "a '+' before the filename.  The column number can be added after "
+                  "a comma.\n"));
+    //
+    //  TRANSLATORS: The next three are column headers of the --help output.
+    //
+    std::printf(_("When a filename is '-', nano reads data from standard input.\n\n"));
     print_opt(_("Option"), _("Long option"), N_("Meaning"));
 
     // TRANSLATORS: The next forty or so strings are option descriptions
@@ -670,10 +683,11 @@ usage()
     {
         print_opt("-P", "--positionlog", N_("Save & restore position of the cursor"));
     }
-    print_opt(_("-Q <regex>"), _("--quotestr=<regex>"),
-              // TRANSLATORS: This refers to email quoting,
-              // like the > in: > quoted text.
-              N_("Regular expression to match quoting"));
+    //
+    //  TRANSLATORS: This refers to email quoting,
+    //  like the > in: > quoted text.
+    //
+    print_opt(_("-Q <regex>"), _("--quotestr=<regex>"), N_("Regular expression to match quoting"));
     if (!ISSET(RESTRICTED))
     {
         print_opt("-R", "--restricted", N_("Restrict access to the filesystem"));
@@ -722,7 +736,7 @@ usage()
     print_opt("-0", "--zero", N_("Hide all bars, use whole terminal"));
     print_opt("-/", "--modernbindings", N_("Use better-known key bindings"));
 
-    exit(EXIT_SUCCESS);
+    std::exit(SUCCESS);
 }
 
 //
@@ -983,16 +997,22 @@ suspend_nano(s32 signal)
 {
     disable_mouse_support();
     restore_terminal();
-    printf("\n\n");
+    std::printf("\n\n");
 
-    // Display our helpful message.
-    printf(_("Use \"fg\" to return to nano.\n"));
-    fflush(stdout);
+    //
+    //  Display our helpful message.
+    //
+    std::printf(_("Use \"fg\" to return to nano.\n"));
+    std::fflush(stdout);
 
-    // The suspend keystroke must not elicit cursor-position display.
+    //
+    //  The suspend keystroke must not elicit cursor-position display.
+    //
     lastmessage = HUSH;
 
-    // Do what mutt does: send ourselves a SIGSTOP.
+    //
+    //  Do what mutt does: send ourselves a SIGSTOP.
+    //
     kill(0, SIGSTOP);
 }
 
@@ -1030,11 +1050,10 @@ continue_nano(s32 signal)
     //
     the_window_resized = true;
 
-    /// This function call is originaly for NANO_TINY
-    /// COMMENT: -> // Put the terminal in the desired state again.
-    /// CALL: -> @c terminal_init();
-
-    // Insert a fake keystroke, to neutralize a key-eating issue.
+    //
+    //  Insert a fake keystroke,
+    //  to neutralize a key-eating issue.
+    //
     ungetch(KEY_FRESH);
 }
 
@@ -1044,20 +1063,16 @@ continue_nano(s32 signal)
 void
 block_sigwinch(bool blockit)
 {
-#ifdef SIGWINCH
     sigset_t winch;
 
     sigemptyset(&winch);
     sigaddset(&winch, SIGWINCH);
-    sigprocmask(blockit ? SIG_BLOCK : SIG_UNBLOCK, &winch, NULL);
-#endif
+    sigprocmask(blockit ? SIG_BLOCK : SIG_UNBLOCK, &winch, nullptr);
 
-#ifndef NANO_TINY
     if (the_window_resized)
     {
         regenerate_screen();
     }
-#endif
 }
 
 //
@@ -1076,25 +1091,36 @@ handle_sigwinch(s32 signal)
 void
 regenerate_screen()
 {
-    /* Reset the trigger. */
-    the_window_resized = FALSE;
+    PROFILE_FUNCTION;
 
-    /* Leave and immediately reenter curses mode, so that ncurses notices
-     * the new screen dimensions and sets LINES and COLS accordingly. */
+    //
+    //  Reset the trigger.
+    //
+    the_window_resized = false;
+
+    //
+    //  Leave and immediately reenter curses mode, so that ncurses notices
+    //  the new screen dimensions and sets LINES and COLS accordingly.
+    //
     endwin();
     refresh();
 
     sidebar = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
-    bardata = RE_CAST(int *, nrealloc(bardata, LINES * sizeof(int)));
+    bardata = static_cast<s32 *>(nrealloc(bardata, LINES * sizeof(s32)));
 
     editwincols = COLS - margin - sidebar;
 
-    /* Put the terminal in the desired state again, and
-     * recreate the subwindows with their (new) sizes. */
+    //
+    //  Put the terminal in the desired state again, and
+    //  recreate the subwindows with their (new) sizes.
+    //
     terminal_init();
     window_init();
 
-    /* If we have an open buffer, redraw the contents of the subwindows. */
+    //
+    //  If we have an open buffer,
+    //  redraw the contents of the subwindows.
+    //
     if (openfile)
     {
         ensure_firstcolumn_is_aligned();
@@ -1209,7 +1235,7 @@ toggle_this(const s32 flag)
 void
 disable_extended_io()
 {
-    struct termios settings = {0};
+    termios settings = {0};
 
     tcgetattr(0, &settings);
     settings.c_lflag &= ~IEXTEN;
@@ -1223,7 +1249,7 @@ disable_extended_io()
 void
 disable_kb_interrupt()
 {
-    struct termios settings = {0};
+    termios settings = {0};
 
     tcgetattr(0, &settings);
     settings.c_lflag &= ~ISIG;
@@ -1236,7 +1262,7 @@ disable_kb_interrupt()
 void
 enable_kb_interrupt()
 {
-    struct termios settings = {0};
+    termios settings = {0};
 
     tcgetattr(0, &settings);
     settings.c_lflag |= ISIG;
@@ -1249,7 +1275,7 @@ enable_kb_interrupt()
 void
 disable_flow_control()
 {
-    struct termios settings;
+    termios settings;
 
     tcgetattr(0, &settings);
     settings.c_iflag &= ~IXON;
@@ -1262,7 +1288,7 @@ disable_flow_control()
 void
 enable_flow_control()
 {
-    struct termios settings;
+    termios settings;
 
     tcgetattr(0, &settings);
     settings.c_iflag |= IXON;
@@ -1270,14 +1296,20 @@ enable_flow_control()
 }
 
 //
-///  Set up the terminal state.  Put the terminal in raw mode (read one
-///  character at a time, disable the special control keys, and disable
-///  the flow control characters), disable translation of carriage return
-///  (^M) into newline (^J) so that we can tell the difference between the
-///  Enter key and Ctrl-J, and disable echoing of characters as they're
-///  typed.  Finally, disable extended input and output processing, and,
-///  if we're not in preserve mode, reenable interpretation of the flow
-///  control characters.
+//  Set up the terminal state.
+//  Put the terminal in raw mode (
+//   read one character at a time,
+//   disable the special control keys,
+//   and disable the flow control characters
+//  ),
+//  disable translation of carriage return (^M) into newline (^J),
+//  so that we can tell the difference between the Enter key and Ctrl-J,
+//  and disable echoing of characters as they're typed.
+//  Finally,
+//  disable extended input and output processing,
+//  and,
+//  if we're not in preserve mode,
+//  reenable interpretation of the flow control characters.
 //
 void
 terminal_init()
@@ -1304,21 +1336,21 @@ terminal_init()
 //  Ask ncurses for a keycode, or assign a default one.
 //
 s32
-get_keycode(const s8 *keyname, const s32 standard)
+get_keycode(const s8 *const keyname, const s32 standard)
 {
+    PROFILE_FUNCTION;
+
     const s8 *keyvalue = tigetstr(keyname);
     if (keyvalue != 0 && keyvalue != (s8 *)-1 && key_defined(keyvalue))
     {
         return key_defined(keyvalue);
     }
-
 #ifdef DEBUG
     if (!ISSET(RAW_SEQUENCES))
     {
         fprintf(stderr, "Using fallback keycode for %s\n", keyname);
     }
 #endif
-
     return standard;
 }
 

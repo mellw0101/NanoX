@@ -77,9 +77,11 @@ concatenate(const s8 *path, const s8 *name)
     return joined;
 }
 
-// Return the number of digits that the given integer n takes up.
+//
+//  Return the number of digits that the given integer n takes up.
+//
 s32
-digits(s64 n)
+digits(const s64 n)
 {
     if (n < 100000)
     {
@@ -160,12 +162,12 @@ digits(s64 n)
     }
 */
 bool
-parseNum(const std::string &string, s64 &result)
+parseNum(std::string_view string, s64 &result)
 {
     s8 *end;
     errno = 0;
 
-    long long value = std::strtoll(&string[0], &end, 10);
+    s64 value = std::strtoll(&string[0], &end, 10);
 
     if (errno == ERANGE || *end != '\0' || string[0] == '\0')
     {
@@ -292,6 +294,7 @@ is_separate_word(u64 position, u64 length, const s8 *text)
     return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
 }
 
+// constexpr auto ERROR_MSG_OUT_OF_MEMORY = "Out of memory";
 //
 //  Return the position of the needle in the haystack, or NULL if not found.
 //  When searching backwards, we will find the last match that starts no later
@@ -302,6 +305,8 @@ is_separate_word(u64 position, u64 length, const s8 *text)
 const s8 *
 strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const start)
 {
+    PROFILE_FUNCTION;
+
     if ISSET (USE_REGEXP)
     {
         if ISSET (BACKWARDS_SEARCH)
@@ -390,7 +395,7 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
         }
         else
         {
-            return strstr(start, needle);
+            return std::strstr(start, needle);
         }
     }
 
@@ -413,7 +418,7 @@ nmalloc(const u64 howmuch)
     void *section = std::malloc(howmuch);
     if (section == nullptr)
     {
-        die(_("Nano is out of memory!\n"));
+        die(_(ERROR_MSG_OUT_OF_MEMORY /* "Nano is out of memory!\n" */));
     }
     return section;
 }

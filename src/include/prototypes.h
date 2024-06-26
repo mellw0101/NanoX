@@ -137,7 +137,9 @@ s8  *browse_in(const s8 *inpath);
 void to_first_file();
 void to_last_file();
 
-/* Most functions in chars.c. */
+//
+//  Most functions in 'chars.cpp'.
+//
 void utf8_init();
 bool using_utf8();
 bool is_alpha_char(const s8 *c);
@@ -145,7 +147,7 @@ bool is_blank_char(const s8 *c);
 bool is_cntrl_char(const s8 *c);
 bool is_word_char(const s8 *c, bool allow_punct);
 char control_mbrep(const s8 *c, bool isdata);
-s32  mbtowide(wchar_t *wc, const s8 *c);
+s32  mbtowide(wchar_t &wc, const s8 *c);
 bool is_doublewidth(const s8 *ch);
 bool is_zerowidth(const s8 *ch);
 s32  char_length(const s8 *const &pointer);
@@ -206,130 +208,125 @@ void  close_buffer(void);
 void  read_file(FILE *f, int fd, const char *filename, bool undoable);
 int   open_file(const char *filename, bool new_one, FILE **f);
 char *get_next_filename(const char *name, const char *suffix);
-void  do_insertfile(void);
-#ifndef NANO_TINY
-void do_execute(void);
-#endif
-char *get_full_path(const char *origpath);
-char *safe_tempfile(FILE **stream);
-#ifdef ENABLE_OPERATINGDIR
-void init_operating_dir(void);
-bool outside_of_confinement(const char *currpath, bool allow_tabcomp);
-#endif
-#ifndef NANO_TINY
-void init_backup_dir(void);
-#endif
-int  copy_file(FILE *inn, FILE *out, bool close_out);
-bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
-#ifndef NANO_TINY
-bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
-#endif
-int   write_it_out(bool exiting, bool withprompt);
-void  do_writeout(void);
-void  do_savefile(void);
-char *real_dir_from_tilde(const char *path);
-#if defined(ENABLE_TABCOMP) || defined(ENABLE_BROWSER)
-int diralphasort(const void *va, const void *vb);
-#endif
-#ifdef ENABLE_TABCOMP
-char *input_tab(s8 *buf, u64 *place, void (*refresh_func)(), bool &listed);
-#endif
+void  do_insertfile();
+void  do_execute();
+s8   *get_full_path(const s8 *origpath);
+s8   *safe_tempfile(FILE **stream);
+void  init_operating_dir(void);
+bool  outside_of_confinement(const char *currpath, bool allow_tabcomp);
+void  init_backup_dir(void);
+int   copy_file(FILE *inn, FILE *out, bool close_out);
+bool  write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
+bool  write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
+s32   write_it_out(bool exiting, bool withprompt);
+void  do_writeout();
+void  do_savefile();
+s8   *real_dir_from_tilde(const s8 *path);
+int   diralphasort(const void *va, const void *vb);
+s8   *input_tab(s8 *buf, u64 *place, void (*refresh_func)(), bool &listed);
 
-/* Some functions in global.c. */
-const keystruct *first_sc_for(int menu, void (*function)(void));
-size_t           shown_entries_for(int menu);
-const keystruct *get_shortcut(const int keycode);
+//
+//  Some functions in 'global.cpp'.
+//
 functionptrtype  func_from_key(const s32 keycode);
+functionptrtype  interpret(const s32 keycode);
+const keystruct *first_sc_for(s32 menu, void (*function)(void));
+const keystruct *get_shortcut(const s32 keycode);
 
-functionptrtype interpret(const s32 keycode);
-int             keycode_from_string(const char *keystring);
-void            shortcut_init(void);
-const s8       *epithet_of_flag(s32 flag);
+u64       shown_entries_for(s32 menu);
+s32       keycode_from_string(const s8 *keystring);
+void      shortcut_init();
+const s8 *epithet_of_flag(s32 flag);
 
-/* Some functions in help.c. */
+//
+//  Some functions in 'help.cpp'.
+//
 void wrap_help_text_into_buffer();
 void do_help();
 
-/* Most functions in history.c. */
-void  history_init(void);
+//
+//  Most functions in 'history.cpp'.
+//
+void  history_init();
 void  reset_history_pointer_for(const linestruct *list);
-void  update_history(linestruct **item, const char *text, bool avoid_duplicates);
-char *get_history_completion(linestruct **h, char *s, size_t len);
-bool  have_statedir(void);
-void  load_history(void);
-void  save_history(void);
-void  load_poshistory(void);
-void  update_poshistory(void);
-bool  has_old_position(const char *file, ssize_t *line, ssize_t *column);
+void  update_history(linestruct **item, const s8 *text, bool avoid_duplicates);
+char *get_history_completion(linestruct **h, char *s, u64 len);
+bool  have_statedir();
+void  load_history();
+void  save_history();
+void  load_poshistory();
+void  update_poshistory();
+bool  has_old_position(const s8 *file, s64 *line, s64 *column);
 
-/* Most functions in move.c. */
-void to_first_line(void);
-void to_last_line(void);
-void do_page_up(void);
-void do_page_down(void);
-void to_top_row(void);
-void to_bottom_row(void);
-void do_cycle(void);
-void do_center(void);
+//
+//  Most functions in 'move.cpp'.
+//
+void to_first_line();
+void to_last_line();
+void do_page_up();
+void do_page_down();
+void to_top_row();
+void to_bottom_row();
+void do_cycle();
+void do_center();
 void do_para_begin(linestruct **line);
 void do_para_end(linestruct **line);
-void to_para_begin(void);
-void to_para_end(void);
-void to_prev_block(void);
-void to_next_block(void);
-void do_prev_word(void);
+void to_para_begin();
+void to_para_end();
+void to_prev_block();
+void to_next_block();
+void do_prev_word();
 bool do_next_word(bool after_ends);
-void to_prev_word(void);
-void to_next_word(void);
-void do_home(void);
-void do_end(void);
-void do_up(void);
-void do_down(void);
-#if !defined(NANO_TINY) || defined(ENABLE_HELP)
-void do_scroll_up(void);
-void do_scroll_down(void);
-#endif
-void do_left(void);
-void do_right(void);
+void to_prev_word();
+void to_next_word();
+void do_home();
+void do_end();
+void do_up();
+void do_down();
+void do_scroll_up();
+void do_scroll_down();
+void do_left();
+void do_right();
 
 //
 //  Most functions in 'nano.cpp'.
 //
 linestruct *make_new_node(linestruct *prevnode);
 linestruct *copy_buffer(const linestruct *src);
-void        splice_node(linestruct *afterthis, linestruct *newnode);
-void        unlink_node(linestruct *line);
-void        delete_node(linestruct *line);
-void        free_lines(linestruct *src);
-void        renumber_from(linestruct *line);
-void        print_view_warning(void);
-bool        in_restricted_mode(void);
-void        suggest_ctrlT_ctrlZ(void);
-void        finish(void);
-void        close_and_go(void);
-void        do_exit(void);
-void        die(const char *msg, ...);
-void        window_init(void);
-void        install_handler_for_Ctrl_C(void);
-void        restore_handler_for_Ctrl_C(void);
-void        reconnect_and_store_state(void);
-void        handle_hupterm(int signal);
-void        handle_crash(s32 signal);
-void        suspend_nano(int signal);
-void        do_suspend(void);
-void        continue_nano(int signal);
-void        block_sigwinch(bool blockit);
-void        handle_sigwinch(int signal);
-void        regenerate_screen(void);
-void        disable_kb_interrupt(void);
-void        enable_kb_interrupt(void);
-void        disable_flow_control(void);
-void        enable_flow_control(void);
-void        terminal_init(void);
-void        confirm_margin(void);
-void        unbound_key(int code);
-bool        changes_something(functionptrtype f);
-void        inject(char *burst, u64 count);
+
+void splice_node(linestruct *afterthis, linestruct *newnode);
+void unlink_node(linestruct *line);
+void delete_node(linestruct *line);
+void free_lines(linestruct *src);
+void renumber_from(linestruct *line);
+void print_view_warning();
+bool in_restricted_mode();
+void suggest_ctrlT_ctrlZ();
+void finish();
+void close_and_go();
+void do_exit();
+void die(std::string_view msg, ...);
+void window_init();
+void install_handler_for_Ctrl_C();
+void restore_handler_for_Ctrl_C();
+void reconnect_and_store_state();
+void handle_hupterm(s32 signal);
+void handle_crash(s32 signal);
+void suspend_nano(s32 signal);
+void do_suspend();
+void continue_nano(s32 signal);
+void block_sigwinch(bool blockit);
+void handle_sigwinch(s32 signal);
+void regenerate_screen();
+void disable_kb_interrupt();
+void enable_kb_interrupt();
+void disable_flow_control();
+void enable_flow_control();
+void terminal_init();
+void confirm_margin();
+void unbound_key(s32 code);
+bool changes_something(functionptrtype f);
+void inject(s8 *burst, u64 count);
 
 //
 //  Most functions in 'prompt.cpp'.
@@ -414,7 +411,7 @@ void        get_homedir();
 const s8   *tail(const s8 *path);
 s8         *concatenate(const s8 *path, const s8 *name);
 int         digits(s64 n);
-bool        parseNum(const std::string &string, int64_t &result);
+bool        parseNum(std::string_view string, int64_t &result);
 bool        parse_line_column(const s8 *str, s64 *line, s64 *column);
 void        recode_NUL_to_LF(s8 *string, u64 length);
 u64         recode_LF_to_NUL(s8 *string);
@@ -440,7 +437,9 @@ void        get_range(linestruct *&top, linestruct *&bot);
 u64         number_of_characters_in(const linestruct *begin, const linestruct *end);
 linestruct *line_from_number(s64 number);
 
-/* Most functions in winio.c. */
+//
+//  Most functions in 'winio.cpp'.
+//
 void record_macro(void);
 void run_macro(void);
 void reserve_space_for(size_t newsize);
@@ -489,7 +488,9 @@ void spotlight(size_t from_col, size_t to_col);
 void spotlight_softwrapped(size_t from_col, size_t to_col);
 void do_credits(void);
 
-// These are just name definitions.
+//
+//  These are just name definitions.
+//
 void case_sens_void();
 void regexp_void();
 void backwards_void();
@@ -512,5 +513,10 @@ void flip_convert();
 void flip_newbuffer();
 void discard_buffer();
 void do_cancel();
+
+//
+//  All functions in 'cpp.cpp'.
+//
+bool isCppSyntaxChar(const s8 c);
 
 #include <Mlib/def.h>

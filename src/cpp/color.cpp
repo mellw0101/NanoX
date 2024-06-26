@@ -19,11 +19,11 @@
  *                                                                        *
  **************************************************************************/
 
+#include <Mlib/Profile.h>
 #include "../include/prototypes.h"
 
 #ifdef HAVE_MAGIC_H
-#    include <cerrno>
-#    include <magic.h>
+// #    include <magic.h>
 #endif
 #include <cstring>
 
@@ -149,10 +149,13 @@ set_syntax_colorpairs(syntaxtype *sntx)
 void
 prepare_palette()
 {
-    short number = NUMBER_OF_ELEMENTS;
+    s16 number = NUMBER_OF_ELEMENTS;
 
-    /* For each unique pair number, tell ncurses the combination of colors. */
-    for (colortype *ink = openfile->syntax->color; ink != NULL; ink = ink->next)
+    //
+    //  For each unique pair number,
+    //  tell ncurses the combination of colors.
+    //
+    for (colortype *ink = openfile->syntax->color; ink != nullptr; ink = ink->next)
     {
         if (ink->pairnum > number)
         {
@@ -161,7 +164,7 @@ prepare_palette()
         }
     }
 
-    have_palette = TRUE;
+    have_palette = true;
 }
 
 //
@@ -189,10 +192,14 @@ found_in_list(regexlisttype *head, const s8 *shibboleth)
 void
 find_and_prime_applicable_syntax()
 {
+    PROFILE_FUNCTION;
+
     syntaxtype *sntx = nullptr;
 
     //
-    //  If the rcfiles were not read, or contained no syntaxes, get out.
+    //  If the rcfiles were not read,
+    //  or contained no syntaxes,
+    //  get out.
     //
     if (syntaxes == nullptr)
     {
@@ -200,21 +207,22 @@ find_and_prime_applicable_syntax()
     }
 
     //
-    //  If we specified a syntax-override string, use it.
+    //  If we specified a syntax-override string,
+    //  use it.
     //
     if (syntaxstr != nullptr)
     {
         //
         //  An override of "none" is like having no syntax at all.
         //
-        if (strcmp(syntaxstr, "none") == 0)
+        if (std::strcmp(syntaxstr, "none") == 0)
         {
             return;
         }
 
         for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
         {
-            if (strcmp(sntx->name, syntaxstr) == 0)
+            if (std::strcmp(sntx->name, syntaxstr) == 0)
             {
                 break;
             }
@@ -227,7 +235,8 @@ find_and_prime_applicable_syntax()
     }
 
     //
-    //  If no syntax-override string was specified, or it didn't match,
+    //  If no syntax-override string was specified,
+    //  or it didn't match,
     //  try finding a syntax based on the filename (extension).
     //
     if (sntx == nullptr && !inhelp)
@@ -250,7 +259,10 @@ find_and_prime_applicable_syntax()
         free(fullname);
     }
 
-    // If the filename didn't match anything, try the first line.
+    //
+    //  If the filename didn't match anything,
+    //  try the first line.
+    //
     if (sntx == nullptr && !inhelp)
     {
         for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
@@ -262,68 +274,73 @@ find_and_prime_applicable_syntax()
         }
     }
 
-#ifdef HAVE_LIBMAGIC
-    // If we still don't have an answer, try using magic (when requested).
-    if (sntx == nullptr && !inhelp && ISSET(USE_MAGIC))
-    {
-        struct stat fileinfo;
-        magic_t     cookie      = nullptr;
-        const s8   *magicstring = nullptr;
+    // #ifdef HAVE_LIBMAGIC
+    //     // If we still don't have an answer, try using magic (when requested).
+    //     if (sntx == nullptr && !inhelp && ISSET(USE_MAGIC))
+    //     {
+    //         struct stat fileinfo;
+    //         magic_t     cookie      = nullptr;
+    //         const s8   *magicstring = nullptr;
 
-        if (stat(openfile->filename, &fileinfo) == 0)
-        {
-            /* Open the magic database and get a diagnosis of the file. */
-            cookie = magic_open(MAGIC_SYMLINK |
-#    ifdef DEBUG
-                                MAGIC_DEBUG | MAGIC_CHECK |
-#    endif
-                                MAGIC_ERROR);
-            if (cookie == nullptr || magic_load(cookie, nullptr) < 0)
-            {
-                statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
-            }
-            else
-            {
-                magicstring = magic_file(cookie, openfile->filename);
-                if (magicstring == nullptr)
-                {
-                    statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
-                }
-            }
-        }
+    //         if (stat(openfile->filename, &fileinfo) == 0)
+    //         {
+    //             /* Open the magic database and get a diagnosis of the file. */
+    //             cookie = magic_open(MAGIC_SYMLINK |
+    // #    ifdef DEBUG
+    //                                 MAGIC_DEBUG | MAGIC_CHECK |
+    // #    endif
+    //                                 MAGIC_ERROR);
+    //             if (cookie == nullptr || magic_load(cookie, nullptr) < 0)
+    //             {
+    //                 statusline(ALERT, _("magic_load() failed: %s"), ERRNO_C_STR);
+    //             }
+    //             else
+    //             {
+    //                 magicstring = magic_file(cookie, openfile->filename);
+    //                 if (magicstring == nullptr)
+    //                 {
+    //                     statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
+    //                 }
+    //             }
+    //         }
 
-        /* Now try and find a syntax that matches the magic string. */
-        if (magicstring != nullptr)
-        {
-            for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
-            {
-                if (found_in_list(sntx->magics, magicstring))
-                {
-                    break;
-                }
-            }
-        }
+    //         /* Now try and find a syntax that matches the magic string. */
+    //         if (magicstring != nullptr)
+    //         {
+    //             for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
+    //             {
+    //                 if (found_in_list(sntx->magics, magicstring))
+    //                 {
+    //                     break;
+    //                 }
+    //             }
+    //         }
 
-        if (!stat(openfile->filename, &fileinfo))
-        {
-            magic_close(cookie);
-        }
-    }
-#endif /* HAVE_LIBMAGIC */
-
-    // If nothing at all matched, see if there is a default syntax.
+    //         if (!stat(openfile->filename, &fileinfo))
+    //         {
+    //             magic_close(cookie);
+    //         }
+    //     }
+    // #endif
+    //
+    //  If nothing at all matched,
+    //  see if there is a default syntax.
+    //
     if (sntx == nullptr && !inhelp)
     {
         for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
         {
-            if (strcmp(sntx->name, "default") == 0)
+            if (std::strcmp(sntx->name, "default") == 0)
             {
                 break;
             }
         }
     }
 
-    // When the syntax isn't loaded yet, parse it and initialize its colors.
+    //
+    //  When the syntax isn't loaded yet,
+    //  parse it and initialize its colors.
+    //
     if (sntx != nullptr && sntx->filename != nullptr)
     {
         parse_one_include(sntx->filename, sntx);
@@ -341,11 +358,18 @@ void
 check_the_multis(linestruct *line)
 {
     const colortype *ink;
-    bool             astart, anend;
-    regmatch_t       startmatch, endmatch;
-    char            *afterstart;
 
-    // If there is no syntax or no multiline regex, there is nothing to do.
+    regmatch_t startmatch;
+    regmatch_t endmatch;
+
+    bool astart;
+    bool anend;
+    s8  *afterstart;
+
+    //
+    //  If there is no syntax or no multiline regex,
+    //  there is nothing to do.
+    //
     if (!openfile->syntax || !openfile->syntax->multiscore)
     {
         return;
@@ -359,7 +383,10 @@ check_the_multis(linestruct *line)
 
     for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next)
     {
-        /* If it's not a multiline regex, skip. */
+        //
+        //  If it's not a multiline regex,
+        //  skip.
+        //
         if (ink->end == nullptr)
         {
             continue;
@@ -369,7 +396,9 @@ check_the_multis(linestruct *line)
         afterstart = line->data + (astart ? startmatch.rm_eo : 0);
         anend      = (regexec(ink->end, afterstart, 1, &endmatch, 0) == 0);
 
-        /* Check whether the multidata still matches the current situation. */
+        //
+        //  Check whether the multidata still matches the current situation.
+        //
         if (line->multidata[ink->id] == NOTHING)
         {
             if (!astart)
@@ -379,7 +408,9 @@ check_the_multis(linestruct *line)
         }
         else if (line->multidata[ink->id] == WHOLELINE)
         {
-            /* Ensure that a detected start match is not actually an end match. */
+            //
+            //  Ensure that a detected start match is not actually an end match.
+            //
             if (!anend && (!astart || regexec(ink->end, line->data, 1, &endmatch, 0) != 0))
             {
                 continue;
@@ -408,7 +439,11 @@ check_the_multis(linestruct *line)
             }
         }
 
-        /* There is a mismatch, so something changed: repaint. */
+        //
+        //  There is a mismatch,
+        //  so something changed:
+        //  - repaint.
+        //
         refresh_needed = true;
         perturbed      = true;
 

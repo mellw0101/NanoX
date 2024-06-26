@@ -1112,10 +1112,10 @@ get_next_filename(const char *name, const char *suffix)
 
     /* Reserve space for: the name plus the suffix plus a dot plus
      * possibly five digits plus a null byte. */
-    buf = RE_CAST(char *, nmalloc(wholenamelen + 7));
-    sprintf(buf, "%s%s", name, suffix);
+    buf = static_cast<s8 *>(nmalloc(wholenamelen + 7));
+    std::sprintf(buf, "%s%s", name, suffix);
 
-    while (TRUE)
+    while (true)
     {
         struct stat fs;
 
@@ -1160,90 +1160,113 @@ cancel_the_command(int signal)
     }
 }
 
-/* Send the text that starts at the given line to file descriptor fd. */
+//
+//  Send the text that starts at the given line to file descriptor fd.
+//
 void
-send_data(const linestruct *line, int fd)
+send_data(const linestruct *line, s32 fd)
 {
     FILE *tube = fdopen(fd, "w");
 
-    if (tube == NULL)
+    if (tube == nullptr)
     {
-        exit(4);
+        std::exit(4);
     }
 
-    /* Send each line, except a final empty line. */
-    while (line != NULL && (line->next != NULL || line->data[0] != '\0'))
+    //
+    //  Send each line, except a final empty line.
+    //
+    while (line != nullptr && (line->next != nullptr || line->data[0] != '\0'))
     {
-        size_t length = recode_LF_to_NUL(line->data);
+        u64 length = recode_LF_to_NUL(line->data);
 
-        if (fwrite(line->data, 1, length, tube) < length)
+        if (std::fwrite(line->data, 1, length, tube) < length)
         {
-            exit(5);
+            std::exit(5);
         }
 
-        if (line->next && putc('\n', tube) == EOF)
+        if (line->next && std::putc('\n', tube) == EOF)
         {
-            exit(6);
+            std::exit(6);
         }
 
         line = line->next;
     }
 
-    fclose(tube);
+    std::fclose(tube);
 }
 
-/* Execute the given command in a shell. */
+//
+//  Execute the given command in a shell.
+//
 void
-execute_command(const char *command)
+execute_command(const s8 *command)
 {
-    int from_fd[2], to_fd[2];
-    /* The pipes through which text will be written and read. */
+    PROFILE_FUNCTION;
+
+    //
+    //  The pipes through which text will be written and read.
+    //
+    s32 from_fd[2], to_fd[2];
+    //
+    //  Original and temporary handlers for SIGINT.
+    //
     struct sigaction oldaction, newaction = {{0}};
-    /* Original and temporary handlers for SIGINT. */
-    ssize_t was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
-    int     command_status, sender_status;
-    FILE   *stream;
+
+    s64   was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
+    s32   command_status, sender_status;
+    FILE *stream;
 
     should_pipe = (command[0] == '|');
 
-    /* Create a pipe to read the command's output from, and, if needed,
-     * a pipe to feed the command's input through. */
+    //
+    //  Create a pipe to read the command's output from, and, if needed,
+    //  a pipe to feed the command's input through.
+    //
     if (pipe(from_fd) == -1 || (should_pipe && pipe(to_fd) == -1))
     {
-        statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+        statusline(ALERT, _("Could not create pipe: %s"), ERRNO_C_STR);
         return;
     }
 
-    /* Fork a child process to run the command in. */
+    //
+    //  Fork a child process to run the command in.
+    //
     if ((pid_of_command = fork()) == 0)
     {
-        const char *theshell = getenv("SHELL");
+        const char *theshell = std::getenv("SHELL");
 
-        if (theshell == NULL)
+        if (theshell == nullptr)
         {
-            theshell = (char *)"/bin/sh";
+            theshell = const_cast<s8 *>("/bin/sh");
         }
 
-        /* Child: close the unused read end of the output pipe. */
+        //
+        //  Child: close the unused read end of the output pipe.
+        //
         close(from_fd[0]);
 
-        /* Connect the write end of the output pipe to the process' output streams. */
+        //
+        //  Connect the write end of the output pipe to the process' output streams.
+        //
         if (dup2(from_fd[1], STDOUT_FILENO) < 0)
         {
-            exit(3);
+            std::exit(3);
         }
         if (dup2(from_fd[1], STDERR_FILENO) < 0)
         {
-            exit(4);
+            std::exit(4);
         }
 
-        /* If the parent sends text, connect the read end of the
-         * feeding pipe to the child's input stream. */
+        //
+        //  If the parent sends text,
+        //  connect the read end of the feeding pipe to the child's input stream.
+        //
         if (should_pipe)
         {
             if (dup2(to_fd[0], STDIN_FILENO) < 0)
             {
-                exit(5);
+                std::exit(5);
             }
             close(from_fd[1]);
             close(to_fd[1]);
@@ -1256,27 +1279,32 @@ execute_command(const char *command)
         exit(6);
     }
 
-    /* Parent: close the unused write end of the pipe. */
+    //
+    //  Parent: close the unused write end of the pipe.
+    //
     close(from_fd[1]);
 
     if (pid_of_command == -1)
     {
-        statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+        statusline(ALERT, _("Could not fork: %s"), ERRNO_C_STR);
         close(from_fd[0]);
         return;
     }
 
     statusbar(_("Executing..."));
 
-    /* If the command starts with "|", pipe buffer or region to the command. */
+    //
+    //  If the command starts with "|",
+    //  pipe buffer or region to the command.
+    //
     if (should_pipe)
     {
         linestruct *was_cutbuffer = cutbuffer;
-        bool        whole_buffer  = FALSE;
+        bool        whole_buffer  = false;
 
-        cutbuffer = NULL;
+        cutbuffer = nullptr;
 
-        if (ISSET(MULTIBUFFER))
+        if ISSET (MULTIBUFFER)
         {
             openfile = openfile->prev;
             if (openfile->mark)
@@ -1285,43 +1313,47 @@ execute_command(const char *command)
             }
             else
             {
-                whole_buffer = TRUE;
+                whole_buffer = true;
             }
         }
         else
         {
-            /* TRANSLATORS: This one goes with Undid/Redid messages. */
+            //
+            //  TRANSLATORS: This one goes with Undid/Redid messages.
+            //
             add_undo(COUPLE_BEGIN, N_("filtering"));
-            if (openfile->mark == NULL)
+            if (openfile->mark == nullptr)
             {
                 openfile->current   = openfile->filetop;
                 openfile->current_x = 0;
             }
-            add_undo(CUT, NULL);
-            do_snip(openfile->mark != NULL, openfile->mark == NULL, FALSE);
-            if (openfile->filetop->next == NULL)
+            add_undo(CUT, nullptr);
+            do_snip(openfile->mark != nullptr, openfile->mark == nullptr, false);
+            if (openfile->filetop->next == nullptr)
             {
-                openfile->filetop->has_anchor = FALSE;
+                openfile->filetop->has_anchor = false;
             }
             update_undo(CUT);
         }
 
-        /* Create a separate process for piping the data to the command. */
+        // s
+        //   Create a separate process for piping the data to the command.
+        //
         if ((pid_of_sender = fork()) == 0)
         {
             send_data(whole_buffer ? openfile->filetop : cutbuffer, to_fd[1]);
-            exit(0);
+            std::exit(SUCCESS);
         }
 
         if (pid_of_sender == -1)
         {
-            statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+            statusline(ALERT, _("Could not fork: %s"), ERRNO_C_STR);
         }
 
         close(to_fd[0]);
         close(to_fd[1]);
 
-        if (ISSET(MULTIBUFFER))
+        if ISSET (MULTIBUFFER)
         {
             openfile = openfile->next;
         }
@@ -1329,23 +1361,27 @@ execute_command(const char *command)
         cutbuffer = was_cutbuffer;
     }
 
-    /* Re-enable interpretation of the special control keys so that we get
-     * SIGINT when Ctrl-C is pressed. */
+    //
+    //  Re-enable interpretation of the special control keys so that we get
+    //  SIGINT when Ctrl-C is pressed.
+    //
     enable_kb_interrupt();
 
-    /* Set up a signal handler so that ^C will terminate the forked process. */
+    //
+    //  Set up a signal handler so that ^C will terminate the forked process.
+    //
     newaction.sa_handler = cancel_the_command;
     newaction.sa_flags   = 0;
     sigaction(SIGINT, &newaction, &oldaction);
 
     stream = fdopen(from_fd[0], "rb");
-    if (stream == NULL)
+    if (stream == nullptr)
     {
-        statusline(ALERT, _("Failed to open pipe: %s"), strerror(errno));
+        statusline(ALERT, _("Failed to open pipe: %s"), ERRNO_C_STR);
     }
     else
     {
-        read_file(stream, 0, "pipe", TRUE);
+        read_file(stream, 0, "pipe", true);
     }
 
     if (should_pipe && !ISSET(MULTIBUFFER))
@@ -1357,19 +1393,23 @@ execute_command(const char *command)
         add_undo(COUPLE_END, N_("filtering"));
     }
 
-    /* Wait for the external command (and possibly data sender) to terminate. */
+    //
+    //  Wait for the external command (and possibly data sender) to terminate.
+    //
     waitpid(pid_of_command, &command_status, 0);
     if (should_pipe && pid_of_sender > 0)
     {
         waitpid(pid_of_sender, &sender_status, 0);
     }
 
-    /* If the command failed, show what the shell reported. */
+    //
+    //  If the command failed, show what the shell reported.
+    //
     if (WIFEXITED(command_status) == 0 || WEXITSTATUS(command_status))
     {
         statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error: %s"),
-                   openfile->current->prev && strstr(openfile->current->prev->data, ": ")
-                       ? strstr(openfile->current->prev->data, ": ") + 2
+                   openfile->current->prev && std::strstr(openfile->current->prev->data, ": ")
+                       ? std::strstr(openfile->current->prev->data, ": ") + 2
                        : "---");
     }
     else if (should_pipe && pid_of_sender > 0 && (WIFEXITED(sender_status) == 0 || WEXITSTATUS(sender_status)))
@@ -1377,24 +1417,34 @@ execute_command(const char *command)
         statusline(ALERT, _("Piping failed"));
     }
 
-    /* If there was an error, undo and discard what the command did. */
+    //
+    //  If there was an error,
+    //  undo and discard what the command did.
+    //
     if (lastmessage == ALERT)
     {
         do_undo();
         discard_until(openfile->current_undo);
     }
 
-    /* Restore the original handler for SIGINT. */
-    sigaction(SIGINT, &oldaction, NULL);
+    //
+    //  Restore the original handler for SIGINT.
+    //
+    sigaction(SIGINT, &oldaction, nullptr);
 
-    /* Restore the terminal to its desired state, and disable
-     * interpretation of the special control keys again. */
+    //
+    //  Restore the terminal to its desired state, and disable
+    //  interpretation of the special control keys again.
+    //
     terminal_init();
 }
 
-// Insert a file into the current buffer (or into a new buffer).  But when
-// execute is TRUE, run a command in the shell and insert its output into
-// the buffer, or just run one of the tools listed in the help lines.
+//
+//  Insert a file into the current buffer (or into a new buffer).
+//  But when execute is 'true',
+//  run a command in the shell and insert its output into the buffer,
+//  or just run one of the tools listed in the help lines.
+//
 void
 insert_a_file_or(bool execute)
 {
@@ -1514,17 +1564,22 @@ insert_a_file_or(bool execute)
             {
                 s8 *chosen = browse_in(answer);
 
-                // If no file was chosen, go back to the prompt.
+                //
+                //  If no file was chosen, go back to the prompt.
+                //
                 if (chosen == nullptr)
                 {
                     continue;
                 }
 
-                free(answer);
+                std::free(answer);
                 answer   = chosen;
                 response = 0;
             }
-            // If we don't have a file yet, go back to the prompt.
+            //
+            //  If we don't have a file yet,
+            //  go back to the prompt.
+            //
             if (response != 0 && (!ISSET(MULTIBUFFER) || response != -2))
             {
                 continue;
@@ -1532,21 +1587,30 @@ insert_a_file_or(bool execute)
 
             if (execute)
             {
-                // When in multibuffer mode, first open a blank buffer.
+                //
+                //  When in multibuffer mode,
+                //  first open a blank buffer.
+                //
                 if ISSET (MULTIBUFFER)
                 {
                     open_buffer("", true);
                 }
 
-                // If the command is not empty, execute it and read its output
-                // into the buffer, and add the command to the history list.
+                //
+                //  If the command is not empty,
+                //  execute it and read its output into the buffer,
+                //  and add the command to the history list.
+                //
                 if (*answer != '\0')
                 {
                     execute_command(answer);
                     update_history(&execute_history, answer, PRUNE_DUPLICATE);
                 }
 
-                // If this is a new buffer, put the cursor at the top.
+                //
+                //  If this is a new buffer,
+                //  put the cursor at the top.
+                //
                 if ISSET (MULTIBUFFER)
                 {
                     openfile->current     = openfile->filetop;
@@ -1557,51 +1621,55 @@ insert_a_file_or(bool execute)
             }
             else
             {
-                // Make sure the specified path is tilde-expanded.
+                //
+                //  Make sure the specified path is tilde-expanded.
+                //
                 answer = free_and_assign(answer, real_dir_from_tilde(answer));
-
-                // Read the file into a new buffer or into current buffer.
+                //
+                //  Read the file into a new buffer or into current buffer.
+                //
                 open_buffer(answer, ISSET(MULTIBUFFER));
             }
 
-#ifdef ENABLE_MULTIBUFFER
-            if (ISSET(MULTIBUFFER))
+            if ISSET (MULTIBUFFER)
             {
-#    ifdef ENABLE_HISTORIES
-                if (ISSET(POSITIONLOG))
+                if ISSET (POSITIONLOG)
                 {
-                    ssize_t priorline, priorcol;
-#        ifndef NANO_TINY
+                    s64 priorline = 0;
+                    s64 priorcol  = 0;
+
                     if (!execute)
-#        endif
+                    {
                         if (has_old_position(answer, &priorline, &priorcol))
                         {
-                            goto_line_and_column(priorline, priorcol, FALSE, FALSE);
+                            goto_line_and_column(priorline, priorcol, false, false);
                         }
+                    }
                 }
-#    endif
-                /* Update title bar and color info for this new buffer. */
+                //
+                //  Update title bar and color info for this new buffer.
+                //
                 prepare_for_display();
             }
             else
-#endif /* ENABLE_MULTIBUFFER */
             {
-                /* If the buffer actually changed, mark it as modified. */
+                //
+                //  If the buffer actually changed, mark it as modified.
+                //
                 if (openfile->current->lineno != was_current_lineno || openfile->current_x != was_current_x)
                 {
                     set_modified();
                 }
 
-                refresh_needed = TRUE;
+                refresh_needed = true;
             }
 
             break;
         }
     }
 
-    free(given);
+    std::free(given);
 
-#ifdef ENABLE_MULTIBUFFER
     if (was_multibuffer)
     {
         SET(MULTIBUFFER);
@@ -1610,7 +1678,6 @@ insert_a_file_or(bool execute)
     {
         UNSET(MULTIBUFFER);
     }
-#endif
 }
 
 //
@@ -2819,15 +2886,17 @@ do_savefile()
 s8 *
 real_dir_from_tilde(const s8 *path)
 {
-    s8    *tilded, *retval;
-    size_t i = 1;
+    s8 *tilded, *retval;
+    u64 i = 1;
 
     if (*path != '~')
     {
         return copy_of(path);
     }
 
-    /* Figure out how much of the string we need to compare. */
+    //
+    //  Figure out how much of the string we need to compare.
+    //
     while (path[i] != '/' && path[i] != '\0')
     {
         i++;
@@ -2840,7 +2909,7 @@ real_dir_from_tilde(const s8 *path)
     }
     else
     {
-        const struct passwd *userdata;
+        const passwd *userdata;
 
         tilded = measured_copy(path, i);
 
@@ -2850,17 +2919,15 @@ real_dir_from_tilde(const s8 *path)
         }
         while (userdata && std::strcmp(userdata->pw_name, tilded + 1) != 0);
         endpwent();
-
         if (userdata != nullptr)
         {
             tilded = mallocstrcpy(tilded, userdata->pw_dir);
         }
     }
 
-    retval = RE_CAST(char *, nmalloc(strlen(tilded) + strlen(path + i) + 1));
-    sprintf(retval, "%s%s", tilded, path + i);
-
-    free(tilded);
+    retval = static_cast<s8 *>(nmalloc(std::strlen(tilded) + std::strlen(path + i) + 1));
+    std::sprintf(retval, "%s%s", tilded, path + i);
+    std::free(tilded);
 
     return retval;
 }
@@ -2873,10 +2940,12 @@ s32
 diralphasort(const void *va, const void *vb)
 {
     struct stat fileinfo;
-    const s8   *a      = *(const char *const *)va;
-    const s8   *b      = *(const char *const *)vb;
-    bool        aisdir = stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode);
-    bool        bisdir = stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode);
+
+    const s8 *a = *static_cast<const s8 *const *>(va);
+    const s8 *b = *static_cast<const s8 *const *>(vb);
+
+    bool aisdir = stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode);
+    bool bisdir = stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode);
 
     if (aisdir && !bisdir)
     {
@@ -2903,7 +2972,7 @@ diralphasort(const void *va, const void *vb)
 }
 
 //
-//  Return TRUE when the given path is a directory.
+//  Return 'true' when the given path is a directory.
 //
 bool
 is_dir(const s8 *const path)
@@ -2944,7 +3013,7 @@ username_completion(const s8 *morsel, u64 length, u64 &num_matches)
                 continue;
             }
 
-            matches              = static_cast<s8 **>(nrealloc(matches, (num_matches + 1) * sizeof(char *)));
+            matches              = static_cast<s8 **>(nrealloc(matches, (num_matches + 1) * sizeof(s8 *)));
             matches[num_matches] = static_cast<s8 *>(nmalloc(std::strlen(userdata->pw_name) + 2));
             std::sprintf(matches[num_matches], "~%s", userdata->pw_name);
             ++num_matches;

@@ -2,6 +2,7 @@
 #include "../include/prototypes.h"
 
 #include <Mlib/Profile.h>
+
 #include <cstring>
 #include <cwchar>
 #include <cwctype>
@@ -42,7 +43,7 @@ is_alpha_char(const s8 *const &c)
     PROFILE_FUNCTION;
 
     wchar_t wc;
-    if (mbtowide(&wc, c) < 0)
+    if (mbtowide(wc, c) < 0)
     {
         return false;
     }
@@ -57,7 +58,7 @@ bool
 is_alnum_char(const s8 *const &c)
 {
     wchar_t wc;
-    if (mbtowide(&wc, c) < 0)
+    if (mbtowide(wc, c) < 0)
     {
         return false;
     }
@@ -80,7 +81,7 @@ is_blank_char(const s8 *c)
         // return std::isspace(static_cast<u8> (*c));
     }
 
-    if (mbtowide(&wc, c) < 0)
+    if (mbtowide(wc, c) < 0)
     {
         return false;
     }
@@ -111,7 +112,7 @@ bool
 is_punct_char(const s8 *c)
 {
     wchar_t wc;
-    if (mbtowide(&wc, c) < 0)
+    if (mbtowide(wc, c) < 0)
     {
         return false;
     }
@@ -218,7 +219,7 @@ control_mbrep(const s8 *c, bool isdata)
 //  the number of bytes in the sequence, or -1 for an invalid sequence.
 //
 s32
-mbtowide(wchar_t *wc, const s8 *c)
+mbtowide(wchar_t &wc, const s8 *c)
 {
     if (static_cast<SigS8>(*c) < 0 && use_utf8)
     {
@@ -232,7 +233,7 @@ mbtowide(wchar_t *wc, const s8 *c)
 
         if (v1 < 0xE0)
         {
-            *wc = ((static_cast<u32>(v1 & 0x1F) << 6) | static_cast<u32>(v2));
+            wc = ((static_cast<u32>(v1 & 0x1F) << 6) | static_cast<u32>(v2));
             return 2;
         }
 
@@ -247,7 +248,7 @@ mbtowide(wchar_t *wc, const s8 *c)
         {
             if ((v1 > 0xE0 || v2 >= 0x20) && (v1 != 0xED || v2 < 0x20))
             {
-                *wc = ((static_cast<u32>(v1 & 0x0F) << 12) | (static_cast<u32>(v2) << 6) | static_cast<u32>(v3));
+                wc = ((static_cast<u32>(v1 & 0x0F) << 12) | (static_cast<u32>(v2) << 6) | static_cast<u32>(v3));
                 return 3;
             }
             else
@@ -265,8 +266,8 @@ mbtowide(wchar_t *wc, const s8 *c)
 
         if ((v1 > 0xF0 || v2 >= 0x10) && (v1 != 0xF4 || v2 < 0x10))
         {
-            *wc = ((static_cast<u32>(v1 & 0x07) << 18) | (static_cast<u32>(v2) << 12) | (static_cast<u32>(v3) << 6) |
-                   static_cast<u32>(v4));
+            wc = ((static_cast<u32>(v1 & 0x07) << 18) | (static_cast<u32>(v2) << 12) | (static_cast<u32>(v3) << 6) |
+                  static_cast<u32>(v4));
             return 4;
         }
         else
@@ -275,7 +276,7 @@ mbtowide(wchar_t *wc, const s8 *c)
         }
     }
 
-    *wc = static_cast<u32>(*c);
+    wc = static_cast<u32>(*c);
     return 1;
 }
 
@@ -295,7 +296,7 @@ is_doublewidth(const s8 *ch)
         return false;
     }
 
-    if (mbtowide(&wc, ch) < 0)
+    if (mbtowide(wc, ch) < 0)
     {
         return false;
     }
@@ -321,7 +322,7 @@ is_zerowidth(const s8 *ch)
         return false;
     }
 
-    if (mbtowide(&wc, ch) < 0)
+    if (mbtowide(wc, ch) < 0)
     {
         return false;
     }
@@ -452,7 +453,7 @@ advance_over(const s8 *str, u64 &column)
         {
             wchar_t wc;
 
-            s32 charlen = mbtowide(&wc, str);
+            s32 charlen = mbtowide(wc, str);
             if (charlen < 0)
             {
                 column += 1;
@@ -620,8 +621,8 @@ mbstrncasecmp(const s8 *s1, const s8 *s2, u64 n)
                 continue;
             }
 
-            bool bad1 = (mbtowide(&wc1, s1) < 0);
-            bool bad2 = (mbtowide(&wc2, s2) < 0);
+            bool bad1 = (mbtowide(wc1, s1) < 0);
+            bool bad2 = (mbtowide(wc2, s2) < 0);
 
             if (bad1 || bad2)
             {
@@ -822,12 +823,14 @@ mbrevstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
 s8 *
 mbstrchr(const s8 *string, const s8 *chr)
 {
+    PROFILE_FUNCTION;
+
     if (use_utf8)
     {
         bool    bad_s = false, bad_c = false;
         wchar_t ws, wc;
 
-        if (mbtowide(&wc, chr) < 0)
+        if (mbtowide(wc, chr) < 0)
         {
             wc    = static_cast<u8>(*chr);
             bad_c = true;
@@ -835,7 +838,7 @@ mbstrchr(const s8 *string, const s8 *chr)
 
         while (*string != '\0')
         {
-            s32 symlen = mbtowide(&ws, string);
+            s32 symlen = mbtowide(ws, string);
 
             if (symlen < 0)
             {
@@ -931,7 +934,7 @@ mbrevstrpbrk(const s8 *head, const s8 *accept, const s8 *pointer)
 }
 
 //
-//  Return TRUE if the given string contains at least one blank character.
+//  Return 'true' if the given string contains at least one blank character.
 //
 bool
 has_blank_char(const s8 *string)
@@ -945,7 +948,7 @@ has_blank_char(const s8 *string)
 }
 
 //
-//  Return TRUE when the given string is empty or consists of only blanks.
+//  Return 'true' when the given string is empty or consists of only blanks.
 //
 bool
 white_string(const s8 *string)
