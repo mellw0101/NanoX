@@ -38,7 +38,7 @@ using_utf8()
 //  is some kind of letter.
 //
 bool
-is_alpha_char(const s8 *const &c)
+is_alpha_char(const s8 *c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
@@ -53,7 +53,7 @@ is_alpha_char(const s8 *const &c)
 //  is some kind of letter or a digit.
 //
 bool
-is_alnum_char(const s8 *const &c)
+is_alnum_char(const s8 *c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)

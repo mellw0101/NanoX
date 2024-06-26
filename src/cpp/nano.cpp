@@ -1128,13 +1128,71 @@ regenerate_screen()
     }
 }
 
+// CONSTEXPR_MAP<u32, void (*)(), 8> toggleActionsMap = {
+//     {{ZERO,
+// []
+// {
+// window_init();
+// draw_all_subwindows();
+// return;
+// }},
+//      {NO_HELP,
+//      []
+//      {
+//      if (LINES < (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5))
+//      {
+//      statusline(AHEM, _("Too tiny"));
+//      TOGGLE(NO_HELP);
+//      return;
+//      }
+//      window_init();
+//      draw_all_subwindows();
+//      }},
+//      {CONSTANT_SHOW,
+//      []
+//      {
+//
+//      }},
+//      {SOFTWRAP,
+//      []
+//      {
+//
+//      }},
+//      {WHITESPACE_DISPLAY,
+//      []
+//      {
+//
+//      }},
+//      {NO_SYNTAX,
+//      []
+//      {
+//
+//      }},
+//      {TABS_TO_SPACES,
+//      []
+//      {
+//
+//      }},
+//      {USE_MOUSE, []
+//      {
+//
+//      }}}
+// };
+//
+
 //
 //  Invert the given global flag and adjust things for its new value.
+//
+//  TODO : FIX statusline as it takes up 94.1% of the time in this function
 //
 void
 toggle_this(const s32 flag)
 {
-    PROFILE_FUNCTION;
+    //
+    //  PROFILE_FUNCTION;
+    //
+    //  TODO : Re profile this function when statusline is fixed
+    //
 
     bool enabled = !ISSET(flag);
 

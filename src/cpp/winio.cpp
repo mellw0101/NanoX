@@ -2978,7 +2978,7 @@ minibar()
 void
 statusline(message_type importance, const s8 *msg, ...)
 {
-    Mlib::Profile::AutoTimer timer("statusline");
+    PROFILE_FUNCTION;
 
     bool       showed_whitespace = ISSET(WHITESPACE_DISPLAY);
     static u64 start_col         = 0;

@@ -1522,6 +1522,5 @@ shortcut_init()
 const s8 *
 epithet_of_flag(const s32 flag)
 {
-    PROFILE_FUNCTION;
     return &epithetOfFlagMap[flag].value[0];
 }
