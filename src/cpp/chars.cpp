@@ -490,8 +490,6 @@ advance_over(const s8 *str, u64 &column)
 u64
 step_left(const s8 *buf, u64 pos)
 {
-    PROFILE_FUNCTION;
-
     if (use_utf8)
     {
         u64 before, charlen = 0;

@@ -1081,8 +1081,10 @@ block_sigwinch(bool blockit)
 void
 handle_sigwinch(s32 signal)
 {
-    /* Let the input routine know that a SIGWINCH has occurred. */
-    the_window_resized = TRUE;
+    //
+    //  Let the input routine know that a SIGWINCH has occurred.
+    //
+    the_window_resized = true;
 }
 
 //
@@ -1127,58 +1129,6 @@ regenerate_screen()
         draw_all_subwindows();
     }
 }
-
-// CONSTEXPR_MAP<u32, void (*)(), 8> toggleActionsMap = {
-//     {{ZERO,
-// []
-// {
-// window_init();
-// draw_all_subwindows();
-// return;
-// }},
-//      {NO_HELP,
-//      []
-//      {
-//      if (LINES < (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5))
-//      {
-//      statusline(AHEM, _("Too tiny"));
-//      TOGGLE(NO_HELP);
-//      return;
-//      }
-//      window_init();
-//      draw_all_subwindows();
-//      }},
-//      {CONSTANT_SHOW,
-//      []
-//      {
-//
-//      }},
-//      {SOFTWRAP,
-//      []
-//      {
-//
-//      }},
-//      {WHITESPACE_DISPLAY,
-//      []
-//      {
-//
-//      }},
-//      {NO_SYNTAX,
-//      []
-//      {
-//
-//      }},
-//      {TABS_TO_SPACES,
-//      []
-//      {
-//
-//      }},
-//      {USE_MOUSE, []
-//      {
-//
-//      }}}
-// };
-//
 
 //
 //  Invert the given global flag and adjust things for its new value.
@@ -1378,14 +1328,16 @@ terminal_init()
 
     disable_extended_io();
 
-    if (ISSET(PRESERVE))
+    if ISSET (PRESERVE)
     {
         enable_flow_control();
     }
 
     disable_kb_interrupt();
 
-    /* Tell the terminal to enable bracketed pastes. */
+    //
+    //  Tell the terminal to enable bracketed pastes.
+    //
     printf("\x1B[?2004h");
     fflush(stdout);
 }
@@ -1755,6 +1707,7 @@ inject(s8 *burst, u64 count)
     {
         check_the_multis(openfile->current);
     }
+
     if (!refresh_needed)
     {
         update_line(openfile->current, openfile->current_x);

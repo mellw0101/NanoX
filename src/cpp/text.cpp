@@ -1943,8 +1943,6 @@ break_line(const s8 *textstart, s64 goal, bool snap_at_nl)
 u64
 indent_length(const s8 *line)
 {
-    PROFILE_FUNCTION;
-
     const s8 *start = line;
     while (*line != '\0' && is_blank_char(line))
     {
@@ -1991,7 +1989,10 @@ begpar(const linestruct *const line, s32 depth)
     u64 indent_len    = 0;
     u64 prev_dent_len = 0;
 
-    /* The very first line counts as a BOP, even when it contains no text. */
+    //
+    //  The very first line counts as a BOP,
+    //  even when it contains no text.
+    //
     if (line->prev == nullptr)
     {
         return true;
@@ -2933,27 +2934,36 @@ treat(s8 *tempfile_name, s8 *theprogram, bool spelling)
     }
 }
 
-/* Let the user edit the misspelled word.  Return FALSE if the user cancels. */
+//
+//  Let the user edit the misspelled word.
+//  Return 'false' if the user cancels.
+//
 bool
-fix_spello(const char *word)
+fix_spello(const s8 *word)
 {
-    linestruct *was_edittop     = openfile->edittop;
-    linestruct *was_current     = openfile->current;
-    size_t      was_firstcolumn = openfile->firstcolumn;
-    size_t      was_x           = openfile->current_x;
-    bool        proceed         = FALSE;
-    int         result;
-#ifndef NANO_TINY
-    bool        right_side_up = (openfile->mark && mark_is_before_cursor());
+    linestruct *was_edittop = openfile->edittop;
+    linestruct *was_current = openfile->current;
+
+    u64  was_firstcolumn = openfile->firstcolumn;
+    u64  was_x           = openfile->current_x;
+    bool proceed         = false;
+    int  result;
+    bool right_side_up = (openfile->mark && mark_is_before_cursor());
+
     linestruct *top, *bot;
     size_t      top_x, bot_x;
 
-    /* If the mark is on, start at the beginning of the marked region. */
+    //
+    //  If the mark is on,
+    //  start at the beginning of the marked region.
+    //
     if (openfile->mark)
     {
+        //
+        //  If the region is marked normally, swap the end points, so that
+        //  (current, current_x) (where searching starts) is at the top.
+        //
         get_region(top, top_x, bot, bot_x);
-        /* If the region is marked normally, swap the end points, so that
-         * (current, current_x) (where searching starts) is at the top. */
         if (right_side_up)
         {
             openfile->current   = top;
@@ -2962,64 +2972,76 @@ fix_spello(const char *word)
             openfile->mark_x    = bot_x;
         }
     }
+    //
+    //  Otherwise,
+    //  start from the top of the file.
+    //
     else
-#endif
-    /* Otherwise, start from the top of the file. */
     {
         openfile->current   = openfile->filetop;
         openfile->current_x = 0;
     }
 
-    /* Find the first whole occurrence of word. */
-    result = findnextstr(word, TRUE, INREGION, NULL, FALSE, NULL, 0);
+    //
+    //  Find the first whole occurrence of word.
+    //
+    result = findnextstr(word, true, INREGION, nullptr, false, nullptr, 0);
 
-    /* If the word isn't found, alert the user; if it is, allow correction. */
+    //
+    //  If the word isn't found,
+    //  alert the user; if it is, allow correction.
+    //
     if (result == 0)
     {
         statusline(ALERT, _("Unfindable word: %s"), word);
         lastmessage = VACUUM;
-        proceed     = TRUE;
+        proceed     = true;
         napms(2800);
     }
     else if (result == 1)
     {
-        spotlighted    = TRUE;
-        light_from_col = xplustabs();
-        light_to_col   = light_from_col + breadth(word);
-#ifndef NANO_TINY
+        spotlighted            = true;
+        light_from_col         = xplustabs();
+        light_to_col           = light_from_col + breadth(word);
         linestruct *saved_mark = openfile->mark;
-        openfile->mark         = NULL;
-#endif
-        edit_refresh();
+        openfile->mark         = nullptr;
 
+        edit_refresh();
         put_cursor_at_end_of_answer();
 
-        /* Let the user supply a correctly spelled alternative. */
-        proceed = (do_prompt(MSPELL, word, NULL, edit_refresh,
-                             /* TRANSLATORS: This is a prompt. */
+        //
+        //  Let the user supply a correctly spelled alternative.
+        //
+        proceed = (do_prompt(MSPELL, word, nullptr, edit_refresh,
+                             //
+                             //  TRANSLATORS: This is a prompt.
+                             //
                              _("Edit a replacement")) != -1);
 
-        spotlighted = FALSE;
+        spotlighted = false;
 
-#ifndef NANO_TINY
         openfile->mark = saved_mark;
-#endif
 
-        /* If a replacement was given, go through all occurrences. */
+        //
+        //  If a replacement was given, go through all occurrences.
+        //
         if (proceed && strcmp(word, answer) != 0)
         {
-            do_replace_loop(word, TRUE, was_current, &was_x);
+            do_replace_loop(word, true, was_current, &was_x);
 
-            /* TRANSLATORS: Shown after fixing misspellings in one word. */
+            //
+            //  TRANSLATORS: Shown after fixing misspellings in one word.
+            //
             statusbar(_("Next word..."));
             napms(400);
         }
     }
 
-#ifndef NANO_TINY
     if (openfile->mark)
     {
-        /* Restore the (compensated) end points of the marked region. */
+        //
+        //  Restore the (compensated) end points of the marked region.
+        //
         if (right_side_up)
         {
             openfile->current   = openfile->mark;
@@ -3034,40 +3056,49 @@ fix_spello(const char *word)
         }
     }
     else
-#endif
     {
-        /* Restore the (compensated) cursor position. */
+        //
+        //  Restore the (compensated) cursor position.
+        //
         openfile->current   = was_current;
         openfile->current_x = was_x;
     }
 
-    /* Restore the viewport to where it was. */
+    //
+    //  Restore the viewport to where it was.
+    //
     openfile->edittop     = was_edittop;
     openfile->firstcolumn = was_firstcolumn;
 
     return proceed;
 }
 
-/* Run a spell-check on the given file, using 'spell' to produce a list of all
- * misspelled words, then feeding those through 'sort' and 'uniq' to obtain an
- * alphabetical list, which words are then offered one by one to the user for
- * correction. */
+//
+//  Run a spell-check on the given file, using 'spell' to produce a list of all
+//  misspelled words, then feeding those through 'sort' and 'uniq' to obtain an
+//  alphabetical list, which words are then offered one by one to the user for
+//  correction.
+//
 void
-do_int_speller(const char *tempfile_name)
+do_int_speller(const s8 *tempfile_name)
 {
-#if defined(HAVE_FORK) && defined(HAVE_WAITPID)
-    char    *misspellings, *pointer, *oneword;
-    long     pipesize;
-    size_t   buffersize, bytesread, totalread;
-    int      spell_fd[2], sort_fd[2], uniq_fd[2], tempfile_fd = -1;
-    pid_t    pid_spell, pid_sort, pid_uniq;
-    int      spell_status, sort_status, uniq_status;
+    PROFILE_FUNCTION;
+
+    s8   *misspellings, *pointer, *oneword;
+    s64   pipesize;
+    u64   buffersize, bytesread, totalread;
+    s32   spell_fd[2], sort_fd[2], uniq_fd[2], tempfile_fd = -1;
+    pid_t pid_spell, pid_sort, pid_uniq;
+    s32   spell_status, sort_status, uniq_status;
+
     unsigned stash[sizeof(flags) / sizeof(flags[0])];
 
-    /* Create all three pipes up front. */
+    //
+    //  Create all three pipes up front.
+    //
     if (pipe(spell_fd) == -1 || pipe(sort_fd) == -1 || pipe(uniq_fd) == -1)
     {
-        statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
+        statusline(ALERT, _("Could not create pipe: %s"), ERRNO_C_STR);
         return;
     }
 
@@ -3088,7 +3119,9 @@ do_int_speller(const char *tempfile_name)
             exit(7);
         }
 
-        /* Connect standard output to the write end of the first pipe. */
+        //
+        //  Connect standard output to the write end of the first pipe.
+        //
         if (dup2(spell_fd[1], STDOUT_FILENO) < 0)
         {
             exit(8);
@@ -3098,27 +3131,39 @@ do_int_speller(const char *tempfile_name)
         close(spell_fd[0]);
         close(spell_fd[1]);
 
-        /* Try to run 'hunspell'; if that fails, fall back to 'spell'. */
-        execlp("hunspell", "hunspell", "-l", NULL);
-        execlp("spell", "spell", NULL);
+        //
+        //  Try to run 'hunspell'; if that fails, fall back to 'spell'.
+        //
+        execlp("hunspell", "hunspell", "-l", nullptr);
+        execlp("spell", "spell", nullptr);
 
-        /* Indicate failure when neither speller was found. */
+        //
+        //  Indicate failure when neither speller was found.
+        //
         exit(9);
     }
 
-    /* Parent: close the unused write end of the first pipe. */
+    //
+    //  Parent: close the unused write end of the first pipe.
+    //
     close(spell_fd[1]);
 
-    /* Fork a process to run sort in. */
+    //
+    //  Fork a process to run sort in.
+    //
     if ((pid_sort = fork()) == 0)
     {
-        /* Connect standard input to the read end of the first pipe. */
+        //
+        //  Connect standard input to the read end of the first pipe.
+        //
         if (dup2(spell_fd[0], STDIN_FILENO) < 0)
         {
             exit(7);
         }
 
-        /* Connect standard output to the write end of the second pipe. */
+        //
+        //  Connect standard output to the write end of the second pipe.
+        //
         if (dup2(sort_fd[1], STDOUT_FILENO) < 0)
         {
             exit(8);
@@ -3128,8 +3173,11 @@ do_int_speller(const char *tempfile_name)
         close(sort_fd[0]);
         close(sort_fd[1]);
 
-        /* Now run the sort program.  Use -f to mix upper and lower case. */
-        execlp("sort", "sort", "-f", NULL);
+        //
+        //  Now run the sort program.
+        //  Use -f to mix upper and lower case.
+        //
+        execlp("sort", "sort", "-f", nullptr);
 
         exit(9);
     }
@@ -3137,7 +3185,9 @@ do_int_speller(const char *tempfile_name)
     close(spell_fd[0]);
     close(sort_fd[1]);
 
-    /* Fork a process to run uniq in. */
+    //
+    //  Fork a process to run uniq in.
+    //
     if ((pid_uniq = fork()) == 0)
     {
         if (dup2(sort_fd[0], STDIN_FILENO) < 0)
@@ -3154,7 +3204,7 @@ do_int_speller(const char *tempfile_name)
         close(uniq_fd[0]);
         close(uniq_fd[1]);
 
-        execlp("uniq", "uniq", NULL);
+        execlp("uniq", "uniq", nullptr);
 
         exit(9);
     }
@@ -3162,15 +3212,19 @@ do_int_speller(const char *tempfile_name)
     close(sort_fd[0]);
     close(uniq_fd[1]);
 
-    /* When some child process was not forked successfully... */
+    //
+    //  When some child process was not forked successfully...
+    //
     if (pid_spell < 0 || pid_sort < 0 || pid_uniq < 0)
     {
-        statusline(ALERT, _("Could not fork: %s"), strerror(errno));
+        statusline(ALERT, _("Could not fork: %s"), ERRNO_C_STR);
         close(uniq_fd[0]);
         return;
     }
 
-    /* Get the system pipe buffer size. */
+    //
+    //  Get the system pipe buffer size.
+    //
     pipesize = fpathconf(uniq_fd[0], _PC_PIPE_BUF);
 
     if (pipesize < 1)
@@ -3180,38 +3234,48 @@ do_int_speller(const char *tempfile_name)
         return;
     }
 
-    /* Leave curses mode so that error messages go to the original screen. */
+    //
+    //  Leave curses mode so that error messages go to the original screen.
+    //
     endwin();
 
-    /* Block SIGWINCHes while reading misspelled words from the third pipe. */
-    block_sigwinch(TRUE);
+    //
+    //  Block SIGWINCHes while reading misspelled words from the third pipe.
+    //
+    block_sigwinch(true);
 
     totalread    = 0;
     buffersize   = pipesize + 1;
-    misspellings = nmalloc(buffersize);
+    misspellings = static_cast<s8 *>(nmalloc(buffersize));
     pointer      = misspellings;
 
     while ((bytesread = read(uniq_fd[0], pointer, pipesize)) > 0)
     {
         totalread += bytesread;
         buffersize += pipesize;
-        misspellings = nrealloc(misspellings, buffersize);
+        misspellings = static_cast<s8 *>(nrealloc(misspellings, buffersize));
         pointer      = misspellings + totalread;
     }
 
     *pointer = '\0';
     close(uniq_fd[0]);
 
-    block_sigwinch(FALSE);
+    block_sigwinch(false);
 
-    /* Re-enter curses mode. */
+    //
+    //  Re-enter curses mode.
+    //
     terminal_init();
     doupdate();
 
-    /* Save the settings of the global flags. */
-    memcpy(stash, flags, sizeof(flags));
+    //
+    //  Save the settings of the global flags.
+    //
+    std::memcpy(stash, flags, sizeof(flags));
 
-    /* Do any replacements case-sensitively, forward, and without regexes. */
+    //
+    //  Do any replacements case-sensitively, forward, and without regexes.
+    //
     SET(CASE_SENSITIVE);
     UNSET(BACKWARDS_SEARCH);
     UNSET(USE_REGEXP);
@@ -3219,7 +3283,9 @@ do_int_speller(const char *tempfile_name)
     pointer = misspellings;
     oneword = misspellings;
 
-    /* Process each of the misspelled words. */
+    //
+    //  Process each of the misspelled words.
+    //
     while (*pointer != '\0')
     {
         if ((*pointer == '\r') || (*pointer == '\n'))
@@ -3238,19 +3304,25 @@ do_int_speller(const char *tempfile_name)
         pointer++;
     }
 
-    /* Special case: the last word doesn't end with '\r' or '\n'. */
+    //
+    //  Special case: the last word doesn't end with '\r' or '\n'.
+    //
     if (oneword != pointer)
     {
         fix_spello(oneword);
     }
 
-    free(misspellings);
-    refresh_needed = TRUE;
+    std::free(misspellings);
+    refresh_needed = true;
 
-    /* Restore the settings of the global flags. */
-    memcpy(flags, stash, sizeof(flags));
+    //
+    //  Restore the settings of the global flags.
+    //
+    std::memcpy(flags, stash, sizeof(flags));
 
-    /* Process the end of the three processes. */
+    //
+    //  Process the end of the three processes.
+    //
     waitpid(pid_spell, &spell_status, 0);
     waitpid(pid_sort, &sort_status, 0);
     waitpid(pid_uniq, &uniq_status, 0);
@@ -3271,7 +3343,6 @@ do_int_speller(const char *tempfile_name)
     {
         statusline(REMARK, _("Finished checking spelling"));
     }
-#endif
 }
 
 /* Spell check the current file.  If an alternate spell checker is

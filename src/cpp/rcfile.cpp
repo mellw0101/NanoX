@@ -190,7 +190,14 @@ jot_error(const s8 *msg, ...)
     std::sprintf(error->data, "%s", textbuf);
 }
 
-CONSTEXPR_MAP<std::string_view, functionptrtype, 104> keyMap = {
+//
+//  - Staticly define the number of elements in the map as a constexpr.
+//
+static constexpr u8 FUNCTION_MAP_COUNT = 104;
+//
+//  - Define a map of 'string_view`s' to 'functionptrtype`s'.
+//
+CONSTEXPR_MAP<STRING_VIEW, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {
     {{"cancel", do_cancel},
      {"help", do_help},
      {"exit", do_exit},
@@ -386,8 +393,6 @@ parse_next_word(s8 *ptr)
 s8 *
 parse_argument(s8 *ptr)
 {
-    PROFILE_FUNCTION;
-
     const s8 *ptr_save   = ptr;
     s8       *last_quote = nullptr;
 
@@ -428,8 +433,6 @@ parse_argument(s8 *ptr)
 s8 *
 parse_next_regex(s8 *ptr)
 {
-    PROFILE_FUNCTION;
-
     s8 *starting_point = ptr;
 
     if (*(ptr - 1) != '"')
@@ -442,7 +445,7 @@ parse_next_regex(s8 *ptr)
     //  Continue until the end of the line, or until a double quote followed
     //  by end-of-line or a blank.
     //
-    while (*ptr != '\0' && (*ptr != '"' || (ptr[1] != '\0' && !isblank((unsigned char)ptr[1]))))
+    while (*ptr != '\0' && (*ptr != '"' || (ptr[1] != '\0' && !Constexpr::Chars::isblank(static_cast<u8>(ptr[1])))))
     {
         ptr++;
     }
@@ -450,19 +453,21 @@ parse_next_regex(s8 *ptr)
     if (*ptr == '\0')
     {
         jot_error(N_("Regex strings must begin and end with a \" character"));
-        return NULL;
+        return nullptr;
     }
 
     if (ptr == starting_point)
     {
         jot_error(N_("Empty regex string"));
-        return NULL;
+        return nullptr;
     }
 
-    /* Null-terminate the regex and skip until the next non-blank. */
+    //
+    //  Null-terminate the regex and skip until the next non-blank.
+    //
     *ptr++ = '\0';
 
-    while (isblank((unsigned char)*ptr))
+    while (Constexpr::Chars::isblank(static_cast<u8>(*ptr)))
     {
         ptr++;
     }
@@ -618,22 +623,30 @@ check_for_nonempty_syntax()
 bool
 is_universal(void (*func)())
 {
-    PROFILE_FUNCTION;
-
     return (func == do_left || func == do_right || func == do_home || func == do_end || func == to_prev_word ||
             func == to_next_word || func == do_delete || func == do_backspace || func == cut_text ||
             func == paste_text || func == do_tab || func == do_enter || func == do_verbatim_input);
 }
 
-/* Bind or unbind a key combo, to or from a function. */
+//
+//  Bind or unbind a key combo,
+//  to or from a function.
+//
 void
-parse_binding(char *ptr, bool dobind)
+parse_binding(s8 *ptr, bool dobind)
 {
     PROFILE_FUNCTION;
 
-    char      *keyptr = NULL, *keycopy = NULL, *funcptr = NULL, *menuptr = NULL;
-    int        keycode, menu, mask = 0;
-    keystruct *newsc = NULL;
+    s8 *keyptr  = nullptr;
+    s8 *keycopy = nullptr;
+    s8 *funcptr = nullptr;
+    s8 *menuptr = nullptr;
+
+    s32 keycode;
+    s32 menu;
+    s32 mask = 0;
+
+    keystruct *newsc = nullptr;
 
     check_for_nonempty_syntax();
 
@@ -647,7 +660,9 @@ parse_binding(char *ptr, bool dobind)
     ptr     = parse_next_word(ptr);
     keycopy = copy_of(keyptr);
 
-    /* Uppercase either the second or the first character of the key name. */
+    //
+    //  Uppercase either the second or the first character of the key name.
+    //
     if (keycopy[0] == '^')
     {
         keycopy[1] = toupper((unsigned char)keycopy[1]);
@@ -657,7 +672,10 @@ parse_binding(char *ptr, bool dobind)
         keycopy[0] = toupper((unsigned char)keycopy[0]);
     }
 
-    /* Verify that the key name is not too short, to allow the next call. */
+    //
+    //  Verify that the key name is not too short,
+    //  to allow the next call.
+    //
     if (keycopy[1] == '\0' || (keycopy[0] == 'M' && keycopy[2] == '\0'))
     {
         jot_error(N_("Key name %s is invalid"), keycopy);
@@ -682,7 +700,7 @@ parse_binding(char *ptr, bool dobind)
             jot_error(N_("Must specify a function to bind the key to"));
             goto free_things;
         }
-        else if (ptr == NULL)
+        else if (ptr == nullptr)
         {
             goto free_things;
         }
@@ -693,7 +711,9 @@ parse_binding(char *ptr, bool dobind)
 
     if (menuptr[0] == '\0')
     {
-        /* TRANSLATORS: Do not translate the word "all". */
+        //
+        //  TRANSLATORS: Do not translate the word "all".
+        //
         jot_error(N_("Must specify a menu (or \"all\") "
                      "in which to bind/unbind the key"));
         goto free_things;
@@ -717,24 +737,24 @@ parse_binding(char *ptr, bool dobind)
             newsc            = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
             newsc->func      = (functionptrtype)implant;
             newsc->expansion = copy_of(funcptr + 1);
-#ifndef NANO_TINY
-            newsc->toggle = 0;
-#endif
+            newsc->toggle    = 0;
         }
         else
         {
             newsc = strtosc(funcptr);
         }
 
-        if (newsc == NULL)
+        if (newsc == nullptr)
         {
             jot_error(N_("Unknown function: %s"), funcptr);
             goto free_things;
         }
     }
 
-    /* Wipe the given shortcut from the given menu. */
-    for (keystruct *s = sclist; s != NULL; s = s->next)
+    //
+    //  Wipe the given shortcut from the given menu.
+    //
+    for (keystruct *s = sclist; s != nullptr; s = s->next)
     {
         if ((s->menus & menu) && s->keycode == keycode)
         {
@@ -742,7 +762,10 @@ parse_binding(char *ptr, bool dobind)
         }
     }
 
-    /* When unbinding, we are done now. */
+    //
+    //  When unbinding,
+    //  we are done now.
+    //
     if (!dobind)
     {
         goto free_things;
@@ -801,7 +824,9 @@ parse_binding(char *ptr, bool dobind)
     newsc->keystr  = keycopy;
     newsc->keycode = keycode;
 
-    /* Disallow rebinding <Esc> (^[). */
+    //
+    //  Disallow rebinding <Esc> (^[).
+    //
     if (newsc->keycode == ESC_CODE)
     {
         jot_error(N_("Keystroke %s may not be rebound"), keycopy);
@@ -811,8 +836,10 @@ parse_binding(char *ptr, bool dobind)
         return;
     }
 
-#ifndef NANO_TINY
-    /* If this is a toggle, find and copy its sequence number. */
+    //
+    //  If this is a toggle,
+    //  find and copy its sequence number.
+    //
     if (newsc->func == do_toggle)
     {
         for (keystruct *s = sclist; s != NULL; s = s->next)
@@ -827,27 +854,32 @@ parse_binding(char *ptr, bool dobind)
     {
         newsc->ordinal = 0;
     }
-#endif
-    /* Add the new shortcut at the start of the list. */
+    //
+    //  Add the new shortcut at the start of the list.
+    //
     newsc->next = sclist;
     sclist      = newsc;
 }
 
-// Verify that the given file exists, is not a folder nor a device.
+//
+//  Verify that the given file exists, is not a folder nor a device.
+//
 bool
 is_good_file(s8 *file)
 {
-    PROFILE_FUNCTION;
-
     struct stat rcinfo;
 
-    // First check that the file exists and is readable.
+    //
+    //  First check that the file exists and is readable.
+    //
     if (access(file, R_OK) != 0)
     {
         return false;
     }
 
-    // If the thing exists, it may be neither a directory nor a device.
+    //
+    //  If the thing exists, it may be neither a directory nor a device.
+    //
     if (stat(file, &rcinfo) != -1 && (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode)))
     {
         jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
@@ -859,19 +891,26 @@ is_good_file(s8 *file)
     }
 }
 
-/* Partially parse the syntaxes in the given file, or (when syntax
- * is not NULL) fully parse one specific syntax from the file. */
+//
+//  Partially parse the syntaxes in the given file,
+//  or ( when syntax is not NULL ) fully parse one specific syntax from the file.
+//
 void
-parse_one_include(char *file, syntaxtype *syntax)
+parse_one_include(s8 *file, syntaxtype *syntax)
 {
     PROFILE_FUNCTION;
 
-    char          *was_nanorc = nanorc;
-    size_t         was_lineno = lineno;
-    augmentstruct *extra;
-    FILE          *rcstream;
+    s8   *was_nanorc = nanorc;
+    u64   was_lineno = lineno;
+    FILE *rcstream;
 
-    /* Don't open directories, character files, or block files. */
+    augmentstruct *extra;
+
+    //
+    //  Don't open directories,
+    //  character files,
+    //  or block files.
+    //
     if (access(file, R_OK) == 0 && !is_good_file(file))
     {
         return;
@@ -879,39 +918,48 @@ parse_one_include(char *file, syntaxtype *syntax)
 
     rcstream = fopen(file, "rb");
 
-    if (rcstream == NULL)
+    if (rcstream == nullptr)
     {
-        jot_error(N_("Error reading %s: %s"), file, strerror(errno));
+        jot_error(N_("Error reading %s: %s"), file, ERRNO_C_STR);
         return;
     }
 
-    /* Use the name and line number position of the included syntax file
-     * while parsing it, so we can know where any errors in it are. */
+    //
+    //  Use the name and line number position of the included syntax file
+    //  while parsing it, so we can know where any errors in it are.
+    //
     nanorc = file;
     lineno = 0;
 
-    /* If this is the first pass, parse only the prologue. */
-    if (syntax == NULL)
+    //
+    //  If this is the first pass,
+    //  parse only the prologue.
+    //
+    if (syntax == nullptr)
     {
-        parse_rcfile(rcstream, TRUE, TRUE);
+        parse_rcfile(rcstream, true, true);
         nanorc = was_nanorc;
         lineno = was_lineno;
         return;
     }
 
     live_syntax = syntax;
-    lastcolor   = NULL;
+    lastcolor   = nullptr;
 
-    /* Fully parse the given syntax (as it is about to be used). */
-    parse_rcfile(rcstream, TRUE, FALSE);
+    //
+    //  Fully parse the given syntax (as it is about to be used).
+    //
+    parse_rcfile(rcstream, true, false);
 
     extra = syntax->augmentations;
 
-    /* Apply any stored extendsyntax commands. */
-    while (extra != NULL)
+    //
+    //  Apply any stored extendsyntax commands.
+    //
+    while (extra != nullptr)
     {
-        char *keyword = extra->data;
-        char *therest = parse_next_word(extra->data);
+        s8 *keyword = extra->data;
+        s8 *therest = parse_next_word(extra->data);
 
         nanorc = extra->filename;
         lineno = extra->lineno;
@@ -925,7 +973,7 @@ parse_one_include(char *file, syntaxtype *syntax)
     }
 
     free(syntax->filename);
-    syntax->filename = NULL;
+    syntax->filename = nullptr;
 
     nanorc = was_nanorc;
     lineno = was_lineno;
@@ -986,7 +1034,7 @@ parse_includes(s8 *ptr)
     }
 
     globfree(&files);
-    free(expanded);
+    std::free(expanded);
 }
 
 //
@@ -1015,10 +1063,16 @@ closest_index_color(s16 red, s16 green, s16 blue)
 {
     PROFILE_FUNCTION;
 
-    /* Translation table, from 16 intended color levels to 6 available levels. */
+    //
+    //  Translation table,
+    //  from 16 intended color levels to 6 available levels.
+    //
     static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
 
-    /* Translation table, from 14 intended gray levels to 24 available levels. */
+    //
+    //  Translation table,
+    //  from 14 intended gray levels to 24 available levels. */
+    //
     static const short gray[] = {1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 21, 23};
 
     if (COLORS != 256)
@@ -1083,13 +1137,15 @@ CONSTEXPR_MAP<STRING_VIEW, s16, COLORCOUNT> huesIndiecesMap = {
 short
 color_to_short(const s8 *colorname, bool &vivid, bool &thick)
 {
-    if (Mlib::Constexpr::strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
+    using namespace Mlib;
+
+    if (Constexpr::strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
         vivid = true;
         thick = true;
         colorname += 6;
     }
-    else if (Mlib::Constexpr::strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
+    else if (Constexpr::strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
     {
         vivid = true;
         thick = false;
@@ -1101,7 +1157,7 @@ color_to_short(const s8 *colorname, bool &vivid, bool &thick)
         thick = false;
     }
 
-    if (colorname[0] == '#' && Mlib::Constexpr::strlen(colorname) == 4)
+    if (colorname[0] == '#' && Constexpr::strlen(colorname) == 4)
     {
         u16 r, g, b;
 
@@ -1119,7 +1175,7 @@ color_to_short(const s8 *colorname, bool &vivid, bool &thick)
 
     for (s32 index = 0; index < COLORCOUNT; index++)
     {
-        if (Mlib::Constexpr::strcmp(colorname, &huesIndiecesMap[index].key[0]))
+        if (Constexpr::strcmp(colorname, &huesIndiecesMap[index].key[0]))
         {
             if (index > 7 && vivid)
             {
@@ -1152,12 +1208,16 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 {
     PROFILE_FUNCTION;
 
-    bool vivid, thick;
-    s8  *comma;
+    using namespace Mlib;
+
+    bool vivid;
+    bool thick;
+
+    s8 *comma;
 
     attributes = A_NORMAL;
 
-    if (std::strncmp(combotext, "bold", 4) == 0)
+    if (Constexpr::strncmp(combotext, "bold", 4) == 0)
     {
         attributes |= A_BOLD;
         if (combotext[4] != ',')
@@ -1168,20 +1228,19 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
         combotext += 5;
     }
 
-    if (std::strncmp(combotext, "italic", 6) == 0)
+    if (Constexpr::strncmp(combotext, "italic", 6) == 0)
     {
-#ifdef A_ITALIC
         attributes |= A_ITALIC;
-#endif
+
         if (combotext[6] != ',')
         {
             jot_error(N_("An attribute requires a subsequent comma"));
-            return FALSE;
+            return false;
         }
         combotext += 7;
     }
 
-    comma = std::strchr(combotext, ',');
+    comma = Constexpr::strchr(combotext, ',');
 
     if (comma)
     {
@@ -1235,13 +1294,13 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 //  add a rule to the current syntax.
 //
 void
-parse_rule(char *ptr, int rex_flags)
+parse_rule(s8 *ptr, s32 rex_flags)
 {
     PROFILE_FUNCTION;
 
-    char *names, *regexstring;
-    short fg, bg;
-    int   attributes;
+    s8 *names, *regexstring;
+    s16 fg, bg;
+    s32 attributes;
 
     if (*ptr == '\0')
     {
@@ -1340,7 +1399,9 @@ parse_rule(char *ptr, int rex_flags)
     }
 }
 
-/* Set the colors for the given interface element to the given combination. */
+//
+//  Set the colors for the given interface element to the given combination.
+//
 void
 set_interface_color(s32 element, s8 *combotext)
 {
@@ -1348,12 +1409,12 @@ set_interface_color(s32 element, s8 *combotext)
 
     if (parse_combination(combotext, trio->fg, trio->bg, trio->attributes))
     {
-        free(color_combo[element]);
+        std::free(color_combo[element]);
         color_combo[element] = trio;
     }
     else
     {
-        free(trio);
+        std::free(trio);
     }
 }
 
@@ -1411,7 +1472,9 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
             return;
         }
 
-        /* If the regex string is malformed, skip it. */
+        //
+        //  If the regex string is malformed, skip it.
+        //
         if (!compile(regexstring, NANO_REG_EXTENDED | REG_NOSUB, packed_rgx))
         {
             continue;

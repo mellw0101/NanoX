@@ -15,67 +15,86 @@
 #    define USING_OLDER_LIBVTE yes
 #endif
 
-// A buffer for the keystrokes that haven't been handled yet.
+//
+//  A buffer for the keystrokes that haven't been handled yet.
+//
 static s32 *key_buffer = nullptr;
-
-// A pointer pointing at the next keycode in the keystroke buffer.
+//
+//  A pointer pointing at the next keycode in the keystroke buffer.
+//
 static s32 *nextcodes = nullptr;
-
-// The size of the keystroke buffer; gets doubled whenever needed.
+//
+//  The size of the keystroke buffer; gets doubled whenever needed.
+//
 static u64 capacity = 32;
-
-// The number of key codes waiting in the keystroke buffer.
+//
+//  The number of key codes waiting in the keystroke buffer.
+//
 static u64 waiting_codes = 0;
-
-// Points into the expansion string for the current implantation.
+//
+//  Points into the expansion string for the current implantation.
+//
 static const s8 *plants_pointer = nullptr;
-
-// How many digits of a three-digit character code we've eaten.
+//
+//  How many digits of a three-digit character code we've eaten.
+//
 static s32 digit_count = 0;
-
-// Whether the cursor should be shown when waiting for input.
+//
+//  Whether the cursor should be shown when waiting for input.
+//
 static bool reveal_cursor = false;
-
-// Whether to give ncurses some time to get the next code.
+//
+//  Whether to give ncurses some time to get the next code.
+//
 static bool linger_after_escape = false;
-
-// The number of keystrokes left before we blank the status bar.
+//
+//  The number of keystrokes left before we blank the status bar.
+//
 static s32 countdown = 0;
-
-// From where in the relevant line the current row is drawn.
+//
+//  From where in the relevant line the current row is drawn.
+//
 static u64 from_x = 0;
-
-// Until where in the relevant line the current row is drawn.
+//
+//  Until where in the relevant line the current row is drawn.
+//
 static u64 till_x = 0;
-
-// Whether the current line has more text after the displayed part.
+//
+//  Whether the current line has more text after the displayed part.
+//
 static bool has_more = false;
-
-// Whether a row's text is narrower than the screen's width.
+//
+//  Whether a row's text is narrower than the screen's width.
+//
 static bool is_shorter = true;
-
-// The starting column of the next chunk when softwrapping.
+//
+//  The starting column of the next chunk when softwrapping.
+//
 static u64 sequel_column = 0;
-
-// Whether we are in the process of recording a macro.
+//
+//  Whether we are in the process of recording a macro.
+//
 static bool recording = false;
-
-// A buffer where the recorded key codes are stored.
+//
+//  A buffer where the recorded key codes are stored.
+//
 static s32 *macro_buffer = nullptr;
-
-// The current length of the macro.
+//
+//  The current length of the macro.
+//
 static u64 macro_length = 0;
-
-// Where the last burst of recorded keystrokes started.
+//
+//  Where the last burst of recorded keystrokes started.
+//
 static u64 milestone = 0;
 
-/// @name @c add_to_macrobuffer]
-/// @brief
-///  -  Add the given code to the macro buffer.
-/// @param code ( int )
-///  -  The code to add.
-/// @returns
-///  -  @c void
+//
+//
+//  Add the given code to the macro buffer.
+//  @param code ( s32 )
+//  - The code to add.
+//  @return void
+//
 void
 add_to_macrobuffer(s32 code)
 {
@@ -84,7 +103,9 @@ add_to_macrobuffer(s32 code)
     macro_buffer[macro_length - 1] = code;
 }
 
-// Start or stop the recording of keystrokes.
+//
+//  Start or stop the recording of keystrokes.
+//
 void
 record_macro()
 {
@@ -108,8 +129,10 @@ record_macro()
     }
 }
 
-// Copy the stored sequence of codes into the regular key buffer,
-// so they will be "executed" again.
+//
+//  Copy the stored sequence of codes into the regular key buffer,
+//  so they will be "executed" again.
+//
 void
 run_macro()
 {
@@ -131,26 +154,28 @@ run_macro()
         reserve_space_for(macro_length);
     }
 
-    for (size_t i = 0; i < macro_length; i++)
+    for (u64 i = 0; i < macro_length; i++)
     {
         key_buffer[i] = macro_buffer[i];
     }
 
     waiting_codes  = macro_length;
     nextcodes      = key_buffer;
-    mute_modifiers = TRUE;
+    mute_modifiers = true;
 }
 
-/* Allocate the requested space for the keystroke buffer. */
+//
+//  Allocate the requested space for the keystroke buffer.
+//
 void
-reserve_space_for(size_t newsize)
+reserve_space_for(u64 newsize)
 {
     if (newsize < capacity)
     {
         die(_("Too much input at once\n"));
     }
 
-    key_buffer = RE_CAST(int *, nrealloc(key_buffer, newsize * sizeof(int)));
+    key_buffer = static_cast<s32 *>(nrealloc(key_buffer, newsize * sizeof(s32)));
     nextcodes  = key_buffer;
     capacity   = newsize;
 }
@@ -192,8 +217,10 @@ reserve_space_for(size_t newsize)
  * - F10 on FreeBSD console == PageUp on Mach console; the former is
  *   omitted.  (Same as above.) */
 
-// Read in at least one keystroke from the given window
-// and save it (or them) in the keystroke buffer.
+//
+//  Read in at least one keystroke from the given window
+//  and save it (or them) in the keystroke buffer.
+//
 void
 read_keys_from(WINDOW *frame)
 {
@@ -351,16 +378,20 @@ read_keys_from(WINDOW *frame)
 #endif
 }
 
-/* Return the number of key codes waiting in the keystroke buffer. */
-size_t
-waiting_keycodes(void)
+//
+//  Return the number of key codes waiting in the keystroke buffer.
+//
+u64
+waiting_keycodes()
 {
     return waiting_codes;
 }
 
-/* Add the given keycode to the front of the keystroke buffer. */
+//
+//  Add the given keycode to the front of the keystroke buffer.
+//
 void
-put_back(int keycode)
+put_back(s32 keycode)
 {
     /* If there is no room at the head of the keystroke buffer, make room. */
     if (nextcodes == key_buffer)
@@ -380,10 +411,11 @@ put_back(int keycode)
     waiting_codes++;
 }
 
-#ifdef ENABLE_NANORC
-/* Set up the given expansion string to be ingested by the keyboard routines. */
+//
+//  Set up the given expansion string to be ingested by the keyboard routines.
+//
 void
-implant(const char *string)
+implant(const s8 *string)
 {
     plants_pointer = string;
     put_back(MORE_PLANTS);
@@ -391,11 +423,17 @@ implant(const char *string)
     mute_modifiers = TRUE;
 }
 
-/* Continue processing an expansion string.  Returns either an error code,
- * a plain character byte, or a placeholder for a command shortcut. */
-int
-get_code_from_plantation(void)
+//
+//  Continue processing an expansion string.
+//  Returns either an error code,
+//  a plain character byte,
+//  or a placeholder for a command shortcut.
+//
+s32
+get_code_from_plantation()
 {
+    PROFILE_FUNCTION;
+
     if (*plants_pointer == '{')
     {
         char *closing = (char *)strchr(plants_pointer + 1, '}');
@@ -461,10 +499,12 @@ get_code_from_plantation(void)
         return (firstbyte) ? firstbyte : ERR;
     }
 }
-#endif
 
-// Return one code from the keystroke buffer.  If the buffer is empty
-// but frame is given, first read more codes from the keyboard.
+//
+//  Return one code from the keystroke buffer.
+//  If the buffer is empty but frame is given,
+//  first read more codes from the keyboard.
+//
 s32
 get_input(WINDOW *frame)
 {
@@ -2809,7 +2849,9 @@ minibar()
 
     wchar_t widecode;
 
-    // Draw a colored bar over the full width of the screen.
+    //
+    //  Draw a colored bar over the full width of the screen.
+    //
     wattron(footwin, interface_color_pair[MINI_INFOBAR]);
     mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
 
@@ -2824,10 +2866,13 @@ minibar()
     }
 
     sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
-    placewidth = strlen(location);
+    placewidth = std::strlen(location);
     namewidth  = breadth(thename);
 
-    /* If the file name is relatively long, drop the side spaces. */
+    //
+    //  If the file name is relatively long
+    //  drop the side spaces.
+    //
     if (namewidth + 19 > COLS)
     {
         padding = 0;

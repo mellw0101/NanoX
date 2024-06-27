@@ -294,7 +294,8 @@ is_separate_word(u64 position, u64 length, const s8 *text)
     return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
 }
 
-// constexpr auto ERROR_MSG_OUT_OF_MEMORY = "Out of memory";
+//
+//  constexpr auto ERROR_MSG_OUT_OF_MEMORY = "Out of memory";
 //
 //  Return the position of the needle in the haystack, or NULL if not found.
 //  When searching backwards, we will find the last match that starts no later
@@ -313,8 +314,10 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
         {
             u64 last_find, ceiling, far_end;
 
-            // The start of the search range,
-            // and the next start.
+            //
+            //  The start of the search range,
+            //  and the next start.
+            //
             u64 floor = 0, next_rung = 0;
 
             if (regexec(&search_regexp, haystack, 1, regmatches, 0))
@@ -526,8 +529,6 @@ xplustabs()
 u64
 actual_x(const s8 *text, u64 column)
 {
-    PROFILE_FUNCTION;
-
     //
     //  From where we start walking through the text.
     //
@@ -582,8 +583,6 @@ wideness(const s8 *text, u64 maxlen)
 u64
 breadth(const s8 *text)
 {
-    PROFILE_FUNCTION;
-
     u64 span = 0;
     while (*text != '\0')
     {

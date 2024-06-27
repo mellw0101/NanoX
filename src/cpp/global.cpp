@@ -477,8 +477,6 @@ add_to_funcs(void (*function)(), s32 menus, const s8 *tag, const s8 *phrase, boo
 s32
 keycode_from_string(const s8 *keystring)
 {
-    PROFILE_FUNCTION;
-
     if (keystring[0] == '^')
     {
         if (keystring[2] == '\0')

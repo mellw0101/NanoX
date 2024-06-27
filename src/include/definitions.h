@@ -3,6 +3,9 @@
 
 #include "../include/config.h"
 
+#include <Mlib/Debug.h>
+#include <Mlib/FileSys.h>
+#include <Mlib/constexpr.hpp>
 #include <Mlib/def.h>
 
 #ifndef _XOPEN_SOURCE_EXTENDED

@@ -193,21 +193,21 @@ void copy_marked_region();
 void copy_text();
 void paste_text();
 
-/* Most functions in files.c. */
-void make_new_buffer(void);
-#ifndef NANO_TINY
-bool delete_lockfile(const char *lockfilename);
-#endif
+//
+//  Most functions in 'files.cpp'.
+//
+void  make_new_buffer();
+bool  delete_lockfile(const char *lockfilename);
 bool  open_buffer(const char *filename, bool new_one);
-void  set_modified(void);
-void  prepare_for_display(void);
-void  mention_name_and_linecount(void);
-void  switch_to_prev_buffer(void);
-void  switch_to_next_buffer(void);
-void  close_buffer(void);
-void  read_file(FILE *f, int fd, const char *filename, bool undoable);
+void  set_modified();
+void  prepare_for_display();
+void  mention_name_and_linecount();
+void  switch_to_prev_buffer();
+void  switch_to_next_buffer();
+void  close_buffer();
+void  read_file(FILE *f, s32 fd, const s8 *filename, bool undoable);
 int   open_file(const char *filename, bool new_one, FILE **f);
-char *get_next_filename(const char *name, const char *suffix);
+char *get_next_filename(const s8 *name, const s8 *suffix);
 void  do_insertfile();
 void  do_execute();
 s8   *get_full_path(const s8 *origpath);
@@ -407,41 +407,42 @@ void complete_a_word();
 //
 //  All functions in utils.cpp
 //
-void        get_homedir();
-const s8   *tail(const s8 *path);
-s8         *concatenate(const s8 *path, const s8 *name);
-int         digits(s64 n);
-bool        parseNum(std::string_view string, int64_t &result);
-bool        parse_line_column(const s8 *str, s64 *line, s64 *column);
-void        recode_NUL_to_LF(s8 *string, u64 length);
-u64         recode_LF_to_NUL(s8 *string);
-void        free_chararray(char **array, u64 len);
-bool        is_separate_word(u64 position, u64 length, const s8 *buf);
+void  get_homedir();
+s8   *concatenate(const s8 *path, const s8 *name);
+int   digits(s64 n);
+bool  parseNum(std::string_view string, int64_t &result);
+bool  parse_line_column(const s8 *str, s64 *line, s64 *column);
+void  recode_NUL_to_LF(s8 *string, u64 length);
+u64   recode_LF_to_NUL(s8 *string);
+void  free_chararray(char **array, u64 len);
+bool  is_separate_word(u64 position, u64 length, const s8 *buf);
+void *nmalloc(const u64 howmuch);
+void *nrealloc(void *ptr, const u64 howmuch);
+s8   *measured_copy(const s8 *string, u64 count);
+s8   *mallocstrcpy(s8 *dest, const s8 *src);
+s8   *copy_of(const s8 *string);
+s8   *free_and_assign(s8 *dest, s8 *src);
+u64   get_page_start(u64 column);
+u64   xplustabs();
+u64   actual_x(const s8 *text, u64 column);
+u64   wideness(const s8 *text, u64 maxlen);
+u64   breadth(const s8 *text);
+void  new_magicline();
+void  remove_magicline();
+bool  mark_is_before_cursor();
+void  get_region(linestruct *&top, u64 &top_x, linestruct *&bot, u64 &bot_x);
+void  get_range(linestruct *&top, linestruct *&bot);
+u64   number_of_characters_in(const linestruct *begin, const linestruct *end);
+
 const s8   *strstrwrapper(const s8 *haystack, const s8 *needle, const s8 *start);
-void       *nmalloc(const u64 howmuch);
-void       *nrealloc(void *ptr, const u64 howmuch);
-s8         *measured_copy(const s8 *string, u64 count);
-s8         *mallocstrcpy(s8 *dest, const s8 *src);
-s8         *copy_of(const s8 *string);
-s8         *free_and_assign(s8 *dest, s8 *src);
-u64         get_page_start(u64 column);
-u64         xplustabs();
-u64         actual_x(const s8 *text, u64 column);
-u64         wideness(const s8 *text, u64 maxlen);
-u64         breadth(const s8 *text);
-void        new_magicline();
-void        remove_magicline();
-bool        mark_is_before_cursor();
-void        get_region(linestruct *&top, u64 &top_x, linestruct *&bot, u64 &bot_x);
-void        get_range(linestruct *&top, linestruct *&bot);
-u64         number_of_characters_in(const linestruct *begin, const linestruct *end);
+const s8   *tail(const s8 *path);
 linestruct *line_from_number(s64 number);
 
 //
 //  Most functions in 'winio.cpp'.
 //
-void record_macro(void);
-void run_macro(void);
+void record_macro();
+void run_macro();
 void reserve_space_for(size_t newsize);
 u64  waiting_keycodes(void);
 void implant(const s8 *string);
@@ -457,7 +458,7 @@ void blank_it_when_expired(void);
 void set_blankdelay_to_one(void);
 s8  *display_string(const s8 *buf, u64 column, u64 span, bool isdata, bool isprompt);
 void titlebar(const s8 *path);
-void minibar(void);
+void minibar();
 void statusline(message_type importance, const s8 *msg, ...);
 void statusbar(const s8 *msg);
 void warn_and_briefly_pause(const s8 *msg);

@@ -1,11 +1,9 @@
 #include "../include/prototypes.h"
 
-#ifdef ENABLE_BROWSER
-
-#    include <cerrno>
-#    include <cstdint>
-#    include <cstring>
-#    include <unistd.h>
+#include <cerrno>
+#include <cstdint>
+#include <cstring>
+#include <unistd.h>
 
 //
 //  The list of files to display in the file browser.
@@ -326,9 +324,11 @@ browser_refresh()
     wnoutrefresh(midwin);
 }
 
-/* Look for the given needle in the list of files, forwards or backwards. */
+//
+//  Look for the given needle in the list of files, forwards or backwards.
+//
 void
-findfile(const char *needle, bool forwards)
+findfile(const s8 *needle, bool forwards)
 {
     size_t began_at = selected;
 
@@ -376,8 +376,10 @@ findfile(const char *needle, bool forwards)
     }
 }
 
-/* Prepare the prompt and ask the user what to search for; then search for it.
- * If forwards is TRUE, search forward in the list; otherwise, search backward. */
+//
+//  Prepare the prompt and ask the user what to search for; then search for it.
+//  If forwards is TRUE, search forward in the list; otherwise, search backward.
+//
 void
 search_filename(bool forwards)
 {
@@ -417,9 +419,9 @@ search_filename(bool forwards)
     if (*answer != '\0')
     {
         last_search = mallocstrcpy(last_search, answer);
-#    ifdef ENABLE_HISTORIES
+#ifdef ENABLE_HISTORIES
         update_history(&search_history, answer, PRUNE_DUPLICATE);
-#    endif
+#endif
     }
 
     if (response == 0 || response == -2)
@@ -428,18 +430,20 @@ search_filename(bool forwards)
     }
 }
 
-/* Search again without prompting for the last given search string,
- * either forwards or backwards. */
+//
+//  Search again without prompting for the last given search string,
+//  either forwards or backwards.
+//
 void
 research_filename(bool forwards)
 {
-#    ifdef ENABLE_HISTORIES
+#ifdef ENABLE_HISTORIES
     /* If nothing was searched for yet, take the last item from history. */
     if (*last_search == '\0' && searchbot->prev != NULL)
     {
         last_search = mallocstrcpy(last_search, searchbot->prev->data);
     }
-#    endif
+#endif
 
     if (*last_search == '\0')
     {
@@ -452,29 +456,35 @@ research_filename(bool forwards)
     }
 }
 
-/* Select the first file in the list -- called by ^W^Y. */
+//
+//  Select the first file in the list -- called by ^W^Y.
+//
 void
-to_first_file(void)
+to_first_file()
 {
     selected = 0;
 }
 
-/* Select the last file in the list -- called by ^W^V. */
+//
+//  Select the last file in the list -- called by ^W^V.
+//
 void
-to_last_file(void)
+to_last_file()
 {
     selected = list_length - 1;
 }
 
-/* Strip one element from the end of path, and return the stripped path.
- * The returned string is dynamically allocated, and should be freed. */
-char *
-strip_last_component(const char *path)
+//
+//  Strip one element from the end of path, and return the stripped path.
+//  The returned string is dynamically allocated, and should be freed.
+//
+s8 *
+strip_last_component(const s8 *path)
 {
-    char *copy       = copy_of(path);
-    char *last_slash = strrchr(copy, '/');
+    s8 *copy       = copy_of(path);
+    s8 *last_slash = std::strrchr(copy, '/');
 
-    if (last_slash != NULL)
+    if (last_slash != nullptr)
     {
         *last_slash = '\0';
     }
@@ -482,20 +492,20 @@ strip_last_component(const char *path)
     return copy;
 }
 
-/// @name @c browse
-/// @brief
-/// - Allow the user to browse through the directories in the filesystem,
-/// - starting at the given path.
-/// - The user can select a file, which will be returned.
-/// - The user can also select a directory, which will be entered.
-/// - The user can also cancel the browsing.
-/// @param path
-/// - The path to start browsing in.
-/// @returns
-/// - ( char* ) - The name of the file that the user picked
-/// - ( NULL ) - if none.
-char *
-browse(char *path)
+//
+//  Allow the user to browse through the directories in the filesystem,
+//  starting at the given path.
+//  The user can select a file, which will be returned.
+//  The user can also select a directory, which will be entered.
+//  The user can also cancel the browsing.
+//  @param path
+//  - The path to start browsing in.
+//  @returns
+//  - ( char* ) - The name of the file that the user picked
+//  - ( nullptr ) - if none.
+//
+s8 *
+browse(s8 *path)
 {
     // The name of the currently selected file, or of the directory we
     // were in before backing up to "..".
@@ -589,7 +599,7 @@ read_directory_contents:
 
             kbinput = get_kbinput(midwin, ISSET(SHOW_CURSOR));
 
-#    ifdef ENABLE_MOUSE
+#ifdef ENABLE_MOUSE
             if (kbinput == KEY_MOUSE)
             {
                 int mouse_x, mouse_y;
@@ -624,8 +634,8 @@ read_directory_contents:
                     continue;
                 }
             }
-#    endif /* ENABLE_MOUSE */
-#    ifndef NANO_TINY
+#endif /* ENABLE_MOUSE */
+#ifndef NANO_TINY
             while (bracketed_paste)
             {
                 kbinput = get_kbinput(midwin, BLIND);
@@ -635,13 +645,13 @@ read_directory_contents:
                 beep();
                 continue;
             }
-#    endif
+#endif
             function = interpret(kbinput);
 
             if (function == full_refresh || function == do_help)
             {
                 function();
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
                 /* Simulate a terminal resize to force a directory reread,
                  * or because the terminal dimensions might have changed. */
                 kbinput = KEY_WINCH;
@@ -651,7 +661,7 @@ read_directory_contents:
                 TOGGLE(NO_HELP);
                 window_init();
                 kbinput = KEY_WINCH;
-#    endif
+#endif
             }
             else if (function == do_search_backward)
             {
@@ -784,7 +794,7 @@ read_directory_contents:
                     sprintf(path, "%s%s", present_path, answer);
                 }
 
-#    ifdef ENABLE_OPERATINGDIR
+#ifdef ENABLE_OPERATINGDIR
                 if (outside_of_confinement(path, FALSE))
                 {
                     /* TRANSLATORS: This refers to the confining effect of
@@ -793,7 +803,7 @@ read_directory_contents:
                     path = mallocstrcpy(path, present_path);
                     continue;
                 }
-#    endif
+#endif
                 /* Snip any trailing slashes, so the name can be compared. */
                 while (strlen(path) > 1 && path[strlen(path) - 1] == '/')
                 {
@@ -824,7 +834,7 @@ read_directory_contents:
                     continue;
                 }
 
-#    ifdef ENABLE_OPERATINGDIR
+#ifdef ENABLE_OPERATINGDIR
                 /* Note: The selected file can be outside the operating
                  * directory if it's ".." or if it's a symlink to a
                  * directory outside the operating directory. */
@@ -833,7 +843,7 @@ read_directory_contents:
                     statusline(ALERT, _("Can't go outside of %s"), operating_dir);
                     continue;
                 }
-#    endif
+#endif
                 /* If for some reason the file is inaccessible, complain. */
                 if (stat(filelist[selected], &st) == -1)
                 {
@@ -858,18 +868,18 @@ read_directory_contents:
                 /* Try opening and reading the selected directory. */
                 path = mallocstrcpy(path, filelist[selected]);
                 goto read_directory_contents;
-#    ifdef ENABLE_NANORC
+#ifdef ENABLE_NANORC
             }
             else if (function == (functionptrtype)implant)
             {
                 implant(first_sc_for(MBROWSER, function)->expansion);
-#    endif
-#    ifndef NANO_TINY
+#endif
+#ifndef NANO_TINY
             }
             else if (kbinput == KEY_WINCH)
             {
                 ; /* Gets handled below. */
-#    endif
+#endif
             }
             else if (function == do_exit)
             {
@@ -880,7 +890,7 @@ read_directory_contents:
                 unbound_key(kbinput);
             }
 
-#    ifndef NANO_TINY
+#ifndef NANO_TINY
             /* If the terminal resized (or might have), refresh the file list. */
             if (kbinput == KEY_WINCH)
             {
@@ -888,7 +898,7 @@ read_directory_contents:
                 present_name = copy_of(filelist[selected]);
                 goto read_directory_contents;
             }
-#    endif
+#endif
         }
     }
 
@@ -904,18 +914,20 @@ read_directory_contents:
     return chosen;
 }
 
-/// @name @c browse_in
-/// @brief
-/// - Prepare to start browsing.  If the given path has a directory part,
-/// - start browsing in that directory, otherwise in the current directory.
-/// - If the path is not a directory, try to strip a filename from it;
-/// - if then still not a directory, use the current working directory instead.
-/// - If the resulting path isn't in the operating directory, use the operating directory instead.
-/// @param inpath
-/// - The path to start browsing in.
-/// @returns
-/// - ( char* ) - The name of the file that the user picked
-/// - ( NULL ) - if none.
+//
+//  Prepare to start browsing.
+//  If the given path has a directory part,
+//  start browsing in that directory,
+//  otherwise in the current directory.
+//  If the path is not a directory, try to strip a filename from it;
+//  if then still not a directory, use the current working directory instead.
+//  If the resulting path isn't in the operating directory, use the operating directory instead.
+//  @param inpath
+//  - The path to start browsing in.
+//  @returns
+//  - ( char* ) - The name of the file that the user picked
+//  - ( nullptr ) - if none.
+//
 char *
 browse_in(const char *inpath)
 {
@@ -941,16 +953,14 @@ browse_in(const char *inpath)
         }
     }
 
-#    ifdef ENABLE_OPERATINGDIR
+#ifdef ENABLE_OPERATINGDIR
     /* If the resulting path isn't in the operating directory,
      * use the operating directory instead. */
     if (outside_of_confinement(path, FALSE))
     {
         path = mallocstrcpy(path, operating_dir);
     }
-#    endif
+#endif
 
     return browse(path);
 }
-
-#endif /* ENABLE_BROWSER */
