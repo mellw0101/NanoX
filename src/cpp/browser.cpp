@@ -37,7 +37,7 @@ static u64 selected = 0;
 //  files that can be displayed per screen row.  And sort the list too. */
 //
 void
-read_the_list(const s8 *path, DIR *dir)
+read_the_list(C_s8 *path, DIR *dir)
 {
     size_t               path_len = std::strlen(path);
     const struct dirent *entry;
@@ -127,11 +127,11 @@ read_the_list(const s8 *path, DIR *dir)
 //  Reselect the given file or directory name, if it still exists.
 //
 void
-reselect(const s8 *const name)
+reselect(C_s8 *const name)
 {
     u64 looking_at = 0;
 
-    while (looking_at < list_length && std::strcmp(filelist[looking_at], name) != 0)
+    while (looking_at < list_length && constexpr_strcmp(filelist[looking_at], name) != 0)
     {
         looking_at++;
     }
@@ -328,9 +328,9 @@ browser_refresh()
 //  Look for the given needle in the list of files, forwards or backwards.
 //
 void
-findfile(const s8 *needle, bool forwards)
+findfile(C_s8 *needle, bool forwards)
 {
-    size_t began_at = selected;
+    u64 began_at = selected;
 
     //
     // Iterate through the list of filenames, until a match is found or
@@ -355,7 +355,9 @@ findfile(const s8 *needle, bool forwards)
             }
         }
 
-        /* When the needle occurs in the basename of the file, we have a match. */
+        //
+        //  When the needle occurs in the basename of the file, we have a match.
+        //
         if (mbstrcasestr(tail(filelist[selected]), needle))
         {
             if (selected == began_at)
@@ -605,7 +607,7 @@ read_directory_contents:
                 int mouse_x, mouse_y;
 
                 /* When the user clicked in the file list, select a filename. */
-                if (get_mouseinput(&mouse_y, &mouse_x, TRUE) == 0 && wmouse_trafo(midwin, &mouse_y, &mouse_x, FALSE))
+                if (get_mouseinput(mouse_y, mouse_x, TRUE) == 0 && wmouse_trafo(midwin, &mouse_y, &mouse_x, FALSE))
                 {
                     selected =
                         selected - selected % (usable_rows * piles) + (mouse_y * piles) + (mouse_x / (gauge + 2));

@@ -18,7 +18,7 @@ static bool have_compiled_regexp = false;
 //  Return TRUE if the expression is valid, and FALSE otherwise.
 //
 bool
-regexp_init(const s8 *regexp)
+regexp_init(C_s8 *regexp)
 {
     s32 value = regcomp(&search_regexp, regexp, NANO_REG_EXTENDED | (ISSET(CASE_SENSITIVE) ? 0 : REG_ICASE));
 
@@ -32,7 +32,7 @@ regexp_init(const s8 *regexp)
 
         regerror(value, &search_regexp, str, len);
         statusline(AHEM, _("Bad regex \"%s\": %s"), regexp, str);
-        free(str);
+        std::free(str);
 
         return false;
     }
@@ -63,24 +63,32 @@ tidy_up_after_search()
     recook |= perturbed;
 }
 
-/* Prepare the prompt and ask the user what to search for.  Keep looping
- * as long as the user presses a toggle, and only take action and exit
- * when <Enter> is pressed or a non-toggle shortcut was executed. */
+//
+//  Prepare the prompt and ask the user what to search for.  Keep looping
+//  as long as the user presses a toggle, and only take action and exit
+//  when <Enter> is pressed or a non-toggle shortcut was executed.
+//
 void
 search_init(bool replacing, bool retain_answer)
 {
-    char *thedefault;
-    /* What will be searched for when the user types just <Enter>. */
+    //
+    //  What will be searched for when the user types just <Enter>.
+    //
+    s8 *thedefault;
 
-    /* If something was searched for earlier, include it in the prompt. */
+    //
+    //  If something was searched for earlier, include it in the prompt.
+    //
     if (*last_search != '\0')
     {
-        char *disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
+        s8 *disp = display_string(last_search, 0, COLS / 3, false, false);
 
-        thedefault = RE_CAST(char *, nmalloc(strlen(disp) + 7));
-        /* We use (COLS / 3) here because we need to see more on the line. */
-        sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > COLS / 3) ? "..." : "");
-        free(disp);
+        thedefault = static_cast<s8 *>(nmalloc(constexpr_strlen(disp) + 7));
+        //
+        //  We use (COLS / 3) here because we need to see more on the line.
+        //
+        std::sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > COLS / 3) ? "..." : "");
+        std::free(disp);
     }
     else
     {

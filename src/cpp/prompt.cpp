@@ -194,14 +194,16 @@ lop_the_answer()
     answer[typing_x] = '\0';
 }
 
-/* Copy the current answer (if any) into the cutbuffer. */
+//
+//  Copy the current answer (if any) into the cutbuffer.
+//
 void
 copy_the_answer()
 {
     if (*answer)
     {
         free_lines(cutbuffer);
-        cutbuffer       = make_new_node(NULL);
+        cutbuffer       = make_new_node(nullptr);
         cutbuffer->data = copy_of(answer);
         typing_x        = 0;
     }
@@ -215,9 +217,9 @@ paste_into_answer()
 {
     u64 pastelen = std::strlen(cutbuffer->data);
 
-    answer = static_cast<s8 *>(nrealloc(answer, strlen(answer) + pastelen + 1));
-    memmove(answer + typing_x + pastelen, answer + typing_x, strlen(answer) - typing_x + 1);
-    strncpy(answer + typing_x, cutbuffer->data, pastelen);
+    answer = static_cast<s8 *>(nrealloc(answer, std::strlen(answer) + pastelen + 1));
+    std::memmove(answer + typing_x + pastelen, answer + typing_x, std::strlen(answer) - typing_x + 1);
+    std::strncpy(answer + typing_x, cutbuffer->data, pastelen);
 
     typing_x += pastelen;
 }
@@ -228,8 +230,10 @@ paste_into_answer()
 s32
 do_statusbar_mouse()
 {
-    s32 click_row, click_col;
-    s32 retval = get_mouseinput(&click_row, &click_col, true);
+    s32 click_row = 0;
+    s32 click_col = 0;
+
+    s32 retval = get_mouseinput(click_row, click_col, true);
 
     //
     //  We can click on the status-bar window text to move the cursor.
@@ -268,19 +272,21 @@ inject_into_answer(s8 *burst, u64 count)
         }
     }
 
-    answer = static_cast<s8 *>(nrealloc(answer, strlen(answer) + count + 1));
-    memmove(answer + typing_x + count, answer + typing_x, strlen(answer) - typing_x + 1);
-    strncpy(answer + typing_x, burst, count);
+    answer = static_cast<s8 *>(nrealloc(answer, std::strlen(answer) + count + 1));
+    std::memmove(answer + typing_x + count, answer + typing_x, std::strlen(answer) - typing_x + 1);
+    std::strncpy(answer + typing_x, burst, count);
 
     typing_x += count;
 }
 
-/* Get a verbatim keystroke and insert it into the answer. */
+//
+//  Get a verbatim keystroke and insert it into the answer.
+//
 void
-do_statusbar_verbatim_input(void)
+do_statusbar_verbatim_input()
 {
-    size_t count = 1;
-    char  *bytes;
+    u64 count = 1;
+    s8 *bytes;
 
     bytes = get_verbatim_kbinput(footwin, &count);
 
@@ -293,13 +299,15 @@ do_statusbar_verbatim_input(void)
         beep();
     }
 
-    free(bytes);
+    std::free(bytes);
 }
 
-/* Add the given input to the input buffer when it's a normal byte,
- * and inject the gathered bytes into the answer when ready. */
+//
+//  Add the given input to the input buffer when it's a normal byte,
+//  and inject the gathered bytes into the answer when ready.
+//
 void
-absorb_character(int input, functionptrtype function)
+absorb_character(s32 input, functionptrtype function)
 {
     static char *puddle = NULL;
     /* The input buffer. */
@@ -442,7 +450,7 @@ get_statusbar_page_start(size_t base, size_t column)
 
 /* Reinitialize the cursor position in the answer. */
 void
-put_cursor_at_end_of_answer(void)
+put_cursor_at_end_of_answer()
 {
     typing_x = HIGHEST_POSITIVE;
 }
@@ -702,12 +710,14 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*r
     return function;
 }
 
-// Ask a question on the status bar.  Return 0 when text was entered,
-// -1 for a cancelled entry, -2 for a blank string, and the relevant
-// keycode when a valid shortcut key was pressed.  The 'provided'
-// parameter is the default answer for when simply Enter is typed. */
+//
+//  Ask a question on the status bar.  Return 0 when text was entered,
+//  -1 for a cancelled entry, -2 for a blank string, and the relevant
+//  keycode when a valid shortcut key was pressed.  The 'provided'
+//  parameter is the default answer for when simply Enter is typed.
+//
 s32
-do_prompt(s32 menu, const s8 *provided, linestruct **history_list, void (*refresh_func)(void), const s8 *msg, ...)
+do_prompt(s32 menu, const s8 *provided, linestruct **history_list, void (*refresh_func)(), const s8 *msg, ...)
 {
     functionptrtype function = NULL;
     bool            listed   = FALSE;
@@ -724,20 +734,20 @@ do_prompt(s32 menu, const s8 *provided, linestruct **history_list, void (*refres
         answer = mallocstrcpy(answer, provided);
     }
 
-#ifndef NANO_TINY
 redo_theprompt:
-#endif
     prompt = static_cast<s8 *>(nmalloc((COLS * MAXCHARLEN) + 1));
     va_start(ap, msg);
-    vsnprintf(prompt, COLS * MAXCHARLEN, msg, ap);
+    std::vsnprintf(prompt, COLS * MAXCHARLEN, msg, ap);
     va_end(ap);
-    /* Reserve five columns for colon plus angles plus answer, ":<aa>". */
+    //
+    //  Reserve five columns for colon plus angles plus answer, ":<aa>".
+    //
     prompt[actual_x(prompt, (COLS < 5) ? 0 : COLS - 5)] = '\0';
 
     lastmessage = VACUUM;
 
     function = acquire_an_answer(&retval, &listed, history_list, refresh_func);
-    free(prompt);
+    std::free(prompt);
 
     if (retval == KEY_WINCH)
     {
@@ -754,7 +764,9 @@ redo_theprompt:
         typing_x = was_typing_x;
     }
 
-    /* Set the proper return value for Cancel and Enter. */
+    //
+    //  Set the proper return value for Cancel and Enter.
+    //
     if (function == do_cancel)
     {
         retval = -1;
@@ -792,9 +804,9 @@ ask_user(bool withall, const s8 *question)
     s32 width  = 16;
 
     //
-    //  TRANSLATORS: For the next three strings, specify the starting letters
-    //  of the translations for "Yes"/"No"/"All".  The first letter of each of
-    //  these strings MUST be a single-byte letter; others may be multi-byte.
+    //  TRANSLATORS : For the next three strings, specify the starting letters
+    //                of the translations for "Yes"/"No"/"All".  The first letter of each of
+    //                these strings MUST be a single-byte letter; others may be multi-byte.
     //
     const s8 *yesstr = _("Yy");
     const s8 *nostr  = _("Nn");
@@ -962,7 +974,7 @@ ask_user(bool withall, const s8 *question)
             s32 mouse_x, mouse_y;
 
             // We can click on the Yes/No/All shortcuts to select an answer.
-            if (get_mouseinput(&mouse_y, &mouse_x, false) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, false) &&
+            if (get_mouseinput(mouse_y, mouse_x, false) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, false) &&
                 mouse_x < (width * 2) && mouse_y > 0)
             {
                 s32 x = mouse_x / width;

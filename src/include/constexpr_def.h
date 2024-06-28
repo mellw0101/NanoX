@@ -22,7 +22,7 @@ constexpr u8 NUMBER_OF_ELEMENTS = 12;
 //
 //  The color options map.
 //
-CONSTEXPR_STRBITMAP<12> colorOptionMap = {
+CONSTEXPR_MAP<STRING_VIEW, u8, 12> colorOptionMap = {
     {{"titlecolor", TITLE_BAR},
      {"numbercolor", LINE_NUMBER},
      {"stripecolor", GUIDE_STRIPE},
@@ -55,7 +55,7 @@ constexpr u16 CONF_OPT_TABSIZE = (1 << 11);
 //
 //  The configuration options map.
 //
-CONSTEXPR_STRBITMAP<12> configOptionMap = {
+CONSTEXPR_MAP<STRING_VIEW, u16, 12> configOptionMap = {
     {{"operatingdir", OPERATINGDIR},
      {"fill", FILL},
      {"matchbrackets", MATCHBRACKETS},
@@ -82,7 +82,7 @@ constexpr u8 SYNTAX_OPT_FORMATTER = (1 << 5);
 //
 //  The syntax options map.
 //
-CONSTEXPR_STRBITMAP<6> syntaxOptionMap = {
+CONSTEXPR_MAP<STRING_VIEW, u8, 6> syntaxOptionMap = {
     {{"color", SYNTAX_OPT_COLOR},
      {"icolor", SYNTAX_OPT_ICOLOR},
      {"comment", SYNTAX_OPT_COMMENT},
@@ -148,7 +148,7 @@ constexpr u8 MODERN_BINDINGS    = 50;
 //
 //  The flags map.
 //
-CONSTEXPR_STRBITMAP<94> flagOptionsMap = {
+CONSTEXPR_MAP<STRING_VIEW, u8, 94> flagOptionsMap = {
     {{"-A", SMART_HOME},
      {"--smarthome", SMART_HOME},
      {"-B", MAKE_BACKUP},
@@ -265,7 +265,7 @@ constexpr u32 CLI_OPT_BREAKLONGLINES = (1 << 13);
 //
 //  The command line options map.
 //
-CONSTEXPR_STRBITMAP<25> cliOptionMap = {
+CONSTEXPR_MAP<STRING_VIEW, u32, 25> cliOptionMap = {
     {{"-I", CLI_OPT_IGNORERCFILE},
      {"--ignorercfiles", CLI_OPT_IGNORERCFILE},
      {"-V", CLI_OPT_VERSION},
@@ -386,7 +386,7 @@ constexpr u16 MSOME = MMOST | MBROWSER;
 //
 //  The menus map.
 //
-CONSTEXPR_STRBITMAP<16> menuOptionMap = {
+CONSTEXPR_MAP<STRING_VIEW, u16, 16> menuOptionMap = {
     {{"main", MMAIN},
      {"search", MWHEREIS},
      {"replace", MREPLACE},
@@ -405,7 +405,7 @@ CONSTEXPR_STRBITMAP<16> menuOptionMap = {
      {"all", MMOST | MBROWSER | MHELP | MYESNO}}
 };
 
-CONSTEXPR_STRBITMAP<14> toggleOptionMap = {
+CONSTEXPR_MAP<STRING_VIEW, u32, 14> toggleOptionMap = {
     {{"nohelp", NO_HELP},
      {"zero", ZERO},
      {"constantshow", CONSTANT_SHOW},
@@ -422,5 +422,5 @@ CONSTEXPR_STRBITMAP<14> toggleOptionMap = {
      {"mouse", USE_MOUSE}}
 };
 
-constexpr auto ERROR_MSG_OUT_OF_MEMORY         = "NanoX is out of memory!\n";
-constexpr auto ERROR_MSG_TO_MENY_DOT_SAVEFILES = "\nToo many .save files\n";
+constexpr C_s8 *ERROR_MSG_OUT_OF_MEMORY         = "NanoX is out of memory!\n";
+constexpr C_s8 *ERROR_MSG_TO_MENY_DOT_SAVEFILES = "\nToo many .save files\n";

@@ -14,8 +14,6 @@
 void
 get_homedir()
 {
-    PROFILE_FUNCTION;
-
     if (homedir == nullptr)
     {
         const s8 *homenv = getenv("HOME");
@@ -184,7 +182,7 @@ parseNum(std::string_view string, s64 &result)
 //  Return FALSE on a failed parsing, and TRUE otherwise.
 //
 bool
-parse_line_column(const s8 *string, s64 *line, s64 *column)
+parse_line_column(C_s8 *string, s64 *line, s64 *column)
 {
     const s8 *comma;
     s8       *firstpart;
@@ -281,7 +279,7 @@ free_chararray(s8 **array, u64 len)
 //  length a separate word?  That is: is it not part of a longer word?
 //
 bool
-is_separate_word(u64 position, u64 length, const s8 *text)
+is_separate_word(u64 position, u64 length, C_s8 *text)
 {
     const s8 *before = text + step_left(text, position);
     const s8 *after  = text + position + length;
@@ -303,8 +301,8 @@ is_separate_word(u64 position, u64 length, const s8 *text)
 //  than start.  If we are doing a regexp search, and we find a match, we fill
 //  in the global variable regmatches with at most 9 subexpression matches.
 //
-const s8 *
-strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const start)
+C_s8 *
+strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
 {
     PROFILE_FUNCTION;
 
@@ -325,7 +323,7 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
                 return nullptr;
             }
 
-            far_end   = std::strlen(haystack);
+            far_end   = constexpr_strlen(haystack);
             ceiling   = start - haystack;
             last_find = regmatches[0].rm_so;
 
@@ -379,7 +377,7 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
         //  Do a forward regex search from the starting point.
         //
         regmatches[0].rm_so = start - haystack;
-        regmatches[0].rm_eo = strlen(haystack);
+        regmatches[0].rm_eo = constexpr_strlen(haystack);
         if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND))
         {
             return nullptr;
@@ -398,7 +396,7 @@ strstrwrapper(const s8 *const haystack, const s8 *const needle, const s8 *const 
         }
         else
         {
-            return std::strstr(start, needle);
+            return constexpr_strstr(start, needle);
         }
     }
 
@@ -421,7 +419,7 @@ nmalloc(const u64 howmuch)
     void *section = std::malloc(howmuch);
     if (section == nullptr)
     {
-        die(_(ERROR_MSG_OUT_OF_MEMORY /* "Nano is out of memory!\n" */));
+        die(_(ERROR_MSG_OUT_OF_MEMORY));
     }
     return section;
 }

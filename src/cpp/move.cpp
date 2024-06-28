@@ -15,7 +15,7 @@ to_first_line()
     openfile->current_x   = 0;
     openfile->placewewant = 0;
 
-    refresh_needed = TRUE;
+    refresh_needed = true;
 }
 
 //
@@ -25,17 +25,17 @@ void
 to_last_line()
 {
     openfile->current     = openfile->filebot;
-    openfile->current_x   = (inhelp) ? 0 : strlen(openfile->filebot->data);
+    openfile->current_x   = (inhelp) ? 0 : std::strlen(openfile->filebot->data);
     openfile->placewewant = xplustabs();
 
-    /* Set the last line of the screen as the target for the cursor. */
+    //
+    //  Set the last line of the screen as the target for the cursor.
+    //
     openfile->cursor_row = editwinrows - 1;
 
-    refresh_needed = TRUE;
-#ifdef ENABLE_COLOR
+    refresh_needed = true;
     recook |= perturbed;
-#endif
-    focusing = FALSE;
+    focusing = false;
 }
 
 //
@@ -95,22 +95,24 @@ proper_x(linestruct *line, u64 &leftedge, bool forward, u64 column, bool *shifte
 //  the middle of a tab that crosses a row boundary.
 //
 void
-set_proper_index_and_pww(u64 *leftedge, u64 target, bool forward)
+set_proper_index_and_pww(u64 &leftedge, u64 target, bool forward)
 {
-    size_t was_edge = *leftedge;
-    bool   shifted  = FALSE;
+    u64  was_edge = leftedge;
+    bool shifted  = false;
 
     openfile->current_x =
-        proper_x(openfile->current, *leftedge, forward, actual_last_column(*leftedge, target), &shifted);
+        proper_x(openfile->current, leftedge, forward, actual_last_column(leftedge, target), &shifted);
 
-    /* If the index was incremented, try going to the target column. */
-    if (shifted || *leftedge < was_edge)
+    //
+    //  If the index was incremented, try going to the target column.
+    //
+    if (shifted || leftedge < was_edge)
     {
         openfile->current_x =
-            proper_x(openfile->current, *leftedge, forward, actual_last_column(*leftedge, target), &shifted);
+            proper_x(openfile->current, leftedge, forward, actual_last_column(leftedge, target), &shifted);
     }
 
-    openfile->placewewant = *leftedge + target;
+    openfile->placewewant = leftedge + target;
 }
 
 //
@@ -149,7 +151,7 @@ do_page_up()
         return;
     }
 
-    set_proper_index_and_pww(&leftedge, target_column, false);
+    set_proper_index_and_pww(leftedge, target_column, false);
 
     //
     //  Move the viewport so that the cursor stays immobile, if possible.
@@ -193,7 +195,7 @@ do_page_down()
         return;
     }
 
-    set_proper_index_and_pww(&leftedge, target_column, true);
+    set_proper_index_and_pww(leftedge, target_column, true);
 
     //
     //  Move the viewport so that the cursor stays immobile, if possible.
@@ -216,7 +218,7 @@ to_top_row()
     openfile->current = openfile->edittop;
     leftedge          = openfile->firstcolumn;
 
-    set_proper_index_and_pww(&leftedge, offset, false);
+    set_proper_index_and_pww(leftedge, offset, false);
 
     place_the_cursor();
 }
@@ -236,7 +238,7 @@ to_bottom_row()
     leftedge          = openfile->firstcolumn;
 
     go_forward_chunks(editwinrows - 1, openfile->current, leftedge);
-    set_proper_index_and_pww(&leftedge, offset, true);
+    set_proper_index_and_pww(leftedge, offset, true);
 
     place_the_cursor();
 }
@@ -552,7 +554,9 @@ do_next_word(bool after_ends)
                 seen_word = true;
             }
             else if (is_zerowidth(openfile->current->data + openfile->current_x))
-                ;  //  skip
+            {
+                ;  //  Skip
+            }
             else if (seen_word)
             {
                 break;
@@ -810,7 +814,7 @@ do_up()
         return;
     }
 
-    set_proper_index_and_pww(&leftedge, target_column, false);
+    set_proper_index_and_pww(leftedge, target_column, false);
 
     if (openfile->cursor_row == 0 && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP)))
     {
@@ -848,7 +852,7 @@ do_down()
         return;
     }
 
-    set_proper_index_and_pww(&leftedge, target_column, true);
+    set_proper_index_and_pww(leftedge, target_column, true);
 
     if (openfile->cursor_row == editwinrows - 1 && !ISSET(JUMPY_SCROLLING) &&
         (tabsize < editwincols || !ISSET(SOFTWRAP)))

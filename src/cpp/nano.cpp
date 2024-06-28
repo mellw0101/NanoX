@@ -14,6 +14,7 @@
 #    include <langinfo.h>
 #endif
 #include <clocale>
+#include <cstdlib>
 #include <cstring>
 #include <sys/vt.h>
 #include <termios.h>
@@ -436,7 +437,7 @@ emergency_save(const s8 *filename)
 //  @return void
 //
 void
-die(std::string_view msg, ...)
+die(STRING_VIEW msg, ...)
 {
     openfilestruct *firstone = openfile;
     static s32      stabs    = 0;
@@ -524,8 +525,11 @@ window_init()
     {
         editwinrows = (ISSET(ZERO) ? LINES : 1);
 
-        // Set up two subwindows.  If the terminal is just one line,
-        // edit window and status-bar window will cover each other.
+        //
+        //  Set up two subwindows.
+        //  If the terminal is just one line,
+        //  edit window and status-bar window will cover each other.
+        //
         midwin  = newwin(editwinrows, COLS, 0, 0);
         footwin = newwin(1, COLS, LINES - 1, 0);
     }
@@ -553,17 +557,23 @@ window_init()
         footwin = newwin(bottomrows, COLS, LINES - bottomrows, 0);
     }
 
-    // In case the terminal shrunk, make sure the status line is clear.
+    //
+    //  In case the terminal shrunk, make sure the status line is clear.
+    //
     wnoutrefresh(footwin);
 
-    // When not disabled, turn escape-sequence translation on.
+    //
+    //  When not disabled, turn escape-sequence translation on.
+    //
     if (!ISSET(RAW_SEQUENCES))
     {
         keypad(midwin, true);
         keypad(footwin, true);
     }
 
-    // Set up the wrapping point, accounting for screen width when negative.
+    //
+    //  Set up the wrapping point, accounting for screen width when negative.
+    //
     if (COLS + fill < 0)
     {
         wrap_at = 0;
@@ -921,38 +931,36 @@ signal_init()
 {
     struct sigaction deed = {{0}};
 
-    /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
+    //
+    //  Trap SIGINT and SIGQUIT because we want them to do useful things.
+    //
     deed.sa_handler = SIG_IGN;
-    sigaction(SIGINT, &deed, NULL);
-#ifdef SIGQUIT
-    sigaction(SIGQUIT, &deed, NULL);
-#endif
+    sigaction(SIGINT, &deed, nullptr);
+    sigaction(SIGQUIT, &deed, nullptr);
 
-    /* Trap SIGHUP and SIGTERM because we want to write the file out. */
+    //
+    //  Trap SIGHUP and SIGTERM because we want to write the file out.
+    //
     deed.sa_handler = handle_hupterm;
-#ifdef SIGHUP
     sigaction(SIGHUP, &deed, nullptr);
-#endif
     sigaction(SIGTERM, &deed, nullptr);
 
-#ifndef NANO_TINY
-#    ifdef SIGWINCH
-    /* Trap SIGWINCH because we want to handle window resizes. */
+    //
+    //  Trap SIGWINCH because we want to handle window resizes.
+    //
     deed.sa_handler = handle_sigwinch;
     sigaction(SIGWINCH, &deed, nullptr);
-#    endif
-#    ifdef SIGTSTP
-    /* Prevent the suspend handler from getting interrupted. */
+
+    //
+    //  Prevent the suspend handler from getting interrupted.
+    //
     sigfillset(&deed.sa_mask);
     deed.sa_handler = suspend_nano;
     sigaction(SIGTSTP, &deed, nullptr);
-#    endif
-#endif /* !NANO_TINY */
-#ifdef SIGCONT
     sigfillset(&deed.sa_mask);
     deed.sa_handler = continue_nano;
     sigaction(SIGCONT, &deed, nullptr);
-#endif
+
 #if !defined(DEBUG)
     if (getenv("NANO_NOCATCH") == nullptr)
     {
@@ -1407,8 +1415,10 @@ unbound_key(s32 code)
 {
     if (code == FOREIGN_SEQUENCE)
     {
-        // TRANSLATORS: This refers to a sequence of escape codes
-        // (from the keyboard) that nano does not recognize.
+        //
+        //  TRANSLATORS : This refers to a sequence of escape codes
+        //                (from the keyboard) that nano does not recognize.
+        //
         statusline(AHEM, _("Unknown sequence"));
     }
     else if (code == NO_SUCH_FUNCTION)
@@ -1421,7 +1431,9 @@ unbound_key(s32 code)
     }
     else if (code > KEY_F0 && code < KEY_F0 + 25)
     {
-        /* TRANSLATORS: This refers to an unbound function key. */
+        //
+        //  TRANSLATORS : This refers to an unbound function key.
+        //
         statusline(AHEM, _("Unbound key: F%i"), code - KEY_F0);
     }
     else if (code > 0x7F)
@@ -1464,24 +1476,30 @@ unbound_key(s32 code)
 s32
 do_mouse()
 {
-    s32 click_row, click_col;
-    s32 retval = get_mouseinput(&click_row, &click_col, TRUE);
+    s32 click_row;
+    s32 click_col;
 
-    /* If the click is wrong or already handled, we're done. */
+    s32 retval = get_mouseinput(click_row, click_col, true);
+
+    //
+    //  If the click is wrong or already handled, we're done.
+    //
     if (retval != 0)
     {
         return retval;
     }
 
-    /* If the click was in the edit window, put the cursor in that spot. */
-    if (wmouse_trafo(midwin, &click_row, &click_col, FALSE))
+    //
+    //  If the click was in the edit window, put the cursor in that spot.
+    //
+    if (wmouse_trafo(midwin, &click_row, &click_col, false))
     {
         linestruct *was_current = openfile->current;
         ssize_t     row_count   = click_row - openfile->cursor_row;
         size_t      leftedge;
         size_t      was_x = openfile->current_x;
 
-        if (ISSET(SOFTWRAP))
+        if ISSET (SOFTWRAP)
         {
             leftedge = leftedge_for(xplustabs(), openfile->current);
         }
@@ -1504,8 +1522,9 @@ do_mouse()
 
         openfile->current_x = actual_x(openfile->current->data, actual_last_column(leftedge, click_col));
 
-#ifndef NANO_TINY
-        /* Clicking there where the cursor is toggles the mark. */
+        //
+        //  Clicking there where the cursor is toggles the mark.
+        //
         if (row_count == 0 && openfile->current_x == was_x)
         {
             do_mark();
@@ -1515,14 +1534,19 @@ do_mouse()
             }
         }
         else
-#endif
-            /* The cursor moved; clean the cutbuffer on the next cut. */
-            keep_cutbuffer = FALSE;
+        {
+            //
+            //  The cursor moved; clean the cutbuffer on the next cut.
+            //
+            keep_cutbuffer = false;
+        }
 
         edit_redraw(was_current, CENTERING);
     }
 
-    /* No more handling is needed. */
+    //
+    //  No more handling is needed.
+    //
     return 2;
 }
 
@@ -2059,6 +2083,7 @@ main(s32 argc, s8 **argv)
     SET(LET_THEM_ZAP);
     SET(MODERN_BINDINGS);
     SET(AUTOINDENT);
+    // SET(CONSTANT_SHOW);
 
     //
     //  If the executable's name starts with 'r', activate restricted mode.
@@ -2142,7 +2167,7 @@ main(s32 argc, s8 **argv)
     //
     if (std::getenv("TERM") == nullptr)
     {
-        putenv((s8 *)"TERM=vt220");
+        putenv(const_cast<s8 *>("TERM=vt220"));
         setenv("TERM", "vt220", 1);
     }
 
@@ -2154,7 +2179,9 @@ main(s32 argc, s8 **argv)
         exit(EXIT_FAILURE);
     }
 
-    // If the terminal can do colors, tell ncurses to switch them on.
+    //
+    //  If the terminal can do colors, tell ncurses to switch them on.
+    //
     if (has_colors())
     {
         start_color();
@@ -2163,7 +2190,7 @@ main(s32 argc, s8 **argv)
     //
     //  When requested, suppress the default spotlight and error colors.
     //
-    rescind_colors = (getenv("NO_COLOR") != nullptr);
+    rescind_colors = (std::getenv("NO_COLOR") != nullptr);
 
     //
     //  Set up the function and shortcut lists.  This needs to be done
@@ -2732,7 +2759,9 @@ main(s32 argc, s8 **argv)
         statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
     }
 
-    // Set the margin to an impossible value to force re-evaluation.
+    //
+    //  Set the margin to an impossible value to force re-evaluation.
+    //
     margin         = 12345;
     we_are_running = true;
 
@@ -2756,8 +2785,10 @@ main(s32 argc, s8 **argv)
         }
         else
         {
-            // Update the displayed current cursor position only when there
-            // is no message and no keys are waiting in the input buffer.
+            //
+            //  Update the displayed current cursor position only when there
+            //  is no message and no keys are waiting in the input buffer.
+            //
             if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && waiting_keycodes() == 0)
             {
                 report_cursor_position();

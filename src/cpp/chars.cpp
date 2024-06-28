@@ -4,7 +4,6 @@
 #include <Mlib/Profile.h>
 
 #include <cstring>
-#include <cwchar>
 #include <cwctype>
 
 //
@@ -38,7 +37,7 @@ using_utf8()
 //  is some kind of letter.
 //
 bool
-is_alpha_char(const s8 *c)
+is_alpha_char(C_s8 *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
@@ -53,7 +52,7 @@ is_alpha_char(const s8 *c)
 //  is some kind of letter or a digit.
 //
 bool
-is_alnum_char(const s8 *c)
+is_alnum_char(C_s8 *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
@@ -67,7 +66,7 @@ is_alnum_char(const s8 *c)
 //  Return TRUE when the given character is space or tab or other whitespace.
 //
 bool
-is_blank_char(const s8 *c)
+is_blank_char(C_s8 *const c)
 {
     wchar_t wc;
 
@@ -88,7 +87,7 @@ is_blank_char(const s8 *c)
 //  Return 'true' when the given character is a control character.
 //
 bool
-is_cntrl_char(const s8 *c)
+is_cntrl_char(C_s8 *const c)
 {
     if (use_utf8)
     {
@@ -105,14 +104,14 @@ is_cntrl_char(const s8 *c)
 //  Return 'true' when the given character is a punctuation character.
 //
 bool
-is_punct_char(const s8 *c)
+is_punct_char(C_s8 *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
     {
         return false;
     }
-    return iswpunct(wc);
+    return std::iswpunct(wc);
 }
 
 //
@@ -120,7 +119,7 @@ is_punct_char(const s8 *c)
 //  specified in 'wordchars', or it is punctuation when allow_punct is TRUE).
 //
 bool
-is_word_char(const s8 *c, bool allow_punct)
+is_word_char(C_s8 *const c, bool allow_punct)
 {
     if (*c == '\0')
     {
@@ -139,11 +138,11 @@ is_word_char(const s8 *c, bool allow_punct)
 
     if (word_chars != nullptr && *word_chars != '\0')
     {
-        s8  symbol[MAXCHARLEN + 1];
-        s32 symlen = collect_char(c, symbol);
+        s8    symbol[MAXCHARLEN + 1];
+        C_s32 symlen = collect_char(c, symbol);
 
         symbol[symlen] = '\0';
-        return (std::strstr(word_chars, symbol) != nullptr);
+        return (constexpr_strstr(word_chars, symbol) != nullptr);
     }
     else
     {
@@ -155,10 +154,8 @@ is_word_char(const s8 *c, bool allow_punct)
 //  Return the visible representation of control character c.
 //
 s8
-control_rep(const SigS8 c)
+control_rep(C_SigS8 c)
 {
-    PROFILE_FUNCTION;
-
     if (c == DEL_CODE)
     {
         return '?';
@@ -181,10 +178,8 @@ control_rep(const SigS8 c)
 //  Return the visible representation of multibyte control character c.
 //
 s8
-control_mbrep(const s8 *c, bool isdata)
+control_mbrep(C_s8 *const c, bool isdata)
 {
-    PROFILE_FUNCTION;
-
     //
     //  An embedded newline is an encoded NUL if 'isdata' is true.
     //
@@ -215,7 +210,7 @@ control_mbrep(const s8 *c, bool isdata)
 //  the number of bytes in the sequence, or -1 for an invalid sequence.
 //
 s32
-mbtowide(wchar_t &wc, const s8 *c)
+mbtowide(wchar_t &wc, C_s8 *const c)
 {
     if (static_cast<SigS8>(*c) < 0 && use_utf8)
     {
@@ -280,7 +275,7 @@ mbtowide(wchar_t &wc, const s8 *c)
 //  Return TRUE when the given character occupies two cells.
 //
 bool
-is_doublewidth(const s8 *ch)
+is_doublewidth(C_s8 *const ch)
 {
     wchar_t wc;
 
@@ -304,10 +299,8 @@ is_doublewidth(const s8 *ch)
 //  Return 'true' when the given character occupies zero cells.
 //
 bool
-is_zerowidth(const s8 *ch)
+is_zerowidth(C_s8 *ch)
 {
-    PROFILE_FUNCTION;
-
     wchar_t wc;
 
     //
@@ -324,7 +317,9 @@ is_zerowidth(const s8 *ch)
     }
 
 #if defined(__OpenBSD__)
-    /* Work around an OpenBSD bug -- see https://sv.gnu.org/bugs/?60393. */
+    //
+    //  Work around an OpenBSD bug -- see https://sv.gnu.org/bugs/?60393.
+    //
     if (wc >= 0xF0000)
     {
         return false;
@@ -338,7 +333,7 @@ is_zerowidth(const s8 *ch)
 //  Return the number of bytes in the character that starts at *pointer.
 //
 s32
-char_length(const s8 *const &pointer)
+char_length(C_s8 *const &pointer)
 {
     if (static_cast<u8>(*pointer) > 0xC1 && use_utf8)
     {
@@ -394,7 +389,7 @@ char_length(const s8 *const &pointer)
 //  Return the number of (multibyte) characters in the given string.
 //
 u64
-mbstrlen(const s8 *pointer)
+mbstrlen(C_s8 *pointer)
 {
     u64 count = 0;
     while (*pointer != '\0')
@@ -410,12 +405,10 @@ mbstrlen(const s8 *pointer)
 //  given string, and return a copy of this character in *thechar.
 //
 s32
-collect_char(const s8 *str, s8 *c)
+collect_char(C_s8 *const str, s8 *c)
 {
-    PROFILE_FUNCTION;
-
-    s32 charlen = char_length(str);
-    for (int i = 0; i < charlen; i++)
+    C_s32 charlen = char_length(str);
+    for (s32 i = 0; i < charlen; i++)
     {
         c[i] = str[i];
     }
@@ -427,7 +420,7 @@ collect_char(const s8 *str, s8 *c)
 //  the given string, and add this character's width to '*column'.
 //
 s32
-advance_over(const s8 *str, u64 &column)
+advance_over(C_s8 *const str, u64 &column)
 {
     if (static_cast<s8>(*str) < 0 && use_utf8)
     {
@@ -443,19 +436,19 @@ advance_over(const s8 *str, u64 &column)
         {
             wchar_t wc;
 
-            s32 charlen = mbtowide(wc, str);
+            C_s32 charlen = mbtowide(wc, str);
             if (charlen < 0)
             {
                 column += 1;
                 return 1;
             }
-            s32 width = wcwidth(wc);
+            C_s32 width = wcwidth(wc);
 
-            // #if defined(__OpenBSD__)
-            //             *column += (width < 0 || wc >= 0xF0000) ? 1 : width;
-            // #else
+#if defined(__OpenBSD__)
+            *column += (width < 0 || wc >= 0xF0000) ? 1 : width;
+#else
             column += (width < 0) ? 1 : width;
-            // #endif
+#endif
             return charlen;
         }
     }
@@ -488,11 +481,12 @@ advance_over(const s8 *str, u64 &column)
 //  the multibyte character before the one at pos.
 //
 u64
-step_left(const s8 *buf, u64 pos)
+step_left(C_s8 *const buf, C_u64 pos)
 {
     if (use_utf8)
     {
-        u64 before, charlen = 0;
+        u64 before;
+        u64 charlen = 0;
 
         if (pos < 4)
         {
@@ -550,7 +544,7 @@ step_left(const s8 *buf, u64 pos)
 //  after the one at pos.
 //
 u64
-step_right(const s8 *buf, u64 pos)
+step_right(C_s8 *const buf, C_u64 pos)
 {
     return pos + char_length(buf + pos);
 }
@@ -559,7 +553,7 @@ step_right(const s8 *buf, u64 pos)
 //  This function is equivalent to strcasecmp() for multibyte strings.
 //
 s32
-mbstrcasecmp(const s8 *s1, const s8 *s2)
+mbstrcasecmp(C_s8 *s1, C_s8 *s2)
 {
     return mbstrncasecmp(s1, s2, HIGHEST_POSITIVE);
 }
@@ -568,17 +562,15 @@ mbstrcasecmp(const s8 *s1, const s8 *s2)
 //  This function is equivalent to strncasecmp() for multibyte strings.
 //
 s32
-mbstrncasecmp(const s8 *s1, const s8 *s2, u64 n)
+mbstrncasecmp(C_s8 *s1, C_s8 *s2, u64 n)
 {
-    PROFILE_FUNCTION;
-
     if (use_utf8)
     {
         wchar_t wc1, wc2;
 
         while (*s1 != '\0' && *s2 != '\0' && n > 0)
         {
-            if ((s8)*s1 >= 0 && (s8)*s2 >= 0)
+            if (*s1 >= 0 && *s2 >= 0)
             {
                 if ('A' <= (*s1 & 0x5F) && (*s1 & 0x5F) <= 'Z')
                 {
@@ -626,7 +618,8 @@ mbstrncasecmp(const s8 *s1, const s8 *s2, u64 n)
             }
             else
             {
-                s32 difference = static_cast<s32>(towlower(wc1)) - static_cast<s32>(towlower(wc2));
+                C_s32 difference = static_cast<s32>(towlower(static_cast<wint_t>(wc1))) -
+                                   static_cast<s32>(towlower(static_cast<wint_t>(wc2)));
 
                 if (difference)
                 {
@@ -643,7 +636,7 @@ mbstrncasecmp(const s8 *s1, const s8 *s2, u64 n)
     }
     else
     {
-        return strncasecmp(s1, s2, n);
+        return constexpr_strncasecmp(s1, s2, n);
     }
 }
 
@@ -651,13 +644,11 @@ mbstrncasecmp(const s8 *s1, const s8 *s2, u64 n)
 //  This function is equivalent to strcasestr() for multibyte strings.
 //
 s8 *
-mbstrcasestr(const s8 *haystack, const s8 *needle)
+mbstrcasestr(C_s8 *haystack, C_s8 *const needle)
 {
-    PROFILE_FUNCTION;
-
     if (use_utf8)
     {
-        u64 needle_len = mbstrlen(needle);
+        C_u64 needle_len = mbstrlen(needle);
 
         while (*haystack != '\0')
         {
@@ -671,7 +662,7 @@ mbstrcasestr(const s8 *haystack, const s8 *needle)
     }
     else
     {
-        return const_cast<s8 *>(strcasestr(haystack, needle));
+        return const_cast<s8 *>(constexpr_strcasestr(haystack, needle));
     }
 }
 
@@ -681,10 +672,10 @@ mbstrcasestr(const s8 *haystack, const s8 *needle)
 //  starting at pointer.
 //
 s8 *
-revstrstr(const s8 *const haystack, const s8 *const needle, const s8 *pointer)
+revstrstr(C_s8 *const haystack, C_s8 *const needle, C_s8 *pointer)
 {
-    u64 needle_len = std::strlen(needle);
-    u64 tail_len   = std::strlen(pointer);
+    C_u64 needle_len = constexpr_strlen(needle);
+    C_u64 tail_len   = constexpr_strlen(pointer);
 
     if (tail_len < needle_len)
     {
@@ -693,7 +684,7 @@ revstrstr(const s8 *const haystack, const s8 *const needle, const s8 *pointer)
 
     while (pointer >= haystack)
     {
-        if (std::strncmp(pointer, needle, needle_len) == 0)
+        if (constexpr_strncmp(pointer, needle, needle_len) == 0)
         {
             return const_cast<s8 *>(pointer);
         }
@@ -708,10 +699,10 @@ revstrstr(const s8 *const haystack, const s8 *const needle, const s8 *pointer)
 //  the string in reverse, starting at pointer.
 //
 s8 *
-revstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
+revstrcasestr(C_s8 *const haystack, C_s8 *const needle, C_s8 *pointer)
 {
-    u64 needle_len = std::strlen(needle);
-    u64 tail_len   = std::strlen(pointer);
+    C_u64 needle_len = constexpr_strlen(needle);
+    C_u64 tail_len   = constexpr_strlen(pointer);
 
     if (tail_len < needle_len)
     {
@@ -720,7 +711,7 @@ revstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
 
     while (pointer >= haystack)
     {
-        if (strncasecmp(pointer, needle, needle_len) == 0)
+        if (constexpr_strncasecmp(pointer, needle, needle_len) == 0)
         {
             return const_cast<s8 *>(pointer);
         }
@@ -751,12 +742,12 @@ revstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
 ///  - ( NULL )  - if the string is not found.
 //
 s8 *
-mbrevstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
+mbrevstrcasestr(C_s8 *const haystack, C_s8 *const needle, C_s8 *pointer)
 {
     if (use_utf8)
     {
-        u64 needle_len = mbstrlen(needle);
-        u64 tail_len   = mbstrlen(pointer);
+        C_u64 needle_len = mbstrlen(needle);
+        C_u64 tail_len   = mbstrlen(pointer);
 
         if (tail_len < needle_len)
         {
@@ -809,14 +800,17 @@ mbrevstrcasestr(const s8 *haystack, const s8 *needle, const s8 *pointer)
 /// - ( NULL )  - if the character is not found.
 //
 s8 *
-mbstrchr(const s8 *string, const s8 *chr)
+mbstrchr(C_s8 *string, C_s8 *const chr)
 {
     PROFILE_FUNCTION;
 
     if (use_utf8)
     {
-        bool    bad_s = false, bad_c = false;
-        wchar_t ws, wc;
+        bool bad_s = false;
+        bool bad_c = false;
+
+        wchar_t ws;
+        wchar_t wc;
 
         if (mbtowide(wc, chr) < 0)
         {
@@ -826,7 +820,7 @@ mbstrchr(const s8 *string, const s8 *chr)
 
         while (*string != '\0')
         {
-            s32 symlen = mbtowide(ws, string);
+            C_s32 symlen = mbtowide(ws, string);
 
             if (symlen < 0)
             {
@@ -851,7 +845,7 @@ mbstrchr(const s8 *string, const s8 *chr)
     }
     else
     {
-        return strchr(const_cast<s8 *>(string), *chr);
+        return constexpr_strchr(const_cast<s8 *>(string), *chr);
     }
 }
 
@@ -873,17 +867,17 @@ mbstrchr(const s8 *string, const s8 *chr)
 /// - ( NULL )  - if none of the characters are found.
 //
 s8 *
-mbstrpbrk(const s8 *string, const s8 *accept)
+mbstrpbrk(C_s8 *string, C_s8 *accept)
 {
     while (*string != '\0')
     {
-        if (mbstrchr(accept, string) != NULL)
+        if (mbstrchr(accept, string) != nullptr)
         {
-            return (char *)string;
+            return const_cast<s8 *>(string);
         }
         string += char_length(string);
     }
-    return NULL;
+    return nullptr;
 }
 
 //
@@ -891,7 +885,7 @@ mbstrpbrk(const s8 *string, const s8 *accept)
 //  the characters in accept, starting from pointer and searching backwards.
 //
 s8 *
-mbrevstrpbrk(const s8 *head, const s8 *accept, const s8 *pointer)
+mbrevstrpbrk(C_s8 *const head, C_s8 *const accept, C_s8 *pointer)
 {
     if (*pointer == '\0')
     {
@@ -925,13 +919,12 @@ mbrevstrpbrk(const s8 *head, const s8 *accept, const s8 *pointer)
 //  Return 'true' if the given string contains at least one blank character.
 //
 bool
-has_blank_char(const s8 *string)
+has_blank_char(C_s8 *string)
 {
     while (*string != '\0' && !is_blank_char(string))
     {
         string += char_length(string);
     }
-
     return *string;
 }
 
@@ -939,13 +932,12 @@ has_blank_char(const s8 *string)
 //  Return 'true' when the given string is empty or consists of only blanks.
 //
 bool
-white_string(const s8 *string)
+white_string(C_s8 *string)
 {
     while (*string != '\0' && (is_blank_char(string) || *string == '\r'))
     {
         string += char_length(string);
     }
-
     return !*string;
 }
 
@@ -957,6 +949,6 @@ strip_leading_blanks_from(s8 *string)
 {
     while (string && (*string == ' ' || *string == '\t'))
     {
-        std::memmove(string, string + 1, std::strlen(string));
+        std::memmove(string, string + 1, constexpr_strlen(string));
     }
 }

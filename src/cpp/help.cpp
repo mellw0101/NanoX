@@ -29,7 +29,7 @@ static u64 location;
 //  The function key list is built by iterating over all functions,
 //  - and for each function, iterating over all shortcuts.
 //  The function key descriptions are built by iterating over all functions.
-// @return void
+//  @return void
 //
 void
 help_init()
@@ -492,32 +492,45 @@ wrap_help_text_into_buffer()
 //
 //  Assemble a help text, display it, and allow scrolling through it.
 //
+//  TODO : ( show_help ) : Change to NanoX help text.
+//
 void
 show_help()
 {
-    s32             kbinput = ERR;
+    s32 kbinput = ERR;
+    //
+    //  The function of the key the user typed in.
+    //
     functionptrtype function;
-
-    // The function of the key the user typed in.
+    //
+    //  The menu we were called from.
+    //
     s32 oldmenu = currmenu;
 
-    // The menu we were called from.
     s32 was_margin  = margin;
     s64 was_tabsize = tabsize;
     s8 *was_syntax  = syntaxstr;
 
-    // The current answer when the user invokes help at the prompt.
+    //
+    //  The current answer when the user invokes help at the prompt.
+    //
     s8 *saved_answer = (answer != nullptr) ? copy_of(answer) : nullptr;
     u32 stash[sizeof(flags) / sizeof(flags[0])];
 
-    // A storage place for the current flag settings.
+    //
+    //  A storage place for the current flag settings.
+    //
     linestruct *line;
-    int         length;
+    s32         length;
 
-    // Save the settings of all flags.
-    memcpy(stash, flags, sizeof(flags));
+    //
+    //  Save the settings of all flags.
+    //
+    std::memcpy(stash, flags, sizeof(flags));
 
-    // Ensure that the help screen's shortcut list can be displayed.
+    //
+    //  Ensure that the help screen's shortcut list can be displayed.
+    //
     if (ISSET(NO_HELP) || ISSET(ZERO))
     {
         UNSET(NO_HELP);
@@ -529,7 +542,9 @@ show_help()
         blank_statusbar();
     }
 
-    // When searching, do it forward, case insensitive, and without regexes.
+    //
+    //  When searching, do it forward, case insensitive, and without regexes.
+    //
     UNSET(BACKWARDS_SEARCH);
     UNSET(CASE_SENSITIVE);
     UNSET(USE_REGEXP);
@@ -541,7 +556,9 @@ show_help()
     syntaxstr   = _("nanohelp");
     curs_set(0);
 
-    // Compose the help text from all the relevant pieces.
+    //
+    //  Compose the help text from all the relevant pieces.
+    //
     help_init();
 
     inhelp   = true;
@@ -550,13 +567,17 @@ show_help()
 
     bottombars(MHELP);
 
-    /* Extract the title from the head of the help text. */
-    length = break_line(help_text, HIGHEST_POSITIVE, TRUE);
+    //
+    //  Extract the title from the head of the help text.
+    //
+    length = break_line(help_text, HIGHEST_POSITIVE, true);
     title  = measured_copy(help_text, length);
 
     titlebar(title);
 
-    // Skip over the title to point at the start of the body text.
+    //
+    //  Skip over the title to point at the start of the body text.
+    //
     start_of_body = help_text + length;
     while (*start_of_body == '\n')
     {
@@ -566,15 +587,17 @@ show_help()
     wrap_help_text_into_buffer();
     edit_refresh();
 
-    while (TRUE)
+    while (true)
     {
         lastmessage = VACUUM;
         focusing    = true;
 
-        // Show the cursor when we searched and found something.
+        //
+        //  Show the cursor when we searched and found something.
+        //
         kbinput     = get_kbinput(midwin, didfind == 1 || ISSET(SHOW_CURSOR));
         didfind     = 0;
-        spotlighted = FALSE;
+        spotlighted = false;
 
         if (bracketed_paste || kbinput == BRACKETED_PASTE_MARKER)
         {
@@ -613,25 +636,19 @@ show_help()
         {
             function();
             bottombars(MHELP);
-#ifdef ENABLE_NANORC
         }
-        else if (function == (functionptrtype)implant)
+        else if (function == (CFuncPtr)implant)
         {
             implant(first_sc_for(MHELP, function)->expansion);
-#endif /* ENABLE_NANORC */
-#ifdef ENABLE_MOUSE
         }
         else if (kbinput == KEY_MOUSE)
         {
             int dummy_row, dummy_col;
-            get_mouseinput(&dummy_row, &dummy_col, TRUE);
-#endif
-#ifndef NANO_TINY
+            get_mouseinput(dummy_row, dummy_col, TRUE);
         }
         else if (kbinput == KEY_WINCH)
         {
             ; /* Nothing to do. */
-#endif
         }
         else if (function == do_exit)
         {
@@ -647,7 +664,9 @@ show_help()
         location = 0;
         line     = openfile->filetop;
 
-        /* Count how far (in bytes) edittop is into the file. */
+        //
+        //  Count how far (in bytes) edittop is into the file.
+        //
         while (line != openfile->edittop)
         {
             location += strlen(line->data);

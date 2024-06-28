@@ -81,11 +81,11 @@
 #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
 #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
 
-constexpr auto BACKWARD = false;
-constexpr auto FORWARD  = true;
+constexpr bool BACKWARD = false;
+constexpr bool FORWARD  = true;
 
-constexpr auto YESORNO      = false;
-constexpr auto YESORALLORNO = true;
+constexpr bool YESORNO      = false;
+constexpr bool YESORALLORNO = true;
 
 constexpr auto YES    = 1;
 constexpr auto ALL    = 2;
@@ -110,34 +110,29 @@ constexpr auto PRUNE_DUPLICATE   = true;
 constexpr auto IGNORE_DUPLICATES = false;
 
 constexpr auto MAXCHARLEN = 4;
-
 //
 //  The default width of a tab in spaces.
 //
 constexpr auto WIDTH_OF_TAB = 4;
-
 //
 //  The default number of columns from end of line where wrapping occurs.
 //
 constexpr auto COLUMNS_FROM_EOL = 8;
-
 //
 //  The default comment character when a syntax does not specify any.
 //
 constexpr auto GENERAL_COMMENT_CHARACTER = "#";
-
 //
 //  The maximum number of search/replace history strings saved.
 //
 constexpr auto MAX_SEARCH_HISTORY = 100;
-
 //
 //  The largest size_t number that doesn't have the high bit set.
 //
 constexpr auto HIGHEST_POSITIVE = ((~(u64)0) >> 1);
 
-constexpr auto THE_DEFAULT = -1;
-constexpr auto BAD_COLOR   = -2;
+constexpr s16 THE_DEFAULT = -1;
+constexpr s16 BAD_COLOR   = -2;
 
 //  Flags for indicating how a multiline regex pair apply to a line.
 
@@ -384,7 +379,9 @@ typedef struct lintstruct
     s8 *filename;      // Filename.
 } lintstruct;
 
-// More structure types.
+//
+//  More structure types.
+//
 typedef struct linestruct
 {
     linestruct *next;        // Next node.
@@ -407,42 +404,28 @@ typedef struct groupstruct
 
 typedef struct undostruct
 {
-    undo_type type;
-    /* The operation type that this undo item is for. */
-    int xflags;
-    /* Some flag data to mark certain corner cases. */
-    ssize_t head_lineno;
-    /* The line number where the operation began or ended. */
-    size_t head_x;
-    /* The x position where the operation began or ended. */
-    char *strdata;
-    /* String data to help restore the affected line. */
-    size_t wassize;
-    /* The file size before the action. */
-    size_t newsize;
-    /* The file size after the action. */
-    groupstruct *grouping;
-    /* Undo info specific to groups of lines. */
-    linestruct *cutbuffer;
-    /* A copy of the cutbuffer. */
-    ssize_t tail_lineno;
-    /* Mostly the line number of the current line; sometimes something else. */
-    size_t tail_x;
-    /* The x position corresponding to the above line number. */
-    struct undostruct *next;
-    /* A pointer to the undo item of the preceding action. */
+    undo_type    type;        /* The operation type that this undo item is for. */
+    int          xflags;      /* Some flag data to mark certain corner cases. */
+    ssize_t      head_lineno; /* The line number where the operation began or ended. */
+    size_t       head_x;      /* The x position where the operation began or ended. */
+    char        *strdata;     /* String data to help restore the affected line. */
+    size_t       wassize;     /* The file size before the action. */
+    size_t       newsize;     /* The file size after the action. */
+    groupstruct *grouping;    /* Undo info specific to groups of lines. */
+    linestruct  *cutbuffer;   /* A copy of the cutbuffer. */
+    ssize_t      tail_lineno; /* Mostly the line number of the current line; sometimes something else. */
+    size_t       tail_x;      /* The x position corresponding to the above line number. */
+
+    undostruct *next;         /* A pointer to the undo item of the preceding action. */
 } undostruct;
 
 typedef struct poshiststruct
 {
-    char *filename;
-    /* The full path plus name of the file. */
-    ssize_t linenumber;
-    /* The line where the cursor was when we closed the file. */
-    ssize_t columnnumber;
-    /* The column where the cursor was. */
-    struct poshiststruct *next;
-    /* The next item of position history. */
+    char   *filename;     /* The full path plus name of the file. */
+    ssize_t linenumber;   /* The line where the cursor was when we closed the file. */
+    ssize_t columnnumber; /* The column where the cursor was. */
+
+    poshiststruct *next;  /* The next item of position history. */
 } poshiststruct;
 
 typedef struct openfilestruct
@@ -482,7 +465,7 @@ typedef struct openfilestruct
 typedef struct rcoption
 {
     const s8 *name;  // The name of the rcfile option.
-    long      flag;  // The flag associated with it, if any.
+    s64       flag;  // The flag associated with it, if any.
 } rcoption;
 
 typedef struct keystruct

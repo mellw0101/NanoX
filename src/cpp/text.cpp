@@ -3877,7 +3877,7 @@ do_formatter()
 //  characters instead of single-byte characters.
 //
 void
-count_lines_words_and_characters(void)
+count_lines_words_and_characters()
 {
     linestruct *was_current = openfile->current;
     size_t      was_x       = openfile->current_x;
@@ -3937,9 +3937,15 @@ count_lines_words_and_characters(void)
                P_("character", "characters", chars));
 }
 
-// Get verbatim input.  This is used to insert a Unicode character by its
-// hexadecimal code, which is typed in by the user.  The function returns
-// the bytes that were typed in, and the number of bytes that were read.
+//
+//  Get verbatim input.
+//
+//  This is used to insert a Unicode character by its hexadecimal code,
+//  which is typed in by the user.
+//
+//  The function returns the bytes that were typed in,
+//  and the number of bytes that were read.
+//
 void
 do_verbatim_input()
 {

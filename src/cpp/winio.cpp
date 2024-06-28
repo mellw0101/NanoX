@@ -393,14 +393,16 @@ waiting_keycodes()
 void
 put_back(s32 keycode)
 {
-    /* If there is no room at the head of the keystroke buffer, make room. */
+    //
+    //  If there is no room at the head of the keystroke buffer, make room.
+    //
     if (nextcodes == key_buffer)
     {
         if (waiting_codes == capacity)
         {
             reserve_space_for(2 * capacity);
         }
-        memmove(key_buffer + 1, key_buffer, waiting_codes * sizeof(int));
+        std::memmove(key_buffer + 1, key_buffer, waiting_codes * sizeof(s32));
     }
     else
     {
@@ -1182,27 +1184,32 @@ parse_escape_sequence(int starter)
     return keycode;
 }
 
-#define PROCEED -44
-
-/* For each consecutive call, gather the given digit into a three-digit
- * decimal byte code (from 000 to 255).  Return the assembled code when
- * it is complete, but until then return PROCEED when the given digit is
- * valid, and the given digit itself otherwise. */
+constexpr s32 PROCEED = -44;
+//
+//  For each consecutive call, gather the given digit into a three-digit
+//  decimal byte code (from 000 to 255).  Return the assembled code when
+//  it is complete, but until then return PROCEED when the given digit is
+//  valid, and the given digit itself otherwise.
+//
 int
-assemble_byte_code(int keycode)
+assemble_byte_code(s32 keycode)
 {
-    static int byte = 0;
+    static s32 byte = 0;
 
     digit_count++;
 
-    /* The first digit is either 0, 1, or 2 (checked before the call). */
+    //
+    //  The first digit is either 0, 1, or 2 (checked before the call).
+    //
     if (digit_count == 1)
     {
         byte = (keycode - '0') * 100;
         return PROCEED;
     }
 
-    /* The second digit may be at most 5 if the first was 2. */
+    //
+    //  The second digit may be at most 5 if the first was 2.
+    //
     if (digit_count == 2)
     {
         if (byte < 200 || keycode <= '5')
@@ -1216,7 +1223,9 @@ assemble_byte_code(int keycode)
         }
     }
 
-    /* The third digit may be at most 5 if the first two were 2 and 5. */
+    //
+    //  The third digit may be at most 5 if the first two were 2 and 5.
+    //
     if (byte < 250 || keycode <= '5')
     {
         return (byte + keycode - '0');
@@ -2097,12 +2106,14 @@ get_verbatim_kbinput(WINDOW *frame, size_t *count)
 //  been handled by putting back keystrokes, or 2 if it's been ignored.
 //
 s32
-get_mouseinput(s32 *mouse_y, s32 *mouse_x, bool allow_shortcuts)
+get_mouseinput(s32 &mouse_y, s32 &mouse_x, bool allow_shortcuts)
 {
     bool   in_middle, in_footer;
     MEVENT event;
 
-    /* First, get the actual mouse event. */
+    //
+    //  First, get the actual mouse event.
+    //
     if (getmouse(&event) == ERR)
     {
         return -1;
@@ -2111,43 +2122,63 @@ get_mouseinput(s32 *mouse_y, s32 *mouse_x, bool allow_shortcuts)
     in_middle = wenclose(midwin, event.y, event.x);
     in_footer = wenclose(footwin, event.y, event.x);
 
-    /* Copy (and possibly adjust) the coordinates of the mouse event. */
-    *mouse_x = event.x - (in_middle ? margin : 0);
-    *mouse_y = event.y;
+    //
+    //  Copy (and possibly adjust) the coordinates of the mouse event.
+    //
+    mouse_x = event.x - (in_middle ? margin : 0);
+    mouse_y = event.y;
 
-    /* Handle releases/clicks of the first mouse button. */
+    //
+    //  Handle releases/clicks of the first mouse button.
+    //
     if (event.bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED))
     {
-        /* If we're allowing shortcuts, and the current shortcut list is
-         * being displayed on the last two lines of the screen, and the
-         * first mouse button was released on/clicked inside it, we need
-         * to figure out which shortcut was released on/clicked and put
-         * back the equivalent keystroke(s) for it. */
+        //
+        //  If we're allowing shortcuts, and the current shortcut list is
+        //  being displayed on the last two lines of the screen, and the
+        //  first mouse button was released on/clicked inside it, we need
+        //  to figure out which shortcut was released on/clicked and put
+        //  back the equivalent keystroke(s) for it.
+        //
         if (allow_shortcuts && !ISSET(NO_HELP) && in_footer)
         {
-            int width;
-            /* The width of each shortcut item, except the last two. */
-            int index;
-            /* The calculated index of the clicked item. */
-            size_t number;
-            /* The number of shortcut items that get displayed. */
+            //
+            //  The width of each shortcut item, except the last two.
+            //
+            s32 width;
+            //
+            //  The calculated index of the clicked item.
+            //
+            s32 index;
+            //
+            //  The number of shortcut items that get displayed.
+            //
+            u64 number;
 
-            /* Shift the coordinates to be relative to the bottom window. */
-            wmouse_trafo(footwin, mouse_y, mouse_x, FALSE);
+            //
+            //  Shift the coordinates to be relative to the bottom window.
+            //
+            wmouse_trafo(footwin, &mouse_y, &mouse_x, false);
 
-            /* Clicks on the status bar are handled elsewhere, so
-             * restore the untranslated mouse-event coordinates. */
-            if (*mouse_y == 0)
+            //
+            //  Clicks on the status bar are handled elsewhere, so
+            //  restore the untranslated mouse-event coordinates.
+            //
+            if (mouse_y == 0)
             {
-                *mouse_x = event.x;
-                *mouse_y = event.y;
+                mouse_x = event.x;
+                mouse_y = event.y;
                 return 0;
             }
 
-            /* Determine how many shortcuts are being shown. */
+            //
+            //  Determine how many shortcuts are being shown.
+            //
             number = shown_entries_for(currmenu);
 
-            /* Calculate the clickable width of each menu item. */
+            //
+            //  Calculate the clickable width of each menu item.
+            //
             if (number < 5)
             {
                 width = COLS / 2;
@@ -2157,24 +2188,32 @@ get_mouseinput(s32 *mouse_y, s32 *mouse_x, bool allow_shortcuts)
                 width = COLS / ((number + 1) / 2);
             }
 
-            /* Calculate the one-based index in the shortcut list. */
-            index = (*mouse_x / width) * 2 + *mouse_y;
+            //
+            //  Calculate the one-based index in the shortcut list.
+            //
+            index = (mouse_x / width) * 2 + mouse_y;
 
-            /* Adjust the index if we hit the last two wider ones. */
-            if ((index > number) && (*mouse_x % width < COLS % width))
+            //
+            //  Adjust the index if we hit the last two wider ones.
+            //
+            if ((index > number) && (mouse_x % width < COLS % width))
             {
                 index -= 2;
             }
 
-            /* Ignore clicks beyond the last shortcut. */
+            //
+            //  Ignore clicks beyond the last shortcut.
+            //
             if (index > number)
             {
                 return 2;
             }
 
-            /* Search through the list of functions to determine which
-             * shortcut in the current menu the user clicked on; then
-             * put the corresponding keystroke into the keyboard buffer. */
+            //
+            //  Search through the list of functions to determine which
+            //  shortcut in the current menu the user clicked on; then
+            //  put the corresponding keystroke into the keyboard buffer.
+            //
             for (funcstruct *f = allfuncs; f != NULL; f = f->next)
             {
                 if ((f->menus & currmenu) == 0)
@@ -2207,21 +2246,27 @@ get_mouseinput(s32 *mouse_y, s32 *mouse_x, bool allow_shortcuts)
         }
     }
 #if NCURSES_MOUSE_VERSION >= 2
-    /* Handle "presses" of the fourth and fifth mouse buttons
-     * (upward and downward rolls of the mouse wheel). */
+    //
+    //  Handle "presses" of the fourth and fifth mouse buttons
+    //  (upward and downward rolls of the mouse wheel). */
+    //
     else if (event.bstate & (BUTTON4_PRESSED | BUTTON5_PRESSED))
     {
         if (in_footer)
         {
-            /* Shift the coordinates to be relative to the bottom window. */
-            wmouse_trafo(footwin, mouse_y, mouse_x, FALSE);
+            //
+            //  Shift the coordinates to be relative to the bottom window.
+            //
+            wmouse_trafo(footwin, &mouse_y, &mouse_x, false);
         }
 
-        if (in_middle || (in_footer && *mouse_y == 0))
+        if (in_middle || (in_footer && mouse_y == 0))
         {
-            int keycode = (event.bstate & BUTTON4_PRESSED) ? ALT_UP : ALT_DOWN;
+            s32 keycode = (event.bstate & BUTTON4_PRESSED) ? ALT_UP : ALT_DOWN;
 
-            /* One bump of the mouse wheel should scroll two lines. */
+            //
+            //  One bump of the mouse wheel should scroll two lines.
+            //
             put_back(keycode);
             put_back(keycode);
 
@@ -2229,8 +2274,10 @@ get_mouseinput(s32 *mouse_y, s32 *mouse_x, bool allow_shortcuts)
         }
         else
         {
-            /* Ignore "presses" of the fourth and fifth mouse buttons
-             * that aren't on the edit window or the status bar. */
+            //
+            //  Ignore "presses" of the fourth and fifth mouse buttons
+            //  that aren't on the edit window or the status bar.
+            //
             return 2;
         }
     }
@@ -2247,14 +2294,18 @@ blank_row(WINDOW *window, s32 row)
     wclrtoeol(window);
 }
 
-/* Blank the first line of the top portion of the screen. */
+//
+//  Blank the first line of the top portion of the screen.
+//
 void
 blank_titlebar()
 {
     mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
 }
 
-/* Blank all lines of the middle portion of the screen (the edit window). */
+//
+//  Blank all lines of the middle portion of the screen (the edit window).
+//
 void
 blank_edit()
 {
@@ -2273,7 +2324,9 @@ blank_statusbar()
     blank_row(footwin, 0);
 }
 
-/* Wipe the status bar clean and include this in the next screen update. */
+//
+//  Wipe the status bar clean and include this in the next screen update.
+//
 void
 wipe_statusbar()
 {
@@ -2288,7 +2341,9 @@ wipe_statusbar()
     wnoutrefresh(footwin);
 }
 
-/* Blank out the two help lines (when they are present). */
+//
+//  Blank out the two help lines (when they are present).
+//
 void
 blank_bottombars()
 {
@@ -2299,7 +2354,9 @@ blank_bottombars()
     }
 }
 
-/* When some number of keystrokes has been reached, wipe the status bar. */
+//
+//  When some number of keystrokes has been reached, wipe the status bar.
+//
 void
 blank_it_when_expired()
 {
@@ -2313,7 +2370,9 @@ blank_it_when_expired()
         wipe_statusbar();
     }
 
-    /* When windows overlap, make sure to show the edit window now. */
+    //
+    //  When windows overlap, make sure to show the edit window now.
+    //
     if (currmenu == MMAIN && (ISSET(ZERO) || LINES == 1))
     {
         wredrawln(midwin, editwinrows - 1, 1);
@@ -2321,7 +2380,9 @@ blank_it_when_expired()
     }
 }
 
-/* Ensure that the status bar will be wiped upon the next keystroke. */
+//
+//  Ensure that the status bar will be wiped upon the next keystroke.
+//
 void
 set_blankdelay_to_one()
 {
@@ -2352,28 +2413,39 @@ set_blankdelay_to_one()
 s8 *
 display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
 {
-    // The beginning of the text, to later determine the covered part.
+    PROFILE_FUNCTION;
+
+    //
+    //  The beginning of the text, to later determine the covered part.
+    //
     const s8 *origin = text;
-
-    // The index of the first character that the caller wishes to show.
+    //
+    //  The index of the first character that the caller wishes to show.
+    //
     u64 start_x = actual_x(text, column);
-
-    // The actual column where that first character starts.
+    //
+    //  The actual column where that first character starts.
+    //
     u64 start_col = wideness(text, start_x);
-
-    // The number of zero-width characters for which to reserve space.
+    //
+    //  The number of zero-width characters for which to reserve space.
+    //
     u64 stowaways = 20;
-
-    // The amount of memory to reserve for the displayable string.
+    //
+    //  The amount of memory to reserve for the displayable string.
+    //
     u64 allocsize = (COLS + stowaways) * MAXCHARLEN + 1;
-
-    // The displayable string we will return.
+    //
+    //  The displayable string we will return.
+    //
     s8 *converted = static_cast<s8 *>(nmalloc(allocsize));
-
-    // Current position in converted.
+    //
+    //  Current position in converted.
+    //
     u64 index = 0;
-
-    // The column number just beyond the last shown character.
+    //
+    //  The column number just beyond the last shown character.
+    //
     u64 beyond = column + span;
 
     text += start_x;
@@ -2385,8 +2457,10 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
         return converted;
     }
 
-    // If the first character starts before the left edge, or would be
-    // overwritten by a "<" token, then show placeholders instead.
+    //
+    //  If the first character starts before the left edge, or would be
+    //  overwritten by a "<" token, then show placeholders instead.
+    //
     if ((start_col < column || (start_col > 0 && isdata && !ISSET(SOFTWRAP))) && *text != '\0' && *text != '\t')
     {
         if (is_cntrl_char(text))
@@ -2406,7 +2480,9 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
                 column++;
             }
 
-            // Display the right half of a two-column character as ']'.
+            //
+            //  Display the right half of a two-column character as ']'.
+            //
             converted[index++] = ']';
             column++;
             text += char_length(text);
@@ -2423,15 +2499,19 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
 
     while (*text != '\0' && (column < beyond || ZEROWIDTH_CHAR))
     {
-        // A plain printable ASCII character is one byte, one column.
-        if (((s8)*text > 0x20 && *text != DEL_CODE) || ISO8859_CHAR)
+        //
+        //  A plain printable ASCII character is one byte, one column.
+        //
+        if ((*text > 0x20 && *text != DEL_CODE) || ISO8859_CHAR)
         {
             converted[index++] = *(text++);
             column++;
             continue;
         }
 
-        // Show a space as a visible character, or as a space.
+        //
+        //  Show a space as a visible character, or as a space.
+        //
         if (*text == ' ')
         {
             if ISSET (WHITESPACE_DISPLAY)
@@ -2450,7 +2530,9 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
             continue;
         }
 
-        // Show a tab as a visible character plus spaces, or as just spaces.
+        //
+        //  Show a tab as a visible character plus spaces, or as just spaces.
+        //
         if (*text == '\t')
         {
             if (ISSET(WHITESPACE_DISPLAY) &&
@@ -2477,7 +2559,9 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
             continue;
         }
 
-        // Represent a control character with a leading caret.
+        //
+        //  Represent a control character with a leading caret.
+        //
         if (is_cntrl_char(text))
         {
             converted[index++] = '^';
@@ -2490,10 +2574,14 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
         s32     charlength, charwidth;
         wchar_t wc;
 
-        // Convert a multibyte character to a single code.
+        //
+        //  Convert a multibyte character to a single code.
+        //
         charlength = mbtowide(wc, text);
 
-        // Represent an invalid character with the Replacement Character.
+        //
+        //  Represent an invalid character with the Replacement Character.
+        //
         if (charlength < 0)
         {
             converted[index++] = '\xEF';
@@ -2504,10 +2592,14 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
             continue;
         }
 
-        // Determine whether the character takes zero, one, or two columns.
+        //
+        //  Determine whether the character takes zero, one, or two columns.
+        //
         charwidth = wcwidth(wc);
 
-        // Watch the number of zero-widths, to keep ample memory reserved.
+        //
+        //  Watch the number of zero-widths, to keep ample memory reserved.
+        //
         if (charwidth == 0 && --stowaways == 0)
         {
             stowaways = 40;
@@ -2515,25 +2607,33 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
             converted = static_cast<s8 *>(nrealloc(converted, allocsize));
         }
 
-        // On a Linux console, skip zero-width characters, as it would show
-        // them WITH a width, thus messing up the display.  See bug #52954.
+        //
+        //  On a Linux console, skip zero-width characters, as it would show
+        //  them WITH a width, thus messing up the display.  See bug #52954.
+        //
         if (on_a_vt && charwidth == 0)
         {
             text += charlength;
             continue;
         }
 
-        // For any valid character, just copy its bytes.
+        //
+        //  For any valid character, just copy its bytes.
+        //
         for (; charlength > 0; charlength--)
         {
             converted[index++] = *(text++);
         }
 
-        /* If the codepoint is unassigned, assume a width of one. */
+        //
+        //  If the codepoint is unassigned, assume a width of one.
+        //
         column += (charwidth < 0 ? 1 : charwidth);
     }
 
-    /* If there is more text than can be shown, make room for the ">". */
+    //
+    //  If there is more text than can be shown, make room for the ">".
+    //
     if (column > beyond || (*text != '\0' && (isprompt || (isdata && !ISSET(SOFTWRAP)))))
     {
         do
@@ -2542,7 +2642,9 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
         }
         while (is_zerowidth(converted + index));
 
-        // Display the left half of a two-column character as '['.
+        //
+        //  Display the left half of a two-column character as '['.
+        //
         if (is_doublewidth(converted + index))
         {
             converted[index++] = '[';
@@ -2557,10 +2659,14 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
 
     is_shorter = (column < beyond);
 
-    // Null-terminate the converted string.
+    //
+    //  Null-terminate the converted string.
+    //
     converted[index] = '\0';
 
-    // Remember what part of the original text is covered by converted.
+    //
+    //  Remember what part of the original text is covered by converted.
+    //
     from_x = start_x;
     till_x = text - origin;
 
@@ -2568,24 +2674,24 @@ display_string(const s8 *text, u64 column, u64 span, bool isdata, bool isprompt)
 }
 
 //
-//  Determine the sequence number of the given buffer in the circular list. */
+//  Determine the sequence number of the given buffer in the circular list.
 //
-int
+s32
 buffer_number(openfilestruct *buffer)
 {
-    int count = 1;
-
+    s32 count = 1;
     while (buffer != startfile)
     {
         buffer = buffer->prev;
         count++;
     }
-
     return count;
 }
 
-/* Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
- * and soft-wrapping by showing corresponding letters in the given window. */
+//
+//  Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
+//  and soft-wrapping by showing corresponding letters in the given window.
+//
 void
 show_states_at(WINDOW *window)
 {
@@ -2835,15 +2941,27 @@ titlebar(const s8 *path)
     wrefresh(topwin);
 }
 
-// Draw a bar at the bottom with some minimal state information.
+//
+//  Draw a bar at the bottom with some minimal state information.
+//
+//  TODO : ( minibar ) Profile later.
+//
 void
 minibar()
 {
-    s8 *thename = nullptr, *number_of_lines = nullptr, *ranking = nullptr;
+    PROFILE_FUNCTION;
+
+    s8 *thename         = nullptr;
+    s8 *number_of_lines = nullptr;
+    s8 *ranking         = nullptr;
+    s8 *successor       = nullptr;
+
     s8 *location    = static_cast<s8 *>(nmalloc(44));
     s8 *hexadecimal = static_cast<s8 *>(nmalloc(9));
-    s8 *successor   = nullptr;
-    u64 namewidth, placewidth;
+
+    u64 namewidth;
+    u64 placewidth;
+
     u64 tallywidth = 0;
     u64 padding    = 2;
 
@@ -2858,15 +2976,15 @@ minibar()
     if (openfile->filename[0] != '\0')
     {
         as_an_at = false;
-        thename  = display_string(openfile->filename, 0, COLS, FALSE, FALSE);
+        thename  = display_string(openfile->filename, 0, COLS, false, false);
     }
     else
     {
         thename = copy_of(_("(nameless)"));
     }
 
-    sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
-    placewidth = std::strlen(location);
+    std::sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
+    placewidth = constexpr_strlen(location);
     namewidth  = breadth(thename);
 
     //
@@ -2878,8 +2996,10 @@ minibar()
         padding = 0;
     }
 
-    // Display the name of the current file (dottifying it if it doesn't fit),
-    // plus a star when the file has been modified.
+    //
+    //  Display the name of the current file (dottifying it if it doesn't fit),
+    //  plus a star when the file has been modified.
+    //
     if (COLS > 4)
     {
         if (namewidth > COLS - 2)
@@ -2887,7 +3007,7 @@ minibar()
             s8 *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, false, false);
             mvwaddstr(footwin, 0, 0, "...");
             waddstr(footwin, shortname);
-            free(shortname);
+            std::free(shortname);
         }
         else
         {
@@ -2897,8 +3017,10 @@ minibar()
         waddstr(footwin, openfile->modified ? " *" : "  ");
     }
 
-    // Right after reading or writing a file, display its number of lines;
-    // otherwise, when there are multiple buffers, display an [x/n] counter.
+    //
+    //  Right after reading or writing a file, display its number of lines;
+    //  otherwise, when there are multiple buffers, display an [x/n] counter.
+    //
     if (report_size && COLS > 35)
     {
         u64 count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0');
@@ -2906,12 +3028,12 @@ minibar()
         number_of_lines = static_cast<s8 *>(nmalloc(49));
         if (openfile->fmt == NIX_FILE || openfile->fmt == UNSPECIFIED)
         {
-            sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
+            std::sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
         }
         else
         {
-            sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count,
-                    (openfile->fmt == DOS_FILE) ? "DOS" : "Mac");
+            std::sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count,
+                         (openfile->fmt == DOS_FILE) ? "DOS" : "Mac");
         }
         tallywidth = breadth(number_of_lines);
         if (namewidth + tallywidth + 11 < COLS)
@@ -2927,44 +3049,48 @@ minibar()
     else if (openfile->next != openfile && COLS > 35)
     {
         ranking = ranking = static_cast<s8 *>(nmalloc(24));
-        sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
+        std::sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
         if (namewidth + placewidth + breadth(ranking) + 32 < COLS)
         {
             waddstr(footwin, ranking);
         }
     }
 
-    // Display the line/column position of the cursor.
+    //
+    //  Display the line/column position of the cursor.
+    //
     if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + placewidth + 32 < COLS)
     {
         mvwaddstr(footwin, 0, COLS - 27 - placewidth, location);
     }
 
-    // Display the hexadecimal code of the character under the cursor,
-    // plus the codes of up to two succeeding zero-width characters.
+    //
+    //  Display the hexadecimal code of the character under the cursor,
+    //  plus the codes of up to two succeeding zero-width characters.
+    //
     if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + 28 < COLS)
     {
         s8 *this_position = openfile->current->data + openfile->current_x;
 
         if (*this_position == '\0')
         {
-            sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
+            std::sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
         }
         else if (*this_position == '\n')
         {
-            sprintf(hexadecimal, "  0x00");
+            std::sprintf(hexadecimal, "  0x00");
         }
         else if (static_cast<u8>(*this_position) < 0x80 && using_utf8())
         {
-            sprintf(hexadecimal, "U+%04X", static_cast<u8>(*this_position));
+            std::sprintf(hexadecimal, "U+%04X", static_cast<u8>(*this_position));
         }
         else if (using_utf8() && mbtowide(widecode, this_position) > 0)
         {
-            sprintf(hexadecimal, "U+%04X", static_cast<s32>(widecode));
+            std::sprintf(hexadecimal, "U+%04X", static_cast<s32>(widecode));
         }
         else
         {
-            sprintf(hexadecimal, "  0x%02X", static_cast<u8>(*this_position));
+            std::sprintf(hexadecimal, "  0x%02X", static_cast<u8>(*this_position));
         }
 
         mvwaddstr(footwin, 0, COLS - 23, hexadecimal);
@@ -2973,14 +3099,14 @@ minibar()
 
         if (*this_position && *successor && is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
         {
-            sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
+            std::sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
             waddstr(footwin, hexadecimal);
 
             successor += char_length(successor);
 
             if (is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
             {
-                sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
+                std::sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
                 waddstr(footwin, hexadecimal);
             }
         }
@@ -2990,28 +3116,32 @@ minibar()
         }
     }
 
-    // Display the state of three flags, and the state of macro and mark.
+    //
+    //  Display the state of three flags, and the state of macro and mark.
+    //
     if (ISSET(STATEFLAGS) && !successor && namewidth + tallywidth + 14 + 2 * padding < COLS)
     {
         wmove(footwin, 0, COLS - 11 - padding);
         show_states_at(footwin);
     }
 
-    // Display how many percent the current line is into the file.
+    //
+    //  Display how many percent the current line is into the file.
+    //
     if (namewidth + 6 < COLS)
     {
-        sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
+        std::sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
         mvwaddstr(footwin, 0, COLS - 4 - padding, location);
     }
 
     wattroff(footwin, interface_color_pair[MINI_INFOBAR]);
     wrefresh(footwin);
 
-    free(number_of_lines);
-    free(hexadecimal);
-    free(location);
-    free(thename);
-    free(ranking);
+    std::free(number_of_lines);
+    std::free(hexadecimal);
+    std::free(location);
+    std::free(thename);
+    std::free(ranking);
 }
 
 //
@@ -3021,7 +3151,7 @@ minibar()
 //  TODO : This function is a mess, FIX IT.
 //
 void
-statusline(message_type importance, const s8 *msg, ...)
+statusline(message_type importance, C_s8 *msg, ...)
 {
     PROFILE_FUNCTION;
 
@@ -3055,7 +3185,7 @@ statusline(message_type importance, const s8 *msg, ...)
     //
     compound = static_cast<s8 *>(nmalloc(MAXCHARLEN * COLS + 1));
     va_start(ap, msg);
-    vsnprintf(compound, MAXCHARLEN * COLS + 1, msg, ap);
+    std::vsnprintf(compound, MAXCHARLEN * COLS + 1, msg, ap);
     va_end(ap);
 
     //
@@ -3063,8 +3193,8 @@ statusline(message_type importance, const s8 *msg, ...)
     //
     if (isendwin())
     {
-        fprintf(stderr, "\n%s\n", compound);
-        free(compound);
+        std::fprintf(stderr, "\n%s\n", compound);
+        std::free(compound);
         return;
     }
 
@@ -3099,7 +3229,7 @@ statusline(message_type importance, const s8 *msg, ...)
             napms(100);
             beep();
         }
-        free(compound);
+        std::free(compound);
         return;
     }
 
@@ -3126,7 +3256,7 @@ statusline(message_type importance, const s8 *msg, ...)
 
     UNSET(WHITESPACE_DISPLAY);
 
-    message = display_string(compound, 0, COLS, FALSE, FALSE);
+    message = display_string(compound, 0, COLS, false, false);
 
     if (showed_whitespace)
     {
@@ -3162,8 +3292,8 @@ statusline(message_type importance, const s8 *msg, ...)
     //
     wrefresh(footwin);
 
-    free(compound);
-    free(message);
+    std::free(compound);
+    std::free(message);
 
     //
     //  When requested, wipe the status bar after just one keystroke.
@@ -3194,9 +3324,9 @@ warn_and_briefly_pause(const s8 *msg)
 }
 
 //
-/// Write a key's representation plus a minute description of its function
-/// to the screen.  For example, the key could be "^C" and its tag "Cancel".
-/// Key plus tag may occupy at most width columns. */
+//  Write a key's representation plus a minute description of its function
+//  to the screen.  For example, the key could be "^C" and its tag "Cancel".
+//  Key plus tag may occupy at most width columns.
 //
 void
 post_one_key(const s8 *keystroke, const s8 *tag, s32 width)
@@ -3244,13 +3374,19 @@ bottombars(s32 menu)
         return;
     }
 
-    /* Determine how many shortcuts must be shown. */
+    //
+    //  Determine how many shortcuts must be shown.
+    //
     number = shown_entries_for(menu);
 
-    /* Compute the width of each keyname-plus-explanation pair. */
+    //
+    //  Compute the width of each keyname-plus-explanation pair.
+    //
     itemwidth = COLS / ((number + 1) / 2);
 
-    /* If there is no room, don't print anything. */
+    //
+    //  If there is no room, don't print anything.
+    //
     if (itemwidth == 0)
     {
         return;
@@ -3258,11 +3394,13 @@ bottombars(s32 menu)
 
     blank_bottombars();
 
-    /* Display the first number of shortcuts in the given menu that
-     * have a key combination assigned to them. */
+    //
+    //  Display the first number of shortcuts in the given menu that
+    //  have a key combination assigned to them.
+    //
     for (f = allfuncs, index = 0; f != NULL && index < number; f = f->next)
     {
-        size_t thiswidth = itemwidth;
+        u64 thiswidth = itemwidth;
 
         if ((f->menus & menu) == 0)
         {
@@ -3271,21 +3409,24 @@ bottombars(s32 menu)
 
         s = first_sc_for(menu, f->func);
 
-        if (s == NULL)
+        if (s == nullptr)
         {
             continue;
         }
 
         wmove(footwin, 1 + index % 2, (index / 2) * itemwidth);
 
-        /* When the number is uneven, the penultimate item can be double wide.
-         */
+        //
+        //  When the number is uneven, the penultimate item can be double wide.
+        //
         if ((number % 2) == 1 && (index + 2 == number))
         {
             thiswidth += itemwidth;
         }
 
-        /* For the last two items, use also the remaining slack. */
+        //
+        //  For the last two items, use also the remaining slack.
+        //
         if (index + 2 >= number)
         {
             thiswidth += COLS % itemwidth;
@@ -3358,19 +3499,24 @@ place_the_cursor()
 //  The number of bytes after which to stop painting,
 //  to avoid major slowdowns.
 //
-static constexpr auto PAINT_LIMIT = 2000;
+static constexpr u16 PAINT_LIMIT = 2000;
 //
 //  Draw the given text on the given row of the edit window.  line is the
 //  line to be drawn, and converted is the actual string to be written with
 //  tabs and control characters replaced by strings of regular characters.
 //  from_col is the column number of the first character of this "page".
 //
-//  TODO : ( draw_row ) NEEDED
+//  TODO : ( draw_row ) - Make faster.
+//
 void
-draw_row(int row, const char *converted, linestruct *line, size_t from_col)
+draw_row(s32 row, const s8 *converted, linestruct *line, u64 from_col)
 {
-    /* If line numbering is switched on, put a line number in front of
-     * the text -- but only for the parts that are not softwrapped. */
+    PROFILE_FUNCTION;
+
+    //
+    //  If line numbering is switched on, put a line number in front of
+    //  the text -- but only for the parts that are not softwrapped.
+    //
     if (margin > 0)
     {
         wattron(midwin, interface_color_pair[LINE_NUMBER]);
@@ -3400,11 +3546,15 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
         }
     }
 
-    /* First simply write the converted line -- afterward we'll add colors
-     * and the marking highlight on just the pieces that need it. */
+    //
+    //  First simply write the converted line -- afterward we'll add colors
+    //  and the marking highlight on just the pieces that need it.
+    //
     mvwaddstr(midwin, row, margin, converted);
 
-    /* When needed, clear the remainder of the row. */
+    //
+    //  When needed, clear the remainder of the row.
+    //
     if (is_shorter || ISSET(SOFTWRAP))
     {
         wclrtoeol(midwin);
@@ -3415,59 +3565,90 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
         mvwaddch(midwin, row, COLS - 1, bardata[row]);
     }
 
-    /* If there are color rules (and coloring is turned on), apply them. */
+    //
+    //  If there are color rules (and coloring is turned on), apply them.
+    //
     if (openfile->syntax && !ISSET(NO_SYNTAX))
     {
         const colortype *varnish = openfile->syntax->color;
 
-        /* If there are multiline regexes, make sure this line has a cache. */
-        if (openfile->syntax->multiscore > 0 && line->multidata == NULL)
+        //
+        //  If there are multiline regexes, make sure this line has a cache.
+        //
+        if (openfile->syntax->multiscore > 0 && line->multidata == nullptr)
         {
-            line->multidata = RE_CAST(s16 *, nmalloc(openfile->syntax->multiscore * sizeof(s16)));
+            line->multidata = static_cast<s16 *>(nmalloc(openfile->syntax->multiscore * sizeof(s16)));
         }
 
-        /* Iterate through all the coloring regexes. */
-        for (; varnish != NULL; varnish = varnish->next)
+        //
+        //  Iterate through all the coloring regexes.
+        //
+        for (; varnish != nullptr; varnish = varnish->next)
         {
-            size_t index = 0;
-            /* Where in the line we currently begin looking for a match. */
-            int start_col = 0;
-            /* The starting column of a piece to paint.  Zero-based. */
-            int paintlen = 0;
-            /* The number of characters to paint. */
-            const char *thetext;
-            /* The place in converted from where painting starts. */
+            //
+            //  Where in the line we currently begin looking for a match.
+            //
+            u64 index = 0;
+            //
+            //  The starting column of a piece to paint.
+            //  Zero-based.
+            //
+            s32 start_col = 0;
+            //
+            //  The number of characters to paint.
+            //
+            s32 paintlen = 0;
+            //
+            //  The place in converted from where painting starts.
+            //
+            const s8 *thetext;
+            //
+            //  The match positions of a single-line regex.
+            //
             regmatch_t match;
-            /* The match positions of a single-line regex. */
+            //
+            //  The first line before line that matches 'start'.
+            //
             const linestruct *start_line = line->prev;
-            /* The first line before line that matches 'start'. */
+            //
+            //  The match positions of the start and end regexes.
+            //
             regmatch_t startmatch, endmatch;
-            /* The match positions of the start and end regexes. */
 
-            /* First case: varnish is a single-line expression. */
-            if (varnish->end == NULL)
+            //
+            // First case: varnish is a single-line expression.
+            //
+            if (varnish->end == nullptr)
             {
                 while (index < PAINT_LIMIT && index < till_x)
                 {
-                    /* If there is no match, go on to the next line. */
+                    //
+                    //  If there is no match, go on to the next line.
+                    //
                     if (regexec(varnish->start, &line->data[index], 1, &match, (index == 0) ? 0 : REG_NOTBOL) != 0)
                     {
                         break;
                     }
 
-                    /* Translate the match to the beginning of the line. */
+                    //
+                    //  Translate the match to the beginning of the line.
+                    //
                     match.rm_so += index;
                     match.rm_eo += index;
                     index = match.rm_eo;
 
-                    /* If the match is offscreen to the right, this rule is
-                     * done. */
+                    //
+                    //  If the match is offscreen to the right,
+                    //  this rule is done.
+                    //
                     if (match.rm_so >= till_x)
                     {
                         break;
                     }
 
-                    /* If the match has length zero, advance over it. */
+                    //
+                    //  If the match has length zero, advance over it.
+                    //
                     if (match.rm_so == match.rm_eo)
                     {
                         if (line->data[index] == '\0')
@@ -3478,7 +3659,9 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
                         continue;
                     }
 
-                    /* If the match is offscreen to the left, skip to next. */
+                    //
+                    //  If the match is offscreen to the left, skip to next.
+                    //
                     if (match.rm_eo <= from_x)
                     {
                         continue;
@@ -3501,9 +3684,11 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
                 continue;
             }
 
-            /* Second case: varnish is a multiline expression. */
+            // Second case: varnish is a multiline expression.
 
-            /* Assume nothing gets painted until proven otherwise below. */
+            //
+            //  Assume nothing gets painted until proven otherwise below.
+            //
             line->multidata[varnish->id] = NOTHING;
 
             if (start_line && !start_line->multidata)
@@ -3511,14 +3696,18 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
                 statusline(ALERT, "Missing multidata -- please report a bug");
             }
             else
-
-                /* If there is an unterminated start match before the current
-                 * line, we need to look for an end match first. */
+            {
+                //
+                //  If there is an unterminated start match before the current
+                //  line, we need to look for an end match first.
+                //
                 if (start_line && (start_line->multidata[varnish->id] == WHOLELINE ||
                                    start_line->multidata[varnish->id] == STARTSHERE))
                 {
-                    /* If there is no end on this line, paint whole line, and be
-                     * done. */
+                    //
+                    //  If there is no end on this line,
+                    //  paint whole line, and be done.
+                    //
                     if (regexec(varnish->end, line->data, 1, &endmatch, 0) == REG_NOMATCH)
                     {
                         wattron(midwin, varnish->attributes);
@@ -3528,7 +3717,9 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
                         continue;
                     }
 
-                    /* Only if it is visible, paint the part to be coloured. */
+                    //
+                    //  Only if it is visible, paint the part to be coloured.
+                    //
                     if (endmatch.rm_eo > from_x)
                     {
                         paintlen = actual_x(converted, wideness(line->data, endmatch.rm_eo) - from_col);
@@ -3539,15 +3730,20 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
 
                     line->multidata[varnish->id] = ENDSHERE;
                 }
+            }
 
-            /* Second step: look for starts on this line, but begin
-             * looking only after an end match, if there is one. */
+            //
+            //  Second step: look for starts on this line, but begin
+            //  looking only after an end match, if there is one.
+            //
             index = (paintlen == 0) ? 0 : endmatch.rm_eo;
 
             while (index < PAINT_LIMIT &&
                    regexec(varnish->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
             {
-                /* Make the match relative to the beginning of the line. */
+                //
+                //  Make the match relative to the beginning of the line.
+                //
                 startmatch.rm_so += index;
                 startmatch.rm_eo += index;
 
@@ -3561,11 +3757,15 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
                 if (regexec(varnish->end, line->data + startmatch.rm_eo, 1, &endmatch,
                             (startmatch.rm_eo == 0) ? 0 : REG_NOTBOL) == 0)
                 {
-                    /* Make the match relative to the beginning of the line. */
+                    //
+                    //  Make the match relative to the beginning of the line.
+                    //
                     endmatch.rm_so += startmatch.rm_eo;
                     endmatch.rm_eo += startmatch.rm_eo;
-                    /* Only paint the match if it is visible on screen
-                     * and it is more than zero characters long. */
+                    //
+                    //  Only paint the match if it is visible on screen
+                    //  and it is more than zero characters long.
+                    //
                     if (endmatch.rm_eo > from_x && endmatch.rm_eo > startmatch.rm_so)
                     {
                         paintlen = actual_x(thetext, wideness(line->data, endmatch.rm_eo) - from_col - start_col);
@@ -3577,7 +3777,9 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
                         line->multidata[varnish->id] = JUSTONTHIS;
                     }
                     index = endmatch.rm_eo;
-                    /* If both start and end match are anchors, advance. */
+                    //
+                    //  If both start and end match are anchors, advance.
+                    //
                     if (startmatch.rm_so == startmatch.rm_eo && endmatch.rm_so == endmatch.rm_eo)
                     {
                         if (line->data[index] == '\0')
@@ -3589,7 +3791,9 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
                     continue;
                 }
 
-                /* Paint the rest of the line, and we're done. */
+                //
+                //  Paint the rest of the line, and we're done.
+                //
                 wattron(midwin, varnish->attributes);
                 mvwaddnstr(midwin, row, margin + start_col, thetext, -1);
                 wattroff(midwin, varnish->attributes);
@@ -3639,20 +3843,34 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
         wattroff(midwin, interface_color_pair[GUIDE_STRIPE]);
     }
 
-    /* If the line is at least partially selected, paint the marked part. */
+    //
+    //  If the line is at least partially selected, paint the marked part.
+    //
     if (openfile->mark && ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno) ||
                            (line->lineno <= openfile->mark->lineno && line->lineno >= openfile->current->lineno)))
     {
+        //
+        //  The lines where the marked region begins and ends.
+        //
         linestruct *top, *bot;
-        /* The lines where the marked region begins and ends. */
-        size_t top_x, bot_x;
-        /* The x positions where the marked region begins and ends. */
-        int start_col;
-        /* The column where painting starts.  Zero-based. */
-        const char *thetext;
-        /* The place in converted from where painting starts. */
-        int paintlen = -1;
-        /* The number of characters to paint.  Negative means "all". */
+        //
+        //  The x positions where the marked region begins and ends.
+        //
+        u64 top_x, bot_x;
+        //
+        //  The column where painting starts.
+        //  Zero-based.
+        //
+        s32 start_col;
+        //
+        //  The place in converted from where painting starts.
+        //
+        const s8 *thetext;
+        //
+        //  The number of characters to paint.
+        //  Negative means "all".
+        //
+        s32 paintlen = -1;
 
         get_region(top, top_x, bot, bot_x);
 
@@ -3665,10 +3883,14 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
             bot_x = till_x;
         }
 
-        /* Only paint if the marked part of the line is on this page. */
+        //
+        //  Only paint if the marked part of the line is on this page.
+        //
         if (top_x < till_x && bot_x > from_x)
         {
-            /* Compute on which screen column to start painting. */
+            //
+            //  Compute on which screen column to start painting.
+            //
             start_col = wideness(line->data, top_x) - from_col;
 
             if (start_col < 0)
@@ -3678,12 +3900,14 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
 
             thetext = converted + actual_x(converted, start_col);
 
-            /* If the end of the mark is onscreen, compute how many
-             * characters to paint.  Otherwise, just paint all. */
+            //
+            //  If the end of the mark is onscreen, compute how many
+            //  characters to paint.  Otherwise, just paint all.
+            //
             if (bot_x < till_x)
             {
-                size_t end_col = wideness(line->data, bot_x) - from_col;
-                paintlen       = actual_x(thetext, end_col - start_col);
+                u64 end_col = wideness(line->data, bot_x) - from_col;
+                paintlen    = actual_x(thetext, end_col - start_col);
             }
 
             wattron(midwin, interface_color_pair[SELECTED_TEXT]);
@@ -3693,35 +3917,43 @@ draw_row(int row, const char *converted, linestruct *line, size_t from_col)
     }
 }
 
-/* Redraw the given line so that the character at the given index is visible
- * -- if necessary, scroll the line horizontally (when not softwrapping).
- * Return the number of rows "consumed" (relevant when softwrapping). */
-int
-update_line(linestruct *line, size_t index)
+//
+//  Redraw the given line so that the character at the given index is visible
+//  -- if necessary, scroll the line horizontally (when not softwrapping).
+//  Return the number of rows "consumed" (relevant when softwrapping). */
+//
+s32
+update_line(linestruct *line, u64 index)
 {
-    int row;
-    /* The row in the edit window we will be updating. */
-    char *converted;
-    /* The data of the line with tabs and control characters expanded. */
-    size_t from_col;
-    /* From which column a horizontally scrolled line is displayed. */
+    //
+    //  The row in the edit window we will be updating.
+    //
+    s32 row;
+    //
+    //  The data of the line with tabs and control characters expanded.
+    //
+    s8 *converted;
+    //
+    //  From which column a horizontally scrolled line is displayed.
+    //
+    u64 from_col;
 
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
         return update_softwrapped_line(line);
     }
 
     sequel_column = 0;
-#endif
 
     row      = line->lineno - openfile->edittop->lineno;
     from_col = get_page_start(wideness(line->data, index));
 
-    /* Expand the piece to be drawn to its representable form, and draw it. */
-    converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
+    //
+    //  Expand the piece to be drawn to its representable form, and draw it.
+    //
+    converted = display_string(line->data, from_col, editwincols, true, false);
     draw_row(row, converted, line, from_col);
-    free(converted);
+    std::free(converted);
 
     if (from_col > 0)
     {

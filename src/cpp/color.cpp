@@ -194,6 +194,8 @@ find_and_prime_applicable_syntax()
 {
     PROFILE_FUNCTION;
 
+    using namespace std;
+
     syntaxtype *sntx = nullptr;
 
     //
@@ -215,14 +217,14 @@ find_and_prime_applicable_syntax()
         //
         //  An override of "none" is like having no syntax at all.
         //
-        if (std::strcmp(syntaxstr, "none") == 0)
+        if (constexpr_strcmp(syntaxstr, "none") == 0)
         {
             return;
         }
 
         for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
         {
-            if (std::strcmp(sntx->name, syntaxstr) == 0)
+            if (constexpr_strcmp(sntx->name, syntaxstr) == 0)
             {
                 break;
             }
@@ -256,7 +258,7 @@ find_and_prime_applicable_syntax()
             }
         }
 
-        free(fullname);
+        std::free(fullname);
     }
 
     //
@@ -330,7 +332,7 @@ find_and_prime_applicable_syntax()
     {
         for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
         {
-            if (std::strcmp(sntx->name, "default") == 0)
+            if (constexpr_strcmp(sntx->name, "default") == 0)
             {
                 break;
             }

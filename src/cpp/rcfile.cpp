@@ -99,7 +99,7 @@ static s8 *nanorc = nullptr;
 //  Whether we're allowed to add to the last syntax.  When a file ends,
 //  or when a new syntax command is seen, this bool becomes 'false'.
 //
-static bool opensyntax = FALSE;
+static bool opensyntax = false;
 //
 //  The syntax that is currently being parsed.
 //
@@ -107,7 +107,7 @@ static syntaxtype *live_syntax;
 //
 //  Whether a syntax definition contains any color commands.
 //
-static bool seen_color_command = FALSE;
+static bool seen_color_command = false;
 //
 //  The end of the color list for the current syntax.
 //
@@ -361,7 +361,9 @@ strtosc(const s8 *input)
 s8 *
 parse_next_word(s8 *ptr)
 {
-    while (!std::isblank((unsigned char)*ptr) && *ptr != '\0')
+    PROFILE_FUNCTION;
+
+    while (!std::isblank(static_cast<u8>(*ptr)) && *ptr != '\0')
     {
         ptr++;
     }
@@ -376,7 +378,7 @@ parse_next_word(s8 *ptr)
     //
     *ptr++ = '\0';
 
-    while (std::isblank((unsigned char)*ptr))
+    while (std::isblank(static_cast<u8>(*ptr)))
     {
         ptr++;
     }
@@ -516,6 +518,8 @@ begin_new_syntax(s8 *ptr)
 {
     PROFILE_FUNCTION;
 
+    using namespace Mlib;
+
     s8 *nameptr = ptr;
 
     //
@@ -544,13 +548,13 @@ begin_new_syntax(s8 *ptr)
     if (*nameptr == '\x22')
     {
         nameptr++;
-        nameptr[strlen(nameptr) - 1] = '\0';
+        nameptr[std::strlen(nameptr) - 1] = '\0';
     }
 
     //
     //  Redefining the "none" syntax is not allowed.
     //
-    if (strcmp(nameptr, "none") == 0)
+    if (Constexpr::strcmp(nameptr, "none") == 0)
     {
         jot_error(N_("The \"none\" syntax is reserved"));
         return;
@@ -559,7 +563,7 @@ begin_new_syntax(s8 *ptr)
     //
     //  Initialize a new syntax struct.
     //
-    live_syntax                = RE_CAST(syntaxtype *, nmalloc(sizeof(syntaxtype)));
+    live_syntax                = static_cast<syntaxtype *>(nmalloc(sizeof(syntaxtype)));
     live_syntax->name          = copy_of(nameptr);
     live_syntax->filename      = copy_of(nanorc);
     live_syntax->lineno        = lineno;
@@ -585,7 +589,7 @@ begin_new_syntax(s8 *ptr)
     //
     //  The default syntax should have no associated extensions.
     //
-    if (std::strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
+    if (Constexpr::strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept extensions"));
         return;
@@ -885,10 +889,8 @@ is_good_file(s8 *file)
         jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
         return false;
     }
-    else
-    {
-        return true;
-    }
+
+    return true;
 }
 
 //
@@ -1134,7 +1136,7 @@ CONSTEXPR_MAP<STRING_VIEW, s16, COLORCOUNT> huesIndiecesMap = {
 //
 //  TODO : Use references instead of pointers
 //
-short
+s16
 color_to_short(const s8 *colorname, bool &vivid, bool &thick)
 {
     using namespace Mlib;
@@ -1175,7 +1177,7 @@ color_to_short(const s8 *colorname, bool &vivid, bool &thick)
 
     for (s32 index = 0; index < COLORCOUNT; index++)
     {
-        if (Constexpr::strcmp(colorname, &huesIndiecesMap[index].key[0]))
+        if (Constexpr::strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0)
         {
             if (index > 7 && vivid)
             {
@@ -1298,8 +1300,14 @@ parse_rule(s8 *ptr, s32 rex_flags)
 {
     PROFILE_FUNCTION;
 
-    s8 *names, *regexstring;
-    s16 fg, bg;
+    using namespace Mlib;
+
+    s8 *names;
+    s8 *regexstring;
+
+    s16 fg;
+    s16 bg;
+
     s32 attributes;
 
     if (*ptr == '\0')
@@ -1324,14 +1332,21 @@ parse_rule(s8 *ptr, s32 rex_flags)
 
     while (*ptr != '\0')
     {
-        regex_t *start_rgx = NULL, *end_rgx = NULL;
-        /* Intermediate storage for compiled regular expressions. */
-        colortype *newcolor = NULL;
-        /* Container for compiled regex (pair) and the color it paints. */
-        bool expectend = FALSE;
-        /* Whether it is a start=/end= regex pair. */
+        //
+        //  Intermediate storage for compiled regular expressions.
+        //
+        regex_t *start_rgx = nullptr;
+        regex_t *end_rgx   = nullptr;
+        //
+        //  Container for compiled regex (pair) and the color it paints.
+        //
+        colortype *newcolor = nullptr;
+        //
+        //  Whether it is a start=/end= regex pair.
+        //
+        bool expectend = false;
 
-        if (strncmp(ptr, "start=", 6) == 0)
+        if (Constexpr::strncmp(ptr, "start=", 6) == 0)
         {
             ptr += 6;
             expectend = TRUE;
@@ -1340,15 +1355,17 @@ parse_rule(s8 *ptr, s32 rex_flags)
         regexstring = ++ptr;
         ptr         = parse_next_regex(ptr);
 
-        /* When there is no regex, or it is invalid, skip this line. */
-        if (ptr == NULL || !compile(regexstring, rex_flags, start_rgx))
+        //
+        //  When there is no regex, or it is invalid, skip this line.
+        //
+        if (ptr == nullptr || !compile(regexstring, rex_flags, start_rgx))
         {
             return;
         }
 
         if (expectend)
         {
-            if (strncmp(ptr, "end=", 4) != 0)
+            if (Constexpr::strncmp(ptr, "end=", 4) != 0)
             {
                 jot_error(N_("\"start=\" requires a corresponding \"end=\""));
                 regfree(start_rgx);
@@ -1359,17 +1376,21 @@ parse_rule(s8 *ptr, s32 rex_flags)
             regexstring = ptr + 5;
             ptr         = parse_next_regex(ptr + 5);
 
-            /* When there is no valid end= regex, abandon the rule. */
-            if (ptr == NULL || !compile(regexstring, rex_flags, end_rgx))
+            //
+            //  When there is no valid end= regex, abandon the rule.
+            //
+            if (ptr == nullptr || !compile(regexstring, rex_flags, end_rgx))
             {
                 regfree(start_rgx);
-                free(start_rgx);
+                std::free(start_rgx);
                 return;
             }
         }
 
-        /* Allocate a rule, fill in the data, and link it into the list. */
-        newcolor = RE_CAST(colortype *, nmalloc(sizeof(colortype)));
+        //
+        //  Allocate a rule, fill in the data, and link it into the list.
+        //
+        newcolor = static_cast<colortype *>(nmalloc(sizeof(colortype)));
 
         newcolor->start = start_rgx;
         newcolor->end   = end_rgx;
@@ -1378,7 +1399,7 @@ parse_rule(s8 *ptr, s32 rex_flags)
         newcolor->bg         = bg;
         newcolor->attributes = attributes;
 
-        if (lastcolor == NULL)
+        if (lastcolor == nullptr)
         {
             live_syntax->color = newcolor;
         }
@@ -1387,10 +1408,12 @@ parse_rule(s8 *ptr, s32 rex_flags)
             lastcolor->next = newcolor;
         }
 
-        newcolor->next = NULL;
+        newcolor->next = nullptr;
         lastcolor      = newcolor;
 
-        /* For a multiline rule, give it a number and increase the count. */
+        //
+        //  For a multiline rule, give it a number and increase the count.
+        //
         if (expectend)
         {
             newcolor->id = live_syntax->multiscore;
@@ -1403,7 +1426,7 @@ parse_rule(s8 *ptr, s32 rex_flags)
 //  Set the colors for the given interface element to the given combination.
 //
 void
-set_interface_color(s32 element, s8 *combotext)
+set_interface_color(const s32 element, s8 *combotext)
 {
     colortype *trio = static_cast<colortype *>(nmalloc(sizeof(colortype)));
 
@@ -1542,8 +1565,6 @@ pick_up_name(const s8 *kind, s8 *ptr, s8 **storage)
 bool
 parse_syntax_commands(s8 *keyword, s8 *ptr)
 {
-    PROFILE_FUNCTION;
-
     const u32 syntax_opt = retriveSyntaxOptionFromStr(keyword);
     if (syntax_opt == false)
     {
@@ -1575,7 +1596,6 @@ parse_syntax_commands(s8 *keyword, s8 *ptr)
         pick_up_name("formatter", ptr, &live_syntax->formatter);
         strip_leading_blanks_from(live_syntax->formatter);
     }
-
     return true;
 }
 
@@ -1587,8 +1607,6 @@ static constexpr s8 VITALS = 4;
 static void
 check_vitals_mapped()
 {
-    PROFILE_FUNCTION;
-
     void (*vitals[VITALS])() = {do_exit, do_exit, do_exit, do_cancel};
     s32 inmenus[VITALS]      = {MMAIN, MBROWSER, MHELP, MYESNO};
 
