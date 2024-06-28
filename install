@@ -1,3 +1,22 @@
 #!/bin/bash
 
-AmakeCpp --build --install --bin /usr/lib/Mlib.a 
+
+# Get the architecture of the machine
+ARCH=$(uname -m)
+
+# Print the architecture
+echo "Architecture: $ARCH"
+
+# Perform actions based on the architecture
+case "$ARCH" in
+    x86_64)
+        AmakeCpp --build --install --bin /usr/lib/Mlib.a 
+        ;;
+    aarch64)
+        AmakeCpp --build --install --bin /usr/lib/Mlib.a -lncurses 
+        ;;
+    *)
+        echo "Unknown architecture: $ARCH"
+        # Add your commands for other architectures here
+        ;;
+esac
