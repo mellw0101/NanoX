@@ -73,9 +73,18 @@
     }                            \
     while (0)
 
-/* Macros for flags, indexing each bit in a small array. */
-#define FLAGS(flag)    flags[((flag) / (sizeof(unsigned) * 8))]
-#define FLAGMASK(flag) ((unsigned)1 << ((flag) % (sizeof(unsigned) * 8)))
+//
+//  Macros for flags,
+//  indexing each bit in a small array.
+//
+// #define FLAGS(flag)    flags[((flag) / (sizeof(unsigned) * 8))]
+// #define FLAGMASK(flag) ((unsigned)1 << ((flag) % (sizeof(unsigned) * 8)))
+// #define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
+// #define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
+// #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+// #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
+#define FLAGS(flag)    flags[((flag) / (sizeof(u64) * 8))]
+#define FLAGMASK(flag) ((u64)1 << ((flag) % (sizeof(u64) * 8)))
 #define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
 #define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
 #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
@@ -87,49 +96,49 @@ constexpr bool FORWARD  = true;
 constexpr bool YESORNO      = false;
 constexpr bool YESORALLORNO = true;
 
-constexpr auto YES    = 1;
-constexpr auto ALL    = 2;
-constexpr auto NO     = 0;
-constexpr auto CANCEL = -1;
+constexpr s16 YES    = 1;
+constexpr s16 ALL    = 2;
+constexpr s16 NO     = 0;
+constexpr s16 CANCEL = -1;
 
-constexpr auto BLIND   = false;
-constexpr auto VISIBLE = true;
+constexpr bool BLIND   = false;
+constexpr bool VISIBLE = true;
 
-constexpr auto JUSTFIND  = 0;
-constexpr auto REPLACING = 1;
-constexpr auto INREGION  = 2;
+constexpr u8 JUSTFIND  = 0;
+constexpr u8 REPLACING = 1;
+constexpr u8 INREGION  = 2;
 
-constexpr auto NORMAL    = true;
-constexpr auto SPECIAL   = false;
-constexpr auto TEMPORARY = false;
+constexpr bool NORMAL    = true;
+constexpr bool SPECIAL   = false;
+constexpr bool TEMPORARY = false;
 
-constexpr auto ANNOTATE = true;
-constexpr auto NONOTES  = false;
+constexpr bool ANNOTATE = true;
+constexpr bool NONOTES  = false;
 
-constexpr auto PRUNE_DUPLICATE   = true;
-constexpr auto IGNORE_DUPLICATES = false;
+constexpr bool PRUNE_DUPLICATE   = true;
+constexpr bool IGNORE_DUPLICATES = false;
 
-constexpr auto MAXCHARLEN = 4;
+constexpr u8 MAXCHARLEN = 4;
 //
 //  The default width of a tab in spaces.
 //
-constexpr auto WIDTH_OF_TAB = 4;
+constexpr u8 WIDTH_OF_TAB = 4;
 //
 //  The default number of columns from end of line where wrapping occurs.
 //
-constexpr auto COLUMNS_FROM_EOL = 8;
+constexpr u8 COLUMNS_FROM_EOL = 8;
 //
 //  The default comment character when a syntax does not specify any.
 //
-constexpr auto GENERAL_COMMENT_CHARACTER = "#";
+constexpr C_s8 *GENERAL_COMMENT_CHARACTER = "#";
 //
 //  The maximum number of search/replace history strings saved.
 //
-constexpr auto MAX_SEARCH_HISTORY = 100;
+constexpr u8 MAX_SEARCH_HISTORY = 100;
 //
 //  The largest size_t number that doesn't have the high bit set.
 //
-constexpr auto HIGHEST_POSITIVE = ((~(u64)0) >> 1);
+constexpr u64 HIGHEST_POSITIVE = ((~(u64)0) >> 1);
 
 constexpr s16 THE_DEFAULT = -1;
 constexpr s16 BAD_COLOR   = -2;

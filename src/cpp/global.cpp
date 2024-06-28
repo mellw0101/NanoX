@@ -109,22 +109,25 @@ s8 *present_path = nullptr;
 //
 //  Our flags array, containing the states of all global options.
 //
-u32 flags[4] = {0, 0, 0, 0};
+// u32 flags[4] = {0, 0, 0, 0};
+u64 flags[1] = {0};
 
-int controlleft, controlright, controlup, controldown;
-int controlhome, controlend;
-int controldelete, controlshiftdelete;
-int shiftleft, shiftright, shiftup, shiftdown;
-int shiftcontrolleft, shiftcontrolright, shiftcontrolup, shiftcontroldown;
-int shiftcontrolhome, shiftcontrolend;
-int altleft, altright, altup, altdown;
-int althome, altend, altpageup, altpagedown;
-int altinsert, altdelete;
-int shiftaltleft, shiftaltright, shiftaltup, shiftaltdown;
-int mousefocusin, mousefocusout;
+s32 controlleft, controlright, controlup, controldown;
+s32 controlhome, controlend;
+s32 controldelete, controlshiftdelete;
+s32 shiftleft, shiftright, shiftup, shiftdown;
+s32 shiftcontrolleft, shiftcontrolright, shiftcontrolup, shiftcontroldown;
+s32 shiftcontrolhome, shiftcontrolend;
+s32 altleft, altright, altup, altdown;
+s32 althome, altend, altpageup, altpagedown;
+s32 altinsert, altdelete;
+s32 shiftaltleft, shiftaltright, shiftaltup, shiftaltdown;
+s32 mousefocusin, mousefocusout;
 
-/* The relative column where we will wrap lines. */
-ssize_t fill = -COLUMNS_FROM_EOL;
+//
+//  The relative column where we will wrap lines.
+//
+s64 fill = -COLUMNS_FROM_EOL;
 
 /* The actual column where we will wrap lines, based on fill. */
 size_t wrap_at = 0;

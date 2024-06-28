@@ -3305,7 +3305,7 @@ statusline(message_type importance, C_s8 *msg, ...)
 //  Display a normal message on the status bar, quietly.
 //
 void
-statusbar(const s8 *msg)
+statusbar(C_s8 *msg)
 {
     statusline(HUSH, msg);
 }
@@ -3315,7 +3315,7 @@ statusbar(const s8 *msg)
 //  message can be noticed and read.
 //
 void
-warn_and_briefly_pause(const s8 *msg)
+warn_and_briefly_pause(C_s8 *msg)
 {
     blank_bottombars();
     statusline(ALERT, msg);
@@ -3329,7 +3329,7 @@ warn_and_briefly_pause(const s8 *msg)
 //  Key plus tag may occupy at most width columns.
 //
 void
-post_one_key(const s8 *keystroke, const s8 *tag, s32 width)
+post_one_key(C_s8 *keystroke, C_s8 *tag, s32 width)
 {
     wattron(footwin, interface_color_pair[KEY_COMBO]);
     waddnstr(footwin, keystroke, actual_x(keystroke, width));
@@ -3351,11 +3351,12 @@ post_one_key(const s8 *keystroke, const s8 *tag, s32 width)
 }
 
 //
-/// Display the shortcut list corresponding to menu on the last two rows
-/// of the bottom portion of the window. The shortcuts are shown in pairs,
+//  Display the shortcut list corresponding to menu on the last two rows
+//  of the bottom portion of the window.
+//  The shortcuts are shown in pairs,
 //
 void
-bottombars(s32 menu)
+bottombars(C_s32 menu)
 {
     u64 index     = 0;
     u64 number    = 0;
@@ -3398,7 +3399,7 @@ bottombars(s32 menu)
     //  Display the first number of shortcuts in the given menu that
     //  have a key combination assigned to them.
     //
-    for (f = allfuncs, index = 0; f != NULL && index < number; f = f->next)
+    for (f = allfuncs, index = 0; f != nullptr && index < number; f = f->next)
     {
         u64 thiswidth = itemwidth;
 
@@ -3509,7 +3510,7 @@ static constexpr u16 PAINT_LIMIT = 2000;
 //  TODO : ( draw_row ) - Make faster.
 //
 void
-draw_row(s32 row, const s8 *converted, linestruct *line, u64 from_col)
+draw_row(C_s32 row, C_s8 *converted, linestruct *line, C_u64 from_col)
 {
     PROFILE_FUNCTION;
 
@@ -3865,7 +3866,7 @@ draw_row(s32 row, const s8 *converted, linestruct *line, u64 from_col)
         //
         //  The place in converted from where painting starts.
         //
-        const s8 *thetext;
+        C_s8 *thetext;
         //
         //  The number of characters to paint.
         //  Negative means "all".
@@ -4189,9 +4190,13 @@ less_than_a_screenful(size_t was_lineno, size_t was_leftedge)
         return (openfile->current->lineno - was_lineno < editwinrows);
 }
 
-/* Draw a "scroll bar" on the righthand side of the edit window. */
+//
+//  Draw a "scroll bar" on the righthand side of the edit window.
+//
+//  TODO : ( draw_scrollbar ) WTF i have never seen a scrollbar during runtime.
+//
 void
-draw_scrollbar(void)
+draw_scrollbar()
 {
     int fromline     = openfile->edittop->lineno - 1;
     int totallines   = openfile->filebot->lineno;
@@ -4227,16 +4232,20 @@ draw_scrollbar(void)
     }
 }
 
-/* Scroll the edit window one row in the given direction, and
- * draw the relevant content on the resultant blank row. */
+//
+//  Scroll the edit window one row in the given direction, and
+//  draw the relevant content on the resultant blank row. */
+//
 void
 edit_scroll(bool direction)
 {
     linestruct *line;
-    size_t      leftedge;
-    int         nrows = 1;
+    u64         leftedge;
+    s32         nrows = 1;
 
-    /* Move the top line of the edit window one row up or down. */
+    //
+    //  Move the top line of the edit window one row up or down.
+    //
     if (direction == BACKWARD)
     {
         go_back_chunks(1, &openfile->edittop, &openfile->firstcolumn);
@@ -4268,7 +4277,6 @@ edit_scroll(bool direction)
         go_forward_chunks(editwinrows - nrows, line, leftedge);
     }
 
-#ifndef NANO_TINY
     if (sidebar)
     {
         draw_scrollbar();
@@ -4285,7 +4293,6 @@ edit_scroll(bool direction)
             nrows -= chunk_for(openfile->firstcolumn, line);
         }
     }
-#endif
 
     /* Draw new content on the blank row (and on the bordering row too
      * when it was deemed necessary). */
@@ -4304,12 +4311,12 @@ edit_scroll(bool direction)
 //  when end-of-line is reached while searching for a possible breakpoint.
 //
 u64
-get_softwrap_breakpoint(const s8 *linedata, u64 leftedge, bool &kickoff, bool &end_of_line)
+get_softwrap_breakpoint(C_s8 *linedata, u64 leftedge, bool &kickoff, bool &end_of_line)
 {
     //
     //  Pointer at the current character in this line's data.
     //
-    static const char *text;
+    static C_s8 *text;
     //
     // Column position that corresponds to the above pointer. */
     //
@@ -4329,7 +4336,7 @@ get_softwrap_breakpoint(const s8 *linedata, u64 leftedge, bool &kickoff, bool &e
     //
     //  A pointer to the last seen whitespace character in text.
     //
-    const char *farthest_blank = nullptr;
+    C_s8 *farthest_blank = nullptr;
 
     //
     //  Initialize the static variables when it's another line.
@@ -4430,7 +4437,7 @@ get_chunk_and_edge(u64 column, linestruct *line, u64 *leftedge)
         //
         if (end_of_line || (start_col <= column && column < end_col))
         {
-            if (leftedge != NULL)
+            if (leftedge != nullptr)
             {
                 *leftedge = start_col;
             }
@@ -4789,9 +4796,11 @@ report_cursor_position(void)
                fullwidth, colpct, digits(openfile->totsize), sum, openfile->totsize, charpct);
 }
 
-/* Highlight the text between the given two columns on the current line. */
+//
+//  Highlight the text between the given two columns on the current line.
+//
 void
-spotlight(size_t from_col, size_t to_col)
+spotlight(u64 from_col, u64 to_col)
 {
     size_t right_edge = get_page_start(from_col) + editwincols;
     bool   overshoots = (to_col > right_edge);

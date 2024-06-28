@@ -3,32 +3,37 @@
 
 #include <cstring>
 
-// Delete the character at the current position, and
-// add or update an undo item for the given action.
+//
+//  Delete the character at the current position,
+//  and add or update an undo item for the given action.
+//
 void
 expunge(undo_type action)
 {
     openfile->placewewant = xplustabs();
 
-    /* When in the middle of a line, delete the current character. */
+    //
+    //  When in the middle of a line, delete the current character.
+    //
     if (openfile->current->data[openfile->current_x] != '\0')
     {
-        int    charlen  = char_length(openfile->current->data + openfile->current_x);
-        size_t line_len = strlen(openfile->current->data + openfile->current_x);
-#ifndef NANO_TINY
-        size_t old_amount = ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current) : 0;
+        s32 charlen    = char_length(openfile->current->data + openfile->current_x);
+        u64 line_len   = constexpr_strlen(openfile->current->data + openfile->current_x);
+        u64 old_amount = ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current) : 0;
 
-        /* If the type of action changed or the cursor moved to a different
-         * line, create a new undo item, otherwise update the existing item. */
+        //
+        //  If the type of action changed or the cursor moved to a different
+        //  line, create a new undo item, otherwise update the existing item.
+        //
         if (action != openfile->last_action || openfile->current->lineno != openfile->current_undo->head_lineno)
         {
-            add_undo(action, NULL);
+            add_undo(action, nullptr);
         }
         else
         {
             update_undo(action);
         }
-#endif
+
         /* Move the remainder of the line "in", over the current character. */
         memmove(&openfile->current->data[openfile->current_x], &openfile->current->data[openfile->current_x + charlen],
                 line_len - charlen + 1);

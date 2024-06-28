@@ -29,7 +29,8 @@ extern linestruct *cutbuffer;
 extern linestruct *cutbottom;
 extern linestruct *pletion_line;
 
-extern unsigned flags[4];
+// extern unsigned flags[4];
+extern u64 flags[1];
 
 extern s64 fill;
 
@@ -214,8 +215,8 @@ s8   *get_full_path(const s8 *origpath);
 s8   *safe_tempfile(FILE **stream);
 void  init_operating_dir(void);
 bool  outside_of_confinement(const char *currpath, bool allow_tabcomp);
-void  init_backup_dir(void);
-int   copy_file(FILE *inn, FILE *out, bool close_out);
+void  init_backup_dir();
+s32   copy_file(FILE *inn, FILE *out, bool close_out);
 bool  write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
 bool  write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
 s32   write_it_out(bool exiting, bool withprompt);

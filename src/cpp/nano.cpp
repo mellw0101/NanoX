@@ -1197,7 +1197,7 @@ toggle_this(const s32 flag)
             refresh_needed = TRUE;
             break;
         case WHITESPACE_DISPLAY :
-            titlebar(NULL);
+            titlebar(nullptr);
             refresh_needed = TRUE;
             break;
         case NO_SYNTAX :

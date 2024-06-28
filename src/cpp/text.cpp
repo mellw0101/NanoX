@@ -2939,7 +2939,7 @@ treat(s8 *tempfile_name, s8 *theprogram, bool spelling)
 //  Return 'false' if the user cancels.
 //
 bool
-fix_spello(const s8 *word)
+fix_spello(C_s8 *word)
 {
     linestruct *was_edittop = openfile->edittop;
     linestruct *was_current = openfile->current;
@@ -3080,7 +3080,7 @@ fix_spello(const s8 *word)
 //  correction.
 //
 void
-do_int_speller(const s8 *tempfile_name)
+do_int_speller(C_s8 *const tempfile_name)
 {
     PROFILE_FUNCTION;
 
@@ -3091,7 +3091,7 @@ do_int_speller(const s8 *tempfile_name)
     pid_t pid_spell, pid_sort, pid_uniq;
     s32   spell_status, sort_status, uniq_status;
 
-    unsigned stash[sizeof(flags) / sizeof(flags[0])];
+    u64 stash[sizeof(flags) / sizeof(flags[0])];
 
     //
     //  Create all three pipes up front.
@@ -3104,19 +3104,25 @@ do_int_speller(const s8 *tempfile_name)
 
     statusbar(_("Invoking spell checker..."));
 
-    /* Fork a process to run spell in. */
+    //
+    //  Fork a process to run spell in.
+    //
     if ((pid_spell = fork()) == 0)
     {
-        /* Child: open the temporary file that holds the text to be checked. */
+        //
+        //  Child: open the temporary file that holds the text to be checked.
+        //
         if ((tempfile_fd = open(tempfile_name, O_RDONLY)) == -1)
         {
-            exit(6);
+            std::exit(6);
         }
 
-        /* Connect standard input to the temporary file. */
+        //
+        //  Connect standard input to the temporary file.
+        //
         if (dup2(tempfile_fd, STDIN_FILENO) < 0)
         {
-            exit(7);
+            std::exit(7);
         }
 
         //
@@ -3124,7 +3130,7 @@ do_int_speller(const s8 *tempfile_name)
         //
         if (dup2(spell_fd[1], STDOUT_FILENO) < 0)
         {
-            exit(8);
+            std::exit(8);
         }
 
         close(tempfile_fd);
@@ -3140,7 +3146,7 @@ do_int_speller(const s8 *tempfile_name)
         //
         //  Indicate failure when neither speller was found.
         //
-        exit(9);
+        std::exit(9);
     }
 
     //
@@ -3158,7 +3164,7 @@ do_int_speller(const s8 *tempfile_name)
         //
         if (dup2(spell_fd[0], STDIN_FILENO) < 0)
         {
-            exit(7);
+            std::exit(7);
         }
 
         //
@@ -3166,7 +3172,7 @@ do_int_speller(const s8 *tempfile_name)
         //
         if (dup2(sort_fd[1], STDOUT_FILENO) < 0)
         {
-            exit(8);
+            std::exit(8);
         }
 
         close(spell_fd[0]);
@@ -3179,7 +3185,7 @@ do_int_speller(const s8 *tempfile_name)
         //
         execlp("sort", "sort", "-f", nullptr);
 
-        exit(9);
+        std::exit(9);
     }
 
     close(spell_fd[0]);
@@ -3345,10 +3351,13 @@ do_int_speller(const s8 *tempfile_name)
     }
 }
 
-/* Spell check the current file.  If an alternate spell checker is
- * specified, use it.  Otherwise, use the internal spell checker. */
+//
+//  Spell check the current file.
+//  If an alternate spell checker is specified, use it.
+//  Otherwise, use the internal spell checker.
+//
 void
-do_spell(void)
+do_spell()
 {
     FILE *stream;
     char *temp_name;

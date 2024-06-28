@@ -515,7 +515,7 @@ show_help()
     //  The current answer when the user invokes help at the prompt.
     //
     s8 *saved_answer = (answer != nullptr) ? copy_of(answer) : nullptr;
-    u32 stash[sizeof(flags) / sizeof(flags[0])];
+    u64 stash[sizeof(flags) / sizeof(flags[0])];
 
     //
     //  A storage place for the current flag settings.

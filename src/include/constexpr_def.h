@@ -94,6 +94,17 @@ CONSTEXPR_MAP<STRING_VIEW, u8, 6> syntaxOptionMap = {
 //
 //  Identifiers for the different flags.
 //
+//  TODO : ( flags ):
+//       - Change the flags array into a 64 bit unsigned integer,
+//       - as there is less then 64 flags, and this will save memory.
+//       - Currently the flags are stored in a 32 bit unsigned integer array with size 4.
+//       - ( unsigned flags[4] )
+//
+
+//
+//  This flag is not used as this is part of a bitfield and 0 is not a unique value, in terms
+//  of bitwise operations as the default all non set value is 0.
+//
 constexpr u8 DONTUSE            = 0;
 constexpr u8 CASE_SENSITIVE     = 1;
 constexpr u8 CONSTANT_SHOW      = 2;
