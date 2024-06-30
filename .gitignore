@@ -1,5 +1,5 @@
 /.amake/
 /build/
-/build/bin/*
+/build/bin/
 /build/lib/*
 /build/obj/*.o
