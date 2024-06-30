@@ -481,10 +481,10 @@ to_last_file()
 //  The returned string is dynamically allocated, and should be freed.
 //
 s8 *
-strip_last_component(const s8 *path)
+strip_last_component(C_s8 *path)
 {
     s8 *copy       = copy_of(path);
-    s8 *last_slash = std::strrchr(copy, '/');
+    s8 *last_slash = constexpr_strrchr(copy, '/');
 
     if (last_slash != nullptr)
     {
@@ -930,39 +930,42 @@ read_directory_contents:
 //  - ( char* ) - The name of the file that the user picked
 //  - ( nullptr ) - if none.
 //
-char *
-browse_in(const char *inpath)
+s8 *
+browse_in(C_s8 *inpath)
 {
-    char       *path = real_dir_from_tilde(inpath);
+    s8 *path = real_dir_from_tilde(inpath);
+
     struct stat fileinfo;
 
-    /* If path is not a directory, try to strip a filename from it; if then
-     * still not a directory, use the current working directory instead. */
+    //
+    //  If path is not a directory, try to strip a filename from it; if then
+    //  still not a directory, use the current working directory instead.
+    //
     if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode))
     {
         path = free_and_assign(path, strip_last_component(path));
 
         if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode))
         {
-            path = free_and_assign(path, realpath(".", NULL));
+            path = free_and_assign(path, realpath(".", nullptr));
 
-            if (path == NULL)
+            if (path == nullptr)
             {
                 statusline(ALERT, _("The working directory has disappeared"));
                 napms(1200);
-                return NULL;
+                return nullptr;
             }
         }
     }
 
-#ifdef ENABLE_OPERATINGDIR
-    /* If the resulting path isn't in the operating directory,
-     * use the operating directory instead. */
-    if (outside_of_confinement(path, FALSE))
+    //
+    //  If the resulting path isn't in the operating directory,
+    //  use the operating directory instead.
+    //
+    if (outside_of_confinement(path, false))
     {
         path = mallocstrcpy(path, operating_dir);
     }
-#endif
 
     return browse(path);
 }

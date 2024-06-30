@@ -216,7 +216,8 @@ to_top_row()
     get_edge_and_target(leftedge, offset);
 
     openfile->current = openfile->edittop;
-    leftedge          = openfile->firstcolumn;
+
+    leftedge = openfile->firstcolumn;
 
     set_proper_index_and_pww(leftedge, offset, false);
 
@@ -235,7 +236,8 @@ to_bottom_row()
     get_edge_and_target(leftedge, offset);
 
     openfile->current = openfile->edittop;
-    leftedge          = openfile->firstcolumn;
+
+    leftedge = openfile->firstcolumn;
 
     go_forward_chunks(editwinrows - 1, openfile->current, leftedge);
     set_proper_index_and_pww(leftedge, offset, true);
@@ -271,7 +273,10 @@ do_cycle()
 void
 do_center()
 {
-    do_cycle(); /* The main loop has set 'cycling_aim' to zero. */
+    //
+    //  The main loop has set 'cycling_aim' to zero.
+    //
+    do_cycle();
 }
 
 //
@@ -343,7 +348,7 @@ to_para_end()
     }
     else
     {
-        openfile->current_x = std::strlen(openfile->current->data);
+        openfile->current_x = constexpr_strlen(openfile->current->data);
     }
 
     edit_redraw(was_current, CENTERING);
@@ -357,7 +362,8 @@ void
 to_prev_block()
 {
     linestruct *was_current = openfile->current;
-    bool        is_text = false, seen_text = false;
+
+    bool is_text = false, seen_text = false;
 
     //
     //  Skip backward until first blank line after some nonblank line(s).
@@ -365,8 +371,9 @@ to_prev_block()
     while (openfile->current->prev != nullptr && (!seen_text || is_text))
     {
         openfile->current = openfile->current->prev;
-        is_text           = !white_string(openfile->current->data);
-        seen_text         = seen_text || is_text;
+
+        is_text   = !white_string(openfile->current->data);
+        seen_text = seen_text || is_text;
     }
 
     //
@@ -388,8 +395,9 @@ void
 to_next_block()
 {
     linestruct *was_current = openfile->current;
-    bool        is_white    = white_string(openfile->current->data);
-    bool        seen_white  = is_white;
+
+    bool is_white   = white_string(openfile->current->data);
+    bool seen_white = is_white;
 
     //
     //  Skip forward until first nonblank line after some blank line(s).
@@ -397,8 +405,9 @@ to_next_block()
     while (openfile->current->next != nullptr && (!seen_white || is_white))
     {
         openfile->current = openfile->current->next;
-        is_white          = white_string(openfile->current->data);
-        seen_white        = seen_white || is_white;
+
+        is_white   = white_string(openfile->current->data);
+        seen_white = seen_white || is_white;
     }
 
     openfile->current_x = 0;
@@ -438,7 +447,7 @@ do_prev_word()
                 break;
             }
             openfile->current   = openfile->current->prev;
-            openfile->current_x = std::strlen(openfile->current->data);
+            openfile->current_x = constexpr_strlen(openfile->current->data);
         }
 
         //
@@ -529,7 +538,8 @@ do_next_word(bool after_ends)
             }
             openfile->current   = openfile->current->next;
             openfile->current_x = 0;
-            seen_space          = true;
+
+            seen_space = true;
         }
         else
         {
@@ -705,8 +715,8 @@ do_home()
     }
 
     //
-    //  If we changed chunk, we might be offscreen.  Otherwise,
-    //  update current if the mark is on or we changed 'page'.
+    //  If we changed chunk, we might be offscreen.
+    //  Otherwise, update current if the mark is on or we changed 'page'.
     //
     if (ISSET(SOFTWRAP) && moved_off_chunk)
     {
@@ -729,7 +739,7 @@ do_end()
     linestruct *was_current = openfile->current;
 
     u64 was_column = xplustabs();
-    u64 line_len   = std::strlen(openfile->current->data);
+    u64 line_len   = constexpr_strlen(openfile->current->data);
 
     bool moved_off_chunk = true;
 
@@ -934,7 +944,7 @@ do_left()
     else if (openfile->current != openfile->filetop)
     {
         openfile->current   = openfile->current->prev;
-        openfile->current_x = std::strlen(openfile->current->data);
+        openfile->current_x = constexpr_strlen(openfile->current->data);
     }
 
     edit_redraw(was_current, FLOWING);

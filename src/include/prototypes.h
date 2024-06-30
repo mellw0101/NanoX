@@ -132,7 +132,9 @@ extern keystruct *planted_shortcut;
 
 typedef void (*functionptrtype)();
 
-/* The two needed functions from browser.c. */
+//
+//  The two needed functions from 'browser.cpp'.
+//
 void browser_refresh();
 s8  *browse_in(const s8 *inpath);
 void to_first_file();
@@ -146,43 +148,47 @@ bool using_utf8();
 bool is_alpha_char(C_s8 *c);
 bool is_blank_char(C_s8 *c);
 bool is_cntrl_char(C_s8 *c);
-bool is_word_char(const s8 *c, bool allow_punct);
-char control_mbrep(const s8 *c, bool isdata);
+bool is_word_char(C_s8 *c, bool allow_punct);
+char control_mbrep(C_s8 *c, bool isdata);
 s32  mbtowide(wchar_t &wc, C_s8 *c);
-bool is_doublewidth(const s8 *ch);
-bool is_zerowidth(const s8 *ch);
-s32  char_length(const s8 *const &pointer);
-u64  mbstrlen(const s8 *pointer);
-s32  collect_char(const s8 *string, s8 *thechar);
-s32  advance_over(const s8 *string, u64 &column);
-u64  step_left(const s8 *buf, u64 pos);
-u64  step_right(const s8 *buf, u64 pos);
-s32  mbstrcasecmp(const s8 *s1, const s8 *s2);
-s32  mbstrncasecmp(const s8 *s1, const s8 *s2, u64 n);
-s8  *mbstrcasestr(const s8 *haystack, const s8 *needle);
-s8  *revstrstr(const s8 *haystack, const s8 *needle, const s8 *pointer);
-s8  *mbrevstrcasestr(const char *haystack, const s8 *needle, const s8 *pointer);
-s8  *mbstrchr(const s8 *string, const s8 *chr);
-s8  *mbstrpbrk(const s8 *string, const s8 *accept);
-s8  *mbrevstrpbrk(const s8 *head, const s8 *accept, const s8 *pointer);
-bool has_blank_char(const s8 *string);
-bool white_string(const s8 *string);
+bool is_doublewidth(C_s8 *ch);
+bool is_zerowidth(C_s8 *ch);
+s32  char_length(C_s8 *const &pointer);
+u64  mbstrlen(C_s8 *pointer);
+s32  collect_char(C_s8 *string, s8 *thechar);
+s32  advance_over(C_s8 *string, u64 &column);
+u64  step_left(C_s8 *buf, u64 pos);
+u64  step_right(C_s8 *buf, u64 pos);
+s32  mbstrcasecmp(C_s8 *s1, C_s8 *s2);
+s32  mbstrncasecmp(C_s8 *s1, C_s8 *s2, u64 n);
+s8  *mbstrcasestr(C_s8 *haystack, C_s8 *needle);
+s8  *revstrstr(C_s8 *haystack, C_s8 *needle, C_s8 *pointer);
+s8  *mbrevstrcasestr(C_s8 *haystack, C_s8 *needle, C_s8 *pointer);
+s8  *mbstrchr(C_s8 *string, C_s8 *chr);
+s8  *mbstrpbrk(C_s8 *string, C_s8 *accept);
+s8  *mbrevstrpbrk(C_s8 *head, C_s8 *accept, C_s8 *pointer);
+bool has_blank_char(C_s8 *string);
+bool white_string(C_s8 *string);
 void strip_leading_blanks_from(s8 *string);
 
-/* Most functions in color.c. */
+//
+//  Most functions in 'color.cpp'.
+//
 void set_interface_colorpairs();
 void prepare_palette();
 void find_and_prime_applicable_syntax();
 void check_the_multis(linestruct *line);
 void precalc_multicolorinfo();
 
-/* Most functions in cut.c. */
+//
+//  Most functions in 'cut.cpp'.
+//
 void expunge(undo_type action);
 void do_delete();
 void do_backspace();
 void chop_previous_word();
 void chop_next_word();
-void extract_segment(linestruct *top, u64 top_x, linestruct *bot, size_t bot_x);
+void extract_segment(linestruct *top, u64 top_x, linestruct *bot, u64 bot_x);
 void ingraft_buffer(linestruct *topline);
 void copy_from_buffer(linestruct *somebuffer);
 void cut_marked_region();
@@ -294,7 +300,7 @@ void do_right();
 //
 linestruct *make_new_node(linestruct *prevnode);
 linestruct *copy_buffer(const linestruct *src);
-
+//
 void splice_node(linestruct *afterthis, linestruct *newnode);
 void unlink_node(linestruct *line);
 void delete_node(linestruct *line);
@@ -344,10 +350,10 @@ s32  ask_user(bool withall, const s8 *question);
 void       set_interface_color(s32 element, s8 *combotext);
 void       display_rcfile_errors();
 void       jot_error(const s8 *msg, ...);
-keystruct *strtosc(const s8 *input);
+keystruct *strtosc(C_s8 *input);
 void       parse_one_include(s8 *file, syntaxtype *syntax);
 void       grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage);
-bool       parse_syntax_commands(s8 *keyword, s8 *ptr);
+bool       parse_syntax_commands(C_s8 *keyword, s8 *ptr);
 void       parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
 void       do_rcfiles();
 

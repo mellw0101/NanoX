@@ -5,6 +5,7 @@
 #include <Mlib/def.h>
 
 #include <cerrno>
+#include <csignal>
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
@@ -446,7 +447,7 @@ has_valid_path(C_s8 *filename)
 //  into a new buffer when requested, otherwise into the existing buffer.
 //
 bool
-open_buffer(const s8 *filename, bool new_one)
+open_buffer(C_s8 *filename, bool new_one)
 {
     PROFILE_FUNCTION;
 
@@ -467,9 +468,9 @@ open_buffer(const s8 *filename, bool new_one)
     //
     //  Display newlines in filenames as ^J.
     //
-    as_an_at = FALSE;
+    as_an_at = false;
 
-    if (outside_of_confinement(filename, FALSE))
+    if (outside_of_confinement(filename, false))
     {
         statusline(ALERT, _("Can't read file from outside of %s"), operating_dir);
         return FALSE;
@@ -485,14 +486,16 @@ open_buffer(const s8 *filename, bool new_one)
         if (S_ISDIR(fileinfo.st_mode))
         {
             statusline(ALERT, _("\"%s\" is a directory"), realname);
-            free(realname);
-            return FALSE;
+            std::free(realname);
+
+            return false;
         }
         if (S_ISCHR(fileinfo.st_mode) || S_ISBLK(fileinfo.st_mode))
         {
             statusline(ALERT, _("\"%s\" is a device file"), realname);
-            free(realname);
-            return FALSE;
+            std::free(realname);
+
+            return false;
         }
         if (new_one && !(fileinfo.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && geteuid() == ROOT_UID)
         {
@@ -500,8 +503,10 @@ open_buffer(const s8 *filename, bool new_one)
         }
     }
 
-    /* When loading into a new buffer, first check the file's path is valid,
-     * and then (if requested and possible) create a lock file for it. */
+    //
+    //  When loading into a new buffer, first check the file's path is valid,
+    //  and then ( if requested and possible ) create a lock file for it.
+    //
     if (new_one)
     {
         make_new_buffer();
@@ -510,14 +515,16 @@ open_buffer(const s8 *filename, bool new_one)
         {
             if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && filename[0] != '\0')
             {
-                char *thelocksname = do_lockfile(realname, TRUE);
+                s8 *thelocksname = do_lockfile(realname, true);
 
-                /* When not overriding an existing lock, discard the buffer. */
+                //
+                //  When not overriding an existing lock, discard the buffer.
+                //
                 if (thelocksname == SKIPTHISFILE)
                 {
                     close_buffer();
-                    free(realname);
-                    return FALSE;
+                    std::free(realname);
+                    return false;
                 }
                 else
                 {
@@ -527,13 +534,17 @@ open_buffer(const s8 *filename, bool new_one)
         }
     }
 
-    /* If we have a filename and are not in NOREAD mode, open the file. */
+    //
+    //  If we have a filename and are not in NOREAD mode, open the file.
+    //
     if (filename[0] != '\0' && !ISSET(NOREAD_MODE))
     {
         descriptor = open_file(realname, new_one, &f);
     }
 
-    /* If we've successfully opened an existing file, read it in. */
+    //
+    //  If we've successfully opened an existing file, read it in.
+    //
     if (descriptor > 0)
     {
         install_handler_for_Ctrl_C();
@@ -542,18 +553,21 @@ open_buffer(const s8 *filename, bool new_one)
 
         restore_handler_for_Ctrl_C();
 
-        if (openfile->statinfo == NULL)
+        if (openfile->statinfo == nullptr)
         {
             stat_with_alloc(realname, &openfile->statinfo);
         }
     }
 
-    /* For a new buffer, store filename and put cursor at start of buffer. */
+    //
+    //  For a new buffer, store filename and put cursor at start of buffer.
+    //
     if (descriptor >= 0 && new_one)
     {
-        openfile->filename    = mallocstrcpy(openfile->filename, realname);
-        openfile->current     = openfile->filetop;
-        openfile->current_x   = 0;
+        openfile->filename  = mallocstrcpy(openfile->filename, realname);
+        openfile->current   = openfile->filetop;
+        openfile->current_x = 0;
+
         openfile->placewewant = 0;
     }
 
@@ -590,90 +604,111 @@ set_modified()
     }
 }
 
-/* Update the title bar and the multiline cache to match the current buffer. */
+//
+//  Update the title bar and the multiline cache to match the current buffer.
+//
+//  TODO : ( prepare_for_display ) - Understand.
+//
 void
-prepare_for_display(void)
+prepare_for_display()
 {
-    /* Update the title bar, since the filename may have changed. */
+    //
+    //  Update the title bar, since the filename may have changed.
+    //
     if (!inhelp)
     {
-        titlebar(NULL);
+        titlebar(nullptr);
     }
 
-#ifdef ENABLE_COLOR
-    /* Precalculate the data for any multiline coloring regexes. */
+    //
+    //  Precalculate the data for any multiline coloring regexes.
+    //
     if (!openfile->filetop->multidata)
     {
         precalc_multicolorinfo();
     }
-    have_palette = FALSE;
-#endif
-    refresh_needed = TRUE;
+    have_palette   = false;
+    refresh_needed = true;
 }
 
-/* Show name of current buffer and its number of lines on the status bar. */
+//
+//  Show name of current buffer and its number of lines on the status bar.
+//
 void
-mention_name_and_linecount(void)
+mention_name_and_linecount()
 {
-    size_t count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0' ? 1 : 0);
+    u64 count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0' ? 1 : 0);
 
-#ifndef NANO_TINY
-    if (ISSET(MINIBAR))
+    if ISSET (MINIBAR)
     {
-        report_size = TRUE;
+        report_size = true;
         return;
     }
-    else if (ISSET(ZERO))
+    else if ISSET (ZERO)
     {
         return;
     }
 
     if (openfile->fmt > NIX_FILE)
     {
-        /* TRANSLATORS: First %s is file name, second %s is file format. */
+        //
+        //  TRANSLATORS : First %s is file name, second %s is file format.
+        //
         statusline(HUSH, P_("%s -- %zu line (%s)", "%s -- %zu lines (%s)", count),
                    openfile->filename[0] == '\0' ? _("New Buffer") : tail(openfile->filename), count,
                    openfile->fmt == DOS_FILE ? _("DOS") : _("Mac"));
     }
     else
-#endif
+    {
         statusline(HUSH, P_("%s -- %zu line", "%s -- %zu lines", count),
                    openfile->filename[0] == '\0' ? _("New Buffer") : tail(openfile->filename), count);
+    }
 }
 
-/* Update title bar and such after switching to another buffer.*/
+//
+//  Update title bar and such after switching to another buffer.
+//
 void
-redecorate_after_switch(void)
+redecorate_after_switch()
 {
-    /* If only one file buffer is open, there is nothing to update. */
+    //
+    //  If only one file buffer is open, there is nothing to update.
+    //
     if (openfile == openfile->next)
     {
         statusline(AHEM, _("No more open file buffers"));
         return;
     }
 
-#ifndef NANO_TINY
-    /* While in a different buffer, the width of the screen may have changed,
-     * so make sure that the starting column for the first row is fitting. */
+    //
+    //  While in a different buffer, the width of the screen may have changed,
+    //  so make sure that the starting column for the first row is fitting.
+    //
     ensure_firstcolumn_is_aligned();
-#endif
 
-    /* Update title bar and multiline info to match the current buffer. */
+    //
+    //  Update title bar and multiline info to match the current buffer.
+    //
     prepare_for_display();
 
-    /* Ensure that the main loop will redraw the help lines. */
+    //
+    //  Ensure that the main loop will redraw the help lines.
+    //
     currmenu = MMOST;
+    //
+    //  Prevent a possible Shift selection from getting cancelled.
+    //
+    shift_held = true;
 
-    /* Prevent a possible Shift selection from getting cancelled. */
-    shift_held = TRUE;
-
-    /* If the switched-to buffer gave an error during opening, show the message
-     * once; otherwise, indicate on the status bar which file we switched to. */
+    //
+    //  If the switched-to buffer gave an error during opening, show the message
+    //  once; otherwise, indicate on the status bar which file we switched to.
+    //
     if (openfile->errormessage)
     {
         statusline(ALERT, openfile->errormessage);
-        free(openfile->errormessage);
-        openfile->errormessage = NULL;
+        std::free(openfile->errormessage);
+        openfile->errormessage = nullptr;
     }
     else
     {
@@ -681,38 +716,36 @@ redecorate_after_switch(void)
     }
 }
 
-/* Switch to the previous entry in the circular list of buffers. */
+//
+//  Switch to the previous entry in the circular list of buffers.
+//
 void
-switch_to_prev_buffer(void)
+switch_to_prev_buffer()
 {
     openfile = openfile->prev;
     redecorate_after_switch();
 }
 
-/* Switch to the next entry in the circular list of buffers. */
+//
+//  Switch to the next entry in the circular list of buffers.
+//
 void
-switch_to_next_buffer(void)
+switch_to_next_buffer()
 {
     openfile = openfile->next;
     redecorate_after_switch();
 }
 
 //
-/// @name
-///  -  @c close_buffer
-///
-/// @brief
-///  -  Remove the current buffer from the circular list of buffers.
-///
-/// @details
-///  -  When just one buffer remains open, show "Exit" in the help lines.
-///  -  Free the undo stack.
-///  -  Free the error message.
-///  -  Free the lock filename.
-///  -  Free the stat info.
-///
-/// @returns
-///  -  @c void
+//  Remove the current buffer from the circular list of buffers.
+//
+//  When just one buffer remains open, show "Exit" in the help lines.
+//  Free the undo stack.
+//  Free the error message.
+//  Free the lock filename.
+//  Free the stat info.
+//
+//  @return ( void )
 //
 void
 close_buffer()
@@ -727,15 +760,17 @@ close_buffer()
     orphan->prev->next = orphan->next;
     orphan->next->prev = orphan->prev;
 
-    free(orphan->filename);
+    std::free(orphan->filename);
     free_lines(orphan->filetop);
 
-    free(orphan->statinfo);
-    free(orphan->lock_filename);
+    std::free(orphan->statinfo);
+    std::free(orphan->lock_filename);
 
-    // Free the undo stack.
+    //
+    //  Free the undo stack.
+    //
     discard_until(nullptr);
-    free(orphan->errormessage);
+    std::free(orphan->errormessage);
 
     openfile = orphan->prev;
     if (openfile == orphan)
@@ -743,11 +778,11 @@ close_buffer()
         openfile = nullptr;
     }
 
-    free(orphan);
+    std::free(orphan);
 
     //
-    /// When just one buffer remains open,
-    /// show "Exit" in the help lines.
+    //  When just one buffer remains open,
+    //  show "Exit" in the help lines.
     //
     if (openfile && openfile == openfile->next)
     {
@@ -755,10 +790,12 @@ close_buffer()
     }
 }
 
-/* Encode any NUL bytes in the given line of text (of the given length),
- * and return a dynamically allocated copy of the resultant string. */
-char *
-encode_data(char *text, size_t length)
+//
+//  Encode any NUL bytes in the given line of text (of the given length),
+//  and return a dynamically allocated copy of the resultant string. */
+//
+s8 *
+encode_data(s8 *text, u64 length)
 {
     recode_NUL_to_LF(text, length);
     text[length] = '\0';
@@ -766,8 +803,10 @@ encode_data(char *text, size_t length)
     return copy_of(text);
 }
 
-/* The number of bytes by which we expand the line buffer while reading. */
-#define LUMPSIZE 120
+//
+//  The number of bytes by which we expand the line buffer while reading.
+//
+constexpr u8 LUMPSIZE = 120;
 
 //
 //  TODO : ( read_file ) - FIX IT.
@@ -776,69 +815,102 @@ encode_data(char *text, size_t length)
  * set to the name of the file.  undoable means that undo records should be
  * created and that the file does not need to be checked for writability. */
 void
-read_file(FILE *f, int fd, const char *filename, bool undoable)
+read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
 {
-    ssize_t was_lineno = openfile->current->lineno;
-    /* The line number where we start the insertion. */
-    size_t was_leftedge = 0;
-    /* The leftedge where we start the insertion. */
-    size_t num_lines = 0;
-    /* The number of lines in the file. */
-    size_t len = 0;
-    /* The length of the current line of the file. */
-    size_t bufsize = LUMPSIZE;
-    /* The size of the line buffer; increased as needed. */
-    char *buf = RE_CAST(char *, nmalloc(bufsize));
-    /* The buffer in which we assemble each line of the file. */
+    PROFILE_FUNCTION;
+    //
+    //  The line number where we start the insertion.
+    //
+    s64 was_lineno = openfile->current->lineno;
+    //
+    //  The leftedge where we start the insertion.
+    //
+    u64 was_leftedge = 0;
+    //
+    //  The number of lines in the file.
+    //
+    u64 num_lines = 0;
+    //
+    //  The length of the current line of the file.
+    //
+    u64 len = 0;
+    //
+    //  The size of the line buffer; increased as needed.
+    //
+    u64 bufsize = LUMPSIZE;
+    //
+    //  The buffer in which we assemble each line of the file.
+    //
+    s8 *buf = static_cast<s8 *>(nmalloc(bufsize));
+    //
+    //  The top of the new buffer where we store the read file.
+    //
     linestruct *topline;
-    /* The top of the new buffer where we store the read file. */
+    //
+    //  The bottom of the new buffer.
+    //
     linestruct *bottomline;
-    /* The bottom of the new buffer. */
-    int onevalue;
-    /* The current value we read from the file, either a byte or EOF. */
-    int errornumber;
-    /* The error code, in case an error occurred during reading. */
-    bool writable = TRUE;
-    /* Whether the file is writable (in case we care). */
+    //
+    //  The current value we read from the file, either a byte or EOF.
+    //
+    s32 onevalue;
+    //
+    //  The error code, in case an error occurred during reading.
+    //
+    s32 errornumber;
+    //
+    //  Whether the file is writable (in case we care).
+    //
+    bool writable = true;
+    //
+    //  The type of line ending the file uses: Unix, DOS, or Mac.
+    //
     format_type format = NIX_FILE;
-    /* The type of line ending the file uses: Unix, DOS, or Mac. */
 
     if (undoable)
     {
-        add_undo(INSERT, NULL);
+        add_undo(INSERT, nullptr);
     }
 
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
         was_leftedge = leftedge_for(xplustabs(), openfile->current);
     }
 
-    /* Create an empty buffer. */
-    topline    = make_new_node(NULL);
+    //
+    //  Create an empty buffer.
+    //
+    topline    = make_new_node(nullptr);
     bottomline = topline;
 
-    block_sigwinch(TRUE);
+    block_sigwinch(true);
 
-    /* Lock the file before starting to read it, to avoid the overhead
-     * of locking it for each single byte that we read from it. */
+    //
+    //  Lock the file before starting to read it,
+    //  to avoid the overhead of locking it for each single byte that we read from it.
+    //
     flockfile(f);
 
-    control_C_was_pressed = FALSE;
+    control_C_was_pressed = false;
 
-    /* Read in the entire file, byte by byte, line by line. */
+    //
+    //  Read in the entire file, byte by byte, line by line.
+    //
     while ((onevalue = getc_unlocked(f)) != EOF)
     {
-        char input = (char)onevalue;
+        s8 input = static_cast<s8>(onevalue);
 
         if (control_C_was_pressed)
         {
             break;
         }
 
-        /* When the byte before the current one is a CR and automatic format
-         * conversion has not been switched off, then strip this CR when it's
-         * before a LF OR when the file is in Mac format.  Also, when this is
-         * the first line break, make a note of the format. */
+        //
+        //  When the byte before the current one is a CR and automatic format
+        //  conversion has not been switched off,
+        //  then strip this CR when it's before a LF OR when the file is in Mac format.
+        //  Also, when this is the first line break, make a note of the format.
+        //
         if (input == '\n')
         {
             if (len > 0 && buf[len - 1] == '\r' && !ISSET(NO_CONVERT))
@@ -857,35 +929,48 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
         }
         else
         {
-            /* Store the byte. */
+            //
+            //  Store the byte.
+            //
             buf[len] = input;
 
-            /* Keep track of the total length of the line.  It might have
-             * NUL bytes in it, so we can't just use strlen() later. */
+            //
+            //  Keep track of the total length of the line.
+            //  It might have NUL bytes in it,
+            //  so we can't just use strlen() later.
+            //
             len++;
 
-            /* When needed, increase the line-buffer size.  Don't bother
-             * decreasing it -- it gets freed when reading is finished. */
+            //
+            //  When needed, increase the line-buffer size.  Don't bother
+            //  decreasing it -- it gets freed when reading is finished.
+            //
             if (len == bufsize)
             {
                 bufsize += LUMPSIZE;
-                buf = RE_CAST(char *, nrealloc(buf, bufsize));
+                buf = static_cast<s8 *>(nrealloc(buf, bufsize));
             }
 
             continue;
         }
 
-        /* Store the data and make a new line. */
+        //
+        //  Store the data and make a new line.
+        //
         bottomline->data = encode_data(buf, len);
         bottomline->next = make_new_node(bottomline);
         bottomline       = bottomline->next;
         num_lines++;
 
-        /* Reset the length in preparation for the next line. */
+        //
+        //  eset the length in preparation for the next line.
+        //
         len = 0;
 
-        /* If it was a Mac line, then store the byte after the \r
-         * as the first byte of the next line. */
+        //
+        //  If it was a Mac line, then store the byte after the \r
+        //  as the first byte of the next line.
+        //
         if (input != '\n')
         {
             buf[len++] = input;
@@ -894,12 +979,16 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
 
     errornumber = errno;
 
-    /* We are done with the file, unlock it. */
+    //
+    //  We are done with the file, unlock it.
+    //
     funlockfile(f);
 
-    block_sigwinch(FALSE);
+    block_sigwinch(false);
 
-    /* When reading from stdin, restore the terminal and reenter curses mode. */
+    //
+    //  When reading from stdin, restore the terminal and reenter curses mode.
+    //
     if (isendwin())
     {
         if (!isatty(STDIN_FILENO))
@@ -910,10 +999,12 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
         doupdate();
     }
 
-    /* If there was a real error during the reading, let the user know. */
+    //
+    //  If there was a real error during the reading, let the user know.
+    //
     if (ferror(f) && errornumber != EINTR && errornumber != 0)
     {
-        statusline(ALERT, strerror(errornumber));
+        statusline(ALERT, std::strerror(errornumber));
     }
 
     if (control_C_was_pressed)
@@ -921,25 +1012,30 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
         statusline(ALERT, _("Interrupted"));
     }
 
-    fclose(f);
+    std::fclose(f);
 
     if (fd > 0 && !undoable && !ISSET(VIEW_MODE))
     {
         writable = (access(filename, W_OK) == 0);
     }
 
-    /* If the file ended with a newline, or it was entirely empty, make the
-     * last line blank.  Otherwise, put the last read data in. */
+    //
+    //  If the file ended with a newline, or it was entirely empty,
+    //  make the last line blank.
+    //  Otherwise, put the last read data in.
+    //
     if (len == 0)
     {
         bottomline->data = copy_of("");
     }
     else
     {
-        bool mac_line_needs_newline = FALSE;
+        bool mac_line_needs_newline = false;
 
-        /* If the final character is a CR and file conversion isn't disabled,
-         * strip this CR and indicate that an extra blank line is needed. */
+        //
+        //  If the final character is a CR and file conversion isn't disabled,
+        //  strip this CR and indicate that an extra blank line is needed.
+        //
         if (buf[len - 1] == '\r' && !ISSET(NO_CONVERT))
         {
             if (num_lines == 0)
@@ -947,9 +1043,11 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
                 format = MAC_FILE;
             }
             buf[--len]             = '\0';
-            mac_line_needs_newline = TRUE;
+            mac_line_needs_newline = true;
         }
-        /* Store the data of the final line. */
+        //
+        //  Store the data of the final line.
+        //
         bottomline->data = encode_data(buf, len);
         num_lines++;
 
@@ -961,12 +1059,16 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
         }
     }
 
-    free(buf);
+    std::free(buf);
 
-    /* Insert the just read buffer into the current one. */
+    //
+    //  Insert the just read buffer into the current one.
+    //
     ingraft_buffer(topline);
 
-    /* Set the desired x position at the end of what was inserted. */
+    //
+    //  Set the desired x position at the end of what was inserted.
+    //
     openfile->placewewant = xplustabs();
 
     if (!writable)
@@ -975,11 +1077,13 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
     }
     else if ((ISSET(ZERO) || ISSET(MINIBAR)) && !(we_are_running && undoable))
     {
-        ; /* No blurb for new buffers with --zero or --mini. */
+        ;  //  No blurb for new buffers with --zero or --mini.
     }
+    //
+    //  TRANSLATORS : Keep the next three messages at most 78 characters.
+    //
     else if (format == MAC_FILE)
     {
-        /* TRANSLATORS: Keep the next three messages at most 78 characters. */
         statusline(
             REMARK,
             P_("Read %zu line (converted from Mac format)", "Read %zu lines (converted from Mac format)", num_lines),
@@ -997,12 +1101,14 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
         statusline(REMARK, P_("Read %zu line", "Read %zu lines", num_lines), num_lines);
     }
 
-    report_size = TRUE;
+    report_size = true;
 
-    /* If we inserted less than a screenful, don't center the cursor. */
+    //
+    //  If we inserted less than a screenful, don't center the cursor.
+    //
     if (undoable && less_than_a_screenful(was_lineno, was_leftedge))
     {
-        focusing  = FALSE;
+        focusing  = false;
         perturbed = true;
     }
     else if (undoable)
@@ -1025,27 +1131,34 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
     }
 }
 
-/* Open the file with the given name.  If the file does not exist, display
- * "New File" if new_one is TRUE, and say "File not found" otherwise.
- * Return 0 if we say "New File", -1 upon failure, and the obtained file
- * descriptor otherwise.  The opened filestream is returned in *f. */
-int
-open_file(const char *filename, bool new_one, FILE **f)
+//
+//  Open the file with the given name.  If the file does not exist, display
+//  "New File" if new_one is TRUE, and say "File not found" otherwise.
+//  Return 0 if we say "New File", -1 upon failure, and the obtained file
+//  descriptor otherwise.  The opened filestream is returned in *f.
+//
+s32
+open_file(C_s8 *filename, bool new_one, FILE **f)
 {
-    char       *full_filename = get_full_path(filename);
-    struct stat fileinfo;
-    int         fd;
+    PROFILE_FUNCTION;
 
-    /* If the absolute path is unusable (due to some component's permissions),
-     * try the given path instead (as it is probably relative). */
-    if (full_filename == NULL || stat(full_filename, &fileinfo) == -1)
+    struct stat fileinfo;
+
+    s8 *full_filename = get_full_path(filename);
+    s32 fd;
+
+    //
+    //  If the absolute path is unusable (due to some component's permissions),
+    //  try the given path instead (as it is probably relative).
+    //
+    if (full_filename == nullptr || stat(full_filename, &fileinfo) == -1)
     {
         full_filename = mallocstrcpy(full_filename, filename);
     }
 
     if (stat(full_filename, &fileinfo) == -1)
     {
-        free(full_filename);
+        std::free(full_filename);
 
         if (new_one)
         {
@@ -1059,23 +1172,21 @@ open_file(const char *filename, bool new_one, FILE **f)
         }
     }
 
-#ifndef NANO_TINY
     if (S_ISFIFO(fileinfo.st_mode))
     {
         statusbar(_("Reading from FIFO..."));
     }
 
-    block_sigwinch(TRUE);
+    block_sigwinch(true);
     install_handler_for_Ctrl_C();
-#endif
 
-    /* Try opening the file. */
+    //
+    //  Try opening the file.
+    //
     fd = open(full_filename, O_RDONLY);
 
-#ifndef NANO_TINY
     restore_handler_for_Ctrl_C();
-    block_sigwinch(FALSE);
-#endif
+    block_sigwinch(false);
 
     if (fd == -1)
     {
@@ -1085,17 +1196,19 @@ open_file(const char *filename, bool new_one, FILE **f)
         }
         else
         {
-            statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
+            statusline(ALERT, _("Error reading %s: %s"), filename, ERRNO_C_STR);
         }
     }
     else
     {
-        /* The file is A-OK.  Associate a stream with it. */
+        //
+        //  The file is A-OK.  Associate a stream with it.
+        //
         *f = fdopen(fd, "rb");
 
-        if (*f == NULL)
+        if (*f == nullptr)
         {
-            statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
+            statusline(ALERT, _("Error reading %s: %s"), filename, ERRNO_C_STR);
             close(fd);
             fd = -1;
         }
@@ -1105,24 +1218,28 @@ open_file(const char *filename, bool new_one, FILE **f)
         }
     }
 
-    free(full_filename);
+    std::free(full_filename);
 
     return fd;
 }
 
-/* This function will return the name of the first available extension
- * of a filename (starting with [name][suffix], then [name][suffix].1,
- * etc.).  Memory is allocated for the return value.  If no writable
- * extension exists, we return "". */
-char *
-get_next_filename(const char *name, const char *suffix)
+//
+//  This function will return the name of the first available extension
+//  of a filename (starting with [name][suffix], then [name][suffix].1,etc.).
+//  Memory is allocated for the return value.
+//  If no writable extension exists, we return "".
+//
+s8 *
+get_next_filename(C_s8 *name, C_s8 *suffix)
 {
-    size_t        wholenamelen = strlen(name) + strlen(suffix);
-    unsigned long i            = 0;
-    char         *buf;
+    u64 wholenamelen = constexpr_strlen(name) + constexpr_strlen(suffix);
+    u64 i            = 0;
+    s8 *buf;
 
-    /* Reserve space for: the name plus the suffix plus a dot plus
-     * possibly five digits plus a null byte. */
+    //
+    //  Reserve space for: the name plus the suffix plus a dot plus
+    //  possibly five digits plus a null byte.
+    //
     buf = static_cast<s8 *>(nmalloc(wholenamelen + 7));
     std::sprintf(buf, "%s%s", name, suffix);
 
@@ -1135,31 +1252,42 @@ get_next_filename(const char *name, const char *suffix)
             return buf;
         }
 
-        /* Limit the number of backup files to a hundred thousand. */
+        //
+        //  Limit the number of backup files to a hundred thousand.
+        //
         if (++i == 100000)
         {
             break;
         }
 
-        sprintf(buf + wholenamelen, ".%lu", i);
+        std::sprintf(buf + wholenamelen, ".%lu", i);
     }
 
-    /* There is no possible save file: blank out the filename. */
+    //
+    //  There is no possible save file: blank out the filename.
+    //
     *buf = '\0';
 
     return buf;
 }
 
+//
+//  The PID of a forked process -- needed when wanting to abort it.
+//
 static pid_t pid_of_command = -1;
-/* The PID of a forked process -- needed when wanting to abort it. */
+//
+//  The PID of the process that pipes data to the above process.
+//
 static pid_t pid_of_sender = -1;
-/* The PID of the process that pipes data to the above process. */
-static bool should_pipe = FALSE;
-/* Whether we are piping data to the external command. */
-
-/* Send an unconditional kill signal to the running external command. */
+//
+//  Whether we are piping data to the external command.
+//
+static bool should_pipe = false;
+//
+//  Send an unconditional kill signal to the running external command.
+//
 void
-cancel_the_command(int signal)
+cancel_the_command(s32 signal)
 {
     if (pid_of_command > 0)
     {
@@ -1211,10 +1339,9 @@ send_data(const linestruct *line, s32 fd)
 //  Execute the given command in a shell.
 //
 void
-execute_command(const s8 *command)
+execute_command(C_s8 *command)
 {
     PROFILE_FUNCTION;
-
     //
     //  The pipes through which text will be written and read.
     //
@@ -1283,11 +1410,15 @@ execute_command(const s8 *command)
             close(to_fd[1]);
         }
 
-        /* Run the given command inside the preferred shell. */
-        execl(theshell, tail(theshell), "-c", should_pipe ? &command[1] : command, NULL);
+        //
+        //  Run the given command inside the preferred shell.
+        //
+        execl(theshell, tail(theshell), "-c", should_pipe ? &command[1] : command, nullptr);
 
-        /* If the exec call returns, there was an error. */
-        exit(6);
+        //
+        //  If the exec call returns, there was an error.
+        //
+        std::exit(6);
     }
 
     //
@@ -1311,7 +1442,8 @@ execute_command(const s8 *command)
     if (should_pipe)
     {
         linestruct *was_cutbuffer = cutbuffer;
-        bool        whole_buffer  = false;
+
+        bool whole_buffer = false;
 
         cutbuffer = nullptr;
 
@@ -1347,7 +1479,7 @@ execute_command(const s8 *command)
             update_undo(CUT);
         }
 
-        // s
+        //
         //   Create a separate process for piping the data to the command.
         //
         if ((pid_of_sender = fork()) == 0)
@@ -1419,8 +1551,8 @@ execute_command(const s8 *command)
     if (WIFEXITED(command_status) == 0 || WEXITSTATUS(command_status))
     {
         statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error: %s"),
-                   openfile->current->prev && std::strstr(openfile->current->prev->data, ": ")
-                       ? std::strstr(openfile->current->prev->data, ": ") + 2
+                   openfile->current->prev && constexpr_strstr(openfile->current->prev->data, ": ")
+                       ? constexpr_strstr(openfile->current->prev->data, ": ") + 2
                        : "---");
     }
     else if (should_pipe && pid_of_sender > 0 && (WIFEXITED(sender_status) == 0 || WEXITSTATUS(sender_status)))
@@ -1459,25 +1591,27 @@ execute_command(const s8 *command)
 void
 insert_a_file_or(bool execute)
 {
-    s32       response;
-    const s8 *msg;
+    s32   response;
+    C_s8 *msg;
 
-    // The last answer the user typed at the status-bar prompt.
+    //
+    //  The last answer the user typed at the status-bar prompt.
+    //
     s8 *given = copy_of("");
 
     bool was_multibuffer = ISSET(MULTIBUFFER);
-
-    // Display newlines in filenames as ^J.
+    //
+    //  Display newlines in filenames as ^J.
+    //
     as_an_at = false;
-
-    // Reset the flag that is set by the Spell Checker and Linter and such.
+    //
+    //  Reset the flag that is set by the Spell Checker and Linter and such.
+    //
     ran_a_tool = false;
 
     while (true)
     {
-        //
         //  TRANSLATORS: The next six messages are prompts.
-        //
 
         if (execute)
         {
@@ -1544,7 +1678,9 @@ insert_a_file_or(bool execute)
 
             if (function == flip_newbuffer)
             {
-                // Allow toggling only when not in view mode. */
+                //
+                //  Allow toggling only when not in view mode.
+                //
                 if (!ISSET(VIEW_MODE))
                 {
                     TOGGLE(MULTIBUFFER);
@@ -1715,184 +1851,208 @@ do_execute()
     }
 }
 
-/* For the given bare path (or path plus filename), return the canonical,
- * absolute path (plus filename) when the path exists, and NULL when not. */
-char *
-get_full_path(const char *origpath)
+//
+//  For the given bare path (or path plus filename), return the canonical,
+//  absolute path (plus filename) when the path exists, and NULL when not.
+//
+s8 *
+get_full_path(C_s8 *origpath)
 {
-    Mlib::Profile::AutoTimer timer("get_full_path");
+    PROFILE_FUNCTION;
 
     s8 *untilded, *target, *slash;
 
     struct stat fileinfo;
 
-    if (origpath == NULL)
+    if (origpath == nullptr)
     {
-        return NULL;
+        return nullptr;
     }
 
     untilded = real_dir_from_tilde(origpath);
-    target   = realpath(untilded, NULL);
-    slash    = strrchr(untilded, '/');
 
-    /* If realpath() returned NULL, try without the last component,
-     * as this can be a file that does not exist yet. */
+    target = realpath(untilded, nullptr);
+    slash  = constexpr_strrchr(untilded, '/');
+
+    //
+    //  If realpath() returned NULL, try without the last component,
+    //  as this can be a file that does not exist yet.
+    //
     if (!target && slash && slash[1])
     {
         *slash = '\0';
-        target = realpath(untilded, NULL);
+        target = realpath(untilded, nullptr);
 
-        /* Upon success, re-add the last component of the original path. */
+        //
+        //  Upon success, re-add the last component of the original path.
+        //
         if (target)
         {
-            target = RE_CAST(char *, nrealloc(target, strlen(target) + strlen(slash + 1) + 1));
-            strcat(target, slash + 1);
+            target = static_cast<s8 *>(nrealloc(target, constexpr_strlen(target) + constexpr_strlen(slash + 1) + 1));
+            constexpr_strcat(target, slash + 1);
         }
     }
 
-    /* Ensure that a non-apex directory path ends with a slash. */
+    //
+    //  Ensure that a non-apex directory path ends with a slash.
+    //
     if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode))
     {
-        target = RE_CAST(char *, nrealloc(target, strlen(target) + 2));
-        strcat(target, "/");
+        target = static_cast<s8 *>(nrealloc(target, constexpr_strlen(target) + 2));
+        constexpr_strcat(target, "/");
     }
 
-    free(untilded);
+    std::free(untilded);
 
     return target;
 }
 
-/* Check whether the given path refers to a directory that is writable.
- * Return the absolute form of the path on success, and NULL on failure. */
-char *
-check_writable_directory(const char *path)
+//
+//  Check whether the given path refers to a directory that is writable.
+//  Return the absolute form of the path on success, and NULL on failure.
+//
+s8 *
+check_writable_directory(C_s8 *path)
 {
-    char *full_path = get_full_path(path);
+    s8 *full_path = get_full_path(path);
 
-    if (full_path == NULL)
+    if (full_path == nullptr)
     {
-        return NULL;
+        return nullptr;
     }
 
-    if (full_path[strlen(full_path) - 1] != '/' || access(full_path, W_OK) != 0)
+    if (full_path[constexpr_strlen(full_path) - 1] != '/' || access(full_path, W_OK) != 0)
     {
-        free(full_path);
-        return NULL;
+        std::free(full_path);
+        return nullptr;
     }
 
     return full_path;
 }
 
-/* Create, safely, a temporary file in the standard temp directory.
- * On success, return the malloc()ed filename, plus the corresponding
- * file stream opened in read-write mode.  On error, return NULL. */
-char *
+//
+//  Create, safely, a temporary file in the standard temp directory.
+//  On success, return the malloc()ed filename, plus the corresponding
+//  file stream opened in read-write mode.  On error, return NULL.
+//
+s8 *
 safe_tempfile(FILE **stream)
 {
-    const char *env_dir = getenv("TMPDIR");
-    char       *tempdir = NULL, *tempfile_name = NULL;
-    char       *extension;
-    int         descriptor;
+    C_s8 *env_dir = getenv("TMPDIR");
 
-    /* Get the absolute path for the first directory among $TMPDIR
-     * and P_tmpdir that is writable, otherwise use /tmp/. */
-    if (env_dir != NULL)
+    s8 *tempdir = nullptr, *tempfile_name = nullptr;
+    s8 *extension;
+    s32 descriptor;
+
+    //
+    //  Get the absolute path for the first directory among $TMPDIR
+    //  and P_tmpdir that is writable, otherwise use /tmp/.
+    //
+    if (env_dir != nullptr)
     {
         tempdir = check_writable_directory(env_dir);
     }
 
-    if (tempdir == NULL)
+    if (tempdir == nullptr)
     {
         tempdir = check_writable_directory(P_tmpdir);
     }
 
-    if (tempdir == NULL)
+    if (tempdir == nullptr)
     {
         tempdir = copy_of("/tmp/");
     }
 
-    extension = strrchr(openfile->filename, '.');
+    extension = constexpr_strrchr(openfile->filename, '.');
 
-    if (!extension || strchr(extension, '/'))
+    if (!extension || constexpr_strchr(extension, '/'))
     {
-        extension = openfile->filename + strlen(openfile->filename);
+        extension = openfile->filename + constexpr_strlen(openfile->filename);
     }
 
-    tempfile_name = RE_CAST(char *, nrealloc(tempdir, strlen(tempdir) + 12 + strlen(extension)));
-    strcat(tempfile_name, "nano.XXXXXX");
-    strcat(tempfile_name, extension);
+    tempfile_name = static_cast<s8 *>(nrealloc(tempdir, constexpr_strlen(tempdir) + 12 + constexpr_strlen(extension)));
+    constexpr_strcat(tempfile_name, "nano.XXXXXX");
+    constexpr_strcat(tempfile_name, extension);
 
-    descriptor = mkstemps(tempfile_name, strlen(extension));
+    descriptor = mkstemps(tempfile_name, constexpr_strlen(extension));
 
-    *stream = (descriptor > 0) ? fdopen(descriptor, "r+b") : NULL;
+    *stream = (descriptor > 0) ? fdopen(descriptor, "r+b") : nullptr;
 
-    if (*stream == NULL)
+    if (*stream == nullptr)
     {
         if (descriptor > 0)
         {
             close(descriptor);
         }
-        free(tempfile_name);
-        return NULL;
+        std::free(tempfile_name);
+        return nullptr;
     }
 
     return tempfile_name;
 }
 
-#ifdef ENABLE_OPERATINGDIR
-/* Change to the specified operating directory, when it's valid. */
+//
+//  Change to the specified operating directory, when it's valid.
+//
 void
-init_operating_dir(void)
+init_operating_dir()
 {
-    char *target = get_full_path(operating_dir);
+    s8 *target = get_full_path(operating_dir);
 
-    /* If the operating directory is inaccessible, fail. */
-    if (target == NULL || chdir(target) == -1)
+    //
+    //  If the operating directory is inaccessible, fail.
+    //
+    if (target == nullptr || chdir(target) == -1)
     {
         die(_("Invalid operating directory: %s\n"), operating_dir);
     }
 
-    free(operating_dir);
-    operating_dir = RE_CAST(char *, nrealloc(target, strlen(target) + 1));
+    std::free(operating_dir);
+    operating_dir = static_cast<s8 *>(nrealloc(target, constexpr_strlen(target) + 1));
 }
 
-/* Check whether the given path is outside of the operating directory.
- * Return TRUE if it is, and FALSE otherwise.  If tabbing is TRUE,
- * incomplete names that can grow into matches for the operating directory
- * are considered to be inside, so that tab completion will work. */
+//
+//  Check whether the given path is outside of the operating directory.
+//  Return TRUE if it is, and FALSE otherwise.  If tabbing is TRUE,
+//  incomplete names that can grow into matches for the operating directory
+//  are considered to be inside, so that tab completion will work.
+//
 bool
-outside_of_confinement(const char *somepath, bool tabbing)
+outside_of_confinement(C_s8 *somepath, bool tabbing)
 {
-    bool  is_inside, begins_to_be;
-    char *fullpath;
+    bool is_inside, begins_to_be;
+    s8  *fullpath;
 
-    /* If no operating directory is set, there is nothing to check. */
-    if (operating_dir == NULL)
+    //
+    //  If no operating directory is set, there is nothing to check.
+    //
+    if (operating_dir == nullptr)
     {
-        return FALSE;
+        return false;
     }
 
     fullpath = get_full_path(somepath);
 
-    /* When we can't get an absolute path, it means some directory in the path
-     * doesn't exist or is unreadable.  When not doing tab completion, somepath
-     * is what the user typed somewhere.  We don't want to report a non-existent
-     * directory as being outside the operating directory, so we return FALSE.
-     * When the user is doing tab completion, then somepath exists but is not
-     * executable.  So we say it is outside the operating directory. */
-    if (fullpath == NULL)
+    //
+    //  When we can't get an absolute path, it means some directory in the path
+    //  doesn't exist or is unreadable.  When not doing tab completion, somepath
+    //  is what the user typed somewhere.  We don't want to report a non-existent
+    //  directory as being outside the operating directory, so we return FALSE.
+    //  When the user is doing tab completion, then somepath exists but is not
+    //  executable.  So we say it is outside the operating directory.
+    //
+    if (fullpath == nullptr)
     {
         return tabbing;
     }
 
-    is_inside    = (strstr(fullpath, operating_dir) == fullpath);
-    begins_to_be = (tabbing && strstr(operating_dir, fullpath) == operating_dir);
+    is_inside    = (constexpr_strstr(fullpath, operating_dir) == fullpath);
+    begins_to_be = (tabbing && constexpr_strstr(operating_dir, fullpath) == operating_dir);
 
-    free(fullpath);
+    std::free(fullpath);
 
     return (!is_inside && !begins_to_be);
 }
-#endif
 
 //
 //  Transform the specified backup directory to an absolute path,
@@ -1994,7 +2154,7 @@ make_backup_of(s8 *realname)
     if (backup_dir == nullptr)
     {
         backupname = static_cast<s8 *>(nmalloc(constexpr_strlen(realname) + 2));
-        sprintf(backupname, "%s~", realname);
+        std::sprintf(backupname, "%s~", realname);
     }
     else
     {
@@ -2204,12 +2364,10 @@ failure:
 bool
 write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate)
 {
-#ifndef NANO_TINY
     bool is_existing_file;
     /* Becomes TRUE when the file is non-temporary and exists. */
     struct stat fileinfo;
     /* The status fields filled in by statting the file. */
-#endif
     char *realname = real_dir_from_tilde(name);
     /* The filename after tilde expansion. */
     int descriptor = 0;
@@ -2221,7 +2379,6 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
     size_t lineswritten = 0;
     /* The number of lines written, for feedback on the status bar. */
 
-#ifdef ENABLE_OPERATINGDIR
     /* If we're writing a temporary file, we're probably going outside
      * the operating directory, so skip the operating directory test. */
     if (normal && outside_of_confinement(realname, FALSE))
@@ -2229,8 +2386,6 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
         statusline(ALERT, _("Can't write outside of %s"), operating_dir);
         goto cleanup_and_exit;
     }
-#endif
-#ifndef NANO_TINY
     /* Check whether the file (at the end of the symlink) exists. */
     is_existing_file = normal && (stat(realname, &fileinfo) != -1);
 
@@ -2304,7 +2459,6 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
     {
         statusbar(_("Writing to FIFO..."));
     }
-#endif /* !NANO_TINY */
 
     /* When it's not a temporary file, this is where we open or create it.
      * For an emergency file, access is restricted to just the owner. */
@@ -2312,27 +2466,28 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
     {
         mode_t permissions = (normal ? RW_FOR_ALL : S_IRUSR | S_IWUSR);
 
-#ifndef NANO_TINY
         block_sigwinch(TRUE);
         if (normal)
         {
             install_handler_for_Ctrl_C();
         }
-#endif
 
-        /* Now open the file.  Use O_EXCL for an emergency file. */
+        //
+        //  Now open the file.
+        //  Use O_EXCL for an emergency file.
+        //
         descriptor = open(
             realname, O_WRONLY | O_CREAT | ((method == APPEND) ? O_APPEND : (normal ? O_TRUNC : O_EXCL)), permissions);
 
-#ifndef NANO_TINY
         if (normal)
         {
             restore_handler_for_Ctrl_C();
         }
-        block_sigwinch(FALSE);
-#endif
+        block_sigwinch(false);
 
-        /* If we couldn't open the file, give up. */
+        //
+        //  If we couldn't open the file, give up.
+        //
         if (descriptor < 0)
         {
             if (errno == EINTR || errno == 0)
@@ -2343,18 +2498,16 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
             {
                 statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
             }
-#ifndef NANO_TINY
             if (tempname != NULL)
             {
                 unlink(tempname);
             }
-#endif
             goto cleanup_and_exit;
         }
 
         thefile = fdopen(descriptor, (method == APPEND) ? "ab" : "wb");
 
-        if (thefile == NULL)
+        if (thefile == nullptr)
         {
             statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
             close(descriptor);
@@ -2369,26 +2522,32 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
 
     while (true)
     {
-        size_t data_len, wrote;
+        u64 data_len, wrote;
 
-        // Decode LFs as the NULs that they are, before writing to disk.
+        //
+        //  Decode LFs as the NULs that they are, before writing to disk.
+        //
         data_len = recode_LF_to_NUL(line->data);
 
-        wrote = fwrite(line->data, 1, data_len, thefile);
+        wrote = std::fwrite(line->data, 1, data_len, thefile);
 
-        // Re-encode any embedded NULs as LFs.
+        //
+        //  Re-encode any embedded NULs as LFs.
+        //
         recode_NUL_to_LF(line->data, data_len);
 
         if (wrote < data_len)
         {
             statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-            fclose(thefile);
+            std::fclose(thefile);
             goto cleanup_and_exit;
         }
 
-        // If we've reached the last line of the buffer, don't write a newline
-        // character after it.  If this last line is empty, it means zero bytes
-        // are written for it, and we don't count it in the number of lines.
+        //
+        //  If we've reached the last line of the buffer, don't write a newline
+        //  character after it.  If this last line is empty, it means zero bytes
+        //  are written for it, and we don't count it in the number of lines.
+        //
         if (line->next == nullptr)
         {
             if (line->data[0] != '\0')
@@ -2400,20 +2559,20 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
 
         if (openfile->fmt == DOS_FILE || openfile->fmt == MAC_FILE)
         {
-            if (putc('\r', thefile) == EOF)
+            if (std::putc('\r', thefile) == EOF)
             {
                 statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-                fclose(thefile);
+                std::fclose(thefile);
                 goto cleanup_and_exit;
             }
         }
 
         if (openfile->fmt != MAC_FILE)
         {
-            if (putc('\n', thefile) == EOF)
+            if (std::putc('\n', thefile) == EOF)
             {
                 statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-                fclose(thefile);
+                std::fclose(thefile);
                 goto cleanup_and_exit;
             }
         }
@@ -2422,14 +2581,16 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
         lineswritten++;
     }
 
-    /* When prepending, append the temporary file to what we wrote above. */
+    //
+    //  When prepending, append the temporary file to what we wrote above.
+    //
     if (method == PREPEND)
     {
-        FILE *source = fopen(tempname, "rb");
+        FILE *source = std::fopen(tempname, "rb");
         if (source == nullptr)
         {
             statusline(ALERT, _("Error reading temp file: %s"), strerror(errno));
-            fclose(thefile);
+            std::fclose(thefile);
             goto cleanup_and_exit;
         }
 
@@ -2452,79 +2613,93 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
 
     if (!is_existing_file || !S_ISFIFO(fileinfo.st_mode))
     {
-        // Ensure the data has reached the disk before reporting it as written.
-        if (fflush(thefile) != 0 || fsync(fileno(thefile)) != 0)
+        //
+        //  Ensure the data has reached the disk before reporting it as written.
+        //
+        if (std::fflush(thefile) != 0 || fsync(fileno(thefile)) != 0)
         {
-            statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-            fclose(thefile);
+            statusline(ALERT, _("Error writing %s: %s"), realname, ERRNO_C_STR);
+            std::fclose(thefile);
             goto cleanup_and_exit;
         }
     }
 
-    // Change permissions and owner of an emergency save file to the values
-    // of the original file, but ignore any failure as we are in a hurry.
+    //
+    //  Change permissions and owner of an emergency save file to the values
+    //  of the original file, but ignore any failure as we are in a hurry.
+    //
     if (method == EMERGENCY && descriptor && openfile->statinfo)
     {
         IGNORE_CALL_RESULT(fchmod(descriptor, openfile->statinfo->st_mode));
         IGNORE_CALL_RESULT(fchown(descriptor, openfile->statinfo->st_uid, openfile->statinfo->st_gid));
     }
 
-    if (fclose(thefile) != 0)
+    if (std::fclose(thefile) != 0)
     {
-        statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+        statusline(ALERT, _("Error writing %s: %s"), realname, ERRNO_C_STR);
     cleanup_and_exit:
         if (errno == ENOSPC && normal)
         {
             napms(3200);
             lastmessage = VACUUM;
 
-            // TRANSLATORS: This warns for data loss when the disk is full.
+            //
+            //  TRANSLATORS: This warns for data loss when the disk is full.
+            //
             statusline(ALERT, _("File on disk has been truncated!"));
             napms(3200);
             lastmessage = VACUUM;
 
-            // TRANSLATORS: This is a suggestion to the user,
-            // where "resume" means resuming from suspension.
-            // Try to keep this at most 76 characters.
+            //
+            //  TRANSLATORS: This is a suggestion to the user,
+            //  where "resume" means resuming from suspension.
+            //  Try to keep this at most 76 characters.
+            //
             statusline(ALERT, _("Maybe ^T^Z, make room on disk, resume, then ^S^X"));
             stat_with_alloc(realname, &openfile->statinfo);
         }
-        free(tempname);
-        free(realname);
-        return FALSE;
+        std::free(tempname);
+        std::free(realname);
+        return false;
     }
 
-    // When having written an entire buffer, update some administrivia.
+    //
+    //  When having written an entire buffer, update some administrivia.
+    //
     if (annotate && method == OVERWRITE)
     {
-        // If the filename was changed, write a new lockfile when needed,
-        // and check whether it means a different syntax gets used.
-        if (strcmp(openfile->filename, realname) != 0)
+        //
+        //  If the filename was changed, write a new lockfile when needed,
+        //  and check whether it means a different syntax gets used.
+        //
+        if (constexpr_strcmp(openfile->filename, realname) != 0)
         {
 
-            if (openfile->lock_filename != NULL)
+            if (openfile->lock_filename != nullptr)
             {
                 delete_lockfile(openfile->lock_filename);
-                free(openfile->lock_filename);
+                std::free(openfile->lock_filename);
             }
 
-            if (ISSET(LOCKING))
+            if ISSET (LOCKING)
             {
                 openfile->lock_filename = do_lockfile(realname, FALSE);
             }
             openfile->filename = mallocstrcpy(openfile->filename, realname);
-            const s8 *oldname, *newname;
+            C_s8 *oldname, *newname;
 
             oldname = openfile->syntax ? openfile->syntax->name : "";
             find_and_prime_applicable_syntax();
             newname = openfile->syntax ? openfile->syntax->name : "";
 
-            /* If the syntax changed, discard and recompute the multidata. */
-            if (strcmp(oldname, newname) != 0)
+            //
+            //  If the syntax changed, discard and recompute the multidata.
+            //
+            if (constexpr_strcmp(oldname, newname) != 0)
             {
                 for (line = openfile->filetop; line != nullptr; line = line->next)
                 {
-                    free(line->multidata);
+                    std::free(line->multidata);
                     line->multidata = nullptr;
                 }
 
@@ -2533,10 +2708,14 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
                 refresh_needed = true;
             }
         }
-        // Get or update the stat info to reflect the current state.
+        //
+        //  Get or update the stat info to reflect the current state.
+        //
         stat_with_alloc(realname, &openfile->statinfo);
 
-        // Record at which point in the undo stack the buffer was saved.
+        //
+        //  Record at which point in the undo stack the buffer was saved.
+        //
         openfile->last_saved  = openfile->current_undo;
         openfile->last_action = OTHER;
         openfile->modified    = false;
@@ -2553,39 +2732,49 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
         {
             statusline(REMARK, P_("Wrote %zu line", "Wrote %zu lines", lineswritten), lineswritten);
         }
-        free(tempname);
-        free(realname);
+        std::free(tempname);
+        std::free(realname);
     }
     return true;
 }
 
-/* Write the marked region of the current buffer out to disk.
- * Return TRUE on success and FALSE on error. */
+//
+//  Write the marked region of the current buffer out to disk.
+//  Return TRUE on success and FALSE on error.
+//
 bool
-write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method)
+write_region_to_file(C_s8 *name, FILE *stream, bool normal, kind_of_writing_type method)
 {
     linestruct *birthline, *topline, *botline, *stopper, *afterline;
-    char       *was_datastart, saved_byte;
-    size_t      top_x, bot_x;
-    bool        retval;
+
+    s8 *was_datastart, saved_byte;
+    u64 top_x, bot_x;
+
+    bool retval;
 
     get_region(topline, top_x, botline, bot_x);
 
-    /* When needed, prepare a magic end line for the region. */
+    //
+    //  When needed, prepare a magic end line for the region.
+    //
     if (normal && bot_x > 0 && !ISSET(NO_NEWLINES))
     {
-        stopper       = make_new_node(botline);
+        stopper = make_new_node(botline);
+
         stopper->data = copy_of("");
     }
     else
     {
-        stopper = NULL;
+        stopper = nullptr;
     }
 
-    /* Make the marked area look like a separate buffer. */
-    afterline            = botline->next;
-    botline->next        = stopper;
-    saved_byte           = botline->data[bot_x];
+    //
+    //  Make the marked area look like a separate buffer.
+    //
+    afterline     = botline->next;
+    botline->next = stopper;
+    saved_byte    = botline->data[bot_x];
+
     botline->data[bot_x] = '\0';
     was_datastart        = topline->data;
     topline->data += top_x;
@@ -2594,7 +2783,9 @@ write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writin
 
     retval = write_file(name, stream, normal, method, NONOTES);
 
-    /* Restore the proper state of the buffer. */
+    //
+    //  Restore the proper state of the buffer.
+    //
     openfile->filetop    = birthline;
     topline->data        = was_datastart;
     botline->data[bot_x] = saved_byte;
@@ -2610,7 +2801,7 @@ write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writin
 
 //
 //  Write the current buffer (or marked region) to disk.
-//  @param exiting - Indicates whether the program is exiting.
+//  @param exiting ( bool ) - Indicates whether the program is exiting.
 //  - If exiting is 'true', write the entire buffer regardless of whether the mark is on.
 //  - Do not ask for a name when withprompt is 'false'.
 //  - Nor when doing save-on-exit and the buffer already has a name.
@@ -2628,7 +2819,6 @@ write_it_out(bool exiting, bool withprompt)
     PROFILE_FUNCTION;
 
     s8 *given;
-
     //
     //  The filename we offer, or what the user typed so far.
     //
@@ -2648,22 +2838,27 @@ write_it_out(bool exiting, bool withprompt)
     while (true)
     {
         functionptrtype function;
-        const s8       *msg;
+
+        C_s8 *msg;
 
         s32 response = 0;
         s32 choice   = NO;
 
-        const s8 *formatstr = (openfile->fmt == DOS_FILE) ? _(" [DOS Format]")
-                            : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]")
-                                                          : "";
-        const s8 *backupstr = ISSET(MAKE_BACKUP) ? _(" [Backup]") : "";
+        C_s8 *formatstr = (openfile->fmt == DOS_FILE) ? _(" [DOS Format]")
+                        : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]")
+                                                      : "";
+        C_s8 *backupstr = ISSET(MAKE_BACKUP) ? _(" [Backup]") : "";
 
-        // When the mark is on, offer to write the selection to disk, but
-        // not when in restricted mode, because it would allow writing to
-        // a file not specified on the command line.
+        //
+        //  When the mark is on, offer to write the selection to disk, but
+        //  not when in restricted mode, because it would allow writing to
+        //  a file not specified on the command line.
+        //
         if (openfile->mark && !exiting && !ISSET(RESTRICTED))
         {
-            // TRANSLATORS: The next six strings are prompts.
+            //
+            //  TRANSLATORS : The next six strings are prompts.
+            //
             msg = (method == PREPEND) ? _("Prepend Selection to File")
                 : (method == APPEND)  ? _("Append Selection to File")
                                       : _("Write Selection to File");
@@ -2679,30 +2874,34 @@ write_it_out(bool exiting, bool withprompt)
 
         present_path = mallocstrcpy(present_path, "./");
 
-        // When we shouldn't prompt, use the existing filename.
-        // Otherwise, ask for (confirmation of) the filename.
+        //
+        //  When we shouldn't prompt, use the existing filename.
+        //  Otherwise, ask for (confirmation of) the filename.
+        //
         if ((!withprompt || (ISSET(SAVE_ON_EXIT) && exiting)) && openfile->filename[0] != '\0')
         {
             answer = mallocstrcpy(answer, openfile->filename);
         }
         else
         {
-            response = do_prompt(MWRITEFILE, given, NULL, edit_refresh, "%s%s%s", msg, formatstr, backupstr);
+            response = do_prompt(MWRITEFILE, given, nullptr, edit_refresh, "%s%s%s", msg, formatstr, backupstr);
         }
 
         if (response < 0)
         {
             statusbar(_("Cancelled"));
-            free(given);
+            std::free(given);
             return 0;
         }
 
         function = func_from_key(response);
 
-        // Upon request, abandon the buffer.
+        //
+        //  Upon request, abandon the buffer.
+        //
         if (function == discard_buffer)
         {
-            free(given);
+            std::free(given);
             return 2;
         }
 
@@ -2715,7 +2914,7 @@ write_it_out(bool exiting, bool withprompt)
             {
                 continue;
             }
-            free(answer);
+            std::free(answer);
             answer = chosen;
         }
         else if (function == dos_format)
@@ -2743,7 +2942,7 @@ write_it_out(bool exiting, bool withprompt)
             {
                 method = (method == APPEND) ? OVERWRITE : APPEND;
             }
-            if (strcmp(answer, openfile->filename) == 0)
+            if (constexpr_strcmp(answer, openfile->filename) == 0)
             {
                 given[0] = '\0';
             }
@@ -2756,11 +2955,13 @@ write_it_out(bool exiting, bool withprompt)
                 continue;
             }
 
-            // If the user pressed Ctrl-X in the edit window, and answered "Y" at
-            // the "Save modified buffer?" prompt, and entered "zzy" as filename,
-            // and this is the first time around, show an Easter egg.
-            if (exiting && !ISSET(SAVE_ON_EXIT) && openfile->filename[0] == '\0' && strcmp(answer, "zzy") == 0 &&
-                !did_credits)
+            //
+            //  If the user pressed Ctrl-X in the edit window, and answered "Y" at
+            //  the "Save modified buffer?" prompt, and entered "zzy" as filename,
+            //  and this is the first time around, show an Easter egg.
+            //
+            if (exiting && !ISSET(SAVE_ON_EXIT) && openfile->filename[0] == '\0' &&
+                constexpr_strcmp(answer, "zzy") == 0 && !did_credits)
             {
                 if (LINES > 5 && COLS > 31)
                 {
@@ -2769,10 +2970,12 @@ write_it_out(bool exiting, bool withprompt)
                 }
                 else
                 {
-                    // TRANSLATORS: Concisely say the screen is too small.
+                    //
+                    //  TRANSLATORS : Concisely say the screen is too small.
+                    //
                     statusline(AHEM, _("Too tiny"));
                 }
-                free(given);
+                std::free(given);
                 return 0;
             }
 
@@ -2793,21 +2996,26 @@ write_it_out(bool exiting, bool withprompt)
                 }
                 else
                 {
-                    do_warning = (strcmp((full_answer == NULL) ? answer : full_answer,
-                                         (full_filename == NULL) ? openfile->filename : full_filename) != 0);
+                    do_warning =
+                        (constexpr_strcmp((full_answer == nullptr) ? answer : full_answer,
+                                          (full_filename == nullptr) ? openfile->filename : full_filename) != 0);
                 }
 
-                free(full_filename);
-                free(full_answer);
+                std::free(full_filename);
+                std::free(full_answer);
 
                 if (do_warning)
                 {
-                    // When in restricted mode, we aren't allowed to overwrite
-                    // an existing file with the current buffer, nor to change
-                    // the name of the current buffer if it already has one.
-                    if (ISSET(RESTRICTED))
+                    //
+                    //  When in restricted mode, we aren't allowed to overwrite
+                    //  an existing file with the current buffer, nor to change
+                    //  the name of the current buffer if it already has one.
+                    //
+                    if ISSET (RESTRICTED)
                     {
-                        // TRANSLATORS: Restricted mode forbids overwriting.
+                        //
+                        //  TRANSLATORS : Restricted mode forbids overwriting.
+                        //
                         warn_and_briefly_pause(_("File exists -- cannot overwrite"));
                         continue;
                     }
@@ -2821,7 +3029,7 @@ write_it_out(bool exiting, bool withprompt)
                             {
                                 continue;
                             }
-                            maychange = TRUE;
+                            maychange = true;
                         }
                     }
 
@@ -2829,13 +3037,14 @@ write_it_out(bool exiting, bool withprompt)
                     {
                         s8 *question = _("File \"%s\" exists; OVERWRITE? ");
                         s8 *name     = crop_to_fit(answer, COLS - breadth(question) + 1);
-                        s8 *message  = RE_CAST(s8 *, nmalloc(strlen(question) + strlen(name) + 1));
+                        s8 *message =
+                            static_cast<s8 *>(nmalloc(constexpr_strlen(question) + constexpr_strlen(name) + 1));
 
-                        sprintf(message, question, name);
+                        std::sprintf(message, question, name);
                         choice = ask_user(YESORNO, message);
 
-                        free(message);
-                        free(name);
+                        std::free(message);
+                        std::free(name);
 
                         if (choice != YES)
                         {
@@ -2843,9 +3052,11 @@ write_it_out(bool exiting, bool withprompt)
                         }
                     }
                 }
-                // Complain if the file exists, the name hasn't changed,
-                // and the stat information we had before does not match
-                // what we have now.
+                //
+                //  Complain if the file exists, the name hasn't changed,
+                //  and the stat information we had before does not match
+                //  what we have now.
+                //
                 else if (name_exists && openfile->statinfo &&
                          (openfile->statinfo->st_mtime < fileinfo.st_mtime ||
                           openfile->statinfo->st_dev != fileinfo.st_dev ||
@@ -2863,10 +3074,10 @@ write_it_out(bool exiting, bool withprompt)
                     // overwrite the file right here when requested.
                     if (ISSET(SAVE_ON_EXIT) && withprompt)
                     {
-                        free(given);
+                        std::free(given);
                         if (choice == YES)
                         {
-                            return write_file(openfile->filename, NULL, NORMAL, OVERWRITE, NONOTES);
+                            return write_file(openfile->filename, nullptr, NORMAL, OVERWRITE, NONOTES);
                         }
                         else if (choice == NO) /* Discard buffer */
                         {
@@ -2883,20 +3094,22 @@ write_it_out(bool exiting, bool withprompt)
                     }
                     else if (choice != YES)
                     {
-                        free(given);
+                        std::free(given);
                         return 1;
                     }
                 }
             }
 
-            free(given);
+            std::free(given);
             break;
         }
     }
 
-    // When the mark is on (and we've prompted for a name and we're
-    // not exiting and we're not in restricted mode), then write out
-    // the marked region; otherwise, write out the whole buffer.
+    //
+    //  When the mark is on (and we've prompted for a name and we're
+    //  not exiting and we're not in restricted mode), then write out
+    //  the marked region; otherwise, write out the whole buffer.
+    //
     if (openfile->mark && withprompt && !exiting && !ISSET(RESTRICTED))
     {
         return write_region_to_file(answer, nullptr, NORMAL, method);
@@ -2939,7 +3152,7 @@ do_savefile()
 //  Return an allocated string containing the expanded path.
 //
 s8 *
-real_dir_from_tilde(const s8 *path)
+real_dir_from_tilde(C_s8 *path)
 {
     s8 *tilded, *retval;
     u64 i = 1;
@@ -2972,7 +3185,7 @@ real_dir_from_tilde(const s8 *path)
         {
             userdata = getpwent();
         }
-        while (userdata && std::strcmp(userdata->pw_name, tilded + 1) != 0);
+        while (userdata && constexpr_strcmp(userdata->pw_name, tilded + 1) != 0);
         endpwent();
         if (userdata != nullptr)
         {
@@ -2980,7 +3193,7 @@ real_dir_from_tilde(const s8 *path)
         }
     }
 
-    retval = static_cast<s8 *>(nmalloc(std::strlen(tilded) + std::strlen(path + i) + 1));
+    retval = static_cast<s8 *>(nmalloc(constexpr_strlen(tilded) + constexpr_strlen(path + i) + 1));
     std::sprintf(retval, "%s%s", tilded, path + i);
     std::free(tilded);
 
@@ -3018,7 +3231,7 @@ diralphasort(const void *va, const void *vb)
     //
     if (difference == 0)
     {
-        return std::strcmp(a, b);
+        return constexpr_strcmp(a, b);
     }
     else
     {
@@ -3030,7 +3243,7 @@ diralphasort(const void *va, const void *vb)
 //  Return 'true' when the given path is a directory.
 //
 bool
-is_dir(const s8 *const path)
+is_dir(C_s8 *const path)
 {
     s8         *thepath = real_dir_from_tilde(path);
     struct stat fileinfo;
@@ -3046,7 +3259,7 @@ is_dir(const s8 *const path)
 //  Try to complete the given fragment of given length to a username.
 //
 s8 **
-username_completion(const s8 *morsel, u64 length, u64 &num_matches)
+username_completion(C_s8 *morsel, u64 length, u64 &num_matches)
 {
     s8 **matches = nullptr;
 
@@ -3058,7 +3271,7 @@ username_completion(const s8 *morsel, u64 length, u64 &num_matches)
     //
     while ((userdata = getpwent()) != nullptr)
     {
-        if (std::strncmp(userdata->pw_name, morsel + 1, length - 1) == 0)
+        if (constexpr_strncmp(userdata->pw_name, morsel + 1, length - 1) == 0)
         {
             //
             //  Skip directories that are outside of the allowed area.
@@ -3069,7 +3282,7 @@ username_completion(const s8 *morsel, u64 length, u64 &num_matches)
             }
 
             matches              = static_cast<s8 **>(nrealloc(matches, (num_matches + 1) * sizeof(s8 *)));
-            matches[num_matches] = static_cast<s8 *>(nmalloc(std::strlen(userdata->pw_name) + 2));
+            matches[num_matches] = static_cast<s8 *>(nmalloc(constexpr_strlen(userdata->pw_name) + 2));
             std::sprintf(matches[num_matches], "~%s", userdata->pw_name);
             ++num_matches;
         }
@@ -3099,7 +3312,7 @@ username_completion(const s8 *morsel, u64 length, u64 &num_matches)
 //  Try to complete the given fragment to an existing filename.
 //
 s8 **
-filename_completion(const s8 *morsel, u64 &num_matches)
+filename_completion(C_s8 *morsel, u64 &num_matches)
 {
     s8  *dirname = copy_of(morsel);
     s8  *slash, *filename;
@@ -3114,7 +3327,7 @@ filename_completion(const s8 *morsel, u64 &num_matches)
     //  If there's a '/' in the name,
     //  split out filename and directory parts.
     //
-    slash = std::strrchr(dirname, '/');
+    slash = constexpr_strrchr(dirname, '/');
     if (slash != nullptr)
     {
         s8 *wasdirname = dirname;
@@ -3130,7 +3343,8 @@ filename_completion(const s8 *morsel, u64 &num_matches)
         //
         if (dirname[0] != '/')
         {
-            dirname = static_cast<s8 *>(nrealloc(dirname, std::strlen(present_path) + std::strlen(wasdirname) + 1));
+            dirname =
+                static_cast<s8 *>(nrealloc(dirname, constexpr_strlen(present_path) + constexpr_strlen(wasdirname) + 1));
             std::sprintf(dirname, "%s%s", present_path, wasdirname);
         }
         std::free(wasdirname);
@@ -3151,7 +3365,7 @@ filename_completion(const s8 *morsel, u64 &num_matches)
         return nullptr;
     }
 
-    filenamelen = std::strlen(filename);
+    filenamelen = constexpr_strlen(filename);
 
     //
     //  Iterate through the filenames in the directory,
@@ -3159,10 +3373,11 @@ filename_completion(const s8 *morsel, u64 &num_matches)
     //
     while ((entry = readdir(dir)) != nullptr)
     {
-        if (std::strncmp(entry->d_name, filename, filenamelen) == 0 && std::strcmp(entry->d_name, ".") != 0 &&
-            std::strcmp(entry->d_name, "..") != 0)
+        if (constexpr_strncmp(entry->d_name, filename, filenamelen) == 0 && constexpr_strcmp(entry->d_name, ".") != 0 &&
+            constexpr_strcmp(entry->d_name, "..") != 0)
         {
-            fullname = static_cast<s8 *>(nrealloc(fullname, std::strlen(dirname) + std::strlen(entry->d_name) + 1));
+            fullname =
+                static_cast<s8 *>(nrealloc(fullname, constexpr_strlen(dirname) + constexpr_strlen(entry->d_name) + 1));
 
             std::sprintf(fullname, "%s%s", dirname, entry->d_name);
 
@@ -3194,7 +3409,7 @@ filename_completion(const s8 *morsel, u64 &num_matches)
 //  'refresh_func' is the function to be called to refresh the edit window.
 //
 s8 *
-input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
+input_tab(s8 *morsel, u64 *place, CFuncPtr refresh_func, bool &listed)
 {
     u64  num_matches = 0;
     s8 **matches     = nullptr;
@@ -3212,7 +3427,7 @@ input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
     //  If the fragment starts with a tilde and contains no slash,
     //  then try completing it as a username.
     //
-    if (morsel[0] == '~' && std::strchr(morsel, '/') == nullptr)
+    if (morsel[0] == '~' && constexpr_strchr(morsel, '/') == nullptr)
     {
         matches = username_completion(morsel, *place, num_matches);
     }
@@ -3240,7 +3455,7 @@ input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
         return morsel;
     }
 
-    const s8 *lastslash = revstrstr(morsel, "/", morsel + *place);
+    C_s8 *lastslash = revstrstr(morsel, "/", morsel + *place);
 
     u64 length_of_path = (lastslash == nullptr) ? 0 : lastslash - morsel + 1;
     u64 match, common_len = 0;
@@ -3259,7 +3474,7 @@ input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
         {
             len2 = collect_char(matches[match] + common_len, char2);
 
-            if (len1 != len2 || std::strncmp(char1, char2, len2) != 0)
+            if (len1 != len2 || constexpr_strncmp(char1, char2, len2) != 0)
             {
                 break;
             }
@@ -3275,8 +3490,8 @@ input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
 
     shared = static_cast<char *>(nmalloc(length_of_path + common_len + 1));
 
-    std::strncpy(shared, morsel, length_of_path);
-    std::strncpy(shared + length_of_path, matches[0], common_len);
+    constexpr_strncpy(shared, morsel, length_of_path);
+    constexpr_strncpy(shared + length_of_path, matches[0], common_len);
 
     common_len += length_of_path;
     shared[common_len] = '\0';
@@ -3284,7 +3499,7 @@ input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
     //
     //  Cover also the case of the user specifying a relative path.
     //
-    glued = static_cast<s8 *>(nmalloc(strlen(present_path) + common_len + 1));
+    glued = static_cast<s8 *>(nmalloc(constexpr_strlen(present_path) + common_len + 1));
     std::sprintf(glued, "%s%s", present_path, shared);
 
     if (num_matches == 1 && (is_dir(shared) || is_dir(glued)))
@@ -3298,7 +3513,7 @@ input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
     if (common_len != *place)
     {
         morsel = static_cast<s8 *>(nrealloc(morsel, common_len + 1));
-        std::strncpy(morsel, shared, common_len);
+        constexpr_strncpy(morsel, shared, common_len);
         morsel[common_len] = '\0';
         *place             = common_len;
     }
@@ -3372,7 +3587,7 @@ input_tab(s8 *morsel, u64 *place, void (*refresh_func)(), bool &listed)
                 break;
             }
 
-            disp = display_string(matches[match], 0, longest_name, FALSE, FALSE);
+            disp = display_string(matches[match], 0, longest_name, false, false);
             waddstr(midwin, disp);
             std::free(disp);
 

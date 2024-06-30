@@ -10,9 +10,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-/* Toggle the mark. */
+//
+//  Toggle the mark.
+//
 void
-do_mark(void)
+do_mark()
 {
     if (!openfile->mark)
     {
@@ -39,30 +41,32 @@ do_tab()
 {
     PROFILE_FUNCTION;
 
-    // When <Tab> is pressed while a region is marked, indent the region.
+    //
+    //  When <Tab> is pressed while a region is marked, indent the region.
+    //
     if (openfile->mark && openfile->mark != openfile->current)
     {
         do_indent();
     }
     else if (openfile->syntax && openfile->syntax->tabstring)
     {
-        inject(openfile->syntax->tabstring, std::strlen(openfile->syntax->tabstring));
+        inject(openfile->syntax->tabstring, constexpr_strlen(openfile->syntax->tabstring));
     }
     else if ISSET (TABS_TO_SPACES)
     {
-        s8    *spaces = static_cast<s8 *>(nmalloc(tabsize + 1));
-        size_t length = tabsize - (xplustabs() % tabsize);
+        s8 *spaces = static_cast<s8 *>(nmalloc(tabsize + 1));
+        u64 length = tabsize - (xplustabs() % tabsize);
 
-        memset(spaces, ' ', length);
+        std::memset(spaces, ' ', length);
         spaces[length] = '\0';
 
         inject(spaces, length);
 
-        free(spaces);
+        std::free(spaces);
     }
     else
     {
-        inject((s8 *)"\t", 1);
+        inject(const_cast<s8 *>(TAB_STR) /* (s8 *)"\t" */, 1);
     }
 }
 

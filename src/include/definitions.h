@@ -479,27 +479,49 @@ typedef struct rcoption
 
 typedef struct keystruct
 {
-    const s8 *keystr;      // The string that describes the keystroke, like "^C" or "M-R".
-    s32       keycode;     // The integer that, together with meta, identifies the
-                           // keystroke.
-    s32 menus;             // The menus in which this keystroke is bound.
-    void (*func)();        // The function to which this keystroke is bound.
-    s32 toggle;            // If a toggle, what we're toggling.
-    s32 ordinal;           // The how-manieth toggle this is, in order to be able to
-                           // keep them in sequence.
-    s8        *expansion;  // The string of keycodes to which this shortcut is expanded.
-    keystruct *next;       // Next in the list.
+    //
+    //  The string that describes the keystroke, like "^C" or "M-R".
+    //
+    C_s8 *keystr;
+    //
+    //  The integer that, together with meta, identifies the keystroke.
+    //
+    s32 keycode;
+    //
+    //  The menus in which this keystroke is bound.
+    //
+    s32 menus;
+    //
+    //  The function to which this keystroke is bound.
+    //
+    CFuncPtr func;
+    //
+    //  If a toggle, what we're toggling.
+    //
+    s32 toggle;
+    //
+    //  The how-manieth toggle this is, in order to be able to keep them in sequence.
+    //
+    s32 ordinal;
+    //
+    //  The string of keycodes to which this shortcut is expanded.
+    //
+    s8 *expansion;
+    //
+    //  Next in the list.
+    //
+    keystruct *next;
 } keystruct;
 
 typedef struct funcstruct
 {
-    void (*func)();        /* The actual function to call. */
-    const s8 *tag;         /* The function's help-line label, for example "Where Is". */
-    const s8 *phrase;      /* The function's description for in the help viewer. */
-    bool      blank_after; /* Whether to distance this function from the next in the
-                              help viewer. */
-    s32         menus;     /* In what menus this function applies. */
-    funcstruct *next;      /* Next item in the list. */
+    void (*func)();    /* The actual function to call. */
+    C_s8 *tag;         /* The function's help-line label, for example "Where Is". */
+    C_s8 *phrase;      /* The function's description for in the help viewer. */
+    bool  blank_after; /* Whether to distance this function from the next in the
+                          help viewer. */
+    s32         menus; /* In what menus this function applies. */
+    funcstruct *next;  /* Next item in the list. */
 } funcstruct;
 
 typedef struct completionstruct

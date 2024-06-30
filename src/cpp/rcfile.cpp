@@ -8,8 +8,6 @@
 #include <glob.h>
 #include <unistd.h>
 
-using namespace Mlib;
-
 #ifndef RCFILE_NAME
 #    define HOME_RC_NAME ".nanorc"
 #    define RCFILE_NAME  "nanorc"
@@ -447,7 +445,8 @@ parse_next_regex(s8 *ptr)
     //  Continue until the end of the line, or until a double quote followed
     //  by end-of-line or a blank.
     //
-    while (*ptr != '\0' && (*ptr != '"' || (ptr[1] != '\0' && !Constexpr::Chars::isblank(static_cast<u8>(ptr[1])))))
+    while (*ptr != '\0' &&
+           (*ptr != '"' || (ptr[1] != '\0' && !Mlib::Constexpr::Chars::isblank(static_cast<u8>(ptr[1])))))
     {
         ptr++;
     }
@@ -469,7 +468,7 @@ parse_next_regex(s8 *ptr)
     //
     *ptr++ = '\0';
 
-    while (Constexpr::Chars::isblank(static_cast<u8>(*ptr)))
+    while (Mlib::Constexpr::Chars::isblank(static_cast<u8>(*ptr)))
     {
         ptr++;
     }
@@ -518,8 +517,6 @@ begin_new_syntax(s8 *ptr)
 {
     PROFILE_FUNCTION;
 
-    using namespace Mlib;
-
     s8 *nameptr = ptr;
 
     //
@@ -536,7 +533,7 @@ begin_new_syntax(s8 *ptr)
     //
     //  Check that quotes around the name are either paired or absent.
     //
-    if ((*nameptr == '\x22') ^ (nameptr[std::strlen(nameptr) - 1] == '\x22'))
+    if ((*nameptr == '\x22') ^ (nameptr[constexpr_strlen(nameptr) - 1] == '\x22'))
     {
         jot_error(N_("Unpaired quote in syntax name"));
         return;
@@ -554,7 +551,7 @@ begin_new_syntax(s8 *ptr)
     //
     //  Redefining the "none" syntax is not allowed.
     //
-    if (Constexpr::strcmp(nameptr, "none") == 0)
+    if (constexpr_strcmp(nameptr, "none") == 0)
     {
         jot_error(N_("The \"none\" syntax is reserved"));
         return;
@@ -589,7 +586,7 @@ begin_new_syntax(s8 *ptr)
     //
     //  The default syntax should have no associated extensions.
     //
-    if (Constexpr::strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
+    if (constexpr_strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept extensions"));
         return;
@@ -918,7 +915,7 @@ parse_one_include(s8 *file, syntaxtype *syntax)
         return;
     }
 
-    rcstream = fopen(file, "rb");
+    rcstream = std::fopen(file, "rb");
 
     if (rcstream == nullptr)
     {
@@ -942,6 +939,7 @@ parse_one_include(s8 *file, syntaxtype *syntax)
         parse_rcfile(rcstream, true, true);
         nanorc = was_nanorc;
         lineno = was_lineno;
+
         return;
     }
 
@@ -974,7 +972,7 @@ parse_one_include(s8 *file, syntaxtype *syntax)
         extra = extra->next;
     }
 
-    free(syntax->filename);
+    std::free(syntax->filename);
     syntax->filename = nullptr;
 
     nanorc = was_nanorc;
@@ -1004,7 +1002,7 @@ parse_includes(s8 *ptr)
     }
     ptr = parse_argument(ptr);
 
-    if (strlen(pattern) > PATH_MAX)
+    if (constexpr_strlen(pattern) > PATH_MAX)
     {
         jot_error(N_("Path is too long"));
         return;
@@ -1137,17 +1135,15 @@ CONSTEXPR_MAP<STRING_VIEW, s16, COLORCOUNT> huesIndiecesMap = {
 //  TODO : Use references instead of pointers
 //
 s16
-color_to_short(const s8 *colorname, bool &vivid, bool &thick)
+color_to_short(C_s8 *colorname, bool &vivid, bool &thick)
 {
-    using namespace Mlib;
-
-    if (Constexpr::strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
+    if (constexpr_strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
         vivid = true;
         thick = true;
         colorname += 6;
     }
-    else if (Constexpr::strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
+    else if (constexpr_strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
     {
         vivid = true;
         thick = false;
@@ -1159,7 +1155,7 @@ color_to_short(const s8 *colorname, bool &vivid, bool &thick)
         thick = false;
     }
 
-    if (colorname[0] == '#' && Constexpr::strlen(colorname) == 4)
+    if (colorname[0] == '#' && constexpr_strlen(colorname) == 4)
     {
         u16 r, g, b;
 
@@ -1177,7 +1173,7 @@ color_to_short(const s8 *colorname, bool &vivid, bool &thick)
 
     for (s32 index = 0; index < COLORCOUNT; index++)
     {
-        if (Constexpr::strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0)
+        if (constexpr_strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0)
         {
             if (index > 7 && vivid)
             {
@@ -1210,8 +1206,6 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 {
     PROFILE_FUNCTION;
 
-    using namespace Mlib;
-
     bool vivid;
     bool thick;
 
@@ -1219,18 +1213,18 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 
     attributes = A_NORMAL;
 
-    if (Constexpr::strncmp(combotext, "bold", 4) == 0)
+    if (constexpr_strncmp(combotext, "bold", 4) == 0)
     {
         attributes |= A_BOLD;
         if (combotext[4] != ',')
         {
             jot_error(N_("An attribute requires a subsequent comma"));
-            return FALSE;
+            return false;
         }
         combotext += 5;
     }
 
-    if (Constexpr::strncmp(combotext, "italic", 6) == 0)
+    if (constexpr_strncmp(combotext, "italic", 6) == 0)
     {
         attributes |= A_ITALIC;
 
@@ -1242,7 +1236,7 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
         combotext += 7;
     }
 
-    comma = Constexpr::strchr(combotext, ',');
+    comma = constexpr_strchr(combotext, ',');
 
     if (comma)
     {
@@ -1300,8 +1294,6 @@ parse_rule(s8 *ptr, s32 rex_flags)
 {
     PROFILE_FUNCTION;
 
-    using namespace Mlib;
-
     s8 *names;
     s8 *regexstring;
 
@@ -1346,7 +1338,7 @@ parse_rule(s8 *ptr, s32 rex_flags)
         //
         bool expectend = false;
 
-        if (Constexpr::strncmp(ptr, "start=", 6) == 0)
+        if (constexpr_strncmp(ptr, "start=", 6) == 0)
         {
             ptr += 6;
             expectend = TRUE;
@@ -1365,11 +1357,11 @@ parse_rule(s8 *ptr, s32 rex_flags)
 
         if (expectend)
         {
-            if (Constexpr::strncmp(ptr, "end=", 4) != 0)
+            if (constexpr_strncmp(ptr, "end=", 4) != 0)
             {
                 jot_error(N_("\"start=\" requires a corresponding \"end=\""));
                 regfree(start_rgx);
-                free(start_rgx);
+                std::free(start_rgx);
                 return;
             }
 
@@ -1426,7 +1418,7 @@ parse_rule(s8 *ptr, s32 rex_flags)
 //  Set the colors for the given interface element to the given combination.
 //
 void
-set_interface_color(const s32 element, s8 *combotext)
+set_interface_color(C_s32 element, s8 *combotext)
 {
     colortype *trio = static_cast<colortype *>(nmalloc(sizeof(colortype)));
 
@@ -1446,10 +1438,11 @@ set_interface_color(const s32 element, s8 *combotext)
 //  by ptr, and store them quoteless in the passed storage place.
 //
 void
-grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
+grab_and_store(C_s8 *kind, s8 *ptr, regexlisttype **storage)
 {
     regexlisttype *lastthing, *newthing;
-    const s8      *regexstring;
+
+    C_s8 *regexstring;
 
     if (!opensyntax)
     {
@@ -1460,7 +1453,7 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
     //
     //  The default syntax doesn't take any file matching stuff.
     //
-    if (std::strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
+    if (constexpr_strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept '%s' regexes"), kind);
         return;
@@ -1482,13 +1475,16 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
         lastthing = lastthing->next;
     }
 
-    /* Now gather any valid regexes and add them to the linked list. */
+    //
+    //  Now gather any valid regexes and add them to the linked list.
+    //
     while (*ptr != '\0')
     {
         regex_t *packed_rgx = nullptr;
 
         regexstring = ++ptr;
-        ptr         = parse_next_regex(ptr);
+
+        ptr = parse_next_regex(ptr);
 
         if (ptr == nullptr)
         {
@@ -1506,7 +1502,8 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
         //
         //  Copy the regex into a struct, and hook this in at the end.
         //
-        newthing          = static_cast<regexlisttype *>(nmalloc(sizeof(regexlisttype)));
+        newthing = static_cast<regexlisttype *>(nmalloc(sizeof(regexlisttype)));
+
         newthing->one_rgx = packed_rgx;
         newthing->next    = nullptr;
 
@@ -1527,7 +1524,7 @@ grab_and_store(const s8 *kind, s8 *ptr, regexlisttype **storage)
 //  Gather and store the string after a comment/linter command.
 //
 void
-pick_up_name(const s8 *kind, s8 *ptr, s8 **storage)
+pick_up_name(C_s8 *kind, s8 *ptr, s8 **storage)
 {
     PROFILE_FUNCTION;
 
@@ -1541,7 +1538,7 @@ pick_up_name(const s8 *kind, s8 *ptr, s8 **storage)
     //
     if (*ptr == '"')
     {
-        s8 *look = ptr + std::strlen(ptr);
+        s8 *look = ptr + constexpr_strlen(ptr);
 
         while (*look != '"')
         {
@@ -1563,9 +1560,9 @@ pick_up_name(const s8 *kind, s8 *ptr, s8 **storage)
 //  and set the syntax options accordingly.
 //
 bool
-parse_syntax_commands(s8 *keyword, s8 *ptr)
+parse_syntax_commands(C_s8 *keyword, s8 *ptr)
 {
-    const u32 syntax_opt = retriveSyntaxOptionFromStr(keyword);
+    C_u32 syntax_opt = retriveSyntaxOptionFromStr(keyword);
     if (syntax_opt == false)
     {
         return false;
@@ -1599,7 +1596,7 @@ parse_syntax_commands(s8 *keyword, s8 *ptr)
     return true;
 }
 
-static constexpr s8 VITALS = 4;
+static constexpr u8 VITALS = 4;
 //
 //  Verify that the user has not unmapped every shortcut for a
 //  function that we consider 'vital' (such as 'do_exit').
@@ -1678,13 +1675,17 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 
         lineno++;
 
-        /* If doing a full parse, skip to after the 'syntax' command. */
+        //
+        //  If doing a full parse, skip to after the 'syntax' command.
+        //
         if (just_syntax && !intros_only && lineno <= live_syntax->lineno)
         {
             continue;
         }
 
-        /* Strip the terminating newline and possibly a carriage return. */
+        //
+        //  Strip the terminating newline and possibly a carriage return.
+        //
         if (buffer[length - 1] == '\n')
         {
             buffer[--length] = '\0';
@@ -1700,18 +1701,25 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             ptr++;
         }
 
-        /* If the line is empty or a comment, skip to next line. */
+        //
+        //  If the line is empty or a comment, skip to next line.
+        //
         if (*ptr == '\0' || *ptr == '#')
         {
             continue;
         }
 
-        /* Otherwise, skip to the next space. */
+        //
+        //  Otherwise, skip to the next space.
+        //
         keyword = ptr;
-        ptr     = parse_next_word(ptr);
 
-        /* Handle extending first... */
-        if (!just_syntax && std::strcmp(keyword, "extendsyntax") == 0)
+        ptr = parse_next_word(ptr);
+
+        //
+        //  Handle extending first...
+        //
+        if (!just_syntax && constexpr_strcmp(keyword, "extendsyntax") == 0)
         {
             augmentstruct *newitem, *extra;
             s8            *syntaxname = ptr;
@@ -1721,9 +1729,9 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 
             ptr = parse_next_word(ptr);
 
-            for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
+            for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
             {
-                if (strcmp(sntx->name, syntaxname) == 0)
+                if (constexpr_strcmp(sntx->name, syntaxname) == 0)
                 {
                     break;
                 }
@@ -1743,9 +1751,9 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             //  File-matching commands need to be processed immediately;
             //  other commands are stored for possible later processing.
             //
-            if (strcmp(keyword, "header") == 0 || strcmp(keyword, "magic") == 0)
+            if (constexpr_strcmp(keyword, "header") == 0 || constexpr_strcmp(keyword, "magic") == 0)
             {
-                free(argument);
+                std::free(argument);
                 live_syntax = sntx;
                 opensyntax  = TRUE;
                 drop_open   = TRUE;
@@ -1757,12 +1765,12 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 newitem->filename = copy_of(nanorc);
                 newitem->lineno   = lineno;
                 newitem->data     = argument;
-                newitem->next     = NULL;
+                newitem->next     = nullptr;
 
-                if (sntx->augmentations != NULL)
+                if (sntx->augmentations != nullptr)
                 {
                     extra = sntx->augmentations;
-                    while (extra->next != NULL)
+                    while (extra->next != nullptr)
                     {
                         extra = extra->next;
                     }
@@ -1777,8 +1785,10 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
         }
 
-        /* Try to parse the keyword. */
-        if (strcmp(keyword, "syntax") == 0)
+        //
+        //  Try to parse the keyword.
+        //
+        if (constexpr_strcmp(keyword, "syntax") == 0)
         {
             if (intros_only)
             {
@@ -1790,14 +1800,14 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 break;
             }
         }
-        else if (strcmp(keyword, "header") == 0)
+        else if (constexpr_strcmp(keyword, "header") == 0)
         {
             if (intros_only)
             {
                 grab_and_store("header", ptr, &live_syntax->headers);
             }
         }
-        else if (strcmp(keyword, "magic") == 0)
+        else if (constexpr_strcmp(keyword, "magic") == 0)
         {
 #ifdef HAVE_LIBMAGIC
             if (intros_only)
@@ -1806,9 +1816,10 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
 #endif
         }
-        else if (just_syntax && (strcmp(keyword, "set") == 0 || strcmp(keyword, "unset") == 0 ||
-                                 strcmp(keyword, "bind") == 0 || strcmp(keyword, "unbind") == 0 ||
-                                 strcmp(keyword, "include") == 0 || strcmp(keyword, "extendsyntax") == 0))
+        else if (just_syntax &&
+                 (constexpr_strcmp(keyword, "set") == 0 || constexpr_strcmp(keyword, "unset") == 0 ||
+                  constexpr_strcmp(keyword, "bind") == 0 || constexpr_strcmp(keyword, "unbind") == 0 ||
+                  constexpr_strcmp(keyword, "include") == 0 || constexpr_strcmp(keyword, "extendsyntax") == 0))
         {
             if (intros_only)
             {
@@ -1819,9 +1830,10 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 break;
             }
         }
-        else if (intros_only && (strcmp(keyword, "color") == 0 || strcmp(keyword, "icolor") == 0 ||
-                                 strcmp(keyword, "comment") == 0 || strcmp(keyword, "tabgives") == 0 ||
-                                 strcmp(keyword, "linter") == 0 || strcmp(keyword, "formatter") == 0))
+        else if (intros_only &&
+                 (constexpr_strcmp(keyword, "color") == 0 || constexpr_strcmp(keyword, "icolor") == 0 ||
+                  constexpr_strcmp(keyword, "comment") == 0 || constexpr_strcmp(keyword, "tabgives") == 0 ||
+                  constexpr_strcmp(keyword, "linter") == 0 || constexpr_strcmp(keyword, "formatter") == 0))
         {
             if (!opensyntax)
             {
@@ -1829,7 +1841,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                              "'syntax' command"),
                           keyword);
             }
-            if (strstr("icolor", keyword))
+            if (constexpr_strstr("icolor", keyword))
             {
                 seen_color_command = true;
             }
@@ -1839,25 +1851,25 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         {
             ;
         }
-        else if (strcmp(keyword, "include") == 0)
+        else if (constexpr_strcmp(keyword, "include") == 0)
         {
             parse_includes(ptr);
         }
         else
         {
-            if (strcmp(keyword, "set") == 0)
+            if (constexpr_strcmp(keyword, "set") == 0)
             {
                 set = 1;
             }
-            else if (strcmp(keyword, "unset") == 0)
+            else if (constexpr_strcmp(keyword, "unset") == 0)
             {
                 set = -1;
             }
-            else if (strcmp(keyword, "bind") == 0)
+            else if (constexpr_strcmp(keyword, "bind") == 0)
             {
                 parse_binding(ptr, true);
             }
-            else if (strcmp(keyword, "unbind") == 0)
+            else if (constexpr_strcmp(keyword, "unbind") == 0)
             {
                 parse_binding(ptr, false);
             }
@@ -1893,7 +1905,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         //
         for (i = 0; rcopts[i].name != nullptr; i++)
         {
-            if (strcmp(option, rcopts[i].name) == 0)
+            if (constexpr_strcmp(option, rcopts[i].name) == 0)
             {
                 break;
             }
@@ -1905,7 +1917,9 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             continue;
         }
 
-        /* If the option has a flag, set it or unset it, as requested. */
+        //
+        //  If the option has a flag, set it or unset it, as requested.
+        //
         if (rcopts[i].flag)
         {
             if (set == 1)
@@ -1919,7 +1933,9 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             continue;
         }
 
-        /* An option that takes an argument cannot be unset. */
+        //
+        //  An option that takes an argument cannot be unset.
+        //
         if (set == -1)
         {
             jot_error(N_("Cannot unset option \"%s\""), option);
@@ -2057,8 +2073,8 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         check_for_nonempty_syntax();
     }
 
-    fclose(rcstream);
-    free(buffer);
+    std::fclose(rcstream);
+    std::free(buffer);
     lineno = 0;
 
     return;
@@ -2087,14 +2103,14 @@ parse_one_nanorc()
 }
 
 bool
-have_nanorc(const s8 *path, const s8 *name)
+have_nanorc(C_s8 *path, C_s8 *name)
 {
     if (path == nullptr)
     {
         return false;
     }
 
-    free(nanorc);
+    std::free(nanorc);
     nanorc = concatenate(path, name);
 
     return is_good_file(nanorc);
@@ -2133,12 +2149,14 @@ do_rcfiles()
 
     if (custom_nanorc == nullptr)
     {
-        const s8 *xdgconfdir = getenv("XDG_CONFIG_HOME");
+        C_s8 *xdgconfdir = getenv("XDG_CONFIG_HOME");
 
         get_homedir();
 
-        /* Now try to find a nanorc file in the user's home directory or in the
-         * XDG configuration directories, and process the first one found. */
+        //
+        //  Now try to find a nanorc file in the user's home directory or in the
+        //  XDG configuration directories, and process the first one found.
+        //
         if (have_nanorc(homedir, "/" HOME_RC_NAME) || have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) ||
             have_nanorc(homedir, "/.config/nano/" RCFILE_NAME))
         {
@@ -2151,6 +2169,6 @@ do_rcfiles()
     }
 
     check_vitals_mapped();
-    free(nanorc);
+    std::free(nanorc);
     nanorc = nullptr;
 }

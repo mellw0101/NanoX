@@ -435,3 +435,4 @@ CONSTEXPR_MAP<STRING_VIEW, u32, 14> toggleOptionMap = {
 
 constexpr C_s8 *ERROR_MSG_OUT_OF_MEMORY         = "NanoX is out of memory!\n";
 constexpr C_s8 *ERROR_MSG_TO_MENY_DOT_SAVEFILES = "\nToo many .save files\n";
+constexpr C_s8 *TAB_STR                         = "\t";

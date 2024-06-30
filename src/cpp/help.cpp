@@ -1,5 +1,6 @@
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <cstring>
 
 //
@@ -34,18 +35,28 @@ static u64 location;
 void
 help_init()
 {
-    size_t allocsize = 0;
+    PROFILE_FUNCTION;
 
-    // Space needed for help_text.
-    const char *htx[3];
+    u64 allocsize = 0;
 
-    // Untranslated help introduction.  We break it up into three chunks
-    // in case the full string is too long for the compiler to handle.
+    //
+    //  Space needed for help_text.
+    //
+    C_s8 *htx[3];
+
+    //
+    //  Untranslated help introduction.
+    //  We break it up into three chunks
+    //  in case the full string is too long for the compiler to handle.
+    //
     const funcstruct *f;
     const keystruct  *s;
-    char             *ptr;
 
-    /* First, set up the initial help text for the current function. */
+    s8 *ptr;
+
+    //
+    //  First, set up the initial help text for the current function.
+    //
     if (currmenu & (MWHEREIS | MREPLACE))
     {
         htx[0] = N_("Search Command Help Text\n\n "
@@ -237,14 +248,14 @@ help_init()
         htx[2] = _(htx[2]);
     }
 
-    allocsize += std::strlen(htx[0]);
+    allocsize += constexpr_strlen(htx[0]);
     if (htx[1] != nullptr)
     {
-        allocsize += std::strlen(htx[1]);
+        allocsize += constexpr_strlen(htx[1]);
     }
     if (htx[2] != nullptr)
     {
-        allocsize += std::strlen(htx[2]);
+        allocsize += constexpr_strlen(htx[2]);
     }
 
     //
@@ -256,7 +267,7 @@ help_init()
     {
         if (f->menus & currmenu)
         {
-            allocsize += std::strlen(_(f->phrase)) + 21;
+            allocsize += constexpr_strlen(_(f->phrase)) + 21;
         }
     }
 
@@ -267,12 +278,12 @@ help_init()
     //
     if (currmenu == MMAIN)
     {
-        u64 onoff_len = std::strlen(_("enable/disable"));
+        u64 onoff_len = constexpr_strlen(_("enable/disable"));
         for (s = sclist; s != nullptr; s = s->next)
         {
             if (s->func == do_toggle)
             {
-                allocsize += std::strlen(_(epithet_of_flag(s->toggle))) + onoff_len + 9;
+                allocsize += constexpr_strlen(_(epithet_of_flag(s->toggle))) + onoff_len + 9;
             }
         }
     }
@@ -285,21 +296,22 @@ help_init()
     //
     //  Now add the text we want.
     //
-    std::strcpy(help_text, htx[0]);
+    constexpr_strcpy(help_text, htx[0]);
     if (htx[1] != nullptr)
     {
-        std::strcat(help_text, htx[1]);
+        constexpr_strcat(help_text, htx[1]);
     }
     if (htx[2] != nullptr)
     {
-        std::strcat(help_text, htx[2]);
+        constexpr_strcat(help_text, htx[2]);
     }
 
     //
     //  Remember this end-of-introduction, start-of-shortcuts.
     //
-    end_of_intro = help_text + std::strlen(help_text);
-    ptr          = end_of_intro;
+    end_of_intro = help_text + constexpr_strlen(help_text);
+
+    ptr = end_of_intro;
 
     //
     //  Now add the shortcuts and their descriptions.
@@ -330,12 +342,12 @@ help_init()
                     //
                     //  Unicode arrows take three bytes instead of one.
                     //
-                    ptr += (std::strstr(s->keystr, "\xE2") != nullptr ? 9 : 7);
+                    ptr += (constexpr_strstr(s->keystr, "\xE2") != nullptr ? 9 : 7);
                 }
                 else
                 {
                     std::sprintf(ptr, "(%s)       ", s->keystr);
-                    ptr += (std::strstr(s->keystr, "\xE2") != nullptr ? 12 : 10);
+                    ptr += (constexpr_strstr(s->keystr, "\xE2") != nullptr ? 12 : 10);
                     break;
                 }
             }
@@ -407,14 +419,19 @@ help_init()
 void
 wrap_help_text_into_buffer()
 {
-    /* Avoid overtight and overwide paragraphs in the introductory text. */
-    size_t      wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
-    const char *ptr            = start_of_body;
-    size_t      sum            = 0;
+    //
+    //  Avoid overtight and overwide paragraphs in the introductory text.
+    //
+    u64 wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
+
+    C_s8 *ptr = start_of_body;
+    u64   sum = 0;
 
     make_new_buffer();
 
-    /* Ensure there is a blank line at the top of the text, for esthetics. */
+    //
+    //  Ensure there is a blank line at the top of the text, for esthetics.
+    //
     if ((ISSET(MINIBAR) || !ISSET(EMPTY_LINE)) && LINES > 6)
     {
         openfile->current->data = mallocstrcpy(openfile->current->data, " ");
@@ -422,11 +439,13 @@ wrap_help_text_into_buffer()
         openfile->current       = openfile->current->next;
     }
 
-    /* Copy the help text into the just-created new buffer. */
+    //
+    //  Copy the help text into the just-created new buffer.
+    //
     while (*ptr != '\0')
     {
-        int   length, shim;
-        char *oneline;
+        s32 length, shim;
+        s8 *oneline;
 
         if (ptr == end_of_intro)
         {
@@ -435,19 +454,19 @@ wrap_help_text_into_buffer()
 
         if (ptr < end_of_intro || *(ptr - 1) == '\n')
         {
-            length  = break_line(ptr, wrapping_point, TRUE);
-            oneline = RE_CAST(char *, nmalloc(length + 1));
+            length  = break_line(ptr, wrapping_point, true);
+            oneline = static_cast<s8 *>(nmalloc(length + 1));
             shim    = (*(ptr + length - 1) == ' ') ? 0 : 1;
             snprintf(oneline, length + shim, "%s", ptr);
         }
         else
         {
-            length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, TRUE);
-            oneline = RE_CAST(char *, nmalloc(length + 5));
+            length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, true);
+            oneline = static_cast<s8 *>(nmalloc(length + 5));
             snprintf(oneline, length + 5, "\t\t  %s", ptr);
         }
 
-        free(openfile->current->data);
+        std::free(openfile->current->data);
         openfile->current->data = oneline;
 
         ptr += length;
@@ -456,7 +475,9 @@ wrap_help_text_into_buffer()
             ptr--;
         }
 
-        /* Create a new line, and then one more for each extra \n. */
+        //
+        //  Create a new line, and then one more for each extra \n.
+        //
         do
         {
             openfile->current->next = make_new_node(openfile->current);
@@ -470,15 +491,15 @@ wrap_help_text_into_buffer()
     openfile->current = openfile->filetop;
 
     remove_magicline();
-#ifdef ENABLE_COLOR
     find_and_prime_applicable_syntax();
-#endif
     prepare_for_display();
 
-    /* Move to the position in the file where we were before. */
-    while (TRUE)
+    //
+    //  Move to the position in the file where we were before.
+    //
+    while (true)
     {
-        sum += strlen(openfile->current->data);
+        sum += constexpr_strlen(openfile->current->data);
         if (sum > location)
         {
             break;
@@ -643,8 +664,8 @@ show_help()
         }
         else if (kbinput == KEY_MOUSE)
         {
-            int dummy_row, dummy_col;
-            get_mouseinput(dummy_row, dummy_col, TRUE);
+            s32 dummy_row, dummy_col;
+            get_mouseinput(dummy_row, dummy_col, true);
         }
         else if (kbinput == KEY_WINCH)
         {
@@ -669,33 +690,35 @@ show_help()
         //
         while (line != openfile->edittop)
         {
-            location += strlen(line->data);
+            location += constexpr_strlen(line->data);
             line = line->next;
         }
     }
 
-    /* Discard the help-text buffer. */
+    //
+    //  Discard the help-text buffer.
+    //
     close_buffer();
 
-    /* Restore the settings of all flags. */
-    memcpy(flags, stash, sizeof(flags));
+    //
+    //  Restore the settings of all flags.
+    //
+    std::memcpy(flags, stash, sizeof(flags));
 
-#ifdef ENABLE_LINENUMBERS
     margin      = was_margin;
     editwincols = COLS - margin - sidebar;
-#endif
-    tabsize = was_tabsize;
-#ifdef ENABLE_COLOR
-    syntaxstr    = was_syntax;
-    have_palette = FALSE;
-#endif
 
-    free(title);
-    title = NULL;
-    free(answer);
+    tabsize = was_tabsize;
+
+    syntaxstr    = was_syntax;
+    have_palette = false;
+
+    std::free(title);
+    title = nullptr;
+    std::free(answer);
     answer = saved_answer;
-    free(help_text);
-    inhelp = FALSE;
+    std::free(help_text);
+    inhelp = false;
 
     curs_set(0);
 
@@ -710,15 +733,13 @@ show_help()
 
     bottombars(oldmenu);
 
-#ifdef ENABLE_BROWSER
     if (oldmenu & (MBROWSER | MWHEREISFILE | MGOTODIR))
     {
         browser_refresh();
     }
     else
-#endif
     {
-        titlebar(NULL);
+        titlebar(nullptr);
         edit_refresh();
     }
 }

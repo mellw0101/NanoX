@@ -1,7 +1,9 @@
 /// @file prompt.cpp
+#include "../include/prototypes.h"
+
+#include <Mlib/Profile.h>
 #include <Mlib/def.h>
 #include <cstring>
-#include "../include/prototypes.h"
 
 //
 //  The prompt string used for status-bar questions.
@@ -27,39 +29,45 @@ do_statusbar_home()
 void
 do_statusbar_end()
 {
-    typing_x = std::strlen(answer);
+    typing_x = constexpr_strlen(answer);
 }
 
-/* Move to the previous word in the answer. */
+//
+//  Move to the previous word in the answer.
+//
 void
 do_statusbar_prev_word()
 {
-    bool seen_a_word = FALSE, step_forward = FALSE;
+    bool seen_a_word = false, step_forward = false;
 
-    /* Move backward until we pass over the start of a word. */
+    //
+    //  Move backward until we pass over the start of a word.
+    //
     while (typing_x != 0)
     {
         typing_x = step_left(answer, typing_x);
 
-        if (is_word_char(answer + typing_x, FALSE))
+        if (is_word_char(answer + typing_x, false))
         {
-            seen_a_word = TRUE;
+            seen_a_word = true;
         }
-#ifdef ENABLE_UTF8
         else if (is_zerowidth(answer + typing_x))
             ; /* skip */
-#endif
         else if (seen_a_word)
         {
-            /* This is space now: we've overshot the start of the word. */
-            step_forward = TRUE;
+            //
+            //  This is space now: we've overshot the start of the word.
+            //
+            step_forward = true;
             break;
         }
     }
 
     if (step_forward)
     {
-        /* Move one character forward again to sit on the start of the word. */
+        //
+        //  Move one character forward again to sit on the start of the word.
+        //
         typing_x = step_right(answer, typing_x);
     }
 }
@@ -70,27 +78,29 @@ do_statusbar_prev_word()
 void
 do_statusbar_next_word()
 {
-    bool seen_space = !is_word_char(answer + typing_x, FALSE);
+    bool seen_space = !is_word_char(answer + typing_x, false);
     bool seen_word  = !seen_space;
 
-    /* Move forward until we reach either the end or the start of a word,
-     * depending on whether the AFTER_ENDS flag is set or not. */
+    //
+    //  Move forward until we reach either the end or the start of a word,
+    //  depending on whether the AFTER_ENDS flag is set or not.
+    //
     while (answer[typing_x] != '\0')
     {
         typing_x = step_right(answer, typing_x);
 
         if (ISSET(AFTER_ENDS))
         {
-            /* If this is a word character, continue; else it's a separator,
-             * and if we've already seen a word, then it's a word end. */
-            if (is_word_char(answer + typing_x, FALSE))
+            //
+            //  If this is a word character, continue; else it's a separator,
+            //  and if we've already seen a word, then it's a word end.
+            //
+            if (is_word_char(answer + typing_x, false))
             {
-                seen_word = TRUE;
+                seen_word = true;
             }
-#ifdef ENABLE_UTF8
             else if (is_zerowidth(answer + typing_x))
                 ; /* skip */
-#endif
             else if (seen_word)
             {
                 break;
@@ -98,67 +108,71 @@ do_statusbar_next_word()
         }
         else
         {
-#ifdef ENABLE_UTF8
             if (is_zerowidth(answer + typing_x))
                 ; /* skip */
             else
-#endif
-                /* If this is not a word character, then it's a separator; else
-                 * if we've already seen a separator, then it's a word start. */
-                if (!is_word_char(answer + typing_x, FALSE))
+            {
+                //
+                //  If this is not a word character, then it's a separator; else
+                //  if we've already seen a separator, then it's a word start. */
+                //
+                if (!is_word_char(answer + typing_x, false))
                 {
-                    seen_space = TRUE;
+                    seen_space = true;
                 }
                 else if (seen_space)
                 {
                     break;
                 }
+            }
         }
     }
 }
 
-/* Move left one character in the answer. */
+//
+//  Move left one character in the answer.
+//
 void
 do_statusbar_left()
 {
     if (typing_x > 0)
     {
         typing_x = step_left(answer, typing_x);
-#ifdef ENABLE_UTF8
         while (typing_x > 0 && is_zerowidth(answer + typing_x))
         {
             typing_x = step_left(answer, typing_x);
         }
-#endif
     }
 }
 
-/* Move right one character in the answer. */
+//
+//  Move right one character in the answer.
+//
 void
 do_statusbar_right()
 {
     if (answer[typing_x] != '\0')
     {
         typing_x = step_right(answer, typing_x);
-#ifdef ENABLE_UTF8
         while (answer[typing_x] != '\0' && is_zerowidth(answer + typing_x))
         {
             typing_x = step_right(answer, typing_x);
         }
-#endif
     }
 }
 
-/* Backspace over one character in the answer. */
+//
+//  Backspace over one character in the answer.
+//
 void
 do_statusbar_backspace()
 {
     if (typing_x > 0)
     {
-        size_t was_x = typing_x;
+        u64 was_x = typing_x;
 
         typing_x = step_left(answer, typing_x);
-        memmove(answer + typing_x, answer + was_x, strlen(answer) - was_x + 1);
+        std::memmove(answer + typing_x, answer + was_x, constexpr_strlen(answer) - was_x + 1);
     }
 }
 
@@ -215,11 +229,11 @@ copy_the_answer()
 void
 paste_into_answer()
 {
-    u64 pastelen = std::strlen(cutbuffer->data);
+    u64 pastelen = constexpr_strlen(cutbuffer->data);
 
-    answer = static_cast<s8 *>(nrealloc(answer, std::strlen(answer) + pastelen + 1));
-    std::memmove(answer + typing_x + pastelen, answer + typing_x, std::strlen(answer) - typing_x + 1);
-    std::strncpy(answer + typing_x, cutbuffer->data, pastelen);
+    answer = static_cast<s8 *>(nrealloc(answer, constexpr_strlen(answer) + pastelen + 1));
+    std::memmove(answer + typing_x + pastelen, answer + typing_x, constexpr_strlen(answer) - typing_x + 1);
+    constexpr_strncpy(answer + typing_x, cutbuffer->data, pastelen);
 
     typing_x += pastelen;
 }
@@ -272,9 +286,9 @@ inject_into_answer(s8 *burst, u64 count)
         }
     }
 
-    answer = static_cast<s8 *>(nrealloc(answer, std::strlen(answer) + count + 1));
-    std::memmove(answer + typing_x + count, answer + typing_x, std::strlen(answer) - typing_x + 1);
-    std::strncpy(answer + typing_x, burst, count);
+    answer = static_cast<s8 *>(nrealloc(answer, constexpr_strlen(answer) + count + 1));
+    std::memmove(answer + typing_x + count, answer + typing_x, constexpr_strlen(answer) - typing_x + 1);
+    constexpr_strncpy(answer + typing_x, burst, count);
 
     typing_x += count;
 }
@@ -307,18 +321,26 @@ do_statusbar_verbatim_input()
 //  and inject the gathered bytes into the answer when ready.
 //
 void
-absorb_character(s32 input, functionptrtype function)
+absorb_character(s32 input, CFuncPtr function)
 {
-    static char *puddle = NULL;
-    /* The input buffer. */
-    static size_t capacity = 8;
-    /* The size of the input buffer; gets doubled whenever needed. */
-    static size_t depth = 0;
-    /* The length of the input buffer. */
+    //
+    //  The input buffer.
+    //
+    static s8 *puddle = nullptr;
+    //
+    //  The size of the input buffer; gets doubled whenever needed.
+    //
+    static u64 capacity = 8;
+    //
+    //  The length of the input buffer.
+    //
+    static u64 depth = 0;
 
-    /* If not a command, discard anything that is not a normal character byte.
-     * Apart from that, only accept input when not in restricted mode, or when
-     * not at the "Write File" prompt, or when there is no filename yet. */
+    //
+    //  If not a command, discard anything that is not a normal character byte.
+    //  Apart from that, only accept input when not in restricted mode, or when
+    //  not at the "Write File" prompt, or when there is no filename yet.
+    //
     if (!function)
     {
         if (input < 0x20 || input > 0xFF || meta_key)
@@ -327,24 +349,28 @@ absorb_character(s32 input, functionptrtype function)
         }
         else if (!ISSET(RESTRICTED) || currmenu != MWRITEFILE || openfile->filename[0] == '\0')
         {
-            /* When the input buffer (plus room for terminating NUL) is full,
-             * extend it; otherwise, if it does not exist yet, create it. */
+            //
+            //  When the input buffer (plus room for terminating NUL) is full,
+            //  extend it; otherwise, if it does not exist yet, create it.
+            //
             if (depth + 1 == capacity)
             {
                 capacity = 2 * capacity;
-                puddle   = RE_CAST(char *, nrealloc(puddle, capacity));
+                puddle   = static_cast<s8 *>(nrealloc(puddle, capacity));
             }
             else if (!puddle)
             {
-                puddle = RE_CAST(char *, nmalloc(capacity));
+                puddle = static_cast<s8 *>(nmalloc(capacity));
             }
 
-            puddle[depth++] = (char)input;
+            puddle[depth++] = static_cast<s8>(input);
         }
     }
 
-    /* If there are gathered bytes and we have a command or no other key codes
-     * are waiting, it's time to insert these bytes into the answer. */
+    //
+    //  If there are gathered bytes and we have a command or no other key codes
+    //  are waiting, it's time to insert these bytes into the answer.
+    //
     if (depth > 0 && (function || waiting_keycodes() == 0))
     {
         puddle[depth] = '\0';
@@ -353,9 +379,11 @@ absorb_character(s32 input, functionptrtype function)
     }
 }
 
-/* Handle any editing shortcut, and return TRUE when handled. */
+//
+//  Handle any editing shortcut, and return TRUE when handled.
+//
 bool
-handle_editing(functionptrtype function)
+handle_editing(CFuncPtr function)
 {
     if (function == do_left)
     {
@@ -365,7 +393,6 @@ handle_editing(functionptrtype function)
     {
         do_statusbar_right();
     }
-#ifndef NANO_TINY
     else if (function == to_prev_word)
     {
         do_statusbar_prev_word();
@@ -374,7 +401,6 @@ handle_editing(functionptrtype function)
     {
         do_statusbar_next_word();
     }
-#endif
     else if (function == do_home)
     {
         do_statusbar_home();
@@ -383,12 +409,16 @@ handle_editing(functionptrtype function)
     {
         do_statusbar_end();
     }
-    /* When in restricted mode at the "Write File" prompt and the
-     * filename isn't blank, disallow any input and deletion. */
+    //
+    //  When in restricted mode at the "Write File" prompt and the
+    //  filename isn't blank, disallow any input and deletion.
+    //
     else if (ISSET(RESTRICTED) && currmenu == MWRITEFILE && openfile->filename[0] != '\0' &&
              (function == do_verbatim_input || function == do_delete || function == do_backspace ||
               function == cut_text || function == paste_text))
+    {
         ;
+    }
     else if (function == do_verbatim_input)
     {
         do_statusbar_verbatim_input();
@@ -405,34 +435,36 @@ handle_editing(functionptrtype function)
     {
         lop_the_answer();
     }
-#ifndef NANO_TINY
     else if (function == copy_text)
     {
         copy_the_answer();
     }
     else if (function == paste_text)
     {
-        if (cutbuffer != NULL)
+        if (cutbuffer != nullptr)
         {
             paste_into_answer();
         }
     }
-#endif
     else
     {
-        return FALSE;
+        return false;
     }
 
-    /* Don't handle any handled function again. */
-    return TRUE;
+    //
+    //  Don't handle any handled function again.
+    //
+    return true;
 }
 
-/* Return the column number of the first character of the answer that is
- * displayed in the status bar when the cursor is at the given column,
- * with the available room for the answer starting at base.  Note that
- * (0 <= column - get_statusbar_page_start(column) < COLS). */
-size_t
-get_statusbar_page_start(size_t base, size_t column)
+//
+//  Return the column number of the first character of the answer that is
+//  displayed in the status bar when the cursor is at the given column,
+//  with the available room for the answer starting at base.  Note that
+//  (0 <= column - get_statusbar_page_start(column) < COLS).
+//
+u64
+get_statusbar_page_start(u64 base, u64 column)
 {
     if (column == base || column < COLS - 1)
     {
@@ -448,7 +480,9 @@ get_statusbar_page_start(size_t base, size_t column)
     }
 }
 
-/* Reinitialize the cursor position in the answer. */
+//
+//  Reinitialize the cursor position in the answer.
+//
 void
 put_cursor_at_end_of_answer()
 {
@@ -461,15 +495,17 @@ put_cursor_at_end_of_answer()
 void
 draw_the_promptbar()
 {
-    size_t base   = breadth(prompt) + 2;
-    size_t column = base + wideness(answer, typing_x);
-    size_t the_page, end_page;
-    char  *expanded;
+    u64 base   = breadth(prompt) + 2;
+    u64 column = base + wideness(answer, typing_x);
+    u64 the_page, end_page;
+    s8 *expanded;
 
     the_page = get_statusbar_page_start(base, column);
     end_page = get_statusbar_page_start(base, base + breadth(answer) - 1);
 
-    /* Color the prompt bar over its full width. */
+    //
+    //  Color the prompt bar over its full width.
+    //
     wattron(footwin, interface_color_pair[PROMPT_BAR]);
     mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
 
@@ -477,9 +513,9 @@ draw_the_promptbar()
     waddch(footwin, ':');
     waddch(footwin, (the_page == 0) ? ' ' : '<');
 
-    expanded = display_string(answer, the_page, COLS - base, FALSE, TRUE);
+    expanded = display_string(answer, the_page, COLS - base, false, true);
     waddstr(footwin, expanded);
-    free(expanded);
+    std::free(expanded);
 
     if (the_page < end_page && base + breadth(answer) - the_page > COLS)
     {
@@ -509,7 +545,7 @@ add_or_remove_pipe_symbol_from_answer()
 {
     if (answer[0] == '|')
     {
-        memmove(answer, answer + 1, strlen(answer));
+        std::memmove(answer, answer + 1, constexpr_strlen(answer));
         if (typing_x > 0)
         {
             typing_x--;
@@ -517,8 +553,8 @@ add_or_remove_pipe_symbol_from_answer()
     }
     else
     {
-        answer = RE_CAST(char *, nrealloc(answer, strlen(answer) + 2));
-        memmove(answer + 1, answer, strlen(answer) + 1);
+        answer = static_cast<s8 *>(nrealloc(answer, constexpr_strlen(answer) + 2));
+        std::memmove(answer + 1, answer, constexpr_strlen(answer) + 1);
         answer[0] = '|';
         typing_x++;
     }
@@ -527,8 +563,8 @@ add_or_remove_pipe_symbol_from_answer()
 //
 //  Get a string of input at the status-bar prompt.
 //
-functionptrtype
-acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*refresh_func)())
+CFuncPtr
+acquire_an_answer(s32 &actual, bool &listed, linestruct *&history_list, CFuncPtr refresh_func)
 {
     //
     //  Whatever the answer was before the user foraged into history.
@@ -545,34 +581,40 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*r
 
     const keystruct *shortcut;
     functionptrtype  function;
-    int              input;
 
-    if (typing_x > strlen(answer))
+    s32 input;
+
+    if (typing_x > constexpr_strlen(answer))
     {
-        typing_x = strlen(answer);
+        typing_x = constexpr_strlen(answer);
     }
 
-    while (TRUE)
+    while (true)
     {
         draw_the_promptbar();
 
-        /* Read in one keystroke. */
+        //
+        //  Read in one keystroke.
+        //
         input = get_kbinput(footwin, VISIBLE);
 
-#ifndef NANO_TINY
-        /* If the window size changed, go reformat the prompt string. */
+        //
+        //  If the window size changed, go reformat the prompt string.
+        //
         if (input == KEY_WINCH)
         {
-            refresh_func(); /* Only needed when in file browser. */
-            *actual = KEY_WINCH;
-#    ifdef ENABLE_HISTORIES
-            free(stored_string);
-#    endif
-            return NULL;
+            //
+            //  Only needed when in file browser.
+            //
+            refresh_func();
+            actual = KEY_WINCH;
+            std::free(stored_string);
+
+            return nullptr;
         }
-#endif
-#ifdef ENABLE_MOUSE
-        /* For a click on a shortcut, read in the resulting keycode. */
+        //
+        //  For a click on a shortcut, read in the resulting keycode.
+        //
         if (input == KEY_MOUSE && do_statusbar_mouse() == 1)
         {
             input = get_kbinput(footwin, BLIND);
@@ -581,13 +623,16 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*r
         {
             continue;
         }
-#endif
 
-        /* Check for a shortcut in the current list. */
+        //
+        //  Check for a shortcut in the current list.
+        //
         shortcut = get_shortcut(input);
-        function = (shortcut ? shortcut->func : NULL);
+        function = (shortcut ? shortcut->func : nullptr);
 
-        /* When it's a normal character, add it to the answer. */
+        //
+        //  When it's a normal character, add it to the answer.
+        //
         absorb_character(input, function);
 
         if (function == do_cancel || function == do_enter)
@@ -597,67 +642,80 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*r
 
         if (function == do_tab)
         {
-            if (history_list != NULL)
+            if (history_list != nullptr)
             {
                 if (!previous_was_tab)
                 {
-                    fragment_length = strlen(answer);
+                    fragment_length = constexpr_strlen(answer);
                 }
 
                 if (fragment_length > 0)
                 {
-                    answer   = get_history_completion(history_list, answer, fragment_length);
-                    typing_x = strlen(answer);
+                    answer   = get_history_completion(&history_list, answer, fragment_length);
+                    typing_x = constexpr_strlen(answer);
                 }
             }
             else
-
-                /* Allow tab completion of filenames, but not in restricted mode. */
+            {
+                //
+                //  Allow tab completion of filenames, but not in restricted mode.
+                //
                 if ((currmenu & (MINSERTFILE | MWRITEFILE | MGOTODIR)) && !ISSET(RESTRICTED))
                 {
-                    answer = input_tab(answer, &typing_x, refresh_func, *listed);
+                    answer = input_tab(answer, &typing_x, refresh_func, listed);
                 }
+            }
         }
         else
         {
 
-            if (function == get_older_item && history_list != NULL)
+            if (function == get_older_item && history_list != nullptr)
             {
-                /* If this is the first step into history, start at the bottom. */
-                if (stored_string == NULL)
+                //
+                //  If this is the first step into history, start at the bottom.
+                //
+                if (stored_string == nullptr)
                 {
-                    reset_history_pointer_for(*history_list);
+                    reset_history_pointer_for(history_list);
                 }
 
-                /* When moving up from the bottom, remember the current answer. */
-                if ((*history_list)->next == NULL)
+                //
+                //  When moving up from the bottom, remember the current answer.
+                //
+                if (history_list->next == nullptr)
                 {
                     stored_string = mallocstrcpy(stored_string, answer);
                 }
 
-                /* If there is an older item, move to it and copy its string. */
-                if ((*history_list)->prev != NULL)
+                //
+                //  If there is an older item, move to it and copy its string.
+                //
+                if (history_list->prev != nullptr)
                 {
-                    *history_list = (*history_list)->prev;
-                    answer        = mallocstrcpy(answer, (*history_list)->data);
-                    typing_x      = strlen(answer);
+                    history_list = history_list->prev;
+                    answer       = mallocstrcpy(answer, history_list->data);
+                    typing_x     = constexpr_strlen(answer);
                 }
             }
-            else if (function == get_newer_item && history_list != NULL)
+            else if (function == get_newer_item && history_list != nullptr)
             {
-                /* If there is a newer item, move to it and copy its string. */
-                if ((*history_list)->next != NULL)
+                //
+                //  If there is a newer item, move to it and copy its string.
+                //
+                if (history_list->next != nullptr)
                 {
-                    *history_list = (*history_list)->next;
-                    answer        = mallocstrcpy(answer, (*history_list)->data);
-                    typing_x      = strlen(answer);
+                    history_list = history_list->next;
+                    answer       = mallocstrcpy(answer, history_list->data);
+                    typing_x     = constexpr_strlen(answer);
                 }
 
-                /* When at the bottom of the history list, restore the old answer. */
-                if ((*history_list)->next == NULL && stored_string && *answer == '\0')
+                //
+                //  When at the bottom of the history list, restore the old answer.
+                //
+                if (history_list->next == nullptr && stored_string && *answer == '\0')
                 {
                     answer   = mallocstrcpy(answer, stored_string);
-                    typing_x = strlen(answer);
+                    typing_x = constexpr_strlen(answer);
                 }
             }
             else
@@ -678,13 +736,15 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*r
                 {
                     ;
                 }
-                else if (function == (functionptrtype)implant)
+                else if (function == (CFuncPtr)implant)
                 {
                     implant(shortcut->expansion);
                 }
                 else if (function && !handle_editing(function))
                 {
-                    // When it's a permissible shortcut, run it and done.
+                    //
+                    //  When it's a permissible shortcut, run it and done.
+                    //
                     if (!ISSET(VIEW_MODE) || !changes_something(function))
                     {
                         function();
@@ -700,13 +760,15 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*r
         }
     }
 
-    // If the history pointer was moved, point it at the bottom again.
-    if (stored_string != NULL)
+    //
+    //  If the history pointer was moved, point it at the bottom again.
+    //
+    if (stored_string != nullptr)
     {
-        reset_history_pointer_for(*history_list);
-        free(stored_string);
+        reset_history_pointer_for(history_list);
+        std::free(stored_string);
     }
-    *actual = input;
+    actual = input;
     return function;
 }
 
@@ -717,15 +779,19 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, void (*r
 //  parameter is the default answer for when simply Enter is typed.
 //
 s32
-do_prompt(s32 menu, const s8 *provided, linestruct **history_list, void (*refresh_func)(), const s8 *msg, ...)
+do_prompt(s32 menu, C_s8 *provided, linestruct **history_list, CFuncPtr refresh_func, C_s8 *msg, ...)
 {
-    functionptrtype function = NULL;
-    bool            listed   = FALSE;
-    va_list         ap;
-    int             retval;
-    /* Save a possible current status-bar x position and prompt. */
-    size_t was_typing_x = typing_x;
-    char  *saved_prompt = prompt;
+    CFuncPtr function = nullptr;
+    va_list  ap;
+
+    bool listed = false;
+
+    s32 retval;
+    //
+    //  Save a possible current status-bar x position and prompt.
+    //
+    u64 was_typing_x = typing_x;
+    s8 *saved_prompt = prompt;
 
     bottombars(menu);
 
@@ -746,7 +812,7 @@ redo_theprompt:
 
     lastmessage = VACUUM;
 
-    function = acquire_an_answer(&retval, &listed, history_list, refresh_func);
+    function = acquire_an_answer(retval, listed, *history_list, refresh_func);
     std::free(prompt);
 
     if (retval == KEY_WINCH)
@@ -798,7 +864,7 @@ constexpr auto UNDECIDED = -2;
 //  and return the choice -- either YES or NO or ALL or CANCEL.
 //
 s32
-ask_user(bool withall, const s8 *question)
+ask_user(bool withall, C_s8 *question)
 {
     s32 choice = UNDECIDED;
     s32 width  = 16;
@@ -808,12 +874,13 @@ ask_user(bool withall, const s8 *question)
     //                of the translations for "Yes"/"No"/"All".  The first letter of each of
     //                these strings MUST be a single-byte letter; others may be multi-byte.
     //
-    const s8 *yesstr = _("Yy");
-    const s8 *nostr  = _("Nn");
-    const s8 *allstr = _("Aa");
+    C_s8 *yesstr = _("Yy");
+    C_s8 *nostr  = _("Nn");
+    C_s8 *allstr = _("Aa");
 
     const keystruct *shortcut;
-    functionptrtype  function;
+
+    CFuncPtr function;
 
     while (choice == UNDECIDED)
     {
@@ -838,11 +905,15 @@ ask_user(bool withall, const s8 *question)
                 width = COLS / 2;
             }
 
-            // Clear the shortcut list from the bottom of the screen.
+            //
+            //  Clear the shortcut list from the bottom of the screen.
+            //
             blank_bottombars();
 
-            // Now show the ones for "Yes", "No", "Cancel" and maybe "All".
-            sprintf(shortstr, " %c", yesstr[0]);
+            //
+            //  Now show the ones for "Yes", "No", "Cancel" and maybe "All".
+            //
+            std::sprintf(shortstr, " %c", yesstr[0]);
             wmove(footwin, 1, 0);
             post_one_key(shortstr, _("Yes"), width);
 
@@ -870,7 +941,9 @@ ask_user(bool withall, const s8 *question)
 
         currmenu = MYESNO;
 
-        // When not replacing, show the cursor while waiting for a key.
+        //
+        //  When not replacing, show the cursor while waiting for a key.
+        //
         kbinput = get_kbinput(footwin, !withall);
 
         if (kbinput == KEY_WINCH)
@@ -878,7 +951,9 @@ ask_user(bool withall, const s8 *question)
             continue;
         }
 
-        // Accept first character of an external paste and ignore the rest. */
+        //
+        //  Accept first character of an external paste and ignore the rest. */
+        //
         if (bracketed_paste)
         {
             kbinput = get_kbinput(footwin, BLIND);
@@ -888,10 +963,12 @@ ask_user(bool withall, const s8 *question)
             get_kbinput(footwin, BLIND);
         }
 
-        letter[index++] = (u8)kbinput;
+        letter[index++] = static_cast<u8>(kbinput);
 
-        // If the received code is a UTF-8 starter byte, get also the
-        // continuation bytes and assemble them into one letter.
+        //
+        //  If the received code is a UTF-8 starter byte, get also the
+        //  continuation bytes and assemble them into one letter.
+        //
         if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7)
         {
             s32 extras = (kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0);
@@ -904,30 +981,32 @@ ask_user(bool withall, const s8 *question)
 
         letter[index] = '\0';
 
-        /* See if the typed letter is in the Yes, No, or All strings. */
-        if (strstr(yesstr, letter) != nullptr)
+        //
+        //  See if the typed letter is in the Yes, No, or All strings.
+        //
+        if (constexpr_strstr(yesstr, letter) != nullptr)
         {
             choice = YES;
         }
-        else if (strstr(nostr, letter) != nullptr)
+        else if (constexpr_strstr(nostr, letter) != nullptr)
         {
             choice = NO;
         }
-        else if (withall && strstr(allstr, letter) != nullptr)
+        else if (withall && constexpr_strstr(allstr, letter) != nullptr)
         {
             choice = ALL;
         }
         else
         {
-            if (strchr("Yy", kbinput) != nullptr)
+            if (constexpr_strchr("Yy", kbinput) != nullptr)
             {
                 choice = YES;
             }
-            else if (strchr("Nn", kbinput) != nullptr)
+            else if (constexpr_strchr("Nn", kbinput) != nullptr)
             {
                 choice = NO;
             }
-            else if (withall && strchr("Aa", kbinput) != nullptr)
+            else if (withall && constexpr_strchr("Aa", kbinput) != nullptr)
             {
                 choice = ALL;
             }
@@ -958,13 +1037,17 @@ ask_user(bool withall, const s8 *question)
             edit_refresh();
             focusing = true;
         }
-        // Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too.
+        //
+        //  Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too.
+        //
         else if (kbinput == '\x0E' || (kbinput == '\x11' && !ISSET(MODERN_BINDINGS)) ||
                  (kbinput == '\x18' && ISSET(MODERN_BINDINGS)))
         {
             choice = NO;
         }
-        // And interpret ^Y as "Yes".
+        //
+        //  And interpret ^Y as "Yes".
+        //
         else if (kbinput == '\x19')
         {
             choice = YES;
@@ -973,14 +1056,18 @@ ask_user(bool withall, const s8 *question)
         {
             s32 mouse_x, mouse_y;
 
-            // We can click on the Yes/No/All shortcuts to select an answer.
+            //
+            //  We can click on the Yes/No/All shortcuts to select an answer.
+            //
             if (get_mouseinput(mouse_y, mouse_x, false) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, false) &&
                 mouse_x < (width * 2) && mouse_y > 0)
             {
                 s32 x = mouse_x / width;
                 s32 y = mouse_y - 1;
 
-                /* x == 0 means Yes or No, y == 0 means Yes or All. */
+                //
+                //  x == 0 means Yes or No, y == 0 means Yes or All.
+                //
                 choice = -2 * x * y + x - y + 1;
 
                 if (choice == ALL && !withall)

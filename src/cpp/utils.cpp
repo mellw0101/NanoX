@@ -2,6 +2,7 @@
 #include "../include/prototypes.h"
 
 #include <Mlib/Profile.h>
+#include <Mlib/constexpr.hpp>
 #include <cerrno>
 #include <cstring>
 #include <pwd.h>
@@ -45,10 +46,10 @@ get_homedir()
 //
 //  Return the filename part of the given path.
 //
-const s8 *
-tail(const s8 *path)
+C_s8 *
+tail(C_s8 *path)
 {
-    const s8 *slash = std::strrchr(path, '/');
+    C_s8 *slash = constexpr_strrchr(path, '/');
 
     if (slash == nullptr)
     {
@@ -64,13 +65,13 @@ tail(const s8 *path)
 //  Return a copy of the two given strings, welded together.
 //
 s8 *
-concatenate(const s8 *path, const s8 *name)
+concatenate(C_s8 *path, C_s8 *name)
 {
-    u64 pathlen = strlen(path);
-    s8 *joined  = static_cast<s8 *>(nmalloc(pathlen + strlen(name) + 1));
+    u64 pathlen = constexpr_strlen(path);
+    s8 *joined  = static_cast<s8 *>(nmalloc(pathlen + constexpr_strlen(name) + 1));
 
-    strcpy(joined, path);
-    strcpy(joined + pathlen, name);
+    constexpr_strcpy(joined, path);
+    constexpr_strcpy(joined + pathlen, name);
 
     return joined;
 }
@@ -79,7 +80,7 @@ concatenate(const s8 *path, const s8 *name)
 //  Return the number of digits that the given integer n takes up.
 //
 s32
-digits(const s64 n)
+digits(C_s64 n)
 {
     if (n < 100000)
     {
@@ -160,12 +161,12 @@ digits(const s64 n)
     }
 */
 bool
-parseNum(std::string_view string, s64 &result)
+parseNum(STRING_VIEW string, s64 &result)
 {
     s8 *end;
     errno = 0;
 
-    s64 value = std::strtoll(&string[0], &end, 10);
+    s64 value = constexpr_strtoll(&string[0], &end, 10);
 
     if (errno == ERANGE || *end != '\0' || string[0] == '\0')
     {
@@ -184,16 +185,18 @@ parseNum(std::string_view string, s64 &result)
 bool
 parse_line_column(C_s8 *string, s64 *line, s64 *column)
 {
-    const s8 *comma;
-    s8       *firstpart;
-    bool      retval;
+    PROFILE_FUNCTION;
+
+    C_s8 *comma;
+    s8   *firstpart;
+    bool  retval;
 
     while (*string == ' ')
     {
         string++;
     }
 
-    comma = std::strpbrk(string, ",.:");
+    comma = constexpr_strpbrk(string, ",.:");
 
     if (comma == nullptr)
     {
@@ -281,8 +284,8 @@ free_chararray(s8 **array, u64 len)
 bool
 is_separate_word(u64 position, u64 length, C_s8 *text)
 {
-    const s8 *before = text + step_left(text, position);
-    const s8 *after  = text + position + length;
+    C_s8 *before = text + step_left(text, position);
+    C_s8 *after  = text + position + length;
 
     //
     //  If the word starts at the beginning of the line OR the character before
@@ -414,7 +417,7 @@ strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
 //  Allocate the given amount of memory and return a pointer to it.
 //
 void *
-nmalloc(const u64 howmuch)
+nmalloc(C_u64 howmuch)
 {
     void *section = std::malloc(howmuch);
     if (section == nullptr)
@@ -428,13 +431,13 @@ nmalloc(const u64 howmuch)
 //  Reallocate the given section of memory to have the given size.
 //
 void *
-nrealloc(void *section, const u64 howmuch)
+nrealloc(void *section, C_u64 howmuch)
 {
     section = std::realloc(section, howmuch);
 
     if (section == nullptr)
     {
-        die(_("Nano is out of memory!\n"));
+        die(_(ERROR_MSG_OUT_OF_MEMORY));
     }
 
     return section;
@@ -445,12 +448,12 @@ nrealloc(void *section, const u64 howmuch)
 //  Usage: "dest = mallocstrcpy(dest, src);".
 //
 s8 *
-mallocstrcpy(s8 *dest, const s8 *src)
+mallocstrcpy(s8 *dest, C_s8 *src)
 {
-    const u64 count = std::strlen(src) + 1;
+    C_u64 count = constexpr_strlen(src) + 1;
 
     dest = static_cast<s8 *>(nrealloc(dest, count));
-    std::strncpy(dest, src, count);
+    constexpr_strncpy(dest, src, count);
 
     return dest;
 }
@@ -460,7 +463,7 @@ mallocstrcpy(s8 *dest, const s8 *src)
 //  of the given string, and NUL-terminate the copy.
 //
 s8 *
-measured_copy(const s8 *string, const u64 count)
+measured_copy(C_s8 *string, C_u64 count)
 {
     s8 *thecopy = static_cast<s8 *>(nmalloc(count + 1));
     std::memcpy(thecopy, string, count);
@@ -473,9 +476,9 @@ measured_copy(const s8 *string, const u64 count)
 //  Return an allocated copy of the given string.
 //
 s8 *
-copy_of(const s8 *string)
+copy_of(C_s8 *string)
 {
-    return measured_copy(string, std::strlen(string));
+    return measured_copy(string, constexpr_strlen(string));
 }
 
 //
@@ -494,7 +497,7 @@ free_and_assign(s8 *dest, s8 *src)
 //  displayed in the edit window when the cursor is at the given column.
 //
 u64
-get_page_start(u64 column)
+get_page_start(C_u64 column)
 {
     if (column == 0 || column + 2 < editwincols || ISSET(SOFTWRAP))
     {
@@ -525,7 +528,7 @@ xplustabs()
 //  not overshoot the given column.
 //
 u64
-actual_x(const s8 *text, u64 column)
+actual_x(C_s8 *text, u64 column)
 {
     //
     //  From where we start walking through the text.
@@ -554,7 +557,7 @@ actual_x(const s8 *text, u64 column)
 //  how many columns wide are the first maxlen bytes of text?
 //
 u64
-wideness(const s8 *text, u64 maxlen)
+wideness(C_s8 *text, u64 maxlen)
 {
     if (maxlen == 0)
     {
@@ -579,7 +582,7 @@ wideness(const s8 *text, u64 maxlen)
 //  Return the number of columns that the given text occupies.
 //
 u64
-breadth(const s8 *text)
+breadth(C_s8 *text)
 {
     u64 span = 0;
     while (*text != '\0')

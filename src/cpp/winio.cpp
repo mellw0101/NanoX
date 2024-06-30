@@ -365,7 +365,9 @@ read_keys_from(WINDOW *frame)
         key_buffer[waiting_codes++] = input;
     }
 
-    // Restore blocking-input mode.
+    //
+    //  Restore blocking-input mode.
+    //
     nodelay(frame, false);
 
 #ifdef DEBUG
@@ -417,12 +419,12 @@ put_back(s32 keycode)
 //  Set up the given expansion string to be ingested by the keyboard routines.
 //
 void
-implant(const s8 *string)
+implant(C_s8 *string)
 {
     plants_pointer = string;
     put_back(MORE_PLANTS);
 
-    mute_modifiers = TRUE;
+    mute_modifiers = true;
 }
 
 //
@@ -438,7 +440,7 @@ get_code_from_plantation()
 
     if (*plants_pointer == '{')
     {
-        char *closing = (char *)strchr(plants_pointer + 1, '}');
+        s8 *closing = const_cast<s8 *>(constexpr_strchr(plants_pointer + 1, '}'));
 
         if (!closing)
         {
@@ -538,10 +540,12 @@ get_input(WINDOW *frame)
     }
 }
 
-// Return the arrow-key code that corresponds to the given letter.
-// (This mapping is common to a handful of escape sequences.)
+//
+//  Return the arrow-key code that corresponds to the given letter.
+//  ( This mapping is common to a handful of escape sequences )
+//
 s32
-arrow_from_ABCD(s32 letter)
+arrow_from_ABCD(C_s32 letter)
 {
     if (letter < 'C')
     {
@@ -550,13 +554,16 @@ arrow_from_ABCD(s32 letter)
     return (letter == 'D' ? KEY_LEFT : KEY_RIGHT);
 }
 
-// Translate a sequence that began with "Esc O" to its corresponding key code.
+//
+//  Translate a sequence that began with "Esc O" to its corresponding key code.
+//
 s32
-convert_SS3_sequence(const int *seq, size_t length, int *consumed)
+convert_SS3_sequence(C_s32 *seq, u64 length, s32 *consumed)
 {
     switch (seq[0])
     {
         case '1' :
+        {
             if (length > 3 && seq[1] == ';')
             {
                 *consumed = 4;
@@ -564,47 +571,94 @@ convert_SS3_sequence(const int *seq, size_t length, int *consumed)
                 switch (seq[2])
                 {
                     case '2' :
+                    {
                         if ('A' <= seq[3] && seq[3] <= 'D')
                         {
-                            /* Esc O 1 ; 2 A == Shift-Up on old Terminal. */
-                            /* Esc O 1 ; 2 B == Shift-Down on old Terminal. */
-                            /* Esc O 1 ; 2 C == Shift-Right on old Terminal. */
-                            /* Esc O 1 ; 2 D == Shift-Left on old Terminal. */
-                            shift_held = TRUE;
+                            //
+                            //  Esc O 1 ; 2 A == Shift-Up on old Terminal.
+                            //  Esc O 1 ; 2 B == Shift-Down on old Terminal.
+                            //  Esc O 1 ; 2 C == Shift-Right on old Terminal.
+                            //  Esc O 1 ; 2 D == Shift-Left on old Terminal.
+                            //
+                            shift_held = true;
                             return arrow_from_ABCD(seq[3]);
                         }
                         break;
+                    }
                     case '5' :
+                    {
                         switch (seq[3])
                         {
-                            case 'A' : /* Esc O 1 ; 5 A == Ctrl-Up on old
-                                          Terminal. */
+                            //
+                            //  Esc O 1 ; 5 A == Ctrl-Up on old Terminal.
+                            //
+                            case 'A' :
+                            {
                                 return CONTROL_UP;
-                            case 'B' : /* Esc O 1 ; 5 B == Ctrl-Down on old
-                                          Terminal. */
+                            }
+                            //
+                            //  Esc O 1 ; 5 B == Ctrl-Down on old Terminal.
+                            //
+                            case 'B' :
+                            {
                                 return CONTROL_DOWN;
-                            case 'C' : /* Esc O 1 ; 5 C == Ctrl-Right on old
-                                          Terminal. */
+                            }
+                            //
+                            //  Esc O 1 ; 5 C == Ctrl-Right on old Terminal.
+                            //
+                            case 'C' :
+                            {
                                 return CONTROL_RIGHT;
-                            case 'D' : /* Esc O 1 ; 5 D == Ctrl-Left on old
-                                          Terminal. */
+                            }
+                            //
+                            //  Esc O 1 ; 5 D == Ctrl-Left on old Terminal.
+                            //
+                            case 'D' :
+                            {
                                 return CONTROL_LEFT;
+                            }
                         }
                         break;
+                    }
                 }
             }
             break;
-        case '2' : /* Shift */
-        case '3' : /* Alt */
-        case '4' : /* Shift+Alt */
-        case '5' : /* Ctrl */
-        case '6' : /* Shift+Ctrl */
-        case '7' : /* Alt+Ctrl */
-        case '8' : /* Shift+Alt+Ctrl */
+        }
+        //
+        //  Shift
+        //
+        case '2' :
+        //
+        //  Alt
+        //
+        case '3' :
+        //
+        //  Shift+Alt
+        //
+        case '4' :
+        //
+        //  Ctrl
+        //
+        case '5' :
+        //
+        //  Shift+Ctrl
+        //
+        case '6' :
+        //
+        //  Alt+Ctrl
+        //
+        case '7' :
+        //
+        //  Shift+Alt+Ctrl
+        //
+        case '8' :
+        {
             if (length > 1)
             {
                 *consumed = 2;
-                /* Do not accept multiple modifiers. */
+                //
+                //  Do not accept multiple modifiers.
+                //
                 if (seq[0] == '4' || seq[0] > '5')
                 {
                     return FOREIGN_SEQUENCE;
@@ -612,8 +666,13 @@ convert_SS3_sequence(const int *seq, size_t length, int *consumed)
 
                 switch (seq[1])
                 {
-                    case 'A' : /* Esc O 5 A == Ctrl-Up on Haiku. */
+                    //
+                    //  Esc O 5 A == Ctrl-Up on Haiku.
+                    //
+                    case 'A' :
+                    {
                         return CONTROL_UP;
+                    }
                     case 'B' : /* Esc O 5 B == Ctrl-Down on Haiku. */
                         return CONTROL_DOWN;
                     case 'C' : /* Esc O 5 C == Ctrl-Right on Haiku. */
@@ -628,6 +687,7 @@ convert_SS3_sequence(const int *seq, size_t length, int *consumed)
                 return (seq[1] - 0x40);
             }
             break;
+        }
         case 'A' : /* Esc O A == Up on VT100/VT320. */
         case 'B' : /* Esc O B == Down on VT100/VT320. */
         case 'C' : /* Esc O C == Right on VT100/VT320. */
@@ -966,7 +1026,6 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 }
 #endif
             }
-#ifndef NANO_TINY
             if (length > 1 && seq[1] == '$')
             {
                 /* Esc [ 3 $ == Shift-Delete on urxvt. */
@@ -987,7 +1046,6 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 /* Esc [ 3 n ~ == F17...F20 on some terminals. */
                 *consumed = 3;
             }
-#endif
             break;
         case '4' : /* Esc [ 4 ~ == End on VT220/VT320/
                     * Linux console/xterm. */
@@ -1026,7 +1084,6 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
             else if (length > 3 && seq[1] == ';' && seq[3] == '~')
             {
                 *consumed = 4;
-#ifndef NANO_TINY
                 if (seq[2] == '2')
                 {
                     return shiftaltdown;
@@ -1035,7 +1092,6 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 {
                     return ALT_PAGEDOWN;
                 }
-#endif
             }
             break;
         case '7' : /* Esc [ 7 ~ == Home on Eterm/rxvt;
@@ -1054,12 +1110,10 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
             {
                 return CONTROL_HOME;
             }
-#ifndef NANO_TINY
             else if (length > 1 && seq[1] == '@')
             {
                 return shiftcontrolhome;
             }
-#endif
             break;
         case '8' : /* Esc [ 8 ~ == End on Eterm/rxvt;
                     * Esc [ 8 $ == Shift-End on Eterm/rxvt;
@@ -1077,12 +1131,10 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
             {
                 return CONTROL_END;
             }
-#ifndef NANO_TINY
             else if (length > 1 && seq[1] == '@')
             {
                 return shiftcontrolend;
             }
-#endif
             break;
         case '9' : /* Esc [ 9 == Delete on Mach console. */
             return KEY_DC;
@@ -1146,11 +1198,11 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 *consumed = 2;
                 if ('@' < seq[1] && seq[1] < 'F')
                 {
-                    /* Esc [ [ A == F1 on Linux console. */
-                    /* Esc [ [ B == F2 on Linux console. */
-                    /* Esc [ [ C == F3 on Linux console. */
-                    /* Esc [ [ D == F4 on Linux console. */
-                    /* Esc [ [ E == F5 on Linux console. */
+                    //  Esc [ [ A == F1 on Linux console.
+                    //  Esc [ [ B == F2 on Linux console.
+                    //  Esc [ [ C == F3 on Linux console.
+                    //  Esc [ [ D == F4 on Linux console.
+                    //  Esc [ [ E == F5 on Linux console.
                     return KEY_F(seq[1] - '@');
                 }
             }
@@ -1160,13 +1212,15 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
     return FOREIGN_SEQUENCE;
 }
 
-/* Interpret an escape sequence that has the given post-ESC starter byte
- * and with the rest of the sequence still in the keystroke buffer. */
-int
-parse_escape_sequence(int starter)
+//
+//  Interpret an escape sequence that has the given post-ESC starter byte
+//  and with the rest of the sequence still in the keystroke buffer.
+//
+s32
+parse_escape_sequence(s32 starter)
 {
-    int consumed = 1;
-    int keycode  = 0;
+    s32 consumed = 1;
+    s32 keycode  = 0;
 
     if (starter == 'O')
     {
@@ -1177,7 +1231,9 @@ parse_escape_sequence(int starter)
         keycode = convert_CSI_sequence(nextcodes, waiting_codes, &consumed);
     }
 
-    /* Skip the consumed sequence elements. */
+    //
+    //  Skip the consumed sequence elements.
+    //
     waiting_codes -= consumed;
     nextcodes += consumed;
 
@@ -1187,11 +1243,12 @@ parse_escape_sequence(int starter)
 constexpr s32 PROCEED = -44;
 //
 //  For each consecutive call, gather the given digit into a three-digit
-//  decimal byte code (from 000 to 255).  Return the assembled code when
-//  it is complete, but until then return PROCEED when the given digit is
-//  valid, and the given digit itself otherwise.
+//  decimal byte code (from 000 to 255).
+//  Return the assembled code when it is complete,
+//  but until then return PROCEED when the given digit is valid,
+//  and the given digit itself otherwise.
 //
-int
+s32
 assemble_byte_code(s32 keycode)
 {
     static s32 byte = 0;
@@ -1236,24 +1293,23 @@ assemble_byte_code(s32 keycode)
     }
 }
 
-/// @name @c convert_to_control
-/// @brief
-///  -  Translate a normal ASCII character into its corresponding control code.
-///  -  The following groups of control keystrokes are
-///  -  EQUVILENT:
-///       Ctrl-2 == Ctrl-@ == Ctrl-` == Ctrl-Space
-///       Ctrl-3 == Ctrl-[ == <Esc>
-///       Ctrl-4 == Ctrl-\ == Ctrl-|
-///       Ctrl-5 == Ctrl-]
-///       Ctrl-6 == Ctrl-^ == Ctrl-~
-///       Ctrl-7 == Ctrl-/ == Ctrl-_
-///       Ctrl-8 == Ctrl-? */
-/// @param kbinput ( int )
-///  -  The ASCII character to convert.
-/// @returns @c int
-///  -  The corresponding control code.
-int
-convert_to_control(int kbinput)
+//
+//  Translate a normal ASCII character into its corresponding control code.
+//  The following groups of control keystrokes are EQUVILENT:
+//  - Ctrl-2 == Ctrl-@ == Ctrl-` == Ctrl-Space
+//  - Ctrl-3 == Ctrl-[ == <Esc>
+//  - Ctrl-4 == Ctrl-\ == Ctrl-|
+//  - Ctrl-5 == Ctrl-]
+//  - Ctrl-6 == Ctrl-^ == Ctrl-~
+//  - Ctrl-7 == Ctrl-/ == Ctrl-_
+//  - Ctrl-8 == Ctrl-?
+//
+//  @param kbinput ( int ) - The ASCII character to convert.
+//
+//  @return ( s32 ) - The corresponding control code.
+//
+s32
+convert_to_control(s32 kbinput)
 {
     if ('@' <= kbinput && kbinput <= '_')
     {
@@ -1283,41 +1339,52 @@ convert_to_control(int kbinput)
     return kbinput;
 }
 
-/// @name @c parse_kbinput
-/// @brief
-///  -  Extract one keystroke from the input stream.  Translate escape sequences
-///  -  and possibly keypad codes into their corresponding values.  Set meta_key
-///  -  to TRUE when appropriate.  Supported keypad keystrokes are: the arrow
-///  -  keys,
-///  -  Insert, Delete, Home, End, PageUp, PageDown, Enter, and Backspace (many
-///  -  of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or
-///  -  Shift+Alt.
-///  -  the function keys (F1-F12), and the numeric keypad with NumLock off.
-///  -  The function also handles UTF-8 sequences, and converts them to Unicode.
-///  -  The function returns the corresponding value for the given keystroke.
-/// @param frame ( WINDOW * )
-///  -  The window to read the input from.
-/// @returns @c int
-///  -  The corresponding value for the given keystroke.
-///
-/// TODO: MAKE into a loop to handle all the input codes using less code
-///
-int
+//
+//  Extract one keystroke from the input stream.
+//  Translate escape sequences and possibly keypad codes into their corresponding values.
+//  Set meta_key to TRUE when appropriate.
+//  Supported keypad keystrokes are:
+//  - the arrow keys,
+//  - Insert,
+//  - Delete,
+//  - Home,
+//  - End,
+//  - PageUp,
+//  - PageDown,
+//  - Enter,
+//  - and Backspace.
+//  - ( many of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or Shift+Alt )
+//  the function keys (F1-F12), and the numeric keypad with NumLock off.
+//  The function also handles UTF-8 sequences, and converts them to Unicode.
+//  The function returns the corresponding value for the given keystroke.
+//
+//  @param frame ( WINDOW * ) - The window to read the input from.
+//
+//  @return ( s32 ) - The corresponding value for the given keystroke.
+//
+//  TODO: MAKE into a loop to handle all the input codes using less code
+//
+s32
 parse_kbinput(WINDOW *frame)
 {
-    static bool first_escape_was_alone = FALSE;
-    static bool last_escape_was_alone  = FALSE;
-    static int  escapes                = 0;
-    int         keycode;
+    static bool first_escape_was_alone = false;
+    static bool last_escape_was_alone  = false;
+    static s32  escapes                = 0;
 
-    meta_key   = FALSE;
-    shift_held = FALSE;
+    s32 keycode;
 
-    /* Get one code from the input stream. */
+    meta_key   = false;
+    shift_held = false;
+
+    //
+    //  Get one code from the input stream.
+    //
     keycode = get_input(frame);
 
-    /* For an Esc, remember whether the last two arrived by themselves.
-     * Then increment the counter, rolling around on three escapes. */
+    //
+    //  For an Esc, remember whether the last two arrived by themselves.
+    //  Then increment the counter, rolling around on three escapes. */
+    //
     if (keycode == ESC_CODE)
     {
         first_escape_was_alone = last_escape_was_alone;
@@ -1340,7 +1407,9 @@ parse_kbinput(WINDOW *frame)
 
     if (escapes == 0)
     {
-        /* Most key codes in byte range cannot be special keys. */
+        //
+        // Most key codes in byte range cannot be special keys.
+        //
         if (keycode < 0xFF && keycode != '\t' && keycode != DEL_CODE)
         {
             return keycode;
@@ -1349,41 +1418,39 @@ parse_kbinput(WINDOW *frame)
     else if (escapes == 1)
     {
         escapes = 0;
-        /* Codes out of ASCII printable range cannot form an escape sequence. */
+        //
+        //  Codes out of ASCII printable range cannot form an escape sequence.
+        //
         if (keycode < 0x20 || 0x7E < keycode)
         {
             if (keycode == '\t')
             {
                 return SHIFT_TAB;
             }
-#ifndef NANO_TINY
             else if (keycode == KEY_BACKSPACE || keycode == '\b' || keycode == DEL_CODE)
             {
                 return CONTROL_SHIFT_DELETE;
             }
-#endif
-#ifdef ENABLE_UTF8
             else if (0xC0 <= keycode && keycode <= 0xFF && using_utf8())
             {
                 while (waiting_codes && 0x80 <= nextcodes[0] && nextcodes[0] <= 0xBF)
                 {
-                    get_input(NULL);
+                    get_input(nullptr);
                 }
                 return FOREIGN_SEQUENCE;
             }
-#endif
             else if (keycode < 0x20 && !last_escape_was_alone)
             {
-                meta_key = TRUE;
+                meta_key = true;
             }
         }
         else if (waiting_codes == 0 || nextcodes[0] == ESC_CODE || (keycode != 'O' && keycode != '['))
         {
             if (!shifted_metas)
             {
-                keycode = tolower(keycode);
+                keycode = constexpr_tolower(keycode);
             }
-            meta_key = TRUE;
+            meta_key = true;
         }
         else
         {
@@ -1396,30 +1463,48 @@ parse_kbinput(WINDOW *frame)
         if (keycode == '[' && waiting_codes &&
             (('A' <= nextcodes[0] && nextcodes[0] <= 'D') || ('a' <= nextcodes[0] && nextcodes[0] <= 'd')))
         {
-            /* An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X
-             * for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow. */
-            switch (get_input(NULL))
+            //
+            //  An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X
+            //  for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow.
+            //
+            switch (get_input(nullptr))
             {
                 case 'A' :
+                {
                     return KEY_HOME;
+                }
                 case 'B' :
+                {
                     return KEY_END;
+                }
                 case 'C' :
+                {
                     return CONTROL_RIGHT;
+                }
                 case 'D' :
+                {
                     return CONTROL_LEFT;
+                }
                 case 'a' :
-                    shift_held = TRUE;
+                {
+                    shift_held = true;
                     return KEY_PPAGE;
+                }
                 case 'b' :
-                    shift_held = TRUE;
+                {
+                    shift_held = true;
                     return KEY_NPAGE;
+                }
                 case 'c' :
-                    shift_held = TRUE;
+                {
+                    shift_held = true;
                     return KEY_HOME;
+                }
                 case 'd' :
-                    shift_held = TRUE;
+                {
+                    shift_held = true;
                     return KEY_END;
+                }
             }
         }
         else if (waiting_codes && nextcodes[0] != ESC_CODE && (keycode == '[' || keycode == 'O'))
@@ -1429,10 +1514,14 @@ parse_kbinput(WINDOW *frame)
         }
         else if ('0' <= keycode && (keycode <= '2' || (keycode <= '9' && digit_count > 0)))
         {
-            // Two escapes followed by one digit: byte sequence mode.
+            //
+            //  Two escapes followed by one digit: byte sequence mode.
+            //
             s32 byte = assemble_byte_code(keycode);
 
-            // If the decimal byte value is not yet complete, return nothing.
+            //
+            //  If the decimal byte value is not yet complete, return nothing.
+            //
             if (byte == PROCEED)
             {
                 escapes = 2;
@@ -1440,16 +1529,18 @@ parse_kbinput(WINDOW *frame)
             }
             else if (byte > 0x7F && using_utf8())
             {
-                // Convert the code to the corresponding Unicode, and
-                // put the second byte back into the keyboard buffer.
+                //
+                //  Convert the code to the corresponding Unicode, and
+                //  put the second byte back into the keyboard buffer.
+                //
                 if (byte < 0xC0)
                 {
-                    put_back((u8)byte);
+                    put_back(static_cast<u8>(byte));
                     return 0xC2;
                 }
                 else
                 {
-                    put_back((u8)(byte - 0x40));
+                    put_back(static_cast<u8>(byte - 0x40));
                     return 0xC3;
                 }
             }
@@ -1464,13 +1555,15 @@ parse_kbinput(WINDOW *frame)
         }
         else if (digit_count == 0)
         {
-            // If the first escape arrived alone but not the second, then it
-            // is a Meta keystroke; otherwise, it is an "Esc Esc control".
+            //
+            //  If the first escape arrived alone but not the second, then it
+            //  is a Meta keystroke; otherwise, it is an "Esc Esc control".
+            //
             if (first_escape_was_alone && !last_escape_was_alone)
             {
                 if (!shifted_metas)
                 {
-                    keycode = tolower(keycode);
+                    keycode = constexpr_tolower(keycode);
                 }
                 meta_key = true;
             }
@@ -1515,42 +1608,42 @@ parse_kbinput(WINDOW *frame)
     }
     else if (keycode == shiftup)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return KEY_UP;
     }
     else if (keycode == shiftdown)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return KEY_DOWN;
     }
     else if (keycode == shiftcontrolleft)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return CONTROL_LEFT;
     }
     else if (keycode == shiftcontrolright)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return CONTROL_RIGHT;
     }
     else if (keycode == shiftcontrolup)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return CONTROL_UP;
     }
     else if (keycode == shiftcontroldown)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return CONTROL_DOWN;
     }
     else if (keycode == shiftcontrolhome)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return CONTROL_HOME;
     }
     else if (keycode == shiftcontrolend)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return CONTROL_END;
     }
     else if (keycode == altleft)
@@ -1595,22 +1688,22 @@ parse_kbinput(WINDOW *frame)
     }
     else if (keycode == shiftaltleft)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return KEY_HOME;
     }
     else if (keycode == shiftaltright)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return KEY_END;
     }
     else if (keycode == shiftaltup)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return KEY_PPAGE;
     }
     else if (keycode == shiftaltdown)
     {
-        shift_held = TRUE;
+        shift_held = true;
         return KEY_NPAGE;
     }
     else if ((KEY_F0 + 24) < keycode && keycode < (KEY_F0 + 64))
@@ -1619,14 +1712,20 @@ parse_kbinput(WINDOW *frame)
     }
 
 #ifdef __linux__
-    /* When not running under X, check for the bare arrow keys whether
-     * Shift/Ctrl/Alt are being held together with them. */
-    unsigned char modifiers = 6;
+    //
+    //  When not running under X, check for the bare arrow keys whether
+    //  Shift/Ctrl/Alt are being held together with them.
+    //
+    u8 modifiers = 6;
 
-    /* Modifiers are: Alt (8), Ctrl (4), Shift (1). */
+    //
+    //  Modifiers are: Alt (8), Ctrl (4), Shift (1).
+    //
     if (on_a_vt && !mute_modifiers && ioctl(0, TIOCLINUX, &modifiers) >= 0)
     {
-        // Is Shift being held?
+        //
+        //  Is Shift being held?
+        //
         if (modifiers & 0x01)
         {
             if (keycode == '\t')
@@ -1643,34 +1742,54 @@ parse_kbinput(WINDOW *frame)
             }
             if (!meta_key)
             {
-                shift_held = TRUE;
+                shift_held = true;
             }
         }
-        // Is only Alt being held?
+        //
+        //  Is only Alt being held?
+        //
         if (modifiers == 0x08)
         {
             switch (keycode)
             {
                 case KEY_UP :
+                {
                     return ALT_UP;
+                }
                 case KEY_DOWN :
+                {
                     return ALT_DOWN;
+                }
                 case KEY_HOME :
+                {
                     return ALT_HOME;
+                }
                 case KEY_END :
+                {
                     return ALT_END;
+                }
                 case KEY_PPAGE :
+                {
                     return ALT_PAGEUP;
+                }
                 case KEY_NPAGE :
+                {
                     return ALT_PAGEDOWN;
+                }
                 case KEY_DC :
+                {
                     return ALT_DELETE;
+                }
                 case KEY_IC :
+                {
                     return ALT_INSERT;
+                }
             }
         }
 #endif
-        /* Is Ctrl being held? */
+        //
+        //  Is Ctrl being held?
+        //
         if (modifiers & 0x04)
         {
             switch (keycode)
@@ -1815,48 +1934,60 @@ parse_kbinput(WINDOW *frame)
     return keycode;
 }
 
-/// @name @c get_kbinput
-/// @brief
-///  -  Read in a single keystroke, ignoring any that are invalid.
-/// @param frame ( WINDOW * )
-///  -  The window to read the input from.
-/// @param showcursor ( bool )
-///  -  Whether to show the cursor.
-/// @returns @c int
-///  -  The corresponding value for the given keystroke.
-/// TODO: - ( This is the main function that reads the input from the terminal )
-int
+//
+//  Read in a single keystroke, ignoring any that are invalid.
+//
+//  @param frame ( WINDOW * )
+//   -  The window to read the input from.
+//
+//  @param showcursor ( bool )
+//   -  Whether to show the cursor.
+//
+//  @return ( int ) - The corresponding value for the given keystroke.
+//
+//  TODO: ( get_kbinput ) - This is the main function that reads the input from the terminal
+//
+s32
 get_kbinput(WINDOW *frame, bool showcursor)
 {
     s32 kbinput   = ERR;
     reveal_cursor = showcursor;
 
-    // Extract one keystroke from the input stream.
+    //
+    //  Extract one keystroke from the input stream.
+    //
     while (kbinput == ERR)
     {
         kbinput = parse_kbinput(frame);
     }
-    // If we read from the edit window, blank the status bar when it's time.
+
+    //
+    //  If we read from the edit window, blank the status bar when it's time.
+    //
     if (frame == midwin)
     {
         blank_it_when_expired();
     }
+
     return kbinput;
 }
 
-#ifdef ENABLE_UTF8
-#    define INVALID_DIGIT -77
-
-/* For each consecutive call, gather the given symbol into a Unicode code point.
- * When it's complete (with six digits, or when Space or Enter is typed), return
- * the assembled code.  Until then, return PROCEED when the symbol is valid, or
- * an error code for anything other than hexadecimal, Space, and Enter. */
-long
-assemble_unicode(int symbol)
+constexpr s16 INVALID_DIGIT = -77;
+//
+//  For each consecutive call, gather the given symbol into a Unicode code point.
+//  When it's complete (with six digits, or when Space or Enter is typed),
+//  return the assembled code.
+//  Until then,
+//  return PROCEED when the symbol is valid,
+//  or an error code for anything other than hexadecimal, Space, and Enter.
+//
+s64
+assemble_unicode(s32 symbol)
 {
-    static long unicode = 0;
-    static int  digits  = 0;
-    long        outcome = PROCEED;
+    static s64 unicode = 0;
+    static s32 digits  = 0;
+
+    s32 outcome = PROCEED;
 
     if ('0' <= symbol && symbol <= '9')
     {
@@ -1875,26 +2006,34 @@ assemble_unicode(int symbol)
         outcome = INVALID_DIGIT;
     }
 
-    /* If also the sixth digit was a valid hexadecimal value, then the
-     * Unicode sequence is complete, so return it (when it's valid). */
+    //
+    //  If also the sixth digit was a valid hexadecimal value, then the
+    //  Unicode sequence is complete, so return it (when it's valid).
+    //
     if (++digits == 6 && outcome == PROCEED)
     {
         outcome = (unicode < 0x110000) ? unicode : INVALID_DIGIT;
     }
 
-    /* Show feedback only when editing, not when at a prompt. */
+    //
+    //  Show feedback only when editing, not when at a prompt.
+    //
     if (outcome == PROCEED && currmenu == MMAIN)
     {
-        char partial[7] = "      ";
+        s8 partial[7] = "      ";
 
-        sprintf(partial + 6 - digits, "%0*lX", digits, unicode);
+        std::sprintf(partial + 6 - digits, "%0*lX", digits, unicode);
 
-        /* TRANSLATORS: This is shown while a six-digit hexadecimal
-         * Unicode character code (%s) is being typed in. */
+        //
+        //  TRANSLATORS: This is shown while a six-digit hexadecimal
+        //  Unicode character code (%s) is being typed in.
+        //
         statusline(INFO, _("Unicode Input: %s"), partial);
     }
 
-    /* If we have an end result, reset the value and the counter. */
+    //
+    //  If we have an end result, reset the value and the counter.
+    //
     if (outcome != PROCEED)
     {
         unicode = 0;
@@ -1903,82 +2042,91 @@ assemble_unicode(int symbol)
 
     return outcome;
 }
-#endif /* ENABLE_UTF8 */
 
-/* Read in one control character (or an iTerm/Eterm/rxvt double Escape),
- * or convert a series of six digits into a Unicode codepoint.  Return
- * in count either 1 (for a control character or the first byte of a
- * multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
-int *
-parse_verbatim_kbinput(WINDOW *frame, size_t *count)
+//
+//  Read in one control character (or an iTerm/Eterm/rxvt double Escape),
+//  or convert a series of six digits into a Unicode codepoint.  Return
+//  in count either 1 (for a control character or the first byte of a
+//  multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape).
+//
+s32 *
+parse_verbatim_kbinput(WINDOW *frame, u64 *count)
 {
-    int keycode, *yield;
+    s32 keycode, *yield;
 
-    reveal_cursor = TRUE;
+    reveal_cursor = true;
 
     keycode = get_input(frame);
 
-#ifndef NANO_TINY
-    /* When the window was resized, abort and return nothing. */
+    //
+    //  When the window was resized, abort and return nothing.
+    //
     if (keycode == KEY_WINCH)
     {
         *count = 999;
-        return NULL;
+        return nullptr;
     }
-#endif
 
-    /* Reserve ample space for the possible result. */
-    yield = RE_CAST(int *, nmalloc(6 * sizeof(int)));
+    //
+    //  Reserve ample space for the possible result.
+    //
+    yield = static_cast<s32 *>(nmalloc(6 * sizeof(s32)));
 
-#ifdef ENABLE_UTF8
-    /* If the key code is a hexadecimal digit, commence Unicode input. */
+    //
+    //  If the key code is a hexadecimal digit, commence Unicode input.
+    //
     if (using_utf8() && isxdigit(keycode))
     {
         long unicode = assemble_unicode(keycode);
         char multibyte[MB_CUR_MAX];
 
-        reveal_cursor = FALSE;
+        reveal_cursor = false;
 
-        /* Gather at most six hexadecimal digits. */
+        //
+        //  Gather at most six hexadecimal digits.
+        //
         while (unicode == PROCEED)
         {
             keycode = get_input(frame);
             unicode = assemble_unicode(keycode);
         }
 
-#    ifndef NANO_TINY
         if (keycode == KEY_WINCH)
         {
             *count = 999;
-            free(yield);
-            return NULL;
+            std::free(yield);
+            return nullptr;
         }
-#    endif
-        /* For an invalid keystroke, discard its possible continuation bytes. */
+
+        //
+        //  For an invalid keystroke, discard its possible continuation bytes.
+        //
         if (unicode == INVALID_DIGIT)
         {
             if (keycode == ESC_CODE && waiting_codes)
             {
-                get_input(NULL);
+                get_input(nullptr);
                 while (waiting_codes && 0x1F < nextcodes[0] && nextcodes[0] < 0x40)
                 {
-                    get_input(NULL);
+                    get_input(nullptr);
                 }
                 if (waiting_codes && 0x3F < nextcodes[0] && nextcodes[0] < 0x7F)
                 {
-                    get_input(NULL);
+                    get_input(nullptr);
                 }
             }
             else if (0xC0 <= keycode && keycode <= 0xFF)
             {
                 while (waiting_codes && 0x7F < nextcodes[0] && nextcodes[0] < 0xC0)
                 {
-                    get_input(NULL);
+                    get_input(nullptr);
                 }
             }
         }
 
-        /* Convert the Unicode value to a multibyte sequence. */
+        //
+        //  Convert the Unicode value to a multibyte sequence.
+        //
         *count = wctomb(multibyte, unicode);
 
         if (*count > MAXCHARLEN)
@@ -1986,62 +2134,73 @@ parse_verbatim_kbinput(WINDOW *frame, size_t *count)
             *count = 0;
         }
 
-        /* Change the multibyte character into a series of integers. */
-        for (size_t i = 0; i < *count; i++)
+        //
+        //  Change the multibyte character into a series of integers.
+        //
+        for (u64 i = 0; i < *count; i++)
         {
-            yield[i] = (int)multibyte[i];
+            yield[i] = static_cast<s32>(multibyte[i]);
         }
 
         return yield;
     }
-#endif /* ENABLE_UTF8 */
 
     yield[0] = keycode;
 
-    /* In case of an escape, take also a second code, as it might be another
-     * escape (on iTerm2/rxvt) or a control code (for M-Bsp and M-Enter). */
+    //
+    //  In case of an escape, take also a second code, as it might be another
+    //  escape (on iTerm2/rxvt) or a control code (for M-Bsp and M-Enter).
+    //
     if (keycode == ESC_CODE && waiting_codes)
     {
-        yield[1] = get_input(NULL);
+        yield[1] = get_input(nullptr);
         *count   = 2;
     }
 
     return yield;
 }
 
-/* Read in one control code, one character byte, or the leading escapes of
- * an escape sequence, and return the resulting number of bytes in count. */
-char *
-get_verbatim_kbinput(WINDOW *frame, size_t *count)
+//
+//  Read in one control code, one character byte, or the leading escapes of
+//  an escape sequence, and return the resulting number of bytes in count.
+//
+s8 *
+get_verbatim_kbinput(WINDOW *frame, u64 *count)
 {
-    char *bytes = RE_CAST(char *, nmalloc(MAXCHARLEN + 2));
-    int  *input;
+    s8  *bytes = static_cast<s8 *>(nmalloc(MAXCHARLEN + 2));
+    s32 *input;
 
-    /* Turn off flow control characters if necessary so that we can type
-     * them in verbatim, and turn the keypad off if necessary so that we
-     * don't get extended keypad values. */
-    if (ISSET(PRESERVE))
+    //
+    //  Turn off flow control characters if necessary so that we can type
+    //  them in verbatim, and turn the keypad off if necessary so that we
+    //  don't get extended keypad values.
+    //
+    if ISSET (PRESERVE)
     {
         disable_flow_control();
     }
     if (!ISSET(RAW_SEQUENCES))
     {
-        keypad(frame, FALSE);
+        keypad(frame, false);
     }
 
-#ifndef NANO_TINY
-    /* Turn bracketed-paste mode off. */
-    printf("\x1B[?2004l");
-    fflush(stdout);
-#endif
+    //
+    //  Turn bracketed-paste mode off.
+    //
+    std::printf(ESC_CODE_TURN_OFF_BRACKETED_PASTE);
+    std::fflush(stdout);
 
-    linger_after_escape = TRUE;
+    linger_after_escape = true;
 
-    /* Read in a single byte or two escapes. */
+    //
+    //  Read in a single byte or two escapes.
+    //
     input = parse_verbatim_kbinput(frame, count);
 
-    /* If the byte is invalid in the current mode, discard it;
-     * if it is an incomplete Unicode sequence, stuff it back. */
+    //
+    //  If the byte is invalid in the current mode, discard it;
+    //  if it is an incomplete Unicode sequence, stuff it back.
+    //
     if (input && *count)
     {
         if (*input >= 0x80 && *count == 1)
@@ -2055,39 +2214,43 @@ get_verbatim_kbinput(WINDOW *frame, size_t *count)
         }
     }
 
-    linger_after_escape = FALSE;
+    linger_after_escape = false;
 
-#ifndef NANO_TINY
-    /* Turn bracketed-paste mode back on. */
-    printf("\x1B[?2004h");
-    fflush(stdout);
-#endif
+    //
+    //  Turn bracketed-paste mode back on.
+    //
+    std::printf(ESC_CODE_TURN_ON_BRACKETED_PASTE);
+    std::fflush(stdout);
 
-    /* Turn flow control characters back on if necessary and turn the
-     * keypad back on if necessary now that we're done. */
-    if (ISSET(PRESERVE))
+    //
+    //  Turn flow control characters back on if necessary and turn the
+    //  keypad back on if necessary now that we're done.
+    //
+    if ISSET (PRESERVE)
     {
         enable_flow_control();
     }
 
-    /* Use the global window pointers, because a resize may have freed
-     * the data that the frame parameter points to. */
+    //
+    //  Use the global window pointers, because a resize may have freed
+    //  the data that the frame parameter points to.
+    //
     if (!ISSET(RAW_SEQUENCES))
     {
-        keypad(midwin, TRUE);
-        keypad(footwin, TRUE);
+        keypad(midwin, true);
+        keypad(footwin, true);
     }
 
     if (*count < 999)
     {
-        for (size_t i = 0; i < *count; i++)
+        for (u64 i = 0; i < *count; i++)
         {
-            bytes[i] = (char)input[i];
+            bytes[i] = static_cast<s8>(input[i]);
         }
         bytes[*count] = '\0';
     }
 
-    free(input);
+    std::free(input);
 
     return bytes;
 }
@@ -2214,7 +2377,7 @@ get_mouseinput(s32 &mouse_y, s32 &mouse_x, bool allow_shortcuts)
             //  shortcut in the current menu the user clicked on; then
             //  put the corresponding keystroke into the keyboard buffer.
             //
-            for (funcstruct *f = allfuncs; f != NULL; f = f->next)
+            for (funcstruct *f = allfuncs; f != nullptr; f = f->next)
             {
                 if ((f->menus & currmenu) == 0)
                 {
@@ -2282,11 +2445,15 @@ get_mouseinput(s32 &mouse_y, s32 &mouse_x, bool allow_shortcuts)
         }
     }
 #endif
-    /* Ignore all other mouse events. */
+    //
+    //  Ignore all other mouse events.
+    //
     return 2;
 }
 
-/* Move (in the given window) to the given row and wipe it clean. */
+//
+//  Move (in the given window) to the given row and wipe it clean.
+//
 void
 blank_row(WINDOW *window, s32 row)
 {
@@ -3808,10 +3975,10 @@ draw_row(C_s32 row, C_s8 *converted, linestruct *line, C_u64 from_col)
     if (stripe_column > from_col && !inhelp && (sequel_column == 0 || stripe_column <= sequel_column) &&
         stripe_column <= from_col + editwincols)
     {
-        ssize_t target_column = stripe_column - from_col - 1;
-        size_t  target_x      = actual_x(converted, target_column);
-        char    striped_char[MAXCHARLEN];
-        size_t  charlen = 1;
+        s64 target_column = stripe_column - from_col - 1;
+        u64 target_x      = actual_x(converted, target_column);
+        s8  striped_char[MAXCHARLEN];
+        u64 charlen = 1;
 
         if (*(converted + target_x) != '\0')
         {
@@ -3907,8 +4074,8 @@ draw_row(C_s32 row, C_s8 *converted, linestruct *line, C_u64 from_col)
             //
             if (bot_x < till_x)
             {
-                u64 end_col = wideness(line->data, bot_x) - from_col;
-                paintlen    = actual_x(thetext, end_col - start_col);
+                C_u64 end_col = wideness(line->data, bot_x) - from_col;
+                paintlen      = actual_x(thetext, end_col - start_col);
             }
 
             wattron(midwin, interface_color_pair[SELECTED_TEXT]);
@@ -3924,7 +4091,7 @@ draw_row(C_s32 row, C_s8 *converted, linestruct *line, C_u64 from_col)
 //  Return the number of rows "consumed" (relevant when softwrapping). */
 //
 s32
-update_line(linestruct *line, u64 index)
+update_line(linestruct *line, C_u64 index)
 {
     //
     //  The row in the edit window we will be updating.
@@ -3977,28 +4144,46 @@ update_line(linestruct *line, u64 index)
     return 1;
 }
 
-/* Redraw all the chunks of the given line (as far as they fit onscreen),
- * unless it's edittop, which will be displayed from column firstcolumn.
- * Return the number of rows that were "consumed". */
-int
+//
+//  Redraw all the chunks of the given line (as far as they fit onscreen),
+//  unless it's edittop, which will be displayed from column firstcolumn.
+//  Return the number of rows that were "consumed".
+//
+s32
 update_softwrapped_line(linestruct *line)
 {
-    int row = 0;
-    /* The row in the edit window we will write to. */
+    //
+    //  The row in the edit window we will write to.
+    //
+    s32 row = 0;
+    //
+    //  An iterator needed to find the relevant row.
+    //
     linestruct *someline = openfile->edittop;
-    /* An iterator needed to find the relevant row. */
-    int starting_row;
-    /* The first row in the edit window that gets updated. */
-    size_t from_col = 0;
-    /* The starting column of the current chunk. */
-    size_t to_col = 0;
-    /* The end column of the current chunk. */
-    char *converted;
-    /* The data of the chunk with tabs and control characters expanded. */
-    bool kickoff = TRUE;
-    /* This tells the softwrapping routine to start at beginning-of-line. */
-    bool end_of_line = FALSE;
-    /* Becomes TRUE when the last chunk of the line has been reached. */
+    //
+    //  The first row in the edit window that gets updated.
+    //
+    s32 starting_row;
+    //
+    //  The starting column of the current chunk.
+    //
+    u64 from_col = 0;
+    //
+    //  The end column of the current chunk.
+    //
+    u64 to_col = 0;
+    //
+    //  The data of the chunk with tabs and control characters expanded.
+    //
+    s8 *converted;
+    //
+    //  This tells the softwrapping routine to start at beginning-of-line.
+    //
+    bool kickoff = true;
+    //
+    //  Becomes TRUE when the last chunk of the line has been reached.
+    //
+    bool end_of_line = false;
 
     if (line == openfile->edittop)
     {
@@ -4009,14 +4194,18 @@ update_softwrapped_line(linestruct *line)
         row -= chunk_for(openfile->firstcolumn, openfile->edittop);
     }
 
-    /* Find out on which screen row the target line should be shown. */
-    while (someline != line && someline != NULL)
+    //
+    //  Find out on which screen row the target line should be shown.
+    //
+    while (someline != line && someline != nullptr)
     {
         row += 1 + extra_chunks_in(someline);
         someline = someline->next;
     }
 
-    /* If the first chunk is offscreen, don't even try to display it. */
+    //
+    //  If the first chunk is offscreen, don't even try to display it.
+    //
     if (row < 0 || row >= editwinrows)
     {
         return 0;
@@ -4030,8 +4219,10 @@ update_softwrapped_line(linestruct *line)
 
         sequel_column = (end_of_line) ? 0 : to_col;
 
-        /* Convert the chunk to its displayable form and draw it. */
-        converted = display_string(line->data, from_col, to_col - from_col, TRUE, FALSE);
+        //
+        //  Convert the chunk to its displayable form and draw it.
+        //
+        converted = display_string(line->data, from_col, to_col - from_col, true, false);
         draw_row(row++, converted, line, from_col);
         free(converted);
 
@@ -4046,38 +4237,42 @@ update_softwrapped_line(linestruct *line)
     return (row - starting_row);
 }
 
-/* Check whether the mark is on, or whether old_column and new_column are on
- * different "pages" (in softwrap mode, only the former applies), which means
- * that the relevant line needs to be redrawn. */
+//
+//  Check whether the mark is on, or whether old_column and new_column are on
+//  different "pages" (in softwrap mode, only the former applies), which means
+//  that the relevant line needs to be redrawn.
+//
 bool
-line_needs_update(const size_t old_column, const size_t new_column)
+line_needs_update(C_u64 old_column, C_u64 new_column)
 {
-#ifndef NANO_TINY
     if (openfile->mark)
     {
-        return TRUE;
+        return true;
     }
     else
-#endif
+    {
         return (get_page_start(old_column) != get_page_start(new_column));
+    }
 }
 
-/* Try to move up nrows softwrapped chunks from the given line and the
- * given column (leftedge).  After moving, leftedge will be set to the
- * starting column of the current chunk.  Return the number of chunks we
- * couldn't move up, which will be zero if we completely succeeded. */
-int
-go_back_chunks(int nrows, linestruct **line, size_t *leftedge)
+//
+//  Try to move up nrows softwrapped chunks from the given line and the
+//  given column (leftedge).  After moving, leftedge will be set to the
+//  starting column of the current chunk.  Return the number of chunks we
+//  couldn't move up, which will be zero if we completely succeeded.
+//
+s32
+go_back_chunks(s32 nrows, linestruct **line, u64 *leftedge)
 {
-    int i;
-
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    s32 i;
+    if ISSET (SOFTWRAP)
     {
-        /* Recede through the requested number of chunks. */
+        //
+        //  Recede through the requested number of chunks.
+        //
         for (i = nrows; i > 0; i--)
         {
-            size_t chunk = chunk_for(*leftedge, *line);
+            u64 chunk = chunk_for(*leftedge, *line);
 
             *leftedge = 0;
 
@@ -4102,12 +4297,12 @@ go_back_chunks(int nrows, linestruct **line, size_t *leftedge)
         }
     }
     else
-#endif
+    {
         for (i = nrows; i > 0 && (*line)->prev != NULL; i--)
         {
             *line = (*line)->prev;
         }
-
+    }
     return i;
 }
 
@@ -4129,7 +4324,9 @@ go_forward_chunks(s32 nrows, linestruct *&line, u64 &leftedge)
         u64  current_leftedge = leftedge;
         bool kickoff          = true;
 
-        /* Advance through the requested number of chunks. */
+        //
+        //  Advance through the requested number of chunks.
+        //
         for (i = nrows; i > 0; i--)
         {
             bool end_of_line = false;
@@ -4170,24 +4367,27 @@ go_forward_chunks(s32 nrows, linestruct *&line, u64 &leftedge)
     return i;
 }
 
-/* Return TRUE if there are fewer than a screen's worth of lines between
- * the line at line number was_lineno (and column was_leftedge, if we're
- * in softwrap mode) and the line at current[current_x]. */
+//
+//  Return TRUE if there are fewer than a screen's worth of lines between
+//  the line at line number was_lineno (and column was_leftedge, if we're
+//  in softwrap mode) and the line at current[current_x].
+//
 bool
-less_than_a_screenful(size_t was_lineno, size_t was_leftedge)
+less_than_a_screenful(u64 was_lineno, u64 was_leftedge)
 {
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
-        linestruct *line      = openfile->current;
-        size_t      leftedge  = leftedge_for(xplustabs(), openfile->current);
-        int         rows_left = go_back_chunks(editwinrows - 1, &line, &leftedge);
+        linestruct *line = openfile->current;
+
+        u64 leftedge  = leftedge_for(xplustabs(), openfile->current);
+        s32 rows_left = go_back_chunks(editwinrows - 1, &line, &leftedge);
 
         return (rows_left > 0 || line->lineno < was_lineno || (line->lineno == was_lineno && leftedge <= was_leftedge));
     }
     else
-#endif
+    {
         return (openfile->current->lineno - was_lineno < editwinrows);
+    }
 }
 
 //
@@ -4198,14 +4398,14 @@ less_than_a_screenful(size_t was_lineno, size_t was_leftedge)
 void
 draw_scrollbar()
 {
-    int fromline     = openfile->edittop->lineno - 1;
-    int totallines   = openfile->filebot->lineno;
-    int coveredlines = editwinrows;
+    s32 fromline     = openfile->edittop->lineno - 1;
+    s32 totallines   = openfile->filebot->lineno;
+    s32 coveredlines = editwinrows;
 
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
         linestruct *line   = openfile->edittop;
-        int         extras = extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line);
+        s32         extras = extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line);
 
         while (line->lineno + extras < fromline + editwinrows && line->next)
         {
@@ -4216,8 +4416,8 @@ draw_scrollbar()
         coveredlines = line->lineno - fromline;
     }
 
-    int lowest  = (fromline * editwinrows) / totallines;
-    int highest = lowest + (editwinrows * coveredlines) / totallines;
+    s32 lowest  = (fromline * editwinrows) / totallines;
+    s32 highest = lowest + (editwinrows * coveredlines) / totallines;
 
     if (editwinrows > totallines && !ISSET(SOFTWRAP))
     {
@@ -4255,48 +4455,66 @@ edit_scroll(bool direction)
         go_forward_chunks(1, openfile->edittop, openfile->firstcolumn);
     }
 
-    /* Actually scroll the text of the edit window one row up or down. */
+    //
+    //  Actually scroll the text of the edit window one row up or down.
+    //
     scrollok(midwin, TRUE);
     wscrl(midwin, (direction == BACKWARD) ? -1 : 1);
     scrollok(midwin, FALSE);
 
-    /* If we're not on the first "page" (when not softwrapping), or the mark
-     * is on, the row next to the scrolled region needs to be redrawn too. */
+    //
+    //  If we're not on the first "page" (when not softwrapping), or the mark
+    //  is on, the row next to the scrolled region needs to be redrawn too.
+    //
     if (line_needs_update(openfile->placewewant, 0) && nrows < editwinrows)
     {
         nrows++;
     }
 
-    /* If we scrolled backward, the top row needs to be redrawn. */
+    //
+    //  If we scrolled backward, the top row needs to be redrawn.
+    //
     line     = openfile->edittop;
     leftedge = openfile->firstcolumn;
 
-    /* If we scrolled forward, the bottom row needs to be redrawn. */
+    //
+    //  If we scrolled forward, the bottom row needs to be redrawn.
+    //
     if (direction == FORWARD)
     {
         go_forward_chunks(editwinrows - nrows, line, leftedge);
     }
 
+    //
+    //  TODO : ( edit_scroll ) - This is the place where the scrollbar is drawn.
+    //         figure out how to enable.
+    //
     if (sidebar)
     {
         draw_scrollbar();
     }
 
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
-        /* Compensate for the earlier chunks of a softwrapped line. */
+        //
+        //  Compensate for the earlier chunks of a softwrapped line.
+        //
         nrows += chunk_for(leftedge, line);
 
-        /* Don't compensate for the chunks that are offscreen. */
+        //
+        //  Don't compensate for the chunks that are offscreen.
+        //
         if (line == openfile->edittop)
         {
             nrows -= chunk_for(openfile->firstcolumn, line);
         }
     }
 
-    /* Draw new content on the blank row (and on the bordering row too
-     * when it was deemed necessary). */
-    while (nrows > 0 && line != NULL)
+    //
+    //  Draw new content on the blank row (and on the bordering row too
+    //  when it was deemed necessary).
+    //
+    while (nrows > 0 && line != nullptr)
     {
         nrows -= update_line(line, (line == openfile->current) ? openfile->current_x : 0);
         line = line->next;
@@ -4318,7 +4536,7 @@ get_softwrap_breakpoint(C_s8 *linedata, u64 leftedge, bool &kickoff, bool &end_o
     //
     static C_s8 *text;
     //
-    // Column position that corresponds to the above pointer. */
+    //  Column position that corresponds to the above pointer.
     //
     static u64 column;
     //
@@ -4449,40 +4667,48 @@ get_chunk_and_edge(u64 column, linestruct *line, u64 *leftedge)
     }
 }
 
-/* Return how many extra rows the given line needs when softwrapping. */
-size_t
+//
+//  Return how many extra rows the given line needs when softwrapping.
+//
+u64
 extra_chunks_in(linestruct *line)
 {
-    return get_chunk_and_edge((size_t)-1, line, NULL);
+    return get_chunk_and_edge((u64)-1, line, nullptr);
 }
 
-/* Return the row of the softwrapped chunk of the given line that column is on,
- * relative to the first row (zero-based). */
-size_t
-chunk_for(size_t column, linestruct *line)
+//
+//  Return the row of the softwrapped chunk of the given line that column is on,
+//  relative to the first row (zero-based).
+//
+u64
+chunk_for(u64 column, linestruct *line)
 {
-    return get_chunk_and_edge(column, line, NULL);
+    return get_chunk_and_edge(column, line, nullptr);
 }
 
-/* Return the leftmost column of the softwrapped chunk of the given line that
- * the given column is on. */
-size_t
-leftedge_for(size_t column, linestruct *line)
+//
+//  Return the leftmost column of the softwrapped chunk of the given line that
+//  the given column is on.
+//
+u64
+leftedge_for(u64 column, linestruct *line)
 {
-    size_t leftedge;
+    u64 leftedge;
 
     get_chunk_and_edge(column, line, &leftedge);
 
     return leftedge;
 }
 
-/* Ensure that firstcolumn is at the starting column of the softwrapped chunk
- * it's on.  We need to do this when the number of columns of the edit window
- * has changed, because then the width of softwrapped chunks has changed. */
+//
+//  Ensure that firstcolumn is at the starting column of the softwrapped chunk
+//  it's on.  We need to do this when the number of columns of the edit window
+//  has changed, because then the width of softwrapped chunks has changed.
+//
 void
-ensure_firstcolumn_is_aligned(void)
+ensure_firstcolumn_is_aligned()
 {
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
         openfile->firstcolumn = leftedge_for(openfile->firstcolumn, openfile->edittop);
     }
@@ -4491,27 +4717,32 @@ ensure_firstcolumn_is_aligned(void)
         openfile->firstcolumn = 0;
     }
 
-    /* If smooth scrolling is on, make sure the viewport doesn't center. */
-    focusing = FALSE;
+    //
+    //  If smooth scrolling is on, make sure the viewport doesn't center.
+    //
+    focusing = false;
 }
 
-/* When in softwrap mode, and the given column is on or after the breakpoint of
- * a softwrapped chunk, shift it back to the last column before the breakpoint.
- * The given column is relative to the given leftedge in current.  The returned
- * column is relative to the start of the text. */
-size_t
-actual_last_column(size_t leftedge, size_t column)
+//
+//  When in softwrap mode, and the given column is on or after the breakpoint of
+//  a softwrapped chunk, shift it back to the last column before the breakpoint.
+//  The given column is relative to the given leftedge in current.  The returned
+//  column is relative to the start of the text.
+//
+u64
+actual_last_column(u64 leftedge, u64 column)
 {
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
-        bool   kickoff    = TRUE;
-        bool   last_chunk = FALSE;
-        size_t end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk) - leftedge;
+        bool kickoff    = true;
+        bool last_chunk = false;
+        u64  end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk) - leftedge;
 
-        /* If we're not on the last chunk, we're one column past the end of
-         * the row.  Shifting back one column might put us in the middle of
-         * a multi-column character, but actual_x() will fix that later. */
+        //
+        //  If we're not on the last chunk, we're one column past the end of
+        //  the row.  Shifting back one column might put us in the middle of
+        //  a multi-column character, but actual_x() will fix that later.
+        //
         if (!last_chunk)
         {
             end_col--;
@@ -4522,24 +4753,23 @@ actual_last_column(size_t leftedge, size_t column)
             column = end_col;
         }
     }
-#endif
 
     return leftedge + column;
 }
 
-/* Return TRUE if current[current_x] is before the viewport. */
+//
+//  Return TRUE if current[current_x] is before the viewport.
+//
 bool
-current_is_above_screen(void)
+current_is_above_screen()
 {
-#ifndef NANO_TINY
-    if (ISSET(SOFTWRAP))
+    if ISSET (SOFTWRAP)
     {
         return (openfile->current->lineno < openfile->edittop->lineno ||
                 (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
     }
-    else
-#endif
-        return (openfile->current->lineno < openfile->edittop->lineno);
+
+    return (openfile->current->lineno < openfile->edittop->lineno);
 }
 
 #define SHIM (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
@@ -4553,42 +4783,48 @@ current_is_below_screen()
     if ISSET (SOFTWRAP)
     {
         linestruct *line     = openfile->edittop;
-        size_t      leftedge = openfile->firstcolumn;
+        u64         leftedge = openfile->firstcolumn;
 
-        /* If current[current_x] is more than a screen's worth of lines after
-         * edittop at column firstcolumn, it's below the screen. */
+        //
+        //  If current[current_x] is more than a screen's worth of lines after
+        //  edittop at column firstcolumn, it's below the screen.
+        //
         return (
             go_forward_chunks(editwinrows - 1 - SHIM, line, leftedge) == 0 &&
             (line->lineno < openfile->current->lineno ||
              (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
     }
-    else
-    {
-        return (openfile->current->lineno >= openfile->edittop->lineno + editwinrows - SHIM);
-    }
+
+    return (openfile->current->lineno >= openfile->edittop->lineno + editwinrows - SHIM);
 }
 
-/* Return TRUE if current[current_x] is outside the viewport. */
+//
+//  Return TRUE if current[current_x] is outside the viewport.
+//
 bool
-current_is_offscreen(void)
+current_is_offscreen()
 {
     return (current_is_above_screen() || current_is_below_screen());
 }
 
-/* Update any lines between old_current and current that need to be
- * updated.  Use this if we've moved without changing any text. */
+//
+//  Update any lines between old_current and current that need to be
+//  updated.  Use this if we've moved without changing any text.
+//
 void
 edit_redraw(linestruct *old_current, update_type manner)
 {
-    size_t was_pww = openfile->placewewant;
+    u64 was_pww = openfile->placewewant;
 
     openfile->placewewant = xplustabs();
 
-    /* If the current line is offscreen, scroll until it's onscreen. */
+    //
+    //  If the current line is offscreen, scroll until it's onscreen.
+    //
     if (current_is_offscreen())
     {
         adjust_viewport(ISSET(JUMPY_SCROLLING) ? CENTERING : manner);
-        refresh_needed = TRUE;
+        refresh_needed = true;
         return;
     }
 

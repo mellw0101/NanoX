@@ -2,8 +2,6 @@
 
 #include <Mlib/Profile.h>
 #include <Mlib/def.h>
-#include <cctype>
-#include <cstring>
 #include <term.h>
 
 //  Global variables.
@@ -128,205 +126,264 @@ s32 mousefocusin, mousefocusout;
 //  The relative column where we will wrap lines.
 //
 s64 fill = -COLUMNS_FROM_EOL;
-
-/* The actual column where we will wrap lines, based on fill. */
-size_t wrap_at = 0;
-
-/* The top portion of the screen, showing the version number of nano,
- * the name of the file, and whether the buffer was modified. */
-WINDOW *topwin = NULL;
-
-/* The middle portion of the screen: the edit window, showing the
- * contents of the current buffer, the file we are editing. */
-WINDOW *midwin = NULL;
-
-/* The bottom portion of the screen, where status-bar messages,
- * the status-bar prompt, and a list of shortcuts are shown. */
-WINDOW *footwin = NULL;
-
-/* How many rows does the edit window take up? */
+//
+//  The actual column where we will wrap lines, based on fill.
+//
+u64 wrap_at = 0;
+//
+//  The top portion of the screen,
+//  showing the version number of nano,
+//  the name of the file,
+//  and whether the buffer was modified.
+//
+WINDOW *topwin = nullptr;
+//
+//  The middle portion of the screen: the edit window, showing the
+//  contents of the current buffer, the file we are editing.
+//
+WINDOW *midwin = nullptr;
+//
+//  The bottom portion of the screen, where status-bar messages,
+//  the status-bar prompt, and a list of shortcuts are shown.
+//
+WINDOW *footwin = nullptr;
+//
+//  How many rows does the edit window take up?
+//
 int editwinrows = 0;
-
-/* The number of usable columns in the edit window: COLS - margin. */
+//
+//  The number of usable columns in the edit window: COLS - margin.
+//
 int editwincols = -1;
-
-/* The amount of space reserved at the left for line numbers. */
+//
+//  The amount of space reserved at the left for line numbers.
+//
 int margin = 0;
-
-/* Becomes 1 when the indicator "scroll bar" must be shown. */
+//
+//  Becomes 1 when the indicator "scroll bar" must be shown.
+//
 int sidebar = 0;
-
-/* An array of characters that together depict the scrollbar. */
-int *bardata = NULL;
-
-/* The column at which a vertical bar will be drawn. */
+//
+//  An array of characters that together depict the scrollbar.
+//
+int *bardata = nullptr;
+//
+//  The column at which a vertical bar will be drawn.
+//
 ssize_t stripe_column = 0;
-
-/* Whether to center the line with the cursor (0), push it
- * to the top of the viewport (1), or to the bottom (2). */
+//
+//  Whether to center the line with the cursor (0), push it
+//  to the top of the viewport (1), or to the bottom (2).
+//
 int cycling_aim = 0;
-
-/* The buffer where we store cut text. */
-linestruct *cutbuffer = NULL;
-
-/* The last line in the cutbuffer. */
-linestruct *cutbottom = NULL;
-
-/* Whether to add to the cutbuffer instead of clearing it first. */
+//
+//  The buffer where we store cut text.
+//
+linestruct *cutbuffer = nullptr;
+//
+//  The last line in the cutbuffer.
+//
+linestruct *cutbottom = nullptr;
+//
+//  Whether to add to the cutbuffer instead of clearing it first.
+//
 bool keep_cutbuffer = FALSE;
-
-/* The list of all open file buffers. */
-openfilestruct *openfile = NULL;
-
-/* The first open buffer. */
-openfilestruct *startfile = NULL;
-
-/* The opening and closing brackets that bracket searches can find. */
-char *matchbrackets = NULL;
-
-/* The characters used when visibly showing tabs and spaces. */
-char *whitespace = NULL;
-
-/* The length in bytes of these characters. */
-int whitelen[2];
-
-/* The closing punctuation that can end sentences. */
-char *punct = NULL;
-
-/* The closing brackets that can follow closing punctuation and
- * can end sentences. */
-char *brackets = NULL;
-
-/* The quoting string.  The default value is set in main(). */
-char *quotestr = NULL;
-
-/* The compiled regular expression from the quoting string. */
+//
+//  The list of all open file buffers.
+//
+openfilestruct *openfile = nullptr;
+//
+//  The first open buffer.
+//
+openfilestruct *startfile = nullptr;
+//
+//  The opening and closing brackets that bracket searches can find.
+//
+s8 *matchbrackets = nullptr;
+//
+//  The characters used when visibly showing tabs and spaces.
+//
+s8 *whitespace = nullptr;
+//
+//  The length in bytes of these characters.
+//
+s32 whitelen[2];
+//
+//  The closing punctuation that can end sentences.
+//
+s8 *punct = nullptr;
+//
+//  The closing brackets that can follow closing punctuation and
+//  can end sentences.
+//
+s8 *brackets = nullptr;
+//
+//  The quoting string.  The default value is set in main().
+//
+s8 *quotestr = nullptr;
+//
+//  The compiled regular expression from the quoting string.
+//
 regex_t quotereg;
-
-/* Nonalphanumeric characters that also form words. */
-char *word_chars = NULL;
-
-/* The width of a tab in spaces.  The default is set in main(). */
-ssize_t tabsize = -1;
-
-/* The directory where we store backup files. */
-char *backup_dir = NULL;
-
-/* The path to our confining "operating" directory, when given. */
-char *operating_dir = NULL;
-
-/* The command to use for the alternate spell checker. */
-char *alt_speller = NULL;
-
-/* The global list of color syntaxes. */
-syntaxtype *syntaxes = NULL;
-
-/* The color syntax name specified on the command line. */
-char *syntaxstr = NULL;
-
-/* Whether the colors for the current syntax have been initialized. */
+//
+//  Nonalphanumeric characters that also form words.
+//
+s8 *word_chars = nullptr;
+//
+//  The width of a tab in spaces.  The default is set in main().
+//
+s64 tabsize = -1;
+//
+//  The directory where we store backup files.
+//
+s8 *backup_dir = nullptr;
+//
+//  The path to our confining "operating" directory, when given.
+//
+s8 *operating_dir = nullptr;
+//
+//  The command to use for the alternate spell checker.
+//
+s8 *alt_speller = nullptr;
+//
+//  The global list of color syntaxes.
+//
+syntaxtype *syntaxes = nullptr;
+//
+//  The color syntax name specified on the command line.
+//
+s8 *syntaxstr = nullptr;
+//
+//  Whether the colors for the current syntax have been initialized.
+//
 bool have_palette = FALSE;
-
-/* Becomes TRUE when NO_COLOR is set in the environment. */
+//
+//  Becomes TRUE when NO_COLOR is set in the environment.
+//
 bool rescind_colors = FALSE;
-
-/* Whether the multiline-coloring situation has changed. */
+//
+//  Whether the multiline-coloring situation has changed.
+//
 bool perturbed = FALSE;
-
-/* Whether the multidata should be recalculated. */
+//
+//  Whether the multidata should be recalculated.
+//
 bool recook = FALSE;
-
-/* The currently active menu, initialized to a dummy value. */
-int currmenu = MMOST;
-
-/* The start of the shortcuts list. */
-keystruct *sclist = NULL;
-
-/* The start of the functions list. */
-funcstruct *allfuncs = NULL;
-
-/* The last function in the list. */
+//
+//  The currently active menu, initialized to a dummy value.
+//
+s32 currmenu = MMOST;
+//
+//  The start of the shortcuts list.
+//
+keystruct *sclist = nullptr;
+//
+//  The start of the functions list.
+//
+funcstruct *allfuncs = nullptr;
+//
+//  The last function in the list.
+//
 funcstruct *tailfunc;
-
-/* A pointer to the special Exit/Close item. */
+//
+//  A pointer to the special Exit/Close item.
+//
 funcstruct *exitfunc;
+//
+//  The current item in the list of strings that were searched for.
+//
+linestruct *search_history = nullptr;
+//
+//  The current item in the list of replace strings.
+//
+linestruct *replace_history = nullptr;
+//
+//  The current item in the list of commands that were run with ^T.
+//
+linestruct *execute_history = nullptr;
+//
+//  The oldest item in the list of search strings.
+//
+linestruct *searchtop = nullptr;
+//
+//  The empty item at the end of the list of search strings.
+//
+linestruct *searchbot = nullptr;
 
-/* The current item in the list of strings that were searched for. */
-linestruct *search_history = NULL;
+linestruct *replacetop = nullptr;
+linestruct *replacebot = nullptr;
 
-/* The current item in the list of replace strings. */
-linestruct *replace_history = NULL;
-
-/* The current item in the list of commands that were run with ^T. */
-linestruct *execute_history = NULL;
-
-/* The oldest item in the list of search strings. */
-linestruct *searchtop = NULL;
-
-/* The empty item at the end of the list of search strings. */
-linestruct *searchbot = NULL;
-
-linestruct *replacetop = NULL;
-linestruct *replacebot = NULL;
-
-linestruct *executetop = NULL;
-linestruct *executebot = NULL;
-
-/* The compiled regular expression to use in searches. */
+linestruct *executetop = nullptr;
+linestruct *executebot = nullptr;
+//
+//  The compiled regular expression to use in searches.
+//
 regex_t search_regexp;
-
-/* The match positions for parenthetical subexpressions, 10
- * maximum, used in regular expression searches. */
+//
+//  The match positions for parenthetical subexpressions, 10
+//  maximum, used in regular expression searches.
+//
 regmatch_t regmatches[10];
-
-/* The curses attribute we use to highlight something. */
-int hilite_attribute = A_REVERSE;
-
-/* The color combinations for interface elements given in the rcfile. */
-colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
-
-/* The processed color pairs for the interface elements. */
-int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
-
-/* The user's home directory, from $HOME or /etc/passwd. */
-char *homedir = NULL;
-
-/* The directory for nano's history files. */
-char *statedir = NULL;
-
-/* An error message (if any) about nanorc files or history files. */
-char *startup_problem = NULL;
-
-/* The argument of the --rcfile option, when given. */
-char *custom_nanorc = NULL;
-
-/* The name (of a function) between braces in a string bind. */
-char *commandname = NULL;
-
-/* The function that the above name resolves to, if any. */
-keystruct *planted_shortcut = NULL;
-
-/* Whether any text is spotlighted. */
-bool spotlighted = FALSE;
-
-/* Where the spotlighted text starts. */
-size_t light_from_col = 0;
-
-/* Where the spotlighted text ends. */
-size_t light_to_col = 0;
+//
+//  The curses attribute we use to highlight something.
+//
+s32 hilite_attribute = A_REVERSE;
+//
+//  The color combinations for interface elements given in the rcfile.
+//
+colortype *color_combo[NUMBER_OF_ELEMENTS] = {nullptr};
+//
+//  The processed color pairs for the interface elements.
+//
+s32 interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
+//
+//  The user's home directory, from $HOME or /etc/passwd.
+//
+s8 *homedir = nullptr;
+//
+//  The directory for nano's history files.
+//
+s8 *statedir = nullptr;
+//
+//  An error message (if any) about nanorc files or history files.
+//
+s8 *startup_problem = nullptr;
+//
+//  The argument of the --rcfile option, when given.
+//
+s8 *custom_nanorc = nullptr;
+//
+//  The name (of a function) between braces in a string bind.
+//
+s8 *commandname = nullptr;
+//
+//  The function that the above name resolves to, if any.
+//
+keystruct *planted_shortcut = nullptr;
+//
+//  Whether any text is spotlighted.
+//
+bool spotlighted = false;
+//
+//  Where the spotlighted text starts.
+//
+u64 light_from_col = 0;
+//
+//  Where the spotlighted text ends.
+//
+u64 light_to_col = 0;
 
 //  To make the functions and shortcuts lists clearer.
-
 //
 //  Is allowed in view mode.
 //
-#define VIEW       true
-#define NOVIEW     false
+// constexpr bool VIEW   = true;
+// constexpr bool NOVIEW = false;
 //
 //  A blank line after this one.
 //
-#define BLANKAFTER true
-#define TOGETHER   false
+constexpr bool BLANKAFTER = true;
+constexpr bool TOGETHER   = false;
 
 //
 //  Empty functions, for the most part corresponding to toggles.
@@ -496,8 +553,6 @@ add_to_funcs(CFuncPtr function, C_s32 menus, C_s8 *tag, C_s8 *phrase, bool blank
 s32
 keycode_from_string(C_s8 *keystring)
 {
-    using namespace Mlib;
-
     if (keystring[0] == '^')
     {
         if (keystring[2] == '\0')
@@ -519,7 +574,7 @@ keycode_from_string(C_s8 *keystring)
                 return -1;
             }
         }
-        else if (Constexpr::strcasecmp(keystring, "^Space") == 0)
+        else if (constexpr_strcasecmp(keystring, "^Space") == 0)
         {
             return 0;
         }
@@ -532,9 +587,9 @@ keycode_from_string(C_s8 *keystring)
     {
         if (keystring[1] == '-' && keystring[3] == '\0')
         {
-            return Constexpr::tolower(static_cast<u8>(keystring[2]));
+            return constexpr_tolower(static_cast<u8>(keystring[2]));
         }
-        if (Constexpr::strcasecmp(keystring, "M-Space") == 0)
+        if (constexpr_strcasecmp(keystring, "M-Space") == 0)
         {
             return static_cast<s32>(' ');
         }
@@ -543,7 +598,7 @@ keycode_from_string(C_s8 *keystring)
             return -1;
         }
     }
-    else if (Constexpr::strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) &&
+    else if (constexpr_strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) &&
              (keystring[5] | 0x20) <= 'z' && keystring[6] == '\0')
     {
         shifted_metas = true;
@@ -551,18 +606,18 @@ keycode_from_string(C_s8 *keystring)
     }
     else if (keystring[0] == 'F')
     {
-        s32 fn = Constexpr::atoi(&keystring[1]);
+        s32 fn = constexpr_atoi(&keystring[1]);
         if (fn < 1 || fn > 24)
         {
             return -1;
         }
         return KEY_F0 + fn;
     }
-    else if (Constexpr::strcasecmp(keystring, "Ins") == 0)
+    else if (constexpr_strcasecmp(keystring, "Ins") == 0)
     {
         return KEY_IC;
     }
-    else if (Constexpr::strcasecmp(keystring, "Del") == 0)
+    else if (constexpr_strcasecmp(keystring, "Del") == 0)
     {
         return KEY_DC;
     }
@@ -758,7 +813,7 @@ interpret(C_s32 keycode)
             return do_findnext;
         }
 
-        switch (std::tolower(keycode))
+        switch (constexpr_tolower(keycode))
         {
             case 'b' :
             case '-' :
@@ -979,7 +1034,7 @@ shortcut_init()
     add_to_funcs(do_gotolinecolumn, MMAIN, N_("Go To Line"), WHENHELP(gotoline_gist), BLANKAFTER);
 
     //
-    //  TRANSLATORS: Try to keep the next ten strings at most 12 characters.
+    //  TRANSLATORS : Try to keep the next ten strings at most 12 characters.
     //
     add_to_funcs(do_undo, MMAIN, N_("Undo"), WHENHELP(undo_gist), TOGETHER);
     add_to_funcs(do_redo, MMAIN, N_("Redo"), WHENHELP(redo_gist), BLANKAFTER);

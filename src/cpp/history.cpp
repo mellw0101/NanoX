@@ -1,17 +1,15 @@
 #include "../include/prototypes.h"
 
-#ifdef ENABLE_HISTORIES
+#include <cerrno>
+#include <cstring>
 
-#    include <errno.h>
-#    include <string.h>
+#ifndef SEARCH_HISTORY
+#    define SEARCH_HISTORY "search_history"
+#endif
 
-#    ifndef SEARCH_HISTORY
-#        define SEARCH_HISTORY "search_history"
-#    endif
-
-#    ifndef POSITION_HISTORY
-#        define POSITION_HISTORY "filepos_history"
-#    endif
+#ifndef POSITION_HISTORY
+#    define POSITION_HISTORY "filepos_history"
+#endif
 
 /* Whether any of the history lists has changed. */
 static bool history_changed = FALSE;
@@ -152,11 +150,12 @@ update_history(linestruct **item, const char *text, bool avoid_duplicates)
     *item = *hbot;
 }
 
-#    ifdef ENABLE_TABCOMP
-/* Go backward through one of three history lists, starting at item *here,
- * searching for a string that is a tab completion of the given string,
- * looking at only its first len characters.  When found, make *here point
- * at the item and return its string; otherwise, just return the string. */
+//
+// Go backward through one of three history lists, starting at item *here,
+// searching for a string that is a tab completion of the given string,
+// looking at only its first len characters.  When found, make *here point
+// at the item and return its string; otherwise, just return the string. */
+//
 char *
 get_history_completion(linestruct **here, char *string, size_t len)
 {
@@ -211,7 +210,6 @@ get_history_completion(linestruct **here, char *string, size_t len)
     /* When no useful match was found, simply return the given string. */
     return (char *)string;
 }
-#    endif /* ENABLE_TABCOMP */
 
 /* Check whether we have or could make a directory for history files. */
 bool
@@ -578,10 +576,13 @@ reload_positions_if_needed(void)
     load_poshistory();
 }
 
-/* Update the recorded last file positions with the current position in the
- * current buffer.  If no existing entry is found, add a new one at the end. */
+//
+//  Update the recorded last file positions with the current position in the
+//  current buffer.
+//  If no existing entry is found, add a new one at the end.
+//
 void
-update_poshistory(void)
+update_poshistory()
 {
     char          *fullpath = get_full_path(openfile->filename);
     poshiststruct *previous = NULL;
@@ -670,37 +671,40 @@ update_poshistory(void)
     save_poshistory();
 }
 
-/* Check whether the given file matches an existing entry in the recorded
- * last file positions.  If not, return FALSE.  If yes, return TRUE and
- * set line and column to the retrieved values. */
+//
+//  Check whether the given file matches an existing entry in the recorded
+//  last file positions.  If not, return FALSE.  If yes, return TRUE and
+//  set line and column to the retrieved values.
+//
 bool
-has_old_position(const char *file, ssize_t *line, ssize_t *column)
+has_old_position(C_s8 *file, s64 *line, s64 *column)
 {
-    char          *fullpath = get_full_path(file);
+    s8 *fullpath = get_full_path(file);
+
     poshiststruct *item;
 
-    if (fullpath == NULL)
+    if (fullpath == nullptr)
     {
-        return FALSE;
+        return false;
     }
 
     reload_positions_if_needed();
 
     item = position_history;
-    while (item != NULL && strcmp(item->filename, fullpath) != 0)
+    while (item != nullptr && constexpr_strcmp(item->filename, fullpath) != 0)
     {
         item = item->next;
     }
 
-    free(fullpath);
+    std::free(fullpath);
 
-    if (item == NULL)
+    if (item == nullptr)
     {
-        return FALSE;
+        return false;
     }
 
     *line   = item->linenumber;
     *column = item->columnnumber;
-    return TRUE;
+
+    return true;
 }
-#endif /* ENABLE_HISTORIES */

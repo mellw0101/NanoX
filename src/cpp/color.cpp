@@ -25,7 +25,6 @@
 #ifdef HAVE_MAGIC_H
 // #    include <magic.h>
 #endif
-#include <cstring>
 
 //
 //  Whether ncurses accepts -1 to mean "default color".
@@ -41,11 +40,15 @@ static bool defaults_allowed = false;
 void
 set_interface_colorpairs()
 {
-    // Ask ncurses to allow -1 to mean "default color".
+    //
+    //  Ask ncurses to allow -1 to mean "default color".
+    //
     defaults_allowed = (use_default_colors() == OK);
 
-    /* Initialize the color pairs for nano's interface elements. */
-    for (size_t index = 0; index < NUMBER_OF_ELEMENTS; index++)
+    //
+    //  Initialize the color pairs for nano's interface elements.
+    //
+    for (u64 index = 0; index < NUMBER_OF_ELEMENTS; index++)
     {
         colortype *combo = color_combo[index];
 
@@ -62,9 +65,11 @@ set_interface_colorpairs()
                     combo->bg = COLOR_BLACK;
                 }
             }
+
             init_pair(index + 1, combo->fg, combo->bg);
             interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
-            rescind_colors              = false;
+
+            rescind_colors = false;
         }
         else
         {
@@ -96,7 +101,7 @@ set_interface_colorpairs()
             }
         }
 
-        free(color_combo[index]);
+        std::free(color_combo[index]);
     }
 
     if (rescind_colors)
@@ -113,7 +118,8 @@ set_interface_colorpairs()
 void
 set_syntax_colorpairs(syntaxtype *sntx)
 {
-    s16        number = NUMBER_OF_ELEMENTS;
+    s16 number = NUMBER_OF_ELEMENTS;
+
     colortype *older;
 
     for (colortype *ink = sntx->color; ink != nullptr; ink = ink->next)
@@ -173,7 +179,7 @@ prepare_palette()
 //  Return 'true' upon success.
 //
 bool
-found_in_list(regexlisttype *head, const s8 *shibboleth)
+found_in_list(regexlisttype *head, C_s8 *shibboleth)
 {
     for (regexlisttype *item = head; item != nullptr; item = item->next)
     {
@@ -193,8 +199,6 @@ void
 find_and_prime_applicable_syntax()
 {
     PROFILE_FUNCTION;
-
-    using namespace std;
 
     syntaxtype *sntx = nullptr;
 
@@ -442,8 +446,7 @@ check_the_multis(linestruct *line)
         }
 
         //
-        //  There is a mismatch,
-        //  so something changed:
+        //  There is a mismatch, so something changed:
         //  - repaint.
         //
         refresh_needed = true;

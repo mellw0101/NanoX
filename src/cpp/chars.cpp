@@ -867,15 +867,15 @@ mbstrchr(C_s8 *string, C_s8 *const chr)
 /// - ( NULL )  - if none of the characters are found.
 //
 s8 *
-mbstrpbrk(C_s8 *string, C_s8 *accept)
+mbstrpbrk(C_s8 *str, C_s8 *accept)
 {
-    while (*string != '\0')
+    while (*str != '\0')
     {
-        if (mbstrchr(accept, string) != nullptr)
+        if (mbstrchr(accept, str) != nullptr)
         {
-            return const_cast<s8 *>(string);
+            return const_cast<s8 *>(str);
         }
-        string += char_length(string);
+        str += char_length(str);
     }
     return nullptr;
 }
@@ -919,36 +919,36 @@ mbrevstrpbrk(C_s8 *const head, C_s8 *const accept, C_s8 *pointer)
 //  Return 'true' if the given string contains at least one blank character.
 //
 bool
-has_blank_char(C_s8 *string)
+has_blank_char(C_s8 *str)
 {
-    while (*string != '\0' && !is_blank_char(string))
+    while (*str != '\0' && !is_blank_char(str))
     {
-        string += char_length(string);
+        str += char_length(str);
     }
-    return *string;
+    return *str;
 }
 
 //
 //  Return 'true' when the given string is empty or consists of only blanks.
 //
 bool
-white_string(C_s8 *string)
+white_string(C_s8 *str)
 {
-    while (*string != '\0' && (is_blank_char(string) || *string == '\r'))
+    while (*str != '\0' && (is_blank_char(str) || *str == '\r'))
     {
-        string += char_length(string);
+        str += char_length(str);
     }
-    return !*string;
+    return !*str;
 }
 
 //
 //  Remove leading whitespace from the given string.
 //
 void
-strip_leading_blanks_from(s8 *string)
+strip_leading_blanks_from(s8 *str)
 {
-    while (string && (*string == ' ' || *string == '\t'))
+    while (str && (*str == ' ' || *str == '\t'))
     {
-        std::memmove(string, string + 1, constexpr_strlen(string));
+        std::memmove(str, str + 1, constexpr_strlen(str));
     }
 }
