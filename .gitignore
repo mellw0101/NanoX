@@ -1,5 +1,6 @@
 /.amake/
 /build/
 /build/bin/
+/build/bin/NanoX
 /build/lib/*
 /build/obj/*.o
