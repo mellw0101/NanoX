@@ -260,7 +260,7 @@ restore_terminal()
 {
     curs_set(1);
     endwin();
-    std::printf("\x1B[?2004l");
+    printf("\x1B[?2004l");
     fflush(stdout);
     tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
@@ -377,7 +377,9 @@ do_exit()
         choice = ask_user(YESORNO, _("Save modified buffer? "));
     }
 
-    // When not saving, or the save succeeds, close the buffer.
+    //
+    //  When not saving, or the save succeeds, close the buffer.
+    //
     if (choice == NO || (choice == YES && write_it_out(true, true) > 0))
     {
         close_and_go();
@@ -401,7 +403,7 @@ emergency_save(const s8 *filename)
     if (*filename == '\0')
     {
         plainname = static_cast<s8 *>(nmalloc(28));
-        std::sprintf(plainname, "nano.%u", getpid());
+        sprintf(plainname, "nano.%u", getpid());
     }
     else
     {
@@ -412,15 +414,15 @@ emergency_save(const s8 *filename)
 
     if (*targetname == '\0')
     {
-        std::fprintf(stderr, ERROR_MSG_TO_MENY_DOT_SAVEFILES);
+        fprintf(stderr, ERROR_MSG_TO_MENY_DOT_SAVEFILES);
     }
     else if (write_file(targetname, nullptr, SPECIAL, EMERGENCY, NONOTES))
     {
-        std::fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
+        fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
     }
 
-    std::free(targetname);
-    std::free(plainname);
+    free(targetname);
+    free(plainname);
 }
 
 //
@@ -440,8 +442,9 @@ void
 die(STRING_VIEW msg, ...)
 {
     openfilestruct *firstone = openfile;
-    static s32      stabs    = 0;
-    va_list         ap;
+
+    static s32 stabs = 0;
+    va_list    ap;
 
     //
     //  When dying for a second time,
@@ -459,7 +462,7 @@ die(STRING_VIEW msg, ...)
     //  Display the dying message.
     //
     va_start(ap, msg);
-    std::vfprintf(stderr, &msg[0], ap);
+    vfprintf(stderr, &msg[0], ap);
     va_end(ap);
 
     while (openfile)
@@ -493,7 +496,7 @@ die(STRING_VIEW msg, ...)
     //
     //  Abandon the building.
     //
-    std::exit(FAILURE);
+    exit(FAILURE);
 }
 
 //
@@ -624,22 +627,22 @@ mouse_init()
 void
 print_opt(const s8 *const shortflag, const s8 *const longflag, const s8 *const description)
 {
-    s32 firstwidth  = breadth(shortflag);
-    s32 secondwidth = breadth(longflag);
+    const s32 firstwidth  = breadth(shortflag);
+    const s32 secondwidth = breadth(longflag);
 
-    std::printf(" %s", shortflag);
+    printf(" %s", shortflag);
     if (firstwidth < 14)
     {
-        std::printf("%*s", 14 - firstwidth, " ");
+        printf("%*s", 14 - firstwidth, " ");
     }
 
-    std::printf(" %s", longflag);
+    printf(" %s", longflag);
     if (secondwidth < 24)
     {
-        std::printf("%*s", 24 - secondwidth, " ");
+        printf("%*s", 24 - secondwidth, " ");
     }
 
-    std::printf("%s\n", _(description));
+    printf("%s\n", _(description));
 }
 
 //
@@ -648,19 +651,19 @@ print_opt(const s8 *const shortflag, const s8 *const longflag, const s8 *const d
 void
 usage()
 {
-    std::printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
+    printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
     //
     //  TRANSLATORS: The next two strings are part of the --help output.
     //  It's best to keep its lines within 80 characters.
     //
-    std::printf(_("To place the cursor on a specific line of a file, put the line "
-                  "number with\n"
-                  "a '+' before the filename.  The column number can be added after "
-                  "a comma.\n"));
+    printf(_("To place the cursor on a specific line of a file, put the line "
+             "number with\n"
+             "a '+' before the filename.  The column number can be added after "
+             "a comma.\n"));
     //
     //  TRANSLATORS: The next three are column headers of the --help output.
     //
-    std::printf(_("When a filename is '-', nano reads data from standard input.\n\n"));
+    printf(_("When a filename is '-', nano reads data from standard input.\n\n"));
     print_opt(_("Option"), _("Long option"), N_("Meaning"));
 
     // TRANSLATORS: The next forty or so strings are option descriptions
@@ -763,21 +766,21 @@ usage()
 void
 version()
 {
-    std::printf(_(" NanoX, version %s\n"), VERSION);
-    std::printf(
+    printf(_(" NanoX, version %s\n"), VERSION);
+    printf(
         " 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code, converted into C++\n", REVISION);
 
     //
     //  TRANSLATORS: The %s is the year of the latest release.
     //
-    std::printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
+    printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
 
 #ifdef DEBUG
-    std::printf(_(" Compiled options:"));
-    std::printf(" --enable-debug");
+    printf(_(" Compiled options:"));
+    printf(" --enable-debug");
 #endif
-    std::printf("\n");
-    std::exit(EXIT_SUCCESS);
+    printf("\n");
+    exit(SUCCESS);
 }
 
 //
@@ -788,18 +791,18 @@ list_syntax_names()
 {
     s32 width = 0;
 
-    std::printf(_("Available syntaxes:\n"));
+    printf(_("Available syntaxes:\n"));
     for (syntaxtype *sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
     {
         if (width > 45)
         {
-            std::printf("\n");
+            printf("\n");
             width = 0;
         }
-        std::printf(" %s", sntx->name);
+        printf(" %s", sntx->name);
         width += wideness(sntx->name, 45 * 4);
     }
-    std::printf("\n");
+    printf("\n");
 }
 
 //
@@ -889,7 +892,7 @@ scoop_stdin()
     stream = std::fopen("/dev/stdin", "rb");
     if (stream == nullptr)
     {
-        const std::string_view errnoStr = ERRNO_C_STR;
+        const STRING_VIEW errnoStr = ERRNO_C_STR;
 
         terminal_init();
         doupdate();
@@ -971,8 +974,8 @@ signal_init()
         //
         deed.sa_handler = handle_crash;
         deed.sa_flags |= SA_RESETHAND;
-        sigaction(SIGSEGV, &deed, NULL);
-        sigaction(SIGABRT, &deed, NULL);
+        sigaction(SIGSEGV, &deed, nullptr);
+        sigaction(SIGABRT, &deed, nullptr);
     }
 #endif
 }
@@ -1160,10 +1163,13 @@ toggle_this(const s32 flag)
     switch (flag)
     {
         case ZERO :
+        {
             window_init();
             draw_all_subwindows();
             return;
+        }
         case NO_HELP :
+        {
             if (LINES < (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5))
             {
                 statusline(AHEM, _("Too tiny"));
@@ -1173,7 +1179,9 @@ toggle_this(const s32 flag)
             window_init();
             draw_all_subwindows();
             break;
+        }
         case CONSTANT_SHOW :
+        {
             if (LINES == 1)
             {
                 statusline(AHEM, _("Too tiny"));
@@ -1189,22 +1197,30 @@ toggle_this(const s32 flag)
                 wipe_statusbar();
             }
             return;
+        }
         case SOFTWRAP :
+        {
             if (!ISSET(SOFTWRAP))
             {
                 openfile->firstcolumn = 0;
             }
-            refresh_needed = TRUE;
+            refresh_needed = true;
             break;
+        }
         case WHITESPACE_DISPLAY :
+        {
             titlebar(nullptr);
-            refresh_needed = TRUE;
+            refresh_needed = true;
             break;
+        }
         case NO_SYNTAX :
+        {
             precalc_multicolorinfo();
-            refresh_needed = TRUE;
+            refresh_needed = true;
             break;
+        }
         case TABS_TO_SPACES :
+        {
             if (openfile->syntax && openfile->syntax->tabstring)
             {
                 statusline(AHEM, _("Current syntax determines Tab"));
@@ -1212,9 +1228,12 @@ toggle_this(const s32 flag)
                 return;
             }
             break;
+        }
         case USE_MOUSE :
+        {
             mouse_init();
             break;
+        }
     }
 
     if (flag == AUTOINDENT || flag == BREAK_LONG_LINES || flag == SOFTWRAP)
