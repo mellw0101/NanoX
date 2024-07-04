@@ -317,7 +317,7 @@ constexpr auto DEFAULT_RESPONSE_ON_NONE = "Ehm...";
 //
 //  The ( flag / description ) map.
 //
-CONSTEXPR_MAP<u32, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
+CONSTEXPR_MAP<u32, STRING_VIEW, NUMBER_OF_FLAGS> epithetOfFlagMap = {
     {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
      {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
      {CONSTANT_SHOW, "Constant cursor position display"},

@@ -302,7 +302,7 @@ CONSTEXPR_MAP<STRING_VIEW, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {
      {"lastfile", to_last_file}}
 };
 constexpr auto
-retriveScFromStr(std::string_view str)
+retriveScFromStr(STRING_VIEW str)
 {
     for (const auto &[key, value] : keyMap)
     {
@@ -352,9 +352,9 @@ strtosc(const s8 *input)
 }
 
 //
-//  Parse the next word from the string, null-terminate it, and return
-//  a pointer to the first character after the null terminator.  The
-//  returned pointer will point to '\0' if we hit the end of the line.
+//  Parse the next word from the string, null-terminate it,
+//  and return a pointer to the first character after the null terminator.
+//  The returned pointer will point to '\0' if we hit the end of the line.
 //
 s8 *
 parse_next_word(s8 *ptr)

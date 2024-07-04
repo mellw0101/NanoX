@@ -858,8 +858,6 @@ C_s8 *close_tag = N_("Close");
 void
 shortcut_init()
 {
-    PROFILE_FUNCTION;
-
     //
     //  TRANSLATORS: The next long series of strings are shortcut descriptions;
     //  they are best kept shorter than 56 characters, but may be longer.

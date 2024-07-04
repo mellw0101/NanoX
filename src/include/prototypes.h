@@ -204,8 +204,8 @@ void paste_text();
 //  Most functions in 'files.cpp'.
 //
 void  make_new_buffer();
-bool  delete_lockfile(const char *lockfilename);
-bool  open_buffer(const char *filename, bool new_one);
+bool  delete_lockfile(C_s8 *lockfilename);
+bool  open_buffer(C_s8 *filename, bool new_one);
 void  set_modified();
 void  prepare_for_display();
 void  mention_name_and_linecount();
@@ -217,13 +217,13 @@ int   open_file(const char *filename, bool new_one, FILE **f);
 char *get_next_filename(const s8 *name, const s8 *suffix);
 void  do_insertfile();
 void  do_execute();
-s8   *get_full_path(const s8 *origpath);
+s8   *get_full_path(C_s8 *origpath);
 s8   *safe_tempfile(FILE **stream);
-void  init_operating_dir(void);
-bool  outside_of_confinement(const char *currpath, bool allow_tabcomp);
+void  init_operating_dir();
+bool  outside_of_confinement(C_s8 *currpath, bool allow_tabcomp);
 void  init_backup_dir();
 s32   copy_file(FILE *inn, FILE *out, bool close_out);
-bool  write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
+bool  write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
 bool  write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
 s32   write_it_out(bool exiting, bool withprompt);
 void  do_writeout();

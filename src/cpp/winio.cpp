@@ -760,10 +760,11 @@ convert_SS3_sequence(C_s32 *seq, u64 length, s32 *consumed)
     return FOREIGN_SEQUENCE;
 }
 
-/* Translate a sequence that began with "Esc [" to its corresponding key code.
- */
-int
-convert_CSI_sequence(const int *seq, size_t length, int *consumed)
+//
+//  Translate a sequence that began with "Esc [" to its corresponding key code.
+//
+s32
+convert_CSI_sequence(C_s32 *seq, u64 length, s32 *consumed)
 {
     if (seq[0] < '9' && length > 1)
     {
@@ -773,9 +774,12 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
     switch (seq[0])
     {
         case '1' :
+        {
             if (length > 1 && seq[1] == '~')
             {
-                /* Esc [ 1 ~ == Home on VT320/Linux console. */
+                //
+                //  Esc [ 1 ~ == Home on VT320/Linux console.
+                //
                 return KEY_HOME;
             }
             else if (length > 2 && seq[2] == '~')
@@ -783,218 +787,421 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 *consumed = 3;
                 switch (seq[1])
                 {
-#ifndef NANO_TINY
-                    case '1' : /* Esc [ 1 1 ~ == F1 on rxvt/Eterm. */
-                    case '2' : /* Esc [ 1 2 ~ == F2 on rxvt/Eterm. */
-                    case '3' : /* Esc [ 1 3 ~ == F3 on rxvt/Eterm. */
-                    case '4' : /* Esc [ 1 4 ~ == F4 on rxvt/Eterm. */
-#endif
-                    case '5' : /* Esc [ 1 5 ~ == F5 on xterm/rxvt/Eterm. */
+                    //
+                    //  Esc [ 1 1 ~ == F1 on rxvt/Eterm.
+                    //
+                    case '1' :
+                    //
+                    //  Esc [ 1 2 ~ == F2 on rxvt/Eterm.
+                    //
+                    case '2' :
+                    //
+                    //  Esc [ 1 3 ~ == F3 on rxvt/Eterm.
+                    //
+                    case '3' :
+                    //
+                    //  Esc [ 1 4 ~ == F4 on rxvt/Eterm.
+                    //
+                    case '4' :
+                    //
+                    //  Esc [ 1 5 ~ == F5 on xterm/rxvt/Eterm.
+                    //
+                    case '5' :
+                    {
                         return KEY_F(seq[1] - '0');
-                    case '7' : /* Esc [ 1 7 ~ == F6 on VT220/VT320/
-                                * Linux console/xterm/rxvt/Eterm. */
-                    case '8' : /* Esc [ 1 8 ~ == F7 on the same. */
-                    case '9' : /* Esc [ 1 9 ~ == F8 on the same. */
+                    }
+                    //
+                    //  Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux console/xterm/rxvt/Eterm.
+                    //
+                    case '7' :
+                    //
+                    //  Esc [ 1 8 ~ == F7 on the same.
+                    //
+                    case '8' :
+                    //
+                    //  Esc [ 1 9 ~ == F8 on the same.
+                    //
+                    case '9' :
+                    {
                         return KEY_F(seq[1] - '1');
+                    }
                 }
             }
             else if (length > 3 && seq[1] == ';')
             {
                 *consumed = 4;
-#ifndef NANO_TINY
                 switch (seq[2])
                 {
                     case '2' :
+                    {
                         switch (seq[3])
                         {
-                            case 'A' : /* Esc [ 1 ; 2 A == Shift-Up on xterm. */
-                            case 'B' : /* Esc [ 1 ; 2 B == Shift-Down on xterm.
-                                        */
-                            case 'C' : /* Esc [ 1 ; 2 C == Shift-Right on xterm.
-                                        */
-                            case 'D' : /* Esc [ 1 ; 2 D == Shift-Left on xterm.
-                                        */
+                            //
+                            //  Esc [ 1 ; 2 A == Shift-Up on xterm.
+                            //
+                            case 'A' :
+                            //
+                            //  Esc [ 1 ; 2 B == Shift-Down on xterm.
+                            //
+                            case 'B' :
+                            //
+                            //  Esc [ 1 ; 2 C == Shift-Right on xterm.
+                            //
+                            case 'C' :
+                            //
+                            //  Esc [ 1 ; 2 D == Shift-Left on xterm.
+                            //
+                            case 'D' :
+                            {
                                 shift_held = TRUE;
                                 return arrow_from_ABCD(seq[3]);
-                            case 'F' : /* Esc [ 1 ; 2 F == Shift-End on xterm.
-                                        */
+                            }
+                            //
+                            //  Esc [ 1 ; 2 F == Shift-End on xterm.
+                            //
+                            case 'F' :
+                            {
                                 return SHIFT_END;
-                            case 'H' : /* Esc [ 1 ; 2 H == Shift-Home on xterm.
-                                        */
+                            }
+                            //
+                            //  Esc [ 1 ; 2 H == Shift-Home on xterm.
+                            //
+                            case 'H' :
+                            {
                                 return SHIFT_HOME;
+                            }
                         }
                         break;
-                    case '9' : /* To accommodate iTerm2 in "xterm mode". */
+                    }
+                    //
+                    //  To accommodate iTerm2 in "xterm mode".
+                    //
+                    case '9' :
                     case '3' :
+                    {
                         switch (seq[3])
                         {
-                            case 'A' : /* Esc [ 1 ; 3 A == Alt-Up on xterm. */
+                            //
+                            //  Esc [ 1 ; 3 A == Alt-Up on xterm.
+                            //
+                            case 'A' :
+                            {
                                 return ALT_UP;
-                            case 'B' : /* Esc [ 1 ; 3 B == Alt-Down on xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 3 B == Alt-Down on xterm.
+                            //
+                            case 'B' :
+                            {
                                 return ALT_DOWN;
-                            case 'C' : /* Esc [ 1 ; 3 C == Alt-Right on xterm.
-                                        */
+                            }
+                            //
+                            //  Esc [ 1 ; 3 C == Alt-Right on xterm.
+                            //
+                            case 'C' :
+                            {
                                 return ALT_RIGHT;
-                            case 'D' : /* Esc [ 1 ; 3 D == Alt-Left on xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 3 D == Alt-Left on xterm.
+                            //
+                            case 'D' :
+                            {
                                 return ALT_LEFT;
-                            case 'F' : /* Esc [ 1 ; 3 F == Alt-End on xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 3 F == Alt-End on xterm.
+                            //
+                            case 'F' :
+                            {
                                 return ALT_END;
-                            case 'H' : /* Esc [ 1 ; 3 H == Alt-Home on xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 3 H == Alt-Home on xterm.
+                            //
+                            case 'H' :
+                            {
                                 return ALT_HOME;
+                            }
                         }
                         break;
+                    }
                     case '4' :
-                        /* When the arrow keys are held together with
-                         * Shift+Meta, act as if they are Home/End/PgUp/PgDown
-                         * with Shift. */
+                    {
+                        //
+                        //  When the arrow keys are held together with
+                        //  Shift+Meta, act as if they are Home/End/PgUp/PgDown
+                        //  with Shift.
+                        //
                         switch (seq[3])
                         {
-                            case 'A' : /* Esc [ 1 ; 4 A == Shift-Alt-Up on
-                                          xterm. */
+                            //
+                            //  Esc [ 1 ; 4 A == Shift-Alt-Up on xterm.
+                            //
+                            case 'A' :
+                            {
                                 return SHIFT_PAGEUP;
-                            case 'B' : /* Esc [ 1 ; 4 B == Shift-Alt-Down on
-                                          xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 4 B == Shift-Alt-Down on xterm.
+                            //
+                            case 'B' :
+                            {
                                 return SHIFT_PAGEDOWN;
-                            case 'C' : /* Esc [ 1 ; 4 C == Shift-Alt-Right on
-                                          xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 4 C == Shift-Alt-Right on xterm.
+                            //
+                            case 'C' :
+                            {
                                 return SHIFT_END;
-                            case 'D' : /* Esc [ 1 ; 4 D == Shift-Alt-Left on
-                                          xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 4 D == Shift-Alt-Left on xterm.
+                            //
+                            case 'D' :
+                            {
                                 return SHIFT_HOME;
+                            }
                         }
                         break;
+                    }
                     case '5' :
+                    {
                         switch (seq[3])
                         {
-                            case 'A' : /* Esc [ 1 ; 5 A == Ctrl-Up on xterm. */
+                            //  Esc [ 1 ; 5 A == Ctrl-Up on xterm.
+                            case 'A' :
+                            {
                                 return CONTROL_UP;
-                            case 'B' : /* Esc [ 1 ; 5 B == Ctrl-Down on xterm.
-                                        */
+                            }
+                            //
+                            //  Esc [ 1 ; 5 B == Ctrl-Down on xterm.
+                            //
+                            case 'B' :
+                            {
                                 return CONTROL_DOWN;
-                            case 'C' : /* Esc [ 1 ; 5 C == Ctrl-Right on xterm.
-                                        */
+                            }
+                            //
+                            //  Esc [ 1 ; 5 C == Ctrl-Right on xterm.
+                            //
+                            case 'C' :
+                            {
                                 return CONTROL_RIGHT;
-                            case 'D' : /* Esc [ 1 ; 5 D == Ctrl-Left on xterm.
-                                        */
+                            }
+                            //
+                            //  Esc [ 1 ; 5 D == Ctrl-Left on xterm.
+                            //
+                            case 'D' :
+                            {
                                 return CONTROL_LEFT;
-                            case 'F' : /* Esc [ 1 ; 5 F == Ctrl-End on xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 5 F == Ctrl-End on xterm.
+                            //
+                            case 'F' :
+                            {
                                 return CONTROL_END;
-                            case 'H' : /* Esc [ 1 ; 5 H == Ctrl-Home on xterm.
-                                        */
+                            }
+                            //
+                            //  Esc [ 1 ; 5 H == Ctrl-Home on xterm.
+                            //
+                            case 'H' :
+                            {
                                 return CONTROL_HOME;
+                            }
                         }
                         break;
+                    }
                     case '6' :
+                    {
                         switch (seq[3])
                         {
-                            case 'A' : /* Esc [ 1 ; 6 A == Shift-Ctrl-Up on
-                                          xterm. */
+                            //
+                            //  Esc [ 1 ; 6 A == Shift-Ctrl-Up on xterm.
+                            //
+                            case 'A' :
+                            {
                                 return shiftcontrolup;
-                            case 'B' : /* Esc [ 1 ; 6 B == Shift-Ctrl-Down on
-                                          xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 6 B == Shift-Ctrl-Down on xterm.
+                            //
+                            case 'B' :
+                            {
                                 return shiftcontroldown;
-                            case 'C' : /* Esc [ 1 ; 6 C == Shift-Ctrl-Right on
-                                          xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 6 C == Shift-Ctrl-Right on xterm.
+                            //
+                            case 'C' :
+                            {
                                 return shiftcontrolright;
-                            case 'D' : /* Esc [ 1 ; 6 D == Shift-Ctrl-Left on
-                                          xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 6 D == Shift-Ctrl-Left on xterm.
+                            //
+                            case 'D' :
+                            {
                                 return shiftcontrolleft;
-                            case 'F' : /* Esc [ 1 ; 6 F == Shift-Ctrl-End on
-                                          xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 6 F == Shift-Ctrl-End on xterm.
+                            //
+                            case 'F' :
+                            {
                                 return shiftcontrolend;
-                            case 'H' : /* Esc [ 1 ; 6 H == Shift-Ctrl-Home on
-                                          xterm. */
+                            }
+                            //
+                            //  Esc [ 1 ; 6 H == Shift-Ctrl-Home on xterm.
+                            //
+                            case 'H' :
+                            {
                                 return shiftcontrolhome;
+                            }
                         }
                         break;
+                    }
                 }
-#endif /* !NANO-TINY */
             }
             else if (length > 4 && seq[2] == ';' && seq[4] == '~')
             {
-                /* Esc [ 1 n ; 2 ~ == F17...F20 on some terminals. */
+                //
+                //  Esc [ 1 n ; 2 ~ == F17...F20 on some terminals.
+                //
                 *consumed = 5;
             }
             break;
+        }
         case '2' :
+        {
             if (length > 2 && seq[2] == '~')
             {
                 *consumed = 3;
                 switch (seq[1])
                 {
-                    case '0' : /* Esc [ 2 0 ~ == F9 on VT220/VT320/
-                                * Linux console/xterm/rxvt/Eterm. */
+                    //
+                    //  Esc [ 2 0 ~ == F9 on VT220/VT320/
+                    //  Linux console/xterm/rxvt/Eterm.
+                    //
+                    case '0' :
+                    {
                         return KEY_F(9);
-                    case '1' : /* Esc [ 2 1 ~ == F10 on the same. */
+                    }
+                    //
+                    //  Esc [ 2 1 ~ == F10 on the same.
+                    //
+                    case '1' :
+                    {
                         return KEY_F(10);
-                    case '3' : /* Esc [ 2 3 ~ == F11 on the same. */
+                    }
+                    //
+                    //  Esc [ 2 3 ~ == F11 on the same.
+                    //
+                    case '3' :
+                    {
                         return KEY_F(11);
-                    case '4' : /* Esc [ 2 4 ~ == F12 on the same. */
+                    }
+                    //
+                    //  Esc [ 2 4 ~ == F12 on the same.
+                    //
+                    case '4' :
+                    {
                         return KEY_F(12);
-#ifdef ENABLE_NANORC
-                    case '5' : /* Esc [ 2 5 ~ == F13 on the same. */
+                    }
+                    //
+                    //  Esc [ 2 5 ~ == F13 on the same.
+                    //
+                    case '5' :
+                    {
                         return KEY_F(13);
-                    case '6' : /* Esc [ 2 6 ~ == F14 on the same. */
+                    }
+                    //
+                    //  Esc [ 2 6 ~ == F14 on the same.
+                    //
+                    case '6' :
+                    {
                         return KEY_F(14);
-                    case '8' : /* Esc [ 2 8 ~ == F15 on the same. */
+                    }
+                    //
+                    //  Esc [ 2 8 ~ == F15 on the same.
+                    //
+                    case '8' :
+                    {
                         return KEY_F(15);
-                    case '9' : /* Esc [ 2 9 ~ == F16 on the same. */
+                    }
+                    //
+                    //  Esc [ 2 9 ~ == F16 on the same.
+                    //
+                    case '9' :
+                    {
                         return KEY_F(16);
-#endif
+                    }
                 }
             }
             else if (length > 1 && seq[1] == '~')
             {
-                /* Esc [ 2 ~ == Insert on VT220/VT320/
-                 * Linux console/xterm/Terminal. */
+                //
+                //  Esc [ 2 ~ == Insert on VT220/VT320/
+                //  Linux console/xterm/Terminal.
+                //
                 return KEY_IC;
             }
             else if (length > 3 && seq[1] == ';' && seq[3] == '~')
             {
-                /* Esc [ 2 ; x ~ == modified Insert on xterm. */
+                //
+                //  Esc [ 2 ; x ~ == modified Insert on xterm.
+                //
                 *consumed = 4;
-#ifndef NANO_TINY
                 if (seq[2] == '3')
                 {
                     return ALT_INSERT;
                 }
-#endif
             }
             else if (length > 4 && seq[2] == ';' && seq[4] == '~')
             {
-                /* Esc [ 2 n ; 2 ~ == F21...F24 on some terminals. */
+                //
+                //  Esc [ 2 n ; 2 ~ == F21...F24 on some terminals.
+                //
                 *consumed = 5;
             }
-#ifndef NANO_TINY
             else if (length > 3 && seq[1] == '0' && seq[3] == '~')
             {
-                /* Esc [ 2 0 0 ~ == start of a bracketed paste,
-                 * Esc [ 2 0 1 ~ == end of a bracketed paste. */
+                //
+                //  Esc [ 2 0 0 ~ == start of a bracketed paste,
+                //  Esc [ 2 0 1 ~ == end of a bracketed paste.
+                //
                 *consumed = 4;
                 if (seq[2] == '0')
                 {
-                    bracketed_paste = TRUE;
+                    bracketed_paste = true;
                     return BRACKETED_PASTE_MARKER;
                 }
                 else if (seq[2] == '1')
                 {
-                    bracketed_paste = FALSE;
+                    bracketed_paste = false;
                     return BRACKETED_PASTE_MARKER;
                 }
             }
             else
             {
-                /* When invalid, assume it's a truncated end-of-paste sequence,
-                 * in order to avoid a hang -- https://sv.gnu.org/bugs/?64996.
-                 */
-                bracketed_paste = FALSE;
+                //
+                //  When invalid, assume it's a truncated end-of-paste sequence,
+                //  in order to avoid a hang -- https://sv.gnu.org/bugs/?64996.
+                //
+                bracketed_paste = false;
                 *consumed       = length;
                 return ERR;
             }
-#endif
             break;
-        case '3' : /* Esc [ 3 ~ == Delete on VT220/VT320/
-                    * Linux console/xterm/Terminal. */
+        }
+        //
+        //  Esc [ 3 ~ == Delete on VT220/VT320/
+        //  Linux console/xterm/Terminal.
+        //
+        case '3' :
+        {
+
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_DC;
@@ -1002,60 +1209,84 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
             if (length > 3 && seq[1] == ';' && seq[3] == '~')
             {
                 *consumed = 4;
-#ifndef NANO_TINY
                 if (seq[2] == '2')
                 {
-                    /* Esc [ 3 ; 2 ~ == Shift-Delete on xterm/Terminal. */
+                    //
+                    //  Esc [ 3 ; 2 ~ == Shift-Delete on xterm/Terminal.
+                    //
                     return SHIFT_DELETE;
                 }
                 if (seq[2] == '3')
                 {
-                    /* Esc [ 3 ; 3 ~ == Alt-Delete on xterm/rxvt/Eterm/Terminal.
-                     */
+                    //
+                    //  Esc [ 3 ; 3 ~ == Alt-Delete on xterm/rxvt/Eterm/Terminal.
+                    //
                     return ALT_DELETE;
                 }
                 if (seq[2] == '5')
                 {
-                    /* Esc [ 3 ; 5 ~ == Ctrl-Delete on xterm. */
+                    //
+                    //  Esc [ 3 ; 5 ~ == Ctrl-Delete on xterm.
+                    //
                     return CONTROL_DELETE;
                 }
                 if (seq[2] == '6')
                 {
-                    /* Esc [ 3 ; 6 ~ == Ctrl-Shift-Delete on xterm. */
+                    //
+                    //  Esc [ 3 ; 6 ~ == Ctrl-Shift-Delete on xterm.
+                    //
                     return controlshiftdelete;
                 }
-#endif
             }
             if (length > 1 && seq[1] == '$')
             {
-                /* Esc [ 3 $ == Shift-Delete on urxvt. */
+                //
+                //  Esc [ 3 $ == Shift-Delete on urxvt.
+                //
                 return SHIFT_DELETE;
             }
             if (length > 1 && seq[1] == '^')
             {
-                /* Esc [ 3 ^ == Ctrl-Delete on urxvt. */
+                //
+                //  Esc [ 3 ^ == Ctrl-Delete on urxvt.
+                //
                 return CONTROL_DELETE;
             }
             if (length > 1 && seq[1] == '@')
             {
-                /* Esc [ 3 @ == Ctrl-Shift-Delete on urxvt. */
+                //
+                //  Esc [ 3 @ == Ctrl-Shift-Delete on urxvt.
+                //
                 return controlshiftdelete;
             }
             if (length > 2 && seq[2] == '~')
             {
-                /* Esc [ 3 n ~ == F17...F20 on some terminals. */
+                //
+                //  Esc [ 3 n ~ == F17...F20 on some terminals.
+                //
                 *consumed = 3;
             }
             break;
-        case '4' : /* Esc [ 4 ~ == End on VT220/VT320/
-                    * Linux console/xterm. */
+        }
+        //
+        //  Esc [ 4 ~ == End on VT220/VT320/
+        //  Linux console/xterm.
+        //
+        case '4' :
+        {
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_END;
             }
             break;
-        case '5' : /* Esc [ 5 ~ == PageUp on VT220/VT320/
-                    * Linux console/xterm/Eterm/urxvt/Terminal */
+        }
+        //
+        //  Esc [ 5 ~ == PageUp on VT220/VT320/
+        //  Linux console/xterm/Eterm/urxvt/Terminal
+        //
+        case '5' :
+        {
+
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_PPAGE;
@@ -1063,7 +1294,6 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
             else if (length > 3 && seq[1] == ';' && seq[3] == '~')
             {
                 *consumed = 4;
-#ifndef NANO_TINY
                 if (seq[2] == '2')
                 {
                     return shiftaltup;
@@ -1072,11 +1302,15 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 {
                     return ALT_PAGEUP;
                 }
-#endif
             }
             break;
-        case '6' : /* Esc [ 6 ~ == PageDown on VT220/VT320/
-                    * Linux console/xterm/Eterm/urxvt/Terminal */
+        }
+        //
+        //  Esc [ 6 ~ == PageDown on VT220/VT320/
+        //  Linux console/xterm/Eterm/urxvt/Terminal
+        //
+        case '6' :
+        {
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_NPAGE;
@@ -1094,10 +1328,15 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 }
             }
             break;
-        case '7' : /* Esc [ 7 ~ == Home on Eterm/rxvt;
-                    * Esc [ 7 $ == Shift-Home on Eterm/rxvt;
-                    * Esc [ 7 ^ == Control-Home on Eterm/rxvt;
-                    * Esc [ 7 @ == Shift-Control-Home on same. */
+        }
+        //
+        //  Esc [ 7 ~ == Home on Eterm/rxvt;
+        //  Esc [ 7 $ == Shift-Home on Eterm/rxvt;
+        //  Esc [ 7 ^ == Control-Home on Eterm/rxvt;
+        //  Esc [ 7 @ == Shift-Control-Home on same.
+        //
+        case '7' :
+        {
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_HOME;
@@ -1115,10 +1354,15 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 return shiftcontrolhome;
             }
             break;
-        case '8' : /* Esc [ 8 ~ == End on Eterm/rxvt;
-                    * Esc [ 8 $ == Shift-End on Eterm/rxvt;
-                    * Esc [ 8 ^ == Control-End on Eterm/rxvt;
-                    * Esc [ 8 @ == Shift-Control-End on same. */
+        }
+        //
+        //  Esc [ 8 ~ == End on Eterm/rxvt;
+        //  Esc [ 8 $ == Shift-End on Eterm/rxvt;
+        //  Esc [ 8 ^ == Control-End on Eterm/rxvt;
+        //  Esc [ 8 @ == Shift-Control-End on same.
+        //
+        case '8' :
+        {
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_END;
@@ -1136,63 +1380,176 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 return shiftcontrolend;
             }
             break;
-        case '9' : /* Esc [ 9 == Delete on Mach console. */
+        }
+        //
+        //  Esc [ 9 == Delete on Mach console.
+        //
+        case '9' :
+        {
             return KEY_DC;
-        case '@' : /* Esc [ @ == Insert on Mach console. */
+        }
+        //
+        //  Esc [ @ == Insert on Mach console.
+        //
+        case '@' :
+        {
             return KEY_IC;
-        case 'A' : /* Esc [ A == Up on ANSI/VT220/Linux console/
-                    * FreeBSD console/Mach console/xterm/Eterm/
-                    * urxvt/Gnome and Xfce Terminal. */
-        case 'B' : /* Esc [ B == Down on the same. */
-        case 'C' : /* Esc [ C == Right on the same. */
-        case 'D' : /* Esc [ D == Left on the same. */
+        }
+        //
+        //  Esc [ A == Up on ANSI/VT220/Linux console/
+        //  FreeBSD console/Mach console/xterm/Eterm/
+        //  urxvt/Gnome and Xfce Terminal.
+        //
+        case 'A' :
+        //
+        //  Esc [ B == Down on the same.
+        //
+        case 'B' :
+        //
+        //  Esc [ C == Right on the same.
+        //
+        case 'C' :
+        //
+        //  Esc [ D == Left on the same.
+        //
+        case 'D' :
+        {
             return arrow_from_ABCD(seq[0]);
-        case 'F' : /* Esc [ F == End on FreeBSD console/Eterm. */
+        }
+        //
+        //  Esc [ F == End on FreeBSD console/Eterm.
+        //
+        case 'F' :
+        {
             return KEY_END;
-        case 'G' : /* Esc [ G == PageDown on FreeBSD console. */
+        }
+        //
+        //  Esc [ G == PageDown on FreeBSD console.
+        //
+        case 'G' :
+        {
             return KEY_NPAGE;
-        case 'H' : /* Esc [ H == Home on ANSI/VT220/FreeBSD
-                    * console/Mach console/Eterm. */
+        }
+        //
+        //  Esc [ H == Home on ANSI/VT220/FreeBSD console/Mach console/Eterm.
+        //
+        case 'H' :
+        {
             return KEY_HOME;
-        case 'I' : /* Esc [ I == PageUp on FreeBSD console. */
+        }
+        //
+        //  Esc [ I == PageUp on FreeBSD console.
+        //
+        case 'I' :
+        {
             return KEY_PPAGE;
-        case 'L' : /* Esc [ L == Insert on ANSI/FreeBSD console. */
+        }
+        //
+        //  Esc [ L == Insert on ANSI/FreeBSD console.
+        //
+        case 'L' :
+        {
             return KEY_IC;
-#ifndef NANO_TINY
-        case 'M' : /* Esc [ M == F1 on FreeBSD console. */
-        case 'N' : /* Esc [ N == F2 on FreeBSD console. */
-        case 'O' : /* Esc [ O == F3 on FreeBSD console. */
-        case 'P' : /* Esc [ P == F4 on FreeBSD console. */
-        case 'Q' : /* Esc [ Q == F5 on FreeBSD console. */
-        case 'R' : /* Esc [ R == F6 on FreeBSD console. */
-        case 'S' : /* Esc [ S == F7 on FreeBSD console. */
-        case 'T' : /* Esc [ T == F8 on FreeBSD console. */
+        }
+        //
+        //  Esc [ M == F1 on FreeBSD console.
+        //
+        case 'M' :
+        //
+        //  Esc [ N == F2 on FreeBSD console.
+        //
+        case 'N' :
+        //
+        //  Esc [ O == F3 on FreeBSD console.
+        //
+        case 'O' :
+        //
+        //  Esc [ P == F4 on FreeBSD console.
+        //
+        case 'P' :
+        //
+        //  Esc [ Q == F5 on FreeBSD console.
+        //
+        case 'Q' :
+        //
+        //  Esc [ R == F6 on FreeBSD console.
+        //
+        case 'R' :
+        //
+        //  Esc [ S == F7 on FreeBSD console.
+        //
+        case 'S' :
+        //
+        //  Esc [ T == F8 on FreeBSD console.
+        //
+        case 'T' :
+        {
             return KEY_F(seq[0] - 'L');
-#endif
-        case 'U' : /* Esc [ U == PageDown on Mach console. */
+        }
+        //
+        //  Esc [ U == PageDown on Mach console.
+        //
+        case 'U' :
+        {
             return KEY_NPAGE;
-        case 'V' : /* Esc [ V == PageUp on Mach console. */
+        }
+        //
+        //  Esc [ V == PageUp on Mach console.
+        //
+        case 'V' :
+        {
             return KEY_PPAGE;
-#ifndef NANO_TINY
-        case 'W' : /* Esc [ W == F11 on FreeBSD console. */
+        }
+        //
+        //  Esc [ W == F11 on FreeBSD console.
+        //
+        case 'W' :
+        {
             return KEY_F(11);
-        case 'X' : /* Esc [ X == F12 on FreeBSD console. */
+        }
+        //
+        //  Esc [ X == F12 on FreeBSD console.
+        //
+        case 'X' :
+        {
             return KEY_F(12);
-#endif
-        case 'Y' : /* Esc [ Y == End on Mach console. */
+        }
+        //
+        //  Esc [ Y == End on Mach console.
+        //
+        case 'Y' :
+        {
             return KEY_END;
-        case 'Z' : /* Esc [ Z == Shift-Tab on ANSI/Linux console/
-                    * FreeBSD console/xterm/rxvt/Terminal. */
+        }
+        //
+        //  Esc [ Z == Shift-Tab on ANSI/Linux console/ FreeBSD console/xterm/rxvt/Terminal.
+        //
+        case 'Z' :
+        {
             return SHIFT_TAB;
-#ifndef NANO_TINY
-        case 'a' : /* Esc [ a == Shift-Up on rxvt/Eterm. */
-        case 'b' : /* Esc [ b == Shift-Down on rxvt/Eterm. */
-        case 'c' : /* Esc [ c == Shift-Right on rxvt/Eterm. */
-        case 'd' : /* Esc [ d == Shift-Left on rxvt/Eterm. */
-            shift_held = TRUE;
+        }
+        //
+        //  Esc [ a == Shift-Up on rxvt/Eterm.
+        //
+        case 'a' :
+        //
+        //  Esc [ b == Shift-Down on rxvt/Eterm.
+        //
+        case 'b' :
+        //
+        //  Esc [ c == Shift-Right on rxvt/Eterm.
+        //
+        case 'c' :
+        //
+        //  Esc [ d == Shift-Left on rxvt/Eterm.
+        //
+        case 'd' :
+        {
+            shift_held = true;
             return arrow_from_ABCD(seq[0] - 0x20);
-#endif
+        }
         case '[' :
+        {
             if (length > 1)
             {
                 *consumed = 2;
@@ -1207,8 +1564,8 @@ convert_CSI_sequence(const int *seq, size_t length, int *consumed)
                 }
             }
             break;
+        }
     }
-
     return FOREIGN_SEQUENCE;
 }
 

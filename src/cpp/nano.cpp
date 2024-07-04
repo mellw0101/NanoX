@@ -1554,7 +1554,7 @@ do_mouse()
 //  Return TRUE when the given function is a cursor-moving command.
 //
 bool
-wanted_to_move(void (*func)())
+wanted_to_move(CFuncPtr func)
 {
     return (func == do_left || func == do_right || func == do_up || func == do_down || func == do_home ||
             func == do_end || func == to_prev_word || func == to_next_word || func == to_para_begin ||
@@ -1566,7 +1566,7 @@ wanted_to_move(void (*func)())
 //  Return TRUE when the given function makes a change -- no good for view mode.
 //
 bool
-changes_something(functionptrtype f)
+changes_something(CFuncPtr f)
 {
     return (f == do_savefile || f == do_writeout || f == do_enter || f == do_tab || f == do_delete ||
             f == do_backspace || f == cut_text || f == paste_text || f == chop_previous_word || f == chop_next_word ||
@@ -1668,22 +1668,28 @@ inject(s8 *burst, u64 count)
         add_undo(ADD, nullptr);
     }
 
-    // Make room for the new bytes and copy them into the line.
+    //
+    //  Make room for the new bytes and copy them into the line.
+    //
     thisline->data = static_cast<s8 *>(nrealloc(thisline->data, datalen + count + 1));
     std::memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
                  datalen - openfile->current_x + 1);
     std::strncpy(thisline->data + openfile->current_x, burst, count);
 
-    // When the cursor is on the top row and not on the first chunk
-    // of a line, adding text there might change the preceding chunk
-    // and thus require an adjustment of firstcolumn.
+    //
+    //  When the cursor is on the top row and not on the first chunk
+    //  of a line, adding text there might change the preceding chunk
+    //  and thus require an adjustment of firstcolumn.
+    //
     if (thisline == openfile->edittop && openfile->firstcolumn > 0)
     {
         ensure_firstcolumn_is_aligned();
         refresh_needed = TRUE;
     }
 
-    // When the mark is to the right of the cursor, compensate its position.
+    //
+    //  When the mark is to the right of the cursor, compensate its position.
+    //
     if (thisline == openfile->mark && openfile->current_x < openfile->mark_x)
     {
         openfile->mark_x += count;
@@ -1694,7 +1700,9 @@ inject(s8 *burst, u64 count)
     openfile->totsize += mbstrlen(burst);
     set_modified();
 
-    // If text was added to the magic line, create a new magic line.
+    //
+    //  If text was added to the magic line, create a new magic line.
+    //
     if (thisline == openfile->filebot && !ISSET(NO_NEWLINES))
     {
         new_magicline();
@@ -1716,9 +1724,11 @@ inject(s8 *burst, u64 count)
     }
     openfile->placewewant = xplustabs();
 
-    // When softwrapping and the number of chunks in the current line changed,
-    // or we were on the last row of the edit window and moved to a new chunk,
-    // we need a full refresh.
+    //
+    //  When softwrapping and the number of chunks in the current line changed,
+    //  or we were on the last row of the edit window and moved to a new chunk,
+    //  we need a full refresh.
+    //
     if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current) != old_amount ||
                             (openfile->cursor_row == editwinrows - 1 &&
                              chunk_for(openfile->placewewant, openfile->current) > original_row)))
@@ -2017,12 +2027,14 @@ main(s32 argc, s8 **argv)
     std::atexit(
         []
         {
-            std::vector<std::string> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
-            for (const auto &str : gprof_report)
+            LOUT.destroy();
+            VECTOR<STRING> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
+            for (const STRING &str : gprof_report)
             {
                 NETLOGGER << str << NETLOG_ENDL;
             }
             NETLOGGER.send_to_server("\nExiting nano");
+            NETLOGGER.destroy();
         });
 
     s32 stdin_flags;
@@ -2067,7 +2079,7 @@ main(s32 argc, s8 **argv)
     //  If setting the locale is successful and it uses UTF-8, we will
     //  need to use the multibyte functions for text processing.
     //
-    if (std::setlocale(LC_ALL, "") && std::strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
+    if (std::setlocale(LC_ALL, "") && constexpr_strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
     {
         utf8_init();
     }
@@ -2083,7 +2095,11 @@ main(s32 argc, s8 **argv)
     SET(LET_THEM_ZAP);
     SET(MODERN_BINDINGS);
     SET(AUTOINDENT);
-    // SET(CONSTANT_SHOW);
+    //
+    //  TODO : ( SET(CONSTANT_SHOW) ) - Find out where this is implemented.
+    //
+    //  SET(CONSTANT_SHOW);
+    //
 
     //
     //  If the executable's name starts with 'r', activate restricted mode.
@@ -2095,10 +2111,10 @@ main(s32 argc, s8 **argv)
 
     for (s32 i = 1; i < argc; ++i)
     {
-        const u16 flag = retriveFlagFromStr(argv[i]);
+        C_u16 flag = retriveFlagFromStr(argv[i]);
         flag ? SET(flag) : 0;
 
-        const u32 cliCmd = retriveCliOptionFromStr(argv[i]);
+        C_u32 cliCmd = retriveCliOptionFromStr(argv[i]);
         cliCmd &CLI_OPT_VERSION ? version() : void();
         cliCmd &CLI_OPT_HELP ? usage() : void();
         cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = true : 0;
@@ -2106,10 +2122,17 @@ main(s32 argc, s8 **argv)
         cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = mallocstrcpy(word_chars, argv[i]) : 0 : 0;
         cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
         cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = mallocstrcpy(custom_nanorc, argv[i]) : 0 : 0;
-        cliCmd &CLI_OPT_OPERATINGDIR ? (i++ < argc) ? operating_dir = mallocstrcpy(operating_dir, argv[i]) : 0 : 0;
         cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
         cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = mallocstrcpy(alt_speller, argv[i]) : 0 : 0;
         cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
+
+        if (cliCmd & CLI_OPT_OPERATINGDIR)
+        {
+            if (i++ < argc)
+            {
+                operating_dir = mallocstrcpy(operating_dir, argv[i]);
+            }
+        }
         if (cliCmd & CLI_OPT_LISTSYNTAX)
         {
             if (!ignore_rcfiles)
@@ -2120,7 +2143,7 @@ main(s32 argc, s8 **argv)
             {
                 list_syntax_names();
             }
-            exit(EXIT_SUCCESS);
+            std::exit(SUCCESS);
         }
         if (cliCmd & CLI_OPT_FILL)
         {
@@ -2128,9 +2151,9 @@ main(s32 argc, s8 **argv)
             {
                 if (!parseNum(argv[i], fill) || fill <= 0)
                 {
-                    fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
-                    fprintf(stderr, "\n");
-                    exit(1);
+                    std::fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
+                    std::fprintf(stderr, "\n");
+                    std::exit(FAILURE);
                 }
                 fill_used = true;
             }
@@ -2141,9 +2164,9 @@ main(s32 argc, s8 **argv)
             {
                 if (!parseNum(argv[i], tabsize) || tabsize <= 0)
                 {
-                    fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
-                    fprintf(stderr, "\n");
-                    exit(EXIT_FAILURE);
+                    std::fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
+                    std::fprintf(stderr, "\n");
+                    std::exit(FAILURE);
                 }
                 continue;
             }
@@ -2154,9 +2177,9 @@ main(s32 argc, s8 **argv)
             {
                 if (!parseNum(argv[i], stripe_column) || stripe_column <= 0)
                 {
-                    fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
-                    fprintf(stderr, "\n");
-                    exit(EXIT_FAILURE);
+                    std::fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
+                    std::fprintf(stderr, "\n");
+                    std::exit(FAILURE);
                 }
             }
         }
@@ -2200,7 +2223,9 @@ main(s32 argc, s8 **argv)
 
     if (!ignore_rcfiles)
     {
-        /* Back up the command-line options that take an argument. */
+        //
+        //  Back up the command-line options that take an argument.
+        //
         s64 fill_cmdline          = fill;
         u64 stripeclm_cmdline     = stripe_column;
         s64 tabsize_cmdline       = tabsize;
@@ -2210,35 +2235,43 @@ main(s32 argc, s8 **argv)
         s8 *quotestr_cmdline      = quotestr;
         s8 *alt_speller_cmdline   = alt_speller;
 
-        /* Back up the command-line flags. */
+        //
+        //  ack up the command-line flags.
+        //
         u32 flags_cmdline[sizeof(flags) / sizeof(flags[0])];
-        memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
+        std::memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
 
-        /* Clear the string options, to not overwrite the specified ones. */
+        //
+        //  Clear the string options, to not overwrite the specified ones.
+        //
         backup_dir    = nullptr;
         word_chars    = nullptr;
         operating_dir = nullptr;
         quotestr      = nullptr;
         alt_speller   = nullptr;
 
-        /* Now process the system's and the user's nanorc file, if any. */
+        //
+        //  Now process the system's and the user's nanorc file, if any.
+        //
         do_rcfiles();
 
-        /* If the backed-up command-line options have a value, restore them. */
+        //
+        //  If the backed-up command-line options have a value, restore them.
+        //
         if (fill_used)
         {
             fill = fill_cmdline;
         }
 
-        if (backup_dir_cmdline != NULL)
+        if (backup_dir_cmdline != nullptr)
         {
-            free(backup_dir);
+            std::free(backup_dir);
             backup_dir = backup_dir_cmdline;
         }
 
         if (word_chars_cmdline != nullptr)
         {
-            free(word_chars);
+            std::free(word_chars);
             word_chars = word_chars_cmdline;
         }
 
@@ -2254,31 +2287,35 @@ main(s32 argc, s8 **argv)
 
         if (operating_dir_cmdline != nullptr || ISSET(RESTRICTED))
         {
-            free(operating_dir);
+            std::free(operating_dir);
             operating_dir = operating_dir_cmdline;
         }
 
         if (quotestr_cmdline != nullptr)
         {
-            free(quotestr);
+            std::free(quotestr);
             quotestr = quotestr_cmdline;
         }
 
         if (alt_speller_cmdline != nullptr)
         {
-            free(alt_speller);
+            std::free(alt_speller);
             alt_speller = alt_speller_cmdline;
         }
         strip_leading_blanks_from(alt_speller);
 
-        /* If an rcfile undid the default setting, copy it to the new flag. */
+        //
+        //  If an rcfile undid the default setting, copy it to the new flag.
+        //
         if (!ISSET(NO_WRAP))
         {
             SET(BREAK_LONG_LINES);
         }
 
-        /* Simply OR the boolean flags from rcfile and command line. */
-        for (size_t i = 0; i < sizeof(flags) / sizeof(flags[0]); i++)
+        //
+        //  Simply OR the boolean flags from rcfile and command line.
+        //
+        for (u64 i = 0; i < sizeof(flags) / sizeof(flags[0]); i++)
         {
             flags[i] |= flags_cmdline[i];
         }
@@ -2337,15 +2374,19 @@ main(s32 argc, s8 **argv)
     //
     history_init();
 
-    /* If we need history files, verify that we have a directory for them,
-     * and when not, cancel the options. */
+    //
+    //  If we need history files, verify that we have a directory for them,
+    //  and when not, cancel the options.
+    //
     if ((ISSET(HISTORYLOG) || ISSET(POSITIONLOG)) && !have_statedir())
     {
         UNSET(HISTORYLOG);
         UNSET(POSITIONLOG);
     }
 
-    /* If the user wants history persistence, read the relevant files. */
+    //
+    //  If the user wants history persistence, read the relevant files.
+    //
     if ISSET (HISTORYLOG)
     {
         load_history();
@@ -2356,26 +2397,34 @@ main(s32 argc, s8 **argv)
         load_poshistory();
     }
 
-    /* If a backup directory was specified and we're not in restricted mode,
-     * verify it is an existing folder, so backup files can be saved there. */
+    //
+    //  If a backup directory was specified and we're not in restricted mode,
+    //  verify it is an existing folder, so backup files can be saved there.
+    //
     if (backup_dir != nullptr && !ISSET(RESTRICTED))
     {
         init_backup_dir();
     }
 
-    /* Set up the operating directory.  This entails chdir()ing there,
-     * so that file reads and writes will be based there. */
+    //
+    //  Set up the operating directory.  This entails chdir()ing there,
+    //  so that file reads and writes will be based there.
+    //
     if (operating_dir != nullptr)
     {
         init_operating_dir();
     }
 
-    /* Set the default value for things that weren't specified. */
+    //
+    //  Set the default value for things that weren't specified.
+    //
     (punct == nullptr) ? punct = copy_of("!.?") : 0;
     (brackets == nullptr) ? brackets = copy_of("\"')>]}") : 0;
     (quotestr == nullptr) ? quotestr = copy_of("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
 
-    /* Compile the quoting regex, and exit when it's invalid. */
+    //
+    //  Compile the quoting regex, and exit when it's invalid.
+    //
     quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
     if (quoterc != 0)
     {
@@ -2387,56 +2436,60 @@ main(s32 argc, s8 **argv)
     }
     else
     {
-        free(quotestr);
+        std::free(quotestr);
     }
 
-#ifdef ENABLE_SPELLER
-    /* If we don't have an alternative spell checker after reading the
-     * command line and/or rcfile(s), check $SPELL for one, as Pico
-     * does (unless we're using restricted mode, in which case spell
-     * checking is disabled, since it would allow reading from or
-     * writing to files not specified on the command line). */
-    if (alt_speller == NULL && !ISSET(RESTRICTED))
+    //
+    //  If we don't have an alternative spell checker after reading the
+    //  command line and/or rcfile(s), check $SPELL for one, as Pico
+    //  does (unless we're using restricted mode, in which case spell
+    //  checking is disabled, since it would allow reading from or
+    //  writing to files not specified on the command line).
+    //
+    if (alt_speller == nullptr && !ISSET(RESTRICTED))
     {
-        const char *spellenv = getenv("SPELL");
+        C_s8 *spellenv = std::getenv("SPELL");
 
-        if (spellenv != NULL)
+        if (spellenv != nullptr)
         {
             alt_speller = copy_of(spellenv);
         }
     }
-#endif
 
-#ifndef NANO_TINY
-    /* If matchbrackets wasn't specified, set its default value. */
-    if (matchbrackets == NULL)
+    //
+    //  If matchbrackets wasn't specified, set its default value.
+    //
+    if (matchbrackets == nullptr)
     {
         matchbrackets = copy_of("(<[{)>]}");
     }
 
-    /* If the whitespace option wasn't specified, set its default value. */
-    if (whitespace == NULL)
+    //
+    //  If the whitespace option wasn't specified, set its default value.
+    //
+    if (whitespace == nullptr)
     {
-#    ifdef ENABLE_UTF8
         if (using_utf8())
         {
-            /* A tab is shown as a Right-Pointing Double Angle Quotation Mark
-             * (U+00BB), and a space as a Middle Dot (U+00B7). */
+            //
+            //  A tab is shown as a Right-Pointing Double Angle Quotation Mark
+            //  (U+00BB), and a space as a Middle Dot (U+00B7).
+            //
             whitespace  = copy_of("\xC2\xBB\xC2\xB7");
             whitelen[0] = 2;
             whitelen[1] = 2;
         }
         else
-#    endif
         {
             whitespace  = copy_of(">.");
             whitelen[0] = 1;
             whitelen[1] = 1;
         }
     }
-#endif /* !NANO_TINY */
 
-    /* Initialize the search string. */
+    //
+    //  Initialize the search string.
+    //
     last_search = copy_of("");
     UNSET(BACKWARDS_SEARCH);
 
@@ -2492,7 +2545,9 @@ main(s32 argc, s8 **argv)
     //
     signal_init();
 
-    // Initialize mouse support.
+    //
+    //  Initialize mouse support.
+    //
     mouse_init();
 
     //
@@ -2531,20 +2586,28 @@ main(s32 argc, s8 **argv)
     mousefocusin       = get_keycode("kxIN", FOCUS_IN);
     mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
 
-    /* Disable the type-ahead checking that ncurses normally does. */
+    //
+    //  Disable the type-ahead checking that ncurses normally does.
+    //
     typeahead(-1);
 
 #ifdef HAVE_SET_ESCDELAY
-    /* Tell ncurses to pass the Esc key quickly. */
+    //
+    //  Tell ncurses to pass the Esc key quickly.
+    //
     set_escdelay(50);
 #endif
-    /* Read the files mentioned on the command line into new buffers. */
+    //
+    //  Read the files mentioned on the command line into new buffers.
+    //
     while (optind < argc && (!openfile || true))
     {
         s64 givenline = 0, givencol = 0;
         s8 *searchstring = nullptr;
 
-        /* If there's a +LINE[,COLUMN] argument here, eat it up. */
+        //
+        //  If there's a +LINE[,COLUMN] argument here, eat it up.
+        //
         if (optind < argc - 1 && argv[optind][0] == '+')
         {
             s32 n = 1;
@@ -2588,8 +2651,10 @@ main(s32 argc, s8 **argv)
             }
             else
             {
-                /* When there is nothing after the "+", understand it as
-                 * go-to-EOF, otherwise parse and store the given number(s).*/
+                //
+                //  When there is nothing after the "+", understand it as
+                //  go-to-EOF, otherwise parse and store the given number(s).
+                //
                 if (argv[optind++][1] == '\0')
                 {
                     givenline = -1;
@@ -2601,9 +2666,11 @@ main(s32 argc, s8 **argv)
             }
         }
 
-        // If the filename is a dash, read from standard input; otherwise,
-        // open the file; skip positioning the cursor if either failed.
-        if (strcmp(argv[optind], "-") == 0)
+        //
+        //  If the filename is a dash, read from standard input; otherwise,
+        //  open the file; skip positioning the cursor if either failed.
+        //
+        if (constexpr_strcmp(argv[optind], "-") == 0)
         {
             optind++;
             if (!scoop_stdin())
@@ -2619,7 +2686,7 @@ main(s32 argc, s8 **argv)
                 optind++;
                 continue;
             }
-            const u32 cliCmd = retriveFlagFromStr(argv[optind]);
+            const u32 cliCmd = retriveCliOptionFromStr(argv[optind]);
             if (cliCmd)
             {
                 optind += 2;
@@ -2629,12 +2696,14 @@ main(s32 argc, s8 **argv)
             s8         *filename = argv[optind++];
             struct stat fileinfo;
 
-            /* If the filename contains a colon and this file does not exist,
-             * then check if the filename ends with digits preceded by a colon
-             * (possibly preceded by more digits and a colon).  If there is or
-             * are such trailing numbers, chop the colons plus numbers off.
-             * The number is later used to place the cursor on that line. */
-            if (ISSET(COLON_PARSING) && !givenline && strchr(filename, ':') && !givencol &&
+            //
+            //  If the filename contains a colon and this file does not exist,
+            //  then check if the filename ends with digits preceded by a colon
+            //  (possibly preceded by more digits and a colon).  If there is or
+            //  are such trailing numbers, chop the colons plus numbers off.
+            //  The number is later used to place the cursor on that line.
+            //
+            if (ISSET(COLON_PARSING) && !givenline && constexpr_strchr(filename, ':') && !givencol &&
                 stat(filename, &fileinfo) < 0)
             {
                 s8 *coda = filename + strlen(filename);
@@ -2649,8 +2718,10 @@ main(s32 argc, s8 **argv)
                     if (stat(filename, &fileinfo) < 0)
                     {
                         *coda = ':';
-                        // If this was the first colon, look for a second one.
-                        if (!strchr(coda + 1, ':'))
+                        //
+                        //  If this was the first colon, look for a second one.
+                        //
+                        if (!constexpr_strchr(coda + 1, ':'))
                         {
                             goto maybe_two;
                         }
@@ -2667,7 +2738,9 @@ main(s32 argc, s8 **argv)
             }
         }
 
-        // If a position was given on the command line, go there.
+        //
+        //  If a position was given on the command line, go there.
+        //
         if (givenline != 0 || givencol != 0)
         {
             goto_line_and_column(givenline, givencol, false, false);
@@ -2692,7 +2765,7 @@ main(s32 argc, s8 **argv)
             {
                 tidy_up_after_search();
             }
-            free(last_search);
+            std::free(last_search);
             last_search  = searchstring;
             searchstring = nullptr;
         }
@@ -2708,18 +2781,24 @@ main(s32 argc, s8 **argv)
         }
     }
 
-    // After handling the files on the command line, allow inserting files.
+    //
+    //  After handling the files on the command line, allow inserting files.
+    //
     UNSET(NOREAD_MODE);
 
-    // Nano is a hands-on editor -- it needs a keyboard.
+    //
+    //  Nano is a hands-on editor -- it needs a keyboard.
+    //
     if (!isatty(STDIN_FILENO))
     {
         die(_("Standard input is not a terminal\n"));
     }
 
-    // If no filenames were given, or all of them were invalid things like
-    // directories, then open a blank buffer and allow editing.  Otherwise,
-    // switch from the last opened file to the next, that is: the first.
+    //
+    //  If no filenames were given, or all of them were invalid things like
+    //  directories, then open a blank buffer and allow editing.  Otherwise,
+    //  switch from the last opened file to the next, that is: the first.
+    //
     if (openfile == nullptr)
     {
         open_buffer("", true);
@@ -2806,8 +2885,10 @@ main(s32 argc, s8 **argv)
             place_the_cursor();
         }
 
-        // In barless mode, either redraw a relevant status message,
-        // or overwrite a minor, redundant one.
+        //
+        //  In barless mode, either redraw a relevant status message,
+        //  or overwrite a minor, redundant one.
+        //
         if (ISSET(ZERO) && lastmessage > HUSH)
         {
             if (openfile->cursor_row == editwinrows - 1 && LINES > 1)
@@ -2827,14 +2908,16 @@ main(s32 argc, s8 **argv)
         errno    = 0;
         focusing = true;
 
-        // Forget any earlier cursor position at the prompt.
+        //
+        //  Forget any earlier cursor position at the prompt.
+        //
         put_cursor_at_end_of_answer();
 
-        // Read in and interpret a single keystroke.
+        //
+        //  Read in and interpret a single keystroke.
+        //
         process_a_keystroke();
     }
 
-    LOUT.destroy();
-    NETLOGGER.destroy();
     return 0;
 }
