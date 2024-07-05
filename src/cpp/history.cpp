@@ -11,22 +11,29 @@
 #    define POSITION_HISTORY "filepos_history"
 #endif
 
-/* Whether any of the history lists has changed. */
-static bool history_changed = FALSE;
-
-/* The name of the positions-history file. */
-static char *poshistname = NULL;
-
-/* The last time the positions-history file was written. */
+//
+//  Whether any of the history lists has changed.
+//
+static bool history_changed = false;
+//
+//  he name of the positions-history file.
+//
+static char *poshistname = nullptr;
+//
+//  The last time the positions-history file was written.
+//
 static time_t latest_timestamp = 942927132;
+//
+//  The list of filenames with their last cursor positions.
+//
+static poshiststruct *position_history = nullptr;
 
-/* The list of filenames with their last cursor positions. */
-static poshiststruct *position_history = NULL;
-
-// Initialize the lists of historical search and replace strings
-// and the list of historical executed commands.
+//
+//  Initialize the lists of historical search and replace strings
+//  and the list of historical executed commands.
+//
 void
-history_init(void)
+history_init()
 {
     search_history       = make_new_node(NULL);
     search_history->data = copy_of("");
@@ -44,7 +51,9 @@ history_init(void)
     executebot            = execute_history;
 }
 
-// Reset the pointer into the history list that contains item to the bottom.
+//
+//  Reset the pointer into the history list that contains item to the bottom.
+//
 void
 reset_history_pointer_for(const linestruct *item)
 {
@@ -62,9 +71,11 @@ reset_history_pointer_for(const linestruct *item)
     }
 }
 
-// Return from the history list that starts at start and ends at end
-// the first node that contains the first len characters of the given
-// text, or NULL if there is no such node.
+//
+//  Return from the history list that starts at start and ends at end
+//  the first node that contains the first len characters of the given
+//  text, or NULL if there is no such node.
+//
 linestruct *
 find_in_history(const linestruct *start, const linestruct *end, const char *text, size_t len)
 {

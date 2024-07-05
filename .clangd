@@ -1,6 +1,6 @@
 CompileFlags:
   Add: [-Iinclude, -Isrc, -std=c++23]
 Index:
-  Background: true
+  Background: Build
 Diagnostics:
   UnusedIncludes: Strict

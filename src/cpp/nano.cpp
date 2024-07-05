@@ -180,7 +180,8 @@ copy_buffer(const linestruct *src)
 {
     linestruct *head, *item;
 
-    head       = copy_node(src);
+    head = copy_node(src);
+
     head->prev = nullptr;
 
     item = head;
@@ -188,7 +189,8 @@ copy_buffer(const linestruct *src)
 
     while (src != nullptr)
     {
-        item->next       = copy_node(src);
+        item->next = copy_node(src);
+
         item->next->prev = item;
 
         item = item->next;
@@ -210,7 +212,8 @@ renumber_from(linestruct *line)
     while (line != nullptr)
     {
         line->lineno = ++number;
-        line         = line->next;
+
+        line = line->next;
     }
 }
 
