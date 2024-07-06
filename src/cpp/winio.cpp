@@ -3507,7 +3507,7 @@ minibar()
         thename = copy_of(_("(nameless)"));
     }
 
-    std::sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
+    sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
     placewidth = constexpr_strlen(location);
     namewidth  = breadth(thename);
 
@@ -3598,23 +3598,23 @@ minibar()
 
         if (*this_position == '\0')
         {
-            std::sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
+            sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
         }
         else if (*this_position == '\n')
         {
-            std::sprintf(hexadecimal, "  0x00");
+            sprintf(hexadecimal, "  0x00");
         }
         else if (static_cast<u8>(*this_position) < 0x80 && using_utf8())
         {
-            std::sprintf(hexadecimal, "U+%04X", static_cast<u8>(*this_position));
+            sprintf(hexadecimal, "U+%04X", static_cast<u8>(*this_position));
         }
         else if (using_utf8() && mbtowide(widecode, this_position) > 0)
         {
-            std::sprintf(hexadecimal, "U+%04X", static_cast<s32>(widecode));
+            sprintf(hexadecimal, "U+%04X", static_cast<s32>(widecode));
         }
         else
         {
-            std::sprintf(hexadecimal, "  0x%02X", static_cast<u8>(*this_position));
+            sprintf(hexadecimal, "  0x%02X", static_cast<u8>(*this_position));
         }
 
         mvwaddstr(footwin, 0, COLS - 23, hexadecimal);
@@ -3623,14 +3623,14 @@ minibar()
 
         if (*this_position && *successor && is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
         {
-            std::sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
+            sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
             waddstr(footwin, hexadecimal);
 
             successor += char_length(successor);
 
             if (is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
             {
-                std::sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
+                sprintf(hexadecimal, "|%04X", static_cast<s32>(widecode));
                 waddstr(footwin, hexadecimal);
             }
         }

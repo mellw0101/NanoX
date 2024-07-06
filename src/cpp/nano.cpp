@@ -1378,8 +1378,6 @@ terminal_init()
 s32
 get_keycode(const s8 *const keyname, const s32 standard)
 {
-    PROFILE_FUNCTION;
-
     const s8 *keyvalue = tigetstr(keyname);
     if (keyvalue != 0 && keyvalue != (s8 *)-1 && key_defined(keyvalue))
     {
@@ -1654,8 +1652,6 @@ suck_up_input_and_paste_it()
 void
 inject(s8 *burst, u64 count)
 {
-    PROFILE_FUNCTION;
-
     linestruct *thisline = openfile->current;
 
     u64 datalen      = std::strlen(thisline->data);
@@ -1694,9 +1690,9 @@ inject(s8 *burst, u64 count)
     //  Make room for the new bytes and copy them into the line.
     //
     thisline->data = static_cast<s8 *>(nrealloc(thisline->data, datalen + count + 1));
-    std::memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
-                 datalen - openfile->current_x + 1);
-    std::strncpy(thisline->data + openfile->current_x, burst, count);
+    memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
+            datalen - openfile->current_x + 1);
+    strncpy(thisline->data + openfile->current_x, burst, count);
 
     //
     //  When the cursor is on the top row and not on the first chunk
@@ -2101,11 +2097,11 @@ main(s32 argc, s8 **argv)
     //  If setting the locale is successful and it uses UTF-8, we will
     //  need to use the multibyte functions for text processing.
     //
-    if (std::setlocale(LC_ALL, "") && constexpr_strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
+    if (setlocale(LC_ALL, "") && constexpr_strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
     {
         utf8_init();
     }
-    std::setlocale(LC_ALL, "");
+    setlocale(LC_ALL, "");
 
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
@@ -2117,6 +2113,7 @@ main(s32 argc, s8 **argv)
     SET(LET_THEM_ZAP);
     SET(MODERN_BINDINGS);
     SET(AUTOINDENT);
+    // SET(MINIBAR);
     //
     //  TODO : ( SET(CONSTANT_SHOW) ) - Find out where this is implemented.
     //
@@ -2210,7 +2207,7 @@ main(s32 argc, s8 **argv)
     //
     //  Curses needs TERM; if it is unset, try falling back to a VT220.
     //
-    if (std::getenv("TERM") == nullptr)
+    if (getenv("TERM") == nullptr)
     {
         putenv(const_cast<s8 *>("TERM=vt220"));
         setenv("TERM", "vt220", 1);
