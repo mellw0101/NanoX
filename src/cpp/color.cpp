@@ -101,7 +101,7 @@ set_interface_colorpairs()
             }
         }
 
-        std::free(color_combo[index]);
+        free(color_combo[index]);
     }
 
     if (rescind_colors)

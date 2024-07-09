@@ -2113,11 +2113,14 @@ main(s32 argc, s8 **argv)
     SET(LET_THEM_ZAP);
     SET(MODERN_BINDINGS);
     SET(AUTOINDENT);
-    // SET(MINIBAR);
     //
     //  TODO : ( SET(CONSTANT_SHOW) ) - Find out where this is implemented.
+    //         If MINIBAR and CONSTANT_SHOW is active we get a const bar
+    //         witch is what we want now we need to figure out how to make it perfect.
     //
-    //  SET(CONSTANT_SHOW);
+    SET(MINIBAR);
+    SET(CONSTANT_SHOW);
+    SET(STATEFLAGS);
     //
 
     //
@@ -2232,11 +2235,12 @@ main(s32 argc, s8 **argv)
     //
     //  When requested, suppress the default spotlight and error colors.
     //
-    rescind_colors = (std::getenv("NO_COLOR") != nullptr);
+    rescind_colors = (getenv("NO_COLOR") != nullptr);
 
     //
-    //  Set up the function and shortcut lists.  This needs to be done
-    //  before reading the rcfile, to be able to rebind/unbind keys.
+    //  Set up the function and shortcut lists.
+    //  This needs to be done before reading the rcfile,
+    //  to be able to rebind/unbind keys.
     //
     shortcut_init();
 
@@ -2258,7 +2262,7 @@ main(s32 argc, s8 **argv)
         //  ack up the command-line flags.
         //
         u32 flags_cmdline[sizeof(flags) / sizeof(flags[0])];
-        std::memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
+        memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
 
         //
         //  Clear the string options, to not overwrite the specified ones.
@@ -2455,7 +2459,7 @@ main(s32 argc, s8 **argv)
     }
     else
     {
-        std::free(quotestr);
+        free(quotestr);
     }
 
     //
@@ -2467,7 +2471,7 @@ main(s32 argc, s8 **argv)
     //
     if (alt_speller == nullptr && !ISSET(RESTRICTED))
     {
-        C_s8 *spellenv = std::getenv("SPELL");
+        C_s8 *spellenv = getenv("SPELL");
 
         if (spellenv != nullptr)
         {

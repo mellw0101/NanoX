@@ -2186,7 +2186,9 @@ parse_kbinput(WINDOW *frame)
         }
     }
 
-    /* Spurious codes from VTE -- see https://sv.gnu.org/bugs/?64578. */
+    //
+    //  Spurious codes from VTE -- see https://sv.gnu.org/bugs/?64578.
+    //
     if (keycode == mousefocusin || keycode == mousefocusout)
     {
         return ERR;
@@ -2195,11 +2197,16 @@ parse_kbinput(WINDOW *frame)
     switch (keycode)
     {
         case KEY_SLEFT :
+        {
             shift_held = TRUE;
             return KEY_LEFT;
+        }
         case KEY_SRIGHT :
+        {
+
             shift_held = TRUE;
             return KEY_RIGHT;
+        }
 #ifdef KEY_SR
 #    ifdef KEY_SUP    /* Ncurses doesn't know Shift+Up. */
         case KEY_SUP :
@@ -2254,7 +2261,7 @@ parse_kbinput(WINDOW *frame)
         /* When requested, swap meanings of keycodes for <Bsp> and <Del>. */
         case DEL_CODE :
         //
-        /// TODO : This is backspace.
+        //  TODO : This is backspace.
         //
         case KEY_BACKSPACE :
             return (ISSET(REBIND_DELETE) ? KEY_DC : KEY_BACKSPACE);
@@ -2379,7 +2386,7 @@ assemble_unicode(s32 symbol)
     {
         s8 partial[7] = "      ";
 
-        std::sprintf(partial + 6 - digits, "%0*lX", digits, unicode);
+        sprintf(partial + 6 - digits, "%0*lX", digits, unicode);
 
         //
         //  TRANSLATORS: This is shown while a six-digit hexadecimal
@@ -2544,8 +2551,8 @@ get_verbatim_kbinput(WINDOW *frame, u64 *count)
     //
     //  Turn bracketed-paste mode off.
     //
-    std::printf(ESC_CODE_TURN_OFF_BRACKETED_PASTE);
-    std::fflush(stdout);
+    printf(ESC_CODE_TURN_OFF_BRACKETED_PASTE);
+    fflush(stdout);
 
     linger_after_escape = true;
 
@@ -3236,7 +3243,6 @@ show_states_at(WINDOW *window)
 void
 titlebar(const s8 *path)
 {
-    PROFILE_FUNCTION;
     //
     //  The width of the different title-bar elements, in columns.
     //
@@ -3359,7 +3365,9 @@ titlebar(const s8 *path)
             }
         }
     }
-    /* Determine the widths of the four elements, including their padding. */
+    //
+    //  Determine the widths of the four elements, including their padding.
+    //
     verlen    = breadth(upperleft) + 3;
     prefixlen = breadth(prefix);
     if (prefixlen > 0)
@@ -3373,7 +3381,9 @@ titlebar(const s8 *path)
         pathlen++;
     }
 
-    /* Only print the version message when there is room for it. */
+    //
+    //  Only print the version message when there is room for it.
+    //
     if (verlen + prefixlen + pathlen + pluglen + statelen <= COLS)
     {
         mvwaddstr(topwin, 0, 2, upperleft);
@@ -3381,12 +3391,16 @@ titlebar(const s8 *path)
     else
     {
         verlen = 2;
-        /* If things don't fit yet, give up the placeholder. */
+        //
+        //  If things don't fit yet, give up the placeholder.
+        //
         if (verlen + prefixlen + pathlen + pluglen + statelen > COLS)
         {
             pluglen = 0;
         }
-        /* If things still don't fit, give up the side spaces. */
+        //
+        //  If things still don't fit, give up the side spaces.
+        //
         if (verlen + prefixlen + pathlen + pluglen + statelen > COLS)
         {
             verlen = 0;
@@ -3396,13 +3410,17 @@ titlebar(const s8 *path)
 
     free(ranking);
 
-    /* If we have side spaces left, center the path name. */
+    //
+    //  If we have side spaces left, center the path name.
+    //
     if (verlen > 0)
     {
         offset = verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2;
     }
 
-    /* Only print the prefix when there is room for it. */
+    //
+    //  Only print the prefix when there is room for it.
+    //
     if (verlen + prefixlen + pathlen + pluglen + statelen <= COLS)
     {
         mvwaddstr(topwin, 0, offset, prefix);
@@ -3416,24 +3434,27 @@ titlebar(const s8 *path)
         wmove(topwin, 0, offset);
     }
 
-    /* Print the full path if there's room; otherwise, dottify it. */
+    //
+    //  Print the full path if there's room; otherwise, dottify it.
+    //
     if (pathlen + pluglen + statelen <= COLS)
     {
-        caption = display_string(path, 0, pathlen, FALSE, FALSE);
+        caption = display_string(path, 0, pathlen, false, false);
         waddstr(topwin, caption);
         free(caption);
     }
     else if (5 + statelen <= COLS)
     {
         waddstr(topwin, "...");
-        caption = display_string(path, 3 + pathlen - COLS + statelen, COLS - statelen, FALSE, FALSE);
+        caption = display_string(path, 3 + pathlen - COLS + statelen, COLS - statelen, false, false);
         waddstr(topwin, caption);
         free(caption);
     }
 
-#ifndef NANO_TINY
-    /* When requested, show on the title bar the state of three options and
-     * the state of the mark and whether a macro is being recorded. */
+    //
+    //  When requested, show on the title bar the state of three options and
+    //  the state of the mark and whether a macro is being recorded.
+    //
     if (*state && ISSET(STATEFLAGS) && !ISSET(VIEW_MODE))
     {
         if (openfile->modified && COLS > 1)
@@ -3447,9 +3468,10 @@ titlebar(const s8 *path)
         }
     }
     else
-#endif
     {
-        /* If there's room, right-align the state word; otherwise, clip it. */
+        //
+        //  If there's room, right-align the state word; otherwise, clip it.
+        //
         if (statelen > 0 && statelen <= COLS)
         {
             mvwaddstr(topwin, 0, COLS - statelen, state);
@@ -3469,12 +3491,11 @@ titlebar(const s8 *path)
 //  Draw a bar at the bottom with some minimal state information.
 //
 //  TODO : ( minibar ) Profile later.
+//         Also make this way better.
 //
 void
 minibar()
 {
-    PROFILE_FUNCTION;
-
     s8 *thename         = nullptr;
     s8 *number_of_lines = nullptr;
     s8 *ranking         = nullptr;
@@ -3531,7 +3552,7 @@ minibar()
             s8 *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, false, false);
             mvwaddstr(footwin, 0, 0, "...");
             waddstr(footwin, shortname);
-            std::free(shortname);
+            free(shortname);
         }
         else
         {
@@ -3552,12 +3573,12 @@ minibar()
         number_of_lines = static_cast<s8 *>(nmalloc(49));
         if (openfile->fmt == NIX_FILE || openfile->fmt == UNSPECIFIED)
         {
-            std::sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
+            sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
         }
         else
         {
-            std::sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count,
-                         (openfile->fmt == DOS_FILE) ? "DOS" : "Mac");
+            sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count,
+                    (openfile->fmt == DOS_FILE) ? "DOS" : "Mac");
         }
         tallywidth = breadth(number_of_lines);
         if (namewidth + tallywidth + 11 < COLS)
@@ -3573,7 +3594,7 @@ minibar()
     else if (openfile->next != openfile && COLS > 35)
     {
         ranking = ranking = static_cast<s8 *>(nmalloc(24));
-        std::sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
+        sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
         if (namewidth + placewidth + breadth(ranking) + 32 < COLS)
         {
             waddstr(footwin, ranking);
@@ -3654,18 +3675,18 @@ minibar()
     //
     if (namewidth + 6 < COLS)
     {
-        std::sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
+        sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
         mvwaddstr(footwin, 0, COLS - 4 - padding, location);
     }
 
     wattroff(footwin, interface_color_pair[MINI_INFOBAR]);
     wrefresh(footwin);
 
-    std::free(number_of_lines);
-    std::free(hexadecimal);
-    std::free(location);
-    std::free(thename);
-    std::free(ranking);
+    free(number_of_lines);
+    free(hexadecimal);
+    free(location);
+    free(thename);
+    free(ranking);
 }
 
 //

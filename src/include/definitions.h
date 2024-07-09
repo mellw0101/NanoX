@@ -335,7 +335,6 @@ typedef struct colortype
                        // combination.
     s32 attributes;    // Pair number and brightness composed into ready-to-use
                        // attributes.
-
     regex_t   *start;  // The compiled regular expression for 'start=', or the only one.
     regex_t   *end;    // The compiled regular expression for 'end=', if any.
     colortype *next;   // Next color combination.
