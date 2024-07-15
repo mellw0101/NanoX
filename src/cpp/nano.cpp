@@ -1121,6 +1121,9 @@ regenerate_screen()
     endwin();
     refresh();
 
+    //
+    //  TODO : (INDECATOR) - this is for the sidebar?
+    //
     sidebar = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
     bardata = static_cast<s32 *>(nrealloc(bardata, LINES * sizeof(s32)));
 
