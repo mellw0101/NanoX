@@ -399,10 +399,9 @@ do_exit()
 //  If needed, the name is further suffixed to be unique.
 //
 void
-emergency_save(const s8 *filename)
+emergency_save(const char *filename)
 {
-    s8 *plainname, *targetname;
-
+    char *plainname, *targetname;
     if (*filename == '\0')
     {
         plainname = static_cast<s8 *>(nmalloc(28));
@@ -412,9 +411,7 @@ emergency_save(const s8 *filename)
     {
         plainname = copy_of(filename);
     }
-
     targetname = get_next_filename(plainname, ".save");
-
     if (*targetname == '\0')
     {
         fprintf(stderr, ERROR_MSG_TO_MENY_DOT_SAVEFILES);
@@ -423,7 +420,6 @@ emergency_save(const s8 *filename)
     {
         fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
     }
-
     free(targetname);
     free(plainname);
 }
@@ -520,9 +516,7 @@ window_init()
         delwin(midwin);
         delwin(footwin);
     }
-
     topwin = nullptr;
-
     //
     //  If the terminal is very flat,
     //  don't set up a title bar.
@@ -530,7 +524,6 @@ window_init()
     if (LINES < 3)
     {
         editwinrows = (ISSET(ZERO) ? LINES : 1);
-
         //
         //  Set up two subwindows.
         //  If the terminal is just one line,
@@ -541,17 +534,14 @@ window_init()
     }
     else
     {
-        s32 minimum    = (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5);
-        s32 toprows    = ((ISSET(EMPTY_LINE) && LINES > minimum) ? 2 : 1);
-        s32 bottomrows = ((ISSET(NO_HELP) || LINES < minimum) ? 1 : 3);
-
+        int minimum    = (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5);
+        int toprows    = ((ISSET(EMPTY_LINE) && LINES > minimum) ? 2 : 1);
+        int bottomrows = ((ISSET(NO_HELP) || LINES < minimum) ? 1 : 3);
         if (ISSET(MINIBAR) || ISSET(ZERO))
         {
             toprows = 0;
         }
-
         editwinrows = LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0);
-
         //
         //  Set up the normal three subwindows.
         //
@@ -562,12 +552,10 @@ window_init()
         midwin  = newwin(editwinrows, COLS, toprows, 0);
         footwin = newwin(bottomrows, COLS, LINES - bottomrows, 0);
     }
-
     //
     //  In case the terminal shrunk, make sure the status line is clear.
     //
     wnoutrefresh(footwin);
-
     //
     //  When not disabled, turn escape-sequence translation on.
     //
@@ -576,7 +564,6 @@ window_init()
         keypad(midwin, true);
         keypad(footwin, true);
     }
-
     //
     //  Set up the wrapping point, accounting for screen width when negative.
     //
@@ -630,21 +617,18 @@ mouse_init()
 void
 print_opt(const char *const shortflag, const char *const longflag, const char *const description)
 {
-    const s32 firstwidth  = breadth(shortflag);
-    const s32 secondwidth = breadth(longflag);
-
+    const int firstwidth  = breadth(shortflag);
+    const int secondwidth = breadth(longflag);
     printf(" %s", shortflag);
     if (firstwidth < 14)
     {
         printf("%*s", 14 - firstwidth, " ");
     }
-
     printf(" %s", longflag);
     if (secondwidth < 24)
     {
         printf("%*s", 24 - secondwidth, " ");
     }
-
     printf("%s\n", _(description));
 }
 
@@ -812,7 +796,7 @@ list_syntax_names()
 /// Register that Ctrl+C was pressed during some system call.
 //
 void
-make_a_note(s32 signal)
+make_a_note(int signal)
 {
     control_C_was_pressed = true;
 }
