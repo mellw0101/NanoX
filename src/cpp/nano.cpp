@@ -628,7 +628,7 @@ mouse_init()
 //  Print the usage line for the given option to the screen.
 //
 void
-print_opt(const s8 *const shortflag, const s8 *const longflag, const s8 *const description)
+print_opt(const char *const shortflag, const char *const longflag, const char *const description)
 {
     const s32 firstwidth  = breadth(shortflag);
     const s32 secondwidth = breadth(longflag);
@@ -987,7 +987,7 @@ signal_init()
 //  Handler for SIGHUP (hangup) and SIGTERM (terminate).
 //
 void
-handle_hupterm(s32 signal)
+handle_hupterm(int signal)
 {
     die(_("Received SIGHUP or SIGTERM\n"));
 }
@@ -997,7 +997,7 @@ handle_hupterm(s32 signal)
 /// Handler for SIGSEGV (segfault) and SIGABRT (abort).
 //
 void
-handle_crash(s32 signal)
+handle_crash(int signal)
 {
     die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
 }
@@ -1007,7 +1007,7 @@ handle_crash(s32 signal)
 //  Handler for SIGTSTP (suspend).
 //
 void
-suspend_nano(s32 signal)
+suspend_nano(int signal)
 {
     disable_mouse_support();
     restore_terminal();
@@ -1048,7 +1048,7 @@ do_suspend()
 //  Handler for SIGCONT (continue after suspend).
 //
 void
-continue_nano(s32 signal)
+continue_nano(int signal)
 {
     if ISSET (USE_MOUSE)
     {
@@ -1093,7 +1093,7 @@ block_sigwinch(bool blockit)
 //  Handler for SIGWINCH (window size change).
 //
 void
-handle_sigwinch(s32 signal)
+handle_sigwinch(int signal)
 {
     //
     //  Let the input routine know that a SIGWINCH has occurred.
@@ -1379,7 +1379,7 @@ terminal_init()
 //  Ask ncurses for a keycode, or assign a default one.
 //
 s32
-get_keycode(const s8 *const keyname, const s32 standard)
+get_keycode(const char *const keyname, const int standard)
 {
     const s8 *keyvalue = tigetstr(keyname);
     if (keyvalue != 0 && keyvalue != (s8 *)-1 && key_defined(keyvalue))
@@ -1434,7 +1434,7 @@ confirm_margin()
 //  Say that an unbound key was struck, and if possible which one.
 //
 void
-unbound_key(s32 code)
+unbound_key(int code)
 {
     if (code == FOREIGN_SEQUENCE)
     {
@@ -1496,7 +1496,7 @@ unbound_key(s32 code)
 //
 //  Handle a mouse click on the edit window or the shortcut list.
 //
-s32
+int
 do_mouse()
 {
     s32 click_row;
@@ -1653,13 +1653,13 @@ suck_up_input_and_paste_it()
 //  Insert the given short burst of bytes into the edit buffer.
 //
 void
-inject(s8 *burst, u64 count)
+inject(char *burst, size_t count)
 {
     linestruct *thisline = openfile->current;
 
-    u64 datalen      = std::strlen(thisline->data);
-    u64 original_row = 0;
-    u64 old_amount   = 0;
+    size_t datalen      = strlen(thisline->data);
+    size_t original_row = 0;
+    size_t old_amount   = 0;
 
     if ISSET (SOFTWRAP)
     {
@@ -1669,9 +1669,8 @@ inject(s8 *burst, u64 count)
         }
         old_amount = extra_chunks_in(thisline);
     }
-
     // Encode an embedded NUL byte as 0x0A.
-    for (u64 index = 0; index < count; index++)
+    for (size_t index = 0; index < count; index++)
     {
         if (burst[index] == '\0')
         {
@@ -2033,30 +2032,29 @@ process_a_keystroke()
     }
 }
 
-s32
-main(s32 argc, s8 **argv)
+int
+main(int argc, char **argv)
 {
     Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
 
     LOUT.setOutputFile("/home/mellw/.NanoX.log");
     LoutI << "Starting nano" << '\n';
 
-    NETLOGGER.enable();
-    NETLOGGER.init("192.168.0.36", 23);
-    NETLOGGER.send_to_server("Starting nano");
-
-    std::atexit(
-        []
-        {
-            LOUT.destroy();
-            VECTOR<STRING> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
-            for (const STRING &str : gprof_report)
-            {
-                NETLOGGER << str << NETLOG_ENDL;
-            }
-            NETLOGGER.send_to_server("\nExiting nano");
-            NETLOGGER.destroy();
-        });
+    // NETLOGGER.enable();
+    // NETLOGGER.init("192.168.0.36", 23);
+    // NETLOGGER.send_to_server("Starting nano");
+    // std::atexit(
+    //     []
+    //     {
+    //         LOUT.destroy();
+    //         VECTOR<STRING> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
+    //         for (const STRING &str : gprof_report)
+    //         {
+    //             NETLOGGER << str << NETLOG_ENDL;
+    //         }
+    //         NETLOGGER.send_to_server("\nExiting nano");
+    //         NETLOGGER.destroy();
+    //     });
 
     s32 stdin_flags;
     //
@@ -2124,6 +2122,7 @@ main(s32 argc, s8 **argv)
     SET(MINIBAR);
     SET(CONSTANT_SHOW);
     SET(STATEFLAGS);
+    SET(NO_HELP);
     //
 
     //
