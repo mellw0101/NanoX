@@ -405,11 +405,6 @@ do_prev_word()
     bool punctuation_as_letters = ISSET(WORD_BOUNDS);
     bool seen_a_word            = false;
     bool step_forward           = false;
-    if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
-    {
-        openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-        return;
-    }
     /* Move backward until we pass over the start of a word. */
     while (true)
     {
@@ -434,9 +429,9 @@ do_prev_word()
                 break;
             }
         }
-        else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
+        else if (openfile->current->data[openfile->current_x - 1] &&
+                 isCppSyntaxChar(openfile->current->data[openfile->current_x - 1]))
         {
-            step_forward = true;
             break;
         }
         else if (is_zerowidth(openfile->current->data + openfile->current_x))
