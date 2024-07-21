@@ -1564,7 +1564,6 @@ suck_up_input_and_paste_it()
 
     line->data = copy_of("");
     cutbuffer  = line;
-
     while (bracketed_paste)
     {
         int input = get_kbinput(midwin, BLIND);
@@ -1578,7 +1577,7 @@ suck_up_input_and_paste_it()
         }
         else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t')
         {
-            line->data          = RE_CAST(char *, nrealloc(line->data, index + 2));
+            line->data          = (char *)nrealloc(line->data, index + 2);
             line->data[index++] = (char)input;
             line->data[index]   = '\0';
         }
@@ -1587,7 +1586,6 @@ suck_up_input_and_paste_it()
             beep();
         }
     }
-
     if ISSET (VIEW_MODE)
     {
         print_view_warning();
@@ -1596,7 +1594,6 @@ suck_up_input_and_paste_it()
     {
         paste_text();
     }
-
     free_lines(cutbuffer);
     cutbuffer = was_cutbuffer;
 }
@@ -1621,7 +1618,7 @@ inject(char *burst, size_t count)
         }
         old_amount = extra_chunks_in(thisline);
     }
-    // Encode an embedded NUL byte as 0x0A.
+    //  Encode an embedded NUL byte as 0x0A.
     for (size_t index = 0; index < count; index++)
     {
         if (burst[index] == '\0')
@@ -1629,7 +1626,6 @@ inject(char *burst, size_t count)
             burst[index] = '\n';
         }
     }
-
     //
     //  Only add a new undo item when the current item is not an ADD or when
     //  the current typing is not contiguous with the previous typing.
@@ -1639,7 +1635,6 @@ inject(char *burst, size_t count)
     {
         add_undo(ADD, nullptr);
     }
-
     //
     //  Make room for the new bytes and copy them into the line.
     //
@@ -1647,7 +1642,6 @@ inject(char *burst, size_t count)
     memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
             datalen - openfile->current_x + 1);
     strncpy(thisline->data + openfile->current_x, burst, count);
-
     //
     //  When the cursor is on the top row and not on the first chunk
     //  of a line, adding text there might change the preceding chunk
@@ -1658,7 +1652,6 @@ inject(char *burst, size_t count)
         ensure_firstcolumn_is_aligned();
         refresh_needed = TRUE;
     }
-
     //
     //  When the mark is to the right of the cursor, compensate its position.
     //
@@ -1666,12 +1659,9 @@ inject(char *burst, size_t count)
     {
         openfile->mark_x += count;
     }
-
     openfile->current_x += count;
-
     openfile->totsize += mbstrlen(burst);
     set_modified();
-
     //
     //  If text was added to the magic line, create a new magic line.
     //
@@ -1695,7 +1685,6 @@ inject(char *burst, size_t count)
         do_wrap();
     }
     openfile->placewewant = xplustabs();
-
     //
     //  When softwrapping and the number of chunks in the current line changed,
     //  or we were on the last row of the edit window and moved to a new chunk,
@@ -1705,15 +1694,13 @@ inject(char *burst, size_t count)
                             (openfile->cursor_row == editwinrows - 1 &&
                              chunk_for(openfile->placewewant, openfile->current) > original_row)))
     {
-        refresh_needed = TRUE;
-        focusing       = FALSE;
+        refresh_needed = true;
+        focusing       = false;
     }
-
     if (!refresh_needed)
     {
         check_the_multis(openfile->current);
     }
-
     if (!refresh_needed)
     {
         update_line(openfile->current, openfile->current_x);
@@ -2001,23 +1988,21 @@ main(int argc, char **argv)
     //
     //  Becomes 0 when --nowrap and 1 when --breaklonglines is used.
     //
-    s32 hardwrap = -2;
+    int hardwrap = -2;
     //
     //  Whether the quoting regex was compiled successfully.
     //
-    s32 quoterc;
+    int quoterc;
 
-    struct vt_stat dummy;
+    vt_stat dummy;
     //
     //  Check whether we're running on a Linux console.
     //
     on_a_vt = !ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy);
-
     //
     //  Back up the terminal settings so that they can be restored.
     //
     tcgetattr(STDIN_FILENO, &original_state);
-
     //
     //  Get the state of standard input and ensure it uses blocking mode.
     //
@@ -2026,7 +2011,6 @@ main(int argc, char **argv)
     {
         fcntl(STDIN_FILENO, F_SETFL, stdin_flags & ~O_NONBLOCK);
     }
-
     //
     //  If setting the locale is successful and it uses UTF-8, we will
     //  need to use the multibyte functions for text processing.
@@ -2036,10 +2020,8 @@ main(int argc, char **argv)
         utf8_init();
     }
     setlocale(LC_ALL, "");
-
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
-
     //
     //  Set the default values for some flags.
     //
@@ -2057,15 +2039,12 @@ main(int argc, char **argv)
     SET(STATEFLAGS);
     SET(NO_HELP);
     //
-
-    //
     //  If the executable's name starts with 'r', activate restricted mode.
     //
     if (*(tail(argv[0])) == 'r')
     {
         SET(RESTRICTED);
     }
-
     for (int i = 1; i < argc; ++i)
     {
         const unsigned int flag = retriveFlagFromStr(argv[i]);
@@ -2085,7 +2064,7 @@ main(int argc, char **argv)
 
         if (cliCmd & CLI_OPT_OPERATINGDIR)
         {
-            if (i++ < argc)
+            if (++i < argc)
             {
                 operating_dir = mallocstrcpy(operating_dir, argv[i]);
             }
@@ -2100,43 +2079,43 @@ main(int argc, char **argv)
             {
                 list_syntax_names();
             }
-            std::exit(SUCCESS);
+            exit(0);
         }
         if (cliCmd & CLI_OPT_FILL)
         {
-            if (i++ < argc)
+            if (++i < argc)
             {
                 if (!parseNum(argv[i], fill) || fill <= 0)
                 {
-                    std::fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
-                    std::fprintf(stderr, "\n");
-                    std::exit(FAILURE);
+                    fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
+                    fprintf(stderr, "\n");
+                    exit(1);
                 }
                 fill_used = true;
             }
         }
         if (cliCmd & CLI_OPT_TABSIZE)
         {
-            if (i++ < argc)
+            if (++i < argc)
             {
                 if (!parseNum(argv[i], tabsize) || tabsize <= 0)
                 {
-                    std::fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
-                    std::fprintf(stderr, "\n");
-                    std::exit(FAILURE);
+                    fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
+                    fprintf(stderr, "\n");
+                    exit(1);
                 }
                 continue;
             }
         }
         if (cliCmd & CLI_OPT_GUIDESTRIPE)
         {
-            if (argc < i++)
+            if (++i < argc)
             {
                 if (!parseNum(argv[i], stripe_column) || stripe_column <= 0)
                 {
-                    std::fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
-                    std::fprintf(stderr, "\n");
-                    std::exit(FAILURE);
+                    fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
+                    fprintf(stderr, "\n");
+                    exit(1);
                 }
             }
         }
@@ -2154,7 +2133,7 @@ main(int argc, char **argv)
     //
     if (initscr() == nullptr)
     {
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     //
     //  If the terminal can do colors, tell ncurses to switch them on.
@@ -2186,13 +2165,11 @@ main(int argc, char **argv)
         char  *operating_dir_cmdline = operating_dir;
         char  *quotestr_cmdline      = quotestr;
         char  *alt_speller_cmdline   = alt_speller;
-
         //
-        //  ack up the command-line flags.
+        //  Back up the command-line flags.
         //
         size_t flags_cmdline[sizeof(flags) / sizeof(flags[0])];
         memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
-
         //
         //  Clear the string options, to not overwrite the specified ones.
         //
@@ -2201,12 +2178,10 @@ main(int argc, char **argv)
         operating_dir = nullptr;
         quotestr      = nullptr;
         alt_speller   = nullptr;
-
         //
         //  Now process the system's and the user's nanorc file, if any.
         //
         do_rcfiles();
-
         //
         //  If the backed-up command-line options have a value, restore them.
         //
@@ -2263,7 +2238,6 @@ main(int argc, char **argv)
             flags[i] |= flags_cmdline[i];
         }
     }
-
     if (hardwrap == 0)
     {
         UNSET(BREAK_LONG_LINES);
@@ -2272,7 +2246,6 @@ main(int argc, char **argv)
     {
         SET(BREAK_LONG_LINES);
     }
-
     //
     //  If the user wants bold instead of reverse video for hilited text...
     //
@@ -2311,12 +2284,10 @@ main(int argc, char **argv)
     {
         SET(NO_HELP);
     }
-
     //
     //  Initialize the pointers for the Search/Replace/Execute histories.
     //
     history_init();
-
     //
     //  If we need history files, verify that we have a directory for them,
     //  and when not, cancel the options.
@@ -2326,7 +2297,6 @@ main(int argc, char **argv)
         UNSET(HISTORYLOG);
         UNSET(POSITIONLOG);
     }
-
     //
     //  If the user wants history persistence, read the relevant files.
     //
@@ -2334,12 +2304,10 @@ main(int argc, char **argv)
     {
         load_history();
     }
-
     if ISSET (POSITIONLOG)
     {
         load_poshistory();
     }
-
     //
     //  If a backup directory was specified and we're not in restricted mode,
     //  verify it is an existing folder, so backup files can be saved there.
@@ -2348,7 +2316,6 @@ main(int argc, char **argv)
     {
         init_backup_dir();
     }
-
     //
     //  Set up the operating directory.  This entails chdir()ing there,
     //  so that file reads and writes will be based there.
@@ -2357,23 +2324,20 @@ main(int argc, char **argv)
     {
         init_operating_dir();
     }
-
     //
     //  Set the default value for things that weren't specified.
     //
     (punct == nullptr) ? punct = copy_of("!.?") : 0;
     (brackets == nullptr) ? brackets = copy_of("\"')>]}") : 0;
     (quotestr == nullptr) ? quotestr = copy_of("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
-
     //
     //  Compile the quoting regex, and exit when it's invalid.
     //
     quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
     if (quoterc != 0)
     {
-        u64 size    = regerror(quoterc, &quotereg, nullptr, 0);
-        s8 *message = static_cast<s8 *>(nmalloc(size));
-
+        size_t size    = regerror(quoterc, &quotereg, nullptr, 0);
+        char  *message = static_cast<char *>(nmalloc(size));
         regerror(quoterc, &quotereg, message, size);
         die(_("Bad quoting regex \"%s\": %s\n"), quotestr, message);
     }
@@ -2381,7 +2345,6 @@ main(int argc, char **argv)
     {
         free(quotestr);
     }
-
     //
     //  If we don't have an alternative spell checker after reading the
     //  command line and/or rcfile(s), check $SPELL for one, as Pico
@@ -2398,7 +2361,6 @@ main(int argc, char **argv)
             alt_speller = copy_of(spellenv);
         }
     }
-
     //
     //  If matchbrackets wasn't specified, set its default value.
     //
@@ -2406,7 +2368,6 @@ main(int argc, char **argv)
     {
         matchbrackets = copy_of("(<[{)>]}");
     }
-
     //
     //  If the whitespace option wasn't specified, set its default value.
     //
@@ -2429,13 +2390,11 @@ main(int argc, char **argv)
             whitelen[1] = 1;
         }
     }
-
     //
     //  Initialize the search string.
     //
     last_search = copy_of("");
     UNSET(BACKWARDS_SEARCH);
-
     //
     //  If tabsize wasn't specified, set its default value.
     //
@@ -2443,7 +2402,6 @@ main(int argc, char **argv)
     {
         tabsize = WIDTH_OF_TAB;
     }
-
     //
     //  On capable terminals, use colors, otherwise just reverse or bold.
     //
@@ -2466,33 +2424,26 @@ main(int argc, char **argv)
         interface_color_pair[KEY_COMBO]     = hilite_attribute;
         interface_color_pair[FUNCTION_TAG]  = A_NORMAL;
     }
-
     //
     //  Set up the terminal state.
     //
     terminal_init();
-
     //
     //  Create the three subwindows, based on the current screen dimensions.
     //
     window_init();
     curs_set(0);
-
-    sidebar = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
-    bardata = static_cast<s32 *>(nrealloc(bardata, LINES * sizeof(s32)));
-
+    sidebar     = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
+    bardata     = static_cast<int *>(nrealloc(bardata, LINES * sizeof(int)));
     editwincols = COLS - sidebar;
-
     //
     //  Set up the signal handlers.
     //
     signal_init();
-
     //
     //  Initialize mouse support.
     //
     mouse_init();
-
     //
     //  Ask ncurses for the key codes for most modified editing keys.
     //
@@ -2528,12 +2479,10 @@ main(int argc, char **argv)
     shiftaltdown       = get_keycode("kDN4", SHIFT_ALT_DOWN);
     mousefocusin       = get_keycode("kxIN", FOCUS_IN);
     mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
-
     //
     //  Disable the type-ahead checking that ncurses normally does.
     //
     typeahead(-1);
-
 #ifdef HAVE_SET_ESCDELAY
     //
     //  Tell ncurses to pass the Esc key quickly.
@@ -2545,9 +2494,8 @@ main(int argc, char **argv)
     //
     while (optind < argc && (!openfile || true))
     {
-        s64 givenline = 0, givencol = 0;
-        s8 *searchstring = nullptr;
-
+        long  givenline = 0, givencol = 0;
+        char *searchstring = nullptr;
         //
         //  If there's a +LINE[,COLUMN] argument here, eat it up.
         //
@@ -2608,7 +2556,6 @@ main(int argc, char **argv)
                 }
             }
         }
-
         //
         //  If the filename is a dash, read from standard input; otherwise,
         //  open the file; skip positioning the cursor if either failed.
@@ -2623,22 +2570,20 @@ main(int argc, char **argv)
         }
         else
         {
-            const u32 flag = retriveFlagFromStr(argv[optind]);
+            const unsigned int flag = retriveFlagFromStr(argv[optind]);
             if (flag)
             {
                 optind++;
                 continue;
             }
-            const u32 cliCmd = retriveCliOptionFromStr(argv[optind]);
+            const unsigned int cliCmd = retriveCliOptionFromStr(argv[optind]);
             if (cliCmd)
             {
                 optind += 2;
                 continue;
             }
-
-            s8         *filename = argv[optind++];
+            char       *filename = argv[optind++];
             struct stat fileinfo;
-
             //
             //  If the filename contains a colon and this file does not exist,
             //  then check if the filename ends with digits preceded by a colon
@@ -2649,7 +2594,7 @@ main(int argc, char **argv)
             if (ISSET(COLON_PARSING) && !givenline && constexpr_strchr(filename, ':') && !givencol &&
                 stat(filename, &fileinfo) < 0)
             {
-                s8 *coda = filename + strlen(filename);
+                char *coda = filename + strlen(filename);
             maybe_two:
                 while (--coda > filename + 1 && ('0' <= *coda && *coda <= '9'))
                 {
@@ -2680,7 +2625,6 @@ main(int argc, char **argv)
                 continue;
             }
         }
-
         //
         //  If a position was given on the command line, go there.
         //
@@ -2708,27 +2652,24 @@ main(int argc, char **argv)
             {
                 tidy_up_after_search();
             }
-            std::free(last_search);
+            free(last_search);
             last_search  = searchstring;
             searchstring = nullptr;
         }
         else if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
         {
-            s64 savedline, savedcol;
-
-            // If edited before, restore the last cursor position.
+            long savedline, savedcol;
+            //  If edited before, restore the last cursor position.
             if (has_old_position(argv[optind - 1], &savedline, &savedcol))
             {
                 goto_line_and_column(savedline, savedcol, false, false);
             }
         }
     }
-
     //
     //  After handling the files on the command line, allow inserting files.
     //
     UNSET(NOREAD_MODE);
-
     //
     //  Nano is a hands-on editor -- it needs a keyboard.
     //
@@ -2736,7 +2677,6 @@ main(int argc, char **argv)
     {
         die(_("Standard input is not a terminal\n"));
     }
-
     //
     //  If no filenames were given, or all of them were invalid things like
     //  directories, then open a blank buffer and allow editing.  Otherwise,
@@ -2763,14 +2703,11 @@ main(int argc, char **argv)
     {
         die(_("Can open just one file\n"));
     }
-
     prepare_for_display();
-
     if (startup_problem != nullptr)
     {
         statusline(ALERT, "%s", startup_problem);
     }
-
     //
     /// THIS: -> #define NOTREBOUND first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07
     /// Is form nano c source code
@@ -2780,13 +2717,11 @@ main(int argc, char **argv)
     {
         statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
     }
-
     //
     //  Set the margin to an impossible value to force re-evaluation.
     //
     margin         = 12345;
     we_are_running = true;
-
     //
     // TODO : This is the main loop of the editor.
     while (true)
@@ -2800,25 +2735,22 @@ main(int argc, char **argv)
         {
             bottombars(MMAIN);
         }
-
         if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1 && lastmessage < REMARK)
         {
             minibar();
         }
         else
         {
-            //
-            //  Update the displayed current cursor position only when there
-            //  is no message and no keys are waiting in the input buffer.
-            //
+            /**
+                Update the displayed current cursor position only when there
+                is no message and no keys are waiting in the input buffer.
+             */
             if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && waiting_keycodes() == 0)
             {
                 report_cursor_position();
             }
         }
-
         as_an_at = true;
-
         if ((refresh_needed && LINES > 1) || (LINES == 1 && lastmessage <= HUSH))
         {
             edit_refresh();
@@ -2827,7 +2759,6 @@ main(int argc, char **argv)
         {
             place_the_cursor();
         }
-
         //
         //  In barless mode, either redraw a relevant status message,
         //  or overwrite a minor, redundant one.
@@ -2847,20 +2778,16 @@ main(int argc, char **argv)
         {
             wredrawln(midwin, editwinrows - 1, 1);
         }
-
         errno    = 0;
         focusing = true;
-
         //
         //  Forget any earlier cursor position at the prompt.
         //
         put_cursor_at_end_of_answer();
-
         //
         //  Read in and interpret a single keystroke.
         //
         process_a_keystroke();
     }
-
     return 0;
 }
