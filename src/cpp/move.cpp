@@ -366,6 +366,13 @@ to_prev_block()
                 {
                     NETLOGGER << openfile->current->data << '\n' << NETLOG_ENDL;
                     was_indent = cur_indent;
+                    if (openfile->current->next != nullptr)
+                    {
+                        openfile->current   = openfile->current->next;
+                        openfile->current_x = was_indent;
+                        edit_redraw(was_current, CENTERING);
+                        return;
+                    }
                 }
                 break;
             }
