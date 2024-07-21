@@ -429,12 +429,9 @@ do_prev_word()
                 break;
             }
         }
-        else if (!is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters))
-        {
-            break;
-        }
         else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
         {
+            step_forward = true;
             break;
         }
         else if (is_zerowidth(openfile->current->data + openfile->current_x))
