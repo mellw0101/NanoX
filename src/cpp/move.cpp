@@ -340,9 +340,10 @@ to_para_end()
 void
 to_prev_block()
 {
-    int         cur_indent;
+    int         cur_indent, was_indent;
     linestruct *was_current;
     bool        is_text, seen_text;
+    was_indent  = -1;
     was_current = openfile->current;
     is_text     = false;
     seen_text   = false;
@@ -357,6 +358,14 @@ to_prev_block()
             if (openfile->current->data[cur_indent] != '\t')
             {
                 NETLOGGER << "current indent: " << cur_indent << '\n' << NETLOG_ENDL;
+                if (was_indent == -1)
+                {
+                    was_indent = cur_indent;
+                }
+                else if (was_indent != cur_indent)
+                {
+                    NETLOGGER << openfile->current->data << '\n' << NETLOG_ENDL;
+                }
                 break;
             }
         }
