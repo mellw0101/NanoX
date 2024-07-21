@@ -340,31 +340,29 @@ to_para_end()
 void
 to_prev_block()
 {
-    int         cur_indent, was_indent;
-    linestruct *was_current;
-    bool        is_text, seen_text;
-    was_indent  = -1;
-    was_current = openfile->current;
-    is_text     = false;
-    seen_text   = false;
+    int         cur_indent, was_indent = -1;
+    linestruct *was_current = openfile->current;
+    bool        is_text = false, seen_text = false;
     //
     //  Skip backward until first blank line after some nonblank line(s).
     //
     while (openfile->current->prev != nullptr && (!seen_text || is_text))
     {
         openfile->current = openfile->current->prev;
+        /**
+            This is experimental and will be improved.
+            TODO: (to_prev_block) - Make better with more rules.
+         */
         for (cur_indent = 0; openfile->current->data[cur_indent]; cur_indent++)
         {
             if (openfile->current->data[cur_indent] != '\t')
             {
-                NETLOGGER << "current indent: " << cur_indent << '\n' << NETLOG_ENDL;
                 if (was_indent == -1)
                 {
                     was_indent = cur_indent;
                 }
                 else if (was_indent != cur_indent)
                 {
-                    NETLOGGER << openfile->current->data << '\n' << NETLOG_ENDL;
                     if (openfile->current->next != nullptr)
                     {
                         openfile->current   = openfile->current->next;
@@ -396,22 +394,41 @@ to_prev_block()
 void
 to_next_block()
 {
+    int         cur_indent, was_indent;
     linestruct *was_current = openfile->current;
-
-    bool is_white   = white_string(openfile->current->data);
-    bool seen_white = is_white;
-
+    bool        is_white    = white_string(openfile->current->data);
+    bool        seen_white  = is_white;
     //
     //  Skip forward until first nonblank line after some blank line(s).
     //
     while (openfile->current->next != nullptr && (!seen_white || is_white))
     {
         openfile->current = openfile->current->next;
-
+        for (cur_indent = 0, was_indent = -1; openfile->current->data[cur_indent]; cur_indent++)
+        {
+            if (openfile->current->data[cur_indent] != '\t')
+            {
+                if (was_indent == -1)
+                {
+                    was_indent = cur_indent;
+                }
+                else if (was_indent != cur_indent)
+                {
+                    if (openfile->current->prev != nullptr)
+                    {
+                        openfile->current   = openfile->current->prev;
+                        openfile->current_x = was_indent;
+                        edit_redraw(was_current, CENTERING);
+                        recook |= perturbed;
+                        return;
+                    }
+                }
+                break;
+            }
+        }
         is_white   = white_string(openfile->current->data);
         seen_white = seen_white || is_white;
     }
-
     openfile->current_x = 0;
     edit_redraw(was_current, CENTERING);
     recook |= perturbed;
