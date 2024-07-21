@@ -429,8 +429,7 @@ do_prev_word()
                 break;
             }
         }
-        else if (openfile->current->data[openfile->current_x - 1] &&
-                 isCppSyntaxChar(openfile->current->data[openfile->current_x - 1]))
+        else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
         {
             break;
         }
