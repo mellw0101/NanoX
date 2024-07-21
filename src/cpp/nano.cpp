@@ -33,86 +33,64 @@ static termios original_state;
 //
 static struct sigaction oldaction, newaction;
 
-//
-//  -  Create a new linestruct node.
-//  -  Note that we do NOT set 'prevnode->next'.
-//  -
-//  -  prevnode:
-//  -  The previous node in the linked list.
-//  -
-//  -  returns ( linestruct * )
-//  -  A pointer to the new node.
-//
+/**
+    Create a new linestruct node.
+    Note that we do NOT set 'prevnode->next'.
+    @param prevnode: previous node in the linked list.
+    returns ( linestruct * ) - pointer to the new node.
+ */
 linestruct *
 make_new_node(linestruct *prevnode)
 {
-    linestruct *newnode = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
-
+    linestruct *newnode;
+    newnode             = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
     newnode->prev       = prevnode;
     newnode->next       = nullptr;
     newnode->data       = nullptr;
     newnode->multidata  = nullptr;
     newnode->lineno     = (prevnode) ? prevnode->lineno + 1 : 1;
     newnode->has_anchor = false;
-
     return newnode;
 }
 
-//
-// Splice a new node into an existing linked list of linestructs.
-//
+//  Splice a new node into an existing linked list of linestructs.
 void
 splice_node(linestruct *afterthis, linestruct *newnode)
 {
     newnode->next = afterthis->next;
     newnode->prev = afterthis;
-
     if (afterthis->next != nullptr)
     {
         afterthis->next->prev = newnode;
     }
-
     afterthis->next = newnode;
-
-    //
-    //  Update filebot when inserting a node at the end of file.
-    //
+    //  Update filebot when inserting a node at the end of file
     if (openfile && openfile->filebot == afterthis)
     {
         openfile->filebot = newnode;
     }
 }
 
-//
-//  Free the data structures in the given node.
-//
+//  Free the data structures in the given node
 void
 delete_node(linestruct *line)
 {
-    //
     //  If the first line on the screen gets deleted, step one back.
-    //
     if (line == openfile->edittop)
     {
         openfile->edittop = line->prev;
     }
-
-    //
     //  If the spill-over line for hard-wrapping is deleted...
-    //
     if (line == openfile->spillage_line)
     {
         openfile->spillage_line = nullptr;
     }
-
-    std::free(line->data);
-    std::free(line->multidata);
-    std::free(line);
+    free(line->data);
+    free(line->multidata);
+    free(line);
 }
 
-//
 //  Disconnect a node from a linked list of linestructs and delete it.
-//
 void
 unlink_node(linestruct *line)
 {
@@ -124,21 +102,15 @@ unlink_node(linestruct *line)
     {
         line->next->prev = line->prev;
     }
-
-    //
     //  Update filebot when removing a node at the end of file.
-    //
     if (openfile && openfile->filebot == line)
     {
         openfile->filebot = line->prev;
     }
-
     delete_node(line);
 }
 
-//
 //  Free an entire linked list of linestructs.
-//
 void
 free_lines(linestruct *src)
 {
@@ -146,89 +118,68 @@ free_lines(linestruct *src)
     {
         return;
     }
-
     while (src->next != nullptr)
     {
         src = src->next;
         delete_node(src->prev);
     }
-
     delete_node(src);
 }
 
-//
 //  Make a copy of a linestruct node.
-//
 linestruct *
 copy_node(const linestruct *src)
 {
-    linestruct *dst = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
-
+    linestruct *dst;
+    dst             = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
     dst->data       = copy_of(src->data);
     dst->multidata  = nullptr;
     dst->lineno     = src->lineno;
     dst->has_anchor = src->has_anchor;
-
     return dst;
 }
 
-//
 //  Duplicate an entire linked list of linestructs.
-//
 linestruct *
 copy_buffer(const linestruct *src)
 {
     linestruct *head, *item;
-
-    head = copy_node(src);
-
+    head       = copy_node(src);
     head->prev = nullptr;
-
-    item = head;
-    src  = src->next;
-
+    item       = head;
+    src        = src->next;
     while (src != nullptr)
     {
-        item->next = copy_node(src);
-
+        item->next       = copy_node(src);
         item->next->prev = item;
-
-        item = item->next;
-        src  = src->next;
+        item             = item->next;
+        src              = src->next;
     }
-
     item->next = nullptr;
     return head;
 }
 
-//
 //  Renumber the lines in a buffer, from the given line onwards.
-//
 void
 renumber_from(linestruct *line)
 {
-    s64 number = (line->prev == nullptr) ? 0 : line->prev->lineno;
-
+    long number;
+    number = (line->prev == nullptr) ? 0 : line->prev->lineno;
     while (line != nullptr)
     {
         line->lineno = ++number;
-
-        line = line->next;
+        line         = line->next;
     }
 }
 
-//
 //  Display a warning about a key disabled in view mode.
-//
 void
 print_view_warning()
 {
     statusline(AHEM, _("Key is invalid in view mode"));
 }
 
-//
 //  When in restricted mode, show a warning and return 'true'.
-//
 bool
 in_restricted_mode()
 {
@@ -241,9 +192,7 @@ in_restricted_mode()
     return false;
 }
 
-//
 //  Say how the user can achieve suspension (when they typed ^Z).
-//
 void
 suggest_ctrlT_ctrlZ()
 {
@@ -254,10 +203,10 @@ suggest_ctrlT_ctrlZ()
     }
 }
 
-//
-//  Make sure the cursor is visible, then exit from curses mode, disable
-//  bracketed-paste mode, and restore the original terminal settings.
-//
+/**
+    Make sure the cursor is visible, then exit from curses mode, disable
+    bracketed-paste mode, and restore the original terminal settings.
+ */
 void
 restore_terminal()
 {
@@ -268,47 +217,27 @@ restore_terminal()
     tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
-//
 //  Exit normally: restore terminal state and report any startup errors.
-//
 void
 finish()
 {
-    //
     //  Blank the status bar and (if applicable) the shortcut list.
-    //
     blank_statusbar();
     blank_bottombars();
     wrefresh(footwin);
-
-    //
     //  Deallocate the two or three subwindows.
-    //
     if (topwin != nullptr)
     {
         delwin(topwin);
     }
     delwin(midwin);
     delwin(footwin);
-
-    //
-    //  Switch the cursor on, exit from curses, and restore terminal settings.
-    //
     restore_terminal();
     display_rcfile_errors();
-    exit(EXIT_SUCCESS);
+    exit(0);
 }
 
-//
-/// @name
-///  -  @c close_buffer
-///
-/// @brief
-///  -  Close the current buffer, freeing its memory.
-///
-/// @returns
-///  -  @c void
-//
+//  Close the current buffer, freeing its memory.
 void
 close_and_go()
 {
@@ -320,21 +249,14 @@ close_and_go()
     {
         update_poshistory();
     }
-
-    //
-    //  If there is another buffer, close this one.
-    //  otherwise just terminate.
-    //
+    //  If there is another buffer, close this one.  Otherwise just terminate.
     if (openfile != openfile->next)
     {
         switch_to_next_buffer();
         openfile = openfile->prev;
         close_buffer();
         openfile = openfile->next;
-
-        //
         //  Adjust the count in the top bar.
-        //
         titlebar(nullptr);
     }
     else
@@ -347,21 +269,21 @@ close_and_go()
     }
 }
 
-//
-//  Close the current buffer if it is unmodified.
-//  otherwise (when not doing automatic saving),
-//  ask the user whether to save it, then close it and exit,
-//  or return when the user cancelled.
-//
+/**
+    Close the current buffer if it is unmodified.
+    otherwise (when not doing automatic saving),
+    ask the user whether to save it, then close it and exit,
+    or return when the user cancelled.
+ */
 void
 do_exit()
 {
-    s32 choice;
-
-    //
-    //  When unmodified, simply close.  Else, when doing automatic saving
-    //  and the file has a name, simply save.  Otherwise, ask the user.
-    //
+    int choice;
+    /**
+        When unmodified, simply close.
+        Else, when doing automatic saving and the file has a name, simply save.
+        Otherwise, ask the user.
+     */
     if (!openfile->modified || ISSET(VIEW_MODE))
     {
         choice = NO;
@@ -376,13 +298,9 @@ do_exit()
         {
             warn_and_briefly_pause(_("No file name"));
         }
-
         choice = ask_user(YESORNO, _("Save modified buffer? "));
     }
-
-    //
     //  When not saving, or the save succeeds, close the buffer.
-    //
     if (choice == NO || (choice == YES && write_it_out(true, true) > 0))
     {
         close_and_go();
@@ -393,11 +311,11 @@ do_exit()
     }
 }
 
-//
-//  Save the current buffer under the given name (or "nano.<pid>" when nameless)
-//  with suffix ".save".
-//  If needed, the name is further suffixed to be unique.
-//
+/**
+  Save the current buffer under the given name (or "nano.<pid>" when nameless)
+  with suffix ".save".
+  If needed, the name is further suffixed to be unique.
+ */
 void
 emergency_save(const char *filename)
 {
@@ -424,89 +342,65 @@ emergency_save(const char *filename)
     free(plainname);
 }
 
-//
-//  Die gracefully,
-//  - by restoring the terminal state and,
-//  - saving any buffers that were modified.
-//
-//  @param msg ( std::string_view )
-//  - The format string for the dying message.
-//
-//  @param ... ( __VA_ARGS__ )
-//  - Additional arguments to be formatted into the dying message.
-//
-//  @return void
-//
+/**
+    Die gracefully,
+    - by restoring the terminal state and,
+    - saving any buffers that were modified.
+    @param msg ( std::string_view )
+    - The format string for the dying message.
+    @param ... ( __VA_ARGS__ )
+    - Additional arguments to be formatted into the dying message.
+    @return void
+ */
 void
 die(STRING_VIEW msg, ...)
 {
-    openfilestruct *firstone = openfile;
-
-    static s32 stabs = 0;
-    va_list    ap;
-
-    //
-    //  When dying for a second time,
-    //  just give up.
-    //
+    openfilestruct *firstone;
+    static int      stabs = 0;
+    va_list         ap;
+    firstone = openfile;
+    //  When dying for a second time, just give up.
     if (++stabs > 1)
     {
-        std::exit(11);
+        exit(11);
     }
-
     restore_terminal();
     display_rcfile_errors();
-
-    //
-    //  Display the dying message.
-    //
     va_start(ap, msg);
+    //  Display the dying message
     vfprintf(stderr, &msg[0], ap);
     va_end(ap);
-
     while (openfile)
     {
-        //
-        //  If the current buffer has a lock file,
-        //  remove it.
-        //
+        //  If the current buffer has a lock file, remove it.
         if (openfile->lock_filename)
         {
             delete_lockfile(openfile->lock_filename);
         }
-
-        //
-        // When modified, save the current buffer.
-        // not when in restricted mode, as it would
-        // write a file not mentioned on the command line.
-        //
+        /**
+            When modified, save the current buffer.
+            not when in restricted mode, as it would
+            write a file not mentioned on the command line.
+         */
         if (openfile->modified && !ISSET(RESTRICTED))
         {
             emergency_save(openfile->filename);
         }
-
         openfile = openfile->next;
         if (openfile == firstone)
         {
             break;
         }
     }
-
-    //
     //  Abandon the building.
-    //
-    exit(FAILURE);
+    exit(1);
 }
 
-//
 //  Initialize the three window portions nano uses.
-//
 void
 window_init()
 {
-    //
     //  When resizing, first delete the existing windows.
-    //
     if (midwin != nullptr)
     {
         if (topwin != nullptr)
@@ -517,18 +411,14 @@ window_init()
         delwin(footwin);
     }
     topwin = nullptr;
-    //
-    //  If the terminal is very flat,
-    //  don't set up a title bar.
-    //
+    //  If the terminal is very flat, don't set up a title bar
     if (LINES < 3)
     {
         editwinrows = (ISSET(ZERO) ? LINES : 1);
-        //
-        //  Set up two subwindows.
-        //  If the terminal is just one line,
-        //  edit window and status-bar window will cover each other.
-        //
+        /**
+            Set up two subwindows.  If the terminal is just one line,
+            edit window and status-bar window will cover each other.
+         */
         midwin  = newwin(editwinrows, COLS, 0, 0);
         footwin = newwin(1, COLS, LINES - 1, 0);
     }
@@ -542,9 +432,7 @@ window_init()
             toprows = 0;
         }
         editwinrows = LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0);
-        //
         //  Set up the normal three subwindows.
-        //
         if (toprows > 0)
         {
             topwin = newwin(toprows, COLS, 0, 0);
@@ -552,21 +440,15 @@ window_init()
         midwin  = newwin(editwinrows, COLS, toprows, 0);
         footwin = newwin(bottomrows, COLS, LINES - bottomrows, 0);
     }
-    //
     //  In case the terminal shrunk, make sure the status line is clear.
-    //
     wnoutrefresh(footwin);
-    //
     //  When not disabled, turn escape-sequence translation on.
-    //
     if (!ISSET(RAW_SEQUENCES))
     {
         keypad(midwin, true);
         keypad(footwin, true);
     }
-    //
     //  Set up the wrapping point, accounting for screen width when negative.
-    //
     if (COLS + fill < 0)
     {
         wrap_at = 0;
@@ -1406,9 +1288,7 @@ unbound_key(int code)
     }
     else if (code > KEY_F0 && code < KEY_F0 + 25)
     {
-        //
         //  TRANSLATORS : This refers to an unbound function key.
-        //
         statusline(AHEM, _("Unbound key: F%i"), code - KEY_F0);
     }
     else if (code > 0x7F)
@@ -1635,26 +1515,22 @@ inject(char *burst, size_t count)
     {
         add_undo(ADD, nullptr);
     }
-    //
     //  Make room for the new bytes and copy them into the line.
-    //
-    thisline->data = static_cast<s8 *>(nrealloc(thisline->data, datalen + count + 1));
+    thisline->data = (char *)nrealloc(thisline->data, datalen + count + 1);
     memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
             datalen - openfile->current_x + 1);
     strncpy(thisline->data + openfile->current_x, burst, count);
-    //
-    //  When the cursor is on the top row and not on the first chunk
-    //  of a line, adding text there might change the preceding chunk
-    //  and thus require an adjustment of firstcolumn.
-    //
+    /**
+        When the cursor is on the top row and not on the first chunk
+        of a line, adding text there might change the preceding chunk
+        and thus require an adjustment of firstcolumn.
+     */
     if (thisline == openfile->edittop && openfile->firstcolumn > 0)
     {
         ensure_firstcolumn_is_aligned();
         refresh_needed = TRUE;
     }
-    //
     //  When the mark is to the right of the cursor, compensate its position.
-    //
     if (thisline == openfile->mark && openfile->current_x < openfile->mark_x)
     {
         openfile->mark_x += count;
@@ -1662,9 +1538,7 @@ inject(char *burst, size_t count)
     openfile->current_x += count;
     openfile->totsize += mbstrlen(burst);
     set_modified();
-    //
     //  If text was added to the magic line, create a new magic line.
-    //
     if (thisline == openfile->filebot && !ISSET(NO_NEWLINES))
     {
         new_magicline();
@@ -1685,11 +1559,11 @@ inject(char *burst, size_t count)
         do_wrap();
     }
     openfile->placewewant = xplustabs();
-    //
-    //  When softwrapping and the number of chunks in the current line changed,
-    //  or we were on the last row of the edit window and moved to a new chunk,
-    //  we need a full refresh.
-    //
+    /**
+        When softwrapping and the number of chunks in the current line changed,
+        or we were on the last row of the edit window and moved to a new chunk,
+        we need a full refresh.
+     */
     if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current) != old_amount ||
                             (openfile->cursor_row == editwinrows - 1 &&
                              chunk_for(openfile->placewewant, openfile->current) > original_row)))
@@ -1707,11 +1581,10 @@ inject(char *burst, size_t count)
     }
 }
 
-//
-//  Read in a keystroke, and execute its command or insert it into the buffer.
-//
-//  TODO: -> Move to a better place
-//
+/**
+    Read in a keystroke, and execute its command or insert it into the buffer.
+    TODO: Move to a better place
+ */
 void
 process_a_keystroke()
 {
@@ -1748,11 +1621,11 @@ process_a_keystroke()
     //
     if (input == KEY_MOUSE)
     {
-        //
-        //  If the user clicked on a shortcut, read in the key code that it was
-        //  converted into.
-        //  Else the click has been handled or was invalid.
-        //
+        /**
+            If the user clicked on a shortcut,
+            read in the key code that it was converted into.
+            Else the click has been handled or was invalid.
+         */
         if (do_mouse() == 1)
         {
             input = get_kbinput(midwin, BLIND);
@@ -1772,10 +1645,10 @@ process_a_keystroke()
     //
     if (!function)
     {
-        //
-        //  When the input is a function key,
-        //  execute the function it is bound to.
-        //
+        /**
+            When the input is a function key,
+            execute the function it is bound to.
+         */
         if (input < 0x20 || input > 0xFF || meta_key)
         {
             unbound_key(input);
@@ -1791,12 +1664,11 @@ process_a_keystroke()
                 openfile->mark = nullptr;
                 refresh_needed = true;
             }
-
-            //
-            //  When the input buffer (plus room for terminating NUL)
-            //  is full, extend it;
-            //  otherwise, if it does not exist yet, create it.
-            //
+            /**
+                When the input buffer (plus room for terminating NUL)
+                is full, extend it.
+                Otherwise, if it does not exist yet, create it.
+             */
             if (depth + 1 == capacity)
             {
                 capacity = 2 * capacity;
@@ -1806,56 +1678,45 @@ process_a_keystroke()
             {
                 puddle = static_cast<s8 *>(nmalloc(capacity));
             }
-            puddle[depth++] = static_cast<s8>(input);
-
-            //
-            //  TODO : Add closing brackets to the input buffer,
-            //  if the input is '(', '[', or '{'.
-            //
-            NETLOGGER << "input: " << input << NETLOG_ENDL;
-
-            //
-            //  Check for a bracketed input start.
-            //  Meaning a char that has a corresponding closing bracket.
-            //
+            puddle[depth++] = (char)input;
+            /**
+                Check for a bracketed input start.
+                Meaning a char that has a corresponding closing bracket.
+             */
             if (input == '(' || input == '[' || input == '{' || input == '<' || input == '\'' || input == '"')
             {
-                //
-                //  Insert the corresponding closing bracket character
-                //
                 if (input == '<')
                 {
                     if (openfile->current->data[0] == '#')
                     {
                         puddle[depth++] = '>';
-
-                        //
-                        //  Set a flag to remember that an open bracket character was
-                        //  inserted into the input buffer.
-                        //
+                        /**
+                            Set a flag to remember that an open bracket character was
+                            inserted into the input buffer.
+                         */
                         was_open_bracket_char = true;
                     }
                 }
                 else
                 {
-                    puddle[depth++] = static_cast<s8>(input == '('    ? ')'
-                                                      : input == '['  ? ']'
-                                                      : input == '"'  ? '"'
-                                                      : input == '\'' ? '\''
-                                                                      : '}');
-                    //
-                    //  Set a flag to remember that an open bracket character was
-                    //  inserted into the input buffer.
-                    //
+                    puddle[depth++] = static_cast<char>(input == '('    ? ')'
+                                                        : input == '['  ? ']'
+                                                        : input == '"'  ? '"'
+                                                        : input == '\'' ? '\''
+                                                                        : '}');
+                    /**
+                        Set a flag to remember that an open bracket character was
+                        inserted into the input buffer.
+                     */
                     was_open_bracket_char = true;
                 }
             }
         }
     }
-    //
-    //  If there are gathered bytes and we have a command or no other key codes
-    //  are waiting, it's time to insert these bytes into the edit buffer.
-    //
+    /**
+        If there are gathered bytes and we have a command or no other key codes
+        are waiting, it's time to insert these bytes into the edit buffer.
+     */
     if (depth > 0 && (function || waiting_keycodes() == 0))
     {
         puddle[depth] = '\0';
@@ -1960,7 +1821,7 @@ main(int argc, char **argv)
     LOUT.setOutputFile("/home/mellw/.NanoX.log");
     LoutI << "Starting nano" << '\n';
 
-    // NETLOGGER.enable();
+    NETLOGGER.enable();
     NETLOGGER.init("192.168.0.76", 8080);
     NETLOGGER.send_to_server("Starting nano");
     atexit(

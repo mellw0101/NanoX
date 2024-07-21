@@ -168,7 +168,7 @@ s8  *mbstrchr(C_s8 *string, C_s8 *chr);
 s8  *mbstrpbrk(C_s8 *string, C_s8 *accept);
 s8  *mbrevstrpbrk(C_s8 *head, C_s8 *accept, C_s8 *pointer);
 bool has_blank_char(C_s8 *string);
-bool white_string(C_s8 *string);
+bool white_string(const char *string);
 void strip_leading_blanks_from(s8 *string);
 
 //

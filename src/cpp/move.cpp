@@ -5,35 +5,26 @@
 
 #include <cstring>
 
-//
 //  Move to the first line of the file.
-//
 void
 to_first_line()
 {
     openfile->current     = openfile->filetop;
     openfile->current_x   = 0;
     openfile->placewewant = 0;
-
-    refresh_needed = true;
+    refresh_needed        = true;
 }
 
-//
 //  Move to the last line of the file.
-//
 void
 to_last_line()
 {
     openfile->current     = openfile->filebot;
-    openfile->current_x   = (inhelp) ? 0 : std::strlen(openfile->filebot->data);
+    openfile->current_x   = (inhelp) ? 0 : strlen(openfile->filebot->data);
     openfile->placewewant = xplustabs();
-
-    //
     //  Set the last line of the screen as the target for the cursor.
-    //
     openfile->cursor_row = editwinrows - 1;
-
-    refresh_needed = true;
+    refresh_needed       = true;
     recook |= perturbed;
     focusing = false;
 }
@@ -42,12 +33,11 @@ to_last_line()
 //  Determine the actual current chunk and the target column.
 //
 void
-get_edge_and_target(u64 &leftedge, u64 &target_column)
+get_edge_and_target(size_t &leftedge, size_t &target_column)
 {
     if ISSET (SOFTWRAP)
     {
-        u64 shim = editwincols * (1 + (tabsize / editwincols));
-
+        size_t shim   = editwincols * (1 + (tabsize / editwincols));
         leftedge      = leftedge_for(xplustabs(), openfile->current);
         target_column = (openfile->placewewant + shim - leftedge) % editwincols;
     }
@@ -97,15 +87,11 @@ proper_x(linestruct *line, u64 &leftedge, bool forward, u64 column, bool *shifte
 void
 set_proper_index_and_pww(u64 &leftedge, u64 target, bool forward)
 {
-    u64  was_edge = leftedge;
-    bool shifted  = false;
-
+    size_t was_edge = leftedge;
+    bool   shifted  = false;
     openfile->current_x =
         proper_x(openfile->current, leftedge, forward, actual_last_column(leftedge, target), &shifted);
-
-    //
     //  If the index was incremented, try going to the target column.
-    //
     if (shifted || leftedge < was_edge)
     {
         openfile->current_x =
@@ -230,18 +216,13 @@ to_top_row()
 void
 to_bottom_row()
 {
-    u64 leftedge = 0;
-    u64 offset   = 0;
-
+    size_t leftedge = 0;
+    size_t offset   = 0;
     get_edge_and_target(leftedge, offset);
-
     openfile->current = openfile->edittop;
-
-    leftedge = openfile->firstcolumn;
-
+    leftedge          = openfile->firstcolumn;
     go_forward_chunks(editwinrows - 1, openfile->current, leftedge);
     set_proper_index_and_pww(leftedge, offset, true);
-
     place_the_cursor();
 }
 
@@ -260,9 +241,7 @@ do_cycle()
         openfile->cursor_row = (cycling_aim == 1) ? 0 : editwinrows - 1;
         adjust_viewport(STATIONARY);
     }
-
     cycling_aim = (cycling_aim + 1) % 3;
-
     draw_all_subwindows();
     full_refresh();
 }
@@ -289,7 +268,6 @@ do_para_begin(linestruct **line)
     {
         *line = (*line)->prev;
     }
-
     while (!begpar(*line, 0))
     {
         *line = (*line)->prev;
@@ -357,33 +335,41 @@ to_para_end()
 
 //
 //  Move to the preceding block of text.
+//  TODO : (to_prev_block) - Make this stop at indent as well.
 //
 void
 to_prev_block()
 {
-    linestruct *was_current = openfile->current;
-
-    bool is_text = false, seen_text = false;
-
+    int         cur_indent;
+    linestruct *was_current;
+    bool        is_text, seen_text;
+    was_current = openfile->current;
+    is_text     = false;
+    seen_text   = false;
     //
     //  Skip backward until first blank line after some nonblank line(s).
     //
     while (openfile->current->prev != nullptr && (!seen_text || is_text))
     {
         openfile->current = openfile->current->prev;
-
+        for (cur_indent = 0; openfile->current->data[cur_indent]; cur_indent++)
+        {
+            if (openfile->current->data[cur_indent] != ' ')
+            {
+                NETLOGGER << "current indent: " << cur_indent << NETLOG_ENDL;
+                break;
+            }
+        }
         is_text   = !white_string(openfile->current->data);
         seen_text = seen_text || is_text;
     }
-
     //
     //  Step forward one line again if we passed text but this line is blank.
     //
-    if (seen_text && openfile->current->next != NULL && white_string(openfile->current->data))
+    if (seen_text && openfile->current->next != nullptr && white_string(openfile->current->data))
     {
         openfile->current = openfile->current->next;
     }
-
     openfile->current_x = 0;
     edit_redraw(was_current, CENTERING);
 }
