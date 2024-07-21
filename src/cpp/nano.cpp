@@ -861,22 +861,19 @@ bool
 scoop_stdin()
 {
     FILE *stream;
-
     restore_terminal();
-
     //
     //  When input comes from a terminal, show a helpful message.
     //
     if (isatty(STDIN_FILENO))
     {
-        std::fprintf(stderr, _("Reading data from keyboard; "
-                               "type ^D or ^D^D to finish.\n"));
+        fprintf(stderr, _("Reading data from keyboard; "
+                          "type ^D or ^D^D to finish.\n"));
     }
-
     //
     //  Open standard input.
     //
-    stream = std::fopen("/dev/stdin", "rb");
+    stream = fopen("/dev/stdin", "rb");
     if (stream == nullptr)
     {
         const STRING_VIEW errnoStr = ERRNO_C_STR;
@@ -886,30 +883,24 @@ scoop_stdin()
         statusline(ALERT, _("Failed to open stdin: %s"), errnoStr);
         return false;
     }
-
     //
     //  Set up a signal handler so that ^C will stop the reading.
     //
     install_handler_for_Ctrl_C();
-
     //
     //  Read the input into a new buffer, undoably.
     //
     make_new_buffer();
     read_file(stream, 0, "stdin", false);
-
     find_and_prime_applicable_syntax();
-
     //
     //  Restore the original ^C handler.
     //
     restore_handler_for_Ctrl_C();
-
     if (!ISSET(VIEW_MODE) && openfile->totsize > 0)
     {
         set_modified();
     }
-
     return true;
 }
 
@@ -995,19 +986,16 @@ suspend_nano(int signal)
 {
     disable_mouse_support();
     restore_terminal();
-    std::printf("\n\n");
-
+    printf("\n\n");
     //
     //  Display our helpful message.
     //
-    std::printf(_("Use \"fg\" to return to nano.\n"));
-    std::fflush(stdout);
-
+    printf(_("Use \"fg\" to return to nano.\n"));
+    fflush(stdout);
     //
     //  The suspend keystroke must not elicit cursor-position display.
     //
     lastmessage = HUSH;
-
     //
     //  Do what mutt does: send ourselves a SIGSTOP.
     //
@@ -1038,16 +1026,14 @@ continue_nano(int signal)
     {
         enable_mouse_support();
     }
-
-    //
+    ///
     /// Seams wierd to me that we assume the window was resized
     /// instead of checking, but it's the original code.
     /// COMMENT: -> // Perhaps the user resized the window while we slept.
     ///
     /// TODO: -> Check if the window was resized instead.
-    //
+    ///
     the_window_resized = true;
-
     //
     //  Insert a fake keystroke,
     //  to neutralize a key-eating issue.
@@ -1062,11 +1048,9 @@ void
 block_sigwinch(bool blockit)
 {
     sigset_t winch;
-
     sigemptyset(&winch);
     sigaddset(&winch, SIGWINCH);
     sigprocmask(blockit ? SIG_BLOCK : SIG_UNBLOCK, &winch, nullptr);
-
     if (the_window_resized)
     {
         regenerate_screen();
@@ -1137,19 +1121,16 @@ regenerate_screen()
 //  TODO : FIX statusline as it takes up 94.1% of the time in this function
 //
 void
-toggle_this(const s32 flag)
+toggle_this(const int flag)
 {
     //
     //  PROFILE_FUNCTION;
     //
     //  TODO : Re profile this function when statusline is fixed
     //
-
     bool enabled = !ISSET(flag);
-
     TOGGLE(flag);
     focusing = false;
-
     switch (flag)
     {
         case ZERO :
@@ -1225,7 +1206,6 @@ toggle_this(const s32 flag)
             break;
         }
     }
-
     if (flag == AUTOINDENT || flag == BREAK_LONG_LINES || flag == SOFTWRAP)
     {
         if (ISSET(MINIBAR) && !ISSET(ZERO) && ISSET(STATEFLAGS))
@@ -1237,7 +1217,6 @@ toggle_this(const s32 flag)
             titlebar(nullptr);
         }
     }
-
     if (flag == NO_HELP || flag == LINE_NUMBERS || flag == WHITESPACE_DISPLAY)
     {
         if (ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1)
@@ -1245,12 +1224,10 @@ toggle_this(const s32 flag)
             return;
         }
     }
-
     if (flag == NO_HELP || flag == NO_SYNTAX)
     {
         enabled = !enabled;
     }
-
     statusline(REMARK, "%s %s", _(epithet_of_flag(flag)), enabled ? _("enabled") : _("disabled"));
 }
 
@@ -1261,7 +1238,6 @@ void
 disable_extended_io()
 {
     termios settings = {0};
-
     tcgetattr(0, &settings);
     settings.c_lflag &= ~IEXTEN;
     settings.c_oflag &= ~OPOST;
@@ -1275,7 +1251,6 @@ void
 disable_kb_interrupt()
 {
     termios settings = {0};
-
     tcgetattr(0, &settings);
     settings.c_lflag &= ~ISIG;
     tcsetattr(0, TCSANOW, &settings);
@@ -1288,7 +1263,6 @@ void
 enable_kb_interrupt()
 {
     termios settings = {0};
-
     tcgetattr(0, &settings);
     settings.c_lflag |= ISIG;
     tcsetattr(0, TCSANOW, &settings);
@@ -1301,7 +1275,6 @@ void
 disable_flow_control()
 {
     termios settings;
-
     tcgetattr(0, &settings);
     settings.c_iflag &= ~IXON;
     tcsetattr(0, TCSANOW, &settings);
@@ -1314,7 +1287,6 @@ void
 enable_flow_control()
 {
     termios settings;
-
     tcgetattr(0, &settings);
     settings.c_iflag |= IXON;
     tcsetattr(0, TCSANOW, &settings);
@@ -1342,16 +1314,12 @@ terminal_init()
     raw();
     nonl();
     noecho();
-
     disable_extended_io();
-
     if ISSET (PRESERVE)
     {
         enable_flow_control();
     }
-
     disable_kb_interrupt();
-
     //
     //  Tell the terminal to enable bracketed pastes.
     //
@@ -1362,11 +1330,11 @@ terminal_init()
 //
 //  Ask ncurses for a keycode, or assign a default one.
 //
-s32
+int
 get_keycode(const char *const keyname, const int standard)
 {
-    const s8 *keyvalue = tigetstr(keyname);
-    if (keyvalue != 0 && keyvalue != (s8 *)-1 && key_defined(keyvalue))
+    const char *keyvalue = tigetstr(keyname);
+    if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue))
     {
         return key_defined(keyvalue);
     }
@@ -1760,22 +1728,15 @@ inject(char *burst, size_t count)
 void
 process_a_keystroke()
 {
-    //
-    //  The keystroke we read in: a character or a shortcut.
-    //
-    s32 input;
-    //
-    //  The input buffer for actual characters.
-    //
-    static s8 *puddle = nullptr;
-    //
-    //  The size of the input buffer; gets doubled whenever needed.
-    //
-    static u64 capacity = 12;
-    //
-    //  The length of the input buffer.
-    //
-    static u64 depth = 0;
+    /**
+        input    = The keystroke we read in, this can be a char or a shortcut
+        puddle   = The buffer to hold the actual chars.
+        capacity = The size of the buffer, doubles when needed.
+        depth    = The current length of the buffer.
+     */
+    int                  input;
+    static char         *puddle   = nullptr;
+    static unsigned long capacity = 12, depth = 0;
 
     linestruct      *was_mark              = openfile->mark;
     static bool      give_a_hint           = true;
@@ -1788,7 +1749,6 @@ process_a_keystroke()
     //
     input       = get_kbinput(midwin, VISIBLE);
     lastmessage = VACUUM;
-
     //
     //  When the input is a window resize, do nothing.
     //
@@ -1801,8 +1761,11 @@ process_a_keystroke()
     //
     if (input == KEY_MOUSE)
     {
-        // If the user clicked on a shortcut, read in the key code that it was
-        // converted into.  Else the click has been handled or was invalid.
+        //
+        //  If the user clicked on a shortcut, read in the key code that it was
+        //  converted into.
+        //  Else the click has been handled or was invalid.
+        //
         if (do_mouse() == 1)
         {
             input = get_kbinput(midwin, BLIND);
@@ -1812,13 +1775,11 @@ process_a_keystroke()
             return;
         }
     }
-
     //
     //  Check for a shortcut in the main list.
     //
     shortcut = get_shortcut(input);
     function = (shortcut ? shortcut->func : nullptr);
-
     //
     //  If not a command, discard anything that is not a normal character byte.
     //
@@ -1904,7 +1865,6 @@ process_a_keystroke()
             }
         }
     }
-
     //
     //  If there are gathered bytes and we have a command or no other key codes
     //  are waiting, it's time to insert these bytes into the edit buffer.
@@ -1919,25 +1879,21 @@ process_a_keystroke()
         }
         depth = 0;
     }
-
     if (function != do_cycle)
     {
         cycling_aim = 0;
     }
-
     if (!function)
     {
         pletion_line   = nullptr;
         keep_cutbuffer = false;
         return;
     }
-
     if (ISSET(VIEW_MODE) && changes_something(function))
     {
         print_view_warning();
         return;
     }
-
     if (input == '\b' && give_a_hint && openfile->current_x == 0 && openfile->current == openfile->filetop &&
         !ISSET(NO_HELP))
     {
@@ -1948,8 +1904,7 @@ process_a_keystroke()
     {
         give_a_hint = false;
     }
-
-    // When not cutting or copying text, drop the cutbuffer the next time.
+    //  When not cutting or copying text, drop the cutbuffer the next time.
     if (function != cut_text && function != copy_text)
     {
         if (function != zap_text)
@@ -1957,7 +1912,6 @@ process_a_keystroke()
             keep_cutbuffer = false;
         }
     }
-
     if (function != complete_a_word)
     {
         pletion_line = nullptr;
@@ -1976,24 +1930,21 @@ process_a_keystroke()
         }
         return;
     }
-
-    linestruct *was_current = openfile->current;
-    u64         was_x       = openfile->current_x;
-
-    // If Shifted movement occurs, set the mark.
+    linestruct   *was_current = openfile->current;
+    unsigned long was_x       = openfile->current_x;
+    //  If Shifted movement occurs, set the mark.
     if (shift_held && !openfile->mark)
     {
         openfile->mark     = openfile->current;
         openfile->mark_x   = openfile->current_x;
         openfile->softmark = true;
     }
-
-    // Execute the function of the shortcut.
+    //  Execute the function of the shortcut.
     function();
-
-    // When the marked region changes without Shift being held,
-    // discard a soft mark.  And when the set of lines changes,
-    // reset the "last line too" flag.
+    /**
+        When the marked region changes without Shift being held, discard a soft mark.
+        And when the set of lines changes, reset the "last line too" flag.
+     */
     if (openfile->mark && openfile->softmark && !shift_held &&
         (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)))
     {
@@ -2004,12 +1955,10 @@ process_a_keystroke()
     {
         also_the_last = false;
     }
-
     if (bracketed_paste)
     {
         suck_up_input_and_paste_it();
     }
-
     if (ISSET(STATEFLAGS) && openfile->mark != was_mark)
     {
         titlebar(nullptr);
@@ -2025,22 +1974,22 @@ main(int argc, char **argv)
     LoutI << "Starting nano" << '\n';
 
     // NETLOGGER.enable();
-    // NETLOGGER.init("192.168.0.36", 23);
-    // NETLOGGER.send_to_server("Starting nano");
-    // std::atexit(
-    //     []
-    //     {
-    //         LOUT.destroy();
-    //         VECTOR<STRING> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
-    //         for (const STRING &str : gprof_report)
-    //         {
-    //             NETLOGGER << str << NETLOG_ENDL;
-    //         }
-    //         NETLOGGER.send_to_server("\nExiting nano");
-    //         NETLOGGER.destroy();
-    //     });
+    NETLOGGER.init("192.168.0.76", 8080);
+    NETLOGGER.send_to_server("Starting nano");
+    atexit(
+        []
+        {
+            LOUT.destroy();
+            VECTOR<STRING> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
+            for (const STRING &str : gprof_report)
+            {
+                NETLOGGER << str << NETLOG_ENDL;
+            }
+            NETLOGGER.send_to_server("\nExiting nano");
+            NETLOGGER.destroy();
+        });
 
-    s32 stdin_flags;
+    int stdin_flags;
     //
     //  Whether to ignore the nanorc files.
     //
@@ -2198,7 +2147,7 @@ main(int argc, char **argv)
     //
     if (getenv("TERM") == nullptr)
     {
-        putenv(const_cast<s8 *>("TERM=vt220"));
+        putenv(const_cast<char *>("TERM=vt220"));
         setenv("TERM", "vt220", 1);
     }
 
@@ -2235,19 +2184,19 @@ main(int argc, char **argv)
         //
         //  Back up the command-line options that take an argument.
         //
-        s64 fill_cmdline          = fill;
-        u64 stripeclm_cmdline     = stripe_column;
-        s64 tabsize_cmdline       = tabsize;
-        s8 *backup_dir_cmdline    = backup_dir;
-        s8 *word_chars_cmdline    = word_chars;
-        s8 *operating_dir_cmdline = operating_dir;
-        s8 *quotestr_cmdline      = quotestr;
-        s8 *alt_speller_cmdline   = alt_speller;
+        long   fill_cmdline          = fill;
+        size_t stripeclm_cmdline     = stripe_column;
+        long   tabsize_cmdline       = tabsize;
+        char  *backup_dir_cmdline    = backup_dir;
+        char  *word_chars_cmdline    = word_chars;
+        char  *operating_dir_cmdline = operating_dir;
+        char  *quotestr_cmdline      = quotestr;
+        char  *alt_speller_cmdline   = alt_speller;
 
         //
         //  ack up the command-line flags.
         //
-        u32 flags_cmdline[sizeof(flags) / sizeof(flags[0])];
+        unsigned long flags_cmdline[sizeof(flags) / sizeof(flags[0])];
         memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
 
         //
@@ -2271,48 +2220,40 @@ main(int argc, char **argv)
         {
             fill = fill_cmdline;
         }
-
         if (backup_dir_cmdline != nullptr)
         {
             std::free(backup_dir);
             backup_dir = backup_dir_cmdline;
         }
-
         if (word_chars_cmdline != nullptr)
         {
             std::free(word_chars);
             word_chars = word_chars_cmdline;
         }
-
         if (stripeclm_cmdline > 0)
         {
             stripe_column = stripeclm_cmdline;
         }
-
         if (tabsize_cmdline != -1)
         {
             tabsize = tabsize_cmdline;
         }
-
         if (operating_dir_cmdline != nullptr || ISSET(RESTRICTED))
         {
-            std::free(operating_dir);
+            free(operating_dir);
             operating_dir = operating_dir_cmdline;
         }
-
         if (quotestr_cmdline != nullptr)
         {
             std::free(quotestr);
             quotestr = quotestr_cmdline;
         }
-
         if (alt_speller_cmdline != nullptr)
         {
             std::free(alt_speller);
             alt_speller = alt_speller_cmdline;
         }
         strip_leading_blanks_from(alt_speller);
-
         //
         //  If an rcfile undid the default setting, copy it to the new flag.
         //
@@ -2320,11 +2261,10 @@ main(int argc, char **argv)
         {
             SET(BREAK_LONG_LINES);
         }
-
         //
         //  Simply OR the boolean flags from rcfile and command line.
         //
-        for (u64 i = 0; i < sizeof(flags) / sizeof(flags[0]); i++)
+        for (size_t i = 0; i < sizeof(flags) / sizeof(flags[0]); i++)
         {
             flags[i] |= flags_cmdline[i];
         }
