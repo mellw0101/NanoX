@@ -354,7 +354,7 @@ to_prev_block()
         openfile->current = openfile->current->prev;
         for (cur_indent = 0; openfile->current->data[cur_indent]; cur_indent++)
         {
-            if (openfile->current->data[cur_indent] != ' ')
+            if (openfile->current->data[cur_indent] != '\t')
             {
                 NETLOGGER << "current indent: " << cur_indent << '\n' << NETLOG_ENDL;
                 break;
