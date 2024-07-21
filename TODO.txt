@@ -1,0 +1,2 @@
+1.
+    Change it so that when using CTRL+(UP/DOWN) it stops at indent diffs.

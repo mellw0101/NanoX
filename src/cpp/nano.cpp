@@ -2066,12 +2066,12 @@ main(int argc, char **argv)
         SET(RESTRICTED);
     }
 
-    for (s32 i = 1; i < argc; ++i)
+    for (int i = 1; i < argc; ++i)
     {
-        C_u16 flag = retriveFlagFromStr(argv[i]);
+        const unsigned int flag = retriveFlagFromStr(argv[i]);
         flag ? SET(flag) : 0;
 
-        C_u32 cliCmd = retriveCliOptionFromStr(argv[i]);
+        const unsigned int cliCmd = retriveCliOptionFromStr(argv[i]);
         cliCmd &CLI_OPT_VERSION ? version() : void();
         cliCmd &CLI_OPT_HELP ? usage() : void();
         cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = true : 0;
@@ -2141,7 +2141,6 @@ main(int argc, char **argv)
             }
         }
     }
-
     //
     //  Curses needs TERM; if it is unset, try falling back to a VT220.
     //
@@ -2150,7 +2149,6 @@ main(int argc, char **argv)
         putenv(const_cast<char *>("TERM=vt220"));
         setenv("TERM", "vt220", 1);
     }
-
     //
     //  Enter into curses mode.  Abort if this fails.
     //
@@ -2158,7 +2156,6 @@ main(int argc, char **argv)
     {
         exit(EXIT_FAILURE);
     }
-
     //
     //  If the terminal can do colors, tell ncurses to switch them on.
     //
@@ -2166,19 +2163,16 @@ main(int argc, char **argv)
     {
         start_color();
     }
-
     //
     //  When requested, suppress the default spotlight and error colors.
     //
     rescind_colors = (getenv("NO_COLOR") != nullptr);
-
     //
     //  Set up the function and shortcut lists.
     //  This needs to be done before reading the rcfile,
     //  to be able to rebind/unbind keys.
     //
     shortcut_init();
-
     if (!ignore_rcfiles)
     {
         //
@@ -2196,7 +2190,7 @@ main(int argc, char **argv)
         //
         //  ack up the command-line flags.
         //
-        unsigned long flags_cmdline[sizeof(flags) / sizeof(flags[0])];
+        size_t flags_cmdline[sizeof(flags) / sizeof(flags[0])];
         memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
 
         //
