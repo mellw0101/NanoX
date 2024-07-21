@@ -423,14 +423,15 @@ do_prev_word()
         if (is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters))
         {
             seen_a_word = true;
-            //
-            //  If at the head of a line now,
-            //  this surely is a word start.
-            //
+            /* If at the head of a line now, this surely is a word start. */
             if (openfile->current_x == 0)
             {
                 break;
             }
+        }
+        else if (!is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters))
+        {
+            break;
         }
         else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
         {
