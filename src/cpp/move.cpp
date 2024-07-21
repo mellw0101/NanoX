@@ -365,7 +365,6 @@ to_prev_block()
                 else if (was_indent != cur_indent)
                 {
                     NETLOGGER << openfile->current->data << '\n' << NETLOG_ENDL;
-                    was_indent = cur_indent;
                     if (openfile->current->next != nullptr)
                     {
                         openfile->current   = openfile->current->next;
