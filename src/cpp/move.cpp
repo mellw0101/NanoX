@@ -394,7 +394,7 @@ to_prev_block()
 void
 to_next_block()
 {
-    int         cur_indent, was_indent;
+    int         cur_indent, was_indent = -1;
     linestruct *was_current = openfile->current;
     bool        is_white    = white_string(openfile->current->data);
     bool        seen_white  = is_white;
@@ -404,8 +404,9 @@ to_next_block()
     while (openfile->current->next != nullptr && (!seen_white || is_white))
     {
         openfile->current = openfile->current->next;
-        for (cur_indent = 0, was_indent = -1; openfile->current->data[cur_indent]; cur_indent++)
+        for (cur_indent = 0; openfile->current->data[cur_indent]; cur_indent++)
         {
+            NETLOGGER << "line indent: " << cur_indent << '\n' << NETLOG_ENDL;
             if (openfile->current->data[cur_indent] != '\t')
             {
                 if (was_indent == -1)
