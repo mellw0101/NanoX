@@ -2752,7 +2752,7 @@ write_region_to_file(C_s8 *name, FILE *stream, bool normal, kind_of_writing_type
 
     bool retval;
 
-    get_region(topline, top_x, botline, bot_x);
+    get_region(&topline, &top_x, &botline, &bot_x);
 
     //
     //  When needed, prepare a magic end line for the region.
