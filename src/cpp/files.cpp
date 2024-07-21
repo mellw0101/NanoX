@@ -2732,70 +2732,51 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
         {
             statusline(REMARK, P_("Wrote %zu line", "Wrote %zu lines", lineswritten), lineswritten);
         }
-        std::free(tempname);
-        std::free(realname);
+        free(tempname);
+        free(realname);
     }
     return true;
 }
 
-//
-//  Write the marked region of the current buffer out to disk.
-//  Return TRUE on success and FALSE on error.
-//
+/* Write the marked region of the current buffer out to disk.
+ * Return 'true' on success and 'false' on error. */
 bool
-write_region_to_file(C_s8 *name, FILE *stream, bool normal, kind_of_writing_type method)
+write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method)
 {
     linestruct *birthline, *topline, *botline, *stopper, *afterline;
-
-    s8 *was_datastart, saved_byte;
-    u64 top_x, bot_x;
-
-    bool retval;
-
+    char       *was_datastart, saved_byte;
+    size_t      top_x, bot_x;
+    bool        retval;
     get_region(&topline, &top_x, &botline, &bot_x);
-
-    //
-    //  When needed, prepare a magic end line for the region.
-    //
+    /* When needed, prepare a magic end line for the region. */
     if (normal && bot_x > 0 && !ISSET(NO_NEWLINES))
     {
-        stopper = make_new_node(botline);
-
+        stopper       = make_new_node(botline);
         stopper->data = copy_of("");
     }
     else
     {
         stopper = nullptr;
     }
-
-    //
-    //  Make the marked area look like a separate buffer.
-    //
-    afterline     = botline->next;
-    botline->next = stopper;
-    saved_byte    = botline->data[bot_x];
-
+    /* Make the marked area look like a separate buffer. */
+    afterline            = botline->next;
+    botline->next        = stopper;
+    saved_byte           = botline->data[bot_x];
     botline->data[bot_x] = '\0';
     was_datastart        = topline->data;
     topline->data += top_x;
     birthline         = openfile->filetop;
     openfile->filetop = topline;
-
-    retval = write_file(name, stream, normal, method, NONOTES);
-
-    //
-    //  Restore the proper state of the buffer.
-    //
+    retval            = write_file(name, stream, normal, method, NONOTES);
+    /* Restore the proper state of the buffer. */
     openfile->filetop    = birthline;
     topline->data        = was_datastart;
     botline->data[bot_x] = saved_byte;
     botline->next        = afterline;
-
     if (stopper)
     {
         delete_node(stopper);
     }
-
     return retval;
 }
 
@@ -2813,52 +2794,34 @@ write_region_to_file(C_s8 *name, FILE *stream, bool normal, kind_of_writing_type
 //  - ( 1 ) - if the buffer is saved.
 //  - ( 2 ) - if the buffer is discarded.
 //
-s32
+int
 write_it_out(bool exiting, bool withprompt)
 {
     PROFILE_FUNCTION;
-
-    s8 *given;
-    //
-    //  The filename we offer, or what the user typed so far.
-    //
-    bool maychange = (openfile->filename[0] == '\0');
-    //
-    //  Whether it's okay to save the buffer under a different name.
-    //
+    /* The filename we offer, or what the user typed so far. */
+    char *given;
+    /* Whether it's okay to save the buffer under a different name. */
+    bool                 maychange   = (openfile->filename[0] == '\0');
     kind_of_writing_type method      = OVERWRITE;
     static bool          did_credits = false;
-    //
-    //  Display newlines in filenames as ^J.
-    //
+    /* Display newlines in filenames as ^J. */
     as_an_at = false;
-
-    given = copy_of((openfile->mark && !exiting) ? "" : openfile->filename);
-
+    given    = copy_of((openfile->mark && !exiting) ? "" : openfile->filename);
     while (true)
     {
         functionptrtype function;
-
-        C_s8 *msg;
-
-        s32 response = 0;
-        s32 choice   = NO;
-
-        C_s8 *formatstr = (openfile->fmt == DOS_FILE) ? _(" [DOS Format]")
-                        : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]")
-                                                      : "";
-        C_s8 *backupstr = ISSET(MAKE_BACKUP) ? _(" [Backup]") : "";
-
-        //
-        //  When the mark is on, offer to write the selection to disk, but
-        //  not when in restricted mode, because it would allow writing to
-        //  a file not specified on the command line.
-        //
+        const char     *msg;
+        int             response = 0, choice = NO;
+        const char     *formatstr = (openfile->fmt == DOS_FILE) ? _(" [DOS Format]")
+                                  : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]")
+                                                                : "";
+        const char     *backupstr = ISSET(MAKE_BACKUP) ? _(" [Backup]") : "";
+        /* When the mark is on, offer to write the selection to disk, but
+         * not when in restricted mode, because it would allow writing to
+         * a file not specified on the command line. */
         if (openfile->mark && !exiting && !ISSET(RESTRICTED))
         {
-            //
-            //  TRANSLATORS : The next six strings are prompts.
-            //
+            /* TRANSLATORS : The next six strings are prompts. */
             msg = (method == PREPEND) ? _("Prepend Selection to File")
                 : (method == APPEND)  ? _("Append Selection to File")
                                       : _("Write Selection to File");
@@ -2871,13 +2834,9 @@ write_it_out(bool exiting, bool withprompt)
         {
             msg = _("File Name to Write");
         }
-
         present_path = mallocstrcpy(present_path, "./");
-
-        //
-        //  When we shouldn't prompt, use the existing filename.
-        //  Otherwise, ask for (confirmation of) the filename.
-        //
+        /* When we shouldn't prompt, use the existing filename.
+         * Otherwise, ask for (confirmation of) the filename. */
         if ((!withprompt || (ISSET(SAVE_ON_EXIT) && exiting)) && openfile->filename[0] != '\0')
         {
             answer = mallocstrcpy(answer, openfile->filename);
@@ -2886,35 +2845,28 @@ write_it_out(bool exiting, bool withprompt)
         {
             response = do_prompt(MWRITEFILE, given, nullptr, edit_refresh, "%s%s%s", msg, formatstr, backupstr);
         }
-
         if (response < 0)
         {
             statusbar(_("Cancelled"));
-            std::free(given);
+            free(given);
             return 0;
         }
-
         function = func_from_key(response);
-
-        //
-        //  Upon request, abandon the buffer.
-        //
+        /* Upon request, abandon the buffer. */
         if (function == discard_buffer)
         {
-            std::free(given);
+            free(given);
             return 2;
         }
-
         given = mallocstrcpy(given, answer);
-
         if (function == to_files && !ISSET(RESTRICTED))
         {
-            s8 *chosen = browse_in(answer);
+            char *chosen = browse_in(answer);
             if (chosen == nullptr)
             {
                 continue;
             }
-            std::free(answer);
+            free(answer);
             answer = chosen;
         }
         else if (function == dos_format)
@@ -2954,12 +2906,9 @@ write_it_out(bool exiting, bool withprompt)
             {
                 continue;
             }
-
-            //
-            //  If the user pressed Ctrl-X in the edit window, and answered "Y" at
-            //  the "Save modified buffer?" prompt, and entered "zzy" as filename,
-            //  and this is the first time around, show an Easter egg.
-            //
+            /* If the user pressed Ctrl-X in the edit window, and answered "Y" at
+             * the "Save modified buffer?" prompt, and entered "zzy" as filename,
+             * and this is the first time around, show an Easter egg. */
             if (exiting && !ISSET(SAVE_ON_EXIT) && openfile->filename[0] == '\0' &&
                 constexpr_strcmp(answer, "zzy") == 0 && !did_credits)
             {
@@ -2970,26 +2919,20 @@ write_it_out(bool exiting, bool withprompt)
                 }
                 else
                 {
-                    //
-                    //  TRANSLATORS : Concisely say the screen is too small.
-                    //
+                    /* TRANSLATORS : Concisely say the screen is too small. */
                     statusline(AHEM, _("Too tiny"));
                 }
-                std::free(given);
+                free(given);
                 return 0;
             }
-
             if (method == OVERWRITE)
             {
                 struct stat fileinfo;
-
-                bool name_exists, do_warning;
-                s8  *full_answer, *full_filename;
-
+                bool        name_exists, do_warning;
+                char       *full_answer, *full_filename;
                 full_answer   = get_full_path(answer);
                 full_filename = get_full_path(openfile->filename);
                 name_exists   = (stat((full_answer == nullptr) ? answer : full_answer, &fileinfo) != -1);
-
                 if (openfile->filename[0] == '\0')
                 {
                     do_warning = name_exists;
@@ -3000,26 +2943,19 @@ write_it_out(bool exiting, bool withprompt)
                         (constexpr_strcmp((full_answer == nullptr) ? answer : full_answer,
                                           (full_filename == nullptr) ? openfile->filename : full_filename) != 0);
                 }
-
-                std::free(full_filename);
-                std::free(full_answer);
-
+                free(full_filename);
+                free(full_answer);
                 if (do_warning)
                 {
-                    //
-                    //  When in restricted mode, we aren't allowed to overwrite
-                    //  an existing file with the current buffer, nor to change
-                    //  the name of the current buffer if it already has one.
-                    //
+                    /* When in restricted mode, we aren't allowed to overwrite
+                     * an existing file with the current buffer, nor to change
+                     * the name of the current buffer if it already has one. */
                     if ISSET (RESTRICTED)
                     {
-                        //
-                        //  TRANSLATORS : Restricted mode forbids overwriting.
-                        //
+                        /* TRANSLATORS : Restricted mode forbids overwriting. */
                         warn_and_briefly_pause(_("File exists -- cannot overwrite"));
                         continue;
                     }
-
                     if (!maychange)
                     {
                         if (exiting || !openfile->mark)
@@ -3032,54 +2968,45 @@ write_it_out(bool exiting, bool withprompt)
                             maychange = true;
                         }
                     }
-
                     if (name_exists)
                     {
-                        s8 *question = _("File \"%s\" exists; OVERWRITE? ");
-                        s8 *name     = crop_to_fit(answer, COLS - breadth(question) + 1);
-                        s8 *message =
-                            static_cast<s8 *>(nmalloc(constexpr_strlen(question) + constexpr_strlen(name) + 1));
-
-                        std::sprintf(message, question, name);
+                        char *question = _("File \"%s\" exists; OVERWRITE? ");
+                        char *name     = crop_to_fit(answer, COLS - breadth(question) + 1);
+                        char *message  = (char *)nmalloc(constexpr_strlen(question) + constexpr_strlen(name) + 1);
+                        sprintf(message, question, name);
                         choice = ask_user(YESORNO, message);
-
-                        std::free(message);
-                        std::free(name);
-
+                        free(message);
+                        free(name);
                         if (choice != YES)
                         {
                             continue;
                         }
                     }
                 }
-                //
-                //  Complain if the file exists, the name hasn't changed,
-                //  and the stat information we had before does not match
-                //  what we have now.
-                //
+                /* Complain if the file exists, the name hasn't changed,
+                 * and the stat information we had before does not match
+                 * what we have now. */
                 else if (name_exists && openfile->statinfo &&
                          (openfile->statinfo->st_mtime < fileinfo.st_mtime ||
                           openfile->statinfo->st_dev != fileinfo.st_dev ||
                           openfile->statinfo->st_ino != fileinfo.st_ino))
                 {
-
                     warn_and_briefly_pause(_("File on disk has changed"));
-
-                    // TRANSLATORS: Try to keep this at most 76 characters.
+                    /* TRANSLATORS: Try to keep this at most 76 characters. */
                     choice = ask_user(YESORNO, _("File was modified "
                                                  "since you opened it; continue saving? "));
                     wipe_statusbar();
-
-                    // When in tool mode and not called by 'savefile',
-                    // overwrite the file right here when requested.
+                    /* When in tool mode and not called by 'savefile',
+                     * overwrite the file right here when requested. */
                     if (ISSET(SAVE_ON_EXIT) && withprompt)
                     {
-                        std::free(given);
+                        free(given);
                         if (choice == YES)
                         {
                             return write_file(openfile->filename, nullptr, NORMAL, OVERWRITE, NONOTES);
                         }
-                        else if (choice == NO) /* Discard buffer */
+                        /* Discard buffer */
+                        else if (choice == NO)
                         {
                             return 2;
                         }
@@ -3094,22 +3021,18 @@ write_it_out(bool exiting, bool withprompt)
                     }
                     else if (choice != YES)
                     {
-                        std::free(given);
+                        free(given);
                         return 1;
                     }
                 }
             }
-
-            std::free(given);
+            free(given);
             break;
         }
     }
-
-    //
-    //  When the mark is on (and we've prompted for a name and we're
-    //  not exiting and we're not in restricted mode), then write out
-    //  the marked region; otherwise, write out the whole buffer.
-    //
+    /* When the mark is on (and we've prompted for a name and we're
+     * not exiting and we're not in restricted mode), then write out
+     * the marked region; otherwise, write out the whole buffer. */
     if (openfile->mark && withprompt && !exiting && !ISSET(RESTRICTED))
     {
         return write_region_to_file(answer, nullptr, NORMAL, method);
@@ -3147,29 +3070,22 @@ do_savefile()
     }
 }
 
-//
-//  Convert the tilde notation when the given path begins with ~/ or ~user/.
-//  Return an allocated string containing the expanded path.
-//
-s8 *
-real_dir_from_tilde(C_s8 *path)
+/* Convert the tilde notation when the given path begins with ~/ or ~user/.
+ * Return an allocated string containing the expanded path. */
+char *
+real_dir_from_tilde(const char *path)
 {
-    s8 *tilded, *retval;
-    u64 i = 1;
-
+    char  *tilded, *retval;
+    size_t i = 1;
     if (*path != '~')
     {
         return copy_of(path);
     }
-
-    //
-    //  Figure out how much of the string we need to compare.
-    //
+    /* Figure out how much of the string we need to compare. */
     while (path[i] != '/' && path[i] != '\0')
     {
         i++;
     }
-
     if (i == 1)
     {
         get_homedir();
@@ -3178,9 +3094,7 @@ real_dir_from_tilde(C_s8 *path)
     else
     {
         const passwd *userdata;
-
         tilded = measured_copy(path, i);
-
         do
         {
             userdata = getpwent();
@@ -3192,11 +3106,9 @@ real_dir_from_tilde(C_s8 *path)
             tilded = mallocstrcpy(tilded, userdata->pw_dir);
         }
     }
-
-    retval = static_cast<s8 *>(nmalloc(constexpr_strlen(tilded) + constexpr_strlen(path + i) + 1));
-    std::sprintf(retval, "%s%s", tilded, path + i);
-    std::free(tilded);
-
+    retval = (char *)nmalloc(constexpr_strlen(tilded) + constexpr_strlen(path + i) + 1);
+    sprintf(retval, "%s%s", tilded, path + i);
+    free(tilded);
     return retval;
 }
 

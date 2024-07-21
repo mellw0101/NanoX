@@ -156,7 +156,7 @@ do_page_down(void)
     }
     /* Move down the required number of lines or chunks.  If we can't, we're
      * at the bottom of the file, so put the cursor there and get out. */
-    if (go_forward_chunks(mustmove, openfile->current, leftedge) > 0)
+    if (go_forward_chunks(mustmove, &openfile->current, &leftedge) > 0)
     {
         to_last_line();
         return;
@@ -189,7 +189,7 @@ to_bottom_row()
     get_edge_and_target(&leftedge, &offset);
     openfile->current = openfile->edittop;
     leftedge          = openfile->firstcolumn;
-    go_forward_chunks(editwinrows - 1, openfile->current, leftedge);
+    go_forward_chunks(editwinrows - 1, &openfile->current, &leftedge);
     set_proper_index_and_pww(&leftedge, offset, true);
     place_the_cursor();
 }
@@ -456,37 +456,26 @@ do_prev_word()
     }
 }
 
-//
-//  Move to the next word.
-//  If after_ends is TRUE, stop at the ends of words
-//  instead of at their beginnings.
-//  @param after_ends
-//  - If TRUE, stop at the ends of words instead of at their beginnings.
-//  @return bool
-//  - ( true ) if we started on a word.
-//
-//  TODO : Make this perfect for c++ code.
-//  Meaning:
-//  - It should stop at all relevant operators.
-//  - It should stop at all relevant keywords.
-//
+/* Move to the next word.  If after_ends is 'true',
+ * stop at the ends of words instead of at their beginnings.
+ * If @param 'after_ends' is 'true', stop at the ends of words instead of at their beginnings.
+ * Return 'true' if we started on a word. */
 bool
 do_next_word(bool after_ends)
 {
     PROFILE_FUNCTION;
-    bool punctuation_as_letters = ISSET(WORD_BOUNDS);
-    bool started_on_word        = is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters);
-    bool seen_space             = !started_on_word;
-    bool seen_word              = started_on_word;
+    bool punct_as_letters, started_on_word, seen_space, seen_word;
+    punct_as_letters = ISSET(WORD_BOUNDS);
+    started_on_word  = is_word_char(openfile->current->data + openfile->current_x, punct_as_letters);
+    seen_space       = !started_on_word;
+    seen_word        = started_on_word;
     /* Move forward until we reach the start of a word. */
     while (true)
     {
         /* If at the end of a line, move to the beginning of the next one. */
         if (openfile->current->data[openfile->current_x] == '\0')
         {
-            //
-            //  When at end of file, stop.
-            //
+            /* When at end of file, stop. */
             if (openfile->current->next == nullptr)
             {
                 break;
@@ -497,28 +486,21 @@ do_next_word(bool after_ends)
         }
         else
         {
-            //
-            //  Step forward one character.
-            //
+            /* Step forward one character. */
             openfile->current_x = step_right(openfile->current->data, openfile->current_x);
         }
         if (after_ends)
         {
-            //
-            //  If this is a word character,
-            //  continue.
-            //  Else,
-            //  it's a separator,
-            //  and if we've already seen a word,
-            //  then it's a word end.
-            //
-            if (is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters))
+            /* If this is a word character, continue.  Else, it's a separator,
+             * and if we've already seen a word, then it's a word end. */
+            if (is_word_char(openfile->current->data + openfile->current_x, punct_as_letters))
             {
                 seen_word = true;
             }
+            /* Skip */
             else if (is_zerowidth(openfile->current->data + openfile->current_x))
             {
-                ;  //  Skip
+                ;
             }
             else if (seen_word)
             {
@@ -531,26 +513,19 @@ do_next_word(bool after_ends)
             {
                 ;
             }
-            //
-            //  Checks for cpp syntax characters,
-            //  and if true then break.
-            //
+            /* Checks for cpp syntax characters, and if true then break. */
             else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
             {
                 break;
             }
             else
             {
-                //
-                //  If this is not a word character,
-                //  then it's a separator.
-                //  Else,
-                //  if we've already seen a separator,
-                //  then it's a word start.
-                //
-                if (!is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters))
+                /* If this is not a word character, then it's a separator.
+                 * Else, if we've already seen a separator, then it's a word start. */
+                if (!is_word_char(openfile->current->data + openfile->current_x, punct_as_letters))
                 {
                     seen_space = true;
+                    break;
                 }
                 else if (seen_space)
                 {
@@ -658,25 +633,25 @@ do_home(void)
     }
 }
 
-//
-//  Move to the end of the current line (or softwrapped chunk).
-//  When softwrapping and already at the end of a chunk, go to the
-//  end of the full line.
-//
+/* Move to the end of the current line (or softwrapped 'chunk').
+ * When softwrapping and already at the end of a 'chunk'(?? TODO: what does a 'chunk' in this context),
+ * go to the end of the full line. */
 void
-do_end()
+do_end(void)
 {
-    linestruct *was_current     = openfile->current;
-    size_t      was_column      = xplustabs();
-    size_t      line_len        = constexpr_strlen(openfile->current->data);
-    bool        moved_off_chunk = true;
+    bool          moved_off_chunk, kickoff, last_chunk;
+    unsigned long was_column, line_len, leftedge, rightedge, right_x;
+    linestruct   *was_current;
+    was_current     = openfile->current;
+    was_column      = xplustabs();
+    line_len        = constexpr_strlen(openfile->current->data);
+    moved_off_chunk = true;
     if ISSET (SOFTWRAP)
     {
-        bool   kickoff    = true;
-        bool   last_chunk = false;
-        size_t leftedge   = leftedge_for(was_column, openfile->current);
-        size_t rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk);
-        size_t right_x;
+        kickoff    = true;
+        last_chunk = false;
+        leftedge   = leftedge_for(was_column, openfile->current);
+        rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk);
         /* If we're on the last chunk, we're already at the end of the line.
          * Otherwise, we're one column past the end of the line.  Shifting
          * backwards one column might put us in the middle of a multi-column
@@ -719,18 +694,14 @@ do_end()
     }
 }
 
-//
-//  Move the cursor to the preceding line or chunk.
-//
+/* Move the cursor to the preceding line or chunk. */
 void
-do_up()
+do_up(void)
 {
     linestruct   *was_current = openfile->current;
     unsigned long leftedge, target_column;
     get_edge_and_target(&leftedge, &target_column);
-    //
-    //  If we can't move up one line or chunk, we're at top of file.
-    //
+    /* If we can't move up one line or chunk, we're at top of file. */
     if (go_back_chunks(1, &openfile->current, &leftedge) > 0)
     {
         return;
@@ -744,25 +715,19 @@ do_up()
     {
         edit_redraw(was_current, FLOWING);
     }
-    //
-    //  <Up> should not change placewewant, so restore it.
-    //
+    /* <Up> should not change placewewant, so restore it. */
     openfile->placewewant = leftedge + target_column;
 }
 
-//
-//  Move the cursor to next line or chunk.
-//
+/* Move the cursor to next line or chunk. */
 void
-do_down()
+do_down(void)
 {
     linestruct   *was_current = openfile->current;
     unsigned long leftedge, target_column;
     get_edge_and_target(&leftedge, &target_column);
-    //
-    //  If we can't move down one line or chunk, we're at bottom of file.
-    //
-    if (go_forward_chunks(1, openfile->current, leftedge) > 0)
+    /* If we can't move down one line or chunk, we're at bottom of file. */
+    if (go_forward_chunks(1, &openfile->current, &leftedge) > 0)
     {
         return;
     }
@@ -776,17 +741,13 @@ do_down()
     {
         edit_redraw(was_current, FLOWING);
     }
-    //
-    //  <Down> should not change placewewant, so restore it.
-    //
+    /* <Down> should not change placewewant, so restore it. */
     openfile->placewewant = leftedge + target_column;
 }
 
-//
-//  Scroll up one line or chunk without moving the cursor textwise.
-//
+/* Scroll up one line or chunk without moving the cursor textwise. */
 void
-do_scroll_up()
+do_scroll_up(void)
 {
     //
     //  When the top of the file is onscreen, we can't scroll.
@@ -805,11 +766,9 @@ do_scroll_up()
     }
 }
 
-//
-//  Scroll down one line or chunk without moving the cursor textwise.
-//
+/* Scroll down one line or chunk without moving the cursor textwise. */
 void
-do_scroll_down()
+do_scroll_down(void)
 {
     if (openfile->cursor_row == 0)
     {
@@ -823,11 +782,9 @@ do_scroll_down()
     }
 }
 
-//
-//  Move left one character.
-//
+/* Move left one character. */
 void
-do_left()
+do_left(void)
 {
     linestruct *was_current = openfile->current;
     if (openfile->current_x > 0)
@@ -846,11 +803,9 @@ do_left()
     edit_redraw(was_current, FLOWING);
 }
 
-//
-//  Move right one character.
-//
+/* Move right one character. */
 void
-do_right()
+do_right(void)
 {
     linestruct *was_current = openfile->current;
     if (openfile->current->data[openfile->current_x] != '\0')

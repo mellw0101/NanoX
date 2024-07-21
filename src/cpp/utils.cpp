@@ -64,8 +64,8 @@ tail(const char *path)
 char *
 concatenate(const char *path, const char *name)
 {
-    size_t pathlen = constexpr_strlen(path);
-    char  *joined  = (char *)nmalloc(pathlen + constexpr_strlen(name) + 1);
+    unsigned long pathlen = constexpr_strlen(path);
+    char         *joined  = (char *)nmalloc(pathlen + constexpr_strlen(name) + 1);
     constexpr_strcpy(joined, path);
     constexpr_strcpy(joined + pathlen, name);
     return joined;
@@ -129,16 +129,15 @@ digits(const long n)
     }
 }
 
-//
-/// Original code: From GNU nano 8.0.1
-/*
+/* Original code: From GNU nano 8.0.1
+
     // Read an integer from the given string.  If it parses okay,
     // store it in *result and return TRUE; otherwise, return FALSE.
     bool
-    parse_num(const s8 *string, s64 *result)
+    parse_num(const char *string, s64 *result)
     {
-        ssize_t value;
-        s8     *excess;
+        sunsigned long value;
+        char     *excess;
 
         // Clear the error number so that we can check it afterward.
         errno = 0;
@@ -169,11 +168,9 @@ parseNum(STRING_VIEW string, long &result)
     return true;
 }
 
-//
-//  Read one number (or two numbers separated by comma, period, or colon)
-//  from the given string and store the number(s) in *line (and *column).
-//  Return FALSE on a failed parsing, and TRUE otherwise.
-//
+/* Read one number (or two numbers separated by comma, period, or colon)
+ * from the given string and store the number(s) in *line (and *column).
+ * Return 'false' on a failed parsing, and 'true' otherwise. */
 bool
 parse_line_column(const char *string, long *line, long *column)
 {
@@ -206,7 +203,7 @@ parse_line_column(const char *string, long *line, long *column)
 //  In the given string, recode each embedded NUL as a newline.
 //
 void
-recode_NUL_to_LF(char *string, size_t length)
+recode_NUL_to_LF(char *string, unsigned long length)
 {
     while (length > 0)
     {
@@ -223,7 +220,7 @@ recode_NUL_to_LF(char *string, size_t length)
 //  In the given string, recode each embedded newline as a NUL,
 //  and return the number of bytes in the string.
 //
-size_t
+unsigned long
 recode_LF_to_NUL(char *string)
 {
     char *beginning = string;
@@ -235,14 +232,14 @@ recode_LF_to_NUL(char *string)
         }
         string++;
     }
-    return (size_t)(string - beginning);
+    return (unsigned long)(string - beginning);
 }
 
 //
 //  Free the memory of the given array, which should contain len elements.
 //
 void
-free_chararray(char **array, size_t len)
+free_chararray(char **array, unsigned long len)
 {
     if (array == nullptr)
     {
@@ -260,7 +257,7 @@ free_chararray(char **array, size_t len)
 //  length a separate word?  That is: is it not part of a longer word?
 //
 bool
-is_separate_word(size_t position, size_t length, const char *text)
+is_separate_word(unsigned long position, unsigned long length, const char *text)
 {
     const char *before = text + step_left(text, position);
     const char *after  = text + position + length;
@@ -289,7 +286,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
     {
         if ISSET (BACKWARDS_SEARCH)
         {
-            size_t last_find, ceiling, far_end, floor, next_rung;
+            unsigned long last_find, ceiling, far_end, floor, next_rung;
             //
             //  The start of the search range,
             //  and the next start.
@@ -382,7 +379,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
 //  Allocate the given amount of memory and return a pointer to it.
 //
 void *
-nmalloc(const size_t howmuch)
+nmalloc(const unsigned long howmuch)
 {
     void *section = malloc(howmuch);
     if (section == nullptr)
@@ -396,7 +393,7 @@ nmalloc(const size_t howmuch)
 //  Reallocate the given section of memory to have the given size.
 //
 void *
-nrealloc(void *section, const size_t howmuch)
+nrealloc(void *section, const unsigned long howmuch)
 {
     section = realloc(section, howmuch);
     if (section == nullptr)
@@ -413,8 +410,8 @@ nrealloc(void *section, const size_t howmuch)
 char *
 mallocstrcpy(char *dest, const char *src)
 {
-    const size_t count = constexpr_strlen(src) + 1;
-    dest               = (char *)nrealloc(dest, count);
+    const unsigned long count = constexpr_strlen(src) + 1;
+    dest                      = (char *)nrealloc(dest, count);
     constexpr_strncpy(dest, src, count);
     return dest;
 }
@@ -424,7 +421,7 @@ mallocstrcpy(char *dest, const char *src)
 //  of the given string, and NUL-terminate the copy.
 //
 char *
-measured_copy(const char *string, const size_t count)
+measured_copy(const char *string, const unsigned long count)
 {
     char *thecopy = (char *)nmalloc(count + 1);
     memcpy(thecopy, string, count);
@@ -435,8 +432,8 @@ measured_copy(const char *string, const size_t count)
 //
 //  Return an allocated copy of the given string.
 //
-s8 *
-copy_of(C_s8 *string)
+char *
+copy_of(const char *string)
 {
     return measured_copy(string, constexpr_strlen(string));
 }
@@ -444,8 +441,8 @@ copy_of(C_s8 *string)
 //
 //  Free the string at dest and return the string at src.
 //
-s8 *
-free_and_assign(s8 *dest, s8 *src)
+char *
+free_and_assign(char *dest, char *src)
 {
     std::free(dest);
     return src;
@@ -456,8 +453,8 @@ free_and_assign(s8 *dest, s8 *src)
 //  chunks ("pages").  Return the column number of the first character
 //  displayed in the edit window when the cursor is at the given column.
 //
-u64
-get_page_start(C_u64 column)
+unsigned long
+get_page_start(const unsigned long column)
 {
     if (column == 0 || column + 2 < editwincols || ISSET(SOFTWRAP))
     {
@@ -477,7 +474,7 @@ get_page_start(C_u64 column)
 //  Return the placewewant associated with current_x,
 //  i.e. the zero-based column position of the cursor.
 //
-u64
+unsigned long
 xplustabs()
 {
     return wideness(openfile->current->data, openfile->current_x);
@@ -487,21 +484,21 @@ xplustabs()
 //  Return the index in text of the character that (when displayed) will
 //  not overshoot the given column.
 //
-u64
-actual_x(C_s8 *text, u64 column)
+unsigned long
+actual_x(const char *text, unsigned long column)
 {
     //
     //  From where we start walking through the text.
     //
-    const s8 *start = text;
+    const char *start = text;
     //
     //  The current accumulated span, in columns.
     //
-    u64 width = 0;
+    unsigned long width = 0;
 
     while (*text != '\0')
     {
-        s32 charlen = advance_over(text, width);
+        int charlen = advance_over(text, width);
         if (width > column)
         {
             break;
@@ -509,25 +506,25 @@ actual_x(C_s8 *text, u64 column)
         text += charlen;
     }
 
-    return static_cast<u64>(text - start);
+    return static_cast<unsigned long>(text - start);
 }
 
 //
 //  A strnlen() with tabs and multicolumn characters factored in:
 //  how many columns wide are the first maxlen bytes of text?
 //
-u64
-wideness(C_s8 *text, u64 maxlen)
+unsigned long
+wideness(const char *text, unsigned long maxlen)
 {
     if (maxlen == 0)
     {
         return 0;
     }
 
-    u64 width = 0;
+    unsigned long width = 0;
     while (*text != '\0')
     {
-        u64 charlen = static_cast<u64>(advance_over(text, width));
+        unsigned long charlen = static_cast<unsigned long>(advance_over(text, width));
         if (maxlen <= charlen)
         {
             break;
@@ -541,10 +538,10 @@ wideness(C_s8 *text, u64 maxlen)
 //
 //  Return the number of columns that the given text occupies.
 //
-u64
-breadth(C_s8 *text)
+unsigned long
+breadth(const char *text)
 {
-    u64 span = 0;
+    unsigned long span = 0;
     while (*text != '\0')
     {
         text += advance_over(text, span);

@@ -1372,7 +1372,7 @@ do_mouse()
         }
         else
         {
-            go_forward_chunks(row_count, openfile->current, leftedge);
+            go_forward_chunks(row_count, &openfile->current, &leftedge);
         }
 
         openfile->current_x = actual_x(openfile->current->data, actual_last_column(leftedge, click_col));

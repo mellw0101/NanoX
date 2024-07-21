@@ -476,7 +476,7 @@ int    update_line(linestruct *line, size_t index);
 int    update_softwrapped_line(linestruct *line);
 bool   line_needs_update(const size_t old_column, const size_t new_column);
 int    go_back_chunks(int nrows, linestruct **line, size_t *leftedge);
-int    go_forward_chunks(int nrows, linestruct *&line, size_t &leftedge);
+int    go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge);
 bool   less_than_a_screenful(size_t was_lineno, size_t was_leftedge);
 void   edit_scroll(bool direction);
 size_t get_softwrap_breakpoint(const char *linedata, size_t leftedge, bool &kickoff, bool &end_of_line);
