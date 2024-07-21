@@ -52,19 +52,16 @@ do_tab()
     }
     else if ISSET (TABS_TO_SPACES)
     {
-        s8 *spaces = static_cast<s8 *>(nmalloc(tabsize + 1));
-        u64 length = tabsize - (xplustabs() % tabsize);
-
+        char         *spaces = (char *)nmalloc(tabsize + 1);
+        unsigned long length = tabsize - (xplustabs() % tabsize);
         memset(spaces, ' ', length);
         spaces[length] = '\0';
-
         inject(spaces, length);
-
         free(spaces);
     }
     else
     {
-        inject(const_cast<s8 *>(TAB_STR) /* (s8 *)"\t" */, 1);
+        inject((char *)"\t", 1);
     }
 }
 
@@ -72,11 +69,11 @@ do_tab()
 //  Add an indent to the given line.
 //
 void
-indent_a_line(linestruct *line, s8 *indentation)
+indent_a_line(linestruct *line, char *indentation)
 {
-    u64 length     = strlen(line->data);
-    u64 indent_len = strlen(indentation);
-
+    unsigned long length, indent_len;
+    length     = strlen(line->data);
+    indent_len = strlen(indentation);
     //
     //  If the requested indentation is empty, don't change the line.
     //
@@ -84,16 +81,13 @@ indent_a_line(linestruct *line, s8 *indentation)
     {
         return;
     }
-
     //
     //  Add the fabricated indentation to the beginning of the line.
     //
-    line->data = static_cast<s8 *>(nrealloc(line->data, length + indent_len + 1));
+    line->data = (char *)nrealloc(line->data, length + indent_len + 1);
     memmove(line->data + indent_len, line->data, length + 1);
     memcpy(line->data, indentation, indent_len);
-
     openfile->totsize += indent_len;
-
     //
     //  Compensate for the change in the current line.
     //
@@ -117,14 +111,11 @@ void
 do_indent()
 {
     linestruct *top, *bot, *line;
-
-    s8 *indentation;
-
+    char       *indentation;
     //
     //  Use either all the marked lines or just the current line.
     //
-    get_range(top, bot);
-
+    get_range(&top, &bot);
     //
     //  Skip any leading empty lines.
     //
@@ -303,12 +294,10 @@ void
 do_unindent()
 {
     linestruct *top, *bot, *line;
-
     //
     //  Use either all the marked lines or just the current line.
     //
-    get_range(top, bot);
-
+    get_range(&top, &bot);
     //
     //  Skip any leading lines that cannot be unindented.
     //
@@ -316,7 +305,6 @@ do_unindent()
     {
         top = top->next;
     }
-
     //
     //  If none of the lines can be unindented, there is nothing to do.
     //
@@ -324,27 +312,21 @@ do_unindent()
     {
         return;
     }
-
     add_undo(UNINDENT, nullptr);
-
     //
     //  Go through each of the lines, removing their leading indent where
     //  possible, and saving the removed whitespace in the undo item.
     //
     for (line = top; line != bot->next; line = line->next)
     {
-        u64 indent_len  = length_of_white(line->data);
-        s8 *indentation = measured_copy(line->data, indent_len);
-
+        unsigned long indent_len  = length_of_white(line->data);
+        char         *indentation = measured_copy(line->data, indent_len);
         unindent_a_line(line, indent_len);
         update_multiline_undo(line->lineno, indentation);
-
         free(indentation);
     }
-
     set_modified();
     ensure_firstcolumn_is_aligned();
-
     refresh_needed = true;
     shift_held     = true;
 }
@@ -357,7 +339,6 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 {
     groupstruct *group = u->grouping;
     linestruct  *line  = line_from_number(group->top_line);
-
     //
     //  When redoing, reposition the cursor and let the indenter adjust it.
     //
@@ -365,14 +346,12 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
     {
         goto_line_posx(u->head_lineno, u->head_x);
     }
-
     //
     //  For each line in the group, add or remove the individual indent.
     //
     while (line != nullptr && line->lineno <= group->bottom_line)
     {
-        s8 *blanks = group->indentations[line->lineno - group->top_line];
-
+        char *blanks = group->indentations[line->lineno - group->top_line];
         if (undoing ^ add_indent)
         {
             indent_a_line(line, blanks);
@@ -381,7 +360,6 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
         {
             unindent_a_line(line, strlen(blanks));
         }
-
         line = line->next;
     }
 
@@ -499,11 +477,10 @@ comment_line(undo_type action, linestruct *line, const s8 *comment_seq)
 void
 do_comment()
 {
-    const s8   *comment_seq = GENERAL_COMMENT_CHARACTER;
+    const char *comment_seq = GENERAL_COMMENT_CHARACTER;
     undo_type   action      = UNCOMMENT;
     linestruct *top, *bot, *line;
     bool        empty, all_empty = true;
-
     if (openfile->syntax)
     {
         comment_seq = openfile->syntax->comment;
@@ -514,12 +491,10 @@ do_comment()
         statusline(AHEM, _("Commenting is not supported for this file type"));
         return;
     }
-
     //
     //  Determine which lines to work on.
     //
-    get_range(top, bot);
-
+    get_range(&top, &bot);
     //
     //  If only the magic line is selected, don't do anything.
     //
@@ -528,7 +503,6 @@ do_comment()
         statusline(AHEM, _("Cannot comment past end of file"));
         return;
     }
-
     //
     //  Figure out whether to comment or uncomment the selected line or lines.
     //
@@ -2624,47 +2598,43 @@ justify_text(bool whole_buffer)
     //
     //  Whether the end of a marked region is before the end of its line.
     //
-    bool before_eol = FALSE;
+    bool before_eol = false;
     //
     //  The leading part (quoting + indentation) of the first line
     //  of the paragraph where the marked region begins.
     //
-    char *primary_lead = NULL;
+    char *primary_lead = nullptr;
     //
     //  The length (in bytes) of the above first-line leading part.
     //
-    size_t primary_len = 0;
+    unsigned long primary_len = 0;
     //
     //  The leading part for lines after the first one.
     //
-    char *secondary_lead = NULL;
+    char *secondary_lead = nullptr;
     //
     //  The length of that later lead.
     //
-    size_t secondary_len = 0;
+    unsigned long secondary_len = 0;
     //
     //  The line to return to after a full justification.
     //
-    ssize_t was_the_linenumber = openfile->current->lineno;
-    bool    marked_backward    = (openfile->mark && !mark_is_before_cursor());
-
+    long was_the_linenumber = openfile->current->lineno;
+    bool marked_backward    = (openfile->mark && !mark_is_before_cursor());
     //
     //  TRANSLATORS: This one goes with Undid/Redid messages.
     //
     add_undo(COUPLE_BEGIN, N_("justification"));
-
     //
     //  If the mark is on, do as Pico: treat all marked text as one paragraph.
     //
     if (openfile->mark)
     {
-        size_t      quot_len, fore_len, other_quot_len, other_white_len;
-        linestruct *sampleline;
-
-        get_region(startline, start_x, endline, end_x);
-
+        unsigned long quot_len, fore_len, other_quot_len, other_white_len;
+        linestruct   *sampleline;
+        get_region(&startline, &start_x, &endline, &end_x);
         //
-        // When the marked region is empty, do nothing. */
+        // When the marked region is empty, do nothing.
         //
         if (startline == endline && start_x == end_x)
         {
@@ -2672,10 +2642,8 @@ justify_text(bool whole_buffer)
             discard_until(openfile->undotop->next);
             return;
         }
-
         quot_len = quote_length(startline->data);
         fore_len = quot_len + indent_length(startline->data + quot_len);
-
         //
         //  When the region starts IN the lead, take the whole lead.
         //
@@ -2683,7 +2651,6 @@ justify_text(bool whole_buffer)
         {
             start_x = 0;
         }
-
         //
         //  Recede over blanks before the region.  This effectively snips
         //  trailing blanks from what will become the preceding paragraph.
@@ -2692,10 +2659,8 @@ justify_text(bool whole_buffer)
         {
             start_x = step_left(startline->data, start_x);
         }
-
         quot_len = quote_length(endline->data);
         fore_len = quot_len + indent_length(endline->data + quot_len);
-
         //
         //  When the region ends IN the lead, take the whole lead.
         //
@@ -2703,7 +2668,6 @@ justify_text(bool whole_buffer)
         {
             end_x = fore_len;
         }
-
         //
         //  When not at the left edge, advance over blanks after the region.
         //
@@ -2711,9 +2675,7 @@ justify_text(bool whole_buffer)
         {
             end_x = step_right(endline->data, end_x);
         }
-
         sampleline = startline;
-
         //
         //  Find the first line of the paragraph in which the region starts.
         //
@@ -2721,7 +2683,6 @@ justify_text(bool whole_buffer)
         {
             sampleline = sampleline->prev;
         }
-
         //
         //  Ignore lines that contain no text.
         //
@@ -2729,19 +2690,16 @@ justify_text(bool whole_buffer)
         {
             sampleline = sampleline->next;
         }
-
         //
         //  Store the leading part that is to be used for the new paragraph.
         //
         quot_len     = quote_length(sampleline->data);
         primary_len  = quot_len + indent_length(sampleline->data + quot_len);
         primary_lead = measured_copy(sampleline->data, primary_len);
-
         if (sampleline->next && startline != endline)
         {
             sampleline = sampleline->next;
         }
-
         //
         //  Copy the leading part that is to be used for the new paragraph after
         //  its first line (if any): the quoting of the first line, plus the
@@ -2749,14 +2707,11 @@ justify_text(bool whole_buffer)
         //
         other_quot_len  = quote_length(sampleline->data);
         other_white_len = indent_length(sampleline->data + other_quot_len);
-
-        secondary_len  = quot_len + other_white_len;
-        secondary_lead = RE_CAST(char *, nmalloc(secondary_len + 1));
-
+        secondary_len   = quot_len + other_white_len;
+        secondary_lead  = (char *)nmalloc(secondary_len + 1);
         strncpy(secondary_lead, startline->data, quot_len);
         strncpy(secondary_lead + quot_len, sampleline->data + other_quot_len, other_white_len);
         secondary_lead[secondary_len] = '\0';
-
         //
         //  Include preceding and succeeding leads into the marked region.
         //
@@ -2764,9 +2719,7 @@ justify_text(bool whole_buffer)
         openfile->mark_x    = start_x;
         openfile->current   = endline;
         openfile->current_x = end_x;
-
-        linecount = endline->lineno - startline->lineno + (end_x > 0 ? 1 : 0);
-
+        linecount           = endline->lineno - startline->lineno + (end_x > 0 ? 1 : 0);
         //
         //  Remember whether the end of the region was before the end-of-line.
         //
@@ -2786,7 +2739,6 @@ justify_text(bool whole_buffer)
         {
             do_para_begin(&openfile->current);
         }
-
         //
         //  Find the first line of the paragraph(s) to be justified.  If the
         //  search fails, there is nothing to justify, and we will be on the
@@ -2803,13 +2755,11 @@ justify_text(bool whole_buffer)
         {
             openfile->current_x = 0;
         }
-
         //
         //  Set the starting point of the paragraph.
         //
         startline = openfile->current;
         start_x   = 0;
-
         //
         //  Set the end point of the paragraph.
         //
@@ -2820,12 +2770,11 @@ justify_text(bool whole_buffer)
         else
         {
             endline = startline;
-            for (u64 count = linecount; count > 1; count--)
+            for (unsigned long count = linecount; count > 1; count--)
             {
                 endline = endline->next;
             }
         }
-
         //
         //  When possible, step one line further; otherwise, to line's end.
         //
@@ -2839,23 +2788,19 @@ justify_text(bool whole_buffer)
             end_x = strlen(endline->data);
         }
     }
-
     add_undo(CUT, nullptr);
-
     //
     //  Do the equivalent of a marked cut into an empty cutbuffer.
     //
     cutbuffer = nullptr;
     extract_segment(startline, start_x, endline, end_x);
     update_undo(CUT);
-
     if (openfile->mark)
     {
-        linestruct *line     = cutbuffer;
-        size_t      quot_len = quote_length(line->data);
-        size_t      fore_len = quot_len + indent_length(line->data + quot_len);
-        size_t      text_len = strlen(line->data) - fore_len;
-
+        linestruct   *line     = cutbuffer;
+        unsigned long quot_len = quote_length(line->data);
+        unsigned long fore_len = quot_len + indent_length(line->data + quot_len);
+        unsigned long text_len = strlen(line->data) - fore_len;
         //
         //  If the extracted region begins with any leading part, trim it.
         //
@@ -2863,7 +2808,6 @@ justify_text(bool whole_buffer)
         {
             memmove(line->data, line->data + fore_len, text_len + 1);
         }
-
         //
         //  Then copy back in the leading part that it should have.
         //
@@ -2873,14 +2817,12 @@ justify_text(bool whole_buffer)
             memmove(line->data + primary_len, line->data, text_len + 1);
             strncpy(line->data, primary_lead, primary_len);
         }
-
         //
         //  Now justify the extracted region.
         //
         concat_paragraph(cutbuffer, linecount);
         squeeze(cutbuffer, primary_len);
         rewrap_paragraph(&line, secondary_lead, secondary_len);
-
         //
         //  If the marked region started in the middle of a line,
         //  insert a newline before the new paragraph.
@@ -2892,7 +2834,6 @@ justify_text(bool whole_buffer)
             cutbuffer->prev->next = cutbuffer;
             cutbuffer             = cutbuffer->prev;
         }
-
         //
         //  If the marked region ended in the middle of a line,
         //  insert a newline after the new paragraph.
@@ -2902,10 +2843,8 @@ justify_text(bool whole_buffer)
             line->next       = make_new_node(line);
             line->next->data = copy_of(primary_lead);
         }
-
         free(secondary_lead);
         free(primary_lead);
-
         //
         //  Keep as much of the marked region onscreen as possible.
         //
@@ -2917,12 +2856,10 @@ justify_text(bool whole_buffer)
         //  Prepare to justify the text we just put in the cutbuffer.
         //
         jusline = cutbuffer;
-
         //
         //  Justify the current paragraph.
         //
         justify_paragraph(&jusline, linecount);
-
         //
         //  When justifying the entire buffer, find and justify all paragraphs.
         //
@@ -2931,7 +2868,6 @@ justify_text(bool whole_buffer)
             while (find_paragraph(jusline, linecount))
             {
                 justify_paragraph(&jusline, linecount);
-
                 if (jusline->next == nullptr)
                 {
                     break;
@@ -2939,7 +2875,6 @@ justify_text(bool whole_buffer)
             }
         }
     }
-
     //
     //  Wipe an anchor on the first paragraph if it was only inherited.
     //
@@ -2947,34 +2882,29 @@ justify_text(bool whole_buffer)
     {
         openfile->current->has_anchor = false;
     }
-
     add_undo(PASTE, nullptr);
     //
     //  Do the equivalent of a paste of the justified text.
     //
     ingraft_buffer(cutbuffer);
     update_undo(PASTE);
-
     //
     //  After justifying a backward-marked text, swap mark and cursor.
     //
     if (marked_backward)
     {
-        linestruct *bottom   = openfile->current;
-        u64         bottom_x = openfile->current_x;
-
-        openfile->current   = openfile->mark;
-        openfile->current_x = openfile->mark_x;
-        openfile->mark      = bottom;
-        openfile->mark_x    = bottom_x;
+        linestruct   *bottom   = openfile->current;
+        unsigned long bottom_x = openfile->current_x;
+        openfile->current      = openfile->mark;
+        openfile->current_x    = openfile->mark_x;
+        openfile->mark         = bottom;
+        openfile->mark_x       = bottom_x;
     }
     else if (whole_buffer && !openfile->mark)
     {
         goto_line_posx(was_the_linenumber, 0);
     }
-
     add_undo(COUPLE_END, N_("justification"));
-
     //
     //  Report on the status bar what we justified.
     //
@@ -2990,20 +2920,17 @@ justify_text(bool whole_buffer)
     {
         statusbar(_("Justified paragraph"));
     }
-
     //
     //  We're done justifying.  Restore the cutbuffer.
     //
     cutbuffer = was_cutbuffer;
-
     //
     //  Set the desired screen column (always zero, except at EOF).
     //
     openfile->placewewant = xplustabs();
-
     set_modified();
-    refresh_needed = TRUE;
-    shift_held     = TRUE;
+    refresh_needed = true;
+    shift_held     = true;
 }
 
 //
@@ -3304,20 +3231,17 @@ treat(s8 *tempfile_name, s8 *theprogram, bool spelling)
 //  Return 'false' if the user cancels.
 //
 bool
-fix_spello(const s8 *word)
+fix_spello(const char *word)
 {
-    linestruct *was_edittop = openfile->edittop;
-    linestruct *was_current = openfile->current;
-
-    u64  was_firstcolumn = openfile->firstcolumn;
-    u64  was_x           = openfile->current_x;
-    bool proceed         = false;
-    s32  result;
-    bool right_side_up = (openfile->mark && mark_is_before_cursor());
-
-    linestruct *top, *bot;
-    u64         top_x, bot_x;
-
+    linestruct   *was_edittop     = openfile->edittop;
+    linestruct   *was_current     = openfile->current;
+    unsigned long was_firstcolumn = openfile->firstcolumn;
+    unsigned long was_x           = openfile->current_x;
+    bool          proceed         = false;
+    int           result;
+    bool          right_side_up = (openfile->mark && mark_is_before_cursor());
+    linestruct   *top, *bot;
+    unsigned long top_x, bot_x;
     //
     //  If the mark is on,
     //  start at the beginning of the marked region.
@@ -3328,7 +3252,7 @@ fix_spello(const s8 *word)
         //  If the region is marked normally, swap the end points, so that
         //  (current, current_x) (where searching starts) is at the top.
         //
-        get_region(top, top_x, bot, bot_x);
+        get_region(&top, &top_x, &bot, &bot_x);
         if (right_side_up)
         {
             openfile->current   = top;
@@ -3346,12 +3270,10 @@ fix_spello(const s8 *word)
         openfile->current   = openfile->filetop;
         openfile->current_x = 0;
     }
-
     //
     //  Find the first whole occurrence of word.
     //
     result = findnextstr(word, true, INREGION, nullptr, false, nullptr, 0);
-
     //
     //  If the word isn't found,
     //  alert the user; if it is, allow correction.
@@ -3370,30 +3292,24 @@ fix_spello(const s8 *word)
         light_to_col           = light_from_col + breadth(word);
         linestruct *saved_mark = openfile->mark;
         openfile->mark         = nullptr;
-
         edit_refresh();
         put_cursor_at_end_of_answer();
-
         //
         //  Let the user supply a correctly spelled alternative.
         //
-        proceed = (do_prompt(MSPELL, word, nullptr, edit_refresh,
-                             //
-                             //  TRANSLATORS : This is a prompt.
-                             //
-                             _("Edit a replacement")) != -1);
-
-        spotlighted = false;
-
+        proceed        = (do_prompt(MSPELL, word, nullptr, edit_refresh,
+                                    //
+                                    //  TRANSLATORS : This is a prompt.
+                                    //
+                                    _("Edit a replacement")) != -1);
+        spotlighted    = false;
         openfile->mark = saved_mark;
-
         //
         //  If a replacement was given, go through all occurrences.
         //
         if (proceed && strcmp(word, answer) != 0)
         {
             do_replace_loop(word, true, was_current, &was_x);
-
             //
             //  TRANSLATORS : Shown after fixing misspellings in one word.
             //
@@ -3401,7 +3317,6 @@ fix_spello(const s8 *word)
             napms(400);
         }
     }
-
     if (openfile->mark)
     {
         //
@@ -3428,13 +3343,11 @@ fix_spello(const s8 *word)
         openfile->current   = was_current;
         openfile->current_x = was_x;
     }
-
     //
     //  Restore the viewport to where it was.
     //
     openfile->edittop     = was_edittop;
     openfile->firstcolumn = was_firstcolumn;
-
     return proceed;
 }
 
@@ -3445,19 +3358,16 @@ fix_spello(const s8 *word)
 //  correction.
 //
 void
-do_int_speller(const s8 *const tempfile_name)
+do_int_speller(const char *const tempfile_name)
 {
     PROFILE_FUNCTION;
-
-    s8   *misspellings, *pointer, *oneword;
-    s64   pipesize;
-    u64   buffersize, bytesread, totalread;
-    s32   spell_fd[2], sort_fd[2], uniq_fd[2], tempfile_fd = -1;
-    pid_t pid_spell, pid_sort, pid_uniq;
-    s32   spell_status, sort_status, uniq_status;
-
-    u64 stash[sizeof(flags) / sizeof(flags[0])];
-
+    char         *misspellings, *pointer, *oneword;
+    long          pipesize;
+    unsigned long buffersize, bytesread, totalread;
+    int           spell_fd[2], sort_fd[2], uniq_fd[2], tempfile_fd = -1;
+    pid_t         pid_spell, pid_sort, pid_uniq;
+    int           spell_status, sort_status, uniq_status;
+    unsigned long stash[sizeof(flags) / sizeof(flags[0])];
     //
     //  Create all three pipes up front.
     //
@@ -3466,9 +3376,7 @@ do_int_speller(const s8 *const tempfile_name)
         statusline(ALERT, _("Could not create pipe: %s"), ERRNO_C_STR);
         return;
     }
-
     statusbar(_("Invoking spell checker..."));
-
     //
     //  Fork a process to run spell in.
     //
@@ -3481,7 +3389,6 @@ do_int_speller(const s8 *const tempfile_name)
         {
             exit(6);
         }
-
         //
         //  Connect standard input to the temporary file.
         //
@@ -3489,7 +3396,6 @@ do_int_speller(const s8 *const tempfile_name)
         {
             exit(7);
         }
-
         //
         //  Connect standard output to the write end of the first pipe.
         //
@@ -3497,28 +3403,23 @@ do_int_speller(const s8 *const tempfile_name)
         {
             exit(8);
         }
-
         close(tempfile_fd);
         close(spell_fd[0]);
         close(spell_fd[1]);
-
         //
         //  Try to run 'hunspell'; if that fails, fall back to 'spell'.
         //
         execlp("hunspell", "hunspell", "-l", nullptr);
         execlp("spell", "spell", nullptr);
-
         //
         //  Indicate failure when neither speller was found.
         //
         exit(9);
     }
-
     //
     //  Parent: close the unused write end of the first pipe.
     //
     close(spell_fd[1]);
-
     //
     //  Fork a process to run sort in.
     //
@@ -3531,7 +3432,6 @@ do_int_speller(const s8 *const tempfile_name)
         {
             exit(7);
         }
-
         //
         //  Connect standard output to the write end of the second pipe.
         //
@@ -3539,23 +3439,18 @@ do_int_speller(const s8 *const tempfile_name)
         {
             exit(8);
         }
-
         close(spell_fd[0]);
         close(sort_fd[0]);
         close(sort_fd[1]);
-
         //
         //  Now run the sort program.
         //  Use -f to mix upper and lower case.
         //
         execlp("sort", "sort", "-f", nullptr);
-
         exit(9);
     }
-
     close(spell_fd[0]);
     close(sort_fd[1]);
-
     //
     //  Fork a process to run uniq in.
     //
@@ -3565,24 +3460,18 @@ do_int_speller(const s8 *const tempfile_name)
         {
             exit(7);
         }
-
         if (dup2(uniq_fd[1], STDOUT_FILENO) < 0)
         {
             exit(8);
         }
-
         close(sort_fd[0]);
         close(uniq_fd[0]);
         close(uniq_fd[1]);
-
         execlp("uniq", "uniq", nullptr);
-
         exit(9);
     }
-
     close(sort_fd[0]);
     close(uniq_fd[1]);
-
     //
     //  When some child process was not forked successfully...
     //
@@ -3592,68 +3481,55 @@ do_int_speller(const s8 *const tempfile_name)
         close(uniq_fd[0]);
         return;
     }
-
     //
     //  Get the system pipe buffer size.
     //
     pipesize = fpathconf(uniq_fd[0], _PC_PIPE_BUF);
-
     if (pipesize < 1)
     {
         statusline(ALERT, _("Could not get size of pipe buffer"));
         close(uniq_fd[0]);
         return;
     }
-
     //
     //  Leave curses mode so that error messages go to the original screen.
     //
     endwin();
-
     //
     //  Block SIGWINCHes while reading misspelled words from the third pipe.
     //
     block_sigwinch(true);
-
     totalread    = 0;
     buffersize   = pipesize + 1;
-    misspellings = static_cast<s8 *>(nmalloc(buffersize));
+    misspellings = (char *)nmalloc(buffersize);
     pointer      = misspellings;
-
     while ((bytesread = read(uniq_fd[0], pointer, pipesize)) > 0)
     {
         totalread += bytesread;
         buffersize += pipesize;
-        misspellings = static_cast<s8 *>(nrealloc(misspellings, buffersize));
+        misspellings = (char *)nrealloc(misspellings, buffersize);
         pointer      = misspellings + totalread;
     }
-
     *pointer = '\0';
     close(uniq_fd[0]);
-
     block_sigwinch(false);
-
     //
     //  Re-enter curses mode.
     //
     terminal_init();
     doupdate();
-
     //
     //  Save the settings of the global flags.
     //
     memcpy(stash, flags, sizeof(flags));
-
     //
     //  Do any replacements case-sensitively, forward, and without regexes.
     //
     SET(CASE_SENSITIVE);
     UNSET(BACKWARDS_SEARCH);
     UNSET(USE_REGEXP);
-
     pointer = misspellings;
     oneword = misspellings;
-
     //
     //  Process each of the misspelled words.
     //
@@ -3674,7 +3550,6 @@ do_int_speller(const s8 *const tempfile_name)
         }
         pointer++;
     }
-
     //
     //  Special case: the last word doesn't end with '\r' or '\n'.
     //
@@ -3682,22 +3557,18 @@ do_int_speller(const s8 *const tempfile_name)
     {
         fix_spello(oneword);
     }
-
     free(misspellings);
     refresh_needed = true;
-
     //
     //  Restore the settings of the global flags.
     //
     memcpy(flags, stash, sizeof(flags));
-
     //
     //  Process the end of the three processes.
     //
     waitpid(pid_spell, &spell_status, 0);
     waitpid(pid_sort, &sort_status, 0);
     waitpid(pid_uniq, &uniq_status, 0);
-
     if (WIFEXITED(uniq_status) == 0 || WEXITSTATUS(uniq_status))
     {
         statusline(ALERT, _("Error invoking \"uniq\""));
@@ -4266,13 +4137,11 @@ count_lines_words_and_characters()
      * region or the whole buffer.  Then compute the number of characters. */
     if (openfile->mark)
     {
-        get_region(topline, top_x, botline, bot_x);
-
+        get_region(&topline, &top_x, &botline, &bot_x);
         if (topline != botline)
         {
             chars = number_of_characters_in(topline->next, botline) + 1;
         }
-
         chars += mbstrlen(topline->data + top_x) - mbstrlen(botline->data + bot_x);
     }
     else

@@ -4418,7 +4418,7 @@ draw_row(C_s32 row, C_s8 *converted, linestruct *line, C_u64 from_col)
         //
         s32 paintlen = -1;
 
-        get_region(top, top_x, bot, bot_x);
+        get_region(&top, &top_x, &bot, &bot_x);
 
         if (top->lineno < line->lineno || top_x < from_x)
         {

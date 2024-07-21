@@ -8,17 +8,16 @@
 #include <pwd.h>
 #include <unistd.h>
 
-//
-//  Return the user's home directory.  We use $HOME, and if that fails,
-//  we fall back on the home directory of the effective user ID.
-//
+/**
+    Return the user's home directory.  We use $HOME, and if that fails,
+    we fall back on the home directory of the effective user ID.
+ */
 void
 get_homedir()
 {
     if (homedir == nullptr)
     {
-        const s8 *homenv = getenv("HOME");
-
+        const char *homenv = getenv("HOME");
         //
         //  When HOME isn't set,or when we're root,
         //  get the home directory from the password file instead.
@@ -31,7 +30,6 @@ get_homedir()
                 homenv = userage->pw_dir;
             }
         }
-
         //
         //  Only set homedir if some home directory could be determined,
         //  otherwise keep homedir nullpre.
@@ -46,11 +44,10 @@ get_homedir()
 //
 //  Return the filename part of the given path.
 //
-C_s8 *
-tail(C_s8 *path)
+const char *
+tail(const char *path)
 {
-    C_s8 *slash = constexpr_strrchr(path, '/');
-
+    const char *slash = constexpr_strrchr(path, '/');
     if (slash == nullptr)
     {
         return path;
@@ -64,23 +61,21 @@ tail(C_s8 *path)
 //
 //  Return a copy of the two given strings, welded together.
 //
-s8 *
-concatenate(C_s8 *path, C_s8 *name)
+char *
+concatenate(const char *path, const char *name)
 {
-    u64 pathlen = constexpr_strlen(path);
-    s8 *joined  = static_cast<s8 *>(nmalloc(pathlen + constexpr_strlen(name) + 1));
-
+    size_t pathlen = constexpr_strlen(path);
+    char  *joined  = (char *)nmalloc(pathlen + constexpr_strlen(name) + 1);
     constexpr_strcpy(joined, path);
     constexpr_strcpy(joined + pathlen, name);
-
     return joined;
 }
 
 //
 //  Return the number of digits that the given integer n takes up.
 //
-s32
-digits(C_s64 n)
+int
+digits(const long n)
 {
     if (n < 100000)
     {
@@ -161,19 +156,16 @@ digits(C_s64 n)
     }
 */
 bool
-parseNum(STRING_VIEW string, s64 &result)
+parseNum(STRING_VIEW string, long &result)
 {
-    s8 *end;
-    errno = 0;
-
-    s64 value = constexpr_strtoll(&string[0], &end, 10);
-
+    char *end;
+    errno      = 0;
+    long value = constexpr_strtoll(&string[0], &end, 10);
     if (errno == ERANGE || *end != '\0' || string[0] == '\0')
     {
         return false;
     }
-
-    result = static_cast<s64>(value);
+    result = value;
     return true;
 }
 
@@ -183,40 +175,30 @@ parseNum(STRING_VIEW string, s64 &result)
 //  Return FALSE on a failed parsing, and TRUE otherwise.
 //
 bool
-parse_line_column(C_s8 *string, s64 *line, s64 *column)
+parse_line_column(const char *string, long *line, long *column)
 {
     PROFILE_FUNCTION;
-
-    C_s8 *comma;
-    s8   *firstpart;
-    bool  retval;
-
+    const char *comma;
+    char       *firstpart;
+    bool        retval;
     while (*string == ' ')
     {
         string++;
     }
-
     comma = constexpr_strpbrk(string, ",.:");
-
     if (comma == nullptr)
     {
         return parseNum(string, *line);
     }
-
     retval = parseNum(comma + 1, *column);
-
     if (comma == string)
     {
         return retval;
     }
-
     firstpart                 = copy_of(string);
     firstpart[comma - string] = '\0';
-
-    retval = parseNum(firstpart, *line) && retval;
-
-    std::free(firstpart);
-
+    retval                    = parseNum(firstpart, *line) && retval;
+    free(firstpart);
     return retval;
 }
 
@@ -224,7 +206,7 @@ parse_line_column(C_s8 *string, s64 *line, s64 *column)
 //  In the given string, recode each embedded NUL as a newline.
 //
 void
-recode_NUL_to_LF(s8 *string, u64 length)
+recode_NUL_to_LF(char *string, size_t length)
 {
     while (length > 0)
     {
@@ -241,11 +223,10 @@ recode_NUL_to_LF(s8 *string, u64 length)
 //  In the given string, recode each embedded newline as a NUL,
 //  and return the number of bytes in the string.
 //
-u64
-recode_LF_to_NUL(s8 *string)
+size_t
+recode_LF_to_NUL(char *string)
 {
-    s8 *beginning = string;
-
+    char *beginning = string;
     while (*string != '\0')
     {
         if (*string == '\n')
@@ -254,27 +235,24 @@ recode_LF_to_NUL(s8 *string)
         }
         string++;
     }
-
-    return static_cast<u64>(string - beginning);
+    return (size_t)(string - beginning);
 }
 
 //
 //  Free the memory of the given array, which should contain len elements.
 //
 void
-free_chararray(s8 **array, u64 len)
+free_chararray(char **array, size_t len)
 {
     if (array == nullptr)
     {
         return;
     }
-
     while (len > 0)
     {
-        std::free(array[--len]);
+        free(array[--len]);
     }
-
-    std::free(array);
+    free(array);
 }
 
 //
@@ -282,11 +260,10 @@ free_chararray(s8 **array, u64 len)
 //  length a separate word?  That is: is it not part of a longer word?
 //
 bool
-is_separate_word(u64 position, u64 length, C_s8 *text)
+is_separate_word(size_t position, size_t length, const char *text)
 {
-    C_s8 *before = text + step_left(text, position);
-    C_s8 *after  = text + position + length;
-
+    const char *before = text + step_left(text, position);
+    const char *after  = text + position + length;
     //
     //  If the word starts at the beginning of the line OR the character before
     //  the word isn't a letter, and if the word ends at the end of the line OR
@@ -304,32 +281,27 @@ is_separate_word(u64 position, u64 length, C_s8 *text)
 //  than start.  If we are doing a regexp search, and we find a match, we fill
 //  in the global variable regmatches with at most 9 subexpression matches.
 //
-C_s8 *
-strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
+const char *
+strstrwrapper(const char *const haystack, const char *const needle, const char *const start)
 {
     PROFILE_FUNCTION;
-
     if ISSET (USE_REGEXP)
     {
         if ISSET (BACKWARDS_SEARCH)
         {
-            u64 last_find, ceiling, far_end;
-
+            size_t last_find, ceiling, far_end, floor, next_rung;
             //
             //  The start of the search range,
             //  and the next start.
             //
-            u64 floor = 0, next_rung = 0;
-
+            floor = 0, next_rung = 0;
             if (regexec(&search_regexp, haystack, 1, regmatches, 0))
             {
                 return nullptr;
             }
-
             far_end   = constexpr_strlen(haystack);
             ceiling   = start - haystack;
             last_find = regmatches[0].rm_so;
-
             //
             //  A result beyond the search range also means: no match.
             //
@@ -337,7 +309,6 @@ strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
             {
                 return nullptr;
             }
-
             //
             //  Move the start-of-range forward until there is no more match;
             //  then the last match found is the first match backwards.
@@ -346,7 +317,6 @@ strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
             {
                 floor     = next_rung;
                 last_find = regmatches[0].rm_so;
-
                 //
                 //  If this is the last possible match, don't try to advance.
                 //
@@ -362,7 +332,6 @@ strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
                     break;
                 }
             }
-
             //
             //  Find the last match again, to get possible submatches.
             //
@@ -372,10 +341,8 @@ strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
             {
                 return nullptr;
             }
-
             return haystack + regmatches[0].rm_so;
         }
-
         //
         //  Do a forward regex search from the starting point.
         //
@@ -390,7 +357,6 @@ strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
             return haystack + regmatches[0].rm_so;
         }
     }
-
     if ISSET (CASE_SENSITIVE)
     {
         if ISSET (BACKWARDS_SEARCH)
@@ -402,7 +368,6 @@ strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
             return constexpr_strstr(start, needle);
         }
     }
-
     if ISSET (BACKWARDS_SEARCH)
     {
         return mbrevstrcasestr(haystack, needle, start);
@@ -417,9 +382,9 @@ strstrwrapper(C_s8 *const haystack, C_s8 *const needle, C_s8 *const start)
 //  Allocate the given amount of memory and return a pointer to it.
 //
 void *
-nmalloc(C_u64 howmuch)
+nmalloc(const size_t howmuch)
 {
-    void *section = std::malloc(howmuch);
+    void *section = malloc(howmuch);
     if (section == nullptr)
     {
         die(_(ERROR_MSG_OUT_OF_MEMORY));
@@ -431,15 +396,13 @@ nmalloc(C_u64 howmuch)
 //  Reallocate the given section of memory to have the given size.
 //
 void *
-nrealloc(void *section, C_u64 howmuch)
+nrealloc(void *section, const size_t howmuch)
 {
-    section = std::realloc(section, howmuch);
-
+    section = realloc(section, howmuch);
     if (section == nullptr)
     {
         die(_(ERROR_MSG_OUT_OF_MEMORY));
     }
-
     return section;
 }
 
@@ -447,14 +410,12 @@ nrealloc(void *section, C_u64 howmuch)
 //  Return an appropriately reallocated dest string holding a copy of src.
 //  Usage: "dest = mallocstrcpy(dest, src);".
 //
-s8 *
-mallocstrcpy(s8 *dest, C_s8 *src)
+char *
+mallocstrcpy(char *dest, const char *src)
 {
-    C_u64 count = constexpr_strlen(src) + 1;
-
-    dest = static_cast<s8 *>(nrealloc(dest, count));
+    const size_t count = constexpr_strlen(src) + 1;
+    dest               = (char *)nrealloc(dest, count);
     constexpr_strncpy(dest, src, count);
-
     return dest;
 }
 
@@ -462,13 +423,12 @@ mallocstrcpy(s8 *dest, C_s8 *src)
 //  Return an allocated copy of the first count characters
 //  of the given string, and NUL-terminate the copy.
 //
-s8 *
-measured_copy(C_s8 *string, C_u64 count)
+char *
+measured_copy(const char *string, const size_t count)
 {
-    s8 *thecopy = static_cast<s8 *>(nmalloc(count + 1));
-    std::memcpy(thecopy, string, count);
+    char *thecopy = (char *)nmalloc(count + 1);
+    memcpy(thecopy, string, count);
     thecopy[count] = '\0';
-
     return thecopy;
 }
 
@@ -639,21 +599,21 @@ mark_is_before_cursor()
 //  of the marked region.
 //
 void
-get_region(linestruct *&top, u64 &top_x, linestruct *&bot, u64 &bot_x)
+get_region(linestruct **top, unsigned long *top_x, linestruct **bot, unsigned long *bot_x)
 {
     if (mark_is_before_cursor())
     {
-        top   = openfile->mark;
-        top_x = openfile->mark_x;
-        bot   = openfile->current;
-        bot_x = openfile->current_x;
+        *top   = openfile->mark;
+        *top_x = openfile->mark_x;
+        *bot   = openfile->current;
+        *bot_x = openfile->current_x;
     }
     else
     {
-        bot   = openfile->mark;
-        bot_x = openfile->mark_x;
-        top   = openfile->current;
-        top_x = openfile->current_x;
+        *bot   = openfile->mark;
+        *bot_x = openfile->mark_x;
+        *top   = openfile->current;
+        *top_x = openfile->current_x;
     }
 }
 
@@ -663,20 +623,20 @@ get_region(linestruct *&top, u64 &top_x, linestruct *&bot, u64 &bot_x)
 //  at the start of the last line of the region, exclude that line.
 //
 void
-get_range(linestruct *&top, linestruct *&bot)
+get_range(linestruct **top, linestruct **bot)
 {
     if (!openfile->mark)
     {
-        top = openfile->current;
-        bot = openfile->current;
+        *top = openfile->current;
+        *bot = openfile->current;
     }
     else
     {
-        u64 top_x, bot_x;
-        get_region(top, top_x, bot, bot_x);
+        unsigned long top_x, bot_x;
+        get_region(top, &top_x, bot, &bot_x);
         if (bot_x == 0 && bot != top && !also_the_last)
         {
-            bot = (bot)->prev;
+            *bot = (*bot)->prev;
         }
         else
         {
@@ -689,10 +649,9 @@ get_range(linestruct *&top, linestruct *&bot)
 //  Return a pointer to the line that has the given line number.
 //
 linestruct *
-line_from_number(s64 number)
+line_from_number(long number)
 {
     linestruct *line = openfile->current;
-
     if (line->lineno > number)
     {
         while (line->lineno != number)
@@ -707,19 +666,17 @@ line_from_number(s64 number)
             line = line->next;
         }
     }
-
     return line;
 }
 
 //
 //  Count the number of characters from begin to end, and return it.
 //
-u64
+unsigned long
 number_of_characters_in(const linestruct *begin, const linestruct *end)
 {
     const linestruct *line;
-    u64               count = 0;
-
+    unsigned long     count = 0;
     //
     //  Sum the number of characters (plus a newline) in each line.
     //
@@ -727,7 +684,6 @@ number_of_characters_in(const linestruct *begin, const linestruct *end)
     {
         count += mbstrlen(line->data) + 1;
     }
-
     //
     //  Do not count the final newline.
     //

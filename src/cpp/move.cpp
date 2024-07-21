@@ -33,83 +33,73 @@ to_last_line()
 //  Determine the actual current chunk and the target column.
 //
 void
-get_edge_and_target(size_t &leftedge, size_t &target_column)
+get_edge_and_target(size_t *leftedge, size_t *target_column)
 {
     if ISSET (SOFTWRAP)
     {
-        size_t shim   = editwincols * (1 + (tabsize / editwincols));
-        leftedge      = leftedge_for(xplustabs(), openfile->current);
-        target_column = (openfile->placewewant + shim - leftedge) % editwincols;
+        size_t shim    = editwincols * (1 + (tabsize / editwincols));
+        *leftedge      = leftedge_for(xplustabs(), openfile->current);
+        *target_column = (openfile->placewewant + shim - *leftedge) % editwincols;
     }
     else
     {
-        leftedge      = 0;
-        target_column = openfile->placewewant;
+        *leftedge      = 0;
+        *target_column = openfile->placewewant;
     }
 }
 
-//
-//  Return the index in line->data that corresponds to the given column on the
-//  chunk that starts at the given leftedge.  If the target column has landed
-//  on a tab, prevent the cursor from falling back a row when moving forward,
-//  or from skipping a row when moving backward, by incrementing the index.
-//
-u64
-proper_x(linestruct *line, u64 &leftedge, bool forward, u64 column, bool *shifted)
+/* Return the index in line->data that corresponds to the given column on the
+ * chunk that starts at the given leftedge.  If the target column has landed
+ * on a tab, prevent the cursor from falling back a row when moving forward,
+ * or from skipping a row when moving backward, by incrementing the index. */
+size_t
+proper_x(linestruct *line, size_t *leftedge, bool forward, size_t column, bool *shifted)
 {
-    u64 index = actual_x(line->data, column);
-
+    size_t index = actual_x(line->data, column);
     if (ISSET(SOFTWRAP) && line->data[index] == '\t' &&
-        ((forward && wideness(line->data, index) < leftedge) ||
-         (!forward && column / tabsize == (leftedge - 1) / tabsize &&
-          column / tabsize < (leftedge + editwincols - 1) / tabsize)))
+        ((forward && wideness(line->data, index) < *leftedge) ||
+         (!forward && column / tabsize == (*leftedge - 1) / tabsize &&
+          column / tabsize < (*leftedge + editwincols - 1) / tabsize)))
     {
         index++;
-
         if (shifted != nullptr)
         {
             *shifted = true;
         }
     }
-
     if ISSET (SOFTWRAP)
     {
-        leftedge = leftedge_for(wideness(line->data, index), line);
+        *leftedge = leftedge_for(wideness(line->data, index), line);
     }
-
     return index;
 }
 
-//
-//  Adjust the values for current_x and placewewant in case we have landed in
-//  the middle of a tab that crosses a row boundary.
-//
+/* Adjust the values for current_x and placewewant in case we have landed in
+ * the middle of a tab that crosses a row boundary. */
 void
-set_proper_index_and_pww(u64 &leftedge, u64 target, bool forward)
+set_proper_index_and_pww(size_t *leftedge, size_t target, bool forward)
 {
-    size_t was_edge = leftedge;
-    bool   shifted  = false;
+    unsigned long was_edge = *leftedge;
+    bool          shifted  = false;
     openfile->current_x =
-        proper_x(openfile->current, leftedge, forward, actual_last_column(leftedge, target), &shifted);
+        proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
+    //
     //  If the index was incremented, try going to the target column.
-    if (shifted || leftedge < was_edge)
+    //
+    if (shifted || *leftedge < was_edge)
     {
         openfile->current_x =
-            proper_x(openfile->current, leftedge, forward, actual_last_column(leftedge, target), &shifted);
+            proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
     }
-
-    openfile->placewewant = leftedge + target;
+    openfile->placewewant = *leftedge + target;
 }
 
-//
-//  Move up almost one screenful.
-//
+/* Move up almost one screenful. */
 void
 do_page_up()
 {
-    s32 mustmove = (editwinrows < 3) ? 1 : editwinrows - 2;
-    u64 leftedge, target_column;
-
+    int    mustmove = (editwinrows < 3) ? 1 : editwinrows - 2;
+    size_t leftedge, target_column;
     //
     //  If we're not in smooth scrolling mode, put the cursor at the
     //  beginning of the top line of the edit window, as Pico does.
@@ -123,9 +113,8 @@ do_page_up()
     }
     else
     {
-        get_edge_and_target(leftedge, target_column);
+        get_edge_and_target(&leftedge, &target_column);
     }
-
     //
     //  Move up the required number of lines or chunks.
     //  If we can't, we're at the top of the file,
@@ -136,9 +125,7 @@ do_page_up()
         to_first_line();
         return;
     }
-
-    set_proper_index_and_pww(leftedge, target_column, false);
-
+    set_proper_index_and_pww(&leftedge, target_column, false);
     //
     //  Move the viewport so that the cursor stays immobile, if possible.
     //
@@ -150,15 +137,12 @@ do_page_up()
 //  Move down almost one screenful.
 //
 void
-do_page_down()
+do_page_down(void)
 {
-    s32 mustmove = (editwinrows < 3) ? 1 : editwinrows - 2;
-    u64 leftedge, target_column;
-
-    //
-    //  If we're not in smooth scrolling mode, put the cursor at the
-    //  beginning of the top line of the edit window, as Pico does.
-    //
+    int           mustmove = (editwinrows < 3) ? 1 : editwinrows - 2;
+    unsigned long leftedge, target_column;
+    /* If we're not in smooth scrolling mode, put the cursor at the
+     * beginning of the top line of the edit window, as Pico does. */
     if ISSET (JUMPY_SCROLLING)
     {
         openfile->current    = openfile->edittop;
@@ -168,24 +152,17 @@ do_page_down()
     }
     else
     {
-        get_edge_and_target(leftedge, target_column);
+        get_edge_and_target(&leftedge, &target_column);
     }
-
-    //
-    //  Move down the required number of lines or chunks.  If we can't, we're
-    //  at the bottom of the file, so put the cursor there and get out.
-    //
+    /* Move down the required number of lines or chunks.  If we can't, we're
+     * at the bottom of the file, so put the cursor there and get out. */
     if (go_forward_chunks(mustmove, openfile->current, leftedge) > 0)
     {
         to_last_line();
         return;
     }
-
-    set_proper_index_and_pww(leftedge, target_column, true);
-
-    //
-    //  Move the viewport so that the cursor stays immobile, if possible.
-    //
+    set_proper_index_and_pww(&leftedge, target_column, true);
+    /* Move the viewport so that the cursor stays immobile, if possible. */
     adjust_viewport(STATIONARY);
     refresh_needed = true;
 }
@@ -196,33 +173,24 @@ do_page_down()
 void
 to_top_row()
 {
-    u64 leftedge = 0;
-    u64 offset   = 0;
-
-    get_edge_and_target(leftedge, offset);
-
+    size_t leftedge, offset;
+    get_edge_and_target(&leftedge, &offset);
     openfile->current = openfile->edittop;
-
-    leftedge = openfile->firstcolumn;
-
-    set_proper_index_and_pww(leftedge, offset, false);
-
+    leftedge          = openfile->firstcolumn;
+    set_proper_index_and_pww(&leftedge, offset, false);
     place_the_cursor();
 }
 
-//
-//  Place the cursor on the last row in the viewport, when possible.
-//
+/* Place the cursor on the last row in the viewport, when possible. */
 void
 to_bottom_row()
 {
-    size_t leftedge = 0;
-    size_t offset   = 0;
-    get_edge_and_target(leftedge, offset);
+    size_t leftedge, offset;
+    get_edge_and_target(&leftedge, &offset);
     openfile->current = openfile->edittop;
     leftedge          = openfile->firstcolumn;
     go_forward_chunks(editwinrows - 1, openfile->current, leftedge);
-    set_proper_index_and_pww(leftedge, offset, true);
+    set_proper_index_and_pww(&leftedge, offset, true);
     place_the_cursor();
 }
 
@@ -284,7 +252,6 @@ do_para_end(linestruct **line)
     {
         *line = (*line)->next;
     }
-
     while ((*line)->next != nullptr && inpar((*line)->next) && !begpar((*line)->next, 0))
     {
         *line = (*line)->next;
@@ -298,10 +265,8 @@ void
 to_para_begin()
 {
     linestruct *was_current = openfile->current;
-
     do_para_begin(&openfile->current);
     openfile->current_x = 0;
-
     edit_redraw(was_current, CENTERING);
 }
 
@@ -388,9 +353,7 @@ to_prev_block()
     edit_redraw(was_current, CENTERING);
 }
 
-//
-//  Move to the next block of text.
-//
+/* Move to the next block of text. */
 void
 to_next_block()
 {
@@ -398,15 +361,14 @@ to_next_block()
     linestruct *was_current = openfile->current;
     bool        is_white    = white_string(openfile->current->data);
     bool        seen_white  = is_white;
-    //
-    //  Skip forward until first nonblank line after some blank line(s).
-    //
+    /* Skip forward until first nonblank line after some blank line(s). */
     while (openfile->current->next != nullptr && (!seen_white || is_white))
     {
         openfile->current = openfile->current->next;
+        /* This is experimental and will be improved.
+         * TODO: (to_next_block) - Implement more complex rules. */
         for (cur_indent = 0; openfile->current->data[cur_indent]; cur_indent++)
         {
-            NETLOGGER << "line indent: " << cur_indent << '\n' << NETLOG_ENDL;
             if (openfile->current->data[cur_indent] != '\t')
             {
                 if (was_indent == -1)
@@ -435,31 +397,18 @@ to_next_block()
     recook |= perturbed;
 }
 
-//
-//  Move to the previous word.
-//
-//  TODO : ( do_prev_word ) Make this perfect for c++ code.
-//  Meaning:
-//  - It should stop at all relevant operators. ( it does but it needs to be more consise )
-//
+/* Move to the previous word. */
 void
 do_prev_word()
 {
     PROFILE_FUNCTION;
-
     bool punctuation_as_letters = ISSET(WORD_BOUNDS);
-
-    bool seen_a_word  = false;
-    bool step_forward = false;
-
-    //
-    //  Move backward until we pass over the start of a word.
-    //
+    bool seen_a_word            = false;
+    bool step_forward           = false;
+    /* Move backward until we pass over the start of a word. */
     while (true)
     {
-        //
-        //  If at the head of a line, move to the end of the preceding one.
-        //
+        /* If at the head of a line, move to the end of the preceding one. */
         if (openfile->current_x == 0)
         {
             if (openfile->current->prev == nullptr)
@@ -469,12 +418,8 @@ do_prev_word()
             openfile->current   = openfile->current->prev;
             openfile->current_x = constexpr_strlen(openfile->current->data);
         }
-
-        //
-        //  Step back one character.
-        //
+        /* Step back one character. */
         openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-
         if (is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters))
         {
             seen_a_word = true;
@@ -504,12 +449,9 @@ do_prev_word()
             break;
         }
     }
-
     if (step_forward)
     {
-        //
-        //  Move one character forward again to sit on the start of the word.
-        //
+        /* Move one character forward again to sit on the start of the word. */
         openfile->current_x = step_right(openfile->current->data, openfile->current_x);
     }
 }
@@ -532,21 +474,14 @@ bool
 do_next_word(bool after_ends)
 {
     PROFILE_FUNCTION;
-
     bool punctuation_as_letters = ISSET(WORD_BOUNDS);
     bool started_on_word        = is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters);
     bool seen_space             = !started_on_word;
     bool seen_word              = started_on_word;
-
-    //
-    //  Move forward until we reach the start of a word.
-    //
+    /* Move forward until we reach the start of a word. */
     while (true)
     {
-        //
-        //  If at the end of a line,
-        //  move to the beginning of the next one.
-        //
+        /* If at the end of a line, move to the beginning of the next one. */
         if (openfile->current->data[openfile->current_x] == '\0')
         {
             //
@@ -558,8 +493,7 @@ do_next_word(bool after_ends)
             }
             openfile->current   = openfile->current->next;
             openfile->current_x = 0;
-
-            seen_space = true;
+            seen_space          = true;
         }
         else
         {
@@ -568,7 +502,6 @@ do_next_word(bool after_ends)
             //
             openfile->current_x = step_right(openfile->current->data, openfile->current_x);
         }
-
         if (after_ends)
         {
             //
@@ -626,65 +559,49 @@ do_next_word(bool after_ends)
             }
         }
     }
-
     return started_on_word;
 }
 
-//
-//  Move to the previous word in the file, and update the screen afterwards.
-//
+/* Move to the previous word in the file, and update the screen afterwards. */
 void
-to_prev_word()
+to_prev_word(void)
 {
     linestruct *was_current = openfile->current;
-
     do_prev_word();
-
     edit_redraw(was_current, FLOWING);
 }
 
-//
-//  Move to the next word in the file.
-//  If the AFTER_ENDS flag is set, stop at word ends instead of beginnings.
-//  Update the screen afterwards.
-//
+/* Move to the next word in the file.
+ * If the AFTER_ENDS flag is set, stop at word ends instead of beginnings.
+ * Update the screen afterwards. */
 void
-to_next_word()
+to_next_word(void)
 {
     linestruct *was_current = openfile->current;
-
     do_next_word(ISSET(AFTER_ENDS));
-
     edit_redraw(was_current, FLOWING);
 }
 
-//
-//  Move to the beginning of the current line (or softwrapped chunk).
-//  When enabled, do a smart home.  When softwrapping, go the beginning
-//  of the full line when already at the start of a chunk.
-//
+/* Move to the beginning of the current line (or softwrapped chunk).
+ * When enabled, do a smart home.  When softwrapping, go the beginning
+ * of the full line when already at the start of a chunk. */
 void
-do_home()
+do_home(void)
 {
     linestruct *was_current = openfile->current;
-
-    bool moved_off_chunk = true;
-    bool moved           = false;
-
-    u64 was_column = xplustabs();
-    u64 leftedge   = 0;
-    u64 left_x     = 0;
-
+    bool        moved_off_chunk, moved;
+    size_t      was_column, leftedge, left_x;
+    moved_off_chunk = true;
+    moved           = false;
+    was_column      = xplustabs();
     if ISSET (SOFTWRAP)
     {
         leftedge = leftedge_for(was_column, openfile->current);
-        left_x   = proper_x(openfile->current, leftedge, false, leftedge, nullptr);
+        left_x   = proper_x(openfile->current, &leftedge, false, leftedge, nullptr);
     }
-
     if ISSET (SMART_HOME)
     {
-        u64 indent_x = indent_length(openfile->current->data);
-
+        size_t indent_x = indent_length(openfile->current->data);
         if (openfile->current->data[indent_x] != '\0')
         {
             //
@@ -695,18 +612,15 @@ do_home()
             if (openfile->current_x == indent_x)
             {
                 openfile->current_x = 0;
-
-                moved = true;
+                moved               = true;
             }
             else if (left_x <= indent_x)
             {
                 openfile->current_x = indent_x;
-
-                moved = true;
+                moved               = true;
             }
         }
     }
-
     if (!moved && ISSET(SOFTWRAP))
     {
         //
@@ -728,16 +642,12 @@ do_home()
     {
         openfile->current_x = 0;
     }
-
     if (moved_off_chunk)
     {
         openfile->placewewant = xplustabs();
     }
-
-    //
-    //  If we changed chunk, we might be offscreen.
-    //  Otherwise, update current if the mark is on or we changed 'page'.
-    //
+    /* If we changed chunk, we might be offscreen.
+     * Otherwise, update current if the mark is on or we changed 'page'. */
     if (ISSET(SOFTWRAP) && moved_off_chunk)
     {
         edit_redraw(was_current, FLOWING);
@@ -756,38 +666,28 @@ do_home()
 void
 do_end()
 {
-    linestruct *was_current = openfile->current;
-
-    u64 was_column = xplustabs();
-    u64 line_len   = constexpr_strlen(openfile->current->data);
-
-    bool moved_off_chunk = true;
-
+    linestruct *was_current     = openfile->current;
+    size_t      was_column      = xplustabs();
+    size_t      line_len        = constexpr_strlen(openfile->current->data);
+    bool        moved_off_chunk = true;
     if ISSET (SOFTWRAP)
     {
-        bool kickoff    = true;
-        bool last_chunk = false;
-        u64  leftedge   = leftedge_for(was_column, openfile->current);
-        u64  rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk);
-        u64  right_x;
-
-        //
-        //  If we're on the last chunk, we're already at the end of the line.
-        //  Otherwise, we're one column past the end of the line.  Shifting
-        //  backwards one column might put us in the middle of a multi-column
-        //  character, but actual_x() will fix that.
-        //
+        bool   kickoff    = true;
+        bool   last_chunk = false;
+        size_t leftedge   = leftedge_for(was_column, openfile->current);
+        size_t rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk);
+        size_t right_x;
+        /* If we're on the last chunk, we're already at the end of the line.
+         * Otherwise, we're one column past the end of the line.  Shifting
+         * backwards one column might put us in the middle of a multi-column
+         * character, but actual_x() will fix that. */
         if (!last_chunk)
         {
             rightedge--;
         }
-
         right_x = actual_x(openfile->current->data, rightedge);
-
-        //
-        //  If already at the right edge of the screen, move fully to
-        //  the end of the line.  Otherwise, move to the right edge.
-        //
+        /* If already at the right edge of the screen, move fully to
+         * the end of the line.  Otherwise, move to the right edge. */
         if (openfile->current_x == right_x)
         {
             openfile->current_x = line_len;
@@ -803,16 +703,12 @@ do_end()
     {
         openfile->current_x = line_len;
     }
-
     if (moved_off_chunk)
     {
         openfile->placewewant = xplustabs();
     }
-
-    //
-    //  If we changed chunk, we might be offscreen.  Otherwise,
-    //  update current if the mark is on or we changed "page".
-    //
+    /* If we changed chunk, we might be offscreen.  Otherwise,
+     * update current if the mark is on or we changed "page". */
     if (ISSET(SOFTWRAP) && moved_off_chunk)
     {
         edit_redraw(was_current, FLOWING);
@@ -829,13 +725,9 @@ do_end()
 void
 do_up()
 {
-    linestruct *was_current = openfile->current;
-
-    u64 leftedge      = 0;
-    u64 target_column = 0;
-
-    get_edge_and_target(leftedge, target_column);
-
+    linestruct   *was_current = openfile->current;
+    unsigned long leftedge, target_column;
+    get_edge_and_target(&leftedge, &target_column);
     //
     //  If we can't move up one line or chunk, we're at top of file.
     //
@@ -843,9 +735,7 @@ do_up()
     {
         return;
     }
-
-    set_proper_index_and_pww(leftedge, target_column, false);
-
+    set_proper_index_and_pww(&leftedge, target_column, false);
     if (openfile->cursor_row == 0 && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP)))
     {
         edit_scroll(BACKWARD);
@@ -854,7 +744,6 @@ do_up()
     {
         edit_redraw(was_current, FLOWING);
     }
-
     //
     //  <Up> should not change placewewant, so restore it.
     //
@@ -867,13 +756,9 @@ do_up()
 void
 do_down()
 {
-    linestruct *was_current = openfile->current;
-
-    u64 leftedge      = 0;
-    u64 target_column = 0;
-
-    get_edge_and_target(leftedge, target_column);
-
+    linestruct   *was_current = openfile->current;
+    unsigned long leftedge, target_column;
+    get_edge_and_target(&leftedge, &target_column);
     //
     //  If we can't move down one line or chunk, we're at bottom of file.
     //
@@ -881,9 +766,7 @@ do_down()
     {
         return;
     }
-
-    set_proper_index_and_pww(leftedge, target_column, true);
-
+    set_proper_index_and_pww(&leftedge, target_column, true);
     if (openfile->cursor_row == editwinrows - 1 && !ISSET(JUMPY_SCROLLING) &&
         (tabsize < editwincols || !ISSET(SOFTWRAP)))
     {
@@ -893,7 +776,6 @@ do_down()
     {
         edit_redraw(was_current, FLOWING);
     }
-
     //
     //  <Down> should not change placewewant, so restore it.
     //
@@ -913,12 +795,10 @@ do_scroll_up()
     {
         return;
     }
-
     if (openfile->cursor_row == editwinrows - 1)
     {
         do_up();
     }
-
     if (editwinrows > 1)
     {
         edit_scroll(BACKWARD);
@@ -935,7 +815,6 @@ do_scroll_down()
     {
         do_down();
     }
-
     if (editwinrows > 1 && (openfile->edittop->next != nullptr ||
                             (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
                                                  chunk_for(openfile->firstcolumn, openfile->edittop)))))
@@ -951,11 +830,9 @@ void
 do_left()
 {
     linestruct *was_current = openfile->current;
-
     if (openfile->current_x > 0)
     {
         openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-
         while (openfile->current_x > 0 && is_zerowidth(openfile->current->data + openfile->current_x))
         {
             openfile->current_x = step_left(openfile->current->data, openfile->current_x);
@@ -966,7 +843,6 @@ do_left()
         openfile->current   = openfile->current->prev;
         openfile->current_x = constexpr_strlen(openfile->current->data);
     }
-
     edit_redraw(was_current, FLOWING);
 }
 
@@ -977,11 +853,9 @@ void
 do_right()
 {
     linestruct *was_current = openfile->current;
-
     if (openfile->current->data[openfile->current_x] != '\0')
     {
         openfile->current_x = step_right(openfile->current->data, openfile->current_x);
-
         while (openfile->current->data[openfile->current_x] != '\0' &&
                is_zerowidth(openfile->current->data + openfile->current_x))
         {
@@ -993,6 +867,5 @@ do_right()
         openfile->current   = openfile->current->next;
         openfile->current_x = 0;
     }
-
     edit_redraw(was_current, FLOWING);
 }

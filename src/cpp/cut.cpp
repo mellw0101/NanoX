@@ -606,11 +606,8 @@ cut_marked_region()
 {
     linestruct *top, *bot;
     u64         top_x, bot_x;
-
-    get_region(top, top_x, bot, bot_x);
-
+    get_region(&top, &top_x, &bot, &bot_x);
     extract_segment(top, top_x, bot, bot_x);
-
     openfile->placewewant = xplustabs();
 }
 
@@ -792,20 +789,16 @@ copy_marked_region()
     linestruct *topline, *botline, *afterline;
     char       *was_datastart, saved_byte;
     size_t      top_x, bot_x;
-
-    get_region(topline, top_x, botline, bot_x);
-
+    get_region(&topline, &top_x, &botline, &bot_x);
     openfile->last_action = OTHER;
-    keep_cutbuffer        = FALSE;
-    openfile->mark        = NULL;
-    refresh_needed        = TRUE;
-
+    keep_cutbuffer        = false;
+    openfile->mark        = nullptr;
+    refresh_needed        = true;
     if (topline == botline && top_x == bot_x)
     {
         statusbar(_("Copied nothing"));
         return;
     }
-
     /* Make the area that was marked look like a separate buffer. */
     afterline            = botline->next;
     botline->next        = NULL;
@@ -813,9 +806,7 @@ copy_marked_region()
     botline->data[bot_x] = '\0';
     was_datastart        = topline->data;
     topline->data += top_x;
-
     cutbuffer = copy_buffer(topline);
-
     /* Restore the proper state of the buffer. */
     topline->data        = was_datastart;
     botline->data[bot_x] = saved_byte;

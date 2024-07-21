@@ -713,27 +713,23 @@ replace_line(const char *needle)
 ssize_t
 do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, size_t *real_current_x)
 {
-    bool skipone       = ISSET(BACKWARDS_SEARCH);
-    bool replaceall    = false;
-    int  modus         = REPLACING;
-    bool right_side_up = (openfile->mark && mark_is_before_cursor());
-
-    s64 numreplaced = -1;
-    u64 match_len;
-    u64 top_x, bot_x;
-
+    bool        skipone       = ISSET(BACKWARDS_SEARCH);
+    bool        replaceall    = false;
+    int         modus         = REPLACING;
+    bool        right_side_up = (openfile->mark && mark_is_before_cursor());
+    ssize_t     numreplaced   = -1;
+    size_t      match_len;
+    size_t      top_x, bot_x;
     linestruct *was_mark = openfile->mark;
     linestruct *top, *bot;
-
     //
     //  If the mark is on, frame the region, and turn the mark off.
     //
     if (openfile->mark)
     {
-        get_region(top, top_x, bot, bot_x);
+        get_region(&top, &top_x, &bot, &bot_x);
         openfile->mark = nullptr;
         modus          = INREGION;
-
         //
         //  Start either at the top or the bottom of the marked region.
         //
@@ -748,14 +744,11 @@ do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real
             openfile->current_x = bot_x;
         }
     }
-
-    came_full_circle = FALSE;
-
-    while (TRUE)
+    came_full_circle = false;
+    while (true)
     {
         int choice = NO;
         int result = findnextstr(needle, whole_word_only, modus, &match_len, skipone, real_current, *real_current_x);
-
         /* If nothing more was found, or the user aborted, stop looping. */
         if (result < 1)
         {
@@ -765,8 +758,6 @@ do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real
             }
             break;
         }
-
-#ifndef NANO_TINY
         /* An occurrence outside of the marked region means we're done. */
         if (was_mark && (openfile->current->lineno > bot->lineno || openfile->current->lineno < top->lineno ||
                          (openfile->current == bot && openfile->current_x + match_len > bot_x) ||
@@ -774,52 +765,37 @@ do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real
         {
             break;
         }
-#endif
-
         /* Indicate that we found the search string. */
         if (numreplaced == -1)
         {
             numreplaced = 0;
         }
-
         if (!replaceall)
         {
-            spotlighted    = TRUE;
+            spotlighted    = true;
             light_from_col = xplustabs();
             light_to_col   = wideness(openfile->current->data, openfile->current_x + match_len);
-
             /* Refresh the edit window, scrolling it if necessary. */
             edit_refresh();
-
             /* TRANSLATORS: This is a prompt. */
-            choice = ask_user(YESORALLORNO, _("Replace this instance?"));
-
-            spotlighted = FALSE;
-
+            choice      = ask_user(YESORALLORNO, _("Replace this instance?"));
+            spotlighted = false;
             if (choice == CANCEL)
             {
                 break;
             }
-
             replaceall = (choice == ALL);
-
             /* When "No" or moving backwards, the search routine should
              * first move one character further before continuing. */
             skipone = (choice == 0 || ISSET(BACKWARDS_SEARCH));
         }
-
         if (choice == YES || replaceall)
         {
             size_t length_change;
             char  *altered;
-
-            altered = replace_line(needle);
-
+            altered       = replace_line(needle);
             length_change = strlen(altered) - strlen(openfile->current->data);
-
-#ifndef NANO_TINY
-            add_undo(REPLACE, NULL);
-
+            add_undo(REPLACE, nullptr);
             /* If the mark was on and it was located after the cursor,
              * then adjust its x position for any text length changes. */
             if (was_mark && !right_side_up)
@@ -837,11 +813,9 @@ do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real
                     bot_x = openfile->mark_x;
                 }
             }
-
             /* If the mark was not on or it was before the cursor, then
              * adjust the cursor's x position for any text length changes. */
             if (!was_mark || right_side_up)
-#endif
             {
                 if (openfile->current == real_current && openfile->current_x < *real_current_x)
                 {
@@ -850,49 +824,36 @@ do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real
                         *real_current_x = openfile->current_x + match_len;
                     }
                     *real_current_x += length_change;
-#ifndef NANO_TINY
                     bot_x = *real_current_x;
-#endif
                 }
             }
-
             /* Don't find the same zero-length or BOL match again. */
             if (match_len == 0 || (*needle == '^' && ISSET(USE_REGEXP)))
             {
-                skipone = TRUE;
+                skipone = true;
             }
-
             /* When moving forward, put the cursor just after the replacement
              * text, so that searching will continue there. */
             if (!ISSET(BACKWARDS_SEARCH))
             {
                 openfile->current_x += match_len + length_change;
             }
-
             /* Update the file size, and put the changed line into place. */
             openfile->totsize += mbstrlen(altered) - mbstrlen(openfile->current->data);
             free(openfile->current->data);
             openfile->current->data = altered;
-
-#ifdef ENABLE_COLOR
             check_the_multis(openfile->current);
-            refresh_needed = FALSE;
-#endif
+            refresh_needed = false;
             set_modified();
-            as_an_at = TRUE;
+            as_an_at = true;
             numreplaced++;
         }
     }
-
     if (numreplaced == -1)
     {
         not_found_msg(needle);
     }
-
-#ifndef NANO_TINY
     openfile->mark = was_mark;
-#endif
-
     return numreplaced;
 }
 
@@ -907,7 +868,7 @@ do_replace(void)
     else
     {
         UNSET(BACKWARDS_SEARCH);
-        search_init(TRUE, FALSE);
+        search_init(true, false);
     }
 }
 
@@ -921,23 +882,17 @@ ask_for_and_do_replacements(void)
     size_t      begin_x         = openfile->current_x;
     char       *replacee        = copy_of(last_search);
     ssize_t     numreplaced;
-
-    int response = do_prompt(MREPLACEWITH, "", &replace_history,
-                             /* TRANSLATORS: This is a prompt. */
-                             edit_refresh, _("Replace with"));
-
+    int         response = do_prompt(MREPLACEWITH, "", &replace_history,
+                                     /* TRANSLATORS: This is a prompt. */
+                                     edit_refresh, _("Replace with"));
     /* Set the string to be searched, as it might have changed at the prompt. */
     free(last_search);
     last_search = replacee;
-
-#ifdef ENABLE_HISTORIES
     /* When not "", add the replace string to the replace history list. */
     if (response == 0)
     {
         update_history(&replace_history, answer, PRUNE_DUPLICATE);
     }
-#endif
-
     /* When cancelled, or when a function was run, get out. */
     if (response == -1)
     {
@@ -948,35 +903,28 @@ ask_for_and_do_replacements(void)
     {
         return;
     }
-
-    numreplaced = do_replace_loop(last_search, FALSE, beginline, &begin_x);
-
+    numreplaced = do_replace_loop(last_search, false, beginline, &begin_x);
     /* Restore where we were. */
     openfile->edittop     = was_edittop;
     openfile->firstcolumn = was_firstcolumn;
     openfile->current     = beginline;
     openfile->current_x   = begin_x;
-
-    refresh_needed = TRUE;
-
+    refresh_needed        = true;
     if (numreplaced >= 0)
     {
         statusline(REMARK, P_("Replaced %zd occurrence", "Replaced %zd occurrences", numreplaced), numreplaced);
     }
 }
 
-//
-//  Go to the specified line and x position.
-//
+/* Go to the specified line and x position. */
 void
-goto_line_posx(s64 linenumber, u64 pos_x)
+goto_line_posx(ssize_t linenumber, size_t pos_x)
 {
     if (linenumber > openfile->edittop->lineno + editwinrows ||
         (ISSET(SOFTWRAP) && linenumber > openfile->current->lineno))
     {
         recook |= perturbed;
     }
-
     if (linenumber < openfile->filebot->lineno)
     {
         openfile->current = line_from_number(linenumber);
@@ -985,11 +933,9 @@ goto_line_posx(s64 linenumber, u64 pos_x)
     {
         openfile->current = openfile->filebot;
     }
-
     openfile->current_x   = pos_x;
     openfile->placewewant = xplustabs();
-
-    refresh_needed = true;
+    refresh_needed        = true;
 }
 
 //
@@ -998,42 +944,31 @@ goto_line_posx(s64 linenumber, u64 pos_x)
 //  Note that both the line and column number should be one-based.
 //
 void
-goto_line_and_column(s64 line, s64 column, bool retain_answer, bool interactive)
+goto_line_and_column(ssize_t line, ssize_t column, bool retain_answer, bool interactive)
 {
     if (interactive)
     {
-        //
-        //  Ask for the line and column.
-        //  TODO : This is a prompt.
-        //
-        s32 response = do_prompt(
+        /* Ask for the line and column.  TRANSLATOR: This is a prompt. */
+        int response = do_prompt(
             MGOTOLINE, retain_answer ? answer : "", nullptr, edit_refresh, _("Enter line number, column number"));
-
-        //
-        //  If the user cancelled or gave a blank answer, get out.
-        //
+        /* If the user cancelled or gave a blank answer, get out. */
         if (response < 0)
         {
             statusbar(_("Cancelled"));
             return;
         }
-
         if (func_from_key(response) == flip_goto)
         {
             UNSET(BACKWARDS_SEARCH);
-            //
-            //  Switch to searching but retain what the user typed so far.
-            //
+            /* Switch to searching but retain what the user typed so far. */
             search_init(false, true);
             return;
         }
-
         /* If a function was executed, we're done here. */
         if (response > 0)
         {
             return;
         }
-
         /* Try to extract one or two numbers from the user's response. */
         if (!parse_line_column(answer, &line, &column))
         {
@@ -1053,7 +988,6 @@ goto_line_and_column(s64 line, s64 column, bool retain_answer, bool interactive)
             column = openfile->placewewant + 1;
         }
     }
-
     /* Take a negative line number to mean: from the end of the file. */
     if (line < 0)
     {
@@ -1063,20 +997,15 @@ goto_line_and_column(s64 line, s64 column, bool retain_answer, bool interactive)
     {
         line = 1;
     }
-
-#ifdef ENABLE_COLOR
     if (line > openfile->edittop->lineno + editwinrows || (ISSET(SOFTWRAP) && line > openfile->current->lineno))
     {
         recook |= perturbed;
     }
-#endif
-
     /* Iterate to the requested line. */
     for (openfile->current = openfile->filetop; line > 1 && openfile->current != openfile->filebot; line--)
     {
         openfile->current = openfile->current->next;
     }
-
     /* Take a negative column number to mean: from the end of the line. */
     if (column < 0)
     {
@@ -1086,18 +1015,13 @@ goto_line_and_column(s64 line, s64 column, bool retain_answer, bool interactive)
     {
         column = 1;
     }
-
     /* Set the x position that corresponds to the requested column. */
     openfile->current_x   = actual_x(openfile->current->data, column - 1);
     openfile->placewewant = column - 1;
-
-#ifndef NANO_TINY
     if (ISSET(SOFTWRAP) && openfile->placewewant / editwincols > breadth(openfile->current->data) / editwincols)
     {
         openfile->placewewant = breadth(openfile->current->data);
     }
-#endif
-
     /* When a line number was manually given, center the target line. */
     if (interactive)
     {
@@ -1107,19 +1031,16 @@ goto_line_and_column(s64 line, s64 column, bool retain_answer, bool interactive)
     else
     {
         int rows_from_tail;
-
-#ifndef NANO_TINY
         if (ISSET(SOFTWRAP))
         {
             linestruct *currentline = openfile->current;
             size_t      leftedge    = leftedge_for(xplustabs(), openfile->current);
-
-            rows_from_tail = (editwinrows / 2) - go_forward_chunks(editwinrows / 2, currentline, leftedge);
+            rows_from_tail          = (editwinrows / 2) - go_forward_chunks(editwinrows / 2, currentline, leftedge);
         }
         else
-#endif
+        {
             rows_from_tail = openfile->filebot->lineno - openfile->current->lineno;
-
+        }
         /* If the target line is close to the tail of the file, put the last
          * line or chunk on the bottom line of the screen; otherwise, just
          * center the target line. */
@@ -1135,9 +1056,7 @@ goto_line_and_column(s64 line, s64 column, bool retain_answer, bool interactive)
     }
 }
 
-//
-//  Go to the specified line and column, asking for them beforehand.
-//
+/* Go to the specified line and column, asking for them beforehand. */
 void
 do_gotolinecolumn()
 {
@@ -1150,16 +1069,13 @@ do_gotolinecolumn()
 //  Return TRUE when one of the brackets was found, and FALSE otherwise.
 //
 bool
-find_a_bracket(bool reverse, C_s8 *bracket_pair)
+find_a_bracket(bool reverse, const char *bracket_pair)
 {
     linestruct *line = openfile->current;
-    C_s8       *pointer, *found;
-
+    const char *pointer, *found;
     if (reverse)
     {
-        //
-        //  First step away from the current bracket.
-        //
+        /* First step away from the current bracket. */
         if (openfile->current_x == 0)
         {
             line = line->prev;
@@ -1173,10 +1089,7 @@ find_a_bracket(bool reverse, C_s8 *bracket_pair)
         {
             pointer = line->data + step_left(line->data, openfile->current_x);
         }
-
-        //
-        //  Now seek for any of the two brackets we are interested in.
-        //
+        /* Now seek for any of the two brackets we are interested in. */
         while (!(found = mbrevstrpbrk(line->data, bracket_pair, pointer)))
         {
             line = line->prev;
@@ -1190,7 +1103,6 @@ find_a_bracket(bool reverse, C_s8 *bracket_pair)
     else
     {
         pointer = line->data + step_right(line->data, openfile->current_x);
-
         while (!(found = mbstrpbrk(pointer, bracket_pair)))
         {
             line = line->next;
@@ -1201,13 +1113,9 @@ find_a_bracket(bool reverse, C_s8 *bracket_pair)
             pointer = line->data;
         }
     }
-
-    //
-    //  Set the current position to the found bracket.
-    //
+    /* Set the current position to the found bracket. */
     openfile->current   = line;
     openfile->current_x = found - line->data;
-
     return true;
 }
 
@@ -1223,62 +1131,55 @@ do_find_bracket()
     //  The current cursor position,
     //  in case we don't find a complement.
     //
-    u64 was_current_x = openfile->current_x;
+    size_t was_current_x = openfile->current_x;
     //
     //  The location in matchbrackets of the bracket under the cursor.
     //
-    const s8 *ch;
+    const char *ch;
     //
     //  The length of ch in bytes.
     //
-    s32 ch_len;
+    int ch_len;
     //
     //  The location in matchbrackets of the complementing bracket.
     //
-    const s8 *wanted_ch;
+    const char *wanted_ch;
     //
     //  The length of wanted_ch in bytes.
     //
-    s32 wanted_ch_len;
+    int wanted_ch_len;
     //
     //  The pair of characters in ch and wanted_ch.
     //
-    s8 bracket_pair[MAXCHARLEN * 2 + 1];
+    char bracket_pair[MAXCHARLEN * 2 + 1];
     //
     //  The index in matchbrackets where the closing brackets start.
     //
-    u64 halfway = 0;
+    size_t halfway = 0;
     //
     //  Half the number of characters in matchbrackets.
     //
-    u64 charcount = mbstrlen(matchbrackets) / 2;
+    size_t charcount = mbstrlen(matchbrackets) / 2;
     //
     //  The initial bracket count.
     //
-    u64 balance = 1;
-    //
-    //  The direction we search.
-    //
+    size_t balance = 1;
+    /* The direction we search. */
     bool reverse;
-
     ch = mbstrchr(matchbrackets, openfile->current->data + openfile->current_x);
-
     if (ch == nullptr)
     {
         statusline(AHEM, _("Not a bracket"));
         return;
     }
-
     /* Find the halfway point in matchbrackets, where the closing ones start. */
     for (size_t i = 0; i < charcount; i++)
     {
         halfway += char_length(matchbrackets + halfway);
     }
-
     /* When on a closing bracket, we have to search backwards for a matching
      * opening bracket; otherwise, forward for a matching closing bracket. */
     reverse = (ch >= (matchbrackets + halfway));
-
     /* Step half the number of total characters either backwards or forwards
      * through matchbrackets to find the wanted complementary bracket. */
     wanted_ch = ch;
@@ -1293,20 +1194,16 @@ do_find_bracket()
             wanted_ch += char_length(wanted_ch);
         }
     }
-
     ch_len        = char_length(ch);
     wanted_ch_len = char_length(wanted_ch);
-
     /* Copy the two complementary brackets into a single string. */
-    std::strncpy(bracket_pair, ch, ch_len);
-    std::strncpy(bracket_pair + ch_len, wanted_ch, wanted_ch_len);
+    strncpy(bracket_pair, ch, ch_len);
+    strncpy(bracket_pair + ch_len, wanted_ch, wanted_ch_len);
     bracket_pair[ch_len + wanted_ch_len] = '\0';
-
     while (find_a_bracket(reverse, bracket_pair))
     {
         /* Increment/decrement balance for an identical/other bracket. */
-        balance += (std::strncmp(openfile->current->data + openfile->current_x, ch, ch_len) == 0) ? 1 : -1;
-
+        balance += (strncmp(openfile->current->data + openfile->current_x, ch, ch_len) == 0) ? 1 : -1;
         /* When balance reached zero, we've found the complementary bracket. */
         if (balance == 0)
         {
@@ -1314,9 +1211,7 @@ do_find_bracket()
             return;
         }
     }
-
     statusline(AHEM, _("No matching bracket"));
-
     /* Restore the cursor position. */
     openfile->current   = was_current;
     openfile->current_x = was_current_x;
@@ -1330,9 +1225,7 @@ void
 put_or_lift_anchor()
 {
     openfile->current->has_anchor = !openfile->current->has_anchor;
-
     update_line(openfile->current, openfile->current_x);
-
     if (openfile->current->has_anchor)
     {
         statusline(REMARK, _("Placed anchor"));
@@ -1351,7 +1244,6 @@ void
 go_to_and_confirm(linestruct *line)
 {
     linestruct *was_current = openfile->current;
-
     if (line != openfile->current)
     {
         openfile->current   = line;
@@ -1378,16 +1270,14 @@ go_to_and_confirm(linestruct *line)
 //  Jump to the first anchor before the current line; wrap around at the top.
 //
 void
-to_prev_anchor()
+to_prev_anchor(void)
 {
     linestruct *line = openfile->current;
-
     do
     {
         line = (line->prev) ? line->prev : openfile->filebot;
     }
     while (!line->has_anchor && line != openfile->current);
-
     go_to_and_confirm(line);
 }
 
@@ -1398,12 +1288,10 @@ void
 to_next_anchor()
 {
     linestruct *line = openfile->current;
-
     do
     {
         line = (line->next) ? line->next : openfile->filetop;
     }
     while (!line->has_anchor && line != openfile->current);
-
     go_to_and_confirm(line);
 }
