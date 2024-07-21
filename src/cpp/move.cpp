@@ -356,7 +356,7 @@ to_prev_block()
         {
             if (openfile->current->data[cur_indent] != ' ')
             {
-                NETLOGGER << "current indent: " << cur_indent << NETLOG_ENDL;
+                NETLOGGER << "current indent: " << cur_indent << '\n' << NETLOG_ENDL;
                 break;
             }
         }
