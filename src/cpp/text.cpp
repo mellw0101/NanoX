@@ -1809,121 +1809,70 @@ update_undo(undo_type action)
 void
 do_wrap()
 {
-    //
-    //  The line to be wrapped, if needed and possible.
-    //
+    /* The line to be wrapped, if needed and possible. */
     linestruct *line = openfile->current;
-    //
-    //  The length of this line.
-    //
+    /* The length of this line. */
     unsigned long line_len = strlen(line->data);
-    //
-    //  The length of the quoting part of this line.
-    //
+    /* The length of the quoting part of this line. */
     unsigned long quot_len = quote_length(line->data);
-    //
-    //  The length of the quoting part plus subsequent whitespace.
-    //
+    /* The length of the quoting part plus subsequent whitespace. */
     unsigned long lead_len = quot_len + indent_length(line->data + quot_len);
-    //
-    //  The current cursor position, for comparison with the wrap point.
-    //
+    /* The current cursor position, for comparison with the wrap point. */
     unsigned long cursor_x = openfile->current_x;
-    //
-    //  The position in the line's text where we wrap.
-    //
+    /* The position in the line's text where we wrap. */
     long wrap_loc;
-    //
-    //  The text after the wrap point.
-    //
+    /* The text after the wrap point. */
     const char *remainder;
-    //
-    //  The length of the remainder.
-    //
+    /* The length of the remainder. */
     unsigned long rest_length;
-
-    //
-    //  First find the last blank character where we can break the line.
-    //
+    /* First find the last blank character where we can break the line. */
     wrap_loc = break_line(line->data + lead_len, wrap_at - wideness(line->data, lead_len), false);
-
-    //
-    //  If no wrapping point was found before end-of-line, we don't wrap.
-    //
+    /* If no wrapping point was found before end-of-line, we don't wrap. */
     if (wrap_loc < 0 || lead_len + wrap_loc == line_len)
     {
         return;
     }
-
-    //
-    //  Adjust the wrap location to its position in the full line,
-    //  and step forward to the character just after the blank.
-    //
+    /* Adjust the wrap location to its position in the full line,
+     * and step forward to the character just after the blank. */
     wrap_loc = lead_len + step_right(line->data + lead_len, wrap_loc);
-
-    //
-    //  When now at end-of-line, no need to wrap.
-    //
+    /* When now at end-of-line, no need to wrap. */
     if (line->data[wrap_loc] == '\0')
     {
         return;
     }
-
     add_undo(SPLIT_BEGIN, nullptr);
-
     bool autowhite = ISSET(AUTOINDENT);
-
     if (quot_len > 0)
     {
         UNSET(AUTOINDENT);
     }
-
-    //
-    //  The remainder is the text that will be wrapped to the next line.
-    //
+    /* The remainder is the text that will be wrapped to the next line. */
     remainder   = line->data + wrap_loc;
     rest_length = line_len - wrap_loc;
-
-    //
-    //  When prepending and the remainder of this line will not make the next
-    //  line too long, then join the two lines, so that, after the line wrap,
-    //  the remainder will effectively have been prefixed to the next line.
-    //
+    /* When prepending and the remainder of this line will not make the next
+     * line too long, then join the two lines, so that, after the line wrap,
+     * the remainder will effectively have been prefixed to the next line. */
     if (openfile->spillage_line && openfile->spillage_line == line->next &&
         rest_length + breadth(line->next->data) <= wrap_at)
     {
-        //
-        //  Go to the end of this line.
-        //
+        /* Go to the end of this line. */
         openfile->current_x = line_len;
-
-        //
-        //  If the remainder doesn't end in a blank, add a space.
-        //
+        /* If the remainder doesn't end in a blank, add a space. */
         if (!is_blank_char(remainder + step_left(remainder, rest_length)))
         {
             add_undo(ADD, nullptr);
-
-            line->data = static_cast<char *>(nrealloc(line->data, line_len + 2));
-
+            line->data               = (char *)nrealloc(line->data, line_len + 2);
             line->data[line_len]     = ' ';
             line->data[line_len + 1] = '\0';
             rest_length++;
             openfile->totsize++;
             openfile->current_x++;
-
             update_undo(ADD);
         }
-
-        //
-        //  Join the next line to this one.
-        //
+        /* Join the next line to this one. */
         expunge(DEL);
-
-        //
-        //  If the leading part of the current line equals the leading part of
-        //  what was the next line, then strip this second leading part.
-        //
+        /* If the leading part of the current line equals the leading part of
+         * what was the next line, then strip this second leading part. */
         if (strncmp(line->data, line->data + openfile->current_x, lead_len) == 0)
         {
             for (unsigned long i = lead_len; i > 0; i--)
@@ -1931,28 +1880,19 @@ do_wrap()
                 expunge(DEL);
             }
         }
-        //
-        //  Remove any extra blanks.
-        //
+        /* Remove any extra blanks. */
         while (is_blank_char(&line->data[openfile->current_x]))
         {
             expunge(DEL);
         }
     }
-
-    //
-    //  Go to the wrap location.
-    //
+    /* Go to the wrap location. */
     openfile->current_x = wrap_loc;
-
-    //
-    //  When requested, snip trailing blanks off the wrapped line.
-    //
+    /* When requested, snip trailing blanks off the wrapped line. */
     if (ISSET(TRIM_BLANKS))
     {
         unsigned long rear_x  = step_left(line->data, wrap_loc);
         unsigned long typed_x = step_left(line->data, cursor_x);
-
         while ((rear_x != typed_x || cursor_x >= wrap_loc) && is_blank_char(line->data + rear_x))
         {
             openfile->current_x = rear_x;
@@ -1960,46 +1900,31 @@ do_wrap()
             rear_x = step_left(line->data, rear_x);
         }
     }
-
-    //
-    //  Now split the line.
-    //
+    /* Now split the line. */
     do_enter();
-
-    //
-    //  When wrapping a partially visible line, adjust start-of-screen.
-    //
+    /* When wrapping a partially visible line, adjust start-of-screen. */
     if (openfile->edittop == line && openfile->firstcolumn > 0 && cursor_x >= wrap_loc)
     {
         go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
     }
-
-    //
-    //  If the original line has quoting, copy it to the spillage line.
-    //
+    /* If the original line has quoting, copy it to the spillage line. */
     if (quot_len > 0)
     {
         line       = line->next;
         line_len   = strlen(line->data);
-        line->data = static_cast<char *>(nrealloc(line->data, lead_len + line_len + 1));
-
+        line->data = (char *)nrealloc(line->data, lead_len + line_len + 1);
         memmove(line->data + lead_len, line->data, line_len + 1);
         strncpy(line->data, line->prev->data, lead_len);
-
         openfile->current_x += lead_len;
         openfile->totsize += lead_len;
-
         free(openfile->undotop->strdata);
         update_undo(ENTER);
-
         if (autowhite)
         {
             SET(AUTOINDENT);
         }
     }
-
     openfile->spillage_line = openfile->current;
-
     if (cursor_x < wrap_loc)
     {
         openfile->current   = openfile->current->prev;
@@ -2009,51 +1934,33 @@ do_wrap()
     {
         openfile->current_x += (cursor_x - wrap_loc);
     }
-
     openfile->placewewant = xplustabs();
-
     add_undo(SPLIT_END, nullptr);
-
     refresh_needed = true;
 }
 
-//
-//  Find the last blank in the given piece of text such that the display width
-//  to that point is at most (goal + 1).  When there is no such blank, then find
-//  the first blank.  Return the index of the last blank in that group of blanks.
-//  When snap_at_nl is TRUE, a newline character counts as a blank too.
-//
+/* Find the last blank in the given piece of text such that the display width
+ * to that point is at most (goal + 1).  When there is no such blank, then find
+ * the first blank.  Return the index of the last blank in that group of blanks.
+ * When snap_at_nl is TRUE, a newline character counts as a blank too. */
 long
 break_line(const char *textstart, long goal, bool snap_at_nl)
 {
     PROFILE_FUNCTION;
-
-    //
-    //  The point where the last blank was found, if any.
-    //
+    /* The point where the last blank was found, if any. */
     const char *lastblank = nullptr;
-    //
-    //  An iterator through the given line of text.
-    //
+    /* An iterator through the given line of text. */
     const char *pointer = textstart;
-    //
-    //  The column number that corresponds to the position of the pointer.
-    //
+    /* The column number that corresponds to the position of the pointer. */
     unsigned long column = 0;
-
-    //
-    //  Skip over leading whitespace, where a line should never be broken.
-    //
+    /* Skip over leading whitespace, where a line should never be broken. */
     while (*pointer != '\0' && is_blank_char(pointer))
     {
         pointer += advance_over(pointer, column);
     }
-
-    //
-    //  Find the last blank that does not overshoot the target column.
-    //  When treating a help text, do not break in the keystrokes area.
-    //
-    while (*pointer != '\0' && (static_cast<long>(column) <= goal))
+    /* Find the last blank that does not overshoot the target column.
+     * When treating a help text, do not break in the keystrokes area. */
+    while (*pointer != '\0' && ((long)column <= goal))
     {
         if (is_blank_char(pointer) && (!inhelp || column > 17 || goal < 40))
         {
@@ -2066,33 +1973,23 @@ break_line(const char *textstart, long goal, bool snap_at_nl)
         }
         pointer += advance_over(pointer, column);
     }
-
-    //
-    //  If the whole line displays shorter than goal, we're done.
-    //
-    if (static_cast<long>(column) <= goal)
+    /* If the whole line displays shorter than goal, we're done. */
+    if ((long)column <= goal)
     {
         return (pointer - textstart);
     }
-
-    //
-    //  When wrapping a help text and no blank was found, force a line break.
-    //
+    /* When wrapping a help text and no blank was found, force a line break. */
     if (snap_at_nl && lastblank == nullptr)
     {
         return step_left(textstart, pointer - textstart);
     }
-
-    //
-    //  If no blank was found within the goal width, seek one after it.
-    //
+    /* If no blank was found within the goal width, seek one after it. */
     while (lastblank == nullptr)
     {
         if (*pointer == '\0')
         {
             return -1;
         }
-
         if (is_blank_char(pointer))
         {
             lastblank = pointer;
@@ -2102,25 +1999,18 @@ break_line(const char *textstart, long goal, bool snap_at_nl)
             pointer += char_length(pointer);
         }
     }
-
     pointer = lastblank + char_length(lastblank);
-
-    //
-    //  Skip any consecutive blanks after the last blank.
-    //
+    /* Skip any consecutive blanks after the last blank. */
     while (*pointer != '\0' && is_blank_char(pointer))
     {
         lastblank = pointer;
         pointer += char_length(pointer);
     }
-
     return static_cast<long>(lastblank - textstart);
 }
 
-//
-//  Return the length of the indentation part of the given line.  The
-//  "indentation" of a line is the leading consecutive whitespace.
-//
+/* Return the length of the indentation part of the given line.
+ * The "indentation" of a line is the leading consecutive whitespace. */
 unsigned long
 indent_length(const char *line)
 {
@@ -2129,125 +2019,84 @@ indent_length(const char *line)
     {
         line += char_length(line);
     }
-    return static_cast<unsigned long>(line - start);
+    return (unsigned long)(line - start);
 }
 
-//
-//  Return the length of the quote part of the given line.
-//  The 'quote part' of a line is the largest initial
-//  substring matching the quoting regex.
-//
+/* Return the length of the quote part of the given line.
+ * The 'quote part' of a line is the largest initial
+ * substring matching the quoting regex. */
 unsigned long
 quote_length(const char *line)
 {
     regmatch_t matches;
-
-    int rc = regexec(&quotereg, line, 1, &matches, 0);
-
+    int        rc = regexec(&quotereg, line, 1, &matches, 0);
     if (rc == REG_NOMATCH || matches.rm_so == (regoff_t)-1)
     {
         return 0;
     }
-
     return matches.rm_eo;
 }
 
-//
-//  The maximum depth of recursion.
-//  Note that this MUST be an even number.
-//
-constexpr auto RECURSION_LIMIT = 222;
-//
-//  Return TRUE when the given line is the beginning of a paragraph (BOP).
-//
+/* The maximum depth of recursion.  Note that this MUST be an even number. */
+constexpr unsigned char RECURSION_LIMIT = 222;
+/* Return TRUE when the given line is the beginning of a paragraph (BOP). */
 bool
 begpar(const linestruct *const line, int depth)
 {
     PROFILE_FUNCTION;
-
     unsigned long quot_len      = 0;
     unsigned long indent_len    = 0;
     unsigned long prev_dent_len = 0;
-
-    //
-    //  The very first line counts as a BOP,
-    //  even when it contains no text.
-    //
+    /* The very first line counts as a BOP, even when it contains no text. */
     if (line->prev == nullptr)
     {
         return true;
     }
-
-    //
-    //  If recursion is going too deep, just say it's not a BOP.
-    //
+    /* If recursion is going too deep, just say it's not a BOP. */
     if (depth > RECURSION_LIMIT)
     {
         return false;
     }
-
     quot_len   = quote_length(line->data);
     indent_len = indent_length(line->data + quot_len);
-
-    //
-    //  If this line contains no text, it is not a BOP.
-    //
+    /* If this line contains no text, it is not a BOP. */
     if (line->data[quot_len + indent_len] == '\0')
     {
         return false;
     }
-
-    //
-    //  When requested, treat a line that starts with whitespace as a BOP.
-    //
+    /* When requested, treat a line that starts with whitespace as a BOP. */
     if (ISSET(BOOKSTYLE) && !ISSET(AUTOINDENT) && is_blank_char(line->data))
     {
         return true;
     }
-
-    //
-    //  If the quote part of the preceding line differs, this is a BOP.
-    //
+    /* If the quote part of the preceding line differs, this is a BOP. */
     if (quot_len != quote_length(line->prev->data) || strncmp(line->data, line->prev->data, quot_len) != 0)
     {
         return true;
     }
-
     prev_dent_len = indent_length(line->prev->data + quot_len);
-
-    //
-    //  If the preceding line contains no text, this is a BOP.
-    //
+    /* If the preceding line contains no text, this is a BOP. */
     if (line->prev->data[quot_len + prev_dent_len] == '\0')
     {
         return true;
     }
-
-    //
-    //  If indentation of this and preceding line are equal, this is not a BOP.
-    //
+    /* If indentation of this and preceding line are equal, this is not a BOP. */
     if (wideness(line->prev->data, quot_len + prev_dent_len) == wideness(line->data, quot_len + indent_len))
     {
         return false;
     }
-
-    //
-    //  Otherwise, this is a BOP if the preceding line is not.
-    //
+    /* Otherwise, this is a BOP if the preceding line is not. */
     return !begpar(line->prev, depth + 1);
 }
 
-//
-//  Return TRUE when the given line is part of a paragraph.
-//  A line is part of a paragraph if it contains something more
-//  than quoting and leading whitespace.
-//
+/* Return TRUE when the given line is part of a paragraph.
+ * A line is part of a paragraph if it contains something more
+ * than quoting and leading whitespace. */
 bool
 inpar(const linestruct *const line)
 {
     unsigned long quot_len   = quote_length(line->data);
     unsigned long indent_len = indent_length(line->data + quot_len);
-
     return (line->data[quot_len + indent_len] != '\0');
 }
 
@@ -2257,39 +2106,24 @@ inpar(const linestruct *const line)
 //  Furthermore, return the first line and the number of lines of the paragraph.
 //
 bool
-find_paragraph(linestruct *&firstline, unsigned long &linecount)
+find_paragraph(linestruct **firstline, unsigned long *linecount)
 {
-    linestruct *line = firstline;
-
-    //
-    //  When not currently in a paragraph, move forward to a line that is.
-    //
+    linestruct *line = *firstline;
+    /* When not currently in a paragraph, move forward to a line that is. */
     while (!inpar(line) && line->next != nullptr)
     {
         line = line->next;
     }
-
-    firstline = line;
-
-    //
-    //  Move down to the last line of the paragraph (if any).
-    //
+    *firstline = line;
+    /* Move down to the last line of the paragraph (if any). */
     do_para_end(&line);
-
-    //
-    //  When not in a paragraph now, there aren't any paragraphs left.
-    //
+    /* When not in a paragraph now, there aren't any paragraphs left. */
     if (!inpar(line))
     {
         return false;
     }
-
-    //
-    //  We found a paragraph.
-    //  Now we determine its number of lines.
-    //
-    linecount = line->lineno - firstline->lineno + 1;
-
+    /* We found a paragraph.  Now we determine its number of lines. */
+    *linecount = line->lineno - (*firstline)->lineno + 1;
     return true;
 }
 
@@ -2303,25 +2137,20 @@ concat_paragraph(linestruct *line, unsigned long count)
 {
     while (count > 1)
     {
-        linestruct *next_line = line->next;
-
+        linestruct   *next_line     = line->next;
         unsigned long next_line_len = strlen(next_line->data);
         unsigned long next_quot_len = quote_length(next_line->data);
         unsigned long next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
         unsigned long line_len      = strlen(line->data);
-
-        //
-        //  We're just about to tack the next line onto this one.
-        //  If this line isn't empty, make sure it ends in a space.
-        //
+        /* We're just about to tack the next line onto this one.
+         * If this line isn't empty, make sure it ends in a space. */
         if (line_len > 0 && line->data[line_len - 1] != ' ')
         {
-            line->data             = static_cast<char *>(nrealloc(line->data, line_len + 2));
+            line->data             = (char *)nrealloc(line->data, line_len + 2);
             line->data[line_len++] = ' ';
             line->data[line_len]   = '\0';
         }
-
-        line->data = static_cast<char *>(nrealloc(line->data, line_len + next_line_len - next_lead_len + 1));
+        line->data = (char *)nrealloc(line->data, line_len + next_line_len - next_lead_len + 1);
         strcat(line->data, next_line->data + next_lead_len);
         line->has_anchor |= next_line->has_anchor;
         unlink_node(next_line);
@@ -2336,7 +2165,6 @@ void
 copy_character(char **from, char **to)
 {
     int charlen = char_length(*from);
-
     if (*from == *to)
     {
         *from += charlen;
@@ -2633,7 +2461,7 @@ justify_text(bool whole_buffer)
         /* Find the first line of the paragraph(s) to be justified.  If the
          * search fails, there is nothing to justify, and we will be on the
          * last line of the file, so put the cursor at the end of it. */
-        if (!find_paragraph(openfile->current, linecount))
+        if (!find_paragraph(&openfile->current, &linecount))
         {
             openfile->current_x = strlen(openfile->filebot->data);
             discard_until(openfile->undotop->next);
@@ -2748,7 +2576,7 @@ justify_text(bool whole_buffer)
         //
         if (whole_buffer)
         {
-            while (find_paragraph(jusline, linecount))
+            while (find_paragraph(&jusline, &linecount))
             {
                 justify_paragraph(&jusline, linecount);
                 if (jusline->next == nullptr)

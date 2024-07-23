@@ -3,22 +3,14 @@
 #include <Mlib/Profile.h>
 #include <cstring>
 
-//
-//  The text displayed in the help window.
-//
-static s8 *help_text = nullptr;
-//
-//  The point in the help text just after the title.
-//
-static const s8 *start_of_body = nullptr;
-//
-//  The point in the help text where the shortcut descriptions begin.
-//
-static s8 *end_of_intro = nullptr;
-//
-//  The offset (in bytes) of the topleft of the shown help text.
-//
-static u64 location;
+/* The text displayed in the help window. */
+static char *help_text = nullptr;
+/* The point in the help text just after the title. */
+static const char *start_of_body = nullptr;
+/* The point in the help text where the shortcut descriptions begin. */
+static char *end_of_intro = nullptr;
+/* The offset (in bytes) of the topleft of the shown help text. */
+static unsigned long location;
 
 //
 //  Allocate space for the help text for the current menu,
@@ -36,27 +28,16 @@ void
 help_init()
 {
     PROFILE_FUNCTION;
-
-    u64 allocsize = 0;
-
-    //
-    //  Space needed for help_text.
-    //
-    C_s8 *htx[3];
-
-    //
-    //  Untranslated help introduction.
-    //  We break it up into three chunks
-    //  in case the full string is too long for the compiler to handle.
-    //
+    unsigned long allocsize = 0;
+    /* Space needed for help_text. */
+    const char *htx[3];
+    /* Untranslated help introduction.
+     * We break it up into three chunks
+     * in case the full string is too long for the compiler to handle. */
     const funcstruct *f;
     const keystruct  *s;
-
-    s8 *ptr;
-
-    //
-    //  First, set up the initial help text for the current function.
-    //
+    char             *ptr;
+    /* First, set up the initial help text for the current function. */
     if (currmenu & (MWHEREIS | MREPLACE))
     {
         htx[0] = N_("Search Command Help Text\n\n "
@@ -208,11 +189,8 @@ help_init()
     }
     else
     {
-        //
-        //  Default to the main help list.
-        //
-        //  TODO : Change to NanoX help text.
-        //
+        /* Default to the main help list.
+         * TODO : Change to NanoX help text. */
         htx[0] = N_("Main nano help text\n\n "
                     "The nano editor is designed to emulate the "
                     "functionality and ease-of-use of the UW Pico text "
@@ -237,7 +215,6 @@ help_init()
                     "window.  Alternative keys are shown in "
                     "parentheses:\n\n");
     }
-
     htx[0] = _(htx[0]);
     if (htx[1] != nullptr)
     {
@@ -247,7 +224,6 @@ help_init()
     {
         htx[2] = _(htx[2]);
     }
-
     allocsize += constexpr_strlen(htx[0]);
     if (htx[1] != nullptr)
     {
@@ -257,12 +233,9 @@ help_init()
     {
         allocsize += constexpr_strlen(htx[2]);
     }
-
-    //
-    //  Calculate the length of the descriptions of the shortcuts.
-    //  Each entry has one or two keystrokes, which fill 17 cells,
-    //  plus translated text, plus one or two \n's.
-    //
+    /* Calculate the length of the descriptions of the shortcuts.
+     * Each entry has one or two keystrokes, which fill 17 cells,
+     * plus translated text, plus one or two \n's. */
     for (f = allfuncs; f != nullptr; f = f->next)
     {
         if (f->menus & currmenu)
@@ -270,15 +243,12 @@ help_init()
             allocsize += constexpr_strlen(_(f->phrase)) + 21;
         }
     }
-
-    //
-    //  If we're on the main list, we also count the toggle help text.
-    //  Each entry has "M-%c\t\t ", six chars which fill 17 cells, plus
-    //  two translated texts, plus a space, plus one or two '\n's.
-    //
+    /* If we're on the main list, we also count the toggle help text.
+     * Each entry has "M-%c\t\t ", six chars which fill 17 cells, plus
+     * two translated texts, plus a space, plus one or two '\n's. */
     if (currmenu == MMAIN)
     {
-        u64 onoff_len = constexpr_strlen(_("enable/disable"));
+        unsigned long onoff_len = constexpr_strlen(_("enable/disable"));
         for (s = sclist; s != nullptr; s = s->next)
         {
             if (s->func == do_toggle)
@@ -287,15 +257,9 @@ help_init()
             }
         }
     }
-
-    //
-    //  Allocate memory for the help text.
-    //
-    help_text = static_cast<s8 *>(nmalloc(allocsize + 1));
-
-    //
-    //  Now add the text we want.
-    //
+    /* Allocate memory for the help text. */
+    help_text = static_cast<char *>(nmalloc(allocsize + 1));
+    /* Now add the text we want. */
     constexpr_strcpy(help_text, htx[0]);
     if (htx[1] != nullptr)
     {
@@ -305,90 +269,62 @@ help_init()
     {
         constexpr_strcat(help_text, htx[2]);
     }
-
-    //
-    //  Remember this end-of-introduction, start-of-shortcuts.
-    //
+    /* Remember this end-of-introduction, start-of-shortcuts. */
     end_of_intro = help_text + constexpr_strlen(help_text);
-
-    ptr = end_of_intro;
-
-    //
-    //  Now add the shortcuts and their descriptions.
-    //
+    ptr          = end_of_intro;
+    /* Now add the shortcuts and their descriptions. */
     for (f = allfuncs; f != nullptr; f = f->next)
     {
-        s32 tally = 0;
-
+        int tally = 0;
         if ((f->menus & currmenu) == 0)
         {
             continue;
         }
-
-        //
-        //  Show the first two shortcuts (if any) for each function.
-        //
+        /* Show the first two shortcuts (if any) for each function. */
         for (s = sclist; s != nullptr; s = s->next)
         {
             if ((s->menus & currmenu) && s->func == f->func && s->keystr[0])
             {
-                //
-                //  Make the first column 7 cells wide and the second 10.
-                //
+                /* Make the first column 7 cells wide and the second 10. */
                 if (++tally == 1)
                 {
-                    std::sprintf(ptr, "%s                ", s->keystr);
-
-                    //
-                    //  Unicode arrows take three bytes instead of one.
-                    //
+                    sprintf(ptr, "%s                ", s->keystr);
+                    /* Unicode arrows take three bytes instead of one. */
                     ptr += (constexpr_strstr(s->keystr, "\xE2") != nullptr ? 9 : 7);
                 }
                 else
                 {
-                    std::sprintf(ptr, "(%s)       ", s->keystr);
+                    sprintf(ptr, "(%s)       ", s->keystr);
                     ptr += (constexpr_strstr(s->keystr, "\xE2") != nullptr ? 12 : 10);
                     break;
                 }
             }
         }
-
         if (tally == 0)
         {
-            ptr += std::sprintf(ptr, "\t\t ");
+            ptr += sprintf(ptr, "\t\t ");
         }
         else if (tally == 1)
         {
             ptr += 10;
         }
-
-        //
-        //  The shortcut's description.
-        //
-        ptr += std::sprintf(ptr, "%s\n", _(f->phrase));
+        /* The shortcut's description. */
+        ptr += sprintf(ptr, "%s\n", _(f->phrase));
         if (f->blank_after)
         {
-            ptr += std::sprintf(ptr, "\n");
+            ptr += sprintf(ptr, "\n");
         }
     }
-    //
-    //  And the toggles...
-    //
+    /* And the toggles... */
     if (currmenu == MMAIN)
     {
-        s32 maximum = 0, counter = 0;
-
-        //
-        //  First see how many toggles there are.
-        //
+        int maximum = 0, counter = 0;
+        /* First see how many toggles there are. */
         for (s = sclist; s != nullptr; s = s->next)
         {
             maximum = (s->toggle && s->ordinal > maximum) ? s->ordinal : maximum;
         }
-
-        //
-        //  Now show them in the original order.
-        //
+        /* Now show them in the original order. */
         while (counter < maximum)
         {
             counter++;
@@ -396,15 +332,12 @@ help_init()
             {
                 if (s->toggle && s->ordinal == counter)
                 {
-                    ptr += std::sprintf(ptr, "%s\t\t %s %s\n", (s->menus & MMAIN ? s->keystr : ""),
-                                        _(epithet_of_flag(s->toggle)), _("enable/disable"));
-
-                    //
-                    //  Add a blank like between two groups.
-                    //
+                    ptr += sprintf(ptr, "%s\t\t %s %s\n", (s->menus & MMAIN ? s->keystr : ""),
+                                   _(epithet_of_flag(s->toggle)), _("enable/disable"));
+                    /* Add a blank like between two groups. */
                     if (s->toggle == NO_SYNTAX)
                     {
-                        ptr += std::sprintf(ptr, "\n");
+                        ptr += sprintf(ptr, "\n");
                     }
                     break;
                 }
@@ -413,71 +346,52 @@ help_init()
     }
 }
 
-//
-//  Hard-wrap the concatenated help text, and write it into a new buffer.
-//
+/* Hard-wrap the concatenated help text, and write it into a new buffer. */
 void
 wrap_help_text_into_buffer()
 {
-    //
-    //  Avoid overtight and overwide paragraphs in the introductory text.
-    //
-    u64 wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
-
-    C_s8 *ptr = start_of_body;
-    u64   sum = 0;
-
+    /* Avoid overtight and overwide paragraphs in the introductory text. */
+    unsigned long wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
+    const char   *ptr            = start_of_body;
+    unsigned long sum            = 0;
     make_new_buffer();
-
-    //
-    //  Ensure there is a blank line at the top of the text, for esthetics.
-    //
+    /* Ensure there is a blank line at the top of the text, for esthetics. */
     if ((ISSET(MINIBAR) || !ISSET(EMPTY_LINE)) && LINES > 6)
     {
         openfile->current->data = mallocstrcpy(openfile->current->data, " ");
         openfile->current->next = make_new_node(openfile->current);
         openfile->current       = openfile->current->next;
     }
-
-    //
-    //  Copy the help text into the just-created new buffer.
-    //
+    /* Copy the help text into the just-created new buffer. */
     while (*ptr != '\0')
     {
-        s32 length, shim;
-        s8 *oneline;
-
+        int   length, shim;
+        char *oneline;
         if (ptr == end_of_intro)
         {
             wrapping_point = ((COLS < 40) ? 40 : COLS) - sidebar;
         }
-
         if (ptr < end_of_intro || *(ptr - 1) == '\n')
         {
             length  = break_line(ptr, wrapping_point, true);
-            oneline = static_cast<s8 *>(nmalloc(length + 1));
+            oneline = (char *)nmalloc(length + 1);
             shim    = (*(ptr + length - 1) == ' ') ? 0 : 1;
             snprintf(oneline, length + shim, "%s", ptr);
         }
         else
         {
             length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, true);
-            oneline = static_cast<s8 *>(nmalloc(length + 5));
+            oneline = (char *)nmalloc(length + 5);
             snprintf(oneline, length + 5, "\t\t  %s", ptr);
         }
-
-        std::free(openfile->current->data);
+        free(openfile->current->data);
         openfile->current->data = oneline;
-
         ptr += length;
         if (*ptr != '\n')
         {
             ptr--;
         }
-
-        //
-        //  Create a new line, and then one more for each extra \n.
-        //
+        /* Create a new line, and then one more for each extra \n. */
         do
         {
             openfile->current->next = make_new_node(openfile->current);
@@ -486,17 +400,12 @@ wrap_help_text_into_buffer()
         }
         while (*(++ptr) == '\n');
     }
-
     openfile->filebot = openfile->current;
     openfile->current = openfile->filetop;
-
     remove_magicline();
     find_and_prime_applicable_syntax();
     prepare_for_display();
-
-    //
-    //  Move to the position in the file where we were before.
-    //
+    /* Move to the position in the file where we were before. */
     while (true)
     {
         sum += constexpr_strlen(openfile->current->data);
@@ -506,52 +415,31 @@ wrap_help_text_into_buffer()
         }
         openfile->current = openfile->current->next;
     }
-
     openfile->edittop = openfile->current;
 }
 
-//
-//  Assemble a help text, display it, and allow scrolling through it.
-//
-//  TODO : ( show_help ) : Change to NanoX help text.
-//
+/* Assemble a help text, display it, and allow scrolling through it.
+ * TODO : ( show_help ) : Change to NanoX help text. */
 void
 show_help()
 {
-    s32 kbinput = ERR;
-    //
-    //  The function of the key the user typed in.
-    //
+    int kbinput = ERR;
+    /* The function of the key the user typed in. */
     functionptrtype function;
-    //
-    //  The menu we were called from.
-    //
-    s32 oldmenu = currmenu;
-
-    s32 was_margin  = margin;
-    s64 was_tabsize = tabsize;
-    s8 *was_syntax  = syntaxstr;
-
-    //
-    //  The current answer when the user invokes help at the prompt.
-    //
-    s8 *saved_answer = (answer != nullptr) ? copy_of(answer) : nullptr;
-    u64 stash[sizeof(flags) / sizeof(flags[0])];
-
-    //
-    //  A storage place for the current flag settings.
-    //
+    /* The menu we were called from. */
+    int   oldmenu     = currmenu;
+    int   was_margin  = margin;
+    long  was_tabsize = tabsize;
+    char *was_syntax  = syntaxstr;
+    /* The current answer when the user invokes help at the prompt. */
+    char         *saved_answer = (answer != nullptr) ? copy_of(answer) : nullptr;
+    unsigned long stash[sizeof(flags) / sizeof(flags[0])];
+    /* A storage place for the current flag settings. */
     linestruct *line;
-    s32         length;
-
-    //
-    //  Save the settings of all flags.
-    //
-    std::memcpy(stash, flags, sizeof(flags));
-
-    //
-    //  Ensure that the help screen's shortcut list can be displayed.
-    //
+    int         length;
+    /* Save the settings of all flags. */
+    memcpy(stash, flags, sizeof(flags));
+    /* Ensure that the help screen's shortcut list can be displayed. */
     if (ISSET(NO_HELP) || ISSET(ZERO))
     {
         UNSET(NO_HELP);
@@ -562,70 +450,47 @@ show_help()
     {
         blank_statusbar();
     }
-
-    //
-    //  When searching, do it forward, case insensitive, and without regexes.
-    //
+    /* When searching, do it forward, case insensitive, and without regexes. */
     UNSET(BACKWARDS_SEARCH);
     UNSET(CASE_SENSITIVE);
     UNSET(USE_REGEXP);
     UNSET(WHITESPACE_DISPLAY);
-
     editwincols = COLS - sidebar;
     margin      = 0;
     tabsize     = 8;
     syntaxstr   = _("nanohelp");
     curs_set(0);
-
-    //
-    //  Compose the help text from all the relevant pieces.
-    //
+    /* Compose the help text from all the relevant pieces. */
     help_init();
-
     inhelp   = true;
     location = 0;
     didfind  = 0;
-
     bottombars(MHELP);
-
-    //
-    //  Extract the title from the head of the help text.
-    //
+    /* Extract the title from the head of the help text. */
     length = break_line(help_text, HIGHEST_POSITIVE, true);
     title  = measured_copy(help_text, length);
-
     titlebar(title);
-
-    //
-    //  Skip over the title to point at the start of the body text.
-    //
+    /* Skip over the title to point at the start of the body text. */
     start_of_body = help_text + length;
     while (*start_of_body == '\n')
     {
         start_of_body++;
     }
-
     wrap_help_text_into_buffer();
     edit_refresh();
-
     while (true)
     {
         lastmessage = VACUUM;
         focusing    = true;
-
-        //
-        //  Show the cursor when we searched and found something.
-        //
+        /* Show the cursor when we searched and found something. */
         kbinput     = get_kbinput(midwin, didfind == 1 || ISSET(SHOW_CURSOR));
         didfind     = 0;
         spotlighted = false;
-
         if (bracketed_paste || kbinput == BRACKETED_PASTE_MARKER)
         {
             beep();
             continue;
         }
-
         function = interpret(kbinput);
         if (function == full_refresh)
         {
@@ -664,7 +529,7 @@ show_help()
         }
         else if (kbinput == KEY_MOUSE)
         {
-            s32 dummy_row, dummy_col;
+            int dummy_row, dummy_col;
             get_mouseinput(dummy_row, dummy_col, true);
         }
         else if (kbinput == KEY_WINCH)
@@ -679,49 +544,32 @@ show_help()
         {
             unbound_key(kbinput);
         }
-
         edit_refresh();
-
         location = 0;
         line     = openfile->filetop;
-
-        //
-        //  Count how far (in bytes) edittop is into the file.
-        //
+        /* Count how far (in bytes) edittop is into the file. */
         while (line != openfile->edittop)
         {
             location += constexpr_strlen(line->data);
             line = line->next;
         }
     }
-
-    //
-    //  Discard the help-text buffer.
-    //
+    /* Discard the help-text buffer. */
     close_buffer();
-
-    //
-    //  Restore the settings of all flags.
-    //
-    std::memcpy(flags, stash, sizeof(flags));
-
-    margin      = was_margin;
-    editwincols = COLS - margin - sidebar;
-
-    tabsize = was_tabsize;
-
+    /* Restore the settings of all flags. */
+    memcpy(flags, stash, sizeof(flags));
+    margin       = was_margin;
+    editwincols  = COLS - margin - sidebar;
+    tabsize      = was_tabsize;
     syntaxstr    = was_syntax;
     have_palette = false;
-
-    std::free(title);
+    free(title);
     title = nullptr;
-    std::free(answer);
+    free(answer);
     answer = saved_answer;
-    std::free(help_text);
+    free(help_text);
     inhelp = false;
-
     curs_set(0);
-
     if (ISSET(NO_HELP) || ISSET(ZERO))
     {
         window_init();
@@ -730,9 +578,7 @@ show_help()
     {
         blank_statusbar();
     }
-
     bottombars(oldmenu);
-
     if (oldmenu & (MBROWSER | MWHEREISFILE | MGOTODIR))
     {
         browser_refresh();
@@ -744,9 +590,7 @@ show_help()
     }
 }
 
-//
-//  Start the help viewer, or indicate that there is no help.
-//
+/* Start the help viewer, or indicate that there is no help. */
 void
 do_help()
 {

@@ -92,7 +92,7 @@ static size_t lineno = 0;
 //
 //  The path to the rcfile we're parsing. */
 //
-static s8 *nanorc = nullptr;
+static char *nanorc = nullptr;
 //
 //  Whether we're allowed to add to the last syntax.  When a file ends,
 //  or when a new syntax command is seen, this bool becomes 'false'.
@@ -128,7 +128,7 @@ display_rcfile_errors()
     }
 }
 
-static constexpr u16 MAXSIZE = (PATH_MAX + 200);
+static constexpr unsigned short MAXSIZE = (PATH_MAX + 200);
 //
 /// @name @c jot_error
 ///
@@ -144,15 +144,15 @@ static constexpr u16 MAXSIZE = (PATH_MAX + 200);
 /// @returns @c void
 //
 void
-jot_error(const s8 *msg, ...)
+jot_error(const char *msg, ...)
 {
     PROFILE_FUNCTION;
 
     linestruct *error = make_new_node(errors_tail);
     va_list     ap;
 
-    s8  textbuf[MAXSIZE];
-    s32 length = 0;
+    char textbuf[MAXSIZE];
+    int  length = 0;
 
     if (errors_head == nullptr)
     {
@@ -184,14 +184,14 @@ jot_error(const s8 *msg, ...)
     length += std::vsnprintf(textbuf + length, MAXSIZE - length, _(msg), ap);
     va_end(ap);
 
-    error->data = static_cast<s8 *>(nmalloc(length + 1));
+    error->data = static_cast<char *>(nmalloc(length + 1));
     std::sprintf(error->data, "%s", textbuf);
 }
 
 //
 //  - Staticly define the number of elements in the map as a constexpr.
 //
-static constexpr u8 FUNCTION_MAP_COUNT = 104;
+static constexpr unsigned char FUNCTION_MAP_COUNT = 104;
 //
 //  - Define a map of 'string_view`s' to 'functionptrtype`s'.
 //
@@ -321,7 +321,7 @@ retriveScFromStr(STRING_VIEW str)
 //  TODO : Use a map instead of strcmp
 //
 keystruct *
-strtosc(const s8 *input)
+strtosc(const char *input)
 {
     PROFILE_FUNCTION;
 
@@ -356,12 +356,12 @@ strtosc(const s8 *input)
 //  and return a pointer to the first character after the null terminator.
 //  The returned pointer will point to '\0' if we hit the end of the line.
 //
-s8 *
-parse_next_word(s8 *ptr)
+char *
+parse_next_word(char *ptr)
 {
     PROFILE_FUNCTION;
 
-    while (!std::isblank(static_cast<u8>(*ptr)) && *ptr != '\0')
+    while (!std::isblank(static_cast<unsigned char>(*ptr)) && *ptr != '\0')
     {
         ptr++;
     }
@@ -376,7 +376,7 @@ parse_next_word(s8 *ptr)
     //
     *ptr++ = '\0';
 
-    while (std::isblank(static_cast<u8>(*ptr)))
+    while (std::isblank(static_cast<unsigned char>(*ptr)))
     {
         ptr++;
     }
@@ -390,11 +390,11 @@ parse_next_word(s8 *ptr)
 //  last " of the line.  Otherwise, we interpret it as usual, so that the
 //  arguments can contain "'s too.
 //
-s8 *
-parse_argument(s8 *ptr)
+char *
+parse_argument(char *ptr)
 {
-    const s8 *ptr_save   = ptr;
-    s8       *last_quote = nullptr;
+    const char *ptr_save   = ptr;
+    char       *last_quote = nullptr;
 
     if (*ptr != '"')
     {
@@ -418,7 +418,7 @@ parse_argument(s8 *ptr)
     *last_quote = '\0';
     ptr         = last_quote + 1;
 
-    while (std::isblank(static_cast<u8>(*ptr)))
+    while (std::isblank(static_cast<unsigned char>(*ptr)))
     {
         ptr++;
     }
@@ -430,10 +430,10 @@ parse_argument(s8 *ptr)
 //  Advance over one regular expression in the line starting at ptr,
 //  null-terminate it, and return a pointer to the succeeding text.
 //
-s8 *
-parse_next_regex(s8 *ptr)
+char *
+parse_next_regex(char *ptr)
 {
-    s8 *starting_point = ptr;
+    char *starting_point = ptr;
 
     if (*(ptr - 1) != '"')
     {
@@ -446,7 +446,7 @@ parse_next_regex(s8 *ptr)
     //  by end-of-line or a blank.
     //
     while (*ptr != '\0' &&
-           (*ptr != '"' || (ptr[1] != '\0' && !Mlib::Constexpr::Chars::isblank(static_cast<u8>(ptr[1])))))
+           (*ptr != '"' || (ptr[1] != '\0' && !Mlib::Constexpr::Chars::isblank(static_cast<unsigned char>(ptr[1])))))
     {
         ptr++;
     }
@@ -468,7 +468,7 @@ parse_next_regex(s8 *ptr)
     //
     *ptr++ = '\0';
 
-    while (Mlib::Constexpr::Chars::isblank(static_cast<u8>(*ptr)))
+    while (Mlib::Constexpr::Chars::isblank(static_cast<unsigned char>(*ptr)))
     {
         ptr++;
     }
@@ -481,17 +481,17 @@ parse_next_regex(s8 *ptr)
 //  this pointer is not NULL).  Return TRUE when the expression is valid.
 //
 bool
-compile(const s8 *expression, s32 rex_flags, regex_t *&packed)
+compile(const char *expression, int rex_flags, regex_t *&packed)
 {
     PROFILE_FUNCTION;
 
     regex_t *compiled = static_cast<regex_t *>(nmalloc(sizeof(regex_t)));
-    s32      outcome  = regcomp(compiled, expression, rex_flags);
+    int      outcome  = regcomp(compiled, expression, rex_flags);
 
     if (outcome != 0)
     {
-        u64 length  = regerror(outcome, compiled, nullptr, 0);
-        s8 *message = static_cast<s8 *>(nmalloc(length));
+        unsigned long length  = regerror(outcome, compiled, nullptr, 0);
+        char         *message = static_cast<char *>(nmalloc(length));
 
         regerror(outcome, compiled, message, length);
         jot_error(N_("Bad regex \"%s\": %s"), expression, message);
@@ -513,11 +513,11 @@ compile(const s8 *expression, s32 rex_flags, regex_t *&packed)
 //  line at ptr, and add it to the global linked list of color syntaxes.
 //
 void
-begin_new_syntax(s8 *ptr)
+begin_new_syntax(char *ptr)
 {
     PROFILE_FUNCTION;
 
-    s8 *nameptr = ptr;
+    char *nameptr = ptr;
 
     //
     //  Check that the syntax name is not empty.
@@ -609,7 +609,7 @@ check_for_nonempty_syntax()
 {
     if (opensyntax && !seen_color_command)
     {
-        u64 current_lineno = lineno;
+        unsigned long current_lineno = lineno;
 
         lineno = live_syntax->lineno;
         jot_error(N_("Syntax \"%s\" has no color commands"), live_syntax->name);
@@ -634,18 +634,18 @@ is_universal(void (*func)())
 //  to or from a function.
 //
 void
-parse_binding(s8 *ptr, bool dobind)
+parse_binding(char *ptr, bool dobind)
 {
     PROFILE_FUNCTION;
 
-    s8 *keyptr  = nullptr;
-    s8 *keycopy = nullptr;
-    s8 *funcptr = nullptr;
-    s8 *menuptr = nullptr;
+    char *keyptr  = nullptr;
+    char *keycopy = nullptr;
+    char *funcptr = nullptr;
+    char *menuptr = nullptr;
 
-    s32 keycode;
-    s32 menu;
-    s32 mask = 0;
+    int keycode;
+    int menu;
+    int mask = 0;
 
     keystruct *newsc = nullptr;
 
@@ -862,11 +862,9 @@ parse_binding(s8 *ptr, bool dobind)
     sclist      = newsc;
 }
 
-//
-//  Verify that the given file exists, is not a folder nor a device.
-//
+/* Verify that the given file exists, is not a folder nor a device. */
 bool
-is_good_file(s8 *file)
+is_good_file(char *file)
 {
     struct stat rcinfo;
 
@@ -890,131 +888,90 @@ is_good_file(s8 *file)
     return true;
 }
 
-//
-//  Partially parse the syntaxes in the given file,
-//  or ( when syntax is not NULL ) fully parse one specific syntax from the file.
-//
+/* Partially parse the syntaxes in the given file,
+ * or (when syntax is not NULL) fully parse one specific syntax from the file. */
 void
-parse_one_include(s8 *file, syntaxtype *syntax)
+parse_one_include(char *file, syntaxtype *syntax)
 {
     PROFILE_FUNCTION;
-
-    s8   *was_nanorc = nanorc;
-    u64   was_lineno = lineno;
-    FILE *rcstream;
-
+    char          *was_nanorc = nanorc;
+    unsigned long  was_lineno = lineno;
+    FILE          *rcstream;
     augmentstruct *extra;
-
-    //
-    //  Don't open directories,
-    //  character files,
-    //  or block files.
-    //
+    /* Don't open directories, character files, or block files. */
     if (access(file, R_OK) == 0 && !is_good_file(file))
     {
         return;
     }
-
-    rcstream = std::fopen(file, "rb");
-
+    rcstream = fopen(file, "rb");
     if (rcstream == nullptr)
     {
         jot_error(N_("Error reading %s: %s"), file, ERRNO_C_STR);
         return;
     }
-
-    //
-    //  Use the name and line number position of the included syntax file
-    //  while parsing it, so we can know where any errors in it are.
-    //
+    /* Use the name and line number position of the included syntax file
+     * while parsing it, so we can know where any errors in it are. */
     nanorc = file;
     lineno = 0;
-
-    //
-    //  If this is the first pass,
-    //  parse only the prologue.
-    //
+    /* If this is the first pass, parse only the prologue. */
     if (syntax == nullptr)
     {
         parse_rcfile(rcstream, true, true);
         nanorc = was_nanorc;
         lineno = was_lineno;
-
         return;
     }
-
     live_syntax = syntax;
     lastcolor   = nullptr;
-
-    //
-    //  Fully parse the given syntax (as it is about to be used).
-    //
+    /* Fully parse the given syntax (as it is about to be used). */
     parse_rcfile(rcstream, true, false);
-
     extra = syntax->augmentations;
-
-    //
-    //  Apply any stored extendsyntax commands.
-    //
+    /* Apply any stored extendsyntax commands. */
     while (extra != nullptr)
     {
-        s8 *keyword = extra->data;
-        s8 *therest = parse_next_word(extra->data);
-
-        nanorc = extra->filename;
-        lineno = extra->lineno;
-
+        char *keyword = extra->data;
+        char *therest = parse_next_word(extra->data);
+        nanorc        = extra->filename;
+        lineno        = extra->lineno;
         if (!parse_syntax_commands(keyword, therest))
         {
             jot_error(N_("Command \"%s\" not understood"), keyword);
         }
-
         extra = extra->next;
     }
-
-    std::free(syntax->filename);
+    free(syntax->filename);
     syntax->filename = nullptr;
-
-    nanorc = was_nanorc;
-    lineno = was_lineno;
+    nanorc           = was_nanorc;
+    lineno           = was_lineno;
 }
 
-//
-//  Expand globs in the passed name, and parse the resultant files.
-//
+/* Expand globs in the passed name, and parse the resultant files. */
 void
-parse_includes(s8 *ptr)
+parse_includes(char *ptr)
 {
     PROFILE_FUNCTION;
-
-    s8 *pattern;
-    s8 *expanded;
-
+    char  *pattern;
+    char  *expanded;
     glob_t files;
-    s32    result;
-
+    int    result;
     check_for_nonempty_syntax();
-
     pattern = ptr;
     if (*pattern == '"')
     {
         pattern++;
     }
     ptr = parse_argument(ptr);
-
     if (constexpr_strlen(pattern) > PATH_MAX)
     {
         jot_error(N_("Path is too long"));
         return;
     }
-
     //
     //  Expand a tilde first,
     //  then try to match the globbing pattern.
     //
     expanded = real_dir_from_tilde(pattern);
     result   = glob(expanded, GLOB_ERR | GLOB_NOCHECK, nullptr, &files);
-
     //
     //  If there are matches,
     //  process each of them.
@@ -1023,7 +980,7 @@ parse_includes(s8 *ptr)
     //
     if (result == 0)
     {
-        for (u64 i = 0; i < files.gl_pathc; ++i)
+        for (unsigned long i = 0; i < files.gl_pathc; ++i)
         {
             parse_one_include(files.gl_pathv[i], nullptr);
         }
@@ -1032,9 +989,8 @@ parse_includes(s8 *ptr)
     {
         jot_error(N_("Error expanding %s: %s"), pattern, strerror(errno));
     }
-
     globfree(&files);
-    std::free(expanded);
+    free(expanded);
 }
 
 //
@@ -1058,8 +1014,8 @@ parse_includes(s8 *ptr)
 /// @returns ( short )
 ///  -  The index of the color that is closest to the given RGB levels.
 //
-s16
-closest_index_color(s16 red, s16 green, s16 blue)
+short
+closest_index_color(short red, short green, short blue)
 {
     PROFILE_FUNCTION;
 
@@ -1089,9 +1045,8 @@ closest_index_color(s16 red, s16 green, s16 blue)
     }
 }
 
-static constexpr u8 COLORCOUNT = 34;
-
-CONSTEXPR_MAP<STRING_VIEW, s16, COLORCOUNT> huesIndiecesMap = {
+static constexpr unsigned char                COLORCOUNT      = 34;
+CONSTEXPR_MAP<STRING_VIEW, short, COLORCOUNT> huesIndiecesMap = {
     {{"red", COLOR_RED},
      {"green", COLOR_GREEN},
      {"blue", COLOR_BLUE},
@@ -1128,14 +1083,11 @@ CONSTEXPR_MAP<STRING_VIEW, s16, COLORCOUNT> huesIndiecesMap = {
      {"gray", COLOR_BLACK + 8}}
 };
 
-//
-//  Return the short value corresponding to the given color name, and set
-//  vivid to TRUE for a lighter color, and thick for a heavier typeface.
-//
-//  TODO : Use references instead of pointers
-//
-s16
-color_to_short(C_s8 *colorname, bool &vivid, bool &thick)
+/* Return the short value corresponding to the given color name, and set
+ * vivid to TRUE for a lighter color, and thick for a heavier typeface.
+ * TODO: Use references instead of pointers. */
+short
+color_to_short(const char *colorname, bool &vivid, bool &thick)
 {
     if (constexpr_strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
@@ -1157,7 +1109,7 @@ color_to_short(C_s8 *colorname, bool &vivid, bool &thick)
 
     if (colorname[0] == '#' && constexpr_strlen(colorname) == 4)
     {
-        u16 r, g, b;
+        unsigned short r, g, b;
 
         if (vivid)
         {
@@ -1171,7 +1123,7 @@ color_to_short(C_s8 *colorname, bool &vivid, bool &thick)
         }
     }
 
-    for (s32 index = 0; index < COLORCOUNT; index++)
+    for (int index = 0; index < COLORCOUNT; index++)
     {
         if (constexpr_strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0)
         {
@@ -1202,17 +1154,13 @@ color_to_short(C_s8 *colorname, bool &vivid, bool &thick)
 //  TODO : Use references instead of pointers
 //
 bool
-parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
+parse_combination(char *combotext, short &fg, short &bg, int &attributes)
 {
     PROFILE_FUNCTION;
-
-    bool vivid;
-    bool thick;
-
-    s8 *comma;
-
+    bool  vivid;
+    bool  thick;
+    char *comma;
     attributes = A_NORMAL;
-
     if (constexpr_strncmp(combotext, "bold", 4) == 0)
     {
         attributes |= A_BOLD;
@@ -1223,11 +1171,9 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
         }
         combotext += 5;
     }
-
     if (constexpr_strncmp(combotext, "italic", 6) == 0)
     {
         attributes |= A_ITALIC;
-
         if (combotext[6] != ',')
         {
             jot_error(N_("An attribute requires a subsequent comma"));
@@ -1235,14 +1181,11 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
         }
         combotext += 7;
     }
-
     comma = constexpr_strchr(combotext, ',');
-
     if (comma)
     {
         *comma = '\0';
     }
-
     if (!comma || comma > combotext)
     {
         fg = color_to_short(combotext, vivid, thick);
@@ -1263,7 +1206,6 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
     {
         fg = THE_DEFAULT;
     }
-
     if (comma)
     {
         bg = color_to_short(comma + 1, vivid, thick);
@@ -1280,7 +1222,6 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
     {
         bg = THE_DEFAULT;
     }
-
     return true;
 }
 
@@ -1290,71 +1231,51 @@ parse_combination(s8 *combotext, s16 &fg, s16 &bg, s32 &attributes)
 //  add a rule to the current syntax.
 //
 void
-parse_rule(s8 *ptr, s32 rex_flags)
+parse_rule(char *ptr, int rex_flags)
 {
     PROFILE_FUNCTION;
-
-    s8 *names;
-    s8 *regexstring;
-
-    s16 fg;
-    s16 bg;
-
-    s32 attributes;
-
+    char *names;
+    char *regexstring;
+    short fg;
+    short bg;
+    int   attributes;
     if (*ptr == '\0')
     {
         jot_error(N_("Missing color name"));
         return;
     }
-
     names = ptr;
     ptr   = parse_next_word(ptr);
-
     if (!parse_combination(names, fg, bg, attributes))
     {
         return;
     }
-
     if (*ptr == '\0')
     {
         jot_error(N_("Missing regex string after '%s' command"), "color");
         return;
     }
-
     while (*ptr != '\0')
     {
-        //
-        //  Intermediate storage for compiled regular expressions.
-        //
+        /* Intermediate storage for compiled regular expressions. */
         regex_t *start_rgx = nullptr;
         regex_t *end_rgx   = nullptr;
-        //
-        //  Container for compiled regex (pair) and the color it paints.
-        //
+        /* Container for compiled regex (pair) and the color it paints. */
         colortype *newcolor = nullptr;
-        //
-        //  Whether it is a start=/end= regex pair.
-        //
+        /* Whether it is a start=/end= regex pair. */
         bool expectend = false;
-
         if (constexpr_strncmp(ptr, "start=", 6) == 0)
         {
             ptr += 6;
             expectend = TRUE;
         }
-
         regexstring = ++ptr;
         ptr         = parse_next_regex(ptr);
-
-        //
-        //  When there is no regex, or it is invalid, skip this line.
-        //
+        /* When there is no regex, or it is invalid, skip this line. */
         if (ptr == nullptr || !compile(regexstring, rex_flags, start_rgx))
         {
             return;
         }
-
         if (expectend)
         {
             if (constexpr_strncmp(ptr, "end=", 4) != 0)
@@ -1378,19 +1299,13 @@ parse_rule(s8 *ptr, s32 rex_flags)
                 return;
             }
         }
-
-        //
-        //  Allocate a rule, fill in the data, and link it into the list.
-        //
-        newcolor = static_cast<colortype *>(nmalloc(sizeof(colortype)));
-
-        newcolor->start = start_rgx;
-        newcolor->end   = end_rgx;
-
+        /* Allocate a rule, fill in the data, and link it into the list. */
+        newcolor             = (colortype *)nmalloc(sizeof(colortype));
+        newcolor->start      = start_rgx;
+        newcolor->end        = end_rgx;
         newcolor->fg         = fg;
         newcolor->bg         = bg;
         newcolor->attributes = attributes;
-
         if (lastcolor == nullptr)
         {
             live_syntax->color = newcolor;
@@ -1399,13 +1314,9 @@ parse_rule(s8 *ptr, s32 rex_flags)
         {
             lastcolor->next = newcolor;
         }
-
         newcolor->next = nullptr;
         lastcolor      = newcolor;
-
-        //
-        //  For a multiline rule, give it a number and increase the count.
-        //
+        /* For a multiline rule, give it a number and increase the count. */
         if (expectend)
         {
             newcolor->id = live_syntax->multiscore;
@@ -1414,22 +1325,19 @@ parse_rule(s8 *ptr, s32 rex_flags)
     }
 }
 
-//
-//  Set the colors for the given interface element to the given combination.
-//
+/* Set the colors for the given interface element to the given combination. */
 void
-set_interface_color(C_s32 element, s8 *combotext)
+set_interface_color(const int element, char *combotext)
 {
-    colortype *trio = static_cast<colortype *>(nmalloc(sizeof(colortype)));
-
+    colortype *trio = (colortype *)nmalloc(sizeof(colortype));
     if (parse_combination(combotext, trio->fg, trio->bg, trio->attributes))
     {
-        std::free(color_combo[element]);
+        free(color_combo[element]);
         color_combo[element] = trio;
     }
     else
     {
-        std::free(trio);
+        free(trio);
     }
 }
 
@@ -1438,75 +1346,51 @@ set_interface_color(C_s32 element, s8 *combotext)
 //  by ptr, and store them quoteless in the passed storage place.
 //
 void
-grab_and_store(C_s8 *kind, s8 *ptr, regexlisttype **storage)
+grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
 {
     regexlisttype *lastthing, *newthing;
-
-    C_s8 *regexstring;
-
+    const char    *regexstring;
     if (!opensyntax)
     {
         jot_error(N_("A '%s' command requires a preceding 'syntax' command"), kind);
         return;
     }
-
-    //
-    //  The default syntax doesn't take any file matching stuff.
-    //
+    /* The default syntax doesn't take any file matching stuff. */
     if (constexpr_strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept '%s' regexes"), kind);
         return;
     }
-
     if (*ptr == '\0')
     {
         jot_error(N_("Missing regex string after '%s' command"), kind);
         return;
     }
-
     lastthing = *storage;
-
-    //
-    //  If there was an earlier command, go to the last of those regexes.
-    //
+    /* If there was an earlier command, go to the last of those regexes. */
     while (lastthing != nullptr && lastthing->next != nullptr)
     {
         lastthing = lastthing->next;
     }
-
-    //
-    //  Now gather any valid regexes and add them to the linked list.
-    //
+    /* Now gather any valid regexes and add them to the linked list. */
     while (*ptr != '\0')
     {
         regex_t *packed_rgx = nullptr;
-
-        regexstring = ++ptr;
-
-        ptr = parse_next_regex(ptr);
-
+        regexstring         = ++ptr;
+        ptr                 = parse_next_regex(ptr);
         if (ptr == nullptr)
         {
             return;
         }
-
-        //
-        //  If the regex string is malformed, skip it.
-        //
+        /* If the regex string is malformed, skip it. */
         if (!compile(regexstring, NANO_REG_EXTENDED | REG_NOSUB, packed_rgx))
         {
             continue;
         }
-
-        //
-        //  Copy the regex into a struct, and hook this in at the end.
-        //
-        newthing = static_cast<regexlisttype *>(nmalloc(sizeof(regexlisttype)));
-
+        /* Copy the regex into a struct, and hook this in at the end. */
+        newthing          = static_cast<regexlisttype *>(nmalloc(sizeof(regexlisttype)));
         newthing->one_rgx = packed_rgx;
         newthing->next    = nullptr;
-
         if (lastthing == nullptr)
         {
             *storage = newthing;
@@ -1515,31 +1399,24 @@ grab_and_store(C_s8 *kind, s8 *ptr, regexlisttype **storage)
         {
             lastthing->next = newthing;
         }
-
         lastthing = newthing;
     }
 }
 
-//
-//  Gather and store the string after a comment/linter command.
-//
+/* Gather and store the string after a comment/linter command. */
 void
-pick_up_name(C_s8 *kind, s8 *ptr, s8 **storage)
+pick_up_name(const char *kind, char *ptr, char **storage)
 {
     PROFILE_FUNCTION;
-
     if (*ptr == '\0')
     {
         jot_error(N_("Missing argument after '%s'"), kind);
         return;
     }
-    //
-    //  If the argument starts with a quote, find the terminating quote.
-    //
+    /* If the argument starts with a quote, find the terminating quote. */
     if (*ptr == '"')
     {
-        s8 *look = ptr + constexpr_strlen(ptr);
-
+        char *look = ptr + constexpr_strlen(ptr);
         while (*look != '"')
         {
             if (--look == ptr)
@@ -1548,21 +1425,17 @@ pick_up_name(C_s8 *kind, s8 *ptr, s8 **storage)
                 return;
             }
         }
-
         *look = '\0';
         ptr++;
     }
     *storage = mallocstrcpy(*storage, ptr);
 }
 
-//
-//  Parse the syntax command in the given string,
-//  and set the syntax options accordingly.
-//
+/* Parse the syntax command in the given string, and set the syntax options accordingly. */
 bool
-parse_syntax_commands(C_s8 *keyword, s8 *ptr)
+parse_syntax_commands(const char *keyword, char *ptr)
 {
-    C_u32 syntax_opt = retriveSyntaxOptionFromStr(keyword);
+    unsigned int syntax_opt = retriveSyntaxOptionFromStr(keyword);
     if (syntax_opt == false)
     {
         return false;
@@ -1596,18 +1469,15 @@ parse_syntax_commands(C_s8 *keyword, s8 *ptr)
     return true;
 }
 
-static constexpr u8 VITALS = 4;
-//
-//  Verify that the user has not unmapped every shortcut for a
-//  function that we consider 'vital' (such as 'do_exit').
-//
+static constexpr unsigned char VITALS = 4;
+/* Verify that the user has not unmapped every shortcut for a
+ * function that we consider 'vital' (such as 'do_exit'). */
 static void
 check_vitals_mapped()
 {
     void (*vitals[VITALS])() = {do_exit, do_exit, do_exit, do_cancel};
-    s32 inmenus[VITALS]      = {MMAIN, MBROWSER, MHELP, MYESNO};
-
-    for (s32 v = 0; v < VITALS; v++)
+    int inmenus[VITALS]      = {MMAIN, MBROWSER, MHELP, MYESNO};
+    for (unsigned int v = 0; v < VITALS; v++)
     {
         for (funcstruct *f = allfuncs; f != nullptr; f = f->next)
         {
@@ -1657,35 +1527,23 @@ void
 parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 {
     PROFILE_FUNCTION;
-
-    s8 *buffer = nullptr;
-    u64 size   = 0;
-    s64 length = 0;
-
-    //
-    // TODO : This is the main loop for rcfile parsing. FIX IT
-    //
+    char         *buffer = nullptr;
+    unsigned long size   = 0;
+    long          length = 0;
+    /* TODO: This is the main loop for rcfile parsing. FIX IT */
     while ((length = getline(&buffer, &size, rcstream)) > 0)
     {
-        s8 *ptr, *keyword, *option, *argument;
-
-        bool drop_open = false;
-        s32  set       = 0;
-        u64  i;
-
+        char         *ptr, *keyword, *option, *argument;
+        bool          drop_open = false;
+        int           set       = 0;
+        unsigned long i;
         lineno++;
-
-        //
-        //  If doing a full parse, skip to after the 'syntax' command.
-        //
+        /* If doing a full parse, skip to after the 'syntax' command. */
         if (just_syntax && !intros_only && lineno <= live_syntax->lineno)
         {
             continue;
         }
-
-        //
-        //  Strip the terminating newline and possibly a carriage return.
-        //
+        /* Strip the terminating newline and possibly a carriage return. */
         if (buffer[length - 1] == '\n')
         {
             buffer[--length] = '\0';
@@ -1694,35 +1552,24 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         {
             buffer[--length] = '\0';
         }
-
         ptr = buffer;
-        while (isblank(static_cast<u8>(*ptr)))
+        while (isblank((unsigned char)*ptr))
         {
             ptr++;
         }
-
-        //
-        //  If the line is empty or a comment, skip to next line.
-        //
+        /* If the line is empty or a comment, skip to next line. */
         if (*ptr == '\0' || *ptr == '#')
         {
             continue;
         }
-
-        //
-        //  Otherwise, skip to the next space.
-        //
+        /* Otherwise, skip to the next space. */
         keyword = ptr;
-
-        ptr = parse_next_word(ptr);
-
-        //
-        //  Handle extending first...
-        //
+        ptr     = parse_next_word(ptr);
+        /* Handle extending first... */
         if (!just_syntax && constexpr_strcmp(keyword, "extendsyntax") == 0)
         {
             augmentstruct *newitem, *extra;
-            s8            *syntaxname = ptr;
+            char          *syntaxname = ptr;
             syntaxtype    *sntx;
 
             check_for_nonempty_syntax();
@@ -1784,10 +1631,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 continue;
             }
         }
-
-        //
-        //  Try to parse the keyword.
-        //
+        /* Try to parse the keyword. */
         if (constexpr_strcmp(keyword, "syntax") == 0)
         {
             if (intros_only)
@@ -1878,31 +1722,23 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 jot_error(N_("Command \"%s\" not understood"), keyword);
             }
         }
-
         if (drop_open)
         {
             opensyntax = false;
         }
-
         if (set == 0)
         {
             continue;
         }
-
         check_for_nonempty_syntax();
-
         if (*ptr == '\0')
         {
             jot_error(N_("Missing option"));
             continue;
         }
-
         option = ptr;
         ptr    = parse_next_word(ptr);
-
-        //
-        //  Find the just parsed option name among the existing names.
-        //
+        /* Find the just parsed option name among the existing names. */
         for (i = 0; rcopts[i].name != nullptr; i++)
         {
             if (constexpr_strcmp(option, rcopts[i].name) == 0)
@@ -1910,16 +1746,12 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 break;
             }
         }
-
         if (rcopts[i].name == nullptr)
         {
             jot_error(N_("Unknown option: %s"), option);
             continue;
         }
-
-        //
-        //  If the option has a flag, set it or unset it, as requested.
-        //
+        /* If the option has a flag, set it or unset it, as requested. */
         if (rcopts[i].flag)
         {
             if (set == 1)
@@ -1932,42 +1764,32 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
             continue;
         }
-
-        //
-        //  An option that takes an argument cannot be unset.
-        //
+        /* An option that takes an argument cannot be unset. */
         if (set == -1)
         {
             jot_error(N_("Cannot unset option \"%s\""), option);
             continue;
         }
-
         if (*ptr == '\0')
         {
             jot_error(N_("Option \"%s\" requires an argument"), option);
             continue;
         }
-
         argument = ptr;
         if (*argument == '"')
         {
             argument++;
         }
         ptr = parse_argument(ptr);
-
-        //
-        //  When in a UTF-8 locale, ignore arguments with invalid sequences.
-        //
-        if (using_utf8() && mbstowcs(nullptr, argument, 0) == (u64)-1)
+        /* When in a UTF-8 locale, ignore arguments with invalid sequences. */
+        if (using_utf8() && mbstowcs(nullptr, argument, 0) == (unsigned long)-1)
         {
             jot_error(N_("Argument is not a valid multibyte string"));
             continue;
         }
-
-        const s32 colorOption = retriveColorOptionFromStr(option);
+        const int colorOption = retriveColorOptionFromStr(option);
         (colorOption != u32_MAX) ? set_interface_color(colorOption, argument) : void();
-
-        const u32 configOption = retriveConfigOptionFromStr(option);
+        const unsigned int configOption = retriveConfigOptionFromStr(option);
         if (!configOption)
         {
             ;
@@ -2067,31 +1889,22 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
         }
     }
-
     if (intros_only)
     {
         check_for_nonempty_syntax();
     }
-
-    std::fclose(rcstream);
-    std::free(buffer);
+    fclose(rcstream);
+    free(buffer);
     lineno = 0;
-
-    return;
 }
 
-//
-//  Read and interpret one of the two nanorc files.
-//
+/* Read and interpret one of the two nanorc files. */
 void
 parse_one_nanorc()
 {
     FILE *rcstream = fopen(nanorc, "rb");
-
-    //
-    //  If opening the file succeeded, parse it.
-    //  Otherwise, only complain if the file actually exists.
-    //
+    /* If opening the file succeeded, parse it.
+     * Otherwise, only complain if the file actually exists. */
     if (rcstream != nullptr)
     {
         parse_rcfile(rcstream, false, true);
@@ -2103,29 +1916,19 @@ parse_one_nanorc()
 }
 
 bool
-have_nanorc(C_s8 *path, C_s8 *name)
+have_nanorc(const char *path, const char *name)
 {
     if (path == nullptr)
     {
         return false;
     }
-
-    std::free(nanorc);
+    free(nanorc);
     nanorc = concatenate(path, name);
-
     return is_good_file(nanorc);
 }
 
-//
-/// @name
-///  - @c do_rcfiles
-///
-/// @brief
-///  -  Process the nanorc file that was specified on the command line (if any),
-///  -  and otherwise the system-wide rcfile followed by the user's rcfile.
-///
-/// @returns ( void )
-//
+/* Process the nanorc file that was specified on the command line (if any),
+ * and otherwise the system-wide rcfile followed by the user's rcfile. */
 void
 do_rcfiles()
 {
@@ -2141,22 +1944,16 @@ do_rcfiles()
     {
         nanorc = mallocstrcpy(nanorc, SYSCONFDIR "/nanorc");
     }
-
     if (is_good_file(nanorc))
     {
         parse_one_nanorc();
     }
-
     if (custom_nanorc == nullptr)
     {
-        C_s8 *xdgconfdir = getenv("XDG_CONFIG_HOME");
-
+        const char *xdgconfdir = getenv("XDG_CONFIG_HOME");
         get_homedir();
-
-        //
-        //  Now try to find a nanorc file in the user's home directory or in the
-        //  XDG configuration directories, and process the first one found.
-        //
+        /* Now try to find a nanorc file in the user's home directory or in the
+         * XDG configuration directories, and process the first one found. */
         if (have_nanorc(homedir, "/" HOME_RC_NAME) || have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) ||
             have_nanorc(homedir, "/.config/nano/" RCFILE_NAME))
         {
@@ -2167,8 +1964,7 @@ do_rcfiles()
             jot_error(N_("I can't find my home directory!  Wah!"));
         }
     }
-
     check_vitals_mapped();
-    std::free(nanorc);
+    free(nanorc);
     nanorc = nullptr;
 }

@@ -26,32 +26,21 @@
 // #    include <magic.h>
 #endif
 
-//
-//  Whether ncurses accepts -1 to mean "default color".
-//
+/* Whether ncurses accepts -1 to mean "default color". */
 static bool defaults_allowed = false;
 
-//
-//  Initialize the color pairs for nano's interface.
-//  Ask ncurses to allow -1 to mean "default color".
-//  Initialize the color pairs for nano's interface elements.
-//  @return void
-//
+/* Initialize the color pairs for nano's interface.
+ * Ask ncurses to allow -1 to mean "default color".
+ * Initialize the color pairs for nano's interface elements. */
 void
 set_interface_colorpairs()
 {
-    //
-    //  Ask ncurses to allow -1 to mean "default color".
-    //
+    /* Ask ncurses to allow -1 to mean "default color". */
     defaults_allowed = (use_default_colors() == OK);
-
-    //
-    //  Initialize the color pairs for nano's interface elements.
-    //
-    for (u64 index = 0; index < NUMBER_OF_ELEMENTS; index++)
+    /* Initialize the color pairs for nano's interface elements. */
+    for (unsigned long index = 0; index < NUMBER_OF_ELEMENTS; index++)
     {
         colortype *combo = color_combo[index];
-
         if (combo != nullptr)
         {
             if (!defaults_allowed)
@@ -65,11 +54,9 @@ set_interface_colorpairs()
                     combo->bg = COLOR_BLACK;
                 }
             }
-
             init_pair(index + 1, combo->fg, combo->bg);
             interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
-
-            rescind_colors = false;
+            rescind_colors              = false;
         }
         else
         {
@@ -100,10 +87,8 @@ set_interface_colorpairs()
                 interface_color_pair[index] = hilite_attribute;
             }
         }
-
         free(color_combo[index]);
     }
-
     if (rescind_colors)
     {
         interface_color_pair[SPOTLIGHTED]   = A_REVERSE;
@@ -111,17 +96,14 @@ set_interface_colorpairs()
     }
 }
 
-//
-//  Assign a pair number to each of the foreground/background color combinations
-//  in the given syntax, giving identical combinations the same number.
-//
+/* Assign a pair number to each of the foreground/background color combinations
+ * in the given syntax, giving identical combinations the same number.
+ * TODO: (set_syntax_colorpairs) - This is where syntax colors are set, implement func colors. */
 void
 set_syntax_colorpairs(syntaxtype *sntx)
 {
-    s16 number = NUMBER_OF_ELEMENTS;
-
+    short      number = NUMBER_OF_ELEMENTS;
     colortype *older;
-
     for (colortype *ink = sntx->color; ink != nullptr; ink = ink->next)
     {
         if (!defaults_allowed)
@@ -149,18 +131,12 @@ set_syntax_colorpairs(syntaxtype *sntx)
     }
 }
 
-//
-//  Initialize the color pairs for the current syntax.
-//
+/* Initialize the color pairs for the current syntax. */
 void
 prepare_palette()
 {
-    s16 number = NUMBER_OF_ELEMENTS;
-
-    //
-    //  For each unique pair number,
-    //  tell ncurses the combination of colors.
-    //
+    short number = NUMBER_OF_ELEMENTS;
+    /* For each unique pair number, tell ncurses the combination of colors. */
     for (colortype *ink = openfile->syntax->color; ink != nullptr; ink = ink->next)
     {
         if (ink->pairnum > number)
@@ -169,17 +145,14 @@ prepare_palette()
             number = ink->pairnum;
         }
     }
-
     have_palette = true;
 }
 
-//
-//  Try to match the given shibboleth string with,
-//  one of the regexes in the list starting at head.
-//  Return 'true' upon success.
-//
+/* Try to match the given shibboleth string with,
+ * one of the regexes in the list starting at head.
+ * Return 'true' upon success. */
 bool
-found_in_list(regexlisttype *head, C_s8 *shibboleth)
+found_in_list(regexlisttype *head, const char *shibboleth)
 {
     for (regexlisttype *item = head; item != nullptr; item = item->next)
     {
@@ -199,33 +172,20 @@ void
 find_and_prime_applicable_syntax()
 {
     PROFILE_FUNCTION;
-
     syntaxtype *sntx = nullptr;
-
-    //
-    //  If the rcfiles were not read,
-    //  or contained no syntaxes,
-    //  get out.
-    //
+    /* If the rcfiles were not read, or contained no syntaxes, get out. */
     if (syntaxes == nullptr)
     {
         return;
     }
-
-    //
-    //  If we specified a syntax-override string,
-    //  use it.
-    //
+    /* If we specified a syntax-override string, use it. */
     if (syntaxstr != nullptr)
     {
-        //
-        //  An override of "none" is like having no syntax at all.
-        //
+        /* An override of "none" is like having no syntax at all. */
         if (constexpr_strcmp(syntaxstr, "none") == 0)
         {
             return;
         }
-
         for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
         {
             if (constexpr_strcmp(sntx->name, syntaxstr) == 0)
@@ -233,21 +193,16 @@ find_and_prime_applicable_syntax()
                 break;
             }
         }
-
         if (sntx == nullptr && !inhelp)
         {
             statusline(ALERT, _("Unknown syntax name: %s"), syntaxstr);
         }
     }
-
-    //
-    //  If no syntax-override string was specified,
-    //  or it didn't match,
-    //  try finding a syntax based on the filename (extension).
-    //
+    /* If no syntax-override string was specified, or it didn't match,
+     * try finding a syntax based on the filename (extension). */
     if (sntx == nullptr && !inhelp)
     {
-        s8 *fullname = get_full_path(openfile->filename);
+        char *fullname = get_full_path(openfile->filename);
 
         if (fullname == nullptr)
         {
@@ -264,11 +219,7 @@ find_and_prime_applicable_syntax()
 
         std::free(fullname);
     }
-
-    //
-    //  If the filename didn't match anything,
-    //  try the first line.
-    //
+    /* If the filename didn't match anything, try the first line. */
     if (sntx == nullptr && !inhelp)
     {
         for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
@@ -279,14 +230,13 @@ find_and_prime_applicable_syntax()
             }
         }
     }
-
 #ifdef HAVE_LIBMAGIC
     // If we still don't have an answer, try using magic (when requested).
     if (sntx == nullptr && !inhelp && ISSET(USE_MAGIC))
     {
         struct stat fileinfo;
         magic_t     cookie      = nullptr;
-        const s8   *magicstring = nullptr;
+        const char *magicstring = nullptr;
 
         if (stat(openfile->filename, &fileinfo) == 0)
         {
@@ -328,10 +278,7 @@ find_and_prime_applicable_syntax()
         }
     }
 #endif
-    //
-    //  If nothing at all matched,
-    //  see if there is a default syntax.
-    //
+    /* If nothing at all matched, see if there is a default syntax. */
     if (sntx == nullptr && !inhelp)
     {
         for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
@@ -342,69 +289,47 @@ find_and_prime_applicable_syntax()
             }
         }
     }
-
-    //
-    //  When the syntax isn't loaded yet,
-    //  parse it and initialize its colors.
-    //
+    /* When the syntax isn't loaded yet, parse it and initialize its colors. */
     if (sntx != nullptr && sntx->filename != nullptr)
     {
         parse_one_include(sntx->filename, sntx);
         set_syntax_colorpairs(sntx);
     }
-
     openfile->syntax = sntx;
 }
 
-//
-//  Determine whether the matches of multiline regexes are still the same,
-//  and if not, schedule a screen refresh, so things will be repainted.
-//
+/* Determine whether the matches of multiline regexes are still the same,
+ * and if not, schedule a screen refresh, so things will be repainted. */
 void
 check_the_multis(linestruct *line)
 {
     const colortype *ink;
-
-    regmatch_t startmatch;
-    regmatch_t endmatch;
-
-    bool astart;
-    bool anend;
-    s8  *afterstart;
-
-    //
-    //  If there is no syntax or no multiline regex,
-    //  there is nothing to do.
-    //
+    regmatch_t       startmatch;
+    regmatch_t       endmatch;
+    bool             astart;
+    bool             anend;
+    char            *afterstart;
+    /* If there is no syntax or no multiline regex, there is nothing to do. */
     if (!openfile->syntax || !openfile->syntax->multiscore)
     {
         return;
     }
-
     if (line->multidata == nullptr)
     {
         refresh_needed = true;
         return;
     }
-
     for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next)
     {
-        //
-        //  If it's not a multiline regex,
-        //  skip.
-        //
+        /* If it's not a multiline regex, skip. */
         if (ink->end == nullptr)
         {
             continue;
         }
-
         astart     = (regexec(ink->start, line->data, 1, &startmatch, 0) == 0);
         afterstart = line->data + (astart ? startmatch.rm_eo : 0);
         anend      = (regexec(ink->end, afterstart, 1, &endmatch, 0) == 0);
-
-        //
-        //  Check whether the multidata still matches the current situation.
-        //
+        /* Check whether the multidata still matches the current situation. */
         if (line->multidata[ink->id] == NOTHING)
         {
             if (!astart)
@@ -414,9 +339,7 @@ check_the_multis(linestruct *line)
         }
         else if (line->multidata[ink->id] == WHOLELINE)
         {
-            //
-            //  Ensure that a detected start match is not actually an end match.
-            //
+            /* Ensure that a detected start match is not actually an end match. */
             if (!anend && (!astart || regexec(ink->end, line->data, 1, &endmatch, 0) != 0))
             {
                 continue;
@@ -444,142 +367,98 @@ check_the_multis(linestruct *line)
                 continue;
             }
         }
-
-        //
-        //  There is a mismatch, so something changed:
-        //  - repaint.
-        //
+        /* There is a mismatch, so something changed: repaint. */
         refresh_needed = true;
         perturbed      = true;
-
         return;
     }
 }
 
-//
-// Precalculate the multi-line start and end regex info so we can
-// speed up rendering (with any hope at all...).
-//
+/* Precalculate the multi-line start and end regex info so we can
+ * speed up rendering (with any hope at all...). */
 void
 precalc_multicolorinfo()
 {
     PROFILE_FUNCTION;
-
     const colortype *ink;
     regmatch_t       startmatch, endmatch;
     linestruct      *line, *tailline;
-
     if (!openfile->syntax || !openfile->syntax->multiscore || ISSET(NO_SYNTAX))
     {
         return;
     }
-
 // #define TIMEPRECALC 123
 #ifdef TIMEPRECALC
 #    include <time.h>
     clock_t start = clock();
 #endif
-
     /* For each line, allocate cache space for the multiline-regex info. */
     for (line = openfile->filetop; line != nullptr; line = line->next)
     {
         if (!line->multidata)
         {
-            line->multidata = static_cast<s16 *>(nmalloc(openfile->syntax->multiscore * sizeof(s16)));
+            line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
         }
     }
-
     for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next)
     {
-        // If this is not a multi-line regex, skip it.
+        /* If this is not a multi-line regex, skip it. */
         if (ink->end == nullptr)
         {
             continue;
         }
-
         for (line = openfile->filetop; line != nullptr; line = line->next)
         {
-            s32 index = 0;
-            //
-            //  Assume nothing applies until proven otherwise below.
-            //
+            int index = 0;
+            /* Assume nothing applies until proven otherwise below. */
             line->multidata[ink->id] = NOTHING;
-
-            //
-            //  When the line contains a start match, look for an end,
-            //  and if found, mark all the lines that are affected.
-            //
+            /* When the line contains a start match, look for an end,
+             * and if found, mark all the lines that are affected. */
             while (regexec(ink->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
             {
-                //
-                //  Begin looking for an end match after the start match.
-                //
+                /* Begin looking for an end match after the start match. */
                 index += startmatch.rm_eo;
-
-                //
-                //  If there is an end match on this same line, mark the line,
-                //  but continue looking for other starts after it.
-                //
+                /* If there is an end match on this same line, mark the line,
+                 * but continue looking for other starts after it. */
                 if (regexec(ink->end, line->data + index, 1, &endmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
                 {
                     line->multidata[ink->id] = JUSTONTHIS;
-
                     index += endmatch.rm_eo;
-
-                    //
-                    //  If the total match has zero length, force an advance.
-                    //
+                    /* If the total match has zero length, force an advance. */
                     if (startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo == 0)
                     {
-                        //
-                        //  When at end-of-line, there is no other start.
-                        //
+                        /* When at end-of-line, there is no other start. */
                         if (line->data[index] == '\0')
                         {
                             break;
                         }
                         index = step_right(line->data, index);
                     }
-
                     continue;
                 }
-
-                //
-                //  Look for an end match on later lines.
-                //
+                /* Look for an end match on later lines. */
                 tailline = line->next;
-
                 while (tailline && regexec(ink->end, tailline->data, 1, &endmatch, 0) != 0)
                 {
                     tailline = tailline->next;
                 }
-
                 line->multidata[ink->id] = STARTSHERE;
-
-                //
-                //  Note that this also advances the line in the main loop.
-                //
+                /* Note that this also advances the line in the main loop. */
                 for (line = line->next; line != tailline; line = line->next)
                 {
                     line->multidata[ink->id] = WHOLELINE;
                 }
-
                 if (tailline == nullptr)
                 {
                     line = openfile->filebot;
                     break;
                 }
-
                 tailline->multidata[ink->id] = ENDSHERE;
-
-                //
-                //  Look for a possible new start after the end match.
-                //
+                /* Look for a possible new start after the end match. */
                 index = endmatch.rm_eo;
             }
         }
     }
-
 #ifdef TIMEPRECALC
     statusline(INFO, "Precalculation: %.1f ms", 1000 * (double)(clock() - start) / CLOCKS_PER_SEC);
     napms(1200);

@@ -30,7 +30,7 @@ extern linestruct *cutbottom;
 extern linestruct *pletion_line;
 
 // extern unsigned flags[4];
-extern size_t flags[1];
+extern unsigned long flags[1];
 
 extern long fill;
 
@@ -101,7 +101,7 @@ extern bool perturbed;
 extern bool recook;
 extern bool refresh_needed;
 
-extern size_t wrap_at;
+extern unsigned long wrap_at;
 
 extern long stripe_column;
 extern long tabsize;
@@ -116,79 +116,71 @@ extern funcstruct *exitfunc;
 extern regex_t    search_regexp;
 extern regmatch_t regmatches[10];
 
-extern int    hilite_attribute;
-extern int    interface_color_pair[NUMBER_OF_ELEMENTS];
-extern char  *homedir;
-extern char  *statedir;
-extern char  *startup_problem;
-extern char  *custom_nanorc;
-extern char  *commandname;
-extern bool   spotlighted;
-extern size_t light_from_col;
-extern size_t light_to_col;
+extern int           hilite_attribute;
+extern int           interface_color_pair[NUMBER_OF_ELEMENTS];
+extern char         *homedir;
+extern char         *statedir;
+extern char         *startup_problem;
+extern char         *custom_nanorc;
+extern char         *commandname;
+extern bool          spotlighted;
+extern unsigned long light_from_col;
+extern unsigned long light_to_col;
 
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
 typedef void (*functionptrtype)();
 
-//
-//  The two needed functions from 'browser.cpp'.
-//
+/* The two needed functions from 'browser.cpp'. */
 void  browser_refresh();
 char *browse_in(const char *inpath);
 void  to_first_file();
 void  to_last_file();
 
-//
-//  Most functions in 'chars.cpp'.
-//
-void   utf8_init();
-bool   using_utf8();
-bool   is_alpha_char(const char *c);
-bool   is_blank_char(const char *c);
-bool   is_cntrl_char(const char *c);
-bool   is_word_char(const char *c, bool allow_punct);
-char   control_mbrep(const char *c, bool isdata);
-int    mbtowide(wchar_t &wc, const char *c);
-bool   is_doublewidth(const char *ch);
-bool   is_zerowidth(const char *ch);
-int    char_length(const char *const &pointer);
-size_t mbstrlen(const char *pointer);
-int    collect_char(const char *string, char *thechar);
-int    advance_over(const char *string, size_t &column);
-size_t step_left(const char *buf, size_t pos);
-size_t step_right(const char *buf, size_t pos);
-int    mbstrcasecmp(const char *s1, const char *s2);
-int    mbstrncasecmp(const char *s1, const char *s2, size_t n);
-char  *mbstrcasestr(const char *haystack, const char *needle);
-char  *revstrstr(const char *haystack, const char *needle, const char *pointer);
-char  *mbrevstrcasestr(const char *haystack, const char *needle, const char *pointer);
-char  *mbstrchr(const char *string, const char *chr);
-char  *mbstrpbrk(const char *string, const char *accept);
-char  *mbrevstrpbrk(const char *head, const char *accept, const char *pointer);
-bool   has_blank_char(const char *string);
-bool   white_string(const char *string);
-void   strip_leading_blanks_from(char *string);
+/* Most functions in 'chars.cpp'. */
+void          utf8_init();
+bool          using_utf8();
+bool          is_alpha_char(const char *c);
+bool          is_blank_char(const char *c);
+bool          is_cntrl_char(const char *c);
+bool          is_word_char(const char *c, bool allow_punct);
+char          control_mbrep(const char *c, bool isdata);
+int           mbtowide(wchar_t &wc, const char *c);
+bool          is_doublewidth(const char *ch);
+bool          is_zerowidth(const char *ch);
+int           char_length(const char *const &pointer);
+unsigned long mbstrlen(const char *pointer);
+int           collect_char(const char *string, char *thechar);
+int           advance_over(const char *string, unsigned long &column);
+unsigned long step_left(const char *buf, unsigned long pos);
+unsigned long step_right(const char *buf, unsigned long pos);
+int           mbstrcasecmp(const char *s1, const char *s2);
+int           mbstrncasecmp(const char *s1, const char *s2, unsigned long n);
+char         *mbstrcasestr(const char *haystack, const char *needle);
+char         *revstrstr(const char *haystack, const char *needle, const char *pointer);
+char         *mbrevstrcasestr(const char *haystack, const char *needle, const char *pointer);
+char         *mbstrchr(const char *string, const char *chr);
+char         *mbstrpbrk(const char *string, const char *accept);
+char         *mbrevstrpbrk(const char *head, const char *accept, const char *pointer);
+bool          has_blank_char(const char *string);
+bool          white_string(const char *string);
+void          strip_leading_blanks_from(char *string);
 
-//
-//  Most functions in 'color.cpp'.
-//
+/* Most functions in 'color.cpp'. */
 void set_interface_colorpairs();
 void prepare_palette();
 void find_and_prime_applicable_syntax();
 void check_the_multis(linestruct *line);
 void precalc_multicolorinfo();
 
-//
-//  Most functions in 'cut.cpp'.
-//
+/* Most functions in 'cut.cpp'. */
 void expunge(undo_type action);
 void do_delete();
 void do_backspace();
 void chop_previous_word();
 void chop_next_word();
-void extract_segment(linestruct *top, size_t top_x, linestruct *bot, size_t bot_x);
+void extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned long bot_x);
 void ingraft_buffer(linestruct *topline);
 void copy_from_buffer(linestruct *somebuffer);
 void cut_marked_region();
@@ -230,7 +222,7 @@ void  do_writeout();
 void  do_savefile();
 char *real_dir_from_tilde(const char *path);
 int   diralphasort(const void *va, const void *vb);
-char *input_tab(char *buf, size_t *place, void (*refresh_func)(), bool &listed);
+char *input_tab(char *buf, unsigned long *place, void (*refresh_func)(), bool &listed);
 
 //
 //  Some functions in 'global.cpp'.
@@ -240,10 +232,10 @@ functionptrtype  interpret(const int keycode);
 const keystruct *first_sc_for(int menu, void (*function)(void));
 const keystruct *get_shortcut(const int keycode);
 
-size_t      shown_entries_for(int menu);
-int         keycode_from_string(const char *keystring);
-void        shortcut_init();
-const char *epithet_of_flag(const unsigned int flag);
+unsigned long shown_entries_for(int menu);
+int           keycode_from_string(const char *keystring);
+void          shortcut_init();
+const char   *epithet_of_flag(const unsigned int flag);
 
 //
 //  Some functions in 'help.cpp'.
@@ -257,7 +249,7 @@ void do_help();
 void  history_init();
 void  reset_history_pointer_for(const linestruct *list);
 void  update_history(linestruct **item, const char *text, bool avoid_duplicates);
-char *get_history_completion(linestruct **h, char *s, size_t len);
+char *get_history_completion(linestruct **h, char *s, unsigned long len);
 bool  have_statedir();
 void  load_history();
 void  save_history();
@@ -333,14 +325,14 @@ void terminal_init();
 void confirm_margin();
 void unbound_key(int code);
 bool changes_something(CFuncPtr f);
-void inject(char *burst, size_t count);
+void inject(char *burst, unsigned long count);
 
 //
 //  Most functions in 'prompt.cpp'.
 //
-size_t get_statusbar_page_start(size_t base, size_t column);
-void   put_cursor_at_end_of_answer();
-void   add_or_remove_pipe_symbol_from_answer();
+unsigned long get_statusbar_page_start(unsigned long base, unsigned long column);
+void          put_cursor_at_end_of_answer();
+void          add_or_remove_pipe_symbol_from_answer();
 int do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(), const char *msg, ...);
 int ask_user(bool withall, const char *question);
 
@@ -362,18 +354,19 @@ void       do_rcfiles();
 //
 bool regexp_init(const char *regexp);
 void tidy_up_after_search();
-int  findnextstr(const char *needle, bool whole_word_only, int modus, size_t *match_len, bool skipone,
-                 const linestruct *begin, size_t begin_x);
+int  findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *match_len, bool skipone,
+                 const linestruct *begin, unsigned long begin_x);
 void do_search_forward();
 void do_search_backward();
 void do_findprevious();
 void do_findnext();
 void not_found_msg(const char *str);
 void go_looking();
-long do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, size_t *real_current_x);
+long do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current,
+                     unsigned long *real_current_x);
 void do_replace();
 void ask_for_and_do_replacements();
-void goto_line_posx(long line, size_t pos_x);
+void goto_line_posx(long line, unsigned long pos_x);
 void goto_line_and_column(long line, long column, bool retain_answer, bool interactive);
 void do_gotolinecolumn();
 void do_find_bracket();
@@ -384,117 +377,112 @@ void to_next_anchor();
 //
 //  Most functions in 'text.cpp'.
 //
-void   do_mark();
-void   do_tab();
-void   do_indent();
-void   do_unindent();
-void   do_comment();
-void   do_undo();
-void   do_redo();
-void   do_enter();
-void   discard_until(const undostruct *thisitem);
-void   add_undo(undo_type action, const char *message);
-void   update_multiline_undo(long lineno, char *indentation);
-void   update_undo(undo_type action);
-void   do_wrap();
-long   break_line(const char *textstart, long goal, bool snap_at_nl);
-size_t indent_length(const char *line);
-size_t quote_length(const char *line);
-bool   begpar(const linestruct *const line, int depth);
-bool   inpar(const linestruct *const line);
-void   do_justify();
-void   do_full_justify();
-void   do_spell();
-void   do_linter();
-void   do_formatter();
-void   count_lines_words_and_characters();
-void   do_verbatim_input();
-void   complete_a_word();
+void          do_mark();
+void          do_tab();
+void          do_indent();
+void          do_unindent();
+void          do_comment();
+void          do_undo();
+void          do_redo();
+void          do_enter();
+void          discard_until(const undostruct *thisitem);
+void          add_undo(undo_type action, const char *message);
+void          update_multiline_undo(long lineno, char *indentation);
+void          update_undo(undo_type action);
+void          do_wrap();
+long          break_line(const char *textstart, long goal, bool snap_at_nl);
+unsigned long indent_length(const char *line);
+unsigned long quote_length(const char *line);
+bool          begpar(const linestruct *const line, int depth);
+bool          inpar(const linestruct *const line);
+void          do_justify();
+void          do_full_justify();
+void          do_spell();
+void          do_linter();
+void          do_formatter();
+void          count_lines_words_and_characters();
+void          do_verbatim_input();
+void          complete_a_word();
 
-//
-//  All functions in utils.cpp
-//
-void   get_homedir();
-char  *concatenate(const char *path, const char *name);
-int    digits(long n);
-bool   parseNum(std::string_view string, int64_t &result);
-bool   parse_line_column(const char *str, long *line, long *column);
-void   recode_NUL_to_LF(char *string, size_t length);
-size_t recode_LF_to_NUL(char *string);
-void   free_chararray(char **array, size_t len);
-bool   is_separate_word(size_t position, size_t length, const char *buf);
-void  *nmalloc(const size_t howmuch);
-void  *nrealloc(void *ptr, const size_t howmuch);
-char  *measured_copy(const char *string, size_t count);
-char  *mallocstrcpy(char *dest, const char *src);
-char  *copy_of(const char *string);
-char  *free_and_assign(char *dest, char *src);
-size_t get_page_start(size_t column);
-size_t xplustabs();
-size_t actual_x(const char *text, size_t column);
-size_t wideness(const char *text, size_t maxlen);
-size_t breadth(const char *text);
-void   new_magicline();
-void   remove_magicline();
-bool   mark_is_before_cursor();
-void   get_region(linestruct **top, unsigned long *top_x, linestruct **bot, unsigned long *bot_x);
-void   get_range(linestruct **top, linestruct **bot);
-size_t number_of_characters_in(const linestruct *begin, const linestruct *end);
+/* All functions in utils.cpp */
+void          get_homedir();
+char         *concatenate(const char *path, const char *name);
+int           digits(long n);
+bool          parseNum(std::string_view string, int64_t &result);
+bool          parse_line_column(const char *str, long *line, long *column);
+void          recode_NUL_to_LF(char *string, unsigned long length);
+unsigned long recode_LF_to_NUL(char *string);
+void          free_chararray(char **array, unsigned long len);
+bool          is_separate_word(unsigned long position, unsigned long length, const char *buf);
+void         *nmalloc(const unsigned long howmuch);
+void         *nrealloc(void *ptr, const unsigned long howmuch);
+char         *measured_copy(const char *string, unsigned long count);
+char         *mallocstrcpy(char *dest, const char *src);
+char         *copy_of(const char *string);
+char         *free_and_assign(char *dest, char *src);
+unsigned long get_page_start(unsigned long column);
+unsigned long xplustabs();
+unsigned long actual_x(const char *text, unsigned long column);
+unsigned long wideness(const char *text, unsigned long maxlen);
+unsigned long breadth(const char *text);
+void          new_magicline();
+void          remove_magicline();
+bool          mark_is_before_cursor();
+void          get_region(linestruct **top, unsigned long *top_x, linestruct **bot, unsigned long *bot_x);
+void          get_range(linestruct **top, linestruct **bot);
+unsigned long number_of_characters_in(const linestruct *begin, const linestruct *end);
+const char   *strstrwrapper(const char *haystack, const char *needle, const char *start);
+const char   *tail(const char *path);
+linestruct   *line_from_number(long number);
 
-const char *strstrwrapper(const char *haystack, const char *needle, const char *start);
-const char *tail(const char *path);
-linestruct *line_from_number(long number);
-
-//
-//  Most functions in 'winio.cpp'.
-//
-void   record_macro();
-void   run_macro();
-void   reserve_space_for(size_t newsize);
-size_t waiting_keycodes();
-void   implant(const char *string);
-int    get_input(WINDOW *win);
-int    get_kbinput(WINDOW *win, bool showcursor);
-char  *get_verbatim_kbinput(WINDOW *win, size_t *count);
-int    get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts);
-void   blank_edit();
-void   blank_statusbar();
-void   wipe_statusbar();
-void   blank_bottombars();
-void   blank_it_when_expired(void);
-void   set_blankdelay_to_one(void);
-char  *display_string(const char *buf, size_t column, size_t span, bool isdata, bool isprompt);
-void   titlebar(const char *path);
-void   minibar();
-void   statusline(message_type importance, const char *msg, ...);
-void   statusbar(const char *msg);
-void   warn_and_briefly_pause(const char *msg);
-void   bottombars(int menu);
-void   post_one_key(const char *keystroke, const char *tag, int width);
-void   place_the_cursor(void);
-int    update_line(linestruct *line, size_t index);
-int    update_softwrapped_line(linestruct *line);
-bool   line_needs_update(const size_t old_column, const size_t new_column);
-int    go_back_chunks(int nrows, linestruct **line, size_t *leftedge);
-int    go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge);
-bool   less_than_a_screenful(size_t was_lineno, size_t was_leftedge);
-void   edit_scroll(bool direction);
-size_t get_softwrap_breakpoint(const char *linedata, size_t leftedge, bool &kickoff, bool &end_of_line);
-size_t get_chunk_and_edge(size_t column, linestruct *line, size_t *leftedge);
-size_t chunk_for(size_t column, linestruct *line);
-size_t leftedge_for(size_t column, linestruct *line);
-size_t extra_chunks_in(linestruct *line);
-void   ensure_firstcolumn_is_aligned(void);
-size_t actual_last_column(size_t leftedge, size_t column);
-void   edit_redraw(linestruct *old_current, update_type manner);
-void   edit_refresh(void);
-void   adjust_viewport(update_type manner);
-void   full_refresh(void);
-void   draw_all_subwindows(void);
-void   report_cursor_position(void);
-void   spotlight(size_t from_col, size_t to_col);
-void   spotlight_softwrapped(size_t from_col, size_t to_col);
-void   do_credits(void);
+/* Most functions in 'winio.cpp'. */
+void          record_macro();
+void          run_macro();
+void          reserve_space_for(unsigned long newsize);
+unsigned long waiting_keycodes();
+void          implant(const char *string);
+int           get_input(WINDOW *win);
+int           get_kbinput(WINDOW *win, bool showcursor);
+char         *get_verbatim_kbinput(WINDOW *win, unsigned long *count);
+int           get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts);
+void          blank_edit();
+void          blank_statusbar();
+void          wipe_statusbar();
+void          blank_bottombars();
+void          blank_it_when_expired(void);
+void          set_blankdelay_to_one(void);
+char         *display_string(const char *buf, unsigned long column, unsigned long span, bool isdata, bool isprompt);
+void          titlebar(const char *path);
+void          minibar();
+void          statusline(message_type importance, const char *msg, ...);
+void          statusbar(const char *msg);
+void          warn_and_briefly_pause(const char *msg);
+void          bottombars(int menu);
+void          post_one_key(const char *keystroke, const char *tag, int width);
+void          place_the_cursor(void);
+int           update_line(linestruct *line, unsigned long index);
+int           update_softwrapped_line(linestruct *line);
+bool          line_needs_update(const unsigned long old_column, const unsigned long new_column);
+int           go_back_chunks(int nrows, linestruct **line, unsigned long *leftedge);
+int           go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge);
+bool          less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge);
+void          edit_scroll(bool direction);
+unsigned long get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kickoff, bool &end_of_line);
+unsigned long get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *leftedge);
+unsigned long chunk_for(unsigned long column, linestruct *line);
+unsigned long leftedge_for(unsigned long column, linestruct *line);
+unsigned long extra_chunks_in(linestruct *line);
+void          ensure_firstcolumn_is_aligned(void);
+unsigned long actual_last_column(unsigned long leftedge, unsigned long column);
+void          edit_redraw(linestruct *old_current, update_type manner);
+void          edit_refresh(void);
+void          adjust_viewport(update_type manner);
+void          full_refresh(void);
+void          draw_all_subwindows(void);
+void          report_cursor_position(void);
+void          spotlight(unsigned long from_col, unsigned long to_col);
+void          spotlight_softwrapped(unsigned long from_col, unsigned long to_col);
+void          do_credits(void);
 
 //
 //  These are just name definitions.

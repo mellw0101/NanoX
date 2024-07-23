@@ -4053,10 +4053,8 @@ void
 draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col)
 {
     PROFILE_FUNCTION;
-    //
-    //  If line numbering is switched on, put a line number in front of
-    //  the text -- but only for the parts that are not softwrapped.
-    //
+    /* If line numbering is switched on, put a line number in front of
+     * the text -- but only for the parts that are not softwrapped. */
     if (margin > 0)
     {
         wattron(midwin, interface_color_pair[LINE_NUMBER]);
@@ -4085,10 +4083,10 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
             wprintw(midwin, " ");
         }
     }
-    //  First simply write the converted line -- afterward we'll add colors
-    //  and the marking highlight on just the pieces that need it.
+    /* First simply write the converted line -- afterward we'll add colors
+     * and the marking highlight on just the pieces that need it. */
     mvwaddstr(midwin, row, margin, converted);
-    //  When needed, clear the remainder of the row.
+    /* When needed, clear the remainder of the row. */
     if (is_shorter || ISSET(SOFTWRAP))
     {
         wclrtoeol(midwin);
@@ -4104,7 +4102,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
         /* If there are multiline regexes, make sure this line has a cache. */
         if (openfile->syntax->multiscore > 0 && line->multidata == nullptr)
         {
-            line->multidata = static_cast<short *>(nmalloc(openfile->syntax->multiscore * sizeof(short)));
+            line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
         }
         /* Iterate through all the coloring regexes. */
         for (; varnish != nullptr; varnish = varnish->next)
@@ -4137,8 +4135,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                     match.rm_so += index;
                     match.rm_eo += index;
                     index = match.rm_eo;
-                    /* If the match is offscreen to the right,
-                     * this rule is done. */
+                    /* If the match is offscreen to the right, this rule is done. */
                     if (match.rm_so >= till_x)
                     {
                         break;
@@ -4339,11 +4336,9 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
     }
 }
 
-//
-//  Redraw the given line so that the character at the given index is visible
-//  -- if necessary, scroll the line horizontally (when not softwrapping).
-//  Return the number of rows "consumed" (relevant when softwrapping). */
-//
+/* Redraw the given line so that the character at the given index is visible
+ * -- if necessary, scroll the line horizontally (when not softwrapping).
+ * Return the number of rows "consumed" (relevant when softwrapping). */
 int
 update_line(linestruct *line, const unsigned long index)
 {
@@ -4389,26 +4384,22 @@ update_line(linestruct *line, const unsigned long index)
 int
 update_softwrapped_line(linestruct *line)
 {
-    /* starting_row = The first row in the edit window that gets updated.
-     * row          = The row in the edit window we will write to.
-     * someline     = An iterator needed to find the relevent row.
-     * from_col     = The starting column of the current chunk.
-     * to_col       = The end column of the current_chunk.
-     * converted    = The data of the chunk with tabs and controll chars expanded.
-     * kickoff      = This tells the softwrapping rutine to start at begining-of-line.
-     * end_of_line  = Becomes 'true' when the last chunk of the line has been reached. */
-    int           starting_row, row;
-    linestruct   *someline;
-    unsigned long from_col, to_col;
-    char         *converted;
-    bool          kickoff, end_of_line;
-    /* Defenition */
-    row         = 0;
-    from_col    = 0;
-    to_col      = 0;
-    kickoff     = true;
-    end_of_line = false;
-    someline    = openfile->edittop;
+    /* The first row in the edit window that gets updated. */
+    int starting_row;
+    /* The row in the edit window we will write to. */
+    int row = 0;
+    /* An iterator needed to find the relevent row. */
+    linestruct *someline = openfile->edittop;
+    /* The starting column of the current chunk. */
+    unsigned long from_col = 0;
+    /* The end column of the current_chunk. */
+    unsigned long to_col = 0;
+    /* The data of the chunk with tabs and controll chars expanded. */
+    char *converted;
+    /* This tells the softwrapping rutine to start at begining-of-line. */
+    bool kickoff = true;
+    /* Becomes 'true' when the last chunk of the line has been reached. */
+    bool end_of_line = false;
     if (line == openfile->edittop)
     {
         from_col = openfile->firstcolumn;

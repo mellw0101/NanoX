@@ -375,9 +375,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
     }
 }
 
-//
-//  Allocate the given amount of memory and return a pointer to it.
-//
+/* Allocate the given amount of memory and return a pointer to it. */
 void *
 nmalloc(const unsigned long howmuch)
 {
