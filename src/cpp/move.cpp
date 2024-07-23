@@ -171,7 +171,7 @@ do_page_down(void)
 //  Place the cursor on the first row in the viewport.
 //
 void
-to_top_row()
+to_top_row(void)
 {
     size_t leftedge, offset;
     get_edge_and_target(&leftedge, &offset);
@@ -183,9 +183,9 @@ to_top_row()
 
 /* Place the cursor on the last row in the viewport, when possible. */
 void
-to_bottom_row()
+to_bottom_row(void)
 {
-    size_t leftedge, offset;
+    unsigned long leftedge, offset;
     get_edge_and_target(&leftedge, &offset);
     openfile->current = openfile->edittop;
     leftedge          = openfile->firstcolumn;
@@ -198,7 +198,7 @@ to_bottom_row()
 //  Put the cursor line at the center, then the top, then the bottom.
 //
 void
-do_cycle()
+do_cycle(void)
 {
     if (cycling_aim == 0)
     {
@@ -218,7 +218,7 @@ do_cycle()
 //  Scroll the line with the cursor to the center of the screen.
 //
 void
-do_center()
+do_center(void)
 {
     //
     //  The main loop has set 'cycling_aim' to zero.
@@ -242,9 +242,7 @@ do_para_begin(linestruct **line)
     }
 }
 
-//
-//  Move down to the last line of the first found paragraph.
-//
+/* Move down to the last line of the first found paragraph. */
 void
 do_para_end(linestruct **line)
 {
@@ -258,11 +256,9 @@ do_para_end(linestruct **line)
     }
 }
 
-//
-//  Move up to first start of a paragraph before the current line.
-//
+/* Move up to first start of a paragraph before the current line. */
 void
-to_para_begin()
+to_para_begin(void)
 {
     linestruct *was_current = openfile->current;
     do_para_begin(&openfile->current);
@@ -270,11 +266,9 @@ to_para_begin()
     edit_redraw(was_current, CENTERING);
 }
 
-//
-//  Move down to just after the first found end of a paragraph.
-//
+/* Move down to just after the first found end of a paragraph. */
 void
-to_para_end()
+to_para_end(void)
 {
     linestruct *was_current = openfile->current;
 
@@ -298,108 +292,93 @@ to_para_end()
     recook |= perturbed;
 }
 
-//
-//  Move to the preceding block of text.
-//  TODO : (to_prev_block) - Make this stop at indent as well.
-//
+/* Move to the preceding block of text.  TODO: (to_prev_block) - Make this stop at indent as well. */
 void
-to_prev_block()
+to_prev_block(void)
 {
-    int         cur_indent, was_indent = -1;
-    linestruct *was_current = openfile->current;
-    bool        is_text = false, seen_text = false;
-    //
-    //  Skip backward until first blank line after some nonblank line(s).
-    //
+    int            lines = 0, cur_indent, was_indent = -1;
+    linestruct    *was_current = openfile->current;
+    bool           is_text = false, seen_text = false;
+    unsigned short tabs, spaces, t_char, t_tabs;
+    /* Skip backward until first blank line after some nonblank line(s). */
     while (openfile->current->prev != nullptr && (!seen_text || is_text))
     {
-        openfile->current = openfile->current->prev;
-        /**
-            This is experimental and will be improved.
-            TODO: (to_prev_block) - Make better with more rules.
-         */
-        for (cur_indent = 0; openfile->current->data[cur_indent]; cur_indent++)
+        get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
+        cur_indent = t_tabs;
+        if (was_indent == -1)
         {
-            if (openfile->current->data[cur_indent] != '\t')
-            {
-                if (was_indent == -1)
-                {
-                    was_indent = cur_indent;
-                }
-                else if (was_indent != cur_indent)
-                {
-                    if (openfile->current->next != nullptr)
-                    {
-                        openfile->current   = openfile->current->next;
-                        openfile->current_x = was_indent;
-                        edit_redraw(was_current, CENTERING);
-                        return;
-                    }
-                }
-                break;
-            }
+            was_indent = cur_indent;
         }
-        is_text   = !white_string(openfile->current->data);
-        seen_text = seen_text || is_text;
+        else if (was_indent != cur_indent)
+        {
+            if (lines > 1)
+            {
+                openfile->current = openfile->current->next;
+                get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
+            }
+            openfile->current_x = t_char;
+            edit_redraw(was_current, CENTERING);
+            return;
+        }
+        openfile->current = openfile->current->prev;
+        is_text           = !white_string(openfile->current->data);
+        seen_text         = seen_text || is_text;
+        lines++;
     }
-    //
-    //  Step forward one line again if we passed text but this line is blank.
-    //
+    /* Step forward one line again if we passed text but this line is blank. */
     if (seen_text && openfile->current->next != nullptr && white_string(openfile->current->data))
     {
         openfile->current = openfile->current->next;
     }
-    openfile->current_x = 0;
+    get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
+    openfile->current_x = t_char;
     edit_redraw(was_current, CENTERING);
 }
 
 /* Move to the next block of text. */
 void
-to_next_block()
+to_next_block(void)
 {
-    int         cur_indent, was_indent = -1;
-    linestruct *was_current = openfile->current;
-    bool        is_white    = white_string(openfile->current->data);
-    bool        seen_white  = is_white;
+    int            lines = 0, cur_indent, was_indent = -1;
+    linestruct    *was_current = openfile->current;
+    bool           is_white    = white_string(openfile->current->data);
+    bool           seen_white  = is_white;
+    unsigned short tabs, spaces, t_char, t_tabs;
     /* Skip forward until first nonblank line after some blank line(s). */
     while (openfile->current->next != nullptr && (!seen_white || is_white))
     {
-        openfile->current = openfile->current->next;
-        /* This is experimental and will be improved.
-         * TODO: (to_next_block) - Implement more complex rules. */
-        for (cur_indent = 0; openfile->current->data[cur_indent]; cur_indent++)
+        get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
+        cur_indent = t_tabs;
+        if (was_indent == -1)
         {
-            if (openfile->current->data[cur_indent] != '\t')
-            {
-                if (was_indent == -1)
-                {
-                    was_indent = cur_indent;
-                }
-                else if (was_indent != cur_indent)
-                {
-                    if (openfile->current->prev != nullptr)
-                    {
-                        openfile->current   = openfile->current->prev;
-                        openfile->current_x = was_indent;
-                        edit_redraw(was_current, CENTERING);
-                        recook |= perturbed;
-                        return;
-                    }
-                }
-                break;
-            }
+            was_indent = cur_indent;
         }
-        is_white   = white_string(openfile->current->data);
-        seen_white = seen_white || is_white;
+        else if (was_indent != cur_indent)
+        {
+            if (lines > 1)
+            {
+                openfile->current = openfile->current->prev;
+                get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
+            }
+            openfile->current_x = t_char;
+            edit_redraw(was_current, CENTERING);
+            recook |= perturbed;
+            return;
+        }
+        openfile->current = openfile->current->next;
+        is_white          = white_string(openfile->current->data);
+        seen_white        = seen_white || is_white;
+        lines++;
     }
-    openfile->current_x = 0;
+    get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
+    openfile->current_x = t_char;
     edit_redraw(was_current, CENTERING);
     recook |= perturbed;
 }
 
 /* Move to the previous word. */
 void
-do_prev_word()
+do_prev_word(void)
 {
     PROFILE_FUNCTION;
     bool punctuation_as_letters = ISSET(WORD_BOUNDS);
@@ -439,9 +418,7 @@ do_prev_word()
         }
         else if (seen_a_word)
         {
-            //
-            //  This is space now: we've overshot the start of the word.
-            //
+            /* This is space now: we've overshot the start of the word. */
             step_forward = true;
             break;
         }
@@ -506,12 +483,20 @@ do_next_word(bool after_ends)
         }
         else
         {
-            if (is_zerowidth(openfile->current->data + openfile->current_x))
+            if (is_word_char(openfile->current->data + openfile->current_x, punct_as_letters))
+            {
+                seen_word = true;
+            }
+            else if (is_zerowidth(openfile->current->data + openfile->current_x))
             {
                 ;
             }
             /* Checks for cpp syntax characters, and if true then break. */
             else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
+            {
+                break;
+            }
+            else if (seen_word)
             {
                 break;
             }
@@ -522,7 +507,10 @@ do_next_word(bool after_ends)
                 if (!is_word_char(openfile->current->data + openfile->current_x, punct_as_letters))
                 {
                     seen_space = true;
-                    break;
+                }
+                else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
+                {
+                    seen_space = true;
                 }
                 else if (seen_space)
                 {

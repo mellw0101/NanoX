@@ -2417,54 +2417,35 @@ int *
 parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
 {
     int keycode, *yield;
-
     reveal_cursor = true;
-
-    keycode = get_input(frame);
-
-    //
-    //  When the window was resized, abort and return nothing.
-    //
+    keycode       = get_input(frame);
+    /* When the window was resized, abort and return nothing. */
     if (keycode == KEY_WINCH)
     {
         *count = 999;
         return nullptr;
     }
-
-    //
-    //  Reserve ample space for the possible result.
-    //
+    /* Reserve ample space for the possible result. */
     yield = static_cast<int *>(nmalloc(6 * sizeof(int)));
-
-    //
-    //  If the key code is a hexadecimal digit, commence Unicode input.
-    //
+    /* If the key code is a hexadecimal digit, commence Unicode input. */
     if (using_utf8() && isxdigit(keycode))
     {
         long unicode = assemble_unicode(keycode);
         char multibyte[MB_CUR_MAX];
-
         reveal_cursor = false;
-
-        //
-        //  Gather at most six hexadecimal digits.
-        //
+        /* Gather at most six hexadecimal digits. */
         while (unicode == PROCEED)
         {
             keycode = get_input(frame);
             unicode = assemble_unicode(keycode);
         }
-
         if (keycode == KEY_WINCH)
         {
             *count = 999;
-            std::free(yield);
+            free(yield);
             return nullptr;
         }
-
-        //
-        //  For an invalid keystroke, discard its possible continuation bytes.
-        //
+        /* For an invalid keystroke, discard its possible continuation bytes. */
         if (unicode == INVALID_DIGIT)
         {
             if (keycode == ESC_CODE && waiting_codes)
@@ -2487,58 +2468,40 @@ parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
                 }
             }
         }
-
-        //
-        //  Convert the Unicode value to a multibyte sequence.
-        //
+        /* Convert the Unicode value to a multibyte sequence. */
         *count = wctomb(multibyte, unicode);
-
         if (*count > MAXCHARLEN)
         {
             *count = 0;
         }
-
-        //
-        //  Change the multibyte character into a series of integers.
-        //
+        /* Change the multibyte character into a series of integers. */
         for (unsigned long i = 0; i < *count; i++)
         {
-            yield[i] = static_cast<int>(multibyte[i]);
+            yield[i] = (int)multibyte[i];
         }
-
         return yield;
     }
-
     yield[0] = keycode;
-
-    //
-    //  In case of an escape, take also a second code, as it might be another
-    //  escape (on iTerm2/rxvt) or a control code (for M-Bsp and M-Enter).
-    //
+    /* In case of an escape, take also a second code, as it might be another
+     * escape (on iTerm2/rxvt) or a control code (for M-Bsp and M-Enter). */
     if (keycode == ESC_CODE && waiting_codes)
     {
         yield[1] = get_input(nullptr);
         *count   = 2;
     }
-
     return yield;
 }
 
-//
-//  Read in one control code, one character byte, or the leading escapes of
-//  an escape sequence, and return the resulting number of bytes in count.
-//
+/* Read in one control code, one character byte, or the leading escapes of
+ * an escape sequence, and return the resulting number of bytes in count. */
 char *
 get_verbatim_kbinput(WINDOW *frame, unsigned long *count)
 {
-    char *bytes = static_cast<char *>(nmalloc(MAXCHARLEN + 2));
+    char *bytes = (char *)nmalloc(MAXCHARLEN + 2);
     int  *input;
-
-    //
-    //  Turn off flow control characters if necessary so that we can type
-    //  them in verbatim, and turn the keypad off if necessary so that we
-    //  don't get extended keypad values.
-    //
+    /* Turn off flow control characters if necessary so that we can type
+     * them in verbatim, and turn the keypad off if necessary so that we
+     * don't get extended keypad values. */
     if ISSET (PRESERVE)
     {
         disable_flow_control();
@@ -2547,24 +2510,14 @@ get_verbatim_kbinput(WINDOW *frame, unsigned long *count)
     {
         keypad(frame, false);
     }
-
-    //
-    //  Turn bracketed-paste mode off.
-    //
+    /* Turn bracketed-paste mode off. */
     printf(ESC_CODE_TURN_OFF_BRACKETED_PASTE);
     fflush(stdout);
-
     linger_after_escape = true;
-
-    //
-    //  Read in a single byte or two escapes.
-    //
+    /* Read in a single byte or two escapes. */
     input = parse_verbatim_kbinput(frame, count);
-
-    //
-    //  If the byte is invalid in the current mode, discard it;
-    //  if it is an incomplete Unicode sequence, stuff it back.
-    //
+    /* If the byte is invalid in the current mode, discard it;
+     * if it is an incomplete Unicode sequence, stuff it back. */
     if (input && *count)
     {
         if (*input >= 0x80 && *count == 1)
@@ -2577,135 +2530,90 @@ get_verbatim_kbinput(WINDOW *frame, unsigned long *count)
             *count = 0;
         }
     }
-
     linger_after_escape = false;
-
-    //
-    //  Turn bracketed-paste mode back on.
-    //
-    std::printf(ESC_CODE_TURN_ON_BRACKETED_PASTE);
-    std::fflush(stdout);
-
-    //
-    //  Turn flow control characters back on if necessary and turn the
-    //  keypad back on if necessary now that we're done.
-    //
+    /* Turn bracketed-paste mode back on. */
+    printf(ESC_CODE_TURN_ON_BRACKETED_PASTE);
+    fflush(stdout);
+    /* Turn flow control characters back on if necessary and turn the
+     * keypad back on if necessary now that we're done. */
     if ISSET (PRESERVE)
     {
         enable_flow_control();
     }
-
-    //
-    //  Use the global window pointers, because a resize may have freed
-    //  the data that the frame parameter points to.
-    //
+    /* Use the global window pointers, because a resize may have freed
+     * the data that the frame parameter points to. */
     if (!ISSET(RAW_SEQUENCES))
     {
         keypad(midwin, true);
         keypad(footwin, true);
     }
-
     if (*count < 999)
     {
         for (unsigned long i = 0; i < *count; i++)
         {
-            bytes[i] = static_cast<char>(input[i]);
+            bytes[i] = (char)input[i];
         }
         bytes[*count] = '\0';
     }
-
-    std::free(input);
-
+    free(input);
     return bytes;
 }
 
-//
-//  Handle any mouse event that may have occurred.  We currently handle
-//  releases/clicks of the first mouse button.  If allow_shortcuts is
-//  TRUE, releasing/clicking on a visible shortcut will put back the
-//  keystroke associated with that shortcut.  If ncurses supports them,
-//  we also handle presses of the fourth mouse button (upward rolls of
-//  the mouse wheel) by putting back keystrokes to scroll up, and presses
-//  of the fifth mouse button (downward rolls of the mouse wheel) by
-//  putting back keystrokes to scroll down.  We also store the coordinates
-//  of a mouse event that needs further handling in mouse_x and mouse_y.
-//  Return -1 on error, 0 if the mouse event needs to be handled, 1 if it's
-//  been handled by putting back keystrokes, or 2 if it's been ignored.
-//
+/* Handle any mouse event that may have occurred.  We currently handle
+ * releases/clicks of the first mouse button.  If allow_shortcuts is
+ * 'true', releasing/clicking on a visible shortcut will put back the
+ * keystroke associated with that shortcut.  If ncurses supports them,
+ * we also handle presses of the fourth mouse button (upward rolls of
+ * the mouse wheel) by putting back keystrokes to scroll up, and presses
+ * of the fifth mouse button (downward rolls of the mouse wheel) by
+ * putting back keystrokes to scroll down.  We also store the coordinates
+ * of a mouse event that needs further handling in mouse_x and mouse_y.
+ * Return -1 on error, 0 if the mouse event needs to be handled, 1 if it's
+ * been handled by putting back keystrokes, or 2 if it's been ignored. */
 int
 get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
 {
     bool   in_middle, in_footer;
     MEVENT event;
-
-    //
-    //  First, get the actual mouse event.
-    //
+    /* First, get the actual mouse event. */
     if (getmouse(&event) == ERR)
     {
         return -1;
     }
-
     in_middle = wenclose(midwin, event.y, event.x);
     in_footer = wenclose(footwin, event.y, event.x);
-
-    //
-    //  Copy (and possibly adjust) the coordinates of the mouse event.
-    //
+    /* Copy (and possibly adjust) the coordinates of the mouse event. */
     mouse_x = event.x - (in_middle ? margin : 0);
     mouse_y = event.y;
-
-    //
-    //  Handle releases/clicks of the first mouse button.
-    //
+    /* Handle releases/clicks of the first mouse button. */
     if (event.bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED))
     {
-        //
-        //  If we're allowing shortcuts, and the current shortcut list is
-        //  being displayed on the last two lines of the screen, and the
-        //  first mouse button was released on/clicked inside it, we need
-        //  to figure out which shortcut was released on/clicked and put
-        //  back the equivalent keystroke(s) for it.
-        //
+        /* If we're allowing shortcuts, and the current shortcut list is
+         * being displayed on the last two lines of the screen, and the
+         * first mouse button was released on/clicked inside it, we need
+         * to figure out which shortcut was released on/clicked and put
+         * back the equivalent keystroke(s) for it. */
         if (allow_shortcuts && !ISSET(NO_HELP) && in_footer)
         {
-            //
-            //  The width of each shortcut item, except the last two.
-            //
+            /* The width of each shortcut item, except the last two. */
             int width;
-            //
-            //  The calculated index of the clicked item.
-            //
+            /* The calculated index of the clicked item. */
             int index;
-            //
-            //  The number of shortcut items that get displayed.
-            //
+            /* The number of shortcut items that get displayed. */
             unsigned long number;
-
-            //
-            //  Shift the coordinates to be relative to the bottom window.
-            //
+            /* Shift the coordinates to be relative to the bottom window. */
             wmouse_trafo(footwin, &mouse_y, &mouse_x, false);
-
-            //
-            //  Clicks on the status bar are handled elsewhere, so
-            //  restore the untranslated mouse-event coordinates.
-            //
+            /* Clicks on the status bar are handled elsewhere, so
+             * restore the untranslated mouse-event coordinates. */
             if (mouse_y == 0)
             {
                 mouse_x = event.x;
                 mouse_y = event.y;
                 return 0;
             }
-
-            //
-            //  Determine how many shortcuts are being shown.
-            //
+            /* Determine how many shortcuts are being shown. */
             number = shown_entries_for(currmenu);
-
-            //
-            //  Calculate the clickable width of each menu item.
-            //
+            /* Calculate the clickable width of each menu item. */
             if (number < 5)
             {
                 width = COLS / 2;
@@ -2714,33 +2622,21 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
             {
                 width = COLS / ((number + 1) / 2);
             }
-
-            //
-            //  Calculate the one-based index in the shortcut list.
-            //
+            /* Calculate the one-based index in the shortcut list. */
             index = (mouse_x / width) * 2 + mouse_y;
-
-            //
-            //  Adjust the index if we hit the last two wider ones.
-            //
+            /* Adjust the index if we hit the last two wider ones. */
             if ((index > number) && (mouse_x % width < COLS % width))
             {
                 index -= 2;
             }
-
-            //
-            //  Ignore clicks beyond the last shortcut.
-            //
+            /* Ignore clicks beyond the last shortcut. */
             if (index > number)
             {
                 return 2;
             }
-
-            //
-            //  Search through the list of functions to determine which
-            //  shortcut in the current menu the user clicked on; then
-            //  put the corresponding keystroke into the keyboard buffer.
-            //
+            /* Search through the list of functions to determine which
+             * shortcut in the current menu the user clicked on; then
+             * put the corresponding keystroke into the keyboard buffer. */
             for (funcstruct *f = allfuncs; f != nullptr; f = f->next)
             {
                 if ((f->menus & currmenu) == 0)
@@ -2754,7 +2650,6 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
                 if (--index == 0)
                 {
                     const keystruct *shortcut = first_sc_for(currmenu, f->func);
-
                     put_back(shortcut->keycode);
                     if (0x20 <= shortcut->keycode && shortcut->keycode <= 0x7E)
                     {
@@ -2763,7 +2658,6 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
                     break;
                 }
             }
-
             return 1;
         }
         else
@@ -2773,51 +2667,36 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
         }
     }
 #if NCURSES_MOUSE_VERSION >= 2
-    //
-    //  Handle "presses" of the fourth and fifth mouse buttons
-    //  (upward and downward rolls of the mouse wheel). */
-    //
+    /* Handle "presses" of the fourth and fifth mouse buttons
+     * (upward and downward rolls of the mouse wheel). */
     else if (event.bstate & (BUTTON4_PRESSED | BUTTON5_PRESSED))
     {
         if (in_footer)
         {
-            //
-            //  Shift the coordinates to be relative to the bottom window.
-            //
+            /* Shift the coordinates to be relative to the bottom window. */
             wmouse_trafo(footwin, &mouse_y, &mouse_x, false);
         }
-
         if (in_middle || (in_footer && mouse_y == 0))
         {
             int keycode = (event.bstate & BUTTON4_PRESSED) ? ALT_UP : ALT_DOWN;
-
-            //
-            //  One bump of the mouse wheel should scroll two lines.
-            //
+            /* One bump of the mouse wheel should scroll two lines. */
             put_back(keycode);
             put_back(keycode);
-
             return 1;
         }
         else
         {
-            //
-            //  Ignore "presses" of the fourth and fifth mouse buttons
-            //  that aren't on the edit window or the status bar.
-            //
+            /* Ignore "presses" of the fourth and fifth mouse buttons
+             * that aren't on the edit window or the status bar. */
             return 2;
         }
     }
 #endif
-    //
-    //  Ignore all other mouse events.
-    //
+    /* Ignore all other mouse events. */
     return 2;
 }
 
-//
-//  Move (in the given window) to the given row and wipe it clean.
-//
+/* Move (in the given window) to the given row and wipe it clean. */
 void
 blank_row(WINDOW *window, int row)
 {
@@ -2825,18 +2704,14 @@ blank_row(WINDOW *window, int row)
     wclrtoeol(window);
 }
 
-//
-//  Blank the first line of the top portion of the screen.
-//
+/* Blank the first line of the top portion of the screen. */
 void
 blank_titlebar()
 {
     mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
 }
 
-//
-//  Blank all lines of the middle portion of the screen (the edit window).
-//
+/* Blank all lines of the middle portion of the screen (the edit window). */
 void
 blank_edit()
 {
@@ -2846,37 +2721,29 @@ blank_edit()
     }
 }
 
-//
-//  Blank the first line of the bottom portion of the screen.
-//
+/* Blank the first line of the bottom portion of the screen. */
 void
 blank_statusbar()
 {
     blank_row(footwin, 0);
 }
 
-//
-//  Wipe the status bar clean and include this in the next screen update.
-//
+/* Wipe the status bar clean and include this in the next screen update. */
 void
 wipe_statusbar()
 {
     lastmessage = VACUUM;
-
     if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN)
     {
         return;
     }
-
     blank_row(footwin, 0);
     wnoutrefresh(footwin);
 }
 
-//
-//  Blank out the two help lines (when they are present).
-//
+/* Blank out the two help lines (when they are present). */
 void
-blank_bottombars()
+blank_bottombars(void)
 {
     if (!ISSET(NO_HELP) && LINES > 5)
     {
@@ -2885,25 +2752,19 @@ blank_bottombars()
     }
 }
 
-//
-//  When some number of keystrokes has been reached, wipe the status bar.
-//
+/* When some number of keystrokes has been reached, wipe the status bar. */
 void
-blank_it_when_expired()
+blank_it_when_expired(void)
 {
     if (countdown == 0)
     {
         return;
     }
-
     if (--countdown == 0)
     {
         wipe_statusbar();
     }
-
-    //
-    //  When windows overlap, make sure to show the edit window now.
-    //
+    /* When windows overlap, make sure to show the edit window now. */
     if (currmenu == MMAIN && (ISSET(ZERO) || LINES == 1))
     {
         wredrawln(midwin, editwinrows - 1, 1);
@@ -2911,11 +2772,9 @@ blank_it_when_expired()
     }
 }
 
-//
-//  Ensure that the status bar will be wiped upon the next keystroke.
-//
+/* Ensure that the status bar will be wiped upon the next keystroke. */
 void
-set_blankdelay_to_one()
+set_blankdelay_to_one(void)
 {
     countdown = 1;
 }
@@ -2945,53 +2804,31 @@ char *
 display_string(const char *text, unsigned long column, unsigned long span, bool isdata, bool isprompt)
 {
     PROFILE_FUNCTION;
-
-    //
-    //  The beginning of the text, to later determine the covered part.
-    //
+    /* The beginning of the text, to later determine the covered part. */
     const char *origin = text;
-    //
-    //  The index of the first character that the caller wishes to show.
-    //
+    /* The index of the first character that the caller wishes to show. */
     unsigned long start_x = actual_x(text, column);
-    //
-    //  The actual column where that first character starts.
-    //
+    /* The actual column where that first character starts. */
     unsigned long start_col = wideness(text, start_x);
-    //
-    //  The number of zero-width characters for which to reserve space.
-    //
+    /* The number of zero-width characters for which to reserve space. */
     unsigned long stowaways = 20;
-    //
-    //  The amount of memory to reserve for the displayable string.
-    //
+    /* The amount of memory to reserve for the displayable string. */
     unsigned long allocsize = (COLS + stowaways) * MAXCHARLEN + 1;
-    //
-    //  The displayable string we will return.
-    //
-    char *converted = static_cast<char *>(nmalloc(allocsize));
-    //
-    //  Current position in converted.
-    //
+    /* The displayable string we will return. */
+    char *converted = (char *)nmalloc(allocsize);
+    /* Current position in converted. */
     unsigned long index = 0;
-    //
-    //  The column number just beyond the last shown character.
-    //
+    /* The column number just beyond the last shown character. */
     unsigned long beyond = column + span;
-
     text += start_x;
-
     if (span > HIGHEST_POSITIVE)
     {
         statusline(ALERT, "Span has underflowed -- please report a bug");
         converted[0] = '\0';
         return converted;
     }
-
-    //
-    //  If the first character starts before the left edge, or would be
-    //  overwritten by a "<" token, then show placeholders instead.
-    //
+    /* If the first character starts before the left edge, or would be
+     * overwritten by a "<" token, then show placeholders instead. */
     if ((start_col < column || (start_col > 0 && isdata && !ISSET(SOFTWRAP))) && *text != '\0' && *text != '\t')
     {
         if (is_cntrl_char(text))
@@ -3010,39 +2847,29 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
                 converted[index++] = ' ';
                 column++;
             }
-
-            //
-            //  Display the right half of a two-column character as ']'.
-            //
+            /* Display the right half of a two-column character as ']'. */
             converted[index++] = ']';
             column++;
             text += char_length(text);
         }
     }
-
 #ifdef ENABLE_UTF8
 #    define ISO8859_CHAR   false
 #    define ZEROWIDTH_CHAR (is_zerowidth(text))
 #else
-#    define ISO8859_CHAR   ((u8) * text > 0x9F)
+#    define ISO8859_CHAR   ((unsigned char)*text > 0x9F)
 #    define ZEROWIDTH_CHAR false
 #endif
-
     while (*text != '\0' && (column < beyond || ZEROWIDTH_CHAR))
     {
-        //
-        //  A plain printable ASCII character is one byte, one column.
-        //
+        /* A plain printable ASCII character is one byte, one column. */
         if ((*text > 0x20 && *text != DEL_CODE) || ISO8859_CHAR)
         {
             converted[index++] = *(text++);
             column++;
             continue;
         }
-
-        //
-        //  Show a space as a visible character, or as a space.
-        //
+        /* Show a space as a visible character, or as a space. */
         if (*text == ' ')
         {
             if ISSET (WHITESPACE_DISPLAY)
@@ -3060,10 +2887,7 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
             text++;
             continue;
         }
-
-        //
-        //  Show a tab as a visible character plus spaces, or as just spaces.
-        //
+        /* Show a tab as a visible character plus spaces, or as just spaces. */
         if (*text == '\t')
         {
             if (ISSET(WHITESPACE_DISPLAY) &&
@@ -3079,8 +2903,7 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
                 converted[index++] = ' ';
             }
             column++;
-
-            // Fill the tab up with the required number of spaces.
+            /* Fill the tab up with the required number of spaces. */
             while (column % tabsize != 0 && column < beyond)
             {
                 converted[index++] = ' ';
@@ -3089,10 +2912,7 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
             text++;
             continue;
         }
-
-        //
-        //  Represent a control character with a leading caret.
-        //
+        /* Represent a control character with a leading caret. */
         if (is_cntrl_char(text))
         {
             converted[index++] = '^';
@@ -3101,18 +2921,11 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
             column += 2;
             continue;
         }
-
         int     charlength, charwidth;
         wchar_t wc;
-
-        //
-        //  Convert a multibyte character to a single code.
-        //
+        /* Convert a multibyte character to a single code. */
         charlength = mbtowide(wc, text);
-
-        //
-        //  Represent an invalid character with the Replacement Character.
-        //
+        /* Represent an invalid character with the Replacement Character. */
         if (charlength < 0)
         {
             converted[index++] = '\xEF';
@@ -3122,49 +2935,31 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
             column++;
             continue;
         }
-
-        //
-        //  Determine whether the character takes zero, one, or two columns.
-        //
+        /* Determine whether the character takes zero, one, or two columns. */
         charwidth = wcwidth(wc);
-
-        //
-        //  Watch the number of zero-widths, to keep ample memory reserved.
-        //
+        /* Watch the number of zero-widths, to keep ample memory reserved. */
         if (charwidth == 0 && --stowaways == 0)
         {
             stowaways = 40;
             allocsize += stowaways * MAXCHARLEN;
-            converted = static_cast<char *>(nrealloc(converted, allocsize));
+            converted = (char *)nrealloc(converted, allocsize);
         }
-
-        //
-        //  On a Linux console, skip zero-width characters, as it would show
-        //  them WITH a width, thus messing up the display.  See bug #52954.
-        //
+        /* On a Linux console, skip zero-width characters, as it would show
+         * them WITH a width, thus messing up the display.  See bug #52954. */
         if (on_a_vt && charwidth == 0)
         {
             text += charlength;
             continue;
         }
-
-        //
-        //  For any valid character, just copy its bytes.
-        //
+        /* For any valid character, just copy its bytes. */
         for (; charlength > 0; charlength--)
         {
             converted[index++] = *(text++);
         }
-
-        //
-        //  If the codepoint is unassigned, assume a width of one.
-        //
+        /* If the codepoint is unassigned, assume a width of one. */
         column += (charwidth < 0 ? 1 : charwidth);
     }
-
-    //
-    //  If there is more text than can be shown, make room for the ">".
-    //
+    /* If there is more text than can be shown, make room for the ">". */
     if (column > beyond || (*text != '\0' && (isprompt || (isdata && !ISSET(SOFTWRAP)))))
     {
         do
@@ -3172,41 +2967,27 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
             index = step_left(converted, index);
         }
         while (is_zerowidth(converted + index));
-
-        //
-        //  Display the left half of a two-column character as '['.
-        //
+        /* Display the left half of a two-column character as '['. */
         if (is_doublewidth(converted + index))
         {
             converted[index++] = '[';
         }
-
         has_more = true;
     }
     else
     {
         has_more = false;
     }
-
     is_shorter = (column < beyond);
-
-    //
-    //  Null-terminate the converted string.
-    //
+    /* Null-terminate the converted string. */
     converted[index] = '\0';
-
-    //
-    //  Remember what part of the original text is covered by converted.
-    //
+    /* Remember what part of the original text is covered by converted. */
     from_x = start_x;
     till_x = text - origin;
-
     return converted;
 }
 
-//
-//  Determine the sequence number of the given buffer in the circular list.
-//
+/* Determine the sequence number of the given buffer in the circular list. */
 int
 buffer_number(openfilestruct *buffer)
 {
@@ -3219,10 +3000,9 @@ buffer_number(openfilestruct *buffer)
     return count;
 }
 
-//
-//  Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
-//  and soft-wrapping by showing corresponding letters in the given window.
-//
+/* Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
+ * and soft-wrapping by showing corresponding letters in the given window.
+ * TODO: (show_states_at) - Find out how to customize this to be more informative. */
 void
 show_states_at(WINDOW *window)
 {
@@ -3233,78 +3013,48 @@ show_states_at(WINDOW *window)
     waddstr(window, ISSET(SOFTWRAP) ? "S" : " ");
 }
 
-//
-/// If path is NULL, we're in normal editing mode, so display the current
-/// version of nano, the current filename, and whether the current file
-/// has been modified on the title bar.  If path isn't NULL, we're either
-/// in the file browser or the help viewer, so show either the current
-/// directory or the title of help text, that is: whatever is in path.
-//
+/* If path is NULL, we're in normal editing mode, so display the current
+ * version of nano, the current filename, and whether the current file
+ * has been modified on the title bar.  If path isn't NULL, we're either
+ * in the file browser or the help viewer, so show either the current
+ * directory or the title of help text, that is: whatever is in path. */
 void
 titlebar(const char *path)
 {
-    //
-    //  The width of the different title-bar elements, in columns.
-    //
+    /* The width of the different title-bar elements, in columns. */
     unsigned long verlen, prefixlen, pathlen, statelen;
-    //
-    //  The width that "Modified" would take up.
-    //
+    /* The width that "Modified" would take up. */
     unsigned long pluglen = 0;
-    //
-    //  The position at which the center part of the title bar starts.
-    //
+    /* The position at which the center part of the title bar starts. */
     unsigned long offset = 0;
-    //
-    //  What is shown in the top left corner.
-    //
+    /* What is shown in the top left corner. */
     const char *upperleft = "";
-    //
-    //  What is shown before the path -- "DIR:" or nothing.
-    //
+    /* What is shown before the path -- "DIR:" or nothing. */
     const char *prefix = "";
-    //
-    //  The state of the current buffer -- "Modified", "View", or "".
-    //
+    /* The state of the current buffer -- "Modified", "View", or "". */
     const char *state = "";
-    //
-    //  The presentable form of the pathname.
-    //
+    /* The presentable form of the pathname. */
     char *caption;
-    //
-    //  The buffer sequence number plus the total buffer count.
-    //
+    /* The buffer sequence number plus the total buffer count. */
     char *ranking = nullptr;
-
-    //
-    //  If the screen is too small,
-    //  there is no title bar.
-    //
+    /* If the screen is too small, there is no title bar. */
     if (topwin == nullptr)
     {
         return;
     }
-
     wattron(topwin, interface_color_pair[TITLE_BAR]);
-
     blank_titlebar();
     as_an_at = false;
-
-    //
-    //  Do as Pico:
-    //  - if there is not enough width available for all items,
-    //  - first sacrifice the version string,
-    //  - then eat up the side spaces,
-    //  - then sacrifice the prefix,
-    //  - and only then start dottifying.
-    //
-
-    //
-    //  Figure out the path, prefix and state strings.
-    //
+    /* Do as Pico:
+     * if there is not enough width available for all items,
+     * first sacrifice the version string,
+     * then eat up the side spaces,
+     * then sacrifice the prefix,
+     * and only then start dottifying. */
+    /* Figure out the path, prefix and state strings. */
     if (currmenu == MLINTER)
     {
-        // TRANSLATORS: The next five are "labels" in the title bar.
+        /* TRANSLATORS: The next five are "labels" in the title bar. */
         prefix = _("Linting --");
         path   = openfile->filename;
     }
@@ -3318,13 +3068,10 @@ titlebar(const char *path)
         {
             if (!inhelp)
             {
-                //
-                //  If there are/were multiple buffers,
-                //  show which out of how many.
-                //
+                /* If there are/were multiple buffers, show which out of how many. */
                 if (more_than_one)
                 {
-                    ranking = static_cast<char *>(nmalloc(24));
+                    ranking = (char *)nmalloc(24);
                     sprintf(ranking, "[%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
                     upperleft = ranking;
                 }
@@ -3332,7 +3079,6 @@ titlebar(const char *path)
                 {
                     upperleft = BRANDING;
                 }
-
                 if (openfile->filename[0] == '\0')
                 {
                     path = _("New Buffer");
@@ -3341,7 +3087,6 @@ titlebar(const char *path)
                 {
                     path = openfile->filename;
                 }
-
                 if ISSET (VIEW_MODE)
                 {
                     state = _("View");
@@ -3365,9 +3110,7 @@ titlebar(const char *path)
             }
         }
     }
-    //
-    //  Determine the widths of the four elements, including their padding.
-    //
+    /* Determine the widths of the four elements, including their padding. */
     verlen    = breadth(upperleft) + 3;
     prefixlen = breadth(prefix);
     if (prefixlen > 0)
@@ -3380,10 +3123,7 @@ titlebar(const char *path)
     {
         pathlen++;
     }
-
-    //
-    //  Only print the version message when there is room for it.
-    //
+    /* Only print the version message when there is room for it. */
     if (verlen + prefixlen + pathlen + pluglen + statelen <= COLS)
     {
         mvwaddstr(topwin, 0, 2, upperleft);
@@ -3391,36 +3131,25 @@ titlebar(const char *path)
     else
     {
         verlen = 2;
-        //
-        //  If things don't fit yet, give up the placeholder.
-        //
+        /* If things don't fit yet, give up the placeholder. */
         if (verlen + prefixlen + pathlen + pluglen + statelen > COLS)
         {
             pluglen = 0;
         }
-        //
-        //  If things still don't fit, give up the side spaces.
-        //
+        /* If things still don't fit, give up the side spaces. */
         if (verlen + prefixlen + pathlen + pluglen + statelen > COLS)
         {
             verlen = 0;
             statelen -= 2;
         }
     }
-
     free(ranking);
-
-    //
-    //  If we have side spaces left, center the path name.
-    //
+    /* If we have side spaces left, center the path name. */
     if (verlen > 0)
     {
         offset = verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2;
     }
-
-    //
-    //  Only print the prefix when there is room for it.
-    //
+    /* Only print the prefix when there is room for it. */
     if (verlen + prefixlen + pathlen + pluglen + statelen <= COLS)
     {
         mvwaddstr(topwin, 0, offset, prefix);
@@ -3433,10 +3162,7 @@ titlebar(const char *path)
     {
         wmove(topwin, 0, offset);
     }
-
-    //
-    //  Print the full path if there's room; otherwise, dottify it.
-    //
+    /* Print the full path if there's room; otherwise, dottify it. */
     if (pathlen + pluglen + statelen <= COLS)
     {
         caption = display_string(path, 0, pathlen, false, false);
@@ -3450,11 +3176,8 @@ titlebar(const char *path)
         waddstr(topwin, caption);
         free(caption);
     }
-
-    //
-    //  When requested, show on the title bar the state of three options and
-    //  the state of the mark and whether a macro is being recorded.
-    //
+    /* When requested, show on the title bar the state of three options and
+     * the state of the mark and whether a macro is being recorded. */
     if (*state && ISSET(STATEFLAGS) && !ISSET(VIEW_MODE))
     {
         if (openfile->modified && COLS > 1)
@@ -3469,9 +3192,7 @@ titlebar(const char *path)
     }
     else
     {
-        //
-        //  If there's room, right-align the state word; otherwise, clip it.
-        //
+        /* If there's room, right-align the state word; otherwise, clip it. */
         if (statelen > 0 && statelen <= COLS)
         {
             mvwaddstr(topwin, 0, COLS - statelen, state);
@@ -3481,43 +3202,29 @@ titlebar(const char *path)
             mvwaddnstr(topwin, 0, 0, state, actual_x(state, COLS));
         }
     }
-
     wattroff(topwin, interface_color_pair[TITLE_BAR]);
-
     wrefresh(topwin);
 }
 
-//
-//  Draw a bar at the bottom with some minimal state information.
-//
-//  TODO : ( minibar ) Profile later.
-//         Also make this way better.
-//
+/* Draw a bar at the bottom with some minimal state information.
+ * TODO : ( minibar ) Profile later.  Also make this way better. */
 void
-minibar()
+minibar(void)
 {
-    char *thename         = nullptr;
-    char *number_of_lines = nullptr;
-    char *ranking         = nullptr;
-    char *successor       = nullptr;
-
-    char *location    = static_cast<char *>(nmalloc(44));
-    char *hexadecimal = static_cast<char *>(nmalloc(9));
-
+    char         *thename         = nullptr;
+    char         *number_of_lines = nullptr;
+    char         *ranking         = nullptr;
+    char         *successor       = nullptr;
+    char         *location        = (char *)nmalloc(44);
+    char         *hexadecimal     = (char *)nmalloc(9);
     unsigned long namewidth;
     unsigned long placewidth;
-
     unsigned long tallywidth = 0;
     unsigned long padding    = 2;
-
-    wchar_t widecode;
-
-    //
-    //  Draw a colored bar over the full width of the screen.
-    //
+    wchar_t       widecode;
+    /* Draw a colored bar over the full width of the screen. */
     wattron(footwin, interface_color_pair[MINI_INFOBAR]);
     mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
-
     if (openfile->filename[0] != '\0')
     {
         as_an_at = false;
@@ -3527,24 +3234,16 @@ minibar()
     {
         thename = copy_of(_("(nameless)"));
     }
-
     sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
     placewidth = constexpr_strlen(location);
     namewidth  = breadth(thename);
-
-    //
-    //  If the file name is relatively long
-    //  drop the side spaces.
-    //
+    /* If the file name is relatively long drop the side spaces. */
     if (namewidth + 19 > COLS)
     {
         padding = 0;
     }
-
-    //
-    //  Display the name of the current file (dottifying it if it doesn't fit),
-    //  plus a star when the file has been modified.
-    //
+    /* Display the name of the current file (dottifying it if it doesn't fit),
+     * plus a star when the file has been modified. */
     if (COLS > 4)
     {
         if (namewidth > COLS - 2)
@@ -3558,19 +3257,14 @@ minibar()
         {
             mvwaddstr(footwin, 0, padding, thename);
         }
-
         waddstr(footwin, openfile->modified ? " *" : "  ");
     }
-
-    //
-    //  Right after reading or writing a file, display its number of lines;
-    //  otherwise, when there are multiple buffers, display an [x/n] counter.
-    //
+    /* Right after reading or writing a file, display its number of lines;
+     * otherwise, when there are multiple buffers, display an [x/n] counter. */
     if (report_size && COLS > 35)
     {
         unsigned long count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0');
-
-        number_of_lines = static_cast<char *>(nmalloc(49));
+        number_of_lines     = (char *)nmalloc(49);
         if (openfile->fmt == NIX_FILE || openfile->fmt == UNSPECIFIED)
         {
             sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
@@ -3593,30 +3287,23 @@ minibar()
     }
     else if (openfile->next != openfile && COLS > 35)
     {
-        ranking = ranking = static_cast<char *>(nmalloc(24));
+        ranking = ranking = (char *)nmalloc(24);
         sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
         if (namewidth + placewidth + breadth(ranking) + 32 < COLS)
         {
             waddstr(footwin, ranking);
         }
     }
-
-    //
-    //  Display the line/column position of the cursor.
-    //
+    /* Display the line/column position of the cursor. */
     if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + placewidth + 32 < COLS)
     {
         mvwaddstr(footwin, 0, COLS - 27 - placewidth, location);
     }
-
-    //
-    //  Display the hexadecimal code of the character under the cursor,
-    //  plus the codes of up to two succeeding zero-width characters.
-    //
+    /* Display the hexadecimal code of the character under the cursor,
+     * plus the codes of up to two succeeding zero-width characters. */
     if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + 28 < COLS)
     {
         char *this_position = openfile->current->data + openfile->current_x;
-
         if (*this_position == '\0')
         {
             sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
@@ -3625,7 +3312,7 @@ minibar()
         {
             sprintf(hexadecimal, "  0x00");
         }
-        else if (static_cast<u8>(*this_position) < 0x80 && using_utf8())
+        else if ((unsigned char)(*this_position) < 0x80 && using_utf8())
         {
             sprintf(hexadecimal, "U+%04X", static_cast<u8>(*this_position));
         }
@@ -3637,18 +3324,13 @@ minibar()
         {
             sprintf(hexadecimal, "  0x%02X", static_cast<u8>(*this_position));
         }
-
         mvwaddstr(footwin, 0, COLS - 23, hexadecimal);
-
         successor = this_position + char_length(this_position);
-
         if (*this_position && *successor && is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
         {
             sprintf(hexadecimal, "|%04X", static_cast<int>(widecode));
             waddstr(footwin, hexadecimal);
-
             successor += char_length(successor);
-
             if (is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
             {
                 sprintf(hexadecimal, "|%04X", static_cast<int>(widecode));
@@ -3660,28 +3342,20 @@ minibar()
             successor = nullptr;
         }
     }
-
-    //
-    //  Display the state of three flags, and the state of macro and mark.
-    //
+    /* Display the state of three flags, and the state of macro and mark. */
     if (ISSET(STATEFLAGS) && !successor && namewidth + tallywidth + 14 + 2 * padding < COLS)
     {
         wmove(footwin, 0, COLS - 11 - padding);
         show_states_at(footwin);
     }
-
-    //
-    //  Display how many percent the current line is into the file.
-    //
+    /* Display how many percent the current line is into the file. */
     if (namewidth + 6 < COLS)
     {
         sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
         mvwaddstr(footwin, 0, COLS - 4 - padding, location);
     }
-
     wattroff(footwin, interface_color_pair[MINI_INFOBAR]);
     wrefresh(footwin);
-
     free(number_of_lines);
     free(hexadecimal);
     free(location);
@@ -3689,78 +3363,53 @@ minibar()
     free(ranking);
 }
 
-//
-//  Display the given message on the status bar, but only if its importance
-//  is higher than that of a message that is already there.
-//
-//  TODO : This function is a mess, FIX IT.
-//
+/* Display the given message on the status bar, but only if its importance
+ * is higher than that of a message that is already there.
+ * TODO: This function is a mess, FIX IT. */
 void
 statusline(message_type importance, const char *msg, ...)
 {
     PROFILE_FUNCTION;
-
     bool                 showed_whitespace = ISSET(WHITESPACE_DISPLAY);
     static unsigned long start_col         = 0;
-
-    char *compound, *message;
-    bool  bracketed;
-    int   colorpair;
-
-    va_list ap;
-
-    //
-    //  Drop all waiting keystrokes upon any kind of 'error'.
-    //
+    char                *compound, *message;
+    bool                 bracketed;
+    int                  colorpair;
+    va_list              ap;
+    /* Drop all waiting keystrokes upon any kind of 'error'. */
     if (importance >= AHEM)
     {
         waiting_codes = 0;
     }
-
-    //
-    //  Ignore a message with an importance that is lower than the last one.
-    //
+    /* Ignore a message with an importance that is lower than the last one. */
     if (importance < lastmessage && lastmessage > NOTICE)
     {
         return;
     }
-
-    //
-    //  Construct the message out of all the arguments.
-    //
-    compound = static_cast<char *>(nmalloc(MAXCHARLEN * COLS + 1));
+    /* Construct the message out of all the arguments. */
+    compound = (char *)nmalloc(MAXCHARLEN * COLS + 1);
     va_start(ap, msg);
-    std::vsnprintf(compound, MAXCHARLEN * COLS + 1, msg, ap);
+    vsnprintf(compound, MAXCHARLEN * COLS + 1, msg, ap);
     va_end(ap);
-
-    //
-    //  When not in curses mode, write the message to standard error.
-    //
+    /* When not in curses mode, write the message to standard error. */
     if (isendwin())
     {
-        std::fprintf(stderr, "\n%s\n", compound);
-        std::free(compound);
+        fprintf(stderr, "\n%s\n", compound);
+        free(compound);
         return;
     }
-
     if (!we_are_running && importance == ALERT && openfile && !openfile->fmt && !openfile->errormessage &&
         openfile->next != openfile)
     {
         openfile->errormessage = copy_of(compound);
     }
-
-    //
-    //  On a one-row terminal, ensure that any changes in the edit window are
-    //  written out first, to prevent them from overwriting the message.
-    //
+    /* On a one-row terminal, ensure that any changes in the edit window are
+     * written out first, to prevent them from overwriting the message. */
     if (LINES == 1 && importance < INFO)
     {
         wnoutrefresh(midwin);
     }
-
-    //
-    //  If there are multiple alert messages, add trailing dots to the first.
-    //
+    /* If there are multiple alert messages, add trailing dots to the first. */
     if (lastmessage == ALERT)
     {
         if (start_col > 4)
@@ -3774,10 +3423,9 @@ statusline(message_type importance, const char *msg, ...)
             napms(100);
             beep();
         }
-        std::free(compound);
+        free(compound);
         return;
     }
-
     if (importance > NOTICE)
     {
         if (importance == ALERT)
@@ -3794,23 +3442,16 @@ statusline(message_type importance, const char *msg, ...)
     {
         colorpair = interface_color_pair[STATUS_BAR];
     }
-
     lastmessage = importance;
-
     blank_statusbar();
-
     UNSET(WHITESPACE_DISPLAY);
-
     message = display_string(compound, 0, COLS, false, false);
-
     if (showed_whitespace)
     {
         SET(WHITESPACE_DISPLAY);
     }
-
     start_col = (COLS - breadth(message)) / 2;
     bracketed = (start_col > 1);
-
     wmove(footwin, 0, (bracketed ? start_col - 2 : start_col));
     wattron(footwin, colorpair);
     if (bracketed)
@@ -3823,42 +3464,23 @@ statusline(message_type importance, const char *msg, ...)
         waddstr(footwin, " ]");
     }
     wattroff(footwin, colorpair);
-
-    // #ifdef USING_OLDER_LIBVTE
-    //     /* Defeat a VTE/Konsole bug, where the cursor can go off-limits. */
-    //     if (ISSET(CONSTANT_SHOW) && ISSET(NO_HELP))
-    //     {
-    //         wmove(footwin, 0, 0);
-    //     }
-    // #endif
-
-    //
-    //  Push the message to the screen straightaway.
-    //
+    /* Push the message to the screen straightaway. */
     wrefresh(footwin);
-
-    std::free(compound);
-    std::free(message);
-
-    //
-    //  When requested, wipe the status bar after just one keystroke.
-    //
+    free(compound);
+    free(message);
+    /* When requested, wipe the status bar after just one keystroke. */
     countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
 }
 
-//
-//  Display a normal message on the status bar, quietly.
-//
+/* Display a normal message on the status bar, quietly. */
 void
 statusbar(const char *msg)
 {
     statusline(HUSH, msg);
 }
 
-//
-//  Warn the user on the status bar and pause for a moment, so that the
-//  message can be noticed and read.
-//
+/* Warn the user on the status bar and pause for a moment, so that the
+ * message can be noticed and read. */
 void
 warn_and_briefly_pause(const char *msg)
 {
@@ -3868,154 +3490,103 @@ warn_and_briefly_pause(const char *msg)
     napms(1500);
 }
 
-//
-//  Write a key's representation plus a minute description of its function
-//  to the screen.  For example, the key could be "^C" and its tag "Cancel".
-//  Key plus tag may occupy at most width columns.
-//
+/* Write a key's representation plus a minute description of its function
+ * to the screen.  For example, the key could be "^C" and its tag "Cancel".
+ * Key plus tag may occupy at most width columns. */
 void
 post_one_key(const char *keystroke, const char *tag, int width)
 {
     wattron(footwin, interface_color_pair[KEY_COMBO]);
     waddnstr(footwin, keystroke, actual_x(keystroke, width));
     wattroff(footwin, interface_color_pair[KEY_COMBO]);
-
-    //
-    // If the remaining space is too small, skip the description.
-    //
+    /* If the remaining space is too small, skip the description. */
     width -= breadth(keystroke);
     if (width < 2)
     {
         return;
     }
-
     waddch(footwin, ' ');
     wattron(footwin, interface_color_pair[FUNCTION_TAG]);
     waddnstr(footwin, tag, actual_x(tag, width - 1));
     wattroff(footwin, interface_color_pair[FUNCTION_TAG]);
 }
 
-//
-//  Display the shortcut list corresponding to menu on the last two rows
-//  of the bottom portion of the window.
-//  The shortcuts are shown in pairs,
-//
+/* Display the shortcut list corresponding to menu on the last two rows
+ * of the bottom portion of the window.  The shortcuts are shown in pairs. */
 void
 bottombars(const int menu)
 {
-    unsigned long index     = 0;
-    unsigned long number    = 0;
-    unsigned long itemwidth = 0;
-
+    unsigned long    index     = 0;
+    unsigned long    number    = 0;
+    unsigned long    itemwidth = 0;
     const keystruct *s;
     funcstruct      *f;
-
-    //
-    //  Set the global variable to the given menu.
-    //
+    /* Set the global variable to the given menu. */
     currmenu = menu;
-
     if (ISSET(NO_HELP) || LINES < (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5))
     {
         return;
     }
-
-    //
-    //  Determine how many shortcuts must be shown.
-    //
+    /* Determine how many shortcuts must be shown. */
     number = shown_entries_for(menu);
-
-    //
-    //  Compute the width of each keyname-plus-explanation pair.
-    //
+    /* Compute the width of each keyname-plus-explanation pair. */
     itemwidth = COLS / ((number + 1) / 2);
-
-    //
-    //  If there is no room, don't print anything.
-    //
+    /* If there is no room, don't print anything. */
     if (itemwidth == 0)
     {
         return;
     }
-
     blank_bottombars();
-
-    //
-    //  Display the first number of shortcuts in the given menu that
-    //  have a key combination assigned to them.
-    //
+    /* Display the first number of shortcuts in the given menu that
+     * have a key combination assigned to them. */
     for (f = allfuncs, index = 0; f != nullptr && index < number; f = f->next)
     {
         unsigned long thiswidth = itemwidth;
-
         if ((f->menus & menu) == 0)
         {
             continue;
         }
-
         s = first_sc_for(menu, f->func);
-
         if (s == nullptr)
         {
             continue;
         }
-
         wmove(footwin, 1 + index % 2, (index / 2) * itemwidth);
-
-        //
-        //  When the number is uneven, the penultimate item can be double wide.
-        //
+        /* When the number is uneven, the penultimate item can be double wide. */
         if ((number % 2) == 1 && (index + 2 == number))
         {
             thiswidth += itemwidth;
         }
-
-        //
-        //  For the last two items, use also the remaining slack.
-        //
+        /* For the last two items, use also the remaining slack. */
         if (index + 2 >= number)
         {
             thiswidth += COLS % itemwidth;
         }
-
         post_one_key(s->keystr, _(f->tag), thiswidth);
-
         index++;
     }
-
     wrefresh(footwin);
 }
 
-//
-//  Redetermine `cursor_row` from the position of current relative to edittop,
-//  and put the cursor in the edit window at (cursor_row, "current_x").
-//
+/* Redetermine `cursor_row` from the position of current relative to edittop,
+ * and put the cursor in the edit window at (cursor_row, "current_x"). */
 void
-place_the_cursor()
+place_the_cursor(void)
 {
     long          row    = 0;
     unsigned long column = xplustabs();
-
     if ISSET (SOFTWRAP)
     {
-        linestruct *line = openfile->edittop;
-
+        linestruct   *line = openfile->edittop;
         unsigned long leftedge;
-
         row -= chunk_for(openfile->firstcolumn, openfile->edittop);
-
-        //
-        //  Calculate how many rows the lines from edittop to current use.
-        //
+        /* Calculate how many rows the lines from edittop to current use. */
         while (line != nullptr && line != openfile->current)
         {
             row += 1 + extra_chunks_in(line);
             line = line->next;
         }
-
-        //
-        //  Add the number of wraps in the current line before the cursor.
-        //
+        /* Add the number of wraps in the current line before the cursor. */
         row += get_chunk_and_edge(column, openfile->current, &leftedge);
         column -= leftedge;
     }
@@ -4024,7 +3595,6 @@ place_the_cursor()
         row = openfile->current->lineno - openfile->edittop->lineno;
         column -= get_page_start(column);
     }
-
     if (row < editwinrows)
     {
         wmove(midwin, row, margin + column);
@@ -4033,11 +3603,10 @@ place_the_cursor()
     {
         statusline(ALERT, "Misplaced cursor -- please report a bug");
     }
-
 #ifdef _CURSES_H_
-    wnoutrefresh(midwin); /* Only needed for NetBSD curses. */
+    /* Only needed for NetBSD curses. */
+    wnoutrefresh(midwin);
 #endif
-
     openfile->cursor_row = row;
 }
 

@@ -256,67 +256,44 @@ compensate_leftward(linestruct *line, unsigned long leftshift)
     }
 }
 
-//
-//  Remove an indent from the given line.
-//
+/* Remove an indent from the given line. */
 void
 unindent_a_line(linestruct *line, unsigned long indent_len)
 {
-    unsigned long length = std::strlen(line->data);
-
-    //
-    //  If the indent is empty, don't change the line.
-    //
+    unsigned long length = strlen(line->data);
+    /* If the indent is empty, don't change the line. */
     if (indent_len == 0)
     {
         return;
     }
-
-    //
-    //  Remove the first tab's worth of whitespace from this line.
-    //
-    std::memmove(line->data, line->data + indent_len, length - indent_len + 1);
-
+    /* Remove the first tab's worth of whitespace from this line. */
+    memmove(line->data, line->data + indent_len, length - indent_len + 1);
     openfile->totsize -= indent_len;
-
-    //
-    //  Adjust the positions of mark and cursor,
-    //  when they are affected.
-    //
+    /* Adjust the positions of mark and cursor, when they are affected. */
     compensate_leftward(line, indent_len);
 }
 
-//
-//  Unindent the current line (or the marked lines) by tabsize columns.
-//  The removed indent can be a mixture of spaces plus at most one tab.
-//
+/* Unindent the current line (or the marked lines) by tabsize columns.
+ * The removed indent can be a mixture of spaces plus at most one tab. */
 void
-do_unindent()
+do_unindent(void)
 {
     linestruct *top, *bot, *line;
-    //
-    //  Use either all the marked lines or just the current line.
-    //
+    /* Use either all the marked lines or just the current line. */
     get_range(&top, &bot);
-    //
-    //  Skip any leading lines that cannot be unindented.
-    //
+    /* Skip any leading lines that cannot be unindented. */
     while (top != bot->next && length_of_white(top->data) == 0)
     {
         top = top->next;
     }
-    //
-    //  If none of the lines can be unindented, there is nothing to do.
-    //
+    /* If none of the lines can be unindented, there is nothing to do. */
     if (top == bot->next)
     {
         return;
     }
     add_undo(UNINDENT, nullptr);
-    //
-    //  Go through each of the lines, removing their leading indent where
-    //  possible, and saving the removed whitespace in the undo item.
-    //
+    /* Go through each of the lines, removing their leading indent where
+     * possible, and saving the removed whitespace in the undo item. */
     for (line = top; line != bot->next; line = line->next)
     {
         unsigned long indent_len  = length_of_white(line->data);
@@ -331,24 +308,18 @@ do_unindent()
     shift_held     = true;
 }
 
-//
-//  Perform an undo or redo for an indent or unindent action.
-//
+/* Perform an undo or redo for an indent or unindent action. */
 void
 handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 {
     groupstruct *group = u->grouping;
     linestruct  *line  = line_from_number(group->top_line);
-    //
-    //  When redoing, reposition the cursor and let the indenter adjust it.
-    //
+    /* When redoing, reposition the cursor and let the indenter adjust it. */
     if (!undoing)
     {
         goto_line_posx(u->head_lineno, u->head_x);
     }
-    //
-    //  For each line in the group, add or remove the individual indent.
-    //
+    /* For each line in the group, add or remove the individual indent. */
     while (line != nullptr && line->lineno <= group->bottom_line)
     {
         char *blanks = group->indentations[line->lineno - group->top_line];
@@ -362,70 +333,48 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
         }
         line = line->next;
     }
-
-    //
-    //  When undoing, reposition the cursor to the recorded location.
-    //
+    /* When undoing, reposition the cursor to the recorded location. */
     if (undoing)
     {
         goto_line_posx(u->head_lineno, u->head_x);
     }
-
     refresh_needed = true;
 }
 
-//
-//  Test whether the given line can be uncommented, or add or remove a comment,
-//  depending on action.  Return TRUE if the line is uncommentable, or when
-//  anything was added or removed; FALSE otherwise.
-//
-//  TODO : ( comment_line ) Change key to toggle comment
-//
+/* Test whether the given line can be uncommented, or add or remove a comment,
+ * depending on action.  Return TRUE if the line is uncommentable, or when
+ * anything was added or removed; FALSE otherwise.
+ * ADDED: Also takes indentation into account. */
 bool
 comment_line(undo_type action, linestruct *line, const char *comment_seq)
 {
     PROFILE_FUNCTION;
-
     unsigned long comment_seq_len = strlen(comment_seq);
-    //
-    //  The postfix,
-    //  if this is a bracketing type comment sequence.
-    //
+    /* The postfix, if this is a bracketing type comment sequence. */
     const char *post_seq = strchr(comment_seq, '|');
-    //
-    //  Length of prefix.
-    //
+    /* Length of prefix. */
     unsigned long pre_len = post_seq ? post_seq++ - comment_seq : comment_seq_len;
-    //
-    //  Length of postfix.
-    //
-    unsigned long post_len = post_seq ? comment_seq_len - pre_len - 1 : 0;
-    unsigned long line_len = strlen(line->data);
-
+    /* Length of postfix. */
+    unsigned long  post_len   = post_seq ? comment_seq_len - pre_len - 1 : 0;
+    unsigned long  line_len   = strlen(line->data);
+    unsigned short indent_len = indent_char_len(line);
     if (!ISSET(NO_NEWLINES) && line == openfile->filebot)
     {
         return false;
     }
-
     if (action == COMMENT)
     {
-        //
-        //  Make room for the comment sequence(s),
-        //  move the text right and copy them in.
-        //
-        line->data = static_cast<char *>(nrealloc(line->data, line_len + pre_len + post_len + 1));
-        memmove(line->data + pre_len, line->data, line_len + 1);
-        memmove(line->data, comment_seq, pre_len);
+        /* Make room for the comment sequence(s), move the text right and copy them in. */
+        line->data = (char *)nrealloc(line->data, line_len + pre_len + post_len + 1);
+        memmove(line->data + pre_len + indent_len, line->data + indent_len, line_len - indent_len + 1);
+        memmove(line->data + indent_len, comment_seq, pre_len);
+        inject_in_line(&line, " ", indent_len + comment_seq_len);
         if (post_len > 0)
         {
             memmove(line->data + pre_len + line_len, post_seq, post_len + 1);
         }
-
         openfile->totsize += pre_len + post_len;
-
-        //
-        //  If needed, adjust the position of the mark and of the cursor.
-        //
+        /* If needed, adjust the position of the mark and of the cursor. */
         if (line == openfile->mark && openfile->mark_x > 0)
         {
             openfile->mark_x += pre_len;
@@ -435,47 +384,33 @@ comment_line(undo_type action, linestruct *line, const char *comment_seq)
             openfile->current_x += pre_len;
             openfile->placewewant = xplustabs();
         }
-
         return true;
     }
-
-    //
-    //  If the line is commented, report it as uncommentable, or uncomment it.
-    //
-    if (strncmp(line->data, comment_seq, pre_len) == 0 &&
+    /* If the line is commented, report it as uncommentable, or uncomment it. */
+    if (strncmp(line->data + indent_len, comment_seq, pre_len) == 0 &&
         (post_len == 0 || strcmp(line->data + line_len - post_len, post_seq) == 0))
     {
         if (action == PREFLIGHT)
         {
             return true;
         }
-        //
-        //  Erase the comment prefix by moving the non-comment part.
-        //
-        memmove(line->data, line->data + pre_len, line_len - pre_len);
-        //
-        //  Truncate the postfix if there was one.
-        //
+        /* Erase the comment prefix by moving the non-comment part. */
+        memmove(line->data + indent_len, line->data + indent_len + pre_len + 1, line_len - pre_len - indent_len);
+        /* Truncate the postfix if there was one. */
         line->data[line_len - pre_len - post_len] = '\0';
         openfile->totsize -= pre_len + post_len;
-        //
-        //  Adjust the positions of mark and cursor, when needed.
-        //
+        /* Adjust the positions of mark and cursor, when needed. */
         compensate_leftward(line, pre_len);
-
         return true;
     }
-
     return false;
 }
 
-//
-//  Comment or uncomment the current line or the marked lines.
-//
-//  TODO : FIX SO COMMENTS ARE PLACED AT CURSOR POSITION NOT AT THE BEGINNING OF THE LINE
-//
+/* Comment or uncomment the current line or the marked lines.
+ * TODO: FIX SO COMMENTS ARE PLACED AT CURSOR POSITION NOT AT THE BEGINNING OF THE LINE,
+ * EDIT: I FUCKING DID IT!!! */
 void
-do_comment()
+do_comment(void)
 {
     const char *comment_seq = GENERAL_COMMENT_CHARACTER;
     undo_type   action      = UNCOMMENT;
@@ -485,54 +420,36 @@ do_comment()
     {
         comment_seq = openfile->syntax->comment;
     }
-
     if (*comment_seq == '\0')
     {
         statusline(AHEM, _("Commenting is not supported for this file type"));
         return;
     }
-    //
-    //  Determine which lines to work on.
-    //
+    /* Determine which lines to work on. */
     get_range(&top, &bot);
-    //
-    //  If only the magic line is selected, don't do anything.
-    //
+    /* If only the magic line is selected, don't do anything. */
     if (top == bot && bot == openfile->filebot && !ISSET(NO_NEWLINES))
     {
         statusline(AHEM, _("Cannot comment past end of file"));
         return;
     }
-    //
-    //  Figure out whether to comment or uncomment the selected line or lines.
-    //
+    /* Figure out whether to comment or uncomment the selected line or lines. */
     for (line = top; line != bot->next; line = line->next)
     {
         empty = white_string(line->data);
-
-        //
-        //  If this line is not blank and not commented, we comment all.
-        //
+        /* If this line is not blank and not commented, we comment all. */
         if (!empty && !comment_line(PREFLIGHT, line, comment_seq))
         {
             action = COMMENT;
             break;
         }
-
         all_empty = all_empty && empty;
     }
-
-    //
-    //  If all selected lines are blank, we comment them.
-    //
+    /* If all selected lines are blank, we comment them. */
     action = all_empty ? COMMENT : action;
-
     add_undo(action, nullptr);
-
-    //
-    //  Store the comment sequence used for the operation, because it could
-    //  change when the file name changes; we need to know what it was.
-    //
+    /* Store the comment sequence used for the operation, because it could
+     * change when the file name changes; we need to know what it was. */
     openfile->current_undo->strdata = copy_of(comment_seq);
 
     //
@@ -554,148 +471,106 @@ do_comment()
     shift_held     = true;
 }
 
-//
-//  Perform an undo or redo for a comment or uncomment action.
-//
+/* Perform an undo or redo for a comment or uncomment action. */
 void
 handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 {
     PROFILE_FUNCTION;
-
     groupstruct *group = u->grouping;
-
-    //
-    //  When redoing, reposition the cursor and let the commenter adjust it.
-    //
+    /* When redoing, reposition the cursor and let the commenter adjust it. */
     if (!undoing)
     {
         goto_line_posx(u->head_lineno, u->head_x);
     }
-
     while (group)
     {
         linestruct *line = line_from_number(group->top_line);
-
         while (line != nullptr && line->lineno <= group->bottom_line)
         {
             comment_line(undoing ^ add_comment ? COMMENT : UNCOMMENT, line, u->strdata);
             line = line->next;
         }
-
         group = group->next;
     }
-
-    //
-    //  When undoing, reposition the cursor to the recorded location.
-    //
+    /* When undoing, reposition the cursor to the recorded location. */
     if (undoing)
     {
         goto_line_posx(u->head_lineno, u->head_x);
     }
-
     refresh_needed = true;
 }
 
 #define redo_paste undo_cut
 #define undo_paste redo_cut
 
-//
-//  Undo a cut, or redo a paste.
-//
+/* Undo a cut, or redo a paste. */
 void
 undo_cut(undostruct *u)
 {
     PROFILE_FUNCTION;
-
     goto_line_posx(u->head_lineno, (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x);
-
-    //
-    //  Clear an inherited anchor but not a user-placed one.
-    //
+    /* Clear an inherited anchor but not a user-placed one. */
     if (!(u->xflags & HAD_ANCHOR_AT_START))
     {
         openfile->current->has_anchor = FALSE;
     }
-
     if (u->cutbuffer)
     {
         copy_from_buffer(u->cutbuffer);
     }
-
-    //
-    //  If originally the last line was cut too, remove an extra magic line.
-    //
+    /* If originally the last line was cut too, remove an extra magic line. */
     if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES) && openfile->filebot != openfile->current &&
         openfile->filebot->prev->data[0] == '\0')
     {
         remove_magicline();
     }
-
     if (u->xflags & CURSOR_WAS_AT_HEAD)
     {
         goto_line_posx(u->head_lineno, u->head_x);
     }
 }
 
-//
-//  Redo a cut, or undo a paste.
-//
+/* Redo a cut, or undo a paste. */
 void
 redo_cut(undostruct *u)
 {
     PROFILE_FUNCTION;
-
     linestruct *oldcutbuffer = cutbuffer;
-
-    cutbuffer = nullptr;
-
-    openfile->mark   = line_from_number(u->head_lineno);
-    openfile->mark_x = (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x;
-
+    cutbuffer                = nullptr;
+    openfile->mark           = line_from_number(u->head_lineno);
+    openfile->mark_x         = (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x;
     goto_line_posx(u->tail_lineno, u->tail_x);
-
     do_snip(true, false, u->type == ZAP);
-
     free_lines(cutbuffer);
     cutbuffer = oldcutbuffer;
 }
 
-//
-//  Undo the last thing(s) we did.
-//
+/* Undo the last thing(s) we did. */
 void
-do_undo()
+do_undo(void)
 {
     PROFILE_FUNCTION;
-
-    undostruct *u = openfile->current_undo;
-    linestruct *oldcutbuffer, *intruder;
-    linestruct *line = nullptr;
-
+    undostruct   *u = openfile->current_undo;
+    linestruct   *oldcutbuffer, *intruder;
+    linestruct   *line = nullptr;
     unsigned long original_x, regain_from_x;
     char         *undidmsg = nullptr;
     char         *data;
-
     if (u == nullptr)
     {
         statusline(AHEM, _("Nothing to undo"));
         return;
     }
-
     if (u->type <= REPLACE)
     {
         line = line_from_number(u->tail_lineno);
     }
-
     switch (u->type)
     {
         case ADD :
         {
-            //
-            //  TRANSLATORS: The next thirteen strings describe actions
-            //  that are undone or redone.
-            //  They are all nouns, not verbs.
-            //
+            /* TRANSLATORS: The next thirteen strings describe actions
+             * that are undone or redone.  They are all nouns, not verbs. */
             undidmsg = _("addition");
             if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES))
             {
@@ -881,19 +756,15 @@ do_undo()
             break;
         }
     }
-
     if (undidmsg && !ISSET(ZERO) && !pletion_line)
     {
         statusline(HUSH, _("Undid %s"), undidmsg);
     }
-
     openfile->current_undo = openfile->current_undo->next;
     openfile->last_action  = OTHER;
     openfile->mark         = nullptr;
     openfile->placewewant  = xplustabs();
-
-    openfile->totsize = u->wassize;
-
+    openfile->totsize      = u->wassize;
     if (u->type <= REPLACE)
     {
         check_the_multis(openfile->current);
@@ -902,10 +773,7 @@ do_undo()
     {
         recook = true;
     }
-
-    //
-    //  When at the point where the buffer was last saved, unset "Modified".
-    //
+    /* When at the point where the buffer was last saved, unset "Modified". */
     if (openfile->current_undo == openfile->last_saved)
     {
         openfile->modified = false;
@@ -917,11 +785,9 @@ do_undo()
     }
 }
 
-//
-//  Redo the last thing(s) we undid.
-//
+/* Redo the last thing(s) we undid. */
 void
-do_redo()
+do_redo(void)
 {
     PROFILE_FUNCTION;
 
@@ -1163,108 +1029,80 @@ do_redo()
 //  the closing bracket
 //
 void
-do_enter()
+do_enter(void)
 {
-    //
-    //  Check the char at the 'openfile->current_x - 1' is valid
-    //
+    /* Check the char at the 'openfile->current_x - 1' is valid */
     if (openfile->current->data[openfile->current_x - 1])
     {
         char c_prev = openfile->current->data[openfile->current_x - 1];
         char c_next = openfile->current->data[openfile->current_x];
         if (c_prev == '{' && c_next == '}')
         {
-            linestruct *new_node_middle = make_new_node(openfile->current);
-            linestruct *sample_line     = openfile->current;
-
-            bool allblanks = false;
-
-            unsigned long extra = indent_length(sample_line->data);
+            linestruct   *new_node_middle = make_new_node(openfile->current);
+            linestruct   *sample_line     = openfile->current;
+            bool          allblanks       = false;
+            unsigned long extra           = indent_length(sample_line->data);
             if (extra == openfile->current_x)
             {
                 allblanks = (indent_length(openfile->current->data) == extra);
             }
-
-            new_node_middle->data =
-                static_cast<char *>(nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1));
-
+            new_node_middle->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
             strcpy(&new_node_middle->data[extra], openfile->current->data + openfile->current_x);
             if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x)
             {
                 openfile->mark = new_node_middle;
                 openfile->mark_x += extra - openfile->current_x;
             }
-
             strncpy(new_node_middle->data, sample_line->data, extra);
-
             if (allblanks)
             {
                 openfile->current_x = 0;
             }
-
             openfile->current->data[openfile->current_x] = '\0';
             add_undo(ENTER, nullptr);
-
             splice_node(openfile->current, new_node_middle);
             renumber_from(new_node_middle);
-
             openfile->current     = new_node_middle;
             openfile->current_x   = extra;
             openfile->placewewant = xplustabs();
             openfile->totsize++;
             set_modified();
-
             if (ISSET(AUTOINDENT) && !allblanks)
             {
                 openfile->totsize += extra;
             }
             update_undo(ENTER);
-
-            //
-            //  End of middleline and begining of making the end line for the closing bracket.
-            //
+            /* End of middleline and begining of making the end line for the closing bracket. */
             linestruct *new_node_end = make_new_node(openfile->current);
-
-            sample_line = openfile->current;
-            new_node_end->data =
-                static_cast<char *>(nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1));
+            sample_line              = openfile->current;
+            new_node_end->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
             strcpy(&new_node_end->data[extra], openfile->current->data + openfile->current_x);
             strncpy(new_node_end->data, sample_line->data, extra);
-
             openfile->current->data[openfile->current_x] = '\0';
             add_undo(ENTER, nullptr);
-
             splice_node(openfile->current, new_node_end);
             renumber_from(new_node_end);
-
             openfile->current     = new_node_end;
             openfile->current_x   = extra;
             openfile->placewewant = xplustabs();
             openfile->totsize++;
-
             if (ISSET(AUTOINDENT) && !allblanks)
             {
                 openfile->totsize += extra;
             }
-
             update_undo(ENTER);
-
+            /* Place cursor at correct position. */
             do_up();
             do_tab();
-
             refresh_needed = true;
             focusing       = false;
-
             return;
         }
     }
-
-    linestruct *newnode    = make_new_node(openfile->current);
-    linestruct *sampleline = openfile->current;
-
-    unsigned long extra     = 0;
-    bool          allblanks = false;
-
+    linestruct   *newnode    = make_new_node(openfile->current);
+    linestruct   *sampleline = openfile->current;
+    unsigned long extra      = 0;
+    bool          allblanks  = false;
     if ISSET (AUTOINDENT)
     {
         //
@@ -1351,15 +1189,12 @@ do_enter()
     focusing       = false;
 }
 
-//
-//  Discard undo items that are newer than the given one, or all if NULL.
-//
+/* Discard undo items that are newer than the given one, or all if NULL. */
 void
 discard_until(const undostruct *thisitem)
 {
     undostruct  *dropit = openfile->undotop;
     groupstruct *group;
-
     while (dropit != nullptr && dropit != thisitem)
     {
         openfile->undotop = dropit->next;
@@ -1376,15 +1211,9 @@ discard_until(const undostruct *thisitem)
         free(dropit);
         dropit = openfile->undotop;
     }
-
-    //
-    //  Adjust the pointer to the top of the undo stack.
-    //
+    /* Adjust the pointer to the top of the undo stack. */
     openfile->current_undo = (undostruct *)thisitem;
-
-    //
-    //  Prevent a chain of editing actions from continuing.
-    //
+    /* Prevent a chain of editing actions from continuing. */
     openfile->last_action = OTHER;
 }
 
@@ -2646,7 +2475,7 @@ justify_text(bool whole_buffer)
 
 /* Justify the current paragraph. */
 void
-do_justify()
+do_justify(void)
 {
     justify_text(ONE_PARAGRAPH);
 }
@@ -3295,7 +3124,7 @@ do_int_speller(const char *const tempfile_name)
 //  Otherwise, use the internal spell checker.
 //
 void
-do_spell()
+do_spell(void)
 {
     FILE *stream;
     char *temp_name;

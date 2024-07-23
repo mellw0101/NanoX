@@ -83,8 +83,8 @@
 // #define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
 // #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
 // #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
-#define FLAGS(flag)    flags[((flag) / (sizeof(u64) * 8))]
-#define FLAGMASK(flag) ((u64)1 << ((flag) % (sizeof(u64) * 8)))
+#define FLAGS(flag)    flags[((flag) / (sizeof(unsigned long) * 8))]
+#define FLAGMASK(flag) ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
 #define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
 #define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
 #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
@@ -96,10 +96,10 @@ constexpr bool FORWARD  = true;
 constexpr bool YESORNO      = false;
 constexpr bool YESORALLORNO = true;
 
-constexpr s16 YES    = 1;
-constexpr s16 ALL    = 2;
-constexpr s16 NO     = 0;
-constexpr s16 CANCEL = -1;
+constexpr short YES    = 1;
+constexpr short ALL    = 2;
+constexpr short NO     = 0;
+constexpr short CANCEL = -1;
 
 constexpr bool BLIND   = false;
 constexpr bool VISIBLE = true;
@@ -118,63 +118,39 @@ constexpr bool NONOTES  = false;
 constexpr bool PRUNE_DUPLICATE   = true;
 constexpr bool IGNORE_DUPLICATES = false;
 
-constexpr u8 MAXCHARLEN = 4;
-//
-//  The default width of a tab in spaces.
-//
-constexpr u8 WIDTH_OF_TAB = 4;
-//
-//  The default number of columns from end of line where wrapping occurs.
-//
-constexpr u8 COLUMNS_FROM_EOL = 8;
-//
-//  The default comment character when a syntax does not specify any.
-//
-constexpr C_s8 *GENERAL_COMMENT_CHARACTER = "#";
-//
-//  The maximum number of search/replace history strings saved.
-//
-constexpr u8 MAX_SEARCH_HISTORY = 100;
-//
-//  The largest size_t number that doesn't have the high bit set.
-//
-constexpr u64 HIGHEST_POSITIVE = ((~(u64)0) >> 1);
+constexpr unsigned char MAXCHARLEN = 4;
+/* The default width of a tab in spaces. */
+constexpr unsigned char WIDTH_OF_TAB = 4;
+/* The default number of columns from end of line where wrapping occurs. */
+constexpr unsigned char COLUMNS_FROM_EOL = 8;
+/* The default comment character when a syntax does not specify any. */
+constexpr const char *GENERAL_COMMENT_CHARACTER = "#";
+/* The maximum number of search/replace history strings saved. */
+constexpr unsigned char MAX_SEARCH_HISTORY = 100;
+/* The largest unsigned long number that doesn't have the high bit set. */
+constexpr unsigned long HIGHEST_POSITIVE = ((~(unsigned long)0) >> 1);
 
-constexpr s16 THE_DEFAULT = -1;
-constexpr s16 BAD_COLOR   = -2;
+constexpr short THE_DEFAULT = -1;
+constexpr short BAD_COLOR   = -2;
 
-//  Flags for indicating how a multiline regex pair apply to a line.
+/* Flags for indicating how a multiline regex pair apply to a line. */
 
-//
-//  The start/end regexes don't cover this line at all.
-//
-constexpr auto NOTHING = (1 << 1);
-//
-//  The start regex matches on this line, the end regex on a later one.
-//
-constexpr auto STARTSHERE = (1 << 2);
-//
-//  The start regex matches on an earlier line, the end regex on a later one.
-//
-constexpr auto WHOLELINE = (1 << 3);
-//
-//  The start regex matches on an earlier line, the end regex on this one.
-//
-constexpr auto ENDSHERE = (1 << 4);
-//
-//  Both the start and end regexes match within this line.
-//
-constexpr auto JUSTONTHIS = (1 << 5);
+/* The start/end regexes don't cover this line at all. */
+constexpr unsigned char NOTHING = (1 << 1);
+/* The start regex matches on this line, the end regex on a later one. */
+constexpr unsigned char STARTSHERE = (1 << 2);
+/* The start regex matches on an earlier line, the end regex on a later one. */
+constexpr unsigned char WHOLELINE = (1 << 3);
+/* The start regex matches on an earlier line, the end regex on this one. */
+constexpr unsigned char ENDSHERE = (1 << 4);
+/* Both the start and end regexes match within this line. */
+constexpr unsigned char JUSTONTHIS = (1 << 5);
 
-//
-//  Basic control codes.
-//
-constexpr auto ESC_CODE = 0x1B;
-constexpr auto DEL_CODE = 0x7F;
+/* Basic control codes. */
+constexpr int ESC_CODE = 0x1B;
+constexpr int DEL_CODE = 0x7F;
 
-//
-//  Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses.
-//
+/* Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses. */
 #define CONTROL_LEFT         0x401
 #define CONTROL_RIGHT        0x402
 #define CONTROL_UP           0x403
@@ -217,47 +193,33 @@ constexpr auto DEL_CODE = 0x7F;
 #define FOCUS_IN             0x491
 #define FOCUS_OUT            0x499
 
-//
-//  Special keycodes for when a string bind has been partially implanted
-//  or has an unpaired opening brace, or when a function in a string bind
-//  needs execution or a specified function name is invalid.
-//
-constexpr auto MORE_PLANTS       = 0x4EA;
-constexpr auto MISSING_BRACE     = 0x4EB;
-constexpr auto PLANTED_A_COMMAND = 0x4EC;
-constexpr auto NO_SUCH_FUNCTION  = 0x4EF;
-//
-//  A special keycode to signal the beginning and end of a bracketed paste.
-//
-constexpr auto BRACKETED_PASTE_MARKER = 0x4FB;
-//
-//  A special keycode for when a key produces an unknown escape sequence.
-//
+/* Special keycodes for when a string bind has been partially implanted
+ * or has an unpaired opening brace, or when a function in a string bind
+ * needs execution or a specified function name is invalid. */
+constexpr unsigned short MORE_PLANTS       = 0x4EA;
+constexpr unsigned short MISSING_BRACE     = 0x4EB;
+constexpr unsigned short PLANTED_A_COMMAND = 0x4EC;
+constexpr unsigned short NO_SUCH_FUNCTION  = 0x4EF;
+/* A special keycode to signal the beginning and end of a bracketed paste. */
+constexpr unsigned short BRACKETED_PASTE_MARKER = 0x4FB;
+/* A special keycode for when a key produces an unknown escape sequence. */
 constexpr auto FOREIGN_SEQUENCE = 0x4FC;
-//
-//  A special keycode for plugging into the input stream after a suspension.
-//
+/* A special keycode for plugging into the input stream after a suspension. */
 constexpr auto KEY_FRESH = 0x4FE;
-//
-//  A special keycode for when we get a SIGWINCH (a window resize).
-//
+/* A special keycode for when we get a SIGWINCH (a window resize). */
 constexpr auto KEY_WINCH = -2;
 
-//
-//  Some extra flags for the undo function.
-//
-constexpr auto WAS_BACKSPACE_AT_EOF = (1 << 1);
-constexpr auto WAS_WHOLE_LINE       = (1 << 2);
-constexpr auto INCLUDED_LAST_LINE   = (1 << 3);
-constexpr auto MARK_WAS_SET         = (1 << 4);
-constexpr auto CURSOR_WAS_AT_HEAD   = (1 << 5);
-constexpr auto HAD_ANCHOR_AT_START  = (1 << 6);
+/* Some extra flags for the undo function. */
+constexpr unsigned char WAS_BACKSPACE_AT_EOF = (1 << 1);
+constexpr unsigned char WAS_WHOLE_LINE       = (1 << 2);
+constexpr unsigned char INCLUDED_LAST_LINE   = (1 << 3);
+constexpr unsigned char MARK_WAS_SET         = (1 << 4);
+constexpr unsigned char CURSOR_WAS_AT_HEAD   = (1 << 5);
+constexpr unsigned char HAD_ANCHOR_AT_START  = (1 << 6);
 
 #include "constexpr_utils.h"
 
-//
-//  Enumeration types.
-//
+/* Enumeration types. */
 typedef enum
 {
     UNSPECIFIED,
@@ -293,10 +255,8 @@ typedef enum
     STATIONARY
 } update_type;
 
-//
-//  The kinds of undo actions.
-//  ADD...REPLACE must come first.
-//
+/* The kinds of undo actions.
+ * ADD...REPLACE must come first. */
 typedef enum
 {
     ADD,
@@ -323,17 +283,15 @@ typedef enum
     OTHER
 } undo_type;
 
-//
-//  Structure types.
-//
+/* Structure types. */
 typedef struct colortype
 {
-    s16 id;            // An ordinal number (if this color combo is for a multiline regex).
-    s16 fg;            // This combo's foreground color.
-    s16 bg;            // This combo's background color.
-    s16 pairnum;       // The pair number for this foreground/background color
+    short id;          // An ordinal number (if this color combo is for a multiline regex).
+    short fg;          // This combo's foreground color.
+    short bg;          // This combo's background color.
+    short pairnum;     // The pair number for this foreground/background color
                        // combination.
-    s32 attributes;    // Pair number and brightness composed into ready-to-use
+    int attributes;    // Pair number and brightness composed into ready-to-use
                        // attributes.
     regex_t   *start;  // The compiled regular expression for 'start=', or the only one.
     regex_t   *end;    // The compiled regular expression for 'end=', if any.
@@ -348,9 +306,9 @@ typedef struct regexlisttype
 
 typedef struct augmentstruct
 {
-    s8            *filename;  //  The file where the syntax is extended.
-    s64            lineno;    //  The number of the line of the extendsyntax command.
-    s8            *data;      //  The text of the line.
+    char          *filename;  //  The file where the syntax is extended.
+    long           lineno;    //  The number of the line of the extendsyntax command.
+    char          *data;      //  The text of the line.
     augmentstruct *next;      //  Next node.
 } augmentstruct;
 
@@ -359,7 +317,7 @@ typedef struct syntaxtype
     char *name;                    // The name of this syntax.
     char *filename;                // File where the syntax is defined, or NULL if not an
                                    // included file.
-    size_t         lineno;         // The line number where the 'syntax' command was found.
+    unsigned long  lineno;         // The line number where the 'syntax' command was found.
     augmentstruct *augmentations;  // List of extendsyntax commands to apply when loaded.
     regexlisttype *extensions;     // The list of extensions that this syntax applies to.
     regexlisttype *headers;        // The list of headerlines that this syntax applies to.
@@ -381,10 +339,10 @@ typedef struct lintstruct
     lintstruct *next;  // Next error.
     lintstruct *prev;  // Previous error.
 
-    s64 lineno;        // Line number of the error.
-    s64 colno;         // Column # of the error.
-    s8 *msg;           // Error message text.
-    s8 *filename;      // Filename.
+    long  lineno;      // Line number of the error.
+    long  colno;       // Column # of the error.
+    char *msg;         // Error message text.
+    char *filename;    // Filename.
 } lintstruct;
 
 //
@@ -392,88 +350,120 @@ typedef struct lintstruct
 //
 typedef struct linestruct
 {
-    linestruct *next;        // Next node.
-    linestruct *prev;        // Previous node.
-    s8         *data;        // The text of this line.
-    s64         lineno;      // The number of this line.
-    s16        *multidata;   // Array of which multi-line regexes apply to this line.
-    bool        has_anchor;  // Whether the user has placed an anchor at this line.
+    /* Next node. */
+    linestruct *next;
+    /* Previous node. */
+    linestruct *prev;
+    /* The text of this line. */
+    char *data;
+    /* The number of this line. */
+    long lineno;
+    /* Array of which multi-line regexes apply to this line. */
+    short *multidata;
+    /* Whether the user has placed an anchor at this line. */
+    bool has_anchor;
 } linestruct;
 
 typedef struct groupstruct
 {
-    groupstruct *next;  // The next group, if any.
+    /* The next group, if any. */
+    groupstruct *next;
+    /* First line of group. */
+    long top_line;
+    /* Last line of group. */
+    long bottom_line;
+    /* String data used to restore the affected lines; one per line. */
+    char **indentations;
 
-    s64  top_line;      // First line of group.
-    s64  bottom_line;   // Last line of group.
-    s8 **indentations;  // String data used to restore the affected lines; one
-                        // per line.
 } groupstruct;
 
 typedef struct undostruct
 {
-    undo_type    type;        /* The operation type that this undo item is for. */
-    int          xflags;      /* Some flag data to mark certain corner cases. */
-    ssize_t      head_lineno; /* The line number where the operation began or ended. */
-    size_t       head_x;      /* The x position where the operation began or ended. */
-    char        *strdata;     /* String data to help restore the affected line. */
-    size_t       wassize;     /* The file size before the action. */
-    size_t       newsize;     /* The file size after the action. */
-    groupstruct *grouping;    /* Undo info specific to groups of lines. */
-    linestruct  *cutbuffer;   /* A copy of the cutbuffer. */
-    ssize_t      tail_lineno; /* Mostly the line number of the current line; sometimes something else. */
-    size_t       tail_x;      /* The x position corresponding to the above line number. */
-
-    undostruct *next;         /* A pointer to the undo item of the preceding action. */
+    undo_type     type;        /* The operation type that this undo item is for. */
+    int           xflags;      /* Some flag data to mark certain corner cases. */
+    long          head_lineno; /* The line number where the operation began or ended. */
+    unsigned long head_x;      /* The x position where the operation began or ended. */
+    char         *strdata;     /* String data to help restore the affected line. */
+    unsigned long wassize;     /* The file size before the action. */
+    unsigned long newsize;     /* The file size after the action. */
+    groupstruct  *grouping;    /* Undo info specific to groups of lines. */
+    linestruct   *cutbuffer;   /* A copy of the cutbuffer. */
+    long          tail_lineno; /* Mostly the line number of the current line; sometimes something else. */
+    unsigned long tail_x;      /* The x position corresponding to the above line number. */
+    undostruct   *next;        /* A pointer to the undo item of the preceding action. */
 } undostruct;
 
 typedef struct poshiststruct
 {
-    char   *filename;     /* The full path plus name of the file. */
-    ssize_t linenumber;   /* The line where the cursor was when we closed the file. */
-    ssize_t columnnumber; /* The column where the cursor was. */
+    char *filename;      /* The full path plus name of the file. */
+    long  linenumber;    /* The line where the cursor was when we closed the file. */
+    long  columnnumber;  /* The column where the cursor was. */
 
-    poshiststruct *next;  /* The next item of position history. */
+    poshiststruct *next; /* The next item of position history. */
 } poshiststruct;
 
 typedef struct openfilestruct
 {
-    char       *filename;       // The file's name.
-    linestruct *filetop;        // The file's first line.
-    linestruct *filebot;        // The file's last line.
-    linestruct *edittop;        // The current top of the edit window for this file.
-    linestruct *current;        // The current line for this file.
-    size_t      totsize;        // The file's total number of characters.
-    size_t      firstcolumn;    // The starting column of the top line of the edit
-                                // window When not in softwrap mode, it's always zero.
-    size_t       current_x;     // The file's x-coordinate position.
-    size_t       placewewant;   // The file's x position we would like.
-    ssize_t      cursor_row;    // The row in the edit window that the cursor is on.
-    struct stat *statinfo;      // The file's stat information from when it was
-                                // opened or last saved.
-    linestruct *spillage_line;  // The line for prepending stuff to during
-                                // automatic hard-wrapping.
-    linestruct *mark;           // The line in the file where the mark is set; NULL if not set.
-    size_t      mark_x;         // The mark's x position in the above line.
-    bool        softmark;       // Whether a marked region was made by holding Shift.
-    format_type fmt;            // The file's format -- Unix or DOS or Mac.
-    char       *lock_filename;  // The path of the lockfile, if we created one.
-    undostruct *undotop;        // The top of the undo list.
-    undostruct *current_undo;   // The current (i.e. next) level of undo.
-    undostruct *last_saved;     // The undo item at which the file was last saved.
-    undo_type   last_action;    // The type of the last action the user performed.
-    bool        modified;       // Whether the file has been modified.
-    syntaxtype *syntax;         // The syntax that applies to this file, if any.
-    char       *errormessage;   // The ALERT message (if any) that occurred when opening
-                                // the file.
-    openfilestruct *next;       // The next open file, if any.
-    openfilestruct *prev;       // The preceding open file, if any.
+    /* The file's name. */
+    char *filename;
+    /* The file's first line. */
+    linestruct *filetop;
+    /* The file's last line. */
+    linestruct *filebot;
+    /* The current top of the edit window for this file. */
+    linestruct *edittop;
+    /* The current line for this file. */
+    linestruct *current;
+    /* The file's total number of characters. */
+    unsigned long totsize;
+    /* The starting column of the top line of the edit
+     * window.  When not in softwrap mode, it's always zero. */
+    unsigned long firstcolumn;
+    /* The file's x-coordinate position. */
+    unsigned long current_x;
+    /* The file's x position we would like. */
+    unsigned long placewewant;
+    /* The row in the edit window that the cursor is on. */
+    long cursor_row;
+    /* The file's stat information from when it was opened or last saved. */
+    struct stat *statinfo;
+    /* The line for prepending stuff to during automatic hard-wrapping. */
+    linestruct *spillage_line;
+    /* The line in the file where the mark is set; NULL if not set. */
+    linestruct *mark;
+    /* The mark's x position in the above line. */
+    unsigned long mark_x;
+    /* Whether a marked region was made by holding Shift. */
+    bool softmark;
+    /* The file's format -- Unix or DOS or Mac. */
+    format_type fmt;
+    /* The path of the lockfile, if we created one. */
+    char *lock_filename;
+    /* The top of the undo list. */
+    undostruct *undotop;
+    /* The current (i.e. next) level of undo. */
+    undostruct *current_undo;
+    /* The undo item at which the file was last saved. */
+    undostruct *last_saved;
+    /* The type of the last action the user performed. */
+    undo_type last_action;
+    /* Whether the file has been modified. */
+    bool modified;
+    /* The syntax that applies to this file, if any. */
+    syntaxtype *syntax;
+    /* The ALERT message (if any) that occurred when opening the file. */
+    char *errormessage;
+    /* The next open file, if any. */
+    openfilestruct *next;
+    /* The preceding open file, if any. */
+    openfilestruct *prev;
+
 } openfilestruct;
 
 typedef struct rcoption
 {
-    const s8 *name;  // The name of the rcfile option.
-    s64       flag;  // The flag associated with it, if any.
+    const char *name;  // The name of the rcfile option.
+    long        flag;  // The flag associated with it, if any.
 } rcoption;
 
 typedef struct keystruct
@@ -481,15 +471,15 @@ typedef struct keystruct
     //
     //  The string that describes the keystroke, like "^C" or "M-R".
     //
-    C_s8 *keystr;
+    const char *keystr;
     //
     //  The integer that, together with meta, identifies the keystroke.
     //
-    s32 keycode;
+    int keycode;
     //
     //  The menus in which this keystroke is bound.
     //
-    s32 menus;
+    int menus;
     //
     //  The function to which this keystroke is bound.
     //
@@ -497,15 +487,15 @@ typedef struct keystruct
     //
     //  If a toggle, what we're toggling.
     //
-    s32 toggle;
+    int toggle;
     //
     //  The how-manieth toggle this is, in order to be able to keep them in sequence.
     //
-    s32 ordinal;
+    int ordinal;
     //
     //  The string of keycodes to which this shortcut is expanded.
     //
-    s8 *expansion;
+    char *expansion;
     //
     //  Next in the list.
     //
@@ -514,18 +504,18 @@ typedef struct keystruct
 
 typedef struct funcstruct
 {
-    void (*func)();    /* The actual function to call. */
-    C_s8 *tag;         /* The function's help-line label, for example "Where Is". */
-    C_s8 *phrase;      /* The function's description for in the help viewer. */
-    bool  blank_after; /* Whether to distance this function from the next in the
-                          help viewer. */
-    s32         menus; /* In what menus this function applies. */
-    funcstruct *next;  /* Next item in the list. */
+    void (*func)();          /* The actual function to call. */
+    const char *tag;         /* The function's help-line label, for example "Where Is". */
+    const char *phrase;      /* The function's description for in the help viewer. */
+    bool        blank_after; /* Whether to distance this function from the next in the
+                                help viewer. */
+    int         menus;       /* In what menus this function applies. */
+    funcstruct *next;        /* Next item in the list. */
 } funcstruct;
 
 typedef struct completionstruct
 {
-    s8               *word;
+    char             *word;
     completionstruct *next;
 } completionstruct;
 

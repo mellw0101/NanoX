@@ -17,9 +17,9 @@ expunge(undo_type action)
     //
     if (openfile->current->data[openfile->current_x] != '\0')
     {
-        s32 charlen    = char_length(openfile->current->data + openfile->current_x);
-        u64 line_len   = constexpr_strlen(openfile->current->data + openfile->current_x);
-        u64 old_amount = ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current) : 0;
+        int           charlen    = char_length(openfile->current->data + openfile->current_x);
+        unsigned long line_len   = constexpr_strlen(openfile->current->data + openfile->current_x);
+        unsigned long old_amount = ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current) : 0;
 
         //
         //  If the type of action changed or the cursor moved to a different
@@ -88,7 +88,7 @@ expunge(undo_type action)
         //
         //  Add the content of the next line to that of the current one.
         //
-        openfile->current->data = static_cast<s8 *>(nrealloc(
+        openfile->current->data = static_cast<char *>(nrealloc(
             openfile->current->data, constexpr_strlen(openfile->current->data) + constexpr_strlen(joining->data) + 1));
         constexpr_strcat(openfile->current->data, joining->data);
 
@@ -198,32 +198,21 @@ is_cuttable(bool test_cliff)
     }
 }
 
-//
-//  Delete text from the cursor until the first start of a word to
-//  the left, or to the right when forward is TRUE.
-//
+/* Delete text from the cursor until the first start of a word to
+ * the left, or to the right when forward is 'true'. */
 void
 chop_word(bool forward)
 {
-    //
-    //  Remember the current cursor position.
-    //
-    linestruct *is_current   = openfile->current;
-    size_t      is_current_x = openfile->current_x;
-
-    //
-    //  Remember where the cutbuffer is, then make it seem blank.
-    //
+    /* Remember the current cursor position. */
+    linestruct   *is_current   = openfile->current;
+    unsigned long is_current_x = openfile->current_x;
+    /* Remember where the cutbuffer is, then make it seem blank. */
     linestruct *is_cutbuffer = cutbuffer;
-
-    cutbuffer = nullptr;
-
-    //
-    //  Move the cursor to a word start, to the left or to the right.
-    //  If that word is on another line and the cursor was not already
-    //  on the edge of the original line, then put the cursor on that
-    //  edge instead, so that lines will not be joined unexpectedly.
-    //
+    cutbuffer                = nullptr;
+    /* Move the cursor to a word start, to the left or to the right.
+     * If that word is on another line and the cursor was not already
+     * on the edge of the original line, then put the cursor on that
+     * edge instead, so that lines will not be joined unexpectedly. */
     if (!forward)
     {
         do_prev_word();
@@ -299,35 +288,27 @@ void
 chop_next_word()
 {
     openfile->mark = nullptr;
-
     if (is_cuttable(true))
     {
         chop_word(FORWARD);
     }
 }
 
-//
-//  Excise the text between the given two points and add it to the cutbuffer.
-//
+/* Excise the text between the given two points and add it to the cutbuffer. */
 void
-extract_segment(linestruct *top, u64 top_x, linestruct *bot, u64 bot_x)
+extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned long bot_x)
 {
     linestruct *taken, *last;
-
-    bool edittop_inside = (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
-
-    bool same_line = (openfile->mark == top);
-    bool post_marked =
+    bool        edittop_inside = (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
+    bool        same_line      = (openfile->mark == top);
+    bool        post_marked =
         (openfile->mark && (openfile->mark->lineno > top->lineno || (same_line && openfile->mark_x > top_x)));
-
     static bool inherited_anchor = false;
     bool        had_anchor       = top->has_anchor;
-
     if (top == bot && top_x == bot_x)
     {
         return;
     }
-
     if (top != bot)
     {
         for (linestruct *line = top->next; line != bot->next; line = line->next)
@@ -335,26 +316,23 @@ extract_segment(linestruct *top, u64 top_x, linestruct *bot, u64 bot_x)
             had_anchor |= line->has_anchor;
         }
     }
-
     if (top == bot)
     {
         taken       = make_new_node(nullptr);
         taken->data = measured_copy(top->data + top_x, bot_x - top_x);
-        std::memmove(top->data + top_x, top->data + bot_x, constexpr_strlen(top->data + bot_x) + 1);
+        memmove(top->data + top_x, top->data + bot_x, constexpr_strlen(top->data + bot_x) + 1);
         last = taken;
     }
     else if (top_x == 0 && bot_x == 0)
     {
-        taken      = top;
-        last       = make_new_node(nullptr);
-        last->data = copy_of("");
-
+        taken            = top;
+        last             = make_new_node(nullptr);
+        last->data       = copy_of("");
         last->has_anchor = bot->has_anchor;
         last->prev       = bot->prev;
         bot->prev->next  = last;
         last->next       = nullptr;
-
-        bot->prev = top->prev;
+        bot->prev        = top->prev;
         if (top->prev)
         {
             top->prev->next = bot;
@@ -363,71 +341,53 @@ extract_segment(linestruct *top, u64 top_x, linestruct *bot, u64 bot_x)
         {
             openfile->filetop = bot;
         }
-
         openfile->current = bot;
     }
     else
     {
-        taken = make_new_node(nullptr);
-
-        taken->data = copy_of(top->data + top_x);
-        taken->next = top->next;
-
+        taken           = make_new_node(nullptr);
+        taken->data     = copy_of(top->data + top_x);
+        taken->next     = top->next;
         top->next->prev = taken;
-
-        top->next = bot->next;
+        top->next       = bot->next;
         if (bot->next)
         {
             bot->next->prev = top;
         }
-
-        top->data = static_cast<s8 *>(nrealloc(top->data, top_x + constexpr_strlen(bot->data + bot_x) + 1));
+        top->data = (char *)nrealloc(top->data, top_x + constexpr_strlen(bot->data + bot_x) + 1);
         constexpr_strcpy(top->data + top_x, bot->data + bot_x);
-
         last              = bot;
         last->data[bot_x] = '\0';
         last->next        = nullptr;
-
         openfile->current = top;
     }
-
-    //
-    //  Subtract the size of the excised text from the buffer size.
-    //
+    /* Subtract the size of the excised text from the buffer size. */
     openfile->totsize -= number_of_characters_in(taken, last);
-
-    //
-    //  If the cutbuffer is currently empty, just move all the text directly
-    //  into it; otherwise, append the text to what is already there.
-    //
+    /* If the cutbuffer is currently empty, just move all the text directly
+     * into it; otherwise, append the text to what is already there. */
     if (cutbuffer == nullptr)
     {
-        cutbuffer = taken;
-        cutbottom = last;
-
+        cutbuffer        = taken;
+        cutbottom        = last;
         inherited_anchor = taken->has_anchor;
     }
     else
     {
-        cutbottom->data = static_cast<s8 *>(
-            nrealloc(cutbottom->data, constexpr_strlen(cutbottom->data) + constexpr_strlen(taken->data) + 1));
+        cutbottom->data =
+            (char *)nrealloc(cutbottom->data, constexpr_strlen(cutbottom->data) + constexpr_strlen(taken->data) + 1);
         constexpr_strcat(cutbottom->data, taken->data);
         cutbottom->has_anchor = taken->has_anchor && !inherited_anchor;
         inherited_anchor |= taken->has_anchor;
         cutbottom->next = taken->next;
         delete_node(taken);
-
         if (cutbottom->next != nullptr)
         {
             cutbottom->next->prev = cutbottom;
             cutbottom             = last;
         }
     }
-
-    openfile->current_x = top_x;
-
+    openfile->current_x           = top_x;
     openfile->current->has_anchor = had_anchor;
-
     if (post_marked || same_line)
     {
         openfile->mark = openfile->current;
@@ -440,85 +400,58 @@ extract_segment(linestruct *top, u64 top_x, linestruct *bot, u64 bot_x)
     {
         openfile->filebot = openfile->current;
     }
-
     renumber_from(openfile->current);
-
-    //
-    //  When the beginning of the viewport was inside the excision, adjust.
-    //
+    /* When the beginning of the viewport was inside the excision, adjust. */
     if (edittop_inside)
     {
         adjust_viewport(STATIONARY);
         refresh_needed = true;
     }
-
-    //
-    //  If the text doesn't end with a newline, and it should, add one.
-    //
+    /* If the text doesn't end with a newline, and it should, add one. */
     if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0] != '\0')
     {
         new_magicline();
     }
 }
 
-//
-//  Meld the buffer that starts at topline into the current file buffer
-//  at the current cursor position.
-//
+/* Meld the buffer that starts at topline into the current file buffer
+ * at the current cursor position. */
 void
 ingraft_buffer(linestruct *topline)
 {
-    linestruct *line = openfile->current;
-
-    u64 length   = constexpr_strlen(line->data);
-    u64 extralen = constexpr_strlen(topline->data);
-    u64 xpos     = openfile->current_x;
-    s8 *tailtext = copy_of(line->data + xpos);
-
-    bool mark_follows = (openfile->mark == line && !mark_is_before_cursor());
-
-    linestruct *botline = topline;
-
+    linestruct   *line         = openfile->current;
+    unsigned long length       = constexpr_strlen(line->data);
+    unsigned long extralen     = constexpr_strlen(topline->data);
+    unsigned long xpos         = openfile->current_x;
+    char         *tailtext     = copy_of(line->data + xpos);
+    bool          mark_follows = (openfile->mark == line && !mark_is_before_cursor());
+    linestruct   *botline      = topline;
     while (botline->next != nullptr)
     {
         botline = botline->next;
     }
-
-    //
-    //  Add the size of the text to be grafted to the buffer size.
-    //
+    /* Add the size of the text to be grafted to the buffer size. */
     openfile->totsize += number_of_characters_in(topline, botline);
-
     if (topline != botline)
     {
         length = xpos;
     }
-
     if (extralen > 0)
     {
-        //
-        //  Insert the text of topline at the current cursor position.
-        //
-        line->data = static_cast<s8 *>(nrealloc(line->data, length + extralen + 1));
-        std::memmove(line->data + xpos + extralen, line->data + xpos, length - xpos + 1);
+        /* Insert the text of topline at the current cursor position. */
+        line->data = (char *)nrealloc(line->data, length + extralen + 1);
+        memmove(line->data + xpos + extralen, line->data + xpos, length - xpos + 1);
         constexpr_strncpy(line->data + xpos, topline->data, extralen);
     }
-
     if (topline != botline)
     {
-        //
-        //  When inserting at end-of-buffer, update the relevant pointer.
-        //
+        /* When inserting at end-of-buffer, update the relevant pointer. */
         if (line->next == nullptr)
         {
             openfile->filebot = botline;
         }
-
         line->data[xpos + extralen] = '\0';
-
-        //
-        //  Hook the grafted lines in after the current one.
-        //
+        /* Hook the grafted lines in after the current one. */
         botline->next = openfile->current->next;
         if (botline->next)
         {
@@ -526,19 +459,12 @@ ingraft_buffer(linestruct *topline)
         }
         openfile->current->next = topline->next;
         topline->next->prev     = openfile->current;
-
-        //
-        //  Add the text after the cursor position at the end of botline.
-        //
-        length   = constexpr_strlen(botline->data);
-        extralen = constexpr_strlen(tailtext);
-
-        botline->data = static_cast<s8 *>(nrealloc(botline->data, length + extralen + 1));
+        /* Add the text after the cursor position at the end of botline. */
+        length        = constexpr_strlen(botline->data);
+        extralen      = constexpr_strlen(tailtext);
+        botline->data = (char *)nrealloc(botline->data, length + extralen + 1);
         constexpr_strcpy(botline->data + length, tailtext);
-
-        //
-        //  Put the cursor at the end of the grafted text.
-        //
+        /* Put the cursor at the end of the grafted text. */
         openfile->current   = botline;
         openfile->current_x = length;
     }
@@ -546,10 +472,7 @@ ingraft_buffer(linestruct *topline)
     {
         openfile->current_x += extralen;
     }
-
-    //
-    //  When needed, update the mark's pointer and position.
-    //
+    /* When needed, update the mark's pointer and position. */
     if (mark_follows && topline != botline)
     {
         openfile->mark = botline;
@@ -559,33 +482,23 @@ ingraft_buffer(linestruct *topline)
     {
         openfile->mark_x += extralen;
     }
-
     delete_node(topline);
-    std::free(tailtext);
-
+    free(tailtext);
     renumber_from(line);
-
-    //
-    //  If the text doesn't end with a newline, and it should, add one.
-    //
+    /* If the text doesn't end with a newline, and it should, add one. */
     if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0] != '\0')
     {
         new_magicline();
     }
 }
 
-//
-//  Meld a copy of the given buffer into the current file buffer.
-//
+/* Meld a copy of the given buffer into the current file buffer. */
 void
 copy_from_buffer(linestruct *somebuffer)
 {
-    size_t threshold = openfile->edittop->lineno + editwinrows - 1;
-
-    linestruct *the_copy = copy_buffer(somebuffer);
-
+    unsigned long threshold = openfile->edittop->lineno + editwinrows - 1;
+    linestruct   *the_copy  = copy_buffer(somebuffer);
     ingraft_buffer(the_copy);
-
     if (openfile->current->lineno > threshold || ISSET(SOFTWRAP))
     {
         recook = true;
@@ -596,46 +509,33 @@ copy_from_buffer(linestruct *somebuffer)
     }
 }
 
-//
-/// Move all marked text from the current buffer into the cutbuffer. */
-///
-/// TODO : (cut_marked_region) NEEDED
-//
+/* Move all marked text from the current buffer into the cutbuffer. */
 void
-cut_marked_region()
+cut_marked_region(void)
 {
-    linestruct *top, *bot;
-    u64         top_x, bot_x;
+    linestruct   *top, *bot;
+    unsigned long top_x, bot_x;
     get_region(&top, &top_x, &bot, &bot_x);
     extract_segment(top, top_x, bot, bot_x);
     openfile->placewewant = xplustabs();
 }
 
-//
-//  Move text from the current buffer into the cutbuffer.
-//  If until_eof is TRUE, move all text from the current cursor
-//  position to the end of the file into the cutbuffer.  If append
-//  is TRUE (when zapping), always append the cut to the cutbuffer.
-//
+/* Move text from the current buffer into the cutbuffer.
+ * If until_eof is TRUE, move all text from the current cursor
+ * position to the end of the file into the cutbuffer.  If append
+ * is TRUE (when zapping), always append the cut to the cutbuffer. */
 void
 do_snip(bool marked, bool until_eof, bool append)
 {
     linestruct *line = openfile->current;
-
     keep_cutbuffer &= (openfile->last_action != COPY);
-
-    //
-    //  If cuts were not continuous, or when cutting a region, clear the slate.
-    //
+    /* If cuts were not continuous, or when cutting a region, clear the slate. */
     if ((marked || until_eof || !keep_cutbuffer) && !append)
     {
         free_lines(cutbuffer);
         cutbuffer = nullptr;
     }
-
-    //
-    //  Now move the relevant piece of text into the cutbuffer.
-    //
+    /* Now move the relevant piece of text into the cutbuffer. */
     if (until_eof)
     {
         extract_segment(
@@ -648,11 +548,9 @@ do_snip(bool marked, bool until_eof, bool append)
     }
     else if ISSET (CUT_FROM_CURSOR)
     {
-        //
-        //  When not at the end of a line, move the rest of this line into
-        //  the cutbuffer.  Otherwise, when not at the end of the buffer,
-        //  move just the "line separator" into the cutbuffer.
-        //
+        /* When not at the end of a line, move the rest of this line into
+         * the cutbuffer.  Otherwise, when not at the end of the buffer,
+         * move just the "line separator" into the cutbuffer. */
         if (line->data[openfile->current_x] != '\0')
         {
             extract_segment(line, openfile->current_x, line, constexpr_strlen(line->data));
@@ -665,10 +563,8 @@ do_snip(bool marked, bool until_eof, bool append)
     }
     else
     {
-        //
-        //  When not at end-of-buffer, move one full line into the cutbuffer;
-        //  otherwise, move all text until end-of-line into the cutbuffer.
-        //
+        /* When not at end-of-buffer, move one full line into the cutbuffer;
+         * otherwise, move all text until end-of-line into the cutbuffer. */
         if (openfile->current != openfile->filebot)
         {
             extract_segment(line, 0, line->next, 0);
@@ -677,55 +573,40 @@ do_snip(bool marked, bool until_eof, bool append)
         {
             extract_segment(line, 0, line, constexpr_strlen(line->data));
         }
-
         openfile->placewewant = 0;
     }
-
-    //
-    //  After a line operation, future ones should add to the cutbuffer.
-    //
+    /* After a line operation, future ones should add to the cutbuffer. */
     keep_cutbuffer = !marked && !until_eof;
-
     set_modified();
     refresh_needed = true;
     perturbed      = true;
 }
 
-//
-//  Move text from the current buffer into the cutbuffer.
-//
+/* Move text from the current buffer into the cutbuffer. */
 void
-cut_text()
+cut_text(void)
 {
     if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && openfile->mark == nullptr))
     {
         return;
     }
-
-    //
-    //  Only add a new undo item when the current item is not a CUT or when
-    //  the current cut is not contiguous with the previous cutting.
-    //
+    /* Only add a new undo item when the current item is not a CUT or when
+     * the current cut is not contiguous with the previous cutting. */
     if (openfile->last_action != CUT || !keep_cutbuffer)
     {
         keep_cutbuffer = false;
         add_undo(CUT, nullptr);
     }
-
     do_snip(openfile->mark != nullptr, false, false);
-
     update_undo(CUT);
     wipe_statusbar();
 }
 
-//
-//  Cut from the current cursor position to the end of the file.
-//
+/* Cut from the current cursor position to the end of the file. */
 void
-cut_till_eof()
+cut_till_eof(void)
 {
     ran_a_tool = true;
-
     if (openfile->current->data[openfile->current_x] == '\0' &&
         (openfile->current->next == nullptr ||
          (!ISSET(NO_NEWLINES) && openfile->current_x > 0 && openfile->current->next == openfile->filebot)))
@@ -733,62 +614,44 @@ cut_till_eof()
         statusbar(_("Nothing was cut"));
         return;
     }
-
     add_undo(CUT_TO_EOF, nullptr);
     do_snip(false, true, false);
     update_undo(CUT_TO_EOF);
     wipe_statusbar();
 }
 
-//
-//  Erase text (current line or marked region), sending it into oblivion.
-//
+/* Erase text (current line or marked region), sending it into oblivion. */
 void
-zap_text()
+zap_text(void)
 {
-    //
-    //  Remember the current cutbuffer so it can be restored after the zap.
-    //
+    /* Remember the current cutbuffer so it can be restored after the zap. */
     linestruct *was_cutbuffer = cutbuffer;
-
     if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && openfile->mark == nullptr))
     {
         return;
     }
-
-    //
-    //  Add a new undo item only when the current item is not a ZAP or when
-    //  the current zap is not contiguous with the previous zapping.
-    //
+    /* Add a new undo item only when the current item is not a ZAP or when
+     * the current zap is not contiguous with the previous zapping. */
     if (openfile->last_action != ZAP || !keep_cutbuffer)
     {
         add_undo(ZAP, nullptr);
     }
-
-    //
-    //  Use the cutbuffer from the ZAP undo item, so the cut can be undone.
-    //
+    /* Use the cutbuffer from the ZAP undo item, so the cut can be undone. */
     cutbuffer = openfile->current_undo->cutbuffer;
-
     do_snip(openfile->mark != nullptr, false, true);
-
     update_undo(ZAP);
     wipe_statusbar();
-
     cutbuffer = was_cutbuffer;
 }
 
-//
-//  Make a copy of the marked region, putting it in the cutbuffer.
-//
-//  TODO : (copy_marked_region) NEEDED, FIX IT, MODERNIZE IT
-//
+/* Make a copy of the marked region, putting it in the cutbuffer.
+ * TODO: (copy_marked_region) NEEDED, FIX IT, MODERNIZE IT */
 void
-copy_marked_region()
+copy_marked_region(void)
 {
-    linestruct *topline, *botline, *afterline;
-    char       *was_datastart, saved_byte;
-    size_t      top_x, bot_x;
+    linestruct   *topline, *botline, *afterline;
+    char         *was_datastart, saved_byte;
+    unsigned long top_x, bot_x;
     get_region(&topline, &top_x, &botline, &bot_x);
     openfile->last_action = OTHER;
     keep_cutbuffer        = false;
@@ -801,7 +664,7 @@ copy_marked_region()
     }
     /* Make the area that was marked look like a separate buffer. */
     afterline            = botline->next;
-    botline->next        = NULL;
+    botline->next        = nullptr;
     saved_byte           = botline->data[bot_x];
     botline->data[bot_x] = '\0';
     was_datastart        = topline->data;
@@ -813,63 +676,47 @@ copy_marked_region()
     botline->next        = afterline;
 }
 
-//
-//  Copy text from the current buffer into the cutbuffer.  The text is either
-//  the marked region, the whole line, the text from cursor to end-of-line,
-//  just the line break, or nothing, depending on mode and cursor position.
-//
+/* Copy text from the current buffer into the cutbuffer.  The text is either
+ * the marked region, the whole line, the text from cursor to end-of-line,
+ * just the line break, or nothing, depending on mode and cursor position. */
 void
-copy_text()
+copy_text(void)
 {
-    bool at_eol       = (openfile->current->data[openfile->current_x] == '\0');
-    bool sans_newline = (ISSET(NO_NEWLINES) && openfile->current->next == nullptr);
-    u64  from_x       = (ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0;
-
-    linestruct *was_current = openfile->current;
-    linestruct *addition;
-
+    bool          at_eol       = (openfile->current->data[openfile->current_x] == '\0');
+    bool          sans_newline = (ISSET(NO_NEWLINES) && openfile->current->next == nullptr);
+    unsigned long from_x       = (ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0;
+    linestruct   *was_current  = openfile->current;
+    linestruct   *addition;
     if (openfile->mark || openfile->last_action != COPY)
     {
         keep_cutbuffer = false;
     }
-
     if (!keep_cutbuffer)
     {
         free_lines(cutbuffer);
         cutbuffer = nullptr;
     }
-
     wipe_statusbar();
-
     if (openfile->mark)
     {
         copy_marked_region();
         return;
     }
-
-    //
-    //  When at the very end of the buffer, there is nothing to do.
-    //
+    /* When at the very end of the buffer, there is nothing to do. */
     if (openfile->current->next == nullptr && at_eol &&
         (ISSET(CUT_FROM_CURSOR) || openfile->current_x == 0 || cutbuffer))
     {
         statusbar(_("Copied nothing"));
         return;
     }
-
-    addition = make_new_node(nullptr);
-
+    addition       = make_new_node(nullptr);
     addition->data = copy_of(openfile->current->data + from_x);
-
     if (ISSET(CUT_FROM_CURSOR))
     {
         sans_newline = !at_eol;
     }
-
-    //
-    //  Create the cutbuffer OR add to it, depending on the mode, the position
-    //  of the cursor, and whether or not the cutbuffer is currently empty.
-    //
+    /* Create the cutbuffer OR add to it, depending on the mode, the position
+     * of the cursor, and whether or not the cutbuffer is currently empty. */
     if (cutbuffer == nullptr && sans_newline)
     {
         cutbuffer = addition;
@@ -877,9 +724,8 @@ copy_text()
     }
     else if (cutbuffer == nullptr)
     {
-        cutbuffer = addition;
-        cutbottom = make_new_node(cutbuffer);
-
+        cutbuffer       = addition;
+        cutbottom       = make_new_node(cutbuffer);
         cutbottom->data = copy_of("");
         cutbuffer->next = cutbottom;
     }
@@ -903,10 +749,7 @@ copy_text()
         addition->next       = cutbottom;
         cutbottom->prev      = addition;
     }
-
-    //
-    //  When needed and possible, move the cursor to the next line.
-    //
+    /* When needed and possible, move the cursor to the next line. */
     if ((!ISSET(CUT_FROM_CURSOR) || at_eol) && openfile->current->next)
     {
         openfile->current   = openfile->current->next;
@@ -916,70 +759,46 @@ copy_text()
     {
         openfile->current_x = constexpr_strlen(openfile->current->data);
     }
-
     edit_redraw(was_current, FLOWING);
-
     openfile->last_action = COPY;
-
-    keep_cutbuffer = true;
+    keep_cutbuffer        = true;
 }
 
-//
-//  Copy text from the cutbuffer into the current buffer.
-//
+/* Copy text from the cutbuffer into the current buffer. */
 void
-paste_text()
+paste_text(void)
 {
-    //
-    //  Remember where the paste started.
-    //
-    linestruct *was_current = openfile->current;
-
-    bool had_anchor   = was_current->has_anchor;
-    s64  was_lineno   = openfile->current->lineno;
-    u64  was_leftedge = 0;
-
+    /* Remember where the paste started. */
+    linestruct   *was_current  = openfile->current;
+    bool          had_anchor   = was_current->has_anchor;
+    long          was_lineno   = openfile->current->lineno;
+    unsigned long was_leftedge = 0;
     if (!cutbuffer)
     {
         statusline(AHEM, _("Cutbuffer is empty"));
         return;
     }
-
     add_undo(PASTE, nullptr);
-
     if ISSET (SOFTWRAP)
     {
         was_leftedge = leftedge_for(xplustabs(), openfile->current);
     }
-
-    //
-    //  Add a copy of the text in the cutbuffer to the current buffer
-    //  at the current cursor position.
-    //
+    /* Add a copy of the text in the cutbuffer to the current buffer
+     * at the current cursor position. */
     copy_from_buffer(cutbuffer);
-
-    //
-    //  Wipe any anchors in the pasted text, so that they don't proliferate.
-    //
+    /* Wipe any anchors in the pasted text, so that they don't proliferate. */
     for (linestruct *line = was_current; line != openfile->current->next; line = line->next)
     {
         line->has_anchor = false;
     }
-
     was_current->has_anchor = had_anchor;
     update_undo(PASTE);
-
-    //
-    //  When still on the same line and doing hard-wrapping, limit the width.
-    //
+    /* When still on the same line and doing hard-wrapping, limit the width. */
     if (openfile->current == was_current && ISSET(BREAK_LONG_LINES))
     {
         do_wrap();
     }
-
-    //
-    //  If we pasted less than a screenful, don't center the cursor.
-    //
+    /* If we pasted less than a screenful, don't center the cursor. */
     if (less_than_a_screenful(was_lineno, was_leftedge))
     {
         focusing = false;
@@ -988,12 +807,8 @@ paste_text()
     {
         precalc_multicolorinfo();
     }
-
-    //
-    //  Set the desired x position to where the pasted text ends.
-    //
+    /* Set the desired x position to where the pasted text ends. */
     openfile->placewewant = xplustabs();
-
     set_modified();
     wipe_statusbar();
     refresh_needed = true;

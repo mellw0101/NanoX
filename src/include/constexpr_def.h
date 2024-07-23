@@ -3,26 +3,22 @@
 #include <Mlib/constexpr.hpp>
 #include <ncursesw/ncurses.h>
 
-//
-//  Identifiers for color options.
-//
-constexpr u8 TITLE_BAR          = 0;
-constexpr u8 LINE_NUMBER        = 1;
-constexpr u8 GUIDE_STRIPE       = 2;
-constexpr u8 SCROLL_BAR         = 3;
-constexpr u8 SELECTED_TEXT      = 4;
-constexpr u8 SPOTLIGHTED        = 5;
-constexpr u8 MINI_INFOBAR       = 6;
-constexpr u8 PROMPT_BAR         = 7;
-constexpr u8 STATUS_BAR         = 8;
-constexpr u8 ERROR_MESSAGE      = 9;
-constexpr u8 KEY_COMBO          = 10;
-constexpr u8 FUNCTION_TAG       = 11;
-constexpr u8 NUMBER_OF_ELEMENTS = 12;
-//
-//  The color options map.
-//
-CONSTEXPR_MAP<STRING_VIEW, u8, 12> colorOptionMap = {
+/* Identifiers for color options. */
+constexpr unsigned char TITLE_BAR          = 0;
+constexpr unsigned char LINE_NUMBER        = 1;
+constexpr unsigned char GUIDE_STRIPE       = 2;
+constexpr unsigned char SCROLL_BAR         = 3;
+constexpr unsigned char SELECTED_TEXT      = 4;
+constexpr unsigned char SPOTLIGHTED        = 5;
+constexpr unsigned char MINI_INFOBAR       = 6;
+constexpr unsigned char PROMPT_BAR         = 7;
+constexpr unsigned char STATUS_BAR         = 8;
+constexpr unsigned char ERROR_MESSAGE      = 9;
+constexpr unsigned char KEY_COMBO          = 10;
+constexpr unsigned char FUNCTION_TAG       = 11;
+constexpr unsigned char NUMBER_OF_ELEMENTS = 12;
+/* The color options map. */
+CONSTEXPR_MAP<std::string_view, unsigned char, 12> colorOptionMap = {
     {{"titlecolor", TITLE_BAR},
      {"numbercolor", LINE_NUMBER},
      {"stripecolor", GUIDE_STRIPE},
@@ -37,25 +33,21 @@ CONSTEXPR_MAP<STRING_VIEW, u8, 12> colorOptionMap = {
      {"functioncolor", FUNCTION_TAG}}
 };
 
-//
-//  Identifiers for the different configuration options.
-//
-constexpr u16 OPERATINGDIR     = (1 << 0);
-constexpr u16 FILL             = (1 << 1);
-constexpr u16 MATCHBRACKETS    = (1 << 2);
-constexpr u16 WHITESPACE       = (1 << 3);
-constexpr u16 PUNCT            = (1 << 4);
-constexpr u16 BRACKETS         = (1 << 5);
-constexpr u16 QUOTESTR         = (1 << 6);
-constexpr u16 SPELLER          = (1 << 7);
-constexpr u16 BACKUPDIR        = (1 << 8);
-constexpr u16 WORDCHARS        = (1 << 9);
-constexpr u16 GUIDESTRIPE      = (1 << 10);
-constexpr u16 CONF_OPT_TABSIZE = (1 << 11);
-//
-//  The configuration options map.
-//
-CONSTEXPR_MAP<STRING_VIEW, u16, 12> configOptionMap = {
+/* Identifiers for the different configuration options. */
+constexpr unsigned short OPERATINGDIR     = (1 << 0);
+constexpr unsigned short FILL             = (1 << 1);
+constexpr unsigned short MATCHBRACKETS    = (1 << 2);
+constexpr unsigned short WHITESPACE       = (1 << 3);
+constexpr unsigned short PUNCT            = (1 << 4);
+constexpr unsigned short BRACKETS         = (1 << 5);
+constexpr unsigned short QUOTESTR         = (1 << 6);
+constexpr unsigned short SPELLER          = (1 << 7);
+constexpr unsigned short BACKUPDIR        = (1 << 8);
+constexpr unsigned short WORDCHARS        = (1 << 9);
+constexpr unsigned short GUIDESTRIPE      = (1 << 10);
+constexpr unsigned short CONF_OPT_TABSIZE = (1 << 11);
+/* The configuration options map. */
+CONSTEXPR_MAP<std::string_view, unsigned short, 12> configOptionMap = {
     {{"operatingdir", OPERATINGDIR},
      {"fill", FILL},
      {"matchbrackets", MATCHBRACKETS},
@@ -70,19 +62,15 @@ CONSTEXPR_MAP<STRING_VIEW, u16, 12> configOptionMap = {
      {"tabsize", CONF_OPT_TABSIZE}}
 };
 
-//
-//  Identifiers for the different syntax options.
-//
-constexpr u8 SYNTAX_OPT_COLOR     = (1 << 0);
-constexpr u8 SYNTAX_OPT_ICOLOR    = (1 << 1);
-constexpr u8 SYNTAX_OPT_COMMENT   = (1 << 2);
-constexpr u8 SYNTAX_OPT_TABGIVES  = (1 << 3);
-constexpr u8 SYNTAX_OPT_LINTER    = (1 << 4);
-constexpr u8 SYNTAX_OPT_FORMATTER = (1 << 5);
-//
-//  The syntax options map.
-//
-CONSTEXPR_MAP<STRING_VIEW, u8, 6> syntaxOptionMap = {
+/* Identifiers for the different syntax options. */
+constexpr unsigned char SYNTAX_OPT_COLOR     = (1 << 0);
+constexpr unsigned char SYNTAX_OPT_ICOLOR    = (1 << 1);
+constexpr unsigned char SYNTAX_OPT_COMMENT   = (1 << 2);
+constexpr unsigned char SYNTAX_OPT_TABGIVES  = (1 << 3);
+constexpr unsigned char SYNTAX_OPT_LINTER    = (1 << 4);
+constexpr unsigned char SYNTAX_OPT_FORMATTER = (1 << 5);
+/* The syntax options map. */
+constexpr_map<std::string_view, unsigned char, 6> syntaxOptionMap = {
     {{"color", SYNTAX_OPT_COLOR},
      {"icolor", SYNTAX_OPT_ICOLOR},
      {"comment", SYNTAX_OPT_COMMENT},
@@ -101,65 +89,61 @@ CONSTEXPR_MAP<STRING_VIEW, u8, 6> syntaxOptionMap = {
 //       - ( unsigned flags[4] )
 //
 
-//
-//  This flag is not used as this is part of a bitfield and 0 is not a unique value, in terms
-//  of bitwise operations as the default all non set value is 0.
-//
-constexpr u8 DONTUSE            = 0;
-constexpr u8 CASE_SENSITIVE     = 1;
-constexpr u8 CONSTANT_SHOW      = 2;
-constexpr u8 NO_HELP            = 3;
-constexpr u8 NO_WRAP            = 4;
-constexpr u8 AUTOINDENT         = 5;
-constexpr u8 VIEW_MODE          = 6;
-constexpr u8 USE_MOUSE          = 7;
-constexpr u8 USE_REGEXP         = 8;
-constexpr u8 SAVE_ON_EXIT       = 9;
-constexpr u8 CUT_FROM_CURSOR    = 10;
-constexpr u8 BACKWARDS_SEARCH   = 11;
-constexpr u8 MULTIBUFFER        = 12;
-constexpr u8 REBIND_DELETE      = 13;
-constexpr u8 RAW_SEQUENCES      = 14;
-constexpr u8 NO_CONVERT         = 15;
-constexpr u8 MAKE_BACKUP        = 16;
-constexpr u8 INSECURE_BACKUP    = 17;
-constexpr u8 NO_SYNTAX          = 18;
-constexpr u8 PRESERVE           = 19;
-constexpr u8 HISTORYLOG         = 20;
-constexpr u8 RESTRICTED         = 21;
-constexpr u8 SMART_HOME         = 22;
-constexpr u8 WHITESPACE_DISPLAY = 23;
-constexpr u8 TABS_TO_SPACES     = 24;
-constexpr u8 QUICK_BLANK        = 25;
-constexpr u8 WORD_BOUNDS        = 26;
-constexpr u8 NO_NEWLINES        = 27;
-constexpr u8 BOLD_TEXT          = 28;
-constexpr u8 SOFTWRAP           = 29;
-constexpr u8 POSITIONLOG        = 30;
-constexpr u8 LOCKING            = 31;
-constexpr u8 NOREAD_MODE        = 32;
-constexpr u8 MAKE_IT_UNIX       = 33;
-constexpr u8 TRIM_BLANKS        = 34;
-constexpr u8 SHOW_CURSOR        = 35;
-constexpr u8 LINE_NUMBERS       = 36;
-constexpr u8 AT_BLANKS          = 37;
-constexpr u8 AFTER_ENDS         = 38;
-constexpr u8 LET_THEM_ZAP       = 39;
-constexpr u8 BREAK_LONG_LINES   = 40;
-constexpr u8 JUMPY_SCROLLING    = 41;
-constexpr u8 EMPTY_LINE         = 42;
-constexpr u8 INDICATOR          = 43;
-constexpr u8 BOOKSTYLE          = 44;
-constexpr u8 COLON_PARSING      = 45;
-constexpr u8 STATEFLAGS         = 46;
-constexpr u8 USE_MAGIC          = 47;
-constexpr u8 MINIBAR            = 48;
-constexpr u8 ZERO               = 49;
-constexpr u8 MODERN_BINDINGS    = 50;
-//
-//  The flags map.
-//
-CONSTEXPR_MAP<STRING_VIEW, u8, 94> flagOptionsMap = {
+/* This flag is not used as this is part of a bitfield and 0 is not a unique value, in terms
+ * of bitwise operations as the default all non set value is 0. */
+constexpr unsigned char DONTUSE            = 0;
+constexpr unsigned char CASE_SENSITIVE     = 1;
+constexpr unsigned char CONSTANT_SHOW      = 2;
+constexpr unsigned char NO_HELP            = 3;
+constexpr unsigned char NO_WRAP            = 4;
+constexpr unsigned char AUTOINDENT         = 5;
+constexpr unsigned char VIEW_MODE          = 6;
+constexpr unsigned char USE_MOUSE          = 7;
+constexpr unsigned char USE_REGEXP         = 8;
+constexpr unsigned char SAVE_ON_EXIT       = 9;
+constexpr unsigned char CUT_FROM_CURSOR    = 10;
+constexpr unsigned char BACKWARDS_SEARCH   = 11;
+constexpr unsigned char MULTIBUFFER        = 12;
+constexpr unsigned char REBIND_DELETE      = 13;
+constexpr unsigned char RAW_SEQUENCES      = 14;
+constexpr unsigned char NO_CONVERT         = 15;
+constexpr unsigned char MAKE_BACKUP        = 16;
+constexpr unsigned char INSECURE_BACKUP    = 17;
+constexpr unsigned char NO_SYNTAX          = 18;
+constexpr unsigned char PRESERVE           = 19;
+constexpr unsigned char HISTORYLOG         = 20;
+constexpr unsigned char RESTRICTED         = 21;
+constexpr unsigned char SMART_HOME         = 22;
+constexpr unsigned char WHITESPACE_DISPLAY = 23;
+constexpr unsigned char TABS_TO_SPACES     = 24;
+constexpr unsigned char QUICK_BLANK        = 25;
+constexpr unsigned char WORD_BOUNDS        = 26;
+constexpr unsigned char NO_NEWLINES        = 27;
+constexpr unsigned char BOLD_TEXT          = 28;
+constexpr unsigned char SOFTWRAP           = 29;
+constexpr unsigned char POSITIONLOG        = 30;
+constexpr unsigned char LOCKING            = 31;
+constexpr unsigned char NOREAD_MODE        = 32;
+constexpr unsigned char MAKE_IT_UNIX       = 33;
+constexpr unsigned char TRIM_BLANKS        = 34;
+constexpr unsigned char SHOW_CURSOR        = 35;
+constexpr unsigned char LINE_NUMBERS       = 36;
+constexpr unsigned char AT_BLANKS          = 37;
+constexpr unsigned char AFTER_ENDS         = 38;
+constexpr unsigned char LET_THEM_ZAP       = 39;
+constexpr unsigned char BREAK_LONG_LINES   = 40;
+constexpr unsigned char JUMPY_SCROLLING    = 41;
+constexpr unsigned char EMPTY_LINE         = 42;
+constexpr unsigned char INDICATOR          = 43;
+constexpr unsigned char BOOKSTYLE          = 44;
+constexpr unsigned char COLON_PARSING      = 45;
+constexpr unsigned char STATEFLAGS         = 46;
+constexpr unsigned char USE_MAGIC          = 47;
+constexpr unsigned char MINIBAR            = 48;
+constexpr unsigned char ZERO               = 49;
+constexpr unsigned char MODERN_BINDINGS    = 50;
+/* The flags map. */
+constexpr_map<std::string_view, unsigned char, 94> flagOptionsMap = {
     {{"-A", SMART_HOME},
      {"--smarthome", SMART_HOME},
      {"-B", MAKE_BACKUP},
@@ -256,27 +240,23 @@ CONSTEXPR_MAP<STRING_VIEW, u8, 94> flagOptionsMap = {
      {"--magic", USE_MAGIC}}
 };
 
-//
-//  Identifiers for the different command line options.
-//
-constexpr u32 CLI_OPT_IGNORERCFILE   = (1 << 0);
-constexpr u32 CLI_OPT_VERSION        = (1 << 1);
-constexpr u32 CLI_OPT_HELP           = (1 << 2);
-constexpr u32 CLI_OPT_SYNTAX         = (1 << 3);
-constexpr u32 CLI_OPT_RCFILE         = (1 << 4);
-constexpr u32 CLI_OPT_GUIDESTRIPE    = (1 << 5);
-constexpr u32 CLI_OPT_WORDCHARS      = (1 << 6);
-constexpr u32 CLI_OPT_TABSIZE        = (1 << 7);
-constexpr u32 CLI_OPT_OPERATINGDIR   = (1 << 8);
-constexpr u32 CLI_OPT_FILL           = (1 << 9);
-constexpr u32 CLI_OPT_SPELLER        = (1 << 10);
-constexpr u32 CLI_OPT_LISTSYNTAX     = (1 << 11);
-constexpr u32 CLI_OPT_BACKUPDIR      = (1 << 12);
-constexpr u32 CLI_OPT_BREAKLONGLINES = (1 << 13);
-//
-//  The command line options map.
-//
-CONSTEXPR_MAP<STRING_VIEW, u32, 25> cliOptionMap = {
+/* Identifiers for the different command line options. */
+constexpr unsigned int CLI_OPT_IGNORERCFILE   = (1 << 0);
+constexpr unsigned int CLI_OPT_VERSION        = (1 << 1);
+constexpr unsigned int CLI_OPT_HELP           = (1 << 2);
+constexpr unsigned int CLI_OPT_SYNTAX         = (1 << 3);
+constexpr unsigned int CLI_OPT_RCFILE         = (1 << 4);
+constexpr unsigned int CLI_OPT_GUIDESTRIPE    = (1 << 5);
+constexpr unsigned int CLI_OPT_WORDCHARS      = (1 << 6);
+constexpr unsigned int CLI_OPT_TABSIZE        = (1 << 7);
+constexpr unsigned int CLI_OPT_OPERATINGDIR   = (1 << 8);
+constexpr unsigned int CLI_OPT_FILL           = (1 << 9);
+constexpr unsigned int CLI_OPT_SPELLER        = (1 << 10);
+constexpr unsigned int CLI_OPT_LISTSYNTAX     = (1 << 11);
+constexpr unsigned int CLI_OPT_BACKUPDIR      = (1 << 12);
+constexpr unsigned int CLI_OPT_BREAKLONGLINES = (1 << 13);
+/* The command line options map. */
+constexpr_map<std::string_view, unsigned int, 25> cliOptionMap = {
     {{"-I", CLI_OPT_IGNORERCFILE},
      {"--ignorercfiles", CLI_OPT_IGNORERCFILE},
      {"-V", CLI_OPT_VERSION},
@@ -304,8 +284,8 @@ CONSTEXPR_MAP<STRING_VIEW, u32, 25> cliOptionMap = {
      {"--breaklonglines", CLI_OPT_BREAKLONGLINES}}
 };
 
-constexpr auto NUMBER_OF_FLAGS          = 51;
-constexpr auto DEFAULT_RESPONSE_ON_NONE = "Ehm...";
+constexpr unsigned char     NUMBER_OF_FLAGS          = 51;
+constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
 //
 //  This is a masterpiece of a map.
 //  I have succesfully made the way to get the description of a flag,

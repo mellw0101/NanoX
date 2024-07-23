@@ -16,42 +16,31 @@
 
 #define RW_FOR_ALL (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
-//
-//  Add an item to the circular list of openfile structs.
-//
+/* Add an item to the circular list of openfile structs. */
 void
 make_new_buffer()
 {
-    openfilestruct *newnode = static_cast<openfilestruct *>(nmalloc(sizeof(openfilestruct)));
-
+    openfilestruct *newnode = (openfilestruct *)nmalloc(sizeof(openfilestruct));
     if (openfile == nullptr)
     {
-        // Make the first buffer the only element in the list.
+        /* Make the first buffer the only element in the list. */
         newnode->prev = newnode;
         newnode->next = newnode;
-
-        startfile = newnode;
+        startfile     = newnode;
     }
     else
     {
-        // Add the new buffer after the current one in the list.
+        /* Add the new buffer after the current one in the list. */
         newnode->prev        = openfile;
         newnode->next        = openfile->next;
         openfile->next->prev = newnode;
         openfile->next       = newnode;
-
-        //
-        //  There is more than one buffer: show "Close" in help lines.
-        //
+        /* There is more than one buffer: show "Close" in help lines. */
         exitfunc->tag = close_tag;
         more_than_one = !inhelp || more_than_one;
     }
-
-    //
-    //  Make the new buffer the current one, and start initializing it
-    //
-    openfile = newnode;
-
+    /* Make the new buffer the current one, and start initializing it */
+    openfile                = newnode;
     openfile->filename      = copy_of("");
     openfile->filetop       = make_new_node(nullptr);
     openfile->filetop->data = copy_of("");
@@ -78,40 +67,31 @@ make_new_buffer()
     openfile->syntax        = nullptr;
 }
 
-//
-//  Return the given file name in a way that fits within the given space.
-//
-s8 *
-crop_to_fit(C_s8 *name, C_s32 room)
+/* Return the given file name in a way that fits within the given space. */
+char *
+crop_to_fit(const char *name, const int room)
 {
-    s8 *clipped;
-
+    char *clipped;
     if (breadth(name) <= room)
     {
         return display_string(name, 0, room, false, false);
     }
-
     if (room < 4)
     {
         return copy_of("_");
     }
-
     clipped = display_string(name, breadth(name) - room + 3, room, false, false);
-
-    clipped = static_cast<s8 *>(nrealloc(clipped, constexpr_strlen(clipped) + 4));
-    std::memmove(clipped + 3, clipped, constexpr_strlen(clipped) + 1);
+    clipped = (char *)nrealloc(clipped, constexpr_strlen(clipped) + 4);
+    memmove(clipped + 3, clipped, constexpr_strlen(clipped) + 1);
     clipped[0] = '.';
     clipped[1] = '.';
     clipped[2] = '.';
-
     return clipped;
 }
 
-//
-//  Delete the lock file.  Return TRUE on success, and FALSE otherwise.
-//
+/* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
 bool
-delete_lockfile(C_s8 *lockfilename)
+delete_lockfile(const char *lockfilename)
 {
     if (unlink(lockfilename) < 0 && errno != ENOENT)
     {
@@ -121,37 +101,31 @@ delete_lockfile(C_s8 *lockfilename)
     return true;
 }
 
-constexpr s16 LOCKSIZE = 1024;
-#define SKIPTHISFILE (s8 *)-1
+constexpr short LOCKSIZE = 1024;
+#define SKIPTHISFILE (char *)-1
 
-constexpr C_s8 *locking_prefix = ".";
-constexpr C_s8 *locking_suffix = ".swp";
+constexpr const char *locking_prefix = ".";
+constexpr const char *locking_suffix = ".swp";
 
-//
-//  Write a lock file, under the given lockfilename.  This always annihilates an
-//  existing version of that file.  Return TRUE on success; FALSE otherwise.
-//
+/* Write a lock file, under the given lockfilename.  This always annihilates an
+ * existing version of that file.  Return TRUE on success; FALSE otherwise. */
 bool
-write_lockfile(C_s8 *lockfilename, C_s8 *filename, const bool modified)
+write_lockfile(const char *lockfilename, const char *filename, const bool modified)
 {
-    s32     mypid   = getpid();
-    uid_t   myuid   = geteuid();
-    passwd *mypwuid = getpwuid(myuid);
-    s8      myhostname[32];
-    s32     fd;
-    FILE   *filestream = nullptr;
-    s8     *lockdata;
-    u64     wroteamt;
-
+    int           mypid   = getpid();
+    uid_t         myuid   = geteuid();
+    passwd       *mypwuid = getpwuid(myuid);
+    char          myhostname[32];
+    int           fd;
+    FILE         *filestream = nullptr;
+    char         *lockdata;
+    unsigned long wroteamt;
     if (mypwuid == nullptr)
     {
-        //
-        //  TRANSLATORS : Keep the next seven messages at most 76 characters.
-        //
+        /* TRANSLATORS: Keep the next seven messages at most 76 characters. */
         statusline(MILD, _("Couldn't determine my identity for lock file"));
         return false;
     }
-
     if (gethostname(myhostname, 31) < 0 && errno != ENAMETOOLONG)
     {
         statusline(MILD, _("Couldn't determine hostname: %s"), strerror(errno));
@@ -161,25 +135,17 @@ write_lockfile(C_s8 *lockfilename, C_s8 *filename, const bool modified)
     {
         myhostname[31] = '\0';
     }
-
-    //
-    //  First make sure to remove an existing lock file.
-    //
+    /* First make sure to remove an existing lock file. */
     if (!delete_lockfile(lockfilename))
     {
         return false;
     }
-
-    //
-    //  Create the lock file -- do not accept an existing one.
-    //
+    /* Create the lock file -- do not accept an existing one. */
     fd = open(lockfilename, O_WRONLY | O_CREAT | O_EXCL, RW_FOR_ALL);
-
     if (fd > 0)
     {
         filestream = fdopen(fd, "wb");
     }
-
     if (filestream == nullptr)
     {
         statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, ERRNO_C_STR);
@@ -189,34 +155,25 @@ write_lockfile(C_s8 *lockfilename, C_s8 *filename, const bool modified)
         }
         return false;
     }
-
-    lockdata = static_cast<s8 *>(nmalloc(LOCKSIZE));
-    std::memset(lockdata, 0, LOCKSIZE);
-
-    /**
-        This is the lock data we will store (other bytes remain 0x00):
-
-            bytes 0-1     - 0x62 0x30
-            bytes 2-11    - name of program that created the lock
-            bytes 24-27   - PID (little endian) of creator process
-            bytes 28-43   - username of the user who created the lock
-            bytes 68-99   - hostname of machine from where the lock was created
-            bytes 108-876 - filename that the lock is for
-            byte 1007     - 0x55 if file is modified
-
-        Nano does not write the page size (bytes 12-15), nor the modification
-        time (bytes 16-19), nor the inode of the relevant file (bytes 20-23).
-        Nano also does not use all available space for user name (40 bytes),
-        host name (40 bytes), and file name (890 bytes).  Nor does nano write
-        some byte-order-checking numbers (bytes 1008-1022).
-    */
+    lockdata = (char *)nmalloc(LOCKSIZE);
+    memset(lockdata, 0, LOCKSIZE);
+    /** This is the lock data we will store (other bytes remain 0x00):
+     *      bytes 0-1     - 0x62 0x30
+     *      bytes 2-11    - name of program that created the lock
+     *      bytes 24-27   - PID (little endian) of creator process
+     *      bytes 28-43   - username of the user who created the lock
+     *      bytes 68-99   - hostname of machine from where the lock was created
+     *      bytes 108-876 - filename that the lock is for
+     *      byte 1007     - 0x55 if file is modified
+     *  Nano does not write the page size (bytes 12-15), nor the modification
+     *  time (bytes 16-19), nor the inode of the relevant file (bytes 20-23).
+     *  Nano also does not use all available space for user name (40 bytes),
+     *  host name (40 bytes), and file name (890 bytes).  Nor does nano write
+     *  some byte-order-checking numbers (bytes 1008-1022). */
     lockdata[0] = 0x62;
     lockdata[1] = 0x30;
-
-    //
-    //  It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway.
-    //
-    std::snprintf(&lockdata[2], 11, "nano %s", VERSION);
+    /* It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway. */
+    snprintf(&lockdata[2], 11, "nano %s", VERSION);
     lockdata[24] = mypid % 256;
     lockdata[25] = (mypid / 256) % 256;
     lockdata[26] = (mypid / (256 * 256)) % 256;
@@ -225,12 +182,9 @@ write_lockfile(C_s8 *lockfilename, C_s8 *filename, const bool modified)
     constexpr_strncpy(&lockdata[68], myhostname, 32);
     constexpr_strncpy(&lockdata[108], filename, 768);
     lockdata[1007] = (modified) ? 0x55 : 0x00;
-
-    wroteamt = std::fwrite(lockdata, 1, LOCKSIZE, filestream);
-
-    std::free(lockdata);
-
-    if (std::fclose(filestream) == EOF || wroteamt < LOCKSIZE)
+    wroteamt       = fwrite(lockdata, 1, LOCKSIZE, filestream);
+    free(lockdata);
+    if (fclose(filestream) == EOF || wroteamt < LOCKSIZE)
     {
         statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, ERRNO_C_STR);
         return false;
@@ -238,28 +192,23 @@ write_lockfile(C_s8 *lockfilename, C_s8 *filename, const bool modified)
     return true;
 }
 
-//
-//  First check if a lock file already exists.  If so, and ask_the_user is TRUE,
-//  then ask whether to open the corresponding file anyway.  Return SKIPTHISFILE
-//  when the user answers "No", return the name of the lock file on success, and
-//  return NULL on failure.
-//
-s8 *
-do_lockfile(C_s8 *filename, const bool ask_the_user)
+/* First check if a lock file already exists.  If so, and ask_the_user is TRUE,
+ * then ask whether to open the corresponding file anyway.  Return SKIPTHISFILE
+ * when the user answers "No", return the name of the lock file on success, and
+ * return NULL on failure. */
+char *
+do_lockfile(const char *filename, const bool ask_the_user)
 {
-    s8 *namecopy   = copy_of(filename);
-    s8 *secondcopy = copy_of(filename);
-    u64 locknamesize =
+    char         *namecopy   = copy_of(filename);
+    char         *secondcopy = copy_of(filename);
+    unsigned long locknamesize =
         constexpr_strlen(filename) + constexpr_strlen(locking_prefix) + constexpr_strlen(locking_suffix) + 3;
-    s8 *lockfilename = static_cast<s8 *>(nmalloc(locknamesize));
-
+    char       *lockfilename = (char *)nmalloc(locknamesize);
     struct stat fileinfo;
-
-    std::snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy),
-                  locking_suffix);
-    std::free(secondcopy);
-    std::free(namecopy);
-
+    snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy),
+             locking_suffix);
+    free(secondcopy);
+    free(namecopy);
     if (!ask_the_user && stat(lockfilename, &fileinfo) != -1)
     {
         blank_bottombars();
@@ -268,139 +217,104 @@ do_lockfile(C_s8 *filename, const bool ask_the_user)
     }
     else if (stat(lockfilename, &fileinfo) != -1)
     {
-        s8       *lockbuf, *question, *pidstring, *postedname, *promptstr;
-        static s8 lockprog[11], lockuser[17];
-        s32       lockfd, lockpid, choice;
-        s64       readamt;
-
+        char       *lockbuf, *question, *pidstring, *postedname, *promptstr;
+        static char lockprog[11], lockuser[17];
+        int         lockfd, lockpid, choice;
+        long        readamt;
         if ((lockfd = open(lockfilename, O_RDONLY)) < 0)
         {
             statusline(ALERT, _("Error opening lock file %s: %s"), lockfilename, ERRNO_C_STR);
-            std::free(lockfilename);
+            free(lockfilename);
             return nullptr;
         }
-
-        lockbuf = static_cast<s8 *>(nmalloc(LOCKSIZE));
-
+        lockbuf = (char *)nmalloc(LOCKSIZE);
         readamt = read(lockfd, lockbuf, LOCKSIZE);
-
         close(lockfd);
-
-        //
-        //  If not enough data has been read to show the needed things,
-        //  or the two magic bytes are not there, skip the lock file.
-        //
+        /* If not enough data has been read to show the needed things,
+         * or the two magic bytes are not there, skip the lock file. */
         if (readamt < 68 || lockbuf[0] != 0x62 || lockbuf[1] != 0x30)
         {
             statusline(ALERT, _("Bad lock file is ignored: %s"), lockfilename);
-            std::free(lockfilename);
-            std::free(lockbuf);
+            free(lockfilename);
+            free(lockbuf);
             return nullptr;
         }
-
         constexpr_strncpy(lockprog, &lockbuf[2], 10);
         lockprog[10] = '\0';
         lockpid =
-            ((static_cast<u8>(lockbuf[27]) * 256 + static_cast<u8>(lockbuf[26])) * 256 + static_cast<u8>(lockbuf[25])) *
-                256 +
+            (((unsigned char)lockbuf[27] * 256 + (unsigned char)lockbuf[26]) * 256 + (unsigned char)lockbuf[25]) * 256 +
             (unsigned char)lockbuf[24];
         constexpr_strncpy(lockuser, &lockbuf[28], 16);
         lockuser[16] = '\0';
-        std::free(lockbuf);
-
-        pidstring = static_cast<s8 *>(nmalloc(11));
-        std::sprintf(pidstring, "%u", static_cast<u32>(lockpid));
-
-        //
-        //  Display newlines in filenames as ^J.
-        //
+        free(lockbuf);
+        pidstring = (char *)nmalloc(11);
+        sprintf(pidstring, "%u", (unsigned int)lockpid);
+        /* Display newlines in filenames as ^J. */
         as_an_at = false;
-
-        //
-        //  TRANSLATORS : The second %s is the name of the user, the third that of the editor.
-        //
-        question   = const_cast<s8 *>(_("File %s is being edited by %s (with %s, PID %s); open anyway?"));
+        /* TRANSLATORS: The second %s is the name of the user, the third that of the editor. */
+        question   = const_cast<char *>(_("File %s is being edited by %s (with %s, PID %s); open anyway?"));
         postedname = crop_to_fit(
             filename, COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) - breadth(pidstring) + 7);
-
-        //
-        //  Allow extra space for username (14), program name (8), PID (8),
-        //  and terminating \0 (1), minus the %s (2) for the file name.
-        //
-        promptstr = static_cast<s8 *>(nmalloc(constexpr_strlen(question) + 29 + constexpr_strlen(postedname)));
-        std::sprintf(promptstr, question, postedname, lockuser, lockprog, pidstring);
-        std::free(postedname);
-        std::free(pidstring);
-
+        /* Allow extra space for username (14), program name (8), PID (8),
+         * and terminating \0 (1), minus the %s (2) for the file name. */
+        promptstr = (char *)nmalloc(constexpr_strlen(question) + 29 + constexpr_strlen(postedname));
+        sprintf(promptstr, question, postedname, lockuser, lockprog, pidstring);
+        free(postedname);
+        free(pidstring);
         choice = ask_user(YESORNO, promptstr);
-        std::free(promptstr);
-
-        //
-        //  When the user cancelled while we're still starting up, quit.
-        //
+        free(promptstr);
+        /* When the user cancelled while we're still starting up, quit. */
         if (choice == CANCEL && !we_are_running)
         {
             finish();
         }
-
         if (choice != YES)
         {
-            std::free(lockfilename);
+            free(lockfilename);
             wipe_statusbar();
             return SKIPTHISFILE;
         }
     }
-
     if (write_lockfile(lockfilename, filename, false))
     {
         return lockfilename;
     }
-
-    std::free(lockfilename);
+    free(lockfilename);
     return nullptr;
 }
 
-//
-//  Perform a stat call on the given filename, allocating a stat struct
-//  if necessary.  On success, *pstat points to the stat's result.  On
-//  failure, *pstat is freed and made NULL.
-//
+/* Perform a stat call on the given filename, allocating a stat struct
+ * if necessary.  On success, *pstat points to the stat's result.  On
+ * failure, *pstat is freed and made NULL. */
 void
-stat_with_alloc(C_s8 *filename, struct stat **pstat)
+stat_with_alloc(const char *filename, struct stat **pstat)
 {
     if (*pstat == nullptr)
     {
-        *pstat = static_cast<struct stat *>(nmalloc(sizeof(struct stat)));
+        *pstat = (struct stat *)nmalloc(sizeof(struct stat));
     }
-
     if (stat(filename, *pstat) != 0)
     {
-        std::free(*pstat);
+        free(*pstat);
         *pstat = nullptr;
     }
 }
 
-//
-//  Verify that the containing directory of the given filename exists.
-//
+/* Verify that the containing directory of the given filename exists. */
 bool
-has_valid_path(C_s8 *filename)
+has_valid_path(const char *filename)
 {
-    s8  *namecopy  = copy_of(filename);
-    s8  *parentdir = dirname(namecopy);
-    bool validity  = false;
-    bool gone      = false;
-
+    char       *namecopy  = copy_of(filename);
+    char       *parentdir = dirname(namecopy);
+    bool        validity  = false;
+    bool        gone      = false;
     struct stat parentinfo;
-
     if (constexpr_strcmp(parentdir, ".") == 0)
     {
-        s8 *currentdir = realpath(".", nullptr);
-
-        gone = (currentdir == nullptr && errno == ENOENT);
-        std::free(currentdir);
+        char *currentdir = realpath(".", nullptr);
+        gone             = (currentdir == nullptr && errno == ENOENT);
+        free(currentdir);
     }
-
     if (gone)
     {
         statusline(ALERT, _("The working directory has disappeared"));
@@ -409,9 +323,7 @@ has_valid_path(C_s8 *filename)
     {
         if (errno == ENOENT)
         {
-            //
-            //  TRANSLATORS : Keep the next ten messages at most 76 characters.
-            //
+            /* TRANSLATORS: Keep the next ten messages at most 76 characters. */
             statusline(ALERT, _("Directory '%s' does not exist"), parentdir);
         }
         else
@@ -435,66 +347,44 @@ has_valid_path(C_s8 *filename)
     {
         validity = true;
     }
-
-    std::free(namecopy);
-
+    free(namecopy);
     return validity;
 }
 
-//
-//  This does one of three things.  If the filename is "", it just creates
-//  a new empty buffer.  When the filename is not empty, it reads that file
-//  into a new buffer when requested, otherwise into the existing buffer.
-//
+/* This does one of three things.  If the filename is "", it just creates
+ * a new empty buffer.  When the filename is not empty, it reads that file
+ * into a new buffer when requested, otherwise into the existing buffer. */
 bool
-open_buffer(C_s8 *filename, bool new_one)
+open_buffer(const char *filename, bool new_one)
 {
     PROFILE_FUNCTION;
-
-    //
-    //  The filename after tilde expansion.
-    //
-    s8 *realname;
-
+    /* The filename after tilde expansion. */
+    char       *realname;
     struct stat fileinfo;
-
-    //
-    //  Code 0 means new file, -1 means failure, and else it's the fd.
-    //
-    s32 descriptor = 0;
-
+    /* Code 0 means new file, -1 means failure, and else it's the fd. */
+    int   descriptor = 0;
     FILE *f;
-
-    //
-    //  Display newlines in filenames as ^J.
-    //
+    /* Display newlines in filenames as ^J. */
     as_an_at = false;
-
     if (outside_of_confinement(filename, false))
     {
         statusline(ALERT, _("Can't read file from outside of %s"), operating_dir);
-        return FALSE;
+        return false;
     }
-
     realname = real_dir_from_tilde(filename);
-
-    //
-    //  Don't try to open directories, character files, or block files.
-    //
+    /* Don't try to open directories, character files, or block files. */
     if (*filename != '\0' && stat(realname, &fileinfo) == 0)
     {
         if (S_ISDIR(fileinfo.st_mode))
         {
             statusline(ALERT, _("\"%s\" is a directory"), realname);
-            std::free(realname);
-
+            free(realname);
             return false;
         }
         if (S_ISCHR(fileinfo.st_mode) || S_ISBLK(fileinfo.st_mode))
         {
             statusline(ALERT, _("\"%s\" is a device file"), realname);
-            std::free(realname);
-
+            free(realname);
             return false;
         }
         if (new_one && !(fileinfo.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && geteuid() == ROOT_UID)
@@ -502,28 +392,21 @@ open_buffer(C_s8 *filename, bool new_one)
             statusline(ALERT, _("%s is meant to be read-only"), realname);
         }
     }
-
-    //
-    //  When loading into a new buffer, first check the file's path is valid,
-    //  and then ( if requested and possible ) create a lock file for it.
-    //
+    /* When loading into a new buffer, first check the file's path is valid,
+     * and then (if requested and possible) create a lock file for it. */
     if (new_one)
     {
         make_new_buffer();
-
         if (has_valid_path(realname))
         {
             if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && filename[0] != '\0')
             {
-                s8 *thelocksname = do_lockfile(realname, true);
-
-                //
-                //  When not overriding an existing lock, discard the buffer.
-                //
+                char *thelocksname = do_lockfile(realname, true);
+                /* When not overriding an existing lock, discard the buffer. */
                 if (thelocksname == SKIPTHISFILE)
                 {
                     close_buffer();
-                    std::free(realname);
+                    free(realname);
                     return false;
                 }
                 else
@@ -533,60 +416,41 @@ open_buffer(C_s8 *filename, bool new_one)
             }
         }
     }
-
-    //
-    //  If we have a filename and are not in NOREAD mode, open the file.
-    //
+    /* If we have a filename and are not in NOREAD mode, open the file. */
     if (filename[0] != '\0' && !ISSET(NOREAD_MODE))
     {
         descriptor = open_file(realname, new_one, &f);
     }
-
-    //
-    //  If we've successfully opened an existing file, read it in.
-    //
+    /* If we've successfully opened an existing file, read it in. */
     if (descriptor > 0)
     {
         install_handler_for_Ctrl_C();
-
         read_file(f, descriptor, realname, !new_one);
-
         restore_handler_for_Ctrl_C();
-
         if (openfile->statinfo == nullptr)
         {
             stat_with_alloc(realname, &openfile->statinfo);
         }
     }
-
-    //
-    //  For a new buffer, store filename and put cursor at start of buffer.
-    //
+    /* For a new buffer, store filename and put cursor at start of buffer. */
     if (descriptor >= 0 && new_one)
     {
-        openfile->filename  = mallocstrcpy(openfile->filename, realname);
-        openfile->current   = openfile->filetop;
-        openfile->current_x = 0;
-
+        openfile->filename    = mallocstrcpy(openfile->filename, realname);
+        openfile->current     = openfile->filetop;
+        openfile->current_x   = 0;
         openfile->placewewant = 0;
     }
-
-    //
-    //  If a new buffer was opened, check whether a syntax can be applied.
-    //
+    /* If a new buffer was opened, check whether a syntax can be applied. */
     if (new_one)
     {
         find_and_prime_applicable_syntax();
     }
-
-    std::free(realname);
+    free(realname);
     return true;
 }
 
-//
-//  Mark the current buffer as modified if it isn't already, and
-//  then update the title bar to display the buffer's new status.
-//
+/* Mark the current buffer as modified if it isn't already, and
+ * then update the title bar to display the buffer's new status. */
 void
 set_modified()
 {
@@ -594,35 +458,25 @@ set_modified()
     {
         return;
     }
-
     openfile->modified = true;
     titlebar(nullptr);
-
     if (openfile->lock_filename != nullptr)
     {
         write_lockfile(openfile->lock_filename, openfile->filename, true);
     }
 }
 
-//
-//  Update the title bar and the multiline cache to match the current buffer.
-//
-//  TODO : ( prepare_for_display ) - Understand.
-//
+/* Update the title bar and the multiline cache to match the current buffer.
+ * TODO: (prepare_for_display) - Understand. */
 void
 prepare_for_display()
 {
-    //
-    //  Update the title bar, since the filename may have changed.
-    //
+    /* Update the title bar, since the filename may have changed. */
     if (!inhelp)
     {
         titlebar(nullptr);
     }
-
-    //
-    //  Precalculate the data for any multiline coloring regexes.
-    //
+    /* Precalculate the data for any multiline coloring regexes. */
     if (!openfile->filetop->multidata)
     {
         precalc_multicolorinfo();
@@ -631,14 +485,11 @@ prepare_for_display()
     refresh_needed = true;
 }
 
-//
-//  Show name of current buffer and its number of lines on the status bar.
-//
+/* Show name of current buffer and its number of lines on the status bar. */
 void
 mention_name_and_linecount()
 {
-    u64 count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0' ? 1 : 0);
-
+    unsigned long count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0' ? 1 : 0);
     if ISSET (MINIBAR)
     {
         report_size = true;
@@ -648,12 +499,9 @@ mention_name_and_linecount()
     {
         return;
     }
-
     if (openfile->fmt > NIX_FILE)
     {
-        //
-        //  TRANSLATORS : First %s is file name, second %s is file format.
-        //
+        /* TRANSLATORS: First %s is file name, second %s is file format. */
         statusline(HUSH, P_("%s -- %zu line (%s)", "%s -- %zu lines (%s)", count),
                    openfile->filename[0] == '\0' ? _("New Buffer") : tail(openfile->filename), count,
                    openfile->fmt == DOS_FILE ? _("DOS") : _("Mac"));
@@ -665,49 +513,31 @@ mention_name_and_linecount()
     }
 }
 
-//
-//  Update title bar and such after switching to another buffer.
-//
+/* Update title bar and such after switching to another buffer. */
 void
 redecorate_after_switch()
 {
-    //
-    //  If only one file buffer is open, there is nothing to update.
-    //
+    /* If only one file buffer is open, there is nothing to update. */
     if (openfile == openfile->next)
     {
         statusline(AHEM, _("No more open file buffers"));
         return;
     }
-
-    //
-    //  While in a different buffer, the width of the screen may have changed,
-    //  so make sure that the starting column for the first row is fitting.
-    //
+    /* While in a different buffer, the width of the screen may have changed,
+     * so make sure that the starting column for the first row is fitting. */
     ensure_firstcolumn_is_aligned();
-
-    //
-    //  Update title bar and multiline info to match the current buffer.
-    //
+    /* Update title bar and multiline info to match the current buffer. */
     prepare_for_display();
-
-    //
-    //  Ensure that the main loop will redraw the help lines.
-    //
+    /* Ensure that the main loop will redraw the help lines. */
     currmenu = MMOST;
-    //
-    //  Prevent a possible Shift selection from getting cancelled.
-    //
+    /* Prevent a possible Shift selection from getting cancelled. */
     shift_held = true;
-
-    //
-    //  If the switched-to buffer gave an error during opening, show the message
-    //  once; otherwise, indicate on the status bar which file we switched to.
-    //
+    /* If the switched-to buffer gave an error during opening, show the message
+     * once; otherwise, indicate on the status bar which file we switched to. */
     if (openfile->errormessage)
     {
         statusline(ALERT, openfile->errormessage);
-        std::free(openfile->errormessage);
+        free(openfile->errormessage);
         openfile->errormessage = nullptr;
     }
     else
@@ -716,9 +546,7 @@ redecorate_after_switch()
     }
 }
 
-//
-//  Switch to the previous entry in the circular list of buffers.
-//
+/* Switch to the previous entry in the circular list of buffers. */
 void
 switch_to_prev_buffer()
 {
@@ -726,9 +554,7 @@ switch_to_prev_buffer()
     redecorate_after_switch();
 }
 
-//
-//  Switch to the next entry in the circular list of buffers.
-//
+/* Switch to the next entry in the circular list of buffers. */
 void
 switch_to_next_buffer()
 {
@@ -736,181 +562,110 @@ switch_to_next_buffer()
     redecorate_after_switch();
 }
 
-//
-//  Remove the current buffer from the circular list of buffers.
-//
-//  When just one buffer remains open, show "Exit" in the help lines.
-//  Free the undo stack.
-//  Free the error message.
-//  Free the lock filename.
-//  Free the stat info.
-//
-//  @return ( void )
-//
+/* Remove the current buffer from the circular list of buffers.
+ * When just one buffer remains open, show "Exit" in the help lines. */
 void
 close_buffer()
 {
     openfilestruct *orphan = openfile;
-
     if (orphan == startfile)
     {
         startfile = startfile->next;
     }
-
     orphan->prev->next = orphan->next;
     orphan->next->prev = orphan->prev;
-
-    std::free(orphan->filename);
+    free(orphan->filename);
     free_lines(orphan->filetop);
-
-    std::free(orphan->statinfo);
-    std::free(orphan->lock_filename);
-
-    //
-    //  Free the undo stack.
-    //
+    free(orphan->statinfo);
+    free(orphan->lock_filename);
+    /* Free the undo stack. */
     discard_until(nullptr);
-    std::free(orphan->errormessage);
-
+    free(orphan->errormessage);
     openfile = orphan->prev;
     if (openfile == orphan)
     {
         openfile = nullptr;
     }
-
-    std::free(orphan);
-
-    //
-    //  When just one buffer remains open,
-    //  show "Exit" in the help lines.
-    //
+    free(orphan);
+    /* When just one buffer remains open, show "Exit" in the help lines. */
     if (openfile && openfile == openfile->next)
     {
         exitfunc->tag = exit_tag;
     }
 }
 
-//
-//  Encode any NUL bytes in the given line of text (of the given length),
-//  and return a dynamically allocated copy of the resultant string. */
-//
-s8 *
-encode_data(s8 *text, u64 length)
+/* Encode any NUL bytes in the given line of text (of the given length),
+ * and return a dynamically allocated copy of the resultant string. */
+char *
+encode_data(char *text, unsigned long length)
 {
     recode_NUL_to_LF(text, length);
     text[length] = '\0';
-
     return copy_of(text);
 }
 
-//
-//  The number of bytes by which we expand the line buffer while reading.
-//
-constexpr u8 LUMPSIZE = 120;
-
-//
-//  TODO : ( read_file ) - FIX IT.
-//
+/* The number of bytes by which we expand the line buffer while reading. */
+constexpr unsigned char LUMPSIZE = 120;
 /* Read the given open file f into the current buffer.  filename should be
  * set to the name of the file.  undoable means that undo records should be
- * created and that the file does not need to be checked for writability. */
+ * created and that the file does not need to be checked for writability.
+ * TODO: (read_file) - FIX IT. */
 void
-read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
+read_file(FILE *f, int fd, const char *filename, bool undoable)
 {
     PROFILE_FUNCTION;
-    //
-    //  The line number where we start the insertion.
-    //
-    s64 was_lineno = openfile->current->lineno;
-    //
-    //  The leftedge where we start the insertion.
-    //
-    u64 was_leftedge = 0;
-    //
-    //  The number of lines in the file.
-    //
-    u64 num_lines = 0;
-    //
-    //  The length of the current line of the file.
-    //
-    u64 len = 0;
-    //
-    //  The size of the line buffer; increased as needed.
-    //
-    u64 bufsize = LUMPSIZE;
-    //
-    //  The buffer in which we assemble each line of the file.
-    //
-    s8 *buf = static_cast<s8 *>(nmalloc(bufsize));
-    //
-    //  The top of the new buffer where we store the read file.
-    //
+    /* The line number where we start the insertion. */
+    long was_lineno = openfile->current->lineno;
+    /* The leftedge where we start the insertion. */
+    unsigned long was_leftedge = 0;
+    /* The number of lines in the file. */
+    unsigned long num_lines = 0;
+    /* The length of the current line of the file. */
+    unsigned long len = 0;
+    /* The size of the line buffer; increased as needed. */
+    unsigned long bufsize = LUMPSIZE;
+    /* The buffer in which we assemble each line of the file. */
+    char *buf = (char *)nmalloc(bufsize);
+    /* The top of the new buffer where we store the read file. */
     linestruct *topline;
-    //
-    //  The bottom of the new buffer.
-    //
+    /* The bottom of the new buffer. */
     linestruct *bottomline;
-    //
-    //  The current value we read from the file, either a byte or EOF.
-    //
-    s32 onevalue;
-    //
-    //  The error code, in case an error occurred during reading.
-    //
-    s32 errornumber;
-    //
-    //  Whether the file is writable (in case we care).
-    //
+    /* The current value we read from the file, either a byte or EOF. */
+    int onevalue;
+    /* The error code, in case an error occurred during reading. */
+    int errornumber;
+    /* Whether the file is writable (in case we care). */
     bool writable = true;
-    //
-    //  The type of line ending the file uses: Unix, DOS, or Mac.
-    //
+    /* The type of line ending the file uses: Unix, DOS, or Mac. */
     format_type format = NIX_FILE;
-
     if (undoable)
     {
         add_undo(INSERT, nullptr);
     }
-
     if ISSET (SOFTWRAP)
     {
         was_leftedge = leftedge_for(xplustabs(), openfile->current);
     }
-
-    //
-    //  Create an empty buffer.
-    //
+    /* Create an empty buffer. */
     topline    = make_new_node(nullptr);
     bottomline = topline;
-
     block_sigwinch(true);
-
-    //
-    //  Lock the file before starting to read it,
-    //  to avoid the overhead of locking it for each single byte that we read from it.
-    //
+    /* Lock the file before starting to read it,
+     * to avoid the overhead of locking it for each single byte that we read from it. */
     flockfile(f);
-
     control_C_was_pressed = false;
-
-    //
-    //  Read in the entire file, byte by byte, line by line.
-    //
+    /* Read in the entire file, byte by byte, line by line. */
     while ((onevalue = getc_unlocked(f)) != EOF)
     {
-        s8 input = static_cast<s8>(onevalue);
-
+        char input = (char)onevalue;
         if (control_C_was_pressed)
         {
             break;
         }
-
-        //
-        //  When the byte before the current one is a CR and automatic format
-        //  conversion has not been switched off,
-        //  then strip this CR when it's before a LF OR when the file is in Mac format.
-        //  Also, when this is the first line break, make a note of the format.
-        //
+        /* When the byte before the current one is a CR and automatic format
+         * conversion has not been switched off,
+         * then strip this CR when it's before a LF OR when the file is in Mac format.
+         * Also, when this is the first line break, make a note of the format. */
         if (input == '\n')
         {
             if (len > 0 && buf[len - 1] == '\r' && !ISSET(NO_CONVERT))
@@ -929,66 +684,39 @@ read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
         }
         else
         {
-            //
-            //  Store the byte.
-            //
+            /* Store the byte. */
             buf[len] = input;
-
-            //
-            //  Keep track of the total length of the line.
-            //  It might have NUL bytes in it,
-            //  so we can't just use strlen() later.
-            //
+            /* Keep track of the total length of the line.
+             * It might have NUL bytes in it, so we can't just use strlen() later. */
             len++;
-
-            //
-            //  When needed, increase the line-buffer size.  Don't bother
-            //  decreasing it -- it gets freed when reading is finished.
-            //
+            /* When needed, increase the line-buffer size.  Don't bother
+             * decreasing it -- it gets freed when reading is finished. */
             if (len == bufsize)
             {
                 bufsize += LUMPSIZE;
-                buf = static_cast<s8 *>(nrealloc(buf, bufsize));
+                buf = (char *)nrealloc(buf, bufsize);
             }
-
             continue;
         }
-
-        //
-        //  Store the data and make a new line.
-        //
+        /* Store the data and make a new line. */
         bottomline->data = encode_data(buf, len);
         bottomline->next = make_new_node(bottomline);
         bottomline       = bottomline->next;
         num_lines++;
-
-        //
-        //  eset the length in preparation for the next line.
-        //
+        /* Reset the length in preparation for the next line. */
         len = 0;
-
-        //
-        //  If it was a Mac line, then store the byte after the \r
-        //  as the first byte of the next line.
-        //
+        /* If it was a Mac line, then store the byte after the \r
+         * as the first byte of the next line. */
         if (input != '\n')
         {
             buf[len++] = input;
         }
     }
-
     errornumber = errno;
-
-    //
-    //  We are done with the file, unlock it.
-    //
+    /* We are done with the file, unlock it. */
     funlockfile(f);
-
     block_sigwinch(false);
-
-    //
-    //  When reading from stdin, restore the terminal and reenter curses mode.
-    //
+    /* When reading from stdin, restore the terminal and reenter curses mode. */
     if (isendwin())
     {
         if (!isatty(STDIN_FILENO))
@@ -998,32 +726,22 @@ read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
         terminal_init();
         doupdate();
     }
-
-    //
-    //  If there was a real error during the reading, let the user know.
-    //
+    /* If there was a real error during the reading, let the user know. */
     if (ferror(f) && errornumber != EINTR && errornumber != 0)
     {
-        statusline(ALERT, std::strerror(errornumber));
+        statusline(ALERT, strerror(errornumber));
     }
-
     if (control_C_was_pressed)
     {
         statusline(ALERT, _("Interrupted"));
     }
-
-    std::fclose(f);
-
+    fclose(f);
     if (fd > 0 && !undoable && !ISSET(VIEW_MODE))
     {
         writable = (access(filename, W_OK) == 0);
     }
-
-    //
-    //  If the file ended with a newline, or it was entirely empty,
-    //  make the last line blank.
-    //  Otherwise, put the last read data in.
-    //
+    /* If the file ended with a newline, or it was entirely empty,
+     * make the last line blank.  Otherwise, put the last read data in. */
     if (len == 0)
     {
         bottomline->data = copy_of("");
@@ -1031,11 +749,8 @@ read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
     else
     {
         bool mac_line_needs_newline = false;
-
-        //
-        //  If the final character is a CR and file conversion isn't disabled,
-        //  strip this CR and indicate that an extra blank line is needed.
-        //
+        /* If the final character is a CR and file conversion isn't disabled,
+         * strip this CR and indicate that an extra blank line is needed. */
         if (buf[len - 1] == '\r' && !ISSET(NO_CONVERT))
         {
             if (num_lines == 0)
@@ -1045,12 +760,9 @@ read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
             buf[--len]             = '\0';
             mac_line_needs_newline = true;
         }
-        //
-        //  Store the data of the final line.
-        //
+        /* Store the data of the final line. */
         bottomline->data = encode_data(buf, len);
         num_lines++;
-
         if (mac_line_needs_newline)
         {
             bottomline->next = make_new_node(bottomline);
@@ -1058,30 +770,20 @@ read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
             bottomline->data = copy_of("");
         }
     }
-
-    std::free(buf);
-
-    //
-    //  Insert the just read buffer into the current one.
-    //
+    free(buf);
+    /* Insert the just read buffer into the current one. */
     ingraft_buffer(topline);
-
-    //
-    //  Set the desired x position at the end of what was inserted.
-    //
+    /* Set the desired x position at the end of what was inserted. */
     openfile->placewewant = xplustabs();
-
     if (!writable)
     {
         statusline(ALERT, _("File '%s' is unwritable"), filename);
     }
     else if ((ISSET(ZERO) || ISSET(MINIBAR)) && !(we_are_running && undoable))
     {
-        ;  //  No blurb for new buffers with --zero or --mini.
+        ; /* No blurb for new buffers with --zero or --mini. */
     }
-    //
-    //  TRANSLATORS : Keep the next three messages at most 78 characters.
-    //
+    /* TRANSLATORS : Keep the next three messages at most 78 characters. */
     else if (format == MAC_FILE)
     {
         statusline(
@@ -1100,12 +802,8 @@ read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
     {
         statusline(REMARK, P_("Read %zu line", "Read %zu lines", num_lines), num_lines);
     }
-
     report_size = true;
-
-    //
-    //  If we inserted less than a screenful, don't center the cursor.
-    //
+    /* If we inserted less than a screenful, don't center the cursor. */
     if (undoable && less_than_a_screenful(was_lineno, was_leftedge))
     {
         focusing  = false;
@@ -1115,12 +813,10 @@ read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
     {
         recook = true;
     }
-
     if (undoable)
     {
         update_undo(INSERT);
     }
-
     if (ISSET(MAKE_IT_UNIX))
     {
         openfile->fmt = NIX_FILE;
@@ -1131,35 +827,26 @@ read_file(FILE *f, s32 fd, C_s8 *filename, bool undoable)
     }
 }
 
-//
-//  Open the file with the given name.  If the file does not exist, display
-//  "New File" if new_one is TRUE, and say "File not found" otherwise.
-//  Return 0 if we say "New File", -1 upon failure, and the obtained file
-//  descriptor otherwise.  The opened filestream is returned in *f.
-//
-s32
-open_file(C_s8 *filename, bool new_one, FILE **f)
+/* Open the file with the given name.  If the file does not exist, display
+ * "New File" if new_one is TRUE, and say "File not found" otherwise.
+ * Return 0 if we say "New File", -1 upon failure, and the obtained file
+ * descriptor otherwise.  The opened filestream is returned in *f. */
+int
+open_file(const char *filename, bool new_one, FILE **f)
 {
     PROFILE_FUNCTION;
-
     struct stat fileinfo;
-
-    s8 *full_filename = get_full_path(filename);
-    s32 fd;
-
-    //
-    //  If the absolute path is unusable (due to some component's permissions),
-    //  try the given path instead (as it is probably relative).
-    //
+    char       *full_filename = get_full_path(filename);
+    int         fd;
+    /* If the absolute path is unusable (due to some component's permissions),
+     * try the given path instead (as it is probably relative). */
     if (full_filename == nullptr || stat(full_filename, &fileinfo) == -1)
     {
         full_filename = mallocstrcpy(full_filename, filename);
     }
-
     if (stat(full_filename, &fileinfo) == -1)
     {
-        std::free(full_filename);
-
+        free(full_filename);
         if (new_one)
         {
             statusline(REMARK, _("New File"));
@@ -1171,23 +858,16 @@ open_file(C_s8 *filename, bool new_one, FILE **f)
             return -1;
         }
     }
-
     if (S_ISFIFO(fileinfo.st_mode))
     {
         statusbar(_("Reading from FIFO..."));
     }
-
     block_sigwinch(true);
     install_handler_for_Ctrl_C();
-
-    //
-    //  Try opening the file.
-    //
+    /* Try opening the file. */
     fd = open(full_filename, O_RDONLY);
-
     restore_handler_for_Ctrl_C();
     block_sigwinch(false);
-
     if (fd == -1)
     {
         if (errno == EINTR || errno == 0)
@@ -1201,11 +881,8 @@ open_file(C_s8 *filename, bool new_one, FILE **f)
     }
     else
     {
-        //
-        //  The file is A-OK.  Associate a stream with it.
-        //
+        /* The file is A-OK.  Associate a stream with it. */
         *f = fdopen(fd, "rb");
-
         if (*f == nullptr)
         {
             statusline(ALERT, _("Error reading %s: %s"), filename, ERRNO_C_STR);
@@ -1217,77 +894,52 @@ open_file(C_s8 *filename, bool new_one, FILE **f)
             statusbar(_("Reading..."));
         }
     }
-
-    std::free(full_filename);
-
+    free(full_filename);
     return fd;
 }
 
-//
-//  This function will return the name of the first available extension
-//  of a filename (starting with [name][suffix], then [name][suffix].1,etc.).
-//  Memory is allocated for the return value.
-//  If no writable extension exists, we return "".
-//
-s8 *
-get_next_filename(C_s8 *name, C_s8 *suffix)
+/* This function will return the name of the first available extension
+ * of a filename (starting with [name][suffix], then [name][suffix].1,etc.).
+ * Memory is allocated for the return value.
+ * If no writable extension exists, we return "". */
+char *
+get_next_filename(const char *name, const char *suffix)
 {
-    u64 wholenamelen = constexpr_strlen(name) + constexpr_strlen(suffix);
-    u64 i            = 0;
-    s8 *buf;
-
-    //
-    //  Reserve space for: the name plus the suffix plus a dot plus
-    //  possibly five digits plus a null byte.
-    //
-    buf = static_cast<s8 *>(nmalloc(wholenamelen + 7));
-    std::sprintf(buf, "%s%s", name, suffix);
-
+    unsigned long wholenamelen = constexpr_strlen(name) + constexpr_strlen(suffix);
+    unsigned long i            = 0;
+    char         *buf;
+    /* Reserve space for: the name plus the suffix plus a dot plus
+     * possibly five digits plus a null byte. */
+    buf = (char *)nmalloc(wholenamelen + 7);
+    sprintf(buf, "%s%s", name, suffix);
     while (true)
     {
         struct stat fs;
-
         if (stat(buf, &fs) == -1)
         {
             return buf;
         }
-
-        //
-        //  Limit the number of backup files to a hundred thousand.
-        //
+        /* Limit the number of backup files to a hundred thousand. */
         if (++i == 100000)
         {
             break;
         }
-
-        std::sprintf(buf + wholenamelen, ".%lu", i);
+        sprintf(buf + wholenamelen, ".%lu", i);
     }
-
-    //
-    //  There is no possible save file: blank out the filename.
-    //
+    /* There is no possible save file: blank out the filename. */
     *buf = '\0';
-
     return buf;
 }
 
-//
-//  The PID of a forked process -- needed when wanting to abort it.
-//
+/* The PID of a forked process -- needed when wanting to abort it. */
 static pid_t pid_of_command = -1;
-//
-//  The PID of the process that pipes data to the above process.
-//
+/* The PID of the process that pipes data to the above process. */
 static pid_t pid_of_sender = -1;
-//
-//  Whether we are piping data to the external command.
-//
+/* Whether we are piping data to the external command. */
 static bool should_pipe = false;
-//
-//  Send an unconditional kill signal to the running external command.
-//
+/* Send an unconditional kill signal to the running external command. */
 void
-cancel_the_command(s32 signal)
+cancel_the_command(int signal)
 {
     if (pid_of_command > 0)
     {
@@ -1299,154 +951,101 @@ cancel_the_command(s32 signal)
     }
 }
 
-//
-//  Send the text that starts at the given line to file descriptor fd.
-//
+/* Send the text that starts at the given line to file descriptor fd. */
 void
-send_data(const linestruct *line, s32 fd)
+send_data(const linestruct *line, int fd)
 {
     FILE *tube = fdopen(fd, "w");
-
     if (tube == nullptr)
     {
-        std::exit(4);
+        exit(4);
     }
-
-    //
-    //  Send each line, except a final empty line.
-    //
+    /* Send each line, except a final empty line. */
     while (line != nullptr && (line->next != nullptr || line->data[0] != '\0'))
     {
-        u64 length = recode_LF_to_NUL(line->data);
-
-        if (std::fwrite(line->data, 1, length, tube) < length)
+        unsigned long length = recode_LF_to_NUL(line->data);
+        if (fwrite(line->data, 1, length, tube) < length)
         {
-            std::exit(5);
+            exit(5);
         }
-
-        if (line->next && std::putc('\n', tube) == EOF)
+        if (line->next && putc('\n', tube) == EOF)
         {
-            std::exit(6);
+            exit(6);
         }
-
         line = line->next;
     }
-
-    std::fclose(tube);
+    fclose(tube);
 }
 
-//
-//  Execute the given command in a shell.
-//
+/* Execute the given command in a shell. */
 void
-execute_command(C_s8 *command)
+execute_command(const char *command)
 {
     PROFILE_FUNCTION;
-    //
-    //  The pipes through which text will be written and read.
-    //
-    s32 from_fd[2], to_fd[2];
-    //
-    //  Original and temporary handlers for SIGINT.
-    //
+    /* The pipes through which text will be written and read. */
+    int from_fd[2], to_fd[2];
+    /* Original and temporary handlers for SIGINT. */
     struct sigaction oldaction, newaction = {{0}};
-
-    s64   was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
-    s32   command_status, sender_status;
-    FILE *stream;
-
+    long             was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
+    int              command_status, sender_status;
+    FILE            *stream;
     should_pipe = (command[0] == '|');
-
-    //
-    //  Create a pipe to read the command's output from, and, if needed,
-    //  a pipe to feed the command's input through.
-    //
+    /* Create a pipe to read the command's output from, and, if needed,
+     * a pipe to feed the command's input through. */
     if (pipe(from_fd) == -1 || (should_pipe && pipe(to_fd) == -1))
     {
         statusline(ALERT, _("Could not create pipe: %s"), ERRNO_C_STR);
         return;
     }
-
-    //
-    //  Fork a child process to run the command in.
-    //
+    /* Fork a child process to run the command in. */
     if ((pid_of_command = fork()) == 0)
     {
-        const char *theshell = std::getenv("SHELL");
-
+        const char *theshell = getenv("SHELL");
         if (theshell == nullptr)
         {
-            theshell = const_cast<s8 *>("/bin/sh");
+            theshell = const_cast<char *>("/bin/sh");
         }
-
-        //
-        //  Child: close the unused read end of the output pipe.
-        //
+        /* Child: close the unused read end of the output pipe. */
         close(from_fd[0]);
-
-        //
-        //  Connect the write end of the output pipe to the process' output streams.
-        //
+        /* Connect the write end of the output pipe to the process' output streams. */
         if (dup2(from_fd[1], STDOUT_FILENO) < 0)
         {
-            std::exit(3);
+            exit(3);
         }
         if (dup2(from_fd[1], STDERR_FILENO) < 0)
         {
-            std::exit(4);
+            exit(4);
         }
-
-        //
-        //  If the parent sends text,
-        //  connect the read end of the feeding pipe to the child's input stream.
-        //
+        /* If the parent sends text, connect the read end of the feeding pipe to the child's input stream. */
         if (should_pipe)
         {
             if (dup2(to_fd[0], STDIN_FILENO) < 0)
             {
-                std::exit(5);
+                exit(5);
             }
             close(from_fd[1]);
             close(to_fd[1]);
         }
-
-        //
-        //  Run the given command inside the preferred shell.
-        //
+        /* Run the given command inside the preferred shell. */
         execl(theshell, tail(theshell), "-c", should_pipe ? &command[1] : command, nullptr);
-
-        //
-        //  If the exec call returns, there was an error.
-        //
-        std::exit(6);
+        /* If the exec call returns, there was an error. */
+        exit(6);
     }
-
-    //
-    //  Parent: close the unused write end of the pipe.
-    //
+    /* Parent: close the unused write end of the pipe. */
     close(from_fd[1]);
-
     if (pid_of_command == -1)
     {
         statusline(ALERT, _("Could not fork: %s"), ERRNO_C_STR);
         close(from_fd[0]);
         return;
     }
-
     statusbar(_("Executing..."));
-
-    //
-    //  If the command starts with "|",
-    //  pipe buffer or region to the command.
-    //
+    /* If the command starts with "|", pipe buffer or region to the command. */
     if (should_pipe)
     {
         linestruct *was_cutbuffer = cutbuffer;
-
-        bool whole_buffer = false;
-
-        cutbuffer = nullptr;
-
+        bool        whole_buffer  = false;
+        cutbuffer                 = nullptr;
         if ISSET (MULTIBUFFER)
         {
             openfile = openfile->prev;
@@ -1461,9 +1060,7 @@ execute_command(C_s8 *command)
         }
         else
         {
-            //
-            //  TRANSLATORS: This one goes with Undid/Redid messages.
-            //
+            /* TRANSLATORS: This one goes with Undid/Redid messages. */
             add_undo(COUPLE_BEGIN, N_("filtering"));
             if (openfile->mark == nullptr)
             {
@@ -1478,24 +1075,18 @@ execute_command(C_s8 *command)
             }
             update_undo(CUT);
         }
-
-        //
-        //   Create a separate process for piping the data to the command.
-        //
+        /* Create a separate process for piping the data to the command. */
         if ((pid_of_sender = fork()) == 0)
         {
             send_data(whole_buffer ? openfile->filetop : cutbuffer, to_fd[1]);
-            std::exit(SUCCESS);
+            exit(0);
         }
-
         if (pid_of_sender == -1)
         {
             statusline(ALERT, _("Could not fork: %s"), ERRNO_C_STR);
         }
-
         close(to_fd[0]);
         close(to_fd[1]);
-
         if ISSET (MULTIBUFFER)
         {
             openfile = openfile->next;
@@ -1503,20 +1094,13 @@ execute_command(C_s8 *command)
         free_lines(cutbuffer);
         cutbuffer = was_cutbuffer;
     }
-
-    //
-    //  Re-enable interpretation of the special control keys so that we get
-    //  SIGINT when Ctrl-C is pressed.
-    //
+    /* Re-enable interpretation of the special control keys so that we get
+     * SIGINT when Ctrl-C is pressed. */
     enable_kb_interrupt();
-
-    //
-    //  Set up a signal handler so that ^C will terminate the forked process.
-    //
+    /* Set up a signal handler so that ^C will terminate the forked process. */
     newaction.sa_handler = cancel_the_command;
     newaction.sa_flags   = 0;
     sigaction(SIGINT, &newaction, &oldaction);
-
     stream = fdopen(from_fd[0], "rb");
     if (stream == nullptr)
     {
@@ -1526,7 +1110,6 @@ execute_command(C_s8 *command)
     {
         read_file(stream, 0, "pipe", true);
     }
-
     if (should_pipe && !ISSET(MULTIBUFFER))
     {
         if (was_lineno)
@@ -1535,19 +1118,13 @@ execute_command(C_s8 *command)
         }
         add_undo(COUPLE_END, N_("filtering"));
     }
-
-    //
-    //  Wait for the external command (and possibly data sender) to terminate.
-    //
+    /* Wait for the external command (and possibly data sender) to terminate. */
     waitpid(pid_of_command, &command_status, 0);
     if (should_pipe && pid_of_sender > 0)
     {
         waitpid(pid_of_sender, &sender_status, 0);
     }
-
-    //
-    //  If the command failed, show what the shell reported.
-    //
+    /* If the command failed, show what the shell reported. */
     if (WIFEXITED(command_status) == 0 || WEXITSTATUS(command_status))
     {
         statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error: %s"),
@@ -1559,45 +1136,29 @@ execute_command(C_s8 *command)
     {
         statusline(ALERT, _("Piping failed"));
     }
-
-    //
-    //  If there was an error,
-    //  undo and discard what the command did.
-    //
+    /* If there was an error, undo and discard what the command did. */
     if (lastmessage == ALERT)
     {
         do_undo();
         discard_until(openfile->current_undo);
     }
-
-    //
-    //  Restore the original handler for SIGINT.
-    //
+    /* Restore the original handler for SIGINT. */
     sigaction(SIGINT, &oldaction, nullptr);
-
-    //
-    //  Restore the terminal to its desired state, and disable
-    //  interpretation of the special control keys again.
-    //
+    /* Restore the terminal to its desired state, and disable
+     * interpretation of the special control keys again. */
     terminal_init();
 }
 
-//
-//  Insert a file into the current buffer (or into a new buffer).
-//  But when execute is 'true',
-//  run a command in the shell and insert its output into the buffer,
-//  or just run one of the tools listed in the help lines.
-//
+/* Insert a file into the current buffer (or into a new buffer).
+ * But when execute is 'true', run a command in the shell and insert its output into the buffer,
+ * or just run one of the tools listed in the help lines. */
 void
 insert_a_file_or(bool execute)
 {
-    s32   response;
-    C_s8 *msg;
-
-    //
-    //  The last answer the user typed at the status-bar prompt.
-    //
-    s8 *given = copy_of("");
+    int         response;
+    const char *msg;
+    /* The last answer the user typed at the status-bar prompt. */
+    char *given = copy_of("");
 
     bool was_multibuffer = ISSET(MULTIBUFFER);
     //
@@ -1665,8 +1226,8 @@ insert_a_file_or(bool execute)
         }
         else
         {
-            s64 was_current_lineno = openfile->current->lineno;
-            u64 was_current_x      = openfile->current_x;
+            long          was_current_lineno = openfile->current->lineno;
+            unsigned long was_current_x      = openfile->current_x;
 
             functionptrtype function = func_from_key(response);
             given                    = mallocstrcpy(given, answer);
@@ -1709,7 +1270,7 @@ insert_a_file_or(bool execute)
             }
             if (function == to_files)
             {
-                s8 *chosen = browse_in(answer);
+                char *chosen = browse_in(answer);
 
                 //
                 //  If no file was chosen, go back to the prompt.
@@ -1782,8 +1343,8 @@ insert_a_file_or(bool execute)
             {
                 if ISSET (POSITIONLOG)
                 {
-                    s64 priorline = 0;
-                    s64 priorcol  = 0;
+                    long priorline = 0;
+                    long priorcol  = 0;
 
                     if (!execute)
                     {
@@ -1855,12 +1416,12 @@ do_execute()
 //  For the given bare path (or path plus filename), return the canonical,
 //  absolute path (plus filename) when the path exists, and NULL when not.
 //
-s8 *
-get_full_path(C_s8 *origpath)
+char *
+get_full_path(const char *origpath)
 {
     PROFILE_FUNCTION;
 
-    s8 *untilded, *target, *slash;
+    char *untilded, *target, *slash;
 
     struct stat fileinfo;
 
@@ -1888,7 +1449,7 @@ get_full_path(C_s8 *origpath)
         //
         if (target)
         {
-            target = static_cast<s8 *>(nrealloc(target, constexpr_strlen(target) + constexpr_strlen(slash + 1) + 1));
+            target = static_cast<char *>(nrealloc(target, constexpr_strlen(target) + constexpr_strlen(slash + 1) + 1));
             constexpr_strcat(target, slash + 1);
         }
     }
@@ -1898,7 +1459,7 @@ get_full_path(C_s8 *origpath)
     //
     if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode))
     {
-        target = static_cast<s8 *>(nrealloc(target, constexpr_strlen(target) + 2));
+        target = static_cast<char *>(nrealloc(target, constexpr_strlen(target) + 2));
         constexpr_strcat(target, "/");
     }
 
@@ -1911,10 +1472,10 @@ get_full_path(C_s8 *origpath)
 //  Check whether the given path refers to a directory that is writable.
 //  Return the absolute form of the path on success, and NULL on failure.
 //
-s8 *
-check_writable_directory(C_s8 *path)
+char *
+check_writable_directory(const char *path)
 {
-    s8 *full_path = get_full_path(path);
+    char *full_path = get_full_path(path);
 
     if (full_path == nullptr)
     {
@@ -1935,14 +1496,14 @@ check_writable_directory(C_s8 *path)
 //  On success, return the malloc()ed filename, plus the corresponding
 //  file stream opened in read-write mode.  On error, return NULL.
 //
-s8 *
+char *
 safe_tempfile(FILE **stream)
 {
-    C_s8 *env_dir = getenv("TMPDIR");
+    const char *env_dir = getenv("TMPDIR");
 
-    s8 *tempdir = nullptr, *tempfile_name = nullptr;
-    s8 *extension;
-    s32 descriptor;
+    char *tempdir = nullptr, *tempfile_name = nullptr;
+    char *extension;
+    int   descriptor;
 
     //
     //  Get the absolute path for the first directory among $TMPDIR
@@ -1970,7 +1531,8 @@ safe_tempfile(FILE **stream)
         extension = openfile->filename + constexpr_strlen(openfile->filename);
     }
 
-    tempfile_name = static_cast<s8 *>(nrealloc(tempdir, constexpr_strlen(tempdir) + 12 + constexpr_strlen(extension)));
+    tempfile_name =
+        static_cast<char *>(nrealloc(tempdir, constexpr_strlen(tempdir) + 12 + constexpr_strlen(extension)));
     constexpr_strcat(tempfile_name, "nano.XXXXXX");
     constexpr_strcat(tempfile_name, extension);
 
@@ -1997,7 +1559,7 @@ safe_tempfile(FILE **stream)
 void
 init_operating_dir()
 {
-    s8 *target = get_full_path(operating_dir);
+    char *target = get_full_path(operating_dir);
 
     //
     //  If the operating directory is inaccessible, fail.
@@ -2008,7 +1570,7 @@ init_operating_dir()
     }
 
     std::free(operating_dir);
-    operating_dir = static_cast<s8 *>(nrealloc(target, constexpr_strlen(target) + 1));
+    operating_dir = static_cast<char *>(nrealloc(target, constexpr_strlen(target) + 1));
 }
 
 //
@@ -2018,10 +1580,10 @@ init_operating_dir()
 //  are considered to be inside, so that tab completion will work.
 //
 bool
-outside_of_confinement(C_s8 *somepath, bool tabbing)
+outside_of_confinement(const char *somepath, bool tabbing)
 {
-    bool is_inside, begins_to_be;
-    s8  *fullpath;
+    bool  is_inside, begins_to_be;
+    char *fullpath;
 
     //
     //  If no operating directory is set, there is nothing to check.
@@ -2061,7 +1623,7 @@ outside_of_confinement(C_s8 *somepath, bool tabbing)
 void
 init_backup_dir()
 {
-    s8 *target = get_full_path(backup_dir);
+    char *target = get_full_path(backup_dir);
 
     //
     //  If we can't get an absolute path (which means it doesn't exist or
@@ -2073,7 +1635,7 @@ init_backup_dir()
     }
 
     std::free(backup_dir);
-    backup_dir = static_cast<s8 *>(nrealloc(target, strlen(target) + 1));
+    backup_dir = static_cast<char *>(nrealloc(target, strlen(target) + 1));
 }
 
 //
@@ -2082,13 +1644,13 @@ init_backup_dir()
 //  read error, and a positive number on write error.  File inn is always
 //  closed by this function, out is closed  only if close_out is true.
 //
-s32
+int
 copy_file(FILE *inn, FILE *out, bool close_out)
 {
-    s32 retval = 0;
-    s8  buf[BUFSIZ];
-    u64 charsread;
-    s32 (*flush_out_fnc)(FILE *) = (close_out) ? std::fclose : std::fflush;
+    int           retval = 0;
+    char          buf[BUFSIZ];
+    unsigned long charsread;
+    int (*flush_out_fnc)(FILE *) = (close_out) ? std::fclose : std::fflush;
 
     do
     {
@@ -2128,14 +1690,14 @@ copy_file(FILE *inn, FILE *out, bool close_out)
 //  Return TRUE if the save can proceed.
 //
 bool
-make_backup_of(s8 *realname)
+make_backup_of(char *realname)
 {
     FILE           *original = nullptr, *backup_file = nullptr;
     static timespec filetime[2];
-    s32             creation_flags, descriptor;
+    int             creation_flags, descriptor;
     bool            second_attempt = false;
-    s8             *backupname     = nullptr;
-    s32             verdict        = 0;
+    char           *backupname     = nullptr;
+    int             verdict        = 0;
 
     //
     //  Remember the original file's access and modification times.
@@ -2153,12 +1715,12 @@ make_backup_of(s8 *realname)
     //
     if (backup_dir == nullptr)
     {
-        backupname = static_cast<s8 *>(nmalloc(constexpr_strlen(realname) + 2));
+        backupname = static_cast<char *>(nmalloc(constexpr_strlen(realname) + 2));
         std::sprintf(backupname, "%s~", realname);
     }
     else
     {
-        s8 *thename = get_full_path(realname);
+        char *thename = get_full_path(realname);
 
         //
         //  If we have a valid absolute path, replace each slash
@@ -2167,7 +1729,7 @@ make_backup_of(s8 *realname)
         //
         if (thename)
         {
-            for (s32 i = 0; thename[i] != '\0'; i++)
+            for (int i = 0; thename[i] != '\0'; i++)
             {
                 if (thename[i] == '/')
                 {
@@ -2180,7 +1742,7 @@ make_backup_of(s8 *realname)
             thename = copy_of(tail(realname));
         }
 
-        backupname = static_cast<s8 *>(nmalloc(constexpr_strlen(backup_dir) + constexpr_strlen(thename) + 1));
+        backupname = static_cast<char *>(nmalloc(constexpr_strlen(backup_dir) + constexpr_strlen(thename) + 1));
         std::sprintf(backupname, "%s%s", backup_dir, thename);
         std::free(thename);
 
@@ -2306,7 +1868,7 @@ problem:
         warn_and_briefly_pause(_("Trying again in your home directory"));
         currmenu = MMOST;
 
-        backupname = static_cast<s8 *>(nmalloc(constexpr_strlen(homedir) + constexpr_strlen(tail(realname)) + 9));
+        backupname = static_cast<char *>(nmalloc(constexpr_strlen(homedir) + constexpr_strlen(tail(realname)) + 9));
         std::sprintf(backupname, "%s/%s~XXXXXX", homedir, tail(realname));
 
         descriptor  = mkstemp(backupname);
@@ -2362,7 +1924,7 @@ failure:
 //  TODO : ( write_file ) - FIX IT.
 //
 bool
-write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate)
+write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate)
 {
     bool is_existing_file;
     /* Becomes TRUE when the file is non-temporary and exists. */
@@ -2522,7 +2084,7 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
 
     while (true)
     {
-        u64 data_len, wrote;
+        unsigned long data_len, wrote;
 
         //
         //  Decode LFs as the NULs that they are, before writing to disk.
@@ -2594,7 +2156,7 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
             goto cleanup_and_exit;
         }
 
-        s32 verdict = copy_file(source, thefile, false);
+        int verdict = copy_file(source, thefile, false);
         if (verdict < 0)
         {
             statusline(ALERT, _("Error reading temp file: %s"), strerror(errno));
@@ -2686,7 +2248,7 @@ write_file(C_s8 *name, FILE *thefile, bool normal, kind_of_writing_type method, 
                 openfile->lock_filename = do_lockfile(realname, FALSE);
             }
             openfile->filename = mallocstrcpy(openfile->filename, realname);
-            C_s8 *oldname, *newname;
+            const char *oldname, *newname;
 
             oldname = openfile->syntax ? openfile->syntax->name : "";
             find_and_prime_applicable_syntax();
@@ -2789,7 +2351,7 @@ write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writin
 //  @param withprompt
 //  - ( true ) - ask for (confirmation of) the filename.
 //  - ( false ) - do not ask for a the filename.
-//  @return s32 (int)
+//  @return int (int)
 //  - ( 0 ) - if the operation is cancelled.
 //  - ( 1 ) - if the buffer is saved.
 //  - ( 2 ) - if the buffer is discarded.
@@ -3043,26 +2605,20 @@ write_it_out(bool exiting, bool withprompt)
     }
 }
 
-//
-//  Write the current buffer to disk, or discard it.
-//
+/* Write the current buffer to disk, or discard it. */
 void
-do_writeout()
+do_writeout(void)
 {
-    //
-    //  If the user chose to discard the buffer, close it.
-    //
+    /* If the user chose to discard the buffer, close it. */
     if (write_it_out(false, true) == 2)
     {
         close_and_go();
     }
 }
 
-//
-//  If it has a name, write the current buffer to disk without prompting.
-//
+/* If it has a name, write the current buffer to disk without prompting. */
 void
-do_savefile()
+do_savefile(void)
 {
     if (write_it_out(false, false) == 2)
     {
@@ -3116,13 +2672,13 @@ real_dir_from_tilde(const char *path)
 //  Our sort routine for file listings.  Sort alphabetically and
 //  case-insensitively, and sort directories before filenames.
 //
-s32
+int
 diralphasort(const void *va, const void *vb)
 {
     struct stat fileinfo;
 
-    const s8 *a = *static_cast<const s8 *const *>(va);
-    const s8 *b = *static_cast<const s8 *const *>(vb);
+    const char *a = *static_cast<const char *const *>(va);
+    const char *b = *static_cast<const char *const *>(vb);
 
     bool aisdir = stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode);
     bool bisdir = stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode);
@@ -3136,7 +2692,7 @@ diralphasort(const void *va, const void *vb)
         return 1;
     }
 
-    s32 difference = mbstrcasecmp(a, b);
+    int difference = mbstrcasecmp(a, b);
 
     //
     //  If two names are equivalent when ignoring case, compare them bytewise.
@@ -3155,9 +2711,9 @@ diralphasort(const void *va, const void *vb)
 //  Return 'true' when the given path is a directory.
 //
 bool
-is_dir(C_s8 *const path)
+is_dir(const char *const path)
 {
-    s8         *thepath = real_dir_from_tilde(path);
+    char       *thepath = real_dir_from_tilde(path);
     struct stat fileinfo;
     bool        retval;
 
@@ -3170,10 +2726,10 @@ is_dir(C_s8 *const path)
 //
 //  Try to complete the given fragment of given length to a username.
 //
-s8 **
-username_completion(C_s8 *morsel, u64 length, u64 &num_matches)
+char **
+username_completion(const char *morsel, unsigned long length, unsigned long &num_matches)
 {
-    s8 **matches = nullptr;
+    char **matches = nullptr;
 
     const passwd *userdata;
 
@@ -3193,8 +2749,8 @@ username_completion(C_s8 *morsel, u64 length, u64 &num_matches)
                 continue;
             }
 
-            matches              = static_cast<s8 **>(nrealloc(matches, (num_matches + 1) * sizeof(s8 *)));
-            matches[num_matches] = static_cast<s8 *>(nmalloc(constexpr_strlen(userdata->pw_name) + 2));
+            matches              = static_cast<char **>(nrealloc(matches, (num_matches + 1) * sizeof(char *)));
+            matches[num_matches] = static_cast<char *>(nmalloc(constexpr_strlen(userdata->pw_name) + 2));
             std::sprintf(matches[num_matches], "~%s", userdata->pw_name);
             ++num_matches;
         }
@@ -3223,15 +2779,15 @@ username_completion(C_s8 *morsel, u64 length, u64 &num_matches)
 //
 //  Try to complete the given fragment to an existing filename.
 //
-s8 **
-filename_completion(C_s8 *morsel, u64 &num_matches)
+char **
+filename_completion(const char *morsel, unsigned long &num_matches)
 {
-    s8  *dirname = copy_of(morsel);
-    s8  *slash, *filename;
-    u64  filenamelen;
-    s8  *fullname = nullptr;
-    s8 **matches  = nullptr;
-    DIR *dir;
+    char         *dirname = copy_of(morsel);
+    char         *slash, *filename;
+    unsigned long filenamelen;
+    char         *fullname = nullptr;
+    char        **matches  = nullptr;
+    DIR          *dir;
 
     const dirent *entry;
 
@@ -3242,7 +2798,7 @@ filename_completion(C_s8 *morsel, u64 &num_matches)
     slash = constexpr_strrchr(dirname, '/');
     if (slash != nullptr)
     {
-        s8 *wasdirname = dirname;
+        char *wasdirname = dirname;
 
         filename = copy_of(++slash);
         //
@@ -3255,8 +2811,8 @@ filename_completion(C_s8 *morsel, u64 &num_matches)
         //
         if (dirname[0] != '/')
         {
-            dirname =
-                static_cast<s8 *>(nrealloc(dirname, constexpr_strlen(present_path) + constexpr_strlen(wasdirname) + 1));
+            dirname = static_cast<char *>(
+                nrealloc(dirname, constexpr_strlen(present_path) + constexpr_strlen(wasdirname) + 1));
             std::sprintf(dirname, "%s%s", present_path, wasdirname);
         }
         std::free(wasdirname);
@@ -3288,8 +2844,8 @@ filename_completion(C_s8 *morsel, u64 &num_matches)
         if (constexpr_strncmp(entry->d_name, filename, filenamelen) == 0 && constexpr_strcmp(entry->d_name, ".") != 0 &&
             constexpr_strcmp(entry->d_name, "..") != 0)
         {
-            fullname =
-                static_cast<s8 *>(nrealloc(fullname, constexpr_strlen(dirname) + constexpr_strlen(entry->d_name) + 1));
+            fullname = static_cast<char *>(
+                nrealloc(fullname, constexpr_strlen(dirname) + constexpr_strlen(entry->d_name) + 1));
 
             std::sprintf(fullname, "%s%s", dirname, entry->d_name);
 
@@ -3302,7 +2858,7 @@ filename_completion(C_s8 *morsel, u64 &num_matches)
                 continue;
             }
 
-            matches              = static_cast<s8 **>(nrealloc(matches, (num_matches + 1) * sizeof(s8 *)));
+            matches              = static_cast<char **>(nrealloc(matches, (num_matches + 1) * sizeof(char *)));
             matches[num_matches] = copy_of(entry->d_name);
             ++num_matches;
         }
@@ -3320,11 +2876,11 @@ filename_completion(C_s8 *morsel, u64 &num_matches)
 //  Do tab completion.  'place' is the position of the status-bar cursor, and
 //  'refresh_func' is the function to be called to refresh the edit window.
 //
-s8 *
-input_tab(s8 *morsel, u64 *place, CFuncPtr refresh_func, bool &listed)
+char *
+input_tab(char *morsel, unsigned long *place, CFuncPtr refresh_func, bool &listed)
 {
-    u64  num_matches = 0;
-    s8 **matches     = nullptr;
+    unsigned long num_matches = 0;
+    char        **matches     = nullptr;
 
     //
     //  If the cursor is not at the end of the fragment, do nothing.
@@ -3367,13 +2923,13 @@ input_tab(s8 *morsel, u64 *place, CFuncPtr refresh_func, bool &listed)
         return morsel;
     }
 
-    C_s8 *lastslash = revstrstr(morsel, "/", morsel + *place);
+    const char *lastslash = revstrstr(morsel, "/", morsel + *place);
 
-    u64 length_of_path = (lastslash == nullptr) ? 0 : lastslash - morsel + 1;
-    u64 match, common_len = 0;
-    s8 *shared, *glued;
-    s8  char1[MAXCHARLEN], char2[MAXCHARLEN];
-    s32 len1, len2;
+    unsigned long length_of_path = (lastslash == nullptr) ? 0 : lastslash - morsel + 1;
+    unsigned long match, common_len = 0;
+    char         *shared, *glued;
+    char          char1[MAXCHARLEN], char2[MAXCHARLEN];
+    int           len1, len2;
 
     //
     //  Determine the number of characters that all matches have in common.
@@ -3411,7 +2967,7 @@ input_tab(s8 *morsel, u64 *place, CFuncPtr refresh_func, bool &listed)
     //
     //  Cover also the case of the user specifying a relative path.
     //
-    glued = static_cast<s8 *>(nmalloc(constexpr_strlen(present_path) + common_len + 1));
+    glued = static_cast<char *>(nmalloc(constexpr_strlen(present_path) + common_len + 1));
     std::sprintf(glued, "%s%s", present_path, shared);
 
     if (num_matches == 1 && (is_dir(shared) || is_dir(glued)))
@@ -3424,7 +2980,7 @@ input_tab(s8 *morsel, u64 *place, CFuncPtr refresh_func, bool &listed)
     //
     if (common_len != *place)
     {
-        morsel = static_cast<s8 *>(nrealloc(morsel, common_len + 1));
+        morsel = static_cast<char *>(nrealloc(morsel, common_len + 1));
         constexpr_strncpy(morsel, shared, common_len);
         morsel[common_len] = '\0';
         *place             = common_len;
@@ -3434,29 +2990,25 @@ input_tab(s8 *morsel, u64 *place, CFuncPtr refresh_func, bool &listed)
         beep();
     }
 
-    //
-    //  If there is more than one possible completion, show a sorted list.
-    //
+    /* If there is more than one possible completion, show a sorted list. */
     if (num_matches > 1)
     {
-        s32 lastrow      = editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
-        u64 longest_name = 0;
-        u64 nrows, ncols;
-        s32 row;
-
+        int           lastrow      = editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
+        unsigned long longest_name = 0;
+        unsigned long nrows, ncols;
+        int           row;
         if (!listed)
         {
             beep();
         }
-
-        std::qsort(matches, num_matches, sizeof(s8 *), diralphasort);
+        qsort(matches, num_matches, sizeof(char *), diralphasort);
 
         //
         //  Find the length of the longest name among the matches.
         //
         for (match = 0; match < num_matches; match++)
         {
-            u64 namelen = breadth(matches[match]);
+            unsigned long namelen = breadth(matches[match]);
 
             if (namelen > longest_name)
             {
@@ -3489,7 +3041,7 @@ input_tab(s8 *morsel, u64 *place, CFuncPtr refresh_func, bool &listed)
         //
         for (match = 0; match < num_matches; match++)
         {
-            s8 *disp;
+            char *disp;
 
             wmove(midwin, row, (longest_name + 2) * (match % ncols));
 

@@ -85,75 +85,43 @@ static const rcoption rcopts[] = {
     {        "functioncolor",                0},
     {                   NULL,                0}
 };
-//
-//  The line number of the last encountered error.
-//
-static size_t lineno = 0;
-//
-//  The path to the rcfile we're parsing. */
-//
+/* The line number of the last encountered error. */
+static unsigned long lineno = 0;
+/* The path to the rcfile we're parsing. */
 static char *nanorc = nullptr;
-//
-//  Whether we're allowed to add to the last syntax.  When a file ends,
-//  or when a new syntax command is seen, this bool becomes 'false'.
-//
+/* Whether we're allowed to add to the last syntax.  When a file ends,
+ * or when a new syntax command is seen, this bool becomes 'false'. */
 static bool opensyntax = false;
-//
-//  The syntax that is currently being parsed.
-//
+/* The syntax that is currently being parsed. */
 static syntaxtype *live_syntax;
-//
-//  Whether a syntax definition contains any color commands.
-//
+/* Whether a syntax definition contains any color commands. */
 static bool seen_color_command = false;
-//
-//  The end of the color list for the current syntax.
-//
+/* The end of the color list for the current syntax. */
 static colortype *lastcolor = nullptr;
-//
-//  Beginning and end of a list of errors in rcfiles, if any.
-//
+/* Beginning and end of a list of errors in rcfiles, if any. */
 static linestruct *errors_head = nullptr;
 static linestruct *errors_tail = nullptr;
 
-//
-//  Send the gathered error messages (if any) to the terminal.
-//
+/* Send the gathered error messages (if any) to the terminal. */
 void
 display_rcfile_errors()
 {
     for (linestruct *error = errors_head; error != nullptr; error = error->next)
     {
-        std::fprintf(stderr, "%s\n", error->data);
+        fprintf(stderr, "%s\n", error->data);
     }
 }
 
 static constexpr unsigned short MAXSIZE = (PATH_MAX + 200);
-//
-/// @name @c jot_error
-///
-/// @brief
-///  -  Store the given error message in a linked list, to be printed upon exit.
-///
-/// @param msg
-///  -  The error message, possibly with @c printf-style format specifiers.
-///
-/// @param ...
-///  -  The arguments to be inserted into the format specifiers.
-///
-/// @returns @c void
-//
+/* Store the given error message in a linked list, to be printed upon exit. */
 void
 jot_error(const char *msg, ...)
 {
     PROFILE_FUNCTION;
-
     linestruct *error = make_new_node(errors_tail);
     va_list     ap;
-
-    char textbuf[MAXSIZE];
-    int  length = 0;
-
+    char        textbuf[MAXSIZE];
+    int         length = 0;
     if (errors_head == nullptr)
     {
         errors_head = error;
@@ -163,12 +131,11 @@ jot_error(const char *msg, ...)
         errors_tail->next = error;
     }
     errors_tail = error;
-
     if (startup_problem == nullptr)
     {
         if (nanorc != nullptr)
         {
-            std::snprintf(textbuf, MAXSIZE, _("Mistakes in '%s'"), nanorc);
+            snprintf(textbuf, MAXSIZE, _("Mistakes in '%s'"), nanorc);
             startup_problem = copy_of(textbuf);
         }
         else
@@ -178,24 +145,19 @@ jot_error(const char *msg, ...)
     }
     if (lineno > 0)
     {
-        length = std::snprintf(textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanorc, lineno);
+        length = snprintf(textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanorc, lineno);
     }
     va_start(ap, msg);
-    length += std::vsnprintf(textbuf + length, MAXSIZE - length, _(msg), ap);
+    length += vsnprintf(textbuf + length, MAXSIZE - length, _(msg), ap);
     va_end(ap);
-
-    error->data = static_cast<char *>(nmalloc(length + 1));
-    std::sprintf(error->data, "%s", textbuf);
+    error->data = (char *)nmalloc(length + 1);
+    sprintf(error->data, "%s", textbuf);
 }
 
-//
-//  - Staticly define the number of elements in the map as a constexpr.
-//
+/* Staticly define the number of elements in the map as a constexpr. */
 static constexpr unsigned char FUNCTION_MAP_COUNT = 104;
-//
-//  - Define a map of 'string_view`s' to 'functionptrtype`s'.
-//
-CONSTEXPR_MAP<STRING_VIEW, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {
+/* Define a map of 'string_view`s' to 'functionptrtype`s'. */
+CONSTEXPR_MAP<std::string_view, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {
     {{"cancel", do_cancel},
      {"help", do_help},
      {"exit", do_exit},
@@ -302,7 +264,7 @@ CONSTEXPR_MAP<STRING_VIEW, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {
      {"lastfile", to_last_file}}
 };
 constexpr auto
-retriveScFromStr(STRING_VIEW str)
+retriveScFromStr(std::string_view str)
 {
     for (const auto &[key, value] : keyMap)
     {
@@ -314,93 +276,73 @@ retriveScFromStr(STRING_VIEW str)
     return (functionptrtype) nullptr;
 }
 
-//
-//  Interpret a function string given in the rc file, and return a
-//  shortcut record with the corresponding function filled in.
-//
-//  TODO : Use a map instead of strcmp
-//
+/* Interpret a function string given in the rc file, and return a
+ * shortcut record with the corresponding function filled in. */
 keystruct *
 strtosc(const char *input)
 {
     PROFILE_FUNCTION;
-
-    keystruct *s = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
-
-    s->toggle = 0;
-
-    const auto it = retriveScFromStr(input);
+    keystruct *s             = (keystruct *)nmalloc(sizeof(keystruct));
+    s->toggle                = 0;
+    const functionptrtype it = retriveScFromStr(input);
     if (it != nullptr)
     {
         s->func = it;
     }
     else
     {
-        s->func           = do_toggle;
-        const auto toggle = retriveToggleOptionFromStr(input);
+        s->func                   = do_toggle;
+        const unsigned int toggle = retriveToggleOptionFromStr(input);
         if (toggle)
         {
             s->toggle = toggle;
         }
         else
         {
-            std::free(s);
+            free(s);
             return nullptr;
         }
     }
     return s;
 }
 
-//
-//  Parse the next word from the string, null-terminate it,
-//  and return a pointer to the first character after the null terminator.
-//  The returned pointer will point to '\0' if we hit the end of the line.
-//
+/* Parse the next word from the string, null-terminate it,
+ * and return a pointer to the first character after the null terminator.
+ * The returned pointer will point to '\0' if we hit the end of the line. */
 char *
 parse_next_word(char *ptr)
 {
     PROFILE_FUNCTION;
-
-    while (!std::isblank(static_cast<unsigned char>(*ptr)) && *ptr != '\0')
+    while (!isblank((unsigned char)*ptr) && *ptr != '\0')
     {
         ptr++;
     }
-
     if (*ptr == '\0')
     {
         return ptr;
     }
-
-    //
-    //  Null-terminate and advance ptr.
-    //
+    /* Null-terminate and advance ptr. */
     *ptr++ = '\0';
-
-    while (std::isblank(static_cast<unsigned char>(*ptr)))
+    while (isblank((unsigned char)*ptr))
     {
         ptr++;
     }
-
     return ptr;
 }
 
-//
-//  Parse an argument, with optional quotes, after a keyword that takes
-//  one.  If the next word starts with a ", we say that it ends with the
-//  last " of the line.  Otherwise, we interpret it as usual, so that the
-//  arguments can contain "'s too.
-//
+/* Parse an argument, with optional quotes, after a keyword that takes
+ * one.  If the next word starts with a ", we say that it ends with the
+ * last " of the line.  Otherwise, we interpret it as usual, so that the
+ * arguments can contain "'s too. */
 char *
 parse_argument(char *ptr)
 {
     const char *ptr_save   = ptr;
     char       *last_quote = nullptr;
-
     if (*ptr != '"')
     {
         return parse_next_word(ptr);
     }
-
     while (*ptr != '\0')
     {
         if (*++ptr == '"')
@@ -408,103 +350,77 @@ parse_argument(char *ptr)
             last_quote = ptr;
         }
     }
-
     if (last_quote == nullptr)
     {
         jot_error(N_("Argument '%s' has an unterminated \""), ptr_save);
         return nullptr;
     }
-
     *last_quote = '\0';
     ptr         = last_quote + 1;
-
-    while (std::isblank(static_cast<unsigned char>(*ptr)))
+    while (isblank((unsigned char)*ptr))
     {
         ptr++;
     }
-
     return ptr;
 }
 
-//
-//  Advance over one regular expression in the line starting at ptr,
-//  null-terminate it, and return a pointer to the succeeding text.
-//
+/* Advance over one regular expression in the line starting at ptr,
+ * null-terminate it, and return a pointer to the succeeding text. */
 char *
 parse_next_regex(char *ptr)
 {
     char *starting_point = ptr;
-
     if (*(ptr - 1) != '"')
     {
         jot_error(N_("Regex strings must begin and end with a \" character"));
         return nullptr;
     }
-
-    //
-    //  Continue until the end of the line, or until a double quote followed
-    //  by end-of-line or a blank.
-    //
-    while (*ptr != '\0' &&
-           (*ptr != '"' || (ptr[1] != '\0' && !Mlib::Constexpr::Chars::isblank(static_cast<unsigned char>(ptr[1])))))
+    /* Continue until the end of the line, or until a double quote followed by end-of-line or a blank. */
+    while (*ptr != '\0' && (*ptr != '"' || (ptr[1] != '\0' && !constexpr_isblank((unsigned char)ptr[1]))))
     {
         ptr++;
     }
-
     if (*ptr == '\0')
     {
         jot_error(N_("Regex strings must begin and end with a \" character"));
         return nullptr;
     }
-
     if (ptr == starting_point)
     {
         jot_error(N_("Empty regex string"));
         return nullptr;
     }
-
-    //
-    //  Null-terminate the regex and skip until the next non-blank.
-    //
+    /* Null-terminate the regex and skip until the next non-blank. */
     *ptr++ = '\0';
-
-    while (Mlib::Constexpr::Chars::isblank(static_cast<unsigned char>(*ptr)))
+    while (constexpr_isblank((unsigned char)*ptr))
     {
         ptr++;
     }
-
     return ptr;
 }
 
-//
-//  Compile the given regular expression and store the result in packed (when
-//  this pointer is not NULL).  Return TRUE when the expression is valid.
-//
+/* Compile the given regular expression and store the result in packed (when
+ * this pointer is not NULL).  Return TRUE when the expression is valid. */
 bool
 compile(const char *expression, int rex_flags, regex_t *&packed)
 {
     PROFILE_FUNCTION;
-
-    regex_t *compiled = static_cast<regex_t *>(nmalloc(sizeof(regex_t)));
+    regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
     int      outcome  = regcomp(compiled, expression, rex_flags);
-
     if (outcome != 0)
     {
         unsigned long length  = regerror(outcome, compiled, nullptr, 0);
-        char         *message = static_cast<char *>(nmalloc(length));
-
+        char         *message = (char *)nmalloc(length);
         regerror(outcome, compiled, message, length);
         jot_error(N_("Bad regex \"%s\": %s"), expression, message);
-        std::free(message);
-
+        free(message);
         regfree(compiled);
-        std::free(compiled);
+        free(compiled);
     }
     else
     {
         packed = compiled;
     }
-
     return (outcome == 0);
 }
 
@@ -610,17 +526,14 @@ check_for_nonempty_syntax()
     if (opensyntax && !seen_color_command)
     {
         unsigned long current_lineno = lineno;
-
-        lineno = live_syntax->lineno;
+        lineno                       = live_syntax->lineno;
         jot_error(N_("Syntax \"%s\" has no color commands"), live_syntax->name);
         lineno = current_lineno;
     }
     opensyntax = false;
 }
 
-//
-//  Return TRUE when the given function is present in almost all menus.
-//
+/* Return TRUE when the given function is present in almost all menus. */
 bool
 is_universal(void (*func)())
 {
@@ -629,41 +542,29 @@ is_universal(void (*func)())
             func == paste_text || func == do_tab || func == do_enter || func == do_verbatim_input);
 }
 
-//
-//  Bind or unbind a key combo,
-//  to or from a function.
-//
+/* Bind or unbind a key combo, to or from a function. */
 void
 parse_binding(char *ptr, bool dobind)
 {
     PROFILE_FUNCTION;
-
-    char *keyptr  = nullptr;
-    char *keycopy = nullptr;
-    char *funcptr = nullptr;
-    char *menuptr = nullptr;
-
-    int keycode;
-    int menu;
-    int mask = 0;
-
+    char      *keyptr  = nullptr;
+    char      *keycopy = nullptr;
+    char      *funcptr = nullptr;
+    char      *menuptr = nullptr;
+    int        keycode;
+    int        menu;
+    int        mask  = 0;
     keystruct *newsc = nullptr;
-
     check_for_nonempty_syntax();
-
     if (*ptr == '\0')
     {
         jot_error(N_("Missing key name"));
         return;
     }
-
     keyptr  = ptr;
     ptr     = parse_next_word(ptr);
     keycopy = copy_of(keyptr);
-
-    //
-    //  Uppercase either the second or the first character of the key name.
-    //
+    /* Uppercase either the second or the first character of the key name. */
     if (keycopy[0] == '^')
     {
         keycopy[1] = toupper((unsigned char)keycopy[1]);
@@ -672,30 +573,22 @@ parse_binding(char *ptr, bool dobind)
     {
         keycopy[0] = toupper((unsigned char)keycopy[0]);
     }
-
-    //
-    //  Verify that the key name is not too short,
-    //  to allow the next call.
-    //
+    /* Verify that the key name is not too short, to allow the next call. */
     if (keycopy[1] == '\0' || (keycopy[0] == 'M' && keycopy[2] == '\0'))
     {
         jot_error(N_("Key name %s is invalid"), keycopy);
         goto free_things;
     }
-
     keycode = keycode_from_string(keycopy);
-
     if (keycode < 0)
     {
         jot_error(N_("Key name %s is invalid"), keycopy);
         goto free_things;
     }
-
     if (dobind)
     {
         funcptr = ptr;
         ptr     = parse_argument(ptr);
-
         if (funcptr[0] == '\0')
         {
             jot_error(N_("Must specify a function to bind the key to"));
@@ -706,36 +599,28 @@ parse_binding(char *ptr, bool dobind)
             goto free_things;
         }
     }
-
     menuptr = ptr;
     ptr     = parse_next_word(ptr);
-
     if (menuptr[0] == '\0')
     {
-        //
-        //  TRANSLATORS: Do not translate the word "all".
-        //
+        /* TRANSLATORS: Do not translate the word "all". */
         jot_error(N_("Must specify a menu (or \"all\") "
                      "in which to bind/unbind the key"));
         goto free_things;
     }
-
     menu = nameToMenu(menuptr);
     if (!menu)
     {
         jot_error(N_("Unknown menu: %s"), menuptr);
         goto free_things;
     }
-
     if (dobind)
     {
-        //
-        //  If the thing to bind starts with a double quote, it is a string,
-        //  otherwise it is the name of a function.
-        //
+        /* If the thing to bind starts with a double quote, it is a string,
+         * otherwise it is the name of a function. */
         if (*funcptr == '"')
         {
-            newsc            = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
+            newsc            = (keystruct *)nmalloc(sizeof(keystruct));
             newsc->func      = (functionptrtype)implant;
             newsc->expansion = copy_of(funcptr + 1);
             newsc->toggle    = 0;
@@ -744,17 +629,13 @@ parse_binding(char *ptr, bool dobind)
         {
             newsc = strtosc(funcptr);
         }
-
         if (newsc == nullptr)
         {
             jot_error(N_("Unknown function: %s"), funcptr);
             goto free_things;
         }
     }
-
-    //
-    //  Wipe the given shortcut from the given menu.
-    //
+    /* Wipe the given shortcut from the given menu. */
     for (keystruct *s = sclist; s != nullptr; s = s->next)
     {
         if ((s->menus & menu) && s->keycode == keycode)
@@ -762,20 +643,13 @@ parse_binding(char *ptr, bool dobind)
             s->menus &= ~menu;
         }
     }
-
-    //
-    //  When unbinding,
-    //  we are done now.
-    //
+    /* When unbinding, we are done now. */
     if (!dobind)
     {
         goto free_things;
     }
-
-    //
-    //  Limit the given menu to those where the function exists;
-    //  first handle five special cases, then the general case.
-    //
+    /* Limit the given menu to those where the function exists;
+     * first handle five special cases, then the general case. */
     if (is_universal(newsc->func))
     {
         menu &= MMOST | MBROWSER;
@@ -798,9 +672,7 @@ parse_binding(char *ptr, bool dobind)
     }
     else
     {
-        //
-        //  Tally up the menus where the function exists.
-        //
+        /* Tally up the menus where the function exists. */
         for (funcstruct *f = allfuncs; f != nullptr; f = f->next)
         {
             if (f->func == newsc->func)
@@ -808,10 +680,8 @@ parse_binding(char *ptr, bool dobind)
                 mask |= f->menus;
             }
         }
-
         menu &= mask;
     }
-
     if (!menu)
     {
         if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE))
@@ -820,14 +690,10 @@ parse_binding(char *ptr, bool dobind)
         }
         goto free_things;
     }
-
     newsc->menus   = menu;
     newsc->keystr  = keycopy;
     newsc->keycode = keycode;
-
-    //
-    //  Disallow rebinding <Esc> (^[).
-    //
+    /* Disallow rebinding <Esc> (^[). */
     if (newsc->keycode == ESC_CODE)
     {
         jot_error(N_("Keystroke %s may not be rebound"), keycopy);
@@ -836,11 +702,7 @@ parse_binding(char *ptr, bool dobind)
         free(newsc);
         return;
     }
-
-    //
-    //  If this is a toggle,
-    //  find and copy its sequence number.
-    //
+    /* If this is a toggle, find and copy its sequence number. */
     if (newsc->func == do_toggle)
     {
         for (keystruct *s = sclist; s != NULL; s = s->next)
@@ -855,9 +717,7 @@ parse_binding(char *ptr, bool dobind)
     {
         newsc->ordinal = 0;
     }
-    //
-    //  Add the new shortcut at the start of the list.
-    //
+    /* Add the new shortcut at the start of the list. */
     newsc->next = sclist;
     sclist      = newsc;
 }
@@ -867,24 +727,17 @@ bool
 is_good_file(char *file)
 {
     struct stat rcinfo;
-
-    //
-    //  First check that the file exists and is readable.
-    //
+    /* First check that the file exists and is readable. */
     if (access(file, R_OK) != 0)
     {
         return false;
     }
-
-    //
-    //  If the thing exists, it may be neither a directory nor a device.
-    //
+    /* If the thing exists, it may be neither a directory nor a device. */
     if (stat(file, &rcinfo) != -1 && (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode)))
     {
         jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
         return false;
     }
-
     return true;
 }
 
@@ -966,18 +819,11 @@ parse_includes(char *ptr)
         jot_error(N_("Path is too long"));
         return;
     }
-    //
-    //  Expand a tilde first,
-    //  then try to match the globbing pattern.
-    //
+    /* Expand a tilde first, then try to match the globbing pattern. */
     expanded = real_dir_from_tilde(pattern);
     result   = glob(expanded, GLOB_ERR | GLOB_NOCHECK, nullptr, &files);
-    //
-    //  If there are matches,
-    //  process each of them.
-    //  Otherwise,
-    //  only report an error if it's something other than zero matches.
-    //
+    /* If there are matches, process each of them.
+     * Otherwise, only report an error if it's something other than zero matches. */
     if (result == 0)
     {
         for (unsigned long i = 0; i < files.gl_pathc; ++i)
@@ -993,44 +839,17 @@ parse_includes(char *ptr)
     free(expanded);
 }
 
-//
-/// @name
-///  - @c closest_index_color
-///
-/// @brief
-///  -  Return the index of the color that is closest to the given RGB levels,
-///     assuming that the terminal uses the 6x6x6 color cube of xterm-256color.
-///     When red == green == blue, return an index in the xterm gray scale.
-///
-/// @param red ( short )
-///  -  The red color level.
-///
-/// @param green ( short )
-///  -  The green color level.
-///
-/// @param blue ( short )
-///  -  The blue color level.
-///
-/// @returns ( short )
-///  -  The index of the color that is closest to the given RGB levels.
-//
+/* Return the index of the color that is closest to the given RGB levels,
+ * assuming that the terminal uses the 6x6x6 color cube of xterm-256color.
+ * When red == green == blue, return an index in the xterm gray scale. */
 short
 closest_index_color(short red, short green, short blue)
 {
     PROFILE_FUNCTION;
-
-    //
-    //  Translation table,
-    //  from 16 intended color levels to 6 available levels.
-    //
+    /* Translation table, from 16 intended color levels to 6 available levels. */
     static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
-
-    //
-    //  Translation table,
-    //  from 14 intended gray levels to 24 available levels. */
-    //
+    /* Translation table, from 14 intended gray levels to 24 available levels. */
     static const short gray[] = {1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 21, 23};
-
     if (COLORS != 256)
     {
         return THE_DEFAULT;
@@ -1045,8 +864,8 @@ closest_index_color(short red, short green, short blue)
     }
 }
 
-static constexpr unsigned char                COLORCOUNT      = 34;
-CONSTEXPR_MAP<STRING_VIEW, short, COLORCOUNT> huesIndiecesMap = {
+static constexpr unsigned char                     COLORCOUNT      = 34;
+constexpr_map<std::string_view, short, COLORCOUNT> huesIndiecesMap = {
     {{"red", COLOR_RED},
      {"green", COLOR_GREEN},
      {"blue", COLOR_BLUE},
@@ -1106,23 +925,19 @@ color_to_short(const char *colorname, bool &vivid, bool &thick)
         vivid = false;
         thick = false;
     }
-
     if (colorname[0] == '#' && constexpr_strlen(colorname) == 4)
     {
         unsigned short r, g, b;
-
         if (vivid)
         {
             jot_error(N_("Color '%s' takes no prefix"), colorname);
             return BAD_COLOR;
         }
-
-        if (std::sscanf(colorname, "#%1hX%1hX%1hX", &r, &g, &b) == 3)
+        if (sscanf(colorname, "#%1hX%1hX%1hX", &r, &g, &b) == 3)
         {
             return closest_index_color(r, g, b);
         }
     }
-
     for (int index = 0; index < COLORCOUNT; index++)
     {
         if (constexpr_strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0)
@@ -1142,17 +957,12 @@ color_to_short(const char *colorname, bool &vivid, bool &thick)
             }
         }
     }
-
     jot_error(N_("Color \"%s\" not understood"), colorname);
     return BAD_COLOR;
 }
 
-//
-//  Parse the color name (or pair of color names) in the given string.
-//  Return FALSE when any color name is invalid; otherwise return TRUE.
-//
-//  TODO : Use references instead of pointers
-//
+/* Parse the color name (or pair of color names) in the given string.
+ * Return 'false' when any color name is invalid; otherwise return 'true'. */
 bool
 parse_combination(char *combotext, short &fg, short &bg, int &attributes)
 {

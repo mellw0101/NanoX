@@ -1,2 +1,6 @@
 1.
     Change it so that when using CTRL+(UP/DOWN) it stops at indent diffs.
+2.
+    Make prev_word stop at eol if done from start of next line.
+3.
+    Fix both next_word and prev_word so that cut_next_word and cut_prev_word works properly.

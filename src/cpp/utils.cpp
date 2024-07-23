@@ -414,10 +414,8 @@ mallocstrcpy(char *dest, const char *src)
     return dest;
 }
 
-//
-//  Return an allocated copy of the first count characters
-//  of the given string, and NUL-terminate the copy.
-//
+/* Return an allocated copy of the first count characters
+ * of the given string, and NUL-terminate the copy. */
 char *
 measured_copy(const char *string, const unsigned long count)
 {
@@ -427,30 +425,24 @@ measured_copy(const char *string, const unsigned long count)
     return thecopy;
 }
 
-//
-//  Return an allocated copy of the given string.
-//
+/* Return an allocated copy of the given string. */
 char *
 copy_of(const char *string)
 {
     return measured_copy(string, constexpr_strlen(string));
 }
 
-//
-//  Free the string at dest and return the string at src.
-//
+/* Free the string at dest and return the string at src. */
 char *
 free_and_assign(char *dest, char *src)
 {
-    std::free(dest);
+    free(dest);
     return src;
 }
 
-//
-//  When not softwrapping, nano scrolls the current line horizontally by
-//  chunks ("pages").  Return the column number of the first character
-//  displayed in the edit window when the cursor is at the given column.
-//
+/* When not softwrapping, nano scrolls the current line horizontally by
+ * chunks ("pages").  Return the column number of the first character
+ * displayed in the edit window when the cursor is at the given column. */
 unsigned long
 get_page_start(const unsigned long column)
 {
@@ -468,32 +460,23 @@ get_page_start(const unsigned long column)
     }
 }
 
-//
-//  Return the placewewant associated with current_x,
-//  i.e. the zero-based column position of the cursor.
-//
+/* Return the placewewant associated with current_x,
+ * i.e. the zero-based column position of the cursor. */
 unsigned long
-xplustabs()
+xplustabs(void)
 {
     return wideness(openfile->current->data, openfile->current_x);
 }
 
-//
-//  Return the index in text of the character that (when displayed) will
-//  not overshoot the given column.
-//
+/* Return the index in text of the character that (when displayed) will
+ * not overshoot the given column. */
 unsigned long
 actual_x(const char *text, unsigned long column)
 {
-    //
-    //  From where we start walking through the text.
-    //
+    /* From where we start walking through the text. */
     const char *start = text;
-    //
-    //  The current accumulated span, in columns.
-    //
+    /* The current accumulated span, in columns. */
     unsigned long width = 0;
-
     while (*text != '\0')
     {
         int charlen = advance_over(text, width);
@@ -503,14 +486,11 @@ actual_x(const char *text, unsigned long column)
         }
         text += charlen;
     }
-
-    return static_cast<unsigned long>(text - start);
+    return (unsigned long)(text - start);
 }
 
-//
-//  A strnlen() with tabs and multicolumn characters factored in:
-//  how many columns wide are the first maxlen bytes of text?
-//
+/* A strnlen() with tabs and multicolumn characters factored in:
+ * how many columns wide are the first maxlen bytes of text? */
 unsigned long
 wideness(const char *text, unsigned long maxlen)
 {
@@ -518,11 +498,10 @@ wideness(const char *text, unsigned long maxlen)
     {
         return 0;
     }
-
     unsigned long width = 0;
     while (*text != '\0')
     {
-        unsigned long charlen = static_cast<unsigned long>(advance_over(text, width));
+        unsigned long charlen = (unsigned long)advance_over(text, width);
         if (maxlen <= charlen)
         {
             break;
@@ -533,9 +512,7 @@ wideness(const char *text, unsigned long maxlen)
     return width;
 }
 
-//
-//  Return the number of columns that the given text occupies.
-//
+/* Return the number of columns that the given text occupies. */
 unsigned long
 breadth(const char *text)
 {
@@ -547,11 +524,9 @@ breadth(const char *text)
     return span;
 }
 
-//
-//  Append a new magic line to the end of the buffer.
-//
+/* Append a new magic line to the end of the buffer. */
 void
-new_magicline()
+new_magicline(void)
 {
     openfile->filebot->next       = make_new_node(openfile->filebot);
     openfile->filebot->next->data = copy_of("");
@@ -559,12 +534,10 @@ new_magicline()
     openfile->totsize++;
 }
 
-//
-//  Remove the magic line from the end of the buffer, if there is one and
-//  it isn't the only line in the file.
-//
+/* Remove the magic line from the end of the buffer, if there is one and
+ * it isn't the only line in the file. */
 void
-remove_magicline()
+remove_magicline(void)
 {
     if (openfile->filebot->data[0] == '\0' && openfile->filebot != openfile->filetop)
     {
@@ -579,9 +552,7 @@ remove_magicline()
     }
 }
 
-//
-//  Return 'true' when the mark is before or at the cursor, and false otherwise.
-//
+/* Return 'true' when the mark is before or at the cursor, and false otherwise. */
 bool
 mark_is_before_cursor()
 {
