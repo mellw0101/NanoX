@@ -12,20 +12,17 @@ static char *end_of_intro = nullptr;
 /* The offset (in bytes) of the topleft of the shown help text. */
 static unsigned long location;
 
-//
-//  Allocate space for the help text for the current menu,
-//  and concatenate the different pieces of text into it.
-//  The help text is divided into three parts:
-//  - The untranslated introduction,
-//  - The untranslated function key list, and
-//  - The untranslated function key descriptions.
-//  The function key list is built by iterating over all functions,
-//  - and for each function, iterating over all shortcuts.
-//  The function key descriptions are built by iterating over all functions.
-//  @return void
-//
+/* Allocate space for the help text for the current menu,
+ * and concatenate the different pieces of text into it.
+ * The help text is divided into three parts:
+ * - The untranslated introduction,
+ * - The untranslated function key list, and
+ * - The untranslated function key descriptions.
+ * The function key list is built by iterating over all functions,
+ * and for each function, iterating over all shortcuts.
+ * The function key descriptions are built by iterating over all functions. */
 void
-help_init()
+help_init(void)
 {
     PROFILE_FUNCTION;
     unsigned long allocsize = 0;
@@ -258,7 +255,7 @@ help_init()
         }
     }
     /* Allocate memory for the help text. */
-    help_text = static_cast<char *>(nmalloc(allocsize + 1));
+    help_text = (char *)nmalloc(allocsize + 1);
     /* Now add the text we want. */
     constexpr_strcpy(help_text, htx[0]);
     if (htx[1] != nullptr)
@@ -348,7 +345,7 @@ help_init()
 
 /* Hard-wrap the concatenated help text, and write it into a new buffer. */
 void
-wrap_help_text_into_buffer()
+wrap_help_text_into_buffer(void)
 {
     /* Avoid overtight and overwide paragraphs in the introductory text. */
     unsigned long wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
@@ -419,9 +416,9 @@ wrap_help_text_into_buffer()
 }
 
 /* Assemble a help text, display it, and allow scrolling through it.
- * TODO : ( show_help ) : Change to NanoX help text. */
+ * TODO : (show_help) : Change to NanoX help text. */
 void
-show_help()
+show_help(void)
 {
     int kbinput = ERR;
     /* The function of the key the user typed in. */
@@ -592,7 +589,7 @@ show_help()
 
 /* Start the help viewer, or indicate that there is no help. */
 void
-do_help()
+do_help(void)
 {
 #ifdef ENABLE_HELP
     show_help();

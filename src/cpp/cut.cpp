@@ -3,28 +3,20 @@
 
 #include <cstring>
 
-//
-//  Delete the character at the current position,
-//  and add or update an undo item for the given action.
-//
+/* Delete the character at the current position,
+ * and add or update an undo item for the given action. */
 void
 expunge(undo_type action)
 {
     openfile->placewewant = xplustabs();
-
-    //
-    //  When in the middle of a line, delete the current character.
-    //
+    /* When in the middle of a line, delete the current character. */
     if (openfile->current->data[openfile->current_x] != '\0')
     {
         int           charlen    = char_length(openfile->current->data + openfile->current_x);
         unsigned long line_len   = constexpr_strlen(openfile->current->data + openfile->current_x);
         unsigned long old_amount = ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current) : 0;
-
-        //
-        //  If the type of action changed or the cursor moved to a different
-        //  line, create a new undo item, otherwise update the existing item.
-        //
+        /* If the type of action changed or the cursor moved to a different
+         * line, create a new undo item, otherwise update the existing item. */
         if (action != openfile->last_action || openfile->current->lineno != openfile->current_undo->head_lineno)
         {
             add_undo(action, nullptr);
@@ -33,37 +25,25 @@ expunge(undo_type action)
         {
             update_undo(action);
         }
-
-        //
-        //  Move the remainder of the line "in", over the current character.
-        //
-        std::memmove(&openfile->current->data[openfile->current_x],
-                     &openfile->current->data[openfile->current_x + charlen], line_len - charlen + 1);
-        //
-        //  When softwrapping, a changed number of chunks requires a refresh.
-        //
+        /* Move the remainder of the line "in", over the current character. */
+        memmove(&openfile->current->data[openfile->current_x], &openfile->current->data[openfile->current_x + charlen],
+                line_len - charlen + 1);
+        /* When softwrapping, a changed number of chunks requires a refresh. */
         if (ISSET(SOFTWRAP) && extra_chunks_in(openfile->current) != old_amount)
         {
             refresh_needed = true;
         }
-        //
-        //  Adjust the mark if it is after the cursor on the current line.
-        //
+        /* Adjust the mark if it is after the cursor on the current line. */
         if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x)
         {
             openfile->mark_x -= charlen;
         }
     }
-    //
-    //  Otherwise, when not at end of buffer, join this line with the next.
-    //
+    /* Otherwise, when not at end of buffer, join this line with the next. */
     else if (openfile->current != openfile->filebot)
     {
         linestruct *joining = openfile->current->next;
-
-        //
-        //  If there is a magic line, and we're before it: don't eat it.
-        //
+        /* If there is a magic line, and we're before it: don't eat it. */
         if (joining == openfile->filebot && openfile->current_x != 0 && !ISSET(NO_NEWLINES))
         {
             if (action == BACK)
@@ -72,42 +52,28 @@ expunge(undo_type action)
             }
             return;
         }
-
         add_undo(action, nullptr);
-
-        //
-        //  Adjust the mark if it is on the line that will be "eaten".
-        //
+        /* Adjust the mark if it is on the line that will be "eaten". */
         if (openfile->mark == joining)
         {
             openfile->mark = openfile->current;
             openfile->mark_x += openfile->current_x;
         }
-
         openfile->current->has_anchor |= joining->has_anchor;
-        //
-        //  Add the content of the next line to that of the current one.
-        //
-        openfile->current->data = static_cast<char *>(nrealloc(
-            openfile->current->data, constexpr_strlen(openfile->current->data) + constexpr_strlen(joining->data) + 1));
+        /* Add the content of the next line to that of the current one. */
+        openfile->current->data = (char *)nrealloc(
+            openfile->current->data, constexpr_strlen(openfile->current->data) + constexpr_strlen(joining->data) + 1);
         constexpr_strcat(openfile->current->data, joining->data);
-
         unlink_node(joining);
-
-        //
-        //  Two lines were joined, so do a renumbering and refresh the screen.
-        //
+        /* Two lines were joined, so do a renumbering and refresh the screen. */
         renumber_from(openfile->current);
         refresh_needed = true;
     }
     else
     {
-        //
-        //  We're at the end-of-file: nothing to do.
-        //
+        /* We're at the end-of-file: nothing to do. */
         return;
     }
-
     if (!refresh_needed)
     {
         check_the_multis(openfile->current);
@@ -116,21 +82,16 @@ expunge(undo_type action)
     {
         update_line(openfile->current, openfile->current_x);
     }
-
-    //
-    //  Adjust the file size, and remember it for a possible redo.
-    //
+    /* Adjust the file size, and remember it for a possible redo. */
     openfile->totsize--;
     openfile->current_undo->newsize = openfile->totsize;
     set_modified();
 }
 
-//
-//  Delete the character under the cursor plus any succeeding zero-widths,
-//  or, when the mark is on and --zap is active, delete the marked region.
-//
+/* Delete the character under the cursor plus any succeeding zero-widths,
+ * or, when the mark is on and --zap is active, delete the marked region. */
 void
-do_delete()
+do_delete(void)
 {
     if (openfile->mark && ISSET(LET_THEM_ZAP))
     {
@@ -147,15 +108,12 @@ do_delete()
     }
 }
 
-//
-//  Backspace over one character.  That is, move the cursor left one
-//  character, and then delete the character under the cursor.  Or,
-//  when mark is on and --zap is active, delete the marked region.
-//
-//  TODO : (do_backspace) NEEDED
-//
+/* Backspace over one character.  That is, move the cursor left one
+ * character, and then delete the character under the cursor.  Or,
+ * when mark is on and --zap is active, delete the marked region.
+ * TODO: (do_backspace) - NEEDED. */
 void
-do_backspace()
+do_backspace(void)
 {
     if (openfile->mark && ISSET(LET_THEM_ZAP))
     {
@@ -163,6 +121,14 @@ do_backspace()
     }
     else if (openfile->current_x > 0)
     {
+        /* If the last char injected was a open bracket char,
+         * this means that a closing bracket was plased next to it,
+         * and therefor this flag was set.  Here we check if the flag
+         * is set, if so we delete the closing bracket as well. */
+        if (last_key_was_bracket)
+        {
+            expunge(BACK);
+        }
         openfile->current_x = step_left(openfile->current->data, openfile->current_x);
         expunge(BACK);
     }
@@ -173,16 +139,13 @@ do_backspace()
     }
 }
 
-//
-//  Return 'false' when a cut command would not actually cut anything: when
-//  on an empty line at EOF, or when the mark covers zero characters, or
-//  (when test_cliff is 'true') when the magic line would be cut.
-//
+/* Return 'false' when a cut command would not actually cut anything: when
+ * on an empty line at EOF, or when the mark covers zero characters, or
+ * (when test_cliff is 'true') when the magic line would be cut. */
 bool
 is_cuttable(bool test_cliff)
 {
-    size_t from = (test_cliff) ? openfile->current_x : 0;
-
+    unsigned long from = (test_cliff) ? openfile->current_x : 0;
     if ((openfile->current->next == nullptr && openfile->current->data[from] == '\0' && openfile->mark == nullptr) ||
         (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) ||
         (from > 0 && !ISSET(NO_NEWLINES) && openfile->current->data[from] == '\0' &&
@@ -238,38 +201,24 @@ chop_word(bool forward)
             openfile->current_x = constexpr_strlen(is_current->data);
         }
     }
-
-    //
-    //  Set the mark at the start of that word.
-    //
+    /* Set the mark at the start of that word. */
     openfile->mark   = openfile->current;
     openfile->mark_x = openfile->current_x;
-
-    //
-    //  Put the cursor back where it was, so an undo will put it there too.
-    //
+    /* Put the cursor back where it was, so an undo will put it there too. */
     openfile->current   = is_current;
     openfile->current_x = is_current_x;
-
-    //
-    //  Now kill the marked region and a word is gone.
-    //
+    /* Now kill the marked region and a word is gone. */
     add_undo(CUT, nullptr);
     do_snip(true, false, false);
     update_undo(CUT);
-
-    //
-    //  Discard the cut word and restore the cutbuffer.
-    //
+    /* Discard the cut word and restore the cutbuffer. */
     free_lines(cutbuffer);
     cutbuffer = is_cutbuffer;
 }
 
-//
-//  Delete a word leftward.
-//
+/* Delete a word leftward. */
 void
-chop_previous_word()
+chop_previous_word(void)
 {
     if (openfile->current->prev == nullptr && openfile->current_x == 0)
     {
@@ -281,11 +230,9 @@ chop_previous_word()
     }
 }
 
-//
-//  Delete a word rightward.
-//
+/* Delete a word rightward. */
 void
-chop_next_word()
+chop_next_word(void)
 {
     openfile->mark = nullptr;
     if (is_cuttable(true))
@@ -521,9 +468,9 @@ cut_marked_region(void)
 }
 
 /* Move text from the current buffer into the cutbuffer.
- * If until_eof is TRUE, move all text from the current cursor
+ * If until_eof is 'true', move all text from the current cursor
  * position to the end of the file into the cutbuffer.  If append
- * is TRUE (when zapping), always append the cut to the cutbuffer. */
+ * is 'true' (when zapping), always append the cut to the cutbuffer. */
 void
 do_snip(bool marked, bool until_eof, bool append)
 {

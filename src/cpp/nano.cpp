@@ -34,7 +34,7 @@ linestruct *
 make_new_node(linestruct *prevnode)
 {
     linestruct *newnode;
-    newnode             = static_cast<linestruct *>(nmalloc(sizeof(linestruct)));
+    newnode             = (linestruct *)nmalloc(sizeof(linestruct));
     newnode->prev       = prevnode;
     newnode->next       = nullptr;
     newnode->data       = nullptr;
@@ -321,16 +321,7 @@ emergency_save(const char *filename)
     free(plainname);
 }
 
-/**
-    Die gracefully,
-    - by restoring the terminal state and,
-    - saving any buffers that were modified.
-    @param msg ( std::string_view )
-    - The format string for the dying message.
-    @param ... ( __VA_ARGS__ )
-    - Additional arguments to be formatted into the dying message.
-    @return void
- */
+/* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
 void
 die(STRING_VIEW msg, ...)
 {
@@ -338,7 +329,7 @@ die(STRING_VIEW msg, ...)
     static int      stabs = 0;
     va_list         ap;
     firstone = openfile;
-    //  When dying for a second time, just give up.
+    /* When dying for a second time, just give up. */
     if (++stabs > 1)
     {
         exit(11);
@@ -346,21 +337,18 @@ die(STRING_VIEW msg, ...)
     restore_terminal();
     display_rcfile_errors();
     va_start(ap, msg);
-    //  Display the dying message
+    /* Display the dying message */
     vfprintf(stderr, &msg[0], ap);
     va_end(ap);
     while (openfile)
     {
-        //  If the current buffer has a lock file, remove it.
+        /* If the current buffer has a lock file, remove it. */
         if (openfile->lock_filename)
         {
             delete_lockfile(openfile->lock_filename);
         }
-        /**
-            When modified, save the current buffer.
-            not when in restricted mode, as it would
-            write a file not mentioned on the command line.
-         */
+        /* When modified, save the current buffer when not when in restricted mode,
+         * as it would write a file not mentioned on the command line. */
         if (openfile->modified && !ISSET(RESTRICTED))
         {
             emergency_save(openfile->filename);
@@ -371,7 +359,7 @@ die(STRING_VIEW msg, ...)
             break;
         }
     }
-    //  Abandon the building.
+    /* Abandon the building. */
     exit(1);
 }
 
@@ -583,17 +571,8 @@ usage(void)
     exit(0);
 }
 
-//
-/// @name
-///  -  @c version
-///
-/// @brief
-///  -  Display the version number of this nano, a copyright notice, some contact
-///  -  information, and the configuration options this nano was compiled with.
-///
-/// @returns
-///  -  @c void
-//
+/* Display the version number of this nano, a copyright notice, some contact
+ * information, and the configuration options this nano was compiled with. */
 void
 version(void)
 {
@@ -607,7 +586,7 @@ version(void)
     printf(" --enable-debug");
 #endif
     printf("\n");
-    exit(SUCCESS);
+    exit(0);
 }
 
 /* List the names of the available syntaxes. */
@@ -675,7 +654,7 @@ reconnect_and_store_state()
 
 /* Read whatever comes from standard input into a new buffer. */
 bool
-scoop_stdin()
+scoop_stdin(void)
 {
     FILE *stream;
     restore_terminal();
@@ -712,7 +691,7 @@ scoop_stdin()
 
 /* Register half a dozen signal handlers. */
 void
-signal_init()
+signal_init(void)
 {
     struct sigaction deed = {{0}};
     /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
@@ -799,13 +778,10 @@ continue_nano(int signal)
     {
         enable_mouse_support();
     }
-    ///
-    /// Seams wierd to me that we assume the window was resized
-    /// instead of checking, but it's the original code.
-    /// COMMENT: -> // Perhaps the user resized the window while we slept.
-    ///
-    /// TODO: -> Check if the window was resized instead.
-    ///
+    /* Seams wierd to me that we assume the window was resized
+     * instead of checking, but it's the original code.
+     * COMMENT: -> // Perhaps the user resized the window while we slept.
+     * TODO: Check if the window was resized instead. */
     the_window_resized = true;
     /* Insert a fake keystroke, to neutralize a key-eating issue. */
     ungetch(KEY_FRESH);
@@ -973,7 +949,7 @@ toggle_this(const int flag)
 
 /* Disable extended input and output processing in our terminal settings. */
 void
-disable_extended_io()
+disable_extended_io(void)
 {
     termios settings = {0};
     tcgetattr(0, &settings);
@@ -984,7 +960,7 @@ disable_extended_io()
 
 /* Stop ^C from generating a SIGINT. */
 void
-disable_kb_interrupt()
+disable_kb_interrupt(void)
 {
     termios settings = {0};
     tcgetattr(0, &settings);
@@ -1022,22 +998,12 @@ enable_flow_control(void)
     tcsetattr(0, TCSANOW, &settings);
 }
 
-//
-//  Set up the terminal state.
-//  Put the terminal in raw mode (
-//   read one character at a time,
-//   disable the special control keys,
-//   and disable the flow control characters
-//  ),
-//  disable translation of carriage return (^M) into newline (^J),
-//  so that we can tell the difference between the Enter key and Ctrl-J,
-//  and disable echoing of characters as they're typed.
-//  Finally,
-//  disable extended input and output processing,
-//  and,
-//  if we're not in preserve mode,
-//  reenable interpretation of the flow control characters.
-//
+/* Set up the terminal state.  Put the terminal in raw mode
+ * (read one character at a time, disable the special control keys, and disable the flow control characters),
+ * disable translation of carriage return (^M) into newline (^J), so that we can tell the difference
+ * between the Enter key and Ctrl-J, and disable echoing of characters as they're typed.
+ * Finally, disable extended input and output processing, and, if we're not in preserve mode,
+ * reenable interpretation of the flow control characters. */
 void
 terminal_init(void)
 {
@@ -1045,7 +1011,7 @@ terminal_init(void)
     nonl();
     noecho();
     disable_extended_io();
-    if ISSET (PRESERVE)
+    if (ISSET(PRESERVE))
     {
         enable_flow_control();
     }
@@ -1212,7 +1178,7 @@ do_mouse(void)
 
 /* Return 'true' when the given function is a cursor-moving command. */
 bool
-wanted_to_move(CFuncPtr func)
+wanted_to_move(functionptrtype func)
 {
     return (func == do_left || func == do_right || func == do_up || func == do_down || func == do_home ||
             func == do_end || func == to_prev_word || func == to_next_word || func == to_para_begin ||
@@ -1222,7 +1188,7 @@ wanted_to_move(CFuncPtr func)
 
 /* Return 'true' when the given function makes a change -- no good for view mode. */
 bool
-changes_something(CFuncPtr f)
+changes_something(functionptrtype f)
 {
     return (f == do_savefile || f == do_writeout || f == do_enter || f == do_tab || f == do_delete ||
             f == do_backspace || f == cut_text || f == paste_text || f == chop_previous_word || f == chop_next_word ||
@@ -1385,7 +1351,8 @@ process_a_keystroke(void)
     const keystruct     *shortcut;
     functionptrtype      function;
     /* Read in a keystroke, and show the cursor while waiting. */
-    input       = get_kbinput(midwin, VISIBLE);
+    input = get_kbinput(midwin, VISIBLE);
+    NETLOGGER.log("input: %i\nlast_key_was_bracket == %s.", input, (last_key_was_bracket == true) ? "true" : "false");
     lastmessage = VACUUM;
     /* When the input is a window resize, do nothing. */
     if (input == KEY_WINCH)
@@ -1425,11 +1392,6 @@ process_a_keystroke(void)
         }
         else
         {
-            if (openfile->mark && openfile->softmark)
-            {
-                openfile->mark = nullptr;
-                refresh_needed = true;
-            }
             /* When the input buffer (plus room for terminating NUL) is full, extend it.
              * Otherwise, if it does not exist yet, create it. */
             if (depth + 1 == capacity)
@@ -1441,9 +1403,25 @@ process_a_keystroke(void)
             {
                 puddle = (char *)nmalloc(capacity);
             }
+            if (openfile->mark)
+            {
+                if (input == '"' || input == '\'' || input == '(' || input == '{' || input == '[')
+                {
+                    const char *s1, *s2;
+                    input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(",
+                                   s2 = ")" : input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : 0;
+                    enclose_marked_region(s1, s2);
+                    refresh_needed = true;
+                    return;
+                }
+            }
+            if (openfile->mark && openfile->softmark)
+            {
+                openfile->mark = nullptr;
+                refresh_needed = true;
+            }
             puddle[depth++] = (char)input;
-            /* Check for a bracketed input start.
-             * Meaning a char that has a corresponding closing bracket. */
+            /* Check for a bracketed input start.  Meaning a char that has a corresponding closing bracket. */
             if (input == '(' || input == '[' || input == '{' || input == '<' || input == '\'' || input == '"')
             {
                 if (input == '<')
@@ -1451,24 +1429,19 @@ process_a_keystroke(void)
                     if (openfile->current->data[0] == '#')
                     {
                         puddle[depth++] = '>';
-                        /**
-                            Set a flag to remember that an open bracket character was
-                            inserted into the input buffer.
-                         */
-                        was_open_bracket_char = true;
                     }
                 }
                 else
                 {
-                    puddle[depth++] = static_cast<char>(input == '('    ? ')'
-                                                        : input == '['  ? ']'
-                                                        : input == '"'  ? '"'
-                                                        : input == '\'' ? '\''
-                                                                        : '}');
-                    /* Set a flag to remember that an open bracket character was
-                     * inserted into the input buffer. */
-                    was_open_bracket_char = true;
+                    puddle[depth++] = (char)(input == '('    ? ')'
+                                             : input == '['  ? ']'
+                                             : input == '"'  ? '"'
+                                             : input == '\'' ? '\''
+                                                             : '}');
                 }
+                /* Set a flag to remember that an open bracket
+                 * character was inserted into the input buffer. */
+                was_open_bracket_char = true;
             }
         }
     }
@@ -1481,6 +1454,13 @@ process_a_keystroke(void)
         if (was_open_bracket_char)
         {
             do_left();
+            /* Set this flag so we can delete both of the
+             * brackeded char if Bsp is pressed directly after. */
+            last_key_was_bracket = true;
+        }
+        else
+        {
+            last_key_was_bracket = false;
         }
         depth = 0;
     }
@@ -1566,6 +1546,7 @@ process_a_keystroke(void)
     {
         titlebar(nullptr);
     }
+    !was_open_bracket_char ? (last_key_was_bracket = false) : 0;
 }
 
 int
@@ -1583,8 +1564,8 @@ main(int argc, char **argv)
         []
         {
             LOUT.destroy();
-            VECTOR<STRING> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
-            for (const STRING &str : gprof_report)
+            std::vector<std::string> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
+            for (const std::string &str : gprof_report)
             {
                 NETLOGGER << str << NETLOG_ENDL;
             }
@@ -1632,6 +1613,7 @@ main(int argc, char **argv)
     SET(CONSTANT_SHOW);
     SET(STATEFLAGS);
     SET(NO_HELP);
+    SET(INDICATOR);
     /* If the executable's name starts with 'r', activate restricted mode. */
     if (*(tail(argv[0])) == 'r')
     {
@@ -1712,43 +1694,31 @@ main(int argc, char **argv)
             }
         }
     }
-    //
-    //  Curses needs TERM; if it is unset, try falling back to a VT220.
-    //
+    /* Curses needs TERM; if it is unset, try falling back to a VT220. */
     if (getenv("TERM") == nullptr)
     {
         putenv(const_cast<char *>("TERM=vt220"));
         setenv("TERM", "vt220", 1);
     }
-    //
-    //  Enter into curses mode.  Abort if this fails.
-    //
+    /* Enter into curses mode.  Abort if this fails. */
     if (initscr() == nullptr)
     {
         exit(1);
     }
-    //
-    //  If the terminal can do colors, tell ncurses to switch them on.
-    //
+    /* If the terminal can do colors, tell ncurses to switch them on. */
     if (has_colors())
     {
         start_color();
     }
-    //
-    //  When requested, suppress the default spotlight and error colors.
-    //
+    /* When requested, suppress the default spotlight and error colors. */
     rescind_colors = (getenv("NO_COLOR") != nullptr);
-    //
-    //  Set up the function and shortcut lists.
-    //  This needs to be done before reading the rcfile,
-    //  to be able to rebind/unbind keys.
-    //
+    /* Set up the function and shortcut lists.
+     * This needs to be done before reading the rcfile,
+     * to be able to rebind/unbind keys. */
     shortcut_init();
     if (!ignore_rcfiles)
     {
-        //
-        //  Back up the command-line options that take an argument.
-        //
+        /* Back up the command-line options that take an argument. */
         long          fill_cmdline          = fill;
         unsigned long stripeclm_cmdline     = stripe_column;
         long          tabsize_cmdline       = tabsize;
@@ -2010,6 +1980,7 @@ main(int argc, char **argv)
     shiftaltdown       = get_keycode("kDN4", SHIFT_ALT_DOWN);
     mousefocusin       = get_keycode("kxIN", FOCUS_IN);
     mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
+    controlbsp         = get_keycode("kBSP5", CONTROL_BSP);
     /* Disable the type-ahead checking that ncurses normally does. */
     typeahead(-1);
 #ifdef HAVE_SET_ESCDELAY

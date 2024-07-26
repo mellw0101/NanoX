@@ -52,6 +52,8 @@ extern int altinsert, altdelete;
 extern int shiftaltleft, shiftaltright;
 extern int shiftaltup, shiftaltdown;
 extern int mousefocusin, mousefocusout;
+extern int controlbsp;
+
 extern int editwinrows;
 extern int editwincols;
 extern int margin;
@@ -127,6 +129,8 @@ extern bool          spotlighted;
 extern unsigned long light_from_col;
 extern unsigned long light_to_col;
 
+extern bool last_key_was_bracket;
+
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
@@ -192,9 +196,7 @@ void copy_marked_region(void);
 void copy_text(void);
 void paste_text(void);
 
-//
-//  Most functions in 'files.cpp'.
-//
+/* Most functions in 'files.cpp'. */
 void  make_new_buffer(void);
 bool  delete_lockfile(const char *lockfilename);
 bool  open_buffer(const char *filename, bool new_one);
@@ -222,11 +224,9 @@ void  do_writeout(void);
 void  do_savefile(void);
 char *real_dir_from_tilde(const char *path);
 int   diralphasort(const void *va, const void *vb);
-char *input_tab(char *buf, unsigned long *place, void (*refresh_func)(void), bool &listed);
+char *input_tab(char *buf, unsigned long *place, void (*refresh_func)(void), bool *listed);
 
-//
-//  Some functions in 'global.cpp'.
-//
+/* Some functions in 'global.cpp'. */
 functionptrtype  func_from_key(const int keycode);
 functionptrtype  interpret(const int keycode);
 const keystruct *first_sc_for(int menu, void (*function)(void));
@@ -237,15 +237,11 @@ int           keycode_from_string(const char *keystring);
 void          shortcut_init(void);
 const char   *epithet_of_flag(const unsigned int flag);
 
-//
-//  Some functions in 'help.cpp'.
-//
+/* Some functions in 'help.cpp'. */
 void wrap_help_text_into_buffer(void);
 void do_help(void);
 
-//
-//  Most functions in 'history.cpp'.
-//
+/* Most functions in 'history.cpp'. */
 void  history_init(void);
 void  reset_history_pointer_for(const linestruct *list);
 void  update_history(linestruct **item, const char *text, bool avoid_duplicates);
@@ -285,12 +281,10 @@ void do_scroll_down(void);
 void do_left(void);
 void do_right(void);
 
-//
-//  Most functions in 'nano.cpp'.
-//
+/* Most functions in 'nano.cpp'. */
 linestruct *make_new_node(linestruct *prevnode);
 linestruct *copy_buffer(const linestruct *src);
-//
+
 void splice_node(linestruct *afterthis, linestruct *newnode);
 void unlink_node(linestruct *line);
 void delete_node(linestruct *line);
@@ -325,9 +319,7 @@ void unbound_key(int code);
 bool changes_something(CFuncPtr f);
 void inject(char *burst, unsigned long count);
 
-//
-//  Most functions in 'prompt.cpp'.
-//
+/* Most functions in 'prompt.cpp'. */
 unsigned long get_statusbar_page_start(unsigned long base, unsigned long column);
 void          put_cursor_at_end_of_answer(void);
 void          add_or_remove_pipe_symbol_from_answer(void);
@@ -335,9 +327,7 @@ int do_prompt(int menu, const char *provided, linestruct **history_list, void (*
               ...);
 int ask_user(bool withall, const char *question);
 
-//
-//  Most functions in 'rcfile.cpp'.
-//
+/* Most functions in 'rcfile.cpp'. */
 void       set_interface_color(int element, char *combotext);
 void       display_rcfile_errors(void);
 void       jot_error(const char *msg, ...);
@@ -348,9 +338,7 @@ bool       parse_syntax_commands(const char *keyword, char *ptr);
 void       parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
 void       do_rcfiles(void);
 
-//
-//  Most functions in 'search.cpp'.
-//
+/* Most functions in 'search.cpp'. */
 bool regexp_init(const char *regexp);
 void tidy_up_after_search(void);
 int  findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *match_len, bool skipone,
@@ -373,9 +361,7 @@ void put_or_lift_anchor(void);
 void to_prev_anchor(void);
 void to_next_anchor(void);
 
-//
-//  Most functions in 'text.cpp'.
-//
+/* Most functions in 'text.cpp'. */
 void          do_mark(void);
 void          do_tab(void);
 void          do_indent(void);
@@ -403,7 +389,7 @@ void          count_lines_words_and_characters(void);
 void          do_verbatim_input(void);
 void          complete_a_word(void);
 
-/* All functions in utils.cpp */
+/* All functions in 'utils.cpp' */
 void          get_homedir(void);
 char         *concatenate(const char *path, const char *name);
 int           digits(long n);
@@ -483,9 +469,7 @@ void          spotlight(unsigned long from_col, unsigned long to_col);
 void          spotlight_softwrapped(unsigned long from_col, unsigned long to_col);
 void          do_credits(void);
 
-//
-//  These are just name definitions.
-//
+/* These are just name definitions. */
 void case_sens_void(void);
 void regexp_void(void);
 void backwards_void(void);
@@ -510,9 +494,14 @@ void discard_buffer(void);
 void do_cancel(void);
 
 /* All functions in 'cpp.cpp'. */
-bool           isCppSyntaxChar(const char c);
-void           get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces, unsigned short *t_char,
-                               unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
+bool isCppSyntaxChar(const char c);
+void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces, unsigned short *t_char,
+                     unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
+
 unsigned short indent_char_len(linestruct *line);
-void           inject_in_line(linestruct **line, const char *str, unsigned long at);
+
+void inject_in_line(linestruct **line, const char *str, unsigned long at);
+void enclose_marked_region(const char *s1, const char *s2);
+void do_block_comment(void);
+
 #include <Mlib/def.h>

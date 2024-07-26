@@ -189,6 +189,7 @@ constexpr int DEL_CODE = 0x7F;
 #define SHIFT_PAGEDOWN       0x458
 #define SHIFT_DELETE         0x45D
 #define SHIFT_TAB            0x45F
+#define CONTROL_BSP          0x460
 
 #define FOCUS_IN             0x491
 #define FOCUS_OUT            0x499
@@ -203,11 +204,11 @@ constexpr unsigned short NO_SUCH_FUNCTION  = 0x4EF;
 /* A special keycode to signal the beginning and end of a bracketed paste. */
 constexpr unsigned short BRACKETED_PASTE_MARKER = 0x4FB;
 /* A special keycode for when a key produces an unknown escape sequence. */
-constexpr auto FOREIGN_SEQUENCE = 0x4FC;
+constexpr unsigned short FOREIGN_SEQUENCE = 0x4FC;
 /* A special keycode for plugging into the input stream after a suspension. */
-constexpr auto KEY_FRESH = 0x4FE;
+constexpr unsigned short KEY_FRESH = 0x4FE;
 /* A special keycode for when we get a SIGWINCH (a window resize). */
-constexpr auto KEY_WINCH = -2;
+constexpr unsigned short KEY_WINCH = -2;
 
 /* Some extra flags for the undo function. */
 constexpr unsigned char WAS_BACKSPACE_AT_EOF = (1 << 1);
@@ -345,9 +346,8 @@ typedef struct lintstruct
     char *filename;    // Filename.
 } lintstruct;
 
-//
-//  More structure types.
-//
+/* More structure types. */
+
 typedef struct linestruct
 {
     /* Next node. */
@@ -395,11 +395,14 @@ typedef struct undostruct
 
 typedef struct poshiststruct
 {
-    char *filename;      /* The full path plus name of the file. */
-    long  linenumber;    /* The line where the cursor was when we closed the file. */
-    long  columnnumber;  /* The column where the cursor was. */
-
-    poshiststruct *next; /* The next item of position history. */
+    /* The full path plus name of the file. */
+    char *filename;
+    /* The line where the cursor was when we closed the file. */
+    long linenumber;
+    /* The column where the cursor was. */
+    long columnnumber;
+    /* The next item of position history. */
+    poshiststruct *next;
 } poshiststruct;
 
 typedef struct openfilestruct
@@ -462,43 +465,29 @@ typedef struct openfilestruct
 
 typedef struct rcoption
 {
-    const char *name;  // The name of the rcfile option.
-    long        flag;  // The flag associated with it, if any.
+    /* The name of the rcfile option. */
+    const char *name;
+    /* The flag associated with it, if any. */
+    long flag;
 } rcoption;
 
 typedef struct keystruct
 {
-    //
-    //  The string that describes the keystroke, like "^C" or "M-R".
-    //
+    /* The string that describes the keystroke, like "^C" or "M-R". */
     const char *keystr;
-    //
-    //  The integer that, together with meta, identifies the keystroke.
-    //
+    /* The integer that, together with meta, identifies the keystroke. */
     int keycode;
-    //
-    //  The menus in which this keystroke is bound.
-    //
+    /* The menus in which this keystroke is bound. */
     int menus;
-    //
-    //  The function to which this keystroke is bound.
-    //
+    /* The function to which this keystroke is bound. */
     CFuncPtr func;
-    //
-    //  If a toggle, what we're toggling.
-    //
+    /* If a toggle, what we're toggling. */
     int toggle;
-    //
-    //  The how-manieth toggle this is, in order to be able to keep them in sequence.
-    //
+    /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
     int ordinal;
-    //
-    //  The string of keycodes to which this shortcut is expanded.
-    //
+    /* The string of keycodes to which this shortcut is expanded. */
     char *expansion;
-    //
-    //  Next in the list.
-    //
+    /* Next in the list. */
     keystruct *next;
 } keystruct;
 
@@ -519,5 +508,5 @@ typedef struct completionstruct
     completionstruct *next;
 } completionstruct;
 
-constexpr auto NANO_REG_EXTENDED = 1;
+constexpr unsigned char NANO_REG_EXTENDED = 1;
 #define SYSCONFDIR "/etc"

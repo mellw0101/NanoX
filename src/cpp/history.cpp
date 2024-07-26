@@ -23,7 +23,7 @@ static poshiststruct *position_history = nullptr;
 /* Initialize the lists of historical search and replace strings
  * and the list of historical executed commands. */
 void
-history_init()
+history_init(void)
 {
     search_history        = make_new_node(nullptr);
     search_history->data  = copy_of("");

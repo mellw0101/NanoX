@@ -117,23 +117,19 @@ set_syntax_colorpairs(syntaxtype *sntx)
                 ink->bg = COLOR_BLACK;
             }
         }
-
         older = sntx->color;
-
         while (older != ink && (older->fg != ink->fg || older->bg != ink->bg))
         {
             older = older->next;
         }
-
         ink->pairnum = (older != ink) ? older->pairnum : ++number;
-
         ink->attributes |= COLOR_PAIR(ink->pairnum);
     }
 }
 
 /* Initialize the color pairs for the current syntax. */
 void
-prepare_palette()
+prepare_palette(void)
 {
     short number = NUMBER_OF_ELEMENTS;
     /* For each unique pair number, tell ncurses the combination of colors. */
@@ -164,12 +160,10 @@ found_in_list(regexlisttype *head, const char *shibboleth)
     return false;
 }
 
-//
-//  Find a syntax that applies to the current buffer, based upon filename
-//  or buffer content, and load and prime this syntax when needed.
-//
+/* Find a syntax that applies to the current buffer, based upon filename
+ * or buffer content, and load and prime this syntax when needed. */
 void
-find_and_prime_applicable_syntax()
+find_and_prime_applicable_syntax(void)
 {
     PROFILE_FUNCTION;
     syntaxtype *sntx = nullptr;
@@ -231,13 +225,12 @@ find_and_prime_applicable_syntax()
         }
     }
 #ifdef HAVE_LIBMAGIC
-    // If we still don't have an answer, try using magic (when requested).
+    /* If we still don't have an answer, try using magic (when requested). */
     if (sntx == nullptr && !inhelp && ISSET(USE_MAGIC))
     {
         struct stat fileinfo;
         magic_t     cookie      = nullptr;
         const char *magicstring = nullptr;
-
         if (stat(openfile->filename, &fileinfo) == 0)
         {
             /* Open the magic database and get a diagnosis of the file. */
@@ -259,7 +252,6 @@ find_and_prime_applicable_syntax()
                 }
             }
         }
-
         /* Now try and find a syntax that matches the magic string. */
         if (magicstring != nullptr)
         {
@@ -271,7 +263,6 @@ find_and_prime_applicable_syntax()
                 }
             }
         }
-
         if (!stat(openfile->filename, &fileinfo))
         {
             magic_close(cookie);
@@ -377,7 +368,7 @@ check_the_multis(linestruct *line)
 /* Precalculate the multi-line start and end regex info so we can
  * speed up rendering (with any hope at all...). */
 void
-precalc_multicolorinfo()
+precalc_multicolorinfo(void)
 {
     PROFILE_FUNCTION;
     const colortype *ink;
@@ -387,7 +378,7 @@ precalc_multicolorinfo()
     {
         return;
     }
-// #define TIMEPRECALC 123
+/* #define TIMEPRECALC 123 */
 #ifdef TIMEPRECALC
 #    include <time.h>
     clock_t start = clock();

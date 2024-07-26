@@ -43,74 +43,43 @@ static int digit_count = 0;
 //  Whether the cursor should be shown when waiting for input.
 //
 static bool reveal_cursor = false;
-//
-//  Whether to give ncurses some time to get the next code.
-//
+/* Whether to give ncurses some time to get the next code. */
 static bool linger_after_escape = false;
-//
-//  The number of keystrokes left before we blank the status bar.
-//
+/* The number of keystrokes left before we blank the status bar. */
 static int countdown = 0;
-//
-//  From where in the relevant line the current row is drawn.
-//
+/* From where in the relevant line the current row is drawn. */
 static unsigned long from_x = 0;
-//
-//  Until where in the relevant line the current row is drawn.
-//
+/* Until where in the relevant line the current row is drawn. */
 static unsigned long till_x = 0;
-//
-//  Whether the current line has more text after the displayed part.
-//
+/* Whether the current line has more text after the displayed part. */
 static bool has_more = false;
-//
-//  Whether a row's text is narrower than the screen's width.
-//
+/* Whether a row's text is narrower than the screen's width. */
 static bool is_shorter = true;
-//
-//  The starting column of the next chunk when softwrapping.
-//
+/* The starting column of the next chunk when softwrapping. */
 static unsigned long sequel_column = 0;
-//
-//  Whether we are in the process of recording a macro.
-//
+/* Whether we are in the process of recording a macro. */
 static bool recording = false;
-//
-//  A buffer where the recorded key codes are stored.
-//
+/* A buffer where the recorded key codes are stored. */
 static int *macro_buffer = nullptr;
-//
-//  The current length of the macro.
-//
+/* The current length of the macro. */
 static unsigned long macro_length = 0;
-//
-//  Where the last burst of recorded keystrokes started.
-//
+/* Where the last burst of recorded keystrokes started. */
 static unsigned long milestone = 0;
 
-//
-//
-//  Add the given code to the macro buffer.
-//  @param code ( int )
-//  - The code to add.
-//  @return void
-//
+/* Add the given code to the macro buffer. */
 void
 add_to_macrobuffer(int code)
 {
     macro_length++;
-    macro_buffer                   = static_cast<int *>(nrealloc(macro_buffer, macro_length * sizeof(int)));
+    macro_buffer                   = (int *)nrealloc(macro_buffer, macro_length * sizeof(int));
     macro_buffer[macro_length - 1] = code;
 }
 
-//
-//  Start or stop the recording of keystrokes.
-//
+/* Start or stop the recording of keystrokes. */
 void
-record_macro()
+record_macro(void)
 {
     recording = !recording;
-
     if (recording)
     {
         macro_length = 0;
@@ -118,23 +87,20 @@ record_macro()
     }
     else
     {
-        // Snip the keystroke that invoked this function.
+        /* Snip the keystroke that invoked this function. */
         macro_length = milestone;
         statusline(REMARK, _("Stopped recording"));
     }
-
     if ISSET (STATEFLAGS)
     {
         titlebar(nullptr);
     }
 }
 
-//
-//  Copy the stored sequence of codes into the regular key buffer,
-//  so they will be "executed" again.
-//
+/* Copy the stored sequence of codes into the regular key buffer,
+ * so they will be "executed" again. */
 void
-run_macro()
+run_macro(void)
 {
     if (recording)
     {
@@ -142,31 +108,25 @@ run_macro()
         macro_length = milestone;
         return;
     }
-
     if (macro_length == 0)
     {
         statusline(AHEM, _("Macro is empty"));
         return;
     }
-
     if (macro_length > capacity)
     {
         reserve_space_for(macro_length);
     }
-
     for (unsigned long i = 0; i < macro_length; i++)
     {
         key_buffer[i] = macro_buffer[i];
     }
-
     waiting_codes  = macro_length;
     nextcodes      = key_buffer;
     mute_modifiers = true;
 }
 
-//
-//  Allocate the requested space for the keystroke buffer.
-//
+/* Allocate the requested space for the keystroke buffer. */
 void
 reserve_space_for(unsigned long newsize)
 {
@@ -174,8 +134,7 @@ reserve_space_for(unsigned long newsize)
     {
         die(_("Too much input at once\n"));
     }
-
-    key_buffer = static_cast<int *>(nrealloc(key_buffer, newsize * sizeof(int)));
+    key_buffer = (int *)nrealloc(key_buffer, newsize * sizeof(int));
     nextcodes  = key_buffer;
     capacity   = newsize;
 }
@@ -217,55 +176,44 @@ reserve_space_for(unsigned long newsize)
  * - F10 on FreeBSD console == PageUp on Mach console; the former is
  *   omitted.  (Same as above.) */
 
-//
-//  Read in at least one keystroke from the given window
-//  and save it (or them) in the keystroke buffer.
-//
+/* Read in at least one keystroke from the given window
+ * and save it (or them) in the keystroke buffer. */
 void
 read_keys_from(WINDOW *frame)
 {
     int           input    = ERR;
     unsigned long errcount = 0;
-
-    bool timed = false;
-
-    // Before reading the first keycode, display any pending screen updates.
+    bool          timed    = false;
+    /* Before reading the first keycode, display any pending screen updates. */
     doupdate();
-
     if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) &&
         (LINES > 1 || lastmessage <= HUSH))
     {
         curs_set(1);
     }
-
     if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH &&
                                lastmessage < ALERT && lastmessage != INFO) ||
                               spotlighted))
     {
         timed = true;
         halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
-
-        // Counteract a side effect of half-delay mode.
+        /* Counteract a side effect of half-delay mode. */
         disable_kb_interrupt();
     }
-
     /* Read in the first keycode, waiting for it to arrive. */
     while (input == ERR)
     {
         input = wgetch(frame);
-
         if (the_window_resized)
         {
             regenerate_screen();
             input = KEY_WINCH;
         }
-
         if (timed)
         {
             timed = false;
-            // Leave half-delay mode.
+            /* Leave half-delay mode. */
             raw();
-
             if (input == ERR)
             {
                 if (spotlighted || ISSET(ZERO) || LINES == 1)
@@ -284,92 +232,73 @@ read_keys_from(WINDOW *frame)
                 {
                     minibar();
                 }
-                as_an_at = TRUE;
+                as_an_at = true;
                 place_the_cursor();
                 doupdate();
                 continue;
             }
         }
-
-        // When we've failed to get a keycode millions of times in a row,
-        // assume our input source is gone and die gracefully.  We could
-        // check if errno is set to EIO ("Input/output error") and die in
-        // that case, but it's not always set properly.  Argh.
+        /* When we've failed to get a keycode millions of times in a row,
+         * assume our input source is gone and die gracefully.  We could
+         * check if errno is set to EIO ("Input/output error") and die in
+         * that case, but it's not always set properly.  Argh. */
         if (input == ERR && ++errcount == 12345678)
         {
             die(_("Too many errors from stdin\n"));
         }
     }
-
     curs_set(0);
-
-    // When there is no keystroke buffer yet, allocate one.
+    /* When there is no keystroke buffer yet, allocate one. */
     if (!key_buffer)
     {
         reserve_space_for(capacity);
     }
-
     key_buffer[0] = input;
-
     nextcodes     = key_buffer;
     waiting_codes = 1;
-
-    // Cancel the highlighting of a search match, if there still is one.
+    /* Cancel the highlighting of a search match, if there still is one. */
     if (currmenu == MMAIN)
     {
         refresh_needed |= spotlighted;
         spotlighted = false;
     }
-
-    // If we got a SIGWINCH, get out as the frame argument is no longer valid.
+    /* If we got a SIGWINCH, get out as the frame argument is no longer valid. */
     if (input == KEY_WINCH)
     {
         return;
     }
-
-    // Remember where the recording of this
-    // keystroke (or burst of them) started.
+    /* Remember where the recording of this
+     * keystroke (or burst of them) started. */
     milestone = macro_length;
-
-    // Read in any remaining key codes using non-blocking input.
+    /* Read in any remaining key codes using non-blocking input. */
     nodelay(frame, true);
-
-    // After an ESC, when ncurses does not translate escape sequences,
-    // give the keyboard some time to bring the next code to ncurses.
+    /* After an ESC, when ncurses does not translate escape sequences,
+     * give the keyboard some time to bring the next code to ncurses. */
     if (input == ESC_CODE && (linger_after_escape || ISSET(RAW_SEQUENCES)))
     {
         napms(20);
     }
-
     while (true)
     {
         if (recording)
         {
             add_to_macrobuffer(input);
         }
-
         input = wgetch(frame);
-
-        // If there aren't any more characters, stop reading.
+        /* If there aren't any more characters, stop reading. */
         if (input == ERR)
         {
             break;
         }
-
-        // When the keystroke buffer is full, extend it.
+        /* When the keystroke buffer is full, extend it. */
         if (waiting_codes == capacity)
         {
             reserve_space_for(2 * capacity);
         }
-
         key_buffer[waiting_codes++] = input;
     }
-
-    //
-    //  Restore blocking-input mode.
-    //
+    /* Restore blocking-input mode. */
     nodelay(frame, false);
-
 #ifdef DEBUG
     fprintf(stderr, "\nSequence of hex codes:");
     for (size_t i = 0; i < waiting_codes; i++)
@@ -380,73 +309,56 @@ read_keys_from(WINDOW *frame)
 #endif
 }
 
-//
-//  Return the number of key codes waiting in the keystroke buffer.
-//
+/* Return the number of key codes waiting in the keystroke buffer. */
 unsigned long
-waiting_keycodes()
+waiting_keycodes(void)
 {
     return waiting_codes;
 }
 
-//
-//  Add the given keycode to the front of the keystroke buffer.
-//
+/* Add the given keycode to the front of the keystroke buffer. */
 void
 put_back(int keycode)
 {
-    //
-    //  If there is no room at the head of the keystroke buffer, make room.
-    //
+    /* If there is no room at the head of the keystroke buffer, make room. */
     if (nextcodes == key_buffer)
     {
         if (waiting_codes == capacity)
         {
             reserve_space_for(2 * capacity);
         }
-        std::memmove(key_buffer + 1, key_buffer, waiting_codes * sizeof(int));
+        memmove(key_buffer + 1, key_buffer, waiting_codes * sizeof(int));
     }
     else
     {
         nextcodes--;
     }
-
     *nextcodes = keycode;
     waiting_codes++;
 }
 
-//
-//  Set up the given expansion string to be ingested by the keyboard routines.
-//
+/* Set up the given expansion string to be ingested by the keyboard routines. */
 void
 implant(const char *string)
 {
     plants_pointer = string;
     put_back(MORE_PLANTS);
-
     mute_modifiers = true;
 }
 
-//
-//  Continue processing an expansion string.
-//  Returns either an error code,
-//  a plain character byte,
-//  or a placeholder for a command shortcut.
-//
+/* Continue processing an expansion string.  Returns either an error code,
+ * a plain character byte, or a placeholder for a command shortcut. */
 int
-get_code_from_plantation()
+get_code_from_plantation(void)
 {
     PROFILE_FUNCTION;
-
     if (*plants_pointer == '{')
     {
         char *closing = const_cast<char *>(constexpr_strchr(plants_pointer + 1, '}'));
-
         if (!closing)
         {
             return MISSING_BRACE;
         }
-
         if (plants_pointer[1] == '{' && plants_pointer[2] == '}')
         {
             plants_pointer += 3;
@@ -456,25 +368,19 @@ get_code_from_plantation()
             }
             return '{';
         }
-
         free(commandname);
         free(planted_shortcut);
-
         commandname      = measured_copy(plants_pointer + 1, closing - plants_pointer - 1);
         planted_shortcut = strtosc(commandname);
-
         if (!planted_shortcut)
         {
             return NO_SUCH_FUNCTION;
         }
-
         plants_pointer = closing + 1;
-
         if (*plants_pointer != '\0')
         {
             put_back(MORE_PLANTS);
         }
-
         return PLANTED_A_COMMAND;
     }
     else
@@ -482,7 +388,6 @@ get_code_from_plantation()
         char         *opening   = _(strchr(plants_pointer, '{'));
         unsigned char firstbyte = *plants_pointer;
         int           length;
-
         if (opening)
         {
             length = opening - plants_pointer;
@@ -492,23 +397,17 @@ get_code_from_plantation()
         {
             length = strlen(plants_pointer);
         }
-
         for (int index = length - 1; index > 0; index--)
         {
             put_back((unsigned char)plants_pointer[index]);
         }
-
         plants_pointer += length;
-
         return (firstbyte) ? firstbyte : ERR;
     }
 }
 
-//
-//  Return one code from the keystroke buffer.
-//  If the buffer is empty but frame is given,
-//  first read more codes from the keyboard.
-//
+/* Return one code from the keystroke buffer.
+ * If the buffer is empty but frame is given, first read more codes from the keyboard. */
 int
 get_input(WINDOW *frame)
 {
@@ -520,7 +419,6 @@ get_input(WINDOW *frame)
     {
         read_keys_from(frame);
     }
-
     if (waiting_codes)
     {
         waiting_codes--;
@@ -540,10 +438,8 @@ get_input(WINDOW *frame)
     }
 }
 
-//
-//  Return the arrow-key code that corresponds to the given letter.
-//  ( This mapping is common to a handful of escape sequences )
-//
+/* Return the arrow-key code that corresponds to the given letter.
+ * (This mapping is common to a handful of escape sequences). */
 int
 arrow_from_ABCD(const int letter)
 {
@@ -554,9 +450,8 @@ arrow_from_ABCD(const int letter)
     return (letter == 'D' ? KEY_LEFT : KEY_RIGHT);
 }
 
-//
-//  Translate a sequence that began with "Esc O" to its corresponding key code.
-//
+/* Translate a sequence that began with "Esc O" to its corresponding key code.
+ * TODO: (convert_SS3_sequence) - Importante, see if this can be used to retrieve 'Ctrl+Bsp/^Bsp'. */
 int
 convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
 {
@@ -567,53 +462,38 @@ convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
             if (length > 3 && seq[1] == ';')
             {
                 *consumed = 4;
-
                 switch (seq[2])
                 {
-                    case '2' :
+                    case '2' : /* Shift */
                     {
                         if ('A' <= seq[3] && seq[3] <= 'D')
                         {
-                            //
-                            //  Esc O 1 ; 2 A == Shift-Up on old Terminal.
-                            //  Esc O 1 ; 2 B == Shift-Down on old Terminal.
-                            //  Esc O 1 ; 2 C == Shift-Right on old Terminal.
-                            //  Esc O 1 ; 2 D == Shift-Left on old Terminal.
-                            //
+                            /* Esc O 1 ; 2 A == Shift-Up on old Terminal.
+                             * Esc O 1 ; 2 B == Shift-Down on old Terminal.
+                             * Esc O 1 ; 2 C == Shift-Right on old Terminal.
+                             * Esc O 1 ; 2 D == Shift-Left on old Terminal. */
                             shift_held = true;
                             return arrow_from_ABCD(seq[3]);
                         }
                         break;
                     }
-                    case '5' :
+                    case '5' : /* Ctrl */
                     {
                         switch (seq[3])
                         {
-                            //
-                            //  Esc O 1 ; 5 A == Ctrl-Up on old Terminal.
-                            //
-                            case 'A' :
+                            case 'A' : /* Esc O 1 ; 5 A == Ctrl-Up on old Terminal. */
                             {
                                 return CONTROL_UP;
                             }
-                            //
-                            //  Esc O 1 ; 5 B == Ctrl-Down on old Terminal.
-                            //
-                            case 'B' :
+                            case 'B' : /* Esc O 1 ; 5 B == Ctrl-Down on old Terminal. */
                             {
                                 return CONTROL_DOWN;
                             }
-                            //
-                            //  Esc O 1 ; 5 C == Ctrl-Right on old Terminal.
-                            //
-                            case 'C' :
+                            case 'C' : /* Esc O 1 ; 5 C == Ctrl-Right on old Terminal. */
                             {
                                 return CONTROL_RIGHT;
                             }
-                            //
-                            //  Esc O 1 ; 5 D == Ctrl-Left on old Terminal.
-                            //
-                            case 'D' :
+                            case 'D' : /* Esc O 1 ; 5 D == Ctrl-Left on old Terminal. */
                             {
                                 return CONTROL_LEFT;
                             }
@@ -624,66 +504,44 @@ convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
             }
             break;
         }
-        //
-        //  Shift
-        //
-        case '2' :
-        //
-        //  Alt
-        //
-        case '3' :
-        //
-        //  Shift+Alt
-        //
-        case '4' :
-        //
-        //  Ctrl
-        //
-        case '5' :
-        //
-        //  Shift+Ctrl
-        //
-        case '6' :
-        //
-        //  Alt+Ctrl
-        //
-        case '7' :
-        //
-        //  Shift+Alt+Ctrl
-        //
-        case '8' :
+        case '2' : /* Shift */
+        case '3' : /* Alt */
+        case '4' : /* Shift+Alt */
+        case '5' : /* Ctrl */
+        case '6' : /* Shift+Ctrl */
+        case '7' : /* Alt+Ctrl */
+        case '8' : /* Shift+Alt+Ctrl */
         {
             if (length > 1)
             {
                 *consumed = 2;
-                //
-                //  Do not accept multiple modifiers.
-                //
+                /* Do not accept multiple modifiers. */
                 if (seq[0] == '4' || seq[0] > '5')
                 {
                     return FOREIGN_SEQUENCE;
                 }
-
                 switch (seq[1])
                 {
-                    //
-                    //  Esc O 5 A == Ctrl-Up on Haiku.
-                    //
-                    case 'A' :
+                    case 'A' : /* Esc O 5 A == Ctrl-Up on Haiku. */
                     {
                         return CONTROL_UP;
                     }
                     case 'B' : /* Esc O 5 B == Ctrl-Down on Haiku. */
+                    {
                         return CONTROL_DOWN;
+                    }
                     case 'C' : /* Esc O 5 C == Ctrl-Right on Haiku. */
+                    {
                         return CONTROL_RIGHT;
+                    }
                     case 'D' : /* Esc O 5 D == Ctrl-Left on Haiku. */
+                    {
                         return CONTROL_LEFT;
+                    }
                 }
-
-                // Translate Shift+digit on the keypad to the digit
-                // (Esc O 2 p == Shift-0, ...), modifier+operator to
-                // the operator, and modifier+Enter to CR.
+                /* Translate Shift+digit on the keypad to the digit
+                 * (Esc O 2 p == Shift-0, ...), modifier+operator to
+                 * the operator, and modifier+Enter to CR. */
                 return (seq[1] - 0x40);
             }
             break;
@@ -692,77 +550,119 @@ convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
         case 'B' : /* Esc O B == Down on VT100/VT320. */
         case 'C' : /* Esc O C == Right on VT100/VT320. */
         case 'D' : /* Esc O D == Left on VT100/VT320. */
+        {
             return arrow_from_ABCD(seq[0]);
+        }
         case 'F' : /* Esc O F == End on old xterm. */
+        {
             return KEY_END;
+        }
         case 'H' : /* Esc O H == Home on old xterm. */
+        {
             return KEY_HOME;
-        case 'M' : /* Esc O M == Enter on numeric keypad
-                    * with NumLock off on VT100/VT220/VT320. */
+        }
+        case 'M' : /* Esc O M == Enter on numeric keypad with NumLock off on VT100/VT220/VT320. */
+        {
             return KEY_ENTER;
+        }
         case 'P' : /* Esc O P == F1 on VT100/VT220/VT320/xterm/Mach console. */
         case 'Q' : /* Esc O Q == F2 on VT100/VT220/VT320/xterm/Mach console. */
         case 'R' : /* Esc O R == F3 on VT100/VT220/VT320/xterm/Mach console. */
         case 'S' : /* Esc O S == F4 on VT100/VT220/VT320/xterm/Mach console. */
+        {
             return KEY_F(seq[0] - 'O');
+        }
         case 'T' : /* Esc O T == F5 on Mach console. */
         case 'U' : /* Esc O U == F6 on Mach console. */
         case 'V' : /* Esc O V == F7 on Mach console. */
         case 'W' : /* Esc O W == F8 on Mach console. */
         case 'X' : /* Esc O X == F9 on Mach console. */
         case 'Y' : /* Esc O Y == F10 on Mach console. */
+        {
             return KEY_F(seq[0] - 'O');
+        }
         case 'a' : /* Esc O a == Ctrl-Up on rxvt/Eterm. */
+        {
             return CONTROL_UP;
+        }
         case 'b' : /* Esc O b == Ctrl-Down on rxvt/Eterm. */
+        {
             return CONTROL_DOWN;
+        }
         case 'c' : /* Esc O c == Ctrl-Right on rxvt/Eterm. */
+        {
             return CONTROL_RIGHT;
+        }
         case 'd' : /* Esc O d == Ctrl-Left on rxvt/Eterm. */
+        {
             return CONTROL_LEFT;
-        case 'j' : /* Esc O j == '*' on numeric keypad with
-                    * NumLock off on xterm/rxvt/Eterm. */
+        }
+        case 'j' : /* Esc O j == '*' on numeric keypad with NumLock off on xterm/rxvt/Eterm. */
+        {
             return '*';
+        }
         case 'k' : /* Esc O k == '+' on the same. */
+        {
             return '+';
+        }
         case 'l' : /* Esc O l == ',' on VT100/VT220/VT320. */
+        {
             return ',';
-        case 'm' : /* Esc O m == '-' on numeric keypad with
-                    * NumLock off on VTnnn/xterm/rxvt/Eterm. */
+        }
+        case 'm' : /* Esc O m == '-' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
+        {
             return '-';
-        case 'n' : /* Esc O n == Delete (.) on numeric keypad
-                    * with NumLock off on rxvt/Eterm. */
+        }
+        case 'n' : /* Esc O n == Delete (.) on numeric keypad with NumLock off on rxvt/Eterm. */
+        {
             return KEY_DC;
-        case 'o' : /* Esc O o == '/' on numeric keypad with
-                    * NumLock off on VTnnn/xterm/rxvt/Eterm. */
+        }
+        case 'o' : /* Esc O o == '/' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
+        {
             return '/';
-        case 'p' : /* Esc O p == Insert (0) on numeric keypad
-                    * with NumLock off on rxvt/Eterm. */
+        }
+        case 'p' : /* Esc O p == Insert (0) on numeric keypad with NumLock off on rxvt/Eterm. */
+        {
             return KEY_IC;
+        }
         case 'q' : /* Esc O q == End (1) on the same. */
+        {
             return KEY_END;
+        }
         case 'r' : /* Esc O r == Down (2) on the same. */
+        {
             return KEY_DOWN;
+        }
         case 's' : /* Esc O s == PageDown (3) on the same. */
+        {
             return KEY_NPAGE;
+        }
         case 't' : /* Esc O t == Left (4) on the same. */
+        {
             return KEY_LEFT;
+        }
         case 'v' : /* Esc O v == Right (6) on the same. */
+        {
             return KEY_RIGHT;
+        }
         case 'w' : /* Esc O w == Home (7) on the same. */
+        {
             return KEY_HOME;
+        }
         case 'x' : /* Esc O x == Up (8) on the same. */
+        {
             return KEY_UP;
+        }
         case 'y' : /* Esc O y == PageUp (9) on the same. */
+        {
             return KEY_PPAGE;
+        }
     }
-
     return FOREIGN_SEQUENCE;
 }
 
-//
-//  Translate a sequence that began with "Esc [" to its corresponding key code.
-//
+/* Translate a sequence that began with "Esc [" to its corresponding key code.
+ * TODO: (convert_CSI_sequence) - Importante, see if this can be used to retrieve 'Ctrl+Bsp/^Bsp'. */
 int
 convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
 {
@@ -770,16 +670,13 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
     {
         *consumed = 2;
     }
-
     switch (seq[0])
     {
         case '1' :
         {
+            /* Esc [ 1 ~ == Home on VT320/Linux console. */
             if (length > 1 && seq[1] == '~')
             {
-                //
-                //  Esc [ 1 ~ == Home on VT320/Linux console.
-                //
                 return KEY_HOME;
             }
             else if (length > 2 && seq[2] == '~')
@@ -787,41 +684,17 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                 *consumed = 3;
                 switch (seq[1])
                 {
-                    //
-                    //  Esc [ 1 1 ~ == F1 on rxvt/Eterm.
-                    //
-                    case '1' :
-                    //
-                    //  Esc [ 1 2 ~ == F2 on rxvt/Eterm.
-                    //
-                    case '2' :
-                    //
-                    //  Esc [ 1 3 ~ == F3 on rxvt/Eterm.
-                    //
-                    case '3' :
-                    //
-                    //  Esc [ 1 4 ~ == F4 on rxvt/Eterm.
-                    //
-                    case '4' :
-                    //
-                    //  Esc [ 1 5 ~ == F5 on xterm/rxvt/Eterm.
-                    //
-                    case '5' :
+                    case '1' : /* Esc [ 1 1 ~ == F1 on rxvt/Eterm. */
+                    case '2' : /* Esc [ 1 2 ~ == F2 on rxvt/Eterm. */
+                    case '3' : /* Esc [ 1 3 ~ == F3 on rxvt/Eterm. */
+                    case '4' : /* Esc [ 1 4 ~ == F4 on rxvt/Eterm. */
+                    case '5' : /* Esc [ 1 5 ~ == F5 on xterm/rxvt/Eterm. */
                     {
                         return KEY_F(seq[1] - '0');
                     }
-                    //
-                    //  Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux console/xterm/rxvt/Eterm.
-                    //
-                    case '7' :
-                    //
-                    //  Esc [ 1 8 ~ == F7 on the same.
-                    //
-                    case '8' :
-                    //
-                    //  Esc [ 1 9 ~ == F8 on the same.
-                    //
-                    case '9' :
+                    case '7' : /* Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux console/xterm/rxvt/Eterm. */
+                    case '8' : /* Esc [ 1 8 ~ == F7 on the same. */
+                    case '9' : /* Esc [ 1 9 ~ == F8 on the same. */
                     {
                         return KEY_F(seq[1] - '1');
                     }
@@ -832,94 +705,55 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                 *consumed = 4;
                 switch (seq[2])
                 {
-                    case '2' :
+                    case '2' : /* Shift */
                     {
                         switch (seq[3])
                         {
-                            //
-                            //  Esc [ 1 ; 2 A == Shift-Up on xterm.
-                            //
-                            case 'A' :
-                            //
-                            //  Esc [ 1 ; 2 B == Shift-Down on xterm.
-                            //
-                            case 'B' :
-                            //
-                            //  Esc [ 1 ; 2 C == Shift-Right on xterm.
-                            //
-                            case 'C' :
-                            //
-                            //  Esc [ 1 ; 2 D == Shift-Left on xterm.
-                            //
-                            case 'D' :
+                            case 'A' : /* Esc [ 1 ; 2 A == Shift-Up on xterm. */
+                            case 'B' : /* Esc [ 1 ; 2 B == Shift-Down on xterm. */
+                            case 'C' : /* Esc [ 1 ; 2 C == Shift-Right on xterm. */
+                            case 'D' : /* Esc [ 1 ; 2 D == Shift-Left on xterm. */
                             {
-                                shift_held = TRUE;
+                                shift_held = true;
                                 return arrow_from_ABCD(seq[3]);
                             }
-                            //
-                            //  Esc [ 1 ; 2 F == Shift-End on xterm.
-                            //
-                            case 'F' :
+                            case 'F' : /* Esc [ 1 ; 2 F == Shift-End on xterm. */
                             {
                                 return SHIFT_END;
                             }
-                            //
-                            //  Esc [ 1 ; 2 H == Shift-Home on xterm.
-                            //
-                            case 'H' :
+                            case 'H' : /* Esc [ 1 ; 2 H == Shift-Home on xterm. */
                             {
                                 return SHIFT_HOME;
                             }
                         }
                         break;
                     }
-                    //
-                    //  To accommodate iTerm2 in "xterm mode".
-                    //
-                    case '9' :
-                    case '3' :
+                    case '9' : /* To accommodate iTerm2 in "xterm mode". */
+                    case '3' : /* Alt */
                     {
                         switch (seq[3])
                         {
-                            //
-                            //  Esc [ 1 ; 3 A == Alt-Up on xterm.
-                            //
-                            case 'A' :
+                            case 'A' : /* Esc [ 1 ; 3 A == Alt-Up on xterm. */
                             {
                                 return ALT_UP;
                             }
-                            //
-                            //  Esc [ 1 ; 3 B == Alt-Down on xterm.
-                            //
-                            case 'B' :
+                            case 'B' : /* Esc [ 1 ; 3 B == Alt-Down on xterm. */
                             {
                                 return ALT_DOWN;
                             }
-                            //
-                            //  Esc [ 1 ; 3 C == Alt-Right on xterm.
-                            //
-                            case 'C' :
+                            case 'C' : /* Esc [ 1 ; 3 C == Alt-Right on xterm. */
                             {
                                 return ALT_RIGHT;
                             }
-                            //
-                            //  Esc [ 1 ; 3 D == Alt-Left on xterm.
-                            //
-                            case 'D' :
+                            case 'D' : /* Esc [ 1 ; 3 D == Alt-Left on xterm. */
                             {
                                 return ALT_LEFT;
                             }
-                            //
-                            //  Esc [ 1 ; 3 F == Alt-End on xterm.
-                            //
-                            case 'F' :
+                            case 'F' : /* Esc [ 1 ; 3 F == Alt-End on xterm. */
                             {
                                 return ALT_END;
                             }
-                            //
-                            //  Esc [ 1 ; 3 H == Alt-Home on xterm.
-                            //
-                            case 'H' :
+                            case 'H' : /* Esc [ 1 ; 3 H == Alt-Home on xterm. */
                             {
                                 return ALT_HOME;
                             }
@@ -928,17 +762,11 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                     }
                     case '4' :
                     {
-                        //
-                        //  When the arrow keys are held together with
-                        //  Shift+Meta, act as if they are Home/End/PgUp/PgDown
-                        //  with Shift.
-                        //
+                        /* When the arrow keys are held together with Shift+Meta,
+                         * act as if they are Home/End/PgUp/PgDown with Shift. */
                         switch (seq[3])
                         {
-                            //
-                            //  Esc [ 1 ; 4 A == Shift-Alt-Up on xterm.
-                            //
-                            case 'A' :
+                            case 'A' : /* Esc [ 1 ; 4 A == Shift-Alt-Up on xterm. */
                             {
                                 return SHIFT_PAGEUP;
                             }
@@ -1066,9 +894,7 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             }
             else if (length > 4 && seq[2] == ';' && seq[4] == '~')
             {
-                //
-                //  Esc [ 1 n ; 2 ~ == F17...F20 on some terminals.
-                //
+                /* Esc [ 1 n ; 2 ~ == F17...F20 on some terminals. */
                 *consumed = 5;
             }
             break;
@@ -1080,60 +906,35 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                 *consumed = 3;
                 switch (seq[1])
                 {
-                    //
-                    //  Esc [ 2 0 ~ == F9 on VT220/VT320/
-                    //  Linux console/xterm/rxvt/Eterm.
-                    //
-                    case '0' :
+                    case '0' : /* Esc [ 2 0 ~ == F9 on VT220/VT320/Linux console/xterm/rxvt/Eterm. */
                     {
                         return KEY_F(9);
                     }
-                    //
-                    //  Esc [ 2 1 ~ == F10 on the same.
-                    //
-                    case '1' :
+                    case '1' : /* Esc [ 2 1 ~ == F10 on the same. */
                     {
                         return KEY_F(10);
                     }
-                    //
-                    //  Esc [ 2 3 ~ == F11 on the same.
-                    //
-                    case '3' :
+                    case '3' : /* Esc [ 2 3 ~ == F11 on the same. */
                     {
                         return KEY_F(11);
                     }
-                    //
-                    //  Esc [ 2 4 ~ == F12 on the same.
-                    //
-                    case '4' :
+                    case '4' : /* Esc [ 2 4 ~ == F12 on the same. */
                     {
                         return KEY_F(12);
                     }
-                    //
-                    //  Esc [ 2 5 ~ == F13 on the same.
-                    //
-                    case '5' :
+                    case '5' : /* Esc [ 2 5 ~ == F13 on the same. */
                     {
                         return KEY_F(13);
                     }
-                    //
-                    //  Esc [ 2 6 ~ == F14 on the same.
-                    //
-                    case '6' :
+                    case '6' : /* Esc [ 2 6 ~ == F14 on the same. */
                     {
                         return KEY_F(14);
                     }
-                    //
-                    //  Esc [ 2 8 ~ == F15 on the same.
-                    //
-                    case '8' :
+                    case '8' : /* Esc [ 2 8 ~ == F15 on the same. */
                     {
                         return KEY_F(15);
                     }
-                    //
-                    //  Esc [ 2 9 ~ == F16 on the same.
-                    //
-                    case '9' :
+                    case '9' : /* Esc [ 2 9 ~ == F16 on the same. */
                     {
                         return KEY_F(16);
                     }
@@ -1141,17 +942,12 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             }
             else if (length > 1 && seq[1] == '~')
             {
-                //
-                //  Esc [ 2 ~ == Insert on VT220/VT320/
-                //  Linux console/xterm/Terminal.
-                //
+                /* Esc [ 2 ~ == Insert on VT220/VT320/Linux console/xterm/Terminal. */
                 return KEY_IC;
             }
             else if (length > 3 && seq[1] == ';' && seq[3] == '~')
             {
-                //
-                //  Esc [ 2 ; x ~ == modified Insert on xterm.
-                //
+                /* Esc [ 2 ; x ~ == modified Insert on xterm. */
                 *consumed = 4;
                 if (seq[2] == '3')
                 {
@@ -1160,17 +956,13 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             }
             else if (length > 4 && seq[2] == ';' && seq[4] == '~')
             {
-                //
-                //  Esc [ 2 n ; 2 ~ == F21...F24 on some terminals.
-                //
+                /* Esc [ 2 n ; 2 ~ == F21...F24 on some terminals. */
                 *consumed = 5;
             }
             else if (length > 3 && seq[1] == '0' && seq[3] == '~')
             {
-                //
-                //  Esc [ 2 0 0 ~ == start of a bracketed paste,
-                //  Esc [ 2 0 1 ~ == end of a bracketed paste.
-                //
+                /* Esc [ 2 0 0 ~ == start of a bracketed paste,
+                 * Esc [ 2 0 1 ~ == end of a bracketed paste. */
                 *consumed = 4;
                 if (seq[2] == '0')
                 {
@@ -1185,23 +977,16 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             }
             else
             {
-                //
-                //  When invalid, assume it's a truncated end-of-paste sequence,
-                //  in order to avoid a hang -- https://sv.gnu.org/bugs/?64996.
-                //
+                /* When invalid, assume it's a truncated end-of-paste sequence,
+                 * in order to avoid a hang -- https://sv.gnu.org/bugs/?64996. */
                 bracketed_paste = false;
                 *consumed       = length;
                 return ERR;
             }
             break;
         }
-        //
-        //  Esc [ 3 ~ == Delete on VT220/VT320/
-        //  Linux console/xterm/Terminal.
-        //
-        case '3' :
+        case '3' : /* Esc [ 3 ~ == Delete on VT220/VT320/Linux console/xterm/Terminal. */
         {
-
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_DC;
@@ -1211,68 +996,48 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                 *consumed = 4;
                 if (seq[2] == '2')
                 {
-                    //
-                    //  Esc [ 3 ; 2 ~ == Shift-Delete on xterm/Terminal.
-                    //
+                    /* Esc [ 3 ; 2 ~ == Shift-Delete on xterm/Terminal. */
                     return SHIFT_DELETE;
                 }
                 if (seq[2] == '3')
                 {
-                    //
-                    //  Esc [ 3 ; 3 ~ == Alt-Delete on xterm/rxvt/Eterm/Terminal.
-                    //
+                    /* Esc [ 3 ; 3 ~ == Alt-Delete on xterm/rxvt/Eterm/Terminal. */
                     return ALT_DELETE;
                 }
                 if (seq[2] == '5')
                 {
-                    //
-                    //  Esc [ 3 ; 5 ~ == Ctrl-Delete on xterm.
-                    //
+                    /* Esc [ 3 ; 5 ~ == Ctrl-Delete on xterm. */
                     return CONTROL_DELETE;
                 }
                 if (seq[2] == '6')
                 {
-                    //
-                    //  Esc [ 3 ; 6 ~ == Ctrl-Shift-Delete on xterm.
-                    //
+                    /* Esc [ 3 ; 6 ~ == Ctrl-Shift-Delete on xterm. */
                     return controlshiftdelete;
                 }
             }
             if (length > 1 && seq[1] == '$')
             {
-                //
-                //  Esc [ 3 $ == Shift-Delete on urxvt.
-                //
+                /* Esc [ 3 $ == Shift-Delete on urxvt. */
                 return SHIFT_DELETE;
             }
             if (length > 1 && seq[1] == '^')
             {
-                //
-                //  Esc [ 3 ^ == Ctrl-Delete on urxvt.
-                //
+                /* Esc [ 3 ^ == Ctrl-Delete on urxvt. */
                 return CONTROL_DELETE;
             }
             if (length > 1 && seq[1] == '@')
             {
-                //
-                //  Esc [ 3 @ == Ctrl-Shift-Delete on urxvt.
-                //
+                /* Esc [ 3 @ == Ctrl-Shift-Delete on urxvt. */
                 return controlshiftdelete;
             }
             if (length > 2 && seq[2] == '~')
             {
-                //
-                //  Esc [ 3 n ~ == F17...F20 on some terminals.
-                //
+                /* Esc [ 3 n ~ == F17...F20 on some terminals. */
                 *consumed = 3;
             }
             break;
         }
-        //
-        //  Esc [ 4 ~ == End on VT220/VT320/
-        //  Linux console/xterm.
-        //
-        case '4' :
+        case '4' : /* Esc [ 4 ~ == End on VT220/VT320/Linux console/xterm. */
         {
             if (length > 1 && seq[1] == '~')
             {
@@ -1280,13 +1045,8 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             }
             break;
         }
-        //
-        //  Esc [ 5 ~ == PageUp on VT220/VT320/
-        //  Linux console/xterm/Eterm/urxvt/Terminal
-        //
-        case '5' :
+        case '5' : /* Esc [ 5 ~ == PageUp on VT220/VT320/Linux console/xterm/Eterm/urxvt/Terminal */
         {
-
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_PPAGE;
@@ -1305,11 +1065,7 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             }
             break;
         }
-        //
-        //  Esc [ 6 ~ == PageDown on VT220/VT320/
-        //  Linux console/xterm/Eterm/urxvt/Terminal
-        //
-        case '6' :
+        case '6' : /* Esc [ 6 ~ == PageDown on VT220/VT320/Linux console/xterm/Eterm/urxvt/Terminal */
         {
             if (length > 1 && seq[1] == '~')
             {
@@ -1329,221 +1085,130 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             }
             break;
         }
-        //
-        //  Esc [ 7 ~ == Home on Eterm/rxvt;
-        //  Esc [ 7 $ == Shift-Home on Eterm/rxvt;
-        //  Esc [ 7 ^ == Control-Home on Eterm/rxvt;
-        //  Esc [ 7 @ == Shift-Control-Home on same.
-        //
         case '7' :
         {
+            /* Esc [ 7 ~ == Home on Eterm/rxvt; */
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_HOME;
             }
+            /* Esc [ 7 $ == Shift-Home on Eterm/rxvt; */
             else if (length > 1 && seq[1] == '$')
             {
                 return SHIFT_HOME;
             }
+            /* Esc [ 7 ^ == Control-Home on Eterm/rxvt; */
             else if (length > 1 && seq[1] == '^')
             {
                 return CONTROL_HOME;
             }
+            /* Esc [ 7 @ == Shift-Control-Home on same. */
             else if (length > 1 && seq[1] == '@')
             {
                 return shiftcontrolhome;
             }
             break;
         }
-        //
-        //  Esc [ 8 ~ == End on Eterm/rxvt;
-        //  Esc [ 8 $ == Shift-End on Eterm/rxvt;
-        //  Esc [ 8 ^ == Control-End on Eterm/rxvt;
-        //  Esc [ 8 @ == Shift-Control-End on same.
-        //
         case '8' :
         {
+            /* Esc [ 8 ~ == End on Eterm/rxvt; */
             if (length > 1 && seq[1] == '~')
             {
                 return KEY_END;
             }
+            /* Esc [ 8 $ == Shift-End on Eterm/rxvt; */
             else if (length > 1 && seq[1] == '$')
             {
                 return SHIFT_END;
             }
+            /* Esc [ 8 ^ == Control-End on Eterm/rxvt; */
             else if (length > 1 && seq[1] == '^')
             {
                 return CONTROL_END;
             }
+            /* Esc [ 8 @ == Shift-Control-End on same. */
             else if (length > 1 && seq[1] == '@')
             {
                 return shiftcontrolend;
             }
             break;
         }
-        //
-        //  Esc [ 9 == Delete on Mach console.
-        //
-        case '9' :
+        case '9' : /* Esc [ 9 == Delete on Mach console. */
         {
             return KEY_DC;
         }
-        //
-        //  Esc [ @ == Insert on Mach console.
-        //
-        case '@' :
+        case '@' : /* Esc [ @ == Insert on Mach console. */
         {
             return KEY_IC;
         }
-        //
-        //  Esc [ A == Up on ANSI/VT220/Linux console/
-        //  FreeBSD console/Mach console/xterm/Eterm/
-        //  urxvt/Gnome and Xfce Terminal.
-        //
-        case 'A' :
-        //
-        //  Esc [ B == Down on the same.
-        //
-        case 'B' :
-        //
-        //  Esc [ C == Right on the same.
-        //
-        case 'C' :
-        //
-        //  Esc [ D == Left on the same.
-        //
-        case 'D' :
+        case 'A' : /* Esc [ A == Up on ANSI/VT220/Linux console/
+                    * FreeBSD console/Mach console/xterm/Eterm/
+                    * urxvt/Gnome and Xfce Terminal. */
+        case 'B' : /* Esc [ B == Down on the same. */
+        case 'C' : /* Esc [ C == Right on the same. */
+        case 'D' : /* Esc [ D == Left on the same. */
         {
             return arrow_from_ABCD(seq[0]);
         }
-        //
-        //  Esc [ F == End on FreeBSD console/Eterm.
-        //
-        case 'F' :
+        case 'F' : /* Esc [ F == End on FreeBSD console/Eterm. */
         {
             return KEY_END;
         }
-        //
-        //  Esc [ G == PageDown on FreeBSD console.
-        //
-        case 'G' :
+        case 'G' : /* Esc [ G == PageDown on FreeBSD console. */
         {
             return KEY_NPAGE;
         }
-        //
-        //  Esc [ H == Home on ANSI/VT220/FreeBSD console/Mach console/Eterm.
-        //
-        case 'H' :
+        case 'H' : /* Esc [ H == Home on ANSI/VT220/FreeBSD console/Mach console/Eterm. */
         {
             return KEY_HOME;
         }
-        //
-        //  Esc [ I == PageUp on FreeBSD console.
-        //
-        case 'I' :
+        case 'I' : /* Esc [ I == PageUp on FreeBSD console. */
         {
             return KEY_PPAGE;
         }
-        //
-        //  Esc [ L == Insert on ANSI/FreeBSD console.
-        //
-        case 'L' :
+        case 'L' : /* Esc [ L == Insert on ANSI/FreeBSD console. */
         {
             return KEY_IC;
         }
-        //
-        //  Esc [ M == F1 on FreeBSD console.
-        //
-        case 'M' :
-        //
-        //  Esc [ N == F2 on FreeBSD console.
-        //
-        case 'N' :
-        //
-        //  Esc [ O == F3 on FreeBSD console.
-        //
-        case 'O' :
-        //
-        //  Esc [ P == F4 on FreeBSD console.
-        //
-        case 'P' :
-        //
-        //  Esc [ Q == F5 on FreeBSD console.
-        //
-        case 'Q' :
-        //
-        //  Esc [ R == F6 on FreeBSD console.
-        //
-        case 'R' :
-        //
-        //  Esc [ S == F7 on FreeBSD console.
-        //
-        case 'S' :
-        //
-        //  Esc [ T == F8 on FreeBSD console.
-        //
-        case 'T' :
+        case 'M' : /* Esc [ M == F1 on FreeBSD console. */
+        case 'N' : /* Esc [ N == F2 on FreeBSD console. */
+        case 'O' : /* Esc [ O == F3 on FreeBSD console. */
+        case 'P' : /* Esc [ P == F4 on FreeBSD console. */
+        case 'Q' : /* Esc [ Q == F5 on FreeBSD console. */
+        case 'R' : /* Esc [ R == F6 on FreeBSD console. */
+        case 'S' : /* Esc [ S == F7 on FreeBSD console. */
+        case 'T' : /* Esc [ T == F8 on FreeBSD console. */
         {
             return KEY_F(seq[0] - 'L');
         }
-        //
-        //  Esc [ U == PageDown on Mach console.
-        //
-        case 'U' :
+        case 'U' : /* Esc [ U == PageDown on Mach console. */
         {
             return KEY_NPAGE;
         }
-        //
-        //  Esc [ V == PageUp on Mach console.
-        //
-        case 'V' :
+        case 'V' : /* Esc [ V == PageUp on Mach console. */
         {
             return KEY_PPAGE;
         }
-        //
-        //  Esc [ W == F11 on FreeBSD console.
-        //
-        case 'W' :
+        case 'W' : /* Esc [ W == F11 on FreeBSD console. */
         {
             return KEY_F(11);
         }
-        //
-        //  Esc [ X == F12 on FreeBSD console.
-        //
-        case 'X' :
+        case 'X' : /* Esc [ X == F12 on FreeBSD console. */
         {
             return KEY_F(12);
         }
-        //
-        //  Esc [ Y == End on Mach console.
-        //
-        case 'Y' :
+        case 'Y' : /* Esc [ Y == End on Mach console. */
         {
             return KEY_END;
         }
-        //
-        //  Esc [ Z == Shift-Tab on ANSI/Linux console/ FreeBSD console/xterm/rxvt/Terminal.
-        //
-        case 'Z' :
+        case 'Z' : /* Esc [ Z == Shift-Tab on ANSI/Linux console/ FreeBSD console/xterm/rxvt/Terminal. */
         {
             return SHIFT_TAB;
         }
-        //
-        //  Esc [ a == Shift-Up on rxvt/Eterm.
-        //
-        case 'a' :
-        //
-        //  Esc [ b == Shift-Down on rxvt/Eterm.
-        //
-        case 'b' :
-        //
-        //  Esc [ c == Shift-Right on rxvt/Eterm.
-        //
-        case 'c' :
-        //
-        //  Esc [ d == Shift-Left on rxvt/Eterm.
-        //
-        case 'd' :
+        case 'a' : /* Esc [ a == Shift-Up on rxvt/Eterm. */
+        case 'b' : /* Esc [ b == Shift-Down on rxvt/Eterm. */
+        case 'c' : /* Esc [ c == Shift-Right on rxvt/Eterm. */
+        case 'd' : /* Esc [ d == Shift-Left on rxvt/Eterm. */
         {
             shift_held = true;
             return arrow_from_ABCD(seq[0] - 0x20);
@@ -1569,16 +1234,14 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
     return FOREIGN_SEQUENCE;
 }
 
-//
-//  Interpret an escape sequence that has the given post-ESC starter byte
-//  and with the rest of the sequence still in the keystroke buffer.
-//
+/* Interpret an escape sequence that has the given post-ESC starter byte
+ * and with the rest of the sequence still in the keystroke buffer.
+ * TODO: (parse_escape_sequence) - Use this to get 'Ctrl+Bsp/^Bsp'. */
 int
 parse_escape_sequence(int starter)
 {
     int consumed = 1;
     int keycode  = 0;
-
     if (starter == 'O')
     {
         keycode = convert_SS3_sequence(nextcodes, waiting_codes, &consumed);
@@ -1587,43 +1250,30 @@ parse_escape_sequence(int starter)
     {
         keycode = convert_CSI_sequence(nextcodes, waiting_codes, &consumed);
     }
-
-    //
-    //  Skip the consumed sequence elements.
-    //
+    /* Skip the consumed sequence elements. */
     waiting_codes -= consumed;
     nextcodes += consumed;
-
     return keycode;
 }
 
 constexpr int PROCEED = -44;
-//
-//  For each consecutive call, gather the given digit into a three-digit
-//  decimal byte code (from 000 to 255).
-//  Return the assembled code when it is complete,
-//  but until then return PROCEED when the given digit is valid,
-//  and the given digit itself otherwise.
-//
+/* For each consecutive call, gather the given digit into a three-digit
+ * decimal byte code (from 000 to 255).
+ * Return the assembled code when it is complete,
+ * but until then return PROCEED when the given digit is valid,
+ * and the given digit itself otherwise. */
 int
 assemble_byte_code(int keycode)
 {
     static int byte = 0;
-
     digit_count++;
-
-    //
-    //  The first digit is either 0, 1, or 2 (checked before the call).
-    //
+    /* The first digit is either 0, 1, or 2 (checked before the call). */
     if (digit_count == 1)
     {
         byte = (keycode - '0') * 100;
         return PROCEED;
     }
-
-    //
-    //  The second digit may be at most 5 if the first was 2.
-    //
+    /* The second digit may be at most 5 if the first was 2. */
     if (digit_count == 2)
     {
         if (byte < 200 || keycode <= '5')
@@ -1636,10 +1286,7 @@ assemble_byte_code(int keycode)
             return keycode;
         }
     }
-
-    //
-    //  The third digit may be at most 5 if the first two were 2 and 5.
-    //
+    /* The third digit may be at most 5 if the first two were 2 and 5. */
     if (byte < 250 || keycode <= '5')
     {
         return (byte + keycode - '0');
@@ -1650,21 +1297,16 @@ assemble_byte_code(int keycode)
     }
 }
 
-//
-//  Translate a normal ASCII character into its corresponding control code.
-//  The following groups of control keystrokes are EQUVILENT:
-//  - Ctrl-2 == Ctrl-@ == Ctrl-` == Ctrl-Space
-//  - Ctrl-3 == Ctrl-[ == <Esc>
-//  - Ctrl-4 == Ctrl-\ == Ctrl-|
-//  - Ctrl-5 == Ctrl-]
-//  - Ctrl-6 == Ctrl-^ == Ctrl-~
-//  - Ctrl-7 == Ctrl-/ == Ctrl-_
-//  - Ctrl-8 == Ctrl-?
-//
-//  @param kbinput ( int ) - The ASCII character to convert.
-//
-//  @return ( int ) - The corresponding control code.
-//
+/* Translate a normal ASCII character into its corresponding control code.
+ * The following groups of control keystrokes are EQUVILENT:
+ * - Ctrl-2 == Ctrl-@ == Ctrl-` == Ctrl-Space
+ * - Ctrl-3 == Ctrl-[ == <Esc>
+ * - Ctrl-4 == Ctrl-\ == Ctrl-|
+ * - Ctrl-5 == Ctrl-]
+ * - Ctrl-6 == Ctrl-^ == Ctrl-~
+ * - Ctrl-7 == Ctrl-/ == Ctrl-_
+ * - Ctrl-8 == Ctrl-?
+ * TODO: (convert_to_control) - Check if this can be used to retrive 'Ctrl+Bsp'. */
 int
 convert_to_control(int kbinput)
 {
@@ -1692,56 +1334,39 @@ convert_to_control(int kbinput)
     {
         return 31;
     }
-
     return kbinput;
 }
 
-//
-//  Extract one keystroke from the input stream.
-//  Translate escape sequences and possibly keypad codes into their corresponding values.
-//  Set meta_key to TRUE when appropriate.
-//  Supported keypad keystrokes are:
-//  - the arrow keys,
-//  - Insert,
-//  - Delete,
-//  - Home,
-//  - End,
-//  - PageUp,
-//  - PageDown,
-//  - Enter,
-//  - and Backspace.
-//  - ( many of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or Shift+Alt )
-//  the function keys (F1-F12), and the numeric keypad with NumLock off.
-//  The function also handles UTF-8 sequences, and converts them to Unicode.
-//  The function returns the corresponding value for the given keystroke.
-//
-//  @param frame ( WINDOW * ) - The window to read the input from.
-//
-//  @return ( int ) - The corresponding value for the given keystroke.
-//
-//  TODO: MAKE into a loop to handle all the input codes using less code
-//
+/* Extract one keystroke from the input stream.
+ * Translate escape sequences and possibly keypad codes into their corresponding values.
+ * Set meta_key to TRUE when appropriate.
+ * Supported keypad keystrokes are:
+ * - the arrow keys,
+ * - Insert,
+ * - Delete,
+ * - Home,
+ * - End,
+ * - PageUp,
+ * - PageDown,
+ * - Enter,
+ * - and Backspace.
+ * - (Many of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or Shift+Alt).
+ * The function keys (F1-F12), and the numeric keypad with NumLock off.
+ * The function also handles UTF-8 sequences, and converts them to Unicode.
+ * The function returns the corresponding value for the given keystroke. */
 int
 parse_kbinput(WINDOW *frame)
 {
     static bool first_escape_was_alone = false;
     static bool last_escape_was_alone  = false;
     static int  escapes                = 0;
-
-    int keycode;
-
+    int         keycode;
     meta_key   = false;
     shift_held = false;
-
-    //
-    //  Get one code from the input stream.
-    //
+    /* Get one code from the input stream. */
     keycode = get_input(frame);
-
-    //
-    //  For an Esc, remember whether the last two arrived by themselves.
-    //  Then increment the counter, rolling around on three escapes. */
-    //
+    /* For an Esc, remember whether the last two arrived by themselves.
+     * Then increment the counter, rolling around on three escapes. */
     if (keycode == ESC_CODE)
     {
         first_escape_was_alone = last_escape_was_alone;
@@ -1761,12 +1386,9 @@ parse_kbinput(WINDOW *frame)
     {
         return ERR;
     }
-
     if (escapes == 0)
     {
-        //
-        // Most key codes in byte range cannot be special keys.
-        //
+        /* Most key codes in byte range cannot be special keys. */
         if (keycode < 0xFF && keycode != '\t' && keycode != DEL_CODE)
         {
             return keycode;
@@ -1775,9 +1397,7 @@ parse_kbinput(WINDOW *frame)
     else if (escapes == 1)
     {
         escapes = 0;
-        //
-        //  Codes out of ASCII printable range cannot form an escape sequence.
-        //
+        /* Codes out of ASCII printable range cannot form an escape sequence. */
         if (keycode < 0x20 || 0x7E < keycode)
         {
             if (keycode == '\t')
@@ -1786,6 +1406,7 @@ parse_kbinput(WINDOW *frame)
             }
             else if (keycode == KEY_BACKSPACE || keycode == '\b' || keycode == DEL_CODE)
             {
+                /* TODO: (parse_kbinput) - Check how to detect only CONTROL_BSP here. */
                 return CONTROL_SHIFT_DELETE;
             }
             else if (0xC0 <= keycode && keycode <= 0xFF && using_utf8())
@@ -1811,6 +1432,7 @@ parse_kbinput(WINDOW *frame)
         }
         else
         {
+            /* TODO: (parse_kbinput) - Here is 'parse_escape_sequence' called. */
             keycode = parse_escape_sequence(keycode);
         }
     }
@@ -1820,10 +1442,8 @@ parse_kbinput(WINDOW *frame)
         if (keycode == '[' && waiting_codes &&
             (('A' <= nextcodes[0] && nextcodes[0] <= 'D') || ('a' <= nextcodes[0] && nextcodes[0] <= 'd')))
         {
-            //
-            //  An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X
-            //  for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow.
-            //
+            /* An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X
+             * for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow. */
             switch (get_input(nullptr))
             {
                 case 'A' :
@@ -1871,14 +1491,9 @@ parse_kbinput(WINDOW *frame)
         }
         else if ('0' <= keycode && (keycode <= '2' || (keycode <= '9' && digit_count > 0)))
         {
-            //
-            //  Two escapes followed by one digit: byte sequence mode.
-            //
+            /* Two escapes followed by one digit: byte sequence mode. */
             int byte = assemble_byte_code(keycode);
-
-            //
-            //  If the decimal byte value is not yet complete, return nothing.
-            //
+            /* If the decimal byte value is not yet complete, return nothing. */
             if (byte == PROCEED)
             {
                 escapes = 2;
@@ -1886,18 +1501,16 @@ parse_kbinput(WINDOW *frame)
             }
             else if (byte > 0x7F && using_utf8())
             {
-                //
-                //  Convert the code to the corresponding Unicode, and
-                //  put the second byte back into the keyboard buffer.
-                //
+                /* Convert the code to the corresponding Unicode, and
+                 * put the second byte back into the keyboard buffer. */
                 if (byte < 0xC0)
                 {
-                    put_back(static_cast<u8>(byte));
+                    put_back((unsigned char)byte);
                     return 0xC2;
                 }
                 else
                 {
-                    put_back(static_cast<u8>(byte - 0x40));
+                    put_back((unsigned char)(byte - 0x40));
                     return 0xC3;
                 }
             }
@@ -1912,10 +1525,8 @@ parse_kbinput(WINDOW *frame)
         }
         else if (digit_count == 0)
         {
-            //
-            //  If the first escape arrived alone but not the second, then it
-            //  is a Meta keystroke; otherwise, it is an "Esc Esc control".
-            //
+            /* If the first escape arrived alone but not the second, then it
+             * is a Meta keystroke; otherwise, it is an "Esc Esc control". */
             if (first_escape_was_alone && !last_escape_was_alone)
             {
                 if (!shifted_metas)
@@ -1930,7 +1541,6 @@ parse_kbinput(WINDOW *frame)
             }
         }
     }
-
     if (keycode == controlleft)
     {
         return CONTROL_LEFT;
@@ -2067,22 +1677,14 @@ parse_kbinput(WINDOW *frame)
     {
         return FOREIGN_SEQUENCE;
     }
-
 #ifdef __linux__
-    //
-    //  When not running under X, check for the bare arrow keys whether
-    //  Shift/Ctrl/Alt are being held together with them.
-    //
-    u8 modifiers = 6;
-
-    //
-    //  Modifiers are: Alt (8), Ctrl (4), Shift (1).
-    //
+    /* When not running under X, check for the bare arrow keys whether
+     * Shift/Ctrl/Alt are being held together with them. */
+    unsigned char modifiers = 6;
+    /* Modifiers are: Alt (8), Ctrl (4), Shift (1). */
     if (on_a_vt && !mute_modifiers && ioctl(0, TIOCLINUX, &modifiers) >= 0)
     {
-        //
-        //  Is Shift being held?
-        //
+        /* Is Shift being held? */
         if (modifiers & 0x01)
         {
             if (keycode == '\t')
@@ -2102,9 +1704,7 @@ parse_kbinput(WINDOW *frame)
                 shift_held = true;
             }
         }
-        //
-        //  Is only Alt being held?
-        //
+        /* Is only Alt being held? */
         if (modifiers == 0x08)
         {
             switch (keycode)
@@ -2144,67 +1744,84 @@ parse_kbinput(WINDOW *frame)
             }
         }
 #endif
-        //
-        //  Is Ctrl being held?
-        //
+        /* Is Ctrl being held? */
         if (modifiers & 0x04)
         {
             switch (keycode)
             {
                 case KEY_UP :
+                {
                     return CONTROL_UP;
+                }
                 case KEY_DOWN :
+                {
                     return CONTROL_DOWN;
+                }
                 case KEY_LEFT :
+                {
                     return CONTROL_LEFT;
+                }
                 case KEY_RIGHT :
+                {
                     return CONTROL_RIGHT;
+                }
                 case KEY_HOME :
+                {
                     return CONTROL_HOME;
+                }
                 case KEY_END :
+                {
                     return CONTROL_END;
+                }
                 case KEY_DC :
+                {
                     return CONTROL_DELETE;
+                }
+                case KEY_BACKSPACE : /* ADDED: TESTING */
+                {
+                    return CONTROL_BSP;
+                }
             }
         }
-        //
-        //  Are both Shift and Alt being held?
-        //
+        /* Are both Shift and Alt being held? */
         if ((modifiers & 0x09) == 0x09)
         {
             switch (keycode)
             {
                 case KEY_UP :
+                {
                     return KEY_PPAGE;
+                }
                 case KEY_DOWN :
+                {
                     return KEY_NPAGE;
+                }
                 case KEY_LEFT :
+                {
                     return KEY_HOME;
+                }
                 case KEY_RIGHT :
+                {
                     return KEY_END;
+                }
             }
         }
     }
-
-    //
-    //  Spurious codes from VTE -- see https://sv.gnu.org/bugs/?64578.
-    //
+    /* Spurious codes from VTE -- see https://sv.gnu.org/bugs/?64578. */
     if (keycode == mousefocusin || keycode == mousefocusout)
     {
         return ERR;
     }
-
     switch (keycode)
     {
         case KEY_SLEFT :
         {
-            shift_held = TRUE;
+            shift_held = true;
             return KEY_LEFT;
         }
         case KEY_SRIGHT :
         {
-
-            shift_held = TRUE;
+            shift_held = true;
             return KEY_RIGHT;
         }
 #ifdef KEY_SR
@@ -2212,75 +1829,102 @@ parse_kbinput(WINDOW *frame)
         case KEY_SUP :
 #    endif
         case KEY_SR : /* Scroll backward, on Xfce4-terminal. */
-            shift_held = TRUE;
+        {
+            shift_held = true;
             return KEY_UP;
+        }
 #endif
 #ifdef KEY_SF
 #    ifdef KEY_SDOWN  /* Ncurses doesn't know Shift+Down. */
         case KEY_SDOWN :
 #    endif
         case KEY_SF : /* Scroll forward, on Xfce4-terminal. */
-            shift_held = TRUE;
+        {
+            shift_held = true;
             return KEY_DOWN;
+        }
 #endif
 #ifdef KEY_SHOME /* HP-UX 10-11 doesn't know Shift+Home. */
         case KEY_SHOME :
 #endif
         case SHIFT_HOME :
-            shift_held = TRUE;
+        {
+            shift_held = true;
+        }
         case KEY_A1 : /* Home (7) on keypad with NumLock off. */
+        {
             return KEY_HOME;
-#ifdef KEY_SEND       /* HP-UX 10-11 doesn't know Shift+End. */
+        }
+#ifdef KEY_SEND /* HP-UX 10-11 doesn't know Shift+End. */
         case KEY_SEND :
 #endif
         case SHIFT_END :
-            shift_held = TRUE;
-        case KEY_C1 :  /* End (1) on keypad with NumLock off. */
+        {
+            shift_held = true;
+        }
+        case KEY_C1 : /* End (1) on keypad with NumLock off. */
+        {
             return KEY_END;
+        }
 #ifdef KEY_EOL
         case KEY_EOL : /* Ctrl+End on rxvt-unicode. */
+        {
             return CONTROL_END;
+        }
 #endif
-#ifndef NANO_TINY
-#    ifdef KEY_SPREVIOUS
+#ifdef KEY_SPREVIOUS
         case KEY_SPREVIOUS :
-#    endif
-        case SHIFT_PAGEUP : /* Fake key, from Shift+Alt+Up. */
-            shift_held = TRUE;
 #endif
-        case KEY_A3 :       /* PageUp (9) on keypad with NumLock off. */
+        case SHIFT_PAGEUP : /* Fake key, from Shift+Alt+Up. */
+        {
+            shift_held = TRUE;
+        }
+        case KEY_A3 : /* PageUp (9) on keypad with NumLock off. */
+        {
             return KEY_PPAGE;
+        }
 #ifdef KEY_SNEXT
         case KEY_SNEXT :
 #endif
         case SHIFT_PAGEDOWN : /* Fake key, from Shift+Alt+Down. */
+        {
             shift_held = true;
-
-        case KEY_C3 :         /* PageDown (3) on keypad with NumLock off. */
+        }
+        case KEY_C3 : /* PageDown (3) on keypad with NumLock off. */
+        {
             return KEY_NPAGE;
+        }
         /* When requested, swap meanings of keycodes for <Bsp> and <Del>. */
         case DEL_CODE :
-        //
-        //  TODO : This is backspace.
-        //
         case KEY_BACKSPACE :
+        {
             return (ISSET(REBIND_DELETE) ? KEY_DC : KEY_BACKSPACE);
+        }
         case KEY_DC :
+        {
             return (ISSET(REBIND_DELETE) ? KEY_BACKSPACE : KEY_DC);
+        }
         case KEY_SDC :
+        {
             return SHIFT_DELETE;
+        }
         case KEY_SCANCEL :
+        {
             return KEY_CANCEL;
+        }
         case KEY_SSUSPEND :
         case KEY_SUSPEND :
+        {
             return 0x1A; /* The ASCII code for Ctrl+Z. */
+        }
         case KEY_BTAB :
+        {
             return SHIFT_TAB;
-
+        }
         case KEY_SBEG :
         case KEY_BEG :
         case KEY_B2 : /* Center (5) on keypad with NumLock off. */
-#ifdef PDCURSES
+#ifdef PDCURSES       /* TODO: (PDCURSES) - Find out if this can be used. */
         case KEY_SHIFT_L :
         case KEY_SHIFT_R :
         case KEY_CONTROL_L :
@@ -2292,67 +1936,44 @@ parse_kbinput(WINDOW *frame)
         case KEY_RESIZE :
 #endif
         case KEY_FRESH :
+        {
             return ERR; /* Ignore this keystroke. */
+        }
     }
-
     return keycode;
 }
 
-//
-//  Read in a single keystroke, ignoring any that are invalid.
-//
-//  @param frame ( WINDOW * )
-//   -  The window to read the input from.
-//
-//  @param showcursor ( bool )
-//   -  Whether to show the cursor.
-//
-//  @return ( int ) - The corresponding value for the given keystroke.
-//
-//  TODO: ( get_kbinput ) - This is the main function that reads the input from the terminal
-//
+/* Read in a single keystroke, ignoring any that are invalid.
+ * TODO: ( get_kbinput ) - This is the main function that reads the input from the terminal. */
 int
 get_kbinput(WINDOW *frame, bool showcursor)
 {
     int kbinput   = ERR;
     reveal_cursor = showcursor;
-
-    //
-    //  Extract one keystroke from the input stream.
-    //
+    /* Extract one keystroke from the input stream. */
     while (kbinput == ERR)
     {
         kbinput = parse_kbinput(frame);
     }
-
-    //
-    //  If we read from the edit window, blank the status bar when it's time.
-    //
+    /* If we read from the edit window, blank the status bar when it's time. */
     if (frame == midwin)
     {
         blank_it_when_expired();
     }
-
     return kbinput;
 }
 
 constexpr short INVALID_DIGIT = -77;
-//
-//  For each consecutive call, gather the given symbol into a Unicode code point.
-//  When it's complete (with six digits, or when Space or Enter is typed),
-//  return the assembled code.
-//  Until then,
-//  return PROCEED when the symbol is valid,
-//  or an error code for anything other than hexadecimal, Space, and Enter.
-//
+/* For each consecutive call, gather the given symbol into a Unicode code point.
+ * When it's complete (with six digits, or when Space or Enter is typed),
+ * return the assembled code. Until then, return PROCEED when the symbol is valid,
+ * or an error code for anything other than hexadecimal, Space, and Enter. */
 long
 assemble_unicode(int symbol)
 {
     static long unicode = 0;
     static int  digits  = 0;
-
-    int outcome = PROCEED;
-
+    int         outcome = PROCEED;
     if ('0' <= symbol && symbol <= '9')
     {
         unicode = (unicode << 4) + symbol - '0';
@@ -2369,50 +1990,34 @@ assemble_unicode(int symbol)
     {
         outcome = INVALID_DIGIT;
     }
-
-    //
-    //  If also the sixth digit was a valid hexadecimal value, then the
-    //  Unicode sequence is complete, so return it (when it's valid).
-    //
+    /* If also the sixth digit was a valid hexadecimal value, then the
+     * Unicode sequence is complete, so return it (when it's valid). */
     if (++digits == 6 && outcome == PROCEED)
     {
         outcome = (unicode < 0x110000) ? unicode : INVALID_DIGIT;
     }
-
-    //
-    //  Show feedback only when editing, not when at a prompt.
-    //
+    /* Show feedback only when editing, not when at a prompt. */
     if (outcome == PROCEED && currmenu == MMAIN)
     {
         char partial[7] = "      ";
-
         sprintf(partial + 6 - digits, "%0*lX", digits, unicode);
-
-        //
-        //  TRANSLATORS: This is shown while a six-digit hexadecimal
-        //  Unicode character code (%s) is being typed in.
-        //
+        /* TRANSLATORS: This is shown while a six-digit hexadecimal
+         * Unicode character code (%s) is being typed in. */
         statusline(INFO, _("Unicode Input: %s"), partial);
     }
-
-    //
-    //  If we have an end result, reset the value and the counter.
-    //
+    /* If we have an end result, reset the value and the counter. */
     if (outcome != PROCEED)
     {
         unicode = 0;
         digits  = 0;
     }
-
     return outcome;
 }
 
-//
-//  Read in one control character (or an iTerm/Eterm/rxvt double Escape),
-//  or convert a series of six digits into a Unicode codepoint.  Return
-//  in count either 1 (for a control character or the first byte of a
-//  multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape).
-//
+/* Read in one control character (or an iTerm/Eterm/rxvt double Escape),
+ * or convert a series of six digits into a Unicode codepoint.  Return
+ * in count either 1 (for a control character or the first byte of a
+ * multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
 int *
 parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
 {
@@ -2426,7 +2031,7 @@ parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
         return nullptr;
     }
     /* Reserve ample space for the possible result. */
-    yield = static_cast<int *>(nmalloc(6 * sizeof(int)));
+    yield = (int *)nmalloc(6 * sizeof(int));
     /* If the key code is a hexadecimal digit, commence Unicode input. */
     if (using_utf8() && isxdigit(keycode))
     {
@@ -2779,27 +2384,11 @@ set_blankdelay_to_one(void)
     countdown = 1;
 }
 
-//
-//  Convert text into a string that can be displayed on screen.
-//  The caller wants to display text starting with the given column, and extending for at most span columns.
-//  The returned string is dynamically allocated, and should be freed.
-//  If isdata is TRUE, the caller might put "<" at the beginning or ">" at the end of the line if it's too long.
-//  If isprompt is TRUE, the caller might put ">" at the end of the line if it's too long.
-//  @param text ( const char * )
-//  -  The text to be displayed.
-//  @param column ( size_t )
-//  -  The column to start displaying the text.
-//  @param span ( size_t )
-//  -  The number of columns to display.
-//  @param isdata ( bool )
-//  -  Whether the text is data.
-//  @param isprompt ( bool )
-//  -  Whether the text is a prompt.
-//  @return (char *)
-//  -  The displayable string.
-//
-//  TODO : ( This function makes a string that is displayeble ) Make this function more readable.
-//
+/* Convert text into a string that can be displayed on screen.
+ * The caller wants to display text starting with the given column, and extending for at most span columns.
+ * The returned string is dynamically allocated, and should be freed.
+ * If isdata is TRUE, the caller might put "<" at the beginning or ">" at the end of the line if it's too long.
+ * If isprompt is TRUE, the caller might put ">" at the end of the line if it's too long. */
 char *
 display_string(const char *text, unsigned long column, unsigned long span, bool isdata, bool isprompt)
 {
@@ -3207,7 +2796,7 @@ titlebar(const char *path)
 }
 
 /* Draw a bar at the bottom with some minimal state information.
- * TODO : ( minibar ) Profile later.  Also make this way better. */
+ * TODO: (minibar) - Profile later.  Also make this way better. */
 void
 minibar(void)
 {
@@ -3428,10 +3017,7 @@ statusline(message_type importance, const char *msg, ...)
     }
     if (importance > NOTICE)
     {
-        if (importance == ALERT)
-        {
-            beep();
-        }
+        (importance == ALERT) ? beep() : 0;
         colorpair = interface_color_pair[ERROR_MESSAGE];
     }
     else if (importance == NOTICE)
@@ -3546,8 +3132,7 @@ bottombars(const int menu)
         {
             continue;
         }
-        s = first_sc_for(menu, f->func);
-        if (s == nullptr)
+        if ((s = first_sc_for(menu, f->func)) == nullptr)
         {
             continue;
         }
@@ -3575,7 +3160,7 @@ place_the_cursor(void)
 {
     long          row    = 0;
     unsigned long column = xplustabs();
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         linestruct   *line = openfile->edittop;
         unsigned long leftedge;
@@ -4031,7 +3616,7 @@ go_back_chunks(int nrows, linestruct **line, unsigned long *leftedge)
 {
     int           i;
     unsigned long chunk;
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         /* Recede through the requested number of chunks. */
         for (i = nrows; i > 0; i--)
@@ -4077,7 +3662,7 @@ go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge)
     int           i;
     unsigned long current_leftedge;
     bool          kickoff, end_of_line;
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         current_leftedge = *leftedge;
         kickoff          = true;
@@ -4123,7 +3708,7 @@ less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge)
     int           rows_left;
     unsigned long leftedge;
     linestruct   *line;
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         line      = openfile->current;
         leftedge  = leftedge_for(xplustabs(), openfile->current);
@@ -4136,40 +3721,31 @@ less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge)
     }
 }
 
-//
-//  Draw a "scroll bar" on the righthand side of the edit window.
-//
-//  TODO : ( draw_scrollbar ) WTF i have never seen a scrollbar during runtime.
-//
+/* Draw a "scroll bar" on the righthand side of the edit window.
+ * TODO : ( draw_scrollbar ) WTF i have never seen a scrollbar during runtime. */
 void
-draw_scrollbar()
+draw_scrollbar(void)
 {
     int fromline     = openfile->edittop->lineno - 1;
     int totallines   = openfile->filebot->lineno;
     int coveredlines = editwinrows;
-
     if ISSET (SOFTWRAP)
     {
         linestruct *line   = openfile->edittop;
         int         extras = extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line);
-
         while (line->lineno + extras < fromline + editwinrows && line->next)
         {
             line = line->next;
             extras += extra_chunks_in(line);
         }
-
         coveredlines = line->lineno - fromline;
     }
-
     int lowest  = (fromline * editwinrows) / totallines;
     int highest = lowest + (editwinrows * coveredlines) / totallines;
-
     if (editwinrows > totallines && !ISSET(SOFTWRAP))
     {
         highest = editwinrows;
     }
-
     for (int row = 0; row < editwinrows; row++)
     {
         bardata[row] =
@@ -4178,20 +3754,15 @@ draw_scrollbar()
     }
 }
 
-//
-//  Scroll the edit window one row in the given direction, and
-//  draw the relevant content on the resultant blank row. */
-//
+/* Scroll the edit window one row in the given direction, and
+ * draw the relevant content on the resultant blank row. */
 void
 edit_scroll(bool direction)
 {
     linestruct   *line;
     unsigned long leftedge;
     int           nrows = 1;
-
-    //
-    //  Move the top line of the edit window one row up or down.
-    //
+    /* Move the top line of the edit window one row up or down. */
     if (direction == BACKWARD)
     {
         go_back_chunks(1, &openfile->edittop, &openfile->firstcolumn);
@@ -4200,66 +3771,40 @@ edit_scroll(bool direction)
     {
         go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
     }
-
-    //
-    //  Actually scroll the text of the edit window one row up or down.
-    //
-    scrollok(midwin, TRUE);
+    /* Actually scroll the text of the edit window one row up or down. */
+    scrollok(midwin, true);
     wscrl(midwin, (direction == BACKWARD) ? -1 : 1);
-    scrollok(midwin, FALSE);
-
-    //
-    //  If we're not on the first "page" (when not softwrapping), or the mark
-    //  is on, the row next to the scrolled region needs to be redrawn too.
-    //
+    scrollok(midwin, false);
+    /* If we're not on the first "page" (when not softwrapping), or the mark
+     * is on, the row next to the scrolled region needs to be redrawn too. */
     if (line_needs_update(openfile->placewewant, 0) && nrows < editwinrows)
     {
         nrows++;
     }
-
-    //
-    //  If we scrolled backward, the top row needs to be redrawn.
-    //
+    /* If we scrolled backward, the top row needs to be redrawn. */
     line     = openfile->edittop;
     leftedge = openfile->firstcolumn;
-
-    //
-    //  If we scrolled forward, the bottom row needs to be redrawn.
-    //
+    /* If we scrolled forward, the bottom row needs to be redrawn. */
     if (direction == FORWARD)
     {
         go_forward_chunks(editwinrows - nrows, &line, &leftedge);
     }
-
-    //
-    //  TODO : ( edit_scroll ) - This is the place where the scrollbar is drawn.
-    //         figure out how to enable.
-    //
     if (sidebar)
     {
         draw_scrollbar();
     }
-
     if ISSET (SOFTWRAP)
     {
-        //
-        //  Compensate for the earlier chunks of a softwrapped line.
-        //
+        /* Compensate for the earlier chunks of a softwrapped line. */
         nrows += chunk_for(leftedge, line);
-
-        //
-        //  Don't compensate for the chunks that are offscreen.
-        //
+        /* Don't compensate for the chunks that are offscreen. */
         if (line == openfile->edittop)
         {
             nrows -= chunk_for(openfile->firstcolumn, line);
         }
     }
-
-    //
-    //  Draw new content on the blank row (and on the bordering row too
-    //  when it was deemed necessary).
-    //
+    /* Draw new content on the blank row (and on the bordering row too
+     * when it was deemed necessary). */
     while (nrows > 0 && line != nullptr)
     {
         nrows -= update_line(line, (line == openfile->current) ? openfile->current_x : 0);
@@ -4267,67 +3812,42 @@ edit_scroll(bool direction)
     }
 }
 
-//
-//  Get the column number after leftedge where we can break the given linedata,
-//  and return it.  (This will always be at most editwincols after leftedge.)
-//  When kickoff is TRUE, start at the beginning of the linedata; otherwise,
-//  continue from where the previous call left off.  Set end_of_line to TRUE
-//  when end-of-line is reached while searching for a possible breakpoint.
-//
+/* Get the column number after leftedge where we can break the given linedata,
+ * and return it.  (This will always be at most editwincols after leftedge.)
+ * When kickoff is TRUE, start at the beginning of the linedata; otherwise,
+ * continue from where the previous call left off.  Set end_of_line to TRUE
+ * when end-of-line is reached while searching for a possible breakpoint. */
 unsigned long
 get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kickoff, bool &end_of_line)
 {
-    //
-    //  Pointer at the current character in this line's data.
-    //
+    /* Pointer at the current character in this line's data. */
     static const char *text;
-    //
-    //  Column position that corresponds to the above pointer.
-    //
+    /* Column position that corresponds to the above pointer. */
     static unsigned long column;
-    //
-    //  The place at or before which text must be broken.
-    //
+    /* The place at or before which text must be broken. */
     unsigned long rightside = leftedge + editwincols;
-    //
-    // The column where text can be broken, when there's no better.
-    //
+    /* The column where text can be broken, when there's no better. */
     unsigned long breaking_col = rightside;
-    //
-    //  The column position of the last seen whitespace character.
-    //
+    /* The column position of the last seen whitespace character. */
     unsigned long last_blank_col = 0;
-    //
-    //  A pointer to the last seen whitespace character in text.
-    //
+    /* A pointer to the last seen whitespace character in text. */
     const char *farthest_blank = nullptr;
-
-    //
-    //  Initialize the static variables when it's another line.
-    //
+    /* Initialize the static variables when it's another line. */
     if (kickoff)
     {
         text    = linedata;
         column  = 0;
         kickoff = false;
     }
-
-    //
-    //  First find the place in text where the current chunk starts.
-    //
+    /* First find the place in text where the current chunk starts. */
     while (*text != '\0' && column < leftedge)
     {
         text += advance_over(text, column);
     }
-
-    //
-    //  Now find the place in text where this chunk should end.
-    //
+    /* Now find the place in text where this chunk should end. */
     while (*text != '\0' && column <= rightside)
     {
-        //
-        //  When breaking at blanks, do it *before* the target column.
-        //
+        /* When breaking at blanks, do it *before* the target column. */
         if (ISSET(AT_BLANKS) && is_blank_char(text) && column < rightside)
         {
             farthest_blank = text;
@@ -4336,53 +3856,38 @@ get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kick
         breaking_col = (*text == '\t' ? rightside : column);
         text += advance_over(text, column);
     }
-
-    //
-    //  If we didn't overshoot the limit, we've found a breaking point;
-    //  and we've reached EOL if we didn't even *reach* the limit.
-    //
+    /* If we didn't overshoot the limit, we've found a breaking point;
+     * and we've reached EOL if we didn't even *reach* the limit. */
     if (column <= rightside)
     {
         end_of_line = (column < rightside);
         return column;
     }
-
-    //
-    //  If we're softwrapping at blanks and we found at least one blank, break
-    //  after that blank -- if it doesn't overshoot the screen's edge.
-    //
+    /* If we're softwrapping at blanks and we found at least one blank, break
+     * after that blank -- if it doesn't overshoot the screen's edge. */
     if (farthest_blank != nullptr)
     {
         unsigned long aftertheblank = last_blank_col;
         unsigned long onestep       = advance_over(farthest_blank, aftertheblank);
-
         if (aftertheblank <= rightside)
         {
             text   = farthest_blank + onestep;
             column = aftertheblank;
             return aftertheblank;
         }
-
-        //
-        //  If it's a tab that overshoots, break at the screen's edge.
-        //
+        /* If it's a tab that overshoots, break at the screen's edge. */
         if (*farthest_blank == '\t')
         {
             breaking_col = rightside;
         }
     }
-
-    //
-    //  Otherwise, break at the last character that doesn't overshoot.
-    //
+    /* Otherwise, break at the last character that doesn't overshoot. */
     return (editwincols > 1) ? breaking_col : column - 1;
 }
 
-//
-//  Return the row number of the softwrapped chunk in the given line that the
-//  given column is on, relative to the first row (zero-based).  If leftedge
-//  isn't NULL, return in it the leftmost column of the chunk.
-//
+/* Return the row number of the softwrapped chunk in the given line that the
+ * given column is on, relative to the first row (zero-based).  If leftedge
+ * isn't NULL, return in it the leftmost column of the chunk. */
 unsigned long
 get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *leftedge)
 {
@@ -4409,29 +3914,23 @@ get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *lefted
     }
 }
 
-//
-//  Return how many extra rows the given line needs when softwrapping.
-//
+/* Return how many extra rows the given line needs when softwrapping. */
 unsigned long
 extra_chunks_in(linestruct *line)
 {
     return get_chunk_and_edge((unsigned long)-1, line, nullptr);
 }
 
-//
-//  Return the row of the softwrapped chunk of the given line that column is on,
-//  relative to the first row (zero-based).
-//
+/* Return the row of the softwrapped chunk of the given line that column is on,
+ * relative to the first row (zero-based). */
 unsigned long
 chunk_for(unsigned long column, linestruct *line)
 {
     return get_chunk_and_edge(column, line, nullptr);
 }
 
-//
-//  Return the leftmost column of the softwrapped chunk of the given line that
-//  the given column is on.
-//
+/* Return the leftmost column of the softwrapped chunk of the given line that
+ * the given column is on. */
 unsigned long
 leftedge_for(unsigned long column, linestruct *line)
 {
@@ -4440,13 +3939,11 @@ leftedge_for(unsigned long column, linestruct *line)
     return leftedge;
 }
 
-//
-//  Ensure that firstcolumn is at the starting column of the softwrapped chunk
-//  it's on.  We need to do this when the number of columns of the edit window
-//  has changed, because then the width of softwrapped chunks has changed.
-//
+/* Ensure that firstcolumn is at the starting column of the softwrapped chunk
+ * it's on.  We need to do this when the number of columns of the edit window
+ * has changed, because then the width of softwrapped chunks has changed. */
 void
-ensure_firstcolumn_is_aligned()
+ensure_firstcolumn_is_aligned(void)
 {
     if ISSET (SOFTWRAP)
     {
@@ -4456,19 +3953,14 @@ ensure_firstcolumn_is_aligned()
     {
         openfile->firstcolumn = 0;
     }
-
-    //
-    //  If smooth scrolling is on, make sure the viewport doesn't center.
-    //
+    /* If smooth scrolling is on, make sure the viewport doesn't center. */
     focusing = false;
 }
 
-//
-//  When in softwrap mode, and the given column is on or after the breakpoint of
-//  a softwrapped chunk, shift it back to the last column before the breakpoint.
-//  The given column is relative to the given leftedge in current.  The returned
-//  column is relative to the start of the text.
-//
+/* When in softwrap mode, and the given column is on or after the breakpoint of
+ * a softwrapped chunk, shift it back to the last column before the breakpoint.
+ * The given column is relative to the given leftedge in current.  The returned
+ * column is relative to the start of the text. */
 unsigned long
 actual_last_column(unsigned long leftedge, unsigned long column)
 {
@@ -4494,9 +3986,7 @@ actual_last_column(unsigned long leftedge, unsigned long column)
     return leftedge + column;
 }
 
-//
-//  Return TRUE if current[current_x] is before the viewport.
-//
+/* Return TRUE if current[current_x] is before the viewport. */
 bool
 current_is_above_screen()
 {
@@ -4505,39 +3995,32 @@ current_is_above_screen()
         return (openfile->current->lineno < openfile->edittop->lineno ||
                 (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
     }
-
     return (openfile->current->lineno < openfile->edittop->lineno);
 }
 
 #define SHIM (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
 
-//
-//  Return TRUE if current[current_x] is beyond the viewport.
-//
+/* Return TRUE if current[current_x] is beyond the viewport. */
 bool
-current_is_below_screen()
+current_is_below_screen(void)
 {
     if ISSET (SOFTWRAP)
     {
         linestruct   *line     = openfile->edittop;
         unsigned long leftedge = openfile->firstcolumn;
-
-        //
-        //  If current[current_x] is more than a screen's worth of lines after
-        //  edittop at column firstcolumn, it's below the screen.
-        //
+        /* If current[current_x] is more than a screen's worth of lines after
+         * edittop at column firstcolumn, it's below the screen. */
         return (
             go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 &&
             (line->lineno < openfile->current->lineno ||
              (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
     }
-
     return (openfile->current->lineno >= openfile->edittop->lineno + editwinrows - SHIM);
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */
 bool
-current_is_offscreen()
+current_is_offscreen(void)
 {
     return (current_is_above_screen() || current_is_below_screen());
 }
@@ -4591,74 +4074,55 @@ edit_refresh(void)
 {
     linestruct *line;
     int         row = 0;
-
     /* If the current line is out of view, get it back on screen. */
     if (current_is_offscreen())
     {
         adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
     }
-
-#ifdef ENABLE_COLOR
     /* When needed and useful, initialize the colors for the current syntax. */
     if (openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors())
     {
         prepare_palette();
     }
-
     /* When the line above the viewport does not have multidata, recalculate
      * all. */
     recook |= ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata;
-
     if (recook)
     {
         precalc_multicolorinfo();
         perturbed = FALSE;
         recook    = FALSE;
     }
-#endif
-
-#ifndef NANO_TINY
     if (sidebar)
     {
         draw_scrollbar();
     }
-#endif
-
 // #define TIMEREFRESH  123
 #ifdef TIMEREFRESH
 #    include <time.h>
     clock_t start = clock();
 #endif
-
     line = openfile->edittop;
-
-    while (row < editwinrows && line != NULL)
+    while (row < editwinrows && line != nullptr)
     {
         row += update_line(line, (line == openfile->current) ? openfile->current_x : 0);
         line = line->next;
     }
-
     while (row < editwinrows)
     {
         blank_row(midwin, row);
-#ifndef NANO_TINY
         if (sidebar)
         {
             mvwaddch(midwin, row, COLS - 1, bardata[row]);
         }
-#endif
         row++;
     }
-
 #ifdef TIMEREFRESH
     statusline(INFO, "Refresh: %.1f ms", 1000 * (double)(clock() - start) / CLOCKS_PER_SEC);
 #endif
-
     place_the_cursor();
-
     wnoutrefresh(midwin);
-
-    refresh_needed = FALSE;
+    refresh_needed = false;
 }
 
 /* Move edittop so that current is on the screen.  manner says how:
@@ -4670,7 +4134,6 @@ void
 adjust_viewport(update_type manner)
 {
     int goal = 0;
-
     if (manner == STATIONARY)
     {
         goal = openfile->cursor_row;
@@ -4683,15 +4146,11 @@ adjust_viewport(update_type manner)
     {
         goal = editwinrows - 1 - SHIM;
     }
-
     openfile->edittop = openfile->current;
-#ifndef NANO_TINY
     if (ISSET(SOFTWRAP))
     {
         openfile->firstcolumn = leftedge_for(xplustabs(), openfile->current);
     }
-#endif
-
     /* Move edittop back goal rows, starting at current[current_x]. */
     go_back_chunks(goal, &openfile->edittop, &openfile->firstcolumn);
 }
@@ -4712,22 +4171,20 @@ draw_all_subwindows(void)
     {
         titlebar(title);
     }
-#ifdef ENABLE_HELP
     if (inhelp)
     {
         close_buffer();
         wrap_help_text_into_buffer();
     }
-    else
-#endif
-        if (currmenu & ~(MBROWSER | MWHEREISFILE | MGOTODIR))
+    else if (currmenu & ~(MBROWSER | MWHEREISFILE | MGOTODIR))
     {
         edit_refresh();
     }
     bottombars(currmenu);
 }
 
-/* Display on the status bar details about the current cursor position. */
+/* Display on the status bar details about the current cursor position.
+ * TODO: (report_cursor_position) - Make better. */
 void
 report_cursor_position(void)
 {
@@ -4736,20 +4193,15 @@ report_cursor_position(void)
     int    linepct, colpct, charpct;
     char   saved_byte;
     size_t sum;
-
     saved_byte                                   = openfile->current->data[openfile->current_x];
     openfile->current->data[openfile->current_x] = '\0';
-
     /* Determine the size of the file up to the cursor. */
-    sum = number_of_characters_in(openfile->filetop, openfile->current);
-
+    sum                                          = number_of_characters_in(openfile->filetop, openfile->current);
     openfile->current->data[openfile->current_x] = saved_byte;
-
     /* Calculate the percentages. */
     linepct = 100 * openfile->current->lineno / openfile->filebot->lineno;
     colpct  = 100 * column / fullwidth;
     charpct = (openfile->totsize == 0) ? 0 : 100 * sum / openfile->totsize;
-
     statusline(INFO,
                _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu "
                  "(%2d%%)"),
@@ -4797,32 +4249,27 @@ spotlight(unsigned long from_col, unsigned long to_col)
     free(word);
 }
 
-#ifndef NANO_TINY
 /* Highlight the text between the given two columns on the current line. */
 void
-spotlight_softwrapped(size_t from_col, size_t to_col)
+spotlight_softwrapped(unsigned long from_col, unsigned long to_col)
 {
-    ssize_t row;
-    size_t  leftedge = leftedge_for(from_col, openfile->current);
-    size_t  break_col;
-    bool    end_of_line = false;
-    bool    kickoff     = true;
-    char   *word;
-
+    long          row;
+    unsigned long leftedge = leftedge_for(from_col, openfile->current);
+    unsigned long break_col;
+    bool          end_of_line = false;
+    bool          kickoff     = true;
+    char         *word;
     place_the_cursor();
     row = openfile->cursor_row;
-
     while (row < editwinrows)
     {
         break_col = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, end_of_line);
-
         /* If the highlighting ends on this chunk, we can stop after it. */
         if (break_col >= to_col)
         {
-            end_of_line = TRUE;
+            end_of_line = true;
             break_col   = to_col;
         }
-
         /* If the target text is of zero length, highlight a space instead. */
         if (break_col == from_col)
         {
@@ -4833,92 +4280,83 @@ spotlight_softwrapped(size_t from_col, size_t to_col)
         {
             word = display_string(openfile->current->data, from_col, break_col - from_col, FALSE, FALSE);
         }
-
         wattron(midwin, interface_color_pair[SPOTLIGHTED]);
         waddnstr(midwin, word, actual_x(word, break_col));
         wattroff(midwin, interface_color_pair[SPOTLIGHTED]);
-
         free(word);
-
         if (end_of_line)
         {
             break;
         }
-
         wmove(midwin, ++row, margin);
-
         leftedge = break_col;
         from_col = break_col;
     }
 }
-#endif
 
-#ifdef ENABLE_EXTRA
-#    define CREDIT_LEN   52
-#    define XLCREDIT_LEN 9
+#define CREDIT_LEN   52
+#define XLCREDIT_LEN 9
 
 /* Fully blank the terminal screen, then slowly "crawl" the credits over it.
  * Abort the crawl upon any keystroke. */
 void
 do_credits(void)
 {
-    bool with_interface = !ISSET(ZERO);
-    bool with_help      = !ISSET(NO_HELP);
-    int  crpos = 0, xlpos = 0;
-
-    const char *credits[CREDIT_LEN] = {NULL, /* "The nano text editor" */
-                                       NULL, /* "version" */
-                                       VERSION,
-                                       "",
-                                       NULL, /* "Brought to you by:" */
-                                       "Chris Allegretta",
-                                       "Benno Schulenberg",
-                                       "David Lawrence Ramsey",
-                                       "Jordi Mallach",
-                                       "David Benbennick",
-                                       "Rocco Corsi",
-                                       "Mike Frysinger",
-                                       "Adam Rogoyski",
-                                       "Rob Siemborski",
-                                       "Mark Majeres",
-                                       "Ken Tyler",
-                                       "Sven Guckes",
-                                       "Bill Soudan",
-                                       "Christian Weisgerber",
-                                       "Erik Andersen",
-                                       "Big Gaute",
-                                       "Joshua Jensen",
-                                       "Ryan Krebs",
-                                       "Albert Chin",
-                                       "",
-                                       NULL, /* "Special thanks to:" */
-                                       "Monique, Brielle & Joseph",
-                                       "Plattsburgh State University",
-                                       "Benet Laboratories",
-                                       "Amy Allegretta",
-                                       "Linda Young",
-                                       "Jeremy Robichaud",
-                                       "Richard Kolb II",
-                                       NULL, /* "The Free Software Foundation" */
-                                       "Linus Torvalds",
-                                       NULL, /* "the many translators and the TP" */
-                                       NULL, /* "For ncurses:" */
-                                       "Thomas Dickey",
-                                       "Pavel Curtis",
-                                       "Zeyd Ben-Halim",
-                                       "Eric S. Raymond",
-                                       NULL, /* "and anyone else we forgot..." */
-                                       "",
-                                       "",
-                                       NULL, /* "Thank you for using nano!" */
-                                       "",
-                                       "",
-                                       "(C) 2024",
-                                       "Free Software Foundation, Inc.",
-                                       "",
-                                       "",
-                                       "https://nano-editor.org/"};
-
+    bool        with_interface = !ISSET(ZERO);
+    bool        with_help      = !ISSET(NO_HELP);
+    int         crpos = 0, xlpos = 0;
+    const char *credits[CREDIT_LEN]     = {nullptr, /* "The nano text editor" */
+                                           nullptr, /* "version" */
+                                           VERSION,
+                                           "",
+                                           nullptr, /* "Brought to you by:" */
+                                           "Chris Allegretta",
+                                           "Benno Schulenberg",
+                                           "David Lawrence Ramsey",
+                                           "Jordi Mallach",
+                                           "David Benbennick",
+                                           "Rocco Corsi",
+                                           "Mike Frysinger",
+                                           "Adam Rogoyski",
+                                           "Rob Siemborski",
+                                           "Mark Majeres",
+                                           "Ken Tyler",
+                                           "Sven Guckes",
+                                           "Bill Soudan",
+                                           "Christian Weisgerber",
+                                           "Erik Andersen",
+                                           "Big Gaute",
+                                           "Joshua Jensen",
+                                           "Ryan Krebs",
+                                           "Albert Chin",
+                                           "",
+                                           NULL, /* "Special thanks to:" */
+                                           "Monique, Brielle & Joseph",
+                                           "Plattsburgh State University",
+                                           "Benet Laboratories",
+                                           "Amy Allegretta",
+                                           "Linda Young",
+                                           "Jeremy Robichaud",
+                                           "Richard Kolb II",
+                                           NULL, /* "The Free Software Foundation" */
+                                           "Linus Torvalds",
+                                           NULL, /* "the many translators and the TP" */
+                                           NULL, /* "For ncurses:" */
+                                           "Thomas Dickey",
+                                           "Pavel Curtis",
+                                           "Zeyd Ben-Halim",
+                                           "Eric S. Raymond",
+                                           NULL, /* "and anyone else we forgot..." */
+                                           "",
+                                           "",
+                                           NULL, /* "Thank you for using nano!" */
+                                           "",
+                                           "",
+                                           "(C) 2024",
+                                           "Free Software Foundation, Inc.",
+                                           "",
+                                           "",
+                                           "https://nano-editor.org/"};
     const char *xlcredits[XLCREDIT_LEN] = {N_("The nano text editor"),
                                            N_("version"),
                                            N_("Brought to you by:"),
@@ -4928,55 +4366,44 @@ do_credits(void)
                                            N_("For ncurses:"),
                                            N_("and anyone else we forgot..."),
                                            N_("Thank you for using nano!")};
-
     if (with_interface || with_help)
     {
         SET(ZERO);
         SET(NO_HELP);
         window_init();
     }
-
-    nodelay(midwin, TRUE);
-    scrollok(midwin, TRUE);
-
+    nodelay(midwin, true);
+    scrollok(midwin, true);
     blank_edit();
     wrefresh(midwin);
     napms(600);
-
     for (crpos = 0; crpos < CREDIT_LEN + editwinrows / 2; crpos++)
     {
         if (crpos < CREDIT_LEN)
         {
             const char *text = credits[crpos];
-
             if (!text)
             {
                 text = _(xlcredits[xlpos++]);
             }
-
             mvwaddstr(midwin, editwinrows - 1, (COLS - breadth(text)) / 2, text);
             wrefresh(midwin);
         }
-
         if (wgetch(midwin) != ERR)
         {
             break;
         }
-
         napms(600);
         wscrl(midwin, 1);
         wrefresh(midwin);
-
         if (wgetch(midwin) != ERR)
         {
             break;
         }
-
         napms(600);
         wscrl(midwin, 1);
         wrefresh(midwin);
     }
-
     if (with_interface)
     {
         UNSET(ZERO);
@@ -4986,10 +4413,7 @@ do_credits(void)
         UNSET(NO_HELP);
     }
     window_init();
-
-    scrollok(midwin, FALSE);
-    nodelay(midwin, FALSE);
-
+    scrollok(midwin, false);
+    nodelay(midwin, false);
     draw_all_subwindows();
 }
-#endif /* ENABLE_EXTRA */

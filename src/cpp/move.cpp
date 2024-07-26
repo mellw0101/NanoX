@@ -5,9 +5,9 @@
 
 #include <cstring>
 
-//  Move to the first line of the file.
+/* Move to the first line of the file. */
 void
-to_first_line()
+to_first_line(void)
 {
     openfile->current     = openfile->filetop;
     openfile->current_x   = 0;
@@ -15,31 +15,29 @@ to_first_line()
     refresh_needed        = true;
 }
 
-//  Move to the last line of the file.
+/* Move to the last line of the file. */
 void
-to_last_line()
+to_last_line(void)
 {
     openfile->current     = openfile->filebot;
     openfile->current_x   = (inhelp) ? 0 : strlen(openfile->filebot->data);
     openfile->placewewant = xplustabs();
-    //  Set the last line of the screen as the target for the cursor.
+    /* Set the last line of the screen as the target for the cursor. */
     openfile->cursor_row = editwinrows - 1;
     refresh_needed       = true;
     recook |= perturbed;
     focusing = false;
 }
 
-//
-//  Determine the actual current chunk and the target column.
-//
+/* Determine the actual current chunk and the target column. */
 void
-get_edge_and_target(size_t *leftedge, size_t *target_column)
+get_edge_and_target(unsigned long *leftedge, unsigned long *target_column)
 {
     if ISSET (SOFTWRAP)
     {
-        size_t shim    = editwincols * (1 + (tabsize / editwincols));
-        *leftedge      = leftedge_for(xplustabs(), openfile->current);
-        *target_column = (openfile->placewewant + shim - *leftedge) % editwincols;
+        unsigned long shim = editwincols * (1 + (tabsize / editwincols));
+        *leftedge          = leftedge_for(xplustabs(), openfile->current);
+        *target_column     = (openfile->placewewant + shim - *leftedge) % editwincols;
     }
     else
     {
@@ -52,10 +50,10 @@ get_edge_and_target(size_t *leftedge, size_t *target_column)
  * chunk that starts at the given leftedge.  If the target column has landed
  * on a tab, prevent the cursor from falling back a row when moving forward,
  * or from skipping a row when moving backward, by incrementing the index. */
-size_t
-proper_x(linestruct *line, size_t *leftedge, bool forward, size_t column, bool *shifted)
+unsigned long
+proper_x(linestruct *line, unsigned long *leftedge, bool forward, unsigned long column, bool *shifted)
 {
-    size_t index = actual_x(line->data, column);
+    unsigned long index = actual_x(line->data, column);
     if (ISSET(SOFTWRAP) && line->data[index] == '\t' &&
         ((forward && wideness(line->data, index) < *leftedge) ||
          (!forward && column / tabsize == (*leftedge - 1) / tabsize &&
@@ -77,15 +75,13 @@ proper_x(linestruct *line, size_t *leftedge, bool forward, size_t column, bool *
 /* Adjust the values for current_x and placewewant in case we have landed in
  * the middle of a tab that crosses a row boundary. */
 void
-set_proper_index_and_pww(size_t *leftedge, size_t target, bool forward)
+set_proper_index_and_pww(unsigned long *leftedge, unsigned long target, bool forward)
 {
     unsigned long was_edge = *leftedge;
     bool          shifted  = false;
     openfile->current_x =
         proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
-    //
-    //  If the index was incremented, try going to the target column.
-    //
+    /* If the index was incremented, try going to the target column. */
     if (shifted || *leftedge < was_edge)
     {
         openfile->current_x =
@@ -96,14 +92,12 @@ set_proper_index_and_pww(size_t *leftedge, size_t target, bool forward)
 
 /* Move up almost one screenful. */
 void
-do_page_up()
+do_page_up(void)
 {
-    int    mustmove = (editwinrows < 3) ? 1 : editwinrows - 2;
-    size_t leftedge, target_column;
-    //
-    //  If we're not in smooth scrolling mode, put the cursor at the
-    //  beginning of the top line of the edit window, as Pico does.
-    //
+    int           mustmove = (editwinrows < 3) ? 1 : editwinrows - 2;
+    unsigned long leftedge, target_column;
+    /* If we're not in smooth scrolling mode, put the cursor at the
+     * beginning of the top line of the edit window, as Pico does. */
     if ISSET (JUMPY_SCROLLING)
     {
         openfile->current    = openfile->edittop;
@@ -115,27 +109,21 @@ do_page_up()
     {
         get_edge_and_target(&leftedge, &target_column);
     }
-    //
-    //  Move up the required number of lines or chunks.
-    //  If we can't, we're at the top of the file,
-    //  so put the cursor there and get out.
-    //
+    /* Move up the required number of lines or chunks.
+     * If we can't, we're at the top of the file,
+     * so put the cursor there and get out. */
     if (go_back_chunks(mustmove, &openfile->current, &leftedge) > 0)
     {
         to_first_line();
         return;
     }
     set_proper_index_and_pww(&leftedge, target_column, false);
-    //
-    //  Move the viewport so that the cursor stays immobile, if possible.
-    //
+    /* Move the viewport so that the cursor stays immobile, if possible. */
     adjust_viewport(STATIONARY);
     refresh_needed = true;
 }
 
-//
-//  Move down almost one screenful.
-//
+/* Move down almost one screenful. */
 void
 do_page_down(void)
 {
@@ -167,13 +155,11 @@ do_page_down(void)
     refresh_needed = true;
 }
 
-//
-//  Place the cursor on the first row in the viewport.
-//
+/* Place the cursor on the first row in the viewport. */
 void
 to_top_row(void)
 {
-    size_t leftedge, offset;
+    unsigned long leftedge, offset;
     get_edge_and_target(&leftedge, &offset);
     openfile->current = openfile->edittop;
     leftedge          = openfile->firstcolumn;
@@ -194,9 +180,7 @@ to_bottom_row(void)
     place_the_cursor();
 }
 
-//
-//  Put the cursor line at the center, then the top, then the bottom.
-//
+/* Put the cursor line at the center, then the top, then the bottom. */
 void
 do_cycle(void)
 {
@@ -214,21 +198,15 @@ do_cycle(void)
     full_refresh();
 }
 
-//
-//  Scroll the line with the cursor to the center of the screen.
-//
+/* Scroll the line with the cursor to the center of the screen. */
 void
 do_center(void)
 {
-    //
-    //  The main loop has set 'cycling_aim' to zero.
-    //
+    /* The main loop has set 'cycling_aim' to zero. */
     do_cycle();
 }
 
-//
-//  Move to the first beginning of a paragraph before the current line.
-//
+/* Move to the first beginning of a paragraph before the current line. */
 void
 do_para_begin(linestruct **line)
 {
@@ -271,13 +249,9 @@ void
 to_para_end(void)
 {
     linestruct *was_current = openfile->current;
-
     do_para_end(&openfile->current);
-
-    //
-    //  Step beyond the last line of the paragraph, if possible.
-    //  Otherwise, move to the end of the line.
-    //
+    /* Step beyond the last line of the paragraph, if possible.
+     * Otherwise, move to the end of the line. */
     if (openfile->current->next != nullptr)
     {
         openfile->current   = openfile->current->next;
@@ -287,7 +261,6 @@ to_para_end(void)
     {
         openfile->current_x = constexpr_strlen(openfile->current->data);
     }
-
     edit_redraw(was_current, CENTERING);
     recook |= perturbed;
 }
@@ -396,6 +369,7 @@ do_prev_word(void)
             }
             openfile->current   = openfile->current->prev;
             openfile->current_x = constexpr_strlen(openfile->current->data);
+            break;
         }
         /* Step back one character. */
         openfile->current_x = step_left(openfile->current->data, openfile->current_x);
@@ -414,7 +388,7 @@ do_prev_word(void)
         }
         else if (is_zerowidth(openfile->current->data + openfile->current_x))
         {
-            ;  //  Do nothing.
+            ; /* Do nothing. */
         }
         else if (seen_a_word)
         {
@@ -433,22 +407,28 @@ do_prev_word(void)
 /* Move to the next word.  If after_ends is 'true',
  * stop at the ends of words instead of at their beginnings.
  * If @param 'after_ends' is 'true', stop at the ends of words instead of at their beginnings.
- * Return 'true' if we started on a word. */
+ * Return 'true' if we started on a word.
+ * TODO: (do_next_word) - Make so it stops start and after word. */
 bool
 do_next_word(bool after_ends)
 {
     PROFILE_FUNCTION;
-    bool punct_as_letters, started_on_word, seen_space, seen_word;
-    punct_as_letters = ISSET(WORD_BOUNDS);
-    started_on_word  = is_word_char(openfile->current->data + openfile->current_x, punct_as_letters);
-    seen_space       = !started_on_word;
-    seen_word        = started_on_word;
+    bool     punct_as_letters = ISSET(WORD_BOUNDS);
+    bool     started_on_word  = is_word_char(openfile->current->data + openfile->current_x, punct_as_letters);
+    bool     seen_space       = !started_on_word;
+    bool     seen_word        = started_on_word;
+    unsigned i                = 0;
     /* Move forward until we reach the start of a word. */
     while (true)
     {
         /* If at the end of a line, move to the beginning of the next one. */
         if (openfile->current->data[openfile->current_x] == '\0')
         {
+            /* If not called when at eol stop here. */
+            if (i != 0)
+            {
+                break;
+            }
             /* When at end of file, stop. */
             if (openfile->current->next == nullptr)
             {
@@ -471,10 +451,9 @@ do_next_word(bool after_ends)
             {
                 seen_word = true;
             }
-            /* Skip */
             else if (is_zerowidth(openfile->current->data + openfile->current_x))
             {
-                ;
+                ; /* Skip */
             }
             else if (seen_word)
             {
@@ -483,20 +462,12 @@ do_next_word(bool after_ends)
         }
         else
         {
-            if (is_word_char(openfile->current->data + openfile->current_x, punct_as_letters))
-            {
-                seen_word = true;
-            }
-            else if (is_zerowidth(openfile->current->data + openfile->current_x))
+            if (is_zerowidth(openfile->current->data + openfile->current_x))
             {
                 ;
             }
             /* Checks for cpp syntax characters, and if true then break. */
             else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
-            {
-                break;
-            }
-            else if (seen_word)
             {
                 break;
             }
@@ -518,6 +489,7 @@ do_next_word(bool after_ends)
                 }
             }
         }
+        i++;
     }
     return started_on_word;
 }
@@ -548,9 +520,9 @@ to_next_word(void)
 void
 do_home(void)
 {
-    linestruct *was_current = openfile->current;
-    bool        moved_off_chunk, moved;
-    size_t      was_column, leftedge, left_x;
+    linestruct   *was_current = openfile->current;
+    bool          moved_off_chunk, moved;
+    unsigned long was_column, leftedge, left_x;
     moved_off_chunk = true;
     moved           = false;
     was_column      = xplustabs();
@@ -561,7 +533,7 @@ do_home(void)
     }
     if ISSET (SMART_HOME)
     {
-        size_t indent_x = indent_length(openfile->current->data);
+        unsigned long indent_x = indent_length(openfile->current->data);
         if (openfile->current->data[indent_x] != '\0')
         {
             //

@@ -24,72 +24,37 @@ bool bracketed_paste = false;
 bool we_are_running = false;
 /* Whether more than one buffer is or has been open. */
 bool more_than_one = false;
-//
-//  Whether to show the number of lines when the minibar is used.
-//
+/* Whether to show the number of lines when the minibar is used. */
 bool report_size = true;
-//
-//  Whether a tool has been run at the Execute-Command prompt.
-//
+/* Whether a tool has been run at the Execute-Command prompt. */
 bool ran_a_tool = false;
-//
-//  Whether we are in the help viewer.
-//
+/* Whether we are in the help viewer. */
 bool inhelp = false;
-//
-//  When not NULL: the title of the current help text.
-//
+/* When not nullptr: the title of the current help text. */
 char *title = nullptr;
-//
-//  Did a command mangle enough of the buffer that we should
-//  repaint the screen?
-//
+/* Did a command mangle enough of the buffer that we should repaint the screen? */
 bool refresh_needed = false;
-//
-//  Whether an update of the edit window should center the cursor.
-//
+/* Whether an update of the edit window should center the cursor. */
 bool focusing = true;
-//
-//  Whether a 0x0A byte should be shown as a ^@ instead of a ^J.
-//
+/* Whether a 0x0A byte should be shown as a ^@ instead of a ^J. */
 bool as_an_at = true;
-//
-//  Whether Ctrl+C was pressed (when a keyboard interrupt is enabled).
-//
+/* Whether Ctrl+C was pressed (when a keyboard interrupt is enabled). */
 bool control_C_was_pressed = false;
-//
-//  Messages of type HUSH should not overwrite type MILD nor ALERT.
-//
+/* Messages of type HUSH should not overwrite type MILD nor ALERT. */
 message_type lastmessage = VACUUM;
-//
-//  The line where the last completion was found, if any.
-//
+/* The line where the last completion was found, if any. */
 linestruct *pletion_line = nullptr;
-//
-//  Whether indenting/commenting should include the last line of
-//  the marked region.
-//
+/* Whether indenting/commenting should include the last line of the marked region. */
 bool also_the_last = false;
-//
-//  The answer string used by the status-bar prompt.
-//
+/* The answer string used by the status-bar prompt. */
 char *answer = nullptr;
-//
-//  The last string we searched for.
-//
+/* The last string we searched for. */
 char *last_search = nullptr;
-//
-//  Whether the last search found something.
-//
+/* Whether the last search found something. */
 int didfind = 0;
-//
-//  The current browser directory when trying to do tab completion.
-//
+/* The current browser directory when trying to do tab completion. */
 char *present_path = nullptr;
-//
-//  Our flags array, containing the states of all global options.
-//
-// u32 flags[4] = {0, 0, 0, 0};
+/* Our flags array, containing the states of all global options. */
 unsigned long flags[1] = {0};
 
 int controlleft, controlright, controlup, controldown;
@@ -103,6 +68,7 @@ int althome, altend, altpageup, altpagedown;
 int altinsert, altdelete;
 int shiftaltleft, shiftaltright, shiftaltup, shiftaltdown;
 int mousefocusin, mousefocusout;
+int controlbsp;
 
 /* The relative column where we will wrap lines. */
 long fill = -COLUMNS_FROM_EOL;
@@ -134,358 +100,250 @@ long stripe_column = 0;
 /* Whether to center the line with the cursor (0), push it
  * to the top of the viewport (1), or to the bottom (2). */
 int cycling_aim = 0;
-//
-//  The buffer where we store cut text.
-//
+/* The buffer where we store cut text. */
 linestruct *cutbuffer = nullptr;
-//
-//  The last line in the cutbuffer.
-//
+/* The last line in the cutbuffer. */
 linestruct *cutbottom = nullptr;
-//
-//  Whether to add to the cutbuffer instead of clearing it first.
-//
-bool keep_cutbuffer = FALSE;
-//
-//  The list of all open file buffers.
-//
+/* Whether to add to the cutbuffer instead of clearing it first. */
+bool keep_cutbuffer = false;
+/* The list of all open file buffers. */
 openfilestruct *openfile = nullptr;
-//
-//  The first open buffer.
-//
+/* The first open buffer. */
 openfilestruct *startfile = nullptr;
-//
-//  The opening and closing brackets that bracket searches can find.
-//
+/* The opening and closing brackets that bracket searches can find. */
 char *matchbrackets = nullptr;
-//
-//  The characters used when visibly showing tabs and spaces.
-//
+/* The characters used when visibly showing tabs and spaces. */
 char *whitespace = nullptr;
-//
-//  The length in bytes of these characters.
-//
+/* The length in bytes of these characters. */
 int whitelen[2];
-//
-//  The closing punctuation that can end sentences.
-//
+/* The closing punctuation that can end sentences. */
 char *punct = nullptr;
-//
-//  The closing brackets that can follow closing punctuation and
-//  can end sentences.
-//
+/* The closing brackets that can follow closing punctuation and can end sentences. */
 char *brackets = nullptr;
-//
-//  The quoting string.  The default value is set in main().
-//
+/* The quoting string.  The default value is set in main(). */
 char *quotestr = nullptr;
-//
-//  The compiled regular expression from the quoting string.
-//
+/* The compiled regular expression from the quoting string. */
 regex_t quotereg;
-//
-//  Nonalphanumeric characters that also form words.
-//
+/* Nonalphanumeric characters that also form words. */
 char *word_chars = nullptr;
-//
-//  The width of a tab in spaces.  The default is set in main().
-//
+/* The width of a tab in spaces.  The default is set in main(). */
 long tabsize = -1;
-//
-//  The directory where we store backup files.
-//
+/* The directory where we store backup files. */
 char *backup_dir = nullptr;
-//
-//  The path to our confining "operating" directory, when given.
-//
+/* The path to our confining "operating" directory, when given. */
 char *operating_dir = nullptr;
-//
-//  The command to use for the alternate spell checker.
-//
+/* The command to use for the alternate spell checker. */
 char *alt_speller = nullptr;
-//
-//  The global list of color syntaxes.
-//
+/* The global list of color syntaxes. */
 syntaxtype *syntaxes = nullptr;
-//
-//  The color syntax name specified on the command line.
-//
+/* The color syntax name specified on the command line. */
 char *syntaxstr = nullptr;
-//
-//  Whether the colors for the current syntax have been initialized.
-//
-bool have_palette = FALSE;
-//
-//  Becomes TRUE when NO_COLOR is set in the environment.
-//
-bool rescind_colors = FALSE;
-//
-//  Whether the multiline-coloring situation has changed.
-//
-bool perturbed = FALSE;
-//
-//  Whether the multidata should be recalculated.
-//
-bool recook = FALSE;
-//
-//  The currently active menu, initialized to a dummy value.
-//
+/* Whether the colors for the current syntax have been initialized. */
+bool have_palette = false;
+/* Becomes TRUE when NO_COLOR is set in the environment. */
+bool rescind_colors = false;
+/* Whether the multiline-coloring situation has changed. */
+bool perturbed = false;
+/* Whether the multidata should be recalculated. */
+bool recook = false;
+/* The currently active menu, initialized to a dummy value. */
 int currmenu = MMOST;
-//
-//  The start of the shortcuts list.
-//
+/* The start of the shortcuts list. */
 keystruct *sclist = nullptr;
-//
-//  The start of the functions list.
-//
+/* The start of the functions list. */
 funcstruct *allfuncs = nullptr;
-//
-//  The last function in the list.
-//
+/* The last function in the list. */
 funcstruct *tailfunc;
-//
-//  A pointer to the special Exit/Close item.
-//
+/* A pointer to the special Exit/Close item. */
 funcstruct *exitfunc;
-//
-//  The current item in the list of strings that were searched for.
-//
+/* The current item in the list of strings that were searched for. */
 linestruct *search_history = nullptr;
-//
-//  The current item in the list of replace strings.
-//
+/* The current item in the list of replace strings. */
 linestruct *replace_history = nullptr;
-//
-//  The current item in the list of commands that were run with ^T.
-//
+/* The current item in the list of commands that were run with ^T. */
 linestruct *execute_history = nullptr;
-//
-//  The oldest item in the list of search strings.
-//
+/* The oldest item in the list of search strings. */
 linestruct *searchtop = nullptr;
-//
-//  The empty item at the end of the list of search strings.
-//
-linestruct *searchbot = nullptr;
-
+/* The empty item at the end of the list of search strings. */
+linestruct *searchbot  = nullptr;
 linestruct *replacetop = nullptr;
 linestruct *replacebot = nullptr;
-
 linestruct *executetop = nullptr;
 linestruct *executebot = nullptr;
-//
-//  The compiled regular expression to use in searches.
-//
+/* The compiled regular expression to use in searches. */
 regex_t search_regexp;
-//
-//  The match positions for parenthetical subexpressions, 10
-//  maximum, used in regular expression searches.
-//
+/* The match positions for parenthetical subexpressions,
+ * 10 maximum, used in regular expression searches. */
 regmatch_t regmatches[10];
-//
-//  The curses attribute we use to highlight something.
-//
+/* The curses attribute we use to highlight something. */
 int hilite_attribute = A_REVERSE;
-//
-//  The color combinations for interface elements given in the rcfile.
-//
+/* The color combinations for interface elements given in the rcfile. */
 colortype *color_combo[NUMBER_OF_ELEMENTS] = {nullptr};
-//
-//  The processed color pairs for the interface elements.
-//
+/* The processed color pairs for the interface elements. */
 int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
-//
-//  The user's home directory, from $HOME or /etc/passwd.
-//
+/* The user's home directory, from $HOME or /etc/passwd. */
 char *homedir = nullptr;
-//
-//  The directory for nano's history files.
-//
+/* The directory for nano's history files. */
 char *statedir = nullptr;
-//
-//  An error message (if any) about nanorc files or history files.
-//
+/* An error message (if any) about nanorc files or history files. */
 char *startup_problem = nullptr;
-//
-//  The argument of the --rcfile option, when given.
-//
+/* The argument of the --rcfile option, when given. */
 char *custom_nanorc = nullptr;
-//
-//  The name (of a function) between braces in a string bind.
-//
+/* The name (of a function) between braces in a string bind. */
 char *commandname = nullptr;
-//
-//  The function that the above name resolves to, if any.
-//
+/* The function that the above name resolves to, if any. */
 keystruct *planted_shortcut = nullptr;
-//
-//  Whether any text is spotlighted.
-//
+/* Whether any text is spotlighted. */
 bool spotlighted = false;
-//
-//  Where the spotlighted text starts.
-//
+/* Where the spotlighted text starts. */
 unsigned long light_from_col = 0;
-//
-//  Where the spotlighted text ends.
-//
+/* Where the spotlighted text ends. */
 unsigned long light_to_col = 0;
-
-//  To make the functions and shortcuts lists clearer.
-//
-//  Is allowed in view mode.
-//
-// constexpr bool VIEW   = true;
-// constexpr bool NOVIEW = false;
-//
-//  A blank line after this one.
-//
+/* To make the functions and shortcuts lists clearer. */
 constexpr bool BLANKAFTER = true;
 constexpr bool TOGETHER   = false;
+/* If closing bracket char was printed then this is true until another
+ * key input has been prossesed. */
+bool last_key_was_bracket = false;
 
-//
-//  Empty functions, for the most part corresponding to toggles.
-//
+/* Empty functions, for the most part corresponding to toggles. */
 void
-case_sens_void()
+case_sens_void(void)
 {
     ;
 }
 
 void
-regexp_void()
+regexp_void(void)
 {
     ;
 }
 
 void
-backwards_void()
+backwards_void(void)
 {
     ;
 }
 
 void
-get_older_item()
+get_older_item(void)
 {
     ;
 }
 
 void
-get_newer_item()
+get_newer_item(void)
 {
     ;
 }
 
 void
-flip_replace()
+flip_replace(void)
 {
     ;
 }
 
 void
-flip_goto()
+flip_goto(void)
 {
     ;
 }
 
 void
-to_files()
+to_files(void)
 {
     ;
 }
 
 void
-goto_dir()
+goto_dir(void)
 {
     ;
 }
 
 void
-do_nothing()
+do_nothing(void)
 {
     ;
 }
 
 void
-do_toggle()
+do_toggle(void)
 {
     ;
 }
 
 void
-dos_format()
+dos_format(void)
 {
     ;
 }
 
 void
-mac_format()
+mac_format(void)
 {
     ;
 }
 
 void
-append_it()
+append_it(void)
 {
     ;
 }
 
 void
-prepend_it()
+prepend_it(void)
 {
     ;
 }
 
 void
-back_it_up()
+back_it_up(void)
 {
     ;
 }
 
 void
-flip_execute()
+flip_execute(void)
 {
     ;
 }
 
 void
-flip_pipe()
+flip_pipe(void)
 {
     ;
 }
 
 void
-flip_convert()
+flip_convert(void)
 {
     ;
 }
 
 void
-flip_newbuffer()
+flip_newbuffer(void)
 {
     ;
 }
 
 void
-discard_buffer()
+discard_buffer(void)
 {
     ;
 }
 
 void
-do_cancel()
+do_cancel(void)
 {
     ;
 }
 
-//
-//  Add a function to the linked list of functions.
-//
+/* Add a function to the linked list of functions. */
 void
 add_to_funcs(CFuncPtr function, const int menus, const char *tag, const char *phrase, bool blank_after)
 {
-    funcstruct *f = static_cast<funcstruct *>(nmalloc(sizeof(funcstruct)));
-
+    funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
     if (allfuncs == nullptr)
     {
         allfuncs = f;
@@ -494,8 +352,7 @@ add_to_funcs(CFuncPtr function, const int menus, const char *tag, const char *ph
     {
         tailfunc->next = f;
     }
-    tailfunc = f;
-
+    tailfunc       = f;
     f->next        = nullptr;
     f->func        = function;
     f->menus       = menus;
@@ -504,10 +361,9 @@ add_to_funcs(CFuncPtr function, const int menus, const char *tag, const char *ph
     f->blank_after = blank_after;
 }
 
-//
-//  Parse the given keystring and return the corresponding keycode,
-//  or return -1 when the string is invalid.
-//
+/* Parse the given keystring and return the corresponding keycode,
+ * or return -1 when the string is invalid.
+ TODO: (keycode_from_string) - Try to add '^Bsp' and see. */
 int
 keycode_from_string(const char *keystring)
 {
@@ -586,32 +442,19 @@ keycode_from_string(const char *keystring)
 }
 
 void
-show_curses_version()
+show_curses_version(void)
 {
-    PROFILE_FUNCTION;
-
     statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
 
-//
-//  Add a key combo to the linked list of shortcuts.
-//
+/* Add a key combo to the linked list of shortcuts. */
 void
-add_to_sclist(const int menus, const char *scstring, const int keycode, CFuncPtr function, const int toggle)
+add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function, const int toggle)
 {
-    //
-    // PROFILE_FUNCTION;
-    //
-    //  TODO : ( add_to_sclist ) Profile later
-    //
-
     static keystruct *tailsc;
     static int        counter = 0;
-    keystruct        *sc      = static_cast<keystruct *>(nmalloc(sizeof(keystruct)));
-
-    //
-    //  Start the list, or tack on the next item.
-    //
+    keystruct        *sc      = (keystruct *)nmalloc(sizeof(keystruct));
+    /* Start the list, or tack on the next item. */
     if (sclist == nullptr)
     {
         sclist = sc;
@@ -621,25 +464,18 @@ add_to_sclist(const int menus, const char *scstring, const int keycode, CFuncPtr
         tailsc->next = sc;
     }
     sc->next = nullptr;
-
-    //
-    //  Fill in the data.
-    //
+    /* Fill in the data. */
     sc->menus  = menus;
     sc->func   = function;
     sc->toggle = toggle;
-
-    //
-    //  When not the same toggle as the previous one, increment the ID.
-    //
+    /* When not the same toggle as the previous one, increment the ID. */
     if (toggle)
     {
         sc->ordinal = (tailsc->toggle == toggle) ? counter : ++counter;
     }
     sc->keystr  = scstring;
     sc->keycode = (keycode ? keycode : keycode_from_string(scstring));
-
-    tailsc = sc;
+    tailsc      = sc;
 }
 
 /* Return the first shortcut in the list of shortcuts that,
@@ -744,25 +580,38 @@ interpret(const int keycode)
         {
             case 'b' :
             case '-' :
+            {
                 return do_page_up;
+            }
             case ' ' :
+            {
                 return do_page_down;
+            }
             case 'w' :
             case '/' :
+            {
                 return do_search_forward;
+            }
             case 'g' :
+            {
                 return goto_dir;
+            }
             case '?' :
+            {
                 return do_help;
+            }
             case 's' :
+            {
                 return do_enter;
+            }
             case 'e' :
             case 'q' :
             case 'x' :
+            {
                 return do_exit;
+            }
         }
     }
-
     return func_from_key(keycode);
 }
 
@@ -780,7 +629,7 @@ void
 shortcut_init(void)
 {
     /* TRANSLATORS: The next long series of strings are shortcut descriptions;
-     * they are best kept shorter than 56 characters, but may be longer. */
+     *              they are best kept shorter than 56 characters, but may be longer. */
     const char *cancel_gist           = N_("Cancel the current function");
     const char *help_gist             = N_("Display this help text");
     const char *exit_gist             = N_("Close the current buffer / Exit from nano");
@@ -1094,7 +943,8 @@ shortcut_init(void)
         add_to_sclist(MMAIN, "^P", 0, report_cursor_position, 0);
         add_to_sclist(MMAIN, "^Z", 0, do_undo, 0);
         add_to_sclist(MMAIN, "^Y", 0, do_redo, 0);
-        add_to_sclist(MMAIN, "^A", 0, do_mark, 0);
+        /* add_to_sclist(MMAIN, "^A", 0, do_mark, 0); */
+        add_to_sclist(MMAIN, "^A", 0, do_block_comment, 0);
         add_to_sclist(MMAIN, "^X", 0, cut_text, 0);
         add_to_sclist(MMAIN, "^C", 0, copy_text, 0);
         add_to_sclist(MMAIN, "^V", 0, paste_text, 0);
@@ -1162,7 +1012,7 @@ shortcut_init(void)
     add_to_sclist(MMAIN, "M-]", 0, do_find_bracket, 0);
     add_to_sclist(MMAIN, "M-A", 0, do_mark, 0);
     add_to_sclist(MMAIN, "^6", 0, do_mark, 0);
-    add_to_sclist(MMAIN, "^^", 0, do_mark, 0);
+    // add_to_sclist(MMAIN, "^^", 0, do_mark, 0);
     add_to_sclist(MMAIN, "M-}", 0, do_indent, 0);
     add_to_sclist(MMAIN, "M-{", 0, do_unindent, 0);
     add_to_sclist(MMAIN, "Sh-Tab", SHIFT_TAB, do_unindent, 0);
@@ -1184,6 +1034,7 @@ shortcut_init(void)
     add_to_sclist(MMAIN, "^]", 0, complete_a_word, 0);
     add_to_sclist(MMAIN, (on_a_vt) ? "^-" : "^/", 0, do_comment, 0);
     add_to_sclist(MMAIN, "^_", 0, do_comment, 0);
+    add_to_sclist(MMAIN, "Sh-^/", 0, do_block_comment, 0);
     add_to_sclist(MMOST & ~MMAIN, "^B", 0, do_left, 0);
     add_to_sclist(MMOST & ~MMAIN, "^F", 0, do_right, 0);
     if (using_utf8())

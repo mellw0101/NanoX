@@ -104,7 +104,7 @@ static linestruct *errors_tail = nullptr;
 
 /* Send the gathered error messages (if any) to the terminal. */
 void
-display_rcfile_errors()
+display_rcfile_errors(void)
 {
     for (linestruct *error = errors_head; error != nullptr; error = error->next)
     {
@@ -424,59 +424,40 @@ compile(const char *expression, int rex_flags, regex_t *&packed)
     return (outcome == 0);
 }
 
-//
-//  Parse the next syntax name and its possible extension regexes from the
-//  line at ptr, and add it to the global linked list of color syntaxes.
-//
+/* Parse the next syntax name and its possible extension regexes from the
+ * line at ptr, and add it to the global linked list of color syntaxes. */
 void
 begin_new_syntax(char *ptr)
 {
     PROFILE_FUNCTION;
-
     char *nameptr = ptr;
-
-    //
-    //  Check that the syntax name is not empty.
-    //
+    /* Check that the syntax name is not empty. */
     if (*ptr == '\0' || (*ptr == '"' && (*(ptr + 1) == '\0' || *(ptr + 1) == '"')))
     {
         jot_error(N_("Missing syntax name"));
         return;
     }
-
     ptr = parse_next_word(ptr);
-
-    //
-    //  Check that quotes around the name are either paired or absent.
-    //
+    /* Check that quotes around the name are either paired or absent. */
     if ((*nameptr == '\x22') ^ (nameptr[constexpr_strlen(nameptr) - 1] == '\x22'))
     {
         jot_error(N_("Unpaired quote in syntax name"));
         return;
     }
-
-    //
-    //  If the name is quoted, strip the quotes.
-    //
+    /* If the name is quoted, strip the quotes. */
     if (*nameptr == '\x22')
     {
         nameptr++;
-        nameptr[std::strlen(nameptr) - 1] = '\0';
+        nameptr[strlen(nameptr) - 1] = '\0';
     }
-
-    //
-    //  Redefining the "none" syntax is not allowed.
-    //
+    /* Redefining the "none" syntax is not allowed. */
     if (constexpr_strcmp(nameptr, "none") == 0)
     {
         jot_error(N_("The \"none\" syntax is reserved"));
         return;
     }
-
-    //
-    //  Initialize a new syntax struct.
-    //
-    live_syntax                = static_cast<syntaxtype *>(nmalloc(sizeof(syntaxtype)));
+    /* Initialize a new syntax struct. */
+    live_syntax                = (syntaxtype *)nmalloc(sizeof(syntaxtype));
     live_syntax->name          = copy_of(nameptr);
     live_syntax->filename      = copy_of(nanorc);
     live_syntax->lineno        = lineno;
@@ -490,36 +471,25 @@ begin_new_syntax(char *ptr)
     live_syntax->comment       = copy_of(GENERAL_COMMENT_CHARACTER);
     live_syntax->color         = nullptr;
     live_syntax->multiscore    = 0;
-    //
-    //  Hook the new syntax in at the top of the list.
-    //
-    live_syntax->next = syntaxes;
-    syntaxes          = live_syntax;
-
+    /* Hook the new syntax in at the top of the list. */
+    live_syntax->next  = syntaxes;
+    syntaxes           = live_syntax;
     opensyntax         = true;
     seen_color_command = false;
-
-    //
-    //  The default syntax should have no associated extensions.
-    //
+    /* The default syntax should have no associated extensions. */
     if (constexpr_strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept extensions"));
         return;
     }
-
-    //
-    //  If there seem to be extension regexes, pick them up.
-    //
+    /* If there seem to be extension regexes, pick them up. */
     if (*ptr != '\0')
     {
         grab_and_store("extension", ptr, &live_syntax->extensions);
     }
 }
 
-//
-//  Verify that a syntax definition contains at least one color command.
-//
+/* Verify that a syntax definition contains at least one color command. */
 void
 check_for_nonempty_syntax()
 {
@@ -1035,11 +1005,9 @@ parse_combination(char *combotext, short &fg, short &bg, int &attributes)
     return true;
 }
 
-//
-//  Parse the color specification that starts at ptr, and then the one or more
-//  regexes that follow it.  For each valid regex (or start=/end= regex pair),
-//  add a rule to the current syntax.
-//
+/* Parse the color specification that starts at ptr, and then the one or more
+ * regexes that follow it.  For each valid regex (or start=/end= regex pair),
+ * add a rule to the current syntax. */
 void
 parse_rule(char *ptr, int rex_flags)
 {
@@ -1077,7 +1045,7 @@ parse_rule(char *ptr, int rex_flags)
         if (constexpr_strncmp(ptr, "start=", 6) == 0)
         {
             ptr += 6;
-            expectend = TRUE;
+            expectend = true;
         }
         regexstring = ++ptr;
         ptr         = parse_next_regex(ptr);
@@ -1092,20 +1060,16 @@ parse_rule(char *ptr, int rex_flags)
             {
                 jot_error(N_("\"start=\" requires a corresponding \"end=\""));
                 regfree(start_rgx);
-                std::free(start_rgx);
+                free(start_rgx);
                 return;
             }
-
             regexstring = ptr + 5;
             ptr         = parse_next_regex(ptr + 5);
-
-            //
-            //  When there is no valid end= regex, abandon the rule.
-            //
+            /* When there is no valid end= regex, abandon the rule. */
             if (ptr == nullptr || !compile(regexstring, rex_flags, end_rgx))
             {
                 regfree(start_rgx);
-                std::free(start_rgx);
+                free(start_rgx);
                 return;
             }
         }
@@ -1151,10 +1115,8 @@ set_interface_color(const int element, char *combotext)
     }
 }
 
-//
-//  Read regex strings enclosed in double quotes from the line pointed at
-//  by ptr, and store them quoteless in the passed storage place.
-//
+/* Read regex strings enclosed in double quotes from the line pointed at
+ * by ptr, and store them quoteless in the passed storage place. */
 void
 grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
 {
@@ -1187,8 +1149,7 @@ grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
     {
         regex_t *packed_rgx = nullptr;
         regexstring         = ++ptr;
-        ptr                 = parse_next_regex(ptr);
-        if (ptr == nullptr)
+        if ((ptr = parse_next_regex(ptr)) == nullptr)
         {
             return;
         }
@@ -1198,7 +1159,7 @@ grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
             continue;
         }
         /* Copy the regex into a struct, and hook this in at the end. */
-        newthing          = static_cast<regexlisttype *>(nmalloc(sizeof(regexlisttype)));
+        newthing          = (regexlisttype *)nmalloc(sizeof(regexlisttype));
         newthing->one_rgx = packed_rgx;
         newthing->next    = nullptr;
         if (lastthing == nullptr)
@@ -1295,11 +1256,9 @@ check_vitals_mapped()
             {
                 if (first_sc_for(inmenus[v], f->func) == nullptr)
                 {
-                    jot_error(N_("No key is bound to function '%s' in menu '%s'. "
-                                 " Exiting.\n"),
-                              f->tag, menuToName(inmenus[v]));
-                    die(_("If needed, use nano with the -I option "
-                          "to adjust your nanorc settings.\n"));
+                    jot_error(N_("No key is bound to function '%s' in menu '%s'.  Exiting.\n"), f->tag,
+                              menuToName(inmenus[v]));
+                    die(_("If needed, use nano with the -I option to adjust your nanorc settings.\n"));
                 }
                 else
                 {
@@ -1310,29 +1269,14 @@ check_vitals_mapped()
     }
 }
 
-//
-/// @name
-///  -  @c parse_rcfile
-///
-/// @brief
-///  -  Parse the rcfile, once it has been opened successfully at rcstream,
-///     and close it afterwards.  If just_syntax is TRUE, allow the file to
-///     to contain only color syntax commands.
-///
-/// @param rcstream ( FILE * )
-///  -  The file stream to read from.
-///
-/// @param just_syntax ( bool )
-///  -  Whether to parse only the syntax commands.
-///
-/// @param intros_only ( bool )
-///  -  Whether to parse only the syntax prologue.
-///
-/// @returns ( void )
-//
-/// TODO : This function is too long and needs to be refactored.
-///        It is also convoluted and hard to follow.
-//
+/* Parse the rcfile, once it has been opened successfully at rcstream,
+ * and close it afterwards.  If just_syntax is TRUE, allow the file to
+ * to contain only color syntax commands.
+ * @param rcstream (FILE *) - The file stream to read from.
+ * @param just_syntax (bool) - Whether to parse only the syntax commands.
+ * @param intros_only (bool) - Whether to parse only the syntax prologue.
+ * TODO: This function is too long and needs to be refactored.
+ *       It is also convoluted and hard to follow. */
 void
 parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 {
@@ -1381,11 +1325,8 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             augmentstruct *newitem, *extra;
             char          *syntaxname = ptr;
             syntaxtype    *sntx;
-
             check_for_nonempty_syntax();
-
             ptr = parse_next_word(ptr);
-
             for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
             {
                 if (constexpr_strcmp(sntx->name, syntaxname) == 0)
@@ -1393,37 +1334,30 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                     break;
                 }
             }
-
             if (sntx == nullptr)
             {
                 jot_error(N_("Could not find syntax \"%s\" to extend"), syntaxname);
                 continue;
             }
-
             keyword  = ptr;
             argument = copy_of(ptr);
             ptr      = parse_next_word(ptr);
-
-            //
-            //  File-matching commands need to be processed immediately;
-            //  other commands are stored for possible later processing.
-            //
+            /* File-matching commands need to be processed immediately;
+             * other commands are stored for possible later processing. */
             if (constexpr_strcmp(keyword, "header") == 0 || constexpr_strcmp(keyword, "magic") == 0)
             {
-                std::free(argument);
+                free(argument);
                 live_syntax = sntx;
-                opensyntax  = TRUE;
-                drop_open   = TRUE;
+                opensyntax  = true;
+                drop_open   = true;
             }
             else
             {
-                newitem = static_cast<augmentstruct *>(nmalloc(sizeof(augmentstruct)));
-
+                newitem           = (augmentstruct *)nmalloc(sizeof(augmentstruct));
                 newitem->filename = copy_of(nanorc);
                 newitem->lineno   = lineno;
                 newitem->data     = argument;
                 newitem->next     = nullptr;
-
                 if (sntx->augmentations != nullptr)
                 {
                     extra = sntx->augmentations;
@@ -1437,7 +1371,6 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 {
                     sntx->augmentations = newitem;
                 }
-
                 continue;
             }
         }
@@ -1491,9 +1424,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         {
             if (!opensyntax)
             {
-                jot_error(N_("A '%s' command requires a preceding "
-                             "'syntax' command"),
-                          keyword);
+                jot_error(N_("A '%s' command requires a preceding 'syntax' command"), keyword);
             }
             if (constexpr_strstr("icolor", keyword))
             {
@@ -1721,7 +1652,7 @@ parse_one_nanorc()
     }
     else if (errno != ENOENT)
     {
-        jot_error(N_("Error reading %s: %s"), nanorc, ERRNO_C_STR);
+        jot_error(N_("Error reading %s: %s"), nanorc, strerror(errno));
     }
 }
 
