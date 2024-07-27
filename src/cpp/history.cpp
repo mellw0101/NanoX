@@ -499,7 +499,7 @@ reload_positions_if_needed(void)
 /* Update the recorded last file positions with the current position in the current buffer.
  * If no existing entry is found, add a new one at the end. */
 void
-update_poshistory()
+update_poshistory(void)
 {
     char          *fullpath = get_full_path(openfile->filename);
     poshiststruct *previous = nullptr;

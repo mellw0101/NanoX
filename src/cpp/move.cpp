@@ -261,7 +261,7 @@ to_para_end(void)
     {
         openfile->current_x = constexpr_strlen(openfile->current->data);
     }
-    edit_redraw(was_current, CENTERING);
+    edit_redraw(was_current, FLOWING);
     recook |= perturbed;
 }
 
@@ -276,6 +276,29 @@ to_prev_block(void)
     /* Skip backward until first blank line after some nonblank line(s). */
     while (openfile->current->prev != nullptr && (!seen_text || is_text))
     {
+        if (is_empty_line(openfile->current))
+        {
+            /* If on line after starting line. */
+            if (lines == 1)
+            {
+                /* Find first line that is not empty. */
+                for (; openfile->current->prev != nullptr && is_empty_line(openfile->current);
+                     openfile->current = openfile->current->prev)
+                    ;
+                get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
+                openfile->current_x = t_char;
+                edit_redraw(was_current, FLOWING);
+                return;
+            }
+            else if (openfile->current->prev != nullptr)
+            {
+                openfile->current = openfile->current->prev;
+                get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
+                openfile->current_x = t_char;
+                edit_redraw(openfile->current, FLOWING);
+                return;
+            }
+        }
         get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
         cur_indent = t_tabs;
         if (was_indent == -1)
@@ -290,7 +313,7 @@ to_prev_block(void)
                 get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
             }
             openfile->current_x = t_char;
-            edit_redraw(was_current, CENTERING);
+            edit_redraw(was_current, FLOWING);
             return;
         }
         openfile->current = openfile->current->prev;
@@ -305,7 +328,7 @@ to_prev_block(void)
     }
     get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
     openfile->current_x = t_char;
-    edit_redraw(was_current, CENTERING);
+    edit_redraw(was_current, FLOWING);
 }
 
 /* Move to the next block of text. */
@@ -320,6 +343,31 @@ to_next_block(void)
     /* Skip forward until first nonblank line after some blank line(s). */
     while (openfile->current->next != nullptr && (!seen_white || is_white))
     {
+        if (is_empty_line(openfile->current))
+        {
+            if (lines == 0)
+                ;
+            else if (lines == 1)
+            {
+                for (; openfile->current->next != nullptr && is_empty_line(openfile->current);
+                     openfile->current = openfile->current->next)
+                    ;
+                get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
+                openfile->current_x = t_char;
+                edit_redraw(was_current, FLOWING);
+                recook |= perturbed;
+                return;
+            }
+            else
+            {
+                openfile->current = openfile->current->prev;
+                get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
+                openfile->current_x = t_char;
+                edit_redraw(was_current, FLOWING);
+                recook |= perturbed;
+                return;
+            }
+        }
         get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
         cur_indent = t_tabs;
         if (was_indent == -1)
@@ -334,7 +382,7 @@ to_next_block(void)
                 get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
             }
             openfile->current_x = t_char;
-            edit_redraw(was_current, CENTERING);
+            edit_redraw(was_current, FLOWING);
             recook |= perturbed;
             return;
         }
@@ -345,7 +393,7 @@ to_next_block(void)
     }
     get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
     openfile->current_x = t_char;
-    edit_redraw(was_current, CENTERING);
+    edit_redraw(was_current, FLOWING);
     recook |= perturbed;
 }
 
@@ -424,7 +472,7 @@ do_next_word(bool after_ends)
         /* If at the end of a line, move to the beginning of the next one. */
         if (openfile->current->data[openfile->current_x] == '\0')
         {
-            /* If not called when at eol stop here. */
+            /* If not called starting at eof, stop here. */
             if (i != 0)
             {
                 break;
@@ -603,7 +651,7 @@ do_end(void)
     was_column      = xplustabs();
     line_len        = constexpr_strlen(openfile->current->data);
     moved_off_chunk = true;
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         kickoff    = true;
         last_chunk = false;
@@ -706,9 +754,7 @@ do_down(void)
 void
 do_scroll_up(void)
 {
-    //
-    //  When the top of the file is onscreen, we can't scroll.
-    //
+    /* When the top of the file is onscreen, we can't scroll. */
     if (openfile->edittop->prev == nullptr && openfile->firstcolumn == 0)
     {
         return;

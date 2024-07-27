@@ -503,5 +503,7 @@ unsigned short indent_char_len(linestruct *line);
 void inject_in_line(linestruct **line, const char *str, unsigned long at);
 void enclose_marked_region(const char *s1, const char *s2);
 void do_block_comment(void);
+bool enter_with_bracket(void);
+bool is_empty_line(linestruct *line);
 
 #include <Mlib/def.h>

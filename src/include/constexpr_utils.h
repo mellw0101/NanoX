@@ -3,9 +3,7 @@
 
 #include "constexpr_def.h"
 
-//
-//  Function to retrive a syntax option from a string literal.
-//
+/* Function to retrive a syntax option from a string literal. */
 constexpr int
 retriveSyntaxOptionFromStr(std::string_view str)
 {
@@ -19,9 +17,7 @@ retriveSyntaxOptionFromStr(std::string_view str)
     return 0;
 }
 
-//
-//  Function to retrive a color option from a string literal.
-//
+/* Function to retrive a color option from a string literal. */
 constexpr int
 retriveConfigOptionFromStr(std::string_view str)
 {
@@ -35,9 +31,7 @@ retriveConfigOptionFromStr(std::string_view str)
     return 0;
 }
 
-//
-//  Function to retrive the color option from a string literal.
-//
+/* Function to retrive the color option from a string literal. */
 constexpr int
 retriveColorOptionFromStr(std::string_view str)
 {
@@ -48,12 +42,10 @@ retriveColorOptionFromStr(std::string_view str)
             return val;
         }
     }
-    return s32_MAX;
+    return (unsigned int)-1;
 }
 
-//
-//  Function to retrive flags from a string literal.
-//
+/* Function to retrive flags from a string literal. */
 constexpr unsigned int
 retriveFlagFromStr(std::string_view str)
 {
@@ -93,9 +85,7 @@ retriveToggleOptionFromStr(std::string_view str)
     return 0;
 }
 
-//
-//  Function to retrive the menu option from a string literal.
-//
+/* Function to retrive the menu option from a string literal. */
 constexpr unsigned int
 nameToMenu(std::string_view str)
 {

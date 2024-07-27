@@ -106,10 +106,98 @@ enclose_marked_region(const char *s1, const char *s2)
     set_modified();
 }
 
+/* This is a shortcut to make marked area a block comment. */
 void
 do_block_comment(void)
 {
     PROFILE_FUNCTION;
     enclose_marked_region("/* ", " */");
     refresh_needed = true;
+}
+
+/* Check if enter is requested when betweeen '{' and '}'.
+ * if so properly open the brackets, place cursor in the middle and indent once.
+ * Return`s 'false' if not between them, otherwise return`s 'true' */
+bool
+enter_with_bracket(void)
+{
+    char          c, c_prev;
+    linestruct   *was_current = openfile->current, *middle, *end;
+    bool          allblanks   = false;
+    unsigned long extra;
+    if (!openfile->current->data[openfile->current_x - 1])
+    {
+        return false;
+    }
+    c_prev = openfile->current->data[openfile->current_x - 1];
+    c      = openfile->current->data[openfile->current_x];
+    if (c_prev != '{' || c != '}')
+    {
+        return false;
+    }
+    extra = indent_length(was_current->data);
+    if (extra == openfile->current_x)
+    {
+        allblanks = (indent_length(openfile->current->data) == extra);
+    }
+    middle       = make_new_node(openfile->current);
+    middle->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
+    strcpy(&middle->data[extra], openfile->current->data + openfile->current_x);
+    if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x)
+    {
+        openfile->mark = middle;
+        openfile->mark_x += extra - openfile->current_x;
+    }
+    strncpy(middle->data, was_current->data, extra);
+    if (allblanks)
+    {
+        openfile->current_x = 0;
+    }
+    openfile->current->data[openfile->current_x] = '\0';
+    add_undo(ENTER, nullptr);
+    splice_node(openfile->current, middle);
+    renumber_from(middle);
+    openfile->current     = middle;
+    openfile->current_x   = extra;
+    openfile->placewewant = xplustabs();
+    openfile->totsize++;
+    set_modified();
+    if (ISSET(AUTOINDENT) && !allblanks)
+    {
+        openfile->totsize += extra;
+    }
+    update_undo(ENTER);
+    /* End of 'middle' and start of 'end' */
+    end       = make_new_node(openfile->current);
+    end->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
+    strcpy(&end->data[extra], openfile->current->data + openfile->current_x);
+    strncpy(end->data, was_current->data, extra);
+    openfile->current->data[openfile->current_x] = '\0';
+    add_undo(ENTER, nullptr);
+    splice_node(openfile->current, end);
+    renumber_from(end);
+    openfile->current     = end;
+    openfile->current_x   = extra;
+    openfile->placewewant = xplustabs();
+    openfile->totsize++;
+    if (ISSET(AUTOINDENT) && !allblanks)
+    {
+        openfile->totsize += extra;
+    }
+    update_undo(ENTER);
+    /* Place cursor at correct pos. */
+    do_up();
+    do_tab();
+    refresh_needed = true;
+    focusing       = false;
+    return true;
+}
+
+bool
+is_empty_line(linestruct *line)
+{
+    unsigned i = 0;
+    for (; line->data[i]; i++)
+        ;
+    return (i == 0);
 }

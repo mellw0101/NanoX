@@ -400,9 +400,10 @@ parse_next_regex(char *ptr)
 }
 
 /* Compile the given regular expression and store the result in packed (when
- * this pointer is not NULL).  Return TRUE when the expression is valid. */
+ * this pointer is not NULL).  Return TRUE when the expression is valid.
+ * TODO: (compile) - This is importent to live syntax coloring. */
 bool
-compile(const char *expression, int rex_flags, regex_t *&packed)
+compile(const char *expression, int rex_flags, regex_t **packed)
 {
     PROFILE_FUNCTION;
     regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
@@ -419,7 +420,7 @@ compile(const char *expression, int rex_flags, regex_t *&packed)
     }
     else
     {
-        packed = compiled;
+        *packed = compiled;
     }
     return (outcome == 0);
 }
@@ -491,7 +492,7 @@ begin_new_syntax(char *ptr)
 
 /* Verify that a syntax definition contains at least one color command. */
 void
-check_for_nonempty_syntax()
+check_for_nonempty_syntax(void)
 {
     if (opensyntax && !seen_color_command)
     {
@@ -505,11 +506,11 @@ check_for_nonempty_syntax()
 
 /* Return TRUE when the given function is present in almost all menus. */
 bool
-is_universal(void (*func)())
+is_universal(void (*f)(void))
 {
-    return (func == do_left || func == do_right || func == do_home || func == do_end || func == to_prev_word ||
-            func == to_next_word || func == do_delete || func == do_backspace || func == cut_text ||
-            func == paste_text || func == do_tab || func == do_enter || func == do_verbatim_input);
+    return (f == do_left || f == do_right || f == do_home || f == do_end || f == to_prev_word || f == to_next_word ||
+            f == do_delete || f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter ||
+            f == do_verbatim_input);
 }
 
 /* Bind or unbind a key combo, to or from a function. */
@@ -878,10 +879,11 @@ constexpr_map<std::string_view, short, COLORCOUNT> huesIndiecesMap = {
 short
 color_to_short(const char *colorname, bool &vivid, bool &thick)
 {
+    PROFILE_FUNCTION;
     if (constexpr_strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
-        vivid = true;
         thick = true;
+        vivid = true;
         colorname += 6;
     }
     else if (constexpr_strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
@@ -1050,7 +1052,7 @@ parse_rule(char *ptr, int rex_flags)
         regexstring = ++ptr;
         ptr         = parse_next_regex(ptr);
         /* When there is no regex, or it is invalid, skip this line. */
-        if (ptr == nullptr || !compile(regexstring, rex_flags, start_rgx))
+        if (ptr == nullptr || !compile(regexstring, rex_flags, &start_rgx))
         {
             return;
         }
@@ -1066,7 +1068,7 @@ parse_rule(char *ptr, int rex_flags)
             regexstring = ptr + 5;
             ptr         = parse_next_regex(ptr + 5);
             /* When there is no valid end= regex, abandon the rule. */
-            if (ptr == nullptr || !compile(regexstring, rex_flags, end_rgx))
+            if (ptr == nullptr || !compile(regexstring, rex_flags, &end_rgx))
             {
                 regfree(start_rgx);
                 free(start_rgx);
@@ -1116,7 +1118,8 @@ set_interface_color(const int element, char *combotext)
 }
 
 /* Read regex strings enclosed in double quotes from the line pointed at
- * by ptr, and store them quoteless in the passed storage place. */
+ * by ptr, and store them quoteless in the passed storage place.
+ * TODO: (grab_and_store) - Implement live syntax for defined typed like struct`s, class`s and define`s. */
 void
 grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
 {
@@ -1154,7 +1157,7 @@ grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
             return;
         }
         /* If the regex string is malformed, skip it. */
-        if (!compile(regexstring, NANO_REG_EXTENDED | REG_NOSUB, packed_rgx))
+        if (!compile(regexstring, NANO_REG_EXTENDED | REG_NOSUB, &packed_rgx))
         {
             continue;
         }
@@ -1529,7 +1532,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             continue;
         }
         const int colorOption = retriveColorOptionFromStr(option);
-        (colorOption != u32_MAX) ? set_interface_color(colorOption, argument) : void();
+        (colorOption != (unsigned int)-1) ? set_interface_color(colorOption, argument) : void();
         const unsigned int configOption = retriveConfigOptionFromStr(option);
         if (!configOption)
         {
@@ -1641,7 +1644,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 
 /* Read and interpret one of the two nanorc files. */
 void
-parse_one_nanorc()
+parse_one_nanorc(void)
 {
     FILE *rcstream = fopen(nanorc, "rb");
     /* If opening the file succeeded, parse it.
@@ -1671,7 +1674,7 @@ have_nanorc(const char *path, const char *name)
 /* Process the nanorc file that was specified on the command line (if any),
  * and otherwise the system-wide rcfile followed by the user's rcfile. */
 void
-do_rcfiles()
+do_rcfiles(void)
 {
     if (custom_nanorc)
     {

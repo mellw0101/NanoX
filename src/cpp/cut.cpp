@@ -1,6 +1,7 @@
 /// @file @c cut.cpp
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <cstring>
 
 /* Delete the character at the current position,
@@ -366,6 +367,7 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
 void
 ingraft_buffer(linestruct *topline)
 {
+    PROFILE_FUNCTION;
     linestruct   *line         = openfile->current;
     unsigned long length       = constexpr_strlen(line->data);
     unsigned long extralen     = constexpr_strlen(topline->data);
@@ -485,8 +487,7 @@ do_snip(bool marked, bool until_eof, bool append)
     /* Now move the relevant piece of text into the cutbuffer. */
     if (until_eof)
     {
-        extract_segment(
-            openfile->current, openfile->current_x, openfile->filebot, constexpr_strlen(openfile->filebot->data));
+        extract_segment(openfile->current, openfile->current_x, openfile->filebot, strlen(openfile->filebot->data));
     }
     else if (openfile->mark)
     {

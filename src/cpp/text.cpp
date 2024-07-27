@@ -43,7 +43,7 @@ do_tab(void)
     {
         inject(openfile->syntax->tabstring, constexpr_strlen(openfile->syntax->tabstring));
     }
-    else if ISSET (TABS_TO_SPACES)
+    else if (ISSET(TABS_TO_SPACES))
     {
         char         *spaces = (char *)nmalloc(tabsize + 1);
         unsigned long length = tabsize - (xplustabs() % tabsize);
@@ -295,7 +295,8 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 /* Test whether the given line can be uncommented, or add or remove a comment,
  * depending on action.  Return TRUE if the line is uncommentable, or when
  * anything was added or removed; FALSE otherwise.
- * ADDED: Also takes indentation into account. */
+ * ADDED: Also takes indentation into account.
+ * TODO: (comment_line) - Fix bug where cursor is missplaces one step to the left. */
 bool
 comment_line(undo_type action, linestruct *line, const char *comment_seq)
 {
@@ -950,73 +951,9 @@ do_redo(void)
 void
 do_enter(void)
 {
-    /* Check the char at the 'openfile->current_x - 1' is valid */
-    if (openfile->current->data[openfile->current_x - 1])
+    if (enter_with_bracket())
     {
-        char c_prev = openfile->current->data[openfile->current_x - 1];
-        char c_next = openfile->current->data[openfile->current_x];
-        if (c_prev == '{' && c_next == '}')
-        {
-            linestruct   *new_node_middle = make_new_node(openfile->current);
-            linestruct   *sample_line     = openfile->current;
-            bool          allblanks       = false;
-            unsigned long extra           = indent_length(sample_line->data);
-            if (extra == openfile->current_x)
-            {
-                allblanks = (indent_length(openfile->current->data) == extra);
-            }
-            new_node_middle->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
-            strcpy(&new_node_middle->data[extra], openfile->current->data + openfile->current_x);
-            if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x)
-            {
-                openfile->mark = new_node_middle;
-                openfile->mark_x += extra - openfile->current_x;
-            }
-            strncpy(new_node_middle->data, sample_line->data, extra);
-            if (allblanks)
-            {
-                openfile->current_x = 0;
-            }
-            openfile->current->data[openfile->current_x] = '\0';
-            add_undo(ENTER, nullptr);
-            splice_node(openfile->current, new_node_middle);
-            renumber_from(new_node_middle);
-            openfile->current     = new_node_middle;
-            openfile->current_x   = extra;
-            openfile->placewewant = xplustabs();
-            openfile->totsize++;
-            set_modified();
-            if (ISSET(AUTOINDENT) && !allblanks)
-            {
-                openfile->totsize += extra;
-            }
-            update_undo(ENTER);
-            /* End of middleline and begining of making the end line for the closing bracket. */
-            linestruct *new_node_end = make_new_node(openfile->current);
-            sample_line              = openfile->current;
-            new_node_end->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
-            strcpy(&new_node_end->data[extra], openfile->current->data + openfile->current_x);
-            strncpy(new_node_end->data, sample_line->data, extra);
-            openfile->current->data[openfile->current_x] = '\0';
-            add_undo(ENTER, nullptr);
-            splice_node(openfile->current, new_node_end);
-            renumber_from(new_node_end);
-            openfile->current     = new_node_end;
-            openfile->current_x   = extra;
-            openfile->placewewant = xplustabs();
-            openfile->totsize++;
-            if (ISSET(AUTOINDENT) && !allblanks)
-            {
-                openfile->totsize += extra;
-            }
-            update_undo(ENTER);
-            /* Place cursor at correct position. */
-            do_up();
-            do_tab();
-            refresh_needed = true;
-            focusing       = false;
-            return;
-        }
+        return;
     }
     linestruct   *newnode    = make_new_node(openfile->current);
     linestruct   *sampleline = openfile->current;
@@ -1697,6 +1634,7 @@ quote_length(const char *line)
 
 /* The maximum depth of recursion.  Note that this MUST be an even number. */
 constexpr unsigned char RECURSION_LIMIT = 222;
+
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
 bool
 begpar(const linestruct *const line, int depth)
@@ -1913,7 +1851,7 @@ rewrap_paragraph(linestruct **line, char *lead_string, unsigned long lead_len)
         /* Insert a new line after the current one, and copy the leading part
          * plus the text after the breaking point into it. */
         splice_node(*line, make_new_node(*line));
-        (*line)->next->data = static_cast<char *>(nmalloc(lead_len + line_len - break_pos + 1));
+        (*line)->next->data = (char *)nmalloc(lead_len + line_len - break_pos + 1);
         strncpy((*line)->next->data, lead_string, lead_len);
         strcpy((*line)->next->data + lead_len, (*line)->data + break_pos);
         /* When requested, snip the one or two trailing spaces. */

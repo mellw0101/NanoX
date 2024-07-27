@@ -661,14 +661,13 @@ scoop_stdin(void)
     /* When input comes from a terminal, show a helpful message. */
     if (isatty(STDIN_FILENO))
     {
-        fprintf(stderr, _("Reading data from keyboard; "
-                          "type ^D or ^D^D to finish.\n"));
+        fprintf(stderr, _("Reading data from keyboard; type ^D or ^D^D to finish.\n"));
     }
     /* Open standard input. */
     stream = fopen("/dev/stdin", "rb");
     if (stream == nullptr)
     {
-        const char *errnoStr = ERRNO_C_STR;
+        const char *errnoStr = strerror(errno);
         terminal_init();
         doupdate();
         statusline(ALERT, _("Failed to open stdin: %s"), errnoStr);
@@ -1429,6 +1428,9 @@ process_a_keystroke(void)
                     if (openfile->current->data[0] == '#')
                     {
                         puddle[depth++] = '>';
+                        /* Set a flag to remember that an open bracket
+                         * character was inserted into the input buffer. */
+                        was_open_bracket_char = true;
                     }
                 }
                 else
@@ -1438,10 +1440,10 @@ process_a_keystroke(void)
                                              : input == '"'  ? '"'
                                              : input == '\'' ? '\''
                                                              : '}');
+                    /* Set a flag to remember that an open bracket
+                     * character was inserted into the input buffer. */
+                    was_open_bracket_char = true;
                 }
-                /* Set a flag to remember that an open bracket
-                 * character was inserted into the input buffer. */
-                was_open_bracket_char = true;
             }
         }
     }

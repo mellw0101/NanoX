@@ -130,8 +130,8 @@ constexpr unsigned char MAX_SEARCH_HISTORY = 100;
 /* The largest unsigned long number that doesn't have the high bit set. */
 constexpr unsigned long HIGHEST_POSITIVE = ((~(unsigned long)0) >> 1);
 
-constexpr short THE_DEFAULT = -1;
-constexpr short BAD_COLOR   = -2;
+constexpr signed char THE_DEFAULT = -1;
+constexpr signed char BAD_COLOR   = -2;
 
 /* Flags for indicating how a multiline regex pair apply to a line. */
 
@@ -256,8 +256,7 @@ typedef enum
     STATIONARY
 } update_type;
 
-/* The kinds of undo actions.
- * ADD...REPLACE must come first. */
+/* The kinds of undo actions.  ADD...REPLACE must come first. */
 typedef enum
 {
     ADD,
@@ -287,63 +286,90 @@ typedef enum
 /* Structure types. */
 typedef struct colortype
 {
-    short id;          // An ordinal number (if this color combo is for a multiline regex).
-    short fg;          // This combo's foreground color.
-    short bg;          // This combo's background color.
-    short pairnum;     // The pair number for this foreground/background color
-                       // combination.
-    int attributes;    // Pair number and brightness composed into ready-to-use
-                       // attributes.
-    regex_t   *start;  // The compiled regular expression for 'start=', or the only one.
-    regex_t   *end;    // The compiled regular expression for 'end=', if any.
-    colortype *next;   // Next color combination.
+    /* An ordinal number (if this color combo is for a multiline regex). */
+    short id;
+    /* This combo's foreground color. */
+    short fg;
+    /* This combo's background color. */
+    short bg;
+    /* The pair number for this foreground/background color combination. */
+    short pairnum;
+    /* Pair number and brightness composed into ready-to-use attributes. */
+    int attributes;
+    /* The compiled regular expression for 'start=', or the only one. */
+    regex_t *start;
+    /* The compiled regular expression for 'end=', if any. */
+    regex_t *end;
+    /* Next color combination. */
+    colortype *next;
 } colortype;
 
 typedef struct regexlisttype
 {
-    regex_t       *one_rgx; /* A regex to match things that imply a certain syntax. */
-    regexlisttype *next;    /* The next regex. */
+    /* A regex to match things that imply a certain syntax. */
+    regex_t *one_rgx;
+    /* The next regex. */
+    regexlisttype *next;
 } regexlisttype;
 
 typedef struct augmentstruct
 {
-    char          *filename;  //  The file where the syntax is extended.
-    long           lineno;    //  The number of the line of the extendsyntax command.
-    char          *data;      //  The text of the line.
-    augmentstruct *next;      //  Next node.
+    /* The file where the syntax is extended. */
+    char *filename;
+    /* The number of the line of the extendsyntax command. */
+    long lineno;
+    /* The text of the line. */
+    char *data;
+    /* Next node. */
+    augmentstruct *next;
 } augmentstruct;
 
 typedef struct syntaxtype
 {
-    char *name;                    // The name of this syntax.
-    char *filename;                // File where the syntax is defined, or NULL if not an
-                                   // included file.
-    unsigned long  lineno;         // The line number where the 'syntax' command was found.
-    augmentstruct *augmentations;  // List of extendsyntax commands to apply when loaded.
-    regexlisttype *extensions;     // The list of extensions that this syntax applies to.
-    regexlisttype *headers;        // The list of headerlines that this syntax applies to.
-    regexlisttype *magics;         // The list of libmagic results that this syntax applies to.
-    char          *linter;         // The command with which to lint this type of file.
-    char          *formatter;      // The command with which to format/modify/arrange this
-                                   // type of file.
-    char *tabstring;               // What the Tab key should produce; NULL for default
-                                   // behavior.
-    char *comment;                 // The line comment prefix (and postfix) for this type of
-                                   // file.
-    colortype  *color;             // The colors and their regexes used in this syntax.
-    short       multiscore;        // How many multiline regex strings this syntax has.
-    syntaxtype *next;              // Next syntax.
+    /* The name of this syntax. */
+    char *name;
+    /* File where the syntax is defined, or NULL if not an included file. */
+    char *filename;
+    /* The line number where the 'syntax' command was found. */
+    unsigned long lineno;
+    /* List of extendsyntax commands to apply when loaded. */
+    augmentstruct *augmentations;
+    /* The list of extensions that this syntax applies to. */
+    regexlisttype *extensions;
+    /* The list of headerlines that this syntax applies to. */
+    regexlisttype *headers;
+    /* The list of libmagic results that this syntax applies to. */
+    regexlisttype *magics;
+    /* The command with which to lint this type of file. */
+    char *linter;
+    /* The command with which to format/modify/arrange this type of file. */
+    char *formatter;
+    /* What the Tab key should produce; NULL for default behavior. */
+    char *tabstring;
+    /* The line comment prefix (and postfix) for this type of file. */
+    char *comment;
+    /* The colors and their regexes used in this syntax. */
+    colortype *color;
+    /* How many multiline regex strings this syntax has. */
+    short multiscore;
+    /* Next syntax. */
+    syntaxtype *next;
 } syntaxtype;
 
 typedef struct lintstruct
 {
-    lintstruct *next;  // Next error.
-    lintstruct *prev;  // Previous error.
-
-    long  lineno;      // Line number of the error.
-    long  colno;       // Column # of the error.
-    char *msg;         // Error message text.
-    char *filename;    // Filename.
+    /* Next error. */
+    lintstruct *next;
+    /* Previous error. */
+    lintstruct *prev;
+    /* Line number of the error. */
+    long lineno;
+    /* Column # of the error. */
+    long colno;
+    /* Error message text. */
+    char *msg;
+    /* Filename. */
+    char *filename;
 } lintstruct;
 
 /* More structure types. */
@@ -374,23 +400,34 @@ typedef struct groupstruct
     long bottom_line;
     /* String data used to restore the affected lines; one per line. */
     char **indentations;
-
 } groupstruct;
 
 typedef struct undostruct
 {
-    undo_type     type;        /* The operation type that this undo item is for. */
-    int           xflags;      /* Some flag data to mark certain corner cases. */
-    long          head_lineno; /* The line number where the operation began or ended. */
-    unsigned long head_x;      /* The x position where the operation began or ended. */
-    char         *strdata;     /* String data to help restore the affected line. */
-    unsigned long wassize;     /* The file size before the action. */
-    unsigned long newsize;     /* The file size after the action. */
-    groupstruct  *grouping;    /* Undo info specific to groups of lines. */
-    linestruct   *cutbuffer;   /* A copy of the cutbuffer. */
-    long          tail_lineno; /* Mostly the line number of the current line; sometimes something else. */
-    unsigned long tail_x;      /* The x position corresponding to the above line number. */
-    undostruct   *next;        /* A pointer to the undo item of the preceding action. */
+    /* The operation type that this undo item is for. */
+    undo_type type;
+    /* Some flag data to mark certain corner cases. */
+    int xflags;
+    /* The line number where the operation began or ended. */
+    long head_lineno;
+    /* The x position where the operation began or ended. */
+    unsigned long head_x;
+    /* String data to help restore the affected line. */
+    char *strdata;
+    /* The file size before the action. */
+    unsigned long wassize;
+    /* The file size after the action. */
+    unsigned long newsize;
+    /* Undo info specific to groups of lines. */
+    groupstruct *grouping;
+    /* A copy of the cutbuffer. */
+    linestruct *cutbuffer;
+    /* Mostly the line number of the current line; sometimes something else. */
+    long tail_lineno;
+    /* The x position corresponding to the above line number. */
+    unsigned long tail_x;
+    /* A pointer to the undo item of the preceding action. */
+    undostruct *next;
 } undostruct;
 
 typedef struct poshiststruct
@@ -460,7 +497,6 @@ typedef struct openfilestruct
     openfilestruct *next;
     /* The preceding open file, if any. */
     openfilestruct *prev;
-
 } openfilestruct;
 
 typedef struct rcoption
@@ -493,13 +529,18 @@ typedef struct keystruct
 
 typedef struct funcstruct
 {
-    void (*func)();          /* The actual function to call. */
-    const char *tag;         /* The function's help-line label, for example "Where Is". */
-    const char *phrase;      /* The function's description for in the help viewer. */
-    bool        blank_after; /* Whether to distance this function from the next in the
-                                help viewer. */
-    int         menus;       /* In what menus this function applies. */
-    funcstruct *next;        /* Next item in the list. */
+    /* The actual function to call. */
+    void (*func)();
+    /* The function's help-line label, for example "Where Is". */
+    const char *tag;
+    /* The function's description for in the help viewer. */
+    const char *phrase;
+    /* Whether to distance this function from the next in the help viewer. */
+    bool blank_after;
+    /* In what menus this function applies. */
+    int menus;
+    /* Next item in the list. */
+    funcstruct *next;
 } funcstruct;
 
 typedef struct completionstruct
@@ -508,5 +549,5 @@ typedef struct completionstruct
     completionstruct *next;
 } completionstruct;
 
-constexpr unsigned char NANO_REG_EXTENDED = 1;
-#define SYSCONFDIR "/etc"
+#define NANO_REG_EXTENDED 1
+#define SYSCONFDIR        "/etc"
