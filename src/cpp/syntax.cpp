@@ -244,6 +244,7 @@ add_syntax(const unsigned short *type, char *word)
             if (word[i] == ';')
             {
                 word[i] = '\0';
+                break;
             }
         }
         add_syntax_word("cyan", rgx_word(word));
