@@ -309,6 +309,8 @@ do_cpp_syntax(void)
     }
 }
 
+static unsigned short last_type = 0;
+
 /* Check a line for syntax words, also index files that are included and add functions as well. */
 void
 check_for_syntax_words(linestruct *line)
@@ -328,11 +330,28 @@ check_for_syntax_words(linestruct *line)
     }
     for (i = 0; words[i] != nullptr; i++)
     {
+        const unsigned short type = retrieve_c_syntax_type(words[i]);
+        if (last_type != 0)
+        {
+            if (last_type & CS_VOID)
+            {
+                for (unsigned int j = 0; (words[i])[j]; j++)
+                {
+                    if ((words[i])[j] == '(')
+                    {
+                        (words[i])[j] = '\0';
+                    }
+                }
+                add_syntax_word("yellow", words[i]);
+                last_type = 0;
+                continue;
+            }
+        }
         if (words[i + 1] == nullptr)
         {
+            last_type = type;
             break;
         }
-        const unsigned short type = retrieve_c_syntax_type(words[i]);
         if (!type)
         {
             continue;

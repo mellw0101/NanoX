@@ -192,7 +192,11 @@ check_syntax(const char *path)
         words = words_in_str(buf);
         for (i = 0; words[i] != nullptr; i++)
         {
-            unsigned short type = retrieve_c_syntax_type(words[i]);
+            const unsigned short type = retrieve_c_syntax_type(words[i]);
+            if (!type)
+            {
+                continue;
+            }
             if (type & CS_CHAR)
             {
                 check_func_syntax(&words, &i);
@@ -241,7 +245,7 @@ add_syntax(const unsigned short *type, char *word)
         unsigned int i;
         for (i = 0; word[i]; i++)
         {
-            if (word[i] == ';')
+            if (word[i] == ';' || word[i] == ')')
             {
                 word[i] = '\0';
                 break;
