@@ -230,6 +230,7 @@ add_syntax_word(const char *color, const char *word)
     set_syntax_colorpairs(s);
 }
 
+/* Add some basic cpp syntax. */
 void
 do_cpp_syntax(void)
 {
@@ -308,6 +309,7 @@ do_cpp_syntax(void)
     }
 }
 
+/* Check a line for syntax words, also index files that are included and add functions as well. */
 void
 check_for_syntax_words(linestruct *line)
 {
@@ -330,7 +332,7 @@ check_for_syntax_words(linestruct *line)
         {
             break;
         }
-        const unsigned char type = retrieve_c_syntax_type(words[i]);
+        const unsigned short type = retrieve_c_syntax_type(words[i]);
         if (!type)
         {
             continue;
@@ -370,6 +372,50 @@ check_for_syntax_words(linestruct *line)
             }
             add_syntax_word("cyan", rgx_word(words[i]));
         }
+        else if (type & CS_INCLUDE)
+        {
+            if (*(words[++i]) == '<')
+            {
+                static char buf[PATH_MAX];
+                sprintf(buf, "%s%s", "/usr/include/", extract_include(words[i]));
+                if (does_include_file_exist(buf))
+                {
+                    check_syntax(buf);
+                    continue;
+                }
+                words[i] += 1;
+                if (*(words[i]) == 'c')
+                {
+                    words[i] += 1;
+                }
+                memset(buf, '\0', sizeof(buf));
+                sprintf(buf, "%s%s%s", "/usr/include/c++/v1/", words[i], ".h");
+                if (does_include_file_exist(buf))
+                {
+                    check_syntax(buf);
+                    continue;
+                }
+            }
+        }
+        else if (type & CS_CLASS)
+        {
+            add_syntax_word("brightgreen", words[++i]);
+        }
     }
     free(words);
+}
+
+bool
+does_include_file_exist(const char *path)
+{
+    struct stat st;
+    if (access(path, R_OK) != 0)
+    {
+        return false;
+    }
+    if (stat(path, &st) != -1 && (S_ISDIR(st.st_mode) || S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)))
+    {
+        return false;
+    }
+    return true;
 }

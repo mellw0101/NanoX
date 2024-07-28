@@ -15,12 +15,15 @@ void
 syntax_check_file(openfilestruct *file)
 {
     PROFILE_FUNCTION;
+    if (openfile->filetop->next == nullptr)
+    {
+        return;
+    }
     linestruct *line;
     for (line = file->filetop; line != nullptr; line = line->next)
     {
         check_for_syntax_words(line);
     }
-    check_syntax("/usr/include/stdio.h");
 }
 
 bool
@@ -147,20 +150,21 @@ check_func_syntax(char ***words, unsigned int *i)
     {
         return;
     }
-    if (*((*words)[*i]) == '*')
+    /* Remove all if any preceding '*' char`s. */
+    while (*((*words)[*i]) == '*')
     {
         (*words)[*i] += 1;
     }
     if (is_word_func((*words)[*i]))
     {
-        add_syntax_word("yellow", (*words)[*i]);
+        add_syntax_word("yellow", rgx_word((*words)[*i]));
         return;
     }
     if ((*words)[(*i) + 1] != nullptr)
     {
         if (*((*words)[(*i) + 1]) == '(')
         {
-            add_syntax_word("yellow", (*words)[*i]);
+            add_syntax_word("yellow", rgx_word((*words)[*i]));
             return;
         }
     }
@@ -180,10 +184,14 @@ check_syntax(const char *path)
     }
     while ((len = getline(&buf, &size, f)) != EOF)
     {
+        if (buf[len - 1] == '\n')
+        {
+            buf[--len] = '\0';
+        }
         words = words_in_str(buf);
         for (i = 0; words[i] != nullptr; i++)
         {
-            unsigned char type = retrieve_c_syntax_type(words[i]);
+            unsigned short type = retrieve_c_syntax_type(words[i]);
             if (type & CS_CHAR)
             {
                 check_func_syntax(&words, &i);
@@ -204,8 +212,16 @@ check_syntax(const char *path)
                 }
                 if (*(words[i]) == '<')
                 {
-                    NETLOGGER.log("%s\n", extract_include(words[i]));
+                    // NETLOGGER.log("%s\n", extract_include(words[i]));
                 }
+            }
+            else if (type & CS_CLASS)
+            {
+                if (words[i + 1] == nullptr)
+                {
+                    continue;
+                }
+                add_syntax_word("brightgreen", rgx_word(words[++i]));
             }
         }
         free(words);

@@ -516,6 +516,7 @@ bool is_empty_line(linestruct *line);
 void add_syntax_word(const char *color, const char *word);
 void do_cpp_syntax(void);
 void check_for_syntax_words(linestruct *line);
+bool does_include_file_exist(const char *path);
 
 /* 'syntax.cpp' */
 const char *rgx_word(const char *word);

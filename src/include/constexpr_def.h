@@ -416,14 +416,18 @@ constexpr_map<STRING_VIEW, u32, 14> toggleOptionMap = {
 #define CS_LONG    (1 << 4)
 #define CS_CHAR    (1 << 5)
 #define CS_INCLUDE (1 << 6)
-constexpr_map<std::string_view, unsigned char, 7> c_syntax_map = {
+#define CS_DEFINE  (1 << 7)
+#define CS_CLASS   (1 << 8)
+constexpr_map<std::string_view, unsigned short, 9> c_syntax_map = {
     {{"struct", CS_STRUCT},
      {"enum", CS_ENUM},
      {"int", CS_INT},
      {"void", CS_VOID},
      {"long", CS_LONG},
      {"char", CS_CHAR},
-     {"#include", CS_INCLUDE}}
+     {"#include", CS_INCLUDE},
+     {"#define", CS_DEFINE},
+     {"class", CS_CLASS}}
 };
 
 constexpr const char *ERROR_MSG_OUT_OF_MEMORY         = "NanoX is out of memory!\n";

@@ -427,7 +427,6 @@ compile(const char *expression, int rex_flags, regex_t **packed)
 void
 begin_new_syntax(char *ptr)
 {
-    NETLOGGER.log("%s: ptr: %s\n", __func__, ptr);
     char *nameptr = ptr;
     /* Check that the syntax name is not empty. */
     if (*ptr == '\0' || (*ptr == '"' && (*(ptr + 1) == '\0' || *(ptr + 1) == '"')))
@@ -931,7 +930,6 @@ color_to_short(const char *colorname, bool &vivid, bool &thick)
 bool
 parse_combination(char *combotext, short *fg, short *bg, int *attributes)
 {
-    NETLOGGER.log("combotext: %s\n", combotext);
     bool  vivid;
     bool  thick;
     char *comma;
@@ -1043,7 +1041,6 @@ parse_rule(char *ptr, int rex_flags)
         }
         regexstring = ++ptr;
         ptr         = parse_next_regex(ptr);
-        NETLOGGER.log("regexstring: %s\n", regexstring);
         /* When there is no regex, or it is invalid, skip this line. */
         if (ptr == nullptr || !compile(regexstring, rex_flags, &start_rgx))
         {
@@ -1206,7 +1203,6 @@ pick_up_name(const char *kind, char *ptr, char **storage)
 bool
 parse_syntax_commands(const char *keyword, char *ptr)
 {
-    NETLOGGER.log("%s: keyword: %s, ptr: %s\n", __func__, keyword, ptr);
     unsigned int syntax_opt = retriveSyntaxOptionFromStr(keyword);
     if (syntax_opt == false)
     {
@@ -1322,7 +1318,6 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         /* Handle extending first... */
         if (!just_syntax && constexpr_strcmp(keyword, "extendsyntax") == 0)
         {
-            NETLOGGER.log("extendsyntax: keyword: %s", keyword);
             augmentstruct *newitem, *extra;
             char          *syntaxname = ptr;
             syntaxtype    *sntx;
@@ -1423,7 +1418,6 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                   constexpr_strcmp(keyword, "comment") == 0 || constexpr_strcmp(keyword, "tabgives") == 0 ||
                   constexpr_strcmp(keyword, "linter") == 0 || constexpr_strcmp(keyword, "formatter") == 0))
         {
-            NETLOGGER.log("keyword: %s.\n", keyword);
             if (!opensyntax)
             {
                 jot_error(N_("A '%s' command requires a preceding 'syntax' command"), keyword);
@@ -1481,7 +1475,6 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         }
         option = ptr;
         ptr    = parse_next_word(ptr);
-        NETLOGGER.log("option: %s, ptr: %s.\n", option, ptr);
         /* Find the just parsed option name among the existing names. */
         for (i = 0; rcopts[i].name != nullptr; i++)
         {

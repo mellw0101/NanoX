@@ -70,6 +70,6 @@ const char *
 extract_include(char *str)
 {
     str += 1;
-    str[strlen(str) - 2] = '\0';
+    str[strlen(str) - 1] = '\0';
     return str;
 }
