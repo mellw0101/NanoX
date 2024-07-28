@@ -352,32 +352,28 @@ CONSTEXPR_MAP<u32, STRING_VIEW, NUMBER_OF_FLAGS> epithetOfFlagMap = {
 };
 
 //  Legazy code, from nano source code.
-//
-//  Identifiers for the different menus.
-//
-constexpr u16 MMAIN        = (1 << 0);
-constexpr u16 MWHEREIS     = (1 << 1);
-constexpr u16 MREPLACE     = (1 << 2);
-constexpr u16 MREPLACEWITH = (1 << 3);
-constexpr u16 MGOTOLINE    = (1 << 4);
-constexpr u16 MWRITEFILE   = (1 << 5);
-constexpr u16 MINSERTFILE  = (1 << 6);
-constexpr u16 MEXECUTE     = (1 << 7);
-constexpr u16 MHELP        = (1 << 8);
-constexpr u16 MSPELL       = (1 << 9);
-constexpr u16 MBROWSER     = (1 << 10);
-constexpr u16 MWHEREISFILE = (1 << 11);
-constexpr u16 MGOTODIR     = (1 << 12);
-constexpr u16 MYESNO       = (1 << 13);
-constexpr u16 MLINTER      = (1 << 14);
-constexpr u16 MFINDINHELP  = (1 << 15);
-constexpr u16 MMOST = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE |
-                       MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER);
-constexpr u16 MSOME = MMOST | MBROWSER;
-//
-//  The menus map.
-//
-CONSTEXPR_MAP<STRING_VIEW, u16, 16> menuOptionMap = {
+/* Identifiers for the different menus. */
+constexpr unsigned short MMAIN        = (1 << 0);
+constexpr unsigned short MWHEREIS     = (1 << 1);
+constexpr unsigned short MREPLACE     = (1 << 2);
+constexpr unsigned short MREPLACEWITH = (1 << 3);
+constexpr unsigned short MGOTOLINE    = (1 << 4);
+constexpr unsigned short MWRITEFILE   = (1 << 5);
+constexpr unsigned short MINSERTFILE  = (1 << 6);
+constexpr unsigned short MEXECUTE     = (1 << 7);
+constexpr unsigned short MHELP        = (1 << 8);
+constexpr unsigned short MSPELL       = (1 << 9);
+constexpr unsigned short MBROWSER     = (1 << 10);
+constexpr unsigned short MWHEREISFILE = (1 << 11);
+constexpr unsigned short MGOTODIR     = (1 << 12);
+constexpr unsigned short MYESNO       = (1 << 13);
+constexpr unsigned short MLINTER      = (1 << 14);
+constexpr unsigned short MFINDINHELP  = (1 << 15);
+constexpr unsigned short MMOST = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE |
+                                  MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER);
+constexpr unsigned short MSOME = MMOST | MBROWSER;
+/* The menus map. */
+constexpr_map<std::string_view, unsigned short, 16> menuOptionMap = {
     {{"main", MMAIN},
      {"search", MWHEREIS},
      {"replace", MREPLACE},
@@ -396,7 +392,7 @@ CONSTEXPR_MAP<STRING_VIEW, u16, 16> menuOptionMap = {
      {"all", MMOST | MBROWSER | MHELP | MYESNO}}
 };
 
-CONSTEXPR_MAP<STRING_VIEW, u32, 14> toggleOptionMap = {
+constexpr_map<STRING_VIEW, u32, 14> toggleOptionMap = {
     {{"nohelp", NO_HELP},
      {"zero", ZERO},
      {"constantshow", CONSTANT_SHOW},
@@ -413,6 +409,13 @@ CONSTEXPR_MAP<STRING_VIEW, u32, 14> toggleOptionMap = {
      {"mouse", USE_MOUSE}}
 };
 
-constexpr C_s8 *ERROR_MSG_OUT_OF_MEMORY         = "NanoX is out of memory!\n";
-constexpr C_s8 *ERROR_MSG_TO_MENY_DOT_SAVEFILES = "\nToo many .save files\n";
-constexpr C_s8 *TAB_STR                         = "\t";
+#define CS_STRUCT (1 << 0)
+#define CS_ENUM   (1 << 1)
+#define CS_INT    (1 << 2)
+constexpr_map<std::string_view, unsigned char, 3> c_syntax_map = {
+    {{"struct", CS_STRUCT}, {"enum", CS_ENUM}, {"int", CS_INT}}
+};
+
+constexpr const char *ERROR_MSG_OUT_OF_MEMORY         = "NanoX is out of memory!\n";
+constexpr const char *ERROR_MSG_TO_MENY_DOT_SAVEFILES = "\nToo many .save files\n";
+constexpr const char *TAB_STR                         = "\t";

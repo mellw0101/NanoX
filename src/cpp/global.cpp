@@ -85,6 +85,8 @@ WINDOW *midwin = nullptr;
 /* The bottom portion of the screen, where status-bar messages,
  * the status-bar prompt, and a list of shortcuts are shown. */
 WINDOW *footwin = nullptr;
+/* Test window for sugestions. */
+WINDOW *test_win = nullptr;
 /* How many rows does the edit window take up? */
 int editwinrows = 0;
 /* The number of usable columns in the edit window: COLS - margin. */
@@ -497,7 +499,6 @@ first_sc_for(const int menu, functionptrtype function)
 unsigned long
 shown_entries_for(const int menu)
 {
-    PROFILE_FUNCTION;
     funcstruct   *item    = allfuncs;
     unsigned long maximum = ((COLS + 40) / 20) * 2;
     unsigned long count   = 0;
@@ -522,7 +523,6 @@ shown_entries_for(const int menu)
 const keystruct *
 get_shortcut(const int keycode)
 {
-    PROFILE_FUNCTION;
     /* Plain characters and upper control codes cannot be shortcuts. */
     if (!meta_key && 0x20 <= keycode && keycode <= 0xFF)
     {

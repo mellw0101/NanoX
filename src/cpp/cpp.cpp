@@ -201,3 +201,112 @@ is_empty_line(linestruct *line)
         ;
     return (i == 0);
 }
+
+/* Add a word and the color of that word to the syntax list. */
+void
+add_syntax_word(const char *color, const char *word)
+{
+    PROFILE_FUNCTION;
+    syntaxtype *s;
+    colortype  *c;
+    /* Find 'c' syntax. */
+    for (s = syntaxes; s != nullptr && strcmp(s->name, "c"); s = s->next)
+        ;
+    /* Return if syntax 'c' was not found */
+    if (s == nullptr)
+    {
+        return;
+    }
+    /* Find end of colortype list in syntax 'c' */
+    for (c = s->color; c->next != nullptr; c = c->next)
+        ;
+    /* Return if 'c' == nullptr */
+    if (c == nullptr)
+    {
+        return;
+    }
+    /* Add, then update the syntax. */
+    add_syntax_color(color, word, c);
+    set_syntax_colorpairs(s);
+}
+
+void
+do_cpp_syntax(void)
+{
+    syntaxtype *syntax;
+    for (syntax = syntaxes; syntax != nullptr; syntax = syntax->next)
+    {
+        if (strcmp(syntax->name, "c") == 0 && syntax->filename == nullptr)
+        {
+            break;
+        }
+    }
+    if (syntax != nullptr)
+    {
+        netlog_syntaxtype(syntax);
+        colortype *c;
+        for (c = syntax->color; c->next != nullptr; c = c->next)
+            ;
+        if (c != nullptr)
+        {
+            add_syntax_color("gray", ";", c);
+            c = c->next;
+            add_syntax_color("brightred", "\\<[A-Z_][0-9A-Z_]*\\>", c);
+            c = c->next;
+            add_syntax_color("blue", "\\<(nullptr)\\>", c);
+            c = c->next;
+            // add_syntax_color("yellow", "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*\\(*$", c);
+            set_syntax_colorpairs(syntax);
+        }
+    }
+}
+
+void
+check_for_syntax_words(linestruct *line)
+{
+    PROFILE_FUNCTION;
+    unsigned i;
+    char   **words;
+    if (is_empty_line(line))
+    {
+        return;
+    }
+    words = words_in_line(line);
+    if (*words == nullptr)
+    {
+        free(words);
+        return;
+    }
+    for (i = 0; words[i] != nullptr; i++)
+    {
+        if (words[i + 1] == nullptr)
+        {
+            break;
+        }
+        const unsigned char type = retrieve_c_syntax_type(words[i]);
+        if (!type)
+        {
+            continue;
+        }
+        else if (type & CS_STRUCT)
+        {
+            add_syntax_word("brightgreen", rgx_word(words[++i]));
+        }
+        else if (type & CS_ENUM)
+        {
+            add_syntax_word("brightgreen", rgx_word(words[++i]));
+        }
+        else if (type & CS_INT)
+        {
+            if (is_word_func(words[++i]))
+            {
+                add_syntax_word("lightyellow", rgx_word(words[i]));
+            }
+            else
+            {
+                add_syntax_word("cyan", rgx_word(words[i]));
+            }
+        }
+    }
+    free(words);
+}

@@ -2384,6 +2384,9 @@ set_blankdelay_to_one(void)
     countdown = 1;
 }
 
+#define ISO8859_CHAR   false
+#define ZEROWIDTH_CHAR (is_zerowidth(text))
+
 /* Convert text into a string that can be displayed on screen.
  * The caller wants to display text starting with the given column, and extending for at most span columns.
  * The returned string is dynamically allocated, and should be freed.
@@ -2392,7 +2395,6 @@ set_blankdelay_to_one(void)
 char *
 display_string(const char *text, unsigned long column, unsigned long span, bool isdata, bool isprompt)
 {
-    PROFILE_FUNCTION;
     /* The beginning of the text, to later determine the covered part. */
     const char *origin = text;
     /* The index of the first character that the caller wishes to show. */
@@ -2442,13 +2444,6 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
             text += char_length(text);
         }
     }
-#ifdef ENABLE_UTF8
-#    define ISO8859_CHAR   false
-#    define ZEROWIDTH_CHAR (is_zerowidth(text))
-#else
-#    define ISO8859_CHAR   ((unsigned char)*text > 0x9F)
-#    define ZEROWIDTH_CHAR false
-#endif
     while (*text != '\0' && (column < beyond || ZEROWIDTH_CHAR))
     {
         /* A plain printable ASCII character is one byte, one column. */
@@ -2958,7 +2953,6 @@ minibar(void)
 void
 statusline(message_type importance, const char *msg, ...)
 {
-    PROFILE_FUNCTION;
     bool                 showed_whitespace = ISSET(WHITESPACE_DISPLAY);
     static unsigned long start_col         = 0;
     char                *compound, *message;
@@ -3202,11 +3196,10 @@ static constexpr unsigned short PAINT_LIMIT = 2000;
  * line to be drawn, and converted is the actual string to be written with
  * tabs and control characters replaced by strings of regular characters.
  * from_col is the column number of the first character of this "page".
- * TODO : (draw_row) - Make faster. */
+ * TODO : (draw_row) - Figure out how to add syntax. */
 void
 draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col)
 {
-    PROFILE_FUNCTION;
     /* If line numbering is switched on, put a line number in front of
      * the text -- but only for the parts that are not softwrapped. */
     if (margin > 0)
@@ -4209,24 +4202,20 @@ report_cursor_position(void)
                fullwidth, colpct, digits(openfile->totsize), sum, openfile->totsize, charpct);
 }
 
-//
-//  Highlight the text between the given two columns on the current line.
-//
+/* Highlight the text between the given two columns on the current line.
+ * TODO: (spotlight) - See if this can be used for live syntax coloring. */
 void
 spotlight(unsigned long from_col, unsigned long to_col)
 {
-    size_t right_edge = get_page_start(from_col) + editwincols;
-    bool   overshoots = (to_col > right_edge);
-    char  *word;
-
+    unsigned long right_edge = get_page_start(from_col) + editwincols;
+    bool          overshoots = (to_col > right_edge);
+    char         *word;
     place_the_cursor();
-
     /* Limit the end column to the edge of the screen. */
     if (overshoots)
     {
         to_col = right_edge;
     }
-
     /* If the target text is of zero length, highlight a space instead. */
     if (to_col == from_col)
     {
@@ -4235,9 +4224,8 @@ spotlight(unsigned long from_col, unsigned long to_col)
     }
     else
     {
-        word = display_string(openfile->current->data, from_col, to_col - from_col, FALSE, overshoots);
+        word = display_string(openfile->current->data, from_col, to_col - from_col, false, overshoots);
     }
-
     wattron(midwin, interface_color_pair[SPOTLIGHTED]);
     waddnstr(midwin, word, actual_x(word, to_col));
     if (overshoots)
@@ -4245,7 +4233,6 @@ spotlight(unsigned long from_col, unsigned long to_col)
         mvwaddch(midwin, openfile->cursor_row, COLS - 1 - sidebar, '>');
     }
     wattroff(midwin, interface_color_pair[SPOTLIGHTED]);
-
     free(word);
 }
 

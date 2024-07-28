@@ -300,7 +300,6 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 bool
 comment_line(undo_type action, linestruct *line, const char *comment_seq)
 {
-    PROFILE_FUNCTION;
     unsigned long comment_seq_len = strlen(comment_seq);
     /* The postfix, if this is a bracketing type comment sequence. */
     const char *post_seq = strchr(comment_seq, '|');
@@ -422,7 +421,6 @@ do_comment(void)
 void
 handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 {
-    PROFILE_FUNCTION;
     groupstruct *group = u->grouping;
     /* When redoing, reposition the cursor and let the commenter adjust it. */
     if (!undoing)
@@ -454,7 +452,6 @@ handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 void
 undo_cut(undostruct *u)
 {
-    PROFILE_FUNCTION;
     goto_line_posx(u->head_lineno, (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x);
     /* Clear an inherited anchor but not a user-placed one. */
     if (!(u->xflags & HAD_ANCHOR_AT_START))
@@ -481,7 +478,6 @@ undo_cut(undostruct *u)
 void
 redo_cut(undostruct *u)
 {
-    PROFILE_FUNCTION;
     linestruct *oldcutbuffer = cutbuffer;
     cutbuffer                = nullptr;
     openfile->mark           = line_from_number(u->head_lineno);
@@ -496,7 +492,6 @@ redo_cut(undostruct *u)
 void
 do_undo(void)
 {
-    PROFILE_FUNCTION;
     undostruct   *u = openfile->current_undo;
     linestruct   *oldcutbuffer, *intruder;
     linestruct   *line = nullptr;
@@ -728,7 +723,6 @@ do_undo(void)
 void
 do_redo(void)
 {
-    PROFILE_FUNCTION;
     undostruct *u                     = openfile->undotop;
     bool        suppress_modification = false;
     linestruct *line                  = nullptr;
@@ -955,6 +949,20 @@ do_enter(void)
     {
         return;
     }
+    else if (!is_empty_line(openfile->current))
+    {
+        unsigned i;
+        char   **words = words_in_line(openfile->current);
+        if (words[0] != nullptr)
+        {
+            for (i = 0; words[i] != nullptr; i++)
+            {
+                NETLOGGER.log("%s\n", words[i]);
+            }
+        }
+        free(words);
+    }
+    check_for_syntax_words(openfile->current);
     linestruct   *newnode    = make_new_node(openfile->current);
     linestruct   *sampleline = openfile->current;
     unsigned long extra      = 0;
@@ -1541,7 +1549,6 @@ do_wrap(void)
 long
 break_line(const char *textstart, long goal, bool snap_at_nl)
 {
-    PROFILE_FUNCTION;
     /* The point where the last blank was found, if any. */
     const char *lastblank = nullptr;
     /* An iterator through the given line of text. */
@@ -1639,7 +1646,6 @@ constexpr unsigned char RECURSION_LIMIT = 222;
 bool
 begpar(const linestruct *const line, int depth)
 {
-    PROFILE_FUNCTION;
     unsigned long quot_len      = 0;
     unsigned long indent_len    = 0;
     unsigned long prev_dent_len = 0;
@@ -2258,7 +2264,6 @@ replace_buffer(const char *filename, undo_type action, const char *operation)
 void
 treat(char *tempfile_name, char *theprogram, bool spelling)
 {
-    PROFILE_FUNCTION;
     long          was_lineno = openfile->current->lineno;
     unsigned long was_pww    = openfile->placewewant;
     unsigned long was_x      = openfile->current_x;
@@ -2504,7 +2509,6 @@ fix_spello(const char *word)
 void
 do_int_speller(const char *const tempfile_name)
 {
-    PROFILE_FUNCTION;
     char         *misspellings, *pointer, *oneword;
     long          pipesize;
     unsigned long buffersize, bytesread, totalread;
@@ -2691,22 +2695,17 @@ do_spell(void)
     FILE *stream;
     char *temp_name;
     bool  okay;
-
-    ran_a_tool = TRUE;
-
+    ran_a_tool = true;
     if (in_restricted_mode())
     {
         return;
     }
-
     temp_name = safe_tempfile(&stream);
-
-    if (temp_name == NULL)
+    if (temp_name == nullptr)
     {
         statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
         return;
     }
-
     if (openfile->mark)
     {
         okay = write_region_to_file(temp_name, stream, TEMPORARY, OVERWRITE);
@@ -2715,7 +2714,6 @@ do_spell(void)
     {
         okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
     }
-
     if (!okay)
     {
         statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
@@ -2723,9 +2721,7 @@ do_spell(void)
         free(temp_name);
         return;
     }
-
     blank_bottombars();
-
     if (alt_speller && *alt_speller)
     {
         treat(temp_name, alt_speller, true);
@@ -2734,13 +2730,9 @@ do_spell(void)
     {
         do_int_speller(temp_name);
     }
-
     unlink(temp_name);
     free(temp_name);
-
-    //
-    //  Ensure the help lines will be redrawn and a selection is retained.
-    //
+    /* Ensure the help lines will be redrawn and a selection is retained. */
     currmenu   = MMOST;
     shift_held = true;
 }
@@ -2749,7 +2741,6 @@ do_spell(void)
 void
 do_linter(void)
 {
-    PROFILE_FUNCTION;
     char         *lintings, *pointer, *onelint;
     long          pipesize;
     unsigned long buffersize, bytesread, totalread;

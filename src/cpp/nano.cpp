@@ -812,7 +812,6 @@ handle_sigwinch(int signal)
 void
 regenerate_screen(void)
 {
-    PROFILE_FUNCTION;
     /* Reset the trigger. */
     the_window_resized = false;
     /* Leave and immediately reenter curses mode, so that ncurses notices
@@ -841,8 +840,6 @@ regenerate_screen(void)
 void
 toggle_this(const int flag)
 {
-    /* PROFILE_FUNCTION;
-     * TODO : Re profile this function when statusline is fixed. */
     bool enabled = !ISSET(flag);
     TOGGLE(flag);
     focusing = false;
@@ -1351,7 +1348,7 @@ process_a_keystroke(void)
     functionptrtype      function;
     /* Read in a keystroke, and show the cursor while waiting. */
     input = get_kbinput(midwin, VISIBLE);
-    NETLOGGER.log("input: %i\nlast_key_was_bracket == %s.", input, (last_key_was_bracket == true) ? "true" : "false");
+    NETLOGGER.log("input: %i.", input);
     lastmessage = VACUUM;
     /* When the input is a window resize, do nothing. */
     if (input == KEY_WINCH)
@@ -1699,7 +1696,7 @@ main(int argc, char **argv)
     /* Curses needs TERM; if it is unset, try falling back to a VT220. */
     if (getenv("TERM") == nullptr)
     {
-        putenv(const_cast<char *>("TERM=vt220"));
+        putenv((char *)"TERM=vt220");
         setenv("TERM", "vt220", 1);
     }
     /* Enter into curses mode.  Abort if this fails. */
@@ -1986,9 +1983,7 @@ main(int argc, char **argv)
     /* Disable the type-ahead checking that ncurses normally does. */
     typeahead(-1);
 #ifdef HAVE_SET_ESCDELAY
-    //
-    //  Tell ncurses to pass the Esc key quickly.
-    //
+    /* Tell ncurses to pass the Esc key quickly. */
     set_escdelay(50);
 #endif
     /* Read the files mentioned on the command line into new buffers. */
@@ -2207,6 +2202,8 @@ main(int argc, char **argv)
     {
         statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
     }
+    /* Extremly experimental, this is a test for live syntax handeling. */
+    do_cpp_syntax();
     /* Set the margin to an impossible value to force re-evaluation. */
     margin         = 12345;
     we_are_running = true;

@@ -8,6 +8,7 @@ extern volatile sig_atomic_t the_window_resized;
 extern WINDOW *topwin;
 extern WINDOW *midwin;
 extern WINDOW *footwin;
+extern WINDOW *test_win;
 
 extern syntaxtype *syntaxes;
 
@@ -173,6 +174,7 @@ void          strip_leading_blanks_from(char *string);
 
 /* Most functions in 'color.cpp'. */
 void set_interface_colorpairs(void);
+void set_syntax_colorpairs(syntaxtype *sntx);
 void prepare_palette(void);
 void find_and_prime_applicable_syntax(void);
 void check_the_multis(linestruct *line);
@@ -328,7 +330,13 @@ int do_prompt(int menu, const char *provided, linestruct **history_list, void (*
 int ask_user(bool withall, const char *question);
 
 /* Most functions in 'rcfile.cpp'. */
-void       set_interface_color(int element, char *combotext);
+short      color_to_short(const char *colorname, bool &vivid, bool &thick);
+char      *parse_next_word(char *ptr);
+void       parse_rule(char *ptr, int rex_flags);
+bool       compile(const char *expression, int rex_flags, regex_t **packed);
+void       begin_new_syntax(char *ptr);
+bool       parse_combination(char *combotext, short *fg, short *bg, int *attributes);
+void       set_interface_color(const unsigned char element, char *combotext);
 void       display_rcfile_errors(void);
 void       jot_error(const char *msg, ...);
 keystruct *strtosc(const char *input);
@@ -505,5 +513,21 @@ void enclose_marked_region(const char *s1, const char *s2);
 void do_block_comment(void);
 bool enter_with_bracket(void);
 bool is_empty_line(linestruct *line);
+void do_cpp_syntax(void);
+void check_for_syntax_words(linestruct *line);
+
+/* 'syntax.cpp' */
+const char *rgx_word(const char *word);
+void        syntax_check_file(openfilestruct *file);
+bool        is_word_func(char *word);
+void        add_syntax_color(const char *color, const char *rgxstr, colortype *c);
+
+/* 'netlog.cpp' */
+void netlog_syntaxtype(syntaxtype *s);
+void netlog_colortype(colortype *c);
+
+/* 'words.cpp' */
+void   remove_tabs_from_word(char **word);
+char **words_in_line(linestruct *line);
 
 #include <Mlib/def.h>

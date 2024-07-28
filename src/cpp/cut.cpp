@@ -367,7 +367,6 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
 void
 ingraft_buffer(linestruct *topline)
 {
-    PROFILE_FUNCTION;
     linestruct   *line         = openfile->current;
     unsigned long length       = constexpr_strlen(line->data);
     unsigned long extralen     = constexpr_strlen(topline->data);

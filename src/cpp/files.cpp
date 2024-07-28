@@ -357,7 +357,6 @@ has_valid_path(const char *filename)
 bool
 open_buffer(const char *filename, bool new_one)
 {
-    PROFILE_FUNCTION;
     /* The filename after tilde expansion. */
     char       *realname;
     struct stat fileinfo;
@@ -613,7 +612,6 @@ constexpr unsigned char LUMPSIZE = 120;
 void
 read_file(FILE *f, int fd, const char *filename, bool undoable)
 {
-    PROFILE_FUNCTION;
     /* The line number where we start the insertion. */
     long was_lineno = openfile->current->lineno;
     /* The leftedge where we start the insertion. */
@@ -834,7 +832,6 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
 int
 open_file(const char *filename, bool new_one, FILE **f)
 {
-    PROFILE_FUNCTION;
     struct stat fileinfo;
     char       *full_filename = get_full_path(filename);
     int         fd;
@@ -981,7 +978,6 @@ send_data(const linestruct *line, int fd)
 void
 execute_command(const char *command)
 {
-    PROFILE_FUNCTION;
     /* The pipes through which text will be written and read. */
     int from_fd[2], to_fd[2];
     /* Original and temporary handlers for SIGINT. */
@@ -1365,7 +1361,6 @@ do_execute(void)
 char *
 get_full_path(const char *origpath)
 {
-    PROFILE_FUNCTION;
     char       *untilded, *target, *slash;
     struct stat fileinfo;
     if (origpath == nullptr)
@@ -1581,7 +1576,7 @@ make_backup_of(char *realname)
      * Otherwise, we create a numbered backup in the specified directory. */
     if (backup_dir == nullptr)
     {
-        backupname = static_cast<char *>(nmalloc(constexpr_strlen(realname) + 2));
+        backupname = (char *)nmalloc(constexpr_strlen(realname) + 2);
         sprintf(backupname, "%s~", realname);
     }
     else
@@ -1718,7 +1713,7 @@ failure:
         return true;
     }
     /* TRANSLATORS: The %s is the reason of failure. */
-    statusline(HUSH, _("Cannot make backup: %s"), ERRNO_C_STR);
+    statusline(HUSH, _("Cannot make backup: %s"), strerror(errno));
     return false;
 }
 
@@ -2088,7 +2083,6 @@ write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writin
 int
 write_it_out(bool exiting, bool withprompt)
 {
-    PROFILE_FUNCTION;
     /* The filename we offer, or what the user typed so far. */
     char *given;
     /* Whether it's okay to save the buffer under a different name. */

@@ -281,7 +281,6 @@ retriveScFromStr(std::string_view str)
 keystruct *
 strtosc(const char *input)
 {
-    PROFILE_FUNCTION;
     keystruct *s             = (keystruct *)nmalloc(sizeof(keystruct));
     s->toggle                = 0;
     const functionptrtype it = retriveScFromStr(input);
@@ -312,7 +311,6 @@ strtosc(const char *input)
 char *
 parse_next_word(char *ptr)
 {
-    PROFILE_FUNCTION;
     while (!isblank((unsigned char)*ptr) && *ptr != '\0')
     {
         ptr++;
@@ -405,7 +403,6 @@ parse_next_regex(char *ptr)
 bool
 compile(const char *expression, int rex_flags, regex_t **packed)
 {
-    PROFILE_FUNCTION;
     regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
     int      outcome  = regcomp(compiled, expression, rex_flags);
     if (outcome != 0)
@@ -430,7 +427,7 @@ compile(const char *expression, int rex_flags, regex_t **packed)
 void
 begin_new_syntax(char *ptr)
 {
-    PROFILE_FUNCTION;
+    NETLOGGER.log("%s: ptr: %s\n", __func__, ptr);
     char *nameptr = ptr;
     /* Check that the syntax name is not empty. */
     if (*ptr == '\0' || (*ptr == '"' && (*(ptr + 1) == '\0' || *(ptr + 1) == '"')))
@@ -517,7 +514,6 @@ is_universal(void (*f)(void))
 void
 parse_binding(char *ptr, bool dobind)
 {
-    PROFILE_FUNCTION;
     char      *keyptr  = nullptr;
     char      *keycopy = nullptr;
     char      *funcptr = nullptr;
@@ -717,7 +713,6 @@ is_good_file(char *file)
 void
 parse_one_include(char *file, syntaxtype *syntax)
 {
-    PROFILE_FUNCTION;
     char          *was_nanorc = nanorc;
     unsigned long  was_lineno = lineno;
     FILE          *rcstream;
@@ -773,7 +768,6 @@ parse_one_include(char *file, syntaxtype *syntax)
 void
 parse_includes(char *ptr)
 {
-    PROFILE_FUNCTION;
     char  *pattern;
     char  *expanded;
     glob_t files;
@@ -816,7 +810,6 @@ parse_includes(char *ptr)
 short
 closest_index_color(short red, short green, short blue)
 {
-    PROFILE_FUNCTION;
     /* Translation table, from 16 intended color levels to 6 available levels. */
     static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
     /* Translation table, from 14 intended gray levels to 24 available levels. */
@@ -879,7 +872,6 @@ constexpr_map<std::string_view, short, COLORCOUNT> huesIndiecesMap = {
 short
 color_to_short(const char *colorname, bool &vivid, bool &thick)
 {
-    PROFILE_FUNCTION;
     if (constexpr_strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
         thick = true;
@@ -934,18 +926,19 @@ color_to_short(const char *colorname, bool &vivid, bool &thick)
 }
 
 /* Parse the color name (or pair of color names) in the given string.
- * Return 'false' when any color name is invalid; otherwise return 'true'. */
+ * Return 'false' when any color name is invalid; otherwise return 'true'.
+ * TODO: (parse_combination) - Figure out how to use this for live syntax colors. */
 bool
-parse_combination(char *combotext, short &fg, short &bg, int &attributes)
+parse_combination(char *combotext, short *fg, short *bg, int *attributes)
 {
-    PROFILE_FUNCTION;
+    NETLOGGER.log("combotext: %s\n", combotext);
     bool  vivid;
     bool  thick;
     char *comma;
-    attributes = A_NORMAL;
+    *attributes = A_NORMAL;
     if (constexpr_strncmp(combotext, "bold", 4) == 0)
     {
-        attributes |= A_BOLD;
+        *attributes |= A_BOLD;
         if (combotext[4] != ',')
         {
             jot_error(N_("An attribute requires a subsequent comma"));
@@ -955,7 +948,7 @@ parse_combination(char *combotext, short &fg, short &bg, int &attributes)
     }
     if (constexpr_strncmp(combotext, "italic", 6) == 0)
     {
-        attributes |= A_ITALIC;
+        *attributes |= A_ITALIC;
         if (combotext[6] != ',')
         {
             jot_error(N_("An attribute requires a subsequent comma"));
@@ -970,8 +963,8 @@ parse_combination(char *combotext, short &fg, short &bg, int &attributes)
     }
     if (!comma || comma > combotext)
     {
-        fg = color_to_short(combotext, vivid, thick);
-        if (fg == BAD_COLOR)
+        *fg = color_to_short(combotext, vivid, thick);
+        if (*fg == BAD_COLOR)
         {
             return false;
         }
@@ -981,17 +974,17 @@ parse_combination(char *combotext, short &fg, short &bg, int &attributes)
         }
         else if (vivid)
         {
-            attributes |= A_BOLD;
+            *attributes |= A_BOLD;
         }
     }
     else
     {
-        fg = THE_DEFAULT;
+        *fg = THE_DEFAULT;
     }
     if (comma)
     {
-        bg = color_to_short(comma + 1, vivid, thick);
-        if (bg == BAD_COLOR)
+        *bg = color_to_short(comma + 1, vivid, thick);
+        if (*bg == BAD_COLOR)
         {
             return false;
         }
@@ -1002,7 +995,7 @@ parse_combination(char *combotext, short &fg, short &bg, int &attributes)
     }
     else
     {
-        bg = THE_DEFAULT;
+        *bg = THE_DEFAULT;
     }
     return true;
 }
@@ -1013,7 +1006,6 @@ parse_combination(char *combotext, short &fg, short &bg, int &attributes)
 void
 parse_rule(char *ptr, int rex_flags)
 {
-    PROFILE_FUNCTION;
     char *names;
     char *regexstring;
     short fg;
@@ -1026,7 +1018,7 @@ parse_rule(char *ptr, int rex_flags)
     }
     names = ptr;
     ptr   = parse_next_word(ptr);
-    if (!parse_combination(names, fg, bg, attributes))
+    if (!parse_combination(names, &fg, &bg, &attributes))
     {
         return;
     }
@@ -1051,6 +1043,7 @@ parse_rule(char *ptr, int rex_flags)
         }
         regexstring = ++ptr;
         ptr         = parse_next_regex(ptr);
+        NETLOGGER.log("regexstring: %s\n", regexstring);
         /* When there is no regex, or it is invalid, skip this line. */
         if (ptr == nullptr || !compile(regexstring, rex_flags, &start_rgx))
         {
@@ -1103,10 +1096,15 @@ parse_rule(char *ptr, int rex_flags)
 
 /* Set the colors for the given interface element to the given combination. */
 void
-set_interface_color(const int element, char *combotext)
+set_interface_color(const unsigned char element, char *combotext)
 {
+    /* Sanity check. */
+    if (element >= NUMBER_OF_ELEMENTS)
+    {
+        return;
+    }
     colortype *trio = (colortype *)nmalloc(sizeof(colortype));
-    if (parse_combination(combotext, trio->fg, trio->bg, trio->attributes))
+    if (parse_combination(combotext, &trio->fg, &trio->bg, &trio->attributes))
     {
         free(color_combo[element]);
         color_combo[element] = trio;
@@ -1181,7 +1179,6 @@ grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
 void
 pick_up_name(const char *kind, char *ptr, char **storage)
 {
-    PROFILE_FUNCTION;
     if (*ptr == '\0')
     {
         jot_error(N_("Missing argument after '%s'"), kind);
@@ -1209,6 +1206,7 @@ pick_up_name(const char *kind, char *ptr, char **storage)
 bool
 parse_syntax_commands(const char *keyword, char *ptr)
 {
+    NETLOGGER.log("%s: keyword: %s, ptr: %s\n", __func__, keyword, ptr);
     unsigned int syntax_opt = retriveSyntaxOptionFromStr(keyword);
     if (syntax_opt == false)
     {
@@ -1247,7 +1245,7 @@ static constexpr unsigned char VITALS = 4;
 /* Verify that the user has not unmapped every shortcut for a
  * function that we consider 'vital' (such as 'do_exit'). */
 static void
-check_vitals_mapped()
+check_vitals_mapped(void)
 {
     void (*vitals[VITALS])() = {do_exit, do_exit, do_exit, do_cancel};
     int inmenus[VITALS]      = {MMAIN, MBROWSER, MHELP, MYESNO};
@@ -1283,7 +1281,6 @@ check_vitals_mapped()
 void
 parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
 {
-    PROFILE_FUNCTION;
     char         *buffer = nullptr;
     unsigned long size   = 0;
     long          length = 0;
@@ -1325,6 +1322,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         /* Handle extending first... */
         if (!just_syntax && constexpr_strcmp(keyword, "extendsyntax") == 0)
         {
+            NETLOGGER.log("extendsyntax: keyword: %s", keyword);
             augmentstruct *newitem, *extra;
             char          *syntaxname = ptr;
             syntaxtype    *sntx;
@@ -1425,6 +1423,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                   constexpr_strcmp(keyword, "comment") == 0 || constexpr_strcmp(keyword, "tabgives") == 0 ||
                   constexpr_strcmp(keyword, "linter") == 0 || constexpr_strcmp(keyword, "formatter") == 0))
         {
+            NETLOGGER.log("keyword: %s.\n", keyword);
             if (!opensyntax)
             {
                 jot_error(N_("A '%s' command requires a preceding 'syntax' command"), keyword);
@@ -1482,6 +1481,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         }
         option = ptr;
         ptr    = parse_next_word(ptr);
+        NETLOGGER.log("option: %s, ptr: %s.\n", option, ptr);
         /* Find the just parsed option name among the existing names. */
         for (i = 0; rcopts[i].name != nullptr; i++)
         {

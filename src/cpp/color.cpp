@@ -33,7 +33,7 @@ static bool defaults_allowed = false;
  * Ask ncurses to allow -1 to mean "default color".
  * Initialize the color pairs for nano's interface elements. */
 void
-set_interface_colorpairs()
+set_interface_colorpairs(void)
 {
     /* Ask ncurses to allow -1 to mean "default color". */
     defaults_allowed = (use_default_colors() == OK);
@@ -165,7 +165,6 @@ found_in_list(regexlisttype *head, const char *shibboleth)
 void
 find_and_prime_applicable_syntax(void)
 {
-    PROFILE_FUNCTION;
     syntaxtype *sntx = nullptr;
     /* If the rcfiles were not read, or contained no syntaxes, get out. */
     if (syntaxes == nullptr)
@@ -287,6 +286,7 @@ find_and_prime_applicable_syntax(void)
         set_syntax_colorpairs(sntx);
     }
     openfile->syntax = sntx;
+    syntax_check_file(openfile);
 }
 
 /* Determine whether the matches of multiline regexes are still the same,
@@ -370,7 +370,6 @@ check_the_multis(linestruct *line)
 void
 precalc_multicolorinfo(void)
 {
-    PROFILE_FUNCTION;
     const colortype *ink;
     regmatch_t       startmatch, endmatch;
     linestruct      *line, *tailline;
