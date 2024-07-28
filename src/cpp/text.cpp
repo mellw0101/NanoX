@@ -328,11 +328,11 @@ comment_line(undo_type action, linestruct *line, const char *comment_seq)
         /* If needed, adjust the position of the mark and of the cursor. */
         if (line == openfile->mark && openfile->mark_x > 0)
         {
-            openfile->mark_x += pre_len;
+            openfile->mark_x += pre_len + 1;
         }
         if (line == openfile->current && openfile->current_x > 0)
         {
-            openfile->current_x += pre_len;
+            openfile->current_x += pre_len + 1;
             openfile->placewewant = xplustabs();
         }
         return true;
@@ -351,7 +351,7 @@ comment_line(undo_type action, linestruct *line, const char *comment_seq)
         line->data[line_len - pre_len - post_len] = '\0';
         openfile->totsize -= pre_len + post_len;
         /* Adjust the positions of mark and cursor, when needed. */
-        compensate_leftward(line, pre_len);
+        compensate_leftward(line, pre_len + 1);
         return true;
     }
     return false;

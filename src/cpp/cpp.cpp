@@ -255,7 +255,54 @@ do_cpp_syntax(void)
             c = c->next;
             add_syntax_color("blue", "\\<(nullptr)\\>", c);
             c = c->next;
-            // add_syntax_color("yellow", "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*\\(*$", c);
+            add_syntax_color("brightmagenta", "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*:[[:blank:]]*$", c);
+            c = c->next;
+            add_syntax_color("normal", ":[[:blank:]]*$", c);
+            c = c->next;
+            /* This makes word after green while typing. */
+            add_syntax_color("brightgreen", "(namespace|enum|struct|class)[[:blank:]]+[A-Za-z_][A-Za-z_0-9]*", c);
+            c = c->next;
+            /* Types and related keywords. */
+            add_syntax_color("brightblue",
+                             "\\<(auto|bool|char|const|double|enum|extern|float|inline|int|long|restrict|short|signed|"
+                             "sizeof|static|struct|typedef|union|unsigned|void)\\>",
+                             c);
+            c = c->next;
+            add_syntax_color("brightgreen", "\\<([[:lower:]][[:lower:]_]*|(u_?)?int(8|16|32|64))_t\\>", c);
+            c = c->next;
+            add_syntax_color(
+                "green",
+                "\\<(_(Alignas|Alignof|Atomic|Bool|Complex|Generic|Imaginary|Noreturn|Static_assert|Thread_local))\\>",
+                c);
+            c = c->next;
+            add_syntax_color("brightblue",
+                             "\\<(class|explicit|friend|mutable|namespace|override|private|protected|public|register|"
+                             "template|this|typename|virtual|volatile|false|true)\\>",
+                             c);
+            c = c->next;
+            add_syntax_color("brightgreen", "\\<(std|string|vector)\\>", c);
+            c = c->next;
+            /* Flow control. */
+            add_syntax_color("brightyellow", "\\<(if|else|for|while|do|switch|case|default)\\>", c);
+            c = c->next;
+            add_syntax_color("brightyellow", "\\<(try|throw|catch|operator|new|delete)\\>", c);
+            c = c->next;
+            add_syntax_color("brightmagenta", "\\<(using|break|continue|goto|return)\\>", c);
+            c = c->next;
+            add_syntax_color("brightmagenta", "'([^'\\]|\\([\"'\abfnrtv]|x[[:xdigit:]]{1,2}|[0-3]?[0-7]{1,2}))'", c);
+            c = c->next;
+            add_syntax_color("cyan",
+                             "__attribute__[[:blank:]]*\\(\\([^)]*\\)\\)|__(aligned|asm|builtin|hidden|inline|packed|"
+                             "restrict|section|typeof|weak)__",
+                             c);
+            c = c->next;
+            // add_syntax_color("brightyellow", "\"([^\"]|\\\")*\"|#[[:blank:]]*include[[:blank:]]*<[^>]+>", c);
+            // c = c->next;
+            add_syntax_color("green", "//[^\"]*$|(^|[[:blank:]])//.*", c);
+            c = c->next;
+            // add_syntax_color("brightwhite,yellow", "\\<(FIXME|TODO|XXX)\\>", c);
+            // c = c->next;
+            // add_syntax_color(",green", "[[:space:]]+$", c);
             set_syntax_colorpairs(syntax);
         }
     }
@@ -301,11 +348,27 @@ check_for_syntax_words(linestruct *line)
             if (is_word_func(words[++i]))
             {
                 add_syntax_word("lightyellow", rgx_word(words[i]));
+                continue;
             }
-            else
+            add_syntax_word("cyan", rgx_word(words[i]));
+        }
+        else if (type & CS_VOID)
+        {
+            if (is_word_func(words[++i]))
             {
-                add_syntax_word("cyan", rgx_word(words[i]));
+                add_syntax_word("lightyellow", rgx_word(words[i]));
+                continue;
             }
+            add_syntax_word("cyan", rgx_word(words[i]));
+        }
+        else if (type & CS_LONG)
+        {
+            if (is_word_func(words[++i]))
+            {
+                add_syntax_word("lightyellow", rgx_word(words[i]));
+                continue;
+            }
+            add_syntax_word("cyan", rgx_word(words[i]));
         }
     }
     free(words);
