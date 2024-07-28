@@ -513,6 +513,7 @@ void enclose_marked_region(const char *s1, const char *s2);
 void do_block_comment(void);
 bool enter_with_bracket(void);
 bool is_empty_line(linestruct *line);
+void add_syntax_word(const char *color, const char *word);
 void do_cpp_syntax(void);
 void check_for_syntax_words(linestruct *line);
 
@@ -521,13 +522,17 @@ const char *rgx_word(const char *word);
 void        syntax_check_file(openfilestruct *file);
 bool        is_word_func(char *word);
 void        add_syntax_color(const char *color, const char *rgxstr, colortype *c);
+void        check_func_syntax(char ***words, unsigned int *i);
+void        check_syntax(const char *path);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
 void netlog_colortype(colortype *c);
 
 /* 'words.cpp' */
-void   remove_tabs_from_word(char **word);
-char **words_in_line(linestruct *line);
+void        remove_tabs_from_word(char **word);
+char      **words_in_line(linestruct *line);
+char      **words_in_str(const char *str);
+const char *extract_include(char *str);
 
 #include <Mlib/def.h>

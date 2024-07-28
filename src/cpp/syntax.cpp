@@ -1,6 +1,7 @@
 #include "../include/prototypes.h"
 
 #include <Mlib/Profile.h>
+#include <fcntl.h>
 
 const char *
 rgx_word(const char *word)
@@ -19,6 +20,7 @@ syntax_check_file(openfilestruct *file)
     {
         check_for_syntax_words(line);
     }
+    check_syntax("/usr/include/stdio.h");
 }
 
 bool
@@ -136,4 +138,76 @@ add_syntax_color(const char *color, const char *rgxstr, colortype *c)
     nc->pairnum    = c->pairnum + 1;
     nc->next       = nullptr;
     c->next        = nc;
+}
+
+void
+check_func_syntax(char ***words, unsigned int *i)
+{
+    if ((*words)[++(*i)] == nullptr)
+    {
+        return;
+    }
+    if (*((*words)[*i]) == '*')
+    {
+        (*words)[*i] += 1;
+    }
+    if (is_word_func((*words)[*i]))
+    {
+        add_syntax_word("yellow", (*words)[*i]);
+        return;
+    }
+    if ((*words)[(*i) + 1] != nullptr)
+    {
+        if (*((*words)[(*i) + 1]) == '(')
+        {
+            add_syntax_word("yellow", (*words)[*i]);
+            return;
+        }
+    }
+}
+
+void
+check_syntax(const char *path)
+{
+    PROFILE_FUNCTION;
+    char         *buf = nullptr, **words;
+    unsigned int  i;
+    unsigned long size, len;
+    FILE         *f = fopen(path, "rb");
+    if (f == nullptr)
+    {
+        return;
+    }
+    while ((len = getline(&buf, &size, f)) != EOF)
+    {
+        words = words_in_str(buf);
+        for (i = 0; words[i] != nullptr; i++)
+        {
+            unsigned char type = retrieve_c_syntax_type(words[i]);
+            if (type & CS_CHAR)
+            {
+                check_func_syntax(&words, &i);
+            }
+            else if (type & CS_VOID)
+            {
+                check_func_syntax(&words, &i);
+            }
+            else if (type & CS_INT)
+            {
+                check_func_syntax(&words, &i);
+            }
+            else if (type & CS_INCLUDE)
+            {
+                if (words[++i] == nullptr)
+                {
+                    continue;
+                }
+                if (*(words[i]) == '<')
+                {
+                    NETLOGGER.log("%s\n", extract_include(words[i]));
+                }
+            }
+        }
+        free(words);
+    }
 }

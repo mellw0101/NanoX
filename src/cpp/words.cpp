@@ -1,3 +1,4 @@
+#include <Mlib/Profile.h>
 #include "../include/prototypes.h"
 
 /* Remove all tabs from a word passed by refrence. */
@@ -42,6 +43,7 @@ words_in_line(linestruct *line)
 char **
 words_in_str(const char *str)
 {
+    PROFILE_FUNCTION;
     unsigned int i, cap;
     char        *data, *tok, **words;
     i     = 0;
@@ -62,4 +64,12 @@ words_in_str(const char *str)
     }
     words[i] = NULL;
     return words;
+}
+
+const char *
+extract_include(char *str)
+{
+    str += 1;
+    str[strlen(str) - 2] = '\0';
+    return str;
 }
