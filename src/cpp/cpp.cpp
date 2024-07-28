@@ -351,7 +351,7 @@ check_for_syntax_words(linestruct *line)
             {
                 continue;
             }
-            add_syntax_word("cyan", rgx_word(words[i]));
+            add_syntax(&type, words[i]);
         }
         else if (type & CS_VOID)
         {
@@ -359,7 +359,7 @@ check_for_syntax_words(linestruct *line)
             {
                 continue;
             }
-            add_syntax_word("cyan", rgx_word(words[i]));
+            add_syntax(&type, words[i]);
         }
         else if (type & CS_LONG)
         {
@@ -367,7 +367,15 @@ check_for_syntax_words(linestruct *line)
             {
                 continue;
             }
-            add_syntax_word("cyan", rgx_word(words[i]));
+            add_syntax(&type, words[i]);
+        }
+        else if (type & CS_CHAR)
+        {
+            if (check_func_syntax(&words, &i))
+            {
+                continue;
+            }
+            add_syntax(&type, words[i]);
         }
         else if (type & CS_INCLUDE)
         {
@@ -397,6 +405,14 @@ check_for_syntax_words(linestruct *line)
         else if (type & CS_CLASS)
         {
             add_syntax_word("brightgreen", words[++i]);
+        }
+        else if (type & CS_BOOL)
+        {
+            if (check_func_syntax(&words, &i))
+            {
+                continue;
+            }
+            add_syntax(&type, words[i]);
         }
     }
     free(words);

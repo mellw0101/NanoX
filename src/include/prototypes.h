@@ -525,6 +525,7 @@ bool        is_word_func(char *word);
 void        add_syntax_color(const char *color, const char *rgxstr, colortype *c);
 bool        check_func_syntax(char ***words, unsigned int *i);
 void        check_syntax(const char *path);
+void        add_syntax(const unsigned short *type, char *word);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);

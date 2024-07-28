@@ -228,3 +228,24 @@ check_syntax(const char *path)
         free(words);
     }
 }
+
+void
+add_syntax(const unsigned short *type, char *word)
+{
+    if (*type & CS_STRUCT || *type & CS_ENUM || *type & CS_CLASS)
+    {
+        add_syntax_word("brightgreen", rgx_word(word));
+    }
+    else if (*type & CS_INT || *type & CS_VOID || *type & CS_LONG || *type & CS_CHAR || *type & CS_BOOL)
+    {
+        unsigned int i;
+        for (i = 0; word[i]; i++)
+        {
+            if (word[i] == ';')
+            {
+                word[i] = '\0';
+            }
+        }
+        add_syntax_word("cyan", rgx_word(word));
+    }
+}
