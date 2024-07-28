@@ -347,27 +347,24 @@ check_for_syntax_words(linestruct *line)
         }
         else if (type & CS_INT)
         {
-            if (is_word_func(words[++i]))
+            if (check_func_syntax(&words, &i))
             {
-                add_syntax_word("lightyellow", rgx_word(words[i]));
                 continue;
             }
             add_syntax_word("cyan", rgx_word(words[i]));
         }
         else if (type & CS_VOID)
         {
-            if (is_word_func(words[++i]))
+            if (check_func_syntax(&words, &i))
             {
-                add_syntax_word("lightyellow", rgx_word(words[i]));
                 continue;
             }
             add_syntax_word("cyan", rgx_word(words[i]));
         }
         else if (type & CS_LONG)
         {
-            if (is_word_func(words[++i]))
+            if (check_func_syntax(&words, &i))
             {
-                add_syntax_word("lightyellow", rgx_word(words[i]));
                 continue;
             }
             add_syntax_word("cyan", rgx_word(words[i]));

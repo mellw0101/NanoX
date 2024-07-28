@@ -143,12 +143,12 @@ add_syntax_color(const char *color, const char *rgxstr, colortype *c)
     c->next        = nc;
 }
 
-void
+bool
 check_func_syntax(char ***words, unsigned int *i)
 {
     if ((*words)[++(*i)] == nullptr)
     {
-        return;
+        return false;
     }
     /* Remove all if any preceding '*' char`s. */
     while (*((*words)[*i]) == '*')
@@ -158,16 +158,17 @@ check_func_syntax(char ***words, unsigned int *i)
     if (is_word_func((*words)[*i]))
     {
         add_syntax_word("yellow", rgx_word((*words)[*i]));
-        return;
+        return true;
     }
     if ((*words)[(*i) + 1] != nullptr)
     {
         if (*((*words)[(*i) + 1]) == '(')
         {
             add_syntax_word("yellow", rgx_word((*words)[*i]));
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 void
