@@ -335,7 +335,8 @@ check_for_syntax_words(linestruct *line)
         {
             if (last_type & CS_VOID)
             {
-                for (unsigned int j = 0; (words[i])[j]; j++)
+                unsigned int j;
+                for (j = 0; (words[i])[j]; j++)
                 {
                     if ((words[i])[j] == '(')
                     {
@@ -343,6 +344,8 @@ check_for_syntax_words(linestruct *line)
                     }
                 }
                 add_syntax_word("yellow", words[i]);
+                words[i] += j + 1;
+                --i;
                 last_type = 0;
                 continue;
             }
