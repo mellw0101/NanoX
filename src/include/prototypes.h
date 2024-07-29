@@ -523,6 +523,7 @@ const char *rgx_word(const char *word);
 void        syntax_check_file(openfilestruct *file);
 bool        is_word_func(char *word);
 void        add_syntax_color(const char *color, const char *rgxstr, colortype *c);
+void        add_start_end_syntax(const char *color, const char *start, const char *end, colortype *c);
 bool        check_func_syntax(char ***words, unsigned int *i);
 void        check_syntax(const char *path);
 int         add_syntax(const unsigned short *type, char *word);

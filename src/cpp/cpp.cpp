@@ -301,6 +301,8 @@ do_cpp_syntax(void)
             // c = c->next;
             add_syntax_color("green", "//[^\"]*$|(^|[[:blank:]])//.*", c);
             c = c->next;
+            add_start_end_syntax("green", "/\\*", "\\*/", c);
+            c = c->next;
             // add_syntax_color("brightwhite,yellow", "\\<(FIXME|TODO|XXX)\\>", c);
             // c = c->next;
             // add_syntax_color(",green", "[[:space:]]+$", c);

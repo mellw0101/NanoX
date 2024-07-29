@@ -120,26 +120,62 @@ add_syntax_color(const char *color, const char *rgxstr, colortype *c)
     {
         return;
     }
-    regex_t   *rgx = nullptr;
-    colortype *nc  = nullptr;
     short      fg, bg;
     int        attr;
+    regex_t   *start_rgx = nullptr;
+    colortype *nc        = nullptr;
     if (!parse_color_opts(color, &fg, &bg, &attr))
     {
         return;
     }
-    if (!compile(rgxstr, NANO_REG_EXTENDED, &rgx))
+    if (!compile(rgxstr, NANO_REG_EXTENDED, &start_rgx))
     {
         return;
     }
     nc             = (colortype *)nmalloc(sizeof(colortype));
-    nc->start      = rgx;
-    nc->end        = nullptr;
+    nc->start      = start_rgx;
+    nc->end        = NULL;
     nc->fg         = fg;
     nc->bg         = bg;
     nc->attributes = attr;
     nc->pairnum    = c->pairnum + 1;
     nc->next       = nullptr;
+    c->next        = nc;
+}
+
+void
+add_start_end_syntax(const char *color, const char *start, const char *end, colortype *c)
+{
+    short      fg, bg;
+    int        attr;
+    regex_t   *start_rgx = NULL, *end_rgx = NULL;
+    colortype *nc;
+    if (c == NULL)
+    {
+        return;
+    }
+    if (!parse_color_opts(color, &fg, &bg, &attr))
+    {
+        return;
+    }
+    if (!compile(start, NANO_REG_EXTENDED, &start_rgx))
+    {
+        return;
+    }
+    if (!compile(end, NANO_REG_EXTENDED, &end_rgx))
+    {
+        regfree(start_rgx);
+        free(start_rgx);
+        return;
+    }
+    nc             = (colortype *)nmalloc(sizeof(colortype));
+    nc->start      = start_rgx;
+    nc->end        = end_rgx;
+    nc->fg         = fg;
+    nc->bg         = bg;
+    nc->attributes = attr;
+    nc->pairnum    = c->pairnum + 1;
+    nc->next       = NULL;
     c->next        = nc;
 }
 
