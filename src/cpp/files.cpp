@@ -2687,3 +2687,19 @@ input_tab(char *morsel, unsigned long *place, functionptrtype refresh_func, bool
     free(shared);
     return morsel;
 }
+
+/* Return`s 'true' only when given 'path' exists, and is not a dir or device. */
+bool
+is_file_and_exists(const char *path)
+{
+    struct stat st;
+    if (access(path, R_OK) != 0)
+    {
+        return false;
+    }
+    if (stat(path, &st) != -1 && (S_ISDIR(st.st_mode) || S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)))
+    {
+        return false;
+    }
+    return true;
+}

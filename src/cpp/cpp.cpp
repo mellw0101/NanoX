@@ -204,111 +204,53 @@ is_empty_line(linestruct *line)
 
 /* Add a word and the color of that word to the syntax list. */
 void
-add_syntax_word(const char *color, const char *word)
+add_syntax_word(const char *color_fg, const char *color_bg, const char *word)
 {
     PROFILE_FUNCTION;
-    syntaxtype *s;
-    colortype  *c;
-    /* Find 'c' syntax. */
-    for (s = syntaxes; s != nullptr && strcmp(s->name, "c"); s = s->next)
-        ;
-    /* Return if syntax 'c' was not found */
-    if (s == nullptr)
+    if (last_c_color == NULL)
     {
-        return;
-    }
-    /* Find end of colortype list in syntax 'c' */
-    for (c = s->color; c->next != nullptr; c = c->next)
-        ;
-    /* Return if 'c' == nullptr */
-    if (c == nullptr)
-    {
-        return;
+        last_c_color = get_last_c_colortype();
     }
     /* Add, then update the syntax. */
-    add_syntax_color(color, word, c);
-    set_syntax_colorpairs(s);
+    add_syntax_color(color_fg, color_bg, word, &last_c_color);
 }
 
 /* Add some basic cpp syntax. */
 void
 do_cpp_syntax(void)
 {
-    syntaxtype *syntax;
-    for (syntax = syntaxes; syntax != nullptr; syntax = syntax->next)
-    {
-        if (strcmp(syntax->name, "c") == 0 && syntax->filename == nullptr)
-        {
-            break;
-        }
-    }
-    if (syntax != nullptr)
-    {
-        netlog_syntaxtype(syntax);
-        colortype *c;
-        for (c = syntax->color; c->next != nullptr; c = c->next)
-            ;
-        if (c != nullptr)
-        {
-            add_syntax_color("gray", ";", c);
-            c = c->next;
-            add_syntax_color("brightred", "\\<[A-Z_][0-9A-Z_]*\\>", c);
-            c = c->next;
-            add_syntax_color("blue", "\\<(nullptr)\\>", c);
-            c = c->next;
-            add_syntax_color("brightmagenta", "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*:[[:blank:]]*$", c);
-            c = c->next;
-            add_syntax_color("normal", ":[[:blank:]]*$", c);
-            c = c->next;
-            /* This makes word after green while typing. */
-            add_syntax_color("brightgreen", "(namespace|enum|struct|class)[[:blank:]]+[A-Za-z_][A-Za-z_0-9]*", c);
-            c = c->next;
-            /* Types and related keywords. */
-            add_syntax_color("brightblue",
-                             "\\<(auto|bool|char|const|double|enum|extern|float|inline|int|long|restrict|short|signed|"
-                             "sizeof|static|struct|typedef|union|unsigned|void)\\>",
-                             c);
-            c = c->next;
-            add_syntax_color("brightgreen", "\\<([[:lower:]][[:lower:]_]*|(u_?)?int(8|16|32|64))_t\\>", c);
-            c = c->next;
-            add_syntax_color(
-                "green",
-                "\\<(_(Alignas|Alignof|Atomic|Bool|Complex|Generic|Imaginary|Noreturn|Static_assert|Thread_local))\\>",
-                c);
-            c = c->next;
-            add_syntax_color("brightblue",
-                             "\\<(class|explicit|friend|mutable|namespace|override|private|protected|public|register|"
-                             "template|this|typename|virtual|volatile|false|true)\\>",
-                             c);
-            c = c->next;
-            add_syntax_color("brightgreen", "\\<(std|string|vector)\\>", c);
-            c = c->next;
-            /* Flow control. */
-            add_syntax_color("brightyellow", "\\<(if|else|for|while|do|switch|case|default)\\>", c);
-            c = c->next;
-            add_syntax_color("brightyellow", "\\<(try|throw|catch|operator|new|delete)\\>", c);
-            c = c->next;
-            add_syntax_color("brightmagenta", "\\<(using|break|continue|goto|return)\\>", c);
-            c = c->next;
-            add_syntax_color("brightmagenta", "'([^'\\]|\\([\"'\abfnrtv]|x[[:xdigit:]]{1,2}|[0-3]?[0-7]{1,2}))'", c);
-            c = c->next;
-            add_syntax_color("cyan",
-                             "__attribute__[[:blank:]]*\\(\\([^)]*\\)\\)|__(aligned|asm|builtin|hidden|inline|packed|"
-                             "restrict|section|typeof|weak)__",
-                             c);
-            c = c->next;
-            // add_syntax_color("brightyellow", "\"([^\"]|\\\")*\"|#[[:blank:]]*include[[:blank:]]*<[^>]+>", c);
-            // c = c->next;
-            add_syntax_color("green", "//[^\"]*$|(^|[[:blank:]])//.*", c);
-            c = c->next;
-            add_start_end_syntax("green", "/\\*", "\\*/", c);
-            c = c->next;
-            // add_syntax_color("brightwhite,yellow", "\\<(FIXME|TODO|XXX)\\>", c);
-            // c = c->next;
-            // add_syntax_color(",green", "[[:space:]]+$", c);
-            set_syntax_colorpairs(syntax);
-        }
-    }
+    add_syntax_word("gray", NULL, ";");
+    add_syntax_word("brightred", NULL, "\\<[A-Z_][0-9A-Z_]*\\>");
+    add_syntax_word("blue", NULL, "\\<(nullptr)\\>");
+    add_syntax_word("brightmagenta", NULL, "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*:[[:blank:]]*$");
+    add_syntax_word("normal", NULL, ":[[:blank:]]*$");
+    /* This makes word after green, while typing. */
+    add_syntax_word("brightgreen", NULL, "(namespace|enum|struct|class)[[:blank:]]+[A-Za-z_][A-Za-z_0-9]*");
+    /* Types and related keywords. */
+    add_syntax_word("brightblue", NULL,
+                    "\\<(auto|bool|char|const|double|enum|extern|float|inline|int|long|restrict|short|signed|"
+                    "sizeof|static|struct|typedef|union|unsigned|void)\\>");
+    add_syntax_word("brightgreen", NULL, "\\<([[:lower:]][[:lower:]_]*|(u_?)?int(8|16|32|64))_t\\>");
+    add_syntax_word(
+        "green", NULL,
+        "\\<(_(Alignas|Alignof|Atomic|Bool|Complex|Generic|Imaginary|Noreturn|Static_assert|Thread_local))\\>");
+    add_syntax_word("brightblue", NULL,
+                    "\\<(class|explicit|friend|mutable|namespace|override|private|protected|public|register|"
+                    "template|this|typename|virtual|volatile|false|true)\\>");
+    add_syntax_word("brightgreen", NULL, "\\<(std|string|vector)\\>");
+    /* Flow control. */
+    add_syntax_word("brightyellow", NULL, "\\<(if|else|for|while|do|switch|case|default)\\>");
+    add_syntax_word("brightyellow", NULL, "\\<(try|throw|catch|operator|new|delete)\\>");
+    add_syntax_word("brightmagenta", NULL, "\\<(using|break|continue|goto|return)\\>");
+    add_syntax_word("brightmagenta", NULL, "'([^'\\]|\\([\"'\abfnrtv]|x[[:xdigit:]]{1,2}|[0-3]?[0-7]{1,2}))'");
+    add_syntax_word("cyan", NULL,
+                    "__attribute__[[:blank:]]*\\(\\([^)]*\\)\\)|__(aligned|asm|builtin|hidden|inline|packed|"
+                    "restrict|section|typeof|weak)__");
+    add_syntax_word("green", NULL, "//[^\"]*$|(^|[[:blank:]])//.*");
+    add_start_end_syntax("green", NULL, "/\\*", "\\*/", &last_c_color);
+    add_syntax_word("brightwhite", "yellow", "\\<(FIXME|TODO|XXX)\\>");
+    add_syntax_word(NULL, "green", "[[:space:]]+$");
+    update_c_syntaxtype();
 }
 
 static unsigned short last_type = 0;
@@ -317,7 +259,6 @@ static unsigned short last_type = 0;
 void
 check_for_syntax_words(linestruct *line)
 {
-    PROFILE_FUNCTION;
     unsigned i;
     char   **words;
     if (is_empty_line(line))
@@ -346,7 +287,7 @@ check_for_syntax_words(linestruct *line)
                         (words[i])[j] = '\0';
                     }
                 }
-                add_syntax_word("yellow", rgx_word(words[i]));
+                add_syntax_word("yellow", NULL, rgx_word(words[i]));
                 last_type = 0;
                 continue;
             }
@@ -362,11 +303,7 @@ check_for_syntax_words(linestruct *line)
         }
         else if (type & CS_STRUCT || type & CS_CLASS || type & CS_ENUM)
         {
-            add_syntax_word("brightgreen", rgx_word(words[++i]));
-        }
-        else if (type & CS_ENUM)
-        {
-            add_syntax_word("brightgreen", rgx_word(words[++i]));
+            add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
         }
         else if (type & CS_LONG || type & CS_VOID || type & CS_INT || type & CS_CHAR || type & CS_BOOL)
         {
@@ -392,44 +329,55 @@ check_for_syntax_words(linestruct *line)
         }
         else if (type & CS_INCLUDE)
         {
-            if (*(words[++i]) == '<')
-            {
-                static char buf[PATH_MAX];
-                sprintf(buf, "%s%s", "/usr/include/", extract_include(words[i]));
-                if (does_include_file_exist(buf))
-                {
-                    check_syntax(buf);
-                    continue;
-                }
-                words[i] += 1;
-                if (*(words[i]) == 'c')
-                {
-                    words[i] += 1;
-                }
-                memset(buf, '\0', sizeof(buf));
-                sprintf(buf, "%s%s%s", "/usr/include/c++/v1/", words[i], ".h");
-                if (does_include_file_exist(buf))
-                {
-                    check_syntax(buf);
-                    continue;
-                }
-            }
+            handle_include(words[++i]);
         }
     }
     free(words);
 }
 
-bool
-does_include_file_exist(const char *path)
+colortype *
+get_last_c_colortype(void)
 {
-    struct stat st;
-    if (access(path, R_OK) != 0)
+    syntaxtype *s = NULL;
+    colortype  *c = NULL;
+    /* Find 'c' syntax. */
+    for (s = syntaxes; s != NULL && strcmp(s->name, "c"); s = s->next)
+        ;
+    /* Return if syntax 'c' was not found */
+    if (s == NULL)
     {
-        return false;
+        return NULL;
     }
-    if (stat(path, &st) != -1 && (S_ISDIR(st.st_mode) || S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)))
+    /* Find end of colortype list in syntax 'c' */
+    for (c = s->color; c->next != NULL; c = c->next)
+        ;
+    /* Return if 'c' == nullptr */
+    if (c == NULL)
     {
-        return false;
+        return NULL;
     }
-    return true;
+    return c;
+}
+
+syntaxtype *
+get_c_syntaxtype(void)
+{
+    syntaxtype *s = NULL;
+    for (s = syntaxes; s != NULL && strcmp(s->name, "c"); s = s->next)
+        ;
+    return s;
+}
+
+void
+update_c_syntaxtype(void)
+{
+    if (c_syntaxtype == NULL)
+    {
+        c_syntaxtype = get_c_syntaxtype();
+        if (c_syntaxtype == NULL)
+        {
+            return;
+        }
+    }
+    set_syntax_colorpairs(c_syntaxtype);
 }

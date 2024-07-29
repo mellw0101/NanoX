@@ -50,7 +50,6 @@ words_in_line(linestruct *line)
 char **
 words_in_str(const char *str, unsigned long *size)
 {
-    PROFILE_FUNCTION;
     unsigned int i     = 0;
     unsigned int cap   = 10;
     char       **words = (char **)nmalloc(sizeof(char *) * cap);

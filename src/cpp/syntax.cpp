@@ -42,40 +42,23 @@ is_word_func(char *word)
 }
 
 bool
-parse_color_opts(const char *color, short *fg, short *bg, int *attr)
+parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr)
 {
-    bool  vivid, thick;
-    char *comma;
+    bool vivid, thick;
     *attr = A_NORMAL;
-    if (strncmp(color, "bold", 4) == 0)
+    if (color_fg != NULL)
     {
-        *attr |= A_BOLD;
-        if (color[4] != ',')
+        if (strncmp(color_fg, "bold", 4) == 0)
         {
-            NETLOGGER.log("%s: Attribute 'bold' requires a subsequent comma.\n", __func__);
-            jot_error("%s: Attribute 'bold' requires a subsequent comma.\n", __func__);
-            return false;
+            *attr |= A_BOLD;
+            color_fg += 5;
         }
-        color += 5;
-    }
-    if (strncmp(color, "italic", 6) == 0)
-    {
-        *attr |= A_ITALIC;
-        if (color[6] != ',')
+        if (strncmp(color_fg, "italic", 6) == 0)
         {
-            NETLOGGER.log("%s: Attribute 'italic' requires a subsequent comma.\n", __func__);
-            jot_error("%s: Attribute 'italic' requires a subsequent comma.\n", __func__);
+            *attr |= A_ITALIC;
+            color_fg += 7;
         }
-        color += 7;
-    }
-    comma = strrchr((char *)color, ',');
-    if (comma != nullptr)
-    {
-        *comma = '\0';
-    }
-    if (comma == nullptr || comma > color)
-    {
-        *fg = color_to_short(color, vivid, thick);
+        *fg = color_to_short(color_fg, vivid, thick);
         if (*fg == BAD_COLOR)
         {
             return false;
@@ -93,9 +76,19 @@ parse_color_opts(const char *color, short *fg, short *bg, int *attr)
     {
         *fg = THE_DEFAULT;
     }
-    if (comma)
+    if (color_bg != NULL)
     {
-        *bg = color_to_short(comma + 1, vivid, thick);
+        if (strncmp(color_bg, "bold", 4) == 0)
+        {
+            *attr |= A_BOLD;
+            color_bg += 5;
+        }
+        if (strncmp(color_bg, "italic", 6) == 0)
+        {
+            *attr |= A_ITALIC;
+            color_bg += 7;
+        }
+        *bg = color_to_short(color_bg, vivid, thick);
         if (*bg == BAD_COLOR)
         {
             return false;
@@ -114,7 +107,7 @@ parse_color_opts(const char *color, short *fg, short *bg, int *attr)
 
 /* Add syntax regex to end of colortype list 'c'. */
 void
-add_syntax_color(const char *color, const char *rgxstr, colortype *c)
+add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c)
 {
     if (c == nullptr)
     {
@@ -124,7 +117,7 @@ add_syntax_color(const char *color, const char *rgxstr, colortype *c)
     int        attr;
     regex_t   *start_rgx = nullptr;
     colortype *nc        = nullptr;
-    if (!parse_color_opts(color, &fg, &bg, &attr))
+    if (!parse_color_opts(color_fg, color_bg, &fg, &bg, &attr))
     {
         return;
     }
@@ -138,13 +131,14 @@ add_syntax_color(const char *color, const char *rgxstr, colortype *c)
     nc->fg         = fg;
     nc->bg         = bg;
     nc->attributes = attr;
-    nc->pairnum    = c->pairnum + 1;
+    nc->pairnum    = (*c)->pairnum + 1;
     nc->next       = nullptr;
-    c->next        = nc;
+    (*c)->next     = nc;
+    (*c)           = (*c)->next;
 }
 
 void
-add_start_end_syntax(const char *color, const char *start, const char *end, colortype *c)
+add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end, colortype **c)
 {
     short      fg, bg;
     int        attr;
@@ -154,7 +148,7 @@ add_start_end_syntax(const char *color, const char *start, const char *end, colo
     {
         return;
     }
-    if (!parse_color_opts(color, &fg, &bg, &attr))
+    if (!parse_color_opts(color_fg, color_bg, &fg, &bg, &attr))
     {
         return;
     }
@@ -174,9 +168,10 @@ add_start_end_syntax(const char *color, const char *start, const char *end, colo
     nc->fg         = fg;
     nc->bg         = bg;
     nc->attributes = attr;
-    nc->pairnum    = c->pairnum + 1;
+    nc->pairnum    = (*c)->pairnum + 1;
     nc->next       = NULL;
-    c->next        = nc;
+    (*c)->next     = nc;
+    (*c)           = (*c)->next;
 }
 
 bool
@@ -193,14 +188,14 @@ check_func_syntax(char ***words, unsigned int *i)
     }
     if (is_word_func((*words)[*i]))
     {
-        add_syntax_word("yellow", rgx_word((*words)[*i]));
+        add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
         return true;
     }
     if ((*words)[(*i) + 1] != NULL)
     {
         if (*((*words)[(*i) + 1]) == '(')
         {
-            add_syntax_word("yellow", rgx_word((*words)[*i]));
+            add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
             return true;
         }
     }
@@ -215,7 +210,7 @@ check_syntax(const char *path)
     unsigned int  i;
     unsigned long size, len;
     FILE         *f = fopen(path, "rb");
-    if (f == nullptr)
+    if (f == NULL)
     {
         return;
     }
@@ -226,59 +221,31 @@ check_syntax(const char *path)
             buf[--len] = '\0';
         }
         words = words_in_str(buf);
-        for (i = 0; words[i] != nullptr; i++)
+        if (*words == NULL)
+        {
+            continue;
+        }
+        for (i = 0; words[i] != NULL; i++)
         {
             const unsigned short type = retrieve_c_syntax_type(words[i]);
+            if (words[i + 1] == NULL)
+            {
+                break;
+            }
             if (!type)
             {
                 continue;
             }
-            if (type & CS_STRUCT)
+            if (type & CS_STRUCT || type & CS_ENUM || type & CS_CLASS)
             {
-                if (words[i + 1] == NULL)
+                add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
+            }
+            else if (type & CS_CHAR || type & CS_VOID || type & CS_INT)
+            {
+                if (check_func_syntax(&words, &i))
                 {
                     continue;
                 }
-                add_syntax_word("brightgreen", rgx_word(words[++i]));
-            }
-            else if (type & CS_ENUM)
-            {
-                if (words[i + 1] == NULL)
-                {
-                    continue;
-                }
-                add_syntax_word("brightgreen", rgx_word(words[++i]));
-            }
-            else if (type & CS_CHAR)
-            {
-                check_func_syntax(&words, &i);
-            }
-            else if (type & CS_VOID)
-            {
-                check_func_syntax(&words, &i);
-            }
-            else if (type & CS_INT)
-            {
-                check_func_syntax(&words, &i);
-            }
-            else if (type & CS_INCLUDE)
-            {
-                if (words[++i] == nullptr)
-                {
-                    continue;
-                }
-                if (*(words[i]) == '<')
-                {
-                    // NETLOGGER.log("%s\n", extract_include(words[i]));
-                }
-            }
-            else if (type & CS_CLASS)
-            {
-                if (words[i + 1] == nullptr)
-                {
-                    continue;
-                }
-                add_syntax_word("brightgreen", rgx_word(words[++i]));
             }
         }
         free(words);
@@ -291,7 +258,7 @@ add_syntax(const unsigned short *type, char *word)
 {
     if (*type & CS_STRUCT || *type & CS_ENUM || *type & CS_CLASS)
     {
-        add_syntax_word("brightgreen", rgx_word(word));
+        add_syntax_word("brightgreen", NULL, rgx_word(word));
     }
     else if (*type & CS_INT || *type & CS_VOID || *type & CS_LONG || *type & CS_CHAR || *type & CS_BOOL)
     {
@@ -307,11 +274,10 @@ add_syntax(const unsigned short *type, char *word)
         unsigned int i = 0;
         for (i = 0; word[i]; i++)
         {
-            NETLOGGER.log("%c\n", word[i]);
             if (word[i] == ',')
             {
                 word[i] = '\0';
-                add_syntax_word("cyan", rgx_word(word));
+                add_syntax_word("cyan", NULL, rgx_word(word));
                 return NEXT_WORD_ALSO;
             }
             if (word[i] == ';' || word[i] == ')')
@@ -320,7 +286,74 @@ add_syntax(const unsigned short *type, char *word)
                 break;
             }
         }
-        add_syntax_word("cyan", rgx_word(word));
+        add_syntax_word("cyan", NULL, rgx_word(word));
     }
     return 0;
+}
+
+void
+handle_include(char *str)
+{
+    static char        buf[PATH_MAX];
+    static const char *pwd          = NULL;
+    char              *current_file = NULL;
+    unsigned long      i, pos;
+    if (str == NULL)
+    {
+        return;
+    }
+    if (*str == '<')
+    {
+        sprintf(buf, "%s%s", "/usr/include/", extract_include(str));
+        if (is_file_and_exists(buf))
+        {
+            check_syntax(buf);
+            return;
+        }
+        str += 1;
+        if (*str == 'c')
+        {
+            str += 1;
+        }
+        memset(buf, '\0', sizeof(buf));
+        sprintf(buf, "%s%s", "/usr/include/c++/v1/", str);
+        if (is_file_and_exists(str))
+        {
+            check_syntax(buf);
+            return;
+        }
+        memset(buf, '\0', sizeof(buf));
+        sprintf(buf, "%s%s%s", "/usr/include/c++/v1/", str, ".h");
+        if (is_file_and_exists(buf))
+        {
+            check_syntax(buf);
+            return;
+        }
+    }
+    else if (*str == '"')
+    {
+        pwd = getenv("PWD");
+        if (pwd == NULL)
+        {
+            return;
+        }
+        current_file = strdup(openfile->filename);
+        for (i = 0, pos = 0; current_file[i]; i++)
+        {
+            if (current_file[i] == '/')
+            {
+                pos = i;
+            }
+        }
+        if (pos != 0)
+        {
+            current_file[pos + 1] = '\0';
+        }
+        sprintf(buf, "%s%s%s%s", pwd, "/", (current_file != NULL) ? current_file : "", extract_include(str));
+        if (is_file_and_exists(buf))
+        {
+            check_syntax(buf);
+        }
+        free(current_file);
+    }
 }

@@ -206,7 +206,9 @@ constexpr bool BLANKAFTER = true;
 constexpr bool TOGETHER   = false;
 /* If closing bracket char was printed then this is true until another
  * key input has been prossesed. */
-bool last_key_was_bracket = false;
+bool        last_key_was_bracket = false;
+colortype  *last_c_color         = NULL;
+syntaxtype *c_syntaxtype         = NULL;
 
 /* Empty functions, for the most part corresponding to toggles. */
 void

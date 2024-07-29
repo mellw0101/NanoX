@@ -963,6 +963,7 @@ do_enter(void)
         free(words);
     }
     check_for_syntax_words(openfile->current);
+    update_c_syntaxtype();
     linestruct   *newnode    = make_new_node(openfile->current);
     linestruct   *sampleline = openfile->current;
     unsigned long extra      = 0;

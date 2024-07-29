@@ -135,6 +135,9 @@ extern bool last_key_was_bracket;
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
+extern colortype  *last_c_color;
+extern syntaxtype *c_syntaxtype;
+
 typedef void (*functionptrtype)(void);
 
 /* The two needed functions from 'browser.cpp'. */
@@ -227,6 +230,7 @@ void  do_savefile(void);
 char *real_dir_from_tilde(const char *path);
 int   diralphasort(const void *va, const void *vb);
 char *input_tab(char *buf, unsigned long *place, void (*refresh_func)(void), bool *listed);
+bool  is_file_and_exists(const char *path);
 
 /* Some functions in 'global.cpp'. */
 functionptrtype  func_from_key(const int keycode);
@@ -508,25 +512,28 @@ void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spa
 
 unsigned short indent_char_len(linestruct *line);
 
-void inject_in_line(linestruct **line, const char *str, unsigned long at);
-void enclose_marked_region(const char *s1, const char *s2);
-void do_block_comment(void);
-bool enter_with_bracket(void);
-bool is_empty_line(linestruct *line);
-void add_syntax_word(const char *color, const char *word);
-void do_cpp_syntax(void);
-void check_for_syntax_words(linestruct *line);
-bool does_include_file_exist(const char *path);
+void       inject_in_line(linestruct **line, const char *str, unsigned long at);
+void       enclose_marked_region(const char *s1, const char *s2);
+void       do_block_comment(void);
+bool       enter_with_bracket(void);
+bool       is_empty_line(linestruct *line);
+void       add_syntax_word(const char *color_fg, const char *color_bg, const char *word);
+void       do_cpp_syntax(void);
+void       check_for_syntax_words(linestruct *line);
+colortype *get_last_c_colortype(void);
+void       update_c_syntaxtype(void);
 
 /* 'syntax.cpp' */
 const char *rgx_word(const char *word);
 void        syntax_check_file(openfilestruct *file);
 bool        is_word_func(char *word);
-void        add_syntax_color(const char *color, const char *rgxstr, colortype *c);
-void        add_start_end_syntax(const char *color, const char *start, const char *end, colortype *c);
+void        add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c);
+void        add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end,
+                                 colortype **c);
 bool        check_func_syntax(char ***words, unsigned int *i);
 void        check_syntax(const char *path);
 int         add_syntax(const unsigned short *type, char *word);
+void        handle_include(char *str);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);

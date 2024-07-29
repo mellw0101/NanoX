@@ -777,16 +777,12 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                             {
                                 return SHIFT_PAGEDOWN;
                             }
-                            //
                             //  Esc [ 1 ; 4 C == Shift-Alt-Right on xterm.
-                            //
                             case 'C' :
                             {
                                 return SHIFT_END;
                             }
-                            //
-                            //  Esc [ 1 ; 4 D == Shift-Alt-Left on xterm.
-                            //
+                            /* Esc [ 1 ; 4 D == Shift-Alt-Left on xterm. */
                             case 'D' :
                             {
                                 return SHIFT_HOME;
