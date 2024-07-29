@@ -343,9 +343,7 @@ check_for_syntax_words(linestruct *line)
                         (words[i])[j] = '\0';
                     }
                 }
-                add_syntax_word("yellow", words[i]);
-                words[i] += j + 1;
-                --i;
+                add_syntax_word("yellow", rgx_word(words[i]));
                 last_type = 0;
                 continue;
             }

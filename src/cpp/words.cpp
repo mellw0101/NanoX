@@ -23,7 +23,7 @@ words_in_line(linestruct *line)
     unsigned int cap = 10, i = 0;
     char       **words = (char **)nmalloc(sizeof(char *) * cap);
     char        *data  = strdup(line->data);
-    char        *tok   = strtok(data, " ");
+    char        *tok   = strtok(data, " (");
     while (tok != nullptr)
     {
         if (i == cap)
