@@ -392,7 +392,7 @@ constexpr_map<std::string_view, unsigned short, 16> menuOptionMap = {
      {"all", MMOST | MBROWSER | MHELP | MYESNO}}
 };
 
-constexpr_map<STRING_VIEW, u32, 14> toggleOptionMap = {
+constexpr_map<std::string_view, unsigned int, 14> toggleOptionMap = {
     {{"nohelp", NO_HELP},
      {"zero", ZERO},
      {"constantshow", CONSTANT_SHOW},
@@ -426,8 +426,8 @@ constexpr_map<std::string_view, unsigned short, 10> c_syntax_map = {
      {"void", CS_VOID},
      {"long", CS_LONG},
      {"char", CS_CHAR},
-     {"#include", CS_INCLUDE},
-     {"#define", CS_DEFINE},
+     {"include", CS_INCLUDE},
+     {"define", CS_DEFINE},
      {"class", CS_CLASS},
      {"bool", CS_BOOL}}
 };

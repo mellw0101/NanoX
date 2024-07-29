@@ -322,7 +322,7 @@ check_for_syntax_words(linestruct *line)
     {
         return;
     }
-    words = words_in_line(line);
+    words = words_in_str(line->data);
     if (*words == nullptr)
     {
         free(words);
@@ -333,7 +333,8 @@ check_for_syntax_words(linestruct *line)
         const unsigned short type = retrieve_c_syntax_type(words[i]);
         if (last_type != 0)
         {
-            if (last_type & CS_VOID || last_type & CS_INT || last_type & CS_CHAR || last_type & CS_LONG)
+            if (last_type & CS_VOID || last_type & CS_INT || last_type & CS_CHAR || last_type & CS_LONG ||
+                last_type & CS_BOOL)
             {
                 unsigned int j;
                 for (j = 0; (words[i])[j]; j++)
@@ -348,7 +349,7 @@ check_for_syntax_words(linestruct *line)
                 continue;
             }
         }
-        if (words[i + 1] == nullptr)
+        if (words[i + 1] == NULL)
         {
             last_type = type;
             break;
@@ -357,7 +358,7 @@ check_for_syntax_words(linestruct *line)
         {
             continue;
         }
-        else if (type & CS_STRUCT)
+        else if (type & CS_STRUCT || type & CS_CLASS || type & CS_ENUM)
         {
             add_syntax_word("brightgreen", rgx_word(words[++i]));
         }
@@ -365,37 +366,27 @@ check_for_syntax_words(linestruct *line)
         {
             add_syntax_word("brightgreen", rgx_word(words[++i]));
         }
-        else if (type & CS_INT)
+        else if (type & CS_LONG || type & CS_VOID || type & CS_INT || type & CS_CHAR || type & CS_BOOL)
         {
             if (check_func_syntax(&words, &i))
             {
                 continue;
             }
-            add_syntax(&type, words[i]);
-        }
-        else if (type & CS_VOID)
-        {
-            if (check_func_syntax(&words, &i))
+            if (add_syntax(&type, words[i]) == NEXT_WORD_ALSO)
             {
+                while (true)
+                {
+                    if (words[++i] == nullptr)
+                    {
+                        break;
+                    }
+                    if (add_syntax(&type, words[i]) != NEXT_WORD_ALSO)
+                    {
+                        break;
+                    }
+                }
                 continue;
             }
-            add_syntax(&type, words[i]);
-        }
-        else if (type & CS_LONG)
-        {
-            if (check_func_syntax(&words, &i))
-            {
-                continue;
-            }
-            add_syntax(&type, words[i]);
-        }
-        else if (type & CS_CHAR)
-        {
-            if (check_func_syntax(&words, &i))
-            {
-                continue;
-            }
-            add_syntax(&type, words[i]);
         }
         else if (type & CS_INCLUDE)
         {
@@ -421,18 +412,6 @@ check_for_syntax_words(linestruct *line)
                     continue;
                 }
             }
-        }
-        else if (type & CS_CLASS)
-        {
-            add_syntax_word("brightgreen", words[++i]);
-        }
-        else if (type & CS_BOOL)
-        {
-            if (check_func_syntax(&words, &i))
-            {
-                continue;
-            }
-            add_syntax(&type, words[i]);
         }
     }
     free(words);

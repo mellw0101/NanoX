@@ -146,7 +146,7 @@ add_syntax_color(const char *color, const char *rgxstr, colortype *c)
 bool
 check_func_syntax(char ***words, unsigned int *i)
 {
-    if ((*words)[++(*i)] == nullptr)
+    if ((*words)[++(*i)] == NULL)
     {
         return false;
     }
@@ -160,7 +160,7 @@ check_func_syntax(char ***words, unsigned int *i)
         add_syntax_word("yellow", rgx_word((*words)[*i]));
         return true;
     }
-    if ((*words)[(*i) + 1] != nullptr)
+    if ((*words)[(*i) + 1] != NULL)
     {
         if (*((*words)[(*i) + 1]) == '(')
         {
@@ -189,7 +189,6 @@ check_syntax(const char *path)
         {
             buf[--len] = '\0';
         }
-        NETLOGGER.log("%s\n", buf);
         words = words_in_str(buf);
         for (i = 0; words[i] != nullptr; i++)
         {
@@ -248,9 +247,10 @@ check_syntax(const char *path)
         }
         free(words);
     }
+    fclose(f);
 }
 
-void
+int
 add_syntax(const unsigned short *type, char *word)
 {
     if (*type & CS_STRUCT || *type & CS_ENUM || *type & CS_CLASS)
@@ -259,9 +259,25 @@ add_syntax(const unsigned short *type, char *word)
     }
     else if (*type & CS_INT || *type & CS_VOID || *type & CS_LONG || *type & CS_CHAR || *type & CS_BOOL)
     {
-        unsigned int i;
+        /* Remove all if any '*' char`s */
+        while (word[0] == '*')
+        {
+            word += 1;
+        }
+        if (word[0] == '\0')
+        {
+            return NEXT_WORD_ALSO;
+        }
+        unsigned int i = 0;
         for (i = 0; word[i]; i++)
         {
+            NETLOGGER.log("%c\n", word[i]);
+            if (word[i] == ',')
+            {
+                word[i] = '\0';
+                add_syntax_word("cyan", rgx_word(word));
+                return NEXT_WORD_ALSO;
+            }
             if (word[i] == ';' || word[i] == ')')
             {
                 word[i] = '\0';
@@ -270,4 +286,5 @@ add_syntax(const unsigned short *type, char *word)
         }
         add_syntax_word("cyan", rgx_word(word));
     }
+    return 0;
 }

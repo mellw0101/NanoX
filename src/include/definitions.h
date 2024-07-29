@@ -549,5 +549,10 @@ typedef struct completionstruct
     completionstruct *next;
 } completionstruct;
 
+enum syntax_flag_t
+{
+    NEXT_WORD_ALSO = 1
+};
+
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"

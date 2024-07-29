@@ -525,7 +525,7 @@ bool        is_word_func(char *word);
 void        add_syntax_color(const char *color, const char *rgxstr, colortype *c);
 bool        check_func_syntax(char ***words, unsigned int *i);
 void        check_syntax(const char *path);
-void        add_syntax(const unsigned short *type, char *word);
+int         add_syntax(const unsigned short *type, char *word);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
@@ -534,7 +534,8 @@ void netlog_colortype(colortype *c);
 /* 'words.cpp' */
 void        remove_tabs_from_word(char **word);
 char      **words_in_line(linestruct *line);
-char      **words_in_str(const char *str);
+char      **words_in_str(const char *str, unsigned long *size = NULL);
 const char *extract_include(char *str);
+void        words_in_file(const char *path);
 
 #include <Mlib/def.h>
