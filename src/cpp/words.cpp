@@ -14,6 +14,13 @@ remove_tabs_from_word(char **word)
         }
     }
     *word += i;
+    for (i = 0; (*word)[i]; i++)
+    {
+        if ((*word)[i] == '[')
+        {
+            (*word)[i] = '\0';
+        }
+    }
 }
 
 /* Creates a malloc`ed 'char **' containing all words in a line. */

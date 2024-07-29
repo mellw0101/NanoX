@@ -189,6 +189,7 @@ check_syntax(const char *path)
         {
             buf[--len] = '\0';
         }
+        NETLOGGER.log("%s\n", buf);
         words = words_in_str(buf);
         for (i = 0; words[i] != nullptr; i++)
         {
@@ -197,7 +198,23 @@ check_syntax(const char *path)
             {
                 continue;
             }
-            if (type & CS_CHAR)
+            if (type & CS_STRUCT)
+            {
+                if (words[i + 1] == NULL)
+                {
+                    continue;
+                }
+                add_syntax_word("brightgreen", rgx_word(words[++i]));
+            }
+            else if (type & CS_ENUM)
+            {
+                if (words[i + 1] == NULL)
+                {
+                    continue;
+                }
+                add_syntax_word("brightgreen", rgx_word(words[++i]));
+            }
+            else if (type & CS_CHAR)
             {
                 check_func_syntax(&words, &i);
             }

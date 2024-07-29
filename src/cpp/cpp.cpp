@@ -333,7 +333,7 @@ check_for_syntax_words(linestruct *line)
         const unsigned short type = retrieve_c_syntax_type(words[i]);
         if (last_type != 0)
         {
-            if (last_type & CS_VOID)
+            if (last_type & CS_VOID || last_type & CS_INT || last_type & CS_CHAR || last_type & CS_LONG)
             {
                 unsigned int j;
                 for (j = 0; (words[i])[j]; j++)
