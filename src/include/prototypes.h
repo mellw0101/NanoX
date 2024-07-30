@@ -512,16 +512,17 @@ void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spa
 
 unsigned short indent_char_len(linestruct *line);
 
-void       inject_in_line(linestruct **line, const char *str, unsigned long at);
-void       enclose_marked_region(const char *s1, const char *s2);
-void       do_block_comment(void);
-bool       enter_with_bracket(void);
-bool       is_empty_line(linestruct *line);
-void       add_syntax_word(const char *color_fg, const char *color_bg, const char *word);
-void       do_cpp_syntax(void);
-void       check_for_syntax_words(linestruct *line);
-colortype *get_last_c_colortype(void);
-void       update_c_syntaxtype(void);
+void        inject_in_line(linestruct **line, const char *str, unsigned long at);
+void        enclose_marked_region(const char *s1, const char *s2);
+void        do_block_comment(void);
+bool        enter_with_bracket(void);
+bool        is_empty_line(linestruct *line);
+void        add_syntax_word(const char *color_fg, const char *color_bg, const char *word);
+void        do_cpp_syntax(void);
+void        check_for_syntax_words(linestruct *line);
+colortype  *get_last_c_colortype(void);
+void        update_c_syntaxtype(void);
+syntaxtype *get_c_syntaxtype(void);
 
 /* 'syntax.cpp' */
 const char *rgx_word(const char *word);

@@ -266,7 +266,7 @@ check_for_syntax_words(linestruct *line)
         return;
     }
     words = words_in_str(line->data);
-    if (*words == nullptr)
+    if (*words == NULL)
     {
         free(words);
         return;
@@ -315,7 +315,7 @@ check_for_syntax_words(linestruct *line)
             {
                 while (true)
                 {
-                    if (words[++i] == nullptr)
+                    if (words[++i] == NULL)
                     {
                         break;
                     }
@@ -338,18 +338,17 @@ check_for_syntax_words(linestruct *line)
 colortype *
 get_last_c_colortype(void)
 {
-    syntaxtype *s = NULL;
-    colortype  *c = NULL;
-    /* Find 'c' syntax. */
-    for (s = syntaxes; s != NULL && strcmp(s->name, "c"); s = s->next)
-        ;
-    /* Return if syntax 'c' was not found */
-    if (s == NULL)
+    if (c_syntaxtype == NULL)
     {
-        return NULL;
+        c_syntaxtype = get_c_syntaxtype();
+        if (c_syntaxtype == NULL)
+        {
+            return NULL;
+        }
     }
+    colortype *c = NULL;
     /* Find end of colortype list in syntax 'c' */
-    for (c = s->color; c->next != NULL; c = c->next)
+    for (c = c_syntaxtype->color; c->next != NULL; c = c->next)
         ;
     /* Return if 'c' == nullptr */
     if (c == NULL)
