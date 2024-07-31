@@ -231,7 +231,7 @@ do_cpp_syntax(void)
     /* This makes word after green, while typing. */
     add_syntax_word("brightgreen", NULL, "(namespace|enum|struct|class)[[:blank:]]+[A-Za-z_][A-Za-z_0-9]*");
     /* Types and related keywords. */
-    add_syntax_word("brightblue", NULL,
+    add_syntax_word("bold,brightblue", NULL,
                     "\\<(auto|const|bool|char|double|enum|extern|float|inline|int|long|restrict|short|signed|"
                     "sizeof|static|struct|typedef|union|unsigned|void)\\>");
     add_syntax_word("brightgreen", NULL, "\\<([[:lower:]][[:lower:]_]*|(u_?)?int(8|16|32|64))_t\\>");
