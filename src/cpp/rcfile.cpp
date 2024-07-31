@@ -873,20 +873,20 @@ color_to_short(const char *colorname, bool &vivid, bool &thick)
 {
     if (constexpr_strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
-        thick = true;
-        vivid = true;
+        thick = TRUE;
+        vivid = TRUE;
         colorname += 6;
     }
     else if (constexpr_strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
     {
-        vivid = true;
-        thick = false;
+        vivid = TRUE;
+        thick = FALSE;
         colorname += 5;
     }
     else
     {
-        vivid = false;
-        thick = false;
+        vivid = FALSE;
+        thick = FALSE;
     }
     if (colorname[0] == '#' && constexpr_strlen(colorname) == 4)
     {

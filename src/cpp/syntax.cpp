@@ -19,10 +19,14 @@ syntax_check_file(openfilestruct *file)
     {
         return;
     }
-    linestruct *line;
-    for (line = file->filetop; line != nullptr; line = line->next)
+    const char *fext = get_file_extention(openfile->filename);
+    if (strcmp(fext, "cpp") == 0 || strcmp(fext, "c") == 0)
     {
-        check_for_syntax_words(line);
+        linestruct *line;
+        for (line = file->filetop; line != NULL; line = line->next)
+        {
+            check_for_syntax_words(line);
+        }
     }
 }
 
@@ -35,10 +39,10 @@ is_word_func(char *word)
         if (word[i] == '(')
         {
             word[i] = '\0';
-            return true;
+            return TRUE;
         }
     }
-    return false;
+    return FALSE;
 }
 
 bool
@@ -61,7 +65,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
         *fg = color_to_short(color_fg, vivid, thick);
         if (*fg == BAD_COLOR)
         {
-            return false;
+            return FALSE;
         }
         if (vivid && !thick && COLORS > 8)
         {
@@ -91,7 +95,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
         *bg = color_to_short(color_bg, vivid, thick);
         if (*bg == BAD_COLOR)
         {
-            return false;
+            return FALSE;
         }
         if (vivid && COLORS > 8)
         {
@@ -102,7 +106,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
     {
         *bg = THE_DEFAULT;
     }
-    return true;
+    return TRUE;
 }
 
 /* Add syntax regex to end of colortype list 'c'. */
@@ -115,8 +119,8 @@ add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr,
     }
     short      fg, bg;
     int        attr;
-    regex_t   *start_rgx = nullptr;
-    colortype *nc        = nullptr;
+    regex_t   *start_rgx = NULL;
+    colortype *nc        = NULL;
     if (!parse_color_opts(color_fg, color_bg, &fg, &bg, &attr))
     {
         return;
@@ -132,7 +136,7 @@ add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr,
     nc->bg         = bg;
     nc->attributes = attr;
     nc->pairnum    = (*c)->pairnum + 1;
-    nc->next       = nullptr;
+    nc->next       = NULL;
     (*c)->next     = nc;
     (*c)           = (*c)->next;
 }
@@ -202,6 +206,7 @@ check_func_syntax(char ***words, unsigned int *i)
     return false;
 }
 
+/* Check a file for syntax and add relevent syntax. */
 void
 check_syntax(const char *path)
 {
@@ -240,12 +245,17 @@ check_syntax(const char *path)
             {
                 add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
             }
-            else if (type & CS_CHAR || type & CS_VOID || type & CS_INT)
+            else if (type & CS_CHAR || type & CS_VOID || type & CS_INT || type & CS_LONG || type & CS_BOOL ||
+                     type & CS_SIZE_T || type & CS_SSIZE_T)
             {
                 if (check_func_syntax(&words, &i))
                 {
                     continue;
                 }
+            }
+            else if (type & CS_DEFINE)
+            {
+                handle_define(words[++i]);
             }
         }
         free(words);
@@ -260,7 +270,8 @@ add_syntax(const unsigned short *type, char *word)
     {
         add_syntax_word("brightgreen", NULL, rgx_word(word));
     }
-    else if (*type & CS_INT || *type & CS_VOID || *type & CS_LONG || *type & CS_CHAR || *type & CS_BOOL)
+    else if (*type & CS_INT || *type & CS_VOID || *type & CS_LONG || *type & CS_CHAR || *type & CS_BOOL ||
+             *type & CS_SIZE_T || *type & CS_SSIZE_T)
     {
         /* Remove all if any '*' char`s */
         while (word[0] == '*')
@@ -277,7 +288,7 @@ add_syntax(const unsigned short *type, char *word)
             if (word[i] == ',')
             {
                 word[i] = '\0';
-                add_syntax_word("cyan", NULL, rgx_word(word));
+                add_syntax_word("lagoon", NULL, rgx_word(word));
                 return NEXT_WORD_ALSO;
             }
             if (word[i] == ';' || word[i] == ')')
@@ -286,7 +297,7 @@ add_syntax(const unsigned short *type, char *word)
                 break;
             }
         }
-        add_syntax_word("cyan", NULL, rgx_word(word));
+        add_syntax_word("lagoon", NULL, rgx_word(word));
     }
     return 0;
 }
@@ -356,4 +367,24 @@ handle_include(char *str)
         }
         free(current_file);
     }
+}
+
+/* Add a '#define' to syntax. */
+void
+handle_define(char *str)
+{
+    unsigned int i;
+    if (*str == '\\')
+    {
+        return;
+    }
+    for (i = 0; str[i]; i++)
+    {
+        if (str[i] == '(')
+        {
+            str[i] = '\0';
+            break;
+        }
+    }
+    add_syntax_word("lagoon", NULL, rgx_word(str));
 }

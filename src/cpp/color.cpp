@@ -133,7 +133,7 @@ prepare_palette(void)
 {
     short number = NUMBER_OF_ELEMENTS;
     /* For each unique pair number, tell ncurses the combination of colors. */
-    for (colortype *ink = openfile->syntax->color; ink != nullptr; ink = ink->next)
+    for (colortype *ink = openfile->syntax->color; ink != NULL; ink = ink->next)
     {
         if (ink->pairnum > number)
         {
@@ -141,7 +141,7 @@ prepare_palette(void)
             number = ink->pairnum;
         }
     }
-    have_palette = true;
+    have_palette = TRUE;
 }
 
 /* Try to match the given shibboleth string with,
@@ -150,14 +150,14 @@ prepare_palette(void)
 bool
 found_in_list(regexlisttype *head, const char *shibboleth)
 {
-    for (regexlisttype *item = head; item != nullptr; item = item->next)
+    for (regexlisttype *item = head; item != NULL; item = item->next)
     {
-        if (regexec(item->one_rgx, shibboleth, 0, nullptr, 0) == 0)
+        if (regexec(item->one_rgx, shibboleth, 0, NULL, 0) == 0)
         {
-            return true;
+            return TRUE;
         }
     }
-    return false;
+    return FALSE;
 }
 
 /* Find a syntax that applies to the current buffer, based upon filename
@@ -165,57 +165,54 @@ found_in_list(regexlisttype *head, const char *shibboleth)
 void
 find_and_prime_applicable_syntax(void)
 {
-    syntaxtype *sntx = nullptr;
+    syntaxtype *sntx = NULL;
     /* If the rcfiles were not read, or contained no syntaxes, get out. */
-    if (syntaxes == nullptr)
+    if (syntaxes == NULL)
     {
         return;
     }
     /* If we specified a syntax-override string, use it. */
-    if (syntaxstr != nullptr)
+    if (syntaxstr != NULL)
     {
         /* An override of "none" is like having no syntax at all. */
         if (constexpr_strcmp(syntaxstr, "none") == 0)
         {
             return;
         }
-        for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
+        for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
         {
             if (constexpr_strcmp(sntx->name, syntaxstr) == 0)
             {
                 break;
             }
         }
-        if (sntx == nullptr && !inhelp)
+        if (sntx == NULL && !inhelp)
         {
             statusline(ALERT, _("Unknown syntax name: %s"), syntaxstr);
         }
     }
     /* If no syntax-override string was specified, or it didn't match,
      * try finding a syntax based on the filename (extension). */
-    if (sntx == nullptr && !inhelp)
+    if (sntx == NULL && !inhelp)
     {
         char *fullname = get_full_path(openfile->filename);
-
-        if (fullname == nullptr)
+        if (fullname == NULL)
         {
             fullname = mallocstrcpy(fullname, openfile->filename);
         }
-
-        for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
+        for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
         {
             if (found_in_list(sntx->extensions, fullname))
             {
                 break;
             }
         }
-
-        std::free(fullname);
+        free(fullname);
     }
     /* If the filename didn't match anything, try the first line. */
-    if (sntx == nullptr && !inhelp)
+    if (sntx == NULL && !inhelp)
     {
-        for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
+        for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
         {
             if (found_in_list(sntx->headers, openfile->filetop->data))
             {
@@ -225,11 +222,11 @@ find_and_prime_applicable_syntax(void)
     }
 #ifdef HAVE_LIBMAGIC
     /* If we still don't have an answer, try using magic (when requested). */
-    if (sntx == nullptr && !inhelp && ISSET(USE_MAGIC))
+    if (sntx == NULL && !inhelp && ISSET(USE_MAGIC))
     {
         struct stat fileinfo;
-        magic_t     cookie      = nullptr;
-        const char *magicstring = nullptr;
+        magic_t     cookie      = NULL;
+        const char *magicstring = NULL;
         if (stat(openfile->filename, &fileinfo) == 0)
         {
             /* Open the magic database and get a diagnosis of the file. */
@@ -238,23 +235,23 @@ find_and_prime_applicable_syntax(void)
                                 MAGIC_DEBUG | MAGIC_CHECK |
 #    endif
                                 MAGIC_ERROR);
-            if (cookie == nullptr || magic_load(cookie, nullptr) < 0)
+            if (cookie == NULL || magic_load(cookie, NULL) < 0)
             {
-                statusline(ALERT, _("magic_load() failed: %s"), ERRNO_C_STR);
+                statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
             }
             else
             {
                 magicstring = magic_file(cookie, openfile->filename);
-                if (magicstring == nullptr)
+                if (magicstring == NULL)
                 {
                     statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
                 }
             }
         }
         /* Now try and find a syntax that matches the magic string. */
-        if (magicstring != nullptr)
+        if (magicstring != NULL)
         {
-            for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
+            for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
             {
                 if (found_in_list(sntx->magics, magicstring))
                 {
@@ -269,9 +266,9 @@ find_and_prime_applicable_syntax(void)
     }
 #endif
     /* If nothing at all matched, see if there is a default syntax. */
-    if (sntx == nullptr && !inhelp)
+    if (sntx == NULL && !inhelp)
     {
-        for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next)
+        for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
         {
             if (constexpr_strcmp(sntx->name, "default") == 0)
             {
@@ -280,7 +277,7 @@ find_and_prime_applicable_syntax(void)
         }
     }
     /* When the syntax isn't loaded yet, parse it and initialize its colors. */
-    if (sntx != nullptr && sntx->filename != nullptr)
+    if (sntx != NULL && sntx->filename != NULL)
     {
         parse_one_include(sntx->filename, sntx);
         set_syntax_colorpairs(sntx);
@@ -305,15 +302,15 @@ check_the_multis(linestruct *line)
     {
         return;
     }
-    if (line->multidata == nullptr)
+    if (line->multidata == NULL)
     {
         refresh_needed = true;
         return;
     }
-    for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next)
+    for (ink = openfile->syntax->color; ink != NULL; ink = ink->next)
     {
         /* If it's not a multiline regex, skip. */
-        if (ink->end == nullptr)
+        if (ink->end == NULL)
         {
             continue;
         }
@@ -359,8 +356,8 @@ check_the_multis(linestruct *line)
             }
         }
         /* There is a mismatch, so something changed: repaint. */
-        refresh_needed = true;
-        perturbed      = true;
+        refresh_needed = TRUE;
+        perturbed      = TRUE;
         return;
     }
 }

@@ -1,5 +1,7 @@
-#include <Mlib/Profile.h>
 #include "../include/prototypes.h"
+
+#include <Mlib/Io.h>
+#include <Mlib/Profile.h>
 
 /* Remove all tabs from a word passed by refrence. */
 void
@@ -50,6 +52,11 @@ words_in_line(linestruct *line)
 char **
 words_in_str(const char *str, unsigned long *size)
 {
+    PROFILE_FUNCTION;
+    if (str == NULL)
+    {
+        return NULL;
+    }
     unsigned int i     = 0;
     unsigned int cap   = 10;
     char       **words = (char **)nmalloc(sizeof(char *) * cap);
@@ -97,14 +104,36 @@ append_arry(char **dst, unsigned long size_dst, char **src, unsigned long size_s
 }
 
 void
+add_word_to_arry(const char *word, char ***words, unsigned long *cword, unsigned long *cap)
+{
+    if (*cword == *cap)
+    {
+        *cap *= 2;
+        *words = (char **)realloc(*words, sizeof(char *) * (*cap));
+    }
+    char *nword = (char *)malloc(strlen(word) + 1);
+    strcpy(nword, word);
+    *(words[*(cword++)]) = nword;
+}
+
+void
 words_in_file(const char *path)
 {
     PROFILE_FUNCTION;
-    FILE *f = fopen(path, "rb");
-    if (f == NULL)
+}
+
+char *
+get_file_extention(const char *full_name)
+{
+    unsigned int i;
+    char        *fname = strdup(openfile->filename);
+    for (i = 0; fname[i]; i++)
     {
-        NETLOGGER.log("Could not open file: %s", path);
-        return;
+        if (fname[i] == '.')
+        {
+            fname += i + 1;
+            break;
+        }
     }
-    fclose(f);
+    return fname;
 }

@@ -343,7 +343,7 @@ nmalloc(const unsigned long howmuch)
     void *section = malloc(howmuch);
     if (section == nullptr)
     {
-        die(_(ERROR_MSG_OUT_OF_MEMORY));
+        die(_("NanoX is out of memory!\n"));
     }
     return section;
 }
@@ -355,7 +355,7 @@ nrealloc(void *section, const unsigned long howmuch)
     section = realloc(section, howmuch);
     if (section == nullptr)
     {
-        die(_(ERROR_MSG_OUT_OF_MEMORY));
+        die(_("NanoX is out of memory!\n"));
     }
     return section;
 }

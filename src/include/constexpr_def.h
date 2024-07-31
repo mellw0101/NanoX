@@ -419,7 +419,9 @@ constexpr_map<std::string_view, unsigned int, 14> toggleOptionMap = {
 #define CS_DEFINE  (1 << 7)
 #define CS_CLASS   (1 << 8)
 #define CS_BOOL    (1 << 9)
-constexpr_map<std::string_view, unsigned short, 10> c_syntax_map = {
+#define CS_SIZE_T  (1 << 10)
+#define CS_SSIZE_T (1 << 11)
+constexpr_map<std::string_view, unsigned short, 12> c_syntax_map = {
     {{"struct", CS_STRUCT},
      {"enum", CS_ENUM},
      {"int", CS_INT},
@@ -429,9 +431,10 @@ constexpr_map<std::string_view, unsigned short, 10> c_syntax_map = {
      {"include", CS_INCLUDE},
      {"define", CS_DEFINE},
      {"class", CS_CLASS},
-     {"bool", CS_BOOL}}
+     {"bool", CS_BOOL},
+     {"size_t", CS_SIZE_T},
+     {"ssize_t", CS_SSIZE_T}}
 };
 
-constexpr const char *ERROR_MSG_OUT_OF_MEMORY         = "NanoX is out of memory!\n";
 constexpr const char *ERROR_MSG_TO_MENY_DOT_SAVEFILES = "\nToo many .save files\n";
 constexpr const char *TAB_STR                         = "\t";

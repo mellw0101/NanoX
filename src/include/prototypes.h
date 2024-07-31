@@ -535,6 +535,7 @@ bool        check_func_syntax(char ***words, unsigned int *i);
 void        check_syntax(const char *path);
 int         add_syntax(const unsigned short *type, char *word);
 void        handle_include(char *str);
+void        handle_define(char *str);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
@@ -546,5 +547,6 @@ char      **words_in_line(linestruct *line);
 char      **words_in_str(const char *str, unsigned long *size = NULL);
 const char *extract_include(char *str);
 void        words_in_file(const char *path);
+char       *get_file_extention(const char *full_name);
 
 #include <Mlib/def.h>
