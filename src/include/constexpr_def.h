@@ -410,7 +410,8 @@ constexpr_map<std::string_view, unsigned int, 14> toggleOptionMap = {
 #define CS_BOOL    (1 << 9)
 #define CS_SIZE_T  (1 << 10)
 #define CS_SSIZE_T (1 << 11)
-constexpr_map<std::string_view, unsigned short, 12> c_syntax_map = {
+#define CS_SHORT   (1 << 12)
+constexpr_map<std::string_view, unsigned short, 13> c_syntax_map = {
     {{"struct", CS_STRUCT},
      {"enum", CS_ENUM},
      {"int", CS_INT},
@@ -422,5 +423,6 @@ constexpr_map<std::string_view, unsigned short, 12> c_syntax_map = {
      {"class", CS_CLASS},
      {"bool", CS_BOOL},
      {"size_t", CS_SIZE_T},
-     {"ssize_t", CS_SSIZE_T}}
+     {"ssize_t", CS_SSIZE_T},
+     {"short", CS_SHORT}}
 };

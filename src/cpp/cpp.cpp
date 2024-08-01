@@ -319,7 +319,7 @@ check_for_syntax_words(linestruct *line)
             add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
         }
         else if (type & CS_LONG || type & CS_VOID || type & CS_INT || type & CS_CHAR || type & CS_BOOL ||
-                 type & CS_SIZE_T || type & CS_SSIZE_T)
+                 type & CS_SIZE_T || type & CS_SSIZE_T || type & CS_SHORT)
         {
             if (check_func_syntax(&words, &i))
             {
