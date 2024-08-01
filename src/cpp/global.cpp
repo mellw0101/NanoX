@@ -345,7 +345,7 @@ do_cancel(void)
 
 /* Add a function to the linked list of functions. */
 void
-add_to_funcs(CFuncPtr function, const int menus, const char *tag, const char *phrase, bool blank_after)
+add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after)
 {
     funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
     if (allfuncs == NULL)
