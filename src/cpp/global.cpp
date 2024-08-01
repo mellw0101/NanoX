@@ -30,8 +30,8 @@ bool report_size = true;
 bool ran_a_tool = false;
 /* Whether we are in the help viewer. */
 bool inhelp = false;
-/* When not nullptr: the title of the current help text. */
-char *title = nullptr;
+/* When not NULL: the title of the current help text. */
+char *title = NULL;
 /* Did a command mangle enough of the buffer that we should repaint the screen? */
 bool refresh_needed = false;
 /* Whether an update of the edit window should center the cursor. */
@@ -43,17 +43,17 @@ bool control_C_was_pressed = false;
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
 message_type lastmessage = VACUUM;
 /* The line where the last completion was found, if any. */
-linestruct *pletion_line = nullptr;
+linestruct *pletion_line = NULL;
 /* Whether indenting/commenting should include the last line of the marked region. */
 bool also_the_last = false;
 /* The answer string used by the status-bar prompt. */
-char *answer = nullptr;
+char *answer = NULL;
 /* The last string we searched for. */
-char *last_search = nullptr;
+char *last_search = NULL;
 /* Whether the last search found something. */
 int didfind = 0;
 /* The current browser directory when trying to do tab completion. */
-char *present_path = nullptr;
+char *present_path = NULL;
 /* Our flags array, containing the states of all global options. */
 unsigned long flags[1] = {0};
 
@@ -78,15 +78,15 @@ unsigned long wrap_at = 0;
  * showing the version number of nano,
  * the name of the file,
  * and whether the buffer was modified. */
-WINDOW *topwin = nullptr;
+WINDOW *topwin = NULL;
 /* The middle portion of the screen: the edit window, showing the
  * contents of the current buffer, the file we are editing. */
-WINDOW *midwin = nullptr;
+WINDOW *midwin = NULL;
 /* The bottom portion of the screen, where status-bar messages,
  * the status-bar prompt, and a list of shortcuts are shown. */
-WINDOW *footwin = nullptr;
+WINDOW *footwin = NULL;
 /* Test window for sugestions. */
-WINDOW *test_win = nullptr;
+WINDOW *test_win = NULL;
 /* How many rows does the edit window take up? */
 int editwinrows = 0;
 /* The number of usable columns in the edit window: COLS - margin. */
@@ -96,50 +96,50 @@ int margin = 0;
 /* Becomes 1 when the indicator "scroll bar" must be shown. */
 int sidebar = 0;
 /* An array of characters that together depict the scrollbar. */
-int *bardata = nullptr;
+int *bardata = NULL;
 /* The column at which a vertical bar will be drawn. */
 long stripe_column = 0;
 /* Whether to center the line with the cursor (0), push it
  * to the top of the viewport (1), or to the bottom (2). */
 int cycling_aim = 0;
 /* The buffer where we store cut text. */
-linestruct *cutbuffer = nullptr;
+linestruct *cutbuffer = NULL;
 /* The last line in the cutbuffer. */
-linestruct *cutbottom = nullptr;
+linestruct *cutbottom = NULL;
 /* Whether to add to the cutbuffer instead of clearing it first. */
 bool keep_cutbuffer = false;
 /* The list of all open file buffers. */
-openfilestruct *openfile = nullptr;
+openfilestruct *openfile = NULL;
 /* The first open buffer. */
-openfilestruct *startfile = nullptr;
+openfilestruct *startfile = NULL;
 /* The opening and closing brackets that bracket searches can find. */
-char *matchbrackets = nullptr;
+char *matchbrackets = NULL;
 /* The characters used when visibly showing tabs and spaces. */
-char *whitespace = nullptr;
+char *whitespace = NULL;
 /* The length in bytes of these characters. */
 int whitelen[2];
 /* The closing punctuation that can end sentences. */
-char *punct = nullptr;
+char *punct = NULL;
 /* The closing brackets that can follow closing punctuation and can end sentences. */
-char *brackets = nullptr;
+char *brackets = NULL;
 /* The quoting string.  The default value is set in main(). */
-char *quotestr = nullptr;
+char *quotestr = NULL;
 /* The compiled regular expression from the quoting string. */
 regex_t quotereg;
 /* Nonalphanumeric characters that also form words. */
-char *word_chars = nullptr;
+char *word_chars = NULL;
 /* The width of a tab in spaces.  The default is set in main(). */
 long tabsize = -1;
 /* The directory where we store backup files. */
-char *backup_dir = nullptr;
+char *backup_dir = NULL;
 /* The path to our confining "operating" directory, when given. */
-char *operating_dir = nullptr;
+char *operating_dir = NULL;
 /* The command to use for the alternate spell checker. */
-char *alt_speller = nullptr;
+char *alt_speller = NULL;
 /* The global list of color syntaxes. */
-syntaxtype *syntaxes = nullptr;
+syntaxtype *syntaxes = NULL;
 /* The color syntax name specified on the command line. */
-char *syntaxstr = nullptr;
+char *syntaxstr = NULL;
 /* Whether the colors for the current syntax have been initialized. */
 bool have_palette = false;
 /* Becomes TRUE when NO_COLOR is set in the environment. */
@@ -151,27 +151,27 @@ bool recook = false;
 /* The currently active menu, initialized to a dummy value. */
 int currmenu = MMOST;
 /* The start of the shortcuts list. */
-keystruct *sclist = nullptr;
+keystruct *sclist = NULL;
 /* The start of the functions list. */
-funcstruct *allfuncs = nullptr;
+funcstruct *allfuncs = NULL;
 /* The last function in the list. */
 funcstruct *tailfunc;
 /* A pointer to the special Exit/Close item. */
 funcstruct *exitfunc;
 /* The current item in the list of strings that were searched for. */
-linestruct *search_history = nullptr;
+linestruct *search_history = NULL;
 /* The current item in the list of replace strings. */
-linestruct *replace_history = nullptr;
+linestruct *replace_history = NULL;
 /* The current item in the list of commands that were run with ^T. */
-linestruct *execute_history = nullptr;
+linestruct *execute_history = NULL;
 /* The oldest item in the list of search strings. */
-linestruct *searchtop = nullptr;
+linestruct *searchtop = NULL;
 /* The empty item at the end of the list of search strings. */
-linestruct *searchbot  = nullptr;
-linestruct *replacetop = nullptr;
-linestruct *replacebot = nullptr;
-linestruct *executetop = nullptr;
-linestruct *executebot = nullptr;
+linestruct *searchbot  = NULL;
+linestruct *replacetop = NULL;
+linestruct *replacebot = NULL;
+linestruct *executetop = NULL;
+linestruct *executebot = NULL;
 /* The compiled regular expression to use in searches. */
 regex_t search_regexp;
 /* The match positions for parenthetical subexpressions,
@@ -180,21 +180,21 @@ regmatch_t regmatches[10];
 /* The curses attribute we use to highlight something. */
 int hilite_attribute = A_REVERSE;
 /* The color combinations for interface elements given in the rcfile. */
-colortype *color_combo[NUMBER_OF_ELEMENTS] = {nullptr};
+colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
 /* The processed color pairs for the interface elements. */
 int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 /* The user's home directory, from $HOME or /etc/passwd. */
-char *homedir = nullptr;
+char *homedir = NULL;
 /* The directory for nano's history files. */
-char *statedir = nullptr;
+char *statedir = NULL;
 /* An error message (if any) about nanorc files or history files. */
-char *startup_problem = nullptr;
+char *startup_problem = NULL;
 /* The argument of the --rcfile option, when given. */
-char *custom_nanorc = nullptr;
+char *custom_nanorc = NULL;
 /* The name (of a function) between braces in a string bind. */
-char *commandname = nullptr;
+char *commandname = NULL;
 /* The function that the above name resolves to, if any. */
-keystruct *planted_shortcut = nullptr;
+keystruct *planted_shortcut = NULL;
 /* Whether any text is spotlighted. */
 bool spotlighted = false;
 /* Where the spotlighted text starts. */
@@ -348,7 +348,7 @@ void
 add_to_funcs(CFuncPtr function, const int menus, const char *tag, const char *phrase, bool blank_after)
 {
     funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
-    if (allfuncs == nullptr)
+    if (allfuncs == NULL)
     {
         allfuncs = f;
     }
@@ -357,7 +357,7 @@ add_to_funcs(CFuncPtr function, const int menus, const char *tag, const char *ph
         tailfunc->next = f;
     }
     tailfunc       = f;
-    f->next        = nullptr;
+    f->next        = NULL;
     f->func        = function;
     f->menus       = menus;
     f->tag         = tag;
@@ -459,7 +459,7 @@ add_to_sclist(const int menus, const char *scstring, const int keycode, function
     static int        counter = 0;
     keystruct        *sc      = (keystruct *)nmalloc(sizeof(keystruct));
     /* Start the list, or tack on the next item. */
-    if (sclist == nullptr)
+    if (sclist == NULL)
     {
         sclist = sc;
     }
@@ -467,7 +467,7 @@ add_to_sclist(const int menus, const char *scstring, const int keycode, function
     {
         tailsc->next = sc;
     }
-    sc->next = nullptr;
+    sc->next = NULL;
     /* Fill in the data. */
     sc->menus  = menus;
     sc->func   = function;
@@ -487,14 +487,14 @@ add_to_sclist(const int menus, const char *scstring, const int keycode, function
 const keystruct *
 first_sc_for(const int menu, functionptrtype function)
 {
-    for (keystruct *sc = sclist; sc != nullptr; sc = sc->next)
+    for (keystruct *sc = sclist; sc != NULL; sc = sc->next)
     {
         if ((sc->menus & menu) && sc->func == function && sc->keystr[0])
         {
             return sc;
         }
     }
-    return nullptr;
+    return NULL;
 }
 
 /* Return the number of entries that can be shown in the given menu. */
@@ -504,7 +504,7 @@ shown_entries_for(const int menu)
     funcstruct   *item    = allfuncs;
     unsigned long maximum = ((COLS + 40) / 20) * 2;
     unsigned long count   = 0;
-    while (count < maximum && item != nullptr)
+    while (count < maximum && item != NULL)
     {
         if (item->menus & menu)
         {
@@ -513,7 +513,7 @@ shown_entries_for(const int menu)
         item = item->next;
     }
     /* When --saveonexit is not used, widen the grid of the WriteOut menu. */
-    if (menu == MWRITEFILE && item == nullptr && first_sc_for(menu, discard_buffer) == nullptr)
+    if (menu == MWRITEFILE && item == NULL && first_sc_for(menu, discard_buffer) == NULL)
     {
         count--;
     }
@@ -528,30 +528,30 @@ get_shortcut(const int keycode)
     /* Plain characters and upper control codes cannot be shortcuts. */
     if (!meta_key && 0x20 <= keycode && keycode <= 0xFF)
     {
-        return nullptr;
+        return NULL;
     }
     /* Lower control codes with Meta cannot be shortcuts either. */
     if (meta_key && keycode < 0x20)
     {
-        return nullptr;
+        return NULL;
     }
     /* During a paste at a prompt, ignore all command keycodes. */
     if (bracketed_paste && keycode != BRACKETED_PASTE_MARKER)
     {
-        return nullptr;
+        return NULL;
     }
     if (keycode == PLANTED_A_COMMAND)
     {
         return planted_shortcut;
     }
-    for (const keystruct *sc = sclist; sc != nullptr; sc = sc->next)
+    for (const keystruct *sc = sclist; sc != NULL; sc = sc->next)
     {
         if ((sc->menus & currmenu) && keycode == sc->keycode)
         {
             return sc;
         }
     }
-    return nullptr;
+    return NULL;
 }
 
 /* Return a pointer to the function that is bound to the given key. */
@@ -559,7 +559,7 @@ functionptrtype
 func_from_key(const int keycode)
 {
     const keystruct *sc = get_shortcut(keycode);
-    return (sc) ? sc->func : nullptr;
+    return (sc) ? sc->func : NULL;
 }
 
 /* Return the function that is bound to the given key in the file browser or
@@ -736,7 +736,7 @@ shortcut_init(void)
     const char *nextlint_gist         = N_("Go to next linter msg");
     const char *formatter_gist        = N_("Invoke a program to format/arrange/manipulate the buffer");
     /* If Backspace is not ^H, then ^H can be used for Help. */
-    char *bsp_string = tgetstr("kb", nullptr);
+    char *bsp_string = tgetstr("kb", NULL);
     char *help_key   = (bsp_string && *bsp_string != 0x08) ? (char *)"^H" : (char *)"^N";
 #define WHENHELP(description) description
     /* Start populating the different menus with functions. */

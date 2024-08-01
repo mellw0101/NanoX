@@ -13,22 +13,22 @@
 void
 get_homedir(void)
 {
-    if (homedir == nullptr)
+    if (homedir == NULL)
     {
         const char *homenv = getenv("HOME");
         /* When HOME isn't set,or when we're root,
          * get the home directory from the password file instead. */
-        if (homenv == nullptr || geteuid() == ROOT_UID)
+        if (homenv == NULL || geteuid() == ROOT_UID)
         {
             const passwd *userage = getpwuid(geteuid());
-            if (userage != nullptr)
+            if (userage != NULL)
             {
                 homenv = userage->pw_dir;
             }
         }
         /* Only set homedir if some home directory could be determined,
          * otherwise keep homedir nullpre. */
-        if (homenv != nullptr && *homenv != '\0')
+        if (homenv != NULL && *homenv != '\0')
         {
             homedir = copy_of(homenv);
         }
@@ -40,7 +40,7 @@ const char *
 tail(const char *path)
 {
     const char *slash = constexpr_strrchr(path, '/');
-    if (slash == nullptr)
+    if (slash == NULL)
     {
         return path;
     }
@@ -171,7 +171,7 @@ parse_line_column(const char *string, long *line, long *column)
         string++;
     }
     comma = constexpr_strpbrk(string, ",.:");
-    if (comma == nullptr)
+    if (comma == NULL)
     {
         return parseNum(string, *line);
     }
@@ -223,7 +223,7 @@ recode_LF_to_NUL(char *string)
 void
 free_chararray(char **array, unsigned long len)
 {
-    if (array == nullptr)
+    if (array == NULL)
     {
         return;
     }
@@ -265,7 +265,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
             floor = 0, next_rung = 0;
             if (regexec(&search_regexp, haystack, 1, regmatches, 0))
             {
-                return nullptr;
+                return NULL;
             }
             far_end   = constexpr_strlen(haystack);
             ceiling   = start - haystack;
@@ -273,7 +273,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
             /* A result beyond the search range also means: no match. */
             if (last_find > ceiling)
             {
-                return nullptr;
+                return NULL;
             }
             /* Move the start-of-range forward until there is no more match;
              * then the last match found is the first match backwards. */
@@ -299,7 +299,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
             regmatches[0].rm_eo = far_end;
             if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND))
             {
-                return nullptr;
+                return NULL;
             }
             return haystack + regmatches[0].rm_so;
         }
@@ -308,7 +308,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
         regmatches[0].rm_eo = constexpr_strlen(haystack);
         if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND))
         {
-            return nullptr;
+            return NULL;
         }
         else
         {
@@ -341,7 +341,7 @@ void *
 nmalloc(const unsigned long howmuch)
 {
     void *section = malloc(howmuch);
-    if (section == nullptr)
+    if (section == NULL)
     {
         die(_("NanoX is out of memory!\n"));
     }
@@ -353,7 +353,7 @@ void *
 nrealloc(void *section, const unsigned long howmuch)
 {
     section = realloc(section, howmuch);
-    if (section == nullptr)
+    if (section == NULL)
     {
         die(_("NanoX is out of memory!\n"));
     }
@@ -504,7 +504,7 @@ remove_magicline(void)
         }
         openfile->filebot = openfile->filebot->prev;
         delete_node(openfile->filebot->next);
-        openfile->filebot->next = nullptr;
+        openfile->filebot->next = NULL;
         openfile->totsize--;
     }
 }

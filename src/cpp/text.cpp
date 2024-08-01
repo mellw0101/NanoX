@@ -953,9 +953,9 @@ do_enter(void)
     {
         unsigned i;
         char   **words = words_in_line(openfile->current);
-        if (words[0] != nullptr)
+        if (words[0] != NULL)
         {
-            for (i = 0; words[i] != nullptr; i++)
+            for (i = 0; words[i] != NULL; i++)
             {
                 NETLOGGER.log("%s\n", words[i]);
             }
@@ -967,8 +967,8 @@ do_enter(void)
     linestruct   *newnode    = make_new_node(openfile->current);
     linestruct   *sampleline = openfile->current;
     unsigned long extra      = 0;
-    bool          allblanks  = false;
-    if ISSET (AUTOINDENT)
+    bool          allblanks  = FALSE;
+    if (ISSET(AUTOINDENT))
     {
         /* When doing automatic long-line wrapping and the next line is
          * in this same paragraph, use its indentation as the model. */
@@ -996,7 +996,7 @@ do_enter(void)
         openfile->mark = newnode;
         openfile->mark_x += extra - openfile->current_x;
     }
-    if ISSET (AUTOINDENT)
+    if (ISSET(AUTOINDENT))
     {
         /* Copy the whitespace from the sample line to the new one. */
         strncpy(newnode->data, sampleline->data, extra);

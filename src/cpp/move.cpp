@@ -60,7 +60,7 @@ proper_x(linestruct *line, unsigned long *leftedge, bool forward, unsigned long 
           column / tabsize < (*leftedge + editwincols - 1) / tabsize)))
     {
         index++;
-        if (shifted != nullptr)
+        if (shifted != NULL)
         {
             *shifted = true;
         }
@@ -210,7 +210,7 @@ do_center(void)
 void
 do_para_begin(linestruct **line)
 {
-    if ((*line)->prev != nullptr)
+    if ((*line)->prev != NULL)
     {
         *line = (*line)->prev;
     }
@@ -224,11 +224,11 @@ do_para_begin(linestruct **line)
 void
 do_para_end(linestruct **line)
 {
-    while ((*line)->next != nullptr && !inpar(*line))
+    while ((*line)->next != NULL && !inpar(*line))
     {
         *line = (*line)->next;
     }
-    while ((*line)->next != nullptr && inpar((*line)->next) && !begpar((*line)->next, 0))
+    while ((*line)->next != NULL && inpar((*line)->next) && !begpar((*line)->next, 0))
     {
         *line = (*line)->next;
     }
@@ -252,7 +252,7 @@ to_para_end(void)
     do_para_end(&openfile->current);
     /* Step beyond the last line of the paragraph, if possible.
      * Otherwise, move to the end of the line. */
-    if (openfile->current->next != nullptr)
+    if (openfile->current->next != NULL)
     {
         openfile->current   = openfile->current->next;
         openfile->current_x = 0;
@@ -274,7 +274,7 @@ to_prev_block(void)
     bool           is_text = false, seen_text = false;
     unsigned short tabs, spaces, t_char, t_tabs;
     /* Skip backward until first blank line after some nonblank line(s). */
-    while (openfile->current->prev != nullptr && (!seen_text || is_text))
+    while (openfile->current->prev != NULL && (!seen_text || is_text))
     {
         if (is_empty_line(openfile->current))
         {
@@ -282,7 +282,7 @@ to_prev_block(void)
             if (lines == 1)
             {
                 /* Find first line that is not empty. */
-                for (; openfile->current->prev != nullptr && is_empty_line(openfile->current);
+                for (; openfile->current->prev != NULL && is_empty_line(openfile->current);
                      openfile->current = openfile->current->prev)
                     ;
                 get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
@@ -290,7 +290,7 @@ to_prev_block(void)
                 edit_redraw(was_current, FLOWING);
                 return;
             }
-            else if (openfile->current->prev != nullptr)
+            else if (openfile->current->prev != NULL)
             {
                 openfile->current = openfile->current->prev;
                 get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
@@ -322,7 +322,7 @@ to_prev_block(void)
         lines++;
     }
     /* Step forward one line again if we passed text but this line is blank. */
-    if (seen_text && openfile->current->next != nullptr && white_string(openfile->current->data))
+    if (seen_text && openfile->current->next != NULL && white_string(openfile->current->data))
     {
         openfile->current = openfile->current->next;
     }
@@ -341,7 +341,7 @@ to_next_block(void)
     bool           seen_white  = is_white;
     unsigned short tabs, spaces, t_char, t_tabs;
     /* Skip forward until first nonblank line after some blank line(s). */
-    while (openfile->current->next != nullptr && (!seen_white || is_white))
+    while (openfile->current->next != NULL && (!seen_white || is_white))
     {
         if (is_empty_line(openfile->current))
         {
@@ -349,7 +349,7 @@ to_next_block(void)
                 ;
             else if (lines == 1)
             {
-                for (; openfile->current->next != nullptr && is_empty_line(openfile->current);
+                for (; openfile->current->next != NULL && is_empty_line(openfile->current);
                      openfile->current = openfile->current->next)
                     ;
                 get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
@@ -411,7 +411,7 @@ do_prev_word(void)
         /* If at the head of a line, move to the end of the preceding one. */
         if (openfile->current_x == 0)
         {
-            if (openfile->current->prev == nullptr)
+            if (openfile->current->prev == NULL)
             {
                 break;
             }
@@ -478,7 +478,7 @@ do_next_word(bool after_ends)
                 break;
             }
             /* When at end of file, stop. */
-            if (openfile->current->next == nullptr)
+            if (openfile->current->next == NULL)
             {
                 break;
             }
@@ -577,7 +577,7 @@ do_home(void)
     if ISSET (SOFTWRAP)
     {
         leftedge = leftedge_for(was_column, openfile->current);
-        left_x   = proper_x(openfile->current, &leftedge, false, leftedge, nullptr);
+        left_x   = proper_x(openfile->current, &leftedge, false, leftedge, NULL);
     }
     if ISSET (SMART_HOME)
     {
@@ -755,7 +755,7 @@ void
 do_scroll_up(void)
 {
     /* When the top of the file is onscreen, we can't scroll. */
-    if (openfile->edittop->prev == nullptr && openfile->firstcolumn == 0)
+    if (openfile->edittop->prev == NULL && openfile->firstcolumn == 0)
     {
         return;
     }
@@ -777,9 +777,9 @@ do_scroll_down(void)
     {
         do_down();
     }
-    if (editwinrows > 1 && (openfile->edittop->next != nullptr ||
-                            (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
-                                                 chunk_for(openfile->firstcolumn, openfile->edittop)))))
+    if (editwinrows > 1 &&
+        (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
+                                                                 chunk_for(openfile->firstcolumn, openfile->edittop)))))
     {
         edit_scroll(FORWARD);
     }

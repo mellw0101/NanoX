@@ -3,12 +3,13 @@
 void
 netlog_syntaxtype(syntaxtype *s)
 {
-    NETLOGGER.log("name: %s\n"
+    NETLOGGER.log("    name: %s\n"
                   "filename: %s\n"
-                  "lineno: %lu\n",
+                  "  lineno: %lu\n",
                   s->name, s->filename, s->lineno);
 }
 
+/* Log a 'colortype' struct using 'NETLOGGER'. */
 void
 netlog_colortype(colortype *c)
 {

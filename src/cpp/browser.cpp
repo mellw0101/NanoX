@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 /* The list of files to display in the file browser. */
-static char **filelist = nullptr;
+static char **filelist = NULL;
 /* The number of files in the list. */
 static unsigned long list_length = 0;
 /* The number of screen rows we can use to display the list. */
@@ -30,7 +30,7 @@ read_the_list(const char *path, DIR *dir)
     unsigned long        widest = 0;
     unsigned long        index  = 0;
     /* Find the width of the widest filename in the current folder. */
-    while ((entry = readdir(dir)) != nullptr)
+    while ((entry = readdir(dir)) != NULL)
     {
         unsigned long span = breadth(entry->d_name);
         if (span > widest)
@@ -56,7 +56,7 @@ read_the_list(const char *path, DIR *dir)
     list_length = index;
     index       = 0;
     filelist    = (char **)nmalloc(list_length * sizeof(char *));
-    while ((entry = readdir(dir)) != nullptr && index < list_length)
+    while ((entry = readdir(dir)) != NULL && index < list_length)
     {
         /* Don't show the useless dot item. */
         if (strcmp(entry->d_name, ".") == 0)
@@ -343,7 +343,7 @@ void
 research_filename(bool forwards)
 {
     /* If nothing was searched for yet, take the last item from history. */
-    if (*last_search == '\0' && searchbot->prev != nullptr)
+    if (*last_search == '\0' && searchbot->prev != NULL)
     {
         last_search = mallocstrcpy(last_search, searchbot->prev->data);
     }
@@ -379,7 +379,7 @@ strip_last_component(const char *path)
 {
     char *copy       = copy_of(path);
     char *last_slash = constexpr_strrchr(copy, '/');
-    if (last_slash != nullptr)
+    if (last_slash != NULL)
     {
         *last_slash = '\0';
     }
@@ -395,49 +395,49 @@ browse(char *path)
 {
     /* The name of the currently selected file, or of the directory we
      * were in before backing up to "..". */
-    char *present_name = nullptr;
+    char *present_name = NULL;
     /* The number of the selected file before the current selected file. */
     unsigned long old_selected;
     /* The directory whose contents we are showing. */
     DIR *dir;
     /* The name of the file that the user picked, or NULL if none. */
-    char *chosen = nullptr;
+    char *chosen = NULL;
 /* We come here when the user refreshes or selects a new directory. */
 read_directory_contents:
     path = free_and_assign(path, get_full_path(path));
-    if (path != nullptr)
+    if (path != NULL)
     {
         dir = opendir(path);
     }
-    if (path == nullptr || dir == nullptr)
+    if (path == NULL || dir == NULL)
     {
         statusline(ALERT, _("Cannot open directory: %s"), strerror(errno));
         /* If we don't have a file list, there is nothing to show. */
-        if (filelist == nullptr)
+        if (filelist == NULL)
         {
             lastmessage = VACUUM;
             free(present_name);
             free(path);
             napms(1200);
-            return nullptr;
+            return NULL;
         }
         path         = mallocstrcpy(path, present_path);
         present_name = mallocstrcpy(present_name, filelist[selected]);
     }
-    if (dir != nullptr)
+    if (dir != NULL)
     {
         /* Get the file list, and set gauge and piles in the process. */
         read_the_list(path, dir);
         closedir(dir);
-        dir = nullptr;
+        dir = NULL;
     }
     /* If something was selected before, reselect it;
      * otherwise, just select the first item (..). */
-    if (present_name != nullptr)
+    if (present_name != NULL)
     {
         reselect(present_name);
         free(present_name);
-        present_name = nullptr;
+        present_name = NULL;
     }
     else
     {
@@ -736,11 +736,11 @@ read_directory_contents:
             }
         }
     }
-    titlebar(nullptr);
+    titlebar(NULL);
     edit_refresh();
     free(path);
     free_chararray(filelist, list_length);
-    filelist    = nullptr;
+    filelist    = NULL;
     list_length = 0;
     return chosen;
 }
@@ -762,12 +762,12 @@ browse_in(const char *inpath)
         path = free_and_assign(path, strip_last_component(path));
         if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode))
         {
-            path = free_and_assign(path, realpath(".", nullptr));
-            if (path == nullptr)
+            path = free_and_assign(path, realpath(".", NULL));
+            if (path == NULL)
             {
                 statusline(ALERT, _("The working directory has disappeared"));
                 napms(1200);
-                return nullptr;
+                return NULL;
             }
         }
     }

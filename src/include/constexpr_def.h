@@ -79,15 +79,7 @@ constexpr_map<std::string_view, unsigned char, 6> syntaxOptionMap = {
      {"formatter", SYNTAX_OPT_FORMATTER}}
 };
 
-//
-//  Identifiers for the different flags.
-//
-//  TODO : ( flags ):
-//       - Change the flags array into a 64 bit unsigned integer,
-//       - as there is less then 64 flags, and this will save memory.
-//       - Currently the flags are stored in a 32 bit unsigned integer array with size 4.
-//       - ( unsigned flags[4] )
-//
+/* Identifiers for the different flags. */
 
 /* This flag is not used as this is part of a bitfield and 0 is not a unique value, in terms
  * of bitwise operations as the default all non set value is 0. */
@@ -286,18 +278,15 @@ constexpr_map<std::string_view, unsigned int, 25> cliOptionMap = {
 
 constexpr unsigned char     NUMBER_OF_FLAGS          = 51;
 constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
-//
-//  This is a masterpiece of a map.
-//  I have succesfully made the way to get the description of a flag,
-//  instant and without any overhead,
-//  while using less memory then a unordered map.
-//  .
-//  USAGE:
-//  - ( &epithetOfFlagMap[flag].value[0] ) will return the underlying ptr to the description of the flag
-//
-//  The ( flag / description ) map.
-//
-CONSTEXPR_MAP<u32, STRING_VIEW, NUMBER_OF_FLAGS> epithetOfFlagMap = {
+
+/* This is a masterpiece of a map.
+ * I have succesfully made the way to get the description of a flag,
+ * instant and without any overhead,
+ * while using less memory then a unordered map.
+ * USAGE:
+ * - (&epithetOfFlagMap[flag].value[0]) will return the underlying ptr to the description of the flag
+ * The (flag / description) map. */
+constexpr_map<u32, STRING_VIEW, NUMBER_OF_FLAGS> epithetOfFlagMap = {
     {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
      {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
      {CONSTANT_SHOW, "Constant cursor position display"},
@@ -435,6 +424,3 @@ constexpr_map<std::string_view, unsigned short, 12> c_syntax_map = {
      {"size_t", CS_SIZE_T},
      {"ssize_t", CS_SSIZE_T}}
 };
-
-constexpr const char *ERROR_MSG_TO_MENY_DOT_SAVEFILES = "\nToo many .save files\n";
-constexpr const char *TAB_STR                         = "\t";

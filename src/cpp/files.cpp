@@ -1772,8 +1772,8 @@ write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type me
     /* When prepending, first copy the existing file to a temporary file. */
     if (method == PREPEND)
     {
-        FILE *source = nullptr;
-        FILE *target = nullptr;
+        FILE *source = NULL;
+        FILE *target = NULL;
         int   verdict;
         if (is_existing_file && S_ISFIFO(fileinfo.st_mode))
         {
@@ -1781,7 +1781,7 @@ write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type me
             goto cleanup_and_exit;
         }
         source = fopen(realname, "rb");
-        if (source == nullptr)
+        if (source == NULL)
         {
             statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
             goto cleanup_and_exit;

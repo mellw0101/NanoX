@@ -108,12 +108,12 @@ is_word_char(const char *const c, bool allow_punct)
     {
         return true;
     }
-    if (word_chars != nullptr && *word_chars != '\0')
+    if (word_chars != NULL && *word_chars != '\0')
     {
         char      symbol[MAXCHARLEN + 1];
         const int symlen = collect_char(c, symbol);
         symbol[symlen]   = '\0';
-        return (constexpr_strstr(word_chars, symbol) != nullptr);
+        return (constexpr_strstr(word_chars, symbol) != NULL);
     }
     else
     {
@@ -545,7 +545,7 @@ mbstrcasestr(const char *haystack, const char *const needle)
             }
             haystack += char_length(haystack);
         }
-        return nullptr;
+        return NULL;
     }
     else
     {
@@ -573,7 +573,7 @@ revstrstr(const char *const haystack, const char *const needle, const char *poin
         }
         pointer--;
     }
-    return nullptr;
+    return NULL;
 }
 
 /* This function is equivalent to strcasestr(), except in that it scans
@@ -595,7 +595,7 @@ revstrcasestr(const char *const haystack, const char *const needle, const char *
         }
         pointer--;
     }
-    return nullptr;
+    return NULL;
 }
 
 /* This function is equivalent to strcasestr() for multibyte strings,
@@ -613,7 +613,7 @@ mbrevstrcasestr(const char *const haystack, const char *const needle, const char
         }
         if (pointer < haystack)
         {
-            return nullptr;
+            return NULL;
         }
         while (true)
         {
@@ -623,7 +623,7 @@ mbrevstrcasestr(const char *const haystack, const char *const needle, const char
             }
             if (pointer == haystack)
             {
-                return nullptr;
+                return NULL;
             }
             pointer = haystack + step_left(haystack, pointer - haystack);
         }
@@ -669,7 +669,7 @@ mbstrchr(const char *string, const char *const chr)
         }
         if (*string == '\0')
         {
-            return nullptr;
+            return NULL;
         }
         return (char *)string;
     }
@@ -686,13 +686,13 @@ mbstrpbrk(const char *str, const char *accept)
 {
     while (*str != '\0')
     {
-        if (mbstrchr(accept, str) != nullptr)
+        if (mbstrchr(accept, str) != NULL)
         {
             return (char *)str;
         }
         str += char_length(str);
     }
-    return nullptr;
+    return NULL;
 }
 
 /* Locate, in the string that starts at head, the first occurrence of any of
@@ -704,20 +704,20 @@ mbrevstrpbrk(const char *const head, const char *const accept, const char *point
     {
         if (pointer == head)
         {
-            return nullptr;
+            return NULL;
         }
         pointer = head + step_left(head, pointer - head);
     }
     while (true)
     {
-        if (mbstrchr(accept, pointer) != nullptr)
+        if (mbstrchr(accept, pointer) != NULL)
         {
             return (char *)pointer;
         }
         /* If we've reached the head of the string, we found nothing. */
         if (pointer == head)
         {
-            return nullptr;
+            return NULL;
         }
         pointer = head + step_left(head, pointer - head);
     }

@@ -311,9 +311,9 @@ emergency_save(const char *filename)
     targetname = get_next_filename(plainname, ".save");
     if (*targetname == '\0')
     {
-        fprintf(stderr, ERROR_MSG_TO_MENY_DOT_SAVEFILES);
+        fprintf(stderr, "\nToo meny .save files\n");
     }
-    else if (write_file(targetname, nullptr, SPECIAL, EMERGENCY, NONOTES))
+    else if (write_file(targetname, NULL, SPECIAL, EMERGENCY, NONOTES))
     {
         fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
     }
@@ -332,6 +332,7 @@ die(STRING_VIEW msg, ...)
     /* When dying for a second time, just give up. */
     if (++stabs > 1)
     {
+        LoutE << "die was called more then once." << '\n';
         exit(11);
     }
     restore_terminal();
@@ -637,7 +638,7 @@ restore_handler_for_Ctrl_C()
 
 /* Reconnect standard input to the tty, and store its state. */
 void
-reconnect_and_store_state()
+reconnect_and_store_state(void)
 {
     int thetty = open("/dev/tty", O_RDONLY);
     if (thetty < 0 || dup2(thetty, STDIN_FILENO) < 0)
@@ -665,19 +666,19 @@ scoop_stdin(void)
     }
     /* Open standard input. */
     stream = fopen("/dev/stdin", "rb");
-    if (stream == nullptr)
+    if (stream == NULL)
     {
         const char *errnoStr = strerror(errno);
         terminal_init();
         doupdate();
         statusline(ALERT, _("Failed to open stdin: %s"), errnoStr);
-        return false;
+        return FALSE;
     }
     /* Set up a signal handler so that ^C will stop the reading. */
     install_handler_for_Ctrl_C();
     /* Read the input into a new buffer, undoably. */
     make_new_buffer();
-    read_file(stream, 0, "stdin", false);
+    read_file(stream, 0, "stdin", FALSE);
     find_and_prime_applicable_syntax();
     /* Restore the original ^C handler. */
     restore_handler_for_Ctrl_C();
@@ -685,7 +686,7 @@ scoop_stdin(void)
     {
         set_modified();
     }
-    return true;
+    return TRUE;
 }
 
 /* Register half a dozen signal handlers. */
@@ -1336,14 +1337,14 @@ process_a_keystroke(void)
     /* The keystroke we read in, this can be a char or a shortcut */
     int input;
     /* The buffer to hold the actual chars. */
-    static char *puddle = nullptr;
+    static char *puddle = NULL;
     /* The size of the buffer, doubles when needed. */
     static unsigned long capacity = 12;
     /* The current length of the buffer. */
     static unsigned long depth                 = 0;
     linestruct          *was_mark              = openfile->mark;
-    static bool          give_a_hint           = true;
-    bool                 was_open_bracket_char = false;
+    static bool          give_a_hint           = TRUE;
+    bool                 was_open_bracket_char = FALSE;
     const keystruct     *shortcut;
     functionptrtype      function;
     /* Read in a keystroke, and show the cursor while waiting. */
@@ -1552,12 +1553,14 @@ int
 main(int argc, char **argv)
 {
     Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
-
     LOUT.setOutputFile("/home/mellw/.NanoX.log");
     LoutI << "Starting nano" << '\n';
-
-    NETLOGGER.enable();
-    NETLOGGER.init("192.168.0.76", 8080);
+    const char *netlogger = getenv("NETLOGGER");
+    if (netlogger != NULL)
+    {
+        NETLOGGER.enable();
+        NETLOGGER.init(netlogger, 8080);
+    }
     NETLOGGER.send_to_server("Starting nano");
     atexit(
         []

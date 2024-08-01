@@ -4,11 +4,11 @@
 #include <cstring>
 
 /* The text displayed in the help window. */
-static char *help_text = nullptr;
+static char *help_text = NULL;
 /* The point in the help text just after the title. */
-static const char *start_of_body = nullptr;
+static const char *start_of_body = NULL;
 /* The point in the help text where the shortcut descriptions begin. */
-static char *end_of_intro = nullptr;
+static char *end_of_intro = NULL;
 /* The offset (in bytes) of the topleft of the shown help text. */
 static unsigned long location;
 
@@ -50,7 +50,7 @@ help_init(void)
                     "search to replace, only matches in the selected text "
                     "will be replaced.\n\n The following function keys are "
                     "available in Search mode:\n\n");
-        htx[2] = nullptr;
+        htx[2] = NULL;
     }
     else if (currmenu == MREPLACEWITH)
     {
@@ -59,7 +59,7 @@ help_init(void)
                     "typed at the previous prompt, and press Enter.\n\n");
         htx[1] = N_(" The following function keys "
                     "are available at this prompt:\n\n");
-        htx[2] = nullptr;
+        htx[2] = NULL;
     }
     else if (currmenu == MGOTOLINE)
     {
@@ -69,8 +69,8 @@ help_init(void)
                     "number you entered, you will be brought to the last "
                     "line of the file.\n\n The following function keys are "
                     "available in Go To Line mode:\n\n");
-        htx[1] = nullptr;
-        htx[2] = nullptr;
+        htx[1] = NULL;
+        htx[2] = NULL;
     }
     else if (currmenu == MINSERTFILE)
     {
@@ -87,7 +87,7 @@ help_init(void)
                     "any filename, or type in a nonexistent filename at "
                     "the prompt and press Enter.\n\n The following "
                     "function keys are available in Insert File mode:\n\n");
-        htx[2] = nullptr;
+        htx[2] = NULL;
     }
     else if (currmenu == MWRITEFILE)
     {
@@ -100,8 +100,8 @@ help_init(void)
                     "just a portion of it, the current filename is not the "
                     "default in this mode.\n\n The following function keys "
                     "are available in Write File mode:\n\n");
-        htx[1] = nullptr;
-        htx[2] = nullptr;
+        htx[1] = NULL;
+        htx[2] = NULL;
     }
     else if (currmenu == MBROWSER)
     {
@@ -115,8 +115,8 @@ help_init(void)
                     "directory called \"..\" at the top of the file "
                     "list.\n\n The following function keys are available "
                     "in the file browser:\n\n");
-        htx[1] = nullptr;
-        htx[2] = nullptr;
+        htx[1] = NULL;
+        htx[2] = NULL;
     }
     else if (currmenu == MWHEREISFILE)
     {
@@ -131,7 +131,7 @@ help_init(void)
                     "previous search.\n\n");
         htx[1] = N_(" The following function keys "
                     "are available at this prompt:\n\n");
-        htx[2] = nullptr;
+        htx[2] = NULL;
     }
     else if (currmenu == MGOTODIR)
     {
@@ -142,8 +142,8 @@ help_init(void)
                     "automatically complete the directory name.\n\n The "
                     "following function keys are available in Browser Go "
                     "To Directory mode:\n\n");
-        htx[1] = nullptr;
-        htx[2] = nullptr;
+        htx[1] = NULL;
+        htx[2] = NULL;
     }
     else if (currmenu == MSPELL)
     {
@@ -156,8 +156,8 @@ help_init(void)
                     "file, or, if you have selected text with the mark, in "
                     "the selected text.\n\n The following function keys "
                     "are available in Spell Check mode:\n\n");
-        htx[1] = nullptr;
-        htx[2] = nullptr;
+        htx[1] = NULL;
+        htx[2] = NULL;
     }
     else if (currmenu == MEXECUTE)
     {
@@ -182,7 +182,7 @@ help_init(void)
                     "can switch to earlier and later messages.\n\n");
         htx[1] = N_(" The following function keys are "
                     "available in Linter mode:\n\n");
-        htx[2] = nullptr;
+        htx[2] = NULL;
     }
     else
     {
@@ -213,27 +213,27 @@ help_init(void)
                     "parentheses:\n\n");
     }
     htx[0] = _(htx[0]);
-    if (htx[1] != nullptr)
+    if (htx[1] != NULL)
     {
         htx[1] = _(htx[1]);
     }
-    if (htx[2] != nullptr)
+    if (htx[2] != NULL)
     {
         htx[2] = _(htx[2]);
     }
     allocsize += constexpr_strlen(htx[0]);
-    if (htx[1] != nullptr)
+    if (htx[1] != NULL)
     {
         allocsize += constexpr_strlen(htx[1]);
     }
-    if (htx[2] != nullptr)
+    if (htx[2] != NULL)
     {
         allocsize += constexpr_strlen(htx[2]);
     }
     /* Calculate the length of the descriptions of the shortcuts.
      * Each entry has one or two keystrokes, which fill 17 cells,
      * plus translated text, plus one or two \n's. */
-    for (f = allfuncs; f != nullptr; f = f->next)
+    for (f = allfuncs; f != NULL; f = f->next)
     {
         if (f->menus & currmenu)
         {
@@ -246,7 +246,7 @@ help_init(void)
     if (currmenu == MMAIN)
     {
         unsigned long onoff_len = constexpr_strlen(_("enable/disable"));
-        for (s = sclist; s != nullptr; s = s->next)
+        for (s = sclist; s != NULL; s = s->next)
         {
             if (s->func == do_toggle)
             {
@@ -258,11 +258,11 @@ help_init(void)
     help_text = (char *)nmalloc(allocsize + 1);
     /* Now add the text we want. */
     constexpr_strcpy(help_text, htx[0]);
-    if (htx[1] != nullptr)
+    if (htx[1] != NULL)
     {
         constexpr_strcat(help_text, htx[1]);
     }
-    if (htx[2] != nullptr)
+    if (htx[2] != NULL)
     {
         constexpr_strcat(help_text, htx[2]);
     }
@@ -270,7 +270,7 @@ help_init(void)
     end_of_intro = help_text + constexpr_strlen(help_text);
     ptr          = end_of_intro;
     /* Now add the shortcuts and their descriptions. */
-    for (f = allfuncs; f != nullptr; f = f->next)
+    for (f = allfuncs; f != NULL; f = f->next)
     {
         int tally = 0;
         if ((f->menus & currmenu) == 0)
@@ -278,7 +278,7 @@ help_init(void)
             continue;
         }
         /* Show the first two shortcuts (if any) for each function. */
-        for (s = sclist; s != nullptr; s = s->next)
+        for (s = sclist; s != NULL; s = s->next)
         {
             if ((s->menus & currmenu) && s->func == f->func && s->keystr[0])
             {
@@ -287,12 +287,12 @@ help_init(void)
                 {
                     sprintf(ptr, "%s                ", s->keystr);
                     /* Unicode arrows take three bytes instead of one. */
-                    ptr += (constexpr_strstr(s->keystr, "\xE2") != nullptr ? 9 : 7);
+                    ptr += (constexpr_strstr(s->keystr, "\xE2") != NULL ? 9 : 7);
                 }
                 else
                 {
                     sprintf(ptr, "(%s)       ", s->keystr);
-                    ptr += (constexpr_strstr(s->keystr, "\xE2") != nullptr ? 12 : 10);
+                    ptr += (constexpr_strstr(s->keystr, "\xE2") != NULL ? 12 : 10);
                     break;
                 }
             }
@@ -317,7 +317,7 @@ help_init(void)
     {
         int maximum = 0, counter = 0;
         /* First see how many toggles there are. */
-        for (s = sclist; s != nullptr; s = s->next)
+        for (s = sclist; s != NULL; s = s->next)
         {
             maximum = (s->toggle && s->ordinal > maximum) ? s->ordinal : maximum;
         }
@@ -325,7 +325,7 @@ help_init(void)
         while (counter < maximum)
         {
             counter++;
-            for (s = sclist; s != nullptr; s = s->next)
+            for (s = sclist; s != NULL; s = s->next)
             {
                 if (s->toggle && s->ordinal == counter)
                 {
@@ -429,7 +429,7 @@ show_help(void)
     long  was_tabsize = tabsize;
     char *was_syntax  = syntaxstr;
     /* The current answer when the user invokes help at the prompt. */
-    char         *saved_answer = (answer != nullptr) ? copy_of(answer) : nullptr;
+    char         *saved_answer = (answer != NULL) ? copy_of(answer) : NULL;
     unsigned long stash[sizeof(flags) / sizeof(flags[0])];
     /* A storage place for the current flag settings. */
     linestruct *line;
@@ -561,7 +561,7 @@ show_help(void)
     syntaxstr    = was_syntax;
     have_palette = false;
     free(title);
-    title = nullptr;
+    title = NULL;
     free(answer);
     answer = saved_answer;
     free(help_text);
@@ -582,7 +582,7 @@ show_help(void)
     }
     else
     {
-        titlebar(nullptr);
+        titlebar(NULL);
         edit_refresh();
     }
 }

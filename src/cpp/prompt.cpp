@@ -6,7 +6,7 @@
 #include <cstring>
 
 /* The prompt string used for status-bar questions. */
-static char *prompt = nullptr;
+static char *prompt = NULL;
 /* The cursor position in answer. */
 static unsigned long typing_x = HIGHEST_POSITIVE;
 
@@ -173,7 +173,7 @@ copy_the_answer(void)
     if (*answer)
     {
         free_lines(cutbuffer);
-        cutbuffer       = make_new_node(nullptr);
+        cutbuffer       = make_new_node(NULL);
         cutbuffer->data = copy_of(answer);
         typing_x        = 0;
     }
@@ -253,7 +253,7 @@ void
 absorb_character(int input, functionptrtype function)
 {
     /* The input buffer. */
-    static char *puddle = nullptr;
+    static char *puddle = NULL;
     /* The size of the input buffer; gets doubled whenever needed. */
     static unsigned long capacity = 8;
     /* The length of the input buffer. */
@@ -351,7 +351,7 @@ handle_editing(functionptrtype function)
     }
     else if (function == paste_text)
     {
-        if (cutbuffer != nullptr)
+        if (cutbuffer != NULL)
         {
             paste_into_answer();
         }
@@ -455,7 +455,7 @@ functionptrtype
 acquire_an_answer(int *actual, bool *listed, linestruct **history_list, functionptrtype refresh_func)
 {
     /* Whatever the answer was before the user foraged into history. */
-    char *stored_string = nullptr;
+    char *stored_string = NULL;
     /* Whether the previous keystroke was an attempt at tab completion. */
     bool previous_was_tab = false;
     /* The length of the fragment that the user tries to tab complete. */
@@ -479,7 +479,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
             refresh_func();
             *actual = KEY_WINCH;
             free(stored_string);
-            return nullptr;
+            return NULL;
         }
         /* For a click on a shortcut, read in the resulting keycode. */
         if (input == KEY_MOUSE && do_statusbar_mouse() == 1)
@@ -492,7 +492,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
         }
         /* Check for a shortcut in the current list. */
         shortcut = get_shortcut(input);
-        function = (shortcut ? shortcut->func : nullptr);
+        function = (shortcut ? shortcut->func : NULL);
         /* When it's a normal character, add it to the answer. */
         absorb_character(input, function);
         if (function == do_cancel || function == do_enter)
@@ -501,7 +501,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
         }
         if (function == do_tab)
         {
-            if (history_list != nullptr)
+            if (history_list != NULL)
             {
                 if (!previous_was_tab)
                 {
@@ -524,37 +524,37 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
         }
         else
         {
-            if (function == get_older_item && history_list != nullptr)
+            if (function == get_older_item && history_list != NULL)
             {
                 /* If this is the first step into history, start at the bottom. */
-                if (stored_string == nullptr)
+                if (stored_string == NULL)
                 {
                     reset_history_pointer_for(*history_list);
                 }
                 /* When moving up from the bottom, remember the current answer. */
-                if ((*history_list)->next == nullptr)
+                if ((*history_list)->next == NULL)
                 {
                     stored_string = mallocstrcpy(stored_string, answer);
                 }
                 /* If there is an older item, move to it and copy its string. */
-                if ((*history_list)->prev != nullptr)
+                if ((*history_list)->prev != NULL)
                 {
                     *history_list = (*history_list)->prev;
                     answer        = mallocstrcpy(answer, (*history_list)->data);
                     typing_x      = constexpr_strlen(answer);
                 }
             }
-            else if (function == get_newer_item && history_list != nullptr)
+            else if (function == get_newer_item && history_list != NULL)
             {
                 /* If there is a newer item, move to it and copy its string. */
-                if ((*history_list)->next != nullptr)
+                if ((*history_list)->next != NULL)
                 {
                     *history_list = (*history_list)->next;
                     answer        = mallocstrcpy(answer, (*history_list)->data);
                     typing_x      = constexpr_strlen(answer);
                 }
                 /* When at the bottom of the history list, restore the old answer. */
-                if ((*history_list)->next == nullptr && stored_string && *answer == '\0')
+                if ((*history_list)->next == NULL && stored_string && *answer == '\0')
                 {
                     answer   = mallocstrcpy(answer, stored_string);
                     typing_x = constexpr_strlen(answer);
@@ -600,7 +600,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
         }
     }
     /* If the history pointer was moved, point it at the bottom again. */
-    if (stored_string != nullptr)
+    if (stored_string != NULL)
     {
         reset_history_pointer_for(*history_list);
         free(stored_string);
@@ -616,7 +616,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
 int
 do_prompt(int menu, const char *provided, linestruct **history_list, functionptrtype refresh_func, const char *msg, ...)
 {
-    functionptrtype function = nullptr;
+    functionptrtype function = NULL;
     va_list         ap;
     bool            listed = false;
     int             retval;
@@ -754,29 +754,29 @@ ask_user(bool withall, const char *question)
         }
         letter[index] = '\0';
         /* See if the typed letter is in the Yes, No, or All strings. */
-        if (constexpr_strstr(yesstr, letter) != nullptr)
+        if (constexpr_strstr(yesstr, letter) != NULL)
         {
             choice = YES;
         }
-        else if (constexpr_strstr(nostr, letter) != nullptr)
+        else if (constexpr_strstr(nostr, letter) != NULL)
         {
             choice = NO;
         }
-        else if (withall && constexpr_strstr(allstr, letter) != nullptr)
+        else if (withall && constexpr_strstr(allstr, letter) != NULL)
         {
             choice = ALL;
         }
         else
         {
-            if (constexpr_strchr("Yy", kbinput) != nullptr)
+            if (constexpr_strchr("Yy", kbinput) != NULL)
             {
                 choice = YES;
             }
-            else if (constexpr_strchr("Nn", kbinput) != nullptr)
+            else if (constexpr_strchr("Nn", kbinput) != NULL)
             {
                 choice = NO;
             }
-            else if (withall && constexpr_strchr("Aa", kbinput) != nullptr)
+            else if (withall && constexpr_strchr("Aa", kbinput) != NULL)
             {
                 choice = ALL;
             }
@@ -786,7 +786,7 @@ ask_user(bool withall, const char *question)
             break;
         }
         shortcut = get_shortcut(kbinput);
-        function = (shortcut ? shortcut->func : nullptr);
+        function = (shortcut ? shortcut->func : NULL);
         if (function == do_cancel)
         {
             choice = CANCEL;
@@ -799,7 +799,7 @@ ask_user(bool withall, const char *question)
         {
             TOGGLE(NO_HELP);
             window_init();
-            titlebar(nullptr);
+            titlebar(NULL);
             focusing = false;
             edit_refresh();
             focusing = true;

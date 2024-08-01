@@ -15,36 +15,22 @@
 #    define USING_OLDER_LIBVTE yes
 #endif
 
-//
-//  A buffer for the keystrokes that haven't been handled yet.
-//
-static int *key_buffer = nullptr;
-//
-//  A pointer pointing at the next keycode in the keystroke buffer.
-//
-static int *nextcodes = nullptr;
-//
-//  The size of the keystroke buffer; gets doubled whenever needed.
-//
+/* A buffer for the keystrokes that haven't been handled yet. */
+static int *key_buffer = NULL;
+/* A pointer pointing at the next keycode in the keystroke buffer. */
+static int *nextcodes = NULL;
+/* The size of the keystroke buffer; gets doubled whenever needed. */
 static unsigned long capacity = 32;
-//
-//  The number of key codes waiting in the keystroke buffer.
-//
+/* The number of key codes waiting in the keystroke buffer. */
 static unsigned long waiting_codes = 0;
-//
-//  Points into the expansion string for the current implantation.
-//
-static const char *plants_pointer = nullptr;
-//
-//  How many digits of a three-digit character code we've eaten.
-//
+/* Points into the expansion string for the current implantation. */
+static const char *plants_pointer = NULL;
+/* How many digits of a three-digit character code we've eaten. */
 static int digit_count = 0;
-//
-//  Whether the cursor should be shown when waiting for input.
-//
-static bool reveal_cursor = false;
+/* Whether the cursor should be shown when waiting for input. */
+static bool reveal_cursor = FALSE;
 /* Whether to give ncurses some time to get the next code. */
-static bool linger_after_escape = false;
+static bool linger_after_escape = FALSE;
 /* The number of keystrokes left before we blank the status bar. */
 static int countdown = 0;
 /* From where in the relevant line the current row is drawn. */
@@ -52,15 +38,15 @@ static unsigned long from_x = 0;
 /* Until where in the relevant line the current row is drawn. */
 static unsigned long till_x = 0;
 /* Whether the current line has more text after the displayed part. */
-static bool has_more = false;
+static bool has_more = FALSE;
 /* Whether a row's text is narrower than the screen's width. */
-static bool is_shorter = true;
+static bool is_shorter = TRUE;
 /* The starting column of the next chunk when softwrapping. */
 static unsigned long sequel_column = 0;
 /* Whether we are in the process of recording a macro. */
-static bool recording = false;
+static bool recording = FALSE;
 /* A buffer where the recorded key codes are stored. */
-static int *macro_buffer = nullptr;
+static int *macro_buffer = NULL;
 /* The current length of the macro. */
 static unsigned long macro_length = 0;
 /* Where the last burst of recorded keystrokes started. */
@@ -91,9 +77,9 @@ record_macro(void)
         macro_length = milestone;
         statusline(REMARK, _("Stopped recording"));
     }
-    if ISSET (STATEFLAGS)
+    if (ISSET(STATEFLAGS))
     {
-        titlebar(nullptr);
+        titlebar(NULL);
     }
 }
 
@@ -123,7 +109,7 @@ run_macro(void)
     }
     waiting_codes  = macro_length;
     nextcodes      = key_buffer;
-    mute_modifiers = true;
+    mute_modifiers = TRUE;
 }
 
 /* Allocate the requested space for the keystroke buffer. */
@@ -183,7 +169,7 @@ read_keys_from(WINDOW *frame)
 {
     int           input    = ERR;
     unsigned long errcount = 0;
-    bool          timed    = false;
+    bool          timed    = FALSE;
     /* Before reading the first keycode, display any pending screen updates. */
     doupdate();
     if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) &&
@@ -195,7 +181,7 @@ read_keys_from(WINDOW *frame)
                                lastmessage < ALERT && lastmessage != INFO) ||
                               spotlighted))
     {
-        timed = true;
+        timed = TRUE;
         halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
         /* Counteract a side effect of half-delay mode. */
         disable_kb_interrupt();
@@ -211,7 +197,7 @@ read_keys_from(WINDOW *frame)
         }
         if (timed)
         {
-            timed = false;
+            timed = FALSE;
             /* Leave half-delay mode. */
             raw();
             if (input == ERR)
@@ -223,7 +209,7 @@ read_keys_from(WINDOW *frame)
                         wredrawln(midwin, editwinrows - 1, 1);
                     }
                     lastmessage = VACUUM;
-                    spotlighted = false;
+                    spotlighted = FALSE;
                     update_line(openfile->current, openfile->current_x);
                     wnoutrefresh(midwin);
                     curs_set(1);
@@ -232,7 +218,7 @@ read_keys_from(WINDOW *frame)
                 {
                     minibar();
                 }
-                as_an_at = true;
+                as_an_at = TRUE;
                 place_the_cursor();
                 doupdate();
                 continue;
@@ -260,7 +246,7 @@ read_keys_from(WINDOW *frame)
     if (currmenu == MMAIN)
     {
         refresh_needed |= spotlighted;
-        spotlighted = false;
+        spotlighted = FALSE;
     }
     /* If we got a SIGWINCH, get out as the frame argument is no longer valid. */
     if (input == KEY_WINCH)
@@ -271,14 +257,14 @@ read_keys_from(WINDOW *frame)
      * keystroke (or burst of them) started. */
     milestone = macro_length;
     /* Read in any remaining key codes using non-blocking input. */
-    nodelay(frame, true);
+    nodelay(frame, TRUE);
     /* After an ESC, when ncurses does not translate escape sequences,
      * give the keyboard some time to bring the next code to ncurses. */
     if (input == ESC_CODE && (linger_after_escape || ISSET(RAW_SEQUENCES)))
     {
         napms(20);
     }
-    while (true)
+    while (TRUE)
     {
         if (recording)
         {
@@ -298,7 +284,7 @@ read_keys_from(WINDOW *frame)
         key_buffer[waiting_codes++] = input;
     }
     /* Restore blocking-input mode. */
-    nodelay(frame, false);
+    nodelay(frame, FALSE);
 #ifdef DEBUG
     fprintf(stderr, "\nSequence of hex codes:");
     for (size_t i = 0; i < waiting_codes; i++)
@@ -343,7 +329,7 @@ implant(const char *string)
 {
     plants_pointer = string;
     put_back(MORE_PLANTS);
-    mute_modifiers = true;
+    mute_modifiers = TRUE;
 }
 
 /* Continue processing an expansion string.  Returns either an error code,
@@ -413,7 +399,7 @@ get_input(WINDOW *frame)
 {
     if (waiting_codes)
     {
-        spotlighted = false;
+        spotlighted = FALSE;
     }
     else if (frame)
     {
@@ -472,7 +458,7 @@ convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
                              * Esc O 1 ; 2 B == Shift-Down on old Terminal.
                              * Esc O 1 ; 2 C == Shift-Right on old Terminal.
                              * Esc O 1 ; 2 D == Shift-Left on old Terminal. */
-                            shift_held = true;
+                            shift_held = TRUE;
                             return arrow_from_ABCD(seq[3]);
                         }
                         break;
@@ -714,7 +700,7 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                             case 'C' : /* Esc [ 1 ; 2 C == Shift-Right on xterm. */
                             case 'D' : /* Esc [ 1 ; 2 D == Shift-Left on xterm. */
                             {
-                                shift_held = true;
+                                shift_held = TRUE;
                                 return arrow_from_ABCD(seq[3]);
                             }
                             case 'F' : /* Esc [ 1 ; 2 F == Shift-End on xterm. */
@@ -962,12 +948,12 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                 *consumed = 4;
                 if (seq[2] == '0')
                 {
-                    bracketed_paste = true;
+                    bracketed_paste = TRUE;
                     return BRACKETED_PASTE_MARKER;
                 }
                 else if (seq[2] == '1')
                 {
-                    bracketed_paste = false;
+                    bracketed_paste = FALSE;
                     return BRACKETED_PASTE_MARKER;
                 }
             }
@@ -975,7 +961,7 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             {
                 /* When invalid, assume it's a truncated end-of-paste sequence,
                  * in order to avoid a hang -- https://sv.gnu.org/bugs/?64996. */
-                bracketed_paste = false;
+                bracketed_paste = FALSE;
                 *consumed       = length;
                 return ERR;
             }
@@ -1083,23 +1069,19 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
         }
         case '7' :
         {
-            /* Esc [ 7 ~ == Home on Eterm/rxvt; */
-            if (length > 1 && seq[1] == '~')
+            if (length > 1 && seq[1] == '~') /* Esc [ 7 ~ == Home on Eterm/rxvt; */
             {
                 return KEY_HOME;
             }
-            /* Esc [ 7 $ == Shift-Home on Eterm/rxvt; */
-            else if (length > 1 && seq[1] == '$')
+            else if (length > 1 && seq[1] == '$') /* Esc [ 7 $ == Shift-Home on Eterm/rxvt; */
             {
                 return SHIFT_HOME;
             }
-            /* Esc [ 7 ^ == Control-Home on Eterm/rxvt; */
-            else if (length > 1 && seq[1] == '^')
+            else if (length > 1 && seq[1] == '^') /* Esc [ 7 ^ == Control-Home on Eterm/rxvt; */
             {
                 return CONTROL_HOME;
             }
-            /* Esc [ 7 @ == Shift-Control-Home on same. */
-            else if (length > 1 && seq[1] == '@')
+            else if (length > 1 && seq[1] == '@') /* Esc [ 7 @ == Shift-Control-Home on same. */
             {
                 return shiftcontrolhome;
             }
@@ -1107,23 +1089,19 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
         }
         case '8' :
         {
-            /* Esc [ 8 ~ == End on Eterm/rxvt; */
-            if (length > 1 && seq[1] == '~')
+            if (length > 1 && seq[1] == '~') /* Esc [ 8 ~ == End on Eterm/rxvt; */
             {
                 return KEY_END;
             }
-            /* Esc [ 8 $ == Shift-End on Eterm/rxvt; */
-            else if (length > 1 && seq[1] == '$')
+            else if (length > 1 && seq[1] == '$') /* Esc [ 8 $ == Shift-End on Eterm/rxvt; */
             {
                 return SHIFT_END;
             }
-            /* Esc [ 8 ^ == Control-End on Eterm/rxvt; */
-            else if (length > 1 && seq[1] == '^')
+            else if (length > 1 && seq[1] == '^') /* Esc [ 8 ^ == Control-End on Eterm/rxvt; */
             {
                 return CONTROL_END;
             }
-            /* Esc [ 8 @ == Shift-Control-End on same. */
-            else if (length > 1 && seq[1] == '@')
+            else if (length > 1 && seq[1] == '@') /* Esc [ 8 @ == Shift-Control-End on same. */
             {
                 return shiftcontrolend;
             }
@@ -1206,7 +1184,7 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
         case 'c' : /* Esc [ c == Shift-Right on rxvt/Eterm. */
         case 'd' : /* Esc [ d == Shift-Left on rxvt/Eterm. */
         {
-            shift_held = true;
+            shift_held = TRUE;
             return arrow_from_ABCD(seq[0] - 0x20);
         }
         case '[' :
@@ -1216,11 +1194,11 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                 *consumed = 2;
                 if ('@' < seq[1] && seq[1] < 'F')
                 {
-                    //  Esc [ [ A == F1 on Linux console.
-                    //  Esc [ [ B == F2 on Linux console.
-                    //  Esc [ [ C == F3 on Linux console.
-                    //  Esc [ [ D == F4 on Linux console.
-                    //  Esc [ [ E == F5 on Linux console.
+                    /* Esc [ [ A == F1 on Linux console. */
+                    /* Esc [ [ B == F2 on Linux console. */
+                    /* Esc [ [ C == F3 on Linux console. */
+                    /* Esc [ [ D == F4 on Linux console. */
+                    /* Esc [ [ E == F5 on Linux console. */
                     return KEY_F(seq[1] - '@');
                 }
             }
@@ -1353,12 +1331,12 @@ convert_to_control(int kbinput)
 int
 parse_kbinput(WINDOW *frame)
 {
-    static bool first_escape_was_alone = false;
-    static bool last_escape_was_alone  = false;
+    static bool first_escape_was_alone = FALSE;
+    static bool last_escape_was_alone  = FALSE;
     static int  escapes                = 0;
     int         keycode;
-    meta_key   = false;
-    shift_held = false;
+    meta_key   = FALSE;
+    shift_held = FALSE;
     /* Get one code from the input stream. */
     keycode = get_input(frame);
     /* For an Esc, remember whether the last two arrived by themselves.
@@ -1409,13 +1387,13 @@ parse_kbinput(WINDOW *frame)
             {
                 while (waiting_codes && 0x80 <= nextcodes[0] && nextcodes[0] <= 0xBF)
                 {
-                    get_input(nullptr);
+                    get_input(NULL);
                 }
                 return FOREIGN_SEQUENCE;
             }
             else if (keycode < 0x20 && !last_escape_was_alone)
             {
-                meta_key = true;
+                meta_key = TRUE;
             }
         }
         else if (waiting_codes == 0 || nextcodes[0] == ESC_CODE || (keycode != 'O' && keycode != '['))
@@ -1424,7 +1402,7 @@ parse_kbinput(WINDOW *frame)
             {
                 keycode = constexpr_tolower(keycode);
             }
-            meta_key = true;
+            meta_key = TRUE;
         }
         else
         {
@@ -1440,7 +1418,7 @@ parse_kbinput(WINDOW *frame)
         {
             /* An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X
              * for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow. */
-            switch (get_input(nullptr))
+            switch (get_input(NULL))
             {
                 case 'A' :
                 {
@@ -1460,22 +1438,22 @@ parse_kbinput(WINDOW *frame)
                 }
                 case 'a' :
                 {
-                    shift_held = true;
+                    shift_held = TRUE;
                     return KEY_PPAGE;
                 }
                 case 'b' :
                 {
-                    shift_held = true;
+                    shift_held = TRUE;
                     return KEY_NPAGE;
                 }
                 case 'c' :
                 {
-                    shift_held = true;
+                    shift_held = TRUE;
                     return KEY_HOME;
                 }
                 case 'd' :
                 {
-                    shift_held = true;
+                    shift_held = TRUE;
                     return KEY_END;
                 }
             }
@@ -1483,7 +1461,7 @@ parse_kbinput(WINDOW *frame)
         else if (waiting_codes && nextcodes[0] != ESC_CODE && (keycode == '[' || keycode == 'O'))
         {
             keycode  = parse_escape_sequence(keycode);
-            meta_key = true;
+            meta_key = TRUE;
         }
         else if ('0' <= keycode && (keycode <= '2' || (keycode <= '9' && digit_count > 0)))
         {
@@ -1529,7 +1507,7 @@ parse_kbinput(WINDOW *frame)
                 {
                     keycode = constexpr_tolower(keycode);
                 }
-                meta_key = true;
+                meta_key = TRUE;
             }
             else
             {
@@ -1571,42 +1549,42 @@ parse_kbinput(WINDOW *frame)
     }
     else if (keycode == shiftup)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return KEY_UP;
     }
     else if (keycode == shiftdown)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return KEY_DOWN;
     }
     else if (keycode == shiftcontrolleft)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return CONTROL_LEFT;
     }
     else if (keycode == shiftcontrolright)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return CONTROL_RIGHT;
     }
     else if (keycode == shiftcontrolup)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return CONTROL_UP;
     }
     else if (keycode == shiftcontroldown)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return CONTROL_DOWN;
     }
     else if (keycode == shiftcontrolhome)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return CONTROL_HOME;
     }
     else if (keycode == shiftcontrolend)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return CONTROL_END;
     }
     else if (keycode == altleft)
@@ -1651,22 +1629,22 @@ parse_kbinput(WINDOW *frame)
     }
     else if (keycode == shiftaltleft)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return KEY_HOME;
     }
     else if (keycode == shiftaltright)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return KEY_END;
     }
     else if (keycode == shiftaltup)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return KEY_PPAGE;
     }
     else if (keycode == shiftaltdown)
     {
-        shift_held = true;
+        shift_held = TRUE;
         return KEY_NPAGE;
     }
     else if ((KEY_F0 + 24) < keycode && keycode < (KEY_F0 + 64))
@@ -1697,7 +1675,7 @@ parse_kbinput(WINDOW *frame)
             }
             if (!meta_key)
             {
-                shift_held = true;
+                shift_held = TRUE;
             }
         }
         /* Is only Alt being held? */
@@ -1812,12 +1790,12 @@ parse_kbinput(WINDOW *frame)
     {
         case KEY_SLEFT :
         {
-            shift_held = true;
+            shift_held = TRUE;
             return KEY_LEFT;
         }
         case KEY_SRIGHT :
         {
-            shift_held = true;
+            shift_held = TRUE;
             return KEY_RIGHT;
         }
 #ifdef KEY_SR
@@ -1826,7 +1804,7 @@ parse_kbinput(WINDOW *frame)
 #    endif
         case KEY_SR : /* Scroll backward, on Xfce4-terminal. */
         {
-            shift_held = true;
+            shift_held = TRUE;
             return KEY_UP;
         }
 #endif
@@ -1836,7 +1814,7 @@ parse_kbinput(WINDOW *frame)
 #    endif
         case KEY_SF : /* Scroll forward, on Xfce4-terminal. */
         {
-            shift_held = true;
+            shift_held = TRUE;
             return KEY_DOWN;
         }
 #endif
@@ -1845,7 +1823,7 @@ parse_kbinput(WINDOW *frame)
 #endif
         case SHIFT_HOME :
         {
-            shift_held = true;
+            shift_held = TRUE;
         }
         case KEY_A1 : /* Home (7) on keypad with NumLock off. */
         {
@@ -1856,7 +1834,7 @@ parse_kbinput(WINDOW *frame)
 #endif
         case SHIFT_END :
         {
-            shift_held = true;
+            shift_held = TRUE;
         }
         case KEY_C1 : /* End (1) on keypad with NumLock off. */
         {
@@ -1884,7 +1862,7 @@ parse_kbinput(WINDOW *frame)
 #endif
         case SHIFT_PAGEDOWN : /* Fake key, from Shift+Alt+Down. */
         {
-            shift_held = true;
+            shift_held = TRUE;
         }
         case KEY_C3 : /* PageDown (3) on keypad with NumLock off. */
         {
@@ -2018,13 +1996,13 @@ int *
 parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
 {
     int keycode, *yield;
-    reveal_cursor = true;
+    reveal_cursor = TRUE;
     keycode       = get_input(frame);
     /* When the window was resized, abort and return nothing. */
     if (keycode == KEY_WINCH)
     {
         *count = 999;
-        return nullptr;
+        return NULL;
     }
     /* Reserve ample space for the possible result. */
     yield = (int *)nmalloc(6 * sizeof(int));
@@ -2033,7 +2011,7 @@ parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
     {
         long unicode = assemble_unicode(keycode);
         char multibyte[MB_CUR_MAX];
-        reveal_cursor = false;
+        reveal_cursor = FALSE;
         /* Gather at most six hexadecimal digits. */
         while (unicode == PROCEED)
         {
@@ -2044,28 +2022,28 @@ parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
         {
             *count = 999;
             free(yield);
-            return nullptr;
+            return NULL;
         }
         /* For an invalid keystroke, discard its possible continuation bytes. */
         if (unicode == INVALID_DIGIT)
         {
             if (keycode == ESC_CODE && waiting_codes)
             {
-                get_input(nullptr);
+                get_input(NULL);
                 while (waiting_codes && 0x1F < nextcodes[0] && nextcodes[0] < 0x40)
                 {
-                    get_input(nullptr);
+                    get_input(NULL);
                 }
                 if (waiting_codes && 0x3F < nextcodes[0] && nextcodes[0] < 0x7F)
                 {
-                    get_input(nullptr);
+                    get_input(NULL);
                 }
             }
             else if (0xC0 <= keycode && keycode <= 0xFF)
             {
                 while (waiting_codes && 0x7F < nextcodes[0] && nextcodes[0] < 0xC0)
                 {
-                    get_input(nullptr);
+                    get_input(NULL);
                 }
             }
         }
@@ -2087,7 +2065,7 @@ parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
      * escape (on iTerm2/rxvt) or a control code (for M-Bsp and M-Enter). */
     if (keycode == ESC_CODE && waiting_codes)
     {
-        yield[1] = get_input(nullptr);
+        yield[1] = get_input(NULL);
         *count   = 2;
     }
     return yield;
@@ -2109,12 +2087,12 @@ get_verbatim_kbinput(WINDOW *frame, unsigned long *count)
     }
     if (!ISSET(RAW_SEQUENCES))
     {
-        keypad(frame, false);
+        keypad(frame, FALSE);
     }
     /* Turn bracketed-paste mode off. */
     printf(ESC_CODE_TURN_OFF_BRACKETED_PASTE);
     fflush(stdout);
-    linger_after_escape = true;
+    linger_after_escape = TRUE;
     /* Read in a single byte or two escapes. */
     input = parse_verbatim_kbinput(frame, count);
     /* If the byte is invalid in the current mode, discard it;
@@ -2131,7 +2109,7 @@ get_verbatim_kbinput(WINDOW *frame, unsigned long *count)
             *count = 0;
         }
     }
-    linger_after_escape = false;
+    linger_after_escape = FALSE;
     /* Turn bracketed-paste mode back on. */
     printf(ESC_CODE_TURN_ON_BRACKETED_PASTE);
     fflush(stdout);
@@ -2145,8 +2123,8 @@ get_verbatim_kbinput(WINDOW *frame, unsigned long *count)
      * the data that the frame parameter points to. */
     if (!ISSET(RAW_SEQUENCES))
     {
-        keypad(midwin, true);
-        keypad(footwin, true);
+        keypad(midwin, TRUE);
+        keypad(footwin, TRUE);
     }
     if (*count < 999)
     {
@@ -2162,7 +2140,7 @@ get_verbatim_kbinput(WINDOW *frame, unsigned long *count)
 
 /* Handle any mouse event that may have occurred.  We currently handle
  * releases/clicks of the first mouse button.  If allow_shortcuts is
- * 'true', releasing/clicking on a visible shortcut will put back the
+ * 'TRUE', releasing/clicking on a visible shortcut will put back the
  * keystroke associated with that shortcut.  If ncurses supports them,
  * we also handle presses of the fourth mouse button (upward rolls of
  * the mouse wheel) by putting back keystrokes to scroll up, and presses
@@ -2203,7 +2181,7 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
             /* The number of shortcut items that get displayed. */
             unsigned long number;
             /* Shift the coordinates to be relative to the bottom window. */
-            wmouse_trafo(footwin, &mouse_y, &mouse_x, false);
+            wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE);
             /* Clicks on the status bar are handled elsewhere, so
              * restore the untranslated mouse-event coordinates. */
             if (mouse_y == 0)
@@ -2238,7 +2216,7 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
             /* Search through the list of functions to determine which
              * shortcut in the current menu the user clicked on; then
              * put the corresponding keystroke into the keyboard buffer. */
-            for (funcstruct *f = allfuncs; f != nullptr; f = f->next)
+            for (funcstruct *f = allfuncs; f != NULL; f = f->next)
             {
                 if ((f->menus & currmenu) == 0)
                 {
@@ -2275,7 +2253,7 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
         if (in_footer)
         {
             /* Shift the coordinates to be relative to the bottom window. */
-            wmouse_trafo(footwin, &mouse_y, &mouse_x, false);
+            wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE);
         }
         if (in_middle || (in_footer && mouse_y == 0))
         {
@@ -2307,14 +2285,14 @@ blank_row(WINDOW *window, int row)
 
 /* Blank the first line of the top portion of the screen. */
 void
-blank_titlebar()
+blank_titlebar(void)
 {
     mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
 }
 
 /* Blank all lines of the middle portion of the screen (the edit window). */
 void
-blank_edit()
+blank_edit(void)
 {
     for (int row = 0; row < editwinrows; row++)
     {
@@ -2324,14 +2302,14 @@ blank_edit()
 
 /* Blank the first line of the bottom portion of the screen. */
 void
-blank_statusbar()
+blank_statusbar(void)
 {
     blank_row(footwin, 0);
 }
 
 /* Wipe the status bar clean and include this in the next screen update. */
 void
-wipe_statusbar()
+wipe_statusbar(void)
 {
     lastmessage = VACUUM;
     if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN)
@@ -2380,7 +2358,7 @@ set_blankdelay_to_one(void)
     countdown = 1;
 }
 
-#define ISO8859_CHAR   false
+#define ISO8859_CHAR   FALSE
 #define ZEROWIDTH_CHAR (is_zerowidth(text))
 
 /* Convert text into a string that can be displayed on screen.
@@ -2552,11 +2530,11 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
         {
             converted[index++] = '[';
         }
-        has_more = true;
+        has_more = TRUE;
     }
     else
     {
-        has_more = false;
+        has_more = FALSE;
     }
     is_shorter = (column < beyond);
     /* Null-terminate the converted string. */
@@ -2616,15 +2594,15 @@ titlebar(const char *path)
     /* The presentable form of the pathname. */
     char *caption;
     /* The buffer sequence number plus the total buffer count. */
-    char *ranking = nullptr;
+    char *ranking = NULL;
     /* If the screen is too small, there is no title bar. */
-    if (topwin == nullptr)
+    if (topwin == NULL)
     {
         return;
     }
     wattron(topwin, interface_color_pair[TITLE_BAR]);
     blank_titlebar();
-    as_an_at = false;
+    as_an_at = FALSE;
     /* Do as Pico:
      * if there is not enough width available for all items,
      * first sacrifice the version string,
@@ -2640,7 +2618,7 @@ titlebar(const char *path)
     }
     else
     {
-        if (!inhelp && path != nullptr)
+        if (!inhelp && path != NULL)
         {
             prefix = _("DIR:");
         }
@@ -2745,14 +2723,14 @@ titlebar(const char *path)
     /* Print the full path if there's room; otherwise, dottify it. */
     if (pathlen + pluglen + statelen <= COLS)
     {
-        caption = display_string(path, 0, pathlen, false, false);
+        caption = display_string(path, 0, pathlen, FALSE, FALSE);
         waddstr(topwin, caption);
         free(caption);
     }
     else if (5 + statelen <= COLS)
     {
         waddstr(topwin, "...");
-        caption = display_string(path, 3 + pathlen - COLS + statelen, COLS - statelen, false, false);
+        caption = display_string(path, 3 + pathlen - COLS + statelen, COLS - statelen, FALSE, FALSE);
         waddstr(topwin, caption);
         free(caption);
     }
@@ -2791,10 +2769,10 @@ titlebar(const char *path)
 void
 minibar(void)
 {
-    char         *thename         = nullptr;
-    char         *number_of_lines = nullptr;
-    char         *ranking         = nullptr;
-    char         *successor       = nullptr;
+    char         *thename         = NULL;
+    char         *number_of_lines = NULL;
+    char         *ranking         = NULL;
+    char         *successor       = NULL;
     char         *location        = (char *)nmalloc(44);
     char         *hexadecimal     = (char *)nmalloc(9);
     unsigned long namewidth;
@@ -2807,8 +2785,8 @@ minibar(void)
     mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
     if (openfile->filename[0] != '\0')
     {
-        as_an_at = false;
-        thename  = display_string(openfile->filename, 0, COLS, false, false);
+        as_an_at = FALSE;
+        thename  = display_string(openfile->filename, 0, COLS, FALSE, FALSE);
     }
     else
     {
@@ -2828,7 +2806,7 @@ minibar(void)
     {
         if (namewidth > COLS - 2)
         {
-            char *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, false, false);
+            char *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, FALSE, FALSE);
             mvwaddstr(footwin, 0, 0, "...");
             waddstr(footwin, shortname);
             free(shortname);
@@ -2863,7 +2841,7 @@ minibar(void)
         {
             tallywidth = 0;
         }
-        report_size = false;
+        report_size = FALSE;
     }
     else if (openfile->next != openfile && COLS > 35)
     {
@@ -2892,34 +2870,34 @@ minibar(void)
         {
             sprintf(hexadecimal, "  0x00");
         }
-        else if ((unsigned char)(*this_position) < 0x80 && using_utf8())
+        else if ((unsigned char)*this_position < 0x80 && using_utf8())
         {
-            sprintf(hexadecimal, "U+%04X", static_cast<u8>(*this_position));
+            sprintf(hexadecimal, "U+%04X", (unsigned char)*this_position);
         }
         else if (using_utf8() && mbtowide(widecode, this_position) > 0)
         {
-            sprintf(hexadecimal, "U+%04X", static_cast<int>(widecode));
+            sprintf(hexadecimal, "U+%04X", (int)widecode);
         }
         else
         {
-            sprintf(hexadecimal, "  0x%02X", static_cast<u8>(*this_position));
+            sprintf(hexadecimal, "  0x%02X", (unsigned char)*this_position);
         }
         mvwaddstr(footwin, 0, COLS - 23, hexadecimal);
         successor = this_position + char_length(this_position);
         if (*this_position && *successor && is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
         {
-            sprintf(hexadecimal, "|%04X", static_cast<int>(widecode));
+            sprintf(hexadecimal, "|%04X", (int)widecode);
             waddstr(footwin, hexadecimal);
             successor += char_length(successor);
             if (is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
             {
-                sprintf(hexadecimal, "|%04X", static_cast<int>(widecode));
+                sprintf(hexadecimal, "|%04X", (int)widecode);
                 waddstr(footwin, hexadecimal);
             }
         }
         else
         {
-            successor = nullptr;
+            successor = NULL;
         }
     }
     /* Display the state of three flags, and the state of macro and mark. */
@@ -2973,6 +2951,7 @@ statusline(message_type importance, const char *msg, ...)
     /* When not in curses mode, write the message to standard error. */
     if (isendwin())
     {
+        LoutE << compound << '\n';
         fprintf(stderr, "\n%s\n", compound);
         free(compound);
         return;
@@ -3021,7 +3000,7 @@ statusline(message_type importance, const char *msg, ...)
     lastmessage = importance;
     blank_statusbar();
     UNSET(WHITESPACE_DISPLAY);
-    message = display_string(compound, 0, COLS, false, false);
+    message = display_string(compound, 0, COLS, FALSE, FALSE);
     if (showed_whitespace)
     {
         SET(WHITESPACE_DISPLAY);
@@ -3030,15 +3009,10 @@ statusline(message_type importance, const char *msg, ...)
     bracketed = (start_col > 1);
     wmove(footwin, 0, (bracketed ? start_col - 2 : start_col));
     wattron(footwin, colorpair);
-    if (bracketed)
-    {
-        waddstr(footwin, "[ ");
-    }
+    bracketed ? waddstr(footwin, "[ ") : 0;
+    LoutI << message << '\n';
     waddstr(footwin, message);
-    if (bracketed)
-    {
-        waddstr(footwin, " ]");
-    }
+    bracketed ? waddstr(footwin, " ]") : 0;
     wattroff(footwin, colorpair);
     /* Push the message to the screen straightaway. */
     wrefresh(footwin);
@@ -3115,14 +3089,14 @@ bottombars(const int menu)
     blank_bottombars();
     /* Display the first number of shortcuts in the given menu that
      * have a key combination assigned to them. */
-    for (f = allfuncs, index = 0; f != nullptr && index < number; f = f->next)
+    for (f = allfuncs, index = 0; f != NULL && index < number; f = f->next)
     {
         unsigned long thiswidth = itemwidth;
         if ((f->menus & menu) == 0)
         {
             continue;
         }
-        if ((s = first_sc_for(menu, f->func)) == nullptr)
+        if ((s = first_sc_for(menu, f->func)) == NULL)
         {
             continue;
         }
@@ -3156,7 +3130,7 @@ place_the_cursor(void)
         unsigned long leftedge;
         row -= chunk_for(openfile->firstcolumn, openfile->edittop);
         /* Calculate how many rows the lines from edittop to current use. */
-        while (line != nullptr && line != openfile->current)
+        while (line != NULL && line != openfile->current)
         {
             row += 1 + extra_chunks_in(line);
             line = line->next;
@@ -3243,12 +3217,12 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
     {
         const colortype *varnish = openfile->syntax->color;
         /* If there are multiline regexes, make sure this line has a cache. */
-        if (openfile->syntax->multiscore > 0 && line->multidata == nullptr)
+        if (openfile->syntax->multiscore > 0 && line->multidata == NULL)
         {
             line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
         }
         /* Iterate through all the coloring regexes. */
-        for (; varnish != nullptr; varnish = varnish->next)
+        for (; varnish != NULL; varnish = varnish->next)
         {
             /* Where in the line we currently begin looking for a match. */
             unsigned long index = 0;
@@ -3265,7 +3239,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
             /* The match positions of the start and end regexes. */
             regmatch_t startmatch, endmatch;
             /* First case: varnish is a single-line expression. */
-            if (varnish->end == nullptr)
+            if (varnish->end == NULL)
             {
                 while (index < PAINT_LIMIT && index < till_x)
                 {
@@ -3499,7 +3473,7 @@ update_line(linestruct *line, const unsigned long index)
     row           = line->lineno - openfile->edittop->lineno;
     from_col      = get_page_start(wideness(line->data, index));
     /* Expand the piece to be drawn to its representable form, and draw it. */
-    converted = display_string(line->data, from_col, editwincols, true, false);
+    converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
     draw_row(row, converted, line, from_col);
     free(converted);
     if (from_col > 0)
@@ -3540,9 +3514,9 @@ update_softwrapped_line(linestruct *line)
     /* The data of the chunk with tabs and controll chars expanded. */
     char *converted;
     /* This tells the softwrapping rutine to start at begining-of-line. */
-    bool kickoff = true;
-    /* Becomes 'true' when the last chunk of the line has been reached. */
-    bool end_of_line = false;
+    bool kickoff = TRUE;
+    /* Becomes 'TRUE' when the last chunk of the line has been reached. */
+    bool end_of_line = FALSE;
     if (line == openfile->edittop)
     {
         from_col = openfile->firstcolumn;
@@ -3552,7 +3526,7 @@ update_softwrapped_line(linestruct *line)
         row -= chunk_for(openfile->firstcolumn, openfile->edittop);
     }
     /* Find out on which screen row the target line should be shown. */
-    while (someline != line && someline != nullptr)
+    while (someline != line && someline != NULL)
     {
         row += 1 + extra_chunks_in(someline);
         someline = someline->next;
@@ -3568,7 +3542,7 @@ update_softwrapped_line(linestruct *line)
         to_col        = get_softwrap_breakpoint(line->data, from_col, kickoff, end_of_line);
         sequel_column = (end_of_line) ? 0 : to_col;
         /* Convert the chunk to its displayable form and draw it. */
-        converted = display_string(line->data, from_col, to_col - from_col, true, false);
+        converted = display_string(line->data, from_col, to_col - from_col, TRUE, FALSE);
         draw_row(row++, converted, line, from_col);
         free(converted);
         from_col = to_col;
@@ -3588,7 +3562,7 @@ line_needs_update(const unsigned long old_column, const unsigned long new_column
 {
     if (openfile->mark)
     {
-        return true;
+        return TRUE;
     }
     else
     {
@@ -3631,7 +3605,7 @@ go_back_chunks(int nrows, linestruct **line, unsigned long *leftedge)
     }
     else
     {
-        for (i = nrows; i > 0 && (*line)->prev != nullptr; i--)
+        for (i = nrows; i > 0 && (*line)->prev != NULL; i--)
         {
             *line = (*line)->prev;
         }
@@ -3654,11 +3628,11 @@ go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge)
     if (ISSET(SOFTWRAP))
     {
         current_leftedge = *leftedge;
-        kickoff          = true;
+        kickoff          = TRUE;
         /* Advance through the requested number of chunks. */
         for (i = nrows; i > 0; i--)
         {
-            end_of_line      = false;
+            end_of_line      = FALSE;
             current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, kickoff, end_of_line);
             if (!end_of_line)
             {
@@ -3670,7 +3644,7 @@ go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge)
             }
             *line            = (*line)->next;
             current_leftedge = 0;
-            kickoff          = true;
+            kickoff          = TRUE;
         }
         /* Only change leftedge when we actually could move. */
         if (i < nrows)
@@ -3688,7 +3662,7 @@ go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge)
     return i;
 }
 
-/* Return 'true' if there are fewer than a screen's worth of lines between
+/* Return 'TRUE' if there are fewer than a screen's worth of lines between
  * the line at line number was_lineno (and column was_leftedge, if we're in softwrap mode)
  * and the line at current[current_x]. */
 bool
@@ -3761,9 +3735,9 @@ edit_scroll(bool direction)
         go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
     }
     /* Actually scroll the text of the edit window one row up or down. */
-    scrollok(midwin, true);
+    scrollok(midwin, TRUE);
     wscrl(midwin, (direction == BACKWARD) ? -1 : 1);
-    scrollok(midwin, false);
+    scrollok(midwin, FALSE);
     /* If we're not on the first "page" (when not softwrapping), or the mark
      * is on, the row next to the scrolled region needs to be redrawn too. */
     if (line_needs_update(openfile->placewewant, 0) && nrows < editwinrows)
@@ -3794,7 +3768,7 @@ edit_scroll(bool direction)
     }
     /* Draw new content on the blank row (and on the bordering row too
      * when it was deemed necessary). */
-    while (nrows > 0 && line != nullptr)
+    while (nrows > 0 && line != NULL)
     {
         nrows -= update_line(line, (line == openfile->current) ? openfile->current_x : 0);
         line = line->next;
@@ -3820,13 +3794,13 @@ get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kick
     /* The column position of the last seen whitespace character. */
     unsigned long last_blank_col = 0;
     /* A pointer to the last seen whitespace character in text. */
-    const char *farthest_blank = nullptr;
+    const char *farthest_blank = NULL;
     /* Initialize the static variables when it's another line. */
     if (kickoff)
     {
         text    = linedata;
         column  = 0;
-        kickoff = false;
+        kickoff = FALSE;
     }
     /* First find the place in text where the current chunk starts. */
     while (*text != '\0' && column < leftedge)
@@ -3854,7 +3828,7 @@ get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kick
     }
     /* If we're softwrapping at blanks and we found at least one blank, break
      * after that blank -- if it doesn't overshoot the screen's edge. */
-    if (farthest_blank != nullptr)
+    if (farthest_blank != NULL)
     {
         unsigned long aftertheblank = last_blank_col;
         unsigned long onestep       = advance_over(farthest_blank, aftertheblank);
@@ -3884,15 +3858,15 @@ get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *lefted
     bool          end_of_line, kickoff;
     current_chunk = 0;
     start_col     = 0;
-    end_of_line   = false;
-    kickoff       = true;
-    while (true)
+    end_of_line   = FALSE;
+    kickoff       = TRUE;
+    while (TRUE)
     {
         end_col = get_softwrap_breakpoint(line->data, start_col, kickoff, end_of_line);
         /* When the column is in range or we reached end-of-line, we're done. */
         if (end_of_line || (start_col <= column && column < end_col))
         {
-            if (leftedge != nullptr)
+            if (leftedge != NULL)
             {
                 *leftedge = start_col;
             }
@@ -3907,7 +3881,7 @@ get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *lefted
 unsigned long
 extra_chunks_in(linestruct *line)
 {
-    return get_chunk_and_edge((unsigned long)-1, line, nullptr);
+    return get_chunk_and_edge((unsigned long)-1, line, NULL);
 }
 
 /* Return the row of the softwrapped chunk of the given line that column is on,
@@ -3915,7 +3889,7 @@ extra_chunks_in(linestruct *line)
 unsigned long
 chunk_for(unsigned long column, linestruct *line)
 {
-    return get_chunk_and_edge(column, line, nullptr);
+    return get_chunk_and_edge(column, line, NULL);
 }
 
 /* Return the leftmost column of the softwrapped chunk of the given line that
@@ -3943,7 +3917,7 @@ ensure_firstcolumn_is_aligned(void)
         openfile->firstcolumn = 0;
     }
     /* If smooth scrolling is on, make sure the viewport doesn't center. */
-    focusing = false;
+    focusing = FALSE;
 }
 
 /* When in softwrap mode, and the given column is on or after the breakpoint of
@@ -3957,8 +3931,8 @@ actual_last_column(unsigned long leftedge, unsigned long column)
     unsigned long end_col;
     if ISSET (SOFTWRAP)
     {
-        kickoff    = true;
-        last_chunk = false;
+        kickoff    = TRUE;
+        last_chunk = FALSE;
         end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk) - leftedge;
         /* If we're not on the last chunk, we're one column past the end of
          * the row.  Shifting back one column might put us in the middle of
@@ -4025,7 +3999,7 @@ edit_redraw(linestruct *old_current, update_type manner)
     if (current_is_offscreen())
     {
         adjust_viewport(ISSET(JUMPY_SCROLLING) ? CENTERING : manner);
-        refresh_needed = true;
+        refresh_needed = TRUE;
         return;
     }
     /* If the mark is on, update all lines between old_current and current. */
@@ -4092,7 +4066,7 @@ edit_refresh(void)
     clock_t start = clock();
 #endif
     line = openfile->edittop;
-    while (row < editwinrows && line != nullptr)
+    while (row < editwinrows && line != NULL)
     {
         row += update_line(line, (line == openfile->current) ? openfile->current_x : 0);
         line = line->next;
@@ -4111,7 +4085,7 @@ edit_refresh(void)
 #endif
     place_the_cursor();
     wnoutrefresh(midwin);
-    refresh_needed = false;
+    refresh_needed = FALSE;
 }
 
 /* Move edittop so that current is on the screen.  manner says how:
@@ -4220,7 +4194,7 @@ spotlight(unsigned long from_col, unsigned long to_col)
     }
     else
     {
-        word = display_string(openfile->current->data, from_col, to_col - from_col, false, overshoots);
+        word = display_string(openfile->current->data, from_col, to_col - from_col, FALSE, overshoots);
     }
     wattron(midwin, interface_color_pair[SPOTLIGHTED]);
     waddnstr(midwin, word, actual_x(word, to_col));
@@ -4239,8 +4213,8 @@ spotlight_softwrapped(unsigned long from_col, unsigned long to_col)
     long          row;
     unsigned long leftedge = leftedge_for(from_col, openfile->current);
     unsigned long break_col;
-    bool          end_of_line = false;
-    bool          kickoff     = true;
+    bool          end_of_line = FALSE;
+    bool          kickoff     = TRUE;
     char         *word;
     place_the_cursor();
     row = openfile->cursor_row;
@@ -4250,7 +4224,7 @@ spotlight_softwrapped(unsigned long from_col, unsigned long to_col)
         /* If the highlighting ends on this chunk, we can stop after it. */
         if (break_col >= to_col)
         {
-            end_of_line = true;
+            end_of_line = TRUE;
             break_col   = to_col;
         }
         /* If the target text is of zero length, highlight a space instead. */
@@ -4288,11 +4262,11 @@ do_credits(void)
     bool        with_interface = !ISSET(ZERO);
     bool        with_help      = !ISSET(NO_HELP);
     int         crpos = 0, xlpos = 0;
-    const char *credits[CREDIT_LEN]     = {nullptr, /* "The nano text editor" */
-                                           nullptr, /* "version" */
+    const char *credits[CREDIT_LEN]     = {NULL, /* "The nano text editor" */
+                                           NULL, /* "version" */
                                            VERSION,
                                            "",
-                                           nullptr, /* "Brought to you by:" */
+                                           NULL, /* "Brought to you by:" */
                                            "Chris Allegretta",
                                            "Benno Schulenberg",
                                            "David Lawrence Ramsey",
@@ -4355,8 +4329,8 @@ do_credits(void)
         SET(NO_HELP);
         window_init();
     }
-    nodelay(midwin, true);
-    scrollok(midwin, true);
+    nodelay(midwin, TRUE);
+    scrollok(midwin, TRUE);
     blank_edit();
     wrefresh(midwin);
     napms(600);
@@ -4396,7 +4370,7 @@ do_credits(void)
         UNSET(NO_HELP);
     }
     window_init();
-    scrollok(midwin, false);
-    nodelay(midwin, false);
+    scrollok(midwin, FALSE);
+    nodelay(midwin, FALSE);
     draw_all_subwindows();
 }
