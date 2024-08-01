@@ -271,7 +271,7 @@ add_syntax(const unsigned short *type, char *word)
         add_syntax_word("brightgreen", NULL, rgx_word(word));
     }
     else if (*type & CS_INT || *type & CS_VOID || *type & CS_LONG || *type & CS_CHAR || *type & CS_BOOL ||
-             *type & CS_SIZE_T || *type & CS_SSIZE_T)
+             *type & CS_SIZE_T || *type & CS_SSIZE_T || *type & CS_SHORT)
     {
         /* Remove all if any '*' char`s */
         while (word[0] == '*')
