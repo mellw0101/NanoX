@@ -175,13 +175,13 @@ find_and_prime_applicable_syntax(void)
     if (syntaxstr != NULL)
     {
         /* An override of "none" is like having no syntax at all. */
-        if (constexpr_strcmp(syntaxstr, "none") == 0)
+        if (strcmp(syntaxstr, "none") == 0)
         {
             return;
         }
         for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
         {
-            if (constexpr_strcmp(sntx->name, syntaxstr) == 0)
+            if (strcmp(sntx->name, syntaxstr) == 0)
             {
                 break;
             }
@@ -270,7 +270,7 @@ find_and_prime_applicable_syntax(void)
     {
         for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
         {
-            if (constexpr_strcmp(sntx->name, "default") == 0)
+            if (strcmp(sntx->name, "default") == 0)
             {
                 break;
             }

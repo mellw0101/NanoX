@@ -137,3 +137,26 @@ get_file_extention(const char *full_name)
     }
     return fname;
 }
+
+bool
+is_word_func(char *word)
+{
+    unsigned int i;
+    for (i = 0; word[i]; i++)
+    {
+        if (word[i] == '(')
+        {
+            word[i] = '\0';
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+const char *
+rgx_word(const char *word)
+{
+    static char buf[1024];
+    sprintf(buf, "%s%s%s", "\\<(", word, ")\\>");
+    return buf;
+}

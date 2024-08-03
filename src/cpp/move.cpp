@@ -299,6 +299,23 @@ to_prev_block(void)
                 return;
             }
         }
+        else if (is_line_comment(openfile->current))
+        {
+            /* If not on the (first line / top) of a '//' comment. */
+            if (lines > 0)
+            {
+                /* Iterate to the top of the comment. */
+                for (; openfile->current->prev != NULL && is_line_comment(openfile->current);
+                     openfile->current = openfile->current->prev)
+                    ;
+                /* Back down one line. */
+                openfile->current = openfile->current->next;
+                get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
+                openfile->current_x = t_char;
+                edit_redraw(was_current, FLOWING);
+                return;
+            }
+        }
         get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
         cur_indent = t_tabs;
         if (was_indent == -1)
@@ -368,6 +385,21 @@ to_next_block(void)
                 return;
             }
         }
+        else if (is_line_comment(openfile->current))
+        {
+            if (lines > 0)
+            {
+                for (; openfile->next != NULL && is_line_comment(openfile->current);
+                     openfile->current = openfile->current->next)
+                    ;
+                openfile->current = openfile->current->prev;
+                get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
+                openfile->current_x = t_char;
+                edit_redraw(was_current, FLOWING);
+                recook |= perturbed;
+                return;
+            }
+        }
         get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
         cur_indent = t_tabs;
         if (was_indent == -1)
@@ -397,11 +429,11 @@ to_next_block(void)
     recook |= perturbed;
 }
 
-/* Move to the previous word. */
+/* Move to the previous word.
+ * TODO: (do_prev_word) - Fix so it properly stops where is should. */
 void
 do_prev_word(void)
 {
-    PROFILE_FUNCTION;
     bool punctuation_as_letters = ISSET(WORD_BOUNDS);
     bool seen_a_word            = false;
     bool step_forward           = false;
@@ -574,21 +606,19 @@ do_home(void)
     moved_off_chunk = true;
     moved           = false;
     was_column      = xplustabs();
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         leftedge = leftedge_for(was_column, openfile->current);
         left_x   = proper_x(openfile->current, &leftedge, false, leftedge, NULL);
     }
-    if ISSET (SMART_HOME)
+    if (ISSET(SMART_HOME))
     {
         unsigned long indent_x = indent_length(openfile->current->data);
         if (openfile->current->data[indent_x] != '\0')
         {
-            //
-            //  If we're exactly on the indent, move fully home.  Otherwise,
-            //  when not softwrapping or not after the first nonblank chunk,
-            //  move to the first nonblank character.
-            //
+            /* If we're exactly on the indent, move fully home.  Otherwise,
+             * when not softwrapping or not after the first nonblank chunk,
+             * move to the first nonblank character. */
             if (openfile->current_x == indent_x)
             {
                 openfile->current_x = 0;
@@ -603,10 +633,8 @@ do_home(void)
     }
     if (!moved && ISSET(SOFTWRAP))
     {
-        //
-        //  If already at the left edge of the screen, move fully home.
-        //  Otherwise, move to the left edge.
-        //
+        /* If already at the left edge of the screen, move fully home.
+         * Otherwise, move to the left edge. */
         if (openfile->current_x == left_x)
         {
             openfile->current_x = 0;

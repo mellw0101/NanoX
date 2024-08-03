@@ -964,6 +964,11 @@ do_enter(void)
     }
     check_for_syntax_words(openfile->current);
     update_c_syntaxtype();
+    char c_prev = '\0';
+    if (openfile->current->data[openfile->current_x - 1])
+    {
+        c_prev = openfile->current->data[openfile->current_x - 1];
+    }
     linestruct   *newnode    = make_new_node(openfile->current);
     linestruct   *sampleline = openfile->current;
     unsigned long extra      = 0;
@@ -1023,6 +1028,10 @@ do_enter(void)
         openfile->totsize += extra;
     }
     update_undo(ENTER);
+    if (c_prev == '{')
+    {
+        do_tab();
+    }
     refresh_needed = true;
     focusing       = false;
 }

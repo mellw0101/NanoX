@@ -9,3 +9,6 @@
 4.
     Make it so that when text is marked and '/" is pressed it 'text'/"text". 
     DONE!!!!.
+5.
+    Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
+    Almost DONE, it currently stops at top when going up and bottom when going down.

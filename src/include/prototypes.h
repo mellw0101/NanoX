@@ -512,22 +512,14 @@ void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spa
 
 unsigned short indent_char_len(linestruct *line);
 
-void        inject_in_line(linestruct **line, const char *str, unsigned long at);
-void        enclose_marked_region(const char *s1, const char *s2);
-void        do_block_comment(void);
-bool        enter_with_bracket(void);
-bool        is_empty_line(linestruct *line);
-void        add_syntax_word(const char *color_fg, const char *color_bg, const char *word);
-void        do_cpp_syntax(void);
-void        check_for_syntax_words(linestruct *line);
-colortype  *get_last_c_colortype(void);
-void        update_c_syntaxtype(void);
-syntaxtype *get_c_syntaxtype(void);
+void inject_in_line(linestruct **line, const char *str, unsigned long at);
+void enclose_marked_region(const char *s1, const char *s2);
+void do_block_comment(void);
+bool enter_with_bracket(void);
+bool is_empty_line(linestruct *line);
 
 /* 'syntax.cpp' */
-const char *rgx_word(const char *word);
 void        syntax_check_file(openfilestruct *file);
-bool        is_word_func(char *word);
 void        add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c);
 void        add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end,
                                  colortype **c);
@@ -536,6 +528,12 @@ void        check_syntax(const char *path);
 int         add_syntax(const unsigned short *type, char *word);
 void        handle_include(char *str);
 void        handle_define(char *str);
+void        do_cpp_syntax(void);
+void        check_for_syntax_words(linestruct *line);
+colortype  *get_last_c_colortype(void);
+void        update_c_syntaxtype(void);
+syntaxtype *get_c_syntaxtype(void);
+void        add_syntax_word(const char *color_fg, const char *color_bg, const char *word);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
@@ -548,5 +546,10 @@ char      **words_in_str(const char *str, unsigned long *size = NULL);
 const char *extract_include(char *str);
 void        words_in_file(const char *path);
 char       *get_file_extention(const char *full_name);
+const char *rgx_word(const char *word);
+bool        is_word_func(char *word);
+
+/* 'lines.cpp' */
+bool is_line_comment(linestruct *line);
 
 #include <Mlib/def.h>
