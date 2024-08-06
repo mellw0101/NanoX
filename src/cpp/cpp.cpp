@@ -1,9 +1,11 @@
 #include "../include/prototypes.h"
 
+#include "../include/definitions.h"
+
 #include <Mlib/Profile.h>
 #include <Mlib/def.h>
 
-/* Returns 'true' if 'c' is a cpp syntax char. */
+/* Returns 'TRUE' if 'c' is a cpp syntax char. */
 bool
 isCppSyntaxChar(const char c)
 {
@@ -110,14 +112,13 @@ enclose_marked_region(const char *s1, const char *s2)
 void
 do_block_comment(void)
 {
-    PROFILE_FUNCTION;
     enclose_marked_region("/* ", " */");
-    refresh_needed = true;
+    refresh_needed = TRUE;
 }
 
 /* Check if enter is requested when betweeen '{' and '}'.
  * if so properly open the brackets, place cursor in the middle and indent once.
- * Return`s 'false' if not between them, otherwise return`s 'true' */
+ * Return`s 'false' if not between them, otherwise return`s 'TRUE' */
 bool
 enter_with_bracket(void)
 {
@@ -189,11 +190,12 @@ enter_with_bracket(void)
     /* Place cursor at correct pos. */
     do_up();
     do_tab();
-    refresh_needed = true;
+    refresh_needed = TRUE;
     focusing       = false;
-    return true;
+    return TRUE;
 }
 
+/* Return`s 'TRUE' if the first char in a line is '\0'. */
 bool
 is_empty_line(linestruct *line)
 {

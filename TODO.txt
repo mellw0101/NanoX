@@ -9,6 +9,18 @@
 4.
     Make it so that when text is marked and '/" is pressed it 'text'/"text". 
     DONE!!!!.
+    p.s: i also added so that '{', '[' and '(' puts closing brackets around marked region,
+    i.e: '{text}', '[text]' and '(text)'.
+    @see @file 'cpp.cpp' @func 'enclose_marked_region'. 
 5.
     Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
     Almost DONE, it currently stops at top when going up and bottom when going down.
+6.
+    Implement a way to close and open brackets (will probebly be very HARD!!!).
+    funcs of intrest:
+        'edit_refresh'
+7.
+    Implement live syntax.
+    Almost done i just need to make a system to save types and structs of function calls
+    and such for help and error checking, also make the syntax highlighting of func
+    params local to function only and not global. 

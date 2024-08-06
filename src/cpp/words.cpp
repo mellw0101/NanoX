@@ -33,7 +33,7 @@ words_in_line(linestruct *line)
     char       **words = (char **)nmalloc(sizeof(char *) * cap);
     char        *data  = strdup(line->data);
     char        *tok   = strtok(data, " (");
-    while (tok != nullptr)
+    while (tok != NULL)
     {
         if (i == cap)
         {
@@ -42,9 +42,9 @@ words_in_line(linestruct *line)
         }
         remove_tabs_from_word(&tok);
         words[i++] = tok;
-        tok        = strtok(nullptr, " ");
+        tok        = strtok(NULL, " ");
     }
-    words[i] = nullptr;
+    words[i] = NULL;
     return words;
 }
 
@@ -119,11 +119,13 @@ add_word_to_arry(const char *word, char ***words, unsigned long *cword, unsigned
 void
 words_in_file(const char *path)
 {
-    PROFILE_FUNCTION;
+    // unsigned long cap   = 10;
+    // char       ***lines = (char ***)nmalloc(sizeof(char **) * cap);
 }
 
+/* Returns the text after '.' in 'openfile->filename'. */
 char *
-get_file_extention(const char *full_name)
+get_file_extention(void)
 {
     unsigned int i;
     char        *fname = strdup(openfile->filename);

@@ -257,7 +257,7 @@ findfile(const char *needle, bool forwards)
     unsigned long began_at = selected;
     /* Iterate through the list of filenames, until a match is found or
      * we've come back to the point where we started. */
-    while (true)
+    while (TRUE)
     {
         if (forwards)
         {
@@ -303,7 +303,7 @@ search_filename(bool forwards)
     /* If something was searched for before, show it between square brackets. */
     if (*last_search != '\0')
     {
-        char *disp = display_string(last_search, 0, COLS / 3, false, false);
+        char *disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
         thedefault = (char *)nmalloc(strlen(disp) + 7);
         /* We use (COLS / 3) here because we need to see more on the line. */
         sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > COLS / 3) ? "..." : "");
@@ -453,7 +453,7 @@ read_directory_contents:
     }
     else
     {
-        while (true)
+        while (TRUE)
         {
             functionptrtype function;
             int             kbinput;
@@ -471,7 +471,7 @@ read_directory_contents:
             {
                 int mouse_x, mouse_y;
                 /* When the user clicked in the file list, select a filename. */
-                if (get_mouseinput(mouse_y, mouse_x, TRUE) == 0 && wmouse_trafo(midwin, &mouse_y, &mouse_x, FALSE))
+                if (get_mouseinput(&mouse_y, &mouse_x, TRUE) == 0 && wmouse_trafo(midwin, &mouse_y, &mouse_x, FALSE))
                 {
                     selected =
                         selected - selected % (usable_rows * piles) + (mouse_y * piles) + (mouse_x / (gauge + 2));
@@ -647,7 +647,7 @@ read_directory_contents:
                     path = (char *)nrealloc(path, strlen(present_path) + strlen(answer) + 1);
                     sprintf(path, "%s%s", present_path, answer);
                 }
-                if (outside_of_confinement(path, false))
+                if (outside_of_confinement(path, FALSE))
                 {
                     /* TRANSLATORS: This refers to the confining effect of
                      * the option --operatingdir, not of --restricted. */
@@ -773,7 +773,7 @@ browse_in(const char *inpath)
     }
     /* If the resulting path isn't in the operating directory,
      * use the operating directory instead. */
-    if (outside_of_confinement(path, false))
+    if (outside_of_confinement(path, FALSE))
     {
         path = mallocstrcpy(path, operating_dir);
     }

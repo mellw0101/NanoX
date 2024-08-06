@@ -1,3 +1,4 @@
+#include "../include/definitions.h"
 #include "../include/prototypes.h"
 
 #include <Mlib/Profile.h>
@@ -6,12 +7,11 @@
 void
 syntax_check_file(openfilestruct *file)
 {
-    PROFILE_FUNCTION;
-    if (openfile->filetop->next == nullptr)
+    if (openfile->filetop->next == NULL)
     {
         return;
     }
-    const char *fext = get_file_extention(openfile->filename);
+    const char *fext = get_file_extention();
     if (strcmp(fext, "cpp") == 0 || strcmp(fext, "c") == 0)
     {
         linestruct *line;
@@ -90,7 +90,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
 void
 add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c)
 {
-    if (c == nullptr)
+    if (c == NULL)
     {
         return;
     }
@@ -170,25 +170,24 @@ check_func_syntax(char ***words, unsigned int *i)
     if (is_word_func((*words)[*i]))
     {
         add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
-        return true;
+        return TRUE;
     }
     if ((*words)[(*i) + 1] != NULL)
     {
         if (*((*words)[(*i) + 1]) == '(')
         {
             add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
-            return true;
+            return TRUE;
         }
     }
-    return false;
+    return FALSE;
 }
 
-/* Check a file for syntax and add relevent syntax. */
+/* Check a file for syntax, and add relevent syntax. */
 void
 check_syntax(const char *path)
 {
-    PROFILE_FUNCTION;
-    char         *buf = nullptr, **words;
+    char         *buf = NULL, **words;
     unsigned int  i;
     unsigned long size, len;
     FILE         *f = fopen(path, "rb");
@@ -254,10 +253,6 @@ add_syntax(const unsigned short *type, char *word)
         while (word[0] == '*')
         {
             word += 1;
-        }
-        if (word[0] == '\0')
-        {
-            return NEXT_WORD_ALSO;
         }
         unsigned int i = 0;
         for (i = 0; word[i]; i++)
@@ -363,7 +358,7 @@ handle_define(char *str)
             break;
         }
     }
-    add_syntax_word("bold,lagoon", NULL, rgx_word(str));
+    add_syntax_word("bold,blue", NULL, rgx_word(str));
 }
 
 static unsigned short last_type = 0;
@@ -390,7 +385,7 @@ check_for_syntax_words(linestruct *line)
         if (last_type != 0)
         {
             if (last_type & CS_VOID || last_type & CS_INT || last_type & CS_CHAR || last_type & CS_LONG ||
-                last_type & CS_BOOL)
+                last_type & CS_BOOL || last_type & CS_SIZE_T || last_type & CS_SSIZE_T || last_type & CS_SHORT)
             {
                 unsigned int j;
                 for (j = 0; (words[i])[j]; j++)
@@ -430,7 +425,7 @@ check_for_syntax_words(linestruct *line)
             }
             if (add_syntax(&type, words[i]) == NEXT_WORD_ALSO)
             {
-                while (true)
+                while (TRUE)
                 {
                     if (words[++i] == NULL)
                     {
@@ -466,7 +461,7 @@ do_cpp_syntax(void)
     }
     add_syntax_word("gray", NULL, ";");
     add_syntax_word("brightred", NULL, "\\<[A-Z_][0-9A-Z_]*\\>");
-    add_syntax_word("blue", NULL, "\\<(NULL|nullptr)\\>");
+    add_syntax_word("blue", NULL, "\\<(NULL|nullptr|FALSE|TRUE)\\>");
     add_syntax_word("brightmagenta", NULL, "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*:[[:blank:]]*$");
     add_syntax_word("normal", NULL, ":[[:blank:]]*$");
     /* This makes word after green, while typing. */
@@ -487,7 +482,7 @@ do_cpp_syntax(void)
     add_syntax_word("brightyellow", NULL, "\\<(if|else|for|while|do|switch|case|default)\\>");
     add_syntax_word("brightyellow", NULL, "\\<(try|throw|catch|operator|new|delete)\\>");
     add_syntax_word("brightmagenta", NULL, "\\<(using|break|continue|goto|return)\\>");
-    add_syntax_word("brightmagenta", NULL, "'([^'\\]|\\([\"'\abfnrtv]|x[[:xdigit:]]{1,2}|[0-3]?[0-7]{1,2}))'");
+    add_syntax_word("brightmagenta", NULL, "'([^'\\]|\\\\([\"'\abfnrtv]|x[[:xdigit:]]{1,2}|[0-3]?[0-7]{1,2}))'");
     add_syntax_word("cyan", NULL,
                     "__attribute__[[:blank:]]*\\(\\([^)]*\\)\\)|__(aligned|asm|builtin|hidden|inline|packed|"
                     "restrict|section|typeof|weak)__");
@@ -504,7 +499,6 @@ do_cpp_syntax(void)
 colortype *
 get_last_c_colortype(void)
 {
-    PROFILE_FUNCTION;
     if (c_syntaxtype == NULL)
     {
         c_syntaxtype = get_c_syntaxtype();
@@ -541,7 +535,6 @@ get_c_syntaxtype(void)
 void
 update_c_syntaxtype(void)
 {
-    PROFILE_FUNCTION;
     if (c_syntaxtype == NULL)
     {
         c_syntaxtype = get_c_syntaxtype();
@@ -557,11 +550,10 @@ update_c_syntaxtype(void)
 void
 add_syntax_word(const char *color_fg, const char *color_bg, const char *word)
 {
-    PROFILE_FUNCTION;
     if (last_c_color == NULL)
     {
         last_c_color = get_last_c_colortype();
     }
-    /* Add, then update the syntax. */
+    /* Add the syntax. */
     add_syntax_color(color_fg, color_bg, word, &last_c_color);
 }

@@ -24,7 +24,6 @@ static unsigned long location;
 void
 help_init(void)
 {
-    PROFILE_FUNCTION;
     unsigned long allocsize = 0;
     /* Space needed for help_text. */
     const char *htx[3];
@@ -370,14 +369,14 @@ wrap_help_text_into_buffer(void)
         }
         if (ptr < end_of_intro || *(ptr - 1) == '\n')
         {
-            length  = break_line(ptr, wrapping_point, true);
+            length  = break_line(ptr, wrapping_point, TRUE);
             oneline = (char *)nmalloc(length + 1);
             shim    = (*(ptr + length - 1) == ' ') ? 0 : 1;
             snprintf(oneline, length + shim, "%s", ptr);
         }
         else
         {
-            length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, true);
+            length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, TRUE);
             oneline = (char *)nmalloc(length + 5);
             snprintf(oneline, length + 5, "\t\t  %s", ptr);
         }
@@ -403,7 +402,7 @@ wrap_help_text_into_buffer(void)
     find_and_prime_applicable_syntax();
     prepare_for_display();
     /* Move to the position in the file where we were before. */
-    while (true)
+    while (TRUE)
     {
         sum += constexpr_strlen(openfile->current->data);
         if (sum > location)
@@ -459,12 +458,12 @@ show_help(void)
     curs_set(0);
     /* Compose the help text from all the relevant pieces. */
     help_init();
-    inhelp   = true;
+    inhelp   = TRUE;
     location = 0;
     didfind  = 0;
     bottombars(MHELP);
     /* Extract the title from the head of the help text. */
-    length = break_line(help_text, HIGHEST_POSITIVE, true);
+    length = break_line(help_text, HIGHEST_POSITIVE, TRUE);
     title  = measured_copy(help_text, length);
     titlebar(title);
     /* Skip over the title to point at the start of the body text. */
@@ -475,14 +474,14 @@ show_help(void)
     }
     wrap_help_text_into_buffer();
     edit_refresh();
-    while (true)
+    while (TRUE)
     {
         lastmessage = VACUUM;
-        focusing    = true;
+        focusing    = TRUE;
         /* Show the cursor when we searched and found something. */
         kbinput     = get_kbinput(midwin, didfind == 1 || ISSET(SHOW_CURSOR));
         didfind     = 0;
-        spotlighted = false;
+        spotlighted = FALSE;
         if (bracketed_paste || kbinput == BRACKETED_PASTE_MARKER)
         {
             beep();
@@ -527,7 +526,7 @@ show_help(void)
         else if (kbinput == KEY_MOUSE)
         {
             int dummy_row, dummy_col;
-            get_mouseinput(dummy_row, dummy_col, true);
+            get_mouseinput(&dummy_row, &dummy_col, TRUE);
         }
         else if (kbinput == KEY_WINCH)
         {
@@ -559,13 +558,13 @@ show_help(void)
     editwincols  = COLS - margin - sidebar;
     tabsize      = was_tabsize;
     syntaxstr    = was_syntax;
-    have_palette = false;
+    have_palette = FALSE;
     free(title);
     title = NULL;
     free(answer);
     answer = saved_answer;
     free(help_text);
-    inhelp = false;
+    inhelp = FALSE;
     curs_set(0);
     if (ISSET(NO_HELP) || ISSET(ZERO))
     {

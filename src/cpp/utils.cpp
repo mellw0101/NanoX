@@ -122,24 +122,19 @@ digits(const long n)
     // Read an integer from the given string.  If it parses okay,
     // store it in *result and return TRUE; otherwise, return FALSE.
     bool
-    parse_num(const char *string, s64 *result)
+    parse_num(const char *string, long *result)
     {
         sunsigned long value;
         char     *excess;
-
         // Clear the error number so that we can check it afterward.
         errno = 0;
-
-        value = (ssize_t)strtol(string, &excess, 10);
-
+        value = (long)strtol(string, &excess, 10);
         if (errno == ERANGE || *string == '\0' || *excess != '\0')
         {
-            return false;
+            return FALSE;
         }
-
         *result = value;
-
-        return true;
+        return TRUE;
     }
  */
 bool
@@ -150,19 +145,18 @@ parseNum(STRING_VIEW string, long &result)
     long value = constexpr_strtoll(&string[0], &end, 10);
     if (errno == ERANGE || *end != '\0' || string[0] == '\0')
     {
-        return false;
+        return FALSE;
     }
     result = value;
-    return true;
+    return TRUE;
 }
 
 /* Read one number (or two numbers separated by comma, period, or colon)
  * from the given string and store the number(s) in *line (and *column).
- * Return 'false' on a failed parsing, and 'true' otherwise. */
+ * Return 'FALSE' on a failed parsing, and 'TRUE' otherwise. */
 bool
 parse_line_column(const char *string, long *line, long *column)
 {
-    PROFILE_FUNCTION;
     const char *comma;
     char       *firstpart;
     bool        retval;
@@ -509,7 +503,7 @@ remove_magicline(void)
     }
 }
 
-/* Return 'true' when the mark is before or at the cursor, and false otherwise. */
+/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
 bool
 mark_is_before_cursor(void)
 {
@@ -558,7 +552,7 @@ get_range(linestruct **top, linestruct **bot)
         }
         else
         {
-            also_the_last = true;
+            also_the_last = TRUE;
         }
     }
 }

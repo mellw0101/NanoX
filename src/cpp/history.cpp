@@ -12,7 +12,7 @@
 #endif
 
 /* Whether any of the history lists has changed. */
-static bool history_changed = false;
+static bool history_changed = FALSE;
 /* The name of the positions-history file. */
 static char *poshistname = NULL;
 /* The last time the positions-history file was written. */
@@ -128,7 +128,7 @@ update_history(linestruct **item, const char *text, bool avoid_duplicates)
     *hbot         = (*hbot)->next;
     (*hbot)->data = copy_of("");
     /* Indicate that the history needs to be saved on exit. */
-    history_changed = true;
+    history_changed = TRUE;
     /* Set the current position in the list to the bottom. */
     *item = *hbot;
 }
@@ -197,14 +197,14 @@ have_statedir(void)
         if (stat(statedir, &dirinfo) == 0 && S_ISDIR(dirinfo.st_mode))
         {
             poshistname = concatenate(statedir, POSITION_HISTORY);
-            return true;
+            return TRUE;
         }
     }
     free(statedir);
     xdgdatadir = getenv("XDG_DATA_HOME");
     if (homedir == NULL && xdgdatadir == NULL)
     {
-        return false;
+        return FALSE;
     }
     if (xdgdatadir != NULL)
     {
@@ -231,7 +231,7 @@ have_statedir(void)
                          "It is required for saving/loading "
                          "search history or cursor positions.\n"),
                       statedir, strerror(errno));
-            return false;
+            return FALSE;
         }
     }
     else if (!S_ISDIR(dirinfo.st_mode))
@@ -240,10 +240,10 @@ have_statedir(void)
                      "Nano will be unable to load or save "
                      "search history or cursor positions.\n"),
                   statedir);
-        return false;
+        return FALSE;
     }
     poshistname = concatenate(statedir, POSITION_HISTORY);
-    return true;
+    return TRUE;
 }
 
 /* Load the histories for Search, Replace With, and Execute Command. */
@@ -293,7 +293,7 @@ load_history(void)
     free(histname);
     free(stanza);
     /* Reading in the lists has marked them as changed; undo this side effect. */
-    history_changed = false;
+    history_changed = FALSE;
 }
 
 /* Write the lines of a history list, starting at head, from oldest to newest,
@@ -308,14 +308,14 @@ write_list(const linestruct *head, FILE *histfile)
         unsigned long length = recode_LF_to_NUL(item->data);
         if (fwrite(item->data, 1, length, histfile) < length)
         {
-            return false;
+            return FALSE;
         }
         if (putc('\n', histfile) == EOF)
         {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }
 
 /* Save the histories for Search, Replace With, and Execute Command. */
@@ -580,7 +580,7 @@ update_poshistory(void)
 }
 
 /* Check whether the given file matches an existing entry in the recorded
- * last file positions.  If not, return 'false'.  If yes, return 'true' and
+ * last file positions.  If not, return 'FALSE'.  If yes, return 'TRUE' and
  * set line and column to the retrieved values. */
 bool
 has_old_position(const char *file, long *line, long *column)
@@ -589,7 +589,7 @@ has_old_position(const char *file, long *line, long *column)
     poshiststruct *item;
     if (fullpath == NULL)
     {
-        return false;
+        return FALSE;
     }
     reload_positions_if_needed();
     item = position_history;
@@ -600,9 +600,9 @@ has_old_position(const char *file, long *line, long *column)
     free(fullpath);
     if (item == NULL)
     {
-        return false;
+        return FALSE;
     }
     *line   = item->linenumber;
     *column = item->columnnumber;
-    return true;
+    return TRUE;
 }

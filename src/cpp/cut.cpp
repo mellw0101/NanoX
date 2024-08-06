@@ -32,7 +32,7 @@ expunge(undo_type action)
         /* When softwrapping, a changed number of chunks requires a refresh. */
         if (ISSET(SOFTWRAP) && extra_chunks_in(openfile->current) != old_amount)
         {
-            refresh_needed = true;
+            refresh_needed = TRUE;
         }
         /* Adjust the mark if it is after the cursor on the current line. */
         if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x)
@@ -62,13 +62,13 @@ expunge(undo_type action)
         }
         openfile->current->has_anchor |= joining->has_anchor;
         /* Add the content of the next line to that of the current one. */
-        openfile->current->data = (char *)nrealloc(
-            openfile->current->data, constexpr_strlen(openfile->current->data) + constexpr_strlen(joining->data) + 1);
+        openfile->current->data =
+            (char *)nrealloc(openfile->current->data, strlen(openfile->current->data) + strlen(joining->data) + 1);
         constexpr_strcat(openfile->current->data, joining->data);
         unlink_node(joining);
         /* Two lines were joined, so do a renumbering and refresh the screen. */
         renumber_from(openfile->current);
-        refresh_needed = true;
+        refresh_needed = TRUE;
     }
     else
     {
@@ -140,9 +140,9 @@ do_backspace(void)
     }
 }
 
-/* Return 'false' when a cut command would not actually cut anything: when
+/* Return 'FALSE' when a cut command would not actually cut anything: when
  * on an empty line at EOF, or when the mark covers zero characters, or
- * (when test_cliff is 'true') when the magic line would be cut. */
+ * (when test_cliff is 'TRUE') when the magic line would be cut. */
 bool
 is_cuttable(bool test_cliff)
 {
@@ -154,16 +154,16 @@ is_cuttable(bool test_cliff)
     {
         statusbar(_("Nothing was cut"));
         openfile->mark = NULL;
-        return false;
+        return FALSE;
     }
     else
     {
-        return true;
+        return TRUE;
     }
 }
 
 /* Delete text from the cursor until the first start of a word to
- * the left, or to the right when forward is 'true'. */
+ * the left, or to the right when forward is 'TRUE'. */
 void
 chop_word(bool forward)
 {
@@ -210,7 +210,7 @@ chop_word(bool forward)
     openfile->current_x = is_current_x;
     /* Now kill the marked region and a word is gone. */
     add_undo(CUT, NULL);
-    do_snip(true, false, false);
+    do_snip(TRUE, FALSE, FALSE);
     update_undo(CUT);
     /* Discard the cut word and restore the cutbuffer. */
     free_lines(cutbuffer);
@@ -236,7 +236,7 @@ void
 chop_next_word(void)
 {
     openfile->mark = NULL;
-    if (is_cuttable(true))
+    if (is_cuttable(TRUE))
     {
         chop_word(FORWARD);
     }
@@ -251,7 +251,7 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
     bool        same_line      = (openfile->mark == top);
     bool        post_marked =
         (openfile->mark && (openfile->mark->lineno > top->lineno || (same_line && openfile->mark_x > top_x)));
-    static bool inherited_anchor = false;
+    static bool inherited_anchor = FALSE;
     bool        had_anchor       = top->has_anchor;
     if (top == bot && top_x == bot_x)
     {
@@ -353,7 +353,7 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
     if (edittop_inside)
     {
         adjust_viewport(STATIONARY);
-        refresh_needed = true;
+        refresh_needed = TRUE;
     }
     /* If the text doesn't end with a newline, and it should, add one. */
     if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0] != '\0')
@@ -449,11 +449,11 @@ copy_from_buffer(linestruct *somebuffer)
     ingraft_buffer(the_copy);
     if (openfile->current->lineno > threshold || ISSET(SOFTWRAP))
     {
-        recook = true;
+        recook = TRUE;
     }
     else
     {
-        perturbed = true;
+        perturbed = TRUE;
     }
 }
 
@@ -469,12 +469,13 @@ cut_marked_region(void)
 }
 
 /* Move text from the current buffer into the cutbuffer.
- * If until_eof is 'true', move all text from the current cursor
+ * If until_eof is 'TRUE', move all text from the current cursor
  * position to the end of the file into the cutbuffer.  If append
- * is 'true' (when zapping), always append the cut to the cutbuffer. */
+ * is 'TRUE' (when zapping), always append the cut to the cutbuffer. */
 void
 do_snip(bool marked, bool until_eof, bool append)
 {
+    PROFILE_FUNCTION;
     linestruct *line = openfile->current;
     keep_cutbuffer &= (openfile->last_action != COPY);
     /* If cuts were not continuous, or when cutting a region, clear the slate. */
@@ -500,7 +501,7 @@ do_snip(bool marked, bool until_eof, bool append)
          * move just the "line separator" into the cutbuffer. */
         if (line->data[openfile->current_x] != '\0')
         {
-            extract_segment(line, openfile->current_x, line, constexpr_strlen(line->data));
+            extract_segment(line, openfile->current_x, line, strlen(line->data));
         }
         else if (openfile->current != openfile->filebot)
         {
@@ -518,15 +519,15 @@ do_snip(bool marked, bool until_eof, bool append)
         }
         else
         {
-            extract_segment(line, 0, line, constexpr_strlen(line->data));
+            extract_segment(line, 0, line, strlen(line->data));
         }
         openfile->placewewant = 0;
     }
     /* After a line operation, future ones should add to the cutbuffer. */
     keep_cutbuffer = !marked && !until_eof;
     set_modified();
-    refresh_needed = true;
-    perturbed      = true;
+    refresh_needed = TRUE;
+    perturbed      = TRUE;
 }
 
 /* Move text from the current buffer into the cutbuffer. */
@@ -541,10 +542,10 @@ cut_text(void)
      * the current cut is not contiguous with the previous cutting. */
     if (openfile->last_action != CUT || !keep_cutbuffer)
     {
-        keep_cutbuffer = false;
+        keep_cutbuffer = FALSE;
         add_undo(CUT, NULL);
     }
-    do_snip(openfile->mark != NULL, false, false);
+    do_snip(openfile->mark != NULL, FALSE, FALSE);
     update_undo(CUT);
     wipe_statusbar();
 }
@@ -553,7 +554,7 @@ cut_text(void)
 void
 cut_till_eof(void)
 {
-    ran_a_tool = true;
+    ran_a_tool = TRUE;
     if (openfile->current->data[openfile->current_x] == '\0' &&
         (openfile->current->next == NULL ||
          (!ISSET(NO_NEWLINES) && openfile->current_x > 0 && openfile->current->next == openfile->filebot)))
@@ -562,7 +563,7 @@ cut_till_eof(void)
         return;
     }
     add_undo(CUT_TO_EOF, NULL);
-    do_snip(false, true, false);
+    do_snip(FALSE, TRUE, FALSE);
     update_undo(CUT_TO_EOF);
     wipe_statusbar();
 }
@@ -585,7 +586,7 @@ zap_text(void)
     }
     /* Use the cutbuffer from the ZAP undo item, so the cut can be undone. */
     cutbuffer = openfile->current_undo->cutbuffer;
-    do_snip(openfile->mark != NULL, false, true);
+    do_snip(openfile->mark != NULL, FALSE, TRUE);
     update_undo(ZAP);
     wipe_statusbar();
     cutbuffer = was_cutbuffer;
@@ -601,9 +602,9 @@ copy_marked_region(void)
     unsigned long top_x, bot_x;
     get_region(&topline, &top_x, &botline, &bot_x);
     openfile->last_action = OTHER;
-    keep_cutbuffer        = false;
+    keep_cutbuffer        = FALSE;
     openfile->mark        = NULL;
-    refresh_needed        = true;
+    refresh_needed        = TRUE;
     if (topline == botline && top_x == bot_x)
     {
         statusbar(_("Copied nothing"));
@@ -636,7 +637,7 @@ copy_text(void)
     linestruct   *addition;
     if (openfile->mark || openfile->last_action != COPY)
     {
-        keep_cutbuffer = false;
+        keep_cutbuffer = FALSE;
     }
     if (!keep_cutbuffer)
     {
@@ -707,7 +708,7 @@ copy_text(void)
     }
     edit_redraw(was_current, FLOWING);
     openfile->last_action = COPY;
-    keep_cutbuffer        = true;
+    keep_cutbuffer        = TRUE;
 }
 
 /* Copy text from the cutbuffer into the current buffer. */
@@ -735,7 +736,7 @@ paste_text(void)
     /* Wipe any anchors in the pasted text, so that they don't proliferate. */
     for (linestruct *line = was_current; line != openfile->current->next; line = line->next)
     {
-        line->has_anchor = false;
+        line->has_anchor = FALSE;
     }
     was_current->has_anchor = had_anchor;
     update_undo(PASTE);
@@ -747,7 +748,7 @@ paste_text(void)
     /* If we pasted less than a screenful, don't center the cursor. */
     if (less_than_a_screenful(was_lineno, was_leftedge))
     {
-        focusing = false;
+        focusing = FALSE;
     }
     else
     {
@@ -757,5 +758,5 @@ paste_text(void)
     openfile->placewewant = xplustabs();
     set_modified();
     wipe_statusbar();
-    refresh_needed = true;
+    refresh_needed = TRUE;
 }

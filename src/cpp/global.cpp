@@ -6,46 +6,46 @@
 
 /* Global variables. */
 
-/* Set to 'true' by the handler whenever a SIGWINCH occurs. */
-volatile sig_atomic_t the_window_resized = false;
+/* Set to 'TRUE' by the handler whenever a SIGWINCH occurs. */
+volatile sig_atomic_t the_window_resized = FALSE;
 /* Whether we're running on a Linux console (a VT). */
-bool on_a_vt = false;
+bool on_a_vt = FALSE;
 /* Whether any Sh-M-<letter> combo has been bound. */
-bool shifted_metas = false;
+bool shifted_metas = FALSE;
 /* Whether the current keystroke is a Meta key. */
 bool meta_key;
 /* Whether Shift was being held together with a movement key. */
 bool shift_held;
 /* Whether to ignore modifier keys while running a macro or string bind. */
-bool mute_modifiers = false;
+bool mute_modifiers = FALSE;
 /* Whether text is being pasted into nano from outside. */
-bool bracketed_paste = false;
+bool bracketed_paste = FALSE;
 /* Becomes TRUE as soon as all options and files have been read. */
-bool we_are_running = false;
+bool we_are_running = FALSE;
 /* Whether more than one buffer is or has been open. */
-bool more_than_one = false;
+bool more_than_one = FALSE;
 /* Whether to show the number of lines when the minibar is used. */
-bool report_size = true;
+bool report_size = TRUE;
 /* Whether a tool has been run at the Execute-Command prompt. */
-bool ran_a_tool = false;
+bool ran_a_tool = FALSE;
 /* Whether we are in the help viewer. */
-bool inhelp = false;
+bool inhelp = FALSE;
 /* When not NULL: the title of the current help text. */
 char *title = NULL;
 /* Did a command mangle enough of the buffer that we should repaint the screen? */
-bool refresh_needed = false;
+bool refresh_needed = FALSE;
 /* Whether an update of the edit window should center the cursor. */
-bool focusing = true;
+bool focusing = TRUE;
 /* Whether a 0x0A byte should be shown as a ^@ instead of a ^J. */
-bool as_an_at = true;
+bool as_an_at = TRUE;
 /* Whether Ctrl+C was pressed (when a keyboard interrupt is enabled). */
-bool control_C_was_pressed = false;
+bool control_C_was_pressed = FALSE;
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
 message_type lastmessage = VACUUM;
 /* The line where the last completion was found, if any. */
 linestruct *pletion_line = NULL;
 /* Whether indenting/commenting should include the last line of the marked region. */
-bool also_the_last = false;
+bool also_the_last = FALSE;
 /* The answer string used by the status-bar prompt. */
 char *answer = NULL;
 /* The last string we searched for. */
@@ -107,7 +107,7 @@ linestruct *cutbuffer = NULL;
 /* The last line in the cutbuffer. */
 linestruct *cutbottom = NULL;
 /* Whether to add to the cutbuffer instead of clearing it first. */
-bool keep_cutbuffer = false;
+bool keep_cutbuffer = FALSE;
 /* The list of all open file buffers. */
 openfilestruct *openfile = NULL;
 /* The first open buffer. */
@@ -141,13 +141,13 @@ syntaxtype *syntaxes = NULL;
 /* The color syntax name specified on the command line. */
 char *syntaxstr = NULL;
 /* Whether the colors for the current syntax have been initialized. */
-bool have_palette = false;
+bool have_palette = FALSE;
 /* Becomes TRUE when NO_COLOR is set in the environment. */
-bool rescind_colors = false;
+bool rescind_colors = FALSE;
 /* Whether the multiline-coloring situation has changed. */
-bool perturbed = false;
+bool perturbed = FALSE;
 /* Whether the multidata should be recalculated. */
-bool recook = false;
+bool recook = FALSE;
 /* The currently active menu, initialized to a dummy value. */
 int currmenu = MMOST;
 /* The start of the shortcuts list. */
@@ -196,19 +196,20 @@ char *commandname = NULL;
 /* The function that the above name resolves to, if any. */
 keystruct *planted_shortcut = NULL;
 /* Whether any text is spotlighted. */
-bool spotlighted = false;
+bool spotlighted = FALSE;
 /* Where the spotlighted text starts. */
 unsigned long light_from_col = 0;
 /* Where the spotlighted text ends. */
 unsigned long light_to_col = 0;
 /* To make the functions and shortcuts lists clearer. */
-constexpr bool BLANKAFTER = true;
-constexpr bool TOGETHER   = false;
-/* If closing bracket char was printed then this is true until another
+constexpr bool BLANKAFTER = TRUE;
+constexpr bool TOGETHER   = FALSE;
+/* If closing bracket char was printed then this is TRUE until another
  * key input has been prossesed. */
-bool        last_key_was_bracket = false;
-colortype  *last_c_color         = NULL;
-syntaxtype *c_syntaxtype         = NULL;
+bool                      last_key_was_bracket = FALSE;
+colortype                *last_c_color         = NULL;
+syntaxtype               *c_syntaxtype         = NULL;
+std::vector<bracket_pair> bracket_pairs;
 
 /* Empty functions, for the most part corresponding to toggles. */
 void
@@ -405,11 +406,11 @@ keycode_from_string(const char *keystring)
     {
         if (keystring[1] == '-' && keystring[3] == '\0')
         {
-            return constexpr_tolower(static_cast<u8>(keystring[2]));
+            return constexpr_tolower((unsigned char)keystring[2]);
         }
         if (constexpr_strcasecmp(keystring, "M-Space") == 0)
         {
-            return static_cast<int>(' ');
+            return (int)' ';
         }
         else
         {
@@ -419,7 +420,7 @@ keycode_from_string(const char *keystring)
     else if (constexpr_strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) &&
              (keystring[5] | 0x20) <= 'z' && keystring[6] == '\0')
     {
-        shifted_metas = true;
+        shifted_metas = TRUE;
         return (keystring[5] & 0x5F);
     }
     else if (keystring[0] == 'F')

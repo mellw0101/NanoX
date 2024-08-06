@@ -756,20 +756,15 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                             {
                                 return SHIFT_PAGEUP;
                             }
-                            //
-                            //  Esc [ 1 ; 4 B == Shift-Alt-Down on xterm.
-                            //
-                            case 'B' :
+                            case 'B' : /* Esc [ 1 ; 4 B == Shift-Alt-Down on xterm. */
                             {
                                 return SHIFT_PAGEDOWN;
                             }
-                            //  Esc [ 1 ; 4 C == Shift-Alt-Right on xterm.
-                            case 'C' :
+                            case 'C' : /* Esc [ 1 ; 4 C == Shift-Alt-Right on xterm. */
                             {
                                 return SHIFT_END;
                             }
-                            /* Esc [ 1 ; 4 D == Shift-Alt-Left on xterm. */
-                            case 'D' :
+                            case 'D' : /* Esc [ 1 ; 4 D == Shift-Alt-Left on xterm. */
                             {
                                 return SHIFT_HOME;
                             }
@@ -780,43 +775,27 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                     {
                         switch (seq[3])
                         {
-                            //  Esc [ 1 ; 5 A == Ctrl-Up on xterm.
-                            case 'A' :
+                            case 'A' : /* Esc [ 1 ; 5 A == Ctrl-Up on xterm. */
                             {
                                 return CONTROL_UP;
                             }
-                            //
-                            //  Esc [ 1 ; 5 B == Ctrl-Down on xterm.
-                            //
-                            case 'B' :
+                            case 'B' : /* Esc [ 1 ; 5 B == Ctrl-Down on xterm. */
                             {
                                 return CONTROL_DOWN;
                             }
-                            //
-                            //  Esc [ 1 ; 5 C == Ctrl-Right on xterm.
-                            //
-                            case 'C' :
+                            case 'C' : /* Esc [ 1 ; 5 C == Ctrl-Right on xterm. */
                             {
                                 return CONTROL_RIGHT;
                             }
-                            //
-                            //  Esc [ 1 ; 5 D == Ctrl-Left on xterm.
-                            //
-                            case 'D' :
+                            case 'D' : /* Esc [ 1 ; 5 D == Ctrl-Left on xterm. */
                             {
                                 return CONTROL_LEFT;
                             }
-                            //
-                            //  Esc [ 1 ; 5 F == Ctrl-End on xterm.
-                            //
-                            case 'F' :
+                            case 'F' : /* Esc [ 1 ; 5 F == Ctrl-End on xterm. */
                             {
                                 return CONTROL_END;
                             }
-                            //
-                            //  Esc [ 1 ; 5 H == Ctrl-Home on xterm.
-                            //
-                            case 'H' :
+                            case 'H' : /* Esc [ 1 ; 5 H == Ctrl-Home on xterm. */
                             {
                                 return CONTROL_HOME;
                             }
@@ -827,45 +806,27 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                     {
                         switch (seq[3])
                         {
-                            //
-                            //  Esc [ 1 ; 6 A == Shift-Ctrl-Up on xterm.
-                            //
-                            case 'A' :
+                            case 'A' : /* Esc [ 1 ; 6 A == Shift-Ctrl-Up on xterm. */
                             {
                                 return shiftcontrolup;
                             }
-                            //
-                            //  Esc [ 1 ; 6 B == Shift-Ctrl-Down on xterm.
-                            //
-                            case 'B' :
+                            case 'B' : /* Esc [ 1 ; 6 B == Shift-Ctrl-Down on xterm. */
                             {
                                 return shiftcontroldown;
                             }
-                            //
-                            //  Esc [ 1 ; 6 C == Shift-Ctrl-Right on xterm.
-                            //
-                            case 'C' :
+                            case 'C' : /* Esc [ 1 ; 6 C == Shift-Ctrl-Right on xterm. */
                             {
                                 return shiftcontrolright;
                             }
-                            //
-                            //  Esc [ 1 ; 6 D == Shift-Ctrl-Left on xterm.
-                            //
-                            case 'D' :
+                            case 'D' : /* Esc [ 1 ; 6 D == Shift-Ctrl-Left on xterm. */
                             {
                                 return shiftcontrolleft;
                             }
-                            //
-                            //  Esc [ 1 ; 6 F == Shift-Ctrl-End on xterm.
-                            //
-                            case 'F' :
+                            case 'F' : /* Esc [ 1 ; 6 F == Shift-Ctrl-End on xterm. */
                             {
                                 return shiftcontrolend;
                             }
-                            //
-                            //  Esc [ 1 ; 6 H == Shift-Ctrl-Home on xterm.
-                            //
-                            case 'H' :
+                            case 'H' : /* Esc [ 1 ; 6 H == Shift-Ctrl-Home on xterm. */
                             {
                                 return shiftcontrolhome;
                             }
@@ -2150,7 +2111,7 @@ get_verbatim_kbinput(WINDOW *frame, unsigned long *count)
  * Return -1 on error, 0 if the mouse event needs to be handled, 1 if it's
  * been handled by putting back keystrokes, or 2 if it's been ignored. */
 int
-get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
+get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts)
 {
     bool   in_middle, in_footer;
     MEVENT event;
@@ -2162,8 +2123,8 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
     in_middle = wenclose(midwin, event.y, event.x);
     in_footer = wenclose(footwin, event.y, event.x);
     /* Copy (and possibly adjust) the coordinates of the mouse event. */
-    mouse_x = event.x - (in_middle ? margin : 0);
-    mouse_y = event.y;
+    *mouse_x = event.x - (in_middle ? margin : 0);
+    *mouse_y = event.y;
     /* Handle releases/clicks of the first mouse button. */
     if (event.bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED))
     {
@@ -2181,13 +2142,13 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
             /* The number of shortcut items that get displayed. */
             unsigned long number;
             /* Shift the coordinates to be relative to the bottom window. */
-            wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE);
+            wmouse_trafo(footwin, mouse_y, mouse_x, FALSE);
             /* Clicks on the status bar are handled elsewhere, so
              * restore the untranslated mouse-event coordinates. */
-            if (mouse_y == 0)
+            if (*mouse_y == 0)
             {
-                mouse_x = event.x;
-                mouse_y = event.y;
+                *mouse_x = event.x;
+                *mouse_y = event.y;
                 return 0;
             }
             /* Determine how many shortcuts are being shown. */
@@ -2202,9 +2163,9 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
                 width = COLS / ((number + 1) / 2);
             }
             /* Calculate the one-based index in the shortcut list. */
-            index = (mouse_x / width) * 2 + mouse_y;
+            index = (*mouse_x / width) * 2 + *mouse_y;
             /* Adjust the index if we hit the last two wider ones. */
-            if ((index > number) && (mouse_x % width < COLS % width))
+            if ((index > number) && (*mouse_x % width < COLS % width))
             {
                 index -= 2;
             }
@@ -2253,9 +2214,9 @@ get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts)
         if (in_footer)
         {
             /* Shift the coordinates to be relative to the bottom window. */
-            wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE);
+            wmouse_trafo(footwin, mouse_y, mouse_x, FALSE);
         }
-        if (in_middle || (in_footer && mouse_y == 0))
+        if (in_middle || (in_footer && *mouse_y == 0))
         {
             int keycode = (event.bstate & BUTTON4_PRESSED) ? ALT_UP : ALT_DOWN;
             /* One bump of the mouse wheel should scroll two lines. */
@@ -2604,11 +2565,9 @@ titlebar(const char *path)
     blank_titlebar();
     as_an_at = FALSE;
     /* Do as Pico:
-     * if there is not enough width available for all items,
-     * first sacrifice the version string,
-     * then eat up the side spaces,
-     * then sacrifice the prefix,
-     * and only then start dottifying. */
+     * - if there is not enough width available for all items,
+     * - first sacrifice the version string, then eat up the side spaces,
+     * - then sacrifice the prefix, and only then start dottifying. */
     /* Figure out the path, prefix and state strings. */
     if (currmenu == MLINTER)
     {
@@ -3166,7 +3125,8 @@ static constexpr unsigned short PAINT_LIMIT = 2000;
  * line to be drawn, and converted is the actual string to be written with
  * tabs and control characters replaced by strings of regular characters.
  * from_col is the column number of the first character of this "page".
- * TODO : (draw_row) - Figure out how to add syntax. */
+ * TODO: (draw_row) - Figure out how to add syntax, DONE!!.
+ * TODO(2): (draw_row) - Implement a way to close and open brackets (will probebly be hard as fuck!!!). */
 void
 draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col)
 {
@@ -3539,7 +3499,7 @@ update_softwrapped_line(linestruct *line)
     starting_row = row;
     while (!end_of_line && row < editwinrows)
     {
-        to_col        = get_softwrap_breakpoint(line->data, from_col, kickoff, end_of_line);
+        to_col        = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line);
         sequel_column = (end_of_line) ? 0 : to_col;
         /* Convert the chunk to its displayable form and draw it. */
         converted = display_string(line->data, from_col, to_col - from_col, TRUE, FALSE);
@@ -3633,7 +3593,7 @@ go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge)
         for (i = nrows; i > 0; i--)
         {
             end_of_line      = FALSE;
-            current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, kickoff, end_of_line);
+            current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
             if (!end_of_line)
             {
                 continue;
@@ -3781,7 +3741,7 @@ edit_scroll(bool direction)
  * continue from where the previous call left off.  Set end_of_line to TRUE
  * when end-of-line is reached while searching for a possible breakpoint. */
 unsigned long
-get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kickoff, bool &end_of_line)
+get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool *kickoff, bool *end_of_line)
 {
     /* Pointer at the current character in this line's data. */
     static const char *text;
@@ -3796,11 +3756,11 @@ get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kick
     /* A pointer to the last seen whitespace character in text. */
     const char *farthest_blank = NULL;
     /* Initialize the static variables when it's another line. */
-    if (kickoff)
+    if (*kickoff)
     {
-        text    = linedata;
-        column  = 0;
-        kickoff = FALSE;
+        text     = linedata;
+        column   = 0;
+        *kickoff = FALSE;
     }
     /* First find the place in text where the current chunk starts. */
     while (*text != '\0' && column < leftedge)
@@ -3823,7 +3783,7 @@ get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kick
      * and we've reached EOL if we didn't even *reach* the limit. */
     if (column <= rightside)
     {
-        end_of_line = (column < rightside);
+        *end_of_line = (column < rightside);
         return column;
     }
     /* If we're softwrapping at blanks and we found at least one blank, break
@@ -3862,7 +3822,7 @@ get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *lefted
     kickoff       = TRUE;
     while (TRUE)
     {
-        end_col = get_softwrap_breakpoint(line->data, start_col, kickoff, end_of_line);
+        end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line);
         /* When the column is in range or we reached end-of-line, we're done. */
         if (end_of_line || (start_col <= column && column < end_col))
         {
@@ -3933,7 +3893,7 @@ actual_last_column(unsigned long leftedge, unsigned long column)
     {
         kickoff    = TRUE;
         last_chunk = FALSE;
-        end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, last_chunk) - leftedge;
+        end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge;
         /* If we're not on the last chunk, we're one column past the end of
          * the row.  Shifting back one column might put us in the middle of
          * a multi-column character, but 'actual_x()' will fix that later. */
@@ -3951,7 +3911,7 @@ actual_last_column(unsigned long leftedge, unsigned long column)
 
 /* Return TRUE if current[current_x] is before the viewport. */
 bool
-current_is_above_screen()
+current_is_above_screen(void)
 {
     if ISSET (SOFTWRAP)
     {
@@ -4030,8 +3990,9 @@ edit_redraw(linestruct *old_current, update_type manner)
     }
 }
 
-/* Refresh the screen without changing the position of lines.  Use this
- * if we've moved and changed text. */
+/* Refresh the screen without changing the position of lines.
+ * Use this if we've moved and changed text.
+ * TODO: (edit_refresh) - This is used to draw all the lines, use this to handle closing brackets. */
 void
 edit_refresh(void)
 {
@@ -4047,8 +4008,7 @@ edit_refresh(void)
     {
         prepare_palette();
     }
-    /* When the line above the viewport does not have multidata, recalculate
-     * all. */
+    /* When the line above the viewport does not have multidata, recalculate all. */
     recook |= ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata;
     if (recook)
     {
@@ -4060,7 +4020,7 @@ edit_refresh(void)
     {
         draw_scrollbar();
     }
-// #define TIMEREFRESH  123
+/* #define TIMEREFRESH 123 */
 #ifdef TIMEREFRESH
 #    include <time.h>
     clock_t start = clock();
@@ -4151,15 +4111,13 @@ draw_all_subwindows(void)
 void
 report_cursor_position(void)
 {
-    size_t fullwidth = breadth(openfile->current->data) + 1;
-    size_t column    = xplustabs() + 1;
-    int    linepct, colpct, charpct;
-    char   saved_byte;
-    size_t sum;
-    saved_byte                                   = openfile->current->data[openfile->current_x];
+    int           linepct, colpct, charpct;
+    unsigned long fullwidth                      = breadth(openfile->current->data) + 1;
+    unsigned long column                         = xplustabs() + 1;
+    char          saved_byte                     = openfile->current->data[openfile->current_x];
     openfile->current->data[openfile->current_x] = '\0';
     /* Determine the size of the file up to the cursor. */
-    sum                                          = number_of_characters_in(openfile->filetop, openfile->current);
+    unsigned long sum                            = number_of_characters_in(openfile->filetop, openfile->current);
     openfile->current->data[openfile->current_x] = saved_byte;
     /* Calculate the percentages. */
     linepct = 100 * openfile->current->lineno / openfile->filebot->lineno;
@@ -4220,7 +4178,7 @@ spotlight_softwrapped(unsigned long from_col, unsigned long to_col)
     row = openfile->cursor_row;
     while (row < editwinrows)
     {
-        break_col = get_softwrap_breakpoint(openfile->current->data, leftedge, kickoff, end_of_line);
+        break_col = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &end_of_line);
         /* If the highlighting ends on this chunk, we can stop after it. */
         if (break_col >= to_col)
         {

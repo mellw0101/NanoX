@@ -40,7 +40,7 @@ make_new_node(linestruct *prevnode)
     newnode->data       = NULL;
     newnode->multidata  = NULL;
     newnode->lineno     = (prevnode) ? prevnode->lineno + 1 : 1;
-    newnode->has_anchor = false;
+    newnode->has_anchor = FALSE;
     return newnode;
 }
 
@@ -170,7 +170,7 @@ print_view_warning(void)
     statusline(AHEM, _("Key is invalid in view mode"));
 }
 
-/* When in restricted mode, show a warning and return 'true'. */
+/* When in restricted mode, show a warning and return 'TRUE'. */
 bool
 in_restricted_mode(void)
 {
@@ -178,9 +178,9 @@ in_restricted_mode(void)
     {
         statusline(AHEM, _("This function is disabled in restricted mode"));
         beep();
-        return true;
+        return TRUE;
     }
-    return false;
+    return FALSE;
 }
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
@@ -283,7 +283,7 @@ do_exit(void)
         choice = ask_user(YESORNO, _("Save modified buffer? "));
     }
     /* When not saving, or the save succeeds, close the buffer. */
-    if (choice == NO || (choice == YES && write_it_out(true, true) > 0))
+    if (choice == NO || (choice == YES && write_it_out(TRUE, TRUE) > 0))
     {
         close_and_go();
     }
@@ -411,8 +411,8 @@ window_init(void)
     /* When not disabled, turn escape-sequence translation on. */
     if (!ISSET(RAW_SEQUENCES))
     {
-        keypad(midwin, true);
-        keypad(footwin, true);
+        keypad(midwin, TRUE);
+        keypad(footwin, TRUE);
     }
     /* Set up the wrapping point, accounting for screen width when negative. */
     if (COLS + fill < 0)
@@ -613,7 +613,7 @@ list_syntax_names()
 void
 make_a_note(int signal)
 {
-    control_C_was_pressed = true;
+    control_C_was_pressed = TRUE;
 }
 
 /* Make ^C interrupt a system call and set a flag. */
@@ -767,14 +767,14 @@ do_suspend(void)
         return;
     }
     suspend_nano(0);
-    ran_a_tool = true;
+    ran_a_tool = TRUE;
 }
 
 /* Handler for SIGCONT (continue after suspend). */
 void
 continue_nano(int signal)
 {
-    if ISSET (USE_MOUSE)
+    if (ISSET(USE_MOUSE))
     {
         enable_mouse_support();
     }
@@ -782,7 +782,7 @@ continue_nano(int signal)
      * instead of checking, but it's the original code.
      * COMMENT: -> // Perhaps the user resized the window while we slept.
      * TODO: Check if the window was resized instead. */
-    the_window_resized = true;
+    the_window_resized = TRUE;
     /* Insert a fake keystroke, to neutralize a key-eating issue. */
     ungetch(KEY_FRESH);
 }
@@ -806,7 +806,7 @@ void
 handle_sigwinch(int signal)
 {
     /* Let the input routine know that a SIGWINCH has occurred. */
-    the_window_resized = true;
+    the_window_resized = TRUE;
 }
 
 /* Reinitialize and redraw the screen completely. */
@@ -814,7 +814,7 @@ void
 regenerate_screen(void)
 {
     /* Reset the trigger. */
-    the_window_resized = false;
+    the_window_resized = FALSE;
     /* Leave and immediately reenter curses mode, so that ncurses notices
      * the new screen dimensions and sets LINES and COLS accordingly. */
     endwin();
@@ -843,7 +843,7 @@ toggle_this(const int flag)
 {
     bool enabled = !ISSET(flag);
     TOGGLE(flag);
-    focusing = false;
+    focusing = FALSE;
     switch (flag)
     {
         case ZERO :
@@ -888,19 +888,19 @@ toggle_this(const int flag)
             {
                 openfile->firstcolumn = 0;
             }
-            refresh_needed = true;
+            refresh_needed = TRUE;
             break;
         }
         case WHITESPACE_DISPLAY :
         {
             titlebar(NULL);
-            refresh_needed = true;
+            refresh_needed = TRUE;
             break;
         }
         case NO_SYNTAX :
         {
             precalc_multicolorinfo();
-            refresh_needed = true;
+            refresh_needed = TRUE;
             break;
         }
         case TABS_TO_SPACES :
@@ -1055,7 +1055,7 @@ confirm_margin(void)
         ensure_firstcolumn_is_aligned();
         focusing = keep_focus;
         /* The margin has changed -- schedule a full refresh. */
-        refresh_needed = true;
+        refresh_needed = TRUE;
     }
 }
 
@@ -1122,14 +1122,14 @@ do_mouse(void)
 {
     int click_row;
     int click_col;
-    int retval = get_mouseinput(click_row, click_col, true);
+    int retval = get_mouseinput(&click_row, &click_col, TRUE);
     /* If the click is wrong or already handled, we're done. */
     if (retval != 0)
     {
         return retval;
     }
     /* If the click was in the edit window, put the cursor in that spot. */
-    if (wmouse_trafo(midwin, &click_row, &click_col, false))
+    if (wmouse_trafo(midwin, &click_row, &click_col, FALSE))
     {
         linestruct   *was_current = openfile->current;
         long          row_count   = click_row - openfile->cursor_row;
@@ -1165,7 +1165,7 @@ do_mouse(void)
         else
         {
             /* The cursor moved; clean the cutbuffer on the next cut. */
-            keep_cutbuffer = false;
+            keep_cutbuffer = FALSE;
         }
         edit_redraw(was_current, CENTERING);
     }
@@ -1173,7 +1173,7 @@ do_mouse(void)
     return 2;
 }
 
-/* Return 'true' when the given function is a cursor-moving command. */
+/* Return 'TRUE' when the given function is a cursor-moving command. */
 bool
 wanted_to_move(functionptrtype func)
 {
@@ -1183,7 +1183,7 @@ wanted_to_move(functionptrtype func)
             func == do_page_down || func == to_first_line || func == to_last_line);
 }
 
-/* Return 'true' when the given function makes a change -- no good for view mode. */
+/* Return 'TRUE' when the given function makes a change -- no good for view mode. */
 bool
 changes_something(functionptrtype f)
 {
@@ -1198,7 +1198,6 @@ changes_something(functionptrtype f)
 void
 suck_up_input_and_paste_it(void)
 {
-    PROFILE_FUNCTION;
     linestruct   *was_cutbuffer = cutbuffer;
     linestruct   *line          = make_new_node(NULL);
     unsigned long index         = 0;
@@ -1279,7 +1278,7 @@ inject(char *burst, unsigned long count)
     if (thisline == openfile->edittop && openfile->firstcolumn > 0)
     {
         ensure_firstcolumn_is_aligned();
-        refresh_needed = true;
+        refresh_needed = TRUE;
     }
     /* When the mark is to the right of the cursor, compensate its position. */
     if (thisline == openfile->mark && openfile->current_x < openfile->mark_x)
@@ -1317,8 +1316,8 @@ inject(char *burst, unsigned long count)
                             (openfile->cursor_row == editwinrows - 1 &&
                              chunk_for(openfile->placewewant, openfile->current) > original_row)))
     {
-        refresh_needed = true;
-        focusing       = false;
+        refresh_needed = TRUE;
+        focusing       = FALSE;
     }
     if (!refresh_needed)
     {
@@ -1408,14 +1407,14 @@ process_a_keystroke(void)
                     input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(",
                                    s2 = ")" : input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : 0;
                     enclose_marked_region(s1, s2);
-                    refresh_needed = true;
+                    refresh_needed = TRUE;
                     return;
                 }
             }
             if (openfile->mark && openfile->softmark)
             {
                 openfile->mark = NULL;
-                refresh_needed = true;
+                refresh_needed = TRUE;
             }
             puddle[depth++] = (char)input;
             /* Check for a bracketed input start.  Meaning a char that has a corresponding closing bracket. */
@@ -1428,7 +1427,7 @@ process_a_keystroke(void)
                         puddle[depth++] = '>';
                         /* Set a flag to remember that an open bracket
                          * character was inserted into the input buffer. */
-                        was_open_bracket_char = true;
+                        was_open_bracket_char = TRUE;
                     }
                 }
                 else
@@ -1440,7 +1439,7 @@ process_a_keystroke(void)
                                                              : '}');
                     /* Set a flag to remember that an open bracket
                      * character was inserted into the input buffer. */
-                    was_open_bracket_char = true;
+                    was_open_bracket_char = TRUE;
                 }
             }
         }
@@ -1456,11 +1455,11 @@ process_a_keystroke(void)
             do_left();
             /* Set this flag so we can delete both of the
              * brackeded char if Bsp is pressed directly after. */
-            last_key_was_bracket = true;
+            last_key_was_bracket = TRUE;
         }
         else
         {
-            last_key_was_bracket = false;
+            last_key_was_bracket = FALSE;
         }
         depth = 0;
     }
@@ -1471,7 +1470,7 @@ process_a_keystroke(void)
     if (!function)
     {
         pletion_line   = NULL;
-        keep_cutbuffer = false;
+        keep_cutbuffer = FALSE;
         return;
     }
     if (ISSET(VIEW_MODE) && changes_something(function))
@@ -1483,18 +1482,18 @@ process_a_keystroke(void)
         !ISSET(NO_HELP))
     {
         statusbar(_("^W = Ctrl+W    M-W = Alt+W"));
-        give_a_hint = false;
+        give_a_hint = FALSE;
     }
     else if (meta_key)
     {
-        give_a_hint = false;
+        give_a_hint = FALSE;
     }
     /* When not cutting or copying text, drop the cutbuffer the next time. */
     if (function != cut_text && function != copy_text)
     {
         if (function != zap_text)
         {
-            keep_cutbuffer = false;
+            keep_cutbuffer = FALSE;
         }
     }
     if (function != complete_a_word)
@@ -1511,7 +1510,7 @@ process_a_keystroke(void)
         toggle_this(shortcut->toggle);
         if (shortcut->toggle == CUT_FROM_CURSOR)
         {
-            keep_cutbuffer = false;
+            keep_cutbuffer = FALSE;
         }
         return;
     }
@@ -1522,7 +1521,7 @@ process_a_keystroke(void)
     {
         openfile->mark     = openfile->current;
         openfile->mark_x   = openfile->current_x;
-        openfile->softmark = true;
+        openfile->softmark = TRUE;
     }
     /* Execute the function of the shortcut. */
     function();
@@ -1532,11 +1531,11 @@ process_a_keystroke(void)
         (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)))
     {
         openfile->mark = NULL;
-        refresh_needed = true;
+        refresh_needed = TRUE;
     }
     else if (openfile->current != was_current)
     {
-        also_the_last = false;
+        also_the_last = FALSE;
     }
     if (bracketed_paste)
     {
@@ -1546,7 +1545,7 @@ process_a_keystroke(void)
     {
         titlebar(NULL);
     }
-    !was_open_bracket_char ? (last_key_was_bracket = false) : 0;
+    !was_open_bracket_char ? (last_key_was_bracket = FALSE) : 0;
 }
 
 int
@@ -1576,9 +1575,9 @@ main(int argc, char **argv)
         });
     int stdin_flags;
     /* Whether to ignore the nanorc files. */
-    bool ignore_rcfiles = false;
+    bool ignore_rcfiles = FALSE;
     /* Was the fill option used on the command line? */
-    bool fill_used = false;
+    bool fill_used = FALSE;
     /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
     int hardwrap = -2;
     /* Whether the quoting regex was compiled successfully. */
@@ -1616,11 +1615,13 @@ main(int argc, char **argv)
     SET(STATEFLAGS);
     SET(NO_HELP);
     SET(INDICATOR);
+    SET(AFTER_ENDS);
     /* If the executable's name starts with 'r', activate restricted mode. */
     if (*(tail(argv[0])) == 'r')
     {
         SET(RESTRICTED);
     }
+    /* Check for cmd flags. */
     for (int i = 1; i < argc; ++i)
     {
         const unsigned int flag = retriveFlagFromStr(argv[i]);
@@ -1629,7 +1630,7 @@ main(int argc, char **argv)
         const unsigned int cliCmd = retriveCliOptionFromStr(argv[i]);
         cliCmd &CLI_OPT_VERSION ? version() : void();
         cliCmd &CLI_OPT_HELP ? usage() : void();
-        cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = true : 0;
+        cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = TRUE : 0;
         cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = mallocstrcpy(backup_dir, argv[i]) : 0 : 0;
         cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = mallocstrcpy(word_chars, argv[i]) : 0 : 0;
         cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
@@ -1667,7 +1668,7 @@ main(int argc, char **argv)
                     fprintf(stderr, "\n");
                     exit(1);
                 }
-                fill_used = true;
+                fill_used = TRUE;
             }
         }
         if (cliCmd & CLI_OPT_TABSIZE)
@@ -1990,7 +1991,7 @@ main(int argc, char **argv)
     set_escdelay(50);
 #endif
     /* Read the files mentioned on the command line into new buffers. */
-    while (optind < argc && (!openfile || true))
+    while (optind < argc && (!openfile || TRUE))
     {
         long  givenline = 0, givencol = 0;
         char *searchstring = NULL;
@@ -2071,12 +2072,14 @@ main(int argc, char **argv)
         }
         else
         {
+            /* Consume any flags in cmd line. */
             const unsigned int flag = retriveFlagFromStr(argv[optind]);
             if (flag)
             {
                 optind++;
                 continue;
             }
+            /* Consume any options in cmd line. */
             const unsigned int cliCmd = retriveCliOptionFromStr(argv[optind]);
             if (cliCmd)
             {
@@ -2117,7 +2120,7 @@ main(int argc, char **argv)
                     }
                 }
             }
-            if (!open_buffer(filename, true))
+            if (!open_buffer(filename, TRUE))
             {
                 continue;
             }
@@ -2125,15 +2128,15 @@ main(int argc, char **argv)
         /* If a position was given on the command line, go there. */
         if (givenline != 0 || givencol != 0)
         {
-            goto_line_and_column(givenline, givencol, false, false);
+            goto_line_and_column(givenline, givencol, FALSE, FALSE);
         }
         else if (searchstring != NULL)
         {
-            if ISSET (USE_REGEXP)
+            if (ISSET(USE_REGEXP))
             {
                 regexp_init(searchstring);
             }
-            if (!findnextstr(searchstring, false, JUSTFIND, NULL, ISSET(BACKWARDS_SEARCH), openfile->filetop, 0))
+            if (!findnextstr(searchstring, FALSE, JUSTFIND, NULL, ISSET(BACKWARDS_SEARCH), openfile->filetop, 0))
             {
                 not_found_msg(searchstring);
             }
@@ -2143,7 +2146,7 @@ main(int argc, char **argv)
             }
             openfile->placewewant = xplustabs();
             adjust_viewport(CENTERING);
-            if ISSET (USE_REGEXP)
+            if (ISSET(USE_REGEXP))
             {
                 tidy_up_after_search();
             }
@@ -2157,7 +2160,7 @@ main(int argc, char **argv)
             /* If edited before, restore the last cursor position. */
             if (has_old_position(argv[optind - 1], &savedline, &savedcol))
             {
-                goto_line_and_column(savedline, savedcol, false, false);
+                goto_line_and_column(savedline, savedcol, FALSE, FALSE);
             }
         }
     }
@@ -2173,7 +2176,7 @@ main(int argc, char **argv)
      * switch from the last opened file to the next, that is: the first. */
     if (openfile == NULL)
     {
-        open_buffer("", true);
+        open_buffer("", TRUE);
         UNSET(VIEW_MODE);
     }
     else
@@ -2207,16 +2210,17 @@ main(int argc, char **argv)
     }
     /* Extremly experimental, this is a test for live syntax handeling. */
     do_cpp_syntax();
+    all_brackets_pos();
     /* Set the margin to an impossible value to force re-evaluation. */
     margin         = 12345;
-    we_are_running = true;
+    we_are_running = TRUE;
     /* TODO: This is the main loop of the editor. */
-    while (true)
+    while (TRUE)
     {
         confirm_margin();
         if (on_a_vt && waiting_keycodes() == 0)
         {
-            mute_modifiers = false;
+            mute_modifiers = FALSE;
         }
         if (currmenu != MMAIN)
         {
@@ -2235,7 +2239,7 @@ main(int argc, char **argv)
                 report_cursor_position();
             }
         }
-        as_an_at = true;
+        as_an_at = TRUE;
         if ((refresh_needed && LINES > 1) || (LINES == 1 && lastmessage <= HUSH))
         {
             edit_refresh();
@@ -2262,7 +2266,7 @@ main(int argc, char **argv)
             wredrawln(midwin, editwinrows - 1, 1);
         }
         errno    = 0;
-        focusing = true;
+        focusing = TRUE;
         /* Forget any earlier cursor position at the prompt. */
         put_cursor_at_end_of_answer();
         /* Read in and interpret a single keystroke. */

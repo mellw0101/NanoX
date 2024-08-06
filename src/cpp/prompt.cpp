@@ -28,21 +28,21 @@ do_statusbar_end(void)
 void
 do_statusbar_prev_word(void)
 {
-    bool seen_a_word = false, step_forward = false;
+    bool seen_a_word = FALSE, step_forward = FALSE;
     /* Move backward until we pass over the start of a word. */
     while (typing_x != 0)
     {
         typing_x = step_left(answer, typing_x);
-        if (is_word_char(answer + typing_x, false))
+        if (is_word_char(answer + typing_x, FALSE))
         {
-            seen_a_word = true;
+            seen_a_word = TRUE;
         }
         else if (is_zerowidth(answer + typing_x))
             ; /* skip */
         else if (seen_a_word)
         {
             /* This is space now: we've overshot the start of the word. */
-            step_forward = true;
+            step_forward = TRUE;
             break;
         }
     }
@@ -57,7 +57,7 @@ do_statusbar_prev_word(void)
 void
 do_statusbar_next_word(void)
 {
-    bool seen_space = !is_word_char(answer + typing_x, false);
+    bool seen_space = !is_word_char(answer + typing_x, FALSE);
     bool seen_word  = !seen_space;
     /* Move forward until we reach either the end or the start of a word,
      * depending on whether the AFTER_ENDS flag is set or not. */
@@ -68,9 +68,9 @@ do_statusbar_next_word(void)
         {
             /* If this is a word character, continue; else it's a separator,
              * and if we've already seen a word, then it's a word end. */
-            if (is_word_char(answer + typing_x, false))
+            if (is_word_char(answer + typing_x, FALSE))
             {
-                seen_word = true;
+                seen_word = TRUE;
             }
             else if (is_zerowidth(answer + typing_x))
                 ; /* skip */
@@ -87,9 +87,9 @@ do_statusbar_next_word(void)
             {
                 /* If this is not a word character, then it's a separator; else
                  * if we've already seen a separator, then it's a word start. */
-                if (!is_word_char(answer + typing_x, false))
+                if (!is_word_char(answer + typing_x, FALSE))
                 {
-                    seen_space = true;
+                    seen_space = TRUE;
                 }
                 else if (seen_space)
                 {
@@ -196,9 +196,9 @@ do_statusbar_mouse(void)
 {
     int click_row = 0;
     int click_col = 0;
-    int retval    = get_mouseinput(click_row, click_col, true);
+    int retval    = get_mouseinput(&click_row, &click_col, TRUE);
     /* We can click on the status-bar window text to move the cursor. */
-    if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, false))
+    if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, FALSE))
     {
         unsigned long start_col = breadth(prompt) + 2;
         /* Move to where the click occurred. */
@@ -358,10 +358,10 @@ handle_editing(functionptrtype function)
     }
     else
     {
-        return false;
+        return FALSE;
     }
     /* Don't handle any handled function again. */
-    return true;
+    return TRUE;
 }
 
 /* Return the column number of the first character of the answer that is
@@ -408,7 +408,7 @@ draw_the_promptbar(void)
     mvwaddstr(footwin, 0, 0, prompt);
     waddch(footwin, ':');
     waddch(footwin, (the_page == 0) ? ' ' : '<');
-    expanded = display_string(answer, the_page, COLS - base, false, true);
+    expanded = display_string(answer, the_page, COLS - base, FALSE, TRUE);
     waddstr(footwin, expanded);
     free(expanded);
     if (the_page < end_page && base + breadth(answer) - the_page > COLS)
@@ -457,7 +457,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
     /* Whatever the answer was before the user foraged into history. */
     char *stored_string = NULL;
     /* Whether the previous keystroke was an attempt at tab completion. */
-    bool previous_was_tab = false;
+    bool previous_was_tab = FALSE;
     /* The length of the fragment that the user tries to tab complete. */
     unsigned long    fragment_length = 0;
     const keystruct *shortcut;
@@ -467,7 +467,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
     {
         typing_x = constexpr_strlen(answer);
     }
-    while (true)
+    while (TRUE)
     {
         draw_the_promptbar();
         /* Read in one keystroke. */
@@ -570,7 +570,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
                 {
                     TOGGLE(NO_HELP);
                     window_init();
-                    focusing = false;
+                    focusing = FALSE;
                     refresh_func();
                     bottombars(currmenu);
                 }
@@ -618,7 +618,7 @@ do_prompt(int menu, const char *provided, linestruct **history_list, functionptr
 {
     functionptrtype function = NULL;
     va_list         ap;
-    bool            listed = false;
+    bool            listed = FALSE;
     int             retval;
     /* Save a possible current status-bar x position and prompt. */
     unsigned long was_typing_x = typing_x;
@@ -800,9 +800,9 @@ ask_user(bool withall, const char *question)
             TOGGLE(NO_HELP);
             window_init();
             titlebar(NULL);
-            focusing = false;
+            focusing = FALSE;
             edit_refresh();
-            focusing = true;
+            focusing = TRUE;
         }
         /* Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too. */
         else if (kbinput == '\x0E' || (kbinput == '\x11' && !ISSET(MODERN_BINDINGS)) ||
@@ -819,7 +819,7 @@ ask_user(bool withall, const char *question)
         {
             int mouse_x, mouse_y;
             /* We can click on the Yes/No/All shortcuts to select an answer. */
-            if (get_mouseinput(mouse_y, mouse_x, false) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, false) &&
+            if (get_mouseinput(&mouse_y, &mouse_x, FALSE) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE) &&
                 mouse_x < (width * 2) && mouse_y > 0)
             {
                 int x = mouse_x / width;

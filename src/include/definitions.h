@@ -554,5 +554,11 @@ enum syntax_flag_t
     NEXT_WORD_ALSO = 1
 };
 
+struct bracket_pair
+{
+    unsigned long start_line;
+    unsigned long end_line;
+};
+
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"

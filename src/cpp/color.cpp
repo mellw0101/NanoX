@@ -27,7 +27,7 @@
 #endif
 
 /* Whether ncurses accepts -1 to mean "default color". */
-static bool defaults_allowed = false;
+static bool defaults_allowed = FALSE;
 
 /* Initialize the color pairs for nano's interface.
  * Ask ncurses to allow -1 to mean "default color".
@@ -41,7 +41,7 @@ set_interface_colorpairs(void)
     for (unsigned long index = 0; index < NUMBER_OF_ELEMENTS; index++)
     {
         colortype *combo = color_combo[index];
-        if (combo != nullptr)
+        if (combo != NULL)
         {
             if (!defaults_allowed)
             {
@@ -56,7 +56,7 @@ set_interface_colorpairs(void)
             }
             init_pair(index + 1, combo->fg, combo->bg);
             interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
-            rescind_colors              = false;
+            rescind_colors              = FALSE;
         }
         else
         {
@@ -104,7 +104,7 @@ set_syntax_colorpairs(syntaxtype *sntx)
 {
     short      number = NUMBER_OF_ELEMENTS;
     colortype *older;
-    for (colortype *ink = sntx->color; ink != nullptr; ink = ink->next)
+    for (colortype *ink = sntx->color; ink != NULL; ink = ink->next)
     {
         if (!defaults_allowed)
         {
@@ -146,7 +146,7 @@ prepare_palette(void)
 
 /* Try to match the given shibboleth string with,
  * one of the regexes in the list starting at head.
- * Return 'true' upon success. */
+ * Return 'TRUE' upon success. */
 bool
 found_in_list(regexlisttype *head, const char *shibboleth)
 {
@@ -304,7 +304,7 @@ check_the_multis(linestruct *line)
     }
     if (line->multidata == NULL)
     {
-        refresh_needed = true;
+        refresh_needed = TRUE;
         return;
     }
     for (ink = openfile->syntax->color; ink != NULL; ink = ink->next)
@@ -367,6 +367,7 @@ check_the_multis(linestruct *line)
 void
 precalc_multicolorinfo(void)
 {
+    PROFILE_FUNCTION;
     const colortype *ink;
     regmatch_t       startmatch, endmatch;
     linestruct      *line, *tailline;
@@ -380,21 +381,21 @@ precalc_multicolorinfo(void)
     clock_t start = clock();
 #endif
     /* For each line, allocate cache space for the multiline-regex info. */
-    for (line = openfile->filetop; line != nullptr; line = line->next)
+    for (line = openfile->filetop; line != NULL; line = line->next)
     {
         if (!line->multidata)
         {
             line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
         }
     }
-    for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next)
+    for (ink = openfile->syntax->color; ink != NULL; ink = ink->next)
     {
         /* If this is not a multi-line regex, skip it. */
-        if (ink->end == nullptr)
+        if (ink->end == NULL)
         {
             continue;
         }
-        for (line = openfile->filetop; line != nullptr; line = line->next)
+        for (line = openfile->filetop; line != NULL; line = line->next)
         {
             int index = 0;
             /* Assume nothing applies until proven otherwise below. */
@@ -435,7 +436,7 @@ precalc_multicolorinfo(void)
                 {
                     line->multidata[ink->id] = WHOLELINE;
                 }
-                if (tailline == nullptr)
+                if (tailline == NULL)
                 {
                     line = openfile->filebot;
                     break;

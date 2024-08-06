@@ -135,8 +135,9 @@ extern bool last_key_was_bracket;
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
-extern colortype  *last_c_color;
-extern syntaxtype *c_syntaxtype;
+extern colortype                *last_c_color;
+extern syntaxtype               *c_syntaxtype;
+extern std::vector<bracket_pair> bracket_pairs;
 
 typedef void (*functionptrtype)(void);
 
@@ -290,40 +291,39 @@ void do_right(void);
 /* Most functions in 'nano.cpp'. */
 linestruct *make_new_node(linestruct *prevnode);
 linestruct *copy_buffer(const linestruct *src);
-
-void splice_node(linestruct *afterthis, linestruct *newnode);
-void unlink_node(linestruct *line);
-void delete_node(linestruct *line);
-void free_lines(linestruct *src);
-void renumber_from(linestruct *line);
-void print_view_warning(void);
-bool in_restricted_mode(void);
-void suggest_ctrlT_ctrlZ(void);
-void finish(void);
-void close_and_go(void);
-void do_exit(void);
-void die(STRING_VIEW msg, ...);
-void window_init(void);
-void install_handler_for_Ctrl_C(void);
-void restore_handler_for_Ctrl_C(void);
-void reconnect_and_store_state(void);
-void handle_hupterm(int signal);
-void handle_crash(int signal);
-void suspend_nano(int signal);
-void do_suspend(void);
-void continue_nano(int signal);
-void block_sigwinch(bool blockit);
-void handle_sigwinch(int signal);
-void regenerate_screen(void);
-void disable_kb_interrupt(void);
-void enable_kb_interrupt(void);
-void disable_flow_control(void);
-void enable_flow_control(void);
-void terminal_init(void);
-void confirm_margin(void);
-void unbound_key(int code);
-bool changes_something(CFuncPtr f);
-void inject(char *burst, unsigned long count);
+void        splice_node(linestruct *afterthis, linestruct *newnode);
+void        unlink_node(linestruct *line);
+void        delete_node(linestruct *line);
+void        free_lines(linestruct *src);
+void        renumber_from(linestruct *line);
+void        print_view_warning(void);
+bool        in_restricted_mode(void);
+void        suggest_ctrlT_ctrlZ(void);
+void        finish(void);
+void        close_and_go(void);
+void        do_exit(void);
+void        die(STRING_VIEW msg, ...);
+void        window_init(void);
+void        install_handler_for_Ctrl_C(void);
+void        restore_handler_for_Ctrl_C(void);
+void        reconnect_and_store_state(void);
+void        handle_hupterm(int signal);
+void        handle_crash(int signal);
+void        suspend_nano(int signal);
+void        do_suspend(void);
+void        continue_nano(int signal);
+void        block_sigwinch(bool blockit);
+void        handle_sigwinch(int signal);
+void        regenerate_screen(void);
+void        disable_kb_interrupt(void);
+void        enable_kb_interrupt(void);
+void        disable_flow_control(void);
+void        enable_flow_control(void);
+void        terminal_init(void);
+void        confirm_margin(void);
+void        unbound_key(int code);
+bool        changes_something(CFuncPtr f);
+void        inject(char *burst, unsigned long count);
 
 /* Most functions in 'prompt.cpp'. */
 unsigned long get_statusbar_page_start(unsigned long base, unsigned long column);
@@ -441,7 +441,7 @@ void          implant(const char *string);
 int           get_input(WINDOW *win);
 int           get_kbinput(WINDOW *win, bool showcursor);
 char         *get_verbatim_kbinput(WINDOW *win, unsigned long *count);
-int           get_mouseinput(int &mouse_y, int &mouse_x, bool allow_shortcuts);
+int           get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts);
 void          blank_edit(void);
 void          blank_statusbar(void);
 void          wipe_statusbar(void);
@@ -464,7 +464,7 @@ int           go_back_chunks(int nrows, linestruct **line, unsigned long *lefted
 int           go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge);
 bool          less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge);
 void          edit_scroll(bool direction);
-unsigned long get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool &kickoff, bool &end_of_line);
+unsigned long get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool *kickoff, bool *end_of_line);
 unsigned long get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *leftedge);
 unsigned long chunk_for(unsigned long column, linestruct *line);
 unsigned long leftedge_for(unsigned long column, linestruct *line);
@@ -545,11 +545,13 @@ char      **words_in_line(linestruct *line);
 char      **words_in_str(const char *str, unsigned long *size = NULL);
 const char *extract_include(char *str);
 void        words_in_file(const char *path);
-char       *get_file_extention(const char *full_name);
+char       *get_file_extention(void);
 const char *rgx_word(const char *word);
 bool        is_word_func(char *word);
 
 /* 'lines.cpp' */
 bool is_line_comment(linestruct *line);
+bool is_line_in_bracket_pair(const unsigned long lineno);
+void all_brackets_pos(void);
 
 #include <Mlib/def.h>
