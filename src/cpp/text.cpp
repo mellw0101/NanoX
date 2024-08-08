@@ -1588,12 +1588,12 @@ break_line(const char *textstart, long goal, bool snap_at_nl)
     /* If the whole line displays shorter than goal, we're done. */
     if ((long)column <= goal)
     {
-        return (pointer - textstart);
+        return (long)(pointer - textstart);
     }
     /* When wrapping a help text and no blank was found, force a line break. */
     if (snap_at_nl && lastblank == NULL)
     {
-        return step_left(textstart, pointer - textstart);
+        return (long)step_left(textstart, pointer - textstart);
     }
     /* If no blank was found within the goal width, seek one after it. */
     while (lastblank == NULL)

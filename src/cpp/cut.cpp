@@ -189,7 +189,7 @@ chop_word(bool forward)
             }
             else
             {
-                openfile->current_x = constexpr_strlen(openfile->current->data);
+                openfile->current_x = strlen(openfile->current->data);
             }
         }
     }
@@ -199,7 +199,7 @@ chop_word(bool forward)
         if (openfile->current != is_current && is_current->data[is_current_x] != '\0')
         {
             openfile->current   = is_current;
-            openfile->current_x = constexpr_strlen(is_current->data);
+            openfile->current_x = strlen(is_current->data);
         }
     }
     /* Set the mark at the start of that word. */
@@ -368,8 +368,8 @@ void
 ingraft_buffer(linestruct *topline)
 {
     linestruct   *line         = openfile->current;
-    unsigned long length       = constexpr_strlen(line->data);
-    unsigned long extralen     = constexpr_strlen(topline->data);
+    unsigned long length       = strlen(line->data);
+    unsigned long extralen     = strlen(topline->data);
     unsigned long xpos         = openfile->current_x;
     char         *tailtext     = copy_of(line->data + xpos);
     bool          mark_follows = (openfile->mark == line && !mark_is_before_cursor());
@@ -408,8 +408,8 @@ ingraft_buffer(linestruct *topline)
         openfile->current->next = topline->next;
         topline->next->prev     = openfile->current;
         /* Add the text after the cursor position at the end of botline. */
-        length        = constexpr_strlen(botline->data);
-        extralen      = constexpr_strlen(tailtext);
+        length        = strlen(botline->data);
+        extralen      = strlen(tailtext);
         botline->data = (char *)nrealloc(botline->data, length + extralen + 1);
         constexpr_strcpy(botline->data + length, tailtext);
         /* Put the cursor at the end of the grafted text. */
@@ -586,7 +586,7 @@ zap_text(void)
     }
     /* Use the cutbuffer from the ZAP undo item, so the cut can be undone. */
     cutbuffer = openfile->current_undo->cutbuffer;
-    do_snip(openfile->mark != NULL, FALSE, TRUE);
+    do_snip((openfile->mark != NULL), FALSE, TRUE);
     update_undo(ZAP);
     wipe_statusbar();
     cutbuffer = was_cutbuffer;
@@ -726,7 +726,7 @@ paste_text(void)
         return;
     }
     add_undo(PASTE, NULL);
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         was_leftedge = leftedge_for(xplustabs(), openfile->current);
     }

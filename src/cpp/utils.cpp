@@ -359,7 +359,7 @@ nrealloc(void *section, const unsigned long howmuch)
 char *
 mallocstrcpy(char *dest, const char *src)
 {
-    const unsigned long count = constexpr_strlen(src) + 1;
+    const unsigned long count = strlen(src) + 1;
     dest                      = (char *)nrealloc(dest, count);
     constexpr_strncpy(dest, src, count);
     return dest;
@@ -380,7 +380,7 @@ measured_copy(const char *string, const unsigned long count)
 char *
 copy_of(const char *string)
 {
-    return measured_copy(string, constexpr_strlen(string));
+    return measured_copy(string, strlen(string));
 }
 
 /* Free the string at dest and return the string at src. */

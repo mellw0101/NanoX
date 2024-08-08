@@ -3425,7 +3425,7 @@ update_line(linestruct *line, const unsigned long index)
     char *converted;
     /* From which column a horizontally scrolled line is displayed. */
     unsigned long from_col;
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         return update_softwrapped_line(line);
     }
@@ -3868,7 +3868,7 @@ leftedge_for(unsigned long column, linestruct *line)
 void
 ensure_firstcolumn_is_aligned(void)
 {
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         openfile->firstcolumn = leftedge_for(openfile->firstcolumn, openfile->edittop);
     }
@@ -3889,7 +3889,7 @@ actual_last_column(unsigned long leftedge, unsigned long column)
 {
     bool          kickoff, last_chunk;
     unsigned long end_col;
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         kickoff    = TRUE;
         last_chunk = FALSE;
@@ -3913,7 +3913,7 @@ actual_last_column(unsigned long leftedge, unsigned long column)
 bool
 current_is_above_screen(void)
 {
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         return (openfile->current->lineno < openfile->edittop->lineno ||
                 (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
@@ -3927,7 +3927,7 @@ current_is_above_screen(void)
 bool
 current_is_below_screen(void)
 {
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         linestruct   *line     = openfile->edittop;
         unsigned long leftedge = openfile->firstcolumn;

@@ -234,7 +234,7 @@ close_and_go(void)
     {
         delete_lockfile(openfile->lock_filename);
     }
-    if ISSET (POSITIONLOG)
+    if (ISSET(POSITIONLOG))
     {
         update_poshistory();
     }
@@ -250,7 +250,7 @@ close_and_go(void)
     }
     else
     {
-        if ISSET (HISTORYLOG)
+        if (ISSET(HISTORYLOG))
         {
             save_history();
         }
@@ -1175,12 +1175,11 @@ do_mouse(void)
 
 /* Return 'TRUE' when the given function is a cursor-moving command. */
 bool
-wanted_to_move(functionptrtype func)
+wanted_to_move(functionptrtype f)
 {
-    return (func == do_left || func == do_right || func == do_up || func == do_down || func == do_home ||
-            func == do_end || func == to_prev_word || func == to_next_word || func == to_para_begin ||
-            func == to_para_end || func == to_prev_block || func == to_next_block || func == do_page_up ||
-            func == do_page_down || func == to_first_line || func == to_last_line);
+    return (f == do_left || f == do_right || f == do_up || f == do_down || f == do_home || f == do_end ||
+            f == to_prev_word || f == to_next_word || f == to_para_begin || f == to_para_end || f == to_prev_block ||
+            f == to_next_block || f == do_page_up || f == do_page_down || f == to_first_line || f == to_last_line);
 }
 
 /* Return 'TRUE' when the given function makes a change -- no good for view mode. */
@@ -1244,7 +1243,7 @@ inject(char *burst, unsigned long count)
     unsigned long datalen      = strlen(thisline->data);
     unsigned long original_row = 0;
     unsigned long old_amount   = 0;
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         if (openfile->cursor_row == editwinrows - 1)
         {
@@ -1304,7 +1303,7 @@ inject(char *burst, unsigned long count)
         }
     }
     update_undo(ADD);
-    if ISSET (BREAK_LONG_LINES)
+    if (ISSET(BREAK_LONG_LINES))
     {
         do_wrap();
     }
@@ -1348,7 +1347,7 @@ process_a_keystroke(void)
     functionptrtype      function;
     /* Read in a keystroke, and show the cursor while waiting. */
     input = get_kbinput(midwin, VISIBLE);
-    NETLOGGER.log("input: %i.", input);
+    NETLOGGER.log("input: %i.\n", input);
     lastmessage = VACUUM;
     /* When the input is a window resize, do nothing. */
     if (input == KEY_WINCH)
@@ -1560,7 +1559,7 @@ main(int argc, char **argv)
         NETLOGGER.enable();
         NETLOGGER.init(netlogger, 8080);
     }
-    NETLOGGER.send_to_server("Starting nano");
+    NETLOGGER.send_to_server("Starting nano.\n");
     atexit(
         []
         {
@@ -1570,7 +1569,7 @@ main(int argc, char **argv)
             {
                 NETLOGGER << str << NETLOG_ENDL;
             }
-            NETLOGGER.send_to_server("\nExiting nano");
+            NETLOGGER.send_to_server("\nExiting nano.\n");
             NETLOGGER.destroy();
         });
     int stdin_flags;

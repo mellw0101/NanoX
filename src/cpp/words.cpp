@@ -141,7 +141,7 @@ get_file_extention(void)
 }
 
 bool
-is_word_func(char *word)
+is_word_func(char *word, unsigned long *at)
 {
     unsigned int i;
     for (i = 0; word[i]; i++)
@@ -149,10 +149,29 @@ is_word_func(char *word)
         if (word[i] == '(')
         {
             word[i] = '\0';
+            *at     = i;
             return TRUE;
         }
     }
     return FALSE;
+}
+
+void
+remove_leading_ptrs(char **word)
+{
+    while (*(*word) == '*')
+    {
+        *word += 1;
+    }
+}
+
+void
+remove_leading_parent(char **word)
+{
+    while (*(*word) == '(')
+    {
+        *word += 1;
+    }
 }
 
 const char *

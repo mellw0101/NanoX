@@ -104,9 +104,9 @@ constexpr short CANCEL = -1;
 constexpr bool BLIND   = false;
 constexpr bool VISIBLE = true;
 
-constexpr u8 JUSTFIND  = 0;
-constexpr u8 REPLACING = 1;
-constexpr u8 INREGION  = 2;
+constexpr unsigned char JUSTFIND  = 0;
+constexpr unsigned char REPLACING = 1;
+constexpr unsigned char INREGION  = 2;
 
 constexpr bool NORMAL    = true;
 constexpr bool SPECIAL   = false;
@@ -193,6 +193,10 @@ constexpr int DEL_CODE = 0x7F;
 
 #define FOCUS_IN             0x491
 #define FOCUS_OUT            0x499
+
+/* Some color defs. */
+#define BOLD                 "bold,"
+#define ITALIC               "italic,"
 
 /* Special keycodes for when a string bind has been partially implanted
  * or has an unpaired opening brace, or when a function in a string bind
@@ -388,6 +392,8 @@ typedef struct linestruct
     short *multidata;
     /* Whether the user has placed an anchor at this line. */
     bool has_anchor;
+    /* If this line should be hidden. */
+    bool hidden = FALSE;
 } linestruct;
 
 typedef struct groupstruct

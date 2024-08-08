@@ -138,6 +138,7 @@ extern keystruct *planted_shortcut;
 extern colortype                *last_c_color;
 extern syntaxtype               *c_syntaxtype;
 extern std::vector<bracket_pair> bracket_pairs;
+extern std::vector<std::string>  syntax_structs;
 
 typedef void (*functionptrtype)(void);
 
@@ -236,7 +237,7 @@ bool  is_file_and_exists(const char *path);
 /* Some functions in 'global.cpp'. */
 functionptrtype  func_from_key(const int keycode);
 functionptrtype  interpret(const int keycode);
-const keystruct *first_sc_for(int menu, void (*function)(void));
+const keystruct *first_sc_for(const int menu, void (*function)(void));
 const keystruct *get_shortcut(const int keycode);
 
 unsigned long shown_entries_for(int menu);
@@ -457,6 +458,7 @@ void          warn_and_briefly_pause(const char *msg);
 void          bottombars(int menu);
 void          post_one_key(const char *keystroke, const char *tag, int width);
 void          place_the_cursor(void);
+void          draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col);
 int           update_line(linestruct *line, unsigned long index);
 int           update_softwrapped_line(linestruct *line);
 bool          line_needs_update(const unsigned long old_column, const unsigned long new_column);
@@ -512,11 +514,13 @@ void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spa
 
 unsigned short indent_char_len(linestruct *line);
 
-void inject_in_line(linestruct **line, const char *str, unsigned long at);
 void enclose_marked_region(const char *s1, const char *s2);
 void do_block_comment(void);
 bool enter_with_bracket(void);
-bool is_empty_line(linestruct *line);
+void add_bracket_pair(const unsigned long start, const unsigned long end);
+void all_brackets_pos(void);
+void do_close_bracket(void);
+void do_test_window(void);
 
 /* 'syntax.cpp' */
 void        syntax_check_file(openfilestruct *file);
@@ -534,6 +538,9 @@ colortype  *get_last_c_colortype(void);
 void        update_c_syntaxtype(void);
 syntaxtype *get_c_syntaxtype(void);
 void        add_syntax_word(const char *color_fg, const char *color_bg, const char *word);
+bool        is_syntax_struct(std::string_view str);
+void        add_syntax_struct(const char *name);
+void        handle_struct_syntax(char **word);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
@@ -547,11 +554,15 @@ const char *extract_include(char *str);
 void        words_in_file(const char *path);
 char       *get_file_extention(void);
 const char *rgx_word(const char *word);
-bool        is_word_func(char *word);
+bool        is_word_func(char *word, unsigned long *at);
+void        remove_leading_ptrs(char **word);
+void        remove_leading_parent(char **word);
 
 /* 'lines.cpp' */
 bool is_line_comment(linestruct *line);
+bool is_line_start_end_bracket(linestruct *line, bool *is_start);
 bool is_line_in_bracket_pair(const unsigned long lineno);
-void all_brackets_pos(void);
+bool is_empty_line(linestruct *line);
+void inject_in_line(linestruct **line, const char *str, unsigned long at);
 
 #include <Mlib/def.h>

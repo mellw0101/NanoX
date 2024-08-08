@@ -210,6 +210,7 @@ bool                      last_key_was_bracket = FALSE;
 colortype                *last_c_color         = NULL;
 syntaxtype               *c_syntaxtype         = NULL;
 std::vector<bracket_pair> bracket_pairs;
+std::vector<std::string>  syntax_structs;
 
 /* Empty functions, for the most part corresponding to toggles. */
 void
@@ -863,7 +864,7 @@ shortcut_init(void)
     add_to_funcs(do_linter, MMAIN, N_("Linter"), WHENHELP(lint_gist), TOGETHER);
     add_to_funcs(do_formatter, MMAIN, N_("Formatter"), WHENHELP(formatter_gist), BLANKAFTER);
     /* Although not allowed in restricted mode, keep execution rebindable. */
-    if ISSET (RESTRICTED)
+    if (ISSET(RESTRICTED))
     {
         add_to_funcs(do_execute, MMAIN, N_("Execute"), WHENHELP(execute_gist), TOGETHER);
     }
@@ -928,10 +929,11 @@ shortcut_init(void)
     add_to_sclist(MMOST | MBROWSER, "^M", '\r', do_enter, 0);
     add_to_sclist(MMOST | MBROWSER, "Enter", KEY_ENTER, do_enter, 0);
     add_to_sclist(MMOST, "^I", '\t', do_tab, 0);
+    /* add_to_sclist(MMOST, "^I", 0, do_test_window, 0); */
     add_to_sclist(MMOST, "Tab", '\t', do_tab, 0);
     add_to_sclist(MMAIN | MBROWSER | MHELP, "^B", 0, do_search_backward, 0);
     add_to_sclist(MMAIN | MBROWSER | MHELP, "^F", 0, do_search_forward, 0);
-    if ISSET (MODERN_BINDINGS)
+    if (ISSET(MODERN_BINDINGS))
     {
         add_to_sclist((MMOST | MBROWSER) & ~MFINDINHELP, help_key, 0, do_help, 0);
         add_to_sclist(MHELP, help_key, 0, do_exit, 0);
@@ -943,7 +945,8 @@ shortcut_init(void)
         add_to_sclist(MMAIN | MBROWSER | MHELP, "^G", 0, do_findnext, 0);
         add_to_sclist(MMAIN, "^R", 0, do_replace, 0);
         add_to_sclist(MMAIN, "^T", 0, do_gotolinecolumn, 0);
-        add_to_sclist(MMAIN, "^P", 0, report_cursor_position, 0);
+        /* add_to_sclist(MMAIN, "^P", 0, report_cursor_position, 0); */
+        add_to_sclist(MMAIN, "^P", 0, do_close_bracket, 0);
         add_to_sclist(MMAIN, "^Z", 0, do_undo, 0);
         add_to_sclist(MMAIN, "^Y", 0, do_redo, 0);
         /* add_to_sclist(MMAIN, "^A", 0, do_mark, 0); */
@@ -1015,7 +1018,7 @@ shortcut_init(void)
     add_to_sclist(MMAIN, "M-]", 0, do_find_bracket, 0);
     add_to_sclist(MMAIN, "M-A", 0, do_mark, 0);
     add_to_sclist(MMAIN, "^6", 0, do_mark, 0);
-    // add_to_sclist(MMAIN, "^^", 0, do_mark, 0);
+    /* add_to_sclist(MMAIN, "^^", 0, do_mark, 0); */
     add_to_sclist(MMAIN, "M-}", 0, do_indent, 0);
     add_to_sclist(MMAIN, "M-{", 0, do_unindent, 0);
     add_to_sclist(MMAIN, "Sh-Tab", SHIFT_TAB, do_unindent, 0);

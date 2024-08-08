@@ -19,32 +19,23 @@ is_line_comment(linestruct *line)
 }
 
 bool
-is_line_start_end_bracket(linestruct *line, bool *start)
+is_line_start_end_bracket(linestruct *line, bool *is_start)
 {
     unsigned long i;
     for (i = 0; line->data[i]; i++)
     {
         if (line->data[i] == '{')
         {
-            *start = TRUE;
+            *is_start = TRUE;
             return TRUE;
         }
         else if (line->data[i] == '}')
         {
-            *start = FALSE;
+            *is_start = FALSE;
             return TRUE;
         }
     }
     return FALSE;
-}
-
-void
-add_bracket_pair(const unsigned long start, const unsigned long end)
-{
-    bracket_pair bp;
-    bp.start_line = start;
-    bp.end_line   = end;
-    bracket_pairs.push_back(bp);
 }
 
 bool
@@ -64,36 +55,27 @@ is_line_in_bracket_pair(const unsigned long lineno)
     return FALSE;
 }
 
-void
-all_brackets_pos(void)
+/* Return`s 'TRUE' if the first char in a line is '\0'. */
+bool
+is_empty_line(linestruct *line)
 {
-    linestruct *line;
-    long        start_pos = -1, end_pos = -1;
-    bool        start;
-    for (line = openfile->filetop; line != NULL; line = line->next)
+    unsigned i = 0;
+    for (; line->data[i]; i++)
+        ;
+    return (i == 0);
+}
+
+/* Inject a string into a line at an index. */
+void
+inject_in_line(linestruct **line, const char *str, unsigned long at)
+{
+    unsigned long len   = strlen((*line)->data);
+    unsigned long s_len = strlen(str);
+    if (at > len)
     {
-        if (is_line_start_end_bracket(line, &start))
-        {
-            if (start == TRUE)
-            {
-                start_pos = line->lineno;
-            }
-            else
-            {
-                if (start_pos != -1)
-                {
-                    end_pos = line->lineno;
-                    add_bracket_pair(start_pos, end_pos);
-                    start_pos = -1, end_pos = -1;
-                }
-            }
-        }
+        return;
     }
-    for (line = openfile->filetop; line != NULL; line = line->next)
-    {
-        if (is_line_in_bracket_pair(line->lineno))
-        {
-            NETLOGGER.log("line: %lu\n", line->lineno);
-        }
-    }
+    (*line)->data = (char *)nrealloc((*line)->data, len + s_len + 1);
+    memmove((*line)->data + at + s_len, (*line)->data + at, len - at + 1);
+    memmove((*line)->data + at, str, s_len);
 }

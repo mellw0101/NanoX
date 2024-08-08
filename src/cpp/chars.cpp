@@ -559,8 +559,8 @@ mbstrcasestr(const char *haystack, const char *const needle)
 char *
 revstrstr(const char *const haystack, const char *const needle, const char *pointer)
 {
-    const unsigned long needle_len = constexpr_strlen(needle);
-    const unsigned long tail_len   = constexpr_strlen(pointer);
+    const unsigned long needle_len = strlen(needle);
+    const unsigned long tail_len   = strlen(pointer);
     if (tail_len < needle_len)
     {
         pointer -= (needle_len - tail_len);
@@ -581,8 +581,8 @@ revstrstr(const char *const haystack, const char *const needle, const char *poin
 char *
 revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
 {
-    const unsigned long needle_len = constexpr_strlen(needle);
-    const unsigned long tail_len   = constexpr_strlen(pointer);
+    const unsigned long needle_len = strlen(needle);
+    const unsigned long tail_len   = strlen(pointer);
     if (tail_len < needle_len)
     {
         pointer -= (needle_len - tail_len);
@@ -634,8 +634,7 @@ mbrevstrcasestr(const char *const haystack, const char *const needle, const char
     }
 }
 
-/* This fu
-nction is equivalent to strchr() for multibyte strings.
+/* This function is equivalent to strchr() for multibyte strings.
  * It is used to find the first occurrence of a character in a string.
  * The character to find is given as a multibyte string.
  * The function is used in justify.c to find the first space in a line. */

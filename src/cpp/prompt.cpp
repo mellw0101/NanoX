@@ -223,8 +223,8 @@ inject_into_answer(char *burst, unsigned long count)
             burst[index] = '\n';
         }
     }
-    answer = (char *)nrealloc(answer, constexpr_strlen(answer) + count + 1);
-    memmove(answer + typing_x + count, answer + typing_x, constexpr_strlen(answer) - typing_x + 1);
+    answer = (char *)nrealloc(answer, strlen(answer) + count + 1);
+    memmove(answer + typing_x + count, answer + typing_x, strlen(answer) - typing_x + 1);
     constexpr_strncpy(answer + typing_x, burst, count);
     typing_x += count;
 }
@@ -435,7 +435,7 @@ add_or_remove_pipe_symbol_from_answer(void)
 {
     if (answer[0] == '|')
     {
-        memmove(answer, answer + 1, constexpr_strlen(answer));
+        memmove(answer, answer + 1, strlen(answer));
         if (typing_x > 0)
         {
             typing_x--;
@@ -443,8 +443,8 @@ add_or_remove_pipe_symbol_from_answer(void)
     }
     else
     {
-        answer = (char *)nrealloc(answer, constexpr_strlen(answer) + 2);
-        memmove(answer + 1, answer, constexpr_strlen(answer) + 1);
+        answer = (char *)nrealloc(answer, strlen(answer) + 2);
+        memmove(answer + 1, answer, strlen(answer) + 1);
         answer[0] = '|';
         typing_x++;
     }

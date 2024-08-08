@@ -63,21 +63,6 @@ indent_char_len(linestruct *line)
     return i;
 }
 
-/* Inject a string into a line at an index. */
-void
-inject_in_line(linestruct **line, const char *str, unsigned long at)
-{
-    unsigned long len   = strlen((*line)->data);
-    unsigned long s_len = strlen(str);
-    if (at > len)
-    {
-        return;
-    }
-    (*line)->data = (char *)nrealloc((*line)->data, len + s_len + 1);
-    memmove((*line)->data + at + s_len, (*line)->data + at, len - at + 1);
-    memmove((*line)->data + at, str, s_len);
-}
-
 /* If an area is marked then plase the 'str' at mark and current_x, thereby enclosing the marked area.
  * TODO: (enclose_marked_region) - Make the undo one action insted of two seprate once. */
 void
@@ -195,12 +180,88 @@ enter_with_bracket(void)
     return TRUE;
 }
 
-/* Return`s 'TRUE' if the first char in a line is '\0'. */
-bool
-is_empty_line(linestruct *line)
+void
+add_bracket_pair(const unsigned long start, const unsigned long end)
 {
-    unsigned i = 0;
-    for (; line->data[i]; i++)
-        ;
-    return (i == 0);
+    bracket_pair bp;
+    bp.start_line = start;
+    bp.end_line   = end;
+    bracket_pairs.push_back(bp);
+}
+
+void
+all_brackets_pos(void)
+{
+    linestruct *line;
+    long        start_pos = -1, end_pos = -1;
+    bool        is_start;
+    for (line = openfile->filetop; line != NULL; line = line->next)
+    {
+        if (is_line_start_end_bracket(line, &is_start))
+        {
+            if (is_start == TRUE)
+            {
+                start_pos = line->lineno;
+            }
+            else
+            {
+                if (start_pos != -1)
+                {
+                    end_pos = line->lineno;
+                    add_bracket_pair(start_pos, end_pos);
+                    start_pos = -1, end_pos = -1;
+                }
+            }
+        }
+    }
+}
+
+void
+get_bracket_start_end(unsigned long lineno, unsigned long *start, unsigned long *end)
+{
+    *start = 0, *end = 0;
+    for (const auto &[s, e] : bracket_pairs)
+    {
+        if (s < lineno && e > lineno)
+        {
+            *start = s, *end = e;
+            return;
+        }
+        if (s > lineno && e > lineno)
+        {
+            return;
+        }
+    }
+}
+
+void
+do_close_bracket(void)
+{
+    unsigned long start_line, end_line;
+    linestruct   *line, *was_current;
+    get_bracket_start_end(openfile->current->lineno, &start_line, &end_line);
+    if (start_line != 0 && end_line != 0)
+    {
+        NETLOGGER.log("is inside bracket, start: %lu, end: %lu\n", start_line, end_line);
+        line        = line_from_number(start_line + 1);
+        was_current = line;
+        for (; line->lineno != end_line; line = line->next)
+        {
+            NETLOGGER.log("%s\n", line->data);
+            line->hidden = TRUE;
+        }
+        edit_redraw(was_current, FLOWING);
+        // draw_row(openfile->current->lineno, "", openfile->current, 0);
+    }
+}
+
+void
+do_test_window(void)
+{
+    NETLOGGER.log("test win\n");
+    if (test_win != NULL)
+    {
+        delwin(test_win);
+    }
+    test_win = newwin(20, 20, 0, 0);
 }

@@ -462,10 +462,11 @@ do_prev_word(void)
                 break;
             }
         }
-        else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
+        /* else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
         {
+            step_forward = TRUE;
             break;
-        }
+        } */
         else if (is_zerowidth(openfile->current->data + openfile->current_x))
         {
             ; /* Do nothing. */

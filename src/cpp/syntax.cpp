@@ -158,6 +158,8 @@ add_start_end_syntax(const char *color_fg, const char *color_bg, const char *sta
 bool
 check_func_syntax(char ***words, unsigned int *i)
 {
+    unsigned long  at   = 0;
+    unsigned short type = 0;
     if ((*words)[++(*i)] == NULL)
     {
         return false;
@@ -167,15 +169,25 @@ check_func_syntax(char ***words, unsigned int *i)
     {
         (*words)[*i] += 1;
     }
-    if (is_word_func((*words)[*i]))
+    if (is_word_func((*words)[*i], &at))
     {
         add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
+        (*words)[*i] += at + 1;
+        type = retrieve_c_syntax_type((*words)[*i]);
+        if (type)
+        {
+            if ((*words)[++(*i)] != NULL)
+            {
+                add_syntax(&type, (*words)[*i]);
+            }
+        }
         return TRUE;
     }
     if ((*words)[(*i) + 1] != NULL)
     {
         if (*((*words)[(*i) + 1]) == '(')
         {
+            remove_leading_parent(&(*words)[*i]);
             add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
             return TRUE;
         }
@@ -381,6 +393,14 @@ check_for_syntax_words(linestruct *line)
     }
     for (i = 0; words[i] != NULL; i++)
     {
+        if (is_syntax_struct(words[i]))
+        {
+            if (words[i + 1] != NULL)
+            {
+                handle_struct_syntax(&words[i + 1]);
+                add_syntax_word("lagoon", NULL, words[++i]);
+            }
+        }
         const unsigned short type = retrieve_c_syntax_type(words[i]);
         if (last_type != 0)
         {
@@ -412,7 +432,15 @@ check_for_syntax_words(linestruct *line)
         {
             continue;
         }
-        else if (type & CS_STRUCT || type & CS_CLASS || type & CS_ENUM)
+        else if (type & CS_STRUCT)
+        {
+            if (!is_syntax_struct(words[++i]))
+            {
+                add_syntax_word("brightgreen", NULL, rgx_word(words[i]));
+                add_syntax_struct(words[i]);
+            }
+        }
+        else if (type & CS_CLASS || type & CS_ENUM)
         {
             add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
         }
@@ -461,6 +489,7 @@ do_cpp_syntax(void)
     }
     add_syntax_word("gray", NULL, ";");
     add_syntax_word("brightred", NULL, "\\<[A-Z_][0-9A-Z_]*\\>");
+    add_syntax_word("sand", NULL, "\\<[0-9]\\>");
     add_syntax_word("blue", NULL, "\\<(NULL|nullptr|FALSE|TRUE)\\>");
     add_syntax_word("brightmagenta", NULL, "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*:[[:blank:]]*$");
     add_syntax_word("normal", NULL, ":[[:blank:]]*$");
@@ -556,4 +585,42 @@ add_syntax_word(const char *color_fg, const char *color_bg, const char *word)
     }
     /* Add the syntax. */
     add_syntax_color(color_fg, color_bg, word, &last_c_color);
+}
+
+void
+add_syntax_struct(const char *name)
+{
+    syntax_structs.push_back(name);
+}
+
+/* Return`s 'TRUE' if 'str' is in the 'syntax_structs' vector. */
+bool
+is_syntax_struct(std::string_view str)
+{
+    for (const auto &s : syntax_structs)
+    {
+        if (s == str)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+void
+handle_struct_syntax(char **word)
+{
+    unsigned long i;
+    while (*(*word) == '*')
+    {
+        *word += 1;
+    }
+    for (i = 0; (*word)[i]; i++)
+    {
+        if ((*word)[i] == ';')
+        {
+            (*word)[i] = '\0';
+            break;
+        }
+    }
 }

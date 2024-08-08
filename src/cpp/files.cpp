@@ -1165,7 +1165,7 @@ insert_a_file_or(bool execute)
         /* TRANSLATORS: The next six messages are prompts. */
         if (execute)
         {
-            if ISSET (MULTIBUFFER)
+            if (ISSET(MULTIBUFFER))
             {
                 msg = _("Command to execute in new buffer");
             }
@@ -1176,9 +1176,9 @@ insert_a_file_or(bool execute)
         }
         else
         {
-            if ISSET (MULTIBUFFER)
+            if (ISSET(MULTIBUFFER))
             {
-                if ISSET (NO_CONVERT)
+                if (ISSET(NO_CONVERT))
                 {
                     msg = _("File to read unconverted into new buffer [from %s]");
                 }
@@ -1189,13 +1189,12 @@ insert_a_file_or(bool execute)
             }
             else
             {
-                if ISSET (NO_CONVERT)
+                if (ISSET(NO_CONVERT))
                 {
                     msg = _("File to insert unconverted [from %s]");
                 }
                 else
                 {
-
                     msg = _("File to insert [from %s]");
                 }
             }
@@ -1269,7 +1268,7 @@ insert_a_file_or(bool execute)
             if (execute)
             {
                 /* When in multibuffer mode, first open a blank buffer. */
-                if ISSET (MULTIBUFFER)
+                if (ISSET(MULTIBUFFER))
                 {
                     open_buffer("", TRUE);
                 }
@@ -1281,7 +1280,7 @@ insert_a_file_or(bool execute)
                     update_history(&execute_history, answer, PRUNE_DUPLICATE);
                 }
                 /* If this is a new buffer, put the cursor at the top. */
-                if ISSET (MULTIBUFFER)
+                if (ISSET(MULTIBUFFER))
                 {
                     openfile->current     = openfile->filetop;
                     openfile->current_x   = 0;
@@ -1296,9 +1295,9 @@ insert_a_file_or(bool execute)
                 /* Read the file into a new buffer or into current buffer. */
                 open_buffer(answer, ISSET(MULTIBUFFER));
             }
-            if ISSET (MULTIBUFFER)
+            if (ISSET(MULTIBUFFER))
             {
-                if ISSET (POSITIONLOG)
+                if (ISSET(POSITIONLOG))
                 {
                     long priorline = 0;
                     long priorcol  = 0;

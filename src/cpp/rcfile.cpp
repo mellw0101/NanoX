@@ -856,6 +856,7 @@ constexpr_map<std::string_view, short, COLORCOUNT> huesIndiecesMap = {
      {"sage", 107},
      {"brown", 100},
      {"ocher", 142},
+     /* 'sand' Should be used for func`s and num`s. */
      {"sand", 186},
      {"tawny", 136},
      {"brick", 166},
