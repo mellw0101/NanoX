@@ -622,5 +622,10 @@ handle_struct_syntax(char **word)
             (*word)[i] = '\0';
             break;
         }
+        if ((*word)[i] == ')')
+        {
+            (*word)[i] = '\0';
+            break;
+        }
     }
 }
