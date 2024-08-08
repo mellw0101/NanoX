@@ -229,7 +229,15 @@ check_syntax(const char *path)
             {
                 continue;
             }
-            if (type & CS_STRUCT || type & CS_ENUM || type & CS_CLASS)
+            if (type & CS_STRUCT)
+            {
+                if (!is_syntax_struct(words[++i]))
+                {
+                    add_syntax_word("brightgreen", NULL, rgx_word(words[i]));
+                    add_syntax_struct(words[i]);
+                }
+            }
+            if (type & CS_ENUM || type & CS_CLASS)
             {
                 add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
             }
