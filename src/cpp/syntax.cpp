@@ -406,7 +406,7 @@ check_for_syntax_words(linestruct *line)
             if (words[i + 1] != NULL)
             {
                 handle_struct_syntax(&words[i + 1]);
-                add_syntax_word("lagoon", NULL, words[++i]);
+                add_syntax_word("lagoon", NULL, rgx_word(words[++i]));
             }
         }
         const unsigned short type = retrieve_c_syntax_type(words[i]);
