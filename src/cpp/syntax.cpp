@@ -237,7 +237,15 @@ check_syntax(const char *path)
                     add_syntax_struct(words[i]);
                 }
             }
-            if (type & CS_ENUM || type & CS_CLASS)
+            else if (type & CS_CLASS)
+            {
+                if (!is_syntax_class(words[++i]))
+                {
+                    add_syntax(&type, words[i]);
+                    add_syntax_class(words[i]);
+                }
+            }
+            else if (type & CS_ENUM)
             {
                 add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
             }
@@ -409,6 +417,14 @@ check_for_syntax_words(linestruct *line)
                 add_syntax_word("lagoon", NULL, rgx_word(words[++i]));
             }
         }
+        else if (is_syntax_class(words[i]))
+        {
+            if (words[i + 1] != NULL)
+            {
+                handle_struct_syntax(&words[i + 1]);
+                add_syntax_word("lagoon", NULL, rgx_word(words[++i]));
+            }
+        }
         const unsigned short type = retrieve_c_syntax_type(words[i]);
         if (last_type != 0)
         {
@@ -448,7 +464,15 @@ check_for_syntax_words(linestruct *line)
                 add_syntax_struct(words[i]);
             }
         }
-        else if (type & CS_CLASS || type & CS_ENUM)
+        else if (type & CS_CLASS)
+        {
+            if (!is_syntax_class(words[++i]))
+            {
+                add_syntax(&type, words[i]);
+                add_syntax_class(words[i]);
+            }
+        }
+        else if (type & CS_ENUM)
         {
             add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
         }
@@ -601,6 +625,12 @@ add_syntax_struct(const char *name)
     syntax_structs.push_back(name);
 }
 
+void
+add_syntax_class(const char *name)
+{
+    syntax_classes.push_back(name);
+}
+
 /* Return`s 'TRUE' if 'str' is in the 'syntax_structs' vector. */
 bool
 is_syntax_struct(std::string_view str)
@@ -608,6 +638,19 @@ is_syntax_struct(std::string_view str)
     for (const auto &s : syntax_structs)
     {
         if (s == str)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+bool
+is_syntax_class(std::string_view str)
+{
+    for (const auto &c : syntax_classes)
+    {
+        if (c == str)
         {
             return TRUE;
         }

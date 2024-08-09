@@ -206,13 +206,18 @@ constexpr bool BLANKAFTER = TRUE;
 constexpr bool TOGETHER   = FALSE;
 /* If closing bracket char was printed then this is TRUE until another
  * key input has been prossesed. */
-bool                      last_key_was_bracket = FALSE;
-colortype                *last_c_color         = NULL;
-syntaxtype               *c_syntaxtype         = NULL;
+bool        last_key_was_bracket = FALSE;
+colortype  *last_c_color         = NULL;
+syntaxtype *c_syntaxtype         = NULL;
+/* Vector to hold bracket bairs for closing them, (NOT YET IMPLEMENTED). */
 std::vector<bracket_pair> bracket_pairs;
-std::vector<std::string>  syntax_structs;
+/* Vector to hold struct`s that are found, we use this to higlight created objects. */
+std::vector<std::string> syntax_structs;
+/* Vector to hold class`es that are found, we use this to higlight created objects. */
+std::vector<std::string> syntax_classes;
 
 /* Empty functions, for the most part corresponding to toggles. */
+
 void
 case_sens_void(void)
 {

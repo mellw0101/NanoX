@@ -139,6 +139,7 @@ extern colortype                *last_c_color;
 extern syntaxtype               *c_syntaxtype;
 extern std::vector<bracket_pair> bracket_pairs;
 extern std::vector<std::string>  syntax_structs;
+extern std::vector<std::string>  syntax_classes;
 
 typedef void (*functionptrtype)(void);
 
@@ -538,8 +539,10 @@ colortype  *get_last_c_colortype(void);
 void        update_c_syntaxtype(void);
 syntaxtype *get_c_syntaxtype(void);
 void        add_syntax_word(const char *color_fg, const char *color_bg, const char *word);
-bool        is_syntax_struct(std::string_view str);
 void        add_syntax_struct(const char *name);
+void        add_syntax_class(const char *name);
+bool        is_syntax_struct(std::string_view str);
+bool        is_syntax_class(std::string_view str);
 void        handle_struct_syntax(char **word);
 
 /* 'netlog.cpp' */
