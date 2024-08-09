@@ -483,12 +483,15 @@ check_for_syntax_words(linestruct *line)
     {
         if (is_syntax_struct(words[i]))
         {
-            if (*words[i + 1] == '(')
-                ;
-            else if (words[i + 1] != NULL)
+            if (words[i + 1] != NULL)
             {
-                handle_struct_syntax(&words[i + 1]);
-                add_syntax_word("lagoon", NULL, rgx_word(words[++i]));
+                if (*words[i + 1] == '(')
+                    ;
+                else
+                {
+                    handle_struct_syntax(&words[i + 1]);
+                    add_syntax_word("lagoon", NULL, rgx_word(words[++i]));
+                }
             }
         }
         else if (is_syntax_class(words[i]))
