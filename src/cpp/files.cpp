@@ -1378,14 +1378,14 @@ get_full_path(const char *origpath)
         /* Upon success, re-add the last component of the original path. */
         if (target)
         {
-            target = static_cast<char *>(nrealloc(target, constexpr_strlen(target) + constexpr_strlen(slash + 1) + 1));
+            target = (char *)nrealloc(target, strlen(target) + strlen(slash + 1) + 1);
             constexpr_strcat(target, slash + 1);
         }
     }
     /* Ensure that a non-apex directory path ends with a slash. */
     if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode))
     {
-        target = (char *)nrealloc(target, constexpr_strlen(target) + 2);
+        target = (char *)nrealloc(target, strlen(target) + 2);
         constexpr_strcat(target, "/");
     }
     free(untilded);
@@ -1439,10 +1439,10 @@ safe_tempfile(FILE **stream)
     {
         extension = openfile->filename + constexpr_strlen(openfile->filename);
     }
-    tempfile_name = (char *)nrealloc(tempdir, constexpr_strlen(tempdir) + 12 + constexpr_strlen(extension));
+    tempfile_name = (char *)nrealloc(tempdir, strlen(tempdir) + 12 + strlen(extension));
     constexpr_strcat(tempfile_name, "nano.XXXXXX");
     constexpr_strcat(tempfile_name, extension);
-    descriptor = mkstemps(tempfile_name, constexpr_strlen(extension));
+    descriptor = mkstemps(tempfile_name, strlen(extension));
     *stream    = (descriptor > 0) ? fdopen(descriptor, "r+b") : NULL;
     if (*stream == NULL)
     {
@@ -1598,7 +1598,7 @@ make_backup_of(char *realname)
         {
             thename = copy_of(tail(realname));
         }
-        backupname = (char *)nmalloc(constexpr_strlen(backup_dir) + constexpr_strlen(thename) + 1);
+        backupname = (char *)nmalloc(strlen(backup_dir) + strlen(thename) + 1);
         sprintf(backupname, "%s%s", backup_dir, thename);
         free(thename);
         thename = get_next_filename(backupname, "~");

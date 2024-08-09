@@ -140,6 +140,7 @@ extern syntaxtype               *c_syntaxtype;
 extern std::vector<bracket_pair> bracket_pairs;
 extern std::vector<std::string>  syntax_structs;
 extern std::vector<std::string>  syntax_classes;
+extern std::vector<std::string>  handled_includes;
 
 typedef void (*functionptrtype)(void);
 
@@ -240,11 +241,12 @@ functionptrtype  func_from_key(const int keycode);
 functionptrtype  interpret(const int keycode);
 const keystruct *first_sc_for(const int menu, void (*function)(void));
 const keystruct *get_shortcut(const int keycode);
-
-unsigned long shown_entries_for(int menu);
-int           keycode_from_string(const char *keystring);
-void          shortcut_init(void);
-const char   *epithet_of_flag(const unsigned int flag);
+unsigned long    shown_entries_for(int menu);
+int              keycode_from_string(const char *keystring);
+void             shortcut_init(void);
+const char      *epithet_of_flag(const unsigned int flag);
+void             add_to_handled_includes_vec(const char *path);
+bool             is_in_handled_includes_vec(std::string_view path);
 
 /* Some functions in 'help.cpp'. */
 void wrap_help_text_into_buffer(void);
@@ -340,6 +342,7 @@ short      color_to_short(const char *colorname, bool &vivid, bool &thick);
 char      *parse_next_word(char *ptr);
 void       parse_rule(char *ptr, int rex_flags);
 bool       compile(const char *expression, int rex_flags, regex_t **packed);
+bool       compile_with_callback(const char *expression, int rex_flags, regex_t **packed, const char *from_file);
 void       begin_new_syntax(char *ptr);
 bool       parse_combination(char *combotext, short *fg, short *bg, int *attributes);
 void       set_interface_color(const unsigned char element, char *combotext);
@@ -525,7 +528,8 @@ void do_test_window(void);
 
 /* 'syntax.cpp' */
 void        syntax_check_file(openfilestruct *file);
-void        add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c);
+void        add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c,
+                             const char *from_file = NULL);
 void        add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end,
                                  colortype **c);
 bool        check_func_syntax(char ***words, unsigned int *i);
@@ -538,7 +542,7 @@ void        check_for_syntax_words(linestruct *line);
 colortype  *get_last_c_colortype(void);
 void        update_c_syntaxtype(void);
 syntaxtype *get_c_syntaxtype(void);
-void        add_syntax_word(const char *color_fg, const char *color_bg, const char *word);
+void        add_syntax_word(const char *color_fg, const char *color_bg, const char *word, const char *from_file = NULL);
 void        add_syntax_struct(const char *name);
 void        add_syntax_class(const char *name);
 bool        is_syntax_struct(std::string_view str);
@@ -560,6 +564,7 @@ const char *rgx_word(const char *word);
 bool        is_word_func(char *word, unsigned long *at);
 void        remove_leading_ptrs(char **word);
 void        remove_leading_parent(char **word);
+const char *concat_path(const char *s1, const char *s2);
 
 /* 'lines.cpp' */
 bool is_line_comment(linestruct *line);

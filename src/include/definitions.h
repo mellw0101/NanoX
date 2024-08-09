@@ -197,6 +197,9 @@ constexpr int DEL_CODE = 0x7F;
 /* Some color defs. */
 #define BOLD                 "bold,"
 #define ITALIC               "italic,"
+#define BRIGHT               "bright"
+#define LIGHT                "light"
+#define MAGENTA              "magenta"
 
 /* Special keycodes for when a string bind has been partially implanted
  * or has an unpaired opening brace, or when a function in a string bind

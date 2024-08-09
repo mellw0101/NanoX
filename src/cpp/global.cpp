@@ -215,6 +215,8 @@ std::vector<bracket_pair> bracket_pairs;
 std::vector<std::string> syntax_structs;
 /* Vector to hold class`es that are found, we use this to higlight created objects. */
 std::vector<std::string> syntax_classes;
+/* Vector for all includes that have been handled. */
+std::vector<std::string> handled_includes;
 
 /* Empty functions, for the most part corresponding to toggles. */
 
@@ -1244,4 +1246,25 @@ const char *
 epithet_of_flag(const unsigned int flag)
 {
     return &epithetOfFlagMap[flag].value[0];
+}
+
+/* Add 'path' to 'handles_include' vector. */
+void
+add_to_handled_includes_vec(const char *path)
+{
+    handled_includes.push_back(path);
+}
+
+/* Return`s 'TRUE' if 'path' is found in 'handles_includes' vector. */
+bool
+is_in_handled_includes_vec(std::string_view path)
+{
+    for (const auto &p : handled_includes)
+    {
+        if (p == path)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }

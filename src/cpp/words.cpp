@@ -61,7 +61,7 @@ words_in_str(const char *str, unsigned long *size)
     unsigned int cap   = 10;
     char       **words = (char **)nmalloc(sizeof(char *) * cap);
     char        *data  = strdup(str);
-    char        *tok   = strtok(data, " #");
+    char        *tok   = strtok(data, " #\t");
     while (tok != NULL)
     {
         if (i == cap)
@@ -71,7 +71,7 @@ words_in_str(const char *str, unsigned long *size)
         }
         remove_tabs_from_word(&tok);
         words[i++] = tok;
-        tok        = strtok(NULL, " ");
+        tok        = strtok(NULL, " \t");
     }
     words[i] = NULL;
     (size != NULL) ? *size = 1 : 0;
@@ -174,10 +174,28 @@ remove_leading_parent(char **word)
     }
 }
 
+/* Return`s "\<('word')\>". */
 const char *
 rgx_word(const char *word)
 {
     static char buf[1024];
     sprintf(buf, "%s%s%s", "\\<(", word, ")\\>");
+    return buf;
+}
+
+/* Concat path from 2 string`s.  if end of 's1' is not '/', it is added. */
+const char *
+concat_path(const char *s1, const char *s2)
+{
+    static char   buf[PATH_MAX];
+    unsigned long len_s1 = strlen(s1);
+    if (s1[len_s1 - 1] == '/')
+    {
+        snprintf(buf, sizeof(buf), "%s%s", s1, s2);
+    }
+    else
+    {
+        snprintf(buf, sizeof(buf), "%s%s%s", s1, "/", s2);
+    }
     return buf;
 }

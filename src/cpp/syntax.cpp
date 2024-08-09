@@ -7,6 +7,7 @@
 void
 syntax_check_file(openfilestruct *file)
 {
+    PROFILE_FUNCTION;
     if (openfile->filetop->next == NULL)
     {
         return;
@@ -88,7 +89,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
 
 /* Add syntax regex to end of colortype list 'c'. */
 void
-add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c)
+add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c, const char *from_file)
 {
     if (c == NULL)
     {
@@ -102,9 +103,19 @@ add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr,
     {
         return;
     }
-    if (!compile(rgxstr, NANO_REG_EXTENDED, &start_rgx))
+    if (from_file != NULL)
     {
-        return;
+        if (!compile_with_callback(rgxstr, NANO_REG_EXTENDED, &start_rgx, from_file))
+        {
+            return;
+        }
+    }
+    else
+    {
+        if (!compile(rgxstr, NANO_REG_EXTENDED, &start_rgx))
+        {
+            return;
+        }
     }
     nc             = (colortype *)nmalloc(sizeof(colortype));
     nc->start      = start_rgx;
@@ -187,7 +198,6 @@ check_func_syntax(char ***words, unsigned int *i)
     {
         if (*((*words)[(*i) + 1]) == '(')
         {
-            remove_leading_parent(&(*words)[*i]);
             add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
             return TRUE;
         }
@@ -229,25 +239,35 @@ check_syntax(const char *path)
             {
                 continue;
             }
-            if (type & CS_STRUCT)
+            else if (type & CS_STRUCT)
             {
-                if (!is_syntax_struct(words[++i]))
+                if (*words[i + 1] == '{' || *words[i + 1] == '*')
+                    ;
+                else if (!is_syntax_struct(words[++i]))
                 {
-                    add_syntax_word("brightgreen", NULL, rgx_word(words[i]));
+                    add_syntax_word("brightgreen", NULL, rgx_word(words[i]), path);
                     add_syntax_struct(words[i]);
                 }
             }
             else if (type & CS_CLASS)
             {
-                if (!is_syntax_class(words[++i]))
+                if (*words[i + 1] == '{')
+                    ;
+                else if (!is_syntax_class(words[++i]))
                 {
-                    add_syntax(&type, words[i]);
+                    add_syntax_word("brightgreen", NULL, rgx_word(words[i]), path);
                     add_syntax_class(words[i]);
                 }
             }
             else if (type & CS_ENUM)
             {
-                add_syntax_word("brightgreen", NULL, rgx_word(words[++i]));
+                /* If this is a anonumus enum skip, (will be implemented later). */
+                if (*words[i + 1] == '{')
+                    ;
+                else
+                {
+                    add_syntax_word("brightgreen", NULL, rgx_word(words[++i]), path);
+                }
             }
             else if (type & CS_CHAR || type & CS_VOID || type & CS_INT || type & CS_LONG || type & CS_BOOL ||
                      type & CS_SIZE_T || type & CS_SSIZE_T)
@@ -260,6 +280,58 @@ check_syntax(const char *path)
             else if (type & CS_DEFINE)
             {
                 handle_define(words[++i]);
+            }
+            else if (type & CS_INCLUDE)
+            {
+                /* If the include file is a 'local' file, then base the full path on current path. */
+                if (*words[++i] == '"')
+                {
+                    char         *rpath = strdup(path);
+                    unsigned long j = 0, pos = 0;
+                    for (; rpath[j]; j++)
+                    {
+                        if (rpath[j] == '/')
+                        {
+                            pos = j;
+                        }
+                    }
+                    if (pos != 0)
+                    {
+                        rpath[pos] = '\0';
+                    }
+                    const char *full_rpath = concat_path(rpath, extract_include(words[i]));
+                    if (is_file_and_exists(full_rpath))
+                    {
+                        if (!is_in_handled_includes_vec(full_rpath))
+                        {
+                            add_to_handled_includes_vec(full_rpath);
+                            check_syntax(full_rpath);
+                        }
+                    }
+                    free(rpath);
+                }
+                else if (*words[i] == '<')
+                {
+                    const char *rpath = concat_path("/usr/include/", extract_include(words[i]));
+                    if (is_file_and_exists(rpath))
+                    {
+                        if (!is_in_handled_includes_vec(rpath))
+                        {
+                            add_to_handled_includes_vec(rpath);
+                            check_syntax(rpath);
+                        }
+                        continue;
+                    }
+                    rpath = concat_path("/usr/include/c++/v1/", extract_include(words[i]));
+                    if (is_file_and_exists(rpath))
+                    {
+                        if (!is_in_handled_includes_vec(rpath))
+                        {
+                            add_to_handled_includes_vec(rpath);
+                            check_syntax(rpath);
+                        }
+                    }
+                }
             }
         }
         free(words);
@@ -411,7 +483,9 @@ check_for_syntax_words(linestruct *line)
     {
         if (is_syntax_struct(words[i]))
         {
-            if (words[i + 1] != NULL)
+            if (*words[i + 1] == '(')
+                ;
+            else if (words[i + 1] != NULL)
             {
                 handle_struct_syntax(&words[i + 1]);
                 add_syntax_word("lagoon", NULL, rgx_word(words[++i]));
@@ -519,9 +593,9 @@ do_cpp_syntax(void)
     {
         return;
     }
-    add_syntax_word("gray", NULL, ";");
-    add_syntax_word("brightred", NULL, "\\<[A-Z_][0-9A-Z_]*\\>");
-    add_syntax_word("sand", NULL, "\\<[0-9]\\>");
+    /* add_syntax_word("gray", NULL, ";"); */
+    // add_syntax_word("brightred", NULL, "\\<[A-Z_][0-9A-Z_]*\\>");
+    add_syntax_word("sand", NULL, "[0-9]");
     add_syntax_word("blue", NULL, "\\<(NULL|nullptr|FALSE|TRUE)\\>");
     add_syntax_word("brightmagenta", NULL, "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*:[[:blank:]]*$");
     add_syntax_word("normal", NULL, ":[[:blank:]]*$");
@@ -540,9 +614,11 @@ do_cpp_syntax(void)
                     "template|this|typename|virtual|volatile|false|true)\\>");
     add_syntax_word("brightgreen", NULL, "\\<(std|string|vector)\\>");
     /* Flow control. */
-    add_syntax_word("brightyellow", NULL, "\\<(if|else|for|while|do|switch|case|default)\\>");
-    add_syntax_word("brightyellow", NULL, "\\<(try|throw|catch|operator|new|delete)\\>");
-    add_syntax_word("brightmagenta", NULL, "\\<(using|break|continue|goto|return)\\>");
+    // add_syntax_word("brightyellow", NULL, "\\<(if|else|for|while|do|switch|case|default)\\>");
+    // add_syntax_word("brightyellow", NULL, "\\<(try|throw|catch|operator|new|delete)\\>");
+    add_syntax_word("brightmagenta", NULL,
+                    "\\<(using|break|continue|goto|return|try|throw|catch|operator|new|delete|if|else|for|while|do|"
+                    "switch|case|default)\\>");
     add_syntax_word("brightmagenta", NULL, "'([^'\\]|\\\\([\"'\abfnrtv]|x[[:xdigit:]]{1,2}|[0-3]?[0-7]{1,2}))'");
     add_syntax_word("cyan", NULL,
                     "__attribute__[[:blank:]]*\\(\\([^)]*\\)\\)|__(aligned|asm|builtin|hidden|inline|packed|"
@@ -609,14 +685,14 @@ update_c_syntaxtype(void)
 
 /* Add a word and the color of that word to the syntax list. */
 void
-add_syntax_word(const char *color_fg, const char *color_bg, const char *word)
+add_syntax_word(const char *color_fg, const char *color_bg, const char *word, const char *from_file)
 {
     if (last_c_color == NULL)
     {
         last_c_color = get_last_c_colortype();
     }
     /* Add the syntax. */
-    add_syntax_color(color_fg, color_bg, word, &last_c_color);
+    add_syntax_color(color_fg, color_bg, word, &last_c_color, from_file);
 }
 
 void

@@ -421,6 +421,29 @@ compile(const char *expression, int rex_flags, regex_t **packed)
     return (outcome == 0);
 }
 
+/* Same as compile but errors with origin file. */
+bool
+compile_with_callback(const char *expression, int rex_flags, regex_t **packed, const char *from_file)
+{
+    regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
+    int      outcome  = regcomp(compiled, expression, rex_flags);
+    if (outcome != 0)
+    {
+        unsigned long length  = regerror(outcome, compiled, NULL, 0);
+        char         *message = (char *)nmalloc(length);
+        regerror(outcome, compiled, message, length);
+        jot_error(N_("Bad regex \"%s\": %s, from file '%s'"), expression, message, from_file);
+        free(message);
+        regfree(compiled);
+        free(compiled);
+    }
+    else
+    {
+        *packed = compiled;
+    }
+    return (outcome == 0);
+}
+
 /* Parse the next syntax name and its possible extension regexes from the
  * line at ptr, and add it to the global linked list of color syntaxes. */
 void
