@@ -281,58 +281,58 @@ check_syntax(const char *path)
             {
                 handle_define(words[++i]);
             }
-            else if (type & CS_INCLUDE)
-            {
-                /* If the include file is a 'local' file, then base the full path on current path. */
-                if (*words[++i] == '"')
-                {
-                    char         *rpath = strdup(path);
-                    unsigned long j = 0, pos = 0;
-                    for (; rpath[j]; j++)
-                    {
-                        if (rpath[j] == '/')
-                        {
-                            pos = j;
-                        }
-                    }
-                    if (pos != 0)
-                    {
-                        rpath[pos] = '\0';
-                    }
-                    const char *full_rpath = concat_path(rpath, extract_include(words[i]));
-                    if (is_file_and_exists(full_rpath))
-                    {
-                        if (!is_in_handled_includes_vec(full_rpath))
-                        {
-                            add_to_handled_includes_vec(full_rpath);
-                            check_syntax(full_rpath);
-                        }
-                    }
-                    free(rpath);
-                }
-                else if (*words[i] == '<')
-                {
-                    const char *rpath = concat_path("/usr/include/", extract_include(words[i]));
-                    if (is_file_and_exists(rpath))
-                    {
-                        if (!is_in_handled_includes_vec(rpath))
-                        {
-                            add_to_handled_includes_vec(rpath);
-                            check_syntax(rpath);
-                        }
-                        continue;
-                    }
-                    rpath = concat_path("/usr/include/c++/v1/", extract_include(words[i]));
-                    if (is_file_and_exists(rpath))
-                    {
-                        if (!is_in_handled_includes_vec(rpath))
-                        {
-                            add_to_handled_includes_vec(rpath);
-                            check_syntax(rpath);
-                        }
-                    }
-                }
-            }
+            // else if (type & CS_INCLUDE)
+            // {
+            //     /* If the include file is a 'local' file, then base the full path on current path. */
+            //     if (*words[++i] == '"')
+            //     {
+            //         char         *rpath = strdup(path);
+            //         unsigned long j = 0, pos = 0;
+            //         for (; rpath[j]; j++)
+            //         {
+            //             if (rpath[j] == '/')
+            //             {
+            //                 pos = j;
+            //             }
+            //         }
+            //         if (pos != 0)
+            //         {
+            //             rpath[pos] = '\0';
+            //         }
+            //         const char *full_rpath = concat_path(rpath, extract_include(words[i]));
+            //         if (is_file_and_exists(full_rpath))
+            //         {
+            //             if (!is_in_handled_includes_vec(full_rpath))
+            //             {
+            //                 add_to_handled_includes_vec(full_rpath);
+            //                 check_syntax(full_rpath);
+            //             }
+            //         }
+            //         free(rpath);
+            //     }
+            //     else if (*words[i] == '<')
+            //     {
+            //         const char *rpath = concat_path("/usr/include/", extract_include(words[i]));
+            //         if (is_file_and_exists(rpath))
+            //         {
+            //             if (!is_in_handled_includes_vec(rpath))
+            //             {
+            //                 add_to_handled_includes_vec(rpath);
+            //                 check_syntax(rpath);
+            //             }
+            //             continue;
+            //         }
+            //         rpath = concat_path("/usr/include/c++/v1/", extract_include(words[i]));
+            //         if (is_file_and_exists(rpath))
+            //         {
+            //             if (!is_in_handled_includes_vec(rpath))
+            //             {
+            //                 add_to_handled_includes_vec(rpath);
+            //                 check_syntax(rpath);
+            //             }
+            //         }
+            //     }
+            // }
         }
         free(words);
     }
