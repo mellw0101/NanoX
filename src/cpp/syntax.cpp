@@ -281,6 +281,7 @@ check_syntax(const char *path)
             {
                 handle_define(words[++i]);
             }
+            /* TODO: Fix check_multis before. */
             // else if (type & CS_INCLUDE)
             // {
             //     /* If the include file is a 'local' file, then base the full path on current path. */
