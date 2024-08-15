@@ -135,12 +135,13 @@ extern bool last_key_was_bracket;
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
-extern colortype                *last_c_color;
-extern syntaxtype               *c_syntaxtype;
-extern std::vector<bracket_pair> bracket_pairs;
-extern std::vector<std::string>  syntax_structs;
-extern std::vector<std::string>  syntax_classes;
-extern std::vector<std::string>  handled_includes;
+extern colortype                 *last_c_color;
+extern syntaxtype                *c_syntaxtype;
+extern std::vector<bracket_pair>  bracket_pairs;
+extern std::vector<bracket_entry> bracket_entrys;
+extern std::vector<std::string>   syntax_structs;
+extern std::vector<std::string>   syntax_classes;
+extern std::vector<std::string>   handled_includes;
 
 typedef void (*functionptrtype)(void);
 
@@ -326,7 +327,7 @@ void        enable_flow_control(void);
 void        terminal_init(void);
 void        confirm_margin(void);
 void        unbound_key(int code);
-bool        changes_something(CFuncPtr f);
+bool        changes_something(functionptrtype f);
 void        inject(char *burst, unsigned long count);
 
 /* Most functions in 'prompt.cpp'. */
@@ -552,6 +553,7 @@ void        handle_struct_syntax(char **word);
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
 void netlog_colortype(colortype *c);
+void netlog_bracket_entry(const bracket_entry &be);
 
 /* 'words.cpp' */
 void        remove_tabs_from_word(char **word);
@@ -567,10 +569,14 @@ void        remove_leading_parent(char **word);
 const char *concat_path(const char *s1, const char *s2);
 
 /* 'lines.cpp' */
-bool is_line_comment(linestruct *line);
-bool is_line_start_end_bracket(linestruct *line, bool *is_start);
-bool is_line_in_bracket_pair(const unsigned long lineno);
-bool is_empty_line(linestruct *line);
-void inject_in_line(linestruct **line, const char *str, unsigned long at);
+bool          is_line_comment(linestruct *line);
+bool          is_line_start_end_bracket(linestruct *line, bool *is_start);
+bool          is_line_in_bracket_pair(const unsigned long lineno);
+bool          is_empty_line(linestruct *line);
+void          inject_in_line(linestruct **line, const char *str, unsigned long at);
+unsigned long get_line_total_tabs(linestruct *line);
+
+/* 'brackets.cpp' */
+void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_start);
 
 #include <Mlib/def.h>

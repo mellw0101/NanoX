@@ -33,7 +33,7 @@ to_last_line(void)
 void
 get_edge_and_target(unsigned long *leftedge, unsigned long *target_column)
 {
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         unsigned long shim = editwincols * (1 + (tabsize / editwincols));
         *leftedge          = leftedge_for(xplustabs(), openfile->current);
@@ -65,7 +65,7 @@ proper_x(linestruct *line, unsigned long *leftedge, bool forward, unsigned long 
             *shifted = TRUE;
         }
     }
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         *leftedge = leftedge_for(wideness(line->data, index), line);
     }

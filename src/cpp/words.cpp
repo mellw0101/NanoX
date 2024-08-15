@@ -1,4 +1,6 @@
 #include "../include/prototypes.h"
+#include <string.h>
+#include "../include/definitions.h"
 
 #include <Mlib/Io.h>
 #include <Mlib/Profile.h>

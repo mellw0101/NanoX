@@ -54,8 +54,8 @@ tail(const char *path)
 char *
 concatenate(const char *path, const char *name)
 {
-    unsigned long pathlen = constexpr_strlen(path);
-    char         *joined  = (char *)nmalloc(pathlen + constexpr_strlen(name) + 1);
+    unsigned long pathlen = strlen(path);
+    char         *joined  = (char *)nmalloc(pathlen + strlen(name) + 1);
     constexpr_strcpy(joined, path);
     constexpr_strcpy(joined + pathlen, name);
     return joined;

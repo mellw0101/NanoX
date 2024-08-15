@@ -2497,7 +2497,7 @@ filename_completion(const char *morsel, unsigned long *num_matches)
         /* A non-absolute path is relative to the current browser directory. */
         if (dirname[0] != '/')
         {
-            dirname = (char *)nrealloc(dirname, constexpr_strlen(present_path) + constexpr_strlen(wasdirname) + 1);
+            dirname = (char *)nrealloc(dirname, strlen(present_path) + strlen(wasdirname) + 1);
             sprintf(dirname, "%s%s", present_path, wasdirname);
         }
         free(wasdirname);
@@ -2515,14 +2515,14 @@ filename_completion(const char *morsel, unsigned long *num_matches)
         free(dirname);
         return NULL;
     }
-    filenamelen = constexpr_strlen(filename);
+    filenamelen = strlen(filename);
     /* Iterate through the filenames in the directory, and add each fitting one to the list of matches. */
     while ((entry = readdir(dir)) != NULL)
     {
         if (constexpr_strncmp(entry->d_name, filename, filenamelen) == 0 && constexpr_strcmp(entry->d_name, ".") != 0 &&
             constexpr_strcmp(entry->d_name, "..") != 0)
         {
-            fullname = (char *)nrealloc(fullname, constexpr_strlen(dirname) + constexpr_strlen(entry->d_name) + 1);
+            fullname = (char *)nrealloc(fullname, strlen(dirname) + strlen(entry->d_name) + 1);
             sprintf(fullname, "%s%s", dirname, entry->d_name);
             if (outside_of_confinement(fullname, TRUE))
             {

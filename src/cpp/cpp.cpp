@@ -113,13 +113,13 @@ enter_with_bracket(void)
     unsigned long extra;
     if (!openfile->current->data[openfile->current_x - 1])
     {
-        return false;
+        return FALSE;
     }
     c_prev = openfile->current->data[openfile->current_x - 1];
     c      = openfile->current->data[openfile->current_x];
     if (c_prev != '{' || c != '}')
     {
-        return false;
+        return FALSE;
     }
     extra = indent_length(was_current->data);
     if (extra == openfile->current_x)
@@ -176,7 +176,7 @@ enter_with_bracket(void)
     do_up();
     do_tab();
     refresh_needed = TRUE;
-    focusing       = false;
+    focusing       = FALSE;
     return TRUE;
 }
 
@@ -212,8 +212,13 @@ all_brackets_pos(void)
                     start_pos = -1, end_pos = -1;
                 }
             }
+            create_bracket_entry(line->lineno, get_line_total_tabs(line), is_start);
         }
     }
+    // for (const auto &be : bracket_entrys)
+    // {
+    //     netlog_bracket_entry(be);
+    // }
 }
 
 void

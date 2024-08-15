@@ -563,6 +563,13 @@ enum syntax_flag_t
     NEXT_WORD_ALSO = 1
 };
 
+struct bracket_entry
+{
+    unsigned long lineno;
+    unsigned long indent;
+    bool          start;
+};
+
 struct bracket_pair
 {
     unsigned long start_line;

@@ -26,6 +26,13 @@ is_line_start_end_bracket(linestruct *line, bool *is_start)
     {
         if (line->data[i] == '{')
         {
+            if (line->data[i + 1])
+            {
+                if (line->data[i + 1] == '}')
+                {
+                    return FALSE;
+                }
+            }
             *is_start = TRUE;
             return TRUE;
         }
@@ -78,4 +85,31 @@ inject_in_line(linestruct **line, const char *str, unsigned long at)
     (*line)->data = (char *)nrealloc((*line)->data, len + s_len + 1);
     memmove((*line)->data + at + s_len, (*line)->data + at, len - at + 1);
     memmove((*line)->data + at, str, s_len);
+}
+
+unsigned long
+get_line_total_tabs(linestruct *line)
+{
+    unsigned long i, tabs = 0, spaces = 0, total = 0;
+    if (line->data[0] != ' ' && line->data[0] != '\t')
+    {
+        return 0;
+    }
+    for (i = 0; line->data[i]; i++)
+    {
+        if (line->data[i] == ' ')
+        {
+            spaces++;
+        }
+        else if (line->data[i] == '\t')
+        {
+            tabs++;
+        }
+    }
+    total = tabs;
+    if (spaces)
+    {
+        total += spaces / WIDTH_OF_TAB;
+    }
+    return total;
 }

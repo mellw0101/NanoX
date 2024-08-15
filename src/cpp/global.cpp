@@ -211,6 +211,8 @@ colortype  *last_c_color         = NULL;
 syntaxtype *c_syntaxtype         = NULL;
 /* Vector to hold bracket bairs for closing them, (NOT YET IMPLEMENTED). */
 std::vector<bracket_pair> bracket_pairs;
+/* Vector for bracket entry`s. */
+std::vector<bracket_entry> bracket_entrys;
 /* Vector to hold struct`s that are found, we use this to higlight created objects. */
 std::vector<std::string> syntax_structs;
 /* Vector to hold class`es that are found, we use this to higlight created objects. */
