@@ -113,3 +113,65 @@ get_line_total_tabs(linestruct *line)
     }
     return total;
 }
+
+/* Move a line up or down.  Will later be expanded to also move all marked lines. */
+void
+move_line(bool up)
+{
+    char *tmp_data = NULL;
+    /* For now if mark is set just return early. */
+    if (openfile->mark != NULL)
+    {
+        return;
+    }
+    if (up == TRUE)
+    {
+        if (openfile->current->prev != NULL)
+        {
+            tmp_data = copy_of(openfile->current->prev->data);
+            free(openfile->current->prev->data);
+            openfile->current->prev->data = copy_of(openfile->current->data);
+            free(openfile->current->data);
+            openfile->current->data = copy_of(tmp_data);
+            free(tmp_data);
+            openfile->current = openfile->current->prev;
+        }
+    }
+    else
+    {
+        if (openfile->current->next != NULL)
+        {
+            tmp_data = copy_of(openfile->current->next->data);
+            free(openfile->current->next->data);
+            openfile->current->next->data = copy_of(openfile->current->data);
+            free(openfile->current->data);
+            openfile->current->data = copy_of(tmp_data);
+            free(tmp_data);
+            openfile->current = openfile->current->next;
+        }
+    }
+    set_modified();
+    refresh_needed = TRUE;
+}
+
+void
+move_lines_up(void)
+{
+    if (openfile->current->lineno == 1)
+    {
+        return;
+    }
+    add_undo(MOVE_LINE_UP, NULL);
+    move_line(TRUE);
+}
+
+void
+move_lines_down(void)
+{
+    if (openfile->current->next == NULL)
+    {
+        return;
+    }
+    add_undo(MOVE_LINE_DOWN, NULL);
+    move_line(FALSE);
+}

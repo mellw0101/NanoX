@@ -685,6 +685,18 @@ do_undo(void)
             undidmsg = _("uncomment");
             break;
         }
+        case MOVE_LINE_UP :
+        {
+            openfile->current = line_from_number(u->head_lineno - 1);
+            move_line(FALSE);
+            break;
+        }
+        case MOVE_LINE_DOWN :
+        {
+            openfile->current = line_from_number(u->head_lineno + 1);
+            move_line(TRUE);
+            break;
+        }
         default :
         {
             break;
@@ -1242,6 +1254,11 @@ add_undo(undo_type action, const char *message)
         case UNINDENT :
         case COMMENT :
         case UNCOMMENT :
+        {
+            break;
+        }
+        case MOVE_LINE_UP :
+        case MOVE_LINE_DOWN :
         {
             break;
         }

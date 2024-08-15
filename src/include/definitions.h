@@ -287,7 +287,9 @@ typedef enum
     INSERT,
     COUPLE_BEGIN,
     COUPLE_END,
-    OTHER
+    OTHER,
+    MOVE_LINE_UP,
+    MOVE_LINE_DOWN
 } undo_type;
 
 /* Structure types. */

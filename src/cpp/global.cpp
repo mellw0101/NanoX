@@ -799,7 +799,6 @@ shortcut_init(void)
     add_to_funcs(flip_replace, MREPLACE, N_("No Replace"), WHENHELP(whereis_gist), BLANKAFTER);
     add_to_funcs(
         get_older_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Older"), WHENHELP(older_gist), TOGETHER);
-
     add_to_funcs(get_newer_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Newer"), WHENHELP(newer_gist),
                  BLANKAFTER);
     add_to_funcs(get_older_item, MEXECUTE, N_("Older"), WHENHELP(older_command_gist), TOGETHER);
@@ -1102,8 +1101,8 @@ shortcut_init(void)
     add_to_sclist(MMAIN, "M-0", 0, to_para_end, 0);
     if (using_utf8())
     {
-        add_to_sclist(MMAIN | MHELP, "M-\xE2\x96\xb4", ALT_UP, do_scroll_up, 0);
-        add_to_sclist(MMAIN | MHELP, "M-\xE2\x96\xbe", ALT_DOWN, do_scroll_down, 0);
+        add_to_sclist(MMAIN | MHELP, "M-\xE2\x96\xb4", ALT_UP, move_lines_up, 0);
+        add_to_sclist(MMAIN | MHELP, "M-\xE2\x96\xbe", ALT_DOWN, move_lines_down, 0);
     }
     else
     {

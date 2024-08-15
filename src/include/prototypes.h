@@ -575,6 +575,9 @@ bool          is_line_in_bracket_pair(const unsigned long lineno);
 bool          is_empty_line(linestruct *line);
 void          inject_in_line(linestruct **line, const char *str, unsigned long at);
 unsigned long get_line_total_tabs(linestruct *line);
+void          move_line(bool up);
+void          move_lines_up(void);
+void          move_lines_down(void);
 
 /* 'brackets.cpp' */
 void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_start);
