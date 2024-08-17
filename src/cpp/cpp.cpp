@@ -85,7 +85,6 @@ enclose_marked_region(const char *s1, const char *s2)
     openfile->current = bot;
     add_undo(REPLACE, NULL);
     inject_in_line(&bot, s2, bot_x);
-    update_undo(REPLACE);
     openfile->mark_x++;
     /* If top and bot is the same, move cursor one step right. */
     (top == bot) ? do_right() : void();

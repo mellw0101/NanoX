@@ -589,7 +589,7 @@ check_for_syntax_words(linestruct *line)
     free(words);
 }
 
-/* Add some basic cpp syntax. */
+/* Add some "basic" cpp syntax. */
 void
 do_cpp_syntax(void)
 {

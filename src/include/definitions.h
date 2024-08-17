@@ -289,7 +289,8 @@ typedef enum
     COUPLE_END,
     OTHER,
     MOVE_LINE_UP,
-    MOVE_LINE_DOWN
+    MOVE_LINE_DOWN,
+    ENCLOSE
 } undo_type;
 
 /* Structure types. */

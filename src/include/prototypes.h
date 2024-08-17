@@ -578,6 +578,7 @@ unsigned long get_line_total_tabs(linestruct *line);
 void          move_line(bool up);
 void          move_lines_up(void);
 void          move_lines_down(void);
+void          erase_in_line(linestruct *line, unsigned long at, unsigned long len);
 
 /* 'brackets.cpp' */
 void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_start);

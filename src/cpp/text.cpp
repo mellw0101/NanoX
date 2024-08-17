@@ -697,6 +697,13 @@ do_undo(void)
             move_line(TRUE);
             break;
         }
+        case ENCLOSE :
+        {
+            erase_in_line(line_from_number(u->head_lineno), u->head_x, strlen(u->strdata));
+            erase_in_line(line_from_number(u->tail_lineno), u->tail_x, strlen(u->strdata));
+            refresh_needed = TRUE;
+            break;
+        }
         default :
         {
             break;
@@ -915,6 +922,18 @@ do_redo(void)
         {
             handle_comment_action(u, FALSE, FALSE);
             redidmsg = _("uncomment");
+            break;
+        }
+        case MOVE_LINE_UP :
+        {
+            openfile->current = line_from_number(u->head_lineno);
+            move_line(TRUE);
+            break;
+        }
+        case MOVE_LINE_DOWN :
+        {
+            openfile->current = line_from_number(u->head_lineno);
+            move_line(FALSE);
             break;
         }
         default :
@@ -1260,6 +1279,19 @@ add_undo(undo_type action, const char *message)
         case MOVE_LINE_UP :
         case MOVE_LINE_DOWN :
         {
+            break;
+        }
+        case ENCLOSE :
+        {
+            if (openfile->mark == NULL)
+            {
+                break;
+            }
+            u->head_lineno = openfile->mark->lineno;
+            u->head_x      = openfile->mark_x;
+            u->tail_lineno = openfile->current->lineno;
+            u->tail_x      = openfile->current_x;
+            u->strdata     = copy_of(message);
             break;
         }
         default :

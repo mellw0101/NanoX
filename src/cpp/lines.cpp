@@ -114,16 +114,11 @@ get_line_total_tabs(linestruct *line)
     return total;
 }
 
-/* Move a line up or down.  Will later be expanded to also move all marked lines. */
+/* Move a line up or down. */
 void
 move_line(bool up)
 {
     char *tmp_data = NULL;
-    /* For now if mark is set just return early. */
-    if (openfile->mark != NULL)
-    {
-        return;
-    }
     if (up == TRUE)
     {
         if (openfile->current->prev != NULL)
@@ -154,9 +149,14 @@ move_line(bool up)
     refresh_needed = TRUE;
 }
 
+/* Function to move line/lines up shortcut. */
 void
 move_lines_up(void)
 {
+    if (openfile->mark != NULL)
+    {
+        return;
+    }
     if (openfile->current->lineno == 1)
     {
         return;
@@ -165,13 +165,43 @@ move_lines_up(void)
     move_line(TRUE);
 }
 
+/* Function to move line/lines down shortcut. */
 void
 move_lines_down(void)
 {
+    if (openfile->mark != NULL)
+    {
+        linestruct   *top, *bot;
+        unsigned long x_top, x_bot;
+        get_region(&top, &x_top, &bot, &x_bot);
+        if (top == bot)
+            ;
+        else
+        {
+
+            return;
+        }
+    }
     if (openfile->current->next == NULL)
     {
         return;
     }
     add_undo(MOVE_LINE_DOWN, NULL);
     move_line(FALSE);
+}
+
+/* Remove 'len' of char`s 'at' pos in line. */
+void
+erase_in_line(linestruct *line, unsigned long at, unsigned long len)
+{
+    unsigned long slen = strlen(line->data);
+    if (at + len > slen)
+    {
+        return;
+    }
+    char *data = (char *)nmalloc(slen - len + 1);
+    memmove(data, line->data, at);
+    memmove(data + at, line->data + at + len, slen - at - len + 1);
+    free(line->data);
+    line->data = data;
 }
