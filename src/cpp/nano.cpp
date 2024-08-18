@@ -1552,7 +1552,7 @@ main(int argc, char **argv)
 {
     Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
     LOUT.setOutputFile("/home/mellw/.NanoX.log");
-    LoutI << "Starting nano" << '\n';
+    LOUT_logI("Starting nano\n");
     const char *netlogger = getenv("NETLOGGER");
     if (netlogger != NULL)
     {
