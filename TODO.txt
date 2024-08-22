@@ -25,7 +25,7 @@
     STATUS:
         KINDA DONE!!.
 4.
-    Make it so that when text is marked and '/" is pressed it 'text'/"text". 
+    Make it so that when text is marked and '/" is pressed it 'text'/"text".
     
     NOTES:
         I also added so that '{', '[' and '(' puts closing brackets around marked region.
@@ -142,3 +142,12 @@
         it indents one if pressing enter when 'prev char' == '{' and 'next char' != '}'.
     STATUS:
         DONE!!.
+12.
+    Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace is pressed directly
+    after remove both char`s.
+
+    NOTES:
+        I added so that '<' so that creates a '>' if after #include.  This will be improved for edge case`s
+        when found so it is not yet done.
+    STATUS:
+        ALMOST DONE!!.

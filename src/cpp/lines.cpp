@@ -123,6 +123,13 @@ get_line_total_tabs(linestruct *line)
 void
 move_line(linestruct **line, bool up, bool refresh)
 {
+    if (openfile->mark)
+    {
+        if (openfile->current != openfile->mark)
+        {
+            return;
+        }
+    }
     char *tmp_data = NULL;
     if (up == TRUE)
     {
@@ -195,11 +202,6 @@ move_lines(bool up)
 void
 move_lines_up(void)
 {
-    if (openfile->mark != NULL)
-    {
-        /* move_lines(TRUE); */
-        return;
-    }
     if (openfile->current->lineno == 1)
     {
         return;
@@ -212,19 +214,6 @@ move_lines_up(void)
 void
 move_lines_down(void)
 {
-    if (openfile->mark != NULL)
-    {
-        linestruct   *top, *bot;
-        unsigned long x_top, x_bot;
-        get_region(&top, &x_top, &bot, &x_bot);
-        if (top == bot)
-            ;
-        else
-        {
-
-            return;
-        }
-    }
     if (openfile->current->next == NULL)
     {
         return;
@@ -247,4 +236,14 @@ erase_in_line(linestruct *line, unsigned long at, unsigned long len)
     memmove(data + at, line->data + at + len, slen - at - len + 1);
     free(line->data);
     line->data = data;
+}
+
+void
+select_line(linestruct *line, unsigned long from_col, unsigned long to_col)
+{
+    const char         *data     = line->data + actual_x(line->data, from_col);
+    const unsigned long paintlen = actual_x(line->data, to_col - from_col);
+    wattron(midwin, interface_color_pair[SELECTED_TEXT]);
+    mvwaddnstr(midwin, line->lineno, margin + from_col, data, paintlen);
+    wattroff(midwin, interface_color_pair[SELECTED_TEXT]);
 }

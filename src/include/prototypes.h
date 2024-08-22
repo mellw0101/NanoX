@@ -580,6 +580,7 @@ void          move_line(linestruct **line, bool up, bool refresh);
 void          move_lines_up(void);
 void          move_lines_down(void);
 void          erase_in_line(linestruct *line, unsigned long at, unsigned long len);
+void          select_line(linestruct *line, unsigned long from_col, unsigned long to_col);
 
 /* 'brackets.cpp' */
 void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_start);

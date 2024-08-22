@@ -1,6 +1,6 @@
-#include "../include/prototypes.h"
 #include <string.h>
 #include "../include/definitions.h"
+#include "../include/prototypes.h"
 
 #include <Mlib/Io.h>
 #include <Mlib/Profile.h>
@@ -200,4 +200,14 @@ concat_path(const char *s1, const char *s2)
         snprintf(buf, sizeof(buf), "%s%s%s", s1, "/", s2);
     }
     return buf;
+}
+
+bool
+is_word_more_then_one_space_away(bool forward)
+{
+    if (!forward)
+    {}
+    else
+    {}
+    return FALSE;
 }

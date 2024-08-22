@@ -462,11 +462,6 @@ do_prev_word(void)
                 break;
             }
         }
-        /* else if (isCppSyntaxChar(openfile->current->data[openfile->current_x]))
-        {
-            step_forward = TRUE;
-            break;
-        } */
         else if (is_zerowidth(openfile->current->data + openfile->current_x))
         {
             ; /* Do nothing. */
@@ -516,7 +511,16 @@ do_next_word(bool after_ends)
             }
             openfile->current   = openfile->current->next;
             openfile->current_x = 0;
-            seen_space          = TRUE;
+            if (after_ends)
+            {
+                /* If we stop after the end of words then then the first iter will be at were we reach '\0'. */
+                if (i == 0)
+                {
+                    openfile->current_x = indent_char_len(openfile->current);
+                    break;
+                }
+            }
+            seen_space = TRUE;
         }
         else
         {
