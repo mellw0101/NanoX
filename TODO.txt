@@ -1,26 +1,144 @@
 1.
     Change it so that when using CTRL+(UP/DOWN) it stops at indent diffs.
-    DONE!!!!.
+
+    NOTES:
+        This is almost perfect and as i want to have it.  I implemented alot of 'rules' that makes coding
+        better(at least for me) for example it stops at indent changes only when not empty line as well as
+        stopping at start and end brackets for 'c/c++' I.E. '{', '}'.  As well as make it more friendly
+        for coding as it puts the cursor in the correct indent when jumping into a bracket`ed area.
+    STATUS:
+        DONE!!!.
 2.
-    Make prev_word stop at eol if done from start of next line.
-    Also make it more intuative to use.
+    Make 'prev_word' stop at eol if done from start of next line.  Also make it more intuative to use.
+
+    NOTES:
+        I dont know how i want this to behave yet so i will probebly change this.
+    STATUS:
+        KINDA DONE!!.
 3.
     Fix both next_word and prev_word so that cut_next_word and cut_prev_word works properly.
+    
+    NOTES:
+        This mostly works like in 'vs-code' right now, I will need to conduct more test`s to find sinarios
+        where it missbehaves, I have`t yet found any places where it directly missbehaves thoue it just need`s
+        more rules to behave exactly the way I want in all case`s.
+    STATUS:
+        KINDA DONE!!.
 4.
     Make it so that when text is marked and '/" is pressed it 'text'/"text". 
-    DONE!!!!.
-    p.s: i also added so that '{', '[' and '(' puts closing brackets around marked region,
-    i.e: '{text}', '[text]' and '(text)'.
-    @see @file 'cpp.cpp' @func 'enclose_marked_region'. 
+    
+    NOTES:
+        I also added so that '{', '[' and '(' puts closing brackets around marked region.
+        I.E.  '{text}', '[text]' and '(text)'.  @see @file 'cpp.cpp' @func 'enclose_marked_region'. 
+    STATUS:
+        DONE!!.
 5.
     Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
-    Almost DONE, it currently stops at top when going up and bottom when going down.
+
+    NOTES:
+        It currently stops at top when going up and bottom when going down.
+        I dont yet know if i want to change it.
+    STATUS:
+        ALMOST DONE!!!!.
 6.
     Implement a way to close and open brackets (will probebly be very HARD!!!).
-    funcs of intrest:
+
+    Notes:
+        The main problem I`m having is that I can find and then not render the line`s I want when the
+        key shortcut is pressed but i can`t just skip them(for now), because the line`s is a linked list.
+        This makes it kinda hard to make them dissepare whithout weird side effects.  I will try to create
+        a new way to render the lines before I continue with this, as I see no viable way to make more
+        and more complex fetures when I have to change basicaly all the func`s that use the line`s just to
+        avoid weird artifacts.  So if i can make a more selecteble rendering system, I will be able easily
+        just not render the lines that should be 'hidden'.  Furthermore I have thought of other ways of
+        doing this by for example, making a 'subfile' where the full text is and a second one that is
+        'display`d' to the user, this way i can 'cut' the bracket out when it is supposed to be close`d
+        then just add it in if it alrady is close`d when the shortcut is pressed.  Althoue this presents
+        yet another issue, I will have to always keep track of both files witch will be alot easier to
+        currupt or not save properly, what I mean by that is that this will make the user think they lost
+        text if we crash before we sync the files.  This also adds alot of complexety witch will be hard
+        to deal with down the line as it will need to be accaunted for when makeing or changing basicaly
+        anything.
+    FUNC`S OF INTREST:
         'edit_refresh'
+        'draw_row'
+    STATUS:
+        NOT DONE.
 7.
     Implement live syntax.
-    Almost done i just need to make a system to save types and structs of function calls
-    and such for help and error checking, also make the syntax highlighting of func
-    params local to function only and not global. 
+    
+    NOTES:
+        I just need to make a system to save types and structs of function calls
+        and such for help and error checking, also make the syntax highlighting of func
+        params local to function only and not global.
+
+        This has now been done and works very well.  The system i have created is very efficient at parsing words
+        to highlight, the only this i need to fix before i make the system mush more complex is a way to make the
+        applying of them to each line way faster and to make it way smarter in the sense that it remembers the
+        entire file`s syntax so that it only updates when something changes instead of how it is now where only
+        line`s in the edit window I.E. the line`s currently display`d to the user are 'saved', right now it rechecks
+        all line`s that become visable every time the user scrolls making it unessesarely slow.  All this is needed
+        to activate recursive header parsing when parsing headers again.  Because like I said my system is extreamly
+        efficient and can parse 903840 lines/second.  The Problem is the constant need to recheck a masive amount of
+        compiled regexes on every line that comes into view.  I think I will need to make it do the syntax once then
+        not at all while moving as this would make the time it takes virtualy meningless as i will be able to offload
+        to another thread if i want the text to appere instantly then the syntax when it is done.  If I also improve
+        the time it takes to check a line by using more clever stuff to exclude more then check I will probebly be
+        able to resolve this issue without changing the way the lines are rechecked, the problem is that i think the
+        linked list of compiled regexes get exponatialy more shit as I have to go thrue a longer and longer list as
+        I make it more complex with more syntax.
+    STATUS:
+        ALMOST DONE!!.
+8.
+    Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
+
+    NOTES:
+        I had to add a check for term so i would know if currently running in xterm, as xterm uses unique codes.
+        Atleast now i have added a global way to check the current env var 'term', it is init at the start of NanoX.
+        I also kinda dont like the system in place to determen what keys where pressed as it makes codes that are
+        destinct come out the same making me think that it was not possible to check if 'ctrl' was heal when pressing
+        'backspace', as when debugging i would get the same code no matter what.  I finaly found out how the system
+        retrives the raw hex codes from the term so i have now started to make checks here to determen what exact key
+        is pressed.  I honestly find it weird why you would want a system where not all key`s and mod keys held, as
+        this allows for total control as well as what i just created.  A way to delete prev word with 'ctrl+backspace',
+        this is the norm in most other modern editors.
+    STATUS:
+        DONE!!.
+9.
+    Make it possible to move one line up and down holding 'alt'.
+
+    NOTES:
+        This was quite easy to get to work, the harder(not really that hard) part was to make undoing and
+        redoing work correctly.  After I worked that out it now works exactly the same as in 'vs-code'
+        when moving one line up and down.  I`m very happy with how it works.  I just need to figure out
+        how to make selected text stay selected after the line has been moved, after that it`s complete.
+    STATUS:
+        DONE!!.
+10.
+    Make it possible to move all selected lines up and down one line.
+
+    NOTES:
+        I can successfully do this now but I cannot manage to return the selection of the text once complete, I think
+        this stems from the fact that I`m using my function to move one line to move the line above the selected text
+        to the last line of the selection and vise versa.  This is a problem because I cannot currently keep the
+        selection when just moving one line making it hard to understand why it wont just work if i save then restore
+        the mark and current pos after we are done.  I think i need to make the this possible when moving just one line
+        then this will be fixed, and if not I will have lerned how it works better.
+    STATUS:
+        NOT DONE.
+11.
+    Make auto bracket placement and proper indent if enter is pressed between '{}',
+    LIKE THIS:
+        {
+            (cursor here)
+        }
+    INSTEAD OF THIS:
+        {
+        (cursor here)}
+
+    NOTES:
+        Was not that hard i just have to decide how i want the undo to work, in one go or two meaning
+        undo the indent then separating or just return directly in one go.  I also added a check where
+        it indents one if pressing enter when 'prev char' == '{' and 'next char' != '}'.
+    STATUS:
+        DONE!!.

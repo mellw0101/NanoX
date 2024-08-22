@@ -73,16 +73,15 @@
     }                            \
     while (0)
 
-//
-//  Macros for flags,
-//  indexing each bit in a small array.
-//
-// #define FLAGS(flag)    flags[((flag) / (sizeof(unsigned) * 8))]
-// #define FLAGMASK(flag) ((unsigned)1 << ((flag) % (sizeof(unsigned) * 8)))
-// #define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
-// #define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
-// #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-// #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
+/* Macros for flags, indexing each bit in a small array.
+ * Old defines:
+    #define FLAGS(flag)    flags[((flag) / (sizeof(unsigned) * 8))]
+    #define FLAGMASK(flag) ((unsigned)1 << ((flag) % (sizeof(unsigned) * 8)))
+    #define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
+    #define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
+    #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+    #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
+ * New defines: */
 #define FLAGS(flag)    flags[((flag) / (sizeof(unsigned long) * 8))]
 #define FLAGMASK(flag) ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
 #define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
@@ -224,6 +223,11 @@ constexpr unsigned char INCLUDED_LAST_LINE   = (1 << 3);
 constexpr unsigned char MARK_WAS_SET         = (1 << 4);
 constexpr unsigned char CURSOR_WAS_AT_HEAD   = (1 << 5);
 constexpr unsigned char HAD_ANCHOR_AT_START  = (1 << 6);
+
+/* Color defines for diffrent types. */
+#define VAR_COLOR           "lagoon"
+#define CONTROL_COLOR       "bold,mauve"
+#define XTERM_CONTROL_COLOR "brightmagenta"
 
 #include "constexpr_utils.h"
 

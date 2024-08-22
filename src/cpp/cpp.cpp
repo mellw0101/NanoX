@@ -68,14 +68,13 @@ indent_char_len(linestruct *line)
 void
 enclose_marked_region(const char *s1, const char *s2)
 {
-    linestruct   *was_current = openfile->current;
-    linestruct   *top, *bot;
-    unsigned long top_x, bot_x;
     /* Sanity check, Returns is there is no mark */
     if (openfile->mark == NULL)
     {
         return;
     }
+    linestruct   *was_current = openfile->current, *top, *bot;
+    unsigned long top_x, bot_x;
     get_region(&top, &top_x, &bot, &bot_x);
     openfile->current = top;
     add_undo(REPLACE, NULL);

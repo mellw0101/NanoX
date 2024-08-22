@@ -81,6 +81,7 @@ extern char *syntaxstr;
 
 extern const char *exit_tag;
 extern const char *close_tag;
+extern const char *term;
 
 extern bool on_a_vt;
 extern bool shifted_metas;
@@ -575,7 +576,7 @@ bool          is_line_in_bracket_pair(const unsigned long lineno);
 bool          is_empty_line(linestruct *line);
 void          inject_in_line(linestruct **line, const char *str, unsigned long at);
 unsigned long get_line_total_tabs(linestruct *line);
-void          move_line(bool up);
+void          move_line(linestruct **line, bool up, bool refresh);
 void          move_lines_up(void);
 void          move_lines_down(void);
 void          erase_in_line(linestruct *line, unsigned long at, unsigned long len);

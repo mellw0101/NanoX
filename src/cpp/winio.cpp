@@ -285,6 +285,11 @@ read_keys_from(WINDOW *frame)
     }
     /* Restore blocking-input mode. */
     nodelay(frame, FALSE);
+    /* Netlog the raw keycodes. */
+    for (unsigned long i = 0; i < waiting_codes; i++)
+    {
+        NETLOGGER.log("func: %s, raw hex code: %3x\n", __func__, key_buffer[i]);
+    }
 #ifdef DEBUG
     fprintf(stderr, "\nSequence of hex codes:");
     for (size_t i = 0; i < waiting_codes; i++)
@@ -340,7 +345,7 @@ get_code_from_plantation(void)
     PROFILE_FUNCTION;
     if (*plants_pointer == '{')
     {
-        char *closing = const_cast<char *>(constexpr_strchr(plants_pointer + 1, '}'));
+        char *closing = (char *)constexpr_strchr(plants_pointer + 1, '}');
         if (!closing)
         {
             return MISSING_BRACE;
@@ -1300,6 +1305,28 @@ parse_kbinput(WINDOW *frame)
     shift_held = FALSE;
     /* Get one code from the input stream. */
     keycode = get_input(frame);
+    NETLOGGER.log("func: %s, returned from 'get_input': %i\n", __func__, keycode);
+    /* Check for '^Bsp'. */
+    if (term != NULL)
+    {
+        /* First we check if we are running in xterm.  And if so then check if the
+         * appropriet key was pressed, for xterm the correct keycode if '127' and
+         * for most other term`s it`s '263'.  If we detect '^Bsp' then we return 'CONTROL_BSP'. */
+        if (strcmp(term, "xterm") == 0)
+        {
+            if (keycode == 127)
+            {
+                return CONTROL_BSP;
+            }
+        }
+        else
+        {
+            if (keycode == 263)
+            {
+                return CONTROL_BSP;
+            }
+        }
+    }
     /* For an Esc, remember whether the last two arrived by themselves.
      * Then increment the counter, rolling around on three escapes. */
     if (keycode == ESC_CODE)
@@ -1682,6 +1709,7 @@ parse_kbinput(WINDOW *frame)
         /* Is Ctrl being held? */
         if (modifiers & 0x04)
         {
+            NETLOGGER.log("ctrl held.\n");
             switch (keycode)
             {
                 case KEY_UP :

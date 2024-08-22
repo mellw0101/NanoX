@@ -33,8 +33,7 @@ static struct sigaction oldaction, newaction;
 linestruct *
 make_new_node(linestruct *prevnode)
 {
-    linestruct *newnode;
-    newnode             = (linestruct *)nmalloc(sizeof(linestruct));
+    linestruct *newnode = (linestruct *)nmalloc(sizeof(linestruct));
     newnode->prev       = prevnode;
     newnode->next       = NULL;
     newnode->data       = NULL;
@@ -1223,7 +1222,7 @@ suck_up_input_and_paste_it(void)
             beep();
         }
     }
-    if ISSET (VIEW_MODE)
+    if (ISSET(VIEW_MODE))
     {
         print_view_warning();
     }
@@ -1381,7 +1380,7 @@ process_a_keystroke(void)
         {
             unbound_key(input);
         }
-        else if ISSET (VIEW_MODE)
+        else if (ISSET(VIEW_MODE))
         {
             print_view_warning();
         }
@@ -1552,7 +1551,8 @@ main(int argc, char **argv)
 {
     Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
     LOUT.setOutputFile("/home/mellw/.NanoX.log");
-    LOUT_logI("Starting nano\n");
+    LOUT_logI("Starting nano");
+    term                  = getenv("TERM");
     const char *netlogger = getenv("NETLOGGER");
     if (netlogger != NULL)
     {

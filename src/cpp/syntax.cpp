@@ -173,7 +173,7 @@ check_func_syntax(char ***words, unsigned int *i)
     unsigned short type = 0;
     if ((*words)[++(*i)] == NULL)
     {
-        return false;
+        return FALSE;
     }
     /* Remove all if any preceding '*' char`s. */
     while (*((*words)[*i]) == '*')
@@ -361,7 +361,7 @@ add_syntax(const unsigned short *type, char *word)
             if (word[i] == ',')
             {
                 word[i] = '\0';
-                add_syntax_word("lagoon", NULL, rgx_word(word));
+                add_syntax_word(VAR_COLOR, NULL, rgx_word(word));
                 return NEXT_WORD_ALSO;
             }
             if (word[i] == ';' || word[i] == ')')
@@ -370,7 +370,7 @@ add_syntax(const unsigned short *type, char *word)
                 break;
             }
         }
-        add_syntax_word("lagoon", NULL, rgx_word(word));
+        add_syntax_word(VAR_COLOR, NULL, rgx_word(word));
     }
     return 0;
 }
@@ -600,7 +600,7 @@ do_cpp_syntax(void)
     /* add_syntax_word("gray", NULL, ";"); */
     // add_syntax_word("brightred", NULL, "\\<[A-Z_][0-9A-Z_]*\\>");
     add_syntax_word("sand", NULL, "[0-9]");
-    add_syntax_word("blue", NULL, "\\<(NULL|nullptr|FALSE|TRUE)\\>");
+    add_syntax_word("bold,blue", NULL, "\\<(NULL|nullptr|FALSE|TRUE)\\>");
     add_syntax_word("brightmagenta", NULL, "^[[:blank:]]*[A-Z_a-z][0-9A-Z_a-z]*:[[:blank:]]*$");
     add_syntax_word("normal", NULL, ":[[:blank:]]*$");
     /* This makes word after green, while typing. */
@@ -618,11 +618,23 @@ do_cpp_syntax(void)
                     "template|this|typename|virtual|volatile|false|true)\\>");
     add_syntax_word("brightgreen", NULL, "\\<(std|string|vector)\\>");
     /* Flow control. */
-    // add_syntax_word("brightyellow", NULL, "\\<(if|else|for|while|do|switch|case|default)\\>");
-    // add_syntax_word("brightyellow", NULL, "\\<(try|throw|catch|operator|new|delete)\\>");
-    add_syntax_word("brightmagenta", NULL,
-                    "\\<(using|break|continue|goto|return|try|throw|catch|operator|new|delete|if|else|for|while|do|"
-                    "switch|case|default)\\>");
+    if (term != NULL)
+    {
+        if (strcmp(term, "xterm") == 0)
+        {
+            add_syntax_word(
+                "brightmagenta", NULL,
+                "\\<(using|break|continue|goto|return|try|throw|catch|operator|new|delete|if|else|for|while|do|"
+                "switch|case|default)\\>");
+        }
+        else
+        {
+            add_syntax_word(
+                CONTROL_COLOR, NULL,
+                "\\<(using|break|continue|goto|return|try|throw|catch|operator|new|delete|if|else|for|while|do|"
+                "switch|case|default)\\>");
+        }
+    }
     add_syntax_word("brightmagenta", NULL, "'([^'\\]|\\\\([\"'\abfnrtv]|x[[:xdigit:]]{1,2}|[0-3]?[0-7]{1,2}))'");
     add_syntax_word("cyan", NULL,
                     "__attribute__[[:blank:]]*\\(\\([^)]*\\)\\)|__(aligned|asm|builtin|hidden|inline|packed|"

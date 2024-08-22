@@ -220,8 +220,9 @@ std::vector<std::string> syntax_classes;
 /* Vector for all includes that have been handled. */
 std::vector<std::string> handled_includes;
 
-/* Empty functions, for the most part corresponding to toggles. */
+const char *term = NULL;
 
+/* Empty functions, for the most part corresponding to toggles. */
 void
 case_sens_void(void)
 {
@@ -1036,6 +1037,7 @@ shortcut_init(void)
     add_to_sclist(MMAIN, "M-E", 0, do_redo, 0);
     add_to_sclist(MMAIN, "M-Bsp", CONTROL_SHIFT_DELETE, chop_previous_word, 0);
     add_to_sclist(MMAIN, "Sh-^Del", CONTROL_SHIFT_DELETE, chop_previous_word, 0);
+    add_to_sclist(MMAIN, "^Bsp", CONTROL_BSP, chop_previous_word, 0);
     add_to_sclist(MMAIN, "^Del", CONTROL_DELETE, chop_next_word, 0);
     add_to_sclist(MMAIN, "M-Del", ALT_DELETE, zap_text, 0);
     add_to_sclist(MMAIN, "M-Ins", ALT_INSERT, put_or_lift_anchor, 0);

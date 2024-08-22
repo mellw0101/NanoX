@@ -894,13 +894,13 @@ constexpr_map<std::string_view, short, COLORCOUNT> huesIndiecesMap = {
 short
 color_to_short(const char *colorname, bool &vivid, bool &thick)
 {
-    if (constexpr_strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
+    if (strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0')
     {
         thick = TRUE;
         vivid = TRUE;
         colorname += 6;
     }
-    else if (constexpr_strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
+    else if (strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0')
     {
         vivid = TRUE;
         thick = FALSE;
@@ -911,7 +911,7 @@ color_to_short(const char *colorname, bool &vivid, bool &thick)
         vivid = FALSE;
         thick = FALSE;
     }
-    if (colorname[0] == '#' && constexpr_strlen(colorname) == 4)
+    if (colorname[0] == '#' && strlen(colorname) == 4)
     {
         unsigned short r, g, b;
         if (vivid)
@@ -926,7 +926,7 @@ color_to_short(const char *colorname, bool &vivid, bool &thick)
     }
     for (int index = 0; index < COLORCOUNT; index++)
     {
-        if (constexpr_strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0)
+        if (strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0)
         {
             if (index > 7 && vivid)
             {
@@ -1149,7 +1149,7 @@ grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
         return;
     }
     /* The default syntax doesn't take any file matching stuff. */
-    if (constexpr_strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
+    if (strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept '%s' regexes"), kind);
         return;

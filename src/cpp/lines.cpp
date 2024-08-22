@@ -68,7 +68,12 @@ is_empty_line(linestruct *line)
 {
     unsigned i = 0;
     for (; line->data[i]; i++)
-        ;
+    {
+        if (1 > 0)
+        {
+            return FALSE;
+        }
+    }
     return (i == 0);
 }
 
@@ -114,39 +119,76 @@ get_line_total_tabs(linestruct *line)
     return total;
 }
 
-/* Move a line up or down. */
+/* Move a single line up or down. */
 void
-move_line(bool up)
+move_line(linestruct **line, bool up, bool refresh)
 {
     char *tmp_data = NULL;
     if (up == TRUE)
     {
-        if (openfile->current->prev != NULL)
+        if ((*line)->prev != NULL)
         {
-            tmp_data = copy_of(openfile->current->prev->data);
-            free(openfile->current->prev->data);
-            openfile->current->prev->data = copy_of(openfile->current->data);
-            free(openfile->current->data);
-            openfile->current->data = copy_of(tmp_data);
+            tmp_data = copy_of((*line)->prev->data);
+            free((*line)->prev->data);
+            (*line)->prev->data = copy_of((*line)->data);
+            free((*line)->data);
+            (*line)->data = copy_of(tmp_data);
             free(tmp_data);
-            openfile->current = openfile->current->prev;
+            openfile->current = (*line)->prev;
         }
     }
     else
     {
-        if (openfile->current->next != NULL)
+        if ((*line)->next != NULL)
         {
-            tmp_data = copy_of(openfile->current->next->data);
-            free(openfile->current->next->data);
-            openfile->current->next->data = copy_of(openfile->current->data);
-            free(openfile->current->data);
-            openfile->current->data = copy_of(tmp_data);
+            tmp_data = copy_of((*line)->next->data);
+            free((*line)->next->data);
+            (*line)->next->data = copy_of((*line)->data);
+            free((*line)->data);
+            (*line)->data = copy_of(tmp_data);
             free(tmp_data);
-            openfile->current = openfile->current->next;
+            openfile->current = (*line)->next;
         }
     }
     set_modified();
-    refresh_needed = TRUE;
+    if (refresh)
+    {
+        refresh_needed = TRUE;
+    }
+}
+
+void
+move_lines(bool up)
+{
+    linestruct   *top, *bot, *line, *mark, *cur;
+    unsigned long x_top, x_bot, bot_line, x_mark, x_cur;
+    get_region(&top, &x_top, &bot, &x_bot);
+    if (top == bot)
+    {
+        return;
+    }
+    mark   = openfile->mark;
+    x_mark = openfile->mark_x;
+    cur    = openfile->current;
+    x_cur  = openfile->current_x;
+    if (up)
+    {
+        bot_line = bot->lineno;
+        if (top->prev != NULL)
+        {
+            for (line = top->prev; line->lineno != bot_line; line = line->next)
+            {
+                move_line(&line, FALSE, FALSE);
+            }
+            mark = mark->prev;
+            cur  = cur->prev;
+            NETLOGGER.log("%lu\n%s\n%lu\n%s\n", x_cur, cur->data, x_mark, mark->data);
+            openfile->mark      = mark;
+            openfile->mark_x    = x_mark;
+            openfile->current   = cur;
+            openfile->current_x = x_cur;
+        }
+    }
 }
 
 /* Function to move line/lines up shortcut. */
@@ -155,6 +197,7 @@ move_lines_up(void)
 {
     if (openfile->mark != NULL)
     {
+        /* move_lines(TRUE); */
         return;
     }
     if (openfile->current->lineno == 1)
@@ -162,7 +205,7 @@ move_lines_up(void)
         return;
     }
     add_undo(MOVE_LINE_UP, NULL);
-    move_line(TRUE);
+    move_line(&openfile->current, TRUE, TRUE);
 }
 
 /* Function to move line/lines down shortcut. */
@@ -187,7 +230,7 @@ move_lines_down(void)
         return;
     }
     add_undo(MOVE_LINE_DOWN, NULL);
-    move_line(FALSE);
+    move_line(&openfile->current, FALSE, TRUE);
 }
 
 /* Remove 'len' of char`s 'at' pos in line. */

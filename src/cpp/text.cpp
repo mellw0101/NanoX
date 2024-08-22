@@ -688,13 +688,13 @@ do_undo(void)
         case MOVE_LINE_UP :
         {
             openfile->current = line_from_number(u->head_lineno - 1);
-            move_line(FALSE);
+            move_line(&openfile->current, FALSE, TRUE);
             break;
         }
         case MOVE_LINE_DOWN :
         {
             openfile->current = line_from_number(u->head_lineno + 1);
-            move_line(TRUE);
+            move_line(&openfile->current, TRUE, TRUE);
             break;
         }
         case ENCLOSE :
@@ -927,13 +927,13 @@ do_redo(void)
         case MOVE_LINE_UP :
         {
             openfile->current = line_from_number(u->head_lineno);
-            move_line(TRUE);
+            move_line(&openfile->current, TRUE, TRUE);
             break;
         }
         case MOVE_LINE_DOWN :
         {
             openfile->current = line_from_number(u->head_lineno);
-            move_line(FALSE);
+            move_line(&openfile->current, FALSE, TRUE);
             break;
         }
         default :
@@ -980,6 +980,8 @@ do_enter(void)
     {
         return;
     }
+    /* Debuging for func 'words_in_line' to see what words it picks up apon any changes.  As well as
+     * being a sanity check to make sure I catch an error with a word not being fetched directly. */
     else if (!is_empty_line(openfile->current))
     {
         unsigned i;
@@ -1059,7 +1061,7 @@ do_enter(void)
         openfile->totsize += extra;
     }
     update_undo(ENTER);
-    if (c_prev == '{')
+    if (c_prev == '{' || c_prev == ':')
     {
         do_tab();
     }
