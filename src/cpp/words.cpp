@@ -202,12 +202,23 @@ concat_path(const char *s1, const char *s2)
     return buf;
 }
 
+/* Check either behind or infront of 'cursor_x' if there are more than a single ' ' char.
+ * If so, return 'TRUE' and asign the number of spaces to 'nspaces'. */
 bool
-is_word_more_then_one_space_away(bool forward)
+word_more_then_one_space_away(bool forward, unsigned long *nspaces)
 {
+    unsigned long i = openfile->current_x, spaces = 0;
     if (!forward)
-    {}
+    {
+        i--;
+        for (; i != (unsigned long)-1 && openfile->current->data[i] == ' '; i--, spaces++)
+            ;
+    }
     else
-    {}
-    return FALSE;
+    {
+        for (; openfile->current->data[i] && openfile->current->data[i] == ' '; i++, spaces++)
+            ;
+    }
+    (spaces > 1) ? *nspaces = spaces : 0;
+    return (spaces > 1);
 }

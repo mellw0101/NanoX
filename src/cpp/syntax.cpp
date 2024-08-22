@@ -32,13 +32,11 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
     {
         if (strncmp(color_fg, "bold", 4) == 0)
         {
-            *attr |= A_BOLD;
-            color_fg += 5;
+            *attr |= A_BOLD, color_fg += 5;
         }
         if (strncmp(color_fg, "italic", 6) == 0)
         {
-            *attr |= A_ITALIC;
-            color_fg += 7;
+            *attr |= A_ITALIC, color_fg += 7;
         }
         *fg = color_to_short(color_fg, vivid, thick);
         if (*fg == BAD_COLOR)

@@ -169,7 +169,7 @@ chop_word(bool forward)
 {
     /* Remember the current cursor position. */
     linestruct   *is_current   = openfile->current;
-    unsigned long is_current_x = openfile->current_x;
+    unsigned long is_current_x = openfile->current_x, nspaces;
     /* Remember where the cutbuffer is, then make it seem blank. */
     linestruct *is_cutbuffer = cutbuffer;
     cutbuffer                = NULL;
@@ -179,27 +179,41 @@ chop_word(bool forward)
      * edge instead, so that lines will not be joined unexpectedly. */
     if (!forward)
     {
-        do_prev_word();
-        if (openfile->current != is_current)
+        if (word_more_then_one_space_away(FALSE, &nspaces))
         {
-            if (is_current_x > 0)
+            openfile->current_x -= nspaces;
+        }
+        else
+        {
+            do_prev_word();
+            if (openfile->current != is_current)
             {
-                openfile->current   = is_current;
-                openfile->current_x = 0;
-            }
-            else
-            {
-                openfile->current_x = strlen(openfile->current->data);
+                if (is_current_x > 0)
+                {
+                    openfile->current   = is_current;
+                    openfile->current_x = 0;
+                }
+                else
+                {
+                    openfile->current_x = strlen(openfile->current->data);
+                }
             }
         }
     }
     else
     {
-        do_next_word(ISSET(AFTER_ENDS));
-        if (openfile->current != is_current && is_current->data[is_current_x] != '\0')
+        if (word_more_then_one_space_away(TRUE, &nspaces))
         {
-            openfile->current   = is_current;
-            openfile->current_x = strlen(is_current->data);
+            openfile->current_x += nspaces;
+        }
+        else
+        {
+            do_next_word(ISSET(AFTER_ENDS));
+            if (openfile->current != is_current && is_current->data[is_current_x] != '\0')
+            {
+                openfile->current   = is_current;
+                openfile->current_x = strlen(is_current->data);
+            }
         }
     }
     /* Set the mark at the start of that word. */

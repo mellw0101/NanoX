@@ -568,6 +568,7 @@ bool        is_word_func(char *word, unsigned long *at);
 void        remove_leading_ptrs(char **word);
 void        remove_leading_parent(char **word);
 const char *concat_path(const char *s1, const char *s2);
+bool        word_more_then_one_space_away(bool forward, unsigned long *nspaces);
 
 /* 'lines.cpp' */
 bool          is_line_comment(linestruct *line);
