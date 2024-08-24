@@ -360,14 +360,7 @@ void
 add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after)
 {
     funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
-    if (allfuncs == NULL)
-    {
-        allfuncs = f;
-    }
-    else
-    {
-        tailfunc->next = f;
-    }
+    (allfuncs == NULL) ? allfuncs = f : tailfunc->next = f;
     tailfunc       = f;
     f->next        = NULL;
     f->func        = function;
@@ -383,6 +376,7 @@ add_to_funcs(functionptrtype function, const int menus, const char *tag, const c
 int
 keycode_from_string(const char *keystring)
 {
+    PROFILE_FUNCTION;
     if (keystring[0] == '^')
     {
         if (keystring[2] == '\0')
@@ -436,7 +430,7 @@ keycode_from_string(const char *keystring)
     }
     else if (keystring[0] == 'F')
     {
-        int fn = constexpr_atoi(&keystring[1]);
+        int fn = atoi(&keystring[1]);
         if (fn < 1 || fn > 24)
         {
             return -1;
@@ -471,14 +465,7 @@ add_to_sclist(const int menus, const char *scstring, const int keycode, function
     static int        counter = 0;
     keystruct        *sc      = (keystruct *)nmalloc(sizeof(keystruct));
     /* Start the list, or tack on the next item. */
-    if (sclist == NULL)
-    {
-        sclist = sc;
-    }
-    else
-    {
-        tailsc->next = sc;
-    }
+    (sclist == NULL) ? sclist = sc : tailsc->next = sc;
     sc->next = NULL;
     /* Fill in the data. */
     sc->menus  = menus;

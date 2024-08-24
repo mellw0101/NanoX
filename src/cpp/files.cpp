@@ -6,11 +6,11 @@
 
 #include <cerrno>
 #include <csignal>
-#include <cstdio>
 #include <cstring>
 #include <fcntl.h>
 #include <libgen.h>
 #include <pwd.h>
+#include <stdio.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -81,8 +81,8 @@ crop_to_fit(const char *name, const int room)
         return copy_of("_");
     }
     clipped = display_string(name, breadth(name) - room + 3, room, FALSE, FALSE);
-    clipped = (char *)nrealloc(clipped, constexpr_strlen(clipped) + 4);
-    memmove(clipped + 3, clipped, constexpr_strlen(clipped) + 1);
+    clipped = (char *)nrealloc(clipped, strlen(clipped) + 4);
+    memmove(clipped + 3, clipped, strlen(clipped) + 1);
     clipped[0] = '.';
     clipped[1] = '.';
     clipped[2] = '.';
@@ -200,12 +200,11 @@ write_lockfile(const char *lockfilename, const char *filename, const bool modifi
 char *
 do_lockfile(const char *filename, const bool ask_the_user)
 {
-    char         *namecopy   = copy_of(filename);
-    char         *secondcopy = copy_of(filename);
-    unsigned long locknamesize =
-        constexpr_strlen(filename) + constexpr_strlen(locking_prefix) + constexpr_strlen(locking_suffix) + 3;
-    char       *lockfilename = (char *)nmalloc(locknamesize);
-    struct stat fileinfo;
+    char         *namecopy     = copy_of(filename);
+    char         *secondcopy   = copy_of(filename);
+    unsigned long locknamesize = strlen(filename) + strlen(locking_prefix) + strlen(locking_suffix) + 3;
+    char         *lockfilename = (char *)nmalloc(locknamesize);
+    struct stat   fileinfo;
     snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy),
              locking_suffix);
     free(secondcopy);
@@ -224,7 +223,7 @@ do_lockfile(const char *filename, const bool ask_the_user)
         long        readamt;
         if ((lockfd = open(lockfilename, O_RDONLY)) < 0)
         {
-            statusline(ALERT, _("Error opening lock file %s: %s"), lockfilename, ERRNO_C_STR);
+            statusline(ALERT, _("Error opening lock file %s: %s"), lockfilename, strerror(errno));
             free(lockfilename);
             return NULL;
         }
@@ -240,12 +239,12 @@ do_lockfile(const char *filename, const bool ask_the_user)
             free(lockbuf);
             return NULL;
         }
-        constexpr_strncpy(lockprog, &lockbuf[2], 10);
+        strncpy(lockprog, &lockbuf[2], 10);
         lockprog[10] = '\0';
         lockpid =
             (((unsigned char)lockbuf[27] * 256 + (unsigned char)lockbuf[26]) * 256 + (unsigned char)lockbuf[25]) * 256 +
             (unsigned char)lockbuf[24];
-        constexpr_strncpy(lockuser, &lockbuf[28], 16);
+        strncpy(lockuser, &lockbuf[28], 16);
         lockuser[16] = '\0';
         free(lockbuf);
         pidstring = (char *)nmalloc(11);
@@ -253,12 +252,12 @@ do_lockfile(const char *filename, const bool ask_the_user)
         /* Display newlines in filenames as ^J. */
         as_an_at = FALSE;
         /* TRANSLATORS: The second %s is the name of the user, the third that of the editor. */
-        question   = const_cast<char *>(_("File %s is being edited by %s (with %s, PID %s); open anyway?"));
+        question   = (char *)_("File %s is being edited by %s (with %s, PID %s); open anyway?");
         postedname = crop_to_fit(
             filename, COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) - breadth(pidstring) + 7);
         /* Allow extra space for username (14), program name (8), PID (8),
          * and terminating \0 (1), minus the %s (2) for the file name. */
-        promptstr = (char *)nmalloc(constexpr_strlen(question) + 29 + constexpr_strlen(postedname));
+        promptstr = (char *)nmalloc(strlen(question) + 29 + strlen(postedname));
         sprintf(promptstr, question, postedname, lockuser, lockprog, pidstring);
         free(postedname);
         free(pidstring);
@@ -289,10 +288,7 @@ do_lockfile(const char *filename, const bool ask_the_user)
 void
 stat_with_alloc(const char *filename, struct stat **pstat)
 {
-    if (*pstat == NULL)
-    {
-        *pstat = (struct stat *)nmalloc(sizeof(struct stat));
-    }
+    (*pstat == NULL) ? *pstat = (struct stat *)nmalloc(sizeof(struct stat)) : 0;
     if (stat(filename, *pstat) != 0)
     {
         free(*pstat);
@@ -328,7 +324,7 @@ has_valid_path(const char *filename)
         }
         else
         {
-            statusline(ALERT, _("Path '%s': %s"), parentdir, ERRNO_C_STR);
+            statusline(ALERT, _("Path '%s': %s"), parentdir, strerror(errno));
         }
     }
     else if (!S_ISDIR(parentinfo.st_mode))
@@ -640,7 +636,7 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
     {
         add_undo(INSERT, NULL);
     }
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         was_leftedge = leftedge_for(xplustabs(), openfile->current);
     }
@@ -873,7 +869,7 @@ open_file(const char *filename, bool new_one, FILE **f)
         }
         else
         {
-            statusline(ALERT, _("Error reading %s: %s"), filename, ERRNO_C_STR);
+            statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
         }
     }
     else
@@ -882,7 +878,7 @@ open_file(const char *filename, bool new_one, FILE **f)
         *f = fdopen(fd, "rb");
         if (*f == NULL)
         {
-            statusline(ALERT, _("Error reading %s: %s"), filename, ERRNO_C_STR);
+            statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
             close(fd);
             fd = -1;
         }
@@ -901,7 +897,7 @@ open_file(const char *filename, bool new_one, FILE **f)
 char *
 get_next_filename(const char *name, const char *suffix)
 {
-    unsigned long wholenamelen = constexpr_strlen(name) + constexpr_strlen(suffix);
+    unsigned long wholenamelen = strlen(name) + strlen(suffix);
     unsigned long i            = 0;
     char         *buf;
     /* Reserve space for: the name plus the suffix plus a dot plus
@@ -990,7 +986,7 @@ execute_command(const char *command)
      * a pipe to feed the command's input through. */
     if (pipe(from_fd) == -1 || (should_pipe && pipe(to_fd) == -1))
     {
-        statusline(ALERT, _("Could not create pipe: %s"), ERRNO_C_STR);
+        statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
         return;
     }
     /* Fork a child process to run the command in. */
@@ -1124,9 +1120,9 @@ execute_command(const char *command)
     if (WIFEXITED(command_status) == 0 || WEXITSTATUS(command_status))
     {
         statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error: %s"),
-                   openfile->current->prev && constexpr_strstr(openfile->current->prev->data, ": ")
-                       ? constexpr_strstr(openfile->current->prev->data, ": ") + 2
-                       : "---");
+                   openfile->current->prev && strstr(openfile->current->prev->data, ": ") ?
+                       strstr(openfile->current->prev->data, ": ") + 2 :
+                       "---");
     }
     else if (should_pipe && pid_of_sender > 0 && (WIFEXITED(sender_status) == 0 || WEXITSTATUS(sender_status)))
     {
@@ -1202,8 +1198,7 @@ insert_a_file_or(bool execute)
         present_path = mallocstrcpy(present_path, "./");
         response = do_prompt(execute ? MEXECUTE : MINSERTFILE, given, execute ? &execute_history : NULL, edit_refresh,
                              msg, operating_dir != NULL ? operating_dir : "./");
-        /* If we're in multibuffer mode and the filename or command is
-         * blank, open a new buffer instead of canceling. */
+        /* If we're in multibuffer mode and the filename or command is blank, open a new buffer instead of canceling. */
         if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER)))
         {
             statusbar(_("Cancelled"));
@@ -1368,7 +1363,7 @@ get_full_path(const char *origpath)
     }
     untilded = real_dir_from_tilde(origpath);
     target   = realpath(untilded, NULL);
-    slash    = constexpr_strrchr(untilded, '/');
+    slash    = strrchr(untilded, '/');
     /* If realpath() returned NULL, try without the last component,
      * as this can be a file that does not exist yet. */
     if (!target && slash && slash[1])
@@ -1379,14 +1374,14 @@ get_full_path(const char *origpath)
         if (target)
         {
             target = (char *)nrealloc(target, strlen(target) + strlen(slash + 1) + 1);
-            constexpr_strcat(target, slash + 1);
+            strcat(target, slash + 1);
         }
     }
     /* Ensure that a non-apex directory path ends with a slash. */
     if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode))
     {
         target = (char *)nrealloc(target, strlen(target) + 2);
-        constexpr_strcat(target, "/");
+        strcat(target, "/");
     }
     free(untilded);
     return target;
@@ -1402,7 +1397,7 @@ check_writable_directory(const char *path)
     {
         return NULL;
     }
-    if (full_path[constexpr_strlen(full_path) - 1] != '/' || access(full_path, W_OK) != 0)
+    if (full_path[strlen(full_path) - 1] != '/' || access(full_path, W_OK) != 0)
     {
         free(full_path);
         return NULL;
@@ -1434,14 +1429,14 @@ safe_tempfile(FILE **stream)
     {
         tempdir = copy_of("/tmp/");
     }
-    extension = constexpr_strrchr(openfile->filename, '.');
-    if (!extension || constexpr_strchr(extension, '/'))
+    extension = strrchr(openfile->filename, '.');
+    if (!extension || strchr(extension, '/'))
     {
-        extension = openfile->filename + constexpr_strlen(openfile->filename);
+        extension = openfile->filename + strlen(openfile->filename);
     }
     tempfile_name = (char *)nrealloc(tempdir, strlen(tempdir) + 12 + strlen(extension));
-    constexpr_strcat(tempfile_name, "nano.XXXXXX");
-    constexpr_strcat(tempfile_name, extension);
+    strcat(tempfile_name, "nano.XXXXXX");
+    strcat(tempfile_name, extension);
     descriptor = mkstemps(tempfile_name, strlen(extension));
     *stream    = (descriptor > 0) ? fdopen(descriptor, "r+b") : NULL;
     if (*stream == NULL)
@@ -1467,7 +1462,7 @@ init_operating_dir(void)
         die(_("Invalid operating directory: %s\n"), operating_dir);
     }
     free(operating_dir);
-    operating_dir = (char *)nrealloc(target, constexpr_strlen(target) + 1);
+    operating_dir = (char *)nrealloc(target, strlen(target) + 1);
 }
 
 /* Check whether the given path is outside of the operating directory.
@@ -1495,8 +1490,8 @@ outside_of_confinement(const char *somepath, bool tabbing)
     {
         return tabbing;
     }
-    is_inside    = (constexpr_strstr(fullpath, operating_dir) == fullpath);
-    begins_to_be = (tabbing && constexpr_strstr(operating_dir, fullpath) == operating_dir);
+    is_inside    = (strstr(fullpath, operating_dir) == fullpath);
+    begins_to_be = (tabbing && strstr(operating_dir, fullpath) == operating_dir);
     free(fullpath);
     return (!is_inside && !begins_to_be);
 }
@@ -1508,7 +1503,7 @@ init_backup_dir(void)
     char *target = get_full_path(backup_dir);
     /* If we can't get an absolute path (which means it doesn't exist or
      * isn't accessible), or it's not a directory, fail. */
-    if (target == NULL || target[constexpr_strlen(target) - 1] != '/')
+    if (target == NULL || target[strlen(target) - 1] != '/')
     {
         die(_("Invalid backup directory: %s\n"), backup_dir);
     }
@@ -1575,7 +1570,7 @@ make_backup_of(char *realname)
      * Otherwise, we create a numbered backup in the specified directory. */
     if (backup_dir == NULL)
     {
-        backupname = (char *)nmalloc(constexpr_strlen(realname) + 2);
+        backupname = (char *)nmalloc(strlen(realname) + 2);
         sprintf(backupname, "%s~", realname);
     }
     else
@@ -1687,7 +1682,7 @@ problem:
         warn_and_briefly_pause(_("Cannot make regular backup"));
         warn_and_briefly_pause(_("Trying again in your home directory"));
         currmenu   = MMOST;
-        backupname = static_cast<char *>(nmalloc(constexpr_strlen(homedir) + constexpr_strlen(tail(realname)) + 9));
+        backupname = (char *)nmalloc(strlen(homedir) + strlen(tail(realname)) + 9);
         sprintf(backupname, "%s/%s~XXXXXX", homedir, tail(realname));
         descriptor     = mkstemp(backupname);
         backup_file    = NULL;
@@ -2068,18 +2063,13 @@ write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writin
     return retval;
 }
 
-/* Write the current buffer (or marked region) to disk.
- * @param exiting ( bool ) - Indicates whether the program is exiting.
- * - If exiting is 'TRUE', write the entire buffer regardless of whether the mark is on.
- * - Do not ask for a name when withprompt is 'FALSE'.
- * - Nor when doing save-on-exit and the buffer already has a name.
- * @param withprompt
- * - ( TRUE ) - ask for ( confirmation of ) the filename.
- * - ( FALSE ) - do not ask for a the filename.
- * @return int (int)
- * - ( 0 ) - if the operation is cancelled.
- * - ( 1 ) - if the buffer is saved.
- * - ( 2 ) - if the buffer is discarded. */
+/* Write the current buffer (or marked region) to disk.  'exiting' Indicates whether
+ * the program is exiting.  If exiting is 'TRUE', write the entire buffer regardless
+ * of whether the mark is on.  Do not ask for a name when 'withprompt' is 'FALSE'.
+ * Nor when doing save-on-exit and the buffer already has a name.  If 'withprompt'
+ * is 'TRUE' then ask for (confirmation of) the filename. And if 'FALSE' then do
+ * not ask for a the filename.  Return`s '0' if the operation is cancelled,
+ * '1' if the buffer is saved and '2' if the buffer is discarded. */
 int
 write_it_out(bool exiting, bool withprompt)
 {
@@ -2097,9 +2087,9 @@ write_it_out(bool exiting, bool withprompt)
         functionptrtype function;
         const char     *msg;
         int             response = 0, choice = NO;
-        const char     *formatstr = (openfile->fmt == DOS_FILE) ? _(" [DOS Format]")
-                                  : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]")
-                                                                : "";
+        const char     *formatstr = (openfile->fmt == DOS_FILE) ? _(" [DOS Format]") :
+                                    (openfile->fmt == MAC_FILE) ? _(" [Mac Format]") :
+                                                                  "";
         const char     *backupstr = ISSET(MAKE_BACKUP) ? _(" [Backup]") : "";
         /* When the mark is on, offer to write the selection to disk, but
          * not when in restricted mode, because it would allow writing to
@@ -2107,9 +2097,9 @@ write_it_out(bool exiting, bool withprompt)
         if (openfile->mark && !exiting && !ISSET(RESTRICTED))
         {
             /* TRANSLATORS : The next six strings are prompts. */
-            msg = (method == PREPEND) ? _("Prepend Selection to File")
-                : (method == APPEND)  ? _("Append Selection to File")
-                                      : _("Write Selection to File");
+            msg = (method == PREPEND) ? _("Prepend Selection to File") :
+                  (method == APPEND)  ? _("Append Selection to File") :
+                                        _("Write Selection to File");
         }
         else if (method != OVERWRITE)
         {
@@ -2377,14 +2367,14 @@ real_dir_from_tilde(const char *path)
         {
             userdata = getpwent();
         }
-        while (userdata && constexpr_strcmp(userdata->pw_name, tilded + 1) != 0);
+        while (userdata && strcmp(userdata->pw_name, tilded + 1) != 0);
         endpwent();
         if (userdata != NULL)
         {
             tilded = mallocstrcpy(tilded, userdata->pw_dir);
         }
     }
-    retval = (char *)nmalloc(constexpr_strlen(tilded) + constexpr_strlen(path + i) + 1);
+    retval = (char *)nmalloc(strlen(tilded) + strlen(path + i) + 1);
     sprintf(retval, "%s%s", tilded, path + i);
     free(tilded);
     return retval;
@@ -2442,7 +2432,7 @@ username_completion(const char *morsel, unsigned long length, unsigned long &num
      * add each fitting username to the list of matches. */
     while ((userdata = getpwent()) != NULL)
     {
-        if (constexpr_strncmp(userdata->pw_name, morsel + 1, length - 1) == 0)
+        if (strncmp(userdata->pw_name, morsel + 1, length - 1) == 0)
         {
             /* Skip directories that are outside of the allowed area. */
             if (outside_of_confinement(userdata->pw_dir, TRUE))
@@ -2450,7 +2440,7 @@ username_completion(const char *morsel, unsigned long length, unsigned long &num
                 continue;
             }
             matches              = (char **)nrealloc(matches, (num_matches + 1) * sizeof(char *));
-            matches[num_matches] = (char *)nmalloc(constexpr_strlen(userdata->pw_name) + 2);
+            matches[num_matches] = (char *)nmalloc(strlen(userdata->pw_name) + 2);
             sprintf(matches[num_matches], "~%s", userdata->pw_name);
             ++num_matches;
         }
@@ -2486,7 +2476,7 @@ filename_completion(const char *morsel, unsigned long *num_matches)
     DIR          *dir;
     const dirent *entry;
     /* If there's a '/' in the name, split out filename and directory parts. */
-    slash = constexpr_strrchr(dirname, '/');
+    slash = strrchr(dirname, '/');
     if (slash != NULL)
     {
         char *wasdirname = dirname;
@@ -2519,8 +2509,8 @@ filename_completion(const char *morsel, unsigned long *num_matches)
     /* Iterate through the filenames in the directory, and add each fitting one to the list of matches. */
     while ((entry = readdir(dir)) != NULL)
     {
-        if (constexpr_strncmp(entry->d_name, filename, filenamelen) == 0 && constexpr_strcmp(entry->d_name, ".") != 0 &&
-            constexpr_strcmp(entry->d_name, "..") != 0)
+        if (strncmp(entry->d_name, filename, filenamelen) == 0 && strcmp(entry->d_name, ".") != 0 &&
+            strcmp(entry->d_name, "..") != 0)
         {
             fullname = (char *)nrealloc(fullname, strlen(dirname) + strlen(entry->d_name) + 1);
             sprintf(fullname, "%s%s", dirname, entry->d_name);
@@ -2592,7 +2582,7 @@ input_tab(char *morsel, unsigned long *place, functionptrtype refresh_func, bool
         for (match = 1; match < num_matches; match++)
         {
             len2 = collect_char(matches[match] + common_len, char2);
-            if (len1 != len2 || constexpr_strncmp(char1, char2, len2) != 0)
+            if (len1 != len2 || strncmp(char1, char2, len2) != 0)
             {
                 break;
             }
@@ -2604,12 +2594,12 @@ input_tab(char *morsel, unsigned long *place, functionptrtype refresh_func, bool
         common_len += len1;
     }
     shared = (char *)nmalloc(length_of_path + common_len + 1);
-    constexpr_strncpy(shared, morsel, length_of_path);
-    constexpr_strncpy(shared + length_of_path, matches[0], common_len);
+    strncpy(shared, morsel, length_of_path);
+    strncpy(shared + length_of_path, matches[0], common_len);
     common_len += length_of_path;
     shared[common_len] = '\0';
     /* Cover also the case of the user specifying a relative path. */
-    glued = (char *)nmalloc(constexpr_strlen(present_path) + common_len + 1);
+    glued = (char *)nmalloc(strlen(present_path) + common_len + 1);
     sprintf(glued, "%s%s", present_path, shared);
     if (num_matches == 1 && (is_dir(shared) || is_dir(glued)))
     {
@@ -2619,7 +2609,7 @@ input_tab(char *morsel, unsigned long *place, functionptrtype refresh_func, bool
     if (common_len != *place)
     {
         morsel = (char *)nrealloc(morsel, common_len + 1);
-        constexpr_strncpy(morsel, shared, common_len);
+        strncpy(morsel, shared, common_len);
         morsel[common_len] = '\0';
         *place             = common_len;
     }
@@ -2701,4 +2691,127 @@ is_file_and_exists(const char *path)
         return FALSE;
     }
     return TRUE;
+}
+
+char **
+retrieve_lines_from_file(const char *path, unsigned long *nlines)
+{
+    PROFILE_FUNCTION;
+    if (!is_file_and_exists(path))
+    {
+        LOUT_logE("Path: '%s' is not a file");
+        return NULL;
+    }
+    char         *buf = NULL;
+    unsigned long len, size, i = 0, bcap = 200, bsize = 0;
+    char        **lines = (char **)nmalloc(sizeof(char *) * bcap);
+    FILE         *file  = fopen(path, "rb");
+    if (file == NULL)
+    {
+        LOUT_logE("Failed to open file: '%s'", path);
+        return NULL;
+    }
+    for (; (len = getline(&buf, &size, file)) != EOF; i++)
+    {
+        if (buf[len - 1] == '\n')
+        {
+            buf[--len] = '\0';
+        }
+        if (bsize == bcap)
+        {
+            bcap *= 2;
+            lines = (char **)nrealloc(lines, sizeof(char *) * bcap);
+        }
+        lines[bsize++] = measured_copy(buf, len);
+    }
+    (nlines != NULL) ? *nlines = i : 0;
+    fclose(file);
+    return lines;
+}
+
+char **
+retrieve_words_from_file(const char *path, unsigned long *nwords)
+{
+    PROFILE_FUNCTION;
+    unsigned long nlines, linei = 0, i, size = 0, cap = 100;
+    unsigned int  word_count;
+    char        **lines = retrieve_lines_from_file(path, &nlines);
+    if (lines == NULL)
+    {
+        return NULL;
+    }
+    char **words = (char **)nmalloc(sizeof(char *) * cap);
+    for (; linei < nlines; linei++)
+    {
+        char **twords = split_into_words(lines[linei], strlen(lines[linei]), &word_count);
+        if (twords == NULL)
+        {
+            free(lines[linei]);
+            continue;
+        }
+        for (i = 0; i < word_count; i++)
+        {
+            if (size == cap)
+            {
+                cap *= 2;
+                words = (char **)nrealloc(words, sizeof(char *) * cap);
+            }
+            words[size++] = copy_of(twords[i]);
+        }
+        free(twords);
+        free(lines[linei]);
+    }
+    (nwords != NULL) ? *nwords = size : 0;
+    free(lines);
+    return words;
+}
+
+char **
+words_from_file(const char *path, unsigned long *nwords)
+{
+    PROFILE_FUNCTION;
+    if (!is_file_and_exists(path))
+    {
+        LOUT_logE("Path: '%s' in not a file or does not exist.");
+        return NULL;
+    }
+    FILE *file = fopen(path, "rb");
+    if (file == NULL)
+    {
+        LOUT_logE("Failed to open file: '%s'.");
+        return NULL;
+    }
+    char         *buf = NULL;
+    unsigned long len, size, bsize = 0, bcap = 100;
+    char        **words = (char **)nmalloc(sizeof(char *) * bcap);
+    while ((len = getline(&buf, &size, file)) != EOF)
+    {
+        (buf[len - 1] == '\n') ? buf[--len] = '\0' : 0;
+        const char *start = buf, *end = buf;
+        while (end < (buf + len))
+        {
+            for (; end < (buf + len) && *end == ' '; end++)
+                ;
+            if (end == (buf + len))
+            {
+                break;
+            }
+            start = end;
+            for (; end < (buf + len) && *end != ' '; end++)
+                ;
+            const unsigned int word_len = end - start;
+            (bsize == bcap) ? bcap *= 2, words = (char **)nrealloc(words, sizeof(char *) * bcap) : 0;
+            words[bsize++] = measured_copy(start, word_len);
+        }
+    }
+    words[bsize] = NULL;
+    fclose(file);
+    *nwords = bsize;
+    return words;
+}
+
+char **
+words_from_current_file(const char *path, unsigned long *nwords)
+{
+    return NULL;
 }

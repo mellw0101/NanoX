@@ -593,7 +593,7 @@ has_old_position(const char *file, long *line, long *column)
     }
     reload_positions_if_needed();
     item = position_history;
-    while (item != NULL && constexpr_strcmp(item->filename, fullpath) != 0)
+    while (item != NULL && strcmp(item->filename, fullpath) != 0)
     {
         item = item->next;
     }

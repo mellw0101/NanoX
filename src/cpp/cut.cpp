@@ -125,7 +125,7 @@ do_backspace(void)
         /* If the last char injected was a open bracket char,
          * this means that a closing bracket was plased next to it,
          * and therefor this flag was set.  Here we check if the flag
-         * is set, if so we delete the closing bracket as well. */
+         * is set, and if so we delete the closing bracket as well. */
         if (last_key_was_bracket)
         {
             expunge(BACK);
@@ -169,19 +169,21 @@ chop_word(bool forward)
 {
     /* Remember the current cursor position. */
     linestruct   *is_current   = openfile->current;
-    unsigned long is_current_x = openfile->current_x, nspaces;
+    unsigned long is_current_x = openfile->current_x, steps;
     /* Remember where the cutbuffer is, then make it seem blank. */
     linestruct *is_cutbuffer = cutbuffer;
     cutbuffer                = NULL;
     /* Move the cursor to a word start, to the left or to the right.
      * If that word is on another line and the cursor was not already
      * on the edge of the original line, then put the cursor on that
-     * edge instead, so that lines will not be joined unexpectedly. */
+     * edge instead, so that lines will not be joined unexpectedly.
+     * I also made it so that if next word is more than one 'tab/space'
+     * away, then just put put the cursor to remove the 'tabs/spaces'. */
     if (!forward)
     {
-        if (word_more_then_one_space_away(FALSE, &nspaces))
+        if (word_more_than_one_white_away(FALSE, &steps))
         {
-            openfile->current_x -= nspaces;
+            openfile->current_x -= steps;
         }
         else
         {
@@ -202,9 +204,9 @@ chop_word(bool forward)
     }
     else
     {
-        if (word_more_then_one_space_away(TRUE, &nspaces))
+        if (word_more_than_one_white_away(TRUE, &steps))
         {
-            openfile->current_x += nspaces;
+            openfile->current_x += steps;
         }
         else
         {
@@ -282,7 +284,7 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
     {
         taken       = make_new_node(NULL);
         taken->data = measured_copy(top->data + top_x, bot_x - top_x);
-        memmove(top->data + top_x, top->data + bot_x, constexpr_strlen(top->data + bot_x) + 1);
+        memmove(top->data + top_x, top->data + bot_x, strlen(top->data + bot_x) + 1);
         last = taken;
     }
     else if (top_x == 0 && bot_x == 0)
@@ -295,14 +297,7 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
         bot->prev->next  = last;
         last->next       = NULL;
         bot->prev        = top->prev;
-        if (top->prev)
-        {
-            top->prev->next = bot;
-        }
-        else
-        {
-            openfile->filetop = bot;
-        }
+        (top->prev != NULL) ? top->prev->next = bot : openfile->filetop = bot;
         openfile->current = bot;
     }
     else
@@ -312,12 +307,9 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
         taken->next     = top->next;
         top->next->prev = taken;
         top->next       = bot->next;
-        if (bot->next)
-        {
-            bot->next->prev = top;
-        }
-        top->data = (char *)nrealloc(top->data, top_x + constexpr_strlen(bot->data + bot_x) + 1);
-        constexpr_strcpy(top->data + top_x, bot->data + bot_x);
+        (bot->next != NULL) ? bot->next->prev = top : 0;
+        top->data = (char *)nrealloc(top->data, top_x + strlen(bot->data + bot_x) + 1);
+        strcpy(top->data + top_x, bot->data + bot_x);
         last              = bot;
         last->data[bot_x] = '\0';
         last->next        = NULL;
@@ -335,9 +327,8 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
     }
     else
     {
-        cutbottom->data =
-            (char *)nrealloc(cutbottom->data, constexpr_strlen(cutbottom->data) + constexpr_strlen(taken->data) + 1);
-        constexpr_strcat(cutbottom->data, taken->data);
+        cutbottom->data = (char *)nrealloc(cutbottom->data, strlen(cutbottom->data) + strlen(taken->data) + 1);
+        strcat(cutbottom->data, taken->data);
         cutbottom->has_anchor = taken->has_anchor && !inherited_anchor;
         inherited_anchor |= taken->has_anchor;
         cutbottom->next = taken->next;
@@ -508,7 +499,7 @@ do_snip(bool marked, bool until_eof, bool append)
         cut_marked_region();
         openfile->mark = NULL;
     }
-    else if ISSET (CUT_FROM_CURSOR)
+    else if (ISSET(CUT_FROM_CURSOR))
     {
         /* When not at the end of a line, move the rest of this line into
          * the cutbuffer.  Otherwise, when not at the end of the buffer,

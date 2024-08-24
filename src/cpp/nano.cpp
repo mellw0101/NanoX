@@ -1397,6 +1397,7 @@ process_a_keystroke(void)
             {
                 puddle = (char *)nmalloc(capacity);
             }
+            /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
             if (openfile->mark)
             {
                 if (input == '"' || input == '\'' || input == '(' || input == '{' || input == '[')
@@ -1420,25 +1421,19 @@ process_a_keystroke(void)
             {
                 if (input == '<')
                 {
-                    if (openfile->current->data[0] == '#')
-                    {
-                        puddle[depth++] = '>';
-                        /* Set a flag to remember that an open bracket
-                         * character was inserted into the input buffer. */
-                        was_open_bracket_char = TRUE;
-                    }
+                    (openfile->current->data[0] == '#') ? puddle[depth++] = '>' : 0;
                 }
                 else
                 {
-                    puddle[depth++] = (char)(input == '('    ? ')'
-                                             : input == '['  ? ']'
-                                             : input == '"'  ? '"'
-                                             : input == '\'' ? '\''
-                                                             : '}');
-                    /* Set a flag to remember that an open bracket
-                     * character was inserted into the input buffer. */
-                    was_open_bracket_char = TRUE;
+                    puddle[depth++] = input == '('  ? ')' :
+                                      input == '['  ? ']' :
+                                      input == '"'  ? '"' :
+                                      input == '\'' ? '\'' :
+                                                      '}';
                 }
+                /* Set a flag to remember that an open bracket
+                 * character was inserted into the input buffer. */
+                was_open_bracket_char = TRUE;
             }
         }
     }
@@ -1601,14 +1596,11 @@ main(int argc, char **argv)
     setlocale(LC_ALL, "");
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
-    /* Set the default values for some flags. */
+    /* Set some default flags. */
     SET(NO_WRAP);
     SET(LET_THEM_ZAP);
     SET(MODERN_BINDINGS);
     SET(AUTOINDENT);
-    /* TODO : (SET(CONSTANT_SHOW)) - Find out where this is implemented.
-     *        If MINIBAR and CONSTANT_SHOW is active we get a const bar
-     *        witch is what we want now we need to figure out how to make it perfect. */
     SET(MINIBAR);
     SET(CONSTANT_SHOW);
     SET(STATEFLAGS);
@@ -1714,9 +1706,8 @@ main(int argc, char **argv)
     }
     /* When requested, suppress the default spotlight and error colors. */
     rescind_colors = (getenv("NO_COLOR") != NULL);
-    /* Set up the function and shortcut lists.
-     * This needs to be done before reading the rcfile,
-     * to be able to rebind/unbind keys. */
+    /* Set up the function and shortcut lists.  This needs to be done
+     * before reading the rcfile, to be able to rebind/unbind keys. */
     shortcut_init();
     if (!ignore_rcfiles)
     {
@@ -1799,30 +1790,30 @@ main(int argc, char **argv)
         SET(BREAK_LONG_LINES);
     }
     /* If the user wants bold instead of reverse video for hilited text... */
-    if ISSET (BOLD_TEXT)
+    if (ISSET(BOLD_TEXT))
     {
         hilite_attribute = A_BOLD;
     }
     /* When in restricted mode, disable backups and history files, since they
      * would allow writing to files not specified on the command line. */
-    if ISSET (RESTRICTED)
+    if (ISSET(RESTRICTED))
     {
         UNSET(MAKE_BACKUP);
         UNSET(HISTORYLOG);
         UNSET(POSITIONLOG);
     }
     /* When getting untranslated escape sequences, the mouse cannot be used. */
-    if ISSET (RAW_SEQUENCES)
+    if (ISSET(RAW_SEQUENCES))
     {
         UNSET(USE_MOUSE);
     }
     /* When --modernbindings is used, ^Q and ^S need to be functional. */
-    if ISSET (MODERN_BINDINGS)
+    if (ISSET(MODERN_BINDINGS))
     {
         UNSET(PRESERVE);
     }
     /* When suppressing title bar or minibar, suppress also the help lines. */
-    if ISSET (ZERO)
+    if (ISSET(ZERO))
     {
         SET(NO_HELP);
     }
@@ -1836,11 +1827,11 @@ main(int argc, char **argv)
         UNSET(POSITIONLOG);
     }
     /* If the user wants history persistence, read the relevant files. */
-    if ISSET (HISTORYLOG)
+    if (ISSET(HISTORYLOG))
     {
         load_history();
     }
-    if ISSET (POSITIONLOG)
+    if (ISSET(POSITIONLOG))
     {
         load_poshistory();
     }
@@ -1982,7 +1973,6 @@ main(int argc, char **argv)
     shiftaltdown       = get_keycode("kDN4", SHIFT_ALT_DOWN);
     mousefocusin       = get_keycode("kxIN", FOCUS_IN);
     mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
-    controlbsp         = get_keycode("kBSP5", CONTROL_BSP);
     /* Disable the type-ahead checking that ncurses normally does. */
     typeahead(-1);
 #ifdef HAVE_SET_ESCDELAY
@@ -2061,7 +2051,7 @@ main(int argc, char **argv)
         }
         /* If the filename is a dash, read from standard input; otherwise,
          * open the file; skip positioning the cursor if either failed. */
-        if (constexpr_strcmp(argv[optind], "-") == 0)
+        if (strcmp(argv[optind], "-") == 0)
         {
             optind++;
             if (!scoop_stdin())

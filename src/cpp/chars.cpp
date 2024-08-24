@@ -398,8 +398,7 @@ step_left(const char *const buf, const unsigned long pos)
 {
     if (use_utf8)
     {
-        unsigned long before;
-        unsigned long charlen = 0;
+        unsigned long before, charlen = 0;
         if (pos < 4)
         {
             before = 0;
@@ -497,13 +496,12 @@ mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
                 n--;
                 continue;
             }
-            bool bad1 = (mbtowide(wc1, s1) < 0);
-            bool bad2 = (mbtowide(wc2, s2) < 0);
+            bool bad1 = (mbtowide(wc1, s1) < 0), bad2 = (mbtowide(wc2, s2) < 0);
             if (bad1 || bad2)
             {
                 if (*s1 != *s2)
                 {
-                    return (unsigned char)*s1 - (unsigned char)*s2;
+                    return (int)((unsigned char)*s1 - (unsigned char)*s2);
                 }
                 if (bad1 != bad2)
                 {
@@ -518,15 +516,14 @@ mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
                     return difference;
                 }
             }
-            s1 += char_length(s1);
-            s2 += char_length(s2);
+            s1 += char_length(s1), s2 += char_length(s2);
             n--;
         }
-        return (n > 0) ? ((unsigned char)*s1 - (unsigned char)*s2) : 0;
+        return (n > 0) ? (int)((unsigned char)*s1 - (unsigned char)*s2) : 0;
     }
     else
     {
-        return constexpr_strncasecmp(s1, s2, n);
+        return strncasecmp(s1, s2, n);
     }
 }
 
@@ -549,7 +546,7 @@ mbstrcasestr(const char *haystack, const char *const needle)
     }
     else
     {
-        return (char *)constexpr_strcasestr(haystack, needle);
+        return (char *)strcasestr(haystack, needle);
     }
 }
 
@@ -559,15 +556,14 @@ mbstrcasestr(const char *haystack, const char *const needle)
 char *
 revstrstr(const char *const haystack, const char *const needle, const char *pointer)
 {
-    const unsigned long needle_len = strlen(needle);
-    const unsigned long tail_len   = strlen(pointer);
+    const unsigned long needle_len = strlen(needle), tail_len = strlen(pointer);
     if (tail_len < needle_len)
     {
         pointer -= (needle_len - tail_len);
     }
     while (pointer >= haystack)
     {
-        if (constexpr_strncmp(pointer, needle, needle_len) == 0)
+        if (strncmp(pointer, needle, needle_len) == 0)
         {
             return (char *)pointer;
         }
@@ -581,15 +577,14 @@ revstrstr(const char *const haystack, const char *const needle, const char *poin
 char *
 revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
 {
-    const unsigned long needle_len = strlen(needle);
-    const unsigned long tail_len   = strlen(pointer);
+    const unsigned long needle_len = strlen(needle), tail_len = strlen(pointer);
     if (tail_len < needle_len)
     {
         pointer -= (needle_len - tail_len);
     }
     while (pointer >= haystack)
     {
-        if (constexpr_strncasecmp(pointer, needle, needle_len) == 0)
+        if (strncasecmp(pointer, needle, needle_len) == 0)
         {
             return (char *)pointer;
         }
@@ -605,8 +600,7 @@ mbrevstrcasestr(const char *const haystack, const char *const needle, const char
 {
     if (use_utf8)
     {
-        const unsigned long needle_len = mbstrlen(needle);
-        const unsigned long tail_len   = mbstrlen(pointer);
+        const unsigned long needle_len = mbstrlen(needle), tail_len = mbstrlen(pointer);
         if (tail_len < needle_len)
         {
             pointer -= (needle_len - tail_len);
@@ -643,10 +637,8 @@ mbstrchr(const char *string, const char *const chr)
 {
     if (use_utf8)
     {
-        bool    bad_s = FALSE;
-        bool    bad_c = FALSE;
-        wchar_t ws;
-        wchar_t wc;
+        bool    bad_s = FALSE, bad_c = FALSE;
+        wchar_t ws, wc;
         if (mbtowide(wc, chr) < 0)
         {
             wc    = (unsigned char)*chr;
@@ -674,7 +666,7 @@ mbstrchr(const char *string, const char *const chr)
     }
     else
     {
-        return constexpr_strchr((char *)string, *chr);
+        return strchr((char *)string, *chr);
     }
 }
 
@@ -744,12 +736,26 @@ white_string(const char *str)
     return !*str;
 }
 
-/* Remove leading whitespace from the given string. */
+/* This is the original code from 'nano', and I must say, this is fucking horible.
+ * Honestly why the fuck even do it like this, it is the most inefficient way to do it.
+ *
+ * Remove leading whitespace from the given string.
 void
 strip_leading_blanks_from(char *str)
 {
     while (str && (*str == ' ' || *str == '\t'))
     {
-        memmove(str, str + 1, constexpr_strlen(str));
+        memmove(str, str + 1, strlen(str));
     }
+}
+*/
+
+/* Remove leading whitespace from a given string */
+void
+strip_leading_blanks_from(char *str)
+{
+    char *start = str;
+    for (; start && (*start == '\t' || *start == ' '); start++)
+        ;
+    (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
 }

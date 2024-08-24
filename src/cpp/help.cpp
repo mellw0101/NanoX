@@ -1,7 +1,6 @@
 #include "../include/prototypes.h"
 
 #include <Mlib/Profile.h>
-#include <cstring>
 
 /* The text displayed in the help window. */
 static char *help_text = NULL;
@@ -220,14 +219,14 @@ help_init(void)
     {
         htx[2] = _(htx[2]);
     }
-    allocsize += constexpr_strlen(htx[0]);
+    allocsize += strlen(htx[0]);
     if (htx[1] != NULL)
     {
-        allocsize += constexpr_strlen(htx[1]);
+        allocsize += strlen(htx[1]);
     }
     if (htx[2] != NULL)
     {
-        allocsize += constexpr_strlen(htx[2]);
+        allocsize += strlen(htx[2]);
     }
     /* Calculate the length of the descriptions of the shortcuts.
      * Each entry has one or two keystrokes, which fill 17 cells,
@@ -236,7 +235,7 @@ help_init(void)
     {
         if (f->menus & currmenu)
         {
-            allocsize += constexpr_strlen(_(f->phrase)) + 21;
+            allocsize += strlen(_(f->phrase)) + 21;
         }
     }
     /* If we're on the main list, we also count the toggle help text.
@@ -244,26 +243,26 @@ help_init(void)
      * two translated texts, plus a space, plus one or two '\n's. */
     if (currmenu == MMAIN)
     {
-        unsigned long onoff_len = constexpr_strlen(_("enable/disable"));
+        unsigned long onoff_len = strlen(_("enable/disable"));
         for (s = sclist; s != NULL; s = s->next)
         {
             if (s->func == do_toggle)
             {
-                allocsize += constexpr_strlen(_(epithet_of_flag(s->toggle))) + onoff_len + 9;
+                allocsize += strlen(_(epithet_of_flag(s->toggle))) + onoff_len + 9;
             }
         }
     }
     /* Allocate memory for the help text. */
     help_text = (char *)nmalloc(allocsize + 1);
     /* Now add the text we want. */
-    constexpr_strcpy(help_text, htx[0]);
+    strcpy(help_text, htx[0]);
     if (htx[1] != NULL)
     {
-        constexpr_strcat(help_text, htx[1]);
+        strcat(help_text, htx[1]);
     }
     if (htx[2] != NULL)
     {
-        constexpr_strcat(help_text, htx[2]);
+        strcat(help_text, htx[2]);
     }
     /* Remember this end-of-introduction, start-of-shortcuts. */
     end_of_intro = help_text + constexpr_strlen(help_text);
@@ -286,12 +285,12 @@ help_init(void)
                 {
                     sprintf(ptr, "%s                ", s->keystr);
                     /* Unicode arrows take three bytes instead of one. */
-                    ptr += (constexpr_strstr(s->keystr, "\xE2") != NULL ? 9 : 7);
+                    ptr += (strstr(s->keystr, "\xE2") != NULL ? 9 : 7);
                 }
                 else
                 {
                     sprintf(ptr, "(%s)       ", s->keystr);
-                    ptr += (constexpr_strstr(s->keystr, "\xE2") != NULL ? 12 : 10);
+                    ptr += (strstr(s->keystr, "\xE2") != NULL ? 12 : 10);
                     break;
                 }
             }
@@ -404,7 +403,7 @@ wrap_help_text_into_buffer(void)
     /* Move to the position in the file where we were before. */
     while (TRUE)
     {
-        sum += constexpr_strlen(openfile->current->data);
+        sum += strlen(openfile->current->data);
         if (sum > location)
         {
             break;

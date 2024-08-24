@@ -513,7 +513,8 @@ do_next_word(bool after_ends)
             openfile->current_x = 0;
             if (after_ends)
             {
-                /* If we stop after the end of words then then the first iter will be at were we reach '\0'. */
+                /* If we stop after the end of words then then the
+                 * first iter will be at 0 were we reach '\0'. */
                 if (i == 0)
                 {
                     openfile->current_x = indent_char_len(openfile->current);

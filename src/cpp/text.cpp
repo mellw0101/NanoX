@@ -2480,10 +2480,8 @@ fix_spello(const char *word)
     /* If the mark is on, start at the beginning of the marked region. */
     if (openfile->mark)
     {
-        //
-        //  If the region is marked normally, swap the end points, so that
-        //  (current, current_x) (where searching starts) is at the top.
-        //
+        /* If the region is marked normally, swap the end points, so that
+         * (current, current_x) (where searching starts) is at the top. */
         get_region(&top, &top_x, &bot, &bot_x);
         if (right_side_up)
         {
@@ -2520,9 +2518,7 @@ fix_spello(const char *word)
         put_cursor_at_end_of_answer();
         /* Let the user supply a correctly spelled alternative. */
         proceed        = (do_prompt(MSPELL, word, NULL, edit_refresh,
-                                    //
-                                    //  TRANSLATORS : This is a prompt.
-                                    //
+                                    /* TRANSLATORS: This is a prompt. */
                                     _("Edit a replacement")) != -1);
         spotlighted    = FALSE;
         openfile->mark = saved_mark;

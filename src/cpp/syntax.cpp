@@ -85,7 +85,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
     return TRUE;
 }
 
-/* Add syntax regex to end of colortype list 'c'. */
+/* Add syntax regex to end of colortype list 'c'.  This need`s to be faster. currently this takes around 0.4 ms. */
 void
 add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c, const char *from_file)
 {
@@ -338,6 +338,132 @@ check_syntax(const char *path)
     fclose(f);
 }
 
+void
+check_include_file_syntax(const char *path)
+{
+    unsigned short type;
+    unsigned       i;
+    unsigned long  nwords;
+    char         **words = words_from_file(path, &nwords);
+    if (words == NULL)
+    {
+        return;
+    }
+    for (i = 0; i < nwords; i++)
+    {
+        if (*words[i] == '#')
+        {
+            unsigned long slen = strlen(words[i]) - 1;
+            memmove(words[i], words[i] + 1, slen);
+            words[i][slen] = '\0';
+        }
+        type = retrieve_c_syntax_type(words[i]);
+        if (type & CS_STRUCT)
+        {
+            if (words[++i] != NULL)
+            {
+                if (*words[i] == '{' || *words[i] == '*')
+                {}
+                else if (!is_syntax_struct(words[i]))
+                {
+                    add_syntax_word("brightgreen", NULL, rgx_word(words[i]));
+                    add_syntax_struct(words[i]);
+                }
+            }
+        }
+        else if (type & CS_CLASS)
+        {
+            if (words[++i] != NULL)
+            {
+                if (*words[i] == '{' || *words[i] == '*')
+                {}
+                else if (!is_syntax_class(words[i]))
+                {
+                    add_syntax_word("brightgreen", NULL, rgx_word(words[i]));
+                    add_syntax_class(words[i]);
+                }
+            }
+        }
+        else if (type & CS_ENUM)
+        {
+            if (words[++i] != NULL)
+            {
+                if (*words[i] == '{' || *words[i] == '*')
+                {}
+                else
+                {
+                    add_syntax_word("brightgreen", NULL, rgx_word(words[i]));
+                }
+            }
+        }
+        else if (type & CS_CHAR || type & CS_VOID || type & CS_INT || type & CS_LONG || type & CS_BOOL ||
+                 type & CS_SIZE_T || type & CS_SSIZE_T)
+        {
+            if (words[++i] != NULL)
+            {
+                unsigned long at;
+                if (char_is_in_word(words[i], '(', &at))
+                {
+                    if (at != 0)
+                    {
+                        words[i][at] = '\0';
+                        if (!char_is_in_word(words[i], '=', &at))
+                        {
+                            while (char_is_in_word(words[i], '*', &at))
+                            {
+                                if (at == 0)
+                                {
+                                    unsigned long slen = strlen(words[i]) - 1;
+                                    memmove(words[i], words[i] + 1, slen);
+                                    words[i][slen] = '\0';
+                                }
+                            }
+                            add_syntax_word("yellow", NULL, rgx_word(words[i]));
+                        }
+                    }
+                }
+                else if (words[i + 1] && *words[i + 1] == '(')
+                {
+                    while (char_is_in_word(words[i], '*', &at))
+                    {
+                        if (at == 0)
+                        {
+                            unsigned long slen = strlen(words[i]) - 1;
+                            memmove(words[i], words[i] + 1, slen);
+                            words[i][slen] = '\0';
+                        }
+                    }
+                    add_syntax_word("yellow", NULL, rgx_word(words[i]));
+                }
+            }
+        }
+        /* else if (type & CS_INCLUDE)
+        {
+            if (words[++i] != NULL)
+            {
+                if (!is_in_handled_includes_vec(words[i]))
+                {
+                    NETLOGGER.log("%s\n", words[i]);
+                    add_to_handled_includes_vec(words[i]);
+                    handle_include(words[i]);
+                }
+            }
+        } */
+        else if (type & CS_DEFINE)
+        {
+            if (words[++i] != NULL)
+            {
+                handle_define(words[i]);
+            }
+        }
+    }
+    for (i = 0; i < nwords; i++)
+    {
+        free(words[i]);
+    }
+    free(words);
+}
+
 int
 add_syntax(const unsigned short *type, char *word)
 {
@@ -389,7 +515,7 @@ handle_include(char *str)
         sprintf(buf, "%s%s", "/usr/include/", extract_include(str));
         if (is_file_and_exists(buf))
         {
-            check_syntax(buf);
+            check_include_file_syntax(buf);
             return;
         }
         str += 1;
@@ -401,16 +527,17 @@ handle_include(char *str)
         sprintf(buf, "%s%s", "/usr/include/c++/v1/", str);
         if (is_file_and_exists(str))
         {
-            check_syntax(buf);
+            check_include_file_syntax(buf);
             return;
         }
         memset(buf, '\0', sizeof(buf));
         sprintf(buf, "%s%s%s", "/usr/include/c++/v1/", str, ".h");
         if (is_file_and_exists(buf))
         {
-            check_syntax(buf);
+            check_include_file_syntax(buf);
             return;
         }
+        NETLOGGER.log("Did not find: %s\n", str);
     }
     else if (*str == '"')
     {
@@ -431,10 +558,17 @@ handle_include(char *str)
         {
             current_file[pos + 1] = '\0';
         }
-        sprintf(buf, "%s%s%s%s", pwd, "/", (current_file != NULL) ? current_file : "", extract_include(str));
+        unsigned long slen = strlen(str) - 2;
+        memmove(str, str + 1, slen);
+        str[slen] = '\0';
+        sprintf(buf, "%s%s%s%s", pwd, "/", (current_file != NULL) ? current_file : "", str);
         if (is_file_and_exists(buf))
         {
-            check_syntax(buf);
+            check_include_file_syntax(buf);
+        }
+        else
+        {
+            NETLOGGER.log("Did not find: %s\n", str);
         }
         free(current_file);
     }

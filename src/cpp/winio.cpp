@@ -2593,9 +2593,10 @@ titlebar(const char *path)
     blank_titlebar();
     as_an_at = FALSE;
     /* Do as Pico:
-     * - if there is not enough width available for all items,
-     * - first sacrifice the version string, then eat up the side spaces,
-     * - then sacrifice the prefix, and only then start dottifying. */
+     *  if there is not enough width available for all items,
+     *  first sacrifice the version string, then eat up the side spaces,
+     *  then sacrifice the prefix, and only then start dottifying.
+     */
     /* Figure out the path, prefix and state strings. */
     if (currmenu == MLINTER)
     {
@@ -2632,11 +2633,11 @@ titlebar(const char *path)
                 {
                     path = openfile->filename;
                 }
-                if ISSET (VIEW_MODE)
+                if (ISSET(VIEW_MODE))
                 {
                     state = _("View");
                 }
-                else if ISSET (STATEFLAGS)
+                else if (ISSET(STATEFLAGS))
                 {
                     state = "+.xxxxx";
                 }
@@ -2644,7 +2645,7 @@ titlebar(const char *path)
                 {
                     state = _("Modified");
                 }
-                else if ISSET (RESTRICTED)
+                else if (ISSET(RESTRICTED))
                 {
                     state = _("Restricted");
                 }
@@ -2938,7 +2939,7 @@ statusline(message_type importance, const char *msg, ...)
     /* When not in curses mode, write the message to standard error. */
     if (isendwin())
     {
-        LoutE << compound << '\n';
+        LOUT_logI(compound);
         fprintf(stderr, "\n%s\n", compound);
         free(compound);
         return;
@@ -3146,15 +3147,13 @@ place_the_cursor(void)
     openfile->cursor_row = row;
 }
 
-/* The number of bytes after which to stop painting,
- * to avoid major slowdowns. */
+/* The number of bytes after which to stop painting, to avoid major slowdowns. */
 static constexpr unsigned short PAINT_LIMIT = 2000;
-/* Draw the given text on the given row of the edit window.  line is the
- * line to be drawn, and converted is the actual string to be written with
- * tabs and control characters replaced by strings of regular characters.
- * from_col is the column number of the first character of this "page".
- * TODO: (draw_row) - Figure out how to add syntax, DONE!!.
- * TODO(2): (draw_row) - Implement a way to close and open brackets (will probebly be hard as fuck!!!). */
+/* Draw the given text on the given row of the edit window.  line is the line to be drawn,
+ * and converted is the actual string to be written with tabs and control characters replaced
+ * by strings of regular characters.  'from_col' is the column number of the first character
+ * of this "page".
+ * TODO: (draw_row) - Implement a way to close and open brackets (will probebly be hard as fuck!!!). */
 void
 draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col)
 {

@@ -124,7 +124,7 @@ digits(const long n)
     bool
     parse_num(const char *string, long *result)
     {
-        sunsigned long value;
+        unsigned long value;
         char     *excess;
         // Clear the error number so that we can check it afterward.
         errno = 0;
@@ -164,7 +164,7 @@ parse_line_column(const char *string, long *line, long *column)
     {
         string++;
     }
-    comma = constexpr_strpbrk(string, ",.:");
+    comma = strpbrk(string, ",.:");
     if (comma == NULL)
     {
         return parseNum(string, *line);
@@ -249,10 +249,9 @@ is_separate_word(unsigned long position, unsigned long length, const char *text)
 const char *
 strstrwrapper(const char *const haystack, const char *const needle, const char *const start)
 {
-    PROFILE_FUNCTION;
-    if ISSET (USE_REGEXP)
+    if (ISSET(USE_REGEXP))
     {
-        if ISSET (BACKWARDS_SEARCH)
+        if (ISSET(BACKWARDS_SEARCH))
         {
             unsigned long last_find, ceiling, far_end, floor, next_rung;
             /* The start of the search range, and the next start. */
@@ -261,7 +260,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
             {
                 return NULL;
             }
-            far_end   = constexpr_strlen(haystack);
+            far_end   = strlen(haystack);
             ceiling   = start - haystack;
             last_find = regmatches[0].rm_so;
             /* A result beyond the search range also means: no match. */
@@ -299,7 +298,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
         }
         /* Do a forward regex search from the starting point. */
         regmatches[0].rm_so = start - haystack;
-        regmatches[0].rm_eo = constexpr_strlen(haystack);
+        regmatches[0].rm_eo = strlen(haystack);
         if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND))
         {
             return NULL;
@@ -309,18 +308,18 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
             return haystack + regmatches[0].rm_so;
         }
     }
-    if ISSET (CASE_SENSITIVE)
+    if (ISSET(CASE_SENSITIVE))
     {
-        if ISSET (BACKWARDS_SEARCH)
+        if (ISSET(BACKWARDS_SEARCH))
         {
             return revstrstr(haystack, needle, start);
         }
         else
         {
-            return constexpr_strstr(start, needle);
+            return strstr(start, needle);
         }
     }
-    if ISSET (BACKWARDS_SEARCH)
+    if (ISSET(BACKWARDS_SEARCH))
     {
         return mbrevstrcasestr(haystack, needle, start);
     }

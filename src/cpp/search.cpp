@@ -58,7 +58,7 @@ search_init(bool replacing, bool retain_answer)
     if (*last_search != '\0')
     {
         char *disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
-        thedefault = (char *)nmalloc(constexpr_strlen(disp) + 7);
+        thedefault = (char *)nmalloc(strlen(disp) + 7);
         /* We use (COLS / 3) here because we need to see more on the line. */
         sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > COLS / 3) ? "..." : "");
         free(disp);
@@ -158,13 +158,13 @@ search_init(bool replacing, bool retain_answer)
  * where we first started searching, at column begin_x.  Return 1 when we
  * found something, 0 when nothing, and -2 on cancel.  When match_len is
  * not NULL, set it to the length of the found string, if any.
- * TODO : ( findnextstr )  :  FIX IT */
+ * TODO: (findnextstr) - This can be usefull. */
 int
 findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *match_len, bool skipone,
             const linestruct *begin, unsigned long begin_x)
 {
     /* The length of a match -- will be recomputed for a regex. */
-    unsigned long found_len = constexpr_strlen(needle);
+    unsigned long found_len = strlen(needle);
     /* When bigger than zero, show and wipe the "Searching..." message. */
     int feedback = 0;
     /* The line that we will search through now. */
@@ -179,10 +179,7 @@ findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *
     time_t lastkbcheck = time(NULL);
     /* Set non-blocking input so that we can just peek for a Cancel. */
     nodelay(midwin, TRUE);
-    if (begin == NULL)
-    {
-        came_full_circle = FALSE;
-    }
+    (begin == NULL) ? came_full_circle = FALSE : 0;
     while (TRUE)
     {
         /* When starting a new search, skip the first character, then
@@ -208,7 +205,7 @@ findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *
         if (found != NULL)
         {
             /* When doing a regex search, compute the length of the match. */
-            if ISSET (USE_REGEXP)
+            if (ISSET(USE_REGEXP))
             {
                 found_len = regmatches[0].rm_eo - regmatches[0].rm_so;
             }
@@ -258,15 +255,12 @@ findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *
             }
         }
         /* If we've reached the original starting line, take note. */
-        if (line == begin)
-        {
-            came_full_circle = TRUE;
-        }
+        (line == begin) ? came_full_circle = TRUE : 0;
         /* Set the starting x to the start or end of the line. */
         from = line->data;
-        if ISSET (BACKWARDS_SEARCH)
+        if (ISSET(BACKWARDS_SEARCH))
         {
-            from += constexpr_strlen(line->data);
+            from += strlen(line->data);
         }
         /* Glance at the keyboard once every second, to check for a Cancel. */
         if (time(NULL) - lastkbcheck > 0)
@@ -323,10 +317,7 @@ findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *
     openfile->current   = line;
     openfile->current_x = found_x;
     /* When requested, pass back the length of the match. */
-    if (match_len != NULL)
-    {
-        *match_len = found_len;
-    }
+    (match_len != NULL) ? *match_len = found_len : 0;
     if (modus == JUSTFIND && (!openfile->mark || openfile->softmark))
     {
         spotlighted    = TRUE;
@@ -460,10 +451,7 @@ replace_regexp(char *string, bool create)
         int num = (*(c + 1) - '0');
         if (*c != '\\' || num < 1 || num > 9 || num > search_regexp.re_nsub)
         {
-            if (create)
-            {
-                *string++ = *c;
-            }
+            (create) ? *string++ = *c : 0;
             c++;
             replacement_size++;
         }
@@ -483,14 +471,12 @@ replace_regexp(char *string, bool create)
             }
         }
     }
-    if (create)
-    {
-        *string = '\0';
-    }
+    (create) ? *string = '\0' : 0;
     return replacement_size;
 }
 
-/* Return a copy of the current line with one needle replaced. */
+/* Return a copy of the current line with one needle replaced.
+ * TODO: (replace_line) - What does this mean like replace with what ? */
 char *
 replace_line(const char *needle)
 {
@@ -797,7 +783,6 @@ goto_line_and_column(long line, long column, bool retain_answer, bool interactiv
         {
             line = openfile->current->lineno;
         }
-
         if (column == 0)
         {
             column = openfile->placewewant + 1;
@@ -896,7 +881,7 @@ find_a_bracket(bool reverse, const char *bracket_pair)
             {
                 return FALSE;
             }
-            pointer = line->data + constexpr_strlen(line->data);
+            pointer = line->data + strlen(line->data);
         }
         else
         {
@@ -910,7 +895,7 @@ find_a_bracket(bool reverse, const char *bracket_pair)
             {
                 return FALSE;
             }
-            pointer = line->data + constexpr_strlen(line->data);
+            pointer = line->data + strlen(line->data);
         }
     }
     else

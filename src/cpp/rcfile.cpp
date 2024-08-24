@@ -458,7 +458,7 @@ begin_new_syntax(char *ptr)
     }
     ptr = parse_next_word(ptr);
     /* Check that quotes around the name are either paired or absent. */
-    if ((*nameptr == '\x22') ^ (nameptr[constexpr_strlen(nameptr) - 1] == '\x22'))
+    if ((*nameptr == '\x22') ^ (nameptr[strlen(nameptr) - 1] == '\x22'))
     {
         jot_error(N_("Unpaired quote in syntax name"));
         return;
@@ -470,7 +470,7 @@ begin_new_syntax(char *ptr)
         nameptr[strlen(nameptr) - 1] = '\0';
     }
     /* Redefining the "none" syntax is not allowed. */
-    if (constexpr_strcmp(nameptr, "none") == 0)
+    if (strcmp(nameptr, "none") == 0)
     {
         jot_error(N_("The \"none\" syntax is reserved"));
         return;
@@ -496,7 +496,7 @@ begin_new_syntax(char *ptr)
     opensyntax         = TRUE;
     seen_color_command = FALSE;
     /* The default syntax should have no associated extensions. */
-    if (constexpr_strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
+    if (strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
         jot_error(N_("The \"default\" syntax does not accept extensions"));
         return;
@@ -800,7 +800,7 @@ parse_includes(char *ptr)
         pattern++;
     }
     ptr = parse_argument(ptr);
-    if (constexpr_strlen(pattern) > PATH_MAX)
+    if (strlen(pattern) > PATH_MAX)
     {
         jot_error(N_("Path is too long"));
         return;
@@ -957,7 +957,7 @@ parse_combination(char *combotext, short *fg, short *bg, int *attributes)
     bool  thick;
     char *comma;
     *attributes = A_NORMAL;
-    if (constexpr_strncmp(combotext, "bold", 4) == 0)
+    if (strncmp(combotext, "bold", 4) == 0)
     {
         *attributes |= A_BOLD;
         if (combotext[4] != ',')
@@ -967,7 +967,7 @@ parse_combination(char *combotext, short *fg, short *bg, int *attributes)
         }
         combotext += 5;
     }
-    if (constexpr_strncmp(combotext, "italic", 6) == 0)
+    if (strncmp(combotext, "italic", 6) == 0)
     {
         *attributes |= A_ITALIC;
         if (combotext[6] != ',')
@@ -977,7 +977,7 @@ parse_combination(char *combotext, short *fg, short *bg, int *attributes)
         }
         combotext += 7;
     }
-    comma = constexpr_strchr(combotext, ',');
+    comma = strchr(combotext, ',');
     if (comma)
     {
         *comma = '\0';
@@ -1183,14 +1183,7 @@ grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
         newthing          = (regexlisttype *)nmalloc(sizeof(regexlisttype));
         newthing->one_rgx = packed_rgx;
         newthing->next    = NULL;
-        if (lastthing == NULL)
-        {
-            *storage = newthing;
-        }
-        else
-        {
-            lastthing->next = newthing;
-        }
+        (lastthing == NULL) ? *storage = newthing : lastthing->next = newthing;
         lastthing = newthing;
     }
 }
@@ -1207,7 +1200,7 @@ pick_up_name(const char *kind, char *ptr, char **storage)
     /* If the argument starts with a quote, find the terminating quote. */
     if (*ptr == '"')
     {
-        char *look = ptr + constexpr_strlen(ptr);
+        char *look = ptr + strlen(ptr);
         while (*look != '"')
         {
             if (--look == ptr)
@@ -1339,7 +1332,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         keyword = ptr;
         ptr     = parse_next_word(ptr);
         /* Handle extending first... */
-        if (!just_syntax && constexpr_strcmp(keyword, "extendsyntax") == 0)
+        if (!just_syntax && strcmp(keyword, "extendsyntax") == 0)
         {
             augmentstruct *newitem, *extra;
             char          *syntaxname = ptr;
@@ -1348,7 +1341,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             ptr = parse_next_word(ptr);
             for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
             {
-                if (constexpr_strcmp(sntx->name, syntaxname) == 0)
+                if (strcmp(sntx->name, syntaxname) == 0)
                 {
                     break;
                 }
@@ -1363,7 +1356,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             ptr      = parse_next_word(ptr);
             /* File-matching commands need to be processed immediately;
              * other commands are stored for possible later processing. */
-            if (constexpr_strcmp(keyword, "header") == 0 || constexpr_strcmp(keyword, "magic") == 0)
+            if (strcmp(keyword, "header") == 0 || strcmp(keyword, "magic") == 0)
             {
                 free(argument);
                 live_syntax = sntx;
@@ -1394,7 +1387,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
         }
         /* Try to parse the keyword. */
-        if (constexpr_strcmp(keyword, "syntax") == 0)
+        if (strcmp(keyword, "syntax") == 0)
         {
             if (intros_only)
             {
@@ -1406,14 +1399,14 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 break;
             }
         }
-        else if (constexpr_strcmp(keyword, "header") == 0)
+        else if (strcmp(keyword, "header") == 0)
         {
             if (intros_only)
             {
                 grab_and_store("header", ptr, &live_syntax->headers);
             }
         }
-        else if (constexpr_strcmp(keyword, "magic") == 0)
+        else if (strcmp(keyword, "magic") == 0)
         {
 #ifdef HAVE_LIBMAGIC
             if (intros_only)
@@ -1422,10 +1415,9 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
 #endif
         }
-        else if (just_syntax &&
-                 (constexpr_strcmp(keyword, "set") == 0 || constexpr_strcmp(keyword, "unset") == 0 ||
-                  constexpr_strcmp(keyword, "bind") == 0 || constexpr_strcmp(keyword, "unbind") == 0 ||
-                  constexpr_strcmp(keyword, "include") == 0 || constexpr_strcmp(keyword, "extendsyntax") == 0))
+        else if (just_syntax && (strcmp(keyword, "set") == 0 || strcmp(keyword, "unset") == 0 ||
+                                 strcmp(keyword, "bind") == 0 || strcmp(keyword, "unbind") == 0 ||
+                                 strcmp(keyword, "include") == 0 || strcmp(keyword, "extendsyntax") == 0))
         {
             if (intros_only)
             {
@@ -1436,16 +1428,15 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 break;
             }
         }
-        else if (intros_only &&
-                 (constexpr_strcmp(keyword, "color") == 0 || constexpr_strcmp(keyword, "icolor") == 0 ||
-                  constexpr_strcmp(keyword, "comment") == 0 || constexpr_strcmp(keyword, "tabgives") == 0 ||
-                  constexpr_strcmp(keyword, "linter") == 0 || constexpr_strcmp(keyword, "formatter") == 0))
+        else if (intros_only && (strcmp(keyword, "color") == 0 || strcmp(keyword, "icolor") == 0 ||
+                                 strcmp(keyword, "comment") == 0 || strcmp(keyword, "tabgives") == 0 ||
+                                 strcmp(keyword, "linter") == 0 || strcmp(keyword, "formatter") == 0))
         {
             if (!opensyntax)
             {
                 jot_error(N_("A '%s' command requires a preceding 'syntax' command"), keyword);
             }
-            if (constexpr_strstr("icolor", keyword))
+            if (strstr("icolor", keyword))
             {
                 seen_color_command = TRUE;
             }
@@ -1455,25 +1446,25 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         {
             ;
         }
-        else if (constexpr_strcmp(keyword, "include") == 0)
+        else if (strcmp(keyword, "include") == 0)
         {
             parse_includes(ptr);
         }
         else
         {
-            if (constexpr_strcmp(keyword, "set") == 0)
+            if (strcmp(keyword, "set") == 0)
             {
                 set = 1;
             }
-            else if (constexpr_strcmp(keyword, "unset") == 0)
+            else if (strcmp(keyword, "unset") == 0)
             {
                 set = -1;
             }
-            else if (constexpr_strcmp(keyword, "bind") == 0)
+            else if (strcmp(keyword, "bind") == 0)
             {
                 parse_binding(ptr, TRUE);
             }
-            else if (constexpr_strcmp(keyword, "unbind") == 0)
+            else if (strcmp(keyword, "unbind") == 0)
             {
                 parse_binding(ptr, FALSE);
             }
@@ -1501,7 +1492,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         /* Find the just parsed option name among the existing names. */
         for (i = 0; rcopts[i].name != NULL; i++)
         {
-            if (constexpr_strcmp(option, rcopts[i].name) == 0)
+            if (strcmp(option, rcopts[i].name) == 0)
             {
                 break;
             }

@@ -84,7 +84,7 @@ void
 reselect(const char *const name)
 {
     unsigned long looking_at = 0;
-    while (looking_at < list_length && constexpr_strcmp(filelist[looking_at], name) != 0)
+    while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0)
     {
         looking_at++;
     }
@@ -378,7 +378,7 @@ char *
 strip_last_component(const char *path)
 {
     char *copy       = copy_of(path);
-    char *last_slash = constexpr_strrchr(copy, '/');
+    char *last_slash = strrchr(copy, '/');
     if (last_slash != NULL)
     {
         *last_slash = '\0';

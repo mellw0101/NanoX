@@ -1,5 +1,5 @@
-1.
-    Change it so that when using CTRL+(UP/DOWN) it stops at indent diffs.
+NanoX, fork of nano.  TODO LIST.
+1.  Change it so that when using CTRL+(UP/DOWN) it stops at indent diffs.
 
     NOTES:
         This is almost perfect and as i want to have it.  I implemented alot of 'rules' that makes coding
@@ -8,15 +8,13 @@
         for coding as it puts the cursor in the correct indent when jumping into a bracket`ed area.
     STATUS:
         DONE!!!.
-2.
-    Make 'prev_word' stop at eol if done from start of next line.  Also make it more intuative to use.
+2.  Make 'prev_word' stop at eol if done from start of next line.  Also make it more intuative to use.
 
     NOTES:
         I dont know how i want this to behave yet so i will probebly change this.
     STATUS:
         KINDA DONE!!.
-3.
-    Fix both next_word and prev_word so that cut_next_word and cut_prev_word works properly.
+3.  Fix both next_word and prev_word so that cut_next_word and cut_prev_word works properly.
     
     NOTES:
         This mostly works like in 'vs-code' right now, I will need to conduct more test`s to find sinarios
@@ -24,24 +22,21 @@
         more rules to behave exactly the way I want in all case`s.
     STATUS:
         KINDA DONE!!.
-4.
-    Make it so that when text is marked and '/" is pressed it 'text'/"text".
+4.  Make it so that when text is marked and '/" is pressed it 'text'/"text".
     
     NOTES:
         I also added so that '{', '[' and '(' puts closing brackets around marked region.
         I.E.  '{text}', '[text]' and '(text)'.  @see @file 'cpp.cpp' @func 'enclose_marked_region'. 
     STATUS:
         DONE!!.
-5.
-    Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
+5.  Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
 
     NOTES:
         It currently stops at top when going up and bottom when going down.
         I dont yet know if i want to change it.
     STATUS:
         ALMOST DONE!!!!.
-6.
-    Implement a way to close and open brackets (will probebly be very HARD!!!).
+6.  Implement a way to close and open brackets (will probebly be very HARD!!!).
 
     Notes:
         The main problem I`m having is that I can find and then not render the line`s I want when the
@@ -64,8 +59,7 @@
         'draw_row'
     STATUS:
         NOT DONE.
-7.
-    Implement live syntax.
+7.  Implement live syntax.
     
     NOTES:
         I just need to make a system to save types and structs of function calls
@@ -87,10 +81,22 @@
         able to resolve this issue without changing the way the lines are rechecked, the problem is that i think the
         linked list of compiled regexes get exponatialy more shit as I have to go thrue a longer and longer list as
         I make it more complex with more syntax.
+
+        The hard part is over it took quite a lot of time for me to figure out how to programeble add syntax to
+        a system designed for .nanorc file parsing.  But I did eventualy figure it out, it took me working on this
+        on and of for 3 weeks.  This is mostly because I had never worked with a linked list that has linked list`s
+        nested before.  Anyway like I said the hard part is over now and I did create 'basic' live highlighting 
+        in a few hour`s, that im not happy with at all but it is fast and works like it should.  The next step is to
+        spend a couple of days and create a new system that I will be proud of.
+
+        I have finaly successfully made parsing 4 times faster as well as being able to retrieve one 'char **' with all words
+        in a file and the number of words in that array.  With this i have changed parsing for includes, but not yet for the main
+        openfile as for now it is done line by line but i will make a new function that parses the entire file and see how fast
+        I can make it.  Now i can also start to store data on struct`s, class`s and enum`s, and then start to apply the highlights
+        only where thay should be for example a paramater for a function should only be highlighted inside that function.
     STATUS:
         ALMOST DONE!!.
-8.
-    Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
+8.  Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
 
     NOTES:
         I had to add a check for term so i would know if currently running in xterm, as xterm uses unique codes.
@@ -104,8 +110,7 @@
         this is the norm in most other modern editors.
     STATUS:
         DONE!!.
-9.
-    Make it possible to move one line up and down holding 'alt'.
+9.  Make it possible to move one line up and down holding 'alt'.
 
     NOTES:
         This was quite easy to get to work, the harder(not really that hard) part was to make undoing and
@@ -114,8 +119,7 @@
         how to make selected text stay selected after the line has been moved, after that it`s complete.
     STATUS:
         DONE!!.
-10.
-    Make it possible to move all selected lines up and down one line.
+10. Make it possible to move all selected lines up and down one line.
 
     NOTES:
         I can successfully do this now but I cannot manage to return the selection of the text once complete, I think
@@ -126,8 +130,7 @@
         then this will be fixed, and if not I will have lerned how it works better.
     STATUS:
         NOT DONE.
-11.
-    Make auto bracket placement and proper indent if enter is pressed between '{}',
+11. Make auto bracket placement and proper indent if enter is pressed between '{}',
     LIKE THIS:
         {
             (cursor here)
@@ -142,8 +145,7 @@
         it indents one if pressing enter when 'prev char' == '{' and 'next char' != '}'.
     STATUS:
         DONE!!.
-12.
-    Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace is pressed directly
+12. Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace is pressed directly
     after remove both char`s.
 
     NOTES:
@@ -151,3 +153,27 @@
         when found so it is not yet done.
     STATUS:
         ALMOST DONE!!.
+13. Make '^Bsp' and '^Del' remove all spaces if more then one space to next/prev word, like 'vs-code'.
+
+    NOTES:
+        This was quite fun to be honest I remade the function 8 times and managed to make one of my begin_new_syntax
+        func`s so far, IN MY OPINION.  I will probebly improve it even more when I find some edge case.
+    STATUS:
+        DONE!!.  FOR NOW.
+14. Extend functionality of execute so you can do more when using '^E', for example run formater and such.
+
+    STATUS:
+        NOT DONE.
+15. Create a system to find header file`s based on the file they are found in.
+    
+    NOTES:
+        This will not be hard at all i think it will be easiest to just parse all files in the folder that the
+        current file is in for local(") header files.  And for global(<) i will just parse the entire '/usr/include/'
+        folder.
+    STATUS:
+        NOT DONE.
+
+NOTES:
+    constexpr_atoi is slower then atoi.
+    constexpr_tolower is faster then tolower.
+    constexpr_strcasecmp is faster then strcasecmp.

@@ -69,7 +69,7 @@ is_empty_line(linestruct *line)
     unsigned i = 0;
     for (; line->data[i]; i++)
     {
-        if (1 > 0)
+        if (i > 0)
         {
             return FALSE;
         }

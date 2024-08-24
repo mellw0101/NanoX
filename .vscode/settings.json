@@ -34,7 +34,7 @@
     "editor.showFoldingControls": "always",
     "editor.defaultFoldingRangeProvider": "llvm-vs-code-extensions.vscode-clangd",
     "editor.fontFamily": "JetBrains Mono",
-    "editor.fontWeight": "500",  // Use 600 for semi-bold
+    "editor.fontWeight": "400",  // Use 600 for semi-bold
     "editor.fontLigatures": true,  // Enable font ligatures
     "editor.tokenColorCustomizations": {
         "textMateRules": [
@@ -51,7 +51,7 @@
             }
         ]
     },
-    "editor.fontSize": 18,  // Adjust this to your preferred font size
+    "editor.fontSize": 17,  // Adjust this to your preferred font size
     "editor.lineHeight": 20,  // Adjust this to your preferred line height
     "terminal.integrated.fontFamily": "JetBrains Mono",
     "terminal.integrated.fontWeight": "400",  // Use 600 for semi-bold in terminal

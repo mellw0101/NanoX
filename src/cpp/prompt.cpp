@@ -21,7 +21,7 @@ do_statusbar_home(void)
 void
 do_statusbar_end(void)
 {
-    typing_x = constexpr_strlen(answer);
+    typing_x = strlen(answer);
 }
 
 /* Move to the previous word in the answer. */
@@ -136,7 +136,7 @@ do_statusbar_backspace(void)
     {
         unsigned long was_x = typing_x;
         typing_x            = step_left(answer, typing_x);
-        memmove(answer + typing_x, answer + was_x, constexpr_strlen(answer) - was_x + 1);
+        memmove(answer + typing_x, answer + was_x, strlen(answer) - was_x + 1);
     }
 }
 
@@ -183,10 +183,10 @@ copy_the_answer(void)
 void
 paste_into_answer(void)
 {
-    unsigned long pastelen = constexpr_strlen(cutbuffer->data);
-    answer                 = (char *)nrealloc(answer, constexpr_strlen(answer) + pastelen + 1);
-    memmove(answer + typing_x + pastelen, answer + typing_x, constexpr_strlen(answer) - typing_x + 1);
-    constexpr_strncpy(answer + typing_x, cutbuffer->data, pastelen);
+    unsigned long pastelen = strlen(cutbuffer->data);
+    answer                 = (char *)nrealloc(answer, strlen(answer) + pastelen + 1);
+    memmove(answer + typing_x + pastelen, answer + typing_x, strlen(answer) - typing_x + 1);
+    strncpy(answer + typing_x, cutbuffer->data, pastelen);
     typing_x += pastelen;
 }
 
@@ -225,7 +225,7 @@ inject_into_answer(char *burst, unsigned long count)
     }
     answer = (char *)nrealloc(answer, strlen(answer) + count + 1);
     memmove(answer + typing_x + count, answer + typing_x, strlen(answer) - typing_x + 1);
-    constexpr_strncpy(answer + typing_x, burst, count);
+    strncpy(answer + typing_x, burst, count);
     typing_x += count;
 }
 
@@ -463,7 +463,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
     const keystruct *shortcut;
     functionptrtype  function;
     int              input;
-    if (typing_x > constexpr_strlen(answer))
+    if (typing_x > strlen(answer))
     {
         typing_x = constexpr_strlen(answer);
     }
@@ -505,12 +505,12 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
             {
                 if (!previous_was_tab)
                 {
-                    fragment_length = constexpr_strlen(answer);
+                    fragment_length = strlen(answer);
                 }
                 if (fragment_length > 0)
                 {
                     answer   = get_history_completion(history_list, answer, fragment_length);
-                    typing_x = constexpr_strlen(answer);
+                    typing_x = strlen(answer);
                 }
             }
             else
@@ -541,7 +541,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
                 {
                     *history_list = (*history_list)->prev;
                     answer        = mallocstrcpy(answer, (*history_list)->data);
-                    typing_x      = constexpr_strlen(answer);
+                    typing_x      = strlen(answer);
                 }
             }
             else if (function == get_newer_item && history_list != NULL)
@@ -551,13 +551,13 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
                 {
                     *history_list = (*history_list)->next;
                     answer        = mallocstrcpy(answer, (*history_list)->data);
-                    typing_x      = constexpr_strlen(answer);
+                    typing_x      = strlen(answer);
                 }
                 /* When at the bottom of the history list, restore the old answer. */
                 if ((*history_list)->next == NULL && stored_string && *answer == '\0')
                 {
                     answer   = mallocstrcpy(answer, stored_string);
-                    typing_x = constexpr_strlen(answer);
+                    typing_x = strlen(answer);
                 }
             }
             else
@@ -754,29 +754,29 @@ ask_user(bool withall, const char *question)
         }
         letter[index] = '\0';
         /* See if the typed letter is in the Yes, No, or All strings. */
-        if (constexpr_strstr(yesstr, letter) != NULL)
+        if (strstr(yesstr, letter) != NULL)
         {
             choice = YES;
         }
-        else if (constexpr_strstr(nostr, letter) != NULL)
+        else if (strstr(nostr, letter) != NULL)
         {
             choice = NO;
         }
-        else if (withall && constexpr_strstr(allstr, letter) != NULL)
+        else if (withall && strstr(allstr, letter) != NULL)
         {
             choice = ALL;
         }
         else
         {
-            if (constexpr_strchr("Yy", kbinput) != NULL)
+            if (strchr("Yy", kbinput) != NULL)
             {
                 choice = YES;
             }
-            else if (constexpr_strchr("Nn", kbinput) != NULL)
+            else if (strchr("Nn", kbinput) != NULL)
             {
                 choice = NO;
             }
-            else if (withall && constexpr_strchr("Aa", kbinput) != NULL)
+            else if (withall && strchr("Aa", kbinput) != NULL)
             {
                 choice = ALL;
             }

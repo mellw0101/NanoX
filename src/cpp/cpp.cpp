@@ -107,7 +107,7 @@ enter_with_bracket(void)
 {
     char          c, c_prev;
     linestruct   *was_current = openfile->current, *middle, *end;
-    bool          allblanks   = false;
+    bool          allblanks   = FALSE;
     unsigned long extra;
     if (!openfile->current->data[openfile->current_x - 1])
     {

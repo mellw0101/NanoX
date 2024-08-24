@@ -76,7 +76,58 @@ words_in_str(const char *str, unsigned long *size)
         tok        = strtok(NULL, " \t");
     }
     words[i] = NULL;
-    (size != NULL) ? *size = 1 : 0;
+    (size != NULL) ? *size = i : 0;
+    return words;
+}
+
+char **
+delim_str(const char *str, const char delim, unsigned long *size)
+{
+    PROFILE_FUNCTION;
+    if (str == NULL)
+    {
+        return NULL;
+    }
+    unsigned int bsize = 0, cap = 10;
+    char       **words = (char **)nmalloc(sizeof(char *) * cap);
+    char        *tok   = strtok((char *)str, &delim);
+    while (tok != NULL)
+    {
+        if (bsize == cap)
+        {
+            cap *= 2;
+            words = (char **)nrealloc(words, sizeof(char *) * cap);
+        }
+        words[bsize++] = tok;
+        tok            = strtok(NULL, &delim);
+    }
+    words[bsize] = NULL;
+    (size != NULL) ? *size = bsize : 0;
+    return words;
+}
+
+char **
+split_into_words(const char *str, const unsigned int len, unsigned int *word_count)
+{
+    const unsigned int max_words = (len / 2) + 1;
+    char             **words     = (char **)nmalloc(sizeof(char *) * max_words);
+    unsigned int       count     = 0;
+    const char        *start = str, *end = str;
+    while (end < (str + len))
+    {
+        for (; end < (str + len) && *end == ' '; end++)
+            ;
+        if (end == str + len)
+        {
+            break;
+        }
+        start = end;
+        for (; end < (str + len) && *end != ' '; end++)
+            ;
+        const unsigned int word_len = end - start;
+        words[count++]              = measured_copy(start, word_len);
+    }
+    *word_count = count;
     return words;
 }
 
@@ -118,13 +169,6 @@ add_word_to_arry(const char *word, char ***words, unsigned long *cword, unsigned
     *(words[*(cword++)]) = nword;
 }
 
-void
-words_in_file(const char *path)
-{
-    // unsigned long cap   = 10;
-    // char       ***lines = (char ***)nmalloc(sizeof(char **) * cap);
-}
-
 /* Returns the text after '.' in 'openfile->filename'. */
 char *
 get_file_extention(void)
@@ -158,19 +202,11 @@ is_word_func(char *word, unsigned long *at)
     return FALSE;
 }
 
+/* Remove`s all leading 'c' char`s from 'word'.  Note that 'word' shall be passed by refrence. */
 void
-remove_leading_ptrs(char **word)
+remove_leading_char_type(char **word, const char c)
 {
-    while (*(*word) == '*')
-    {
-        *word += 1;
-    }
-}
-
-void
-remove_leading_parent(char **word)
-{
-    while (*(*word) == '(')
+    while (*(*word) == c)
     {
         *word += 1;
     }
@@ -202,23 +238,84 @@ concat_path(const char *s1, const char *s2)
     return buf;
 }
 
-/* Check either behind or infront of 'cursor_x' if there are more than a single ' ' char.
- * If so, return 'TRUE' and asign the number of spaces to 'nspaces'. */
+/* Assigns the number of steps of char 'ch' to the prev/next word to 'nchars'.
+ * Return`s 'TRUE' when word is more then 2 steps of 'ch' away. */
 bool
-word_more_then_one_space_away(bool forward, unsigned long *nspaces)
+word_more_than_one_char_away(bool forward, unsigned long *nchars, const char ch)
 {
-    unsigned long i = openfile->current_x, spaces = 0;
+    unsigned long i = openfile->current_x, chars = 0;
     if (!forward)
     {
         i--;
-        for (; i != (unsigned long)-1 && openfile->current->data[i] == ' '; i--, spaces++)
+        for (; i != (unsigned long)-1 && openfile->current->data[i] == ch; i--, chars++)
             ;
     }
     else
     {
-        for (; openfile->current->data[i] && openfile->current->data[i] == ' '; i++, spaces++)
+        for (; openfile->current->data[i] && openfile->current->data[i] == ch; i++, chars++)
             ;
     }
-    (spaces > 1) ? *nspaces = spaces : 0;
-    return (spaces > 1);
+    (chars > 1) ? *nchars = chars : 0;
+    return (chars > 1);
+}
+
+bool
+word_more_than_one_white_away(bool forward, unsigned long *nsteps)
+{
+    unsigned long i = openfile->current_x, chars = 0;
+    if (!forward)
+    {
+        i--;
+        for (; i != (unsigned long)-1 && (openfile->current->data[i] == ' ' || openfile->current->data[i] == '\t');
+             i--, chars++)
+            ;
+    }
+    else
+    {
+        for (; openfile->current->data[i] && (openfile->current->data[i] == ' ' || openfile->current->data[i] == '\t');
+             i++, chars++)
+            ;
+    }
+    (chars > 1) ? *nsteps = chars : 0;
+    return (chars > 1);
+}
+
+/* Check either behind or infront of 'current_x' if there are more than a single ' ' char.
+ * If so, return 'TRUE' and asign the number of spaces to 'nspaces'. */
+bool
+word_more_than_one_space_away(bool forward, unsigned long *nspaces)
+{
+    return word_more_than_one_char_away(forward, nspaces, ' ');
+}
+
+/* Check either behind or infront of 'current_x' if there are more than a single '\t' char.
+ * And if so, return 'TRUE' and assign the number of tabs to 'ntabs'. */
+bool
+word_more_than_one_tab_away(bool forward, unsigned long *ntabs)
+{
+    return word_more_than_one_char_away(forward, ntabs, '\t');
+}
+
+bool
+prev_word_is_comment_start(unsigned long *nsteps)
+{
+    unsigned long i = openfile->current_x - 1, steps = 0;
+    for (; i != (unsigned long)-1 && openfile->current->data[i] == ' '; i--, steps++)
+        ;
+    if (openfile->current->data[i - 1] && (openfile->current->data[i - 1] == '/' && openfile->current->data[i] == '/'))
+    {
+        *nsteps = steps + 2;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/* Return`s 'TRUE' when 'ch' is found in 'word', and 'FALSE' otherwise. */
+bool
+char_is_in_word(const char *word, const char ch, unsigned long *at)
+{
+    *at = (unsigned long)-1;
+    for (unsigned long i = 0; word[i] != '\0' && *at == (unsigned long)-1; (word[i] == ch) ? *at = i : 0, i++)
+        ;
+    return (*at != (unsigned long)-1);
 }
