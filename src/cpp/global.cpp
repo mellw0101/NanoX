@@ -217,6 +217,8 @@ std::vector<bracket_entry> bracket_entrys;
 std::vector<std::string> syntax_structs;
 /* Vector to hold class`es that are found, we use this to higlight created objects. */
 std::vector<std::string> syntax_classes;
+/* This vector is used to store all vars, for live syntax. */
+std::vector<std::string> syntax_vars;
 /* Vector for all includes that have been handled. */
 std::vector<std::string> handled_includes;
 
@@ -1257,4 +1259,23 @@ is_in_handled_includes_vec(std::string_view path)
         }
     }
     return FALSE;
+}
+
+bool
+syntax_var(std::string_view str)
+{
+    for (const auto &var : syntax_vars)
+    {
+        if (str == var)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+void
+new_syntax_var(const char *str)
+{
+    syntax_vars.push_back(str);
 }

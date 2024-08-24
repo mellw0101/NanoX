@@ -142,6 +142,7 @@ extern std::vector<bracket_pair>  bracket_pairs;
 extern std::vector<bracket_entry> bracket_entrys;
 extern std::vector<std::string>   syntax_structs;
 extern std::vector<std::string>   syntax_classes;
+extern std::vector<std::string>   syntax_vars;
 extern std::vector<std::string>   handled_includes;
 
 typedef void (*functionptrtype)(void);
@@ -179,7 +180,8 @@ char         *mbstrpbrk(const char *string, const char *accept);
 char         *mbrevstrpbrk(const char *head, const char *accept, const char *pointer);
 bool          has_blank_char(const char *string);
 bool          white_string(const char *string);
-void          strip_leading_blanks_from(char *string);
+void          strip_leading_blanks_from(char *str);
+void          strip_leading_chars_from(char *str, const char ch);
 
 /* Most functions in 'color.cpp'. */
 void set_interface_colorpairs(void);
@@ -240,6 +242,7 @@ bool   is_file_and_exists(const char *path);
 char **retrieve_lines_from_file(const char *path, unsigned long *nlines);
 char **retrieve_words_from_file(const char *path, unsigned long *nwords);
 char **words_from_file(const char *path, unsigned long *nwords);
+char **words_from_current_file(unsigned long *nwords);
 
 /* Some functions in 'global.cpp'. */
 functionptrtype  func_from_key(const int keycode);
@@ -252,6 +255,8 @@ void             shortcut_init(void);
 const char      *epithet_of_flag(const unsigned int flag);
 void             add_to_handled_includes_vec(const char *path);
 bool             is_in_handled_includes_vec(std::string_view path);
+bool             syntax_var(std::string_view str);
+void             new_syntax_var(const char *str);
 
 /* Some functions in 'help.cpp'. */
 void wrap_help_text_into_buffer(void);
@@ -532,28 +537,28 @@ void do_close_bracket(void);
 void do_test_window(void);
 
 /* 'syntax.cpp' */
-void        syntax_check_file(openfilestruct *file);
-void        add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c,
-                             const char *from_file = NULL);
-void        add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end,
-                                 colortype **c);
-bool        check_func_syntax(char ***words, unsigned int *i);
-void        check_syntax(const char *path);
-void        check_include_file_syntax(const char *path);
-int         add_syntax(const unsigned short *type, char *word);
-void        handle_include(char *str);
-void        handle_define(char *str);
-void        do_cpp_syntax(void);
-void        check_for_syntax_words(linestruct *line);
-colortype  *get_last_c_colortype(void);
-void        update_c_syntaxtype(void);
-syntaxtype *get_c_syntaxtype(void);
-void        add_syntax_word(const char *color_fg, const char *color_bg, const char *word, const char *from_file = NULL);
-void        add_syntax_struct(const char *name);
-void        add_syntax_class(const char *name);
-bool        is_syntax_struct(std::string_view str);
-bool        is_syntax_class(std::string_view str);
-void        handle_struct_syntax(char **word);
+void syntax_check_file(openfilestruct *file);
+void add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c,
+                      const char *from_file = NULL);
+void add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end,
+                          colortype **c);
+bool check_func_syntax(char ***words, unsigned long *i);
+void check_syntax(const char *path);
+void check_include_file_syntax(const char *path);
+int  add_syntax(const unsigned short *type, char *word);
+void handle_include(char *str);
+void handle_define(char *str);
+void do_cpp_syntax(void);
+void check_for_syntax_words(linestruct *line);
+void update_c_syntaxtype(void);
+void add_syntax_word(const char *color_fg, const char *color_bg, const char *word, const char *from_file = NULL);
+void set_last_c_colortype(void);
+void add_syntax_struct(const char *name);
+void add_syntax_class(const char *name);
+bool is_syntax_struct(std::string_view str);
+bool is_syntax_class(std::string_view str);
+void handle_struct_syntax(char **word);
+void openfile_syntax_c(void);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);

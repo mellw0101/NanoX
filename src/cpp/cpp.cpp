@@ -52,8 +52,8 @@ get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces, 
 unsigned short
 indent_char_len(linestruct *line)
 {
-    unsigned short i;
-    for (i = 0; line->data[i]; i++)
+    unsigned short i = 0;
+    for (; line->data[i]; i++)
     {
         if (line->data[i] != ' ' && line->data[i] != '\t')
         {

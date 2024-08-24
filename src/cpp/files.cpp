@@ -2782,7 +2782,8 @@ words_from_file(const char *path, unsigned long *nwords)
         return NULL;
     }
     char         *buf = NULL;
-    unsigned long len, size, bsize = 0, bcap = 100;
+    unsigned long size, bsize = 0, bcap = 100;
+    long          len;
     char        **words = (char **)nmalloc(sizeof(char *) * bcap);
     while ((len = getline(&buf, &size, file)) != EOF)
     {
@@ -2790,7 +2791,7 @@ words_from_file(const char *path, unsigned long *nwords)
         const char *start = buf, *end = buf;
         while (end < (buf + len))
         {
-            for (; end < (buf + len) && *end == ' '; end++)
+            for (; end < (buf + len) && (*end == ' ' || *end == '\t'); end++)
                 ;
             if (end == (buf + len))
             {
@@ -2811,7 +2812,21 @@ words_from_file(const char *path, unsigned long *nwords)
 }
 
 char **
-words_from_current_file(const char *path, unsigned long *nwords)
+words_from_current_file(unsigned long *nwords)
 {
+    PROFILE_FUNCTION;
+    if (openfile->filename != NULL)
+    {
+        const char *pwd = getenv("PWD"), *full_path = NULL;
+        if (pwd != NULL)
+
+        {
+            char *file = copy_of(openfile->filename);
+            full_path  = concat_path(pwd, file);
+            free(file);
+            NETLOGGER.log("%s\n", full_path);
+            return words_from_file(full_path, nwords);
+        }
+    }
     return NULL;
 }

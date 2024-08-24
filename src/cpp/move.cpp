@@ -308,11 +308,14 @@ to_prev_block(void)
                 for (; openfile->current->prev != NULL && is_line_comment(openfile->current);
                      openfile->current = openfile->current->prev)
                     ;
-                /* Back down one line. */
-                openfile->current = openfile->current->next;
-                get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
-                openfile->current_x = t_char;
-                edit_redraw(was_current, FLOWING);
+                if (openfile->current->next != NULL)
+                {
+                    /* Back down one line. */
+                    openfile->current = openfile->current->next;
+                    get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
+                    openfile->current_x = t_char;
+                    edit_redraw(was_current, FLOWING);
+                }
                 return;
             }
         }

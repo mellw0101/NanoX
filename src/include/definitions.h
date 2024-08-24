@@ -227,6 +227,9 @@ constexpr unsigned char HAD_ANCHOR_AT_START  = (1 << 6);
 /* Color defines for diffrent types. */
 #define VAR_COLOR           "lagoon"
 #define CONTROL_COLOR       "bold,mauve"
+#define DEFINE_COLOR        "bold,blue"
+#define STRUCT_COLOR        "brightgreen"
+#define FUNC_COLOR          "yellow"
 #define XTERM_CONTROL_COLOR "brightmagenta"
 
 #include "constexpr_utils.h"

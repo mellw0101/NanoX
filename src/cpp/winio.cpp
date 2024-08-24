@@ -1,7 +1,10 @@
 /// @file winio.cpp
+#include "../include/definitions.h"
+
 #include "../include/prototypes.h"
 #include "../include/revision.h"
 
+#include <Mlib/Debug.h>
 #include <Mlib/Profile.h>
 #include <cctype>
 #include <cstring>

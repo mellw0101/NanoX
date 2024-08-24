@@ -66,14 +66,9 @@ is_line_in_bracket_pair(const unsigned long lineno)
 bool
 is_empty_line(linestruct *line)
 {
-    unsigned i = 0;
-    for (; line->data[i]; i++)
-    {
-        if (i > 0)
-        {
-            return FALSE;
-        }
-    }
+    unsigned long i = 0;
+    for (; line->data[i] && i < 1; i++)
+        ;
     return (i == 0);
 }
 
@@ -139,8 +134,7 @@ move_line(linestruct **line, bool up, bool refresh)
             free((*line)->prev->data);
             (*line)->prev->data = copy_of((*line)->data);
             free((*line)->data);
-            (*line)->data = copy_of(tmp_data);
-            free(tmp_data);
+            (*line)->data     = tmp_data;
             openfile->current = (*line)->prev;
         }
     }
@@ -152,8 +146,7 @@ move_line(linestruct **line, bool up, bool refresh)
             free((*line)->next->data);
             (*line)->next->data = copy_of((*line)->data);
             free((*line)->data);
-            (*line)->data = copy_of(tmp_data);
-            free(tmp_data);
+            (*line)->data     = tmp_data;
             openfile->current = (*line)->next;
         }
     }

@@ -1554,7 +1554,7 @@ main(int argc, char **argv)
         NETLOGGER.enable();
         NETLOGGER.init(netlogger, 8080);
     }
-    NETLOGGER.send_to_server("Starting nano.\n");
+    NETLOGGER.send_to_server("Starting NanoX.\n");
     atexit(
         []
         {
@@ -1564,7 +1564,7 @@ main(int argc, char **argv)
             {
                 NETLOGGER << str << NETLOG_ENDL;
             }
-            NETLOGGER.send_to_server("\nExiting nano.\n");
+            NETLOGGER.send_to_server("\nExiting NanoX.\n");
             NETLOGGER.destroy();
         });
     int stdin_flags;
@@ -2199,7 +2199,7 @@ main(int argc, char **argv)
     }
     /* Extremly experimental, this is a test for live syntax handeling. */
     do_cpp_syntax();
-    all_brackets_pos();
+    /* all_brackets_pos(); */
     /* Set the margin to an impossible value to force re-evaluation. */
     margin         = 12345;
     we_are_running = TRUE;
