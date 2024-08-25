@@ -586,5 +586,47 @@ struct bracket_pair
     unsigned long end_line;
 };
 
+typedef struct
+{
+    void *(*function)(void *);
+    void  *arg;
+    void **result;
+    void (*callback)(void *);
+} task_t;
+
+#define MAX_THREADS 4
+#define QUEUE_SIZE  10
+
+typedef struct
+{
+    task_t          tasks[QUEUE_SIZE];
+    int             front;
+    int             rear;
+    int             count;
+    pthread_mutex_t mutex;
+    pthread_cond_t  cond;
+} task_queue_t;
+
+typedef struct callback_node_t
+{
+    void (*callback)(void *);
+    void            *result;
+    callback_node_t *next;
+} callback_node_t;
+
+typedef struct
+{
+    callback_node_t *head;
+    callback_node_t *tail;
+    pthread_mutex_t  mutex;
+} callback_queue_t;
+
+typedef struct
+{
+    char        **words;
+    unsigned long nwords;
+    char         *path;
+} word_search_task_t;
+
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"

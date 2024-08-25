@@ -1061,3 +1061,13 @@ to_next_anchor(void)
     while (!line->has_anchor && line != openfile->current);
     go_to_and_confirm(line);
 }
+
+/* char *
+find_header(const char *str, bool local)
+{
+    DIR    *dir;
+    dirent *entry;
+    if (local)
+    {}
+    return NULL;
+} */

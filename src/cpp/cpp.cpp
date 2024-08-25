@@ -240,7 +240,7 @@ get_bracket_start_end(unsigned long lineno, unsigned long *start, unsigned long 
 void
 do_close_bracket(void)
 {
-    unsigned long start_line, end_line;
+    /* unsigned long start_line, end_line;
     linestruct   *line, *was_current;
     get_bracket_start_end(openfile->current->lineno, &start_line, &end_line);
     if (start_line != 0 && end_line != 0)
@@ -255,7 +255,8 @@ do_close_bracket(void)
         }
         edit_redraw(was_current, FLOWING);
         // draw_row(openfile->current->lineno, "", openfile->current, 0);
-    }
+    } */
+    submit_search_task("/usr/include/stdio.h");
 }
 
 void

@@ -146,6 +146,12 @@ extern std::vector<std::string>   syntax_vars;
 extern std::vector<std::string>   syntax_funcs;
 extern std::vector<std::string>   handled_includes;
 
+extern task_queue_t          *task_queue;
+extern pthread_t             *threads;
+extern volatile sig_atomic_t *stop_thread_flags;
+
+extern callback_queue_t *callback_queue;
+
 typedef void (*functionptrtype)(void);
 
 /* The two needed functions from 'browser.cpp'. */
@@ -602,5 +608,20 @@ void          select_line(linestruct *line, unsigned long from_col, unsigned lon
 
 /* 'brackets.cpp' */
 void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_start);
+
+/* 'threadpool.cpp' */
+void init_queue_task(void);
+void shutdown_queue(void);
+void submit_task(void *(*function)(void *), void *arg, void **result, void (*callback)(void *));
+void stop_thread(unsigned char thread_id);
+
+/* 'event.cpp' */
+void init_event_handler(void);
+void enqueue_callback(void (*callback)(void *), void *result);
+void prosses_callback_queue(void);
+void cleanup_event_handler(void);
+
+/* 'tasks.cpp' */
+void submit_search_task(const char *path);
 
 #include <Mlib/def.h>

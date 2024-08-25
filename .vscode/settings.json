@@ -51,8 +51,8 @@
             }
         ]
     },
-    "editor.fontSize": 17,  // Adjust this to your preferred font size
-    "editor.lineHeight": 20,  // Adjust this to your preferred line height
+    "editor.fontSize": 20,  // Adjust this to your preferred font size
+    "editor.lineHeight": 22,  // Adjust this to your preferred line height
     "terminal.integrated.fontFamily": "JetBrains Mono",
     "terminal.integrated.fontWeight": "400",  // Use 600 for semi-bold in terminal
     "terminal.integrated.fontSize": 16

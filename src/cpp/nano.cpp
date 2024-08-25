@@ -1544,9 +1544,11 @@ process_a_keystroke(void)
 int
 main(int argc, char **argv)
 {
+    init_queue_task();
+    init_event_handler();
     Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
     LOUT.setOutputFile("/home/mellw/.NanoX.log");
-    LOUT_logI("Starting nano");
+    LOUT_logI("Starting NanoX");
     term                  = getenv("TERM");
     const char *netlogger = getenv("NETLOGGER");
     if (netlogger != NULL)
@@ -2206,6 +2208,7 @@ main(int argc, char **argv)
     /* TODO: This is the main loop of the editor. */
     while (TRUE)
     {
+        prosses_callback_queue();
         confirm_margin();
         if (on_a_vt && waiting_keycodes() == 0)
         {
@@ -2261,5 +2264,7 @@ main(int argc, char **argv)
         /* Read in and interpret a single keystroke. */
         process_a_keystroke();
     }
+    cleanup_event_handler();
+    shutdown_queue();
     return 0;
 }

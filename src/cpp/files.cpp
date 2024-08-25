@@ -2781,10 +2781,10 @@ words_from_file(const char *path, unsigned long *nwords)
         LOUT_logE("Failed to open file: '%s'.");
         return NULL;
     }
-    char         *buf = NULL;
-    unsigned long size, bsize = 0, bcap = 100;
-    long          len;
-    char        **words = (char **)nmalloc(sizeof(char *) * bcap);
+    static thread_local char *buf = NULL;
+    unsigned long             size, bsize = 0, bcap = 100;
+    long                      len;
+    char                    **words = (char **)nmalloc(sizeof(char *) * bcap);
     while ((len = getline(&buf, &size, file)) != EOF)
     {
         (buf[len - 1] == '\n') ? buf[--len] = '\0' : 0;
@@ -2829,4 +2829,17 @@ words_from_current_file(unsigned long *nwords)
         }
     }
     return NULL;
+}
+
+char *
+full_current_file_path(void)
+{
+    static thread_local char buf[PATH_MAX];
+    const char              *pwd = getenv("PWD");
+    if (pwd == NULL)
+    {
+        return NULL;
+    }
+    snprintf(buf, PATH_MAX, (openfile->filename[0] == '/') ? "%s%s" : "%s/%s", pwd, openfile->filename);
+    return copy_of(buf);
 }
