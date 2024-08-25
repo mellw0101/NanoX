@@ -143,6 +143,7 @@ extern std::vector<bracket_entry> bracket_entrys;
 extern std::vector<std::string>   syntax_structs;
 extern std::vector<std::string>   syntax_classes;
 extern std::vector<std::string>   syntax_vars;
+extern std::vector<std::string>   syntax_funcs;
 extern std::vector<std::string>   handled_includes;
 
 typedef void (*functionptrtype)(void);
@@ -256,7 +257,9 @@ const char      *epithet_of_flag(const unsigned int flag);
 void             add_to_handled_includes_vec(const char *path);
 bool             is_in_handled_includes_vec(std::string_view path);
 bool             syntax_var(std::string_view str);
+bool             syntax_func(std::string_view str);
 void             new_syntax_var(const char *str);
+void             new_syntax_func(const char *str);
 
 /* Some functions in 'help.cpp'. */
 void wrap_help_text_into_buffer(void);

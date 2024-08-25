@@ -219,6 +219,8 @@ std::vector<std::string> syntax_structs;
 std::vector<std::string> syntax_classes;
 /* This vector is used to store all vars, for live syntax. */
 std::vector<std::string> syntax_vars;
+/* This is to store functions to avoid douplicates. */
+std::vector<std::string> syntax_funcs;
 /* Vector for all includes that have been handled. */
 std::vector<std::string> handled_includes;
 
@@ -1274,8 +1276,27 @@ syntax_var(std::string_view str)
     return FALSE;
 }
 
+bool
+syntax_func(std::string_view str)
+{
+    for (const auto &func : syntax_funcs)
+    {
+        if (str == func)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 void
 new_syntax_var(const char *str)
 {
     syntax_vars.push_back(str);
+}
+
+void
+new_syntax_func(const char *str)
+{
+    syntax_funcs.push_back(str);
 }

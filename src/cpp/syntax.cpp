@@ -16,11 +16,11 @@ syntax_check_file(openfilestruct *file)
     if (fext && (strncmp(fext, "cpp", 3) == 0 || strncmp(fext, "c", 1) == 0))
     {
         set_last_c_colortype();
-        /* for (linestruct *line = file->filetop; line != NULL; line = line->next)
+        for (linestruct *line = file->filetop; line != NULL; line = line->next)
         {
             check_for_syntax_words(line);
-        } */
-        openfile_syntax_c();
+        }
+        // openfile_syntax_c();
     }
 }
 
@@ -90,6 +90,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
 void
 add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c, const char *from_file)
 {
+    PROFILE_FUNCTION;
     if (*c == NULL)
     {
         return;
@@ -181,7 +182,11 @@ check_func_syntax(char ***words, unsigned long *i)
     }
     if (is_word_func((*words)[*i], &at))
     {
-        add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
+        if (!syntax_func((*words)[*i]))
+        {
+            new_syntax_func((*words)[*i]);
+            add_syntax_word(FUNC_COLOR, NULL, rgx_word((*words)[*i]));
+        }
         (*words)[*i] += at + 1;
         type = retrieve_c_syntax_type((*words)[*i]);
         if (type)
@@ -197,7 +202,11 @@ check_func_syntax(char ***words, unsigned long *i)
     {
         if (*((*words)[(*i) + 1]) == '(')
         {
-            add_syntax_word("yellow", NULL, rgx_word((*words)[*i]));
+            if (!syntax_func((*words)[*i]))
+            {
+                new_syntax_func((*words)[*i]);
+                add_syntax_word(FUNC_COLOR, NULL, rgx_word((*words)[*i]));
+            }
             return TRUE;
         }
     }
@@ -476,7 +485,11 @@ add_syntax(const unsigned short *type, char *word)
             if (word[i] == ',')
             {
                 word[i] = '\0';
-                add_syntax_word(VAR_COLOR, NULL, rgx_word(word));
+                if (!syntax_var(word))
+                {
+                    new_syntax_func(word);
+                    add_syntax_word(VAR_COLOR, NULL, rgx_word(word));
+                }
                 return NEXT_WORD_ALSO;
             }
             if (word[i] == ';' || word[i] == ')')
@@ -485,7 +498,11 @@ add_syntax(const unsigned short *type, char *word)
                 break;
             }
         }
-        add_syntax_word(VAR_COLOR, NULL, rgx_word(word));
+        if (!syntax_var(word))
+        {
+            new_syntax_func(word);
+            add_syntax_word(VAR_COLOR, NULL, rgx_word(word));
+        }
     }
     return 0;
 }
@@ -606,8 +623,13 @@ check_for_syntax_words(linestruct *line)
                     ;
                 else
                 {
+
                     handle_struct_syntax(&words[i + 1]);
-                    add_syntax_word("lagoon", NULL, rgx_word(words[++i]));
+                    if (!syntax_var(words[++i]))
+                    {
+                        new_syntax_var(words[i]);
+                        add_syntax_word(VAR_COLOR, NULL, rgx_word(words[i]));
+                    }
                 }
             }
         }
@@ -616,7 +638,11 @@ check_for_syntax_words(linestruct *line)
             if (words[i + 1] != NULL)
             {
                 handle_struct_syntax(&words[i + 1]);
-                add_syntax_word("lagoon", NULL, rgx_word(words[++i]));
+                if (!syntax_var(words[i]))
+                {
+                    new_syntax_var(words[i]);
+                    add_syntax_word(VAR_COLOR, NULL, rgx_word(words[++i]));
+                }
             }
         }
         const unsigned short type = retrieve_c_syntax_type(words[i]);
@@ -634,7 +660,11 @@ check_for_syntax_words(linestruct *line)
                         break;
                     }
                 }
-                add_syntax_word("yellow", NULL, rgx_word(words[i]));
+                if (!syntax_func(words[i]))
+                {
+                    new_syntax_func(words[i]);
+                    add_syntax_word(FUNC_COLOR, NULL, rgx_word(words[i]));
+                }
                 words[i] += j + 1;
                 --i;
                 last_type = 0;
