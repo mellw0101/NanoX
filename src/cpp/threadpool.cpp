@@ -1,5 +1,6 @@
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -38,7 +39,8 @@ lock_pthread_mutex(pthread_mutex_t *mutex, bool lock)
         }
         case EDEADLK :
         {
-            LOUT_logE("Mutex: 'task_queue->mutex' caused a deadlock or was already owned by this thread.");
+            LOUT_logE("Mutex: 'task_queue->mutex' caused a deadlock or was already owned by this "
+                      "thread.");
             break;
         }
         case EINVAL :
@@ -53,7 +55,8 @@ lock_pthread_mutex(pthread_mutex_t *mutex, bool lock)
         }
         default :
         {
-            LOUT_logE("Mutex: 'task_queue->mutex' encountered an unexpected error code: %d.", result);
+            LOUT_logE(
+                "Mutex: 'task_queue->mutex' encountered an unexpected error code: %d.", result);
         }
     }
 }
@@ -82,18 +85,17 @@ sub_thread_signal_handler(int sig)
     if (sig == SIGUSR1)
     {
         block_pthread_sig(SIGUSR1, TRUE);
-        pthread_t     this_thread = pthread_self();
-        unsigned char thread_id   = thread_id_from_pthread(&this_thread);
-        LOUT_logI("Thread '%u' is paused. Waiting for SIGUSR2 to resume...", thread_id);
         sigset_t mask;
         int      received_sig;
         sigemptyset(&mask);
         sigaddset(&mask, SIGUSR2);
         /* Wait for SIGUSR2 */
         block_pthread_sig(SIGUSR2, FALSE);
-        if (sigwait(&mask, &received_sig) == 0)
+        if (sigwait(&mask, &received_sig) != 0)
         {
-            LOUT_logI("Thread '%u' resumed.", thread_id);
+            pthread_t     this_thread = pthread_self();
+            unsigned char thread_id   = thread_id_from_pthread(&this_thread);
+            LOUT_logI("Thread: '%u'. Failed to resume execution.", thread_id);
         }
         block_pthread_sig(SIGUSR2, TRUE);
         block_pthread_sig(SIGUSR1, FALSE);
@@ -196,6 +198,15 @@ init_queue_task(void)
             LOUT_logE("Failed to create thread: '%u'.", i);
         }
     }
+}
+
+int
+task_queue_count(void)
+{
+    PROFILE_FUNCTION;
+    pthread_mutex_guard_t guard(&task_queue->mutex);
+    int                   current_count = task_queue->count;
+    return (current_count);
 }
 
 /* Cleanup the threadpool and join all threads. */

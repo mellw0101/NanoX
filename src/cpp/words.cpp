@@ -54,7 +54,6 @@ words_in_line(linestruct *line)
 char **
 words_in_str(const char *str, unsigned long *size)
 {
-    PROFILE_FUNCTION;
     if (str == NULL)
     {
         return NULL;
@@ -266,13 +265,15 @@ word_more_than_one_white_away(bool forward, unsigned long *nsteps)
     if (!forward)
     {
         i--;
-        for (; i != (unsigned long)-1 && (openfile->current->data[i] == ' ' || openfile->current->data[i] == '\t');
+        for (; i != (unsigned long)-1 &&
+               (openfile->current->data[i] == ' ' || openfile->current->data[i] == '\t');
              i--, chars++)
             ;
     }
     else
     {
-        for (; openfile->current->data[i] && (openfile->current->data[i] == ' ' || openfile->current->data[i] == '\t');
+        for (; openfile->current->data[i] &&
+               (openfile->current->data[i] == ' ' || openfile->current->data[i] == '\t');
              i++, chars++)
             ;
     }
@@ -302,7 +303,8 @@ prev_word_is_comment_start(unsigned long *nsteps)
     unsigned long i = openfile->current_x - 1, steps = 0;
     for (; i != (unsigned long)-1 && openfile->current->data[i] == ' '; i--, steps++)
         ;
-    if (openfile->current->data[i - 1] && (openfile->current->data[i - 1] == '/' && openfile->current->data[i] == '/'))
+    if (openfile->current->data[i - 1] &&
+        (openfile->current->data[i - 1] == '/' && openfile->current->data[i] == '/'))
     {
         *nsteps = steps + 2;
         return TRUE;
@@ -315,7 +317,8 @@ bool
 char_is_in_word(const char *word, const char ch, unsigned long *at)
 {
     *at = (unsigned long)-1;
-    for (unsigned long i = 0; word[i] != '\0' && *at == (unsigned long)-1; (word[i] == ch) ? *at = i : 0, i++)
+    for (unsigned long i = 0; word[i] != '\0' && *at == (unsigned long)-1;
+         (word[i] == ch) ? *at = i : 0, i++)
         ;
     return (*at != (unsigned long)-1);
 }

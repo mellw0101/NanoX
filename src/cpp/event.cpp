@@ -58,8 +58,10 @@ enqueue_callback(callback_functionptr_t callback, void *result)
     under_callback_mutex(
         [node]
         {
-            /* If 'tail' is not empty, link 'node' to 'tail->next'.  Otherwise, we set 'node' as the 'head'. */
-            (callback_queue->tail) ? (callback_queue->tail->next = node) : (callback_queue->head = node);
+            /* If 'tail' is not empty, link 'node' to 'tail->next'.
+             * Otherwise, we set 'node' as the 'head'. */
+            (callback_queue->tail) ? (callback_queue->tail->next = node) :
+                                     (callback_queue->head = node);
             /* Now we set the 'tail' ptr to 'new_node'. */
             callback_queue->tail = node;
         });
@@ -69,7 +71,6 @@ enqueue_callback(callback_functionptr_t callback, void *result)
 void
 prosses_callback_queue(void)
 {
-    PROFILE_FUNCTION;
     /* Lock the callback mutex while we retrieve a callback. */
     lock_callback_mutex(TRUE);
     /* Here we fetch all callbacks until there are no more left. */

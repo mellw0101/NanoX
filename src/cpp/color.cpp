@@ -97,8 +97,7 @@ set_interface_colorpairs(void)
 }
 
 /* Assign a pair number to each of the foreground/background color combinations
- * in the given syntax, giving identical combinations the same number.
- * TODO: (set_syntax_colorpairs) - This is where syntax colors are set, implement func colors. */
+ * in the given syntax, giving identical combinations the same number. */
 void
 set_syntax_colorpairs(syntaxtype *sntx)
 {
@@ -244,7 +243,8 @@ find_and_prime_applicable_syntax(void)
                 magicstring = magic_file(cookie, openfile->filename);
                 if (magicstring == NULL)
                 {
-                    statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
+                    statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename,
+                               magic_error(cookie));
                 }
             }
         }
@@ -336,7 +336,8 @@ check_the_multis(linestruct *line)
         else if (line->multidata[ink->id] == JUSTONTHIS)
         {
             if (astart && anend &&
-                regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch, 0) != 0)
+                regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch,
+                        0) != 0)
             {
                 continue;
             }
@@ -397,13 +398,15 @@ precalc_multicolorinfo(void)
             line->multidata[ink->id] = NOTHING;
             /* When the line contains a start match, look for an end,
              * and if found, mark all the lines that are affected. */
-            while (regexec(ink->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
+            while (regexec(ink->start, line->data + index, 1, &startmatch,
+                           (index == 0) ? 0 : REG_NOTBOL) == 0)
             {
                 /* Begin looking for an end match after the start match. */
                 index += startmatch.rm_eo;
                 /* If there is an end match on this same line, mark the line,
                  * but continue looking for other starts after it. */
-                if (regexec(ink->end, line->data + index, 1, &endmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
+                if (regexec(ink->end, line->data + index, 1, &endmatch,
+                            (index == 0) ? 0 : REG_NOTBOL) == 0)
                 {
                     line->multidata[ink->id] = JUSTONTHIS;
                     index += endmatch.rm_eo;

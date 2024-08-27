@@ -372,8 +372,10 @@ parse_next_regex(char *ptr)
         jot_error(N_("Regex strings must begin and end with a \" character"));
         return NULL;
     }
-    /* Continue until the end of the line, or until a double quote followed by end-of-line or a blank. */
-    while (*ptr != '\0' && (*ptr != '"' || (ptr[1] != '\0' && !constexpr_isblank((unsigned char)ptr[1]))))
+    /* Continue until the end of the line, or until a double quote followed by end-of-line or a
+     * blank. */
+    while (*ptr != '\0' &&
+           (*ptr != '"' || (ptr[1] != '\0' && !constexpr_isblank((unsigned char)ptr[1]))))
     {
         ptr++;
     }
@@ -423,7 +425,8 @@ compile(const char *expression, int rex_flags, regex_t **packed)
 
 /* Same as compile but errors with origin file. */
 bool
-compile_with_callback(const char *expression, int rex_flags, regex_t **packed, const char *from_file)
+compile_with_callback(const char *expression, int rex_flags, regex_t **packed,
+                      const char *from_file)
 {
     regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
     int      outcome  = regcomp(compiled, expression, rex_flags);
@@ -526,9 +529,9 @@ check_for_nonempty_syntax(void)
 bool
 is_universal(void (*f)(void))
 {
-    return (f == do_left || f == do_right || f == do_home || f == do_end || f == to_prev_word || f == to_next_word ||
-            f == do_delete || f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter ||
-            f == do_verbatim_input);
+    return (f == do_left || f == do_right || f == do_home || f == do_end || f == to_prev_word ||
+            f == to_next_word || f == do_delete || f == do_backspace || f == cut_text ||
+            f == paste_text || f == do_tab || f == do_enter || f == do_verbatim_input);
 }
 
 /* Bind or unbind a key combo, to or from a function. */
@@ -721,9 +724,12 @@ is_good_file(char *file)
         return FALSE;
     }
     /* If the thing exists, it may be neither a directory nor a device. */
-    if (stat(file, &rcinfo) != -1 && (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode)))
+    if (stat(file, &rcinfo) != -1 &&
+        (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode)))
     {
-        jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
+        jot_error(
+            S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"),
+            file);
         return FALSE;
     }
     return TRUE;
@@ -1137,7 +1143,8 @@ set_interface_color(const unsigned char element, char *combotext)
 
 /* Read regex strings enclosed in double quotes from the line pointed at
  * by ptr, and store them quoteless in the passed storage place.
- * TODO: (grab_and_store) - Implement live syntax for defined typed like struct`s, class`s and define`s. */
+ * TODO: (grab_and_store) - Implement live syntax for defined typed like struct`s, class`s and
+ * define`s. */
 void
 grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
 {
@@ -1269,9 +1276,10 @@ check_vitals_mapped(void)
             {
                 if (first_sc_for(inmenus[v], f->func) == NULL)
                 {
-                    jot_error(N_("No key is bound to function '%s' in menu '%s'.  Exiting.\n"), f->tag,
-                              menuToName(inmenus[v]));
-                    die(_("If needed, use nano with the -I option to adjust your nanorc settings.\n"));
+                    jot_error(N_("No key is bound to function '%s' in menu '%s'.  Exiting.\n"),
+                              f->tag, menuToName(inmenus[v]));
+                    die(_("If needed, use nano with the -I option to adjust your nanorc "
+                          "settings.\n"));
                 }
                 else
                 {
@@ -1415,9 +1423,10 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
 #endif
         }
-        else if (just_syntax && (strcmp(keyword, "set") == 0 || strcmp(keyword, "unset") == 0 ||
-                                 strcmp(keyword, "bind") == 0 || strcmp(keyword, "unbind") == 0 ||
-                                 strcmp(keyword, "include") == 0 || strcmp(keyword, "extendsyntax") == 0))
+        else if (just_syntax &&
+                 (strcmp(keyword, "set") == 0 || strcmp(keyword, "unset") == 0 ||
+                  strcmp(keyword, "bind") == 0 || strcmp(keyword, "unbind") == 0 ||
+                  strcmp(keyword, "include") == 0 || strcmp(keyword, "extendsyntax") == 0))
         {
             if (intros_only)
             {
@@ -1428,9 +1437,10 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
                 break;
             }
         }
-        else if (intros_only && (strcmp(keyword, "color") == 0 || strcmp(keyword, "icolor") == 0 ||
-                                 strcmp(keyword, "comment") == 0 || strcmp(keyword, "tabgives") == 0 ||
-                                 strcmp(keyword, "linter") == 0 || strcmp(keyword, "formatter") == 0))
+        else if (intros_only &&
+                 (strcmp(keyword, "color") == 0 || strcmp(keyword, "icolor") == 0 ||
+                  strcmp(keyword, "comment") == 0 || strcmp(keyword, "tabgives") == 0 ||
+                  strcmp(keyword, "linter") == 0 || strcmp(keyword, "formatter") == 0))
         {
             if (!opensyntax)
             {
@@ -1705,7 +1715,8 @@ do_rcfiles(void)
         get_homedir();
         /* Now try to find a nanorc file in the user's home directory or in the
          * XDG configuration directories, and process the first one found. */
-        if (have_nanorc(homedir, "/" HOME_RC_NAME) || have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) ||
+        if (have_nanorc(homedir, "/" HOME_RC_NAME) ||
+            have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) ||
             have_nanorc(homedir, "/.config/nano/" RCFILE_NAME))
         {
             parse_one_nanorc();

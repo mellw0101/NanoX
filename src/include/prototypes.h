@@ -219,31 +219,32 @@ void copy_text(void);
 void paste_text(void);
 
 /* Most functions in 'files.cpp'. */
-void   make_new_buffer(void);
-bool   delete_lockfile(const char *lockfilename);
-bool   open_buffer(const char *filename, bool new_one);
-void   set_modified(void);
-void   prepare_for_display(void);
-void   mention_name_and_linecount(void);
-void   switch_to_prev_buffer(void);
-void   switch_to_next_buffer(void);
-void   close_buffer(void);
-void   read_file(FILE *f, int fd, const char *filename, bool undoable);
-int    open_file(const char *filename, bool new_one, FILE **f);
-char  *get_next_filename(const char *name, const char *suffix);
-void   do_insertfile(void);
-void   do_execute(void);
-char  *get_full_path(const char *origpath);
-char  *safe_tempfile(FILE **stream);
-void   init_operating_dir(void);
-bool   outside_of_confinement(const char *currpath, bool allow_tabcomp);
-void   init_backup_dir(void);
-int    copy_file(FILE *inn, FILE *out, bool close_out);
-bool   write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
-bool   write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
-int    write_it_out(bool exiting, bool withprompt);
-void   do_writeout(void);
-void   do_savefile(void);
+void  make_new_buffer(void);
+bool  delete_lockfile(const char *lockfilename);
+bool  open_buffer(const char *filename, bool new_one);
+void  set_modified(void);
+void  prepare_for_display(void);
+void  mention_name_and_linecount(void);
+void  switch_to_prev_buffer(void);
+void  switch_to_next_buffer(void);
+void  close_buffer(void);
+void  read_file(FILE *f, int fd, const char *filename, bool undoable);
+int   open_file(const char *filename, bool new_one, FILE **f);
+char *get_next_filename(const char *name, const char *suffix);
+void  do_insertfile(void);
+void  do_execute(void);
+char *get_full_path(const char *origpath);
+char *safe_tempfile(FILE **stream);
+void  init_operating_dir(void);
+bool  outside_of_confinement(const char *currpath, bool allow_tabcomp);
+void  init_backup_dir(void);
+int   copy_file(FILE *inn, FILE *out, bool close_out);
+bool  write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method,
+                 bool annotate);
+bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
+int  write_it_out(bool exiting, bool withprompt);
+void do_writeout(void);
+void do_savefile(void);
 char  *real_dir_from_tilde(const char *path);
 int    diralphasort(const void *va, const void *vb);
 char  *input_tab(char *buf, unsigned long *place, void (*refresh_func)(void), bool *listed);
@@ -355,8 +356,8 @@ void        inject(char *burst, unsigned long count);
 unsigned long get_statusbar_page_start(unsigned long base, unsigned long column);
 void          put_cursor_at_end_of_answer(void);
 void          add_or_remove_pipe_symbol_from_answer(void);
-int do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg,
-              ...);
+int do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void),
+              const char *msg, ...);
 int ask_user(bool withall, const char *question);
 
 /* Most functions in 'rcfile.cpp'. */
@@ -364,7 +365,8 @@ short      color_to_short(const char *colorname, bool &vivid, bool &thick);
 char      *parse_next_word(char *ptr);
 void       parse_rule(char *ptr, int rex_flags);
 bool       compile(const char *expression, int rex_flags, regex_t **packed);
-bool       compile_with_callback(const char *expression, int rex_flags, regex_t **packed, const char *from_file);
+bool       compile_with_callback(const char *expression, int rex_flags, regex_t **packed,
+                                 const char *from_file);
 void       begin_new_syntax(char *ptr);
 bool       parse_combination(char *combotext, short *fg, short *bg, int *attributes);
 void       set_interface_color(const unsigned char element, char *combotext);
@@ -380,8 +382,8 @@ void       do_rcfiles(void);
 /* Most functions in 'search.cpp'. */
 bool regexp_init(const char *regexp);
 void tidy_up_after_search(void);
-int  findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *match_len, bool skipone,
-                 const linestruct *begin, unsigned long begin_x);
+int  findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *match_len,
+                 bool skipone, const linestruct *begin, unsigned long begin_x);
 void do_search_forward(void);
 void do_search_backward(void);
 void do_findprevious(void);
@@ -452,8 +454,8 @@ unsigned long breadth(const char *text);
 void          new_magicline(void);
 void          remove_magicline(void);
 bool          mark_is_before_cursor(void);
-void          get_region(linestruct **top, unsigned long *top_x, linestruct **bot, unsigned long *bot_x);
-void          get_range(linestruct **top, linestruct **bot);
+void get_region(linestruct **top, unsigned long *top_x, linestruct **bot, unsigned long *bot_x);
+void get_range(linestruct **top, linestruct **bot);
 unsigned long number_of_characters_in(const linestruct *begin, const linestruct *end);
 const char   *strstrwrapper(const char *haystack, const char *needle, const char *start);
 const char   *tail(const char *path);
@@ -475,7 +477,8 @@ void          wipe_statusbar(void);
 void          blank_bottombars(void);
 void          blank_it_when_expired(void);
 void          set_blankdelay_to_one(void);
-char         *display_string(const char *buf, unsigned long column, unsigned long span, bool isdata, bool isprompt);
+char         *display_string(const char *buf, unsigned long column, unsigned long span, bool isdata,
+                             bool isprompt);
 void          titlebar(const char *path);
 void          minibar(void);
 void          statusline(message_type importance, const char *msg, ...);
@@ -484,15 +487,16 @@ void          warn_and_briefly_pause(const char *msg);
 void          bottombars(int menu);
 void          post_one_key(const char *keystroke, const char *tag, int width);
 void          place_the_cursor(void);
-void          draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col);
-int           update_line(linestruct *line, unsigned long index);
-int           update_softwrapped_line(linestruct *line);
-bool          line_needs_update(const unsigned long old_column, const unsigned long new_column);
-int           go_back_chunks(int nrows, linestruct **line, unsigned long *leftedge);
-int           go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge);
-bool          less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge);
-void          edit_scroll(bool direction);
-unsigned long get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool *kickoff, bool *end_of_line);
+void draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col);
+int  update_line(linestruct *line, unsigned long index);
+int  update_softwrapped_line(linestruct *line);
+bool line_needs_update(const unsigned long old_column, const unsigned long new_column);
+int  go_back_chunks(int nrows, linestruct **line, unsigned long *leftedge);
+int  go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge);
+bool less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge);
+void edit_scroll(bool direction);
+unsigned long get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool *kickoff,
+                                      bool *end_of_line);
 unsigned long get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *leftedge);
 unsigned long chunk_for(unsigned long column, linestruct *line);
 unsigned long leftedge_for(unsigned long column, linestruct *line);
@@ -535,8 +539,8 @@ void do_cancel(void);
 
 /* All functions in 'cpp.cpp'. */
 bool isCppSyntaxChar(const char c);
-void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces, unsigned short *t_char,
-                     unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
+void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces,
+                     unsigned short *t_char, unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
 
 unsigned short indent_char_len(linestruct *line);
 
@@ -553,8 +557,8 @@ void syntax_check_file(openfilestruct *file);
 bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr);
 void add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c,
                       const char *from_file = NULL);
-void add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end,
-                          colortype **c);
+void add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start,
+                          const char *end, colortype **c);
 bool check_func_syntax(char ***words, unsigned long *i);
 void check_syntax(const char *path);
 void check_include_file_syntax(const char *path);
@@ -564,7 +568,8 @@ void handle_define(char *str);
 void do_cpp_syntax(void);
 void check_for_syntax_words(linestruct *line);
 void update_c_syntaxtype(void);
-void add_syntax_word(const char *color_fg, const char *color_bg, const char *word, const char *from_file = NULL);
+void add_syntax_word(const char *color_fg, const char *color_bg, const char *word,
+                     const char *from_file = NULL);
 void set_last_c_colortype(void);
 void add_syntax_struct(const char *name);
 void add_syntax_class(const char *name);
@@ -618,8 +623,10 @@ void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_st
 void          lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
 void          pause_all_sub_threads(bool pause);
 void          init_queue_task(void);
+int           task_queue_count(void);
 void          shutdown_queue(void);
-void          submit_task(task_functionptr_t function, void *arg, void **result, callback_functionptr_t callback);
+void          submit_task(task_functionptr_t function, void *arg, void **result,
+                          callback_functionptr_t callback);
 void          stop_thread(unsigned char thread_id);
 unsigned char thread_id_from_pthread(pthread_t *thread);
 
@@ -636,7 +643,10 @@ void cleanup_event_handler(void);
 void submit_search_task(const char *path);
 void submit_find_in_dir(const char *file, const char *in_dir);
 void sub_thread_delete_c_syntax(char *word);
-void sub_thread_add_c_syntax(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **color_type);
+void sub_thread_add_c_syntax(const char *color_fg, const char *color_bg, const char *rgxstr,
+                             colortype **color_type);
+void sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg, const char *rgxstr,
+                                colortype **last_c);
 
 /* 'signal.cpp' */
 void init_main_thread(void);
