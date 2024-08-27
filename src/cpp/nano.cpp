@@ -2206,6 +2206,7 @@ main(int argc, char **argv)
     /* Set the margin to an impossible value to force re-evaluation. */
     margin         = 12345;
     we_are_running = TRUE;
+    LOUT_logI("reached main loop.");
     /* TODO: This is the main loop of the editor. */
     while (TRUE)
     {

@@ -758,7 +758,7 @@ do_cpp_syntax(void)
 {
     if (last_c_color == NULL)
     {
-        LOUT_logE("last_c_color == NULL\n");
+        LOUT_logE("last_c_color == NULL.");
         return;
     }
     /* add_syntax_word("gray", NULL, ";"); */
