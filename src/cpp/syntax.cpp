@@ -16,12 +16,12 @@ syntax_check_file(openfilestruct *file)
     const char *fext = get_file_extention();
     if (fext && (strncmp(fext, "cpp", 3) == 0 || strncmp(fext, "c", 1) == 0))
     {
-        /* set_last_c_colortype();
+        set_last_c_colortype();
         for (linestruct *line = file->filetop; line != NULL; line = line->next)
         {
             check_for_syntax_words(line);
         }
-        do_cpp_syntax(); */
+        do_cpp_syntax();
     }
 }
 
@@ -680,8 +680,8 @@ check_for_syntax_words(linestruct *line)
                 {
                     new_syntax_func(words[i]);
                     /* This works i think. */
-                    sub_thread_add_c_syntax(FUNC_COLOR, NULL, rgx_word(words[i]), &last_c_color);
-                    /* add_syntax_word(FUNC_COLOR, NULL, rgx_word(words[i])); */
+                    // sub_thread_add_c_syntax(FUNC_COLOR, NULL, rgx_word(words[i]), &last_c_color);
+                    add_syntax_word(FUNC_COLOR, NULL, rgx_word(words[i]));
                 }
                 words[i] += j + 1;
                 --i;
