@@ -63,6 +63,7 @@ init_main_thread(void)
 {
     if (main_thread != NULL)
     {
+        LOUT_logE("main_thread should only be allocated once.");
         return;
     }
     main_thread         = (main_thread_t *)nmalloc(sizeof(main_thread_t));

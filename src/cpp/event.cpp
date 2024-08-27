@@ -1,5 +1,6 @@
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <pthread.h>
 
 callback_queue_t *callback_queue = NULL;
@@ -68,6 +69,7 @@ enqueue_callback(callback_functionptr_t callback, void *result)
 void
 prosses_callback_queue(void)
 {
+    PROFILE_FUNCTION;
     /* Lock the callback mutex while we retrieve a callback. */
     lock_callback_mutex(TRUE);
     /* Here we fetch all callbacks until there are no more left. */
