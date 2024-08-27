@@ -758,7 +758,7 @@ do_cpp_syntax(void)
 {
     if (last_c_color == NULL)
     {
-        NETLOGGER.log("last_c_color == NULL\n");
+        LOUT_logE("last_c_color == NULL\n");
         return;
     }
     /* add_syntax_word("gray", NULL, ";"); */
