@@ -756,7 +756,6 @@ check_for_syntax_words(linestruct *line)
 void
 do_cpp_syntax(void)
 {
-    set_last_c_colortype();
     if (last_c_color == NULL)
     {
         NETLOGGER.log("last_c_color == NULL\n");
