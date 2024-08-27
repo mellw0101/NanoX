@@ -16,12 +16,12 @@ syntax_check_file(openfilestruct *file)
     const char *fext = get_file_extention();
     if (fext && (strncmp(fext, "cpp", 3) == 0 || strncmp(fext, "c", 1) == 0))
     {
-        set_last_c_colortype();
+        /* set_last_c_colortype();
         for (linestruct *line = file->filetop; line != NULL; line = line->next)
         {
             check_for_syntax_words(line);
         }
-        do_cpp_syntax();
+        do_cpp_syntax(); */
     }
 }
 
