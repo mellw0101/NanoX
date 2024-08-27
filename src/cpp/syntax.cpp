@@ -4,6 +4,7 @@
 #include <Mlib/Profile.h>
 #include <fcntl.h>
 
+/* Function to check syntax for a open buffer. */
 void
 syntax_check_file(openfilestruct *file)
 {
@@ -92,7 +93,6 @@ add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr,
     PROFILE_FUNCTION;
     if (*c == NULL)
     {
-        NETLOGGER.log("c == NULL.\n");
         LOUT_logE("c == NULL.");
         return;
     }
@@ -637,11 +637,12 @@ check_for_syntax_words(linestruct *line)
                     ;
                 else
                 {
-
                     handle_struct_syntax(&words[i + 1]);
                     if (!syntax_var(words[++i]))
                     {
+
                         new_syntax_var(words[i]);
+                        // sub_thread_add_c_syntax(VAR_COLOR, NULL, rgx_word(words[i]));
                         add_syntax_word(VAR_COLOR, NULL, rgx_word(words[i]));
                     }
                 }
@@ -677,7 +678,9 @@ check_for_syntax_words(linestruct *line)
                 if (!syntax_func(words[i]))
                 {
                     new_syntax_func(words[i]);
-                    add_syntax_word(FUNC_COLOR, NULL, rgx_word(words[i]));
+                    /* This works i think. */
+                    sub_thread_add_c_syntax(FUNC_COLOR, NULL, rgx_word(words[i]), &last_c_color);
+                    /* add_syntax_word(FUNC_COLOR, NULL, rgx_word(words[i])); */
                 }
                 words[i] += j + 1;
                 --i;
@@ -698,8 +701,8 @@ check_for_syntax_words(linestruct *line)
         {
             if (!is_syntax_struct(words[++i]))
             {
-                add_syntax_word("brightgreen", NULL, rgx_word(words[i]));
                 add_syntax_struct(words[i]);
+                add_syntax_word("brightgreen", NULL, rgx_word(words[i]));
             }
         }
         else if (type & CS_CLASS)

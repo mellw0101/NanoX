@@ -232,6 +232,18 @@ constexpr unsigned char HAD_ANCHOR_AT_START  = (1 << 6);
 #define FUNC_COLOR          "yellow"
 #define XTERM_CONTROL_COLOR "brightmagenta"
 
+#define TASK_STRUCT(name, ...) \
+    typedef struct             \
+    {                          \
+        __VA_ARGS__            \
+    } name;
+
+#define LIST_STRUCT(name, ...) \
+    typedef struct name        \
+    {                          \
+        __VA_ARGS__            \
+    } name;
+
 #include "constexpr_utils.h"
 
 /* Enumeration types. */
@@ -586,47 +598,11 @@ struct bracket_pair
     unsigned long end_line;
 };
 
-typedef struct
-{
-    void *(*function)(void *);
-    void  *arg;
-    void **result;
-    void (*callback)(void *);
-} task_t;
+/* RAII complient way to lock a pthread mutex.  This struct will lock
+ * the mutex apon its creation, and unlock it when it goes out of scope. */
+typedef struct pthread_mutex_guard_t pthread_mutex_guard_t;
 
-#define MAX_THREADS 4
-#define QUEUE_SIZE  10
-
-typedef struct
-{
-    task_t          tasks[QUEUE_SIZE];
-    int             front;
-    int             rear;
-    int             count;
-    pthread_mutex_t mutex;
-    pthread_cond_t  cond;
-} task_queue_t;
-
-typedef struct callback_node_t
-{
-    void (*callback)(void *);
-    void            *result;
-    callback_node_t *next;
-} callback_node_t;
-
-typedef struct
-{
-    callback_node_t *head;
-    callback_node_t *tail;
-    pthread_mutex_t  mutex;
-} callback_queue_t;
-
-typedef struct
-{
-    char        **words;
-    unsigned long nwords;
-    char         *path;
-} word_search_task_t;
+typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
 
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"

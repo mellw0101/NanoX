@@ -287,10 +287,10 @@ read_keys_from(WINDOW *frame)
     /* Restore blocking-input mode. */
     nodelay(frame, FALSE);
     /* Netlog the raw keycodes. */
-    for (unsigned long i = 0; i < waiting_codes; i++)
+    /* for (unsigned long i = 0; i < waiting_codes; i++)
     {
         NETLOGGER.log("func: %s, raw hex code: %3x\n", __func__, key_buffer[i]);
-    }
+    } */
 #ifdef DEBUG
     fprintf(stderr, "\nSequence of hex codes:");
     for (size_t i = 0; i < waiting_codes; i++)
@@ -1306,7 +1306,7 @@ parse_kbinput(WINDOW *frame)
     shift_held = FALSE;
     /* Get one code from the input stream. */
     keycode = get_input(frame);
-    NETLOGGER.log("func: %s, returned from 'get_input': %i\n", __func__, keycode);
+    /* NETLOGGER.log("func: %s, returned from 'get_input': %i\n", __func__, keycode); */
     /* Check for '^Bsp'. */
     if (term != NULL)
     {
@@ -3953,6 +3953,7 @@ current_is_above_screen(void)
 
 /* Return TRUE if current[current_x] is beyond the viewport. */
 bool
+
 current_is_below_screen(void)
 {
     if (ISSET(SOFTWRAP))
@@ -4002,8 +4003,8 @@ edit_redraw(linestruct *old_current, update_type manner)
     }
     else
     {
-        /* Otherwise, update old_current only if it differs from current
-         * and was horizontally scrolled. */
+        /* Otherwise, update old_current only if it differs
+         * from current and was horizontally scrolled. */
         if (old_current != openfile->current && get_page_start(was_pww) > 0)
         {
             update_line(old_current, 0);

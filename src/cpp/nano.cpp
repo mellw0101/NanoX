@@ -27,6 +27,8 @@ static termios original_state;
 /* Containers for the original and the temporary handler for SIGINT. */
 static struct sigaction oldaction, newaction;
 
+main_thread_t *main_thread = NULL;
+
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'.
  * prevnode: previous node in the linked list.
  * returns ( linestruct * ) - pointer to the new node. */
@@ -331,7 +333,6 @@ die(STRING_VIEW msg, ...)
     /* When dying for a second time, just give up. */
     if (++stabs > 1)
     {
-        LoutE << "die was called more then once." << '\n';
         exit(11);
     }
     restore_terminal();
@@ -591,7 +592,7 @@ version(void)
 
 /* List the names of the available syntaxes. */
 void
-list_syntax_names()
+list_syntax_names(void)
 {
     int width = 0;
     printf(_("Available syntaxes:\n"));
@@ -617,7 +618,7 @@ make_a_note(int signal)
 
 /* Make ^C interrupt a system call and set a flag. */
 void
-install_handler_for_Ctrl_C()
+install_handler_for_Ctrl_C(void)
 {
     /* Enable the generation of a SIGINT when ^C is pressed. */
     enable_kb_interrupt();
@@ -629,7 +630,7 @@ install_handler_for_Ctrl_C()
 
 /* Go back to ignoring ^C. */
 void
-restore_handler_for_Ctrl_C()
+restore_handler_for_Ctrl_C(void)
 {
     sigaction(SIGINT, &oldaction, NULL);
     disable_kb_interrupt();
@@ -1346,7 +1347,7 @@ process_a_keystroke(void)
     functionptrtype      function;
     /* Read in a keystroke, and show the cursor while waiting. */
     input = get_kbinput(midwin, VISIBLE);
-    NETLOGGER.log("input: %i.\n", input);
+    /* NETLOGGER.log("input: %i.\n", input); */
     lastmessage = VACUUM;
     /* When the input is a window resize, do nothing. */
     if (input == KEY_WINCH)

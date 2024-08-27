@@ -172,8 +172,35 @@ NanoX, fork of nano.  TODO LIST.
         folder.
     STATUS:
         NOT DONE.
+16. Multithreding just dropped bois!!!
+
+    NOTES:
+        Now this is amazing i coded this for 9 hours and it worked when i tested it ahhahahhaha!!
+        i decided to make subthreads only as i dont se the benefit of having more threads for
+        something other then data parsing and formating witch i can now completly do in the
+        backround.  So the way i set it up is that there is a threadpool with a queue that has
+        the threads all wating for a task to perform.  When I(the main thread) gives them
+        a task that do that task in there thread and package it into a struct witch i make
+        that has exactly the data that i want in the exact format i want making prossesing
+        super fast.  i also ensured that for every iter of the main loop I read and prosses all
+        callbacks that I recieved from the tasks that i sent.  This is done by making a linked
+        list of callbacks that are 100 % thread safe as there is no shared data all of the 
+        threads allocate the structs themselfs and then when i prosses them all i mutex
+        lock the entire callback queue untill all callbacks are prossesed making race
+        conditions imposible as there is only I on this side to access the data.
+        I also made everything non blocking for all threads the only waiting thay will
+        do is for the next task, I cannot wait to develop them further.
+    
+        I just made a system to make task`s easier to orgin
+    STATUS:
+        OBVIUSLY NOT DONE BUT NO ERRORS AT ALL!!
 
 NOTES:
     constexpr_atoi is slower then atoi.
     constexpr_tolower is faster then tolower.
     constexpr_strcasecmp is faster then strcasecmp.
+OPTIMIZE:
+    #pragma unroll 4.  Can be used to tell the compiler to unroll a loop.
+    #pragma omp simd.  Can be used to tell the compiler to try to vectorize the loop. 
+
+        

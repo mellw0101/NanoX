@@ -2766,6 +2766,9 @@ retrieve_words_from_file(const char *path, unsigned long *nwords)
     return words;
 }
 
+/* This function extract all words from a file and assigns the number of words parsed to 'nwords'.
+ * Note that 'nwords' needs to be passed as a refrence.  This function is very fast, it can parse
+ * around 20 million words per second. */
 char **
 words_from_file(const char *path, unsigned long *nwords)
 {
@@ -2819,7 +2822,6 @@ words_from_current_file(unsigned long *nwords)
     {
         const char *pwd = getenv("PWD"), *full_path = NULL;
         if (pwd != NULL)
-
         {
             char *file = copy_of(openfile->filename);
             full_path  = concat_path(pwd, file);
@@ -2842,4 +2844,27 @@ full_current_file_path(void)
     }
     snprintf(buf, PATH_MAX, (openfile->filename[0] == '/') ? "%s%s" : "%s/%s", pwd, openfile->filename);
     return copy_of(buf);
+}
+
+char **
+dir_entrys_from(const char *path)
+{
+    static thread_local char **buf  = NULL;
+    thread_local unsigned long size = 0, cap = 10;
+    thread_local dirent       *entry;
+    thread_local DIR          *dir = opendir(path);
+    if (dir == NULL)
+    {
+        LOUT_logE("Failed to open dir: '%s'.", path);
+        return NULL;
+    }
+    buf = (char **)nmalloc(sizeof(char *) * cap);
+    while ((entry = readdir(dir)) != NULL)
+    {
+        (size == cap) ? cap *= 2, buf = (char **)nrealloc(buf, sizeof(char *) * cap) : 0;
+        buf[size++] = copy_of(entry->d_name);
+    }
+    buf[size] = NULL;
+    closedir(dir);
+    return buf;
 }

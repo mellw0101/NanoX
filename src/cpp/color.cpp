@@ -291,6 +291,7 @@ find_and_prime_applicable_syntax(void)
 void
 check_the_multis(linestruct *line)
 {
+    PROFILE_FUNCTION;
     const colortype *ink;
     regmatch_t       startmatch;
     regmatch_t       endmatch;
@@ -442,4 +443,10 @@ precalc_multicolorinfo(void)
             }
         }
     }
+}
+
+bool
+str_equal_to_rgx(const char *str, const regex_t *rgx)
+{
+    return (regexec(rgx, str, 0, NULL, 0) == 0);
 }

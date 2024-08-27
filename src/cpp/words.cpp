@@ -319,3 +319,25 @@ char_is_in_word(const char *word, const char ch, unsigned long *at)
         ;
     return (*at != (unsigned long)-1);
 }
+
+char *
+retrieve_word_from_cursor_pos(bool forward)
+{
+    const unsigned long slen = strlen(openfile->current->data);
+    unsigned long       i;
+    for (i = openfile->current_x; i < slen; i++)
+    {
+        if (!is_word_char(openfile->current->data + i, FALSE))
+        {
+            if (openfile->current->data[i] != '_')
+            {
+                break;
+            }
+        }
+    }
+    if (i == openfile->current_x)
+    {
+        return NULL;
+    }
+    return measured_copy(&openfile->current->data[openfile->current_x], i - openfile->current_x);
+}

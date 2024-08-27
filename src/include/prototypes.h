@@ -1,5 +1,6 @@
 /// @file definitions.h
 #include "definitions.h"
+#include "task_types.h"
 
 /* All external variables.  See global.c for their descriptions. */
 
@@ -149,8 +150,8 @@ extern std::vector<std::string>   handled_includes;
 extern task_queue_t          *task_queue;
 extern pthread_t             *threads;
 extern volatile sig_atomic_t *stop_thread_flags;
-
-extern callback_queue_t *callback_queue;
+extern callback_queue_t      *callback_queue;
+extern main_thread_t         *main_thread;
 
 typedef void (*functionptrtype)(void);
 
@@ -197,6 +198,7 @@ void prepare_palette(void);
 void find_and_prime_applicable_syntax(void);
 void check_the_multis(linestruct *line);
 void precalc_multicolorinfo(void);
+bool str_equal_to_rgx(const char *str, const regex_t *rgx);
 
 /* Most functions in 'cut.cpp'. */
 void expunge(undo_type action);
@@ -250,6 +252,7 @@ char **retrieve_lines_from_file(const char *path, unsigned long *nlines);
 char **retrieve_words_from_file(const char *path, unsigned long *nwords);
 char **words_from_file(const char *path, unsigned long *nwords);
 char **words_from_current_file(unsigned long *nwords);
+char **dir_entrys_from(const char *path);
 
 /* Some functions in 'global.cpp'. */
 functionptrtype  func_from_key(const int keycode);
@@ -547,6 +550,7 @@ void do_test_window(void);
 
 /* 'syntax.cpp' */
 void syntax_check_file(openfilestruct *file);
+bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr);
 void add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c,
                       const char *from_file = NULL);
 void add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end,
@@ -592,6 +596,7 @@ bool        word_more_than_one_space_away(bool forward, unsigned long *nspaces);
 bool        word_more_than_one_tab_away(bool forward, unsigned long *ntabs);
 bool        prev_word_is_comment_start(unsigned long *nsteps);
 bool        char_is_in_word(const char *word, const char ch, unsigned long *at);
+char       *retrieve_word_from_cursor_pos(bool forward);
 
 /* 'lines.cpp' */
 bool          is_line_comment(linestruct *line);
@@ -610,18 +615,33 @@ void          select_line(linestruct *line, unsigned long from_col, unsigned lon
 void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_start);
 
 /* 'threadpool.cpp' */
-void init_queue_task(void);
-void shutdown_queue(void);
-void submit_task(void *(*function)(void *), void *arg, void **result, void (*callback)(void *));
-void stop_thread(unsigned char thread_id);
+void          lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
+void          pause_all_sub_threads(bool pause);
+void          init_queue_task(void);
+void          shutdown_queue(void);
+void          submit_task(task_functionptr_t function, void *arg, void **result, callback_functionptr_t callback);
+void          stop_thread(unsigned char thread_id);
+unsigned char thread_id_from_pthread(pthread_t *thread);
 
 /* 'event.cpp' */
+bool is_main_thread(void);
+void send_SIGUSR1_to_main_thread(void);
+void send_signal_to_main_thread(callback_functionptr_t func, void *arg);
 void init_event_handler(void);
-void enqueue_callback(void (*callback)(void *), void *result);
+void enqueue_callback(callback_functionptr_t callback, void *result);
 void prosses_callback_queue(void);
 void cleanup_event_handler(void);
 
 /* 'tasks.cpp' */
 void submit_search_task(const char *path);
+void submit_find_in_dir(const char *file, const char *in_dir);
+void sub_thread_delete_c_syntax(char *word);
+void sub_thread_add_c_syntax(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **color_type);
+
+/* 'signal.cpp' */
+void init_main_thread(void);
+void cleanup_main_thread(void);
+void setup_signal_handler_on_sub_thread(void (*handler)(int));
+void block_pthread_sig(int sig, bool block);
 
 #include <Mlib/def.h>

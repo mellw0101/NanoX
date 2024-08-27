@@ -256,7 +256,14 @@ do_close_bracket(void)
         edit_redraw(was_current, FLOWING);
         // draw_row(openfile->current->lineno, "", openfile->current, 0);
     } */
-    submit_search_task("/usr/include/stdio.h");
+    char *word = retrieve_word_from_cursor_pos(TRUE);
+    if (word)
+    {
+        NETLOGGER.log("%s\n", word);
+        sub_thread_delete_c_syntax(word);
+        refresh_needed = TRUE;
+    }
+    // submit_search_task("/home/mellw/Downloads/74307.txt.utf-8" /* "/usr/include/stdio.h" */);
 }
 
 void
