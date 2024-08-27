@@ -2200,9 +2200,6 @@ main(int argc, char **argv)
     {
         statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
     }
-    /* Extremly experimental, this is a test for live syntax handeling. */
-    do_cpp_syntax();
-    /* all_brackets_pos(); */
     /* Set the margin to an impossible value to force re-evaluation. */
     margin         = 12345;
     we_are_running = TRUE;

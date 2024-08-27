@@ -21,6 +21,7 @@ syntax_check_file(openfilestruct *file)
         {
             check_for_syntax_words(line);
         }
+        do_cpp_syntax();
     }
 }
 
