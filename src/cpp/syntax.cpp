@@ -846,6 +846,11 @@ set_last_c_colortype(void)
         LOUT_logI("'c_syntaxtype' and 'last_c_color' is already set.");
         return;
     }
+    if (syntaxes == NULL)
+    {
+        LOUT_logE("syntaxes == NULL");
+        return;
+    }
     syntaxtype *s;
     for (s = syntaxes; s && (strncmp(s->name, "c", 1)); s = s->next)
         ;
