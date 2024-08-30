@@ -496,8 +496,7 @@ usage(void)
     if (!ISSET(RESTRICTED))
     {
         print_opt("-B", "--backup", N_("Save backups of existing files"));
-        print_opt(
-            _("-C <dir>"), _("--backupdir=<dir>"), N_("Directory for saving unique backup files"));
+        print_opt(_("-C <dir>"), _("--backupdir=<dir>"), N_("Directory for saving unique backup files"));
     }
     print_opt("-D", "--boldtext", N_("Use bold instead of reverse video text"));
     print_opt("-E", "--tabstospaces", N_("Convert typed tabs to spaces"));
@@ -511,8 +510,7 @@ usage(void)
         print_opt("-H", "--historylog", N_("Save & reload old search/replace strings"));
     }
     print_opt("-I", "--ignorercfiles", N_("Don't look at nanorc files"));
-    print_opt(
-        _("-J <number>"), _("--guidestripe=<number>"), N_("Show a guiding bar at this column"));
+    print_opt(_("-J <number>"), _("--guidestripe=<number>"), N_("Show a guiding bar at this column"));
     print_opt("-K", "--rawsequences", N_("Fix numeric keypad key confusion problem"));
     print_opt("-L", "--nonewlines", N_("Don't add an automatic newline"));
     print_opt("-M", "--trimblanks", N_("Trim tail spaces when hard-wrapping"));
@@ -529,13 +527,11 @@ usage(void)
         print_opt("-R", "--restricted", N_("Restrict access to the filesystem"));
     }
     print_opt("-S", "--softwrap", N_("Display overlong lines on multiple rows"));
-    print_opt(
-        _("-T <number>"), _("--tabsize=<number>"), N_("Make a tab this number of columns wide"));
+    print_opt(_("-T <number>"), _("--tabsize=<number>"), N_("Make a tab this number of columns wide"));
     print_opt("-U", "--quickblank", N_("Wipe status bar upon next keystroke"));
     print_opt("-V", "--version", N_("Print version information and exit"));
     print_opt("-W", "--wordbounds", N_("Detect word boundaries more accurately"));
-    print_opt(
-        _("-X <string>"), _("--wordchars=<string>"), N_("Which other characters are word parts"));
+    print_opt(_("-X <string>"), _("--wordchars=<string>"), N_("Which other characters are word parts"));
     print_opt(_("-Y <name>"), _("--syntax=<name>"), N_("Syntax definition to use for coloring"));
     print_opt("-Z", "--zap", N_("Let Bsp and Del erase a marked region"));
     print_opt("-a", "--atblanks", N_("When soft-wrapping, do it at whitespace"));
@@ -558,8 +554,7 @@ usage(void)
     print_opt(_("-r <number>"), _("--fill=<number>"), N_("Set width for hard-wrap and justify"));
     if (!ISSET(RESTRICTED))
     {
-        print_opt(
-            _("-s <program>"), _("--speller=<program>"), N_("Use this alternative spell checker"));
+        print_opt(_("-s <program>"), _("--speller=<program>"), N_("Use this alternative spell checker"));
     }
     print_opt("-t", "--saveonexit", N_("Save changes on exit, don't prompt"));
     print_opt("-u", "--unix", N_("Save a file by default in Unix format"));
@@ -1158,8 +1153,7 @@ do_mouse(void)
         {
             go_forward_chunks(row_count, &openfile->current, &leftedge);
         }
-        openfile->current_x =
-            actual_x(openfile->current->data, actual_last_column(leftedge, click_col));
+        openfile->current_x = actual_x(openfile->current->data, actual_last_column(leftedge, click_col));
         /* Clicking there where the cursor is toggles the mark. */
         if (row_count == 0 && openfile->current_x == was_x)
         {
@@ -1184,22 +1178,21 @@ do_mouse(void)
 bool
 wanted_to_move(functionptrtype f)
 {
-    return (f == do_left || f == do_right || f == do_up || f == do_down || f == do_home ||
-            f == do_end || f == to_prev_word || f == to_next_word || f == to_para_begin ||
-            f == to_para_end || f == to_prev_block || f == to_next_block || f == do_page_up ||
-            f == do_page_down || f == to_first_line || f == to_last_line);
+    return (f == do_left || f == do_right || f == do_up || f == do_down || f == do_home || f == do_end ||
+            f == to_prev_word || f == to_next_word || f == to_para_begin || f == to_para_end ||
+            f == to_prev_block || f == to_next_block || f == do_page_up || f == do_page_down ||
+            f == to_first_line || f == to_last_line);
 }
 
 /* Return 'TRUE' when the given function makes a change -- no good for view mode. */
 bool
 changes_something(functionptrtype f)
 {
-    return (f == do_savefile || f == do_writeout || f == do_enter || f == do_tab ||
-            f == do_delete || f == do_backspace || f == cut_text || f == paste_text ||
-            f == chop_previous_word || f == chop_next_word || f == zap_text || f == cut_till_eof ||
-            f == do_execute || f == do_indent || f == do_unindent || f == do_justify ||
-            f == do_full_justify || f == do_comment || f == do_spell || f == do_formatter ||
-            f == complete_a_word || f == do_replace || f == do_verbatim_input);
+    return (f == do_savefile || f == do_writeout || f == do_enter || f == do_tab || f == do_delete ||
+            f == do_backspace || f == cut_text || f == paste_text || f == chop_previous_word ||
+            f == chop_next_word || f == zap_text || f == cut_till_eof || f == do_execute || f == do_indent ||
+            f == do_unindent || f == do_justify || f == do_full_justify || f == do_comment || f == do_spell ||
+            f == do_formatter || f == complete_a_word || f == do_replace || f == do_verbatim_input);
 }
 
 /* Read in all waiting input bytes and paste them into the buffer in one go. */
@@ -1415,8 +1408,7 @@ process_a_keystroke(void)
                 {
                     const char *s1, *s2;
                     input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'",
-                                   s2 = s1 : input == '('  ? s1 = "(",
-                                   s2 = ")" : input == '{' ? s1 = "{",
+                                   s2 = s1 : input == '(' ? s1 = "(", s2 = ")" : input == '{' ? s1 = "{",
                                    s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : 0;
                     enclose_marked_region(s1, s2);
                     refresh_needed = TRUE;
@@ -1431,8 +1423,7 @@ process_a_keystroke(void)
             puddle[depth++] = (char)input;
             /* Check for a bracketed input start.  Meaning a char that has a corresponding closing
              * bracket. */
-            if (input == '(' || input == '[' || input == '{' || input == '<' || input == '\'' ||
-                input == '"')
+            if (input == '(' || input == '[' || input == '{' || input == '<' || input == '\'' || input == '"')
             {
                 if (input == '<')
                 {
@@ -1486,8 +1477,8 @@ process_a_keystroke(void)
         print_view_warning();
         return;
     }
-    if (input == '\b' && give_a_hint && openfile->current_x == 0 &&
-        openfile->current == openfile->filetop && !ISSET(NO_HELP))
+    if (input == '\b' && give_a_hint && openfile->current_x == 0 && openfile->current == openfile->filetop &&
+        !ISSET(NO_HELP))
     {
         statusbar(_("^W = Ctrl+W    M-W = Alt+W"));
         give_a_hint = FALSE;
@@ -1536,8 +1527,7 @@ process_a_keystroke(void)
     /* When the marked region changes without Shift being held, discard a soft mark.
      * And when the set of lines changes, reset the "last line too" flag. */
     if (openfile->mark && openfile->softmark && !shift_held &&
-        (openfile->current != was_current || openfile->current_x != was_x ||
-         wanted_to_move(function)))
+        (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)))
     {
         openfile->mark = NULL;
         refresh_needed = TRUE;
@@ -1640,23 +1630,13 @@ main(int argc, char **argv)
         cliCmd &CLI_OPT_VERSION ? version() : void();
         cliCmd &CLI_OPT_HELP ? usage() : void();
         cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = TRUE : 0;
-        cliCmd &CLI_OPT_BACKUPDIR ?
-            (i++ < argc) ? backup_dir = mallocstrcpy(backup_dir, argv[i]) : 0 :
-            0;
-        cliCmd &CLI_OPT_WORDCHARS ?
-            (i++ < argc) ? word_chars = mallocstrcpy(word_chars, argv[i]) : 0 :
-            0;
-        cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 :
-                                 0;
-        cliCmd &CLI_OPT_RCFILE ?
-            (i++ < argc) ? custom_nanorc = mallocstrcpy(custom_nanorc, argv[i]) : 0 :
-            0;
+        cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = mallocstrcpy(backup_dir, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = mallocstrcpy(word_chars, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = mallocstrcpy(custom_nanorc, argv[i]) : 0 : 0;
         cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
-        cliCmd &CLI_OPT_SPELLER ?
-            (i++ < argc) ? alt_speller = mallocstrcpy(alt_speller, argv[i]) : 0 :
-            0;
-        cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 :
-                                 0;
+        cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = mallocstrcpy(alt_speller, argv[i]) : 0 : 0;
+        cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
 
         if (cliCmd & CLI_OPT_OPERATINGDIR)
         {
@@ -2110,8 +2090,8 @@ main(int argc, char **argv)
              * (possibly preceded by more digits and a colon).  If there is or
              * are such trailing numbers, chop the colons plus numbers off.
              * The number is later used to place the cursor on that line. */
-            if (ISSET(COLON_PARSING) && !givenline && constexpr_strchr(filename, ':') &&
-                !givencol && stat(filename, &fileinfo) < 0)
+            if (ISSET(COLON_PARSING) && !givenline && constexpr_strchr(filename, ':') && !givencol &&
+                stat(filename, &fileinfo) < 0)
             {
                 char *coda = filename + strlen(filename);
             maybe_two:
@@ -2153,8 +2133,8 @@ main(int argc, char **argv)
             {
                 regexp_init(searchstring);
             }
-            if (!findnextstr(searchstring, FALSE, JUSTFIND, NULL, ISSET(BACKWARDS_SEARCH),
-                             openfile->filetop, 0))
+            if (!findnextstr(
+                    searchstring, FALSE, JUSTFIND, NULL, ISSET(BACKWARDS_SEARCH), openfile->filetop, 0))
             {
                 not_found_msg(searchstring);
             }
@@ -2200,14 +2180,8 @@ main(int argc, char **argv)
     else
     {
         openfile = openfile->next;
-        if (more_than_one)
-        {
-            mention_name_and_linecount();
-        }
-        if ISSET (VIEW_MODE)
-        {
-            SET(MULTIBUFFER);
-        }
+        (more_than_one) ? mention_name_and_linecount() : void();
+        ISSET(VIEW_MODE) ? SET(MULTIBUFFER) : 0;
     }
     if (optind < argc)
     {
@@ -2222,8 +2196,7 @@ main(int argc, char **argv)
      * do_help)->keycode == 0x07 Is form nano c source code We will not use this for now as it is
      * not needed */
     if (*openfile->filename == '\0' && openfile->totsize == 0 && openfile->next == openfile &&
-        !ISSET(NO_HELP) &&
-        (first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07))
+        !ISSET(NO_HELP) && (first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07))
     {
         statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
     }
@@ -2231,7 +2204,7 @@ main(int argc, char **argv)
     /* Set the margin to an impossible value to force re-evaluation. */
     margin         = 12345;
     we_are_running = TRUE;
-    LOUT_logI("reached main loop.");
+    LOUT_logI("Reached main loop.");
     /* TODO: This is the main loop of the editor. */
     while (TRUE)
     {

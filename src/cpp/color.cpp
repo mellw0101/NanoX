@@ -66,7 +66,8 @@ set_interface_colorpairs(void)
             }
             else if (index == GUIDE_STRIPE)
             {
-                interface_color_pair[index] = A_REVERSE;
+                init_pair(index + 1, COLOR_BLUE, COLOR_BLACK);
+                interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
             }
             else if (index == SPOTLIGHTED)
             {
@@ -80,6 +81,12 @@ set_interface_colorpairs(void)
             else if (index == ERROR_MESSAGE)
             {
                 init_pair(index + 1, COLOR_WHITE, COLOR_RED);
+                interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
+            }
+            else if (index == BLUE || index == GREEN)
+            {
+                color_combo[index] = (colortype *)malloc(sizeof(*(color_combo[index])));
+                init_pair(index + 1, (index == BLUE) ? COLOR_BLUE : COLOR_GREEN, COLOR_BLACK);
                 interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
             }
             else
@@ -243,8 +250,8 @@ find_and_prime_applicable_syntax(void)
                 magicstring = magic_file(cookie, openfile->filename);
                 if (magicstring == NULL)
                 {
-                    statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename,
-                               magic_error(cookie));
+                    statusline(
+                        ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
                 }
             }
         }
@@ -336,8 +343,7 @@ check_the_multis(linestruct *line)
         else if (line->multidata[ink->id] == JUSTONTHIS)
         {
             if (astart && anend &&
-                regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch,
-                        0) != 0)
+                regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch, 0) != 0)
             {
                 continue;
             }
@@ -398,15 +404,14 @@ precalc_multicolorinfo(void)
             line->multidata[ink->id] = NOTHING;
             /* When the line contains a start match, look for an end,
              * and if found, mark all the lines that are affected. */
-            while (regexec(ink->start, line->data + index, 1, &startmatch,
-                           (index == 0) ? 0 : REG_NOTBOL) == 0)
+            while (regexec(ink->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) ==
+                   0)
             {
                 /* Begin looking for an end match after the start match. */
                 index += startmatch.rm_eo;
                 /* If there is an end match on this same line, mark the line,
                  * but continue looking for other starts after it. */
-                if (regexec(ink->end, line->data + index, 1, &endmatch,
-                            (index == 0) ? 0 : REG_NOTBOL) == 0)
+                if (regexec(ink->end, line->data + index, 1, &endmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
                 {
                     line->multidata[ink->id] = JUSTONTHIS;
                     index += endmatch.rm_eo;

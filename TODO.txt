@@ -194,7 +194,17 @@ NanoX, fork of nano.  TODO LIST.
         I just made a system to make task`s easier to orgin
     STATUS:
         OBVIUSLY NOT DONE BUT NO ERRORS AT ALL!!
+17. Create a rendering engine.
 
+    NOTES:
+        I have just created the first part of the rendering engine, the main function to render the text in a line.
+        I will begin to split up the rendering into parts, this way i can start to multithread most actions.  By doing
+        this I can make the visual updating imediet always.
+    STATUS:
+        NOT DONE.
+
+NCURSES_HELP:
+    'wattron' turns on an attribute for a 'WINDOW*'. 
 NOTES:
     constexpr_atoi is slower then atoi.
     constexpr_tolower is faster then tolower.

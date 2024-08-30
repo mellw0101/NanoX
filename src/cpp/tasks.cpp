@@ -39,87 +39,28 @@ struct sub_thread_function
     delete_one_c_syntax(void *arg)
     {
         PROFILE_FUNCTION;
+        pthread_mutex_guard_t   guard(&task_queue->mutex);
         delete_c_syntax_task_t *task = (delete_c_syntax_task_t *)arg;
         colortype              *c;
-        for (c = task->syntax_type->color;
-             c->next != NULL && !str_equal_to_rgx(task->word, c->next->start);
+        for (c = task->syntax_type->color; c->next != NULL && !str_equal_to_rgx(task->word, c->next->start);
              c = c->next, task->iter++)
             ;
         if (c->next != NULL)
         {
-            pthread_mutex_guard_t sub_guard(&task_queue->mutex);
-            colortype            *tc = c->next->next;
-            (c->next->end) ? regfree(c->next->end) : void();
-            regfree(c->next->start);
+            colortype *tc = c->next->next;
+            (c->next->end != NULL) ? regfree(c->next->end) : void();
+            (c->next->start != NULL) ? regfree(c->next->start) : void();
             free(c->next);
             c->next = tc;
         }
         return task;
     }
 
-    /* TODO: (add_c_syntax) - Finish this. */
-    static void *
-    add_c_syntax(void *arg)
-    {
-        PROFILE_FUNCTION;
-        add_c_syntax_task_t *task = (add_c_syntax_task_t *)arg;
-        if (c_syntaxtype == NULL)
-        {
-            return task;
-        }
-        short    fg, bg;
-        int      attr;
-        regex_t *start = NULL;
-        if (!parse_color_opts(task->color_fg, task->color_bg, &fg, &bg, &attr))
-        {
-            LOUT_logE("Could not parse color opts.");
-            return task;
-        }
-        if (!compile(task->rgxstr, NANO_REG_EXTENDED, &start))
-        {
-            LOUT_logE("Could not compile rgxstr: '%s'.", task->rgxstr);
-            return task;
-        }
-        if (task->color_type == NULL)
-        {
-            colortype            *c = NULL;
-            pthread_mutex_guard_t guard(&task_queue->mutex);
-            for (c = c_syntaxtype->color; c->next != NULL; c = c->next)
-                ;
-            if (c == NULL)
-            {
-                LOUT_logE("Could not retrieve the last item in c colortype linked list.");
-                return task;
-            }
-            (*task->color_type) = c;
-        }
-        colortype *c  = (colortype *)nmalloc(sizeof(colortype));
-        c->start      = start;
-        c->end        = NULL;
-        c->fg         = fg;
-        c->bg         = bg;
-        c->attributes = attr;
-        if ((*task->color_type)->next != NULL)
-        {
-            colortype            *c;
-            pthread_mutex_guard_t guard(&task_queue->mutex);
-            for (c = (*task->color_type); c->next != NULL; c = c->next)
-                ;
-            (*task->color_type) = c;
-        }
-        c->pairnum                = (*task->color_type)->pairnum + 1;
-        c->next                   = NULL;
-        (*task->color_type)->next = c;
-        (*task->color_type)       = (*task->color_type)->next;
-        return task;
-    }
-
     static void *
     compile_rgx(void *arg)
     {
-        compile_rgx_task_t *task = (compile_rgx_task_t *)arg;
-        static void (*cleanup)(
-            compile_rgx_task_t *, bool) = [](compile_rgx_task_t *task, bool error)
+        compile_rgx_task_t *task                           = (compile_rgx_task_t *)arg;
+        static void (*cleanup)(compile_rgx_task_t *, bool) = [](compile_rgx_task_t *task, bool error)
         {
             if (task)
             {
@@ -204,15 +145,6 @@ struct main_thread_function
     }
 
     static void
-    check_add_c_syntax(void *arg)
-    {
-        add_c_syntax_task_t *task = (add_c_syntax_task_t *)arg;
-        (task->color_fg) ? free(task->color_fg) : void();
-        (task->color_bg) ? free(task->color_bg) : void();
-        free(task->rgxstr);
-    }
-
-    static void
     add_rgx_to_list(void *arg)
     {
         PROFILE_FUNCTION;
@@ -236,8 +168,7 @@ struct main_thread_function
         c->attributes = task->attr;
         if ((*task->last_c)->next != NULL)
         {
-            pause_sub_threads_guard_t pause_guard;
-            colortype                *c;
+            colortype *c;
             for (c = (*task->last_c); c->next; c = c->next)
                 ;
             (*task->last_c) = c;
@@ -248,6 +179,7 @@ struct main_thread_function
         (*task->last_c)       = (*task->last_c)->next;
         refresh_needed        = TRUE;
         perturbed             = TRUE;
+        free(task);
     }
 };
 
@@ -279,23 +211,10 @@ struct task_creator
             LOUT_logE("'c_syntaxtype' == NULL.");
             return NULL;
         }
-        delete_c_syntax_task_t *task =
-            (delete_c_syntax_task_t *)nmalloc(sizeof(delete_c_syntax_task_t));
-        task->syntax_type = c_syntaxtype;
-        task->word        = copy_of(word);
-        task->iter        = 0;
-        return task;
-    }
-
-    static add_c_syntax_task_t *
-    create_add_c_syntax_task(const char *color_fg, const char *color_bg, const char *rgxstr,
-                             colortype **color_type)
-    {
-        add_c_syntax_task_t *task = (add_c_syntax_task_t *)nmalloc(sizeof(add_c_syntax_task_t));
-        task->color_fg            = (color_fg) ? copy_of(color_fg) : NULL;
-        task->color_bg            = (color_bg) ? copy_of(color_bg) : NULL;
-        task->rgxstr              = copy_of(rgxstr);
-        task->color_type          = color_type;
+        delete_c_syntax_task_t *task = (delete_c_syntax_task_t *)nmalloc(sizeof(delete_c_syntax_task_t));
+        task->syntax_type            = c_syntaxtype;
+        task->word                   = copy_of(word);
+        task->iter                   = 0;
         return task;
     }
 
@@ -319,16 +238,14 @@ void
 submit_search_task(const char *path)
 {
     word_search_task_t *task = task_creator::create_word_search_task(path);
-    submit_task(sub_thread_function::search_word_task, task, NULL,
-                main_thread_function::on_search_complete);
+    submit_task(sub_thread_function::search_word_task, task, NULL, main_thread_function::on_search_complete);
 }
 
 void
 submit_find_in_dir(const char *find, const char *in_dir)
 {
     dir_search_task_t *task = task_creator::create_dir_search_task(find, in_dir);
-    submit_task(sub_thread_function::find_file_in_dir, task, NULL,
-                main_thread_function::on_find_file_in_dir);
+    submit_task(sub_thread_function::find_file_in_dir, task, NULL, main_thread_function::on_find_file_in_dir);
 }
 
 /* Call on a sub thread to delete a 'c' syntax obj.  We will have to see if we
@@ -344,21 +261,8 @@ sub_thread_delete_c_syntax(char *word)
 }
 
 void
-sub_thread_add_c_syntax(const char *color_fg, const char *color_bg, const char *rgxstr,
-                        colortype **color_type)
+sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **last_c)
 {
-    add_c_syntax_task_t *task =
-        task_creator::create_add_c_syntax_task(color_fg, color_bg, rgxstr, color_type);
-    submit_task(
-        sub_thread_function::add_c_syntax, task, NULL, main_thread_function::check_add_c_syntax);
-}
-
-void
-sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg, const char *rgxstr,
-                           colortype **last_c)
-{
-    compile_rgx_task_t *task =
-        task_creator::create_compile_rgx_task(color_fg, color_bg, rgxstr, last_c);
-    submit_task(
-        sub_thread_function::compile_rgx, task, NULL, main_thread_function::add_rgx_to_list);
+    compile_rgx_task_t *task = task_creator::create_compile_rgx_task(color_fg, color_bg, rgxstr, last_c);
+    submit_task(sub_thread_function::compile_rgx, task, NULL, main_thread_function::add_rgx_to_list);
 }

@@ -35,13 +35,13 @@ static bool linger_after_escape = FALSE;
 /* The number of keystrokes left before we blank the status bar. */
 static int countdown = 0;
 /* From where in the relevant line the current row is drawn. */
-static unsigned long from_x = 0;
+unsigned long from_x = 0;
 /* Until where in the relevant line the current row is drawn. */
-static unsigned long till_x = 0;
+unsigned long till_x = 0;
 /* Whether the current line has more text after the displayed part. */
 static bool has_more = FALSE;
 /* Whether a row's text is narrower than the screen's width. */
-static bool is_shorter = TRUE;
+bool is_shorter = TRUE;
 /* The starting column of the next chunk when softwrapping. */
 static unsigned long sequel_column = 0;
 /* Whether we are in the process of recording a macro. */
@@ -443,7 +443,8 @@ arrow_from_ABCD(const int letter)
 }
 
 /* Translate a sequence that began with "Esc O" to its corresponding key code.
- * TODO: (convert_SS3_sequence) - Importante, see if this can be used to retrieve 'Ctrl+Bsp/^Bsp'. */
+ * TODO: (convert_SS3_sequence) - Importante, see if this can be used to retrieve 'Ctrl+Bsp/^Bsp'.
+ */
 int
 convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
 {
@@ -601,7 +602,8 @@ convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
         {
             return ',';
         }
-        case 'm' : /* Esc O m == '-' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
+        case 'm' : /* Esc O m == '-' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm.
+                    */
         {
             return '-';
         }
@@ -609,7 +611,8 @@ convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
         {
             return KEY_DC;
         }
-        case 'o' : /* Esc O o == '/' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
+        case 'o' : /* Esc O o == '/' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm.
+                    */
         {
             return '/';
         }
@@ -654,7 +657,8 @@ convert_SS3_sequence(const int *seq, unsigned long length, int *consumed)
 }
 
 /* Translate a sequence that began with "Esc [" to its corresponding key code.
- * TODO: (convert_CSI_sequence) - Importante, see if this can be used to retrieve 'Ctrl+Bsp/^Bsp'. */
+ * TODO: (convert_CSI_sequence) - Importante, see if this can be used to retrieve 'Ctrl+Bsp/^Bsp'.
+ */
 int
 convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
 {
@@ -684,7 +688,8 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                     {
                         return KEY_F(seq[1] - '0');
                     }
-                    case '7' : /* Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux console/xterm/rxvt/Eterm. */
+                    case '7' : /* Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux
+                                  console/xterm/rxvt/Eterm. */
                     case '8' : /* Esc [ 1 8 ~ == F7 on the same. */
                     case '9' : /* Esc [ 1 9 ~ == F8 on the same. */
                     {
@@ -855,7 +860,8 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
                 *consumed = 3;
                 switch (seq[1])
                 {
-                    case '0' : /* Esc [ 2 0 ~ == F9 on VT220/VT320/Linux console/xterm/rxvt/Eterm. */
+                    case '0' : /* Esc [ 2 0 ~ == F9 on VT220/VT320/Linux console/xterm/rxvt/Eterm.
+                                */
                     {
                         return KEY_F(9);
                     }
@@ -1014,7 +1020,8 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
             }
             break;
         }
-        case '6' : /* Esc [ 6 ~ == PageDown on VT220/VT320/Linux console/xterm/Eterm/urxvt/Terminal */
+        case '6' : /* Esc [ 6 ~ == PageDown on VT220/VT320/Linux console/xterm/Eterm/urxvt/Terminal
+                    */
         {
             if (length > 1 && seq[1] == '~')
             {
@@ -1142,7 +1149,8 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
         {
             return KEY_END;
         }
-        case 'Z' : /* Esc [ Z == Shift-Tab on ANSI/Linux console/ FreeBSD console/xterm/rxvt/Terminal. */
+        case 'Z' : /* Esc [ Z == Shift-Tab on ANSI/Linux console/ FreeBSD
+                      console/xterm/rxvt/Terminal. */
         {
             return SHIFT_TAB;
         }
@@ -2352,10 +2360,10 @@ set_blankdelay_to_one(void)
 #define ZEROWIDTH_CHAR (is_zerowidth(text))
 
 /* Convert text into a string that can be displayed on screen.
- * The caller wants to display text starting with the given column, and extending for at most span columns.
- * The returned string is dynamically allocated, and should be freed.
- * If isdata is TRUE, the caller might put "<" at the beginning or ">" at the end of the line if it's too long.
- * If isprompt is TRUE, the caller might put ">" at the end of the line if it's too long. */
+ * The caller wants to display text starting with the given column, and extending for at most span
+ * columns. The returned string is dynamically allocated, and should be freed. If isdata is TRUE,
+ * the caller might put "<" at the beginning or ">" at the end of the line if it's too long. If
+ * isprompt is TRUE, the caller might put ">" at the end of the line if it's too long. */
 char *
 display_string(const char *text, unsigned long column, unsigned long span, bool isdata, bool isprompt)
 {
@@ -2384,7 +2392,8 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
     }
     /* If the first character starts before the left edge, or would be
      * overwritten by a "<" token, then show placeholders instead. */
-    if ((start_col < column || (start_col > 0 && isdata && !ISSET(SOFTWRAP))) && *text != '\0' && *text != '\t')
+    if ((start_col < column || (start_col > 0 && isdata && !ISSET(SOFTWRAP))) && *text != '\0' &&
+        *text != '\t')
     {
         if (is_cntrl_char(text))
         {
@@ -3158,51 +3167,12 @@ static constexpr unsigned short PAINT_LIMIT = 2000;
 void
 draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col)
 {
-    /* If line numbering is switched on, put a line number in front of
-     * the text -- but only for the parts that are not softwrapped. */
-    if (margin > 0)
-    {
-        wattron(midwin, interface_color_pair[LINE_NUMBER]);
-        if (ISSET(SOFTWRAP) && from_col != 0)
-        {
-            mvwprintw(midwin, row, 0, "%*s", margin - 1, " ");
-        }
-        else
-        {
-            mvwprintw(midwin, row, 0, "%*zd", margin - 1, line->lineno);
-        }
-        wattroff(midwin, interface_color_pair[LINE_NUMBER]);
-        if (line->has_anchor && (from_col == 0 || !ISSET(SOFTWRAP)))
-        {
-            if (using_utf8())
-            {
-                wprintw(midwin, "\xE2\xAC\xA5"); /* black medium diamond */
-            }
-            else
-            {
-                wprintw(midwin, "+");
-            }
-        }
-        else
-        {
-            wprintw(midwin, " ");
-        }
-    }
-    /* First simply write the converted line -- afterward we'll add colors
-     * and the marking highlight on just the pieces that need it. */
-    mvwaddstr(midwin, row, margin, converted);
-    /* When needed, clear the remainder of the row. */
-    if (is_shorter || ISSET(SOFTWRAP))
-    {
-        wclrtoeol(midwin);
-    }
-    if (sidebar)
-    {
-        mvwaddch(midwin, row, COLS - 1, bardata[row]);
-    }
+    PROFILE_FUNCTION;
+    render_line_text(row, converted, line, from_col);
     /* If there are color rules (and coloring is turned on), apply them. */
     if (openfile->syntax && !ISSET(NO_SYNTAX))
     {
+        PROFILE_CURRENT_SCOPE("draw_row: color checking");
         const colortype *varnish = openfile->syntax->color;
         /* If there are multiline regexes, make sure this line has a cache. */
         if (openfile->syntax->multiscore > 0 && line->multidata == NULL)
@@ -3232,7 +3202,8 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                 while (index < PAINT_LIMIT && index < till_x)
                 {
                     /* If there is no match, go on to the next line. */
-                    if (regexec(varnish->start, &line->data[index], 1, &match, (index == 0) ? 0 : REG_NOTBOL) != 0)
+                    if (regexec(varnish->start, &line->data[index], 1, &match,
+                                (index == 0) ? 0 : REG_NOTBOL) != 0)
                     {
                         break;
                     }
@@ -3310,8 +3281,8 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
             /* Second step: look for starts on this line, but begin
              * looking only after an end match, if there is one. */
             index = (paintlen == 0) ? 0 : endmatch.rm_eo;
-            while (index < PAINT_LIMIT &&
-                   regexec(varnish->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
+            while (index < PAINT_LIMIT && regexec(varnish->start, line->data + index, 1, &startmatch,
+                                                  (index == 0) ? 0 : REG_NOTBOL) == 0)
             {
                 /* Make the match relative to the beginning of the line. */
                 startmatch.rm_so += index;
@@ -3331,7 +3302,8 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                      * and it is more than zero characters long. */
                     if (endmatch.rm_eo > from_x && endmatch.rm_eo > startmatch.rm_so)
                     {
-                        paintlen = actual_x(thetext, wideness(line->data, endmatch.rm_eo) - from_col - start_col);
+                        paintlen =
+                            actual_x(thetext, wideness(line->data, endmatch.rm_eo) - from_col - start_col);
                         wattron(midwin, varnish->attributes);
                         mvwaddnstr(midwin, row, margin + start_col, thetext, paintlen);
                         wattroff(midwin, varnish->attributes);
@@ -3390,13 +3362,13 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
         {
             striped_char[0] = ' ';
         }
-        wattron(midwin, interface_color_pair[GUIDE_STRIPE]);
-        mvwaddnstr(midwin, row, margin + target_column, striped_char, charlen);
-        wattroff(midwin, interface_color_pair[GUIDE_STRIPE]);
+        midwin_mv_add_nstr_wattr(
+            row, margin + target_column, striped_char, charlen, interface_color_pair[GUIDE_STRIPE]);
     }
     /* If the line is at least partially selected, paint the marked part. */
-    if (openfile->mark && ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno) ||
-                           (line->lineno <= openfile->mark->lineno && line->lineno >= openfile->current->lineno)))
+    if (openfile->mark &&
+        ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno) ||
+         (line->lineno <= openfile->mark->lineno && line->lineno >= openfile->current->lineno)))
     {
         /* The lines where the marked region begins and ends. */
         linestruct *top, *bot;
@@ -3434,9 +3406,8 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                 const unsigned long end_col = wideness(line->data, bot_x) - from_col;
                 paintlen                    = actual_x(thetext, end_col - start_col);
             }
-            wattron(midwin, interface_color_pair[SELECTED_TEXT]);
-            mvwaddnstr(midwin, row, margin + start_col, thetext, paintlen);
-            wattroff(midwin, interface_color_pair[SELECTED_TEXT]);
+            midwin_mv_add_nstr_wattr(
+                row, margin + start_col, thetext, paintlen, interface_color_pair[SELECTED_TEXT]);
         }
     }
 }
@@ -3447,6 +3418,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
 int
 update_line(linestruct *line, const unsigned long index)
 {
+    PROFILE_FUNCTION;
     /* The row in the edit window we will be updating. */
     int row;
     /* The data of the line with tabs and control characters expanded. */
@@ -3466,15 +3438,11 @@ update_line(linestruct *line, const unsigned long index)
     free(converted);
     if (from_col > 0)
     {
-        wattron(midwin, hilite_attribute);
-        mvwaddch(midwin, row, margin, '<');
-        wattroff(midwin, hilite_attribute);
+        midwin_mv_add_char_wattr(row, margin, '<', hilite_attribute);
     }
     if (has_more)
     {
-        wattron(midwin, hilite_attribute);
-        mvwaddch(midwin, row, COLS - 1 - sidebar, '>');
-        wattroff(midwin, hilite_attribute);
+        midwin_mv_add_char_wattr(row, (COLS - 1), '>', hilite_attribute);
     }
     if (spotlighted && line == openfile->current)
     {
@@ -3620,8 +3588,9 @@ go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge)
         /* Advance through the requested number of chunks. */
         for (i = nrows; i > 0; i--)
         {
-            end_of_line      = FALSE;
-            current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
+            end_of_line = FALSE;
+            current_leftedge =
+                get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
             if (!end_of_line)
             {
                 continue;
@@ -3664,7 +3633,8 @@ less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge)
         line      = openfile->current;
         leftedge  = leftedge_for(xplustabs(), openfile->current);
         rows_left = go_back_chunks(editwinrows - 1, &line, &leftedge);
-        return (rows_left > 0 || line->lineno < was_lineno || (line->lineno == was_lineno && leftedge <= was_leftedge));
+        return (rows_left > 0 || line->lineno < was_lineno ||
+                (line->lineno == was_lineno && leftedge <= was_leftedge));
     }
     else
     {
@@ -3921,7 +3891,8 @@ actual_last_column(unsigned long leftedge, unsigned long column)
     {
         kickoff    = TRUE;
         last_chunk = FALSE;
-        end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge;
+        end_col =
+            get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge;
         /* If we're not on the last chunk, we're one column past the end of
          * the row.  Shifting back one column might put us in the middle of
          * a multi-column character, but 'actual_x()' will fix that later. */
@@ -3943,8 +3914,9 @@ current_is_above_screen(void)
 {
     if (ISSET(SOFTWRAP))
     {
-        return (openfile->current->lineno < openfile->edittop->lineno ||
-                (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
+        return (
+            openfile->current->lineno < openfile->edittop->lineno ||
+            (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
     }
     return (openfile->current->lineno < openfile->edittop->lineno);
 }
@@ -3962,10 +3934,10 @@ current_is_below_screen(void)
         unsigned long leftedge = openfile->firstcolumn;
         /* If current[current_x] is more than a screen's worth of lines after
          * edittop at column firstcolumn, it's below the screen. */
-        return (
-            go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 &&
-            (line->lineno < openfile->current->lineno ||
-             (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
+        return (go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 &&
+                (line->lineno < openfile->current->lineno ||
+                 (line->lineno == openfile->current->lineno &&
+                  leftedge < leftedge_for(xplustabs(), openfile->current))));
     }
     return (openfile->current->lineno >= openfile->edittop->lineno + editwinrows - SHIM);
 }
@@ -4020,11 +3992,11 @@ edit_redraw(linestruct *old_current, update_type manner)
 }
 
 /* Refresh the screen without changing the position of lines.
- * Use this if we've moved and changed text.
- * TODO: (edit_refresh) - This is used to draw all the lines, use this to handle closing brackets. */
+ * Use this if we've moved and changed text. */
 void
 edit_refresh(void)
 {
+    PROFILE_FUNCTION;
     linestruct *line;
     int         row = 0;
     /* If the current line is out of view, get it back on screen. */
@@ -4146,7 +4118,7 @@ report_cursor_position(void)
     char          saved_byte                     = openfile->current->data[openfile->current_x];
     openfile->current->data[openfile->current_x] = '\0';
     /* Determine the size of the file up to the cursor. */
-    unsigned long sum                            = number_of_characters_in(openfile->filetop, openfile->current);
+    unsigned long sum = number_of_characters_in(openfile->filetop, openfile->current);
     openfile->current->data[openfile->current_x] = saved_byte;
     /* Calculate the percentages. */
     linepct = 100 * openfile->current->lineno / openfile->filebot->lineno;
@@ -4155,8 +4127,9 @@ report_cursor_position(void)
     statusline(INFO,
                _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu "
                  "(%2d%%)"),
-               digits(openfile->filebot->lineno), openfile->current->lineno, openfile->filebot->lineno, linepct, column,
-               fullwidth, colpct, digits(openfile->totsize), sum, openfile->totsize, charpct);
+               digits(openfile->filebot->lineno), openfile->current->lineno, openfile->filebot->lineno,
+               linepct, column, fullwidth, colpct, digits(openfile->totsize), sum, openfile->totsize,
+               charpct);
 }
 
 /* Highlight the text between the given two columns on the current line.

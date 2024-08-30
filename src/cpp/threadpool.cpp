@@ -55,8 +55,7 @@ lock_pthread_mutex(pthread_mutex_t *mutex, bool lock)
         }
         default :
         {
-            LOUT_logE(
-                "Mutex: 'task_queue->mutex' encountered an unexpected error code: %d.", result);
+            LOUT_logE("Mutex: 'task_queue->mutex' encountered an unexpected error code: %d.", result);
         }
     }
 }
@@ -219,8 +218,9 @@ shutdown_queue(void)
         pthread_join(threads[i], NULL);
     }
     free(threads);
-    free(task_queue);
     free((void *)stop_thread_flags);
+    pthread_mutex_destroy(&task_queue->mutex);
+    free(task_queue);
 }
 
 /* Add a task to the threadpool queue for for the subthreads to perform. */

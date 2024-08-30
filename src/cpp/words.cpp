@@ -317,8 +317,7 @@ bool
 char_is_in_word(const char *word, const char ch, unsigned long *at)
 {
     *at = (unsigned long)-1;
-    for (unsigned long i = 0; word[i] != '\0' && *at == (unsigned long)-1;
-         (word[i] == ch) ? *at = i : 0, i++)
+    for (unsigned long i = 0; word[i] != '\0' && *at == (unsigned long)-1; (word[i] == ch) ? *at = i : 0, i++)
         ;
     return (*at != (unsigned long)-1);
 }
@@ -343,4 +342,70 @@ retrieve_word_from_cursor_pos(bool forward)
         return NULL;
     }
     return measured_copy(&openfile->current->data[openfile->current_x], i - openfile->current_x);
+}
+
+char **
+fast_words_from_str(const char *str, unsigned long slen, unsigned long *nwords)
+{
+    PROFILE_FUNCTION;
+    unsigned long size = 0, cap = 10;
+    char        **words = (char **)nmalloc(sizeof(char *) * cap);
+    (str[slen] == '\n') ? slen-- : 0;
+    const char *start = str, *end = str;
+    while (end < (str + slen))
+    {
+        for (; end < (str + slen) && (*end == ' ' || *end == '\t'); end++)
+            ;
+        if (end == (str + slen))
+        {
+            break;
+        }
+        start = end;
+        for (; end < (str + slen) && *end != ' '; end++)
+            ;
+        const unsigned int word_len = end - start;
+        (size == cap) ? cap *= 2, words = (char **)nrealloc(words, sizeof(char *) * cap) : 0;
+        words[size++] = measured_copy(start, word_len);
+    }
+    words[size] = NULL;
+    *nwords     = size;
+    return words;
+}
+
+line_word_t *
+line_word_list(const char *str, unsigned long slen)
+{
+    PROFILE_FUNCTION;
+    line_word_t *head = NULL, *tail = NULL;
+    (str[slen] == '\n') ? slen-- : 0;
+    const char *start = str, *end = str;
+    while (end < (str + slen))
+    {
+        for (; end < (str + slen) && (*end == ' ' || *end == '\t'); end++)
+            ;
+        if (end == (str + slen))
+        {
+            break;
+        }
+        start = end;
+        for (; end < (str + slen) && *end != ' '; end++)
+            ;
+        const unsigned int word_len = end - start;
+        line_word_t       *word     = (line_word_t *)malloc(sizeof(*word));
+        word->str                   = measured_copy(start, word_len);
+        word->start                 = start - str;
+        word->end                   = word->start + (end - start);
+        word->next                  = NULL;
+        if (tail == NULL)
+        {
+            head = word;
+            tail = word;
+        }
+        else
+        {
+            tail->next = word;
+            tail       = tail->next;
+        }
+    }
+    return head;
 }

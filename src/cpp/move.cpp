@@ -259,7 +259,7 @@ to_para_end(void)
     }
     else
     {
-        openfile->current_x = constexpr_strlen(openfile->current->data);
+        openfile->current_x = strlen(openfile->current->data);
     }
     edit_redraw(was_current, FLOWING);
     recook |= perturbed;
@@ -295,7 +295,7 @@ to_prev_block(void)
                 openfile->current = openfile->current->prev;
                 get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
                 openfile->current_x = t_char;
-                edit_redraw(openfile->current, FLOWING);
+                edit_redraw(was_current, FLOWING);
                 return;
             }
         }
@@ -825,9 +825,9 @@ do_scroll_down(void)
     {
         do_down();
     }
-    if (editwinrows > 1 &&
-        (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
-                                                                 chunk_for(openfile->firstcolumn, openfile->edittop)))))
+    if (editwinrows > 1 && (openfile->edittop->next != NULL ||
+                            (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
+                                                 chunk_for(openfile->firstcolumn, openfile->edittop)))))
     {
         edit_scroll(FORWARD);
     }

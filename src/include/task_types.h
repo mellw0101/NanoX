@@ -1,8 +1,8 @@
 #pragma once
 #include "definitions.h"
 
-#define MAX_THREADS 4
-#define QUEUE_SIZE  100
+#define MAX_THREADS 8
+#define QUEUE_SIZE  200
 
 typedef void *(*task_functionptr_t)(void *);
 

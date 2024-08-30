@@ -9,9 +9,10 @@
 bool
 isCppSyntaxChar(const char c)
 {
-    return (c == '<' || c == '>' || c == '&' || c == '*' || c == '=' || c == '+' || c == '-' || c == '/' || c == '%' ||
-            c == '!' || c == '^' || c == '|' || c == '~' || c == '{' || c == '}' || c == '[' || c == ']' || c == '(' ||
-            c == ')' || c == ';' || c == ':' || c == ',' || c == '.' || c == '?' || c == '#');
+    return (c == '<' || c == '>' || c == '&' || c == '*' || c == '=' || c == '+' || c == '-' || c == '/' ||
+            c == '%' || c == '!' || c == '^' || c == '|' || c == '~' || c == '{' || c == '}' || c == '[' ||
+            c == ']' || c == '(' || c == ')' || c == ';' || c == ':' || c == ',' || c == '.' || c == '?' ||
+            c == '#');
 }
 
 /* Get indent in number of 'tabs', 'spaces', 'total chars', 'total tabs (based on width of tab)'. */
@@ -256,13 +257,41 @@ do_close_bracket(void)
         edit_redraw(was_current, FLOWING);
         // draw_row(openfile->current->lineno, "", openfile->current, 0);
     } */
-    char *word = retrieve_word_from_cursor_pos(TRUE);
+    /* char *word = retrieve_word_from_cursor_pos(TRUE);
     if (word)
     {
         NETLOGGER.log("%s\n", word);
         sub_thread_delete_c_syntax(word);
         refresh_needed = TRUE;
+    } */
+    int         row  = 0;
+    linestruct *line = openfile->edittop;
+    while (row < editwinrows && line != NULL)
+    {
+        unsigned long from_col =
+            get_page_start(wideness(line->data, (line == openfile->current) ? openfile->current_x : 0));
+        char *converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
+        apply_syntax_to_line(row, converted, line, from_col);
+        free(converted);
+        /* if (line->data[0] != '\0')
+        {
+            unsigned long nwords;
+            char        **words = fast_words_from_str(line->data, strlen(line->data), &nwords);
+            if (nwords)
+            {
+                for (int i = 0; i < nwords; i++)
+                {
+                    NETLOGGER.log("%s ", words[i]);
+                    free(words[i]);
+                }
+                NETLOGGER.log("\n");
+                free(words);
+            }
+        } */
+        row++;
+        line = line->next;
     }
+
     // submit_search_task("/home/mellw/Downloads/74307.txt.utf-8" /* "/usr/include/stdio.h" */);
 }
 

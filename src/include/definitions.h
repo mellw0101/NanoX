@@ -313,6 +313,11 @@ typedef enum
 } undo_type;
 
 /* Structure types. */
+typedef struct color_restraints_t
+{
+
+} color_restraints_t;
+
 typedef struct colortype
 {
     /* An ordinal number (if this color combo is for a multiline regex). */
@@ -597,6 +602,14 @@ struct bracket_pair
     unsigned long start_line;
     unsigned long end_line;
 };
+
+typedef struct line_word_t
+{
+    char         *str;
+    unsigned long start;
+    unsigned long end;
+    line_word_t  *next;
+} line_word_t;
 
 /* RAII complient way to lock a pthread mutex.  This struct will lock
  * the mutex apon its creation, and unlock it when it goes out of scope. */

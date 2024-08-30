@@ -4,19 +4,21 @@
 #include <ncursesw/ncurses.h>
 
 /* Identifiers for color options. */
-constexpr unsigned char TITLE_BAR          = 0;
-constexpr unsigned char LINE_NUMBER        = 1;
-constexpr unsigned char GUIDE_STRIPE       = 2;
-constexpr unsigned char SCROLL_BAR         = 3;
-constexpr unsigned char SELECTED_TEXT      = 4;
-constexpr unsigned char SPOTLIGHTED        = 5;
-constexpr unsigned char MINI_INFOBAR       = 6;
-constexpr unsigned char PROMPT_BAR         = 7;
-constexpr unsigned char STATUS_BAR         = 8;
-constexpr unsigned char ERROR_MESSAGE      = 9;
-constexpr unsigned char KEY_COMBO          = 10;
-constexpr unsigned char FUNCTION_TAG       = 11;
-constexpr unsigned char NUMBER_OF_ELEMENTS = 12;
+constexpr unsigned char TITLE_BAR     = 0;
+constexpr unsigned char LINE_NUMBER   = 1;
+constexpr unsigned char GUIDE_STRIPE  = 2;
+constexpr unsigned char SCROLL_BAR    = 3;
+constexpr unsigned char SELECTED_TEXT = 4;
+constexpr unsigned char SPOTLIGHTED   = 5;
+constexpr unsigned char MINI_INFOBAR  = 6;
+constexpr unsigned char PROMPT_BAR    = 7;
+constexpr unsigned char STATUS_BAR    = 8;
+constexpr unsigned char ERROR_MESSAGE = 9;
+constexpr unsigned char KEY_COMBO     = 10;
+constexpr unsigned char FUNCTION_TAG  = 11;
+#define BLUE  12
+#define GREEN 13
+constexpr unsigned char NUMBER_OF_ELEMENTS = 14;
 /* The color options map. */
 CONSTEXPR_MAP<std::string_view, unsigned char, 12> colorOptionMap = {
     {{"titlecolor", TITLE_BAR},
@@ -358,8 +360,9 @@ constexpr unsigned short MGOTODIR     = (1 << 12);
 constexpr unsigned short MYESNO       = (1 << 13);
 constexpr unsigned short MLINTER      = (1 << 14);
 constexpr unsigned short MFINDINHELP  = (1 << 15);
-constexpr unsigned short MMOST = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE |
-                                  MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER);
+constexpr unsigned short MMOST =
+    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE |
+     MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER);
 constexpr unsigned short MSOME = MMOST | MBROWSER;
 /* The menus map. */
 constexpr_map<std::string_view, unsigned short, 16> menuOptionMap = {
@@ -398,20 +401,21 @@ constexpr_map<std::string_view, unsigned int, 14> toggleOptionMap = {
      {"mouse", USE_MOUSE}}
 };
 
-#define CS_STRUCT  (1 << 0)
-#define CS_ENUM    (1 << 1)
-#define CS_INT     (1 << 2)
-#define CS_VOID    (1 << 3)
-#define CS_LONG    (1 << 4)
-#define CS_CHAR    (1 << 5)
-#define CS_INCLUDE (1 << 6)
-#define CS_DEFINE  (1 << 7)
-#define CS_CLASS   (1 << 8)
-#define CS_BOOL    (1 << 9)
-#define CS_SIZE_T  (1 << 10)
-#define CS_SSIZE_T (1 << 11)
-#define CS_SHORT   (1 << 12)
-constexpr_map<std::string_view, unsigned short, 13> c_syntax_map = {
+#define CS_STRUCT    (1 << 0)
+#define CS_ENUM      (1 << 1)
+#define CS_INT       (1 << 2)
+#define CS_VOID      (1 << 3)
+#define CS_LONG      (1 << 4)
+#define CS_CHAR      (1 << 5)
+#define CS_INCLUDE   (1 << 6)
+#define CS_DEFINE    (1 << 7)
+#define CS_CLASS     (1 << 8)
+#define CS_BOOL      (1 << 9)
+#define CS_SIZE_T    (1 << 10)
+#define CS_SSIZE_T   (1 << 11)
+#define CS_SHORT     (1 << 12)
+#define CS_NAMESPACE (1 << 13)
+constexpr_map<std::string_view, unsigned short, 14> c_syntax_map = {
     {{"struct", CS_STRUCT},
      {"enum", CS_ENUM},
      {"int", CS_INT},
@@ -424,5 +428,6 @@ constexpr_map<std::string_view, unsigned short, 13> c_syntax_map = {
      {"bool", CS_BOOL},
      {"size_t", CS_SIZE_T},
      {"ssize_t", CS_SSIZE_T},
-     {"short", CS_SHORT}}
+     {"short", CS_SHORT},
+     {"namespace", CS_NAMESPACE}}
 };

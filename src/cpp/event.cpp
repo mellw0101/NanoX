@@ -60,8 +60,7 @@ enqueue_callback(callback_functionptr_t callback, void *result)
         {
             /* If 'tail' is not empty, link 'node' to 'tail->next'.
              * Otherwise, we set 'node' as the 'head'. */
-            (callback_queue->tail) ? (callback_queue->tail->next = node) :
-                                     (callback_queue->head = node);
+            (callback_queue->tail) ? (callback_queue->tail->next = node) : (callback_queue->head = node);
             /* Now we set the 'tail' ptr to 'new_node'. */
             callback_queue->tail = node;
         });
