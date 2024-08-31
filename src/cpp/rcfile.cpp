@@ -1140,8 +1140,8 @@ set_interface_color(const unsigned char element, char *combotext)
 
 /* Read regex strings enclosed in double quotes from the line pointed at
  * by ptr, and store them quoteless in the passed storage place.
- * TODO: (grab_and_store) - Implement live syntax for defined typed like struct`s, class`s and
- * define`s. */
+ * TODO: (grab_and_store) - Implement live syntax for defined typed like
+ * struct`s, class`s and define`s. */
 void
 grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
 {

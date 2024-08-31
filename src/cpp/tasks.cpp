@@ -10,7 +10,7 @@ struct sub_thread_function
     search_word_task(void *arg)
     {
         word_search_task_t *task = (word_search_task_t *)arg;
-        NETLOGGER.log("path: '%s'.\n", task->path);
+        NLOG("path: '%s'.\n", task->path);
         task->words = words_from_file(task->path, &task->nwords);
         return task;
     }

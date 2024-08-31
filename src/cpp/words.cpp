@@ -388,12 +388,13 @@ line_word_list(const char *str, unsigned long slen)
             break;
         }
         start = end;
-        for (; end < (str + slen) && *end != ' '; end++)
+        for (; (end < (str + slen)) && (*end != ' ') && (*end != '\t'); end++)
             ;
         const unsigned int word_len = end - start;
         line_word_t       *word     = (line_word_t *)malloc(sizeof(*word));
         word->str                   = measured_copy(start, word_len);
         word->start                 = start - str;
+        word->len                   = (end - start);
         word->end                   = word->start + (end - start);
         word->next                  = NULL;
         if (tail == NULL)
@@ -408,4 +409,16 @@ line_word_list(const char *str, unsigned long slen)
         }
     }
     return head;
+}
+
+line_word_t *
+make_line_word(char *str, unsigned short start, unsigned short len, unsigned short end)
+{
+    line_word_t *word = (line_word_t *)nmalloc(sizeof(*word));
+    word->str         = str;
+    word->start       = start;
+    word->len         = len;
+    word->end         = end;
+    word->next        = NULL;
+    return word;
 }

@@ -16,11 +16,15 @@ constexpr unsigned char STATUS_BAR    = 8;
 constexpr unsigned char ERROR_MESSAGE = 9;
 constexpr unsigned char KEY_COMBO     = 10;
 constexpr unsigned char FUNCTION_TAG  = 11;
-#define BLUE  12
-#define GREEN 13
-constexpr unsigned char NUMBER_OF_ELEMENTS = 14;
+#define FG_BLUE    12
+#define FG_GREEN   13
+#define FG_MAGENTA 14
+#define FG_LAGOON  15
+#define FG_YELLOW  16
+#define FG_RED     17
+constexpr unsigned char NUMBER_OF_ELEMENTS = 18;
 /* The color options map. */
-CONSTEXPR_MAP<std::string_view, unsigned char, 12> colorOptionMap = {
+constexpr_map<std::string_view, unsigned char, 12> colorOptionMap = {
     {{"titlecolor", TITLE_BAR},
      {"numbercolor", LINE_NUMBER},
      {"stripecolor", GUIDE_STRIPE},
@@ -49,7 +53,7 @@ constexpr unsigned short WORDCHARS        = (1 << 9);
 constexpr unsigned short GUIDESTRIPE      = (1 << 10);
 constexpr unsigned short CONF_OPT_TABSIZE = (1 << 11);
 /* The configuration options map. */
-CONSTEXPR_MAP<std::string_view, unsigned short, 12> configOptionMap = {
+constexpr_map<std::string_view, unsigned short, 12> configOptionMap = {
     {{"operatingdir", OPERATINGDIR},
      {"fill", FILL},
      {"matchbrackets", MATCHBRACKETS},
@@ -136,6 +140,7 @@ constexpr unsigned char USE_MAGIC          = 47;
 constexpr unsigned char MINIBAR            = 48;
 constexpr unsigned char ZERO               = 49;
 constexpr unsigned char MODERN_BINDINGS    = 50;
+#define EXPERIMENTAL_FAST_LIVE_SYNTAX 51
 /* The flags map. */
 constexpr_map<std::string_view, unsigned char, 94> flagOptionsMap = {
     {{"-A", SMART_HOME},
@@ -407,27 +412,43 @@ constexpr_map<std::string_view, unsigned int, 14> toggleOptionMap = {
 #define CS_VOID      (1 << 3)
 #define CS_LONG      (1 << 4)
 #define CS_CHAR      (1 << 5)
-#define CS_INCLUDE   (1 << 6)
-#define CS_DEFINE    (1 << 7)
-#define CS_CLASS     (1 << 8)
-#define CS_BOOL      (1 << 9)
-#define CS_SIZE_T    (1 << 10)
-#define CS_SSIZE_T   (1 << 11)
-#define CS_SHORT     (1 << 12)
-#define CS_NAMESPACE (1 << 13)
-constexpr_map<std::string_view, unsigned short, 14> c_syntax_map = {
-    {{"struct", CS_STRUCT},
-     {"enum", CS_ENUM},
-     {"int", CS_INT},
-     {"void", CS_VOID},
-     {"long", CS_LONG},
-     {"char", CS_CHAR},
-     {"include", CS_INCLUDE},
-     {"define", CS_DEFINE},
-     {"class", CS_CLASS},
-     {"bool", CS_BOOL},
-     {"size_t", CS_SIZE_T},
-     {"ssize_t", CS_SSIZE_T},
-     {"short", CS_SHORT},
-     {"namespace", CS_NAMESPACE}}
+#define CS_CLASS     (1 << 6)
+#define CS_BOOL      (1 << 7)
+#define CS_SIZEOF    (1 << 8)
+#define CS_SHORT     (1 << 9)
+#define CS_NAMESPACE (1 << 10)
+#define CS_STATIC    (1 << 11)
+#define CS_UNSIGNED  (1 << 12)
+#define CS_CONST     (1 << 13)
+#define CS_NULL      (1 << 14)
+#define CS_TRUE      (1 << 15)
+#define CS_FALSE     (1 << 16)
+#define CS_SIZE_T    (1 << 17)
+#define CS_SSIZE_T   (1 << 18)
+#define CS_IF        (1 << 19)
+#define CS_CASE      (1 << 20)
+#define CS_ELSE      (1 << 21)
+#define CS_SWITCH    (1 << 22)
+#define CS_TYPEDEF   (1 << 23)
+#define CS_FOR       (1 << 24)
+#define CS_WHILE     (1 << 25)
+#define CS_RETURN    (1 << 26)
+#define CS_INCLUDE   (1 << 27)
+#define CS_DEFINE    (1 << 28)
+constexpr_map<std::string_view, unsigned int, 29> c_syntax_map = {
+    {{"struct", CS_STRUCT},   {"enum", CS_ENUM},
+     {"int", CS_INT},         {"void", CS_VOID},
+     {"long", CS_LONG},       {"char", CS_CHAR},
+     {"include", CS_INCLUDE}, {"define", CS_DEFINE},
+     {"class", CS_CLASS},     {"bool", CS_BOOL},
+     {"size_t", CS_SIZE_T},   {"ssize_t", CS_SSIZE_T},
+     {"short", CS_SHORT},     {"namespace", CS_NAMESPACE},
+     {"static", CS_STATIC},   {"unsigned", CS_UNSIGNED},
+     {"const", CS_CONST},     {"NULL", CS_NULL},
+     {"TRUE", CS_TRUE},       {"FALSE", CS_FALSE},
+     {"if", CS_IF},           {"case", CS_CASE},
+     {"else", CS_ELSE},       {"switch", CS_SWITCH},
+     {"typedef", CS_TYPEDEF}, {"for", CS_FOR},
+     {"while", CS_WHILE},     {"return", CS_RETURN},
+     {"sizeof", CS_SIZEOF}}
 };

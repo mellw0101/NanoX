@@ -16,7 +16,7 @@
 #    define USING_OLDER_LIBVTE yes
 #endif
 
-/* A buffer for the keystrokes that haven't been handled yet. */
+/* A buffer for the keystrokes that haven't been handled. */
 static int *key_buffer = NULL;
 /* A pointer pointing at the next keycode in the keystroke buffer. */
 static int *nextcodes = NULL;
@@ -113,7 +113,7 @@ run_macro(void)
     mute_modifiers = TRUE;
 }
 
-/* Allocate the requested space for the keystroke buffer. */
+/* Allocate the requested space for the keystroke */
 void
 reserve_space_for(unsigned long newsize)
 {
@@ -1718,7 +1718,6 @@ parse_kbinput(WINDOW *frame)
         /* Is Ctrl being held? */
         if (modifiers & 0x04)
         {
-            NETLOGGER.log("ctrl held.\n");
             switch (keycode)
             {
                 case KEY_UP :
@@ -2386,6 +2385,7 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
     text += start_x;
     if (span > HIGHEST_POSITIVE)
     {
+        LOUT_logE("Span has underflowed.");
         statusline(ALERT, "Span has underflowed -- please report a bug");
         converted[0] = '\0';
         return converted;
@@ -2791,7 +2791,7 @@ minibar(void)
         thename = copy_of(_("(nameless)"));
     }
     sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
-    placewidth = constexpr_strlen(location);
+    placewidth = strlen(location);
     namewidth  = breadth(thename);
     /* If the file name is relatively long drop the side spaces. */
     if (namewidth + 19 > COLS)
@@ -3008,7 +3008,7 @@ statusline(message_type importance, const char *msg, ...)
     wmove(footwin, 0, (bracketed ? start_col - 2 : start_col));
     wattron(footwin, colorpair);
     bracketed ? waddstr(footwin, "[ ") : 0;
-    LoutI << message << '\n';
+    LOUT_logI("%s", message);
     waddstr(footwin, message);
     bracketed ? waddstr(footwin, " ]") : 0;
     wattroff(footwin, colorpair);
@@ -3167,10 +3167,13 @@ static constexpr unsigned short PAINT_LIMIT = 2000;
 void
 draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col)
 {
-    PROFILE_FUNCTION;
     render_line_text(row, converted, line, from_col);
+    if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX))
+    {
+        apply_syntax_to_line(row, converted, line, from_col);
+    }
     /* If there are color rules (and coloring is turned on), apply them. */
-    if (openfile->syntax && !ISSET(NO_SYNTAX))
+    else if (openfile->syntax && !ISSET(NO_SYNTAX))
     {
         PROFILE_CURRENT_SCOPE("draw_row: color checking");
         const colortype *varnish = openfile->syntax->color;
@@ -3237,9 +3240,8 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                     }
                     thetext  = converted + actual_x(converted, start_col);
                     paintlen = actual_x(thetext, wideness(line->data, match.rm_eo) - from_col - start_col);
-                    wattron(midwin, varnish->attributes);
-                    mvwaddnstr(midwin, row, margin + start_col, thetext, paintlen);
-                    wattroff(midwin, varnish->attributes);
+                    midwin_mv_add_nstr_wattr(
+                        row, (margin + start_col), thetext, paintlen, varnish->attributes);
                 }
                 continue;
             }
@@ -3714,7 +3716,7 @@ edit_scroll(bool direction)
     {
         draw_scrollbar();
     }
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         /* Compensate for the earlier chunks of a softwrapped line. */
         nrows += chunk_for(leftedge, line);

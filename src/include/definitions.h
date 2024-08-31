@@ -82,40 +82,47 @@
     #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
     #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
  * New defines: */
-#define FLAGS(flag)    flags[((flag) / (sizeof(unsigned long) * 8))]
-#define FLAGMASK(flag) ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
-#define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
-#define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
-#define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-#define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
+#define FLAGS(flag)               flags[((flag) / (sizeof(unsigned long) * 8))]
+#define FLAGMASK(flag)            ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
+#define SET(flag)                 FLAGS(flag) |= FLAGMASK(flag)
+#define UNSET(flag)               FLAGS(flag) &= ~FLAGMASK(flag)
+#define ISSET(flag)               ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+#define TOGGLE(flag)              FLAGS(flag) ^= FLAGMASK(flag)
 
-constexpr bool BACKWARD = false;
-constexpr bool FORWARD  = true;
+/* Macros for line flags. */
+#define LINE_FLAGS(line, flag)    (line)->flags[((flag) / (sizeof(unsigned char) * 8))]
+#define LINE_FLAGMASK(flag)       ((unsigned char)1 << ((flag) % (sizeof(unsigned char) * 8)))
+#define LINE_SET(line, flag)      LINE_FLAGS(line, flag) |= LINE_FLAGMASK(flag)
+#define LINE_UNSET(line, flag)    LINE_FLAGS(line, flag) &= ~LINE_FLAGMASK(flag)
+#define LINE_ISSET(line, flag)    ((LINE_FLAGS(line, flag) & LINE_FLAGMASK(flag)) != 0)
+#define LINE_TOGGLE(line, flag)   LINE_FLAGS(line, flag) ^= LINE_FLAGMASK(flag)
 
-constexpr bool YESORNO      = false;
-constexpr bool YESORALLORNO = true;
+/* Some line flags. */
+#define BLOCK_COMMENT_START       1
+#define BLOCK_COMMENT_END         2
+#define IN_BLOCK_COMMENT          3
+#define SINGLE_LINE_BLOCK_COMMENT 4
 
-constexpr short YES    = 1;
-constexpr short ALL    = 2;
-constexpr short NO     = 0;
-constexpr short CANCEL = -1;
-
-constexpr bool BLIND   = false;
-constexpr bool VISIBLE = true;
-
-constexpr unsigned char JUSTFIND  = 0;
-constexpr unsigned char REPLACING = 1;
-constexpr unsigned char INREGION  = 2;
-
-constexpr bool NORMAL    = true;
-constexpr bool SPECIAL   = false;
-constexpr bool TEMPORARY = false;
-
-constexpr bool ANNOTATE = true;
-constexpr bool NONOTES  = false;
-
-constexpr bool PRUNE_DUPLICATE   = true;
-constexpr bool IGNORE_DUPLICATES = false;
+constexpr bool          BACKWARD          = FALSE;
+constexpr bool          FORWARD           = TRUE;
+constexpr bool          YESORNO           = FALSE;
+constexpr bool          YESORALLORNO      = TRUE;
+constexpr bool          BLIND             = FALSE;
+constexpr bool          VISIBLE           = TRUE;
+constexpr short         YES               = 1;
+constexpr short         ALL               = 2;
+constexpr short         NO                = 0;
+constexpr short         CANCEL            = -1;
+constexpr unsigned char JUSTFIND          = 0;
+constexpr unsigned char REPLACING         = 1;
+constexpr unsigned char INREGION          = 2;
+constexpr bool          NORMAL            = TRUE;
+constexpr bool          SPECIAL           = FALSE;
+constexpr bool          TEMPORARY         = FALSE;
+constexpr bool          ANNOTATE          = TRUE;
+constexpr bool          NONOTES           = FALSE;
+constexpr bool          PRUNE_DUPLICATE   = TRUE;
+constexpr bool          IGNORE_DUPLICATES = FALSE;
 
 constexpr unsigned char MAXCHARLEN = 4;
 /* The default width of a tab in spaces. */
@@ -192,13 +199,6 @@ constexpr int DEL_CODE = 0x7F;
 
 #define FOCUS_IN             0x491
 #define FOCUS_OUT            0x499
-
-/* Some color defs. */
-#define BOLD                 "bold,"
-#define ITALIC               "italic,"
-#define BRIGHT               "bright"
-#define LIGHT                "light"
-#define MAGENTA              "magenta"
 
 /* Special keycodes for when a string bind has been partially implanted
  * or has an unpaired opening brace, or when a function in a string bind
@@ -313,11 +313,6 @@ typedef enum
 } undo_type;
 
 /* Structure types. */
-typedef struct color_restraints_t
-{
-
-} color_restraints_t;
-
 typedef struct colortype
 {
     /* An ordinal number (if this color combo is for a multiline regex). */
@@ -407,7 +402,6 @@ typedef struct lintstruct
 } lintstruct;
 
 /* More structure types. */
-
 typedef struct linestruct
 {
     /* Next node. */
@@ -422,8 +416,8 @@ typedef struct linestruct
     short *multidata;
     /* Whether the user has placed an anchor at this line. */
     bool has_anchor;
-    /* If this line should be hidden. */
-    bool hidden = FALSE;
+    /* The state of the line. */
+    unsigned char flags[1] = {0};
 } linestruct;
 
 typedef struct groupstruct
@@ -605,11 +599,14 @@ struct bracket_pair
 
 typedef struct line_word_t
 {
-    char         *str;
-    unsigned long start;
-    unsigned long end;
-    line_word_t  *next;
+    char          *str;
+    unsigned short start;
+    unsigned short end;
+    unsigned short len;
+    line_word_t   *next;
 } line_word_t;
+
+#define free_node(node) free(node->str), free(node)
 
 /* RAII complient way to lock a pthread mutex.  This struct will lock
  * the mutex apon its creation, and unlock it when it goes out of scope. */

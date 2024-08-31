@@ -580,6 +580,7 @@ bool is_syntax_class(std::string_view str);
 void handle_struct_syntax(char **word);
 void openfile_syntax_c(void);
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col);
+void find_block_comments(int before, int end);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
@@ -607,6 +608,7 @@ bool         char_is_in_word(const char *word, const char ch, unsigned long *at)
 char        *retrieve_word_from_cursor_pos(bool forward);
 char       **fast_words_from_str(const char *str, unsigned long slen, unsigned long *nwords);
 line_word_t *line_word_list(const char *str, unsigned long slen);
+line_word_t *make_line_word(char *str, unsigned short start, unsigned short len, unsigned short end);
 
 /* 'lines.cpp' */
 bool          is_line_comment(linestruct *line);
@@ -658,5 +660,6 @@ void block_pthread_sig(int sig, bool block);
 
 /* 'render.cpp' */
 void render_line_text(const int row, const char *str, linestruct *line, const unsigned long from_col);
+void apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col);
 
 #include <Mlib/def.h>

@@ -346,7 +346,8 @@ comment_line(undo_type action, linestruct *line, const char *comment_seq)
             return TRUE;
         }
         /* Erase the comment prefix by moving the non-comment part. */
-        memmove(line->data + indent_len, line->data + indent_len + pre_len + 1, line_len - pre_len - indent_len);
+        memmove(
+            line->data + indent_len, line->data + indent_len + pre_len + 1, line_len - pre_len - indent_len);
         /* Truncate the postfix if there was one. */
         line->data[line_len - pre_len - post_len] = '\0';
         openfile->totsize -= pre_len + post_len;
@@ -531,8 +532,8 @@ do_undo(void)
              * In that case, adjust the positions to return to and to scoop data from. */
             original_x    = (u->head_x == 0) ? u->tail_x : u->head_x;
             regain_from_x = (u->head_x == 0) ? 0 : u->tail_x;
-            line->data =
-                static_cast<char *>(nrealloc(line->data, strlen(line->data) + strlen(&u->strdata[regain_from_x]) + 1));
+            line->data    = static_cast<char *>(
+                nrealloc(line->data, strlen(line->data) + strlen(&u->strdata[regain_from_x]) + 1));
             strcat(line->data, &u->strdata[regain_from_x]);
             line->has_anchor |= line->next->has_anchor;
             unlink_node(line->next);
@@ -620,7 +621,8 @@ do_undo(void)
         {
             undidmsg = _("paste");
             undo_paste(u);
-            if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES) && openfile->filebot != openfile->current)
+            if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES) &&
+                openfile->filebot != openfile->current)
             {
                 remove_magicline();
             }
@@ -637,7 +639,8 @@ do_undo(void)
             cut_marked_region();
             u->cutbuffer = cutbuffer;
             cutbuffer    = oldcutbuffer;
-            if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES) && openfile->filebot != openfile->current)
+            if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES) &&
+                openfile->filebot != openfile->current)
             {
                 remove_magicline();
             }
@@ -971,29 +974,14 @@ do_redo(void)
 }
 
 /* Break the current line at the cursor position.
- * TODO: Fix so if char before cursor is a ( '{', '[', '(' ) then it will break the line at the next line and insert
- * the closing bracket. */
+ * TODO: Fix so if char before cursor is a ( '{', '[', '(' ) then it will break the line at the next line and
+ * insert the closing bracket. */
 void
 do_enter(void)
 {
     if (enter_with_bracket())
     {
         return;
-    }
-    /* Debuging for func 'words_in_line' to see what words it picks up apon any changes.  As well as
-     * being a sanity check to make sure I catch an error with a word not being fetched directly. */
-    else if (!is_empty_line(openfile->current))
-    {
-        unsigned i;
-        char   **words = words_in_line(openfile->current);
-        if (words[0] != NULL)
-        {
-            for (i = 0; words[i] != NULL; i++)
-            {
-                NETLOGGER.log("%s\n", words[i]);
-            }
-        }
-        free(words);
     }
     check_for_syntax_words(openfile->current);
     update_c_syntaxtype();
@@ -1319,7 +1307,8 @@ update_multiline_undo(long lineno, char *indentation)
     {
         unsigned long number_of_lines = lineno - u->grouping->top_line + 1;
         u->grouping->bottom_line      = lineno;
-        u->grouping->indentations     = (char **)nrealloc(u->grouping->indentations, number_of_lines * sizeof(char *));
+        u->grouping->indentations =
+            (char **)nrealloc(u->grouping->indentations, number_of_lines * sizeof(char *));
         u->grouping->indentations[number_of_lines - 1] = copy_of(indentation);
     }
     else
@@ -2410,8 +2399,8 @@ treat(char *tempfile_name, char *theprogram, bool spelling)
     }
     free(arguments[0]);
     /* When the temporary file wasn't touched, say so and leave. */
-    if (timestamp_sec > 0 && stat(tempfile_name, &fileinfo) == 0 && (long)fileinfo.st_mtim.tv_sec == timestamp_sec &&
-        (long)fileinfo.st_mtim.tv_nsec == timestamp_nsec)
+    if (timestamp_sec > 0 && stat(tempfile_name, &fileinfo) == 0 &&
+        (long)fileinfo.st_mtim.tv_sec == timestamp_sec && (long)fileinfo.st_mtim.tv_nsec == timestamp_nsec)
     {
         statusline(REMARK, _("Nothing changed"));
         return;
@@ -3232,7 +3221,8 @@ count_lines_words_and_characters(void)
     /* Keep stepping to the next word (considering punctuation as part of a
      * word, as "wc -w" does), until we reach the end of the relevant area,
      * incrementing the word count for each successful step. */
-    while (openfile->current->lineno < botline->lineno || (openfile->current == botline && openfile->current_x < bot_x))
+    while (openfile->current->lineno < botline->lineno ||
+           (openfile->current == botline && openfile->current_x < bot_x))
     {
         if (do_next_word(FALSE))
         {

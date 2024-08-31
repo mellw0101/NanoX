@@ -42,6 +42,10 @@ make_new_node(linestruct *prevnode)
     newnode->multidata  = NULL;
     newnode->lineno     = (prevnode) ? prevnode->lineno + 1 : 1;
     newnode->has_anchor = FALSE;
+    LINE_UNSET(newnode, IN_BLOCK_COMMENT);
+    LINE_UNSET(newnode, BLOCK_COMMENT_START);
+    LINE_UNSET(newnode, BLOCK_COMMENT_END);
+    LINE_UNSET(newnode, SINGLE_LINE_BLOCK_COMMENT);
     return newnode;
 }
 
@@ -1615,6 +1619,8 @@ main(int argc, char **argv)
     SET(NO_HELP);
     SET(INDICATOR);
     SET(AFTER_ENDS);
+    /* This is my new system for live syntax, and it`s fucking fast. */
+    SET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
     /* If the executable's name starts with 'r', activate restricted mode. */
     if (*(tail(argv[0])) == 'r')
     {

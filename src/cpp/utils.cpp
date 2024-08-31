@@ -449,16 +449,9 @@ wideness(const char *text, unsigned long maxlen)
         return 0;
     }
     unsigned long width = 0;
-    while (*text != '\0')
-    {
-        unsigned long charlen = (unsigned long)advance_over(text, width);
-        if (maxlen <= charlen)
-        {
-            break;
-        }
-        maxlen -= charlen;
-        text += charlen;
-    }
+    for (unsigned long charlen; (*text != '\0') && (maxlen > (charlen = advance_over(text, width)));
+         maxlen -= charlen, text += charlen)
+        ;
     return width;
 }
 
@@ -467,10 +460,8 @@ unsigned long
 breadth(const char *text)
 {
     unsigned long span = 0;
-    while (*text != '\0')
-    {
-        text += advance_over(text, span);
-    }
+    for (; *text != '\0'; text += advance_over(text, span))
+        ;
     return span;
 }
 

@@ -13,15 +13,23 @@ syntax_check_file(openfilestruct *file)
     {
         return;
     }
-    const char *fext = get_file_extention();
-    if (fext && (strncmp(fext, "cpp", 3) == 0 || strncmp(fext, "c", 1) == 0))
+    if (!ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX))
     {
-        set_last_c_colortype();
-        for (linestruct *line = file->filetop; line != NULL; line = line->next)
+        const char *fext = get_file_extention();
+        if (fext && (strncmp(fext, "cpp", 3) == 0 || strncmp(fext, "c", 1) == 0))
         {
-            check_for_syntax_words(line);
+            set_last_c_colortype();
+            for (linestruct *line = file->filetop; line != NULL; line = line->next)
+            {
+                check_for_syntax_words(line);
+            }
+            prosses_callback_queue();
         }
-        prosses_callback_queue();
+    }
+    else
+    {
+        check_include_file_syntax("/usr/include/Mlib/Packy.h");
+        check_include_file_syntax("/usr/include/stdio.h");
     }
 }
 
@@ -399,7 +407,7 @@ check_include_file_syntax(const char *path)
                 }
                 else if (!is_syntax_struct(words[i]))
                 {
-                    add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]), path);
+                    // add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]), path);
                     add_syntax_struct(words[i]);
                 }
             }
@@ -414,12 +422,12 @@ check_include_file_syntax(const char *path)
                 }
                 else if (!is_syntax_class(words[i]))
                 {
-                    add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]), path);
+                    // add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]), path);
                     add_syntax_class(words[i]);
                 }
             }
         }
-        else if (type & CS_ENUM)
+        /* else if (type & CS_ENUM)
         {
             if (words[++i] != NULL)
             {
@@ -429,7 +437,7 @@ check_include_file_syntax(const char *path)
                 }
                 add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]));
             }
-        }
+        } */
         else if (type & CS_CHAR || type & CS_VOID || type & CS_INT || type & CS_LONG || type & CS_BOOL ||
                  type & CS_SIZE_T || type & CS_SSIZE_T)
         {
@@ -444,8 +452,14 @@ check_include_file_syntax(const char *path)
                         if (!char_is_in_word(words[i], '=', &at))
                         {
                             strip_leading_chars_from(words[i], '*');
-                            (words[i] != NULL) ? add_syntax_word("yellow", NULL, rgx_word(words[i]), path) :
-                                                 void();
+                            if (words[i] != NULL)
+                            {
+                                if (!syntax_func(words[i]))
+                                {
+                                    new_syntax_func(words[i]);
+                                }
+                                // add_syntax_word("yellow", NULL, rgx_word(words[i]), path);
+                            }
                         }
                     }
                 }
@@ -455,12 +469,12 @@ check_include_file_syntax(const char *path)
                     if (!syntax_func(words[i]))
                     {
                         new_syntax_func(words[i]);
-                        add_syntax_word(FUNC_COLOR, NULL, rgx_word(words[i]), path);
+                        // add_syntax_word(FUNC_COLOR, NULL, rgx_word(words[i]), path);
                     }
                 }
             }
         }
-        else if (type & CS_INCLUDE)
+        /* else if (type & CS_INCLUDE)
         {
             if (words[++i] != NULL)
             {
@@ -477,7 +491,7 @@ check_include_file_syntax(const char *path)
             {
                 handle_define(words[i]);
             }
-        }
+        } */
     }
     for (i = 0; i < nwords; i++)
     {
@@ -1013,7 +1027,6 @@ openfile_syntax_c(void)
     {
         return;
     }
-    NETLOGGER.log("words: %lu\n", nwords);
     /* Main loop to parse the syntax. */
     for (i = 0; i < nwords; i++)
     {
@@ -1089,33 +1102,34 @@ openfile_syntax_c(void)
     free(words);
 }
 
-#define PAINT_LIMIT 2000
-
 void
-apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col)
+find_block_comments(int from, int end)
 {
     PROFILE_FUNCTION;
-    if (line->data[0] == '\0')
+    linestruct *line = line_from_number(from);
+    for (; line && line->lineno != end; line = line->next)
     {
-        return;
-    }
-    line_word_t *head = line_word_list(line->data, strlen(line->data));
-    while (head != NULL)
-    {
-        line_word_t *node         = head;
-        head                      = node->next;
-        const unsigned short type = retrieve_c_syntax_type(node->str);
-        if (type & CS_VOID)
+        const char *found_start = strstr(line->data, "/*");
+        const char *found_end   = strstr(line->data, "*/");
+        if (found_start && found_end)
+            ;
+        else if (found_start && !found_end)
         {
-            midwin_mv_add_nstr_wattr(
-                row, node->start + margin, node->str, node->end - node->start, interface_color_pair[BLUE]);
+            LINE_SET(line, BLOCK_COMMENT_START);
+            continue;
         }
-        if (type & CS_NAMESPACE)
+        else if (!found_start && found_end)
         {
-            midwin_mv_add_nstr_wattr(
-                row, node->start + margin, node->str, node->end - node->start, interface_color_pair[BLUE]);
+            LINE_SET(line, BLOCK_COMMENT_END);
+            continue;
         }
-        free(node->str);
-        free(node);
+        else if (!found_start && !found_end)
+        {
+            if (line->prev != NULL &&
+                (LINE_ISSET(line->prev, BLOCK_COMMENT_START) || LINE_ISSET(line->prev, IN_BLOCK_COMMENT)))
+            {
+                LINE_SET(line, IN_BLOCK_COMMENT);
+            }
+        }
     }
 }

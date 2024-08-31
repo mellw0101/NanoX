@@ -112,7 +112,7 @@ menuToName(const unsigned short value)
     return "boooo";
 }
 
-constexpr unsigned short
+constexpr unsigned int
 retrieve_c_syntax_type(std::string_view str)
 {
     for (const auto &[key, val] : c_syntax_map)
