@@ -4,6 +4,7 @@
 #define COLOR_LAGOON                           38
 
 #define get_start_col(line, node)              wideness((line)->data, (node)->start) + margin
+#define start_column(line, index)              wideness((line)->data, index) + margin
 
 /* Define`s for modifying the 'midwin', i.e: The edit window. */
 

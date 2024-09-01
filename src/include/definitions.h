@@ -82,26 +82,47 @@
     #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
     #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
  * New defines: */
-#define FLAGS(flag)               flags[((flag) / (sizeof(unsigned long) * 8))]
-#define FLAGMASK(flag)            ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
-#define SET(flag)                 FLAGS(flag) |= FLAGMASK(flag)
-#define UNSET(flag)               FLAGS(flag) &= ~FLAGMASK(flag)
-#define ISSET(flag)               ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-#define TOGGLE(flag)              FLAGS(flag) ^= FLAGMASK(flag)
+#define FLAGS(flag)             flags[((flag) / (sizeof(unsigned long) * 8))]
+#define FLAGMASK(flag)          ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
+#define SET(flag)               FLAGS(flag) |= FLAGMASK(flag)
+#define UNSET(flag)             FLAGS(flag) &= ~FLAGMASK(flag)
+#define ISSET(flag)             ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+#define TOGGLE(flag)            FLAGS(flag) ^= FLAGMASK(flag)
 
 /* Macros for line flags. */
-#define LINE_FLAGS(line, flag)    (line)->flags[((flag) / (sizeof(unsigned char) * 8))]
-#define LINE_FLAGMASK(flag)       ((unsigned char)1 << ((flag) % (sizeof(unsigned char) * 8)))
-#define LINE_SET(line, flag)      LINE_FLAGS(line, flag) |= LINE_FLAGMASK(flag)
-#define LINE_UNSET(line, flag)    LINE_FLAGS(line, flag) &= ~LINE_FLAGMASK(flag)
-#define LINE_ISSET(line, flag)    ((LINE_FLAGS(line, flag) & LINE_FLAGMASK(flag)) != 0)
-#define LINE_TOGGLE(line, flag)   LINE_FLAGS(line, flag) ^= LINE_FLAGMASK(flag)
+#define LINE_FLAGS(line, flag)  (line)->flags[((flag) / (sizeof(unsigned char) * 8))]
+#define LINE_FLAGMASK(flag)     ((unsigned char)1 << ((flag) % (sizeof(unsigned char) * 8)))
+#define LINE_SET(line, flag)    LINE_FLAGS(line, flag) |= LINE_FLAGMASK(flag)
+#define LINE_UNSET(line, flag)  LINE_FLAGS(line, flag) &= ~LINE_FLAGMASK(flag)
+#define LINE_ISSET(line, flag)  ((LINE_FLAGS(line, flag) & LINE_FLAGMASK(flag)) != 0)
+#define LINE_TOGGLE(line, flag) LINE_FLAGS(line, flag) ^= LINE_FLAGMASK(flag)
+
+#define SAVE_LINE_FLAGS(name, flags_to_save)                              \
+    unsigned char name[sizeof(flags_to_save) / sizeof(flags_to_save[0])]; \
+    memcpy(name, flags_to_save, sizeof(flags_to_save))
+
+#define SET_LINE_FLAGS(set, from) memcpy(set, from, sizeof(set))
+
+#define EXANGE_LINE_FLAGS(line_1, line_2)           \
+    SAVE_LINE_FLAGS(line_1_flags, (line_1)->flags); \
+    SAVE_LINE_FLAGS(line_2_flags, (line_2)->flags); \
+    SET_LINE_FLAGS((line_1)->flags, line_2_flags);  \
+    SET_LINE_FLAGS((line_2)->flags, line_1_flags)
+
+#define TOGGLE_LINE_FLAG(line_1, line_2, flag)                         \
+    if ((LINE_ISSET((line_1), flag) && !LINE_ISSET((line_2), flag)) || \
+        (!LINE_ISSET((line_1), flag) && LINE_ISSET((line_2), flag)))   \
+    {                                                                  \
+        LINE_TOGGLE((line_1), flag);                                   \
+        LINE_TOGGLE((line_2), flag);                                   \
+    }
 
 /* Some line flags. */
 #define BLOCK_COMMENT_START       1
 #define BLOCK_COMMENT_END         2
 #define IN_BLOCK_COMMENT          3
 #define SINGLE_LINE_BLOCK_COMMENT 4
+#define IS_HIDDEN                 5
 
 constexpr bool          BACKWARD          = FALSE;
 constexpr bool          FORWARD           = TRUE;

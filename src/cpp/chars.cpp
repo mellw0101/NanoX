@@ -71,7 +71,8 @@ is_cntrl_char(const char *const c)
 {
     if (use_utf8)
     {
-        return ((c[0] & 0xE0) == 0 || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
+        return ((c[0] & 0xE0) == 0 || c[0] == DEL_CODE ||
+                ((signed char)c[0] == -62 && (signed char)c[1] < -96));
     }
     else
     {

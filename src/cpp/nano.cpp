@@ -42,10 +42,16 @@ make_new_node(linestruct *prevnode)
     newnode->multidata  = NULL;
     newnode->lineno     = (prevnode) ? prevnode->lineno + 1 : 1;
     newnode->has_anchor = FALSE;
-    LINE_UNSET(newnode, IN_BLOCK_COMMENT);
+    if (prevnode != NULL)
+    {
+        (LINE_ISSET(prevnode, IN_BLOCK_COMMENT) || LINE_ISSET(prevnode, BLOCK_COMMENT_START)) ?
+            LINE_SET(newnode, IN_BLOCK_COMMENT) :
+            LINE_UNSET(newnode, IN_BLOCK_COMMENT);
+    }
     LINE_UNSET(newnode, BLOCK_COMMENT_START);
     LINE_UNSET(newnode, BLOCK_COMMENT_END);
     LINE_UNSET(newnode, SINGLE_LINE_BLOCK_COMMENT);
+    LINE_UNSET(newnode, IS_HIDDEN);
     return newnode;
 }
 

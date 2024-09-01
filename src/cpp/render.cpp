@@ -2,9 +2,8 @@
 
 #include <Mlib/Profile.h>
 
-static bool          in_block_comment    = FALSE;
-static unsigned int  block_comment_start = -1;
-static unsigned int  block_comment_end   = -1;
+static unsigned int  block_comment_start = (unsigned int)-1;
+static unsigned int  block_comment_end   = (unsigned int)-1;
 static unsigned char next_word_color     = FALSE;
 static unsigned int  last_type           = 0;
 
@@ -51,74 +50,122 @@ render_line_text(const int row, const char *str, linestruct *line, const unsigne
     }
 }
 
-bool
-find_block_start(linestruct *from_line)
-{
-    PROFILE_FUNCTION;
-    linestruct *line = from_line;
-    for (int i = 0; line->prev != NULL; line = line->prev, i++)
-    {
-        /* if (LINE_ISSET(line, IN_BLOCK_COMMENT))
-        {
-            continue;
-        }
-        else if (LINE_ISSET(line, BLOCK_COMMENT_START))
-        {
-            // NLOG("Found block start: %s\n", line->data);
-            return TRUE;
-        }
-        else  */
-        if (LINE_ISSET(line, BLOCK_COMMENT_END))
-        {
-            NLOG("Found block end: %s\n", line->data);
-            return TRUE;
-        }
-        if (i > 30)
-        {
-            break;
-        }
-    }
-    return FALSE;
-}
-
 /* Set start and end pos for comment block or if the entire line is inside of a block comment
  * set 'block_comment_start' to '0' and 'block_comment_end' to '(unsigned int)-1'. */
 void
-comment_block(int row, linestruct *line)
+render_comment(int row, linestruct *line)
 {
     PROFILE_FUNCTION;
-    int         len         = 2;
-    int         start_col   = 0;
     const char *found_start = strstr(line->data, "/*");
     const char *found_end   = strstr(line->data, "*/");
+    const char *found_slash = strstr(line->data, "//");
+    /* Single line block comment. */
     if (found_start != NULL && found_end != NULL)
     {
         block_comment_start = (found_start - line->data);
-        block_comment_end   = (block_comment_start + (found_end - line->data + len));
-        /* start_col for the end of the block comment. */
-        start_col = wideness(line->data, (found_end - line->data));
-        /* Then we color just the end block. */
-        midwin_mv_add_nstr_color(row, (start_col + margin), found_end, len, FG_GREEN);
-        in_block_comment = FALSE;
+        block_comment_end   = (block_comment_start + (found_end - line->data + 2));
+        /* If slash comment found, adjust the start and end pos correctly. */
+        if (found_slash != NULL && (found_slash - line->data) < block_comment_start)
+        {
+            block_comment_start = (found_slash - line->data);
+            block_comment_end   = (unsigned int)-1;
+        }
         LINE_SET(line, SINGLE_LINE_BLOCK_COMMENT);
         LINE_UNSET(line, BLOCK_COMMENT_START);
         LINE_UNSET(line, BLOCK_COMMENT_END);
         LINE_UNSET(line, IN_BLOCK_COMMENT);
-        refresh_needed = TRUE;
-        return;
+        midwin_mv_add_nstr_color(
+            row, (wideness(line->data, (found_end - line->data)) + margin), found_end, 2, FG_GREEN);
+        /* Highlight the block start if prev line is in a
+         * block comment or the start of a block comment. */
+        if (line->prev &&
+            (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) || LINE_ISSET(line->prev, BLOCK_COMMENT_START)))
+        {
+            if ((found_end - line->data) > 0 && line->data[(found_end - line->data) - 1] != '/')
+            {
+                midwin_mv_add_nstr_color(row, (wideness(line->data, (found_start - line->data)) + margin),
+                                         found_start, 2, ERROR_MESSAGE);
+                /* If there is a slash comment infront the block comment. Then of cource we still color
+                 * the text from the slash to the block start after we error highlight the block start. */
+                if (found_slash != NULL && (found_slash - line->data) < (found_start - line->data))
+                {
+                    midwin_mv_add_nstr_color(
+                        row, (wideness(line->data, (found_slash - line->data))) + margin, found_slash,
+                        (found_start - line->data) - (found_slash - line->data), FG_GREEN);
+                }
+                block_comment_start += (found_start - line->data) + 2;
+            }
+            else if ((found_start - line->data) + 1 == (found_end - line->data))
+            {
+                LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
+                LINE_SET(line, BLOCK_COMMENT_END);
+                block_comment_start = 0;
+            }
+        }
+        else if ((found_start - line->data) + 1 == (found_end - line->data))
+        {
+            found_end = strstr(found_end + 2, "*/");
+            if (found_end != NULL)
+            {
+                block_comment_end = (found_end - line->data) + 2;
+            }
+            else
+            {
+                block_comment_end = (unsigned int)-1;
+                LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
+                LINE_SET(line, BLOCK_COMMENT_START);
+            }
+        }
+        found_start = strstr(found_start + 2, "/*");
+        found_end   = strstr(found_end + 2, "*/");
+        if (found_start != NULL && found_end != NULL)
+        {}
+        else if (found_start == NULL && found_end != NULL)
+        {
+            midwin_mv_add_nstr_color(
+                row, (wideness(line->data, (found_end - line->data)) + margin), found_end, 2, ERROR_MESSAGE);
+        }
+        else if (found_start != NULL && found_end == NULL)
+        {
+            /* TODO: Fix this shit so it works good.
+            midwin_mv_add_nstr_color(row, (wideness(line->data, (found_start - line->data)) + margin),
+                                     found_start, actual_x(found_start, wideness(line->data, till_x)),
+                                     FG_GREEN); */
+        }
     }
+    /* First line for a block comment. */
     else if (found_start != NULL && found_end == NULL)
     {
         block_comment_start = (found_start - line->data);
         block_comment_end   = (unsigned int)-1;
-        LINE_SET(line, BLOCK_COMMENT_START);
+        /* Do some error checking and highlight the block start if it`s found
+         * while the block above it being a start block or inside a block. */
+        if (line->prev &&
+            (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) || LINE_ISSET(line->prev, BLOCK_COMMENT_START)))
+        {
+            midwin_mv_add_nstr_color(row, (wideness(line->data, (found_start - line->data)) + margin),
+                                     found_start, 2, ERROR_MESSAGE);
+            block_comment_start = (found_start - line->data) + 2;
+        }
+        /* If a slash comment is found and it is before the block start,
+         * we adjust the start and end pos.  We also make sure to unset
+         * 'BLOCK_COMMENT_START' for the line. */
+        if (found_slash != NULL && (found_slash - line->data) < block_comment_start)
+        {
+            block_comment_start = (found_slash - line->data);
+            block_comment_end   = (unsigned int)-1;
+            LINE_UNSET(line, BLOCK_COMMENT_START);
+        }
+        else
+        {
+            LINE_SET(line, BLOCK_COMMENT_START);
+        }
         LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
         LINE_UNSET(line, IN_BLOCK_COMMENT);
         LINE_UNSET(line, BLOCK_COMMENT_END);
-        in_block_comment = TRUE;
-        return;
     }
-    else if (in_block_comment && found_start == NULL && found_end == NULL)
+    /* Either inside of a block comment or not a block comment at all. */
+    else if (found_start == NULL && found_end == NULL)
     {
         if (line->prev &&
             (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) || LINE_ISSET(line->prev, BLOCK_COMMENT_START)) &&
@@ -127,60 +174,70 @@ comment_block(int row, linestruct *line)
             block_comment_start = 0;
             block_comment_end   = (unsigned int)-1;
             LINE_SET(line, IN_BLOCK_COMMENT);
+            LINE_UNSET(line, BLOCK_COMMENT_START);
+            LINE_UNSET(line, BLOCK_COMMENT_END);
+            LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
         }
-        return;
-    }
-    else if (found_start == NULL && found_end != NULL)
-    {
-        block_comment_start = 0;
-        block_comment_end   = (found_end - line->data);
-        start_col           = wideness(line->data, block_comment_end);
-        midwin_mv_add_nstr_color(row, start_col + margin, found_end, len, FG_GREEN);
-        if (line->prev &&
-            (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) || LINE_ISSET(line->prev, BLOCK_COMMENT_START)) &&
-            !LINE_ISSET(line->prev, SINGLE_LINE_BLOCK_COMMENT))
-        {
-            LINE_SET(line, BLOCK_COMMENT_END);
-        }
-        in_block_comment = FALSE;
-        return;
-    }
-    /* block_comment_start = (unsigned int)-1;
-    block_comment_end   = 0; */
-}
-
-void
-apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col)
-{
-    PROFILE_FUNCTION;
-    if (line->data[0] == '\0')
-    {
-        return;
-    }
-    comment_block(row, line);
-    if (LINE_ISSET(line, IN_BLOCK_COMMENT))
-    {
-        block_comment_start = 0;
-        block_comment_end   = (unsigned int)-1;
-        if (line->prev != NULL &&
-            (!LINE_ISSET(line->prev, IN_BLOCK_COMMENT) && !LINE_ISSET(line->prev, BLOCK_COMMENT_START)))
+        /* If the prev line is not in a block comment or the
+         * start block line we are not inside a comment block. */
+        else
         {
             block_comment_start = (unsigned int)-1;
             block_comment_end   = 0;
             LINE_UNSET(line, IN_BLOCK_COMMENT);
+            LINE_UNSET(line, BLOCK_COMMENT_START);
+            LINE_UNSET(line, BLOCK_COMMENT_END);
+            LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
+            /* If slash comment is found comment out entire line after slash. */
+            if (found_slash != NULL)
+            {
+                block_comment_start = (found_slash - line->data);
+                block_comment_end   = (unsigned int)-1;
+            }
         }
     }
-    else if (!LINE_ISSET(line, SINGLE_LINE_BLOCK_COMMENT) && !LINE_ISSET(line, BLOCK_COMMENT_START) &&
-             !LINE_ISSET(line, BLOCK_COMMENT_END))
+    /* End of a block comment. */
+    else if (found_start == NULL && found_end != NULL)
     {
-        block_comment_start = (unsigned int)-1;
-        block_comment_end   = 0;
+        /* If last line is in a comment block or is the start of the block. */
+        if (line->prev &&
+            (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) || LINE_ISSET(line->prev, BLOCK_COMMENT_START)) &&
+            !LINE_ISSET(line->prev, SINGLE_LINE_BLOCK_COMMENT))
+        {
+            block_comment_start = 0;
+            block_comment_end   = (found_end - line->data) + 2;
+            midwin_mv_add_nstr_color(
+                row, (wideness(line->data, (found_end - line->data)) + margin), found_end, 2, FG_GREEN);
+            LINE_SET(line, BLOCK_COMMENT_END);
+            LINE_UNSET(line, IN_BLOCK_COMMENT);
+            LINE_UNSET(line, BLOCK_COMMENT_START);
+            LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
+        }
+        /* If slash if found and is before block end. */
+        else if (found_slash != NULL && (found_slash - line->data) < (found_end - line->data))
+        {
+            block_comment_start = 0;
+            block_comment_end   = (unsigned int)-1;
+        }
+        /* If not, error highlight the end block. */
+        else
+        {
+            midwin_mv_add_nstr_color(
+                row, (wideness(line->data, (found_end - line->data)) + margin), found_end, 2, ERROR_MESSAGE);
+        }
     }
-    const char *pos = strstr(line->data, "//");
-    if (pos)
+    refresh_needed = TRUE;
+}
+
+/* Main function that applies syntax to a line in real time. */
+void
+apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col)
+{
+    PROFILE_FUNCTION;
+    render_comment(row, line);
+    if (line->data[0] == '\0')
     {
-        block_comment_start = (pos - line->data);
-        block_comment_end   = (unsigned int)-1;
+        return;
     }
     line_word_t *head = line_word_list(line->data, till_x);
     while (head != NULL)

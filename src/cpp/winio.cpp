@@ -10,12 +10,10 @@
 #include <sys/ioctl.h>
 
 #define BRANDING PACKAGE_STRING
-
-// When having an older ncurses, then most likely libvte is older too.
+/* When having an older ncurses, then most likely libvte is older too. */
 #if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20200212)
 #    define USING_OLDER_LIBVTE yes
 #endif
-
 /* A buffer for the keystrokes that haven't been handled. */
 static int *key_buffer = NULL;
 /* A pointer pointing at the next keycode in the keystroke buffer. */
@@ -113,7 +111,7 @@ run_macro(void)
     mute_modifiers = TRUE;
 }
 
-/* Allocate the requested space for the keystroke */
+/* Allocate the requested space for the keystroke. */
 void
 reserve_space_for(unsigned long newsize)
 {
