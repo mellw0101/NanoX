@@ -1,6 +1,9 @@
 #include "../include/prototypes.h"
 
 #include <Mlib/Profile.h>
+#include <time.h>
+
+#define NEW_SYSTEM FALSE
 
 /* These are the functions that the sub threads perform. */
 struct sub_thread_function
@@ -13,6 +16,90 @@ struct sub_thread_function
         NLOG("path: '%s'.\n", task->path);
         task->words = words_from_file(task->path, &task->nwords);
         return task;
+    }
+
+    /* Use a sub thread to find syntax from a header file and put them all into a format we can use.
+     * Here we put them into a list that we return for the main thread to prosses. */
+    static void *
+    syntax_from(void *arg)
+    {
+        clock_t       start_time = clock();
+        char         *path       = (char *)arg;
+        unsigned long nwords, i;
+        char        **words = words_from_file(path, &nwords);
+        if (words == NULL)
+        {
+            free(path);
+            return NULL;
+        }
+        syntax_search_t *result = (syntax_search_t *)nmalloc(sizeof(*result));
+        result->functions_head  = NULL;
+        result->functions_tail  = NULL;
+        for (i = 0; i < nwords; i++)
+        {
+            if (strncmp(words[i], "void", 4) == 0 || strncmp(words[i], "int", 3) == 0)
+            {
+                if (words[++i] != NULL)
+                {
+                    if (strncmp(words[i], "*__restrict", 12) == 0 || strncmp(words[i], "*/", 2) == 0)
+                    {
+                        if (words[++i] == NULL)
+                        {
+                            continue;
+                        }
+                    }
+                    unsigned long j = 0;
+                    for (; words[i][j]; j++)
+                    {
+                        if (words[i][j] == ',' || words[i][j] == ')' || words[i][j] == ';')
+                        {
+                            j = 0;
+                            break;
+                        }
+                        if (words[i][j] == '(')
+                        {
+                            words[i][j] = '\0';
+                            break;
+                        }
+                    }
+                    if (j != 0)
+                    {
+                        while (*words[i] == '*')
+                        {
+                            char *p = copy_of(words[i] + 1);
+                            free(words[i]);
+                            words[i] = p;
+                        }
+                        syntax_word_t *word = (syntax_word_t *)nmalloc(sizeof(*word));
+                        word->str           = copy_of(words[i]);
+                        word->return_type   = NULL;
+                        word->next          = NULL;
+                        if (result->functions_tail == NULL)
+                        {
+                            result->functions_tail = word;
+                            result->functions_head = word;
+                        }
+                        else
+                        {
+                            result->functions_tail->next = word;
+                            result->functions_tail       = result->functions_tail->next;
+                        }
+                    }
+                }
+            }
+            free(words[i]);
+        }
+        double tot_time = CALCULATE_MS_TIME(start_time);
+        NLOG("nwords found: %lu, in file: %s\n", nwords, path);
+        free(words);
+        free(path);
+        NLOG("time took: %lf m/s.\n", tot_time);
+        if (result->functions_head == NULL)
+        {
+            free(result);
+            return NULL;
+        }
+        return result;
     }
 
     static void *
@@ -116,6 +203,29 @@ struct main_thread_function
         free(search_result->words);
         free(search_result->path);
         free(search_result);
+    }
+
+    /* Callback function for the main thread to add syntax fetched by subthreads. */
+    static void
+    handle_syntax(void *arg)
+    {
+        if (arg == NULL)
+        {
+            return;
+        }
+        syntax_search_t *result = (syntax_search_t *)arg;
+        while (result->functions_head != NULL)
+        {
+            syntax_word_t *node    = result->functions_head;
+            result->functions_head = node->next;
+            if (!syntax_func(node->str))
+            {
+                new_syntax_func(node->str);
+            }
+            free(node->str);
+            free(node);
+        }
+        free(result);
     }
 
     static void
@@ -265,4 +375,10 @@ sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg, const cha
 {
     compile_rgx_task_t *task = task_creator::create_compile_rgx_task(color_fg, color_bg, rgxstr, last_c);
     submit_task(sub_thread_function::compile_rgx, task, NULL, main_thread_function::add_rgx_to_list);
+}
+
+void
+sub_thread_find_syntax(const char *path)
+{
+    submit_task(sub_thread_function::syntax_from, copy_of(path), NULL, main_thread_function::handle_syntax);
 }

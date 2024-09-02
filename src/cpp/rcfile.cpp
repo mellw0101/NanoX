@@ -154,7 +154,7 @@ jot_error(const char *msg, ...)
 }
 
 /* Staticly define the number of elements in the map as a constexpr. */
-static constexpr unsigned char FUNCTION_MAP_COUNT = 104;
+#define FUNCTION_MAP_COUNT 104
 /* Define a map of 'string_view`s' to 'functionptrtype`s'. */
 constexpr_map<std::string_view, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {
     {{"cancel", do_cancel},
@@ -852,7 +852,7 @@ closest_index_color(short red, short green, short blue)
     }
 }
 
-static constexpr unsigned char                     COLORCOUNT      = 34;
+#define COLORCOUNT 34
 constexpr_map<std::string_view, short, COLORCOUNT> huesIndiecesMap = {
     {{"red", COLOR_RED},
      {"green", COLOR_GREEN},

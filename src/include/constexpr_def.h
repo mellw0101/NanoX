@@ -4,25 +4,26 @@
 #include <ncursesw/ncurses.h>
 
 /* Identifiers for color options. */
-constexpr unsigned char TITLE_BAR     = 0;
-constexpr unsigned char LINE_NUMBER   = 1;
-constexpr unsigned char GUIDE_STRIPE  = 2;
-constexpr unsigned char SCROLL_BAR    = 3;
-constexpr unsigned char SELECTED_TEXT = 4;
-constexpr unsigned char SPOTLIGHTED   = 5;
-constexpr unsigned char MINI_INFOBAR  = 6;
-constexpr unsigned char PROMPT_BAR    = 7;
-constexpr unsigned char STATUS_BAR    = 8;
-constexpr unsigned char ERROR_MESSAGE = 9;
-constexpr unsigned char KEY_COMBO     = 10;
-constexpr unsigned char FUNCTION_TAG  = 11;
-#define FG_BLUE    12
-#define FG_GREEN   13
-#define FG_MAGENTA 14
-#define FG_LAGOON  15
-#define FG_YELLOW  16
-#define FG_RED     17
-constexpr unsigned char NUMBER_OF_ELEMENTS = 18;
+#define TITLE_BAR          0
+#define LINE_NUMBER        1
+#define GUIDE_STRIPE       2
+#define SCROLL_BAR         3
+#define SELECTED_TEXT      4
+#define SPOTLIGHTED        5
+#define MINI_INFOBAR       6
+#define PROMPT_BAR         7
+#define STATUS_BAR         8
+#define ERROR_MESSAGE      9
+#define KEY_COMBO          10
+#define FUNCTION_TAG       11
+#define FG_BLUE            12
+#define FG_GREEN           13
+#define FG_MAGENTA         14
+#define FG_LAGOON          15
+#define FG_YELLOW          16
+#define FG_RED             17
+#define FG_PINK            18
+#define NUMBER_OF_ELEMENTS 19
 /* The color options map. */
 constexpr_map<std::string_view, unsigned char, 12> colorOptionMap = {
     {{"titlecolor", TITLE_BAR},
@@ -40,18 +41,18 @@ constexpr_map<std::string_view, unsigned char, 12> colorOptionMap = {
 };
 
 /* Identifiers for the different configuration options. */
-constexpr unsigned short OPERATINGDIR     = (1 << 0);
-constexpr unsigned short FILL             = (1 << 1);
-constexpr unsigned short MATCHBRACKETS    = (1 << 2);
-constexpr unsigned short WHITESPACE       = (1 << 3);
-constexpr unsigned short PUNCT            = (1 << 4);
-constexpr unsigned short BRACKETS         = (1 << 5);
-constexpr unsigned short QUOTESTR         = (1 << 6);
-constexpr unsigned short SPELLER          = (1 << 7);
-constexpr unsigned short BACKUPDIR        = (1 << 8);
-constexpr unsigned short WORDCHARS        = (1 << 9);
-constexpr unsigned short GUIDESTRIPE      = (1 << 10);
-constexpr unsigned short CONF_OPT_TABSIZE = (1 << 11);
+#define OPERATINGDIR     (1 << 0)
+#define FILL             (1 << 1)
+#define MATCHBRACKETS    (1 << 2)
+#define WHITESPACE       (1 << 3)
+#define PUNCT            (1 << 4)
+#define BRACKETS         (1 << 5)
+#define QUOTESTR         (1 << 6)
+#define SPELLER          (1 << 7)
+#define BACKUPDIR        (1 << 8)
+#define WORDCHARS        (1 << 9)
+#define GUIDESTRIPE      (1 << 10)
+#define CONF_OPT_TABSIZE (1 << 11)
 /* The configuration options map. */
 constexpr_map<std::string_view, unsigned short, 12> configOptionMap = {
     {{"operatingdir", OPERATINGDIR},
@@ -69,12 +70,12 @@ constexpr_map<std::string_view, unsigned short, 12> configOptionMap = {
 };
 
 /* Identifiers for the different syntax options. */
-constexpr unsigned char SYNTAX_OPT_COLOR     = (1 << 0);
-constexpr unsigned char SYNTAX_OPT_ICOLOR    = (1 << 1);
-constexpr unsigned char SYNTAX_OPT_COMMENT   = (1 << 2);
-constexpr unsigned char SYNTAX_OPT_TABGIVES  = (1 << 3);
-constexpr unsigned char SYNTAX_OPT_LINTER    = (1 << 4);
-constexpr unsigned char SYNTAX_OPT_FORMATTER = (1 << 5);
+#define SYNTAX_OPT_COLOR     (1 << 0)
+#define SYNTAX_OPT_ICOLOR    (1 << 1)
+#define SYNTAX_OPT_COMMENT   (1 << 2)
+#define SYNTAX_OPT_TABGIVES  (1 << 3)
+#define SYNTAX_OPT_LINTER    (1 << 4)
+#define SYNTAX_OPT_FORMATTER (1 << 5)
 /* The syntax options map. */
 constexpr_map<std::string_view, unsigned char, 6> syntaxOptionMap = {
     {{"color", SYNTAX_OPT_COLOR},
@@ -89,57 +90,57 @@ constexpr_map<std::string_view, unsigned char, 6> syntaxOptionMap = {
 
 /* This flag is not used as this is part of a bitfield and 0 is not a unique value, in terms
  * of bitwise operations as the default all non set value is 0. */
-constexpr unsigned char DONTUSE            = 0;
-constexpr unsigned char CASE_SENSITIVE     = 1;
-constexpr unsigned char CONSTANT_SHOW      = 2;
-constexpr unsigned char NO_HELP            = 3;
-constexpr unsigned char NO_WRAP            = 4;
-constexpr unsigned char AUTOINDENT         = 5;
-constexpr unsigned char VIEW_MODE          = 6;
-constexpr unsigned char USE_MOUSE          = 7;
-constexpr unsigned char USE_REGEXP         = 8;
-constexpr unsigned char SAVE_ON_EXIT       = 9;
-constexpr unsigned char CUT_FROM_CURSOR    = 10;
-constexpr unsigned char BACKWARDS_SEARCH   = 11;
-constexpr unsigned char MULTIBUFFER        = 12;
-constexpr unsigned char REBIND_DELETE      = 13;
-constexpr unsigned char RAW_SEQUENCES      = 14;
-constexpr unsigned char NO_CONVERT         = 15;
-constexpr unsigned char MAKE_BACKUP        = 16;
-constexpr unsigned char INSECURE_BACKUP    = 17;
-constexpr unsigned char NO_SYNTAX          = 18;
-constexpr unsigned char PRESERVE           = 19;
-constexpr unsigned char HISTORYLOG         = 20;
-constexpr unsigned char RESTRICTED         = 21;
-constexpr unsigned char SMART_HOME         = 22;
-constexpr unsigned char WHITESPACE_DISPLAY = 23;
-constexpr unsigned char TABS_TO_SPACES     = 24;
-constexpr unsigned char QUICK_BLANK        = 25;
-constexpr unsigned char WORD_BOUNDS        = 26;
-constexpr unsigned char NO_NEWLINES        = 27;
-constexpr unsigned char BOLD_TEXT          = 28;
-constexpr unsigned char SOFTWRAP           = 29;
-constexpr unsigned char POSITIONLOG        = 30;
-constexpr unsigned char LOCKING            = 31;
-constexpr unsigned char NOREAD_MODE        = 32;
-constexpr unsigned char MAKE_IT_UNIX       = 33;
-constexpr unsigned char TRIM_BLANKS        = 34;
-constexpr unsigned char SHOW_CURSOR        = 35;
-constexpr unsigned char LINE_NUMBERS       = 36;
-constexpr unsigned char AT_BLANKS          = 37;
-constexpr unsigned char AFTER_ENDS         = 38;
-constexpr unsigned char LET_THEM_ZAP       = 39;
-constexpr unsigned char BREAK_LONG_LINES   = 40;
-constexpr unsigned char JUMPY_SCROLLING    = 41;
-constexpr unsigned char EMPTY_LINE         = 42;
-constexpr unsigned char INDICATOR          = 43;
-constexpr unsigned char BOOKSTYLE          = 44;
-constexpr unsigned char COLON_PARSING      = 45;
-constexpr unsigned char STATEFLAGS         = 46;
-constexpr unsigned char USE_MAGIC          = 47;
-constexpr unsigned char MINIBAR            = 48;
-constexpr unsigned char ZERO               = 49;
-constexpr unsigned char MODERN_BINDINGS    = 50;
+#define DONTUSE                       0
+#define CASE_SENSITIVE                1
+#define CONSTANT_SHOW                 2
+#define NO_HELP                       3
+#define NO_WRAP                       4
+#define AUTOINDENT                    5
+#define VIEW_MODE                     6
+#define USE_MOUSE                     7
+#define USE_REGEXP                    8
+#define SAVE_ON_EXIT                  9
+#define CUT_FROM_CURSOR               10
+#define BACKWARDS_SEARCH              11
+#define MULTIBUFFER                   12
+#define REBIND_DELETE                 13
+#define RAW_SEQUENCES                 14
+#define NO_CONVERT                    15
+#define MAKE_BACKUP                   16
+#define INSECURE_BACKUP               17
+#define NO_SYNTAX                     18
+#define PRESERVE                      19
+#define HISTORYLOG                    20
+#define RESTRICTED                    21
+#define SMART_HOME                    22
+#define WHITESPACE_DISPLAY            23
+#define TABS_TO_SPACES                24
+#define QUICK_BLANK                   25
+#define WORD_BOUNDS                   26
+#define NO_NEWLINES                   27
+#define BOLD_TEXT                     28
+#define SOFTWRAP                      29
+#define POSITIONLOG                   30
+#define LOCKING                       31
+#define NOREAD_MODE                   32
+#define MAKE_IT_UNIX                  33
+#define TRIM_BLANKS                   34
+#define SHOW_CURSOR                   35
+#define LINE_NUMBERS                  36
+#define AT_BLANKS                     37
+#define AFTER_ENDS                    38
+#define LET_THEM_ZAP                  39
+#define BREAK_LONG_LINES              40
+#define JUMPY_SCROLLING               41
+#define EMPTY_LINE                    42
+#define INDICATOR                     43
+#define BOOKSTYLE                     44
+#define COLON_PARSING                 45
+#define STATEFLAGS                    46
+#define USE_MAGIC                     47
+#define MINIBAR                       48
+#define ZERO                          49
+#define MODERN_BINDINGS               50
 #define EXPERIMENTAL_FAST_LIVE_SYNTAX 51
 /* The flags map. */
 constexpr_map<std::string_view, unsigned char, 94> flagOptionsMap = {
@@ -240,20 +241,20 @@ constexpr_map<std::string_view, unsigned char, 94> flagOptionsMap = {
 };
 
 /* Identifiers for the different command line options. */
-constexpr unsigned int CLI_OPT_IGNORERCFILE   = (1 << 0);
-constexpr unsigned int CLI_OPT_VERSION        = (1 << 1);
-constexpr unsigned int CLI_OPT_HELP           = (1 << 2);
-constexpr unsigned int CLI_OPT_SYNTAX         = (1 << 3);
-constexpr unsigned int CLI_OPT_RCFILE         = (1 << 4);
-constexpr unsigned int CLI_OPT_GUIDESTRIPE    = (1 << 5);
-constexpr unsigned int CLI_OPT_WORDCHARS      = (1 << 6);
-constexpr unsigned int CLI_OPT_TABSIZE        = (1 << 7);
-constexpr unsigned int CLI_OPT_OPERATINGDIR   = (1 << 8);
-constexpr unsigned int CLI_OPT_FILL           = (1 << 9);
-constexpr unsigned int CLI_OPT_SPELLER        = (1 << 10);
-constexpr unsigned int CLI_OPT_LISTSYNTAX     = (1 << 11);
-constexpr unsigned int CLI_OPT_BACKUPDIR      = (1 << 12);
-constexpr unsigned int CLI_OPT_BREAKLONGLINES = (1 << 13);
+#define CLI_OPT_IGNORERCFILE   (1 << 0)
+#define CLI_OPT_VERSION        (1 << 1)
+#define CLI_OPT_HELP           (1 << 2)
+#define CLI_OPT_SYNTAX         (1 << 3)
+#define CLI_OPT_RCFILE         (1 << 4)
+#define CLI_OPT_GUIDESTRIPE    (1 << 5)
+#define CLI_OPT_WORDCHARS      (1 << 6)
+#define CLI_OPT_TABSIZE        (1 << 7)
+#define CLI_OPT_OPERATINGDIR   (1 << 8)
+#define CLI_OPT_FILL           (1 << 9)
+#define CLI_OPT_SPELLER        (1 << 10)
+#define CLI_OPT_LISTSYNTAX     (1 << 11)
+#define CLI_OPT_BACKUPDIR      (1 << 12)
+#define CLI_OPT_BREAKLONGLINES (1 << 13)
 /* The command line options map. */
 constexpr_map<std::string_view, unsigned int, 25> cliOptionMap = {
     {{"-I", CLI_OPT_IGNORERCFILE},
@@ -283,7 +284,7 @@ constexpr_map<std::string_view, unsigned int, 25> cliOptionMap = {
      {"--breaklonglines", CLI_OPT_BREAKLONGLINES}}
 };
 
-constexpr unsigned char     NUMBER_OF_FLAGS          = 51;
+#define NUMBER_OF_FLAGS 51
 constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
 
 /* This is a masterpiece of a map.
@@ -293,7 +294,7 @@ constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
  * USAGE:
  * - (&epithetOfFlagMap[flag].value[0]) will return the underlying ptr to the description of the flag
  * The (flag / description) map. */
-constexpr_map<u32, STRING_VIEW, NUMBER_OF_FLAGS> epithetOfFlagMap = {
+constexpr_map<unsigned int, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
     {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
      {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
      {CONSTANT_SHOW, "Constant cursor position display"},
@@ -349,26 +350,26 @@ constexpr_map<u32, STRING_VIEW, NUMBER_OF_FLAGS> epithetOfFlagMap = {
 
 //  Legazy code, from nano source code.
 /* Identifiers for the different menus. */
-constexpr unsigned short MMAIN        = (1 << 0);
-constexpr unsigned short MWHEREIS     = (1 << 1);
-constexpr unsigned short MREPLACE     = (1 << 2);
-constexpr unsigned short MREPLACEWITH = (1 << 3);
-constexpr unsigned short MGOTOLINE    = (1 << 4);
-constexpr unsigned short MWRITEFILE   = (1 << 5);
-constexpr unsigned short MINSERTFILE  = (1 << 6);
-constexpr unsigned short MEXECUTE     = (1 << 7);
-constexpr unsigned short MHELP        = (1 << 8);
-constexpr unsigned short MSPELL       = (1 << 9);
-constexpr unsigned short MBROWSER     = (1 << 10);
-constexpr unsigned short MWHEREISFILE = (1 << 11);
-constexpr unsigned short MGOTODIR     = (1 << 12);
-constexpr unsigned short MYESNO       = (1 << 13);
-constexpr unsigned short MLINTER      = (1 << 14);
-constexpr unsigned short MFINDINHELP  = (1 << 15);
-constexpr unsigned short MMOST =
-    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE |
-     MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER);
-constexpr unsigned short MSOME = MMOST | MBROWSER;
+#define MMAIN        (1 << 0)
+#define MWHEREIS     (1 << 1)
+#define MREPLACE     (1 << 2)
+#define MREPLACEWITH (1 << 3)
+#define MGOTOLINE    (1 << 4)
+#define MWRITEFILE   (1 << 5)
+#define MINSERTFILE  (1 << 6)
+#define MEXECUTE     (1 << 7)
+#define MHELP        (1 << 8)
+#define MSPELL       (1 << 9)
+#define MBROWSER     (1 << 10)
+#define MWHEREISFILE (1 << 11)
+#define MGOTODIR     (1 << 12)
+#define MYESNO       (1 << 13)
+#define MLINTER      (1 << 14)
+#define MFINDINHELP  (1 << 15)
+#define MMOST                                                                                       \
+    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | \
+     MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER)
+#define MSOME (MMOST | MBROWSER)
 /* The menus map. */
 constexpr_map<std::string_view, unsigned short, 16> menuOptionMap = {
     {{"main", MMAIN},

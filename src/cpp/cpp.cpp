@@ -264,7 +264,7 @@ do_close_bracket(void)
         sub_thread_delete_c_syntax(word);
         refresh_needed = TRUE;
     } */
-    int         row  = 0;
+    /* int         row  = 0;
     linestruct *line = openfile->edittop;
     while (row < editwinrows && line != NULL)
     {
@@ -272,27 +272,29 @@ do_close_bracket(void)
             get_page_start(wideness(line->data, (line == openfile->current) ? openfile->current_x : 0));
         char *converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
         apply_syntax_to_line(row, converted, line, from_col);
-        free(converted);
-        /* if (line->data[0] != '\0')
+        free(converted); */
+    /* if (line->data[0] != '\0')
+    {
+        unsigned long nwords;
+        char        **words = fast_words_from_str(line->data, strlen(line->data), &nwords);
+        if (nwords)
         {
-            unsigned long nwords;
-            char        **words = fast_words_from_str(line->data, strlen(line->data), &nwords);
-            if (nwords)
+            for (int i = 0; i < nwords; i++)
             {
-                for (int i = 0; i < nwords; i++)
-                {
-                    NETLOGGER.log("%s ", words[i]);
-                    free(words[i]);
-                }
-                NETLOGGER.log("\n");
-                free(words);
+                NETLOGGER.log("%s ", words[i]);
+                free(words[i]);
             }
-        } */
-        row++;
-        line = line->next;
-    }
-
+            NETLOGGER.log("\n");
+            free(words);
+        }
+    } */
+    /*   row++;
+      line = line->next;
+    } */
     // submit_search_task("/home/mellw/Downloads/74307.txt.utf-8" /* "/usr/include/stdio.h" */);
+    LOG_FLAG(openfile->current, BRACKET_START);
+    LOG_FLAG(openfile->current, IN_BRACKET);
+    LOG_FLAG(openfile->current, BRACKET_END);
 }
 
 void

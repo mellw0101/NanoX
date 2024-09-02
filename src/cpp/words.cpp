@@ -422,3 +422,17 @@ make_line_word(char *str, unsigned short start, unsigned short len, unsigned sho
     word->next        = NULL;
     return word;
 }
+
+unsigned int
+last_strchr(const char *str, const char ch, unsigned int maxlen)
+{
+    unsigned int i = 0, last_seen = 0;
+    for (; str[i] && (i < maxlen); i++)
+    {
+        if (str[i] == ch)
+        {
+            last_seen = i;
+        }
+    }
+    return last_seen;
+}

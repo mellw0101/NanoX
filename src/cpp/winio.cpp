@@ -14,6 +14,7 @@
 #if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20200212)
 #    define USING_OLDER_LIBVTE yes
 #endif
+
 /* A buffer for the keystrokes that haven't been handled. */
 static int *key_buffer = NULL;
 /* A pointer pointing at the next keycode in the keystroke buffer. */
@@ -3173,7 +3174,6 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
     /* If there are color rules (and coloring is turned on), apply them. */
     else if (openfile->syntax && !ISSET(NO_SYNTAX))
     {
-        PROFILE_CURRENT_SCOPE("draw_row: color checking");
         const colortype *varnish = openfile->syntax->color;
         /* If there are multiline regexes, make sure this line has a cache. */
         if (openfile->syntax->multiscore > 0 && line->multidata == NULL)
@@ -3261,9 +3261,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                      * paint whole line, and be done. */
                     if (regexec(varnish->end, line->data, 1, &endmatch, 0) == REG_NOMATCH)
                     {
-                        wattron(midwin, varnish->attributes);
-                        mvwaddnstr(midwin, row, margin, converted, -1);
-                        wattroff(midwin, varnish->attributes);
+                        midwin_mv_add_nstr_wattr(row, margin, converted, -1, varnish->attributes);
                         line->multidata[varnish->id] = WHOLELINE;
                         continue;
                     }
@@ -3271,9 +3269,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                     if (endmatch.rm_eo > from_x)
                     {
                         paintlen = actual_x(converted, wideness(line->data, endmatch.rm_eo) - from_col);
-                        wattron(midwin, varnish->attributes);
-                        mvwaddnstr(midwin, row, margin, converted, paintlen);
-                        wattroff(midwin, varnish->attributes);
+                        midwin_mv_add_nstr_wattr(row, margin, converted, paintlen, varnish->attributes);
                     }
                     line->multidata[varnish->id] = ENDSHERE;
                 }
@@ -3304,9 +3300,8 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                     {
                         paintlen =
                             actual_x(thetext, wideness(line->data, endmatch.rm_eo) - from_col - start_col);
-                        wattron(midwin, varnish->attributes);
-                        mvwaddnstr(midwin, row, margin + start_col, thetext, paintlen);
-                        wattroff(midwin, varnish->attributes);
+                        midwin_mv_add_nstr_wattr(
+                            row, margin + start_col, thetext, paintlen, varnish->attributes);
                         line->multidata[varnish->id] = JUSTONTHIS;
                     }
                     index = endmatch.rm_eo;
@@ -3322,9 +3317,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                     continue;
                 }
                 /* Paint the rest of the line, and we're done. */
-                wattron(midwin, varnish->attributes);
-                mvwaddnstr(midwin, row, margin + start_col, thetext, -1);
-                wattroff(midwin, varnish->attributes);
+                midwin_mv_add_nstr_wattr(row, margin + start_col, thetext, -1, varnish->attributes);
                 line->multidata[varnish->id] = STARTSHERE;
                 break;
             }
@@ -3362,8 +3355,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
         {
             striped_char[0] = ' ';
         }
-        midwin_mv_add_nstr_wattr(
-            row, margin + target_column, striped_char, charlen, interface_color_pair[GUIDE_STRIPE]);
+        midwin_mv_add_nstr_color(row, margin + target_column, striped_char, charlen, GUIDE_STRIPE);
     }
     /* If the line is at least partially selected, paint the marked part. */
     if (openfile->mark &&
@@ -3406,8 +3398,7 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
                 const unsigned long end_col = wideness(line->data, bot_x) - from_col;
                 paintlen                    = actual_x(thetext, end_col - start_col);
             }
-            midwin_mv_add_nstr_wattr(
-                row, margin + start_col, thetext, paintlen, interface_color_pair[SELECTED_TEXT]);
+            midwin_mv_add_nstr_color(row, margin + start_col, thetext, paintlen, SELECTED_TEXT);
         }
     }
 }
@@ -3650,7 +3641,7 @@ draw_scrollbar(void)
     int fromline     = openfile->edittop->lineno - 1;
     int totallines   = openfile->filebot->lineno;
     int coveredlines = editwinrows;
-    if ISSET (SOFTWRAP)
+    if (ISSET(SOFTWRAP))
     {
         linestruct *line   = openfile->edittop;
         int         extras = extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line);

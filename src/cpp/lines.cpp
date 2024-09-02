@@ -240,3 +240,46 @@ select_line(linestruct *line, unsigned long from_col, unsigned long to_col)
     mvwaddnstr(midwin, line->lineno, margin + from_col, data, paintlen);
     wattroff(midwin, interface_color_pair[SELECTED_TEXT]);
 }
+
+linestruct *
+find_next_bracket(bool up, linestruct *from_line)
+{
+    if (up == TRUE)
+    {
+        for (linestruct *line = from_line; line != NULL; line = line->prev)
+        {
+            if (!LINE_ISSET(line, IN_BRACKET))
+            {
+                return NULL;
+            }
+            else if (LINE_ISSET(line, BRACKET_END))
+            {
+                return line;
+            }
+            else if (LINE_ISSET(line, BRACKET_START))
+            {
+                return line;
+            }
+        }
+    }
+    return NULL;
+}
+
+unsigned int
+total_tabs(linestruct *line)
+{
+    unsigned int i = 0, spaces = 0, tabs = 0;
+    for (; line->data[i]; i++)
+    {
+        if (line->data[i] == '\t')
+        {
+            tabs++;
+        }
+        else if (line->data[i] == ' ')
+        {
+            spaces++;
+        }
+    }
+    tabs += (spaces / WIDTH_OF_TAB);
+    return tabs;
+}

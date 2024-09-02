@@ -2,9 +2,16 @@
 #include "definitions.h"
 
 #define COLOR_LAGOON                           38
+#define COLOR_PINK                             204
 
 #define get_start_col(line, node)              wideness((line)->data, (node)->start) + margin
 #define start_column(line, index)              wideness((line)->data, index) + margin
+#define PTR_POS(data, ptr)                     (wideness(data, (ptr - data)) + margin)
+/* Retrieve correct visual position of a ptr in a line`s data. */
+#define PTR_POS_LINE(line, char_ptr)           (wideness((line)->data, (char_ptr - (line)->data)) + margin)
+
+#define LOG_FLAG(line, flag)                   NLOG("flag: '%s' is '%s'\n", #flag, LINE_ISSET(line, flag) ? "TRUE" : "FALSE")
+#define GET_BRACKET_COLOR(n)                   color_bracket_index[(n % 2)]
 
 /* Define`s for modifying the 'midwin', i.e: The edit window. */
 
@@ -12,8 +19,12 @@
 #define midwin_clear_to_eol()                  wclrtoeol(midwin)
 /* Turn attributes on for midwin. */
 #define midwin_attr_on(attributes)             wattr_on(midwin, (attr_t)attributes, NULL)
+/* Turn on a base color attr for midwin. */
+#define midwin_color_on(color)                 midwin_attr_on(interface_color_pair[color])
 /* Turn attributes off for midwin. */
 #define midwin_attr_off(attributes)            wattr_off(midwin, (attr_t)attributes, NULL)
+/* Turn off a base color attr for midwin. */
+#define midwin_color_off(color)                midwin_attr_off(interface_color_pair[color])
 /* Move to 'row', 'col' in midwin. */
 #define midwin_move(row, col)                  wmove(midwin, row, col)
 /* Add one char to midwin. */
@@ -34,9 +45,9 @@
     midwin_attr_off(attributes)
 /* Simplyfied macro for using 'midwin_mv_add_str_wattr' with base colors. */
 #define midwin_mv_add_str_color(row, col, str, color) \
-    midwin_attr_on(interface_color_pair[color]);      \
+    midwin_color_on(color);                           \
     midwin_mv_add_str(row, col, str);                 \
-    midwin_attr_off(interface_color_pair[color])
+    midwin_color_off(color)
 /* Move then add len of str to midwin, with attributes. */
 #define midwin_mv_add_nstr_wattr(row, col, str, len, attributes) \
     midwin_attr_on(attributes);                                  \
@@ -44,14 +55,14 @@
     midwin_attr_off(attributes)
 /* Simplyfied macro for using 'midwin_mv_add_nstr_wattr' with base colors. */
 #define midwin_mv_add_nstr_color(row, col, str, len, color) \
-    midwin_attr_on(interface_color_pair[color]);            \
+    midwin_color_on(color);                                 \
     midwin_mv_add_nstr(row, col, str, len);                 \
-    midwin_attr_off(interface_color_pair[color])
+    midwin_color_off(color)
 /* Move then add char to midwin. */
 #define midwin_mv_add_char_wattr(row, col, char, attributes) \
     midwin_attr_on(attributes);                              \
     midwin_mv_add_char(row, col, char);                      \
-    midwin_attr_off(attributes);
+    midwin_attr_off(attributes)
 
 #define midwin_printw(...)              wprintw(midwin, __VA_ARGS__)
 #define midwin_mv_printw(row, col, ...) mvwprintw(midwin, row, col, __VA_ARGS__)

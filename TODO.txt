@@ -94,6 +94,19 @@ NanoX, fork of nano.  TODO LIST.
         openfile as for now it is done line by line but i will make a new function that parses the entire file and see how fast
         I can make it.  Now i can also start to store data on struct`s, class`s and enum`s, and then start to apply the highlights
         only where thay should be for example a paramater for a function should only be highlighted inside that function.
+
+        I finally fucking did it, i have implemented full live syntax with real time rendering.  This is way faster then the regex
+        based system nano had before i have just done the first implementation for rendering comments and block comments.
+        Here is some profiling data:
+            render_comment:
+                Mean = 9.69487e-05 ms,
+                Stddev = 9.3153e-05 ms,
+                Min = 3e-05 ms,
+                Max = 0.00082 ms,
+                Count = 23287.
+        This is so much faster than any regex done before.  This is to check one line for for comments.
+        I have also made colors way easier and faster and insted of compiling and adding one color tied to each word
+        I would like to color, instead I have added some base colors instead and use them when i want saving time.
     STATUS:
         ALMOST DONE!!.
 8.  Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
@@ -200,8 +213,10 @@ NanoX, fork of nano.  TODO LIST.
         I have just created the first part of the rendering engine, the main function to render the text in a line.
         I will begin to split up the rendering into parts, this way i can start to multithread most actions.  By doing
         this I can make the visual updating imediet always.
+
+        This is going well, and I have made real time rendering a thing now i just need to extend it further. 
     STATUS:
-        NOT DONE.
+        NOT DONE.  But started and implemented.
 
 NCURSES_HELP:
     'wattron' turns on an attribute for a 'WINDOW*'. 

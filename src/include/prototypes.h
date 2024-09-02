@@ -609,6 +609,7 @@ char        *retrieve_word_from_cursor_pos(bool forward);
 char       **fast_words_from_str(const char *str, unsigned long slen, unsigned long *nwords);
 line_word_t *line_word_list(const char *str, unsigned long slen);
 line_word_t *make_line_word(char *str, unsigned short start, unsigned short len, unsigned short end);
+unsigned int last_strchr(const char *str, const char ch, unsigned int maxlen);
 
 /* 'lines.cpp' */
 bool          is_line_comment(linestruct *line);
@@ -622,6 +623,7 @@ void          move_lines_up(void);
 void          move_lines_down(void);
 void          erase_in_line(linestruct *line, unsigned long at, unsigned long len);
 void          select_line(linestruct *line, unsigned long from_col, unsigned long to_col);
+unsigned int  total_tabs(linestruct *line);
 
 /* 'brackets.cpp' */
 void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_start);
@@ -651,6 +653,7 @@ void submit_find_in_dir(const char *file, const char *in_dir);
 void sub_thread_delete_c_syntax(char *word);
 void sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg, const char *rgxstr,
                                 colortype **last_c);
+void sub_thread_find_syntax(const char *path);
 
 /* 'signal.cpp' */
 void init_main_thread(void);

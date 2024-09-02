@@ -3,6 +3,7 @@
 
 #include <Mlib/Profile.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 /* Function to check syntax for a open buffer. */
 void
@@ -30,6 +31,10 @@ syntax_check_file(openfilestruct *file)
     {
         check_include_file_syntax("/usr/include/Mlib/Packy.h");
         check_include_file_syntax("/usr/include/stdio.h");
+        sub_thread_find_syntax("/usr/include/Mlib/Packy.h");
+        sub_thread_find_syntax("/usr/include/stdio.h");
+        sub_thread_find_syntax("/usr/include/stdlib.h");
+        sub_thread_find_syntax("/usr/include/fcntl.h");
     }
 }
 

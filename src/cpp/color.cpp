@@ -84,15 +84,16 @@ set_interface_colorpairs(void)
                 interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
             }
             else if (index == FG_BLUE || index == FG_GREEN || index == FG_MAGENTA || index == FG_LAGOON ||
-                     index == FG_YELLOW || index == FG_RED)
+                     index == FG_YELLOW || index == FG_RED || index == FG_PINK)
             {
-                color_combo[index] = (colortype *)malloc(sizeof(*(color_combo[index])));
+                color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
                 short color        = (index == FG_BLUE)    ? COLOR_BLUE :
                                      (index == FG_MAGENTA) ? COLOR_MAGENTA :
                                      (index == FG_GREEN)   ? COLOR_GREEN :
                                      (index == FG_LAGOON)  ? COLOR_LAGOON :
                                      (index == FG_YELLOW)  ? COLOR_YELLOW :
                                      (index == FG_RED)     ? COLOR_RED :
+                                     (index == FG_PINK)    ? COLOR_PINK :
                                                              1;
                 init_pair(index + 1, color, COLOR_BLACK);
                 interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
