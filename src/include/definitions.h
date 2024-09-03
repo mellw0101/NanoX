@@ -126,8 +126,9 @@
 #define BRACKET_START                 6
 #define IN_BRACKET                    7
 #define BRACKET_END                   8
+#define FUNCTION_OPEN_BRACKET         9
 /* Helpers to unset all line flags. */
-#define NUMBER_OF_LINE_FLAGS          8
+#define NUMBER_OF_LINE_FLAGS          9
 #define UNSET_ALL_LINE_FLAGS(line)                            \
     for (unsigned char i = 1; i <= NUMBER_OF_LINE_FLAGS; i++) \
     {                                                         \
@@ -279,6 +280,15 @@
 #include "constexpr_utils.h"
 
 /* Enumeration types. */
+typedef enum
+{
+    NONE    = (0 << 0),
+    DEFINE  = (1 << 1),
+    IF      = (1 << 2),
+    INCLUDE = (1 << 3),
+    IFDEF   = (1 << 4)
+} preprossesor_t;
+
 typedef enum
 {
     UNSPECIFIED,
@@ -640,13 +650,18 @@ typedef struct line_word_t
 
 #define free_node(node) free(node->str), free(node)
 
-typedef struct line_exclusion_t
+typedef struct
 {
-    unsigned int      from_x;
-    unsigned int      to_x;
-    int               color;
-    line_exclusion_t *next;
-} line_exclusion_t;
+    char  *full_function;
+    char  *name;
+    char  *return_type;
+    char **params;
+    int    number_of_params;
+    char **attributes;
+    int    number_of_attributes;
+    int    start_bracket;
+    int    end_braket;
+} function_info_t;
 
 /* RAII complient way to lock a pthread mutex.  This struct will lock
  * the mutex apon its creation, and unlock it when it goes out of scope. */

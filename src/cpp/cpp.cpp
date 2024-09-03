@@ -295,6 +295,7 @@ do_close_bracket(void)
     LOG_FLAG(openfile->current, BRACKET_START);
     LOG_FLAG(openfile->current, IN_BRACKET);
     LOG_FLAG(openfile->current, BRACKET_END);
+    find_current_function();
 }
 
 void
@@ -306,4 +307,452 @@ do_test_window(void)
         delwin(test_win);
     }
     test_win = newwin(20, 20, 0, 0);
+}
+
+function_info_t *
+parse_function(const char *str)
+{
+    PROFILE_FUNCTION;
+    function_info_t *info      = (function_info_t *)nmalloc(sizeof(*info));
+    info->full_function        = copy_of(str);
+    info->name                 = NULL;
+    info->return_type          = NULL;
+    info->params               = NULL;
+    info->number_of_params     = 0;
+    info->attributes           = NULL;
+    info->number_of_attributes = 0;
+    char *copy                 = copy_of(str);
+    char *rest                 = copy;
+    char  buf[1024]            = "";
+    char *pos                  = NULL;
+    char *token                = strtok_r(rest, " ", &rest);
+    /* We want to find the first mention of '(' char indecating that we have gone thrue the prefix. */
+    while (token != NULL)
+    {
+        if ((pos = strstr(token, "(")) == NULL)
+        {
+            strcat(buf, token);
+            strcat(buf, " ");
+        }
+        else
+        {
+            if (*token == '(')
+            {
+                break;
+            }
+            else
+            {
+                int  i = 0;
+                char name[256];
+                for (; token[i] && token[i] != '('; (name[i] = token[i]), i++)
+                    ;
+                name[i] = '\0';
+                for (int i = 0;; i++)
+                {
+                    if (buf[i] == '\0')
+                    {
+                        int index = 0;
+                        while (name[index] != '\0')
+                        {
+                            buf[i++] = name[index++];
+                        }
+                        buf[i] = '\0';
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        token = strtok_r(rest, " ", &rest);
+    }
+    /* Quick fix for now, this is so the loop bellow can always find return type. */
+    if (buf[0] != ' ')
+    {
+        char tbuf[256] = "  ";
+        strcat(tbuf, buf);
+        buf[0] = '\0';
+        strcat(buf, tbuf);
+    }
+    /* Now the buffer contains all text before '(' char. */
+    const int slen  = strlen(buf);
+    int       words = 0;
+    for (int i = slen; i > 0; --i)
+    {
+        if (buf[i] == ' ' && i != slen - 1)
+        {
+            if (words++ == 0)
+            {
+                int was_i = i;
+                /* Here we extract any ptr`s that are at the start of the name. */
+                for (; buf[i + 1] == '*'; i++)
+                    ;
+                info->name = copy_of(&buf[i + 1]);
+                /* If any ptr`s were found we add them to the return string. */
+                if (int diff = i - was_i; diff != 0)
+                {
+                    for (; diff > 0; diff--, was_i++)
+                    {
+                        buf[was_i] = '*';
+                    }
+                }
+                buf[was_i] = '\0';
+            }
+            else
+            {
+                info->return_type = copy_of(&buf[i + 1]);
+            }
+        }
+    }
+    /* The params. */
+    if (token != NULL)
+    {
+        int i = 0;
+        for (; token[i] && token[i - 1] != '('; i++)
+            ;
+        if (token[i] != '\0')
+        {
+            token += i;
+        }
+        buf[0] = '\0';
+        strcat(buf, token);
+        strcat(buf, " ");
+        for (i = 0; rest[i] && rest[i] != ')'; i++)
+            ;
+        rest[i] = '\0';
+        strcat(buf, rest);
+        rest += i + 1;
+        unsigned long number_of_params;
+        char        **params = delim_str(buf, ",", &number_of_params);
+        for (i = 0; i < number_of_params; i++)
+        {
+            if (*params[i] == ' ')
+            {
+                char *param = copy_of(params[i] + 1);
+                free(params[i]);
+                params[i] = param;
+            }
+        }
+        info->params           = params;
+        info->number_of_params = number_of_params;
+        /* Add attributes later.  Thay are in the rest ptr.
+        NLOG("attributes: %s\n", rest); */
+    }
+    free(copy);
+    return info;
+}
+
+function_info_t *
+parse_func(const char *str)
+{
+    int   i, pos;
+    char *copy        = copy_of(str);
+    char  prefix[256] = "", params[256] = "";
+    for (i = 0; copy[i] && copy[i] != '('; i++)
+        ;
+    if (copy[i] != '(')
+    {
+        free(copy);
+        return NULL;
+    }
+    pos = i;
+    for (i = 0; i < pos; i++)
+    {
+        prefix[i] = copy[i];
+    }
+    prefix[i] = '\0';
+    pos += 1;
+    for (i = 0; copy[pos + i] && copy[pos + i] != ')'; i++)
+    {
+        params[i] = copy[pos + i];
+    }
+    if (copy[pos + i] != ')')
+    {
+        free(copy);
+        return NULL;
+    }
+    params[i]                  = '\0';
+    function_info_t *info      = (function_info_t *)nmalloc(sizeof(*info));
+    info->full_function        = copy_of(str);
+    info->name                 = NULL;
+    info->return_type          = NULL;
+    info->params               = NULL;
+    info->number_of_params     = 0;
+    info->attributes           = NULL;
+    info->number_of_attributes = 0;
+    /* Now the buffer contains all text before the '(' char. */
+    const int slen  = strlen(prefix);
+    int       words = 0;
+    for (int i = slen; i > 0; --i)
+    {
+        if (prefix[i] == ' ' && i != slen - 1)
+        {
+            if (words++ == 0)
+            {
+                int was_i = i;
+                /* Here we extract any ptr`s that are at the start of the name. */
+                for (; prefix[i + 1] == '*'; i++)
+                    ;
+                info->name = copy_of(&prefix[i + 1]);
+                /* If any ptr`s were found we add them to the return string. */
+                if (int diff = i - was_i; diff != 0)
+                {
+                    for (; diff > 0; diff--, was_i++)
+                    {
+                        prefix[was_i] = '*';
+                    }
+                }
+                prefix[was_i] = '\0';
+                break;
+            }
+        }
+    }
+    info->return_type = prefix;
+    int    cap = 10, size = 0;
+    char  *param_buf   = params;
+    char **param_array = (char **)nmalloc(cap * sizeof(char *));
+    for (i = 0, pos = 0; params[i]; i++)
+    {
+        if (params[i] == ',' || params[i + 1] == '\0')
+        {
+            (params[i + 1] == '\0') ? (i += 1) : 0;
+            (cap == size) ? cap *= 2, param_array = (char **)nrealloc(param_array, cap * sizeof(char *)) : 0;
+            param_array[size++] = measured_copy(param_buf, i - pos);
+            (params[i + 1] == ' ') ? (i += 2) : (i += 1);
+            param_buf += i - pos;
+            pos = i;
+        }
+    }
+    param_array[size]      = NULL;
+    info->params           = param_array;
+    info->number_of_params = size;
+    free(copy);
+    return info;
+}
+
+void
+free_function_info(function_info_t *info)
+{
+    for (int i = 0; i < info->number_of_params; i++)
+    {
+        free(info->params[i]);
+    }
+    (info->full_function) ? free(info->full_function) : void();
+    (info->name) ? free(info->name) : void();
+    (info->return_type) ? free(info->return_type) : void();
+    (info->params) ? free(info->params) : void();
+}
+
+void
+flag_all_brackets(void)
+{
+    PROFILE_FUNCTION;
+    for (linestruct *line = openfile->filetop; line != NULL; line = line->next)
+    {
+        const char *start = strchr(line->data, '{');
+        const char *end   = strrchr(line->data, '}');
+        /* Bracket start and end on the same line. */
+        if (start != NULL && end != NULL)
+        {
+            while (start != NULL)
+            {
+                if (line->data[(start - line->data) + 1] == '\0')
+                {
+                    start = NULL;
+                    continue;
+                }
+                start = strchr(start + 1, '{');
+            }
+            while (end != NULL)
+            {
+                unsigned int last_pos = last_strchr(line->data, '}', (end - line->data));
+                if (last_pos < till_x && last_pos != 0)
+                {
+                    end = &line->data[last_pos];
+                }
+                else
+                {
+                    end = NULL;
+                }
+            }
+        }
+        /* Start bracket line was found. */
+        else if (start != NULL && end == NULL)
+        {
+            LINE_SET(line, BRACKET_START);
+            if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET)))
+            {
+                LINE_SET(line, IN_BRACKET);
+            }
+        }
+        /* End bracket line was found. */
+        else if (start == NULL && end != NULL)
+        {
+            LINE_SET(line, BRACKET_END);
+            LINE_UNSET(line, BRACKET_START);
+            for (linestruct *t_line = line->prev; t_line; t_line = t_line->prev)
+            {
+                if (LINE_ISSET(t_line, BRACKET_START))
+                {
+                    if (indent_char_len(line) == indent_char_len(t_line))
+                    {
+                        if (t_line->prev && LINE_ISSET(t_line->prev, IN_BRACKET))
+                        {
+
+                            LINE_SET(line, IN_BRACKET);
+                        }
+                        else
+                        {
+                            LINE_UNSET(line, IN_BRACKET);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        /* Was not found. */
+        else if (start == NULL && end == NULL)
+        {
+            if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET) || LINE_ISSET(line->prev, BRACKET_START)))
+            {
+                LINE_SET(line, IN_BRACKET);
+            }
+            else
+            {
+                LINE_UNSET(line, IN_BRACKET);
+            }
+        }
+    }
+}
+
+void
+find_current_function(void)
+{
+    PROFILE_FUNCTION;
+    char        buf[1024];
+    const char *function_str = NULL;
+    /* Check if function already exists.  We do this by the line number of the current line,
+     * here we also update start and end pos if thay do not align. */
+    /* if (func_info != NULL)
+    {
+        int current_line = openfile->current->lineno;
+        for (int i = 0; func_info[i]; i++)
+        {
+            if (current_line >= func_info[i]->start_bracket && current_line <= func_info[i]->end_braket)
+            {
+                for (linestruct *line = openfile->current; line != NULL; line = line->prev)
+                {
+                    if (LINE_ISSET(line, BRACKET_START) && !LINE_ISSET(line, IN_BRACKET))
+                    {
+                        const char *name = strchr(line->prev->data, '(');
+                        if (name != NULL)
+                        {
+                            char       *buf   = measured_copy(line->prev->data, (name - line->prev->data));
+                            const char *space = strchr(buf, ' ');
+                            if (space != NULL)
+                            {
+                                char *tbuf =
+                                    measured_copy(buf + (space - line->prev->data) + 1,
+                                                  (name - line->prev->data) - (space - line->prev->data));
+                                free(buf);
+                                buf = tbuf;
+                            }
+                            if (strcmp(buf, func_info[i]->name) == 0)
+                            {
+                                func_info[i]->start_bracket = line->lineno;
+                                for (linestruct *l = line; l != NULL; l = l->next)
+                                {
+                                    if (LINE_ISSET(l, BRACKET_END) && !LINE_ISSET(l, IN_BRACKET))
+                                    {
+                                        func_info[i]->end_braket = l->lineno;
+                                        break;
+                                    }
+                                }
+                            }
+                            free(buf);
+                        }
+                        break;
+                    }
+                }
+                return;
+            }
+        }
+    } */
+    /* If not we add it. */
+    for (linestruct *line = openfile->current; line; line = line->prev)
+    {
+        if (LINE_ISSET(line, BRACKET_START) && !LINE_ISSET(line, IN_BRACKET))
+        {
+            if (line->prev == NULL)
+            {
+                return;
+            }
+            line         = line->prev;
+            function_str = strchr(line->data, '(');
+            if (function_str != NULL)
+            {
+                char *tmp_data = measured_copy(line->data, (function_str - line->data));
+                function_str   = strchr(tmp_data, ' ');
+                if (function_str == NULL)
+                {
+                    char *pd = copy_of(line->prev->data);
+                    char *d  = copy_of(line->data);
+                    snprintf(buf, sizeof(buf), "%s %s;", pd, d);
+                    free(pd);
+                    free(d);
+                    function_info_t *info = parse_func(buf);
+                    if (info)
+                    {
+                        info->start_bracket = line->next->lineno;
+                        for (linestruct *l = line->next; l != NULL; l = l->next)
+                        {
+                            if (LINE_ISSET(l, BRACKET_END) && !LINE_ISSET(l, IN_BRACKET))
+                            {
+                                info->end_braket = l->lineno;
+                                break;
+                            }
+                        }
+                        if (func_info == NULL)
+                        {
+                            func_info =
+                                (function_info_t **)nmalloc(func_info_cap * sizeof(function_info_t *));
+                            func_info[func_info_size] = NULL;
+                        }
+                        bool found = FALSE;
+                        for (int i = 0; func_info[i]; i++)
+                        {
+                            if (strcmp(func_info[i]->name, info->name) == 0)
+                            {
+                                found = TRUE;
+                                break;
+                            }
+                        }
+                        if (found == FALSE)
+                        {
+                            if (func_info_cap == func_info_size)
+                            {
+                                NLOG("func_info_size: %i", func_info_size);
+                                func_info_cap *= 2;
+                                func_info = (function_info_t **)nrealloc(
+                                    func_info, func_info_cap * sizeof(function_info_t *));
+                            }
+                            func_info[func_info_size++] = info;
+                            func_info[func_info_size]   = NULL;
+                            refresh_needed              = TRUE;
+                        }
+                    }
+                    function_str = NULL;
+                }
+                else
+                {
+                    NLOG("%s\n", function_str);
+                }
+                free(tmp_data);
+            }
+            break;
+        }
+        if (!LINE_ISSET(line, IN_BRACKET))
+        {
+            break;
+        }
+    }
 }

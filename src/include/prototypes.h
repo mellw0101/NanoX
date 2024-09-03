@@ -152,6 +152,10 @@ extern std::vector<std::string>   syntax_vars;
 extern std::vector<std::string>   syntax_funcs;
 extern std::vector<std::string>   handled_includes;
 
+extern function_info_t **func_info;
+extern int               func_info_size;
+extern int               func_info_cap;
+
 extern task_queue_t          *task_queue;
 extern pthread_t             *threads;
 extern volatile sig_atomic_t *stop_thread_flags;
@@ -543,16 +547,19 @@ void do_cancel(void);
 bool isCppSyntaxChar(const char c);
 void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces, unsigned short *t_char,
                      unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
-
-unsigned short indent_char_len(linestruct *line);
-
-void enclose_marked_region(const char *s1, const char *s2);
-void do_block_comment(void);
-bool enter_with_bracket(void);
-void add_bracket_pair(const unsigned long start, const unsigned long end);
-void all_brackets_pos(void);
-void do_close_bracket(void);
-void do_test_window(void);
+unsigned short   indent_char_len(linestruct *line);
+void             enclose_marked_region(const char *s1, const char *s2);
+void             do_block_comment(void);
+bool             enter_with_bracket(void);
+void             add_bracket_pair(const unsigned long start, const unsigned long end);
+void             all_brackets_pos(void);
+void             do_close_bracket(void);
+void             do_test_window(void);
+function_info_t *parse_function(const char *str);
+void             free_function_info(function_info_t *info);
+function_info_t *parse_func(const char *str);
+void             flag_all_brackets(void);
+void             find_current_function(void);
 
 /* 'syntax.cpp' */
 void syntax_check_file(openfilestruct *file);
@@ -586,12 +593,13 @@ void find_block_comments(int before, int end);
 void netlog_syntaxtype(syntaxtype *s);
 void netlog_colortype(colortype *c);
 void netlog_bracket_entry(const bracket_entry &be);
+void netlog_func_info(function_info_t *info);
 
 /* 'words.cpp' */
 void         remove_tabs_from_word(char **word);
 char       **words_in_line(linestruct *line);
 char       **words_in_str(const char *str, unsigned long *size = NULL);
-char       **delim_str(const char *str, const char delim, unsigned long *size);
+char       **delim_str(const char *str, const char *delim, unsigned long *size);
 char       **split_into_words(const char *str, const unsigned int len, unsigned int *word_count);
 const char  *extract_include(char *str);
 char        *get_file_extention(void);
@@ -654,6 +662,7 @@ void sub_thread_delete_c_syntax(char *word);
 void sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg, const char *rgxstr,
                                 colortype **last_c);
 void sub_thread_find_syntax(const char *path);
+void sub_thread_parse_funcs(const char *path);
 
 /* 'signal.cpp' */
 void init_main_thread(void);

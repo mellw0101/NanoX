@@ -120,7 +120,7 @@ pause_all_sub_threads(bool pause)
     }
 }
 
-/* This is where all subthreads wait for work. */
+/* This is where all sub-threads wait for work. */
 void *
 worker_thread(void *arg)
 {

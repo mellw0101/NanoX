@@ -80,7 +80,7 @@ words_in_str(const char *str, unsigned long *size)
 }
 
 char **
-delim_str(const char *str, const char delim, unsigned long *size)
+delim_str(const char *str, const char *delim, unsigned long *size)
 {
     PROFILE_FUNCTION;
     if (str == NULL)
@@ -89,7 +89,7 @@ delim_str(const char *str, const char delim, unsigned long *size)
     }
     unsigned int bsize = 0, cap = 10;
     char       **words = (char **)nmalloc(sizeof(char *) * cap);
-    char        *tok   = strtok((char *)str, &delim);
+    char        *tok   = strtok((char *)str, delim);
     while (tok != NULL)
     {
         if (bsize == cap)
@@ -97,8 +97,8 @@ delim_str(const char *str, const char delim, unsigned long *size)
             cap *= 2;
             words = (char **)nrealloc(words, sizeof(char *) * cap);
         }
-        words[bsize++] = tok;
-        tok            = strtok(NULL, &delim);
+        words[bsize++] = copy_of(tok);
+        tok            = strtok(NULL, delim);
     }
     words[bsize] = NULL;
     (size != NULL) ? *size = bsize : 0;

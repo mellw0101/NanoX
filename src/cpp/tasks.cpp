@@ -3,8 +3,6 @@
 #include <Mlib/Profile.h>
 #include <time.h>
 
-#define NEW_SYSTEM FALSE
-
 /* These are the functions that the sub threads perform. */
 struct sub_thread_function
 {
@@ -100,6 +98,73 @@ struct sub_thread_function
             return NULL;
         }
         return result;
+    }
+
+    static void *
+    parse_funcs_from(void *arg)
+    {
+        clock_t       t_start = clock();
+        char         *path    = (char *)arg;
+        unsigned long nwords, i;
+        char        **words = words_from_file(path, &nwords);
+        if (words == NULL)
+        {
+            free(path);
+            return NULL;
+        }
+        char  *start      = NULL;
+        char  *end        = NULL;
+        int    func_words = 0;
+        char   buf[1024];
+        int    cap = 10, size = 0;
+        char **funcs = (char **)nmalloc(cap * sizeof(char *));
+        for (i = 0; i < nwords; i++)
+        {
+            const unsigned int type = retrieve_c_syntax_type(words[i]);
+            if (type & CS_INT || type & CS_VOID)
+            {
+                func_words = 0;
+                while (end == NULL)
+                {
+                    if (strncmp(words[i + func_words], "__REDIRECT", 11) == 0 ||
+                        strncmp(words[i + func_words], "__REDIRECT_NTH", 15) == 0 ||
+                        strchr(words[i + func_words - 1], ';') != NULL)
+                    {
+                        break;
+                    }
+                    if (start == NULL)
+                    {
+                        start = strchr(words[i + func_words++], '(');
+                        end   = strchr(words[i + func_words - 1], ')');
+                    }
+                    if (start != NULL && end == NULL)
+                    {
+                        end = strchr(words[i + func_words++], ')');
+                    }
+                    if (end != NULL)
+                    {
+                        buf[0] = '\0';
+                        for (int j = 0; j < func_words; j++)
+                        {
+                            strcat(buf, words[i]);
+                            free(words[i++]);
+                            strcat(buf, " ");
+                        }
+                        (cap == size) ? cap *= 2, funcs = (char **)nrealloc(funcs, cap * sizeof(char *)) : 0;
+                        funcs[size++] = copy_of(buf);
+                        start         = NULL;
+                        end           = NULL;
+                        break;
+                    }
+                }
+            }
+            free(words[i]);
+        }
+        funcs[size] = NULL;
+        free(words);
+        NLOG("%s: file: %s, time: %lf m/s.\n", __func__, path, CALCULATE_MS_TIME(t_start));
+        free(path);
+        return funcs;
     }
 
     static void *
@@ -226,6 +291,53 @@ struct main_thread_function
             free(node);
         }
         free(result);
+    }
+
+    static void
+    handle_parsed_funcs(void *arg)
+    {
+        if (arg == NULL)
+        {
+            return;
+        }
+        char            **funcs = (char **)arg;
+        int               cap = 10, size = 0;
+        function_info_t **info_array = (function_info_t **)nmalloc(cap * sizeof(**info_array));
+        for (int i = 0; funcs[i]; i++)
+        {
+            function_info_t *info = parse_func(funcs[i]);
+            if (info != NULL)
+            {
+                (cap == size) ? cap *= 2,
+                    info_array     = (function_info_t **)nrealloc(info_array, cap * sizeof(**info_array)) : 0;
+                info_array[size++] = info;
+                free(funcs[i]);
+            }
+        }
+        free(funcs);
+        info_array[size] = NULL;
+        if (func_info == NULL)
+        {
+            func_info = info_array;
+        }
+        else
+        {
+            for (int i = 0;; i++)
+            {
+                if (func_info[i] == NULL)
+                {
+                    func_info =
+                        (function_info_t **)nrealloc(func_info, (i + size + 1) * sizeof(function_info_t *));
+                    int k = 0;
+                    for (; info_array[k]; k++)
+                    {
+                        func_info[i + k] = info_array[k];
+                    }
+                    func_info[i + k] = NULL;
+                    break;
+                }
+            }
+        }
     }
 
     static void
@@ -381,4 +493,11 @@ void
 sub_thread_find_syntax(const char *path)
 {
     submit_task(sub_thread_function::syntax_from, copy_of(path), NULL, main_thread_function::handle_syntax);
+}
+
+void
+sub_thread_parse_funcs(const char *path)
+{
+    submit_task(sub_thread_function::parse_funcs_from, copy_of(path), NULL,
+                main_thread_function::handle_parsed_funcs);
 }

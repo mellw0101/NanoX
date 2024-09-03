@@ -224,6 +224,10 @@ std::vector<std::string> syntax_funcs;
 /* Vector for all includes that have been handled. */
 std::vector<std::string> handled_includes;
 
+function_info_t **func_info      = NULL;
+int               func_info_size = 0;
+int               func_info_cap  = 10;
+
 const char *term = NULL;
 
 /* Empty functions, for the most part corresponding to toggles. */
@@ -456,12 +460,14 @@ keycode_from_string(const char *keystring)
 void
 show_curses_version(void)
 {
-    statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
+    statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR,
+               NCURSES_VERSION_PATCH);
 }
 
 /* Add a key combo to the linked list of shortcuts. */
 void
-add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function, const int toggle)
+add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function,
+              const int toggle)
 {
     static keystruct *tailsc;
     static int        counter = 0;
@@ -787,10 +793,10 @@ shortcut_init(void)
     add_to_funcs(backwards_void, MWHEREIS | MREPLACE, N_("Backwards"), WHENHELP(reverse_gist), BLANKAFTER);
     add_to_funcs(flip_replace, MWHEREIS, N_("Replace"), WHENHELP(replace_gist), BLANKAFTER);
     add_to_funcs(flip_replace, MREPLACE, N_("No Replace"), WHENHELP(whereis_gist), BLANKAFTER);
-    add_to_funcs(
-        get_older_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Older"), WHENHELP(older_gist), TOGETHER);
-    add_to_funcs(get_newer_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Newer"), WHENHELP(newer_gist),
-                 BLANKAFTER);
+    add_to_funcs(get_older_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Older"),
+                 WHENHELP(older_gist), TOGETHER);
+    add_to_funcs(get_newer_item, MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE, N_("Newer"),
+                 WHENHELP(newer_gist), BLANKAFTER);
     add_to_funcs(get_older_item, MEXECUTE, N_("Older"), WHENHELP(older_command_gist), TOGETHER);
     add_to_funcs(get_newer_item, MEXECUTE, N_("Newer"), WHENHELP(newer_command_gist), BLANKAFTER);
     /* TRANSLATORS : Try to keep the next four strings at most 10 characters. */
@@ -823,15 +829,18 @@ shortcut_init(void)
     add_to_funcs(to_prev_block, MMAIN, N_("Prev Block"), WHENHELP(prevblock_gist), TOGETHER);
     add_to_funcs(to_next_block, MMAIN, N_("Next Block"), WHENHELP(nextblock_gist), TOGETHER);
     /* TRANSLATORS: Try to keep these two strings at most 16 characters. */
-    add_to_funcs(to_para_begin, MMAIN | MGOTOLINE, N_("Begin of Paragr."), WHENHELP(parabegin_gist), TOGETHER);
+    add_to_funcs(
+        to_para_begin, MMAIN | MGOTOLINE, N_("Begin of Paragr."), WHENHELP(parabegin_gist), TOGETHER);
     add_to_funcs(to_para_end, MMAIN | MGOTOLINE, N_("End of Paragraph"), WHENHELP(paraend_gist), BLANKAFTER);
     add_to_funcs(to_top_row, MMAIN, N_("Top Row"), WHENHELP(toprow_gist), TOGETHER);
     add_to_funcs(to_bottom_row, MMAIN, N_("Bottom Row"), WHENHELP(bottomrow_gist), BLANKAFTER);
     /* TRANSLATORS: Try to keep the next six strings at most 12 characters. */
     add_to_funcs(do_page_up, MMAIN | MHELP, N_("Prev Page"), WHENHELP(prevpage_gist), TOGETHER);
     add_to_funcs(do_page_down, MMAIN | MHELP, N_("Next Page"), WHENHELP(nextpage_gist), TOGETHER);
-    add_to_funcs(to_first_line, MMAIN | MHELP | MGOTOLINE, N_("First Line"), WHENHELP(firstline_gist), TOGETHER);
-    add_to_funcs(to_last_line, MMAIN | MHELP | MGOTOLINE, N_("Last Line"), WHENHELP(lastline_gist), BLANKAFTER);
+    add_to_funcs(
+        to_first_line, MMAIN | MHELP | MGOTOLINE, N_("First Line"), WHENHELP(firstline_gist), TOGETHER);
+    add_to_funcs(
+        to_last_line, MMAIN | MHELP | MGOTOLINE, N_("Last Line"), WHENHELP(lastline_gist), BLANKAFTER);
     add_to_funcs(switch_to_prev_buffer, MMAIN, N_("Prev File"), WHENHELP(prevfile_gist), TOGETHER);
     add_to_funcs(switch_to_next_buffer, MMAIN, N_("Next File"), WHENHELP(nextfile_gist), BLANKAFTER);
     /* TRANSLATORS: The next four strings are names of keyboard keys. */
@@ -844,7 +853,8 @@ shortcut_init(void)
     add_to_funcs(chop_next_word, MMAIN, N_("Chop Right"), WHENHELP(chopwordright_gist), TOGETHER);
     add_to_funcs(cut_till_eof, MMAIN, N_("Cut Till End"), WHENHELP(cuttilleof_gist), BLANKAFTER);
     add_to_funcs(do_full_justify, MMAIN, N_("Full Justify"), WHENHELP(fulljustify_gist), TOGETHER);
-    add_to_funcs(count_lines_words_and_characters, MMAIN, N_("Word Count"), WHENHELP(wordcount_gist), TOGETHER);
+    add_to_funcs(
+        count_lines_words_and_characters, MMAIN, N_("Word Count"), WHENHELP(wordcount_gist), TOGETHER);
     add_to_funcs(copy_text, MMAIN, N_("Copy"), WHENHELP(copy_gist), BLANKAFTER);
     add_to_funcs(do_verbatim_input, MMAIN, N_("Verbatim"), WHENHELP(verbatim_gist), BLANKAFTER);
     add_to_funcs(do_indent, MMAIN, N_("Indent"), WHENHELP(indent_gist), TOGETHER);
@@ -874,7 +884,8 @@ shortcut_init(void)
     /* Include the new-buffer toggle only when it can actually be used. */
     if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE))
     {
-        add_to_funcs(flip_newbuffer, MINSERTFILE | MEXECUTE, N_("New Buffer"), WHENHELP(newbuffer_gist), TOGETHER);
+        add_to_funcs(
+            flip_newbuffer, MINSERTFILE | MEXECUTE, N_("New Buffer"), WHENHELP(newbuffer_gist), TOGETHER);
     }
     add_to_funcs(flip_pipe, MEXECUTE, N_("Pipe Text"), WHENHELP(pipe_gist), BLANKAFTER);
     /* TRANSLATORS: Try to keep the next four strings at most 12 characters. */
@@ -912,7 +923,8 @@ shortcut_init(void)
     }
     add_to_funcs(do_page_up, MBROWSER, N_("Prev Page"), WHENHELP(prevpage_gist), TOGETHER);
     add_to_funcs(do_page_down, MBROWSER, N_("Next Page"), WHENHELP(nextpage_gist), TOGETHER);
-    add_to_funcs(to_first_file, MBROWSER | MWHEREISFILE, N_("First File"), WHENHELP(firstfile_gist), TOGETHER);
+    add_to_funcs(
+        to_first_file, MBROWSER | MWHEREISFILE, N_("First File"), WHENHELP(firstfile_gist), TOGETHER);
     add_to_funcs(to_last_file, MBROWSER | MWHEREISFILE, N_("Last File"), WHENHELP(lastfile_gist), BLANKAFTER);
     add_to_funcs(to_prev_word, MBROWSER, N_("Left Column"), WHENHELP(browserlefthand_gist), TOGETHER);
     add_to_funcs(to_next_word, MBROWSER, N_("Right Column"), WHENHELP(browserrighthand_gist), TOGETHER);
@@ -1145,23 +1157,23 @@ shortcut_init(void)
     add_to_sclist(MWHEREIS | MREPLACE, "^R", 0, flip_replace, 0);
     add_to_sclist(MWHEREIS | MGOTOLINE, "^T", 0, flip_goto, 0);
     add_to_sclist(MWHEREIS | MGOTOLINE, SLASH_OR_DASH, 0, flip_goto, 0);
-    add_to_sclist(
-        MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^P", 0, get_older_item, 0);
-    add_to_sclist(
-        MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^N", 0, get_newer_item, 0);
+    add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^P", 0,
+                  get_older_item, 0);
+    add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^N", 0,
+                  get_newer_item, 0);
     if (using_utf8())
     {
-        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "\xE2\x96\xb4",
-                      KEY_UP, get_older_item, 0);
-        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "\xE2\x96\xbe",
-                      KEY_DOWN, get_newer_item, 0);
+        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE,
+                      "\xE2\x96\xb4", KEY_UP, get_older_item, 0);
+        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE,
+                      "\xE2\x96\xbe", KEY_DOWN, get_newer_item, 0);
     }
     else
     {
-        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Up", KEY_UP,
-                      get_older_item, 0);
-        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Down", KEY_DOWN,
-                      get_newer_item, 0);
+        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Up",
+                      KEY_UP, get_older_item, 0);
+        add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Down",
+                      KEY_DOWN, get_newer_item, 0);
     }
     add_to_sclist(MGOTOLINE, "^W", 0, to_para_begin, 0);
     add_to_sclist(MGOTOLINE, "^O", 0, to_para_end, 0);

@@ -436,20 +436,38 @@ constexpr_map<std::string_view, unsigned int, 14> toggleOptionMap = {
 #define CS_RETURN    (1 << 26)
 #define CS_INCLUDE   (1 << 27)
 #define CS_DEFINE    (1 << 28)
-constexpr_map<std::string_view, unsigned int, 29> c_syntax_map = {
-    {{"struct", CS_STRUCT},   {"enum", CS_ENUM},
-     {"int", CS_INT},         {"void", CS_VOID},
-     {"long", CS_LONG},       {"char", CS_CHAR},
-     {"include", CS_INCLUDE}, {"define", CS_DEFINE},
-     {"class", CS_CLASS},     {"bool", CS_BOOL},
-     {"size_t", CS_SIZE_T},   {"ssize_t", CS_SSIZE_T},
-     {"short", CS_SHORT},     {"namespace", CS_NAMESPACE},
-     {"static", CS_STATIC},   {"unsigned", CS_UNSIGNED},
-     {"const", CS_CONST},     {"NULL", CS_NULL},
-     {"TRUE", CS_TRUE},       {"FALSE", CS_FALSE},
-     {"if", CS_IF},           {"case", CS_CASE},
-     {"else", CS_ELSE},       {"switch", CS_SWITCH},
-     {"typedef", CS_TYPEDEF}, {"for", CS_FOR},
-     {"while", CS_WHILE},     {"return", CS_RETURN},
-     {"sizeof", CS_SIZEOF}}
+#define CS_BREAK     (1 << 29)
+#define CS_DO        (1 << 30)
+constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
+    {{"struct", CS_STRUCT},
+     {"enum", CS_ENUM},
+     {"int", CS_INT},
+     {"void", CS_VOID},
+     {"long", CS_LONG},
+     {"char", CS_CHAR},
+     {"include", CS_INCLUDE},
+     {"define", CS_DEFINE},
+     {"class", CS_CLASS},
+     {"bool", CS_BOOL},
+     {"size_t", CS_SIZE_T},
+     {"ssize_t", CS_SSIZE_T},
+     {"short", CS_SHORT},
+     {"namespace", CS_NAMESPACE},
+     {"static", CS_STATIC},
+     {"unsigned", CS_UNSIGNED},
+     {"const", CS_CONST},
+     {"NULL", CS_NULL},
+     {"TRUE", CS_TRUE},
+     {"FALSE", CS_FALSE},
+     {"if", CS_IF},
+     {"case", CS_CASE},
+     {"else", CS_ELSE},
+     {"switch", CS_SWITCH},
+     {"typedef", CS_TYPEDEF},
+     {"for", CS_FOR},
+     {"while", CS_WHILE},
+     {"return", CS_RETURN},
+     {"sizeof", CS_SIZEOF},
+     {"break", CS_BREAK},
+     {"do", CS_DO}}
 };

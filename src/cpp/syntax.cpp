@@ -31,10 +31,7 @@ syntax_check_file(openfilestruct *file)
     {
         check_include_file_syntax("/usr/include/Mlib/Packy.h");
         check_include_file_syntax("/usr/include/stdio.h");
-        sub_thread_find_syntax("/usr/include/Mlib/Packy.h");
-        sub_thread_find_syntax("/usr/include/stdio.h");
-        sub_thread_find_syntax("/usr/include/stdlib.h");
-        sub_thread_find_syntax("/usr/include/fcntl.h");
+        check_include_file_syntax("/usr/include/stdlib.h");
     }
 }
 
@@ -799,6 +796,7 @@ void
 do_cpp_syntax(void)
 {
     PROFILE_FUNCTION;
+    flag_all_brackets();
     if (last_c_color == NULL)
     {
         LOUT_logE("last_c_color == NULL.");

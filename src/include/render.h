@@ -77,3 +77,14 @@
     }
 
 #define char_ptr_pos_in_str(char_ptr, full_str) (char_ptr - full_str)
+/* Define`s to simplyfy coloring within the rendering system. */
+#define render_text(start, end, col)            render_part(row, converted, line, start, end, from_col, col)
+#define render_text_ptr(start, end, col)        render_text((start - line->data), (end - line->data), col)
+#define render_str_len(start, str, len, c) \
+    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), str, len, c)
+
+#define render_str_ptr_len(start, len, c) \
+    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, len, c)
+
+#define render_str_ptr(start, end, c) \
+    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, (end - start), c)

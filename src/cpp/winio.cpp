@@ -2365,6 +2365,7 @@ set_blankdelay_to_one(void)
 char *
 display_string(const char *text, unsigned long column, unsigned long span, bool isdata, bool isprompt)
 {
+    PROFILE_FUNCTION;
     /* The beginning of the text, to later determine the covered part. */
     const char *origin = text;
     /* The index of the first character that the caller wishes to show. */
@@ -2428,7 +2429,7 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
         /* Show a space as a visible character, or as a space. */
         if (*text == ' ')
         {
-            if ISSET (WHITESPACE_DISPLAY)
+            if (ISSET(WHITESPACE_DISPLAY))
             {
                 for (int i = whitelen[0]; i < whitelen[0] + whitelen[1];)
                 {
@@ -4012,11 +4013,6 @@ edit_refresh(void)
     {
         draw_scrollbar();
     }
-/* #define TIMEREFRESH 123 */
-#ifdef TIMEREFRESH
-#    include <time.h>
-    clock_t start = clock();
-#endif
     line = openfile->edittop;
     while (row < editwinrows && line != NULL)
     {
@@ -4032,9 +4028,7 @@ edit_refresh(void)
         }
         row++;
     }
-#ifdef TIMEREFRESH
-    statusline(INFO, "Refresh: %.1f ms", 1000 * (double)(clock() - start) / CLOCKS_PER_SEC);
-#endif
+    find_current_function();
     place_the_cursor();
     wnoutrefresh(midwin);
     refresh_needed = FALSE;
