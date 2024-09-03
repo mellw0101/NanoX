@@ -204,7 +204,25 @@ NanoX, fork of nano.  TODO LIST.
         I also made everything non blocking for all threads the only waiting thay will
         do is for the next task, I cannot wait to develop them further.
     
-        I just made a system to make task`s easier to orgin
+        This system is flawless.  there are newer problems, the only thing is that i built this before i
+        figured out how the syntaxing worked and before i changed to my real-time system.  And then i really
+        needed to run thing concurently because of the slowness of regexing and other things.  but as of now
+        using my real-time system it`s so fast that Not even a single function i profile when i stress test takes more than
+        '1' ms, to compleate and for all the real-time rendering functions.
+        Well...
+            render_bracket                : Mean = 0.000115283 ms, Stddev = 0.000442019 ms,    Min = 2e-05 ms,    Max = 0.01829 ms,  Count = 91626
+            render_char_strings           : Mean = 6.34184e-05 ms, Stddev = 9.73154e-05 ms,    Min = 2e-05 ms,    Max = 0.01043 ms,  Count = 90696
+            render_comment                : Mean = 7.71813e-05 ms, Stddev = 9.15774e-05 ms,    Min = 3e-05 ms,    Max = 0.00888 ms,  Count = 91626
+            render_function_params        : Mean = 0.00133443 ms, Stddev = 0.00109268 ms,    Min = 0.00041 ms,    Max = 0.02217 ms,  Count = 91626
+            render_preprossesor           : Mean = 3.70054e-05 ms, Stddev = 6.41127e-05 ms,    Min = 2e-05 ms,    Max = 0.00969 ms,  Count = 91626
+            render_string_literals        : Mean = 5.2356e-05 ms, Stddev = 9.17636e-05 ms,    Min = 2e-05 ms,    Max = 0.00791 ms,  Count = 90696
+            /* This one does all the rendering for each line.  And it never took more than '1' ms. for '91626' iters. */
+            apply_syntax_to_line          : Mean = 0.00332462 ms, Stddev = 0.00518622 ms,    Min = 0.0007 ms,    Max = 0.979771 ms,  Count = 91626\
+        
+        I feel this becoming way easier, like all of it i dont know how to explain but i dont seem to make errors, even when i think that im gooing to make
+        it crash non stop because of how i made a linked list, but no nothing.
+
+        I will make NanoX better than vs code the next main problem is to add the ability to close and open brackets.
     STATUS:
         OBVIUSLY NOT DONE BUT NO ERRORS AT ALL!!
 17. Create a rendering engine.
@@ -214,7 +232,38 @@ NanoX, fork of nano.  TODO LIST.
         I will begin to split up the rendering into parts, this way i can start to multithread most actions.  By doing
         this I can make the visual updating imediet always.
 
-        This is going well, and I have made real time rendering a thing now i just need to extend it further. 
+        This is going well, and I have made real time rendering a thing now i just need to extend it further.
+
+        Well i have made something amazing, truly.  I have been planning to do this for mounths, and when i finally
+        cracked all the weird ways the OG. 'nano' integrated rcfile parsing systems for everything.  I could finaly do
+        everything in real-time.  Here are some profiling results.
+        
+        Profiling report: [2024-09-03 11:04:42.297]
+            apply_syntax_to_line          : Mean = 0.00332462 ms, Stddev = 0.00518622 ms,    Min = 0.0007 ms,    Max = 0.979771 ms,  Count = 91626
+            check_include_file_syntax     : Mean = 0.31838 ms, Stddev = 0.211597 ms,    Min = 0.020611 ms,    Max = 0.49295 ms,  Count = 3
+            display_string                : Mean = 8.41382e-05 ms, Stddev = 8.67018e-05 ms,    Min = 3e-05 ms,    Max = 0.01267 ms,  Count = 93675
+            do_cpp_syntax                 : Mean = 0.312771 ms, Stddev = 0 ms,    Min = 0.312771 ms,    Max = 0.312771 ms,  Count = 1
+            edit_refresh                  : Mean = 0.241847 ms, Stddev = 0.0656478 ms,    Min = 0.13139 ms,    Max = 1.75962 ms,  Count = 1985
+            find_current_function         : Mean = 0.00270999 ms, Stddev = 0.00269315 ms,    Min = 6e-05 ms,    Max = 0.0181 ms,  Count = 1077
+            flag_all_brackets             : Mean = 0.282631 ms, Stddev = 0 ms,    Min = 0.282631 ms,    Max = 0.282631 ms,  Count = 1
+            line_word_list                : Mean = 0.000142748 ms, Stddev = 0.000170037 ms,    Min = 3e-05 ms,    Max = 0.01087 ms,  Count = 90696
+            precalc_multicolorinfo        : Mean = 2.98019 ms, Stddev = 0 ms,    Min = 2.98019 ms,    Max = 2.98019 ms,  Count = 1
+            render_bracket                : Mean = 0.000115283 ms, Stddev = 0.000442019 ms,    Min = 2e-05 ms,    Max = 0.01829 ms,  Count = 91626
+            render_char_strings           : Mean = 6.34184e-05 ms, Stddev = 9.73154e-05 ms,    Min = 2e-05 ms,    Max = 0.01043 ms,  Count = 90696
+            render_comment                : Mean = 7.71813e-05 ms, Stddev = 9.15774e-05 ms,    Min = 3e-05 ms,    Max = 0.00888 ms,  Count = 91626
+            render_function_params        : Mean = 0.00133443 ms, Stddev = 0.00109268 ms,    Min = 0.00041 ms,    Max = 0.02217 ms,  Count = 91626
+            render_preprossesor           : Mean = 3.70054e-05 ms, Stddev = 6.41127e-05 ms,    Min = 2e-05 ms,    Max = 0.00969 ms,  Count = 91626
+            render_string_literals        : Mean = 5.2356e-05 ms, Stddev = 9.17636e-05 ms,    Min = 2e-05 ms,    Max = 0.00791 ms,  Count = 90696
+            syntax_check_file             : Mean = 0.956221 ms, Stddev = 0 ms,    Min = 0.956221 ms,    Max = 0.956221 ms,  Count = 1
+            update_line                   : Mean = 0.00469836 ms, Stddev = 0.00624281 ms,    Min = 0.00121 ms,    Max = 1.21486 ms,  Count = 91626
+            words_from_file               : Mean = 0.166264 ms, Stddev = 0.107538 ms,    Min = 0.014421 ms,    Max = 0.24957 ms,  Count = 3
+
+        As you can see, this is so fast and i have been able to add error highlighting as well, also in real time and i have just added to 
+        'render_function_params' so that it can look at a type for a param and if the user tries to index into the param (i.e: param[index])
+        it checks if the param is a '*' ptr and if not it gives an error directly in real time by making the var red. 
+        
+        At this time the renderer is almost 900 lines and nothing is slow.  Im happy, but also i have planed how i was gooing to do this
+        as soon as i cracked all the subsystems and how thay worked and now i have.
     STATUS:
         NOT DONE.  But started and implemented.
 

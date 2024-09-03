@@ -77,14 +77,35 @@
     }
 
 #define char_ptr_pos_in_str(char_ptr, full_str) (char_ptr - full_str)
-/* Define`s to simplyfy coloring within the rendering system. */
-#define render_text(start, end, col)            render_part(row, converted, line, start, end, from_col, col)
+
+/* Define`s to simplyfy coloring within the rendering system.
+ * These use a system for correct visual apperance for coloring
+ * when coloring a str with tabs and spaces inside it.
+ * When coloring a str without any tabs and spaces theese SHOULD NOT
+ * be used. */
+#define render_text(start, end, col)            render_part(start, end, col)
 #define render_text_ptr(start, end, col)        render_text((start - line->data), (end - line->data), col)
+#define rendr_match(color)                      render_text(match_start, match_end, color)
+#define rendr_match_se_ptr(color)               render_text((start - line->data), (end - line->data), color)
+
 #define render_str_len(start, str, len, c) \
     midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), str, len, c)
 
-#define render_str_ptr_len(start, len, c) \
-    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, len, c)
+#define rendr_len(start, len, color) \
+    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, len, color)
 
-#define render_str_ptr(start, end, c) \
-    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, (end - start), c)
+/* Should only be used in 'render.cpp', this is to simplify.  See 'render.cpp'.
+ * this uses a ptr called start that should point to the first char.  And one
+ * called end, witch should point to the last char.  */
+#define rendr_se_ptr(color) \
+    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, (end - start), color);
+
+#define rendr_ptr_ptr(start, end, color) \
+    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, (end - start), color);
+
+#define rendr_ch_ptr(color) midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, ch), ch, 1, color);
+#define rendr_ch_str_ptr(start, color) \
+    midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, 1, color)
+
+#define render_node_str(node, color) \
+    midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, color);

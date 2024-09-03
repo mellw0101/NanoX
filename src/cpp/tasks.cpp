@@ -316,7 +316,7 @@ struct main_thread_function
         }
         free(funcs);
         info_array[size] = NULL;
-        if (func_info == NULL)
+        /* if (func_info == NULL)
         {
             func_info = info_array;
         }
@@ -337,7 +337,7 @@ struct main_thread_function
                     break;
                 }
             }
-        }
+        } */
     }
 
     static void

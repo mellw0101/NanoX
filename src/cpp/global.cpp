@@ -224,9 +224,7 @@ std::vector<std::string> syntax_funcs;
 /* Vector for all includes that have been handled. */
 std::vector<std::string> handled_includes;
 
-function_info_t **func_info      = NULL;
-int               func_info_size = 0;
-int               func_info_cap  = 10;
+std::vector<function_info_t *> func_info;
 
 const char *term = NULL;
 

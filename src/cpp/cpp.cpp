@@ -295,7 +295,8 @@ do_close_bracket(void)
     LOG_FLAG(openfile->current, BRACKET_START);
     LOG_FLAG(openfile->current, IN_BRACKET);
     LOG_FLAG(openfile->current, BRACKET_END);
-    find_current_function();
+    find_current_function(openfile->current);
+    NLOG("tabs: %zu\n", total_tabs(openfile->current));
 }
 
 void
@@ -432,7 +433,7 @@ parse_function(const char *str)
                 params[i] = param;
             }
         }
-        info->params           = params;
+        /* info->params           = params; */
         info->number_of_params = number_of_params;
         /* Add attributes later.  Thay are in the rest ptr.
         NLOG("attributes: %s\n", rest); */
@@ -441,6 +442,8 @@ parse_function(const char *str)
     return info;
 }
 
+/* This function extracts info about a function declaration.  It retrieves all the
+ * param data as well, like type, name and value. */
 function_info_t *
 parse_func(const char *str)
 {
@@ -502,11 +505,12 @@ parse_func(const char *str)
                     }
                 }
                 prefix[was_i] = '\0';
+                i             = was_i;
                 break;
             }
         }
     }
-    info->return_type = prefix;
+    info->return_type = measured_memmove_copy(prefix, i);
     int    cap = 10, size = 0;
     char  *param_buf   = params;
     char **param_array = (char **)nmalloc(cap * sizeof(char *));
@@ -516,30 +520,95 @@ parse_func(const char *str)
         {
             (params[i + 1] == '\0') ? (i += 1) : 0;
             (cap == size) ? cap *= 2, param_array = (char **)nrealloc(param_array, cap * sizeof(char *)) : 0;
-            param_array[size++] = measured_copy(param_buf, i - pos);
+            param_array[size++] = measured_memmove_copy(param_buf, i - pos);
             (params[i + 1] == ' ') ? (i += 2) : (i += 1);
             param_buf += i - pos;
             pos = i;
         }
     }
     param_array[size]      = NULL;
-    info->params           = param_array;
     info->number_of_params = size;
+    for (i = 0; i < size; i++)
+    {
+        variable_t *var   = (variable_t *)nmalloc(sizeof(*var));
+        var->name         = NULL;
+        var->value        = NULL;
+        var->next         = NULL;
+        const char *start = param_array[i];
+        const char *end   = param_array[i];
+        end               = strrchr(param_array[i], '*');
+        if (end == NULL)
+        {
+            end = strrchr(param_array[i], ' ');
+            if (end == NULL)
+            {
+                end = start;
+                for (; *end; end++)
+                    ;
+                var->type = measured_memmove_copy(param_array[i], (end - start));
+                if (info->params == NULL)
+                {
+                    var->prev    = NULL;
+                    info->params = var;
+                }
+                else
+                {
+                    var->prev          = info->params;
+                    info->params->next = var;
+                    info->params       = info->params->next;
+                }
+                continue;
+            }
+        }
+        end += 1;
+        start = end;
+        for (; *end; end++)
+            ;
+        var->name = measured_memmove_copy(param_array[i] + (start - param_array[i]), (end - start));
+        var->type = measured_memmove_copy(param_array[i], (start - param_array[i]));
+        if (info->params == NULL)
+        {
+            var->prev    = NULL;
+            info->params = var;
+        }
+        else
+        {
+            var->prev          = info->params;
+            info->params->next = var;
+            info->params       = info->params->next;
+        }
+    }
+    for (i = 0; i < size; i++)
+    {
+        free(param_array[i]);
+    }
+    free(param_array);
     free(copy);
     return info;
 }
 
 void
-free_function_info(function_info_t *info)
+free_function_info(function_info_t *info, const int index)
 {
-    for (int i = 0; i < info->number_of_params; i++)
+    variable_t *var = info->params;
+    while (var != NULL)
     {
-        free(info->params[i]);
+        info->params = info->params->prev;
+        (var->name != NULL) ? free(var->name) : void();
+        (var->type != NULL) ? free(var->type) : void();
+        (var->value != NULL) ? free(var->value) : void();
+        free(var);
+        var = info->params;
     }
-    (info->full_function) ? free(info->full_function) : void();
-    (info->name) ? free(info->name) : void();
-    (info->return_type) ? free(info->return_type) : void();
-    (info->params) ? free(info->params) : void();
+    (info->params != NULL) ? free(info->params) : void();
+    (info->full_function != NULL) ? free(info->full_function) : void();
+    (info->name != NULL) ? free(info->name) : void();
+    (info->return_type != NULL) ? free(info->return_type) : void();
+    free(info);
+    if (index > -1)
+    {
+        func_info.erase(func_info.begin() + index);
+    }
 }
 
 void
@@ -603,6 +672,7 @@ flag_all_brackets(void)
                         else
                         {
                             LINE_UNSET(line, IN_BRACKET);
+                            find_current_function(line->prev);
                         }
                         break;
                     }
@@ -625,60 +695,21 @@ flag_all_brackets(void)
 }
 
 void
-find_current_function(void)
+find_current_function(linestruct *l)
 {
     PROFILE_FUNCTION;
-    char        buf[1024];
-    const char *function_str = NULL;
-    /* Check if function already exists.  We do this by the line number of the current line,
-     * here we also update start and end pos if thay do not align. */
-    /* if (func_info != NULL)
+    for (int i = 0; i < func_info.size(); i++)
     {
-        int current_line = openfile->current->lineno;
-        for (int i = 0; func_info[i]; i++)
+        if (l->lineno + 2 >= func_info[i]->start_bracket && l->lineno <= func_info[i]->end_braket)
         {
-            if (current_line >= func_info[i]->start_bracket && current_line <= func_info[i]->end_braket)
-            {
-                for (linestruct *line = openfile->current; line != NULL; line = line->prev)
-                {
-                    if (LINE_ISSET(line, BRACKET_START) && !LINE_ISSET(line, IN_BRACKET))
-                    {
-                        const char *name = strchr(line->prev->data, '(');
-                        if (name != NULL)
-                        {
-                            char       *buf   = measured_copy(line->prev->data, (name - line->prev->data));
-                            const char *space = strchr(buf, ' ');
-                            if (space != NULL)
-                            {
-                                char *tbuf =
-                                    measured_copy(buf + (space - line->prev->data) + 1,
-                                                  (name - line->prev->data) - (space - line->prev->data));
-                                free(buf);
-                                buf = tbuf;
-                            }
-                            if (strcmp(buf, func_info[i]->name) == 0)
-                            {
-                                func_info[i]->start_bracket = line->lineno;
-                                for (linestruct *l = line; l != NULL; l = l->next)
-                                {
-                                    if (LINE_ISSET(l, BRACKET_END) && !LINE_ISSET(l, IN_BRACKET))
-                                    {
-                                        func_info[i]->end_braket = l->lineno;
-                                        break;
-                                    }
-                                }
-                            }
-                            free(buf);
-                        }
-                        break;
-                    }
-                }
-                return;
-            }
+            free_function_info(func_info[i], i);
+            break;
         }
-    } */
+    }
+    char        buf[4096];
+    const char *function_str = NULL;
     /* If not we add it. */
-    for (linestruct *line = openfile->current; line; line = line->prev)
+    for (linestruct *line = l; line; line = line->prev)
     {
         if (LINE_ISSET(line, BRACKET_START) && !LINE_ISSET(line, IN_BRACKET))
         {
@@ -690,63 +721,62 @@ find_current_function(void)
             function_str = strchr(line->data, '(');
             if (function_str != NULL)
             {
-                char *tmp_data = measured_copy(line->data, (function_str - line->data));
-                function_str   = strchr(tmp_data, ' ');
-                if (function_str == NULL)
+                memset(buf, 0, sizeof(buf));
+                unsigned long len       = 0;
+                const char   *same_line = strchr(line->data, ' ');
+                if (same_line != NULL && (same_line - line->data) < (function_str - line->data))
                 {
-                    char *pd = copy_of(line->prev->data);
-                    char *d  = copy_of(line->data);
-                    snprintf(buf, sizeof(buf), "%s %s;", pd, d);
-                    free(pd);
-                    free(d);
-                    function_info_t *info = parse_func(buf);
-                    if (info)
+                    len = strlen(line->data);
+                    memcpy(buf, line->data, len + 1);
+                    buf[len] = '\0';
+                }
+                else
+                {
+                    if (line->prev->data[0] != '\0')
                     {
-                        info->start_bracket = line->next->lineno;
-                        for (linestruct *l = line->next; l != NULL; l = l->next)
+                        len = strlen(line->prev->data);
+                        memcpy(buf, line->prev->data, len);
+                        memcpy(buf + len, " ", 1);
+                    }
+                    len += 1;
+                    unsigned long len_2 = strlen(line->data);
+                    memcpy(buf + len, line->data, len_2);
+                    buf[len + len_2] = '\0';
+                }
+                function_info_t *info = parse_func(buf);
+                if (info)
+                {
+                    info->start_bracket = line->next->lineno;
+                    for (linestruct *l = line->next; l != NULL; l = l->next)
+                    {
+                        if (LINE_ISSET(l, BRACKET_END) && !LINE_ISSET(l, IN_BRACKET))
                         {
-                            if (LINE_ISSET(l, BRACKET_END) && !LINE_ISSET(l, IN_BRACKET))
-                            {
-                                info->end_braket = l->lineno;
-                                break;
-                            }
+                            info->end_braket = l->lineno;
+                            break;
                         }
-                        if (func_info == NULL)
+                    }
+                    bool found = FALSE;
+                    for (const auto &i : func_info)
+                    {
+                        if (i->name != NULL)
                         {
-                            func_info =
-                                (function_info_t **)nmalloc(func_info_cap * sizeof(function_info_t *));
-                            func_info[func_info_size] = NULL;
-                        }
-                        bool found = FALSE;
-                        for (int i = 0; func_info[i]; i++)
-                        {
-                            if (strcmp(func_info[i]->name, info->name) == 0)
+                            if (strcmp(i->name, info->name) == 0)
                             {
                                 found = TRUE;
                                 break;
                             }
                         }
-                        if (found == FALSE)
-                        {
-                            if (func_info_cap == func_info_size)
-                            {
-                                NLOG("func_info_size: %i", func_info_size);
-                                func_info_cap *= 2;
-                                func_info = (function_info_t **)nrealloc(
-                                    func_info, func_info_cap * sizeof(function_info_t *));
-                            }
-                            func_info[func_info_size++] = info;
-                            func_info[func_info_size]   = NULL;
-                            refresh_needed              = TRUE;
-                        }
                     }
-                    function_str = NULL;
+                    if (found == FALSE)
+                    {
+                        func_info.push_back(info);
+                        refresh_needed = TRUE;
+                    }
+                    else
+                    {
+                        free_function_info(info);
+                    }
                 }
-                else
-                {
-                    NLOG("%s\n", function_str);
-                }
-                free(tmp_data);
             }
             break;
         }

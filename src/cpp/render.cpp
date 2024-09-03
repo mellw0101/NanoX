@@ -8,9 +8,13 @@ static unsigned char next_word_color     = FALSE;
 static unsigned int  last_type           = 0;
 static int           color_bi[3]         = {FG_YELLOW, FG_PINK, FG_BLUE};
 
+static int         row       = 0;
+static const char *converted = NULL;
+static linestruct *line      = NULL;
+unsigned long      from_col  = 0;
+
 void
-render_part(int row, const char *converted, linestruct *line, unsigned long match_start,
-            unsigned long match_end, unsigned long from_col, short color)
+render_part(unsigned long match_start, unsigned long match_end, short color)
 {
     const char *thetext   = NULL;
     int         paintlen  = 0;
@@ -27,8 +31,6 @@ render_part(int row, const char *converted, linestruct *line, unsigned long matc
     paintlen = actual_x(thetext, wideness(line->data, match_end) - from_col - start_col);
     midwin_mv_add_nstr_color(row, (margin + start_col), thetext, paintlen, color);
 }
-#define render_text(start, end, col)     render_part(row, converted, line, start, end, from_col, col)
-#define render_text_ptr(start, end, col) render_text((start - line->data), (end - line->data), col)
 
 /* Render the text of a given line.  Note that this function only renders the text and nothing else. */
 void
@@ -76,7 +78,7 @@ render_line_text(const int row, const char *str, linestruct *line, const unsigne
 /* Set start and end pos for comment block or if the entire line is inside of a block comment
  * set 'block_comment_start' to '0' and 'block_comment_end' to '(unsigned int)-1'. */
 void
-render_comment(int row, const char *converted, linestruct *line, unsigned long from_col)
+render_comment(void)
 {
     PROFILE_FUNCTION;
     const char *found_start = strstr(line->data, "/*");
@@ -148,7 +150,7 @@ render_comment(int row, const char *converted, linestruct *line, unsigned long f
             {
                 const unsigned long match_start = (found_start - line->data);
                 const unsigned long match_end   = (found_end - line->data) + 2;
-                render_part(row, converted, line, match_start, match_end, from_col, FG_GREEN);
+                render_part(match_start, match_end, FG_GREEN);
             }
             else if (found_start == NULL && found_end != NULL)
             {
@@ -157,7 +159,7 @@ render_comment(int row, const char *converted, linestruct *line, unsigned long f
             else if (found_start != NULL && found_end == NULL)
             {
                 const unsigned long match_start = (found_start - line->data);
-                render_part(row, converted, line, match_start, till_x, from_col, FG_GREEN);
+                render_part(match_start, till_x, FG_GREEN);
             }
         }
     }
@@ -258,7 +260,7 @@ render_comment(int row, const char *converted, linestruct *line, unsigned long f
 
 /* Color brackets based on indent. */
 void
-render_bracket(int row, linestruct *line)
+render_bracket(void)
 {
     PROFILE_FUNCTION;
     const char *start = strchr(line->data, '{');
@@ -268,7 +270,7 @@ render_bracket(int row, linestruct *line)
     {
         while (start != NULL)
         {
-            midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), "{", 1, FG_YELLOW);
+            rendr_ch_str_ptr(start, FG_YELLOW);
             if (line->data[(start - line->data) + 1] == '\0')
             {
                 start = NULL;
@@ -298,11 +300,14 @@ render_bracket(int row, linestruct *line)
     else if (start != NULL && end == NULL)
     {
         LINE_SET(line, BRACKET_START);
-        midwin_mv_add_nstr_color(
-            row, PTR_POS_LINE(line, start), "{", 1, color_bi[(indent_char_len(line) % 3)]);
+        rendr_ch_str_ptr(start, color_bi[(indent_char_len(line) % 3)]);
         if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET)))
         {
             LINE_SET(line, IN_BRACKET);
+        }
+        else
+        {
+            find_current_function(line);
         }
     }
     /* End bracket line was found. */
@@ -310,21 +315,15 @@ render_bracket(int row, linestruct *line)
     {
         LINE_SET(line, BRACKET_END);
         LINE_UNSET(line, BRACKET_START);
-        midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, end), "}", 1, color_bi[(indent_char_len(line) % 3)]);
+        rendr_ch_str_ptr(end, color_bi[(indent_char_len(line) % 3)]);
         for (linestruct *t_line = line->prev; t_line; t_line = t_line->prev)
         {
             if (LINE_ISSET(t_line, BRACKET_START))
             {
-                unsigned short spaces, tabs, t_char, t_tabs;
-                get_line_indent(line, &tabs, &spaces, &t_char, &t_tabs);
-                const unsigned short line_t_tabs = t_tabs;
-                get_line_indent(t_line, &tabs, &spaces, &t_char, &t_tabs);
-                const unsigned short t_line_t_tabs = t_tabs;
-                if (line_t_tabs == t_line_t_tabs)
+                if (total_tabs(t_line) == total_tabs(line))
                 {
                     if (t_line->prev && LINE_ISSET(t_line->prev, IN_BRACKET))
                     {
-
                         LINE_SET(line, IN_BRACKET);
                     }
                     else
@@ -351,7 +350,7 @@ render_bracket(int row, linestruct *line)
 }
 
 void
-render_parents(int row, const char *converted, linestruct *line, unsigned long from_col)
+render_parents(void)
 {
     const char *start = strchr(line->data, '(');
     const char *end   = strchr(line->data, ')');
@@ -359,14 +358,12 @@ render_parents(int row, const char *converted, linestruct *line, unsigned long f
     {
         if (start != NULL)
         {
-            midwin_mv_add_nstr_color(
-                row, PTR_POS_LINE(line, start), "(", 1, color_bi[(indent_char_len(line) % 3)]);
+            rendr_ch_str_ptr(start, color_bi[(indent_char_len(line) % 3)]);
             start = strchr(start + 1, '(');
         }
         if (end != NULL)
         {
-            midwin_mv_add_nstr_color(
-                row, PTR_POS_LINE(line, end), ")", 1, color_bi[(indent_char_len(line) % 3)]);
+            rendr_ch_str_ptr(end, color_bi[(indent_char_len(line) % 3)]);
             end = strchr(end + 1, ')');
         }
         if (start == NULL && end == NULL)
@@ -378,15 +375,15 @@ render_parents(int row, const char *converted, linestruct *line, unsigned long f
 
 /* This function highlights string literals.  Error handeling is needed. */
 void
-render_string_literals(int row, const char *converted, linestruct *line, unsigned long from_col)
+render_string_literals(void)
 {
     PROFILE_FUNCTION;
     const char *start = line->data;
     const char *end   = line->data;
+    const char *slash = line->data;
     while (start != NULL)
     {
-        for (; *end && *end != '"'; end++)
-            ;
+        ADV_PTR_BY_CH(end, '"');
         if (*end != '"')
         {
             return;
@@ -394,11 +391,10 @@ render_string_literals(int row, const char *converted, linestruct *line, unsigne
         start                           = end;
         const unsigned long match_start = (start - line->data);
         end += 1;
-        for (; *end && *end != '"'; end++)
-            ;
+        ADV_PTR_BY_CH(end, '"');
         if (*end != '"')
         {
-            render_part(row, converted, line, match_start, till_x, from_col, ERROR_MESSAGE);
+            render_part(match_start, till_x, ERROR_MESSAGE);
             return;
         }
         end += 1;
@@ -407,14 +403,24 @@ render_string_literals(int row, const char *converted, linestruct *line, unsigne
         {
             return;
         }
-        render_part(row, converted, line, match_start, match_end, from_col, FG_YELLOW);
+        render_part(match_start, match_end, FG_YELLOW);
+        slash = strchr(line->data, '\\');
+        if (slash != NULL)
+        {
+            const char *slash_end = slash + 1;
+            if (*slash_end != '\0' && *slash_end == 'n')
+            {
+                slash_end += 1;
+                rendr_ptr_ptr(slash, slash_end, FG_MAGENTA);
+            }
+        }
         start = end;
     }
 }
 
 /* Function to handle char strings inside other strings or just in general. */
 void
-render_char_strings(int row, const char *converted, linestruct *line, unsigned long from_col)
+render_char_strings(void)
 {
     PROFILE_FUNCTION;
     const char *start = line->data, *end = line->data;
@@ -441,13 +447,16 @@ render_char_strings(int row, const char *converted, linestruct *line, unsigned l
         {
             return;
         }
-        render_part(row, converted, line, match_start, match_end, from_col, FG_MAGENTA);
+        render_part(match_start, match_end, FG_MAGENTA);
         start = end;
     }
 }
 
+/* This 'render' sub-system is responsible for handeling all pre-prossesor syntax.
+ * TODO: Create a structured way to parse, and then create a system to include
+ *       error handeling in real-time. */
 void
-render_preprossesor(int row, const char *converted, linestruct *line, unsigned long from_col)
+render_preprossesor(void)
 {
     PROFILE_FUNCTION;
     char          *current_word = NULL;
@@ -457,7 +466,7 @@ render_preprossesor(int row, const char *converted, linestruct *line, unsigned l
     preprossesor_t ltype        = NONE;
     if (found != NULL)
     {
-        render_str_len(found, "#", 1, FG_MAGENTA);
+        rendr_len(found, 1, FG_MAGENTA);
         start = found + 1;
         end   = found + 1;
         while (1)
@@ -484,7 +493,7 @@ render_preprossesor(int row, const char *converted, linestruct *line, unsigned l
                     for (; end <= (line->data + till_x) && (*end != '(') && (*end != ' ') && (*end != '\t');
                          end++)
                         ;
-                    render_str_ptr(start, end, FG_BLUE);
+                    rendr_se_ptr(FG_BLUE);
                     if (*end == '(')
                     {
                         while (end != (line->data + till_x))
@@ -497,7 +506,7 @@ render_preprossesor(int row, const char *converted, linestruct *line, unsigned l
                                 ;
                             if (*end == ')' || *end == ',')
                             {
-                                render_str_ptr(start, end, FG_BLUE);
+                                rendr_se_ptr(FG_BLUE);
                                 free(current_word);
                                 current_word      = measured_copy(start, (end - start));
                                 const char *param = strstr(end, current_word);
@@ -511,7 +520,7 @@ render_preprossesor(int row, const char *converted, linestruct *line, unsigned l
                                              line->data[(param - line->data) - 1] == ' ' ||
                                              line->data[(param - line->data) - 1] == '('))
                                         {
-                                            render_str_len(param, param, (end - start), FG_BLUE);
+                                            rendr_len(param, (end - start), FG_BLUE);
                                         }
                                         param = strstr(param + (end - start), current_word);
                                     }
@@ -549,7 +558,7 @@ render_preprossesor(int row, const char *converted, linestruct *line, unsigned l
                         {
                             start = defined;
                             defined += 7;
-                            render_text_ptr(start, defined, FG_MAGENTA);
+                            rendr_ptr_ptr(start, defined, FG_MAGENTA);
                             defined = strstr(defined, "defined");
                         }
                         free(current_word);
@@ -565,7 +574,7 @@ render_preprossesor(int row, const char *converted, linestruct *line, unsigned l
                     if (end != (line->data + till_x) && (*start == '<' || *start == '"'))
                     {
                         end += 1;
-                        render_text_ptr(start, end, FG_YELLOW);
+                        rendr_match_se_ptr(FG_YELLOW);
                     }
                     else
                     {
@@ -573,50 +582,56 @@ render_preprossesor(int row, const char *converted, linestruct *line, unsigned l
                         {
                             end += 1;
                         }
-                        render_text_ptr(start, end, ERROR_MESSAGE);
+                        rendr_match_se_ptr(ERROR_MESSAGE);
                     }
                     return;
                 }
                 case IFDEF :
                 {
-                    render_str_ptr(start, end, FG_BLUE);
+                    rendr_se_ptr(FG_BLUE);
+                    break;
+                }
+                case PRAGMA :
+                {
+                    rendr_se_ptr(FG_LAGOON);
                     break;
                 }
             }
             if (strcmp(current_word, "define") == 0)
             {
-                render_str_ptr(start, end, FG_MAGENTA);
+                rendr_se_ptr(FG_MAGENTA);
                 ltype = DEFINE;
             }
             else if (strcmp(current_word, "if") == 0)
             {
-                render_text_ptr(start, end, FG_MAGENTA);
+                rendr_se_ptr(FG_MAGENTA);
                 ltype = IF;
             }
             else if (strcmp(current_word, "endif") == 0)
             {
-                render_text_ptr(start, end, FG_MAGENTA);
+                rendr_se_ptr(FG_MAGENTA);
             }
             else if (strcmp(current_word, "ifndef") == 0)
             {
-                render_text_ptr(start, end, FG_MAGENTA);
+                rendr_se_ptr(FG_MAGENTA);
             }
             else if (strcmp(current_word, "pragma") == 0)
             {
-                render_text_ptr(start, end, FG_MAGENTA);
+                rendr_se_ptr(FG_MAGENTA);
+                ltype = PRAGMA;
             }
             else if (strcmp(current_word, "ifdef") == 0)
             {
-                render_str_ptr(start, end, FG_MAGENTA);
+                rendr_se_ptr(FG_MAGENTA);
                 ltype = IFDEF;
             }
             else if (strcmp(current_word, "else") == 0)
             {
-                render_str_ptr(start, end, FG_MAGENTA);
+                rendr_se_ptr(FG_MAGENTA);
             }
             else if (strcmp(current_word, "include") == 0)
             {
-                render_str_ptr(start, end, FG_MAGENTA);
+                rendr_se_ptr(FG_MAGENTA);
                 ltype = INCLUDE;
             }
             else
@@ -629,15 +644,123 @@ render_preprossesor(int row, const char *converted, linestruct *line, unsigned l
     }
 }
 
+/* Handels most syntax local to functions such as handeling local variabels and params. */
+void
+render_function_params(void)
+{
+    PROFILE_FUNCTION;
+    const char   *start = NULL;
+    const char   *end   = NULL;
+    unsigned long word_len;
+    for (const auto &info : func_info)
+    {
+        end = strstr(line->data, info->name);
+        if (end != NULL)
+        {
+            start = end;
+            for (; *end && (*end != ' ') && (*end != '\t') && (*end != ';') && (*end != '('); end++)
+                ;
+            if (*end == '(')
+            {
+                rendr_se_ptr(FG_YELLOW);
+            }
+        }
+        if (line->lineno + 2 >= info->start_bracket && line->lineno <= info->end_braket)
+        {
+            for (variable_t *var = info->params; var != NULL; var = var->prev)
+            {
+                if (var->name != NULL)
+                {
+                    word_len = strlen(var->name);
+                    end      = strstr(line->data, var->name);
+                    while (end != NULL)
+                    {
+                        start = end;
+                        for (; *end && (*end != ' ') && (*end != '[') && (*end != ')') && (*end != ',') &&
+                               (*end != ';') && (*end != '(') && (*end != '+') && (*end != '-') &&
+                               (*end != '/');
+                             end++)
+                            ;
+                        if (*end == '\0')
+                        {
+                            rendr_se_ptr(ERROR_MESSAGE);
+                            break;
+                        }
+                        else if (*end == '(')
+                        {
+                            if ((end - start) <= word_len &&
+                                !is_word_char(&line->data[(start - line->data) - 1], FALSE) &&
+                                line->data[(start - line->data) - 1] != '_')
+                            {
+                                end += 1;
+                                rendr_se_ptr(ERROR_MESSAGE);
+                            }
+                        }
+                        else if (*end == '[')
+                        {
+                            const char *is_ptr = strchr(var->type, '*');
+                            if (is_ptr != NULL)
+                            {
+                                rendr_se_ptr(FG_LAGOON);
+                            }
+                            else
+                            {
+                                rendr_se_ptr(ERROR_MESSAGE);
+                            }
+                        }
+                        else if (*end == ' ')
+                        {
+                            const char *ptr = end += 1;
+                            for (; *ptr && (*ptr != '(' && *ptr != '=' && *ptr != ';' && *ptr != '*' &&
+                                            *ptr != '|' && *ptr != '&' && *ptr != '<' && *ptr != '>' &&
+                                            *ptr != '+' && *ptr != '-' && *ptr != '/');
+                                 ptr++)
+                                ;
+                            if (*ptr == '(')
+                            {
+                                end = ptr;
+                                rendr_se_ptr(ERROR_MESSAGE);
+                            }
+                            else if (*ptr == ';' || *ptr == '=' || *ptr == '*' || *ptr == '|' ||
+                                     *ptr == '&' || *ptr == '<' || *ptr == '>' || *ptr == '+' ||
+                                     *ptr == '-' || *ptr == '/')
+                            {
+                                rendr_se_ptr(FG_LAGOON);
+                            }
+                        }
+                        else
+                        {
+                            rendr_se_ptr(FG_LAGOON);
+                        }
+                        start += (end - start);
+                        end = strstr(start, var->name);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void
+render_local_vars(void)
+{
+    PROFILE_FUNCTION;
+}
+
 /* Main function that applies syntax to a line in real time. */
 void
 apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col)
 {
     PROFILE_FUNCTION;
-    render_preprossesor(row, converted, line, from_col);
-    render_comment(row, converted, line, from_col);
-    render_bracket(row, line);
-    render_parents(row, converted, line, from_col);
+    ::row       = row;
+    ::converted = converted;
+    ::line      = line;
+    ::from_col  = from_col;
+    render_preprossesor();
+    render_function_params();
+    render_comment();
+    render_bracket();
+    render_parents();
     if (line->data[0] == '\0')
     {
         return;
@@ -758,25 +881,13 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line, uns
         else if (is_syntax_struct(node->str))
         {
             midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_GREEN);
-            // next_word_color = FG_LAGOON;
         }
         else if (is_syntax_class(node->str))
         {
             midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_GREEN);
-            // next_word_color = FG_LAGOON;
-        }
-        if (func_info != NULL)
-        {
-            for (int i = 0; func_info[i]; i++)
-            {
-                if (strcmp(node->str, func_info[i]->name) == 0)
-                {
-                    midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_YELLOW);
-                }
-            }
         }
         free_node(node);
     }
-    render_string_literals(row, converted, line, from_col);
-    render_char_strings(row, converted, line, from_col);
+    render_string_literals();
+    render_char_strings();
 }

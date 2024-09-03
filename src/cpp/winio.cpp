@@ -3917,7 +3917,6 @@ current_is_above_screen(void)
 
 /* Return TRUE if current[current_x] is beyond the viewport. */
 bool
-
 current_is_below_screen(void)
 {
     if (ISSET(SOFTWRAP))
@@ -4028,7 +4027,6 @@ edit_refresh(void)
         }
         row++;
     }
-    find_current_function();
     place_the_cursor();
     wnoutrefresh(midwin);
     refresh_needed = FALSE;

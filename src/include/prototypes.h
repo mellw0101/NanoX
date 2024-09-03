@@ -151,10 +151,9 @@ extern std::vector<std::string>   syntax_classes;
 extern std::vector<std::string>   syntax_vars;
 extern std::vector<std::string>   syntax_funcs;
 extern std::vector<std::string>   handled_includes;
+extern std::vector<std::string>   handled_includes;
 
-extern function_info_t **func_info;
-extern int               func_info_size;
-extern int               func_info_cap;
+extern std::vector<function_info_t *> func_info;
 
 extern task_queue_t          *task_queue;
 extern pthread_t             *threads;
@@ -450,6 +449,9 @@ bool          is_separate_word(unsigned long position, unsigned long length, con
 void         *nmalloc(const unsigned long howmuch);
 void         *nrealloc(void *ptr, const unsigned long howmuch);
 char         *measured_copy(const char *string, unsigned long count);
+char         *measured_memmove_copy(const char *string, const unsigned long count);
+template <unsigned long N>
+char         *smart_move_copy_strltr(const char (&str)[N]);
 char         *mallocstrcpy(char *dest, const char *src);
 char         *copy_of(const char *string);
 char         *free_and_assign(char *dest, char *src);
@@ -556,10 +558,10 @@ void             all_brackets_pos(void);
 void             do_close_bracket(void);
 void             do_test_window(void);
 function_info_t *parse_function(const char *str);
-void             free_function_info(function_info_t *info);
 function_info_t *parse_func(const char *str);
 void             flag_all_brackets(void);
-void             find_current_function(void);
+void             find_current_function(linestruct *l);
+void             free_function_info(function_info_t *info, const int index = -1);
 
 /* 'syntax.cpp' */
 void syntax_check_file(openfilestruct *file);

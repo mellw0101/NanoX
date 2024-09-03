@@ -438,6 +438,7 @@ constexpr_map<std::string_view, unsigned int, 14> toggleOptionMap = {
 #define CS_DEFINE    (1 << 28)
 #define CS_BREAK     (1 << 29)
 #define CS_DO        (1 << 30)
+#define CS_USING     (1 << 31)
 constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
     {{"struct", CS_STRUCT},
      {"enum", CS_ENUM},
@@ -471,3 +472,38 @@ constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
      {"break", CS_BREAK},
      {"do", CS_DO}}
 };
+
+#define STRSTR(return_str, haystack, needle)      \
+    do                                            \
+    {                                             \
+        return_str = NULL;                        \
+        if (!*needle)                             \
+        {                                         \
+            return_str = (haystack);              \
+            break;                                \
+        }                                         \
+        for (const char *h = (haystack); *h; ++h) \
+        {                                         \
+            const char *n     = (needle);         \
+            const char *start = h;                \
+            while (*start && *n && *start == *n)  \
+            {                                     \
+                ++start;                          \
+                ++n;                              \
+            }                                     \
+            if (!*n)                              \
+            {                                     \
+                return_str = h;                   \
+                break;                            \
+            }                                     \
+        }                                         \
+    }                                             \
+    while (FALSE)
+
+#define ADV_PTR_BY_CH(ptr, ch)          \
+    for (; *ptr && (*ptr != ch); ptr++) \
+        ;
+
+#define ADV_PTR(ptr, ...)              \
+    for (; *ptr && __VA_ARGS__; ptr++) \
+        ;

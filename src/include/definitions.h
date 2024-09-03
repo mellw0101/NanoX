@@ -286,7 +286,8 @@ typedef enum
     DEFINE  = (1 << 1),
     IF      = (1 << 2),
     INCLUDE = (1 << 3),
-    IFDEF   = (1 << 4)
+    IFDEF   = (1 << 4),
+    PRAGMA  = (1 << 5)
 } preprossesor_t;
 
 typedef enum
@@ -650,17 +651,26 @@ typedef struct line_word_t
 
 #define free_node(node) free(node->str), free(node)
 
+typedef struct variable_t
+{
+    char       *type  = NULL;
+    char       *name  = NULL;
+    char       *value = NULL;
+    variable_t *next  = NULL;
+    variable_t *prev  = NULL;
+} variable_t;
+
 typedef struct
 {
-    char  *full_function;
-    char  *name;
-    char  *return_type;
-    char **params;
-    int    number_of_params;
-    char **attributes;
-    int    number_of_attributes;
-    int    start_bracket;
-    int    end_braket;
+    char       *full_function;
+    char       *name;
+    char       *return_type;
+    variable_t *params;
+    int         number_of_params;
+    char      **attributes;
+    int         number_of_attributes;
+    int         start_bracket;
+    int         end_braket;
 } function_info_t;
 
 /* RAII complient way to lock a pthread mutex.  This struct will lock

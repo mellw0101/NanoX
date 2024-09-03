@@ -375,11 +375,36 @@ measured_copy(const char *string, const unsigned long count)
     return thecopy;
 }
 
+char *
+measured_memmove_copy(const char *string, const unsigned long count)
+{
+    char *thecopy = (char *)nmalloc(count + 1);
+    memmove(thecopy, string, count);
+    thecopy[count] = '\0';
+    return thecopy;
+}
+
+template <unsigned long N>
+char *
+smart_move_copy_strltr(const char (&str)[N])
+{
+    char *copy = (char *)nmalloc(N);
+    memmove(copy, str, (N - 1));
+    copy[(N - 1)] = '\0';
+    return copy;
+}
+
 /* Return an allocated copy of the given string. */
 char *
 copy_of(const char *string)
 {
     return measured_copy(string, strlen(string));
+}
+
+char *
+memmove_copy_of(const char *string)
+{
+    return measured_memmove_copy(string, strlen(string));
 }
 
 /* Free the string at dest and return the string at src. */
