@@ -1,8 +1,7 @@
 /// @file definitions.h
 #pragma once
 
-#include "../include/config.h"
-
+#include  "../include/config.h"
 #include <Mlib/Debug.h>
 #include <Mlib/FileSys.h>
 #include <Mlib/constexpr.hpp>
@@ -287,7 +286,9 @@ typedef enum
     IF      = (1 << 2),
     INCLUDE = (1 << 3),
     IFDEF   = (1 << 4),
-    PRAGMA  = (1 << 5)
+    PRAGMA  = (1 << 5),
+    IFNDEF  = (1 << 6),
+    UNDEF   = (1 << 7)
 } preprossesor_t;
 
 typedef enum

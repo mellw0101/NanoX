@@ -10,7 +10,7 @@ echo "Architecture: $ARCH"
 # Perform actions based on the architecture
 case "$ARCH" in
     x86_64)
-        AmakeCpp --build --install --bin /usr/lib/Mlib.a
+        AmakeCpp --build --install --bin /usr/lib/Mlib.a 
         ;;
     aarch64)
         AmakeCpp --build --install --bin /usr/lib/Mlib.a -lncurses 

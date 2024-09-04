@@ -262,7 +262,6 @@ render_comment(void)
 void
 render_bracket(void)
 {
-    PROFILE_FUNCTION;
     const char *start = strchr(line->data, '{');
     const char *end   = strrchr(line->data, '}');
     /* Bracket start and end on the same line. */
@@ -270,7 +269,7 @@ render_bracket(void)
     {
         while (start != NULL)
         {
-            rendr_ch_str_ptr(start, FG_YELLOW);
+            rendr(R_CHAR, FG_YELLOW, start);
             if (line->data[(start - line->data) + 1] == '\0')
             {
                 start = NULL;
@@ -280,7 +279,7 @@ render_bracket(void)
         }
         while (end != NULL)
         {
-            midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, end), "}", 1, FG_YELLOW);
+            rendr(R_CHAR, FG_YELLOW, end);
             unsigned int last_pos = last_strchr(line->data, '}', (end - line->data));
             if (last_pos < till_x && last_pos != 0)
             {
@@ -300,7 +299,7 @@ render_bracket(void)
     else if (start != NULL && end == NULL)
     {
         LINE_SET(line, BRACKET_START);
-        rendr_ch_str_ptr(start, color_bi[(indent_char_len(line) % 3)]);
+        rendr(R_CHAR, color_bi[(indent_char_len(line) % 3)], start);
         if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET)))
         {
             LINE_SET(line, IN_BRACKET);
@@ -378,9 +377,12 @@ void
 render_string_literals(void)
 {
     PROFILE_FUNCTION;
-    const char *start = line->data;
-    const char *end   = line->data;
-    const char *slash = line->data;
+    const char *start      = line->data;
+    const char *end        = line->data;
+    const char *slash      = NULL;
+    const char *slash_end  = NULL;
+    const char *format     = NULL;
+    const char *format_end = NULL;
     while (start != NULL)
     {
         ADV_PTR_BY_CH(end, '"');
@@ -394,7 +396,10 @@ render_string_literals(void)
         ADV_PTR_BY_CH(end, '"');
         if (*end != '"')
         {
-            render_part(match_start, till_x, ERROR_MESSAGE);
+            if (match_start <= block_comment_start && match_start >= block_comment_end)
+            {
+                render_part(match_start, till_x, ERROR_MESSAGE);
+            }
             return;
         }
         end += 1;
@@ -403,16 +408,62 @@ render_string_literals(void)
         {
             return;
         }
-        render_part(match_start, match_end, FG_YELLOW);
-        slash = strchr(line->data, '\\');
-        if (slash != NULL)
+        rendr(C, FG_YELLOW, match_start, match_end);
+        slash = start + 1;
+        while (*slash && *slash != '"')
         {
-            const char *slash_end = slash + 1;
-            if (*slash_end != '\0' && *slash_end == 'n')
+            ADV_PTR(slash, (*slash != '"') && (*slash != '\\'))
+            slash_end = slash + 1;
+            if (*slash_end != '\0')
             {
-                slash_end += 1;
-                rendr_ptr_ptr(slash, slash_end, FG_MAGENTA);
+                if (*slash_end == 'n' || *slash_end == 'r' || *slash_end == 'e')
+                {
+                    slash_end += 1;
+                    rendr(R, FG_MAGENTA, slash, slash_end);
+                }
+                else if (*slash_end == 'x')
+                {
+                    slash_end += 1;
+                    if (*slash_end == '1')
+                    {
+                        slash_end += 1;
+                        if (*slash_end == 'B')
+                        {
+                            slash_end += 1;
+                            rendr(R, FG_MAGENTA, slash, slash_end);
+                        }
+                    }
+                }
             }
+            slash = slash_end;
+        }
+        format = start + 1;
+        while (*format && *format != '"')
+        {
+            ADV_PTR(format, (*format != '"') && (*format != '%')) format_end = format + 1;
+            if (*format_end != '\0')
+            {
+                if (*format_end >= '0' && *format_end <= '9')
+                {
+                    ADV_PTR(format_end, (*format_end >= '0' && *format_end <= '9'));
+                }
+                else if (*format_end == '*')
+                {
+                    format_end += 1;
+                }
+                if (*format_end == 'l' || *format_end == 'z')
+                {
+                    format_end += 1;
+                }
+                if (*format_end == 's' || *format_end == 'S' || *format_end == 'u' || *format_end == 'U' ||
+                    *format_end == 'x' || *format_end == 's' || *format_end == 'i' || *format_end == 'e' ||
+                    *format_end == 'd')
+                {
+                    format_end += 1;
+                    rendr(R, FG_LAGOON, format, format_end);
+                }
+            }
+            format = format_end;
         }
         start = end;
     }
@@ -466,14 +517,17 @@ render_preprossesor(void)
     preprossesor_t ltype        = NONE;
     if (found != NULL)
     {
-        rendr_len(found, 1, FG_MAGENTA);
         start = found + 1;
-        end   = found + 1;
+        if (*start == '\0')
+        {
+            return;
+        }
+        rendr(R_CHAR, FG_MAGENTA, found);
+        end = found + 1;
         while (1)
         {
-            for (; end < (line->data + till_x) && (*end == ' ' || *end == '\t'); end++)
-                ;
-            if (end == (line->data + till_x))
+            ADV_PTR(end, (*end == ' ' || *end == '\t'));
+            if (*end == '\0')
             {
                 return;
             }
@@ -493,7 +547,7 @@ render_preprossesor(void)
                     for (; end <= (line->data + till_x) && (*end != '(') && (*end != ' ') && (*end != '\t');
                          end++)
                         ;
-                    rendr_se_ptr(FG_BLUE);
+                    rendr(R, FG_BLUE, start, end);
                     if (*end == '(')
                     {
                         while (end != (line->data + till_x))
@@ -548,91 +602,179 @@ render_preprossesor(void)
                 }
                 case IF :
                 {
-                    if (strncmp(current_word, "defined", 7) == 0)
+                    const char *defined = strstr(start, "defined");
+                    while (defined != NULL)
                     {
-                        free(current_word);
-                        current_word =
-                            measured_copy(line->data + (start - line->data), (till_x - (start - line->data)));
-                        const char *defined = strstr(start, "defined");
-                        while (defined != NULL)
+                        start = defined;
+                        defined += 7;
+                        if (*defined && *defined == ' ')
                         {
-                            start = defined;
-                            defined += 7;
-                            rendr_ptr_ptr(start, defined, FG_MAGENTA);
-                            defined = strstr(defined, "defined");
+                            rendr(R, FG_BLUE, start, defined);
                         }
-                        free(current_word);
-                        return;
+                        else
+                        {
+                            rendr(R, FG_MAGENTA, start, defined);
+                        }
+                        const char *parent_start = defined;
+                        const char *parent_end   = defined;
+                        while (*parent_start && *parent_end)
+                        {
+                            ADV_PTR(parent_start,
+                                    *parent_start != '(' && *parent_start != '&' && *parent_start != '|');
+                            ADV_PTR(
+                                parent_end, *parent_end != ')' && *parent_end != '&' && *parent_end != '|');
+                            if ((*parent_start == '&') || (*parent_start == '|') || (*parent_end == '&') ||
+                                (*parent_end == '|'))
+                            {
+                                break;
+                            }
+                            if (*parent_start != '\0' && *parent_end != '\0')
+                            {
+                                parent_start += 1;
+                                const char *p = parent_start;
+                                ADV_PTR(p, p != parent_end && *p != ' ' && *p != '\t');
+                                if (parent_start == parent_end)
+                                {
+                                    render_part((parent_start - line->data) - 1,
+                                                (parent_end - line->data) + 1, ERROR_MESSAGE);
+                                }
+                                else if (p == parent_end)
+                                {
+                                    rendr(R, FG_BLUE, parent_start, parent_end);
+                                }
+                                else
+                                {
+                                    rendr(C_PTR, ERROR_MESSAGE, parent_start, parent_end);
+                                }
+                                parent_start += 1;
+                                parent_end += 1;
+                                p                     = parent_end - 1;
+                                const char *error_end = NULL;
+                                while (*p && *p != '&' && *p != '|')
+                                {
+                                    p += 1;
+                                    ADV_PTR(p, (*p != '&') && (*p != '|') && (*p != '(') && (*p != ')'));
+                                    if (*p == '(' || *p == ')')
+                                    {
+                                        error_end = p;
+                                    }
+                                }
+                                if (error_end != NULL)
+                                {
+                                    error_end += 1;
+                                    rendr(C_PTR, ERROR_MESSAGE, start, error_end);
+                                }
+                                break;
+                            }
+                            else if ((*parent_start == '\0' && *parent_end != '\0') ||
+                                     (*parent_start != '\0' && *parent_end == '\0'))
+                            {
+                                if (*parent_start != '\0')
+                                {
+                                    rendr(R_CHAR, ERROR_MESSAGE, parent_start);
+                                }
+                                else
+                                {
+                                    rendr(R_CHAR, ERROR_MESSAGE, parent_end);
+                                }
+                                break;
+                            }
+                        }
+                        defined = strstr(defined, "defined");
                     }
-                    break;
+                    free(current_word);
+                    return;
                 }
                 case INCLUDE :
                 {
                     end = start;
-                    for (; end < (line->data + till_x) && (*end != '>') && (*end != '"'); end++)
-                        ;
-                    if (end != (line->data + till_x) && (*start == '<' || *start == '"'))
+                    ADV_PTR(end, (*end != '>' && *end != '"'));
+                    if (*end != '\0')
                     {
-                        end += 1;
-                        rendr_match_se_ptr(FG_YELLOW);
+                        if ((*start == '<' && *end == '>') || (*start == '"' && *end == '"'))
+                        {
+                            end += 1;
+                            rendr(C_PTR, FG_YELLOW, start, end);
+                        }
+                        else
+                        {
+                            end += 1;
+                            rendr(C_PTR, ERROR_MESSAGE, start, end);
+                        }
                     }
                     else
                     {
-                        if (end != (line->data + till_x))
+                        rendr(C_PTR, ERROR_MESSAGE, start, end);
+                    }
+                    start = end;
+                    while (*end)
+                    {
+                        ADV_PTR(end, (*end == ' ' || *end == '\t'));
+                        if (*end == '\0')
                         {
-                            end += 1;
+                            break;
                         }
-                        rendr_match_se_ptr(ERROR_MESSAGE);
+                        start = end;
+                        ADV_PTR(end, (*end != ' ' && *end != '\t'));
+                        rendr(R, ERROR_MESSAGE, start, end);
                     }
                     return;
                 }
+                case UNDEF :
+                case IFNDEF :
                 case IFDEF :
                 {
-                    rendr_se_ptr(FG_BLUE);
+                    rendr(R, FG_BLUE, start, end);
                     break;
                 }
                 case PRAGMA :
                 {
-                    rendr_se_ptr(FG_LAGOON);
+                    rendr(R, FG_LAGOON, start, end);
                     break;
                 }
             }
             if (strcmp(current_word, "define") == 0)
             {
-                rendr_se_ptr(FG_MAGENTA);
+                rendr(R, FG_MAGENTA, start, end);
                 ltype = DEFINE;
             }
             else if (strcmp(current_word, "if") == 0)
             {
-                rendr_se_ptr(FG_MAGENTA);
+                rendr(R, FG_MAGENTA, start, end);
                 ltype = IF;
             }
             else if (strcmp(current_word, "endif") == 0)
             {
-                rendr_se_ptr(FG_MAGENTA);
+                rendr(R, FG_MAGENTA, start, end);
             }
             else if (strcmp(current_word, "ifndef") == 0)
             {
-                rendr_se_ptr(FG_MAGENTA);
+                rendr(R, FG_MAGENTA, start, end);
+                ltype = IFNDEF;
             }
             else if (strcmp(current_word, "pragma") == 0)
             {
-                rendr_se_ptr(FG_MAGENTA);
+                rendr(R, FG_MAGENTA, start, end);
                 ltype = PRAGMA;
             }
             else if (strcmp(current_word, "ifdef") == 0)
             {
-                rendr_se_ptr(FG_MAGENTA);
+                rendr(R, FG_MAGENTA, start, end);
                 ltype = IFDEF;
             }
             else if (strcmp(current_word, "else") == 0)
             {
-                rendr_se_ptr(FG_MAGENTA);
+                rendr(R, FG_MAGENTA, start, end);
             }
             else if (strcmp(current_word, "include") == 0)
             {
-                rendr_se_ptr(FG_MAGENTA);
+                rendr(R, FG_MAGENTA, start, end);
                 ltype = INCLUDE;
+            }
+            else if (strcmp(current_word, "undef") == 0)
+            {
+                rendr(R, FG_MAGENTA, start, end);
+                ltype = UNDEF;
             }
             else
             {
@@ -658,11 +800,10 @@ render_function_params(void)
         if (end != NULL)
         {
             start = end;
-            for (; *end && (*end != ' ') && (*end != '\t') && (*end != ';') && (*end != '('); end++)
-                ;
+            ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != ';' && *end != '('))
             if (*end == '(')
             {
-                rendr_se_ptr(FG_YELLOW);
+                rendr(R, FG_YELLOW, start, end);
             }
         }
         if (line->lineno + 2 >= info->start_bracket && line->lineno <= info->end_braket)
@@ -676,14 +817,13 @@ render_function_params(void)
                     while (end != NULL)
                     {
                         start = end;
-                        for (; *end && (*end != ' ') && (*end != '[') && (*end != ')') && (*end != ',') &&
-                               (*end != ';') && (*end != '(') && (*end != '+') && (*end != '-') &&
-                               (*end != '/');
-                             end++)
-                            ;
+                        ADV_PTR(end, ((end - start) < word_len &&
+                                      ((*end != ' ') && (*end != '[') && (*end != ')') && (*end != ',') &&
+                                       (*end != ';') && (*end != '(') && (*end != '+') && (*end != '-') &&
+                                       (*end != '/'))));
                         if (*end == '\0')
                         {
-                            rendr_se_ptr(ERROR_MESSAGE);
+                            rendr(R, ERROR_MESSAGE, start, end);
                             break;
                         }
                         else if (*end == '(')
@@ -693,7 +833,7 @@ render_function_params(void)
                                 line->data[(start - line->data) - 1] != '_')
                             {
                                 end += 1;
-                                rendr_se_ptr(ERROR_MESSAGE);
+                                rendr(R, ERROR_MESSAGE, start, end);
                             }
                         }
                         else if (*end == '[')
@@ -701,11 +841,11 @@ render_function_params(void)
                             const char *is_ptr = strchr(var->type, '*');
                             if (is_ptr != NULL)
                             {
-                                rendr_se_ptr(FG_LAGOON);
+                                rendr(R, FG_LAGOON, start, end);
                             }
                             else
                             {
-                                rendr_se_ptr(ERROR_MESSAGE);
+                                rendr(R, ERROR_MESSAGE, start, end);
                             }
                         }
                         else if (*end == ' ')
@@ -719,18 +859,18 @@ render_function_params(void)
                             if (*ptr == '(')
                             {
                                 end = ptr;
-                                rendr_se_ptr(ERROR_MESSAGE);
+                                rendr(R, ERROR_MESSAGE, start, end);
                             }
                             else if (*ptr == ';' || *ptr == '=' || *ptr == '*' || *ptr == '|' ||
                                      *ptr == '&' || *ptr == '<' || *ptr == '>' || *ptr == '+' ||
-                                     *ptr == '-' || *ptr == '/')
+                                     *ptr == '-' || *ptr == '/' || *ptr == '\0')
                             {
-                                rendr_se_ptr(FG_LAGOON);
+                                rendr(R, FG_LAGOON, start, end);
                             }
                         }
-                        else
+                        else if (!is_word_char(end, FALSE))
                         {
-                            rendr_se_ptr(FG_LAGOON);
+                            rendr(R, FG_LAGOON, start, end);
                         }
                         start += (end - start);
                         end = strstr(start, var->name);
@@ -739,12 +879,6 @@ render_function_params(void)
             }
         }
     }
-}
-
-void
-render_local_vars(void)
-{
-    PROFILE_FUNCTION;
 }
 
 /* Main function that applies syntax to a line in real time. */
@@ -756,11 +890,11 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line, uns
     ::converted = converted;
     ::line      = line;
     ::from_col  = from_col;
-    render_preprossesor();
     render_function_params();
     render_comment();
     render_bracket();
     render_parents();
+    render_preprossesor();
     if (line->data[0] == '\0')
     {
         return;

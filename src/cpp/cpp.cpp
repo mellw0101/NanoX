@@ -5,6 +5,8 @@
 #include <Mlib/Profile.h>
 #include <Mlib/def.h>
 
+#include <asmlib/lib.h>
+
 /* Returns 'TRUE' if 'c' is a cpp syntax char. */
 bool
 isCppSyntaxChar(const char c)
