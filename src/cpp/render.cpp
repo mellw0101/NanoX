@@ -881,6 +881,63 @@ render_function_params(void)
     }
 }
 
+void
+render_control_statements(unsigned long index)
+{
+    PROFILE_FUNCTION;
+    /* 'if'. */
+    if (line->data[index] == 'i')
+    {}
+    /* 'case'. */
+    else if (line->data[index] == 'c')
+    {}
+    /* 'switch'. */
+    else if (line->data[index] == 's')
+    {}
+    /* 'else'. */
+    else if (line->data[index] == 'e')
+    {
+        unsigned long else_indent = total_tabs(line);
+        unsigned long indent;
+        const char   *if_found = NULL;
+        for (linestruct *l = line; l != NULL; l = l->prev)
+        {
+            indent = total_tabs(l);
+            if (indent < else_indent)
+            {
+                break;
+            }
+            if_found = strstr(l->data, "if");
+            if (if_found != NULL)
+            {
+                NLOG("%s\n", l->data);
+                break;
+            }
+        }
+        if (if_found == NULL)
+        {
+            midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1,
+                                     "<- missleading indentation", "<- missleading indentation"_sllen,
+                                     FG_RED);
+        }
+    }
+    /* 'for'. */
+    else if (line->data[index] == 'f')
+    {}
+    /* 'while'. */
+    else if (line->data[index] == 'w')
+    {}
+    /* 'return'. */
+    else if (line->data[index] == 'r')
+    {}
+    /* 'break'. */
+    else if (line->data[index] == 'b')
+    {}
+    /* 'do'. */
+    else if (line->data[index] == 'd')
+    {}
+}
+
 /* Main function that applies syntax to a line in real time. */
 void
 apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col)
@@ -996,6 +1053,7 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line, uns
                      type & CS_WHILE || type & CS_RETURN || type & CS_BREAK || type & CS_DO)
             {
                 midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_MAGENTA);
+                render_control_statements(node->start);
             }
             free_node(node);
             continue;
