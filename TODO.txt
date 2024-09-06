@@ -191,7 +191,7 @@ NanoX, fork of nano.  TODO LIST.
         Now this is amazing i coded this for 9 hours and it worked when i tested it ahhahahhaha!!
         i decided to make subthreads only as i dont se the benefit of having more threads for
         something other then data parsing and formating witch i can now completly do in the
-        backround.  So the way i set it up is that there is a threadpool with a queue that has
+        background.  So the way i set it up is that there is a threadpool with a queue that has
         the threads all wating for a task to perform.  When I(the main thread) gives them
         a task that do that task in there thread and package it into a struct witch i make
         that has exactly the data that i want in the exact format i want making prossesing
@@ -235,7 +235,7 @@ NanoX, fork of nano.  TODO LIST.
         This is going well, and I have made real time rendering a thing now i just need to extend it further.
 
         Well i have made something amazing, truly.  I have been planning to do this for mounths, and when i finally
-        cracked all the weird ways the OG. 'nano' integrated rcfile parsing systems for everything.  I could finaly do
+        cracked all the weird ways the OG 'nano' integrated rcfile parsing systems for everything.  I could finaly do
         everything in real-time.  Here are some profiling results.
         
         Profiling report: [2024-09-03 11:04:42.297]
@@ -258,12 +258,10 @@ NanoX, fork of nano.  TODO LIST.
             update_line                   : Mean = 0.00469836 ms, Stddev = 0.00624281 ms,    Min = 0.00121 ms,    Max = 1.21486 ms,  Count = 91626
             words_from_file               : Mean = 0.166264 ms, Stddev = 0.107538 ms,    Min = 0.014421 ms,    Max = 0.24957 ms,  Count = 3
 
-        As you can see, this is so fast and i have been able to add error highlighting as well, also in real time and i have just added to 
-        'render_function_params' so that it can look at a type for a param and if the user tries to index into the param (i.e: param[index])
-        it checks if the param is a '*' ptr and if not it gives an error directly in real time by making the var red. 
-        
-        At this time the renderer is almost 900 lines and nothing is slow.  Im happy, but also i have planed how i was gooing to do this
-        as soon as i cracked all the subsystems and how thay worked and now i have.
+        As you can see, this is so fast and i have been able to add error highlighting as well, also in real time and i have just
+        added to 'render_function_params' so that it can look at a type for a param and if the user tries to index into the param
+        (i.e: param[index]) it checks if the param is a '*' ptr and if not it gives an error directly in real time by making the
+        var red.
     STATUS:
         NOT DONE.  But started and implemented.
 

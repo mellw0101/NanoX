@@ -1,11 +1,11 @@
 /// @file definitions.h
 #pragma once
 
-#include  "../include/config.h"
 #include <Mlib/Debug.h>
 #include <Mlib/FileSys.h>
 #include <Mlib/constexpr.hpp>
 #include <Mlib/def.h>
+#include "../include/config.h"
 
 #ifndef _XOPEN_SOURCE_EXTENDED
 #    define _XOPEN_SOURCE_EXTENDED 1
@@ -94,8 +94,8 @@
 #define LINE_ISSET(line, flag)  ((LINE_FLAGS(line, flag) & LINE_FLAGMASK(flag)) != 0)
 #define LINE_TOGGLE(line, flag) LINE_FLAGS(line, flag) ^= LINE_FLAGMASK(flag)
 
-#define SAVE_LINE_FLAGS(name, flags_to_save)                              \
-    unsigned char name[sizeof(flags_to_save) / sizeof(flags_to_save[0])]; \
+#define SAVE_LINE_FLAGS(name, flags_to_save)                               \
+    unsigned short name[sizeof(flags_to_save) / sizeof(flags_to_save[0])]; \
     memcpy(name, flags_to_save, sizeof(flags_to_save))
 
 #define SET_LINE_FLAGS(set, from) memcpy(set, from, sizeof(set))

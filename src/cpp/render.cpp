@@ -32,6 +32,27 @@ render_part(unsigned long match_start, unsigned long match_end, short color)
     midwin_mv_add_nstr_color(row, (margin + start_col), thetext, paintlen, color);
 }
 
+/* Experiment. */
+void
+render_part_raw(unsigned long start_index, unsigned long end_index, short color)
+{
+    const char *start = &line->data[start_index];
+    const char *end   = start;
+    const char *stop  = &line->data[end_index];
+    while (*end && end != stop)
+    {
+        ADV_PTR(end, (end <= stop) && (*end == ' ' || *end == '\t'));
+        if (*end == '\0' || end == stop)
+        {
+            break;
+        }
+        start = end;
+        ADV_PTR(end, (end <= stop) && (*end != ' ' && *end != '\t'));
+        end += 1;
+        rendr(R, color, start, end);
+    }
+}
+
 /* Render the text of a given line.  Note that this function only renders the text and nothing else. */
 void
 render_line_text(const int row, const char *str, linestruct *line, const unsigned long from_col)
@@ -173,7 +194,7 @@ render_comment(void)
         if (line->prev &&
             (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) || LINE_ISSET(line->prev, BLOCK_COMMENT_START)))
         {
-            midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, found_start), found_start, 2, ERROR_MESSAGE);
+            rendr(R_LEN, ERROR_MESSAGE, found_start, 2);
             block_comment_start = (found_start - line->data) + 2;
         }
         /* If a slash comment is found and it is before the block start,
@@ -251,14 +272,13 @@ render_comment(void)
         /* If not, error highlight the end block. */
         else
         {
-            midwin_mv_add_nstr_color(
-                row, (wideness(line->data, (found_end - line->data)) + margin), found_end, 2, ERROR_MESSAGE);
+            rendr(R_LEN, ERROR_MESSAGE, found_end, 2);
         }
     }
     refresh_needed = TRUE;
 }
 
-/* Color brackets based on indent. */
+/* Color brackets based on indent.  TODO: This needs to be fix. */
 void
 render_bracket(void)
 {
@@ -300,10 +320,11 @@ render_bracket(void)
     {
         LINE_SET(line, BRACKET_START);
         rendr(R_CHAR, color_bi[(indent_char_len(line) % 3)], start);
-        if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET)))
+        if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET) || LINE_ISSET(line->prev, BRACKET_START)))
         {
             LINE_SET(line, IN_BRACKET);
         }
+        /* TODO: Find better trigger to recheck current func. */
         else
         {
             find_current_function(line);
@@ -451,7 +472,7 @@ render_string_literals(void)
                 {
                     format_end += 1;
                 }
-                if (*format_end == 'l' || *format_end == 'z')
+                if (*format_end == 'l' || *format_end == 'z' || *format_end == 'h')
                 {
                     format_end += 1;
                 }
@@ -532,8 +553,7 @@ render_preprossesor(void)
                 return;
             }
             start = end;
-            for (; end < (line->data + till_x) && (*end != ' ') && (*end != '\t'); end++)
-                ;
+            ADV_PTR(end, (*end != ' ' && *end != '\t'));
             current_word = measured_copy(start, (end - start));
             switch (ltype)
             {
@@ -544,9 +564,7 @@ render_preprossesor(void)
                 case DEFINE :
                 {
                     end = start;
-                    for (; end <= (line->data + till_x) && (*end != '(') && (*end != ' ') && (*end != '\t');
-                         end++)
-                        ;
+                    adv_ptr(end, (*end != '(' && *end != ' ' && *end != '\t'));
                     rendr(R, FG_BLUE, start, end);
                     if (*end == '(')
                     {
@@ -554,13 +572,10 @@ render_preprossesor(void)
                         {
                             end += 1;
                             start = end;
-                            for (; end <= (line->data + till_x) && (*end != ')') && (*end != ',') &&
-                                   (*end != ' ') && (*end != '\t');
-                                 end++)
-                                ;
+                            adv_ptr(end, (*end != ')' && *end != ',' && *end != ' ' && *end != '\t'));
                             if (*end == ')' || *end == ',')
                             {
-                                rendr_se_ptr(FG_BLUE);
+                                rendr(R, FG_LAGOON, start, end);
                                 free(current_word);
                                 current_word      = measured_copy(start, (end - start));
                                 const char *param = strstr(end, current_word);
@@ -900,25 +915,24 @@ render_control_statements(unsigned long index)
         unsigned long else_indent = total_tabs(line);
         unsigned long indent;
         const char   *if_found = NULL;
-        for (linestruct *l = line; l != NULL; l = l->prev)
+        int           i        = 0;
+        for (linestruct *l = line->prev; l != NULL && (i < 100); l = l->prev, i++)
         {
             indent = total_tabs(l);
-            if (indent < else_indent)
+            if (indent == else_indent)
             {
-                break;
-            }
-            if_found = strstr(l->data, "if");
-            if (if_found != NULL)
-            {
-                NLOG("%s\n", l->data);
-                break;
+                if_found = strstr(l->data, "if");
+                if (if_found != NULL)
+                {
+                    break;
+                }
             }
         }
         if (if_found == NULL)
         {
-            midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1,
-                                     "<- missleading indentation", "<- missleading indentation"_sllen,
-                                     FG_RED);
+            rendr(E, "<- Misleading indentation");
+            /* Add BG_YELLOW. */
+            rendr(R, ERROR_MESSAGE, &line->data[index], &line->data[index + 4]);
         }
     }
     /* 'for'. */
@@ -1035,6 +1049,7 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line, uns
                 type & CS_NULL || type & CS_TRUE || type & CS_FALSE || type & CS_TYPEDEF || type & CS_SIZEOF)
             {
                 midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_BLUE);
+                NLOG("%s\n", &line->data[node->start]);
             }
             else if (type & CS_STRUCT || type & CS_ENUM || type & CS_CLASS || type & CS_NAMESPACE)
             {

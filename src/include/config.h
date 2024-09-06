@@ -41,4 +41,4 @@
 #define HAVE_LIMITS_H           1
 #define HAVE_TERMIOS_H          1
 
-constexpr auto VERSION = "0.0.1";
+#define VERSION                 "0.0.1"

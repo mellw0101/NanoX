@@ -620,7 +620,7 @@ flag_all_brackets(void)
         const char *start = strchr(line->data, '{');
         const char *end   = strrchr(line->data, '}');
         /* Bracket start and end on the same line. */
-        if (start != NULL && end != NULL)
+        /* if (start != NULL && end != NULL)
         {
             while (start != NULL)
             {
@@ -643,9 +643,9 @@ flag_all_brackets(void)
                     end = NULL;
                 }
             }
-        }
+        } */
         /* Start bracket line was found. */
-        else if (start != NULL && end == NULL)
+        if (start != NULL && end == NULL)
         {
             LINE_SET(line, BRACKET_START);
             if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET)))
@@ -680,7 +680,7 @@ flag_all_brackets(void)
             }
         }
         /* Was not found. */
-        else if (start == NULL && end == NULL)
+        else if ((start == NULL && end == NULL) || (start != NULL && end != NULL))
         {
             if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET) || LINE_ISSET(line->prev, BRACKET_START)))
             {

@@ -507,3 +507,7 @@ constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
 #define ADV_PTR(ptr, ...)              \
     for (; *ptr && __VA_ARGS__; ptr++) \
         ;
+
+#define adv_ptr(ptr, ...)              \
+    for (; *ptr && __VA_ARGS__; ptr++) \
+        ;

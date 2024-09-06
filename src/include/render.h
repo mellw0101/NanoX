@@ -120,6 +120,8 @@
 /* Raw ptr rendering. */
 #define R_3(color, start, end) \
     midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, start), start, (end - start), color)
+/* Raw ptr rendering with len. */
+#define R_LEN_3(color, ptr, len) midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, ptr), ptr, len, color)
 /* Render one char based on char_ptr. */
 #define R_CHAR_2(color, char_ptr) \
     midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, char_ptr), char_ptr, 1, color)
@@ -127,6 +129,12 @@
 #define C_3(color, start, end)     render_part(start, end, color)
 /* Index based rendering derived from ptr pos in line. */
 #define C_PTR_3(color, start, end) render_part((start - line->data), (end - line->data), color)
+/* Print a warning at end of line. */
+#define W_1(str) \
+    midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1, str, str##_sllen, FG_YELLOW)
+/* Print a error at end of line. */
+#define E_1(str) \
+    midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1, str, str##_sllen, FG_RED)
 
 /* Main rendering caller. */
-#define rendr(opt, ...)            PP_CAT(opt##_, PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define rendr(opt, ...) PP_CAT(opt##_, PP_NARG(__VA_ARGS__))(__VA_ARGS__)
