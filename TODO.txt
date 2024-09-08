@@ -264,6 +264,25 @@ NanoX, fork of nano.  TODO LIST.
         var red.
     STATUS:
         NOT DONE.  But started and implemented.
+18. Implement a way to search for header files.
+
+    STATUS:
+        NOT DONE.
+19. Implement GOOD methods for the line struct.
+
+    NOTES:
+        I will need to do this with care, as i want to simplyfy not make the struct more complex.
+
+    STATUS:
+        NOT DONE.
+20. Create suggestion system.
+
+    NOTES:
+        The system is very basic and just shows one suggestion for.  It also inject`s the suggestion into the current
+        line and pos correctly when the user presses enter.
+
+    STATUS:
+        IMPLEMENTED, NOT DONE.
 
 NCURSES_HELP:
     'wattron' turns on an attribute for a 'WINDOW*'. 

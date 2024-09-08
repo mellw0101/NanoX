@@ -1,8 +1,8 @@
 #pragma once
 #include "definitions.h"
 
-#define COLOR_LAGOON                           38
-#define COLOR_PINK                             204
+#define rgb_8bit_in_xterm_color(r, g, b) \
+    xterm_byte_scale(r) * 4 - 1, xterm_byte_scale(g) * 4 - 1, xterm_byte_scale(b) * 4 - 1
 
 #define get_start_col(line, node)              wideness((line)->data, (node)->start) + margin
 #define start_column(line, index)              wideness((line)->data, index) + margin
@@ -12,6 +12,8 @@
 
 #define LOG_FLAG(line, flag)                   NLOG("flag: '%s' is '%s'\n", #flag, LINE_ISSET(line, flag) ? "TRUE" : "FALSE")
 #define GET_BRACKET_COLOR(n)                   color_bracket_index[(n % 2)]
+
+#define line_indent(line)                      wideness(line->data, indent_char_len(line))
 
 /* Define`s for modifying the 'midwin', i.e: The edit window. */
 
@@ -28,7 +30,6 @@
 /* Move to 'row', 'col' in midwin. */
 #define midwin_move(row, col)                  wmove(midwin, row, col)
 /* Add one char to midwin. */
-#define midwin_add_char(char)                  waddch(midwin, char)
 #define midwin_mv_add_char(row, col, char)     (midwin_move(row, col) == (-1)) ?: midwin_add_char(char)
 /* Add 'len' of str to midwin. */
 #define midwin_add_nstr(str, len)              waddnstr(midwin, str, len)
@@ -59,9 +60,9 @@
     midwin_mv_add_nstr(row, col, str, len);                 \
     midwin_color_off(color)
 /* Move then add char to midwin. */
-#define midwin_mv_add_char_wattr(row, col, char, attributes) \
-    midwin_attr_on(attributes);                              \
-    midwin_mv_add_char(row, col, char);                      \
+#define mvwaddchwattr(win, row, col, char, attributes) \
+    wattron(win, attributes);                          \
+    mvwaddch(win, row, col, char);                     \
     midwin_attr_off(attributes)
 
 #define midwin_printw(...)              wprintw(midwin, __VA_ARGS__)
@@ -134,7 +135,10 @@
     midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1, str, str##_sllen, FG_YELLOW)
 /* Print a error at end of line. */
 #define E_1(str) \
-    midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1, str, str##_sllen, FG_RED)
+    midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1, str, str##_sllen, FG_VS_CODE_RED)
+#define SUGGEST_1(str)                                                                                 \
+    midwin_mv_add_nstr_color(openfile->cursor_row, wideness(line->data, openfile->current_x) + margin, \
+                             str + suggest_len, strlen(str) - suggest_len, FG_SUGGEST_GRAY)
 
 /* Main rendering caller. */
 #define rendr(opt, ...) PP_CAT(opt##_, PP_NARG(__VA_ARGS__))(__VA_ARGS__)

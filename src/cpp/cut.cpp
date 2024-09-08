@@ -18,7 +18,8 @@ expunge(undo_type action)
         unsigned long old_amount = ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current) : 0;
         /* If the type of action changed or the cursor moved to a different
          * line, create a new undo item, otherwise update the existing item. */
-        if (action != openfile->last_action || openfile->current->lineno != openfile->current_undo->head_lineno)
+        if (action != openfile->last_action ||
+            openfile->current->lineno != openfile->current_undo->head_lineno)
         {
             add_undo(action, NULL);
         }
@@ -27,8 +28,8 @@ expunge(undo_type action)
             update_undo(action);
         }
         /* Move the remainder of the line "in", over the current character. */
-        memmove(&openfile->current->data[openfile->current_x], &openfile->current->data[openfile->current_x + charlen],
-                line_len - charlen + 1);
+        memmove(&openfile->current->data[openfile->current_x],
+                &openfile->current->data[openfile->current_x + charlen], line_len - charlen + 1);
         /* When softwrapping, a changed number of chunks requires a refresh. */
         if (ISSET(SOFTWRAP) && extra_chunks_in(openfile->current) != old_amount)
         {
@@ -62,8 +63,8 @@ expunge(undo_type action)
         }
         openfile->current->has_anchor |= joining->has_anchor;
         /* Add the content of the next line to that of the current one. */
-        openfile->current->data =
-            (char *)nrealloc(openfile->current->data, strlen(openfile->current->data) + strlen(joining->data) + 1);
+        openfile->current->data = (char *)nrealloc(
+            openfile->current->data, strlen(openfile->current->data) + strlen(joining->data) + 1);
         constexpr_strcat(openfile->current->data, joining->data);
         unlink_node(joining);
         /* Two lines were joined, so do a renumbering and refresh the screen. */
@@ -122,6 +123,11 @@ do_backspace(void)
     }
     else if (openfile->current_x > 0)
     {
+        if (suggest_len > 0)
+        {
+            suggest_len -= 2;
+            suggest_buf[suggest_len] = '\0';
+        }
         /* If the last char injected was a open bracket char,
          * this means that a closing bracket was plased next to it,
          * and therefor this flag was set.  Here we check if the flag
@@ -147,7 +153,8 @@ bool
 is_cuttable(bool test_cliff)
 {
     unsigned long from = (test_cliff) ? openfile->current_x : 0;
-    if ((openfile->current->next == NULL && openfile->current->data[from] == '\0' && openfile->mark == NULL) ||
+    if ((openfile->current->next == NULL && openfile->current->data[from] == '\0' &&
+         openfile->mark == NULL) ||
         (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) ||
         (from > 0 && !ISSET(NO_NEWLINES) && openfile->current->data[from] == '\0' &&
          openfile->current->next == openfile->filebot))
@@ -263,9 +270,10 @@ void
 extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned long bot_x)
 {
     linestruct *taken, *last;
-    bool        edittop_inside = (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
-    bool        same_line      = (openfile->mark == top);
-    bool        post_marked =
+    bool        edittop_inside =
+        (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
+    bool same_line = (openfile->mark == top);
+    bool post_marked =
         (openfile->mark && (openfile->mark->lineno > top->lineno || (same_line && openfile->mark_x > top_x)));
     static bool inherited_anchor = FALSE;
     bool        had_anchor       = top->has_anchor;
@@ -327,7 +335,8 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
     }
     else
     {
-        cutbottom->data = (char *)nrealloc(cutbottom->data, strlen(cutbottom->data) + strlen(taken->data) + 1);
+        cutbottom->data =
+            (char *)nrealloc(cutbottom->data, strlen(cutbottom->data) + strlen(taken->data) + 1);
         strcat(cutbottom->data, taken->data);
         cutbottom->has_anchor = taken->has_anchor && !inherited_anchor;
         inherited_anchor |= taken->has_anchor;
@@ -492,7 +501,8 @@ do_snip(bool marked, bool until_eof, bool append)
     /* Now move the relevant piece of text into the cutbuffer. */
     if (until_eof)
     {
-        extract_segment(openfile->current, openfile->current_x, openfile->filebot, strlen(openfile->filebot->data));
+        extract_segment(
+            openfile->current, openfile->current_x, openfile->filebot, strlen(openfile->filebot->data));
     }
     else if (openfile->mark)
     {
@@ -656,7 +666,8 @@ copy_text(void)
         return;
     }
     /* When at the very end of the buffer, there is nothing to do. */
-    if (openfile->current->next == NULL && at_eol && (ISSET(CUT_FROM_CURSOR) || openfile->current_x == 0 || cutbuffer))
+    if (openfile->current->next == NULL && at_eol &&
+        (ISSET(CUT_FROM_CURSOR) || openfile->current_x == 0 || cutbuffer))
     {
         statusbar(_("Copied nothing"));
         return;

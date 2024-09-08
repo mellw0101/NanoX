@@ -41,7 +41,12 @@ do_tab(void)
     }
     else if (openfile->syntax && openfile->syntax->tabstring)
     {
-        inject(openfile->syntax->tabstring, constexpr_strlen(openfile->syntax->tabstring));
+        if (suggest_on)
+        {
+            accept_suggestion();
+            return;
+        }
+        inject(openfile->syntax->tabstring, strlen(openfile->syntax->tabstring));
     }
     else if (ISSET(TABS_TO_SPACES))
     {
@@ -54,6 +59,11 @@ do_tab(void)
     }
     else
     {
+        if (suggest_on)
+        {
+            accept_suggestion();
+            return;
+        }
         inject((char *)"\t", 1);
     }
 }
@@ -979,6 +989,11 @@ do_redo(void)
 void
 do_enter(void)
 {
+    if (suggest_on)
+    {
+        accept_suggestion();
+        return;
+    }
     if (enter_with_bracket())
     {
         return;

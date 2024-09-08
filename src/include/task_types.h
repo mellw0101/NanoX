@@ -42,36 +42,6 @@ typedef struct syntax_search_t
 TASK_STRUCT(signal_payload_t, void (*func)(void *); void *arg;)
 TASK_STRUCT(main_thread_t, pthread_t thread; pid_t pid;)
 
-/* This is from file: 'threadpool.cpp'. */
-void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
-/* RAII complient way to lock a pthread mutex.  This struct will lock
- * the mutex apon its creation, and unlock it when it goes out of scope. */
-struct pthread_mutex_guard_t
-{
-    pthread_mutex_t *mutex = NULL;
-    explicit pthread_mutex_guard_t(pthread_mutex_t *m)
-        : mutex(m)
-    {
-        if (mutex == NULL)
-        {
-            LOUT_logE("A 'NULL' was passed to 'pthread_mutex_guard_t'.");
-        }
-        else
-        {
-            lock_pthread_mutex(mutex, TRUE);
-        }
-    }
-    ~pthread_mutex_guard_t(void)
-    {
-        if (mutex != NULL)
-        {
-            lock_pthread_mutex(mutex, FALSE);
-        }
-    }
-    pthread_mutex_guard_t(const pthread_mutex_guard_t &)            = delete;
-    pthread_mutex_guard_t &operator=(const pthread_mutex_guard_t &) = delete;
-};
-
 bool is_main_thread(void);
 void pause_all_sub_threads(bool pause);
 

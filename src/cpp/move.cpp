@@ -355,11 +355,10 @@ to_prev_block(void)
 void
 to_next_block(void)
 {
-    int            lines = 0, cur_indent, was_indent = -1;
-    linestruct    *was_current = openfile->current;
-    bool           is_white    = white_string(openfile->current->data);
-    bool           seen_white  = is_white;
-    unsigned short tabs, spaces, t_char, t_tabs;
+    int         lines = 0, cur_indent, was_indent = -1;
+    linestruct *was_current = openfile->current;
+    bool        is_white    = white_string(openfile->current->data);
+    bool        seen_white  = is_white;
     /* Skip forward until first nonblank line after some blank line(s). */
     while (openfile->current->next != NULL && (!seen_white || is_white))
     {
@@ -372,17 +371,15 @@ to_next_block(void)
                 for (; openfile->current->next != NULL && is_empty_line(openfile->current);
                      openfile->current = openfile->current->next)
                     ;
-                get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
-                openfile->current_x = t_char;
+                openfile->current_x = indent_char_len(openfile->current);
                 edit_redraw(was_current, FLOWING);
                 recook |= perturbed;
                 return;
             }
             else
             {
-                openfile->current = openfile->current->prev;
-                get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
-                openfile->current_x = t_char;
+                openfile->current   = openfile->current->prev;
+                openfile->current_x = indent_char_len(openfile->current);
                 edit_redraw(was_current, FLOWING);
                 recook |= perturbed;
                 return;
@@ -395,16 +392,14 @@ to_next_block(void)
                 for (; openfile->next != NULL && is_line_comment(openfile->current);
                      openfile->current = openfile->current->next)
                     ;
-                openfile->current = openfile->current->prev;
-                get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
-                openfile->current_x = t_char;
+                openfile->current   = openfile->current->prev;
+                openfile->current_x = indent_char_len(openfile->current);
                 edit_redraw(was_current, FLOWING);
                 recook |= perturbed;
                 return;
             }
         }
-        get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
-        cur_indent = t_tabs;
+        cur_indent = line_indent(openfile->current);
         if (was_indent == -1)
         {
             was_indent = cur_indent;
@@ -414,9 +409,8 @@ to_next_block(void)
             if (lines > 1)
             {
                 openfile->current = openfile->current->prev;
-                get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
             }
-            openfile->current_x = t_char;
+            openfile->current_x = indent_char_len(openfile->current);
             edit_redraw(was_current, FLOWING);
             recook |= perturbed;
             return;
@@ -426,8 +420,7 @@ to_next_block(void)
         seen_white        = seen_white || is_white;
         lines++;
     }
-    get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
-    openfile->current_x = t_char;
+    openfile->current_x = indent_char_len(openfile->current);
     edit_redraw(was_current, FLOWING);
     recook |= perturbed;
 }

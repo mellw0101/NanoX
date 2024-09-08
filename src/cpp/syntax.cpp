@@ -27,11 +27,28 @@ syntax_check_file(openfilestruct *file)
             prosses_callback_queue();
         }
     }
-    else
+    /* else
     {
         check_include_file_syntax("/usr/include/Mlib/Packy.h");
         check_include_file_syntax("/usr/include/stdio.h");
         check_include_file_syntax("/usr/include/stdlib.h");
+    } */
+    char *type, *name, *value;
+    parse_variable("const char *        end   = start;", &type, &name, &value);
+    if (type != NULL)
+    {
+        nlog("type: %s\n", type);
+        free(type);
+    }
+    if (name != NULL)
+    {
+        nlog("name: %s\n", name);
+        free(name);
+    }
+    if (value != NULL)
+    {
+        nlog("value: %s\n", value);
+        free(value);
     }
 }
 
@@ -115,7 +132,7 @@ add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr,
     colortype *nc        = NULL;
     if (!parse_color_opts(color_fg, color_bg, &fg, &bg, &attr))
     {
-        LOUT_logE("'parse_color_opts' Failed.");
+        logE("'parse_color_opts' Failed.");
         return;
     }
     if (from_file != NULL)
@@ -235,6 +252,10 @@ check_func_syntax(char ***words, unsigned long *i)
 void
 check_syntax(const char *path)
 {
+    if (!is_file_and_exists(path))
+    {
+        return;
+    }
     char         *buf = NULL, **words;
     unsigned long size, len, i;
     FILE         *f = fopen(path, "rb");
@@ -370,11 +391,16 @@ check_syntax(const char *path)
 void
 check_include_file_syntax(const char *path)
 {
+    if (!is_file_and_exists(path))
+    {
+        return;
+    }
     PROFILE_FUNCTION;
-    unsigned short type;
-    unsigned       i;
-    unsigned long  nwords;
-    char         **words = words_from_file(path, &nwords);
+    unsigned int  type;
+    unsigned      i;
+    unsigned long nwords;
+    char        **words      = words_from_file(path, &nwords);
+    bool          in_comment = FALSE;
     if (words == NULL)
     {
         return;
@@ -394,6 +420,18 @@ check_include_file_syntax(const char *path)
                 words[i][slen] = '\0';
             }
         }
+        if (strcmp(words[i], "/*") == 0)
+        {
+            in_comment = TRUE;
+        }
+        else if (strcmp(words[i], "*/") == 0)
+        {
+            in_comment = FALSE;
+        }
+        if (in_comment)
+        {
+            continue;
+        }
         type = retrieve_c_syntax_type(words[i]);
         if (!type)
         {
@@ -409,8 +447,7 @@ check_include_file_syntax(const char *path)
                 }
                 else if (!is_syntax_struct(words[i]))
                 {
-                    // add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]), path);
-                    add_syntax_struct(words[i]);
+                    structs.push_back(memmove_copy_of(words[i]));
                 }
             }
         }
@@ -424,8 +461,7 @@ check_include_file_syntax(const char *path)
                 }
                 else if (!is_syntax_class(words[i]))
                 {
-                    // add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]), path);
-                    add_syntax_class(words[i]);
+                    classes.push_back(memmove_copy_of(words[i]));
                 }
             }
         }
@@ -458,9 +494,8 @@ check_include_file_syntax(const char *path)
                             {
                                 if (!syntax_func(words[i]))
                                 {
-                                    new_syntax_func(words[i]);
+                                    funcs.push_back(memmove_copy_of(words[i]));
                                 }
-                                // add_syntax_word("yellow", NULL, rgx_word(words[i]), path);
                             }
                         }
                     }
@@ -470,20 +505,8 @@ check_include_file_syntax(const char *path)
                     strip_leading_chars_from(words[i], '*');
                     if (!syntax_func(words[i]))
                     {
-                        new_syntax_func(words[i]);
-                        // add_syntax_word(FUNC_COLOR, NULL, rgx_word(words[i]), path);
+                        funcs.push_back(memmove_copy_of(words[i]));
                     }
-                }
-            }
-        }
-        /* else if (type & CS_INCLUDE)
-        {
-            if (words[++i] != NULL)
-            {
-                if (!is_in_handled_includes_vec(words[i]))
-                {
-                    add_to_handled_includes_vec(words[i]);
-                    handle_include(words[i]);
                 }
             }
         }
@@ -493,7 +516,7 @@ check_include_file_syntax(const char *path)
             {
                 handle_define(words[i]);
             }
-        } */
+        }
     }
     for (i = 0; i < nwords; i++)
     {
@@ -648,7 +671,10 @@ handle_define(char *str)
             break;
         }
     }
-    sub_thread_compile_add_rgx("bold,blue", NULL, rgx_word(str), &last_c_color);
+    if (!define_exists(str))
+    {
+        defines.push_back(memmove_copy_of(str));
+    }
 }
 
 /* This keeps track of the last type when a type is descovered and there is no next word. */
@@ -893,16 +919,14 @@ set_last_c_colortype(void)
         return;
     }
     syntaxtype *s;
-    for (s = syntaxes; s && (strncmp(s->name, "c", 1)); s = s->next)
-        ;
+    for (s = syntaxes; s && (strncmp(s->name, "c", 1)); s = s->next);
     if (s == NULL)
     {
         LOUT_logE("s == NULL.");
         return;
     }
     colortype *c;
-    for (c = s->color; c->next; c = c->next)
-        ;
+    for (c = s->color; c->next; c = c->next);
     if (c == NULL)
     {
         LOUT_logE("c == NULL.");
@@ -928,9 +952,17 @@ add_syntax_class(const char *name)
 bool
 is_syntax_struct(std::string_view str)
 {
-    for (const auto &s : syntax_structs)
+    /* for (const auto &s : syntax_structs)
     {
         if (s == str)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE; */
+    for (int i = 0; i < structs.get_size(); i++)
+    {
+        if (strcmp(&str[0], structs[i]) == 0)
         {
             return TRUE;
         }
@@ -941,9 +973,30 @@ is_syntax_struct(std::string_view str)
 bool
 is_syntax_class(std::string_view str)
 {
-    for (const auto &c : syntax_classes)
+    /* for (const auto &c : syntax_classes)
     {
         if (c == str)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE; */
+    for (int i = 0; i < classes.get_size(); i++)
+    {
+        if (strcmp(&str[0], classes[i]) == 0)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+bool
+define_exists(const char *str)
+{
+    for (int i = 0; i < defines.get_size(); i++)
+    {
+        if (strcmp(str, defines[i]) == 0)
         {
             return TRUE;
         }

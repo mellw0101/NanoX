@@ -34,6 +34,8 @@ bool inhelp = FALSE;
 char *title = NULL;
 /* Did a command mangle enough of the buffer that we should repaint the screen? */
 bool refresh_needed = FALSE;
+/* If we should refresh the suggest window. */
+bool suggest_on = FALSE;
 /* Whether an update of the edit window should center the cursor. */
 bool focusing = TRUE;
 /* Whether a 0x0A byte should be shown as a ^@ instead of a ^J. */
@@ -86,7 +88,7 @@ WINDOW *midwin = NULL;
  * the status-bar prompt, and a list of shortcuts are shown. */
 WINDOW *footwin = NULL;
 /* Test window for sugestions. */
-WINDOW *test_win = NULL;
+WINDOW *suggestwin = NULL;
 /* How many rows does the edit window take up? */
 int editwinrows = 0;
 /* The number of usable columns in the edit window: COLS - margin. */
@@ -1287,9 +1289,9 @@ syntax_var(std::string_view str)
 bool
 syntax_func(std::string_view str)
 {
-    for (const auto &func : syntax_funcs)
+    for (int i = 0; i < funcs.get_size(); i++)
     {
-        if (str == func)
+        if (strcmp(&str[0], funcs[i]) == 0)
         {
             return TRUE;
         }

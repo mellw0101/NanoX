@@ -3408,9 +3408,13 @@ draw_row(const int row, const char *converted, linestruct *line, const unsigned 
  * -- if necessary, scroll the line horizontally (when not softwrapping).
  * Return the number of rows "consumed" (relevant when softwrapping). */
 int
-update_line(linestruct *line, const unsigned long index)
+update_line(linestruct *line, const unsigned long index, int offset)
 {
     PROFILE_FUNCTION;
+    if (line->is_set(IS_HIDDEN))
+    {
+        return 0;
+    }
     /* The row in the edit window we will be updating. */
     int row;
     /* The data of the line with tabs and control characters expanded. */
@@ -3422,7 +3426,7 @@ update_line(linestruct *line, const unsigned long index)
         return update_softwrapped_line(line);
     }
     sequel_column = 0;
-    row           = line->lineno - openfile->edittop->lineno;
+    row           = line->lineno - openfile->edittop->lineno - offset;
     from_col      = get_page_start(wideness(line->data, index));
     /* Expand the piece to be drawn to its representable form, and draw it. */
     converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
@@ -3430,11 +3434,11 @@ update_line(linestruct *line, const unsigned long index)
     free(converted);
     if (from_col > 0)
     {
-        midwin_mv_add_char_wattr(row, margin, '<', hilite_attribute);
+        mvwaddchwattr(midwin, row, margin, '<', hilite_attribute);
     }
     if (has_more)
     {
-        midwin_mv_add_char_wattr(row, (COLS - 1), '>', hilite_attribute);
+        mvwaddchwattr(midwin, row, (COLS - 1), '>', hilite_attribute);
     }
     if (spotlighted && line == openfile->current)
     {
@@ -3947,7 +3951,7 @@ edit_redraw(linestruct *old_current, update_type manner)
 {
     unsigned long was_pww = openfile->placewewant;
     openfile->placewewant = xplustabs();
-    /* If the current line is offscreen, scroll until it's onscreen. */
+    /* If the curreWINDOW *nt line is offscreen, scroll until it's onscreen. */
     if (current_is_offscreen())
     {
         adjust_viewport(ISSET(JUMPY_SCROLLING) ? CENTERING : manner);
@@ -3989,7 +3993,8 @@ edit_refresh(void)
 {
     PROFILE_FUNCTION;
     linestruct *line;
-    int         row = 0;
+    int         row    = 0;
+    int         offset = 0;
     /* If the current line is out of view, get it back on screen. */
     if (current_is_offscreen())
     {
@@ -4015,7 +4020,12 @@ edit_refresh(void)
     line = openfile->edittop;
     while (row < editwinrows && line != NULL)
     {
-        row += update_line(line, (line == openfile->current) ? openfile->current_x : 0);
+        int result = update_line(line, (line == openfile->current) ? openfile->current_x : 0, offset);
+        if (result == 0)
+        {
+            offset += 1;
+        }
+        row += result;
         line = line->next;
     }
     while (row < editwinrows)

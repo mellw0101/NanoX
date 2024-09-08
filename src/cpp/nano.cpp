@@ -1461,14 +1461,18 @@ process_a_keystroke(void)
         inject(puddle, depth);
         if (was_open_bracket_char)
         {
-            do_left();
-            /* Set this flag so we can delete both of the
-             * brackeded char if Bsp is pressed directly after. */
-            last_key_was_bracket = TRUE;
+            if (puddle[depth - 1] != '<')
+            {
+                do_left();
+                /* Set this flag so we can delete both of the
+                 * brackeded char if Bsp is pressed directly after. */
+                last_key_was_bracket = TRUE;
+            }
         }
         else
         {
             last_key_was_bracket = FALSE;
+            suggest_on           = TRUE;
         }
         depth = 0;
     }
@@ -1706,6 +1710,10 @@ main(int argc, char **argv)
                     exit(1);
                 }
             }
+        }
+        if (cliCmd & CLI_OPT_GUI)
+        {
+            init_window();
         }
     }
     /* Curses needs TERM; if it is unset, try falling back to a VT220. */
@@ -2233,6 +2241,11 @@ main(int argc, char **argv)
         if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1 && lastmessage < REMARK)
         {
             minibar();
+            if (suggest_on)
+            {
+                edit_refresh();
+                rendr_suggestion();
+            }
         }
         else
         {
@@ -2279,5 +2292,6 @@ main(int argc, char **argv)
     }
     cleanup_event_handler();
     shutdown_queue();
+    cleanup_rendr();
     return 0;
 }

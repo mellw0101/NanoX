@@ -83,8 +83,7 @@ set_interface_colorpairs(void)
                 init_pair(index + 1, COLOR_WHITE, COLOR_RED);
                 interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
             }
-            else if (index == FG_BLUE || index == FG_GREEN || index == FG_MAGENTA || index == FG_LAGOON ||
-                     index == FG_YELLOW || index == FG_RED || index == FG_PINK)
+            else if (index >= FG_BLUE && index <= FG_MAUVE)
             {
                 color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
                 short color        = (index == FG_BLUE)    ? COLOR_BLUE :
@@ -94,16 +93,29 @@ set_interface_colorpairs(void)
                                      (index == FG_YELLOW)  ? COLOR_YELLOW :
                                      (index == FG_RED)     ? COLOR_RED :
                                      (index == FG_PINK)    ? COLOR_PINK :
+                                     (index == FG_TEAL)    ? COLOR_TEAL :
+                                     (index == FG_MINT)    ? COLOR_MINT :
+                                     (index == FG_PURPLE)  ? COLOR_PURPLE :
+                                     (index == FG_MAUVE)   ? COLOR_MAUVE :
                                                              1;
                 init_pair(index + 1, color, COLOR_BLACK);
                 interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
+            }
+            else if (index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY)
+            {
+                init_pair(
+                    index + 1, color_index_map[index - FG_VS_CODE_RED].value, xterm_color_index(0, 0, 0));
+                interface_color_pair[index] = COLOR_PAIR(index + 1);
             }
             else
             {
                 interface_color_pair[index] = hilite_attribute;
             }
         }
-        free(color_combo[index]);
+        if (!(index >= FG_VS_CODE_RED && index <= FG_COMMENT_GREEN))
+        {
+            free(color_combo[index]);
+        }
     }
     if (rescind_colors)
     {
@@ -465,4 +477,10 @@ bool
 str_equal_to_rgx(const char *str, const regex_t *rgx)
 {
     return (regexec(rgx, str, 0, NULL, 0) == 0);
+}
+
+short
+rgb_to_ncurses(unsigned char value)
+{
+    return short(value * 1000 / 255);
 }

@@ -436,3 +436,24 @@ last_strchr(const char *str, const char ch, unsigned int maxlen)
     }
     return last_seen;
 }
+
+char *
+memmove_concat(const char *s1, const char *s2)
+{
+    unsigned long len1 = strlen(s1);
+    unsigned long len2 = strlen(s2);
+    char         *data = (char *)nmalloc(len1 + len2 + 1);
+    memmove(data, s1, len1);
+    memmove(data + len1, s2, len2);
+    data[len1 + len2] = '\0';
+    return data;
+}
+
+const char *
+substr(const char *str, unsigned long end_index)
+{
+    static char buf[PATH_MAX];
+    for (uint i = 0; i < end_index; buf[i] = str[i], i++)
+        ;
+    return buf;
+}

@@ -241,9 +241,10 @@ do_lockfile(const char *filename, const bool ask_the_user)
         }
         strncpy(lockprog, &lockbuf[2], 10);
         lockprog[10] = '\0';
-        lockpid =
-            (((unsigned char)lockbuf[27] * 256 + (unsigned char)lockbuf[26]) * 256 + (unsigned char)lockbuf[25]) * 256 +
-            (unsigned char)lockbuf[24];
+        lockpid      = (((unsigned char)lockbuf[27] * 256 + (unsigned char)lockbuf[26]) * 256 +
+                   (unsigned char)lockbuf[25]) *
+                      256 +
+                  (unsigned char)lockbuf[24];
         strncpy(lockuser, &lockbuf[28], 16);
         lockuser[16] = '\0';
         free(lockbuf);
@@ -253,8 +254,8 @@ do_lockfile(const char *filename, const bool ask_the_user)
         as_an_at = FALSE;
         /* TRANSLATORS: The second %s is the name of the user, the third that of the editor. */
         question   = (char *)_("File %s is being edited by %s (with %s, PID %s); open anyway?");
-        postedname = crop_to_fit(
-            filename, COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) - breadth(pidstring) + 7);
+        postedname = crop_to_fit(filename, COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) -
+                                               breadth(pidstring) + 7);
         /* Allow extra space for username (14), program name (8), PID (8),
          * and terminating \0 (1), minus the %s (2) for the file name. */
         promptstr = (char *)nmalloc(strlen(question) + 29 + strlen(postedname));
@@ -671,7 +672,8 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
                 len--;
             }
         }
-        else if ((num_lines == 0 || format == MAC_FILE) && len > 0 && buf[len - 1] == '\r' && !ISSET(NO_CONVERT))
+        else if ((num_lines == 0 || format == MAC_FILE) && len > 0 && buf[len - 1] == '\r' &&
+                 !ISSET(NO_CONVERT))
         {
             format = MAC_FILE;
             len--;
@@ -780,17 +782,17 @@ read_file(FILE *f, int fd, const char *filename, bool undoable)
     /* TRANSLATORS : Keep the next three messages at most 78 characters. */
     else if (format == MAC_FILE)
     {
-        statusline(
-            REMARK,
-            P_("Read %zu line (converted from Mac format)", "Read %zu lines (converted from Mac format)", num_lines),
-            num_lines);
+        statusline(REMARK,
+                   P_("Read %zu line (converted from Mac format)",
+                      "Read %zu lines (converted from Mac format)", num_lines),
+                   num_lines);
     }
     else if (format == DOS_FILE)
     {
-        statusline(
-            REMARK,
-            P_("Read %zu line (converted from DOS format)", "Read %zu lines (converted from DOS format)", num_lines),
-            num_lines);
+        statusline(REMARK,
+                   P_("Read %zu line (converted from DOS format)",
+                      "Read %zu lines (converted from DOS format)", num_lines),
+                   num_lines);
     }
     else
     {
@@ -1124,7 +1126,8 @@ execute_command(const char *command)
                        strstr(openfile->current->prev->data, ": ") + 2 :
                        "---");
     }
-    else if (should_pipe && pid_of_sender > 0 && (WIFEXITED(sender_status) == 0 || WEXITSTATUS(sender_status)))
+    else if (should_pipe && pid_of_sender > 0 &&
+             (WIFEXITED(sender_status) == 0 || WEXITSTATUS(sender_status)))
     {
         statusline(ALERT, _("Piping failed"));
     }
@@ -1196,9 +1199,10 @@ insert_a_file_or(bool execute)
             }
         }
         present_path = mallocstrcpy(present_path, "./");
-        response = do_prompt(execute ? MEXECUTE : MINSERTFILE, given, execute ? &execute_history : NULL, edit_refresh,
-                             msg, operating_dir != NULL ? operating_dir : "./");
-        /* If we're in multibuffer mode and the filename or command is blank, open a new buffer instead of canceling. */
+        response     = do_prompt(execute ? MEXECUTE : MINSERTFILE, given, execute ? &execute_history : NULL,
+                             edit_refresh, msg, operating_dir != NULL ? operating_dir : "./");
+        /* If we're in multibuffer mode and the filename or command is blank, open a new buffer instead of
+         * canceling. */
         if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER)))
         {
             statusbar(_("Cancelled"));
@@ -1817,8 +1821,9 @@ write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type me
             install_handler_for_Ctrl_C();
         }
         /* Now open the file.  Use O_EXCL for an emergency file. */
-        descriptor = open(
-            realname, O_WRONLY | O_CREAT | ((method == APPEND) ? O_APPEND : (normal ? O_TRUNC : O_EXCL)), permissions);
+        descriptor =
+            open(realname, O_WRONLY | O_CREAT | ((method == APPEND) ? O_APPEND : (normal ? O_TRUNC : O_EXCL)),
+                 permissions);
         if (normal)
         {
             restore_handler_for_Ctrl_C();
@@ -2214,8 +2219,9 @@ write_it_out(bool exiting, bool withprompt)
                 }
                 else
                 {
-                    do_warning = (constexpr_strcmp((full_answer == NULL) ? answer : full_answer,
-                                                   (full_filename == NULL) ? openfile->filename : full_filename) != 0);
+                    do_warning =
+                        (constexpr_strcmp((full_answer == NULL) ? answer : full_answer,
+                                          (full_filename == NULL) ? openfile->filename : full_filename) != 0);
                 }
                 free(full_filename);
                 free(full_answer);
@@ -2246,7 +2252,8 @@ write_it_out(bool exiting, bool withprompt)
                     {
                         char *question = _("File \"%s\" exists; OVERWRITE? ");
                         char *name     = crop_to_fit(answer, COLS - breadth(question) + 1);
-                        char *message  = (char *)nmalloc(constexpr_strlen(question) + constexpr_strlen(name) + 1);
+                        char *message =
+                            (char *)nmalloc(constexpr_strlen(question) + constexpr_strlen(name) + 1);
                         sprintf(message, question, name);
                         choice = ask_user(YESORNO, message);
                         free(message);

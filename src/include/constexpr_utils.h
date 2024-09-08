@@ -124,3 +124,16 @@ retrieve_c_syntax_type(std::string_view str)
     }
     return 0;
 }
+
+constexpr unsigned int
+retrieve_preprossesor_type(std::string_view str)
+{
+    for (const auto &[key, val] : c_preprossesor_map)
+    {
+        if (key == str)
+        {
+            return val;
+        }
+    }
+    return 0;
+}

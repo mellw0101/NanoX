@@ -1,6 +1,7 @@
 /// @file - search.cpp
 #include "../include/prototypes.h"
 
+#include <Mlib/Profile.h>
 #include <cstring>
 #include <ctime>
 
@@ -72,14 +73,15 @@ search_init(bool replacing, bool retain_answer)
         functionptrtype function;
         /* Ask the user what to search for (or replace). */
         int response = do_prompt(
-            inhelp ? MFINDINHELP : (replacing ? MREPLACE : MWHEREIS), retain_answer ? answer : "", &search_history,
-            edit_refresh,
+            inhelp ? MFINDINHELP : (replacing ? MREPLACE : MWHEREIS), retain_answer ? answer : "",
+            &search_history, edit_refresh,
             /* TRANSLATORS: This is the main search prompt. */
             "%s%s%s%s%s%s", _("Search"),
             /* TRANSLATORS: The next four modify the search prompt. */
             ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : "", ISSET(USE_REGEXP) ? _(" [Regexp]") : "",
             ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : "",
-            replacing ? openfile->mark ? _(" (to replace) in selection") : _(" (to replace)") : "", thedefault);
+            replacing ? openfile->mark ? _(" (to replace) in selection") : _(" (to replace)") : "",
+            thedefault);
         /* If the search was cancelled, or we have a blank answer and
          * nothing was searched for yet during this session, get out. */
         if (response == -1 || (response == -2 && *last_search == '\0'))
@@ -419,7 +421,7 @@ go_looking(void)
     clock_t start = clock();
 #endif
     came_full_circle = FALSE;
-    didfind          = findnextstr(last_search, FALSE, JUSTFIND, NULL, TRUE, openfile->current, openfile->current_x);
+    didfind = findnextstr(last_search, FALSE, JUSTFIND, NULL, TRUE, openfile->current, openfile->current_x);
     /* If we found something, and we're back at the exact same spot
      * where we started searching, then this is the only occurrence. */
     if (didfind == 1 && openfile->current == was_current && openfile->current_x == was_current_x)
@@ -518,7 +520,8 @@ replace_line(const char *needle)
  * is replaced by a shorter word.  Return -1 if needle isn't found, -2 if
  * the seeking is aborted, else the number of replacements performed. */
 long
-do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, unsigned long *real_current_x)
+do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current,
+                unsigned long *real_current_x)
 {
     bool          skipone       = ISSET(BACKWARDS_SEARCH);
     bool          replaceall    = FALSE;
@@ -551,7 +554,8 @@ do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real
     while (TRUE)
     {
         int choice = NO;
-        int result = findnextstr(needle, whole_word_only, modus, &match_len, skipone, real_current, *real_current_x);
+        int result =
+            findnextstr(needle, whole_word_only, modus, &match_len, skipone, real_current, *real_current_x);
         /* If nothing more was found, or the user aborted, stop looping. */
         if (result < 1)
         {
@@ -715,7 +719,8 @@ ask_for_and_do_replacements(void)
     refresh_needed        = TRUE;
     if (numreplaced >= 0)
     {
-        statusline(REMARK, P_("Replaced %zd occurrence", "Replaced %zd occurrences", numreplaced), numreplaced);
+        statusline(
+            REMARK, P_("Replaced %zd occurrence", "Replaced %zd occurrences", numreplaced), numreplaced);
     }
 }
 
@@ -750,8 +755,8 @@ goto_line_and_column(long line, long column, bool retain_answer, bool interactiv
     if (interactive)
     {
         /* Ask for the line and column.  TRANSLATOR: This is a prompt. */
-        int response = do_prompt(
-            MGOTOLINE, retain_answer ? answer : "", NULL, edit_refresh, _("Enter line number, column number"));
+        int response = do_prompt(MGOTOLINE, retain_answer ? answer : "", NULL, edit_refresh,
+                                 _("Enter line number, column number"));
         /* If the user cancelled or gave a blank answer, get out. */
         if (response < 0)
         {
@@ -797,7 +802,8 @@ goto_line_and_column(long line, long column, bool retain_answer, bool interactiv
     {
         line = 1;
     }
-    if (line > openfile->edittop->lineno + editwinrows || (ISSET(SOFTWRAP) && line > openfile->current->lineno))
+    if (line > openfile->edittop->lineno + editwinrows ||
+        (ISSET(SOFTWRAP) && line > openfile->current->lineno))
     {
         recook |= perturbed;
     }
@@ -818,7 +824,8 @@ goto_line_and_column(long line, long column, bool retain_answer, bool interactiv
     /* Set the x position that corresponds to the requested column. */
     openfile->current_x   = actual_x(openfile->current->data, column - 1);
     openfile->placewewant = column - 1;
-    if (ISSET(SOFTWRAP) && openfile->placewewant / editwincols > breadth(openfile->current->data) / editwincols)
+    if (ISSET(SOFTWRAP) &&
+        openfile->placewewant / editwincols > breadth(openfile->current->data) / editwincols)
     {
         openfile->placewewant = breadth(openfile->current->data);
     }
@@ -835,7 +842,7 @@ goto_line_and_column(long line, long column, bool retain_answer, bool interactiv
         {
             linestruct   *currentline = openfile->current;
             unsigned long leftedge    = leftedge_for(xplustabs(), openfile->current);
-            rows_from_tail            = (editwinrows / 2) - go_forward_chunks(editwinrows / 2, &currentline, &leftedge);
+            rows_from_tail = (editwinrows / 2) - go_forward_chunks(editwinrows / 2, &currentline, &leftedge);
         }
         else
         {
@@ -1062,12 +1069,50 @@ to_next_anchor(void)
     go_to_and_confirm(line);
 }
 
-/* char *
-find_header(const char *str, bool local)
+bool
+search_file_in_dir(const char *file, const char *dir)
 {
-    DIR    *dir;
-    dirent *entry;
-    if (local)
-    {}
+    DIR *d = opendir(dir);
+    if (d == NULL)
+    {
+        return FALSE;
+    }
+    dirent *e;
+    while ((e = readdir(d)) != NULL)
+    {
+        if (strcmp(file, e->d_name) == 0)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/* Find a global header and return the full path. */
+char *
+find_global_header(const char *str)
+{
+    PROFILE_FUNCTION;
+    const char *end = tail(str);
+    if (end != str)
+    {
+        const char *subpath     = substr(str, (end - str));
+        const char *search_path = concat_path("/usr/include/", subpath);
+        if (search_file_in_dir(end, search_path))
+        {
+            char *data = memmove_concat(search_path, end);
+            return data;
+        }
+    }
+    else if (search_file_in_dir(str, "/usr/include/"))
+    {
+        unsigned long slen = strlen(str);
+        char         *data = (char *)nmalloc("/usr/include/"_sllen + slen + 1);
+        memmove(data, "/usr/include/", "/usr/include/"_sllen);
+        memmove(data + "/usr/include/"_sllen, str, slen);
+        data["/usr/include/"_sllen + slen] = '\0';
+        nlog("found %s\n", data);
+        return data;
+    }
     return NULL;
-} */
+}

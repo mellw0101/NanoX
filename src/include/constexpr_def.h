@@ -4,26 +4,19 @@
 #include <ncursesw/ncurses.h>
 
 /* Identifiers for color options. */
-#define TITLE_BAR          0
-#define LINE_NUMBER        1
-#define GUIDE_STRIPE       2
-#define SCROLL_BAR         3
-#define SELECTED_TEXT      4
-#define SPOTLIGHTED        5
-#define MINI_INFOBAR       6
-#define PROMPT_BAR         7
-#define STATUS_BAR         8
-#define ERROR_MESSAGE      9
-#define KEY_COMBO          10
-#define FUNCTION_TAG       11
-#define FG_BLUE            12
-#define FG_GREEN           13
-#define FG_MAGENTA         14
-#define FG_LAGOON          15
-#define FG_YELLOW          16
-#define FG_RED             17
-#define FG_PINK            18
-#define NUMBER_OF_ELEMENTS 19
+#define TITLE_BAR     0
+#define LINE_NUMBER   1
+#define GUIDE_STRIPE  2
+#define SCROLL_BAR    3
+#define SELECTED_TEXT 4
+#define SPOTLIGHTED   5
+#define MINI_INFOBAR  6
+#define PROMPT_BAR    7
+#define STATUS_BAR    8
+#define ERROR_MESSAGE 9
+#define KEY_COMBO     10
+#define FUNCTION_TAG  11
+
 /* The color options map. */
 constexpr_map<std::string_view, unsigned char, 12> colorOptionMap = {
     {{"titlecolor", TITLE_BAR},
@@ -255,8 +248,9 @@ constexpr_map<std::string_view, unsigned char, 94> flagOptionsMap = {
 #define CLI_OPT_LISTSYNTAX     (1 << 11)
 #define CLI_OPT_BACKUPDIR      (1 << 12)
 #define CLI_OPT_BREAKLONGLINES (1 << 13)
+#define CLI_OPT_GUI            (1 << 14)
 /* The command line options map. */
-constexpr_map<std::string_view, unsigned int, 25> cliOptionMap = {
+constexpr_map<std::string_view, unsigned int, 26> cliOptionMap = {
     {{"-I", CLI_OPT_IGNORERCFILE},
      {"--ignorercfiles", CLI_OPT_IGNORERCFILE},
      {"-V", CLI_OPT_VERSION},
@@ -281,7 +275,8 @@ constexpr_map<std::string_view, unsigned int, 25> cliOptionMap = {
      {"-z", CLI_OPT_LISTSYNTAX},
      {"--listsyntaxes", CLI_OPT_LISTSYNTAX},
      {"-b", CLI_OPT_BREAKLONGLINES},
-     {"--breaklonglines", CLI_OPT_BREAKLONGLINES}}
+     {"--breaklonglines", CLI_OPT_BREAKLONGLINES},
+     {"--gui", CLI_OPT_GUI}}
 };
 
 #define NUMBER_OF_FLAGS 51
@@ -473,9 +468,29 @@ constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
      {"do", CS_DO}}
 };
 
+#define PP_define  1
+#define PP_if      2
+#define PP_endif   3
+#define PP_ifndef  4
+#define PP_pragma  5
+#define PP_ifdef   6
+#define PP_else    7
+#define PP_include 8
+#define PP_undef   9
+constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
+    {{"define", 1},
+     {"if", 2},
+     {"endif", 3},
+     {"ifndef", 4},
+     {"pragma", 5},
+     {"ifdef", 6},
+     {"else", 7},
+     {"include", 8},
+     {"undef", 9}}
+};
+
 #define STRSTR(return_str, haystack, needle)      \
-    do                                            \
-    {                                             \
+    do {                                          \
         return_str = NULL;                        \
         if (!*needle)                             \
         {                                         \
@@ -500,14 +515,9 @@ constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
     }                                             \
     while (FALSE)
 
-#define ADV_PTR_BY_CH(ptr, ch)          \
-    for (; *ptr && (*ptr != ch); ptr++) \
-        ;
+#define ADV_PTR_BY_CH(ptr, ch)    for (; *ptr && (*ptr != ch); ptr++);
 
-#define ADV_PTR(ptr, ...)              \
-    for (; *ptr && __VA_ARGS__; ptr++) \
-        ;
+#define ADV_PTR(ptr, ...)         for (; *ptr && __VA_ARGS__; ptr++);
 
-#define adv_ptr(ptr, ...)              \
-    for (; *ptr && __VA_ARGS__; ptr++) \
-        ;
+#define adv_ptr(ptr, ...)         ADV_PTR(ptr, __VA_ARGS__)
+#define adv_ptr_to_next_word(ptr) adv_ptr(ptr, (*ptr == ' ' || *ptr == '\t'))

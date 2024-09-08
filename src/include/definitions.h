@@ -3,6 +3,7 @@
 
 #include <Mlib/Debug.h>
 #include <Mlib/FileSys.h>
+#include <Mlib/Profile.h>
 #include <Mlib/constexpr.hpp>
 #include <Mlib/def.h>
 #include "../include/config.h"
@@ -14,7 +15,6 @@
 #if defined(__HAIKU__) && !defined(_DEFAULT_SOURCE)
 #    define _DEFAULT_SOURCE 1
 #endif
-
 #define ROOT_UID 0
 
 // We are using limits instead of limits.h,
@@ -63,8 +63,7 @@
 
 /* Suppress warnings for __attribute__((warn_unused_result)). */
 #define IGNORE_CALL_RESULT(call) \
-    do                           \
-    {                            \
+    do {                         \
         if (call)                \
         {}                       \
     }                            \
@@ -281,18 +280,6 @@
 /* Enumeration types. */
 typedef enum
 {
-    NONE    = (0 << 0),
-    DEFINE  = (1 << 1),
-    IF      = (1 << 2),
-    INCLUDE = (1 << 3),
-    IFDEF   = (1 << 4),
-    PRAGMA  = (1 << 5),
-    IFNDEF  = (1 << 6),
-    UNDEF   = (1 << 7)
-} preprossesor_t;
-
-typedef enum
-{
     UNSPECIFIED,
     NIX_FILE,
     DOS_FILE,
@@ -462,6 +449,27 @@ typedef struct linestruct
     bool has_anchor;
     /* The state of the line. */
     unsigned short flags[1] = {0};
+    /* Some methods to simplify line flag handeling. */
+    void
+    set(unsigned short flag)
+    {
+        LINE_SET(this, flag);
+    }
+    void
+    unset(unsigned short flag)
+    {
+        LINE_UNSET(this, flag);
+    }
+    bool
+    is_set(unsigned short flag) const
+    {
+        return LINE_ISSET(this, flag);
+    }
+    void
+    toogle(unsigned short flag)
+    {
+        LINE_TOGGLE(this, flag);
+    }
 } linestruct;
 
 typedef struct groupstruct
@@ -674,11 +682,217 @@ typedef struct
     int         end_braket;
 } function_info_t;
 
+typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
+
+/* This is from file: 'threadpool.cpp'. */
+void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
 /* RAII complient way to lock a pthread mutex.  This struct will lock
  * the mutex apon its creation, and unlock it when it goes out of scope. */
-typedef struct pthread_mutex_guard_t pthread_mutex_guard_t;
+struct pthread_mutex_guard_t
+{
+    pthread_mutex_t *mutex = NULL;
+    explicit pthread_mutex_guard_t(pthread_mutex_t *m)
+        : mutex(m)
+    {
+        if (mutex == NULL)
+        {
+            LOUT_logE("A 'NULL' was passed to 'pthread_mutex_guard_t'.");
+        }
+        else
+        {
+            lock_pthread_mutex(mutex, TRUE);
+        }
+    }
+    ~pthread_mutex_guard_t(void)
+    {
+        if (mutex != NULL)
+        {
+            lock_pthread_mutex(mutex, FALSE);
+        }
+    }
+    pthread_mutex_guard_t(const pthread_mutex_guard_t &)            = delete;
+    pthread_mutex_guard_t &operator=(const pthread_mutex_guard_t &) = delete;
+};
 
-typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
+#define vec vec_t
+template <class T>
+class vec_t
+{
+public:
+    vec(std::initializer_list<T> init_list)
+    {
+        pthread_mutex_init(&mutex, NULL);
+        pthread_mutex_guard_t guard(&mutex);
+        size            = init_list.size();
+        cap             = size * 2;
+        data            = (T *)malloc(cap * sizeof(T));
+        unsigned long i = 0;
+        for (const auto &element : init_list)
+        {
+            data[i++] = element;
+        }
+    }
+
+    vec(void)
+        : cap(10)
+        , size(0)
+    {
+        pthread_mutex_init(&mutex, NULL);
+        pthread_mutex_guard_t guard(&mutex);
+        data = (T *)malloc(sizeof(T) * cap);
+    }
+
+    vec(const T *array, unsigned long len = 0)
+    {
+        pthread_mutex_init(&mutex, NULL);
+        pthread_mutex_guard_t guard(&mutex);
+        PROFILE_FUNCTION;
+        if constexpr (std::is_same<char, T>::value)
+        {
+            size  = len ?: strlen(array);
+            cap   = size * 2;
+            data  = (char *)malloc(cap);
+            int i = 0;
+            for (; i < size; (data[i] = array[i]), i++);
+            data[i] = '\0';
+        }
+        else
+        {
+            size = 0;
+            cap  = 10;
+            data = (T *)malloc(sizeof(T) * cap);
+            for (; array[size]; (size == cap) ? cap *= 2, data = (T *)realloc(data, sizeof(T) * cap) : 0,
+                                                          data[size] = array[size], size++);
+            data[size] = NULL;
+        }
+    }
+
+    vec<T> &
+    operator<<=(const T &value)
+    {
+        this->push_back(value);
+        return *this;
+    }
+
+    vec<char> &
+    operator<<=(const char *str)
+    {
+        pthread_mutex_guard_t guard(&this->mutex);
+        unsigned long         str_size = strlen(str);
+        unsigned long         nsize    = this->size + str_size;
+        if (nsize >= this->cap)
+        {
+            this->cap = nsize;
+            this->resize();
+        }
+        memmove(this->data + this->size, str, str_size);
+        this->size        = nsize;
+        this->data[nsize] = '\0';
+        return *this;
+    }
+
+    ~vec(void)
+    {
+        {
+            pthread_mutex_guard_t guard(&mutex);
+            free(data);
+        }
+        pthread_mutex_destroy(&mutex);
+    }
+
+    void
+    push_back(const T &value)
+    {
+        pthread_mutex_guard_t guard(&mutex);
+        if (cap == size)
+        {
+            resize();
+        }
+        data[size++] = value;
+    }
+
+    void
+    pop_back(void)
+    {
+        pthread_mutex_guard_t guard(&mutex);
+        if (size > 0)
+        {
+            --size;
+        }
+    }
+
+    T &
+    operator[](unsigned long index)
+    {
+        pthread_mutex_guard_t guard(&mutex);
+        if (index >= size || index < 0)
+        {
+            logE("Invalid index: '%lu'.", index);
+        }
+        return data[index];
+    }
+
+    unsigned long
+    get_size(void) const
+    {
+        return size;
+    }
+
+    unsigned long
+    get_cap(void) const
+    {
+        return cap;
+    }
+
+    T *
+    begin(void) const
+    {
+        return data;
+    }
+
+    T *
+    end(void) const
+    {
+        return data + size;
+    }
+
+    T *
+    find(const T &value)
+    {
+        for (T *it = begin(); it != end(); ++it)
+        {
+            if constexpr (std::is_same<T, char *>::value)
+            {
+                if (strcmp(*it, value) == 0)
+                {
+                    return it;
+                }
+            }
+            else
+            {
+                if (*it == value)
+                {
+                    return it;
+                }
+            }
+        }
+        return end();
+    }
+
+private:
+    void
+    resize(void)
+    {
+        cap *= 2;
+        data = (T *)realloc(data, sizeof(T) * cap);
+    }
+
+    pthread_mutex_t mutex;
+    T              *data;
+    unsigned long   cap;
+    unsigned long   size;
+};
+#define vec               vec_t
 
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"
