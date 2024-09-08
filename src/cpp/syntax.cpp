@@ -33,19 +33,21 @@ syntax_check_file(openfilestruct *file)
         check_include_file_syntax("/usr/include/stdio.h");
         check_include_file_syntax("/usr/include/stdlib.h");
     } */
-    char *type, *name, *value;
-    parse_variable("const char *        end   = start;", &type, &name, &value);
-    if (type != NULL)
+    char *type;
+    char *name;
+    char *value;
+    parse_variable("macro_balle;", &type, &name, &value);
+    if (type)
     {
         nlog("type: %s\n", type);
         free(type);
     }
-    if (name != NULL)
+    if (name)
     {
         nlog("name: %s\n", name);
         free(name);
     }
-    if (value != NULL)
+    if (value)
     {
         nlog("value: %s\n", value);
         free(value);
@@ -219,7 +221,7 @@ check_func_syntax(char ***words, unsigned long *i)
         {
             new_syntax_func((*words)[*i]);
             // add_syntax_word(FUNC_COLOR, NULL, rgx_word((*words)[*i]));
-            sub_thread_compile_add_rgx(FUNC_COLOR, NULL, rgx_word((*words)[*i]), &last_c_color);
+            // sub_thread_compile_add_rgx(FUNC_COLOR, NULL, rgx_word((*words)[*i]), &last_c_color);
         }
         (*words)[*i] += at + 1;
         type = retrieve_c_syntax_type((*words)[*i]);
@@ -240,7 +242,7 @@ check_func_syntax(char ***words, unsigned long *i)
             {
                 new_syntax_func((*words)[*i]);
                 // add_syntax_word(FUNC_COLOR, NULL, rgx_word((*words)[*i]));
-                sub_thread_compile_add_rgx(FUNC_COLOR, NULL, rgx_word((*words)[*i]), &last_c_color);
+                // sub_thread_compile_add_rgx(FUNC_COLOR, NULL, rgx_word((*words)[*i]), &last_c_color);
             }
             return TRUE;
         }
@@ -292,7 +294,7 @@ check_syntax(const char *path)
                 else if (!is_syntax_struct(words[++i]))
                 {
                     add_syntax_struct(words[i]);
-                    sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(words[i]), &last_c_color);
+                    // sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(words[i]), &last_c_color);
                 }
             }
             else if (type & CS_CLASS)
@@ -302,7 +304,7 @@ check_syntax(const char *path)
                 else if (!is_syntax_class(words[++i]))
                 {
                     add_syntax_class(words[i]);
-                    sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(words[i]), &last_c_color);
+                    // sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(words[i]), &last_c_color);
                 }
             }
             else if (type & CS_ENUM)
@@ -312,7 +314,7 @@ check_syntax(const char *path)
                     ;
                 else
                 {
-                    sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(words[++i]), &last_c_color);
+                    // sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(words[++i]), &last_c_color);
                 }
             }
             else if (type & CS_CHAR || type & CS_VOID || type & CS_INT || type & CS_LONG || type & CS_BOOL ||
@@ -399,15 +401,15 @@ check_include_file_syntax(const char *path)
     unsigned int  type;
     unsigned      i;
     unsigned long nwords;
-    char        **words      = words_from_file(path, &nwords);
-    bool          in_comment = FALSE;
+    char        **words = words_from_file(path, &nwords);
     if (words == NULL)
     {
         return;
     }
+    bool in_comment = FALSE;
     for (i = 0; i < nwords; i++)
     {
-        if (*words[i] == '#')
+        /* if (*words[i] == '#')
         {
             if (words[i][1] == '\0')
             {
@@ -419,7 +421,7 @@ check_include_file_syntax(const char *path)
                 memmove(words[i], words[i] + 1, slen);
                 words[i][slen] = '\0';
             }
-        }
+        } */
         if (strcmp(words[i], "/*") == 0)
         {
             in_comment = TRUE;
@@ -510,13 +512,13 @@ check_include_file_syntax(const char *path)
                 }
             }
         }
-        else if (type & CS_DEFINE)
+        /* else if (type & CS_DEFINE)
         {
             if (words[++i] != NULL)
             {
-                handle_define(words[i]);
+                handle_define(memmove_copy_of(words[i]));
             }
-        }
+        } */
     }
     for (i = 0; i < nwords; i++)
     {
@@ -530,7 +532,7 @@ add_syntax(const unsigned short *type, char *word)
 {
     if (*type & CS_STRUCT || *type & CS_ENUM || *type & CS_CLASS)
     {
-        sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(word), &last_c_color);
+        // sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(word), &last_c_color);
     }
     else if (*type & CS_INT || *type & CS_VOID || *type & CS_LONG || *type & CS_CHAR || *type & CS_BOOL ||
              *type & CS_SIZE_T || *type & CS_SSIZE_T || *type & CS_SHORT)
@@ -549,7 +551,7 @@ add_syntax(const unsigned short *type, char *word)
                 if (!syntax_var(word))
                 {
                     new_syntax_var(word);
-                    sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(word), &last_c_color);
+                    // sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(word), &last_c_color);
                 }
                 return NEXT_WORD_ALSO;
             }
@@ -562,7 +564,7 @@ add_syntax(const unsigned short *type, char *word)
         if (!syntax_var(word))
         {
             new_syntax_var(word);
-            sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(word), &last_c_color);
+            // sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(word), &last_c_color);
         }
     }
     return 0;
@@ -708,7 +710,7 @@ check_for_syntax_words(linestruct *line)
                     if (!syntax_var(words[++i]))
                     {
                         new_syntax_var(words[i]);
-                        sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(words[i]), &last_c_color);
+                        // sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(words[i]), &last_c_color);
                     }
                 }
             }
@@ -721,7 +723,7 @@ check_for_syntax_words(linestruct *line)
                 if (!syntax_var(words[i]))
                 {
                     new_syntax_var(words[i]);
-                    sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(words[++i]), &last_c_color);
+                    // sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(words[++i]), &last_c_color);
                 }
             }
         }
@@ -744,7 +746,7 @@ check_for_syntax_words(linestruct *line)
                 if (!syntax_func(words[i]))
                 {
                     new_syntax_func(words[i]);
-                    sub_thread_compile_add_rgx(FUNC_COLOR, NULL, rgx_word(words[i]), &last_c_color);
+                    // sub_thread_compile_add_rgx(FUNC_COLOR, NULL, rgx_word(words[i]), &last_c_color);
                 }
                 words[i] += j + 1;
                 --i;
@@ -766,7 +768,7 @@ check_for_syntax_words(linestruct *line)
             if (!is_syntax_struct(words[++i]))
             {
                 add_syntax_struct(words[i]);
-                sub_thread_compile_add_rgx(STRUCT_COLOR, NULL, rgx_word(words[i]), &last_c_color);
+                // sub_thread_compile_add_rgx(STRUCT_COLOR, NULL, rgx_word(words[i]), &last_c_color);
             }
         }
         else if (type & CS_CLASS)
@@ -774,7 +776,7 @@ check_for_syntax_words(linestruct *line)
             if (!is_syntax_class(words[++i]))
             {
                 add_syntax(&type, words[i]);
-                sub_thread_compile_add_rgx(STRUCT_COLOR, NULL, rgx_word(words[i]), &last_c_color);
+                // sub_thread_compile_add_rgx(STRUCT_COLOR, NULL, rgx_word(words[i]), &last_c_color);
             }
         }
         else if (type & CS_ENUM)
@@ -1188,4 +1190,102 @@ find_block_comments(int from, int end)
             }
         }
     }
+}
+
+char **
+find_functions_in_file(char *path)
+{
+    FILE *file = fopen(path, "rb");
+    if (file == NULL)
+    {
+        return NULL;
+    }
+    long          len;
+    unsigned long size;
+    static char  *line;
+    unsigned long acap = 10, asize = 0;
+    char        **func_str_array = (char **)nmalloc(acap * sizeof(char *));
+    while ((len = getline(&line, &size, file)) != EOF)
+    {
+        if (line[len - 1] == '\n')
+        {
+            line[--len] = '\0';
+        }
+        const char *start        = line;
+        const char *end          = line;
+        const char *parent_start = strchr(line, '(');
+        if (parent_start)
+        {
+            start = parent_start;
+            for (; start > line && *start != ' ' && *start != '\t' && *start != '*' && *start != '&';
+                 start--);
+            if (start > line)
+            {
+                start += 1;
+                if (strstr(line, "__nonnull") != NULL || line[(start - line) + 1] == '*')
+                {
+                    continue;
+                }
+                end = strchr(line, ';');
+                if (end)
+                {
+                    char *func_str    = measured_memmove_copy(start, (end - start));
+                    char *return_type = copy_of("void ");
+                    char *full_func   = alloc_str_free_substrs(return_type, func_str);
+                    if (acap == asize)
+                    {
+                        acap *= 2;
+                        func_str_array = (char **)nrealloc(func_str_array, acap * sizeof(char *));
+                    }
+                    func_str_array[asize++] = full_func;
+                }
+                /* Here we can check for edge cases. */
+            }
+        }
+    }
+    fclose(file);
+    func_str_array[asize] = NULL;
+    return func_str_array;
+}
+
+char **
+find_variabels_in_file(char *path)
+{
+    FILE *file = fopen(path, "rb");
+    if (file == NULL)
+    {
+        return NULL;
+    }
+    long          len;
+    unsigned long size;
+    static char  *line;
+    unsigned long acap = 10, asize = 0;
+    char        **var_str_array = (char **)nmalloc(acap * sizeof(char *));
+    while ((len = getline(&line, &size, file)) != EOF)
+    {
+        if (line[len - 1] == '\n')
+        {
+            line[--len] = '\0';
+        }
+        const char *parent_start = strchr(line, '(');
+        const char *parent_end   = strchr(line, ')');
+        const char *assign       = strchr(line, ';');
+        if (parent_start || parent_end)
+        {
+            continue;
+        }
+        if (assign)
+        {
+            char *str = measured_memmove_copy(line, (assign - line) + 1);
+            if (acap == asize)
+            {
+                acap *= 2;
+                var_str_array = (char **)nrealloc(var_str_array, acap * sizeof(char *));
+            }
+            var_str_array[asize++] = str;
+        }
+    }
+    fclose(file);
+    var_str_array[asize] = NULL;
+    return var_str_array;
 }

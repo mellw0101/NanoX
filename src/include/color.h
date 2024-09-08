@@ -87,5 +87,5 @@ constexpr_map<int, short, 15> color_index_map = {
      {FG_VS_CODE_BRIGHT_MAGENTA, COLOR_VS_CODE_BRIGHT_MAGENTA},
      {FG_VS_CODE_BRIGHT_CYAN, COLOR_VS_CODE_BRIGHT_CYAN},
      {FG_COMMENT_GREEN, xterm_color_index(0, 102, 0)},
-     {FG_SUGGEST_GRAY, 245}}
+     {FG_SUGGEST_GRAY, xterm_color_index(80, 80, 80)}}
 };

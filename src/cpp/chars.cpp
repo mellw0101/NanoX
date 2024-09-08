@@ -756,8 +756,7 @@ void
 strip_leading_blanks_from(char *str)
 {
     char *start = str;
-    for (; start && (*start == '\t' || *start == ' '); start++)
-        ;
+    for (; start && (*start == '\t' || *start == ' '); start++);
     (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
 }
 
@@ -765,7 +764,6 @@ void
 strip_leading_chars_from(char *str, const char ch)
 {
     char *start = str;
-    for (; start && *start == ch; start++)
-        ;
+    for (; start && *start == ch; start++);
     (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
 }

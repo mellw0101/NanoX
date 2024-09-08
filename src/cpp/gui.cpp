@@ -1,4 +1,4 @@
-#include "../include/prototypes.h"
+/* #include "../include/prototypes.h"
 
 #include <xcb/xcb.h>
 
@@ -31,3 +31,4 @@ init_window(void)
     }
     xcb_disconnect(conn);
 }
+ */

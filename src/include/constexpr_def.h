@@ -135,6 +135,8 @@ constexpr_map<std::string_view, unsigned char, 6> syntaxOptionMap = {
 #define ZERO                          49
 #define MODERN_BINDINGS               50
 #define EXPERIMENTAL_FAST_LIVE_SYNTAX 51
+#define SUGGEST                       52
+#define SUGGEST_INLINE                53
 /* The flags map. */
 constexpr_map<std::string_view, unsigned char, 94> flagOptionsMap = {
     {{"-A", SMART_HOME},

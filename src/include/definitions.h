@@ -669,6 +669,13 @@ typedef struct variable_t
     variable_t *prev  = NULL;
 } variable_t;
 
+struct glob_var_t
+{
+    char *type;
+    char *name;
+    char *value;
+};
+
 typedef struct
 {
     char       *full_function;

@@ -168,11 +168,12 @@ extern volatile sig_atomic_t *stop_thread_flags;
 extern callback_queue_t      *callback_queue;
 extern main_thread_t         *main_thread;
 
-extern vec<char *> includes;
-extern vec<char *> defines;
-extern vec<char *> structs;
-extern vec<char *> classes;
-extern vec<char *> funcs;
+extern vec<char *>     includes;
+extern vec<char *>     defines;
+extern vec<char *>     structs;
+extern vec<char *>     classes;
+extern vec<char *>     funcs;
+extern vec<glob_var_t> glob_vars;
 
 typedef void (*functionptrtype)(void);
 
@@ -202,15 +203,16 @@ unsigned long step_right(const char *buf, unsigned long pos);
 int           mbstrcasecmp(const char *s1, const char *s2);
 int           mbstrncasecmp(const char *s1, const char *s2, unsigned long n);
 char         *mbstrcasestr(const char *haystack, const char *needle);
-char         *revstrstr(const char *haystack, const char *needle, const char *pointer);
-char         *mbrevstrcasestr(const char *haystack, const char *needle, const char *pointer);
-char         *mbstrchr(const char *string, const char *chr);
-char         *mbstrpbrk(const char *string, const char *accept);
-char         *mbrevstrpbrk(const char *head, const char *accept, const char *pointer);
-bool          has_blank_char(const char *string);
-bool          white_string(const char *string);
-void          strip_leading_blanks_from(char *str);
-void          strip_leading_chars_from(char *str, const char ch);
+char *revstrstr(const char *haystack, const char *needle, const char *pointer);
+char *mbrevstrcasestr(const char *haystack, const char *needle,
+                      const char *pointer);
+char *mbstrchr(const char *string, const char *chr);
+char *mbstrpbrk(const char *string, const char *accept);
+char *mbrevstrpbrk(const char *head, const char *accept, const char *pointer);
+bool  has_blank_char(const char *string);
+bool  white_string(const char *string);
+void  strip_leading_blanks_from(char *str);
+void  strip_leading_chars_from(char *str, const char ch);
 
 /* Most functions in 'color.cpp'. */
 void  set_interface_colorpairs(void);
@@ -228,7 +230,8 @@ void do_delete(void);
 void do_backspace(void);
 void chop_previous_word(void);
 void chop_next_word(void);
-void extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned long bot_x);
+void extract_segment(linestruct *top, unsigned long top_x, linestruct *bot,
+                     unsigned long bot_x);
 void ingraft_buffer(linestruct *topline);
 void copy_from_buffer(linestruct *somebuffer);
 void cut_marked_region(void);
@@ -261,14 +264,17 @@ void   init_operating_dir(void);
 bool   outside_of_confinement(const char *currpath, bool allow_tabcomp);
 void   init_backup_dir(void);
 int    copy_file(FILE *inn, FILE *out, bool close_out);
-bool   write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
-bool   write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
+bool   write_file(const char *name, FILE *thefile, bool normal,
+                  kind_of_writing_type method, bool annotate);
+bool   write_region_to_file(const char *name, FILE *stream, bool normal,
+                            kind_of_writing_type method);
 int    write_it_out(bool exiting, bool withprompt);
 void   do_writeout(void);
 void   do_savefile(void);
 char  *real_dir_from_tilde(const char *path);
 int    diralphasort(const void *va, const void *vb);
-char  *input_tab(char *buf, unsigned long *place, void (*refresh_func)(void), bool *listed);
+char  *input_tab(char *buf, unsigned long *place, void (*refresh_func)(void),
+                 bool *listed);
 bool   is_file_and_exists(const char *path);
 char **retrieve_lines_from_file(const char *path, unsigned long *nlines);
 char **retrieve_words_from_file(const char *path, unsigned long *nwords);
@@ -297,9 +303,9 @@ void wrap_help_text_into_buffer(void);
 void do_help(void);
 
 /* Most functions in 'history.cpp'. */
-void  history_init(void);
-void  reset_history_pointer_for(const linestruct *list);
-void  update_history(linestruct **item, const char *text, bool avoid_duplicates);
+void history_init(void);
+void reset_history_pointer_for(const linestruct *list);
+void update_history(linestruct **item, const char *text, bool avoid_duplicates);
 char *get_history_completion(linestruct **h, char *s, unsigned long len);
 bool  have_statedir(void);
 void  load_history(void);
@@ -374,19 +380,21 @@ bool        changes_something(functionptrtype f);
 void        inject(char *burst, unsigned long count);
 
 /* Most functions in 'prompt.cpp'. */
-unsigned long get_statusbar_page_start(unsigned long base, unsigned long column);
+unsigned long get_statusbar_page_start(unsigned long base,
+                                       unsigned long column);
 void          put_cursor_at_end_of_answer(void);
 void          add_or_remove_pipe_symbol_from_answer(void);
-int           do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void),
-                        const char *msg, ...);
-int           ask_user(bool withall, const char *question);
+int do_prompt(int menu, const char *provided, linestruct **history_list,
+              void (*refresh_func)(void), const char *msg, ...);
+int ask_user(bool withall, const char *question);
 
 /* Most functions in 'rcfile.cpp'. */
 short color_to_short(const char *colorname, bool &vivid, bool &thick);
 char *parse_next_word(char *ptr);
 void  parse_rule(char *ptr, int rex_flags);
 bool  compile(const char *expression, int rex_flags, regex_t **packed);
-bool  compile_with_callback(const char *expression, int rex_flags, regex_t **packed, const char *from_file);
+bool  compile_with_callback(const char *expression, int rex_flags,
+                            regex_t **packed, const char *from_file);
 void  begin_new_syntax(char *ptr);
 bool  parse_combination(char *combotext, short *fg, short *bg, int *attributes);
 void  set_interface_color(const unsigned char element, char *combotext);
@@ -403,26 +411,30 @@ void       do_rcfiles(void);
 /* Most functions in 'search.cpp'. */
 bool  regexp_init(const char *regexp);
 void  tidy_up_after_search(void);
-int   findnextstr(const char *needle, bool whole_word_only, int modus, unsigned long *match_len, bool skipone,
-                  const linestruct *begin, unsigned long begin_x);
+int   findnextstr(const char *needle, bool whole_word_only, int modus,
+                  unsigned long *match_len, bool skipone, const linestruct *begin,
+                  unsigned long begin_x);
 void  do_search_forward(void);
 void  do_search_backward(void);
 void  do_findprevious(void);
 void  do_findnext(void);
 void  not_found_msg(const char *str);
 void  go_looking(void);
-long  do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current,
-                      unsigned long *real_current_x);
+long  do_replace_loop(const char *needle, bool whole_word_only,
+                      const linestruct *real_current,
+                      unsigned long    *real_current_x);
 void  do_replace(void);
 void  ask_for_and_do_replacements(void);
 void  goto_line_posx(long line, unsigned long pos_x);
-void  goto_line_and_column(long line, long column, bool retain_answer, bool interactive);
+void  goto_line_and_column(long line, long column, bool retain_answer,
+                           bool interactive);
 void  do_gotolinecolumn(void);
 void  do_find_bracket(void);
 void  put_or_lift_anchor(void);
 void  to_prev_anchor(void);
 void  to_next_anchor(void);
 char *find_global_header(const char *str);
+char *find_local_header(const char *str);
 
 /* Most functions in 'text.cpp'. */
 void          do_mark(void);
@@ -461,11 +473,12 @@ bool          parse_line_column(const char *str, long *line, long *column);
 void          recode_NUL_to_LF(char *string, unsigned long length);
 unsigned long recode_LF_to_NUL(char *string);
 void          free_chararray(char **array, unsigned long len);
-bool          is_separate_word(unsigned long position, unsigned long length, const char *buf);
+bool          is_separate_word(unsigned long position, unsigned long length,
+                               const char *buf);
 void         *nmalloc(const unsigned long howmuch);
 void         *nrealloc(void *ptr, const unsigned long howmuch);
 char         *measured_copy(const char *string, unsigned long count);
-char         *measured_memmove_copy(const char *string, const unsigned long count);
+char *measured_memmove_copy(const char *string, const unsigned long count);
 template <unsigned long N>
 char         *smart_move_copy_strltr(const char (&str)[N]);
 char         *mallocstrcpy(char *dest, const char *src);
@@ -480,12 +493,21 @@ unsigned long breadth(const char *text);
 void          new_magicline(void);
 void          remove_magicline(void);
 bool          mark_is_before_cursor(void);
-void          get_region(linestruct **top, unsigned long *top_x, linestruct **bot, unsigned long *bot_x);
-void          get_range(linestruct **top, linestruct **bot);
-unsigned long number_of_characters_in(const linestruct *begin, const linestruct *end);
-const char   *strstrwrapper(const char *haystack, const char *needle, const char *start);
+void get_region(linestruct **top, unsigned long *top_x, linestruct **bot,
+                unsigned long *bot_x);
+void get_range(linestruct **top, linestruct **bot);
+unsigned long number_of_characters_in(const linestruct *begin,
+                                      const linestruct *end);
+const char   *strstrwrapper(const char *haystack, const char *needle,
+                            const char *start);
 const char   *tail(const char *path);
 linestruct   *line_from_number(long number);
+char         *alloced_pwd(void);
+char         *alloc_str_free_substrs(char *str_1, char *str_2);
+void          append_str(char **str, const char *appen_str);
+char         *alloced_current_file_dir(void);
+char         *alloced_full_current_file_dir(void);
+unsigned long word_index(bool prev);
 
 /* Most functions in 'winio.cpp'. */
 void          record_macro(void);
@@ -503,7 +525,8 @@ void          wipe_statusbar(void);
 void          blank_bottombars(void);
 void          blank_it_when_expired(void);
 void          set_blankdelay_to_one(void);
-char *display_string(const char *buf, unsigned long column, unsigned long span, bool isdata, bool isprompt);
+char *display_string(const char *buf, unsigned long column, unsigned long span,
+                     bool isdata, bool isprompt);
 void  titlebar(const char *path);
 void  minibar(void);
 void  statusline(message_type importance, const char *msg, ...);
@@ -512,17 +535,22 @@ void  warn_and_briefly_pause(const char *msg);
 void  bottombars(int menu);
 void  post_one_key(const char *keystroke, const char *tag, int width);
 void  place_the_cursor(void);
-void  draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col);
+void  draw_row(const int row, const char *converted, linestruct *line,
+               const unsigned long from_col);
 int   update_line(linestruct *line, unsigned long index, int offset = 0);
 int   update_softwrapped_line(linestruct *line);
-bool  line_needs_update(const unsigned long old_column, const unsigned long new_column);
+bool  line_needs_update(const unsigned long old_column,
+                        const unsigned long new_column);
 int   go_back_chunks(int nrows, linestruct **line, unsigned long *leftedge);
 int   go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge);
-bool  less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge);
+bool  less_than_a_screenful(unsigned long was_lineno,
+                            unsigned long was_leftedge);
 void  edit_scroll(bool direction);
-unsigned long get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool *kickoff,
+unsigned long get_softwrap_breakpoint(const char   *linedata,
+                                      unsigned long leftedge, bool *kickoff,
                                       bool *end_of_line);
-unsigned long get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *leftedge);
+unsigned long get_chunk_and_edge(unsigned long column, linestruct *line,
+                                 unsigned long *leftedge);
 unsigned long chunk_for(unsigned long column, linestruct *line);
 unsigned long leftedge_for(unsigned long column, linestruct *line);
 unsigned long extra_chunks_in(linestruct *line);
@@ -535,8 +563,8 @@ void          full_refresh(void);
 void          draw_all_subwindows(void);
 void          report_cursor_position(void);
 void          spotlight(unsigned long from_col, unsigned long to_col);
-void          spotlight_softwrapped(unsigned long from_col, unsigned long to_col);
-void          do_credits(void);
+void spotlight_softwrapped(unsigned long from_col, unsigned long to_col);
+void do_credits(void);
 
 /* These are just name definitions. */
 void case_sens_void(void);
@@ -563,51 +591,57 @@ void discard_buffer(void);
 void do_cancel(void);
 
 /* All functions in 'cpp.cpp'. */
-bool isCppSyntaxChar(const char c);
-void get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces, unsigned short *t_char,
-                     unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
-unsigned short   indent_char_len(linestruct *line);
-void             enclose_marked_region(const char *s1, const char *s2);
-void             do_block_comment(void);
-bool             enter_with_bracket(void);
-void             add_bracket_pair(const unsigned long start, const unsigned long end);
-void             all_brackets_pos(void);
-void             do_close_bracket(void);
-void             do_test_window(void);
+bool           isCppSyntaxChar(const char c);
+void           get_line_indent(linestruct *line, unsigned short *tabs,
+                               unsigned short *spaces, unsigned short *t_char,
+                               unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
+unsigned short indent_char_len(linestruct *line);
+void           enclose_marked_region(const char *s1, const char *s2);
+void           do_block_comment(void);
+bool           enter_with_bracket(void);
+void add_bracket_pair(const unsigned long start, const unsigned long end);
+void all_brackets_pos(void);
+void do_close_bracket(void);
+void do_test_window(void);
 function_info_t *parse_function(const char *str);
 function_info_t *parse_func(const char *str);
-void             parse_variable(const char *sig, char **type, char **name, char **value);
-void             flag_all_brackets(void);
-void             find_current_function(linestruct *l);
-void             free_function_info(function_info_t *info, const int index = -1);
+function_info_t  parse_func_local_mem(const char *str);
+void parse_variable(const char *sig, char **type, char **name, char **value);
+void flag_all_brackets(void);
+void find_current_function(linestruct *l);
+void free_function_info(function_info_t *info, const int index = -1);
 
 /* 'syntax.cpp' */
-void syntax_check_file(openfilestruct *file);
-bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr);
-void add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **c,
-                      const char *from_file = NULL);
-void add_start_end_syntax(const char *color_fg, const char *color_bg, const char *start, const char *end,
-                          colortype **c);
-bool check_func_syntax(char ***words, unsigned long *i);
-void check_syntax(const char *path);
-void check_include_file_syntax(const char *path);
-int  add_syntax(const unsigned short *type, char *word);
-void handle_include(char *str);
-void handle_define(char *str);
-void do_cpp_syntax(void);
-void check_for_syntax_words(linestruct *line);
-void update_c_syntaxtype(void);
-void add_syntax_word(const char *color_fg, const char *color_bg, const char *word,
-                     const char *from_file = NULL);
-void set_last_c_colortype(void);
-void add_syntax_struct(const char *name);
-void add_syntax_class(const char *name);
-bool is_syntax_struct(std::string_view str);
-bool is_syntax_class(std::string_view str);
-bool define_exists(const char *str);
-void handle_struct_syntax(char **word);
-void openfile_syntax_c(void);
-void find_block_comments(int before, int end);
+void   syntax_check_file(openfilestruct *file);
+bool   parse_color_opts(const char *color_fg, const char *color_bg, short *fg,
+                        short *bg, int *attr);
+void   add_syntax_color(const char *color_fg, const char *color_bg,
+                        const char *rgxstr, colortype **c,
+                        const char *from_file = NULL);
+void   add_start_end_syntax(const char *color_fg, const char *color_bg,
+                            const char *start, const char *end, colortype **c);
+bool   check_func_syntax(char ***words, unsigned long *i);
+void   check_syntax(const char *path);
+void   check_include_file_syntax(const char *path);
+int    add_syntax(const unsigned short *type, char *word);
+void   handle_include(char *str);
+void   handle_define(char *str);
+void   do_cpp_syntax(void);
+void   check_for_syntax_words(linestruct *line);
+void   update_c_syntaxtype(void);
+void   add_syntax_word(const char *color_fg, const char *color_bg,
+                       const char *word, const char *from_file = NULL);
+void   set_last_c_colortype(void);
+void   add_syntax_struct(const char *name);
+void   add_syntax_class(const char *name);
+bool   is_syntax_struct(std::string_view str);
+bool   is_syntax_class(std::string_view str);
+bool   define_exists(const char *str);
+void   handle_struct_syntax(char **word);
+void   openfile_syntax_c(void);
+void   find_block_comments(int before, int end);
+char **find_functions_in_file(char *path);
+char **find_variabels_in_file(char *path);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
@@ -616,56 +650,63 @@ void netlog_bracket_entry(const bracket_entry &be);
 void netlog_func_info(function_info_t *info);
 
 /* 'words.cpp' */
-void         remove_tabs_from_word(char **word);
-char       **words_in_line(linestruct *line);
-char       **words_in_str(const char *str, unsigned long *size = NULL);
-char       **delim_str(const char *str, const char *delim, unsigned long *size);
-char       **split_into_words(const char *str, const unsigned int len, unsigned int *word_count);
-const char  *extract_include(char *str);
-char        *get_file_extention(void);
-const char  *rgx_word(const char *word);
-bool         is_word_func(char *word, unsigned long *at);
-void         remove_leading_char_type(char **word, const char c);
-const char  *concat_path(const char *s1, const char *s2);
-bool         word_more_than_one_char_away(bool forward, unsigned long *nchars, const char ch);
-bool         word_more_than_one_white_away(bool forward, unsigned long *nsteps);
-bool         word_more_than_one_space_away(bool forward, unsigned long *nspaces);
-bool         word_more_than_one_tab_away(bool forward, unsigned long *ntabs);
-bool         prev_word_is_comment_start(unsigned long *nsteps);
-bool         char_is_in_word(const char *word, const char ch, unsigned long *at);
-char        *retrieve_word_from_cursor_pos(bool forward);
-char       **fast_words_from_str(const char *str, unsigned long slen, unsigned long *nwords);
+void        remove_tabs_from_word(char **word);
+char      **words_in_line(linestruct *line);
+char      **words_in_str(const char *str, unsigned long *size = NULL);
+char      **delim_str(const char *str, const char *delim, unsigned long *size);
+char      **split_into_words(const char *str, const unsigned int len,
+                             unsigned int *word_count);
+const char *extract_include(char *str);
+char       *get_file_extention(void);
+const char *rgx_word(const char *word);
+bool        is_word_func(char *word, unsigned long *at);
+void        remove_leading_char_type(char **word, const char c);
+const char *concat_path(const char *s1, const char *s2);
+bool        word_more_than_one_char_away(bool forward, unsigned long *nchars,
+                                         const char ch);
+bool        word_more_than_one_white_away(bool forward, unsigned long *nsteps);
+bool        word_more_than_one_space_away(bool forward, unsigned long *nspaces);
+bool        word_more_than_one_tab_away(bool forward, unsigned long *ntabs);
+bool        prev_word_is_comment_start(unsigned long *nsteps);
+bool        char_is_in_word(const char *word, const char ch, unsigned long *at);
+char       *retrieve_word_from_cursor_pos(bool forward);
+char      **fast_words_from_str(const char *str, unsigned long slen,
+                                unsigned long *nwords);
 line_word_t *line_word_list(const char *str, unsigned long slen);
-line_word_t *make_line_word(char *str, unsigned short start, unsigned short len, unsigned short end);
+line_word_t *make_line_word(char *str, unsigned short start, unsigned short len,
+                            unsigned short end);
 unsigned int last_strchr(const char *str, const char ch, unsigned int maxlen);
 char        *memmove_concat(const char *s1, const char *s2);
 const char  *substr(const char *str, unsigned long end_index);
 
 /* 'lines.cpp' */
-bool          is_line_comment(linestruct *line);
-bool          is_line_start_end_bracket(linestruct *line, bool *is_start);
-bool          is_line_in_bracket_pair(const unsigned long lineno);
-bool          is_empty_line(linestruct *line);
-void          inject_in_line(linestruct **line, const char *str, unsigned long at);
+bool is_line_comment(linestruct *line);
+bool is_line_start_end_bracket(linestruct *line, bool *is_start);
+bool is_line_in_bracket_pair(const unsigned long lineno);
+bool is_empty_line(linestruct *line);
+void inject_in_line(linestruct **line, const char *str, unsigned long at);
 unsigned long get_line_total_tabs(linestruct *line);
 void          move_line(linestruct **line, bool up, bool refresh);
 void          move_lines_up(void);
 void          move_lines_down(void);
-void          erase_in_line(linestruct *line, unsigned long at, unsigned long len);
-void          select_line(linestruct *line, unsigned long from_col, unsigned long to_col);
-unsigned int  total_tabs(linestruct *line);
+void erase_in_line(linestruct *line, unsigned long at, unsigned long len);
+void select_line(linestruct *line, unsigned long from_col,
+                 unsigned long to_col);
+unsigned int total_tabs(linestruct *line);
 
 /* 'brackets.cpp' */
-void create_bracket_entry(unsigned long indent, unsigned long lineno, bool is_start);
+void create_bracket_entry(unsigned long indent, unsigned long lineno,
+                          bool is_start);
 
 /* 'threadpool.cpp' */
-void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
-void pause_all_sub_threads(bool pause);
-void init_queue_task(void);
-int  task_queue_count(void);
-void shutdown_queue(void);
-void submit_task(task_functionptr_t function, void *arg, void **result, callback_functionptr_t callback);
-void stop_thread(unsigned char thread_id);
+void          lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
+void          pause_all_sub_threads(bool pause);
+void          init_queue_task(void);
+int           task_queue_count(void);
+void          shutdown_queue(void);
+void          submit_task(task_functionptr_t function, void *arg, void **result,
+                          callback_functionptr_t callback);
+void          stop_thread(unsigned char thread_id);
 unsigned char thread_id_from_pthread(pthread_t *thread);
 
 /* 'event.cpp' */
@@ -681,8 +722,9 @@ void cleanup_event_handler(void);
 void submit_search_task(const char *path);
 void submit_find_in_dir(const char *file, const char *in_dir);
 void sub_thread_delete_c_syntax(char *word);
-void sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg, const char *rgxstr,
-                                colortype **last_c);
+// void sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg,
+// const char *rgxstr,
+//                                 colortype **last_c);
 void sub_thread_find_syntax(const char *path);
 void sub_thread_parse_funcs(const char *path);
 
@@ -693,19 +735,23 @@ void setup_signal_handler_on_sub_thread(void (*handler)(int));
 void block_pthread_sig(int sig, bool block);
 
 /* 'render.cpp' */
-void render_line_text(const int row, const char *str, linestruct *line, const unsigned long from_col);
-void apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col);
+void render_line_text(const int row, const char *str, linestruct *line,
+                      const unsigned long from_col);
+void apply_syntax_to_line(const int row, const char *converted,
+                          linestruct *line, unsigned long from_col);
 void rendr_suggestion();
-void accept_suggestion(void);
 void cleanup_rendr(void);
 
 /* 'render_utils.cpp' */
-void get_next_word(const char **start, const char **end);
-void clear_suggestion(void);
-void find_suggestion(void);
-void add_char_to_suggest_buf(void);
+void  get_next_word(const char **start, const char **end);
+void  clear_suggestion(void);
+void  find_suggestion(void);
+void  add_char_to_suggest_buf(void);
+void  draw_suggest_win(void);
+char *parse_function_sig(linestruct *line);
+void  accept_suggestion(void);
 
 /* 'gui.cpp' */
-void init_window(void);
+// void init_window(void);
 
 #include <Mlib/def.h>

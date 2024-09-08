@@ -238,7 +238,8 @@ is_separate_word(unsigned long position, unsigned long length, const char *text)
     /* If the word starts at the beginning of the line OR the character before
      * the word isn't a letter, and if the word ends at the end of the line OR
      * the character after the word isn't a letter, we have a whole word. */
-    return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
+    return ((position == 0 || !is_alpha_char(before)) &&
+            (*after == '\0' || !is_alpha_char(after)));
 }
 
 /* Return the position of the needle in the haystack, or NULL if not found.
@@ -247,7 +248,8 @@ is_separate_word(unsigned long position, unsigned long length, const char *text)
  * than start.  If we are doing a regexp search, and we find a match, we fill
  * in the global variable regmatches with at most 9 subexpression matches. */
 const char *
-strstrwrapper(const char *const haystack, const char *const needle, const char *const start)
+strstrwrapper(const char *const haystack, const char *const needle,
+              const char *const start)
 {
     if (ISSET(USE_REGEXP))
     {
@@ -282,7 +284,8 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
                 next_rung           = step_right(haystack, last_find);
                 regmatches[0].rm_so = next_rung;
                 regmatches[0].rm_eo = far_end;
-                if (regexec(&search_regexp, haystack, 1, regmatches, REG_STARTEND))
+                if (regexec(
+                        &search_regexp, haystack, 1, regmatches, REG_STARTEND))
                 {
                     break;
                 }
@@ -474,9 +477,9 @@ wideness(const char *text, unsigned long maxlen)
         return 0;
     }
     unsigned long width = 0;
-    for (unsigned long charlen; (*text != '\0') && (maxlen > (charlen = advance_over(text, width)));
-         maxlen -= charlen, text += charlen)
-        ;
+    for (unsigned long charlen;
+         (*text != '\0') && (maxlen > (charlen = advance_over(text, width)));
+         maxlen -= charlen, text += charlen);
     return width;
 }
 
@@ -485,8 +488,7 @@ unsigned long
 breadth(const char *text)
 {
     unsigned long span = 0;
-    for (; *text != '\0'; text += advance_over(text, span))
-        ;
+    for (; *text != '\0'; text += advance_over(text, span));
     return span;
 }
 
@@ -505,7 +507,8 @@ new_magicline(void)
 void
 remove_magicline(void)
 {
-    if (openfile->filebot->data[0] == '\0' && openfile->filebot != openfile->filetop)
+    if (openfile->filebot->data[0] == '\0' &&
+        openfile->filebot != openfile->filetop)
     {
         if (openfile->current == openfile->filebot)
         {
@@ -518,17 +521,21 @@ remove_magicline(void)
     }
 }
 
-/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
+/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise.
+ */
 bool
 mark_is_before_cursor(void)
 {
     return (openfile->mark->lineno < openfile->current->lineno ||
-            (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
+            (openfile->mark == openfile->current &&
+             openfile->mark_x <= openfile->current_x));
 }
 
-/* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
+/* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of
+ * the marked region. */
 void
-get_region(linestruct **top, unsigned long *top_x, linestruct **bot, unsigned long *bot_x)
+get_region(linestruct **top, unsigned long *top_x, linestruct **bot,
+           unsigned long *bot_x)
 {
     if (mark_is_before_cursor())
     {
@@ -607,4 +614,97 @@ number_of_characters_in(const linestruct *begin, const linestruct *end)
     }
     /* Do not count the final newline. */
     return (count - 1);
+}
+
+/* Return`s malloc`ed str containing pwd. */
+char *
+alloced_pwd(void)
+{
+    const char *pwd = getenv("PWD");
+    if (pwd == NULL)
+    {
+        logE("Failed to get pwd.");
+        die("Failed to get pwd");
+    }
+    unsigned long len = strlen(pwd);
+    char         *ret = (char *)nmalloc(len + 1);
+    memmove(ret, pwd, len);
+    ret[len] = '\0';
+    return ret;
+}
+
+/* Return`s malloc`ed str containing both substr`s,
+ * this also free`s both str_1 and str_2. */
+char *
+alloc_str_free_substrs(char *str_1, char *str_2)
+{
+    unsigned long len_1 = strlen(str_1);
+    unsigned long len_2 = strlen(str_2);
+    char         *ret   = (char *)nmalloc(len_1 + len_2 + 1);
+    memmove(ret, str_1, len_1);
+    memmove(ret + len_1, str_2, len_2);
+    ret[len_1 + len_2] = '\0';
+    free(str_1);
+    free(str_2);
+    return ret;
+}
+
+/* Memsafe way to append 'const char *' to already malloc`ed 'char *'. */
+void
+append_str(char **str, const char *appen_str)
+{
+    unsigned long slen      = strlen(*str);
+    unsigned long appendlen = strlen(appen_str);
+    *str                    = (char *)nrealloc(*str, slen + appendlen + 1);
+    memmove(*str + slen, appen_str, appendlen);
+    (*str)[slen + appendlen] = '\0';
+}
+
+/* Return`s either a malloc`ed str of the current
+ * file dir or NULL if inside the same dir. */
+char *
+alloced_current_file_dir(void)
+{
+    const char *slash = strrchr(openfile->filename, '/');
+    if (!slash)
+    {
+        return NULL;
+    }
+    slash += 1;
+    char *ret = (char *)nmalloc((slash - openfile->filename) + 1);
+    memmove(ret, openfile->filename, (slash - openfile->filename));
+    ret[(slash - openfile->filename)] = '\0';
+    return ret;
+}
+
+/* Return`s the full path to the dir that current file is in,
+ * for example if we open 'src/file.txt' then this will return
+ * the full path to 'src' so '/full/path/to/src/'. */
+char *
+alloced_full_current_file_dir(void)
+{
+    char *pwd = alloced_pwd();
+    append_str(&pwd, "/");
+    char *current_file_dir = alloced_current_file_dir();
+    if (current_file_dir)
+    {
+        char *p = alloc_str_free_substrs(pwd, current_file_dir);
+        pwd     = p;
+    }
+    return pwd;
+}
+
+unsigned long
+word_index(bool prev)
+{
+    if (prev)
+    {
+        int i;
+        for (i = openfile->current_x - 1;
+             i > 0 && openfile->current->data[i] != ' ' &&
+             openfile->current->data[i] != '\t';
+             i--);
+        nlog("%s\n", &openfile->current->data[i]);
+    }
+    return 0;
 }

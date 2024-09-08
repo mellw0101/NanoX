@@ -1048,8 +1048,7 @@ void
 to_prev_anchor(void)
 {
     linestruct *line = openfile->current;
-    do
-    {
+    do {
         line = (line->prev) ? line->prev : openfile->filebot;
     }
     while (!line->has_anchor && line != openfile->current);
@@ -1061,8 +1060,7 @@ void
 to_next_anchor(void)
 {
     linestruct *line = openfile->current;
-    do
-    {
+    do {
         line = (line->next) ? line->next : openfile->filetop;
     }
     while (!line->has_anchor && line != openfile->current);
@@ -1115,4 +1113,31 @@ find_global_header(const char *str)
         return data;
     }
     return NULL;
+}
+
+char *
+find_local_header(const char *str)
+{
+    const char *current_dir = NULL, *tail_end = NULL;
+    char        buf[PATH_MAX];
+    memset(buf, 0, sizeof(buf));
+    current_dir = getenv("PWD");
+    tail_end    = tail(openfile->filename);
+    if (!current_dir || !tail_end)
+    {
+        return NULL;
+    }
+    current_dir = concat_path(current_dir, substr(openfile->filename, (tail_end - openfile->filename) - 1));
+    memmove(buf, current_dir, strlen(current_dir));
+    const char *prev = strstr(str, "..");
+    while (prev != NULL)
+    {
+        buf[(tail(buf) - buf) - 1] = '\0';
+        prev += 3;
+        prev = strstr(prev, "..");
+        str += 3;
+    }
+    strcat(buf, "/");
+    strcat(buf, str);
+    return measured_copy(buf, strlen(buf));
 }
