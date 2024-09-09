@@ -1698,6 +1698,7 @@ main(int argc, char **argv)
     SET(INDICATOR);
     SET(AFTER_ENDS);
     SET(SUGGEST);
+    SET(SUGGEST_INLINE);
     /* This is my new system for live syntax, and it`s fucking fast. */
     SET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
     /* If the executable's name starts with 'r', activate restricted mode. */

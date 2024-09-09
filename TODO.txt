@@ -89,14 +89,16 @@ NanoX, fork of nano.  TODO LIST.
         in a few hour`s, that im not happy with at all but it is fast and works like it should.  The next step is to
         spend a couple of days and create a new system that I will be proud of.
 
-        I have finaly successfully made parsing 4 times faster as well as being able to retrieve one 'char **' with all words
-        in a file and the number of words in that array.  With this i have changed parsing for includes, but not yet for the main
-        openfile as for now it is done line by line but i will make a new function that parses the entire file and see how fast
-        I can make it.  Now i can also start to store data on struct`s, class`s and enum`s, and then start to apply the highlights
-        only where thay should be for example a paramater for a function should only be highlighted inside that function.
+        I have finaly successfully made parsing 4 times faster as well as being able to retrieve one 'char **' with
+        all words in a file and the number of words in that array.  With this i have changed parsing for includes,
+        but not yet for the main openfile as for now it is done line by line but i will make a new function that parses
+        the entire file and see how fast I can make it.  Now i can also start to store data on struct`s, class`s and
+        enum`s, and then start to apply the highlights only where thay should be for example a paramater for a
+        function should only be highlighted inside that function.
 
-        I finally fucking did it, i have implemented full live syntax with real time rendering.  This is way faster then the regex
-        based system nano had before i have just done the first implementation for rendering comments and block comments.
+        I finally fucking did it, i have implemented full live syntax with real time rendering.  This is way faster
+        then the regex based system nano had before i have just done the first implementation for rendering comments
+        and block comments.
         Here is some profiling data:
             render_comment:
                 Mean = 9.69487e-05 ms,
@@ -104,9 +106,12 @@ NanoX, fork of nano.  TODO LIST.
                 Min = 3e-05 ms,
                 Max = 0.00082 ms,
                 Count = 23287.
+
         This is so much faster than any regex done before.  This is to check one line for for comments.
         I have also made colors way easier and faster and insted of compiling and adding one color tied to each word
         I would like to color, instead I have added some base colors instead and use them when i want saving time.
+
+        Var parsing needs work so that:  int this, that;  Will be parsed correctly.
     STATUS:
         ALMOST DONE!!.
 8.  Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.

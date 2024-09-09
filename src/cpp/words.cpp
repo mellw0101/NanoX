@@ -106,7 +106,8 @@ delim_str(const char *str, const char *delim, unsigned long *size)
 }
 
 char **
-split_into_words(const char *str, const unsigned int len, unsigned int *word_count)
+split_into_words(const char *str, const unsigned int len,
+                 unsigned int *word_count)
 {
     const unsigned int max_words = (len / 2) + 1;
     char             **words     = (char **)nmalloc(sizeof(char *) * max_words);
@@ -138,9 +139,10 @@ extract_include(char *str)
 }
 
 char **
-append_arry(char **dst, unsigned long size_dst, char **src, unsigned long size_src)
+append_arry(char **dst, unsigned long size_dst, char **src,
+            unsigned long size_src)
 {
-    char        **result = (char **)nmalloc(sizeof(char *) * (size_dst + size_src));
+    char **result = (char **)nmalloc(sizeof(char *) * (size_dst + size_src));
     unsigned long i;
     for (i = 0; i < size_dst; i++)
     {
@@ -154,7 +156,8 @@ append_arry(char **dst, unsigned long size_dst, char **src, unsigned long size_s
 }
 
 void
-add_word_to_arry(const char *word, char ***words, unsigned long *cword, unsigned long *cap)
+add_word_to_arry(const char *word, char ***words, unsigned long *cword,
+                 unsigned long *cap)
 {
     if (*cword == *cap)
     {
@@ -199,7 +202,8 @@ is_word_func(char *word, unsigned long *at)
     return FALSE;
 }
 
-/* Remove`s all leading 'c' char`s from 'word'.  Note that 'word' shall be passed by refrence. */
+/* Remove`s all leading 'c' char`s from 'word'.  Note that 'word' shall be
+ * passed by refrence. */
 void
 remove_leading_char_type(char **word, const char c)
 {
@@ -244,11 +248,13 @@ word_more_than_one_char_away(bool forward, unsigned long *nchars, const char ch)
     if (!forward)
     {
         i--;
-        for (; i != (unsigned long)-1 && openfile->current->data[i] == ch; i--, chars++);
+        for (; i != (unsigned long)-1 && openfile->current->data[i] == ch;
+             i--, chars++);
     }
     else
     {
-        for (; openfile->current->data[i] && openfile->current->data[i] == ch; i++, chars++);
+        for (; openfile->current->data[i] && openfile->current->data[i] == ch;
+             i++, chars++);
     }
     (chars > 1) ? *nchars = chars : 0;
     return (chars > 1);
@@ -261,30 +267,33 @@ word_more_than_one_white_away(bool forward, unsigned long *nsteps)
     if (!forward)
     {
         i--;
-        for (; i != (unsigned long)-1 &&
-               (openfile->current->data[i] == ' ' || openfile->current->data[i] == '\t');
+        for (; i != (unsigned long)-1 && (openfile->current->data[i] == ' ' ||
+                                          openfile->current->data[i] == '\t');
              i--, chars++);
     }
     else
     {
-        for (; openfile->current->data[i] &&
-               (openfile->current->data[i] == ' ' || openfile->current->data[i] == '\t');
+        for (;
+             openfile->current->data[i] && (openfile->current->data[i] == ' ' ||
+                                            openfile->current->data[i] == '\t');
              i++, chars++);
     }
     (chars > 1) ? *nsteps = chars : 0;
     return (chars > 1);
 }
 
-/* Check either behind or infront of 'current_x' if there are more than a single ' ' char.
- * If so, return 'TRUE' and asign the number of spaces to 'nspaces'. */
+/* Check either behind or infront of 'current_x' if there are more than a single
+ * ' ' char. If so, return 'TRUE' and asign the number of spaces to 'nspaces'.
+ */
 bool
 word_more_than_one_space_away(bool forward, unsigned long *nspaces)
 {
     return word_more_than_one_char_away(forward, nspaces, ' ');
 }
 
-/* Check either behind or infront of 'current_x' if there are more than a single '\t' char.
- * And if so, return 'TRUE' and assign the number of tabs to 'ntabs'. */
+/* Check either behind or infront of 'current_x' if there are more than a single
+ * '\t' char. And if so, return 'TRUE' and assign the number of tabs to 'ntabs'.
+ */
 bool
 word_more_than_one_tab_away(bool forward, unsigned long *ntabs)
 {
@@ -295,9 +304,11 @@ bool
 prev_word_is_comment_start(unsigned long *nsteps)
 {
     unsigned long i = openfile->current_x - 1, steps = 0;
-    for (; i != (unsigned long)-1 && openfile->current->data[i] == ' '; i--, steps++);
+    for (; i != (unsigned long)-1 && openfile->current->data[i] == ' ';
+         i--, steps++);
     if (openfile->current->data[i - 1] &&
-        (openfile->current->data[i - 1] == '/' && openfile->current->data[i] == '/'))
+        (openfile->current->data[i - 1] == '/' &&
+         openfile->current->data[i] == '/'))
     {
         *nsteps = steps + 2;
         return TRUE;
@@ -334,7 +345,8 @@ retrieve_word_from_cursor_pos(bool forward)
     {
         return NULL;
     }
-    return measured_copy(&openfile->current->data[openfile->current_x], i - openfile->current_x);
+    return measured_copy(
+        &openfile->current->data[openfile->current_x], i - openfile->current_x);
 }
 
 char **
@@ -355,7 +367,8 @@ fast_words_from_str(const char *str, unsigned long slen, unsigned long *nwords)
         start = end;
         for (; end < (str + slen) && *end != ' '; end++);
         const unsigned int word_len = end - start;
-        (size == cap) ? cap *= 2, words = (char **)nrealloc(words, sizeof(char *) * cap) : 0;
+        (size == cap) ? cap *= 2,
+            words     = (char **)nrealloc(words, sizeof(char *) * cap) : 0;
         words[size++] = measured_copy(start, word_len);
     }
     words[size] = NULL;
@@ -401,7 +414,45 @@ line_word_list(const char *str, unsigned long slen)
 }
 
 line_word_t *
-make_line_word(char *str, unsigned short start, unsigned short len, unsigned short end)
+line_word_list_is_word_char(const char *str, unsigned long slen)
+{
+    PROFILE_FUNCTION;
+    line_word_t *head = NULL, *tail = NULL;
+    (str[slen] == '\n') ? slen-- : 0;
+    const char *start = str, *end = str;
+    while (end < (str + slen))
+    {
+        for (; end < (str + slen) && (*end == ' ' || *end == '\t'); end++);
+        if (end == (str + slen))
+        {
+            break;
+        }
+        start = end;
+        for (; (end < (str + slen)) && (*end != ' ') && (*end != '\t'); end++);
+        const unsigned int word_len = end - start;
+        line_word_t       *word     = (line_word_t *)malloc(sizeof(*word));
+        word->str                   = measured_copy(start, word_len);
+        word->start                 = start - str;
+        word->len                   = (end - start);
+        word->end                   = word->start + (end - start);
+        word->next                  = NULL;
+        if (tail == NULL)
+        {
+            head = word;
+            tail = word;
+        }
+        else
+        {
+            tail->next = word;
+            tail       = tail->next;
+        }
+    }
+    return head;
+}
+
+line_word_t *
+make_line_word(char *str, unsigned short start, unsigned short len,
+               unsigned short end)
 {
     line_word_t *word = (line_word_t *)nmalloc(sizeof(*word));
     word->str         = str;

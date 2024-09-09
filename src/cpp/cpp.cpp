@@ -759,27 +759,19 @@ find_current_function(linestruct *l)
                         break;
                     }
                 }
-                bool found = FALSE;
-                for (const auto &i : func_info)
+                for (int i = 0; i < func_info.size(); i++)
                 {
-                    if (i->name != NULL)
+                    if (func_info[i]->name != NULL)
                     {
-                        if (strcmp(i->name, info->name) == 0)
+                        if (strcmp(func_info[i]->name, info->name) == 0)
                         {
-                            found = TRUE;
+                            free_function_info(func_info[i], i);
                             break;
                         }
                     }
                 }
-                if (found == FALSE)
-                {
-                    func_info.push_back(info);
-                    refresh_needed = TRUE;
-                }
-                else
-                {
-                    free_function_info(info);
-                }
+                func_info.push_back(info);
+                refresh_needed = TRUE;
             }
             free(func_sig);
             break;

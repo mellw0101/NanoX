@@ -508,6 +508,7 @@ void          append_str(char **str, const char *appen_str);
 char         *alloced_current_file_dir(void);
 char         *alloced_full_current_file_dir(void);
 unsigned long word_index(bool prev);
+void          alloced_remove_at(char **str, int at);
 
 /* Most functions in 'winio.cpp'. */
 void          record_macro(void);
@@ -673,6 +674,7 @@ char       *retrieve_word_from_cursor_pos(bool forward);
 char      **fast_words_from_str(const char *str, unsigned long slen,
                                 unsigned long *nwords);
 line_word_t *line_word_list(const char *str, unsigned long slen);
+line_word_t *line_word_list_is_word_char(const char *str, unsigned long slen);
 line_word_t *make_line_word(char *str, unsigned short start, unsigned short len,
                             unsigned short end);
 unsigned int last_strchr(const char *str, const char ch, unsigned int maxlen);
@@ -743,13 +745,17 @@ void rendr_suggestion();
 void cleanup_rendr(void);
 
 /* 'render_utils.cpp' */
-void  get_next_word(const char **start, const char **end);
-void  clear_suggestion(void);
-void  find_suggestion(void);
-void  add_char_to_suggest_buf(void);
-void  draw_suggest_win(void);
-char *parse_function_sig(linestruct *line);
-void  accept_suggestion(void);
+void             get_next_word(const char **start, const char **end);
+void             clear_suggestion(void);
+void             find_suggestion(void);
+void             add_char_to_suggest_buf(void);
+void             draw_suggest_win(void);
+char            *parse_function_sig(linestruct *line);
+void             accept_suggestion(void);
+void             find_word(linestruct *line, const char *data, const char *word,
+                           const unsigned long slen, const char **start, const char **end);
+int              preprossesor_data_from_key(const char *key);
+function_info_t *func_from_lineno(int lineno);
 
 /* 'gui.cpp' */
 // void init_window(void);

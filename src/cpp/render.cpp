@@ -584,6 +584,7 @@ rendr_define(unsigned int index)
     const char *start = NULL, *end = NULL, *param = NULL;
     char       *word = NULL;
     start            = &line->data[index];
+
     if (*start == '\0')
     {
         rendr(E, "<-(Macro name missing)");
@@ -703,11 +704,12 @@ rendr_include(unsigned int index)
                 free(file);
             }
         }
-        /* else if (*start == '"' && *end == '"')
+        else if (*start == '"' && *end == '"')
         {
-            char *path      = measured_memmove_copy(start + 1, (end - start) -
-        1); char *pwd       = alloced_full_current_file_dir(); char *full_path =
-        alloc_str_free_substrs(pwd, path); for (const auto &i : includes)
+            char *path = measured_memmove_copy(start + 1, (end - start) - 1);
+            char *pwd  = alloced_full_current_file_dir();
+            char *full_path = alloc_str_free_substrs(pwd, path);
+            for (const auto &i : includes)
             {
                 if (strcmp(full_path, i) == 0)
                 {
@@ -722,7 +724,10 @@ rendr_include(unsigned int index)
                 {
                     for (int i = 0; func_vec[i]; i++)
                     {
-                        func_info.push_back(parse_func(func_vec[i]));
+                        function_info_t *info = parse_func(func_vec[i]);
+                        info->start_bracket   = 1000000;
+                        info->end_braket      = 1000000;
+                        func_info.push_back(info);
                     }
                 }
                 free(func_vec);
@@ -733,8 +738,9 @@ rendr_include(unsigned int index)
                     {
                         nlog("%s\n", var_vec[i]);
                         glob_var_t gvar;
-                        parse_variable(var_vec[i], &gvar.type, &gvar.name,
-        &gvar.value); glob_vars.push_back(gvar);
+                        parse_variable(
+                            var_vec[i], &gvar.type, &gvar.name, &gvar.value);
+                        glob_vars.push_back(gvar);
                     }
                     free(var_vec);
                 }
@@ -742,7 +748,7 @@ rendr_include(unsigned int index)
                 return;
             }
             free(full_path);
-        } */
+        }
         else
         {
             end += 1;
@@ -881,63 +887,63 @@ render_preprossesor(void)
         }
         start = end;
         adv_ptr(end, (*end != ' ' && *end != '\t'));
-        current_word            = measured_copy(start, (end - start));
-        const unsigned int type = retrieve_preprossesor_type(current_word);
+        current_word   = measured_copy(start, (end - start));
+        const int type = hash_string(current_word);
         switch (type)
         {
-            case PP_define :
+            case define_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 adv_ptr(end, (*end == ' ' || *end == '\t'));
                 rendr_define((end - line->data));
                 break;
             }
-            case PP_if :
+            case if_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 adv_ptr(end, (*end == ' ' || *end == '\t'));
                 rendr_if_preprosses((end - line->data));
                 break;
             }
-            case PP_endif :
+            case endif_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 break;
             }
-            case PP_ifndef :
+            case ifndef_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 get_next_word(&start, &end);
                 rendr(R, FG_VS_CODE_BLUE, start, end);
                 break;
             }
-            case PP_pragma :
+            case pragma_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 get_next_word(&start, &end);
                 rendr(R, FG_LAGOON, start, end);
                 break;
             }
-            case PP_ifdef :
+            case ifdef_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 get_next_word(&start, &end);
                 rendr(R, FG_VS_CODE_BLUE, start, end);
                 break;
             }
-            case PP_else :
+            case else_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 break;
             }
-            case PP_include :
+            case include_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 adv_ptr(end, (*end == ' ' || *end == '\t'));
                 rendr_include((end - line->data));
                 break;
             }
-            case PP_undef :
+            case undef_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 get_next_word(&start, &end);
@@ -957,21 +963,20 @@ render_function_params(void)
     PROFILE_FUNCTION;
     const char   *start = NULL;
     const char   *end   = NULL;
+    const char   *data  = NULL;
     unsigned long word_len;
     for (const auto &info : func_info)
     {
-        end = strstr(line->data, info->name);
-        if (end && (end == line->data ||
-                    !is_word_char(&line->data[(end - line->data) - 1], FALSE)))
-        {
-            start = end;
-            adv_ptr(end, (*end != ' ' && *end != '\t' && *end != ';' &&
-                          *end != '('));
-            if (*end == '(')
+        data = line->data;
+        do {
+            find_word(line, data, info->name, strlen(info->name), &start, &end);
+            if (start != NULL)
             {
                 rendr(R, FG_VS_CODE_BRIGHT_YELLOW, start, end);
+                data = end;
             }
         }
+        while (start);
         if (line->lineno + 2 >= info->start_bracket &&
             line->lineno <= info->end_braket)
         {
@@ -1040,23 +1045,53 @@ render_control_statements(unsigned long index)
 void
 rendr_glob_vars(void)
 {
-    unsigned long len   = 0;
-    const char   *found = NULL;
-    const char   *end   = NULL;
+    PROFILE_FUNCTION;
+    if (line->is_set(IN_BLOCK_COMMENT) ||
+        line->is_set(SINGLE_LINE_BLOCK_COMMENT) ||
+        line->is_set(BLOCK_COMMENT_START) || line->is_set(BLOCK_COMMENT_END))
+    {
+        return;
+    }
+    const char *data  = NULL;
+    const char *start = NULL;
+    const char *end   = NULL;
+    if (func_from_lineno(line->lineno) == NULL)
+    {
+        data  = line->data;
+        start = strchr(data, ';');
+        if (start)
+        {
+            char *str   = measured_copy(line->data, (start - line->data) + 1);
+            bool  found = FALSE;
+            for (const auto &gv : glob_vars)
+            {
+                if (strcmp(gv.name, str) == 0)
+                {
+                    found = TRUE;
+                    break;
+                }
+            }
+            if (found == FALSE)
+            {
+                glob_var_t ngvar;
+                parse_variable(str, &ngvar.type, &ngvar.name, &ngvar.value);
+                glob_vars.push_back(ngvar);
+            }
+            free(str);
+        }
+    }
     for (const auto &gv : glob_vars)
     {
-        found = strstr(line->data, gv.name);
-        while (found)
-        {
-            len = strlen(gv.name);
-            end = found + len;
-            if (!is_word_char(&line->data[(end - line->data)], FALSE))
+        data = line->data;
+        do {
+            find_word(line, data, gv.name, strlen(gv.name), &start, &end);
+            if (start)
             {
-                rendr(R, FG_VS_CODE_BRIGHT_CYAN, found, end);
+                rendr(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
+                data = end;
             }
-            found += len;
-            found = strstr(found, gv.name);
         }
+        while (start);
     }
 }
 
@@ -1078,11 +1113,11 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     }
     render_bracket();
     render_parents();
-    render_preprossesor();
     rendr_glob_vars();
     line_word_t *head = line_word_list(line->data, till_x);
     while (head != NULL)
     {
+        PROFILE_CURRENT_SCOPE("line_word_list_iter");
         line_word_t *node = head;
         head              = node->next;
         if (node->start >= block_comment_start &&
@@ -1092,6 +1127,10 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
                                      node->len, FG_COMMENT_GREEN);
             free_node(node);
             continue;
+        }
+        if (*node->str == '#')
+        {
+            render_preprossesor();
         }
         if (node->str[1] && *node->str == '(')
         {
@@ -1106,7 +1145,6 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
             node->str[--node->len] = '\0';
         }
         unsigned long at;
-
         if (char_is_in_word(node->str, '(', &at))
         {
             if (node->str[at + 1] != '\0')

@@ -55,8 +55,9 @@ set_interface_colorpairs(void)
                 }
             }
             init_pair(index + 1, combo->fg, combo->bg);
-            interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
-            rescind_colors              = FALSE;
+            interface_color_pair[index] =
+                COLOR_PAIR(index + 1) | combo->attributes;
+            rescind_colors = FALSE;
         }
         else
         {
@@ -71,7 +72,8 @@ set_interface_colorpairs(void)
             }
             else if (index == SPOTLIGHTED)
             {
-                init_pair(index + 1, COLOR_BLACK, COLOR_YELLOW + (COLORS > 15 ? 8 : 0));
+                init_pair(index + 1, COLOR_BLACK,
+                          COLOR_YELLOW + (COLORS > 15 ? 8 : 0));
                 interface_color_pair[index] = COLOR_PAIR(index + 1);
             }
             else if (index == MINI_INFOBAR || index == PROMPT_BAR)
@@ -85,26 +87,28 @@ set_interface_colorpairs(void)
             }
             else if (index >= FG_BLUE && index <= FG_MAUVE)
             {
-                color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
-                short color        = (index == FG_BLUE)    ? COLOR_BLUE :
-                                     (index == FG_MAGENTA) ? COLOR_MAGENTA :
-                                     (index == FG_GREEN)   ? COLOR_GREEN :
-                                     (index == FG_LAGOON)  ? COLOR_LAGOON :
-                                     (index == FG_YELLOW)  ? COLOR_YELLOW :
-                                     (index == FG_RED)     ? COLOR_RED :
-                                     (index == FG_PINK)    ? COLOR_PINK :
-                                     (index == FG_TEAL)    ? COLOR_TEAL :
-                                     (index == FG_MINT)    ? COLOR_MINT :
-                                     (index == FG_PURPLE)  ? COLOR_PURPLE :
-                                     (index == FG_MAUVE)   ? COLOR_MAUVE :
-                                                             1;
+                color_combo[index] =
+                    (colortype *)nmalloc(sizeof(*(color_combo[index])));
+                short color = (index == FG_BLUE)    ? COLOR_BLUE :
+                              (index == FG_MAGENTA) ? COLOR_MAGENTA :
+                              (index == FG_GREEN)   ? COLOR_GREEN :
+                              (index == FG_LAGOON)  ? COLOR_LAGOON :
+                              (index == FG_YELLOW)  ? COLOR_YELLOW :
+                              (index == FG_RED)     ? COLOR_RED :
+                              (index == FG_PINK)    ? COLOR_PINK :
+                              (index == FG_TEAL)    ? COLOR_TEAL :
+                              (index == FG_MINT)    ? COLOR_MINT :
+                              (index == FG_PURPLE)  ? COLOR_PURPLE :
+                              (index == FG_MAUVE)   ? COLOR_MAUVE :
+                                                      1;
                 init_pair(index + 1, color, COLOR_BLACK);
                 interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
             }
             else if (index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY)
             {
-                init_pair(
-                    index + 1, color_index_map[index - FG_VS_CODE_RED].value, xterm_color_index(0, 0, 0));
+                init_pair(index + 1,
+                          color_index_map[index - FG_VS_CODE_RED].value, 0);
+
                 interface_color_pair[index] = COLOR_PAIR(index + 1);
             }
             else
@@ -112,7 +116,7 @@ set_interface_colorpairs(void)
                 interface_color_pair[index] = hilite_attribute;
             }
         }
-        if (!(index >= FG_VS_CODE_RED && index <= FG_COMMENT_GREEN))
+        if (!(index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY))
         {
             free(color_combo[index]);
         }
@@ -264,15 +268,16 @@ find_and_prime_applicable_syntax(void)
                                 MAGIC_ERROR);
             if (cookie == NULL || magic_load(cookie, NULL) < 0)
             {
-                statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
+                statusline(
+                    ALERT, _("magic_load() failed: %s"), strerror(errno));
             }
             else
             {
                 magicstring = magic_file(cookie, openfile->filename);
                 if (magicstring == NULL)
                 {
-                    statusline(
-                        ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
+                    statusline(ALERT, _("magic_file(%s) failed: %s"),
+                               openfile->filename, magic_error(cookie));
                 }
             }
         }
@@ -355,8 +360,10 @@ check_the_multis(linestruct *line)
         }
         else if (line->multidata[ink->id] == WHOLELINE)
         {
-            /* Ensure that a detected start match is not actually an end match. */
-            if (!anend && (!astart || regexec(ink->end, line->data, 1, &endmatch, 0) != 0))
+            /* Ensure that a detected start match is not actually an end match.
+             */
+            if (!anend && (!astart ||
+                           regexec(ink->end, line->data, 1, &endmatch, 0) != 0))
             {
                 continue;
             }
@@ -364,7 +371,9 @@ check_the_multis(linestruct *line)
         else if (line->multidata[ink->id] == JUSTONTHIS)
         {
             if (astart && anend &&
-                regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch, 0) != 0)
+                regexec(ink->start,
+                        line->data + startmatch.rm_eo + endmatch.rm_eo, 1,
+                        &startmatch, 0) != 0)
             {
                 continue;
             }
@@ -408,7 +417,8 @@ precalc_multicolorinfo(void)
     {
         if (!line->multidata)
         {
-            line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
+            line->multidata =
+                (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
         }
     }
     for (ink = openfile->syntax->color; ink != NULL; ink = ink->next)
@@ -425,19 +435,21 @@ precalc_multicolorinfo(void)
             line->multidata[ink->id] = NOTHING;
             /* When the line contains a start match, look for an end,
              * and if found, mark all the lines that are affected. */
-            while (regexec(ink->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) ==
-                   0)
+            while (regexec(ink->start, line->data + index, 1, &startmatch,
+                           (index == 0) ? 0 : REG_NOTBOL) == 0)
             {
                 /* Begin looking for an end match after the start match. */
                 index += startmatch.rm_eo;
                 /* If there is an end match on this same line, mark the line,
                  * but continue looking for other starts after it. */
-                if (regexec(ink->end, line->data + index, 1, &endmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
+                if (regexec(ink->end, line->data + index, 1, &endmatch,
+                            (index == 0) ? 0 : REG_NOTBOL) == 0)
                 {
                     line->multidata[ink->id] = JUSTONTHIS;
                     index += endmatch.rm_eo;
                     /* If the total match has zero length, force an advance. */
-                    if (startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo == 0)
+                    if (startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo ==
+                        0)
                     {
                         /* When at end-of-line, there is no other start. */
                         if (line->data[index] == '\0')
@@ -450,7 +462,8 @@ precalc_multicolorinfo(void)
                 }
                 /* Look for an end match on later lines. */
                 tailline = line->next;
-                while (tailline && regexec(ink->end, tailline->data, 1, &endmatch, 0) != 0)
+                while (tailline &&
+                       regexec(ink->end, tailline->data, 1, &endmatch, 0) != 0)
                 {
                     tailline = tailline->next;
                 }

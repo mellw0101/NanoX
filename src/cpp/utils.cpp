@@ -697,14 +697,19 @@ alloced_full_current_file_dir(void)
 unsigned long
 word_index(bool prev)
 {
+    int i = openfile->current_x;
     if (prev)
     {
-        int i;
-        for (i = openfile->current_x - 1;
-             i > 0 && openfile->current->data[i] != ' ' &&
-             openfile->current->data[i] != '\t';
+        for (; i > 0 && openfile->current->data[i - 1] != ' ' &&
+               openfile->current->data[i - 1] != '\t';
              i--);
-        nlog("%s\n", &openfile->current->data[i]);
     }
-    return 0;
+    return i;
+}
+
+void
+alloced_remove_at(char **str, int at)
+{
+    int slen = strlen(*str);
+    memmove(*str + at, *str + at + 1, slen - at);
 }

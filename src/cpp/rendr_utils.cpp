@@ -19,8 +19,6 @@ find_suggestion(void)
                     suggest_len) == 0)
         {
             suggest_str = i->full_function + strlen(i->return_type) + 1;
-            nlog("full_func: %s\n", i->full_function);
-            nlog("return_type: %s\n", i->return_type);
             return;
         }
         if (openfile->current->lineno >= i->start_bracket &&
@@ -104,20 +102,16 @@ add_char_to_suggest_buf(void)
     if (openfile->current_x > 0)
     {
         const char *c = &openfile->current->data[openfile->current_x - 1];
-        /*
-        if (suggest_len < 1)
+        if (is_word_char(c - 1, FALSE))
         {
-            clear_suggestion();
+            suggest_len             = 0;
             const unsigned long pos = word_index(TRUE);
-            for (int i = pos; i < openfile->current_x; suggest_len++, i++)
+            for (int i = pos; i < openfile->current_x - 1; suggest_len++, i++)
             {
                 suggest_buf[suggest_len] = openfile->current->data[i];
             }
             suggest_buf[suggest_len] = '\0';
         }
-        else
-        {
-        } */
         suggest_buf[suggest_len++] = *c;
         suggest_buf[suggest_len]   = '\0';
     }
@@ -136,10 +130,14 @@ draw_suggest_win(void)
     unsigned long row_pos = (openfile->cursor_row > editwinrows - 2) ?
                                 openfile->cursor_row - row_len :
                                 openfile->cursor_row + 1;
-    unsigned long col_pos = openfile->current_x + margin - suggest_len;
+    unsigned long col_pos = xplustabs() + margin - suggest_len - 1;
     suggestwin            = newwin(row_len, col_len, row_pos, col_pos);
     mvwprintw(suggestwin, 0, 1, "%s", suggest_str);
     wrefresh(suggestwin);
+    if (ISSET(SUGGEST_INLINE))
+    {
+        rendr(SUGGEST, suggest_str);
+    }
 }
 
 /* Parse function signature. */
@@ -151,13 +149,18 @@ parse_function_sig(linestruct *line)
     if (p && (p == line->data || *p == line->data[indent_char_len(line)]))
     {
         line = line->prev;
+        if (line->data[0] == ' ' || line->data[0] == '\t')
+        {
+
+            return NULL;
+        }
     }
     param_start = strchr(line->data, '(');
     p           = strchr(line->data, ' ');
     char *sig   = NULL;
     char *ret_t = NULL;
     char *ret   = NULL;
-    if (p && p < param_start)
+    if (p && p < (param_start - 1))
     {
         if (p == line->data)
         {
@@ -167,16 +170,25 @@ parse_function_sig(linestruct *line)
         else
         {
             ret = copy_of(line->data);
+            p   = strchr(ret, ' ');
         }
     }
     else
     {
         sig = copy_of(line->data);
+        for (int i = 0; sig[i] && i < (param_start - line->data); i++)
+        {
+            if (sig[i] == ' ' || sig[i] == '\t')
+            {
+                alloced_remove_at(&sig, i);
+            }
+        }
     }
     if (!ret)
     {
         if (!line->prev->data[0])
         {
+
             return NULL;
         }
         ret_t = copy_of(line->prev->data);
@@ -195,4 +207,70 @@ accept_suggestion(void)
         inject(suggest_str + suggest_len, strlen(suggest_str) - suggest_len);
     }
     clear_suggestion();
+}
+
+void
+find_word(linestruct *line, const char *data, const char *word,
+          const unsigned long slen, const char **start, const char **end)
+{
+    *start = strstr(data, word);
+    if (*start)
+    {
+        *end = (*start) + slen;
+        if (!is_word_char(&line->data[((*end) - line->data)], FALSE) &&
+            (*start == line->data ||
+             !is_word_char(&line->data[((*start) - line->data) - 1], FALSE)))
+        {}
+        else
+        {
+            *start = NULL;
+            *end   = NULL;
+        }
+    }
+}
+
+// Use precomputed hashes as keys
+const std::unordered_map<unsigned int, int> &
+get_preprossesor_map(void)
+{
+    static const std::unordered_map<unsigned int, int> hash_map = {
+        { hash_string("define"), 1},
+        {     hash_string("if"), 2},
+        {  hash_string("endif"), 3},
+        { hash_string("ifndef"), 4},
+        { hash_string("pragma"), 5},
+        {  hash_string("ifdef"), 6},
+        {   hash_string("else"), 7},
+        {hash_string("include"), 8},
+        {  hash_string("undef"), 9},
+    };
+    return hash_map;
+}
+
+// Lookup using compile-time hashed string
+int
+preprossesor_data_from_key(const char *key)
+{
+    PROFILE_FUNCTION;
+    unsigned int hashedKey = hash_string(key);
+    const auto  &hashMap   = get_preprossesor_map();
+    auto         it        = hashMap.find(hashedKey);
+    if (it != hashMap.end())
+    {
+        return it->second;
+    }
+    return 0;
+}
+
+function_info_t *
+func_from_lineno(int lineno)
+{
+    for (const auto &f : func_info)
+    {
+        if (lineno >= f->start_bracket && lineno <= f->end_braket)
+        {
+            return f;
+        }
+    }
+    return NULL;
 }

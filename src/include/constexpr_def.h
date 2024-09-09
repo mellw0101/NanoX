@@ -2,6 +2,7 @@
 #pragma once
 #include <Mlib/constexpr.hpp>
 #include <ncursesw/ncurses.h>
+#include <unordered_map>
 
 /* Identifiers for color options. */
 #define TITLE_BAR     0
@@ -81,8 +82,9 @@ constexpr_map<std::string_view, unsigned char, 6> syntaxOptionMap = {
 
 /* Identifiers for the different flags. */
 
-/* This flag is not used as this is part of a bitfield and 0 is not a unique value, in terms
- * of bitwise operations as the default all non set value is 0. */
+/* This flag is not used as this is part of a bitfield and 0 is not a unique
+ * value, in terms of bitwise operations as the default all non set value is 0.
+ */
 #define DONTUSE                       0
 #define CASE_SENSITIVE                1
 #define CONSTANT_SHOW                 2
@@ -289,60 +291,61 @@ constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
  * instant and without any overhead,
  * while using less memory then a unordered map.
  * USAGE:
- * - (&epithetOfFlagMap[flag].value[0]) will return the underlying ptr to the description of the flag
- * The (flag / description) map. */
-constexpr_map<unsigned int, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
-    {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
-     {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
-     {CONSTANT_SHOW, "Constant cursor position display"},
-     {NO_HELP, "Help mode"},
-     {NO_WRAP, DEFAULT_RESPONSE_ON_NONE},
-     {AUTOINDENT, "Auto indent"},
-     {VIEW_MODE, DEFAULT_RESPONSE_ON_NONE},
-     {USE_MOUSE, "Mouse support"},
-     {USE_REGEXP, DEFAULT_RESPONSE_ON_NONE},
-     {SAVE_ON_EXIT, DEFAULT_RESPONSE_ON_NONE},
-     {CUT_FROM_CURSOR, "Cut to end"},
-     {BACKWARDS_SEARCH, DEFAULT_RESPONSE_ON_NONE},
-     {MULTIBUFFER, DEFAULT_RESPONSE_ON_NONE},
-     {REBIND_DELETE, DEFAULT_RESPONSE_ON_NONE},
-     {RAW_SEQUENCES, DEFAULT_RESPONSE_ON_NONE},
-     {NO_CONVERT, DEFAULT_RESPONSE_ON_NONE},
-     {MAKE_BACKUP, DEFAULT_RESPONSE_ON_NONE},
-     {INSECURE_BACKUP, DEFAULT_RESPONSE_ON_NONE},
-     {NO_SYNTAX, "Color syntax highlighting"},
-     {PRESERVE, DEFAULT_RESPONSE_ON_NONE},
-     {HISTORYLOG, DEFAULT_RESPONSE_ON_NONE},
-     {RESTRICTED, DEFAULT_RESPONSE_ON_NONE},
-     {SMART_HOME, "Smart home key"},
-     {WHITESPACE_DISPLAY, "Whitespace display"},
-     {TABS_TO_SPACES, "Conversion of typed tabs to spaces"},
-     {QUICK_BLANK, DEFAULT_RESPONSE_ON_NONE},
-     {WORD_BOUNDS, DEFAULT_RESPONSE_ON_NONE},
-     {NO_NEWLINES, DEFAULT_RESPONSE_ON_NONE},
-     {BOLD_TEXT, DEFAULT_RESPONSE_ON_NONE},
-     {SOFTWRAP, "Soft wrapping of overlong lines"},
-     {POSITIONLOG, DEFAULT_RESPONSE_ON_NONE},
-     {LOCKING, DEFAULT_RESPONSE_ON_NONE},
-     {NOREAD_MODE, DEFAULT_RESPONSE_ON_NONE},
-     {MAKE_IT_UNIX, DEFAULT_RESPONSE_ON_NONE},
-     {TRIM_BLANKS, DEFAULT_RESPONSE_ON_NONE},
-     {SHOW_CURSOR, DEFAULT_RESPONSE_ON_NONE},
-     {LINE_NUMBERS, "Line numbering"},
-     {AT_BLANKS, DEFAULT_RESPONSE_ON_NONE},
-     {AFTER_ENDS, DEFAULT_RESPONSE_ON_NONE},
-     {LET_THEM_ZAP, DEFAULT_RESPONSE_ON_NONE},
-     {BREAK_LONG_LINES, "Hard wrapping of overlong lines"},
-     {JUMPY_SCROLLING, DEFAULT_RESPONSE_ON_NONE},
-     {EMPTY_LINE, DEFAULT_RESPONSE_ON_NONE},
-     {INDICATOR, DEFAULT_RESPONSE_ON_NONE},
-     {BOOKSTYLE, DEFAULT_RESPONSE_ON_NONE},
-     {COLON_PARSING, DEFAULT_RESPONSE_ON_NONE},
-     {STATEFLAGS, DEFAULT_RESPONSE_ON_NONE},
-     {USE_MAGIC, DEFAULT_RESPONSE_ON_NONE},
-     {MINIBAR, DEFAULT_RESPONSE_ON_NONE},
-     {ZERO, "Hidden interface"},
-     {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE}}
+ * - (&epithetOfFlagMap[flag].value[0]) will return the underlying ptr to the
+ * description of the flag The (flag / description) map. */
+constexpr_map<unsigned int, std::string_view, NUMBER_OF_FLAGS>
+    epithetOfFlagMap = {
+        {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
+         {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
+         {CONSTANT_SHOW, "Constant cursor position display"},
+         {NO_HELP, "Help mode"},
+         {NO_WRAP, DEFAULT_RESPONSE_ON_NONE},
+         {AUTOINDENT, "Auto indent"},
+         {VIEW_MODE, DEFAULT_RESPONSE_ON_NONE},
+         {USE_MOUSE, "Mouse support"},
+         {USE_REGEXP, DEFAULT_RESPONSE_ON_NONE},
+         {SAVE_ON_EXIT, DEFAULT_RESPONSE_ON_NONE},
+         {CUT_FROM_CURSOR, "Cut to end"},
+         {BACKWARDS_SEARCH, DEFAULT_RESPONSE_ON_NONE},
+         {MULTIBUFFER, DEFAULT_RESPONSE_ON_NONE},
+         {REBIND_DELETE, DEFAULT_RESPONSE_ON_NONE},
+         {RAW_SEQUENCES, DEFAULT_RESPONSE_ON_NONE},
+         {NO_CONVERT, DEFAULT_RESPONSE_ON_NONE},
+         {MAKE_BACKUP, DEFAULT_RESPONSE_ON_NONE},
+         {INSECURE_BACKUP, DEFAULT_RESPONSE_ON_NONE},
+         {NO_SYNTAX, "Color syntax highlighting"},
+         {PRESERVE, DEFAULT_RESPONSE_ON_NONE},
+         {HISTORYLOG, DEFAULT_RESPONSE_ON_NONE},
+         {RESTRICTED, DEFAULT_RESPONSE_ON_NONE},
+         {SMART_HOME, "Smart home key"},
+         {WHITESPACE_DISPLAY, "Whitespace display"},
+         {TABS_TO_SPACES, "Conversion of typed tabs to spaces"},
+         {QUICK_BLANK, DEFAULT_RESPONSE_ON_NONE},
+         {WORD_BOUNDS, DEFAULT_RESPONSE_ON_NONE},
+         {NO_NEWLINES, DEFAULT_RESPONSE_ON_NONE},
+         {BOLD_TEXT, DEFAULT_RESPONSE_ON_NONE},
+         {SOFTWRAP, "Soft wrapping of overlong lines"},
+         {POSITIONLOG, DEFAULT_RESPONSE_ON_NONE},
+         {LOCKING, DEFAULT_RESPONSE_ON_NONE},
+         {NOREAD_MODE, DEFAULT_RESPONSE_ON_NONE},
+         {MAKE_IT_UNIX, DEFAULT_RESPONSE_ON_NONE},
+         {TRIM_BLANKS, DEFAULT_RESPONSE_ON_NONE},
+         {SHOW_CURSOR, DEFAULT_RESPONSE_ON_NONE},
+         {LINE_NUMBERS, "Line numbering"},
+         {AT_BLANKS, DEFAULT_RESPONSE_ON_NONE},
+         {AFTER_ENDS, DEFAULT_RESPONSE_ON_NONE},
+         {LET_THEM_ZAP, DEFAULT_RESPONSE_ON_NONE},
+         {BREAK_LONG_LINES, "Hard wrapping of overlong lines"},
+         {JUMPY_SCROLLING, DEFAULT_RESPONSE_ON_NONE},
+         {EMPTY_LINE, DEFAULT_RESPONSE_ON_NONE},
+         {INDICATOR, DEFAULT_RESPONSE_ON_NONE},
+         {BOOKSTYLE, DEFAULT_RESPONSE_ON_NONE},
+         {COLON_PARSING, DEFAULT_RESPONSE_ON_NONE},
+         {STATEFLAGS, DEFAULT_RESPONSE_ON_NONE},
+         {USE_MAGIC, DEFAULT_RESPONSE_ON_NONE},
+         {MINIBAR, DEFAULT_RESPONSE_ON_NONE},
+         {ZERO, "Hidden interface"},
+         {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE}}
 };
 
 //  Legazy code, from nano source code.
@@ -363,9 +366,10 @@ constexpr_map<unsigned int, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap 
 #define MYESNO       (1 << 13)
 #define MLINTER      (1 << 14)
 #define MFINDINHELP  (1 << 15)
-#define MMOST                                                                                       \
-    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | \
-     MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER)
+#define MMOST                                                                  \
+    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE |     \
+     MINSERTFILE | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | \
+     MLINTER)
 #define MSOME (MMOST | MBROWSER)
 /* The menus map. */
 constexpr_map<std::string_view, unsigned short, 16> menuOptionMap = {
@@ -469,6 +473,22 @@ constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
      {"break", CS_BREAK},
      {"do", CS_DO}}
 };
+
+constexpr unsigned int
+hash_string(const char *str, int h = 0)
+{
+    return !str[h] ? 5381 : (hash_string(str, h + 1) * 33) ^ str[h];
+}
+
+constexpr int define_hash  = hash_string("define");
+constexpr int if_hash      = hash_string("if");
+constexpr int endif_hash   = hash_string("endif");
+constexpr int ifndef_hash  = hash_string("ifndef");
+constexpr int pragma_hash  = hash_string("pragma");
+constexpr int ifdef_hash   = hash_string("ifdef");
+constexpr int else_hash    = hash_string("else");
+constexpr int include_hash = hash_string("include");
+constexpr int undef_hash   = hash_string("undef");
 
 #define PP_define  1
 #define PP_if      2
