@@ -28,6 +28,7 @@ vec<const char *> types             = {
 };
 
 std::unordered_map<std::string_view, int> color_map;
+function_info_t                          *current_function = NULL;
 
 void
 render_part(unsigned long match_start, unsigned long match_end, short color)
@@ -129,7 +130,7 @@ render_comment(void)
     const char *found_end   = strstr(line->data, "*/");
     const char *found_slash = strstr(line->data, "//");
     /* Single line block comment. */
-    if (found_start != NULL && found_end != NULL)
+    if (found_start && found_end)
     {
         block_comment_start = (found_start - line->data);
         block_comment_end   = (found_end - line->data + 2);
@@ -221,7 +222,7 @@ render_comment(void)
         }
     }
     /* First line for a block comment. */
-    else if (found_start != NULL && found_end == NULL)
+    else if (found_start && !found_end)
     {
         block_comment_start = (found_start - line->data);
         block_comment_end   = till_x;
@@ -253,7 +254,7 @@ render_comment(void)
         LINE_UNSET(line, BLOCK_COMMENT_END);
     }
     /* Either inside of a block comment or not a block comment at all. */
-    else if (found_start == NULL && found_end == NULL)
+    else if (!found_start && !found_end)
     {
         if (line->prev &&
             (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) ||
@@ -280,15 +281,17 @@ render_comment(void)
             LINE_UNSET(line, BLOCK_COMMENT_END);
             LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
             /* If slash comment is found comment out entire line after slash. */
-            if (found_slash != NULL)
+            if (found_slash)
             {
                 block_comment_start = (found_slash - line->data);
-                block_comment_end   = (unsigned int)-1;
+                block_comment_end   = till_x;
             }
+            render_part(
+                block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         }
     }
     /* End of a block comment. */
-    else if (found_start == NULL && found_end != NULL)
+    else if (!found_start && found_end)
     {
         /* If last line is in a comment block or is the start of the block. */
         if (line->prev &&
@@ -328,9 +331,9 @@ render_bracket(void)
     const char *start = strchr(line->data, '{');
     const char *end   = strrchr(line->data, '}');
     /* Bracket start and end on the same line. */
-    if (start != NULL && end != NULL)
+    if (start && end)
     {
-        while (start != NULL)
+        while (start)
         {
             rendr(R_CHAR, FG_VS_CODE_YELLOW, start);
             if (line->data[(start - line->data) + 1] == '\0')
@@ -340,7 +343,7 @@ render_bracket(void)
             }
             start = strchr(start + 1, '{');
         }
-        while (end != NULL)
+        while (end)
         {
             rendr(R_CHAR, FG_VS_CODE_YELLOW, end);
             unsigned int last_pos =
@@ -357,18 +360,18 @@ render_bracket(void)
         if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET) ||
                            LINE_ISSET(line->prev, BRACKET_START)))
         {
-            line->set(IN_BRACKET);
+            LINE_SET(line, IN_BRACKET);
         }
     }
     /* Start bracket line was found. */
-    else if (start != NULL && end == NULL)
+    else if (start && !end)
     {
         line->set(BRACKET_START);
         rendr(R_CHAR, color_bi[(line_indent(line) % 3)], start);
-        if (line->prev && (line->prev->is_set(IN_BRACKET) ||
-                           line->prev->is_set(BRACKET_START)))
+        if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET) ||
+                           LINE_ISSET(line->prev, BRACKET_START)))
         {
-            line->set(IN_BRACKET);
+            LINE_SET(line, IN_BRACKET);
         }
         /* TODO: Find better trigger to recheck current func. */
         else
@@ -377,10 +380,10 @@ render_bracket(void)
         }
     }
     /* End bracket line was found. */
-    else if (start == NULL && end != NULL)
+    else if (!start && end)
     {
-        line->set(BRACKET_END);
-        line->unset(BRACKET_START);
+        LINE_SET(line, BRACKET_END);
+        LINE_UNSET(line, BRACKET_START);
         rendr(R_CHAR, color_bi[(line_indent(line) % 3)], end);
         for (linestruct *t_line = line->prev; t_line; t_line = t_line->prev)
         {
@@ -402,7 +405,7 @@ render_bracket(void)
         }
     }
     /* Was not found. */
-    else if (start == NULL && end == NULL)
+    else if (!start && !end)
     {
         if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET) ||
                            LINE_ISSET(line->prev, BRACKET_START)))
@@ -423,21 +426,21 @@ render_parents(void)
     const char *end   = strchr(line->data, ')');
     while (1)
     {
-        if (start != NULL)
+        if (start)
         {
             rendr_ch_str_ptr(
                 start,
                 color_bi[(wideness(line->data, indent_char_len(line)) % 3)]);
             start = strchr(start + 1, '(');
         }
-        if (end != NULL)
+        if (end)
         {
             rendr_ch_str_ptr(
                 end,
                 color_bi[(wideness(line->data, indent_char_len(line)) % 3)]);
             end = strchr(end + 1, ')');
         }
-        if (start == NULL && end == NULL)
+        if (!start && !end)
         {
             break;
         }
@@ -723,7 +726,7 @@ rendr_include(unsigned int index)
             }
             if (is_file_and_exists(full_path))
             {
-                char **func_vec = find_functions_in_file(full_path);
+                /* char **func_vec = find_functions_in_file(full_path);
                 if (func_vec != NULL)
                 {
                     for (int i = 0; func_vec[i]; i++)
@@ -732,15 +735,9 @@ rendr_include(unsigned int index)
                         char            *name = copy_of(info->name);
                         free_function_info(info);
                         color_map[name] = FG_VS_CODE_BRIGHT_YELLOW;
-                        /* if (!func_info_exists(func_vec[i]))
-                        {
-                                info->start_bracket   = 1000000;
-                                info->end_braket      = 1000000;
-                                func_info.push_back(info);
-                        } */
                     }
                 }
-                free(func_vec);
+                free(func_vec); */
                 char **var_vec = find_variabels_in_file(full_path);
                 if (var_vec)
                 {
@@ -1001,6 +998,7 @@ render_function_params(void)
                     while (data);
                 }
             }
+            break;
         }
     }
 }
@@ -1058,7 +1056,7 @@ rendr_glob_vars(void)
     {
         data  = line->data;
         start = strchr(data, ';');
-        if (start)
+        if (start && line->data[indent_char_len(line)] != '}')
         {
             char *str = measured_copy(line->data, (start - line->data) + 1);
             glob_var_t ngvar;
@@ -1076,9 +1074,9 @@ rendr_glob_vars(void)
                 }
                 if (found == FALSE)
                 {
-                    nlog("ngvar str: %s\n", str);
                     color_map[ngvar.name] = FG_VS_CODE_BRIGHT_CYAN;
                     glob_vars.push_back(ngvar);
+                    nlog("ngvar str: %s\n", str);
                 }
             }
             free(str);
@@ -1098,17 +1096,9 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     ::from_col  = from_col;
     render_function_params();
     render_comment();
-    if ((block_comment_start == 0 && block_comment_end == till_x))
+    if (line->data[0] == '\0' ||
+        (block_comment_start == 0 && block_comment_end == till_x))
     {
-        return;
-    }
-    if (line->data[0] == '\0')
-    {
-        return;
-    }
-    if (line->data[indent_char_len(line)] == '#')
-    {
-        render_preprossesor();
         return;
     }
     render_bracket();
@@ -1119,7 +1109,6 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     {
         line_word_t *node = head;
         head              = node->next;
-        const auto &it    = color_map.find(node->str);
         if (node->start >= block_comment_start &&
             node->end <= block_comment_end)
         {
@@ -1128,50 +1117,25 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
             free_node(node);
             continue;
         }
+        const auto &it = color_map.find(node->str);
         if (it != color_map.end())
         {
             midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str,
                                      node->len, it->second);
+            if (it->second == FG_VS_CODE_BRIGHT_MAGENTA)
+            {
+                render_control_statements(node->start);
+            }
             free(node->str);
             free(node);
             continue;
         }
-        const unsigned int type = retrieve_c_syntax_type(node->str);
-        if (type != 0)
-        {
-            if (type & CS_VOID || type & CS_SHORT || type & CS_INT ||
-                type & CS_CHAR || type & CS_LONG || type & CS_STATIC ||
-                type & CS_UNSIGNED || type & CS_BOOL || type & CS_CONST ||
-                type & CS_NULL || type & CS_TRUE || type & CS_FALSE ||
-                type & CS_TYPEDEF || type & CS_SIZEOF)
-            {
-                midwin_mv_add_nstr_color(row, get_start_col(line, node),
-                                         node->str, node->len, FG_VS_CODE_BLUE);
-            }
-            else if (type & CS_STRUCT || type & CS_ENUM || type & CS_CLASS ||
-                     type & CS_NAMESPACE)
-            {
-                midwin_mv_add_nstr_color(row, get_start_col(line, node),
-                                         node->str, node->len, FG_VS_CODE_BLUE);
-            }
-            else if (type & CS_SIZE_T || type & CS_SSIZE_T)
-            {
-                midwin_mv_add_nstr_color(row, get_start_col(line, node),
-                                         node->str, node->len, FG_GREEN);
-            }
-            else if (type & CS_IF || type & CS_CASE || type & CS_SWITCH ||
-                     type & CS_ELSE || type & CS_FOR || type & CS_WHILE ||
-                     type & CS_RETURN || type & CS_BREAK || type & CS_DO)
-            {
-                midwin_mv_add_nstr_color(row, get_start_col(line, node),
-                                         node->str, node->len,
-                                         FG_VS_CODE_BRIGHT_MAGENTA);
-                render_control_statements(node->start);
-            }
-            free_node(node);
-            continue;
-        }
         free_node(node);
+    }
+    if (line->data[indent_char_len(line)] == '#')
+    {
+        render_preprossesor();
+        return;
     }
     render_string_literals();
     render_char_strings();

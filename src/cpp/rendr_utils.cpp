@@ -278,39 +278,6 @@ find_word(linestruct *line, const char *data, const char *word,
     }
 }
 
-// Use precomputed hashes as keys
-const std::unordered_map<unsigned int, int> &
-get_preprossesor_map(void)
-{
-    static const std::unordered_map<unsigned int, int> hash_map = {
-        { hash_string("define"), 1},
-        {     hash_string("if"), 2},
-        {  hash_string("endif"), 3},
-        { hash_string("ifndef"), 4},
-        { hash_string("pragma"), 5},
-        {  hash_string("ifdef"), 6},
-        {   hash_string("else"), 7},
-        {hash_string("include"), 8},
-        {  hash_string("undef"), 9},
-    };
-    return hash_map;
-}
-
-// Lookup using compile-time hashed string
-int
-preprossesor_data_from_key(const char *key)
-{
-    PROFILE_FUNCTION;
-    unsigned int hashedKey = hash_string(key);
-    const auto  &hashMap   = get_preprossesor_map();
-    auto         it        = hashMap.find(hashedKey);
-    if (it != hashMap.end())
-    {
-        return it->second;
-    }
-    return 0;
-}
-
 function_info_t *
 func_from_lineno(int lineno)
 {

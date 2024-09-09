@@ -622,7 +622,6 @@ bool   is_syntax_struct(std::string_view str);
 bool   is_syntax_class(std::string_view str);
 bool   define_exists(const char *str);
 void   handle_struct_syntax(char **word);
-void   openfile_syntax_c(void);
 void   find_block_comments(int before, int end);
 char **find_functions_in_file(char *path);
 char **find_variabels_in_file(char *path);

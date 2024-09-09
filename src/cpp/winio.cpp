@@ -1,13 +1,15 @@
 /// @file winio.cpp
+// #include "../include/definitions.h"
+
 #include "../include/prototypes.h"
 #include "../include/revision.h"
 
 #include <Mlib/Debug.h>
 #include <Mlib/Profile.h>
 #include <cctype>
-#include <string.h>
-#include <stdio.h>
 #include <cwchar>
+#include <stdio.h>
+#include <string.h>
 #include <sys/ioctl.h>
 
 #define BRANDING PACKAGE_STRING
@@ -3634,7 +3636,7 @@ update_softwrapped_line(linestruct *line)
  * that the relevant line needs to be redrawn. */
 bool
 line_needs_update(const unsigned long old_column,
-				  const unsigned long new_column)
+                  const unsigned long new_column)
 {
     if (openfile->mark)
     {

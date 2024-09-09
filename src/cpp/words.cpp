@@ -402,10 +402,10 @@ line_word_list(const char *str, unsigned long slen)
         line_word_t       *word     = (line_word_t *)malloc(sizeof(*word));
         word->str                   = measured_copy(start, word_len);
         word->start                 = start - str;
-        word->len                   = (end - start);
-        word->end                   = word->start + (end - start);
+        word->len                   = word_len;
+        word->end                   = word->start + word_len;
         word->next                  = NULL;
-        if (tail == NULL)
+        if (!tail)
         {
             head = word;
             tail = word;

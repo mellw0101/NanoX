@@ -28,30 +28,47 @@ syntax_check_file(openfilestruct *file)
             prosses_callback_queue();
         }
     }
-    /* else
+    else
     {
-        check_include_file_syntax("/usr/include/Mlib/Packy.h");
-        check_include_file_syntax("/usr/include/stdio.h");
-        check_include_file_syntax("/usr/include/stdlib.h");
-    } */
-    char *type;
-    char *name;
-    char *value;
-    parse_variable("        text++", &type, &name, &value);
-    if (type)
-    {
-        nlog("type: %s\n", type);
-        free(type);
-    }
-    if (name)
-    {
-        nlog("name: %s\n", name);
-        free(name);
-    }
-    if (value)
-    {
-        nlog("value: %s\n", value);
-        free(value);
+        /* Types. */
+        color_map["bool"]      = FG_VS_CODE_BLUE;
+        color_map["char"]      = FG_VS_CODE_BLUE;
+        color_map["short"]     = FG_VS_CODE_BLUE;
+        color_map["int"]       = FG_VS_CODE_BLUE;
+        color_map["long"]      = FG_VS_CODE_BLUE;
+        color_map["unsigned"]  = FG_VS_CODE_BLUE;
+        color_map["void"]      = FG_VS_CODE_BLUE;
+        color_map["static"]    = FG_VS_CODE_BLUE;
+        color_map["extern"]    = FG_VS_CODE_BLUE;
+        color_map["constexpr"] = FG_VS_CODE_BLUE;
+        color_map["const"]     = FG_VS_CODE_BLUE;
+        color_map["true"]      = FG_VS_CODE_BLUE;
+        color_map["false"]     = FG_VS_CODE_BLUE;
+        color_map["TRUE"]      = FG_VS_CODE_BLUE;
+        color_map["FALSE"]     = FG_VS_CODE_BLUE;
+        color_map["nullptr"]   = FG_VS_CODE_BLUE;
+        color_map["NULL"]      = FG_VS_CODE_BLUE;
+        color_map["typedef"]   = FG_VS_CODE_BLUE;
+        color_map["sizeof"]    = FG_VS_CODE_BLUE;
+        color_map["struct"]    = FG_VS_CODE_BLUE;
+        color_map["class"]     = FG_VS_CODE_BLUE;
+        color_map["enum"]      = FG_VS_CODE_BLUE;
+        color_map["namespace"] = FG_VS_CODE_BLUE;
+        color_map["inline"]    = FG_VS_CODE_BLUE;
+        color_map["typename"]  = FG_VS_CODE_BLUE;
+        color_map["template"]  = FG_VS_CODE_BLUE;
+        /* Control statements. */
+        color_map["if"]       = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["else"]     = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["case"]     = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["switch"]   = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["for"]      = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["while"]    = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["return"]   = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["break"]    = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["do"]       = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["continue"] = FG_VS_CODE_BRIGHT_MAGENTA;
+        color_map["using"]    = FG_VS_CODE_BRIGHT_MAGENTA;
     }
 }
 
@@ -924,127 +941,6 @@ handle_struct_syntax(char **word)
             break;
         }
     }
-}
-
-void
-handle(char *word, const unsigned short type)
-{
-    if (word == NULL)
-    {
-        return;
-    }
-    strip_leading_chars_from(word, '*');
-    unsigned long i = 0;
-    for (; word[i]; i++)
-    {
-        if (word[i] == ';' || word[i] == ',' || word[i] == ')')
-        {
-            word[i] = '\0';
-            break;
-        }
-    }
-    if (type == 0)
-    {
-        if (!syntax_var(word))
-        {
-            new_syntax_var(word);
-        }
-    }
-    else if (type & CS_DEFINE)
-    {}
-    else if (type & CS_STRUCT)
-    {
-        if (!is_syntax_struct(word))
-        {}
-    }
-    else if (type & CS_CLASS)
-    {
-        if (!is_syntax_class(word))
-        {}
-    }
-}
-
-void
-openfile_syntax_c(void)
-{
-    unsigned long i, nwords, at;
-    char        **words = words_from_current_file(&nwords);
-    if (words == NULL)
-    {
-        return;
-    }
-    /* Main loop to parse the syntax. */
-    for (i = 0; i < nwords; i++)
-    {
-        if (*words[i] == '#')
-        {
-            if (words[i][1] == '\0')
-            {
-                ++i;
-            }
-            else
-            {
-                strip_leading_chars_from(words[i], '#');
-            }
-        }
-        else if (is_syntax_struct(words[i]))
-        {
-            handle(words[++i], 0);
-        }
-        else if (is_syntax_class(words[i]))
-        {
-            handle(words[++i], 0);
-        }
-        const unsigned short type = retrieve_c_syntax_type(words[i]);
-        if (type == 0)
-        {
-            continue;
-        }
-        else if (type & CS_DEFINE)
-        {
-            handle(words[++i], type);
-        }
-        else if (type & CS_STRUCT)
-        {
-            handle(words[++i], type);
-        }
-        else if (type & CS_CLASS)
-        {
-            handle(words[++i], type);
-        }
-        else if (type & CS_CHAR || type & CS_VOID || type & CS_INT ||
-                 type & CS_LONG || type & CS_SHORT || type & CS_SIZE_T ||
-                 type & CS_SSIZE_T)
-        {
-            if (words[++i])
-            {
-                if (char_is_in_word(words[i], '(', &at))
-                {
-                    if (at)
-                    {
-                        char *ptr    = copy_of(words[i]);
-                        words[i][at] = '\0';
-                        free(words[i]);
-                        words[i--] =
-                            measured_copy(ptr + at + 1, strlen(ptr) - at - 1);
-                        free(ptr);
-                    }
-                }
-                else if (words[i + 1] && *words[i + 1] == '(')
-                {}
-                else
-                {
-                    handle(words[i], 0);
-                }
-            }
-        }
-    }
-    /* Loop to free all words, then we free the array. */
-    for (i = 0; i < nwords; i++)
-    {
-        free(words[i]);
-    }
-    free(words);
 }
 
 void
