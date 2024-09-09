@@ -48,7 +48,7 @@ find_suggestion(void)
     }
     for (const auto &d : defines)
     {
-        if (strncmp(d, suggest_buf, strlen(suggest_buf)) == 0)
+        if (strncmp(d, suggest_buf, suggest_len) == 0)
         {
             suggest_str = d;
             nlog("define: %s\n", d);
@@ -140,22 +140,69 @@ draw_suggest_win(void)
     }
 }
 
+/* Parse a function declaration that is over multiple lines. */
+char *
+parse_split_decl(linestruct *line)
+{
+    char       *data = NULL;
+    const char *p    = strchr(line->data, ')');
+    if (!p)
+    {
+        return NULL;
+    }
+    line            = line->prev;
+    char *cur_data  = copy_of(line->data);
+    char *next_data = copy_of(line->next->data);
+    p               = next_data;
+    for (; *p && (*p == ' ' || *p == '\t'); p++);
+    char *tp = copy_of(p);
+    free(next_data);
+    next_data = tp;
+    append_str(&cur_data, " ");
+    data = alloc_str_free_substrs(cur_data, next_data);
+    if (!line->prev->data[0])
+    {
+        free(data);
+        return NULL;
+    }
+    char *ret_t = copy_of(line->prev->data);
+    append_str(&ret_t, " ");
+    char *ret = alloc_str_free_substrs(ret_t, data);
+    return ret;
+}
+
+/* Return the correct line to start parsing function delc.
+ * if '{' is on 'line' then we simply return 'line',
+ * else we iterate until we find the first line
+ * after '{' line that has text on it. */
+linestruct *
+get_func_decl_last_line(linestruct *line)
+{
+    const char *p = strchr(line->data, '{');
+    if (p && (p == line->data || *p == line->data[indent_char_len(line)]))
+    {
+        do {
+            line = line->prev;
+        }
+        while (!line->data[indent_char_len(line)]);
+    }
+    return line;
+}
+
 /* Parse function signature. */
 char *
 parse_function_sig(linestruct *line)
 {
-    const char *p           = strchr(line->data, '{');
+    const char *p           = NULL;
     const char *param_start = NULL;
-    if (p && (p == line->data || *p == line->data[indent_char_len(line)]))
-    {
-        line = line->prev;
-        if (line->data[0] == ' ' || line->data[0] == '\t')
-        {
-
-            return NULL;
-        }
-    }
+    /* If the bracket is alone on a line then go to prev line. */
+    line = get_func_decl_last_line(line);
+    /* If the line does not contain '(', so it must be a split decl. */
     param_start = strchr(line->data, '(');
+    if (!param_start)
+    {
+        return parse_split_decl(line);
+    }
     p           = strchr(line->data, ' ');
     char *sig   = NULL;
     char *ret_t = NULL;
@@ -170,7 +217,6 @@ parse_function_sig(linestruct *line)
         else
         {
             ret = copy_of(line->data);
-            p   = strchr(ret, ' ');
         }
     }
     else
@@ -188,7 +234,6 @@ parse_function_sig(linestruct *line)
     {
         if (!line->prev->data[0])
         {
-
             return NULL;
         }
         ret_t = copy_of(line->prev->data);
@@ -219,13 +264,17 @@ find_word(linestruct *line, const char *data, const char *word,
         *end = (*start) + slen;
         if (!is_word_char(&line->data[((*end) - line->data)], FALSE) &&
             (*start == line->data ||
-             !is_word_char(&line->data[((*start) - line->data) - 1], FALSE)))
+             (!is_word_char(&line->data[((*start) - line->data) - 1], FALSE) &&
+              line->data[((*start) - line->data) - 1] != '_')))
         {}
         else
         {
             *start = NULL;
-            *end   = NULL;
         }
+    }
+    else
+    {
+        *end = NULL;
     }
 }
 
@@ -273,4 +322,17 @@ func_from_lineno(int lineno)
         }
     }
     return NULL;
+}
+
+bool
+func_info_exists(const char *sig)
+{
+    for (const auto &f : func_info)
+    {
+        if (strcmp(f->full_function, sig) == 0)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }

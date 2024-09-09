@@ -149,17 +149,6 @@ extern bool last_key_was_bracket;
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
-extern colortype                 *last_c_color;
-extern syntaxtype                *c_syntaxtype;
-extern std::vector<bracket_pair>  bracket_pairs;
-extern std::vector<bracket_entry> bracket_entrys;
-extern std::vector<std::string>   syntax_structs;
-extern std::vector<std::string>   syntax_classes;
-extern std::vector<std::string>   syntax_vars;
-extern std::vector<std::string>   syntax_funcs;
-extern std::vector<std::string>   handled_includes;
-extern std::vector<std::string>   handled_includes;
-
 extern std::vector<function_info_t *> func_info;
 
 extern task_queue_t          *task_queue;
@@ -174,6 +163,8 @@ extern vec<char *>     structs;
 extern vec<char *>     classes;
 extern vec<char *>     funcs;
 extern vec<glob_var_t> glob_vars;
+
+extern std::unordered_map<std::string_view, int> color_map;
 
 typedef void (*functionptrtype)(void);
 
@@ -592,23 +583,21 @@ void discard_buffer(void);
 void do_cancel(void);
 
 /* All functions in 'cpp.cpp'. */
-bool           isCppSyntaxChar(const char c);
-void           get_line_indent(linestruct *line, unsigned short *tabs,
-                               unsigned short *spaces, unsigned short *t_char,
-                               unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
-unsigned short indent_char_len(linestruct *line);
-void           enclose_marked_region(const char *s1, const char *s2);
-void           do_block_comment(void);
-bool           enter_with_bracket(void);
-void add_bracket_pair(const unsigned long start, const unsigned long end);
-void all_brackets_pos(void);
-void do_close_bracket(void);
-void do_test_window(void);
-function_info_t *parse_function(const char *str);
+bool             isCppSyntaxChar(const char c);
+void             get_line_indent(linestruct *line, unsigned short *tabs,
+                                 unsigned short *spaces, unsigned short *t_char,
+                                 unsigned short *t_tabs) __nonnull((1, 2, 3, 4, 5));
+unsigned short   indent_char_len(linestruct *line);
+void             enclose_marked_region(const char *s1, const char *s2);
+void             do_block_comment(void);
+bool             enter_with_bracket(void);
+void             all_brackets_pos(void);
+void             do_close_bracket(void);
+void             do_test_window(void);
 function_info_t *parse_func(const char *str);
-function_info_t  parse_func_local_mem(const char *str);
 void parse_variable(const char *sig, char **type, char **name, char **value);
 void flag_all_brackets(void);
+void flag_all_block_comments(void);
 void find_current_function(linestruct *l);
 void free_function_info(function_info_t *info, const int index = -1);
 
@@ -629,12 +618,6 @@ void   handle_include(char *str);
 void   handle_define(char *str);
 void   do_cpp_syntax(void);
 void   check_for_syntax_words(linestruct *line);
-void   update_c_syntaxtype(void);
-void   add_syntax_word(const char *color_fg, const char *color_bg,
-                       const char *word, const char *from_file = NULL);
-void   set_last_c_colortype(void);
-void   add_syntax_struct(const char *name);
-void   add_syntax_class(const char *name);
 bool   is_syntax_struct(std::string_view str);
 bool   is_syntax_class(std::string_view str);
 bool   define_exists(const char *str);
@@ -723,10 +706,6 @@ void cleanup_event_handler(void);
 /* 'tasks.cpp' */
 void submit_search_task(const char *path);
 void submit_find_in_dir(const char *file, const char *in_dir);
-void sub_thread_delete_c_syntax(char *word);
-// void sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg,
-// const char *rgxstr,
-//                                 colortype **last_c);
 void sub_thread_find_syntax(const char *path);
 void sub_thread_parse_funcs(const char *path);
 
@@ -756,6 +735,7 @@ void             find_word(linestruct *line, const char *data, const char *word,
                            const unsigned long slen, const char **start, const char **end);
 int              preprossesor_data_from_key(const char *key);
 function_info_t *func_from_lineno(int lineno);
+bool             func_info_exists(const char *sig);
 
 /* 'gui.cpp' */
 // void init_window(void);

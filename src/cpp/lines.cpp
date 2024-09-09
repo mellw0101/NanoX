@@ -45,30 +45,12 @@ is_line_start_end_bracket(linestruct *line, bool *is_start)
     return FALSE;
 }
 
-bool
-is_line_in_bracket_pair(const unsigned long lineno)
-{
-    for (const auto &[start, end] : bracket_pairs)
-    {
-        if (start < lineno && end > lineno)
-        {
-            return TRUE;
-        }
-        if (start > lineno && end > lineno)
-        {
-            break;
-        }
-    }
-    return FALSE;
-}
-
 /* Return`s 'TRUE' if the first char in a line is '\0'. */
 bool
 is_empty_line(linestruct *line)
 {
     unsigned long i = 0;
-    for (; line->data[i] && i < 1; i++)
-        ;
+    for (; line->data[i] && i < 1; i++);
     return (i == 0);
 }
 
@@ -182,7 +164,8 @@ move_lines(bool up)
             }
             mark = mark->prev;
             cur  = cur->prev;
-            NETLOGGER.log("%lu\n%s\n%lu\n%s\n", x_cur, cur->data, x_mark, mark->data);
+            NETLOGGER.log(
+                "%lu\n%s\n%lu\n%s\n", x_cur, cur->data, x_mark, mark->data);
             openfile->mark      = mark;
             openfile->mark_x    = x_mark;
             openfile->current   = cur;

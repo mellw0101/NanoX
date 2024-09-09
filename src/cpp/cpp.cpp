@@ -188,15 +188,6 @@ enter_with_bracket(void)
 }
 
 void
-add_bracket_pair(const unsigned long start, const unsigned long end)
-{
-    bracket_pair bp;
-    bp.start_line = start;
-    bp.end_line   = end;
-    bracket_pairs.push_back(bp);
-}
-
-void
 all_brackets_pos(void)
 {
     linestruct *line;
@@ -214,8 +205,7 @@ all_brackets_pos(void)
             {
                 if (start_pos != -1)
                 {
-                    end_pos = line->lineno;
-                    add_bracket_pair(start_pos, end_pos);
+                    end_pos   = line->lineno;
                     start_pos = -1, end_pos = -1;
                 }
             }
@@ -223,70 +213,12 @@ all_brackets_pos(void)
                 line->lineno, get_line_total_tabs(line), is_start);
         }
     }
-    // for (const auto &be : bracket_entrys)
-    // {
-    //     netlog_bracket_entry(be);
-    // }
-}
-
-void
-get_bracket_start_end(unsigned long lineno, unsigned long *start,
-                      unsigned long *end)
-{
-    *start = 0, *end = 0;
-    for (const auto &[s, e] : bracket_pairs)
-    {
-        if (s < lineno && e > lineno)
-        {
-            *start = s, *end = e;
-            return;
-        }
-        if (s > lineno && e > lineno)
-        {
-            return;
-        }
-    }
-}
-
-/* Return a normalized length of indentation, where a tab and a space are
- * considered equal. */
-unsigned long
-normalized_indent_length(const char *line)
-{
-    unsigned long count = 0;
-    while (*line != '\0' && (*line == ' ' || *line == '\t'))
-    {
-        count++;
-        line += char_length(line);
-    }
-    return count;
 }
 
 void
 do_close_bracket(void)
 {
-    LOG_FLAG(openfile->current, BRACKET_START);
-    LOG_FLAG(openfile->current, IN_BRACKET);
-    LOG_FLAG(openfile->current, BRACKET_END);
     find_current_function(openfile->current);
-    /* This gives correct indent in column`s. */
-    nlog("wideness: %lu\n",
-         wideness(openfile->current->data, indent_char_len(openfile->current)));
-    nlog("vs-code blue(36, 114, 200): %hi, %hi, %hi, index: %hi\n",
-         xterm_byte_scale(36), xterm_byte_scale(114), xterm_byte_scale(200),
-         xterm_color_index(36, 114, 200));
-    /* test_win = newwin(10, 40, 5, 5);
-    box(test_win, 0, 0);
-    mvwprintw(test_win, 1, 1, "hello");
-    wrefresh(test_win); */
-    /* if (openfile->current->is_set(IS_HIDDEN))
-    {
-        openfile->current->unset(IS_HIDDEN);
-    }
-    else
-    {
-        openfile->current->set(IS_HIDDEN);
-    } */
 }
 
 void
@@ -298,137 +230,6 @@ do_test_window(void)
         delwin(suggestwin);
     }
     suggestwin = newwin(20, 20, 0, 0);
-}
-
-function_info_t *
-parse_function(const char *str)
-{
-    PROFILE_FUNCTION;
-    function_info_t *info      = (function_info_t *)nmalloc(sizeof(*info));
-    info->full_function        = copy_of(str);
-    info->name                 = NULL;
-    info->return_type          = NULL;
-    info->params               = NULL;
-    info->number_of_params     = 0;
-    info->attributes           = NULL;
-    info->number_of_attributes = 0;
-    char *copy                 = copy_of(str);
-    char *rest                 = copy;
-    char  buf[1024]            = "";
-    char *pos                  = NULL;
-    char *token                = strtok_r(rest, " ", &rest);
-    /* We want to find the first mention of '(' char indecating that we have
-     * gone thrue the prefix. */
-    while (token != NULL)
-    {
-        if ((pos = strstr(token, "(")) == NULL)
-        {
-            strcat(buf, token);
-            strcat(buf, " ");
-        }
-        else
-        {
-            if (*token == '(')
-            {
-                break;
-            }
-            else
-            {
-                int  i = 0;
-                char name[256];
-                for (; token[i] && token[i] != '('; (name[i] = token[i]), i++);
-                name[i] = '\0';
-                for (int i = 0;; i++)
-                {
-                    if (buf[i] == '\0')
-                    {
-                        int index = 0;
-                        while (name[index] != '\0')
-                        {
-                            buf[i++] = name[index++];
-                        }
-                        buf[i] = '\0';
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-        token = strtok_r(rest, " ", &rest);
-    }
-    /* Quick fix for now, this is so the loop bellow can always find return
-     * type. */
-    if (buf[0] != ' ')
-    {
-        char tbuf[256] = "  ";
-        strcat(tbuf, buf);
-        buf[0] = '\0';
-        strcat(buf, tbuf);
-    }
-    /* Now the buffer contains all text before '(' char. */
-    const int slen  = strlen(buf);
-    int       words = 0;
-    for (int i = slen; i > 0; --i)
-    {
-        if (buf[i] == ' ' && i != slen - 1)
-        {
-            if (words++ == 0)
-            {
-                int was_i = i;
-                /* Here we extract any ptr`s that are at the start of the name.
-                 */
-                for (; buf[i + 1] == '*'; i++);
-                info->name = copy_of(&buf[i + 1]);
-                /* If any ptr`s were found we add them to the return string. */
-                if (int diff = i - was_i; diff != 0)
-                {
-                    for (; diff > 0; diff--, was_i++)
-                    {
-                        buf[was_i] = '*';
-                    }
-                }
-                buf[was_i] = '\0';
-            }
-            else
-            {
-                info->return_type = copy_of(&buf[i + 1]);
-            }
-        }
-    }
-    /* The params. */
-    if (token != NULL)
-    {
-        int i = 0;
-        for (; token[i] && token[i - 1] != '('; i++);
-        if (token[i] != '\0')
-        {
-            token += i;
-        }
-        buf[0] = '\0';
-        strcat(buf, token);
-        strcat(buf, " ");
-        for (i = 0; rest[i] && rest[i] != ')'; i++);
-        rest[i] = '\0';
-        strcat(buf, rest);
-        rest += i + 1;
-        unsigned long number_of_params;
-        char        **params = delim_str(buf, ",", &number_of_params);
-        for (i = 0; i < number_of_params; i++)
-        {
-            if (*params[i] == ' ')
-            {
-                char *param = copy_of(params[i] + 1);
-                free(params[i]);
-                params[i] = param;
-            }
-        }
-        /* info->params           = params; */
-        info->number_of_params = number_of_params;
-        /* Add attributes later.  Thay are in the rest ptr.
-        NLOG("attributes: %s\n", rest); */
-    }
-    free(copy);
-    return info;
 }
 
 /* This function extracts info about a function declaration.  It retrieves all
@@ -719,6 +520,76 @@ flag_all_brackets(void)
     }
 }
 
+/* Set comment flags for all lines in current file. */
+void
+flag_all_block_comments(void)
+{
+    PROFILE_FUNCTION;
+    for (linestruct *line = openfile->filetop; line != NULL; line = line->next)
+    {
+        const char *found_start = strstr(line->data, "/*");
+        const char *found_end   = strstr(line->data, "*/");
+        const char *found_slash = strstr(line->data, "//");
+        /* First line for a block comment. */
+        if (found_start != NULL && found_end == NULL)
+        {
+            /* If a slash comment is found and it is before the block start,
+             * we adjust the start and end pos.  We also make sure to unset
+             * 'BLOCK_COMMENT_START' for the line. */
+            if (found_slash != NULL && found_slash < found_start)
+            {
+                line->unset(BLOCK_COMMENT_START);
+            }
+            else
+            {
+                line->set(BLOCK_COMMENT_START);
+            }
+            line->unset(SINGLE_LINE_BLOCK_COMMENT);
+            line->unset(IN_BLOCK_COMMENT);
+            line->unset(BLOCK_COMMENT_END);
+        }
+        /* Either inside of a block comment or not a block comment at all. */
+        else if (found_start == NULL && found_end == NULL)
+        {
+            if (line->prev &&
+                (line->prev->is_set(IN_BLOCK_COMMENT) ||
+                 line->prev->is_set(BLOCK_COMMENT_START)) &&
+                !line->prev->is_set(SINGLE_LINE_BLOCK_COMMENT))
+            {
+                line->set(IN_BLOCK_COMMENT);
+                line->unset(BLOCK_COMMENT_START);
+                line->unset(BLOCK_COMMENT_END);
+                line->unset(SINGLE_LINE_BLOCK_COMMENT);
+            }
+            /* If the prev line is not in a block comment or the
+             * start block line we are not inside a comment block. */
+            else
+            {
+                line->unset(IN_BLOCK_COMMENT);
+                line->unset(BLOCK_COMMENT_START);
+                line->unset(BLOCK_COMMENT_END);
+                line->unset(SINGLE_LINE_BLOCK_COMMENT);
+            }
+        }
+        /* End of a block comment. */
+        else if (found_start == NULL && found_end != NULL)
+        {
+            /* If last line is in a comment block or is the start of the block.
+             */
+            if (line->prev &&
+                (line->prev->is_set(IN_BLOCK_COMMENT) ||
+                 line->prev->is_set(BLOCK_COMMENT_START)) &&
+                !line->prev->is_set(SINGLE_LINE_BLOCK_COMMENT))
+            {
+                line->set(BLOCK_COMMENT_END);
+                line->unset(IN_BLOCK_COMMENT);
+                line->unset(BLOCK_COMMENT_START);
+                line->unset(SINGLE_LINE_BLOCK_COMMENT);
+            }
+        }
+    }
+}
+
 void
 find_current_function(linestruct *l)
 {
@@ -770,6 +641,7 @@ find_current_function(linestruct *l)
                         }
                     }
                 }
+                color_map[info->name] = FG_VS_CODE_BRIGHT_YELLOW;
                 func_info.push_back(info);
                 refresh_needed = TRUE;
             }

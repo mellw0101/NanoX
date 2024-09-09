@@ -92,3 +92,16 @@ constexpr_map<int, short, 15> color_index_map = {
      {FG_COMMENT_GREEN, xterm_color_index(0, 102, 0)},
      {FG_SUGGEST_GRAY, xterm_grayscale_color_index(80, 80, 80)}}
 };
+
+#define do_word_in_color(word, color)                    \
+    const unsigned int slen = strlen(word);              \
+    const char        *data = line->data;                \
+    do {                                                 \
+        find_word(line, data, word, slen, &start, &end); \
+        if (start)                                       \
+        {                                                \
+            rendr(R, color, start, end);                 \
+        }                                                \
+        data = end;                                      \
+    }                                                    \
+    while (data);

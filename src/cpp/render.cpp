@@ -27,6 +27,8 @@ vec<const char *> types             = {
     "long", "short", "const", "bool",     "typedef", "class",
 };
 
+std::unordered_map<std::string_view, int> color_map;
+
 void
 render_part(unsigned long match_start, unsigned long match_end, short color)
 {
@@ -116,9 +118,9 @@ render_line_text(const int row, const char *str, linestruct *line,
     midwin_color_off(FG_VS_CODE_WHITE);
 }
 
-/* Set start and end pos for comment block or if the entire line is inside of a
- * block comment set 'block_comment_start' to '0' and 'block_comment_end' to
- * '(unsigned int)-1'. */
+/* Set start and end pos for comment block or if the entire
+ * line is inside of a block comment set 'block_comment_start'
+ * to '0' and 'block_comment_end' to '(unsigned int)-1'. */
 void
 render_comment(void)
 {
@@ -142,8 +144,7 @@ render_comment(void)
         LINE_UNSET(line, BLOCK_COMMENT_START);
         LINE_UNSET(line, BLOCK_COMMENT_END);
         LINE_UNSET(line, IN_BLOCK_COMMENT);
-        midwin_mv_add_nstr_color(
-            row, PTR_POS_LINE(line, found_end), found_end, 2, FG_GREEN);
+        render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         /* Highlight the block start if prev line is in a
          * block comment or the start of a block comment. */
         if (line->prev && (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) ||
@@ -223,7 +224,8 @@ render_comment(void)
     else if (found_start != NULL && found_end == NULL)
     {
         block_comment_start = (found_start - line->data);
-        block_comment_end   = (unsigned int)-1;
+        block_comment_end   = till_x;
+        render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         /* Do some error checking and highlight the block start if it`s found
          * while the block above it being a start block or inside a block. */
         if (line->prev && (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) ||
@@ -259,7 +261,9 @@ render_comment(void)
             !LINE_ISSET(line->prev, SINGLE_LINE_BLOCK_COMMENT))
         {
             block_comment_start = 0;
-            block_comment_end   = (unsigned int)-1;
+            block_comment_end   = till_x;
+            render_part(
+                block_comment_start, block_comment_end, FG_COMMENT_GREEN);
             LINE_SET(line, IN_BLOCK_COMMENT);
             LINE_UNSET(line, BLOCK_COMMENT_START);
             LINE_UNSET(line, BLOCK_COMMENT_END);
@@ -294,9 +298,8 @@ render_comment(void)
         {
             block_comment_start = 0;
             block_comment_end   = (found_end - line->data) + 2;
-            midwin_mv_add_nstr_color(
-                row, (wideness(line->data, (found_end - line->data)) + margin),
-                found_end, 2, FG_GREEN);
+            render_part(
+                block_comment_start, block_comment_end, FG_COMMENT_GREEN);
             LINE_SET(line, BLOCK_COMMENT_END);
             LINE_UNSET(line, IN_BLOCK_COMMENT);
             LINE_UNSET(line, BLOCK_COMMENT_START);
@@ -584,7 +587,6 @@ rendr_define(unsigned int index)
     const char *start = NULL, *end = NULL, *param = NULL;
     char       *word = NULL;
     start            = &line->data[index];
-
     if (*start == '\0')
     {
         rendr(E, "<-(Macro name missing)");
@@ -706,7 +708,9 @@ rendr_include(unsigned int index)
         }
         else if (*start == '"' && *end == '"')
         {
-            char *path = measured_memmove_copy(start + 1, (end - start) - 1);
+            end += 1;
+            render_part((start - line->data), (end - line->data), FG_YELLOW);
+            char *path = measured_memmove_copy(start + 1, (end - start) - 2);
             char *pwd  = alloced_full_current_file_dir();
             char *full_path = alloc_str_free_substrs(pwd, path);
             for (const auto &i : includes)
@@ -725,9 +729,15 @@ rendr_include(unsigned int index)
                     for (int i = 0; func_vec[i]; i++)
                     {
                         function_info_t *info = parse_func(func_vec[i]);
-                        info->start_bracket   = 1000000;
-                        info->end_braket      = 1000000;
-                        func_info.push_back(info);
+                        char            *name = copy_of(info->name);
+                        free_function_info(info);
+                        color_map[name] = FG_VS_CODE_BRIGHT_YELLOW;
+                        /* if (!func_info_exists(func_vec[i]))
+                        {
+                                info->start_bracket   = 1000000;
+                                info->end_braket      = 1000000;
+                                func_info.push_back(info);
+                        } */
                     }
                 }
                 free(func_vec);
@@ -736,11 +746,15 @@ rendr_include(unsigned int index)
                 {
                     for (int i = 0; var_vec[i]; i++)
                     {
-                        nlog("%s\n", var_vec[i]);
+                        // nlog("%s\n", var_vec[i]);
                         glob_var_t gvar;
                         parse_variable(
                             var_vec[i], &gvar.type, &gvar.name, &gvar.value);
-                        glob_vars.push_back(gvar);
+                        if (gvar.name)
+                        {
+                            color_map[gvar.name] = FG_VS_CODE_BRIGHT_CYAN;
+                            glob_vars.push_back(gvar);
+                        }
                     }
                     free(var_vec);
                 }
@@ -961,22 +975,11 @@ void
 render_function_params(void)
 {
     PROFILE_FUNCTION;
-    const char   *start = NULL;
-    const char   *end   = NULL;
-    const char   *data  = NULL;
-    unsigned long word_len;
+    const char *start = NULL;
+    const char *end   = NULL;
+    const char *data  = NULL;
     for (const auto &info : func_info)
     {
-        data = line->data;
-        do {
-            find_word(line, data, info->name, strlen(info->name), &start, &end);
-            if (start != NULL)
-            {
-                rendr(R, FG_VS_CODE_BRIGHT_YELLOW, start, end);
-                data = end;
-            }
-        }
-        while (start);
         if (line->lineno + 2 >= info->start_bracket &&
             line->lineno <= info->end_braket)
         {
@@ -984,21 +987,18 @@ render_function_params(void)
             {
                 if (var->name != NULL)
                 {
-                    word_len = strlen(var->name);
-                    start    = strstr(line->data, var->name);
-                    while (start)
-                    {
-                        end = start + word_len;
-                        if (!is_word_char(
-                                &line->data[(end - line->data)], FALSE) &&
-                            (start == line->data ||
-                             !is_word_char(
-                                 &line->data[(start - line->data) - 1], FALSE)))
+                    const unsigned int word_len = strlen(var->name);
+                    data                        = line->data;
+                    do {
+                        find_word(
+                            line, data, var->name, word_len, &start, &end);
+                        if (start)
                         {
                             rendr(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
                         }
-                        start = strstr(end, var->name);
+                        data = end;
                     }
+                    while (data);
                 }
             }
         }
@@ -1054,44 +1054,35 @@ rendr_glob_vars(void)
     }
     const char *data  = NULL;
     const char *start = NULL;
-    const char *end   = NULL;
     if (func_from_lineno(line->lineno) == NULL)
     {
         data  = line->data;
         start = strchr(data, ';');
         if (start)
         {
-            char *str   = measured_copy(line->data, (start - line->data) + 1);
-            bool  found = FALSE;
-            for (const auto &gv : glob_vars)
+            char *str = measured_copy(line->data, (start - line->data) + 1);
+            glob_var_t ngvar;
+            parse_variable(str, &ngvar.type, &ngvar.name, &ngvar.value);
+            if (ngvar.name)
             {
-                if (strcmp(gv.name, str) == 0)
+                bool found = FALSE;
+                for (const auto &gv : glob_vars)
                 {
-                    found = TRUE;
-                    break;
+                    if (strcmp(gv.name, ngvar.name) == 0)
+                    {
+                        found = TRUE;
+                        break;
+                    }
                 }
-            }
-            if (found == FALSE)
-            {
-                glob_var_t ngvar;
-                parse_variable(str, &ngvar.type, &ngvar.name, &ngvar.value);
-                glob_vars.push_back(ngvar);
+                if (found == FALSE)
+                {
+                    nlog("ngvar str: %s\n", str);
+                    color_map[ngvar.name] = FG_VS_CODE_BRIGHT_CYAN;
+                    glob_vars.push_back(ngvar);
+                }
             }
             free(str);
         }
-    }
-    for (const auto &gv : glob_vars)
-    {
-        data = line->data;
-        do {
-            find_word(line, data, gv.name, strlen(gv.name), &start, &end);
-            if (start)
-            {
-                rendr(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
-                data = end;
-            }
-        }
-        while (start);
     }
 }
 
@@ -1107,8 +1098,17 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     ::from_col  = from_col;
     render_function_params();
     render_comment();
+    if ((block_comment_start == 0 && block_comment_end == till_x))
+    {
+        return;
+    }
     if (line->data[0] == '\0')
     {
+        return;
+    }
+    if (line->data[indent_char_len(line)] == '#')
+    {
+        render_preprossesor();
         return;
     }
     render_bracket();
@@ -1117,48 +1117,24 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     line_word_t *head = line_word_list(line->data, till_x);
     while (head != NULL)
     {
-        PROFILE_CURRENT_SCOPE("line_word_list_iter");
         line_word_t *node = head;
         head              = node->next;
+        const auto &it    = color_map.find(node->str);
         if (node->start >= block_comment_start &&
             node->end <= block_comment_end)
         {
-            midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str,
-                                     node->len, FG_COMMENT_GREEN);
+            /* midwin_mv_add_nstr_color(row, get_start_col(line, node),
+               node->str, node->len, FG_COMMENT_GREEN); */
             free_node(node);
             continue;
         }
-        if (*node->str == '#')
+        if (it != color_map.end())
         {
-            render_preprossesor();
-        }
-        if (node->str[1] && *node->str == '(')
-        {
-            node->start++;
-            char *p   = node->str;
-            node->str = measured_copy(node->str + 1, --node->len);
-            free(p);
-        }
-        (node->str[node->len - 1] != ';') ?: node->str[--node->len] = '\0';
-        while (node->str[node->len - 1] == ')')
-        {
-            node->str[--node->len] = '\0';
-        }
-        unsigned long at;
-        if (char_is_in_word(node->str, '(', &at))
-        {
-            if (node->str[at + 1] != '\0')
-            {
-                line_word_t *new_word =
-                    (line_word_t *)malloc(sizeof(*new_word));
-                new_word->start = node->start + at;
-                new_word->end   = node->end;
-                new_word->len   = node->len - at;
-                new_word->str   = measured_copy(node->str + at, new_word->len);
-                new_word->next  = node->next;
-                head            = new_word;
-                node->str[at]   = '\0';
-            }
+            midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str,
+                                     node->len, it->second);
+            free(node->str);
+            free(node);
+            continue;
         }
         const unsigned int type = retrieve_c_syntax_type(node->str);
         if (type != 0)
@@ -1190,40 +1166,10 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
                 midwin_mv_add_nstr_color(row, get_start_col(line, node),
                                          node->str, node->len,
                                          FG_VS_CODE_BRIGHT_MAGENTA);
-
                 render_control_statements(node->start);
             }
             free_node(node);
             continue;
-        }
-        for (unsigned int i = 0; node->str[i]; i++)
-        {
-            if (is_word_char(&node->str[i], FALSE) == FALSE &&
-                node->str[i] != '_')
-            {
-                node->str[i] = '\0';
-                node->len    = i;
-            }
-        }
-        if (syntax_func(node->str))
-        {
-            midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str,
-                                     node->len, FG_VS_CODE_BRIGHT_YELLOW);
-        }
-        else if (is_syntax_struct(node->str))
-        {
-            midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str,
-                                     node->len, FG_VS_CODE_GREEN);
-        }
-        else if (is_syntax_class(node->str))
-        {
-            midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str,
-                                     node->len, FG_VS_CODE_GREEN);
-        }
-        else if (define_exists(node->str))
-        {
-            midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str,
-                                     node->len, FG_VS_CODE_BLUE);
         }
         free_node(node);
     }

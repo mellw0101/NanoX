@@ -5,7 +5,8 @@
 #include <Mlib/Debug.h>
 #include <Mlib/Profile.h>
 #include <cctype>
-#include <cstring>
+#include <string.h>
+#include <stdio.h>
 #include <cwchar>
 #include <sys/ioctl.h>
 
@@ -3633,7 +3634,7 @@ update_softwrapped_line(linestruct *line)
  * that the relevant line needs to be redrawn. */
 bool
 line_needs_update(const unsigned long old_column,
-                  const unsigned long new_column)
+				  const unsigned long new_column)
 {
     if (openfile->mark)
     {

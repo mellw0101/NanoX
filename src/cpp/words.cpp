@@ -390,8 +390,14 @@ line_word_list(const char *str, unsigned long slen)
         {
             break;
         }
+        while (!is_word_char(end, FALSE))
+        {
+            end += 1;
+        }
         start = end;
-        for (; (end < (str + slen)) && (*end != ' ') && (*end != '\t'); end++);
+        for (; (end < (str + slen)) && (*end != ' ') && (*end != '\t') &&
+               (is_word_char(end, FALSE) || *end == '_');
+             end++);
         const unsigned int word_len = end - start;
         line_word_t       *word     = (line_word_t *)malloc(sizeof(*word));
         word->str                   = measured_copy(start, word_len);

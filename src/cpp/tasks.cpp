@@ -16,8 +16,9 @@ struct sub_thread_function
         return task;
     }
 
-    /* Use a sub thread to find syntax from a header file and put them all into a format we can use.
-     * Here we put them into a list that we return for the main thread to prosses. */
+    /* Use a sub thread to find syntax from a header file and put them all into
+     * a format we can use. Here we put them into a list that we return for the
+     * main thread to prosses. */
     static void *
     syntax_from(void *arg)
     {
@@ -35,11 +36,13 @@ struct sub_thread_function
         result->functions_tail  = NULL;
         for (i = 0; i < nwords; i++)
         {
-            if (strncmp(words[i], "void", 4) == 0 || strncmp(words[i], "int", 3) == 0)
+            if (strncmp(words[i], "void", 4) == 0 ||
+                strncmp(words[i], "int", 3) == 0)
             {
                 if (words[++i] != NULL)
                 {
-                    if (strncmp(words[i], "*__restrict", 12) == 0 || strncmp(words[i], "*/", 2) == 0)
+                    if (strncmp(words[i], "*__restrict", 12) == 0 ||
+                        strncmp(words[i], "*/", 2) == 0)
                     {
                         if (words[++i] == NULL)
                         {
@@ -49,7 +52,8 @@ struct sub_thread_function
                     unsigned long j = 0;
                     for (; words[i][j]; j++)
                     {
-                        if (words[i][j] == ',' || words[i][j] == ')' || words[i][j] == ';')
+                        if (words[i][j] == ',' || words[i][j] == ')' ||
+                            words[i][j] == ';')
                         {
                             j = 0;
                             break;
@@ -68,10 +72,11 @@ struct sub_thread_function
                             free(words[i]);
                             words[i] = p;
                         }
-                        syntax_word_t *word = (syntax_word_t *)nmalloc(sizeof(*word));
-                        word->str           = copy_of(words[i]);
-                        word->return_type   = NULL;
-                        word->next          = NULL;
+                        syntax_word_t *word =
+                            (syntax_word_t *)nmalloc(sizeof(*word));
+                        word->str         = copy_of(words[i]);
+                        word->return_type = NULL;
+                        word->next        = NULL;
                         if (result->functions_tail == NULL)
                         {
                             result->functions_tail = word;
@@ -80,7 +85,8 @@ struct sub_thread_function
                         else
                         {
                             result->functions_tail->next = word;
-                            result->functions_tail       = result->functions_tail->next;
+                            result->functions_tail =
+                                result->functions_tail->next;
                         }
                     }
                 }
@@ -127,7 +133,8 @@ struct sub_thread_function
                 while (end == NULL)
                 {
                     if (strncmp(words[i + func_words], "__REDIRECT", 11) == 0 ||
-                        strncmp(words[i + func_words], "__REDIRECT_NTH", 15) == 0 ||
+                        strncmp(words[i + func_words], "__REDIRECT_NTH", 15) ==
+                            0 ||
                         strchr(words[i + func_words - 1], ';') != NULL)
                     {
                         break;
@@ -150,7 +157,10 @@ struct sub_thread_function
                             free(words[i++]);
                             strcat(buf, " ");
                         }
-                        (cap == size) ? cap *= 2, funcs = (char **)nrealloc(funcs, cap * sizeof(char *)) : 0;
+                        (cap == size) ? cap *= 2,
+                            funcs =
+                                (char **)nrealloc(funcs, cap * sizeof(char *)) :
+                                        0;
                         funcs[size++] = copy_of(buf);
                         start         = NULL;
                         end           = NULL;
@@ -162,7 +172,8 @@ struct sub_thread_function
         }
         funcs[size] = NULL;
         free(words);
-        NLOG("%s: file: %s, time: %lf m/s.\n", __func__, path, CALCULATE_MS_TIME(t_start));
+        NLOG("%s: file: %s, time: %lf m/s.\n", __func__, path,
+             CALCULATE_MS_TIME(t_start));
         free(path);
         return funcs;
     }
@@ -194,9 +205,9 @@ struct sub_thread_function
         pthread_mutex_guard_t   guard(&task_queue->mutex);
         delete_c_syntax_task_t *task = (delete_c_syntax_task_t *)arg;
         colortype              *c;
-        for (c = task->syntax_type->color; c->next != NULL && !str_equal_to_rgx(task->word, c->next->start);
-             c = c->next, task->iter++)
-            ;
+        for (c = task->syntax_type->color;
+             c->next != NULL && !str_equal_to_rgx(task->word, c->next->start);
+             c = c->next, task->iter++);
         if (c->next != NULL)
         {
             colortype *tc = c->next->next;
@@ -211,8 +222,9 @@ struct sub_thread_function
     static void *
     compile_rgx(void *arg)
     {
-        compile_rgx_task_t *task                           = (compile_rgx_task_t *)arg;
-        static void (*cleanup)(compile_rgx_task_t *, bool) = [](compile_rgx_task_t *task, bool error)
+        compile_rgx_task_t *task = (compile_rgx_task_t *)arg;
+        static void (*cleanup)(compile_rgx_task_t *, bool) =
+            [](compile_rgx_task_t *task, bool error)
         {
             if (task)
             {
@@ -226,7 +238,8 @@ struct sub_thread_function
                 }
             }
         };
-        if (!parse_color_opts(task->color_fg, task->color_bg, &task->fg, &task->bg, &task->attr))
+        if (!parse_color_opts(task->color_fg, task->color_bg, &task->fg,
+                              &task->bg, &task->attr))
         {
             LOUT_logE("Failed to parse color opts.");
             cleanup(task, TRUE);
@@ -270,7 +283,8 @@ struct main_thread_function
         free(search_result);
     }
 
-    /* Callback function for the main thread to add syntax fetched by subthreads. */
+    /* Callback function for the main thread to add syntax fetched by
+     * subthreads. */
     static void
     handle_syntax(void *arg)
     {
@@ -302,14 +316,17 @@ struct main_thread_function
         }
         char            **funcs = (char **)arg;
         int               cap = 10, size = 0;
-        function_info_t **info_array = (function_info_t **)nmalloc(cap * sizeof(**info_array));
+        function_info_t **info_array =
+            (function_info_t **)nmalloc(cap * sizeof(**info_array));
         for (int i = 0; funcs[i]; i++)
         {
             function_info_t *info = parse_func(funcs[i]);
             if (info != NULL)
             {
                 (cap == size) ? cap *= 2,
-                    info_array     = (function_info_t **)nrealloc(info_array, cap * sizeof(**info_array)) : 0;
+                    info_array = (function_info_t **)nrealloc(
+                        info_array, cap * sizeof(**info_array)) :
+                                0;
                 info_array[size++] = info;
                 free(funcs[i]);
             }
@@ -327,9 +344,8 @@ struct main_thread_function
                 if (func_info[i] == NULL)
                 {
                     func_info =
-                        (function_info_t **)nrealloc(func_info, (i + size + 1) * sizeof(function_info_t *));
-                    int k = 0;
-                    for (; info_array[k]; k++)
+                        (function_info_t **)nrealloc(func_info, (i + size + 1) *
+        sizeof(function_info_t *)); int k = 0; for (; info_array[k]; k++)
                     {
                         func_info[i + k] = info_array[k];
                     }
@@ -348,60 +364,12 @@ struct main_thread_function
         if (result->found == TRUE)
         {
             pause_sub_threads_guard_t pause_guard;
-            LOUT_logI("Found file: '%s' in dir: '%s'.", result->find, result->dir);
+            LOUT_logI(
+                "Found file: '%s' in dir: '%s'.", result->find, result->dir);
         }
         free(result->find);
         free(result->dir);
         free(result);
-    }
-
-    /* Check wether or not the thread successfully removed the syntax.
-     * Also free the struct used to hold the data. */
-    static void
-    check_delete_one_c_syntax(void *arg)
-    {
-        delete_c_syntax_task_t *result = (delete_c_syntax_task_t *)arg;
-        NETLOGGER.log("%lu\n", result->iter);
-        free(result->word);
-        free(result);
-    }
-
-    static void
-    add_rgx_to_list(void *arg)
-    {
-        PROFILE_FUNCTION;
-        if (arg == NULL || c_syntaxtype == NULL)
-        {
-            return;
-        }
-        compile_rgx_task_t *task = (compile_rgx_task_t *)arg;
-        if (task->last_c == NULL)
-        {
-            colortype *c;
-            for (c = c_syntaxtype->color; c->next != NULL; c = c->next)
-                ;
-            (*task->last_c) = c;
-        }
-        colortype *c  = (colortype *)nmalloc(sizeof(colortype));
-        c->start      = task->rgx;
-        c->end        = NULL;
-        c->fg         = task->fg;
-        c->bg         = task->bg;
-        c->attributes = task->attr;
-        if ((*task->last_c)->next != NULL)
-        {
-            colortype *c;
-            for (c = (*task->last_c); c->next; c = c->next)
-                ;
-            (*task->last_c) = c;
-        }
-        c->pairnum            = (*task->last_c)->pairnum + 1;
-        c->next               = NULL;
-        (*task->last_c)->next = c;
-        (*task->last_c)       = (*task->last_c)->next;
-        refresh_needed        = TRUE;
-        perturbed             = TRUE;
-        free(task);
     }
 };
 
@@ -411,45 +379,19 @@ struct task_creator
     static word_search_task_t *
     create_word_search_task(const char *str)
     {
-        word_search_task_t *task = (word_search_task_t *)nmalloc(sizeof(word_search_task_t));
-        task->path               = copy_of(str);
+        word_search_task_t *task =
+            (word_search_task_t *)nmalloc(sizeof(word_search_task_t));
+        task->path = copy_of(str);
         return task;
     }
 
     static dir_search_task_t *
     create_dir_search_task(const char *find, const char *in_dir)
     {
-        dir_search_task_t *task = (dir_search_task_t *)nmalloc(sizeof(dir_search_task_t));
-        task->find              = copy_of(find);
-        task->dir               = copy_of(in_dir);
-        return task;
-    }
-
-    static delete_c_syntax_task_t *
-    create_delete_c_syntax_task(const char *word)
-    {
-        if (c_syntaxtype == NULL)
-        {
-            LOUT_logE("'c_syntaxtype' == NULL.");
-            return NULL;
-        }
-        delete_c_syntax_task_t *task = (delete_c_syntax_task_t *)nmalloc(sizeof(delete_c_syntax_task_t));
-        task->syntax_type            = c_syntaxtype;
-        task->word                   = copy_of(word);
-        task->iter                   = 0;
-        return task;
-    }
-
-    static compile_rgx_task_t *
-    create_compile_rgx_task(const char *color_fg, const char *color_bg, const char *rgxstr,
-                            colortype **last_c)
-    {
-        compile_rgx_task_t *task = (compile_rgx_task_t *)nmalloc(sizeof(compile_rgx_task_t));
-        task->color_fg           = (color_fg) ? copy_of(color_fg) : NULL;
-        task->color_bg           = (color_bg) ? copy_of(color_bg) : NULL;
-        task->rgxstr             = copy_of(rgxstr);
-        task->last_c             = last_c;
-        task->rgx                = NULL;
+        dir_search_task_t *task =
+            (dir_search_task_t *)nmalloc(sizeof(dir_search_task_t));
+        task->find = copy_of(find);
+        task->dir  = copy_of(in_dir);
         return task;
     }
 };
@@ -460,39 +402,24 @@ void
 submit_search_task(const char *path)
 {
     word_search_task_t *task = task_creator::create_word_search_task(path);
-    submit_task(sub_thread_function::search_word_task, task, NULL, main_thread_function::on_search_complete);
+    submit_task(sub_thread_function::search_word_task, task, NULL,
+                main_thread_function::on_search_complete);
 }
 
 void
 submit_find_in_dir(const char *find, const char *in_dir)
 {
-    dir_search_task_t *task = task_creator::create_dir_search_task(find, in_dir);
-    submit_task(sub_thread_function::find_file_in_dir, task, NULL, main_thread_function::on_find_file_in_dir);
-}
-
-/* Call on a sub thread to delete a 'c' syntax obj.  We will have to see if we
- * need to copy the syntax then restore it later or if we should mutex lock it. */
-void
-sub_thread_delete_c_syntax(char *word)
-{
-    delete_c_syntax_task_t *task = task_creator::create_delete_c_syntax_task(word);
-    free(word);
-    (task) ? submit_task(sub_thread_function::delete_one_c_syntax, task, NULL,
-                         main_thread_function::check_delete_one_c_syntax) :
-             void();
-}
-
-void
-sub_thread_compile_add_rgx(const char *color_fg, const char *color_bg, const char *rgxstr, colortype **last_c)
-{
-    compile_rgx_task_t *task = task_creator::create_compile_rgx_task(color_fg, color_bg, rgxstr, last_c);
-    submit_task(sub_thread_function::compile_rgx, task, NULL, main_thread_function::add_rgx_to_list);
+    dir_search_task_t *task =
+        task_creator::create_dir_search_task(find, in_dir);
+    submit_task(sub_thread_function::find_file_in_dir, task, NULL,
+                main_thread_function::on_find_file_in_dir);
 }
 
 void
 sub_thread_find_syntax(const char *path)
 {
-    submit_task(sub_thread_function::syntax_from, copy_of(path), NULL, main_thread_function::handle_syntax);
+    submit_task(sub_thread_function::syntax_from, copy_of(path), NULL,
+                main_thread_function::handle_syntax);
 }
 
 void
