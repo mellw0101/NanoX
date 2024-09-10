@@ -209,8 +209,6 @@ all_brackets_pos(void)
                     start_pos = -1, end_pos = -1;
                 }
             }
-            create_bracket_entry(
-                line->lineno, get_line_total_tabs(line), is_start);
         }
     }
 }
