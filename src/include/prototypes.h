@@ -678,10 +678,6 @@ void select_line(linestruct *line, unsigned long from_col,
                  unsigned long to_col);
 unsigned int total_tabs(linestruct *line);
 
-/* 'brackets.cpp' */
-void create_bracket_entry(unsigned long indent, unsigned long lineno,
-                          bool is_start);
-
 /* 'threadpool.cpp' */
 void          lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
 void          pause_all_sub_threads(bool pause);
