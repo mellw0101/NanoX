@@ -78,19 +78,23 @@
     #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
     #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
  * New defines: */
-#define FLAGS(flag)             flags[((flag) / (sizeof(unsigned long) * 8))]
-#define FLAGMASK(flag)          ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
-#define SET(flag)               FLAGS(flag) |= FLAGMASK(flag)
-#define UNSET(flag)             FLAGS(flag) &= ~FLAGMASK(flag)
-#define ISSET(flag)             ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-#define TOGGLE(flag)            FLAGS(flag) ^= FLAGMASK(flag)
+#define FLAGS(flag) flags[((flag) / (sizeof(unsigned long) * 8))]
+#define FLAGMASK(flag) \
+    ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
+#define SET(flag)    FLAGS(flag) |= FLAGMASK(flag)
+#define UNSET(flag)  FLAGS(flag) &= ~FLAGMASK(flag)
+#define ISSET(flag)  ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+#define TOGGLE(flag) FLAGS(flag) ^= FLAGMASK(flag)
 
 /* Macros for line flags. */
-#define LINE_FLAGS(line, flag)  (line)->flags[((flag) / (sizeof(unsigned short) * 8))]
-#define LINE_FLAGMASK(flag)     ((unsigned short)1 << ((flag) % (sizeof(unsigned short) * 8)))
-#define LINE_SET(line, flag)    LINE_FLAGS(line, flag) |= LINE_FLAGMASK(flag)
-#define LINE_UNSET(line, flag)  LINE_FLAGS(line, flag) &= ~LINE_FLAGMASK(flag)
-#define LINE_ISSET(line, flag)  ((LINE_FLAGS(line, flag) & LINE_FLAGMASK(flag)) != 0)
+#define LINE_FLAGS(line, flag) \
+    (line)->flags[((flag) / (sizeof(unsigned short) * 8))]
+#define LINE_FLAGMASK(flag) \
+    ((unsigned short)1 << ((flag) % (sizeof(unsigned short) * 8)))
+#define LINE_SET(line, flag)   LINE_FLAGS(line, flag) |= LINE_FLAGMASK(flag)
+#define LINE_UNSET(line, flag) LINE_FLAGS(line, flag) &= ~LINE_FLAGMASK(flag)
+#define LINE_ISSET(line, flag) \
+    ((LINE_FLAGS(line, flag) & LINE_FLAGMASK(flag)) != 0)
 #define LINE_TOGGLE(line, flag) LINE_FLAGS(line, flag) ^= LINE_FLAGMASK(flag)
 
 #define SAVE_LINE_FLAGS(name, flags_to_save)                               \
@@ -113,20 +117,21 @@
         LINE_TOGGLE((line_2), flag);                                   \
     }
 
-#define CALCULATE_MS_TIME(start_time) (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
+#define CALCULATE_MS_TIME(start_time) \
+    (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
 
 /* Some line flags. */
-#define BLOCK_COMMENT_START           1
-#define BLOCK_COMMENT_END             2
-#define IN_BLOCK_COMMENT              3
-#define SINGLE_LINE_BLOCK_COMMENT     4
-#define IS_HIDDEN                     5
-#define BRACKET_START                 6
-#define IN_BRACKET                    7
-#define BRACKET_END                   8
-#define FUNCTION_OPEN_BRACKET         9
+#define BLOCK_COMMENT_START       1
+#define BLOCK_COMMENT_END         2
+#define IN_BLOCK_COMMENT          3
+#define SINGLE_LINE_BLOCK_COMMENT 4
+#define IS_HIDDEN                 5
+#define BRACKET_START             6
+#define IN_BRACKET                7
+#define BRACKET_END               8
+#define FUNCTION_OPEN_BRACKET     9
 /* Helpers to unset all line flags. */
-#define NUMBER_OF_LINE_FLAGS          9
+#define NUMBER_OF_LINE_FLAGS      9
 #define UNSET_ALL_LINE_FLAGS(line)                            \
     for (unsigned char i = 1; i <= NUMBER_OF_LINE_FLAGS; i++) \
     {                                                         \
@@ -601,7 +606,8 @@ typedef struct keystruct
     CFuncPtr func;
     /* If a toggle, what we're toggling. */
     int toggle;
-    /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
+    /* The how-manieth toggle this is, in order to be able to keep them in
+     * sequence. */
     int ordinal;
     /* The string of keycodes to which this shortcut is expanded. */
     char *expansion;
@@ -676,18 +682,14 @@ struct glob_var_t
     char *value;
 };
 
-typedef struct
+struct local_var_t
 {
-    char       *full_function;
-    char       *name;
-    char       *return_type;
-    variable_t *params;
-    int         number_of_params;
-    char      **attributes;
-    int         number_of_attributes;
-    int         start_bracket;
-    int         end_braket;
-} function_info_t;
+    char *type;
+    char *name;
+    char *value;
+    int   decl_line;
+    int   scope_end;
+};
 
 typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
 
@@ -768,8 +770,9 @@ public:
             size = 0;
             cap  = 10;
             data = (T *)malloc(sizeof(T) * cap);
-            for (; array[size]; (size == cap) ? cap *= 2, data = (T *)realloc(data, sizeof(T) * cap) : 0,
-                                                          data[size] = array[size], size++);
+            for (; array[size]; (size == cap) ? cap *= 2,
+                                data = (T *)realloc(data, sizeof(T) * cap) : 0,
+                                data[size] = array[size], size++);
             data[size] = NULL;
         }
     }
@@ -899,7 +902,30 @@ private:
     unsigned long   cap;
     unsigned long   size;
 };
-#define vec               vec_t
+#define vec vec_t
+
+typedef struct
+{
+    char       *full_function;
+    char       *name;
+    char       *return_type;
+    variable_t *params;
+    int         number_of_params;
+    char      **attributes;
+    int         number_of_attributes;
+    int         start_bracket;
+    int         end_braket;
+} function_info_t;
+
+#define LOCAL_VAR_SYNTAX 1
+
+struct syntax_data_t
+{
+    int color;
+    int from_line = -1;
+    int to_line   = -1;
+    int type      = -1;
+};
 
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"

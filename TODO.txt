@@ -112,6 +112,8 @@ NanoX, fork of nano.  TODO LIST.
         I would like to color, instead I have added some base colors instead and use them when i want saving time.
 
         Var parsing needs work so that:  int this, that;  Will be parsed correctly.
+        struct, class and enum parsing needs work and needs to be integrated properly so that all elements and methods
+        are stored for later error checking. 
     STATUS:
         ALMOST DONE!!.
 8.  Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.

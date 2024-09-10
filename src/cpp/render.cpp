@@ -7,12 +7,13 @@ static unsigned int block_comment_end   = (unsigned int)-1;
 static int          color_bi[3]         = {
     FG_VS_CODE_YELLOW, FG_VS_CODE_BRIGHT_MAGENTA, FG_VS_CODE_BRIGHT_BLUE};
 
-vec<char *>     includes;
-vec<char *>     defines;
-vec<char *>     structs;
-vec<char *>     classes;
-vec<char *>     funcs;
-vec<glob_var_t> glob_vars;
+vec<char *>          includes;
+vec<char *>          defines;
+vec<char *>          structs;
+vec<char *>          classes;
+vec<char *>          funcs;
+vec<glob_var_t>      glob_vars;
+vec<function_info_t> local_funcs;
 
 static int           row       = 0;
 static const char   *converted = NULL;
@@ -27,8 +28,7 @@ vec<const char *> types             = {
     "long", "short", "const", "bool",     "typedef", "class",
 };
 
-std::unordered_map<std::string_view, int> color_map;
-function_info_t                          *current_function = NULL;
+std::unordered_map<std::string_view, syntax_data_t> color_map;
 
 void
 render_part(unsigned long match_start, unsigned long match_end, short color)
@@ -125,20 +125,18 @@ render_line_text(const int row, const char *str, linestruct *line,
 void
 render_comment(void)
 {
-    PROFILE_FUNCTION;
-    const char *found_start = strstr(line->data, "/*");
-    const char *found_end   = strstr(line->data, "*/");
-    const char *found_slash = strstr(line->data, "//");
+    const char *start = strstr(line->data, "/*");
+    const char *end   = strstr(line->data, "*/");
+    const char *slash = strstr(line->data, "//");
     /* Single line block comment. */
-    if (found_start && found_end)
+    if (start && end)
     {
-        block_comment_start = (found_start - line->data);
-        block_comment_end   = (found_end - line->data + 2);
+        block_comment_start = (start - line->data);
+        block_comment_end   = (end - line->data + 2);
         /* If slash comment found, adjust the start and end pos correctly. */
-        if (found_slash != NULL &&
-            (found_slash - line->data) < block_comment_start)
+        if (slash != NULL && (slash - line->data) < block_comment_start)
         {
-            block_comment_start = (found_slash - line->data);
+            block_comment_start = (slash - line->data);
             block_comment_end   = (unsigned int)-1;
         }
         LINE_SET(line, SINGLE_LINE_BLOCK_COMMENT);
@@ -151,42 +149,39 @@ render_comment(void)
         if (line->prev && (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) ||
                            LINE_ISSET(line->prev, BLOCK_COMMENT_START)))
         {
-            if ((found_end - line->data) > 0 &&
-                line->data[(found_end - line->data) - 1] != '/')
+            if ((end - line->data) > 0 &&
+                line->data[(end - line->data) - 1] != '/')
             {
                 midwin_mv_add_nstr_color(
-                    row,
-                    (wideness(line->data, (found_start - line->data)) + margin),
-                    found_start, 2, ERROR_MESSAGE);
+                    row, (wideness(line->data, (start - line->data)) + margin),
+                    start, 2, ERROR_MESSAGE);
                 /* If there is a slash comment infront the block comment. Then
                  * of cource we still color the text from the slash to the block
                  * start after we error highlight the block start. */
-                if (found_slash != NULL &&
-                    (found_slash - line->data) < (found_start - line->data))
+                if (slash != NULL &&
+                    (slash - line->data) < (start - line->data))
                 {
                     midwin_mv_add_nstr_color(
                         row,
-                        (wideness(line->data, (found_slash - line->data))) +
-                            margin,
-                        found_slash,
-                        (found_start - line->data) - (found_slash - line->data),
+                        (wideness(line->data, (slash - line->data))) + margin,
+                        slash, (start - line->data) - (slash - line->data),
                         FG_GREEN);
                 }
-                block_comment_start += (found_start - line->data) + 2;
+                block_comment_start += (start - line->data) + 2;
             }
-            else if ((found_start - line->data) + 1 == (found_end - line->data))
+            else if ((start - line->data) + 1 == (end - line->data))
             {
                 LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
                 LINE_SET(line, BLOCK_COMMENT_END);
                 block_comment_start = 0;
             }
         }
-        else if ((found_start - line->data) + 1 == (found_end - line->data))
+        else if ((start - line->data) + 1 == (end - line->data))
         {
-            found_end = strstr(found_end + 2, "*/");
-            if (found_end != NULL)
+            end = strstr(end + 2, "*/");
+            if (end != NULL)
             {
-                block_comment_end = (found_end - line->data) + 2;
+                block_comment_end = (end - line->data) + 2;
             }
             else
             {
@@ -195,36 +190,35 @@ render_comment(void)
                 LINE_SET(line, BLOCK_COMMENT_START);
             }
         }
-        while (found_start != NULL && found_end != NULL)
+        while (start != NULL && end != NULL)
         {
             /* TODO: Here we need to fix the issue of multiple block comments on
              * a single line. */
-            found_start = strstr(found_start + 2, "/*");
-            found_end   = strstr(found_end + 2, "*/");
-            found_slash =
-                strstr(found_slash ? found_slash + 2 : line->data, "//");
-            if (found_start != NULL && found_end != NULL)
+            start = strstr(start + 2, "/*");
+            end   = strstr(end + 2, "*/");
+            slash = strstr(slash ? slash + 2 : line->data, "//");
+            if (start != NULL && end != NULL)
             {
-                const unsigned long match_start = (found_start - line->data);
-                const unsigned long match_end   = (found_end - line->data) + 2;
+                const unsigned long match_start = (start - line->data);
+                const unsigned long match_end   = (end - line->data) + 2;
                 render_part(match_start, match_end, FG_GREEN);
             }
-            else if (found_start == NULL && found_end != NULL)
+            else if (start == NULL && end != NULL)
             {
-                midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, found_end),
-                                         found_end, 2, ERROR_MESSAGE);
+                midwin_mv_add_nstr_color(
+                    row, PTR_POS_LINE(line, end), end, 2, ERROR_MESSAGE);
             }
-            else if (found_start != NULL && found_end == NULL)
+            else if (start != NULL && end == NULL)
             {
-                const unsigned long match_start = (found_start - line->data);
+                const unsigned long match_start = (start - line->data);
                 render_part(match_start, till_x, FG_GREEN);
             }
         }
     }
     /* First line for a block comment. */
-    else if (found_start && !found_end)
+    else if (start && !end)
     {
-        block_comment_start = (found_start - line->data);
+        block_comment_start = (start - line->data);
         block_comment_end   = till_x;
         render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         /* Do some error checking and highlight the block start if it`s found
@@ -232,17 +226,18 @@ render_comment(void)
         if (line->prev && (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) ||
                            LINE_ISSET(line->prev, BLOCK_COMMENT_START)))
         {
-            rendr(R_LEN, ERROR_MESSAGE, found_start, 2);
-            block_comment_start = (found_start - line->data) + 2;
+            rendr(R_LEN, ERROR_MESSAGE, start, 2);
+            block_comment_start = (start - line->data) + 2;
         }
         /* If a slash comment is found and it is before the block start,
          * we adjust the start and end pos.  We also make sure to unset
          * 'BLOCK_COMMENT_START' for the line. */
-        if (found_slash != NULL &&
-            (found_slash - line->data) < block_comment_start)
+        if (slash && (slash - line->data) < block_comment_start)
         {
-            block_comment_start = (found_slash - line->data);
-            block_comment_end   = (unsigned int)-1;
+            block_comment_start = (slash - line->data);
+            block_comment_end   = till_x;
+            render_part(
+                block_comment_start, block_comment_end, FG_COMMENT_GREEN);
             LINE_UNSET(line, BLOCK_COMMENT_START);
         }
         else
@@ -254,7 +249,7 @@ render_comment(void)
         LINE_UNSET(line, BLOCK_COMMENT_END);
     }
     /* Either inside of a block comment or not a block comment at all. */
-    else if (!found_start && !found_end)
+    else if (!start && !end)
     {
         if (line->prev &&
             (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) ||
@@ -274,24 +269,24 @@ render_comment(void)
          * start block line we are not inside a comment block. */
         else
         {
-            block_comment_start = (unsigned int)-1;
+            block_comment_start = till_x;
             block_comment_end   = 0;
             LINE_UNSET(line, IN_BLOCK_COMMENT);
             LINE_UNSET(line, BLOCK_COMMENT_START);
             LINE_UNSET(line, BLOCK_COMMENT_END);
             LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
             /* If slash comment is found comment out entire line after slash. */
-            if (found_slash)
+            if (slash)
             {
-                block_comment_start = (found_slash - line->data);
+                block_comment_start = (slash - line->data);
                 block_comment_end   = till_x;
+                render_part(
+                    block_comment_start, block_comment_end, FG_COMMENT_GREEN);
             }
-            render_part(
-                block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         }
     }
     /* End of a block comment. */
-    else if (!found_start && found_end)
+    else if (!start && end)
     {
         /* If last line is in a comment block or is the start of the block. */
         if (line->prev &&
@@ -300,7 +295,7 @@ render_comment(void)
             !LINE_ISSET(line->prev, SINGLE_LINE_BLOCK_COMMENT))
         {
             block_comment_start = 0;
-            block_comment_end   = (found_end - line->data) + 2;
+            block_comment_end   = (end - line->data) + 2;
             render_part(
                 block_comment_start, block_comment_end, FG_COMMENT_GREEN);
             LINE_SET(line, BLOCK_COMMENT_END);
@@ -309,16 +304,17 @@ render_comment(void)
             LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
         }
         /* If slash if found and is before block end. */
-        else if (found_slash != NULL &&
-                 (found_slash - line->data) < (found_end - line->data))
+        else if (slash != NULL && (slash - line->data) < (end - line->data))
         {
-            block_comment_start = 0;
-            block_comment_end   = (unsigned int)-1;
+            block_comment_start = (slash - line->data);
+            block_comment_end   = till_x;
+            render_part(
+                block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         }
         /* If not, error highlight the end block. */
         else
         {
-            rendr(R_LEN, ERROR_MESSAGE, found_end, 2);
+            rendr(R_LEN, ERROR_MESSAGE, end, 2);
         }
     }
     refresh_needed = TRUE;
@@ -451,7 +447,6 @@ render_parents(void)
 void
 render_string_literals(void)
 {
-    PROFILE_FUNCTION;
     const char *start      = line->data;
     const char *end        = line->data;
     const char *slash      = NULL;
@@ -555,7 +550,6 @@ render_string_literals(void)
 void
 render_char_strings(void)
 {
-    PROFILE_FUNCTION;
     const char *start = line->data, *end = line->data;
     while (start != NULL)
     {
@@ -689,7 +683,9 @@ rendr_include(unsigned int index)
         {
             end += 1;
             rendr(C_PTR, FG_YELLOW, start, end);
-            char *file = measured_copy(start + 1, (end - start) - 2);
+            /* TODO: enable later once local file rendering includes all types.
+             */
+            /* char *file = measured_copy(start + 1, (end - start) - 2);
             for (int i = 0; i < includes.get_size(); i++)
             {
                 if (strcmp(includes[i], file) == 0)
@@ -707,13 +703,13 @@ rendr_include(unsigned int index)
             else if (file != NULL)
             {
                 free(file);
-            }
+            } */
         }
         else if (*start == '"' && *end == '"')
         {
             end += 1;
             render_part((start - line->data), (end - line->data), FG_YELLOW);
-            char *path = measured_memmove_copy(start + 1, (end - start) - 2);
+            /* char *path = measured_memmove_copy(start + 1, (end - start) - 2);
             char *pwd  = alloced_full_current_file_dir();
             char *full_path = alloc_str_free_substrs(pwd, path);
             for (const auto &i : includes)
@@ -725,40 +721,40 @@ rendr_include(unsigned int index)
                 }
             }
             if (is_file_and_exists(full_path))
+            { */
+            /* char **func_vec = find_functions_in_file(full_path);
+            if (func_vec != NULL)
             {
-                /* char **func_vec = find_functions_in_file(full_path);
-                if (func_vec != NULL)
+                for (int i = 0; func_vec[i]; i++)
                 {
-                    for (int i = 0; func_vec[i]; i++)
-                    {
-                        function_info_t *info = parse_func(func_vec[i]);
-                        char            *name = copy_of(info->name);
-                        free_function_info(info);
-                        color_map[name] = FG_VS_CODE_BRIGHT_YELLOW;
-                    }
+                    function_info_t *info = parse_func(func_vec[i]);
+                    char            *name = copy_of(info->name);
+                    free_function_info(info);
+                    color_map[name] = FG_VS_CODE_BRIGHT_YELLOW;
                 }
-                free(func_vec); */
-                char **var_vec = find_variabels_in_file(full_path);
-                if (var_vec)
-                {
-                    for (int i = 0; var_vec[i]; i++)
-                    {
-                        // nlog("%s\n", var_vec[i]);
-                        glob_var_t gvar;
-                        parse_variable(
-                            var_vec[i], &gvar.type, &gvar.name, &gvar.value);
-                        if (gvar.name)
-                        {
-                            color_map[gvar.name] = FG_VS_CODE_BRIGHT_CYAN;
-                            glob_vars.push_back(gvar);
-                        }
-                    }
-                    free(var_vec);
-                }
-                includes.push_back(full_path);
-                return;
             }
-            free(full_path);
+            free(func_vec); */
+            /* char **var_vec = find_variabels_in_file(full_path);
+            if (var_vec)
+            {
+                for (int i = 0; var_vec[i]; i++)
+                {
+                    // nlog("%s\n", var_vec[i]);
+                    glob_var_t gvar;
+                    parse_variable(
+                        var_vec[i], &gvar.type, &gvar.name, &gvar.value);
+                    if (gvar.name)
+                    {
+                        color_map[gvar.name] = FG_VS_CODE_BRIGHT_CYAN;
+                        glob_vars.push_back(gvar);
+                    }
+                }
+                free(var_vec);
+            }
+            includes.push_back(full_path);
+            return;
+            }
+            free(full_path); */
         }
         else
         {
@@ -878,7 +874,6 @@ rendr_if_preprosses(unsigned int index)
 void
 render_preprossesor(void)
 {
-    PROFILE_FUNCTION;
     char       *current_word = NULL;
     const char *start        = strchr(line->data, '#');
     const char *end          = NULL;
@@ -971,16 +966,15 @@ render_preprossesor(void)
 void
 render_function_params(void)
 {
-    PROFILE_FUNCTION;
     const char *start = NULL;
     const char *end   = NULL;
     const char *data  = NULL;
-    for (const auto &info : func_info)
+    for (const auto &info : local_funcs)
     {
-        if (line->lineno + 2 >= info->start_bracket &&
-            line->lineno <= info->end_braket)
+        if (line->lineno + 2 >= info.start_bracket &&
+            line->lineno <= info.end_braket)
         {
-            for (variable_t *var = info->params; var != NULL; var = var->prev)
+            for (variable_t *var = info.params; var != NULL; var = var->prev)
             {
                 if (var->name != NULL)
                 {
@@ -998,7 +992,6 @@ render_function_params(void)
                     while (data);
                 }
             }
-            break;
         }
     }
 }
@@ -1006,7 +999,6 @@ render_function_params(void)
 void
 render_control_statements(unsigned long index)
 {
-    PROFILE_FUNCTION;
     switch (line->data[index])
     {
         case 'e' : /* else */
@@ -1043,16 +1035,25 @@ render_control_statements(unsigned long index)
 void
 rendr_glob_vars(void)
 {
-    PROFILE_FUNCTION;
-    if (line->is_set(IN_BLOCK_COMMENT) ||
-        line->is_set(SINGLE_LINE_BLOCK_COMMENT) ||
-        line->is_set(BLOCK_COMMENT_START) || line->is_set(BLOCK_COMMENT_END))
+    if (LINE_ISSET(line, IN_BLOCK_COMMENT) ||
+        LINE_ISSET(line, SINGLE_LINE_BLOCK_COMMENT) ||
+        LINE_ISSET(line, BLOCK_COMMENT_START) ||
+        LINE_ISSET(line, BLOCK_COMMENT_END))
     {
         return;
     }
-    const char *data  = NULL;
-    const char *start = NULL;
-    if (func_from_lineno(line->lineno) == NULL)
+    const char *data    = NULL;
+    const char *start   = NULL;
+    bool        in_func = FALSE;
+    for (const auto &f : local_funcs)
+    {
+        if (line->lineno >= f.start_bracket && line->lineno <= f.end_braket)
+        {
+            in_func = TRUE;
+            break;
+        }
+    }
+    if (!in_func)
     {
         data  = line->data;
         start = strchr(data, ';');
@@ -1074,9 +1075,13 @@ rendr_glob_vars(void)
                 }
                 if (found == FALSE)
                 {
-                    color_map[ngvar.name] = FG_VS_CODE_BRIGHT_CYAN;
-                    glob_vars.push_back(ngvar);
-                    nlog("ngvar str: %s\n", str);
+                    const auto &it = color_map.find(ngvar.name);
+                    if (it == color_map.end())
+                    {
+                        color_map[ngvar.name].color = FG_VS_CODE_BRIGHT_CYAN;
+                        glob_vars.push_back(ngvar);
+                        nlog("ngvar str: %s\n", str);
+                    }
                 }
             }
             free(str);
@@ -1104,6 +1109,8 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     render_bracket();
     render_parents();
     rendr_glob_vars();
+    remove_local_vars_from(line);
+    check_line_for_vars(line);
     line_word_t *head = line_word_list(line->data, till_x);
     while (head != NULL)
     {
@@ -1120,15 +1127,35 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
         const auto &it = color_map.find(node->str);
         if (it != color_map.end())
         {
-            midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str,
-                                     node->len, it->second);
-            if (it->second == FG_VS_CODE_BRIGHT_MAGENTA)
+            if (it->second.from_line != -1)
             {
-                render_control_statements(node->start);
+                if (line->lineno >= it->second.from_line &&
+                    line->lineno <= it->second.to_line)
+                {
+                    if (line->lineno == it->second.to_line)
+                    {
+                        const char *bracket = strchr(line->data, '}');
+                        if (bracket && node->start > (bracket - line->data))
+                        {
+                            free_node(node);
+                            continue;
+                        }
+                    }
+                    midwin_mv_add_nstr_color(row, get_start_col(line, node),
+                                             node->str, node->len,
+                                             it->second.color);
+                }
             }
-            free(node->str);
-            free(node);
-            continue;
+            else
+            {
+                midwin_mv_add_nstr_color(row, get_start_col(line, node),
+                                         node->str, node->len,
+                                         it->second.color);
+                if (it->second.color == FG_VS_CODE_BRIGHT_MAGENTA)
+                {
+                    render_control_statements(node->start);
+                }
+            }
         }
         free_node(node);
     }

@@ -75,6 +75,8 @@
 /* Total elements. */
 #define NUMBER_OF_ELEMENTS           38
 
+#define LOCAL_VAR                    -1
+
 constexpr_map<int, short, 15> color_index_map = {
     {{FG_VS_CODE_RED, COLOR_VS_CODE_RED},
      {FG_VS_CODE_GREEN, COLOR_VS_CODE_GREEN},

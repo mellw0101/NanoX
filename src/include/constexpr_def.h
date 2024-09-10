@@ -539,7 +539,12 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
 
 #define ADV_PTR_BY_CH(ptr, ch)    for (; *ptr && (*ptr != ch); ptr++);
 
+#define adv_ptr_to_ch(ptr, ch)    for (; *ptr && (*ptr != ch); ptr++)
+
 #define ADV_PTR(ptr, ...)         for (; *ptr && __VA_ARGS__; ptr++);
 
 #define adv_ptr(ptr, ...)         ADV_PTR(ptr, __VA_ARGS__)
 #define adv_ptr_to_next_word(ptr) adv_ptr(ptr, (*ptr == ' ' || *ptr == '\t'))
+#define adv_ptr_past_word(ptr)    adv_ptr(ptr, (*ptr != ' ' && *ptr != '\t'))
+
+#define ptr_to_next_word(p)       for (; *p && !is_word_char(p, FALSE); p++)

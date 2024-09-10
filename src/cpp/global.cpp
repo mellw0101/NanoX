@@ -32,8 +32,8 @@ bool ran_a_tool = FALSE;
 bool inhelp = FALSE;
 /* When not NULL: the title of the current help text. */
 char *title = NULL;
-/* Did a command mangle enough of the buffer that we should repaint the screen?
- */
+/* Did a command mangle enough of the buffer
+ * that we should repaint the screen? */
 bool refresh_needed = FALSE;
 /* If we should refresh the suggest window. */
 bool suggest_on = FALSE;
@@ -231,8 +231,6 @@ std::vector<std::string> syntax_funcs;
 /* Vector for all includes that have been handled. */
 std::vector<std::string> handled_includes;
 
-std::vector<function_info_t *> func_info;
-
 const char *term = NULL;
 
 /* Empty functions, for the most part corresponding to toggles. */
@@ -299,7 +297,7 @@ do_nothing(void)
 void
 do_toggle(void)
 {
-    ;
+	;
 }
 
 void

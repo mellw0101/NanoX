@@ -4,6 +4,10 @@
 #include "render.h"
 #include "task_types.h"
 
+using std::string;
+using std::string_view;
+using std::vector;
+
 /* All external variables.  See global.c for their descriptions. */
 
 extern volatile sig_atomic_t the_window_resized;
@@ -149,7 +153,7 @@ extern bool last_key_was_bracket;
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
-extern std::vector<function_info_t *> func_info;
+// extern std::vector<function_info_t *> func_info;
 
 extern task_queue_t          *task_queue;
 extern pthread_t             *threads;
@@ -157,14 +161,15 @@ extern volatile sig_atomic_t *stop_thread_flags;
 extern callback_queue_t      *callback_queue;
 extern main_thread_t         *main_thread;
 
-extern vec<char *>     includes;
-extern vec<char *>     defines;
-extern vec<char *>     structs;
-extern vec<char *>     classes;
-extern vec<char *>     funcs;
-extern vec<glob_var_t> glob_vars;
+extern vec<char *>          includes;
+extern vec<char *>          defines;
+extern vec<char *>          structs;
+extern vec<char *>          classes;
+extern vec<char *>          funcs;
+extern vec<glob_var_t>      glob_vars;
+extern vec<function_info_t> local_funcs;
 
-extern std::unordered_map<std::string_view, int> color_map;
+extern std::unordered_map<std::string_view, syntax_data_t> color_map;
 
 typedef void (*functionptrtype)(void);
 
@@ -595,26 +600,21 @@ void             all_brackets_pos(void);
 void             do_close_bracket(void);
 void             do_test_window(void);
 function_info_t *parse_func(const char *str);
+bool             invalid_variable_sig(const char *sig);
 void parse_variable(const char *sig, char **type, char **name, char **value);
 void flag_all_brackets(void);
 void flag_all_block_comments(void);
 void find_current_function(linestruct *l);
-void free_function_info(function_info_t *info, const int index = -1);
+void check_line_for_vars(linestruct *line);
+void remove_local_vars_from(linestruct *line);
 
 /* 'syntax.cpp' */
 void   syntax_check_file(openfilestruct *file);
 bool   parse_color_opts(const char *color_fg, const char *color_bg, short *fg,
                         short *bg, int *attr);
-void   add_syntax_color(const char *color_fg, const char *color_bg,
-                        const char *rgxstr, colortype **c,
-                        const char *from_file = NULL);
-void   add_start_end_syntax(const char *color_fg, const char *color_bg,
-                            const char *start, const char *end, colortype **c);
 bool   check_func_syntax(char ***words, unsigned long *i);
 void   check_syntax(const char *path);
 void   check_include_file_syntax(const char *path);
-int    add_syntax(const unsigned short *type, char *word);
-void   handle_include(char *str);
 void   handle_define(char *str);
 void   do_cpp_syntax(void);
 void   check_for_syntax_words(linestruct *line);
@@ -723,18 +723,19 @@ void rendr_suggestion();
 void cleanup_rendr(void);
 
 /* 'render_utils.cpp' */
-void             get_next_word(const char **start, const char **end);
-void             clear_suggestion(void);
-void             find_suggestion(void);
-void             add_char_to_suggest_buf(void);
-void             draw_suggest_win(void);
-char            *parse_function_sig(linestruct *line);
-void             accept_suggestion(void);
-void             find_word(linestruct *line, const char *data, const char *word,
-                           const unsigned long slen, const char **start, const char **end);
-int              preprossesor_data_from_key(const char *key);
-function_info_t *func_from_lineno(int lineno);
-bool             func_info_exists(const char *sig);
+void        get_next_word(const char **start, const char **end);
+void        clear_suggestion(void);
+void        find_suggestion(void);
+void        add_char_to_suggest_buf(void);
+void        draw_suggest_win(void);
+char       *parse_function_sig(linestruct *line);
+void        accept_suggestion(void);
+void        find_word(linestruct *line, const char *data, const char *word,
+                      const unsigned long slen, const char **start, const char **end);
+int         preprossesor_data_from_key(const char *key);
+void        free_local_var(local_var_t *var);
+void        add_to_color_map(std::string_view word, int color);
+local_var_t parse_local_var(linestruct *line);
 
 /* 'gui.cpp' */
 // void init_window(void);

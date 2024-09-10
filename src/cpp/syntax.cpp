@@ -14,62 +14,81 @@ syntax_check_file(openfilestruct *file)
     {
         return;
     }
-    if (!ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX))
+    if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX))
     {
-        const char *fext = get_file_extention();
-        if (fext &&
-            (strncmp(fext, "cpp", 3) == 0 || strncmp(fext, "c", 1) == 0))
+        const std::string_view fext = get_file_extention();
+        if (fext == "cpp" || fext == "c" || fext == "h" || fext == "hpp")
         {
-            for (linestruct *line = file->filetop; line != NULL;
-                 line             = line->next)
+            const auto &it = color_map.find("bool");
+            if (it == color_map.end())
             {
-                check_for_syntax_words(line);
+                /* Types. */
+                color_map["bool"].color      = FG_VS_CODE_BLUE;
+                color_map["char"].color      = FG_VS_CODE_BLUE;
+                color_map["short"].color     = FG_VS_CODE_BLUE;
+                color_map["int"].color       = FG_VS_CODE_BLUE;
+                color_map["long"].color      = FG_VS_CODE_BLUE;
+                color_map["unsigned"].color  = FG_VS_CODE_BLUE;
+                color_map["void"].color      = FG_VS_CODE_BLUE;
+                color_map["static"].color    = FG_VS_CODE_BLUE;
+                color_map["extern"].color    = FG_VS_CODE_BLUE;
+                color_map["constexpr"].color = FG_VS_CODE_BLUE;
+                color_map["const"].color     = FG_VS_CODE_BLUE;
+                color_map["true"].color      = FG_VS_CODE_BLUE;
+                color_map["false"].color     = FG_VS_CODE_BLUE;
+                color_map["TRUE"].color      = FG_VS_CODE_BLUE;
+                color_map["FALSE"].color     = FG_VS_CODE_BLUE;
+                color_map["nullptr"].color   = FG_VS_CODE_BLUE;
+                color_map["NULL"].color      = FG_VS_CODE_BLUE;
+                color_map["typedef"].color   = FG_VS_CODE_BLUE;
+                color_map["sizeof"].color    = FG_VS_CODE_BLUE;
+                color_map["struct"].color    = FG_VS_CODE_BLUE;
+                color_map["class"].color     = FG_VS_CODE_BLUE;
+                color_map["enum"].color      = FG_VS_CODE_BLUE;
+                color_map["namespace"].color = FG_VS_CODE_BLUE;
+                color_map["inline"].color    = FG_VS_CODE_BLUE;
+                color_map["typename"].color  = FG_VS_CODE_BLUE;
+                color_map["template"].color  = FG_VS_CODE_BLUE;
+                color_map["volatile"].color  = FG_VS_CODE_BLUE;
+                /* Control statements. */
+                color_map["if"].color       = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["else"].color     = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["case"].color     = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["switch"].color   = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["for"].color      = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["while"].color    = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["return"].color   = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["break"].color    = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["do"].color       = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["continue"].color = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["using"].color    = FG_VS_CODE_BRIGHT_MAGENTA;
             }
-            prosses_callback_queue();
         }
     }
-    else
+    const char *sig =
+        "funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));";
+    if (invalid_variable_sig(sig))
     {
-        /* Types. */
-        color_map["bool"]      = FG_VS_CODE_BLUE;
-        color_map["char"]      = FG_VS_CODE_BLUE;
-        color_map["short"]     = FG_VS_CODE_BLUE;
-        color_map["int"]       = FG_VS_CODE_BLUE;
-        color_map["long"]      = FG_VS_CODE_BLUE;
-        color_map["unsigned"]  = FG_VS_CODE_BLUE;
-        color_map["void"]      = FG_VS_CODE_BLUE;
-        color_map["static"]    = FG_VS_CODE_BLUE;
-        color_map["extern"]    = FG_VS_CODE_BLUE;
-        color_map["constexpr"] = FG_VS_CODE_BLUE;
-        color_map["const"]     = FG_VS_CODE_BLUE;
-        color_map["true"]      = FG_VS_CODE_BLUE;
-        color_map["false"]     = FG_VS_CODE_BLUE;
-        color_map["TRUE"]      = FG_VS_CODE_BLUE;
-        color_map["FALSE"]     = FG_VS_CODE_BLUE;
-        color_map["nullptr"]   = FG_VS_CODE_BLUE;
-        color_map["NULL"]      = FG_VS_CODE_BLUE;
-        color_map["typedef"]   = FG_VS_CODE_BLUE;
-        color_map["sizeof"]    = FG_VS_CODE_BLUE;
-        color_map["struct"]    = FG_VS_CODE_BLUE;
-        color_map["class"]     = FG_VS_CODE_BLUE;
-        color_map["enum"]      = FG_VS_CODE_BLUE;
-        color_map["namespace"] = FG_VS_CODE_BLUE;
-        color_map["inline"]    = FG_VS_CODE_BLUE;
-        color_map["typename"]  = FG_VS_CODE_BLUE;
-        color_map["template"]  = FG_VS_CODE_BLUE;
-        /* Control statements. */
-        color_map["if"]       = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["else"]     = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["case"]     = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["switch"]   = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["for"]      = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["while"]    = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["return"]   = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["break"]    = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["do"]       = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["continue"] = FG_VS_CODE_BRIGHT_MAGENTA;
-        color_map["using"]    = FG_VS_CODE_BRIGHT_MAGENTA;
+        nlog("'%s' is invalid.\n", sig);
     }
+    char *type, *name, *value;
+    parse_variable("const char *lines, *balle;", &type, &name, &value);
+    if (type)
+    {
+        nlog("type: %s\n", type);
+        free(type);
+    }
+    if (name)
+    {
+        nlog("name: %s\n", name);
+        free(name);
+    }
+    if (value)
+    {
+        nlog("value: %s\n", value);
+        free(value);
+    }
+    nlog("\n");
 }
 
 bool
@@ -135,92 +154,6 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg,
     return TRUE;
 }
 
-/* Add syntax regex to end of colortype list 'c'.  This need`s
- * to be faster.  Currently this takes around 0.4 ms. */
-void
-add_syntax_color(const char *color_fg, const char *color_bg, const char *rgxstr,
-                 colortype **c, const char *from_file)
-{
-    PROFILE_FUNCTION;
-    if (*c == NULL)
-    {
-        LOUT_logE("c == NULL.");
-        return;
-    }
-    short      fg, bg;
-    int        attr;
-    regex_t   *start_rgx = NULL;
-    colortype *nc        = NULL;
-    if (!parse_color_opts(color_fg, color_bg, &fg, &bg, &attr))
-    {
-        logE("'parse_color_opts' Failed.");
-        return;
-    }
-    if (from_file != NULL)
-    {
-        if (!compile_with_callback(
-                rgxstr, NANO_REG_EXTENDED, &start_rgx, from_file))
-        {
-            return;
-        }
-    }
-    else
-    {
-        if (!compile(rgxstr, NANO_REG_EXTENDED, &start_rgx))
-        {
-            return;
-        }
-    }
-    nc             = (colortype *)nmalloc(sizeof(colortype));
-    nc->start      = start_rgx;
-    nc->end        = NULL;
-    nc->fg         = fg;
-    nc->bg         = bg;
-    nc->attributes = attr;
-    nc->pairnum    = (*c)->pairnum + 1;
-    nc->next       = NULL;
-    (*c)->next     = nc;
-    (*c)           = (*c)->next;
-}
-
-void
-add_start_end_syntax(const char *color_fg, const char *color_bg,
-                     const char *start, const char *end, colortype **c)
-{
-    if (*c == NULL)
-    {
-        return;
-    }
-    short      fg, bg;
-    int        attr;
-    regex_t   *start_rgx = NULL, *end_rgx = NULL;
-    colortype *nc;
-    if (!parse_color_opts(color_fg, color_bg, &fg, &bg, &attr))
-    {
-        return;
-    }
-    if (!compile(start, NANO_REG_EXTENDED, &start_rgx))
-    {
-        return;
-    }
-    if (!compile(end, NANO_REG_EXTENDED, &end_rgx))
-    {
-        regfree(start_rgx);
-        free(start_rgx);
-        return;
-    }
-    nc             = (colortype *)nmalloc(sizeof(colortype));
-    nc->start      = start_rgx;
-    nc->end        = end_rgx;
-    nc->fg         = fg;
-    nc->bg         = bg;
-    nc->attributes = attr;
-    nc->pairnum    = (*c)->pairnum + 1;
-    nc->next       = NULL;
-    (*c)->next     = nc;
-    (*c)           = (*c)->next;
-}
-
 bool
 check_func_syntax(char ***words, unsigned long *i)
 {
@@ -249,9 +182,7 @@ check_func_syntax(char ***words, unsigned long *i)
         if (type)
         {
             if ((*words)[++(*i)] != NULL)
-            {
-                add_syntax(&type, (*words)[*i]);
-            }
+            {}
         }
         return TRUE;
     }
@@ -477,8 +408,8 @@ check_include_file_syntax(const char *path)
                 }
                 else if (!is_syntax_struct(words[i]))
                 {
-                    char *struct_str      = copy_of(words[i]);
-                    color_map[struct_str] = FG_VS_CODE_BRIGHT_GREEN;
+                    char *struct_str            = copy_of(words[i]);
+                    color_map[struct_str].color = FG_VS_CODE_BRIGHT_GREEN;
                     structs.push_back(struct_str);
                 }
             }
@@ -493,8 +424,8 @@ check_include_file_syntax(const char *path)
                 }
                 else if (!is_syntax_class(words[i]))
                 {
-                    char *class_str      = copy_of(words[i]);
-                    color_map[class_str] = FG_VS_CODE_BRIGHT_GREEN;
+                    char *class_str            = copy_of(words[i]);
+                    color_map[class_str].color = FG_VS_CODE_BRIGHT_GREEN;
                     classes.push_back(class_str);
                 }
             }
@@ -530,7 +461,7 @@ check_include_file_syntax(const char *path)
                                 if (!syntax_func(words[i]))
                                 {
                                     char *func_str = copy_of(words[i]);
-                                    color_map[func_str] =
+                                    color_map[func_str].color =
                                         FG_VS_CODE_BRIGHT_YELLOW;
                                     funcs.push_back(func_str);
                                 }
@@ -543,8 +474,8 @@ check_include_file_syntax(const char *path)
                     strip_leading_chars_from(words[i], '*');
                     if (!syntax_func(words[i]))
                     {
-                        char *func_str      = copy_of(words[i]);
-                        color_map[func_str] = FG_VS_CODE_BRIGHT_YELLOW;
+                        char *func_str            = copy_of(words[i]);
+                        color_map[func_str].color = FG_VS_CODE_BRIGHT_YELLOW;
                         funcs.push_back(func_str);
                     }
                 }
@@ -563,140 +494,6 @@ check_include_file_syntax(const char *path)
         free(words[i]);
     }
     free(words);
-}
-
-int
-add_syntax(const unsigned short *type, char *word)
-{
-    if (*type & CS_STRUCT || *type & CS_ENUM || *type & CS_CLASS)
-    {
-        // sub_thread_compile_add_rgx("brightgreen", NULL, rgx_word(word),
-        // &last_c_color);
-    }
-    else if (*type & CS_INT || *type & CS_VOID || *type & CS_LONG ||
-             *type & CS_CHAR || *type & CS_BOOL || *type & CS_SIZE_T ||
-             *type & CS_SSIZE_T || *type & CS_SHORT)
-    {
-        /* Remove all if any '*' char`s */
-        while (word[0] == '*')
-        {
-            word += 1;
-        }
-        unsigned int i = 0;
-        for (i = 0; word[i]; i++)
-        {
-            if (word[i] == ',')
-            {
-                word[i] = '\0';
-                if (!syntax_var(word))
-                {
-                    new_syntax_var(word);
-                    // sub_thread_compile_add_rgx(VAR_COLOR, NULL,
-                    // rgx_word(word), &last_c_color);
-                }
-                return NEXT_WORD_ALSO;
-            }
-            if (word[i] == ';' || word[i] == ')')
-            {
-                word[i] = '\0';
-                break;
-            }
-        }
-        if (!syntax_var(word))
-        {
-            new_syntax_var(word);
-            // sub_thread_compile_add_rgx(VAR_COLOR, NULL, rgx_word(word),
-            // &last_c_color);
-        }
-    }
-    return 0;
-}
-
-void
-handle_include(char *str)
-{
-    static char        buf[PATH_MAX];
-    static const char *pwd          = NULL;
-    char              *current_file = NULL;
-    unsigned long      i, pos;
-    if (str == NULL)
-    {
-        LOUT_logE("str == NULL.");
-        return;
-    }
-    if (*str == '<')
-    {
-        sprintf(buf, "%s%s", "/usr/include/", extract_include(str));
-        if (is_file_and_exists(buf))
-        {
-            if (!is_in_handled_includes_vec(buf))
-            {
-                add_to_handled_includes_vec(buf);
-                check_syntax(buf);
-            }
-            return;
-        }
-        str += 1;
-        if (*str == 'c')
-        {
-            str += 1;
-        }
-        memset(buf, '\0', sizeof(buf));
-        sprintf(buf, "%s%s", "/usr/include/c++/v1/", str);
-        if (is_file_and_exists(str))
-        {
-            if (!is_in_handled_includes_vec(buf))
-            {
-                add_to_handled_includes_vec(buf);
-                check_syntax(buf);
-            }
-            return;
-        }
-        memset(buf, '\0', sizeof(buf));
-        sprintf(buf, "%s%s%s", "/usr/include/c++/v1/", str, ".h");
-        if (is_file_and_exists(buf))
-        {
-            if (!is_in_handled_includes_vec(buf))
-            {
-                add_to_handled_includes_vec(buf);
-                check_syntax(buf);
-            }
-            return;
-        }
-    }
-    else if (*str == '"')
-    {
-        pwd = getenv("PWD");
-        if (pwd == NULL)
-        {
-            return;
-        }
-        current_file = strdup(openfile->filename);
-        for (i = 0, pos = 0; current_file[i]; i++)
-        {
-            if (current_file[i] == '/')
-            {
-                pos = i;
-            }
-        }
-        if (pos != 0)
-        {
-            current_file[pos + 1] = '\0';
-        }
-        unsigned long slen = strlen(str) - 2;
-        memmove(str, str + 1, slen);
-        str[slen] = '\0';
-        sprintf(buf, "%s%s%s%s", pwd, "/",
-                (current_file != NULL) ? current_file : "", str);
-        if (is_file_and_exists(buf))
-        {
-            if (!is_in_handled_includes_vec(buf))
-            {
-                add_to_handled_includes_vec(buf);
-                check_syntax(buf);
-            }
-        }
-    }
 }
 
 /* Add a '#define' to syntax. */
@@ -718,8 +515,8 @@ handle_define(char *str)
     }
     if (!define_exists(str))
     {
-        char *define_str      = copy_of(str);
-        color_map[define_str] = FG_VS_CODE_BLUE;
+        char *define_str            = copy_of(str);
+        color_map[define_str].color = FG_VS_CODE_BLUE;
         funcs.push_back(define_str);
         defines.push_back(define_str);
     }
@@ -827,7 +624,6 @@ check_for_syntax_words(linestruct *line)
         {
             if (!is_syntax_class(words[++i]))
             {
-                add_syntax(&type, words[i]);
                 // sub_thread_compile_add_rgx(STRUCT_COLOR, NULL,
                 // rgx_word(words[i]), &last_c_color);
             }
@@ -842,7 +638,7 @@ check_for_syntax_words(linestruct *line)
             {
                 continue;
             }
-            if (add_syntax(&type, words[i]) == NEXT_WORD_ALSO)
+            /* if (add_syntax(&type, words[i]) == NEXT_WORD_ALSO)
             {
                 while (TRUE)
                 {
@@ -856,11 +652,11 @@ check_for_syntax_words(linestruct *line)
                     }
                 }
                 continue;
-            }
+            } */
         }
         else if (type & CS_INCLUDE)
         {
-            handle_include(words[++i]);
+            // handle_include(words[++i]);
         }
         else if (type & CS_DEFINE)
         {
@@ -875,7 +671,6 @@ check_for_syntax_words(linestruct *line)
 void
 do_cpp_syntax(void)
 {
-    PROFILE_FUNCTION;
     flag_all_brackets();
     flag_all_block_comments();
 }

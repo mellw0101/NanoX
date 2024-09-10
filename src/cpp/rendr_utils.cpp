@@ -13,18 +13,18 @@ void
 find_suggestion(void)
 {
     PROFILE_FUNCTION;
-    for (const auto &i : func_info)
+    for (const auto &i : local_funcs)
     {
-        if (strncmp(i->full_function + strlen(i->return_type) + 1, suggest_buf,
+        if (strncmp(i.full_function + strlen(i.return_type) + 1, suggest_buf,
                     suggest_len) == 0)
         {
-            suggest_str = i->full_function + strlen(i->return_type) + 1;
+            suggest_str = i.full_function + strlen(i.return_type) + 1;
             return;
         }
-        if (openfile->current->lineno >= i->start_bracket &&
-            openfile->current->lineno <= i->end_braket)
+        if (openfile->current->lineno >= i.start_bracket &&
+            openfile->current->lineno <= i.end_braket)
         {
-            for (variable_t *var = i->params; var != NULL; var = var->prev)
+            for (variable_t *var = i.params; var != NULL; var = var->prev)
             {
                 if (var->name == NULL)
                 {
@@ -278,28 +278,95 @@ find_word(linestruct *line, const char *data, const char *word,
     }
 }
 
-function_info_t *
-func_from_lineno(int lineno)
+void
+free_local_var(local_var_t *var)
 {
-    for (const auto &f : func_info)
+    if (var->type)
     {
-        if (lineno >= f->start_bracket && lineno <= f->end_braket)
-        {
-            return f;
-        }
+        free(var->type);
     }
-    return NULL;
+    if (var->name)
+    {
+        free(var->name);
+    }
+    if (var->value)
+    {
+        free(var->value);
+    }
+}
+
+void
+add_to_color_map(std::string_view word, int color)
+{
+    const auto &it = color_map.find(word);
+    if (it == color_map.end())
+    {
+        color_map[word].color = color;
+    }
+}
+
+local_var_t
+parse_local_var(linestruct *line)
+{
+    local_var_t var;
+    var.type         = NULL;
+    var.name         = NULL;
+    var.value        = NULL;
+    const char *end  = NULL;
+    const char *data = NULL;
+    data             = &line->data[indent_char_len(line)];
+    end              = strchr(data, ';');
+    if (end)
+    {
+        char *str =
+            measured_copy(&line->data[indent_char_len(line)], (end - data) + 1);
+        const char *bracket = strchr(str, '{');
+        if (bracket)
+        {
+            free(str);
+            return var;
+        }
+        char *type, *name, *value;
+        parse_variable(str, &type, &name, &value);
+        if (type)
+        {
+            var.type = copy_of(type);
+            free(type);
+        }
+        if (name)
+        {
+            var.name = copy_of(name);
+            free(name);
+        }
+        if (value)
+        {
+            var.value = copy_of(value);
+            free(value);
+        }
+        if (!(!type && !name && !value))
+        {
+            int lvl       = 0;
+            var.decl_line = line->lineno;
+            for (linestruct *l = line; l; l = l->next)
+            {
+                if (LINE_ISSET(l, BRACKET_START))
+                {
+                    lvl += 1;
+                }
+                if (LINE_ISSET(l, BRACKET_END))
+                {
+                    if (lvl == 0)
+                    {
+                        var.scope_end = l->lineno;
+                        break;
+                    }
+                    lvl -= 1;
+                }
+            }
+        }
+        free(str);
+    }
+    return var;
 }
 
 bool
-func_info_exists(const char *sig)
-{
-    for (const auto &f : func_info)
-    {
-        if (strcmp(f->full_function, sig) == 0)
-        {
-            return TRUE;
-        }
-    }
-    return FALSE;
-}

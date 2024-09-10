@@ -379,7 +379,6 @@ fast_words_from_str(const char *str, unsigned long slen, unsigned long *nwords)
 line_word_t *
 line_word_list(const char *str, unsigned long slen)
 {
-    PROFILE_FUNCTION;
     line_word_t *head = NULL, *tail = NULL;
     (str[slen] == '\n') ? slen-- : 0;
     const char *start = str, *end = str;

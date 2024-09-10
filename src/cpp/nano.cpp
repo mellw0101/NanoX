@@ -951,7 +951,8 @@ toggle_this(const int flag)
         }
         case NO_SYNTAX :
         {
-            precalc_multicolorinfo();
+            // precalc_multicolorinfo();
+            TOGGLE(EXPERIMENTAL_FAST_LIVE_SYNTAX);
             refresh_needed = TRUE;
             break;
         }
@@ -993,8 +994,16 @@ toggle_this(const int flag)
     {
         enabled = !enabled;
     }
-    statusline(REMARK, "%s %s", _(epithet_of_flag(flag)),
-               enabled ? _("enabled") : _("disabled"));
+    if (flag == NO_SYNTAX)
+    {
+        statusline(REMARK, "%s %s", _("Real-Time experimental syntax"),
+                   enabled ? _("enabled") : _("disabled"));
+    }
+    else
+    {
+        statusline(REMARK, "%s %s", _(epithet_of_flag(flag)),
+                   enabled ? _("enabled") : _("disabled"));
+    }
 }
 
 /* Disable extended input and output processing in our terminal settings. */
