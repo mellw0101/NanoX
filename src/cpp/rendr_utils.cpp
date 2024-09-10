@@ -368,5 +368,3 @@ parse_local_var(linestruct *line)
     }
     return var;
 }
-
-bool
