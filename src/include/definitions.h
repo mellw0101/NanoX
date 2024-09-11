@@ -280,6 +280,8 @@
         __VA_ARGS__            \
     } name;
 
+#define NULL_safe_free(ptr) ptr ? free(ptr) : void()
+
 #include "constexpr_utils.h"
 
 /* Enumeration types. */
@@ -454,27 +456,6 @@ typedef struct linestruct
     bool has_anchor;
     /* The state of the line. */
     unsigned short flags[1] = {0};
-    /* Some methods to simplify line flag handeling. */
-    void
-    set(unsigned short flag)
-    {
-        LINE_SET(this, flag);
-    }
-    void
-    unset(unsigned short flag)
-    {
-        LINE_UNSET(this, flag);
-    }
-    bool
-    is_set(unsigned short flag) const
-    {
-        return LINE_ISSET(this, flag);
-    }
-    void
-    toogle(unsigned short flag)
-    {
-        LINE_TOGGLE(this, flag);
-    }
 } linestruct;
 
 typedef struct groupstruct

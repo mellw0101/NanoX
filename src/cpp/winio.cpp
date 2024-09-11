@@ -10,6 +10,7 @@
 #include <cwchar>
 #include <stdio.h>
 #include <string.h>
+
 #include <sys/ioctl.h>
 
 #define BRANDING PACKAGE_STRING
@@ -3534,7 +3535,7 @@ int
 update_line(linestruct *line, const unsigned long index, int offset)
 {
     PROFILE_FUNCTION;
-    if (line->is_set(IS_HIDDEN))
+    if (LINE_ISSET(line, IS_HIDDEN))
     {
         return 0;
     }

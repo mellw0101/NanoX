@@ -362,7 +362,7 @@ render_bracket(void)
     /* Start bracket line was found. */
     else if (start && !end)
     {
-        line->set(BRACKET_START);
+        LINE_SET(line, BRACKET_START);
         rendr(R_CHAR, color_bi[(line_indent(line) % 3)], start);
         if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET) ||
                            LINE_ISSET(line->prev, BRACKET_START)))
@@ -519,7 +519,7 @@ render_string_literals(void)
                 if (*format_end >= '0' && *format_end <= '9')
                 {
                     adv_ptr(
-                        format_end, (*format_end >= '0' && *format_end <= '9'))
+                        format_end, (*format_end >= '0' && *format_end <= '9'));
                 }
                 else if (*format_end == '*')
                 {
@@ -537,7 +537,7 @@ render_string_literals(void)
                     *format_end == 'd')
                 {
                     format_end += 1;
-                    rendr(R, FG_LAGOON, format, format_end);
+                    rendr(R, FG_VS_CODE_BRIGHT_CYAN, format, format_end);
                 }
             }
             format = format_end;
@@ -709,7 +709,7 @@ rendr_include(unsigned int index)
         {
             end += 1;
             render_part((start - line->data), (end - line->data), FG_YELLOW);
-            /* char *path = measured_memmove_copy(start + 1, (end - start) - 2);
+            char *path = measured_memmove_copy(start + 1, (end - start) - 2);
             char *pwd  = alloced_full_current_file_dir();
             char *full_path = alloc_str_free_substrs(pwd, path);
             for (const auto &i : includes)
@@ -721,6 +721,12 @@ rendr_include(unsigned int index)
                 }
             }
             if (is_file_and_exists(full_path))
+            {
+                includes.push_back(full_path);
+                find_functions_task(full_path);
+                find_glob_vars_task(full_path);
+            }
+            /*
             { */
             /* char **func_vec = find_functions_in_file(full_path);
             if (func_vec != NULL)

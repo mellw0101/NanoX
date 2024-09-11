@@ -219,6 +219,28 @@ do_close_bracket(void)
     // find_current_function(openfile->current);
     remove_local_vars_from(openfile->current);
     check_line_for_vars(openfile->current);
+    LOG_FLAG(openfile->current, IN_BRACKET);
+    LOG_FLAG(openfile->current, BRACKET_START);
+    LOG_FLAG(openfile->current, BRACKET_END);
+    char *type, *name, *value;
+    parse_variable(&openfile->current->data[indent_char_len(openfile->current)],
+                   &type, &name, &value);
+    if (type)
+    {
+        nlog("type: %s\n", type);
+        free(type);
+    }
+    if (name)
+    {
+        nlog("name: %s\n", name);
+        free(name);
+    }
+    if (value)
+    {
+        nlog("value: %s\n", value);
+        free(value);
+    }
+    nlog("\n");
 }
 
 void
@@ -551,22 +573,7 @@ parse_local_func(const char *str)
 bool
 invalid_variable_sig(const char *sig)
 {
-    if (*sig == '{' || *sig == '}')
-    {
-        return TRUE;
-    }
-    const char *found = strstr(sig, "return");
-    if (found)
-    {
-        return TRUE;
-    }
-    found = strstr(sig, "for");
-    if (found)
-    {
-        return TRUE;
-    }
-    found = strchr(sig, '[');
-    if (found)
+    if (strstr(sig, "|=") || strstr(sig, "+=") || strstr(sig, "-="))
     {
         return TRUE;
     }
@@ -579,44 +586,6 @@ invalid_variable_sig(const char *sig)
             return TRUE;
         }
     }
-    const char *p;
-    p                 = sig;
-    const char *split = strchr(sig, ',');
-    if (split)
-    {
-        while (*p)
-        {
-            adv_ptr_to_ch(p, ',');
-            if (!*p)
-            {
-                break;
-            }
-            p += 1;
-            adv_ptr_to_next_word(p);
-            if (*p == ',')
-            {
-                return TRUE;
-            }
-        }
-    }
-    /* const char *eql = sig;
-    while (*eql)
-    {
-        adv_ptr_to_ch(eql, '=');
-        if (!*eql)
-        {
-            break;
-        }
-        eql += 1;
-
-        adv_ptr_to_next_word(eql);
-        if (!is_word_char(eql, FALSE) && *eql != '*')
-        {
-            nlog("%s, eql\n", sig);
-            return TRUE;
-        }
-    } */
-    nlog("valid: %s\n", sig);
     return FALSE;
 }
 
@@ -624,12 +593,10 @@ void
 parse_variable(const char *sig, char **type, char **name, char **value)
 {
     /* Set all refreces to 'NULL' so we can return when we want. */
-    *type                = NULL;
-    *name                = NULL;
-    *value               = NULL;
-    const char *p_eql    = strchr(sig, '=');
-    const char *p_parent = strchr(sig, '(');
-    if ((p_parent && !p_eql) || ((p_eql && p_parent) && p_parent < p_eql))
+    *type  = NULL;
+    *name  = NULL;
+    *value = NULL;
+    if (invalid_variable_sig(sig))
     {
         return;
     }
@@ -704,7 +671,8 @@ flag_all_brackets(void)
                 {
                     if (line_indent(line) == line_indent(t_line))
                     {
-                        if (t_line->prev && t_line->prev->is_set(IN_BRACKET))
+                        if (t_line->prev &&
+                            LINE_ISSET(t_line->prev, IN_BRACKET))
                         {
                             LINE_SET(line, IN_BRACKET);
                         }
@@ -724,14 +692,14 @@ flag_all_brackets(void)
         else if ((start == NULL && end == NULL) ||
                  (start != NULL && end != NULL))
         {
-            if (line->prev && (line->prev->is_set(IN_BRACKET) ||
-                               line->prev->is_set(BRACKET_START)))
+            if (line->prev && (LINE_ISSET(line->prev, IN_BRACKET) ||
+                               LINE_ISSET(line->prev, BRACKET_START)))
             {
-                line->set(IN_BRACKET);
+                LINE_SET(line, IN_BRACKET);
             }
             else
             {
-                line->unset(IN_BRACKET);
+                LINE_UNSET(line, IN_BRACKET);
             }
         }
     }
@@ -754,37 +722,37 @@ flag_all_block_comments(void)
              * 'BLOCK_COMMENT_START' for the line. */
             if (found_slash != NULL && found_slash < found_start)
             {
-                line->unset(BLOCK_COMMENT_START);
+                LINE_UNSET(line, BLOCK_COMMENT_START);
             }
             else
             {
-                line->set(BLOCK_COMMENT_START);
+                LINE_SET(line, BLOCK_COMMENT_START);
             }
-            line->unset(SINGLE_LINE_BLOCK_COMMENT);
-            line->unset(IN_BLOCK_COMMENT);
-            line->unset(BLOCK_COMMENT_END);
+            LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
+            LINE_UNSET(line, IN_BLOCK_COMMENT);
+            LINE_UNSET(line, BLOCK_COMMENT_END);
         }
         /* Either inside of a block comment or not a block comment at all. */
         else if (found_start == NULL && found_end == NULL)
         {
             if (line->prev &&
-                (line->prev->is_set(IN_BLOCK_COMMENT) ||
-                 line->prev->is_set(BLOCK_COMMENT_START)) &&
-                !line->prev->is_set(SINGLE_LINE_BLOCK_COMMENT))
+                (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) ||
+                 LINE_ISSET(line->prev, BLOCK_COMMENT_START)) &&
+                !LINE_ISSET(line->prev, SINGLE_LINE_BLOCK_COMMENT))
             {
-                line->set(IN_BLOCK_COMMENT);
-                line->unset(BLOCK_COMMENT_START);
-                line->unset(BLOCK_COMMENT_END);
-                line->unset(SINGLE_LINE_BLOCK_COMMENT);
+                LINE_SET(line, IN_BLOCK_COMMENT);
+                LINE_UNSET(line, BLOCK_COMMENT_START);
+                LINE_UNSET(line, BLOCK_COMMENT_END);
+                LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
             }
             /* If the prev line is not in a block comment or the
              * start block line we are not inside a comment block. */
             else
             {
-                line->unset(IN_BLOCK_COMMENT);
-                line->unset(BLOCK_COMMENT_START);
-                line->unset(BLOCK_COMMENT_END);
-                line->unset(SINGLE_LINE_BLOCK_COMMENT);
+                LINE_UNSET(line, IN_BLOCK_COMMENT);
+                LINE_UNSET(line, BLOCK_COMMENT_START);
+                LINE_UNSET(line, BLOCK_COMMENT_END);
+                LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
             }
         }
         /* End of a block comment. */
@@ -793,14 +761,14 @@ flag_all_block_comments(void)
             /* If last line is in a comment block or is the start of the block.
              */
             if (line->prev &&
-                (line->prev->is_set(IN_BLOCK_COMMENT) ||
-                 line->prev->is_set(BLOCK_COMMENT_START)) &&
-                !line->prev->is_set(SINGLE_LINE_BLOCK_COMMENT))
+                (LINE_ISSET(line->prev, IN_BLOCK_COMMENT) ||
+                 LINE_ISSET(line->prev, BLOCK_COMMENT_START)) &&
+                !LINE_ISSET(line->prev, SINGLE_LINE_BLOCK_COMMENT))
             {
-                line->set(BLOCK_COMMENT_END);
-                line->unset(IN_BLOCK_COMMENT);
-                line->unset(BLOCK_COMMENT_START);
-                line->unset(SINGLE_LINE_BLOCK_COMMENT);
+                LINE_SET(line, BLOCK_COMMENT_END);
+                LINE_UNSET(line, IN_BLOCK_COMMENT);
+                LINE_UNSET(line, BLOCK_COMMENT_START);
+                LINE_UNSET(line, SINGLE_LINE_BLOCK_COMMENT);
             }
         }
     }
@@ -909,43 +877,57 @@ check_line_for_vars(linestruct *line)
     }
     const char *p          = data;
     char       *decl_start = NULL;
-    adv_ptr(p, (*p != ',' && *p != '=' && *p != '(' && *p != ';' && *p != '{'));
-    if (!*p)
+    adv_ptr(p, (*p != ',') && (*p != ';') && (*p != '=') && (*p != '{'));
+    if (!*p || *p == ';' || *p == '=')
     {
-        return;
-    }
-    if (*p == ';' || *p == '=')
-    {
-        p -= 1;
-        for (; p > data && (*p == ' ' || *p == '\t'); p--);
-        if (!(p > data))
+        char *tmp_data = NULL;
+        if (*p == '=' && p[1] == '\0')
         {
-            return;
-        }
-        const char *end = p;
-        for (; p > data && (*p != ' ' && *p != '\t' && *p != '*' && *p != '&');
-             p--);
-        if (p == data)
-        {
-            return;
-        }
-        char *var  = measured_copy(p + 1, (end - p));
-        char *type = measured_copy(data, (p - data));
-        if (type)
-        {
-            const auto &it = color_map.find(type);
-            if (it != color_map.end() &&
-                it->second.color == FG_VS_CODE_BRIGHT_MAGENTA)
+            if (line->next)
             {
-                free(var);
-                free(type);
-                return;
+                char *first_part = copy_of(data);
+                char *second_part =
+                    copy_of(&line->next->data[indent_char_len(line->next)]);
+                tmp_data = alloc_str_free_substrs(first_part, second_part);
+                data     = tmp_data;
+                nlog("full sig: %s\n", tmp_data);
             }
         }
-        nlog("type: %s\n", type);
-        const auto &it = color_map.find(var);
-        if (it == color_map.end())
+        char *type, *name, *value;
+        parse_variable(data, &type, &name, &value);
+        if (type && name)
         {
+            if (strchr(type, '(') ||
+                strncmp(type, "return", "return"_sllen) == 0 ||
+                strchr(type, '[') || strstr(type, "/*"))
+            {
+                nlog("Wrong type: %s\n", type);
+                nlog("Wrong name: %s\n", name);
+                NULL_safe_free(type);
+                NULL_safe_free(name);
+                NULL_safe_free(value);
+                NULL_safe_free(tmp_data);
+                return;
+            }
+            nlog("type: %s\n", type);
+            nlog("name: %s\n", name);
+            const char *array_start = strchr(name, '[');
+            const char *array_end   = strchr(name, ']');
+            char       *var         = NULL;
+            if (array_start && array_end)
+            {
+                var = measured_copy(name, (array_start - name));
+            }
+            else
+            {
+                var = copy_of(name);
+            }
+            const auto &it = color_map.find(var);
+            if (it != color_map.end() && it->second.color == FG_VS_CODE_BLUE)
+            {
+                free(var);
+                return;
+            }
             color_map[var] = {
                 FG_VS_CODE_BRIGHT_CYAN,
                 (int)line->lineno,
@@ -953,13 +935,17 @@ check_line_for_vars(linestruct *line)
                 LOCAL_VAR_SYNTAX,
             };
         }
-        nlog("%s\n", var);
+        NULL_safe_free(type);
+        NULL_safe_free(name);
+        NULL_safe_free(value);
+        NULL_safe_free(tmp_data);
+        return;
     }
     else if (*p == ',')
     {
         char *first_part = measured_copy(data, (p - data));
-        nlog("first part: %s\n", first_part);
-        nlog("line: %s\n", data);
+        /* nlog("first part: %s\n", first_part);
+        nlog("line: %s\n", data); */
         for (; p > first_part && (*p == ' ' || *p == '\t'); p--);
         if (p == first_part)
         {
@@ -972,9 +958,17 @@ check_line_for_vars(linestruct *line)
         }
         p += 1;
         char *base_type = measured_copy(first_part, (p - first_part));
-        // nlog("base_type: %s\n", base_type);
+        if (strchr(base_type, '=') || strstr(base_type, "/*") ||
+            strchr(base_type, '(') ||
+            strncmp(base_type, "return", "return"_sllen) == 0)
+        {
+            free(first_part);
+            free(base_type);
+            return;
+        }
+        nlog("base_type: %s\n", base_type);
         decl_start = copy_of(data + strlen(base_type));
-        // nlog("decl_start: %s\n", decl_start);
+        nlog("decl_start: %s\n", decl_start);
         if (decl_start)
         {
             vector<string> names;
@@ -999,17 +993,18 @@ check_line_for_vars(linestruct *line)
             {
                 char       *name = copy_of(&str[0]);
                 const auto &it   = color_map.find(name);
-                if (it == color_map.end())
-                {
-                    color_map[name] = {.color     = FG_VS_CODE_BRIGHT_CYAN,
-                                       .from_line = (int)line->lineno,
-                                       .to_line = current_line_scope_end(line),
-                                       .type    = LOCAL_VAR_SYNTAX};
-                }
-                else
+                if (it != color_map.end() &&
+                    it->second.color == FG_VS_CODE_BLUE)
                 {
                     free(name);
+                    continue;
                 }
+                color_map[name] = {
+                    .color     = FG_VS_CODE_BRIGHT_CYAN,
+                    .from_line = (int)line->lineno,
+                    .to_line   = current_line_scope_end(line),
+                    .type      = LOCAL_VAR_SYNTAX,
+                };
             }
         }
     }

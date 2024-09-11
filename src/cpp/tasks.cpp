@@ -107,6 +107,24 @@ struct sub_thread_function
     }
 
     static void *
+    functions_from(void *arg)
+    {
+        char  *path      = (char *)arg;
+        char **functions = find_functions_in_file(path);
+        free(path);
+        return functions;
+    }
+
+    static void *
+    glob_vars_from(void *arg)
+    {
+        char  *path      = (char *)arg;
+        char **glob_vars = find_variabels_in_file(path);
+        free(path);
+        return glob_vars;
+    }
+
+    static void *
     parse_funcs_from(void *arg)
     {
         clock_t       t_start = clock();
@@ -196,64 +214,6 @@ struct sub_thread_function
         task->entrys = NULL;
         return task;
     }
-
-    /* Delete`s one syntax form the c syntax linked list. */
-    static void *
-    delete_one_c_syntax(void *arg)
-    {
-        PROFILE_FUNCTION;
-        pthread_mutex_guard_t   guard(&task_queue->mutex);
-        delete_c_syntax_task_t *task = (delete_c_syntax_task_t *)arg;
-        colortype              *c;
-        for (c = task->syntax_type->color;
-             c->next != NULL && !str_equal_to_rgx(task->word, c->next->start);
-             c = c->next, task->iter++);
-        if (c->next != NULL)
-        {
-            colortype *tc = c->next->next;
-            (c->next->end != NULL) ? regfree(c->next->end) : void();
-            (c->next->start != NULL) ? regfree(c->next->start) : void();
-            free(c->next);
-            c->next = tc;
-        }
-        return task;
-    }
-
-    static void *
-    compile_rgx(void *arg)
-    {
-        compile_rgx_task_t *task = (compile_rgx_task_t *)arg;
-        static void (*cleanup)(compile_rgx_task_t *, bool) =
-            [](compile_rgx_task_t *task, bool error)
-        {
-            if (task)
-            {
-                (task->color_fg) ? free(task->color_fg) : void();
-                (task->color_bg) ? free(task->color_bg) : void();
-                (task->rgxstr) ? free(task->rgxstr) : void();
-                if (error)
-                {
-                    (task->rgx) ? free(task->rgx) : void();
-                    free(task);
-                }
-            }
-        };
-        if (!parse_color_opts(task->color_fg, task->color_bg, &task->fg,
-                              &task->bg, &task->attr))
-        {
-            LOUT_logE("Failed to parse color opts.");
-            cleanup(task, TRUE);
-            return NULL;
-        }
-        if (!compile(task->rgxstr, NANO_REG_EXTENDED, &task->rgx))
-        {
-            LOUT_logE("Could not compile rgxstr: '%s'.", task->rgxstr);
-            cleanup(task, TRUE);
-            return NULL;
-        }
-        cleanup(task, false);
-        return task;
-    }
 };
 
 /* Callback`s that the main thread performs. */
@@ -305,6 +265,73 @@ struct main_thread_function
             free(node);
         }
         free(result);
+    }
+
+    static void
+    handle_found_functions(void *arg)
+    {
+        if (arg == NULL)
+        {
+            return;
+        }
+        char **functions = (char **)arg;
+        for (int i = 0; functions[i]; i++)
+        {
+            nlog("function found %s\n", functions[i]);
+            function_info_t info = parse_local_func(functions[i]);
+            if (info.name)
+            {
+                char       *func = copy_of(info.name);
+                const auto &it   = color_map.find(func);
+                if (it == color_map.end())
+                {
+                    color_map[func] = {FG_VS_CODE_BRIGHT_YELLOW};
+                }
+                else
+                {
+                    free(func);
+                }
+            }
+            free(functions[i]);
+        }
+        free(functions);
+    }
+
+    static void
+    handle_found_glob_vars(void *arg)
+    {
+        if (arg == NULL)
+        {
+            return;
+        }
+        char **vars = (char **)arg;
+        for (int i = 0; vars[i]; i++)
+        {
+            glob_var_t gv;
+            parse_variable(vars[i], &gv.type, &gv.name, &gv.value);
+            if (gv.name)
+            {
+                const auto &it = color_map.find(gv.name);
+                if (it == color_map.end())
+                {
+                    color_map[gv.name] = {FG_VS_CODE_BRIGHT_CYAN};
+                    glob_vars.push_back(gv);
+                }
+                else
+                {
+                    NULL_safe_free(gv.type);
+                    NULL_safe_free(gv.name);
+                    NULL_safe_free(gv.value);
+                }
+            }
+            else
+            {
+                NULL_safe_free(gv.type);
+                NULL_safe_free(gv.value);
+            }
+            free(vars[i]);
+        }
+        free(vars);
     }
 
     static void
@@ -427,4 +454,20 @@ sub_thread_parse_funcs(const char *path)
 {
     submit_task(sub_thread_function::parse_funcs_from, copy_of(path), NULL,
                 main_thread_function::handle_parsed_funcs);
+}
+
+void
+find_functions_task(const char *path)
+{
+    char *alloced_path = copy_of(path);
+    submit_task(sub_thread_function::functions_from, alloced_path, NULL,
+                main_thread_function::handle_found_functions);
+}
+
+void
+find_glob_vars_task(const char *path)
+{
+    char *alloced_path = copy_of(path);
+    submit_task(sub_thread_function::glob_vars_from, alloced_path, NULL,
+                main_thread_function::handle_found_glob_vars);
 }

@@ -600,6 +600,7 @@ void             all_brackets_pos(void);
 void             do_close_bracket(void);
 void             do_test_window(void);
 function_info_t *parse_func(const char *str);
+function_info_t  parse_local_func(const char *str);
 bool             invalid_variable_sig(const char *sig);
 void parse_variable(const char *sig, char **type, char **name, char **value);
 void flag_all_brackets(void);
@@ -703,6 +704,8 @@ void submit_search_task(const char *path);
 void submit_find_in_dir(const char *file, const char *in_dir);
 void sub_thread_find_syntax(const char *path);
 void sub_thread_parse_funcs(const char *path);
+void find_functions_task(const char *path);
+void find_glob_vars_task(const char *path);
 
 /* 'signal.cpp' */
 void init_main_thread(void);

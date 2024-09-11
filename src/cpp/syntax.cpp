@@ -50,6 +50,8 @@ syntax_check_file(openfilestruct *file)
                 color_map["typename"].color  = FG_VS_CODE_BLUE;
                 color_map["template"].color  = FG_VS_CODE_BLUE;
                 color_map["volatile"].color  = FG_VS_CODE_BLUE;
+                color_map["public"].color    = FG_VS_CODE_BLUE;
+                color_map["private"].color   = FG_VS_CODE_BLUE;
                 /* Control statements. */
                 color_map["if"].color       = FG_VS_CODE_BRIGHT_MAGENTA;
                 color_map["else"].color     = FG_VS_CODE_BRIGHT_MAGENTA;
@@ -72,7 +74,9 @@ syntax_check_file(openfilestruct *file)
         nlog("'%s' is invalid.\n", sig);
     }
     char *type, *name, *value;
-    parse_variable("const char *lines, *balle;", &type, &name, &value);
+    parse_variable("const char *answers[] = {\"y\", \"n\", \"current pos\", "
+                   "\"rgb\", nullptr};",
+                   &type, &name, &value);
     if (type)
     {
         nlog("type: %s\n", type);
@@ -784,11 +788,33 @@ find_functions_in_file(char *path)
     static char  *line;
     unsigned long acap = 10, asize = 0;
     char        **func_str_array = (char **)nmalloc(acap * sizeof(char *));
+    bool          in_bracket     = FALSE;
     while ((len = getline(&line, &size, file)) != EOF)
     {
         if (line[len - 1] == '\n')
         {
             line[--len] = '\0';
+        }
+        if (strchr(line, '{'))
+        {
+            in_bracket = TRUE;
+        }
+        if (strchr(line, '}'))
+        {
+            in_bracket = FALSE;
+        }
+        if (in_bracket)
+        {
+            continue;
+        }
+        const char *p = line;
+        while (*p == ' ' || *p == '\t')
+        {
+            p++;
+        }
+        if (strchr(line, '#') || strstr(line, "operator") || strchr(line, '['))
+        {
+            continue;
         }
         const char *start        = line;
         const char *end          = line;
@@ -799,11 +825,11 @@ find_functions_in_file(char *path)
             for (; start > line && *start != ' ' && *start != '\t' &&
                    *start != '*' && *start != '&';
                  start--);
-            if (start > line)
+            if (start > p)
             {
                 start += 1;
                 if (strstr(line, "__nonnull") != NULL ||
-                    line[(start - line) + 1] == '*')
+                    line[(start - line) + 1] == '*' || *start == '(')
                 {
                     continue;
                 }
@@ -845,11 +871,24 @@ find_variabels_in_file(char *path)
     static char  *line;
     unsigned long acap = 10, asize = 0;
     char        **var_str_array = (char **)nmalloc(acap * sizeof(char *));
+    bool          in_bracket    = FALSE;
     while ((len = getline(&line, &size, file)) != EOF)
     {
         if (line[len - 1] == '\n')
         {
             line[--len] = '\0';
+        }
+        if (strchr(line, '{'))
+        {
+            in_bracket = TRUE;
+        }
+        if (strchr(line, '}'))
+        {
+            in_bracket = FALSE;
+        }
+        if (in_bracket)
+        {
+            continue;
         }
         const char *parent_start = strchr(line, '(');
         const char *parent_end   = strchr(line, ')');
