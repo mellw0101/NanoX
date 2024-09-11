@@ -64,6 +64,7 @@ syntax_check_file(openfilestruct *file)
                 color_map["do"].color       = FG_VS_CODE_BRIGHT_MAGENTA;
                 color_map["continue"].color = FG_VS_CODE_BRIGHT_MAGENTA;
                 color_map["using"].color    = FG_VS_CODE_BRIGHT_MAGENTA;
+                color_map["operator"].color = FG_VS_CODE_BRIGHT_MAGENTA;
             }
         }
     }
