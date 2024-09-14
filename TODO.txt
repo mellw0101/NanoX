@@ -1,5 +1,9 @@
-NanoX, fork of nano.  TODO LIST.
-1.  Change it so that when using CTRL+(UP/DOWN) it stops at indent diffs.
+('NanoX') fork of 'GNU nano v8.0-44-gef1c9b9f'.
+
+TODO LIST.
+
+('1').
+Change it so that when using CTRL+(UP/DOWN) it stops at indent diffs.
 
     NOTES:
         This is almost perfect and as i want to have it.  I implemented alot of 'rules' that makes coding
@@ -8,13 +12,17 @@ NanoX, fork of nano.  TODO LIST.
         for coding as it puts the cursor in the correct indent when jumping into a bracket`ed area.
     STATUS:
         DONE!!!.
-2.  Make 'prev_word' stop at eol if done from start of next line.  Also make it more intuative to use.
+('2').
+Make 'prev_word' stop at eol if done from start of next line.
+Also make it more intuative to use.
 
     NOTES:
         I dont know how i want this to behave yet so i will probebly change this.
     STATUS:
         KINDA DONE!!.
-3.  Fix both next_word and prev_word so that cut_next_word and cut_prev_word works properly.
+('3').
+Fix both next_word and prev_word so that cut_next_word and 
+cut_prev_word works properly.
     
     NOTES:
         This mostly works like in 'vs-code' right now, I will need to conduct more test`s to find sinarios
@@ -22,21 +30,25 @@ NanoX, fork of nano.  TODO LIST.
         more rules to behave exactly the way I want in all case`s.
     STATUS:
         KINDA DONE!!.
-4.  Make it so that when text is marked and '/" is pressed it 'text'/"text".
+('4').
+Make it so that when text is marked and '/" is pressed it 'text'/"text".
     
     NOTES:
         I also added so that '{', '[' and '(' puts closing brackets around marked region.
         I.E.  '{text}', '[text]' and '(text)'.  @see @file 'cpp.cpp' @func 'enclose_marked_region'. 
     STATUS:
         DONE!!.
-5.  Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
+('5').
+Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
 
     NOTES:
         It currently stops at top when going up and bottom when going down.
         I dont yet know if i want to change it.
+
     STATUS:
         ALMOST DONE!!!!.
-6.  Implement a way to close and open brackets (will probebly be very HARD!!!).
+('6').
+Implement a way to close and open brackets (will probebly be very HARD!!!).
 
     Notes:
         The main problem I`m having is that I can find and then not render the line`s I want when the
@@ -54,12 +66,18 @@ NanoX, fork of nano.  TODO LIST.
         text if we crash before we sync the files.  This also adds alot of complexety witch will be hard
         to deal with down the line as it will need to be accaunted for when makeing or changing basicaly
         anything.
+        
+        So this is basicly done i can visualy hide whatever lines i want i just have to figure out
+        how to jump over them entirely and not interact with them at all.
+
     FUNC`S OF INTREST:
         'edit_refresh'
         'draw_row'
+    
     STATUS:
         NOT DONE.
-7.  Implement live syntax.
+('7').
+Implement live syntax.
     
     NOTES:
         I just need to make a system to save types and structs of function calls
@@ -114,9 +132,11 @@ NanoX, fork of nano.  TODO LIST.
         Var parsing needs work so that:  int this, that;  Will be parsed correctly.
         struct, class and enum parsing needs work and needs to be integrated properly so that all elements and methods
         are stored for later error checking. 
+    
     STATUS:
         ALMOST DONE!!.
-8.  Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
+('8').
+Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
 
     NOTES:
         I had to add a check for term so i would know if currently running in xterm, as xterm uses unique codes.
@@ -128,33 +148,42 @@ NanoX, fork of nano.  TODO LIST.
         is pressed.  I honestly find it weird why you would want a system where not all key`s and mod keys held, as
         this allows for total control as well as what i just created.  A way to delete prev word with 'ctrl+backspace',
         this is the norm in most other modern editors.
+    
     STATUS:
         DONE!!.
-9.  Make it possible to move one line up and down holding 'alt'.
+('9').
+Make it possible to move one line up and down holding 'alt'.
 
     NOTES:
         This was quite easy to get to work, the harder(not really that hard) part was to make undoing and
         redoing work correctly.  After I worked that out it now works exactly the same as in 'vs-code'
         when moving one line up and down.  I`m very happy with how it works.  I just need to figure out
         how to make selected text stay selected after the line has been moved, after that it`s complete.
+    
     STATUS:
         DONE!!.
-10. Make it possible to move all selected lines up and down one line.
+('10').
+Make it possible to move all selected lines up and down one line.
 
     NOTES:
-        I can successfully do this now but I cannot manage to return the selection of the text once complete, I think
-        this stems from the fact that I`m using my function to move one line to move the line above the selected text
-        to the last line of the selection and vise versa.  This is a problem because I cannot currently keep the
-        selection when just moving one line making it hard to understand why it wont just work if i save then restore
-        the mark and current pos after we are done.  I think i need to make the this possible when moving just one line
-        then this will be fixed, and if not I will have lerned how it works better.
+        I can successfully do this now but I cannot manage to return the selection of the text
+        once complete, I think this stems from the fact that I`m using my function to move one
+        line to move the line above the selected text to the last line of the selection and vise versa.
+        This is a problem because I cannot currently keep the selection when just moving one line
+        making it hard to understand why it wont just work if i save then restore the mark and
+        current pos after we are done.  I think i need to make the this possible when moving just
+        one line then this will be fixed, and if not I will have lerned how it works better.
+    
     STATUS:
         NOT DONE.
-11. Make auto bracket placement and proper indent if enter is pressed between '{}',
+('11').
+Make auto bracket placement and proper indent if enter is pressed between '{}',
+    
     LIKE THIS:
         {
             (cursor here)
         }
+    
     INSTEAD OF THIS:
         {
         (cursor here)}
@@ -163,36 +192,46 @@ NanoX, fork of nano.  TODO LIST.
         Was not that hard i just have to decide how i want the undo to work, in one go or two meaning
         undo the indent then separating or just return directly in one go.  I also added a check where
         it indents one if pressing enter when 'prev char' == '{' and 'next char' != '}'.
+    
     STATUS:
         DONE!!.
-12. Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace is pressed directly
+('12').
+Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace is pressed directly
     after remove both char`s.
 
     NOTES:
         I added so that '<' so that creates a '>' if after #include.  This will be improved for edge case`s
         when found so it is not yet done.
+
     STATUS:
         ALMOST DONE!!.
-13. Make '^Bsp' and '^Del' remove all spaces if more then one space to next/prev word, like 'vs-code'.
+('13').
+Make '^Bsp' and '^Del' remove all spaces if more then one space to next/prev word, like 'vs-code'.
 
     NOTES:
-        This was quite fun to be honest I remade the function 8 times and managed to make one of my begin_new_syntax
-        func`s so far, IN MY OPINION.  I will probebly improve it even more when I find some edge case.
+        This was quite fun to be honest I remade the function 8 times and
+        managed to make one of my begin_new_syntax func`s so far, IN MY OPINION.
+        I will probebly improve it even more when I find some edge case.
+
     STATUS:
         DONE!!.  FOR NOW.
-14. Extend functionality of execute so you can do more when using '^E', for example run formater and such.
+('14').
+Extend functionality of execute so you can do more when using '^E', for example run formater and such.
 
     STATUS:
         NOT DONE.
-15. Create a system to find header file`s based on the file they are found in.
+('15').
+Create a system to find header file`s based on the file they are found in.
     
     NOTES:
         This will not be hard at all i think it will be easiest to just parse all files in the folder that the
         current file is in for local(") header files.  And for global(<) i will just parse the entire '/usr/include/'
         folder.
+    
     STATUS:
         NOT DONE.
-16. Multithreding just dropped bois!!!
+('16').
+Multithreding just dropped bois!!!
 
     NOTES:
         Now this is amazing i coded this for 9 hours and it worked when i tested it ahhahahhaha!!
@@ -211,28 +250,71 @@ NanoX, fork of nano.  TODO LIST.
         I also made everything non blocking for all threads the only waiting thay will
         do is for the next task, I cannot wait to develop them further.
     
-        This system is flawless.  there are newer problems, the only thing is that i built this before i
-        figured out how the syntaxing worked and before i changed to my real-time system.  And then i really
-        needed to run thing concurently because of the slowness of regexing and other things.  but as of now
-        using my real-time system it`s so fast that Not even a single function i profile when i stress test takes more than
-        '1' ms, to compleate and for all the real-time rendering functions.
-        Well...
-            render_bracket                : Mean = 0.000115283 ms, Stddev = 0.000442019 ms,    Min = 2e-05 ms,    Max = 0.01829 ms,  Count = 91626
-            render_char_strings           : Mean = 6.34184e-05 ms, Stddev = 9.73154e-05 ms,    Min = 2e-05 ms,    Max = 0.01043 ms,  Count = 90696
-            render_comment                : Mean = 7.71813e-05 ms, Stddev = 9.15774e-05 ms,    Min = 3e-05 ms,    Max = 0.00888 ms,  Count = 91626
-            render_function_params        : Mean = 0.00133443 ms, Stddev = 0.00109268 ms,    Min = 0.00041 ms,    Max = 0.02217 ms,  Count = 91626
-            render_preprossesor           : Mean = 3.70054e-05 ms, Stddev = 6.41127e-05 ms,    Min = 2e-05 ms,    Max = 0.00969 ms,  Count = 91626
-            render_string_literals        : Mean = 5.2356e-05 ms, Stddev = 9.17636e-05 ms,    Min = 2e-05 ms,    Max = 0.00791 ms,  Count = 90696
-            /* This one does all the rendering for each line.  And it never took more than '1' ms. for '91626' iters. */
-            apply_syntax_to_line          : Mean = 0.00332462 ms, Stddev = 0.00518622 ms,    Min = 0.0007 ms,    Max = 0.979771 ms,  Count = 91626\
+        This system is flawless.  there are newer problems, the only thing is that i built
+        this before i figured out how the syntaxing worked and before i changed to my real-time
+        system.  And then i really needed to run thing concurently because of the slowness of
+        regexing and other things.  But as of now using my real-time system it`s so fast that
+        not even a single function i profile when i stress test takes more than '1' ms,
+        to compleate and for all the real-time rendering functions.
         
-        I feel this becoming way easier, like all of it i dont know how to explain but i dont seem to make errors, even when i think that im gooing to make
-        it crash non stop because of how i made a linked list, but no nothing.
+        Well...
+            render_bracket:
+                Mean    = 0.000115283 ms,
+                Stddev  = 0.000442019 ms,
+                Min     = 2e-05 ms,
+                Max     = 0.01829 ms,
+                Count   = 91626
+            
+            render_char_strings:
+                Mean    = 6.34184e-05 ms,
+                Stddev  = 9.73154e-05 ms,
+                Min     = 2e-05 ms,
+                Max     = 0.01043 ms,
+                Count   = 90696
+            
+            render_comment:
+                Mean    = 7.71813e-05 ms,
+                Stddev  = 9.15774e-05 ms,
+                Min     = 3e-05 ms,
+                Max     = 0.00888 ms,
+                Count   = 91626
+            
+            render_function_params:
+                Mean    = 0.00133443 ms, 
+                tddev   = 0.00109268 ms, 
+                Min     = 0.00041 ms,
+                Max     = 0.02217 ms,
+                Count   = 91626
+            
+            render_preprossesor:
+                Mean    = 3.70054e-05 ms,
+                Stddev  = 6.41127e-05 ms,
+                Min     = 2e-05 ms,
+                Max     = 0.00969 ms,
+                Count   = 91626
+            
+            render_string_literals:
+                Mean    = 5.2356e-05 ms,
+                Stddev  = 9.17636e-05 ms,
+                Min     = 2e-05 ms,
+                Max     = 0.00791 ms,
+                Count   = 90696
+            
+            /* This one does all the rendering for each line.
+             * And it never took more than '1' ms. for '91626' iters. */
+            apply_syntax_to_line:
+                Mean    = 0.00332462 ms,
+                Stddev  = 0.00518622 ms,
+                Min     = 0.0007 ms,
+                Max     = 0.979771 ms,
+                Count   = 91626
 
         I will make NanoX better than vs code the next main problem is to add the ability to close and open brackets.
+
     STATUS:
         OBVIUSLY NOT DONE BUT NO ERRORS AT ALL!!
-17. Create a rendering engine.
+('17').
+Create a rendering engine.
 
     NOTES:
         I have just created the first part of the rendering engine, the main function to render the text in a line.
@@ -269,20 +351,24 @@ NanoX, fork of nano.  TODO LIST.
         added to 'render_function_params' so that it can look at a type for a param and if the user tries to index into the param
         (i.e: param[index]) it checks if the param is a '*' ptr and if not it gives an error directly in real time by making the
         var red.
+
     STATUS:
         NOT DONE.  But started and implemented.
-18. Implement a way to search for header files.
+('18').
+Implement a way to search for header files.
 
     STATUS:
         NOT DONE.
-19. Implement GOOD methods for the line struct.
+('19').
+Implement GOOD methods for the line struct.
 
     NOTES:
         I will need to do this with care, as i want to simplyfy not make the struct more complex.
 
     STATUS:
         NOT DONE.
-20. Create suggestion system.
+('20').
+Create suggestion system.
 
     NOTES:
         The system is very basic and just shows one suggestion for.  It also inject`s the suggestion into the current
@@ -290,6 +376,17 @@ NanoX, fork of nano.  TODO LIST.
 
     STATUS:
         IMPLEMENTED, NOT DONE.
+('21').
+Implement a real parent and bracket color system based on nesting rather then just on indent.
+
+    NOTES:
+        I have a plan on how to implement this as i have already made the logic to correctly get all
+        of the data i need i just need to think of a way to implement this so that it scales no matter
+        the size of the file.  And i know it will not be slow no matter what but i would like it to
+        be as fast as possible directly so i never need to change it out of slowness.
+
+    STATUS:
+        DONE!!, But not yet implemented.
 
 NCURSES_HELP:
     'wattron' turns on an attribute for a 'WINDOW*'. 

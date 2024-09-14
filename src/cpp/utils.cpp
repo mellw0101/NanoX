@@ -713,3 +713,64 @@ alloced_remove_at(char **str, int at)
     int slen = strlen(*str);
     memmove(*str + at, *str + at + 1, slen - at);
 }
+
+/* Return 'NULL' if 'needle' is not found by itself. */
+const char *
+word_strstr(const char *data, const char *needle)
+{
+    const int   slen  = strlen(needle);
+    const char *found = strstr(data, needle);
+    if (found)
+    {
+        if ((data[(found - data) + slen] == ' ' ||
+             data[(found - data) + slen] == '\t') &&
+            (data == found || ((data[(found - data) - 1] == ' ') ||
+                               data[(found - data) - 1] == '\t')))
+        {
+            return found;
+        }
+    }
+    return NULL;
+}
+
+/* Retrieve a 'string' containing the file extention.
+ * And if there is none it will return "". */
+string
+file_extention_str(void)
+{
+    if (!openfile->filename)
+    {
+        return "";
+    }
+    const char *ext = tail(openfile->filename);
+    for (; *ext && *ext != '.'; ext++);
+    if (!*ext)
+    {
+        return "";
+    }
+    return string(ext + 1);
+}
+
+/* Retrieve`s the currently open file`s full dir. */
+string
+current_file_dir(void)
+{
+    if (!openfile->filename)
+    {
+        return "";
+    }
+    string ret = "";
+    if (*openfile->filename != '/')
+    {
+        const char *pwd = getenv("PWD");
+        if (!pwd)
+        {
+            return "";
+        }
+        string str_pwd(pwd);
+        ret = str_pwd + "/";
+    }
+    ret += string(
+        openfile->filename, (tail(openfile->filename) - openfile->filename));
+    return ret;
+}

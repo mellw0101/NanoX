@@ -107,6 +107,53 @@ struct sub_thread_function
     }
 
     static void *
+    make_line_list_from_file(void *arg)
+    {
+        char *path = (char *)arg;
+        if (!is_file_and_exists(path))
+        {
+            logE("Path: '%s' is not a file or does not exist.", path);
+            free(path);
+            return NULL;
+        }
+        FILE *file = fopen(path, "rb");
+        if (file == NULL)
+        {
+            logE("Failed to open file '%s'.", path);
+            free(path);
+            return NULL;
+        }
+        static thread_local char *buf = NULL;
+        unsigned long             size;
+        long                      len;
+        linestruct               *head = NULL;
+        linestruct               *tail = NULL;
+        while ((len = getline(&buf, &size, file)) != EOF)
+        {
+            if (buf[len - 1] == '\n')
+            {
+
+                buf[--len] = '\0';
+            }
+            linestruct *line = make_new_node(tail);
+            line->data       = measured_copy(buf, len);
+            if (tail == NULL)
+            {
+                head = line;
+                tail = line;
+            }
+            else
+            {
+                tail->next = line;
+                tail       = tail->next;
+            }
+        }
+        fclose(file);
+        free(path);
+        return head;
+    }
+
+    static void *
     functions_from(void *arg)
     {
         char  *path      = (char *)arg;
@@ -281,7 +328,7 @@ struct main_thread_function
             function_info_t info = parse_local_func(functions[i]);
             if (info.name)
             {
-                char       *func = copy_of(info.name);
+                /* char       *func = copy_of(info.name);
                 const auto &it   = color_map.find(func);
                 if (it == color_map.end())
                 {
@@ -290,7 +337,7 @@ struct main_thread_function
                 else
                 {
                     free(func);
-                }
+                } */
             }
             free(functions[i]);
         }
@@ -311,7 +358,7 @@ struct main_thread_function
             parse_variable(vars[i], &gv.type, &gv.name, &gv.value);
             if (gv.name)
             {
-                const auto &it = color_map.find(gv.name);
+                /* const auto &it = color_map.find(gv.name);
                 if (it == color_map.end())
                 {
                     color_map[gv.name] = {FG_VS_CODE_BRIGHT_CYAN};
@@ -322,7 +369,7 @@ struct main_thread_function
                     NULL_safe_free(gv.type);
                     NULL_safe_free(gv.name);
                     NULL_safe_free(gv.value);
-                }
+                } */
             }
             else
             {
@@ -381,6 +428,43 @@ struct main_thread_function
                 }
             }
         } */
+    }
+
+    static void
+    get_line_list(void *arg)
+    {
+        if (arg == NULL)
+        {
+            return;
+        }
+        linestruct *head = (linestruct *)arg;
+        for (linestruct *line = head; line; line = line->next)
+        {
+            const char *class_p = word_strstr(line->data, "class");
+            if (class_p && strstr(line->data, "/*") == NULL)
+            {
+                // const char *start = NULL;
+                const char *end = class_p + 5;
+                nlog("%s\n", line->data);
+                if (*end == ' ' || *end == '\t')
+                {
+                    adv_ptr_to_next_word(end);
+                    if (*end)
+                    {
+                        // start = end;
+                        adv_ptr_past_word(end);
+                        parse_class_data(line);
+                    }
+                }
+            }
+        }
+        while (head)
+        {
+            linestruct *line = head;
+            head             = line->next;
+            free(line->data);
+            free(line);
+        }
     }
 
     static void
@@ -470,4 +554,12 @@ find_glob_vars_task(const char *path)
     char *alloced_path = copy_of(path);
     submit_task(sub_thread_function::glob_vars_from, alloced_path, NULL,
                 main_thread_function::handle_found_glob_vars);
+}
+
+void
+get_line_list_task(const char *path)
+{
+    char *arg = copy_of(path);
+    submit_task(sub_thread_function::make_line_list_from_file, arg, NULL,
+                main_thread_function::get_line_list);
 }

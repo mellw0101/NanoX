@@ -4,6 +4,8 @@
 #include <Mlib/Debug.h>
 #include <Mlib/FileSys.h>
 #include <Mlib/Profile.h>
+#include <Mlib/String.h>
+#include <Mlib/Vector.h>
 #include <Mlib/constexpr.hpp>
 #include <Mlib/def.h>
 #include "../include/config.h"
@@ -130,8 +132,9 @@
 #define IN_BRACKET                7
 #define BRACKET_END               8
 #define FUNCTION_OPEN_BRACKET     9
+#define DONT_PREPROSSES_LINE      10
 /* Helpers to unset all line flags. */
-#define NUMBER_OF_LINE_FLAGS      9
+#define NUMBER_OF_LINE_FLAGS      10
 #define UNSET_ALL_LINE_FLAGS(line)                            \
     for (unsigned char i = 1; i <= NUMBER_OF_LINE_FLAGS; i++) \
     {                                                         \
@@ -898,7 +901,31 @@ typedef struct
     int         end_braket;
 } function_info_t;
 
-#define LOCAL_VAR_SYNTAX 1
+struct var_t
+{
+    string type;
+    string name;
+    string value;
+    int    decl_line;
+    int    scope_end;
+};
+
+struct class_info_t
+{
+    string         name;
+    vector<var_t>  variables;
+    vector<string> methods;
+};
+
+#define LOCAL_VAR_SYNTAX    1
+#define CLASS_SYNTAX        2
+#define CLASS_METHOD_SYNTAX 3
+#define DEFAULT_TYPE_SYNTAX 4
+#define CONTROL_SYNTAX      5
+#define IS_WORD_STRUCT      6
+#define STRUCT_SYNTAX       7
+#define IS_WORD_CLASS       8
+#define DEFINE_SYNTAX       9
 
 struct syntax_data_t
 {
@@ -907,6 +934,49 @@ struct syntax_data_t
     int to_line   = -1;
     int type      = -1;
 };
+
+struct define_entry_t
+{
+    string name;
+    string value;
+};
+
+class language_server_t
+{
+    static language_server_t *instance;
+    static pthread_mutex_t    init_mutex;
+
+    pthread_mutex_t        _mutex;
+    vector<string>         _includes;
+    vector<define_entry_t> _defines;
+
+    language_server_t(void);
+
+    int find_endif(linestruct *from);
+
+public:
+    ~language_server_t(void);
+
+    static language_server_t *Instance(void);
+
+    int    is_defined(const string &name);
+    bool   has_been_included(const string &name);
+    string define_value(const string &name);
+    void   add_define(const define_entry_t &entry);
+
+    void define(linestruct *line, const char **ptr);
+    void ifndef(const string &define, linestruct *current_line);
+    void ifdef(const string &define, linestruct *current_line);
+    void undef(const string &define);
+    void handle_if(linestruct *line, const char **ptr);
+
+    void check(linestruct *from, string file);
+    void add_defs_to_color_map(void);
+
+    vector<define_entry_t> retrieve_defines(void);
+};
+#define LSP               language_server_t::Instance()
+#define ADD_BASE_DEF(def) add_define({#def, to_string(def)})
 
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"

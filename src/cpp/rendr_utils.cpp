@@ -13,6 +13,26 @@ void
 find_suggestion(void)
 {
     PROFILE_FUNCTION;
+    for (auto &it : var_vector)
+    {
+        if (openfile->current->lineno >= it.decl_line &&
+            openfile->current->lineno <= it.scope_end)
+        {
+            if (strncmp(it.name.c_str(), suggest_buf, suggest_len) == 0)
+            {
+                suggest_str = &it.name[0];
+                return;
+            }
+        }
+    }
+    for (auto &ci : class_info_vector)
+    {
+        if (strncmp(ci.name.c_str(), suggest_buf, suggest_len) == 0)
+        {
+            suggest_str = &ci.name[0];
+            return;
+        }
+    }
     for (const auto &i : local_funcs)
     {
         if (strncmp(i.full_function + strlen(i.return_type) + 1, suggest_buf,
@@ -295,16 +315,6 @@ free_local_var(local_var_t *var)
     }
 }
 
-void
-add_to_color_map(std::string_view word, int color)
-{
-    const auto &it = color_map.find(word);
-    if (it == color_map.end())
-    {
-        color_map[word].color = color;
-    }
-}
-
 local_var_t
 parse_local_var(linestruct *line)
 {
@@ -367,4 +377,61 @@ parse_local_var(linestruct *line)
         free(str);
     }
     return var;
+}
+
+int
+find_class_end_line(linestruct *from)
+{
+    int         lvl     = 0;
+    const char *b_start = NULL;
+    const char *b_end   = NULL;
+    for (linestruct *line = from; line; line = line->next)
+    {
+        b_start = line->data;
+        do {
+            b_start = strchr(b_start, '{');
+            if (b_start)
+            {
+                if (!(line->data[(b_start - line->data) - 1] == '\'' &&
+                      line->data[(b_start - line->data) + 1] == '\''))
+                {
+                    lvl += 1;
+                }
+                b_start += 1;
+            }
+        }
+        while (b_start);
+        b_end = line->data;
+        do {
+            b_end = strchr(b_end, '}');
+            if (b_end)
+            {
+                if (!(line->data[(b_end - line->data) - 1] == '\'' &&
+                      line->data[(b_end - line->data) + 1] == '\''))
+                {
+                    if (lvl == 0)
+                    {
+                        break;
+                    }
+                    lvl -= 1;
+                }
+                b_end += 1;
+            }
+        }
+        while (b_end);
+        if (strchr(line->data, ';') && lvl == 0)
+        {
+            return line->lineno;
+        }
+    }
+    return -1;
+}
+
+void
+add_to_color_map(string str, syntax_data_t data)
+{
+    if (test_map.find(str) == test_map.end())
+    {
+        test_map[str] = data;
+    }
 }

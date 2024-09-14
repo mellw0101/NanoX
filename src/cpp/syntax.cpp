@@ -16,84 +16,72 @@ syntax_check_file(openfilestruct *file)
     }
     if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX))
     {
-        const std::string_view fext = get_file_extention();
-        if (fext == "cpp" || fext == "c" || fext == "h" || fext == "hpp")
+        const string ext = file_extention_str();
+        NLOG("ext: '%s'.\n", ext.c_str());
+        if (ext == "cpp" || ext == "c" || ext == "h" || ext == "hpp")
         {
-            const auto &it = color_map.find("bool");
-            if (it == color_map.end())
+            const auto &it = test_map.find("bool");
+            if (it == test_map.end())
             {
                 /* Types. */
-                color_map["bool"].color      = FG_VS_CODE_BLUE;
-                color_map["char"].color      = FG_VS_CODE_BLUE;
-                color_map["short"].color     = FG_VS_CODE_BLUE;
-                color_map["int"].color       = FG_VS_CODE_BLUE;
-                color_map["long"].color      = FG_VS_CODE_BLUE;
-                color_map["unsigned"].color  = FG_VS_CODE_BLUE;
-                color_map["void"].color      = FG_VS_CODE_BLUE;
-                color_map["static"].color    = FG_VS_CODE_BLUE;
-                color_map["extern"].color    = FG_VS_CODE_BLUE;
-                color_map["constexpr"].color = FG_VS_CODE_BLUE;
-                color_map["const"].color     = FG_VS_CODE_BLUE;
-                color_map["true"].color      = FG_VS_CODE_BLUE;
-                color_map["false"].color     = FG_VS_CODE_BLUE;
-                color_map["TRUE"].color      = FG_VS_CODE_BLUE;
-                color_map["FALSE"].color     = FG_VS_CODE_BLUE;
-                color_map["nullptr"].color   = FG_VS_CODE_BLUE;
-                color_map["NULL"].color      = FG_VS_CODE_BLUE;
-                color_map["typedef"].color   = FG_VS_CODE_BLUE;
-                color_map["sizeof"].color    = FG_VS_CODE_BLUE;
-                color_map["struct"].color    = FG_VS_CODE_BLUE;
-                color_map["class"].color     = FG_VS_CODE_BLUE;
-                color_map["enum"].color      = FG_VS_CODE_BLUE;
-                color_map["namespace"].color = FG_VS_CODE_BLUE;
-                color_map["inline"].color    = FG_VS_CODE_BLUE;
-                color_map["typename"].color  = FG_VS_CODE_BLUE;
-                color_map["template"].color  = FG_VS_CODE_BLUE;
-                color_map["volatile"].color  = FG_VS_CODE_BLUE;
-                color_map["public"].color    = FG_VS_CODE_BLUE;
-                color_map["private"].color   = FG_VS_CODE_BLUE;
+                test_map["bool"]      = {FG_VS_CODE_BLUE};
+                test_map["char"]      = {FG_VS_CODE_BLUE};
+                test_map["short"]     = {FG_VS_CODE_BLUE};
+                test_map["int"]       = {FG_VS_CODE_BLUE};
+                test_map["long"]      = {FG_VS_CODE_BLUE};
+                test_map["unsigned"]  = {FG_VS_CODE_BLUE};
+                test_map["void"]      = {FG_VS_CODE_BLUE};
+                test_map["static"]    = {FG_VS_CODE_BLUE};
+                test_map["extern"]    = {FG_VS_CODE_BLUE};
+                test_map["constexpr"] = {FG_VS_CODE_BLUE};
+                test_map["const"]     = {FG_VS_CODE_BLUE};
+                test_map["true"]      = {FG_VS_CODE_BLUE};
+                test_map["false"]     = {FG_VS_CODE_BLUE};
+                test_map["TRUE"]      = {FG_VS_CODE_BLUE};
+                test_map["FALSE"]     = {FG_VS_CODE_BLUE};
+                test_map["nullptr"]   = {FG_VS_CODE_BLUE};
+                test_map["NULL"]      = {FG_VS_CODE_BLUE};
+                test_map["typedef"]   = {FG_VS_CODE_BLUE};
+                test_map["sizeof"]    = {FG_VS_CODE_BLUE};
+                test_map["struct"] = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_STRUCT};
+                test_map["class"]  = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_CLASS};
+                test_map["enum"]   = {FG_VS_CODE_BLUE};
+                test_map["namespace"] = {FG_VS_CODE_BLUE};
+                test_map["inline"]    = {FG_VS_CODE_BLUE};
+                test_map["typename"]  = {FG_VS_CODE_BLUE};
+                test_map["template"]  = {FG_VS_CODE_BLUE};
+                test_map["volatile"]  = {FG_VS_CODE_BLUE};
+                test_map["public"]    = {FG_VS_CODE_BLUE};
+                test_map["private"]   = {FG_VS_CODE_BLUE};
+                test_map["explicit"]  = {FG_VS_CODE_BLUE};
+                test_map["this"]      = {FG_VS_CODE_BLUE};
+                test_map["union"]     = {FG_VS_CODE_BLUE};
+                /* Compiler defines. */
+                /* test_map["__cplusplus"]     = {FG_VS_CODE_BLUE};
+                test_map["__clang__"]       = {FG_VS_CODE_BLUE};
+                test_map["__GNUC__"]        = {FG_VS_CODE_BLUE};
+                test_map["__STDC__"]        = {FG_VS_CODE_BLUE};
+                test_map["__has_attribute"] = {FG_VS_CODE_BLUE};
+                test_map["__has_builtin"]   = {FG_VS_CODE_BLUE};
+                test_map["__restrict"]      = {FG_VS_CODE_BLUE}; */
                 /* Control statements. */
-                color_map["if"].color       = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["else"].color     = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["case"].color     = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["switch"].color   = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["for"].color      = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["while"].color    = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["return"].color   = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["break"].color    = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["do"].color       = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["continue"].color = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["using"].color    = FG_VS_CODE_BRIGHT_MAGENTA;
-                color_map["operator"].color = FG_VS_CODE_BRIGHT_MAGENTA;
+                test_map["if"]       = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["else"]     = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["case"]     = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["switch"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["for"]      = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["while"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["return"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["break"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["do"]       = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["continue"] = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["using"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["operator"] = {FG_VS_CODE_BRIGHT_MAGENTA};
             }
+            LSP->check(NULL, "");
+            LSP->add_defs_to_color_map();
         }
     }
-    const char *sig =
-        "funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));";
-    if (invalid_variable_sig(sig))
-    {
-        nlog("'%s' is invalid.\n", sig);
-    }
-    char *type, *name, *value;
-    parse_variable("const char *answers[] = {\"y\", \"n\", \"current pos\", "
-                   "\"rgb\", nullptr};",
-                   &type, &name, &value);
-    if (type)
-    {
-        nlog("type: %s\n", type);
-        free(type);
-    }
-    if (name)
-    {
-        nlog("name: %s\n", name);
-        free(name);
-    }
-    if (value)
-    {
-        nlog("value: %s\n", value);
-        free(value);
-    }
-    nlog("\n");
 }
 
 bool
@@ -413,8 +401,8 @@ check_include_file_syntax(const char *path)
                 }
                 else if (!is_syntax_struct(words[i]))
                 {
-                    char *struct_str            = copy_of(words[i]);
-                    color_map[struct_str].color = FG_VS_CODE_BRIGHT_GREEN;
+                    char *struct_str = copy_of(words[i]);
+                    // color_map[struct_str].color = FG_VS_CODE_BRIGHT_GREEN;
                     structs.push_back(struct_str);
                 }
             }
@@ -429,8 +417,8 @@ check_include_file_syntax(const char *path)
                 }
                 else if (!is_syntax_class(words[i]))
                 {
-                    char *class_str            = copy_of(words[i]);
-                    color_map[class_str].color = FG_VS_CODE_BRIGHT_GREEN;
+                    char *class_str = copy_of(words[i]);
+                    // color_map[class_str].color = FG_VS_CODE_BRIGHT_GREEN;
                     classes.push_back(class_str);
                 }
             }
@@ -466,8 +454,8 @@ check_include_file_syntax(const char *path)
                                 if (!syntax_func(words[i]))
                                 {
                                     char *func_str = copy_of(words[i]);
-                                    color_map[func_str].color =
-                                        FG_VS_CODE_BRIGHT_YELLOW;
+                                    // color_map[func_str].color =
+                                    //     FG_VS_CODE_BRIGHT_YELLOW;
                                     funcs.push_back(func_str);
                                 }
                             }
@@ -479,8 +467,8 @@ check_include_file_syntax(const char *path)
                     strip_leading_chars_from(words[i], '*');
                     if (!syntax_func(words[i]))
                     {
-                        char *func_str            = copy_of(words[i]);
-                        color_map[func_str].color = FG_VS_CODE_BRIGHT_YELLOW;
+                        char *func_str = copy_of(words[i]);
+                        // color_map[func_str].color = FG_VS_CODE_BRIGHT_YELLOW;
                         funcs.push_back(func_str);
                     }
                 }
@@ -520,8 +508,8 @@ handle_define(char *str)
     }
     if (!define_exists(str))
     {
-        char *define_str            = copy_of(str);
-        color_map[define_str].color = FG_VS_CODE_BLUE;
+        char *define_str = copy_of(str);
+        // color_map[define_str].color = FG_VS_CODE_BLUE;
         funcs.push_back(define_str);
         defines.push_back(define_str);
     }
@@ -677,7 +665,7 @@ void
 do_cpp_syntax(void)
 {
     flag_all_brackets();
-    flag_all_block_comments();
+    flag_all_block_comments(openfile->filetop);
 }
 
 /* Return`s 'TRUE' if 'str' is in the 'syntax_structs' vector. */

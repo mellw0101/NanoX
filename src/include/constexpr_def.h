@@ -480,6 +480,12 @@ hash_string(const char *str, int h = 0)
     return !str[h] ? 5381 : (hash_string(str, h + 1) * 33) ^ str[h];
 }
 
+constexpr unsigned int
+operator""_uint_hash(const char *str, unsigned long)
+{
+    return hash_string(str);
+}
+
 constexpr int define_hash  = hash_string("define");
 constexpr int if_hash      = hash_string("if");
 constexpr int endif_hash   = hash_string("endif");
@@ -542,9 +548,25 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
 #define adv_ptr_to_ch(ptr, ch)    for (; *ptr && (*ptr != ch); ptr++)
 
 #define ADV_PTR(ptr, ...)         for (; *ptr && __VA_ARGS__; ptr++);
+#define DCR_PTR(ptr, until, ...)  for (; ptr > until && __VA_ARGS__; ptr--)
 
 #define adv_ptr(ptr, ...)         ADV_PTR(ptr, __VA_ARGS__)
+#define dcr_ptr(ptr, until, ...)  DCR_PTR(ptr, until, __VA_ARGS__)
+#define ADV_TO_NEXT_WORD(ptr)     ADV_PTR(ptr, (*ptr == ' ' || *ptr == '\t'))
 #define adv_ptr_to_next_word(ptr) adv_ptr(ptr, (*ptr == ' ' || *ptr == '\t'))
 #define adv_ptr_past_word(ptr)    adv_ptr(ptr, (*ptr != ' ' && *ptr != '\t'))
+#define ADV_PAST_WORD(ptr)        ADV_PTR(ptr, (*ptr != ' ' && *ptr != '\t'))
 
-#define ptr_to_next_word(p)       for (; *p && !is_word_char(p, FALSE); p++)
+#define adv_to_next_ch(ptr)       for (; *ptr && (*ptr == ' ' || *ptr == '\t'); ptr++)
+#define dcr_to_prev_ch(ptr, until) \
+    dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
+#define dcr_to_prev_ch_on_fail(ptr, until, apon_failure) \
+    dcr_to_prev_ch(ptr, until);                          \
+    if (ptr == until)                                    \
+    {                                                    \
+        apon_failure                                     \
+    }
+#define dcr_past_prev_word(ptr, until) \
+    dcr_ptr(ptr, until, (*ptr != ' ' && *ptr != '\t'))
+
+#define ptr_to_next_word(p) for (; *p && !is_word_char(p, FALSE); p++)

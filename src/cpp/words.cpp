@@ -389,7 +389,7 @@ line_word_list(const char *str, unsigned long slen)
         {
             break;
         }
-        while (!is_word_char(end, FALSE))
+        while (!is_word_char(end, FALSE) && *end != '_')
         {
             end += 1;
         }

@@ -11,21 +11,24 @@ task_queue_t          *task_queue        = NULL;
 pthread_t             *threads           = NULL;
 volatile sig_atomic_t *stop_thread_flags = NULL;
 
-/* This function should be used to camly kill a subthread after the next task it perform.
- * When halting a thread is needed use 'stop_thread'.  Note that this kills whatever thread
- * happens to run the next task, therefor this is intended for clean shoutdown. */
+/* This function should be used to camly kill a subthread after the next task it
+ * perform. When halting a thread is needed use 'stop_thread'.  Note that this
+ * kills whatever thread happens to run the next task, therefor this is intended
+ * for clean shoutdown. */
 void *
 terminate_work(void *)
 {
     return NULL;
 }
 
-/* Either lock or unlock the threadpools mutex, with full error reporting.  We will
- * not interviene on fail as I want to see for now atleast what it takes to crash. */
+/* Either lock or unlock the threadpools mutex, with full error reporting.  We
+ * will not interviene on fail as I want to see for now atleast what it takes to
+ * crash. */
 void
 lock_pthread_mutex(pthread_mutex_t *mutex, bool lock)
 {
-    int result = (lock == TRUE) ? pthread_mutex_lock(mutex) : pthread_mutex_unlock(mutex);
+    int result = (lock == TRUE) ? pthread_mutex_lock(mutex) :
+                                  pthread_mutex_unlock(mutex);
     if (result == 0)
     {
         return;
@@ -34,28 +37,33 @@ lock_pthread_mutex(pthread_mutex_t *mutex, bool lock)
     {
         case EAGAIN :
         {
-            LOUT_logE("Mutex: 'task_queue->mutex' exceeded the maximum number of recursive locks.");
+            logE("Mutex: 'task_queue->mutex' exceeded the maximum number "
+                 "of recursive locks.");
             break;
         }
         case EDEADLK :
         {
-            LOUT_logE("Mutex: 'task_queue->mutex' caused a deadlock or was already owned by this "
-                      "thread.");
+            logE("Mutex: 'task_queue->mutex' caused a deadlock or was "
+                 "already owned by this thread.");
             break;
         }
         case EINVAL :
         {
-            LOUT_logE("Mutex: 'task_queue->mutex' is not valid, indicating a fatal error.");
+            logE("Mutex: 'task_queue->mutex' is not valid,"
+                 " indicating a fatal error.");
             break;
         }
         case EPERM :
         {
-            LOUT_logE("Mutex: 'task_queue->mutex' was locked by another thread, or not at all.");
+            logE("Mutex: 'task_queue->mutex' was locked by another "
+                 "thread, or not at all.");
             break;
         }
         default :
         {
-            LOUT_logE("Mutex: 'task_queue->mutex' encountered an unexpected error code: %d.", result);
+            logE("Mutex: 'task_queue->mutex' encountered"
+                 "an unexpected error code: %d.",
+                 result);
         }
     }
 }
@@ -159,8 +167,9 @@ worker_thread(void *arg)
         {
             *(void **)task.result = result;
         }
-        /* When we want a predefined function to run when this thread has finished
-         * execution, we add the prefifined callback function to the callback queue. */
+        /* When we want a predefined function to run when this thread has
+         * finished execution, we add the prefifined callback function to the
+         * callback queue. */
         if (task.callback != NULL)
         {
             enqueue_callback(task.callback, result);
@@ -187,12 +196,14 @@ init_queue_task(void)
     /* Allocate memory for the 'threads'. */
     threads = (pthread_t *)nmalloc(MAX_THREADS * sizeof(pthread_t));
     /* As well as allocating space for the stop flags. */
-    stop_thread_flags = (volatile sig_atomic_t *)nmalloc(MAX_THREADS * sizeof(sig_atomic_t));
+    stop_thread_flags =
+        (volatile sig_atomic_t *)nmalloc(MAX_THREADS * sizeof(sig_atomic_t));
     /* Create the threads, and start them running 'worker_thread'. */
     for (unsigned char i = 0; i < MAX_THREADS; i++)
     {
         stop_thread_flags[i] = FALSE;
-        if (pthread_create(&threads[i], NULL, worker_thread, (void *)(uintptr_t)i) != 0)
+        if (pthread_create(
+                &threads[i], NULL, worker_thread, (void *)(uintptr_t)i) != 0)
         {
             LOUT_logE("Failed to create thread: '%u'.", i);
         }
@@ -225,7 +236,8 @@ shutdown_queue(void)
 
 /* Add a task to the threadpool queue for for the subthreads to perform. */
 void
-submit_task(task_functionptr_t function, void *arg, void **result, callback_functionptr_t callback)
+submit_task(task_functionptr_t function, void *arg, void **result,
+            callback_functionptr_t callback)
 {
     under_threadpool_mutex(
         [function, arg, result, callback]
@@ -236,7 +248,7 @@ submit_task(task_functionptr_t function, void *arg, void **result, callback_func
                 task_queue->tasks[task_queue->rear].arg      = arg;
                 task_queue->tasks[task_queue->rear].result   = result;
                 task_queue->tasks[task_queue->rear].callback = callback;
-                task_queue->rear                             = (task_queue->rear + 1) % QUEUE_SIZE;
+                task_queue->rear = (task_queue->rear + 1) % QUEUE_SIZE;
                 task_queue->count++;
                 /* Send a signal that there is a new task. */
                 pthread_cond_signal(&task_queue->cond);
@@ -244,7 +256,8 @@ submit_task(task_functionptr_t function, void *arg, void **result, callback_func
         });
 }
 
-/* Stop a thread by 'thread_id'.  Note that this will halt execution on that thread. */
+/* Stop a thread by 'thread_id'.  Note that this will halt execution on that
+ * thread. */
 void
 stop_thread(unsigned char thread_id)
 {

@@ -51,7 +51,7 @@
             }
         ]
     },
-    "editor.fontSize": 18,  // Adjust this to your preferred font size
+    "editor.fontSize": 20,  // Adjust this to your preferred font size
     "editor.lineHeight": 20,  // Adjust this to your preferred line height
     "terminal.integrated.fontFamily": "JetBrains Mono",
     "terminal.integrated.fontWeight": "400",  // Use 600 for semi-bold in terminal
@@ -60,5 +60,6 @@
     "editor.experimentalInlineEdit.enabled": true,
     "emmet.useInlineCompletions": true,
     "diffEditor.experimental.useTrueInlineView": true,
-    "editor.inlineCompletionsAccessibilityVerbose": true
+    "editor.inlineCompletionsAccessibilityVerbose": true,
+    "workbench.editor.doubleClickTabToToggleEditorGroupSizes": "off"
 }

@@ -28,7 +28,10 @@ vec<const char *> types             = {
     "long", "short", "const", "bool",     "typedef", "class",
 };
 
-std::unordered_map<std::string_view, syntax_data_t> color_map;
+// std::unordered_map<std::string_view, syntax_data_t> color_map;
+std::unordered_map<std::string, syntax_data_t> test_map;
+vector<class_info_t>                           class_info_vector;
+vector<var_t>                                  var_vector;
 
 void
 render_part(unsigned long match_start, unsigned long match_end, short color)
@@ -76,11 +79,11 @@ render_part_raw(unsigned long start_index, unsigned long end_index, short color)
  * text and nothing else. */
 void
 render_line_text(const int row, const char *str, linestruct *line,
-                 const unsigned long from_col)
+                 const unsigned long from_col, int color)
 {
     if (margin > 0)
     {
-        midwin_color_on(FG_VS_CODE_WHITE);
+        midwin_color_on(color);
         if (ISSET(SOFTWRAP) && from_col != 0)
         {
             mvwprintw(midwin, row, 0, "%*s", margin - 1, " ");
@@ -116,7 +119,7 @@ render_line_text(const int row, const char *str, linestruct *line,
         mvwaddch(midwin, row, COLS - 1, bardata[row]);
         wprintw(midwin, " ");
     }
-    midwin_color_off(FG_VS_CODE_WHITE);
+    midwin_color_off(color);
 }
 
 /* Set start and end pos for comment block or if the entire
@@ -586,12 +589,17 @@ rendr_define(unsigned int index)
     start            = &line->data[index];
     if (*start == '\0')
     {
-        rendr(E, "<-(Macro name missing)");
+        RENDR(E, "<-(Macro name missing)");
         return;
     }
     end = start;
-    adv_ptr(end, (*end != '(' && *end != ' ' && *end != '\t'));
-    rendr(R, FG_VS_CODE_BLUE, start, end);
+    ADV_PTR(end, (*end != '(' && *end != ' ' && *end != '\t'));
+    RENDR(R, FG_VS_CODE_BLUE, start, end);
+    string define_name(start, (end - start));
+    if (test_map.find(define_name) == test_map.end())
+    {
+        test_map[define_name] = {FG_VS_CODE_BLUE};
+    }
     /* Handle macro parameter list.  If there is one. */
     if (*end == '(')
     {
@@ -599,12 +607,12 @@ rendr_define(unsigned int index)
         {
             end += 1;
             /* Advance to the start of the word. */
-            adv_ptr(end, (*end == ' ' || *end == '\t'));
+            ADV_PTR(end, (*end == ' ' || *end == '\t'));
             start = end;
             /* Now find the end of the word. */
-            adv_ptr(end, (*end != ')' && *end != ',' && *end != ' ' &&
+            ADV_PTR(end, (*end != ')' && *end != ',' && *end != ' ' &&
                           *end != '\t'));
-            rendr(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
+            RENDR(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
             (word != NULL) ? free(word) : void();
             word  = measured_copy(start, (end - start));
             param = strstr(end, word);
@@ -617,7 +625,7 @@ rendr_define(unsigned int index)
                     if ((*pe == ' ' || *pe == ')' || *pe == ',') &&
                         (*ps == ' ' || *ps == '(' || *ps == ','))
                     {
-                        rendr(R_LEN, FG_VS_CODE_BLUE, param, (end - start));
+                        RENDR(R_LEN, FG_VS_CODE_BLUE, param, (end - start));
                     }
                     param = strstr(param + (end - start), word);
                 }
@@ -654,16 +662,16 @@ rendr_define(unsigned int index)
         }
     }
     (word != NULL) ? free(word) : void();
-    adv_ptr(end, (*end == ' ' || *end == '\t'));
+    ADV_PTR(end, (*end == ' ' || *end == '\t'));
     start = end;
-    adv_ptr(end, (*end != '(' && *end != ' ' && *end != '\t'));
+    ADV_PTR(end, (*end != '(' && *end != ' ' && *end != '\t'));
     if (*end == '(')
     {
-        rendr(R, FG_VS_CODE_BRIGHT_YELLOW, start, end);
+        RENDR(R, FG_VS_CODE_BRIGHT_YELLOW, start, end);
     }
     else if (!(*start >= '0' && *start <= '9'))
     {
-        rendr(R, FG_VS_CODE_BLUE, start, end);
+        RENDR(R, FG_VS_CODE_BLUE, start, end);
     }
 }
 
@@ -685,7 +693,9 @@ rendr_include(unsigned int index)
             rendr(C_PTR, FG_YELLOW, start, end);
             /* TODO: enable later once local file rendering includes all types.
              */
-            /* char *file = measured_copy(start + 1, (end - start) - 2);
+            /*
+            char       *file      = measured_copy(start + 1, (end - start) - 2);
+            const char *full_path = concat_path("/usr/include/", file);
             for (int i = 0; i < includes.get_size(); i++)
             {
                 if (strcmp(includes[i], file) == 0)
@@ -694,7 +704,8 @@ rendr_include(unsigned int index)
                     return;
                 }
             }
-            const char *full_path = concat_path("/usr/include/", file);
+            includes.push_back(file);
+            get_line_list_task(full_path);
             if (is_file_and_exists(full_path))
             {
                 includes.push_back(file);
@@ -709,6 +720,8 @@ rendr_include(unsigned int index)
         {
             end += 1;
             render_part((start - line->data), (end - line->data), FG_YELLOW);
+            /*
+
             char *path = measured_memmove_copy(start + 1, (end - start) - 2);
             char *pwd  = alloced_full_current_file_dir();
             char *full_path = alloc_str_free_substrs(pwd, path);
@@ -720,12 +733,14 @@ rendr_include(unsigned int index)
                     return;
                 }
             }
+            includes.push_back(full_path);
+            get_line_list_task(full_path);
             if (is_file_and_exists(full_path))
             {
                 includes.push_back(full_path);
                 find_functions_task(full_path);
                 find_glob_vars_task(full_path);
-            }
+            } */
             /*
             { */
             /* char **func_vec = find_functions_in_file(full_path);
@@ -786,6 +801,7 @@ rendr_include(unsigned int index)
     }
 }
 
+/* Render if preprossesor statements. */
 void
 rendr_if_preprosses(unsigned int index)
 {
@@ -798,6 +814,16 @@ rendr_if_preprosses(unsigned int index)
         if (*defined && *defined == ' ')
         {
             rendr(R, FG_VS_CODE_BLUE, start, defined);
+            const char *ws = defined;
+            ADV_TO_NEXT_WORD(ws);
+            if (!*ws)
+            {
+                break;
+            }
+            const char *es = ws;
+            ADV_PTR(es, (*es != ' ' && *es != '\t' && *es != ')' &&
+                         *es != '|' && *es != '&'));
+            RENDR(R, FG_VS_CODE_BLUE, ws, es);
         }
         else
         {
@@ -955,11 +981,30 @@ render_preprossesor(void)
                 rendr_include((end - line->data));
                 break;
             }
-            case undef_hash :
+            case "undef"_uint_hash :
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 get_next_word(&start, &end);
                 rendr(R, FG_VS_CODE_BLUE, start, end);
+                break;
+            }
+            case "error"_uint_hash :
+            {
+                RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+                ADV_PTR(end, (*end == ' ' || *end == '\t'));
+                if (!*end || *end != '"')
+                {
+                    break;
+                }
+                start = end;
+                end += 1;
+                ADV_PTR(end, (*end != '"'));
+                if (*end)
+                {
+                    end += 1;
+                }
+                render_part(
+                    (start - line->data), (end - line->data), FG_YELLOW);
                 break;
             }
         }
@@ -1081,10 +1126,10 @@ rendr_glob_vars(void)
                 }
                 if (found == FALSE)
                 {
-                    const auto &it = color_map.find(ngvar.name);
-                    if (it == color_map.end())
+                    const auto &it = test_map.find(ngvar.name);
+                    if (it == test_map.end())
                     {
-                        color_map[ngvar.name].color = FG_VS_CODE_BRIGHT_CYAN;
+                        test_map[ngvar.name].color = FG_VS_CODE_BRIGHT_CYAN;
                         glob_vars.push_back(ngvar);
                         nlog("ngvar str: %s\n", str);
                     }
@@ -1093,6 +1138,102 @@ rendr_glob_vars(void)
             free(str);
         }
     }
+}
+
+void
+rendr_classes(void)
+{
+    const char *found = word_strstr(line->data, "class");
+    if (found)
+    {
+        remove_from_color_map(line, FG_VS_CODE_GREEN, CLASS_SYNTAX);
+        const char *start = NULL;
+        const char *end   = NULL;
+        start             = found;
+        start += "class"_sllen;
+        ADV_PTR(start, (*start == ' ' || *start == '\t'));
+        /* If there is nothing after the word class print error msg. */
+        if (*start == '\0')
+        {
+            RENDR(E, "<-(Expected class name)");
+            return;
+        }
+        int end_line = find_class_end_line(line);
+        end          = start;
+        ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '{'));
+        /* If the char after class name is not '{' or null terminator. */
+        if (*end != '{' && *end != '\0')
+        {
+            /* We then iter to past all spaces and tabs. */
+            ADV_PTR(end, (*end == ' ' || *end == '\t'));
+            /* And if there is something other then '{'
+             * or null-terminator.  We print error. */
+            if (*end != '\0' && *end != '{')
+            {
+                rendr(E, "<-(Expected one word as class name)");
+                return;
+            }
+        }
+        end = start;
+        ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '{'));
+        class_info_t class_info;
+        string       name(start, (end - start));
+        class_info.name           = name;
+        test_map[class_info.name] = {
+            FG_VS_CODE_GREEN,
+            (int)line->lineno,
+            100000,
+            CLASS_SYNTAX,
+        };
+        const char *func_found = NULL;
+        for (linestruct *cl = line; cl->lineno < end_line; cl = cl->next)
+        {
+            func_found = strchr(cl->data, '(');
+            if (func_found)
+            {
+                end = func_found;
+                dcr_ptr(end, cl->data, (*end != ' ' && *end != '\t'));
+                adv_ptr_to_next_word(end);
+                string method(end, (func_found - end));
+                if (method != class_info.name)
+                {
+                    remove_from_color_map(
+                        line, FG_VS_CODE_BRIGHT_YELLOW, CLASS_METHOD_SYNTAX);
+                    test_map[method] = {
+                        FG_VS_CODE_BRIGHT_YELLOW,
+                        (int)cl->lineno,
+                        end_line,
+                        CLASS_METHOD_SYNTAX,
+                    };
+                    class_info.methods.push_back(method);
+                }
+            }
+        }
+        class_info_vector.push_back(class_info);
+    }
+}
+
+void
+rendr_structs(int index)
+{
+    remove_from_color_map(line, FG_VS_CODE_GREEN, STRUCT_SYNTAX);
+    const char *start = &line->data[index];
+    const char *end   = &line->data[index];
+    ADV_TO_NEXT_WORD(end);
+    if (!*end)
+    {
+        return;
+    }
+    start = end;
+    ADV_PAST_WORD(end);
+    string name(start, (end - start));
+    test_map[name] = {
+        FG_VS_CODE_GREEN,
+        (int)line->lineno,
+        100000,
+        STRUCT_SYNTAX,
+    };
+    NLOG("struct found: %s\n", name.c_str());
 }
 
 /* Main function that applies syntax to a line in real time. */
@@ -1105,16 +1246,17 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     ::converted = converted;
     ::line      = line;
     ::from_col  = from_col;
+    vector<var_t> var_vector;
     render_function_params();
     render_comment();
-    if (line->data[0] == '\0' ||
-        (block_comment_start == 0 && block_comment_end == till_x))
+    if ((line->data[0] == '\0' ||
+         (block_comment_start == 0 && block_comment_end == till_x)) &&
+        !LINE_ISSET(line, DONT_PREPROSSES_LINE))
     {
         return;
     }
     render_bracket();
     render_parents();
-    rendr_glob_vars();
     remove_local_vars_from(line);
     check_line_for_vars(line);
     line_word_t *head = line_word_list(line->data, till_x);
@@ -1130,13 +1272,14 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
             free_node(node);
             continue;
         }
-        const auto &it = color_map.find(node->str);
-        if (it != color_map.end())
+        const auto &it = test_map.find(node->str);
+        if (it != test_map.end())
         {
             if (it->second.from_line != -1)
             {
                 if (line->lineno >= it->second.from_line &&
                     line->lineno <= it->second.to_line)
+
                 {
                     if (line->lineno == it->second.to_line)
                     {
@@ -1162,8 +1305,21 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
                     render_control_statements(node->start);
                 }
             }
+            if (it->second.type == IS_WORD_STRUCT)
+            {
+                rendr_structs(node->end);
+            }
+            else if (it->second.type == IS_WORD_CLASS)
+            {
+                rendr_classes();
+            }
         }
         free_node(node);
+    }
+    if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
+    {
+        render_part(0, till_x, FG_SUGGEST_GRAY);
+        return;
     }
     if (line->data[indent_char_len(line)] == '#')
     {
@@ -1183,10 +1339,11 @@ rendr_suggestion(void)
     {
         delwin(suggestwin);
     }
-    if (openfile->current_x == 0 ||
-        (!is_word_char(
-             &openfile->current->data[openfile->current_x - 1], FALSE) &&
-         openfile->current->data[openfile->current_x - 1] != '_'))
+    if ((openfile->current_x == 0 ||
+         (!is_word_char(
+              &openfile->current->data[openfile->current_x - 1], FALSE) &&
+          openfile->current->data[openfile->current_x - 1] != '_')) &&
+        openfile->current->data[openfile->current_x - 1] != '.')
     {
         clear_suggestion();
         return;

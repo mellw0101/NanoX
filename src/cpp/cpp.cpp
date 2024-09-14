@@ -257,14 +257,15 @@ do_test_window(void)
 int
 current_line_scope_end(linestruct *line)
 {
-    int lvl = 0;
+    int lvl      = 0;
+    int cur_line = line->lineno;
     for (linestruct *l = line; l; l = l->next)
     {
-        if (LINE_ISSET(l, BRACKET_START))
+        if (strchr(l->data, '{'))
         {
             lvl += 1;
         }
-        if (LINE_ISSET(l, BRACKET_END))
+        if (strchr(l->data, '}'))
         {
             if (lvl == 0)
             {
@@ -272,8 +273,9 @@ current_line_scope_end(linestruct *line)
             }
             lvl -= 1;
         }
+        cur_line = l->lineno;
     }
-    return line->lineno;
+    return cur_line;
 }
 
 /* This function extracts info about a function declaration.  It retrieves all
@@ -474,7 +476,7 @@ parse_local_func(const char *str)
                 int was_i = i;
                 /* Here we extract any ptr`s that are at the start of the name.
                  */
-                for (; prefix[i + 1] == '*'; i++);
+                for (; prefix[i + 1] == '*' || prefix[i + 1] == '&'; i++);
                 info.name = copy_of(&prefix[i + 1]);
                 /* If any ptr`s were found we add them to the return string. */
                 if (int diff = i - was_i; diff > 0)
@@ -519,6 +521,10 @@ parse_local_func(const char *str)
         const char *start = param_array[i];
         const char *end   = param_array[i];
         end               = strrchr(param_array[i], '*');
+        if (end == NULL)
+        {
+            end = strrchr(param_array[i], '&');
+        }
         if (end == NULL)
         {
             end = strrchr(param_array[i], ' ');
@@ -573,7 +579,9 @@ parse_local_func(const char *str)
 bool
 invalid_variable_sig(const char *sig)
 {
-    if (strstr(sig, "|=") || strstr(sig, "+=") || strstr(sig, "-="))
+    if (strstr(sig, "|=") || strstr(sig, "+=") || strstr(sig, "-=") ||
+        *sig == '{' || strstr(sig, "/*") || strchr(sig, '#') ||
+        strncmp(sig, "return", 6) == 0)
     {
         return TRUE;
     }
@@ -585,6 +593,10 @@ invalid_variable_sig(const char *sig)
         {
             return TRUE;
         }
+    }
+    if (p_parent && !p_eql)
+    {
+        return TRUE;
     }
     return FALSE;
 }
@@ -707,9 +719,9 @@ flag_all_brackets(void)
 
 /* Set comment flags for all lines in current file. */
 void
-flag_all_block_comments(void)
+flag_all_block_comments(linestruct *from)
 {
-    for (linestruct *line = openfile->filetop; line != NULL; line = line->next)
+    for (linestruct *line = from; line != NULL; line = line->next)
     {
         const char *found_start = strstr(line->data, "/*");
         const char *found_end   = strstr(line->data, "*/");
@@ -817,7 +829,8 @@ find_current_function(linestruct *l)
             }
             if (!found)
             {
-                add_to_color_map(local_func.name, FG_VS_CODE_BRIGHT_YELLOW);
+                add_to_color_map(local_func.name, {FG_VS_CODE_BRIGHT_YELLOW});
+
                 local_funcs.push_back(local_func);
             }
             refresh_needed = TRUE;
@@ -841,8 +854,8 @@ remove_local_vars_from(linestruct *line)
     bool done = FALSE;
     while (!done)
     {
-        auto it = color_map.begin();
-        for (; it != color_map.end(); ++it)
+        auto it = test_map.begin();
+        for (; it != test_map.end(); ++it)
         {
             if (it->second.from_line == -1)
             {
@@ -852,11 +865,38 @@ remove_local_vars_from(linestruct *line)
                 it->second.color == FG_VS_CODE_BRIGHT_CYAN &&
                 it->second.type == LOCAL_VAR_SYNTAX)
             {
-                color_map.erase(it);
+                test_map.erase(it);
                 break;
             }
         }
-        if (it == color_map.end())
+        if (it == test_map.end())
+        {
+            done = TRUE;
+        }
+    }
+}
+
+void
+remove_from_color_map(linestruct *line, int color, int type)
+{
+    bool done = FALSE;
+    while (!done)
+    {
+        auto it = test_map.begin();
+        for (; it != test_map.end(); it++)
+        {
+            const auto &[c, fline, tline, t] = it->second;
+            if (fline == -1)
+            {
+                continue;
+            }
+            else if (c == color && fline == line->lineno && t == type)
+            {
+                test_map.erase(it);
+                break;
+            }
+        }
+        if (it == test_map.end())
         {
             done = TRUE;
         }
@@ -866,146 +906,194 @@ remove_local_vars_from(linestruct *line)
 void
 check_line_for_vars(linestruct *line)
 {
-    if (!LINE_ISSET(line, IN_BRACKET))
+    auto it = var_vector.begin();
+    while (it != var_vector.end())
     {
-        return;
-    }
-    const char *data = &line->data[indent_char_len(line)];
-    if (invalid_variable_sig(data))
-    {
-        return;
-    }
-    const char *p          = data;
-    char       *decl_start = NULL;
-    adv_ptr(p, (*p != ',') && (*p != ';') && (*p != '=') && (*p != '{'));
-    if (!*p || *p == ';' || *p == '=')
-    {
-        char *tmp_data = NULL;
-        if (*p == '=' && p[1] == '\0')
+        if (it->decl_line == line->lineno)
         {
-            if (line->next)
-            {
-                char *first_part = copy_of(data);
-                char *second_part =
-                    copy_of(&line->next->data[indent_char_len(line->next)]);
-                tmp_data = alloc_str_free_substrs(first_part, second_part);
-                data     = tmp_data;
-                nlog("full sig: %s\n", tmp_data);
-            }
+            it = var_vector.erase(it);
         }
-        char *type, *name, *value;
-        parse_variable(data, &type, &name, &value);
-        if (type && name)
+        else
         {
-            if (strchr(type, '(') ||
-                strncmp(type, "return", "return"_sllen) == 0 ||
-                strchr(type, '[') || strstr(type, "/*"))
-            {
-                nlog("Wrong type: %s\n", type);
-                nlog("Wrong name: %s\n", name);
-                NULL_safe_free(type);
-                NULL_safe_free(name);
-                NULL_safe_free(value);
-                NULL_safe_free(tmp_data);
-                return;
-            }
-            nlog("type: %s\n", type);
-            nlog("name: %s\n", name);
-            const char *array_start = strchr(name, '[');
-            const char *array_end   = strchr(name, ']');
-            char       *var         = NULL;
-            if (array_start && array_end)
-            {
-                var = measured_copy(name, (array_start - name));
-            }
-            else
-            {
-                var = copy_of(name);
-            }
-            const auto &it = color_map.find(var);
-            if (it != color_map.end() && it->second.color == FG_VS_CODE_BLUE)
-            {
-                free(var);
-                return;
-            }
-            color_map[var] = {
-                FG_VS_CODE_BRIGHT_CYAN,
-                (int)line->lineno,
-                current_line_scope_end(line),
-                LOCAL_VAR_SYNTAX,
-            };
-        }
-        NULL_safe_free(type);
-        NULL_safe_free(name);
-        NULL_safe_free(value);
-        NULL_safe_free(tmp_data);
-        return;
-    }
-    else if (*p == ',')
-    {
-        char *first_part = measured_copy(data, (p - data));
-        /* nlog("first part: %s\n", first_part);
-        nlog("line: %s\n", data); */
-        for (; p > first_part && (*p == ' ' || *p == '\t'); p--);
-        if (p == first_part)
-        {
-            return;
-        }
-        p = strrchr(first_part, ' ');
-        if (!p)
-        {
-            return;
-        }
-        p += 1;
-        char *base_type = measured_copy(first_part, (p - first_part));
-        if (strchr(base_type, '=') || strstr(base_type, "/*") ||
-            strchr(base_type, '(') ||
-            strncmp(base_type, "return", "return"_sllen) == 0)
-        {
-            free(first_part);
-            free(base_type);
-            return;
-        }
-        nlog("base_type: %s\n", base_type);
-        decl_start = copy_of(data + strlen(base_type));
-        nlog("decl_start: %s\n", decl_start);
-        if (decl_start)
-        {
-            vector<string> names;
-            const char    *start = decl_start;
-            const char    *end   = NULL;
-            while (*start)
-            {
-                adv_ptr_to_next_word(start);
-                adv_ptr(start, (*start == '*' || *start == '&'));
-                end = start;
-                adv_ptr(end, *end != ',' && *end != ';');
-                if (!*end)
-                {
-                    return;
-                }
-                string name(start, (end - start));
-                p = &name[0];
-                names.push_back(p);
-                start = end + 1;
-            }
-            for (const auto &str : names)
-            {
-                char       *name = copy_of(&str[0]);
-                const auto &it   = color_map.find(name);
-                if (it != color_map.end() &&
-                    it->second.color == FG_VS_CODE_BLUE)
-                {
-                    free(name);
-                    continue;
-                }
-                color_map[name] = {
-                    .color     = FG_VS_CODE_BRIGHT_CYAN,
-                    .from_line = (int)line->lineno,
-                    .to_line   = current_line_scope_end(line),
-                    .type      = LOCAL_VAR_SYNTAX,
-                };
-            }
+            it++;
         }
     }
+    remove_from_color_map(line, FG_VS_CODE_BRIGHT_CYAN, LOCAL_VAR_SYNTAX);
+    vector<var_t> vars;
+    line_variable(line, vars);
+    for (const auto &[type, name, value, delc_line, scope_end] : vars)
+    {
+        const auto &it = test_map.find(name);
+        if (it != test_map.end() &&
+            (it->second.color == FG_VS_CODE_BLUE ||
+             it->second.color == FG_VS_CODE_BRIGHT_MAGENTA))
+        {
+            continue;
+        }
+        test_map[name] = {
+            FG_VS_CODE_BRIGHT_CYAN,
+            delc_line,
+            scope_end,
+            LOCAL_VAR_SYNTAX,
+        };
+        var_vector.push_back({
+            type,
+            name,
+            value,
+            delc_line,
+            scope_end,
+        });
+        /* NLOG("\n"
+             "           Type: %s\n"
+             "           Name: %s\n"
+             "          Value: %s\n"
+             "      Decl line: %i\n"
+             "      Scope_end: %i\n"
+             "var_vector size: %i\n"
+             "\n",
+             type.c_str(), name.c_str(), value.c_str(), delc_line, scope_end,
+             var_vector.size()); */
+    }
+    // const char *data = &line->data[indent_char_len(line)];
+    // if (invalid_variable_sig(data))
+    // {
+    //     return;
+    // }
+    // const char *p          = data;
+    // char       *decl_start = NULL;
+    // adv_ptr(p, (*p != ',') && (*p != ';') && (*p != '=') && (*p != '{'));
+    // if (!*p || *p == ';' || *p == '=')
+    // {
+    //     char *tmp_data = NULL;
+    //     if (*p == '=' && p[1] == '\0')
+    //     {
+    //         if (line->next)
+    //         {
+    //             char *first_part = copy_of(data);
+    //             char *second_part =
+    //                 copy_of(&line->next->data[indent_char_len(line->next)]);
+    //             tmp_data = alloc_str_free_substrs(first_part, second_part);
+    //             data     = tmp_data;
+    //             // nlog("full sig: %s\n", tmp_data);
+    //         }
+    //     }
+    //     char *type, *name, *value;
+    //     parse_variable(data, &type, &name, &value);
+    //     if (type && name)
+    //     {
+    //         if (strchr(type, '(') ||
+    //             strncmp(type, "return", "return"_sllen) == 0 ||
+    //             strchr(type, '[') || strstr(type, "/*") ||
+    //             strncmp(name, "operator", "operator"_sllen) == 0)
+    //         {
+    //             // nlog("Wrong type: %s\n", type);
+    //             // nlog("Wrong name: %s\n", name);
+    //             NULL_safe_free(type);
+    //             NULL_safe_free(name);
+    //             NULL_safe_free(value);
+    //             NULL_safe_free(tmp_data);
+    //             return;
+    //         }
+    //         // nlog("type: %s\n", type);
+    //         // nlog("name: %s\n", name);
+    //         const char *array_start = strchr(name, '[');
+    //         const char *array_end   = strchr(name, ']');
+    //         char       *var         = NULL;
+    //         if (array_start && array_end)
+    //         {
+    //             var = measured_copy(name, (array_start - name));
+    //         }
+    //         else
+    //         {
+    //             var = copy_of(name);
+    //         }
+    //         const auto &it = color_map.find(var);
+    //         if (it != color_map.end() &&
+    //             (it->second.color == FG_VS_CODE_BLUE ||
+    //              it->second.color == FG_VS_CODE_BRIGHT_MAGENTA))
+    //         {
+    //             free(var);
+    //             return;
+    //         }
+    //         color_map[var] = {
+    //             FG_VS_CODE_BRIGHT_CYAN,
+    //             (int)line->lineno,
+    //             current_line_scope_end(line),
+    //             LOCAL_VAR_SYNTAX,
+    //         };
+    //     }
+    //     NULL_safe_free(type);
+    //     NULL_safe_free(name);
+    //     NULL_safe_free(value);
+    //     NULL_safe_free(tmp_data);
+    //     return;
+    // }
+    // else if (*p == ',')
+    // {
+    //     char *first_part = measured_copy(data, (p - data));
+    //     /* nlog("first part: %s\n", first_part);
+    //     nlog("line: %s\n", data); */
+    //     for (; p > first_part && (*p == ' ' || *p == '\t'); p--);
+    //     if (p == first_part)
+    //     {
+    //         return;
+    //     }
+    //     p = strrchr(first_part, ' ');
+    //     if (!p)
+    //     {
+    //         return;
+    //     }
+    //     p += 1;
+    //     char *base_type = measured_copy(first_part, (p - first_part));
+    //     if (strchr(base_type, '=') || strstr(base_type, "/*") ||
+    //         strchr(base_type, '(') ||
+    //         strncmp(base_type, "return", "return"_sllen) == 0)
+    //     {
+    //         free(first_part);
+    //         free(base_type);
+    //         return;
+    //     }
+    //     // nlog("base_type: %s\n", base_type);
+    //     decl_start = copy_of(data + strlen(base_type));
+    //     // nlog("decl_start: %s\n", decl_start);
+    //     if (decl_start)
+    //     {
+    //         vector<string> names;
+    //         const char    *start = decl_start;
+    //         const char    *end   = NULL;
+    //         while (*start)
+    //         {
+    //             adv_ptr_to_next_word(start);
+    //             adv_ptr(start, (*start == '*' || *start == '&'));
+    //             end = start;
+    //             adv_ptr(end, *end != ',' && *end != ';');
+    //             if (!*end)
+    //             {
+    //                 return;
+    //             }
+    //             string name(start, (end - start));
+    //             p = &name[0];
+    //             names.push_back(p);
+    //             start = end + 1;
+    //         }
+    //         for (const auto &str : names)
+    //         {
+    //             char       *name = copy_of(&str[0]);
+    //             const auto &it   = color_map.find(name);
+    //             if (it != color_map.end() &&
+    //                 (it->second.color == FG_VS_CODE_BLUE ||
+    //                  it->second.color == FG_VS_CODE_BRIGHT_MAGENTA))
+    //             {
+    //                 free(name);
+    //                 continue;
+    //             }
+    //             color_map[name] = {
+    //                 .color     = FG_VS_CODE_BRIGHT_CYAN,
+    //                 .from_line = (int)line->lineno,
+    //                 .to_line   = current_line_scope_end(line),
+    //                 .type      = LOCAL_VAR_SYNTAX,
+    //             };
+    //         }
+    //     }
+    // }
 }

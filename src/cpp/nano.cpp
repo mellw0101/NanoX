@@ -501,8 +501,8 @@ usage(void)
         _("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
     /* TRANSLATORS: The next two strings are part of the --help output.
      * It's best to keep its lines within 80 characters. */
-    printf(_("To place the cursor on a specific line of a file, put the line "
-             "number with\n"
+    printf(_("To place the cursor on a specific line of a file,"
+             "put the line number with\n"
              "a '+' before the filename.  The column number can be added after "
              "a comma.\n"));
     /* TRANSLATORS: The next three are column headers of the --help output. */
@@ -1655,8 +1655,15 @@ main(int argc, char **argv)
     atexit(
         []
         {
+            vector<define_entry_t> defs = LSP->retrieve_defines();
+            NLOG("\n");
+            for (const auto &def : defs)
+            {
+                NLOG("define: %s %s\n", def.name.c_str(), def.value.c_str());
+            }
+            NLOG("\n");
             LOUT.destroy();
-            std::vector<std::string> gprof_report =
+            vector<string> gprof_report =
                 GLOBALPROFILER->retrveFormatedStrVecStats();
             for (const std::string &str : gprof_report)
             {

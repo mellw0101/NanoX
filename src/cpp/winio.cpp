@@ -6,6 +6,7 @@
 
 #include <Mlib/Debug.h>
 #include <Mlib/Profile.h>
+#include <Mlib/String.h>
 #include <cctype>
 #include <cwchar>
 #include <stdio.h>
@@ -3128,6 +3129,7 @@ statusbar(const char *msg)
 void
 warn_and_briefly_pause(const char *msg)
 {
+
     blank_bottombars();
     statusline(ALERT, msg);
     lastmessage = VACUUM;

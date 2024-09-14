@@ -6,6 +6,7 @@
 
 using std::string;
 using std::string_view;
+using std::to_string;
 using std::vector;
 
 /* All external variables.  See global.c for their descriptions. */
@@ -169,7 +170,10 @@ extern vec<char *>          funcs;
 extern vec<glob_var_t>      glob_vars;
 extern vec<function_info_t> local_funcs;
 
-extern std::unordered_map<std::string_view, syntax_data_t> color_map;
+// extern std::unordered_map<std::string_view, syntax_data_t> color_map;
+extern std::unordered_map<std::string, syntax_data_t> test_map;
+extern vector<class_info_t>                           class_info_vector;
+extern vector<var_t>                                  var_vector;
 
 typedef void (*functionptrtype)(void);
 
@@ -277,6 +281,7 @@ char **retrieve_words_from_file(const char *path, unsigned long *nwords);
 char **words_from_file(const char *path, unsigned long *nwords);
 char **words_from_current_file(unsigned long *nwords);
 char **dir_entrys_from(const char *path);
+linestruct *retrieve_file_as_lines(const string &path);
 
 /* Some functions in 'global.cpp'. */
 functionptrtype  func_from_key(const int keycode);
@@ -505,6 +510,9 @@ char         *alloced_current_file_dir(void);
 char         *alloced_full_current_file_dir(void);
 unsigned long word_index(bool prev);
 void          alloced_remove_at(char **str, int at);
+const char   *word_strstr(const char *data, const char *needle);
+string        file_extention_str(void);
+string        current_file_dir(void);
 
 /* Most functions in 'winio.cpp'. */
 void          record_macro(void);
@@ -599,15 +607,17 @@ bool             enter_with_bracket(void);
 void             all_brackets_pos(void);
 void             do_close_bracket(void);
 void             do_test_window(void);
+int              current_line_scope_end(linestruct *line);
 function_info_t *parse_func(const char *str);
 function_info_t  parse_local_func(const char *str);
 bool             invalid_variable_sig(const char *sig);
 void parse_variable(const char *sig, char **type, char **name, char **value);
 void flag_all_brackets(void);
-void flag_all_block_comments(void);
+void flag_all_block_comments(linestruct *from);
 void find_current_function(linestruct *l);
 void check_line_for_vars(linestruct *line);
 void remove_local_vars_from(linestruct *line);
+void remove_from_color_map(linestruct *line, int color, int type);
 
 /* 'syntax.cpp' */
 void   syntax_check_file(openfilestruct *file);
@@ -706,6 +716,7 @@ void sub_thread_find_syntax(const char *path);
 void sub_thread_parse_funcs(const char *path);
 void find_functions_task(const char *path);
 void find_glob_vars_task(const char *path);
+void get_line_list_task(const char *path);
 
 /* 'signal.cpp' */
 void init_main_thread(void);
@@ -715,7 +726,8 @@ void block_pthread_sig(int sig, bool block);
 
 /* 'render.cpp' */
 void render_line_text(const int row, const char *str, linestruct *line,
-                      const unsigned long from_col);
+                      const unsigned long from_col,
+                      int                 color = FG_VS_CODE_WHITE);
 void apply_syntax_to_line(const int row, const char *converted,
                           linestruct *line, unsigned long from_col);
 void rendr_suggestion();
@@ -733,8 +745,15 @@ void        find_word(linestruct *line, const char *data, const char *word,
                       const unsigned long slen, const char **start, const char **end);
 int         preprossesor_data_from_key(const char *key);
 void        free_local_var(local_var_t *var);
-void        add_to_color_map(std::string_view word, int color);
 local_var_t parse_local_var(linestruct *line);
+int         find_class_end_line(linestruct *from);
+void        add_to_color_map(string str, syntax_data_t data);
+
+/* 'parse.cpp' */
+void parse_class_data(linestruct *from);
+void parse_var_type(const char *data);
+void line_variable(linestruct *line, vector<var_t> &var_vector);
+void func_decl(linestruct *line);
 
 /* 'gui.cpp' */
 // void init_window(void);
