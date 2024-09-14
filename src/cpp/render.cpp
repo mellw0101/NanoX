@@ -1324,7 +1324,7 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
         render_preprossesor();
         return;
     }
-    render_string_literals();
+    // render_string_literals();
     render_char_strings();
     if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
     {
