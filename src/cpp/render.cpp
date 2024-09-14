@@ -1247,12 +1247,6 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     ::from_col  = from_col;
     render_function_params();
     render_comment();
-    if (line->data[indent_char_len(line)] == '#')
-    {
-
-        render_preprossesor();
-        return;
-    }
     if (line->data[0] == '\0' ||
         (block_comment_start == 0 && block_comment_end == till_x))
     {
