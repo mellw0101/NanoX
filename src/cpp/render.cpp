@@ -600,6 +600,10 @@ rendr_define(unsigned int index)
     }
     end = start;
     ADV_PTR(end, (*end != '(' && *end != ' ' && *end != '\t'));
+    if (end == start)
+    {
+        return;
+    }
     RENDR(R, FG_VS_CODE_BLUE, start, end);
     string define_name(start, (end - start));
     if (test_map.find(define_name) == test_map.end())
@@ -614,10 +618,18 @@ rendr_define(unsigned int index)
             end += 1;
             /* Advance to the start of the word. */
             ADV_PTR(end, (*end == ' ' || *end == '\t'));
+            if (!*end)
+            {
+                break;
+            }
             start = end;
             /* Now find the end of the word. */
             ADV_PTR(end, (*end != ')' && *end != ',' && *end != ' ' &&
                           *end != '\t'));
+            if (end == start)
+            {
+                break;
+            }
             RENDR(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
             (word != NULL) ? free(word) : void();
             word  = measured_copy(start, (end - start));
@@ -669,8 +681,16 @@ rendr_define(unsigned int index)
     }
     (word != NULL) ? free(word) : void();
     ADV_PTR(end, (*end == ' ' || *end == '\t'));
+    if (!*end)
+    {
+        return;
+    }
     start = end;
     ADV_PTR(end, (*end != '(' && *end != ' ' && *end != '\t'));
+    if (end == start)
+    {
+        return;
+    }
     if (*end == '(')
     {
         RENDR(R, FG_VS_CODE_BRIGHT_YELLOW, start, end);
@@ -887,10 +907,7 @@ rendr_if_preprosses(unsigned int index)
                 }
                 else
                 {
-                    if (line->data[index] != '(')
-                    {
-                        rendr(R_CHAR, ERROR_MESSAGE, parent_end);
-                    }
+                    rendr(R_CHAR, ERROR_MESSAGE, parent_end);
                 }
                 break;
             }
@@ -924,6 +941,10 @@ render_preprossesor(void)
         }
         start = end;
         adv_ptr(end, (*end != ' ' && *end != '\t'));
+        if (end == start)
+        {
+            return;
+        }
         current_word   = measured_copy(start, (end - start));
         const int type = hash_string(current_word);
         switch (type)
@@ -932,6 +953,10 @@ render_preprossesor(void)
             {
                 rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
                 adv_ptr(end, (*end == ' ' || *end == '\t'));
+                if (!*end)
+                {
+                    break;
+                }
                 rendr_define((end - line->data));
                 break;
             }
@@ -987,25 +1012,25 @@ render_preprossesor(void)
                 rendr(R, FG_VS_CODE_BLUE, start, end);
                 break;
             }
-            case "error"_uint_hash :
-            {
-                RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
-                ADV_PTR(end, (*end == ' ' || *end == '\t'));
-                if (!*end || *end != '"')
+                /* case "error"_uint_hash :
                 {
-                    break;
-                }
-                start = end;
-                end += 1;
-                ADV_PTR(end, (*end != '"'));
-                if (*end)
-                {
+                    RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+                    ADV_PTR(end, (*end == ' ' || *end == '\t'));
+                    if (!*end || *end != '"')
+                    {
+                        break;
+                    }
+                    start = end;
                     end += 1;
-                }
-                render_part(
-                    (start - line->data), (end - line->data), FG_YELLOW);
-                break;
-            }
+                    ADV_PTR(end, (*end != '"'));
+                    if (*end)
+                    {
+                        end += 1;
+                    }
+                    render_part(
+                        (start - line->data), (end - line->data), FG_YELLOW);
+                    break;
+                } */
         }
         free(current_word);
     }
@@ -1313,11 +1338,11 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
         }
         free_node(node);
     }
-    /* if (line->data[indent_char_len(line)] == '#')
+    if (line->data[indent_char_len(line)] == '#')
     {
         render_preprossesor();
         return;
-    } */
+    }
     // render_string_literals();
     render_char_strings();
     /* if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
