@@ -1237,13 +1237,14 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     ::converted = converted;
     ::line      = line;
     ::from_col  = from_col;
-    if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
-    {
-        render_part(0, till_x, FG_SUGGEST_GRAY);
-        return;
-    }
     render_function_params();
     render_comment();
+    if (line->data[indent_char_len(line)] == '#')
+    {
+
+        render_preprossesor();
+        return;
+    }
     if (line->data[0] == '\0' ||
         (block_comment_start == 0 && block_comment_end == till_x))
     {
@@ -1317,6 +1318,11 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     }
     render_string_literals();
     render_char_strings();
+    if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
+    {
+        render_part(0, till_x, FG_SUGGEST_GRAY);
+        return;
+    }
 }
 
 void
