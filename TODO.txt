@@ -139,14 +139,18 @@ Implement live syntax.
 Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
 
     NOTES:
-        I had to add a check for term so i would know if currently running in xterm, as xterm uses unique codes.
-        Atleast now i have added a global way to check the current env var 'term', it is init at the start of NanoX.
-        I also kinda dont like the system in place to determen what keys where pressed as it makes codes that are
-        destinct come out the same making me think that it was not possible to check if 'ctrl' was heal when pressing
-        'backspace', as when debugging i would get the same code no matter what.  I finaly found out how the system
-        retrives the raw hex codes from the term so i have now started to make checks here to determen what exact key
-        is pressed.  I honestly find it weird why you would want a system where not all key`s and mod keys held, as
-        this allows for total control as well as what i just created.  A way to delete prev word with 'ctrl+backspace',
+        I had to add a check for term so i would know if currently running in
+        xterm, as xterm uses unique codes.  Atleast now i have added a global
+        way to check the current env var 'term', it is init at the start of NanoX.
+        I also kinda dont like the system in place to determen what keys where
+        pressed as it makes codes that are destinct come out the same making me
+        think that it was not possible to check if 'ctrl' was heal when pressing
+        'backspace', as when debugging i would get the same code no matter what.
+        I finaly found out how the system retrives the raw hex codes from the
+        term so i have now started to make checks here to determen what exact key
+        is pressed.  I honestly find it weird why you would want a system where
+        not all key`s and mod keys held, as this allows for total control as well
+        as what i just created.  A way to delete prev word with 'ctrl+backspace',
         this is the norm in most other modern editors.
     
     STATUS:
@@ -155,10 +159,12 @@ Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
 Make it possible to move one line up and down holding 'alt'.
 
     NOTES:
-        This was quite easy to get to work, the harder(not really that hard) part was to make undoing and
-        redoing work correctly.  After I worked that out it now works exactly the same as in 'vs-code'
-        when moving one line up and down.  I`m very happy with how it works.  I just need to figure out
-        how to make selected text stay selected after the line has been moved, after that it`s complete.
+        This was quite easy to get to work, the harder(not really that hard)
+        part was to make undoing and redoing work correctly.  After I worked
+        that out it now works exactly the same as in 'vs-code' when moving
+        one line up and down.  I`m very happy with how it works.  I just need
+        to figure out how to make selected text stay selected after the line
+        has been moved, after that it`s complete.
     
     STATUS:
         DONE!!.
@@ -166,13 +172,15 @@ Make it possible to move one line up and down holding 'alt'.
 Make it possible to move all selected lines up and down one line.
 
     NOTES:
-        I can successfully do this now but I cannot manage to return the selection of the text
-        once complete, I think this stems from the fact that I`m using my function to move one
-        line to move the line above the selected text to the last line of the selection and vise versa.
-        This is a problem because I cannot currently keep the selection when just moving one line
-        making it hard to understand why it wont just work if i save then restore the mark and
-        current pos after we are done.  I think i need to make the this possible when moving just
-        one line then this will be fixed, and if not I will have lerned how it works better.
+        I can successfully do this now but I cannot manage to return the selection
+        of the text once complete, I think this stems from the fact that I`m using
+        my function to move one line to move the line above the selected text to
+        the last line of the selection and vise versa.  This is a problem because
+        I cannot currently keep the selection when just moving one line making it
+        hard to understand why it wont just work if i save then restore the mark and
+        current pos after we are done.  I think i need to make the this possible when
+        moving just one line then this will be fixed, and if not I will have lerned
+        how it works better.
     
     STATUS:
         NOT DONE.
@@ -196,17 +204,19 @@ Make auto bracket placement and proper indent if enter is pressed between '{}',
     STATUS:
         DONE!!.
 ('12').
-Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace is pressed directly
-    after remove both char`s.
+Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace
+is pressed directly after remove both char`s.
 
     NOTES:
-        I added so that '<' so that creates a '>' if after #include.  This will be improved for edge case`s
+        I added so that '<' so that creates a '>' if after #include.
+        This will be improved for edge case`s 
         when found so it is not yet done.
 
     STATUS:
         ALMOST DONE!!.
 ('13').
-Make '^Bsp' and '^Del' remove all spaces if more then one space to next/prev word, like 'vs-code'.
+Make '^Bsp' and '^Del' remove all spaces if more then one space to next/prev
+word, like 'vs-code'.
 
     NOTES:
         This was quite fun to be honest I remade the function 8 times and
@@ -216,7 +226,8 @@ Make '^Bsp' and '^Del' remove all spaces if more then one space to next/prev wor
     STATUS:
         DONE!!.  FOR NOW.
 ('14').
-Extend functionality of execute so you can do more when using '^E', for example run formater and such.
+Extend functionality of execute so you can do more when using '^E', for example
+run formater and such.
 
     STATUS:
         NOT DONE.
@@ -224,8 +235,9 @@ Extend functionality of execute so you can do more when using '^E', for example 
 Create a system to find header file`s based on the file they are found in.
     
     NOTES:
-        This will not be hard at all i think it will be easiest to just parse all files in the folder that the
-        current file is in for local(") header files.  And for global(<) i will just parse the entire '/usr/include/'
+        This will not be hard at all i think it will be easiest to just parse
+        all files in the folder that the current file is in for local(") header
+        files.  And for global(<) i will just parse the entire '/usr/include/'
         folder.
     
     STATUS:
@@ -234,28 +246,31 @@ Create a system to find header file`s based on the file they are found in.
 Multithreding just dropped bois!!!
 
     NOTES:
-        Now this is amazing i coded this for 9 hours and it worked when i tested it ahhahahhaha!!
-        i decided to make subthreads only as i dont se the benefit of having more threads for
-        something other then data parsing and formating witch i can now completly do in the
-        background.  So the way i set it up is that there is a threadpool with a queue that has
-        the threads all wating for a task to perform.  When I(the main thread) gives them
-        a task that do that task in there thread and package it into a struct witch i make
-        that has exactly the data that i want in the exact format i want making prossesing
-        super fast.  i also ensured that for every iter of the main loop I read and prosses all
-        callbacks that I recieved from the tasks that i sent.  This is done by making a linked
-        list of callbacks that are 100 % thread safe as there is no shared data all of the 
-        threads allocate the structs themselfs and then when i prosses them all i mutex
-        lock the entire callback queue untill all callbacks are prossesed making race
+        Now this is amazing i coded this for 9 hours and it worked when i tested
+        it ahhahahhaha!!.  I decided to make subthreads only as i dont see the
+        benefit of having more threads for something other then data parsing and
+        formating witch i can now completly do in the background.  So the way i
+        set it up is that there is a threadpool with a queue that has the threads
+        all wating for a task to perform.  When I(the main thread) gives them a
+        task that do that task in there thread and package it into a struct witch
+        i make that has exactly the data that i want in the exact format i want
+        making prossesing super fast.  i also ensured that for every iter of the
+        main loop I read and prosses all callbacks that I recieved from the tasks
+        that i sent.  This is done by making a linked list of callbacks that are
+        100 % thread safe as there is no shared data all of the threads allocate
+        the structs themselfs and then when i prosses them all i mutex lock the
+        entire callback queue untill all callbacks are prossesed making race
         conditions imposible as there is only I on this side to access the data.
-        I also made everything non blocking for all threads the only waiting thay will
-        do is for the next task, I cannot wait to develop them further.
+        I also made everything non blocking for all threads the only waiting thay
+        will do is for the next task, I cannot wait to develop them further.
     
-        This system is flawless.  there are newer problems, the only thing is that i built
-        this before i figured out how the syntaxing worked and before i changed to my real-time
-        system.  And then i really needed to run thing concurently because of the slowness of
-        regexing and other things.  But as of now using my real-time system it`s so fast that
-        not even a single function i profile when i stress test takes more than '1' ms,
-        to compleate and for all the real-time rendering functions.
+        This system is flawless.  There are newer problems, the only thing is
+        that i built this before i figured out how the syntaxing worked and before
+        i changed to my real-time system.  And then i really needed to run thing
+        concurently because of the slowness of regexing and other things.  But as
+        of now using my real-time system it`s so fast that not even a single
+        function i profile when i stress test takes more than '1' ms, to compleate
+        and for all the real-time rendering functions.
         
         Well...
             render_bracket:
@@ -309,7 +324,8 @@ Multithreding just dropped bois!!!
                 Max     = 0.979771 ms,
                 Count   = 91626
 
-        I will make NanoX better than vs code the next main problem is to add the ability to close and open brackets.
+        I will make NanoX better than vs code the next main problem is
+        to add the ability to close and open brackets.
 
     STATUS:
         OBVIUSLY NOT DONE BUT NO ERRORS AT ALL!!
@@ -317,40 +333,158 @@ Multithreding just dropped bois!!!
 Create a rendering engine.
 
     NOTES:
-        I have just created the first part of the rendering engine, the main function to render the text in a line.
-        I will begin to split up the rendering into parts, this way i can start to multithread most actions.  By doing
-        this I can make the visual updating imediet always.
+        I have just created the first part of the rendering engine, the main
+        function to render the text in a line.  I will begin to split up the
+        rendering into parts, this way i can start to multithread most actions.
+        By doing this I can make the visual updating imediet always.
 
-        This is going well, and I have made real time rendering a thing now i just need to extend it further.
+        This is going well, and I have made real time rendering a thing now I
+        just need to extend it further.
 
-        Well i have made something amazing, truly.  I have been planning to do this for mounths, and when i finally
-        cracked all the weird ways the OG 'nano' integrated rcfile parsing systems for everything.  I could finaly do
-        everything in real-time.  Here are some profiling results.
+        Well i have made something amazing, truly.  I have been planning to do
+        this for mounths, and when i finally cracked all the weird ways the
+        OG 'nano' integrated 'rc-file' parsing system`s for everything.
+        I can finaly do everything in real-time.  Here are some profiling results.
         
         Profiling report: [2024-09-03 11:04:42.297]
-            apply_syntax_to_line          : Mean = 0.00332462 ms, Stddev = 0.00518622 ms,    Min = 0.0007 ms,    Max = 0.979771 ms,  Count = 91626
-            check_include_file_syntax     : Mean = 0.31838 ms, Stddev = 0.211597 ms,    Min = 0.020611 ms,    Max = 0.49295 ms,  Count = 3
-            display_string                : Mean = 8.41382e-05 ms, Stddev = 8.67018e-05 ms,    Min = 3e-05 ms,    Max = 0.01267 ms,  Count = 93675
-            do_cpp_syntax                 : Mean = 0.312771 ms, Stddev = 0 ms,    Min = 0.312771 ms,    Max = 0.312771 ms,  Count = 1
-            edit_refresh                  : Mean = 0.241847 ms, Stddev = 0.0656478 ms,    Min = 0.13139 ms,    Max = 1.75962 ms,  Count = 1985
-            find_current_function         : Mean = 0.00270999 ms, Stddev = 0.00269315 ms,    Min = 6e-05 ms,    Max = 0.0181 ms,  Count = 1077
-            flag_all_brackets             : Mean = 0.282631 ms, Stddev = 0 ms,    Min = 0.282631 ms,    Max = 0.282631 ms,  Count = 1
-            line_word_list                : Mean = 0.000142748 ms, Stddev = 0.000170037 ms,    Min = 3e-05 ms,    Max = 0.01087 ms,  Count = 90696
-            precalc_multicolorinfo        : Mean = 2.98019 ms, Stddev = 0 ms,    Min = 2.98019 ms,    Max = 2.98019 ms,  Count = 1
-            render_bracket                : Mean = 0.000115283 ms, Stddev = 0.000442019 ms,    Min = 2e-05 ms,    Max = 0.01829 ms,  Count = 91626
-            render_char_strings           : Mean = 6.34184e-05 ms, Stddev = 9.73154e-05 ms,    Min = 2e-05 ms,    Max = 0.01043 ms,  Count = 90696
-            render_comment                : Mean = 7.71813e-05 ms, Stddev = 9.15774e-05 ms,    Min = 3e-05 ms,    Max = 0.00888 ms,  Count = 91626
-            render_function_params        : Mean = 0.00133443 ms, Stddev = 0.00109268 ms,    Min = 0.00041 ms,    Max = 0.02217 ms,  Count = 91626
-            render_preprossesor           : Mean = 3.70054e-05 ms, Stddev = 6.41127e-05 ms,    Min = 2e-05 ms,    Max = 0.00969 ms,  Count = 91626
-            render_string_literals        : Mean = 5.2356e-05 ms, Stddev = 9.17636e-05 ms,    Min = 2e-05 ms,    Max = 0.00791 ms,  Count = 90696
-            syntax_check_file             : Mean = 0.956221 ms, Stddev = 0 ms,    Min = 0.956221 ms,    Max = 0.956221 ms,  Count = 1
-            update_line                   : Mean = 0.00469836 ms, Stddev = 0.00624281 ms,    Min = 0.00121 ms,    Max = 1.21486 ms,  Count = 91626
-            words_from_file               : Mean = 0.166264 ms, Stddev = 0.107538 ms,    Min = 0.014421 ms,    Max = 0.24957 ms,  Count = 3
+            apply_syntax_to_line:
+                Mean    = 0.00332462 ms, 
+                Stddev  = 0.00518622 ms,
+                Min     = 0.0007 ms,
+                Max     = 0.979771 ms,
+                Count   = 91626
 
-        As you can see, this is so fast and i have been able to add error highlighting as well, also in real time and i have just
-        added to 'render_function_params' so that it can look at a type for a param and if the user tries to index into the param
-        (i.e: param[index]) it checks if the param is a '*' ptr and if not it gives an error directly in real time by making the
-        var red.
+            check_include_file_syntax:
+                Mean    = 0.31838 ms, 
+                Stddev  = 0.211597 ms,
+                Min     = 0.020611 ms,
+                Max     = 0.49295 ms,
+                Count   = 3
+            
+            display_string:
+                Mean    = 8.41382e-05 ms,
+                Stddev  = 8.67018e-05 ms,
+                Min     = 3e-05 ms,
+                Max     = 0.01267 ms,
+                Count   = 93675
+            
+            do_cpp_syntax:
+                Mean    = 0.312771 ms, 
+                Stddev  = 0 ms,
+                Min     = 0.312771 ms,
+                Max     = 0.312771 ms,
+                Count   = 1
+
+            edit_refresh:
+                Mean    = 0.241847 ms, 
+                Stddev  = 0.0656478 ms,
+                Min     = 0.13139 ms,
+                Max     = 1.75962 ms,
+                Count   = 1985
+
+            find_current_function:
+                Mean    = 0.00270999 ms, 
+                Stddev  = 0.00269315 ms,
+                Min     = 6e-05 ms,
+                Max     = 0.0181 ms,
+                Count   = 1077
+
+            flag_all_brackets:
+                Mean    = 0.282631 ms, 
+                Stddev  = 0 ms,
+                Min     = 0.282631 ms,
+                Max     = 0.282631 ms,
+                Count   = 1
+
+            line_word_list:
+                Mean    = 0.000142748 ms, 
+                Stddev  = 0.000170037 ms,
+                Min     = 3e-05 ms,
+                Max     = 0.01087 ms,
+                Count   = 90696
+
+            precalc_multicolorinfo:
+                Mean    = 2.98019 ms, 
+                Stddev  = 0 ms,
+                Min     = 2.98019 ms,
+                Max     = 2.98019 ms,
+                Count   = 1
+
+            render_bracket:
+                Mean    = 0.000115283 ms, 
+                Stddev  = 0.000442019 ms,
+                Min     = 2e-05 ms,
+                Max     = 0.01829 ms,
+                Count   = 91626
+
+            render_char_strings:
+                Mean    = 6.34184e-05 ms,
+                Stddev  = 9.73154e-05 ms,
+                Min     = 2e-05 ms,
+                Max     = 0.01043 ms,
+                Count   = 90696
+            
+            render_comment:
+                Mean    = 7.71813e-05 ms,
+                Stddev  = 9.15774e-05 ms,
+                Min     = 3e-05 ms,
+                Max     = 0.00888 ms,
+                Count   = 91626
+
+            render_function_params:
+                Mean    = 0.00133443 ms, 
+                Stddev  = 0.00109268 ms,
+                Min     = 0.00041 ms,
+                Max     = 0.02217 ms,
+                Count   = 91626
+
+            render_preprossesor:
+                Mean    = 3.70054e-05 ms,
+                Stddev  = 6.41127e-05 ms,
+                Min     = 2e-05 ms,
+                Max     = 0.00969 ms,
+                Count   = 91626
+
+            render_string_literals:
+                Mean    = 5.2356e-05 ms,
+                Stddev  = 9.17636e-05 ms,
+                Min     = 2e-05 ms,
+                Max     = 0.00791 ms,
+                Count = 90696
+
+            syntax_check_file:
+                Mean    = 0.956221 ms, 
+                Stddev  = 0 ms,
+                Min     = 0.956221 ms,
+                Max     = 0.956221 ms,
+                Count   = 1
+
+            update_line:
+                Mean    = 0.00469836 ms, 
+                Stddev  = 0.00624281 ms,
+                Min     = 0.00121 ms,
+                Max     = 1.21486 ms,
+                Count   = 91626
+
+            words_from_file:
+                Mean    = 0.166264 ms, 
+                Stddev  = 0.107538 ms,
+                Min     = 0.014421 ms,
+                Max     = 0.24957 ms,
+                Count   = 3
+
+        As you can see, this is so fast and i have been able to add error
+        highlighting as well, also in real time and i have just added to
+        'render_function_params' so that it can look at a type for a param
+        and if the user tries to index into the param(i.e: param[index])
+        it checks if the param is a '*' ptr and if not it gives an error
+        directly in real time by making the var red.
+
+        Now this is basicly done in the extent that i have full controll
+        over the rendering and now i need to remember to make good tools
+        to simplyfy all of the work i have brute forced so far when i have
+        polished and overhauled all of it until i can do everything very
+        easy then we will be done.  With this part.
 
     STATUS:
         NOT DONE.  But started and implemented.
@@ -377,16 +511,40 @@ Create suggestion system.
     STATUS:
         IMPLEMENTED, NOT DONE.
 ('21').
-Implement a real parent and bracket color system based on nesting rather then just on indent.
+Implement a real parent and bracket color system based on nesting rather
+then just on indent.
 
     NOTES:
-        I have a plan on how to implement this as i have already made the logic to correctly get all
-        of the data i need i just need to think of a way to implement this so that it scales no matter
-        the size of the file.  And i know it will not be slow no matter what but i would like it to
-        be as fast as possible directly so i never need to change it out of slowness.
+        I have a plan on how to implement this as i have already made the
+        logic to correctly get all of the data i need i just need to think
+        of a way to implement this so that it scales no matter the size of
+        the file.  And i know it will not be slow no matter what but i would
+        like it to be as fast as possible directly so i never need to change
+        it out of slowness.
 
     STATUS:
         DONE!!, But not yet implemented.
+('22').
+Make GUI.
+
+    NOTES:
+        When most of the data parsing and structures are done for complete
+        real-time syntax and error checking start to work on the sdl2 gui
+        version of NanoX and also just for fun make one using xcb.  Just
+        because i know it will be fun, then just render the text in the
+        correct colors.
+
+        Do sdl2 to learn how to fully controll sdl2 and then make a lib
+        for faster development.  This is one of the end goals atleast for
+        VERSION '0.0.1', after that we will be on VERSION '0.0.2'.
+
+    STATUS:
+        NOT STARTED YET.
+('23')
+Add a 'c/cpp' formatter that formats on save.
+
+    STATUS:
+        NOT STARTED YET.
 
 NCURSES_HELP:
     'wattron' turns on an attribute for a 'WINDOW*'. 

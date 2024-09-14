@@ -107,8 +107,8 @@ set_interface_colorpairs(void)
             else if (index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY)
             {
                 init_pair(index + 1,
-                          color_index_map[index - FG_VS_CODE_RED].value, 0);
-
+                          color_index_map[index - FG_VS_CODE_RED].value,
+                          COLOR_BLACK);
                 interface_color_pair[index] = COLOR_PAIR(index + 1);
             }
             else

@@ -774,3 +774,79 @@ current_file_dir(void)
         openfile->filename, (tail(openfile->filename) - openfile->filename));
     return ret;
 }
+
+/* Retrieve a malloc`ed 'char **' containing the output of cmd,
+ * in line format.  This function also allows to input a refrece to
+ * an 'unsigned int' to retrieve the line count.  Note that each line
+ * is malloc`ed as well and will need to be free`d, as does the entire
+ * array.  Return`s 'NULL' apon failure. */
+char **
+retrieve_exec_output(const char *cmd, unsigned int *n_lines)
+{
+    FILE *prog = popen(cmd, "r");
+    if (!prog)
+    {
+        logE("Failed to run command: '%s'.", cmd);
+        return NULL;
+    }
+    static char  buf[PATH_MAX];
+    unsigned int size  = 0;
+    unsigned int cap   = 10;
+    char       **lines = AMALLOC_ARRAY(lines, cap);
+    char        *copy  = NULL;
+    while (fgets(buf, sizeof(buf), prog))
+    {
+        unsigned int len = strlen(buf);
+        buf[len - 1] == '\n' ? buf[--len] = '\0' : 0;
+        copy = measured_copy(buf, len);
+        size == cap ? cap *= 2, lines = AREALLOC_ARRAY(lines, cap) : 0;
+        lines[size++] = copy;
+    }
+    pclose(prog);
+    n_lines ? *n_lines = size : 0;
+    lines[size] = NULL;
+    return lines;
+}
+
+const char *
+strstr_array(const char *str, const char **substrs, unsigned int count,
+             unsigned int *index)
+{
+    const char *first = NULL;
+    for (unsigned int i = 0; i < count; i++)
+    {
+        const char *match = strstr(str, substrs[i]);
+        if (match && (!first || match < first))
+        {
+            first = match;
+            index ? *index = i : 0;
+        }
+    }
+    return first;
+}
+
+string
+tern_statement(const string &str, string *if_true, string *if_false)
+{
+    static constexpr char rule_count        = 2;
+    static const char    *rules[rule_count] = {"?", ":"};
+    const char           *start             = &str[0];
+    const char           *end               = start;
+    const char           *found             = NULL;
+    string                ret               = "";
+    unsigned int          index;
+    found = strstr_array(start, rules, rule_count, &index);
+    if (!found)
+    {
+        return "";
+    }
+    if (index != 0)
+    {
+        return "";
+    }
+    found = end;
+    ADV_TO_NEXT_WORD(start);
+    ret = string(start, (end - start));
+    NLOG("%s\n", ret.c_str());
+    return "";
+}

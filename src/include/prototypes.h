@@ -513,6 +513,9 @@ void          alloced_remove_at(char **str, int at);
 const char   *word_strstr(const char *data, const char *needle);
 string        file_extention_str(void);
 string        current_file_dir(void);
+char        **retrieve_exec_output(const char *cmd, unsigned int *n_lines);
+const char   *strstr_array(const char *str, const char **substrs,
+                           unsigned int count, unsigned int *index);
 
 /* Most functions in 'winio.cpp'. */
 void          record_macro(void);
@@ -726,8 +729,7 @@ void block_pthread_sig(int sig, bool block);
 
 /* 'render.cpp' */
 void render_line_text(const int row, const char *str, linestruct *line,
-                      const unsigned long from_col,
-                      int                 color = FG_VS_CODE_WHITE);
+                      const unsigned long from_col);
 void apply_syntax_to_line(const int row, const char *converted,
                           linestruct *line, unsigned long from_col);
 void rendr_suggestion();

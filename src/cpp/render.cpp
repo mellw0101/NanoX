@@ -79,11 +79,11 @@ render_part_raw(unsigned long start_index, unsigned long end_index, short color)
  * text and nothing else. */
 void
 render_line_text(const int row, const char *str, linestruct *line,
-                 const unsigned long from_col, int color)
+                 const unsigned long from_col)
 {
     if (margin > 0)
     {
-        midwin_color_on(color);
+        win_color_on(midwin, LINE_NUMBER);
         if (ISSET(SOFTWRAP) && from_col != 0)
         {
             mvwprintw(midwin, row, 0, "%*s", margin - 1, " ");
@@ -92,6 +92,7 @@ render_line_text(const int row, const char *str, linestruct *line,
         {
             mvwprintw(midwin, row, 0, "%*lu", margin - 1, line->lineno);
         }
+        win_color_off(midwin, LINE_NUMBER);
         if (line->has_anchor == TRUE && (from_col == 0 || !ISSET(SOFTWRAP)))
         {
             if (using_utf8())
@@ -109,7 +110,6 @@ render_line_text(const int row, const char *str, linestruct *line,
         }
     }
     mvwaddstr(midwin, row, margin, str);
-    wprintw(midwin, "%*s", COLS - (int)till_x - margin, " ");
     if (is_shorter || ISSET(SOFTWRAP))
     {
         wclrtoeol(midwin);
@@ -117,9 +117,7 @@ render_line_text(const int row, const char *str, linestruct *line,
     if (sidebar)
     {
         mvwaddch(midwin, row, COLS - 1, bardata[row]);
-        wprintw(midwin, " ");
     }
-    midwin_color_off(color);
 }
 
 /* Set start and end pos for comment block or if the entire
@@ -450,13 +448,13 @@ render_parents(void)
 void
 render_string_literals(void)
 {
-    const char *start      = line->data;
-    const char *end        = line->data;
-    const char *slash      = NULL;
-    const char *slash_end  = NULL;
-    const char *format     = NULL;
-    const char *format_end = NULL;
-    while (start != NULL)
+    const char *start = line->data;
+    const char *end   = line->data;
+    // const char *slash      = NULL;
+    // const char *slash_end  = NULL;
+    // const char *format     = NULL;
+    // const char *format_end = NULL;
+    while (*start)
     {
         ADV_PTR_BY_CH(end, '"');
         if (*end != '"')
@@ -484,7 +482,7 @@ render_string_literals(void)
             return;
         }
         rendr(C, FG_YELLOW, match_start, match_end);
-        slash = start + 1;
+        /* slash = start + 1;
         while (*slash && *slash != '"')
         {
             ADV_PTR(slash, (*slash != '"') && (*slash != '\\'))
@@ -511,8 +509,8 @@ render_string_literals(void)
                 }
             }
             slash = slash_end;
-        }
-        format = start + 1;
+        } */
+        /* format = start + 1;
         while (*format && *format != '"')
         {
             ADV_PTR(format, (*format != '"') && (*format != '%'))
@@ -544,8 +542,8 @@ render_string_literals(void)
                 }
             }
             format = format_end;
-        }
-        start = end;
+        } */
+        start = end + 1;
     }
 }
 
@@ -814,16 +812,6 @@ rendr_if_preprosses(unsigned int index)
         if (*defined && *defined == ' ')
         {
             rendr(R, FG_VS_CODE_BLUE, start, defined);
-            const char *ws = defined;
-            ADV_TO_NEXT_WORD(ws);
-            if (!*ws)
-            {
-                break;
-            }
-            const char *es = ws;
-            ADV_PTR(es, (*es != ' ' && *es != '\t' && *es != ')' &&
-                         *es != '|' && *es != '&'));
-            RENDR(R, FG_VS_CODE_BLUE, ws, es);
         }
         else
         {
@@ -891,7 +879,10 @@ rendr_if_preprosses(unsigned int index)
                 }
                 else
                 {
-                    rendr(R_CHAR, ERROR_MESSAGE, parent_end);
+                    if (line->data[index] != '(')
+                    {
+                        rendr(R_CHAR, ERROR_MESSAGE, parent_end);
+                    }
                 }
                 break;
             }
@@ -1246,12 +1237,15 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     ::converted = converted;
     ::line      = line;
     ::from_col  = from_col;
-    vector<var_t> var_vector;
+    if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
+    {
+        render_part(0, till_x, FG_SUGGEST_GRAY);
+        return;
+    }
     render_function_params();
     render_comment();
-    if ((line->data[0] == '\0' ||
-         (block_comment_start == 0 && block_comment_end == till_x)) &&
-        !LINE_ISSET(line, DONT_PREPROSSES_LINE))
+    if (line->data[0] == '\0' ||
+        (block_comment_start == 0 && block_comment_end == till_x))
     {
         return;
     }
@@ -1315,11 +1309,6 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
             }
         }
         free_node(node);
-    }
-    if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
-    {
-        render_part(0, till_x, FG_SUGGEST_GRAY);
-        return;
     }
     if (line->data[indent_char_len(line)] == '#')
     {

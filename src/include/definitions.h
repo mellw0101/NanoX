@@ -952,26 +952,28 @@ class language_server_t
 
     language_server_t(void);
 
-    int find_endif(linestruct *from);
+    int  find_endif(linestruct *);
+    void fetch_compiler_defines(string);
 
 public:
     ~language_server_t(void);
 
     static language_server_t *Instance(void);
 
-    int    is_defined(const string &name);
-    bool   has_been_included(const string &name);
-    string define_value(const string &name);
-    void   add_define(const define_entry_t &entry);
+    int    is_defined(const string &);
+    bool   has_been_included(const string &);
+    string define_value(const string &);
+    void   add_define(const define_entry_t &);
 
-    void define(linestruct *line, const char **ptr);
-    void ifndef(const string &define, linestruct *current_line);
-    void ifdef(const string &define, linestruct *current_line);
-    void undef(const string &define);
-    void handle_if(linestruct *line, const char **ptr);
+    void define(linestruct *, const char **);
+    void ifndef(const string &, linestruct *);
+    void ifdef(const string &, linestruct *);
+    void undef(const string &);
+    void handle_if(linestruct *, const char **);
 
-    void check(linestruct *from, string file);
-    void add_defs_to_color_map(void);
+    void   check(linestruct *, string);
+    void   add_defs_to_color_map(void);
+    string parse_full_pp_delc(linestruct *, const char **);
 
     vector<define_entry_t> retrieve_defines(void);
 };

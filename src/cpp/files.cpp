@@ -2962,7 +2962,7 @@ dir_entrys_from(const char *path)
     thread_local DIR          *dir = opendir(path);
     if (dir == NULL)
     {
-        LOUT_logE("Failed to open dir: '%s'.", path);
+        logE("Failed to open dir: '%s'.", path);
         return NULL;
     }
     buf = (char **)nmalloc(sizeof(char *) * cap);
@@ -3000,7 +3000,6 @@ retrieve_file_as_lines(const string &path)
     {
         if (buf[len - 1] == '\n')
         {
-
             buf[--len] = '\0';
         }
         linestruct *line = make_new_node(tail);

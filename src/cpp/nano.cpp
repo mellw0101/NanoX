@@ -1655,13 +1655,13 @@ main(int argc, char **argv)
     atexit(
         []
         {
-            vector<define_entry_t> defs = LSP->retrieve_defines();
+            /* vector<define_entry_t> defs = LSP->retrieve_defines();
             NLOG("\n");
             for (const auto &def : defs)
             {
                 NLOG("define: %s %s\n", def.name.c_str(), def.value.c_str());
             }
-            NLOG("\n");
+            NLOG("\n"); */
             LOUT.destroy();
             vector<string> gprof_report =
                 GLOBALPROFILER->retrveFormatedStrVecStats();

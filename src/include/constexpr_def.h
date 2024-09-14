@@ -495,6 +495,8 @@ constexpr int ifdef_hash   = hash_string("ifdef");
 constexpr int else_hash    = hash_string("else");
 constexpr int include_hash = hash_string("include");
 constexpr int undef_hash   = hash_string("undef");
+constexpr int elif_hash    = hash_string("elif");
+constexpr int warning_hash = hash_string("warning");
 
 #define PP_define  1
 #define PP_if      2
@@ -547,7 +549,7 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
 
 #define adv_ptr_to_ch(ptr, ch)    for (; *ptr && (*ptr != ch); ptr++)
 
-#define ADV_PTR(ptr, ...)         for (; *ptr && __VA_ARGS__; ptr++);
+#define ADV_PTR(ptr, ...)         for (; *ptr && __VA_ARGS__; ptr++)
 #define DCR_PTR(ptr, until, ...)  for (; ptr > until && __VA_ARGS__; ptr--)
 
 #define adv_ptr(ptr, ...)         ADV_PTR(ptr, __VA_ARGS__)
@@ -559,6 +561,8 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
 
 #define adv_to_next_ch(ptr)       for (; *ptr && (*ptr == ' ' || *ptr == '\t'); ptr++)
 #define dcr_to_prev_ch(ptr, until) \
+    dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
+#define DCR_TO_PREV_CH(ptr, until) \
     dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
 #define dcr_to_prev_ch_on_fail(ptr, until, apon_failure) \
     dcr_to_prev_ch(ptr, until);                          \

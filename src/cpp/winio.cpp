@@ -92,6 +92,7 @@ record_macro(void)
  * so they will be "executed" again. */
 void
 run_macro(void)
+
 {
     if (recording)
     {
@@ -3129,7 +3130,6 @@ statusbar(const char *msg)
 void
 warn_and_briefly_pause(const char *msg)
 {
-
     blank_bottombars();
     statusline(ALERT, msg);
     lastmessage = VACUUM;

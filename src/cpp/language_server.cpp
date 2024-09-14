@@ -44,6 +44,50 @@ language_server_t::find_endif(linestruct *from)
     return 0;
 }
 
+void
+language_server_t::fetch_compiler_defines(string compiler)
+{
+    if ((compiler != "clang" && compiler != "clang++") &&
+        (compiler != "gcc" && compiler != "g++"))
+    {
+        logE("'%s' is an invalid compiler.", compiler.c_str());
+        return;
+    }
+    compiler += " -dM -E - < /dev/null";
+    unsigned int n_lines;
+    char       **lines = retrieve_exec_output(compiler.c_str(), &n_lines);
+    if (lines)
+    {
+        for (unsigned int i = 0; i < n_lines; i++)
+        {
+            const char *start = lines[i];
+            const char *end   = NULL;
+            ADV_PAST_WORD(start);
+            ADV_TO_NEXT_WORD(start);
+            if (!*start)
+            {
+                free(lines[i]);
+                continue;
+            }
+            end = start;
+            ADV_PAST_WORD(end);
+            string name(start, (end - start));
+            ADV_TO_NEXT_WORD(end);
+            start = end;
+            for (; *end; end++);
+            if (start == end)
+            {
+                free(lines[i]);
+                continue;
+            }
+            string value(start, (end - start));
+            add_define({name, value});
+            free(lines[i]);
+        }
+        free(lines);
+    }
+}
+
 /* This is the only way to access the language_server.
  * There also exist`s a shorthand for this function
  * call named 'LSP'. */
@@ -64,27 +108,14 @@ language_server_t::Instance(void)
 language_server_t::language_server_t(void)
 {
     pthread_mutex_init(&_mutex, NULL);
-#ifdef __GNUC__
-    ADD_BASE_DEF(__GNUC__);
-#endif
-#ifdef __GNUC_MINOR__
-    ADD_BASE_DEF(__GNUC_MINOR__);
-#endif
-#ifdef __clang_major__
-    ADD_BASE_DEF(__clang_major__);
-#endif
-#ifdef __clang_minor__
-    ADD_BASE_DEF(__clang_minor__);
-#endif
-#ifdef _GNU_SOURCE
-    ADD_BASE_DEF(_GNU_SOURCE);
-#endif
+    fetch_compiler_defines("clang++");
+    fetch_compiler_defines("clang");
+    fetch_compiler_defines("g++");
+    fetch_compiler_defines("gcc");
 #ifdef __cplusplus
     ADD_BASE_DEF(__cplusplus);
 #endif
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-    ADD_BASE_DEF(__GXX_EXPERIMENTAL_CXX0X__);
-#endif
+    ADD_BASE_DEF(_GNU_SOURCE);
 }
 
 language_server_t::~language_server_t(void)
@@ -148,7 +179,7 @@ language_server_t::add_define(const define_entry_t &entry)
 {
     if (is_defined(entry.name) == -1)
     {
-        NLOG("define added: %s\n", entry.name.c_str());
+        /* NLOG("define added: %s\n", entry.name.c_str()); */
         _defines.push_back(entry);
     }
 }
@@ -175,13 +206,13 @@ language_server_t::define(linestruct *line, const char **ptr)
         end += 1;
     }
     string define(start, (end - start));
-    NLOG("define: %s\n", define.c_str());
+    // NLOG("define: %s\n", define.c_str());
     start = end;
     ADV_TO_NEXT_WORD(start);
     end = start;
     ADV_PAST_WORD(end);
     string value(start, (end - start));
-    NLOG("value: %s\n", value.c_str());
+    // NLOG("value: %s\n", value.c_str());
 }
 
 void
@@ -233,96 +264,269 @@ language_server_t::undef(const string &define)
     }
 }
 
+static int
+define_is_equl_or_greater(const string &statement)
+{
+    NLOG("statement:('%s')\n", statement.c_str());
+    const char *start = &statement[0];
+    const char *end   = start;
+    ADV_TO_NEXT_WORD(start);
+    end = start;
+    ADV_PAST_WORD(end);
+    if (end == start)
+    {
+        return -1;
+    }
+    string def(start, (end - start));
+    string def_value = LSP->define_value(def);
+    if (def_value.empty())
+    {
+        return -1;
+    }
+    start = strstr(end, ">=");
+    if (!start)
+    {
+        return -1;
+    }
+    start += 2;
+    ADV_TO_NEXT_WORD(start);
+    end = start;
+    ADV_PAST_WORD(end);
+    if (end == start)
+    {
+        return -1;
+    }
+    string compare(start, (end - start));
+    if (atoi(def_value.c_str()) >= atoi(compare.c_str()))
+    {
+        return TRUE;
+    }
+    return FALSE;
+}
+
 void
 language_server_t::handle_if(linestruct *line, const char **ptr)
 {
-    const char *start = *ptr;
-    const char *end   = *ptr;
+    string full_delc = parse_full_pp_delc(line, ptr);
+    // NLOG("%s\n", full_delc.c_str());
+    const char *start = &full_delc[0];
+    const char *end   = &full_delc[0];
     ADV_TO_NEXT_WORD(start);
     if (!*start)
     {
         return;
     }
-    const char *found             = NULL;
-    const char *and_found         = NULL;
-    const char *or_found          = NULL;
-    bool        should_be_defined = FALSE;
-    bool        was_correct       = FALSE;
+    const char        *found     = NULL;
+    string             def       = "";
+    string             found_str = "";
+    unsigned int       index;
+    const char        *next_rule         = NULL;
+    const unsigned int rule_count        = 5;
+    const char        *rules[rule_count] = {"&&", "||", ">=", "defined", "?"};
+    bool               should_be_defined = FALSE;
+    bool               was_correct       = FALSE;
     do {
-        found = strstr(start, "defined");
+        should_be_defined = FALSE;
+        was_correct       = FALSE;
+        /* If no more rules are found we break. */
+        found = strstr_array(start, rules, rule_count, &index);
         if (!found)
         {
             break;
         }
-        should_be_defined = FALSE;
-        was_correct       = FALSE;
-        NLOG("start: %s\n", start);
-        NLOG("found: %s\n", found);
-        /* This def should not be defined. */
-        if (found != start && start[(found - start) - 1] == '!')
+        switch (index)
         {
-            NLOG("%c\n", start[(found - start) - 1]);
-            should_be_defined = FALSE;
+            case 0 : /* && */
+            {
+            }
+            case 1 : /* || */
+            {
+            }
+            case 2 : /* >= */
+            {
+                found += 2;
+                start = found;
+                break;
+            }
+            case 3 : /* defined */
+            {
+                should_be_defined =
+                    (found != start && start[(found - start) - 1] == '!') ?
+                        FALSE : /* This def should not be defined. */
+                        TRUE;   /* This def should be defined. */
+                start = found + 7;
+                ADV_TO_NEXT_WORD(start);
+                if (!*start)
+                {
+                    return;
+                }
+                end = start;
+                ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != ')'));
+                def = string(start, (end - start));
+                found += 7;
+                start     = end;
+                next_rule = strstr_array(start, rules, rule_count, &index);
+                if (!next_rule)
+                {
+                    return;
+                }
+                if (index == 4)
+                {
+                    NLOG("full_decl: %s\n", full_delc.c_str());
+                    start = next_rule + 1;
+                    end   = start;
+                    ADV_PTR(end, (*end != ':'));
+                    if (!*end)
+                    {
+                        return;
+                    }
+                    if (is_defined(def) == -1)
+                    {
+                        end += 1;
+                        start = end;
+                        for (; *end; end++);
+                        if (start == end)
+                        {
+                            return;
+                        }
+                    }
+                    ADV_TO_NEXT_WORD(start);
+                    next_rule = strstr_array(start, rules, rule_count, &index);
+                    if (index == 3)
+                    {
+                        should_be_defined =
+                            (next_rule != start &&
+                             start[(next_rule - start) - 1] == '!') ?
+                                FALSE : /* This def should not be defined. */
+                                TRUE;   /* This def should be defined. */
+                        NLOG("%s\n", BOOL_STR(should_be_defined));
+                        start += 7;
+                        ADV_TO_NEXT_WORD(start);
+                        end = start;
+                        ADV_PAST_WORD(end);
+                        if (end == start)
+                        {
+                            return;
+                        }
+                        def = string(start, (end - start));
+                        /* This def should be defined. */
+                        if (should_be_defined)
+                        {
+                            if (is_defined(def) != -1)
+                            {
+                                was_correct = TRUE;
+                            }
+                        }
+                        /* Should not be defined. */
+                        else
+                        {
+                            if (is_defined(def) == -1)
+                            {
+                                was_correct = TRUE;
+                            }
+                        }
+                        NLOG("was_correct: %s\n", BOOL_STR(was_correct));
+                        if (!was_correct)
+                        {
+                            int endif = find_endif(line->next);
+                            for (linestruct *l              = line->next;
+                                 l && l->lineno != endif; l = l->next)
+                            {
+                                LINE_SET(l, DONT_PREPROSSES_LINE);
+                            }
+                        }
+                    }
+                    else if (index == 2)
+                    {
+                        if (!define_is_equl_or_greater(
+                                string(start, (end - start))))
+                        {
+                            int endif = find_endif(line->next);
+                            for (linestruct *l              = line->next;
+                                 l && l->lineno != endif; l = l->next)
+                            {
+                                LINE_SET(l, DONT_PREPROSSES_LINE);
+                            }
+                            return;
+                        }
+                        /* ADV_TO_NEXT_WORD(start);
+                        end = start;
+                        ADV_PAST_WORD(end);
+                        if (start == end)
+                        {
+                            return;
+                        }
+                        def           = string(start, (end - start));
+                        int def_index = is_defined(def);
+                        if (def_index == -1)
+                        {
+                            return;
+                        }
+                        string def_value = define_value(def);
+                        if (def_value == "")
+                        {
+                            return;
+                        }
+                        start = next_rule + 2;
+                        ADV_TO_NEXT_WORD(start);
+                        end = start;
+                        ADV_PAST_WORD(end);
+                        if (start == end)
+                        {
+                            return;
+                        }
+                        string compare(start, (end - start));
+                        if (!(atoi(def_value.c_str()) >= atoi(compare.c_str())))
+                        {
+                            int endif = find_endif(line->next);
+                            for (linestruct *l              = line->next;
+                                 l && l->lineno != endif; l = l->next)
+                            {
+                                LINE_SET(l, DONT_PREPROSSES_LINE);
+                            }
+                        } */
+                    }
+                }
+                break;
+            }
+            case 4 : /* ? */
+            {
+
+                break;
+            }
         }
-        /* This def should be defined to continue. */
-        else
-        {
-            should_be_defined = TRUE;
-        }
-        start = found + 7;
-        ADV_TO_NEXT_WORD(start);
-        if (!*start)
-        {
-            return;
-        }
-        end = start;
-        ADV_PAST_WORD(end);
-        string def(start, (end - start));
-        NLOG("def: %s\n", def.c_str());
-        and_found = strstr(end, "&&");
-        or_found  = strstr(end, "||");
-        /* If this def should be defined. */
+        /* This def should be defined. */
         if (should_be_defined)
         {
-            if (is_defined(def) == -1)
-            {
-                NLOG("def correct: %s\n", def.c_str());
-                was_correct = FALSE;
-            }
-            else
+            if (is_defined(def) != -1)
             {
                 was_correct = TRUE;
             }
         }
-        /* If this def should not be defined. */
+        /* Should not be defined. */
         else
         {
             if (is_defined(def) == -1)
             {
-                NLOG("def correct: %s\n", def.c_str());
                 was_correct = TRUE;
-            }
-            else
-            {
-                was_correct = FALSE;
             }
         }
         if (!was_correct)
         {
-            NLOG("%s\n", line->data);
-            if (((and_found && or_found) && or_found < and_found) ||
-                and_found || (!and_found && !or_found))
+            if (next_rule)
             {
-                int endif = find_endif(line->next);
-                for (linestruct *l = line->next; l && l->lineno != endif;
-                     l             = l->next)
+                string nrule(next_rule, 2);
+                if (nrule == "&&")
                 {
-                    LINE_SET(l, DONT_PREPROSSES_LINE);
+                    int endif = find_endif(line->next);
+                    for (linestruct *l = line->next; l && l->lineno != endif;
+                         l             = l->next)
+                    {
+                        LINE_SET(l, DONT_PREPROSSES_LINE);
+                    }
                 }
             }
         }
-
-        found += 7;
     }
     while (found);
 }
@@ -500,6 +704,43 @@ language_server_t::add_defs_to_color_map(void)
             DEFINE_SYNTAX,
         };
     }
+}
+
+/* Parses a full preprossesor decl so that '\' are placed on the same line. */
+string
+language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr)
+{
+    PROFILE_FUNCTION;
+    string ret = "";
+    ret.reserve(100);
+    const char *start = *ptr;
+    const char *end   = *ptr;
+    do {
+        ADV_TO_NEXT_WORD(start);
+        if (!*start)
+        {
+            break;
+        }
+        end = start;
+        ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\\'));
+        if (*end == '\\')
+        {
+            line  = line->next;
+            start = line->data;
+            end   = start;
+        }
+        else
+        {
+            if (!ret.empty())
+            {
+                ret += " ";
+            }
+            ret += string(start, (end - start));
+        }
+        start = end;
+    }
+    while (*end);
+    return ret;
 }
 
 vector<define_entry_t>
