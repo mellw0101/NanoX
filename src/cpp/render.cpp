@@ -1327,14 +1327,14 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
                     render_control_statements(node->start);
                 }
             }
-            if (it->second.type == IS_WORD_STRUCT)
+            /* if (it->second.type == IS_WORD_STRUCT)
             {
                 rendr_structs(node->end);
             }
             else if (it->second.type == IS_WORD_CLASS)
             {
                 rendr_classes();
-            }
+            } */
         }
         free_node(node);
     }
