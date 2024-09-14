@@ -1342,11 +1342,10 @@ rendr_suggestion(void)
     {
         delwin(suggestwin);
     }
-    if ((openfile->current_x == 0 ||
-         (!is_word_char(
-              &openfile->current->data[openfile->current_x - 1], FALSE) &&
-          openfile->current->data[openfile->current_x - 1] != '_')) &&
-        openfile->current->data[openfile->current_x - 1] != '.')
+    if (openfile->current_x == 0 ||
+        (!is_word_char(
+             &openfile->current->data[openfile->current_x - 1], FALSE) &&
+         openfile->current->data[openfile->current_x - 1] != '_'))
     {
         clear_suggestion();
         return;
