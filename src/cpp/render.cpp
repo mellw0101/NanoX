@@ -1345,11 +1345,11 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     }
     // render_string_literals();
     render_char_strings();
-    /* if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
+    if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
     {
         render_part(0, till_x, FG_SUGGEST_GRAY);
         return;
-    } */
+    }
 }
 
 void

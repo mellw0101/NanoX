@@ -65,18 +65,30 @@ syntax_check_file(openfilestruct *file)
                 test_map["__has_builtin"]   = {FG_VS_CODE_BLUE};
                 test_map["__restrict"]      = {FG_VS_CODE_BLUE}; */
                 /* Control statements. */
-                test_map["if"]       = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["else"]     = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["case"]     = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["switch"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["for"]      = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["while"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["return"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["break"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["do"]       = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["continue"] = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["using"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
-                test_map["operator"] = {FG_VS_CODE_BRIGHT_MAGENTA};
+                test_map["if"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["else"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["case"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["switch"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["for"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["while"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["return"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["break"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["do"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["continue"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["using"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["operator"] = {
+                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
             }
             LSP->check(NULL, "");
             LSP->add_defs_to_color_map();
