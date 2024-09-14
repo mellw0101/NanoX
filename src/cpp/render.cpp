@@ -1319,11 +1319,11 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
         }
         free_node(node);
     }
-    if (line->data[indent_char_len(line)] == '#')
+    /* if (line->data[indent_char_len(line)] == '#')
     {
         render_preprossesor();
         return;
-    }
+    } */
     // render_string_literals();
     render_char_strings();
     /* if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
