@@ -457,6 +457,10 @@ render_string_literals(void)
     while (*start)
     {
         ADV_PTR_BY_CH(end, '"');
+        if (!*end)
+        {
+            return;
+        }
         if (*end != '"')
         {
             return;
@@ -465,6 +469,10 @@ render_string_literals(void)
         const unsigned long match_start = (start - line->data);
         end += 1;
         ADV_PTR_BY_CH(end, '"');
+        if (!*end)
+        {
+            return;
+        }
         if (*end != '"')
         {
             if (match_start <= block_comment_start &&
