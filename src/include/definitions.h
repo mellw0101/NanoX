@@ -761,15 +761,13 @@ public:
         }
     }
 
-    vec<T> &
-    operator<<=(const T &value)
+    vec<T> &operator<<=(const T &value)
     {
         this->push_back(value);
         return *this;
     }
 
-    vec<char> &
-    operator<<=(const char *str)
+    vec<char> &operator<<=(const char *str)
     {
         pthread_mutex_guard_t guard(&this->mutex);
         unsigned long         str_size = strlen(str);
@@ -794,8 +792,7 @@ public:
         pthread_mutex_destroy(&mutex);
     }
 
-    void
-    push_back(const T &value)
+    void push_back(const T &value)
     {
         pthread_mutex_guard_t guard(&mutex);
         if (cap == size)
@@ -805,8 +802,7 @@ public:
         data[size++] = value;
     }
 
-    void
-    pop_back(void)
+    void pop_back(void)
     {
         pthread_mutex_guard_t guard(&mutex);
         if (size > 0)
@@ -815,8 +811,7 @@ public:
         }
     }
 
-    T &
-    operator[](unsigned long index)
+    T &operator[](unsigned long index)
     {
         pthread_mutex_guard_t guard(&mutex);
         if (index >= size || index < 0)
@@ -826,32 +821,27 @@ public:
         return data[index];
     }
 
-    unsigned long
-    get_size(void) const
+    unsigned long get_size(void) const
     {
         return size;
     }
 
-    unsigned long
-    get_cap(void) const
+    unsigned long get_cap(void) const
     {
         return cap;
     }
 
-    T *
-    begin(void) const
+    T *begin(void) const
     {
         return data;
     }
 
-    T *
-    end(void) const
+    T *end(void) const
     {
         return data + size;
     }
 
-    T *
-    find(const T &value)
+    T *find(const T &value)
     {
         for (T *it = begin(); it != end(); ++it)
         {
@@ -874,8 +864,7 @@ public:
     }
 
 private:
-    void
-    resize(void)
+    void resize(void)
     {
         cap *= 2;
         data = (T *)realloc(data, sizeof(T) * cap);
@@ -926,6 +915,7 @@ struct class_info_t
 #define STRUCT_SYNTAX       7
 #define IS_WORD_CLASS       8
 #define DEFINE_SYNTAX       9
+#define DEFINE_PARAM_SYNTAX 10
 
 struct syntax_data_t
 {
@@ -952,8 +942,9 @@ class language_server_t
 
     language_server_t(void);
 
-    int  find_endif(linestruct *);
-    void fetch_compiler_defines(string);
+    int            find_endif(linestruct *);
+    void           fetch_compiler_defines(string);
+    vector<string> split_if_statement(const string &str);
 
 public:
     ~language_server_t(void);
@@ -973,7 +964,7 @@ public:
 
     void   check(linestruct *, string);
     void   add_defs_to_color_map(void);
-    string parse_full_pp_delc(linestruct *, const char **);
+    string parse_full_pp_delc(linestruct *, const char **, int * = NULL);
 
     vector<define_entry_t> retrieve_defines(void);
 };

@@ -829,8 +829,7 @@ find_current_function(linestruct *l)
             }
             if (!found)
             {
-                add_to_color_map(local_func.name, {FG_VS_CODE_BRIGHT_YELLOW});
-
+                add_rm_color_map(local_func.name, {FG_VS_CODE_BRIGHT_YELLOW});
                 local_funcs.push_back(local_func);
             }
             refresh_needed = TRUE;

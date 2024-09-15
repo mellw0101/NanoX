@@ -540,11 +540,13 @@ Make GUI.
 
     STATUS:
         NOT STARTED YET.
-('23')
+('23').
 Add a 'c/cpp' formatter that formats on save.
 
     STATUS:
         NOT STARTED YET.
+('24').
+Fully render defines.
 
 NCURSES_HELP:
     'wattron' turns on an attribute for a 'WINDOW*'. 

@@ -150,6 +150,7 @@ extern unsigned long light_from_col;
 extern unsigned long light_to_col;
 
 extern bool last_key_was_bracket;
+extern bool gui_enabled;
 
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
@@ -516,6 +517,8 @@ string        current_file_dir(void);
 char        **retrieve_exec_output(const char *cmd, unsigned int *n_lines);
 const char   *strstr_array(const char *str, const char **substrs,
                            unsigned int count, unsigned int *index);
+const char *string_strstr_array(const char *str, const vector<string> &substrs,
+                                unsigned int *index);
 
 /* Most functions in 'winio.cpp'. */
 void          record_macro(void);
@@ -749,7 +752,7 @@ int         preprossesor_data_from_key(const char *key);
 void        free_local_var(local_var_t *var);
 local_var_t parse_local_var(linestruct *line);
 int         find_class_end_line(linestruct *from);
-void        add_to_color_map(string str, syntax_data_t data);
+void        add_rm_color_map(string str, syntax_data_t data);
 
 /* 'parse.cpp' */
 void parse_class_data(linestruct *from);
@@ -759,5 +762,6 @@ void func_decl(linestruct *line);
 
 /* 'gui.cpp' */
 // void init_window(void);
+int run_gui(void);
 
 #include <Mlib/def.h>

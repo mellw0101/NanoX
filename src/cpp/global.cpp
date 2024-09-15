@@ -231,145 +231,124 @@ std::vector<std::string> syntax_funcs;
 /* Vector for all includes that have been handled. */
 std::vector<std::string> handled_includes;
 
+bool gui_enabled = false;
+
 const char *term = NULL;
 
 /* Empty functions, for the most part corresponding to toggles. */
-void
-case_sens_void(void)
+void case_sens_void(void)
 {
     ;
 }
 
-void
-regexp_void(void)
+void regexp_void(void)
 {
     ;
 }
 
-void
-backwards_void(void)
+void backwards_void(void)
 {
     ;
 }
 
-void
-get_older_item(void)
+void get_older_item(void)
 {
     ;
 }
 
-void
-get_newer_item(void)
+void get_newer_item(void)
 {
     ;
 }
 
-void
-flip_replace(void)
+void flip_replace(void)
 {
     ;
 }
 
-void
-flip_goto(void)
+void flip_goto(void)
 {
     ;
 }
 
-void
-to_files(void)
+void to_files(void)
 {
     ;
 }
 
-void
-goto_dir(void)
+void goto_dir(void)
 {
     ;
 }
 
-void
-do_nothing(void)
+void do_nothing(void)
 {
     ;
 }
 
-void
-do_toggle(void)
-{
-	;
-}
-
-void
-dos_format(void)
+void do_toggle(void)
 {
     ;
 }
 
-void
-mac_format(void)
+void dos_format(void)
 {
     ;
 }
 
-void
-append_it(void)
+void mac_format(void)
 {
     ;
 }
 
-void
-prepend_it(void)
+void append_it(void)
 {
     ;
 }
 
-void
-back_it_up(void)
+void prepend_it(void)
 {
     ;
 }
 
-void
-flip_execute(void)
+void back_it_up(void)
 {
     ;
 }
 
-void
-flip_pipe(void)
+void flip_execute(void)
 {
     ;
 }
 
-void
-flip_convert(void)
+void flip_pipe(void)
 {
     ;
 }
 
-void
-flip_newbuffer(void)
+void flip_convert(void)
 {
     ;
 }
 
-void
-discard_buffer(void)
+void flip_newbuffer(void)
 {
     ;
 }
 
-void
-do_cancel(void)
+void discard_buffer(void)
+{
+    ;
+}
+
+void do_cancel(void)
 {
     ;
 }
 
 /* Add a function to the linked list of functions. */
-void
-add_to_funcs(functionptrtype function, const int menus, const char *tag,
-             const char *phrase, bool blank_after)
+void add_to_funcs(functionptrtype function, const int menus, const char *tag,
+                  const char *phrase, bool blank_after)
 {
     funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
     (allfuncs == NULL) ? allfuncs = f : tailfunc->next = f;
@@ -384,8 +363,7 @@ add_to_funcs(functionptrtype function, const int menus, const char *tag,
 
 /* Parse the given keystring and return the corresponding keycode,
  * or return -1 when the string is invalid. */
-int
-keycode_from_string(const char *keystring)
+int keycode_from_string(const char *keystring)
 {
     if (keystring[0] == '^')
     {
@@ -462,17 +440,15 @@ keycode_from_string(const char *keystring)
     }
 }
 
-void
-show_curses_version(void)
+void show_curses_version(void)
 {
     statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR,
                NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
 
 /* Add a key combo to the linked list of shortcuts. */
-void
-add_to_sclist(const int menus, const char *scstring, const int keycode,
-              functionptrtype function, const int toggle)
+void add_to_sclist(const int menus, const char *scstring, const int keycode,
+                   functionptrtype function, const int toggle)
 {
     static keystruct *tailsc;
     static int        counter = 0;
@@ -496,8 +472,7 @@ add_to_sclist(const int menus, const char *scstring, const int keycode,
 
 /* Return the first shortcut in the list of shortcuts that,
  * matches the given function in the given menu. */
-const keystruct *
-first_sc_for(const int menu, functionptrtype function)
+const keystruct *first_sc_for(const int menu, functionptrtype function)
 {
     for (keystruct *sc = sclist; sc != NULL; sc = sc->next)
     {
@@ -510,8 +485,7 @@ first_sc_for(const int menu, functionptrtype function)
 }
 
 /* Return the number of entries that can be shown in the given menu. */
-unsigned long
-shown_entries_for(const int menu)
+unsigned long shown_entries_for(const int menu)
 {
     funcstruct   *item    = allfuncs;
     unsigned long maximum = ((COLS + 40) / 20) * 2;
@@ -535,8 +509,7 @@ shown_entries_for(const int menu)
 
 /* Return the first shortcut in the current menu that matches the given input.
  * TODO : (get_shortcut) - Figure out how this works. */
-const keystruct *
-get_shortcut(const int keycode)
+const keystruct *get_shortcut(const int keycode)
 {
     /* Plain characters and upper control codes cannot be shortcuts. */
     if (!meta_key && 0x20 <= keycode && keycode <= 0xFF)
@@ -568,8 +541,7 @@ get_shortcut(const int keycode)
 }
 
 /* Return a pointer to the function that is bound to the given key. */
-functionptrtype
-func_from_key(const int keycode)
+functionptrtype func_from_key(const int keycode)
 {
     const keystruct *sc = get_shortcut(keycode);
     return (sc) ? sc->func : NULL;
@@ -578,8 +550,7 @@ func_from_key(const int keycode)
 /* Return the function that is bound to the given key in the file browser or
  * the help viewer.  Accept also certain plain characters, for compatibility
  * with Pico or to mimic 'less' and similar text viewers. */
-functionptrtype
-interpret(const int keycode)
+functionptrtype interpret(const int keycode)
 {
     if (!meta_key)
     {
@@ -641,8 +612,7 @@ const char *close_tag = N_("Close");
  * cleaned up, and the keybindings need to be changed to a more resonable
  * format.
  * TODO 2: FIX ^Bsp */
-void
-shortcut_init(void)
+void shortcut_init(void)
 {
     /* TRANSLATORS: The next long series of strings are shortcut descriptions;
      *              they are best kept shorter than 56 characters, but may be
@@ -1415,22 +1385,19 @@ shortcut_init(void)
 }
 
 /* Return the textual description that corresponds to the given flag. */
-const char *
-epithet_of_flag(const unsigned int flag)
+const char *epithet_of_flag(const unsigned int flag)
 {
     return &epithetOfFlagMap[flag].value[0];
 }
 
 /* Add 'path' to 'handles_include' vector. */
-void
-add_to_handled_includes_vec(const char *path)
+void add_to_handled_includes_vec(const char *path)
 {
     handled_includes.push_back(path);
 }
 
 /* Return`s 'TRUE' if 'path' is found in 'handles_includes' vector. */
-bool
-is_in_handled_includes_vec(std::string_view path)
+bool is_in_handled_includes_vec(std::string_view path)
 {
     for (const auto &p : handled_includes)
     {
@@ -1442,8 +1409,7 @@ is_in_handled_includes_vec(std::string_view path)
     return FALSE;
 }
 
-bool
-syntax_var(std::string_view str)
+bool syntax_var(std::string_view str)
 {
     for (const auto &var : syntax_vars)
     {
@@ -1455,8 +1421,7 @@ syntax_var(std::string_view str)
     return FALSE;
 }
 
-bool
-syntax_func(std::string_view str)
+bool syntax_func(std::string_view str)
 {
     for (int i = 0; i < funcs.get_size(); i++)
     {
@@ -1468,14 +1433,12 @@ syntax_func(std::string_view str)
     return FALSE;
 }
 
-void
-new_syntax_var(const char *str)
+void new_syntax_var(const char *str)
 {
     syntax_vars.push_back(str);
 }
 
-void
-new_syntax_func(const char *str)
+void new_syntax_func(const char *str)
 {
     syntax_funcs.push_back(str);
 }

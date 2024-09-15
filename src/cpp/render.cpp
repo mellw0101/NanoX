@@ -33,8 +33,8 @@ std::unordered_map<std::string, syntax_data_t> test_map;
 vector<class_info_t>                           class_info_vector;
 vector<var_t>                                  var_vector;
 
-void
-render_part(unsigned long match_start, unsigned long match_end, short color)
+void render_part(unsigned long match_start, unsigned long match_end,
+                 short color)
 {
     const char *thetext   = NULL;
     int         paintlen  = 0;
@@ -55,8 +55,8 @@ render_part(unsigned long match_start, unsigned long match_end, short color)
 }
 
 /* Experiment. */
-void
-render_part_raw(unsigned long start_index, unsigned long end_index, short color)
+void render_part_raw(unsigned long start_index, unsigned long end_index,
+                     short color)
 {
     const char *start = &line->data[start_index];
     const char *end   = start;
@@ -77,9 +77,8 @@ render_part_raw(unsigned long start_index, unsigned long end_index, short color)
 
 /* Render the text of a given line.  Note that this function only renders the
  * text and nothing else. */
-void
-render_line_text(const int row, const char *str, linestruct *line,
-                 const unsigned long from_col)
+void render_line_text(const int row, const char *str, linestruct *line,
+                      const unsigned long from_col)
 {
     if (margin > 0)
     {
@@ -123,8 +122,7 @@ render_line_text(const int row, const char *str, linestruct *line,
 /* Set start and end pos for comment block or if the entire
  * line is inside of a block comment set 'block_comment_start'
  * to '0' and 'block_comment_end' to '(unsigned int)-1'. */
-void
-render_comment(void)
+void render_comment(void)
 {
     const char *start = strstr(line->data, "/*");
     const char *end   = strstr(line->data, "*/");
@@ -322,8 +320,7 @@ render_comment(void)
 }
 
 /* Color brackets based on indent.  TODO: This needs to be fix. */
-void
-render_bracket(void)
+void render_bracket(void)
 {
     const char *start = strchr(line->data, '{');
     const char *end   = strrchr(line->data, '}');
@@ -416,8 +413,7 @@ render_bracket(void)
     }
 }
 
-void
-render_parents(void)
+void render_parents(void)
 {
     const char *start = strchr(line->data, '(');
     const char *end   = strchr(line->data, ')');
@@ -445,119 +441,28 @@ render_parents(void)
 }
 
 /* This function highlights string literals.  Error handeling is needed. */
-void
-render_string_literals(void)
+void render_string_literals(void)
 {
     const char *start = line->data;
-    const char *end   = line->data;
-    // const char *slash      = NULL;
-    // const char *slash_end  = NULL;
-    // const char *format     = NULL;
-    // const char *format_end = NULL;
-    while (*start)
+    const char *end   = nullptr;
+    while ((start = strchr(start, '"')) != nullptr)
     {
-        ADV_PTR_BY_CH(end, '"');
-        if (!*end)
+        end = strchr(start + 1, '"');
+        if (end != nullptr)
+        {
+            render_part(
+                (start - line->data), (end - line->data) + 1, FG_YELLOW);
+        }
+        else
         {
             return;
         }
-        if (*end != '"')
-        {
-            return;
-        }
-        start                           = end;
-        const unsigned long match_start = (start - line->data);
-        end += 1;
-        ADV_PTR_BY_CH(end, '"');
-        if (!*end)
-        {
-            return;
-        }
-        if (*end != '"')
-        {
-            if (match_start <= block_comment_start &&
-                match_start >= block_comment_end)
-            {
-                render_part(match_start, till_x, ERROR_MESSAGE);
-            }
-            return;
-        }
-        end += 1;
-        const unsigned long match_end = (end - line->data);
-        if ((match_start >= till_x) || (match_start >= block_comment_start &&
-                                        match_end <= block_comment_end))
-        {
-            return;
-        }
-        rendr(C, FG_YELLOW, match_start, match_end);
-        /* slash = start + 1;
-        while (*slash && *slash != '"')
-        {
-            ADV_PTR(slash, (*slash != '"') && (*slash != '\\'))
-            slash_end = slash + 1;
-            if (*slash_end != '\0')
-            {
-                if (*slash_end == 'n' || *slash_end == 'r' || *slash_end == 'e')
-                {
-                    slash_end += 1;
-                    rendr(R, FG_MAGENTA, slash, slash_end);
-                }
-                else if (*slash_end == 'x')
-                {
-                    slash_end += 1;
-                    if (*slash_end == '1')
-                    {
-                        slash_end += 1;
-                        if (*slash_end == 'B')
-                        {
-                            slash_end += 1;
-                            rendr(R, FG_MAGENTA, slash, slash_end);
-                        }
-                    }
-                }
-            }
-            slash = slash_end;
-        } */
-        /* format = start + 1;
-        while (*format && *format != '"')
-        {
-            ADV_PTR(format, (*format != '"') && (*format != '%'))
-            format_end = format + 1;
-            if (*format_end != '\0')
-            {
-                if (*format_end >= '0' && *format_end <= '9')
-                {
-                    adv_ptr(
-                        format_end, (*format_end >= '0' && *format_end <= '9'));
-                }
-                else if (*format_end == '*')
-                {
-                    format_end += 1;
-                }
-                if (*format_end == 'l' || *format_end == 'z' ||
-                    *format_end == 'h')
-                {
-                    format_end += 1;
-                }
-                if (*format_end == 's' || *format_end == 'S' ||
-                    *format_end == 'u' || *format_end == 'U' ||
-                    *format_end == 'x' || *format_end == 's' ||
-                    *format_end == 'i' || *format_end == 'e' ||
-                    *format_end == 'd')
-                {
-                    format_end += 1;
-                    rendr(R, FG_VS_CODE_BRIGHT_CYAN, format, format_end);
-                }
-            }
-            format = format_end;
-        } */
         start = end + 1;
     }
 }
 
 /* Function to handle char strings inside other strings or just in general. */
-void
-render_char_strings(void)
+void render_char_strings(void)
 {
     const char *start = line->data, *end = line->data;
     while (start != NULL)
@@ -587,8 +492,7 @@ render_char_strings(void)
     }
 }
 
-void
-rendr_define(unsigned int index)
+void rendr_define(unsigned int index)
 {
     const char *start = NULL, *end = NULL, *param = NULL;
     char       *word = NULL;
@@ -610,6 +514,7 @@ rendr_define(unsigned int index)
     {
         test_map[define_name] = {FG_VS_CODE_BLUE};
     }
+    vector<string> params {};
     /* Handle macro parameter list.  If there is one. */
     if (*end == '(')
     {
@@ -632,7 +537,8 @@ rendr_define(unsigned int index)
             }
             RENDR(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
             (word != NULL) ? free(word) : void();
-            word  = measured_copy(start, (end - start));
+            word = measured_copy(start, (end - start));
+            params.push_back(string(word));
             param = strstr(end, word);
             if (param != NULL)
             {
@@ -678,6 +584,10 @@ rendr_define(unsigned int index)
                 end += 1;
             }
         }
+        if (*end == ')')
+        {
+            end += 1;
+        }
     }
     (word != NULL) ? free(word) : void();
     ADV_PTR(end, (*end == ' ' || *end == '\t'));
@@ -691,7 +601,37 @@ rendr_define(unsigned int index)
     {
         return;
     }
-    if (*end == '(')
+    if (*start == '\\')
+    {
+        int    end_lineno;
+        string full_decl = LSP->parse_full_pp_delc(line, &start, &end_lineno);
+        NLOG("%s\n", full_decl.c_str());
+        if (line->next != nullptr)
+        {
+            remove_from_color_map(
+                line->next, FG_VS_CODE_BLUE, DEFINE_PARAM_SYNTAX);
+            for (int i = 0; i < params.size(); i++)
+            {
+                NLOG("param: %s\n", params[i].c_str());
+                const auto &it = test_map.find(params[i]);
+                if (it == test_map.end())
+                {
+                    test_map[params[i]] = {
+                        FG_VS_CODE_BLUE,
+                        (int)line->next->lineno,
+                        end_lineno,
+                        DEFINE_PARAM_SYNTAX,
+                    };
+                    /* if (it->second.type != DEFINE_PARAM_SYNTAX)
+                    {
+                        continue;
+                    } */
+                }
+            }
+        }
+        NLOG("end_lineno: %i\n\n", end_lineno);
+    }
+    else if (*end == '(')
     {
         RENDR(R, FG_VS_CODE_BRIGHT_YELLOW, start, end);
     }
@@ -701,8 +641,7 @@ rendr_define(unsigned int index)
     }
 }
 
-void
-rendr_include(unsigned int index)
+void rendr_include(unsigned int index)
 {
     const char *start = &line->data[index];
     const char *end   = start;
@@ -828,8 +767,7 @@ rendr_include(unsigned int index)
 }
 
 /* Render if preprossesor statements. */
-void
-rendr_if_preprosses(unsigned int index)
+void rendr_if_preprosses(unsigned int index)
 {
     const char *start   = &line->data[index];
     const char *defined = strstr(start, "defined");
@@ -919,8 +857,7 @@ rendr_if_preprosses(unsigned int index)
 /* This 'render' sub-system is responsible for handeling all pre-prossesor
  * syntax.  TODO: Create a structured way to parse, and then create a
  * system to include error handeling in real-time. */
-void
-render_preprossesor(void)
+void render_preprossesor(void)
 {
     char       *current_word = NULL;
     const char *start        = strchr(line->data, '#');
@@ -1038,8 +975,7 @@ render_preprossesor(void)
 
 /* Handels most syntax local to functions such as handeling
  * local variabels and params. */
-void
-render_function_params(void)
+void render_function_params(void)
 {
     const char *start = NULL;
     const char *end   = NULL;
@@ -1071,8 +1007,7 @@ render_function_params(void)
     }
 }
 
-void
-render_control_statements(unsigned long index)
+void render_control_statements(unsigned long index)
 {
     switch (line->data[index])
     {
@@ -1107,8 +1042,7 @@ render_control_statements(unsigned long index)
     }
 }
 
-void
-rendr_glob_vars(void)
+void rendr_glob_vars(void)
 {
     if (LINE_ISSET(line, IN_BLOCK_COMMENT) ||
         LINE_ISSET(line, SINGLE_LINE_BLOCK_COMMENT) ||
@@ -1164,9 +1098,9 @@ rendr_glob_vars(void)
     }
 }
 
-void
-rendr_classes(void)
+void rendr_classes(void)
 {
+    PROFILE_FUNCTION;
     const char *found = word_strstr(line->data, "class");
     if (found)
     {
@@ -1182,8 +1116,8 @@ rendr_classes(void)
             RENDR(E, "<-(Expected class name)");
             return;
         }
-        int end_line = find_class_end_line(line);
-        end          = start;
+        // int end_line = find_class_end_line(line);
+        end = start;
         ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '{'));
         /* If the char after class name is not '{' or null terminator. */
         if (*end != '{' && *end != '\0')
@@ -1200,16 +1134,16 @@ rendr_classes(void)
         }
         end = start;
         ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '{'));
+        if (start == end)
+        {
+            return;
+        }
+        string name(start, (end - start));
+        add_rm_color_map(
+            name, {FG_VS_CODE_GREEN, (int)line->lineno, 100000, CLASS_SYNTAX});
         class_info_t class_info;
-        string       name(start, (end - start));
-        class_info.name           = name;
-        test_map[class_info.name] = {
-            FG_VS_CODE_GREEN,
-            (int)line->lineno,
-            100000,
-            CLASS_SYNTAX,
-        };
-        const char *func_found = NULL;
+        class_info.name = name;
+        /* const char *func_found = NULL;
         for (linestruct *cl = line; cl->lineno < end_line; cl = cl->next)
         {
             func_found = strchr(cl->data, '(');
@@ -1223,22 +1157,28 @@ rendr_classes(void)
                 {
                     remove_from_color_map(
                         line, FG_VS_CODE_BRIGHT_YELLOW, CLASS_METHOD_SYNTAX);
-                    test_map[method] = {
-                        FG_VS_CODE_BRIGHT_YELLOW,
-                        (int)cl->lineno,
-                        end_line,
-                        CLASS_METHOD_SYNTAX,
-                    };
+                    // if (test_map.find(method) == test_map.end())
+                    // {
+                    //     test_map[method] = {
+                    //         FG_VS_CODE_BRIGHT_YELLOW,
+                    //         (int)cl->lineno,
+                    //         end_line,
+                    //         CLASS_METHOD_SYNTAX,
+                    //     };
+                    // }
+                    add_rm_color_map(
+                        method, {FG_VS_CODE_BRIGHT_YELLOW, (int)cl->lineno,
+                                 end_line, CLASS_METHOD_SYNTAX});
+
                     class_info.methods.push_back(method);
                 }
             }
-        }
+        } */
         class_info_vector.push_back(class_info);
     }
 }
 
-void
-rendr_structs(int index)
+void rendr_structs(int index)
 {
     remove_from_color_map(line, FG_VS_CODE_GREEN, STRUCT_SYNTAX);
     const char *start = &line->data[index];
@@ -1250,20 +1190,25 @@ rendr_structs(int index)
     }
     start = end;
     ADV_PAST_WORD(end);
+    if (end == start)
+    {
+        return;
+    }
     string name(start, (end - start));
-    test_map[name] = {
-        FG_VS_CODE_GREEN,
-        (int)line->lineno,
-        100000,
-        STRUCT_SYNTAX,
-    };
-    NLOG("struct found: %s\n", name.c_str());
+    if (test_map.find(name) == test_map.end())
+    {
+        test_map[name] = {
+            FG_VS_CODE_GREEN,
+            (int)line->lineno,
+            100000,
+            STRUCT_SYNTAX,
+        };
+    }
 }
 
 /* Main function that applies syntax to a line in real time. */
-void
-apply_syntax_to_line(const int row, const char *converted, linestruct *line,
-                     unsigned long from_col)
+void apply_syntax_to_line(const int row, const char *converted,
+                          linestruct *line, unsigned long from_col)
 {
     PROFILE_FUNCTION;
     ::row       = row;
@@ -1331,10 +1276,11 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
             {
                 rendr_structs(node->end);
             }
-            else if (it->second.type == IS_WORD_CLASS)
+            else */
+            if (it->second.type == IS_WORD_CLASS)
             {
                 rendr_classes();
-            } */
+            }
         }
         free_node(node);
     }
@@ -1343,7 +1289,7 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
         render_preprossesor();
         return;
     }
-    // render_string_literals();
+    render_string_literals();
     render_char_strings();
     if (LINE_ISSET(line, DONT_PREPROSSES_LINE))
     {
@@ -1352,8 +1298,7 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line,
     }
 }
 
-void
-rendr_suggestion(void)
+void rendr_suggestion(void)
 {
     PROFILE_FUNCTION;
     suggest_str = NULL;
@@ -1379,8 +1324,7 @@ rendr_suggestion(void)
 }
 
 /* Cleans up all thing related to rendering. */
-void
-cleanup_rendr(void)
+void cleanup_rendr(void)
 {
     for (int i = 0; i < includes.get_size(); i++)
     {

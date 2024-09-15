@@ -427,11 +427,15 @@ find_class_end_line(linestruct *from)
     return -1;
 }
 
+/* Add entry to color map and remove any entry that has the same name. */
 void
-add_to_color_map(string str, syntax_data_t data)
+add_rm_color_map(string str, syntax_data_t data)
 {
-    if (test_map.find(str) == test_map.end())
+    auto it = test_map.find(str);
+    if (it != test_map.end() && it->second.color == data.color &&
+        it->second.type == data.type)
     {
-        test_map[str] = data;
+        test_map.erase(str);
     }
+    test_map[str] = data;
 }

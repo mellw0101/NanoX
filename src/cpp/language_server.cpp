@@ -3,8 +3,7 @@
 language_server_t *language_server_t::instance   = NULL;
 pthread_mutex_t    language_server_t::init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int
-language_server_t::find_endif(linestruct *from)
+int language_server_t::find_endif(linestruct *from)
 {
     int         lvl   = 0;
     const char *found = NULL;
@@ -44,8 +43,7 @@ language_server_t::find_endif(linestruct *from)
     return 0;
 }
 
-void
-language_server_t::fetch_compiler_defines(string compiler)
+void language_server_t::fetch_compiler_defines(string compiler)
 {
     if ((compiler != "clang" && compiler != "clang++") &&
         (compiler != "gcc" && compiler != "g++"))
@@ -91,8 +89,7 @@ language_server_t::fetch_compiler_defines(string compiler)
 /* This is the only way to access the language_server.
  * There also exist`s a shorthand for this function
  * call named 'LSP'. */
-language_server_t *
-language_server_t::Instance(void)
+language_server_t *language_server_t::Instance(void)
 {
     if (!instance)
     {
@@ -128,8 +125,7 @@ language_server_t::~language_server_t(void)
 }
 
 /* Return`s index of entry if found otherwise '-1'. */
-int
-language_server_t::is_defined(const string &name)
+int language_server_t::is_defined(const string &name)
 {
     const auto *data = _defines.data();
     for (int i = 0; i < _defines.size(); i++)
@@ -142,8 +138,7 @@ language_server_t::is_defined(const string &name)
     return -1;
 }
 
-bool
-language_server_t::has_been_included(const string &name)
+bool language_server_t::has_been_included(const string &name)
 {
     const auto *data = _includes.data();
     for (int i = 0; i < _includes.size(); i++)
@@ -161,8 +156,7 @@ language_server_t::has_been_included(const string &name)
  * exists before using this function.
  * As it returns "" if not found as well as if
  * the define has no value. */
-string
-language_server_t::define_value(const string &name)
+string language_server_t::define_value(const string &name)
 {
     int index = is_defined(name);
     if (index != -1)
@@ -174,8 +168,7 @@ language_server_t::define_value(const string &name)
 }
 
 /* If define is not already in vector then add it. */
-void
-language_server_t::add_define(const define_entry_t &entry)
+void language_server_t::add_define(const define_entry_t &entry)
 {
     if (is_defined(entry.name) == -1)
     {
@@ -184,8 +177,7 @@ language_server_t::add_define(const define_entry_t &entry)
     }
 }
 
-void
-language_server_t::define(linestruct *line, const char **ptr)
+void language_server_t::define(linestruct *line, const char **ptr)
 {
     const char *start = *ptr;
     const char *end   = *ptr;
@@ -215,8 +207,7 @@ language_server_t::define(linestruct *line, const char **ptr)
     // NLOG("value: %s\n", value.c_str());
 }
 
-void
-language_server_t::ifndef(const string &define, linestruct *current_line)
+void language_server_t::ifndef(const string &define, linestruct *current_line)
 {
     if (is_defined(define) == -1)
     {
@@ -231,8 +222,7 @@ language_server_t::ifndef(const string &define, linestruct *current_line)
     }
 }
 
-void
-language_server_t::ifdef(const string &define, linestruct *current_line)
+void language_server_t::ifdef(const string &define, linestruct *current_line)
 {
     if (is_defined(define) != -1)
     {
@@ -247,8 +237,7 @@ language_server_t::ifdef(const string &define, linestruct *current_line)
     }
 }
 
-void
-language_server_t::undef(const string &define)
+void language_server_t::undef(const string &define)
 {
     auto it = _defines.begin();
     while (it != _defines.end())
@@ -264,8 +253,7 @@ language_server_t::undef(const string &define)
     }
 }
 
-static int
-define_is_equl_or_greater(const string &statement)
+static int define_is_equl_or_greater(const string &statement)
 {
     NLOG("statement:('%s')\n", statement.c_str());
     const char *start = &statement[0];
@@ -304,11 +292,53 @@ define_is_equl_or_greater(const string &statement)
     return FALSE;
 }
 
-void
-language_server_t::handle_if(linestruct *line, const char **ptr)
+vector<string> language_server_t::split_if_statement(const string &str)
+{
+    /* vector<string> result;
+    const auto    *data  = str.data();
+    const char    *found = NULL;
+    unsigned int   index;
+    do {
+        found = string_strstr_array(
+            data, {"defined", "&&", "!defined", "(", ")"}, &index);
+        if (found)
+        {
+            result.push_back(str.substr((data - str.data()), (found - data)));
+            data = found;
+            NLOG("found: %s\n", found);
+            if (index == 0)
+            {
+                data += 7;
+            }
+            else if (index == 1)
+
+            {
+                data += 2;
+            }
+            else if (index == 2)
+            {
+                data += 8;
+            }
+            else if (index == 3 || index == 4)
+            {
+                data += 1;
+            }
+        }
+    }
+    while (found);
+    for (const auto &s : result)
+    {
+        NLOG("%s ", s.c_str());
+    }
+    NLOG("\n"); */
+    return {};
+}
+
+void language_server_t::handle_if(linestruct *line, const char **ptr)
 {
     string full_delc = parse_full_pp_delc(line, ptr);
-    // NLOG("%s\n", full_delc.c_str());
+    NLOG("%s\n", full_delc.c_str());
+    // split_if_statement(full_delc);
     const char *start = &full_delc[0];
     const char *end   = &full_delc[0];
     ADV_TO_NEXT_WORD(start);
@@ -531,8 +561,7 @@ language_server_t::handle_if(linestruct *line, const char **ptr)
     while (found);
 }
 
-const char *
-get_preprosses_type(linestruct *line, string &word)
+const char *get_preprosses_type(linestruct *line, string &word)
 {
     const char *found = strchr(line->data, '#');
     const char *start = NULL;
@@ -553,8 +582,7 @@ get_preprosses_type(linestruct *line, string &word)
     return NULL;
 }
 
-string
-get_next_word(const char **ptr)
+string get_next_word(const char **ptr)
 {
     const char *start = *ptr;
     const char *end   = *ptr;
@@ -569,8 +597,7 @@ get_next_word(const char **ptr)
     return string(start, (end - start));
 }
 
-void
-language_server_t::check(linestruct *from, string file)
+void language_server_t::check(linestruct *from, string file)
 {
     if (!from)
     {
@@ -691,8 +718,7 @@ language_server_t::check(linestruct *from, string file)
 }
 
 /* Add the current defs to color map. */
-void
-language_server_t::add_defs_to_color_map(void)
+void language_server_t::add_defs_to_color_map(void)
 {
     const auto *data = _defines.data();
     for (int i = 0; i < _defines.size(); i++)
@@ -707,8 +733,8 @@ language_server_t::add_defs_to_color_map(void)
 }
 
 /* Parses a full preprossesor decl so that '\' are placed on the same line. */
-string
-language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr)
+string language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr,
+                                             int *end_lineno)
 {
     PROFILE_FUNCTION;
     string ret = "";
@@ -740,11 +766,11 @@ language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr)
         start = end;
     }
     while (*end);
+    end_lineno ? *end_lineno = (int)line->lineno : 0;
     return ret;
 }
 
-vector<define_entry_t>
-language_server_t::retrieve_defines(void)
+vector<define_entry_t> language_server_t::retrieve_defines(void)
 {
     return _defines;
 }

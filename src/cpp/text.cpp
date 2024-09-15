@@ -11,8 +11,7 @@
 #include <unistd.h>
 
 /* Toggle the mark. */
-void
-do_mark(void)
+void do_mark(void)
 {
     if (!openfile->mark)
     {
@@ -31,8 +30,7 @@ do_mark(void)
 
 /* Insert a tab.  Or, if --tabstospaces is in effect, insert the number
  * of spaces that a tab would normally take up at this position. */
-void
-do_tab(void)
+void do_tab(void)
 {
     /* When <Tab> is pressed while a region is marked, indent the region. */
     if (openfile->mark && openfile->mark != openfile->current)
@@ -70,8 +68,7 @@ do_tab(void)
 }
 
 /* Add an indent to the given line. */
-void
-indent_a_line(linestruct *line, char *indentation)
+void indent_a_line(linestruct *line, char *indentation)
 {
     unsigned long length, indent_len;
     length     = strlen(line->data);
@@ -101,8 +98,7 @@ indent_a_line(linestruct *line, char *indentation)
 /* Indent the current line (or the marked lines) by tabsize columns.
  * This inserts either a tab character or a tab's worth of spaces,
  * depending on whether --tabstospaces is in effect. */
-void
-do_indent(void)
+void do_indent(void)
 {
     linestruct *top, *bot, *line;
     char       *indentation;
@@ -155,8 +151,7 @@ do_indent(void)
 
 /* Return the number of bytes of whitespace at the start of the given text,
  * but at most a tab's worth. */
-unsigned long
-length_of_white(const char *text)
+unsigned long length_of_white(const char *text)
 {
     unsigned long white_count = 0;
     if (openfile->syntax && openfile->syntax->tabstring)
@@ -190,8 +185,7 @@ length_of_white(const char *text)
 }
 
 /* Adjust the positions of mark and cursor when they are on the given line. */
-void
-compensate_leftward(linestruct *line, unsigned long leftshift)
+void compensate_leftward(linestruct *line, unsigned long leftshift)
 {
     if (line == openfile->mark)
     {
@@ -219,8 +213,7 @@ compensate_leftward(linestruct *line, unsigned long leftshift)
 }
 
 /* Remove an indent from the given line. */
-void
-unindent_a_line(linestruct *line, unsigned long indent_len)
+void unindent_a_line(linestruct *line, unsigned long indent_len)
 {
     unsigned long length = strlen(line->data);
     /* If the indent is empty, don't change the line. */
@@ -237,8 +230,7 @@ unindent_a_line(linestruct *line, unsigned long indent_len)
 
 /* Unindent the current line (or the marked lines) by tabsize columns.
  * The removed indent can be a mixture of spaces plus at most one tab. */
-void
-do_unindent(void)
+void do_unindent(void)
 {
     linestruct *top, *bot, *line;
     /* Use either all the marked lines or just the current line. */
@@ -271,8 +263,7 @@ do_unindent(void)
 }
 
 /* Perform an undo or redo for an indent or unindent action. */
-void
-handle_indent_action(undostruct *u, bool undoing, bool add_indent)
+void handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 {
     groupstruct *group = u->grouping;
     linestruct  *line  = line_from_number(group->top_line);
@@ -309,8 +300,7 @@ handle_indent_action(undostruct *u, bool undoing, bool add_indent)
  * ADDED: Also takes indentation into account.
  * TODO: (comment_line) - Fix bug where cursor is missplaces one step to the
  * left. */
-bool
-comment_line(undo_type action, linestruct *line, const char *comment_seq)
+bool comment_line(undo_type action, linestruct *line, const char *comment_seq)
 {
     unsigned long comment_seq_len = strlen(comment_seq);
     /* The postfix, if this is a bracketing type comment sequence. */
@@ -379,8 +369,7 @@ comment_line(undo_type action, linestruct *line, const char *comment_seq)
  * TODO: FIX SO COMMENTS ARE PLACED AT CURSOR POSITION NOT AT THE BEGINNING OF
  * THE LINE, EDIT: I FUCKING DID IT!!!, The comments are now placed at indent
  * and can be toggeled */
-void
-do_comment(void)
+void do_comment(void)
 {
     const char *comment_seq = GENERAL_COMMENT_CHARACTER;
     undo_type   action      = UNCOMMENT;
@@ -437,8 +426,7 @@ do_comment(void)
 }
 
 /* Perform an undo or redo for a comment or uncomment action. */
-void
-handle_comment_action(undostruct *u, bool undoing, bool add_comment)
+void handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 {
     groupstruct *group = u->grouping;
     /* When redoing, reposition the cursor and let the commenter adjust it. */
@@ -469,8 +457,7 @@ handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 #define undo_paste redo_cut
 
 /* Undo a cut, or redo a paste. */
-void
-undo_cut(undostruct *u)
+void undo_cut(undostruct *u)
 {
     goto_line_posx(
         u->head_lineno, (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x);
@@ -497,8 +484,7 @@ undo_cut(undostruct *u)
 }
 
 /* Redo a cut, or undo a paste. */
-void
-redo_cut(undostruct *u)
+void redo_cut(undostruct *u)
 {
     linestruct *oldcutbuffer = cutbuffer;
     cutbuffer                = NULL;
@@ -511,8 +497,7 @@ redo_cut(undostruct *u)
 }
 
 /* Undo the last thing(s) we did. */
-void
-do_undo(void)
+void do_undo(void)
 {
     undostruct   *u = openfile->current_undo;
     linestruct   *oldcutbuffer, *intruder;
@@ -769,8 +754,7 @@ do_undo(void)
 }
 
 /* Redo the last thing(s) we undid. */
-void
-do_redo(void)
+void do_redo(void)
 {
     undostruct *u                     = openfile->undotop;
     bool        suppress_modification = FALSE;
@@ -1006,8 +990,7 @@ do_redo(void)
 /* Break the current line at the cursor position.
  * TODO: Fix so if char before cursor is a ( '{', '[', '(' ) then it will break
  * the line at the next line and insert the closing bracket. */
-void
-do_enter(void)
+void do_enter(void)
 {
     if (suggest_on)
     {
@@ -1095,8 +1078,7 @@ do_enter(void)
 }
 
 /* Discard undo items that are newer than the given one, or all if NULL. */
-void
-discard_until(const undostruct *thisitem)
+void discard_until(const undostruct *thisitem)
 {
     undostruct  *dropit = openfile->undotop;
     groupstruct *group;
@@ -1124,8 +1106,7 @@ discard_until(const undostruct *thisitem)
 }
 
 /* Add a new undo item of the given type to the top of the current pile. */
-void
-add_undo(undo_type action, const char *message)
+void add_undo(undo_type action, const char *message)
 {
     undostruct *u        = (undostruct *)nmalloc(sizeof(undostruct));
     linestruct *thisline = openfile->current;
@@ -1339,8 +1320,7 @@ add_undo(undo_type action, const char *message)
  * affected by a multiple-line-altering feature.
  * The indentation that is added or removed is saved,
  * separately for each line in the undo item. */
-void
-update_multiline_undo(long lineno, char *indentation)
+void update_multiline_undo(long lineno, char *indentation)
 {
     undostruct *u = openfile->current_undo;
     /* If there already is a group and the current line is contiguous with it,
@@ -1369,8 +1349,7 @@ update_multiline_undo(long lineno, char *indentation)
 
 /* Update an undo item with (among other things) the file size and
  * cursor position after the given action. */
-void
-update_undo(undo_type action)
+void update_undo(undo_type action)
 {
     undostruct   *u = openfile->undotop;
     unsigned long datalen, newlen;
@@ -1507,8 +1486,7 @@ update_undo(undo_type action)
 /* When the current line is overlong, hard-wrap it at the furthest possible
  * whitespace character, and prepend the excess part to an "overflow" line
  * (when it already exists, otherwise create one). */
-void
-do_wrap(void)
+void do_wrap(void)
 {
     /* The line to be wrapped, if needed and possible. */
     linestruct *line = openfile->current;
@@ -1648,8 +1626,7 @@ do_wrap(void)
  * to that point is at most (goal + 1).  When there is no such blank, then find
  * the first blank.  Return the index of the last blank in that group of blanks.
  * When snap_at_nl is TRUE, a newline character counts as a blank too. */
-long
-break_line(const char *textstart, long goal, bool snap_at_nl)
+long break_line(const char *textstart, long goal, bool snap_at_nl)
 {
     /* The point where the last blank was found, if any. */
     const char *lastblank = NULL;
@@ -1715,8 +1692,7 @@ break_line(const char *textstart, long goal, bool snap_at_nl)
 
 /* Return the length of the indentation part of the given line.
  * The "indentation" of a line is the leading consecutive whitespace. */
-unsigned long
-indent_length(const char *line)
+unsigned long indent_length(const char *line)
 {
     const char *start = line;
     while (*line != '\0' && is_blank_char(line))
@@ -1729,8 +1705,7 @@ indent_length(const char *line)
 /* Return the length of the quote part of the given line.
  * The 'quote part' of a line is the largest initial
  * substring matching the quoting regex. */
-unsigned long
-quote_length(const char *line)
+unsigned long quote_length(const char *line)
 {
     regmatch_t matches;
     int        rc = regexec(&quotereg, line, 1, &matches, 0);
@@ -1745,8 +1720,7 @@ quote_length(const char *line)
 constexpr unsigned char RECURSION_LIMIT = 222;
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
-bool
-begpar(const linestruct *const line, int depth)
+bool begpar(const linestruct *const line, int depth)
 {
     unsigned long quot_len      = 0;
     unsigned long indent_len    = 0;
@@ -1799,8 +1773,7 @@ begpar(const linestruct *const line, int depth)
 /* Return TRUE when the given line is part of a paragraph.
  * A line is part of a paragraph if it contains something more
  * than quoting and leading whitespace. */
-bool
-inpar(const linestruct *const line)
+bool inpar(const linestruct *const line)
 {
     unsigned long quot_len   = quote_length(line->data);
     unsigned long indent_len = indent_length(line->data + quot_len);
@@ -1811,8 +1784,7 @@ inpar(const linestruct *const line)
  * Return 'TRUE' when a paragraph was found, and 'FALSE' otherwise.
  * Furthermore, return the first line and the number of lines of the paragraph.
  */
-bool
-find_paragraph(linestruct **firstline, unsigned long *linecount)
+bool find_paragraph(linestruct **firstline, unsigned long *linecount)
 {
     linestruct *line = *firstline;
     /* When not currently in a paragraph, move forward to a line that is. */
@@ -1836,8 +1808,7 @@ find_paragraph(linestruct **firstline, unsigned long *linecount)
 /* Concatenate into a single line all the lines of the paragraph that starts at
  * *line and consists of 'count' lines, skipping the quoting and indentation on
  * all lines after the first. */
-void
-concat_paragraph(linestruct *line, unsigned long count)
+void concat_paragraph(linestruct *line, unsigned long count)
 {
     while (count > 1)
     {
@@ -1865,8 +1836,7 @@ concat_paragraph(linestruct *line, unsigned long count)
 }
 
 /* Copy a character from one place to another. */
-void
-copy_character(char **from, char **to)
+void copy_character(char **from, char **to)
 {
     int charlen = char_length(*from);
     if (*from == *to)
@@ -1887,8 +1857,7 @@ copy_character(char **from, char **to)
  * but keep two spaces (if there are two) after any closing punctuation,
  * and remove all blanks from the end of the line.  Leave the first skip
  * number of characters untreated. */
-void
-squeeze(linestruct *line, unsigned long skip)
+void squeeze(linestruct *line, unsigned long skip)
 {
     char *start = line->data + skip;
     char *from = start, *to = start;
@@ -1944,8 +1913,8 @@ squeeze(linestruct *line, unsigned long skip)
 
 /* Rewrap the given line (that starts with the given lead string which is of
  * the given length), into lines that fit within the target width (wrap_at). */
-void
-rewrap_paragraph(linestruct **line, char *lead_string, unsigned long lead_len)
+void rewrap_paragraph(linestruct **line, char *lead_string,
+                      unsigned long lead_len)
 {
     /* The x-coordinate where the current line is to be broken. */
     long break_pos;
@@ -1998,8 +1967,7 @@ rewrap_paragraph(linestruct **line, char *lead_string, unsigned long lead_len)
 /* Justify the lines of the given paragraph (that starts at *line, and consists
  * of 'count' lines) so they all fit within the target width (wrap_at) and have
  * their whitespace normalized. */
-void
-justify_paragraph(linestruct **line, unsigned long count)
+void justify_paragraph(linestruct **line, unsigned long count)
 {
     /* The line from which the indentation is copied. */
     linestruct *sampleline;
@@ -2029,8 +1997,7 @@ constexpr bool WHOLE_BUFFER  = TRUE;
 
 /* Justify the current paragraph, or the entire buffer when whole_buffer is
  * 'TRUE'.  But if the mark is on, justify only the marked text instead. */
-void
-justify_text(bool whole_buffer)
+void justify_text(bool whole_buffer)
 {
     /* The number of lines in the original paragraph. */
     unsigned long linecount;
@@ -2310,15 +2277,13 @@ justify_text(bool whole_buffer)
 }
 
 /* Justify the current paragraph. */
-void
-do_justify(void)
+void do_justify(void)
 {
     justify_text(ONE_PARAGRAPH);
 }
 
 /* Justify the entire file. */
-void
-do_full_justify(void)
+void do_full_justify(void)
 {
     justify_text(WHOLE_BUFFER);
     ran_a_tool = TRUE;
@@ -2326,8 +2291,7 @@ do_full_justify(void)
 }
 
 /* Set up an argument list for executing the given command. */
-void
-construct_argument_list(char ***arguments, char *command, char *filename)
+void construct_argument_list(char ***arguments, char *command, char *filename)
 {
     char *copy_of_command = copy_of(command);
     char *element         = strtok(copy_of_command, " ");
@@ -2344,8 +2308,8 @@ construct_argument_list(char ***arguments, char *command, char *filename)
 
 /* Open the specified file, and if that succeeds, remove the text of the marked
  * region or of the entire buffer and read the file contents into its place. */
-bool
-replace_buffer(const char *filename, undo_type action, const char *operation)
+bool replace_buffer(const char *filename, undo_type action,
+                    const char *operation)
 {
     linestruct *was_cutbuffer = cutbuffer;
     int         descriptor;
@@ -2377,8 +2341,7 @@ replace_buffer(const char *filename, undo_type action, const char *operation)
 }
 
 /* Execute the given program, with the given temp file as last argument. */
-void
-treat(char *tempfile_name, char *theprogram, bool spelling)
+void treat(char *tempfile_name, char *theprogram, bool spelling)
 {
     long          was_lineno = openfile->current->lineno;
     unsigned long was_pww    = openfile->placewewant;
@@ -2523,8 +2486,7 @@ treat(char *tempfile_name, char *theprogram, bool spelling)
 
 /* Let the user edit the misspelled word.  Return 'FALSE' if the user cancels.
  */
-bool
-fix_spello(const char *word)
+bool fix_spello(const char *word)
 {
     linestruct   *was_edittop     = openfile->edittop;
     linestruct   *was_current     = openfile->current;
@@ -2621,8 +2583,7 @@ fix_spello(const char *word)
  * misspelled words, then feeding those through 'sort' and 'uniq' to obtain an
  * alphabetical list, which words are then offered one by one to the user for
  * correction. */
-void
-do_int_speller(const char *const tempfile_name)
+void do_int_speller(const char *const tempfile_name)
 {
     char         *misspellings, *pointer, *oneword;
     long          pipesize;
@@ -2804,8 +2765,7 @@ do_int_speller(const char *const tempfile_name)
 /* Spell check the current file.
  * If an alternate spell checker is specified, use it.
  * Otherwise, use the internal spell checker. */
-void
-do_spell(void)
+void do_spell(void)
 {
     FILE *stream;
     char *temp_name;
@@ -2853,8 +2813,7 @@ do_spell(void)
 }
 
 /* Run a linting program on the current buffer. */
-void
-do_linter(void)
+void do_linter(void)
 {
     char         *lintings, *pointer, *onelint;
     long          pipesize;
@@ -3226,8 +3185,7 @@ do_linter(void)
 
 /* Run a manipulation program on the contents of the buffer.
  * TODO: (do_formatter) - Implement propper native formating for 'c/c++'. */
-void
-do_formatter(void)
+void do_formatter(void)
 {
     FILE *stream;
     char *temp_name;
@@ -3264,8 +3222,7 @@ do_formatter(void)
 /* Our own version of "wc".
  * Note that the character count is in multibyte
  * characters instead of single-byte characters. */
-void
-count_lines_words_and_characters(void)
+void count_lines_words_and_characters(void)
 {
     linestruct   *was_current = openfile->current;
     unsigned long was_x       = openfile->current_x;
@@ -3324,8 +3281,7 @@ count_lines_words_and_characters(void)
  * which is typed in by the user.
  * The function returns the bytes that were typed in,
  * and the number of bytes that were read. */
-void
-do_verbatim_input(void)
+void do_verbatim_input(void)
 {
     unsigned long count = 1;
     char         *bytes;
@@ -3372,8 +3328,7 @@ do_verbatim_input(void)
 }
 
 /* Return a copy of the found completion candidate. */
-char *
-copy_completion(char *text)
+char *copy_completion(char *text)
 {
     char         *word;
     unsigned long length = 0, index = 0;
@@ -3396,8 +3351,7 @@ copy_completion(char *text)
  * for the first word that starts with this fragment, and tentatively
  * complete the fragment.  If the user hits 'Complete' again, search
  * and paste the next possible completion. */
-void
-complete_a_word(void)
+void complete_a_word(void)
 {
     /* The buffer that is being searched for possible completions. */
     static openfilestruct *scouring = NULL;

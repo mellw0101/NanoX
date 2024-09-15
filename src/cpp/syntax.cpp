@@ -6,8 +6,7 @@
 #include <stdio.h>
 
 /* Function to check syntax for a open buffer. */
-void
-syntax_check_file(openfilestruct *file)
+void syntax_check_file(openfilestruct *file)
 {
     PROFILE_FUNCTION;
     if (openfile->filetop->next == NULL)
@@ -56,6 +55,9 @@ syntax_check_file(openfilestruct *file)
                 test_map["explicit"]  = {FG_VS_CODE_BLUE};
                 test_map["this"]      = {FG_VS_CODE_BLUE};
                 test_map["union"]     = {FG_VS_CODE_BLUE};
+                test_map["auto"]      = {FG_VS_CODE_BLUE};
+                test_map["noexcept"]  = {
+                    FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
                 /* Compiler defines. */
                 /* test_map["__cplusplus"]     = {FG_VS_CODE_BLUE};
                 test_map["__clang__"]       = {FG_VS_CODE_BLUE};
@@ -96,9 +98,8 @@ syntax_check_file(openfilestruct *file)
     }
 }
 
-bool
-parse_color_opts(const char *color_fg, const char *color_bg, short *fg,
-                 short *bg, int *attr)
+bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg,
+                      short *bg, int *attr)
 {
     bool vivid, thick;
     *attr = A_NORMAL;
@@ -159,8 +160,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg,
     return TRUE;
 }
 
-bool
-check_func_syntax(char ***words, unsigned long *i)
+bool check_func_syntax(char ***words, unsigned long *i)
 {
     unsigned long  at   = 0;
     unsigned short type = 0;
@@ -209,8 +209,7 @@ check_func_syntax(char ***words, unsigned long *i)
 }
 
 /* Check a file for syntax, and add relevent syntax. */
-void
-check_syntax(const char *path)
+void check_syntax(const char *path)
 {
     if (!is_file_and_exists(path))
     {
@@ -354,8 +353,7 @@ check_syntax(const char *path)
     fclose(f);
 }
 
-void
-check_include_file_syntax(const char *path)
+void check_include_file_syntax(const char *path)
 {
     if (!is_file_and_exists(path))
     {
@@ -502,8 +500,7 @@ check_include_file_syntax(const char *path)
 }
 
 /* Add a '#define' to syntax. */
-void
-handle_define(char *str)
+void handle_define(char *str)
 {
     unsigned int i;
     if (*str == '\\')
@@ -532,8 +529,7 @@ handle_define(char *str)
 static unsigned short last_type = 0;
 /* Check a line for syntax words, also index files that are included and add
  * functions as well. */
-void
-check_for_syntax_words(linestruct *line)
+void check_for_syntax_words(linestruct *line)
 {
     unsigned long i;
     char        **words;
@@ -673,16 +669,14 @@ check_for_syntax_words(linestruct *line)
 }
 
 /* Add some "basic" cpp syntax. */
-void
-do_cpp_syntax(void)
+void do_cpp_syntax(void)
 {
     flag_all_brackets();
     flag_all_block_comments(openfile->filetop);
 }
 
 /* Return`s 'TRUE' if 'str' is in the 'syntax_structs' vector. */
-bool
-is_syntax_struct(std::string_view str)
+bool is_syntax_struct(std::string_view str)
 {
     for (int i = 0; i < structs.get_size(); i++)
     {
@@ -694,8 +688,7 @@ is_syntax_struct(std::string_view str)
     return FALSE;
 }
 
-bool
-is_syntax_class(std::string_view str)
+bool is_syntax_class(std::string_view str)
 {
     for (int i = 0; i < classes.get_size(); i++)
     {
@@ -707,8 +700,7 @@ is_syntax_class(std::string_view str)
     return FALSE;
 }
 
-bool
-define_exists(const char *str)
+bool define_exists(const char *str)
 {
     for (int i = 0; i < defines.get_size(); i++)
     {
@@ -720,8 +712,7 @@ define_exists(const char *str)
     return FALSE;
 }
 
-void
-handle_struct_syntax(char **word)
+void handle_struct_syntax(char **word)
 {
     unsigned long i;
     while (*(*word) == '*')
@@ -743,8 +734,7 @@ handle_struct_syntax(char **word)
     }
 }
 
-void
-find_block_comments(int from, int end)
+void find_block_comments(int from, int end)
 {
     PROFILE_FUNCTION;
     linestruct *line = line_from_number(from);
@@ -776,8 +766,7 @@ find_block_comments(int from, int end)
     }
 }
 
-char **
-find_functions_in_file(char *path)
+char **find_functions_in_file(char *path)
 {
     FILE *file = fopen(path, "rb");
     if (file == NULL)
@@ -859,8 +848,7 @@ find_functions_in_file(char *path)
     return func_str_array;
 }
 
-char **
-find_variabels_in_file(char *path)
+char **find_variabels_in_file(char *path)
 {
     FILE *file = fopen(path, "rb");
     if (file == NULL)

@@ -32,8 +32,7 @@ main_thread_t *main_thread = NULL;
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'.
  * prevnode: previous node in the linked list.
  * returns ( linestruct * ) - pointer to the new node. */
-linestruct *
-make_new_node(linestruct *prevnode)
+linestruct *make_new_node(linestruct *prevnode)
 {
     linestruct *newnode = (linestruct *)nmalloc(sizeof(linestruct));
     newnode->prev       = prevnode;
@@ -58,8 +57,7 @@ make_new_node(linestruct *prevnode)
 }
 
 /* Splice a new node into an existing linked list of linestructs. */
-void
-splice_node(linestruct *afterthis, linestruct *newnode)
+void splice_node(linestruct *afterthis, linestruct *newnode)
 {
     newnode->next = afterthis->next;
     newnode->prev = afterthis;
@@ -76,8 +74,7 @@ splice_node(linestruct *afterthis, linestruct *newnode)
 }
 
 /* Free the data structures in the given node */
-void
-delete_node(linestruct *line)
+void delete_node(linestruct *line)
 {
     /* If the first line on the screen gets deleted, step one back. */
     if (line == openfile->edittop)
@@ -95,8 +92,7 @@ delete_node(linestruct *line)
 }
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
-void
-unlink_node(linestruct *line)
+void unlink_node(linestruct *line)
 {
     if (line->prev != NULL)
     {
@@ -115,8 +111,7 @@ unlink_node(linestruct *line)
 }
 
 /* Free an entire linked list of linestructs. */
-void
-free_lines(linestruct *src)
+void free_lines(linestruct *src)
 {
     if (src == NULL)
     {
@@ -131,8 +126,7 @@ free_lines(linestruct *src)
 }
 
 /* Make a copy of a linestruct node. */
-linestruct *
-copy_node(const linestruct *src)
+linestruct *copy_node(const linestruct *src)
 {
     linestruct *dst;
     dst             = (linestruct *)nmalloc(sizeof(linestruct));
@@ -144,8 +138,7 @@ copy_node(const linestruct *src)
 }
 
 /* Duplicate an entire linked list of linestructs. */
-linestruct *
-copy_buffer(const linestruct *src)
+linestruct *copy_buffer(const linestruct *src)
 {
     linestruct *head, *item;
     head       = copy_node(src);
@@ -164,8 +157,7 @@ copy_buffer(const linestruct *src)
 }
 
 /* Renumber the lines in a buffer, from the given line onwards. */
-void
-renumber_from(linestruct *line)
+void renumber_from(linestruct *line)
 {
     long number;
     number = (line->prev == NULL) ? 0 : line->prev->lineno;
@@ -177,15 +169,13 @@ renumber_from(linestruct *line)
 }
 
 /* Display a warning about a key disabled in view mode. */
-void
-print_view_warning(void)
+void print_view_warning(void)
 {
     statusline(AHEM, _("Key is invalid in view mode"));
 }
 
 /* When in restricted mode, show a warning and return 'TRUE'. */
-bool
-in_restricted_mode(void)
+bool in_restricted_mode(void)
 {
     if ISSET (RESTRICTED)
     {
@@ -197,8 +187,7 @@ in_restricted_mode(void)
 }
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
-void
-suggest_ctrlT_ctrlZ(void)
+void suggest_ctrlT_ctrlZ(void)
 {
     if (first_sc_for(MMAIN, do_execute) &&
         first_sc_for(MMAIN, do_execute)->keycode == 0x14 &&
@@ -211,8 +200,7 @@ suggest_ctrlT_ctrlZ(void)
 
 /* Make sure the cursor is visible, then exit from curses mode, disable
  * bracketed-paste mode, and restore the original terminal settings. */
-void
-restore_terminal(void)
+void restore_terminal(void)
 {
     curs_set(1);
     endwin();
@@ -222,8 +210,7 @@ restore_terminal(void)
 }
 
 /* Exit normally: restore terminal state and report any startup errors. */
-void
-finish(void)
+void finish(void)
 {
     /* Blank the status bar and (if applicable) the shortcut list. */
     blank_statusbar();
@@ -242,8 +229,7 @@ finish(void)
 }
 
 /* Close the current buffer, freeing its memory. */
-void
-close_and_go(void)
+void close_and_go(void)
 {
     if (openfile->lock_filename)
     {
@@ -276,8 +262,7 @@ close_and_go(void)
 /* Close the current buffer if it is unmodified.  Otherwise (when not doing
  * automatic saving), ask the user whether to save it, then close it and exit,
  * or return when the user cancelled. */
-void
-do_exit(void)
+void do_exit(void)
 {
     int choice;
     /* When unmodified, simply close.  Else, when doing automatic saving and the
@@ -311,8 +296,7 @@ do_exit(void)
 
 /* Save the current buffer under the given name (or "nano.<pid>" when nameless)
  * with suffix ".save". If needed, the name is further suffixed to be unique. */
-void
-emergency_save(const char *filename)
+void emergency_save(const char *filename)
 {
     char *plainname, *targetname;
     if (*filename == '\0')
@@ -339,8 +323,7 @@ emergency_save(const char *filename)
 
 /* Die gracefully, by restoring the terminal state and, saving any buffers that
  * were modified. */
-void
-die(STRING_VIEW msg, ...)
+void die(STRING_VIEW msg, ...)
 {
     openfilestruct *firstone;
     static int      stabs = 0;
@@ -381,8 +364,7 @@ die(STRING_VIEW msg, ...)
 }
 
 /* Initialize the three window portions nano uses. */
-void
-window_init(void)
+void window_init(void)
 {
     /* When resizing, first delete the existing windows. */
     if (midwin != NULL)
@@ -445,23 +427,20 @@ window_init(void)
     }
 }
 
-void
-disable_mouse_support(void)
+void disable_mouse_support(void)
 {
     mousemask(0, NULL);
     mouseinterval(oldinterval);
 }
 
-void
-enable_mouse_support(void)
+void enable_mouse_support(void)
 {
     mousemask(ALL_MOUSE_EVENTS, NULL);
     oldinterval = mouseinterval(50);
 }
 
 /* Switch mouse support on or off, as needed. */
-void
-mouse_init(void)
+void mouse_init(void)
 {
     if ISSET (USE_MOUSE)
     {
@@ -474,9 +453,8 @@ mouse_init(void)
 }
 
 /* Print the usage line for the given option to the screen. */
-void
-print_opt(const char *const shortflag, const char *const longflag,
-          const char *const description)
+void print_opt(const char *const shortflag, const char *const longflag,
+               const char *const description)
 {
     const int firstwidth  = breadth(shortflag);
     const int secondwidth = breadth(longflag);
@@ -494,8 +472,7 @@ print_opt(const char *const shortflag, const char *const longflag,
 }
 
 /* Explain how to properly use NanoX and its command-line options. */
-void
-usage(void)
+void usage(void)
 {
     printf(
         _("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
@@ -622,8 +599,7 @@ usage(void)
 
 /* Display the version number of this nano, a copyright notice, some contact
  * information, and the configuration options this nano was compiled with. */
-void
-version(void)
+void version(void)
 {
     printf(_(" NanoX, version %s\n"), VERSION);
     printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git "
@@ -642,8 +618,7 @@ version(void)
 }
 
 /* List the names of the available syntaxes. */
-void
-list_syntax_names(void)
+void list_syntax_names(void)
 {
     int width = 0;
     printf(_("Available syntaxes:\n"));
@@ -661,15 +636,13 @@ list_syntax_names(void)
 }
 
 /* Register that Ctrl+C was pressed during some system call. */
-void
-make_a_note(int signal)
+void make_a_note(int signal)
 {
     control_C_was_pressed = TRUE;
 }
 
 /* Make ^C interrupt a system call and set a flag. */
-void
-install_handler_for_Ctrl_C(void)
+void install_handler_for_Ctrl_C(void)
 {
     /* Enable the generation of a SIGINT when ^C is pressed. */
     enable_kb_interrupt();
@@ -680,16 +653,14 @@ install_handler_for_Ctrl_C(void)
 }
 
 /* Go back to ignoring ^C. */
-void
-restore_handler_for_Ctrl_C(void)
+void restore_handler_for_Ctrl_C(void)
 {
     sigaction(SIGINT, &oldaction, NULL);
     disable_kb_interrupt();
 }
 
 /* Reconnect standard input to the tty, and store its state. */
-void
-reconnect_and_store_state(void)
+void reconnect_and_store_state(void)
 {
     int thetty = open("/dev/tty", O_RDONLY);
     if (thetty < 0 || dup2(thetty, STDIN_FILENO) < 0)
@@ -705,8 +676,7 @@ reconnect_and_store_state(void)
 }
 
 /* Read whatever comes from standard input into a new buffer. */
-bool
-scoop_stdin(void)
+bool scoop_stdin(void)
 {
     FILE *stream;
     restore_terminal();
@@ -742,8 +712,7 @@ scoop_stdin(void)
 }
 
 /* Register half a dozen signal handlers. */
-void
-signal_init(void)
+void signal_init(void)
 {
     struct sigaction deed = {{0}};
     /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
@@ -779,24 +748,21 @@ signal_init(void)
 }
 
 /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
-void
-handle_hupterm(int signal)
+void handle_hupterm(int signal)
 {
     die(_("Received SIGHUP or SIGTERM\n"));
 }
 
 #if !defined(DEBUG)
 /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
-void
-handle_crash(int signal)
+void handle_crash(int signal)
 {
     die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
 }
 #endif
 
 /* Handler for SIGTSTP (suspend). */
-void
-suspend_nano(int signal)
+void suspend_nano(int signal)
 {
     disable_mouse_support();
     restore_terminal();
@@ -811,8 +777,7 @@ suspend_nano(int signal)
 }
 
 /* When permitted, put nano to sleep. */
-void
-do_suspend(void)
+void do_suspend(void)
 {
     if (in_restricted_mode())
     {
@@ -823,8 +788,7 @@ do_suspend(void)
 }
 
 /* Handler for SIGCONT (continue after suspend). */
-void
-continue_nano(int signal)
+void continue_nano(int signal)
 {
     if (ISSET(USE_MOUSE))
     {
@@ -840,8 +804,7 @@ continue_nano(int signal)
 }
 
 /* Block or unblock the SIGWINCH signal, depending on the blockit parameter. */
-void
-block_sigwinch(bool blockit)
+void block_sigwinch(bool blockit)
 {
     sigset_t winch;
     sigemptyset(&winch);
@@ -854,16 +817,14 @@ block_sigwinch(bool blockit)
 }
 
 /* Handler for SIGWINCH (window size change). */
-void
-handle_sigwinch(int signal)
+void handle_sigwinch(int signal)
 {
     /* Let the input routine know that a SIGWINCH has occurred. */
     the_window_resized = TRUE;
 }
 
 /* Reinitialize and redraw the screen completely. */
-void
-regenerate_screen(void)
+void regenerate_screen(void)
 {
     /* Reset the trigger. */
     the_window_resized = FALSE;
@@ -890,8 +851,7 @@ regenerate_screen(void)
 
 /* Invert the given global flag and adjust things for its new value.
  * TODO : FIX statusline as it takes up 94.1% of the time in this function. */
-void
-toggle_this(const int flag)
+void toggle_this(const int flag)
 {
     bool enabled = !ISSET(flag);
     TOGGLE(flag);
@@ -1007,8 +967,7 @@ toggle_this(const int flag)
 }
 
 /* Disable extended input and output processing in our terminal settings. */
-void
-disable_extended_io(void)
+void disable_extended_io(void)
 {
     termios settings = {0};
     tcgetattr(0, &settings);
@@ -1018,8 +977,7 @@ disable_extended_io(void)
 }
 
 /* Stop ^C from generating a SIGINT. */
-void
-disable_kb_interrupt(void)
+void disable_kb_interrupt(void)
 {
     termios settings = {0};
     tcgetattr(0, &settings);
@@ -1028,8 +986,7 @@ disable_kb_interrupt(void)
 }
 
 /* Make ^C generate a SIGINT. */
-void
-enable_kb_interrupt(void)
+void enable_kb_interrupt(void)
 {
     termios settings = {0};
     tcgetattr(0, &settings);
@@ -1038,8 +995,7 @@ enable_kb_interrupt(void)
 }
 
 /* Disable the terminal's XON/XOFF flow-control characters. */
-void
-disable_flow_control(void)
+void disable_flow_control(void)
 {
     termios settings;
     tcgetattr(0, &settings);
@@ -1048,8 +1004,7 @@ disable_flow_control(void)
 }
 
 /* Enable the terminal's XON/XOFF flow-control characters. */
-void
-enable_flow_control(void)
+void enable_flow_control(void)
 {
     termios settings;
     tcgetattr(0, &settings);
@@ -1064,8 +1019,7 @@ enable_flow_control(void)
  * and Ctrl-J, and disable echoing of characters as they're typed. Finally,
  * disable extended input and output processing, and, if we're not in preserve
  * mode, reenable interpretation of the flow control characters. */
-void
-terminal_init(void)
+void terminal_init(void)
 {
     raw();
     nonl();
@@ -1082,8 +1036,7 @@ terminal_init(void)
 }
 
 /* Ask ncurses for a keycode, or assign a default one. */
-int
-get_keycode(const char *const keyname, const int standard)
+int get_keycode(const char *const keyname, const int standard)
 {
     const char *keyvalue = tigetstr(keyname);
     if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue))
@@ -1100,8 +1053,7 @@ get_keycode(const char *const keyname, const int standard)
 }
 
 /* Ensure that the margin can accommodate the buffer's highest line number. */
-void
-confirm_margin(void)
+void confirm_margin(void)
 {
     int needed_margin = digits(openfile->filebot->lineno) + 1;
     /* When not requested or space is too tight, suppress line numbers. */
@@ -1123,8 +1075,7 @@ confirm_margin(void)
 }
 
 /* Say that an unbound key was struck, and if possible which one. */
-void
-unbound_key(int code)
+void unbound_key(int code)
 {
     if (code == FOREIGN_SEQUENCE)
     {
@@ -1180,8 +1131,7 @@ unbound_key(int code)
 }
 
 /* Handle a mouse click on the edit window or the shortcut list. */
-int
-do_mouse(void)
+int do_mouse(void)
 {
     int click_row;
     int click_col;
@@ -1238,8 +1188,7 @@ do_mouse(void)
 }
 
 /* Return 'TRUE' when the given function is a cursor-moving command. */
-bool
-wanted_to_move(functionptrtype f)
+bool wanted_to_move(functionptrtype f)
 {
     return (f == do_left || f == do_right || f == do_up || f == do_down ||
             f == do_home || f == do_end || f == to_prev_word ||
@@ -1250,8 +1199,7 @@ wanted_to_move(functionptrtype f)
 
 /* Return 'TRUE' when the given function makes a change -- no good for view
  * mode. */
-bool
-changes_something(functionptrtype f)
+bool changes_something(functionptrtype f)
 {
     return (f == do_savefile || f == do_writeout || f == do_enter ||
             f == do_tab || f == do_delete || f == do_backspace ||
@@ -1264,8 +1212,7 @@ changes_something(functionptrtype f)
 }
 
 /* Read in all waiting input bytes and paste them into the buffer in one go. */
-void
-suck_up_input_and_paste_it(void)
+void suck_up_input_and_paste_it(void)
 {
     linestruct   *was_cutbuffer = cutbuffer;
     linestruct   *line          = make_new_node(NULL);
@@ -1307,8 +1254,7 @@ suck_up_input_and_paste_it(void)
 }
 
 /* Insert the given short burst of bytes into the edit buffer. */
-void
-inject(char *burst, unsigned long count)
+void inject(char *burst, unsigned long count)
 {
     linestruct   *thisline     = openfile->current;
     unsigned long datalen      = strlen(thisline->data);
@@ -1403,8 +1349,7 @@ inject(char *burst, unsigned long count)
 }
 
 /* Read in a keystroke, and execute its command or insert it into the buffer. */
-void
-process_a_keystroke(void)
+void process_a_keystroke(void)
 {
     /* The keystroke we read in, this can be a char or a shortcut */
     int input;
@@ -1636,8 +1581,7 @@ process_a_keystroke(void)
     !was_open_bracket_char ? (last_key_was_bracket = FALSE) : 0;
 }
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     init_queue_task();
     init_event_handler();
@@ -1815,10 +1759,10 @@ main(int argc, char **argv)
                 }
             }
         }
-        /* if (cliCmd & CLI_OPT_GUI)
+        if (cliCmd & CLI_OPT_GUI)
         {
-            init_window();
-        } */
+            gui_enabled = true;
+        }
     }
     /* Curses needs TERM; if it is unset, try falling back to a VT220. */
     if (getenv("TERM") == NULL)
@@ -2336,6 +2280,10 @@ main(int argc, char **argv)
     margin         = 12345;
     we_are_running = TRUE;
     LOUT_logI("Reached main loop.");
+    if (gui_enabled == true)
+    {
+        run_gui();
+    }
     /* TODO: This is the main loop of the editor. */
     while (TRUE)
     {
