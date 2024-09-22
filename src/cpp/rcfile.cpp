@@ -144,8 +144,7 @@ jot_error(const char *msg, ...)
     }
     if (lineno > 0)
     {
-        length = snprintf(
-            textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanorc, lineno);
+        length = snprintf(textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanorc, lineno);
     }
     va_start(ap, msg);
     length += vsnprintf(textbuf + length, MAXSIZE - length, _(msg), ap);
@@ -375,9 +374,7 @@ parse_next_regex(char *ptr)
     }
     /* Continue until the end of the line, or until a double quote followed by
      * end-of-line or a blank. */
-    while (*ptr != '\0' &&
-           (*ptr != '"' ||
-            (ptr[1] != '\0' && !constexpr_isblank((unsigned char)ptr[1]))))
+    while (*ptr != '\0' && (*ptr != '"' || (ptr[1] != '\0' && !constexpr_isblank((unsigned char)ptr[1]))))
     {
         ptr++;
     }
@@ -427,8 +424,7 @@ compile(const char *expression, int rex_flags, regex_t **packed)
 
 /* Same as compile but errors with origin file. */
 bool
-compile_with_callback(const char *expression, int rex_flags, regex_t **packed,
-                      const char *from_file)
+compile_with_callback(const char *expression, int rex_flags, regex_t **packed, const char *from_file)
 {
     regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
     int      outcome  = regcomp(compiled, expression, rex_flags);
@@ -437,8 +433,7 @@ compile_with_callback(const char *expression, int rex_flags, regex_t **packed,
         unsigned long length  = regerror(outcome, compiled, NULL, 0);
         char         *message = (char *)nmalloc(length);
         regerror(outcome, compiled, message, length);
-        jot_error(N_("Bad regex \"%s\": %s, from file '%s'"), expression,
-                  message, from_file);
+        jot_error(N_("Bad regex \"%s\": %s, from file '%s'"), expression, message, from_file);
         free(message);
         regfree(compiled);
         free(compiled);
@@ -457,8 +452,7 @@ begin_new_syntax(char *ptr)
 {
     char *nameptr = ptr;
     /* Check that the syntax name is not empty. */
-    if (*ptr == '\0' ||
-        (*ptr == '"' && (*(ptr + 1) == '\0' || *(ptr + 1) == '"')))
+    if (*ptr == '\0' || (*ptr == '"' && (*(ptr + 1) == '\0' || *(ptr + 1) == '"')))
     {
         jot_error(N_("Missing syntax name"));
         return;
@@ -533,10 +527,9 @@ check_for_nonempty_syntax(void)
 bool
 is_universal(void (*f)(void))
 {
-    return (f == do_left || f == do_right || f == do_home || f == do_end ||
-            f == to_prev_word || f == to_next_word || f == do_delete ||
-            f == do_backspace || f == cut_text || f == paste_text ||
-            f == do_tab || f == do_enter || f == do_verbatim_input);
+    return (f == do_left || f == do_right || f == do_home || f == do_end || f == to_prev_word || f == to_next_word ||
+            f == do_delete || f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter ||
+            f == do_verbatim_input);
 }
 
 /* Bind or unbind a key combo, to or from a function. */
@@ -682,8 +675,7 @@ parse_binding(char *ptr, bool dobind)
     {
         if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE))
         {
-            jot_error(N_("Function '%s' does not exist in menu '%s'"), funcptr,
-                      menuptr);
+            jot_error(N_("Function '%s' does not exist in menu '%s'"), funcptr, menuptr);
         }
         goto free_things;
     }
@@ -730,13 +722,9 @@ is_good_file(char *file)
         return FALSE;
     }
     /* If the thing exists, it may be neither a directory nor a device. */
-    if (stat(file, &rcinfo) != -1 &&
-        (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) ||
-         S_ISBLK(rcinfo.st_mode)))
+    if (stat(file, &rcinfo) != -1 && (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode)))
     {
-        jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") :
-                                            N_("\"%s\" is a device file"),
-                  file);
+        jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
         return FALSE;
     }
     return TRUE;
@@ -848,12 +836,10 @@ closest_index_color(short red, short green, short blue)
 {
     /* Translation table, from 16 intended color levels to 6 available levels.
      */
-    static const short level[] = {
-        0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
+    static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
     /* Translation table, from 14 intended gray levels to 24 available levels.
      */
-    static const short gray[] = {
-        1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 21, 23};
+    static const short gray[] = {1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 21, 23};
     if (COLORS != 256)
     {
         return THE_DEFAULT;
@@ -1166,15 +1152,13 @@ grab_and_store(const char *kind, char *ptr, regexlisttype **storage)
     const char    *regexstring;
     if (!opensyntax)
     {
-        jot_error(
-            N_("A '%s' command requires a preceding 'syntax' command"), kind);
+        jot_error(N_("A '%s' command requires a preceding 'syntax' command"), kind);
         return;
     }
     /* The default syntax doesn't take any file matching stuff. */
     if (strcmp(live_syntax->name, "default") == 0 && *ptr != '\0')
     {
-        jot_error(
-            N_("The \"default\" syntax does not accept '%s' regexes"), kind);
+        jot_error(N_("The \"default\" syntax does not accept '%s' regexes"), kind);
         return;
     }
     if (*ptr == '\0')
@@ -1375,8 +1359,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
             if (sntx == NULL)
             {
-                jot_error(
-                    N_("Could not find syntax \"%s\" to extend"), syntaxname);
+                jot_error(N_("Could not find syntax \"%s\" to extend"), syntaxname);
                 continue;
             }
             keyword  = ptr;
@@ -1393,7 +1376,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
             else
             {
-                newitem = (augmentstruct *)nmalloc(sizeof(augmentstruct));
+                newitem           = (augmentstruct *)nmalloc(sizeof(augmentstruct));
                 newitem->filename = copy_of(nanorc);
                 newitem->lineno   = lineno;
                 newitem->data     = argument;
@@ -1443,35 +1426,26 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             }
 #endif
         }
-        else if (just_syntax && (strcmp(keyword, "set") == 0 ||
-                                 strcmp(keyword, "unset") == 0 ||
-                                 strcmp(keyword, "bind") == 0 ||
-                                 strcmp(keyword, "unbind") == 0 ||
-                                 strcmp(keyword, "include") == 0 ||
-                                 strcmp(keyword, "extendsyntax") == 0))
+        else if (just_syntax && (strcmp(keyword, "set") == 0 || strcmp(keyword, "unset") == 0 ||
+                                 strcmp(keyword, "bind") == 0 || strcmp(keyword, "unbind") == 0 ||
+                                 strcmp(keyword, "include") == 0 || strcmp(keyword, "extendsyntax") == 0))
         {
             if (intros_only)
             {
-                jot_error(
-                    N_("Command \"%s\" not allowed in included file"), keyword);
+                jot_error(N_("Command \"%s\" not allowed in included file"), keyword);
             }
             else
             {
                 break;
             }
         }
-        else if (intros_only && (strcmp(keyword, "color") == 0 ||
-                                 strcmp(keyword, "icolor") == 0 ||
-                                 strcmp(keyword, "comment") == 0 ||
-                                 strcmp(keyword, "tabgives") == 0 ||
-                                 strcmp(keyword, "linter") == 0 ||
-                                 strcmp(keyword, "formatter") == 0))
+        else if (intros_only && (strcmp(keyword, "color") == 0 || strcmp(keyword, "icolor") == 0 ||
+                                 strcmp(keyword, "comment") == 0 || strcmp(keyword, "tabgives") == 0 ||
+                                 strcmp(keyword, "linter") == 0 || strcmp(keyword, "formatter") == 0))
         {
             if (!opensyntax)
             {
-                jot_error(
-                    N_("A '%s' command requires a preceding 'syntax' command"),
-                    keyword);
+                jot_error(N_("A '%s' command requires a preceding 'syntax' command"), keyword);
             }
             if (strstr("icolor", keyword))
             {
@@ -1576,9 +1550,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
             continue;
         }
         const int colorOption = retriveColorOptionFromStr(option);
-        (colorOption != (unsigned int)-1) ?
-            set_interface_color(colorOption, argument) :
-            void();
+        (colorOption != (unsigned int)-1) ? set_interface_color(colorOption, argument) : void();
         const unsigned int configOption = retriveConfigOptionFromStr(option);
         if (!configOption)
         {
@@ -1592,8 +1564,7 @@ parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only)
         {
             if (!parseNum(argument, fill))
             {
-                jot_error(
-                    N_("Requested fill size \"%s\" is invalid"), argument);
+                jot_error(N_("Requested fill size \"%s\" is invalid"), argument);
                 fill = -COLUMNS_FROM_EOL;
             }
         }
@@ -1745,8 +1716,7 @@ do_rcfiles(void)
         get_homedir();
         /* Now try to find a nanorc file in the user's home directory or in the
          * XDG configuration directories, and process the first one found. */
-        if (have_nanorc(homedir, "/" HOME_RC_NAME) ||
-            have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) ||
+        if (have_nanorc(homedir, "/" HOME_RC_NAME) || have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) ||
             have_nanorc(homedir, "/.config/nano/" RCFILE_NAME))
         {
             parse_one_nanorc();

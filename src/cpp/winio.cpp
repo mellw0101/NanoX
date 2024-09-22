@@ -62,7 +62,7 @@ void
 add_to_macrobuffer(int code)
 {
     macro_length++;
-    macro_buffer = (int *)nrealloc(macro_buffer, macro_length * sizeof(int));
+    macro_buffer                   = (int *)nrealloc(macro_buffer, macro_length * sizeof(int));
     macro_buffer[macro_length - 1] = code;
 }
 
@@ -88,11 +88,9 @@ record_macro(void)
     }
 }
 
-/* Copy the stored sequence of codes into the regular key buffer,
- * so they will be "executed" again. */
+/* Copy the stored sequence of codes into the regular key buffer, so they will be "executed" again. */
 void
 run_macro(void)
-
 {
     if (recording)
     {
@@ -178,16 +176,14 @@ read_keys_from(WINDOW *frame)
     bool          timed    = FALSE;
     /* Before reading the first keycode, display any pending screen updates. */
     doupdate();
-    if (reveal_cursor &&
-        (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) &&
+    if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) &&
         (LINES > 1 || lastmessage <= HUSH))
     {
         curs_set(1);
     }
-    if (currmenu == MMAIN &&
-        (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH &&
-          lastmessage < ALERT && lastmessage != INFO) ||
-         spotlighted))
+    if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH &&
+                               lastmessage < ALERT && lastmessage != INFO) ||
+                              spotlighted))
     {
         timed = TRUE;
         halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
@@ -256,8 +252,7 @@ read_keys_from(WINDOW *frame)
         refresh_needed |= spotlighted;
         spotlighted = FALSE;
     }
-    /* If we got a SIGWINCH, get out as the frame argument is no longer valid.
-     */
+    /* If we got a SIGWINCH, get out as the frame argument is no longer valid. */
     if (input == KEY_WINCH)
     {
         return;
@@ -370,8 +365,7 @@ get_code_from_plantation(void)
         }
         free(commandname);
         free(planted_shortcut);
-        commandname =
-            measured_copy(plants_pointer + 1, closing - plants_pointer - 1);
+        commandname      = measured_copy(plants_pointer + 1, closing - plants_pointer - 1);
         planted_shortcut = strtosc(commandname);
         if (!planted_shortcut)
         {
@@ -1093,25 +1087,19 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
         }
         case '7' :
         {
-            if (length > 1 &&
-                seq[1] == '~') /* Esc [ 7 ~ == Home on Eterm/rxvt; */
+            if (length > 1 && seq[1] == '~') /* Esc [ 7 ~ == Home on Eterm/rxvt; */
             {
                 return KEY_HOME;
             }
-            else if (length > 1 &&
-                     seq[1] == '$') /* Esc [ 7 $ == Shift-Home on Eterm/rxvt; */
+            else if (length > 1 && seq[1] == '$') /* Esc [ 7 $ == Shift-Home on Eterm/rxvt; */
             {
                 return SHIFT_HOME;
             }
-            else if (length > 1 &&
-                     seq[1] ==
-                         '^') /* Esc [ 7 ^ == Control-Home on Eterm/rxvt; */
+            else if (length > 1 && seq[1] == '^') /* Esc [ 7 ^ == Control-Home on Eterm/rxvt; */
             {
                 return CONTROL_HOME;
             }
-            else if (length > 1 &&
-                     seq[1] ==
-                         '@') /* Esc [ 7 @ == Shift-Control-Home on same. */
+            else if (length > 1 && seq[1] == '@') /* Esc [ 7 @ == Shift-Control-Home on same. */
             {
                 return shiftcontrolhome;
             }
@@ -1119,25 +1107,19 @@ convert_CSI_sequence(const int *seq, unsigned long length, int *consumed)
         }
         case '8' :
         {
-            if (length > 1 &&
-                seq[1] == '~') /* Esc [ 8 ~ == End on Eterm/rxvt; */
+            if (length > 1 && seq[1] == '~') /* Esc [ 8 ~ == End on Eterm/rxvt; */
             {
                 return KEY_END;
             }
-            else if (length > 1 &&
-                     seq[1] == '$') /* Esc [ 8 $ == Shift-End on Eterm/rxvt; */
+            else if (length > 1 && seq[1] == '$') /* Esc [ 8 $ == Shift-End on Eterm/rxvt; */
             {
                 return SHIFT_END;
             }
-            else if (length > 1 &&
-                     seq[1] ==
-                         '^') /* Esc [ 8 ^ == Control-End on Eterm/rxvt; */
+            else if (length > 1 && seq[1] == '^') /* Esc [ 8 ^ == Control-End on Eterm/rxvt; */
             {
                 return CONTROL_END;
             }
-            else if (length > 1 &&
-                     seq[1] ==
-                         '@') /* Esc [ 8 @ == Shift-Control-End on same. */
+            else if (length > 1 && seq[1] == '@') /* Esc [ 8 @ == Shift-Control-End on same. */
             {
                 return shiftcontrolend;
             }
@@ -1441,8 +1423,7 @@ parse_kbinput(WINDOW *frame)
             {
                 return SHIFT_TAB;
             }
-            else if (keycode == KEY_BACKSPACE || keycode == '\b' ||
-                     keycode == DEL_CODE)
+            else if (keycode == KEY_BACKSPACE || keycode == '\b' || keycode == DEL_CODE)
             {
                 /* TODO: (parse_kbinput) - Check how to detect only CONTROL_BSP
                  * here. */
@@ -1450,8 +1431,7 @@ parse_kbinput(WINDOW *frame)
             }
             else if (0xC0 <= keycode && keycode <= 0xFF && using_utf8())
             {
-                while (waiting_codes && 0x80 <= nextcodes[0] &&
-                       nextcodes[0] <= 0xBF)
+                while (waiting_codes && 0x80 <= nextcodes[0] && nextcodes[0] <= 0xBF)
                 {
                     get_input(NULL);
                 }
@@ -1462,8 +1442,7 @@ parse_kbinput(WINDOW *frame)
                 meta_key = TRUE;
             }
         }
-        else if (waiting_codes == 0 || nextcodes[0] == ESC_CODE ||
-                 (keycode != 'O' && keycode != '['))
+        else if (waiting_codes == 0 || nextcodes[0] == ESC_CODE || (keycode != 'O' && keycode != '['))
         {
             if (!shifted_metas)
             {
@@ -1482,8 +1461,7 @@ parse_kbinput(WINDOW *frame)
     {
         escapes = 0;
         if (keycode == '[' && waiting_codes &&
-            (('A' <= nextcodes[0] && nextcodes[0] <= 'D') ||
-             ('a' <= nextcodes[0] && nextcodes[0] <= 'd')))
+            (('A' <= nextcodes[0] && nextcodes[0] <= 'D') || ('a' <= nextcodes[0] && nextcodes[0] <= 'd')))
         {
             /* An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X
              * for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow. */
@@ -1527,14 +1505,12 @@ parse_kbinput(WINDOW *frame)
                 }
             }
         }
-        else if (waiting_codes && nextcodes[0] != ESC_CODE &&
-                 (keycode == '[' || keycode == 'O'))
+        else if (waiting_codes && nextcodes[0] != ESC_CODE && (keycode == '[' || keycode == 'O'))
         {
             keycode  = parse_escape_sequence(keycode);
             meta_key = TRUE;
         }
-        else if ('0' <= keycode &&
-                 (keycode <= '2' || (keycode <= '9' && digit_count > 0)))
+        else if ('0' <= keycode && (keycode <= '2' || (keycode <= '9' && digit_count > 0)))
         {
             /* Two escapes followed by one digit: byte sequence mode. */
             int byte = assemble_byte_code(keycode);
@@ -2103,8 +2079,7 @@ parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
             if (keycode == ESC_CODE && waiting_codes)
             {
                 get_input(NULL);
-                while (waiting_codes && 0x1F < nextcodes[0] &&
-                       nextcodes[0] < 0x40)
+                while (waiting_codes && 0x1F < nextcodes[0] && nextcodes[0] < 0x40)
                 {
                     get_input(NULL);
                 }
@@ -2115,8 +2090,7 @@ parse_verbatim_kbinput(WINDOW *frame, unsigned long *count)
             }
             else if (0xC0 <= keycode && keycode <= 0xFF)
             {
-                while (waiting_codes && 0x7F < nextcodes[0] &&
-                       nextcodes[0] < 0xC0)
+                while (waiting_codes && 0x7F < nextcodes[0] && nextcodes[0] < 0xC0)
                 {
                     get_input(NULL);
                 }
@@ -2443,8 +2417,7 @@ set_blankdelay_to_one(void)
  * at the beginning or ">" at the end of the line if it's too long. If isprompt
  * is TRUE, the caller might put ">" at the end of the line if it's too long. */
 char *
-display_string(const char *text, unsigned long column, unsigned long span,
-               bool isdata, bool isprompt)
+display_string(const char *text, unsigned long column, unsigned long span, bool isdata, bool isprompt)
 {
     PROFILE_FUNCTION;
     /* The beginning of the text, to later determine the covered part. */
@@ -2473,8 +2446,7 @@ display_string(const char *text, unsigned long column, unsigned long span,
     }
     /* If the first character starts before the left edge, or would be
      * overwritten by a "<" token, then show placeholders instead. */
-    if ((start_col < column || (start_col > 0 && isdata && !ISSET(SOFTWRAP))) &&
-        *text != '\0' && *text != '\t')
+    if ((start_col < column || (start_col > 0 && isdata && !ISSET(SOFTWRAP))) && *text != '\0' && *text != '\t')
     {
         if (is_cntrl_char(text))
         {
@@ -2529,8 +2501,7 @@ display_string(const char *text, unsigned long column, unsigned long span,
         if (*text == '\t')
         {
             if (ISSET(WHITESPACE_DISPLAY) &&
-                (index > 0 || !isdata || !ISSET(SOFTWRAP) ||
-                 column % tabsize == 0 || column == start_col))
+                (index > 0 || !isdata || !ISSET(SOFTWRAP) || column % tabsize == 0 || column == start_col))
             {
                 for (int i = 0; i < whitelen[0];)
                 {
@@ -2599,10 +2570,10 @@ display_string(const char *text, unsigned long column, unsigned long span,
         column += (charwidth < 0 ? 1 : charwidth);
     }
     /* If there is more text than can be shown, make room for the ">". */
-    if (column > beyond ||
-        (*text != '\0' && (isprompt || (isdata && !ISSET(SOFTWRAP)))))
+    if (column > beyond || (*text != '\0' && (isprompt || (isdata && !ISSET(SOFTWRAP)))))
     {
-        do {
+        do
+        {
             index = step_left(converted, index);
         }
         while (is_zerowidth(converted + index));
@@ -2712,8 +2683,7 @@ titlebar(const char *path)
                 if (more_than_one)
                 {
                     ranking = (char *)nmalloc(24);
-                    sprintf(ranking, "[%i/%i]", buffer_number(openfile),
-                            buffer_number(startfile->prev));
+                    sprintf(ranking, "[%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
                     upperleft = ranking;
                 }
                 else
@@ -2788,9 +2758,7 @@ titlebar(const char *path)
     /* If we have side spaces left, center the path name. */
     if (verlen > 0)
     {
-        offset =
-            verlen +
-            (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2;
+        offset = verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2;
     }
     /* Only print the prefix when there is room for it. */
     if (verlen + prefixlen + pathlen + pluglen + statelen <= COLS)
@@ -2815,8 +2783,7 @@ titlebar(const char *path)
     else if (5 + statelen <= COLS)
     {
         waddstr(topwin, "...");
-        caption = display_string(
-            path, 3 + pathlen - COLS + statelen, COLS - statelen, FALSE, FALSE);
+        caption = display_string(path, 3 + pathlen - COLS + statelen, COLS - statelen, FALSE, FALSE);
         waddstr(topwin, caption);
         free(caption);
     }
@@ -2892,8 +2859,7 @@ minibar(void)
     {
         if (namewidth > COLS - 2)
         {
-            char *shortname = display_string(
-                thename, namewidth - COLS + 5, COLS - 5, FALSE, FALSE);
+            char *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, FALSE, FALSE);
             mvwaddstr(footwin, 0, 0, "...");
             waddstr(footwin, shortname);
             free(shortname);
@@ -2908,18 +2874,15 @@ minibar(void)
      * otherwise, when there are multiple buffers, display an [x/n] counter. */
     if (report_size && COLS > 35)
     {
-        unsigned long count =
-            openfile->filebot->lineno - (openfile->filebot->data[0] == '\0');
-        number_of_lines = (char *)nmalloc(49);
+        unsigned long count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0');
+        number_of_lines     = (char *)nmalloc(49);
         if (openfile->fmt == NIX_FILE || openfile->fmt == UNSPECIFIED)
         {
-            sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count),
-                    count);
+            sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
         }
         else
         {
-            sprintf(number_of_lines,
-                    P_(" (%zu line, %s)", " (%zu lines, %s)", count), count,
+            sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count,
                     (openfile->fmt == DOS_FILE) ? "DOS" : "Mac");
         }
         tallywidth = breadth(number_of_lines);
@@ -2936,8 +2899,7 @@ minibar(void)
     else if (openfile->next != openfile && COLS > 35)
     {
         ranking = ranking = (char *)nmalloc(24);
-        sprintf(ranking, " [%i/%i]", buffer_number(openfile),
-                buffer_number(startfile->prev));
+        sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
         if (namewidth + placewidth + breadth(ranking) + 32 < COLS)
         {
             waddstr(footwin, ranking);
@@ -2955,9 +2917,7 @@ minibar(void)
         char *this_position = openfile->current->data + openfile->current_x;
         if (*this_position == '\0')
         {
-            sprintf(hexadecimal, openfile->current->next ?
-                                     using_utf8() ? "U+000A" : "  0x0A" :
-                                     "  ----");
+            sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
         }
         else if (*this_position == '\n')
         {
@@ -2977,8 +2937,7 @@ minibar(void)
         }
         mvwaddstr(footwin, 0, COLS - 23, hexadecimal);
         successor = this_position + char_length(this_position);
-        if (*this_position && *successor && is_zerowidth(successor) &&
-            mbtowide(widecode, successor) > 0)
+        if (*this_position && *successor && is_zerowidth(successor) && mbtowide(widecode, successor) > 0)
         {
             sprintf(hexadecimal, "|%04X", (int)widecode);
             waddstr(footwin, hexadecimal);
@@ -2995,8 +2954,7 @@ minibar(void)
         }
     }
     /* Display the state of three flags, and the state of macro and mark. */
-    if (ISSET(STATEFLAGS) && !successor &&
-        namewidth + tallywidth + 14 + 2 * padding < COLS)
+    if (ISSET(STATEFLAGS) && !successor && namewidth + tallywidth + 14 + 2 * padding < COLS)
     {
         wmove(footwin, 0, COLS - 11 - padding);
         show_states_at(footwin);
@@ -3004,8 +2962,7 @@ minibar(void)
     /* Display how many percent the current line is into the file. */
     if (namewidth + 6 < COLS)
     {
-        sprintf(location, "%3zi%%",
-                100 * openfile->current->lineno / openfile->filebot->lineno);
+        sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
         mvwaddstr(footwin, 0, COLS - 4 - padding, location);
     }
     wattroff(footwin, interface_color_pair[MINI_INFOBAR]);
@@ -3052,8 +3009,8 @@ statusline(message_type importance, const char *msg, ...)
         free(compound);
         return;
     }
-    if (!we_are_running && importance == ALERT && openfile && !openfile->fmt &&
-        !openfile->errormessage && openfile->next != openfile)
+    if (!we_are_running && importance == ALERT && openfile && !openfile->fmt && !openfile->errormessage &&
+        openfile->next != openfile)
     {
         openfile->errormessage = copy_of(compound);
     }
@@ -3266,8 +3223,7 @@ static constexpr unsigned short PAINT_LIMIT = 2000;
  * TODO: (draw_row) - Implement a way to close and open brackets (will probebly
  * be hard as fuck!!!). */
 void
-draw_row(const int row, const char *converted, linestruct *line,
-         const unsigned long from_col)
+draw_row(const int row, const char *converted, linestruct *line, const unsigned long from_col)
 {
     render_line_text(row, converted, line, from_col);
     if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX))
@@ -3281,8 +3237,7 @@ draw_row(const int row, const char *converted, linestruct *line,
         /* If there are multiline regexes, make sure this line has a cache. */
         if (openfile->syntax->multiscore > 0 && line->multidata == NULL)
         {
-            line->multidata =
-                (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
+            line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
         }
         /* Iterate through all the coloring regexes. */
         for (; varnish != NULL; varnish = varnish->next)
@@ -3307,8 +3262,7 @@ draw_row(const int row, const char *converted, linestruct *line,
                 while (index < PAINT_LIMIT && index < till_x)
                 {
                     /* If there is no match, go on to the next line. */
-                    if (regexec(varnish->start, &line->data[index], 1, &match,
-                                (index == 0) ? 0 : REG_NOTBOL) != 0)
+                    if (regexec(varnish->start, &line->data[index], 1, &match, (index == 0) ? 0 : REG_NOTBOL) != 0)
                     {
                         break;
                     }
@@ -3339,15 +3293,11 @@ draw_row(const int row, const char *converted, linestruct *line,
                     }
                     if (match.rm_so > from_x)
                     {
-                        start_col =
-                            wideness(line->data, match.rm_so) - from_col;
+                        start_col = wideness(line->data, match.rm_so) - from_col;
                     }
-                    thetext = converted + actual_x(converted, start_col);
-                    paintlen =
-                        actual_x(thetext, wideness(line->data, match.rm_eo) -
-                                              from_col - start_col);
-                    midwin_mv_add_nstr_wattr(row, (margin + start_col), thetext,
-                                             paintlen, varnish->attributes);
+                    thetext  = converted + actual_x(converted, start_col);
+                    paintlen = actual_x(thetext, wideness(line->data, match.rm_eo) - from_col - start_col);
+                    midwin_mv_add_nstr_wattr(row, (margin + start_col), thetext, paintlen, varnish->attributes);
                 }
                 continue;
             }
@@ -3362,28 +3312,22 @@ draw_row(const int row, const char *converted, linestruct *line,
             {
                 /* If there is an unterminated start match before the current
                  * line, we need to look for an end match first. */
-                if (start_line &&
-                    (start_line->multidata[varnish->id] == WHOLELINE ||
-                     start_line->multidata[varnish->id] == STARTSHERE))
+                if (start_line && (start_line->multidata[varnish->id] == WHOLELINE ||
+                                   start_line->multidata[varnish->id] == STARTSHERE))
                 {
                     /* If there is no end on this line,
                      * paint whole line, and be done. */
-                    if (regexec(varnish->end, line->data, 1, &endmatch, 0) ==
-                        REG_NOMATCH)
+                    if (regexec(varnish->end, line->data, 1, &endmatch, 0) == REG_NOMATCH)
                     {
-                        midwin_mv_add_nstr_wattr(
-                            row, margin, converted, -1, varnish->attributes);
+                        midwin_mv_add_nstr_wattr(row, margin, converted, -1, varnish->attributes);
                         line->multidata[varnish->id] = WHOLELINE;
                         continue;
                     }
                     /* Only if it is visible, paint the part to be coloured. */
                     if (endmatch.rm_eo > from_x)
                     {
-                        paintlen = actual_x(
-                            converted,
-                            wideness(line->data, endmatch.rm_eo) - from_col);
-                        midwin_mv_add_nstr_wattr(row, margin, converted,
-                                                 paintlen, varnish->attributes);
+                        paintlen = actual_x(converted, wideness(line->data, endmatch.rm_eo) - from_col);
+                        midwin_mv_add_nstr_wattr(row, margin, converted, paintlen, varnish->attributes);
                     }
                     line->multidata[varnish->id] = ENDSHERE;
                 }
@@ -3392,20 +3336,17 @@ draw_row(const int row, const char *converted, linestruct *line,
              * looking only after an end match, if there is one. */
             index = (paintlen == 0) ? 0 : endmatch.rm_eo;
             while (index < PAINT_LIMIT &&
-                   regexec(varnish->start, line->data + index, 1, &startmatch,
-                           (index == 0) ? 0 : REG_NOTBOL) == 0)
+                   regexec(varnish->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
             {
                 /* Make the match relative to the beginning of the line. */
                 startmatch.rm_so += index;
                 startmatch.rm_eo += index;
                 if (startmatch.rm_so > from_x)
                 {
-                    start_col =
-                        wideness(line->data, startmatch.rm_so) - from_col;
+                    start_col = wideness(line->data, startmatch.rm_so) - from_col;
                 }
                 thetext = converted + actual_x(converted, start_col);
-                if (regexec(varnish->end, line->data + startmatch.rm_eo, 1,
-                            &endmatch,
+                if (regexec(varnish->end, line->data + startmatch.rm_eo, 1, &endmatch,
                             (startmatch.rm_eo == 0) ? 0 : REG_NOTBOL) == 0)
                 {
                     /* Make the match relative to the beginning of the line. */
@@ -3413,21 +3354,15 @@ draw_row(const int row, const char *converted, linestruct *line,
                     endmatch.rm_eo += startmatch.rm_eo;
                     /* Only paint the match if it is visible on screen
                      * and it is more than zero characters long. */
-                    if (endmatch.rm_eo > from_x &&
-                        endmatch.rm_eo > startmatch.rm_so)
+                    if (endmatch.rm_eo > from_x && endmatch.rm_eo > startmatch.rm_so)
                     {
-                        paintlen = actual_x(
-                            thetext, wideness(line->data, endmatch.rm_eo) -
-                                         from_col - start_col);
-                        midwin_mv_add_nstr_wattr(row, margin + start_col,
-                                                 thetext, paintlen,
-                                                 varnish->attributes);
+                        paintlen = actual_x(thetext, wideness(line->data, endmatch.rm_eo) - from_col - start_col);
+                        midwin_mv_add_nstr_wattr(row, margin + start_col, thetext, paintlen, varnish->attributes);
                         line->multidata[varnish->id] = JUSTONTHIS;
                     }
                     index = endmatch.rm_eo;
                     /* If both start and end match are anchors, advance. */
-                    if (startmatch.rm_so == startmatch.rm_eo &&
-                        endmatch.rm_so == endmatch.rm_eo)
+                    if (startmatch.rm_so == startmatch.rm_eo && endmatch.rm_so == endmatch.rm_eo)
                     {
                         if (line->data[index] == '\0')
                         {
@@ -3438,15 +3373,13 @@ draw_row(const int row, const char *converted, linestruct *line,
                     continue;
                 }
                 /* Paint the rest of the line, and we're done. */
-                midwin_mv_add_nstr_wattr(
-                    row, margin + start_col, thetext, -1, varnish->attributes);
+                midwin_mv_add_nstr_wattr(row, margin + start_col, thetext, -1, varnish->attributes);
                 line->multidata[varnish->id] = STARTSHERE;
                 break;
             }
         }
     }
-    if (stripe_column > from_col && !inhelp &&
-        (sequel_column == 0 || stripe_column <= sequel_column) &&
+    if (stripe_column > from_col && !inhelp && (sequel_column == 0 || stripe_column <= sequel_column) &&
         stripe_column <= from_col + editwincols)
     {
         long          target_column = stripe_column - from_col - 1;
@@ -3478,14 +3411,11 @@ draw_row(const int row, const char *converted, linestruct *line,
         {
             striped_char[0] = ' ';
         }
-        midwin_mv_add_nstr_color(
-            row, margin + target_column, striped_char, charlen, GUIDE_STRIPE);
+        midwin_mv_add_nstr_color(row, margin + target_column, striped_char, charlen, GUIDE_STRIPE);
     }
     /* If the line is at least partially selected, paint the marked part. */
-    if (openfile->mark && ((line->lineno >= openfile->mark->lineno &&
-                            line->lineno <= openfile->current->lineno) ||
-                           (line->lineno <= openfile->mark->lineno &&
-                            line->lineno >= openfile->current->lineno)))
+    if (openfile->mark && ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno) ||
+                           (line->lineno <= openfile->mark->lineno && line->lineno >= openfile->current->lineno)))
     {
         /* The lines where the marked region begins and ends. */
         linestruct *top, *bot;
@@ -3520,12 +3450,10 @@ draw_row(const int row, const char *converted, linestruct *line,
              * characters to paint.  Otherwise, just paint all. */
             if (bot_x < till_x)
             {
-                const unsigned long end_col =
-                    wideness(line->data, bot_x) - from_col;
-                paintlen = actual_x(thetext, end_col - start_col);
+                const unsigned long end_col = wideness(line->data, bot_x) - from_col;
+                paintlen                    = actual_x(thetext, end_col - start_col);
             }
-            midwin_mv_add_nstr_color(
-                row, margin + start_col, thetext, paintlen, SELECTED_TEXT);
+            midwin_mv_add_nstr_color(row, margin + start_col, thetext, paintlen, SELECTED_TEXT);
         }
     }
 }
@@ -3537,10 +3465,10 @@ int
 update_line(linestruct *line, const unsigned long index, int offset)
 {
     PROFILE_FUNCTION;
-    if (LINE_ISSET(line, IS_HIDDEN))
+    /* if (LINE_ISSET(line, IS_HIDDEN))
     {
         return 0;
-    }
+    } */
     /* The row in the edit window we will be updating. */
     int row;
     /* The data of the line with tabs and control characters expanded. */
@@ -3617,12 +3545,10 @@ update_softwrapped_line(linestruct *line)
     starting_row = row;
     while (!end_of_line && row < editwinrows)
     {
-        to_col = get_softwrap_breakpoint(
-            line->data, from_col, &kickoff, &end_of_line);
+        to_col        = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line);
         sequel_column = (end_of_line) ? 0 : to_col;
         /* Convert the chunk to its displayable form and draw it. */
-        converted = display_string(
-            line->data, from_col, to_col - from_col, TRUE, FALSE);
+        converted = display_string(line->data, from_col, to_col - from_col, TRUE, FALSE);
         draw_row(row++, converted, line, from_col);
         free(converted);
         from_col = to_col;
@@ -3638,8 +3564,7 @@ update_softwrapped_line(linestruct *line)
  * different "pages" (in softwrap mode, only the former applies), which means
  * that the relevant line needs to be redrawn. */
 bool
-line_needs_update(const unsigned long old_column,
-                  const unsigned long new_column)
+line_needs_update(const unsigned long old_column, const unsigned long new_column)
 {
     if (openfile->mark)
     {
@@ -3714,8 +3639,7 @@ go_forward_chunks(int nrows, linestruct **line, unsigned long *leftedge)
         for (i = nrows; i > 0; i--)
         {
             end_of_line      = FALSE;
-            current_leftedge = get_softwrap_breakpoint(
-                (*line)->data, current_leftedge, &kickoff, &end_of_line);
+            current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
             if (!end_of_line)
             {
                 continue;
@@ -3758,8 +3682,7 @@ less_than_a_screenful(unsigned long was_lineno, unsigned long was_leftedge)
         line      = openfile->current;
         leftedge  = leftedge_for(xplustabs(), openfile->current);
         rows_left = go_back_chunks(editwinrows - 1, &line, &leftedge);
-        return (rows_left > 0 || line->lineno < was_lineno ||
-                (line->lineno == was_lineno && leftedge <= was_leftedge));
+        return (rows_left > 0 || line->lineno < was_lineno || (line->lineno == was_lineno && leftedge <= was_leftedge));
     }
     else
     {
@@ -3778,9 +3701,8 @@ draw_scrollbar(void)
     int coveredlines = editwinrows;
     if (ISSET(SOFTWRAP))
     {
-        linestruct *line = openfile->edittop;
-        int         extras =
-            extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line);
+        linestruct *line   = openfile->edittop;
+        int         extras = extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line);
         while (line->lineno + extras < fromline + editwinrows && line->next)
         {
             line = line->next;
@@ -3796,8 +3718,8 @@ draw_scrollbar(void)
     }
     for (int row = 0; row < editwinrows; row++)
     {
-        bardata[row] = ' ' | interface_color_pair[SCROLL_BAR] |
-                       ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE);
+        bardata[row] =
+            ' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE);
         mvwaddch(midwin, row, COLS - 1, bardata[row]);
     }
 }
@@ -3855,8 +3777,7 @@ edit_scroll(bool direction)
      * when it was deemed necessary). */
     while (nrows > 0 && line != NULL)
     {
-        nrows -= update_line(
-            line, (line == openfile->current) ? openfile->current_x : 0);
+        nrows -= update_line(line, (line == openfile->current) ? openfile->current_x : 0);
         line = line->next;
     }
 }
@@ -3867,8 +3788,7 @@ edit_scroll(bool direction)
  * continue from where the previous call left off.  Set end_of_line to TRUE
  * when end-of-line is reached while searching for a possible breakpoint. */
 unsigned long
-get_softwrap_breakpoint(const char *linedata, unsigned long leftedge,
-                        bool *kickoff, bool *end_of_line)
+get_softwrap_breakpoint(const char *linedata, unsigned long leftedge, bool *kickoff, bool *end_of_line)
 {
     /* Pointer at the current character in this line's data. */
     static const char *text;
@@ -3918,7 +3838,7 @@ get_softwrap_breakpoint(const char *linedata, unsigned long leftedge,
     if (farthest_blank != NULL)
     {
         unsigned long aftertheblank = last_blank_col;
-        unsigned long onestep = advance_over(farthest_blank, aftertheblank);
+        unsigned long onestep       = advance_over(farthest_blank, aftertheblank);
         if (aftertheblank <= rightside)
         {
             text   = farthest_blank + onestep;
@@ -3939,8 +3859,7 @@ get_softwrap_breakpoint(const char *linedata, unsigned long leftedge,
  * given column is on, relative to the first row (zero-based).  If leftedge
  * isn't NULL, return in it the leftmost column of the chunk. */
 unsigned long
-get_chunk_and_edge(unsigned long column, linestruct *line,
-                   unsigned long *leftedge)
+get_chunk_and_edge(unsigned long column, linestruct *line, unsigned long *leftedge)
 {
     unsigned long end_col, current_chunk, start_col;
     bool          end_of_line, kickoff;
@@ -3950,8 +3869,7 @@ get_chunk_and_edge(unsigned long column, linestruct *line,
     kickoff       = TRUE;
     while (TRUE)
     {
-        end_col = get_softwrap_breakpoint(
-            line->data, start_col, &kickoff, &end_of_line);
+        end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line);
         /* When the column is in range or we reached end-of-line, we're done. */
         if (end_of_line || (start_col <= column && column < end_col))
         {
@@ -3999,8 +3917,7 @@ ensure_firstcolumn_is_aligned(void)
 {
     if (ISSET(SOFTWRAP))
     {
-        openfile->firstcolumn =
-            leftedge_for(openfile->firstcolumn, openfile->edittop);
+        openfile->firstcolumn = leftedge_for(openfile->firstcolumn, openfile->edittop);
     }
     else
     {
@@ -4023,9 +3940,7 @@ actual_last_column(unsigned long leftedge, unsigned long column)
     {
         kickoff    = TRUE;
         last_chunk = FALSE;
-        end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge,
-                                             &kickoff, &last_chunk) -
-                  leftedge;
+        end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge;
         /* If we're not on the last chunk, we're one column past the end of
          * the row.  Shifting back one column might put us in the middle of
          * a multi-column character, but 'actual_x()' will fix that later. */
@@ -4048,14 +3963,12 @@ current_is_above_screen(void)
     if (ISSET(SOFTWRAP))
     {
         return (openfile->current->lineno < openfile->edittop->lineno ||
-                (openfile->current->lineno == openfile->edittop->lineno &&
-                 xplustabs() < openfile->firstcolumn));
+                (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
     }
     return (openfile->current->lineno < openfile->edittop->lineno);
 }
 
-#define SHIM \
-    (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
+#define SHIM (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
 
 /* Return TRUE if current[current_x] is beyond the viewport. */
 bool
@@ -4067,14 +3980,12 @@ current_is_below_screen(void)
         unsigned long leftedge = openfile->firstcolumn;
         /* If current[current_x] is more than a screen's worth of lines after
          * edittop at column firstcolumn, it's below the screen. */
-        return (go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) ==
-                    0 &&
-                (line->lineno < openfile->current->lineno ||
-                 (line->lineno == openfile->current->lineno &&
-                  leftedge < leftedge_for(xplustabs(), openfile->current))));
+        return (
+            go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 &&
+            (line->lineno < openfile->current->lineno ||
+             (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
     }
-    return (openfile->current->lineno >=
-            openfile->edittop->lineno + editwinrows - SHIM);
+    return (openfile->current->lineno >= openfile->edittop->lineno + editwinrows - SHIM);
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */
@@ -4105,8 +4016,7 @@ edit_redraw(linestruct *old_current, update_type manner)
         while (line != openfile->current)
         {
             update_line(line, 0);
-            line = (line->lineno > openfile->current->lineno) ? line->prev :
-                                                                line->next;
+            line = (line->lineno > openfile->current->lineno) ? line->prev : line->next;
         }
     }
     else
@@ -4121,8 +4031,7 @@ edit_redraw(linestruct *old_current, update_type manner)
     /* Update current if the mark is on or it has changed "page", or if it
      * differs from old_current and needs to be horizontally scrolled. */
     if (line_needs_update(was_pww, openfile->placewewant) ||
-        (old_current != openfile->current &&
-         get_page_start(openfile->placewewant) > 0))
+        (old_current != openfile->current && get_page_start(openfile->placewewant) > 0))
     {
         update_line(openfile->current, openfile->current_x);
     }
@@ -4140,8 +4049,7 @@ edit_refresh(void)
     /* If the current line is out of view, get it back on screen. */
     if (current_is_offscreen())
     {
-        adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING :
-                                                               FLOWING);
+        adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
     }
     /* When needed and useful, initialize the colors for the current syntax. */
     if (openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors())
@@ -4150,8 +4058,7 @@ edit_refresh(void)
     }
     /* When the line above the viewport does not have multidata, recalculate
      * all. */
-    recook |= ISSET(SOFTWRAP) && openfile->edittop->prev &&
-              !openfile->edittop->prev->multidata;
+    recook |= ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata;
     if (recook)
     {
         precalc_multicolorinfo();
@@ -4165,9 +4072,7 @@ edit_refresh(void)
     line = openfile->edittop;
     while (row < editwinrows && line != NULL)
     {
-        int result = update_line(
-            line, (line == openfile->current) ? openfile->current_x : 0,
-            offset);
+        int result = update_line(line, (line == openfile->current) ? openfile->current_x : 0, offset);
         if (result == 0)
         {
             offset += 1;
@@ -4253,13 +4158,12 @@ void
 report_cursor_position(void)
 {
     int           linepct, colpct, charpct;
-    unsigned long fullwidth  = breadth(openfile->current->data) + 1;
-    unsigned long column     = xplustabs() + 1;
-    char          saved_byte = openfile->current->data[openfile->current_x];
+    unsigned long fullwidth                      = breadth(openfile->current->data) + 1;
+    unsigned long column                         = xplustabs() + 1;
+    char          saved_byte                     = openfile->current->data[openfile->current_x];
     openfile->current->data[openfile->current_x] = '\0';
     /* Determine the size of the file up to the cursor. */
-    unsigned long sum =
-        number_of_characters_in(openfile->filetop, openfile->current);
+    unsigned long sum                            = number_of_characters_in(openfile->filetop, openfile->current);
     openfile->current->data[openfile->current_x] = saved_byte;
     /* Calculate the percentages. */
     linepct = 100 * openfile->current->lineno / openfile->filebot->lineno;
@@ -4268,9 +4172,8 @@ report_cursor_position(void)
     statusline(INFO,
                _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu "
                  "(%2d%%)"),
-               digits(openfile->filebot->lineno), openfile->current->lineno,
-               openfile->filebot->lineno, linepct, column, fullwidth, colpct,
-               digits(openfile->totsize), sum, openfile->totsize, charpct);
+               digits(openfile->filebot->lineno), openfile->current->lineno, openfile->filebot->lineno, linepct, column,
+               fullwidth, colpct, digits(openfile->totsize), sum, openfile->totsize, charpct);
 }
 
 /* Highlight the text between the given two columns on the current line.
@@ -4295,8 +4198,7 @@ spotlight(unsigned long from_col, unsigned long to_col)
     }
     else
     {
-        word = display_string(openfile->current->data, from_col,
-                              to_col - from_col, FALSE, overshoots);
+        word = display_string(openfile->current->data, from_col, to_col - from_col, FALSE, overshoots);
     }
     wattron(midwin, interface_color_pair[SPOTLIGHTED]);
     waddnstr(midwin, word, actual_x(word, to_col));
@@ -4322,8 +4224,7 @@ spotlight_softwrapped(unsigned long from_col, unsigned long to_col)
     row = openfile->cursor_row;
     while (row < editwinrows)
     {
-        break_col = get_softwrap_breakpoint(
-            openfile->current->data, leftedge, &kickoff, &end_of_line);
+        break_col = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &end_of_line);
         /* If the highlighting ends on this chunk, we can stop after it. */
         if (break_col >= to_col)
         {
@@ -4338,8 +4239,7 @@ spotlight_softwrapped(unsigned long from_col, unsigned long to_col)
         }
         else
         {
-            word = display_string(openfile->current->data, from_col,
-                                  break_col - from_col, FALSE, FALSE);
+            word = display_string(openfile->current->data, from_col, break_col - from_col, FALSE, FALSE);
         }
         wattron(midwin, interface_color_pair[SPOTLIGHTED]);
         waddnstr(midwin, word, actual_x(word, break_col));
@@ -4366,69 +4266,67 @@ do_credits(void)
     bool        with_interface = !ISSET(ZERO);
     bool        with_help      = !ISSET(NO_HELP);
     int         crpos = 0, xlpos = 0;
-    const char *credits[CREDIT_LEN] = {
-        NULL, /* "The nano text editor" */
-        NULL, /* "version" */
-        VERSION,
-        "",
-        NULL, /* "Brought to you by:" */
-        "Chris Allegretta",
-        "Benno Schulenberg",
-        "David Lawrence Ramsey",
-        "Jordi Mallach",
-        "David Benbennick",
-        "Rocco Corsi",
-        "Mike Frysinger",
-        "Adam Rogoyski",
-        "Rob Siemborski",
-        "Mark Majeres",
-        "Ken Tyler",
-        "Sven Guckes",
-        "Bill Soudan",
-        "Christian Weisgerber",
-        "Erik Andersen",
-        "Big Gaute",
-        "Joshua Jensen",
-        "Ryan Krebs",
-        "Albert Chin",
-        "",
-        NULL, /* "Special thanks to:" */
-        "Monique, Brielle & Joseph",
-        "Plattsburgh State University",
-        "Benet Laboratories",
-        "Amy Allegretta",
-        "Linda Young",
-        "Jeremy Robichaud",
-        "Richard Kolb II",
-        NULL, /* "The Free Software Foundation" */
-        "Linus Torvalds",
-        NULL, /* "the many translators and the TP" */
-        NULL, /* "For ncurses:" */
-        "Thomas Dickey",
-        "Pavel Curtis",
-        "Zeyd Ben-Halim",
-        "Eric S. Raymond",
-        NULL, /* "and anyone else we forgot..." */
-        "",
-        "",
-        NULL, /* "Thank you for using nano!" */
-        "",
-        "",
-        "(C) 2024",
-        "Free Software Foundation, Inc.",
-        "",
-        "",
-        "https://nano-editor.org/"};
-    const char *xlcredits[XLCREDIT_LEN] = {
-        N_("The nano text editor"),
-        N_("version"),
-        N_("Brought to you by:"),
-        N_("Special thanks to:"),
-        N_("The Free Software Foundation"),
-        N_("the many translators and the TP"),
-        N_("For ncurses:"),
-        N_("and anyone else we forgot..."),
-        N_("Thank you for using nano!")};
+    const char *credits[CREDIT_LEN]     = {NULL, /* "The nano text editor" */
+                                           NULL, /* "version" */
+                                           VERSION,
+                                           "",
+                                           NULL, /* "Brought to you by:" */
+                                           "Chris Allegretta",
+                                           "Benno Schulenberg",
+                                           "David Lawrence Ramsey",
+                                           "Jordi Mallach",
+                                           "David Benbennick",
+                                           "Rocco Corsi",
+                                           "Mike Frysinger",
+                                           "Adam Rogoyski",
+                                           "Rob Siemborski",
+                                           "Mark Majeres",
+                                           "Ken Tyler",
+                                           "Sven Guckes",
+                                           "Bill Soudan",
+                                           "Christian Weisgerber",
+                                           "Erik Andersen",
+                                           "Big Gaute",
+                                           "Joshua Jensen",
+                                           "Ryan Krebs",
+                                           "Albert Chin",
+                                           "",
+                                           NULL, /* "Special thanks to:" */
+                                           "Monique, Brielle & Joseph",
+                                           "Plattsburgh State University",
+                                           "Benet Laboratories",
+                                           "Amy Allegretta",
+                                           "Linda Young",
+                                           "Jeremy Robichaud",
+                                           "Richard Kolb II",
+                                           NULL, /* "The Free Software Foundation" */
+                                           "Linus Torvalds",
+                                           NULL, /* "the many translators and the TP" */
+                                           NULL, /* "For ncurses:" */
+                                           "Thomas Dickey",
+                                           "Pavel Curtis",
+                                           "Zeyd Ben-Halim",
+                                           "Eric S. Raymond",
+                                           NULL, /* "and anyone else we forgot..." */
+                                           "",
+                                           "",
+                                           NULL, /* "Thank you for using nano!" */
+                                           "",
+                                           "",
+                                           "(C) 2024",
+                                           "Free Software Foundation, Inc.",
+                                           "",
+                                           "",
+                                           "https://nano-editor.org/"};
+    const char *xlcredits[XLCREDIT_LEN] = {N_("The nano text editor"),
+                                           N_("version"),
+                                           N_("Brought to you by:"),
+                                           N_("Special thanks to:"),
+                                           N_("The Free Software Foundation"),
+                                           N_("the many translators and the TP"),
+                                           N_("For ncurses:"),
+                                           N_("and anyone else we forgot..."),
+                                           N_("Thank you for using nano!")};
     if (with_interface || with_help)
     {
         SET(ZERO);
@@ -4449,8 +4347,7 @@ do_credits(void)
             {
                 text = _(xlcredits[xlpos++]);
             }
-            mvwaddstr(
-                midwin, editwinrows - 1, (COLS - breadth(text)) / 2, text);
+            mvwaddstr(midwin, editwinrows - 1, (COLS - breadth(text)) / 2, text);
             wrefresh(midwin);
         }
         if (wgetch(midwin) != ERR)

@@ -7,8 +7,7 @@
 struct sub_thread_function
 {
     /* This is the task performed by the other thread. */
-    static void *
-    search_word_task(void *arg)
+    static void *search_word_task(void *arg)
     {
         word_search_task_t *task = (word_search_task_t *)arg;
         NLOG("path: '%s'.\n", task->path);
@@ -19,8 +18,7 @@ struct sub_thread_function
     /* Use a sub thread to find syntax from a header file and put them all into
      * a format we can use. Here we put them into a list that we return for the
      * main thread to prosses. */
-    static void *
-    syntax_from(void *arg)
+    static void *syntax_from(void *arg)
     {
         clock_t       start_time = clock();
         char         *path       = (char *)arg;
@@ -36,13 +34,11 @@ struct sub_thread_function
         result->functions_tail  = NULL;
         for (i = 0; i < nwords; i++)
         {
-            if (strncmp(words[i], "void", 4) == 0 ||
-                strncmp(words[i], "int", 3) == 0)
+            if (strncmp(words[i], "void", 4) == 0 || strncmp(words[i], "int", 3) == 0)
             {
                 if (words[++i] != NULL)
                 {
-                    if (strncmp(words[i], "*__restrict", 12) == 0 ||
-                        strncmp(words[i], "*/", 2) == 0)
+                    if (strncmp(words[i], "*__restrict", 12) == 0 || strncmp(words[i], "*/", 2) == 0)
                     {
                         if (words[++i] == NULL)
                         {
@@ -52,8 +48,7 @@ struct sub_thread_function
                     unsigned long j = 0;
                     for (; words[i][j]; j++)
                     {
-                        if (words[i][j] == ',' || words[i][j] == ')' ||
-                            words[i][j] == ';')
+                        if (words[i][j] == ',' || words[i][j] == ')' || words[i][j] == ';')
                         {
                             j = 0;
                             break;
@@ -72,11 +67,10 @@ struct sub_thread_function
                             free(words[i]);
                             words[i] = p;
                         }
-                        syntax_word_t *word =
-                            (syntax_word_t *)nmalloc(sizeof(*word));
-                        word->str         = copy_of(words[i]);
-                        word->return_type = NULL;
-                        word->next        = NULL;
+                        syntax_word_t *word = (syntax_word_t *)nmalloc(sizeof(*word));
+                        word->str           = copy_of(words[i]);
+                        word->return_type   = NULL;
+                        word->next          = NULL;
                         if (result->functions_tail == NULL)
                         {
                             result->functions_tail = word;
@@ -85,8 +79,7 @@ struct sub_thread_function
                         else
                         {
                             result->functions_tail->next = word;
-                            result->functions_tail =
-                                result->functions_tail->next;
+                            result->functions_tail       = result->functions_tail->next;
                         }
                     }
                 }
@@ -106,8 +99,7 @@ struct sub_thread_function
         return result;
     }
 
-    static void *
-    make_line_list_from_file(void *arg)
+    static void *make_line_list_from_file(void *arg)
     {
         char *path = (char *)arg;
         if (!is_file_and_exists(path))
@@ -153,8 +145,7 @@ struct sub_thread_function
         return head;
     }
 
-    static void *
-    functions_from(void *arg)
+    static void *functions_from(void *arg)
     {
         char  *path      = (char *)arg;
         char **functions = find_functions_in_file(path);
@@ -162,8 +153,7 @@ struct sub_thread_function
         return functions;
     }
 
-    static void *
-    glob_vars_from(void *arg)
+    static void *glob_vars_from(void *arg)
     {
         char  *path      = (char *)arg;
         char **glob_vars = find_variabels_in_file(path);
@@ -171,8 +161,7 @@ struct sub_thread_function
         return glob_vars;
     }
 
-    static void *
-    parse_funcs_from(void *arg)
+    static void *parse_funcs_from(void *arg)
     {
         clock_t       t_start = clock();
         char         *path    = (char *)arg;
@@ -198,8 +187,7 @@ struct sub_thread_function
                 while (end == NULL)
                 {
                     if (strncmp(words[i + func_words], "__REDIRECT", 11) == 0 ||
-                        strncmp(words[i + func_words], "__REDIRECT_NTH", 15) ==
-                            0 ||
+                        strncmp(words[i + func_words], "__REDIRECT_NTH", 15) == 0 ||
                         strchr(words[i + func_words - 1], ';') != NULL)
                     {
                         break;
@@ -222,10 +210,7 @@ struct sub_thread_function
                             free(words[i++]);
                             strcat(buf, " ");
                         }
-                        (cap == size) ? cap *= 2,
-                            funcs =
-                                (char **)nrealloc(funcs, cap * sizeof(char *)) :
-                                        0;
+                        (cap == size) ? cap *= 2, funcs = (char **)nrealloc(funcs, cap * sizeof(char *)) : 0;
                         funcs[size++] = copy_of(buf);
                         start         = NULL;
                         end           = NULL;
@@ -237,14 +222,12 @@ struct sub_thread_function
         }
         funcs[size] = NULL;
         free(words);
-        NLOG("%s: file: %s, time: %lf m/s.\n", __func__, path,
-             CALCULATE_MS_TIME(t_start));
+        NLOG("%s: file: %s, time: %lf m/s.\n", __func__, path, CALCULATE_MS_TIME(t_start));
         free(path);
         return funcs;
     }
 
-    static void *
-    find_file_in_dir(void *arg)
+    static void *find_file_in_dir(void *arg)
     {
         dir_search_task_t *task = (dir_search_task_t *)arg;
         task->entrys            = dir_entrys_from(task->dir);
@@ -268,8 +251,7 @@ struct main_thread_function
 {
     /* This is the function that the main thread will perform
      * when it is placed in the callback queue. */
-    static void
-    on_search_complete(void *result)
+    static void on_search_complete(void *result)
     {
         word_search_task_t *search_result = (word_search_task_t *)result;
         if (search_result->words == NULL)
@@ -292,8 +274,7 @@ struct main_thread_function
 
     /* Callback function for the main thread to add syntax fetched by
      * subthreads. */
-    static void
-    handle_syntax(void *arg)
+    static void handle_syntax(void *arg)
     {
         if (arg == NULL)
         {
@@ -314,8 +295,7 @@ struct main_thread_function
         free(result);
     }
 
-    static void
-    handle_found_functions(void *arg)
+    static void handle_found_functions(void *arg)
     {
         if (arg == NULL)
         {
@@ -344,8 +324,7 @@ struct main_thread_function
         free(functions);
     }
 
-    static void
-    handle_found_glob_vars(void *arg)
+    static void handle_found_glob_vars(void *arg)
     {
         if (arg == NULL)
         {
@@ -381,8 +360,7 @@ struct main_thread_function
         free(vars);
     }
 
-    static void
-    handle_parsed_funcs(void *arg)
+    static void handle_parsed_funcs(void *arg)
     {
         if (arg == NULL)
         {
@@ -390,17 +368,14 @@ struct main_thread_function
         }
         char            **funcs = (char **)arg;
         int               cap = 10, size = 0;
-        function_info_t **info_array =
-            (function_info_t **)nmalloc(cap * sizeof(**info_array));
+        function_info_t **info_array = (function_info_t **)nmalloc(cap * sizeof(**info_array));
         for (int i = 0; funcs[i]; i++)
         {
             function_info_t *info = parse_func(funcs[i]);
             if (info != NULL)
             {
-                (cap == size) ? cap *= 2,
-                    info_array = (function_info_t **)nrealloc(
-                        info_array, cap * sizeof(**info_array)) :
-                                0;
+                (cap == size)                                                                             ? cap *= 2,
+                    info_array     = (function_info_t **)nrealloc(info_array, cap * sizeof(**info_array)) : 0;
                 info_array[size++] = info;
                 free(funcs[i]);
             }
@@ -430,8 +405,7 @@ struct main_thread_function
         } */
     }
 
-    static void
-    get_line_list(void *arg)
+    static void get_line_list(void *arg)
     {
         if (arg == NULL)
         {
@@ -467,16 +441,14 @@ struct main_thread_function
         }
     }
 
-    static void
-    on_find_file_in_dir(void *arg)
+    static void on_find_file_in_dir(void *arg)
     {
         PROFILE_FUNCTION;
         dir_search_task_t *result = (dir_search_task_t *)arg;
         if (result->found == TRUE)
         {
             pause_sub_threads_guard_t pause_guard;
-            LOUT_logI(
-                "Found file: '%s' in dir: '%s'.", result->find, result->dir);
+            LOUT_logI("Found file: '%s' in dir: '%s'.", result->find, result->dir);
         }
         free(result->find);
         free(result->dir);
@@ -487,79 +459,60 @@ struct main_thread_function
 /* Helpers to simplyfy task ptr creation. */
 struct task_creator
 {
-    static word_search_task_t *
-    create_word_search_task(const char *str)
+    static word_search_task_t *create_word_search_task(const char *str)
     {
-        word_search_task_t *task =
-            (word_search_task_t *)nmalloc(sizeof(word_search_task_t));
-        task->path = copy_of(str);
+        word_search_task_t *task = (word_search_task_t *)nmalloc(sizeof(word_search_task_t));
+        task->path               = copy_of(str);
         return task;
     }
 
-    static dir_search_task_t *
-    create_dir_search_task(const char *find, const char *in_dir)
+    static dir_search_task_t *create_dir_search_task(const char *find, const char *in_dir)
     {
-        dir_search_task_t *task =
-            (dir_search_task_t *)nmalloc(sizeof(dir_search_task_t));
-        task->find = copy_of(find);
-        task->dir  = copy_of(in_dir);
+        dir_search_task_t *task = (dir_search_task_t *)nmalloc(sizeof(dir_search_task_t));
+        task->find              = copy_of(find);
+        task->dir               = copy_of(in_dir);
         return task;
     }
 };
 
 /* Calleble functions begin here.  Above are staic functions. */
 
-void
-submit_search_task(const char *path)
+void submit_search_task(const char *path)
 {
     word_search_task_t *task = task_creator::create_word_search_task(path);
-    submit_task(sub_thread_function::search_word_task, task, NULL,
-                main_thread_function::on_search_complete);
+    submit_task(sub_thread_function::search_word_task, task, NULL, main_thread_function::on_search_complete);
 }
 
-void
-submit_find_in_dir(const char *find, const char *in_dir)
+void submit_find_in_dir(const char *find, const char *in_dir)
 {
-    dir_search_task_t *task =
-        task_creator::create_dir_search_task(find, in_dir);
-    submit_task(sub_thread_function::find_file_in_dir, task, NULL,
-                main_thread_function::on_find_file_in_dir);
+    dir_search_task_t *task = task_creator::create_dir_search_task(find, in_dir);
+    submit_task(sub_thread_function::find_file_in_dir, task, NULL, main_thread_function::on_find_file_in_dir);
 }
 
-void
-sub_thread_find_syntax(const char *path)
+void sub_thread_find_syntax(const char *path)
 {
-    submit_task(sub_thread_function::syntax_from, copy_of(path), NULL,
-                main_thread_function::handle_syntax);
+    submit_task(sub_thread_function::syntax_from, copy_of(path), NULL, main_thread_function::handle_syntax);
 }
 
-void
-sub_thread_parse_funcs(const char *path)
+void sub_thread_parse_funcs(const char *path)
 {
-    submit_task(sub_thread_function::parse_funcs_from, copy_of(path), NULL,
-                main_thread_function::handle_parsed_funcs);
+    submit_task(sub_thread_function::parse_funcs_from, copy_of(path), NULL, main_thread_function::handle_parsed_funcs);
 }
 
-void
-find_functions_task(const char *path)
+void find_functions_task(const char *path)
 {
     char *alloced_path = copy_of(path);
-    submit_task(sub_thread_function::functions_from, alloced_path, NULL,
-                main_thread_function::handle_found_functions);
+    submit_task(sub_thread_function::functions_from, alloced_path, NULL, main_thread_function::handle_found_functions);
 }
 
-void
-find_glob_vars_task(const char *path)
+void find_glob_vars_task(const char *path)
 {
     char *alloced_path = copy_of(path);
-    submit_task(sub_thread_function::glob_vars_from, alloced_path, NULL,
-                main_thread_function::handle_found_glob_vars);
+    submit_task(sub_thread_function::glob_vars_from, alloced_path, NULL, main_thread_function::handle_found_glob_vars);
 }
 
-void
-get_line_list_task(const char *path)
+void get_line_list_task(const char *path)
 {
     char *arg = copy_of(path);
-    submit_task(sub_thread_function::make_line_list_from_file, arg, NULL,
-                main_thread_function::get_line_list);
+    submit_task(sub_thread_function::make_line_list_from_file, arg, NULL, main_thread_function::get_line_list);
 }

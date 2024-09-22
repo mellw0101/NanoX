@@ -818,9 +818,9 @@ do_scroll_down(void)
     {
         do_down();
     }
-    if (editwinrows > 1 && (openfile->edittop->next != NULL ||
-                            (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
-                                                 chunk_for(openfile->firstcolumn, openfile->edittop)))))
+    if (editwinrows > 1 &&
+        (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
+                                                                 chunk_for(openfile->firstcolumn, openfile->edittop)))))
     {
         edit_scroll(FORWARD);
     }

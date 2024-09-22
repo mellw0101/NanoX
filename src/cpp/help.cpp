@@ -20,8 +20,7 @@ static unsigned long location;
  * The function key list is built by iterating over all functions,
  * and for each function, iterating over all shortcuts.
  * The function key descriptions are built by iterating over all functions. */
-void
-help_init(void)
+void help_init(void)
 {
     unsigned long allocsize = 0;
     /* Space needed for help_text. */
@@ -342,8 +341,7 @@ help_init(void)
 }
 
 /* Hard-wrap the concatenated help text, and write it into a new buffer. */
-void
-wrap_help_text_into_buffer(void)
+void wrap_help_text_into_buffer(void)
 {
     /* Avoid overtight and overwide paragraphs in the introductory text. */
     unsigned long wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
@@ -415,8 +413,7 @@ wrap_help_text_into_buffer(void)
 
 /* Assemble a help text, display it, and allow scrolling through it.
  * TODO : (show_help) : Change to NanoX help text. */
-void
-show_help(void)
+void show_help(void)
 {
     int kbinput = ERR;
     /* The function of the key the user typed in. */
@@ -586,8 +583,7 @@ show_help(void)
 }
 
 /* Start the help viewer, or indicate that there is no help. */
-void
-do_help(void)
+void do_help(void)
 {
 #ifdef ENABLE_HELP
     show_help();

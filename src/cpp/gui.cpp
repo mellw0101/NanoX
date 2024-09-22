@@ -6,89 +6,194 @@
 
 struct gui_t
 {
-    SDL_Window   *win;
-    SDL_Renderer *ren;
-    SDL_Event     event;
-    int           w = 1200;
-    int           h = 800;
-    bool          running;
-    // Set renderer color.
-    void set_color(unsigned char r, unsigned char g, unsigned char b,
-                   unsigned char a)
-    {
-        SDL_SetRenderDrawColor(ren, r, g, b, a);
-    }
+    int          w             = 1200;
+    int          h             = 800;
+    TTF_Font    *font          = nullptr;
+    sdl_element *title_element = nullptr;
+    SDL_Texture *title_texture = nullptr;
+    string       win_title;
 };
 static gui_t gui;
 
-struct element_t
-{
-    SDL_Rect  r;
-    SDL_Color c;
-};
-#define GUI_TITLE_COLOR 255, 255, 255, 255
-#define GUI_TITLE_RECT  0, 0, 20, gui.w
+#define GUI_TITLE_COLOR 80, 80, 80, 255
 
-void init(void)
+static void
+init(void) noexcept
 {
-    if (SDL_Init(SDL_INIT_VIDEO) == -1)
+    SDL_APP->set_size(1400, 800);
+    gui.font = SDL_APP->retrieve_new_font(
+        18, "/home/mellw/.vscode-insiders/extensions/narasimapandiyan.jetbrainsmono-1.0.2/JetBrainsMono/"
+            "JetBrainsMono-Medium.ttf");
+    if (gui.font == nullptr)
     {
-        logE("Failed to init sdl, SDL_ERROR: %s.", SDL_GetError());
-        exit(1);
+        do_exit();
     }
-    if (TTF_Init() == -1)
+    gui.title_element = SDL_APP->new_element({GUI_TITLE_COLOR}, {0, 0, SDL_APP->width(), 20}, {ELEMENT_ALIGN_WIDTH});
+    if (openfile->filename != nullptr)
     {
-        logE("Failed to init ttf, SLD_ERROR: %s.", SDL_GetError());
-        exit(1);
+        gui.win_title = PROJECT_NAME ": " + string(openfile->filename);
+        SDL_APP->set_title(gui.win_title.c_str());
+        gui.title_texture =
+            SDL_APP->make_text_texture(gui.font, gui.win_title.c_str(), {0, 0, 0, 255}, {255, 255, 255, 255});
+        if (gui.title_texture != nullptr)
+        {
+            gui.title_element->add_text_data(22, -4, gui.title_texture);
+        }
     }
-    gui.win = SDL_CreateWindow("placeholder", SDL_WINDOWPOS_UNDEFINED,
-                               SDL_WINDOWPOS_UNDEFINED, gui.w, gui.h,
-                               SDL_WINDOW_SHOWN);
-    if (gui.win == nullptr)
-    {
-        logE("Failed to create window, SDL_ERROR: %s.", SDL_GetError());
-        SDL_Quit();
-        exit(1);
-    }
-    gui.ren = SDL_CreateRenderer(gui.win, -1, SDL_RENDERER_ACCELERATED);
-    if (gui.ren == nullptr)
-    {
-        logE("Failed to create renderer, SDL_ERROR: %s.", SDL_GetError());
-        SDL_Quit();
-        exit(1);
-    }
-    gui.running = true;
+    SDL_APP->set_min_size(400, 200);
 }
 
-void draw_rect(SDL_Rect *rect, SDL_Color *c)
+static MVector<pair<sdl_element *, SDL_Texture *>> lines;
+#define LINE_HEIGHT 20
+#define LINE_FG     255, 255, 255, 255
+#define LINE_BG     30, 30, 30, 255
+
+/* All this is temporary i will add a 'sdl_element *' and a 'SDL_Texture *'
+ * to linestruct and create one of each for all lines in the file. */
+static void
+set_lines(void) noexcept
 {
-    SDL_SetRenderDrawColor(gui.ren, c->r, c->g, c->b, c->a);
-    SDL_RenderFillRect(gui.ren, rect);
+    if (lines.empty())
+    {
+        for (int i = 1; (i * LINE_HEIGHT) < (SDL_APP->height() * 2); i++)
+        {
+            sdl_element *line = SDL_APP->new_element(
+                {LINE_BG}, {0, (i * LINE_HEIGHT), SDL_APP->width(), LINE_HEIGHT}, {ELEMENT_ALIGN_WIDTH});
+            lines.push_back({line, nullptr});
+        }
+        for (auto &[elem, texture] : lines)
+        {
+            SDL_Texture *line_texture = SDL_APP->make_text_texture(gui.font, "hello", {LINE_FG}, {LINE_BG});
+            texture                   = line_texture;
+        }
+        NLOG("lines created: %i.\n", lines.size());
+    }
+    int i = 0;
+    for (linestruct *line = openfile->filetop; line != nullptr && (line->lineno < lines.size()) && i < lines.size();
+         line             = line->next)
+    {
+        lines[i].second =
+            SDL_APP->make_destroy_text_texture(lines[i].second, gui.font, line->data, {LINE_FG}, {LINE_BG});
+
+        lines[i].first->add_text_data(2, -2, lines[i].second);
+        i++;
+    }
 }
 
-int run_gui(void)
+static sdl_button_element *left_menu_button = nullptr;
+static bool                left_menu_open   = false;
+static sdl_element        *left_menu        = nullptr;
+
+#define ANIM_DURATION 50
+
+int
+run_gui(void) noexcept
 {
     init();
-    while (gui.running)
-    {
-        SDL_SetRenderDrawColor(gui.ren, 0, 0, 0, 255);
-        SDL_RenderClear(gui.ren);
-        prosses_callback_queue();
-        while (SDL_PollEvent(&gui.event))
+    left_menu_button = SDL_APP->new_button_element({
+        {0, 0,  0, 255},
+        {2, 2, 16,  16}
+    });
+    left_menu        = SDL_APP->new_element({255, 255, 255, 255}, {-100, 0, 100, SDL_APP->height()}, {});
+    left_menu_button->action([](SDL_MouseButtonEvent e) {
+        if (!left_menu_button->flags.is_set(ELEMENT_IN_ANIMATION))
         {
-            if (gui.event.type == SDL_QUIT)
+            if (left_menu_open == false)
             {
-                gui.running = false;
+                left_menu_open = true;
+                gui.title_element->animate(200, 0, SDL_APP->width() - 200, 20, ANIM_DURATION);
+                left_menu_button->animate(202, 2, 16, 16, ANIM_DURATION);
+                left_menu->animate(0, 0, 200, SDL_APP->height(), ANIM_DURATION);
+                for (const auto &[element, texture] : lines)
+                {
+                    element->animate(202, element->rect.y, SDL_APP->width() - 200, LINE_HEIGHT, ANIM_DURATION);
+                    if (element->rect.y > SDL_APP->height())
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                left_menu_open = false;
+                gui.title_element->animate(0, 0, SDL_APP->width(), 20, ANIM_DURATION);
+                left_menu_button->animate(2, 2, 16, 16, ANIM_DURATION);
+                left_menu->animate(-200, 0, 200, SDL_APP->height(), ANIM_DURATION);
+                for (const auto &[element, texture] : lines)
+                {
+                    element->animate(2, element->rect.y, SDL_APP->width(), LINE_HEIGHT, ANIM_DURATION);
+                    if (element->rect.y > SDL_APP->height())
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    });
+    set_lines();
+    SDL_APP->set_main_loop([]() {
+        gui.title_element->draw();
+        left_menu_button->draw();
+        left_menu->draw();
+    });
+    SDL_EVENT_HANDLER->event_action(SDL_WINDOWEVENT, [](SDL_Event ev) {
+        SDL_WindowEvent e = ev.window;
+        switch (e.event)
+        {
+            case SDL_WINDOWEVENT_RESIZED :
+            {
+                gui.title_element->rect.w = e.data1;
+                left_menu->rect.h         = e.data2;
+                for (const auto &[element, texture] : lines)
+                {
+                    if (left_menu_open == false)
+                    {
+                        element->rect.w = e.data1;
+                    }
+                    else
+                    {
+                        element->rect.x = 200;
+
+                        element->rect.w = e.data1 - 200;
+                    }
+                    if (element->rect.y > e.data2)
+                    {
+                        break;
+                    }
+                }
                 break;
             }
         }
-        Mlib::Sdl2::KeyObject::Instance()->handleKeyEvent();
-        SDL_RenderPresent(gui.ren);
-        SDL_Delay(((double)1 / 120) * 1000);
-    }
-    SDL_DestroyWindow(gui.win);
-    SDL_DestroyRenderer(gui.ren);
-    SDL_Quit();
+    });
+    SDL_EVENT_HANDLER->event_action(SDL_KEYDOWN, [](SDL_Event ev) {
+        SDL_KeyboardEvent e = ev.key;
+        switch (e.keysym.scancode)
+        {
+            case SDL_SCANCODE_Q :
+            {
+                if (e.keysym.mod & KMOD_LCTRL)
+                {
+                    SDL_APP->quit();
+                }
+                break;
+            }
+            case SDL_SCANCODE_B :
+            {
+                if (e.keysym.mod & KMOD_LCTRL)
+                {
+                    SDL_MouseButtonEvent e;
+                    left_menu_button->_action(e);
+                }
+                break;
+            }
+            default :
+            {
+                break;
+            }
+        }
+    });
+    SDL_APP->run();
+    do_exit();
     return 0;
 }
 

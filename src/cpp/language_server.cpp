@@ -3,7 +3,8 @@
 language_server_t *language_server_t::instance   = NULL;
 pthread_mutex_t    language_server_t::init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int language_server_t::find_endif(linestruct *from)
+int
+language_server_t::find_endif(linestruct *from)
 {
     int         lvl   = 0;
     const char *found = NULL;
@@ -11,7 +12,7 @@ int language_server_t::find_endif(linestruct *from)
     const char *end   = NULL;
     for (linestruct *line = from; line != NULL; line = line->next)
     {
-        if (!LINE_ISSET(line, DONT_PREPROSSES_LINE))
+        if (!(line->flags.is_set(DONT_PREPROSSES_LINE)))
         {
             found = strchr(line->data, '#');
             if (found)
@@ -43,10 +44,10 @@ int language_server_t::find_endif(linestruct *from)
     return 0;
 }
 
-void language_server_t::fetch_compiler_defines(string compiler)
+void
+language_server_t::fetch_compiler_defines(string compiler)
 {
-    if ((compiler != "clang" && compiler != "clang++") &&
-        (compiler != "gcc" && compiler != "g++"))
+    if ((compiler != "clang" && compiler != "clang++") && (compiler != "gcc" && compiler != "g++"))
     {
         logE("'%s' is an invalid compiler.", compiler.c_str());
         return;
@@ -72,7 +73,8 @@ void language_server_t::fetch_compiler_defines(string compiler)
             string name(start, (end - start));
             ADV_TO_NEXT_WORD(end);
             start = end;
-            for (; *end; end++);
+            for (; *end; end++)
+                ;
             if (start == end)
             {
                 free(lines[i]);
@@ -89,7 +91,8 @@ void language_server_t::fetch_compiler_defines(string compiler)
 /* This is the only way to access the language_server.
  * There also exist`s a shorthand for this function
  * call named 'LSP'. */
-language_server_t *language_server_t::Instance(void)
+language_server_t *
+language_server_t::Instance(void)
 {
     if (!instance)
     {
@@ -125,7 +128,8 @@ language_server_t::~language_server_t(void)
 }
 
 /* Return`s index of entry if found otherwise '-1'. */
-int language_server_t::is_defined(const string &name)
+int
+language_server_t::is_defined(const string &name)
 {
     const auto *data = _defines.data();
     for (int i = 0; i < _defines.size(); i++)
@@ -138,7 +142,8 @@ int language_server_t::is_defined(const string &name)
     return -1;
 }
 
-bool language_server_t::has_been_included(const string &name)
+bool
+language_server_t::has_been_included(const string &name)
 {
     const auto *data = _includes.data();
     for (int i = 0; i < _includes.size(); i++)
@@ -156,7 +161,8 @@ bool language_server_t::has_been_included(const string &name)
  * exists before using this function.
  * As it returns "" if not found as well as if
  * the define has no value. */
-string language_server_t::define_value(const string &name)
+string
+language_server_t::define_value(const string &name)
 {
     int index = is_defined(name);
     if (index != -1)
@@ -168,7 +174,8 @@ string language_server_t::define_value(const string &name)
 }
 
 /* If define is not already in vector then add it. */
-void language_server_t::add_define(const define_entry_t &entry)
+void
+language_server_t::add_define(const define_entry_t &entry)
 {
     if (is_defined(entry.name) == -1)
     {
@@ -177,7 +184,8 @@ void language_server_t::add_define(const define_entry_t &entry)
     }
 }
 
-void language_server_t::define(linestruct *line, const char **ptr)
+void
+language_server_t::define(linestruct *line, const char **ptr)
 {
     const char *start = *ptr;
     const char *end   = *ptr;
@@ -207,7 +215,8 @@ void language_server_t::define(linestruct *line, const char **ptr)
     // NLOG("value: %s\n", value.c_str());
 }
 
-void language_server_t::ifndef(const string &define, linestruct *current_line)
+void
+language_server_t::ifndef(const string &define, linestruct *current_line)
 {
     if (is_defined(define) == -1)
     {
@@ -215,14 +224,14 @@ void language_server_t::ifndef(const string &define, linestruct *current_line)
         return;
     }
     int endif = find_endif(current_line->next);
-    for (linestruct *line                              = current_line->next;
-         line != NULL && (line->lineno != endif); line = line->next)
+    for (linestruct *line = current_line->next; line != NULL && (line->lineno != endif); line = line->next)
     {
-        LINE_SET(line, DONT_PREPROSSES_LINE);
+        line->flags.set(DONT_PREPROSSES_LINE);
     }
 }
 
-void language_server_t::ifdef(const string &define, linestruct *current_line)
+void
+language_server_t::ifdef(const string &define, linestruct *current_line)
 {
     if (is_defined(define) != -1)
     {
@@ -230,14 +239,14 @@ void language_server_t::ifdef(const string &define, linestruct *current_line)
         return;
     }
     int endif = find_endif(current_line->next);
-    for (linestruct *line                              = current_line->next;
-         line != NULL && (line->lineno != endif); line = line->next)
+    for (linestruct *line = current_line->next; line != NULL && (line->lineno != endif); line = line->next)
     {
-        LINE_SET(line, DONT_PREPROSSES_LINE);
+        line->flags.set(DONT_PREPROSSES_LINE);
     }
 }
 
-void language_server_t::undef(const string &define)
+void
+language_server_t::undef(const string &define)
 {
     auto it = _defines.begin();
     while (it != _defines.end())
@@ -253,7 +262,8 @@ void language_server_t::undef(const string &define)
     }
 }
 
-static int define_is_equl_or_greater(const string &statement)
+static int
+define_is_equl_or_greater(const string &statement)
 {
     NLOG("statement:('%s')\n", statement.c_str());
     const char *start = &statement[0];
@@ -292,7 +302,8 @@ static int define_is_equl_or_greater(const string &statement)
     return FALSE;
 }
 
-vector<string> language_server_t::split_if_statement(const string &str)
+vector<string>
+language_server_t::split_if_statement(const string &str)
 {
     /* vector<string> result;
     const auto    *data  = str.data();
@@ -334,7 +345,8 @@ vector<string> language_server_t::split_if_statement(const string &str)
     return {};
 }
 
-void language_server_t::handle_if(linestruct *line, const char **ptr)
+void
+language_server_t::handle_if(linestruct *line, const char **ptr)
 {
     string full_delc = parse_full_pp_delc(line, ptr);
     NLOG("%s\n", full_delc.c_str());
@@ -355,7 +367,8 @@ void language_server_t::handle_if(linestruct *line, const char **ptr)
     const char        *rules[rule_count] = {"&&", "||", ">=", "defined", "?"};
     bool               should_be_defined = FALSE;
     bool               was_correct       = FALSE;
-    do {
+    do
+    {
         should_be_defined = FALSE;
         was_correct       = FALSE;
         /* If no more rules are found we break. */
@@ -380,11 +393,11 @@ void language_server_t::handle_if(linestruct *line, const char **ptr)
             }
             case 3 : /* defined */
             {
-                should_be_defined =
-                    (found != start && start[(found - start) - 1] == '!') ?
-                        FALSE : /* This def should not be defined. */
-                        TRUE;   /* This def should be defined. */
-                start = found + 7;
+                should_be_defined = (found != start && start[(found - start) - 1] == '!')
+                                      ? FALSE
+                                      :       /* This def should not be defined. */
+                                        TRUE; /* This def should be defined. */
+                start             = found + 7;
                 ADV_TO_NEXT_WORD(start);
                 if (!*start)
                 {
@@ -414,7 +427,8 @@ void language_server_t::handle_if(linestruct *line, const char **ptr)
                     {
                         end += 1;
                         start = end;
-                        for (; *end; end++);
+                        for (; *end; end++)
+                            ;
                         if (start == end)
                         {
                             return;
@@ -424,11 +438,10 @@ void language_server_t::handle_if(linestruct *line, const char **ptr)
                     next_rule = strstr_array(start, rules, rule_count, &index);
                     if (index == 3)
                     {
-                        should_be_defined =
-                            (next_rule != start &&
-                             start[(next_rule - start) - 1] == '!') ?
-                                FALSE : /* This def should not be defined. */
-                                TRUE;   /* This def should be defined. */
+                        should_be_defined = (next_rule != start && start[(next_rule - start) - 1] == '!')
+                                              ? FALSE
+                                              :       /* This def should not be defined. */
+                                                TRUE; /* This def should be defined. */
                         NLOG("%s\n", BOOL_STR(should_be_defined));
                         start += 7;
                         ADV_TO_NEXT_WORD(start);
@@ -459,23 +472,20 @@ void language_server_t::handle_if(linestruct *line, const char **ptr)
                         if (!was_correct)
                         {
                             int endif = find_endif(line->next);
-                            for (linestruct *l              = line->next;
-                                 l && l->lineno != endif; l = l->next)
+                            for (linestruct *l = line->next; l && l->lineno != endif; l = l->next)
                             {
-                                LINE_SET(l, DONT_PREPROSSES_LINE);
+                                l->flags.set(DONT_PREPROSSES_LINE);
                             }
                         }
                     }
                     else if (index == 2)
                     {
-                        if (!define_is_equl_or_greater(
-                                string(start, (end - start))))
+                        if (!define_is_equl_or_greater(string(start, (end - start))))
                         {
                             int endif = find_endif(line->next);
-                            for (linestruct *l              = line->next;
-                                 l && l->lineno != endif; l = l->next)
+                            for (linestruct *l = line->next; l && l->lineno != endif; l = l->next)
                             {
-                                LINE_SET(l, DONT_PREPROSSES_LINE);
+                                l->flags.set(DONT_PREPROSSES_LINE);
                             }
                             return;
                         }
@@ -549,10 +559,9 @@ void language_server_t::handle_if(linestruct *line, const char **ptr)
                 if (nrule == "&&")
                 {
                     int endif = find_endif(line->next);
-                    for (linestruct *l = line->next; l && l->lineno != endif;
-                         l             = l->next)
+                    for (linestruct *l = line->next; l && l->lineno != endif; l = l->next)
                     {
-                        LINE_SET(l, DONT_PREPROSSES_LINE);
+                        l->flags.set(DONT_PREPROSSES_LINE);
                     }
                 }
             }
@@ -561,7 +570,8 @@ void language_server_t::handle_if(linestruct *line, const char **ptr)
     while (found);
 }
 
-const char *get_preprosses_type(linestruct *line, string &word)
+const char *
+get_preprosses_type(linestruct *line, string &word)
 {
     const char *found = strchr(line->data, '#');
     const char *start = NULL;
@@ -582,7 +592,8 @@ const char *get_preprosses_type(linestruct *line, string &word)
     return NULL;
 }
 
-string get_next_word(const char **ptr)
+string
+get_next_word(const char **ptr)
 {
     const char *start = *ptr;
     const char *end   = *ptr;
@@ -597,7 +608,8 @@ string get_next_word(const char **ptr)
     return string(start, (end - start));
 }
 
-void language_server_t::check(linestruct *from, string file)
+void
+language_server_t::check(linestruct *from, string file)
 {
     if (!from)
     {
@@ -608,7 +620,7 @@ void language_server_t::check(linestruct *from, string file)
     const char *found = NULL;
     for (linestruct *line = from; line != NULL; line = line->next)
     {
-        if (!LINE_ISSET(line, DONT_PREPROSSES_LINE))
+        if (!(line->flags.is_set(DONT_PREPROSSES_LINE)))
         {
             string word = "";
             found       = get_preprosses_type(line, word);
@@ -718,7 +730,8 @@ void language_server_t::check(linestruct *from, string file)
 }
 
 /* Add the current defs to color map. */
-void language_server_t::add_defs_to_color_map(void)
+void
+language_server_t::add_defs_to_color_map(void)
 {
     const auto *data = _defines.data();
     for (int i = 0; i < _defines.size(); i++)
@@ -733,15 +746,16 @@ void language_server_t::add_defs_to_color_map(void)
 }
 
 /* Parses a full preprossesor decl so that '\' are placed on the same line. */
-string language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr,
-                                             int *end_lineno)
+string
+language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_lineno)
 {
     PROFILE_FUNCTION;
     string ret = "";
     ret.reserve(100);
     const char *start = *ptr;
     const char *end   = *ptr;
-    do {
+    do
+    {
         ADV_TO_NEXT_WORD(start);
         if (!*start)
         {
@@ -770,7 +784,8 @@ string language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr,
     return ret;
 }
 
-vector<define_entry_t> language_server_t::retrieve_defines(void)
+vector<define_entry_t>
+language_server_t::retrieve_defines(void)
 {
     return _defines;
 }

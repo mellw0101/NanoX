@@ -22,8 +22,7 @@ static unsigned long selected = 0;
  * 'list_length' to the number of names in that list, set 'gauge' to the
  * width of the widest filename plus ten, and set 'piles' to the number of
  * files that can be displayed per screen row.  And sort the list too. */
-void
-read_the_list(const char *path, DIR *dir)
+void read_the_list(const char *path, DIR *dir)
 {
     unsigned long        path_len = strlen(path);
     const struct dirent *entry;
@@ -80,8 +79,7 @@ read_the_list(const char *path, DIR *dir)
 }
 
 /* Reselect the given file or directory name, if it still exists. */
-void
-reselect(const char *const name)
+void reselect(const char *const name)
 {
     unsigned long looking_at = 0;
     while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0)
@@ -106,8 +104,7 @@ reselect(const char *const name)
 }
 
 /* Display at most a screenful of filenames from the gleaned filelist. */
-void
-browser_refresh(void)
+void browser_refresh(void)
 {
     /* The current row and column while the list is getting displayed. */
     int row = 0, col = 0;
@@ -251,8 +248,7 @@ browser_refresh(void)
 }
 
 /* Look for the given needle in the list of files, forwards or backwards. */
-void
-findfile(const char *needle, bool forwards)
+void findfile(const char *needle, bool forwards)
 {
     unsigned long began_at = selected;
     /* Iterate through the list of filenames, until a match is found or
@@ -295,8 +291,7 @@ findfile(const char *needle, bool forwards)
 
 /* Prepare the prompt and ask the user what to search for; then search for it.
  * If forwards is TRUE, search forward in the list; otherwise, search backward. */
-void
-search_filename(bool forwards)
+void search_filename(bool forwards)
 {
     char *thedefault;
     int   response;
@@ -339,8 +334,7 @@ search_filename(bool forwards)
 
 /* Search again without prompting for the last given search string,
  * either forwards or backwards. */
-void
-research_filename(bool forwards)
+void research_filename(bool forwards)
 {
     /* If nothing was searched for yet, take the last item from history. */
     if (*last_search == '\0' && searchbot->prev != NULL)
@@ -359,23 +353,20 @@ research_filename(bool forwards)
 }
 
 /* Select the first file in the list -- called by ^W^Y. */
-void
-to_first_file(void)
+void to_first_file(void)
 {
     selected = 0;
 }
 
 /* Select the last file in the list -- called by ^W^V. */
-void
-to_last_file(void)
+void to_last_file(void)
 {
     selected = list_length - 1;
 }
 
 /* Strip one element from the end of path, and return the stripped path.
  * The returned string is dynamically allocated, and should be freed. */
-char *
-strip_last_component(const char *path)
+char *strip_last_component(const char *path)
 {
     char *copy       = copy_of(path);
     char *last_slash = strrchr(copy, '/');
@@ -390,8 +381,7 @@ strip_last_component(const char *path)
  * starting at the given path.  The user can select a file, which will be returned.
  * The user can also select a directory, which will be entered.
  * The user can also cancel the browsing. */
-char *
-browse(char *path)
+char *browse(char *path)
 {
     /* The name of the currently selected file, or of the directory we
      * were in before backing up to "..". */
@@ -750,8 +740,7 @@ read_directory_contents:
  * If the path is not a directory, try to strip a filename from it;
  * if then still not a directory, use the current working directory instead.
  * If the resulting path isn't in the operating directory, use the operating directory instead. */
-char *
-browse_in(const char *inpath)
+char *browse_in(const char *inpath)
 {
     char       *path = real_dir_from_tilde(inpath);
     struct stat fileinfo;

@@ -3,11 +3,13 @@
 
 #include <Mlib/Debug.h>
 #include <Mlib/FileSys.h>
+#include <Mlib/Flag.h>
 #include <Mlib/Profile.h>
 #include <Mlib/String.h>
 #include <Mlib/Vector.h>
 #include <Mlib/constexpr.hpp>
 #include <Mlib/def.h>
+
 #include "../include/config.h"
 
 #ifndef _XOPEN_SOURCE_EXTENDED
@@ -65,211 +67,166 @@
 
 /* Suppress warnings for __attribute__((warn_unused_result)). */
 #define IGNORE_CALL_RESULT(call) \
-    do {                         \
+    do                           \
+    {                            \
         if (call)                \
         {}                       \
     }                            \
     while (0)
 
-/* Macros for flags, indexing each bit in a small array.
- * Old defines:
-    #define FLAGS(flag)    flags[((flag) / (sizeof(unsigned) * 8))]
-    #define FLAGMASK(flag) ((unsigned)1 << ((flag) % (sizeof(unsigned) * 8)))
-    #define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
-    #define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
-    #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-    #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
- * New defines: */
-#define FLAGS(flag) flags[((flag) / (sizeof(unsigned long) * 8))]
-#define FLAGMASK(flag) \
-    ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
-#define SET(flag)    FLAGS(flag) |= FLAGMASK(flag)
-#define UNSET(flag)  FLAGS(flag) &= ~FLAGMASK(flag)
-#define ISSET(flag)  ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-#define TOGGLE(flag) FLAGS(flag) ^= FLAGMASK(flag)
+/* Macros for flags, indexing each bit in a small array. */
+#define FLAGS(flag)                   flags[((flag) / (sizeof(unsigned long) * 8))]
+#define FLAGMASK(flag)                ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
+#define SET(flag)                     FLAGS(flag) |= FLAGMASK(flag)
+#define UNSET(flag)                   FLAGS(flag) &= ~FLAGMASK(flag)
+#define ISSET(flag)                   ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+#define TOGGLE(flag)                  FLAGS(flag) ^= FLAGMASK(flag)
 
-/* Macros for line flags. */
-#define LINE_FLAGS(line, flag) \
-    (line)->flags[((flag) / (sizeof(unsigned short) * 8))]
-#define LINE_FLAGMASK(flag) \
-    ((unsigned short)1 << ((flag) % (sizeof(unsigned short) * 8)))
-#define LINE_SET(line, flag)   LINE_FLAGS(line, flag) |= LINE_FLAGMASK(flag)
-#define LINE_UNSET(line, flag) LINE_FLAGS(line, flag) &= ~LINE_FLAGMASK(flag)
-#define LINE_ISSET(line, flag) \
-    ((LINE_FLAGS(line, flag) & LINE_FLAGMASK(flag)) != 0)
-#define LINE_TOGGLE(line, flag) LINE_FLAGS(line, flag) ^= LINE_FLAGMASK(flag)
-
-#define SAVE_LINE_FLAGS(name, flags_to_save)                               \
-    unsigned short name[sizeof(flags_to_save) / sizeof(flags_to_save[0])]; \
-    memcpy(name, flags_to_save, sizeof(flags_to_save))
-
-#define SET_LINE_FLAGS(set, from) memcpy(set, from, sizeof(set))
-
-#define EXANGE_LINE_FLAGS(line_1, line_2)           \
-    SAVE_LINE_FLAGS(line_1_flags, (line_1)->flags); \
-    SAVE_LINE_FLAGS(line_2_flags, (line_2)->flags); \
-    SET_LINE_FLAGS((line_1)->flags, line_2_flags);  \
-    SET_LINE_FLAGS((line_2)->flags, line_1_flags)
-
-#define TOGGLE_LINE_FLAG(line_1, line_2, flag)                         \
-    if ((LINE_ISSET((line_1), flag) && !LINE_ISSET((line_2), flag)) || \
-        (!LINE_ISSET((line_1), flag) && LINE_ISSET((line_2), flag)))   \
-    {                                                                  \
-        LINE_TOGGLE((line_1), flag);                                   \
-        LINE_TOGGLE((line_2), flag);                                   \
-    }
-
-#define CALCULATE_MS_TIME(start_time) \
-    (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
+#define CALCULATE_MS_TIME(start_time) (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
 
 /* Some line flags. */
-#define BLOCK_COMMENT_START       1
-#define BLOCK_COMMENT_END         2
-#define IN_BLOCK_COMMENT          3
-#define SINGLE_LINE_BLOCK_COMMENT 4
-#define IS_HIDDEN                 5
-#define BRACKET_START             6
-#define IN_BRACKET                7
-#define BRACKET_END               8
-#define FUNCTION_OPEN_BRACKET     9
-#define DONT_PREPROSSES_LINE      10
+#define BLOCK_COMMENT_START           1
+#define BLOCK_COMMENT_END             2
+#define IN_BLOCK_COMMENT              3
+#define SINGLE_LINE_BLOCK_COMMENT     4
+#define IS_HIDDEN                     5
+#define BRACKET_START                 6
+#define IN_BRACKET                    7
+#define BRACKET_END                   8
+#define FUNCTION_OPEN_BRACKET         9
+#define DONT_PREPROSSES_LINE          10
 /* Helpers to unset all line flags. */
-#define NUMBER_OF_LINE_FLAGS      10
-#define UNSET_ALL_LINE_FLAGS(line)                            \
-    for (unsigned char i = 1; i <= NUMBER_OF_LINE_FLAGS; i++) \
-    {                                                         \
-        LINE_UNSET(line, i);                                  \
-    }
+#define LINE_BIT_FLAG_SIZE            (sizeof(short) * 8)
 
 /* Some other define`s. */
-#define BACKWARD                  FALSE
-#define FORWARD                   TRUE
-#define YESORNO                   FALSE
-#define YESORALLORNO              TRUE
-#define BLIND                     FALSE
-#define VISIBLE                   TRUE
-#define YES                       1
-#define ALL                       2
-#define NO                        0
-#define CANCEL                    -1
-#define JUSTFIND                  0
-#define REPLACING                 1
-#define INREGION                  2
-#define NORMAL                    TRUE
-#define SPECIAL                   FALSE
-#define TEMPORARY                 FALSE
-#define ANNOTATE                  TRUE
-#define NONOTES                   FALSE
-#define PRUNE_DUPLICATE           TRUE
-#define IGNORE_DUPLICATES         FALSE
+#define BACKWARD                      FALSE
+#define FORWARD                       TRUE
+#define YESORNO                       FALSE
+#define YESORALLORNO                  TRUE
+#define BLIND                         FALSE
+#define VISIBLE                       TRUE
+#define YES                           1
+#define ALL                           2
+#define NO                            0
+#define CANCEL                        -1
+#define JUSTFIND                      0
+#define REPLACING                     1
+#define INREGION                      2
+#define NORMAL                        TRUE
+#define SPECIAL                       FALSE
+#define TEMPORARY                     FALSE
+#define ANNOTATE                      TRUE
+#define NONOTES                       FALSE
+#define PRUNE_DUPLICATE               TRUE
+#define IGNORE_DUPLICATES             FALSE
 
-#define MAXCHARLEN                4
+#define MAXCHARLEN                    4
 /* The default width of a tab in spaces. */
-#define WIDTH_OF_TAB              4
+#define WIDTH_OF_TAB                  4
 /* The default number of columns from end of line where wrapping occurs. */
-#define COLUMNS_FROM_EOL          8
+#define COLUMNS_FROM_EOL              8
 /* The default comment character when a syntax does not specify any. */
-#define GENERAL_COMMENT_CHARACTER "#"
+#define GENERAL_COMMENT_CHARACTER     "#"
 /* The maximum number of search/replace history strings saved. */
-#define MAX_SEARCH_HISTORY        100
+#define MAX_SEARCH_HISTORY            100
 /* The largest unsigned long number that doesn't have the high bit set. */
-#define HIGHEST_POSITIVE          ((~(unsigned long)0) >> 1)
+#define HIGHEST_POSITIVE              ((~(unsigned long)0) >> 1)
 
-#define THE_DEFAULT               -1
-#define BAD_COLOR                 -2
+#define THE_DEFAULT                   -1
+#define BAD_COLOR                     -2
 
 /* Flags for indicating how a multiline regex pair apply to a line. */
 
 /* The start/end regexes don't cover this line at all. */
-#define NOTHING                   (1 << 1)
+#define NOTHING                       (1 << 1)
 /* The start regex matches on this line, the end regex on a later one. */
-#define STARTSHERE                (1 << 2)
+#define STARTSHERE                    (1 << 2)
 /* The start regex matches on an earlier line, the end regex on a later one. */
-#define WHOLELINE                 (1 << 3)
+#define WHOLELINE                     (1 << 3)
 /* The start regex matches on an earlier line, the end regex on this one. */
-#define ENDSHERE                  (1 << 4)
+#define ENDSHERE                      (1 << 4)
 /* Both the start and end regexes match within this line. */
-#define JUSTONTHIS                (1 << 5)
+#define JUSTONTHIS                    (1 << 5)
 
 /* Basic control codes. */
-#define ESC_CODE                  0x1B
-#define DEL_CODE                  0x7F
+#define ESC_CODE                      0x1B
+#define DEL_CODE                      0x7F
 
 /* Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses. */
-#define CONTROL_LEFT              0x401
-#define CONTROL_RIGHT             0x402
-#define CONTROL_UP                0x403
-#define CONTROL_DOWN              0x404
-#define CONTROL_HOME              0x405
-#define CONTROL_END               0x406
-#define CONTROL_DELETE            0x40D
-#define SHIFT_CONTROL_LEFT        0x411
-#define SHIFT_CONTROL_RIGHT       0x412
-#define SHIFT_CONTROL_UP          0x413
-#define SHIFT_CONTROL_DOWN        0x414
-#define SHIFT_CONTROL_HOME        0x415
-#define SHIFT_CONTROL_END         0x416
-#define CONTROL_SHIFT_DELETE      0x41D
-#define ALT_LEFT                  0x421
-#define ALT_RIGHT                 0x422
-#define ALT_UP                    0x423
-#define ALT_DOWN                  0x424
-#define ALT_HOME                  0x425
-#define ALT_END                   0x426
-#define ALT_PAGEUP                0x427
-#define ALT_PAGEDOWN              0x428
-#define ALT_INSERT                0x42C
-#define ALT_DELETE                0x42D
-#define SHIFT_ALT_LEFT            0x431
-#define SHIFT_ALT_RIGHT           0x432
-#define SHIFT_ALT_UP              0x433
-#define SHIFT_ALT_DOWN            0x434
+#define CONTROL_LEFT                  0x401
+#define CONTROL_RIGHT                 0x402
+#define CONTROL_UP                    0x403
+#define CONTROL_DOWN                  0x404
+#define CONTROL_HOME                  0x405
+#define CONTROL_END                   0x406
+#define CONTROL_DELETE                0x40D
+#define SHIFT_CONTROL_LEFT            0x411
+#define SHIFT_CONTROL_RIGHT           0x412
+#define SHIFT_CONTROL_UP              0x413
+#define SHIFT_CONTROL_DOWN            0x414
+#define SHIFT_CONTROL_HOME            0x415
+#define SHIFT_CONTROL_END             0x416
+#define CONTROL_SHIFT_DELETE          0x41D
+#define ALT_LEFT                      0x421
+#define ALT_RIGHT                     0x422
+#define ALT_UP                        0x423
+#define ALT_DOWN                      0x424
+#define ALT_HOME                      0x425
+#define ALT_END                       0x426
+#define ALT_PAGEUP                    0x427
+#define ALT_PAGEDOWN                  0x428
+#define ALT_INSERT                    0x42C
+#define ALT_DELETE                    0x42D
+#define SHIFT_ALT_LEFT                0x431
+#define SHIFT_ALT_RIGHT               0x432
+#define SHIFT_ALT_UP                  0x433
+#define SHIFT_ALT_DOWN                0x434
 // #define SHIFT_LEFT 0x451
 // #define SHIFT_RIGHT 0x452
-#define SHIFT_UP                  0x453
-#define SHIFT_DOWN                0x454
-#define SHIFT_HOME                0x455
-#define SHIFT_END                 0x456
-#define SHIFT_PAGEUP              0x457
-#define SHIFT_PAGEDOWN            0x458
-#define SHIFT_DELETE              0x45D
-#define SHIFT_TAB                 0x45F
-#define CONTROL_BSP               0x460
+#define SHIFT_UP                      0x453
+#define SHIFT_DOWN                    0x454
+#define SHIFT_HOME                    0x455
+#define SHIFT_END                     0x456
+#define SHIFT_PAGEUP                  0x457
+#define SHIFT_PAGEDOWN                0x458
+#define SHIFT_DELETE                  0x45D
+#define SHIFT_TAB                     0x45F
+#define CONTROL_BSP                   0x460
 
-#define FOCUS_IN                  0x491
-#define FOCUS_OUT                 0x499
+#define FOCUS_IN                      0x491
+#define FOCUS_OUT                     0x499
 
 /* Special keycodes for when a string bind has been partially implanted
  * or has an unpaired opening brace, or when a function in a string bind
  * needs execution or a specified function name is invalid. */
-#define MORE_PLANTS               0x4EA
-#define MISSING_BRACE             0x4EB
-#define PLANTED_A_COMMAND         0x4EC
-#define NO_SUCH_FUNCTION          0x4EF
+#define MORE_PLANTS                   0x4EA
+#define MISSING_BRACE                 0x4EB
+#define PLANTED_A_COMMAND             0x4EC
+#define NO_SUCH_FUNCTION              0x4EF
 /* A special keycode to signal the beginning and end of a bracketed paste. */
-#define BRACKETED_PASTE_MARKER    0x4FB
+#define BRACKETED_PASTE_MARKER        0x4FB
 /* A special keycode for when a key produces an unknown escape sequence. */
-#define FOREIGN_SEQUENCE          0x4FC
+#define FOREIGN_SEQUENCE              0x4FC
 /* A special keycode for plugging into the input stream after a suspension. */
-#define KEY_FRESH                 0x4FE
+#define KEY_FRESH                     0x4FE
 /* A special keycode for when we get a SIGWINCH (a window resize). */
-#define KEY_WINCH                 -2
+#define KEY_WINCH                     -2
 
 /* Some extra flags for the undo function. */
-#define WAS_BACKSPACE_AT_EOF      (1 << 1)
-#define WAS_WHOLE_LINE            (1 << 2)
-#define INCLUDED_LAST_LINE        (1 << 3)
-#define MARK_WAS_SET              (1 << 4)
-#define CURSOR_WAS_AT_HEAD        (1 << 5)
-#define HAD_ANCHOR_AT_START       (1 << 6)
+#define WAS_BACKSPACE_AT_EOF          (1 << 1)
+#define WAS_WHOLE_LINE                (1 << 2)
+#define INCLUDED_LAST_LINE            (1 << 3)
+#define MARK_WAS_SET                  (1 << 4)
+#define CURSOR_WAS_AT_HEAD            (1 << 5)
+#define HAD_ANCHOR_AT_START           (1 << 6)
 
 /* Color defines for diffrent types. */
-#define VAR_COLOR                 "lagoon"
-#define CONTROL_COLOR             "bold,mauve"
-#define DEFINE_COLOR              "bold,blue"
-#define STRUCT_COLOR              "brightgreen"
-#define FUNC_COLOR                "yellow"
-#define XTERM_CONTROL_COLOR       "brightmagenta"
+#define VAR_COLOR                     "lagoon"
+#define CONTROL_COLOR                 "bold,mauve"
+#define DEFINE_COLOR                  "bold,blue"
+#define STRUCT_COLOR                  "brightgreen"
+#define FUNC_COLOR                    "yellow"
+#define XTERM_CONTROL_COLOR           "brightmagenta"
 
 #define TASK_STRUCT(name, ...) \
     typedef struct             \
@@ -288,6 +245,13 @@
 #include "constexpr_utils.h"
 
 /* Enumeration types. */
+enum file_type : unsigned int
+{
+    C_CPP = 1,
+    ASM,
+    BASH,
+};
+
 typedef enum
 {
     UNSPECIFIED,
@@ -458,7 +422,7 @@ typedef struct linestruct
     /* Whether the user has placed an anchor at this line. */
     bool has_anchor;
     /* The state of the line. */
-    unsigned short flags[1] = {0};
+    bit_flag_t<LINE_BIT_FLAG_SIZE> flags;
 } linestruct;
 
 typedef struct groupstruct
@@ -746,7 +710,8 @@ public:
             cap   = size * 2;
             data  = (char *)malloc(cap);
             int i = 0;
-            for (; i < size; (data[i] = array[i]), i++);
+            for (; i < size; (data[i] = array[i]), i++)
+                ;
             data[i] = '\0';
         }
         else
@@ -754,20 +719,22 @@ public:
             size = 0;
             cap  = 10;
             data = (T *)malloc(sizeof(T) * cap);
-            for (; array[size]; (size == cap) ? cap *= 2,
-                                data = (T *)realloc(data, sizeof(T) * cap) : 0,
-                                data[size] = array[size], size++);
+            for (; array[size]; (size == cap) ? cap *= 2, data = (T *)realloc(data, sizeof(T) * cap) : 0,
+                                                          data[size] = array[size], size++)
+                ;
             data[size] = NULL;
         }
     }
 
-    vec<T> &operator<<=(const T &value)
+    vec<T> &
+    operator<<=(const T &value)
     {
         this->push_back(value);
         return *this;
     }
 
-    vec<char> &operator<<=(const char *str)
+    vec<char> &
+    operator<<=(const char *str)
     {
         pthread_mutex_guard_t guard(&this->mutex);
         unsigned long         str_size = strlen(str);
@@ -792,7 +759,8 @@ public:
         pthread_mutex_destroy(&mutex);
     }
 
-    void push_back(const T &value)
+    void
+    push_back(const T &value)
     {
         pthread_mutex_guard_t guard(&mutex);
         if (cap == size)
@@ -802,7 +770,8 @@ public:
         data[size++] = value;
     }
 
-    void pop_back(void)
+    void
+    pop_back(void)
     {
         pthread_mutex_guard_t guard(&mutex);
         if (size > 0)
@@ -811,7 +780,8 @@ public:
         }
     }
 
-    T &operator[](unsigned long index)
+    T &
+    operator[](unsigned long index)
     {
         pthread_mutex_guard_t guard(&mutex);
         if (index >= size || index < 0)
@@ -821,27 +791,32 @@ public:
         return data[index];
     }
 
-    unsigned long get_size(void) const
+    unsigned long
+    get_size(void) const
     {
         return size;
     }
 
-    unsigned long get_cap(void) const
+    unsigned long
+    get_cap(void) const
     {
         return cap;
     }
 
-    T *begin(void) const
+    T *
+    begin(void) const
     {
         return data;
     }
 
-    T *end(void) const
+    T *
+    end(void) const
     {
         return data + size;
     }
 
-    T *find(const T &value)
+    T *
+    find(const T &value)
     {
         for (T *it = begin(); it != end(); ++it)
         {
@@ -864,7 +839,8 @@ public:
     }
 
 private:
-    void resize(void)
+    void
+    resize(void)
     {
         cap *= 2;
         data = (T *)realloc(data, sizeof(T) * cap);

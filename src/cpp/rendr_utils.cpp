@@ -15,8 +15,7 @@ find_suggestion(void)
     PROFILE_FUNCTION;
     for (auto &it : var_vector)
     {
-        if (openfile->current->lineno >= it.decl_line &&
-            openfile->current->lineno <= it.scope_end)
+        if (openfile->current->lineno >= it.decl_line && openfile->current->lineno <= it.scope_end)
         {
             if (strncmp(it.name.c_str(), suggest_buf, suggest_len) == 0)
             {
@@ -35,14 +34,12 @@ find_suggestion(void)
     }
     for (const auto &i : local_funcs)
     {
-        if (strncmp(i.full_function + strlen(i.return_type) + 1, suggest_buf,
-                    suggest_len) == 0)
+        if (strncmp(i.full_function + strlen(i.return_type) + 1, suggest_buf, suggest_len) == 0)
         {
             suggest_str = i.full_function + strlen(i.return_type) + 1;
             return;
         }
-        if (openfile->current->lineno >= i.start_bracket &&
-            openfile->current->lineno <= i.end_braket)
+        if (openfile->current->lineno >= i.start_bracket && openfile->current->lineno <= i.end_braket)
         {
             for (variable_t *var = i.params; var != NULL; var = var->prev)
             {
@@ -147,9 +144,8 @@ draw_suggest_win(void)
     }
     unsigned long col_len = strlen(suggest_str) + 2;
     unsigned long row_len = 1;
-    unsigned long row_pos = (openfile->cursor_row > editwinrows - 2) ?
-                                openfile->cursor_row - row_len :
-                                openfile->cursor_row + 1;
+    unsigned long row_pos =
+        (openfile->cursor_row > editwinrows - 2) ? openfile->cursor_row - row_len : openfile->cursor_row + 1;
     unsigned long col_pos = xplustabs() + margin - suggest_len - 1;
     suggestwin            = newwin(row_len, col_len, row_pos, col_pos);
     mvwprintw(suggestwin, 0, 1, "%s", suggest_str);
@@ -174,7 +170,8 @@ parse_split_decl(linestruct *line)
     char *cur_data  = copy_of(line->data);
     char *next_data = copy_of(line->next->data);
     p               = next_data;
-    for (; *p && (*p == ' ' || *p == '\t'); p++);
+    for (; *p && (*p == ' ' || *p == '\t'); p++)
+        ;
     char *tp = copy_of(p);
     free(next_data);
     next_data = tp;
@@ -201,7 +198,8 @@ get_func_decl_last_line(linestruct *line)
     const char *p = strchr(line->data, '{');
     if (p && (p == line->data || *p == line->data[indent_char_len(line)]))
     {
-        do {
+        do
+        {
             line = line->prev;
         }
         while (!line->data[indent_char_len(line)]);
@@ -231,7 +229,8 @@ parse_function_sig(linestruct *line)
     {
         if (p == line->data)
         {
-            for (; *p && (*p == ' ' || *p == '\t'); p++);
+            for (; *p && (*p == ' ' || *p == '\t'); p++)
+                ;
             sig = copy_of(p);
         }
         else
@@ -275,17 +274,16 @@ accept_suggestion(void)
 }
 
 void
-find_word(linestruct *line, const char *data, const char *word,
-          const unsigned long slen, const char **start, const char **end)
+find_word(linestruct *line, const char *data, const char *word, const unsigned long slen, const char **start,
+          const char **end)
 {
     *start = strstr(data, word);
     if (*start)
     {
         *end = (*start) + slen;
         if (!is_word_char(&line->data[((*end) - line->data)], FALSE) &&
-            (*start == line->data ||
-             (!is_word_char(&line->data[((*start) - line->data) - 1], FALSE) &&
-              line->data[((*start) - line->data) - 1] != '_')))
+            (*start == line->data || (!is_word_char(&line->data[((*start) - line->data) - 1], FALSE) &&
+                                      line->data[((*start) - line->data) - 1] != '_')))
         {}
         else
         {
@@ -328,8 +326,7 @@ parse_local_var(linestruct *line)
     end              = strchr(data, ';');
     if (end)
     {
-        char *str =
-            measured_copy(&line->data[indent_char_len(line)], (end - data) + 1);
+        char       *str     = measured_copy(&line->data[indent_char_len(line)], (end - data) + 1);
         const char *bracket = strchr(str, '{');
         if (bracket)
         {
@@ -359,11 +356,11 @@ parse_local_var(linestruct *line)
             var.decl_line = line->lineno;
             for (linestruct *l = line; l; l = l->next)
             {
-                if (LINE_ISSET(l, BRACKET_START))
+                if ((l->flags.is_set(BRACKET_START)))
                 {
                     lvl += 1;
                 }
-                if (LINE_ISSET(l, BRACKET_END))
+                if ((l->flags.is_set(BRACKET_END)))
                 {
                     if (lvl == 0)
                     {
@@ -388,12 +385,12 @@ find_class_end_line(linestruct *from)
     for (linestruct *line = from; line; line = line->next)
     {
         b_start = line->data;
-        do {
+        do
+        {
             b_start = strchr(b_start, '{');
             if (b_start)
             {
-                if (!(line->data[(b_start - line->data) - 1] == '\'' &&
-                      line->data[(b_start - line->data) + 1] == '\''))
+                if (!(line->data[(b_start - line->data) - 1] == '\'' && line->data[(b_start - line->data) + 1] == '\''))
                 {
                     lvl += 1;
                 }
@@ -402,12 +399,12 @@ find_class_end_line(linestruct *from)
         }
         while (b_start);
         b_end = line->data;
-        do {
+        do
+        {
             b_end = strchr(b_end, '}');
             if (b_end)
             {
-                if (!(line->data[(b_end - line->data) - 1] == '\'' &&
-                      line->data[(b_end - line->data) + 1] == '\''))
+                if (!(line->data[(b_end - line->data) - 1] == '\'' && line->data[(b_end - line->data) + 1] == '\''))
                 {
                     if (lvl == 0)
                     {
@@ -432,8 +429,7 @@ void
 add_rm_color_map(string str, syntax_data_t data)
 {
     auto it = test_map.find(str);
-    if (it != test_map.end() && it->second.color == data.color &&
-        it->second.type == data.type)
+    if (it != test_map.end() && it->second.color == data.color && it->second.type == data.type)
     {
         test_map.erase(str);
     }

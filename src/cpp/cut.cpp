@@ -6,8 +6,7 @@
 
 /* Delete the character at the current position,
  * and add or update an undo item for the given action. */
-void
-expunge(undo_type action)
+void expunge(undo_type action)
 {
     openfile->placewewant = xplustabs();
     /* When in the middle of a line, delete the current character. */
@@ -18,8 +17,7 @@ expunge(undo_type action)
         unsigned long old_amount = ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current) : 0;
         /* If the type of action changed or the cursor moved to a different
          * line, create a new undo item, otherwise update the existing item. */
-        if (action != openfile->last_action ||
-            openfile->current->lineno != openfile->current_undo->head_lineno)
+        if (action != openfile->last_action || openfile->current->lineno != openfile->current_undo->head_lineno)
         {
             add_undo(action, NULL);
         }
@@ -28,8 +26,8 @@ expunge(undo_type action)
             update_undo(action);
         }
         /* Move the remainder of the line "in", over the current character. */
-        memmove(&openfile->current->data[openfile->current_x],
-                &openfile->current->data[openfile->current_x + charlen], line_len - charlen + 1);
+        memmove(&openfile->current->data[openfile->current_x], &openfile->current->data[openfile->current_x + charlen],
+                line_len - charlen + 1);
         /* When softwrapping, a changed number of chunks requires a refresh. */
         if (ISSET(SOFTWRAP) && extra_chunks_in(openfile->current) != old_amount)
         {
@@ -63,8 +61,8 @@ expunge(undo_type action)
         }
         openfile->current->has_anchor |= joining->has_anchor;
         /* Add the content of the next line to that of the current one. */
-        openfile->current->data = (char *)nrealloc(
-            openfile->current->data, strlen(openfile->current->data) + strlen(joining->data) + 1);
+        openfile->current->data =
+            (char *)nrealloc(openfile->current->data, strlen(openfile->current->data) + strlen(joining->data) + 1);
         constexpr_strcat(openfile->current->data, joining->data);
         unlink_node(joining);
         /* Two lines were joined, so do a renumbering and refresh the screen. */
@@ -92,8 +90,7 @@ expunge(undo_type action)
 
 /* Delete the character under the cursor plus any succeeding zero-widths,
  * or, when the mark is on and --zap is active, delete the marked region. */
-void
-do_delete(void)
+void do_delete(void)
 {
     if (openfile->mark && ISSET(LET_THEM_ZAP))
     {
@@ -114,8 +111,7 @@ do_delete(void)
  * character, and then delete the character under the cursor.  Or,
  * when mark is on and --zap is active, delete the marked region.
  * TODO: (do_backspace) - NEEDED. */
-void
-do_backspace(void)
+void do_backspace(void)
 {
     if (openfile->mark && ISSET(LET_THEM_ZAP))
     {
@@ -149,12 +145,10 @@ do_backspace(void)
 /* Return 'FALSE' when a cut command would not actually cut anything: when
  * on an empty line at EOF, or when the mark covers zero characters, or
  * (when test_cliff is 'TRUE') when the magic line would be cut. */
-bool
-is_cuttable(bool test_cliff)
+bool is_cuttable(bool test_cliff)
 {
     unsigned long from = (test_cliff) ? openfile->current_x : 0;
-    if ((openfile->current->next == NULL && openfile->current->data[from] == '\0' &&
-         openfile->mark == NULL) ||
+    if ((openfile->current->next == NULL && openfile->current->data[from] == '\0' && openfile->mark == NULL) ||
         (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) ||
         (from > 0 && !ISSET(NO_NEWLINES) && openfile->current->data[from] == '\0' &&
          openfile->current->next == openfile->filebot))
@@ -171,8 +165,7 @@ is_cuttable(bool test_cliff)
 
 /* Delete text from the cursor until the first start of a word to
  * the left, or to the right when forward is 'TRUE'. */
-void
-chop_word(bool forward)
+void chop_word(bool forward)
 {
     /* Remember the current cursor position. */
     linestruct   *is_current   = openfile->current;
@@ -241,8 +234,7 @@ chop_word(bool forward)
 }
 
 /* Delete a word leftward. */
-void
-chop_previous_word(void)
+void chop_previous_word(void)
 {
     if (openfile->current->prev == NULL && openfile->current_x == 0)
     {
@@ -255,8 +247,7 @@ chop_previous_word(void)
 }
 
 /* Delete a word rightward. */
-void
-chop_next_word(void)
+void chop_next_word(void)
 {
     openfile->mark = NULL;
     if (is_cuttable(TRUE))
@@ -266,14 +257,12 @@ chop_next_word(void)
 }
 
 /* Excise the text between the given two points and add it to the cutbuffer. */
-void
-extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned long bot_x)
+void extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned long bot_x)
 {
     linestruct *taken, *last;
-    bool        edittop_inside =
-        (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
-    bool same_line = (openfile->mark == top);
-    bool post_marked =
+    bool        edittop_inside = (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
+    bool        same_line      = (openfile->mark == top);
+    bool        post_marked =
         (openfile->mark && (openfile->mark->lineno > top->lineno || (same_line && openfile->mark_x > top_x)));
     static bool inherited_anchor = FALSE;
     bool        had_anchor       = top->has_anchor;
@@ -335,8 +324,7 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
     }
     else
     {
-        cutbottom->data =
-            (char *)nrealloc(cutbottom->data, strlen(cutbottom->data) + strlen(taken->data) + 1);
+        cutbottom->data = (char *)nrealloc(cutbottom->data, strlen(cutbottom->data) + strlen(taken->data) + 1);
         strcat(cutbottom->data, taken->data);
         cutbottom->has_anchor = taken->has_anchor && !inherited_anchor;
         inherited_anchor |= taken->has_anchor;
@@ -378,8 +366,7 @@ extract_segment(linestruct *top, unsigned long top_x, linestruct *bot, unsigned 
 
 /* Meld the buffer that starts at topline into the current file buffer
  * at the current cursor position. */
-void
-ingraft_buffer(linestruct *topline)
+void ingraft_buffer(linestruct *topline)
 {
     linestruct   *line         = openfile->current;
     unsigned long length       = strlen(line->data);
@@ -455,8 +442,7 @@ ingraft_buffer(linestruct *topline)
 }
 
 /* Meld a copy of the given buffer into the current file buffer. */
-void
-copy_from_buffer(linestruct *somebuffer)
+void copy_from_buffer(linestruct *somebuffer)
 {
     unsigned long threshold = openfile->edittop->lineno + editwinrows - 1;
     linestruct   *the_copy  = copy_buffer(somebuffer);
@@ -472,8 +458,7 @@ copy_from_buffer(linestruct *somebuffer)
 }
 
 /* Move all marked text from the current buffer into the cutbuffer. */
-void
-cut_marked_region(void)
+void cut_marked_region(void)
 {
     linestruct   *top, *bot;
     unsigned long top_x, bot_x;
@@ -486,8 +471,7 @@ cut_marked_region(void)
  * If until_eof is 'TRUE', move all text from the current cursor
  * position to the end of the file into the cutbuffer.  If append
  * is 'TRUE' (when zapping), always append the cut to the cutbuffer. */
-void
-do_snip(bool marked, bool until_eof, bool append)
+void do_snip(bool marked, bool until_eof, bool append)
 {
     PROFILE_FUNCTION;
     linestruct *line = openfile->current;
@@ -501,8 +485,7 @@ do_snip(bool marked, bool until_eof, bool append)
     /* Now move the relevant piece of text into the cutbuffer. */
     if (until_eof)
     {
-        extract_segment(
-            openfile->current, openfile->current_x, openfile->filebot, strlen(openfile->filebot->data));
+        extract_segment(openfile->current, openfile->current_x, openfile->filebot, strlen(openfile->filebot->data));
     }
     else if (openfile->mark)
     {
@@ -546,8 +529,7 @@ do_snip(bool marked, bool until_eof, bool append)
 }
 
 /* Move text from the current buffer into the cutbuffer. */
-void
-cut_text(void)
+void cut_text(void)
 {
     if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && openfile->mark == NULL))
     {
@@ -566,8 +548,7 @@ cut_text(void)
 }
 
 /* Cut from the current cursor position to the end of the file. */
-void
-cut_till_eof(void)
+void cut_till_eof(void)
 {
     ran_a_tool = TRUE;
     if (openfile->current->data[openfile->current_x] == '\0' &&
@@ -584,8 +565,7 @@ cut_till_eof(void)
 }
 
 /* Erase text (current line or marked region), sending it into oblivion. */
-void
-zap_text(void)
+void zap_text(void)
 {
     /* Remember the current cutbuffer so it can be restored after the zap. */
     linestruct *was_cutbuffer = cutbuffer;
@@ -609,8 +589,7 @@ zap_text(void)
 
 /* Make a copy of the marked region, putting it in the cutbuffer.
  * TODO: (copy_marked_region) NEEDED, FIX IT, MODERNIZE IT */
-void
-copy_marked_region(void)
+void copy_marked_region(void)
 {
     linestruct   *topline, *botline, *afterline;
     char         *was_datastart, saved_byte;
@@ -642,8 +621,7 @@ copy_marked_region(void)
 /* Copy text from the current buffer into the cutbuffer.  The text is either
  * the marked region, the whole line, the text from cursor to end-of-line,
  * just the line break, or nothing, depending on mode and cursor position. */
-void
-copy_text(void)
+void copy_text(void)
 {
     bool          at_eol       = (openfile->current->data[openfile->current_x] == '\0');
     bool          sans_newline = (ISSET(NO_NEWLINES) && openfile->current->next == NULL);
@@ -666,8 +644,7 @@ copy_text(void)
         return;
     }
     /* When at the very end of the buffer, there is nothing to do. */
-    if (openfile->current->next == NULL && at_eol &&
-        (ISSET(CUT_FROM_CURSOR) || openfile->current_x == 0 || cutbuffer))
+    if (openfile->current->next == NULL && at_eol && (ISSET(CUT_FROM_CURSOR) || openfile->current_x == 0 || cutbuffer))
     {
         statusbar(_("Copied nothing"));
         return;
@@ -728,8 +705,7 @@ copy_text(void)
 }
 
 /* Copy text from the cutbuffer into the current buffer. */
-void
-paste_text(void)
+void paste_text(void)
 {
     /* Remember where the paste started. */
     linestruct   *was_current  = openfile->current;

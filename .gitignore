@@ -4,3 +4,4 @@
 /build/bin/NanoX
 /build/lib/*
 /build/obj/*.o
+/module-cache/

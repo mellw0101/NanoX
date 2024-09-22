@@ -15,8 +15,7 @@ volatile sig_atomic_t *stop_thread_flags = NULL;
  * perform. When halting a thread is needed use 'stop_thread'.  Note that this
  * kills whatever thread happens to run the next task, therefor this is intended
  * for clean shoutdown. */
-void *
-terminate_work(void *)
+void *terminate_work(void *)
 {
     return NULL;
 }
@@ -24,11 +23,9 @@ terminate_work(void *)
 /* Either lock or unlock the threadpools mutex, with full error reporting.  We
  * will not interviene on fail as I want to see for now atleast what it takes to
  * crash. */
-void
-lock_pthread_mutex(pthread_mutex_t *mutex, bool lock)
+void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock)
 {
-    int result = (lock == TRUE) ? pthread_mutex_lock(mutex) :
-                                  pthread_mutex_unlock(mutex);
+    int result = (lock == TRUE) ? pthread_mutex_lock(mutex) : pthread_mutex_unlock(mutex);
     if (result == 0)
     {
         return;
@@ -69,8 +66,7 @@ lock_pthread_mutex(pthread_mutex_t *mutex, bool lock)
 }
 
 /* This is a helper function to easily lock the threadpool mutex. */
-inline void
-lock_threadpool_mutex(bool lock)
+inline void lock_threadpool_mutex(bool lock)
 {
     lock_pthread_mutex(&task_queue->mutex, lock);
 }
@@ -79,15 +75,13 @@ lock_threadpool_mutex(bool lock)
  * This function uses 'RAII' standard, this is done by making a struct that
  * locks the mutex when created and unlocked when it goes out of scope. */
 template <typename Callback>
-static inline void
-under_threadpool_mutex(Callback &&callback)
+static inline void under_threadpool_mutex(Callback &&callback)
 {
     pthread_mutex_guard_t guard(&task_queue->mutex);
     callback();
 }
 
-void
-sub_thread_signal_handler(int sig)
+void sub_thread_signal_handler(int sig)
 {
     if (sig == SIGUSR1)
     {
@@ -109,8 +103,7 @@ sub_thread_signal_handler(int sig)
     }
 }
 
-void
-pause_sub_thread(bool pause, unsigned char thread_id)
+void pause_sub_thread(bool pause, unsigned char thread_id)
 {
     if (thread_id < MAX_THREADS)
     {
@@ -119,8 +112,7 @@ pause_sub_thread(bool pause, unsigned char thread_id)
     }
 }
 
-void
-pause_all_sub_threads(bool pause)
+void pause_all_sub_threads(bool pause)
 {
     for (unsigned char i = 0; i < MAX_THREADS; i++)
     {
@@ -129,8 +121,7 @@ pause_all_sub_threads(bool pause)
 }
 
 /* This is where all sub-threads wait for work. */
-void *
-worker_thread(void *arg)
+void *worker_thread(void *arg)
 {
     /* Init  */
     setup_signal_handler_on_sub_thread(sub_thread_signal_handler);
@@ -179,8 +170,7 @@ worker_thread(void *arg)
 }
 
 /* Init the threadpool and the queue.  As well as start all subthreds. */
-void
-init_queue_task(void)
+void init_queue_task(void)
 {
     /* Init the queue. */
     if (task_queue != NULL)
@@ -196,22 +186,19 @@ init_queue_task(void)
     /* Allocate memory for the 'threads'. */
     threads = (pthread_t *)nmalloc(MAX_THREADS * sizeof(pthread_t));
     /* As well as allocating space for the stop flags. */
-    stop_thread_flags =
-        (volatile sig_atomic_t *)nmalloc(MAX_THREADS * sizeof(sig_atomic_t));
+    stop_thread_flags = (volatile sig_atomic_t *)nmalloc(MAX_THREADS * sizeof(sig_atomic_t));
     /* Create the threads, and start them running 'worker_thread'. */
     for (unsigned char i = 0; i < MAX_THREADS; i++)
     {
         stop_thread_flags[i] = FALSE;
-        if (pthread_create(
-                &threads[i], NULL, worker_thread, (void *)(uintptr_t)i) != 0)
+        if (pthread_create(&threads[i], NULL, worker_thread, (void *)(uintptr_t)i) != 0)
         {
             LOUT_logE("Failed to create thread: '%u'.", i);
         }
     }
 }
 
-int
-task_queue_count(void)
+int task_queue_count(void)
 {
     PROFILE_FUNCTION;
     pthread_mutex_guard_t guard(&task_queue->mutex);
@@ -220,8 +207,7 @@ task_queue_count(void)
 }
 
 /* Cleanup the threadpool and join all threads. */
-void
-shutdown_queue(void)
+void shutdown_queue(void)
 {
     for (unsigned char i = 0; i < MAX_THREADS; i++)
     {
@@ -235,45 +221,37 @@ shutdown_queue(void)
 }
 
 /* Add a task to the threadpool queue for for the subthreads to perform. */
-void
-submit_task(task_functionptr_t function, void *arg, void **result,
-            callback_functionptr_t callback)
+void submit_task(task_functionptr_t function, void *arg, void **result, callback_functionptr_t callback)
 {
-    under_threadpool_mutex(
-        [function, arg, result, callback]
+    under_threadpool_mutex([function, arg, result, callback] {
+        if (task_queue->count < QUEUE_SIZE)
         {
-            if (task_queue->count < QUEUE_SIZE)
-            {
-                task_queue->tasks[task_queue->rear].function = function;
-                task_queue->tasks[task_queue->rear].arg      = arg;
-                task_queue->tasks[task_queue->rear].result   = result;
-                task_queue->tasks[task_queue->rear].callback = callback;
-                task_queue->rear = (task_queue->rear + 1) % QUEUE_SIZE;
-                task_queue->count++;
-                /* Send a signal that there is a new task. */
-                pthread_cond_signal(&task_queue->cond);
-            }
-        });
+            task_queue->tasks[task_queue->rear].function = function;
+            task_queue->tasks[task_queue->rear].arg      = arg;
+            task_queue->tasks[task_queue->rear].result   = result;
+            task_queue->tasks[task_queue->rear].callback = callback;
+            task_queue->rear                             = (task_queue->rear + 1) % QUEUE_SIZE;
+            task_queue->count++;
+            /* Send a signal that there is a new task. */
+            pthread_cond_signal(&task_queue->cond);
+        }
+    });
 }
 
 /* Stop a thread by 'thread_id'.  Note that this will halt execution on that
  * thread. */
-void
-stop_thread(unsigned char thread_id)
+void stop_thread(unsigned char thread_id)
 {
     if (thread_id < MAX_THREADS)
     {
-        under_threadpool_mutex(
-            [thread_id]
-            {
-                stop_thread_flags[thread_id] = TRUE;
-                pthread_cond_broadcast(&task_queue->cond);
-            });
+        under_threadpool_mutex([thread_id] {
+            stop_thread_flags[thread_id] = TRUE;
+            pthread_cond_broadcast(&task_queue->cond);
+        });
     }
 }
 
-unsigned char
-thread_id_from_pthread(pthread_t *thread)
+unsigned char thread_id_from_pthread(pthread_t *thread)
 {
     unsigned char i = 0;
     for (; i < MAX_THREADS; i++)

@@ -12,22 +12,19 @@
 static bool use_utf8 = FALSE;
 
 /* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
-void
-utf8_init(void)
+void utf8_init(void)
 {
     use_utf8 = TRUE;
 }
 
 /* Checks if UTF-8 support has been enabled. */
-bool
-using_utf8(void)
+bool using_utf8(void)
 {
     return use_utf8;
 }
 
 /* Return 'TRUE' when the given character is some kind of letter. */
-bool
-is_alpha_char(const char *const c)
+bool is_alpha_char(const char *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
@@ -38,8 +35,7 @@ is_alpha_char(const char *const c)
 }
 
 /* Return TRUE when the given character is some kind of letter or a digit. */
-bool
-is_alnum_char(const char *const c)
+bool is_alnum_char(const char *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
@@ -50,8 +46,7 @@ is_alnum_char(const char *const c)
 }
 
 /* Return TRUE when the given character is space or tab or other whitespace. */
-bool
-is_blank_char(const char *const c)
+bool is_blank_char(const char *const c)
 {
     wchar_t wc;
     if ((signed char)*c >= 0)
@@ -66,13 +61,11 @@ is_blank_char(const char *const c)
 }
 
 /* Return 'TRUE' when the given character is a control character. */
-bool
-is_cntrl_char(const char *const c)
+bool is_cntrl_char(const char *const c)
 {
     if (use_utf8)
     {
-        return ((c[0] & 0xE0) == 0 || c[0] == DEL_CODE ||
-                ((signed char)c[0] == -62 && (signed char)c[1] < -96));
+        return ((c[0] & 0xE0) == 0 || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
     }
     else
     {
@@ -81,8 +74,7 @@ is_cntrl_char(const char *const c)
 }
 
 /* Return 'TRUE' when the given character is a punctuation character. */
-bool
-is_punct_char(const char *const c)
+bool is_punct_char(const char *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
@@ -94,8 +86,7 @@ is_punct_char(const char *const c)
 
 /* Return TRUE when the given character is word-forming (it is alphanumeric or
  * specified in 'wordchars', or it is punctuation when allow_punct is TRUE). */
-bool
-is_word_char(const char *const c, bool allow_punct)
+bool is_word_char(const char *const c, bool allow_punct)
 {
     if (*c == '\0')
     {
@@ -123,8 +114,7 @@ is_word_char(const char *const c, bool allow_punct)
 }
 
 /* Return the visible representation of control character c. */
-char
-control_rep(const signed char c)
+char control_rep(const signed char c)
 {
     if (c == DEL_CODE)
     {
@@ -145,8 +135,7 @@ control_rep(const signed char c)
 }
 
 /* Return the visible representation of multibyte control character c. */
-char
-control_mbrep(const char *const c, bool isdata)
+char control_mbrep(const char *const c, bool isdata)
 {
     /* An embedded newline is an encoded NUL if 'isdata' is TRUE. */
     if (*c == '\n' && (isdata || as_an_at))
@@ -172,8 +161,7 @@ control_mbrep(const char *const c, bool isdata)
 
 /* Convert the given multibyte sequence c to wide character wc, and return
  * the number of bytes in the sequence, or -1 for an invalid sequence. */
-int
-mbtowide(wchar_t &wc, const char *const c)
+int mbtowide(wchar_t &wc, const char *const c)
 {
     if ((signed char)*c < 0 && use_utf8)
     {
@@ -226,8 +214,7 @@ mbtowide(wchar_t &wc, const char *const c)
 }
 
 /* Return 'TRUE' when the given character occupies two cells. */
-bool
-is_doublewidth(const char *const ch)
+bool is_doublewidth(const char *const ch)
 {
     wchar_t wc;
     /* Only from U+1100 can code points have double width. */
@@ -243,8 +230,7 @@ is_doublewidth(const char *const ch)
 }
 
 /* Return 'TRUE' when the given character occupies zero cells. */
-bool
-is_zerowidth(const char *ch)
+bool is_zerowidth(const char *ch)
 {
     wchar_t wc;
     /* Only from U+0300 can code points have zero width. */
@@ -267,8 +253,7 @@ is_zerowidth(const char *ch)
 }
 
 /* Return the number of bytes in the character that starts at *pointer. */
-int
-char_length(const char *const &pointer)
+int char_length(const char *const &pointer)
 {
     if ((unsigned char)*pointer > 0xC1 && use_utf8)
     {
@@ -314,8 +299,7 @@ char_length(const char *const &pointer)
 }
 
 /* Return the number of (multibyte) characters in the given string. */
-unsigned long
-mbstrlen(const char *pointer)
+unsigned long mbstrlen(const char *pointer)
 {
     unsigned long count = 0;
     while (*pointer != '\0')
@@ -328,8 +312,7 @@ mbstrlen(const char *pointer)
 
 /* Return the length (in bytes) of the character at the start of the
  * given string, and return a copy of this character in *thechar. */
-int
-collect_char(const char *const str, char *c)
+int collect_char(const char *const str, char *c)
 {
     const int charlen = char_length(str);
     for (int i = 0; i < charlen; i++)
@@ -341,8 +324,7 @@ collect_char(const char *const str, char *c)
 
 /* Return the length ( in bytes ) of the character at the start of
  * the given string, and add this character's width to '*column'. */
-int
-advance_over(const char *const str, unsigned long &column)
+int advance_over(const char *const str, unsigned long &column)
 {
     if ((char)*str < 0 && use_utf8)
     {
@@ -394,8 +376,7 @@ advance_over(const char *const str, unsigned long &column)
 
 /* Return the index in buf of the beginning of
  * the multibyte character before the one at pos. */
-unsigned long
-step_left(const char *const buf, const unsigned long pos)
+unsigned long step_left(const char *const buf, const unsigned long pos)
 {
     if (use_utf8)
     {
@@ -446,22 +427,19 @@ step_left(const char *const buf, const unsigned long pos)
 
 /* Return the index in buf of the beginning of the multibyte character
  * after the one at pos. */
-unsigned long
-step_right(const char *const buf, const unsigned long pos)
+unsigned long step_right(const char *const buf, const unsigned long pos)
 {
     return pos + char_length(buf + pos);
 }
 
 /* This function is equivalent to strcasecmp() for multibyte strings. */
-int
-mbstrcasecmp(const char *s1, const char *s2)
+int mbstrcasecmp(const char *s1, const char *s2)
 {
     return mbstrncasecmp(s1, s2, HIGHEST_POSITIVE);
 }
 
 /* This function is equivalent to strncasecmp() for multibyte strings. */
-int
-mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
+int mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
 {
     if (use_utf8)
     {
@@ -529,8 +507,7 @@ mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
 }
 
 /* This function is equivalent to strcasestr() for multibyte strings. */
-char *
-mbstrcasestr(const char *haystack, const char *const needle)
+char *mbstrcasestr(const char *haystack, const char *const needle)
 {
     if (use_utf8)
     {
@@ -554,8 +531,7 @@ mbstrcasestr(const char *haystack, const char *const needle)
 /* This function is equivalent to strstr(),
  * except in that it scans the string in reverse,
  * starting at pointer. */
-char *
-revstrstr(const char *const haystack, const char *const needle, const char *pointer)
+char *revstrstr(const char *const haystack, const char *const needle, const char *pointer)
 {
     const unsigned long needle_len = strlen(needle), tail_len = strlen(pointer);
     if (tail_len < needle_len)
@@ -575,8 +551,7 @@ revstrstr(const char *const haystack, const char *const needle, const char *poin
 
 /* This function is equivalent to strcasestr(), except in that it scans
  * the string in reverse, starting at pointer. */
-char *
-revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
+char *revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
 {
     const unsigned long needle_len = strlen(needle), tail_len = strlen(pointer);
     if (tail_len < needle_len)
@@ -596,8 +571,7 @@ revstrcasestr(const char *const haystack, const char *const needle, const char *
 
 /* This function is equivalent to strcasestr() for multibyte strings,
  * except in that it scans the string in reverse, starting at pointer. */
-char *
-mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
+char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
 {
     if (use_utf8)
     {
@@ -633,8 +607,7 @@ mbrevstrcasestr(const char *const haystack, const char *const needle, const char
  * It is used to find the first occurrence of a character in a string.
  * The character to find is given as a multibyte string.
  * The function is used in justify.c to find the first space in a line. */
-char *
-mbstrchr(const char *string, const char *const chr)
+char *mbstrchr(const char *string, const char *const chr)
 {
     if (use_utf8)
     {
@@ -673,8 +646,7 @@ mbstrchr(const char *string, const char *const chr)
 
 /* Locate, in the given string, the first occurrence of any of
  * the characters in accept, searching forward. */
-char *
-mbstrpbrk(const char *str, const char *accept)
+char *mbstrpbrk(const char *str, const char *accept)
 {
     while (*str != '\0')
     {
@@ -689,8 +661,7 @@ mbstrpbrk(const char *str, const char *accept)
 
 /* Locate, in the string that starts at head, the first occurrence of any of
  * the characters in accept, starting from pointer and searching backwards. */
-char *
-mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer)
+char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer)
 {
     if (*pointer == '\0')
     {
@@ -716,8 +687,7 @@ mbrevstrpbrk(const char *const head, const char *const accept, const char *point
 }
 
 /* Return 'TRUE' if the given string contains at least one blank character. */
-bool
-has_blank_char(const char *str)
+bool has_blank_char(const char *str)
 {
     while (*str != '\0' && !is_blank_char(str))
     {
@@ -727,8 +697,7 @@ has_blank_char(const char *str)
 }
 
 /* Return 'TRUE' when the given string is empty or consists of only blanks. */
-bool
-white_string(const char *str)
+bool white_string(const char *str)
 {
     while (*str != '\0' && (is_blank_char(str) || *str == '\r'))
     {
@@ -752,18 +721,18 @@ strip_leading_blanks_from(char *str)
 */
 
 /* Remove leading whitespace from a given string */
-void
-strip_leading_blanks_from(char *str)
+void strip_leading_blanks_from(char *str)
 {
     char *start = str;
-    for (; start && (*start == '\t' || *start == ' '); start++);
+    for (; start && (*start == '\t' || *start == ' '); start++)
+        ;
     (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
 }
 
-void
-strip_leading_chars_from(char *str, const char ch)
+void strip_leading_chars_from(char *str, const char ch)
 {
     char *start = str;
-    for (; start && *start == ch; start++);
+    for (; start && *start == ch; start++)
+        ;
     (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
 }

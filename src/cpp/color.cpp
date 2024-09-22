@@ -32,8 +32,7 @@ static bool defaults_allowed = FALSE;
 /* Initialize the color pairs for nano's interface.
  * Ask ncurses to allow -1 to mean "default color".
  * Initialize the color pairs for nano's interface elements. */
-void
-set_interface_colorpairs(void)
+void set_interface_colorpairs(void)
 {
     /* Ask ncurses to allow -1 to mean "default color". */
     defaults_allowed = (use_default_colors() == OK);
@@ -55,9 +54,8 @@ set_interface_colorpairs(void)
                 }
             }
             init_pair(index + 1, combo->fg, combo->bg);
-            interface_color_pair[index] =
-                COLOR_PAIR(index + 1) | combo->attributes;
-            rescind_colors = FALSE;
+            interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
+            rescind_colors              = FALSE;
         }
         else
         {
@@ -72,8 +70,7 @@ set_interface_colorpairs(void)
             }
             else if (index == SPOTLIGHTED)
             {
-                init_pair(index + 1, COLOR_BLACK,
-                          COLOR_YELLOW + (COLORS > 15 ? 8 : 0));
+                init_pair(index + 1, COLOR_BLACK, COLOR_YELLOW + (COLORS > 15 ? 8 : 0));
                 interface_color_pair[index] = COLOR_PAIR(index + 1);
             }
             else if (index == MINI_INFOBAR || index == PROMPT_BAR)
@@ -87,28 +84,25 @@ set_interface_colorpairs(void)
             }
             else if (index >= FG_BLUE && index <= FG_MAUVE)
             {
-                color_combo[index] =
-                    (colortype *)nmalloc(sizeof(*(color_combo[index])));
-                short color = (index == FG_BLUE)    ? COLOR_BLUE :
-                              (index == FG_MAGENTA) ? COLOR_MAGENTA :
-                              (index == FG_GREEN)   ? COLOR_GREEN :
-                              (index == FG_LAGOON)  ? COLOR_LAGOON :
-                              (index == FG_YELLOW)  ? COLOR_YELLOW :
-                              (index == FG_RED)     ? COLOR_RED :
-                              (index == FG_PINK)    ? COLOR_PINK :
-                              (index == FG_TEAL)    ? COLOR_TEAL :
-                              (index == FG_MINT)    ? COLOR_MINT :
-                              (index == FG_PURPLE)  ? COLOR_PURPLE :
-                              (index == FG_MAUVE)   ? COLOR_MAUVE :
-                                                      1;
+                color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
+                short color        = (index == FG_BLUE)    ? COLOR_BLUE
+                                   : (index == FG_MAGENTA) ? COLOR_MAGENTA
+                                   : (index == FG_GREEN)   ? COLOR_GREEN
+                                   : (index == FG_LAGOON)  ? COLOR_LAGOON
+                                   : (index == FG_YELLOW)  ? COLOR_YELLOW
+                                   : (index == FG_RED)     ? COLOR_RED
+                                   : (index == FG_PINK)    ? COLOR_PINK
+                                   : (index == FG_TEAL)    ? COLOR_TEAL
+                                   : (index == FG_MINT)    ? COLOR_MINT
+                                   : (index == FG_PURPLE)  ? COLOR_PURPLE
+                                   : (index == FG_MAUVE)   ? COLOR_MAUVE
+                                                           : 1;
                 init_pair(index + 1, color, COLOR_BLACK);
                 interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
             }
             else if (index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY)
             {
-                init_pair(index + 1,
-                          color_index_map[index - FG_VS_CODE_RED].value,
-                          COLOR_BLACK);
+                init_pair(index + 1, color_index_map[index - FG_VS_CODE_RED].value, COLOR_BLACK);
                 interface_color_pair[index] = COLOR_PAIR(index + 1);
             }
             else
@@ -130,8 +124,7 @@ set_interface_colorpairs(void)
 
 /* Assign a pair number to each of the foreground/background color combinations
  * in the given syntax, giving identical combinations the same number. */
-void
-set_syntax_colorpairs(syntaxtype *sntx)
+void set_syntax_colorpairs(syntaxtype *sntx)
 {
     short      number = NUMBER_OF_ELEMENTS;
     colortype *older;
@@ -159,8 +152,7 @@ set_syntax_colorpairs(syntaxtype *sntx)
 }
 
 /* Initialize the color pairs for the current syntax. */
-void
-prepare_palette(void)
+void prepare_palette(void)
 {
     short number = NUMBER_OF_ELEMENTS;
     /* For each unique pair number, tell ncurses the combination of colors. */
@@ -178,8 +170,7 @@ prepare_palette(void)
 /* Try to match the given shibboleth string with,
  * one of the regexes in the list starting at head.
  * Return 'TRUE' upon success. */
-bool
-found_in_list(regexlisttype *head, const char *shibboleth)
+bool found_in_list(regexlisttype *head, const char *shibboleth)
 {
     for (regexlisttype *item = head; item != NULL; item = item->next)
     {
@@ -193,8 +184,7 @@ found_in_list(regexlisttype *head, const char *shibboleth)
 
 /* Find a syntax that applies to the current buffer, based upon filename
  * or buffer content, and load and prime this syntax when needed. */
-void
-find_and_prime_applicable_syntax(void)
+void find_and_prime_applicable_syntax(void)
 {
     syntaxtype *sntx = NULL;
     /* If the rcfiles were not read, or contained no syntaxes, get out. */
@@ -268,16 +258,14 @@ find_and_prime_applicable_syntax(void)
                                 MAGIC_ERROR);
             if (cookie == NULL || magic_load(cookie, NULL) < 0)
             {
-                statusline(
-                    ALERT, _("magic_load() failed: %s"), strerror(errno));
+                statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
             }
             else
             {
                 magicstring = magic_file(cookie, openfile->filename);
                 if (magicstring == NULL)
                 {
-                    statusline(ALERT, _("magic_file(%s) failed: %s"),
-                               openfile->filename, magic_error(cookie));
+                    statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
                 }
             }
         }
@@ -321,8 +309,7 @@ find_and_prime_applicable_syntax(void)
 
 /* Determine whether the matches of multiline regexes are still the same,
  * and if not, schedule a screen refresh, so things will be repainted. */
-void
-check_the_multis(linestruct *line)
+void check_the_multis(linestruct *line)
 {
     const colortype *ink;
     regmatch_t       startmatch;
@@ -362,8 +349,7 @@ check_the_multis(linestruct *line)
         {
             /* Ensure that a detected start match is not actually an end match.
              */
-            if (!anend && (!astart ||
-                           regexec(ink->end, line->data, 1, &endmatch, 0) != 0))
+            if (!anend && (!astart || regexec(ink->end, line->data, 1, &endmatch, 0) != 0))
             {
                 continue;
             }
@@ -371,9 +357,7 @@ check_the_multis(linestruct *line)
         else if (line->multidata[ink->id] == JUSTONTHIS)
         {
             if (astart && anend &&
-                regexec(ink->start,
-                        line->data + startmatch.rm_eo + endmatch.rm_eo, 1,
-                        &startmatch, 0) != 0)
+                regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch, 0) != 0)
             {
                 continue;
             }
@@ -401,8 +385,7 @@ check_the_multis(linestruct *line)
 
 /* Precalculate the multi-line start and end regex info so we can
  * speed up rendering (with any hope at all...). */
-void
-precalc_multicolorinfo(void)
+void precalc_multicolorinfo(void)
 {
     PROFILE_FUNCTION;
     const colortype *ink;
@@ -417,8 +400,7 @@ precalc_multicolorinfo(void)
     {
         if (!line->multidata)
         {
-            line->multidata =
-                (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
+            line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
         }
     }
     for (ink = openfile->syntax->color; ink != NULL; ink = ink->next)
@@ -435,21 +417,18 @@ precalc_multicolorinfo(void)
             line->multidata[ink->id] = NOTHING;
             /* When the line contains a start match, look for an end,
              * and if found, mark all the lines that are affected. */
-            while (regexec(ink->start, line->data + index, 1, &startmatch,
-                           (index == 0) ? 0 : REG_NOTBOL) == 0)
+            while (regexec(ink->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
             {
                 /* Begin looking for an end match after the start match. */
                 index += startmatch.rm_eo;
                 /* If there is an end match on this same line, mark the line,
                  * but continue looking for other starts after it. */
-                if (regexec(ink->end, line->data + index, 1, &endmatch,
-                            (index == 0) ? 0 : REG_NOTBOL) == 0)
+                if (regexec(ink->end, line->data + index, 1, &endmatch, (index == 0) ? 0 : REG_NOTBOL) == 0)
                 {
                     line->multidata[ink->id] = JUSTONTHIS;
                     index += endmatch.rm_eo;
                     /* If the total match has zero length, force an advance. */
-                    if (startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo ==
-                        0)
+                    if (startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo == 0)
                     {
                         /* When at end-of-line, there is no other start. */
                         if (line->data[index] == '\0')
@@ -462,8 +441,7 @@ precalc_multicolorinfo(void)
                 }
                 /* Look for an end match on later lines. */
                 tailline = line->next;
-                while (tailline &&
-                       regexec(ink->end, tailline->data, 1, &endmatch, 0) != 0)
+                while (tailline && regexec(ink->end, tailline->data, 1, &endmatch, 0) != 0)
                 {
                     tailline = tailline->next;
                 }
@@ -486,14 +464,12 @@ precalc_multicolorinfo(void)
     }
 }
 
-bool
-str_equal_to_rgx(const char *str, const regex_t *rgx)
+bool str_equal_to_rgx(const char *str, const regex_t *rgx)
 {
     return (regexec(rgx, str, 0, NULL, 0) == 0);
 }
 
-short
-rgb_to_ncurses(unsigned char value)
+short rgb_to_ncurses(unsigned char value)
 {
     return short(value * 1000 / 255);
 }

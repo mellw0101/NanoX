@@ -1,17 +1,16 @@
 #include "../include/prototypes.h"
 
-string
-parse_multiline_bracket_var(linestruct *from, const char **data,
-                            const char **end)
+string parse_multiline_bracket_var(linestruct *from, const char **data, const char **end)
 {
-    string value = "";
+    string value;
     adv_ptr_to_ch((*end), '}');
     if (*(*end) == '\0')
     {
         value           = string((*data), ((*end) - (*data)));
         const char *br  = (*data);
         int         lvl = 0;
-        do {
+        do
+        {
             br = strchr(br, '{');
             if (br)
             {
@@ -20,11 +19,12 @@ parse_multiline_bracket_var(linestruct *from, const char **data,
             }
         }
         while (br);
-        const char *stop = NULL;
+        const char *stop = nullptr;
         for (linestruct *end = from->next; end != NULL; end = end->next)
         {
             br = end->data;
-            do {
+            do
+            {
                 br = strchr(br, '{');
                 if (br)
                 {
@@ -34,7 +34,8 @@ parse_multiline_bracket_var(linestruct *from, const char **data,
             }
             while (br);
             br = end->data;
-            do {
+            do
+            {
                 br = strchr(br, '}');
                 if (br)
                 {
@@ -50,8 +51,7 @@ parse_multiline_bracket_var(linestruct *from, const char **data,
             stop = strchr(end->data, ';');
             if (stop)
             {
-                value += string(&end->data[indent_char_len(end)],
-                                (stop - &end->data[indent_char_len(end)]));
+                value += string(&end->data[indent_char_len(end)], (stop - &end->data[indent_char_len(end)]));
                 break;
             }
             value += string(&end->data[indent_char_len(end)]);
@@ -62,14 +62,12 @@ parse_multiline_bracket_var(linestruct *from, const char **data,
 
 /* Decr ptr until space or tab found or end == data.
    This will jump over string literals. */
-void
-move_ptr_to_prev_word(const char **data, const char **end)
+void move_ptr_to_prev_word(const char **data, const char **end)
 {
-    while (1)
+    while (true)
     {
-        for (; *end > *data &&
-               (**end != ' ' && **end != '\t' && **end != '"' && **end != ']');
-             (*end)--);
+        for (; *end > *data && (**end != ' ' && **end != '\t' && **end != '"' && **end != ']'); (*end)--)
+            ;
         if (**end == '"')
         {
             (*end) -= 1;
@@ -94,20 +92,16 @@ move_ptr_to_prev_word(const char **data, const char **end)
     }
 }
 
-void
-parse_var_type(const char *data)
+void parse_var_type(const char *data)
 {
-    if (word_strstr(data, "using") || word_strstr(data, "return") ||
-        *data == '{' || word_strstr(data, "//") || word_strstr(data, "/*") ||
-        word_strstr(data, "==") || word_strstr(data, "||") ||
-        word_strstr(data, "&&") || word_strstr(data, "|=") ||
-        word_strstr(data, "+=") || word_strstr(data, "-="))
+    if (word_strstr(data, "using") || word_strstr(data, "return") || *data == '{' || word_strstr(data, "//") ||
+        word_strstr(data, "/*") || word_strstr(data, "==") || word_strstr(data, "||") || word_strstr(data, "&&") ||
+        word_strstr(data, "|=") || word_strstr(data, "+=") || word_strstr(data, "-="))
     {
         return;
     }
     const char *end = data;
-    adv_ptr(end, (*end != ';' && *end != ',' && *end != '=' && *end != '{' &&
-                  *end != '('));
+    adv_ptr(end, (*end != ';' && *end != ',' && *end != '=' && *end != '{' && *end != '('));
     if (!*end || *end == '(')
     {
         return;
@@ -143,8 +137,7 @@ parse_var_type(const char *data)
     nlog("rest: %s\n", rest.data());
 }
 
-void
-line_variable(linestruct *line, vector<var_t> &var_vector)
+void line_variable(linestruct *line, vector<var_t> &var_vector)
 {
     const char *data = &line->data[indent_char_len(line)];
     if (invalid_variable_sig(data))
@@ -179,13 +172,13 @@ line_variable(linestruct *line, vector<var_t> &var_vector)
     end += 1;
     string type(data, (end - data));
     data = end;
-    do {
+    do
+    {
         string type_addon = "";
         string name       = "";
         string value      = "";
         adv_to_next_ch(data);
-        ADV_PTR(
-            end, (*end != ';' && *end != ',' && *end != '=' && *end != '{'));
+        ADV_PTR(end, (*end != ';' && *end != ',' && *end != '=' && *end != '{'));
         const char *save = end;
         end -= 1;
         dcr_to_prev_ch(end, data);
@@ -259,13 +252,11 @@ line_variable(linestruct *line, vector<var_t> &var_vector)
     while (*data);
 }
 
-void
-func_decl(linestruct *line)
+void func_decl(linestruct *line)
 {
     const char *data = &line->data[indent_char_len(line)];
-    if (!*data || strchr(data, '=') || strchr(data, '<') || strchr(data, '>') ||
-        word_strstr(data, "if") || word_strstr(data, "for") ||
-        word_strstr(data, "//"))
+    if (!*data || strchr(data, '=') || strchr(data, '<') || strchr(data, '>') || word_strstr(data, "if") ||
+        word_strstr(data, "for") || word_strstr(data, "//"))
     {
         return;
     }
@@ -280,9 +271,7 @@ func_decl(linestruct *line)
         }
         else if (start == data)
         {
-            if (!strchr(line->prev->data, ';') &&
-                !strchr(line->prev->data, '{') &&
-                !strchr(line->prev->data, '}'))
+            if (!strchr(line->prev->data, ';') && !strchr(line->prev->data, '{') && !strchr(line->prev->data, '}'))
             {
                 string full_decl = line->prev->data;
                 full_decl += " " + string(start);
@@ -292,8 +281,7 @@ func_decl(linestruct *line)
     }
 }
 
-void
-parse_class_data(linestruct *from)
+void parse_class_data(linestruct *from)
 {
     class_info_t class_info;
     const char  *class_name = word_strstr(from->data, "class");
@@ -313,8 +301,7 @@ parse_class_data(linestruct *from)
             break;
         }
     }
-    for (linestruct *line = from; line != NULL && line->lineno < end_line;
-         line             = line->next)
+    for (linestruct *line = from; line != NULL && line->lineno < end_line; line = line->next)
     {
         line_variable(line, class_info.variables);
     }

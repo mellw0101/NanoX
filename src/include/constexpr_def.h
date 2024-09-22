@@ -293,59 +293,58 @@ constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
  * USAGE:
  * - (&epithetOfFlagMap[flag].value[0]) will return the underlying ptr to the
  * description of the flag The (flag / description) map. */
-constexpr_map<unsigned int, std::string_view, NUMBER_OF_FLAGS>
-    epithetOfFlagMap = {
-        {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
-         {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
-         {CONSTANT_SHOW, "Constant cursor position display"},
-         {NO_HELP, "Help mode"},
-         {NO_WRAP, DEFAULT_RESPONSE_ON_NONE},
-         {AUTOINDENT, "Auto indent"},
-         {VIEW_MODE, DEFAULT_RESPONSE_ON_NONE},
-         {USE_MOUSE, "Mouse support"},
-         {USE_REGEXP, DEFAULT_RESPONSE_ON_NONE},
-         {SAVE_ON_EXIT, DEFAULT_RESPONSE_ON_NONE},
-         {CUT_FROM_CURSOR, "Cut to end"},
-         {BACKWARDS_SEARCH, DEFAULT_RESPONSE_ON_NONE},
-         {MULTIBUFFER, DEFAULT_RESPONSE_ON_NONE},
-         {REBIND_DELETE, DEFAULT_RESPONSE_ON_NONE},
-         {RAW_SEQUENCES, DEFAULT_RESPONSE_ON_NONE},
-         {NO_CONVERT, DEFAULT_RESPONSE_ON_NONE},
-         {MAKE_BACKUP, DEFAULT_RESPONSE_ON_NONE},
-         {INSECURE_BACKUP, DEFAULT_RESPONSE_ON_NONE},
-         {NO_SYNTAX, "Color syntax highlighting"},
-         {PRESERVE, DEFAULT_RESPONSE_ON_NONE},
-         {HISTORYLOG, DEFAULT_RESPONSE_ON_NONE},
-         {RESTRICTED, DEFAULT_RESPONSE_ON_NONE},
-         {SMART_HOME, "Smart home key"},
-         {WHITESPACE_DISPLAY, "Whitespace display"},
-         {TABS_TO_SPACES, "Conversion of typed tabs to spaces"},
-         {QUICK_BLANK, DEFAULT_RESPONSE_ON_NONE},
-         {WORD_BOUNDS, DEFAULT_RESPONSE_ON_NONE},
-         {NO_NEWLINES, DEFAULT_RESPONSE_ON_NONE},
-         {BOLD_TEXT, DEFAULT_RESPONSE_ON_NONE},
-         {SOFTWRAP, "Soft wrapping of overlong lines"},
-         {POSITIONLOG, DEFAULT_RESPONSE_ON_NONE},
-         {LOCKING, DEFAULT_RESPONSE_ON_NONE},
-         {NOREAD_MODE, DEFAULT_RESPONSE_ON_NONE},
-         {MAKE_IT_UNIX, DEFAULT_RESPONSE_ON_NONE},
-         {TRIM_BLANKS, DEFAULT_RESPONSE_ON_NONE},
-         {SHOW_CURSOR, DEFAULT_RESPONSE_ON_NONE},
-         {LINE_NUMBERS, "Line numbering"},
-         {AT_BLANKS, DEFAULT_RESPONSE_ON_NONE},
-         {AFTER_ENDS, DEFAULT_RESPONSE_ON_NONE},
-         {LET_THEM_ZAP, DEFAULT_RESPONSE_ON_NONE},
-         {BREAK_LONG_LINES, "Hard wrapping of overlong lines"},
-         {JUMPY_SCROLLING, DEFAULT_RESPONSE_ON_NONE},
-         {EMPTY_LINE, DEFAULT_RESPONSE_ON_NONE},
-         {INDICATOR, DEFAULT_RESPONSE_ON_NONE},
-         {BOOKSTYLE, DEFAULT_RESPONSE_ON_NONE},
-         {COLON_PARSING, DEFAULT_RESPONSE_ON_NONE},
-         {STATEFLAGS, DEFAULT_RESPONSE_ON_NONE},
-         {USE_MAGIC, DEFAULT_RESPONSE_ON_NONE},
-         {MINIBAR, DEFAULT_RESPONSE_ON_NONE},
-         {ZERO, "Hidden interface"},
-         {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE}}
+constexpr_map<unsigned int, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
+    {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
+     {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
+     {CONSTANT_SHOW, "Constant cursor position display"},
+     {NO_HELP, "Help mode"},
+     {NO_WRAP, DEFAULT_RESPONSE_ON_NONE},
+     {AUTOINDENT, "Auto indent"},
+     {VIEW_MODE, DEFAULT_RESPONSE_ON_NONE},
+     {USE_MOUSE, "Mouse support"},
+     {USE_REGEXP, DEFAULT_RESPONSE_ON_NONE},
+     {SAVE_ON_EXIT, DEFAULT_RESPONSE_ON_NONE},
+     {CUT_FROM_CURSOR, "Cut to end"},
+     {BACKWARDS_SEARCH, DEFAULT_RESPONSE_ON_NONE},
+     {MULTIBUFFER, DEFAULT_RESPONSE_ON_NONE},
+     {REBIND_DELETE, DEFAULT_RESPONSE_ON_NONE},
+     {RAW_SEQUENCES, DEFAULT_RESPONSE_ON_NONE},
+     {NO_CONVERT, DEFAULT_RESPONSE_ON_NONE},
+     {MAKE_BACKUP, DEFAULT_RESPONSE_ON_NONE},
+     {INSECURE_BACKUP, DEFAULT_RESPONSE_ON_NONE},
+     {NO_SYNTAX, "Color syntax highlighting"},
+     {PRESERVE, DEFAULT_RESPONSE_ON_NONE},
+     {HISTORYLOG, DEFAULT_RESPONSE_ON_NONE},
+     {RESTRICTED, DEFAULT_RESPONSE_ON_NONE},
+     {SMART_HOME, "Smart home key"},
+     {WHITESPACE_DISPLAY, "Whitespace display"},
+     {TABS_TO_SPACES, "Conversion of typed tabs to spaces"},
+     {QUICK_BLANK, DEFAULT_RESPONSE_ON_NONE},
+     {WORD_BOUNDS, DEFAULT_RESPONSE_ON_NONE},
+     {NO_NEWLINES, DEFAULT_RESPONSE_ON_NONE},
+     {BOLD_TEXT, DEFAULT_RESPONSE_ON_NONE},
+     {SOFTWRAP, "Soft wrapping of overlong lines"},
+     {POSITIONLOG, DEFAULT_RESPONSE_ON_NONE},
+     {LOCKING, DEFAULT_RESPONSE_ON_NONE},
+     {NOREAD_MODE, DEFAULT_RESPONSE_ON_NONE},
+     {MAKE_IT_UNIX, DEFAULT_RESPONSE_ON_NONE},
+     {TRIM_BLANKS, DEFAULT_RESPONSE_ON_NONE},
+     {SHOW_CURSOR, DEFAULT_RESPONSE_ON_NONE},
+     {LINE_NUMBERS, "Line numbering"},
+     {AT_BLANKS, DEFAULT_RESPONSE_ON_NONE},
+     {AFTER_ENDS, DEFAULT_RESPONSE_ON_NONE},
+     {LET_THEM_ZAP, DEFAULT_RESPONSE_ON_NONE},
+     {BREAK_LONG_LINES, "Hard wrapping of overlong lines"},
+     {JUMPY_SCROLLING, DEFAULT_RESPONSE_ON_NONE},
+     {EMPTY_LINE, DEFAULT_RESPONSE_ON_NONE},
+     {INDICATOR, DEFAULT_RESPONSE_ON_NONE},
+     {BOOKSTYLE, DEFAULT_RESPONSE_ON_NONE},
+     {COLON_PARSING, DEFAULT_RESPONSE_ON_NONE},
+     {STATEFLAGS, DEFAULT_RESPONSE_ON_NONE},
+     {USE_MAGIC, DEFAULT_RESPONSE_ON_NONE},
+     {MINIBAR, DEFAULT_RESPONSE_ON_NONE},
+     {ZERO, "Hidden interface"},
+     {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE}}
 };
 
 //  Legazy code, from nano source code.
@@ -366,10 +365,9 @@ constexpr_map<unsigned int, std::string_view, NUMBER_OF_FLAGS>
 #define MYESNO       (1 << 13)
 #define MLINTER      (1 << 14)
 #define MFINDINHELP  (1 << 15)
-#define MMOST                                                                  \
-    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE |     \
-     MINSERTFILE | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | \
-     MLINTER)
+#define MMOST                                                                                                      \
+    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | \
+     MGOTODIR | MFINDINHELP | MSPELL | MLINTER)
 #define MSOME (MMOST | MBROWSER)
 /* The menus map. */
 constexpr_map<std::string_view, unsigned short, 16> menuOptionMap = {
@@ -474,14 +472,12 @@ constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
      {"do", CS_DO}}
 };
 
-constexpr unsigned int
-hash_string(const char *str, int h = 0)
+constexpr unsigned int hash_string(const char *str, int h = 0)
 {
     return !str[h] ? 5381 : (hash_string(str, h + 1) * 33) ^ str[h];
 }
 
-constexpr unsigned int
-operator""_uint_hash(const char *str, unsigned long)
+constexpr unsigned int operator""_uint_hash(const char *str, unsigned long)
 {
     return hash_string(str);
 }
@@ -520,7 +516,8 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
 };
 
 #define STRSTR(return_str, haystack, needle)      \
-    do {                                          \
+    do                                            \
+    {                                             \
         return_str = NULL;                        \
         if (!*needle)                             \
         {                                         \
@@ -545,32 +542,31 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
     }                                             \
     while (FALSE)
 
-#define ADV_PTR_BY_CH(ptr, ch)    for (; *ptr && (*ptr != ch); ptr++);
+#define ADV_PTR_BY_CH(ptr, ch)          \
+    for (; *ptr && (*ptr != ch); ptr++) \
+        ;
 
-#define adv_ptr_to_ch(ptr, ch)    for (; *ptr && (*ptr != ch); ptr++)
+#define adv_ptr_to_ch(ptr, ch)     for (; *ptr && (*ptr != ch); ptr++)
 
-#define ADV_PTR(ptr, ...)         for (; *ptr && __VA_ARGS__; ptr++)
-#define DCR_PTR(ptr, until, ...)  for (; ptr > until && __VA_ARGS__; ptr--)
+#define ADV_PTR(ptr, ...)          for (; *ptr && __VA_ARGS__; ptr++)
+#define DCR_PTR(ptr, until, ...)   for (; ptr > until && __VA_ARGS__; ptr--)
 
-#define adv_ptr(ptr, ...)         ADV_PTR(ptr, __VA_ARGS__)
-#define dcr_ptr(ptr, until, ...)  DCR_PTR(ptr, until, __VA_ARGS__)
-#define ADV_TO_NEXT_WORD(ptr)     ADV_PTR(ptr, (*ptr == ' ' || *ptr == '\t'))
-#define adv_ptr_to_next_word(ptr) adv_ptr(ptr, (*ptr == ' ' || *ptr == '\t'))
-#define adv_ptr_past_word(ptr)    adv_ptr(ptr, (*ptr != ' ' && *ptr != '\t'))
-#define ADV_PAST_WORD(ptr)        ADV_PTR(ptr, (*ptr != ' ' && *ptr != '\t'))
+#define adv_ptr(ptr, ...)          ADV_PTR(ptr, __VA_ARGS__)
+#define dcr_ptr(ptr, until, ...)   DCR_PTR(ptr, until, __VA_ARGS__)
+#define ADV_TO_NEXT_WORD(ptr)      ADV_PTR(ptr, (*ptr == ' ' || *ptr == '\t'))
+#define adv_ptr_to_next_word(ptr)  adv_ptr(ptr, (*ptr == ' ' || *ptr == '\t'))
+#define adv_ptr_past_word(ptr)     adv_ptr(ptr, (*ptr != ' ' && *ptr != '\t'))
+#define ADV_PAST_WORD(ptr)         ADV_PTR(ptr, (*ptr != ' ' && *ptr != '\t'))
 
-#define adv_to_next_ch(ptr)       for (; *ptr && (*ptr == ' ' || *ptr == '\t'); ptr++)
-#define dcr_to_prev_ch(ptr, until) \
-    dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
-#define DCR_TO_PREV_CH(ptr, until) \
-    dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
+#define adv_to_next_ch(ptr)        for (; *ptr && (*ptr == ' ' || *ptr == '\t'); ptr++)
+#define dcr_to_prev_ch(ptr, until) dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
+#define DCR_TO_PREV_CH(ptr, until) dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
 #define dcr_to_prev_ch_on_fail(ptr, until, apon_failure) \
     dcr_to_prev_ch(ptr, until);                          \
     if (ptr == until)                                    \
     {                                                    \
         apon_failure                                     \
     }
-#define dcr_past_prev_word(ptr, until) \
-    dcr_ptr(ptr, until, (*ptr != ' ' && *ptr != '\t'))
+#define dcr_past_prev_word(ptr, until) dcr_ptr(ptr, until, (*ptr != ' ' && *ptr != '\t'))
 
-#define ptr_to_next_word(p) for (; *p && !is_word_char(p, FALSE); p++)
+#define ptr_to_next_word(p)            for (; *p && !is_word_char(p, FALSE); p++)

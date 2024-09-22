@@ -5,10 +5,29 @@
 #include <fcntl.h>
 #include <stdio.h>
 
+bit_flag_t<8> openfile_type;
+
+static void
+do_bash_synx(void)
+{
+    openfile_type.clear_and_set<BASH>();
+    const auto &it = test_map.find("if");
+    if (it == test_map.end())
+    {
+        test_map["if"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["elif"] = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["else"] = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["fi"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["then"] = {FG_VS_CODE_BRIGHT_MAGENTA};
+    }
+}
+
 /* Function to check syntax for a open buffer. */
-void syntax_check_file(openfilestruct *file)
+void
+syntax_check_file(openfilestruct *file)
 {
     PROFILE_FUNCTION;
+    openfile_type.clear();
     if (openfile->filetop->next == NULL)
     {
         return;
@@ -16,9 +35,9 @@ void syntax_check_file(openfilestruct *file)
     if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX))
     {
         const string ext = file_extention_str();
-        NLOG("ext: '%s'.\n", ext.c_str());
         if (ext == "cpp" || ext == "c" || ext == "h" || ext == "hpp")
         {
+            openfile_type.clear_and_set<C_CPP>();
             const auto &it = test_map.find("bool");
             if (it == test_map.end())
             {
@@ -42,9 +61,9 @@ void syntax_check_file(openfilestruct *file)
                 test_map["NULL"]      = {FG_VS_CODE_BLUE};
                 test_map["typedef"]   = {FG_VS_CODE_BLUE};
                 test_map["sizeof"]    = {FG_VS_CODE_BLUE};
-                test_map["struct"] = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_STRUCT};
-                test_map["class"]  = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_CLASS};
-                test_map["enum"]   = {FG_VS_CODE_BLUE};
+                test_map["struct"]    = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_STRUCT};
+                test_map["class"]     = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_CLASS};
+                test_map["enum"]      = {FG_VS_CODE_BLUE};
                 test_map["namespace"] = {FG_VS_CODE_BLUE};
                 test_map["inline"]    = {FG_VS_CODE_BLUE};
                 test_map["typename"]  = {FG_VS_CODE_BLUE};
@@ -56,8 +75,7 @@ void syntax_check_file(openfilestruct *file)
                 test_map["this"]      = {FG_VS_CODE_BLUE};
                 test_map["union"]     = {FG_VS_CODE_BLUE};
                 test_map["auto"]      = {FG_VS_CODE_BLUE};
-                test_map["noexcept"]  = {
-                    FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["noexcept"]  = {FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
                 /* Compiler defines. */
                 /* test_map["__cplusplus"]     = {FG_VS_CODE_BLUE};
                 test_map["__clang__"]       = {FG_VS_CODE_BLUE};
@@ -67,39 +85,48 @@ void syntax_check_file(openfilestruct *file)
                 test_map["__has_builtin"]   = {FG_VS_CODE_BLUE};
                 test_map["__restrict"]      = {FG_VS_CODE_BLUE}; */
                 /* Control statements. */
-                test_map["if"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["else"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["case"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["switch"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["for"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["while"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["return"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["break"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["do"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["continue"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["using"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-                test_map["operator"] = {
-                    FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["if"]       = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["else"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["case"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["switch"]   = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["for"]      = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["while"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["return"]   = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["break"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["do"]       = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["continue"] = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["using"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+                test_map["operator"] = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
             }
-            LSP->check(NULL, "");
-            LSP->add_defs_to_color_map();
+        }
+        else if (ext == "asm" || ext == "s")
+        {
+            openfile_type.clear_and_set<ASM>();
+        }
+        else if (ext == "sh")
+        {
+            do_bash_synx();
+        }
+        /**
+         * TODO: Check that this is fully safe.
+         */
+        else
+        {
+            linestruct *line = openfile->filetop;
+            while (line && is_empty_line(line))
+            {
+                line = line->next;
+            }
+            if (line && strstr(line->data, "#!"))
+            {
+                do_bash_synx();
+            }
         }
     }
 }
 
-bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg,
-                      short *bg, int *attr)
+bool
+parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr)
 {
     bool vivid, thick;
     *attr = A_NORMAL;
@@ -160,7 +187,8 @@ bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg,
     return TRUE;
 }
 
-bool check_func_syntax(char ***words, unsigned long *i)
+bool
+check_func_syntax(char ***words, unsigned long *i)
 {
     unsigned long  at   = 0;
     unsigned short type = 0;
@@ -209,7 +237,8 @@ bool check_func_syntax(char ***words, unsigned long *i)
 }
 
 /* Check a file for syntax, and add relevent syntax. */
-void check_syntax(const char *path)
+void
+check_syntax(const char *path)
 {
     if (!is_file_and_exists(path))
     {
@@ -276,9 +305,8 @@ void check_syntax(const char *path)
                     // rgx_word(words[++i]), &last_c_color);
                 }
             }
-            else if (type & CS_CHAR || type & CS_VOID || type & CS_INT ||
-                     type & CS_LONG || type & CS_BOOL || type & CS_SIZE_T ||
-                     type & CS_SSIZE_T)
+            else if (type & CS_CHAR || type & CS_VOID || type & CS_INT || type & CS_LONG || type & CS_BOOL ||
+                     type & CS_SIZE_T || type & CS_SSIZE_T)
             {
                 if (check_func_syntax(&words, &i))
                 {
@@ -353,7 +381,8 @@ void check_syntax(const char *path)
     fclose(f);
 }
 
-void check_include_file_syntax(const char *path)
+void
+check_include_file_syntax(const char *path)
 {
     if (!is_file_and_exists(path))
     {
@@ -444,9 +473,8 @@ void check_include_file_syntax(const char *path)
                 add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]));
             }
         } */
-        else if (type & CS_CHAR || type & CS_VOID || type & CS_INT ||
-                 type & CS_LONG || type & CS_BOOL || type & CS_SIZE_T ||
-                 type & CS_SSIZE_T)
+        else if (type & CS_CHAR || type & CS_VOID || type & CS_INT || type & CS_LONG || type & CS_BOOL ||
+                 type & CS_SIZE_T || type & CS_SSIZE_T)
         {
             if (words[++i] != NULL)
             {
@@ -500,7 +528,8 @@ void check_include_file_syntax(const char *path)
 }
 
 /* Add a '#define' to syntax. */
-void handle_define(char *str)
+void
+handle_define(char *str)
 {
     unsigned int i;
     if (*str == '\\')
@@ -529,7 +558,8 @@ void handle_define(char *str)
 static unsigned short last_type = 0;
 /* Check a line for syntax words, also index files that are included and add
  * functions as well. */
-void check_for_syntax_words(linestruct *line)
+void
+check_for_syntax_words(linestruct *line)
 {
     unsigned long i;
     char        **words;
@@ -578,10 +608,8 @@ void check_for_syntax_words(linestruct *line)
         const unsigned short type = retrieve_c_syntax_type(words[i]);
         if (last_type != 0)
         {
-            if (last_type & CS_VOID || last_type & CS_INT ||
-                last_type & CS_CHAR || last_type & CS_LONG ||
-                last_type & CS_BOOL || last_type & CS_SIZE_T ||
-                last_type & CS_SSIZE_T || last_type & CS_SHORT)
+            if (last_type & CS_VOID || last_type & CS_INT || last_type & CS_CHAR || last_type & CS_LONG ||
+                last_type & CS_BOOL || last_type & CS_SIZE_T || last_type & CS_SSIZE_T || last_type & CS_SHORT)
             {
                 unsigned int j;
                 for (j = 0; (words[i])[j]; j++)
@@ -631,9 +659,8 @@ void check_for_syntax_words(linestruct *line)
         }
         else if (type & CS_ENUM)
         {}
-        else if (type & CS_LONG || type & CS_VOID || type & CS_INT ||
-                 type & CS_CHAR || type & CS_BOOL || type & CS_SIZE_T ||
-                 type & CS_SSIZE_T || type & CS_SHORT)
+        else if (type & CS_LONG || type & CS_VOID || type & CS_INT || type & CS_CHAR || type & CS_BOOL ||
+                 type & CS_SIZE_T || type & CS_SSIZE_T || type & CS_SHORT)
         {
             if (check_func_syntax(&words, &i))
             {
@@ -669,14 +696,16 @@ void check_for_syntax_words(linestruct *line)
 }
 
 /* Add some "basic" cpp syntax. */
-void do_cpp_syntax(void)
+void
+do_cpp_syntax(void)
 {
-    flag_all_brackets();
-    flag_all_block_comments(openfile->filetop);
+    // flag_all_brackets();
+    // flag_all_block_comments(openfile->filetop);
 }
 
 /* Return`s 'TRUE' if 'str' is in the 'syntax_structs' vector. */
-bool is_syntax_struct(std::string_view str)
+bool
+is_syntax_struct(std::string_view str)
 {
     for (int i = 0; i < structs.get_size(); i++)
     {
@@ -688,7 +717,8 @@ bool is_syntax_struct(std::string_view str)
     return FALSE;
 }
 
-bool is_syntax_class(std::string_view str)
+bool
+is_syntax_class(std::string_view str)
 {
     for (int i = 0; i < classes.get_size(); i++)
     {
@@ -700,7 +730,8 @@ bool is_syntax_class(std::string_view str)
     return FALSE;
 }
 
-bool define_exists(const char *str)
+bool
+define_exists(const char *str)
 {
     for (int i = 0; i < defines.get_size(); i++)
     {
@@ -712,7 +743,8 @@ bool define_exists(const char *str)
     return FALSE;
 }
 
-void handle_struct_syntax(char **word)
+void
+handle_struct_syntax(char **word)
 {
     unsigned long i;
     while (*(*word) == '*')
@@ -734,7 +766,8 @@ void handle_struct_syntax(char **word)
     }
 }
 
-void find_block_comments(int from, int end)
+void
+find_block_comments(int from, int end)
 {
     PROFILE_FUNCTION;
     linestruct *line = line_from_number(from);
@@ -746,27 +779,27 @@ void find_block_comments(int from, int end)
             ;
         else if (found_start && !found_end)
         {
-            LINE_SET(line, BLOCK_COMMENT_START);
+            line->flags.set(BLOCK_COMMENT_START);
             continue;
         }
         else if (!found_start && found_end)
         {
-            LINE_SET(line, BLOCK_COMMENT_END);
+            line->flags.set(BLOCK_COMMENT_END);
             continue;
         }
         else if (!found_start && !found_end)
         {
             if (line->prev != NULL &&
-                (LINE_ISSET(line->prev, BLOCK_COMMENT_START) ||
-                 LINE_ISSET(line->prev, IN_BLOCK_COMMENT)))
+                ((line->prev->flags.is_set(BLOCK_COMMENT_START)) || (line->prev->flags.is_set(IN_BLOCK_COMMENT))))
             {
-                LINE_SET(line, IN_BLOCK_COMMENT);
+                line->flags.set(IN_BLOCK_COMMENT);
             }
         }
     }
 }
 
-char **find_functions_in_file(char *path)
+char **
+find_functions_in_file(char *path)
 {
     FILE *file = fopen(path, "rb");
     if (file == NULL)
@@ -812,30 +845,25 @@ char **find_functions_in_file(char *path)
         if (parent_start)
         {
             start = parent_start;
-            for (; start > line && *start != ' ' && *start != '\t' &&
-                   *start != '*' && *start != '&';
-                 start--);
+            for (; start > line && *start != ' ' && *start != '\t' && *start != '*' && *start != '&'; start--)
+                ;
             if (start > p)
             {
                 start += 1;
-                if (strstr(line, "__nonnull") != NULL ||
-                    line[(start - line) + 1] == '*' || *start == '(')
+                if (strstr(line, "__nonnull") != NULL || line[(start - line) + 1] == '*' || *start == '(')
                 {
                     continue;
                 }
                 end = strchr(line, ';');
                 if (end)
                 {
-                    char *func_str =
-                        measured_memmove_copy(start, (end - start));
+                    char *func_str    = measured_memmove_copy(start, (end - start));
                     char *return_type = copy_of("void ");
-                    char *full_func =
-                        alloc_str_free_substrs(return_type, func_str);
+                    char *full_func   = alloc_str_free_substrs(return_type, func_str);
                     if (acap == asize)
                     {
                         acap *= 2;
-                        func_str_array = (char **)nrealloc(
-                            func_str_array, acap * sizeof(char *));
+                        func_str_array = (char **)nrealloc(func_str_array, acap * sizeof(char *));
                     }
                     func_str_array[asize++] = full_func;
                 }
@@ -848,7 +876,8 @@ char **find_functions_in_file(char *path)
     return func_str_array;
 }
 
-char **find_variabels_in_file(char *path)
+char **
+find_variabels_in_file(char *path)
 {
     FILE *file = fopen(path, "rb");
     if (file == NULL)
@@ -892,8 +921,7 @@ char **find_variabels_in_file(char *path)
             if (acap == asize)
             {
                 acap *= 2;
-                var_str_array =
-                    (char **)nrealloc(var_str_array, acap * sizeof(char *));
+                var_str_array = (char **)nrealloc(var_str_array, acap * sizeof(char *));
             }
             var_str_array[asize++] = str;
         }

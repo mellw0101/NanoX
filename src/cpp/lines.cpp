@@ -50,7 +50,8 @@ bool
 is_empty_line(linestruct *line)
 {
     unsigned long i = 0;
-    for (; line->data[i] && i < 1; i++);
+    for (; line->data[i] && i < 1; i++)
+        ;
     return (i == 0);
 }
 
@@ -164,8 +165,7 @@ move_lines(bool up)
             }
             mark = mark->prev;
             cur  = cur->prev;
-            NETLOGGER.log(
-                "%lu\n%s\n%lu\n%s\n", x_cur, cur->data, x_mark, mark->data);
+            NETLOGGER.log("%lu\n%s\n%lu\n%s\n", x_cur, cur->data, x_mark, mark->data);
             openfile->mark      = mark;
             openfile->mark_x    = x_mark;
             openfile->current   = cur;
@@ -231,15 +231,15 @@ find_next_bracket(bool up, linestruct *from_line)
     {
         for (linestruct *line = from_line; line != NULL; line = line->prev)
         {
-            if (!LINE_ISSET(line, IN_BRACKET))
+            if (!(line->flags.is_set(IN_BRACKET)))
             {
                 return NULL;
             }
-            else if (LINE_ISSET(line, BRACKET_END))
+            else if ((line->flags.is_set(BRACKET_END)))
             {
                 return line;
             }
-            else if (LINE_ISSET(line, BRACKET_START))
+            else if ((line->flags.is_set(BRACKET_START)))
             {
                 return line;
             }
