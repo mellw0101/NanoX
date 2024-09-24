@@ -1,0 +1,49 @@
+%{
+#include <string>
+#include <iostream>
+
+struct keyword {
+    const char *name;
+    int value;
+};
+%}
+
+%language=C++
+%define class-name HashMap
+%define lookup-function-name find_keyword
+%%
+bool
+char
+short
+int
+long
+unsigned
+void
+static
+extern
+constexpr
+const
+true
+false
+TRUE
+FALSE
+nullptr
+NULL
+typedef
+sizeof
+struct
+class
+enum
+namespace
+inline
+typename
+template
+volatile
+public
+private
+explicit
+this
+union
+auto
+noexcept
+%%

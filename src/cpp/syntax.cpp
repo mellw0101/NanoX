@@ -14,11 +14,18 @@ do_bash_synx(void)
     const auto &it = test_map.find("if");
     if (it == test_map.end())
     {
-        test_map["if"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
-        test_map["elif"] = {FG_VS_CODE_BRIGHT_MAGENTA};
-        test_map["else"] = {FG_VS_CODE_BRIGHT_MAGENTA};
-        test_map["fi"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
-        test_map["then"] = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["if"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["elif"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["else"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["fi"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["then"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["case"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["in"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["esac"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["for"]   = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["while"] = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["do"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
+        test_map["done"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
     }
 }
 
@@ -76,14 +83,6 @@ syntax_check_file(openfilestruct *file)
                 test_map["union"]     = {FG_VS_CODE_BLUE};
                 test_map["auto"]      = {FG_VS_CODE_BLUE};
                 test_map["noexcept"]  = {FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
-                /* Compiler defines. */
-                /* test_map["__cplusplus"]     = {FG_VS_CODE_BLUE};
-                test_map["__clang__"]       = {FG_VS_CODE_BLUE};
-                test_map["__GNUC__"]        = {FG_VS_CODE_BLUE};
-                test_map["__STDC__"]        = {FG_VS_CODE_BLUE};
-                test_map["__has_attribute"] = {FG_VS_CODE_BLUE};
-                test_map["__has_builtin"]   = {FG_VS_CODE_BLUE};
-                test_map["__restrict"]      = {FG_VS_CODE_BLUE}; */
                 /* Control statements. */
                 test_map["if"]       = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
                 test_map["else"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};

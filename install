@@ -10,7 +10,22 @@ echo "Architecture: $ARCH"
 # Perform actions based on the architecture
 case "$ARCH" in
     x86_64)
-        AmakeCpp --build --install --bin /usr/lib/Mlib.a -lSDL2 -lSDL2_ttf
+        AmakeCpp --build --install --bin /usr/lib/Mlib.a /usr/local/lib/libSDL3.a /usr/local/lib/libSDL3_ttf.a /usr/local/lib/libSXL.a -lfreetype
+		# SRC_DIR="$(pwd)/src/c"
+		# OUT_DIR="$(pwd)/build/NIndent"
+		# if [ ! -d "$OUT_DIR" ]; then
+		# 	mkdir "$OUT_DIR"
+		# fi
+		# for file in "$SRC_DIR"/*; do
+		# 	clang -c -O2 $file -o $OUT_DIR/$(basename $file .c).o
+        #     echo $file 
+		# done
+		# args=""
+		# for file in "$OUT_DIR"/*; do
+		# 	args="$args $file"
+        #     echo $file
+		# done
+		# clang -O2 $args -o "$(pwd)/build/bin/NIndent"
         # /usr/local/lib/libxcb.a /usr/local/lib/libXau.a /usr/local/lib/libXdmcp.a
         ;;
     aarch64)

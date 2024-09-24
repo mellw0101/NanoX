@@ -9,22 +9,25 @@
 
 /* Whether we've enabled UTF-8 support.
  * Initially set to 'FALSE', and then set to 'TRUE' by utf8_init(). */
-static bool use_utf8 = FALSE;
+static bool use_utf8 = false;
 
 /* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
-void utf8_init(void)
+void
+utf8_init(void)
 {
-    use_utf8 = TRUE;
+    use_utf8 = true;
 }
 
 /* Checks if UTF-8 support has been enabled. */
-bool using_utf8(void)
+bool
+using_utf8(void)
 {
     return use_utf8;
 }
 
 /* Return 'TRUE' when the given character is some kind of letter. */
-bool is_alpha_char(const char *const c)
+bool
+is_alpha_char(const char *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
@@ -35,18 +38,20 @@ bool is_alpha_char(const char *const c)
 }
 
 /* Return TRUE when the given character is some kind of letter or a digit. */
-bool is_alnum_char(const char *const c)
+bool
+is_alnum_char(const char *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
     {
-        return FALSE;
+        return false;
     }
     return iswalnum(wc);
 }
 
 /* Return TRUE when the given character is space or tab or other whitespace. */
-bool is_blank_char(const char *const c)
+bool
+is_blank_char(const char *const c)
 {
     wchar_t wc;
     if ((signed char)*c >= 0)
@@ -55,13 +60,14 @@ bool is_blank_char(const char *const c)
     }
     if (mbtowide(wc, c) < 0)
     {
-        return FALSE;
+        return false;
     }
     return iswblank(wc);
 }
 
 /* Return 'TRUE' when the given character is a control character. */
-bool is_cntrl_char(const char *const c)
+bool
+is_cntrl_char(const char *const c)
 {
     if (use_utf8)
     {
@@ -74,47 +80,50 @@ bool is_cntrl_char(const char *const c)
 }
 
 /* Return 'TRUE' when the given character is a punctuation character. */
-bool is_punct_char(const char *const c)
+bool
+is_punct_char(const char *const c)
 {
     wchar_t wc;
     if (mbtowide(wc, c) < 0)
     {
-        return FALSE;
+        return false;
     }
     return iswpunct(wc);
 }
 
 /* Return TRUE when the given character is word-forming (it is alphanumeric or
  * specified in 'wordchars', or it is punctuation when allow_punct is TRUE). */
-bool is_word_char(const char *const c, bool allow_punct)
+bool
+is_word_char(const char *const c, bool allow_punct)
 {
     if (*c == '\0')
     {
-        return FALSE;
+        return false;
     }
     if (is_alnum_char(c))
     {
-        return TRUE;
+        return true;
     }
     if (allow_punct && is_punct_char(c))
     {
-        return TRUE;
+        return true;
     }
-    if (word_chars != NULL && *word_chars != '\0')
+    if (word_chars && *word_chars != '\0')
     {
         char      symbol[MAXCHARLEN + 1];
         const int symlen = collect_char(c, symbol);
         symbol[symlen]   = '\0';
-        return (constexpr_strstr(word_chars, symbol) != NULL);
+        return constexpr_strstr(word_chars, symbol);
     }
     else
     {
-        return FALSE;
+        return false;
     }
 }
 
 /* Return the visible representation of control character c. */
-char control_rep(const signed char c)
+char
+control_rep(const signed char c)
 {
     if (c == DEL_CODE)
     {
@@ -135,7 +144,8 @@ char control_rep(const signed char c)
 }
 
 /* Return the visible representation of multibyte control character c. */
-char control_mbrep(const char *const c, bool isdata)
+char
+control_mbrep(const char *const c, bool isdata)
 {
     /* An embedded newline is an encoded NUL if 'isdata' is TRUE. */
     if (*c == '\n' && (isdata || as_an_at))
@@ -144,7 +154,7 @@ char control_mbrep(const char *const c, bool isdata)
     }
     if (use_utf8)
     {
-        if ((unsigned char)c[0] < 128)
+        if ((u_char)c[0] < 128)
         {
             return control_rep(c[0]);
         }
@@ -161,22 +171,23 @@ char control_mbrep(const char *const c, bool isdata)
 
 /* Convert the given multibyte sequence c to wide character wc, and return
  * the number of bytes in the sequence, or -1 for an invalid sequence. */
-int mbtowide(wchar_t &wc, const char *const c)
+int
+mbtowide(wchar_t &wc, const char *const c)
 {
     if ((signed char)*c < 0 && use_utf8)
     {
-        unsigned char v1 = (unsigned char)c[0];
-        unsigned char v2 = (unsigned char)c[1] ^ 0x80;
+        u_char v1 = (u_char)c[0];
+        u_char v2 = (u_char)c[1] ^ 0x80;
         if (v2 > 0x3F || v1 < 0xC2)
         {
             return -1;
         }
         if (v1 < 0xE0)
         {
-            wc = (((unsigned int)(v1 & 0x1F) << 6) | (unsigned int)v2);
+            wc = (((u_int)(v1 & 0x1F) << 6) | (u_int)v2);
             return 2;
         }
-        unsigned char v3 = (unsigned char)c[2] ^ 0x80;
+        u_char v3 = (u_char)c[2] ^ 0x80;
         if (v3 > 0x3F)
         {
             return -1;
@@ -185,7 +196,7 @@ int mbtowide(wchar_t &wc, const char *const c)
         {
             if ((v1 > 0xE0 || v2 >= 0x20) && (v1 != 0xED || v2 < 0x20))
             {
-                wc = (((unsigned int)(v1 & 0x0F) << 12) | ((unsigned int)v2 << 6) | (unsigned int)v3);
+                wc = (((u_int)(v1 & 0x0F) << 12) | ((u_int)v2 << 6) | (u_int)v3);
                 return 3;
             }
             else
@@ -193,15 +204,14 @@ int mbtowide(wchar_t &wc, const char *const c)
                 return -1;
             }
         }
-        unsigned char v4 = (unsigned char)c[3] ^ 0x80;
+        u_char v4 = (u_char)c[3] ^ 0x80;
         if (v4 > 0x3F || v1 > 0xF4)
         {
             return -1;
         }
         if ((v1 > 0xF0 || v2 >= 0x10) && (v1 != 0xF4 || v2 < 0x10))
         {
-            wc = (((unsigned int)(v1 & 0x07) << 18) | ((unsigned int)v2 << 12) | ((unsigned int)v3 << 6) |
-                  (unsigned int)v4);
+            wc = (((u_int)(v1 & 0x07) << 18) | ((u_int)v2 << 12) | ((u_int)v3 << 6) | (u_int)v4);
             return 4;
         }
         else
@@ -209,56 +219,59 @@ int mbtowide(wchar_t &wc, const char *const c)
             return -1;
         }
     }
-    wc = (unsigned int)*c;
+    wc = (u_int)*c;
     return 1;
 }
 
 /* Return 'TRUE' when the given character occupies two cells. */
-bool is_doublewidth(const char *const ch)
+bool
+is_doublewidth(const char *const ch)
 {
     wchar_t wc;
     /* Only from U+1100 can code points have double width. */
-    if ((unsigned char)*ch < 0xE1 || !use_utf8)
+    if ((u_char)*ch < 0xE1 || !use_utf8)
     {
-        return FALSE;
+        return false;
     }
     if (mbtowide(wc, ch) < 0)
     {
-        return FALSE;
+        return false;
     }
     return (wcwidth(wc) == 2);
 }
 
 /* Return 'TRUE' when the given character occupies zero cells. */
-bool is_zerowidth(const char *ch)
+bool
+is_zerowidth(const char *ch)
 {
     wchar_t wc;
     /* Only from U+0300 can code points have zero width. */
     if ((unsigned char)*ch < 0xCC || !use_utf8)
     {
-        return FALSE;
+        return false;
     }
     if (mbtowide(wc, ch) < 0)
     {
-        return FALSE;
+        return false;
     }
 #if defined(__OpenBSD__)
     /* Work around an OpenBSD bug -- see https://sv.gnu.org/bugs/?60393. */
     if (wc >= 0xF0000)
     {
-        return FALSE;
+        return false;
     }
 #endif
     return (wcwidth(wc) == 0);
 }
 
 /* Return the number of bytes in the character that starts at *pointer. */
-int char_length(const char *const &pointer)
+int
+char_length(const char *const &pointer)
 {
-    if ((unsigned char)*pointer > 0xC1 && use_utf8)
+    if ((u_char)*pointer > 0xC1 && use_utf8)
     {
-        const unsigned char c1 = (unsigned char)pointer[0];
-        const unsigned char c2 = (unsigned char)pointer[1];
+        const u_char c1 = (u_char)pointer[0];
+        const u_char c2 = (u_char)pointer[1];
         if ((c2 ^ 0x80) > 0x3F)
         {
             return 1;
@@ -267,7 +280,7 @@ int char_length(const char *const &pointer)
         {
             return 2;
         }
-        if (((unsigned char)pointer[2] ^ 0x80) > 0x3F)
+        if (((u_char)pointer[2] ^ 0x80) > 0x3F)
         {
             return 1;
         }
@@ -282,7 +295,7 @@ int char_length(const char *const &pointer)
                 return 1;
             }
         }
-        if (((unsigned char)pointer[3] ^ 0x80) > 0x3F)
+        if (((u_char)pointer[3] ^ 0x80) > 0x3F)
         {
             return 1;
         }
@@ -299,9 +312,10 @@ int char_length(const char *const &pointer)
 }
 
 /* Return the number of (multibyte) characters in the given string. */
-unsigned long mbstrlen(const char *pointer)
+u_long
+mbstrlen(const char *pointer)
 {
-    unsigned long count = 0;
+    u_long count = 0;
     while (*pointer != '\0')
     {
         pointer += char_length(pointer);
@@ -312,7 +326,8 @@ unsigned long mbstrlen(const char *pointer)
 
 /* Return the length (in bytes) of the character at the start of the
  * given string, and return a copy of this character in *thechar. */
-int collect_char(const char *const str, char *c)
+int
+collect_char(const char *const str, char *c)
 {
     const int charlen = char_length(str);
     for (int i = 0; i < charlen; i++)
@@ -324,12 +339,13 @@ int collect_char(const char *const str, char *c)
 
 /* Return the length ( in bytes ) of the character at the start of
  * the given string, and add this character's width to '*column'. */
-int advance_over(const char *const str, unsigned long &column)
+int
+advance_over(const char *const str, u_long &column)
 {
-    if ((char)*str < 0 && use_utf8)
+    if (*str < 0 && use_utf8)
     {
         /* A UTF-8 upper control code has two bytes and takes two columns. */
-        if ((unsigned char)str[0] == 0xC2 && (signed char)str[1] < -96)
+        if ((u_char)str[0] == 0xC2 && (signed char)str[1] < -96)
         {
             column += 2;
             return 2;
@@ -352,7 +368,7 @@ int advance_over(const char *const str, unsigned long &column)
             return charlen;
         }
     }
-    if ((unsigned char)*str < 0x20)
+    if ((u_char)*str < 0x20)
     {
         if (*str == '\t')
         {
@@ -363,7 +379,7 @@ int advance_over(const char *const str, unsigned long &column)
             column += 2;
         }
     }
-    else if (0x7E < (unsigned char)*str && (unsigned char)*str < 0xA0)
+    else if (0x7E < (u_char)*str && (u_char)*str < 0xA0)
     {
         column += 2;
     }
@@ -374,13 +390,13 @@ int advance_over(const char *const str, unsigned long &column)
     return 1;
 }
 
-/* Return the index in buf of the beginning of
- * the multibyte character before the one at pos. */
-unsigned long step_left(const char *const buf, const unsigned long pos)
+/* Return the index in buf of the beginning of the multibyte character before the one at pos. */
+u_long
+step_left(const char *const buf, const u_long pos)
 {
     if (use_utf8)
     {
-        unsigned long before, charlen = 0;
+        u_long before, charlen = 0;
         if (pos < 4)
         {
             before = 0;
@@ -425,21 +441,23 @@ unsigned long step_left(const char *const buf, const unsigned long pos)
     }
 }
 
-/* Return the index in buf of the beginning of the multibyte character
- * after the one at pos. */
-unsigned long step_right(const char *const buf, const unsigned long pos)
+/* Return the index in buf of the beginning of the multibyte character after the one at pos. */
+u_long
+step_right(const char *const buf, const u_long pos)
 {
     return pos + char_length(buf + pos);
 }
 
 /* This function is equivalent to strcasecmp() for multibyte strings. */
-int mbstrcasecmp(const char *s1, const char *s2)
+int
+mbstrcasecmp(const char *s1, const char *s2)
 {
     return mbstrncasecmp(s1, s2, HIGHEST_POSITIVE);
 }
 
 /* This function is equivalent to strncasecmp() for multibyte strings. */
-int mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
+int
+mbstrncasecmp(const char *s1, const char *s2, u_long n)
 {
     if (use_utf8)
     {
@@ -480,7 +498,7 @@ int mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
             {
                 if (*s1 != *s2)
                 {
-                    return (int)((unsigned char)*s1 - (unsigned char)*s2);
+                    return (int)((u_char)*s1 - (u_char)*s2);
                 }
                 if (bad1 != bad2)
                 {
@@ -498,7 +516,7 @@ int mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
             s1 += char_length(s1), s2 += char_length(s2);
             n--;
         }
-        return (n > 0) ? (int)((unsigned char)*s1 - (unsigned char)*s2) : 0;
+        return (n > 0) ? (int)((u_char)*s1 - (u_char)*s2) : 0;
     }
     else
     {
@@ -507,11 +525,12 @@ int mbstrncasecmp(const char *s1, const char *s2, unsigned long n)
 }
 
 /* This function is equivalent to strcasestr() for multibyte strings. */
-char *mbstrcasestr(const char *haystack, const char *const needle)
+char *
+mbstrcasestr(const char *haystack, const char *const needle)
 {
     if (use_utf8)
     {
-        const unsigned long needle_len = mbstrlen(needle);
+        const u_long needle_len = mbstrlen(needle);
         while (*haystack != '\0')
         {
             if (mbstrncasecmp(haystack, needle, needle_len) == 0)
@@ -520,7 +539,7 @@ char *mbstrcasestr(const char *haystack, const char *const needle)
             }
             haystack += char_length(haystack);
         }
-        return NULL;
+        return nullptr;
     }
     else
     {
@@ -528,10 +547,10 @@ char *mbstrcasestr(const char *haystack, const char *const needle)
     }
 }
 
-/* This function is equivalent to strstr(),
- * except in that it scans the string in reverse,
- * starting at pointer. */
-char *revstrstr(const char *const haystack, const char *const needle, const char *pointer)
+/* This function is equivalent to strstr(), except in that
+ * it scans the string in reverse, starting at pointer. */
+char *
+revstrstr(const char *const haystack, const char *const needle, const char *pointer)
 {
     const unsigned long needle_len = strlen(needle), tail_len = strlen(pointer);
     if (tail_len < needle_len)
@@ -551,9 +570,11 @@ char *revstrstr(const char *const haystack, const char *const needle, const char
 
 /* This function is equivalent to strcasestr(), except in that it scans
  * the string in reverse, starting at pointer. */
-char *revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
+char *
+revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
 {
-    const unsigned long needle_len = strlen(needle), tail_len = strlen(pointer);
+    const u_long needle_len = strlen(needle);
+    const u_long tail_len   = strlen(pointer);
     if (tail_len < needle_len)
     {
         pointer -= (needle_len - tail_len);
@@ -566,25 +587,27 @@ char *revstrcasestr(const char *const haystack, const char *const needle, const 
         }
         pointer--;
     }
-    return NULL;
+    return nullptr;
 }
 
 /* This function is equivalent to strcasestr() for multibyte strings,
  * except in that it scans the string in reverse, starting at pointer. */
-char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
+char *
+mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer)
 {
     if (use_utf8)
     {
-        const unsigned long needle_len = mbstrlen(needle), tail_len = mbstrlen(pointer);
+        const u_long needle_len = mbstrlen(needle);
+        const u_long tail_len   = mbstrlen(pointer);
         if (tail_len < needle_len)
         {
             pointer -= (needle_len - tail_len);
         }
         if (pointer < haystack)
         {
-            return NULL;
+            return nullptr;
         }
-        while (TRUE)
+        while (true)
         {
             if (!mbstrncasecmp(pointer, needle, needle_len))
             {
@@ -592,7 +615,7 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
             }
             if (pointer == haystack)
             {
-                return NULL;
+                return nullptr;
             }
             pointer = haystack + step_left(haystack, pointer - haystack);
         }
@@ -607,24 +630,27 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
  * It is used to find the first occurrence of a character in a string.
  * The character to find is given as a multibyte string.
  * The function is used in justify.c to find the first space in a line. */
-char *mbstrchr(const char *string, const char *const chr)
+char *
+mbstrchr(const char *string, const char *const chr)
 {
     if (use_utf8)
     {
-        bool    bad_s = FALSE, bad_c = FALSE;
-        wchar_t ws, wc;
+        bool    bad_s = false;
+        bool    bad_c = false;
+        wchar_t ws;
+        wchar_t wc;
         if (mbtowide(wc, chr) < 0)
         {
-            wc    = (unsigned char)*chr;
-            bad_c = TRUE;
+            wc    = (u_char)*chr;
+            bad_c = true;
         }
         while (*string != '\0')
         {
             const int symlen = mbtowide(ws, string);
             if (symlen < 0)
             {
-                ws    = (unsigned char)*string;
-                bad_s = TRUE;
+                ws    = (u_char)*string;
+                bad_s = true;
             }
             if (ws == wc && bad_s == bad_c)
             {
@@ -634,7 +660,7 @@ char *mbstrchr(const char *string, const char *const chr)
         }
         if (*string == '\0')
         {
-            return NULL;
+            return nullptr;
         }
         return (char *)string;
     }
@@ -646,50 +672,53 @@ char *mbstrchr(const char *string, const char *const chr)
 
 /* Locate, in the given string, the first occurrence of any of
  * the characters in accept, searching forward. */
-char *mbstrpbrk(const char *str, const char *accept)
+char *
+mbstrpbrk(const char *str, const char *accept)
 {
-    while (*str != '\0')
+    while (*str)
     {
-        if (mbstrchr(accept, str) != NULL)
+        if (mbstrchr(accept, str))
         {
             return (char *)str;
         }
         str += char_length(str);
     }
-    return NULL;
+    return nullptr;
 }
 
 /* Locate, in the string that starts at head, the first occurrence of any of
  * the characters in accept, starting from pointer and searching backwards. */
-char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer)
+char *
+mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer)
 {
     if (*pointer == '\0')
     {
         if (pointer == head)
         {
-            return NULL;
+            return nullptr;
         }
         pointer = head + step_left(head, pointer - head);
     }
-    while (TRUE)
+    while (true)
     {
-        if (mbstrchr(accept, pointer) != NULL)
+        if (mbstrchr(accept, pointer))
         {
             return (char *)pointer;
         }
         /* If we've reached the head of the string, we found nothing. */
         if (pointer == head)
         {
-            return NULL;
+            return nullptr;
         }
         pointer = head + step_left(head, pointer - head);
     }
 }
 
 /* Return 'TRUE' if the given string contains at least one blank character. */
-bool has_blank_char(const char *str)
+bool
+has_blank_char(const char *str)
 {
-    while (*str != '\0' && !is_blank_char(str))
+    while (*str && !is_blank_char(str))
     {
         str += char_length(str);
     }
@@ -697,9 +726,10 @@ bool has_blank_char(const char *str)
 }
 
 /* Return 'TRUE' when the given string is empty or consists of only blanks. */
-bool white_string(const char *str)
+bool
+white_string(const char *str)
 {
-    while (*str != '\0' && (is_blank_char(str) || *str == '\r'))
+    while (*str && (is_blank_char(str) || *str == '\r'))
     {
         str += char_length(str);
     }
@@ -721,18 +751,18 @@ strip_leading_blanks_from(char *str)
 */
 
 /* Remove leading whitespace from a given string */
-void strip_leading_blanks_from(char *str)
+void
+strip_leading_blanks_from(char *str)
 {
     char *start = str;
-    for (; start && (*start == '\t' || *start == ' '); start++)
-        ;
+    for (; start && (*start == '\t' || *start == ' '); start++);
     (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
 }
 
-void strip_leading_chars_from(char *str, const char ch)
+void
+strip_leading_chars_from(char *str, const char ch)
 {
     char *start = str;
-    for (; start && *start == ch; start++)
-        ;
+    for (; start && *start == ch; start++);
     (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
 }

@@ -443,9 +443,9 @@ handle_comment_action(undostruct *u, bool undoing, bool add_comment)
     while (group)
     {
         linestruct *line = line_from_number(group->top_line);
-        while (line != NULL && line->lineno <= group->bottom_line)
+        while (line && line->lineno <= group->bottom_line)
         {
-            comment_line(undoing ^ add_comment ? COMMENT : UNCOMMENT, line, u->strdata);
+            comment_line((undoing ^ add_comment ? COMMENT : UNCOMMENT), line, u->strdata);
             line = line->next;
         }
         group = group->next;
@@ -455,7 +455,7 @@ handle_comment_action(undostruct *u, bool undoing, bool add_comment)
     {
         goto_line_posx(u->head_lineno, u->head_x);
     }
-    refresh_needed = TRUE;
+    refresh_needed = true;
 }
 
 #define redo_paste undo_cut
@@ -469,7 +469,7 @@ undo_cut(undostruct *u)
     /* Clear an inherited anchor but not a user-placed one. */
     if (!(u->xflags & HAD_ANCHOR_AT_START))
     {
-        openfile->current->has_anchor = FALSE;
+        openfile->current->has_anchor = false;
     }
     if (u->cutbuffer)
     {
@@ -492,11 +492,11 @@ void
 redo_cut(undostruct *u)
 {
     linestruct *oldcutbuffer = cutbuffer;
-    cutbuffer                = NULL;
+    cutbuffer                = nullptr;
     openfile->mark           = line_from_number(u->head_lineno);
     openfile->mark_x         = (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x;
     goto_line_posx(u->tail_lineno, u->tail_x);
-    do_snip(TRUE, FALSE, u->type == ZAP);
+    do_snip(true, false, u->type == ZAP);
     free_lines(cutbuffer);
     cutbuffer = oldcutbuffer;
 }
@@ -505,13 +505,13 @@ redo_cut(undostruct *u)
 void
 do_undo(void)
 {
-    undostruct   *u = openfile->current_undo;
-    linestruct   *oldcutbuffer, *intruder;
-    linestruct   *line = NULL;
-    unsigned long original_x, regain_from_x;
-    char         *undidmsg = NULL;
-    char         *data;
-    if (u == NULL)
+    undostruct *u = openfile->current_undo;
+    linestruct *oldcutbuffer, *intruder;
+    linestruct *line = nullptr;
+    u_long      original_x, regain_from_x;
+    char       *undidmsg = nullptr;
+    char       *data;
+    if (u == nullptr)
     {
         statusline(AHEM, _("Nothing to undo"));
         return;
@@ -531,22 +531,22 @@ do_undo(void)
             {
                 remove_magicline();
             }
-            memmove(line->data + u->head_x, line->data + u->head_x + strlen(u->strdata),
-                    strlen(line->data + u->head_x) - strlen(u->strdata) + 1);
+            memmove((line->data + u->head_x), (line->data + u->head_x + strlen(u->strdata)),
+                    (strlen(line->data + u->head_x) - strlen(u->strdata) + 1));
             goto_line_posx(u->head_lineno, u->head_x);
             break;
         }
         case ENTER :
         {
             undidmsg = _("line break");
-            /* An <Enter> at the end of leading whitespace while autoindenting
-             * has deleted the whitespace, and stored an x position of zero. In
-             * that case, adjust the positions to return to and to scoop data
-             * from. */
+            /**
+                An <Enter> at the end of leading whitespace while autoindenting
+                has deleted the whitespace, and stored an x position of zero. In
+                that case, adjust the positions to return to and to scoop data from.
+             */
             original_x    = (u->head_x == 0) ? u->tail_x : u->head_x;
             regain_from_x = (u->head_x == 0) ? 0 : u->tail_x;
-            line->data =
-                static_cast<char *>(nrealloc(line->data, strlen(line->data) + strlen(&u->strdata[regain_from_x]) + 1));
+            line->data    = (char *)nrealloc(line->data, strlen(line->data) + strlen(&u->strdata[regain_from_x]) + 1);
             strcat(line->data, &u->strdata[regain_from_x]);
             line->has_anchor |= line->next->has_anchor;
             unlink_node(line->next);
@@ -571,13 +571,15 @@ do_undo(void)
         case JOIN :
         {
             undidmsg = _("line join");
-            /* When the join was done by a Backspace at the tail of the file,
-             * and the nonewlines flag isn't set, do not re-add a newline that
-             * wasn't actually deleted; just position the cursor. */
+            /**
+                When the join was done by a Backspace at the tail of the file,
+                and the nonewlines flag isn't set, do not re-add a newline that
+                wasn't actually deleted; just position the cursor.
+             */
             if ((u->xflags & WAS_BACKSPACE_AT_EOF) && !ISSET(NO_NEWLINES))
             {
                 goto_line_posx(openfile->filebot->lineno, 0);
-                focusing = FALSE;
+                focusing = false;
                 break;
             }
             line->data[u->tail_x] = '\0';
@@ -644,7 +646,7 @@ do_undo(void)
         {
             undidmsg     = _("insertion");
             oldcutbuffer = cutbuffer;
-            cutbuffer    = NULL;
+            cutbuffer    = nullptr;
             goto_line_posx(u->head_lineno, u->head_x);
             openfile->mark   = line_from_number(u->tail_lineno);
             openfile->mark_x = u->tail_x;
@@ -677,19 +679,19 @@ do_undo(void)
         }
         case INDENT :
         {
-            handle_indent_action(u, TRUE, TRUE);
+            handle_indent_action(u, true, true);
             undidmsg = _("indent");
             break;
         }
         case UNINDENT :
         {
-            handle_indent_action(u, TRUE, FALSE);
+            handle_indent_action(u, true, false);
             undidmsg = _("unindent");
             break;
         }
         case COMMENT :
         {
-            handle_comment_action(u, TRUE, TRUE);
+            handle_comment_action(u, true, true);
             undidmsg = _("comment");
             break;
         }
@@ -702,20 +704,20 @@ do_undo(void)
         case MOVE_LINE_UP :
         {
             openfile->current = line_from_number(u->head_lineno - 1);
-            move_line(&openfile->current, FALSE, TRUE);
+            move_line(&openfile->current, false, true);
             break;
         }
         case MOVE_LINE_DOWN :
         {
             openfile->current = line_from_number(u->head_lineno + 1);
-            move_line(&openfile->current, TRUE, TRUE);
+            move_line(&openfile->current, true, true);
             break;
         }
         case ENCLOSE :
         {
             erase_in_line(line_from_number(u->head_lineno), u->head_x, strlen(u->strdata));
             erase_in_line(line_from_number(u->tail_lineno), u->tail_x, strlen(u->strdata));
-            refresh_needed = TRUE;
+            refresh_needed = true;
             break;
         }
         default :
@@ -738,13 +740,13 @@ do_undo(void)
     }
     else if (u->type == INSERT || u->type == COUPLE_BEGIN)
     {
-        recook = TRUE;
+        recook = true;
     }
     /* When at the point where the buffer was last saved, unset "Modified". */
     if (openfile->current_undo == openfile->last_saved)
     {
-        openfile->modified = FALSE;
-        titlebar(NULL);
+        openfile->modified = false;
+        titlebar(nullptr);
     }
     else
     {
@@ -1681,7 +1683,7 @@ break_line(const char *textstart, long goal, bool snap_at_nl)
 
 /* Return the length of the indentation part of the given line.
  * The "indentation" of a line is the leading consecutive whitespace. */
-unsigned long
+u_long
 indent_length(const char *line)
 {
     const char *start = line;
@@ -1695,7 +1697,7 @@ indent_length(const char *line)
 /* Return the length of the quote part of the given line.
  * The 'quote part' of a line is the largest initial
  * substring matching the quoting regex. */
-unsigned long
+u_long
 quote_length(const char *line)
 {
     regmatch_t matches;
@@ -1708,7 +1710,7 @@ quote_length(const char *line)
 }
 
 /* The maximum depth of recursion.  Note that this MUST be an even number. */
-constexpr unsigned char RECURSION_LIMIT = 222;
+constexpr u_char RECURSION_LIMIT = 222;
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
 bool
@@ -1776,7 +1778,7 @@ inpar(const linestruct *const line)
  * Furthermore, return the first line and the number of lines of the paragraph.
  */
 bool
-find_paragraph(linestruct **firstline, unsigned long *linecount)
+find_paragraph(linestruct **firstline, u_long *linecount)
 {
     linestruct *line = *firstline;
     /* When not currently in a paragraph, move forward to a line that is. */
@@ -1801,7 +1803,7 @@ find_paragraph(linestruct **firstline, unsigned long *linecount)
  * *line and consists of 'count' lines, skipping the quoting and indentation on
  * all lines after the first. */
 void
-concat_paragraph(linestruct *line, unsigned long count)
+concat_paragraph(linestruct *line, u_long count)
 {
     while (count > 1)
     {
@@ -1850,7 +1852,7 @@ copy_character(char **from, char **to)
  * and remove all blanks from the end of the line.  Leave the first skip
  * number of characters untreated. */
 void
-squeeze(linestruct *line, unsigned long skip)
+squeeze(linestruct *line, Ulong skip)
 {
     char *start = line->data + skip;
     char *from = start, *to = start;
@@ -1907,7 +1909,7 @@ squeeze(linestruct *line, unsigned long skip)
 /* Rewrap the given line (that starts with the given lead string which is of
  * the given length), into lines that fit within the target width (wrap_at). */
 void
-rewrap_paragraph(linestruct **line, char *lead_string, unsigned long lead_len)
+rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len)
 {
     /* The x-coordinate where the current line is to be broken. */
     long break_pos;
@@ -1958,7 +1960,7 @@ rewrap_paragraph(linestruct **line, char *lead_string, unsigned long lead_len)
  * of 'count' lines) so they all fit within the target width (wrap_at) and have
  * their whitespace normalized. */
 void
-justify_paragraph(linestruct **line, unsigned long count)
+justify_paragraph(linestruct **line, Ulong count)
 {
     /* The line from which the indentation is copied. */
     linestruct *sampleline;
@@ -1983,8 +1985,8 @@ justify_paragraph(linestruct **line, unsigned long count)
     free(lead_string);
 }
 
-constexpr bool ONE_PARAGRAPH = FALSE;
-constexpr bool WHOLE_BUFFER  = TRUE;
+constexpr bool ONE_PARAGRAPH = false;
+constexpr bool WHOLE_BUFFER  = true;
 
 /* Justify the current paragraph, or the entire buffer when whole_buffer is
  * 'TRUE'.  But if the mark is on, justify only the marked text instead. */
@@ -1992,15 +1994,15 @@ void
 justify_text(bool whole_buffer)
 {
     /* The number of lines in the original paragraph. */
-    unsigned long linecount;
+    Ulong linecount;
     /* The line where the paragraph or region starts. */
     linestruct *startline;
     /* The line where the paragraph or region ends. */
     linestruct *endline;
     /* The x position where the paragraph or region starts. */
-    unsigned long start_x;
+    Ulong start_x;
     /* The x position where the paragraph or region ends. */
-    unsigned long end_x;
+    Ulong end_x;
     /* The old cutbuffer, so we can justify in the current cutbuffer. */
     linestruct *was_cutbuffer = cutbuffer;
     /* The line that we're justifying in the current cutbuffer. */
@@ -2011,11 +2013,11 @@ justify_text(bool whole_buffer)
      * of the paragraph where the marked region begins. */
     char *primary_lead = NULL;
     /* The length (in bytes) of the above first-line leading part. */
-    unsigned long primary_len = 0;
+    Ulong primary_len = 0;
     /* The leading part for lines after the first one. */
-    char *secondary_lead = NULL;
+    char *secondary_lead = nullptr;
     /* The length of that later lead. */
-    unsigned long secondary_len = 0;
+    Ulong secondary_len = 0;
     /* The line to return to after a full justification. */
     long was_the_linenumber = openfile->current->lineno;
     bool marked_backward    = (openfile->mark && !mark_is_before_cursor());

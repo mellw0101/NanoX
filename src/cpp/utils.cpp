@@ -183,7 +183,7 @@ parse_line_column(const char *string, long *line, long *column)
 
 /* In the given string, recode each embedded NUL as a newline. */
 void
-recode_NUL_to_LF(char *string, unsigned long length)
+recode_NUL_to_LF(char *string, u_long length)
 {
     while (length > 0)
     {
@@ -210,14 +210,14 @@ recode_LF_to_NUL(char *string)
         }
         string++;
     }
-    return (unsigned long)(string - beginning);
+    return (u_long)(string - beginning);
 }
 
 /* Free the memory of the given array, which should contain len elements. */
 void
-free_chararray(char **array, unsigned long len)
+free_chararray(char **array, Ulong len)
 {
-    if (array == NULL)
+    if (array == nullptr)
     {
         return;
     }
@@ -231,7 +231,7 @@ free_chararray(char **array, unsigned long len)
 /* Is the word starting at the given position in 'text' and of the given
  * length a separate word?  That is: is it not part of a longer word? */
 bool
-is_separate_word(unsigned long position, unsigned long length, const char *text)
+is_separate_word(Ulong position, Ulong length, const char *text)
 {
     const char *before = text + step_left(text, position);
     const char *after  = text + position + length;
@@ -331,7 +331,7 @@ strstrwrapper(const char *const haystack, const char *const needle, const char *
 
 /* Allocate the given amount of memory and return a pointer to it. */
 void *
-nmalloc(const unsigned long howmuch)
+nmalloc(const Ulong howmuch)
 {
     void *section = malloc(howmuch);
     if (section == NULL)
@@ -343,7 +343,7 @@ nmalloc(const unsigned long howmuch)
 
 /* Reallocate the given section of memory to have the given size. */
 void *
-nrealloc(void *section, const unsigned long howmuch)
+nrealloc(void *section, const Ulong howmuch)
 {
     section = realloc(section, howmuch);
     if (section == NULL)
@@ -367,7 +367,7 @@ mallocstrcpy(char *dest, const char *src)
 /* Return an allocated copy of the first count characters
  * of the given string, and NUL-terminate the copy. */
 char *
-measured_copy(const char *string, const unsigned long count)
+measured_copy(const char *string, const Ulong count)
 {
     char *thecopy = (char *)nmalloc(count + 1);
     memcpy(thecopy, string, count);
@@ -376,22 +376,12 @@ measured_copy(const char *string, const unsigned long count)
 }
 
 char *
-measured_memmove_copy(const char *string, const unsigned long count)
+measured_memmove_copy(const char *string, const Ulong count)
 {
     char *thecopy = (char *)nmalloc(count + 1);
     memmove(thecopy, string, count);
     thecopy[count] = '\0';
     return thecopy;
-}
-
-template <unsigned long N>
-char *
-smart_move_copy_strltr(const char (&str)[N])
-{
-    char *copy = (char *)nmalloc(N);
-    memmove(copy, str, (N - 1));
-    copy[(N - 1)] = '\0';
-    return copy;
 }
 
 /* Return an allocated copy of the given string. */
@@ -418,8 +408,8 @@ free_and_assign(char *dest, char *src)
 /* When not softwrapping, nano scrolls the current line horizontally by
  * chunks ("pages").  Return the column number of the first character
  * displayed in the edit window when the cursor is at the given column. */
-unsigned long
-get_page_start(const unsigned long column)
+Ulong
+get_page_start(const Ulong column)
 {
     if (column == 0 || column + 2 < editwincols || ISSET(SOFTWRAP))
     {
@@ -437,7 +427,7 @@ get_page_start(const unsigned long column)
 
 /* Return the placewewant associated with current_x,
  * i.e. the zero-based column position of the cursor. */
-unsigned long
+Ulong
 xplustabs(void)
 {
     return wideness(openfile->current->data, openfile->current_x);
@@ -445,8 +435,8 @@ xplustabs(void)
 
 /* Return the index in text of the character that (when displayed) will
  * not overshoot the given column. */
-unsigned long
-actual_x(const char *text, unsigned long column)
+Ulong
+actual_x(const char *text, Ulong column)
 {
     /* From where we start walking through the text. */
     const char *start = text;
@@ -466,27 +456,25 @@ actual_x(const char *text, unsigned long column)
 
 /* A strnlen() with tabs and multicolumn characters factored in:
  * how many columns wide are the first maxlen bytes of text? */
-unsigned long
-wideness(const char *text, unsigned long maxlen)
+Ulong
+wideness(const char *text, Ulong maxlen)
 {
     if (maxlen == 0)
     {
         return 0;
     }
-    unsigned long width = 0;
-    for (unsigned long charlen; (*text != '\0') && (maxlen > (charlen = advance_over(text, width)));
-         maxlen -= charlen, text += charlen)
-        ;
+    u_long width = 0;
+    for (u_long charlen; (*text != '\0') && (maxlen > (charlen = advance_over(text, width)));
+         maxlen -= charlen, text += charlen);
     return width;
 }
 
 /* Return the number of columns that the given text occupies. */
-unsigned long
+Ulong
 breadth(const char *text)
 {
-    unsigned long span = 0;
-    for (; *text != '\0'; text += advance_over(text, span))
-        ;
+    u_long span = 0;
+    for (; *text != '\0'; text += advance_over(text, span));
     return span;
 }
 
@@ -518,8 +506,7 @@ remove_magicline(void)
     }
 }
 
-/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise.
- */
+/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
 bool
 mark_is_before_cursor(void)
 {
@@ -530,7 +517,7 @@ mark_is_before_cursor(void)
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of
  * the marked region. */
 void
-get_region(linestruct **top, unsigned long *top_x, linestruct **bot, unsigned long *bot_x)
+get_region(linestruct **top, u_long *top_x, linestruct **bot, u_long *bot_x)
 {
     if (mark_is_before_cursor())
     {
@@ -597,7 +584,7 @@ line_from_number(long number)
 }
 
 /* Count the number of characters from begin to end, and return it. */
-unsigned long
+u_long
 number_of_characters_in(const linestruct *begin, const linestruct *end)
 {
     const linestruct *line;
@@ -689,14 +676,13 @@ alloced_full_current_file_dir(void)
     return pwd;
 }
 
-unsigned long
+Ulong
 word_index(bool prev)
 {
     int i = openfile->current_x;
     if (prev)
     {
-        for (; i > 0 && openfile->current->data[i - 1] != ' ' && openfile->current->data[i - 1] != '\t'; i--)
-            ;
+        for (; i > 0 && openfile->current->data[i - 1] != ' ' && openfile->current->data[i - 1] != '\t'; i--);
     }
     return i;
 }
@@ -735,8 +721,7 @@ file_extention_str(void)
         return "";
     }
     const char *ext = tail(openfile->filename);
-    for (; *ext && *ext != '.'; ext++)
-        ;
+    for (; *ext && *ext != '.'; ext++);
     if (!*ext)
     {
         return "";
@@ -773,7 +758,7 @@ current_file_dir(void)
  * is malloc`ed as well and will need to be free`d, as does the entire
  * array.  Return`s 'NULL' apon failure. */
 char **
-retrieve_exec_output(const char *cmd, unsigned int *n_lines)
+retrieve_exec_output(const char *cmd, u_int *n_lines)
 {
     FILE *prog = popen(cmd, "r");
     if (!prog)
@@ -801,7 +786,7 @@ retrieve_exec_output(const char *cmd, unsigned int *n_lines)
 }
 
 const char *
-strstr_array(const char *str, const char **substrs, unsigned int count, unsigned int *index)
+strstr_array(const char *str, const char **substrs, u_int count, u_int *index)
 {
     const char *first = NULL;
     for (unsigned int i = 0; i < count; i++)
@@ -817,7 +802,7 @@ strstr_array(const char *str, const char **substrs, unsigned int count, unsigned
 }
 
 const char *
-string_strstr_array(const char *str, const vector<string> &substrs, unsigned int *index)
+string_strstr_array(const char *str, const vector<string> &substrs, u_int *index)
 {
     const char *first = NULL;
     for (unsigned int i = 0; i < substrs.size(); i++)

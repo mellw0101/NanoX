@@ -63,7 +63,7 @@ init_main_thread(void)
 {
     if (main_thread != NULL)
     {
-        LOUT_logE("main_thread should only be allocated once.");
+        logE("main_thread should only be allocated once.");
         return;
     }
     main_thread         = (main_thread_t *)nmalloc(sizeof(main_thread_t));
@@ -101,22 +101,22 @@ setup_signal_handler_on_sub_thread(void (*handler)(int))
         {
             case EINVAL :
             {
-                LOUT_logE("Invalid signal or invalid signal handler flags.");
+                logE("Invalid signal or invalid signal handler flags.");
                 break;
             }
             case EFAULT :
             {
-                LOUT_logE("Invalid memory address provided for the action.");
+                logE("Invalid memory address provided for the action.");
                 break;
             }
             case EPERM :
             {
-                LOUT_logE("Insufficient premission to change signal action.");
+                logE("Insufficient premission to change signal action.");
                 break;
             }
             default :
             {
-                LOUT_logE("Unknown error (errno: %d).", errno);
+                logE("Unknown error (errno: %d).", errno);
             }
         }
     }
@@ -135,18 +135,18 @@ block_pthread_sig(int sig, bool block)
     sigaddset(&mask, sig);
     if (pthread_sigmask((block) ? SIG_BLOCK : SIG_UNBLOCK, &mask, NULL) != 0)
     {
-        LOUT_logE("Failed to %s.", (block) ? "SIG_BLOCK" : "SIG_UNBLOCK");
+        logE("Failed to %s.", (block) ? "SIG_BLOCK" : "SIG_UNBLOCK");
         return;
     }
     /* Then check if we were successfull, by getting the current mask. */
     sigemptyset(&mask);
     if (pthread_sigmask(SIG_SETMASK, NULL, &mask) != 0)
     {
-        LOUT_logE("Failed to get current mask.");
+        logE("Failed to get current mask.");
         return;
     }
     if (sigismember(&mask, sig) == (block) ? 0 : 1)
     {
-        LOUT_logE("Failed to %s.", (block) ? "SIG_BLOCK" : "SIG_UNBLOCK");
+        logE("Failed to %s.", (block) ? "SIG_BLOCK" : "SIG_UNBLOCK");
     }
 }

@@ -139,14 +139,14 @@ render_comment(void)
             block_comment_start = (slash - line->data);
             block_comment_end   = (unsigned int)-1;
         }
-        line->flags.set(SINGLE_LINE_BLOCK_COMMENT);
-        line->flags.unset(BLOCK_COMMENT_START);
-        line->flags.unset(BLOCK_COMMENT_END);
-        line->flags.unset(IN_BLOCK_COMMENT);
+        line->flags.set<SINGLE_LINE_BLOCK_COMMENT>();
+        line->flags.unset<BLOCK_COMMENT_START>();
+        line->flags.unset<BLOCK_COMMENT_END>();
+        line->flags.unset<IN_BLOCK_COMMENT>();
         render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         /* Highlight the block start if prev line is in a
          * block comment or the start of a block comment. */
-        if (line->prev && (line->prev->flags.is_set(IN_BLOCK_COMMENT) || line->prev->flags.is_set(BLOCK_COMMENT_START)))
+        if (line->prev && (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()))
         {
             if ((end - line->data) > 0 && line->data[(end - line->data) - 1] != '/')
             {
@@ -164,8 +164,8 @@ render_comment(void)
             }
             else if ((start - line->data) + 1 == (end - line->data))
             {
-                line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
-                line->flags.set(BLOCK_COMMENT_END);
+                line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+                line->flags.set<BLOCK_COMMENT_END>();
                 block_comment_start = 0;
             }
         }
@@ -179,8 +179,8 @@ render_comment(void)
             else
             {
                 block_comment_end = (unsigned int)-1;
-                line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
-                line->flags.set(BLOCK_COMMENT_START);
+                line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+                line->flags.set<BLOCK_COMMENT_START>();
             }
         }
         while (start != NULL && end != NULL)
@@ -215,7 +215,7 @@ render_comment(void)
         render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         /* Do some error checking and highlight the block start if it`s found
          * while the block above it being a start block or inside a block. */
-        if (line->prev && (line->prev->flags.is_set(IN_BLOCK_COMMENT) || line->prev->flags.is_set(BLOCK_COMMENT_START)))
+        if (line->prev && (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()))
         {
             rendr(R_LEN, ERROR_MESSAGE, start, 2);
             block_comment_start = (start - line->data) + 2;
@@ -228,30 +228,30 @@ render_comment(void)
             block_comment_start = (slash - line->data);
             block_comment_end   = till_x;
             render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
-            line->flags.unset(BLOCK_COMMENT_START);
+            line->flags.unset<BLOCK_COMMENT_START>();
         }
         else
         {
-            line->flags.set(BLOCK_COMMENT_START);
+            line->flags.set<BLOCK_COMMENT_START>();
         }
-        line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
-        line->flags.unset(IN_BLOCK_COMMENT);
-        line->flags.unset(BLOCK_COMMENT_END);
+        line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+        line->flags.unset<IN_BLOCK_COMMENT>();
+        line->flags.unset<BLOCK_COMMENT_END>();
     }
     /* Either inside of a block comment or not a block comment at all. */
     else if (!start && !end)
     {
         if (line->prev &&
-            (line->prev->flags.is_set(IN_BLOCK_COMMENT) || line->prev->flags.is_set(BLOCK_COMMENT_START)) &&
-            !line->prev->flags.is_set(SINGLE_LINE_BLOCK_COMMENT))
+            (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()) &&
+            !line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>())
         {
             block_comment_start = 0;
             block_comment_end   = till_x;
             render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
-            line->flags.set(IN_BLOCK_COMMENT);
-            line->flags.unset(BLOCK_COMMENT_START);
-            line->flags.unset(BLOCK_COMMENT_END);
-            line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+            line->flags.set<IN_BLOCK_COMMENT>();
+            line->flags.unset<BLOCK_COMMENT_START>();
+            line->flags.unset<BLOCK_COMMENT_END>();
+            line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
         }
         /* If the prev line is not in a block comment or the
          * start block line we are not inside a comment block. */
@@ -259,10 +259,10 @@ render_comment(void)
         {
             block_comment_start = till_x;
             block_comment_end   = 0;
-            line->flags.unset(IN_BLOCK_COMMENT);
-            line->flags.unset(BLOCK_COMMENT_START);
-            line->flags.unset(BLOCK_COMMENT_END);
-            line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+            line->flags.unset<IN_BLOCK_COMMENT>();
+            line->flags.unset<BLOCK_COMMENT_START>();
+            line->flags.unset<BLOCK_COMMENT_END>();
+            line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
             /* If slash comment is found comment out entire line after slash. */
             if (slash)
             {
@@ -277,16 +277,16 @@ render_comment(void)
     {
         /* If last line is in a comment block or is the start of the block. */
         if (line->prev &&
-            (line->prev->flags.is_set(IN_BLOCK_COMMENT) || line->prev->flags.is_set(BLOCK_COMMENT_START)) &&
-            !line->prev->flags.is_set(SINGLE_LINE_BLOCK_COMMENT))
+            (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()) &&
+            !line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>())
         {
             block_comment_start = 0;
             block_comment_end   = (end - line->data) + 2;
             render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
-            line->flags.set(BLOCK_COMMENT_END);
-            line->flags.unset(IN_BLOCK_COMMENT);
-            line->flags.unset(BLOCK_COMMENT_START);
-            line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+            line->flags.set<BLOCK_COMMENT_END>();
+            line->flags.unset<IN_BLOCK_COMMENT>();
+            line->flags.unset<BLOCK_COMMENT_START>();
+            line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
         }
         /* If slash if found and is before block end. */
         else if (slash != NULL && (slash - line->data) < (end - line->data))
@@ -1181,7 +1181,7 @@ rendr_structs(int index)
 
 /* Main function that applies syntax to a line in real time. */
 void
-apply_syntax_to_line(const int row, const char *converted, linestruct *line, unsigned long from_col)
+apply_syntax_to_line(const int row, const char *converted, linestruct *line, u_long from_col)
 {
     PROFILE_FUNCTION;
     ::row       = row;

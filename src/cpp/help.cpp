@@ -20,13 +20,13 @@ static unsigned long location;
  * The function key list is built by iterating over all functions,
  * and for each function, iterating over all shortcuts.
  * The function key descriptions are built by iterating over all functions. */
-void help_init(void)
+void
+help_init(void)
 {
     unsigned long allocsize = 0;
     /* Space needed for help_text. */
     const char *htx[3];
-    /* Untranslated help introduction.
-     * We break it up into three chunks
+    /* Untranslated help introduction.  We break it up into three chunks
      * in case the full string is too long for the compiler to handle. */
     const funcstruct *f;
     const keystruct  *s;
@@ -341,7 +341,8 @@ void help_init(void)
 }
 
 /* Hard-wrap the concatenated help text, and write it into a new buffer. */
-void wrap_help_text_into_buffer(void)
+void
+wrap_help_text_into_buffer(void)
 {
     /* Avoid overtight and overwide paragraphs in the introductory text. */
     unsigned long wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
@@ -413,7 +414,8 @@ void wrap_help_text_into_buffer(void)
 
 /* Assemble a help text, display it, and allow scrolling through it.
  * TODO : (show_help) : Change to NanoX help text. */
-void show_help(void)
+void
+show_help(void)
 {
     int kbinput = ERR;
     /* The function of the key the user typed in. */
@@ -424,8 +426,8 @@ void show_help(void)
     long  was_tabsize = tabsize;
     char *was_syntax  = syntaxstr;
     /* The current answer when the user invokes help at the prompt. */
-    char         *saved_answer = (answer != NULL) ? copy_of(answer) : NULL;
-    unsigned long stash[sizeof(flags) / sizeof(flags[0])];
+    char  *saved_answer = (answer != NULL) ? copy_of(answer) : NULL;
+    size_t stash[sizeof(flags) / sizeof(flags[0])];
     /* A storage place for the current flag settings. */
     linestruct *line;
     int         length;
@@ -515,7 +517,7 @@ void show_help(void)
             function();
             bottombars(MHELP);
         }
-        else if (function == (CFuncPtr)implant)
+        else if (function == (functionptrtype)implant)
         {
             implant(first_sc_for(MHELP, function)->expansion);
         }
@@ -525,9 +527,7 @@ void show_help(void)
             get_mouseinput(&dummy_row, &dummy_col, TRUE);
         }
         else if (kbinput == KEY_WINCH)
-        {
             ; /* Nothing to do. */
-        }
         else if (function == do_exit)
         {
             break;
@@ -542,7 +542,7 @@ void show_help(void)
         /* Count how far (in bytes) edittop is into the file. */
         while (line != openfile->edittop)
         {
-            location += constexpr_strlen(line->data);
+            location += strlen(line->data);
             line = line->next;
         }
     }
@@ -583,7 +583,8 @@ void show_help(void)
 }
 
 /* Start the help viewer, or indicate that there is no help. */
-void do_help(void)
+void
+do_help(void)
 {
 #ifdef ENABLE_HELP
     show_help();

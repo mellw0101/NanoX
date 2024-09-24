@@ -1,6 +1,7 @@
 #include "../include/prototypes.h"
 
-string parse_multiline_bracket_var(linestruct *from, const char **data, const char **end)
+string
+parse_multiline_bracket_var(linestruct *from, const char **data, const char **end)
 {
     string value;
     adv_ptr_to_ch((*end), '}');
@@ -62,7 +63,8 @@ string parse_multiline_bracket_var(linestruct *from, const char **data, const ch
 
 /* Decr ptr until space or tab found or end == data.
    This will jump over string literals. */
-void move_ptr_to_prev_word(const char **data, const char **end)
+void
+move_ptr_to_prev_word(const char **data, const char **end)
 {
     while (true)
     {
@@ -92,7 +94,8 @@ void move_ptr_to_prev_word(const char **data, const char **end)
     }
 }
 
-void parse_var_type(const char *data)
+void
+parse_var_type(const char *data)
 {
     if (word_strstr(data, "using") || word_strstr(data, "return") || *data == '{' || word_strstr(data, "//") ||
         word_strstr(data, "/*") || word_strstr(data, "==") || word_strstr(data, "||") || word_strstr(data, "&&") ||
@@ -137,7 +140,8 @@ void parse_var_type(const char *data)
     nlog("rest: %s\n", rest.data());
 }
 
-void line_variable(linestruct *line, vector<var_t> &var_vector)
+void
+line_variable(linestruct *line, vector<var_t> &var_vector)
 {
     const char *data = &line->data[indent_char_len(line)];
     if (invalid_variable_sig(data))
@@ -252,7 +256,8 @@ void line_variable(linestruct *line, vector<var_t> &var_vector)
     while (*data);
 }
 
-void func_decl(linestruct *line)
+void
+func_decl(linestruct *line)
 {
     const char *data = &line->data[indent_char_len(line)];
     if (!*data || strchr(data, '=') || strchr(data, '<') || strchr(data, '>') || word_strstr(data, "if") ||
@@ -281,7 +286,8 @@ void func_decl(linestruct *line)
     }
 }
 
-void parse_class_data(linestruct *from)
+void
+parse_class_data(linestruct *from)
 {
     class_info_t class_info;
     const char  *class_name = word_strstr(from->data, "class");

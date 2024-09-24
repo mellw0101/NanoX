@@ -185,7 +185,7 @@ print_view_warning(void)
 bool
 in_restricted_mode(void)
 {
-    if ISSET (RESTRICTED)
+    if (ISSET(RESTRICTED))
     {
         statusline(AHEM, _("This function is disabled in restricted mode"));
         beep();
@@ -1265,7 +1265,7 @@ suck_up_input_and_paste_it(void)
 
 /* Insert the given short burst of bytes into the edit buffer. */
 void
-inject(char *burst, unsigned long count)
+inject(char *burst, Ulong count)
 {
     linestruct   *thisline     = openfile->current;
     unsigned long datalen      = strlen(thisline->data);
@@ -1385,9 +1385,8 @@ process_a_keystroke(void)
     /* When the input is a mouse click, handle it. */
     if (input == KEY_MOUSE)
     {
-        /* If the user clicked on a shortcut,
-         * read in the key code that it was converted into.
-         * Else the click has been handled or was invalid. */
+        /* If the user clicked on a shortcut, read in the key code that it was
+         * converted into.  Else the click has been handled or was invalid. */
         if (do_mouse() == 1)
         {
             input = get_kbinput(midwin, BLIND);

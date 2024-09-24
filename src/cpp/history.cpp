@@ -61,17 +61,17 @@ reset_history_pointer_for(const linestruct *item)
  * the first node that contains the first len characters of the given
  * text, or NULL if there is no such node. */
 linestruct *
-find_in_history(const linestruct *start, const linestruct *end, const char *text, unsigned long len)
+find_in_history(const linestruct *start, const linestruct *end, const char *text, u_long len)
 {
     const linestruct *item;
-    for (item = start; item != end->prev && item != NULL; item = item->prev)
+    for (item = start; item != end->prev && item != nullptr; item = item->prev)
     {
         if (strncmp(item->data, text, len) == 0)
         {
             return (linestruct *)item;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /* Update a history list (the one in which item is the current position)
@@ -79,8 +79,9 @@ find_in_history(const linestruct *start, const linestruct *end, const char *text
 void
 update_history(linestruct **item, const char *text, bool avoid_duplicates)
 {
-    linestruct **htop = NULL, **hbot = NULL;
-    linestruct  *thesame = NULL;
+    linestruct **htop    = nullptr;
+    linestruct **hbot    = nullptr;
+    linestruct  *thesame = nullptr;
     if (*item == search_history)
     {
         htop = &searchtop;
@@ -160,7 +161,7 @@ get_history_completion(linestruct **here, char *string, unsigned long len)
     /* First search from the current position to the top of the list
      * for a match of len characters.  Skip over an exact match. */
     item = find_in_history((*here)->prev, htop, string, len);
-    while (item != NULL && strcmp(item->data, string) == 0)
+    while (item && strcmp(item->data, string) == 0)
     {
         item = find_in_history(item->prev, htop, string, len);
     }
@@ -171,7 +172,7 @@ get_history_completion(linestruct **here, char *string, unsigned long len)
     }
     /* Now search from the bottom of the list to the original position. */
     item = find_in_history(hbot, *here, string, len);
-    while (item != NULL && strcmp(item->data, string) == 0)
+    while (item && strcmp(item->data, string) == 0)
     {
         item = find_in_history(item->prev, *here, string, len);
     }
@@ -191,7 +192,7 @@ have_statedir(void)
     const char *xdgdatadir;
     struct stat dirinfo;
     get_homedir();
-    if (homedir != NULL)
+    if (homedir)
     {
         statedir = concatenate(homedir, "/.nano/");
         if (stat(statedir, &dirinfo) == 0 && S_ISDIR(dirinfo.st_mode))
@@ -253,20 +254,20 @@ load_history(void)
     char *histname = concatenate(statedir, SEARCH_HISTORY);
     FILE *histfile = fopen(histname, "rb");
     /* If reading an existing file failed, don't save history when we quit. */
-    if (histfile == NULL && errno != ENOENT)
+    if (histfile == nullptr && errno != ENOENT)
     {
         jot_error(N_("Error reading %s: %s"), histname, strerror(errno));
         UNSET(HISTORYLOG);
     }
-    if (histfile == NULL)
+    if (histfile == nullptr)
     {
         free(histname);
         return;
     }
-    linestruct  **history = &search_history;
-    char         *stanza  = NULL;
-    unsigned long dummy   = 0;
-    long          read;
+    linestruct **history = &search_history;
+    char        *stanza  = nullptr;
+    u_long       dummy   = 0;
+    long         read;
     /* Load the three history lists (first search, then replace, then execute)
      * from oldest entry to newest.  Between two lists there is an empty line. */
     while ((read = getline(&stanza, &dummy, histfile)) > 0)
@@ -302,20 +303,20 @@ bool
 write_list(const linestruct *head, FILE *histfile)
 {
     const linestruct *item;
-    for (item = head; item != NULL; item = item->next)
+    for (item = head; item != nullptr; item = item->next)
     {
         /* Decode 0x0A bytes as embedded NULs. */
-        unsigned long length = recode_LF_to_NUL(item->data);
+        u_long length = recode_LF_to_NUL(item->data);
         if (fwrite(item->data, 1, length, histfile) < length)
         {
-            return FALSE;
+            return false;
         }
         if (putc('\n', histfile) == EOF)
         {
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
 /* Save the histories for Search, Replace With, and Execute Command. */
@@ -331,7 +332,7 @@ save_history(void)
     }
     histname = concatenate(statedir, SEARCH_HISTORY);
     histfile = fopen(histname, "wb");
-    if (histfile == NULL)
+    if (histfile == nullptr)
     {
         jot_error(N_("Error writing %s: %s"), histname, strerror(errno));
         free(histname);
@@ -359,21 +360,21 @@ load_poshistory(void)
 {
     FILE *histfile = fopen(poshistname, "rb");
     /* If reading an existing file failed, don't save history when we quit. */
-    if (histfile == NULL && errno != ENOENT)
+    if (histfile == nullptr && errno != ENOENT)
     {
         jot_error(N_("Error reading %s: %s"), poshistname, strerror(errno));
         UNSET(POSITIONLOG);
     }
-    if (histfile == NULL)
+    if (histfile == nullptr)
     {
         return;
     }
-    poshiststruct *lastitem = NULL;
+    poshiststruct *lastitem = nullptr;
     poshiststruct *newitem;
     char          *lineptr, *columnptr;
-    char          *stanza = NULL;
+    char          *stanza = nullptr;
     struct stat    fileinfo;
-    unsigned long  dummy = 0;
+    u_long         dummy = 0;
     long           count = 0;
     long           read;
     /* Read and parse each line, and store the extracted data. */
@@ -383,12 +384,12 @@ load_poshistory(void)
         recode_NUL_to_LF(stanza, read);
         /* Find the spaces before column number and line number. */
         columnptr = revstrstr(stanza, " ", stanza + read - 3);
-        if (columnptr == NULL)
+        if (columnptr == nullptr)
         {
             continue;
         }
         lineptr = revstrstr(stanza, " ", columnptr - 2);
-        if (lineptr == NULL)
+        if (lineptr == nullptr)
         {
             continue;
         }
@@ -400,9 +401,9 @@ load_poshistory(void)
         newitem->filename     = copy_of(stanza);
         newitem->linenumber   = atoi(lineptr);
         newitem->columnnumber = atoi(columnptr);
-        newitem->next         = NULL;
+        newitem->next         = nullptr;
         /* Add the record to the list. */
-        if (position_history == NULL)
+        if (position_history == nullptr)
         {
             position_history = newitem;
         }

@@ -11,7 +11,7 @@ AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
+AllowShortLoopsOnASingleLine: true
 BreakConstructorInitializers: BeforeComma
 BreakBeforeBinaryOperators: None
 AlwaysBreakAfterDefinitionReturnType: true

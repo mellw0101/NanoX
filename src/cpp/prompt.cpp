@@ -6,9 +6,9 @@
 #include <cstring>
 
 /* The prompt string used for status-bar questions. */
-static char *prompt = NULL;
+static char *prompt = nullptr;
 /* The cursor position in answer. */
-static unsigned long typing_x = HIGHEST_POSITIVE;
+static u_long typing_x = HIGHEST_POSITIVE;
 
 /* Move to the beginning of the answer. */
 void
@@ -134,8 +134,8 @@ do_statusbar_backspace(void)
 {
     if (typing_x > 0)
     {
-        unsigned long was_x = typing_x;
-        typing_x            = step_left(answer, typing_x);
+        Ulong was_x = typing_x;
+        typing_x    = step_left(answer, typing_x);
         memmove(answer + typing_x, answer + was_x, strlen(answer) - was_x + 1);
     }
 }
@@ -183,8 +183,8 @@ copy_the_answer(void)
 void
 paste_into_answer(void)
 {
-    unsigned long pastelen = strlen(cutbuffer->data);
-    answer                 = (char *)nrealloc(answer, strlen(answer) + pastelen + 1);
+    Ulong pastelen = strlen(cutbuffer->data);
+    answer         = (char *)nrealloc(answer, strlen(answer) + pastelen + 1);
     memmove(answer + typing_x + pastelen, answer + typing_x, strlen(answer) - typing_x + 1);
     strncpy(answer + typing_x, cutbuffer->data, pastelen);
     typing_x += pastelen;
@@ -196,11 +196,11 @@ do_statusbar_mouse(void)
 {
     int click_row = 0;
     int click_col = 0;
-    int retval    = get_mouseinput(&click_row, &click_col, TRUE);
+    int retval    = get_mouseinput(&click_row, &click_col, true);
     /* We can click on the status-bar window text to move the cursor. */
-    if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, FALSE))
+    if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, false))
     {
-        unsigned long start_col = breadth(prompt) + 2;
+        Ulong start_col = breadth(prompt) + 2;
         /* Move to where the click occurred. */
         if (click_row == 0 && click_col >= start_col)
         {
@@ -213,10 +213,10 @@ do_statusbar_mouse(void)
 
 /* Insert the given short burst of bytes into the answer. */
 void
-inject_into_answer(char *burst, unsigned long count)
+inject_into_answer(char *burst, Ulong count)
 {
     /* First encode any embedded NUL byte as 0x0A. */
-    for (unsigned long index = 0; index < count; index++)
+    for (Ulong index = 0; index < count; index++)
     {
         if (burst[index] == '\0')
         {
@@ -233,8 +233,8 @@ inject_into_answer(char *burst, unsigned long count)
 void
 do_statusbar_verbatim_input(void)
 {
-    unsigned long count = 1;
-    char         *bytes;
+    Ulong count = 1;
+    char *bytes;
     bytes = get_verbatim_kbinput(footwin, &count);
     if (0 < count && count < 999)
     {
@@ -253,11 +253,11 @@ void
 absorb_character(int input, functionptrtype function)
 {
     /* The input buffer. */
-    static char *puddle = NULL;
+    static char *puddle = nullptr;
     /* The size of the input buffer; gets doubled whenever needed. */
-    static unsigned long capacity = 8;
+    static Ulong capacity = 8;
     /* The length of the input buffer. */
-    static unsigned long depth = 0;
+    static Ulong depth = 0;
     /* If not a command, discard anything that is not a normal character byte.
      * Apart from that, only accept input when not in restricted mode, or when
      * not at the "Write File" prompt, or when there is no filename yet. */
@@ -358,18 +358,18 @@ handle_editing(functionptrtype function)
     }
     else
     {
-        return FALSE;
+        return false;
     }
     /* Don't handle any handled function again. */
-    return TRUE;
+    return true;
 }
 
 /* Return the column number of the first character of the answer that is
  * displayed in the status bar when the cursor is at the given column,
  * with the available room for the answer starting at base.  Note that
  * (0 <= column - get_statusbar_page_start(column) < COLS). */
-unsigned long
-get_statusbar_page_start(unsigned long base, unsigned long column)
+Ulong
+get_statusbar_page_start(Ulong base, Ulong column)
 {
     if (column == base || column < COLS - 1)
     {
@@ -396,10 +396,10 @@ put_cursor_at_end_of_answer(void)
 void
 draw_the_promptbar(void)
 {
-    unsigned long base   = breadth(prompt) + 2;
-    unsigned long column = base + wideness(answer, typing_x);
-    unsigned long the_page, end_page;
-    char         *expanded;
+    Ulong base   = breadth(prompt) + 2;
+    Ulong column = base + wideness(answer, typing_x);
+    Ulong the_page, end_page;
+    char *expanded;
     the_page = get_statusbar_page_start(base, column);
     end_page = get_statusbar_page_start(base, base + breadth(answer) - 1);
     /* Color the prompt bar over its full width. */
@@ -408,7 +408,7 @@ draw_the_promptbar(void)
     mvwaddstr(footwin, 0, 0, prompt);
     waddch(footwin, ':');
     waddch(footwin, (the_page == 0) ? ' ' : '<');
-    expanded = display_string(answer, the_page, COLS - base, FALSE, TRUE);
+    expanded = display_string(answer, the_page, COLS - base, false, true);
     waddstr(footwin, expanded);
     free(expanded);
     if (the_page < end_page && base + breadth(answer) - the_page > COLS)
@@ -459,13 +459,13 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
     /* Whether the previous keystroke was an attempt at tab completion. */
     bool previous_was_tab = FALSE;
     /* The length of the fragment that the user tries to tab complete. */
-    unsigned long    fragment_length = 0;
+    Ulong            fragment_length = 0;
     const keystruct *shortcut;
     functionptrtype  function;
     int              input;
     if (typing_x > strlen(answer))
     {
-        typing_x = constexpr_strlen(answer);
+        typing_x = strlen(answer);
     }
     while (TRUE)
     {
@@ -479,7 +479,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
             refresh_func();
             *actual = KEY_WINCH;
             free(stored_string);
-            return NULL;
+            return nullptr;
         }
         /* For a click on a shortcut, read in the resulting keycode. */
         if (input == KEY_MOUSE && do_statusbar_mouse() == 1)
@@ -492,7 +492,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
         }
         /* Check for a shortcut in the current list. */
         shortcut = get_shortcut(input);
-        function = (shortcut ? shortcut->func : NULL);
+        function = (shortcut ? shortcut->func : nullptr);
         /* When it's a normal character, add it to the answer. */
         absorb_character(input, function);
         if (function == do_cancel || function == do_enter)
@@ -524,37 +524,37 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
         }
         else
         {
-            if (function == get_older_item && history_list != NULL)
+            if (function == get_older_item && history_list)
             {
                 /* If this is the first step into history, start at the bottom. */
-                if (stored_string == NULL)
+                if (stored_string == nullptr)
                 {
                     reset_history_pointer_for(*history_list);
                 }
                 /* When moving up from the bottom, remember the current answer. */
-                if ((*history_list)->next == NULL)
+                if ((*history_list)->next == nullptr)
                 {
                     stored_string = mallocstrcpy(stored_string, answer);
                 }
                 /* If there is an older item, move to it and copy its string. */
-                if ((*history_list)->prev != NULL)
+                if ((*history_list)->prev)
                 {
                     *history_list = (*history_list)->prev;
                     answer        = mallocstrcpy(answer, (*history_list)->data);
                     typing_x      = strlen(answer);
                 }
             }
-            else if (function == get_newer_item && history_list != NULL)
+            else if (function == get_newer_item && history_list)
             {
                 /* If there is a newer item, move to it and copy its string. */
-                if ((*history_list)->next != NULL)
+                if ((*history_list)->next)
                 {
                     *history_list = (*history_list)->next;
                     answer        = mallocstrcpy(answer, (*history_list)->data);
                     typing_x      = strlen(answer);
                 }
                 /* When at the bottom of the history list, restore the old answer. */
-                if ((*history_list)->next == NULL && stored_string && *answer == '\0')
+                if ((*history_list)->next == nullptr && stored_string && *answer == '\0')
                 {
                     answer   = mallocstrcpy(answer, stored_string);
                     typing_x = strlen(answer);
@@ -575,9 +575,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
                     bottombars(currmenu);
                 }
                 else if (function == do_nothing)
-                {
                     ;
-                }
                 else if (function == (functionptrtype)implant)
                 {
                     implant(shortcut->expansion);
@@ -600,7 +598,7 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
         }
     }
     /* If the history pointer was moved, point it at the bottom again. */
-    if (stored_string != NULL)
+    if (stored_string)
     {
         reset_history_pointer_for(*history_list);
         free(stored_string);
@@ -616,9 +614,9 @@ acquire_an_answer(int *actual, bool *listed, linestruct **history_list, function
 int
 do_prompt(int menu, const char *provided, linestruct **history_list, functionptrtype refresh_func, const char *msg, ...)
 {
-    functionptrtype function = NULL;
+    functionptrtype function = nullptr;
     va_list         ap;
-    bool            listed = FALSE;
+    bool            listed = false;
     int             retval;
     /* Save a possible current status-bar x position and prompt. */
     unsigned long was_typing_x = typing_x;
@@ -741,7 +739,7 @@ ask_user(bool withall, const char *question)
         {
             get_kbinput(footwin, BLIND);
         }
-        letter[index++] = (unsigned char)kbinput;
+        letter[index++] = (Uchar)kbinput;
         /* If the received code is a UTF-8 starter byte, get also the
          * continuation bytes and assemble them into one letter. */
         if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7)
@@ -754,29 +752,29 @@ ask_user(bool withall, const char *question)
         }
         letter[index] = '\0';
         /* See if the typed letter is in the Yes, No, or All strings. */
-        if (strstr(yesstr, letter) != NULL)
+        if (strstr(yesstr, letter))
         {
             choice = YES;
         }
-        else if (strstr(nostr, letter) != NULL)
+        else if (strstr(nostr, letter))
         {
             choice = NO;
         }
-        else if (withall && strstr(allstr, letter) != NULL)
+        else if (withall && strstr(allstr, letter))
         {
             choice = ALL;
         }
         else
         {
-            if (strchr("Yy", kbinput) != NULL)
+            if (strchr("Yy", kbinput))
             {
                 choice = YES;
             }
-            else if (strchr("Nn", kbinput) != NULL)
+            else if (strchr("Nn", kbinput))
             {
                 choice = NO;
             }
-            else if (withall && strchr("Aa", kbinput) != NULL)
+            else if (withall && strchr("Aa", kbinput))
             {
                 choice = ALL;
             }
@@ -786,7 +784,7 @@ ask_user(bool withall, const char *question)
             break;
         }
         shortcut = get_shortcut(kbinput);
-        function = (shortcut ? shortcut->func : NULL);
+        function = (shortcut ? shortcut->func : nullptr);
         if (function == do_cancel)
         {
             choice = CANCEL;
