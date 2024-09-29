@@ -162,10 +162,10 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
     string normalised = Parse::normalise_path(path);
     if (!LSP.has_been_included(normalised.data())) {
       if (is_file_and_exists(normalised.data())) {
-        // unix_socket_debug("%s\n", normalised.data());
+        unix_socket_debug("%s\n", normalised.data());
         IndexFile idfile;
         idfile.file = measured_copy(normalised.data(), normalised.size());
-        idfile.head = retrieve_file_as_lines(path);
+        idfile.head = retrieve_file_as_lines(idfile.file);
         LSP.index.include.push_back(idfile);
         if (idfile.head) {
           LSP.check(idfile.head, idfile.file);
@@ -199,7 +199,7 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
       idfile.file = measured_copy(check_file.c_str(), check_file.length());
       idfile.head = retrieve_file_as_lines(check_file);
       LSP.index.include.push_back(idfile);
-      // unix_socket_debug("%s\n", check_file.c_str());
+      unix_socket_debug("%s\n", check_file.c_str());
       if (idfile.head) {
         LSP.check(idfile.head, check_file);
       }

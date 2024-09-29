@@ -213,18 +213,19 @@ void LSP_t::check(linestruct *from, string file) {
   if (!from) {
     from = openfile->filetop;
     file = openfile->filename;
+    IndexFile idfile;
+    idfile.file = openfile->filename;
+    idfile.head = openfile->filetop;
+    index.include.push_back(idfile);
   }
   FOR_EACH_LINE_NEXT(line, from) {
     Parse::comment(line);
     if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
-        line->flags.is_set<IN_BLOCK_COMMENT>()) {
+        line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
       continue;
     }
     if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
       do_preprossesor(line, file.c_str());
-    }
-    if (line->flags.is_set<PP_LINE>()) {
-      continue;
     }
     vector<var_t> vars;
     Parse::variable(line, vars);

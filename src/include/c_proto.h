@@ -12,6 +12,7 @@
 __BEGIN_DECLS
 
 #define UNIX_DOMAIN_SOCKET_PATH "/tmp/test"
+#define BUF_SIZE 16384
 
 extern int unix_socket_fd;
 

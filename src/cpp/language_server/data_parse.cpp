@@ -140,6 +140,20 @@ namespace Parse {
       return head;
     }
 
+    string process_line(linestruct *line) {\
+      string ret = "";
+      const char *start = line->data;
+      const char *end = line->data;
+      Ulong len = strlen(line->data);
+      while (end < (line->data + len)) {
+        ADV_TO_NEXT_WORD(end);
+        start = end;
+        ADV_PAST_WORD(end);
+        ret += string(start, (end - start)) + " ";
+      }
+      return ret;
+    }
+
     var_t parse_struct_type(linestruct *from, const char *type) {
       Uint        idx;
       const char *found = strstr_array(type, (const char *[]) {"typedef", "enum", "struct", "class"}, 4, &idx);
@@ -149,8 +163,11 @@ namespace Parse {
         const char *b_start = nullptr;
         const char *b_end   = nullptr;
         FOR_EACH_LINE_NEXT(line, from) {
-          expr += &line->data[0];
-          expr += '\n';
+          // if (!expr.empty()) {
+          //   expr += ' ';
+          // }
+          // expr += &line->data[0];
+          expr += process_line(line);
           b_start = line->data;
           do {
             b_start = strchr(b_start, '{');
@@ -179,6 +196,12 @@ namespace Parse {
           if (strchr(line->data, ';') && lvl == 0) {
             break;
           }
+        }
+        const char *brace = strchr(expr.c_str(), '{');
+        const char *paranR = strchr(expr.c_str(), ')');
+        if (((brace && paranR) && paranR < brace) || (paranR && !brace))
+        {
+          return {};
         }
         switch (idx) {
           case 0 : {

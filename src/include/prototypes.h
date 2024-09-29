@@ -501,6 +501,7 @@ const char *word_strstr(const char *data, const char *needle);
 string      file_extention_str(void);
 string      current_file_dir(void);
 char      **retrieve_exec_output(const char *cmd, Uint *n_lines);
+const char *word_strstr_array(const char *str, const char **substrs, Uint count, Uint *index) ;
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *string_strstr_array(const char *str, const vector<string> &substrs, Uint *index);
 

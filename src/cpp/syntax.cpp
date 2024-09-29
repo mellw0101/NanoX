@@ -83,18 +83,56 @@ void syntax_check_file(openfilestruct *file) {
       }
       LSP.check(nullptr, "");
       LSP.add_defs_to_color_map();
-      /* for (const auto &it : LSP.index.rawenum) {
-        unix_socket_debug("%s\n\n\n", it.c_str());
+      for (const auto &it : LSP.index.rawenum) {
+        unix_socket_debug("%s\n", it.c_str());
       }
       for (const auto &it : LSP.index.rawtypedef) {
-        unix_socket_debug("%s\n\n\n", it.c_str());
+        const char *found = word_strstr(it.c_str(), "struct");
+        if (found) {
+          const char *start = found + 6;
+          ADV_TO_NEXT_WORD(start);
+          if (!*start) {
+            continue;
+          }
+          const char *end = start;
+          ADV_PAST_WORD(end);
+          string c(start, (end - start));
+          unix_socket_debug("%s\n", c.c_str());
+          test_map[c] = {FG_VS_CODE_GREEN};
+        }
+        unix_socket_debug("%s\n", it.c_str());
       }
       for (const auto &it : LSP.index.rawclass) {
-        unix_socket_debug("%s\n\n\n", it.c_str());
+        const char *found = word_strstr(it.c_str(), "class");
+        if (found) {
+          const char *start = found + 5;
+          ADV_TO_NEXT_WORD(start);
+          if (!*start) {
+            continue;
+          }
+          const char *end = start;
+          ADV_PAST_WORD(end);
+          string c(start, (end - start));
+          unix_socket_debug("%s\n", c.c_str());
+          test_map[c] = {FG_VS_CODE_GREEN};
+        }
+        unix_socket_debug("%s\n", it.c_str());
       }
-      */
       for (const auto &it : LSP.index.rawstruct) {
-        unix_socket_debug("%s\n\n\n", it.c_str());
+        const char *found = word_strstr(it.c_str(), "struct");
+        if (found) {
+          const char *start = found + 6;
+          ADV_TO_NEXT_WORD(start);
+          if (!*start) {
+            continue;
+          }
+          const char *end = start;
+          ADV_PAST_WORD(end);
+          string c(start, (end - start));
+          unix_socket_debug("%s\n", c.c_str());
+          test_map[c] = {FG_VS_CODE_GREEN};
+        }
+        unix_socket_debug("%s\n", it.c_str());
       }
       unix_socket_debug("rawenum size: %u\n", LSP.index.rawenum.size());
       unix_socket_debug("rawtypedef size: %u\n", LSP.index.rawtypedef.size());

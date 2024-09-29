@@ -622,6 +622,18 @@ char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
   return lines;
 }
 
+const char *word_strstr_array(const char *str, const char **substrs, Uint count, Uint *index) {
+  const char *first = nullptr;
+  for (Uint i = 0; i < count; i++) {
+    const char *match = word_strstr(str, substrs[i]);
+    if (match && (!first || match < first)) {
+      first = match;
+      index ? *index = i : 0;
+    }
+  }
+  return first;
+}
+
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index) {
   const char *first = NULL;
   for (Uint i = 0; i < count; i++) {

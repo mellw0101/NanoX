@@ -31,10 +31,10 @@ void unix_socket_debug(const char *format, ...) {
   if (unix_socket_fd < 0) {
     return;
   }
-  static char buf[4096];
+  static char buf[BUF_SIZE];
   va_list     ap;
   va_start(ap, format);
-  vsnprintf(buf, 4096, format, ap);
+  vsnprintf(buf, BUF_SIZE, format, ap);
   va_end(ap);
   unsigned long len = strlen(buf);
   if (write(unix_socket_fd, buf, len) < 0) {
