@@ -82,8 +82,9 @@ LSP_t &LSP_t::instance(void) {
   if (!_instance) {
     pthread_mutex_guard_t guard(&_init_mutex);
     if (!_instance) {
-      _instance = new language_server_t();
+      _instance = new LSP_t();
     }
+    atexit(LSP_t::_destroy);
   }
   return *_instance;
 }
@@ -101,8 +102,8 @@ LSP_t::LSP_t(void) {
 }
 
 void LSP_t::_destroy(void) noexcept {
-  pthread_mutex_destroy(&_mutex);
-  index.delete_data();
+  pthread_mutex_destroy(&LSP._mutex);
+  LSP.index.delete_data();
   delete _instance;
 }
 

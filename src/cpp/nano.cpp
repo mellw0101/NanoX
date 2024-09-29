@@ -1308,7 +1308,6 @@ int main(int argc, char **argv) {
       unix_socket_debug("%s", str.c_str());
     }
     NETLOGGER.send_to_server("\nExiting NanoX.\n");
-    unix_socket_debug("%s\n", Parse::normalise_path("../this/path/../other_path/../other_other_path").c_str());
     (unix_socket_fd < 0) ? 0 : close(unix_socket_fd);
   });
   int stdin_flags;

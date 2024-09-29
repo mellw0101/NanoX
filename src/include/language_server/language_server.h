@@ -49,14 +49,13 @@ class language_server_t
   // vector<define_entry_t>    _defines;
 
   language_server_t(void);
-  void _destroy(void) noexcept;
+  static void _destroy(void) noexcept;
 
   void           fetch_compiler_defines(string);
   vector<string> split_if_statement(const string &str);
 
   public:
   Index index;
-  ~language_server_t(void);
 
   static language_server_t &instance(void);
 

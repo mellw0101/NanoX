@@ -546,6 +546,7 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
     for (; *ptr && (*ptr != ch); ptr++) \
         ;
 
+#define ADV_PTR_TO_CH(ptr, ch)     for (; *ptr && (*ptr != ch); ptr++)
 #define adv_ptr_to_ch(ptr, ch)     for (; *ptr && (*ptr != ch); ptr++)
 
 #define ADV_PTR(ptr, ...)          for (; *ptr && __VA_ARGS__; ptr++)

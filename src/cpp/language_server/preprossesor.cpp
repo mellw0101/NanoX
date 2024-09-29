@@ -1,4 +1,3 @@
-#include "../../include/language_server/language_server.h"
 #include "../../include/prototypes.h"
 
 inline namespace utils {
@@ -107,13 +106,16 @@ inline namespace utils {
     return -1;
   }
 
-  string parse_full_define(linestruct *from, const char **ptr) {
+  string parse_full_define(linestruct *from, const char **ptr, int *endline = nullptr) {
     string      decl  = "";
     const char *start = *ptr;
     const char *end   = start;
     FOR_EACH_LINE_NEXT(line, from) {
+      line->flags.set<PP_LINE>();
+      /* Advance pointer 'end' to 'EOL' or a backslash ('\'), indicating a continued line. */
       do {
         ADV_PTR(end, (*end != '\\' && *end != '\'' && *end != '"'));
+        /* If we find any ('/") chars.  We must skip them fully. */
         if (*end == '"' || *end == '\'') {
           ++end;
           ADV_PTR(end, (*end != '\'' && *end != '"'));
@@ -121,11 +123,15 @@ inline namespace utils {
         }
       }
       while (*end && *end != '\\');
+      /* 'EOL' was found, indecating end of define decl. */
       if (!*end) {
         decl += string(start, (end - start));
+        endline ? (*endline = line->lineno) : 0;
         break;
       }
+      /* A backslash ('\') was found, indicating a multi-line define. */
       else {
+        /* Trim trailing whitespace between the backslash ('\') and the last non-whitespace character. */
         if (line->data[(end - start) - 1] == '\t' || line->data[(end - start) - 1] == ' ') {
           --end;
           DCR_PTR(end, &line->data[0], (*end == '\t' || *end == ' '));
@@ -133,8 +139,11 @@ inline namespace utils {
         }
         decl += string(start, (end - start));
         decl += "\n";
-        start = &line->next->data[0];
-        end   = start;
+        /* Set 'start' and 'end' to the beginning of the next line's data. */
+        if (line->next) {
+          start = &line->next->data[0];
+          end   = start;
+        }
       }
     }
     return decl;
@@ -153,13 +162,13 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
     string normalised = Parse::normalise_path(path);
     if (!LSP.has_been_included(normalised.data())) {
       if (is_file_and_exists(normalised.data())) {
-        unix_socket_debug("%s\n", normalised.data());
+        // unix_socket_debug("%s\n", normalised.data());
         IndexFile idfile;
         idfile.file = measured_copy(normalised.data(), normalised.size());
         idfile.head = retrieve_file_as_lines(path);
         LSP.index.include.push_back(idfile);
         if (idfile.head) {
-          LSP.check(idfile.head, path);
+          LSP.check(idfile.head, idfile.file);
         }
       }
     }
@@ -190,7 +199,7 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
       idfile.file = measured_copy(check_file.c_str(), check_file.length());
       idfile.head = retrieve_file_as_lines(check_file);
       LSP.index.include.push_back(idfile);
-      unix_socket_debug("%s\n", check_file.c_str());
+      // unix_socket_debug("%s\n", check_file.c_str());
       if (idfile.head) {
         LSP.check(idfile.head, check_file);
       }
@@ -401,12 +410,12 @@ void do_define(linestruct *line, const char *current_file, const char **ptr) {
   }
   end = start;
   ADV_PTR(end, (*end != '(' && *end != ' ' && *end != '\t'));
-  de.name = measured_copy(start, (end - start));
-
+  de.name            = measured_copy(start, (end - start));
+  de.decl_start_line = line->lineno;
   if (*end == '(') {
     ADV_PTR(end, (*end != ')'));
     if (!*end) {
-      free(de.name);
+      de.delete_data();
       return;
     }
     end += 1;
@@ -414,8 +423,9 @@ void do_define(linestruct *line, const char *current_file, const char **ptr) {
   de.full_decl = measured_copy(start, (end - start));
   start        = end;
   ADV_TO_NEXT_WORD(start);
-  string val = parse_full_define(line, &start);
-  de.value = measured_copy(val.data(), val.size());
+  string val = parse_full_define(line, &start, &de.decl_end_line);
+  de.value   = measured_copy(val.data(), val.size());
+  de.file    = copy_of(current_file);
   LSP.index.defines.push_back(de);
 }
 

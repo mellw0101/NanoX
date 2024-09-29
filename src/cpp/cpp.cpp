@@ -1,10 +1,5 @@
 #include "../include/prototypes.h"
 
-#include "../include/definitions.h"
-
-#include <Mlib/Profile.h>
-#include <Mlib/def.h>
-
 /* Returns 'TRUE' if 'c' is a cpp syntax char. */
 bool isCppSyntaxChar(const char c) {
   return (c == '<' || c == '>' || c == '&' || c == '*' || c == '=' || c == '+' || c == '-' || c == '/' || c == '%' ||
@@ -197,14 +192,6 @@ void do_close_bracket(void) {
 }
 
 void do_parse(void) {
-  MParse mp;
-  mp.parse_source_file(openfile->filename);
-  Ulong  nwords;
-  char **words = words_from_file(openfile->filename, &nwords);
-  for (Uint i = 0; i < nwords; ++i) {
-    free(words[i]);
-  }
-  free(words);
 }
 
 void do_test_window(void) {

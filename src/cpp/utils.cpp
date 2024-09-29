@@ -624,7 +624,7 @@ char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
 
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index) {
   const char *first = NULL;
-  for (unsigned int i = 0; i < count; i++) {
+  for (Uint i = 0; i < count; i++) {
     const char *match = strstr(str, substrs[i]);
     if (match && (!first || match < first)) {
       first = match;

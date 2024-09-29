@@ -1,9 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <Mlib/Flag.h>
-#include <Mlib/Parse.hpp>
-#include <Mlib/Parse_definitions.hpp>
-
 static Uint block_comment_start = (unsigned int)-1;
 static Uint block_comment_end   = (unsigned int)-1;
 static int  color_bi[3]         = {FG_VS_CODE_YELLOW, FG_VS_CODE_BRIGHT_MAGENTA, FG_VS_CODE_BRIGHT_BLUE};
@@ -969,7 +965,7 @@ void rendr_structs(int index) {
 
 void render_function(void) {
   PROFILE_FUNCTION;
-  index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
+  /* index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
   if (!id) {
     return;
   }
@@ -1011,7 +1007,7 @@ void render_function(void) {
     else if (line->lineno < f->start.line) {
       break;
     }
-  }
+  } */
 }
 
 /* Main function that applies syntax to a line in real time. */
@@ -1035,14 +1031,14 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
         free_node(node);
         continue;
       }
-      index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
+      /* index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
       if (id) {
         for (const auto &it : id->main.functions) {
           if (it->name == node->str) {
             midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BRIGHT_YELLOW);
           }
         }
-      }
+      } */
       const auto &it = test_map.find(node->str);
       if (it != test_map.end()) {
         if (it->second.from_line != -1) {

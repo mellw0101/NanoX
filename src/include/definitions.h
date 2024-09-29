@@ -21,7 +21,6 @@
 #include <Mlib/Debug.h>
 #include <Mlib/FileSys.h>
 #include <Mlib/Flag.h>
-#include <Mlib/LSP/language_server_protocol.hpp>
 #include <Mlib/Profile.h>
 #include <Mlib/String.h>
 #include <Mlib/Vector.h>

@@ -1686,9 +1686,6 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
     free(tempname);
     free(realname);
   }
-  if (openfile->type.is_set<C_CPP>()) {
-    Lsp::utils::reparse_main_file(openfile->filename);
-  }
   return TRUE;
 }
 
@@ -2399,6 +2396,7 @@ char **dir_entrys_from(const char *path) {
 }
 
 linestruct *retrieve_file_as_lines(const string &path) {
+  PROFILE_FUNCTION;
   if (!is_file_and_exists(path.c_str())) {
     logE("Path: '%s' is not a file or does not exist.", path.c_str());
     return nullptr;
@@ -2409,10 +2407,10 @@ linestruct *retrieve_file_as_lines(const string &path) {
     return nullptr;
   }
   static thread_local char *buf = nullptr;
-  Ulong                     size;
-  long                      len;
-  linestruct               *head = nullptr;
-  linestruct               *tail = nullptr;
+  Ulong size;
+  long  len;
+  linestruct *head = nullptr;
+  linestruct *tail = nullptr;
   while ((len = getline(&buf, &size, file)) != EOF) {
     if (buf[len - 1] == '\n') {
       buf[--len] = '\0';

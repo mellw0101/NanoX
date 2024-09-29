@@ -1,4 +1,3 @@
-#include "../../include/language_server/language_server.h"
 #include "../../include/prototypes.h"
 
 namespace Parse {
@@ -89,8 +88,56 @@ namespace Parse {
       return type;
     }
 
-    void handle_typedef(const string &expr) {
-      // unix_socket_debug("%s\n", expr.data());
+    void parse_typedef_name_alias(const string &expr, const char **ptr, char **name, char **alias) {
+      const char *start = *ptr;
+      const char *end   = nullptr;
+      ADV_PTR(start, (*start == '\t' || *start == ' ') && *start != '{');
+      if (*start != '{') {
+        end = start;
+        ADV_PTR(end, *end != '\t' && *end != ' ' && *end != '{');
+        *name = measured_copy(start, (end - start));
+      }
+      else {
+        *name = copy_of("");
+      }
+      end   = &expr[expr.length() - 2];
+      start = end;
+      DCR_PTR(start, &expr[0], *start != '}');
+      if (*start == '}') {
+        ++start;
+        ADV_TO_NEXT_WORD(start);
+      }
+      if (start != end) {
+        *alias = measured_copy(start, (end - start));
+      }
+      else {
+        *alias = copy_of("error");
+      }
+    }
+
+    linestruct *lines_from_EOL_str(const char *str) {
+      const char *start = &str[0];
+      const char *end   = &str[0];
+      linestruct *head  = nullptr;
+      linestruct *tail  = nullptr;
+      while (*end) {
+        start = end;
+        ADV_PTR(end, *end != '\n');
+        linestruct *line = make_new_node(tail);
+        line->data       = measured_copy(start, (end - start));
+        if (tail == nullptr) {
+          head = line;
+          tail = line;
+        }
+        else {
+          tail->next = line;
+          tail       = tail->next;
+        }
+        if (*end) {
+          ++end;
+        }
+      }
+      return head;
     }
 
     var_t parse_struct_type(linestruct *from, const char *type) {
@@ -102,8 +149,8 @@ namespace Parse {
         const char *b_start = nullptr;
         const char *b_end   = nullptr;
         FOR_EACH_LINE_NEXT(line, from) {
-          expr += line->data;
-          expr += "\n";
+          expr += &line->data[0];
+          expr += '\n';
           b_start = line->data;
           do {
             b_start = strchr(b_start, '{');
@@ -135,9 +182,23 @@ namespace Parse {
         }
         switch (idx) {
           case 0 : {
-            handle_typedef(expr);
+            LSP.index.rawtypedef.push_back(expr);
+            break;
+          }
+          case 1 : {
+            LSP.index.rawenum.push_back(expr);
+            break;
+          }
+          case 2 : {
+            LSP.index.rawstruct.push_back(expr);
+            break;
+          }
+          case 3 : {
+            LSP.index.rawclass.push_back(expr);
+            break;
           }
         }
+        // unix_socket_debug("\n%s\n", expr.data());
       }
       return {};
     }
@@ -254,7 +315,7 @@ namespace Parse {
       int scope_end = current_line_scope_end(line);
       data          = save + 1;
       if (*save == '=') {
-        adv_to_next_ch(data);
+        ADV_TO_NEXT_CH(data);
         end = data;
         adv_ptr(end, (*end != ';' && *end != ',' && *end != '{'));
         if (*end == '\0') {
@@ -273,7 +334,7 @@ namespace Parse {
       else if (*save == '{') {
         end  = save;
         data = end;
-        adv_ptr_to_ch(end, '}');
+        ADV_PTR_TO_CH(end, '}');
         if (*end == '\0') {
           value = parse_multiline_bracket_var(line, &data, &end);
           if (value == "") {

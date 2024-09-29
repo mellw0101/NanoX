@@ -83,52 +83,23 @@ void syntax_check_file(openfilestruct *file) {
       }
       LSP.check(nullptr, "");
       LSP.add_defs_to_color_map();
-      // if (!ISSET(RESTRICTED)) {
-      //   submit_task(
-      //       [](void *) -> void * {
-      //         /* Index the opened file. */
-      //         Lsp::instance().index_file(openfile->filename);
-      //         /* When complete directly interupt the main thread to add results. */
-      //         send_signal_to_main_thread(
-      //             [](void *) -> void {
-      //               index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
-      //               if (!id) {
-      //                 return;
-      //               }
-      //               string path = openfile->filename;
-      //               /* Add all parsed functions. */
-      //               for (const auto &f : id->functions) {
-      //                 test_map[f->name] = {FG_VS_CODE_BRIGHT_YELLOW};
-      //               }
-      //               NLOG("size: %u.\n", id->functions.size());
-      //               /* Add all parsed classes. */
-      //               for (const auto &c : id->classes) {
-      //                 test_map[c->name] = {FG_VS_CODE_GREEN};
-      //                 if (c->file == path) {
-      //                   c->flags.set<MAIN_FILE>();
-      //                 }
-      //               }
-      //               NLOG("classes size: %u.\n", id->classes.size());
-      //               /* Add all parsed structs. */
-      //               for (const auto &s : id->structs) {
-      //                 test_map[s->name] = {FG_VS_CODE_GREEN};
-      //                 if (s->file == path) {
-      //                   s->flags.set<MAIN_FILE>();
-      //                 }
-      //               }
-      //               NLOG("structs size: %u.\n", id->structs.size());
-      //               for (const auto &v : id->variabels) {
-      //                 test_map[v->name] = {FG_VS_CODE_BRIGHT_CYAN};
-      //               }
-      //               NLOG("test_map size: %lu\n", test_map.size());
-      //               refresh_needed = true;
-      //               edit_refresh();
-      //             },
-      //             nullptr);
-      //         return nullptr;
-      //       },
-      //       nullptr, nullptr, nullptr);
-      // }
+      /* for (const auto &it : LSP.index.rawenum) {
+        unix_socket_debug("%s\n\n\n", it.c_str());
+      }
+      for (const auto &it : LSP.index.rawtypedef) {
+        unix_socket_debug("%s\n\n\n", it.c_str());
+      }
+      for (const auto &it : LSP.index.rawclass) {
+        unix_socket_debug("%s\n\n\n", it.c_str());
+      }
+      */
+      for (const auto &it : LSP.index.rawstruct) {
+        unix_socket_debug("%s\n\n\n", it.c_str());
+      }
+      unix_socket_debug("rawenum size: %u\n", LSP.index.rawenum.size());
+      unix_socket_debug("rawtypedef size: %u\n", LSP.index.rawtypedef.size());
+      unix_socket_debug("rawstruct size: %u\n", LSP.index.rawstruct.size());
+      unix_socket_debug("rawclass size: %u\n", LSP.index.rawclass.size());
     }
     else if (ext == "asm" || ext == "s") {
       openfile->type.clear_and_set<ASM>();

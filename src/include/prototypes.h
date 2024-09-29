@@ -624,7 +624,7 @@ void netlog_syntaxtype(syntaxtype *s);
 void netlog_colortype(colortype *c);
 void netlog_bracket_entry(const bracket_entry &be);
 void netlog_func_info(function_info_t *info);
-void netlog_lsp_function_decl(function_decl *decl) noexcept;
+void debug_define(const DefineEntry &de);
 
 /* 'words.cpp' */
 void         remove_tabs_from_word(char **word);

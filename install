@@ -11,7 +11,8 @@ echo "Architecture: $ARCH"
 case "$ARCH" in
     x86_64)
         AmakeCpp --test
-        AmakeCpp --link --bin /usr/lib/Mlib.a /usr/local/lib/libSDL3.a /usr/local/lib/libSDL3_ttf.a /usr/local/lib/libSXL.a -lfreetype -lclang
+        AmakeCpp --link --bin /usr/lib/Mlib.a
+        # /usr/local/lib/libSDL3.a /usr/local/lib/libSDL3_ttf.a /usr/local/lib/libSXL.a -lfreetype
 		# SRC_DIR="$(pwd)/src/c"
 		# OUT_DIR="$(pwd)/build/NIndent"
 		# if [ ! -d "$OUT_DIR" ]; then
