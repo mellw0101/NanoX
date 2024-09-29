@@ -1,24 +1,9 @@
 #include "../include/prototypes.h"
 #include "../include/revision.h"
 
-#include <Mlib/Debug.h>
-#include <Mlib/Profile.h>
-#include <Mlib/def.h>
-
-#include <cctype>
-#include <cerrno>
-#include <fcntl.h>
-#include <getopt.h>
-#include <sys/ioctl.h>
 #ifdef ENABLE_UTF8
 #    include <langinfo.h>
 #endif
-#include <clocale>
-#include <cstdlib>
-#include <cstring>
-#include <sys/vt.h>
-#include <termios.h>
-#include <unistd.h>
 
 /* Used to store the user's original mouse click interval. */
 static int oldinterval = -1;
@@ -1764,23 +1749,23 @@ main(int argc, char **argv)
     if (!ignore_rcfiles)
     {
         /* Back up the command-line options that take an argument. */
-        long          fill_cmdline          = fill;
-        unsigned long stripeclm_cmdline     = stripe_column;
-        long          tabsize_cmdline       = tabsize;
-        char         *backup_dir_cmdline    = backup_dir;
-        char         *word_chars_cmdline    = word_chars;
-        char         *operating_dir_cmdline = operating_dir;
-        char         *quotestr_cmdline      = quotestr;
-        char         *alt_speller_cmdline   = alt_speller;
+        long  fill_cmdline          = fill;
+        Ulong stripeclm_cmdline     = stripe_column;
+        long  tabsize_cmdline       = tabsize;
+        char *backup_dir_cmdline    = backup_dir;
+        char *word_chars_cmdline    = word_chars;
+        char *operating_dir_cmdline = operating_dir;
+        char *quotestr_cmdline      = quotestr;
+        char *alt_speller_cmdline   = alt_speller;
         /* Back up the command-line flags. */
-        unsigned long flags_cmdline[sizeof(flags) / sizeof(flags[0])];
+        Ulong flags_cmdline[sizeof(flags) / sizeof(flags[0])];
         memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
         /* Clear the string options, to not overwrite the specified ones. */
-        backup_dir    = NULL;
-        word_chars    = NULL;
-        operating_dir = NULL;
-        quotestr      = NULL;
-        alt_speller   = NULL;
+        backup_dir    = nullptr;
+        word_chars    = nullptr;
+        operating_dir = nullptr;
+        quotestr      = nullptr;
+        alt_speller   = nullptr;
         /* Now process the system's and the user's nanorc file, if any. */
         do_rcfiles();
         /* If the backed-up command-line options have a value, restore them. */
@@ -2035,7 +2020,7 @@ main(int argc, char **argv)
     while (optind < argc && (!openfile || TRUE))
     {
         long  givenline = 0, givencol = 0;
-        char *searchstring = NULL;
+        char *searchstring = nullptr;
         /* If there's a +LINE[,COLUMN] argument here, eat it up. */
         if (optind < argc - 1 && argv[optind][0] == '+')
         {
@@ -2223,7 +2208,7 @@ main(int argc, char **argv)
     /* If no filenames were given, or all of them were invalid things like
      * directories, then open a blank buffer and allow editing.  Otherwise,
      * switch from the last opened file to the next, that is: the first. */
-    if (openfile == NULL)
+    if (openfile == nullptr)
     {
         open_buffer("", TRUE);
         UNSET(VIEW_MODE);
@@ -2231,7 +2216,7 @@ main(int argc, char **argv)
     else
     {
         openfile = openfile->next;
-        (more_than_one) ? mention_name_and_linecount() : void();
+        more_than_one ? mention_name_and_linecount() : (void)0;
         ISSET(VIEW_MODE) ? SET(MULTIBUFFER) : 0;
     }
     if (optind < argc)
@@ -2251,23 +2236,23 @@ main(int argc, char **argv)
     {
         statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
     }
-    do_cpp_syntax();
+    do_syntax();
     /* Set the margin to an impossible value to force re-evaluation. */
     margin         = 12345;
-    we_are_running = TRUE;
+    we_are_running = true;
     logI("Reached main loop.");
     if (gui_enabled == true)
     {
-        run_gui();
+        /* run_gui(); */
     }
     /* TODO: This is the main loop of the editor. */
-    while (TRUE)
+    while (true)
     {
         prosses_callback_queue();
         confirm_margin();
         if (on_a_vt && waiting_keycodes() == 0)
         {
-            mute_modifiers = FALSE;
+            mute_modifiers = false;
         }
         if (currmenu != MMAIN)
         {
@@ -2291,7 +2276,7 @@ main(int argc, char **argv)
                 report_cursor_position();
             }
         }
-        as_an_at = TRUE;
+        as_an_at = true;
         if ((refresh_needed && LINES > 1) || (LINES == 1 && lastmessage <= HUSH))
         {
             edit_refresh();

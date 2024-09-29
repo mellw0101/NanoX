@@ -17,10 +17,9 @@ isCppSyntaxChar(const char c)
 /* Get indent in number of 'tabs', 'spaces', 'total chars', 'total tabs (based
  * on width of tab)'. */
 void
-get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces, unsigned short *t_char,
-                unsigned short *t_tabs)
+get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs)
 {
-    unsigned long i;
+    Ulong i;
     *tabs = 0, *spaces = 0, *t_char = 0, *t_tabs = 0;
     if (line->data[0] != ' ' && line->data[0] != '\t')
     {
@@ -50,7 +49,7 @@ get_line_indent(linestruct *line, unsigned short *tabs, unsigned short *spaces, 
 }
 
 /* Return the len of indent in terms of index off first non 'tab/space' char. */
-unsigned short
+Ushort
 indent_char_len(linestruct *line)
 {
     unsigned short i = 0;
@@ -238,6 +237,20 @@ do_close_bracket(void)
 }
 
 void
+do_parse(void)
+{
+    MParse mp;
+    mp.parse_source_file(openfile->filename);
+    Ulong nwords;
+    char **words = words_from_file(openfile->filename, &nwords);
+    for (Uint i = 0; i <nwords; ++i)
+    {
+        free(words[i]);
+    }
+    free(words);
+}
+
+void
 do_test_window(void)
 {
     nlog("test win\n");
@@ -282,8 +295,7 @@ parse_func(const char *str)
     char        *copy        = copy_of(str);
     unsigned int len         = strlen(copy);
     char         prefix[256] = "", params[256] = "";
-    for (i = 0; i < len && copy[i] != '('; i++)
-        ;
+    for (i = 0; i < len && copy[i] != '('; i++);
     if (copy[i] != '(')
     {
         free(copy);
@@ -326,8 +338,7 @@ parse_func(const char *str)
                 int was_i = i;
                 /* Here we extract any ptr`s that are at the start of the name.
                  */
-                for (; prefix[i + 1] == '*'; i++)
-                    ;
+                for (; prefix[i + 1] == '*'; i++);
                 info->name = copy_of(&prefix[i + 1]);
                 /* If any ptr`s were found we add them to the return string. */
                 if (int diff = i - was_i; diff > 0)
@@ -376,8 +387,7 @@ parse_func(const char *str)
             if (end == NULL)
             {
                 end = start;
-                for (; *end; end++)
-                    ;
+                for (; *end; end++);
                 var->type = measured_memmove_copy(param_array[i], (end - start));
                 if (info->params == NULL)
                 {
@@ -395,8 +405,7 @@ parse_func(const char *str)
         }
         end += 1;
         start = end;
-        for (; *end; end++)
-            ;
+        for (; *end; end++);
         var->name = measured_copy(param_array[i] + (start - param_array[i]), (end - start));
         var->type = measured_copy(param_array[i], (start - param_array[i]));
         if (info->params == NULL)
@@ -427,8 +436,7 @@ parse_local_func(const char *str)
     char        *copy        = copy_of(str);
     unsigned int len         = strlen(copy);
     char         prefix[256] = "", params[256] = "";
-    for (i = 0; i < len && copy[i] != '('; i++)
-        ;
+    for (i = 0; i < len && copy[i] != '('; i++);
     if (copy[i] != '(')
     {
         free(copy);
@@ -471,8 +479,7 @@ parse_local_func(const char *str)
                 int was_i = i;
                 /* Here we extract any ptr`s that are at the start of the name.
                  */
-                for (; prefix[i + 1] == '*' || prefix[i + 1] == '&'; i++)
-                    ;
+                for (; prefix[i + 1] == '*' || prefix[i + 1] == '&'; i++);
                 info.name = copy_of(&prefix[i + 1]);
                 /* If any ptr`s were found we add them to the return string. */
                 if (int diff = i - was_i; diff > 0)
@@ -525,8 +532,7 @@ parse_local_func(const char *str)
             if (end == NULL)
             {
                 end = start;
-                for (; *end; end++)
-                    ;
+                for (; *end; end++);
                 var->type = measured_memmove_copy(param_array[i], (end - start));
                 if (info.params == NULL)
                 {
@@ -544,8 +550,7 @@ parse_local_func(const char *str)
         }
         end += 1;
         start = end;
-        for (; *end; end++)
-            ;
+        for (; *end; end++);
         var->name = measured_copy(param_array[i] + (start - param_array[i]), (end - start));
         var->type = measured_copy(param_array[i], (start - param_array[i]));
         if (info.params == NULL)
@@ -573,7 +578,7 @@ parse_local_func(const char *str)
 bool
 invalid_variable_sig(const char *sig)
 {
-    if (strstr(sig, "|=") || strstr(sig, "+=") || strstr(sig, "-=") || *sig == '{' || strstr(sig, "/*") ||
+    if (strstr(sig, "|=") || strstr(sig, "+=") || strstr(sig, "-=") || *sig == '{' ||
         strchr(sig, '#') || strncmp(sig, "return", 6) == 0)
     {
         return TRUE;
@@ -614,14 +619,12 @@ parse_variable(const char *sig, char **type, char **name, char **value)
         return;
     }
     start = end;
-    for (; start > sig && *start != '='; start--)
-        ;
+    for (; start > sig && *start != '='; start--);
     if (start > sig)
     {
         p = start;
         p += 1;
-        for (; *p && (*p == ' ' || *p == '\t'); p++)
-            ;
+        for (; *p && (*p == ' ' || *p == '\t'); p++);
         (value != NULL) ? *value = measured_copy(p, (end - p)) : NULL;
     }
     else
@@ -629,11 +632,9 @@ parse_variable(const char *sig, char **type, char **name, char **value)
         start = end;
     }
     start -= 1;
-    for (; start > sig && (*start == ' ' || *start == '\t'); start--)
-        ;
+    for (; start > sig && (*start == ' ' || *start == '\t'); start--);
     end = start;
-    for (; start > sig && *start != ' ' && *start != '\t' && *start != '*' && *start != '&'; start--)
-        ;
+    for (; start > sig && *start != ' ' && *start != '\t' && *start != '*' && *start != '&'; start--);
     p = start;
     if (start > sig)
     {
@@ -645,8 +646,7 @@ parse_variable(const char *sig, char **type, char **name, char **value)
         return;
     }
     end = p - 1;
-    for (; end > sig && (*end == ' ' || *end == '\t'); end--)
-        ;
+    for (; end > sig && (*end == ' ' || *end == '\t'); end--);
     end += 1;
     (type != NULL) ? *type = measured_copy(sig, (end - sig)) : NULL;
 }
@@ -831,7 +831,7 @@ find_current_function(linestruct *l)
     }
 }
 
-void
+/* void
 remove_local_vars_from(linestruct *line)
 {
     if (!(line->flags.is_set(IN_BRACKET)))
@@ -858,6 +858,32 @@ remove_local_vars_from(linestruct *line)
         if (it == test_map.end())
         {
             done = TRUE;
+        }
+    }
+} */
+
+void
+remove_local_vars_from(linestruct *line)
+{
+    if (!(line->flags.is_set(IN_BRACKET)))
+    {
+        return;
+    }
+    for (auto it = test_map.begin(); it != test_map.end();)
+    {
+        if (it->second.from_line == -1)
+        {
+            ++it;
+            continue;
+        }
+        if (it->second.from_line == line->lineno && it->second.color == FG_VS_CODE_BRIGHT_CYAN &&
+            it->second.type == LOCAL_VAR_SYNTAX)
+        {
+            it = test_map.erase(it);
+        }
+        else
+        {
+            ++it;
         }
     }
 }

@@ -1,14 +1,10 @@
 /// @file prompt.cpp
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <Mlib/def.h>
-#include <cstring>
-
 /* The prompt string used for status-bar questions. */
 static char *prompt = nullptr;
 /* The cursor position in answer. */
-static u_long typing_x = HIGHEST_POSITIVE;
+static Ulong typing_x = HIGHEST_POSITIVE;
 
 /* Move to the beginning of the answer. */
 void

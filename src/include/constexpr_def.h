@@ -559,6 +559,7 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
 #define ADV_PAST_WORD(ptr)         ADV_PTR(ptr, (*ptr != ' ' && *ptr != '\t'))
 
 #define adv_to_next_ch(ptr)        for (; *ptr && (*ptr == ' ' || *ptr == '\t'); ptr++)
+#define ADV_TO_NEXT_CH(ptr)        for (; *ptr && (*ptr == ' ' || *ptr == '\t'); ptr++)
 #define dcr_to_prev_ch(ptr, until) dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
 #define DCR_TO_PREV_CH(ptr, until) dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
 #define dcr_to_prev_ch_on_fail(ptr, until, apon_failure) \
@@ -568,5 +569,6 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
         apon_failure                                     \
     }
 #define dcr_past_prev_word(ptr, until) dcr_ptr(ptr, until, (*ptr != ' ' && *ptr != '\t'))
+#define DCR_PAST_PREV_WORD(ptr, until) dcr_ptr(ptr, until, (*ptr != ' ' && *ptr != '\t'))
 
 #define ptr_to_next_word(p)            for (; *p && !is_word_char(p, FALSE); p++)

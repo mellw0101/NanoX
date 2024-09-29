@@ -1,16 +1,16 @@
-#include "../include/prototypes.h"
+#include "../../include/prototypes.h"
 
-language_server_t *language_server_t::instance   = NULL;
-pthread_mutex_t    language_server_t::init_mutex = PTHREAD_MUTEX_INITIALIZER;
+LSP_t          *LSP_t::_instance  = nullptr;
+pthread_mutex_t LSP_t::_init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int
-language_server_t::find_endif(linestruct *from)
+LSP_t::find_endif(linestruct *from)
 {
     int         lvl   = 0;
     const char *found = NULL;
     const char *start = NULL;
     const char *end   = NULL;
-    for (linestruct *line = from; line != NULL; line = line->next)
+    FOR_EACH_LINE_NEXT(line, from)
     {
         if (!(line->flags.is_set(DONT_PREPROSSES_LINE)))
         {
@@ -45,7 +45,7 @@ language_server_t::find_endif(linestruct *from)
 }
 
 void
-language_server_t::fetch_compiler_defines(string compiler)
+LSP_t::fetch_compiler_defines(string compiler)
 {
     if ((compiler != "clang" && compiler != "clang++") && (compiler != "gcc" && compiler != "g++"))
     {
@@ -73,8 +73,7 @@ language_server_t::fetch_compiler_defines(string compiler)
             string name(start, (end - start));
             ADV_TO_NEXT_WORD(end);
             start = end;
-            for (; *end; end++)
-                ;
+            for (; *end; end++);
             if (start == end)
             {
                 free(lines[i]);
@@ -91,21 +90,21 @@ language_server_t::fetch_compiler_defines(string compiler)
 /* This is the only way to access the language_server.
  * There also exist`s a shorthand for this function
  * call named 'LSP'. */
-language_server_t *
-language_server_t::Instance(void)
+LSP_t &
+LSP_t::instance(void)
 {
-    if (!instance)
+    if (!_instance)
     {
-        pthread_mutex_guard_t guard(&init_mutex);
-        if (!instance)
+        pthread_mutex_guard_t guard(&_init_mutex);
+        if (!_instance)
         {
-            instance = new language_server_t();
+            _instance = new language_server_t();
         }
     }
-    return instance;
+    return *_instance;
 }
 
-language_server_t::language_server_t(void)
+LSP_t::LSP_t(void)
 {
     pthread_mutex_init(&_mutex, NULL);
     fetch_compiler_defines("clang++");
@@ -118,18 +117,17 @@ language_server_t::language_server_t(void)
     ADD_BASE_DEF(_GNU_SOURCE);
 }
 
-language_server_t::~language_server_t(void)
+void
+LSP_t::_destroy(void) noexcept
 {
     pthread_mutex_destroy(&_mutex);
-    if (instance)
-    {
-        free(instance);
-    }
+    index.delete_data();
+    delete _instance;
 }
 
 /* Return`s index of entry if found otherwise '-1'. */
 int
-language_server_t::is_defined(const string &name)
+LSP_t::is_defined(const string &name)
 {
     const auto *data = _defines.data();
     for (int i = 0; i < _defines.size(); i++)
@@ -143,17 +141,16 @@ language_server_t::is_defined(const string &name)
 }
 
 bool
-language_server_t::has_been_included(const string &name)
+LSP_t::has_been_included(const char *path)
 {
-    const auto *data = _includes.data();
-    for (int i = 0; i < _includes.size(); i++)
+    for (const auto &i : index.include)
     {
-        if (data[i] == name)
+        if (strcmp(i.file, path) == 0)
         {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 /* If define is in vector then return its value.
@@ -162,7 +159,7 @@ language_server_t::has_been_included(const string &name)
  * As it returns "" if not found as well as if
  * the define has no value. */
 string
-language_server_t::define_value(const string &name)
+LSP_t::define_value(const string &name)
 {
     int index = is_defined(name);
     if (index != -1)
@@ -175,7 +172,7 @@ language_server_t::define_value(const string &name)
 
 /* If define is not already in vector then add it. */
 void
-language_server_t::add_define(const define_entry_t &entry)
+LSP_t::add_define(const define_entry_t &entry)
 {
     if (is_defined(entry.name) == -1)
     {
@@ -185,7 +182,7 @@ language_server_t::add_define(const define_entry_t &entry)
 }
 
 void
-language_server_t::define(linestruct *line, const char **ptr)
+LSP_t::define(linestruct *line, const char **ptr)
 {
     const char *start = *ptr;
     const char *end   = *ptr;
@@ -216,7 +213,7 @@ language_server_t::define(linestruct *line, const char **ptr)
 }
 
 void
-language_server_t::ifndef(const string &define, linestruct *current_line)
+LSP_t::ifndef(const string &define, linestruct *current_line)
 {
     if (is_defined(define) == -1)
     {
@@ -231,7 +228,7 @@ language_server_t::ifndef(const string &define, linestruct *current_line)
 }
 
 void
-language_server_t::ifdef(const string &define, linestruct *current_line)
+LSP_t::ifdef(const string &define, linestruct *current_line)
 {
     if (is_defined(define) != -1)
     {
@@ -246,7 +243,7 @@ language_server_t::ifdef(const string &define, linestruct *current_line)
 }
 
 void
-language_server_t::undef(const string &define)
+LSP_t::undef(const string &define)
 {
     auto it = _defines.begin();
     while (it != _defines.end())
@@ -276,7 +273,7 @@ define_is_equl_or_greater(const string &statement)
         return -1;
     }
     string def(start, (end - start));
-    string def_value = LSP->define_value(def);
+    string def_value = LSP.define_value(def);
     if (def_value.empty())
     {
         return -1;
@@ -303,7 +300,7 @@ define_is_equl_or_greater(const string &statement)
 }
 
 vector<string>
-language_server_t::split_if_statement(const string &str)
+LSP_t::split_if_statement(const string &str)
 {
     /* vector<string> result;
     const auto    *data  = str.data();
@@ -346,10 +343,10 @@ language_server_t::split_if_statement(const string &str)
 }
 
 void
-language_server_t::handle_if(linestruct *line, const char **ptr)
+LSP_t::handle_if(linestruct *line, const char **ptr)
 {
     string full_delc = parse_full_pp_delc(line, ptr);
-    NLOG("%s\n", full_delc.c_str());
+    // NLOG("%s\n", full_delc.c_str());
     // split_if_statement(full_delc);
     const char *start = &full_delc[0];
     const char *end   = &full_delc[0];
@@ -367,8 +364,7 @@ language_server_t::handle_if(linestruct *line, const char **ptr)
     const char        *rules[rule_count] = {"&&", "||", ">=", "defined", "?"};
     bool               should_be_defined = FALSE;
     bool               was_correct       = FALSE;
-    do
-    {
+    do {
         should_be_defined = FALSE;
         was_correct       = FALSE;
         /* If no more rules are found we break. */
@@ -427,8 +423,7 @@ language_server_t::handle_if(linestruct *line, const char **ptr)
                     {
                         end += 1;
                         start = end;
-                        for (; *end; end++)
-                            ;
+                        for (; *end; end++);
                         if (start == end)
                         {
                             return;
@@ -574,157 +569,64 @@ const char *
 get_preprosses_type(linestruct *line, string &word)
 {
     const char *found = strchr(line->data, '#');
-    const char *start = NULL;
-    const char *end   = NULL;
+    const char *start = nullptr;
+    const char *end   = nullptr;
     if (found)
     {
         start = found + 1;
         ADV_TO_NEXT_WORD(start);
         if (!*start)
         {
-            return NULL;
+            return nullptr;
         }
         end = start;
         ADV_PAST_WORD(end);
         word = string(start, (end - start));
         return end;
     }
-    return NULL;
+    return nullptr;
 }
-
-string
-get_next_word(const char **ptr)
-{
-    const char *start = *ptr;
-    const char *end   = *ptr;
-    ADV_TO_NEXT_WORD(start);
-    if (!*start)
-    {
-        return "";
-    }
-    end = start;
-    ADV_PAST_WORD(end);
-    *ptr = end;
-    return string(start, (end - start));
-}
-
+    
 void
-language_server_t::check(linestruct *from, string file)
+LSP_t::check(linestruct *from, string file)
 {
+    PROFILE_FUNCTION;
     if (!from)
     {
         from = openfile->filetop;
-        file = current_file_dir() + string(tail(openfile->filename));
-        // NLOG("current file: '%s'.\n", file.c_str());
+        file = openfile->filename;
     }
-    const char *found = NULL;
-    for (linestruct *line = from; line != NULL; line = line->next)
+    FOR_EACH_LINE_NEXT(line, from)
     {
-        if (!(line->flags.is_set(DONT_PREPROSSES_LINE)))
+        Parse::comment(line);
+        if (line->flags.is_set<BLOCK_COMMENT_START>() ||
+            line->flags.is_set<BLOCK_COMMENT_END>() ||
+            line->flags.is_set<IN_BLOCK_COMMENT>())
         {
-            string word = "";
-            found       = get_preprosses_type(line, word);
-            if (found)
+            continue;
+        }
+        if (!(line->flags.is_set<DONT_PREPROSSES_LINE>()))
+        {
+            do_preprossesor(line, file.c_str());
+        }
+        if (line->flags.is_set<PP_LINE>())
+        {
+            continue;
+        }
+        vector<var_t> vars;
+        Parse::variable(line, vars);
+        if (!vars.empty())
+        {
+            for (const auto &[type, name, value, decl_line, scope_end] : vars)
             {
-                if (word == "ifndef")
-                {
-                    word = get_next_word(&found);
-                    ifndef(word, line);
-                }
-                else if (word == "ifdef")
-                {
-                    word = get_next_word(&found);
-                    ifdef(word, line);
-                }
-                else if (word == "define")
-                {
-                    define(line, &found);
-                }
-                else if (word == "if")
-                {
-                    handle_if(line, &found);
-                }
+                NLOG("type: %s\n"
+                     "         name: %s\n"
+                     "        value: %s\n"
+                     "    decl_line: %d\n"
+                     "    scope_end: %d\n"
+                     "         file: %s\n\n",
+                     type.c_str(), name.c_str(), value.c_str(), decl_line, scope_end, file.c_str());
             }
-            /* found = strchr(line->data, '#');
-            if (found)
-            {
-                start = found + 1;
-                ADV_TO_NEXT_WORD(start);
-                if (!*start)
-                {
-                    return;
-                }
-                end = start;
-                ADV_PAST_WORD(end);
-                string key_word(start, (end - start));
-                start = end;
-                ADV_TO_NEXT_WORD(start);
-                if (*start)
-                {
-                    end = start;
-                    ADV_PAST_WORD(end);
-                    string word = string(start, (end - start));
-                    if (key_word == "ifndef")
-                    {
-                        ifndef(word, line);
-                    }
-                    else if (key_word == "ifdef")
-                    {
-                        ifdef(word, line);
-                    }
-                    else if (key_word == "define")
-                    {
-                        start = end;
-                        ADV_TO_NEXT_WORD(start);
-                        string value = "";
-                        if (*start)
-                        {
-                            end = start;
-                            ADV_PAST_WORD(end);
-                            value = string(start, (end - start));
-                        }
-                        define({word, value});
-                    }
-                    else if (key_word == "include")
-                    {
-                        start = found + 1;
-                        ADV_PTR(start, (*start != '"' && *start != '<'));
-                        if (*start)
-                        {
-                            if (*start == '<')
-                            {
-                                start += 1;
-                                end = start;
-                                ADV_PTR(end, (*end != '>'));
-                                if (*end)
-                                {
-                                    string check_file =
-                                        "/usr/include/" +
-                                        string(start, (end - start));
-                                    NLOG("%s\n", check_file.c_str());
-                                    if (!has_been_included(check_file))
-                                    {
-                                        linestruct *head =
-                                            retrieve_file_as_lines(check_file);
-                                        if (head)
-                                        {
-                                            _includes.push_back(check_file);
-                                            check(head, check_file);
-                                            while (head)
-                                            {
-                                                linestruct *node = head;
-                                                head             = head->next;
-                                                free(node->data);
-                                                free(node);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } */
         }
     }
 }
@@ -747,15 +649,14 @@ language_server_t::add_defs_to_color_map(void)
 
 /* Parses a full preprossesor decl so that '\' are placed on the same line. */
 string
-language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_lineno)
+LSP_t::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_lineno)
 {
     PROFILE_FUNCTION;
     string ret = "";
     ret.reserve(100);
     const char *start = *ptr;
     const char *end   = *ptr;
-    do
-    {
+    do {
         ADV_TO_NEXT_WORD(start);
         if (!*start)
         {
@@ -785,7 +686,7 @@ language_server_t::parse_full_pp_delc(linestruct *line, const char **ptr, int *e
 }
 
 vector<define_entry_t>
-language_server_t::retrieve_defines(void)
+LSP_t::retrieve_defines(void)
 {
     return _defines;
 }

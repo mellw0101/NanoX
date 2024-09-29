@@ -1,13 +1,6 @@
 /// @file rcfile.cpp
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <cctype>
-#include <cerrno>
-#include <cstring>
-#include <glob.h>
-#include <unistd.h>
-
 #ifndef RCFILE_NAME
 #    define HOME_RC_NAME ".nanorc"
 #    define RCFILE_NAME  "nanorc"

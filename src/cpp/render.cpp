@@ -3,11 +3,10 @@
 #include <Mlib/Flag.h>
 #include <Mlib/Parse.hpp>
 #include <Mlib/Parse_definitions.hpp>
-#include <Mlib/Profile.h>
 
-static unsigned int block_comment_start = (unsigned int)-1;
-static unsigned int block_comment_end   = (unsigned int)-1;
-static int          color_bi[3]         = {FG_VS_CODE_YELLOW, FG_VS_CODE_BRIGHT_MAGENTA, FG_VS_CODE_BRIGHT_BLUE};
+static Uint block_comment_start = (unsigned int)-1;
+static Uint block_comment_end   = (unsigned int)-1;
+static int  color_bi[3]         = {FG_VS_CODE_YELLOW, FG_VS_CODE_BRIGHT_MAGENTA, FG_VS_CODE_BRIGHT_BLUE};
 
 vec<char *>          includes;
 vec<char *>          defines;
@@ -36,8 +35,9 @@ vector<class_info_t>                           class_info_vector;
 vector<var_t>                                  var_vector;
 
 void
-render_part(unsigned long match_start, unsigned long match_end, short color)
+render_part(Ulong match_start, Ulong match_end, short color)
 {
+    PROFILE_FUNCTION;
     const char *thetext   = nullptr;
     int         paintlen  = 0;
     int         start_col = 0;
@@ -56,7 +56,7 @@ render_part(unsigned long match_start, unsigned long match_end, short color)
 
 /* Experiment. */
 void
-render_part_raw(unsigned long start_index, unsigned long end_index, short color)
+render_part_raw(Ulong start_index, Ulong end_index, short color)
 {
     const char *start = &line->data[start_index];
     const char *end   = start;
@@ -78,7 +78,7 @@ render_part_raw(unsigned long start_index, unsigned long end_index, short color)
 /* Render the text of a given line.  Note that this function only renders the
  * text and nothing else. */
 void
-render_line_text(const int row, const char *str, linestruct *line, const unsigned long from_col)
+render_line_text(const int row, const char *str, linestruct *line, const Ulong from_col)
 {
     if (margin > 0)
     {
@@ -146,7 +146,8 @@ render_comment(void)
         render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         /* Highlight the block start if prev line is in a
          * block comment or the start of a block comment. */
-        if (line->prev && (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()))
+        if (line->prev &&
+            (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()))
         {
             if ((end - line->data) > 0 && line->data[(end - line->data) - 1] != '/')
             {
@@ -215,7 +216,8 @@ render_comment(void)
         render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
         /* Do some error checking and highlight the block start if it`s found
          * while the block above it being a start block or inside a block. */
-        if (line->prev && (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()))
+        if (line->prev &&
+            (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()))
         {
             rendr(R_LEN, ERROR_MESSAGE, start, 2);
             block_comment_start = (start - line->data) + 2;
@@ -447,16 +449,14 @@ render_char_strings(void)
     const char *start = line->data, *end = line->data;
     while (start != NULL)
     {
-        for (; *end && *end != '\''; end++)
-            ;
+        for (; *end && *end != '\''; end++);
         if (*end != '\'')
         {
             return;
         }
         start = end;
         end++;
-        for (; *end && *end != '\''; end++)
-            ;
+        for (; *end && *end != '\''; end++);
         if (*end != '\'')
         {
             return;
@@ -474,7 +474,7 @@ render_char_strings(void)
 }
 
 void
-rendr_define(unsigned int index)
+rendr_define(Uint index)
 {
     const char *start = nullptr, *end = nullptr, *param = nullptr;
     char       *word = nullptr;
@@ -568,7 +568,7 @@ rendr_define(unsigned int index)
             end += 1;
         }
     }
-    (word != NULL) ? free(word) : void();
+    word ? free(word) : (void)0;
     ADV_PTR(end, (*end == ' ' || *end == '\t'));
     if (!*end)
     {
@@ -583,7 +583,7 @@ rendr_define(unsigned int index)
     if (*start == '\\')
     {
         int    end_lineno;
-        string full_decl = LSP->parse_full_pp_delc(line, &start, &end_lineno);
+        string full_decl = LSP.parse_full_pp_delc(line, &start, &end_lineno);
         NLOG("%s\n", full_decl.c_str());
         if (line->next != nullptr)
         {
@@ -747,7 +747,7 @@ rendr_include(unsigned int index)
 
 /* Render if preprossesor statements. */
 void
-rendr_if_preprosses(unsigned int index)
+rendr_if_preprosses(Uint index)
 {
     const char *start   = &line->data[index];
     const char *defined = strstr(start, "defined");
@@ -947,42 +947,8 @@ render_preprossesor(void)
     }
 }
 
-/* Handels most syntax local to functions such as handeling
- * local variabels and params. */
 void
-render_function_params(void)
-{
-    const char *start = NULL;
-    const char *end   = NULL;
-    const char *data  = NULL;
-    for (const auto &info : local_funcs)
-    {
-        if (line->lineno + 2 >= info.start_bracket && line->lineno <= info.end_braket)
-        {
-            for (variable_t *var = info.params; var != NULL; var = var->prev)
-            {
-                if (var->name != NULL)
-                {
-                    const unsigned int word_len = strlen(var->name);
-                    data                        = line->data;
-                    do
-                    {
-                        find_word(line, data, var->name, word_len, &start, &end);
-                        if (start)
-                        {
-                            rendr(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
-                        }
-                        data = end;
-                    }
-                    while (data);
-                }
-            }
-        }
-    }
-}
-
-void
-render_control_statements(unsigned long index)
+render_control_statements(Ulong index)
 {
     switch (line->data[index])
     {
@@ -1179,38 +1145,103 @@ rendr_structs(int index)
     }
 }
 
+void
+render_function(void)
+{
+    PROFILE_FUNCTION;
+    index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
+    if (!id)
+    {
+        return;
+    }
+    for (const auto &f : id->main.functions)
+    {
+        if (line->lineno >= f->start.line && line->lineno <= f->end.line)
+        {
+            for (const auto &p : f->params)
+            {
+                const char *data  = line->data;
+                const char *start = nullptr;
+                const char *end   = nullptr;
+                do {
+                    find_word(line, data, p.name.c_str(), p.name.length(), &start, &end);
+                    if (start)
+                    {
+                        if ((line->lineno == p.e.line) && ((start - line->data) >= p.e.column - 1))
+                        {
+                            break;
+                        }
+                        RENDR(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
+                    }
+                    data = end;
+                }
+                while (data);
+            }
+            for (const auto &v : f->body.vars)
+            {
+                const char *data  = line->data;
+                const char *start = nullptr;
+                const char *end   = nullptr;
+                do {
+                    find_word(line, data, v.name.c_str(), v.name.length(), &start, &end);
+                    if (start)
+                    {
+                        if ((line->lineno == v.e.line) && ((start - line->data) >= v.e.column - 1))
+                        {
+                            break;
+                        }
+                        RENDR(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
+                    }
+                    data = end;
+                }
+                while (data);
+            }
+        }
+        else if (line->lineno < f->start.line)
+        {
+            break;
+        }
+    }
+}
+
 /* Main function that applies syntax to a line in real time. */
 void
-apply_syntax_to_line(const int row, const char *converted, linestruct *line, u_long from_col)
+apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col)
 {
     PROFILE_FUNCTION;
     ::row       = row;
     ::converted = converted;
     ::line      = line;
     ::from_col  = from_col;
-    if (openfile_type.is_set<C_CPP>())
+    if (openfile->type.is_set<C_CPP>())
     {
-        // render_function_params();
+        render_function();
         render_comment();
         if (line->data[0] == '\0' || (block_comment_start == 0 && block_comment_end == till_x))
         {
             return;
         }
-        // render_bracket();
-        // render_parents();
-        remove_local_vars_from(line);
-        check_line_for_vars(line);
         line_word_t *head = line_word_list(line->data, till_x);
-        while (head != NULL)
+        while (head)
         {
             line_word_t *node = head;
             head              = node->next;
             if (node->start >= block_comment_start && node->end <= block_comment_end)
             {
-                /* midwin_mv_add_nstr_color(row, get_start_col(line, node),
-                   node->str, node->len, FG_COMMENT_GREEN); */
                 free_node(node);
                 continue;
+            }
+            index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
+            if (id)
+            {
+                for (const auto &it : id->main.functions)
+                {
+                    if (it->name == node->str)
+                    {
+                        midwin_mv_add_nstr_color(
+                            row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BRIGHT_YELLOW);
+                    }
+                }
             }
             const auto &it = test_map.find(node->str);
             if (it != test_map.end())
@@ -1240,15 +1271,6 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line, u_l
                         render_control_statements(node->start);
                     }
                 }
-                /* if (it->second.type == IS_WORD_STRUCT)
-                {
-                    rendr_structs(node->end);
-                }
-                else */
-                if (it->second.type == IS_WORD_CLASS)
-                {
-                    rendr_classes();
-                }
             }
             free_node(node);
         }
@@ -1265,9 +1287,9 @@ apply_syntax_to_line(const int row, const char *converted, linestruct *line, u_l
             return;
         } */
     }
-    else if (openfile_type.is_set<ASM>())
+    else if (openfile->type.is_set<ASM>())
     {}
-    else if (openfile_type.is_set<BASH>())
+    else if (openfile->type.is_set<BASH>())
     {
         const char *comment = strchr(line->data, '#');
         if (comment)

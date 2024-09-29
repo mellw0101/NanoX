@@ -110,3 +110,4 @@ AlignConsecutiveShortCaseStatements:
 AlignEscapedNewlines: Left
 BreakAfterAttributes: Always
 PenaltyBreakBeforeFirstCallParameter: 0
+FixNamespaceComments: false

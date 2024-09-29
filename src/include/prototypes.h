@@ -1,6 +1,7 @@
 /// @file definitions.h
 #include "color.h"
 #include "definitions.h"
+#include "language_server/language_server.h"
 #include "render.h"
 #include "task_types.h"
 
@@ -175,7 +176,6 @@ extern vec<function_info_t> local_funcs;
 extern std::unordered_map<std::string, syntax_data_t> test_map;
 extern vector<class_info_t>                           class_info_vector;
 extern vector<var_t>                                  var_vector;
-extern bit_flag_t<8>                                  openfile_type;
 
 typedef void (*functionptrtype)(void);
 
@@ -244,41 +244,42 @@ void copy_text(void);
 void paste_text(void);
 
 /* Most functions in 'files.cpp'. */
-void        make_new_buffer(void);
-bool        delete_lockfile(const char *lockfilename);
-bool        open_buffer(const char *filename, bool new_one);
-void        set_modified(void);
-void        prepare_for_display(void);
-void        mention_name_and_linecount(void);
-void        switch_to_prev_buffer(void);
-void        switch_to_next_buffer(void);
-void        close_buffer(void);
-void        read_file(FILE *f, int fd, const char *filename, bool undoable);
-int         open_file(const char *filename, bool new_one, FILE **f);
-char       *get_next_filename(const char *name, const char *suffix);
-void        do_insertfile(void);
-void        do_execute(void);
-char       *get_full_path(const char *origpath);
-char       *safe_tempfile(FILE **stream);
-void        init_operating_dir(void);
-bool        outside_of_confinement(const char *currpath, bool allow_tabcomp);
-void        init_backup_dir(void);
-int         copy_file(FILE *inn, FILE *out, bool close_out);
-bool        write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
-bool        write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
-int         write_it_out(bool exiting, bool withprompt);
-void        do_writeout(void);
-void        do_savefile(void);
-char       *real_dir_from_tilde(const char *path);
-int         diralphasort(const void *va, const void *vb);
-char       *input_tab(char *buf, unsigned long *place, void (*refresh_func)(void), bool *listed);
-bool        is_file_and_exists(const char *path);
-char      **retrieve_lines_from_file(const char *path, unsigned long *nlines);
-char      **retrieve_words_from_file(const char *path, unsigned long *nwords);
-char      **words_from_file(const char *path, unsigned long *nwords);
-char      **words_from_current_file(unsigned long *nwords);
-char      **dir_entrys_from(const char *path);
-linestruct *retrieve_file_as_lines(const string &path);
+void               make_new_buffer(void);
+bool               delete_lockfile(const char *lockfilename);
+bool               open_buffer(const char *filename, bool new_one);
+void               set_modified(void);
+void               prepare_for_display(void);
+void               mention_name_and_linecount(void);
+void               switch_to_prev_buffer(void);
+void               switch_to_next_buffer(void);
+void               close_buffer(void);
+void               read_file(FILE *f, int fd, const char *filename, bool undoable);
+int                open_file(const char *filename, bool new_one, FILE **f);
+char              *get_next_filename(const char *name, const char *suffix);
+void               do_insertfile(void);
+void               do_execute(void);
+char              *get_full_path(const char *origpath);
+char              *safe_tempfile(FILE **stream);
+void               init_operating_dir(void);
+bool               outside_of_confinement(const char *currpath, bool allow_tabcomp);
+void               init_backup_dir(void);
+int                copy_file(FILE *inn, FILE *out, bool close_out);
+bool               write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
+bool               write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
+int                write_it_out(bool exiting, bool withprompt);
+void               do_writeout(void);
+void               do_savefile(void);
+char              *real_dir_from_tilde(const char *path);
+int                diralphasort(const void *va, const void *vb);
+char              *input_tab(char *buf, unsigned long *place, void (*refresh_func)(void), bool *listed);
+bool               is_file_and_exists(const char *path);
+char             **retrieve_lines_from_file(const char *path, unsigned long *nlines);
+char             **retrieve_words_from_file(const char *path, unsigned long *nwords);
+char             **words_from_file(const char *path, Ulong *nwords);
+char             **words_from_current_file(Ulong *nwords);
+char             **dir_entrys_from(const char *path);
+linestruct        *retrieve_file_as_lines(const string &path);
+string             openfile_absolute_path(void);
 
 /* Some functions in 'global.cpp'. */
 functionptrtype  func_from_key(const int keycode);
@@ -288,7 +289,7 @@ const keystruct *get_shortcut(const int keycode);
 unsigned long    shown_entries_for(int menu);
 int              keycode_from_string(const char *keystring);
 void             shortcut_init(void);
-const char      *epithet_of_flag(const unsigned int flag);
+const char      *epithet_of_flag(const Uint flag);
 void             add_to_handled_includes_vec(const char *path);
 bool             is_in_handled_includes_vec(std::string_view path);
 bool             syntax_var(std::string_view str);
@@ -579,14 +580,15 @@ void do_cancel(void);
 
 /* All functions in 'cpp.cpp'. */
 bool isCppSyntaxChar(const char c);
-void get_line_indent(linestruct *line, u_short *tabs, u_short *spaces, u_short *t_char, u_short *t_tabs)
+void get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs)
     __nonnull((1, 2, 3, 4, 5));
-unsigned short   indent_char_len(linestruct *line);
+Ushort           indent_char_len(linestruct *line);
 void             enclose_marked_region(const char *s1, const char *s2);
 void             do_block_comment(void);
 bool             enter_with_bracket(void);
 void             all_brackets_pos(void);
 void             do_close_bracket(void);
+void             do_parse(void);
 void             do_test_window(void);
 int              current_line_scope_end(linestruct *line);
 function_info_t *parse_func(const char *str);
@@ -607,7 +609,7 @@ bool   check_func_syntax(char ***words, u_long *i);
 void   check_syntax(const char *path);
 void   check_include_file_syntax(const char *path);
 void   handle_define(char *str);
-void   do_cpp_syntax(void);
+void   do_syntax(void);
 void   check_for_syntax_words(linestruct *line);
 bool   is_syntax_struct(std::string_view str);
 bool   is_syntax_class(std::string_view str);
@@ -622,6 +624,7 @@ void netlog_syntaxtype(syntaxtype *s);
 void netlog_colortype(colortype *c);
 void netlog_bracket_entry(const bracket_entry &be);
 void netlog_func_info(function_info_t *info);
+void netlog_lsp_function_decl(function_decl *decl) noexcept;
 
 /* 'words.cpp' */
 void         remove_tabs_from_word(char **word);
@@ -646,33 +649,33 @@ char       **fast_words_from_str(const char *str, u_long slen, u_long *nwords);
 line_word_t *line_word_list(const char *str, u_long slen);
 line_word_t *line_word_list_is_word_char(const char *str, u_long slen);
 line_word_t *make_line_word(char *str, u_short start, u_short len, u_short end);
-unsigned int last_strchr(const char *str, const char ch, unsigned int maxlen);
+Uint         last_strchr(const char *str, const char ch, unsigned int maxlen);
 char        *memmove_concat(const char *s1, const char *s2);
 const char  *substr(const char *str, u_long end_index);
 
 /* 'lines.cpp' */
-bool   is_line_comment(linestruct *line);
-bool   is_line_start_end_bracket(linestruct *line, bool *is_start);
-bool   is_line_in_bracket_pair(const u_long lineno);
-bool   is_empty_line(linestruct *line);
-void   inject_in_line(linestruct **line, const char *str, u_long at);
-u_long get_line_total_tabs(linestruct *line);
-void   move_line(linestruct **line, bool up, bool refresh);
-void   move_lines_up(void);
-void   move_lines_down(void);
-void   erase_in_line(linestruct *line, u_long at, u_long len);
-void   select_line(linestruct *line, u_long from_col, u_long to_col);
-u_int  total_tabs(linestruct *line);
+bool  is_line_comment(linestruct *line);
+bool  is_line_start_end_bracket(linestruct *line, bool *is_start);
+bool  is_line_in_bracket_pair(const u_long lineno);
+bool  is_empty_line(linestruct *line);
+void  inject_in_line(linestruct **line, const char *str, u_long at);
+Ulong get_line_total_tabs(linestruct *line);
+void  move_line(linestruct **line, bool up, bool refresh);
+void  move_lines_up(void);
+void  move_lines_down(void);
+void  erase_in_line(linestruct *line, u_long at, u_long len);
+void  select_line(linestruct *line, u_long from_col, u_long to_col);
+Uint  total_tabs(linestruct *line);
 
 /* 'threadpool.cpp' */
-void   lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
-void   pause_all_sub_threads(bool pause);
-void   init_queue_task(void);
-int    task_queue_count(void);
-void   shutdown_queue(void);
-void   submit_task(task_functionptr_t function, void *arg, void **result, callback_functionptr_t callback);
-void   stop_thread(u_char thread_id);
-u_char thread_id_from_pthread(pthread_t *thread);
+void  lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
+void  pause_all_sub_threads(bool pause);
+void  init_queue_task(void);
+int   task_queue_count(void);
+void  shutdown_queue(void);
+void  submit_task(task_functionptr_t function, void *arg, void **result, callback_functionptr_t callback);
+void  stop_thread(u_char thread_id);
+Uchar thread_id_from_pthread(pthread_t *thread);
 
 /* 'event.cpp' */
 bool is_main_thread(void);
@@ -728,6 +731,6 @@ void func_decl(linestruct *line);
 
 /* 'gui.cpp' */
 // void init_window(void);
-int run_gui(void) noexcept;
+// int run_gui(void) noexcept;
 
 #include <Mlib/def.h>

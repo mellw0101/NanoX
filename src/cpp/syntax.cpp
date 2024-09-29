@@ -1,16 +1,9 @@
-#include "../include/definitions.h"
 #include "../include/prototypes.h"
-
-#include <Mlib/Profile.h>
-#include <fcntl.h>
-#include <stdio.h>
-
-bit_flag_t<8> openfile_type;
 
 static void
 do_bash_synx(void)
 {
-    openfile_type.clear_and_set<BASH>();
+    openfile->type.clear_and_set<BASH>();
     const auto &it = test_map.find("if");
     if (it == test_map.end())
     {
@@ -34,7 +27,7 @@ void
 syntax_check_file(openfilestruct *file)
 {
     PROFILE_FUNCTION;
-    openfile_type.clear();
+    openfile->type.clear();
     if (openfile->filetop->next == NULL)
     {
         return;
@@ -42,9 +35,9 @@ syntax_check_file(openfilestruct *file)
     if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX))
     {
         const string ext = file_extention_str();
-        if (ext == "cpp" || ext == "c" || ext == "h" || ext == "hpp")
+        if (ext == "cpp" || ext == "c" || ext == "cc" || ext == "h" || ext == "hpp")
         {
-            openfile_type.clear_and_set<C_CPP>();
+            openfile->type.clear_and_set<C_CPP>();
             const auto &it = test_map.find("bool");
             if (it == test_map.end())
             {
@@ -97,10 +90,65 @@ syntax_check_file(openfilestruct *file)
                 test_map["using"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
                 test_map["operator"] = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
             }
+            LSP.check(nullptr, "");
+            // if (!ISSET(RESTRICTED))
+            // {
+            //     submit_task(
+            //         [](void *) -> void * {
+            //             /* Index the opened file. */
+            //             Lsp::instance().index_file(openfile->filename);
+            //             /* When complete directly interupt the main thread to add results. */
+            //             send_signal_to_main_thread(
+            //                 [](void *) -> void {
+            //                     index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
+            //                     if (!id)
+            //                     {
+            //                         return;
+            //                     }
+            //                     string path = openfile->filename;
+            //                     /* Add all parsed functions. */
+            //                     for (const auto &f : id->functions)
+            //                     {
+            //                         test_map[f->name] = {FG_VS_CODE_BRIGHT_YELLOW};
+            //                     }
+            //                     NLOG("size: %u.\n", id->functions.size());
+            //                     /* Add all parsed classes. */
+            //                     for (const auto &c : id->classes)
+            //                     {
+            //                         test_map[c->name] = {FG_VS_CODE_GREEN};
+            //                         if (c->file == path)
+            //                         {
+            //                             c->flags.set<MAIN_FILE>();
+            //                         }
+            //                     }
+            //                     NLOG("classes size: %u.\n", id->classes.size());
+            //                     /* Add all parsed structs. */
+            //                     for (const auto &s : id->structs)
+            //                     {
+            //                         test_map[s->name] = {FG_VS_CODE_GREEN};
+            //                         if (s->file == path)
+            //                         {
+            //                             s->flags.set<MAIN_FILE>();
+            //                         }
+            //                     }
+            //                     NLOG("structs size: %u.\n", id->structs.size());
+            //                     for (const auto &v : id->variabels)
+            //                     {
+            //                         test_map[v->name] = {FG_VS_CODE_BRIGHT_CYAN};
+            //                     }
+            //                     NLOG("test_map size: %lu\n", test_map.size());
+            //                     refresh_needed = true;
+            //                     edit_refresh();
+            //                 },
+            //                 nullptr);
+            //             return nullptr;
+            //         },
+            //         nullptr, nullptr, nullptr);
+            // }
         }
         else if (ext == "asm" || ext == "s")
         {
-            openfile_type.clear_and_set<ASM>();
+            openfile->type.clear_and_set<ASM>();
         }
         else if (ext == "sh")
         {
@@ -187,7 +235,7 @@ parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *b
 }
 
 bool
-check_func_syntax(char ***words, unsigned long *i)
+check_func_syntax(char ***words, Ulong *i)
 {
     unsigned long  at   = 0;
     unsigned short type = 0;
@@ -554,7 +602,7 @@ handle_define(char *str)
 
 /* This keeps track of the last type when a type is descovered and there is no
  * next word. */
-static unsigned short last_type = 0;
+static Ushort last_type = 0;
 /* Check a line for syntax words, also index files that are included and add
  * functions as well. */
 void
@@ -696,7 +744,7 @@ check_for_syntax_words(linestruct *line)
 
 /* Add some "basic" cpp syntax. */
 void
-do_cpp_syntax(void)
+do_syntax(void)
 {
     // flag_all_brackets();
     // flag_all_block_comments(openfile->filetop);
@@ -844,8 +892,7 @@ find_functions_in_file(char *path)
         if (parent_start)
         {
             start = parent_start;
-            for (; start > line && *start != ' ' && *start != '\t' && *start != '*' && *start != '&'; start--)
-                ;
+            for (; start > line && *start != ' ' && *start != '\t' && *start != '*' && *start != '&'; start--);
             if (start > p)
             {
                 start += 1;

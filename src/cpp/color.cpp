@@ -19,7 +19,6 @@
  *                                                                        *
  **************************************************************************/
 
-#include <Mlib/Profile.h>
 #include "../include/prototypes.h"
 
 #ifdef HAVE_MAGIC_H

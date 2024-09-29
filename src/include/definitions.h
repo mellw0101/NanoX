@@ -1,15 +1,6 @@
 /// @file definitions.h
 #pragma once
 
-#include <Mlib/Debug.h>
-#include <Mlib/FileSys.h>
-#include <Mlib/Flag.h>
-#include <Mlib/Profile.h>
-#include <Mlib/String.h>
-#include <Mlib/Vector.h>
-#include <Mlib/constexpr.hpp>
-#include <Mlib/def.h>
-
 #include "../include/config.h"
 
 #ifndef _XOPEN_SOURCE_EXTENDED
@@ -27,13 +18,39 @@
 #include <limits>
 // #include <linux/limits.h>
 
+#include <Mlib/Debug.h>
+#include <Mlib/FileSys.h>
+#include <Mlib/Flag.h>
+#include <Mlib/LSP/language_server_protocol.hpp>
+#include <Mlib/Profile.h>
+#include <Mlib/String.h>
+#include <Mlib/Vector.h>
+#include <Mlib/constexpr.hpp>
+#include <Mlib/def.h>
+
+#include <cctype>
+#include <cerrno>
+#include <clocale>
 #include <csignal>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <dirent.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <glob.h>
+#include <libgen.h>
+#include <pwd.h>
 #include <regex.h>
+#include <stdio.h>
 #include <string>
+#include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/vt.h>
+#include <sys/wait.h>
+#include <termios.h>
+#include <unistd.h>
 #include <unordered_map>
 #include <vector>
 
@@ -67,8 +84,7 @@
 
 /* Suppress warnings for __attribute__((warn_unused_result)). */
 #define IGNORE_CALL_RESULT(call) \
-    do                           \
-    {                            \
+    do {                         \
         if (call)                \
         {}                       \
     }                            \
@@ -95,8 +111,9 @@
 #define BRACKET_END                   8
 #define FUNCTION_OPEN_BRACKET         9
 #define DONT_PREPROSSES_LINE          10
+#define PP_LINE                       11
 /* Helpers to unset all line flags. */
-#define LINE_BIT_FLAG_SIZE            (sizeof(short) * 8)
+#define LINE_BIT_FLAG_SIZE            16
 
 /* Some other define`s. */
 #define BACKWARD                      FALSE
@@ -241,18 +258,20 @@
     } name;
 
 #define NULL_safe_free(ptr) ptr ? free(ptr) : void()
+#define anmalloc(size)
 
 #include "constexpr_utils.h"
 
 /* clang-format off */
 
 /* Enumeration types. */
-enum file_type : u_int
+enum file_type : Uint
 {
     C_CPP = 1,
     ASM,
     BASH,
 };
+#define OPENFILE_TYPE_SIZE 8
 
 typedef enum {
     UNSPECIFIED,
@@ -375,6 +394,10 @@ typedef struct linestruct {
     /* The state of the line. */
     bit_flag_t<LINE_BIT_FLAG_SIZE> flags;
 } linestruct;
+#define FOR_EACH_LINE_NEXT(name, start) \
+    for (linestruct *name = start; name != nullptr; name = name->next)
+#define FOR_EACH_LINE_PREV(name, start) \
+    for (linestruct *name = start; name != nullptr; name = name->prev)
 
 typedef struct groupstruct {
     groupstruct *next;   /* The next group, if any. */
@@ -411,15 +434,15 @@ typedef struct openfilestruct {
     linestruct *filebot;        /* The file's last line. */
     linestruct *edittop;        /* The current top of the edit window for this file. */
     linestruct *current;        /* The current line for this file. */
-    u_long totsize;             /* The file's total number of characters. */
-    u_long firstcolumn;         /* The starting column of the top line of the edit window.  When not in softwrap mode, it's always zero. */
-    u_long current_x;           /* The file's x-coordinate position. */
-    u_long placewewant;         /* The file's x position we would like. */
+    Ulong totsize;              /* The file's total number of characters. */
+    Ulong firstcolumn;          /* The starting column of the top line of the edit window.  When not in softwrap mode, it's always zero. */
+    Ulong current_x;            /* The file's x-coordinate position. */
+    Ulong placewewant;          /* The file's x position we would like. */
     long cursor_row;            /* The row in the edit window that the cursor is on. */
     struct stat *statinfo;      /* The file's stat information from when it was opened or last saved. */
     linestruct *spillage_line;  /* The line for prepending stuff to during automatic hard-wrapping. */
     linestruct *mark;           /* The line in the file where the mark is set; NULL if not set. */
-    u_long mark_x;              /* The mark's x position in the above line. */
+    Ulong mark_x;               /* The mark's x position in the above line. */
     bool softmark;              /* Whether a marked region was made by holding Shift. */
     format_type fmt;            /* The file's format -- Unix or DOS or Mac. */
     char *lock_filename;        /* The path of the lockfile, if we created one. */
@@ -430,6 +453,7 @@ typedef struct openfilestruct {
     bool modified;              /* Whether the file has been modified. */
     syntaxtype *syntax;         /* The syntax that applies to this file, if any. */
     char *errormessage;         /* The ALERT message (if any) that occurred when opening the file. */
+    bit_flag_t<OPENFILE_TYPE_SIZE> type;
     openfilestruct *next;       /* The next open file, if any. */
     openfilestruct *prev;       /* The preceding open file, if any. */
 } openfilestruct;
@@ -472,24 +496,24 @@ enum syntax_flag_t
 
 struct bracket_entry
 {
-    unsigned long lineno;
-    unsigned long indent;
-    bool          start;
+    Ulong lineno;
+    Ulong indent;
+    bool  start;
 };
 
 struct bracket_pair
 {
-    unsigned long start_line;
-    unsigned long end_line;
+    Ulong start_line;
+    Ulong end_line;
 };
 
 typedef struct line_word_t
 {
-    char          *str;
-    unsigned short start;
-    unsigned short end;
-    unsigned short len;
-    line_word_t   *next;
+    char        *str;
+    Ushort       start;
+    Ushort       end;
+    Ushort       len;
+    line_word_t *next;
 } line_word_t;
 
 #define free_node(node) free(node->str), free(node)
@@ -590,8 +614,7 @@ public:
             cap   = size * 2;
             data  = (char *)malloc(cap);
             int i = 0;
-            for (; i < size; (data[i] = array[i]), i++)
-                ;
+            for (; i < size; (data[i] = array[i]), i++);
             data[i] = '\0';
         }
         else
@@ -600,8 +623,7 @@ public:
             cap  = 10;
             data = (T *)malloc(sizeof(T) * cap);
             for (; array[size]; (size == cap) ? cap *= 2, data = (T *)realloc(data, sizeof(T) * cap) : 0,
-                                                          data[size] = array[size], size++)
-                ;
+                                                          data[size] = array[size], size++);
             data[size] = NULL;
         }
     }
@@ -773,6 +795,9 @@ struct class_info_t
 #define DEFINE_SYNTAX       9
 #define DEFINE_PARAM_SYNTAX 10
 
+#define LSP_FUNC            11
+#define LSP_FUNC_PARAM      12
+
 struct syntax_data_t
 {
     int color;
@@ -780,52 +805,6 @@ struct syntax_data_t
     int to_line   = -1;
     int type      = -1;
 };
-
-struct define_entry_t
-{
-    string name;
-    string value;
-};
-
-class language_server_t
-{
-    static language_server_t *instance;
-    static pthread_mutex_t    init_mutex;
-
-    pthread_mutex_t        _mutex;
-    vector<string>         _includes;
-    vector<define_entry_t> _defines;
-
-    language_server_t(void);
-
-    int            find_endif(linestruct *);
-    void           fetch_compiler_defines(string);
-    vector<string> split_if_statement(const string &str);
-
-public:
-    ~language_server_t(void);
-
-    static language_server_t *Instance(void);
-
-    int    is_defined(const string &);
-    bool   has_been_included(const string &);
-    string define_value(const string &);
-    void   add_define(const define_entry_t &);
-
-    void define(linestruct *, const char **);
-    void ifndef(const string &, linestruct *);
-    void ifdef(const string &, linestruct *);
-    void undef(const string &);
-    void handle_if(linestruct *, const char **);
-
-    void   check(linestruct *, string);
-    void   add_defs_to_color_map(void);
-    string parse_full_pp_delc(linestruct *, const char **, int * = NULL);
-
-    vector<define_entry_t> retrieve_defines(void);
-};
-#define LSP               language_server_t::Instance()
-#define ADD_BASE_DEF(def) add_define({#def, to_string(def)})
 
 #define NANO_REG_EXTENDED 1
 #define SYSCONFDIR        "/etc"

@@ -334,7 +334,7 @@ void *
 nmalloc(const Ulong howmuch)
 {
     void *section = malloc(howmuch);
-    if (section == NULL)
+    if (section == nullptr)
     {
         die(_("NanoX is out of memory!\n"));
     }
@@ -346,7 +346,7 @@ void *
 nrealloc(void *section, const Ulong howmuch)
 {
     section = realloc(section, howmuch);
-    if (section == NULL)
+    if (section == nullptr)
     {
         die(_("NanoX is out of memory!\n"));
     }
@@ -758,7 +758,7 @@ current_file_dir(void)
  * is malloc`ed as well and will need to be free`d, as does the entire
  * array.  Return`s 'NULL' apon failure. */
 char **
-retrieve_exec_output(const char *cmd, u_int *n_lines)
+retrieve_exec_output(const char *cmd, Uint *n_lines)
 {
     FILE *prog = popen(cmd, "r");
     if (!prog)
@@ -786,7 +786,7 @@ retrieve_exec_output(const char *cmd, u_int *n_lines)
 }
 
 const char *
-strstr_array(const char *str, const char **substrs, u_int count, u_int *index)
+strstr_array(const char *str, const char **substrs, Uint count, Uint *index)
 {
     const char *first = NULL;
     for (unsigned int i = 0; i < count; i++)
@@ -802,7 +802,7 @@ strstr_array(const char *str, const char **substrs, u_int count, u_int *index)
 }
 
 const char *
-string_strstr_array(const char *str, const vector<string> &substrs, u_int *index)
+string_strstr_array(const char *str, const vector<string> &substrs, Uint *index)
 {
     const char *first = NULL;
     for (unsigned int i = 0; i < substrs.size(); i++)

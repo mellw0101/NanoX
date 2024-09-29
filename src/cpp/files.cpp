@@ -1,19 +1,6 @@
 /// @file @c files.cpp
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <Mlib/def.h>
-
-#include <cerrno>
-#include <csignal>
-#include <cstring>
-#include <fcntl.h>
-#include <libgen.h>
-#include <pwd.h>
-#include <stdio.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
 #define RW_FOR_ALL (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 /* Add an item to the circular list of openfile structs. */
@@ -1532,8 +1519,7 @@ copy_file(FILE *inn, FILE *out, bool close_out)
     char          buf[BUFSIZ];
     unsigned long charsread;
     int (*flush_out_fnc)(FILE *) = (close_out) ? fclose : fflush;
-    do
-    {
+    do {
         charsread = fread(buf, 1, BUFSIZ, inn);
         if (charsread == 0 && ferror(inn))
         {
@@ -2030,6 +2016,10 @@ write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type me
         free(tempname);
         free(realname);
     }
+    if (openfile->type.is_set<C_CPP>())
+    {
+        Lsp::utils::reparse_main_file(openfile->filename);
+    }
     return TRUE;
 }
 
@@ -2377,8 +2367,7 @@ real_dir_from_tilde(const char *path)
     {
         const passwd *userdata;
         tilded = measured_copy(path, i);
-        do
-        {
+        do {
             userdata = getpwent();
         }
         while (userdata && strcmp(userdata->pw_name, tilded + 1) != 0);
@@ -2810,15 +2799,13 @@ words_from_file(const char *path, unsigned long *nwords)
         const char *start = buf, *end = buf;
         while (end < (buf + len))
         {
-            for (; end < (buf + len) && (*end == ' ' || *end == '\t'); end++)
-                ;
+            for (; end < (buf + len) && (*end == ' ' || *end == '\t'); end++);
             if (end == (buf + len))
             {
                 break;
             }
             start = end;
-            for (; end < (buf + len) && *end != ' '; end++)
-                ;
+            for (; end < (buf + len) && *end != ' '; end++);
             const unsigned int word_len = end - start;
             (bsize == bcap) ? bcap *= 2, words = (char **)nrealloc(words, sizeof(char *) * bcap) : 0;
             words[bsize++] = measured_copy(start, word_len);
@@ -2891,19 +2878,19 @@ retrieve_file_as_lines(const string &path)
     if (!is_file_and_exists(path.c_str()))
     {
         logE("Path: '%s' is not a file or does not exist.", path.c_str());
-        return NULL;
+        return nullptr;
     }
     FILE *file = fopen(path.c_str(), "rb");
-    if (file == NULL)
+    if (file == nullptr)
     {
         logE("Failed to open file '%s'.", path.c_str());
-        return NULL;
+        return nullptr;
     }
-    static thread_local char *buf = NULL;
+    static thread_local char *buf = nullptr;
     unsigned long             size;
     long                      len;
-    linestruct               *head = NULL;
-    linestruct               *tail = NULL;
+    linestruct               *head = nullptr;
+    linestruct               *tail = nullptr;
     while ((len = getline(&buf, &size, file)) != EOF)
     {
         if (buf[len - 1] == '\n')
@@ -2925,4 +2912,26 @@ retrieve_file_as_lines(const string &path)
     }
     fclose(file);
     return head;
+}
+
+string
+openfile_absolute_path(void)
+{
+    string ret = "";
+    if (openfile->filename == nullptr)
+    {
+        return {};
+    }
+    if (openfile->filename[0] != '/')
+    {
+        const char *pwd = getenv("PWD");
+        if (pwd == nullptr)
+        {
+            return {};
+        }
+        ret = pwd;
+        ret += "/";
+    }
+    ret += openfile->filename;
+    return ret;
 }

@@ -2572,8 +2572,7 @@ display_string(const char *text, unsigned long column, unsigned long span, bool 
     /* If there is more text than can be shown, make room for the ">". */
     if (column > beyond || (*text != '\0' && (isprompt || (isdata && !ISSET(SOFTWRAP)))))
     {
-        do
-        {
+        do {
             index = step_left(converted, index);
         }
         while (is_zerowidth(converted + index));
@@ -3176,15 +3175,15 @@ bottombars(const int menu)
 void
 place_the_cursor(void)
 {
-    long          row    = 0;
-    unsigned long column = xplustabs();
+    long  row    = 0;
+    Ulong column = xplustabs();
     if (ISSET(SOFTWRAP))
     {
         linestruct   *line = openfile->edittop;
-        unsigned long leftedge;
+        Ulong leftedge;
         row -= chunk_for(openfile->firstcolumn, openfile->edittop);
         /* Calculate how many rows the lines from edittop to current use. */
-        while (line != NULL && line != openfile->current)
+        while (line != nullptr && line != openfile->current)
         {
             row += 1 + extra_chunks_in(line);
             line = line->next;

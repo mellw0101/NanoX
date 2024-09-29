@@ -1,6 +1,6 @@
 {
     "clangd.arguments": [
-        "--all-scopes-completion=true",
+        "--all-scopes-completion=false",
         "--background-index=true",
         "--background-index-priority=low",
         "--clang-tidy=true",
@@ -9,7 +9,7 @@
         "--debug-origin=false",
         "--fallback-style=LLVM",
         "--function-arg-placeholders=true",
-        "--header-insertion=iwyu",
+        "--header-insertion=never",
         "--header-insertion-decorators=true",
         "--import-insertions=false",
         "--include-ineligible-results=false",

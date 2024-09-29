@@ -1,7 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-
 /* The text displayed in the help window. */
 static char *help_text = NULL;
 /* The point in the help text just after the title. */
