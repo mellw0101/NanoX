@@ -615,7 +615,7 @@ do_prompt(int menu, const char *provided, linestruct **history_list, functionptr
     bool            listed = false;
     int             retval;
     /* Save a possible current status-bar x position and prompt. */
-    unsigned long was_typing_x = typing_x;
+    Ulong was_typing_x = typing_x;
     char         *saved_prompt = prompt;
     bottombars(menu);
     if (answer != provided)

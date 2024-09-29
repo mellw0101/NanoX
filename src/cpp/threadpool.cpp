@@ -100,8 +100,8 @@ sub_thread_signal_handler(int sig)
         if (sigwait(&mask, &received_sig) != 0)
         {
             pthread_t     this_thread = pthread_self();
-            unsigned char thread_id   = thread_id_from_pthread(&this_thread);
-            LOUT_logI("Thread: '%u'. Failed to resume execution.", thread_id);
+            Uchar thread_id   = thread_id_from_pthread(&this_thread);
+            logI("Thread: '%u'. Failed to resume execution.", thread_id);
         }
         block_pthread_sig(SIGUSR2, TRUE);
         block_pthread_sig(SIGUSR1, FALSE);
@@ -109,7 +109,7 @@ sub_thread_signal_handler(int sig)
 }
 
 void
-pause_sub_thread(bool pause, unsigned char thread_id)
+pause_sub_thread(bool pause, Uchar thread_id)
 {
     if (thread_id < MAX_THREADS)
     {
@@ -121,7 +121,7 @@ pause_sub_thread(bool pause, unsigned char thread_id)
 void
 pause_all_sub_threads(bool pause)
 {
-    for (unsigned char i = 0; i < MAX_THREADS; i++)
+    for (Uchar i = 0; i < MAX_THREADS; i++)
     {
         pause_sub_thread(pause, i);
     }
@@ -134,7 +134,7 @@ worker_thread(void *arg)
     /* Init  */
     setup_signal_handler_on_sub_thread(sub_thread_signal_handler);
     /* Assign 'thread_id' with the id passed via 'arg'. */
-    unsigned char thread_id = (unsigned char)(uintptr_t)arg;
+    Uchar thread_id = (Uchar)(uintptr_t)arg;
     while (1)
     {
         lock_threadpool_mutex(TRUE);
@@ -197,7 +197,7 @@ init_queue_task(void)
     /* As well as allocating space for the stop flags. */
     stop_thread_flags = (volatile sig_atomic_t *)nmalloc(MAX_THREADS * sizeof(sig_atomic_t));
     /* Create the threads, and start them running 'worker_thread'. */
-    for (unsigned char i = 0; i < MAX_THREADS; i++)
+    for (Uchar i = 0; i < MAX_THREADS; i++)
     {
         stop_thread_flags[i] = FALSE;
         if (pthread_create(&threads[i], NULL, worker_thread, (void *)(uintptr_t)i) != 0)
@@ -220,7 +220,7 @@ task_queue_count(void)
 void
 shutdown_queue(void)
 {
-    for (unsigned char i = 0; i < MAX_THREADS; i++)
+    for (Uchar i = 0; i < MAX_THREADS; i++)
     {
         stop_thread(i);
         pthread_join(threads[i], NULL);
@@ -253,7 +253,7 @@ submit_task(task_functionptr_t function, void *arg, void **result, callback_func
 /* Stop a thread by 'thread_id'.  Note that this will halt execution on that
  * thread. */
 void
-stop_thread(unsigned char thread_id)
+stop_thread(Uchar thread_id)
 {
     if (thread_id < MAX_THREADS)
     {
@@ -264,10 +264,10 @@ stop_thread(unsigned char thread_id)
     }
 }
 
-unsigned char
+Uchar
 thread_id_from_pthread(pthread_t *thread)
 {
-    unsigned char i = 0;
+    Uchar i = 0;
     for (; i < MAX_THREADS; i++)
     {
         if (pthread_equal(threads[i], *thread))

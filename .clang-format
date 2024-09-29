@@ -14,7 +14,7 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: true
 BreakConstructorInitializers: BeforeComma
 BreakBeforeBinaryOperators: None
-AlwaysBreakAfterDefinitionReturnType: true
+AlwaysBreakAfterDefinitionReturnType: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: true
@@ -22,10 +22,10 @@ BinPackParameters: true
 BraceWrapping:
   AfterCaseLabel: true
   AfterClass: true
-  AfterControlStatement: true
+  # AfterControlStatement: true
   AfterEnum: true
-  AfterFunction: true
-  AfterNamespace: True
+  AfterFunction: false
+  # AfterNamespace: True
   AfterStruct: true
   AfterUnion: true
   AfterExternBlock: true
@@ -59,7 +59,7 @@ IndentCaseLabels: true
 IndentGotoLabels: true
 IndentPPDirectives: AfterHash
 IndentRequiresClause: True
-IndentWidth: 4
+IndentWidth: 2
 IndentWrappedFunctionNames: false
 InsertBraces: True
 InsertNewlineAtEOF: True

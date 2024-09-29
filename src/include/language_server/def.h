@@ -11,23 +11,23 @@ struct define_entry_t
 
 typedef struct DefineEntry
 {
-    char *name;
-    char *value;
+    char *name      = nullptr;
+    char *full_decl = nullptr;
+    char *value     = nullptr;
     
-    void delete_data(void) noexcept
-    {
-        name  ? free(name)  : (void)0;
-        value ? free(value) : (void)0;
+    void delete_data(void) noexcept {
+        name      ? free(name)      : (void)0;
+        full_decl ? free(full_decl) : (void)0;
+        value     ? free(value)     : (void)0;
     }
 
-    void delete_data(void) const noexcept
-    {
-        name  ? free(name)  : (void)0;
-        value ? free(value) : (void)0;
+    void delete_data(void) const noexcept {
+        name      ? free(name)      : (void)0;
+        full_decl ? free(full_decl) : (void)0;
+        value     ? free(value)     : (void)0;
     }
 
-    static DefineEntry create(char *name, char *value) noexcept
-    {
+    static DefineEntry create(char *name, char *value) noexcept {
         return {name, value};
     }
 }
@@ -43,7 +43,7 @@ IndexFile;
 typedef struct Index
 {
     MVector<IndexFile> include;
-    MVector<DefineEntry> define;
+    MVector<DefineEntry> defines;
 
     void delete_data(void) noexcept;
 }
@@ -63,10 +63,5 @@ inline void Index::delete_data(void) noexcept
         free(it.file);
     }
     include.resize(0);
-    for (const auto &it : define)
-    {
-        it.delete_data();
-    }
-    define.resize(0);
 }
 /* clang-format on */

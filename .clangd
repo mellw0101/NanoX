@@ -6,7 +6,7 @@ CompileFlags:
     - -I/usr/lib/clang/18/include/
     - -I/usr/include/c++/v1/   # Include path for libc++ headers
     - -stdlib=libc++     # Use libc++ as the standard library
-    - -std=c++23        # Specify C++20 standard
+    # - -std=c++23        # Specify C++20 standard
 #    - -fmodules      # Enable C++20 module support
 #    - -fmodules-cache-path=./module-cache  # Cache the modules in a directory (optional)
 #    - -Iinclude         # Specify include directories
