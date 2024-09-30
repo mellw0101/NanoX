@@ -140,11 +140,11 @@ namespace Parse {
       return head;
     }
 
-    string process_line(linestruct *line) {\
-      string ret = "";
+    string process_line(linestruct *line) {
+      string      ret   = "";
       const char *start = line->data;
-      const char *end = line->data;
-      Ulong len = strlen(line->data);
+      const char *end   = line->data;
+      Ulong       len   = strlen(line->data);
       while (end < (line->data + len)) {
         ADV_TO_NEXT_WORD(end);
         start = end;
@@ -154,78 +154,7 @@ namespace Parse {
       return ret;
     }
 
-    var_t parse_struct_type(linestruct *from, const char *type) {
-      Uint        idx;
-      const char *found = strstr_array(type, (const char *[]) {"typedef", "enum", "struct", "class"}, 4, &idx);
-      if (found && (found == type || (type[(found - type) - 1] == ' ' || type[(found - type) - 1] == '\t'))) {
-        string      expr    = "";
-        int         lvl     = 0;
-        const char *b_start = nullptr;
-        const char *b_end   = nullptr;
-        FOR_EACH_LINE_NEXT(line, from) {
-          // if (!expr.empty()) {
-          //   expr += ' ';
-          // }
-          // expr += &line->data[0];
-          expr += process_line(line);
-          b_start = line->data;
-          do {
-            b_start = strchr(b_start, '{');
-            if (b_start) {
-              if (!(line->data[(b_start - line->data) - 1] == '\'' && line->data[(b_start - line->data) + 1] == '\'')) {
-                lvl += 1;
-              }
-              b_start += 1;
-            }
-          }
-          while (b_start);
-          b_end = line->data;
-          do {
-            b_end = strchr(b_end, '}');
-            if (b_end) {
-              if (!(line->data[(b_end - line->data) - 1] == '\'' && line->data[(b_end - line->data) + 1] == '\'')) {
-                if (lvl == 0) {
-                  break;
-                }
-                lvl -= 1;
-              }
-              b_end += 1;
-            }
-          }
-          while (b_end);
-          if (strchr(line->data, ';') && lvl == 0) {
-            break;
-          }
-        }
-        const char *brace = strchr(expr.c_str(), '{');
-        const char *paranR = strchr(expr.c_str(), ')');
-        if (((brace && paranR) && paranR < brace) || (paranR && !brace))
-        {
-          return {};
-        }
-        switch (idx) {
-          case 0 : {
-            LSP.index.rawtypedef.push_back(expr);
-            break;
-          }
-          case 1 : {
-            LSP.index.rawenum.push_back(expr);
-            break;
-          }
-          case 2 : {
-            LSP.index.rawstruct.push_back(expr);
-            break;
-          }
-          case 3 : {
-            LSP.index.rawclass.push_back(expr);
-            break;
-          }
-        }
-        // unix_socket_debug("\n%s\n", expr.data());
-      }
-      return {};
-    }
-
+    /* Return a path without any '..'. */
     string normalise_path(const char *path) {
       const char *start = nullptr;
       string      save  = path;
@@ -241,6 +170,23 @@ namespace Parse {
         save = ret;
       }
       return save;
+    }
+
+    void construct_ClassData(const string &data, const string &visual_data) {
+      ClassData cd;
+      cd.raw_data = data;
+      unix_socket_debug("Class data:\n\n");
+      linestruct *head = lines_from_EOL_str(visual_data.c_str());
+      FOR_EACH_LINE_NEXT(line, head) {
+        unix_socket_debug("%s\n", line->data);
+      }
+      while (head) {
+        linestruct *node = head;
+        head             = head->next;
+        free(node->data);
+        free(node);
+      }
+      LSP.index.classes.push_back(cd);
     }
   }
 
@@ -297,7 +243,93 @@ namespace Parse {
     }
   }
 
-  void variable(linestruct *line, vector<var_t> &var_vector) {
+  void struct_type(linestruct *from) {
+    const char *data = &from->data[indent_char_len(from)];
+    if (invalid_variable_sig(data)) {
+      return;
+    }
+    if (strstr(data, "operator") /* || word_strstr(line->data, "class") */) {
+      return;
+    }
+    const char *end = data;
+    string      t   = parse_var_type(from, &data, &end);
+    if (t.empty()) {
+      return;
+    }
+    if (strstr(t.c_str(), "/*") == t.c_str()) {
+      return;
+    }
+    const char *type = t.c_str();
+    Uint        idx;
+    const char *found = strstr_array(type, (const char *[]) {"typedef", "enum", "struct", "class"}, 4, &idx);
+    if (found && (found == type || (type[(found - type) - 1] == ' ' || type[(found - type) - 1] == '\t'))) {
+      string      expr        = "";
+      string      visual_data = "";
+      int         lvl         = 0;
+      const char *b_start     = nullptr;
+      const char *b_end       = nullptr;
+      FOR_EACH_LINE_NEXT(line, from) {
+        if (!visual_data.empty()) {
+          visual_data += '\n';
+        }
+        visual_data += line->data;
+        expr += process_line(line);
+        b_start = line->data;
+        do {
+          b_start = strchr(b_start, '{');
+          if (b_start) {
+            if (!(line->data[(b_start - line->data) - 1] == '\'' && line->data[(b_start - line->data) + 1] == '\'')) {
+              lvl += 1;
+            }
+            b_start += 1;
+          }
+        }
+        while (b_start);
+        b_end = line->data;
+        do {
+          b_end = strchr(b_end, '}');
+          if (b_end) {
+            if (!(line->data[(b_end - line->data) - 1] == '\'' && line->data[(b_end - line->data) + 1] == '\'')) {
+              if (lvl == 0) {
+                break;
+              }
+              lvl -= 1;
+            }
+            b_end += 1;
+          }
+        }
+        while (b_end);
+        if (strchr(line->data, ';') && lvl == 0) {
+          break;
+        }
+      }
+      const char *brace  = strchr(expr.c_str(), '{');
+      const char *paranR = strchr(expr.c_str(), ')');
+      if (((brace && paranR) && paranR < brace) || (paranR && !brace)) {
+        return;
+      }
+      switch (idx) {
+        case 0 : {
+          LSP.index.rawtypedef.push_back(expr);
+          break;
+        }
+        case 1 : {
+          LSP.index.rawenum.push_back(expr);
+          break;
+        }
+        case 2 : {
+          LSP.index.rawstruct.push_back(expr);
+          break;
+        }
+        case 3 : { /* 'class' */
+          construct_ClassData(expr, visual_data);
+          break;
+        }
+      }
+    }
+  }
+
+  void variable(linestruct *line, const char *current_file, vector<var_t> &var_vector) {
     const char *data = &line->data[indent_char_len(line)];
     if (invalid_variable_sig(data)) {
       return;
@@ -313,7 +345,6 @@ namespace Parse {
     if (strstr(type.c_str(), "/*") == type.c_str()) {
       return;
     }
-    parse_struct_type(line, type.c_str());
     do {
       string type_addon = "";
       string name       = "";
@@ -370,13 +401,7 @@ namespace Parse {
         }
         data = end + 1;
       }
-      var_vector.push_back({
-          type + type_addon,
-          name,
-          value,
-          decl_line,
-          scope_end,
-      });
+      var_vector.push_back({type + type_addon, name, value, decl_line, scope_end, current_file});
       end = data;
     }
     while (*data);

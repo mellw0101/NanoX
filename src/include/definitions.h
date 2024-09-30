@@ -391,7 +391,7 @@ typedef struct linestruct {
     short *multidata;   /* Array of which multi-line regexes apply to this line. */
     bool has_anchor;    /* Whether the user has placed an anchor at this line. */
     /* The state of the line. */
-    bit_flag_t<LINE_BIT_FLAG_SIZE> flags;
+    bit_flag_t<LINE_BIT_FLAG_SIZE> flags;       
 } linestruct;
 #define FOR_EACH_LINE_NEXT(name, start) \
     for (linestruct *name = start; name != nullptr; name = name->next)
@@ -774,6 +774,7 @@ struct var_t
     string value;
     int    decl_line;
     int    scope_end;
+    string file;
 };
 
 struct class_info_t

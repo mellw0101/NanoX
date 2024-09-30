@@ -38,7 +38,8 @@ namespace Parse {
     string normalise_path(const char *path);
   }
   void comment(linestruct *line);
-  void variable(linestruct *line, vector<var_t> &var_vector);
+  void struct_type(linestruct *from);
+  void variable(linestruct *line, const char *current_file, vector<var_t> &var_vector);
 }
 
 class language_server_t

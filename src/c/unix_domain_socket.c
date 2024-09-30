@@ -11,7 +11,7 @@ void unix_socket_connect(const char *path) {
   }
   memset(&sock, 0, sizeof(sock));
   sock.sun_family   = AF_UNIX;
-  unsigned long len = strlen(path);
+  Ulong len = strlen(path);
   if (len >= sizeof(sock.sun_path)) {
     close(unix_socket_fd);
     unix_socket_fd = -1;
@@ -36,7 +36,7 @@ void unix_socket_debug(const char *format, ...) {
   va_start(ap, format);
   vsnprintf(buf, BUF_SIZE, format, ap);
   va_end(ap);
-  unsigned long len = strlen(buf);
+  Ulong len = strlen(buf);
   if (write(unix_socket_fd, buf, len) < 0) {
     unix_socket_fd = -1;
   }

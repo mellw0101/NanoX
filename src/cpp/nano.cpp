@@ -237,7 +237,7 @@ void do_exit(void) {
     statusbar(_("Cancelled"));
   }
 }
-
+ 
 /* Save the current buffer under the given name (or "nano.<pid>" when nameless)
  * with suffix ".save". If needed, the name is further suffixed to be unique. */
 void emergency_save(const char *filename) {
@@ -1369,7 +1369,7 @@ int main(int argc, char **argv) {
     cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = mallocstrcpy(word_chars, argv[i]) : 0 : 0;
     cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
     cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = mallocstrcpy(custom_nanorc, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
+    cliCmd & CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
     cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = mallocstrcpy(alt_speller, argv[i]) : 0 : 0;
     cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
 

@@ -227,19 +227,22 @@ void LSP_t::check(linestruct *from, string file) {
     if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
       do_preprossesor(line, file.c_str());
     }
+    Parse::struct_type(line);
     vector<var_t> vars;
-    Parse::variable(line, vars);
+    Parse::variable(line, file.c_str(), vars);
     if (!vars.empty()) {
-      // for (const auto &[type, name, value, decl_line, scope_end] : vars)
-      // {
-      //     // NLOG("type: %s\n"
-      //     //      "         name: %s\n"
-      //     //      "        value: %s\n"
-      //     //      "    decl_line: %d\n"
-      //     //      "    scope_end: %d\n"
-      //     //      "         file: %s\n\n",
-      //     //      type.c_str(), name.c_str(), value.c_str(), decl_line, scope_end, file.c_str());
-      // }
+      /* for (const auto &[type, name, value, decl_line, scope_end, file] : vars) {
+          unix_socket_debug("type: %s\n"
+               "         name: %s\n"
+               "        value: %s\n"
+               "    decl_line: %d\n"
+               "    scope_end: %d\n"
+               "         file: %s\n\n",
+               type.c_str(), name.c_str(), value.c_str(), decl_line, scope_end, file.c_str());
+      } */
+      for (const auto &it : vars) {
+        LSP.index.variabels.push_back(it);
+      }
     }
   }
 }

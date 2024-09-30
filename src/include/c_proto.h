@@ -9,6 +9,19 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#ifndef Ulong
+#define Ulong unsigned long
+#endif
+#ifndef Uint
+#define Uint unsigned int
+#endif
+#ifndef Ushort
+#define Ushort unsigned short
+#endif
+#ifndef Uchar
+#define Uchar unsigned char
+#endif
+
 __BEGIN_DECLS
 
 #define UNIX_DOMAIN_SOCKET_PATH "/tmp/test"

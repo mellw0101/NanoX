@@ -19,6 +19,21 @@ static void do_bash_synx(void) {
   }
 }
 
+string get_word_after(const char *data, const char *word) {
+  const char *found = word_strstr(data, word);
+  if (!found) {
+    return "";
+  }
+  const char *start = found + strlen(word);
+  ADV_TO_NEXT_WORD(start);
+  if (!*start) {
+    return "";
+  }
+  const char *end = start;
+  ADV_PAST_WORD(end);
+  return string(start, (end - start));
+}
+
 /* Function to check syntax for a open buffer. */
 void syntax_check_file(openfilestruct *file) {
   PROFILE_FUNCTION;
@@ -83,61 +98,30 @@ void syntax_check_file(openfilestruct *file) {
       }
       LSP.check(nullptr, "");
       LSP.add_defs_to_color_map();
-      for (const auto &it : LSP.index.rawenum) {
-        unix_socket_debug("%s\n", it.c_str());
-      }
-      for (const auto &it : LSP.index.rawtypedef) {
-        const char *found = word_strstr(it.c_str(), "struct");
-        if (found) {
-          const char *start = found + 6;
-          ADV_TO_NEXT_WORD(start);
-          if (!*start) {
-            continue;
-          }
-          const char *end = start;
-          ADV_PAST_WORD(end);
-          string c(start, (end - start));
-          unix_socket_debug("%s\n", c.c_str());
-          test_map[c] = {FG_VS_CODE_GREEN};
+      for (const auto &it : LSP.index.classes) {
+        string name = get_word_after(it.raw_data.c_str(), "class");
+        if (!name.empty()) {
+          test_map[name] = {FG_VS_CODE_GREEN};
         }
-        unix_socket_debug("%s\n", it.c_str());
-      }
-      for (const auto &it : LSP.index.rawclass) {
-        const char *found = word_strstr(it.c_str(), "class");
-        if (found) {
-          const char *start = found + 5;
-          ADV_TO_NEXT_WORD(start);
-          if (!*start) {
-            continue;
-          }
-          const char *end = start;
-          ADV_PAST_WORD(end);
-          string c(start, (end - start));
-          unix_socket_debug("%s\n", c.c_str());
-          test_map[c] = {FG_VS_CODE_GREEN};
-        }
-        unix_socket_debug("%s\n", it.c_str());
       }
       for (const auto &it : LSP.index.rawstruct) {
-        const char *found = word_strstr(it.c_str(), "struct");
-        if (found) {
-          const char *start = found + 6;
-          ADV_TO_NEXT_WORD(start);
-          if (!*start) {
-            continue;
-          }
-          const char *end = start;
-          ADV_PAST_WORD(end);
-          string c(start, (end - start));
-          unix_socket_debug("%s\n", c.c_str());
-          test_map[c] = {FG_VS_CODE_GREEN};
+        string name = get_word_after(it.c_str(), "struct");
+        if (!name.empty()) {
+          test_map[name] = {FG_VS_CODE_GREEN};
         }
-        unix_socket_debug("%s\n", it.c_str());
       }
-      unix_socket_debug("rawenum size: %u\n", LSP.index.rawenum.size());
-      unix_socket_debug("rawtypedef size: %u\n", LSP.index.rawtypedef.size());
-      unix_socket_debug("rawstruct size: %u\n", LSP.index.rawstruct.size());
-      unix_socket_debug("rawclass size: %u\n", LSP.index.rawclass.size());
+      for (const auto &it : LSP.index.rawtypedef) {
+        string name = get_word_after(it.c_str(), "struct");
+        if (!name.empty()) {
+          test_map[name] = {FG_VS_CODE_GREEN};
+        }
+      }
+      for (const auto &it : LSP.index.variabels) {
+        if (it.file == openfile->filename) {
+          test_map[it.name] = {FG_VS_CODE_BRIGHT_CYAN, it.decl_line, it.scope_end};
+        }
+      }
+      unix_socket_debug("variable vector size: %u\n", LSP.index.variabels.size());
     }
     else if (ext == "asm" || ext == "s") {
       openfile->type.clear_and_set<ASM>();
@@ -145,9 +129,7 @@ void syntax_check_file(openfilestruct *file) {
     else if (ext == "sh") {
       do_bash_synx();
     }
-    /**
-     * TODO: Check that this is fully safe.
-     */
+    /** TODO: Check that this is fully safe. */
     else {
       linestruct *line = openfile->filetop;
       while (line && is_empty_line(line)) {

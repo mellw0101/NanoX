@@ -192,7 +192,7 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
       }
     }
     if (!is_file_and_exists(check_file.c_str())) {
-      NLOG("[FATAL] file: '%s' could not be found.\n", string(path).c_str());
+      unix_socket_debug("[FATAL] file: '%s' could not be found.\n", string(path).c_str());
     }
     else if (!LSP.has_been_included(check_file.c_str())) {
       IndexFile idfile;

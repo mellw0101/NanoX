@@ -9,8 +9,7 @@ struct define_entry_t
     string value;
 };
 
-typedef struct DefineEntry
-{
+typedef struct DefineEntry {
   char *name      = nullptr;
   char *full_decl = nullptr;
   char *value     = nullptr;
@@ -33,15 +32,12 @@ typedef struct DefineEntry
   static DefineEntry create(char *name, char *value) noexcept {
       return {name, value};
   }
-}
-DefineEntry;
+} DefineEntry;
 
-typedef struct IndexFile
-{
+typedef struct IndexFile {
   char *file;
   linestruct *head;
-}
-IndexFile;
+} IndexFile;
 
 typedef struct TypeDefEnumEntry {
   char *type  = nullptr;
@@ -61,19 +57,22 @@ typedef struct TypeDefEnumEntry {
   }
 } TypeDefEnumEntry;
 
-typedef struct Index
-{
+typedef struct ClassData {
+  string raw_data;
+} ClassData;
+
+typedef struct Index {
   MVector<IndexFile> include;
   MVector<DefineEntry> defines;
+  MVector<var_t> variabels;
+  MVector<ClassData> classes;
 
   MVector<string> rawtypedef;
   MVector<string> rawenum;
   MVector<string> rawstruct;
-  MVector<string> rawclass;
 
   void delete_data(void) noexcept;
-}
-Index;
+} Index;
 
 __inline__ void Index::delete_data(void) noexcept {
   for (auto &it : include) {

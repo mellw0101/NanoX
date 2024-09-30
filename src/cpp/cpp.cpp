@@ -755,7 +755,7 @@ void check_line_for_vars(linestruct *line) {
   remove_from_color_map(line, FG_VS_CODE_BRIGHT_CYAN, LOCAL_VAR_SYNTAX);
   vector<var_t> vars;
   line_variable(line, vars);
-  for (const auto &[type, name, value, delc_line, scope_end] : vars) {
+  for (const auto &[type, name, value, delc_line, scope_end, file] : vars) {
     const auto &it = test_map.find(name);
     if (it != test_map.end() &&
         (it->second.color == FG_VS_CODE_BLUE || it->second.color == FG_VS_CODE_BRIGHT_MAGENTA)) {
