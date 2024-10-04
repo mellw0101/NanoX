@@ -11,19 +11,19 @@
 /* Return the user's home directory.  We use $HOME, and if that fails,
  * we fall back on the home directory of the effective user ID. */
 void get_homedir(void) {
-  if (homedir == NULL) {
+  if (homedir == nullptr) {
     const char *homenv = getenv("HOME");
     /* When HOME isn't set,or when we're root,
      * get the home directory from the password file instead. */
-    if (homenv == NULL || geteuid() == ROOT_UID) {
+    if (homenv == nullptr || geteuid() == ROOT_UID) {
       const passwd *userage = getpwuid(geteuid());
-      if (userage != NULL) {
+      if (userage != nullptr) {
         homenv = userage->pw_dir;
       }
     }
     /* Only set homedir if some home directory could be determined,
      * otherwise keep homedir nullpre. */
-    if (homenv != NULL && *homenv != '\0') {
+    if (homenv != nullptr && *homenv != '\0') {
       homedir = copy_of(homenv);
     }
   }
@@ -32,7 +32,7 @@ void get_homedir(void) {
 /* Return the filename part of the given path. */
 const char *tail(const char *path) {
   const char *slash = constexpr_strrchr(path, '/');
-  if (slash == NULL) {
+  if (slash == nullptr) {
     return path;
   }
   else {
@@ -43,7 +43,7 @@ const char *tail(const char *path) {
 /* Return a copy of the two given strings, welded together. */
 char *concatenate(const char *path, const char *name) {
   Ulong pathlen = strlen(path);
-  char         *joined  = (char *)nmalloc(pathlen + strlen(name) + 1);
+  char *joined  = (char *)nmalloc(pathlen + strlen(name) + 1);
   constexpr_strcpy(joined, path);
   constexpr_strcpy(joined + pathlen, name);
   return joined;
@@ -131,7 +131,7 @@ bool parse_line_column(const char *string, long *line, long *column) {
     string++;
   }
   comma = strpbrk(string, ",.:");
-  if (comma == NULL) {
+  if (comma == nullptr) {
     return parseNum(string, *line);
   }
   retval = parseNum(comma + 1, *column);
@@ -191,7 +191,7 @@ bool is_separate_word(Ulong position, Ulong length, const char *text) {
   return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
 }
 
-/* Return the position of the needle in the haystack, or NULL if not found.
+/* Return the position of the needle in the haystack, or nullptr if not found.
  * When searching backwards, we will find the last match that starts no later
  * than the given start; otherwise, we find the first match starting no earlier
  * than start.  If we are doing a regexp search, and we find a match, we fill
@@ -203,14 +203,14 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
       /* The start of the search range, and the next start. */
       floor = 0, next_rung = 0;
       if (regexec(&search_regexp, haystack, 1, regmatches, 0)) {
-        return NULL;
+        return nullptr;
       }
       far_end   = strlen(haystack);
       ceiling   = start - haystack;
       last_find = regmatches[0].rm_so;
       /* A result beyond the search range also means: no match. */
       if (last_find > ceiling) {
-        return NULL;
+        return nullptr;
       }
       /* Move the start-of-range forward until there is no more match;
        * then the last match found is the first match backwards. */
@@ -232,7 +232,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
       regmatches[0].rm_so = floor;
       regmatches[0].rm_eo = far_end;
       if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
-        return NULL;
+        return nullptr;
       }
       return haystack + regmatches[0].rm_so;
     }
@@ -240,7 +240,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
     regmatches[0].rm_so = start - haystack;
     regmatches[0].rm_eo = strlen(haystack);
     if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
-      return NULL;
+      return nullptr;
     }
     else {
       return haystack + regmatches[0].rm_so;
@@ -283,14 +283,14 @@ void *nrealloc(void *section, const Ulong howmuch) {
 /* Return an appropriately reallocated dest string holding a copy of src.
  * Usage: "dest = mallocstrcpy(dest, src);". */
 char *mallocstrcpy(char *dest, const char *src) {
-  const Ulong count = strlen(src) + 1;
-  dest                      = (char *)nrealloc(dest, count);
+  Ulong count = strlen(src) + 1;
+  dest        = (char *)nrealloc(dest, count);
   constexpr_strncpy(dest, src, count);
   return dest;
 }
 
 /* Return an allocated copy of the first count characters
- * of the given string, and NUL-terminate the copy. */
+ * of the given string, and 'null-terminate' the copy. */
 char *measured_copy(const char *string, const Ulong count) {
   char *thecopy = (char *)nmalloc(count + 1);
   memcpy(thecopy, string, count);
@@ -394,7 +394,7 @@ void remove_magicline(void) {
     }
     openfile->filebot = openfile->filebot->prev;
     delete_node(openfile->filebot->next);
-    openfile->filebot->next = NULL;
+    openfile->filebot->next = nullptr;
     openfile->totsize--;
   }
 }
@@ -461,7 +461,7 @@ linestruct *line_from_number(long number) {
 /* Count the number of characters from begin to end, and return it. */
 Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) {
   const linestruct *line;
-  Ulong     count = 0;
+  Ulong             count = 0;
   /* Sum the number of characters (plus a newline) in each line. */
   for (line = begin; line != end->next; line = line->next) {
     count += mbstrlen(line->data) + 1;
@@ -473,12 +473,12 @@ Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) {
 /* Return`s malloc`ed str containing pwd. */
 char *alloced_pwd(void) {
   const char *pwd = getenv("PWD");
-  if (pwd == NULL) {
+  if (!pwd) {
     logE("Failed to get pwd.");
     die("Failed to get pwd");
   }
   Ulong len = strlen(pwd);
-  char         *ret = (char *)nmalloc(len + 1);
+  char *ret = (char *)nmalloc(len + 1);
   memmove(ret, pwd, len);
   ret[len] = '\0';
   return ret;
@@ -489,7 +489,7 @@ char *alloced_pwd(void) {
 char *alloc_str_free_substrs(char *str_1, char *str_2) {
   Ulong len_1 = strlen(str_1);
   Ulong len_2 = strlen(str_2);
-  char         *ret   = (char *)nmalloc(len_1 + len_2 + 1);
+  char *ret   = (char *)nmalloc(len_1 + len_2 + 1);
   memmove(ret, str_1, len_1);
   memmove(ret + len_1, str_2, len_2);
   ret[len_1 + len_2] = '\0';
@@ -502,17 +502,17 @@ char *alloc_str_free_substrs(char *str_1, char *str_2) {
 void append_str(char **str, const char *appen_str) {
   Ulong slen      = strlen(*str);
   Ulong appendlen = strlen(appen_str);
-  *str                    = (char *)nrealloc(*str, slen + appendlen + 1);
+  *str            = (char *)nrealloc(*str, slen + appendlen + 1);
   memmove(*str + slen, appen_str, appendlen);
   (*str)[slen + appendlen] = '\0';
 }
 
 /* Return`s either a malloc`ed str of the current
- * file dir or NULL if inside the same dir. */
+ * file dir or nullptr if inside the same dir. */
 char *alloced_current_file_dir(void) {
   const char *slash = strrchr(openfile->filename, '/');
   if (!slash) {
-    return NULL;
+    return nullptr;
   }
   slash += 1;
   char *ret = (char *)nmalloc((slash - openfile->filename) + 1);
@@ -548,7 +548,7 @@ void alloced_remove_at(char **str, int at) {
   memmove(*str + at, *str + at + 1, slen - at);
 }
 
-/* Return 'NULL' if 'needle' is not found by itself. */
+/* Return 'nullptr' if 'needle' is not found by itself. */
 const char *word_strstr(const char *data, const char *needle) {
   const int   slen  = strlen(needle);
   const char *found = strstr(data, needle);
@@ -558,7 +558,7 @@ const char *word_strstr(const char *data, const char *needle) {
       return found;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /* Retrieve a 'string' containing the file extention.
@@ -595,22 +595,22 @@ string current_file_dir(void) {
 
 /* Retrieve a malloc`ed 'char **' containing the output of cmd,
  * in line format.  This function also allows to input a refrece to
- * an 'unsigned int' to retrieve the line count.  Note that each line
+ * an 'Uint' to retrieve the line count.  Note that each line
  * is malloc`ed as well and will need to be free`d, as does the entire
- * array.  Return`s 'NULL' apon failure. */
+ * array.  Return`s 'nullptr' apon failure. */
 char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
   FILE *prog = popen(cmd, "r");
   if (!prog) {
     logE("Failed to run command: '%s'.", cmd);
-    return NULL;
+    return nullptr;
   }
-  static char  buf[PATH_MAX];
-  unsigned int size  = 0;
-  unsigned int cap   = 10;
-  char       **lines = AMALLOC_ARRAY(lines, cap);
-  char        *copy  = NULL;
+  static char buf[PATH_MAX];
+  Uint        size  = 0;
+  Uint        cap   = 10;
+  char      **lines = AMALLOC_ARRAY(lines, cap);
+  char       *copy  = nullptr;
   while (fgets(buf, sizeof(buf), prog)) {
-    unsigned int len = strlen(buf);
+    Uint len = strlen(buf);
     buf[len - 1] == '\n' ? buf[--len] = '\0' : 0;
     copy = measured_copy(buf, len);
     size == cap ? cap *= 2, lines = AREALLOC_ARRAY(lines, cap) : 0;
@@ -618,7 +618,7 @@ char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
   }
   pclose(prog);
   n_lines ? *n_lines = size : 0;
-  lines[size] = NULL;
+  lines[size] = nullptr;
   return lines;
 }
 
@@ -635,7 +635,7 @@ const char *word_strstr_array(const char *str, const char **substrs, Uint count,
 }
 
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index) {
-  const char *first = NULL;
+  const char *first = nullptr;
   for (Uint i = 0; i < count; i++) {
     const char *match = strstr(str, substrs[i]);
     if (match && (!first || match < first)) {
@@ -647,8 +647,8 @@ const char *strstr_array(const char *str, const char **substrs, Uint count, Uint
 }
 
 const char *string_strstr_array(const char *str, const vector<string> &substrs, Uint *index) {
-  const char *first = NULL;
-  for (unsigned int i = 0; i < substrs.size(); i++) {
+  const char *first = nullptr;
+  for (Uint i = 0; i < substrs.size(); i++) {
     const char *match = strstr(str, substrs[i].c_str());
     if (match && (!first || match < first)) {
       first = match;
@@ -663,9 +663,9 @@ string tern_statement(const string &str, string *if_true, string *if_false) {
   static const char    *rules[rule_count] = {"?", ":"};
   const char           *start             = &str[0];
   const char           *end               = start;
-  const char           *found             = NULL;
+  const char           *found             = nullptr;
   string                ret               = "";
-  unsigned int          index;
+  Uint                  index;
   found = strstr_array(start, rules, rule_count, &index);
   if (!found) {
     return "";

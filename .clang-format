@@ -1,6 +1,6 @@
 Language: Cpp
 BasedOnStyle: LLVM
-AccessModifierOffset: -4
+AccessModifierOffset: -1
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignOperands: AlignAfterOperator
@@ -21,19 +21,19 @@ BinPackArguments: true
 BinPackParameters: true
 BraceWrapping:
   # AfterCaseLabel: true
-  AfterClass: true
+  # AfterClass: true
   # AfterControlStatement: true
   AfterEnum: true
   AfterFunction: false
   # AfterNamespace: True
-  AfterStruct: true
+  # AfterStruct: true
   AfterUnion: true
   AfterExternBlock: true
   AfterObjCDeclaration: false
   BeforeCatch: true
   BeforeElse: true
   BeforeLambdaBody: false
-  BeforeWhile: true
+  # BeforeWhile: true
   IndentBraces: false
   SplitEmptyFunction: false
   SplitEmptyRecord: false
@@ -42,7 +42,7 @@ BreakBeforeBraces: Custom
 BreakBeforeTernaryOperators: true
 ColumnLimit: 120
 CompactNamespaces: false
-ContinuationIndentWidth: 4
+ContinuationIndentWidth: 2
 EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: LogicalBlock
 IncludeBlocks: Preserve
@@ -82,11 +82,11 @@ SpacesBeforeTrailingComments: 1
 SpacesInAngles: false
 SpacesInContainerLiterals: true
 SpacesInConditionalStatement: False
-BracedInitializerIndentWidth: 4
+BracedInitializerIndentWidth: 2
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-TabWidth: 4
+TabWidth: 2
 UseTab: Never
 PointerAlignment: Right
 Standard: Latest

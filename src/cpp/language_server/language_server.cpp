@@ -1,13 +1,12 @@
 #include "../../include/prototypes.h"
 
-LSP_t          *LSP_t::_instance   = nullptr;
-pthread_mutex_t LSP_t::_init_mutex = PTHREAD_MUTEX_INITIALIZER;
+LanguageServer *LanguageServer::_instance = nullptr;
 
-int LSP_t::find_endif(linestruct *from) {
+auto LanguageServer::find_endif(linestruct *from) -> int {
   int         lvl   = 0;
-  const char *found = NULL;
-  const char *start = NULL;
-  const char *end   = NULL;
+  const char *found = nullptr;
+  const char *start = nullptr;
+  const char *end   = nullptr;
   FOR_EACH_LINE_NEXT(line, from) {
     if (!(line->flags.is_set(DONT_PREPROSSES_LINE))) {
       found = strchr(line->data, '#');
@@ -35,7 +34,7 @@ int LSP_t::find_endif(linestruct *from) {
   return 0;
 }
 
-void LSP_t::fetch_compiler_defines(string compiler) {
+auto LanguageServer::fetch_compiler_defines(string compiler) -> void {
   if ((compiler != "clang" && compiler != "clang++") && (compiler != "gcc" && compiler != "g++")) {
     logE("'%s' is an invalid compiler.", compiler.c_str());
     return;
@@ -46,7 +45,7 @@ void LSP_t::fetch_compiler_defines(string compiler) {
   if (lines) {
     for (Uint i = 0; i < n_lines; i++) {
       const char *start = lines[i];
-      const char *end   = NULL;
+      const char *end   = nullptr;
       ADV_PAST_WORD(start);
       ADV_TO_NEXT_WORD(start);
       if (!*start) {
@@ -64,95 +63,59 @@ void LSP_t::fetch_compiler_defines(string compiler) {
         continue;
       }
       string value(start, (end - start));
-      add_define({
-          measured_copy(name.data(), name.size()),
-          measured_copy(name.data(), name.size()),
-          measured_copy(value.data(), value.size()),
-      });
+
+      DefineEntry de;
+      de.name      = measured_copy(name.data(), name.size());
+      de.full_decl = measured_copy(name.data(), name.size());
+      de.value     = measured_copy(value.data(), value.size());
+      de.file      = copy_of("");
+
+      index.defines[de.name] = de;
       free(lines[i]);
     }
     free(lines);
   }
 }
 
-/* This is the only way to access the language_server.
- * There also exist`s a shorthand for this function
- * call named 'LSP'. */
-LSP_t &LSP_t::instance(void) {
+/* This is the only way to access the language_server.  There
+ * also exist`s a shorthand for this function call named 'LSP'. */
+auto LanguageServer::instance(void) -> LanguageServer *const & {
   if (!_instance) {
-    pthread_mutex_guard_t guard(&_init_mutex);
+    _instance = new LanguageServer();
     if (!_instance) {
-      _instance = new LSP_t();
+      logE("Failed to alloc 'LanguageServer'.");
+      die("Failed to alloc 'LanguageServer'.");
     }
-    atexit(LSP_t::_destroy);
+    atexit(_destroy);
   }
-  return *_instance;
+  return _instance;
 }
 
-LSP_t::LSP_t(void) {
-  pthread_mutex_init(&_mutex, NULL);
-  fetch_compiler_defines("clang++");
-  fetch_compiler_defines("clang");
-  fetch_compiler_defines("g++");
-  fetch_compiler_defines("gcc");
-#ifdef __cplusplus
-  ADD_BASE_DEF(__cplusplus);
-#endif
-  ADD_BASE_DEF(_GNU_SOURCE);
-}
-
-void LSP_t::_destroy(void) noexcept {
-  pthread_mutex_destroy(&LSP._mutex);
-  LSP.index.delete_data();
+auto LanguageServer::_destroy(void) noexcept -> void {
+  LSP->index.delete_data();
   delete _instance;
 }
 
 /* Return`s index of entry if found otherwise '-1'. */
-int LSP_t::is_defined(const string &name) {
-  const auto *data = index.defines.begin();
-  for (int i = 0; i < index.defines.size(); ++i) {
-    if (data[i].name == name) {
-      return i;
-    }
-  }
+auto LanguageServer::is_defined(const string &name) -> int {
   return -1;
 }
 
-bool LSP_t::has_been_included(const char *path) {
-  for (const auto &i : index.include) {
-    if (strcmp(i.file, path) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/* If define is in vector then return its value.
- * Note that the caller should check is define
- * exists before using this function.
- * As it returns "" if not found as well as if
- * the define has no value. */
-string LSP_t::define_value(const string &name) {
-  int idx = is_defined(name);
-  if (idx != -1) {
-    const auto *data = index.defines.begin();
-    return data[idx].value;
-  }
+/* If define is in vector then return its value.  Note that the caller should check is define exists
+ * before using this function.  As it returns "" if not found as well as if the define has no value. */
+auto LanguageServer::define_value(const string &name) -> string {
+  // int idx = is_defined(name);
+  // if (idx != -1) {
+  //   const auto *data = index.defines.begin();
+  //   return data[idx].value;
+  // }
   return "";
 }
 
-/* If define is not already in vector then add it. */
-void LSP_t::add_define(const DefineEntry &entry) {
-  if (is_defined(entry.name) == -1) {
-    /* NLOG("define added: %s\n", entry.name.c_str()); */
-    index.defines.push_back(entry);
-  }
-}
-
-vector<string> LSP_t::split_if_statement(const string &str) {
+auto LanguageServer::split_if_statement(const string &str) -> vector<string> {
   /* vector<string> result;
   const auto    *data  = str.data();
-  const char    *found = NULL;
+  const char    *found = nullptr;
   Uint   index;
   do {
       found = string_strstr_array(
@@ -190,79 +153,8 @@ vector<string> LSP_t::split_if_statement(const string &str) {
   return {};
 }
 
-const char *get_preprosses_type(linestruct *line, string &word) {
-  const char *found = strchr(line->data, '#');
-  const char *start = nullptr;
-  const char *end   = nullptr;
-  if (found) {
-    start = found + 1;
-    ADV_TO_NEXT_WORD(start);
-    if (!*start) {
-      return nullptr;
-    }
-    end = start;
-    ADV_PAST_WORD(end);
-    word = string(start, (end - start));
-    return end;
-  }
-  return nullptr;
-}
-
-void LSP_t::check(linestruct *from, string file) {
-  PROFILE_FUNCTION;
-  if (!from) {
-    from = openfile->filetop;
-    file = openfile->filename;
-    IndexFile idfile;
-    idfile.file = openfile->filename;
-    idfile.head = openfile->filetop;
-    index.include.push_back(idfile);
-  }
-  FOR_EACH_LINE_NEXT(line, from) {
-    Parse::comment(line);
-    if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
-        line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
-      continue;
-    }
-    if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
-      do_preprossesor(line, file.c_str());
-    }
-    Parse::struct_type(line);
-    vector<var_t> vars;
-    Parse::variable(line, file.c_str(), vars);
-    if (!vars.empty()) {
-      /* for (const auto &[type, name, value, decl_line, scope_end, file] : vars) {
-          unix_socket_debug("type: %s\n"
-               "         name: %s\n"
-               "        value: %s\n"
-               "    decl_line: %d\n"
-               "    scope_end: %d\n"
-               "         file: %s\n\n",
-               type.c_str(), name.c_str(), value.c_str(), decl_line, scope_end, file.c_str());
-      } */
-      for (const auto &it : vars) {
-        LSP.index.variabels.push_back(it);
-      }
-    }
-  }
-}
-
-/* Add the current defs to color map. */
-void LSP_t::add_defs_to_color_map(void) {
-  const auto *data = index.defines.begin();
-  for (int i = 0; i < index.defines.size(); ++i) {
-    test_map[data[i].name] = {
-        FG_VS_CODE_BLUE,
-        -1,
-        -1,
-        DEFINE_SYNTAX,
-    };
-  }
-  unix_socket_debug("LSP: Added %u full defines with name full decl and full value\n", index.defines.size());
-}
-
 /* Parses a full preprossesor decl so that '\' are placed on the same line. */
-string LSP_t::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_lineno) {
+auto LanguageServer::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_lineno) -> string {
   PROFILE_FUNCTION;
   string      ret   = "";
   const char *start = *ptr;
@@ -286,12 +178,80 @@ string LSP_t::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_li
       ret += string(start, (end - start));
     }
     start = end;
-  }
-  while (*end);
+  } while (*end);
   end_lineno ? *end_lineno = (int)line->lineno : 0;
   return ret;
 }
 
-MVector<DefineEntry> LSP_t::retrieve_defines(void) {
-  return index.defines;
+auto LanguageServer::check(IndexFile *idfile) -> void {
+  PROFILE_FUNCTION;
+  linestruct *from = idfile->head ? idfile->head : openfile->filetop;
+  FOR_EACH_LINE_NEXT(line, from) {
+    Parse::comment(line);
+    if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
+        line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
+      continue;
+    }
+    if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
+      do_preprossesor(line, idfile->file);
+    }
+    if (line->flags.is_set<PP_LINE>()) {
+      continue;
+    }
+    // do_parse(&line, idfile->file);
+  }
+}
+
+bool LanguageServer::has_been_included(const char *path) {
+  const auto &it = index.include.find(path);
+  if (it != index.include.end()) {
+    return true;
+  }
+  return false;
+}
+
+int LanguageServer::index_file(const char *path) {
+  PROFILE_FUNCTION;
+  if (!path) {
+    logE("Path: '%s', Is invalid.\n", path);
+    return -1;
+  }
+  char *absolute_path = nullptr;
+  if (*path == '/') {
+    absolute_path = copy_of(path);
+  }
+  else {
+    absolute_path  =  get_full_path(path);
+  }
+  if (!absolute_path || !is_file_and_exists(absolute_path)) {
+    // logE("Failed to get absolute path for file: '%s'.", path);
+    return -1;
+  }
+  if (has_been_included(absolute_path)) {
+    free(absolute_path);
+    logE("File: '%s', Has already been include.", absolute_path);
+    return -1;
+  }
+  unix_socket_debug("path %s\n", absolute_path);
+  IndexFile idfile;
+  idfile.file = absolute_path;
+  idfile.head = retrieve_file_as_lines(absolute_path);
+  index.include[absolute_path] = idfile;
+  linestruct *head = idfile.head;
+  while (head) {
+    linestruct *line = head;
+    head = line->next;
+    Parse::comment(line);
+    if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
+        line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
+      continue;
+    }
+    if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
+      do_preprossesor(line, absolute_path);
+    }
+    if (line->flags.is_set<PP_LINE>()) {
+      continue;
+    }
+  }
+  return 0;
 }

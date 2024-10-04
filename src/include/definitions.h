@@ -4,11 +4,11 @@
 #include "../include/config.h"
 
 #ifndef _XOPEN_SOURCE_EXTENDED
-#    define _XOPEN_SOURCE_EXTENDED 1
+#  define _XOPEN_SOURCE_EXTENDED 1
 #endif
 
 #if defined(__HAIKU__) && !defined(_DEFAULT_SOURCE)
-#    define _DEFAULT_SOURCE 1
+#  define _DEFAULT_SOURCE 1
 #endif
 #define ROOT_UID 0
 
@@ -35,6 +35,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
+#include <execinfo.h> // For backtrace functions
 #include <fcntl.h>
 #include <getopt.h>
 #include <glob.h>
@@ -52,19 +53,20 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
+#include <Mlib/Attributes.h>
 
 #include <ncursesw/ncurses.h>
 
 /* Native language support. */
 #ifdef ENABLE_NLS
-#    ifdef HAVE_LIBINTL_H
-#        include <libintl.h>
-#    endif
-#    define _(string)                    gettext(string)
-#    define P_(singular, plural, number) ngettext(singular, plural, number)
+#  ifdef HAVE_LIBINTL_H
+#    include <libintl.h>
+#  endif
+#  define _(string)                    gettext(string)
+#  define P_(singular, plural, number) ngettext(singular, plural, number)
 #else
-#    define _(string)                    (char *)(string)
-#    define P_(singular, plural, number) (number == 1 ? singular : plural)
+#  define _(string)                    (char *)(string)
+#  define P_(singular, plural, number) (number == 1 ? singular : plural)
 #endif
 
 /* For marking a string on which gettext() will be called later. */
@@ -74,20 +76,19 @@
 /* If we aren't using an ncurses with mouse support, then
  * exclude the mouse routines, as they are useless then. */
 #ifndef NCURSES_MOUSE_VERSION
-#    undef ENABLE_MOUSE
+#  undef ENABLE_MOUSE
 #endif
 
 #if defined(ENABLE_WRAPPING) || defined(ENABLE_JUSTIFY)
-#    define ENABLED_WRAPORJUSTIFY 1
+#  define ENABLED_WRAPORJUSTIFY 1
 #endif
 
 /* Suppress warnings for __attribute__((warn_unused_result)). */
 #define IGNORE_CALL_RESULT(call) \
-    do {                         \
-        if (call)                \
-        {}                       \
-    }                            \
-    while (0)
+  do {                           \
+    if (call) {}                 \
+  }                              \
+  while (0)
 
 /* Macros for flags, indexing each bit in a small array. */
 #define FLAGS(flag)                   flags[((flag) / (sizeof(unsigned long) * 8))]
@@ -115,12 +116,12 @@
 #define LINE_BIT_FLAG_SIZE            16
 
 /* Some other define`s. */
-#define BACKWARD                      FALSE
-#define FORWARD                       TRUE
-#define YESORNO                       FALSE
-#define YESORALLORNO                  TRUE
-#define BLIND                         FALSE
-#define VISIBLE                       TRUE
+#define BACKWARD                      false
+#define FORWARD                       true
+#define YESORNO                       false
+#define YESORALLORNO                  true
+#define BLIND                         false
+#define VISIBLE                       true
 #define YES                           1
 #define ALL                           2
 #define NO                            0
@@ -128,13 +129,13 @@
 #define JUSTFIND                      0
 #define REPLACING                     1
 #define INREGION                      2
-#define NORMAL                        TRUE
-#define SPECIAL                       FALSE
-#define TEMPORARY                     FALSE
-#define ANNOTATE                      TRUE
-#define NONOTES                       FALSE
-#define PRUNE_DUPLICATE               TRUE
-#define IGNORE_DUPLICATES             FALSE
+#define NORMAL                        true
+#define SPECIAL                       false
+#define TEMPORARY                     false
+#define ANNOTATE                      true
+#define NONOTES                       false
+#define PRUNE_DUPLICATE               true
+#define IGNORE_DUPLICATES             false
 
 #define MAXCHARLEN                    4
 /* The default width of a tab in spaces. */
@@ -245,16 +246,14 @@
 #define XTERM_CONTROL_COLOR           "brightmagenta"
 
 #define TASK_STRUCT(name, ...) \
-    typedef struct             \
-    {                          \
-        __VA_ARGS__            \
-    } name;
+  typedef struct {             \
+    __VA_ARGS__                \
+  } name;
 
 #define LIST_STRUCT(name, ...) \
-    typedef struct name        \
-    {                          \
-        __VA_ARGS__            \
-    } name;
+  typedef struct name {        \
+    __VA_ARGS__                \
+  } name;
 
 #define NULL_safe_free(ptr) ptr ? free(ptr) : void()
 #define anmalloc(size)
@@ -358,7 +357,7 @@ typedef struct augmentstruct {
 
 typedef struct syntaxtype {
     char *name;                   /* The name of this syntax. */
-    char *filename;               /* File where the syntax is defined, or NULL if not an included file. */
+    char *filename;               /* File where the syntax is defined, or nullptr if not an included file. */
     unsigned long lineno;         /* The line number where the 'syntax' command was found. */
     augmentstruct *augmentations; /* List of extendsyntax commands to apply when loaded. */
     regexlisttype *extensions;    /* The list of extensions that this syntax applies to. */
@@ -366,7 +365,7 @@ typedef struct syntaxtype {
     regexlisttype *magics;        /* The list of libmagic results that this syntax applies to. */
     char *linter;                 /* The command with which to lint this type of file. */
     char *formatter;              /* The command with which to format/modify/arrange this type of file. */
-    char *tabstring;              /* What the Tab key should produce; NULL for default behavior. */
+    char *tabstring;              /* What the Tab key should produce; nullptr for default behavior. */
     char *comment;                /* The line comment prefix (and postfix) for this type of file. */
     colortype *color;             /* The colors and their regexes used in this syntax. */
     short multiscore;             /* How many multiline regex strings this syntax has. */
@@ -440,7 +439,7 @@ typedef struct openfilestruct {
     long cursor_row;            /* The row in the edit window that the cursor is on. */
     struct stat *statinfo;      /* The file's stat information from when it was opened or last saved. */
     linestruct *spillage_line;  /* The line for prepending stuff to during automatic hard-wrapping. */
-    linestruct *mark;           /* The line in the file where the mark is set; NULL if not set. */
+    linestruct *mark;           /* The line in the file where the mark is set; nullptr if not set. */
     Ulong mark_x;               /* The mark's x position in the above line. */
     bool softmark;              /* Whether a marked region was made by holding Shift. */
     format_type fmt;            /* The file's format -- Unix or DOS or Mac. */
@@ -490,56 +489,50 @@ typedef struct completionstruct {
 
 enum syntax_flag_t
 {
-    NEXT_WORD_ALSO = 1
+  NEXT_WORD_ALSO = 1
 };
 
-struct bracket_entry
-{
-    Ulong lineno;
-    Ulong indent;
-    bool  start;
+struct bracket_entry {
+  Ulong lineno;
+  Ulong indent;
+  bool  start;
 };
 
-struct bracket_pair
-{
-    Ulong start_line;
-    Ulong end_line;
+struct bracket_pair {
+  Ulong start_line;
+  Ulong end_line;
 };
 
-typedef struct line_word_t
-{
-    char        *str;
-    Ushort       start;
-    Ushort       end;
-    Ushort       len;
-    line_word_t *next;
+typedef struct line_word_t {
+  char        *str;
+  Ushort       start;
+  Ushort       end;
+  Ushort       len;
+  line_word_t *next;
 } line_word_t;
 
 #define free_node(node) free(node->str), free(node)
 
-typedef struct variable_t
-{
-    char       *type  = NULL;
-    char       *name  = NULL;
-    char       *value = NULL;
-    variable_t *next  = NULL;
-    variable_t *prev  = NULL;
+typedef struct variable_t {
+  char       *type  = nullptr;
+  char       *name  = nullptr;
+  char       *value = nullptr;
+  variable_t *next  = nullptr;
+  variable_t *prev  = nullptr;
 } variable_t;
 
-struct glob_var_t
-{
-    char *type;
-    char *name;
-    char *value;
+struct glob_var_t {
+  char *type;
+  char *name;
+  char *value;
 };
 
-struct local_var_t
-{
-    char *type;
-    char *name;
-    char *value;
-    int   decl_line;
-    int   scope_end;
+struct local_var_t {
+  char *type;
+  char *name;
+  char *value;
+  int   decl_line;
+  int   scope_end;
 };
 
 typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
@@ -548,240 +541,192 @@ typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
 void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
 /* RAII complient way to lock a pthread mutex.  This struct will lock
  * the mutex apon its creation, and unlock it when it goes out of scope. */
-struct pthread_mutex_guard_t
-{
-    pthread_mutex_t *mutex = NULL;
-    explicit pthread_mutex_guard_t(pthread_mutex_t *m)
-        : mutex(m)
-    {
-        if (mutex == NULL)
-        {
-            LOUT_logE("A 'NULL' was passed to 'pthread_mutex_guard_t'.");
-        }
-        else
-        {
-            lock_pthread_mutex(mutex, TRUE);
-        }
+struct pthread_mutex_guard_t {
+  pthread_mutex_t *mutex = nullptr;
+  explicit pthread_mutex_guard_t(pthread_mutex_t *m)
+      : mutex(m) {
+    if (!mutex) {
+      logE("A 'nullptr' was passed to 'pthread_mutex_guard_t'.");
     }
-    ~pthread_mutex_guard_t(void)
-    {
-        if (mutex != NULL)
-        {
-            lock_pthread_mutex(mutex, FALSE);
-        }
+    else {
+      lock_pthread_mutex(mutex, true);
     }
-    pthread_mutex_guard_t(const pthread_mutex_guard_t &)            = delete;
-    pthread_mutex_guard_t &operator=(const pthread_mutex_guard_t &) = delete;
+  }
+  ~pthread_mutex_guard_t(void) {
+    if (mutex) {
+      lock_pthread_mutex(mutex, false);
+    }
+  }
+  pthread_mutex_guard_t(const pthread_mutex_guard_t &)            = delete;
+  pthread_mutex_guard_t &operator=(const pthread_mutex_guard_t &) = delete;
 };
 
 #define vec vec_t
 template <class T>
-class vec_t
-{
-public:
-    vec(std::initializer_list<T> init_list)
+class vec_t {
+ public:
+  vec(initializer_list<T> init_list) {
+    pthread_mutex_init(&mutex, nullptr);
+    pthread_mutex_guard_t guard(&mutex);
+    size    = init_list.size();
+    cap     = size * 2;
+    data    = (T *)malloc(cap * sizeof(T));
+    Ulong i = 0;
+    for (const auto &element : init_list) {
+      data[i++] = element;
+    }
+  }
+
+  vec(void)
+      : cap(10)
+      , size(0) {
+    pthread_mutex_init(&mutex, nullptr);
+    pthread_mutex_guard_t guard(&mutex);
+    data = (T *)malloc(sizeof(T) * cap);
+  }
+
+  vec(const T *array, unsigned long len = 0) {
+    pthread_mutex_init(&mutex, nullptr);
+    pthread_mutex_guard_t guard(&mutex);
+    PROFILE_FUNCTION;
+    if constexpr (std::is_same<char, T>::value) {
+      size  = len ?: strlen(array);
+      cap   = size * 2;
+      data  = (char *)malloc(cap);
+      int i = 0;
+      for (; i < size; (data[i] = array[i]), i++);
+      data[i] = '\0';
+    }
+    else {
+      size = 0;
+      cap  = 10;
+      data = (T *)malloc(sizeof(T) * cap);
+      for (; array[size];
+           (size == cap) ? cap *= 2, data = (T *)realloc(data, sizeof(T) * cap) : 0, data[size] = array[size], size++);
+      data[size] = nullptr;
+    }
+  }
+
+  vec<T> &operator<<=(const T &value) {
+    this->push_back(value);
+    return *this;
+  }
+
+  vec<char> &operator<<=(const char *str) {
+    pthread_mutex_guard_t guard(&this->mutex);
+    unsigned long         str_size = strlen(str);
+    unsigned long         nsize    = this->size + str_size;
+    if (nsize >= this->cap) {
+      this->cap = nsize;
+      this->resize();
+    }
+    memmove(this->data + this->size, str, str_size);
+    this->size        = nsize;
+    this->data[nsize] = '\0';
+    return *this;
+  }
+
+  ~vec(void) {
     {
-        pthread_mutex_init(&mutex, NULL);
-        pthread_mutex_guard_t guard(&mutex);
-        size            = init_list.size();
-        cap             = size * 2;
-        data            = (T *)malloc(cap * sizeof(T));
-        unsigned long i = 0;
-        for (const auto &element : init_list)
-        {
-            data[i++] = element;
+      pthread_mutex_guard_t guard(&mutex);
+      free(data);
+    }
+    pthread_mutex_destroy(&mutex);
+  }
+
+  void push_back(const T &value) {
+    pthread_mutex_guard_t guard(&mutex);
+    if (cap == size) {
+      resize();
+    }
+    data[size++] = value;
+  }
+
+  void pop_back(void) {
+    pthread_mutex_guard_t guard(&mutex);
+    if (size > 0) {
+      --size;
+    }
+  }
+
+  T &operator[](unsigned long index) {
+    pthread_mutex_guard_t guard(&mutex);
+    if (index >= size || index < 0) {
+      logE("Invalid index: '%lu'.", index);
+    }
+    return data[index];
+  }
+
+  unsigned long get_size(void) const {
+    return size;
+  }
+
+  unsigned long get_cap(void) const {
+    return cap;
+  }
+
+  T *begin(void) const {
+    return data;
+  }
+
+  T *end(void) const {
+    return data + size;
+  }
+
+  T *find(const T &value) {
+    for (T *it = begin(); it != end(); ++it) {
+      if constexpr (std::is_same<T, char *>::value) {
+        if (strcmp(*it, value) == 0) {
+          return it;
         }
-    }
-
-    vec(void)
-        : cap(10)
-        , size(0)
-    {
-        pthread_mutex_init(&mutex, NULL);
-        pthread_mutex_guard_t guard(&mutex);
-        data = (T *)malloc(sizeof(T) * cap);
-    }
-
-    vec(const T *array, unsigned long len = 0)
-    {
-        pthread_mutex_init(&mutex, NULL);
-        pthread_mutex_guard_t guard(&mutex);
-        PROFILE_FUNCTION;
-        if constexpr (std::is_same<char, T>::value)
-        {
-            size  = len ?: strlen(array);
-            cap   = size * 2;
-            data  = (char *)malloc(cap);
-            int i = 0;
-            for (; i < size; (data[i] = array[i]), i++);
-            data[i] = '\0';
+      }
+      else {
+        if (*it == value) {
+          return it;
         }
-        else
-        {
-            size = 0;
-            cap  = 10;
-            data = (T *)malloc(sizeof(T) * cap);
-            for (; array[size]; (size == cap) ? cap *= 2, data = (T *)realloc(data, sizeof(T) * cap) : 0,
-                                                          data[size] = array[size], size++);
-            data[size] = NULL;
-        }
+      }
     }
+    return end();
+  }
 
-    vec<T> &
-    operator<<=(const T &value)
-    {
-        this->push_back(value);
-        return *this;
-    }
+ private:
+  void resize(void) {
+    cap *= 2;
+    data = (T *)realloc(data, sizeof(T) * cap);
+  }
 
-    vec<char> &
-    operator<<=(const char *str)
-    {
-        pthread_mutex_guard_t guard(&this->mutex);
-        unsigned long         str_size = strlen(str);
-        unsigned long         nsize    = this->size + str_size;
-        if (nsize >= this->cap)
-        {
-            this->cap = nsize;
-            this->resize();
-        }
-        memmove(this->data + this->size, str, str_size);
-        this->size        = nsize;
-        this->data[nsize] = '\0';
-        return *this;
-    }
-
-    ~vec(void)
-    {
-        {
-            pthread_mutex_guard_t guard(&mutex);
-            free(data);
-        }
-        pthread_mutex_destroy(&mutex);
-    }
-
-    void
-    push_back(const T &value)
-    {
-        pthread_mutex_guard_t guard(&mutex);
-        if (cap == size)
-        {
-            resize();
-        }
-        data[size++] = value;
-    }
-
-    void
-    pop_back(void)
-    {
-        pthread_mutex_guard_t guard(&mutex);
-        if (size > 0)
-        {
-            --size;
-        }
-    }
-
-    T &
-    operator[](unsigned long index)
-    {
-        pthread_mutex_guard_t guard(&mutex);
-        if (index >= size || index < 0)
-        {
-            logE("Invalid index: '%lu'.", index);
-        }
-        return data[index];
-    }
-
-    unsigned long
-    get_size(void) const
-    {
-        return size;
-    }
-
-    unsigned long
-    get_cap(void) const
-    {
-        return cap;
-    }
-
-    T *
-    begin(void) const
-    {
-        return data;
-    }
-
-    T *
-    end(void) const
-    {
-        return data + size;
-    }
-
-    T *
-    find(const T &value)
-    {
-        for (T *it = begin(); it != end(); ++it)
-        {
-            if constexpr (std::is_same<T, char *>::value)
-            {
-                if (strcmp(*it, value) == 0)
-                {
-                    return it;
-                }
-            }
-            else
-            {
-                if (*it == value)
-                {
-                    return it;
-                }
-            }
-        }
-        return end();
-    }
-
-private:
-    void
-    resize(void)
-    {
-        cap *= 2;
-        data = (T *)realloc(data, sizeof(T) * cap);
-    }
-
-    pthread_mutex_t mutex;
-    T              *data;
-    unsigned long   cap;
-    unsigned long   size;
+  pthread_mutex_t mutex;
+  T              *data;
+  unsigned long   cap;
+  unsigned long   size;
 };
 #define vec vec_t
 
-typedef struct
-{
-    char       *full_function;
-    char       *name;
-    char       *return_type;
-    variable_t *params;
-    int         number_of_params;
-    char      **attributes;
-    int         number_of_attributes;
-    int         start_bracket;
-    int         end_braket;
+typedef struct {
+  char       *full_function;
+  char       *name;
+  char       *return_type;
+  variable_t *params;
+  int         number_of_params;
+  char      **attributes;
+  int         number_of_attributes;
+  int         start_bracket;
+  int         end_braket;
 } function_info_t;
 
-struct var_t
-{
-    string type;
-    string name;
-    string value;
-    int    decl_line;
-    int    scope_end;
-    string file;
+struct var_t {
+  string type;
+  string name;
+  string value;
+  int    decl_line;
+  int    scope_end;
+  string file;
 };
 
-struct class_info_t
-{
-    string         name;
-    vector<var_t>  variables;
-    vector<string> methods;
+struct class_info_t {
+  string         name;
+  vector<var_t>  variables;
+  vector<string> methods;
 };
 
 #define LOCAL_VAR_SYNTAX    1
@@ -798,12 +743,11 @@ struct class_info_t
 #define LSP_FUNC            11
 #define LSP_FUNC_PARAM      12
 
-struct syntax_data_t
-{
-    int color;
-    int from_line = -1;
-    int to_line   = -1;
-    int type      = -1;
+struct syntax_data_t {
+  int color;
+  int from_line = -1;
+  int to_line   = -1;
+  int type      = -1;
 };
 
 #define NANO_REG_EXTENDED 1

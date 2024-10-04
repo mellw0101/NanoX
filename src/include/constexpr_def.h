@@ -1,8 +1,6 @@
 /// \file constexpr_def.h
 #pragma once
 #include <Mlib/constexpr.hpp>
-#include <ncursesw/ncurses.h>
-#include <unordered_map>
 
 /* Identifiers for color options. */
 #define TITLE_BAR     0
@@ -253,8 +251,9 @@ constexpr_map<std::string_view, unsigned char, 94> flagOptionsMap = {
 #define CLI_OPT_BACKUPDIR      (1 << 12)
 #define CLI_OPT_BREAKLONGLINES (1 << 13)
 #define CLI_OPT_GUI            (1 << 14)
+#define CLI_OPT_SAFE           (1 << 15)
 /* The command line options map. */
-constexpr_map<std::string_view, unsigned int, 26> cliOptionMap = {
+constexpr_map<std::string_view, unsigned int, 27> cliOptionMap = {
     {{"-I", CLI_OPT_IGNORERCFILE},
      {"--ignorercfiles", CLI_OPT_IGNORERCFILE},
      {"-V", CLI_OPT_VERSION},
@@ -280,7 +279,8 @@ constexpr_map<std::string_view, unsigned int, 26> cliOptionMap = {
      {"--listsyntaxes", CLI_OPT_LISTSYNTAX},
      {"-b", CLI_OPT_BREAKLONGLINES},
      {"--breaklonglines", CLI_OPT_BREAKLONGLINES},
-     {"--gui", CLI_OPT_GUI}}
+     {"--gui", CLI_OPT_GUI},
+     {"--safe", CLI_OPT_SAFE}}
 };
 
 #define NUMBER_OF_FLAGS 51
@@ -365,9 +365,9 @@ constexpr_map<unsigned int, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap 
 #define MYESNO       (1 << 13)
 #define MLINTER      (1 << 14)
 #define MFINDINHELP  (1 << 15)
-#define MMOST                                                                                                      \
-    (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | \
-     MGOTODIR | MFINDINHELP | MSPELL | MLINTER)
+#define MMOST                                                                                                    \
+  (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | \
+   MGOTODIR | MFINDINHELP | MSPELL | MLINTER)
 #define MSOME (MMOST | MBROWSER)
 /* The menus map. */
 constexpr_map<std::string_view, unsigned short, 16> menuOptionMap = {
@@ -472,14 +472,12 @@ constexpr_map<std::string_view, unsigned int, 31> c_syntax_map = {
      {"do", CS_DO}}
 };
 
-constexpr unsigned int hash_string(const char *str, int h = 0)
-{
-    return !str[h] ? 5381 : (hash_string(str, h + 1) * 33) ^ str[h];
+constexpr unsigned int hash_string(const char *str, int h = 0) {
+  return !str[h] ? 5381 : (hash_string(str, h + 1) * 33) ^ str[h];
 }
 
-constexpr unsigned int operator""_uint_hash(const char *str, unsigned long)
-{
-    return hash_string(str);
+constexpr unsigned int operator""_uint_hash(const char *str, unsigned long) {
+  return hash_string(str);
 }
 
 constexpr int define_hash  = hash_string("define");
@@ -515,36 +513,29 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
      {"undef", 9}}
 };
 
-#define STRSTR(return_str, haystack, needle)      \
-    do                                            \
-    {                                             \
-        return_str = NULL;                        \
-        if (!*needle)                             \
-        {                                         \
-            return_str = (haystack);              \
-            break;                                \
-        }                                         \
-        for (const char *h = (haystack); *h; ++h) \
-        {                                         \
-            const char *n     = (needle);         \
-            const char *start = h;                \
-            while (*start && *n && *start == *n)  \
-            {                                     \
-                ++start;                          \
-                ++n;                              \
-            }                                     \
-            if (!*n)                              \
-            {                                     \
-                return_str = h;                   \
-                break;                            \
-            }                                     \
-        }                                         \
-    }                                             \
-    while (FALSE)
+#define STRSTR(return_str, haystack, needle)    \
+  do {                                          \
+    return_str = NULL;                          \
+    if (!*needle) {                             \
+      return_str = (haystack);                  \
+      break;                                    \
+    }                                           \
+    for (const char *h = (haystack); *h; ++h) { \
+      const char *n     = (needle);             \
+      const char *start = h;                    \
+      while (*start && *n && *start == *n) {    \
+        ++start;                                \
+        ++n;                                    \
+      }                                         \
+      if (!*n) {                                \
+        return_str = h;                         \
+        break;                                  \
+      }                                         \
+    }                                           \
+  }                                             \
+  while (FALSE)
 
-#define ADV_PTR_BY_CH(ptr, ch)          \
-    for (; *ptr && (*ptr != ch); ptr++) \
-        ;
+#define ADV_PTR_BY_CH(ptr, ch)     for (; *ptr && (*ptr != ch); ptr++);
 
 #define ADV_PTR_TO_CH(ptr, ch)     for (; *ptr && (*ptr != ch); ptr++)
 #define adv_ptr_to_ch(ptr, ch)     for (; *ptr && (*ptr != ch); ptr++)
@@ -564,11 +555,10 @@ constexpr_map<std::string_view, unsigned int, 9> c_preprossesor_map = {
 #define dcr_to_prev_ch(ptr, until) dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
 #define DCR_TO_PREV_CH(ptr, until) dcr_ptr(ptr, until, (*ptr == ' ' || *ptr == '\t'))
 #define dcr_to_prev_ch_on_fail(ptr, until, apon_failure) \
-    dcr_to_prev_ch(ptr, until);                          \
-    if (ptr == until)                                    \
-    {                                                    \
-        apon_failure                                     \
-    }
+  dcr_to_prev_ch(ptr, until);                            \
+  if (ptr == until) {                                    \
+    apon_failure                                         \
+  }
 #define dcr_past_prev_word(ptr, until) dcr_ptr(ptr, until, (*ptr != ' ' && *ptr != '\t'))
 #define DCR_PAST_PREV_WORD(ptr, until) dcr_ptr(ptr, until, (*ptr != ' ' && *ptr != '\t'))
 

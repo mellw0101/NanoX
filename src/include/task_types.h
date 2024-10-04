@@ -25,17 +25,15 @@ TASK_STRUCT(add_c_syntax_task_t, char *color_fg; char *color_bg; char *rgxstr; c
 TASK_STRUCT(compile_rgx_task_t, char *rgxstr, *color_fg, *color_bg; regex_t * rgx; short fg, bg; int attr;
             colortype * *last_c;)
 
-typedef struct syntax_word_t
-{
-    char          *str;
-    char          *return_type;
-    syntax_word_t *next;
+typedef struct syntax_word_t {
+  char          *str;
+  char          *return_type;
+  syntax_word_t *next;
 } syntax_word_t;
 
-typedef struct syntax_search_t
-{
-    syntax_word_t *functions_head;
-    syntax_word_t *functions_tail;
+typedef struct syntax_search_t {
+  syntax_word_t *functions_head;
+  syntax_word_t *functions_tail;
 } syntax_search_t;
 
 /* Signal struct`s. */
@@ -45,24 +43,19 @@ TASK_STRUCT(main_thread_t, pthread_t thread; pid_t pid;)
 bool is_main_thread(void);
 void pause_all_sub_threads(bool pause);
 
-struct pause_sub_threads_guard_t
-{
-    bool from_main_thread;
-    explicit pause_sub_threads_guard_t(void)
-        : from_main_thread(is_main_thread())
-    {
-        if (from_main_thread)
-        {
-            pause_all_sub_threads(TRUE);
-        }
+struct pause_sub_threads_guard_t {
+  bool from_main_thread;
+  explicit pause_sub_threads_guard_t(void)
+      : from_main_thread(is_main_thread()) {
+    if (from_main_thread) {
+      pause_all_sub_threads(TRUE);
     }
-    ~pause_sub_threads_guard_t(void)
-    {
-        if (from_main_thread)
-        {
-            pause_all_sub_threads(FALSE);
-        }
+  }
+  ~pause_sub_threads_guard_t(void) {
+    if (from_main_thread) {
+      pause_all_sub_threads(FALSE);
     }
-    pause_sub_threads_guard_t(const pause_sub_threads_guard_t &)            = delete;
-    pause_sub_threads_guard_t &operator=(const pause_sub_threads_guard_t &) = delete;
+  }
+  pause_sub_threads_guard_t(const pause_sub_threads_guard_t &)            = delete;
+  pause_sub_threads_guard_t &operator=(const pause_sub_threads_guard_t &) = delete;
 };

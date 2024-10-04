@@ -1,7 +1,7 @@
 #include "../include/prototypes.h"
 
-static Uint block_comment_start = (unsigned int)-1;
-static Uint block_comment_end   = (unsigned int)-1;
+static Uint block_comment_start = (Uint)-1;
+static Uint block_comment_end   = (Uint)-1;
 static int  color_bi[3]         = {FG_VS_CODE_YELLOW, FG_VS_CODE_BRIGHT_MAGENTA, FG_VS_CODE_BRIGHT_BLUE};
 
 vec<char *>          includes;
@@ -12,23 +12,22 @@ vec<char *>          funcs;
 vec<glob_var_t>      glob_vars;
 vec<function_info_t> local_funcs;
 
-static int           row       = 0;
-static const char   *converted = nullptr;
-static linestruct   *line      = nullptr;
-static unsigned long from_col  = 0;
+static int         row       = 0;
+static const char *converted = nullptr;
+static linestruct *line      = nullptr;
+static Ulong       from_col  = 0;
 
 char              suggest_buf[1024] = "";
 char             *suggest_str       = nullptr;
 int               suggest_len       = 0;
 vec<const char *> types             = {
-    "void", "char",  "int",   "unsigned", "extern",  "volatile", "static",
-    "long", "short", "const", "bool",     "typedef", "class",
+  "void", "char",  "int",   "unsigned", "extern",  "volatile", "static",
+  "long", "short", "const", "bool",     "typedef", "class",
 };
 
-// std::unordered_map<std::string_view, syntax_data_t> color_map;
-std::unordered_map<std::string, syntax_data_t> test_map;
-vector<class_info_t>                           class_info_vector;
-vector<var_t>                                  var_vector;
+unordered_map<string, syntax_data_t> test_map;
+vector<class_info_t>                 class_info_vector;
+vector<var_t>                        var_vector;
 
 void render_part(Ulong match_start, Ulong match_end, short color) {
   PROFILE_FUNCTION;
@@ -59,7 +58,7 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
     start = end;
     ADV_PTR(end, (end <= stop) && (*end != ' ' && *end != '\t'));
     end += 1;
-    rendr(R, color, start, end);
+    RENDR(R, color, start, end);
   }
 }
 
@@ -67,15 +66,15 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
  * text and nothing else. */
 void render_line_text(const int row, const char *str, linestruct *line, const Ulong from_col) {
   if (margin > 0) {
-    win_color_on(midwin, LINE_NUMBER);
+    WIN_COLOR_ON(midwin, LINE_NUMBER);
     if (ISSET(SOFTWRAP) && from_col != 0) {
       mvwprintw(midwin, row, 0, "%*s", margin - 1, " ");
     }
     else {
       mvwprintw(midwin, row, 0, "%*lu", margin - 1, line->lineno);
     }
-    win_color_off(midwin, LINE_NUMBER);
-    if (line->has_anchor == TRUE && (from_col == 0 || !ISSET(SOFTWRAP))) {
+    WIN_COLOR_OFF(midwin, LINE_NUMBER);
+    if (line->has_anchor == true && (from_col == 0 || !ISSET(SOFTWRAP))) {
       if (using_utf8()) {
         wprintw(midwin, "\xE2\xAC\xA5");
       }
@@ -98,7 +97,7 @@ void render_line_text(const int row, const char *str, linestruct *line, const Ul
 
 /* Set start and end pos for comment block or if the entire
  * line is inside of a block comment set 'block_comment_start'
- * to '0' and 'block_comment_end' to '(unsigned int)-1'. */
+ * to '0' and 'block_comment_end' to '(Uint)-1'. */
 void render_comment(void) {
   const char *start = strstr(line->data, "/*");
   const char *end   = strstr(line->data, "*/");
@@ -108,9 +107,9 @@ void render_comment(void) {
     block_comment_start = (start - line->data);
     block_comment_end   = (end - line->data + 2);
     /* If slash comment found, adjust the start and end pos correctly. */
-    if (slash != NULL && (slash - line->data) < block_comment_start) {
+    if (slash && (slash - line->data) < block_comment_start) {
       block_comment_start = (slash - line->data);
-      block_comment_end   = (unsigned int)-1;
+      block_comment_end   = (Uint)-1;
     }
     line->flags.set<SINGLE_LINE_BLOCK_COMMENT>();
     line->flags.unset<BLOCK_COMMENT_START>();
@@ -126,7 +125,7 @@ void render_comment(void) {
         /* If there is a slash comment infront the block comment. Then
          * of cource we still color the text from the slash to the block
          * start after we error highlight the block start. */
-        if (slash != NULL && (slash - line->data) < (start - line->data)) {
+        if (slash && (slash - line->data) < (start - line->data)) {
           midwin_mv_add_nstr_color(row, (wideness(line->data, (slash - line->data))) + margin, slash,
                                    (start - line->data) - (slash - line->data), FG_GREEN);
         }
@@ -140,31 +139,30 @@ void render_comment(void) {
     }
     else if ((start - line->data) + 1 == (end - line->data)) {
       end = strstr(end + 2, "*/");
-      if (end != NULL) {
+      if (end) {
         block_comment_end = (end - line->data) + 2;
       }
       else {
-        block_comment_end = (unsigned int)-1;
+        block_comment_end = (Uint)-1;
         line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
         line->flags.set<BLOCK_COMMENT_START>();
       }
     }
-    while (start != NULL && end != NULL) {
-      /* TODO: Here we need to fix the issue of multiple block comments on
-       * a single line. */
+    while (start && end) {
+      /** TODO: Here we need to fix the issue of multiple block comments on a single line. */
       start = strstr(start + 2, "/*");
       end   = strstr(end + 2, "*/");
       slash = strstr(slash ? slash + 2 : line->data, "//");
-      if (start != NULL && end != NULL) {
-        const unsigned long match_start = (start - line->data);
-        const unsigned long match_end   = (end - line->data) + 2;
+      if (start && end) {
+        const Ulong match_start = (start - line->data);
+        const Ulong match_end   = (end - line->data) + 2;
         render_part(match_start, match_end, FG_GREEN);
       }
-      else if (start == NULL && end != NULL) {
+      else if (!start && end) {
         midwin_mv_add_nstr_color(row, PTR_POS_LINE(line, end), end, 2, ERROR_MESSAGE);
       }
-      else if (start != NULL && end == NULL) {
-        const unsigned long match_start = (start - line->data);
+      else if (start && !end) {
+        const Ulong match_start = (start - line->data);
         render_part(match_start, till_x, FG_GREEN);
       }
     }
@@ -178,7 +176,7 @@ void render_comment(void) {
      * while the block above it being a start block or inside a block. */
     if (line->prev &&
         (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>())) {
-      rendr(R_LEN, ERROR_MESSAGE, start, 2);
+      RENDR(R_LEN, ERROR_MESSAGE, start, 2);
       block_comment_start = (start - line->data) + 2;
     }
     /* If a slash comment is found and it is before the block start,
@@ -242,17 +240,17 @@ void render_comment(void) {
       line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
     }
     /* If slash if found and is before block end. */
-    else if (slash != NULL && (slash - line->data) < (end - line->data)) {
+    else if (slash && (slash - line->data) < (end - line->data)) {
       block_comment_start = (slash - line->data);
       block_comment_end   = till_x;
       render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
     }
     /* If not, error highlight the end block. */
     else {
-      rendr(R_LEN, ERROR_MESSAGE, end, 2);
+      RENDR(R_LEN, ERROR_MESSAGE, end, 2);
     }
   }
-  refresh_needed = TRUE;
+  refresh_needed = true;
 }
 
 /* Color brackets based on indent.  TODO: This needs to be fix. */
@@ -262,46 +260,42 @@ void render_bracket(void) {
   /* Bracket start and end on the same line. */
   if (start && end) {
     while (start) {
-      rendr(R_CHAR, FG_VS_CODE_YELLOW, start);
+      RENDR(R_CHAR, FG_VS_CODE_YELLOW, start);
       if (line->data[(start - line->data) + 1] == '\0') {
-        start = NULL;
+        start = nullptr;
         continue;
       }
       start = strchr(start + 1, '{');
     }
     while (end) {
-      rendr(R_CHAR, FG_VS_CODE_YELLOW, end);
-      unsigned int last_pos = last_strchr(line->data, '}', (end - line->data));
+      RENDR(R_CHAR, FG_VS_CODE_YELLOW, end);
+      Uint last_pos = last_strchr(line->data, '}', (end - line->data));
       if (last_pos < till_x && last_pos != 0) {
         end = &line->data[last_pos];
       }
       else {
-        end = NULL;
+        end = nullptr;
       }
     }
-    if (line->prev && (line->prev->flags.is_set(IN_BRACKET) || line->prev->flags.is_set(BRACKET_START))) {
-      line->flags.set(IN_BRACKET);
+    if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
+      line->flags.set<IN_BRACKET>();
     }
   }
   /* Start bracket line was found. */
   else if (start && !end) {
-    line->flags.set(BRACKET_START);
-    rendr(R_CHAR, color_bi[(line_indent(line) % 3)], start);
-    if (line->prev && (line->prev->flags.is_set(IN_BRACKET) || line->prev->flags.is_set(BRACKET_START))) {
-      line->flags.set(IN_BRACKET);
-    }
-    /* TODO: Find better trigger to recheck current func. */
-    else {
-      find_current_function(line->next);
+    line->flags.set<BRACKET_START>();
+    RENDR(R_CHAR, color_bi[(line_indent(line) % 3)], start);
+    if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
+      line->flags.set<IN_BRACKET>();
     }
   }
   /* End bracket line was found. */
   else if (!start && end) {
-    line->flags.set(IN_BRACKET);
-    line->flags.unset(BRACKET_START);
-    rendr(R_CHAR, color_bi[(line_indent(line) % 3)], end);
-    for (linestruct *t_line = line->prev; t_line; t_line = t_line->prev) {
-      if (t_line->flags.is_set(BRACKET_START)) {
+    line->flags.set<IN_BRACKET>();
+    line->flags.unset<BRACKET_START>();
+    RENDR(R_CHAR, color_bi[(line_indent(line) % 3)], end);
+    for (linestruct *t_line = line->prev; t_line != nullptr; t_line = t_line->prev) {
+      if (t_line->flags.is_set<BRACKET_START>()) {
         if (line_indent(t_line) == line_indent(line)) {
           if (t_line->prev && t_line->prev->flags.is_set(IN_BRACKET)) {
             line->flags.set(IN_BRACKET);
@@ -316,11 +310,11 @@ void render_bracket(void) {
   }
   /* Was not found. */
   else if (!start && !end) {
-    if (line->prev && (line->prev->flags.is_set(IN_BRACKET) || line->prev->flags.is_set(BRACKET_START))) {
-      line->flags.set(IN_BRACKET);
+    if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
+      line->flags.set<IN_BRACKET>();
     }
     else {
-      line->flags.unset(IN_BRACKET);
+      line->flags.unset<IN_BRACKET>();
     }
   }
 }
@@ -347,9 +341,9 @@ void render_parents(void) {
 void render_string_literals(void) {
   const char *start = line->data;
   const char *end   = nullptr;
-  while ((start = strchr(start, '"')) != nullptr) {
+  while ((start = strchr(start, '"'))) {
     end = strchr(start + 1, '"');
-    if (end != nullptr) {
+    if (end) {
       render_part((start - line->data), (end - line->data) + 1, FG_YELLOW);
     }
     else {
@@ -362,7 +356,7 @@ void render_string_literals(void) {
 /* Function to handle char strings inside other strings or just in general. */
 void render_char_strings(void) {
   const char *start = line->data, *end = line->data;
-  while (start != NULL) {
+  while (start != nullptr) {
     for (; *end && *end != '\''; end++);
     if (*end != '\'') {
       return;
@@ -374,8 +368,8 @@ void render_char_strings(void) {
       return;
     }
     end++;
-    const unsigned long match_start = (start - line->data);
-    const unsigned long match_end   = (end - line->data);
+    const Ulong match_start = (start - line->data);
+    const Ulong match_end   = (end - line->data);
     if (match_start >= block_comment_start && match_end <= block_comment_end) {
       return;
     }
@@ -388,7 +382,7 @@ void rendr_define(Uint index) {
   const char *start = nullptr, *end = nullptr, *param = nullptr;
   char       *word = nullptr;
   start            = &line->data[index];
-  if (*start == '\0') {
+  if (!*start) {
     RENDR(E, "<-(Macro name missing)");
     return;
   }
@@ -419,12 +413,12 @@ void rendr_define(Uint index) {
         break;
       }
       RENDR(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
-      (word != NULL) ? free(word) : void();
+      (word != nullptr) ? free(word) : void();
       word = measured_copy(start, (end - start));
       params.push_back(string(word));
       param = strstr(end, word);
-      if (param != NULL) {
-        while (param != NULL) {
+      if (param) {
+        while (param) {
           const char *ps = &line->data[(param - line->data) - 1];
           const char *pe = &param[(end - start)];
           if ((*pe == ' ' || *pe == ')' || *pe == ',') && (*ps == ' ' || *ps == '(' || *ps == ',')) {
@@ -438,15 +432,15 @@ void rendr_define(Uint index) {
         break;
       }
       else if (*end == ' ') {
-        adv_ptr(end, (*end == ' ' || *end == '\t'));
+        ADV_PTR(end, (*end == ' ' || *end == '\t'));
         if (*end == ')') {
           break;
         }
         else if (*end != ',') {
           start = end;
-          adv_ptr(end, (*end != ')' && *end != ',' && *end != ' ' && *end != '\t'));
-          rendr(R, ERROR_MESSAGE, start, end);
-          rendr(E, "<-(Expected comma)");
+          ADV_PTR(end, (*end != ')' && *end != ',' && *end != ' ' && *end != '\t'));
+          RENDR(R, ERROR_MESSAGE, start, end);
+          RENDR(E, "<-(Expected comma)");
           if (*end == ')') {
             break;
           }
@@ -472,28 +466,21 @@ void rendr_define(Uint index) {
   }
   if (*start == '\\') {
     int    end_lineno;
-    string full_decl = LSP.parse_full_pp_delc(line, &start, &end_lineno);
-    NLOG("%s\n", full_decl.c_str());
-    if (line->next != nullptr) {
+    string full_decl = parse_full_define(line, &start, &end_lineno);
+    if (!line->next) {
       remove_from_color_map(line->next, FG_VS_CODE_BLUE, DEFINE_PARAM_SYNTAX);
-      for (int i = 0; i < params.size(); i++) {
-        NLOG("param: %s\n", params[i].c_str());
+      for (int i = 0; i < params.size(); ++i) {
         const auto &it = test_map.find(params[i]);
         if (it == test_map.end()) {
           test_map[params[i]] = {
-              FG_VS_CODE_BLUE,
-              (int)line->next->lineno,
-              end_lineno,
-              DEFINE_PARAM_SYNTAX,
+            FG_VS_CODE_BLUE,
+            (int)line->next->lineno,
+            end_lineno,
+            DEFINE_PARAM_SYNTAX,
           };
-          /* if (it->second.type != DEFINE_PARAM_SYNTAX)
-          {
-              continue;
-          } */
         }
       }
     }
-    NLOG("end_lineno: %i\n\n", end_lineno);
   }
   else if (*end == '(') {
     RENDR(R, FG_VS_CODE_BRIGHT_YELLOW, start, end);
@@ -503,119 +490,39 @@ void rendr_define(Uint index) {
   }
 }
 
-void rendr_include(unsigned int index) {
+void rendr_include(Uint index) {
   const char *start = &line->data[index];
   const char *end   = start;
   if (*start == '"') {
     end += 1;
   }
-  adv_ptr(end, (*end != '>' && *end != '"'));
+  ADV_PTR(end, (*end != '>' && *end != '"'));
   if (*end != '\0') {
     if (*start == '<' && *end == '>') {
-      end += 1;
-      rendr(C_PTR, FG_YELLOW, start, end);
-      /* TODO: enable later once local file rendering includes all types.
-       */
-      /*
-      char       *file      = measured_copy(start + 1, (end - start) - 2);
-      const char *full_path = concat_path("/usr/include/", file);
-      for (int i = 0; i < includes.get_size(); i++)
-      {
-          if (strcmp(includes[i], file) == 0)
-          {
-              free(file);
-              return;
-          }
-      }
-      includes.push_back(file);
-      get_line_list_task(full_path);
-      if (is_file_and_exists(full_path))
-      {
-          includes.push_back(file);
-          check_include_file_syntax(full_path);
-      }
-      else if (file != NULL)
-      {
-          free(file);
-      } */
+      ++end;
+      RENDR(C_PTR, FG_YELLOW, start, end);
     }
     else if (*start == '"' && *end == '"') {
-      end += 1;
+      ++end;
       render_part((start - line->data), (end - line->data), FG_YELLOW);
-      /*
-
-      char *path = measured_memmove_copy(start + 1, (end - start) - 2);
-      char *pwd  = alloced_full_current_file_dir();
-      char *full_path = alloc_str_free_substrs(pwd, path);
-      for (const auto &i : includes)
-      {
-          if (strcmp(full_path, i) == 0)
-          {
-              free(full_path);
-              return;
-          }
-      }
-      includes.push_back(full_path);
-      get_line_list_task(full_path);
-      if (is_file_and_exists(full_path))
-      {
-          includes.push_back(full_path);
-          find_functions_task(full_path);
-          find_glob_vars_task(full_path);
-      } */
-      /*
-      { */
-      /* char **func_vec = find_functions_in_file(full_path);
-      if (func_vec != NULL)
-      {
-          for (int i = 0; func_vec[i]; i++)
-          {
-              function_info_t *info = parse_func(func_vec[i]);
-              char            *name = copy_of(info->name);
-              free_function_info(info);
-              color_map[name] = FG_VS_CODE_BRIGHT_YELLOW;
-          }
-      }
-      free(func_vec); */
-      /* char **var_vec = find_variabels_in_file(full_path);
-      if (var_vec)
-      {
-          for (int i = 0; var_vec[i]; i++)
-          {
-              // nlog("%s\n", var_vec[i]);
-              glob_var_t gvar;
-              parse_variable(
-                  var_vec[i], &gvar.type, &gvar.name, &gvar.value);
-              if (gvar.name)
-              {
-                  color_map[gvar.name] = FG_VS_CODE_BRIGHT_CYAN;
-                  glob_vars.push_back(gvar);
-              }
-          }
-          free(var_vec);
-      }
-      includes.push_back(full_path);
-      return;
-      }
-      free(full_path); */
     }
     else {
-      end += 1;
-      rendr(C_PTR, ERROR_MESSAGE, start, end);
+      ++end;
+      RENDR(C_PTR, ERROR_MESSAGE, start, end);
     }
   }
   else {
-    rendr(C_PTR, ERROR_MESSAGE, start, end);
+    RENDR(C_PTR, ERROR_MESSAGE, start, end);
   }
   start = end;
   while (*end) {
-    adv_ptr(end, (*end == ' ' || *end == '\t'));
+    ADV_PTR(end, (*end == ' ' || *end == '\t'));
     if (*end == '\0') {
       break;
     }
     start = end;
-    adv_ptr(end, (*end != ' ' && *end != '\t'));
-    rendr(R, ERROR_MESSAGE, start, end);
+    ADV_PTR(end, (*end != ' ' && *end != '\t'));
+    RENDR(R, ERROR_MESSAGE, start, end);
   }
 }
 
@@ -623,14 +530,14 @@ void rendr_include(unsigned int index) {
 void rendr_if_preprosses(Uint index) {
   const char *start   = &line->data[index];
   const char *defined = strstr(start, "defined");
-  while (defined != NULL) {
+  while (defined != nullptr) {
     start = defined;
     defined += 7;
     if (*defined && *defined == ' ') {
-      rendr(R, FG_VS_CODE_BLUE, start, defined);
+      RENDR(R, FG_VS_CODE_BLUE, start, defined);
     }
     else {
-      rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, defined);
+      RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, defined);
     }
     const char *parent_start = defined;
     const char *parent_end   = defined;
@@ -648,34 +555,34 @@ void rendr_if_preprosses(Uint index) {
           render_part((parent_start - line->data) - 1, (parent_end - line->data) + 1, ERROR_MESSAGE);
         }
         else if (p == parent_end) {
-          rendr(R, FG_VS_CODE_BLUE, parent_start, parent_end);
+          RENDR(R, FG_VS_CODE_BLUE, parent_start, parent_end);
         }
         else {
-          rendr(C_PTR, ERROR_MESSAGE, parent_start, parent_end);
+          RENDR(C_PTR, ERROR_MESSAGE, parent_start, parent_end);
         }
         parent_start += 1;
         parent_end += 1;
         p                     = parent_end - 1;
-        const char *error_end = NULL;
+        const char *error_end = nullptr;
         while (*p && *p != '&' && *p != '|') {
           p += 1;
-          adv_ptr(p, (*p != '&') && (*p != '|') && (*p != '(') && (*p != ')'));
+          ADV_PTR(p, (*p != '&') && (*p != '|') && (*p != '(') && (*p != ')'));
           if (*p == '(' || *p == ')') {
             error_end = p;
           }
         }
-        if (error_end != NULL) {
+        if (error_end != nullptr) {
           error_end += 1;
-          rendr(C_PTR, ERROR_MESSAGE, start, error_end);
+          RENDR(C_PTR, ERROR_MESSAGE, start, error_end);
         }
         break;
       }
       else if ((*parent_start == '\0' && *parent_end != '\0') || (*parent_start != '\0' && *parent_end == '\0')) {
         if (*parent_start != '\0') {
-          rendr(R_CHAR, ERROR_MESSAGE, parent_start);
+          RENDR(R_CHAR, ERROR_MESSAGE, parent_start);
         }
         else {
-          rendr(R_CHAR, ERROR_MESSAGE, parent_end);
+          RENDR(R_CHAR, ERROR_MESSAGE, parent_end);
         }
         break;
       }
@@ -688,88 +595,79 @@ void rendr_if_preprosses(Uint index) {
  * syntax.  TODO: Create a structured way to parse, and then create a
  * system to include error handeling in real-time. */
 void render_preprossesor(void) {
-  char       *current_word = NULL;
+  char       *current_word = nullptr;
   const char *start        = strchr(line->data, '#');
-  const char *end          = NULL;
-  if (start != NULL) {
-    rendr(R_CHAR, FG_VS_CODE_BRIGHT_MAGENTA, start);
-    start += 1;
-    if (*start == '\0') {
+  const char *end          = nullptr;
+  if (start) {
+    RENDR(R_CHAR, FG_VS_CODE_BRIGHT_MAGENTA, start);
+    ++start;
+    if (!*start) {
       return;
     }
     end = start;
-    adv_ptr(end, (*end == ' ' || *end == '\t'));
-    if (*end == '\0') {
+    ADV_PTR(end, (*end == ' ' || *end == '\t'));
+    if (!*end) {
       return;
     }
     start = end;
-    adv_ptr(end, (*end != ' ' && *end != '\t'));
+    ADV_PTR(end, (*end != ' ' && *end != '\t'));
     if (end == start) {
       return;
     }
     current_word   = measured_copy(start, (end - start));
     const int type = hash_string(current_word);
     switch (type) {
-      case define_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
-        adv_ptr(end, (*end == ' ' || *end == '\t'));
+      case define_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+        ADV_PTR(end, (*end == ' ' || *end == '\t'));
         if (!*end) {
           break;
         }
         rendr_define((end - line->data));
         break;
       }
-      case if_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
-        adv_ptr(end, (*end == ' ' || *end == '\t'));
+      case if_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+        ADV_PTR(end, (*end == ' ' || *end == '\t'));
         rendr_if_preprosses((end - line->data));
         break;
       }
-      case endif_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+      case endif_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         break;
       }
-      case ifndef_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+      case ifndef_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         get_next_word(&start, &end);
-        rendr(R, FG_VS_CODE_BLUE, start, end);
+        RENDR(R, FG_VS_CODE_BLUE, start, end);
         break;
       }
-      case pragma_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+      case pragma_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         get_next_word(&start, &end);
-        rendr(R, FG_LAGOON, start, end);
+        RENDR(R, FG_LAGOON, start, end);
         break;
       }
-      case ifdef_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+      case ifdef_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         get_next_word(&start, &end);
-        rendr(R, FG_VS_CODE_BLUE, start, end);
+        RENDR(R, FG_VS_CODE_BLUE, start, end);
         break;
       }
-      case else_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+      case else_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         break;
       }
-      case include_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
-        adv_ptr(end, (*end == ' ' || *end == '\t'));
+      case include_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+        ADV_PTR(end, (*end == ' ' || *end == '\t'));
         rendr_include((end - line->data));
         break;
       }
-      case "undef"_uint_hash :
-      {
-        rendr(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+      case "undef"_uint_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         get_next_word(&start, &end);
-        rendr(R, FG_VS_CODE_BLUE, start, end);
+        RENDR(R, FG_VS_CODE_BLUE, start, end);
         break;
       }
         /* case "error"_uint_hash :
@@ -798,25 +696,24 @@ void render_preprossesor(void) {
 
 void render_control_statements(Ulong index) {
   switch (line->data[index]) {
-    case 'e' : /* else */
-    {
-      unsigned long else_indent = line_indent(line);
-      unsigned long indent;
-      const char   *if_found = NULL;
-      int           i        = 0;
-      for (linestruct *l = line->prev; l != NULL && (i < 500); l = l->prev, i++) {
+    case 'e' : /* else */ {
+      Ulong       else_indent = line_indent(line);
+      Ulong       indent;
+      const char *if_found = nullptr;
+      int         i        = 0;
+      for (linestruct *l = line->prev; l != nullptr && (i < 500); l = l->prev, i++) {
         indent = line_indent(l);
         if (indent <= else_indent) {
           if_found = strstr(l->data, "if");
-          if (if_found != NULL) {
+          if (if_found) {
             break;
           }
         }
       }
-      if (if_found == NULL || indent != else_indent) {
-        rendr(E, "<- Misleading indentation");
+      if (if_found == nullptr || indent != else_indent) {
+        RENDR(E, "<- Misleading indentation");
         /* Add BG_YELLOW. */
-        rendr(R, ERROR_MESSAGE, &line->data[index], &line->data[index + 4]);
+        RENDR(R, ERROR_MESSAGE, &line->data[index], &line->data[index + 4]);
       }
       break;
     }
@@ -828,12 +725,12 @@ void rendr_glob_vars(void) {
       line->flags.is_set(BLOCK_COMMENT_START) || line->flags.is_set(BLOCK_COMMENT_END)) {
     return;
   }
-  const char *data    = NULL;
-  const char *start   = NULL;
-  bool        in_func = FALSE;
+  const char *data    = nullptr;
+  const char *start   = nullptr;
+  bool        in_func = false;
   for (const auto &f : local_funcs) {
     if (line->lineno >= f.start_bracket && line->lineno <= f.end_braket) {
-      in_func = TRUE;
+      in_func = true;
       break;
     }
   }
@@ -845,14 +742,14 @@ void rendr_glob_vars(void) {
       glob_var_t ngvar;
       parse_variable(str, &ngvar.type, &ngvar.name, &ngvar.value);
       if (ngvar.name) {
-        bool found = FALSE;
+        bool found = false;
         for (const auto &gv : glob_vars) {
           if (strcmp(gv.name, ngvar.name) == 0) {
-            found = TRUE;
+            found = true;
             break;
           }
         }
-        if (found == FALSE) {
+        if (found == false) {
           const auto &it = test_map.find(ngvar.name);
           if (it == test_map.end()) {
             test_map[ngvar.name].color = FG_VS_CODE_BRIGHT_CYAN;
@@ -871,8 +768,8 @@ void rendr_classes(void) {
   const char *found = word_strstr(line->data, "class");
   if (found) {
     remove_from_color_map(line, FG_VS_CODE_GREEN, CLASS_SYNTAX);
-    const char *start = NULL;
-    const char *end   = NULL;
+    const char *start = nullptr;
+    const char *end   = nullptr;
     start             = found;
     start += "class"_sllen;
     ADV_PTR(start, (*start == ' ' || *start == '\t'));
@@ -891,7 +788,7 @@ void rendr_classes(void) {
       /* And if there is something other then '{'
        * or null-terminator.  We print error. */
       if (*end != '\0' && *end != '{') {
-        rendr(E, "<-(Expected one word as class name)");
+        RENDR(E, "<-(Expected one word as class name)");
         return;
       }
     }
@@ -904,7 +801,7 @@ void rendr_classes(void) {
     add_rm_color_map(name, {FG_VS_CODE_GREEN, (int)line->lineno, 100000, CLASS_SYNTAX});
     class_info_t class_info;
     class_info.name = name;
-    /* const char *func_found = NULL;
+    /* const char *func_found = nullptr;
     for (linestruct *cl = line; cl->lineno < end_line; cl = cl->next)
     {
         func_found = strchr(cl->data, '(');
@@ -955,10 +852,10 @@ void rendr_structs(int index) {
   string name(start, (end - start));
   if (test_map.find(name) == test_map.end()) {
     test_map[name] = {
-        FG_VS_CODE_GREEN,
-        (int)line->lineno,
-        100000,
-        STRUCT_SYNTAX,
+      FG_VS_CODE_GREEN,
+      (int)line->lineno,
+      100000,
+      STRUCT_SYNTAX,
     };
   }
 }
@@ -1018,9 +915,8 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
   ::line      = line;
   ::from_col  = from_col;
   if (openfile->type.is_set<C_CPP>()) {
-    render_function();
     render_comment();
-    if (line->data[0] == '\0' || (block_comment_start == 0 && block_comment_end == till_x)) {
+    if (!line->data[0] || (block_comment_start == 0 && block_comment_end == till_x)) {
       return;
     }
     line_word_t *head = line_word_list(line->data, till_x);
@@ -1031,14 +927,6 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
         free_node(node);
         continue;
       }
-      /* index_data *id = Lsp::instance().get_file_index_data(openfile->filename, false);
-      if (id) {
-        for (const auto &it : id->main.functions) {
-          if (it->name == node->str) {
-            midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BRIGHT_YELLOW);
-          }
-        }
-      } */
       const auto &it = test_map.find(node->str);
       if (it != test_map.end()) {
         if (it->second.from_line != -1) {
@@ -1066,12 +954,11 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
       render_preprossesor();
       return;
     }
-    // render_string_literals();
+    render_string_literals();
     // render_char_strings();
-    /* if (line->flags.is_set(DONT_PREPROSSES_LINE))
-    {
-        render_part(0, till_x, FG_SUGGEST_GRAY);
-        return;
+    /* if (line->flags.is_set(DONT_PREPROSSES_LINE)) {
+      render_part(0, till_x, FG_SUGGEST_GRAY);
+      return;
     } */
   }
   else if (openfile->type.is_set<ASM>()) {}
@@ -1104,12 +991,12 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
 
 void rendr_suggestion(void) {
   PROFILE_FUNCTION;
-  suggest_str = NULL;
-  if (suggestwin != NULL) {
+  suggest_str = nullptr;
+  if (suggestwin) {
     delwin(suggestwin);
   }
-  if (openfile->current_x == 0 || (!is_word_char(&openfile->current->data[openfile->current_x - 1], FALSE) &&
-                                   openfile->current->data[openfile->current_x - 1] != '_')) {
+  if (!openfile->current_x || (!is_word_char(&openfile->current->data[openfile->current_x - 1], false) &&
+                               openfile->current->data[openfile->current_x - 1] != '_')) {
     clear_suggestion();
     return;
   }

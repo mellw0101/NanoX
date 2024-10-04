@@ -1,69 +1,43 @@
 #pragma once
 
 #include "../definitions.h"
+
+using std::unordered_map;
+
 /* clang-format off */
 
-struct define_entry_t
-{
-    string name;
-    string value;
+struct define_entry_t {
+  string name;
+  string value;
 };
 
 typedef struct DefineEntry {
-  char *name      = nullptr;
-  char *full_decl = nullptr;
-  char *value     = nullptr;
-  char *file      = nullptr;
+  string name;
+  string full_decl;
+  string value;
+  string file;
   int decl_start_line = -1; 
   int decl_end_line   = -1;
-
-  void delete_data(void) noexcept {
-    name      ? free(name)      : (void)0;
-    full_decl ? free(full_decl) : (void)0;
-    value     ? free(value)     : (void)0;
-    file      ? free(file)      : (void)0;
-    name      = nullptr;
-    full_decl = nullptr;
-    value     = nullptr;
-    decl_start_line = -1;
-    decl_end_line   = -1;
-  }
-
-  static DefineEntry create(char *name, char *value) noexcept {
-      return {name, value};
-  }
 } DefineEntry;
 
 typedef struct IndexFile {
   char *file;
-  linestruct *head;
+  linestruct *head = nullptr;
 } IndexFile;
-
-typedef struct TypeDefEnumEntry {
-  char *type  = nullptr;
-  char *name  = nullptr;
-  char *alias = nullptr;
-  char *value = nullptr;
-  int decl_line      = -1;
-  int type_decl_line = -1;
-
-  __inline__ void delete_data(void) noexcept {
-    type  ? free(type)  : (void)0;
-    name  ? free(name)  : (void)0;
-    alias ? free(alias) : (void)0;
-    value ? free(value) : (void)0;
-    decl_line      = -1;
-    type_decl_line = -1;
-  }
-} TypeDefEnumEntry;
 
 typedef struct ClassData {
   string raw_data;
+  char *name = nullptr;
+  
+  __inline__ void delete_data(void) noexcept {
+    name ? free(name) : (void)0;
+    name = nullptr;
+  }
 } ClassData;
 
 typedef struct Index {
-  MVector<IndexFile> include;
-  MVector<DefineEntry> defines;
+  unordered_map<string, IndexFile> include;
+  unordered_map<string, DefineEntry> defines;
   MVector<var_t> variabels;
   MVector<ClassData> classes;
 
@@ -71,23 +45,23 @@ typedef struct Index {
   MVector<string> rawenum;
   MVector<string> rawstruct;
 
-  void delete_data(void) noexcept;
+  void delete_data(void) noexcept {
+    for (auto &[file, data] : include) {
+      while (data.head) {
+        linestruct *node = data.head;
+        data.head = data.head->next;
+        free(node->data);
+        free(node);
+      }
+      free(data.file);
+    }
+    include.clear();
+    defines.clear();
+    for (auto &it : classes) {
+      it.delete_data();
+    }
+    classes.resize(0);
+  }
 } Index;
 
-__inline__ void Index::delete_data(void) noexcept {
-  for (auto &it : include) {
-    while (it.head) {
-      linestruct *node = it.head;
-      it.head = it.head->next;
-      free(node->data);
-      free(node);
-    }
-    free(it.file);
-  }
-  include.resize(0);
-  for (auto &it : defines) {
-    it.delete_data();
-  }
-  defines.resize(0);
-}
 /* clang-format on */

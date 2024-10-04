@@ -17,8 +17,8 @@
 
 #define win_attr_on(win, attr)               wattr_on(win, (attr_t)attr, NULL)
 #define win_attr_off(win, attr)              wattr_off(win, (attr_t)attr, NULL)
-#define win_color_on(win, color)             win_attr_on(win, interface_color_pair[color])
-#define win_color_off(win, color)            win_attr_off(win, interface_color_pair[color])
+#define WIN_COLOR_ON(win, color)             win_attr_on(win, interface_color_pair[color])
+#define WIN_COLOR_OFF(win, color)            win_attr_off(win, interface_color_pair[color])
 #define mv_add_nstr(win, row, col, str, len) (wmove(win, row, col) == (-1)) ?: waddnstr(win, str, len)
 #define mv_add_nstr_color(win, row, col, str, len, color) \
     win_color_on(win, color);                             \

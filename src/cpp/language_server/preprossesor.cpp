@@ -11,6 +11,9 @@ inline namespace utils {
       }
       const char *end = start;
       ADV_PAST_WORD(end);
+      if (start == end) {
+        return nullptr;
+      }
       *word = measured_copy(start, (end - start));
       return end;
     }
@@ -41,7 +44,7 @@ inline namespace utils {
       return -1;
     }
     string def(start, (end - start));
-    string def_value = LSP.define_value(def);
+    string def_value = LSP->define_value(def);
     if (def_value.empty()) {
       return -1;
     }
@@ -82,7 +85,7 @@ inline namespace utils {
         ++start;
         end = start;
         ADV_PTR(end, (*end != '>'));
-        if (!*end) {
+        if (!*end || start == end) {
           return -2;
         }
         *path  = measured_copy(start, (end - start));
@@ -106,7 +109,7 @@ inline namespace utils {
     return -1;
   }
 
-  string parse_full_define(linestruct *from, const char **ptr, int *endline = nullptr) {
+  string parse_full_define(linestruct *from, const char **ptr, int *endline) {
     string      decl  = "";
     const char *start = *ptr;
     const char *end   = start;
@@ -119,10 +122,12 @@ inline namespace utils {
         if (*end == '"' || *end == '\'') {
           ++end;
           ADV_PTR(end, (*end != '\'' && *end != '"'));
+          if (!*end) {
+            break;
+          }
           ++end;
         }
-      }
-      while (*end && *end != '\\');
+      } while (*end && *end != '\\');
       /* 'EOL' was found, indecating end of define decl. */
       if (!*end) {
         decl += string(start, (end - start));
@@ -154,62 +159,83 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
   char *path;
   bool  local;
   int   result = get_include_path(current_file, ptr, &path, &local);
-  if (result < 0) {
-    logE("get_include_path: Error: %d", result);
+  if (result < 0 || !path) {
+    logE("current file: '%s', line: %s, get_include_path: Error: %d", current_file, line->data, result);
     return;
   }
   if (local) {
-    string normalised = Parse::normalise_path(path);
-    if (!LSP.has_been_included(normalised.data())) {
-      if (is_file_and_exists(normalised.data())) {
-        unix_socket_debug("%s\n", normalised.data());
-        IndexFile idfile;
-        idfile.file = measured_copy(normalised.data(), normalised.size());
-        idfile.head = retrieve_file_as_lines(idfile.file);
-        LSP.index.include.push_back(idfile);
-        if (idfile.head) {
-          LSP.check(idfile.head, idfile.file);
-        }
-      }
-    }
+    LSP->index_file(path);
+    free(path);
+    // char *abs_path = get_full_path(path);
+    // free(path);
+    // if (abs_path) {
+    //   if (!LSP->has_been_included(abs_path)) {
+    //     if (is_file_and_exists(abs_path)) {
+    //       IndexFile idfile;
+    //       idfile.file = copy_of(abs_path);
+    //       idfile.head = retrieve_file_as_lines(idfile.file);
+    //       // LSP->index.include.push_back(idfile);
+    //       LSP->index.include[idfile.file] = idfile;
+    //       if (idfile.head) {
+    //         unix_socket_debug("%s\n", idfile.file);
+    //         LSP->check(&idfile);
+    //       }
+    //     }
+    //   }
+    //   free(abs_path);
+    // }
+    return;
   }
   else {
-    /** FIXME: This needs refactoring. */
-    MVector<string> check_files = {
-        "/usr/include/c++/v1/" + string(path),
-        "/usr/lib/clang/18/include/" + string(path),
-        "/usr/include/" + string(path),
-        "/usr/local/include/" + string(path),
-    };
     string check_file = string(path);
-    if (strchr(check_file.c_str(), '.') == nullptr) {
+    free(path);
+    if (check_file.empty()) {
       return;
     }
-    for (const auto &s : check_files) {
-      if (is_file_and_exists(s.c_str())) {
-        check_file = s;
+    vector<string> dirs = {
+      "/usr/local/include/" + check_file,
+      "/usr/include/" + check_file,
+      "/usr/lib/clang/18/include/" + check_file,
+      "/usr/include/c++/v1/" + check_file,
+    };
+    for (const auto &it : dirs) {
+      if (LSP->has_been_included(it.c_str())) {
+        break;
+      }
+      unix_socket_debug("%s\n", it.c_str());
+      LSP->index_file(it.c_str());
+      if (is_file_and_exists(it.c_str())) {
         break;
       }
     }
-    if (!is_file_and_exists(check_file.c_str())) {
-      unix_socket_debug("[FATAL] file: '%s' could not be found.\n", string(path).c_str());
-    }
-    else if (!LSP.has_been_included(check_file.c_str())) {
-      IndexFile idfile;
-      idfile.file = measured_copy(check_file.c_str(), check_file.length());
-      idfile.head = retrieve_file_as_lines(check_file);
-      LSP.index.include.push_back(idfile);
-      unix_socket_debug("%s\n", check_file.c_str());
-      if (idfile.head) {
-        LSP.check(idfile.head, check_file);
-      }
-    }
+    // for (const auto &it : dirs) {
+    //   if (is_file_and_exists(it.c_str())) {
+    //     check_file = it;
+    //     break;
+    //   }
+    // }
+    // if (!is_file_and_exists(check_file.c_str())) {
+    //   unix_socket_debug(
+    //     "current_file: %s, [FATAL] file: '%s' does not have a valid path\n", current_file, check_file.c_str());
+    //   return;
+    // }
+    // if (!LSP->has_been_included(check_file.c_str())) {
+    //   IndexFile idfile;
+    //   idfile.file = copy_of(check_file.c_str());
+    //   idfile.head = retrieve_file_as_lines(idfile.file);
+    //   // LSP->index.include.push_back(idfile);
+    //   LSP->index.include[idfile.file] = idfile;
+    //   if (idfile.head) {
+    //     unix_socket_debug("current_file: %s, non_local_file: %s\n", current_file, idfile.file);
+    //     LSP->check(&idfile);
+    //   }
+    // }
+    return;
   }
-  free(path);
 }
 
 void do_if(linestruct *line, const char **ptr) {
-  string full_delc = LSP.parse_full_pp_delc(line, ptr);
+  string full_delc = LSP->parse_full_pp_delc(line, ptr);
   // NLOG("%s\n", full_delc.c_str());
   // split_if_statement(full_delc);
   const char *start = &full_delc[0];
@@ -248,11 +274,11 @@ void do_if(linestruct *line, const char **ptr) {
         start = found;
         break;
       }
-      case 3 :                                                              /* defined */
+      case 3 :                                                            /* defined */
       {
         should_be_defined =
-            (found != start && start[(found - start) - 1] == '!') ? FALSE : /* This def should not be defined. */
-                TRUE;                                                       /* This def should be defined. */
+          (found != start && start[(found - start) - 1] == '!') ? FALSE : /* This def should not be defined. */
+            TRUE;                                                         /* This def should be defined. */
         start = found + 7;
         ADV_TO_NEXT_WORD(start);
         if (!*start) {
@@ -275,7 +301,7 @@ void do_if(linestruct *line, const char **ptr) {
           if (!*end) {
             return;
           }
-          if (LSP.is_defined(def) == -1) {
+          if (LSP->is_defined(def) == -1) {
             end += 1;
             start = end;
             for (; *end; end++);
@@ -287,9 +313,9 @@ void do_if(linestruct *line, const char **ptr) {
           next_rule = strstr_array(start, rules, rule_count, &index);
           if (index == 3) {
             should_be_defined = (next_rule != start && start[(next_rule - start) - 1] == '!')
-                                  ? FALSE
-                                  :       /* This def should not be defined. */
-                                    TRUE; /* This def should be defined. */
+                                ? FALSE
+                                :       /* This def should not be defined. */
+                                  TRUE; /* This def should be defined. */
             NLOG("%s\n", BOOL_STR(should_be_defined));
             start += 7;
             ADV_TO_NEXT_WORD(start);
@@ -301,19 +327,19 @@ void do_if(linestruct *line, const char **ptr) {
             def = string(start, (end - start));
             /* This def should be defined. */
             if (should_be_defined) {
-              if (LSP.is_defined(def) != -1) {
+              if (LSP->is_defined(def) != -1) {
                 was_correct = TRUE;
               }
             }
             /* Should not be defined. */
             else {
-              if (LSP.is_defined(def) == -1) {
+              if (LSP->is_defined(def) == -1) {
                 was_correct = TRUE;
               }
             }
             NLOG("was_correct: %s\n", BOOL_STR(was_correct));
             if (!was_correct) {
-              int endif = LSP.find_endif(line->next);
+              int endif = LSP->find_endif(line->next);
               for (linestruct *l = line->next; l && l->lineno != endif; l = l->next) {
                 l->flags.set(DONT_PREPROSSES_LINE);
               }
@@ -321,7 +347,7 @@ void do_if(linestruct *line, const char **ptr) {
           }
           else if (index == 2) {
             if (!define_is_equl_or_greater(string(start, (end - start)))) {
-              int endif = LSP.find_endif(line->next);
+              int endif = LSP->find_endif(line->next);
               for (linestruct *l = line->next; l && l->lineno != endif; l = l->next) {
                 l->flags.set(DONT_PREPROSSES_LINE);
               }
@@ -375,13 +401,13 @@ void do_if(linestruct *line, const char **ptr) {
     }
     /* This def should be defined. */
     if (should_be_defined) {
-      if (LSP.is_defined(def) != -1) {
+      if (LSP->is_defined(def) != -1) {
         was_correct = TRUE;
       }
     }
     /* Should not be defined. */
     else {
-      if (LSP.is_defined(def) == -1) {
+      if (LSP->is_defined(def) == -1) {
         was_correct = TRUE;
       }
     }
@@ -389,15 +415,14 @@ void do_if(linestruct *line, const char **ptr) {
       if (next_rule) {
         string nrule(next_rule, 2);
         if (nrule == "&&") {
-          int endif = LSP.find_endif(line->next);
+          int endif = LSP->find_endif(line->next);
           for (linestruct *l = line->next; l && l->lineno != endif; l = l->next) {
             l->flags.set(DONT_PREPROSSES_LINE);
           }
         }
       }
     }
-  }
-  while (found);
+  } while (found);
 }
 
 void do_define(linestruct *line, const char *current_file, const char **ptr) {
@@ -410,41 +435,43 @@ void do_define(linestruct *line, const char *current_file, const char **ptr) {
   }
   end = start;
   ADV_PTR(end, (*end != '(' && *end != ' ' && *end != '\t'));
-  de.name            = measured_copy(start, (end - start));
+  de.name            = string(start, (end - start));
   de.decl_start_line = line->lineno;
   if (*end == '(') {
     ADV_PTR(end, (*end != ')'));
     if (!*end) {
-      de.delete_data();
       return;
     }
     end += 1;
   }
-  de.full_decl = measured_copy(start, (end - start));
+  de.full_decl = string(start, (end - start));
   start        = end;
   ADV_TO_NEXT_WORD(start);
-  string val = parse_full_define(line, &start, &de.decl_end_line);
-  de.value   = measured_copy(val.data(), val.size());
-  de.file    = copy_of(current_file);
-  LSP.index.defines.push_back(de);
+  if (!*start) {
+    return;
+  }
+  string val                  = parse_full_define(line, &start, &de.decl_end_line);
+  de.value                    = string(val.c_str(), val.length());
+  de.file                     = string(current_file);
+  LSP->index.defines[de.name] = de;
 }
 
 void do_ifndef(const string &define, linestruct *current_line) {
-  if (LSP.is_defined(define) == -1) {
+  if (LSP->is_defined(define) == -1) {
     // NLOG("define: '%s' was not defined.\n", define.c_str());
     return;
   }
-  int endif = LSP.find_endif(current_line->next);
+  int endif = LSP->find_endif(current_line->next);
   for (linestruct *line = current_line->next; line != NULL && (line->lineno != endif); line = line->next) {
     line->flags.set(DONT_PREPROSSES_LINE);
   }
 }
 
 void do_ifdef(const string &define, linestruct *current_line) {
-  if (LSP.is_defined(define) != -1) {
+  if (LSP->is_defined(define) != -1) {
     return;
   }
-  int endif = LSP.find_endif(current_line->next);
+  int endif = LSP->find_endif(current_line->next);
   for (linestruct *line = current_line->next; line != nullptr && (line->lineno != endif); line = line->next) {
     line->flags.set<DONT_PREPROSSES_LINE>();
   }
@@ -465,11 +492,25 @@ void do_undef(const string &define) {
 /* This is the main handler of the language server for preprossesing. */
 void do_preprossesor(linestruct *line, const char *current_file) {
   char       *word;
-  const char *found = get_preprosses_type(line, &word);
+  const char *found     = get_preprosses_type(line, &word);
+  const char *slash_com = strstr(line->data, "//");
+  const char *com_st    = strstr(line->data, "/*");
+  const char *com_end   = strstr(line->data, "*/");
   if (found) {
+    if (slash_com && slash_com < found) {
+      free(word);
+      return;
+    }
+    if (com_st && com_end && found > com_st && found < com_end) {
+      free(word);
+      return;
+    }
+    else if (com_st && found > com_st) {
+      free(word);
+      return;
+    }
     line->flags.set<PP_LINE>();
     if (strcmp(word, "include") == 0) {
-      ++found;
       do_include(line, current_file, &found);
     }
     /* else if (strcmp(word, "ifndef") == 0) {

@@ -15,8 +15,7 @@ namespace Parse {
             lvl += 1;
             br += 1;
           }
-        }
-        while (br);
+        } while (br);
         const char *stop = nullptr;
         for (linestruct *end = from->next; end != NULL; end = end->next) {
           br = end->data;
@@ -26,8 +25,7 @@ namespace Parse {
               lvl += 1;
               br += 1;
             }
-          }
-          while (br);
+          } while (br);
           br = end->data;
           do {
             br = strchr(br, '}');
@@ -38,8 +36,7 @@ namespace Parse {
               lvl -= 1;
               br += 1;
             }
-          }
-          while (br);
+          } while (br);
           stop = strchr(end->data, ';');
           if (stop) {
             value += string(&end->data[indent_char_len(end)], (stop - &end->data[indent_char_len(end)]));
@@ -147,8 +144,14 @@ namespace Parse {
       Ulong       len   = strlen(line->data);
       while (end < (line->data + len)) {
         ADV_TO_NEXT_WORD(end);
+        if (!*end) {
+          break;
+        }
         start = end;
         ADV_PAST_WORD(end);
+        if (start == end) {
+          break;
+        }
         ret += string(start, (end - start)) + " ";
       }
       return ret;
@@ -158,14 +161,14 @@ namespace Parse {
     string normalise_path(const char *path) {
       const char *start = nullptr;
       string      save  = path;
-      while ((start = strstr(&save[0], "/.."))) {
-        if (start == &save[0]) {
+      while ((start = strstr(save.c_str(), "/.."))) {
+        if (start == save.c_str()) {
           break;
         }
         const char *end = start + 3;
         --start;
-        DCR_PTR(start, &save[0], (*start != '/'));
-        string ret(&save[0], (start - &save[0]));
+        DCR_PTR(start, save.c_str(), (*start != '/'));
+        string ret(save.c_str(), (start - &save[0]));
         ret += end;
         save = ret;
       }
@@ -175,31 +178,36 @@ namespace Parse {
     void construct_ClassData(const string &data, const string &visual_data) {
       ClassData cd;
       cd.raw_data = data;
-      unix_socket_debug("Class data:\n\n");
-      linestruct *head = lines_from_EOL_str(visual_data.c_str());
-      FOR_EACH_LINE_NEXT(line, head) {
-        unix_socket_debug("%s\n", line->data);
+      // unix_socket_debug("%s\n", cd.raw_data.c_str());
+      const char *start = strstr(cd.raw_data.c_str(), "class");
+      if (!start) {
+        return;
       }
-      while (head) {
-        linestruct *node = head;
-        head             = head->next;
-        free(node->data);
-        free(node);
+      start += 5;
+      ADV_TO_NEXT_WORD(start);
+      const char *end = start;
+      ADV_PTR(end, (*end != '\t' && *end != ' ' && *end != '{'));
+      if (start == end) {
+        return;
       }
-      LSP.index.classes.push_back(cd);
+      cd.name = measured_copy(start, (end - start));
+      // unix_socket_debug("%s\n", cd.name);
+      LSP->index.classes.push_back(cd);
     }
   }
 
   void comment(linestruct *line) {
-    const char *found_start = strstr(line->data, "/*");
-    const char *found_end   = strstr(line->data, "*/");
-    const char *found_slash = strstr(line->data, "//");
+    if (!line) {
+      return;
+    }
+    const char *start = strstr(line->data, "/*");
+    const char *end   = strstr(line->data, "*/");
+    const char *slash = strstr(line->data, "//");
     /* First line for a block comment. */
-    if (found_start && found_end == nullptr) {
-      /* If a slash comment is found and it is before the block start,
-       * we adjust the start and end pos.  We also make sure to unset
-       * 'BLOCK_COMMENT_START' for the line. */
-      if (found_slash && found_slash < found_start) {
+    if (start && !end) {
+      /* If a slash comment is found and it is before the block start, we adjust the start
+       * and end pos.  We also make sure to unset 'BLOCK_COMMENT_START' for the line. */
+      if (slash && slash < start) {
         line->flags.unset<BLOCK_COMMENT_START>();
       }
       else {
@@ -210,7 +218,7 @@ namespace Parse {
       line->flags.unset<BLOCK_COMMENT_END>();
     }
     /* Either inside of a block comment or not a block comment at all. */
-    else if (found_start == nullptr && found_end == nullptr) {
+    else if (!start && !end) {
       if (line->prev &&
           ((line->prev->flags.is_set<IN_BLOCK_COMMENT>()) || (line->prev->flags.is_set<BLOCK_COMMENT_START>())) &&
           !(line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>())) {
@@ -229,9 +237,8 @@ namespace Parse {
       }
     }
     /* End of a block comment. */
-    else if (found_start == nullptr && found_end) {
-      /* If last line is in a comment block or is the start of the block.
-       */
+    else if (!start && end) {
+      /* If last line is in a comment block or is the start of the block. */
       if (line->prev &&
           ((line->prev->flags.is_set<IN_BLOCK_COMMENT>()) || (line->prev->flags.is_set<BLOCK_COMMENT_START>())) &&
           !(line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>())) {
@@ -243,12 +250,17 @@ namespace Parse {
     }
   }
 
-  void struct_type(linestruct *from) {
+  void struct_type(linestruct **from_line) {
+    if (!from_line) {
+      return;
+    }
+    linestruct *from = *from_line;
+    PROFILE_FUNCTION;
     const char *data = &from->data[indent_char_len(from)];
     if (invalid_variable_sig(data)) {
       return;
     }
-    if (strstr(data, "operator") /* || word_strstr(line->data, "class") */) {
+    if (strstr(data, "operator")) {
       return;
     }
     const char *end = data;
@@ -283,8 +295,7 @@ namespace Parse {
             }
             b_start += 1;
           }
-        }
-        while (b_start);
+        } while (b_start);
         b_end = line->data;
         do {
           b_end = strchr(b_end, '}');
@@ -297,8 +308,7 @@ namespace Parse {
             }
             b_end += 1;
           }
-        }
-        while (b_end);
+        } while (b_end);
         if (strchr(line->data, ';') && lvl == 0) {
           break;
         }
@@ -310,15 +320,15 @@ namespace Parse {
       }
       switch (idx) {
         case 0 : {
-          LSP.index.rawtypedef.push_back(expr);
+          LSP->index.rawtypedef.push_back(expr);
           break;
         }
         case 1 : {
-          LSP.index.rawenum.push_back(expr);
+          LSP->index.rawenum.push_back(expr);
           break;
         }
         case 2 : {
-          LSP.index.rawstruct.push_back(expr);
+          LSP->index.rawstruct.push_back(expr);
           break;
         }
         case 3 : { /* 'class' */
@@ -329,7 +339,56 @@ namespace Parse {
     }
   }
 
-  void variable(linestruct *line, const char *current_file, vector<var_t> &var_vector) {
+  void enum_type(linestruct **from) {
+    if (!from) {
+      return;
+    }
+    const char *data = &(*from)->data[indent_char_len(*from)];
+    const char *end  = data;
+    string      type = parse_var_type(*from, &data, &end);
+    if (type == "enum") {
+      // unix_socket_debug("%s\n", from->data);
+      const char *found      = nullptr;
+      linestruct *found_line = nullptr;
+      FOR_EACH_LINE_NEXT(line, *from) {
+        if ((found = strchr(line->data, '{'))) {
+          found_line = line;
+          break;
+        }
+        if ((found = strchr(line->data, ';'))) {
+          break;
+        }
+      }
+      if (!found_line) {
+        return;
+      }
+      linestruct *end_bracket;
+      Ulong       end_index;
+      if (find_matching_bracket(found_line, (found - found_line->data), &end_bracket, &end_index)) {
+        FOR_EACH_LINE_NEXT(line, found_line) {
+          if (line == found_line) {
+            // unix_socket_debug("%s\n", &found_line->data[(found - found_line->data)]);
+          }
+          else {
+            // unix_socket_debug("%s\n", line->data);
+          }
+          if (line == end_bracket) {
+            break;
+          }
+        }
+        *from = end_bracket;
+      }
+      char *body = fetch_bracket_body(found_line, (found - found_line->data));
+      if (body) {
+        unix_socket_debug("  body: %s\n", body);
+        free(body);
+      }
+    }
+    return;
+  }
+
+  void variable(linestruct *line, const char *current_file, vector<var_t> &v_vec) {
+    PROFILE_FUNCTION;
     const char *data = &line->data[indent_char_len(line)];
     if (invalid_variable_sig(data)) {
       return;
@@ -401,9 +460,89 @@ namespace Parse {
         }
         data = end + 1;
       }
-      var_vector.push_back({type + type_addon, name, value, decl_line, scope_end, current_file});
+      v_vec.push_back({type + type_addon, name, value, decl_line, scope_end, current_file});
       end = data;
-    }
-    while (*data);
+    } while (*data);
   }
+
+  /* Parse a function signature. */
+  void function(linestruct **from, const char *current_file) {
+    if (!from) {
+      return;
+    }
+    const char *found = strchr((*from)->data, '(');
+    if (found) {
+      const char *com_st    = strstr((*from)->data, "/*");
+      const char *com_end   = strstr((*from)->data, "*/");
+      const char *com_slash = strstr((*from)->data, "//");
+      /* If inside of a block comment. */
+      if (com_st && com_end && (found > com_st && found < com_end)) {
+        return;
+      }
+      /* If behind a slash comment. */
+      if (com_slash && (found > com_slash)) {
+        return;
+      }
+      // unix_socket_debug("function:\n"
+      //                   "  sig: %s\n",
+      //                   (*from)->data);
+      char       *param_str  = fetch_bracket_body((*from), (found - (*from)->data));
+      linestruct *found_line = nullptr;
+      FOR_EACH_LINE_NEXT(line, *from) {
+        if ((found = strchr(line->data, '{'))) {
+          found_line = line;
+          break;
+        }
+        if ((found = strchr(line->data, ';'))) {
+          break;
+        }
+      }
+      if (found_line) {
+        if (*found == '{') {
+          if (param_str) {
+            // unix_socket_debug("  params: %s\n", param_str);
+            free(param_str);
+          }
+          linestruct *end_bracket;
+          Ulong       end_index;
+          if (find_end_bracket(found_line, (found - found_line->data), &end_bracket, &end_index)) {
+            *from = end_bracket;
+          }
+          char *body = fetch_bracket_body(found_line, (found - found_line->data));
+          if (body) {
+            // unix_socket_debug("  body: %s\n", body);
+            free(body);
+          }
+        }
+        else if (*found == ';') {
+          if (param_str) {
+            free(param_str);
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Main parse function. */
+void do_parse(linestruct **line, const char *current_file) {
+  Parse::struct_type(line);
+  // vector<var_t> vars;
+  // Parse::variable(*line, current_file, vars);
+  // if (!vars.empty()) {
+  //   /* for (const auto &[type, name, value, decl_line, scope_end, file] : vars) {
+  //       unix_socket_debug("type: %s\n"
+  //             "         name: %s\n"
+  //             "        value: %s\n"
+  //             "    decl_line: %d\n"
+  //             "    scope_end: %d\n"
+  //             "         file: %s\n\n",
+  //             type.c_str(), name.c_str(), value.c_str(), decl_line, scope_end, file.c_str());
+  //   } */
+  //   for (const auto &it : vars) {
+  //     LSP->index.variabels.push_back(it);
+  //   }
+  // }
+  Parse::function(line, current_file);
+  Parse::enum_type(line);
 }

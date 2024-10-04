@@ -8,10 +8,10 @@
 #include <cwctype>
 
 /* Whether we've enabled UTF-8 support.
- * Initially set to 'FALSE', and then set to 'TRUE' by utf8_init(). */
+ * Initially set to 'false', and then set to 'true' by utf8_init(). */
 static bool use_utf8 = false;
 
-/* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
+/* Enable UTF-8 support.  Set the 'use_utf8' variable to 'true'. */
 void utf8_init(void) {
   use_utf8 = true;
 }
@@ -21,16 +21,16 @@ bool using_utf8(void) {
   return use_utf8;
 }
 
-/* Return 'TRUE' when the given character is some kind of letter. */
+/* Return 'true' when the given character is some kind of letter. */
 bool is_alpha_char(const char *const c) {
   wchar_t wc;
   if (mbtowide(wc, c) < 0) {
-    return FALSE;
+    return false;
   }
   return iswalpha(wc);
 }
 
-/* Return TRUE when the given character is some kind of letter or a digit. */
+/* Return 'true' when the given character is some kind of letter or a digit. */
 bool is_alnum_char(const char *const c) {
   wchar_t wc;
   if (mbtowide(wc, c) < 0) {
@@ -39,7 +39,7 @@ bool is_alnum_char(const char *const c) {
   return iswalnum(wc);
 }
 
-/* Return TRUE when the given character is space or tab or other whitespace. */
+/* Return 'true' when the given character is space or tab or other whitespace. */
 bool is_blank_char(const char *const c) {
   wchar_t wc;
   if ((signed char)*c >= 0) {
@@ -51,17 +51,17 @@ bool is_blank_char(const char *const c) {
   return iswblank(wc);
 }
 
-/* Return 'TRUE' when the given character is a control character. */
+/* Return 'true' when the given character is a control character. */
 bool is_cntrl_char(const char *const c) {
   if (use_utf8) {
-    return ((c[0] & 0xE0) == 0 || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
+    return (!(c[0] & 0xE0) || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
   }
   else {
-    return ((*c & 0x60) == 0 || *c == DEL_CODE);
+    return (!(*c & 0x60) || *c == DEL_CODE);
   }
 }
 
-/* Return 'TRUE' when the given character is a punctuation character. */
+/* Return 'true' when the given character is a punctuation character. */
 bool is_punct_char(const char *const c) {
   wchar_t wc;
   if (mbtowide(wc, c) < 0) {
@@ -70,8 +70,8 @@ bool is_punct_char(const char *const c) {
   return iswpunct(wc);
 }
 
-/* Return TRUE when the given character is word-forming (it is alphanumeric or
- * specified in 'wordchars', or it is punctuation when allow_punct is TRUE). */
+/* Return 'true' when the given character is word-forming (it is alphanumeric or
+ * specified in 'wordchars', or it is punctuation when allow_punct is true). */
 bool is_word_char(const char *const c, bool allow_punct) {
   if (*c == '\0') {
     return false;
@@ -82,7 +82,7 @@ bool is_word_char(const char *const c, bool allow_punct) {
   if (allow_punct && is_punct_char(c)) {
     return true;
   }
-  if (word_chars && *word_chars != '\0') {
+  if (word_chars && *word_chars) {
     char      symbol[MAXCHARLEN + 1];
     const int symlen = collect_char(c, symbol);
     symbol[symlen]   = '\0';
@@ -109,14 +109,14 @@ char control_rep(const signed char c) {
   }
 }
 
-/* Return the visible representation of multibyte control character c. */
+/* Return the visible representation of multibyte control character 'c'. */
 char control_mbrep(const char *const c, bool isdata) {
-  /* An embedded newline is an encoded NUL if 'isdata' is TRUE. */
+  /* An embedded newline is an encoded NUL if 'isdata' is true. */
   if (*c == '\n' && (isdata || as_an_at)) {
     return '@';
   }
   if (use_utf8) {
-    if ((u_char)c[0] < 128) {
+    if ((Uchar)c[0] < 128) {
       return control_rep(c[0]);
     }
     else {
@@ -132,49 +132,49 @@ char control_mbrep(const char *const c, bool isdata) {
  * the number of bytes in the sequence, or -1 for an invalid sequence. */
 int mbtowide(wchar_t &wc, const char *const c) {
   if ((signed char)*c < 0 && use_utf8) {
-    u_char v1 = (u_char)c[0];
-    u_char v2 = (u_char)c[1] ^ 0x80;
+    Uchar v1 = (Uchar)c[0];
+    Uchar v2 = (Uchar)c[1] ^ 0x80;
     if (v2 > 0x3F || v1 < 0xC2) {
       return -1;
     }
     if (v1 < 0xE0) {
-      wc = (((u_int)(v1 & 0x1F) << 6) | (u_int)v2);
+      wc = (((Uint)(v1 & 0x1F) << 6) | (Uint)v2);
       return 2;
     }
-    u_char v3 = (u_char)c[2] ^ 0x80;
+    Uchar v3 = (Uchar)c[2] ^ 0x80;
     if (v3 > 0x3F) {
       return -1;
     }
     if (v1 < 0xF0) {
       if ((v1 > 0xE0 || v2 >= 0x20) && (v1 != 0xED || v2 < 0x20)) {
-        wc = (((u_int)(v1 & 0x0F) << 12) | ((u_int)v2 << 6) | (u_int)v3);
+        wc = (((Uint)(v1 & 0x0F) << 12) | ((Uint)v2 << 6) | (Uint)v3);
         return 3;
       }
       else {
         return -1;
       }
     }
-    u_char v4 = (u_char)c[3] ^ 0x80;
+    Uchar v4 = (Uchar)c[3] ^ 0x80;
     if (v4 > 0x3F || v1 > 0xF4) {
       return -1;
     }
     if ((v1 > 0xF0 || v2 >= 0x10) && (v1 != 0xF4 || v2 < 0x10)) {
-      wc = (((u_int)(v1 & 0x07) << 18) | ((u_int)v2 << 12) | ((u_int)v3 << 6) | (u_int)v4);
+      wc = (((Uint)(v1 & 0x07) << 18) | ((Uint)v2 << 12) | ((Uint)v3 << 6) | (Uint)v4);
       return 4;
     }
     else {
       return -1;
     }
   }
-  wc = (u_int)*c;
+  wc = (Uint)*c;
   return 1;
 }
 
-/* Return 'TRUE' when the given character occupies two cells. */
+/* Return 'true' when the given character occupies two cells. */
 bool is_doublewidth(const char *const ch) {
   wchar_t wc;
   /* Only from U+1100 can code points have double width. */
-  if ((u_char)*ch < 0xE1 || !use_utf8) {
+  if ((Uchar)*ch < 0xE1 || !use_utf8) {
     return false;
   }
   if (mbtowide(wc, ch) < 0) {
@@ -183,7 +183,7 @@ bool is_doublewidth(const char *const ch) {
   return (wcwidth(wc) == 2);
 }
 
-/* Return 'TRUE' when the given character occupies zero cells. */
+/* Return 'true' when the given character occupies zero cells. */
 bool is_zerowidth(const char *ch) {
   wchar_t wc;
   /* Only from U+0300 can code points have zero width. */
@@ -204,16 +204,16 @@ bool is_zerowidth(const char *ch) {
 
 /* Return the number of bytes in the character that starts at *pointer. */
 int char_length(const char *const &pointer) {
-  if ((u_char)*pointer > 0xC1 && use_utf8) {
-    const u_char c1 = (u_char)pointer[0];
-    const u_char c2 = (u_char)pointer[1];
+  if ((Uchar)*pointer > 0xC1 && use_utf8) {
+    const Uchar c1 = (Uchar)pointer[0];
+    const Uchar c2 = (Uchar)pointer[1];
     if ((c2 ^ 0x80) > 0x3F) {
       return 1;
     }
     if (c1 < 0xE0) {
       return 2;
     }
-    if (((u_char)pointer[2] ^ 0x80) > 0x3F) {
+    if (((Uchar)pointer[2] ^ 0x80) > 0x3F) {
       return 1;
     }
     if (c1 < 0xF0) {
@@ -224,7 +224,7 @@ int char_length(const char *const &pointer) {
         return 1;
       }
     }
-    if (((u_char)pointer[3] ^ 0x80) > 0x3F) {
+    if (((Uchar)pointer[3] ^ 0x80) > 0x3F) {
       return 1;
     }
     if (c1 > 0xF4) {
@@ -262,7 +262,7 @@ int collect_char(const char *const str, char *c) {
 int advance_over(const char *const str, Ulong &column) {
   if (*str < 0 && use_utf8) {
     /* A UTF-8 upper control code has two bytes and takes two columns. */
-    if ((u_char)str[0] == 0xC2 && (signed char)str[1] < -96) {
+    if ((Uchar)str[0] == 0xC2 && (signed char)str[1] < -96) {
       column += 2;
       return 2;
     }
@@ -282,7 +282,7 @@ int advance_over(const char *const str, Ulong &column) {
       return charlen;
     }
   }
-  if ((u_char)*str < 0x20) {
+  if ((Uchar)*str < 0x20) {
     if (*str == '\t') {
       column += tabsize - column % tabsize;
     }
@@ -290,7 +290,7 @@ int advance_over(const char *const str, Ulong &column) {
       column += 2;
     }
   }
-  else if (0x7E < (u_char)*str && (u_char)*str < 0xA0) {
+  else if (0x7E < (Uchar)*str && (Uchar)*str < 0xA0) {
     column += 2;
   }
   else {
@@ -352,7 +352,7 @@ int mbstrcasecmp(const char *s1, const char *s2) {
 int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
   if (use_utf8) {
     wchar_t wc1, wc2;
-    while (*s1 != '\0' && *s2 != '\0' && n > 0) {
+    while (*s1 && *s2 && n > 0) {
       if (*s1 >= 0 && *s2 >= 0) {
         if ('A' <= (*s1 & 0x5F) && (*s1 & 0x5F) <= 'Z') {
           if ('A' <= (*s2 & 0x5F) && (*s2 & 0x5F) <= 'Z') {
@@ -378,7 +378,7 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
       bool bad1 = (mbtowide(wc1, s1) < 0), bad2 = (mbtowide(wc2, s2) < 0);
       if (bad1 || bad2) {
         if (*s1 != *s2) {
-          return (int)((u_char)*s1 - (u_char)*s2);
+          return (int)((Uchar)*s1 - (Uchar)*s2);
         }
         if (bad1 != bad2) {
           return (bad1 ? 1 : -1);
@@ -393,7 +393,7 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
       s1 += char_length(s1), s2 += char_length(s2);
       n--;
     }
-    return (n > 0) ? (int)((u_char)*s1 - (u_char)*s2) : 0;
+    return (n > 0) ? (int)((Uchar)*s1 - (Uchar)*s2) : 0;
   }
   else {
     return strncasecmp(s1, s2, n);
@@ -404,7 +404,7 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
 char *mbstrcasestr(const char *haystack, const char *const needle) {
   if (use_utf8) {
     const Ulong needle_len = mbstrlen(needle);
-    while (*haystack != '\0') {
+    while (*haystack) {
       if (mbstrncasecmp(haystack, needle, needle_len) == 0) {
         return (char *)haystack;
       }
@@ -430,7 +430,7 @@ char *revstrstr(const char *const haystack, const char *const needle, const char
     }
     pointer--;
   }
-  return NULL;
+  return nullptr;
 }
 
 /* This function is equivalent to strcasestr(), except in that it scans
@@ -477,9 +477,8 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
   }
 }
 
-/* This function is equivalent to strchr() for multibyte strings.
- * It is used to find the first occurrence of a character in a string.
- * The character to find is given as a multibyte string.
+/* This function is equivalent to strchr() for multibyte strings.  It is used to find the first
+ * occurrence of a character in a string.  The character to find is given as a multibyte string.
  * The function is used in justify.c to find the first space in a line. */
 char *mbstrchr(const char *string, const char *const chr) {
   if (use_utf8) {
@@ -488,13 +487,13 @@ char *mbstrchr(const char *string, const char *const chr) {
     wchar_t ws;
     wchar_t wc;
     if (mbtowide(wc, chr) < 0) {
-      wc    = (u_char)*chr;
+      wc    = (Uchar)*chr;
       bad_c = true;
     }
-    while (*string != '\0') {
+    while (*string) {
       const int symlen = mbtowide(ws, string);
       if (symlen < 0) {
-        ws    = (u_char)*string;
+        ws    = (Uchar)*string;
         bad_s = true;
       }
       if (ws == wc && bad_s == bad_c) {
@@ -502,7 +501,7 @@ char *mbstrchr(const char *string, const char *const chr) {
       }
       string += symlen;
     }
-    if (*string == '\0') {
+    if (!*string) {
       return nullptr;
     }
     return (char *)string;
@@ -512,8 +511,7 @@ char *mbstrchr(const char *string, const char *const chr) {
   }
 }
 
-/* Locate, in the given string, the first occurrence of any of
- * the characters in accept, searching forward. */
+/* Locate, in the given string, the first occurrence of any of the characters in accept, searching forward. */
 char *mbstrpbrk(const char *str, const char *accept) {
   while (*str) {
     if (mbstrchr(accept, str)) {
@@ -527,7 +525,7 @@ char *mbstrpbrk(const char *str, const char *accept) {
 /* Locate, in the string that starts at head, the first occurrence of any of
  * the characters in accept, starting from pointer and searching backwards. */
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer) {
-  if (*pointer == '\0') {
+  if (!*pointer) {
     if (pointer == head) {
       return nullptr;
     }
@@ -545,7 +543,7 @@ char *mbrevstrpbrk(const char *const head, const char *const accept, const char 
   }
 }
 
-/* Return 'TRUE' if the given string contains at least one blank character. */
+/* Return 'true' if the given string contains at least one blank character. */
 bool has_blank_char(const char *str) {
   while (*str && !is_blank_char(str)) {
     str += char_length(str);
@@ -553,7 +551,7 @@ bool has_blank_char(const char *str) {
   return *str;
 }
 
-/* Return 'TRUE' when the given string is empty or consists of only blanks. */
+/* Return 'true' when the given string is empty or consists of only blanks. */
 bool white_string(const char *str) {
   while (*str && (is_blank_char(str) || *str == '\r')) {
     str += char_length(str);
@@ -586,4 +584,71 @@ void strip_leading_chars_from(char *str, const char ch) {
   char *start = str;
   for (; start && *start == ch; start++);
   (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
+}
+
+/* Works like 'strchr' except made for c/cpp code so it skips all
+ * 'string literals', 'char literals', slash and block comments. */
+const char *nstrchr_ccpp(const char *__s, const char __c) noexcept {
+  PROFILE_FUNCTION;
+  const char *end = __s;
+  do {
+    ADV_PTR(end, *end != __c && *end != '"' && *end != '\'' && *end != '/');
+    /* Start of a string literal. */
+    if (*end == '"'){
+      ++end;
+      ADV_PTR(end, *end != '"');
+      if (!*end) {
+        return nullptr;
+      }
+      ++end;
+    }
+    /* Start of a char literal.  */
+    else if (*end == '\'') {
+      ++end;
+      ADV_PTR(end, *end != '\'');
+      if (!*end) {
+        return nullptr;
+      }
+      ++end;  
+    }
+    /* Check if start of a comment. */
+    else if (*end == '/') {
+      ++end;
+      /* If 'EOL' or start of a slash comment.  Return 'nullptr' emidietly. */
+      if (!*end || *end == '/') {
+        return nullptr;
+      }
+      /* Start of block comment. */
+      else if (*end == '*') {
+        ++end;
+        if (!*end) {
+          return nullptr;
+        }
+        /* Find end of block comment. */
+        do {
+          ADV_PTR(end, *end != '*');
+          if (*end == '*') {
+            ++end;
+            if (!*end) {
+              return nullptr;
+            }
+            else if (*end == '/') {
+              ++end;
+              if (!*end) {
+                return nullptr;
+              }
+              break;
+            }
+          }
+        } while (*end);
+      }
+    }
+  } while (*end && *end != __c);
+  if (!*end) {
+    return nullptr;
+  }
+  else if (*end == __c) {
+    return end;
+  }
+  return nullptr;
 }

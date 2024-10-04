@@ -26,7 +26,7 @@
 #endif
 
 /* Whether ncurses accepts -1 to mean "default color". */
-static bool defaults_allowed = FALSE;
+static bool defaults_allowed = false;
 
 /* Initialize the color pairs for nano's interface.
  * Ask ncurses to allow -1 to mean "default color".
@@ -35,9 +35,9 @@ void set_interface_colorpairs(void) {
   /* Ask ncurses to allow -1 to mean "default color". */
   defaults_allowed = (use_default_colors() == OK);
   /* Initialize the color pairs for nano's interface elements. */
-  for (Ulong index = 0; index < NUMBER_OF_ELEMENTS; index++) {
+  for (Ulong index = 0; index < NUMBER_OF_ELEMENTS; ++index) {
     colortype *combo = color_combo[index];
-    if (combo != NULL) {
+    if (combo != nullptr) {
       if (!defaults_allowed) {
         if (combo->fg == THE_DEFAULT) {
           combo->fg = COLOR_WHITE;
@@ -48,7 +48,7 @@ void set_interface_colorpairs(void) {
       }
       init_pair(index + 1, combo->fg, combo->bg);
       interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
-      rescind_colors              = FALSE;
+      rescind_colors              = false;
     }
     else {
       if (index == FUNCTION_TAG || index == SCROLL_BAR) {
@@ -109,7 +109,7 @@ void set_interface_colorpairs(void) {
 void set_syntax_colorpairs(syntaxtype *sntx) {
   short      number = NUMBER_OF_ELEMENTS;
   colortype *older;
-  for (colortype *ink = sntx->color; ink != NULL; ink = ink->next) {
+  for (colortype *ink = sntx->color; ink != nullptr; ink = ink->next) {
     if (!defaults_allowed) {
       if (ink->fg == THE_DEFAULT) {
         ink->fg = COLOR_WHITE;
@@ -131,58 +131,58 @@ void set_syntax_colorpairs(syntaxtype *sntx) {
 void prepare_palette(void) {
   short number = NUMBER_OF_ELEMENTS;
   /* For each unique pair number, tell ncurses the combination of colors. */
-  for (colortype *ink = openfile->syntax->color; ink != NULL; ink = ink->next) {
+  for (colortype *ink = openfile->syntax->color; ink != nullptr; ink = ink->next) {
     if (ink->pairnum > number) {
       init_pair(ink->pairnum, ink->fg, ink->bg);
       number = ink->pairnum;
     }
   }
-  have_palette = TRUE;
+  have_palette = true;
 }
 
 /* Try to match the given shibboleth string with,
  * one of the regexes in the list starting at head.
- * Return 'TRUE' upon success. */
+ * Return 'true' upon success. */
 bool found_in_list(regexlisttype *head, const char *shibboleth) {
-  for (regexlisttype *item = head; item != NULL; item = item->next) {
-    if (regexec(item->one_rgx, shibboleth, 0, NULL, 0) == 0) {
-      return TRUE;
+  for (regexlisttype *item = head; item != nullptr; item = item->next) {
+    if (regexec(item->one_rgx, shibboleth, 0, nullptr, 0) == 0) {
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 /* Find a syntax that applies to the current buffer, based upon filename
  * or buffer content, and load and prime this syntax when needed. */
 void find_and_prime_applicable_syntax(void) {
-  syntaxtype *sntx = NULL;
+  syntaxtype *sntx = nullptr;
   /* If the rcfiles were not read, or contained no syntaxes, get out. */
-  if (syntaxes == NULL) {
+  if (!syntaxes) {
     return;
   }
   /* If we specified a syntax-override string, use it. */
-  if (syntaxstr != NULL) {
+  if (syntaxstr) {
     /* An override of "none" is like having no syntax at all. */
     if (strcmp(syntaxstr, "none") == 0) {
       return;
     }
-    for (sntx = syntaxes; sntx != NULL; sntx = sntx->next) {
+    for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
       if (strcmp(sntx->name, syntaxstr) == 0) {
         break;
       }
     }
-    if (sntx == NULL && !inhelp) {
+    if (!sntx && !inhelp) {
       statusline(ALERT, _("Unknown syntax name: %s"), syntaxstr);
     }
   }
   /* If no syntax-override string was specified, or it didn't match,
    * try finding a syntax based on the filename (extension). */
-  if (sntx == NULL && !inhelp) {
+  if (!sntx && !inhelp) {
     char *fullname = get_full_path(openfile->filename);
-    if (fullname == NULL) {
+    if (fullname == nullptr) {
       fullname = mallocstrcpy(fullname, openfile->filename);
     }
-    for (sntx = syntaxes; sntx != NULL; sntx = sntx->next) {
+    for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
       if (found_in_list(sntx->extensions, fullname)) {
         break;
       }
@@ -190,8 +190,8 @@ void find_and_prime_applicable_syntax(void) {
     free(fullname);
   }
   /* If the filename didn't match anything, try the first line. */
-  if (sntx == NULL && !inhelp) {
-    for (sntx = syntaxes; sntx != NULL; sntx = sntx->next) {
+  if (!sntx && !inhelp) {
+    for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
       if (found_in_list(sntx->headers, openfile->filetop->data)) {
         break;
       }
@@ -199,10 +199,10 @@ void find_and_prime_applicable_syntax(void) {
   }
 #ifdef HAVE_LIBMAGIC
   /* If we still don't have an answer, try using magic (when requested). */
-  if (sntx == NULL && !inhelp && ISSET(USE_MAGIC)) {
+  if (!sntx && !inhelp && ISSET(USE_MAGIC)) {
     struct stat fileinfo;
-    magic_t     cookie      = NULL;
-    const char *magicstring = NULL;
+    magic_t     cookie      = nullptr;
+    const char *magicstring = nullptr;
     if (stat(openfile->filename, &fileinfo) == 0) {
       /* Open the magic database and get a diagnosis of the file. */
       cookie = magic_open(MAGIC_SYMLINK |
@@ -210,19 +210,19 @@ void find_and_prime_applicable_syntax(void) {
                           MAGIC_DEBUG | MAGIC_CHECK |
 #  endif
                           MAGIC_ERROR);
-      if (cookie == NULL || magic_load(cookie, NULL) < 0) {
+      if (cookie == nullptr || magic_load(cookie, nullptr) < 0) {
         statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
       }
       else {
         magicstring = magic_file(cookie, openfile->filename);
-        if (magicstring == NULL) {
+        if (magicstring == nullptr) {
           statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
         }
       }
     }
     /* Now try and find a syntax that matches the magic string. */
-    if (magicstring != NULL) {
-      for (sntx = syntaxes; sntx != NULL; sntx = sntx->next) {
+    if (magicstring != nullptr) {
+      for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
         if (found_in_list(sntx->magics, magicstring)) {
           break;
         }
@@ -234,15 +234,15 @@ void find_and_prime_applicable_syntax(void) {
   }
 #endif
   /* If nothing at all matched, see if there is a default syntax. */
-  if (sntx == NULL && !inhelp) {
-    for (sntx = syntaxes; sntx != NULL; sntx = sntx->next) {
+  if (!sntx && !inhelp) {
+    for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
       if (strcmp(sntx->name, "default") == 0) {
         break;
       }
     }
   }
   /* When the syntax isn't loaded yet, parse it and initialize its colors. */
-  if (sntx != NULL && sntx->filename != NULL) {
+  if (sntx && sntx->filename) {
     parse_one_include(sntx->filename, sntx);
     set_syntax_colorpairs(sntx);
   }
@@ -263,13 +263,13 @@ void check_the_multis(linestruct *line) {
   if (!openfile->syntax || !openfile->syntax->multiscore) {
     return;
   }
-  if (line->multidata == NULL) {
-    refresh_needed = TRUE;
+  if (!line->multidata) {
+    refresh_needed = true;
     return;
   }
-  for (ink = openfile->syntax->color; ink != NULL; ink = ink->next) {
+  for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next) {
     /* If it's not a multiline regex, skip. */
-    if (ink->end == NULL) {
+    if (ink->end == nullptr) {
       continue;
     }
     astart     = (regexec(ink->start, line->data, 1, &startmatch, 0) == 0);
@@ -282,8 +282,7 @@ void check_the_multis(linestruct *line) {
       }
     }
     else if (line->multidata[ink->id] == WHOLELINE) {
-      /* Ensure that a detected start match is not actually an end match.
-       */
+      /* Ensure that a detected start match is not actually an end match. */
       if (!anend && (!astart || regexec(ink->end, line->data, 1, &endmatch, 0) != 0)) {
         continue;
       }
@@ -305,8 +304,8 @@ void check_the_multis(linestruct *line) {
       }
     }
     /* There is a mismatch, so something changed: repaint. */
-    refresh_needed = TRUE;
-    perturbed      = TRUE;
+    refresh_needed = true;
+    perturbed      = true;
     return;
   }
 }
@@ -322,17 +321,17 @@ void precalc_multicolorinfo(void) {
     return;
   }
   /* For each line, allocate cache space for the multiline-regex info. */
-  for (line = openfile->filetop; line != NULL; line = line->next) {
+  for (line = openfile->filetop; line != nullptr; line = line->next) {
     if (!line->multidata) {
       line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
     }
   }
-  for (ink = openfile->syntax->color; ink != NULL; ink = ink->next) {
+  for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next) {
     /* If this is not a multi-line regex, skip it. */
-    if (ink->end == NULL) {
+    if (ink->end == nullptr) {
       continue;
     }
-    for (line = openfile->filetop; line != NULL; line = line->next) {
+    for (line = openfile->filetop; line != nullptr; line = line->next) {
       int index = 0;
       /* Assume nothing applies until proven otherwise below. */
       line->multidata[ink->id] = NOTHING;
@@ -366,7 +365,7 @@ void precalc_multicolorinfo(void) {
         for (line = line->next; line != tailline; line = line->next) {
           line->multidata[ink->id] = WHOLELINE;
         }
-        if (tailline == NULL) {
+        if (tailline == nullptr) {
           line = openfile->filebot;
           break;
         }
@@ -379,7 +378,7 @@ void precalc_multicolorinfo(void) {
 }
 
 bool str_equal_to_rgx(const char *str, const regex_t *rgx) {
-  return (regexec(rgx, str, 0, NULL, 0) == 0);
+  return (regexec(rgx, str, 0, nullptr, 0) == 0);
 }
 
 short rgb_to_ncurses(unsigned char value) {

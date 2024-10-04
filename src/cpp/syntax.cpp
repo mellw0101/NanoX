@@ -38,90 +38,61 @@ string get_word_after(const char *data, const char *word) {
 void syntax_check_file(openfilestruct *file) {
   PROFILE_FUNCTION;
   openfile->type.clear();
-  if (openfile->filetop->next == nullptr) {
+  if (!openfile->filetop->next) {
     return;
   }
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
     const string ext = file_extention_str();
     if (ext == "cpp" || ext == "c" || ext == "cc" || ext == "h" || ext == "hpp") {
       openfile->type.clear_and_set<C_CPP>();
-      const auto &it = test_map.find("bool");
-      if (it == test_map.end()) {
-        /* Types. */
-        test_map["bool"]      = {FG_VS_CODE_BLUE};
-        test_map["char"]      = {FG_VS_CODE_BLUE};
-        test_map["short"]     = {FG_VS_CODE_BLUE};
-        test_map["int"]       = {FG_VS_CODE_BLUE};
-        test_map["long"]      = {FG_VS_CODE_BLUE};
-        test_map["unsigned"]  = {FG_VS_CODE_BLUE};
-        test_map["void"]      = {FG_VS_CODE_BLUE};
-        test_map["static"]    = {FG_VS_CODE_BLUE};
-        test_map["extern"]    = {FG_VS_CODE_BLUE};
-        test_map["constexpr"] = {FG_VS_CODE_BLUE};
-        test_map["const"]     = {FG_VS_CODE_BLUE};
-        test_map["true"]      = {FG_VS_CODE_BLUE};
-        test_map["false"]     = {FG_VS_CODE_BLUE};
-        test_map["TRUE"]      = {FG_VS_CODE_BLUE};
-        test_map["FALSE"]     = {FG_VS_CODE_BLUE};
-        test_map["nullptr"]   = {FG_VS_CODE_BLUE};
-        test_map["NULL"]      = {FG_VS_CODE_BLUE};
-        test_map["typedef"]   = {FG_VS_CODE_BLUE};
-        test_map["sizeof"]    = {FG_VS_CODE_BLUE};
-        test_map["struct"]    = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_STRUCT};
-        test_map["class"]     = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_CLASS};
-        test_map["enum"]      = {FG_VS_CODE_BLUE};
-        test_map["namespace"] = {FG_VS_CODE_BLUE};
-        test_map["inline"]    = {FG_VS_CODE_BLUE};
-        test_map["typename"]  = {FG_VS_CODE_BLUE};
-        test_map["template"]  = {FG_VS_CODE_BLUE};
-        test_map["volatile"]  = {FG_VS_CODE_BLUE};
-        test_map["public"]    = {FG_VS_CODE_BLUE};
-        test_map["private"]   = {FG_VS_CODE_BLUE};
-        test_map["explicit"]  = {FG_VS_CODE_BLUE};
-        test_map["this"]      = {FG_VS_CODE_BLUE};
-        test_map["union"]     = {FG_VS_CODE_BLUE};
-        test_map["auto"]      = {FG_VS_CODE_BLUE};
-        test_map["noexcept"]  = {FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
-        /* Control statements. */
-        test_map["if"]       = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["else"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["case"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["switch"]   = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["for"]      = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["while"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["return"]   = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["break"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["do"]       = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["continue"] = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["using"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-        test_map["operator"] = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
-      }
-      LSP.check(nullptr, "");
-      LSP.add_defs_to_color_map();
-      for (const auto &it : LSP.index.classes) {
-        string name = get_word_after(it.raw_data.c_str(), "class");
-        if (!name.empty()) {
-          test_map[name] = {FG_VS_CODE_GREEN};
-        }
-      }
-      for (const auto &it : LSP.index.rawstruct) {
-        string name = get_word_after(it.c_str(), "struct");
-        if (!name.empty()) {
-          test_map[name] = {FG_VS_CODE_GREEN};
-        }
-      }
-      for (const auto &it : LSP.index.rawtypedef) {
-        string name = get_word_after(it.c_str(), "struct");
-        if (!name.empty()) {
-          test_map[name] = {FG_VS_CODE_GREEN};
-        }
-      }
-      for (const auto &it : LSP.index.variabels) {
-        if (it.file == openfile->filename) {
-          test_map[it.name] = {FG_VS_CODE_BRIGHT_CYAN, it.decl_line, it.scope_end};
-        }
-      }
-      unix_socket_debug("variable vector size: %u\n", LSP.index.variabels.size());
+      /* Types. */
+      test_map["bool"]      = {FG_VS_CODE_BLUE};
+      test_map["char"]      = {FG_VS_CODE_BLUE};
+      test_map["short"]     = {FG_VS_CODE_BLUE};
+      test_map["int"]       = {FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["long"]      = {FG_VS_CODE_BLUE};
+      test_map["unsigned"]  = {FG_VS_CODE_BLUE};
+      test_map["void"]      = {FG_VS_CODE_BLUE};
+      test_map["static"]    = {FG_VS_CODE_BLUE};
+      test_map["extern"]    = {FG_VS_CODE_BLUE};
+      test_map["constexpr"] = {FG_VS_CODE_BLUE};
+      test_map["const"]     = {FG_VS_CODE_BLUE};
+      test_map["true"]      = {FG_VS_CODE_BLUE};
+      test_map["false"]     = {FG_VS_CODE_BLUE};
+      test_map["TRUE"]      = {FG_VS_CODE_BLUE};
+      test_map["FALSE"]     = {FG_VS_CODE_BLUE};
+      test_map["nullptr"]   = {FG_VS_CODE_BLUE};
+      test_map["NULL"]      = {FG_VS_CODE_BLUE};
+      test_map["typedef"]   = {FG_VS_CODE_BLUE};
+      test_map["sizeof"]    = {FG_VS_CODE_BLUE};
+      test_map["struct"]    = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_STRUCT};
+      test_map["class"]     = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_CLASS};
+      test_map["enum"]      = {FG_VS_CODE_BLUE};
+      test_map["namespace"] = {FG_VS_CODE_BLUE};
+      test_map["inline"]    = {FG_VS_CODE_BLUE};
+      test_map["typename"]  = {FG_VS_CODE_BLUE};
+      test_map["template"]  = {FG_VS_CODE_BLUE};
+      test_map["volatile"]  = {FG_VS_CODE_BLUE};
+      test_map["public"]    = {FG_VS_CODE_BLUE};
+      test_map["private"]   = {FG_VS_CODE_BLUE};
+      test_map["explicit"]  = {FG_VS_CODE_BLUE};
+      test_map["this"]      = {FG_VS_CODE_BLUE};
+      test_map["union"]     = {FG_VS_CODE_BLUE};
+      test_map["auto"]      = {FG_VS_CODE_BLUE};
+      test_map["noexcept"]  = {FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
+      /* Control statements. */
+      test_map["if"]       = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["else"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["case"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["switch"]   = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["for"]      = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["while"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["return"]   = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["break"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["do"]       = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["continue"] = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["using"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["operator"] = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
     }
     else if (ext == "asm" || ext == "s") {
       openfile->type.clear_and_set<ASM>();

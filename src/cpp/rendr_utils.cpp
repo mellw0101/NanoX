@@ -29,8 +29,8 @@ void find_suggestion(void) {
       return;
     }
     if (openfile->current->lineno >= i.start_bracket && openfile->current->lineno <= i.end_braket) {
-      for (variable_t *var = i.params; var != NULL; var = var->prev) {
-        if (var->name == NULL) {
+      for (variable_t *var = i.params; var != nullptr; var = var->prev) {
+        if (var->name == nullptr) {
           continue;
         }
         if (strncmp(var->name, suggest_buf, suggest_len) == 0) {
@@ -77,10 +77,10 @@ void find_suggestion(void) {
 }
 
 /* Clear suggest buffer and len as well as setting the
- * current suggest str to NULL. */
+ * current suggest str to nullptr. */
 void clear_suggestion(void) {
-  suggest_on               = FALSE;
-  suggest_str              = NULL;
+  suggest_on               = false;
+  suggest_str              = nullptr;
   suggest_len              = 0;
   suggest_buf[suggest_len] = '\0';
 }
@@ -89,9 +89,9 @@ void clear_suggestion(void) {
 void add_char_to_suggest_buf(void) {
   if (openfile->current_x > 0) {
     const char *c = &openfile->current->data[openfile->current_x - 1];
-    if (is_word_char(c - 1, FALSE)) {
+    if (is_word_char(c - 1, false)) {
       suggest_len     = 0;
-      const Ulong pos = word_index(TRUE);
+      const Ulong pos = word_index(true);
       for (int i = pos; i < openfile->current_x - 1; suggest_len++, i++) {
         suggest_buf[suggest_len] = openfile->current->data[i];
       }
@@ -121,10 +121,10 @@ void draw_suggest_win(void) {
 
 /* Parse a function declaration that is over multiple lines. */
 char *parse_split_decl(linestruct *line) {
-  char       *data = NULL;
+  char       *data = nullptr;
   const char *p    = strchr(line->data, ')');
   if (!p) {
-    return NULL;
+    return nullptr;
   }
   line            = line->prev;
   char *cur_data  = copy_of(line->data);
@@ -138,7 +138,7 @@ char *parse_split_decl(linestruct *line) {
   data = alloc_str_free_substrs(cur_data, next_data);
   if (!line->prev->data[0]) {
     free(data);
-    return NULL;
+    return nullptr;
   }
   char *ret_t = copy_of(line->prev->data);
   append_str(&ret_t, " ");
@@ -163,8 +163,8 @@ linestruct *get_func_decl_last_line(linestruct *line) {
 
 /* Parse function signature. */
 char *parse_function_sig(linestruct *line) {
-  const char *p           = NULL;
-  const char *param_start = NULL;
+  const char *p           = nullptr;
+  const char *param_start = nullptr;
   /* If the bracket is alone on a line then go to prev line. */
   line = get_func_decl_last_line(line);
   /* If the line does not contain '(', so it must be a split decl. */
@@ -173,9 +173,9 @@ char *parse_function_sig(linestruct *line) {
     return parse_split_decl(line);
   }
   p           = strchr(line->data, ' ');
-  char *sig   = NULL;
-  char *ret_t = NULL;
-  char *ret   = NULL;
+  char *sig   = nullptr;
+  char *ret_t = nullptr;
+  char *ret   = nullptr;
   if (p && p < (param_start - 1)) {
     if (p == line->data) {
       for (; *p && (*p == ' ' || *p == '\t'); p++);
@@ -195,7 +195,7 @@ char *parse_function_sig(linestruct *line) {
   }
   if (!ret) {
     if (!line->prev->data[0]) {
-      return NULL;
+      return nullptr;
     }
     ret_t = copy_of(line->prev->data);
     append_str(&ret_t, " ");
@@ -206,7 +206,7 @@ char *parse_function_sig(linestruct *line) {
 
 /* Inject a suggestion. */
 void accept_suggestion(void) {
-  if (suggest_str != NULL) {
+  if (suggest_str != nullptr) {
     inject(suggest_str + suggest_len, strlen(suggest_str) - suggest_len);
   }
   clear_suggestion();
@@ -217,15 +217,15 @@ void find_word(linestruct *line, const char *data, const char *word, const Ulong
   *start = strstr(data, word);
   if (*start) {
     *end = (*start) + slen;
-    if (!is_word_char(&line->data[((*end) - line->data)], FALSE) &&
-        (*start == line->data || (!is_word_char(&line->data[((*start) - line->data) - 1], FALSE) &&
+    if (!is_word_char(&line->data[((*end) - line->data)], false) &&
+        (*start == line->data || (!is_word_char(&line->data[((*start) - line->data) - 1], false) &&
                                   line->data[((*start) - line->data) - 1] != '_'))) {}
     else {
-      *start = NULL;
+      *start = nullptr;
     }
   }
   else {
-    *end = NULL;
+    *end = nullptr;
   }
 }
 
@@ -243,11 +243,11 @@ void free_local_var(local_var_t *var) {
 
 local_var_t parse_local_var(linestruct *line) {
   local_var_t var;
-  var.type         = NULL;
-  var.name         = NULL;
-  var.value        = NULL;
-  const char *end  = NULL;
-  const char *data = NULL;
+  var.type         = nullptr;
+  var.name         = nullptr;
+  var.value        = nullptr;
+  const char *end  = nullptr;
+  const char *data = nullptr;
   data             = &line->data[indent_char_len(line)];
   end              = strchr(data, ';');
   if (end) {
@@ -294,8 +294,8 @@ local_var_t parse_local_var(linestruct *line) {
 
 int find_class_end_line(linestruct *from) {
   int         lvl     = 0;
-  const char *b_start = NULL;
-  const char *b_end   = NULL;
+  const char *b_start = nullptr;
+  const char *b_end   = nullptr;
   for (linestruct *line = from; line; line = line->next) {
     b_start = line->data;
     do {

@@ -16,7 +16,7 @@ void handle_main_thread_signal(int sig, siginfo_t *si, void *context) {
 }
 
 /* Send a function and arg to the main thread for direct handeling. */
-void send_signal_to_main_thread(callback_functionptr_t func, void *arg) {
+void send_signal_to_main_thread(void (*func)(void *), void *arg) {
   signal_payload_t *payload = (signal_payload_t *)nmalloc(sizeof(signal_payload_t));
   payload->func             = func;
   payload->arg              = arg;
@@ -24,24 +24,20 @@ void send_signal_to_main_thread(callback_functionptr_t func, void *arg) {
   sig_data.sival_ptr = payload;
   if (sigqueue(main_thread->pid, SIGRTMIN, sig_data) != 0) {
     switch (errno) {
-      case EAGAIN :
-      {
-        LOUT_logE("The signal could not be queued due to lack of memory.");
+      case EAGAIN : {
+        logE("The signal could not be queued due to lack of memory.");
         break;
       }
-      case EINVAL :
-      {
-        LOUT_logE("An invalid signal was specified.");
+      case EINVAL : {
+        logE("An invalid signal was specified.");
         break;
       }
-      case ESRCH :
-      {
-        LOUT_logE("The thread does not exist.");
+      case ESRCH : {
+        logE("The thread does not exist.");
         break;
       }
-      default :
-      {
-        LOUT_logE("sigqueue failed with errno: %d.", errno);
+      default : {
+        logE("sigqueue failed with errno: %d.", errno);
       }
     }
   }
@@ -80,23 +76,19 @@ void setup_signal_handler_on_sub_thread(void (*handler)(int)) {
   sig_act.sa_flags = 0;
   if (sigaction(SIGUSR1, &sig_act, NULL) != 0 || sigaction(SIGUSR2, &sig_act, NULL) != 0) {
     switch (errno) {
-      case EINVAL :
-      {
+      case EINVAL : {
         logE("Invalid signal or invalid signal handler flags.");
         break;
       }
-      case EFAULT :
-      {
+      case EFAULT : {
         logE("Invalid memory address provided for the action.");
         break;
       }
-      case EPERM :
-      {
+      case EPERM : {
         logE("Insufficient premission to change signal action.");
         break;
       }
-      default :
-      {
+      default : {
         logE("Unknown error (errno: %d).", errno);
       }
     }
