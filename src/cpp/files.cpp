@@ -496,7 +496,7 @@ char *encode_data(char *text, Ulong length) {
 }
 
 /* The number of bytes by which we expand the line buffer while reading. */
-constexpr Uchar LUMPSIZE = 120;
+#define LUMPSIZE 120
 /* Read the given open file f into the current buffer.  filename should be
  * set to the name of the file.  undoable means that undo records should be
  * created and that the file does not need to be checked for writability.
@@ -715,7 +715,7 @@ int open_file(const char *filename, bool new_one, FILE **f) {
   restore_handler_for_Ctrl_C();
   block_sigwinch(false);
   if (fd == -1) {
-    if (errno == EINTR || errno == 0) {
+    if (errno == EINTR || !errno) {
       statusline(ALERT, _("Interrupted"));
     }
     else {
@@ -725,7 +725,7 @@ int open_file(const char *filename, bool new_one, FILE **f) {
   else {
     /* The file is A-OK.  Associate a stream with it. */
     *f = fdopen(fd, "rb");
-    if (*f == nullptr) {
+    if (!*f) {
       statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
       close(fd);
       fd = -1;
@@ -2381,10 +2381,10 @@ linestruct *retrieve_file_as_lines(const string &path) {
     return nullptr;
   }
   static thread_local char *buf = nullptr;
-  Ulong        size;
-  long         len;
-  linestruct  *head = nullptr;
-  linestruct  *tail = nullptr;
+  Ulong                     size;
+  long                      len;
+  linestruct               *head = nullptr;
+  linestruct               *tail = nullptr;
   while ((len = getline(&buf, &size, file)) != EOF) {
     if (buf[len - 1] == '\n') {
       buf[--len] = '\0';

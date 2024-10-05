@@ -5,12 +5,6 @@
 #include "render.h"
 #include "task_types.h"
 
-using std::string;
-using std::string_view;
-using std::to_string;
-using std::unordered_map;
-using std::vector;
-
 /* All external variables.  See global.c for their descriptions. */
 
 extern volatile sig_atomic_t the_window_resized;
@@ -256,6 +250,7 @@ void        mention_name_and_linecount(void);
 void        switch_to_prev_buffer(void);
 void        switch_to_next_buffer(void);
 void        close_buffer(void);
+char       *encode_data(char *text, Ulong length);
 void        read_file(FILE *f, int fd, const char *filename, bool undoable);
 int         open_file(const char *filename, bool new_one, FILE **f);
 char       *get_next_filename(const char *name, const char *suffix);

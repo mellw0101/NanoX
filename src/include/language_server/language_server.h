@@ -57,13 +57,13 @@ class LanguageServer {
  public:
   Index index;
 
-  static auto instance(void) -> LanguageServer *const &;
+  static LanguageServer *const & instance(void);
 
   auto find_endif(linestruct *) -> int;
   auto is_defined(const string &) -> int;
   auto define_value(const string &) -> string;
-  auto parse_full_pp_delc(linestruct *, const char **, int * = nullptr) -> string;
-  auto check(IndexFile *idfile) -> void;
+  string parse_full_pp_delc(linestruct *, const char **, int * = nullptr);
+  void check(IndexFile *idfile);
 
   bool has_been_included(const char *path);
   int index_file(const char *path);

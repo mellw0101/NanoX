@@ -25,6 +25,8 @@ vec<const char *> types             = {
   "long", "short", "const", "bool",     "typedef", "class",
 };
 
+unordered_map<char *, SynxMapEntry, CharPtrHash, CharPtrEqual> synx_map;
+
 unordered_map<string, syntax_data_t> test_map;
 vector<class_info_t>                 class_info_vector;
 vector<var_t>                        var_vector;
@@ -947,6 +949,10 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
             render_control_statements(node->start);
           }
         }
+      }
+      const auto &macro = LSP->index.defines.find(node->str);
+      if (macro != LSP->index.defines.end()) {
+        midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BLUE);
       }
       free_node(node);
     }

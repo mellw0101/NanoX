@@ -191,6 +191,7 @@ void do_close_bracket(void) {
 
 void do_parse(void) {
   LSP->index_file(openfile->filename);
+  unix_socket_debug("got here\n");
   unix_socket_debug("include size: %u\n", LSP->index.include.size());
   unix_socket_debug("define size: %u\n", LSP->index.defines.size());
   unix_socket_debug("class size: %u\n", LSP->index.classes.size());

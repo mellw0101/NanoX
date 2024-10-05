@@ -1,10 +1,31 @@
 #pragma once
 
 #include "../definitions.h"
-
-using std::unordered_map;
-
 /* clang-format off */
+
+/* Identier for casting data. */
+typedef enum class SynxType {
+  DEFINE_ENTRY
+} SynxType;
+/* Struct to hold the type and ptr to the data. */
+typedef struct {
+  SynxType type; /* Data type to be cast into. */
+  void    *data; /* Ptr to the actual data. */
+} SynxMapEntry;
+/* Custom 'char *' hash struct, for the synx map. */
+typedef struct CharPtrHash {
+  /* Return`s hash based on '__ptr' content. */
+  Ulong operator () (const char *__ptr) const {
+    return hash<string>()(__ptr);
+  }
+} CharPtrHash;
+/* Custom 'char *' equal struct, for the synx map. */
+typedef struct CharPtrEqual {
+  bool operator () (const char *__lhs, const char *__rhs) const {
+    return strcmp(__lhs, __rhs);
+  }
+} CharPtrEqual;
+extern unordered_map<char *, SynxMapEntry, CharPtrHash, CharPtrEqual> synx_map;
 
 struct define_entry_t {
   string name;
@@ -21,8 +42,17 @@ typedef struct DefineEntry {
 } DefineEntry;
 
 typedef struct IndexFile {
-  char *file;
-  linestruct *head = nullptr;
+ private:
+  int  open_file(FILE **f);
+  void read_lines(FILE *f, int fd);
+
+ public:
+  char *filename;
+  linestruct *filetop;
+  linestruct *filebot;
+
+  void read_file(const char *path);
+
 } IndexFile;
 
 typedef struct ClassData {
@@ -46,14 +76,14 @@ typedef struct Index {
   MVector<string> rawstruct;
 
   void delete_data(void) noexcept {
-    for (auto &[file, data] : include) {
-      while (data.head) {
-        linestruct *node = data.head;
-        data.head = data.head->next;
+    for (auto &[filename, file] : include) {
+      while (file.filetop) {
+        linestruct *node = file.filetop;
+        file.filetop = node->next;
         free(node->data);
         free(node);
       }
-      free(data.file);
+      free(file.filename);
     }
     include.clear();
     defines.clear();

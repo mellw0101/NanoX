@@ -166,24 +166,6 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
   if (local) {
     LSP->index_file(path);
     free(path);
-    // char *abs_path = get_full_path(path);
-    // free(path);
-    // if (abs_path) {
-    //   if (!LSP->has_been_included(abs_path)) {
-    //     if (is_file_and_exists(abs_path)) {
-    //       IndexFile idfile;
-    //       idfile.file = copy_of(abs_path);
-    //       idfile.head = retrieve_file_as_lines(idfile.file);
-    //       // LSP->index.include.push_back(idfile);
-    //       LSP->index.include[idfile.file] = idfile;
-    //       if (idfile.head) {
-    //         unix_socket_debug("%s\n", idfile.file);
-    //         LSP->check(&idfile);
-    //       }
-    //     }
-    //   }
-    //   free(abs_path);
-    // }
     return;
   }
   else {
@@ -202,34 +184,11 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
       if (LSP->has_been_included(it.c_str())) {
         break;
       }
-      unix_socket_debug("%s\n", it.c_str());
       LSP->index_file(it.c_str());
       if (is_file_and_exists(it.c_str())) {
         break;
       }
     }
-    // for (const auto &it : dirs) {
-    //   if (is_file_and_exists(it.c_str())) {
-    //     check_file = it;
-    //     break;
-    //   }
-    // }
-    // if (!is_file_and_exists(check_file.c_str())) {
-    //   unix_socket_debug(
-    //     "current_file: %s, [FATAL] file: '%s' does not have a valid path\n", current_file, check_file.c_str());
-    //   return;
-    // }
-    // if (!LSP->has_been_included(check_file.c_str())) {
-    //   IndexFile idfile;
-    //   idfile.file = copy_of(check_file.c_str());
-    //   idfile.head = retrieve_file_as_lines(idfile.file);
-    //   // LSP->index.include.push_back(idfile);
-    //   LSP->index.include[idfile.file] = idfile;
-    //   if (idfile.head) {
-    //     unix_socket_debug("current_file: %s, non_local_file: %s\n", current_file, idfile.file);
-    //     LSP->check(&idfile);
-    //   }
-    // }
     return;
   }
 }
@@ -425,6 +384,10 @@ void do_if(linestruct *line, const char **ptr) {
   } while (found);
 }
 
+inline namespace DefineTools {
+  
+};
+
 void do_define(linestruct *line, const char *current_file, const char **ptr) {
   DefineEntry de;
   const char *start = *ptr;
@@ -435,11 +398,14 @@ void do_define(linestruct *line, const char *current_file, const char **ptr) {
   }
   end = start;
   ADV_PTR(end, (*end != '(' && *end != ' ' && *end != '\t'));
+  if (start == end) {
+    return;
+  }
   de.name            = string(start, (end - start));
   de.decl_start_line = line->lineno;
   if (*end == '(') {
     ADV_PTR(end, (*end != ')'));
-    if (!*end) {
+    if (!*end || end == start) {
       return;
     }
     end += 1;

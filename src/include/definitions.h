@@ -57,6 +57,13 @@
 
 #include <ncursesw/ncurses.h>
 
+using std::string;
+using std::string_view;
+using std::to_string;
+using std::unordered_map;
+using std::vector;
+using std::hash;
+
 /* Native language support. */
 #ifdef ENABLE_NLS
 #  ifdef HAVE_LIBINTL_H

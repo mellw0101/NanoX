@@ -1,6 +1,8 @@
 /// @file rcfile.cpp
 #include "../include/prototypes.h"
 
+#include <libconfig.h>
+
 #ifndef RCFILE_NAME
 #  define HOME_RC_NAME ".nanorc"
 #  define RCFILE_NAME  "nanorc"
@@ -83,12 +85,12 @@ static Ulong lineno = 0;
 /* The path to the rcfile we're parsing. */
 static char *nanorc = nullptr;
 /* Whether we're allowed to add to the last syntax.  When a file ends,
- * or when a new syntax command is seen, this bool becomes 'FALSE'. */
-static bool opensyntax = FALSE;
+ * or when a new syntax command is seen, this bool becomes 'false'. */
+static bool opensyntax = false;
 /* The syntax that is currently being parsed. */
 static syntaxtype *live_syntax;
 /* Whether a syntax definition contains any color commands. */
-static bool seen_color_command = FALSE;
+static bool seen_color_command = false;
 /* The end of the color list for the current syntax. */
 static colortype *lastcolor = nullptr;
 /* Beginning and end of a list of errors in rcfiles, if any. */
@@ -102,22 +104,22 @@ void display_rcfile_errors(void) {
   }
 }
 
-static constexpr Ushort MAXSIZE = (PATH_MAX + 200);
+#define MAXSIZE (PATH_MAX + 200)
 /* Store the given error message in a linked list, to be printed upon exit. */
 void jot_error(const char *msg, ...) {
   linestruct *error = make_new_node(errors_tail);
   va_list     ap;
   char        textbuf[MAXSIZE];
   int         length = 0;
-  if (errors_head == nullptr) {
+  if (!errors_head) {
     errors_head = error;
   }
   else {
     errors_tail->next = error;
   }
   errors_tail = error;
-  if (startup_problem == nullptr) {
-    if (nanorc != nullptr) {
+  if (!startup_problem) {
+    if (nanorc) {
       snprintf(textbuf, MAXSIZE, _("Mistakes in '%s'"), nanorc);
       startup_problem = copy_of(textbuf);
     }
@@ -259,7 +261,7 @@ keystruct *strtosc(const char *input) {
   keystruct *s             = (keystruct *)nmalloc(sizeof(keystruct));
   s->toggle                = 0;
   const functionptrtype it = retriveScFromStr(input);
-  if (it != nullptr) {
+  if (it) {
     s->func = it;
   }
   else {
@@ -433,7 +435,7 @@ void begin_new_syntax(char *ptr) {
   live_syntax->next  = syntaxes;
   syntaxes           = live_syntax;
   opensyntax         = true;
-  seen_color_command = FALSE;
+  seen_color_command = false;
   /* The default syntax should have no associated extensions. */
   if (strcmp(live_syntax->name, "default") == 0 && *ptr) {
     jot_error(N_("The \"default\" syntax does not accept extensions"));
@@ -453,7 +455,7 @@ void check_for_nonempty_syntax(void) {
     jot_error(N_("Syntax \"%s\" has no color commands"), live_syntax->name);
     lineno = current_lineno;
   }
-  opensyntax = FALSE;
+  opensyntax = false;
 }
 
 /* Return true when the given function is present in almost all menus. */
@@ -613,12 +615,12 @@ bool is_good_file(char *file) {
   struct stat rcinfo;
   /* First check that the file exists and is readable. */
   if (access(file, R_OK) != 0) {
-    return FALSE;
+    return false;
   }
   /* If the thing exists, it may be neither a directory nor a device. */
   if (stat(file, &rcinfo) != -1 && (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode))) {
     jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
-    return FALSE;
+    return false;
   }
   return true;
 }
@@ -654,7 +656,7 @@ void parse_one_include(char *file, syntaxtype *syntax) {
   live_syntax = syntax;
   lastcolor   = nullptr;
   /* Fully parse the given syntax (as it is about to be used). */
-  parse_rcfile(rcstream, true, FALSE);
+  parse_rcfile(rcstream, true, false);
   extra = syntax->augmentations;
   /* Apply any stored extendsyntax commands. */
   while (extra != nullptr) {
@@ -778,12 +780,12 @@ short color_to_short(const char *colorname, bool &vivid, bool &thick) {
   }
   else if (strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0') {
     vivid = true;
-    thick = FALSE;
+    thick = false;
     colorname += 5;
   }
   else {
-    vivid = FALSE;
-    thick = FALSE;
+    vivid = false;
+    thick = false;
   }
   if (colorname[0] == '#' && strlen(colorname) == 4) {
     Ushort r, g, b;
@@ -814,7 +816,7 @@ short color_to_short(const char *colorname, bool &vivid, bool &thick) {
 }
 
 /* Parse the color name (or pair of color names) in the given string.
- * Return 'FALSE' when any color name is invalid; otherwise return 'true'.
+ * Return 'false' when any color name is invalid; otherwise return 'true'.
  * TODO: (parse_combination) - Figure out how to use this for live syntax
  * colors. */
 bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
@@ -826,7 +828,7 @@ bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
     *attributes |= A_BOLD;
     if (combotext[4] != ',') {
       jot_error(N_("An attribute requires a subsequent comma"));
-      return FALSE;
+      return false;
     }
     combotext += 5;
   }
@@ -834,7 +836,7 @@ bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
     *attributes |= A_ITALIC;
     if (combotext[6] != ',') {
       jot_error(N_("An attribute requires a subsequent comma"));
-      return FALSE;
+      return false;
     }
     combotext += 7;
   }
@@ -845,7 +847,7 @@ bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
   if (!comma || comma > combotext) {
     *fg = color_to_short(combotext, vivid, thick);
     if (*fg == BAD_COLOR) {
-      return FALSE;
+      return false;
     }
     if (vivid && !thick && COLORS > 8) {
       fg += 8;
@@ -860,7 +862,7 @@ bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
   if (comma) {
     *bg = color_to_short(comma + 1, vivid, thick);
     if (*bg == BAD_COLOR) {
-      return FALSE;
+      return false;
     }
     if (vivid && COLORS > 8) {
       bg += 8;
@@ -901,7 +903,7 @@ void parse_rule(char *ptr, int rex_flags) {
     /* Container for compiled regex (pair) and the color it paints. */
     colortype *newcolor = nullptr;
     /* Whether it is a start=/end= regex pair. */
-    bool expectend = FALSE;
+    bool expectend = false;
     if (constexpr_strncmp(ptr, "start=", 6) == 0) {
       ptr += 6;
       expectend = true;
@@ -1037,8 +1039,8 @@ void pick_up_name(const char *kind, char *ptr, char **storage) {
  * accordingly. */
 bool parse_syntax_commands(const char *keyword, char *ptr) {
   unsigned int syntax_opt = retriveSyntaxOptionFromStr(keyword);
-  if (syntax_opt == FALSE) {
-    return FALSE;
+  if (syntax_opt == false) {
+    return false;
   }
   if (syntax_opt & SYNTAX_OPT_COLOR) {
     parse_rule(ptr, NANO_REG_EXTENDED);
@@ -1103,7 +1105,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
   /* TODO: This is the main loop for rcfile parsing. FIX IT */
   while ((length = getline(&buffer, &size, rcstream)) > 0) {
     char *ptr, *keyword, *option, *argument;
-    bool  drop_open = FALSE;
+    bool  drop_open = false;
     int   set       = 0;
     Ulong i;
     lineno++;
@@ -1235,14 +1237,14 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
         parse_binding(ptr, true);
       }
       else if (strcmp(keyword, "unbind") == 0) {
-        parse_binding(ptr, FALSE);
+        parse_binding(ptr, false);
       }
       else if (intros_only) {
         jot_error(N_("Command \"%s\" not understood"), keyword);
       }
     }
     if (drop_open) {
-      opensyntax = FALSE;
+      opensyntax = false;
     }
     if (set == 0) {
       continue;
@@ -1384,7 +1386,7 @@ void parse_one_nanorc(void) {
   /* If opening the file succeeded, parse it.
    * Otherwise, only complain if the file actually exists. */
   if (rcstream != nullptr) {
-    parse_rcfile(rcstream, FALSE, true);
+    parse_rcfile(rcstream, false, true);
   }
   else if (errno != ENOENT) {
     jot_error(N_("Error reading %s: %s"), nanorc, strerror(errno));
@@ -1393,7 +1395,7 @@ void parse_one_nanorc(void) {
 
 bool have_nanorc(const char *path, const char *name) {
   if (path == nullptr) {
-    return FALSE;
+    return false;
   }
   free(nanorc);
   nanorc = concatenate(path, name);

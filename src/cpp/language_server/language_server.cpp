@@ -2,7 +2,7 @@
 
 LanguageServer *LanguageServer::_instance = nullptr;
 
-auto LanguageServer::find_endif(linestruct *from) -> int {
+int LanguageServer::find_endif(linestruct *from) {
   int         lvl   = 0;
   const char *found = nullptr;
   const char *start = nullptr;
@@ -34,7 +34,7 @@ auto LanguageServer::find_endif(linestruct *from) -> int {
   return 0;
 }
 
-auto LanguageServer::fetch_compiler_defines(string compiler) -> void {
+void LanguageServer::fetch_compiler_defines(string compiler) {
   if ((compiler != "clang" && compiler != "clang++") && (compiler != "gcc" && compiler != "g++")) {
     logE("'%s' is an invalid compiler.", compiler.c_str());
     return;
@@ -79,7 +79,7 @@ auto LanguageServer::fetch_compiler_defines(string compiler) -> void {
 
 /* This is the only way to access the language_server.  There
  * also exist`s a shorthand for this function call named 'LSP'. */
-auto LanguageServer::instance(void) -> LanguageServer *const & {
+LanguageServer *const &LanguageServer::instance(void) {
   if (!_instance) {
     _instance = new LanguageServer();
     if (!_instance) {
@@ -91,13 +91,13 @@ auto LanguageServer::instance(void) -> LanguageServer *const & {
   return _instance;
 }
 
-auto LanguageServer::_destroy(void) noexcept -> void {
+void LanguageServer::_destroy(void) noexcept {
   LSP->index.delete_data();
   delete _instance;
 }
 
 /* Return`s index of entry if found otherwise '-1'. */
-auto LanguageServer::is_defined(const string &name) -> int {
+int LanguageServer::is_defined(const string &name) {
   return -1;
 }
 
@@ -152,9 +152,9 @@ auto LanguageServer::split_if_statement(const string &str) -> vector<string> {
   NLOG("\n"); */
   return {};
 }
-
 /* Parses a full preprossesor decl so that '\' are placed on the same line. */
-auto LanguageServer::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_lineno) -> string {
+
+string LanguageServer::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_lineno) {
   PROFILE_FUNCTION;
   string      ret   = "";
   const char *start = *ptr;
@@ -183,9 +183,9 @@ auto LanguageServer::parse_full_pp_delc(linestruct *line, const char **ptr, int 
   return ret;
 }
 
-auto LanguageServer::check(IndexFile *idfile) -> void {
+void LanguageServer::check(IndexFile *idfile) {
   PROFILE_FUNCTION;
-  linestruct *from = idfile->head ? idfile->head : openfile->filetop;
+  linestruct *from = idfile->filetop ? idfile->filetop : openfile->filetop;
   FOR_EACH_LINE_NEXT(line, from) {
     Parse::comment(line);
     if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
@@ -193,7 +193,7 @@ auto LanguageServer::check(IndexFile *idfile) -> void {
       continue;
     }
     if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
-      do_preprossesor(line, idfile->file);
+      do_preprossesor(line, idfile->filename);
     }
     if (line->flags.is_set<PP_LINE>()) {
       continue;
@@ -210,6 +210,25 @@ bool LanguageServer::has_been_included(const char *path) {
   return false;
 }
 
+char *get_absolute_path(const char *path) {
+  if (!path) {
+    logE("param: 'path', Is invalid.");
+    return nullptr;
+  }
+  char *absolute_path = nullptr;
+  if (*path == '/') {
+    string normalise_path = Parse::normalise_path(path);
+    absolute_path         = copy_of(normalise_path.c_str());
+  }
+  else {
+    absolute_path = get_full_path(path);
+  }
+  if (!absolute_path || !is_file_and_exists(absolute_path)) {
+    return nullptr;
+  }
+  return absolute_path;
+}
+
 int LanguageServer::index_file(const char *path) {
   PROFILE_FUNCTION;
   if (!path) {
@@ -218,40 +237,39 @@ int LanguageServer::index_file(const char *path) {
   }
   char *absolute_path = nullptr;
   if (*path == '/') {
-    absolute_path = copy_of(path);
+    string normalise_path = Parse::normalise_path(path);
+    absolute_path         = copy_of(normalise_path.c_str());
   }
   else {
-    absolute_path  =  get_full_path(path);
+    absolute_path = get_full_path(path);
   }
   if (!absolute_path || !is_file_and_exists(absolute_path)) {
-    // logE("Failed to get absolute path for file: '%s'.", path);
     return -1;
   }
   if (has_been_included(absolute_path)) {
     free(absolute_path);
-    logE("File: '%s', Has already been include.", absolute_path);
     return -1;
   }
   unix_socket_debug("path %s\n", absolute_path);
-  IndexFile idfile;
-  idfile.file = absolute_path;
-  idfile.head = retrieve_file_as_lines(absolute_path);
+  IndexFile idfile;//(absolute_path);
+  idfile.read_file(absolute_path);
+  // idfile.filename = absolute_path;
+  // idfile.filetop = retrieve_file_as_lines(idfile.filename);
   index.include[absolute_path] = idfile;
-  linestruct *head = idfile.head;
-  while (head) {
-    linestruct *line = head;
-    head = line->next;
+  free(absolute_path);
+  FOR_EACH_LINE_NEXT(line, idfile.filetop) {
     Parse::comment(line);
     if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
         line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
       continue;
     }
     if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
-      do_preprossesor(line, absolute_path);
+      do_preprossesor(line, idfile.filename);
     }
     if (line->flags.is_set<PP_LINE>()) {
       continue;
     }
+    // do_parse(&line, idfile.file);
   }
   return 0;
 }
