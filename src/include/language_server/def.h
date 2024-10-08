@@ -27,13 +27,8 @@ typedef struct CharPtrEqual {
 } CharPtrEqual;
 extern unordered_map<char *, SynxMapEntry, CharPtrHash, CharPtrEqual> synx_map;
 
-struct define_entry_t {
-  string name;
-  string value;
-};
-
 typedef struct DefineEntry {
-  string name;
+  char *name;
   string full_decl;
   string value;
   string file;
@@ -43,14 +38,21 @@ typedef struct DefineEntry {
 
 typedef struct IndexFile {
  private:
-  int  open_file(FILE **f);
-  void read_lines(FILE *f, int fd);
-
- public:
+  Ulong checksum;
   char *filename;
   linestruct *filetop;
   linestruct *filebot;
 
+  int  open_file(FILE **f);
+  void read_lines(FILE *f, int fd);
+  void calc_checksum(void) noexcept;
+
+ public:
+  const char *const &name(void) const noexcept;
+  linestruct *const &top(void) const noexcept;
+
+  bool has_changed(void) noexcept;
+  void delete_data(void) noexcept;
   void read_file(const char *path);
 
 } IndexFile;
@@ -77,15 +79,12 @@ typedef struct Index {
 
   void delete_data(void) noexcept {
     for (auto &[filename, file] : include) {
-      while (file.filetop) {
-        linestruct *node = file.filetop;
-        file.filetop = node->next;
-        free(node->data);
-        free(node);
-      }
-      free(file.filename);
+      file.delete_data();
     }
     include.clear();
+    for (auto &[name, de] : defines) {
+      free(de.name);
+    }
     defines.clear();
     for (auto &it : classes) {
       it.delete_data();

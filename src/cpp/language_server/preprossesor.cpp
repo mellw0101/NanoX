@@ -385,23 +385,31 @@ void do_if(linestruct *line, const char **ptr) {
 }
 
 inline namespace DefineTools {
-  
+  char *get_define_name(linestruct *line, const char **ptr) {
+    const char *st = *ptr;
+    ADV_TO_NEXT_WORD(st);
+    if (!*st) {
+      return nullptr;
+    }
+    const char *end = st;
+    ADV_PTR(end, *end != '(' && *end != ' ' && *end != '\t');
+    if (st == end) {
+      return nullptr;
+    }
+    *ptr = end;
+    return measured_memmove_copy(st, (end - st));
+  }
 };
 
 void do_define(linestruct *line, const char *current_file, const char **ptr) {
   DefineEntry de;
   const char *start = *ptr;
   const char *end   = *ptr;
-  ADV_TO_NEXT_WORD(start);
-  if (!*start) {
+  char *name = get_define_name(line, &end);
+  if (!name) {
     return;
   }
-  end = start;
-  ADV_PTR(end, (*end != '(' && *end != ' ' && *end != '\t'));
-  if (start == end) {
-    return;
-  }
-  de.name            = string(start, (end - start));
+  de.name = name;
   de.decl_start_line = line->lineno;
   if (*end == '(') {
     ADV_PTR(end, (*end != ')'));

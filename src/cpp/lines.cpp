@@ -12,6 +12,7 @@ bool is_line_comment(linestruct *line) {
   }
   return false;
 }
+
 bool is_line_start_end_bracket(linestruct *line, bool *is_start) {
   Ulong i;
   for (i = 0; line->data[i]; i++) {
@@ -31,12 +32,14 @@ bool is_line_start_end_bracket(linestruct *line, bool *is_start) {
   }
   return false;
 }
+
 /* Return`s 'true' if the first char in a line is '\0'. */
 bool is_empty_line(linestruct *line) {
   Ulong i = 0;
   for (; line->data[i] && i < 1; i++);
   return (i == 0);
 }
+
 /* Inject a string into a line at an index. */
 void inject_in_line(linestruct **line, const char *str, Ulong at) {
   Ulong len   = strlen((*line)->data);
@@ -48,6 +51,7 @@ void inject_in_line(linestruct **line, const char *str, Ulong at) {
   memmove((*line)->data + at + s_len, (*line)->data + at, len - at + 1);
   memmove((*line)->data + at, str, s_len);
 }
+
 Ulong get_line_total_tabs(linestruct *line) {
   Ulong i, tabs = 0, spaces = 0, total = 0;
   if (line->data[0] != ' ' && line->data[0] != '\t') {
@@ -67,6 +71,7 @@ Ulong get_line_total_tabs(linestruct *line) {
   }
   return total;
 }
+
 /* Move a single line up or down. */
 void move_line(linestruct **line, bool up, bool refresh) {
   if (openfile->mark) {
@@ -100,6 +105,7 @@ void move_line(linestruct **line, bool up, bool refresh) {
     refresh_needed = true;
   }
 }
+
 void move_lines(bool up) {
   linestruct *top, *bot, *line, *mark, *cur;
   Ulong       x_top, x_bot, bot_line, x_mark, x_cur;
@@ -127,6 +133,7 @@ void move_lines(bool up) {
     }
   }
 }
+
 /* Function to move line/lines up shortcut. */
 void move_lines_up(void) {
   if (openfile->current->lineno == 1) {
@@ -135,6 +142,7 @@ void move_lines_up(void) {
   add_undo(MOVE_LINE_UP, nullptr);
   move_line(&openfile->current, true, true);
 }
+
 /* Function to move line/lines down shortcut. */
 void move_lines_down(void) {
   if (!openfile->current->next) {
@@ -143,6 +151,7 @@ void move_lines_down(void) {
   add_undo(MOVE_LINE_DOWN, nullptr);
   move_line(&openfile->current, false, true);
 }
+
 /* Remove 'len' of char`s 'at' pos in line. */
 void erase_in_line(linestruct *line, Ulong at, Ulong len) {
   Ulong slen = strlen(line->data);
@@ -155,6 +164,7 @@ void erase_in_line(linestruct *line, Ulong at, Ulong len) {
   free(line->data);
   line->data = data;
 }
+
 void select_line(linestruct *line, Ulong from_col, Ulong to_col) {
   const char *data     = line->data + actual_x(line->data, from_col);
   const Ulong paintlen = actual_x(line->data, to_col - from_col);
@@ -162,6 +172,7 @@ void select_line(linestruct *line, Ulong from_col, Ulong to_col) {
   mvwaddnstr(midwin, line->lineno, margin + from_col, data, paintlen);
   wattroff(midwin, interface_color_pair[SELECTED_TEXT]);
 }
+
 linestruct *find_next_bracket(bool up, linestruct *from_line) {
   if (up == true) {
     for (linestruct *line = from_line; line != nullptr; line = line->prev) {
@@ -178,6 +189,7 @@ linestruct *find_next_bracket(bool up, linestruct *from_line) {
   }
   return nullptr;
 }
+
 Uint total_tabs(linestruct *line) {
   Uint i = 0, spaces = 0, tabs = 0;
   for (; line->data[i]; i++) {

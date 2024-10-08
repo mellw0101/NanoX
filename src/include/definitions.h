@@ -434,33 +434,33 @@ typedef struct poshiststruct {
 } poshiststruct;
 
 typedef struct openfilestruct {
-    char *filename;             /* The file's name. */
-    linestruct *filetop;        /* The file's first line. */
-    linestruct *filebot;        /* The file's last line. */
-    linestruct *edittop;        /* The current top of the edit window for this file. */
-    linestruct *current;        /* The current line for this file. */
-    Ulong totsize;              /* The file's total number of characters. */
-    Ulong firstcolumn;          /* The starting column of the top line of the edit window.  When not in softwrap mode, it's always zero. */
-    Ulong current_x;            /* The file's x-coordinate position. */
-    Ulong placewewant;          /* The file's x position we would like. */
-    long cursor_row;            /* The row in the edit window that the cursor is on. */
-    struct stat *statinfo;      /* The file's stat information from when it was opened or last saved. */
-    linestruct *spillage_line;  /* The line for prepending stuff to during automatic hard-wrapping. */
-    linestruct *mark;           /* The line in the file where the mark is set; nullptr if not set. */
-    Ulong mark_x;               /* The mark's x position in the above line. */
-    bool softmark;              /* Whether a marked region was made by holding Shift. */
-    format_type fmt;            /* The file's format -- Unix or DOS or Mac. */
-    char *lock_filename;        /* The path of the lockfile, if we created one. */
-    undostruct *undotop;        /* The top of the undo list. */
-    undostruct *current_undo;   /* The current (i.e. next) level of undo. */
-    undostruct *last_saved;     /* The undo item at which the file was last saved. */
-    undo_type last_action;      /* The type of the last action the user performed. */
-    bool modified;              /* Whether the file has been modified. */
-    syntaxtype *syntax;         /* The syntax that applies to this file, if any. */
-    char *errormessage;         /* The ALERT message (if any) that occurred when opening the file. */
-    bit_flag_t<OPENFILE_TYPE_SIZE> type;
-    openfilestruct *next;       /* The next open file, if any. */
-    openfilestruct *prev;       /* The preceding open file, if any. */
+  char *filename;             /* The file's name. */
+  linestruct *filetop;        /* The file's first line. */
+  linestruct *filebot;        /* The file's last line. */
+  linestruct *edittop;        /* The current top of the edit window for this file. */
+  linestruct *current;        /* The current line for this file. */
+  Ulong totsize;              /* The file's total number of characters. */
+  Ulong firstcolumn;          /* The starting column of the top line of the edit window.  When not in softwrap mode, it's always zero. */
+  Ulong current_x;            /* The file's x-coordinate position. */
+  Ulong placewewant;          /* The file's x position we would like. */
+  long cursor_row;            /* The row in the edit window that the cursor is on. */
+  struct stat *statinfo;      /* The file's stat information from when it was opened or last saved. */
+  linestruct *spillage_line;  /* The line for prepending stuff to during automatic hard-wrapping. */
+  linestruct *mark;           /* The line in the file where the mark is set; nullptr if not set. */
+  Ulong mark_x;               /* The mark's x position in the above line. */
+  bool softmark;              /* Whether a marked region was made by holding Shift. */
+  format_type fmt;            /* The file's format -- Unix or DOS or Mac. */
+  char *lock_filename;        /* The path of the lockfile, if we created one. */
+  undostruct *undotop;        /* The top of the undo list. */
+  undostruct *current_undo;   /* The current (i.e. next) level of undo. */
+  undostruct *last_saved;     /* The undo item at which the file was last saved. */
+  undo_type last_action;      /* The type of the last action the user performed. */
+  bool modified;              /* Whether the file has been modified. */
+  syntaxtype *syntax;         /* The syntax that applies to this file, if any. */
+  char *errormessage;         /* The ALERT message (if any) that occurred when opening the file. */
+  bit_flag_t<OPENFILE_TYPE_SIZE> type;
+  openfilestruct *next;       /* The next open file, if any. */
+  openfilestruct *prev;       /* The preceding open file, if any. */
 } openfilestruct;
 
 typedef struct rcoption {

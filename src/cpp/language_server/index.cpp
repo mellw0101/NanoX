@@ -1,6 +1,8 @@
 #include "../../include/prototypes.h"
 
+/* Open a file.  Return`s the fd and assigns the stream to 'f'. */
 int IndexFile::open_file(FILE **f) {
+  PROFILE_FUNCTION;
   int         fd;
   struct stat fileinfo;
   char       *full_filename = get_full_path(filename);
@@ -40,6 +42,7 @@ int IndexFile::open_file(FILE **f) {
 #define LUMP 120
 
 void IndexFile::read_lines(FILE *f, int fd) {
+  PROFILE_FUNCTION;
   Ulong       bufsize   = LUMP;
   Ulong       len       = 0;
   Ulong       num_lines = 0;
@@ -72,6 +75,7 @@ void IndexFile::read_lines(FILE *f, int fd) {
     else {
       buf[len] = input;
       ++len;
+      checksum += (Uchar)input;
       if (len == bufsize) {
         bufsize += LUMP;
         buf = (char *)nrealloc(buf, bufsize);
@@ -80,7 +84,7 @@ void IndexFile::read_lines(FILE *f, int fd) {
     }
     filebot->data = encode_data(buf, len);
     filebot->next = make_new_node(filebot);
-    filebot = filebot->next;
+    filebot       = filebot->next;
     ++num_lines;
     len = 0;
     if (input != '\n') {
@@ -113,26 +117,72 @@ void IndexFile::read_lines(FILE *f, int fd) {
       if (!num_lines) {
         format = MAC_FILE;
       }
-      buf[--len] = '\0';
+      buf[--len]             = '\0';
       mac_line_needs_newline = true;
     }
     filebot->data = encode_data(buf, len);
     ++num_lines;
     if (mac_line_needs_newline) {
       filebot->next = make_new_node(filebot);
-      filebot = filebot->next;
+      filebot       = filebot->next;
       filebot->data = copy_of("");
     }
   }
   free(buf);
 }
 
+void IndexFile::calc_checksum(void) noexcept {
+  PROFILE_FUNCTION;
+  checksum = 0;
+  for (linestruct *line = filetop; line; line = line->next) {
+    Ulong len = strlen(line->data);
+    for (Ulong i = 0; i < len; ++i) {
+      checksum += ((Uchar)line->data[i] * i);
+    }
+  }
+}
+
+const char *const &IndexFile::name(void) const noexcept {
+  return filename;
+}
+
+linestruct *const &IndexFile::top(void) const noexcept {
+  return filetop;
+}
+
+bool IndexFile::has_changed(void) noexcept {
+  Ulong was_checksum = checksum;
+  calc_checksum();
+  if (was_checksum != checksum) {
+    return true;
+  }
+  return false;
+}
+
+void IndexFile::delete_data(void) noexcept {
+  checksum = 0;
+  free(filename);
+  filename = nullptr;
+  while (filetop) {
+    linestruct *node = filetop;
+    filetop = node->next;
+    free(node->data);
+    free(node);
+  }
+  filetop = nullptr;
+  filebot = nullptr;
+}
+
 void IndexFile::read_file(const char *path) {
   filename = memmove_copy_of(path);
+  checksum = 0;
   FILE *f;
-  int fd = open_file(&f);
+  int   fd = open_file(&f);
   if (fd < 0) {
     return;
   }
   read_lines(f, fd);
+  calc_checksum();
+  unix_socket_debug("File: %s, checksum: %u\n", filename, checksum);
 }
+

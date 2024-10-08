@@ -401,7 +401,7 @@ namespace Parse {
     if (type.empty()) {
       return;
     }
-    if (strstr(type.c_str(), "/*") == type.c_str()) {
+    if (strstr(type.c_str(), "/*") == type.c_str() || strncmp(type.c_str(), "//", 2) == 0) {
       return;
     }
     do {
@@ -486,6 +486,7 @@ namespace Parse {
       // unix_socket_debug("function:\n"
       //                   "  sig: %s\n",
       //                   (*from)->data);
+      // unix_socket_debug("%s\n", (*from)->data);
       char       *param_str  = fetch_bracket_body((*from), (found - (*from)->data));
       linestruct *found_line = nullptr;
       FOR_EACH_LINE_NEXT(line, *from) {
@@ -527,22 +528,22 @@ namespace Parse {
 /* Main parse function. */
 void do_parse(linestruct **line, const char *current_file) {
   Parse::struct_type(line);
-  // vector<var_t> vars;
-  // Parse::variable(*line, current_file, vars);
-  // if (!vars.empty()) {
-  //   /* for (const auto &[type, name, value, decl_line, scope_end, file] : vars) {
-  //       unix_socket_debug("type: %s\n"
-  //             "         name: %s\n"
-  //             "        value: %s\n"
-  //             "    decl_line: %d\n"
-  //             "    scope_end: %d\n"
-  //             "         file: %s\n\n",
-  //             type.c_str(), name.c_str(), value.c_str(), decl_line, scope_end, file.c_str());
-  //   } */
-  //   for (const auto &it : vars) {
-  //     LSP->index.variabels.push_back(it);
-  //   }
-  // }
+  /* vector<var_t> vars;
+  Parse::variable(*line, current_file, vars);
+  if (!vars.empty()) {
+    for (const auto &[type, name, value, decl_line, scope_end, file] : vars) {
+        unix_socket_debug("type: %s\n"
+              "         name: %s\n"
+              "        value: %s\n"
+              "    decl_line: %d\n"
+              "    scope_end: %d\n"
+              "         file: %s\n\n",
+              type.c_str(), name.c_str(), value.c_str(), decl_line, scope_end, file.c_str());
+    }
+    for (const auto &it : vars) {
+      LSP->index.variabels.push_back(it);
+    }
+  } */
   Parse::function(line, current_file);
   Parse::enum_type(line);
 }

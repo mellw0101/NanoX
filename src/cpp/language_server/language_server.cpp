@@ -152,8 +152,8 @@ auto LanguageServer::split_if_statement(const string &str) -> vector<string> {
   NLOG("\n"); */
   return {};
 }
-/* Parses a full preprossesor decl so that '\' are placed on the same line. */
 
+/* Parses a full preprossesor decl so that '\' are placed on the same line. */
 string LanguageServer::parse_full_pp_delc(linestruct *line, const char **ptr, int *end_lineno) {
   PROFILE_FUNCTION;
   string      ret   = "";
@@ -185,7 +185,7 @@ string LanguageServer::parse_full_pp_delc(linestruct *line, const char **ptr, in
 
 void LanguageServer::check(IndexFile *idfile) {
   PROFILE_FUNCTION;
-  linestruct *from = idfile->filetop ? idfile->filetop : openfile->filetop;
+  linestruct * from = idfile->top() ? idfile->top() : openfile->filetop;
   FOR_EACH_LINE_NEXT(line, from) {
     Parse::comment(line);
     if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
@@ -193,7 +193,7 @@ void LanguageServer::check(IndexFile *idfile) {
       continue;
     }
     if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
-      do_preprossesor(line, idfile->filename);
+      do_preprossesor(line, idfile->name());
     }
     if (line->flags.is_set<PP_LINE>()) {
       continue;
@@ -251,25 +251,23 @@ int LanguageServer::index_file(const char *path) {
     return -1;
   }
   unix_socket_debug("path %s\n", absolute_path);
-  IndexFile idfile;//(absolute_path);
+  IndexFile idfile;
   idfile.read_file(absolute_path);
-  // idfile.filename = absolute_path;
-  // idfile.filetop = retrieve_file_as_lines(idfile.filename);
   index.include[absolute_path] = idfile;
   free(absolute_path);
-  FOR_EACH_LINE_NEXT(line, idfile.filetop) {
+  FOR_EACH_LINE_NEXT(line, idfile.top()) {
     Parse::comment(line);
     if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
         line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
       continue;
     }
     if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
-      do_preprossesor(line, idfile.filename);
+      do_preprossesor(line, idfile.name());
     }
     if (line->flags.is_set<PP_LINE>()) {
       continue;
     }
-    // do_parse(&line, idfile.file);
+    do_parse(&line, idfile.name());
   }
   return 0;
 }
