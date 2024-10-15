@@ -332,7 +332,7 @@ char *parse_next_regex(char *ptr) {
   }
   /* Continue until the end of the line, or until a double quote followed by
    * end-of-line or a blank. */
-  while (*ptr && (*ptr != '"' || (ptr[1] != '\0' && !constexpr_isblank((Uchar)ptr[1])))) {
+  while (*ptr && (*ptr != '"' || (ptr[1] && !constexpr_isblank((Uchar)ptr[1])))) {
     ptr++;
   }
   if (!*ptr) {
@@ -396,7 +396,7 @@ bool compile_with_callback(const char *expression, int rex_flags, regex_t **pack
 void begin_new_syntax(char *ptr) {
   char *nameptr = ptr;
   /* Check that the syntax name is not empty. */
-  if (*ptr == '\0' || (*ptr == '"' && (*(ptr + 1) == '\0' || *(ptr + 1) == '"'))) {
+  if (!*ptr || (*ptr == '"' && !(*(ptr + 1) || *(ptr + 1) == '"'))) {
     jot_error(N_("Missing syntax name"));
     return;
   }
@@ -476,7 +476,7 @@ void parse_binding(char *ptr, bool dobind) {
   int        mask  = 0;
   keystruct *newsc = nullptr;
   check_for_nonempty_syntax();
-  if (*ptr == '\0') {
+  if (!*ptr) {
     jot_error(N_("Missing key name"));
     return;
   }
@@ -491,7 +491,7 @@ void parse_binding(char *ptr, bool dobind) {
     keycopy[0] = toupper((Uchar)keycopy[0]);
   }
   /* Verify that the key name is not too short, to allow the next call. */
-  if (keycopy[1] == '\0' || (keycopy[0] == 'M' && keycopy[2] == '\0')) {
+  if (!keycopy[1] || (keycopy[0] == 'M' && !keycopy[2])) {
     jot_error(N_("Key name %s is invalid"), keycopy);
     goto free_things;
   }
@@ -507,13 +507,13 @@ void parse_binding(char *ptr, bool dobind) {
       jot_error(N_("Must specify a function to bind the key to"));
       goto free_things;
     }
-    else if (ptr == nullptr) {
+    else if (!ptr) {
       goto free_things;
     }
   }
   menuptr = ptr;
   ptr     = parse_next_word(ptr);
-  if (menuptr[0] == '\0') {
+  if (!menuptr[0]) {
     /* TRANSLATORS: Do not translate the word "all". */
     jot_error(N_("Must specify a menu (or \"all\") "
                  "in which to bind/unbind the key"));
@@ -536,13 +536,13 @@ void parse_binding(char *ptr, bool dobind) {
     else {
       newsc = strtosc(funcptr);
     }
-    if (newsc == nullptr) {
+    if (!newsc) {
       jot_error(N_("Unknown function: %s"), funcptr);
       goto free_things;
     }
   }
   /* Wipe the given shortcut from the given menu. */
-  for (keystruct *s = sclist; s != nullptr; s = s->next) {
+  for (keystruct *s = sclist; s; s = s->next) {
     if ((s->menus & menu) && s->keycode == keycode) {
       s->menus &= ~menu;
     }
@@ -596,7 +596,7 @@ void parse_binding(char *ptr, bool dobind) {
   }
   /* If this is a toggle, find and copy its sequence number. */
   if (newsc->func == do_toggle) {
-    for (keystruct *s = sclist; s != nullptr; s = s->next) {
+    for (keystruct *s = sclist; s; s = s->next) {
       if (s->func == do_toggle && s->toggle == newsc->toggle) {
         newsc->ordinal = s->ordinal;
       }
@@ -625,9 +625,8 @@ bool is_good_file(char *file) {
   return true;
 }
 
-/* Partially parse the syntaxes in the given file,
- * or (when syntax is not nullptr) fully parse one specific syntax from the file.
- */
+/* Partially parse the syntaxes in the given file, or (when syntax is not nullptr)
+ * fully parse one specific syntax from the file. */
 void parse_one_include(char *file, syntaxtype *syntax) {
   char          *was_nanorc = nanorc;
   Ulong          was_lineno = lineno;
@@ -773,12 +772,12 @@ constexpr_map<std::string_view, short, COLORCOUNT> huesIndiecesMap = {
  * vivid to true for a lighter color, and thick for a heavier typeface.
  * TODO: Use references instead of pointers. */
 short color_to_short(const char *colorname, bool &vivid, bool &thick) {
-  if (strncmp(colorname, "bright", 6) == 0 && colorname[6] != '\0') {
+  if (strncmp(colorname, "bright", 6) == 0 && colorname[6]) {
     thick = true;
     vivid = true;
     colorname += 6;
   }
-  else if (strncmp(colorname, "light", 5) == 0 && colorname[5] != '\0') {
+  else if (strncmp(colorname, "light", 5) == 0 && colorname[5]) {
     vivid = true;
     thick = false;
     colorname += 5;
@@ -797,7 +796,7 @@ short color_to_short(const char *colorname, bool &vivid, bool &thick) {
       return closest_index_color(r, g, b);
     }
   }
-  for (int index = 0; index < COLORCOUNT; index++) {
+  for (int index = 0; index < COLORCOUNT; ++index) {
     if (strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0) {
       if (index > 7 && vivid) {
         jot_error(N_("Color '%s' takes no prefix"), colorname);
@@ -817,8 +816,7 @@ short color_to_short(const char *colorname, bool &vivid, bool &thick) {
 
 /* Parse the color name (or pair of color names) in the given string.
  * Return 'false' when any color name is invalid; otherwise return 'true'.
- * TODO: (parse_combination) - Figure out how to use this for live syntax
- * colors. */
+ * TODO: (parse_combination) - Figure out how to use this for live syntax colors. */
 bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
   bool  vivid;
   bool  thick;
@@ -883,7 +881,7 @@ void parse_rule(char *ptr, int rex_flags) {
   short fg;
   short bg;
   int   attributes;
-  if (*ptr == '\0') {
+  if (!*ptr) {
     jot_error(N_("Missing color name"));
     return;
   }
@@ -892,11 +890,11 @@ void parse_rule(char *ptr, int rex_flags) {
   if (!parse_combination(names, &fg, &bg, &attributes)) {
     return;
   }
-  if (*ptr == '\0') {
+  if (!*ptr) {
     jot_error(N_("Missing regex string after '%s' command"), "color");
     return;
   }
-  while (*ptr != '\0') {
+  while (*ptr) {
     /* Intermediate storage for compiled regular expressions. */
     regex_t *start_rgx = nullptr;
     regex_t *end_rgx   = nullptr;
@@ -911,7 +909,7 @@ void parse_rule(char *ptr, int rex_flags) {
     regexstring = ++ptr;
     ptr         = parse_next_regex(ptr);
     /* When there is no regex, or it is invalid, skip this line. */
-    if (ptr == nullptr || !compile(regexstring, rex_flags, &start_rgx)) {
+    if (!ptr || !compile(regexstring, rex_flags, &start_rgx)) {
       return;
     }
     if (expectend) {
@@ -924,7 +922,7 @@ void parse_rule(char *ptr, int rex_flags) {
       regexstring = ptr + 5;
       ptr         = parse_next_regex(ptr + 5);
       /* When there is no valid end= regex, abandon the rule. */
-      if (ptr == nullptr || !compile(regexstring, rex_flags, &end_rgx)) {
+      if (!ptr || !compile(regexstring, rex_flags, &end_rgx)) {
         regfree(start_rgx);
         free(start_rgx);
         return;
@@ -937,7 +935,7 @@ void parse_rule(char *ptr, int rex_flags) {
     newcolor->fg         = fg;
     newcolor->bg         = bg;
     newcolor->attributes = attributes;
-    if (lastcolor == nullptr) {
+    if (!lastcolor) {
       live_syntax->color = newcolor;
     }
     else {

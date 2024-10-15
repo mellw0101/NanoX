@@ -25,8 +25,6 @@ vec<const char *> types             = {
   "long", "short", "const", "bool",     "typedef", "class",
 };
 
-unordered_map<char *, SynxMapEntry, CharPtrHash, CharPtrEqual> synx_map;
-
 unordered_map<string, syntax_data_t> test_map;
 vector<class_info_t>                 class_info_vector;
 vector<var_t>                        var_vector;
@@ -950,9 +948,45 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
           }
         }
       }
+      const auto &is_var = LSP->index.vars.find(node->str);
+      if (is_var != LSP->index.vars.end()) {
+        for (const auto &v : is_var->second) {
+          if (strcmp(tail(v.file), tail(openfile->filename)) == 0) {
+            if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
+              midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BRIGHT_CYAN);
+            }
+          }
+        }
+      }
       const auto &macro = LSP->index.defines.find(node->str);
       if (macro != LSP->index.defines.end()) {
         midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BLUE);
+        free_node(node);
+        continue;
+      }
+      const auto &is_enum = LSP->index.enums.find(node->str);
+      if (is_enum != LSP->index.enums.end()) {
+        midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_GREEN);
+        free_node(node);
+        continue;
+      }
+      const auto &tdsc = LSP->index.tdstructs.find(node->str);
+      if (tdsc != LSP->index.tdstructs.end()) {
+        midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_GREEN);
+        free_node(node);
+        continue;
+      }
+      const auto &is_struct = LSP->index.structs.find(node->str);
+      if (is_struct != LSP->index.structs.end()) {
+        midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_GREEN);
+        free_node(node);
+        continue;
+      }
+      const auto &is_fd = LSP->index.functiondefs.find(node->str);
+      if (is_fd != LSP->index.functiondefs.end()) {
+        midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BRIGHT_YELLOW);
+        free_node(node);
+        continue;
       }
       free_node(node);
     }

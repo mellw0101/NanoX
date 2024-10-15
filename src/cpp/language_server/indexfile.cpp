@@ -75,7 +75,6 @@ void IndexFile::read_lines(FILE *f, int fd) {
     else {
       buf[len] = input;
       ++len;
-      checksum += (Uchar)input;
       if (len == bufsize) {
         bufsize += LUMP;
         buf = (char *)nrealloc(buf, bufsize);
@@ -131,15 +130,14 @@ void IndexFile::read_lines(FILE *f, int fd) {
   free(buf);
 }
 
-void IndexFile::calc_checksum(void) noexcept {
-  PROFILE_FUNCTION;
-  checksum = 0;
-  for (linestruct *line = filetop; line; line = line->next) {
-    Ulong len = strlen(line->data);
-    for (Ulong i = 0; i < len; ++i) {
-      checksum += ((Uchar)line->data[i] * i);
-    }
+void IndexFile::get_last_time_changed(void) {
+  last_time_changed = 0;
+  struct stat fileinfo;
+  if (stat(filename, &fileinfo) == -1) {
+    logE("'stat' failed for path: '%s'.", filename);
+    return;
   }
+  last_time_changed = fileinfo.st_atime;
 }
 
 const char *const &IndexFile::name(void) const noexcept {
@@ -151,21 +149,20 @@ linestruct *const &IndexFile::top(void) const noexcept {
 }
 
 bool IndexFile::has_changed(void) noexcept {
-  Ulong was_checksum = checksum;
-  calc_checksum();
-  if (was_checksum != checksum) {
+  time_t was_ltc = last_time_changed;
+  get_last_time_changed();
+  if (was_ltc != last_time_changed) {
     return true;
   }
   return false;
 }
 
 void IndexFile::delete_data(void) noexcept {
-  checksum = 0;
   free(filename);
   filename = nullptr;
   while (filetop) {
     linestruct *node = filetop;
-    filetop = node->next;
+    filetop          = node->next;
     free(node->data);
     free(node);
   }
@@ -175,14 +172,11 @@ void IndexFile::delete_data(void) noexcept {
 
 void IndexFile::read_file(const char *path) {
   filename = memmove_copy_of(path);
-  checksum = 0;
   FILE *f;
   int   fd = open_file(&f);
   if (fd < 0) {
     return;
   }
   read_lines(f, fd);
-  calc_checksum();
-  unix_socket_debug("File: %s, checksum: %u\n", filename, checksum);
+  get_last_time_changed();
 }
-

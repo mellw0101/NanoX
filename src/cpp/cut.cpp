@@ -1,15 +1,12 @@
 /// @file @c cut.cpp
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <cstring>
-
 /* Delete the character at the current position,
  * and add or update an undo item for the given action. */
 void expunge(undo_type action) {
   openfile->placewewant = xplustabs();
   /* When in the middle of a line, delete the current character. */
-  if (openfile->current->data[openfile->current_x] != '\0') {
+  if (openfile->current->data[openfile->current_x]) {
     int   charlen    = char_length(openfile->current->data + openfile->current_x);
     Ulong line_len   = strlen(openfile->current->data + openfile->current_x);
     Ulong old_amount = ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current) : 0;
@@ -59,8 +56,8 @@ void expunge(undo_type action) {
     renumber_from(openfile->current);
     refresh_needed = true;
   }
+  /* We're at the end-of-file: nothing to do. */
   else {
-    /* We're at the end-of-file: nothing to do. */
     return;
   }
   if (!refresh_needed) {

@@ -1,9 +1,4 @@
-#include <string.h>
-#include "../include/definitions.h"
 #include "../include/prototypes.h"
-
-#include <Mlib/Io.h>
-#include <Mlib/Profile.h>
 
 /* Remove all tabs from a word passed by refrence. */
 void remove_tabs_from_word(char **word) {

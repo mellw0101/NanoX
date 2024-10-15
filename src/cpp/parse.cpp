@@ -13,8 +13,7 @@ string parse_multiline_bracket_var(linestruct *from, const char **data, const ch
         lvl += 1;
         br += 1;
       }
-    }
-    while (br);
+    } while (br);
     const char *stop = nullptr;
     for (linestruct *end = from->next; end != NULL; end = end->next) {
       br = end->data;
@@ -24,8 +23,7 @@ string parse_multiline_bracket_var(linestruct *from, const char **data, const ch
           lvl += 1;
           br += 1;
         }
-      }
-      while (br);
+      } while (br);
       br = end->data;
       do {
         br = strchr(br, '}');
@@ -36,8 +34,7 @@ string parse_multiline_bracket_var(linestruct *from, const char **data, const ch
           lvl -= 1;
           br += 1;
         }
-      }
-      while (br);
+      } while (br);
       stop = strchr(end->data, ';');
       if (stop) {
         value += string(&end->data[indent_char_len(end)], (stop - &end->data[indent_char_len(end)]));
@@ -49,8 +46,7 @@ string parse_multiline_bracket_var(linestruct *from, const char **data, const ch
   return value;
 }
 
-/* Decr ptr until space or tab found or end == data.
-   This will jump over string literals. */
+/* Decr ptr until space or tab found or end == data.  This will jump over string literals. */
 void move_ptr_to_prev_word(const char **data, const char **end) {
   while (true) {
     for (; *end > *data && (**end != ' ' && **end != '\t' && **end != '"' && **end != ']'); (*end)--);
@@ -197,15 +193,14 @@ void line_variable(linestruct *line, vector<var_t> &var_vector) {
       data = end + 1;
     }
     var_vector.push_back({
-        type + type_addon,
-        name,
-        value,
-        decl_line,
-        scope_end,
+      type + type_addon,
+      name,
+      value,
+      decl_line,
+      scope_end,
     });
     end = data;
-  }
-  while (*data);
+  } while (*data);
 }
 
 void func_decl(linestruct *line) {

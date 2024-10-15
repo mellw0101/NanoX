@@ -167,8 +167,8 @@ void help_init(void) {
     htx[2] = nullptr;
   }
   else {
-    /* Default to the main help list.
-     * TODO : Change to NanoX help text. */
+    /* Default to the main help list. */
+    /** TODO: Change to NanoX help text. */
     htx[0] = N_("Main nano help text\n\n "
                 "The nano editor is designed to emulate the "
                 "functionality and ease-of-use of the UW Pico text "
@@ -194,23 +194,22 @@ void help_init(void) {
                 "parentheses:\n\n");
   }
   htx[0] = _(htx[0]);
-  if (htx[1] != nullptr) {
+  if (htx[1]) {
     htx[1] = _(htx[1]);
   }
-  if (htx[2] != nullptr) {
+  if (htx[2]) {
     htx[2] = _(htx[2]);
   }
   allocsize += strlen(htx[0]);
-  if (htx[1] != nullptr) {
+  if (htx[1]) {
     allocsize += strlen(htx[1]);
   }
-  if (htx[2] != nullptr) {
+  if (htx[2]) {
     allocsize += strlen(htx[2]);
   }
-  /* Calculate the length of the descriptions of the shortcuts.
-   * Each entry has one or two keystrokes, which fill 17 cells,
-   * plus translated text, plus one or two \n's. */
-  for (f = allfuncs; f != nullptr; f = f->next) {
+  /* Calculate the length of the descriptions of the shortcuts.  Each entry has one or
+   * two keystrokes, which fill 17 cells, plus translated text, plus one or two \n's. */
+  for (f = allfuncs; f; f = f->next) {
     if (f->menus & currmenu) {
       allocsize += strlen(_(f->phrase)) + 21;
     }
@@ -220,7 +219,7 @@ void help_init(void) {
    * two translated texts, plus a space, plus one or two '\n's. */
   if (currmenu == MMAIN) {
     Ulong onoff_len = strlen(_("enable/disable"));
-    for (s = sclist; s != nullptr; s = s->next) {
+    for (s = sclist; s; s = s->next) {
       if (s->func == do_toggle) {
         allocsize += strlen(_(epithet_of_flag(s->toggle))) + onoff_len + 9;
       }
@@ -230,17 +229,17 @@ void help_init(void) {
   help_text = (char *)nmalloc(allocsize + 1);
   /* Now add the text we want. */
   strcpy(help_text, htx[0]);
-  if (htx[1] != nullptr) {
+  if (htx[1]) {
     strcat(help_text, htx[1]);
   }
-  if (htx[2] != nullptr) {
+  if (htx[2]) {
     strcat(help_text, htx[2]);
   }
   /* Remember this end-of-introduction, start-of-shortcuts. */
-  end_of_intro = help_text + constexpr_strlen(help_text);
+  end_of_intro = help_text + strlen(help_text);
   ptr          = end_of_intro;
   /* Now add the shortcuts and their descriptions. */
-  for (f = allfuncs; f != nullptr; f = f->next) {
+  for (f = allfuncs; f; f = f->next) {
     int tally = 0;
     if ((f->menus & currmenu) == 0) {
       continue;
@@ -277,7 +276,7 @@ void help_init(void) {
   if (currmenu == MMAIN) {
     int maximum = 0, counter = 0;
     /* First see how many toggles there are. */
-    for (s = sclist; s != nullptr; s = s->next) {
+    for (s = sclist; s; s = s->next) {
       maximum = (s->toggle && s->ordinal > maximum) ? s->ordinal : maximum;
     }
     /* Now show them in the original order. */
@@ -312,20 +311,20 @@ void wrap_help_text_into_buffer(void) {
     openfile->current       = openfile->current->next;
   }
   /* Copy the help text into the just-created new buffer. */
-  while (*ptr != '\0') {
+  while (*ptr) {
     int   length, shim;
     char *oneline;
     if (ptr == end_of_intro) {
       wrapping_point = ((COLS < 40) ? 40 : COLS) - sidebar;
     }
     if (ptr < end_of_intro || *(ptr - 1) == '\n') {
-      length  = break_line(ptr, wrapping_point, TRUE);
+      length  = break_line(ptr, wrapping_point, true);
       oneline = (char *)nmalloc(length + 1);
       shim    = (*(ptr + length - 1) == ' ') ? 0 : 1;
       snprintf(oneline, length + shim, "%s", ptr);
     }
     else {
-      length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, TRUE);
+      length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, true);
       oneline = (char *)nmalloc(length + 5);
       snprintf(oneline, length + 5, "\t\t  %s", ptr);
     }
@@ -340,8 +339,7 @@ void wrap_help_text_into_buffer(void) {
       openfile->current->next = make_new_node(openfile->current);
       openfile->current       = openfile->current->next;
       openfile->current->data = copy_of("");
-    }
-    while (*(++ptr) == '\n');
+    } while (*(++ptr) == '\n');
   }
   openfile->filebot = openfile->current;
   openfile->current = openfile->filetop;
@@ -349,7 +347,7 @@ void wrap_help_text_into_buffer(void) {
   find_and_prime_applicable_syntax();
   prepare_for_display();
   /* Move to the position in the file where we were before. */
-  while (TRUE) {
+  while (true) {
     sum += strlen(openfile->current->data);
     if (sum > location) {
       break;
@@ -371,8 +369,8 @@ void show_help(void) {
   long  was_tabsize = tabsize;
   char *was_syntax  = syntaxstr;
   /* The current answer when the user invokes help at the prompt. */
-  char  *saved_answer = (answer != nullptr) ? copy_of(answer) : nullptr;
-  size_t stash[sizeof(flags) / sizeof(flags[0])];
+  char *saved_answer = answer ? copy_of(answer) : nullptr;
+  Ulong stash[sizeof(flags) / sizeof(flags[0])];
   /* A storage place for the current flag settings. */
   linestruct *line;
   int         length;
@@ -399,12 +397,12 @@ void show_help(void) {
   curs_set(0);
   /* Compose the help text from all the relevant pieces. */
   help_init();
-  inhelp   = TRUE;
+  inhelp   = true;
   location = 0;
   didfind  = 0;
   bottombars(MHELP);
   /* Extract the title from the head of the help text. */
-  length = break_line(help_text, HIGHEST_POSITIVE, TRUE);
+  length = break_line(help_text, HIGHEST_POSITIVE, true);
   title  = measured_copy(help_text, length);
   titlebar(title);
   /* Skip over the title to point at the start of the body text. */
@@ -414,9 +412,9 @@ void show_help(void) {
   }
   wrap_help_text_into_buffer();
   edit_refresh();
-  while (TRUE) {
+  while (true) {
     lastmessage = VACUUM;
-    focusing    = TRUE;
+    focusing    = true;
     /* Show the cursor when we searched and found something. */
     kbinput     = get_kbinput(midwin, didfind == 1 || ISSET(SHOW_CURSOR));
     didfind     = 0;
@@ -455,7 +453,7 @@ void show_help(void) {
     }
     else if (kbinput == KEY_MOUSE) {
       int dummy_row, dummy_col;
-      get_mouseinput(&dummy_row, &dummy_col, TRUE);
+      get_mouseinput(&dummy_row, &dummy_col, true);
     }
     else if (kbinput == KEY_WINCH)
       ; /* Nothing to do. */

@@ -607,19 +607,17 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
       else if (length > 2 && seq[2] == '~') {
         *consumed = 3;
         switch (seq[1]) {
-          case '1' : /* Esc [ 1 1 ~ == F1 on rxvt/Eterm. */
-          case '2' : /* Esc [ 1 2 ~ == F2 on rxvt/Eterm. */
-          case '3' : /* Esc [ 1 3 ~ == F3 on rxvt/Eterm. */
-          case '4' : /* Esc [ 1 4 ~ == F4 on rxvt/Eterm. */
-          case '5' : /* Esc [ 1 5 ~ == F5 on xterm/rxvt/Eterm. */
-          {
+          case '1' :   /* Esc [ 1 1 ~ == F1 on rxvt/Eterm. */
+          case '2' :   /* Esc [ 1 2 ~ == F2 on rxvt/Eterm. */
+          case '3' :   /* Esc [ 1 3 ~ == F3 on rxvt/Eterm. */
+          case '4' :   /* Esc [ 1 4 ~ == F4 on rxvt/Eterm. */
+          case '5' : { /* Esc [ 1 5 ~ == F5 on xterm/rxvt/Eterm. */
             return KEY_F(seq[1] - '0');
           }
-          case '7' : /* Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux
-                        console/xterm/rxvt/Eterm. */
-          case '8' : /* Esc [ 1 8 ~ == F7 on the same. */
-          case '9' : /* Esc [ 1 9 ~ == F8 on the same. */
-          {
+          case '7' :   /* Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux
+                          console/xterm/rxvt/Eterm. */
+          case '8' :   /* Esc [ 1 8 ~ == F7 on the same. */
+          case '9' : { /* Esc [ 1 9 ~ == F8 on the same. */
             return KEY_F(seq[1] - '1');
           }
         }
@@ -627,88 +625,62 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
       else if (length > 3 && seq[1] == ';') {
         *consumed = 4;
         switch (seq[2]) {
-          case '2' :     /* Shift */
-          {
+          case '2' : {     /* Shift */
             switch (seq[3]) {
-              case 'A' : /* Esc [ 1 ; 2 A == Shift-Up on xterm. */
-              case 'B' : /* Esc [ 1 ; 2 B == Shift-Down on xterm.
-                          */
-              case 'C' : /* Esc [ 1 ; 2 C == Shift-Right on xterm.
-                          */
-              case 'D' : /* Esc [ 1 ; 2 D == Shift-Left on xterm.
-                          */
-              {
+              case 'A' :   /* Esc [ 1 ; 2 A == Shift-Up on xterm. */
+              case 'B' :   /* Esc [ 1 ; 2 B == Shift-Down on xterm. */
+              case 'C' :   /* Esc [ 1 ; 2 C == Shift-Right on xterm. */
+              case 'D' : { /* Esc [ 1 ; 2 D == Shift-Left on xterm. */
                 shift_held = true;
                 return arrow_from_ABCD(seq[3]);
               }
-              case 'F' : /* Esc [ 1 ; 2 F == Shift-End on xterm.
-                          */
-              {
+              case 'F' : { /* Esc [ 1 ; 2 F == Shift-End on xterm. */
                 return SHIFT_END;
               }
-              case 'H' : /* Esc [ 1 ; 2 H == Shift-Home on xterm.
-                          */
-              {
+              case 'H' : { /* Esc [ 1 ; 2 H == Shift-Home on xterm. */
                 return SHIFT_HOME;
               }
             }
             break;
           }
-          case '9' :     /* To accommodate iTerm2 in "xterm mode". */
-          case '3' :     /* Alt */
-          {
+          case '9' :       /* To accommodate iTerm2 in "xterm mode". */
+          case '3' : {     /* Alt */
             switch (seq[3]) {
-              case 'A' : /* Esc [ 1 ; 3 A == Alt-Up on xterm. */
-              {
+              case 'A' : { /* Esc [ 1 ; 3 A == Alt-Up on xterm. */
                 return ALT_UP;
               }
-              case 'B' : /* Esc [ 1 ; 3 B == Alt-Down on xterm. */
-              {
+              case 'B' : { /* Esc [ 1 ; 3 B == Alt-Down on xterm. */
                 return ALT_DOWN;
               }
-              case 'C' : /* Esc [ 1 ; 3 C == Alt-Right on xterm.
-                          */
-              {
+              case 'C' : { /* Esc [ 1 ; 3 C == Alt-Right on xterm. */
                 return ALT_RIGHT;
               }
-              case 'D' : /* Esc [ 1 ; 3 D == Alt-Left on xterm. */
-              {
+              case 'D' : { /* Esc [ 1 ; 3 D == Alt-Left on xterm. */
                 return ALT_LEFT;
               }
-              case 'F' : /* Esc [ 1 ; 3 F == Alt-End on xterm. */
-              {
+              case 'F' : { /* Esc [ 1 ; 3 F == Alt-End on xterm. */
                 return ALT_END;
               }
-              case 'H' : /* Esc [ 1 ; 3 H == Alt-Home on xterm. */
-              {
+              case 'H' : { /* Esc [ 1 ; 3 H == Alt-Home on xterm. */
                 return ALT_HOME;
               }
             }
             break;
           }
           case '4' : {
-            /* When the arrow keys are held together with
-             * Shift+Meta, act as if they are Home/End/PgUp/PgDown
-             * with Shift. */
+            /* When the arrow keys are held together with Shift+Meta,
+             * act as if they are Home/End/PgUp/PgDown with Shift. */
             switch (seq[3]) {
-              case 'A' : /* Esc [ 1 ; 4 A == Shift-Alt-Up on
-                            xterm. */
-              {
+              case 'A' : { /* Esc [ 1 ; 4 A == Shift-Alt-Up on xterm. */
                 return SHIFT_PAGEUP;
               }
-              case 'B' : /* Esc [ 1 ; 4 B == Shift-Alt-Down on
-                            xterm. */
-              {
+              case 'B' : { /* Esc [ 1 ; 4 B == Shift-Alt-Down on xterm. */
                 return SHIFT_PAGEDOWN;
               }
-              case 'C' : /* Esc [ 1 ; 4 C == Shift-Alt-Right on
-                            xterm. */
-              {
+              case 'C' : { /* Esc [ 1 ; 4 C == Shift-Alt-Right on xterm. */
                 return SHIFT_END;
               }
-              case 'D' : /* Esc [ 1 ; 4 D == Shift-Alt-Left on
-                            xterm. */
-              {
+              case 'D' : { /* Esc [ 1 ; 4 D == Shift-Alt-Left on xterm. */
                 return SHIFT_HOME;
               }
             }
@@ -716,32 +688,22 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
           }
           case '5' : {
             switch (seq[3]) {
-              case 'A' : /* Esc [ 1 ; 5 A == Ctrl-Up on xterm. */
-              {
+              case 'A' : { /* Esc [ 1 ; 5 A == Ctrl-Up on xterm. */
                 return CONTROL_UP;
               }
-              case 'B' : /* Esc [ 1 ; 5 B == Ctrl-Down on xterm.
-                          */
-              {
+              case 'B' : { /* Esc [ 1 ; 5 B == Ctrl-Down on xterm. */
                 return CONTROL_DOWN;
               }
-              case 'C' : /* Esc [ 1 ; 5 C == Ctrl-Right on xterm.
-                          */
-              {
+              case 'C' : { /* Esc [ 1 ; 5 C == Ctrl-Right on xterm. */
                 return CONTROL_RIGHT;
               }
-              case 'D' : /* Esc [ 1 ; 5 D == Ctrl-Left on xterm.
-                          */
-              {
+              case 'D' : { /* Esc [ 1 ; 5 D == Ctrl-Left on xterm. */
                 return CONTROL_LEFT;
               }
-              case 'F' : /* Esc [ 1 ; 5 F == Ctrl-End on xterm. */
-              {
+              case 'F' : { /* Esc [ 1 ; 5 F == Ctrl-End on xterm. */
                 return CONTROL_END;
               }
-              case 'H' : /* Esc [ 1 ; 5 H == Ctrl-Home on xterm.
-                          */
-              {
+              case 'H' : { /* Esc [ 1 ; 5 H == Ctrl-Home on xterm. */
                 return CONTROL_HOME;
               }
             }
@@ -749,34 +711,22 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
           }
           case '6' : {
             switch (seq[3]) {
-              case 'A' : /* Esc [ 1 ; 6 A == Shift-Ctrl-Up on
-                            xterm. */
-              {
+              case 'A' : { /* Esc [ 1 ; 6 A == Shift-Ctrl-Up on xterm. */
                 return shiftcontrolup;
               }
-              case 'B' : /* Esc [ 1 ; 6 B == Shift-Ctrl-Down on
-                            xterm. */
-              {
+              case 'B' : { /* Esc [ 1 ; 6 B == Shift-Ctrl-Down on xterm. */
                 return shiftcontroldown;
               }
-              case 'C' : /* Esc [ 1 ; 6 C == Shift-Ctrl-Right on
-                            xterm. */
-              {
+              case 'C' : { /* Esc [ 1 ; 6 C == Shift-Ctrl-Right on xterm. */
                 return shiftcontrolright;
               }
-              case 'D' : /* Esc [ 1 ; 6 D == Shift-Ctrl-Left on
-                            xterm. */
-              {
+              case 'D' : { /* Esc [ 1 ; 6 D == Shift-Ctrl-Left on xterm. */
                 return shiftcontrolleft;
               }
-              case 'F' : /* Esc [ 1 ; 6 F == Shift-Ctrl-End on
-                            xterm. */
-              {
+              case 'F' : { /* Esc [ 1 ; 6 F == Shift-Ctrl-End on xterm. */
                 return shiftcontrolend;
               }
-              case 'H' : /* Esc [ 1 ; 6 H == Shift-Ctrl-Home on
-                            xterm. */
-              {
+              case 'H' : { /* Esc [ 1 ; 6 H == Shift-Ctrl-Home on xterm. */
                 return shiftcontrolhome;
               }
             }
@@ -784,8 +734,8 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
           }
         }
       }
+      /* Esc [ 1 n ; 2 ~ == F17...F20 on some terminals. */
       else if (length > 4 && seq[2] == ';' && seq[4] == '~') {
-        /* Esc [ 1 n ; 2 ~ == F17...F20 on some terminals. */
         *consumed = 5;
       }
       break;
@@ -794,61 +744,50 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
       if (length > 2 && seq[2] == '~') {
         *consumed = 3;
         switch (seq[1]) {
-          case '0' : /* Esc [ 2 0 ~ == F9 on VT220/VT320/Linux
-                      * console/xterm/rxvt/Eterm.
-                      */
-          {
+          case '0' : { /* Esc [ 2 0 ~ == F9 on VT220/VT320/Linux console/xterm/rxvt/Eterm. */
             return KEY_F(9);
           }
-          case '1' : /* Esc [ 2 1 ~ == F10 on the same. */
-          {
+          case '1' : { /* Esc [ 2 1 ~ == F10 on the same. */
             return KEY_F(10);
           }
-          case '3' : /* Esc [ 2 3 ~ == F11 on the same. */
-          {
+          case '3' : { /* Esc [ 2 3 ~ == F11 on the same. */
             return KEY_F(11);
           }
-          case '4' : /* Esc [ 2 4 ~ == F12 on the same. */
-          {
+          case '4' : { /* Esc [ 2 4 ~ == F12 on the same. */
             return KEY_F(12);
           }
-          case '5' : /* Esc [ 2 5 ~ == F13 on the same. */
-          {
+          case '5' : { /* Esc [ 2 5 ~ == F13 on the same. */
             return KEY_F(13);
           }
-          case '6' : /* Esc [ 2 6 ~ == F14 on the same. */
-          {
+          case '6' : { /* Esc [ 2 6 ~ == F14 on the same. */
             return KEY_F(14);
           }
-          case '8' : /* Esc [ 2 8 ~ == F15 on the same. */
-          {
+          case '8' : { /* Esc [ 2 8 ~ == F15 on the same. */
             return KEY_F(15);
           }
-          case '9' : /* Esc [ 2 9 ~ == F16 on the same. */
-          {
+          case '9' : { /* Esc [ 2 9 ~ == F16 on the same. */
             return KEY_F(16);
           }
         }
       }
+      /* Esc [ 2 ~ == Insert on VT220/VT320/Linux console/xterm/Terminal. */
       else if (length > 1 && seq[1] == '~') {
-        /* Esc [ 2 ~ == Insert on VT220/VT320/Linux
-         * console/xterm/Terminal. */
         return KEY_IC;
       }
+      /* Esc [ 2 ; x ~ == modified Insert on xterm. */
       else if (length > 3 && seq[1] == ';' && seq[3] == '~') {
-        /* Esc [ 2 ; x ~ == modified Insert on xterm. */
         *consumed = 4;
         if (seq[2] == '3') {
           return ALT_INSERT;
         }
       }
+      /* Esc [ 2 n ; 2 ~ == F21...F24 on some terminals. */
       else if (length > 4 && seq[2] == ';' && seq[4] == '~') {
-        /* Esc [ 2 n ; 2 ~ == F21...F24 on some terminals. */
         *consumed = 5;
       }
+      /* Esc [ 2 0 0 ~ == start of a bracketed paste,
+       * Esc [ 2 0 1 ~ == end of a bracketed paste. */
       else if (length > 3 && seq[1] == '0' && seq[3] == '~') {
-        /* Esc [ 2 0 0 ~ == start of a bracketed paste,
-         * Esc [ 2 0 1 ~ == end of a bracketed paste. */
         *consumed = 4;
         if (seq[2] == '0') {
           bracketed_paste = true;
@@ -859,70 +798,63 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
           return BRACKETED_PASTE_MARKER;
         }
       }
+      /* When invalid, assume it's a truncated end-of-paste sequence,
+       * in order to avoid a hang -- https://sv.gnu.org/bugs/?64996. */
       else {
-        /* When invalid, assume it's a truncated end-of-paste sequence,
-         * in order to avoid a hang -- https://sv.gnu.org/bugs/?64996.
-         */
         bracketed_paste = false;
         *consumed       = length;
         return ERR;
       }
       break;
     }
-    case '3' : /* Esc [ 3 ~ == Delete on VT220/VT320/Linux
-                  console/xterm/Terminal. */
-    {
+    case '3' : { /* Esc [ 3 ~ == Delete on VT220/VT320/Linux console/xterm/Terminal. */
       if (length > 1 && seq[1] == '~') {
         return KEY_DC;
       }
       if (length > 3 && seq[1] == ';' && seq[3] == '~') {
         *consumed = 4;
+        /* Esc [ 3 ; 2 ~ == Shift-Delete on xterm/Terminal. */
         if (seq[2] == '2') {
-          /* Esc [ 3 ; 2 ~ == Shift-Delete on xterm/Terminal. */
           return SHIFT_DELETE;
         }
+        /* Esc [ 3 ; 3 ~ == Alt-Delete on xterm/rxvt/Eterm/Terminal. */
         if (seq[2] == '3') {
-          /* Esc [ 3 ; 3 ~ == Alt-Delete on xterm/rxvt/Eterm/Terminal.
-           */
           return ALT_DELETE;
         }
+        /* Esc [ 3 ; 5 ~ == Ctrl-Delete on xterm. */
         if (seq[2] == '5') {
-          /* Esc [ 3 ; 5 ~ == Ctrl-Delete on xterm. */
           return CONTROL_DELETE;
         }
+        /* Esc [ 3 ; 6 ~ == Ctrl-Shift-Delete on xterm. */
         if (seq[2] == '6') {
-          /* Esc [ 3 ; 6 ~ == Ctrl-Shift-Delete on xterm. */
           return controlshiftdelete;
         }
       }
+      /* Esc [ 3 $ == Shift-Delete on urxvt. */
       if (length > 1 && seq[1] == '$') {
-        /* Esc [ 3 $ == Shift-Delete on urxvt. */
         return SHIFT_DELETE;
       }
+      /* Esc [ 3 ^ == Ctrl-Delete on urxvt. */
       if (length > 1 && seq[1] == '^') {
-        /* Esc [ 3 ^ == Ctrl-Delete on urxvt. */
         return CONTROL_DELETE;
       }
+      /* Esc [ 3 @ == Ctrl-Shift-Delete on urxvt. */
       if (length > 1 && seq[1] == '@') {
-        /* Esc [ 3 @ == Ctrl-Shift-Delete on urxvt. */
         return controlshiftdelete;
       }
+      /* Esc [ 3 n ~ == F17...F20 on some terminals. */
       if (length > 2 && seq[2] == '~') {
-        /* Esc [ 3 n ~ == F17...F20 on some terminals. */
         *consumed = 3;
       }
       break;
     }
-    case '4' : /* Esc [ 4 ~ == End on VT220/VT320/Linux console/xterm. */
-    {
+    case '4' : { /* Esc [ 4 ~ == End on VT220/VT320/Linux console/xterm. */
       if (length > 1 && seq[1] == '~') {
         return KEY_END;
       }
       break;
     }
-    case '5' : /* Esc [ 5 ~ == PageUp on VT220/VT320/Linux
-                  console/xterm/Eterm/urxvt/Terminal */
-    {
+    case '5' : { /* Esc [ 5 ~ == PageUp on VT220/VT320/Linux console/xterm/Eterm/urxvt/Terminal */
       if (length > 1 && seq[1] == '~') {
         return KEY_PPAGE;
       }
@@ -937,10 +869,7 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
       }
       break;
     }
-    case '6' : /* Esc [ 6 ~ == PageDown on VT220/VT320/Linux
-                * console/xterm/Eterm/urxvt/Terminal
-                */
-    {
+    case '6' : { /* Esc [ 6 ~ == PageDown on VT220/VT320/Linux console/xterm/Eterm/urxvt/Terminal. */
       if (length > 1 && seq[1] == '~') {
         return KEY_NPAGE;
       }
@@ -975,38 +904,36 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
       break;
     }
     case '8' : {
-      if (length > 1 && seq[1] == '~') /* Esc [ 8 ~ == End on Eterm/rxvt; */
-      {
+      /* Esc [ 8 ~ == End on Eterm/rxvt; */
+      if (length > 1 && seq[1] == '~') {
         return KEY_END;
       }
-      else if (length > 1 && seq[1] == '$') /* Esc [ 8 $ == Shift-End on Eterm/rxvt; */
-      {
+      /* Esc [ 8 $ == Shift-End on Eterm/rxvt; */
+      else if (length > 1 && seq[1] == '$') {
         return SHIFT_END;
       }
-      else if (length > 1 && seq[1] == '^') /* Esc [ 8 ^ == Control-End on Eterm/rxvt; */
-      {
+      /* Esc [ 8 ^ == Control-End on Eterm/rxvt; */
+      else if (length > 1 && seq[1] == '^') {
         return CONTROL_END;
       }
-      else if (length > 1 && seq[1] == '@') /* Esc [ 8 @ == Shift-Control-End on same. */
-      {
+      /* Esc [ 8 @ == Shift-Control-End on same. */
+      else if (length > 1 && seq[1] == '@') {
         return shiftcontrolend;
       }
       break;
     }
-    case '9' : /* Esc [ 9 == Delete on Mach console. */
-    {
+    case '9' : { /* Esc [ 9 == Delete on Mach console. */
       return KEY_DC;
     }
-    case '@' : /* Esc [ @ == Insert on Mach console. */
-    {
+    case '@' : { /* Esc [ @ == Insert on Mach console. */
       return KEY_IC;
     }
-    case 'A' : /* Esc [ A == Up on ANSI/VT220/Linux console/
-                * FreeBSD console/Mach console/xterm/Eterm/
-                * urxvt/Gnome and Xfce Terminal. */
-    case 'B' : /* Esc [ B == Down on the same. */
-    case 'C' : /* Esc [ C == Right on the same. */
-    case 'D' : /* Esc [ D == Left on the same. */
+    case 'A' :   /* Esc [ A == Up on ANSI/VT220/Linux console/
+                  * FreeBSD console/Mach console/xterm/Eterm/
+                  * urxvt/Gnome and Xfce Terminal. */
+    case 'B' :   /* Esc [ B == Down on the same. */
+    case 'C' :   /* Esc [ C == Right on the same. */
+    case 'D' :   /* Esc [ D == Left on the same. */
     {
       return arrow_from_ABCD(seq[0]);
     }
@@ -1031,47 +958,38 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
     {
       return KEY_IC;
     }
-    case 'M' : /* Esc [ M == F1 on FreeBSD console. */
-    case 'N' : /* Esc [ N == F2 on FreeBSD console. */
-    case 'O' : /* Esc [ O == F3 on FreeBSD console. */
-    case 'P' : /* Esc [ P == F4 on FreeBSD console. */
-    case 'Q' : /* Esc [ Q == F5 on FreeBSD console. */
-    case 'R' : /* Esc [ R == F6 on FreeBSD console. */
-    case 'S' : /* Esc [ S == F7 on FreeBSD console. */
-    case 'T' : /* Esc [ T == F8 on FreeBSD console. */
-    {
+    case 'M' :   /* Esc [ M == F1 on FreeBSD console. */
+    case 'N' :   /* Esc [ N == F2 on FreeBSD console. */
+    case 'O' :   /* Esc [ O == F3 on FreeBSD console. */
+    case 'P' :   /* Esc [ P == F4 on FreeBSD console. */
+    case 'Q' :   /* Esc [ Q == F5 on FreeBSD console. */
+    case 'R' :   /* Esc [ R == F6 on FreeBSD console. */
+    case 'S' :   /* Esc [ S == F7 on FreeBSD console. */
+    case 'T' : { /* Esc [ T == F8 on FreeBSD console. */
       return KEY_F(seq[0] - 'L');
     }
-    case 'U' : /* Esc [ U == PageDown on Mach console. */
-    {
+    case 'U' : { /* Esc [ U == PageDown on Mach console. */
       return KEY_NPAGE;
     }
-    case 'V' : /* Esc [ V == PageUp on Mach console. */
-    {
+    case 'V' : { /* Esc [ V == PageUp on Mach console. */
       return KEY_PPAGE;
     }
-    case 'W' : /* Esc [ W == F11 on FreeBSD console. */
-    {
+    case 'W' : { /* Esc [ W == F11 on FreeBSD console. */
       return KEY_F(11);
     }
-    case 'X' : /* Esc [ X == F12 on FreeBSD console. */
-    {
+    case 'X' : { /* Esc [ X == F12 on FreeBSD console. */
       return KEY_F(12);
     }
-    case 'Y' : /* Esc [ Y == End on Mach console. */
-    {
+    case 'Y' : { /* Esc [ Y == End on Mach console. */
       return KEY_END;
     }
-    case 'Z' : /* Esc [ Z == Shift-Tab on ANSI/Linux console/ FreeBSD
-                  console/xterm/rxvt/Terminal. */
-    {
+    case 'Z' : { /* Esc [ Z == Shift-Tab on ANSI/Linux console/ FreeBSD console/xterm/rxvt/Terminal. */
       return SHIFT_TAB;
     }
-    case 'a' : /* Esc [ a == Shift-Up on rxvt/Eterm. */
-    case 'b' : /* Esc [ b == Shift-Down on rxvt/Eterm. */
-    case 'c' : /* Esc [ c == Shift-Right on rxvt/Eterm. */
-    case 'd' : /* Esc [ d == Shift-Left on rxvt/Eterm. */
-    {
+    case 'a' :   /* Esc [ a == Shift-Up on rxvt/Eterm. */
+    case 'b' :   /* Esc [ b == Shift-Down on rxvt/Eterm. */
+    case 'c' :   /* Esc [ c == Shift-Right on rxvt/Eterm. */
+    case 'd' : { /* Esc [ d == Shift-Left on rxvt/Eterm. */
       shift_held = true;
       return arrow_from_ABCD(seq[0] - 0x20);
     }
@@ -1705,7 +1623,7 @@ int get_kbinput(WINDOW *frame, bool showcursor) {
   return kbinput;
 }
 
-constexpr short INVALID_DIGIT = -77;
+#define INVALID_DIGIT -77
 /* For each consecutive call, gather the given symbol into a Unicode code point.
  * When it's complete (with six digits, or when Space or Enter is typed),
  * return the assembled code. Until then, return PROCEED when the symbol is
@@ -1843,7 +1761,7 @@ char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) {
       put_back(*input);
       *count = 999;
     }
-    else if ((*input == '\n' && as_an_at) || (*input == '\0' && !as_an_at)) {
+    else if ((*input == '\n' && as_an_at) || (!*input && !as_an_at)) {
       *count = 0;
     }
   }
@@ -1897,23 +1815,18 @@ int get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) {
   *mouse_y = event.y;
   /* Handle releases/clicks of the first mouse button. */
   if (event.bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED)) {
-    /* If we're allowing shortcuts, and the current shortcut list is
-     * being displayed on the last two lines of the screen, and the
-     * first mouse button was released on/clicked inside it, we need
-     * to figure out which shortcut was released on/clicked and put
-     * back the equivalent keystroke(s) for it. */
+    /* If we're allowing shortcuts, and the current shortcut list is being displayed on the last two
+     * lines of the screen, and the first mouse button was released on/clicked inside it, we need to
+     * figure out which shortcut was released on/clicked and put back the equivalent keystroke(s) for it. */
     if (allow_shortcuts && !ISSET(NO_HELP) && in_footer) {
-      /* The width of each shortcut item, except the last two. */
-      int width;
-      /* The calculated index of the clicked item. */
-      int index;
-      /* The number of shortcut items that get displayed. */
-      Ulong number;
+      int   width;  /* The width of each shortcut item, except the last two. */
+      int   index;  /* The calculated index of the clicked item. */
+      Ulong number; /* The number of shortcut items that get displayed. */
       /* Shift the coordinates to be relative to the bottom window. */
       wmouse_trafo(footwin, mouse_y, mouse_x, false);
       /* Clicks on the status bar are handled elsewhere, so
        * restore the untranslated mouse-event coordinates. */
-      if (*mouse_y == 0) {
+      if (!*mouse_y) {
         *mouse_x = event.x;
         *mouse_y = event.y;
         return 0;
@@ -1940,11 +1853,11 @@ int get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) {
       /* Search through the list of functions to determine which
        * shortcut in the current menu the user clicked on; then
        * put the corresponding keystroke into the keyboard buffer. */
-      for (funcstruct *f = allfuncs; f != nullptr; f = f->next) {
-        if ((f->menus & currmenu) == 0) {
+      for (funcstruct *f = allfuncs; f; f = f->next) {
+        if (!(f->menus & currmenu)) {
           continue;
         }
-        if (first_sc_for(currmenu, f->func) == nullptr) {
+        if (!first_sc_for(currmenu, f->func)) {
           continue;
         }
         if (--index == 0) {
@@ -2192,8 +2105,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   if (column > beyond || (*text != '\0' && (isprompt || (isdata && !ISSET(SOFTWRAP))))) {
     do {
       index = step_left(converted, index);
-    }
-    while (is_zerowidth(converted + index));
+    } while (is_zerowidth(converted + index));
     /* Display the left half of a two-column character as '['. */
     if (is_doublewidth(converted + index)) {
       converted[index++] = '[';
@@ -2700,7 +2612,7 @@ void place_the_cursor(void) {
     Ulong       leftedge;
     row -= chunk_for(openfile->firstcolumn, openfile->edittop);
     /* Calculate how many rows the lines from edittop to current use. */
-    while (line != nullptr && line != openfile->current) {
+    while (line && line != openfile->current) {
       row += 1 + extra_chunks_in(line);
       line = line->next;
     }
@@ -2725,15 +2637,12 @@ void place_the_cursor(void) {
   openfile->cursor_row = row;
 }
 
-/* The number of bytes after which to stop painting, to avoid major slowdowns.
- */
-static constexpr Ushort PAINT_LIMIT = 2000;
-/* Draw the given text on the given row of the edit window.  line is the line to
- * be drawn, and converted is the actual string to be written with tabs and
- * control characters replaced by strings of regular characters.  'from_col' is
- * the column number of the first character of this "page".
- * TODO: (draw_row) - Implement a way to close and open brackets (will probebly
- * be hard as fuck!!!). */
+/* The number of bytes after which to stop painting, to avoid major slowdowns. */
+#define PAINT_LIMIT 2000
+/* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
+ * is the actual string to be written with tabs and control characters replaced by strings of regular
+ * characters.  'from_col' is the column number of the first character of this "page". */
+/** TODO: (draw_row) - Implement a way to close and open brackets (will probebly be hard as fuck!!!). */
 void draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col) {
   render_line_text(row, converted, line, from_col);
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
@@ -2938,15 +2847,9 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
  * horizontally (when not softwrapping). Return the number of rows "consumed" (relevant when softwrapping). */
 int update_line(linestruct *line, const Ulong index, int offset) {
   PROFILE_FUNCTION;
-  /* if (LINE_ISSET(line, IS_HIDDEN)) {
-    return 0;
-  } */
-  /* The row in the edit window we will be updating. */
-  int row;
-  /* The data of the line with tabs and control characters expanded. */
-  char *converted;
-  /* From which column a horizontally scrolled line is displayed. */
-  Ulong from_col;
+  int   row;       /* The row in the edit window we will be updating. */
+  char *converted; /* The data of the line with tabs and control characters expanded. */
+  Ulong from_col;  /* From which column a horizontally scrolled line is displayed. */
   if (ISSET(SOFTWRAP)) {
     return update_softwrapped_line(line);
   }
@@ -3059,7 +2962,7 @@ int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) {
     }
   }
   else {
-    for (i = nrows; i > 0 && (*line)->prev != nullptr; i--) {
+    for (i = nrows; i > 0 && (*line)->prev; i--) {
       *line = (*line)->prev;
     }
   }
@@ -3124,9 +3027,7 @@ bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
   }
 }
 
-/* Draw a "scroll bar" on the righthand side of the edit window.
- * TODO : ( draw_scrollbar ) WTF i have never seen a scrollbar during runtime.
- */
+/* Draw a "scroll bar" on the righthand side of the edit window. */
 void draw_scrollbar(void) {
   int fromline     = openfile->edittop->lineno - 1;
   int totallines   = openfile->filebot->lineno;
@@ -3193,7 +3094,7 @@ void edit_scroll(bool direction) {
   }
   /* Draw new content on the blank row (and on the bordering row too
    * when it was deemed necessary). */
-  while (nrows > 0 && line != nullptr) {
+  while (nrows > 0 && line) {
     nrows -= update_line(line, (line == openfile->current) ? openfile->current_x : 0);
     line = line->next;
   }
@@ -3224,11 +3125,11 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
     *kickoff = false;
   }
   /* First find the place in text where the current chunk starts. */
-  while (*text != '\0' && column < leftedge) {
+  while (*text && column < leftedge) {
     text += advance_over(text, column);
   }
   /* Now find the place in text where this chunk should end. */
-  while (*text != '\0' && column <= rightside) {
+  while (*text && column <= rightside) {
     /* When breaking at blanks, do it *before* the target column. */
     if (ISSET(AT_BLANKS) && is_blank_char(text) && column < rightside) {
       farthest_blank = text;
@@ -3245,7 +3146,7 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
   }
   /* If we're softwrapping at blanks and we found at least one blank, break
    * after that blank -- if it doesn't overshoot the screen's edge. */
-  if (farthest_blank != nullptr) {
+  if (farthest_blank) {
     Ulong aftertheblank = last_blank_col;
     Ulong onestep       = advance_over(farthest_blank, aftertheblank);
     if (aftertheblank <= rightside) {
@@ -3276,7 +3177,7 @@ Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) {
     end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line);
     /* When the column is in range or we reached end-of-line, we're done. */
     if (end_of_line || (start_col <= column && column < end_col)) {
-      if (leftedge != nullptr) {
+      if (leftedge) {
         *leftedge = start_col;
       }
       return current_chunk;
@@ -3431,9 +3332,9 @@ void edit_refresh(void) {
     draw_scrollbar();
   }
   line = openfile->edittop;
-  while (row < editwinrows && line != nullptr) {
+  while (row < editwinrows && line) {
     int result = update_line(line, (line == openfile->current) ? openfile->current_x : 0, offset);
-    if (result == 0) {
+    if (!result) {
       offset += 1;
     }
     row += result;

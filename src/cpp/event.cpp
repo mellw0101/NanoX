@@ -1,8 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <pthread.h>
-
 callback_queue_t *callback_queue = nullptr;
 
 bool is_main_thread(void) {
@@ -59,7 +56,7 @@ void prosses_callback_queue(void) {
   /* Lock the callback mutex while we retrieve a callback. */
   lock_callback_mutex(true);
   /* Here we fetch all callbacks until there are no more left. */
-  while (callback_queue->head != nullptr) {
+  while (callback_queue->head) {
     /* Set 'node' to 'head'. */
     callback_node_t *node = callback_queue->head;
     /* Then we set the new 'head' to 'node->next'. */

@@ -38,7 +38,7 @@ namespace Parse {
     string normalise_path(const char *path);
   }
   void comment(linestruct *line);
-  void struct_type(linestruct **from);
+  void struct_type(linestruct **from, const char *current_file);
   void enum_type(linestruct **from);
   void variable(linestruct *line, const char *current_file, vector<var_t> &var_vector);
   void function(linestruct **line, const char *current_file);

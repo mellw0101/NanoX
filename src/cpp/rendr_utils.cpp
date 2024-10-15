@@ -115,7 +115,7 @@ void draw_suggest_win(void) {
   mvwprintw(suggestwin, 0, 1, "%s", suggest_str);
   wrefresh(suggestwin);
   if (ISSET(SUGGEST_INLINE)) {
-    rendr(SUGGEST, suggest_str);
+    RENDR(SUGGEST, suggest_str);
   }
 }
 

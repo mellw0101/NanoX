@@ -1,8 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <time.h>
-
 /* These are the functions that the sub threads perform. */
 struct sub_thread_function {
   /* This is the task performed by the other thread. */

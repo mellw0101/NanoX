@@ -250,7 +250,7 @@ namespace Parse {
     }
   }
 
-  void struct_type(linestruct **from_line) {
+  void struct_type(linestruct **from_line, const char *current_file) {
     if (!from_line) {
       return;
     }
@@ -268,13 +268,245 @@ namespace Parse {
     if (t.empty()) {
       return;
     }
-    if (strstr(t.c_str(), "/*") == t.c_str()) {
+    if (strstr(t.c_str(), "/*") == t.c_str() || strncmp(t.c_str(), "//", 2) == 0) {
       return;
     }
     const char *type = t.c_str();
     Uint        idx;
-    const char *found = strstr_array(type, (const char *[]) {"typedef", "enum", "struct", "class"}, 4, &idx);
+    const char *found =
+      strstr_array(type, (const char *[]) {"typedef", "enum", "struct", "class", "template"}, 5, &idx);
     if (found && (found == type || (type[(found - type) - 1] == ' ' || type[(found - type) - 1] == '\t'))) {
+      /* typedef */
+      if (idx == 0) {
+        const char *typedef_type = nullptr;
+        linestruct *br_line      = nullptr;
+        FOR_EACH_LINE_NEXT(line, from) {
+          if ((typedef_type = strchr(line->data, '{'))) {
+            br_line = line;
+            break;
+          }
+          if ((typedef_type = strchr(line->data, ';'))) {
+            break;
+          }
+        }
+        if (typedef_type) {
+          /* Single line typedef; */
+          if (*typedef_type == ';') {
+            found = strstr(from->data, "typedef");
+            if (found) {
+              found += 7;
+              ADV_TO_NEXT_WORD(found);
+              if (!*found) {
+                return;
+              }
+              const char *st = found;
+              ADV_PAST_WORD(found);
+              if (found != st) {
+                char *word = measured_copy(st, (found - st));
+                /* Single line 'struct' typedef. */
+                if (strcmp(word, "struct") == 0) {
+                  const char *end = st;
+                  ADV_PTR(end, *end != ';');
+                  if (*end == ';') {
+                    const char *val_st = end;
+                    DCR_PTR(val_st, st, (*val_st != '\t' && *val_st != ' ' && *val_st != '*' && *val_st != '&'));
+                    if (val_st == st || val_st == end) {
+                      return;
+                    }
+                    ++val_st;
+                    char       *name  = measured_copy(st, (val_st - st));
+                    char       *alias = measured_copy(val_st, (end - val_st));
+                    const auto &it    = LSP->index.tdstructs.find(alias);
+                    /* If not inside map, we add it. */
+                    if (it == LSP->index.tdstructs.end()) {
+                      TypedefStruct tds;
+                      tds.name                        = name;
+                      tds.alias                       = alias;
+                      LSP->index.tdstructs[tds.alias] = tds;
+                    }
+                    /* Otherwise free the alloced data. */
+                    else {
+                      free(name);
+                      free(alias);
+                    }
+                  }
+                }
+                free(word);
+              }
+            }
+            return;
+          }
+          /* Typedef with body. */
+          else {
+            found = strstr(from->data, "typedef");
+            if (found) {
+              found += 7;
+              ADV_TO_NEXT_WORD(found);
+              if (!*found) {
+                return;
+              }
+              const char *st = found;
+              ADV_PTR(found, *found != '\t' && *found != ' ' && *found != '{');
+              if (found != st) {
+                char *word = measured_copy(st, (found - st));
+                /* Found 'struct' typedef. */
+                if (strcmp(word, "struct") == 0) {
+                  TypedefStruct tsc;
+                  ADV_TO_NEXT_WORD(found);
+                  /* Anonomus struct. */
+                  if (!*found || *found == '{') {
+                    tsc.name = copy_of("");
+                  }
+                  else {
+                    st = found;
+                    ADV_PTR(found, *found != '\t' && *found != ' ' && *found != '{');
+                    tsc.name = measured_copy(st, (found - st));
+                  }
+                  if (br_line) {
+                    linestruct *end_line;
+                    Ulong       end_idx;
+                    if (find_end_bracket(br_line, (typedef_type - br_line->data), &end_line, &end_idx)) {
+                      FOR_EACH_LINE_NEXT(line, end_line) {
+                        if (strchr(line->data, ';')) {
+                          end_line = line;
+                          break;
+                        }
+                      }
+                      const char *alias_st  = &end_line->data[indent_char_len(end_line)];
+                      const char *alias_end = nullptr;
+                      if (*alias_st == '}') {
+                        ++alias_st;
+                      }
+                      ADV_TO_NEXT_WORD(alias_st);
+                      /** TODO: Fix this. */
+                      if (!*alias_st || *alias_st == '*') {
+                        free(tsc.name);
+                        free(word);
+                        return;
+                      }
+                      alias_end = alias_st;
+                      ADV_PTR(alias_end, *alias_end != '\t' && *alias_end != ' ' && *alias_end != ';');
+                      tsc.alias                       = measured_copy(alias_st, (alias_end - alias_st));
+                      LSP->index.tdstructs[tsc.alias] = tsc;
+                      *from_line                      = end_line;
+                    }
+                  }
+                }
+                free(word);
+              }
+            }
+            return;
+          }
+        }
+      }
+      /* enum */
+      else if (idx == 1) {
+        found = strstr(from->data, "enum");
+        if (found) {
+          found += 4;
+          ADV_TO_NEXT_WORD(found);
+          if (strncmp(found, "class", 5) == 0) {
+            found += 5;
+            ADV_TO_NEXT_WORD(found);
+            // unix_socket_debug("enum class: %s\n", found);
+          }
+          else {
+            unix_socket_debug("enum: %s\n", found);
+          }
+        }
+      }
+      /* struct */
+      else if (idx == 2) {
+        if (strchr(from->data, ')') || strchr(from->data, ',') || strchr(from->data, '[') || strchr(from->data, '<') ||
+            strchr(from->data, '*')) {
+          return;
+        }
+        /* Single line decl. */
+        if (strchr(from->data, ';')) {
+          // unix_socket_debug("decl: %s\n", from->data);
+          return;
+        }
+        /* Defenition. */
+        else {
+          const char *br      = nullptr;
+          linestruct *br_line = nullptr;
+          Uint        i = 0, max_lines = 10;
+          FOR_EACH_LINE_NEXT(line, from) {
+            if ((br = strchr(line->data, '{'))) {
+              br_line = line;
+              break;
+            }
+            if (++i == max_lines) {
+              break;
+            }
+          }
+          if (br_line) {
+            Ulong       end_idx;
+            linestruct *end_line;
+            if (find_end_bracket(br_line, (br - br_line->data), &end_line, &end_idx)) {
+              // unix_socket_debug("Data: %s\n", from->data);
+              *from_line      = end_line;
+              const char *end = from->data;
+              const char *st  = end;
+              ADV_PTR(end, *end != '{' && *end != '/');
+              if (st == end) {
+                return;
+              }
+              --end;
+              DCR_TO_PREV_CH(end, st);
+              if (end == st) {
+                return;
+              }
+              st = end;
+              ++end;
+              DCR_PAST_PREV_WORD(st, from->data);
+              if (st == from->data) {
+                return;
+              }
+              ++st;
+              StructEntry ste;
+              ste.filename                 = copy_of(current_file);
+              ste.name                     = measured_copy(st, (end - st));
+              ste.decl_st                  = from->lineno;
+              ste.decl_end                 = end_line->lineno;
+              LSP->index.structs[ste.name] = ste;
+              return;
+            }
+          }
+        }
+      }
+      /* class */
+      else if (idx == 3) {
+        // unix_socket_debug("%s\n", from->data);
+        const char *is_decl = nullptr;
+        linestruct *st_line = nullptr;
+        FOR_EACH_LINE_NEXT(line, from) {
+          if ((is_decl = strchr(line->data, '{'))) {
+            st_line = line;
+            break;
+          }
+          if ((is_decl = strchr(line->data, ';'))) {
+            break;
+          }
+        }
+        if (is_decl) {
+          if (*is_decl == ';') {
+            if (strchr(from->data, ';')) {
+              // unix_socket_debug("class decl: %s\n", from->data);
+              return;
+            }
+          }
+          else if (st_line) {
+            linestruct *end_line;
+            Ulong       end_idx;
+            if (find_end_bracket(st_line, (is_decl - st_line->data), &end_line, &end_idx)) {
+              // unix_socket_debug("class defenition: %s\n", from->data);
+              *from_line = end_line;
+              return;
+            }
+          }
+        }
+      }
       string      expr        = "";
       string      visual_data = "";
       int         lvl         = 0;
@@ -323,7 +555,8 @@ namespace Parse {
           LSP->index.rawtypedef.push_back(expr);
           break;
         }
-        case 1 : {
+        case 1 : { /* enum */
+          // unix_socket_debug("%s\n", expr.c_str());
           LSP->index.rawenum.push_back(expr);
           break;
         }
@@ -347,7 +580,18 @@ namespace Parse {
     const char *end  = data;
     string      type = parse_var_type(*from, &data, &end);
     if (type == "enum") {
-      // unix_socket_debug("%s\n", from->data);
+      EnumEntry ee;
+      ee.name = nullptr;
+      ADV_TO_NEXT_WORD(end);
+      if (*end) {
+        const char *start = end;
+        ADV_PTR(end, *end != ' ' && *end != '\t' && *end != '{');
+        if (end != start) {
+          char *name = measured_copy(start, (end - start));
+          unix_socket_debug("name: %s\n", name);
+          ee.name = name;
+        }
+      }
       const char *found      = nullptr;
       linestruct *found_line = nullptr;
       FOR_EACH_LINE_NEXT(line, *from) {
@@ -365,26 +609,17 @@ namespace Parse {
       linestruct *end_bracket;
       Ulong       end_index;
       if (find_matching_bracket(found_line, (found - found_line->data), &end_bracket, &end_index)) {
-        FOR_EACH_LINE_NEXT(line, found_line) {
-          if (line == found_line) {
-            // unix_socket_debug("%s\n", &found_line->data[(found - found_line->data)]);
-          }
-          else {
-            // unix_socket_debug("%s\n", line->data);
-          }
-          if (line == end_bracket) {
-            break;
-          }
-        }
         *from = end_bracket;
       }
       char *body = fetch_bracket_body(found_line, (found - found_line->data));
       if (body) {
-        unix_socket_debug("  body: %s\n", body);
+        // unix_socket_debug("  body: %s\n", body);
         free(body);
       }
+      if (ee.name) {
+        LSP->index.enums[ee.name] = ee;
+      }
     }
-    return;
   }
 
   void variable(linestruct *line, const char *current_file, vector<var_t> &v_vec) {
@@ -483,10 +718,13 @@ namespace Parse {
       if (com_slash && (found > com_slash)) {
         return;
       }
-      // unix_socket_debug("function:\n"
-      //                   "  sig: %s\n",
-      //                   (*from)->data);
-      // unix_socket_debug("%s\n", (*from)->data);
+      const char       *param_st      = found;
+      const linestruct *param_st_line = *from;
+      Uint              idx;
+      const char       *not_good = strstr_array((*from)->data, (const char *[]) {"__attribute__"}, 1, &idx);
+      if (not_good) {
+        return;
+      }
       char       *param_str  = fetch_bracket_body((*from), (found - (*from)->data));
       linestruct *found_line = nullptr;
       FOR_EACH_LINE_NEXT(line, *from) {
@@ -500,20 +738,103 @@ namespace Parse {
       }
       if (found_line) {
         if (*found == '{') {
-          if (param_str) {
-            // unix_socket_debug("  params: %s\n", param_str);
-            free(param_str);
-          }
           linestruct *end_bracket;
           Ulong       end_index;
           if (find_end_bracket(found_line, (found - found_line->data), &end_bracket, &end_index)) {
             *from = end_bracket;
           }
-          char *body = fetch_bracket_body(found_line, (found - found_line->data));
+          else {
+            if (param_str) {
+              free(param_str);
+            }
+            return;
+          }
+          char       *body = fetch_bracket_body(found_line, (found - found_line->data));
+          const char *end  = param_st - 1;
+          DCR_TO_PREV_CH(end, param_st_line->data);
+          if (end == param_st_line->data) {
+            return;
+          }
+          ++end;
+          const char *st = end;
+          for (; st > param_st_line->data && (*st != ' ' && *st != '\t' && *st != '*' && *st != '&'); st--);
+          if (st == end) {
+            return;
+          }
+          if (st != param_st_line->data) {
+            ++st;
+          }
+          char *name = measured_copy(st, (end - st));
+          if (strstr(name, "operator") || strstr(name, "::") || strchr(name, '>') || strchr(name, '<') ||
+              strchr(name, '=') || strchr(name, '!')) {
+            free(name);
+            return;
+          }
+          /* For now we only take current file func def`s. */
+          if (strcmp(tail(current_file), tail(openfile->filename)) == 0) {
+            // unix_socket_debug("Name: %s\n", name);
+            FunctionDef fd;
+            fd.file     = copy_of(current_file);
+            fd.name     = name;
+            fd.decl_st  = param_st_line->lineno;
+            fd.decl_end = end_bracket->lineno;
+            if (param_str) {
+              if (*param_str && strcmp(param_str, "void") != 0) {
+                const char *p_st  = param_str;
+                const char *p_end = p_st;
+                do {
+                  ADV_TO_NEXT_WORD(p_end);
+                  p_st = p_end;
+                  ADV_PTR(p_end, *p_end != ',');
+                  if (p_st == p_end) {
+                    break;
+                  }
+                  char       *var   = measured_copy(p_st, (p_end - p_st));
+                  const char *v_st  = var;
+                  const char *v_end = v_st;
+                  for (; *v_end; ++v_end);
+                  DCR_PTR(v_end, v_st, *v_end != '\t' && *v_end != ' ' && *v_end != '*' && *v_end != '&');
+                  if (v_st != v_end) {
+                    ++v_end;
+                    DCR_TO_PREV_CH(v_end, var);
+                    if (v_end != var) {
+                      if (*v_end == '\t' || *v_end == ' ') {
+                        --v_end;
+                      }
+                      VarDecl vd;
+                      vd.file = copy_of(current_file);
+                      vd.type = measured_copy(var, (v_end - var));
+                      vd.name = copy_of(v_end);
+                      /* For now set the value to a empty str. */
+                      vd.value    = copy_of("");
+                      vd.decl_st  = fd.decl_st;
+                      vd.decl_end = fd.decl_end;
+                      LSP->index.vars[vd.name].push_back(vd);
+                    }
+                  }
+                  free(var);
+                  if (*p_end) {
+                    ++p_end;
+                  }
+                } while (*p_end);
+                // unix_socket_debug("Params: %s\n", param_str);
+              }
+              free(param_str);
+            }
+            if (body) {
+              // unix_socket_debug("  body: %s\n", body);
+              free(body);
+            }
+            LSP->index.functiondefs[fd.name] = fd;
+            return;
+          }
+          if (param_str) {
+            free(param_str);
+          }
           if (body) {
-            // unix_socket_debug("  body: %s\n", body);
             free(body);
           }
+          free(name);
         }
         else if (*found == ';') {
           if (param_str) {
@@ -527,7 +848,7 @@ namespace Parse {
 
 /* Main parse function. */
 void do_parse(linestruct **line, const char *current_file) {
-  Parse::struct_type(line);
+  Parse::struct_type(line, current_file);
   /* vector<var_t> vars;
   Parse::variable(*line, current_file, vars);
   if (!vars.empty()) {

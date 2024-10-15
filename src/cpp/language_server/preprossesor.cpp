@@ -414,6 +414,7 @@ void do_define(linestruct *line, const char *current_file, const char **ptr) {
   if (*end == '(') {
     ADV_PTR(end, (*end != ')'));
     if (!*end || end == start) {
+      free(name);
       return;
     }
     end += 1;
@@ -422,6 +423,7 @@ void do_define(linestruct *line, const char *current_file, const char **ptr) {
   start        = end;
   ADV_TO_NEXT_WORD(start);
   if (!*start) {
+    free(name);
     return;
   }
   string val                  = parse_full_define(line, &start, &de.decl_end_line);

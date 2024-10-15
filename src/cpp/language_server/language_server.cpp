@@ -250,7 +250,6 @@ int LanguageServer::index_file(const char *path) {
     free(absolute_path);
     return -1;
   }
-  unix_socket_debug("path %s\n", absolute_path);
   IndexFile idfile;
   idfile.read_file(absolute_path);
   index.include[absolute_path] = idfile;

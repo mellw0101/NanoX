@@ -206,7 +206,7 @@ char *do_lockfile(const char *filename, const bool ask_the_user) {
     lockuser[16] = '\0';
     free(lockbuf);
     pidstring = (char *)nmalloc(11);
-    sprintf(pidstring, "%u", (unsigned int)lockpid);
+    sprintf(pidstring, "%u", (Uint)lockpid);
     /* Display newlines in filenames as ^J. */
     as_an_at = false;
     /* TRANSLATORS: The second %s is the name of the user, the third that of
@@ -1952,7 +1952,7 @@ char *real_dir_from_tilde(const char *path) {
       userdata = getpwent();
     } while (userdata && strcmp(userdata->pw_name, tilded + 1) != 0);
     endpwent();
-    if (userdata != nullptr) {
+    if (userdata) {
       tilded = mallocstrcpy(tilded, userdata->pw_dir);
     }
   }
@@ -2002,7 +2002,7 @@ char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)
   const passwd *userdata;
   /* Iterate through the entries in the passwd file, and
    * add each fitting username to the list of matches. */
-  while ((userdata = getpwent()) != nullptr) {
+  while ((userdata = getpwent())) {
     if (strncmp(userdata->pw_name, morsel + 1, length - 1) == 0) {
       /* Skip directories that are outside of the allowed area. */
       if (outside_of_confinement(userdata->pw_dir, true)) {
@@ -2030,21 +2030,20 @@ char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)
   You may use this code as you wish, so long as the original author(s)
   are attributed in any redistributions of the source code.
   This code is 'as is' with no warranty.
-  This code may safely be consumed by a BSD or GPL license.
-*/
+  This code may safely be consumed by a BSD or GPL license. */
 
 /* Try to complete the given fragment to an existing filename. */
 char **filename_completion(const char *morsel, Ulong *num_matches) {
-  char         *dirname = copy_of(morsel);
-  char         *slash, *filename;
-  Ulong         filenamelen;
-  char         *fullname = nullptr;
-  char        **matches  = nullptr;
-  DIR          *dir;
+  char  *dirname = copy_of(morsel);
+  char  *slash, *filename;
+  Ulong filenamelen;
+  char  *fullname = nullptr;
+  char  **matches = nullptr;
+  DIR   *dir;
   const dirent *entry;
   /* If there's a '/' in the name, split out filename and directory parts. */
   slash = strrchr(dirname, '/');
-  if (slash != nullptr) {
+  if (slash) {
     char *wasdirname = dirname;
     filename         = copy_of(++slash);
     /* Cut off the filename part after the slash. */
@@ -2062,16 +2061,15 @@ char **filename_completion(const char *morsel, Ulong *num_matches) {
     dirname  = copy_of(present_path);
   }
   dir = opendir(dirname);
-  if (dir == nullptr) {
+  if (!dir) {
     beep();
     free(filename);
     free(dirname);
     return nullptr;
   }
   filenamelen = strlen(filename);
-  /* Iterate through the filenames in the directory, and add each fitting one
-   * to the list of matches. */
-  while ((entry = readdir(dir)) != nullptr) {
+  /* Iterate through the filenames in the directory, and add each fitting one to the list of matches. */
+  while ((entry = readdir(dir))) {
     if (strncmp(entry->d_name, filename, filenamelen) == 0 && strcmp(entry->d_name, ".") != 0 &&
         strcmp(entry->d_name, "..") != 0) {
       fullname = (char *)nrealloc(fullname, strlen(dirname) + strlen(entry->d_name) + 1);
@@ -2230,15 +2228,15 @@ bool is_file_and_exists(const char *path) {
 char **retrieve_lines_from_file(const char *path, Ulong *nlines) {
   PROFILE_FUNCTION;
   if (!is_file_and_exists(path)) {
-    LOUT_logE("Path: '%s' is not a file");
+    logE("Path: '%s' is not a file", path);
     return nullptr;
   }
   char  *buf = nullptr;
   Ulong  len, size, i = 0, bcap = 200, bsize = 0;
   char **lines = (char **)nmalloc(sizeof(char *) * bcap);
   FILE  *file  = fopen(path, "rb");
-  if (file == nullptr) {
-    LOUT_logE("Failed to open file: '%s'", path);
+  if (!file) {
+    logE("Failed to open file: '%s'", path);
     return nullptr;
   }
   for (; (len = getline(&buf, &size, file)) != EOF; i++) {
@@ -2251,23 +2249,23 @@ char **retrieve_lines_from_file(const char *path, Ulong *nlines) {
     }
     lines[bsize++] = measured_copy(buf, len);
   }
-  (nlines != nullptr) ? *nlines = i : 0;
+  nlines ? (*nlines = i) : 0;
   fclose(file);
   return lines;
 }
 
 char **retrieve_words_from_file(const char *path, Ulong *nwords) {
   PROFILE_FUNCTION;
-  Ulong        nlines, linei = 0, i, size = 0, cap = 100;
-  unsigned int word_count;
-  char       **lines = retrieve_lines_from_file(path, &nlines);
-  if (lines == nullptr) {
+  Ulong  nlines, linei = 0, i, size = 0, cap = 100;
+  Uint   word_count;
+  char **lines = retrieve_lines_from_file(path, &nlines);
+  if (!lines) {
     return nullptr;
   }
   char **words = (char **)nmalloc(sizeof(char *) * cap);
   for (; linei < nlines; linei++) {
     char **twords = split_into_words(lines[linei], strlen(lines[linei]), &word_count);
-    if (twords == nullptr) {
+    if (!twords) {
       free(lines[linei]);
       continue;
     }
@@ -2281,7 +2279,7 @@ char **retrieve_words_from_file(const char *path, Ulong *nwords) {
     free(twords);
     free(lines[linei]);
   }
-  (nwords != nullptr) ? *nwords = size : 0;
+  nwords ? (*nwords = size) : 0;
   free(lines);
   return words;
 }
@@ -2292,12 +2290,12 @@ char **retrieve_words_from_file(const char *path, Ulong *nwords) {
 char **words_from_file(const char *path, Ulong *nwords) {
   PROFILE_FUNCTION;
   if (!is_file_and_exists(path)) {
-    LOUT_logE("Path: '%s' in not a file or does not exist.");
+    logE("Path: '%s' in not a file or does not exist.", path);
     return nullptr;
   }
   FILE *file = fopen(path, "rb");
-  if (file == nullptr) {
-    LOUT_logE("Failed to open file: '%s'.");
+  if (!file) {
+    logE("Failed to open file: '%s'.", path);
     return nullptr;
   }
   static thread_local char *buf = nullptr;
@@ -2314,7 +2312,7 @@ char **words_from_file(const char *path, Ulong *nwords) {
       }
       start = end;
       for (; end < (buf + len) && *end != ' '; end++);
-      const unsigned int word_len = end - start;
+      const Uint word_len = end - start;
       (bsize == bcap) ? bcap *= 2, words = (char **)nrealloc(words, sizeof(char *) * bcap) : 0;
       words[bsize++] = measured_copy(start, word_len);
     }
@@ -2333,7 +2331,7 @@ char **words_from_current_file(Ulong *nwords) {
       char *file = copy_of(openfile->filename);
       full_path  = concat_path(pwd, file);
       free(file);
-      NETLOGGER.log("%s\n", full_path);
+      NLOG("%s\n", full_path);
       return words_from_file(full_path, nwords);
     }
   }
@@ -2342,7 +2340,7 @@ char **words_from_current_file(Ulong *nwords) {
 
 char *full_current_file_path(void) {
   static thread_local char buf[PATH_MAX];
-  const char              *pwd = getenv("PWD");
+  const char *pwd = getenv("PWD");
   if (pwd == nullptr) {
     return nullptr;
   }
@@ -2352,15 +2350,15 @@ char *full_current_file_path(void) {
 
 char **dir_entrys_from(const char *path) {
   static thread_local char **buf  = nullptr;
-  thread_local Ulong         size = 0, cap = 10;
-  thread_local dirent       *entry;
-  thread_local DIR          *dir = opendir(path);
+  thread_local Ulong  size = 0, cap = 10;
+  thread_local dirent *entry;
+  thread_local DIR    *dir = opendir(path);
   if (dir == nullptr) {
     logE("Failed to open dir: '%s'.", path);
     return nullptr;
   }
   buf = (char **)nmalloc(sizeof(char *) * cap);
-  while ((entry = readdir(dir)) != nullptr) {
+  while ((entry = readdir(dir))) {
     (size == cap) ? cap *= 2, buf = (char **)nrealloc(buf, sizeof(char *) * cap) : 0;
     buf[size++] = copy_of(entry->d_name);
   }

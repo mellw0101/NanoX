@@ -1,15 +1,6 @@
 /// @file text.cpp
 #include "../include/prototypes.h"
 
-#include <Mlib/Debug.h>
-#include <Mlib/Profile.h>
-#include <cerrno>
-#include <cstring>
-#include <ctime>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
 /* Toggle the mark. */
 void do_mark(void) {
   if (!openfile->mark) {

@@ -1,29 +1,20 @@
 /// @file utils.cpp
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <Mlib/constexpr.hpp>
-#include <cerrno>
-#include <cstring>
-#include <pwd.h>
-#include <unistd.h>
-
 /* Return the user's home directory.  We use $HOME, and if that fails,
  * we fall back on the home directory of the effective user ID. */
 void get_homedir(void) {
-  if (homedir == nullptr) {
+  if (!homedir) {
     const char *homenv = getenv("HOME");
-    /* When HOME isn't set,or when we're root,
-     * get the home directory from the password file instead. */
-    if (homenv == nullptr || geteuid() == ROOT_UID) {
+    /* When HOME isn't set,or when we're root, get the home directory from the password file instead. */
+    if (!homenv || geteuid() == ROOT_UID) {
       const passwd *userage = getpwuid(geteuid());
-      if (userage != nullptr) {
+      if (userage) {
         homenv = userage->pw_dir;
       }
     }
-    /* Only set homedir if some home directory could be determined,
-     * otherwise keep homedir nullpre. */
-    if (homenv != nullptr && *homenv != '\0') {
+    /* Only set homedir if some home directory could be determined, otherwise keep homedir 'nullptr'. */
+    if (homenv && *homenv) {
       homedir = copy_of(homenv);
     }
   }
@@ -31,8 +22,8 @@ void get_homedir(void) {
 
 /* Return the filename part of the given path. */
 const char *tail(const char *path) {
-  const char *slash = constexpr_strrchr(path, '/');
-  if (slash == nullptr) {
+  const char *slash = strrchr(path, '/');
+  if (!slash) {
     return path;
   }
   else {
@@ -44,8 +35,8 @@ const char *tail(const char *path) {
 char *concatenate(const char *path, const char *name) {
   Ulong pathlen = strlen(path);
   char *joined  = (char *)nmalloc(pathlen + strlen(name) + 1);
-  constexpr_strcpy(joined, path);
-  constexpr_strcpy(joined + pathlen, name);
+  strcpy(joined, path);
+  strcpy(joined + pathlen, name);
   return joined;
 }
 
@@ -92,7 +83,7 @@ int digits(const long n) {
 /* Original code: From GNU nano 8.0.1
 
     // Read an integer from the given string.  If it parses okay,
-    // store it in *result and return TRUE; otherwise, return FALSE.
+    // store it in *result and return true; otherwise, return FALSE.
     bool
     parse_num(const char *string, long *result)
     {
@@ -106,7 +97,7 @@ int digits(const long n) {
             return FALSE;
         }
         *result = value;
-        return TRUE;
+        return true;
     }
  */
 bool parseNum(STRING_VIEW string, long &result) {
@@ -117,12 +108,12 @@ bool parseNum(STRING_VIEW string, long &result) {
     return FALSE;
   }
   result = value;
-  return TRUE;
+  return true;
 }
 
 /* Read one number (or two numbers separated by comma, period, or colon)
  * from the given string and store the number(s) in *line (and *column).
- * Return 'FALSE' on a failed parsing, and 'TRUE' otherwise. */
+ * Return 'FALSE' on a failed parsing, and 'true' otherwise. */
 bool parse_line_column(const char *string, long *line, long *column) {
   const char *comma;
   char       *firstpart;
@@ -131,7 +122,7 @@ bool parse_line_column(const char *string, long *line, long *column) {
     string++;
   }
   comma = strpbrk(string, ",.:");
-  if (comma == nullptr) {
+  if (!comma) {
     return parseNum(string, *line);
   }
   retval = parseNum(comma + 1, *column);
@@ -148,7 +139,7 @@ bool parse_line_column(const char *string, long *line, long *column) {
 /* In the given string, recode each embedded NUL as a newline. */
 void recode_NUL_to_LF(char *string, Ulong length) {
   while (length > 0) {
-    if (*string == '\0') {
+    if (!*string) {
       *string = '\n';
     }
     length--;
@@ -156,11 +147,10 @@ void recode_NUL_to_LF(char *string, Ulong length) {
   }
 }
 
-/* In the given string, recode each embedded newline as a NUL,
- * and return the number of bytes in the string. */
+/* In the given string, recode each embedded newline as a NUL, and return the number of bytes in the string. */
 Ulong recode_LF_to_NUL(char *string) {
   char *beginning = string;
-  while (*string != '\0') {
+  while (*string) {
     if (*string == '\n') {
       *string = '\0';
     }
@@ -171,7 +161,7 @@ Ulong recode_LF_to_NUL(char *string) {
 
 /* Free the memory of the given array, which should contain len elements. */
 void free_chararray(char **array, Ulong len) {
-  if (array == nullptr) {
+  if (!array) {
     return;
   }
   while (len > 0) {
@@ -361,19 +351,18 @@ Ulong actual_x(const char *text, Ulong column) {
 /* A strnlen() with tabs and multicolumn characters factored in:
  * how many columns wide are the first maxlen bytes of text? */
 Ulong wideness(const char *text, Ulong maxlen) {
-  if (maxlen == 0) {
+  if (!maxlen) {
     return 0;
   }
   Ulong width = 0;
-  for (Ulong charlen; (*text != '\0') && (maxlen > (charlen = advance_over(text, width)));
-       maxlen -= charlen, text += charlen);
+  for (Ulong charlen; *text && (maxlen > (charlen = advance_over(text, width))); maxlen -= charlen, text += charlen);
   return width;
 }
 
 /* Return the number of columns that the given text occupies. */
 Ulong breadth(const char *text) {
   Ulong span = 0;
-  for (; *text != '\0'; text += advance_over(text, span));
+  for (; *text; text += advance_over(text, span));
   return span;
 }
 
@@ -385,10 +374,9 @@ void new_magicline(void) {
   openfile->totsize++;
 }
 
-/* Remove the magic line from the end of the buffer, if there is one and
- * it isn't the only line in the file. */
+/* Remove the magic line from the end of the buffer, if there is one and it isn't the only line in the file. */
 void remove_magicline(void) {
-  if (openfile->filebot->data[0] == '\0' && openfile->filebot != openfile->filetop) {
+  if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
     if (openfile->current == openfile->filebot) {
       openfile->current = openfile->current->prev;
     }
@@ -399,7 +387,7 @@ void remove_magicline(void) {
   }
 }
 
-/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
+/* Return 'true' when the mark is before or at the cursor, and FALSE otherwise. */
 bool mark_is_before_cursor(void) {
   return (openfile->mark->lineno < openfile->current->lineno ||
           (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
@@ -437,7 +425,7 @@ void get_range(linestruct **top, linestruct **bot) {
       *bot = (*bot)->prev;
     }
     else {
-      also_the_last = TRUE;
+      also_the_last = true;
     }
   }
 }

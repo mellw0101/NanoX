@@ -18,18 +18,18 @@ void do_statusbar_end(void) {
 
 /* Move to the previous word in the answer. */
 void do_statusbar_prev_word(void) {
-  bool seen_a_word = FALSE, step_forward = FALSE;
+  bool seen_a_word = false, step_forward = false;
   /* Move backward until we pass over the start of a word. */
-  while (typing_x != 0) {
+  while (typing_x) {
     typing_x = step_left(answer, typing_x);
-    if (is_word_char(answer + typing_x, FALSE)) {
-      seen_a_word = TRUE;
+    if (is_word_char(answer + typing_x, false)) {
+      seen_a_word = true;
     }
     else if (is_zerowidth(answer + typing_x))
       ; /* skip */
     else if (seen_a_word) {
       /* This is space now: we've overshot the start of the word. */
-      step_forward = TRUE;
+      step_forward = true;
       break;
     }
   }
@@ -41,17 +41,17 @@ void do_statusbar_prev_word(void) {
 
 /* Move to the next word in the answer. */
 void do_statusbar_next_word(void) {
-  bool seen_space = !is_word_char(answer + typing_x, FALSE);
+  bool seen_space = !is_word_char(answer + typing_x, false);
   bool seen_word  = !seen_space;
   /* Move forward until we reach either the end or the start of a word,
    * depending on whether the AFTER_ENDS flag is set or not. */
-  while (answer[typing_x] != '\0') {
+  while (answer[typing_x]) {
     typing_x = step_right(answer, typing_x);
     if (ISSET(AFTER_ENDS)) {
       /* If this is a word character, continue; else it's a separator,
        * and if we've already seen a word, then it's a word end. */
-      if (is_word_char(answer + typing_x, FALSE)) {
-        seen_word = TRUE;
+      if (is_word_char(answer + typing_x, false)) {
+        seen_word = true;
       }
       else if (is_zerowidth(answer + typing_x))
         ; /* skip */
@@ -65,8 +65,8 @@ void do_statusbar_next_word(void) {
       else {
         /* If this is not a word character, then it's a separator; else
          * if we've already seen a separator, then it's a word start. */
-        if (!is_word_char(answer + typing_x, FALSE)) {
-          seen_space = TRUE;
+        if (!is_word_char(answer + typing_x, false)) {
+          seen_space = true;
         }
         else if (seen_space) {
           break;
@@ -88,9 +88,9 @@ void do_statusbar_left(void) {
 
 /* Move right one character in the answer. */
 void do_statusbar_right(void) {
-  if (answer[typing_x] != '\0') {
+  if (answer[typing_x]) {
     typing_x = step_right(answer, typing_x);
-    while (answer[typing_x] != '\0' && is_zerowidth(answer + typing_x)) {
+    while (answer[typing_x] && is_zerowidth(answer + typing_x)) {
       typing_x = step_right(answer, typing_x);
     }
   }
@@ -128,7 +128,7 @@ void lop_the_answer(void) {
 void copy_the_answer(void) {
   if (*answer) {
     free_lines(cutbuffer);
-    cutbuffer       = make_new_node(NULL);
+    cutbuffer       = make_new_node(nullptr);
     cutbuffer->data = copy_of(answer);
     typing_x        = 0;
   }
@@ -154,7 +154,7 @@ int do_statusbar_mouse(void) {
     /* Move to where the click occurred. */
     if (click_row == 0 && click_col >= start_col) {
       typing_x = actual_x(
-          answer, get_statusbar_page_start(start_col, start_col + wideness(answer, typing_x)) + click_col - start_col);
+        answer, get_statusbar_page_start(start_col, start_col + wideness(answer, typing_x)) + click_col - start_col);
     }
   }
   return retval;
@@ -164,7 +164,7 @@ int do_statusbar_mouse(void) {
 void inject_into_answer(char *burst, Ulong count) {
   /* First encode any embedded NUL byte as 0x0A. */
   for (Ulong index = 0; index < count; index++) {
-    if (burst[index] == '\0') {
+    if (!burst[index]) {
       burst[index] = '\n';
     }
   }
@@ -226,7 +226,7 @@ void absorb_character(int input, functionptrtype function) {
   }
 }
 
-/* Handle any editing shortcut, and return TRUE when handled. */
+/* Handle any editing shortcut, and return true when handled. */
 bool handle_editing(functionptrtype function) {
   if (function == do_left) {
     do_statusbar_left();
@@ -248,7 +248,7 @@ bool handle_editing(functionptrtype function) {
   }
   /* When in restricted mode at the "Write File" prompt and the
    * filename isn't blank, disallow any input and deletion. */
-  else if (ISSET(RESTRICTED) && currmenu == MWRITEFILE && openfile->filename[0] != '\0' &&
+  else if (ISSET(RESTRICTED) && currmenu == MWRITEFILE && openfile->filename[0] &&
            (function == do_verbatim_input || function == do_delete || function == do_backspace ||
             function == cut_text || function == paste_text)) {
     ;
@@ -269,7 +269,7 @@ bool handle_editing(functionptrtype function) {
     copy_the_answer();
   }
   else if (function == paste_text) {
-    if (cutbuffer != NULL) {
+    if (cutbuffer) {
       paste_into_answer();
     }
   }
@@ -353,9 +353,9 @@ void add_or_remove_pipe_symbol_from_answer(void) {
 /* Get a string of input at the status-bar prompt. */
 functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **history_list, functionptrtype refresh_func) {
   /* Whatever the answer was before the user foraged into history. */
-  char *stored_string = NULL;
+  char *stored_string = nullptr;
   /* Whether the previous keystroke was an attempt at tab completion. */
-  bool previous_was_tab = FALSE;
+  bool previous_was_tab = false;
   /* The length of the fragment that the user tries to tab complete. */
   Ulong            fragment_length = 0;
   const keystruct *shortcut;
@@ -364,7 +364,7 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
   if (typing_x > strlen(answer)) {
     typing_x = strlen(answer);
   }
-  while (TRUE) {
+  while (true) {
     draw_the_promptbar();
     /* Read in one keystroke. */
     input = get_kbinput(footwin, VISIBLE);
@@ -392,7 +392,7 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
       break;
     }
     if (function == do_tab) {
-      if (history_list != NULL) {
+      if (history_list != nullptr) {
         if (!previous_was_tab) {
           fragment_length = strlen(answer);
         }
@@ -445,7 +445,7 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
         else if (function == do_toggle && shortcut->toggle == NO_HELP) {
           TOGGLE(NO_HELP);
           window_init();
-          focusing = FALSE;
+          focusing = false;
           refresh_func();
           bottombars(currmenu);
         }
@@ -637,10 +637,10 @@ int ask_user(bool withall, const char *question) {
     else if (function == do_toggle && shortcut->toggle == NO_HELP) {
       TOGGLE(NO_HELP);
       window_init();
-      titlebar(NULL);
-      focusing = FALSE;
+      titlebar(nullptr);
+      focusing = false;
       edit_refresh();
-      focusing = TRUE;
+      focusing = true;
     }
     /* Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too. */
     else if (kbinput == '\x0E' || (kbinput == '\x11' && !ISSET(MODERN_BINDINGS)) ||
@@ -654,7 +654,7 @@ int ask_user(bool withall, const char *question) {
     else if (kbinput == KEY_MOUSE) {
       int mouse_x, mouse_y;
       /* We can click on the Yes/No/All shortcuts to select an answer. */
-      if (get_mouseinput(&mouse_y, &mouse_x, FALSE) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE) &&
+      if (get_mouseinput(&mouse_y, &mouse_x, false) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, false) &&
           mouse_x < (width * 2) && mouse_y > 0) {
         int x = mouse_x / width;
         int y = mouse_y - 1;

@@ -1,7 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <Mlib/def.h>
 #include <term.h>
 
 /* Global variables. */
@@ -47,8 +45,7 @@ bool control_C_was_pressed = false;
 message_type lastmessage = VACUUM;
 /* The line where the last completion was found, if any. */
 linestruct *pletion_line = nullptr;
-/* Whether indenting/commenting should include the last line of the marked
- * region. */
+/* Whether indenting/commenting should include the last line of the marked region. */
 bool also_the_last = false;
 /* The answer string used by the status-bar prompt. */
 char *answer = nullptr;
@@ -234,6 +231,7 @@ bool gui_enabled = false;
 const char *term = nullptr;
 
 /* Empty functions, for the most part corresponding to toggles. */
+
 void case_sens_void(void) {
   ;
 }
@@ -325,7 +323,7 @@ void do_cancel(void) {
 /* Add a function to the linked list of functions. */
 void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) {
   funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
-  (allfuncs == nullptr) ? allfuncs = f : tailfunc->next = f;
+  !allfuncs ? allfuncs = f : tailfunc->next = f;
   tailfunc       = f;
   f->next        = nullptr;
   f->func        = function;

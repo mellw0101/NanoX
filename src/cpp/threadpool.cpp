@@ -1,12 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <pthread.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
 task_queue_t          *task_queue        = nullptr;
 pthread_t             *threads           = nullptr;
 volatile sig_atomic_t *stop_thread_flags = nullptr;

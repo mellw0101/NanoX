@@ -42,7 +42,7 @@ linestruct *make_new_node(linestruct *prevnode) {
 void splice_node(linestruct *afterthis, linestruct *newnode) {
   newnode->next = afterthis->next;
   newnode->prev = afterthis;
-  if (afterthis->next != nullptr) {
+  if (afterthis->next) {
     afterthis->next->prev = newnode;
   }
   afterthis->next = newnode;
@@ -69,10 +69,10 @@ void delete_node(linestruct *line) {
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
 void unlink_node(linestruct *line) {
-  if (line->prev != nullptr) {
+  if (line->prev) {
     line->prev->next = line->next;
   }
-  if (line->next != nullptr) {
+  if (line->next) {
     line->next->prev = line->prev;
   }
   /* Update filebot when removing a node at the end of file. */
@@ -84,10 +84,10 @@ void unlink_node(linestruct *line) {
 
 /* Free an entire linked list of linestructs. */
 void free_lines(linestruct *src) {
-  if (src == nullptr) {
+  if (!src) {
     return;
   }
-  while (src->next != nullptr) {
+  while (src->next) {
     src = src->next;
     delete_node(src->prev);
   }
@@ -112,7 +112,7 @@ linestruct *copy_buffer(const linestruct *src) {
   head->prev = nullptr;
   item       = head;
   src        = src->next;
-  while (src != nullptr) {
+  while (src) {
     item->next       = copy_node(src);
     item->next->prev = item;
     item             = item->next;
@@ -125,8 +125,8 @@ linestruct *copy_buffer(const linestruct *src) {
 /* Renumber the lines in a buffer, from the given line onwards. */
 void renumber_from(linestruct *line) {
   long number;
-  number = (line->prev == nullptr) ? 0 : line->prev->lineno;
-  while (line != nullptr) {
+  number = !line->prev ? 0 : line->prev->lineno;
+  while (line) {
     line->lineno = ++number;
     line         = line->next;
   }
@@ -242,7 +242,7 @@ void do_exit(void) {
  * with suffix ".save". If needed, the name is further suffixed to be unique. */
 void emergency_save(const char *filename) {
   char *plainname, *targetname;
-  if (*filename == '\0') {
+  if (!*filename) {
     plainname = (char *)nmalloc(28);
     sprintf(plainname, "nano.%u", getpid());
   }
@@ -250,7 +250,7 @@ void emergency_save(const char *filename) {
     plainname = copy_of(filename);
   }
   targetname = get_next_filename(plainname, ".save");
-  if (*targetname == '\0') {
+  if (!*targetname) {
     fprintf(stderr, "\nToo meny .save files\n");
   }
   else if (write_file(targetname, nullptr, SPECIAL, EMERGENCY, NONOTES)) {
@@ -929,7 +929,7 @@ int do_mouse(void) {
   int click_col;
   int retval = get_mouseinput(&click_row, &click_col, true);
   /* If the click is wrong or already handled, we're done. */
-  if (retval != 0) {
+  if (retval) {
     return retval;
   }
   /* If the click was in the edit window, put the cursor in that spot. */
