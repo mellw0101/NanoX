@@ -1,6 +1,9 @@
 /// \file constexpr_def.h
 #pragma once
+
 #include <Mlib/constexpr.hpp>
+
+using std::string_view;
 
 /* Identifiers for color options. */
 #define TITLE_BAR     0

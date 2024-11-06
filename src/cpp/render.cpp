@@ -254,67 +254,83 @@ void render_comment(void) {
 }
 
 /* Color brackets based on indent.  TODO: This needs to be fix. */
+// const char *start = strchr(line->data, '{');
+// const char *end   = strrchr(line->data, '}');
+// /* Bracket start and end on the same line. */
+// if (start && end) {
+//   while (start) {
+//     RENDR(R_CHAR, FG_VS_CODE_YELLOW, start);
+//     if (line->data[(start - line->data) + 1] == '\0') {
+//       start = nullptr;
+//       continue;
+//     }
+//     start = strchr(start + 1, '{');
+//   }
+//   while (end) {
+//     RENDR(R_CHAR, FG_VS_CODE_YELLOW, end);
+//     Uint last_pos = last_strchr(line->data, '}', (end - line->data));
+//     if (last_pos < till_x && last_pos != 0) {
+//       end = &line->data[last_pos];
+//     }
+//     else {
+//       end = nullptr;
+//     }
+//   }
+//   if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
+//     line->flags.set<IN_BRACKET>();
+//   }
+// }
+// /* Start bracket line was found. */
+// else if (start && !end) {
+//   line->flags.set<BRACKET_START>();
+//   RENDR(R_CHAR, color_bi[(line_indent(line) % 3)], start);
+//   if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
+//     line->flags.set<IN_BRACKET>();
+//   }
+// }
+// /* End bracket line was found. */
+// else if (!start && end) {
+//   line->flags.set<IN_BRACKET>();
+//   line->flags.unset<BRACKET_START>();
+//   RENDR(R_CHAR, color_bi[(line_indent(line) % 3)], end);
+//   for (linestruct *t_line = line->prev; t_line != nullptr; t_line = t_line->prev) {
+//     if (t_line->flags.is_set<BRACKET_START>()) {
+//       if (line_indent(t_line) == line_indent(line)) {
+//         if (t_line->prev && t_line->prev->flags.is_set(IN_BRACKET)) {
+//           line->flags.set(IN_BRACKET);
+//         }
+//         else {
+//           line->flags.unset(IN_BRACKET);
+//         }
+//         break;
+//       }
+//     }
+//   }
+// }
+// /* Was not found. */
+// else if (!start && !end) {
+//   if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
+//     line->flags.set<IN_BRACKET>();
+//   }
+//   else {
+//     line->flags.unset<IN_BRACKET>();
+//   }
+// }
 void render_bracket(void) {
-  const char *start = strchr(line->data, '{');
-  const char *end   = strrchr(line->data, '}');
-  /* Bracket start and end on the same line. */
-  if (start && end) {
-    while (start) {
-      RENDR(R_CHAR, FG_VS_CODE_YELLOW, start);
-      if (line->data[(start - line->data) + 1] == '\0') {
-        start = nullptr;
-        continue;
+  PROFILE_FUNCTION;
+  const char *st = strchr(line->data, '{');
+  if (st) {
+    midwin_mv_add_nstr_color(row, ((st - line->data) + margin), "{", 1, FG_VS_CODE_YELLOW);
+    unix_socket_debug("Found st: %s\n", line->data);
+    Ulong       end_idx;
+    linestruct *end_line;
+    if (find_end_bracket(line, (st - line->data), &end_line, &end_idx)) {
+      unix_socket_debug("Found end: %s\n", end_line->data);
+      int end_row = get_editwin_row(end_line);
+      if (end_row != -1) {
+        unix_socket_debug("Found end row: %d\n", end_row);
+        midwin_mv_add_nstr_color(end_row, (end_idx + margin), "}", 1, FG_VS_CODE_YELLOW);
       }
-      start = strchr(start + 1, '{');
-    }
-    while (end) {
-      RENDR(R_CHAR, FG_VS_CODE_YELLOW, end);
-      Uint last_pos = last_strchr(line->data, '}', (end - line->data));
-      if (last_pos < till_x && last_pos != 0) {
-        end = &line->data[last_pos];
-      }
-      else {
-        end = nullptr;
-      }
-    }
-    if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
-      line->flags.set<IN_BRACKET>();
-    }
-  }
-  /* Start bracket line was found. */
-  else if (start && !end) {
-    line->flags.set<BRACKET_START>();
-    RENDR(R_CHAR, color_bi[(line_indent(line) % 3)], start);
-    if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
-      line->flags.set<IN_BRACKET>();
-    }
-  }
-  /* End bracket line was found. */
-  else if (!start && end) {
-    line->flags.set<IN_BRACKET>();
-    line->flags.unset<BRACKET_START>();
-    RENDR(R_CHAR, color_bi[(line_indent(line) % 3)], end);
-    for (linestruct *t_line = line->prev; t_line != nullptr; t_line = t_line->prev) {
-      if (t_line->flags.is_set<BRACKET_START>()) {
-        if (line_indent(t_line) == line_indent(line)) {
-          if (t_line->prev && t_line->prev->flags.is_set(IN_BRACKET)) {
-            line->flags.set(IN_BRACKET);
-          }
-          else {
-            line->flags.unset(IN_BRACKET);
-          }
-          break;
-        }
-      }
-    }
-  }
-  /* Was not found. */
-  else if (!start && !end) {
-    if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
-      line->flags.set<IN_BRACKET>();
-    }
-    else {
-      line->flags.unset<IN_BRACKET>();
     }
   }
 }
@@ -915,6 +931,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
   ::line      = line;
   ::from_col  = from_col;
   if (openfile->type.is_set<C_CPP>()) {
+    // render_bracket();
     render_comment();
     if (!line->data[0] || (block_comment_start == 0 && block_comment_end == till_x)) {
       return;
@@ -1001,7 +1018,35 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
       return;
     } */
   }
-  else if (openfile->type.is_set<ASM>()) {}
+  /** TODO: Fix bug where if '0.' is at end of line then we crash when trying to modify that
+   * line, it`s weird tough as it only craches if this it the first action and not otherwise. */
+  else if (openfile->type.is_set<ASM>()) {
+    if (!line->data[0]) {
+      return;
+    }
+    const char *comment = strpbrk(line->data, ";#");
+    /* If comment is found then color from comment to end of line. */
+    if (comment) {
+      render_part((comment - line->data), till_x, FG_COMMENT_GREEN);
+    }
+    line_word_t *head = line_word_list(line->data, till_x);
+    while (head) {
+      line_word_t *node = head;
+      head              = node->next;
+      /* If there is a comment on the line skip all other words. */
+      if (comment && node->start > (comment - line->data)) {
+        free_node(node);
+        continue;
+      }
+      char *word = lower_case_word(node->str);
+      const auto &it = test_map.find(word);
+      free(word);
+      if (it != test_map.end()) {
+        midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, it->second.color);
+      }
+      free_node(node);
+    }
+  }
   else if (openfile->type.is_set<BASH>()) {
     const char *comment = strchr(line->data, '#');
     if (comment) {

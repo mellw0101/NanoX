@@ -747,7 +747,20 @@ Fully render defines.
         retrieve_file_as_lines        : Mean = 0.0322359 ms, Stddev = 0.0544763 ms,    Min = 0.00721 ms,    Max = 0.548041 ms,  Count = 184
         syntax_check_file             : Mean = 71.0182 ms, Stddev = 0 ms,    Min = 71.0182 ms,    Max = 71.0182 ms,  Count = 1
         update_line                   : Mean = 0.00199175 ms, Stddev = 0.00135052 ms,    Min = 0.00061 ms,    Max = 0.01906 ms,  Count = 3906
+('25').
+Implement a filetype for 'NanoX' configuration.  As well as real-time syntax for this format as well as FULL error handeling live.
 
+  NOTES:
+    Some idea`s for the extention name:
+      .nxcfg
+      .nxrc
+      .nxs
+      .nxini
+      .nxconf
+    I think that '.nxcfg' is what i will use but we will see.
+
+  STATUS:
+    Not started yet.
 
 NCURSES_HELP:
     'wattron' turns on an attribute for a 'WINDOW*'. 

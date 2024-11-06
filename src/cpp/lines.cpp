@@ -203,3 +203,12 @@ Uint total_tabs(linestruct *line) {
   tabs += (spaces / WIDTH_OF_TAB);
   return tabs;
 }
+
+/* Returns '-1' on failure. */
+int get_editwin_row(linestruct *line) {
+  int row = line->lineno - openfile->edittop->lineno;
+  if (row >= editwinrows) {
+    return -1;
+  }
+  return row;
+}

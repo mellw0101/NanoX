@@ -1,3 +1,5 @@
+#pragma once
+
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
@@ -1643,15 +1645,13 @@
 /* Where data are placed to. */
 #define PKGDATADIR                "/usr/local/share/nano"
 
-/* Define to the type that is the result of default argument promotions of
-   type mode_t. */
+/* Define to the type that is the result of default argument promotions of type mode_t. */
 #define PROMOTED_MODE_T           mode_t
 
 /* Define if the pthread_in_use() detection is hard. */
 /* #undef PTHREAD_IN_USE_DETECTION_HARD */
 
-/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
-   'ptrdiff_t'. */
+/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type 'ptrdiff_t'. */
 /* #undef PTRDIFF_T_SUFFIX */
 
 /* Specify an alternate rcfile name (default: .nanorc). */

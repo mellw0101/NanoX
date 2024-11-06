@@ -195,10 +195,12 @@ void do_parse(void) {
   unix_socket_debug("include size: %u\n", LSP->index.include.size());
   unix_socket_debug("define size: %u\n", LSP->index.defines.size());
   unix_socket_debug("class size: %u\n", LSP->index.classes.size());
-  unix_socket_debug("var size: %u\n", LSP->index.variabels.size());
-  unix_socket_debug("rawstructs size: %u\n", LSP->index.rawstruct.size());
-  unix_socket_debug("rawtypedefs size: %u\n", LSP->index.rawtypedef.size());
-  unix_socket_debug("rawenums size: %u\n", LSP->index.rawenum.size());
+  unix_socket_debug("structs size: %u\n", LSP->index.structs.size());
+  unix_socket_debug("typedef_structs size: %u\n", LSP->index.tdstructs.size());
+  unix_socket_debug("enums size: %u\n", LSP->index.enums.size());
+  unix_socket_debug("main file function size: %u\n", LSP->index.functiondefs.size());
+  unix_socket_debug("main file var size: %u\n", LSP->index.vars.size());
+  edit_refresh();
   /* if (!openfile->filename[0]) {
      return;
    }

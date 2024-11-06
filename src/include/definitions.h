@@ -27,6 +27,7 @@
 #include <Mlib/constexpr.hpp>
 #include <Mlib/def.h>
 
+#include <Mlib/Attributes.h>
 #include <cctype>
 #include <cerrno>
 #include <clocale>
@@ -53,16 +54,15 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
-#include <Mlib/Attributes.h>
 
 #include <ncursesw/ncurses.h>
 
+using std::hash;
 using std::string;
 using std::string_view;
 using std::to_string;
 using std::unordered_map;
 using std::vector;
-using std::hash;
 
 /* Native language support. */
 #ifdef ENABLE_NLS
@@ -94,8 +94,7 @@ using std::hash;
 #define IGNORE_CALL_RESULT(call) \
   do {                           \
     if (call) {}                 \
-  }                              \
-  while (0)
+  } while (0)
 
 /* Macros for flags, indexing each bit in a small array. */
 #define FLAGS(flag)                   flags[((flag) / (sizeof(unsigned long) * 8))]
@@ -267,46 +266,63 @@ using std::hash;
 
 #include "constexpr_utils.h"
 
-/* clang-format off */
-
 /* Enumeration types. */
-enum file_type : Uint
-{
-    C_CPP = 1,
-    ASM,
-    BASH,
+enum file_type : Uint {
+  C_CPP = 1,
+  ASM,
+  BASH,
 };
+
 #define OPENFILE_TYPE_SIZE 8
 
+typedef enum : int {
+  LOCAL_VAR_SYNTAX = 1,
+  CLASS_SYNTAX,
+  CLASS_METHOD_SYNTAX,
+  DEFAULT_TYPE_SYNTAX,
+  CONTROL_SYNTAX,
+  IS_WORD_STRUCT,
+  STRUCT_SYNTAX,
+  IS_WORD_CLASS,
+  DEFINE_SYNTAX,
+  DEFINE_PARAM_SYNTAX,
+  LSP_FUNC,
+  LSP_FUNC_PARAM,
+  ASM_REG,
+  ASM_INSTRUCT
+} syntax_type;
+
+/* clang-format off */
+
 typedef enum {
-    UNSPECIFIED,
-    NIX_FILE,
-    DOS_FILE,
-    MAC_FILE
+  UNSPECIFIED,
+  NIX_FILE,
+  DOS_FILE,
+  MAC_FILE
 } format_type;
 
 typedef enum {
-    VACUUM,
-    HUSH,
-    REMARK,
-    INFO,
-    NOTICE,
-    AHEM,
-    MILD,
-    ALERT
+  VACUUM,
+  HUSH,
+  REMARK,
+  INFO,
+  NOTICE,
+  AHEM,
+  MILD,
+  ALERT
 } message_type;
 
 typedef enum {
-    OVERWRITE,
-    APPEND,
-    PREPEND,
-    EMERGENCY
+  OVERWRITE,
+  APPEND,
+  PREPEND,
+  EMERGENCY
 } kind_of_writing_type;
 
 typedef enum {
-    CENTERING,
-    FLOWING,
-    STATIONARY
+  CENTERING,
+  FLOWING,
+  STATIONARY
 } update_type;
 
 /* The kinds of undo actions.  ADD...REPLACE must come first. */
@@ -399,10 +415,12 @@ typedef struct linestruct {
     /* The state of the line. */
     bit_flag_t<LINE_BIT_FLAG_SIZE> flags;       
 } linestruct;
+
+/* Some short-hands to simplyfiy linestruct loop`s. */
 #define FOR_EACH_LINE_NEXT(name, start) \
-    for (linestruct *name = start; name != nullptr; name = name->next)
+  for (linestruct *name = start; name != nullptr; name = name->next)
 #define FOR_EACH_LINE_PREV(name, start) \
-    for (linestruct *name = start; name != nullptr; name = name->prev)
+  for (linestruct *name = start; name != nullptr; name = name->prev)
 
 typedef struct groupstruct {
     groupstruct *next;   /* The next group, if any. */
@@ -464,8 +482,8 @@ typedef struct openfilestruct {
 } openfilestruct;
 
 typedef struct rcoption {
-    const char *name; /* The name of the rcfile option. */
-    long flag;        /* The flag associated with it, if any. */
+  const char *name; /* The name of the rcfile option. */
+  long flag;        /* The flag associated with it, if any. */
 } rcoption;
 
 typedef struct keystruct {
@@ -489,15 +507,12 @@ typedef struct funcstruct {
 } funcstruct;
 
 typedef struct completionstruct {
-    char             *word;
-    completionstruct *next;
+  char             *word;
+  completionstruct *next;
 } completionstruct;
 /* clang-format on */
 
-enum syntax_flag_t
-{
-  NEXT_WORD_ALSO = 1
-};
+enum syntax_flag_t { NEXT_WORD_ALSO = 1 };
 
 struct bracket_entry {
   Ulong lineno;
@@ -735,20 +750,6 @@ struct class_info_t {
   vector<var_t>  variables;
   vector<string> methods;
 };
-
-#define LOCAL_VAR_SYNTAX    1
-#define CLASS_SYNTAX        2
-#define CLASS_METHOD_SYNTAX 3
-#define DEFAULT_TYPE_SYNTAX 4
-#define CONTROL_SYNTAX      5
-#define IS_WORD_STRUCT      6
-#define STRUCT_SYNTAX       7
-#define IS_WORD_CLASS       8
-#define DEFINE_SYNTAX       9
-#define DEFINE_PARAM_SYNTAX 10
-
-#define LSP_FUNC            11
-#define LSP_FUNC_PARAM      12
 
 struct syntax_data_t {
   int color;

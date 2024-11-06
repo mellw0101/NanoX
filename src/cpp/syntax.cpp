@@ -37,8 +37,8 @@ string get_word_after(const char *data, const char *word) {
 /* Function to check syntax for a open buffer. */
 void syntax_check_file(openfilestruct *file) {
   PROFILE_FUNCTION;
-  openfile->type.clear();
-  if (!openfile->filetop->next) {
+  file->type.clear();
+  if (!file->filetop->next) {
     return;
   }
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
@@ -59,10 +59,10 @@ void syntax_check_file(openfilestruct *file) {
       test_map["const"]     = {FG_VS_CODE_BLUE};
       test_map["true"]      = {FG_VS_CODE_BLUE};
       test_map["false"]     = {FG_VS_CODE_BLUE};
-      test_map["TRUE"]      = {FG_VS_CODE_BLUE};
-      test_map["FALSE"]     = {FG_VS_CODE_BLUE};
+      test_map["true"]      = {FG_VS_CODE_BLUE};
+      test_map["false"]     = {FG_VS_CODE_BLUE};
       test_map["nullptr"]   = {FG_VS_CODE_BLUE};
-      test_map["NULL"]      = {FG_VS_CODE_BLUE};
+      test_map["nullptr"]   = {FG_VS_CODE_BLUE};
       test_map["typedef"]   = {FG_VS_CODE_BLUE};
       test_map["sizeof"]    = {FG_VS_CODE_BLUE};
       test_map["struct"]    = {FG_VS_CODE_BLUE, -1, -1, IS_WORD_STRUCT};
@@ -96,15 +96,43 @@ void syntax_check_file(openfilestruct *file) {
       test_map["try"]      = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
       test_map["catch"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
     }
-    else if (ext == "asm" || ext == "s") {
-      openfile->type.clear_and_set<ASM>();
+    else if (ext == "asm" || ext == "s" || ext == "S") {
+      file->type.clear_and_set<ASM>();
+      test_map["rax"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["rbx"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["rcx"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["rdx"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["rsi"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["rdi"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["rbp"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["rsp"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["rip"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["r8"]   = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["r9"]   = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["r10"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["r11"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["r12"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["r13"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["r14"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["r15"]  = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["mov"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["xor"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["cmp"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["cmpb"] = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["je"]   = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["inc"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["jmp"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["ret"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["add"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["sub"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["mul"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
     }
     else if (ext == "sh") {
       do_bash_synx();
     }
     /** TODO: Check that this is fully safe. */
     else {
-      linestruct *line = openfile->filetop;
+      linestruct *line = file->filetop;
       while (line && is_empty_line(line)) {
         line = line->next;
       }
@@ -118,7 +146,7 @@ void syntax_check_file(openfilestruct *file) {
 bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr) {
   bool vivid, thick;
   *attr = A_NORMAL;
-  if (color_fg != NULL) {
+  if (color_fg != nullptr) {
     if (strncmp(color_fg, "bold", 4) == 0) {
       *attr |= A_BOLD, color_fg += 5;
     }
@@ -127,7 +155,7 @@ bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, sho
     }
     *fg = color_to_short(color_fg, vivid, thick);
     if (*fg == BAD_COLOR) {
-      return FALSE;
+      return false;
     }
     if (vivid && !thick && COLORS > 8) {
       fg += 8;
@@ -139,7 +167,7 @@ bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, sho
   else {
     *fg = THE_DEFAULT;
   }
-  if (color_bg != NULL) {
+  if (color_bg != nullptr) {
     if (strncmp(color_bg, "bold", 4) == 0) {
       *attr |= A_BOLD;
       color_bg += 5;
@@ -150,7 +178,7 @@ bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, sho
     }
     *bg = color_to_short(color_bg, vivid, thick);
     if (*bg == BAD_COLOR) {
-      return FALSE;
+      return false;
     }
     if (vivid && COLORS > 8) {
       bg += 8;
@@ -159,14 +187,14 @@ bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, sho
   else {
     *bg = THE_DEFAULT;
   }
-  return TRUE;
+  return true;
 }
 
 bool check_func_syntax(char ***words, Ulong *i) {
-  unsigned long  at   = 0;
+  Ulong          at   = 0;
   unsigned short type = 0;
-  if ((*words)[++(*i)] == NULL) {
-    return FALSE;
+  if ((*words)[++(*i)] == nullptr) {
+    return false;
   }
   /* Remove all if any preceding '*' char`s. */
   while (*((*words)[*i]) == '*') {
@@ -175,29 +203,29 @@ bool check_func_syntax(char ***words, Ulong *i) {
   if (is_word_func((*words)[*i], &at)) {
     if (!syntax_func((*words)[*i])) {
       new_syntax_func((*words)[*i]);
-      // add_syntax_word(FUNC_COLOR, NULL, rgx_word((*words)[*i]));
-      // sub_thread_compile_add_rgx(FUNC_COLOR, NULL,
+      // add_syntax_word(FUNC_COLOR, nullptr, rgx_word((*words)[*i]));
+      // sub_thread_compile_add_rgx(FUNC_COLOR, nullptr,
       // rgx_word((*words)[*i]), &last_c_color);
     }
     (*words)[*i] += at + 1;
     type = retrieve_c_syntax_type((*words)[*i]);
     if (type) {
-      if ((*words)[++(*i)] != NULL) {}
+      if ((*words)[++(*i)] != nullptr) {}
     }
-    return TRUE;
+    return true;
   }
-  if ((*words)[(*i) + 1] != NULL) {
+  if ((*words)[(*i) + 1] != nullptr) {
     if (*((*words)[(*i) + 1]) == '(') {
       if (!syntax_func((*words)[*i])) {
         new_syntax_func((*words)[*i]);
-        // add_syntax_word(FUNC_COLOR, NULL, rgx_word((*words)[*i]));
-        // sub_thread_compile_add_rgx(FUNC_COLOR, NULL,
+        // add_syntax_word(FUNC_COLOR, nullptr, rgx_word((*words)[*i]));
+        // sub_thread_compile_add_rgx(FUNC_COLOR, nullptr,
         // rgx_word((*words)[*i]), &last_c_color);
       }
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 /* Check a file for syntax, and add relevent syntax. */
@@ -205,10 +233,10 @@ void check_syntax(const char *path) {
   if (!is_file_and_exists(path)) {
     return;
   }
-  char         *buf = NULL, **words;
-  unsigned long size, len, i;
-  FILE         *f = fopen(path, "rb");
-  if (f == NULL) {
+  char *buf = nullptr, **words;
+  Ulong size, len, i;
+  FILE *f = fopen(path, "rb");
+  if (f == nullptr) {
     return;
   }
   while ((len = getline(&buf, &size, f)) != EOF) {
@@ -216,12 +244,12 @@ void check_syntax(const char *path) {
       buf[--len] = '\0';
     }
     words = words_in_str(buf);
-    if (*words == NULL) {
+    if (*words == nullptr) {
       continue;
     }
-    for (i = 0; words[i] != NULL; i++) {
+    for (i = 0; words[i] != nullptr; i++) {
       const unsigned short type = retrieve_c_syntax_type(words[i]);
-      if (words[i + 1] == NULL) {
+      if (words[i + 1] == nullptr) {
         break;
       }
       if (!type) {
@@ -231,7 +259,7 @@ void check_syntax(const char *path) {
         if (*words[i + 1] == '{' || *words[i + 1] == '*')
           ;
         else if (!is_syntax_struct(words[++i])) {
-          // sub_thread_compile_add_rgx("brightgreen", NULL,
+          // sub_thread_compile_add_rgx("brightgreen", nullptr,
           // rgx_word(words[i]), &last_c_color);
         }
       }
@@ -239,7 +267,7 @@ void check_syntax(const char *path) {
         if (*words[i + 1] == '{')
           ;
         else if (!is_syntax_class(words[++i])) {
-          // sub_thread_compile_add_rgx("brightgreen", NULL,
+          // sub_thread_compile_add_rgx("brightgreen", nullptr,
           // rgx_word(words[i]), &last_c_color);
         }
       }
@@ -249,7 +277,7 @@ void check_syntax(const char *path) {
         if (*words[i + 1] == '{')
           ;
         else {
-          // sub_thread_compile_add_rgx("brightgreen", NULL,
+          // sub_thread_compile_add_rgx("brightgreen", nullptr,
           // rgx_word(words[++i]), &last_c_color);
         }
       }
@@ -270,7 +298,7 @@ void check_syntax(const char *path) {
       //     if (*words[++i] == '"')
       //     {
       //         char         *rpath = strdup(path);
-      //         unsigned long j = 0, pos = 0;
+      //         Ulong j = 0, pos = 0;
       //         for (; rpath[j]; j++)
       //         {
       //             if (rpath[j] == '/')
@@ -331,30 +359,30 @@ void check_include_file_syntax(const char *path) {
     return;
   }
   PROFILE_FUNCTION;
-  unsigned int  type;
-  unsigned      i;
-  unsigned long nwords;
-  char        **words = words_from_file(path, &nwords);
-  if (words == NULL) {
+  unsigned int type;
+  unsigned     i;
+  Ulong        nwords;
+  char       **words = words_from_file(path, &nwords);
+  if (words == nullptr) {
     return;
   }
-  bool in_comment = FALSE;
+  bool in_comment = false;
   for (i = 0; i < nwords; i++) {
     if (*words[i] == '#') {
       if (words[i][1] == '\0') {
         ++i;
       }
       else {
-        unsigned long slen = strlen(words[i]) - 1;
+        Ulong slen = strlen(words[i]) - 1;
         memmove(words[i], words[i] + 1, slen);
         words[i][slen] = '\0';
       }
     }
     if (strcmp(words[i], "/*") == 0) {
-      in_comment = TRUE;
+      in_comment = true;
     }
     else if (strcmp(words[i], "*/") == 0) {
-      in_comment = FALSE;
+      in_comment = false;
     }
     if (in_comment) {
       continue;
@@ -364,7 +392,7 @@ void check_include_file_syntax(const char *path) {
       continue;
     }
     else if (type & CS_STRUCT) {
-      if (words[++i] != NULL) {
+      if (words[++i] != nullptr) {
         if (*words[i] == '{' || *words[i] == '*') {
           continue;
         }
@@ -376,7 +404,7 @@ void check_include_file_syntax(const char *path) {
       }
     }
     else if (type & CS_CLASS) {
-      if (words[++i] != NULL) {
+      if (words[++i] != nullptr) {
         if (*words[i] == '{' || *words[i] == '*') {
           continue;
         }
@@ -389,25 +417,25 @@ void check_include_file_syntax(const char *path) {
     }
     /* else if (type & CS_ENUM)
     {
-        if (words[++i] != NULL)
+        if (words[++i] != nullptr)
         {
             if (*words[i] == '{' || *words[i] == '*')
             {
                 continue;
             }
-            add_syntax_word(STRUCT_COLOR, NULL, rgx_word(words[i]));
+            add_syntax_word(STRUCT_COLOR, nullptr, rgx_word(words[i]));
         }
     } */
     else if (type & CS_CHAR || type & CS_VOID || type & CS_INT || type & CS_LONG || type & CS_BOOL ||
              type & CS_SIZE_T || type & CS_SSIZE_T) {
-      if (words[++i] != NULL) {
-        unsigned long at;
+      if (words[++i] != nullptr) {
+        Ulong at;
         if (char_is_in_word(words[i], '(', &at)) {
           if (at != 0) {
             words[i][at] = '\0';
             if (!char_is_in_word(words[i], '=', &at)) {
               strip_leading_chars_from(words[i], '*');
-              if (words[i] != NULL) {
+              if (words[i] != nullptr) {
                 if (!syntax_func(words[i])) {
                   char *func_str = copy_of(words[i]);
                   // color_map[func_str].color =
@@ -429,7 +457,7 @@ void check_include_file_syntax(const char *path) {
       }
     }
     else if (type & CS_DEFINE) {
-      if (words[++i] != NULL) {
+      if (words[++i] != nullptr) {
         handle_define(words[i]);
       }
     }
@@ -466,36 +494,36 @@ static Ushort last_type = 0;
 /* Check a line for syntax words, also index files that are included and add
  * functions as well. */
 void check_for_syntax_words(linestruct *line) {
-  unsigned long i;
-  char        **words;
+  Ulong  i;
+  char **words;
   if (is_empty_line(line)) {
     return;
   }
   words = words_in_str(line->data);
-  if (words == NULL) {
+  if (words == nullptr) {
     return;
   }
-  for (i = 0; words[i] != NULL; i++) {
+  for (i = 0; words[i] != nullptr; i++) {
     if (is_syntax_struct(words[i])) {
-      if (words[i + 1] != NULL) {
+      if (words[i + 1] != nullptr) {
         if (*words[i + 1] == '(')
           ;
         else {
           handle_struct_syntax(&words[i + 1]);
           if (!syntax_var(words[++i])) {
             new_syntax_var(words[i]);
-            // sub_thread_compile_add_rgx(VAR_COLOR, NULL,
+            // sub_thread_compile_add_rgx(VAR_COLOR, nullptr,
             // rgx_word(words[i]), &last_c_color);
           }
         }
       }
     }
     else if (is_syntax_class(words[i])) {
-      if (words[i + 1] != NULL) {
+      if (words[i + 1] != nullptr) {
         handle_struct_syntax(&words[i + 1]);
         if (!syntax_var(words[i])) {
           new_syntax_var(words[i]);
-          // sub_thread_compile_add_rgx(VAR_COLOR, NULL,
+          // sub_thread_compile_add_rgx(VAR_COLOR, nullptr,
           // rgx_word(words[++i]), &last_c_color);
         }
       }
@@ -513,7 +541,7 @@ void check_for_syntax_words(linestruct *line) {
         }
         if (!syntax_func(words[i])) {
           new_syntax_func(words[i]);
-          // sub_thread_compile_add_rgx(FUNC_COLOR, NULL,
+          // sub_thread_compile_add_rgx(FUNC_COLOR, nullptr,
           // rgx_word(words[i]), &last_c_color);
         }
         words[i] += j + 1;
@@ -522,7 +550,7 @@ void check_for_syntax_words(linestruct *line) {
         continue;
       }
     }
-    if (words[i + 1] == NULL) {
+    if (words[i + 1] == nullptr) {
       last_type = type;
       break;
     }
@@ -531,13 +559,13 @@ void check_for_syntax_words(linestruct *line) {
     }
     else if (type & CS_STRUCT) {
       if (!is_syntax_struct(words[++i])) {
-        // sub_thread_compile_add_rgx(STRUCT_COLOR, NULL,
+        // sub_thread_compile_add_rgx(STRUCT_COLOR, nullptr,
         // rgx_word(words[i]), &last_c_color);
       }
     }
     else if (type & CS_CLASS) {
       if (!is_syntax_class(words[++i])) {
-        // sub_thread_compile_add_rgx(STRUCT_COLOR, NULL,
+        // sub_thread_compile_add_rgx(STRUCT_COLOR, nullptr,
         // rgx_word(words[i]), &last_c_color);
       }
     }
@@ -549,9 +577,9 @@ void check_for_syntax_words(linestruct *line) {
       }
       /* if (add_syntax(&type, words[i]) == NEXT_WORD_ALSO)
       {
-          while (TRUE)
+          while (true)
           {
-              if (words[++i] == NULL)
+              if (words[++i] == nullptr)
               {
                   break;
               }
@@ -580,36 +608,36 @@ void do_syntax(void) {
   // flag_all_block_comments(openfile->filetop);
 }
 
-/* Return`s 'TRUE' if 'str' is in the 'syntax_structs' vector. */
+/* Return`s 'true' if 'str' is in the 'syntax_structs' vector. */
 bool is_syntax_struct(std::string_view str) {
   for (int i = 0; i < structs.get_size(); i++) {
     if (strcmp(&str[0], structs[i]) == 0) {
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 bool is_syntax_class(std::string_view str) {
   for (int i = 0; i < classes.get_size(); i++) {
     if (strcmp(&str[0], classes[i]) == 0) {
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 bool define_exists(const char *str) {
   for (int i = 0; i < defines.get_size(); i++) {
     if (strcmp(str, defines[i]) == 0) {
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 void handle_struct_syntax(char **word) {
-  unsigned long i;
+  Ulong i;
   while (*(*word) == '*') {
     *word += 1;
   }
@@ -642,7 +670,7 @@ void find_block_comments(int from, int end) {
       continue;
     }
     else if (!found_start && !found_end) {
-      if (line->prev != NULL &&
+      if (line->prev != nullptr &&
           ((line->prev->flags.is_set(BLOCK_COMMENT_START)) || (line->prev->flags.is_set(IN_BLOCK_COMMENT)))) {
         line->flags.set(IN_BLOCK_COMMENT);
       }
@@ -652,24 +680,24 @@ void find_block_comments(int from, int end) {
 
 char **find_functions_in_file(char *path) {
   FILE *file = fopen(path, "rb");
-  if (file == NULL) {
-    return NULL;
+  if (!file) {
+    return nullptr;
   }
-  long          len;
-  unsigned long size;
-  static char  *line;
-  unsigned long acap = 10, asize = 0;
-  char        **func_str_array = (char **)nmalloc(acap * sizeof(char *));
-  bool          in_bracket     = FALSE;
+  long         len;
+  Ulong        size;
+  static char *line;
+  Ulong        acap = 10, asize = 0;
+  char       **func_str_array = (char **)nmalloc(acap * sizeof(char *));
+  bool         in_bracket     = false;
   while ((len = getline(&line, &size, file)) != EOF) {
     if (line[len - 1] == '\n') {
       line[--len] = '\0';
     }
     if (strchr(line, '{')) {
-      in_bracket = TRUE;
+      in_bracket = true;
     }
     if (strchr(line, '}')) {
-      in_bracket = FALSE;
+      in_bracket = false;
     }
     if (in_bracket) {
       continue;
@@ -689,7 +717,7 @@ char **find_functions_in_file(char *path) {
       for (; start > line && *start != ' ' && *start != '\t' && *start != '*' && *start != '&'; start--);
       if (start > p) {
         start += 1;
-        if (strstr(line, "__nonnull") != NULL || line[(start - line) + 1] == '*' || *start == '(') {
+        if (strstr(line, "__nonnull") != nullptr || line[(start - line) + 1] == '*' || *start == '(') {
           continue;
         }
         end = strchr(line, ';');
@@ -708,30 +736,30 @@ char **find_functions_in_file(char *path) {
     }
   }
   fclose(file);
-  func_str_array[asize] = NULL;
+  func_str_array[asize] = nullptr;
   return func_str_array;
 }
 
 char **find_variabels_in_file(char *path) {
   FILE *file = fopen(path, "rb");
-  if (file == NULL) {
-    return NULL;
+  if (!file) {
+    return nullptr;
   }
-  long          len;
-  unsigned long size;
-  static char  *line;
-  unsigned long acap = 10, asize = 0;
-  char        **var_str_array = (char **)nmalloc(acap * sizeof(char *));
-  bool          in_bracket    = FALSE;
+  long         len;
+  Ulong        size;
+  static char *line;
+  Ulong        acap = 10, asize = 0;
+  char       **var_str_array = (char **)nmalloc(acap * sizeof(char *));
+  bool         in_bracket    = false;
   while ((len = getline(&line, &size, file)) != EOF) {
     if (line[len - 1] == '\n') {
       line[--len] = '\0';
     }
     if (strchr(line, '{')) {
-      in_bracket = TRUE;
+      in_bracket = true;
     }
     if (strchr(line, '}')) {
-      in_bracket = FALSE;
+      in_bracket = false;
     }
     if (in_bracket) {
       continue;
@@ -752,6 +780,6 @@ char **find_variabels_in_file(char *path) {
     }
   }
   fclose(file);
-  var_str_array[asize] = NULL;
+  var_str_array[asize] = nullptr;
   return var_str_array;
 }

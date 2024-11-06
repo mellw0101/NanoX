@@ -103,10 +103,10 @@ bool find_end_bracket(linestruct *from, Ulong index, linestruct **end, Ulong *en
     return false;
   }
   const char st_ch = from->data[index];
-  if (st_ch != '{' && st_ch != '[' && st_ch != '(') {
+  if (st_ch != '{' && st_ch != '[' && st_ch != '(' && st_ch != '<') {
     return false;
   }
-  const char  end_ch  = (st_ch == '[') ? ']' : (st_ch == '(') ? ')' : '}';
+  const char  end_ch  = (st_ch == '[') ? ']' : (st_ch == '(') ? ')' : (st_ch == '<') ? '>' : '}';
   int         lvl     = 0;
   const char *b_start = nullptr;
   const char *b_end   = nullptr;
@@ -177,3 +177,4 @@ char *fetch_bracket_body(linestruct *from, Ulong index) {
   }
   return nullptr;
 }
+

@@ -77,11 +77,11 @@ bool delete_lockfile(const char *lockfilename) {
   return true;
 }
 
-constexpr short LOCKSIZE = 1024;
+#define LOCKSIZE 1024
 #define SKIPTHISFILE ((char *)-1)
 
-constexpr const char *locking_prefix = ".";
-constexpr const char *locking_suffix = ".swp";
+#define locking_prefix "."
+#define locking_suffix ".swp"
 
 /* Write a lock file, under the given lockfilename.  This always annihilates an
  * existing version of that file.  Return true on success; false otherwise. */
@@ -94,7 +94,7 @@ bool write_lockfile(const char *lockfilename, const char *filename, const bool m
   FILE   *filestream = nullptr;
   char   *lockdata;
   Ulong   wroteamt;
-  if (mypwuid == nullptr) {
+  if (!mypwuid) {
     /* TRANSLATORS: Keep the next seven messages at most 76 characters. */
     statusline(MILD, _("Couldn't determine my identity for lock file"));
     return false;
@@ -114,7 +114,7 @@ bool write_lockfile(const char *lockfilename, const char *filename, const bool m
   if ((fd = open(lockfilename, O_WRONLY | O_CREAT | O_EXCL, RW_FOR_ALL)) > 0) {
     filestream = fdopen(fd, "wb");
   }
-  if (filestream == nullptr) {
+  if (!filestream) {
     statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
     if (fd > 0) {
       close(fd);
@@ -146,9 +146,9 @@ bool write_lockfile(const char *lockfilename, const char *filename, const bool m
   lockdata[25] = (mypid / 256) % 256;
   lockdata[26] = (mypid / (256 * 256)) % 256;
   lockdata[27] = mypid / (256 * 256 * 256);
-  constexpr_strncpy(&lockdata[28], mypwuid->pw_name, 16);
-  constexpr_strncpy(&lockdata[68], myhostname, 32);
-  constexpr_strncpy(&lockdata[108], filename, 768);
+  strncpy(&lockdata[28], mypwuid->pw_name, 16);
+  strncpy(&lockdata[68], myhostname, 32);
+  strncpy(&lockdata[108], filename, 768);
   lockdata[1007] = (modified) ? 0x55 : 0x00;
   wroteamt       = fwrite(lockdata, 1, LOCKSIZE, filestream);
   free(lockdata);
@@ -239,12 +239,11 @@ char *do_lockfile(const char *filename, const bool ask_the_user) {
   return nullptr;
 }
 
-/* Perform a stat call on the given filename, allocating a stat struct if
- * necessary. On success, *pstat points to the stat's result.  On failure,
- * *pstat is freed and made 'nullptr'. */
+/* Perform a stat call on the given filename, allocating a stat struct if necessary. On success,
+ * '*pstat' points to the stat's result.  On failure, '*pstat' is freed and made 'nullptr'. */
 void stat_with_alloc(const char *filename, struct stat **pstat) {
-  (*pstat == nullptr) ? *pstat = (struct stat *)nmalloc(sizeof(struct stat)) : 0;
-  if (stat(filename, *pstat) != 0) {
+  !*pstat ? (*pstat = (struct stat *)nmalloc(sizeof(**pstat))) : 0;
+  if (stat(filename, *pstat)) {
     free(*pstat);
     *pstat = nullptr;
   }
@@ -2034,12 +2033,12 @@ char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)
 
 /* Try to complete the given fragment to an existing filename. */
 char **filename_completion(const char *morsel, Ulong *num_matches) {
-  char  *dirname = copy_of(morsel);
-  char  *slash, *filename;
-  Ulong filenamelen;
-  char  *fullname = nullptr;
-  char  **matches = nullptr;
-  DIR   *dir;
+  char         *dirname = copy_of(morsel);
+  char         *slash, *filename;
+  Ulong         filenamelen;
+  char         *fullname = nullptr;
+  char        **matches  = nullptr;
+  DIR          *dir;
   const dirent *entry;
   /* If there's a '/' in the name, split out filename and directory parts. */
   slash = strrchr(dirname, '/');
@@ -2340,7 +2339,7 @@ char **words_from_current_file(Ulong *nwords) {
 
 char *full_current_file_path(void) {
   static thread_local char buf[PATH_MAX];
-  const char *pwd = getenv("PWD");
+  const char              *pwd = getenv("PWD");
   if (pwd == nullptr) {
     return nullptr;
   }
@@ -2350,9 +2349,9 @@ char *full_current_file_path(void) {
 
 char **dir_entrys_from(const char *path) {
   static thread_local char **buf  = nullptr;
-  thread_local Ulong  size = 0, cap = 10;
-  thread_local dirent *entry;
-  thread_local DIR    *dir = opendir(path);
+  thread_local Ulong         size = 0, cap = 10;
+  thread_local dirent       *entry;
+  thread_local DIR          *dir = opendir(path);
   if (dir == nullptr) {
     logE("Failed to open dir: '%s'.", path);
     return nullptr;

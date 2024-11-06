@@ -81,33 +81,30 @@ int digits(const long n) {
 }
 
 /* Original code: From GNU nano 8.0.1
-
-    // Read an integer from the given string.  If it parses okay,
-    // store it in *result and return true; otherwise, return FALSE.
-    bool
-    parse_num(const char *string, long *result)
-    {
-        Ulong value;
-        char     *excess;
-        // Clear the error number so that we can check it afterward.
-        errno = 0;
-        value = (long)strtol(string, &excess, 10);
-        if (errno == ERANGE || *string == '\0' || *excess != '\0')
-        {
-            return FALSE;
-        }
-        *result = value;
-        return true;
+  // Read an integer from the given string.  If it parses okay,
+  // store it in *result and return true; otherwise, return FALSE.
+  bool parseNum(STRING_VIEW string, long &result) {
+    char *end;
+    errno      = 0;
+    long value = constexpr_strtoll(&string[0], &end, 10);
+    if (errno == ERANGE || *end != '\0' || string[0] == '\0') {
+      return FALSE;
     }
- */
-bool parseNum(STRING_VIEW string, long &result) {
-  char *end;
-  errno      = 0;
-  long value = constexpr_strtoll(&string[0], &end, 10);
-  if (errno == ERANGE || *end != '\0' || string[0] == '\0') {
-    return FALSE;
+    result = value;
+    return true;
   }
-  result = value;
+*/
+
+bool parse_num(const char *string, long *result) {
+  Ulong value;
+  char *excess;
+  /* Clear the error number so that we can check it afterward. */
+  errno = 0;
+  value = (long)strtol(string, &excess, 10);
+  if (errno == ERANGE || !*string || *excess) {
+    return false;
+  }
+  *result = value;
   return true;
 }
 
@@ -123,15 +120,15 @@ bool parse_line_column(const char *string, long *line, long *column) {
   }
   comma = strpbrk(string, ",.:");
   if (!comma) {
-    return parseNum(string, *line);
+    return parse_num(string, line);
   }
-  retval = parseNum(comma + 1, *column);
+  retval = parse_num(comma + 1, column);
   if (comma == string) {
     return retval;
   }
   firstpart                 = copy_of(string);
   firstpart[comma - string] = '\0';
-  retval                    = parseNum(firstpart, *line) && retval;
+  retval                    = parse_num(firstpart, line) && retval;
   free(firstpart);
   return retval;
 }

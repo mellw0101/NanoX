@@ -265,8 +265,8 @@ keystruct *strtosc(const char *input) {
     s->func = it;
   }
   else {
-    s->func                   = do_toggle;
-    const unsigned int toggle = retriveToggleOptionFromStr(input);
+    s->func           = do_toggle;
+    const Uint toggle = retriveToggleOptionFromStr(input);
     if (toggle) {
       s->toggle = toggle;
     }
@@ -696,7 +696,7 @@ void parse_includes(char *ptr) {
   /* If there are matches, process each of them.
    * Otherwise, only report an error if it's something other than zero
    * matches. */
-  if (result == 0) {
+  if (!result) {
     for (Ulong i = 0; i < files.gl_pathc; ++i) {
       parse_one_include(files.gl_pathv[i], nullptr);
     }
@@ -730,7 +730,7 @@ short closest_index_color(short red, short green, short blue) {
 }
 
 #define COLORCOUNT 34
-constexpr_map<std::string_view, short, COLORCOUNT> huesIndiecesMap = {
+constexpr_map<string_view, short, COLORCOUNT> huesIndiecesMap = {
   {{"red", COLOR_RED},
    {"green", COLOR_GREEN},
    {"blue", COLOR_BLUE},
@@ -1033,11 +1033,10 @@ void pick_up_name(const char *kind, char *ptr, char **storage) {
   *storage = mallocstrcpy(*storage, ptr);
 }
 
-/* Parse the syntax command in the given string, and set the syntax options
- * accordingly. */
+/* Parse the syntax command in the given string, and set the syntax options accordingly. */
 bool parse_syntax_commands(const char *keyword, char *ptr) {
-  unsigned int syntax_opt = retriveSyntaxOptionFromStr(keyword);
-  if (syntax_opt == false) {
+  Uint syntax_opt = retriveSyntaxOptionFromStr(keyword);
+  if (!syntax_opt) {
     return false;
   }
   if (syntax_opt & SYNTAX_OPT_COLOR) {
@@ -1063,14 +1062,14 @@ bool parse_syntax_commands(const char *keyword, char *ptr) {
   return true;
 }
 
-static constexpr Uchar VITALS = 4;
+#define VITALS 4
 /* Verify that the user has not unmapped every shortcut for a
  * function that we consider 'vital' (such as 'do_exit'). */
 static void check_vitals_mapped(void) {
   void (*vitals[VITALS])() = {do_exit, do_exit, do_exit, do_cancel};
   int inmenus[VITALS]      = {MMAIN, MBROWSER, MHELP, MYESNO};
-  for (unsigned int v = 0; v < VITALS; v++) {
-    for (funcstruct *f = allfuncs; f != nullptr; f = f->next) {
+  for (Uint v = 0; v < VITALS; v++) {
+    for (funcstruct *f = allfuncs; f; f = f->next) {
       if (f->func == vitals[v] && (f->menus & inmenus[v])) {
         if (first_sc_for(inmenus[v], f->func) == nullptr) {
           jot_error(N_("No key is bound to function '%s' in menu "
@@ -1294,8 +1293,8 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
       continue;
     }
     const int colorOption = retriveColorOptionFromStr(option);
-    (colorOption != (unsigned int)-1) ? set_interface_color(colorOption, argument) : void();
-    const unsigned int configOption = retriveConfigOptionFromStr(option);
+    (colorOption != (Uint)-1) ? set_interface_color(colorOption, argument) : void();
+    const Uint configOption = retriveConfigOptionFromStr(option);
     if (!configOption) {
       ;
     }
@@ -1303,7 +1302,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
       operating_dir = mallocstrcpy(operating_dir, argument);
     }
     else if (configOption & FILL) {
-      if (!parseNum(argument, fill)) {
+      if (!parse_num(argument, &fill)) {
         jot_error(N_("Requested fill size \"%s\" is invalid"), argument);
         fill = -COLUMNS_FROM_EOL;
       }
@@ -1358,13 +1357,13 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
       word_chars = mallocstrcpy(word_chars, argument);
     }
     else if (configOption & GUIDESTRIPE) {
-      if (!parseNum(argument, stripe_column) || stripe_column <= 0) {
+      if (!parse_num(argument, &stripe_column) || stripe_column <= 0) {
         jot_error(N_("Guide column \"%s\" is invalid"), argument);
         stripe_column = 0;
       }
     }
     else if (configOption & CONF_OPT_TABSIZE) {
-      if (parseNum(argument, tabsize) == 0 || tabsize <= 0) {
+      if (!parse_num(argument, &tabsize) || tabsize <= 0) {
         jot_error(N_("Requested tab size \"%s\" is invalid"), argument);
         tabsize = -1;
       }
@@ -1383,7 +1382,7 @@ void parse_one_nanorc(void) {
   FILE *rcstream = fopen(nanorc, "rb");
   /* If opening the file succeeded, parse it.
    * Otherwise, only complain if the file actually exists. */
-  if (rcstream != nullptr) {
+  if (rcstream) {
     parse_rcfile(rcstream, false, true);
   }
   else if (errno != ENOENT) {
@@ -1392,7 +1391,7 @@ void parse_one_nanorc(void) {
 }
 
 bool have_nanorc(const char *path, const char *name) {
-  if (path == nullptr) {
+  if (!path) {
     return false;
   }
   free(nanorc);
@@ -1405,7 +1404,7 @@ bool have_nanorc(const char *path, const char *name) {
 void do_rcfiles(void) {
   if (custom_nanorc) {
     nanorc = get_full_path(custom_nanorc);
-    if (nanorc == nullptr || access(nanorc, F_OK) != 0) {
+    if (!nanorc || access(nanorc, F_OK) != 0) {
       die(_("Specified rcfile does not exist\n"));
     }
   }
@@ -1415,7 +1414,7 @@ void do_rcfiles(void) {
   if (is_good_file(nanorc)) {
     parse_one_nanorc();
   }
-  if (custom_nanorc == nullptr) {
+  if (!custom_nanorc) {
     const char *xdgconfdir = getenv("XDG_CONFIG_HOME");
     get_homedir();
     /* Now try to find a nanorc file in the user's home directory or in the
@@ -1424,7 +1423,7 @@ void do_rcfiles(void) {
         have_nanorc(homedir, "/.config/nano/" RCFILE_NAME)) {
       parse_one_nanorc();
     }
-    else if (homedir == nullptr && xdgconfdir == nullptr) {
+    else if (!homedir && !xdgconfdir) {
       jot_error(N_("I can't find my home directory!  Wah!"));
     }
   }

@@ -1029,7 +1029,7 @@ int parse_escape_sequence(int starter) {
   return keycode;
 }
 
-constexpr int PROCEED = -44;
+#define PROCEED -44
 /* For each consecutive call, gather the given digit into a three-digit
  * decimal byte code (from 000 to 255).
  * Return the assembled code when it is complete,
@@ -1070,9 +1070,7 @@ int assemble_byte_code(int keycode) {
  * - Ctrl-5 == Ctrl-]
  * - Ctrl-6 == Ctrl-^ == Ctrl-~
  * - Ctrl-7 == Ctrl-/ == Ctrl-_
- * - Ctrl-8 == Ctrl-?
- * TODO: (convert_to_control) - Check if this can be used to retrive 'Ctrl+Bsp'.
- */
+ * - Ctrl-8 == Ctrl-? */
 int convert_to_control(int kbinput) {
   if ('@' <= kbinput && kbinput <= '_') {
     return kbinput - '@';
@@ -1121,14 +1119,11 @@ int parse_kbinput(WINDOW *frame) {
   shift_held = false;
   /* Get one code from the input stream. */
   keycode = get_input(frame);
-  /* NETLOGGER.log("func: %s, returned from 'get_input': %i\n", __func__,
-   * keycode); */
   /* Check for '^Bsp'. */
-  if (term != nullptr) {
-    /* First we check if we are running in xterm.  And if so then check if
-     * the appropriet key was pressed, for xterm the correct keycode if
-     * '127' and for most other term`s it`s '263'.  If we detect '^Bsp' then
-     * we return 'CONTROL_BSP'. */
+  if (term) {
+    /* First we check if we are running in xterm.  And if so then check if the appropriet key
+     * was pressed, for xterm the correct keycode if '127' and for most other term`s it`s '263'.
+     * If we detect '^Bsp' then we return 'CONTROL_BSP'. */
     if (strcmp(term, "xterm") == 0) {
       if (keycode == 127) {
         return CONTROL_BSP;
@@ -1157,7 +1152,7 @@ int parse_kbinput(WINDOW *frame) {
   else if (keycode == ERR) {
     return ERR;
   }
-  if (escapes == 0) {
+  if (!escapes) {
     /* Most key codes in byte range cannot be special keys. */
     if (keycode < 0xFF && keycode != '\t' && keycode != DEL_CODE) {
       return keycode;
@@ -1171,8 +1166,6 @@ int parse_kbinput(WINDOW *frame) {
         return SHIFT_TAB;
       }
       else if (keycode == KEY_BACKSPACE || keycode == '\b' || keycode == DEL_CODE) {
-        /* TODO: (parse_kbinput) - Check how to detect only CONTROL_BSP
-         * here. */
         return CONTROL_SHIFT_DELETE;
       }
       else if (0xC0 <= keycode && keycode <= 0xFF && using_utf8()) {
@@ -1185,15 +1178,13 @@ int parse_kbinput(WINDOW *frame) {
         meta_key = true;
       }
     }
-    else if (waiting_codes == 0 || nextcodes[0] == ESC_CODE || (keycode != 'O' && keycode != '[')) {
+    else if (!waiting_codes || nextcodes[0] == ESC_CODE || (keycode != 'O' && keycode != '[')) {
       if (!shifted_metas) {
-        keycode = constexpr_tolower(keycode);
+        keycode = tolower(keycode);
       }
       meta_key = true;
     }
     else {
-      /* TODO: (parse_kbinput) - Here is 'parse_escape_sequence' called.
-       */
       keycode = parse_escape_sequence(keycode);
     }
   }
@@ -1265,7 +1256,7 @@ int parse_kbinput(WINDOW *frame) {
         return byte;
       }
     }
-    else if (digit_count == 0) {
+    else if (!digit_count) {
       /* If the first escape arrived alone but not the second, then it
        * is a Meta keystroke; otherwise, it is an "Esc Esc control". */
       if (first_escape_was_alone && !last_escape_was_alone) {
@@ -1497,21 +1488,19 @@ int parse_kbinput(WINDOW *frame) {
       return KEY_RIGHT;
     }
 #ifdef KEY_SR
-#  ifdef KEY_SUP  /* Ncurses doesn't know Shift+Up. */
+#  ifdef KEY_SUP    /* Ncurses doesn't know Shift+Up. */
     case KEY_SUP :
 #  endif
-    case KEY_SR : /* Scroll backward, on Xfce4-terminal. */
-    {
+    case KEY_SR : { /* Scroll backward, on Xfce4-terminal. */
       shift_held = true;
       return KEY_UP;
     }
 #endif
 #ifdef KEY_SF
-#  ifdef KEY_SDOWN /* Ncurses doesn't know Shift+Down. */
+#  ifdef KEY_SDOWN  /* Ncurses doesn't know Shift+Down. */
     case KEY_SDOWN :
 #  endif
-    case KEY_SF :  /* Scroll forward, on Xfce4-terminal. */
-    {
+    case KEY_SF : { /* Scroll forward, on Xfce4-terminal. */
       shift_held = true;
       return KEY_DOWN;
     }
@@ -1522,46 +1511,39 @@ int parse_kbinput(WINDOW *frame) {
     case SHIFT_HOME : {
       shift_held = true;
     }
-    case KEY_A1 : /* Home (7) on keypad with NumLock off. */
-    {
+    case KEY_A1 : { /* Home (7) on keypad with NumLock off. */
       return KEY_HOME;
     }
-#ifdef KEY_SEND /* HP-UX 10-11 doesn't know Shift+End. */
+#ifdef KEY_SEND     /* HP-UX 10-11 doesn't know Shift+End. */
     case KEY_SEND :
 #endif
     case SHIFT_END : {
       shift_held = true;
     }
-    case KEY_C1 : /* End (1) on keypad with NumLock off. */
-    {
+    case KEY_C1 : { /* End (1) on keypad with NumLock off. */
       return KEY_END;
     }
 #ifdef KEY_EOL
-    case KEY_EOL : /* Ctrl+End on rxvt-unicode. */
-    {
+    case KEY_EOL : { /* Ctrl+End on rxvt-unicode. */
       return CONTROL_END;
     }
 #endif
 #ifdef KEY_SPREVIOUS
     case KEY_SPREVIOUS :
 #endif
-    case SHIFT_PAGEUP : /* Fake key, from Shift+Alt+Up. */
-    {
+    case SHIFT_PAGEUP : { /* Fake key, from Shift+Alt+Up. */
       shift_held = true;
     }
-    case KEY_A3 : /* PageUp (9) on keypad with NumLock off. */
-    {
+    case KEY_A3 : {       /* PageUp (9) on keypad with NumLock off. */
       return KEY_PPAGE;
     }
 #ifdef KEY_SNEXT
     case KEY_SNEXT :
 #endif
-    case SHIFT_PAGEDOWN : /* Fake key, from Shift+Alt+Down. */
-    {
+    case SHIFT_PAGEDOWN : { /* Fake key, from Shift+Alt+Down. */
       shift_held = true;
     }
-    case KEY_C3 : /* PageDown (3) on keypad with NumLock off. */
-    {
+    case KEY_C3 : {         /* PageDown (3) on keypad with NumLock off. */
       return KEY_NPAGE;
     }
     /* When requested, swap meanings of keycodes for <Bsp> and <Del>. */
@@ -1607,8 +1589,7 @@ int parse_kbinput(WINDOW *frame) {
 }
 
 /* Read in a single keystroke, ignoring any that are invalid.
- * TODO: ( get_kbinput ) - This is the main function that reads the input from
- * the terminal. */
+ * TODO: ( get_kbinput ) - This is the main function that reads the input from the terminal. */
 int get_kbinput(WINDOW *frame, bool showcursor) {
   int kbinput   = ERR;
   reveal_cursor = showcursor;
@@ -1627,8 +1608,7 @@ int get_kbinput(WINDOW *frame, bool showcursor) {
 /* For each consecutive call, gather the given symbol into a Unicode code point.
  * When it's complete (with six digits, or when Space or Enter is typed),
  * return the assembled code. Until then, return PROCEED when the symbol is
- * valid, or an error code for anything other than hexadecimal, Space, and
- * Enter. */
+ * valid, or an error code for anything other than hexadecimal, Space, and Enter. */
 long assemble_unicode(int symbol) {
   static long unicode = 0;
   static int  digits  = 0;

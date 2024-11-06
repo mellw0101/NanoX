@@ -23,7 +23,7 @@ BraceWrapping:
   # AfterCaseLabel: true
   # AfterClass: true
   # AfterControlStatement: true
-  AfterEnum: true
+  # AfterEnum: true
   AfterFunction: false
   # AfterNamespace: True
   # AfterStruct: true

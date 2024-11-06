@@ -35,14 +35,14 @@ void netlog_func_info(function_info_t *info) {
   }
 }
 
-// void debug_define(const DefineEntry &de) {
-//   unix_socket_debug("DEFINE:\n"
-//                     "             Name: %s\n"
-//                     "        Full decl: %s\n"
-//                     "            Value: %s\n"
-//                     "             File: %s\n"
-//                     "  Decl start line: %d\n"
-//                     "    Decl end line: %d\n"
-//                     "\n",
-//                     de.name, de.full_decl, de.value, de.file,  de.decl_start_line, de.decl_end_line);
-// }
+void debug_define(const DefineEntry &de) {
+  unix_socket_debug("DEFINE:\n"
+                    "             Name: %s\n"
+                    "        Full decl: %s\n"
+                    "            Value: %s\n"
+                    "             File: %s\n"
+                    "  Decl start line: %d\n"
+                    "    Decl end line: %d\n"
+                    "\n",
+                    de.name, de.full_decl.c_str(), de.value.c_str(), de.file.c_str(), de.decl_start_line, de.decl_end_line);
+}

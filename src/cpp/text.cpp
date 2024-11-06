@@ -71,9 +71,8 @@ void indent_a_line(linestruct *line, char *indentation) {
   }
 }
 
-/* Indent the current line (or the marked lines) by tabsize columns.
- * This inserts either a tab character or a tab's worth of spaces,
- * depending on whether --tabstospaces is in effect. */
+/* Indent the current line (or the marked lines) by tabsize columns.  This inserts either a
+ * tab character or a tab's worth of spaces, depending on whether --tabstospaces is in effect. */
 void do_indent(void) {
   linestruct *top, *bot, *line;
   char       *indentation;
@@ -117,8 +116,7 @@ void do_indent(void) {
   shift_held     = true;
 }
 
-/* Return the number of bytes of whitespace at the start of the given text,
- * but at most a tab's worth. */
+/* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
 Ulong length_of_white(const char *text) {
   Ulong white_count = 0;
   if (openfile->syntax && openfile->syntax->tabstring) {
@@ -237,8 +235,7 @@ void handle_indent_action(undostruct *u, bool undoing, bool add_indent) {
 
 /* Test whether the given line can be uncommented, or add or remove a comment, depending on action.
  * Return true if the line is uncommentable, or when anything was added or removed; false otherwise.
- * ADDED: Also takes indentation into account.
- * TODO: (comment_line) - Fix bug where cursor is missplaces one step to the left. */
+ * ADDED: Also takes indentation into account. */
 bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
   Ulong comment_seq_len = strlen(comment_seq);
   /* The postfix, if this is a bracketing type comment sequence. */
@@ -1483,7 +1480,7 @@ bool find_paragraph(linestruct **firstline, Ulong *linecount) {
   return true;
 }
 
-/* Concatenate into a single line all the lines of the paragraph that starts at '*line' and
+/* Concatenate into a single line all the lines of the paragraph that starts at 'line' and
  * consists of 'count' lines, skipping the quoting and indentation on all lines after the first. */
 void concat_paragraph(linestruct *line, Ulong count) {
   while (count > 1) {
@@ -2920,4 +2917,19 @@ void complete_a_word(void) {
     statusline(AHEM, _("No matches"));
   }
   free(shard);
+}
+
+/* Return`s a all lower case str of 'str'. */
+char *lower_case_word(const char *str) {
+  char       *ret  = (char *)nmalloc(strlen(str + 1));
+  const char *copy = str;
+  Uint        i    = 0;
+  for (; *copy; ++copy, ++i) {
+    ret[i] = *copy;
+    if (*copy >= 'A' && *copy <= 'Z') {
+      ret[i] += 32;
+    }
+  }
+  ret[i] = '\0';
+  return ret;
 }

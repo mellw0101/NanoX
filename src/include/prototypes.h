@@ -1,8 +1,11 @@
 /// @file definitions.h
+#pragma once
+
 #include "color.h"
 #include "definitions.h"
 #include "language_server/language_server.h"
 #include "render.h"
+#include "rendr/rendr.h"
 #include "task_types.h"
 
 /* All external variables.  See global.c for their descriptions. */
@@ -385,17 +388,17 @@ int   do_prompt(int menu, const char *provided, linestruct **history_list, void 
 int   ask_user(bool withall, const char *question);
 
 /* Most functions in 'rcfile.cpp'. */
-short color_to_short(const char *colorname, bool &vivid, bool &thick);
-char *parse_next_word(char *ptr);
-void  parse_rule(char *ptr, int rex_flags);
-bool  compile(const char *expression, int rex_flags, regex_t **packed);
-// bool       compile_with_callback(const char *expression, int rex_flags, regex_t **packed, const char *from_file);
+short      color_to_short(const char *colorname, bool &vivid, bool &thick);
+char      *parse_next_word(char *ptr);
+void       parse_rule(char *ptr, int rex_flags);
+bool       compile(const char *expression, int rex_flags, regex_t **packed);
 void       begin_new_syntax(char *ptr);
 bool       parse_combination(char *combotext, short *fg, short *bg, int *attributes);
 void       set_interface_color(const u_char element, char *combotext);
 void       display_rcfile_errors(void);
 void       jot_error(const char *msg, ...);
 keystruct *strtosc(const char *input);
+bool       is_good_file(char *file);
 void       parse_one_include(char *file, syntaxtype *syntax);
 short      closest_index_color(short red, short green, short blue);
 void       grab_and_store(const char *kind, char *ptr, regexlisttype **storage);
@@ -455,12 +458,13 @@ void  do_formatter(void);
 void  count_lines_words_and_characters(void);
 void  do_verbatim_input(void);
 void  complete_a_word(void);
+char *lower_case_word(const char *str);
 
 /* All functions in 'utils.cpp' */
 void        get_homedir(void);
 char       *concatenate(const char *path, const char *name);
 int         digits(long n);
-bool        parseNum(std::string_view string, long &result);
+bool        parse_num(const char *string, long *result);
 bool        parse_line_column(const char *str, long *line, long *column);
 void        recode_NUL_to_LF(char *string, Ulong length);
 Ulong       recode_LF_to_NUL(char *string);
@@ -667,6 +671,7 @@ void  move_lines_down(void);
 void  erase_in_line(linestruct *line, Ulong at, Ulong len);
 void  select_line(linestruct *line, Ulong from_col, Ulong to_col);
 Uint  total_tabs(linestruct *line);
+int   get_editwin_row(linestruct *line);
 
 /* 'threadpool.cpp' */
 void  lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
@@ -738,6 +743,9 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 /* 'gui.cpp' */
 // void init_window(void);
 // int run_gui(void) noexcept;
+
+/* 'cfg/cfg_file.cpp'. */
+void init_cfg_file(void);
 
 #include <Mlib/def.h>
 #include "c_proto.h"

@@ -274,7 +274,7 @@ namespace Parse {
     const char *type = t.c_str();
     Uint        idx;
     const char *found =
-      strstr_array(type, (const char *[]) {"typedef", "enum", "struct", "class", "template"}, 5, &idx);
+      strstr_array(type, (const char *[]) {"typedef", "enum", "struct", "class"}, 4, &idx);
     if (found && (found == type || (type[(found - type) - 1] == ' ' || type[(found - type) - 1] == '\t'))) {
       /* typedef */
       if (idx == 0) {
@@ -490,18 +490,35 @@ namespace Parse {
           }
         }
         if (is_decl) {
+          /* Decl. */
           if (*is_decl == ';') {
             if (strchr(from->data, ';')) {
               // unix_socket_debug("class decl: %s\n", from->data);
               return;
             }
           }
+          /* Defenition. */
           else if (st_line) {
             linestruct *end_line;
             Ulong       end_idx;
             if (find_end_bracket(st_line, (is_decl - st_line->data), &end_line, &end_idx)) {
-              // unix_socket_debug("class defenition: %s\n", from->data);
               *from_line = end_line;
+              const char *st = strstr(from->data, "class");
+              if (st) {
+                st += 5;
+                ADV_TO_NEXT_WORD(st);
+                const char *end = st;
+                ADV_PTR(end, *end != '{');
+                if (end != st) {
+                  if (*end != '{') {
+                    if (from->data[(end - from->data) - 1] == ',') {
+                      return;
+                    }
+                  }
+                  --end;
+                  unix_socket_debug("class defenition: %s\n", st);
+                }
+              }
               return;
             }
           }
@@ -844,10 +861,35 @@ namespace Parse {
       }
     }
   }
+
+  /* For now this just skips these lines to make sure the rest of the parsing works better. */
+  void do_template(linestruct **from, const char *current_file) {
+    if (!*from) {
+      return;
+    }
+    linestruct *was = *from;
+    const char *pos = strstr(was->data, "template");
+    const char *slash_com = strstr(was->data, "//");
+    if (pos && (!slash_com || slash_com > pos)) {
+      const char *st = strchr(was->data, '<');
+      if (!st) {
+        return;
+      }
+      Ulong end_idx;
+      linestruct *end_line;
+      if (find_end_bracket(was, (st - was->data), &end_line, &end_idx)) {
+        if (end_line->next) {
+          end_line = end_line->next;
+        }
+        *from = end_line;
+      }
+    }
+  }
 }
 
 /* Main parse function. */
 void do_parse(linestruct **line, const char *current_file) {
+  Parse::do_template(line, current_file);
   Parse::struct_type(line, current_file);
   /* vector<var_t> vars;
   Parse::variable(*line, current_file, vars);

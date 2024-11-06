@@ -172,7 +172,7 @@ void finish(void) {
   blank_bottombars();
   wrefresh(footwin);
   /* Deallocate the two or three subwindows. */
-  if (topwin != nullptr) {
+  if (topwin) {
     delwin(topwin);
   }
   delwin(midwin);
@@ -220,7 +220,7 @@ void do_exit(void) {
   if (!openfile->modified || ISSET(VIEW_MODE)) {
     choice = NO;
   }
-  else if (ISSET(SAVE_ON_EXIT) && openfile->filename[0] != '\0') {
+  else if (ISSET(SAVE_ON_EXIT) && openfile->filename[0]) {
     choice = YES;
   }
   else {
@@ -298,8 +298,8 @@ void die(const char *msg, ...) {
 /* Initialize the three window portions nano uses. */
 void window_init(void) {
   /* When resizing, first delete the existing windows. */
-  if (midwin != nullptr) {
-    if (topwin != nullptr) {
+  if (midwin) {
+    if (topwin) {
       delwin(topwin);
     }
     delwin(midwin);
@@ -360,7 +360,7 @@ void enable_mouse_support(void) {
 
 /* Switch mouse support on or off, as needed. */
 void mouse_init(void) {
-  if ISSET (USE_MOUSE) {
+  if (ISSET(USE_MOUSE)) {
     enable_mouse_support();
   }
   else {
@@ -549,11 +549,11 @@ bool scoop_stdin(void) {
   }
   /* Open standard input. */
   stream = fopen("/dev/stdin", "rb");
-  if (stream == nullptr) {
-    const char *errnoStr = strerror(errno);
+  if (!stream) {
+    const char *errno_str = strerror(errno);
     terminal_init();
     doupdate();
-    statusline(ALERT, _("Failed to open stdin: %s"), errnoStr);
+    statusline(ALERT, _("Failed to open stdin: %s"), errno_str);
     return false;
   }
   /* Set up a signal handler so that ^C will stop the reading. */
@@ -592,7 +592,7 @@ void signal_init(void) {
   deed.sa_handler = continue_nano;
   sigaction(SIGCONT, &deed, nullptr);
 #if !defined(DEBUG)
-  if (getenv("NANO_NOCATCH") == nullptr) {
+  if (!getenv("NANO_NOCATCH")) {
     /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
      * the terminal to a usable state.  Reset these handlers to their
      * defaults as soon as their signal fires. */
@@ -612,7 +612,7 @@ void handle_hupterm(int signal) {
 #if !defined(DEBUG)
 /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
 void handle_crash(int signal) {
-  die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.  errno: '%s'.\n"), signal, strerror(errno));
+  die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
 }
 #endif
 
@@ -953,14 +953,14 @@ int do_mouse(void) {
     }
     openfile->current_x = actual_x(openfile->current->data, actual_last_column(leftedge, click_col));
     /* Clicking there where the cursor is toggles the mark. */
-    if (row_count == 0 && openfile->current_x == was_x) {
+    if (!row_count && openfile->current_x == was_x) {
       do_mark();
       if (ISSET(STATEFLAGS)) {
         titlebar(nullptr);
       }
     }
+    /* The cursor moved; clean the cutbuffer on the next cut. */
     else {
-      /* The cursor moved; clean the cutbuffer on the next cut. */
       keep_cutbuffer = false;
     }
     edit_redraw(was_current, CENTERING);
@@ -976,8 +976,7 @@ bool wanted_to_move(functionptrtype f) {
           f == to_next_block || f == do_page_up || f == do_page_down || f == to_first_line || f == to_last_line);
 }
 
-/* Return 'true' when the given function makes a change -- no good for view
- * mode. */
+/* Return 'true' when the given function makes a change -- no good for view mode. */
 bool changes_something(functionptrtype f) {
   return (f == do_savefile || f == do_writeout || f == do_enter || f == do_tab || f == do_delete || f == do_backspace ||
           f == cut_text || f == paste_text || f == chop_previous_word || f == chop_next_word || f == zap_text ||
@@ -1133,11 +1132,9 @@ void process_a_keystroke(void) {
   /* Check for a shortcut in the main list. */
   shortcut = get_shortcut(input);
   function = (shortcut ? shortcut->func : nullptr);
-  /* If not a command, discard anything that is not a normal character byte.
-   */
+  /* If not a command, discard anything that is not a normal character byte. */
   if (!function) {
-    /* When the input is a function key,
-     * execute the function it is bound to. */
+    /* When the input is a function key, execute the function it is bound to. */
     if (input < 0x20 || input > 0xFF || meta_key) {
       unbound_key(input);
     }
@@ -1281,10 +1278,10 @@ int main(int argc, char **argv) {
   init_event_handler();
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
   LOUT.setOutputFile("/home/mellw/.NanoX.log");
-  LOUT_logI("Starting NanoX");
+  logI("Starting NanoX");
   term                  = getenv("TERM");
   const char *netlogger = getenv("NETLOGGER");
-  if (netlogger != nullptr) {
+  if (netlogger) {
     NETLOGGER.enable();
     NETLOGGER.init(netlogger, 8080);
   }
@@ -1300,15 +1297,12 @@ int main(int argc, char **argv) {
     NETLOGGER.send_to_server("\nExiting NanoX.\n");
     (unix_socket_fd < 0) ? 0 : close(unix_socket_fd);
   });
-  int stdin_flags;
-  /* Whether to ignore the nanorc files. */
-  bool ignore_rcfiles = false;
-  /* Was the fill option used on the command line? */
-  bool fill_used = false;
-  /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
-  int hardwrap = -2;
-  /* Whether the quoting regex was compiled successfully. */
-  int     quoterc;
+  init_cfg_file();
+  int     stdin_flags;
+  bool    ignore_rcfiles = false; /* Whether to ignore the nanorc files. */
+  bool    fill_used      = false; /* Was the fill option used on the command line? */
+  int     hardwrap       = -2;    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
+  int     quoterc;                /* Whether the quoting regex was compiled successfully. */
   vt_stat dummy;
   /* Check whether we're running on a Linux console. */
   on_a_vt = !ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy);
@@ -1321,7 +1315,7 @@ int main(int argc, char **argv) {
   }
   /* If setting the locale is successful and it uses UTF-8, we will
    * need to use the multibyte functions for text processing. */
-  if (setlocale(LC_ALL, "") && constexpr_strcmp(nl_langinfo(CODESET), "UTF-8") == 0) {
+  if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0) {
     utf8_init();
   }
   setlocale(LC_ALL, "");
@@ -1350,7 +1344,6 @@ int main(int argc, char **argv) {
   for (int i = 1; i < argc; ++i) {
     const Uint flag = retriveFlagFromStr(argv[i]);
     flag ? SET(flag) : 0;
-
     const Uint cliCmd = retriveCliOptionFromStr(argv[i]);
     cliCmd &CLI_OPT_VERSION ? version() : void();
     cliCmd &CLI_OPT_HELP ? usage() : void();
@@ -1362,7 +1355,6 @@ int main(int argc, char **argv) {
     cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
     cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = mallocstrcpy(alt_speller, argv[i]) : 0 : 0;
     cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
-
     if (cliCmd & CLI_OPT_OPERATINGDIR) {
       if (++i < argc) {
         operating_dir = mallocstrcpy(operating_dir, argv[i]);
@@ -1379,7 +1371,7 @@ int main(int argc, char **argv) {
     }
     if (cliCmd & CLI_OPT_FILL) {
       if (++i < argc) {
-        if (!parseNum(argv[i], fill) || fill <= 0) {
+        if (!parse_num(argv[i], &fill) || fill <= 0) {
           fprintf(stderr, _("Requested fill size \"%s\" is invalid"), optarg);
           fprintf(stderr, "\n");
           exit(1);
@@ -1389,7 +1381,7 @@ int main(int argc, char **argv) {
     }
     if (cliCmd & CLI_OPT_TABSIZE) {
       if (++i < argc) {
-        if (!parseNum(argv[i], tabsize) || tabsize <= 0) {
+        if (!parse_num(argv[i], &tabsize) || tabsize <= 0) {
           fprintf(stderr, _("Requested tab size \"%s\" is invalid"), argv[i]);
           fprintf(stderr, "\n");
           exit(1);
@@ -1399,7 +1391,7 @@ int main(int argc, char **argv) {
     }
     if (cliCmd & CLI_OPT_GUIDESTRIPE) {
       if (++i < argc) {
-        if (!parseNum(argv[i], stripe_column) || stripe_column <= 0) {
+        if (!parse_num(argv[i], &stripe_column) || stripe_column <= 0) {
           fprintf(stderr, _("Guide column \"%s\" is invalid"), optarg);
           fprintf(stderr, "\n");
           exit(1);
@@ -1552,7 +1544,7 @@ int main(int argc, char **argv) {
   (!quotestr) ? quotestr = copy_of("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
   /* Compile the quoting regex, and exit when it's invalid. */
   quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
-  if (quoterc != 0) {
+  if (quoterc) {
     Ulong size    = regerror(quoterc, &quotereg, nullptr, 0);
     char *message = (char *)nmalloc(size);
     regerror(quoterc, &quotereg, message, size);
@@ -1778,10 +1770,10 @@ int main(int argc, char **argv) {
       }
     }
     /* If a position was given on the command line, go there. */
-    if (givenline != 0 || givencol != 0) {
+    if (givenline || givencol) {
       goto_line_and_column(givenline, givencol, false, false);
     }
-    else if (searchstring != nullptr) {
+    else if (searchstring) {
       if (ISSET(USE_REGEXP)) {
         regexp_init(searchstring);
       }
@@ -1817,7 +1809,7 @@ int main(int argc, char **argv) {
   /* If no filenames were given, or all of them were invalid things like
    * directories, then open a blank buffer and allow editing.  Otherwise,
    * switch from the last opened file to the next, that is: the first. */
-  if (openfile == nullptr) {
+  if (!openfile) {
     open_buffer("", true);
     UNSET(VIEW_MODE);
   }
@@ -1830,7 +1822,7 @@ int main(int argc, char **argv) {
     die(_("Can open just one file\n"));
   }
   prepare_for_display();
-  if (startup_problem != nullptr) {
+  if (startup_problem) {
     statusline(ALERT, "%s", startup_problem);
   }
   /* THIS: -> #define NOTREBOUND first_sc_for(MMAIN, do_help) &&
@@ -1841,6 +1833,7 @@ int main(int argc, char **argv) {
     statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
   }
   do_syntax();
+  // init_cfg_file();
   /* Set the margin to an impossible value to force re-evaluation. */
   margin         = 12345;
   we_are_running = true;

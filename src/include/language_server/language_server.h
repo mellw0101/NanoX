@@ -68,4 +68,5 @@ class LanguageServer {
   bool has_been_included(const char *path);
   int index_file(const char *path);
 };
+
 #define LSP LanguageServer::instance()
