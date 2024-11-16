@@ -246,6 +246,5 @@ void parse_class_data(linestruct *from) {
   for (linestruct *line = from; line != NULL && line->lineno < end_line; line = line->next) {
     line_variable(line, class_info.variables);
   }
-  class_info_vector.push_back(class_info);
   test_map[class_info.name] = {FG_VS_CODE_GREEN};
 }

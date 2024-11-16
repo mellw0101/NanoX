@@ -818,7 +818,6 @@ void do_enter(void) {
   if (enter_with_bracket()) {
     return;
   }
-  check_for_syntax_words(openfile->current);
   char c_prev = '\0';
   if (openfile->current->data[openfile->current_x - 1]) {
     c_prev = openfile->current->data[openfile->current_x - 1];

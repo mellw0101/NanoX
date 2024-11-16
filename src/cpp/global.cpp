@@ -1136,15 +1136,6 @@ bool syntax_var(string_view str) {
   return false;
 }
 
-bool syntax_func(std::string_view str) {
-  for (int i = 0; i < funcs.get_size(); i++) {
-    if (strcmp(&str[0], funcs[i]) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void new_syntax_var(const char *str) {
   syntax_vars.push_back(str);
 }

@@ -162,19 +162,12 @@ extern volatile sig_atomic_t *stop_thread_flags;
 extern callback_queue_t      *callback_queue;
 extern main_thread_t         *main_thread;
 
-extern vec<char *>          includes;
-extern vec<char *>          defines;
-extern vec<char *>          structs;
-extern vec<char *>          classes;
-extern vec<char *>          funcs;
-extern vec<glob_var_t>      glob_vars;
-extern vec<function_info_t> local_funcs;
-
 extern unordered_map<string, syntax_data_t> test_map;
-extern vector<class_info_t>                 class_info_vector;
-extern vector<var_t>                        var_vector;
 
 typedef void (*functionptrtype)(void);
+
+/* Asm functions. */
+ASM_FUNCTION(int) SSE_strlen(const char *str);
 
 /* The two needed functions from 'browser.cpp'. */
 void  browser_refresh(void);
@@ -294,7 +287,6 @@ const char      *epithet_of_flag(const Uint flag);
 void             add_to_handled_includes_vec(const char *path);
 bool             is_in_handled_includes_vec(std::string_view path);
 bool             syntax_var(std::string_view str);
-bool             syntax_func(std::string_view str);
 void             new_syntax_var(const char *str);
 void             new_syntax_func(const char *str);
 
@@ -472,6 +464,7 @@ void        free_chararray(char **array, Ulong len);
 bool        is_separate_word(Ulong position, Ulong length, const char *buf);
 void       *nmalloc(const Ulong howmuch);
 void       *nrealloc(void *ptr, const Ulong howmuch);
+#define     arealloc(ptr, howmuch) (decltype(ptr))nrealloc(ptr, howmuch) 
 char       *measured_copy(const char *string, Ulong count);
 char       *measured_memmove_copy(const char *string, const Ulong count);
 char       *mallocstrcpy(char *dest, const char *src);
@@ -601,8 +594,6 @@ bool             invalid_variable_sig(const char *sig);
 void             parse_variable(const char *sig, char **type, char **name, char **value);
 void             flag_all_brackets(void);
 void             flag_all_block_comments(linestruct *from);
-void             find_current_function(linestruct *l);
-void             check_line_for_vars(linestruct *line);
 void             remove_local_vars_from(linestruct *line);
 void             remove_from_color_map(linestruct *line, int color, int type);
 
@@ -610,15 +601,7 @@ void             remove_from_color_map(linestruct *line, int color, int type);
 string get_word_after(const char *data, const char *word);
 void   syntax_check_file(openfilestruct *file);
 bool   parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr);
-bool   check_func_syntax(char ***words, Ulong *i);
-void   check_syntax(const char *path);
-void   check_include_file_syntax(const char *path);
-void   handle_define(char *str);
 void   do_syntax(void);
-void   check_for_syntax_words(linestruct *line);
-bool   is_syntax_struct(std::string_view str);
-bool   is_syntax_class(std::string_view str);
-bool   define_exists(const char *str);
 void   handle_struct_syntax(char **word);
 void   find_block_comments(int before, int end);
 char **find_functions_in_file(char *path);
@@ -710,8 +693,7 @@ void block_pthread_sig(int sig, bool block);
 /* 'render.cpp' */
 void render_line_text(const int row, const char *str, linestruct *line, const Ulong from_col);
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
-void rendr_suggestion();
-void cleanup_rendr(void);
+void rendr_suggestion(void);
 
 /* 'render_utils.cpp' */
 void        get_next_word(const char **start, const char **end);

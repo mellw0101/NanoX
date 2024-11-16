@@ -7,74 +7,7 @@ void get_next_word(const char **start, const char **end) {
 }
 
 /* Search for any match to the current suggest buf. */
-void find_suggestion(void) {
-  PROFILE_FUNCTION;
-  for (auto &it : var_vector) {
-    if (openfile->current->lineno >= it.decl_line && openfile->current->lineno <= it.scope_end) {
-      if (strncmp(it.name.c_str(), suggest_buf, suggest_len) == 0) {
-        suggest_str = &it.name[0];
-        return;
-      }
-    }
-  }
-  for (auto &ci : class_info_vector) {
-    if (strncmp(ci.name.c_str(), suggest_buf, suggest_len) == 0) {
-      suggest_str = &ci.name[0];
-      return;
-    }
-  }
-  for (const auto &i : local_funcs) {
-    if (strncmp(i.full_function + strlen(i.return_type) + 1, suggest_buf, suggest_len) == 0) {
-      suggest_str = i.full_function + strlen(i.return_type) + 1;
-      return;
-    }
-    if (openfile->current->lineno >= i.start_bracket && openfile->current->lineno <= i.end_braket) {
-      for (variable_t *var = i.params; var != nullptr; var = var->prev) {
-        if (var->name == nullptr) {
-          continue;
-        }
-        if (strncmp(var->name, suggest_buf, suggest_len) == 0) {
-          suggest_str = var->name;
-          return;
-        }
-      }
-    }
-  }
-  for (const auto &t : types) {
-    if (strncmp(t, suggest_buf, suggest_len) == 0) {
-      suggest_str = (char *)t;
-      return;
-    }
-  }
-  for (const auto &d : defines) {
-    if (strncmp(d, suggest_buf, suggest_len) == 0) {
-      suggest_str = d;
-      nlog("define: %s\n", d);
-      return;
-    }
-  }
-  for (const auto &f : funcs) {
-    if (strncmp(f, suggest_buf, suggest_len) == 0) {
-      suggest_str = f;
-      nlog("func: %s\n", f);
-      return;
-    }
-  }
-  for (const auto &s : structs) {
-    if (strncmp(s, suggest_buf, suggest_len) == 0) {
-      suggest_str = s;
-      nlog("struct: %s\n", s);
-      return;
-    }
-  }
-  for (const auto &c : classes) {
-    if (strncmp(c, suggest_buf, suggest_len) == 0) {
-      suggest_str = c;
-      nlog("class: %s\n", c);
-      return;
-    }
-  }
-}
+void find_suggestion(void) {}
 
 /* Clear suggest buffer and len as well as setting the
  * current suggest str to nullptr. */

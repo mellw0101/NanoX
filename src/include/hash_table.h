@@ -10,10 +10,8 @@ private:
     std::hash<K>                            hashFn;  // You can replace this with your custom hash function.
 
 public:
-    HashTable(size_t size)
-        : numBuckets(size)
-    {
-        table.resize(numBuckets);
+    HashTable(size_t size) : numBuckets(size) {
+      table.resize(numBuckets);
     }
 
     void

@@ -262,15 +262,17 @@ using std::vector;
   } name;
 
 #define NULL_safe_free(ptr) ptr ? free(ptr) : void()
-#define anmalloc(size)
+
+#define ASM_FUNCTION(ret) extern "C" ret __attribute__((__const__, __nodebug__, __nothrow__))
 
 #include "constexpr_utils.h"
 
 /* Enumeration types. */
 enum file_type : Uint {
-  C_CPP = 1,
+  C_CPP,
   ASM,
   BASH,
+  GLSL
 };
 
 #define OPENFILE_TYPE_SIZE 8
@@ -289,7 +291,8 @@ typedef enum : int {
   LSP_FUNC,
   LSP_FUNC_PARAM,
   ASM_REG,
-  ASM_INSTRUCT
+  ASM_INSTRUCT,
+  ASM_CONTROL
 } syntax_type;
 
 /* clang-format off */

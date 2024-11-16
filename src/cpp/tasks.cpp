@@ -226,25 +226,6 @@ struct main_thread_function {
     free(search_result);
   }
 
-  /* Callback function for the main thread to add syntax fetched by
-   * subthreads. */
-  static void handle_syntax(void *arg) {
-    if (!arg) {
-      return;
-    }
-    syntax_search_t *result = (syntax_search_t *)arg;
-    while (result->functions_head != NULL) {
-      syntax_word_t *node    = result->functions_head;
-      result->functions_head = node->next;
-      if (!syntax_func(node->str)) {
-        new_syntax_func(node->str);
-      }
-      free(node->str);
-      free(node);
-    }
-    free(result);
-  }
-
   static void handle_found_functions(void *arg) {
     if (!arg) {
       return;
@@ -409,10 +390,6 @@ void submit_search_task(const char *path) {
 void submit_find_in_dir(const char *find, const char *in_dir) {
   dir_search_task_t *task = task_creator::create_dir_search_task(find, in_dir);
   submit_task(sub_thread_function::find_file_in_dir, task, NULL, main_thread_function::on_find_file_in_dir);
-}
-
-void sub_thread_find_syntax(const char *path) {
-  submit_task(sub_thread_function::syntax_from, copy_of(path), NULL, main_thread_function::handle_syntax);
 }
 
 void sub_thread_parse_funcs(const char *path) {

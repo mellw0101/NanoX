@@ -4,14 +4,6 @@ static Uint block_comment_start = (Uint)-1;
 static Uint block_comment_end   = (Uint)-1;
 static int  color_bi[3]         = {FG_VS_CODE_YELLOW, FG_VS_CODE_BRIGHT_MAGENTA, FG_VS_CODE_BRIGHT_BLUE};
 
-vec<char *>          includes;
-vec<char *>          defines;
-vec<char *>          structs;
-vec<char *>          classes;
-vec<char *>          funcs;
-vec<glob_var_t>      glob_vars;
-vec<function_info_t> local_funcs;
-
 static int         row       = 0;
 static const char *converted = nullptr;
 static linestruct *line      = nullptr;
@@ -26,8 +18,6 @@ vec<const char *> types             = {
 };
 
 unordered_map<string, syntax_data_t> test_map;
-vector<class_info_t>                 class_info_vector;
-vector<var_t>                        var_vector;
 
 void render_part(Ulong match_start, Ulong match_end, short color) {
   PROFILE_FUNCTION;
@@ -67,7 +57,7 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
 void render_line_text(const int row, const char *str, linestruct *line, const Ulong from_col) {
   if (margin > 0) {
     WIN_COLOR_ON(midwin, LINE_NUMBER);
-    if (ISSET(SOFTWRAP) && from_col != 0) {
+    if (ISSET(SOFTWRAP) && from_col) {
       mvwprintw(midwin, row, 0, "%*s", margin - 1, " ");
     }
     else {
@@ -95,9 +85,8 @@ void render_line_text(const int row, const char *str, linestruct *line, const Ul
   }
 }
 
-/* Set start and end pos for comment block or if the entire
- * line is inside of a block comment set 'block_comment_start'
- * to '0' and 'block_comment_end' to '(Uint)-1'. */
+/* Set start and end pos for comment block or if the entire line is inside of a block
+ * comment set 'block_comment_start' to '0' and 'block_comment_end' to '(Uint)-1'. */
 void render_comment(void) {
   const char *start = strstr(line->data, "/*");
   const char *end   = strstr(line->data, "*/");
@@ -736,49 +725,6 @@ void render_control_statements(Ulong index) {
   }
 }
 
-void rendr_glob_vars(void) {
-  if (line->flags.is_set(IN_BLOCK_COMMENT) || line->flags.is_set(SINGLE_LINE_BLOCK_COMMENT) ||
-      line->flags.is_set(BLOCK_COMMENT_START) || line->flags.is_set(BLOCK_COMMENT_END)) {
-    return;
-  }
-  const char *data    = nullptr;
-  const char *start   = nullptr;
-  bool        in_func = false;
-  for (const auto &f : local_funcs) {
-    if (line->lineno >= f.start_bracket && line->lineno <= f.end_braket) {
-      in_func = true;
-      break;
-    }
-  }
-  if (!in_func) {
-    data  = line->data;
-    start = strchr(data, ';');
-    if (start && line->data[indent_char_len(line)] != '}') {
-      char      *str = measured_copy(line->data, (start - line->data) + 1);
-      glob_var_t ngvar;
-      parse_variable(str, &ngvar.type, &ngvar.name, &ngvar.value);
-      if (ngvar.name) {
-        bool found = false;
-        for (const auto &gv : glob_vars) {
-          if (strcmp(gv.name, ngvar.name) == 0) {
-            found = true;
-            break;
-          }
-        }
-        if (found == false) {
-          const auto &it = test_map.find(ngvar.name);
-          if (it == test_map.end()) {
-            test_map[ngvar.name].color = FG_VS_CODE_BRIGHT_CYAN;
-            glob_vars.push_back(ngvar);
-            nlog("ngvar str: %s\n", str);
-          }
-        }
-      }
-      free(str);
-    }
-  }
-}
-
 void rendr_classes(void) {
   PROFILE_FUNCTION;
   const char *found = word_strstr(line->data, "class");
@@ -848,7 +794,6 @@ void rendr_classes(void) {
             }
         }
     } */
-    class_info_vector.push_back(class_info);
   }
 }
 
@@ -1038,8 +983,8 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
         free_node(node);
         continue;
       }
-      char *word = lower_case_word(node->str);
-      const auto &it = test_map.find(word);
+      char       *word = lower_case_word(node->str);
+      const auto &it   = test_map.find(word);
       free(word);
       if (it != test_map.end()) {
         midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, it->second.color);
@@ -1072,6 +1017,54 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
       free_node(node);
     }
   }
+  else if (openfile->type.is_set<GLSL>()) {
+    if (!line->data[0]) {
+      return;
+    }
+    if (line->data[indent_char_len(line)] == '#') {
+      render_preprossesor();
+      return;
+    }
+    render_comment();
+    /* Retrieve all words in the current line. */
+    line_word_t *head = line_word_list(line->data, till_x);
+    while (head) {
+      /* Assign head to node, and assign head to the next word. */
+      line_word_t *node = head;
+      head              = node->next;
+      /* Search the syntax map for the word. */
+      const auto &it = test_map.find(node->str);
+      if (it != test_map.end()) {
+        /* If found use the map element to fetch the color. */
+        midwin_mv_add_nstr_color(
+          row, get_start_col(line, node), it->first.c_str(), it->first.length(), it->second.color);
+        free_node(node);
+        continue;
+      }
+      /* Function defenitions. */
+      const auto &func_decl = LSP->index.functiondefs.find(node->str);
+      if (func_decl != LSP->index.functiondefs.end()) {
+        const auto &[name, data] = *func_decl;
+        /* If found use the map element to fetch the color. */
+        midwin_mv_add_nstr_color(
+          row, get_start_col(line, node), name.c_str(), name.length(), FG_VS_CODE_BRIGHT_YELLOW);
+        free_node(node);
+        continue;
+      }
+      /* Vars. */
+      const auto &var = LSP->index.vars.find(node->str);
+      if (var != LSP->index.vars.end()) {
+        const auto &[name, vector] = *var;
+        for (const auto &v : vector) {
+          if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
+            midwin_mv_add_nstr_color(
+              row, get_start_col(line, node), name.c_str(), name.length(), FG_VS_CODE_BRIGHT_CYAN);
+          }
+        }
+      }
+      free_node(node);
+    }
+  }
 }
 
 void rendr_suggestion(void) {
@@ -1091,14 +1084,4 @@ void rendr_suggestion(void) {
   add_char_to_suggest_buf();
   find_suggestion();
   draw_suggest_win();
-}
-
-/* Cleans up all thing related to rendering. */
-void cleanup_rendr(void) {
-  for (int i = 0; i < includes.get_size(); ++i) {
-    free(includes[i]);
-  }
-  for (int i = 0; i < defines.get_size(); ++i) {
-    free(defines[i]);
-  }
 }

@@ -168,7 +168,6 @@ void all_brackets_pos(void) {
 void do_close_bracket(void) {
   // find_current_function(openfile->current);
   remove_local_vars_from(openfile->current);
-  check_line_for_vars(openfile->current);
   LOG_FLAG(openfile->current, IN_BRACKET);
   LOG_FLAG(openfile->current, BRACKET_START);
   LOG_FLAG(openfile->current, BRACKET_END);
@@ -592,9 +591,6 @@ void flag_all_brackets(void) {
             }
             else {
               line->flags.unset(IN_BRACKET);
-              /* Once we find the end bracket we
-               * parse the current function. */
-              find_current_function(line->prev);
             }
             break;
           }
@@ -669,49 +665,6 @@ void flag_all_block_comments(linestruct *from) {
   }
 }
 
-/* TODO: Fix updating function. */
-void find_current_function(linestruct *l) {
-  PROFILE_FUNCTION;
-  for (linestruct *line = l; line; line = line->prev) {
-    if ((line->flags.is_set(BRACKET_START)) && !(line->flags.is_set(IN_BRACKET))) {
-      if (line->prev == nullptr) {
-        return;
-      }
-      char *func_sig = parse_function_sig(line);
-      if (func_sig == nullptr) {
-        return;
-      }
-      line                       = line->prev;
-      function_info_t local_func = parse_local_func(func_sig);
-      local_func.start_bracket   = line->next->lineno;
-      for (linestruct *lend = line->next; lend != nullptr; lend = lend->next) {
-        if ((lend->flags.is_set(IN_BRACKET)) && !(lend->flags.is_set(IN_BRACKET))) {
-          local_func.end_braket = lend->lineno;
-          break;
-        }
-      }
-      bool found = false;
-      for (int i = 0; i < local_funcs.get_size(); i++) {
-        if (l->lineno + 2 >= local_funcs[i].start_bracket && l->lineno <= local_funcs[i].end_braket) {
-          local_funcs[i] = local_func;
-          found          = true;
-          break;
-        }
-      }
-      if (!found) {
-        add_rm_color_map(local_func.name, {FG_VS_CODE_BRIGHT_YELLOW});
-        local_funcs.push_back(local_func);
-      }
-      refresh_needed = true;
-      free(func_sig);
-      break;
-    }
-    if (!(line->flags.is_set(IN_BRACKET))) {
-      break;
-    }
-  }
-}
-
 /* void
 remove_local_vars_from(linestruct *line)
 {
@@ -780,191 +733,4 @@ void remove_from_color_map(linestruct *line, int color, int type) {
       done = true;
     }
   }
-}
-
-void check_line_for_vars(linestruct *line) {
-  auto it = var_vector.begin();
-  while (it != var_vector.end()) {
-    if (it->decl_line == line->lineno) {
-      it = var_vector.erase(it);
-    }
-    else {
-      it++;
-    }
-  }
-  remove_from_color_map(line, FG_VS_CODE_BRIGHT_CYAN, LOCAL_VAR_SYNTAX);
-  vector<var_t> vars;
-  line_variable(line, vars);
-  for (const auto &[type, name, value, delc_line, scope_end, file] : vars) {
-    const auto &it = test_map.find(name);
-    if (it != test_map.end() &&
-        (it->second.color == FG_VS_CODE_BLUE || it->second.color == FG_VS_CODE_BRIGHT_MAGENTA)) {
-      continue;
-    }
-    test_map[name] = {
-      FG_VS_CODE_BRIGHT_CYAN,
-      delc_line,
-      scope_end,
-      LOCAL_VAR_SYNTAX,
-    };
-    var_vector.push_back({
-      type,
-      name,
-      value,
-      delc_line,
-      scope_end,
-    });
-    /* NLOG("\n"
-         "           Type: %s\n"
-         "           Name: %s\n"
-         "          Value: %s\n"
-         "      Decl line: %i\n"
-         "      Scope_end: %i\n"
-         "var_vector size: %i\n"
-         "\n",
-         type.c_str(), name.c_str(), value.c_str(), delc_line, scope_end,
-         var_vector.size()); */
-  }
-  // const char *data = &line->data[indent_char_len(line)];
-  // if (invalid_variable_sig(data))
-  // {
-  //     return;
-  // }
-  // const char *p          = data;
-  // char       *decl_start = nullptr;
-  // adv_ptr(p, (*p != ',') && (*p != ';') && (*p != '=') && (*p != '{'));
-  // if (!*p || *p == ';' || *p == '=')
-  // {
-  //     char *tmp_data = nullptr;
-  //     if (*p == '=' && p[1] == '\0')
-  //     {
-  //         if (line->next)
-  //         {
-  //             char *first_part = copy_of(data);
-  //             char *second_part =
-  //                 copy_of(&line->next->data[indent_char_len(line->next)]);
-  //             tmp_data = alloc_str_free_substrs(first_part, second_part);
-  //             data     = tmp_data;
-  //             // nlog("full sig: %s\n", tmp_data);
-  //         }
-  //     }
-  //     char *type, *name, *value;
-  //     parse_variable(data, &type, &name, &value);
-  //     if (type && name)
-  //     {
-  //         if (strchr(type, '(') ||
-  //             strncmp(type, "return", "return"_sllen) == 0 ||
-  //             strchr(type, '[') || strstr(type, "/*") ||
-  //             strncmp(name, "operator", "operator"_sllen) == 0)
-  //         {
-  //             // nlog("Wrong type: %s\n", type);
-  //             // nlog("Wrong name: %s\n", name);
-  //             NULL_safe_free(type);
-  //             NULL_safe_free(name);
-  //             NULL_safe_free(value);
-  //             NULL_safe_free(tmp_data);
-  //             return;
-  //         }
-  //         // nlog("type: %s\n", type);
-  //         // nlog("name: %s\n", name);
-  //         const char *array_start = strchr(name, '[');
-  //         const char *array_end   = strchr(name, ']');
-  //         char       *var         = nullptr;
-  //         if (array_start && array_end)
-  //         {
-  //             var = measured_copy(name, (array_start - name));
-  //         }
-  //         else
-  //         {
-  //             var = copy_of(name);
-  //         }
-  //         const auto &it = color_map.find(var);
-  //         if (it != color_map.end() &&
-  //             (it->second.color == FG_VS_CODE_BLUE ||
-  //              it->second.color == FG_VS_CODE_BRIGHT_MAGENTA))
-  //         {
-  //             free(var);
-  //             return;
-  //         }
-  //         color_map[var] = {
-  //             FG_VS_CODE_BRIGHT_CYAN,
-  //             (int)line->lineno,
-  //             current_line_scope_end(line),
-  //             LOCAL_VAR_SYNTAX,
-  //         };
-  //     }
-  //     NULL_safe_free(type);
-  //     NULL_safe_free(name);
-  //     NULL_safe_free(value);
-  //     NULL_safe_free(tmp_data);
-  //     return;
-  // }
-  // else if (*p == ',')
-  // {
-  //     char *first_part = measured_copy(data, (p - data));
-  //     /* nlog("first part: %s\n", first_part);
-  //     nlog("line: %s\n", data); */
-  //     for (; p > first_part && (*p == ' ' || *p == '\t'); p--);
-  //     if (p == first_part)
-  //     {
-  //         return;
-  //     }
-  //     p = strrchr(first_part, ' ');
-  //     if (!p)
-  //     {
-  //         return;
-  //     }
-  //     p += 1;
-  //     char *base_type = measured_copy(first_part, (p - first_part));
-  //     if (strchr(base_type, '=') || strstr(base_type, "/*") ||
-  //         strchr(base_type, '(') ||
-  //         strncmp(base_type, "return", "return"_sllen) == 0)
-  //     {
-  //         free(first_part);
-  //         free(base_type);
-  //         return;
-  //     }
-  //     // nlog("base_type: %s\n", base_type);
-  //     decl_start = copy_of(data + strlen(base_type));
-  //     // nlog("decl_start: %s\n", decl_start);
-  //     if (decl_start)
-  //     {
-  //         vector<string> names;
-  //         const char    *start = decl_start;
-  //         const char    *end   = nullptr;
-  //         while (*start)
-  //         {
-  //             adv_ptr_to_next_word(start);
-  //             adv_ptr(start, (*start == '*' || *start == '&'));
-  //             end = start;
-  //             adv_ptr(end, *end != ',' && *end != ';');
-  //             if (!*end)
-  //             {
-  //                 return;
-  //             }
-  //             string name(start, (end - start));
-  //             p = &name[0];
-  //             names.push_back(p);
-  //             start = end + 1;
-  //         }
-  //         for (const auto &str : names)
-  //         {
-  //             char       *name = copy_of(&str[0]);
-  //             const auto &it   = color_map.find(name);
-  //             if (it != color_map.end() &&
-  //                 (it->second.color == FG_VS_CODE_BLUE ||
-  //                  it->second.color == FG_VS_CODE_BRIGHT_MAGENTA))
-  //             {
-  //                 free(name);
-  //                 continue;
-  //             }
-  //             color_map[name] = {
-  //                 .color     = FG_VS_CODE_BRIGHT_CYAN,
-  //                 .from_line = (int)line->lineno,
-  //                 .to_line   = current_line_scope_end(line),
-  //                 .type      = LOCAL_VAR_SYNTAX,
-  //             };
-  //         }
-  //     }
-  // }
 }

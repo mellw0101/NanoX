@@ -6,14 +6,14 @@
 #define xterm_byte_scale(bit) round_short(((double)bit / 255) * 5)
 /* Return the xterm-256 index for a given 8bit rgb value. */
 #define xterm_color_index(r, g, b) \
-    short(16 + (36 * xterm_byte_scale(r)) + (6 * xterm_byte_scale(g)) + xterm_byte_scale(b))
+  short(16 + (36 * xterm_byte_scale(r)) + (6 * xterm_byte_scale(g)) + xterm_byte_scale(b))
 
 #define xterm_std_color_index(r, g, b) xterm_color_index(((double)r / 6), ((double)g / 6), ((double)b / 6)) - 16
 
 #define grayscale_xterm_byte(r, g, b)  round_short(((0.299 * (r) + 0.587 * (g) + 0.114 * (b)) / 255.0) * 5)
 
 #define grayscale_xterm_color_index(r, g, b) \
-    (16 + 36 * grayscale_xterm_byte(r, g, b) + 6 * grayscale_xterm_byte(r, g, b) + grayscale_xterm_byte(r, g, b))
+  (16 + 36 * grayscale_xterm_byte(r, g, b) + 6 * grayscale_xterm_byte(r, g, b) + grayscale_xterm_byte(r, g, b))
 
 #define xterm_grayscale_color_index(r, g, b) grayscale_xterm_color_index(r, g, b)
 
@@ -73,33 +73,30 @@
 #define LOCAL_VAR                            -1
 
 constexpr_map<int, short, 15> color_index_map = {
-    {{FG_VS_CODE_RED, COLOR_VS_CODE_RED},
-     {FG_VS_CODE_GREEN, COLOR_VS_CODE_GREEN},
-     {FG_VS_CODE_YELLOW, COLOR_VS_CODE_YELLOW},
-     {FG_VS_CODE_BLUE, COLOR_VS_CODE_BLUE},
-     {FG_VS_CODE_MAGENTA, COLOR_VS_CODE_MAGENTA},
-     {FG_VS_CODE_CYAN, COLOR_VS_CODE_CYAN},
-     {FG_VS_CODE_WHITE, COLOR_VS_CODE_WHITE},
-     {FG_VS_CODE_BRIGHT_RED, COLOR_VS_CODE_BRIGHT_RED},
-     {FG_VS_CODE_BRIGHT_GREEN, COLOR_VS_CODE_BRIGHT_GREEN},
-     {FG_VS_CODE_BRIGHT_YELLOW, COLOR_VS_CODE_BRIGHT_YELLOW},
-     {FG_VS_CODE_BRIGHT_BLUE, COLOR_VS_CODE_BRIGHT_BLUE},
-     {FG_VS_CODE_BRIGHT_MAGENTA, COLOR_VS_CODE_BRIGHT_MAGENTA},
-     {FG_VS_CODE_BRIGHT_CYAN, COLOR_VS_CODE_BRIGHT_CYAN},
-     {FG_COMMENT_GREEN, xterm_color_index(0, 102, 0)},
-     {FG_SUGGEST_GRAY, xterm_grayscale_color_index(80, 80, 80)}}
+  {{FG_VS_CODE_RED, COLOR_VS_CODE_RED},
+   {FG_VS_CODE_GREEN, COLOR_VS_CODE_GREEN},
+   {FG_VS_CODE_YELLOW, COLOR_VS_CODE_YELLOW},
+   {FG_VS_CODE_BLUE, COLOR_VS_CODE_BLUE},
+   {FG_VS_CODE_MAGENTA, COLOR_VS_CODE_MAGENTA},
+   {FG_VS_CODE_CYAN, COLOR_VS_CODE_CYAN},
+   {FG_VS_CODE_WHITE, COLOR_VS_CODE_WHITE},
+   {FG_VS_CODE_BRIGHT_RED, COLOR_VS_CODE_BRIGHT_RED},
+   {FG_VS_CODE_BRIGHT_GREEN, COLOR_VS_CODE_BRIGHT_GREEN},
+   {FG_VS_CODE_BRIGHT_YELLOW, COLOR_VS_CODE_BRIGHT_YELLOW},
+   {FG_VS_CODE_BRIGHT_BLUE, COLOR_VS_CODE_BRIGHT_BLUE},
+   {FG_VS_CODE_BRIGHT_MAGENTA, COLOR_VS_CODE_BRIGHT_MAGENTA},
+   {FG_VS_CODE_BRIGHT_CYAN, COLOR_VS_CODE_BRIGHT_CYAN},
+   {FG_COMMENT_GREEN, xterm_color_index(0, 102, 0)},
+   {FG_SUGGEST_GRAY, xterm_grayscale_color_index(80, 80, 80)}}
 };
 
-#define do_word_in_color(word, color)                    \
-    const unsigned int slen = strlen(word);              \
-    const char        *data = line->data;                \
-    do                                                   \
-    {                                                    \
-        find_word(line, data, word, slen, &start, &end); \
-        if (start)                                       \
-        {                                                \
-            rendr(R, color, start, end);                 \
-        }                                                \
-        data = end;                                      \
-    }                                                    \
-    while (data);
+#define do_word_in_color(word, color)                \
+  const Uint slen  = strlen(word);                   \
+  const char *data = line->data;                     \
+  do {                                               \
+    find_word(line, data, word, slen, &start, &end); \
+    if (start) {                                     \
+      rendr(R, color, start, end);                   \
+    }                                                \
+    data = end;                                      \
+  } while (data);

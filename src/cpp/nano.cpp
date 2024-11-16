@@ -181,7 +181,6 @@ void finish(void) {
   display_rcfile_errors();
   cleanup_event_handler();
   shutdown_queue();
-  cleanup_rendr();
   exit(0);
 }
 
@@ -1895,6 +1894,5 @@ int main(int argc, char **argv) {
   }
   cleanup_event_handler();
   shutdown_queue();
-  cleanup_rendr();
   return 0;
 }

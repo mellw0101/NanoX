@@ -1,4 +1,4 @@
-/// @file utils.cpp
+/** @file utils.cpp */
 #include "../include/prototypes.h"
 
 /* Return the user's home directory.  We use $HOME, and if that fails,

@@ -1,18 +1,5 @@
-/// @file winio.cpp
-// #include "../include/definitions.h"
-
+/** @file winio.cpp */
 #include "../include/prototypes.h"
-#include "../include/revision.h"
-
-#include <Mlib/Debug.h>
-#include <Mlib/Profile.h>
-#include <Mlib/String.h>
-#include <cctype>
-#include <cwchar>
-#include <stdio.h>
-#include <string.h>
-
-#include <sys/ioctl.h>
 
 #define BRANDING PACKAGE_STRING
 /* When having an older ncurses, then most likely libvte is older too. */
@@ -60,7 +47,7 @@ static Ulong milestone = 0;
 /* Add the given code to the macro buffer. */
 void add_to_macrobuffer(int code) {
   macro_length++;
-  macro_buffer                   = (int *)nrealloc(macro_buffer, macro_length * sizeof(int));
+  macro_buffer = arealloc(macro_buffer, (macro_length * sizeof(int)));
   macro_buffer[macro_length - 1] = code;
 }
 
@@ -88,14 +75,14 @@ void run_macro(void) {
     macro_length = milestone;
     return;
   }
-  if (macro_length == 0) {
+  if (!macro_length) {
     statusline(AHEM, _("Macro is empty"));
     return;
   }
   if (macro_length > capacity) {
     reserve_space_for(macro_length);
   }
-  for (Ulong i = 0; i < macro_length; i++) {
+  for (Ulong i = 0; i < macro_length; ++i) {
     key_buffer[i] = macro_buffer[i];
   }
   waiting_codes  = macro_length;
@@ -108,7 +95,7 @@ void reserve_space_for(Ulong newsize) {
   if (newsize < capacity) {
     die(_("Too much input at once\n"));
   }
-  key_buffer = (int *)nrealloc(key_buffer, newsize * sizeof(int));
+  key_buffer = arealloc(key_buffer, (newsize * sizeof(int)));
   nextcodes  = key_buffer;
   capacity   = newsize;
 }
@@ -279,7 +266,7 @@ void put_back(int keycode) {
     if (waiting_codes == capacity) {
       reserve_space_for(2 * capacity);
     }
-    memmove(key_buffer + 1, key_buffer, waiting_codes * sizeof(int));
+    memmove((key_buffer + 1), key_buffer, (waiting_codes * sizeof(int)));
   }
   else {
     nextcodes--;
@@ -313,12 +300,12 @@ int get_code_from_plantation(void) {
     }
     free(commandname);
     free(planted_shortcut);
-    commandname      = measured_copy(plants_pointer + 1, closing - plants_pointer - 1);
+    commandname      = measured_copy((plants_pointer + 1), (closing - plants_pointer - 1));
     planted_shortcut = strtosc(commandname);
     if (!planted_shortcut) {
       return NO_SUCH_FUNCTION;
     }
-    plants_pointer = closing + 1;
+    plants_pointer = (closing + 1);
     if (*plants_pointer != '\0') {
       put_back(MORE_PLANTS);
     }
@@ -343,9 +330,8 @@ int get_code_from_plantation(void) {
   }
 }
 
-/* Return one code from the keystroke buffer.
- * If the buffer is empty but frame is given, first read more codes from the
- * keyboard. */
+/* Return one code from the keystroke buffer.  If the buffer is
+ * empty but frame is given, first read more codes from the keyboard. */
 int get_input(WINDOW *frame) {
   if (waiting_codes) {
     spotlighted = false;
@@ -354,9 +340,9 @@ int get_input(WINDOW *frame) {
     read_keys_from(frame);
   }
   if (waiting_codes) {
-    waiting_codes--;
+    --waiting_codes;
     if (*nextcodes == MORE_PLANTS) {
-      nextcodes++;
+      ++nextcodes;
       return get_code_from_plantation();
     }
     else {
@@ -372,54 +358,41 @@ int get_input(WINDOW *frame) {
  * (This mapping is common to a handful of escape sequences). */
 int arrow_from_ABCD(const int letter) {
   if (letter < 'C') {
-    return (letter == 'A' ? KEY_UP : KEY_DOWN);
+    return ((letter == 'A') ? KEY_UP : KEY_DOWN);
   }
-  return (letter == 'D' ? KEY_LEFT : KEY_RIGHT);
+  return ((letter == 'D') ? KEY_LEFT : KEY_RIGHT);
 }
 
-/* Translate a sequence that began with "Esc O" to its corresponding key code.
- * TODO: (convert_SS3_sequence) - Importante, see if this can be used to
- * retrieve 'Ctrl+Bsp/^Bsp'.
- */
+/* Translate a sequence that began with "Esc O" to its corresponding key code. */
 int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
   switch (seq[0]) {
     case '1' : {
       if (length > 3 && seq[1] == ';') {
         *consumed = 4;
         switch (seq[2]) {
-          case '2' : /* Shift */
-          {
+          case '2' : { /* Shift */
             if ('A' <= seq[3] && seq[3] <= 'D') {
-              /* Esc O 1 ; 2 A == Shift-Up on old Terminal.
-               * Esc O 1 ; 2 B == Shift-Down on old Terminal.
+              /* Esc O 1 ; 2 A == Shift-Up    on old Terminal.
+               * Esc O 1 ; 2 B == Shift-Down  on old Terminal.
                * Esc O 1 ; 2 C == Shift-Right on old Terminal.
-               * Esc O 1 ; 2 D == Shift-Left on old Terminal. */
+               * Esc O 1 ; 2 D == Shift-Left  on old Terminal. */
               shift_held = true;
               return arrow_from_ABCD(seq[3]);
             }
             break;
           }
-          case '5' :     /* Ctrl */
-          {
+          case '5' : { /* Ctrl */
             switch (seq[3]) {
-              case 'A' : /* Esc O 1 ; 5 A == Ctrl-Up on old
-                            Terminal. */
-              {
+              case 'A' : { /* Esc O 1 ; 5 A == Ctrl-Up on old Terminal. */
                 return CONTROL_UP;
               }
-              case 'B' : /* Esc O 1 ; 5 B == Ctrl-Down on old
-                            Terminal. */
-              {
+              case 'B' : { /* Esc O 1 ; 5 B == Ctrl-Down on old Terminal. */
                 return CONTROL_DOWN;
               }
-              case 'C' : /* Esc O 1 ; 5 C == Ctrl-Right on old
-                            Terminal. */
-              {
+              case 'C' : { /* Esc O 1 ; 5 C == Ctrl-Right on old Terminal. */
                 return CONTROL_RIGHT;
               }
-              case 'D' : /* Esc O 1 ; 5 D == Ctrl-Left on old
-                            Terminal. */
-              {
+              case 'D' : { /* Esc O 1 ; 5 D == Ctrl-Left on old Terminal. */
                 return CONTROL_LEFT;
               }
             }
@@ -429,14 +402,13 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
       }
       break;
     }
-    case '2' : /* Shift */
-    case '3' : /* Alt */
-    case '4' : /* Shift+Alt */
-    case '5' : /* Ctrl */
-    case '6' : /* Shift+Ctrl */
-    case '7' : /* Alt+Ctrl */
-    case '8' : /* Shift+Alt+Ctrl */
-    {
+    case '2' :   /* Shift */
+    case '3' :   /* Alt */
+    case '4' :   /* Shift+Alt */
+    case '5' :   /* Ctrl */
+    case '6' :   /* Shift+Ctrl */
+    case '7' :   /* Alt+Ctrl */
+    case '8' : { /* Shift+Alt+Ctrl */
       if (length > 1) {
         *consumed = 2;
         /* Do not accept multiple modifiers. */
@@ -468,132 +440,97 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
       }
       break;
     }
-    case 'A' : /* Esc O A == Up on VT100/VT320. */
-    case 'B' : /* Esc O B == Down on VT100/VT320. */
-    case 'C' : /* Esc O C == Right on VT100/VT320. */
-    case 'D' : /* Esc O D == Left on VT100/VT320. */
-    {
+    case 'A' :   /* Esc O A == Up on VT100/VT320. */
+    case 'B' :   /* Esc O B == Down on VT100/VT320. */
+    case 'C' :   /* Esc O C == Right on VT100/VT320. */
+    case 'D' : { /* Esc O D == Left on VT100/VT320. */
       return arrow_from_ABCD(seq[0]);
     }
-    case 'F' : /* Esc O F == End on old xterm. */
-    {
+    case 'F' : { /* Esc O F == End on old xterm. */
       return KEY_END;
     }
-    case 'H' : /* Esc O H == Home on old xterm. */
-    {
+    case 'H' : { /* Esc O H == Home on old xterm. */
       return KEY_HOME;
     }
-    case 'M' : /* Esc O M == Enter on numeric keypad with NumLock off on
-                  VT100/VT220/VT320. */
-    {
+    case 'M' : { /* Esc O M == Enter on numeric keypad with NumLock off on VT100/VT220/VT320. */
       return KEY_ENTER;
     }
-    case 'P' : /* Esc O P == F1 on VT100/VT220/VT320/xterm/Mach console. */
-    case 'Q' : /* Esc O Q == F2 on VT100/VT220/VT320/xterm/Mach console. */
-    case 'R' : /* Esc O R == F3 on VT100/VT220/VT320/xterm/Mach console. */
-    case 'S' : /* Esc O S == F4 on VT100/VT220/VT320/xterm/Mach console. */
-    {
+    case 'P' :   /* Esc O P == F1 on VT100/VT220/VT320/xterm/Mach console. */
+    case 'Q' :   /* Esc O Q == F2 on VT100/VT220/VT320/xterm/Mach console. */
+    case 'R' :   /* Esc O R == F3 on VT100/VT220/VT320/xterm/Mach console. */
+    case 'S' : { /* Esc O S == F4 on VT100/VT220/VT320/xterm/Mach console. */
       return KEY_F(seq[0] - 'O');
     }
-    case 'T' : /* Esc O T == F5 on Mach console. */
-    case 'U' : /* Esc O U == F6 on Mach console. */
-    case 'V' : /* Esc O V == F7 on Mach console. */
-    case 'W' : /* Esc O W == F8 on Mach console. */
-    case 'X' : /* Esc O X == F9 on Mach console. */
-    case 'Y' : /* Esc O Y == F10 on Mach console. */
-    {
+    case 'T' :   /* Esc O T == F5 on Mach console. */
+    case 'U' :   /* Esc O U == F6 on Mach console. */
+    case 'V' :   /* Esc O V == F7 on Mach console. */
+    case 'W' :   /* Esc O W == F8 on Mach console. */
+    case 'X' :   /* Esc O X == F9 on Mach console. */
+    case 'Y' : { /* Esc O Y == F10 on Mach console. */
       return KEY_F(seq[0] - 'O');
     }
-    case 'a' : /* Esc O a == Ctrl-Up on rxvt/Eterm. */
-    {
+    case 'a' : { /* Esc O a == Ctrl-Up on rxvt/Eterm. */
       return CONTROL_UP;
     }
-    case 'b' : /* Esc O b == Ctrl-Down on rxvt/Eterm. */
-    {
+    case 'b' : { /* Esc O b == Ctrl-Down on rxvt/Eterm. */
       return CONTROL_DOWN;
     }
-    case 'c' : /* Esc O c == Ctrl-Right on rxvt/Eterm. */
-    {
+    case 'c' : { /* Esc O c == Ctrl-Right on rxvt/Eterm. */
       return CONTROL_RIGHT;
     }
-    case 'd' : /* Esc O d == Ctrl-Left on rxvt/Eterm. */
-    {
+    case 'd' : { /* Esc O d == Ctrl-Left on rxvt/Eterm. */
       return CONTROL_LEFT;
     }
-    case 'j' : /* Esc O j == '*' on numeric keypad with NumLock off on
-                  xterm/rxvt/Eterm. */
-    {
+    case 'j' : { /* Esc O j == '*' on numeric keypad with NumLock off on xterm/rxvt/Eterm. */
       return '*';
     }
-    case 'k' : /* Esc O k == '+' on the same. */
-    {
+    case 'k' : { /* Esc O k == '+' on the same. */
       return '+';
     }
-    case 'l' : /* Esc O l == ',' on VT100/VT220/VT320. */
-    {
+    case 'l' : { /* Esc O l == ',' on VT100/VT220/VT320. */
       return ',';
     }
-    case 'm' : /* Esc O m == '-' on numeric keypad with NumLock off on
-                * VTnnn/xterm/rxvt/Eterm.
-                */
-    {
+    case 'm' : { /* Esc O m == '-' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
       return '-';
     }
-    case 'n' : /* Esc O n == Delete (.) on numeric keypad with NumLock off
-                  on rxvt/Eterm. */
-    {
+    case 'n' : { /* Esc O n == Delete (.) on numeric keypad with NumLock off on rxvt/Eterm. */
       return KEY_DC;
     }
-    case 'o' : /* Esc O o == '/' on numeric keypad with NumLock off on
-                * VTnnn/xterm/rxvt/Eterm.
-                */
-    {
+    case 'o' : { /* Esc O o == '/' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
       return '/';
     }
-    case 'p' : /* Esc O p == Insert (0) on numeric keypad with NumLock off
-                  on rxvt/Eterm. */
-    {
+    case 'p' : { /* Esc O p == Insert (0) on numeric keypad with NumLock off on rxvt/Eterm. */
       return KEY_IC;
     }
-    case 'q' : /* Esc O q == End (1) on the same. */
-    {
+    case 'q' : { /* Esc O q == End (1) on the same. */
       return KEY_END;
     }
-    case 'r' : /* Esc O r == Down (2) on the same. */
-    {
+    case 'r' : { /* Esc O r == Down (2) on the same. */
       return KEY_DOWN;
     }
-    case 's' : /* Esc O s == PageDown (3) on the same. */
-    {
+    case 's' : { /* Esc O s == PageDown (3) on the same. */
       return KEY_NPAGE;
     }
-    case 't' : /* Esc O t == Left (4) on the same. */
-    {
+    case 't' : { /* Esc O t == Left (4) on the same. */
       return KEY_LEFT;
     }
-    case 'v' : /* Esc O v == Right (6) on the same. */
-    {
+    case 'v' : { /* Esc O v == Right (6) on the same. */
       return KEY_RIGHT;
     }
-    case 'w' : /* Esc O w == Home (7) on the same. */
-    {
+    case 'w' : { /* Esc O w == Home (7) on the same. */
       return KEY_HOME;
     }
-    case 'x' : /* Esc O x == Up (8) on the same. */
-    {
+    case 'x' : { /* Esc O x == Up (8) on the same. */
       return KEY_UP;
     }
-    case 'y' : /* Esc O y == PageUp (9) on the same. */
-    {
+    case 'y' : { /* Esc O y == PageUp (9) on the same. */
       return KEY_PPAGE;
     }
   }
   return FOREIGN_SEQUENCE;
 }
 
-/* Translate a sequence that began with "Esc [" to its corresponding key code.
- * TODO: (convert_CSI_sequence) - Importante, see if this can be used to
- * retrieve 'Ctrl+Bsp/^Bsp'. */
+/* Translate a sequence that began with "Esc [" to its corresponding key code. */
 int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
   if (seq[0] < '9' && length > 1) {
     *consumed = 2;
@@ -785,8 +722,7 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
       else if (length > 4 && seq[2] == ';' && seq[4] == '~') {
         *consumed = 5;
       }
-      /* Esc [ 2 0 0 ~ == start of a bracketed paste,
-       * Esc [ 2 0 1 ~ == end of a bracketed paste. */
+      /* Esc [ 2 0 0 ~ == start of a bracketed paste, Esc [ 2 0 1 ~ == end of a bracketed paste. */
       else if (length > 3 && seq[1] == '0' && seq[3] == '~') {
         *consumed = 4;
         if (seq[2] == '0') {

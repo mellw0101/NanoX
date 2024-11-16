@@ -168,9 +168,9 @@ void inject_into_answer(char *burst, Ulong count) {
       burst[index] = '\n';
     }
   }
-  answer = (char *)nrealloc(answer, strlen(answer) + count + 1);
-  memmove(answer + typing_x + count, answer + typing_x, strlen(answer) - typing_x + 1);
-  strncpy(answer + typing_x, burst, count);
+  answer = arealloc(answer, (strlen(answer) + count + 1));
+  memmove((answer + typing_x + count), (answer + typing_x), (strlen(answer) - typing_x + 1));
+  strncpy((answer + typing_x), burst, count);
   typing_x += count;
 }
 
@@ -182,7 +182,7 @@ void do_statusbar_verbatim_input(void) {
   if (0 < count && count < 999) {
     inject_into_answer(bytes, count);
   }
-  else if (count == 0) {
+  else if (!count) {
     beep();
   }
   free(bytes);
@@ -204,11 +204,11 @@ void absorb_character(int input, functionptrtype function) {
     if (input < 0x20 || input > 0xFF || meta_key) {
       beep();
     }
-    else if (!ISSET(RESTRICTED) || currmenu != MWRITEFILE || openfile->filename[0] == '\0') {
+    else if (!ISSET(RESTRICTED) || currmenu != MWRITEFILE || !openfile->filename[0]) {
       /* When the input buffer (plus room for terminating NUL) is full,
        * extend it; otherwise, if it does not exist yet, create it. */
-      if (depth + 1 == capacity) {
-        capacity = 2 * capacity;
+      if ((depth + 1) == capacity) {
+        capacity = (2 * capacity);
         puddle   = (char *)nrealloc(puddle, capacity);
       }
       else if (!puddle) {
@@ -303,12 +303,12 @@ void put_cursor_at_end_of_answer(void) {
 
 /* Redraw the prompt bar and place the cursor at the right spot. */
 void draw_the_promptbar(void) {
-  Ulong base   = breadth(prompt) + 2;
-  Ulong column = base + wideness(answer, typing_x);
+  Ulong base   = (breadth(prompt) + 2);
+  Ulong column = (base + wideness(answer, typing_x));
   Ulong the_page, end_page;
   char *expanded;
   the_page = get_statusbar_page_start(base, column);
-  end_page = get_statusbar_page_start(base, base + breadth(answer) - 1);
+  end_page = get_statusbar_page_start(base, (base + breadth(answer) - 1));
   /* Color the prompt bar over its full width. */
   wattron(footwin, interface_color_pair[PROMPT_BAR]);
   mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
@@ -337,14 +337,14 @@ void draw_the_promptbar(void) {
 /* Remove or add the pipe character at the answer's head. */
 void add_or_remove_pipe_symbol_from_answer(void) {
   if (answer[0] == '|') {
-    memmove(answer, answer + 1, strlen(answer));
+    memmove(answer, (answer + 1), strlen(answer));
     if (typing_x > 0) {
       typing_x--;
     }
   }
   else {
-    answer = (char *)nrealloc(answer, strlen(answer) + 2);
-    memmove(answer + 1, answer, strlen(answer) + 1);
+    answer = (char *)nrealloc(answer, (strlen(answer) + 2));
+    memmove((answer + 1), answer, (strlen(answer) + 1));
     answer[0] = '|';
     typing_x++;
   }
@@ -392,7 +392,7 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
       break;
     }
     if (function == do_tab) {
-      if (history_list != nullptr) {
+      if (history_list) {
         if (!previous_was_tab) {
           fragment_length = strlen(answer);
         }
@@ -411,11 +411,11 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
     else {
       if (function == get_older_item && history_list) {
         /* If this is the first step into history, start at the bottom. */
-        if (stored_string == nullptr) {
+        if (!stored_string) {
           reset_history_pointer_for(*history_list);
         }
         /* When moving up from the bottom, remember the current answer. */
-        if ((*history_list)->next == nullptr) {
+        if (!(*history_list)->next) {
           stored_string = mallocstrcpy(stored_string, answer);
         }
         /* If there is an older item, move to it and copy its string. */
@@ -433,7 +433,7 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
           typing_x      = strlen(answer);
         }
         /* When at the bottom of the history list, restore the old answer. */
-        if ((*history_list)->next == nullptr && stored_string && *answer == '\0') {
+        if (!(*history_list)->next && stored_string && !*answer) {
           answer   = mallocstrcpy(answer, stored_string);
           typing_x = strlen(answer);
         }
@@ -530,7 +530,7 @@ redo_theprompt:
   return retval;
 }
 
-constexpr short UNDECIDED = -2;
+#define UNDECIDED -2
 /* Ask a simple Yes/No (and optionally All) question on the status bar
  * and return the choice -- either YES or NO or ALL or CANCEL. */
 int ask_user(bool withall, const char *question) {
@@ -598,7 +598,7 @@ int ask_user(bool withall, const char *question) {
     if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7) {
       int extras = (kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0);
       while (extras <= waiting_keycodes() && extras-- > 0) {
-        letter[index++] = (unsigned char)get_kbinput(footwin, !withall);
+        letter[index++] = (Uchar)get_kbinput(footwin, !withall);
       }
     }
     letter[index] = '\0';
