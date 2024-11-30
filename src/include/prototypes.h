@@ -92,6 +92,7 @@ extern char *syntaxstr;
 extern const char *exit_tag;
 extern const char *close_tag;
 extern const char *term;
+extern const char *term_program;
 
 extern bool on_a_vt;
 extern bool shifted_metas;
@@ -154,7 +155,7 @@ extern bool gui_enabled;
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
-// extern std::vector<function_info_t *> func_info;
+extern bit_flag_t<8> mod_key;
 
 extern task_queue_t          *task_queue;
 extern pthread_t             *threads;
@@ -610,7 +611,6 @@ char **find_variabels_in_file(char *path);
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
 void netlog_colortype(colortype *c);
-void netlog_bracket_entry(const bracket_entry &be);
 void netlog_func_info(function_info_t *info);
 void debug_define(const DefineEntry &de);
 
@@ -691,7 +691,7 @@ void setup_signal_handler_on_sub_thread(void (*handler)(int));
 void block_pthread_sig(int sig, bool block);
 
 /* 'render.cpp' */
-void render_line_text(const int row, const char *str, linestruct *line, const Ulong from_col);
+void render_line_text(int row, const char *str, linestruct *line, Ulong from_col);
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 void rendr_suggestion(void);
 

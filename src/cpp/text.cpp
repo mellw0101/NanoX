@@ -807,14 +807,13 @@ void do_redo(void) {
   }
 }
 
-/* Break the current line at the cursor position.
- * TODO: Fix so if char before cursor is a ( '{', '[', '(' ) then it will break
- * the line at the next line and insert the closing bracket. */
+/* Break the current line at the cursor position. */
 void do_enter(void) {
   if (suggest_on) {
     accept_suggestion();
     return;
   }
+  /* Check if cursor is between two brackets. */
   if (enter_with_bracket()) {
     return;
   }
@@ -827,10 +826,8 @@ void do_enter(void) {
   Ulong       extra      = 0;
   bool        allblanks  = false;
   if (ISSET(AUTOINDENT)) {
-    /* When doing automatic long-line wrapping and the next line is
-     * in this same paragraph, use its indentation as the model. */
-    if (ISSET(BREAK_LONG_LINES) && sampleline->next != nullptr && inpar(sampleline->next) &&
-        !begpar(sampleline->next, 0)) {
+    /* When doing automatic long-line wrapping and the next line is in this same paragraph, use its indentation as the model. */
+    if (ISSET(BREAK_LONG_LINES) && sampleline->next && inpar(sampleline->next) && !begpar(sampleline->next, 0)) {
       sampleline = sampleline->next;
     }
     extra = indent_length(sampleline->data);
@@ -843,7 +840,7 @@ void do_enter(void) {
     }
   }
   newnode->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
-  strcpy(&newnode->data[extra], openfile->current->data + openfile->current_x);
+  strcpy(&newnode->data[extra], (openfile->current->data + openfile->current_x));
   /* Adjust the mark if it is on the current line after the cursor. */
   if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
     openfile->mark = newnode;
@@ -922,9 +919,8 @@ void add_undo(undo_type action, const char *message) {
   u->xflags      = 0;
   /* Blow away any undone items. */
   discard_until(openfile->current_undo);
-  /* If some action caused automatic long-line wrapping, insert the
-   * SPLIT_BEGIN item underneath that action's undo item.  Otherwise,
-   * just add the new item to the top of the undo stack. */
+  /* If some action caused automatic long-line wrapping, insert the SPLIT_BEGIN item underneath
+   * that action's undo item.  Otherwise, just add the new item to the top of the undo stack. */
   if (u->type == SPLIT_BEGIN) {
     action                  = openfile->undotop->type;
     u->wassize              = openfile->undotop->wassize;
@@ -1210,9 +1206,8 @@ void update_undo(undo_type action) {
   }
 }
 
-/* When the current line is overlong, hard-wrap it at the furthest possible
- * whitespace character, and prepend the excess part to an "overflow" line
- * (when it already exists, otherwise create one). */
+/* When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
+ * and prepend the excess part to an "overflow" line (when it already exists, otherwise create one). */
 void do_wrap(void) {
   /* The line to be wrapped, if needed and possible. */
   linestruct *line = openfile->current;
@@ -1329,10 +1324,9 @@ void do_wrap(void) {
   refresh_needed = true;
 }
 
-/* Find the last blank in the given piece of text such that the display width
- * to that point is at most (goal + 1).  When there is no such blank, then find
- * the first blank.  Return the index of the last blank in that group of blanks.
- * When snap_at_nl is true, a newline character counts as a blank too. */
+/* Find the last blank in the given piece of text such that the display width to that point is at most
+ * (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
+ * blank in that group of blanks. When snap_at_nl is true, a newline character counts as a blank too. */
 long break_line(const char *textstart, long goal, bool snap_at_nl) {
   /* The point where the last blank was found, if any. */
   const char *lastblank = nullptr;
@@ -1399,7 +1393,7 @@ Ulong indent_length(const char *line) {
  * of a line is the largest initial substring matching the quoting regex. */
 Ulong quote_length(const char *line) {
   regmatch_t matches;
-  int        rc = regexec(&quotereg, line, 1, &matches, 0);
+  int rc = regexec(&quotereg, line, 1, &matches, 0);
   if (rc == REG_NOMATCH || matches.rm_so == (regoff_t)-1) {
     return 0;
   }
@@ -1407,7 +1401,7 @@ Ulong quote_length(const char *line) {
 }
 
 /* The maximum depth of recursion.  Note that this MUST be an even number. */
-constexpr Uchar RECURSION_LIMIT = 222;
+#define RECURSION_LIMIT 222
 
 /* Return true when the given line is the beginning of a paragraph (BOP). */
 bool begpar(const linestruct *const line, int depth) {
@@ -1449,13 +1443,12 @@ bool begpar(const linestruct *const line, int depth) {
   return !begpar(line->prev, depth + 1);
 }
 
-/* Return true when the given line is part of a paragraph.
- * A line is part of a paragraph if it contains something more
- * than quoting and leading whitespace. */
+/* Return true when the given line is part of a paragraph.  A line is part of a
+ * paragraph if it contains something more than quoting and leading whitespace. */
 bool inpar(const linestruct *const line) {
   Ulong quot_len   = quote_length(line->data);
   Ulong indent_len = indent_length(line->data + quot_len);
-  return (line->data[quot_len + indent_len] != '\0');
+  return (line->data[quot_len + indent_len]);
 }
 
 /* Find the first occurring paragraph in the forward direction.  Return 'true' when a
@@ -1523,10 +1516,9 @@ void copy_character(char **from, char **to) {
 void squeeze(linestruct *line, Ulong skip) {
   char *start = line->data + skip;
   char *from = start, *to = start;
-  /* For each character, 1) when a blank, change it to a space, and pass over
-   * all blanks after it; 2) if it is punctuation, copy it plus a possible
-   * tailing bracket, and change at most two subsequent blanks to spaces, and
-   * pass over all blanks after these; 3) leave anything else unchanged. */
+  /* For each character, 1) when a blank, change it to a space, and pass over all blanks after it;
+   * 2) if it is punctuation, copy it plus a possible tailing bracket, and change at most two subsequent
+   * blanks to spaces, and * pass over all blanks after these; 3) leave anything else unchanged. */
   while (*from) {
     if (is_blank_char(from)) {
       from += char_length(from);
@@ -1608,14 +1600,10 @@ void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len) {
 /* Justify the lines of the given paragraph (that starts at *line, and consists of 'count' lines)
  * so they all fit within the target width (wrap_at) and have their whitespace normalized. */
 void justify_paragraph(linestruct **line, Ulong count) {
-  /* The line from which the indentation is copied. */
-  linestruct *sampleline;
-  /* Length of the quote part. */
-  Ulong quot_len;
-  /* Length of the quote part plus the indentation part. */
-  Ulong lead_len;
-  /* The quote+indent stuff that is copied from the sample line. */
-  char *lead_string;
+  linestruct *sampleline; /* The line from which the indentation is copied. */
+  Ulong quot_len;         /* Length of the quote part. */
+  Ulong lead_len;         /* Length of the quote part plus the indentation part. */
+  char *lead_string;      /* The quote+indent stuff that is copied from the sample line. */
   /* The sample line is either the only line or the second line. */
   sampleline = (count == 1 ? *line : (*line)->next);
   /* Copy the leading part (quoting + indentation) of the sample line. */
@@ -1715,9 +1703,8 @@ void justify_text(bool whole_buffer) {
     if (sampleline->next && startline != endline) {
       sampleline = sampleline->next;
     }
-    /* Copy the leading part that is to be used for the new paragraph after
-     * its first line (if any): the quoting of the first line, plus the
-     * indentation of the second line. */
+    /* Copy the leading part that is to be used for the new paragraph after its first line
+     * (if any):  the quoting of the first line, plus the indentation of the second line. */
     other_quot_len  = quote_length(sampleline->data);
     other_white_len = indent_length(sampleline->data + other_quot_len);
     secondary_len   = quot_len + other_white_len;
@@ -1736,8 +1723,7 @@ void justify_text(bool whole_buffer) {
   }
   else {
     /* When justifying the entire buffer, start at the top.  Otherwise, when
-     * in a paragraph but not at its beginning, move back to its first line.
-     */
+     * in a paragraph but not at its beginning, move back to its first line. */
     if (whole_buffer) {
       openfile->current = openfile->filetop;
     }
@@ -1770,7 +1756,7 @@ void justify_text(bool whole_buffer) {
       }
     }
     /* When possible, step one line further; otherwise, to line's end. */
-    if (endline->next != nullptr) {
+    if (endline->next) {
       endline = endline->next;
       end_x   = 0;
     }
@@ -1794,7 +1780,7 @@ void justify_text(bool whole_buffer) {
     }
     /* Then copy back in the leading part that it should have. */
     if (primary_len > 0) {
-      line->data = static_cast<char *>(nrealloc(line->data, primary_len + text_len + 1));
+      line->data = (char *)nrealloc(line->data, primary_len + text_len + 1);
       memmove(line->data + primary_len, line->data, text_len + 1);
       strncpy(line->data, primary_lead, primary_len);
     }
@@ -1826,12 +1812,11 @@ void justify_text(bool whole_buffer) {
     jusline = cutbuffer;
     /* Justify the current paragraph. */
     justify_paragraph(&jusline, linecount);
-    /* When justifying the entire buffer, find and justify all paragraphs.
-     */
+    /* When justifying the entire buffer, find and justify all paragraphs. */
     if (whole_buffer) {
       while (find_paragraph(&jusline, &linecount)) {
         justify_paragraph(&jusline, linecount);
-        if (jusline->next == nullptr) {
+        if (!jusline->next) {
           break;
         }
       }

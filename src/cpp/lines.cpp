@@ -80,8 +80,8 @@ void move_line(linestruct **line, bool up, bool refresh) {
     }
   }
   char *tmp_data = nullptr;
-  if (up == true) {
-    if ((*line)->prev != nullptr) {
+  if (up) {
+    if ((*line)->prev) {
       tmp_data = copy_of((*line)->prev->data);
       free((*line)->prev->data);
       (*line)->prev->data = copy_of((*line)->data);
@@ -91,7 +91,7 @@ void move_line(linestruct **line, bool up, bool refresh) {
     }
   }
   else {
-    if ((*line)->next != nullptr) {
+    if ((*line)->next) {
       tmp_data = copy_of((*line)->next->data);
       free((*line)->next->data);
       (*line)->next->data = copy_of((*line)->data);
@@ -119,13 +119,13 @@ void move_lines(bool up) {
   x_cur  = openfile->current_x;
   if (up) {
     bot_line = bot->lineno;
-    if (top->prev != nullptr) {
+    if (top->prev) {
       for (line = top->prev; line->lineno != bot_line; line = line->next) {
         move_line(&line, false, false);
       }
       mark = mark->prev;
       cur  = cur->prev;
-      NETLOGGER.log("%lu\n%s\n%lu\n%s\n", x_cur, cur->data, x_mark, mark->data);
+      NLOG("%lu\n%s\n%lu\n%s\n", x_cur, cur->data, x_mark, mark->data);
       openfile->mark      = mark;
       openfile->mark_x    = x_mark;
       openfile->current   = cur;
@@ -174,7 +174,7 @@ void select_line(linestruct *line, Ulong from_col, Ulong to_col) {
 }
 
 linestruct *find_next_bracket(bool up, linestruct *from_line) {
-  if (up == true) {
+  if (up) {
     for (linestruct *line = from_line; line != nullptr; line = line->prev) {
       if (!(line->flags.is_set(IN_BRACKET))) {
         return nullptr;
@@ -200,7 +200,7 @@ Uint total_tabs(linestruct *line) {
       spaces++;
     }
   }
-  tabs += (spaces / WIDTH_OF_TAB);
+  tabs += (spaces / tabsize);
   return tabs;
 }
 

@@ -625,7 +625,7 @@ const char *strstr_array(const char *str, const char **substrs, Uint count, Uint
     const char *match = strstr(str, substrs[i]);
     if (match && (!first || match < first)) {
       first = match;
-      index ? *index = i : 0;
+      index ? (*index = i) : 0;
     }
   }
   return first;

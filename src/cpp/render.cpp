@@ -21,14 +21,13 @@ unordered_map<string, syntax_data_t> test_map;
 
 void render_part(Ulong match_start, Ulong match_end, short color) {
   PROFILE_FUNCTION;
-  const char *thetext   = nullptr;
-  int         paintlen  = 0;
-  int         start_col = 0;
+  const char *thetext = NULL;
+  int paintlen = 0, start_col = 0;
   if ((match_start >= till_x)) {
     return;
   }
   if (match_start > from_x) {
-    start_col = (int)(wideness(line->data, (int)match_start) - from_col);
+    start_col = (int)(wideness(line->data, match_start) - from_col);
   }
   thetext  = converted + actual_x(converted, start_col);
   paintlen = (int)actual_x(thetext, wideness(line->data, match_end) - from_col - start_col);
@@ -54,7 +53,7 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
 
 /* Render the text of a given line.  Note that this function only renders the
  * text and nothing else. */
-void render_line_text(const int row, const char *str, linestruct *line, const Ulong from_col) {
+void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) {
   if (margin > 0) {
     WIN_COLOR_ON(midwin, LINE_NUMBER);
     if (ISSET(SOFTWRAP) && from_col) {
@@ -64,7 +63,7 @@ void render_line_text(const int row, const char *str, linestruct *line, const Ul
       mvwprintw(midwin, row, 0, "%*lu", margin - 1, line->lineno);
     }
     WIN_COLOR_OFF(midwin, LINE_NUMBER);
-    if (line->has_anchor == true && (from_col == 0 || !ISSET(SOFTWRAP))) {
+    if (line->has_anchor == TRUE && (from_col == 0 || !ISSET(SOFTWRAP))) {
       if (using_utf8()) {
         wprintw(midwin, "\xE2\xAC\xA5");
       }
@@ -111,12 +110,11 @@ void render_comment(void) {
         (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>())) {
       if ((end - line->data) > 0 && line->data[(end - line->data) - 1] != '/') {
         midwin_mv_add_nstr_color(row, (wideness(line->data, (start - line->data)) + margin), start, 2, ERROR_MESSAGE);
-        /* If there is a slash comment infront the block comment. Then
-         * of cource we still color the text from the slash to the block
-         * start after we error highlight the block start. */
+        /* If there is a slash comment infront the block comment. Then of cource we still color
+         * the text from the slash to the block start after we error highlight the block start. */
         if (slash && (slash - line->data) < (start - line->data)) {
-          midwin_mv_add_nstr_color(row, (wideness(line->data, (slash - line->data))) + margin, slash,
-                                   (start - line->data) - (slash - line->data), FG_GREEN);
+          midwin_mv_add_nstr_color(
+            row, (wideness(line->data, (slash - line->data))) + margin, slash, (start - line->data) - (slash - line->data), FG_GREEN);
         }
         block_comment_start += (start - line->data) + 2;
       }
@@ -242,86 +240,17 @@ void render_comment(void) {
   refresh_needed = true;
 }
 
-/* Color brackets based on indent.  TODO: This needs to be fix. */
-// const char *start = strchr(line->data, '{');
-// const char *end   = strrchr(line->data, '}');
-// /* Bracket start and end on the same line. */
-// if (start && end) {
-//   while (start) {
-//     RENDR(R_CHAR, FG_VS_CODE_YELLOW, start);
-//     if (line->data[(start - line->data) + 1] == '\0') {
-//       start = nullptr;
-//       continue;
-//     }
-//     start = strchr(start + 1, '{');
-//   }
-//   while (end) {
-//     RENDR(R_CHAR, FG_VS_CODE_YELLOW, end);
-//     Uint last_pos = last_strchr(line->data, '}', (end - line->data));
-//     if (last_pos < till_x && last_pos != 0) {
-//       end = &line->data[last_pos];
-//     }
-//     else {
-//       end = nullptr;
-//     }
-//   }
-//   if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
-//     line->flags.set<IN_BRACKET>();
-//   }
-// }
-// /* Start bracket line was found. */
-// else if (start && !end) {
-//   line->flags.set<BRACKET_START>();
-//   RENDR(R_CHAR, color_bi[(line_indent(line) % 3)], start);
-//   if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
-//     line->flags.set<IN_BRACKET>();
-//   }
-// }
-// /* End bracket line was found. */
-// else if (!start && end) {
-//   line->flags.set<IN_BRACKET>();
-//   line->flags.unset<BRACKET_START>();
-//   RENDR(R_CHAR, color_bi[(line_indent(line) % 3)], end);
-//   for (linestruct *t_line = line->prev; t_line != nullptr; t_line = t_line->prev) {
-//     if (t_line->flags.is_set<BRACKET_START>()) {
-//       if (line_indent(t_line) == line_indent(line)) {
-//         if (t_line->prev && t_line->prev->flags.is_set(IN_BRACKET)) {
-//           line->flags.set(IN_BRACKET);
-//         }
-//         else {
-//           line->flags.unset(IN_BRACKET);
-//         }
-//         break;
-//       }
-//     }
-//   }
-// }
-// /* Was not found. */
-// else if (!start && !end) {
-//   if (line->prev && (line->prev->flags.is_set<IN_BRACKET>() || line->prev->flags.is_set<BRACKET_START>())) {
-//     line->flags.set<IN_BRACKET>();
-//   }
-//   else {
-//     line->flags.unset<IN_BRACKET>();
-//   }
-// }
+/* Color brackets based on indent. */
 void render_bracket(void) {
   PROFILE_FUNCTION;
-  const char *st = strchr(line->data, '{');
-  if (st) {
-    midwin_mv_add_nstr_color(row, ((st - line->data) + margin), "{", 1, FG_VS_CODE_YELLOW);
-    unix_socket_debug("Found st: %s\n", line->data);
-    Ulong       end_idx;
-    linestruct *end_line;
-    if (find_end_bracket(line, (st - line->data), &end_line, &end_idx)) {
-      unix_socket_debug("Found end: %s\n", end_line->data);
-      int end_row = get_editwin_row(end_line);
-      if (end_row != -1) {
-        unix_socket_debug("Found end row: %d\n", end_row);
-        midwin_mv_add_nstr_color(end_row, (end_idx + margin), "}", 1, FG_VS_CODE_YELLOW);
-      }
+  const char *found = line->data;
+  do {
+    found = strstr_array(found, (const char *[]){ "{", "}", "[", "]", "(", ")" }, 6, NULL);
+    if (found) {
+      RENDR(R_LEN, color_bi[((*found == '{' || *found == '}') ? line_indent(line) : line_indent(line) + 1) % 3], found, 1 );
+      ++found;
     }
-  }
+  } while (found && *found);
 }
 
 void render_parents(void) {
@@ -361,7 +290,7 @@ void render_string_literals(void) {
 /* Function to handle char strings inside other strings or just in general. */
 void render_char_strings(void) {
   const char *start = line->data, *end = line->data;
-  while (start != nullptr) {
+  while (start) {
     for (; *end && *end != '\''; end++);
     if (*end != '\'') {
       return;
@@ -384,8 +313,8 @@ void render_char_strings(void) {
 }
 
 void rendr_define(Uint index) {
-  const char *start = nullptr, *end = nullptr, *param = nullptr;
-  char       *word = nullptr;
+  const char *start = NULL, *end = NULL, *param = NULL;
+  char       *word = NULL;
   start            = &line->data[index];
   if (!*start) {
     RENDR(E, "<-(Macro name missing)");
@@ -418,7 +347,7 @@ void rendr_define(Uint index) {
         break;
       }
       RENDR(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
-      (word != nullptr) ? free(word) : void();
+      (word != NULL) ? free(word) : void();
       word = measured_copy(start, (end - start));
       params.push_back(string(word));
       param = strstr(end, word);
@@ -502,7 +431,7 @@ void rendr_include(Uint index) {
     end += 1;
   }
   ADV_PTR(end, (*end != '>' && *end != '"'));
-  if (*end != '\0') {
+  if (*end) {
     if (*start == '<' && *end == '>') {
       ++end;
       RENDR(C_PTR, FG_YELLOW, start, end);
@@ -535,7 +464,7 @@ void rendr_include(Uint index) {
 void rendr_if_preprosses(Uint index) {
   const char *start   = &line->data[index];
   const char *defined = strstr(start, "defined");
-  while (defined != nullptr) {
+  while (defined) {
     start = defined;
     defined += 7;
     if (*defined && *defined == ' ') {
@@ -552,7 +481,7 @@ void rendr_if_preprosses(Uint index) {
       if ((*parent_start == '&') || (*parent_start == '|') || (*parent_end == '&') || (*parent_end == '|')) {
         break;
       }
-      if (*parent_start != '\0' && *parent_end != '\0') {
+      if (*parent_start && *parent_end) {
         parent_start += 1;
         const char *p = parent_start;
         ADV_PTR(p, p != parent_end && *p != ' ' && *p != '\t');
@@ -568,7 +497,7 @@ void rendr_if_preprosses(Uint index) {
         parent_start += 1;
         parent_end += 1;
         p                     = parent_end - 1;
-        const char *error_end = nullptr;
+        const char *error_end = NULL;
         while (*p && *p != '&' && *p != '|') {
           p += 1;
           ADV_PTR(p, (*p != '&') && (*p != '|') && (*p != '(') && (*p != ')'));
@@ -576,14 +505,14 @@ void rendr_if_preprosses(Uint index) {
             error_end = p;
           }
         }
-        if (error_end != nullptr) {
+        if (error_end) {
           error_end += 1;
           RENDR(C_PTR, ERROR_MESSAGE, start, error_end);
         }
         break;
       }
-      else if ((*parent_start == '\0' && *parent_end != '\0') || (*parent_start != '\0' && *parent_end == '\0')) {
-        if (*parent_start != '\0') {
+      else if ((!*parent_start && *parent_end) || (*parent_start && !*parent_end)) {
+        if (*parent_start) {
           RENDR(R_CHAR, ERROR_MESSAGE, parent_start);
         }
         else {
@@ -600,9 +529,9 @@ void rendr_if_preprosses(Uint index) {
  * syntax.  TODO: Create a structured way to parse, and then create a
  * system to include error handeling in real-time. */
 void render_preprossesor(void) {
-  char       *current_word = nullptr;
+  char       *current_word = NULL;
   const char *start        = strchr(line->data, '#');
-  const char *end          = nullptr;
+  const char *end          = NULL;
   if (start) {
     RENDR(R_CHAR, FG_VS_CODE_BRIGHT_MAGENTA, start);
     ++start;
@@ -675,25 +604,21 @@ void render_preprossesor(void) {
         RENDR(R, FG_VS_CODE_BLUE, start, end);
         break;
       }
-        /* case "error"_uint_hash :
-        {
-            RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
-            ADV_PTR(end, (*end == ' ' || *end == '\t'));
-            if (!*end || *end != '"')
-            {
-                break;
-            }
-            start = end;
-            end += 1;
-            ADV_PTR(end, (*end != '"'));
-            if (*end)
-            {
-                end += 1;
-            }
-            render_part(
-                (start - line->data), (end - line->data), FG_YELLOW);
-            break;
-        } */
+      /* case "error"_uint_hash : {
+        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
+        ADV_PTR(end, (*end == ' ' || *end == '\t'));
+        if (!*end || *end != '"') {
+          break;
+        }
+        start = end;
+        end += 1;
+        ADV_PTR(end, (*end != '"'));
+        if (*end) {
+          end += 1;
+        }
+        render_part((start - line->data), (end - line->data), FG_YELLOW);
+        break;
+      } */
     }
     free(current_word);
   }
@@ -706,7 +631,7 @@ void render_control_statements(Ulong index) {
       Ulong       indent;
       const char *if_found = nullptr;
       int         i        = 0;
-      for (linestruct *l = line->prev; l != nullptr && (i < 500); l = l->prev, i++) {
+      for (linestruct *l = line->prev; l && (i < 500); l = l->prev, ++i) {
         indent = line_indent(l);
         if (indent <= else_indent) {
           if_found = strstr(l->data, "if");
@@ -715,7 +640,7 @@ void render_control_statements(Ulong index) {
           }
         }
       }
-      if (if_found == nullptr || indent != else_indent) {
+      if (!if_found || indent != else_indent) {
         RENDR(E, "<- Misleading indentation");
         /* Add BG_YELLOW. */
         RENDR(R, ERROR_MESSAGE, &line->data[index], &line->data[index + 4]);
@@ -876,7 +801,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
   ::line      = line;
   ::from_col  = from_col;
   if (openfile->type.is_set<C_CPP>()) {
-    // render_bracket();
+    render_bracket();
     render_comment();
     if (!line->data[0] || (block_comment_start == 0 && block_comment_end == till_x)) {
       return;
@@ -957,11 +882,6 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
       return;
     }
     render_string_literals();
-    // render_char_strings();
-    /* if (line->flags.is_set(DONT_PREPROSSES_LINE)) {
-      render_part(0, till_x, FG_SUGGEST_GRAY);
-      return;
-    } */
   }
   /** TODO: Fix bug where if '0.' is at end of line then we crash when trying to modify that
    * line, it`s weird tough as it only craches if this it the first action and not otherwise. */

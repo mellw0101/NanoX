@@ -166,6 +166,9 @@ namespace Parse {
           break;
         }
         const char *end = start + 3;
+        if (!*end) {
+          break;
+        }
         --start;
         DCR_PTR(start, save.c_str(), (*start != '/'));
         string ret(save.c_str(), (start - &save[0]));

@@ -17,10 +17,6 @@ void netlog_colortype(colortype *c) {
                 c->id, c->fg, c->bg, c->pairnum, c->attributes);
 }
 
-void netlog_bracket_entry(const bracket_entry &be) {
-  NETLOGGER.log("indent: %lu, lineno: %lu, start: %s.\n", be.indent, be.lineno, be.start ? "TRUE" : "FALSE");
-}
-
 void netlog_func_info(function_info_t *info) {
   NLOG("  Full func: %s\n"
        "      Start: %i\n"

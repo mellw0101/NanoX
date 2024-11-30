@@ -6,7 +6,6 @@ SSE_strlen:
   ; Check alignment.
   test rcx, 15
   jz .aligned
-
   .unaligned:
     mov al, [rcx]
     test al, al
@@ -14,7 +13,6 @@ SSE_strlen:
     inc rcx
     test rcx, 15
     jnz .unaligned
-
   .aligned:
     .loop:
       movdqa xmm0, [rcx]

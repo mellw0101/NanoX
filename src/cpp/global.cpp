@@ -30,8 +30,7 @@ bool ran_a_tool = false;
 bool inhelp = false;
 /* When not nullptr: the title of the current help text. */
 char *title = nullptr;
-/* Did a command mangle enough of the buffer
- * that we should repaint the screen? */
+/* Did a command mangle enough of the buffer that we should repaint the screen? */
 bool refresh_needed = false;
 /* If we should refresh the suggest window. */
 bool suggest_on = false;
@@ -211,10 +210,6 @@ constexpr bool TOGETHER   = false;
 bool        last_key_was_bracket = false;
 colortype  *last_c_color         = nullptr;
 syntaxtype *c_syntaxtype         = nullptr;
-/* Vector to hold bracket bairs for closing them, (NOT YET IMPLEMENTED). */
-vector<bracket_pair> bracket_pairs;
-/* Vector for bracket entry`s. */
-vector<bracket_entry> bracket_entrys;
 /* Vector to hold struct`s that are found, we use this to higlight created objects. */
 vector<string> syntax_structs;
 /* Vector to hold class`es that are found, we use this to higlight created objects. */
@@ -229,6 +224,8 @@ vector<string> handled_includes;
 bool gui_enabled = false;
 
 const char *term = nullptr;
+const char *term_program = nullptr;
+bit_flag_t<8> mod_key;
 
 /* Empty functions, for the most part corresponding to toggles. */
 
@@ -397,11 +394,10 @@ void show_curses_version(void) {
 }
 
 /* Add a key combo to the linked list of shortcuts. */
-void add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function,
-                   const int toggle) {
+void add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function, const int toggle) {
   static keystruct *tailsc;
-  static int        counter = 0;
-  keystruct        *sc      = (keystruct *)nmalloc(sizeof(keystruct));
+  static int counter = 0;
+  keystruct *sc = (keystruct *)nmalloc(sizeof(keystruct));
   /* Start the list, or tack on the next item. */
   !sclist ? (sclist = sc) : (tailsc->next = sc);
   sc->next = nullptr;
@@ -434,14 +430,14 @@ Ulong shown_entries_for(const int menu) {
   funcstruct *item    = allfuncs;
   Ulong       maximum = ((COLS + 40) / 20) * 2;
   Ulong       count   = 0;
-  while (count < maximum && item != nullptr) {
+  while (count < maximum && item) {
     if (item->menus & menu) {
       count++;
     }
     item = item->next;
   }
   /* When --saveonexit is not used, widen the grid of the WriteOut menu. */
-  if (menu == MWRITEFILE && item == nullptr && first_sc_for(menu, discard_buffer) == nullptr) {
+  if (menu == MWRITEFILE && !item && !first_sc_for(menu, discard_buffer)) {
     count--;
   }
   return count;
@@ -465,7 +461,7 @@ const keystruct *get_shortcut(const int keycode) {
   if (keycode == PLANTED_A_COMMAND) {
     return planted_shortcut;
   }
-  for (const keystruct *sc = sclist; sc != nullptr; sc = sc->next) {
+  for (const keystruct *sc = sclist; sc; sc = sc->next) {
     if ((sc->menus & currmenu) && keycode == sc->keycode) {
       return sc;
     }
@@ -527,10 +523,7 @@ const char *exit_tag  = N_("Exit");
 const char *close_tag = N_("Close");
 
 /* Initialize the list of functions and the list of shortcuts.
- * This is the place where all the functions and shortcuts are defined.
- * TODO: (shortcut_init) Currently, this function is a mess. It needs to be
- * cleaned up, and the keybindings need to be changed to a more resonable
- * format. */
+ * This is the place where all the functions and shortcuts are defined. */
 void shortcut_init(void) {
   /* TRANSLATORS: The next long series of strings are shortcut descriptions;
    *              they are best kept shorter than 56 characters, but may be longer. */
@@ -672,8 +665,7 @@ void shortcut_init(void) {
   }
   /* TRANSLATORS: This refers to the position of the cursor. */
   add_to_funcs(report_cursor_position, MMAIN, N_("Location"), WHENHELP(cursorpos_gist), TOGETHER);
-  /* Conditionally placing this one here or further on, to keep the
-   * help items nicely paired in most conditions. */
+  /* Conditionally placing this one here or further on, to keep the help items nicely paired in most conditions. */
   add_to_funcs(do_gotolinecolumn, MMAIN, N_("Go To Line"), WHENHELP(gotoline_gist), BLANKAFTER);
   /* TRANSLATORS : Try to keep the next ten strings at most 12 characters. */
   add_to_funcs(do_undo, MMAIN, N_("Undo"), WHENHELP(undo_gist), TOGETHER);

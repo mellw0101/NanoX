@@ -37,7 +37,7 @@ void set_interface_colorpairs(void) {
   /* Initialize the color pairs for nano's interface elements. */
   for (Ulong index = 0; index < NUMBER_OF_ELEMENTS; ++index) {
     colortype *combo = color_combo[index];
-    if (combo != nullptr) {
+    if (combo) {
       if (!defaults_allowed) {
         if (combo->fg == THE_DEFAULT) {
           combo->fg = COLOR_WHITE;
@@ -109,7 +109,7 @@ void set_interface_colorpairs(void) {
 void set_syntax_colorpairs(syntaxtype *sntx) {
   short      number = NUMBER_OF_ELEMENTS;
   colortype *older;
-  for (colortype *ink = sntx->color; ink != nullptr; ink = ink->next) {
+  for (colortype *ink = sntx->color; ink; ink = ink->next) {
     if (!defaults_allowed) {
       if (ink->fg == THE_DEFAULT) {
         ink->fg = COLOR_WHITE;
@@ -140,9 +140,8 @@ void prepare_palette(void) {
   have_palette = true;
 }
 
-/* Try to match the given shibboleth string with,
- * one of the regexes in the list starting at head.
- * Return 'true' upon success. */
+/* Try to match the given shibboleth string with, one of the regexes
+ * in the list starting at head.  Return 'true' upon success. */
 bool found_in_list(regexlisttype *head, const char *shibboleth) {
   for (regexlisttype *item = head; item != nullptr; item = item->next) {
     if (regexec(item->one_rgx, shibboleth, 0, nullptr, 0) == 0) {
@@ -166,7 +165,7 @@ void find_and_prime_applicable_syntax(void) {
     if (strcmp(syntaxstr, "none") == 0) {
       return;
     }
-    for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
+    for (sntx = syntaxes; sntx; sntx = sntx->next) {
       if (strcmp(sntx->name, syntaxstr) == 0) {
         break;
       }
@@ -179,10 +178,10 @@ void find_and_prime_applicable_syntax(void) {
    * try finding a syntax based on the filename (extension). */
   if (!sntx && !inhelp) {
     char *fullname = get_full_path(openfile->filename);
-    if (fullname == nullptr) {
+    if (!fullname) {
       fullname = mallocstrcpy(fullname, openfile->filename);
     }
-    for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
+    for (sntx = syntaxes; sntx; sntx = sntx->next) {
       if (found_in_list(sntx->extensions, fullname)) {
         break;
       }
@@ -191,7 +190,7 @@ void find_and_prime_applicable_syntax(void) {
   }
   /* If the filename didn't match anything, try the first line. */
   if (!sntx && !inhelp) {
-    for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
+    for (sntx = syntaxes; sntx; sntx = sntx->next) {
       if (found_in_list(sntx->headers, openfile->filetop->data)) {
         break;
       }
@@ -210,19 +209,19 @@ void find_and_prime_applicable_syntax(void) {
                           MAGIC_DEBUG | MAGIC_CHECK |
 #  endif
                           MAGIC_ERROR);
-      if (cookie == nullptr || magic_load(cookie, nullptr) < 0) {
+      if (!cookie || magic_load(cookie, nullptr) < 0) {
         statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
       }
       else {
         magicstring = magic_file(cookie, openfile->filename);
-        if (magicstring == nullptr) {
+        if (!magicstring) {
           statusline(ALERT, _("magic_file(%s) failed: %s"), openfile->filename, magic_error(cookie));
         }
       }
     }
     /* Now try and find a syntax that matches the magic string. */
-    if (magicstring != nullptr) {
-      for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
+    if (magicstring) {
+      for (sntx = syntaxes; sntx; sntx = sntx->next) {
         if (found_in_list(sntx->magics, magicstring)) {
           break;
         }
@@ -235,7 +234,7 @@ void find_and_prime_applicable_syntax(void) {
 #endif
   /* If nothing at all matched, see if there is a default syntax. */
   if (!sntx && !inhelp) {
-    for (sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
+    for (sntx = syntaxes; sntx; sntx = sntx->next) {
       if (strcmp(sntx->name, "default") == 0) {
         break;
       }
@@ -267,9 +266,9 @@ void check_the_multis(linestruct *line) {
     refresh_needed = true;
     return;
   }
-  for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next) {
+  for (ink = openfile->syntax->color; ink; ink = ink->next) {
     /* If it's not a multiline regex, skip. */
-    if (ink->end == nullptr) {
+    if (!ink->end) {
       continue;
     }
     astart     = (regexec(ink->start, line->data, 1, &startmatch, 0) == 0);

@@ -219,6 +219,10 @@ using std::vector;
 #define FOCUS_IN                      0x491
 #define FOCUS_OUT                     0x499
 
+#define MOD_KEY_SHIFT 0
+#define MOD_KEY_ALT   1
+#define MOD_KEY_CTRL  2
+
 /* Special keycodes for when a string bind has been partially implanted
  * or has an unpaired opening brace, or when a function in a string bind
  * needs execution or a specified function name is invalid. */
@@ -260,6 +264,31 @@ using std::vector;
   typedef struct name {        \
     __VA_ARGS__                \
   } name;
+
+/* Null def. */
+#ifdef NULL
+#undef NULL
+#endif
+#ifdef __cplusplus
+#define NULL nullptr
+#else
+#define NULL __null
+#endif
+/* Bool def. */
+#ifdef TRUE
+  #undef TRUE
+#endif
+#ifdef FALSE
+  #undef FALSE
+#endif
+#ifdef __cplusplus
+  #define TRUE true
+  #define FALSE false
+#else
+  #define TRUE 1
+  #define FALSE 0
+#endif
+
 
 #define NULL_safe_free(ptr) ptr ? free(ptr) : void()
 
@@ -516,17 +545,6 @@ typedef struct completionstruct {
 /* clang-format on */
 
 enum syntax_flag_t { NEXT_WORD_ALSO = 1 };
-
-struct bracket_entry {
-  Ulong lineno;
-  Ulong indent;
-  bool  start;
-};
-
-struct bracket_pair {
-  Ulong start_line;
-  Ulong end_line;
-};
 
 typedef struct line_word_t {
   char        *str;

@@ -52,6 +52,8 @@ void syntax_check_file(openfilestruct *file) {
       test_map["int"]       = {FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
       test_map["long"]      = {FG_VS_CODE_BLUE};
       test_map["unsigned"]  = {FG_VS_CODE_BLUE};
+      test_map["float"]     = {FG_VS_CODE_BLUE};
+      test_map["double"]    = {FG_VS_CODE_BLUE};
       test_map["void"]      = {FG_VS_CODE_BLUE};
       test_map["static"]    = {FG_VS_CODE_BLUE};
       test_map["extern"]    = {FG_VS_CODE_BLUE};
@@ -61,7 +63,6 @@ void syntax_check_file(openfilestruct *file) {
       test_map["false"]     = {FG_VS_CODE_BLUE};
       test_map["true"]      = {FG_VS_CODE_BLUE};
       test_map["false"]     = {FG_VS_CODE_BLUE};
-      test_map["nullptr"]   = {FG_VS_CODE_BLUE};
       test_map["nullptr"]   = {FG_VS_CODE_BLUE};
       test_map["typedef"]   = {FG_VS_CODE_BLUE};
       test_map["sizeof"]    = {FG_VS_CODE_BLUE};
@@ -85,6 +86,7 @@ void syntax_check_file(openfilestruct *file) {
       test_map["else"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
       test_map["case"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
       test_map["switch"]   = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
+      test_map["default"]  = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
       test_map["for"]      = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
       test_map["while"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
       test_map["return"]   = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
@@ -128,6 +130,26 @@ void syntax_check_file(openfilestruct *file) {
       /* Simd 'sse' registers. */
       test_map["xmm0"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
       test_map["xmm1"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["xmm2"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["xmm3"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["xmm4"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["xmm5"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["xmm6"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["xmm7"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      /* Simd 'avx' registers. */
+      test_map["ymm0"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["ymm1"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["ymm2"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["ymm3"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["ymm4"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["ymm5"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["ymm6"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      test_map["ymm7"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
+      /* 'avx' instructions. */
+      test_map["vmovdqa"] = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["vmovaps"] = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["vaddps"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["vsubps"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
       /* Instructions. */
       test_map["syscall"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
       test_map["mov"]      = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
@@ -150,6 +172,7 @@ void syntax_check_file(openfilestruct *file) {
       test_map["jmp"]      = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
       test_map["bsf"]      = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
       test_map["equ"]      = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
+      test_map["lea"]      = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
       test_map["movdqa"]   = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
       test_map["movdqu"]   = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};
       test_map["pcmpeqb"]  = {FG_VS_CODE_BLUE, -1, -1, ASM_INSTRUCT};

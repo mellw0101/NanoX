@@ -14,7 +14,7 @@ static termios original_state;
 /* Containers for the original and the temporary handler for SIGINT. */
 static struct sigaction oldaction, newaction;
 
-main_thread_t *main_thread = nullptr;
+main_thread_t *main_thread = NULL;
 
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'.
  * prevnode: previous node in the linked list.
@@ -22,13 +22,13 @@ main_thread_t *main_thread = nullptr;
 linestruct *make_new_node(linestruct *prevnode) {
   linestruct *newnode = (linestruct *)nmalloc(sizeof(linestruct));
   newnode->prev       = prevnode;
-  newnode->next       = nullptr;
-  newnode->data       = nullptr;
-  newnode->multidata  = nullptr;
+  newnode->next       = NULL;
+  newnode->data       = NULL;
+  newnode->multidata  = NULL;
   newnode->lineno     = (prevnode) ? prevnode->lineno + 1 : 1;
-  newnode->has_anchor = false;
+  newnode->has_anchor = FALSE;
   newnode->flags.clear();
-  if (prevnode != nullptr) {
+  if (prevnode != NULL) {
     ((prevnode->flags.is_set(IN_BLOCK_COMMENT)) || (prevnode->flags.is_set(BLOCK_COMMENT_START)))
       ? newnode->flags.set(IN_BLOCK_COMMENT)
       : newnode->flags.unset(IN_BLOCK_COMMENT);
@@ -60,7 +60,7 @@ void delete_node(linestruct *line) {
   }
   /* If the spill-over line for hard-wrapping is deleted... */
   if (line == openfile->spillage_line) {
-    openfile->spillage_line = nullptr;
+    openfile->spillage_line = NULL;
   }
   free(line->data);
   free(line->multidata);
@@ -99,7 +99,7 @@ linestruct *copy_node(const linestruct *src) {
   linestruct *dst;
   dst             = (linestruct *)nmalloc(sizeof(linestruct));
   dst->data       = copy_of(src->data);
-  dst->multidata  = nullptr;
+  dst->multidata  = NULL;
   dst->lineno     = src->lineno;
   dst->has_anchor = src->has_anchor;
   return dst;
@@ -109,7 +109,7 @@ linestruct *copy_node(const linestruct *src) {
 linestruct *copy_buffer(const linestruct *src) {
   linestruct *head, *item;
   head       = copy_node(src);
-  head->prev = nullptr;
+  head->prev = NULL;
   item       = head;
   src        = src->next;
   while (src) {
@@ -118,7 +118,7 @@ linestruct *copy_buffer(const linestruct *src) {
     item             = item->next;
     src              = src->next;
   }
-  item->next = nullptr;
+  item->next = NULL;
   return head;
 }
 
@@ -137,14 +137,14 @@ void print_view_warning(void) {
   statusline(AHEM, _("Key is invalid in view mode"));
 }
 
-/* When in restricted mode, show a warning and return 'true'. */
+/* When in restricted mode, show a warning and return 'TRUE'. */
 bool in_restricted_mode(void) {
   if (ISSET(RESTRICTED)) {
     statusline(AHEM, _("This function is disabled in restricted mode"));
     beep();
-    return true;
+    return TRUE;
   }
-  return false;
+  return FALSE;
 }
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
@@ -199,7 +199,7 @@ void close_and_go(void) {
     close_buffer();
     openfile = openfile->next;
     /* Adjust the count in the top bar. */
-    titlebar(nullptr);
+    titlebar(NULL);
   }
   else {
     if (ISSET(HISTORYLOG)) {
@@ -229,7 +229,7 @@ void do_exit(void) {
     choice = ask_user(YESORNO, _("Save modified buffer? "));
   }
   /* When not saving, or the save succeeds, close the buffer. */
-  if (choice == NO || (choice == YES && write_it_out(true, true) > 0)) {
+  if (choice == NO || (choice == YES && write_it_out(TRUE, TRUE) > 0)) {
     close_and_go();
   }
   else if (choice != YES) {
@@ -252,7 +252,7 @@ void emergency_save(const char *filename) {
   if (!*targetname) {
     fprintf(stderr, "\nToo meny .save files\n");
   }
-  else if (write_file(targetname, nullptr, SPECIAL, EMERGENCY, NONOTES)) {
+  else if (write_file(targetname, NULL, SPECIAL, EMERGENCY, NONOTES)) {
     fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
   }
   free(targetname);
@@ -304,7 +304,7 @@ void window_init(void) {
     delwin(midwin);
     delwin(footwin);
   }
-  topwin = nullptr;
+  topwin = NULL;
   /* If the terminal is very flat, don't set up a title bar */
   if (LINES < 3) {
     editwinrows = (ISSET(ZERO) ? LINES : 1);
@@ -332,8 +332,8 @@ void window_init(void) {
   wnoutrefresh(footwin);
   /* When not disabled, turn escape-sequence translation on. */
   if (!ISSET(RAW_SEQUENCES)) {
-    keypad(midwin, true);
-    keypad(footwin, true);
+    keypad(midwin, TRUE);
+    keypad(footwin, TRUE);
   }
   /* Set up the wrapping point, accounting for screen width when negative. */
   if (COLS + fill < 0) {
@@ -348,12 +348,12 @@ void window_init(void) {
 }
 
 void disable_mouse_support(void) {
-  mousemask(0, nullptr);
+  mousemask(0, NULL);
   mouseinterval(oldinterval);
 }
 
 void enable_mouse_support(void) {
-  mousemask(ALL_MOUSE_EVENTS, nullptr);
+  mousemask(ALL_MOUSE_EVENTS, NULL);
   oldinterval = mouseinterval(50);
 }
 
@@ -493,7 +493,7 @@ void version(void) {
 void list_syntax_names(void) {
   int width = 0;
   printf(_("Available syntaxes:\n"));
-  for (syntaxtype *sntx = syntaxes; sntx != nullptr; sntx = sntx->next) {
+  for (syntaxtype *sntx = syntaxes; sntx != NULL; sntx = sntx->next) {
     if (width > 45) {
       printf("\n");
       width = 0;
@@ -506,7 +506,7 @@ void list_syntax_names(void) {
 
 /* Register that Ctrl+C was pressed during some system call. */
 void make_a_note(int signal) {
-  control_C_was_pressed = true;
+  control_C_was_pressed = TRUE;
 }
 
 /* Make ^C interrupt a system call and set a flag. */
@@ -521,7 +521,7 @@ void install_handler_for_Ctrl_C(void) {
 
 /* Go back to ignoring ^C. */
 void restore_handler_for_Ctrl_C(void) {
-  sigaction(SIGINT, &oldaction, nullptr);
+  sigaction(SIGINT, &oldaction, NULL);
   disable_kb_interrupt();
 }
 
@@ -553,20 +553,20 @@ bool scoop_stdin(void) {
     terminal_init();
     doupdate();
     statusline(ALERT, _("Failed to open stdin: %s"), errno_str);
-    return false;
+    return FALSE;
   }
   /* Set up a signal handler so that ^C will stop the reading. */
   install_handler_for_Ctrl_C();
   /* Read the input into a new buffer, undoably. */
   make_new_buffer();
-  read_file(stream, 0, "stdin", false);
+  read_file(stream, 0, "stdin", FALSE);
   find_and_prime_applicable_syntax();
   /* Restore the original ^C handler. */
   restore_handler_for_Ctrl_C();
   if (!ISSET(VIEW_MODE) && openfile->totsize > 0) {
     set_modified();
   }
-  return true;
+  return TRUE;
 }
 
 /* Register half a dozen signal handlers. */
@@ -574,22 +574,22 @@ void signal_init(void) {
   struct sigaction deed = {{0}};
   /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
   deed.sa_handler = SIG_IGN;
-  sigaction(SIGINT, &deed, nullptr);
-  sigaction(SIGQUIT, &deed, nullptr);
+  sigaction(SIGINT, &deed, NULL);
+  sigaction(SIGQUIT, &deed, NULL);
   /* Trap SIGHUP and SIGTERM because we want to write the file out. */
   deed.sa_handler = handle_hupterm;
-  sigaction(SIGHUP, &deed, nullptr);
-  sigaction(SIGTERM, &deed, nullptr);
+  sigaction(SIGHUP, &deed, NULL);
+  sigaction(SIGTERM, &deed, NULL);
   /* Trap SIGWINCH because we want to handle window resizes. */
   deed.sa_handler = handle_sigwinch;
-  sigaction(SIGWINCH, &deed, nullptr);
+  sigaction(SIGWINCH, &deed, NULL);
   /* Prevent the suspend handler from getting interrupted. */
   sigfillset(&deed.sa_mask);
   deed.sa_handler = suspend_nano;
-  sigaction(SIGTSTP, &deed, nullptr);
+  sigaction(SIGTSTP, &deed, NULL);
   sigfillset(&deed.sa_mask);
   deed.sa_handler = continue_nano;
-  sigaction(SIGCONT, &deed, nullptr);
+  sigaction(SIGCONT, &deed, NULL);
 #if !defined(DEBUG)
   if (!getenv("NANO_NOCATCH")) {
     /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
@@ -597,8 +597,8 @@ void signal_init(void) {
      * defaults as soon as their signal fires. */
     deed.sa_handler = handle_crash;
     deed.sa_flags |= SA_RESETHAND;
-    sigaction(SIGSEGV, &deed, nullptr);
-    sigaction(SIGABRT, &deed, nullptr);
+    sigaction(SIGSEGV, &deed, NULL);
+    sigaction(SIGABRT, &deed, NULL);
   }
 #endif
 }
@@ -635,7 +635,7 @@ void do_suspend(void) {
     return;
   }
   suspend_nano(0);
-  ran_a_tool = true;
+  ran_a_tool = TRUE;
 }
 
 /* Handler for SIGCONT (continue after suspend). */
@@ -647,7 +647,7 @@ void continue_nano(int signal) {
    * instead of checking, but it's the original code.
    * COMMENT: -> // Perhaps the user resized the window while we slept.
    * TODO: Check if the window was resized instead. */
-  the_window_resized = true;
+  the_window_resized = TRUE;
   /* Insert a fake keystroke, to neutralize a key-eating issue. */
   ungetch(KEY_FRESH);
 }
@@ -657,7 +657,7 @@ void block_sigwinch(bool blockit) {
   sigset_t winch;
   sigemptyset(&winch);
   sigaddset(&winch, SIGWINCH);
-  sigprocmask(blockit ? SIG_BLOCK : SIG_UNBLOCK, &winch, nullptr);
+  sigprocmask(blockit ? SIG_BLOCK : SIG_UNBLOCK, &winch, NULL);
   if (the_window_resized) {
     regenerate_screen();
   }
@@ -666,13 +666,13 @@ void block_sigwinch(bool blockit) {
 /* Handler for SIGWINCH (window size change). */
 void handle_sigwinch(int signal) {
   /* Let the input routine know that a SIGWINCH has occurred. */
-  the_window_resized = true;
+  the_window_resized = TRUE;
 }
 
 /* Reinitialize and redraw the screen completely. */
 void regenerate_screen(void) {
   /* Reset the trigger. */
-  the_window_resized = false;
+  the_window_resized = FALSE;
   /* Leave and immediately reenter curses mode, so that ncurses notices
    * the new screen dimensions and sets LINES and COLS accordingly. */
   endwin();
@@ -685,8 +685,7 @@ void regenerate_screen(void) {
    * recreate the subwindows with their (new) sizes. */
   terminal_init();
   window_init();
-  /* If we have an open buffer,
-   * redraw the contents of the subwindows. */
+  /* If we have an open buffer, redraw the contents of the subwindows. */
   if (openfile) {
     ensure_firstcolumn_is_aligned();
     draw_all_subwindows();
@@ -698,7 +697,7 @@ void regenerate_screen(void) {
 void toggle_this(const int flag) {
   bool enabled = !ISSET(flag);
   TOGGLE(flag);
-  focusing = false;
+  focusing = FALSE;
   switch (flag) {
     case ZERO : {
       window_init();
@@ -733,18 +732,18 @@ void toggle_this(const int flag) {
       if (!ISSET(SOFTWRAP)) {
         openfile->firstcolumn = 0;
       }
-      refresh_needed = true;
+      refresh_needed = TRUE;
       break;
     }
     case WHITESPACE_DISPLAY : {
-      titlebar(nullptr);
-      refresh_needed = true;
+      titlebar(NULL);
+      refresh_needed = TRUE;
       break;
     }
     case NO_SYNTAX : {
       // precalc_multicolorinfo();
       TOGGLE(EXPERIMENTAL_FAST_LIVE_SYNTAX);
-      refresh_needed = true;
+      refresh_needed = TRUE;
       break;
     }
     case TABS_TO_SPACES : {
@@ -765,7 +764,7 @@ void toggle_this(const int flag) {
       return;
     }
     if ISSET (STATEFLAGS) {
-      titlebar(nullptr);
+      titlebar(NULL);
     }
   }
   if (flag == NO_HELP || flag == LINE_NUMBERS || flag == WHITESPACE_DISPLAY) {
@@ -862,7 +861,7 @@ int get_keycode(const char *const keyname, const int standard) {
 
 /* Ensure that the margin can accommodate the buffer's highest line number. */
 void confirm_margin(void) {
-  int needed_margin = digits(openfile->filebot->lineno) + 1;
+  int needed_margin = (digits(openfile->filebot->lineno) + 1);
   /* When not requested or space is too tight, suppress line numbers. */
   if (!ISSET(LINE_NUMBERS) || needed_margin > COLS - 4) {
     needed_margin = 0;
@@ -875,7 +874,7 @@ void confirm_margin(void) {
     ensure_firstcolumn_is_aligned();
     focusing = keep_focus;
     /* The margin has changed -- schedule a full refresh. */
-    refresh_needed = true;
+    refresh_needed = TRUE;
   }
 }
 
@@ -926,18 +925,18 @@ void unbound_key(int code) {
 int do_mouse(void) {
   int click_row;
   int click_col;
-  int retval = get_mouseinput(&click_row, &click_col, true);
+  int retval = get_mouseinput(&click_row, &click_col, TRUE);
   /* If the click is wrong or already handled, we're done. */
   if (retval) {
     return retval;
   }
   /* If the click was in the edit window, put the cursor in that spot. */
-  if (wmouse_trafo(midwin, &click_row, &click_col, false)) {
+  if (wmouse_trafo(midwin, &click_row, &click_col, FALSE)) {
     linestruct *was_current = openfile->current;
     long        row_count   = click_row - openfile->cursor_row;
     Ulong       leftedge;
     Ulong       was_x = openfile->current_x;
-    if ISSET (SOFTWRAP) {
+    if (ISSET(SOFTWRAP)) {
       leftedge = leftedge_for(xplustabs(), openfile->current);
     }
     else {
@@ -955,12 +954,12 @@ int do_mouse(void) {
     if (!row_count && openfile->current_x == was_x) {
       do_mark();
       if (ISSET(STATEFLAGS)) {
-        titlebar(nullptr);
+        titlebar(NULL);
       }
     }
     /* The cursor moved; clean the cutbuffer on the next cut. */
     else {
-      keep_cutbuffer = false;
+      keep_cutbuffer = FALSE;
     }
     edit_redraw(was_current, CENTERING);
   }
@@ -968,14 +967,14 @@ int do_mouse(void) {
   return 2;
 }
 
-/* Return 'true' when the given function is a cursor-moving command. */
+/* Return 'TRUE' when the given function is a cursor-moving command. */
 bool wanted_to_move(functionptrtype f) {
   return (f == do_left || f == do_right || f == do_up || f == do_down || f == do_home || f == do_end ||
           f == to_prev_word || f == to_next_word || f == to_para_begin || f == to_para_end || f == to_prev_block ||
           f == to_next_block || f == do_page_up || f == do_page_down || f == to_first_line || f == to_last_line);
 }
 
-/* Return 'true' when the given function makes a change -- no good for view mode. */
+/* Return 'TRUE' when the given function makes a change -- no good for view mode. */
 bool changes_something(functionptrtype f) {
   return (f == do_savefile || f == do_writeout || f == do_enter || f == do_tab || f == do_delete || f == do_backspace ||
           f == cut_text || f == paste_text || f == chop_previous_word || f == chop_next_word || f == zap_text ||
@@ -987,7 +986,7 @@ bool changes_something(functionptrtype f) {
 /* Read in all waiting input bytes and paste them into the buffer in one go. */
 void suck_up_input_and_paste_it(void) {
   linestruct *was_cutbuffer = cutbuffer;
-  linestruct *line          = make_new_node(nullptr);
+  linestruct *line          = make_new_node(NULL);
   Ulong       index         = 0;
   line->data                = copy_of("");
   cutbuffer                 = line;
@@ -1000,7 +999,7 @@ void suck_up_input_and_paste_it(void) {
       index      = 0;
     }
     else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
-      line->data          = (char *)nrealloc(line->data, index + 2);
+      line->data          = arealloc(line->data, index + 2);
       line->data[index++] = (char)input;
       line->data[index]   = '\0';
     }
@@ -1038,21 +1037,19 @@ void inject(char *burst, Ulong count) {
   }
   /* Only add a new undo item when the current item is not an ADD or when
    * the current typing is not contiguous with the previous typing. */
-  if (openfile->last_action != ADD || openfile->current_undo->tail_lineno != thisline->lineno ||
-      openfile->current_undo->tail_x != openfile->current_x) {
-    add_undo(ADD, nullptr);
+  if (openfile->last_action != ADD || openfile->current_undo->tail_lineno != thisline->lineno || openfile->current_undo->tail_x != openfile->current_x) {
+    add_undo(ADD, NULL);
   }
   /* Make room for the new bytes and copy them into the line. */
-  thisline->data = (char *)nrealloc(thisline->data, datalen + count + 1);
-  memmove(thisline->data + openfile->current_x + count, thisline->data + openfile->current_x,
-          datalen - openfile->current_x + 1);
+  thisline->data = arealloc(thisline->data, (datalen + count + 1));
+  memmove((thisline->data + openfile->current_x + count), (thisline->data + openfile->current_x), (datalen - openfile->current_x + 1));
   strncpy(thisline->data + openfile->current_x, burst, count);
   /* When the cursor is on the top row and not on the first chunk
    * of a line, adding text there might change the preceding chunk
    * and thus require an adjustment of firstcolumn. */
   if (thisline == openfile->edittop && openfile->firstcolumn > 0) {
     ensure_firstcolumn_is_aligned();
-    refresh_needed = true;
+    refresh_needed = TRUE;
   }
   /* When the mark is to the right of the cursor, compensate its position. */
   if (thisline == openfile->mark && openfile->current_x < openfile->mark_x) {
@@ -1077,14 +1074,13 @@ void inject(char *burst, Ulong count) {
     do_wrap();
   }
   openfile->placewewant = xplustabs();
-  /* When softwrapping and the number of chunks in the current line changed,
-   * or we were on the last row of the edit window and moved to a new chunk,
-   * we need a full refresh. */
+  /* When softwrapping and the number of chunks in the current line changed, or we were
+   * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
   if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current) != old_amount ||
                           (openfile->cursor_row == editwinrows - 1 &&
                            chunk_for(openfile->placewewant, openfile->current) > original_row))) {
-    refresh_needed = true;
-    focusing       = false;
+    refresh_needed = TRUE;
+    focusing       = FALSE;
   }
   if (!refresh_needed) {
     check_the_multis(openfile->current);
@@ -1096,22 +1092,23 @@ void inject(char *burst, Ulong count) {
 
 /* Read in a keystroke, and execute its command or insert it into the buffer. */
 void process_a_keystroke(void) {
-  /* The keystroke we read in, this can be a char or a shortcut */
+  /* The keystroke we read in, this can be a char or a shortcut. */
   int input;
   /* The buffer to hold the actual chars. */
-  static char *puddle = nullptr;
+  static char *puddle = NULL;
   /* The size of the buffer, doubles when needed. */
   static Ulong capacity = 12;
   /* The current length of the buffer. */
   static Ulong     depth                 = 0;
   linestruct      *was_mark              = openfile->mark;
-  static bool      give_a_hint           = true;
-  bool             was_open_bracket_char = false;
+  static bool      give_a_hint           = TRUE;
+  bool             was_open_bracket_char = FALSE;
   const keystruct *shortcut;
   functionptrtype  function;
   /* Read in a keystroke, and show the cursor while waiting. */
   input = get_kbinput(midwin, VISIBLE);
-  /* NETLOGGER.log("input: %i.\n", input); */
+  unix_socket_debug("input: %d\n", input);
+  /* NETLOGGER.log("input: %i.\n", input); */ 
   lastmessage = VACUUM;
   /* When the input is a window resize, do nothing. */
   if (input == KEY_WINCH) {
@@ -1130,7 +1127,7 @@ void process_a_keystroke(void) {
   }
   /* Check for a shortcut in the main list. */
   shortcut = get_shortcut(input);
-  function = (shortcut ? shortcut->func : nullptr);
+  function = (shortcut ? shortcut->func : NULL);
   /* If not a command, discard anything that is not a normal character byte. */
   if (!function) {
     /* When the input is a function key, execute the function it is bound to. */
@@ -1144,31 +1141,29 @@ void process_a_keystroke(void) {
       /* When the input buffer (plus room for terminating NUL) is full,
        * extend it. Otherwise, if it does not exist yet, create it. */
       if (depth + 1 == capacity) {
-        capacity = 2 * capacity;
-        puddle   = (char *)nrealloc(puddle, capacity);
+        capacity *= 2;
+        puddle   = arealloc(puddle, capacity);
       }
       else if (!puddle) {
         puddle = (char *)nmalloc(capacity);
       }
-      /* If region is marked, and 'input' is an enclose char, then we
-       * enclose the marked region with that char. */
+      /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
       if (openfile->mark) {
         if (input == '"' || input == '\'' || input == '(' || input == '{' || input == '[') {
           const char *s1, *s2;
           input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(",
                          s2 = ")" : input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : 0;
           enclose_marked_region(s1, s2);
-          refresh_needed = true;
+          refresh_needed = TRUE;
           return;
         }
       }
       if (openfile->mark && openfile->softmark) {
-        openfile->mark = nullptr;
-        refresh_needed = true;
+        openfile->mark = NULL;
+        refresh_needed = TRUE;
       }
       puddle[depth++] = (char)input;
-      /* Check for a bracketed input start.  Meaning a char that has a
-       * corresponding closing bracket. */
+      /* Check for a bracketed input start.  Meaning a char that has a corresponding closing bracket. */
       if (input == '(' || input == '[' || input == '{' || input == '<' || input == '\'' || input == '"') {
         if (input == '<') {
           (openfile->current->data[0] == '#') ? puddle[depth++] = '>' : 0;
@@ -1176,9 +1171,8 @@ void process_a_keystroke(void) {
         else {
           puddle[depth++] = input == '(' ? ')' : input == '[' ? ']' : input == '"' ? '"' : input == '\'' ? '\'' : '}';
         }
-        /* Set a flag to remember that an open bracket
-         * character was inserted into the input buffer. */
-        was_open_bracket_char = true;
+        /* Set a flag to remember that an open bracket character was inserted into the input buffer. */
+        was_open_bracket_char = TRUE;
       }
     }
   }
@@ -1192,13 +1186,13 @@ void process_a_keystroke(void) {
         do_left();
         /* Set this flag so we can delete both of the
          * brackeded char if Bsp is pressed directly after. */
-        last_key_was_bracket = true;
+        last_key_was_bracket = TRUE;
       }
     }
     else {
-      last_key_was_bracket = false;
+      last_key_was_bracket = FALSE;
       if (ISSET(SUGGEST)) {
-        suggest_on = true;
+        suggest_on = TRUE;
       }
     }
     depth = 0;
@@ -1207,30 +1201,29 @@ void process_a_keystroke(void) {
     cycling_aim = 0;
   }
   if (!function) {
-    pletion_line   = nullptr;
-    keep_cutbuffer = false;
+    pletion_line   = NULL;
+    keep_cutbuffer = FALSE;
     return;
   }
   if (ISSET(VIEW_MODE) && changes_something(function)) {
     print_view_warning();
     return;
   }
-  if (input == '\b' && give_a_hint && !openfile->current_x && openfile->current == openfile->filetop &&
-      !ISSET(NO_HELP)) {
+  if (input == '\b' && give_a_hint && !openfile->current_x && openfile->current == openfile->filetop && !ISSET(NO_HELP)) {
     statusbar(_("^W = Ctrl+W    M-W = Alt+W"));
-    give_a_hint = false;
+    give_a_hint = FALSE;
   }
   else if (meta_key) {
-    give_a_hint = false;
+    give_a_hint = FALSE;
   }
   /* When not cutting or copying text, drop the cutbuffer the next time. */
   if (function != cut_text && function != copy_text) {
     if (function != zap_text) {
-      keep_cutbuffer = false;
+      keep_cutbuffer = FALSE;
     }
   }
   if (function != complete_a_word) {
-    pletion_line = nullptr;
+    pletion_line = NULL;
   }
   if (function == (functionptrtype)implant) {
     implant(shortcut->expansion);
@@ -1239,7 +1232,7 @@ void process_a_keystroke(void) {
   if (function == do_toggle) {
     toggle_this(shortcut->toggle);
     if (shortcut->toggle == CUT_FROM_CURSOR) {
-      keep_cutbuffer = false;
+      keep_cutbuffer = FALSE;
     }
     return;
   }
@@ -1249,7 +1242,7 @@ void process_a_keystroke(void) {
   if (shift_held && !openfile->mark) {
     openfile->mark     = openfile->current;
     openfile->mark_x   = openfile->current_x;
-    openfile->softmark = true;
+    openfile->softmark = TRUE;
   }
   /* Execute the function of the shortcut. */
   function();
@@ -1257,19 +1250,19 @@ void process_a_keystroke(void) {
    * mark. And when the set of lines changes, reset the "last line too" flag. */
   if (openfile->mark && openfile->softmark && !shift_held &&
       (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function))) {
-    openfile->mark = nullptr;
-    refresh_needed = true;
+    openfile->mark = NULL;
+    refresh_needed = TRUE;
   }
   else if (openfile->current != was_current) {
-    also_the_last = false;
+    also_the_last = FALSE;
   }
   if (bracketed_paste) {
     suck_up_input_and_paste_it();
   }
   if (ISSET(STATEFLAGS) && openfile->mark != was_mark) {
-    titlebar(nullptr);
+    titlebar(NULL);
   }
-  !was_open_bracket_char ? (last_key_was_bracket = false) : 0;
+  !was_open_bracket_char ? (last_key_was_bracket = FALSE) : 0;
 }
 
 int main(int argc, char **argv) {
@@ -1278,7 +1271,8 @@ int main(int argc, char **argv) {
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
   LOUT.setOutputFile("/home/mellw/.NanoX.log");
   logI("Starting NanoX");
-  term                  = getenv("TERM");
+  term         = getenv("TERM");
+  term_program = getenv("TERM_PROGRAM");
   const char *netlogger = getenv("NETLOGGER");
   if (netlogger) {
     NETLOGGER.enable();
@@ -1289,7 +1283,7 @@ int main(int argc, char **argv) {
   unix_socket_debug("Hello unix domain socket.\n");
   atexit([] {
     vector<string> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
-    for (const std::string &str : gprof_report) {
+    for (const string &str : gprof_report) {
       NETLOGGER << str << NETLOG_ENDL;
       unix_socket_debug("%s", str.c_str());
     }
@@ -1298,8 +1292,8 @@ int main(int argc, char **argv) {
   });
   init_cfg_file();
   int     stdin_flags;
-  bool    ignore_rcfiles = false; /* Whether to ignore the nanorc files. */
-  bool    fill_used      = false; /* Was the fill option used on the command line? */
+  bool    ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
+  bool    fill_used      = FALSE; /* Was the fill option used on the command line? */
   int     hardwrap       = -2;    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
   int     quoterc;                /* Whether the quoting regex was compiled successfully. */
   vt_stat dummy;
@@ -1331,6 +1325,7 @@ int main(int argc, char **argv) {
   SET(NO_HELP);
   SET(INDICATOR);
   SET(AFTER_ENDS);
+  SET(RAW_SEQUENCES);
   // SET(SUGGEST);
   // SET(SUGGEST_INLINE);
   /* This is my new system for live syntax, and it`s fucking fast. */
@@ -1346,7 +1341,7 @@ int main(int argc, char **argv) {
     const Uint cliCmd = retriveCliOptionFromStr(argv[i]);
     cliCmd &CLI_OPT_VERSION ? version() : void();
     cliCmd &CLI_OPT_HELP ? usage() : void();
-    cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = true : 0;
+    cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = TRUE : 0;
     cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = mallocstrcpy(backup_dir, argv[i]) : 0 : 0;
     cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = mallocstrcpy(word_chars, argv[i]) : 0 : 0;
     cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
@@ -1375,7 +1370,7 @@ int main(int argc, char **argv) {
           fprintf(stderr, "\n");
           exit(1);
         }
-        fill_used = true;
+        fill_used = TRUE;
       }
     }
     if (cliCmd & CLI_OPT_TABSIZE) {
@@ -1398,7 +1393,7 @@ int main(int argc, char **argv) {
       }
     }
     if (cliCmd & CLI_OPT_GUI) {
-      gui_enabled = true;
+      gui_enabled = TRUE;
     }
     if (cliCmd & CLI_OPT_SAFE) {
       UNSET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
@@ -1418,7 +1413,7 @@ int main(int argc, char **argv) {
     start_color();
   }
   /* When requested, suppress the default spotlight and error colors. */
-  rescind_colors = (getenv("NO_COLOR") != nullptr);
+  rescind_colors = (getenv("NO_COLOR") != NULL);
   /* Set up the function and shortcut lists.  This needs to be done
    * before reading the rcfile, to be able to rebind/unbind keys. */
   shortcut_init();
@@ -1436,22 +1431,22 @@ int main(int argc, char **argv) {
     Ulong flags_cmdline[sizeof(flags) / sizeof(flags[0])];
     memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
     /* Clear the string options, to not overwrite the specified ones. */
-    backup_dir    = nullptr;
-    word_chars    = nullptr;
-    operating_dir = nullptr;
-    quotestr      = nullptr;
-    alt_speller   = nullptr;
+    backup_dir    = NULL;
+    word_chars    = NULL;
+    operating_dir = NULL;
+    quotestr      = NULL;
+    alt_speller   = NULL;
     /* Now process the system's and the user's nanorc file, if any. */
     do_rcfiles();
     /* If the backed-up command-line options have a value, restore them. */
     if (fill_used) {
       fill = fill_cmdline;
     }
-    if (backup_dir_cmdline != nullptr) {
+    if (backup_dir_cmdline != NULL) {
       free(backup_dir);
       backup_dir = backup_dir_cmdline;
     }
-    if (word_chars_cmdline != nullptr) {
+    if (word_chars_cmdline != NULL) {
       free(word_chars);
       word_chars = word_chars_cmdline;
     }
@@ -1461,15 +1456,15 @@ int main(int argc, char **argv) {
     if (tabsize_cmdline != -1) {
       tabsize = tabsize_cmdline;
     }
-    if (operating_dir_cmdline != nullptr || ISSET(RESTRICTED)) {
+    if (operating_dir_cmdline != NULL || ISSET(RESTRICTED)) {
       free(operating_dir);
       operating_dir = operating_dir_cmdline;
     }
-    if (quotestr_cmdline != nullptr) {
+    if (quotestr_cmdline != NULL) {
       free(quotestr);
       quotestr = quotestr_cmdline;
     }
-    if (alt_speller_cmdline != nullptr) {
+    if (alt_speller_cmdline != NULL) {
       free(alt_speller);
       alt_speller = alt_speller_cmdline;
     }
@@ -1514,8 +1509,7 @@ int main(int argc, char **argv) {
   }
   /* Initialize the pointers for the Search/Replace/Execute histories. */
   history_init();
-  /* If we need history files, verify that we have a directory for them,
-   * and when not, cancel the options. */
+  /* If we need history files, verify that we have a directory for them, and when not, cancel the options. */
   if ((ISSET(HISTORYLOG) || ISSET(POSITIONLOG)) && !have_statedir()) {
     UNSET(HISTORYLOG);
     UNSET(POSITIONLOG);
@@ -1544,7 +1538,7 @@ int main(int argc, char **argv) {
   /* Compile the quoting regex, and exit when it's invalid. */
   quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
   if (quoterc) {
-    Ulong size    = regerror(quoterc, &quotereg, nullptr, 0);
+    Ulong size    = regerror(quoterc, &quotereg, NULL, 0);
     char *message = (char *)nmalloc(size);
     regerror(quoterc, &quotereg, message, size);
     die(_("Bad quoting regex \"%s\": %s\n"), quotestr, message);
@@ -1659,9 +1653,9 @@ int main(int argc, char **argv) {
   set_escdelay(50);
 #endif
   /* Read the files mentioned on the command line into new buffers. */
-  while (optind < argc && (!openfile || true)) {
+  while (optind < argc && (!openfile || TRUE)) {
     long  givenline = 0, givencol = 0;
-    char *searchstring = nullptr;
+    char *searchstring = NULL;
     /* If there's a +LINE[,COLUMN] argument here, eat it up. */
     if (optind < argc - 1 && argv[optind][0] == '+') {
       int n = 1;
@@ -1764,19 +1758,19 @@ int main(int argc, char **argv) {
           }
         }
       }
-      if (!open_buffer(filename, true)) {
+      if (!open_buffer(filename, TRUE)) {
         continue;
       }
     }
     /* If a position was given on the command line, go there. */
     if (givenline || givencol) {
-      goto_line_and_column(givenline, givencol, false, false);
+      goto_line_and_column(givenline, givencol, FALSE, FALSE);
     }
     else if (searchstring) {
       if (ISSET(USE_REGEXP)) {
         regexp_init(searchstring);
       }
-      if (!findnextstr(searchstring, false, JUSTFIND, nullptr, ISSET(BACKWARDS_SEARCH), openfile->filetop, 0)) {
+      if (!findnextstr(searchstring, FALSE, JUSTFIND, NULL, ISSET(BACKWARDS_SEARCH), openfile->filetop, 0)) {
         not_found_msg(searchstring);
       }
       else if (lastmessage <= REMARK) {
@@ -1789,13 +1783,13 @@ int main(int argc, char **argv) {
       }
       free(last_search);
       last_search  = searchstring;
-      searchstring = nullptr;
+      searchstring = NULL;
     }
     else if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0') {
       long savedline, savedcol;
       /* If edited before, restore the last cursor position. */
       if (has_old_position(argv[optind - 1], &savedline, &savedcol)) {
-        goto_line_and_column(savedline, savedcol, false, false);
+        goto_line_and_column(savedline, savedcol, FALSE, FALSE);
       }
     }
   }
@@ -1809,7 +1803,7 @@ int main(int argc, char **argv) {
    * directories, then open a blank buffer and allow editing.  Otherwise,
    * switch from the last opened file to the next, that is: the first. */
   if (!openfile) {
-    open_buffer("", true);
+    open_buffer("", TRUE);
     UNSET(VIEW_MODE);
   }
   else {
@@ -1835,17 +1829,17 @@ int main(int argc, char **argv) {
   // init_cfg_file();
   /* Set the margin to an impossible value to force re-evaluation. */
   margin         = 12345;
-  we_are_running = true;
+  we_are_running = TRUE;
   logI("Reached main loop.");
   if (gui_enabled) {
     /* run_gui(); */
   }
   /* TODO: This is the main loop of the editor. */
-  while (true) {
+  while (TRUE) {
     prosses_callback_queue();
     confirm_margin();
     if (on_a_vt && waiting_keycodes() == 0) {
-      mute_modifiers = false;
+      mute_modifiers = FALSE;
     }
     if (currmenu != MMAIN) {
       bottombars(MMAIN);
@@ -1864,7 +1858,7 @@ int main(int argc, char **argv) {
         report_cursor_position();
       }
     }
-    as_an_at = true;
+    as_an_at = TRUE;
     if ((refresh_needed && LINES > 1) || (LINES == 1 && lastmessage <= HUSH)) {
       edit_refresh();
     }
@@ -1886,7 +1880,7 @@ int main(int argc, char **argv) {
       wredrawln(midwin, editwinrows - 1, 1);
     }
     errno    = 0;
-    focusing = true;
+    focusing = TRUE;
     /* Forget any earlier cursor position at the prompt. */
     put_cursor_at_end_of_answer();
     /* Read in and interpret a single keystroke. */

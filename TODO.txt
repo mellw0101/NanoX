@@ -764,12 +764,22 @@ Implement a filetype for 'NanoX' configuration.  As well as real-time syntax for
 
 NCURSES_HELP:
     'wattron' turns on an attribute for a 'WINDOW*'. 
+
 NOTES:
     constexpr_atoi is slower then atoi.
     constexpr_tolower is faster then tolower.
     constexpr_strcasecmp is faster then strcasecmp.
+
 OPTIMIZE:
     #pragma unroll 4.  Can be used to tell the compiler to unroll a loop.
     #pragma omp simd.  Can be used to tell the compiler to try to vectorize the loop. 
+
+('26').
+Implement CTRL+ENTER so that it goes to newline from the end of the line and, CTRL+SHIFT+ENTER goes to newline from start of line then moves up once.  Like in vs-code.
+
+	STATUS:
+		Not started yet.
+
+	
 
         

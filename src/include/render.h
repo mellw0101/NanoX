@@ -14,7 +14,7 @@
 #define LOG_FLAG(line, flag)                 NLOG("flag: '%s' is '%s'\n", #flag, line->flags.is_set(flag) ? "TRUE" : "FALSE")
 #define GET_BRACKET_COLOR(n)                 color_bracket_index[(n % 2)]
 
-#define line_indent(line)                    wideness(line->data, indent_char_len(line))
+#define line_indent(line)                    wideness(line->data, indent_length(line->data))
 
 #define win_attr_on(win, attr)               wattr_on(win, (attr_t)attr, NULL)
 #define win_attr_off(win, attr)              wattr_off(win, (attr_t)attr, NULL)

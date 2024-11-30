@@ -145,13 +145,11 @@ void read_keys_from(WINDOW *frame) {
   bool  timed    = false;
   /* Before reading the first keycode, display any pending screen updates. */
   doupdate();
-  if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) &&
-      (LINES > 1 || lastmessage <= HUSH)) {
+  if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) && (LINES > 1 || lastmessage <= HUSH)) {
     curs_set(1);
   }
   if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH &&
-                             lastmessage < ALERT && lastmessage != INFO) ||
-                            spotlighted)) {
+                             lastmessage < ALERT && lastmessage != INFO) || spotlighted)) {
     timed = true;
     halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
     /* Counteract a side effect of half-delay mode. */
@@ -188,10 +186,9 @@ void read_keys_from(WINDOW *frame) {
         continue;
       }
     }
-    /* When we've failed to get a keycode millions of times in a row,
-     * assume our input source is gone and die gracefully.  We could
-     * check if errno is set to EIO ("Input/output error") and die in
-     * that case, but it's not always set properly.  Argh. */
+    /* When we've failed to get a keycode millions of times in a row, assume our input source
+     * is gone and die gracefully.  We could check if errno is set to EIO ("Input/output error")
+     * and die in that case, but it's not always set properly.  Argh. */
     if (input == ERR && ++errcount == 12345678) {
       die(_("Too many errors from stdin\n"));
     }
@@ -241,13 +238,13 @@ void read_keys_from(WINDOW *frame) {
   /* Restore blocking-input mode. */
   nodelay(frame, false);
   /* Netlog the raw keycodes. */
-  /* for (Ulong i = 0; i < waiting_codes; i++)
-  {
-      NETLOGGER.log("func: %s, raw hex code: %3x\n", __func__, key_buffer[i]);
+  /* for (Ulong i = 0; i < waiting_codes; ++i) {
+    NLOG("func: %s, raw hex code: %3x\n", __func__, key_buffer[i]);
+    unix_socket_debug("func: %s, raw hex code: %3x\n", __func__, key_buffer[i]);
   } */
 #ifdef DEBUG
   fprintf(stderr, "\nSequence of hex codes:");
-  for (size_t i = 0; i < waiting_codes; i++) {
+  for (Ulong i = 0; i < waiting_codes; i++) {
     fprintf(stderr, " %3x", key_buffer[i]);
   }
   fprintf(stderr, "\n");
@@ -821,20 +818,16 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
       break;
     }
     case '7' : {
-      if (length > 1 && seq[1] == '~') /* Esc [ 7 ~ == Home on Eterm/rxvt; */
-      {
+      if (length > 1 && seq[1] == '~') { /* Esc [ 7 ~ == Home on Eterm/rxvt; */
         return KEY_HOME;
       }
-      else if (length > 1 && seq[1] == '$') /* Esc [ 7 $ == Shift-Home on Eterm/rxvt; */
-      {
+      else if (length > 1 && seq[1] == '$') { /* Esc [ 7 $ == Shift-Home on Eterm/rxvt; */
         return SHIFT_HOME;
       }
-      else if (length > 1 && seq[1] == '^') /* Esc [ 7 ^ == Control-Home on Eterm/rxvt; */
-      {
+      else if (length > 1 && seq[1] == '^') { /* Esc [ 7 ^ == Control-Home on Eterm/rxvt; */
         return CONTROL_HOME;
       }
-      else if (length > 1 && seq[1] == '@') /* Esc [ 7 @ == Shift-Control-Home on same. */
-      {
+      else if (length > 1 && seq[1] == '@') { /* Esc [ 7 @ == Shift-Control-Home on same. */
         return shiftcontrolhome;
       }
       break;
@@ -869,29 +862,22 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
                   * urxvt/Gnome and Xfce Terminal. */
     case 'B' :   /* Esc [ B == Down on the same. */
     case 'C' :   /* Esc [ C == Right on the same. */
-    case 'D' :   /* Esc [ D == Left on the same. */
-    {
+    case 'D' : { /* Esc [ D == Left on the same. */
       return arrow_from_ABCD(seq[0]);
     }
-    case 'F' : /* Esc [ F == End on FreeBSD console/Eterm. */
-    {
+    case 'F' : { /* Esc [ F == End on FreeBSD console/Eterm. */
       return KEY_END;
     }
-    case 'G' : /* Esc [ G == PageDown on FreeBSD console. */
-    {
+    case 'G' : { /* Esc [ G == PageDown on FreeBSD console. */
       return KEY_NPAGE;
     }
-    case 'H' : /* Esc [ H == Home on ANSI/VT220/FreeBSD console/Mach
-                  console/Eterm. */
-    {
+    case 'H' : { /* Esc [ H == Home on ANSI/VT220/FreeBSD console/Mach console/Eterm. */
       return KEY_HOME;
     }
-    case 'I' : /* Esc [ I == PageUp on FreeBSD console. */
-    {
+    case 'I' : { /* Esc [ I == PageUp on FreeBSD console. */
       return KEY_PPAGE;
     }
-    case 'L' : /* Esc [ L == Insert on ANSI/FreeBSD console. */
-    {
+    case 'L' : { /* Esc [ L == Insert on ANSI/FreeBSD console. */
       return KEY_IC;
     }
     case 'M' :   /* Esc [ M == F1 on FreeBSD console. */
@@ -951,6 +937,7 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
  * and with the rest of the sequence still in the keystroke buffer.
  * TODO: (parse_escape_sequence) - Use this to get 'Ctrl+Bsp/^Bsp'. */
 int parse_escape_sequence(int starter) {
+  unix_socket_debug("parse_escape_sequence: starter: %d\n", starter);
   int consumed = 1;
   int keycode  = 0;
   if (starter == 'O') {
@@ -959,6 +946,7 @@ int parse_escape_sequence(int starter) {
   else if (starter == '[') {
     keycode = convert_CSI_sequence(nextcodes, waiting_codes, &consumed);
   }
+  unix_socket_debug("parse_escape_sequence: keycode: %d\n", keycode);
   /* Skip the consumed sequence elements. */
   waiting_codes -= consumed;
   nextcodes += consumed;
@@ -1029,6 +1017,14 @@ int convert_to_control(int kbinput) {
   return kbinput;
 }
 
+Uchar get_mod_key(void) {
+  Uchar modifiers = 6;
+  if (ioctl(STDIN_FILENO, TIOCLINUX, &modifiers) >= 0) {
+    return modifiers;
+  }
+  return 0;
+}
+
 /* Extract one keystroke from the input stream.
  * Translate escape sequences and possibly keypad codes into their corresponding
  * values. Set meta_key to true when appropriate. Supported keypad keystrokes
@@ -1055,6 +1051,7 @@ int parse_kbinput(WINDOW *frame) {
   shift_held = false;
   /* Get one code from the input stream. */
   keycode = get_input(frame);
+  unix_socket_debug("keycode: %d\n", keycode);
   /* Check for '^Bsp'. */
   if (term) {
     /* First we check if we are running in xterm.  And if so then check if the appropriet key
@@ -1066,7 +1063,13 @@ int parse_kbinput(WINDOW *frame) {
       }
     }
     else {
-      if (keycode == 263) {
+      if (term_program && (strcmp(term_program, "vscode") == 0) && (keycode == 23)) {
+        return CONTROL_BSP;
+      }
+      else if (ISSET(RAW_SEQUENCES) && keycode == 8) {
+        return CONTROL_BSP;
+      }
+      else if (keycode == 263) {
         return CONTROL_BSP;
       }
     }
@@ -1126,10 +1129,8 @@ int parse_kbinput(WINDOW *frame) {
   }
   else {
     escapes = 0;
-    if (keycode == '[' && waiting_codes &&
-        (('A' <= nextcodes[0] && nextcodes[0] <= 'D') || ('a' <= nextcodes[0] && nextcodes[0] <= 'd'))) {
-      /* An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X
-       * for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow. */
+    if (keycode == '[' && waiting_codes && (('A' <= nextcodes[0] && nextcodes[0] <= 'D') || ('a' <= nextcodes[0] && nextcodes[0] <= 'd'))) {
+      /* An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow. */
       switch (get_input(nullptr)) {
         case 'A' : {
           return KEY_HOME;
@@ -1203,6 +1204,7 @@ int parse_kbinput(WINDOW *frame) {
       }
       else {
         keycode = convert_to_control(keycode);
+        unix_socket_debug("convert_to_control: keycode: %d\n", keycode);
       }
     }
   }
@@ -1312,6 +1314,7 @@ int parse_kbinput(WINDOW *frame) {
     return FOREIGN_SEQUENCE;
   }
 #ifdef __linux__
+  mod_key.clear();
   /* When not running under X, check for the bare arrow keys whether
    * Shift/Ctrl/Alt are being held together with them. */
   Uchar modifiers = 6;
@@ -1319,6 +1322,7 @@ int parse_kbinput(WINDOW *frame) {
   if (on_a_vt && !mute_modifiers && ioctl(0, TIOCLINUX, &modifiers) >= 0) {
     /* Is Shift being held? */
     if (modifiers & 0x01) {
+      mod_key.set<MOD_KEY_SHIFT>();
       if (keycode == '\t') {
         return SHIFT_TAB;
       }
@@ -1334,6 +1338,7 @@ int parse_kbinput(WINDOW *frame) {
     }
     /* Is only Alt being held? */
     if (modifiers == 0x08) {
+      mod_key.clear_and_set<MOD_KEY_ALT>();
       switch (keycode) {
         case KEY_UP : {
           return ALT_UP;
@@ -1361,9 +1366,9 @@ int parse_kbinput(WINDOW *frame) {
         }
       }
     }
-#endif
     /* Is Ctrl being held? */
     if (modifiers & 0x04) {
+      mod_key.set<MOD_KEY_CTRL>();
       switch (keycode) {
         case KEY_UP : {
           return CONTROL_UP;
@@ -1386,8 +1391,7 @@ int parse_kbinput(WINDOW *frame) {
         case KEY_DC : {
           return CONTROL_DELETE;
         }
-        case KEY_BACKSPACE : /* ADDED: TESTING */
-        {
+        case KEY_BACKSPACE : /** ADDED: TESTING */ {
           return CONTROL_BSP;
         }
       }
@@ -1410,6 +1414,7 @@ int parse_kbinput(WINDOW *frame) {
       }
     }
   }
+#endif
   /* Spurious codes from VTE -- see https://sv.gnu.org/bugs/?64578. */
   if (keycode == mousefocusin || keycode == mousefocusout) {
     return ERR;
@@ -1590,6 +1595,7 @@ int *parse_verbatim_kbinput(WINDOW *frame, Ulong *count) {
   int keycode, *yield;
   reveal_cursor = true;
   keycode       = get_input(frame);
+  unix_socket_debug("parse_verbatim_kbinput: keycode: %d\n", keycode);
   /* When the window was resized, abort and return nothing. */
   if (keycode == KEY_WINCH) {
     *count = 999;
@@ -1658,7 +1664,7 @@ char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) {
   /* Turn off flow control characters if necessary so that we can type
    * them in verbatim, and turn the keypad off if necessary so that we
    * don't get extended keypad values. */
-  if ISSET (PRESERVE) {
+  if (ISSET(PRESERVE)) {
     disable_flow_control();
   }
   if (!ISSET(RAW_SEQUENCES)) {
@@ -1687,7 +1693,7 @@ char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) {
   fflush(stdout);
   /* Turn flow control characters back on if necessary and turn the
    * keypad back on if necessary now that we're done. */
-  if ISSET (PRESERVE) {
+  if (ISSET(PRESERVE)) {
     enable_flow_control();
   }
   /* Use the global window pointers, because a resize may have freed

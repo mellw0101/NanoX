@@ -1708,15 +1708,13 @@ bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_w
   return retval;
 }
 
-/* Write the current buffer (or marked region) to disk.  'exiting' Indicates whether the program
- * is exiting.  If exiting is 'true', write the entire buffer regardless of whether the mark is on.
- * Do not ask for a name when 'withprompt' is 'false'. Nor when doing save-on-exit and the buffer
- * already has a name.  If 'withprompt' is 'true' then ask for (confirmation of) the filename.
- * And if 'false' then do not ask for a the filename.  Return`s '0' if the operation is cancelled,
- * '1' if the buffer is saved and '2' if the buffer is discarded. */
+/* Write the current buffer (or marked region) to disk.  'exiting' Indicates whether the program is exiting.
+ * If exiting is 'true', write the entire buffer regardless of whether the mark is on. Do not ask for a name
+ * when 'withprompt' is 'false'. Nor when doing save-on-exit and the buffer already has a name.  If 'withprompt'
+ * is 'true' then ask for (confirmation of) the filename.  And if 'false' then do not ask for a the filename.
+ * Return`s '0' if the operation is cancelled, '1' if the buffer is saved and '2' if the buffer is discarded. */
 int write_it_out(bool exiting, bool withprompt) {
-  /* The filename we offer, or what the user typed so far. */
-  char *given;
+  char *given; /* The filename we offer, or what the user typed so far. */
   /* Whether it's okay to save the buffer under a different name. */
   bool                 maychange   = (openfile->filename[0] == '\0');
   kind_of_writing_type method      = OVERWRITE;
@@ -1732,9 +1730,8 @@ int write_it_out(bool exiting, bool withprompt) {
                               : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]")
                                                             : "";
     const char     *backupstr = ISSET(MAKE_BACKUP) ? _(" [Backup]") : "";
-    /* When the mark is on, offer to write the selection to disk, but
-     * not when in restricted mode, because it would allow writing to
-     * a file not specified on the command line. */
+    /* When the mark is on, offer to write the selection to disk, but not when in restricted
+     * mode, because it would allow writing to a file not specified on the command line. */
     if (openfile->mark && !exiting && !ISSET(RESTRICTED)) {
       /* TRANSLATORS : The next six strings are prompts. */
       msg = (method == PREPEND) ? _("Prepend Selection to File")
@@ -1902,9 +1899,8 @@ int write_it_out(bool exiting, bool withprompt) {
       break;
     }
   }
-  /* When the mark is on (and we've prompted for a name and we're
-   * not exiting and we're not in restricted mode), then write out
-   * the marked region; otherwise, write out the whole buffer. */
+  /* When the mark is on (and we've prompted for a name and we're not exiting and we're not in
+   * restricted mode), then write out the marked region; otherwise, write out the whole buffer. */
   if (openfile->mark && withprompt && !exiting && !ISSET(RESTRICTED)) {
     return write_region_to_file(answer, nullptr, NORMAL, method);
   }
