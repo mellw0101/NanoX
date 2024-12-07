@@ -26,16 +26,16 @@
 #endif
 
 /* Whether ncurses accepts -1 to mean "default color". */
-static bool defaults_allowed = false;
+static bool defaults_allowed = FALSE;
 
-/* Initialize the color pairs for nano's interface.
- * Ask ncurses to allow -1 to mean "default color".
- * Initialize the color pairs for nano's interface elements. */
+/* Initialize the color pairs for nano's interface.  Ask ncurses to allow -1 to
+ * mean "default color".  Initialize the color pairs for nano's interface elements. */
 void set_interface_colorpairs(void) {
   /* Ask ncurses to allow -1 to mean "default color". */
   defaults_allowed = (use_default_colors() == OK);
   /* Initialize the color pairs for nano's interface elements. */
   for (Ulong index = 0; index < NUMBER_OF_ELEMENTS; ++index) {
+    
     colortype *combo = color_combo[index];
     if (combo) {
       if (!defaults_allowed) {
@@ -48,7 +48,7 @@ void set_interface_colorpairs(void) {
       }
       init_pair(index + 1, combo->fg, combo->bg);
       interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
-      rescind_colors              = false;
+      rescind_colors              = FALSE;
     }
     else {
       if (index == FUNCTION_TAG || index == SCROLL_BAR) {
@@ -68,6 +68,11 @@ void set_interface_colorpairs(void) {
       else if (index == ERROR_MESSAGE) {
         init_pair(index + 1, COLOR_WHITE, COLOR_RED);
         interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
+      }
+      else if (index == LINE_NUMBER) {
+        color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
+        init_pair(index + 1, XTERM_GREY_2, COLOR_BLACK);
+        interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
       else if (index >= FG_BLUE && index <= FG_MAUVE) {
         color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
@@ -131,30 +136,30 @@ void set_syntax_colorpairs(syntaxtype *sntx) {
 void prepare_palette(void) {
   short number = NUMBER_OF_ELEMENTS;
   /* For each unique pair number, tell ncurses the combination of colors. */
-  for (colortype *ink = openfile->syntax->color; ink != nullptr; ink = ink->next) {
+  for (colortype *ink = openfile->syntax->color; ink; ink = ink->next) {
     if (ink->pairnum > number) {
       init_pair(ink->pairnum, ink->fg, ink->bg);
       number = ink->pairnum;
     }
   }
-  have_palette = true;
+  have_palette = TRUE;
 }
 
 /* Try to match the given shibboleth string with, one of the regexes
- * in the list starting at head.  Return 'true' upon success. */
+ * in the list starting at head.  Return 'TRUE' upon success. */
 bool found_in_list(regexlisttype *head, const char *shibboleth) {
-  for (regexlisttype *item = head; item != nullptr; item = item->next) {
-    if (regexec(item->one_rgx, shibboleth, 0, nullptr, 0) == 0) {
-      return true;
+  for (regexlisttype *item = head; item; item = item->next) {
+    if (regexec(item->one_rgx, shibboleth, 0, NULL, 0) == 0) {
+      return TRUE;
     }
   }
-  return false;
+  return FALSE;
 }
 
 /* Find a syntax that applies to the current buffer, based upon filename
  * or buffer content, and load and prime this syntax when needed. */
 void find_and_prime_applicable_syntax(void) {
-  syntaxtype *sntx = nullptr;
+  syntaxtype *sntx = NULL;
   /* If the rcfiles were not read, or contained no syntaxes, get out. */
   if (!syntaxes) {
     return;
@@ -200,8 +205,8 @@ void find_and_prime_applicable_syntax(void) {
   /* If we still don't have an answer, try using magic (when requested). */
   if (!sntx && !inhelp && ISSET(USE_MAGIC)) {
     struct stat fileinfo;
-    magic_t     cookie      = nullptr;
-    const char *magicstring = nullptr;
+    magic_t     cookie      = NULL;
+    const char *magicstring = NULL;
     if (stat(openfile->filename, &fileinfo) == 0) {
       /* Open the magic database and get a diagnosis of the file. */
       cookie = magic_open(MAGIC_SYMLINK |
@@ -209,7 +214,7 @@ void find_and_prime_applicable_syntax(void) {
                           MAGIC_DEBUG | MAGIC_CHECK |
 #  endif
                           MAGIC_ERROR);
-      if (!cookie || magic_load(cookie, nullptr) < 0) {
+      if (!cookie || magic_load(cookie, NULL) < 0) {
         statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
       }
       else {
@@ -246,7 +251,6 @@ void find_and_prime_applicable_syntax(void) {
     set_syntax_colorpairs(sntx);
   }
   openfile->syntax = sntx;
-  syntax_check_file(openfile);
 }
 
 /* Determine whether the matches of multiline regexes are still the same,
@@ -263,7 +267,7 @@ void check_the_multis(linestruct *line) {
     return;
   }
   if (!line->multidata) {
-    refresh_needed = true;
+    refresh_needed = TRUE;
     return;
   }
   for (ink = openfile->syntax->color; ink; ink = ink->next) {
@@ -303,8 +307,8 @@ void check_the_multis(linestruct *line) {
       }
     }
     /* There is a mismatch, so something changed: repaint. */
-    refresh_needed = true;
-    perturbed      = true;
+    refresh_needed = TRUE;
+    perturbed      = TRUE;
     return;
   }
 }
@@ -320,17 +324,17 @@ void precalc_multicolorinfo(void) {
     return;
   }
   /* For each line, allocate cache space for the multiline-regex info. */
-  for (line = openfile->filetop; line != nullptr; line = line->next) {
+  for (line = openfile->filetop; line; line = line->next) {
     if (!line->multidata) {
       line->multidata = (short *)nmalloc(openfile->syntax->multiscore * sizeof(short));
     }
   }
-  for (ink = openfile->syntax->color; ink != nullptr; ink = ink->next) {
+  for (ink = openfile->syntax->color; ink; ink = ink->next) {
     /* If this is not a multi-line regex, skip it. */
-    if (ink->end == nullptr) {
+    if (!ink->end) {
       continue;
     }
-    for (line = openfile->filetop; line != nullptr; line = line->next) {
+    for (line = openfile->filetop; line; line = line->next) {
       int index = 0;
       /* Assume nothing applies until proven otherwise below. */
       line->multidata[ink->id] = NOTHING;
@@ -364,7 +368,7 @@ void precalc_multicolorinfo(void) {
         for (line = line->next; line != tailline; line = line->next) {
           line->multidata[ink->id] = WHOLELINE;
         }
-        if (tailline == nullptr) {
+        if (tailline == NULL) {
           line = openfile->filebot;
           break;
         }
@@ -377,7 +381,7 @@ void precalc_multicolorinfo(void) {
 }
 
 bool str_equal_to_rgx(const char *str, const regex_t *rgx) {
-  return (regexec(rgx, str, 0, nullptr, 0) == 0);
+  return (regexec(rgx, str, 0, NULL, 0) == 0);
 }
 
 short rgb_to_ncurses(unsigned char value) {

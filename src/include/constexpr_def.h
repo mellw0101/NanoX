@@ -1,4 +1,4 @@
-/// \file constexpr_def.h
+/** @file constexpr_def.h */
 #pragma once
 
 #include <Mlib/constexpr.hpp>

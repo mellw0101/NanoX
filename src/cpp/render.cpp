@@ -5,12 +5,12 @@ static Uint block_comment_end   = (Uint)-1;
 static int  color_bi[3]         = {FG_VS_CODE_YELLOW, FG_VS_CODE_BRIGHT_MAGENTA, FG_VS_CODE_BRIGHT_BLUE};
 
 static int         row       = 0;
-static const char *converted = nullptr;
-static linestruct *line      = nullptr;
+static const char *converted = NULL;
+static linestruct *line      = NULL;
 static Ulong       from_col  = 0;
 
 char              suggest_buf[1024] = "";
-char             *suggest_str       = nullptr;
+char             *suggest_str       = NULL;
 int               suggest_len       = 0;
 vec<const char *> types             = {
   "void", "char",  "int",   "unsigned", "extern",  "volatile", "static",
@@ -29,8 +29,8 @@ void render_part(Ulong match_start, Ulong match_end, short color) {
   if (match_start > from_x) {
     start_col = (int)(wideness(line->data, match_start) - from_col);
   }
-  thetext  = converted + actual_x(converted, start_col);
-  paintlen = (int)actual_x(thetext, wideness(line->data, match_end) - from_col - start_col);
+  thetext  = (converted + actual_x(converted, start_col));
+  paintlen = (int)actual_x(thetext, (wideness(line->data, match_end) - from_col - start_col));
   midwin_mv_add_nstr_color(row, (margin + start_col), thetext, paintlen, color);
 }
 
@@ -79,7 +79,8 @@ void render_line_text(int row, const char *str, linestruct *line, Ulong from_col
   if (is_shorter || ISSET(SOFTWRAP)) {
     wclrtoeol(midwin);
   }
-  if (sidebar) {
+  /* Only draw sidebar when file is longer then editwin rows. */
+  if (sidebar && openfile->filebot->lineno > editwinrows) {
     mvwaddch(midwin, row, COLS - 1, bardata[row]);
   }
 }
@@ -113,8 +114,7 @@ void render_comment(void) {
         /* If there is a slash comment infront the block comment. Then of cource we still color
          * the text from the slash to the block start after we error highlight the block start. */
         if (slash && (slash - line->data) < (start - line->data)) {
-          midwin_mv_add_nstr_color(
-            row, (wideness(line->data, (slash - line->data))) + margin, slash, (start - line->data) - (slash - line->data), FG_GREEN);
+          midwin_mv_add_nstr_color(row, (wideness(line->data, (slash - line->data))) + margin, slash, (start - line->data) - (slash - line->data), FG_GREEN);
         }
         block_comment_start += (start - line->data) + 2;
       }
@@ -274,7 +274,7 @@ void render_parents(void) {
 /* This function highlights string literals.  Error handeling is needed. */
 void render_string_literals(void) {
   const char *start = line->data;
-  const char *end   = nullptr;
+  const char *end   = NULL;
   while ((start = strchr(start, '"'))) {
     end = strchr(start + 1, '"');
     if (end) {
@@ -525,9 +525,7 @@ void rendr_if_preprosses(Uint index) {
   }
 }
 
-/* This 'render' sub-system is responsible for handeling all pre-prossesor
- * syntax.  TODO: Create a structured way to parse, and then create a
- * system to include error handeling in real-time. */
+/* This 'render' sub-system is responsible for handeling all pre-prossesor syntax. */
 void render_preprossesor(void) {
   char       *current_word = NULL;
   const char *start        = strchr(line->data, '#');
@@ -629,7 +627,7 @@ void render_control_statements(Ulong index) {
     case 'e' : /* else */ {
       Ulong       else_indent = line_indent(line);
       Ulong       indent;
-      const char *if_found = nullptr;
+      const char *if_found = NULL;
       int         i        = 0;
       for (linestruct *l = line->prev; l && (i < 500); l = l->prev, ++i) {
         indent = line_indent(l);
@@ -655,8 +653,8 @@ void rendr_classes(void) {
   const char *found = word_strstr(line->data, "class");
   if (found) {
     remove_from_color_map(line, FG_VS_CODE_GREEN, CLASS_SYNTAX);
-    const char *start = nullptr;
-    const char *end   = nullptr;
+    const char *start = NULL;
+    const char *end   = NULL;
     start             = found;
     start += "class"_sllen;
     ADV_PTR(start, (*start == ' ' || *start == '\t'));
@@ -688,7 +686,7 @@ void rendr_classes(void) {
     add_rm_color_map(name, {FG_VS_CODE_GREEN, (int)line->lineno, 100000, CLASS_SYNTAX});
     class_info_t class_info;
     class_info.name = name;
-    /* const char *func_found = nullptr;
+    /* const char *func_found = NULL;
     for (linestruct *cl = line; cl->lineno < end_line; cl = cl->next)
     {
         func_found = strchr(cl->data, '(');
@@ -756,8 +754,8 @@ void render_function(void) {
     if (line->lineno >= f->start.line && line->lineno <= f->end.line) {
       for (const auto &p : f->params) {
         const char *data  = line->data;
-        const char *start = nullptr;
-        const char *end   = nullptr;
+        const char *start = NULL;
+        const char *end   = NULL;
         do {
           find_word(line, data, p.name.c_str(), p.name.length(), &start, &end);
           if (start) {
@@ -772,8 +770,8 @@ void render_function(void) {
       }
       for (const auto &v : f->body.vars) {
         const char *data  = line->data;
-        const char *start = nullptr;
-        const char *end   = nullptr;
+        const char *start = NULL;
+        const char *end   = NULL;
         do {
           find_word(line, data, v.name.c_str(), v.name.length(), &start, &end);
           if (start) {
@@ -919,7 +917,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
         render_part((comment - line->data), till_x, FG_COMMENT_GREEN);
       }
       else {
-        comment = nullptr;
+        comment = NULL;
       }
     }
     line_word_t *head = line_word_list(line->data, till_x);
@@ -989,7 +987,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
 
 void rendr_suggestion(void) {
   PROFILE_FUNCTION;
-  suggest_str = nullptr;
+  suggest_str = NULL;
   if (suggestwin) {
     delwin(suggestwin);
   }

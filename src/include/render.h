@@ -135,13 +135,14 @@
 /* Index based rendering derived from ptr pos in line. */
 #define C_PTR_3(color, start, end) render_part((start - line->data), (end - line->data), color)
 /* Print a warning at end of line. */
-#define W_1(str)                   midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1, str, str##_sllen, FG_YELLOW)
+#define W_1(str) \
+  midwin_mv_add_nstr_color(row, (wideness(line->data, till_x) + margin + 1), str, str##_sllen, FG_YELLOW)
 /* Print a error at end of line. */
 #define E_1(str) \
-  midwin_mv_add_nstr_color(row, wideness(line->data, till_x) + margin + 1, str, const_strlen(str), FG_VS_CODE_RED)
+  midwin_mv_add_nstr_color(row, (wideness(line->data, till_x) + margin + 1), str, const_strlen(str), FG_VS_CODE_RED)
 #define SUGGEST_1(str)      \
   midwin_mv_add_nstr_color( \
-    openfile->cursor_row, xplustabs() + margin, str + suggest_len, strlen(str) - suggest_len, FG_SUGGEST_GRAY)
+    openfile->cursor_row, (xplustabs() + margin), (str + suggest_len), (strlen(str) - suggest_len), FG_SUGGEST_GRAY)
 
 /* Main rendering caller. */
 #define rendr(opt, ...) PP_CAT(opt##_, PP_NARG(__VA_ARGS__))(__VA_ARGS__)

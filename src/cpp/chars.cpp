@@ -1,19 +1,12 @@
-/// @file chars.cpp
-
+/** @file chars.cpp */
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
+/* Whether we've enabled UTF-8 support.  Initially set to 'FALSE', and then set to 'TRUE' by utf8_init(). */
+static bool use_utf8 = FALSE;
 
-#include <cstring>
-#include <cwctype>
-
-/* Whether we've enabled UTF-8 support.
- * Initially set to 'false', and then set to 'true' by utf8_init(). */
-static bool use_utf8 = false;
-
-/* Enable UTF-8 support.  Set the 'use_utf8' variable to 'true'. */
+/* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
 void utf8_init(void) {
-  use_utf8 = true;
+  use_utf8 = TRUE;
 }
 
 /* Checks if UTF-8 support has been enabled. */
@@ -21,37 +14,37 @@ bool using_utf8(void) {
   return use_utf8;
 }
 
-/* Return 'true' when the given character is some kind of letter. */
+/* Return 'TRUE' when the given character is some kind of letter. */
 bool is_alpha_char(const char *const c) {
   wchar_t wc;
   if (mbtowide(wc, c) < 0) {
-    return false;
+    return FALSE;
   }
   return iswalpha(wc);
 }
 
-/* Return 'true' when the given character is some kind of letter or a digit. */
+/* Return 'TRUE' when the given character is some kind of letter or a digit. */
 bool is_alnum_char(const char *const c) {
   wchar_t wc;
   if (mbtowide(wc, c) < 0) {
-    return false;
+    return FALSE;
   }
   return iswalnum(wc);
 }
 
-/* Return 'true' when the given character is space or tab or other whitespace. */
+/* Return 'TRUE' when the given character is space or tab or other whitespace. */
 bool is_blank_char(const char *const c) {
   wchar_t wc;
   if ((signed char)*c >= 0) {
     return (*c == ' ' || *c == '\t');
   }
   if (mbtowide(wc, c) < 0) {
-    return false;
+    return FALSE;
   }
   return iswblank(wc);
 }
 
-/* Return 'true' when the given character is a control character. */
+/* Return 'TRUE' when the given character is a control character. */
 bool is_cntrl_char(const char *const c) {
   if (use_utf8) {
     return (!(c[0] & 0xE0) || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
@@ -61,26 +54,26 @@ bool is_cntrl_char(const char *const c) {
   }
 }
 
-/* Return 'true' when the given character is a punctuation character. */
+/* Return 'TRUE' when the given character is a punctuation character. */
 bool is_punct_char(const char *const c) {
   wchar_t wc;
   if (mbtowide(wc, c) < 0) {
-    return false;
+    return FALSE;
   }
   return iswpunct(wc);
 }
 
-/* Return 'true' when the given character is word-forming (it is alphanumeric or
- * specified in 'wordchars', or it is punctuation when allow_punct is true). */
+/* Return 'TRUE' when the given character is word-forming (it is alphanumeric or
+ * specified in 'wordchars', or it is punctuation when allow_punct is TRUE). */
 bool is_word_char(const char *const c, bool allow_punct) {
   if (*c == '\0') {
-    return false;
+    return FALSE;
   }
   if (is_alnum_char(c)) {
-    return true;
+    return TRUE;
   }
   if (allow_punct && is_punct_char(c)) {
-    return true;
+    return TRUE;
   }
   if (word_chars && *word_chars) {
     char      symbol[MAXCHARLEN + 1];
@@ -89,7 +82,7 @@ bool is_word_char(const char *const c, bool allow_punct) {
     return constexpr_strstr(word_chars, symbol);
   }
   else {
-    return false;
+    return FALSE;
   }
 }
 
@@ -111,7 +104,7 @@ char control_rep(const signed char c) {
 
 /* Return the visible representation of multibyte control character 'c'. */
 char control_mbrep(const char *const c, bool isdata) {
-  /* An embedded newline is an encoded NUL if 'isdata' is true. */
+  /* An embedded newline is an encoded NUL if 'isdata' is TRUE. */
   if (*c == '\n' && (isdata || as_an_at)) {
     return '@';
   }
@@ -170,33 +163,33 @@ int mbtowide(wchar_t &wc, const char *const c) {
   return 1;
 }
 
-/* Return 'true' when the given character occupies two cells. */
+/* Return 'TRUE' when the given character occupies two cells. */
 bool is_doublewidth(const char *const ch) {
   wchar_t wc;
   /* Only from U+1100 can code points have double width. */
   if ((Uchar)*ch < 0xE1 || !use_utf8) {
-    return false;
+    return FALSE;
   }
   if (mbtowide(wc, ch) < 0) {
-    return false;
+    return FALSE;
   }
   return (wcwidth(wc) == 2);
 }
 
-/* Return 'true' when the given character occupies zero cells. */
+/* Return 'TRUE' when the given character occupies zero cells. */
 bool is_zerowidth(const char *ch) {
   wchar_t wc;
   /* Only from U+0300 can code points have zero width. */
   if ((Uchar)*ch < 0xCC || !use_utf8) {
-    return false;
+    return FALSE;
   }
   if (mbtowide(wc, ch) < 0) {
-    return false;
+    return FALSE;
   }
 #if defined(__OpenBSD__)
   /* Work around an OpenBSD bug -- see https://sv.gnu.org/bugs/?60393. */
   if (wc >= 0xF0000) {
-    return false;
+    return FALSE;
   }
 #endif
   return (wcwidth(wc) == 0);
@@ -462,7 +455,7 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
     if (pointer < haystack) {
       return nullptr;
     }
-    while (true) {
+    while (TRUE) {
       if (!mbstrncasecmp(pointer, needle, needle_len)) {
         return (char *)pointer;
       }
@@ -482,19 +475,19 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
  * The function is used in justify.c to find the first space in a line. */
 char *mbstrchr(const char *string, const char *const chr) {
   if (use_utf8) {
-    bool    bad_s = false;
-    bool    bad_c = false;
+    bool    bad_s = FALSE;
+    bool    bad_c = FALSE;
     wchar_t ws;
     wchar_t wc;
     if (mbtowide(wc, chr) < 0) {
       wc    = (Uchar)*chr;
-      bad_c = true;
+      bad_c = TRUE;
     }
     while (*string) {
       const int symlen = mbtowide(ws, string);
       if (symlen < 0) {
         ws    = (Uchar)*string;
-        bad_s = true;
+        bad_s = TRUE;
       }
       if (ws == wc && bad_s == bad_c) {
         break;
@@ -531,7 +524,7 @@ char *mbrevstrpbrk(const char *const head, const char *const accept, const char 
     }
     pointer = head + step_left(head, pointer - head);
   }
-  while (true) {
+  while (TRUE) {
     if (mbstrchr(accept, pointer)) {
       return (char *)pointer;
     }
@@ -543,7 +536,7 @@ char *mbrevstrpbrk(const char *const head, const char *const accept, const char 
   }
 }
 
-/* Return 'true' if the given string contains at least one blank character. */
+/* Return 'TRUE' if the given string contains at least one blank character. */
 bool has_blank_char(const char *str) {
   while (*str && !is_blank_char(str)) {
     str += char_length(str);
@@ -551,7 +544,7 @@ bool has_blank_char(const char *str) {
   return *str;
 }
 
-/* Return 'true' when the given string is empty or consists of only blanks. */
+/* Return 'TRUE' when the given string is empty or consists of only blanks. */
 bool white_string(const char *str) {
   while (*str && (is_blank_char(str) || *str == '\r')) {
     str += char_length(str);
@@ -583,7 +576,7 @@ void strip_leading_blanks_from(char *str) {
 void strip_leading_chars_from(char *str, const char ch) {
   char *start = str;
   for (; start && *start == ch; start++);
-  (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
+  (start != str) ? memmove(str, start, (strlen(start) + 1)) : 0;
 }
 
 /* Works like 'strchr' except made for c/cpp code so it skips all

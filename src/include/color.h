@@ -25,19 +25,24 @@
 #define COLOR_PURPLE                         163
 #define COLOR_MAUVE                          134
 /* Vs-code colors. */
-#define COLOR_VS_CODE_RED                    xterm_color_index(205, 49, 49)
-#define COLOR_VS_CODE_GREEN                  xterm_color_index(13, 188, 121)
-#define COLOR_VS_CODE_YELLOW                 xterm_color_index(229, 229, 16)
-#define COLOR_VS_CODE_BLUE                   xterm_color_index(36, 114, 200)
-#define COLOR_VS_CODE_MAGENTA                xterm_color_index(188, 63, 188)
-#define COLOR_VS_CODE_CYAN                   xterm_color_index(17, 168, 205)
-#define COLOR_VS_CODE_WHITE                  xterm_color_index(229, 229, 229)
-#define COLOR_VS_CODE_BRIGHT_RED             xterm_color_index(241, 76, 76)
-#define COLOR_VS_CODE_BRIGHT_GREEN           xterm_color_index(35, 209, 139)
-#define COLOR_VS_CODE_BRIGHT_YELLOW          xterm_color_index(245, 245, 67)
-#define COLOR_VS_CODE_BRIGHT_BLUE            xterm_color_index(59, 142, 234)
-#define COLOR_VS_CODE_BRIGHT_MAGENTA         xterm_color_index(214, 112, 214)
-#define COLOR_VS_CODE_BRIGHT_CYAN            xterm_color_index(41, 184, 219)
+/* Some base constexpr xterm index colors. */
+static constexpr short XTERM_GREY_1 = xterm_grayscale_color_index(80,  80,  80);
+static constexpr short XTERM_GREY_2 = xterm_grayscale_color_index(130, 130, 130);
+static constexpr short XTERM_GREY_3 = xterm_grayscale_color_index(180, 180, 180);
+
+static constexpr short VS_CODE_RED            = xterm_color_index(205, 49, 49);
+static constexpr short VS_CODE_GREEN          = xterm_color_index(13, 188, 121);
+static constexpr short VS_CODE_YELLOW         = xterm_color_index(229, 229, 16);
+static constexpr short VS_CODE_BLUE           = xterm_color_index(36, 114, 200);
+static constexpr short VS_CODE_MAGENTA        = xterm_color_index(188, 63, 188);
+static constexpr short VS_CODE_CYAN           = xterm_color_index(17, 168, 205);
+static constexpr short VS_CODE_WHITE          = xterm_color_index(229, 229, 229);
+static constexpr short VS_CODE_BRIGHT_RED     = xterm_color_index(241, 76, 76);
+static constexpr short VS_CODE_BRIGHT_GREEN   = xterm_color_index(35, 209, 139);
+static constexpr short VS_CODE_BRIGHT_YELLOW  = xterm_color_index(245, 245, 67);
+static constexpr short VS_CODE_BRIGHT_BLUE    = xterm_color_index(59, 142, 234);
+static constexpr short VS_CODE_BRIGHT_MAGENTA = xterm_color_index(214, 112, 214);
+static constexpr short VS_CODE_BRIGHT_CYAN    = xterm_color_index(41, 184, 219);
 
 /* Base colors. */
 #define FG_BLUE                              12
@@ -73,19 +78,19 @@
 #define LOCAL_VAR                            -1
 
 constexpr_map<int, short, 15> color_index_map = {
-  {{FG_VS_CODE_RED, COLOR_VS_CODE_RED},
-   {FG_VS_CODE_GREEN, COLOR_VS_CODE_GREEN},
-   {FG_VS_CODE_YELLOW, COLOR_VS_CODE_YELLOW},
-   {FG_VS_CODE_BLUE, COLOR_VS_CODE_BLUE},
-   {FG_VS_CODE_MAGENTA, COLOR_VS_CODE_MAGENTA},
-   {FG_VS_CODE_CYAN, COLOR_VS_CODE_CYAN},
-   {FG_VS_CODE_WHITE, COLOR_VS_CODE_WHITE},
-   {FG_VS_CODE_BRIGHT_RED, COLOR_VS_CODE_BRIGHT_RED},
-   {FG_VS_CODE_BRIGHT_GREEN, COLOR_VS_CODE_BRIGHT_GREEN},
-   {FG_VS_CODE_BRIGHT_YELLOW, COLOR_VS_CODE_BRIGHT_YELLOW},
-   {FG_VS_CODE_BRIGHT_BLUE, COLOR_VS_CODE_BRIGHT_BLUE},
-   {FG_VS_CODE_BRIGHT_MAGENTA, COLOR_VS_CODE_BRIGHT_MAGENTA},
-   {FG_VS_CODE_BRIGHT_CYAN, COLOR_VS_CODE_BRIGHT_CYAN},
+  {{FG_VS_CODE_RED, VS_CODE_RED},
+   {FG_VS_CODE_GREEN, VS_CODE_GREEN},
+   {FG_VS_CODE_YELLOW, VS_CODE_YELLOW},
+   {FG_VS_CODE_BLUE, VS_CODE_BLUE},
+   {FG_VS_CODE_MAGENTA, VS_CODE_MAGENTA},
+   {FG_VS_CODE_CYAN, VS_CODE_CYAN},
+   {FG_VS_CODE_WHITE, VS_CODE_WHITE},
+   {FG_VS_CODE_BRIGHT_RED, VS_CODE_BRIGHT_RED},
+   {FG_VS_CODE_BRIGHT_GREEN, VS_CODE_BRIGHT_GREEN},
+   {FG_VS_CODE_BRIGHT_YELLOW, VS_CODE_BRIGHT_YELLOW},
+   {FG_VS_CODE_BRIGHT_BLUE, VS_CODE_BRIGHT_BLUE},
+   {FG_VS_CODE_BRIGHT_MAGENTA, VS_CODE_BRIGHT_MAGENTA},
+   {FG_VS_CODE_BRIGHT_CYAN, VS_CODE_BRIGHT_CYAN},
    {FG_COMMENT_GREEN, xterm_color_index(0, 102, 0)},
    {FG_SUGGEST_GRAY, xterm_grayscale_color_index(80, 80, 80)}}
 };
@@ -100,3 +105,5 @@ constexpr_map<int, short, 15> color_index_map = {
     }                                                \
     data = end;                                      \
   } while (data);
+
+

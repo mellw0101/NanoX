@@ -845,7 +845,7 @@ void terminal_init(void) {
   fflush(stdout);
 }
 
-/* Ask ncurses for a keycode, or assign a default one. */
+/* Ask ncurses for@file definitions.h a keycode, or assign a default one. */
 int get_keycode(const char *const keyname, const int standard) {
   const char *keyvalue = tigetstr(keyname);
   if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue)) {
@@ -1326,6 +1326,7 @@ int main(int argc, char **argv) {
   SET(INDICATOR);
   SET(AFTER_ENDS);
   SET(RAW_SEQUENCES);
+  SET(LINE_NUMBERS);
   // SET(SUGGEST);
   // SET(SUGGEST_INLINE);
   /* This is my new system for live syntax, and it`s fucking fast. */
@@ -1442,11 +1443,11 @@ int main(int argc, char **argv) {
     if (fill_used) {
       fill = fill_cmdline;
     }
-    if (backup_dir_cmdline != NULL) {
+    if (backup_dir_cmdline) {
       free(backup_dir);
       backup_dir = backup_dir_cmdline;
     }
-    if (word_chars_cmdline != NULL) {
+    if (word_chars_cmdline) {
       free(word_chars);
       word_chars = word_chars_cmdline;
     }
@@ -1456,15 +1457,15 @@ int main(int argc, char **argv) {
     if (tabsize_cmdline != -1) {
       tabsize = tabsize_cmdline;
     }
-    if (operating_dir_cmdline != NULL || ISSET(RESTRICTED)) {
+    if (operating_dir_cmdline || ISSET(RESTRICTED)) {
       free(operating_dir);
       operating_dir = operating_dir_cmdline;
     }
-    if (quotestr_cmdline != NULL) {
+    if (quotestr_cmdline) {
       free(quotestr);
       quotestr = quotestr_cmdline;
     }
-    if (alt_speller_cmdline != NULL) {
+    if (alt_speller_cmdline) {
       free(alt_speller);
       alt_speller = alt_speller_cmdline;
     }
@@ -1474,7 +1475,7 @@ int main(int argc, char **argv) {
       SET(BREAK_LONG_LINES);
     }
     /* Simply OR the boolean flags from rcfile and command line. */
-    for (Ulong i = 0; i < sizeof(flags) / sizeof(flags[0]); i++) {
+    for (Ulong i = 0; i < (sizeof(flags) / sizeof(flags[0])); ++i) {
       flags[i] |= flags_cmdline[i];
     }
   }
@@ -1521,13 +1522,11 @@ int main(int argc, char **argv) {
   if (ISSET(POSITIONLOG)) {
     load_poshistory();
   }
-  /* If a backup directory was specified and we're not in restricted mode,
-   * verify it is an existing folder, so backup files can be saved there. */
+  /* If a backup directory was specified and we're not in restricted mode, verify it is an existing folder, so backup files can be saved there. */
   if (backup_dir && !ISSET(RESTRICTED)) {
     init_backup_dir();
   }
-  /* Set up the operating directory.  This entails chdir()ing there,
-   * so that file reads and writes will be based there. */
+  /* Set up the operating directory.  This entails chdir()ing there, so that file reads and writes will be based there. */
   if (operating_dir) {
     init_operating_dir();
   }
@@ -1546,11 +1545,9 @@ int main(int argc, char **argv) {
   else {
     free(quotestr);
   }
-  /* If we don't have an alternative spell checker after reading the
-   * command line and/or rcfile(s), check $SPELL for one, as Pico
-   * does (unless we're using restricted mode, in which case spell
-   * checking is disabled, since it would allow reading from or
-   * writing to files not specified on the command line). */
+  /* If we don't have an alternative spell checker after reading the command line and/or rcfile(s), check
+   * $SPELL for one, as Pico does (unless we're using restricted mode, in which case spell checking is
+   * disabled, since it would allow reading from or writing to files not specified on the command line). */
   if (!alt_speller && !ISSET(RESTRICTED)) {
     const char *spellenv = getenv("SPELL");
     if (spellenv) {
@@ -1607,7 +1604,7 @@ int main(int argc, char **argv) {
   window_init();
   curs_set(0);
   sidebar     = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
-  bardata     = (int *)nrealloc(bardata, LINES * sizeof(int));
+  bardata     = arealloc(bardata, LINES * sizeof(int));
   editwincols = COLS - sidebar;
   /* Set up the signal handlers. */
   signal_init();

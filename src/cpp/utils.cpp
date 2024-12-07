@@ -13,7 +13,7 @@ void get_homedir(void) {
         homenv = userage->pw_dir;
       }
     }
-    /* Only set homedir if some home directory could be determined, otherwise keep homedir 'nullptr'. */
+    /* Only set homedir if some home directory could be determined, otherwise keep homedir 'NULL'. */
     if (homenv && *homenv) {
       homedir = copy_of(homenv);
     }
@@ -178,7 +178,7 @@ bool is_separate_word(Ulong position, Ulong length, const char *text) {
   return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
 }
 
-/* Return the position of the needle in the haystack, or nullptr if not found.
+/* Return the position of the needle in the haystack, or NULL if not found.
  * When searching backwards, we will find the last match that starts no later
  * than the given start; otherwise, we find the first match starting no earlier
  * than start.  If we are doing a regexp search, and we find a match, we fill
@@ -190,14 +190,14 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
       /* The start of the search range, and the next start. */
       floor = 0, next_rung = 0;
       if (regexec(&search_regexp, haystack, 1, regmatches, 0)) {
-        return nullptr;
+        return NULL;
       }
       far_end   = strlen(haystack);
       ceiling   = start - haystack;
       last_find = regmatches[0].rm_so;
       /* A result beyond the search range also means: no match. */
       if (last_find > ceiling) {
-        return nullptr;
+        return NULL;
       }
       /* Move the start-of-range forward until there is no more match;
        * then the last match found is the first match backwards. */
@@ -219,7 +219,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
       regmatches[0].rm_so = floor;
       regmatches[0].rm_eo = far_end;
       if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
-        return nullptr;
+        return NULL;
       }
       return haystack + regmatches[0].rm_so;
     }
@@ -227,7 +227,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
     regmatches[0].rm_so = start - haystack;
     regmatches[0].rm_eo = strlen(haystack);
     if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
-      return nullptr;
+      return NULL;
     }
     else {
       return haystack + regmatches[0].rm_so;
@@ -250,18 +250,18 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
 }
 
 /* Allocate the given amount of memory and return a pointer to it. */
-void *nmalloc(const Ulong howmuch) {
+void *nmalloc(Ulong howmuch) {
   void *section = malloc(howmuch);
-  if (section == nullptr) {
+  if (!section) {
     die(_("NanoX is out of memory!\n"));
   }
   return section;
 }
 
 /* Reallocate the given section of memory to have the given size. */
-void *nrealloc(void *section, const Ulong howmuch) {
+void *nrealloc(void *section, Ulong howmuch) {
   section = realloc(section, howmuch);
-  if (section == nullptr) {
+  if (!section) {
     die(_("NanoX is out of memory!\n"));
   }
   return section;
@@ -271,7 +271,7 @@ void *nrealloc(void *section, const Ulong howmuch) {
  * Usage: "dest = mallocstrcpy(dest, src);". */
 char *mallocstrcpy(char *dest, const char *src) {
   Ulong count = strlen(src) + 1;
-  dest        = (char *)nrealloc(dest, count);
+  dest        = arealloc(dest, count);
   constexpr_strncpy(dest, src, count);
   return dest;
 }
@@ -379,7 +379,7 @@ void remove_magicline(void) {
     }
     openfile->filebot = openfile->filebot->prev;
     delete_node(openfile->filebot->next);
-    openfile->filebot->next = nullptr;
+    openfile->filebot->next = NULL;
     openfile->totsize--;
   }
 }
@@ -493,11 +493,11 @@ void append_str(char **str, const char *appen_str) {
 }
 
 /* Return`s either a malloc`ed str of the current
- * file dir or nullptr if inside the same dir. */
+ * file dir or NULL if inside the same dir. */
 char *alloced_current_file_dir(void) {
   const char *slash = strrchr(openfile->filename, '/');
   if (!slash) {
-    return nullptr;
+    return NULL;
   }
   slash += 1;
   char *ret = (char *)nmalloc((slash - openfile->filename) + 1);
@@ -533,7 +533,7 @@ void alloced_remove_at(char **str, int at) {
   memmove(*str + at, *str + at + 1, slen - at);
 }
 
-/* Return 'nullptr' if 'needle' is not found by itself. */
+/* Return 'NULL' if 'needle' is not found by itself. */
 const char *word_strstr(const char *data, const char *needle) {
   const int   slen  = strlen(needle);
   const char *found = strstr(data, needle);
@@ -543,7 +543,7 @@ const char *word_strstr(const char *data, const char *needle) {
       return found;
     }
   }
-  return nullptr;
+  return NULL;
 }
 
 /* Retrieve a 'string' containing the file extention.
@@ -582,18 +582,18 @@ string current_file_dir(void) {
  * in line format.  This function also allows to input a refrece to
  * an 'Uint' to retrieve the line count.  Note that each line
  * is malloc`ed as well and will need to be free`d, as does the entire
- * array.  Return`s 'nullptr' apon failure. */
+ * array.  Return`s 'NULL' apon failure. */
 char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
   FILE *prog = popen(cmd, "r");
   if (!prog) {
     logE("Failed to run command: '%s'.", cmd);
-    return nullptr;
+    return NULL;
   }
   static char buf[PATH_MAX];
   Uint        size  = 0;
   Uint        cap   = 10;
   char      **lines = AMALLOC_ARRAY(lines, cap);
-  char       *copy  = nullptr;
+  char       *copy  = NULL;
   while (fgets(buf, sizeof(buf), prog)) {
     Uint len = strlen(buf);
     buf[len - 1] == '\n' ? buf[--len] = '\0' : 0;
@@ -603,12 +603,12 @@ char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
   }
   pclose(prog);
   n_lines ? *n_lines = size : 0;
-  lines[size] = nullptr;
+  lines[size] = NULL;
   return lines;
 }
 
 const char *word_strstr_array(const char *str, const char **substrs, Uint count, Uint *index) {
-  const char *first = nullptr;
+  const char *first = NULL;
   for (Uint i = 0; i < count; i++) {
     const char *match = word_strstr(str, substrs[i]);
     if (match && (!first || match < first)) {
@@ -620,7 +620,7 @@ const char *word_strstr_array(const char *str, const char **substrs, Uint count,
 }
 
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index) {
-  const char *first = nullptr;
+  const char *first = NULL;
   for (Uint i = 0; i < count; i++) {
     const char *match = strstr(str, substrs[i]);
     if (match && (!first || match < first)) {
@@ -632,7 +632,7 @@ const char *strstr_array(const char *str, const char **substrs, Uint count, Uint
 }
 
 const char *string_strstr_array(const char *str, const vector<string> &substrs, Uint *index) {
-  const char *first = nullptr;
+  const char *first = NULL;
   for (Uint i = 0; i < substrs.size(); i++) {
     const char *match = strstr(str, substrs[i].c_str());
     if (match && (!first || match < first)) {
@@ -648,7 +648,7 @@ string tern_statement(const string &str, string *if_true, string *if_false) {
   static const char    *rules[rule_count] = {"?", ":"};
   const char           *start             = &str[0];
   const char           *end               = start;
-  const char           *found             = nullptr;
+  const char           *found             = NULL;
   string                ret               = "";
   Uint                  index;
   found = strstr_array(start, rules, rule_count, &index);

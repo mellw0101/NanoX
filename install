@@ -1,23 +1,7 @@
 #!/bin/bash
 
-
-# Get the architecture of the machine
-ARCH=$(uname -m)
-
-# Print the architecture
-echo "Architecture: $ARCH"
-
-# Perform actions based on the architecture
-case "$ARCH" in
-    x86_64)
-        AmakeCpp --test
-        AmakeCpp --link --bin /usr/lib/Mlib.a
-        ;;
-    aarch64)
-        AmakeCpp --build --install --bin /usr/lib/Mlib.a -lncurses 
-        ;;
-    *)
-        echo "Unknown architecture: $ARCH"
-        # Add your commands for other architectures here
-        ;;
-esac
+AmakeCpp --test
+sudo AmakeCpp --link --bin /usr/lib/Mlib.a
+if [ -f build/bin/NanoX ]; then
+  sudo cp build/bin/NanoX /usr/bin/nanox
+fi

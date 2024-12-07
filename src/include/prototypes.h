@@ -463,8 +463,8 @@ void        recode_NUL_to_LF(char *string, Ulong length);
 Ulong       recode_LF_to_NUL(char *string);
 void        free_chararray(char **array, Ulong len);
 bool        is_separate_word(Ulong position, Ulong length, const char *buf);
-void       *nmalloc(const Ulong howmuch);
-void       *nrealloc(void *ptr, const Ulong howmuch);
+void       *nmalloc(Ulong howmuch);
+void       *nrealloc(void *ptr, Ulong howmuch);
 #define     arealloc(ptr, howmuch) (decltype(ptr))nrealloc(ptr, howmuch) 
 char       *measured_copy(const char *string, Ulong count);
 char       *measured_memmove_copy(const char *string, const Ulong count);
