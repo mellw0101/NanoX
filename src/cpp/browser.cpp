@@ -98,19 +98,19 @@ void browser_refresh(void) {
   char *info;
   titlebar(present_path);
   blank_edit();
-  for (Ulong index = selected - selected % (usable_rows * piles); index < list_length && row < usable_rows; index++) {
-    const char *thename = tail(filelist[index]);
+  for (Ulong index = (selected - selected % (usable_rows * piles)); (index < list_length) && (row < usable_rows); index++) {
     /* The filename we display, minus the path. */
-    Ulong namelen = breadth(thename);
+    const char *thename = tail(filelist[index]);
     /* The length of the filename in columns. */
-    Ulong infolen;
+    Ulong namelen = breadth(thename);
     /* The length of the file information in columns. */
-    Ulong infomaxlen = 7;
+    Ulong infolen;
     /* The maximum length of the file information in columns: normally seven, but will be twelve for "(parent dir)". */
-    bool dots = (COLS >= 15 && namelen >= gauge - infomaxlen);
+    Ulong infomaxlen = 7;
     /* Whether to put an ellipsis before the filename?  We don't waste space on dots when there are fewer than 15 columns. */
-    char *disp = display_string(thename, dots ? namelen + infomaxlen + 4 - gauge : 0, gauge, FALSE, FALSE);
+    bool dots = (COLS >= 15 && namelen >= gauge - infomaxlen);
     /* The filename (or a fragment of it) in displayable format.  When a fragment, account for dots plus one space padding. */
+    char *disp = display_string(thename, dots ? namelen + infomaxlen + 4 - gauge : 0, gauge, FALSE, FALSE);
     struct stat state;
     /* If this is the selected item, draw its highlighted bar upfront, and remember its location to be able to place the cursor on it. */
     if (index == selected) {
@@ -119,21 +119,21 @@ void browser_refresh(void) {
       the_row    = row;
       the_column = col;
     }
-    /* If the name is too long, we display something like "...ename". */
-    if (dots) {
-      mvwaddstr(midwin, row, col, "...");
-    }
-    mvwaddstr(midwin, row, dots ? col + 3 : col, disp);
-    col += gauge;
     /* Show information about the file: "--" for symlinks (except when they point to a directory)
      * and for files that have disappeared, '(dir)' for directories, and the file size for normal files. */
     if (lstat(filelist[index], &state) == -1 || S_ISLNK(state.st_mode)) {
       if (stat(filelist[index], &state) == -1 || !S_ISDIR(state.st_mode)) {
         info = copy_of("--");
+        if (index != selected) {
+          wattron(midwin, interface_color_pair[FG_COMMENT_GREEN]);
+        }
       }
       else {
         /* TRANSLATORS: Anything more than 7 cells gets clipped. */
         info = copy_of(_("(dir)"));
+        if (index != selected) {
+          wattron(midwin, interface_color_pair[FG_VS_CODE_BLUE]);
+        }
       }
     }
     else if (S_ISDIR(state.st_mode)) {
@@ -141,9 +141,15 @@ void browser_refresh(void) {
         /* TRANSLATORS: Anything more than 12 cells gets clipped. */
         info       = copy_of(_("(parent dir)"));
         infomaxlen = 12;
+        if (index != selected) {
+          wattron(midwin, interface_color_pair[FG_VS_CODE_MAGENTA]);
+        }
       }
       else {
         info = copy_of(_("(dir)"));
+        if (index != selected) {
+          wattron(midwin, interface_color_pair[FG_VS_CODE_BLUE]);
+        }
       }
     }
     else {
@@ -179,6 +185,12 @@ void browser_refresh(void) {
         info = mallocstrcpy(info, _("(huge)"));
       }
     }
+    /* If the name is too long, we display something like "...ename". */
+    if (dots) {
+      mvwaddstr(midwin, row, col, "...");
+    }
+    mvwaddstr(midwin, row, dots ? col + 3 : col, disp);
+    col += gauge;
     /* Make sure info takes up no more than infomaxlen columns. */
     infolen = breadth(info);
     if (infolen > infomaxlen) {
@@ -189,6 +201,17 @@ void browser_refresh(void) {
     /* If this is the selected item, finish its highlighting. */
     if (index == selected) {
       wattroff(midwin, interface_color_pair[SELECTED_TEXT]);
+    }
+    else {
+      if (strcmp(info, "--") == 0) {
+        wattroff(midwin, interface_color_pair[FG_COMMENT_GREEN]);
+      }
+      else if (strcmp(info, _("(dir)")) == 0) {
+        wattroff(midwin, interface_color_pair[FG_VS_CODE_BLUE]);
+      }
+      else if (strcmp(info, _("(parent dir)")) == 0) {
+        wattroff(midwin, interface_color_pair[FG_VS_CODE_MAGENTA]);
+      }
     }
     free(disp);
     free(info);
@@ -352,8 +375,7 @@ read_directory_contents:
     closedir(dir);
     dir = NULL;
   }
-  /* If something was selected before, reselect it;
-   * otherwise, just select the first item (..). */
+  /* If something was selected before, reselect it;  otherwise, just select the first item (..). */
   if (present_name) {
     reselect(present_name);
     free(present_name);
@@ -516,9 +538,8 @@ read_directory_contents:
           path = arealloc(path, strlen(present_path) + strlen(answer) + 1);
           sprintf(path, "%s%s", present_path, answer);
         }
+        /* This refers to the confining effect of the option '--operatingdir', not of '--restricted'. */
         if (outside_of_confinement(path, FALSE)) {
-          /* TRANSLATORS: This refers to the confining effect of
-           * the option --operatingdir, not of --restricted. */
           statusline(ALERT, _("Can't go outside of %s"), operating_dir);
           path = mallocstrcpy(path, present_path);
           continue;

@@ -16,9 +16,7 @@ static struct sigaction oldaction, newaction;
 
 main_thread_t *main_thread = NULL;
 
-/* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'.
- * prevnode: previous node in the linked list.
- * returns ( linestruct * ) - pointer to the new node. */
+/* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'. */
 linestruct *make_new_node(linestruct *prevnode) {
   linestruct *newnode = (linestruct *)nmalloc(sizeof(linestruct));
   newnode->prev       = prevnode;

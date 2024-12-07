@@ -267,6 +267,7 @@ void        do_writeout(void);
 void        do_savefile(void);
 char       *real_dir_from_tilde(const char *path);
 int         diralphasort(const void *va, const void *vb);
+bool        is_dir(const char *const path);
 char       *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *listed);
 bool        is_file_and_exists(const char *path);
 char      **retrieve_lines_from_file(const char *path, Ulong *nlines);

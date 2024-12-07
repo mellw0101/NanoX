@@ -267,10 +267,10 @@ using std::vector;
 
 /* Null def. */
 #ifdef NULL
-#undef NULL
+  #undef NULL
 #endif
 #ifdef __cplusplus
-#define NULL nullptr
+  #define NULL nullptr
 #else
 #define NULL __null
 #endif
@@ -323,6 +323,12 @@ typedef enum : int {
   ASM_INSTRUCT,
   ASM_CONTROL
 } syntax_type;
+
+enum DirEntryTypeEnum {
+  REGULAR_FILE_ENTRY,
+  DIRECTORY_ENTRY,
+  SYMLINK_ENTRY
+};
 
 /* clang-format off */
 

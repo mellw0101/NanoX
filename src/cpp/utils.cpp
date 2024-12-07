@@ -267,8 +267,7 @@ void *nrealloc(void *section, Ulong howmuch) {
   return section;
 }
 
-/* Return an appropriately reallocated dest string holding a copy of src.
- * Usage: "dest = mallocstrcpy(dest, src);". */
+/* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
 char *mallocstrcpy(char *dest, const char *src) {
   Ulong count = strlen(src) + 1;
   dest        = arealloc(dest, count);
@@ -276,8 +275,7 @@ char *mallocstrcpy(char *dest, const char *src) {
   return dest;
 }
 
-/* Return an allocated copy of the first count characters
- * of the given string, and 'null-terminate' the copy. */
+/* Return an allocated copy of the first count characters of the given string, and 'null-terminate' the copy. */
 char *measured_copy(const char *string, const Ulong count) {
   char *thecopy = (char *)nmalloc(count + 1);
   memcpy(thecopy, string, count);
