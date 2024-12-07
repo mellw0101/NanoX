@@ -7,7 +7,7 @@ SSE_strlen:
   test rcx, 15
   jz .aligned
   .unaligned:
-    mov al, [rcx]
+    mov al, byte [rcx]
     test al, al
     jz .end
     inc rcx

@@ -241,6 +241,7 @@ void        make_new_buffer(void);
 bool        delete_lockfile(const char *lockfilename);
 bool        has_valid_path(const char *filename);
 bool        open_buffer(const char *filename, bool new_one);
+void        open_buffer_browser(void);
 void        set_modified(void);
 void        prepare_for_display(void);
 void        mention_name_and_linecount(void);
@@ -576,27 +577,26 @@ void discard_buffer(void);
 void do_cancel(void);
 
 /* All functions in 'cpp.cpp'. */
-bool isCppSyntaxChar(const char c);
-void get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs)
-  __nonnull((1, 2, 3, 4, 5));
-Ushort           indent_char_len(linestruct *line);
-void             enclose_marked_region(const char *s1, const char *s2);
-void             do_block_comment(void);
-bool             enter_with_bracket(void);
-void             all_brackets_pos(void);
-void             do_close_bracket(void);
-void             do_parse(void);
-void             do_test(void);
-void             do_test_window(void);
-int              current_line_scope_end(linestruct *line);
+bool   isCppSyntaxChar(const char c);
+void   get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs) __nonnull((1, 2, 3, 4, 5));
+Ushort indent_char_len(linestruct *line);
+void   enclose_marked_region(const char *s1, const char *s2);
+void   do_block_comment(void);
+bool   enter_with_bracket(void);
+void   all_brackets_pos(void);
+void   do_close_bracket(void);
+void   do_parse(void);
+void   do_test(void);
+void   do_test_window(void);
+int    current_line_scope_end(linestruct *line);
 function_info_t *parse_func(const char *str);
 function_info_t  parse_local_func(const char *str);
-bool             invalid_variable_sig(const char *sig);
-void             parse_variable(const char *sig, char **type, char **name, char **value);
-void             flag_all_brackets(void);
-void             flag_all_block_comments(linestruct *from);
-void             remove_local_vars_from(linestruct *line);
-void             remove_from_color_map(linestruct *line, int color, int type);
+bool   invalid_variable_sig(const char *sig);
+void   parse_variable(const char *sig, char **type, char **name, char **value);
+void   flag_all_brackets(void);
+void   flag_all_block_comments(linestruct *from);
+void   remove_local_vars_from(linestruct *line);
+void   remove_from_color_map(linestruct *line, int color, int type);
 
 /* 'syntax.cpp' */
 string get_word_after(const char *data, const char *word);

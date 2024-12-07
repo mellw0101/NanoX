@@ -367,7 +367,7 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
       if (length > 3 && seq[1] == ';') {
         *consumed = 4;
         switch (seq[2]) {
-          case '2' : { /* Shift */
+          case '2' : /* Shift */ {
             if ('A' <= seq[3] && seq[3] <= 'D') {
               /* Esc O 1 ; 2 A == Shift-Up    on old Terminal.
                * Esc O 1 ; 2 B == Shift-Down  on old Terminal.
@@ -378,18 +378,18 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
             }
             break;
           }
-          case '5' : { /* Ctrl */
+          case '5' : /* Ctrl */ {
             switch (seq[3]) {
-              case 'A' : { /* Esc O 1 ; 5 A == Ctrl-Up on old Terminal. */
+              case 'A' : /* Esc O 1 ; 5 A == Ctrl-Up on old Terminal. */ {
                 return CONTROL_UP;
               }
-              case 'B' : { /* Esc O 1 ; 5 B == Ctrl-Down on old Terminal. */
+              case 'B' : /* Esc O 1 ; 5 B == Ctrl-Down on old Terminal. */ {
                 return CONTROL_DOWN;
               }
-              case 'C' : { /* Esc O 1 ; 5 C == Ctrl-Right on old Terminal. */
+              case 'C' : /* Esc O 1 ; 5 C == Ctrl-Right on old Terminal. */ {
                 return CONTROL_RIGHT;
               }
-              case 'D' : { /* Esc O 1 ; 5 D == Ctrl-Left on old Terminal. */
+              case 'D' : /* Esc O 1 ; 5 D == Ctrl-Left on old Terminal. */ {
                 return CONTROL_LEFT;
               }
             }
@@ -399,13 +399,13 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
       }
       break;
     }
-    case '2' :   /* Shift */
-    case '3' :   /* Alt */
-    case '4' :   /* Shift+Alt */
-    case '5' :   /* Ctrl */
-    case '6' :   /* Shift+Ctrl */
-    case '7' :   /* Alt+Ctrl */
-    case '8' : { /* Shift+Alt+Ctrl */
+    case '2' : /* Shift */
+    case '3' : /* Alt */
+    case '4' : /* Shift+Alt */
+    case '5' : /* Ctrl */
+    case '6' : /* Shift+Ctrl */
+    case '7' : /* Alt+Ctrl */
+    case '8' : /* Shift+Alt+Ctrl */ {
       if (length > 1) {
         *consumed = 2;
         /* Do not accept multiple modifiers. */
@@ -413,26 +413,21 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
           return FOREIGN_SEQUENCE;
         }
         switch (seq[1]) {
-          case 'A' : /* Esc O 5 A == Ctrl-Up on Haiku. */
-          {
+          case 'A' : /* Esc O 5 A == Ctrl-Up on Haiku. */ {
             return CONTROL_UP;
           }
-          case 'B' : /* Esc O 5 B == Ctrl-Down on Haiku. */
-          {
+          case 'B' : /* Esc O 5 B == Ctrl-Down on Haiku. */ {
             return CONTROL_DOWN;
           }
-          case 'C' : /* Esc O 5 C == Ctrl-Right on Haiku. */
-          {
+          case 'C' : /* Esc O 5 C == Ctrl-Right on Haiku. */ {
             return CONTROL_RIGHT;
           }
-          case 'D' : /* Esc O 5 D == Ctrl-Left on Haiku. */
-          {
+          case 'D' : /* Esc O 5 D == Ctrl-Left on Haiku. */ {
             return CONTROL_LEFT;
           }
         }
-        /* Translate Shift+digit on the keypad to the digit
-         * (Esc O 2 p == Shift-0, ...), modifier+operator to
-         * the operator, and modifier+Enter to CR. */
+        /* Translate Shift+digit on the keypad to the digit (Esc O 2 p == Shift-0, ...),
+         * modifier+operator to the operator, and modifier+Enter to CR. */
         return (seq[1] - 0x40);
       }
       break;
@@ -449,7 +444,7 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
     case 'H' : { /* Esc O H == Home on old xterm. */
       return KEY_HOME;
     }
-    case 'M' : { /* Esc O M == Enter on numeric keypad with NumLock off on VT100/VT220/VT320. */
+    case 'M' : { /* Esc O  M == Enter on numeric keypad with NumLock off on VT100/VT220/VT320. */
       return KEY_ENTER;
     }
     case 'P' :   /* Esc O P == F1 on VT100/VT220/VT320/xterm/Mach console. */
@@ -458,24 +453,24 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
     case 'S' : { /* Esc O S == F4 on VT100/VT220/VT320/xterm/Mach console. */
       return KEY_F(seq[0] - 'O');
     }
-    case 'T' :   /* Esc O T == F5 on Mach console. */
-    case 'U' :   /* Esc O U == F6 on Mach console. */
-    case 'V' :   /* Esc O V == F7 on Mach console. */
-    case 'W' :   /* Esc O W == F8 on Mach console. */
-    case 'X' :   /* Esc O X == F9 on Mach console. */
-    case 'Y' : { /* Esc O Y == F10 on Mach console. */
+    case 'T' : /* Esc O T == F5 on Mach console. */
+    case 'U' : /* Esc O U == F6 on Mach console. */
+    case 'V' : /* Esc O V == F7 on Mach console. */
+    case 'W' : /* Esc O W == F8 on Mach console. */
+    case 'X' : /* Esc O X == F9 on Mach console. */
+    case 'Y' : /* Esc O Y == F10 on Mach console. */ {
       return KEY_F(seq[0] - 'O');
     }
-    case 'a' : { /* Esc O a == Ctrl-Up on rxvt/Eterm. */
+    case 'a' : /* Esc O a == Ctrl-Up on rxvt/Eterm. */ {
       return CONTROL_UP;
     }
-    case 'b' : { /* Esc O b == Ctrl-Down on rxvt/Eterm. */
+    case 'b' : /* Esc O b == Ctrl-Down on rxvt/Eterm. */ {
       return CONTROL_DOWN;
     }
-    case 'c' : { /* Esc O c == Ctrl-Right on rxvt/Eterm. */
+    case 'c' : /* Esc O c == Ctrl-Right on rxvt/Eterm. */ {
       return CONTROL_RIGHT;
     }
-    case 'd' : { /* Esc O d == Ctrl-Left on rxvt/Eterm. */
+    case 'd' : /* Esc O d == Ctrl-Left on rxvt/Eterm. */ {
       return CONTROL_LEFT;
     }
     case 'j' : { /* Esc O j == '*' on numeric keypad with NumLock off on xterm/rxvt/Eterm. */
@@ -1052,9 +1047,9 @@ int parse_kbinput(WINDOW *frame) {
   unix_socket_debug("keycode: %d\n", keycode);
   /* Check for '^Bsp'. */
   if (term) {
-    /* First we check if we are running in xterm.  And if so then check if the appropriet key
-     * was pressed, for xterm the correct keycode if '127' and for most other term`s it`s '263'.
-     * If we detect '^Bsp' then we return 'CONTROL_BSP'. */
+    /* First we check if we are running in xterm.  And if so then check if the appropriet
+     * key was pressed, for xterm the correct keycode if '127' and for most other term`s
+     * it`s '263'.  If we detect '^Bsp' then we return 'CONTROL_BSP'. */
     if (strcmp(term, "xterm") == 0) {
       if (keycode == 127) {
         return CONTROL_BSP;
