@@ -51,7 +51,7 @@ void make_new_buffer(void) {
 }
 
 /* Return the given file name in a way that fits within the given space. */
-char *crop_to_fit(const char *name, const int room) {
+char *crop_to_fit(const char *name, int room) {
   char *clipped;
   if (breadth(name) <= room) {
     return display_string(name, 0, room, FALSE, FALSE);
@@ -85,7 +85,7 @@ bool delete_lockfile(const char *lockfilename) {
 
 /* Write a lock file, under the given lockfilename.  This always annihilates an
  * existing version of that file.  Return TRUE on success; FALSE otherwise. */
-bool write_lockfile(const char *lockfilename, const char *filename, const bool modified) {
+bool write_lockfile(const char *lockfilename, const char *filename, bool modified) {
   int     mypid   = getpid();
   uid_t   myuid   = geteuid();
   passwd *mypwuid = getpwuid(myuid);
@@ -163,7 +163,7 @@ bool write_lockfile(const char *lockfilename, const char *filename, const bool m
  * then ask whether to open the corresponding file anyway.  Return SKIPTHISFILE
  * when the user answers "No", return the name of the lock file on success, and
  * return NULL on failure. */
-char *do_lockfile(const char *filename, const bool ask_the_user) {
+char *do_lockfile(const char *filename, bool ask_the_user) {
   char       *namecopy     = copy_of(filename);
   char       *secondcopy   = copy_of(filename);
   Ulong       locknamesize = strlen(filename) + strlen(locking_prefix) + strlen(locking_suffix) + 3;
@@ -392,6 +392,12 @@ void open_buffer_browser(void) {
     }
     edit_refresh();
   }
+}
+
+/* Open a new and empty buffer. */
+void open_new_buffer(void) {
+  make_new_buffer();
+  edit_refresh();
 }
 
 /* Mark the current buffer as modified if it isn't already, and
@@ -766,7 +772,7 @@ int open_file(const char *filename, bool new_one, FILE **f) {
  * (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
  * or the return value.  If no writable extension exists, we return "". */
 char *get_next_filename(const char *name, const char *suffix) {
-  Ulong wholenamelen = strlen(name) + strlen(suffix);
+  Ulong wholenamelen = (strlen(name) + strlen(suffix));
   Ulong i            = 0;
   char *buf;
   /* Reserve space for: the name plus the suffix plus a dot plus
@@ -883,7 +889,7 @@ void execute_command(const char *command) {
     linestruct *was_cutbuffer = cutbuffer;
     bool        whole_buffer  = FALSE;
     cutbuffer                 = NULL;
-    if ISSET (MULTIBUFFER) {
+    if (ISSET(MULTIBUFFER)) {
       openfile = openfile->prev;
       if (openfile->mark) {
         copy_marked_region();
@@ -895,19 +901,19 @@ void execute_command(const char *command) {
     else {
       /* TRANSLATORS: This one goes with Undid/Redid messages. */
       add_undo(COUPLE_BEGIN, N_("filtering"));
-      if (openfile->mark == NULL) {
+      if (!openfile->mark) {
         openfile->current   = openfile->filetop;
         openfile->current_x = 0;
       }
       add_undo(CUT, NULL);
       do_snip(openfile->mark != NULL, openfile->mark == NULL, FALSE);
-      if (openfile->filetop->next == NULL) {
+      if (!openfile->filetop->next) {
         openfile->filetop->has_anchor = FALSE;
       }
       update_undo(CUT);
     }
     /* Create a separate process for piping the data to the command. */
-    if ((pid_of_sender = fork()) == 0) {
+    if (!(pid_of_sender = fork())) {
       send_data(whole_buffer ? openfile->filetop : cutbuffer, to_fd[1]);
       exit(0);
     }
@@ -916,7 +922,7 @@ void execute_command(const char *command) {
     }
     close(to_fd[0]);
     close(to_fd[1]);
-    if ISSET (MULTIBUFFER) {
+    if (ISSET(MULTIBUFFER)) {
       openfile = openfile->next;
     }
     free_lines(cutbuffer);
@@ -948,13 +954,13 @@ void execute_command(const char *command) {
     waitpid(pid_of_sender, &sender_status, 0);
   }
   /* If the command failed, show what the shell reported. */
-  if (WIFEXITED(command_status) == 0 || WEXITSTATUS(command_status)) {
+  if (!WIFEXITED(command_status) || WEXITSTATUS(command_status)) {
     statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error: %s"),
                openfile->current->prev && strstr(openfile->current->prev->data, ": ")
                  ? strstr(openfile->current->prev->data, ": ") + 2
                  : "---");
   }
-  else if (should_pipe && pid_of_sender > 0 && (WIFEXITED(sender_status) == 0 || WEXITSTATUS(sender_status))) {
+  else if (should_pipe && pid_of_sender > 0 && (!WIFEXITED(sender_status) || WEXITSTATUS(sender_status))) {
     statusline(ALERT, _("Piping failed"));
   }
   /* If there was an error, undo and discard what the command did. */
@@ -1226,7 +1232,7 @@ void init_operating_dir(void) {
     die(_("Invalid operating directory: %s\n"), operating_dir);
   }
   free(operating_dir);
-  operating_dir = (char *)nrealloc(target, strlen(target) + 1);
+  operating_dir = anrealloc(target, (strlen(target) + 1));
 }
 
 /* Check whether the given path is outside of the operating directory.
@@ -1241,12 +1247,10 @@ bool outside_of_confinement(const char *somepath, bool tabbing) {
     return FALSE;
   }
   fullpath = get_full_path(somepath);
-  /* When we can't get an absolute path, it means some directory in the path
-   * doesn't exist or is unreadable.  When not doing tab completion, somepath
-   * is what the user typed somewhere.  We don't want to report a non-existent
-   * directory as being outside the operating directory, so we return FALSE.
-   * When the user is doing tab completion, then somepath exists but is not
-   * executable.  So we say it is outside the operating directory. */
+  /* When we can't get an absolute path, it means some directory in the path doesn't exist or is unreadable.  When
+   * not doing tab completion, somepath is what the user typed somewhere.  We don't want to report a non-existent
+   * directory as being outside the operating directory, so we return FALSE.  When the user is doing tab
+   * completion, then somepath exists but is not executable.  So we say it is outside the operating directory. */
   if (!fullpath) {
     return tabbing;
   }
@@ -1298,9 +1302,9 @@ int copy_file(FILE *inn, FILE *out, bool close_out) {
   return retval;
 }
 
-/* Create a backup of an existing file.  If the user did not request backups, make a temporary one.
- * (trying first in the directory of the original file, then in the user's home directory).
- * Return 'TRUE' if the save can proceed. */
+/* Create a backup of an existing file.  If the user did not request backups,
+ * make a temporary one.  (trying first in the directory of the original file,
+ * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
 bool make_backup_of(char *realname) {
   FILE           *original = NULL, *backup_file = NULL;
   static timespec filetime[2];
@@ -1315,7 +1319,7 @@ bool make_backup_of(char *realname) {
   /* If no backup directory was specified, we make a simple backup
    * by appending a tilde to the original file name.
    * Otherwise, we create a numbered backup in the specified directory. */
-  if (backup_dir == NULL) {
+  if (!backup_dir) {
     backupname = (char *)nmalloc(strlen(realname) + 2);
     sprintf(backupname, "%s~", realname);
   }
@@ -1359,7 +1363,7 @@ retry:
   if (descriptor >= 0) {
     backup_file = fdopen(descriptor, "wb");
   }
-  if (backup_file == NULL) {
+  if (!backup_file) {
     goto problem;
   }
   /* Try to change owner and group to those of the original file;
@@ -1377,10 +1381,10 @@ retry:
   }
   original = fopen(realname, "rb");
   /* If opening succeeded, copy the existing file to the backup. */
-  if (original != NULL) {
+  if (original) {
     verdict = copy_file(original, backup_file, FALSE);
   }
-  if (original == NULL || verdict < 0) {
+  if (!original || verdict < 0) {
     warn_and_briefly_pause(_("Cannot read original file"));
     fclose(backup_file);
     goto failure;
@@ -1425,12 +1429,10 @@ failure:
   warn_and_briefly_pause(strerror(errno));
   currmenu = MMOST;
   free(backupname);
-  /* If both attempts failed, and it isn't because of lack of disk space,
-   * ask the user what to do, because if something goes wrong during the
-   * save of the file itself, its contents may be lost. */
+  /* If both attempts failed, and it isn't because of lack of disk space, ask the user what to do,
+   * because if something goes wrong during the save of the file itself, its contents may be lost. */
   /* TRANSLATORS : Try to keep this message at most 76 characters. */
-  if (errno != ENOSPC && ask_user(YESORNO, _("Cannot make backup; "
-                                             "continue and save actual file? ")) == YES) {
+  if (errno != ENOSPC && ask_user(YESORNO, _("Cannot make backup; continue and save actual file? ")) == YES) {
     return TRUE;
   }
   /* TRANSLATORS: The %s is the reason of failure. */
@@ -1705,7 +1707,7 @@ bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_w
   bool        retval;
   get_region(&topline, &top_x, &botline, &bot_x);
   /* When needed, prepare a magic end line for the region. */
-  if (normal && bot_x > 0 && !ISSET(NO_NEWLINES)) {
+  if (normal && (bot_x > 0) && !ISSET(NO_NEWLINES)) {
     stopper       = make_new_node(botline);
     stopper->data = copy_of("");
   }
@@ -2305,8 +2307,8 @@ char **retrieve_words_from_file(const char *path, Ulong *nwords) {
 }
 
 /* This function extract all words from a file and assigns the number of words
- * parsed to 'nwords'. Note that 'nwords' needs to be passed as a refrence. This
- * function is very fast, it can parse around 20 million words per second. */
+ * parsed to 'nwords'. Note that 'nwords' needs to be passed as a refrence.
+ * This function is very fast, it can parse around 20 million words per second. */
 char **words_from_file(const char *path, Ulong *nwords) {
   PROFILE_FUNCTION;
   if (!is_file_and_exists(path)) {

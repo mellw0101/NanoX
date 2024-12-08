@@ -2273,8 +2273,7 @@ void minibar(void) {
       sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
     }
     else {
-      sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count,
-              (openfile->fmt == DOS_FILE) ? "DOS" : "Mac");
+      sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count, (openfile->fmt == DOS_FILE) ? "DOS" : "Mac");
     }
     tallywidth = breadth(number_of_lines);
     if (namewidth + tallywidth + 11 < COLS) {
@@ -2331,12 +2330,12 @@ void minibar(void) {
     }
   }
   /* Display the state of three flags, and the state of macro and mark. */
-  if (ISSET(STATEFLAGS) && !successor && namewidth + tallywidth + 14 + 2 * padding < COLS) {
+  if (ISSET(STATEFLAGS) && !successor && ((namewidth + tallywidth + 14 + 2 * padding) < COLS)) {
     wmove(footwin, 0, COLS - 11 - padding);
     show_states_at(footwin);
   }
   /* Display how many percent the current line is into the file. */
-  if (namewidth + 6 < COLS) {
+  if ((namewidth + 6) < COLS) {
     sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
     mvwaddstr(footwin, 0, COLS - 4 - padding, location);
   }

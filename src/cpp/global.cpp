@@ -626,8 +626,8 @@ void shortcut_init(void) {
   const char *nextlint_gist         = N_("Go to next linter msg");
   const char *formatter_gist        = N_("Invoke a program to format/arrange/manipulate the buffer");
   /* If Backspace is not ^H, then ^H can be used for Help. */
-  char *bsp_string = tgetstr("kb", NULL);
-  char *help_key   = (bsp_string && *bsp_string != 0x08) ? (char *)"^H" : (char *)"^N";
+  /* char *bsp_string = tgetstr("kb", NULL);
+   * char *help_key   = (bsp_string && *bsp_string != 0x08) ? (char *)"^H" : (char *)"^N"; */
 #define WHENHELP(description) description
   /* Start populating the different menus with functions. */
   /** TRANSLATORS: Try to keep the next thirteen strings at most 10 characters. */
@@ -811,8 +811,9 @@ void shortcut_init(void) {
   add_to_sclist(MMAIN | MBROWSER | MHELP, "^B", 0, do_search_backward, 0);
   add_to_sclist(MMAIN | MBROWSER | MHELP, "^F", 0, do_search_forward, 0);
   if (ISSET(MODERN_BINDINGS)) {
-    add_to_sclist((MMOST | MBROWSER) & ~MFINDINHELP, help_key, 0, do_help, 0);
-    add_to_sclist(MHELP, help_key, 0, do_exit, 0);
+    /* add_to_sclist((MMOST | MBROWSER) & ~MFINDINHELP, help_key, 0, do_help, 0);
+    add_to_sclist(MHELP, help_key, 0, do_exit, 0); */
+    add_to_sclist(MMAIN, "^N", 0, open_new_buffer, 0);
     add_to_sclist(MMAIN | MBROWSER | MHELP, "^Q", 0, do_exit, 0);
     add_to_sclist(MMAIN, "^S", 0, do_savefile, 0);
     add_to_sclist(MMAIN, "^W", 0, do_writeout, 0);
@@ -864,7 +865,7 @@ void shortcut_init(void) {
   add_to_sclist(MMOST, "M-6", 0, copy_text, 0);
   add_to_sclist(MMOST, "M-^", 0, copy_text, 0);
   add_to_sclist(MMOST, "^U", 0, paste_text, 0);
-  add_to_sclist(MMAIN, ISSET(MODERN_BINDINGS) ? "^E" : "^T", 0, do_execute, 0);
+  add_to_sclist(MMAIN, (ISSET(MODERN_BINDINGS) ? "^E" : "^T"), 0, do_execute, 0);
   if (!ISSET(PRESERVE)) {
     add_to_sclist(MEXECUTE, "^S", 0, do_spell, 0);
   }
@@ -916,11 +917,11 @@ void shortcut_init(void) {
   add_to_sclist(MMAIN, (on_a_vt) ? "^-" : "^/", 0, do_comment, 0);
   add_to_sclist(MMAIN, "^_", 0, do_comment, 0);
   add_to_sclist(MMAIN, "Sh-^/", 0, do_block_comment, 0);
-  add_to_sclist(MMOST & ~MMAIN, "^B", 0, do_left, 0);
-  add_to_sclist(MMOST & ~MMAIN, "^F", 0, do_right, 0);
+  add_to_sclist((MMOST & ~MMAIN), "^B", 0, do_left, 0);
+  add_to_sclist((MMOST & ~MMAIN), "^F", 0, do_right, 0);
   if (using_utf8()) {
-    add_to_sclist(MMOST | MBROWSER | MHELP, "\xE2\x97\x82", KEY_LEFT, do_left, 0);
-    add_to_sclist(MMOST | MBROWSER | MHELP, "\xE2\x96\xb8", KEY_RIGHT, do_right, 0);
+    add_to_sclist((MMOST | MBROWSER | MHELP), "\xE2\x97\x82", KEY_LEFT, do_left, 0);
+    add_to_sclist((MMOST | MBROWSER | MHELP), "\xE2\x96\xb8", KEY_RIGHT, do_right, 0);
     add_to_sclist(MSOME, "^\xE2\x97\x82", CONTROL_LEFT, to_prev_word, 0);
     add_to_sclist(MSOME, "^\xE2\x96\xb8", CONTROL_RIGHT, to_next_word, 0);
     if (!on_a_vt) {
@@ -929,8 +930,8 @@ void shortcut_init(void) {
     }
   }
   else {
-    add_to_sclist(MMOST | MBROWSER | MHELP, "Left", KEY_LEFT, do_left, 0);
-    add_to_sclist(MMOST | MBROWSER | MHELP, "Right", KEY_RIGHT, do_right, 0);
+    add_to_sclist((MMOST | MBROWSER | MHELP), "Left", KEY_LEFT, do_left, 0);
+    add_to_sclist((MMOST | MBROWSER | MHELP), "Right", KEY_RIGHT, do_right, 0);
     add_to_sclist(MSOME, "^Left", CONTROL_LEFT, to_prev_word, 0);
     add_to_sclist(MSOME, "^Right", CONTROL_RIGHT, to_next_word, 0);
     if (!on_a_vt) {
@@ -943,16 +944,16 @@ void shortcut_init(void) {
   add_to_sclist(MMOST, "Home", KEY_HOME, do_home, 0);
   add_to_sclist(MMOST, "End", KEY_END, do_end, 0);
   if (using_utf8()) {
-    add_to_sclist(MMAIN | MBROWSER | MHELP, "\xE2\x96\xb4", KEY_UP, do_up, 0);
-    add_to_sclist(MMAIN | MBROWSER | MHELP, "\xE2\x96\xbe", KEY_DOWN, do_down, 0);
-    add_to_sclist(MMAIN | MBROWSER | MLINTER, "^\xE2\x96\xb4", CONTROL_UP, to_prev_block, 0);
-    add_to_sclist(MMAIN | MBROWSER | MLINTER, "^\xE2\x96\xbe", CONTROL_DOWN, to_next_block, 0);
+    add_to_sclist((MMAIN | MBROWSER | MHELP), "\xE2\x96\xb4", KEY_UP, do_up, 0);
+    add_to_sclist((MMAIN | MBROWSER | MHELP), "\xE2\x96\xbe", KEY_DOWN, do_down, 0);
+    add_to_sclist((MMAIN | MBROWSER | MLINTER), "^\xE2\x96\xb4", CONTROL_UP, to_prev_block, 0);
+    add_to_sclist((MMAIN | MBROWSER | MLINTER), "^\xE2\x96\xbe", CONTROL_DOWN, to_next_block, 0);
   }
   else {
-    add_to_sclist(MMAIN | MBROWSER | MHELP, "Up", KEY_UP, do_up, 0);
-    add_to_sclist(MMAIN | MBROWSER | MHELP, "Down", KEY_DOWN, do_down, 0);
-    add_to_sclist(MMAIN | MBROWSER | MLINTER, "^Up", CONTROL_UP, to_prev_block, 0);
-    add_to_sclist(MMAIN | MBROWSER | MLINTER, "^Down", CONTROL_DOWN, to_next_block, 0);
+    add_to_sclist((MMAIN | MBROWSER | MHELP), "Up", KEY_UP, do_up, 0);
+    add_to_sclist((MMAIN | MBROWSER | MHELP), "Down", KEY_DOWN, do_down, 0);
+    add_to_sclist((MMAIN | MBROWSER | MLINTER), "^Up", CONTROL_UP, to_prev_block, 0);
+    add_to_sclist((MMAIN | MBROWSER | MLINTER), "^Down", CONTROL_DOWN, to_next_block, 0);
   }
   add_to_sclist(MMAIN, "M-7", 0, to_prev_block, 0);
   add_to_sclist(MMAIN, "M-8", 0, to_next_block, 0);
@@ -961,17 +962,17 @@ void shortcut_init(void) {
   add_to_sclist(MMAIN, "M-)", 0, to_para_end, 0);
   add_to_sclist(MMAIN, "M-0", 0, to_para_end, 0);
   if (using_utf8()) {
-    add_to_sclist(MMAIN | MHELP, "M-\xE2\x96\xb4", ALT_UP, move_lines_up, 0);
-    add_to_sclist(MMAIN | MHELP, "M-\xE2\x96\xbe", ALT_DOWN, move_lines_down, 0);
+    add_to_sclist((MMAIN | MHELP), "M-\xE2\x96\xb4", ALT_UP, move_lines_up, 0);
+    add_to_sclist((MMAIN | MHELP), "M-\xE2\x96\xbe", ALT_DOWN, move_lines_down, 0);
   }
   else {
-    add_to_sclist(MMAIN | MHELP, "M-Up", ALT_UP, do_scroll_up, 0);
-    add_to_sclist(MMAIN | MHELP, "M-Down", ALT_DOWN, do_scroll_down, 0);
+    add_to_sclist((MMAIN | MHELP), "M-Up", ALT_UP, do_scroll_up, 0);
+    add_to_sclist((MMAIN | MHELP), "M-Down", ALT_DOWN, do_scroll_down, 0);
   }
-  add_to_sclist(MMAIN | MHELP, "M--", 0, do_scroll_up, 0);
-  add_to_sclist(MMAIN | MHELP, "M-_", 0, do_scroll_up, 0);
-  add_to_sclist(MMAIN | MHELP, "M-+", 0, do_scroll_down, 0);
-  add_to_sclist(MMAIN | MHELP, "M-=", 0, do_scroll_down, 0);
+  add_to_sclist((MMAIN | MHELP), "M--", 0, do_scroll_up, 0);
+  add_to_sclist((MMAIN | MHELP), "M-_", 0, do_scroll_up, 0);
+  add_to_sclist((MMAIN | MHELP), "M-+", 0, do_scroll_down, 0);
+  add_to_sclist((MMAIN | MHELP), "M-=", 0, do_scroll_down, 0);
   add_to_sclist(MMAIN, "M-,", 0, switch_to_prev_buffer, 0);
   add_to_sclist(MMAIN, "M-<", 0, switch_to_prev_buffer, 0);
   add_to_sclist(MMAIN, "M-.", 0, switch_to_next_buffer, 0);
@@ -986,7 +987,7 @@ void shortcut_init(void) {
   add_to_sclist(MMAIN, "M-J", 0, do_full_justify, 0);
   add_to_sclist(MEXECUTE, "^J", 0, do_full_justify, 0);
   add_to_sclist(MMAIN, "^L", 0, do_cycle, 0);
-  add_to_sclist(MMOST | MBROWSER | MHELP | MYESNO, "^L", 0, full_refresh, 0);
+  add_to_sclist((MMOST | MBROWSER | MHELP | MYESNO), "^L", 0, full_refresh, 0);
   /* Group of "Appearance" toggles. */
   add_to_sclist(MMAIN, "M-Z", 0, do_toggle, ZERO);
   add_to_sclist((MMOST | MBROWSER | MYESNO) & ~MFINDINHELP, "M-X", 0, do_toggle, NO_HELP);
@@ -1016,16 +1017,12 @@ void shortcut_init(void) {
   add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^P", 0, get_older_item, 0);
   add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "^N", 0, get_newer_item, 0);
   if (using_utf8()) {
-    add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "\xE2\x96\xb4", KEY_UP,
-                  get_older_item, 0);
-    add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "\xE2\x96\xbe", KEY_DOWN,
-                  get_newer_item, 0);
+    add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "\xE2\x96\xb4", KEY_UP, get_older_item, 0);
+    add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "\xE2\x96\xbe", KEY_DOWN, get_newer_item, 0);
   }
   else {
-    add_to_sclist(
-      MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Up", KEY_UP, get_older_item, 0);
-    add_to_sclist(
-      MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Down", KEY_DOWN, get_newer_item, 0);
+    add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Up", KEY_UP, get_older_item, 0);
+    add_to_sclist(MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE | MFINDINHELP | MEXECUTE, "Down", KEY_DOWN, get_newer_item, 0);
   }
   add_to_sclist(MGOTOLINE, "^W", 0, to_para_begin, 0);
   add_to_sclist(MGOTOLINE, "^O", 0, to_para_end, 0);
@@ -1082,16 +1079,18 @@ void shortcut_init(void) {
   add_to_sclist(MMAIN | MBROWSER | MHELP, "F6", KEY_F(6), do_search_forward, 0);
   add_to_sclist(MMAIN | MBROWSER | MHELP | MLINTER, "F7", KEY_F(7), do_page_up, 0);
   add_to_sclist(MMAIN | MBROWSER | MHELP | MLINTER, "F8", KEY_F(8), do_page_down, 0);
-  add_to_sclist(MMOST, "F9", KEY_F(9), cut_text, 0);
+  add_to_sclist((MMOST | MBROWSER) & ~MFINDINHELP, "F9", KEY_F(9), do_help, 0);
+  add_to_sclist(MHELP, "F9", KEY_F(9), do_exit, 0);
+  /* add_to_sclist(MMOST, "F9", KEY_F(9), cut_text, 0); */
   add_to_sclist(MMOST, "F10", KEY_F(10), paste_text, 0);
-  // add_to_sclist(MMAIN, "F11", KEY_F(11), report_cursor_position, 0);
-  add_to_sclist(MMAIN, "F11", KEY_F(11), do_test, 0);
+  /* add_to_sclist(MMAIN, "F11", KEY_F(11), report_cursor_position, 0); */
+  /* add_to_sclist(MMAIN, "F11", KEY_F(11), do_test, 0); */
   add_to_sclist(MMAIN, "F12", KEY_F(12), do_spell, 0);
   add_to_sclist(MMAIN, "M-&", 0, show_curses_version, 0);
   add_to_sclist((MMOST & ~MMAIN) | MYESNO, "", KEY_CANCEL, do_cancel, 0);
   add_to_sclist(MMAIN, "", KEY_SIC, do_insertfile, 0);
   /* Catch and ignore bracketed paste marker keys. */
-  add_to_sclist(MMOST | MBROWSER | MHELP | MYESNO, "", BRACKETED_PASTE_MARKER, do_nothing, 0);
+  add_to_sclist((MMOST | MBROWSER | MHELP) | MYESNO, "", BRACKETED_PASTE_MARKER, do_nothing, 0);
 }
 
 /* Return the textual description that corresponds to the given flag. */

@@ -50,9 +50,8 @@ void reset_history_pointer_for(const linestruct *item) {
   }
 }
 
-/* Return from the history list that starts at start and ends at end
- * the first node that contains the first len characters of the given
- * text, or NULL if there is no such node. */
+/* Return from the history list that starts at start and ends at end the first node that
+ * contains the first len characters of the given text, or NULL if there is no such node. */
 linestruct *find_in_history(const linestruct *start, const linestruct *end, const char *text, Ulong len) {
   const linestruct *item;
   for (item = start; item != end->prev && item; item = item->prev) {
@@ -248,8 +247,8 @@ void load_history(void) {
   history_changed = FALSE;
 }
 
-/* Write the lines of a history list, starting at head, from oldest to newest,
- * to the given file.  Return TRUE if writing succeeded, and FALSE otherwise. */
+/* Write the lines of a history list, starting at head, from oldest to newest, to
+ * the given file.  Return 'TRUE' if writing succeeded, and 'FALSE' otherwise. */
 bool write_list(const linestruct *head, FILE *histfile) {
   const linestruct *item;
   for (item = head; item; item = item->next) {
@@ -317,11 +316,11 @@ void load_poshistory(void) {
     /* Decode NULs as embedded newlines. */
     recode_NUL_to_LF(stanza, read);
     /* Find the spaces before column number and line number. */
-    columnptr = revstrstr(stanza, " ", stanza + read - 3);
+    columnptr = revstrstr(stanza, " ", (stanza + read - 3));
     if (!columnptr) {
       continue;
     }
-    lineptr = revstrstr(stanza, " ", columnptr - 2);
+    lineptr = revstrstr(stanza, " ", (columnptr - 2));
     if (!lineptr) {
       continue;
     }
@@ -479,9 +478,8 @@ void update_poshistory(void) {
   save_poshistory();
 }
 
-/* Check whether the given file matches an existing entry in the recorded
- * last file positions.  If not, return 'FALSE'.  If yes, return 'TRUE' and
- * set line and column to the retrieved values. */
+/* Check whether the given file matches an existing entry in the recorded last file positions.
+ * If not, return 'FALSE'.  If yes, return 'TRUE' and set line and column to the retrieved values. */
 bool has_old_position(const char *file, long *line, long *column) {
   char          *fullpath = get_full_path(file);
   poshiststruct *item;

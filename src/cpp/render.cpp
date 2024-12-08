@@ -31,7 +31,7 @@ void render_part(Ulong match_start, Ulong match_end, short color) {
   }
   thetext  = (converted + actual_x(converted, start_col));
   paintlen = (int)actual_x(thetext, (wideness(line->data, match_end) - from_col - start_col));
-  midwin_mv_add_nstr_color(row, (margin + start_col), thetext, paintlen, color);
+  mv_add_nstr_color(midwin, row, (margin + start_col), thetext, paintlen, color);
 }
 
 /* Experiment. */

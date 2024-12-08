@@ -238,14 +238,14 @@ void findfile(const char *needle, bool forwards) {
    * we've come back to the point where we started. */
   while (TRUE) {
     if (forwards) {
-      if (selected++ == list_length - 1) {
+      if (selected++ == (list_length - 1)) {
         selected = 0;
         statusbar(_("Search Wrapped"));
       }
     }
     else {
       if (selected-- == 0) {
-        selected = list_length - 1;
+        selected = (list_length - 1);
         statusbar(_("Search Wrapped"));
       }
     }
@@ -331,7 +331,7 @@ void to_last_file(void) {
 char *strip_last_component(const char *path) {
   char *copy       = copy_of(path);
   char *last_slash = strrchr(copy, '/');
-  if (last_slash != NULL) {
+  if (last_slash) {
     *last_slash = '\0';
   }
   return copy;
@@ -341,8 +341,7 @@ char *strip_last_component(const char *path) {
  * given path.  The user can select a file, which will be returned.  The user can also
  * select a directory, which will be entered.  The user can also cancel the browsing. */
 char *browse(char *path) {
-  /* The name of the currently selected file, or of the directory we
-   * were in before backing up to "..". */
+  /* The name of the currently selected file, or of the directory we were in before backing up to "..". */
   char *present_name = NULL;
   /* The number of the selected file before the current selected file. */
   Ulong old_selected;
@@ -350,7 +349,7 @@ char *browse(char *path) {
   DIR *dir;
   /* The name of the file that the user picked, or NULL if none. */
   char *chosen = NULL;
-/* We come here when the user refreshes or selects a new directory. */
+/* We come here when the user refreshes or selects a new directory. */ 
 read_directory_contents:
   path = free_and_assign(path, get_full_path(path));
   if (path) {

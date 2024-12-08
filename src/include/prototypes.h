@@ -242,6 +242,7 @@ bool        delete_lockfile(const char *lockfilename);
 bool        has_valid_path(const char *filename);
 bool        open_buffer(const char *filename, bool new_one);
 void        open_buffer_browser(void);
+void        open_new_buffer(void);
 void        set_modified(void);
 void        prepare_for_display(void);
 void        mention_name_and_linecount(void);
@@ -467,7 +468,7 @@ void        free_chararray(char **array, Ulong len);
 bool        is_separate_word(Ulong position, Ulong length, const char *buf);
 void       *nmalloc(Ulong howmuch);
 void       *nrealloc(void *ptr, Ulong howmuch);
-#define     arealloc(ptr, howmuch) (decltype(ptr))nrealloc(ptr, howmuch) 
+#define     arealloc(ptr, howmuch) (decltype(ptr))nrealloc(ptr, howmuch)
 char       *measured_copy(const char *string, Ulong count);
 char       *measured_memmove_copy(const char *string, const Ulong count);
 char       *mallocstrcpy(char *dest, const char *src);
@@ -502,6 +503,15 @@ char      **retrieve_exec_output(const char *cmd, Uint *n_lines);
 const char *word_strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *string_strstr_array(const char *str, const vector<string> &substrs, Uint *index);
+
+template <typename T>
+T *anrealloc(T *ptr, Ulong howmush) {
+  T *data = (T *)realloc(ptr, howmush);
+  if (!data) {
+    die(_("Failed to reallocate ptr."));
+  }
+  return data;
+}
 
 /* Most functions in 'winio.cpp'. */
 void  record_macro(void);

@@ -122,12 +122,12 @@ using std::vector;
 #define LINE_BIT_FLAG_SIZE            16
 
 /* Some other define`s. */
-#define BACKWARD                      false
-#define FORWARD                       true
-#define YESORNO                       false
-#define YESORALLORNO                  true
-#define BLIND                         false
-#define VISIBLE                       true
+#define BACKWARD                      FALSE
+#define FORWARD                       TRUE
+#define YESORNO                       FALSE
+#define YESORALLORNO                  TRUE
+#define BLIND                         FALSE
+#define VISIBLE                       TRUE
 #define YES                           1
 #define ALL                           2
 #define NO                            0
@@ -135,13 +135,13 @@ using std::vector;
 #define JUSTFIND                      0
 #define REPLACING                     1
 #define INREGION                      2
-#define NORMAL                        true
-#define SPECIAL                       false
-#define TEMPORARY                     false
-#define ANNOTATE                      true
-#define NONOTES                       false
-#define PRUNE_DUPLICATE               true
-#define IGNORE_DUPLICATES             false
+#define NORMAL                        TRUE
+#define SPECIAL                       FALSE
+#define TEMPORARY                     FALSE
+#define ANNOTATE                      TRUE
+#define NONOTES                       FALSE
+#define PRUNE_DUPLICATE               TRUE
+#define IGNORE_DUPLICATES             FALSE
 
 #define MAXCHARLEN                    4
 /* The default width of a tab in spaces. */
@@ -269,11 +269,6 @@ using std::vector;
 #ifdef NULL
   #undef NULL
 #endif
-#ifdef __cplusplus
-  #define NULL nullptr
-#else
-#define NULL __null
-#endif
 /* Bool def. */
 #ifdef TRUE
   #undef TRUE
@@ -282,9 +277,11 @@ using std::vector;
   #undef FALSE
 #endif
 #ifdef __cplusplus
+  #define NULL nullptr
   #define TRUE true
   #define FALSE false
 #else
+  #define NULL __null
   #define TRUE 1
   #define FALSE 0
 #endif

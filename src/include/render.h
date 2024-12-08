@@ -22,9 +22,9 @@
 #define WIN_COLOR_OFF(win, color)            win_attr_off(win, interface_color_pair[color])
 #define mv_add_nstr(win, row, col, str, len) (wmove(win, row, col) == (-1)) ?: waddnstr(win, str, len)
 #define mv_add_nstr_color(win, row, col, str, len, color) \
-  win_color_on(win, color);                               \
+  wattron(win, interface_color_pair[color]);                               \
   mv_add_nstr(win, row, col, str, len);                   \
-  win_color_off(win, color)
+  wattroff(win, interface_color_pair[color])
 
 /* Define`s for modifying the 'midwin', i.e: The edit window. */
 
