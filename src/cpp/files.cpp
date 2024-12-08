@@ -350,7 +350,7 @@ bool open_buffer(const char *filename, bool new_one) {
     install_handler_for_Ctrl_C();
     read_file(f, descriptor, realname, !new_one);
     restore_handler_for_Ctrl_C();
-    if (openfile->statinfo == NULL) {
+    if (!openfile->statinfo) {
       stat_with_alloc(realname, &openfile->statinfo);
     }
   }
@@ -395,7 +395,7 @@ void open_buffer_browser(void) {
 }
 
 /* Open a new and empty buffer. */
-void open_new_buffer(void) {
+void open_new_empty_buffer(void) {
   make_new_buffer();
   edit_refresh();
 }

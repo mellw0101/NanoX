@@ -813,7 +813,7 @@ void shortcut_init(void) {
   if (ISSET(MODERN_BINDINGS)) {
     /* add_to_sclist((MMOST | MBROWSER) & ~MFINDINHELP, help_key, 0, do_help, 0);
     add_to_sclist(MHELP, help_key, 0, do_exit, 0); */
-    add_to_sclist(MMAIN, "^N", 0, open_new_buffer, 0);
+    add_to_sclist(MMAIN, "^N", 0, open_new_empty_buffer, 0);
     add_to_sclist(MMAIN | MBROWSER | MHELP, "^Q", 0, do_exit, 0);
     add_to_sclist(MMAIN, "^S", 0, do_savefile, 0);
     add_to_sclist(MMAIN, "^W", 0, do_writeout, 0);

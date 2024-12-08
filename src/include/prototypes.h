@@ -242,7 +242,7 @@ bool        delete_lockfile(const char *lockfilename);
 bool        has_valid_path(const char *filename);
 bool        open_buffer(const char *filename, bool new_one);
 void        open_buffer_browser(void);
-void        open_new_buffer(void);
+void        open_new_empty_buffer(void);
 void        set_modified(void);
 void        prepare_for_display(void);
 void        mention_name_and_linecount(void);
