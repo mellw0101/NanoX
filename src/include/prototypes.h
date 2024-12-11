@@ -458,6 +458,8 @@ char *lower_case_word(const char *str);
 
 /* All functions in 'utils.cpp' */
 void        get_homedir(void);
+const char *tail(const char *path);
+const char *ext(const char *path);
 char       *concatenate(const char *path, const char *name);
 int         digits(long n);
 bool        parse_num(const char *string, long *result);
@@ -487,7 +489,6 @@ void        get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *
 void        get_range(linestruct **top, linestruct **bot);
 Ulong       number_of_characters_in(const linestruct *begin, const linestruct *end);
 const char *strstrwrapper(const char *haystack, const char *needle, const char *start);
-const char *tail(const char *path);
 linestruct *line_from_number(long number);
 char       *alloced_pwd(void);
 char       *alloc_str_free_substrs(char *str_1, char *str_2);

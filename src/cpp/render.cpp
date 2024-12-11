@@ -347,7 +347,7 @@ void rendr_define(Uint index) {
         break;
       }
       RENDR(R, FG_VS_CODE_BRIGHT_CYAN, start, end);
-      (word != NULL) ? free(word) : void();
+      word ? free(word) : void();
       word = measured_copy(start, (end - start));
       params.push_back(string(word));
       param = strstr(end, word);
@@ -451,7 +451,7 @@ void rendr_include(Uint index) {
   start = end;
   while (*end) {
     ADV_PTR(end, (*end == ' ' || *end == '\t'));
-    if (*end == '\0') {
+    if (!*end) {
       break;
     }
     start = end;
@@ -659,7 +659,7 @@ void rendr_classes(void) {
     start += "class"_sllen;
     ADV_PTR(start, (*start == ' ' || *start == '\t'));
     /* If there is nothing after the word class print error msg. */
-    if (*start == '\0') {
+    if (!*start) {
       RENDR(E, "<-(Expected class name)");
       return;
     }
@@ -881,7 +881,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
     }
     render_string_literals();
   }
-  /** TODO: Fix bug where if '0.' is at end of line then we crash when trying to modify that
+  /* TODO: Fix bug where if '0.' is at end of line then we crash when trying to modify that
    * line, it`s weird tough as it only craches if this it the first action and not otherwise. */
   else if (openfile->type.is_set<ASM>()) {
     if (!line->data[0]) {
@@ -954,8 +954,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
       const auto &it = test_map.find(node->str);
       if (it != test_map.end()) {
         /* If found use the map element to fetch the color. */
-        midwin_mv_add_nstr_color(
-          row, get_start_col(line, node), it->first.c_str(), it->first.length(), it->second.color);
+        mv_add_nstr_color(midwin, row, get_start_col(line, node), it->first.c_str(), it->first.length(), it->second.color);
         free_node(node);
         continue;
       }
@@ -964,8 +963,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
       if (func_decl != LSP->index.functiondefs.end()) {
         const auto &[name, data] = *func_decl;
         /* If found use the map element to fetch the color. */
-        midwin_mv_add_nstr_color(
-          row, get_start_col(line, node), name.c_str(), name.length(), FG_VS_CODE_BRIGHT_YELLOW);
+        mv_add_nstr_color(midwin, row, get_start_col(line, node), name.c_str(), name.length(), FG_VS_CODE_BRIGHT_YELLOW);
         free_node(node);
         continue;
       }
@@ -975,8 +973,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
         const auto &[name, vector] = *var;
         for (const auto &v : vector) {
           if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
-            midwin_mv_add_nstr_color(
-              row, get_start_col(line, node), name.c_str(), name.length(), FG_VS_CODE_BRIGHT_CYAN);
+            mv_add_nstr_color(midwin, row, get_start_col(line, node), name.c_str(), name.length(), FG_VS_CODE_BRIGHT_CYAN);
           }
         }
       }

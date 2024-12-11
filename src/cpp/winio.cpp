@@ -2917,7 +2917,7 @@ bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
   if (ISSET(SOFTWRAP)) {
     line      = openfile->current;
     leftedge  = leftedge_for(xplustabs(), openfile->current);
-    rows_left = go_back_chunks(editwinrows - 1, &line, &leftedge);
+    rows_left = go_back_chunks((editwinrows - 1), &line, &leftedge);
     return (rows_left > 0 || line->lineno < was_lineno || (line->lineno == was_lineno && leftedge <= was_leftedge));
   }
   else {
@@ -3141,8 +3141,8 @@ Ulong actual_last_column(Ulong leftedge, Ulong column) {
 /* Return TRUE if current[current_x] is before the viewport. */
 bool current_is_above_screen(void) {
   if (ISSET(SOFTWRAP)) {
-    return (openfile->current->lineno < openfile->edittop->lineno ||
-            (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
+    return (openfile->current->lineno < openfile->edittop->lineno || 
+           (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
   }
   return (openfile->current->lineno < openfile->edittop->lineno);
 }
@@ -3154,13 +3154,11 @@ bool current_is_below_screen(void) {
   if (ISSET(SOFTWRAP)) {
     linestruct *line     = openfile->edittop;
     Ulong       leftedge = openfile->firstcolumn;
-    /* If current[current_x] is more than a screen's worth of lines after
-     * edittop at column firstcolumn, it's below the screen. */
-    return (go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 &&
-            (line->lineno < openfile->current->lineno ||
-             (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
+    /* If current[current_x] is more than a screen's worth of lines after edittop at column firstcolumn, it's below the screen. */
+    return (go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 && (line->lineno < openfile->current->lineno || 
+           (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
   }
-  return (openfile->current->lineno >= openfile->edittop->lineno + editwinrows - SHIM);
+  return (openfile->current->lineno >= (openfile->edittop->lineno + editwinrows - SHIM));
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */

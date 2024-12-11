@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cstring>
 #include <unistd.h>
+#include <libevdev-1.0/libevdev/libevdev.h>
+
 
 /* The list of files to display in the file browser. */
 static char **filelist = NULL;
@@ -35,7 +37,7 @@ void read_the_list(const char *path, DIR *dir) {
     ++index;
   }
   /* Reserve ten columns for blanks plus file size. */
-  gauge = widest + 10;
+  gauge = (widest + 10);
   /* If needed, make room for ".. (parent dir)". */
   if (gauge < 15) {
     gauge = 15;
@@ -58,22 +60,21 @@ void read_the_list(const char *path, DIR *dir) {
     sprintf(filelist[index], "%s%s", path, entry->d_name);
     ++index;
   }
-  /* Maybe the number of files in the directory decreased between
-   * the first time we scanned and the second time. */
+  /* Maybe the number of files in the directory decreased between the first time we scanned and the second time. */
   list_length = index;
   /* Sort the list of names. */
   qsort(filelist, list_length, sizeof(char *), diralphasort);
   /* Calculate how many files fit on a line -- feigning room for two spaces beyond
    * the right edge, and adding two spaces of padding between columns. */
-  piles       = (COLS + 2) / (gauge + 2);
+  piles       = ((COLS + 2) / (gauge + 2));
   usable_rows = editwinrows - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
 }
 
 /* Reselect the given file or directory name, if it still exists. */
 void reselect(const char *const name) {
   Ulong looking_at = 0;
-  while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0) {
-    looking_at++;
+  while (looking_at < list_length && strcmp(filelist[looking_at], name)) {
+    ++looking_at;
   }
   /* If the sought name was found, select it; otherwise, just move the highlight so that the
    * changed selection will be noticed, but make sure to stay within the current available range. */
@@ -101,6 +102,14 @@ void browser_refresh(void) {
   for (Ulong index = (selected - selected % (usable_rows * piles)); (index < list_length) && (row < usable_rows); index++) {
     /* The filename we display, minus the path. */
     const char *thename = tail(filelist[index]);
+    /* The file extention. */
+    const char *file_ext = ext(thename);
+    /* The color to apply. */
+    int apply_color = 0;
+    /* Any mod to the color like bold or italic. */
+    int apply_color_mod = 0;
+    /* 'TRUE' if we apply color, otherwise 'FALSE'. */
+    bool did_apply_color = FALSE;
     /* The length of the filename in columns. */
     Ulong namelen = breadth(thename);
     /* The length of the file information in columns. */
@@ -108,32 +117,24 @@ void browser_refresh(void) {
     /* The maximum length of the file information in columns: normally seven, but will be twelve for "(parent dir)". */
     Ulong infomaxlen = 7;
     /* Whether to put an ellipsis before the filename?  We don't waste space on dots when there are fewer than 15 columns. */
-    bool dots = (COLS >= 15 && namelen >= gauge - infomaxlen);
+    bool dots = (COLS >= 15 && namelen >= (gauge - infomaxlen));
     /* The filename (or a fragment of it) in displayable format.  When a fragment, account for dots plus one space padding. */
-    char *disp = display_string(thename, dots ? namelen + infomaxlen + 4 - gauge : 0, gauge, FALSE, FALSE);
+    char *disp = display_string(thename, (dots ? (namelen + infomaxlen + 4 - gauge) : 0), gauge, FALSE, FALSE);
     struct stat state;
-    /* If this is the selected item, draw its highlighted bar upfront, and remember its location to be able to place the cursor on it. */
-    if (index == selected) {
-      wattron(midwin, interface_color_pair[SELECTED_TEXT]);
-      mvwprintw(midwin, row, col, "%*s", gauge, " ");
-      the_row    = row;
-      the_column = col;
-    }
     /* Show information about the file: "--" for symlinks (except when they point to a directory)
      * and for files that have disappeared, '(dir)' for directories, and the file size for normal files. */
     if (lstat(filelist[index], &state) == -1 || S_ISLNK(state.st_mode)) {
       if (stat(filelist[index], &state) == -1 || !S_ISDIR(state.st_mode)) {
         info = copy_of("--");
-        if (index != selected) {
-          wattron(midwin, interface_color_pair[FG_COMMENT_GREEN]);
-        }
+        apply_color = FG_COMMENT_GREEN;
+        did_apply_color = TRUE;
       }
       else {
         /* TRANSLATORS: Anything more than 7 cells gets clipped. */
         info = copy_of(_("(dir)"));
-        if (index != selected) {
-          wattron(midwin, interface_color_pair[FG_VS_CODE_BLUE]);
-        }
+        apply_color = FG_VS_CODE_BLUE;
+        apply_color_mod = A_BOLD;
+        did_apply_color = TRUE;
       }
     }
     else if (S_ISDIR(state.st_mode)) {
@@ -141,15 +142,12 @@ void browser_refresh(void) {
         /* TRANSLATORS: Anything more than 12 cells gets clipped. */
         info       = copy_of(_("(parent dir)"));
         infomaxlen = 12;
-        if (index != selected) {
-          wattron(midwin, interface_color_pair[FG_VS_CODE_MAGENTA]);
-        }
       }
       else {
         info = copy_of(_("(dir)"));
-        if (index != selected) {
-          wattron(midwin, interface_color_pair[FG_VS_CODE_BLUE]);
-        }
+        apply_color = FG_VS_CODE_BLUE;
+        apply_color_mod = A_BOLD;
+        did_apply_color = TRUE;
       }
     }
     else {
@@ -184,34 +182,57 @@ void browser_refresh(void) {
         /* TRANSLATORS: Anything more than 7 cells gets clipped.  If necessary, you can leave out the parentheses. */
         info = mallocstrcpy(info, _("(huge)"));
       }
+      /* Apply extention based colors when not selected. */
+      if (file_ext && index != selected) {
+        if (strcmp(file_ext, "cpp") == 0) {
+          apply_color = FG_VS_CODE_BRIGHT_GREEN;
+          did_apply_color = TRUE;
+        }
+        if (strcmp(file_ext, "h") == 0) {
+          apply_color = FG_VS_CODE_MAGENTA;
+          did_apply_color = TRUE;
+        }
+        if (strcmp(file_ext, "tar") == 0 || strcmp(file_ext, "gz") == 0) {
+          apply_color = FG_VS_CODE_RED;
+          did_apply_color = TRUE;
+        }
+        if (strcmp(file_ext, "conf") == 0 || strcmp(file_ext, "cfg") == 0) {
+          apply_color = FG_VS_CODE_BRIGHT_MAGENTA;
+          did_apply_color = TRUE;
+        }
+      }
+    }
+    /* If this is the selected item, draw its highlighted bar upfront, and remember its location to be able to place the cursor on it. */
+    if (index == selected) {
+      wattron(midwin, interface_color_pair[SELECTED_TEXT]);
+      mvwprintw(midwin, row, col, "%*s", gauge, " ");
+      the_row    = row;
+      the_column = col;
+    }
+    /* If color was selected, turn it on. */
+    else if (did_apply_color) {
+      wattron(midwin, (interface_color_pair[apply_color] | apply_color_mod));
     }
     /* If the name is too long, we display something like "...ename". */
     if (dots) {
       mvwaddstr(midwin, row, col, "...");
     }
-    mvwaddstr(midwin, row, dots ? col + 3 : col, disp);
+    mvwaddstr(midwin, row, (dots ? (col + 3) : col), disp);
     col += gauge;
     /* Make sure info takes up no more than infomaxlen columns. */
     infolen = breadth(info);
     if (infolen > infomaxlen) {
       info[actual_x(info, infomaxlen)] = '\0';
-      infolen                          = infomaxlen;
+      infolen = infomaxlen;
     }
-    mvwaddstr(midwin, row, col - infolen, info);
+    mvwaddstr(midwin, row, (col - infolen), info);
     /* If this is the selected item, finish its highlighting. */
     if (index == selected) {
       wattroff(midwin, interface_color_pair[SELECTED_TEXT]);
     }
-    else {
-      if (strcmp(info, "--") == 0) {
-        wattroff(midwin, interface_color_pair[FG_COMMENT_GREEN]);
-      }
-      else if (strcmp(info, _("(dir)")) == 0) {
-        wattroff(midwin, interface_color_pair[FG_VS_CODE_BLUE]);
-      }
-      else if (strcmp(info, _("(parent dir)")) == 0) {
-        wattroff(midwin, interface_color_pair[FG_VS_CODE_MAGENTA]);
-      }
+    /* If color was selected, turn it off after we have printed the text. */
+    else if (did_apply_color) {
+      wattroff(midwin, (interface_color_pair[apply_color] | apply_color_mod));
     }
     free(disp);
     free(info);
@@ -219,7 +240,7 @@ void browser_refresh(void) {
     col += 2;
     /* If the next item will not fit on this row, move to next row. */
     if (col > COLS - gauge) {
-      row++;
+      ++row;
       col = 0;
     }
   }

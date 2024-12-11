@@ -408,13 +408,12 @@ void set_modified(void) {
   }
   openfile->modified = TRUE;
   titlebar(NULL);
-  if (openfile->lock_filename != NULL) {
+  if (openfile->lock_filename) {
     write_lockfile(openfile->lock_filename, openfile->filename, TRUE);
   }
 }
 
-/* Update the title bar and the multiline cache to match the current buffer.
- * TODO: (prepare_for_display) - Understand. */
+/* Update the title bar and the multiline cache to match the current buffer. */
 void prepare_for_display(void) {
   /* Update the title bar, since the filename may have changed. */
   if (!inhelp) {

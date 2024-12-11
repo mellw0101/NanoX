@@ -28,7 +28,7 @@ void to_last_line(void) {
 /* Determine the actual current chunk and the target column. */
 void get_edge_and_target(Ulong *leftedge, Ulong *target_column) {
   if (ISSET(SOFTWRAP)) {
-    Ulong shim     = editwincols * (1 + (tabsize / editwincols));
+    Ulong shim     = (editwincols * (1 + (tabsize / editwincols)));
     *leftedge      = leftedge_for(xplustabs(), openfile->current);
     *target_column = (openfile->placewewant + shim - *leftedge) % editwincols;
   }
@@ -44,12 +44,10 @@ void get_edge_and_target(Ulong *leftedge, Ulong *target_column) {
  * or from skipping a row when moving backward, by incrementing the index. */
 Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) {
   Ulong index = actual_x(line->data, column);
-  if (ISSET(SOFTWRAP) && line->data[index] == '\t' &&
-      ((forward && wideness(line->data, index) < *leftedge) ||
-       (!forward && column / tabsize == (*leftedge - 1) / tabsize &&
-        column / tabsize < (*leftedge + editwincols - 1) / tabsize))) {
+  if (ISSET(SOFTWRAP) && line->data[index] == '\t' && ((forward && wideness(line->data, index) < *leftedge)
+   || (!forward && column / tabsize == (*leftedge - 1) / tabsize && column / tabsize < (*leftedge + editwincols - 1) / tabsize))) {
     index++;
-    if (shifted != NULL) {
+    if (shifted) {
       *shifted = TRUE;
     }
   }

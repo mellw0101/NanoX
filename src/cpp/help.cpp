@@ -1,11 +1,11 @@
 #include "../include/prototypes.h"
 
 /* The text displayed in the help window. */
-static char *help_text = nullptr;
+static char *help_text = NULL;
 /* The point in the help text just after the title. */
-static const char *start_of_body = nullptr;
+static const char *start_of_body = NULL;
 /* The point in the help text where the shortcut descriptions begin. */
-static char *end_of_intro = nullptr;
+static char *end_of_intro = NULL;
 /* The offset (in bytes) of the topleft of the shown help text. */
 static Ulong location;
 
@@ -42,7 +42,7 @@ void help_init(void) {
                 "search to replace, only matches in the selected text "
                 "will be replaced.\n\n The following function keys are "
                 "available in Search mode:\n\n");
-    htx[2] = nullptr;
+    htx[2] = NULL;
   }
   else if (currmenu == MREPLACEWITH) {
     htx[0] = N_("=== Replacement ===\n\n "
@@ -50,7 +50,7 @@ void help_init(void) {
                 "typed at the previous prompt, and press Enter.\n\n");
     htx[1] = N_(" The following function keys "
                 "are available at this prompt:\n\n");
-    htx[2] = nullptr;
+    htx[2] = NULL;
   }
   else if (currmenu == MGOTOLINE) {
     htx[0] = N_("Go To Line Help Text\n\n "
@@ -59,8 +59,8 @@ void help_init(void) {
                 "number you entered, you will be brought to the last "
                 "line of the file.\n\n The following function keys are "
                 "available in Go To Line mode:\n\n");
-    htx[1] = nullptr;
-    htx[2] = nullptr;
+    htx[1] = NULL;
+    htx[2] = NULL;
   }
   else if (currmenu == MINSERTFILE) {
     htx[0] = N_("Insert File Help Text\n\n "
@@ -76,7 +76,7 @@ void help_init(void) {
                 "any filename, or type in a nonexistent filename at "
                 "the prompt and press Enter.\n\n The following "
                 "function keys are available in Insert File mode:\n\n");
-    htx[2] = nullptr;
+    htx[2] = NULL;
   }
   else if (currmenu == MWRITEFILE) {
     htx[0] = N_("Write File Help Text\n\n "
@@ -88,8 +88,8 @@ void help_init(void) {
                 "just a portion of it, the current filename is not the "
                 "default in this mode.\n\n The following function keys "
                 "are available in Write File mode:\n\n");
-    htx[1] = nullptr;
-    htx[2] = nullptr;
+    htx[1] = NULL;
+    htx[2] = NULL;
   }
   else if (currmenu == MBROWSER) {
     htx[0] = N_("File Browser Help Text\n\n "
@@ -102,8 +102,8 @@ void help_init(void) {
                 "directory called \"..\" at the top of the file "
                 "list.\n\n The following function keys are available "
                 "in the file browser:\n\n");
-    htx[1] = nullptr;
-    htx[2] = nullptr;
+    htx[1] = NULL;
+    htx[2] = NULL;
   }
   else if (currmenu == MWHEREISFILE) {
     htx[0] = N_("Browser Search Command Help Text\n\n "
@@ -117,7 +117,7 @@ void help_init(void) {
                 "previous search.\n\n");
     htx[1] = N_(" The following function keys "
                 "are available at this prompt:\n\n");
-    htx[2] = nullptr;
+    htx[2] = NULL;
   }
   else if (currmenu == MGOTODIR) {
     htx[0] = N_("Browser Go To Directory Help Text\n\n "
@@ -127,8 +127,8 @@ void help_init(void) {
                 "automatically complete the directory name.\n\n The "
                 "following function keys are available in Browser Go "
                 "To Directory mode:\n\n");
-    htx[1] = nullptr;
-    htx[2] = nullptr;
+    htx[1] = NULL;
+    htx[2] = NULL;
   }
   else if (currmenu == MSPELL) {
     htx[0] = N_("Spell Check Help Text\n\n "
@@ -140,8 +140,8 @@ void help_init(void) {
                 "file, or, if you have selected text with the mark, in "
                 "the selected text.\n\n The following function keys "
                 "are available in Spell Check mode:\n\n");
-    htx[1] = nullptr;
-    htx[2] = nullptr;
+    htx[1] = NULL;
+    htx[2] = NULL;
   }
   else if (currmenu == MEXECUTE) {
     htx[0] = N_("Execute Command Help Text\n\n "
@@ -164,7 +164,7 @@ void help_init(void) {
                 "can switch to earlier and later messages.\n\n");
     htx[1] = N_(" The following function keys are "
                 "available in Linter mode:\n\n");
-    htx[2] = nullptr;
+    htx[2] = NULL;
   }
   else {
     /* Default to the main help list. */
@@ -245,17 +245,17 @@ void help_init(void) {
       continue;
     }
     /* Show the first two shortcuts (if any) for each function. */
-    for (s = sclist; s != nullptr; s = s->next) {
+    for (s = sclist; s != NULL; s = s->next) {
       if ((s->menus & currmenu) && s->func == f->func && s->keystr[0]) {
         /* Make the first column 7 cells wide and the second 10. */
         if (++tally == 1) {
           sprintf(ptr, "%s                ", s->keystr);
           /* Unicode arrows take three bytes instead of one. */
-          ptr += (strstr(s->keystr, "\xE2") != nullptr ? 9 : 7);
+          ptr += (strstr(s->keystr, "\xE2") != NULL ? 9 : 7);
         }
         else {
           sprintf(ptr, "(%s)       ", s->keystr);
-          ptr += (strstr(s->keystr, "\xE2") != nullptr ? 12 : 10);
+          ptr += (strstr(s->keystr, "\xE2") != NULL ? 12 : 10);
           break;
         }
       }
@@ -282,7 +282,7 @@ void help_init(void) {
     /* Now show them in the original order. */
     while (counter < maximum) {
       counter++;
-      for (s = sclist; s != nullptr; s = s->next) {
+      for (s = sclist; s != NULL; s = s->next) {
         if (s->toggle && s->ordinal == counter) {
           ptr += sprintf(ptr, "%s\t\t %s %s\n", (s->menus & MMAIN ? s->keystr : ""), _(epithet_of_flag(s->toggle)),
                          _("enable/disable"));
@@ -318,13 +318,13 @@ void wrap_help_text_into_buffer(void) {
       wrapping_point = ((COLS < 40) ? 40 : COLS) - sidebar;
     }
     if (ptr < end_of_intro || *(ptr - 1) == '\n') {
-      length  = break_line(ptr, wrapping_point, true);
+      length  = break_line(ptr, wrapping_point, TRUE);
       oneline = (char *)nmalloc(length + 1);
       shim    = (*(ptr + length - 1) == ' ') ? 0 : 1;
       snprintf(oneline, length + shim, "%s", ptr);
     }
     else {
-      length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, true);
+      length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, TRUE);
       oneline = (char *)nmalloc(length + 5);
       snprintf(oneline, length + 5, "\t\t  %s", ptr);
     }
@@ -347,7 +347,7 @@ void wrap_help_text_into_buffer(void) {
   find_and_prime_applicable_syntax();
   prepare_for_display();
   /* Move to the position in the file where we were before. */
-  while (true) {
+  while (TRUE) {
     sum += strlen(openfile->current->data);
     if (sum > location) {
       break;
@@ -369,7 +369,7 @@ void show_help(void) {
   long  was_tabsize = tabsize;
   char *was_syntax  = syntaxstr;
   /* The current answer when the user invokes help at the prompt. */
-  char *saved_answer = answer ? copy_of(answer) : nullptr;
+  char *saved_answer = answer ? copy_of(answer) : NULL;
   Ulong stash[sizeof(flags) / sizeof(flags[0])];
   /* A storage place for the current flag settings. */
   linestruct *line;
@@ -397,12 +397,12 @@ void show_help(void) {
   curs_set(0);
   /* Compose the help text from all the relevant pieces. */
   help_init();
-  inhelp   = true;
+  inhelp   = TRUE;
   location = 0;
   didfind  = 0;
   bottombars(MHELP);
   /* Extract the title from the head of the help text. */
-  length = break_line(help_text, HIGHEST_POSITIVE, true);
+  length = break_line(help_text, HIGHEST_POSITIVE, TRUE);
   title  = measured_copy(help_text, length);
   titlebar(title);
   /* Skip over the title to point at the start of the body text. */
@@ -412,9 +412,9 @@ void show_help(void) {
   }
   wrap_help_text_into_buffer();
   edit_refresh();
-  while (true) {
+  while (TRUE) {
     lastmessage = VACUUM;
-    focusing    = true;
+    focusing    = TRUE;
     /* Show the cursor when we searched and found something. */
     kbinput     = get_kbinput(midwin, didfind == 1 || ISSET(SHOW_CURSOR));
     didfind     = 0;
@@ -427,8 +427,7 @@ void show_help(void) {
     if (function == full_refresh) {
       full_refresh();
     }
-    else if (ISSET(SHOW_CURSOR) &&
-             (function == do_left || function == do_right || function == do_up || function == do_down)) {
+    else if (ISSET(SHOW_CURSOR) && (function == do_left || function == do_right || function == do_up || function == do_down)) {
       function();
     }
     else if (function == do_up || function == do_scroll_up) {
@@ -439,12 +438,10 @@ void show_help(void) {
         do_scroll_down();
       }
     }
-    else if (function == do_page_up || function == do_page_down || function == to_first_line ||
-             function == to_last_line) {
+    else if (function == do_page_up || function == do_page_down || function == to_first_line || function == to_last_line) {
       function();
     }
-    else if (function == do_search_backward || function == do_search_forward || function == do_findprevious ||
-             function == do_findnext) {
+    else if (function == do_search_backward || function == do_search_forward || function == do_findprevious || function == do_findnext) {
       function();
       bottombars(MHELP);
     }
@@ -453,10 +450,11 @@ void show_help(void) {
     }
     else if (kbinput == KEY_MOUSE) {
       int dummy_row, dummy_col;
-      get_mouseinput(&dummy_row, &dummy_col, true);
+      get_mouseinput(&dummy_row, &dummy_col, TRUE);
     }
-    else if (kbinput == KEY_WINCH)
+    else if (kbinput == KEY_WINCH) {
       ; /* Nothing to do. */
+    }
     else if (function == do_exit) {
       break;
     }
@@ -482,7 +480,7 @@ void show_help(void) {
   syntaxstr    = was_syntax;
   have_palette = FALSE;
   free(title);
-  title = nullptr;
+  title = NULL;
   free(answer);
   answer = saved_answer;
   free(help_text);
@@ -499,7 +497,7 @@ void show_help(void) {
     browser_refresh();
   }
   else {
-    titlebar(nullptr);
+    titlebar(NULL);
     edit_refresh();
   }
 }

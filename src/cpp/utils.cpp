@@ -25,10 +25,17 @@ const char *tail(const char *path) {
   const char *slash = strrchr(path, '/');
   if (!slash) {
     return path;
+  }  
+  return (slash + 1);
+}
+
+/* Return the extention of the given path.  Else if no extention, return 'NULL'. */
+const char *ext(const char *path) {
+  const char *ext = strrchr(path, '.');
+  if (!ext) {
+    return NULL;
   }
-  else {
-    return slash + 1;
-  }
+  return (ext + 1);
 }
 
 /* Return a copy of the two given strings, welded together. */

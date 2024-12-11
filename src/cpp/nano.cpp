@@ -1246,8 +1246,8 @@ void process_a_keystroke(void) {
   function();
   /* When the marked region changes without Shift being held, discard a soft
    * mark. And when the set of lines changes, reset the "last line too" flag. */
-  if (openfile->mark && openfile->softmark && !shift_held &&
-      (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function))) {
+  if (openfile->mark && openfile->softmark && !shift_held
+   && (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function))) {
     openfile->mark = NULL;
     refresh_needed = TRUE;
   }
@@ -1602,8 +1602,8 @@ int main(int argc, char **argv) {
   window_init();
   curs_set(0);
   sidebar     = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
-  bardata     = arealloc(bardata, LINES * sizeof(int));
-  editwincols = COLS - sidebar;
+  bardata     = arealloc(bardata, (LINES * sizeof(int)));
+  editwincols = (COLS - sidebar);
   /* Set up the signal handlers. */
   signal_init();
   /* Initialize mouse support. */
