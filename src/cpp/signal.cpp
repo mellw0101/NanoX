@@ -18,8 +18,8 @@ void handle_main_thread_signal(int sig, siginfo_t *si, void *context) {
 /* Send a function and arg to the main thread for direct handeling. */
 void send_signal_to_main_thread(void (*func)(void *), void *arg) {
   signal_payload_t *payload = (signal_payload_t *)nmalloc(sizeof(signal_payload_t));
-  payload->func             = func;
-  payload->arg              = arg;
+  payload->func = func;
+  payload->arg  = arg;
   union sigval sig_data;
   sig_data.sival_ptr = payload;
   if (sigqueue(main_thread->pid, SIGRTMIN, sig_data) != 0) {
@@ -45,7 +45,7 @@ void send_signal_to_main_thread(void (*func)(void *), void *arg) {
 
 /* Init the main thread, then setup SIGRTMIN. */
 void init_main_thread(void) {
-  if (main_thread != NULL) {
+  if (main_thread) {
     logE("main_thread should only be allocated once.");
     return;
   }

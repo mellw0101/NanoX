@@ -1,8 +1,7 @@
 /** @file utils.cpp */
 #include "../include/prototypes.h"
 
-/* Return the user's home directory.  We use $HOME, and if that fails,
- * we fall back on the home directory of the effective user ID. */
+/* Return the user's home directory.  We use $HOME, and if that fails, we fall back on the home directory of the effective user ID. */
 void get_homedir(void) {
   if (!homedir) {
     const char *homenv = getenv("HOME");
@@ -32,7 +31,8 @@ const char *tail(const char *path) {
 /* Return the extention of the given path.  Else if no extention, return 'NULL'. */
 const char *ext(const char *path) {
   const char *ext = strrchr(path, '.');
-  if (!ext) {
+  const char *slash = tail(path);
+  if (!ext || (ext && ext < slash)) {
     return NULL;
   }
   return (ext + 1);
@@ -43,8 +43,36 @@ char *concatenate(const char *path, const char *name) {
   Ulong pathlen = strlen(path);
   char *joined  = (char *)nmalloc(pathlen + strlen(name) + 1);
   strcpy(joined, path);
-  strcpy(joined + pathlen, name);
+  strcpy((joined + pathlen), name);
   return joined;
+}
+
+/* Return a path copy of two strings, appending '/' to the prefix if needed. */
+char *concatenate_path(const char *prefix, const char *suffix) {
+  Ulong prefix_len = strlen(prefix);
+  char *ret = NULL;
+  if (prefix[prefix_len - 1] == '/') {
+    ret = (char *)malloc(prefix_len + strlen(suffix) + 1);
+    sprintf(ret, "%s%s", prefix, suffix);
+  }
+  else {
+    ret = (char *)malloc(prefix_len + strlen(suffix) + 2);
+    sprintf(ret, "%s%s%s", prefix, "/", suffix);
+  }
+  return ret;
+}
+
+/* Return a path copy of two strings, appending '/' to the prefix if needed. */
+const char *concat_path(const char *s1, const char *s2) {
+  static char buf[PATH_MAX];
+  Ulong       len_s1 = strlen(s1);
+  if (s1[len_s1 - 1] == '/') {
+    snprintf(buf, sizeof(buf), "%s%s", s1, s2);
+  }
+  else {
+    snprintf(buf, sizeof(buf), "%s%s%s", s1, "/", s2);
+  }
+  return buf;
 }
 
 /* Return the number of digits that the given integer n takes up. */
@@ -115,13 +143,13 @@ bool parse_num(const char *string, long *result) {
   return true;
 }
 
-/* Read one number (or two numbers separated by comma, period, or colon)
- * from the given string and store the number(s) in *line (and *column).
- * Return 'FALSE' on a failed parsing, and 'true' otherwise. */
+// Read one number (or two numbers separated by comma, period, or colon)
+// from the given string and store the number(s) in *line (and *column).
+// Return 'FALSE' on a failed parsing, and 'true' otherwise.
 bool parse_line_column(const char *string, long *line, long *column) {
   const char *comma;
-  char       *firstpart;
-  bool        retval;
+  char *firstpart;
+  bool retval;
   while (*string == ' ') {
     string++;
   }
@@ -133,9 +161,9 @@ bool parse_line_column(const char *string, long *line, long *column) {
   if (comma == string) {
     return retval;
   }
-  firstpart                 = copy_of(string);
+  firstpart = copy_of(string);
   firstpart[comma - string] = '\0';
-  retval                    = parse_num(firstpart, line) && retval;
+  retval = parse_num(firstpart, line) && retval;
   free(firstpart);
   return retval;
 }
@@ -174,22 +202,21 @@ void free_chararray(char **array, Ulong len) {
   free(array);
 }
 
-/* Is the word starting at the given position in 'text' and of the given
- * length a separate word?  That is: is it not part of a longer word? */
+// Is the word starting at the given position in 'text' and of the given
+// length a separate word?  That is: is it not part of a longer word?
 bool is_separate_word(Ulong position, Ulong length, const char *text) {
   const char *before = text + step_left(text, position);
   const char *after  = text + position + length;
-  /* If the word starts at the beginning of the line OR the character before
-   * the word isn't a letter, and if the word ends at the end of the line OR
-   * the character after the word isn't a letter, we have a whole word. */
+  /* If the word starts at the beginning of the line OR the character before the word isn't a letter, and if
+   * the word ends at the end of the line OR the character after the word isn't a letter, we have a whole word. */
   return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
 }
 
-/* Return the position of the needle in the haystack, or NULL if not found.
- * When searching backwards, we will find the last match that starts no later
- * than the given start; otherwise, we find the first match starting no earlier
- * than start.  If we are doing a regexp search, and we find a match, we fill
- * in the global variable regmatches with at most 9 subexpression matches. */
+// Return the position of the needle in the haystack, or NULL if not found.
+// When searching backwards, we will find the last match that starts no later
+// than the given start; otherwise, we find the first match starting no earlier
+// than start.  If we are doing a regexp search, and we find a match, we fill
+// in the global variable regmatches with at most 9 subexpression matches.
 const char *strstrwrapper(const char *const haystack, const char *const needle, const char *const start) {
   if (ISSET(USE_REGEXP)) {
     if (ISSET(BACKWARDS_SEARCH)) {
@@ -276,8 +303,8 @@ void *nrealloc(void *section, Ulong howmuch) {
 
 /* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
 char *mallocstrcpy(char *dest, const char *src) {
-  Ulong count = strlen(src) + 1;
-  dest        = arealloc(dest, count);
+  Ulong count = (strlen(src) + 1);
+  dest = arealloc(dest, count);
   constexpr_strncpy(dest, src, count);
   return dest;
 }
@@ -312,29 +339,27 @@ char *free_and_assign(char *dest, char *src) {
   return src;
 }
 
-/* When not softwrapping, nano scrolls the current line horizontally by
- * chunks ("pages").  Return the column number of the first character
- * displayed in the edit window when the cursor is at the given column. */
+// When not softwrapping, nano scrolls the current line horizontally by
+// chunks ("pages").  Return the column number of the first character
+// displayed in the edit window when the cursor is at the given column.
 Ulong get_page_start(const Ulong column) {
-  if (column == 0 || column + 2 < editwincols || ISSET(SOFTWRAP)) {
+  if (!column || (column + 2) < editwincols || ISSET(SOFTWRAP)) {
     return 0;
   }
   else if (editwincols > 8) {
-    return column - 6 - (column - 6) % (editwincols - 8);
+    return (column - 6 - (column - 6) % (editwincols - 8));
   }
   else {
-    return column - (editwincols - 2);
+    return (column - (editwincols - 2));
   }
 }
 
-/* Return the placewewant associated with current_x,
- * i.e. the zero-based column position of the cursor. */
+/* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
 Ulong xplustabs(void) {
   return wideness(openfile->current->data, openfile->current_x);
 }
 
-/* Return the index in text of the character that (when displayed) will
- * not overshoot the given column. */
+/* Return the index in text of the character that (when displayed) will not overshoot the given column. */
 Ulong actual_x(const char *text, Ulong column) {
   /* From where we start walking through the text. */
   const char *start = text;
@@ -350,14 +375,14 @@ Ulong actual_x(const char *text, Ulong column) {
   return (Ulong)(text - start);
 }
 
-/* A strnlen() with tabs and multicolumn characters factored in:
- * how many columns wide are the first maxlen bytes of text? */
+/* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
 Ulong wideness(const char *text, Ulong maxlen) {
   if (!maxlen) {
     return 0;
   }
   Ulong width = 0;
-  for (Ulong charlen; *text && (maxlen > (charlen = advance_over(text, width))); maxlen -= charlen, text += charlen);
+  for (Ulong charlen; *text && (maxlen > (charlen = advance_over(text, width))); maxlen -= charlen, text += charlen)
+    ;
   return width;
 }
 
@@ -373,7 +398,7 @@ void new_magicline(void) {
   openfile->filebot->next       = make_new_node(openfile->filebot);
   openfile->filebot->next->data = copy_of("");
   openfile->filebot             = openfile->filebot->next;
-  openfile->totsize++;
+  ++openfile->totsize;
 }
 
 /* Remove the magic line from the end of the buffer, if there is one and it isn't the only line in the file. */
@@ -385,18 +410,18 @@ void remove_magicline(void) {
     openfile->filebot = openfile->filebot->prev;
     delete_node(openfile->filebot->next);
     openfile->filebot->next = NULL;
-    openfile->totsize--;
+    --openfile->totsize;
   }
 }
 
 /* Return 'true' when the mark is before or at the cursor, and FALSE otherwise. */
 bool mark_is_before_cursor(void) {
-  return (openfile->mark->lineno < openfile->current->lineno ||
-          (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
+  return (
+    openfile->mark->lineno < openfile->current->lineno
+    || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
 }
 
-/* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of
- * the marked region. */
+/* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
 void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) {
   if (mark_is_before_cursor()) {
     *top   = openfile->mark;
@@ -412,9 +437,9 @@ void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) 
   }
 }
 
-/* Get the set of lines to work on -- either just the current line, or the
- * first to last lines of the marked region.  When the cursor (or mark) is
- * at the start of the last line of the region, exclude that line. */
+// Get the set of lines to work on -- either just the current line, or the
+// first to last lines of the marked region.  When the cursor (or mark) is
+// at the start of the last line of the region, exclude that line.
 void get_range(linestruct **top, linestruct **bot) {
   if (!openfile->mark) {
     *top = openfile->current;
@@ -451,7 +476,7 @@ linestruct *line_from_number(long number) {
 /* Count the number of characters from begin to end, and return it. */
 Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) {
   const linestruct *line;
-  Ulong             count = 0;
+  Ulong count = 0;
   /* Sum the number of characters (plus a newline) in each line. */
   for (line = begin; line != end->next; line = line->next) {
     count += mbstrlen(line->data) + 1;
@@ -474,14 +499,13 @@ char *alloced_pwd(void) {
   return ret;
 }
 
-/* Return`s malloc`ed str containing both substr`s,
- * this also free`s both str_1 and str_2. */
+/* Return`s malloc`ed str containing both substr`s, this also free`s both str_1 and str_2. */
 char *alloc_str_free_substrs(char *str_1, char *str_2) {
   Ulong len_1 = strlen(str_1);
   Ulong len_2 = strlen(str_2);
-  char *ret   = (char *)nmalloc(len_1 + len_2 + 1);
+  char *ret = (char *)nmalloc(len_1 + len_2 + 1);
   memmove(ret, str_1, len_1);
-  memmove(ret + len_1, str_2, len_2);
+  memmove((ret + len_1), str_2, len_2);
   ret[len_1 + len_2] = '\0';
   free(str_1);
   free(str_2);
@@ -492,13 +516,12 @@ char *alloc_str_free_substrs(char *str_1, char *str_2) {
 void append_str(char **str, const char *appen_str) {
   Ulong slen      = strlen(*str);
   Ulong appendlen = strlen(appen_str);
-  *str            = (char *)nrealloc(*str, slen + appendlen + 1);
-  memmove(*str + slen, appen_str, appendlen);
+  *str            = (char *)nrealloc(*str, (slen + appendlen + 1));
+  memmove((*str + slen), appen_str, appendlen);
   (*str)[slen + appendlen] = '\0';
 }
 
-/* Return`s either a malloc`ed str of the current
- * file dir or NULL if inside the same dir. */
+/* Return`s either a malloc`ed str of the current file dir or NULL if inside the same dir. */
 char *alloced_current_file_dir(void) {
   const char *slash = strrchr(openfile->filename, '/');
   if (!slash) {
@@ -511,9 +534,9 @@ char *alloced_current_file_dir(void) {
   return ret;
 }
 
-/* Return`s the full path to the dir that current file is in,
- * for example if we open 'src/file.txt' then this will return
- * the full path to 'src' so '/full/path/to/src/'. */
+// Return`s the full path to the dir that current file is in,
+// for example if we open 'src/file.txt' then this will return
+// the full path to 'src' so '/full/path/to/src/'. */
 char *alloced_full_current_file_dir(void) {
   char *pwd = alloced_pwd();
   append_str(&pwd, "/");
@@ -551,43 +574,11 @@ const char *word_strstr(const char *data, const char *needle) {
   return NULL;
 }
 
-/* Retrieve a 'string' containing the file extention.
- * And if there is none it will return "". */
-string file_extention_str(void) {
-  if (!openfile->filename) {
-    return "";
-  }
-  const char *ext = tail(openfile->filename);
-  for (; *ext && *ext != '.'; ext++);
-  if (!*ext) {
-    return "";
-  }
-  return string(ext + 1);
-}
-
-/* Retrieve`s the currently open file`s full dir. */
-string current_file_dir(void) {
-  if (!openfile->filename) {
-    return "";
-  }
-  string ret = "";
-  if (*openfile->filename != '/') {
-    const char *pwd = getenv("PWD");
-    if (!pwd) {
-      return "";
-    }
-    string str_pwd(pwd);
-    ret = str_pwd + "/";
-  }
-  ret += string(openfile->filename, (tail(openfile->filename) - openfile->filename));
-  return ret;
-}
-
-/* Retrieve a malloc`ed 'char **' containing the output of cmd,
- * in line format.  This function also allows to input a refrece to
- * an 'Uint' to retrieve the line count.  Note that each line
- * is malloc`ed as well and will need to be free`d, as does the entire
- * array.  Return`s 'NULL' apon failure. */
+// Retrieve a malloc`ed 'char **' containing the output of cmd,
+// in line format.  This function also allows to input a refrece to
+// an 'Uint' to retrieve the line count.  Note that each line
+// is malloc`ed as well and will need to be free`d, as does the entire
+// array.  Return`s 'NULL' apon failure.
 char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
   FILE *prog = popen(cmd, "r");
   if (!prog) {

@@ -1,12 +1,12 @@
 #include "../../include/prototypes.h"
 
-LanguageServer *LanguageServer::_instance = nullptr;
+LanguageServer *LanguageServer::_instance = NULL;
 
 int LanguageServer::find_endif(linestruct *from) {
   int         lvl   = 0;
-  const char *found = nullptr;
-  const char *start = nullptr;
-  const char *end   = nullptr;
+  const char *found = NULL;
+  const char *start = NULL;
+  const char *end   = NULL;
   FOR_EACH_LINE_NEXT(line, from) {
     if (!(line->flags.is_set(DONT_PREPROSSES_LINE))) {
       found = strchr(line->data, '#');
@@ -45,7 +45,7 @@ void LanguageServer::fetch_compiler_defines(string compiler) {
   if (lines) {
     for (Uint i = 0; i < n_lines; i++) {
       const char *start = lines[i];
-      const char *end   = nullptr;
+      const char *end   = NULL;
       ADV_PAST_WORD(start);
       ADV_TO_NEXT_WORD(start);
       if (!*start) {
@@ -77,8 +77,7 @@ void LanguageServer::fetch_compiler_defines(string compiler) {
   }
 }
 
-/* This is the only way to access the language_server.  There
- * also exist`s a shorthand for this function call named 'LSP'. */
+/* This is the only way to access the language_server.  There also exist`s a shorthand for this function call named 'LSP'. */
 LanguageServer *const &LanguageServer::instance(void) {
   if (!_instance) {
     _instance = new LanguageServer();
@@ -115,7 +114,7 @@ auto LanguageServer::define_value(const string &name) -> string {
 auto LanguageServer::split_if_statement(const string &str) -> vector<string> {
   /* vector<string> result;
   const auto    *data  = str.data();
-  const char    *found = nullptr;
+  const char    *found = NULL;
   Uint   index;
   do {
       found = string_strstr_array(
@@ -213,9 +212,9 @@ bool LanguageServer::has_been_included(const char *path) {
 char *get_absolute_path(const char *path) {
   if (!path) {
     logE("param: 'path', Is invalid.");
-    return nullptr;
+    return NULL;
   }
-  char *absolute_path = nullptr;
+  char *absolute_path = NULL;
   if (*path == '/') {
     string normalise_path = Parse::normalise_path(path);
     absolute_path         = copy_of(normalise_path.c_str());
@@ -224,49 +223,52 @@ char *get_absolute_path(const char *path) {
     absolute_path = get_full_path(path);
   }
   if (!absolute_path || !is_file_and_exists(absolute_path)) {
-    return nullptr;
+    return NULL;
   }
   return absolute_path;
 }
 
-int LanguageServer::index_file(const char *path) {
+int LanguageServer::index_file(const char *path, bool reindex) {
   PROFILE_FUNCTION;
   if (!path) {
     logE("Path: '%s', Is invalid.\n", path);
     return -1;
   }
-  char *absolute_path = nullptr;
-  if (*path == '/') {
-    string normalise_path = Parse::normalise_path(path);
-    absolute_path         = copy_of(normalise_path.c_str());
-  }
-  else {
-    absolute_path = get_full_path(path);
-  }
+  char *absolute_path = abs_path(path);
   if (!absolute_path || !is_file_and_exists(absolute_path)) {
     return -1;
   }
   if (has_been_included(absolute_path)) {
-    free(absolute_path);
-    return -1;
+    if (!reindex) {
+      free(absolute_path);
+      return -1;
+    }
+    index.include[absolute_path].delete_data();
+    index.include.erase(absolute_path);
+    index.bash_data.delete_data();
   }
   IndexFile idfile;
   idfile.read_file(absolute_path);
   index.include[absolute_path] = idfile;
   free(absolute_path);
   FOR_EACH_LINE_NEXT(line, idfile.top()) {
-    Parse::comment(line);
-    if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
-        line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
-      continue;
+    if (openfile->type.is_set<C_CPP>()) {
+      Parse::comment(line);
+      if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>()
+      || line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
+        continue;
+      }
+      if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
+        do_preprossesor(line, idfile.name());
+      }
+      if (line->flags.is_set<PP_LINE>()) {
+        continue;
+      }
+      do_parse(&line, idfile.name());
     }
-    if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
-      do_preprossesor(line, idfile.name());
+    else if (openfile->type.is_set<BASH>()) {
+      do_bash_parse(line, idfile.name());
     }
-    if (line->flags.is_set<PP_LINE>()) {
-      continue;
-    }
-    do_parse(&line, idfile.name());
   }
   return 0;
 }

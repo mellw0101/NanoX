@@ -1,3 +1,29 @@
+// {
+//     "clangd.arguments": [
+//         "--all-scopes-completion=0",
+//         "--background-index=1",
+//         "--background-index-priority=low",
+//         "--clang-tidy=1",
+//         "--completion-parse=auto",
+//         "--completion-style=detailed",
+//         "--debug-origin=0",
+//         "--fallback-style=LLVM",
+//         "--function-arg-placeholders=0",
+//         "--header-insertion=never",
+//         "--header-insertion-decorators=1",
+//         "--import-insertions=0",
+//         "--include-ineligible-results=0",
+//         "--limit-references=4000",
+//         "--limit-results=400",
+//         "--ranking-model=decision_forest",
+//         "--rename-file-limit=50",
+//         "--malloc-trim=1",
+//         "--parse-forwarding-functions=0",
+//         "--pch-storage=disk",
+//         "--use-dirty-headers=0",
+//         "-j=4"
+//     ]
+// }
 {
     "clangd.arguments": [
         "--all-scopes-completion=0",
@@ -8,7 +34,7 @@
         "--completion-style=detailed",
         "--debug-origin=0",
         "--fallback-style=LLVM",
-        "--function-arg-placeholders=1",
+        "--function-arg-placeholders=0",
         "--header-insertion=never",
         "--header-insertion-decorators=1",
         "--import-insertions=0",
@@ -19,7 +45,7 @@
         "--rename-file-limit=50",
         "--malloc-trim=1",
         "--parse-forwarding-functions=0",
-        "--pch-storage=disk",
+        "--pch-storage=memory",
         "--use-dirty-headers=0"
     ]
 }

@@ -1,8 +1,8 @@
-/// @file prompt.cpp
+/** @file prompt.cpp */
 #include "../include/prototypes.h"
 
 /* The prompt string used for status-bar questions. */
-static char *prompt = nullptr;
+static char *prompt = NULL;
 /* The cursor position in answer. */
 static Ulong typing_x = HIGHEST_POSITIVE;
 
@@ -18,18 +18,19 @@ void do_statusbar_end(void) {
 
 /* Move to the previous word in the answer. */
 void do_statusbar_prev_word(void) {
-  bool seen_a_word = false, step_forward = false;
+  bool seen_a_word = FALSE, step_forward = FALSE;
   /* Move backward until we pass over the start of a word. */
   while (typing_x) {
     typing_x = step_left(answer, typing_x);
-    if (is_word_char(answer + typing_x, false)) {
-      seen_a_word = true;
+    if (is_word_char(answer + typing_x, FALSE)) {
+      seen_a_word = TRUE;
     }
-    else if (is_zerowidth(answer + typing_x))
+    else if (is_zerowidth(answer + typing_x)) {
       ; /* skip */
+    }
     else if (seen_a_word) {
       /* This is space now: we've overshot the start of the word. */
-      step_forward = true;
+      step_forward = TRUE;
       break;
     }
   }
@@ -41,32 +42,31 @@ void do_statusbar_prev_word(void) {
 
 /* Move to the next word in the answer. */
 void do_statusbar_next_word(void) {
-  bool seen_space = !is_word_char(answer + typing_x, false);
+  bool seen_space = !is_word_char(answer + typing_x, FALSE);
   bool seen_word  = !seen_space;
-  /* Move forward until we reach either the end or the start of a word,
-   * depending on whether the AFTER_ENDS flag is set or not. */
+  /* Move forward until we reach either the end or the start of a word, depending on whether the AFTER_ENDS flag is set or not. */
   while (answer[typing_x]) {
     typing_x = step_right(answer, typing_x);
     if (ISSET(AFTER_ENDS)) {
-      /* If this is a word character, continue; else it's a separator,
-       * and if we've already seen a word, then it's a word end. */
-      if (is_word_char(answer + typing_x, false)) {
-        seen_word = true;
+      /* If this is a word character, continue; else it's a separator, and if we've already seen a word, then it's a word end. */
+      if (is_word_char((answer + typing_x), FALSE)) {
+        seen_word = TRUE;
       }
-      else if (is_zerowidth(answer + typing_x))
+      else if (is_zerowidth(answer + typing_x)) {
         ; /* skip */
+      }
       else if (seen_word) {
         break;
       }
     }
     else {
-      if (is_zerowidth(answer + typing_x))
+      if (is_zerowidth(answer + typing_x)) {
         ; /* skip */
+      }
       else {
-        /* If this is not a word character, then it's a separator; else
-         * if we've already seen a separator, then it's a word start. */
-        if (!is_word_char(answer + typing_x, false)) {
-          seen_space = true;
+        /* If this is not a word character, then it's a separator; else if we've already seen a separator, then it's a word start. */
+        if (!is_word_char((answer + typing_x), FALSE)) {
+          seen_space = TRUE;
         }
         else if (seen_space) {
           break;
@@ -101,7 +101,7 @@ void do_statusbar_backspace(void) {
   if (typing_x > 0) {
     Ulong was_x = typing_x;
     typing_x    = step_left(answer, typing_x);
-    memmove(answer + typing_x, answer + was_x, strlen(answer) - was_x + 1);
+    memmove((answer + typing_x), (answer + was_x), (strlen(answer) - was_x + 1));
   }
 }
 
@@ -109,7 +109,7 @@ void do_statusbar_backspace(void) {
 void do_statusbar_delete(void) {
   if (answer[typing_x] != '\0') {
     int charlen = char_length(answer + typing_x);
-    memmove(answer + typing_x, answer + typing_x + charlen, strlen(answer) - typing_x - charlen + 1);
+    memmove((answer + typing_x), (answer + typing_x + charlen), (strlen(answer) - typing_x - charlen + 1));
     if (is_zerowidth(answer + typing_x)) {
       do_statusbar_delete();
     }
@@ -118,7 +118,7 @@ void do_statusbar_delete(void) {
 
 /* Zap the part of the answer after the cursor, or the whole answer. */
 void lop_the_answer(void) {
-  if (answer[typing_x] == '\0') {
+  if (!answer[typing_x]) {
     typing_x = 0;
   }
   answer[typing_x] = '\0';
@@ -128,7 +128,7 @@ void lop_the_answer(void) {
 void copy_the_answer(void) {
   if (*answer) {
     free_lines(cutbuffer);
-    cutbuffer       = make_new_node(nullptr);
+    cutbuffer       = make_new_node(NULL);
     cutbuffer->data = copy_of(answer);
     typing_x        = 0;
   }
@@ -137,9 +137,9 @@ void copy_the_answer(void) {
 /* Paste the first line of the cutbuffer into the current answer. */
 void paste_into_answer(void) {
   Ulong pastelen = strlen(cutbuffer->data);
-  answer         = (char *)nrealloc(answer, strlen(answer) + pastelen + 1);
-  memmove(answer + typing_x + pastelen, answer + typing_x, strlen(answer) - typing_x + 1);
-  strncpy(answer + typing_x, cutbuffer->data, pastelen);
+  answer         = arealloc(answer, (strlen(answer) + pastelen + 1));
+  memmove((answer + typing_x + pastelen), (answer + typing_x), (strlen(answer) - typing_x + 1));
+  strncpy((answer + typing_x), cutbuffer->data, pastelen);
   typing_x += pastelen;
 }
 
@@ -147,14 +147,13 @@ void paste_into_answer(void) {
 int do_statusbar_mouse(void) {
   int click_row = 0;
   int click_col = 0;
-  int retval    = get_mouseinput(&click_row, &click_col, true);
+  int retval    = get_mouseinput(&click_row, &click_col, TRUE);
   /* We can click on the status-bar window text to move the cursor. */
-  if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, false)) {
-    Ulong start_col = breadth(prompt) + 2;
+  if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, FALSE)) {
+    Ulong start_col = (breadth(prompt) + 2);
     /* Move to where the click occurred. */
     if (click_row == 0 && click_col >= start_col) {
-      typing_x = actual_x(
-        answer, get_statusbar_page_start(start_col, start_col + wideness(answer, typing_x)) + click_col - start_col);
+      typing_x = actual_x(answer, get_statusbar_page_start(start_col, ((start_col + wideness(answer, typing_x)) + click_col - start_col)));
     }
   }
   return retval;
@@ -188,11 +187,10 @@ void do_statusbar_verbatim_input(void) {
   free(bytes);
 }
 
-/* Add the given input to the input buffer when it's a normal byte,
- * and inject the gathered bytes into the answer when ready. */
+/* Add the given input to the input buffer when it's a normal byte, and inject the gathered bytes into the answer when ready. */
 void absorb_character(int input, functionptrtype function) {
   /* The input buffer. */
-  static char *puddle = nullptr;
+  static char *puddle = NULL;
   /* The size of the input buffer; gets doubled whenever needed. */
   static Ulong capacity = 8;
   /* The length of the input buffer. */
@@ -209,7 +207,7 @@ void absorb_character(int input, functionptrtype function) {
        * extend it; otherwise, if it does not exist yet, create it. */
       if ((depth + 1) == capacity) {
         capacity = (2 * capacity);
-        puddle   = (char *)nrealloc(puddle, capacity);
+        puddle   = arealloc(puddle, capacity);
       }
       else if (!puddle) {
         puddle = (char *)nmalloc(capacity);
@@ -219,14 +217,14 @@ void absorb_character(int input, functionptrtype function) {
   }
   /* If there are gathered bytes and we have a command or no other key codes
    * are waiting, it's time to insert these bytes into the answer. */
-  if (depth > 0 && (function || waiting_keycodes() == 0)) {
+  if (depth > 0 && (function || !waiting_keycodes())) {
     puddle[depth] = '\0';
     inject_into_answer(puddle, depth);
     depth = 0;
   }
 }
 
-/* Handle any editing shortcut, and return true when handled. */
+/* Handle any editing shortcut, and return TRUE when handled. */
 bool handle_editing(functionptrtype function) {
   if (function == do_left) {
     do_statusbar_left();
@@ -246,11 +244,9 @@ bool handle_editing(functionptrtype function) {
   else if (function == do_end) {
     do_statusbar_end();
   }
-  /* When in restricted mode at the "Write File" prompt and the
-   * filename isn't blank, disallow any input and deletion. */
-  else if (ISSET(RESTRICTED) && currmenu == MWRITEFILE && openfile->filename[0] &&
-           (function == do_verbatim_input || function == do_delete || function == do_backspace ||
-            function == cut_text || function == paste_text)) {
+  /* When in restricted mode at the "Write File" prompt and the filename isn't blank, disallow any input and deletion. */
+  else if (ISSET(RESTRICTED) && currmenu == MWRITEFILE && openfile->filename[0]
+   && (function == do_verbatim_input || function == do_delete || function == do_backspace || function == cut_text || function == paste_text)) {
     ;
   }
   else if (function == do_verbatim_input) {
@@ -274,25 +270,23 @@ bool handle_editing(functionptrtype function) {
     }
   }
   else {
-    return false;
+    return FALSE;
   }
   /* Don't handle any handled function again. */
-  return true;
+  return TRUE;
 }
 
-/* Return the column number of the first character of the answer that is
- * displayed in the status bar when the cursor is at the given column,
- * with the available room for the answer starting at base.  Note that
- * (0 <= column - get_statusbar_page_start(column) < COLS). */
+/* Return the column number of the first character of the answer that is displayed in the status bar when the cursor is at the given
+ * column, with the available room for the answer starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
 Ulong get_statusbar_page_start(Ulong base, Ulong column) {
-  if (column == base || column < COLS - 1) {
+  if (column == base || column < (COLS - 1)) {
     return 0;
   }
   else if (COLS > base + 2) {
-    return column - base - 1 - (column - base - 1) % (COLS - base - 2);
+    return (column - base - 1 - (column - base - 1) % (COLS - base - 2));
   }
   else {
-    return column - 2;
+    return (column - 2);
   }
 }
 
@@ -315,7 +309,7 @@ void draw_the_promptbar(void) {
   mvwaddstr(footwin, 0, 0, prompt);
   waddch(footwin, ':');
   waddch(footwin, (the_page == 0) ? ' ' : '<');
-  expanded = display_string(answer, the_page, COLS - base, false, true);
+  expanded = display_string(answer, the_page, COLS - base, FALSE, TRUE);
   waddstr(footwin, expanded);
   free(expanded);
   if (the_page < end_page && base + breadth(answer) - the_page > COLS) {
@@ -330,7 +324,7 @@ void draw_the_promptbar(void) {
   }
 #endif
   /* Place the cursor at the right spot. */
-  wmove(footwin, 0, column - the_page);
+  wmove(footwin, 0, (column - the_page));
   wnoutrefresh(footwin);
 }
 
@@ -339,23 +333,23 @@ void add_or_remove_pipe_symbol_from_answer(void) {
   if (answer[0] == '|') {
     memmove(answer, (answer + 1), strlen(answer));
     if (typing_x > 0) {
-      typing_x--;
+      --typing_x;
     }
   }
   else {
-    answer = (char *)nrealloc(answer, (strlen(answer) + 2));
+    answer = arealloc(answer, (strlen(answer) + 2));
     memmove((answer + 1), answer, (strlen(answer) + 1));
     answer[0] = '|';
-    typing_x++;
+    ++typing_x;
   }
 }
 
 /* Get a string of input at the status-bar prompt. */
 functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **history_list, functionptrtype refresh_func) {
   /* Whatever the answer was before the user foraged into history. */
-  char *stored_string = nullptr;
+  char *stored_string = NULL;
   /* Whether the previous keystroke was an attempt at tab completion. */
-  bool previous_was_tab = false;
+  bool previous_was_tab = FALSE;
   /* The length of the fragment that the user tries to tab complete. */
   Ulong            fragment_length = 0;
   const keystruct *shortcut;
@@ -364,7 +358,7 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
   if (typing_x > strlen(answer)) {
     typing_x = strlen(answer);
   }
-  while (true) {
+  while (TRUE) {
     draw_the_promptbar();
     /* Read in one keystroke. */
     input = get_kbinput(footwin, VISIBLE);
@@ -374,7 +368,7 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
       refresh_func();
       *actual = KEY_WINCH;
       free(stored_string);
-      return nullptr;
+      return NULL;
     }
     /* For a click on a shortcut, read in the resulting keycode. */
     if (input == KEY_MOUSE && do_statusbar_mouse() == 1) {
@@ -385,7 +379,7 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
     }
     /* Check for a shortcut in the current list. */
     shortcut = get_shortcut(input);
-    function = (shortcut ? shortcut->func : nullptr);
+    function = (shortcut ? shortcut->func : NULL);
     /* When it's a normal character, add it to the answer. */
     absorb_character(input, function);
     if (function == do_cancel || function == do_enter) {
@@ -445,12 +439,13 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
         else if (function == do_toggle && shortcut->toggle == NO_HELP) {
           TOGGLE(NO_HELP);
           window_init();
-          focusing = false;
+          focusing = FALSE;
           refresh_func();
           bottombars(currmenu);
         }
-        else if (function == do_nothing)
+        else if (function == do_nothing) {
           ;
+        }
         else if (function == (functionptrtype)implant) {
           implant(shortcut->expansion);
         }
@@ -477,15 +472,12 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
   return function;
 }
 
-/* Ask a question on the status bar.  Return 0 when text was entered,
- * -1 for a cancelled entry, -2 for a blank string, and the relevant
- * keycode when a valid shortcut key was pressed.  The 'provided'
- * parameter is the default answer for when simply Enter is typed. */
-int do_prompt(int menu, const char *provided, linestruct **history_list, functionptrtype refresh_func, const char *msg,
-              ...) {
-  functionptrtype function = nullptr;
+/* Ask a question on the status bar.  Return 0 when text was entered, -1 for a cancelled entry, -2 for a blank string, and the relevant
+ * keycode when a valid shortcut key was pressed.  The 'provided' parameter is the default answer for when simply Enter is typed. */
+int do_prompt(int menu, const char *provided, linestruct **history_list, functionptrtype refresh_func, const char *msg, ...) {
+  functionptrtype function = NULL;
   va_list         ap;
-  bool            listed = false;
+  bool            listed = FALSE;
   int             retval;
   /* Save a possible current status-bar x position and prompt. */
   Ulong was_typing_x = typing_x;
@@ -501,16 +493,16 @@ redo_theprompt:
   va_end(ap);
   /* Reserve five columns for colon plus angles plus answer, ":<aa>". */
   prompt[actual_x(prompt, (COLS < 5) ? 0 : COLS - 5)] = '\0';
-  lastmessage                                         = VACUUM;
-  function                                            = acquire_an_answer(&retval, &listed, history_list, refresh_func);
+  lastmessage = VACUUM;
+  function    = acquire_an_answer(&retval, &listed, history_list, refresh_func);
   free(prompt);
   if (retval == KEY_WINCH) {
     goto redo_theprompt;
   }
   /* Restore a possible previous prompt and maybe the typing position. */
   prompt = saved_prompt;
-  if (function == do_cancel || function == do_enter || function == to_first_file || function == to_last_file ||
-      function == to_first_line || function == to_last_line) {
+  if (function == do_cancel || function == do_enter || function == to_first_file
+   || function == to_last_file || function == to_first_line || function == to_last_line) {
     typing_x = was_typing_x;
   }
   /* Set the proper return value for Cancel and Enter. */
@@ -518,7 +510,7 @@ redo_theprompt:
     retval = -1;
   }
   else if (function == do_enter) {
-    retval = (*answer == '\0') ? -2 : 0;
+    retval = ((*answer == '\0') ? -2 : 0);
   }
   if (lastmessage == VACUUM) {
     wipe_statusbar();
@@ -531,14 +523,12 @@ redo_theprompt:
 }
 
 #define UNDECIDED -2
-/* Ask a simple Yes/No (and optionally All) question on the status bar
- * and return the choice -- either YES or NO or ALL or CANCEL. */
+/* Ask a simple Yes/No (and optionally All) question on the status bar and return the choice -- either YES or NO or ALL or CANCEL. */
 int ask_user(bool withall, const char *question) {
   int choice = UNDECIDED;
   int width  = 16;
-  /* TRANSLATORS : For the next three strings, specify the starting letters
-   *               of the translations for "Yes"/"No"/"All".  The first letter of each of
-   *               these strings MUST be a single-byte letter; others may be multi-byte. */
+  /* TRANSLATORS : For the next three strings, specify the starting letters of the translations for "Yes"/"No"/"All".
+   *               The first letter of each of these strings MUST be a single-byte letter; others may be multi-byte. */
   const char      *yesstr = _("Yy");
   const char      *nostr  = _("Nn");
   const char      *allstr = _("Aa");
@@ -554,7 +544,7 @@ int ask_user(bool withall, const char *question) {
       /* The keystroke that is bound to the Cancel function. */
       const keystruct *cancelshortcut = first_sc_for(MYESNO, do_cancel);
       if (COLS < 32) {
-        width = COLS / 2;
+        width = (COLS / 2);
       }
       /* Clear the shortcut list from the bottom of the screen. */
       blank_bottombars();
@@ -593,8 +583,7 @@ int ask_user(bool withall, const char *question) {
       get_kbinput(footwin, BLIND);
     }
     letter[index++] = (Uchar)kbinput;
-    /* If the received code is a UTF-8 starter byte, get also the
-     * continuation bytes and assemble them into one letter. */
+    /* If the received code is a UTF-8 starter byte, get also the continuation bytes and assemble them into one letter. */
     if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7) {
       int extras = (kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0);
       while (extras <= waiting_keycodes() && extras-- > 0) {
@@ -627,7 +616,7 @@ int ask_user(bool withall, const char *question) {
       break;
     }
     shortcut = get_shortcut(kbinput);
-    function = (shortcut ? shortcut->func : nullptr);
+    function = (shortcut ? shortcut->func : NULL);
     if (function == do_cancel) {
       choice = CANCEL;
     }
@@ -637,14 +626,13 @@ int ask_user(bool withall, const char *question) {
     else if (function == do_toggle && shortcut->toggle == NO_HELP) {
       TOGGLE(NO_HELP);
       window_init();
-      titlebar(nullptr);
-      focusing = false;
+      titlebar(NULL);
+      focusing = FALSE;
       edit_refresh();
-      focusing = true;
+      focusing = TRUE;
     }
     /* Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too. */
-    else if (kbinput == '\x0E' || (kbinput == '\x11' && !ISSET(MODERN_BINDINGS)) ||
-             (kbinput == '\x18' && ISSET(MODERN_BINDINGS))) {
+    else if (kbinput == '\x0E'|| (kbinput == '\x11' && !ISSET(MODERN_BINDINGS)) || (kbinput == '\x18' && ISSET(MODERN_BINDINGS))) {
       choice = NO;
     }
     /* And interpret ^Y as "Yes". */
@@ -654,8 +642,8 @@ int ask_user(bool withall, const char *question) {
     else if (kbinput == KEY_MOUSE) {
       int mouse_x, mouse_y;
       /* We can click on the Yes/No/All shortcuts to select an answer. */
-      if (get_mouseinput(&mouse_y, &mouse_x, false) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, false) &&
-          mouse_x < (width * 2) && mouse_y > 0) {
+      if (get_mouseinput(&mouse_y, &mouse_x, FALSE) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE)
+       && mouse_x < (width * 2) && mouse_y > 0) {
         int x = mouse_x / width;
         int y = mouse_y - 1;
         /* x == 0 means Yes or No, y == 0 means Yes or All. */

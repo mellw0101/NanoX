@@ -39,7 +39,7 @@ void do_tab(void) {
     free(spaces);
   }
   else {
-    if (suggest_on) {
+    if (suggest_on && suggest_str) {
       accept_suggestion();
       return;
     }
@@ -171,7 +171,7 @@ void unindent_a_line(linestruct *line, Ulong indent_len) {
     return;
   }
   /* Remove the first tab's worth of whitespace from this line. */
-  memmove(line->data, line->data + indent_len, length - indent_len + 1);
+  memmove(line->data, (line->data + indent_len), (length - indent_len + 1));
   openfile->totsize -= indent_len;
   /* Adjust the positions of mark and cursor, when they are affected. */
   compensate_leftward(line, indent_len);
@@ -233,9 +233,9 @@ void handle_indent_action(undostruct *u, bool undoing, bool add_indent) {
   refresh_needed = TRUE;
 }
 
-/* Test whether the given line can be uncommented, or add or remove a comment, depending on action.
- * Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
- * ADDED: Also takes indentation into account. */
+// Test whether the given line can be uncommented, or add or remove a comment, depending on action.
+// Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
+// ADDED: Also takes indentation into account.
 bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
   Ulong comment_seq_len = strlen(comment_seq);
   /* The postfix, if this is a bracketing type comment sequence. */
@@ -290,12 +290,19 @@ bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
 /* Comment or uncomment the current line or the marked lines. */
 void do_comment(void) {
   const char *comment_seq = GENERAL_COMMENT_CHARACTER;
-  undo_type   action      = UNCOMMENT;
+  undo_type action = UNCOMMENT;
   linestruct *top, *bot, *line;
-  bool        empty, all_empty = TRUE;
+  bool empty, all_empty = TRUE;
   if (openfile->syntax) {
     comment_seq = openfile->syntax->comment;
   }
+  else if (openfile->type.is_set<C_CPP>()) {
+    comment_seq = "//";
+  }
+  else if (openfile->type.is_set<ASM>()) {
+    comment_seq = ";";
+  }
+  /* This is when 'openfile->syntax' says comments are foridden. */
   if (!*comment_seq) {
     statusline(AHEM, _("Commenting is not supported for this file type"));
     return;
@@ -315,16 +322,14 @@ void do_comment(void) {
       action = COMMENT;
       break;
     }
-    all_empty = all_empty && empty;
+    all_empty = (all_empty && empty);
   }
   /* If all selected lines are blank, we comment them. */
   action = all_empty ? COMMENT : action;
   add_undo(action, NULL);
-  /* Store the comment sequence used for the operation, because it could
-   * change when the file name changes; we need to know what it was. */
+  /* Store the comment sequence used for the operation, because it could change when the file name changes; we need to know what it was. */
   openfile->current_undo->strdata = copy_of(comment_seq);
-  /* Comment/uncomment each of the selected lines when possible,
-   * and store undo data when a line changed. */
+  /* Comment/uncomment each of the selected lines when possible, and store undo data when a line changed. */
   for (line = top; line != bot->next; line = line->next) {
     if (comment_line(action, line, comment_seq)) {
       update_multiline_undo(line->lineno, _(""));
@@ -363,7 +368,7 @@ void handle_comment_action(undostruct *u, bool undoing, bool add_comment) {
 
 /* Undo a cut, or redo a paste. */
 void undo_cut(undostruct *u) {
-  goto_line_posx(u->head_lineno, (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x);
+  goto_line_posx(u->head_lineno, ((u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x));
   /* Clear an inherited anchor but not a user-placed one. */
   if (!(u->xflags & HAD_ANCHOR_AT_START)) {
     openfile->current->has_anchor = FALSE;
@@ -384,13 +389,65 @@ void undo_cut(undostruct *u) {
 /* Redo a cut, or undo a paste. */
 void redo_cut(undostruct *u) {
   linestruct *oldcutbuffer = cutbuffer;
-  cutbuffer                = NULL;
-  openfile->mark           = line_from_number(u->head_lineno);
-  openfile->mark_x         = (u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x;
+  cutbuffer = NULL;
+  openfile->mark   = line_from_number(u->head_lineno);
+  openfile->mark_x = ((u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x);
   goto_line_posx(u->tail_lineno, u->tail_x);
-  do_snip(TRUE, FALSE, u->type == ZAP);
+  do_snip(TRUE, FALSE, (u->type == ZAP));
   free_lines(cutbuffer);
   cutbuffer = oldcutbuffer;
+}
+
+/* Return`s a malloc`ed str encoded with enclose delimiter. */
+char *encode_enclose_str(const char *s1, const char *s2) {
+  char *part = (char *)nmalloc(strlen(s1) + strlen(ENCLOSE_DELIM) + strlen(s2) + 1);
+  sprintf(part, "%s" ENCLOSE_DELIM "%s", s1, s2);
+  return part;
+}
+
+/* Decode s1 and s2 from a encoded enclose str. */
+void decode_enclose_str(const char *str, char **s1, char **s2) {
+  const char *enclose_delim = strstr(str, ENCLOSE_DELIM);
+  if (!enclose_delim) {
+    die("%s: str ('%s') was not encoded properly.  Could not find ENCLOSE_DELIM '%s'.\n", __func__, str, ENCLOSE_DELIM);
+  }
+  *s1 = measured_copy(str, (enclose_delim - str));
+  *s2 = copy_of(enclose_delim + strlen(ENCLOSE_DELIM));
+}
+
+/* If an area is marked then plase the 'str' at mark and current_x, thereby enclosing the marked area. */
+void enclose_marked_region(const char *s1, const char *s2) {
+  /* Return early if there is no mark. */
+  if (!openfile->mark) {
+    return;
+  }
+  char *part = encode_enclose_str(s1, s2);
+  add_undo(ENCLOSE, part);
+  free(part);
+  const Ulong s1_len = strlen(s1);
+  if (mark_is_before_cursor()) {
+    inject_in_line(&openfile->mark, s1, openfile->mark_x);
+    openfile->mark_x += s1_len;
+    if (openfile->mark == openfile->current) {
+      openfile->current_x += s1_len;
+    }
+    inject_in_line(&openfile->current, s2, openfile->current_x);
+  }
+  else {
+    inject_in_line(&openfile->current, s1, openfile->current_x);
+    openfile->current_x += s1_len;
+    if (openfile->current == openfile->mark) {
+      openfile->mark_x += s1_len;
+    }
+    inject_in_line(&openfile->mark, s2, openfile->mark_x);
+  }
+  set_modified();
+  refresh_needed = TRUE;
+}
+
+/* This is a shortcut to make marked area a block comment. */
+void do_block_comment(void) {
+  enclose_marked_region("/* ", " */");
 }
 
 /* Undo the last thing(s) we did. */
@@ -398,9 +455,9 @@ void do_undo(void) {
   undostruct *u = openfile->current_undo;
   linestruct *oldcutbuffer, *intruder;
   linestruct *line = NULL;
-  Ulong       original_x, regain_from_x;
-  char       *undidmsg = NULL;
-  char       *data;
+  Ulong original_x, regain_from_x;
+  char  *undidmsg = NULL;
+  char  *data;
   if (!u) {
     statusline(AHEM, _("Nothing to undo"));
     return;
@@ -410,26 +467,21 @@ void do_undo(void) {
   }
   switch (u->type) {
     case ADD : {
-      /* TRANSLATORS: The next thirteen strings describe actions
-       * that are undone or redone.  They are all nouns, not verbs. */
+      /* TRANSLATORS: The next thirteen strings describe actions that are undone or redone.  They are all nouns, not verbs. */
       undidmsg = _("addition");
       if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
         remove_magicline();
       }
-      memmove((line->data + u->head_x), (line->data + u->head_x + strlen(u->strdata)),
-        (strlen(line->data + u->head_x) - strlen(u->strdata) + 1));
+      memmove((line->data + u->head_x), (line->data + u->head_x + strlen(u->strdata)), (strlen(line->data + u->head_x) - strlen(u->strdata) + 1));
       goto_line_posx(u->head_lineno, u->head_x);
       break;
     }
     case ENTER : {
       undidmsg = _("line break");
-      /**
-        An <Enter> at the end of leading whitespace while autoindenting
-        has deleted the whitespace, and stored an x position of zero. In
-        that case, adjust the positions to return to and to scoop data from.
-       */
-      original_x    = (u->head_x == 0) ? u->tail_x : u->head_x;
-      regain_from_x = (u->head_x == 0) ? 0 : u->tail_x;
+      /* An <Enter> at the end of leading whitespace while autoindenting has deleted the whitespace, and
+       * stored an x position of zero. In that case, adjust the positions to return to and to scoop data from. */
+      original_x    = ((u->head_x == 0) ? u->tail_x : u->head_x);
+      regain_from_x = ((u->head_x == 0) ? 0 : u->tail_x);
       line->data    = arealloc(line->data, (strlen(line->data) + strlen(&u->strdata[regain_from_x]) + 1));
       strcat(line->data, &u->strdata[regain_from_x]);
       line->has_anchor |= line->next->has_anchor;
@@ -576,9 +628,26 @@ void do_undo(void) {
       break;
     }
     case ENCLOSE : {
-      erase_in_line(line_from_number(u->head_lineno), u->head_x, strlen(u->strdata));
-      erase_in_line(line_from_number(u->tail_lineno), u->tail_x, strlen(u->strdata));
+      char *s1, *s2;
+      decode_enclose_str(u->strdata, &s1, &s2);
+      linestruct *head = line_from_number(u->head_lineno);
+      linestruct *tail = line_from_number(u->tail_lineno);
+      erase_in_line(head, u->head_x, strlen(s1));
+      erase_in_line(tail, u->tail_x, strlen(s2));
+      free(s1);
+      free(s2);
+      if (u->xflags & CURSOR_WAS_AT_HEAD) {
+        goto_line_posx(u->head_lineno, u->head_x);
+        openfile->mark   = tail;
+        openfile->mark_x = u->tail_x;
+      }
+      else {
+        goto_line_posx(u->tail_lineno, u->tail_x);
+        openfile->mark   = head;
+        openfile->mark_x = u->head_x;
+      }
       refresh_needed = TRUE;
+      keep_mark      = TRUE;
       break;
     }
     default : {
@@ -590,7 +659,9 @@ void do_undo(void) {
   }
   openfile->current_undo = openfile->current_undo->next;
   openfile->last_action  = OTHER;
-  openfile->mark         = NULL;
+  if (!keep_mark) {
+    openfile->mark = NULL;
+  }
   openfile->placewewant  = xplustabs();
   openfile->totsize      = u->wassize;
   if (u->type <= REPLACE) {
@@ -611,12 +682,12 @@ void do_undo(void) {
 
 /* Redo the last thing(s) we undid. */
 void do_redo(void) {
-  undostruct *u                     = openfile->undotop;
-  bool        suppress_modification = FALSE;
-  linestruct *line                  = NULL;
+  undostruct *u    = openfile->undotop;
+  linestruct *line = NULL;
   linestruct *intruder;
-  char       *redidmsg = NULL;
-  char       *data;
+  bool  suppress_modification = FALSE;
+  char *redidmsg = NULL;
+  char *data;
   if (!u || u == openfile->current_undo) {
     statusline(AHEM, _("Nothing to redo"));
     return;
@@ -629,7 +700,7 @@ void do_redo(void) {
     line = line_from_number(u->tail_lineno);
   }
   switch (u->type) {
-    case ADD : {
+    case ADD: {
       redidmsg = _("addition");
       if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
         new_magicline();
@@ -643,7 +714,7 @@ void do_redo(void) {
       goto_line_posx(u->tail_lineno, u->tail_x);
       break;
     }
-    case ENTER : {
+    case ENTER: {
       redidmsg              = _("line break");
       line->data[u->head_x] = '\0';
       intruder              = make_new_node(line);
@@ -653,15 +724,15 @@ void do_redo(void) {
       goto_line_posx(u->head_lineno + 1, u->tail_x);
       break;
     }
-    case BACK :
-    case DEL : {
+    case BACK:
+    case DEL: {
       redidmsg = _("deletion");
       memmove(line->data + u->head_x, line->data + u->head_x + strlen(u->strdata),
         (strlen(line->data + u->head_x) - strlen(u->strdata) + 1));
       goto_line_posx(u->head_lineno, u->head_x);
       break;
     }
-    case JOIN : {
+    case JOIN: {
       redidmsg = _("line join");
       /**
         When the join was done by a Backspace at the tail of the file,
@@ -680,7 +751,7 @@ void do_redo(void) {
       goto_line_posx(u->tail_lineno, u->tail_x);
       break;
     }
-    case REPLACE : {
+    case REPLACE: {
       redidmsg = _("replacement");
       if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
         new_magicline();
@@ -691,7 +762,7 @@ void do_redo(void) {
       goto_line_posx(u->head_lineno, u->head_x);
       break;
     }
-    case SPLIT_BEGIN : {
+    case SPLIT_BEGIN: {
       openfile->current_undo = u;
       while (openfile->current_undo->type != SPLIT_END) {
         do_redo();
@@ -701,27 +772,27 @@ void do_redo(void) {
       ensure_firstcolumn_is_aligned();
       break;
     }
-    case SPLIT_END : {
+    case SPLIT_END: {
       redidmsg = _("addition");
       break;
     }
-    case ZAP : {
+    case ZAP: {
       redidmsg = _("erasure");
       redo_cut(u);
       break;
     }
-    case CUT_TO_EOF :
-    case CUT : {
+    case CUT_TO_EOF:
+    case CUT: {
       redidmsg = _("cut");
       redo_cut(u);
       break;
     }
-    case PASTE : {
+    case PASTE: {
       redidmsg = _("paste");
       redo_paste(u);
       break;
     }
-    case INSERT : {
+    case INSERT: {
       redidmsg = _("insertion");
       goto_line_posx(u->head_lineno, u->head_x);
       if (u->cutbuffer) {
@@ -734,48 +805,74 @@ void do_redo(void) {
       u->cutbuffer = NULL;
       break;
     }
-    case COUPLE_BEGIN : {
+    case COUPLE_BEGIN: {
       openfile->current_undo = u;
       do_redo();
       do_redo();
       do_redo();
       return;
     }
-    case COUPLE_END : {
+    case COUPLE_END: {
       redidmsg = u->strdata;
       goto_line_posx(u->tail_lineno, u->tail_x);
       openfile->cursor_row = u->head_lineno;
       adjust_viewport(STATIONARY);
       break;
     }
-    case INDENT : {
+    case INDENT: {
       handle_indent_action(u, FALSE, TRUE);
       redidmsg = _("indent");
       break;
     }
-    case UNINDENT : {
+    case UNINDENT: {
       handle_indent_action(u, FALSE, FALSE);
       redidmsg = _("unindent");
       break;
     }
-    case COMMENT : {
+    case COMMENT: {
       handle_comment_action(u, FALSE, TRUE);
       redidmsg = _("comment");
       break;
     }
-    case UNCOMMENT : {
+    case UNCOMMENT: {
       handle_comment_action(u, FALSE, FALSE);
       redidmsg = _("uncomment");
       break;
     }
-    case MOVE_LINE_UP : {
+    case MOVE_LINE_UP: {
       openfile->current = line_from_number(u->head_lineno);
       move_line(&openfile->current, TRUE, TRUE);
       break;
     }
-    case MOVE_LINE_DOWN : {
+    case MOVE_LINE_DOWN: {
       openfile->current = line_from_number(u->head_lineno);
       move_line(&openfile->current, FALSE, TRUE);
+      break;
+    }
+    case ENCLOSE: {
+      char *s1, *s2;
+      decode_enclose_str(u->strdata, &s1, &s2);
+      const Ulong s1_len = strlen(s1);
+      linestruct *head = line_from_number(u->head_lineno);
+      linestruct *tail = line_from_number(u->tail_lineno);
+      const Ulong head_x = (u->head_x + s1_len);
+      const Ulong tail_x = (head == tail) ? (u->tail_x + s1_len) : u->tail_x;
+      inject_in_line(&head, s1, u->head_x);
+      inject_in_line(&tail, s2, tail_x);
+      free(s1);
+      free(s2);
+      if (u->xflags & CURSOR_WAS_AT_HEAD) {
+        goto_line_posx(u->head_lineno, head_x);
+        openfile->mark   = tail;
+        openfile->mark_x = tail_x;
+      }
+      else {
+        goto_line_posx(u->tail_lineno, tail_x);
+        openfile->mark   = head;
+        openfile->mark_x = head_x;
+      }
+      refresh_needed = TRUE;
+      keep_mark      = TRUE;
       break;
     }
     default : {
@@ -787,7 +884,9 @@ void do_redo(void) {
   }
   openfile->current_undo = u;
   openfile->last_action  = OTHER;
-  openfile->mark         = NULL;
+  if (!keep_mark) {
+    openfile->mark = NULL;
+  }
   openfile->placewewant  = xplustabs();
   openfile->totsize      = u->newsize;
   if (u->type <= REPLACE) {
@@ -808,7 +907,7 @@ void do_redo(void) {
 
 /* Break the current line at the cursor position. */
 void do_enter(void) {
-  if (suggest_on) {
+  if (suggest_on && suggest_str) {
     accept_suggestion();
     return;
   }
@@ -863,7 +962,7 @@ void do_enter(void) {
   openfile->current     = newnode;
   openfile->current_x   = extra;
   openfile->placewewant = xplustabs();
-  openfile->totsize++;
+  ++openfile->totsize;
   set_modified();
   if (ISSET(AUTOINDENT) && !allblanks) {
     openfile->totsize += extra;
@@ -887,7 +986,7 @@ void discard_until(const undostruct *thisitem) {
     group = dropit->grouping;
     while (group) {
       groupstruct *next = group->next;
-      free_chararray(group->indentations, group->bottom_line - group->top_line + 1);
+      free_chararray(group->indentations, (group->bottom_line - group->top_line + 1));
       free(group);
       group = next;
     }
@@ -902,7 +1001,7 @@ void discard_until(const undostruct *thisitem) {
 
 /* Add a new undo item of the given type to the top of the current pile. */
 void add_undo(undo_type action, const char *message) {
-  undostruct *u        = (undostruct *)nmalloc(sizeof(undostruct));
+  undostruct *u = (undostruct *)nmalloc(sizeof(undostruct));
   linestruct *thisline = openfile->current;
   /* Initialize the newly allocated undo item. */
   u->type        = action;
@@ -975,7 +1074,7 @@ void add_undo(undo_type action, const char *message) {
     }
     case REPLACE : {
       u->strdata = copy_of(thisline->data);
-      if (thisline == openfile->filebot && answer[0] != '\0') {
+      if (thisline == openfile->filebot && answer[0]) {
         u->xflags |= INCLUDED_LAST_LINE;
       }
       break;
@@ -1009,16 +1108,15 @@ void add_undo(undo_type action, const char *message) {
         }
       }
       else if (!ISSET(CUT_FROM_CURSOR)) {
-        /* The entire line is being cut regardless of the cursor
-         * position. */
+        /* The entire line is being cut regardless of the cursor position. */
         u->xflags |= (WAS_WHOLE_LINE | CURSOR_WAS_AT_HEAD);
         u->tail_x = 0;
       }
       else {
         u->xflags |= CURSOR_WAS_AT_HEAD;
       }
-      if ((openfile->mark && mark_is_before_cursor() && openfile->mark->has_anchor) ||
-          ((!openfile->mark || !mark_is_before_cursor()) && openfile->current->has_anchor)) {
+      if ((openfile->mark && mark_is_before_cursor() && openfile->mark->has_anchor)
+       || ((!openfile->mark || !mark_is_before_cursor()) && openfile->current->has_anchor)) {
         u->xflags |= HAD_ANCHOR_AT_START;
       }
       break;
@@ -1052,14 +1150,17 @@ void add_undo(undo_type action, const char *message) {
       break;
     }
     case ENCLOSE : {
-      if (openfile->mark == NULL) {
-        break;
+      if (mark_is_before_cursor()) {
+        u->head_lineno = openfile->mark->lineno;
+        u->head_x      = openfile->mark_x;
+        u->xflags |= MARK_WAS_SET;
       }
-      u->head_lineno = openfile->mark->lineno;
-      u->head_x      = openfile->mark_x;
-      u->tail_lineno = openfile->current->lineno;
-      u->tail_x      = openfile->current_x;
-      u->strdata     = copy_of(message);
+      else {
+        u->tail_lineno = openfile->mark->lineno;
+        u->tail_x      = openfile->mark_x;
+        u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
+      }
+      u->strdata = copy_of(message);
       break;
     }
     default : {
@@ -1069,13 +1170,11 @@ void add_undo(undo_type action, const char *message) {
   openfile->last_action = action;
 }
 
-/* Update a multiline undo item.  This should be called once for each line,
- * affected by a multiple-line-altering feature.  The indentation that is
- * added or removed is saved, separately for each line in the undo item. */
+// Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
+// feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
 void update_multiline_undo(long lineno, char *indentation) {
   undostruct *u = openfile->current_undo;
-  /* If there already is a group and the current line is contiguous
-   * with it, extend the group; otherwise, create a new group. */
+  /* If there already is a group and the current line is contiguous with it, extend the group; otherwise, create a new group. */
   if (u->grouping && (u->grouping->bottom_line + 1) == lineno) {
     Ulong number_of_lines     = lineno - u->grouping->top_line + 1;
     u->grouping->bottom_line  = lineno;
@@ -1095,22 +1194,21 @@ void update_multiline_undo(long lineno, char *indentation) {
   u->newsize = openfile->totsize;
 }
 
-/* Update an undo item with (among other things) the file
- * size and cursor position after the given action. */
+/* Update an undo item with (among other things) the file size and cursor position after the given action. */
 void update_undo(undo_type action) {
   undostruct *u = openfile->undotop;
-  Ulong       datalen, newlen;
-  char       *textposition;
-  int         charlen;
+  Ulong datalen, newlen;
+  char *textposition;
+  int   charlen;
   if (u->type != action) {
     die("Mismatching undo type -- please report a bug\n");
   }
   u->newsize = openfile->totsize;
   switch (u->type) {
     case ADD : {
-      newlen     = openfile->current_x - u->head_x;
-      u->strdata = (char *)nrealloc(u->strdata, newlen + 1);
-      strncpy(u->strdata, openfile->current->data + u->head_x, newlen);
+      newlen     = (openfile->current_x - u->head_x);
+      u->strdata = arealloc(u->strdata, (newlen + 1));
+      strncpy(u->strdata, (openfile->current->data + u->head_x), newlen);
       u->strdata[newlen] = '\0';
       u->tail_x          = openfile->current_x;
       break;
@@ -1122,28 +1220,25 @@ void update_undo(undo_type action) {
     }
     case BACK :
     case DEL : {
-      textposition = openfile->current->data + openfile->current_x;
+      textposition = (openfile->current->data + openfile->current_x);
       charlen      = char_length(textposition);
       datalen      = strlen(u->strdata);
       if (openfile->current_x == u->head_x) {
-        /* They deleted more: add removed character after earlier stuff.
-         */
-        u->strdata = (char *)nrealloc(u->strdata, datalen + charlen + 1);
-        strncpy(u->strdata + datalen, textposition, charlen);
+        /* They deleted more: add removed character after earlier stuff. */
+        u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
+        strncpy((u->strdata + datalen), textposition, charlen);
         u->strdata[datalen + charlen] = '\0';
         u->tail_x                     = openfile->current_x;
       }
       else if (openfile->current_x == u->head_x - charlen) {
-        /* They backspaced further: add removed character before
-         * earlier. */
-        u->strdata = (char *)nrealloc(u->strdata, datalen + charlen + 1);
-        memmove(u->strdata + charlen, u->strdata, datalen + 1);
+        /* They backspaced further: add removed character before earlier. */
+        u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
+        memmove((u->strdata + charlen), u->strdata, (datalen + 1));
         strncpy(u->strdata, textposition, charlen);
         u->head_x = openfile->current_x;
       }
       else {
-        /* They deleted *elsewhere* on the line: start a new undo item.
-         */
+        /* They deleted *elsewhere* on the line: start a new undo item. */
         add_undo(u->type, NULL);
       }
       break;
@@ -1161,7 +1256,7 @@ void update_undo(undo_type action) {
       if (u->type == ZAP) {
         u->cutbuffer = cutbuffer;
       }
-      else if (cutbuffer != NULL) {
+      else if (cutbuffer) {
         free_lines(u->cutbuffer);
         u->cutbuffer = copy_buffer(cutbuffer);
       }
@@ -1170,11 +1265,11 @@ void update_undo(undo_type action) {
       }
       if (!(u->xflags & MARK_WAS_SET)) {
         linestruct *bottomline = u->cutbuffer;
-        Ulong       count      = 0;
+        Ulong count = 0;
         /* Find the end of the cut for the undo/redo, using our copy. */
-        while (bottomline->next != NULL) {
+        while (bottomline->next) {
           bottomline = bottomline->next;
-          count++;
+          ++count;
         }
         u->tail_lineno = u->head_lineno + count;
         if (ISSET(CUT_FROM_CURSOR) || u->type == CUT_TO_EOF) {
@@ -1205,8 +1300,8 @@ void update_undo(undo_type action) {
   }
 }
 
-/* When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
- * and prepend the excess part to an "overflow" line (when it already exists, otherwise create one). */
+// When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
+// and prepend the excess part to an "overflow" line (when it already exists, otherwise create one).
 void do_wrap(void) {
   /* The line to be wrapped, if needed and possible. */
   linestruct *line = openfile->current;
@@ -1323,9 +1418,9 @@ void do_wrap(void) {
   refresh_needed = TRUE;
 }
 
-/* Find the last blank in the given piece of text such that the display width to that point is at most
- * (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
- * blank in that group of blanks. When snap_at_nl is TRUE, a newline character counts as a blank too. */
+// Find the last blank in the given piece of text such that the display width to that point is at most
+// (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
+// blank in that group of blanks. When snap_at_nl is TRUE, a newline character counts as a blank too.
 long break_line(const char *textstart, long goal, bool snap_at_nl) {
   /* The point where the last blank was found, if any. */
   const char *lastblank = NULL;
@@ -1378,8 +1473,7 @@ long break_line(const char *textstart, long goal, bool snap_at_nl) {
   return (long)(lastblank - textstart);
 }
 
-/* Return the length of the indentation part of the given line.
- * The "indentation" of a line is the leading consecutive whitespace. */
+/* Return the length of the indentation part of the given line.  The "indentation" of a line is the leading consecutive whitespace. */
 Ulong indent_length(const char *line) {
   const char *start = line;
   while (*line && is_blank_char(line)) {
@@ -1388,8 +1482,8 @@ Ulong indent_length(const char *line) {
   return (Ulong)(line - start);
 }
 
-/* Return the length of the quote part of the given line.  The 'quote part'
- * of a line is the largest initial substring matching the quoting regex. */
+// Return the length of the quote part of the given line.  The 'quote part'
+// of a line is the largest initial substring matching the quoting regex.
 Ulong quote_length(const char *line) {
   regmatch_t matches;
   int rc = regexec(&quotereg, line, 1, &matches, 0);
@@ -1450,9 +1544,8 @@ bool inpar(const linestruct *const line) {
   return (line->data[quot_len + indent_len]);
 }
 
-/* Find the first occurring paragraph in the forward direction.  Return 'TRUE' when a
- * paragraph was found, and 'FALSE' otherwise.  Furthermore, return the first line
- * and the number of lines of the paragraph. */
+/* Find the first occurring paragraph in the forward direction.  Return 'TRUE' when a paragraph was found,
+ * and 'FALSE' otherwise.  Furthermore, return the first line and the number of lines of the paragraph. */
 bool find_paragraph(linestruct **firstline, Ulong *linecount) {
   linestruct *line = *firstline;
   /* When not currently in a paragraph, move forward to a line that is. */
@@ -1467,7 +1560,7 @@ bool find_paragraph(linestruct **firstline, Ulong *linecount) {
     return FALSE;
   }
   /* We found a paragraph.  Now we determine its number of lines. */
-  *linecount = line->lineno - (*firstline)->lineno + 1;
+  *linecount = (line->lineno - (*firstline)->lineno + 1);
   return TRUE;
 }
 
@@ -1480,8 +1573,7 @@ void concat_paragraph(linestruct *line, Ulong count) {
     Ulong       next_quot_len = quote_length(next_line->data);
     Ulong       next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
     Ulong       line_len      = strlen(line->data);
-    /* We're just about to tack the next line onto this one.
-     * If this line isn't empty, make sure it ends in a space. */
+    /* We're just about to tack the next line onto this one.  If this line isn't empty, make sure it ends in a space. */
     if (line_len > 0 && line->data[line_len - 1] != ' ') {
       line->data             = arealloc(line->data, (line_len + 2));
       line->data[line_len++] = ' ';
@@ -1522,7 +1614,7 @@ void squeeze(linestruct *line, Ulong skip) {
     if (is_blank_char(from)) {
       from += char_length(from);
       *(to++) = ' ';
-      while (*from != '\0' && is_blank_char(from)) {
+      while (*from && is_blank_char(from)) {
         from += char_length(from);
       }
     }
@@ -1879,7 +1971,7 @@ void construct_argument_list(char ***arguments, char *command, char *filename) {
   char *element         = strtok(copy_of_command, " ");
   int   count           = 2;
   while (element) {
-    (*arguments)            = (char **)nrealloc(*arguments, ++count * sizeof(char *));
+    (*arguments)            = anrealloc(*arguments, (++count * sizeof(char *)));
     (*arguments)[count - 3] = element;
     element                 = strtok(NULL, " ");
   }
@@ -1906,7 +1998,7 @@ bool replace_buffer(const char *filename, undo_type action, const char *operatio
   cutbuffer = NULL;
   /* Cut either the marked region or the whole buffer. */
   add_undo(action, NULL);
-  do_snip(openfile->mark != NULL, openfile->mark == NULL, FALSE);
+  do_snip((openfile->mark != NULL), (openfile->mark == NULL), FALSE);
   update_undo(action);
   /* Discard what was cut. */
   free_lines(cutbuffer);
@@ -1991,8 +2083,8 @@ void treat(char *tempfile_name, char *theprogram, bool spelling) {
   }
   free(arguments[0]);
   /* When the temporary file wasn't touched, say so and leave. */
-  if (timestamp_sec > 0 && stat(tempfile_name, &fileinfo) == 0 && (long)fileinfo.st_mtim.tv_sec == timestamp_sec &&
-      (long)fileinfo.st_mtim.tv_nsec == timestamp_nsec) {
+  if (timestamp_sec > 0 && stat(tempfile_name, &fileinfo) == 0 && (long)fileinfo.st_mtim.tv_sec == timestamp_sec
+   && (long)fileinfo.st_mtim.tv_nsec == timestamp_nsec) {
     statusline(REMARK, _("Nothing changed"));
     return;
   }
@@ -2119,9 +2211,8 @@ bool fix_spello(const char *word) {
   return proceed;
 }
 
-/* Run a spell-check on the given file, using 'spell' to produce a list of all misspelled words,
- * then feeding those through 'sort' and 'uniq' to obtain an alphabetical list, which words are
- * then offered one by one to the user for correction. */
+/* Run a spell-check on the given file, using 'spell' to produce a list of all misspelled words, then feeding those through
+ * 'sort' and 'uniq' to obtain an alphabetical list, which words are then offered one by one to the user for correction. */
 void do_int_speller(const char *const tempfile_name) {
   char *misspellings, *pointer, *oneword;
   long  pipesize;

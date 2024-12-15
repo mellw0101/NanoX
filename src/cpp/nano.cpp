@@ -153,8 +153,8 @@ void suggest_ctrlT_ctrlZ(void) {
   }
 }
 
-/* Make sure the cursor is visible, then exit from curses mode, disable
- * bracketed-paste mode, and restore the original terminal settings. */
+/// Make sure the cursor is visible, then exit from curses mode, disable
+/// bracketed-paste mode, and restore the original terminal settings.
 void restore_terminal(void) {
   curs_set(1);
   endwin();
@@ -163,7 +163,7 @@ void restore_terminal(void) {
   tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
-/* Exit normally: restore terminal state and report any startup errors. */
+/// Exit normally: restore terminal state and report any startup errors.
 void finish(void) {
   /* Blank the status bar and (if applicable) the shortcut list. */
   blank_statusbar();
@@ -179,10 +179,11 @@ void finish(void) {
   display_rcfile_errors();
   cleanup_event_handler();
   shutdown_queue();
+  cleanup_cfg();
   exit(0);
 }
 
-/* Close the current buffer, freeing its memory. */
+/// Close the current buffer, freeing its memory.
 void close_and_go(void) {
   if (openfile->lock_filename) {
     delete_lockfile(openfile->lock_filename);
@@ -207,9 +208,8 @@ void close_and_go(void) {
   }
 }
 
-/* Close the current buffer if it is unmodified.  Otherwise (when not doing
- * automatic saving), ask the user whether to save it, then close it and exit,
- * or return when the user cancelled. */
+/// Close the current buffer if it is unmodified.  Otherwise (when not doing automatic saving),
+/// ask the user whether to save it, then close it and exit, or return when the user cancelled.
 void do_exit(void) {
   int choice;
   /* When unmodified, simply close.  Else, when doing automatic saving and the
@@ -235,8 +235,8 @@ void do_exit(void) {
   }
 }
 
-/* Save the current buffer under the given name (or "nano.<pid>" when nameless)
- * with suffix ".save". If needed, the name is further suffixed to be unique. */
+/// Save the current buffer under the given name (or "nano.<pid>" when nameless)
+/// with suffix ".save". If needed, the name is further suffixed to be unique.
 void emergency_save(const char *filename) {
   char *plainname, *targetname;
   if (!*filename) {
@@ -257,7 +257,7 @@ void emergency_save(const char *filename) {
   free(plainname);
 }
 
-/* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
+/// Die gracefully, by restoring the terminal state and, saving any buffers that were modified.
 void die(const char *msg, ...) {
   openfilestruct *firstone;
   static int      stabs = 0;
@@ -292,7 +292,7 @@ void die(const char *msg, ...) {
   exit(1);
 }
 
-/* Initialize the three window portions nano uses. */
+/// Initialize the three window portions nano uses.
 void window_init(void) {
   /* When resizing, first delete the existing windows. */
   if (midwin) {
@@ -355,7 +355,7 @@ void enable_mouse_support(void) {
   oldinterval = mouseinterval(50);
 }
 
-/* Switch mouse support on or off, as needed. */
+/// Switch mouse support on or off, as needed.
 void mouse_init(void) {
   if (ISSET(USE_MOUSE)) {
     enable_mouse_support();
@@ -365,7 +365,7 @@ void mouse_init(void) {
   }
 }
 
-/* Print the usage line for the given option to the screen. */
+/// Print the usage line for the given option to the screen.
 void print_opt(const char *const shortflag, const char *const longflag, const char *const description) {
   const int firstwidth  = breadth(shortflag);
   const int secondwidth = breadth(longflag);
@@ -1114,8 +1114,7 @@ void process_a_keystroke(void) {
   }
   /* When the input is a mouse click, handle it. */
   if (input == KEY_MOUSE) {
-    /* If the user clicked on a shortcut, read in the key code that it was
-     * converted into.  Else the click has been handled or was invalid. */
+    /* If the user clicked on a shortcut, read in the key code that it was converted into.  Else the click has been handled or was invalid. */
     if (do_mouse() == 1) {
       input = get_kbinput(midwin, BLIND);
     }
@@ -1136,8 +1135,7 @@ void process_a_keystroke(void) {
       print_view_warning();
     }
     else {
-      /* When the input buffer (plus room for terminating NUL) is full,
-       * extend it. Otherwise, if it does not exist yet, create it. */
+      /* When the input buffer (plus room for terminating NUL) is full, extend it. Otherwise, if it does not exist yet, create it. */
       if (depth + 1 == capacity) {
         capacity *= 2;
         puddle   = arealloc(puddle, capacity);
@@ -1152,7 +1150,6 @@ void process_a_keystroke(void) {
           input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(",
                          s2 = ")" : input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : 0;
           enclose_marked_region(s1, s2);
-          refresh_needed = TRUE;
           return;
         }
       }
@@ -1174,16 +1171,14 @@ void process_a_keystroke(void) {
       }
     }
   }
-  /* If there are gathered bytes and we have a command or no other key codes
-   * are waiting, it's time to insert these bytes into the edit buffer. */
+  /* If there are gathered bytes and we have a command or no other key codes are waiting, it's time to insert these bytes into the edit buffer. */
   if (depth > 0 && (function || !waiting_keycodes())) {
     puddle[depth] = '\0';
     inject(puddle, depth);
     if (was_open_bracket_char) {
       if (puddle[depth - 1] != '<') {
         do_left();
-        /* Set this flag so we can delete both of the
-         * brackeded char if Bsp is pressed directly after. */
+        /* Set this flag so we can delete both of the brackeded char if Bsp is pressed directly after. */
         last_key_was_bracket = TRUE;
       }
     }
@@ -1244,10 +1239,9 @@ void process_a_keystroke(void) {
   }
   /* Execute the function of the shortcut. */
   function();
-  /* When the marked region changes without Shift being held, discard a soft
-   * mark. And when the set of lines changes, reset the "last line too" flag. */
-  if (openfile->mark && openfile->softmark && !shift_held
-   && (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function))) {
+  /* When the marked region changes without Shift being held, discard a soft mark. And when the set of lines changes, reset the "last line too" flag. */
+  if (openfile->mark && openfile->softmark && !shift_held && (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)) && !keep_mark) {
+    NLOG("Removing mark.\n");
     openfile->mark = NULL;
     refresh_needed = TRUE;
   }
@@ -1261,6 +1255,7 @@ void process_a_keystroke(void) {
     titlebar(NULL);
   }
   !was_open_bracket_char ? (last_key_was_bracket = FALSE) : 0;
+  keep_mark = FALSE;
 }
 
 int main(int argc, char **argv) {
@@ -1288,12 +1283,12 @@ int main(int argc, char **argv) {
     NETLOGGER.send_to_server("\nExiting NanoX.\n");
     (unix_socket_fd < 0) ? 0 : close(unix_socket_fd);
   });
-  init_cfg_file();
-  int     stdin_flags;
-  bool    ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
-  bool    fill_used      = FALSE; /* Was the fill option used on the command line? */
-  int     hardwrap       = -2;    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
-  int     quoterc;                /* Whether the quoting regex was compiled successfully. */
+  init_cfg();
+  int  stdin_flags;
+  bool ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
+  bool fill_used      = FALSE; /* Was the fill option used on the command line? */
+  int  hardwrap       = -2;    /* Becomes 0 when --nowrap and 1 when --breaklonglines is used. */
+  int  quoterc;                /* Whether the quoting regex was compiled successfully. */
   vt_stat dummy;
   /* Check whether we're running on a Linux console. */
   on_a_vt = !ioctl(STDOUT_FILENO, VT_GETSTATE, &dummy);
@@ -1304,8 +1299,7 @@ int main(int argc, char **argv) {
   if (stdin_flags != -1) {
     fcntl(STDIN_FILENO, F_SETFL, stdin_flags & ~O_NONBLOCK);
   }
-  /* If setting the locale is successful and it uses UTF-8, we will
-   * need to use the multibyte functions for text processing. */
+  /* If setting the locale is successful and it uses UTF-8, we will need to use the multibyte functions for text processing. */
   if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0) {
     utf8_init();
   }
@@ -1325,8 +1319,8 @@ int main(int argc, char **argv) {
   SET(AFTER_ENDS);
   SET(RAW_SEQUENCES);
   SET(LINE_NUMBERS);
-  // SET(SUGGEST);
-  // SET(SUGGEST_INLINE);
+  SET(SUGGEST);
+  SET(SUGGEST_INLINE);
   /* This is my new system for live syntax, and it`s fucking fast. */
   SET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
   /* If the executable's name starts with 'r', activate restricted mode. */
@@ -1559,8 +1553,7 @@ int main(int argc, char **argv) {
   /* If the whitespace option wasn't specified, set its default value. */
   if (!whitespace) {
     if (using_utf8()) {
-      /* A tab is shown as a Right-Pointing Double Angle Quotation Mark
-       * (U+00BB), and a space as a Middle Dot (U+00B7). */
+      /* A tab is shown as a Right-Pointing Double Angle Quotation Mark (U+00BB), and a space as a Middle Dot (U+00B7). */
       whitespace  = copy_of("\xC2\xBB\xC2\xB7");
       whitelen[0] = 2;
       whitelen[1] = 2;
@@ -1691,9 +1684,8 @@ int main(int argc, char **argv) {
         optind++;
       }
       else {
-        /* When there is nothing after the "+", understand it as
-         * go-to-EOF, otherwise parse and store the given number(s). */
-        if (argv[optind++][1] == '\0') {
+        /* When there is nothing after the "+", understand it as go-to-EOF, otherwise parse and store the given number(s). */
+        if (!argv[optind++][1]) {
           givenline = -1;
         }
         else if (!parse_line_column(&argv[optind - 1][1], &givenline, &givencol)) {
@@ -1729,11 +1721,9 @@ int main(int argc, char **argv) {
       }
       char       *filename = argv[optind++];
       struct stat fileinfo;
-      /* If the filename contains a colon and this file does not exist,
-       * then check if the filename ends with digits preceded by a colon
-       * (possibly preceded by more digits and a colon).  If there is or
-       * are such trailing numbers, chop the colons plus numbers off.
-       * The number is later used to place the cursor on that line. */
+      /* If the filename contains a colon and this file does not exist, then check if the filename ends with digits
+       * preceded by a colon (possibly preceded by more digits and a colon).  If there is or are such trailing
+       * numbers, chop the colons plus numbers off.  The number is later used to place the cursor on that line. */
       if (ISSET(COLON_PARSING) && !givenline && strchr(filename, ':') && !givencol && stat(filename, &fileinfo) < 0) {
         char *coda = filename + strlen(filename);
       maybe_two:
@@ -1843,12 +1833,11 @@ int main(int argc, char **argv) {
       minibar();
       if (suggest_on) {
         edit_refresh();
-        rendr_suggestion();
+        do_suggestion();
       }
     }
     else {
-      /* Update the displayed current cursor position only when there
-       * is no message and no keys are waiting in the input buffer. */
+      /* Update the displayed current cursor position only when there is no message and no keys are waiting in the input buffer. */
       if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && waiting_keycodes() == 0) {
         report_cursor_position();
       }
@@ -1860,8 +1849,7 @@ int main(int argc, char **argv) {
     else {
       place_the_cursor();
     }
-    /* In barless mode, either redraw a relevant status message,
-     * or overwrite a minor, redundant one. */
+    /* In barless mode, either redraw a relevant status message, or overwrite a minor, redundant one. */
     if (ISSET(ZERO) && lastmessage > HUSH) {
       if (openfile->cursor_row == editwinrows - 1 && LINES > 1) {
         edit_scroll(FORWARD);

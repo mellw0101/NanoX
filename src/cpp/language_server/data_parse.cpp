@@ -913,3 +913,52 @@ void do_parse(linestruct **line, const char *current_file) {
   Parse::function(line, current_file);
   Parse::enum_type(line);
 }
+
+void do_bash_parse(linestruct *line, const char *current_file) {
+  const char *ptr   = NULL;
+  const char *start = NULL;
+  const char *end   = NULL;
+  /* Look for variables. */
+  if ((ptr = strchr(line->data, '='))) {
+    start = ptr;
+    end   = ptr;
+    DCR_PAST_PREV_WORD(start, line->data);
+    (*start == ' ' || *start == '\t') ? ++start : 0;
+    /* Invalid variable decl.  There is a space behind the '=' char. */
+    if (start == end) {
+      LSP->index.bash_data.error.push_back({
+        copy_of("Decl has no name"),
+        (int)line->lineno,
+        (int)(ptr - line->data),
+        (int)((ptr - line->data) + 1)
+      });
+      return;
+    }
+    char *var_name = measured_copy(start, (end - start));
+    start = (ptr + 1);
+    end   = (ptr + 1);
+    if (!*end) {
+      free(var_name);
+      return;
+    }
+    ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '('));
+    /* Invalid variable decl. */
+    if (end == start) {
+      free(var_name);
+      return;
+    }
+    else if (*end == '(') {
+      linestruct *endl;
+      Ulong endx;
+      if (!find_end_bracket(line, (end - line->data), &endl, &endx) || line != endl) {
+        free(var_name);
+        return;
+      }
+      end = &endl->data[endx];
+      ADV_PAST_WORD(end);
+    }
+    char *var_value = measured_copy(start, (end - start));
+    // NLOG("%s %s\n", var_name, var_value);
+    LSP->index.bash_data.variable[var_name] = {var_name, var_value, (int)line->lineno};
+  }
+}

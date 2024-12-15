@@ -2,6 +2,7 @@
 #include "../include/prototypes.h"
 
 #define BRANDING PACKAGE_STRING
+
 /* When having an older ncurses, then most likely libvte is older too. */
 #if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20200212)
 #  define USING_OLDER_LIBVTE yes
@@ -1018,23 +1019,12 @@ Uchar get_mod_key(void) {
   return 0;
 }
 
-/* Extract one keystroke from the input stream.
- * Translate escape sequences and possibly keypad codes into their corresponding
- * values. Set meta_key to TRUE when appropriate. Supported keypad keystrokes
- * are:
- * - the arrow keys,
- * - Insert,
- * - Delete,
- * - Home,
- * - End,
- * - PageUp,
- * - PageDown,
- * - Enter,
- * - and Backspace.
- * - (Many of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or
- * Shift+Alt). The function keys (F1-F12), and the numeric keypad with NumLock
- * off. The function also handles UTF-8 sequences, and converts them to Unicode.
- * The function returns the corresponding value for the given keystroke. */
+/* Extract one keystroke from the input stream.  Translate escape sequences and possibly keypad codes into
+ * their corresponding values. Set meta_key to TRUE when appropriate. Supported keypad keystrokes are:
+ *   The arrow keys, Insert, Delete, Home, End, PageUp, PageDown, Enter, and Backspace.
+ * (Many of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or Shift+Alt). The function keys
+ * (F1-F12), and the numeric keypad with NumLock off. The function also handles UTF-8 sequences, and
+ * converts them to Unicode.  The function returns the corresponding value for the given keystroke. */
 int parse_kbinput(WINDOW *frame) {
   static bool first_escape_was_alone = FALSE;
   static bool last_escape_was_alone  = FALSE;
@@ -1047,9 +1037,9 @@ int parse_kbinput(WINDOW *frame) {
   unix_socket_debug("keycode: %d\n", keycode);
   /* Check for '^Bsp'. */
   if (term) {
-    /* First we check if we are running in xterm.  And if so then check if the appropriet
-     * key was pressed, for xterm the correct keycode if '127' and for most other term`s
-     * it`s '263'.  If we detect '^Bsp' then we return 'CONTROL_BSP'. */
+    /* First we check if we are running in xterm.  And if so then check if the
+     * appropriet key was pressed, for xterm the correct keycode if '127' and for
+     * most other term`s it`s '263'.  If we detect '^Bsp' then we return 'CONTROL_BSP'. */
     if (strcmp(term, "xterm") == 0) {
       if (keycode == 127) {
         return CONTROL_BSP;
@@ -1522,8 +1512,7 @@ int parse_kbinput(WINDOW *frame) {
   return keycode;
 }
 
-/* Read in a single keystroke, ignoring any that are invalid.
- * TODO: ( get_kbinput ) - This is the main function that reads the input from the terminal. */
+/* Read in a single keystroke, ignoring any that are invalid. */
 int get_kbinput(WINDOW *frame, bool showcursor) {
   int kbinput   = ERR;
   reveal_cursor = showcursor;
@@ -1539,10 +1528,9 @@ int get_kbinput(WINDOW *frame, bool showcursor) {
 }
 
 #define INVALID_DIGIT -77
-/* For each consecutive call, gather the given symbol into a Unicode code point.
- * When it's complete (with six digits, or when Space or Enter is typed),
- * return the assembled code. Until then, return PROCEED when the symbol is
- * valid, or an error code for anything other than hexadecimal, Space, and Enter. */
+/* For each consecutive call, gather the given symbol into a Unicode code point.  When it's complete
+ * (with six digits, or when Space or Enter is typed), return the assembled code. Until then, return
+ * PROCEED when the symbol is valid, or an error code for anything other than hexadecimal, Space, and Enter. */
 long assemble_unicode(int symbol) {
   static long unicode = 0;
   static int  digits  = 0;
@@ -1559,8 +1547,7 @@ long assemble_unicode(int symbol) {
   else {
     outcome = INVALID_DIGIT;
   }
-  /* If also the sixth digit was a valid hexadecimal value, then the
-   * Unicode sequence is complete, so return it (when it's valid). */
+  /* If also the sixth digit was a valid hexadecimal value, then the Unicode sequence is complete, so return it (when it's valid). */
   if (++digits == 6 && outcome == PROCEED) {
     outcome = (unicode < 0x110000) ? unicode : INVALID_DIGIT;
   }
@@ -1568,8 +1555,7 @@ long assemble_unicode(int symbol) {
   if (outcome == PROCEED && currmenu == MMAIN) {
     char partial[7] = "      ";
     sprintf(partial + 6 - digits, "%0*lX", digits, unicode);
-    /* TRANSLATORS: This is shown while a six-digit hexadecimal
-     * Unicode character code (%s) is being typed in. */
+    /* TRANSLATORS: This is shown while a six-digit hexadecimal Unicode character code (%s) is being typed in. */
     statusline(INFO, _("Unicode Input: %s"), partial);
   }
   /* If we have an end result, reset the value and the counter. */
@@ -1580,10 +1566,8 @@ long assemble_unicode(int symbol) {
   return outcome;
 }
 
-/* Read in one control character (or an iTerm/Eterm/rxvt double Escape),
- * or convert a series of six digits into a Unicode codepoint.  Return
- * in count either 1 (for a control character or the first byte of a
- * multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
+/* Read in one control character (or an iTerm/Eterm/rxvt double Escape), or convert a series of six digits into a Unicode codepoint.
+ * Return in count either 1 (for a control character or the first byte of a multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
 int *parse_verbatim_kbinput(WINDOW *frame, Ulong *count) {
   int keycode, *yield;
   reveal_cursor = TRUE;
@@ -1654,9 +1638,8 @@ int *parse_verbatim_kbinput(WINDOW *frame, Ulong *count) {
 char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) {
   char *bytes = (char *)nmalloc(MAXCHARLEN + 2);
   int  *input;
-  /* Turn off flow control characters if necessary so that we can type
-   * them in verbatim, and turn the keypad off if necessary so that we
-   * don't get extended keypad values. */
+  /* Turn off flow control characters if necessary so that we can type them in verbatim,
+   * and turn the keypad off if necessary so that we don't get extended keypad values. */
   if (ISSET(PRESERVE)) {
     disable_flow_control();
   }
@@ -1669,8 +1652,7 @@ char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) {
   linger_after_escape = TRUE;
   /* Read in a single byte or two escapes. */
   input = parse_verbatim_kbinput(frame, count);
-  /* If the byte is invalid in the current mode, discard it;
-   * if it is an incomplete Unicode sequence, stuff it back. */
+  /* If the byte is invalid in the current mode, discard it; if it is an incomplete Unicode sequence, stuff it back. */
   if (input && *count) {
     if (*input >= 0x80 && *count == 1) {
       put_back(*input);
@@ -1684,13 +1666,11 @@ char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) {
   /* Turn bracketed-paste mode back on. */
   printf(ESC_CODE_TURN_ON_BRACKETED_PASTE);
   fflush(stdout);
-  /* Turn flow control characters back on if necessary and turn the
-   * keypad back on if necessary now that we're done. */
+  /* Turn flow control characters back on if necessary and turn the keypad back on if necessary now that we're done. */
   if (ISSET(PRESERVE)) {
     enable_flow_control();
   }
-  /* Use the global window pointers, because a resize may have freed
-   * the data that the frame parameter points to. */
+  /* Use the global window pointers, because a resize may have freed the data that the frame parameter points to. */
   if (!ISSET(RAW_SEQUENCES)) {
     keypad(midwin, TRUE);
     keypad(footwin, TRUE);
@@ -2017,7 +1997,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
     column += (charwidth < 0 ? 1 : charwidth);
   }
   /* If there is more text than can be shown, make room for the ">". */
-  if (column > beyond || (*text != '\0' && (isprompt || (isdata && !ISSET(SOFTWRAP))))) {
+  if (column > beyond || (*text && (isprompt || (isdata && !ISSET(SOFTWRAP))))) {
     do {
       index = step_left(converted, index);
     } while (is_zerowidth(converted + index));
@@ -2050,9 +2030,7 @@ int buffer_number(openfilestruct *buffer) {
 }
 
 /* Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
- * and soft-wrapping by showing corresponding letters in the given window.
- * TODO: (show_states_at) - Find out how to customize this to be more
- * informative. */
+ * and soft-wrapping by showing corresponding letters in the given window. */
 void show_states_at(WINDOW *window) {
   waddstr(window, ISSET(AUTOINDENT) ? "I" : " ");
   waddstr(window, openfile->mark ? "M" : " ");
@@ -2236,24 +2214,23 @@ void minibar(void) {
   /* Draw a colored bar over the full width of the screen. */
   wattron(footwin, interface_color_pair[MINI_INFOBAR]);
   mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
-  if (openfile->filename[0] != '\0') {
+  if (openfile->filename[0]) {
     as_an_at = FALSE;
     thename  = display_string(openfile->filename, 0, COLS, FALSE, FALSE);
   }
   else {
     thename = copy_of(_("(nameless)"));
   }
-  sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
+  sprintf(location, "%zi,%zi", openfile->current->lineno, (xplustabs() + 1));
   placewidth = strlen(location);
   namewidth  = breadth(thename);
   /* If the file name is relatively long drop the side spaces. */
-  if (namewidth + 19 > COLS) {
+  if ((namewidth + 19) > COLS) {
     padding = 0;
   }
-  /* Display the name of the current file (dottifying it if it doesn't fit),
-   * plus a star when the file has been modified. */
+  /* Display the name of the current file (dottifying it if it doesn't fit), plus a star when the file has been modified. */
   if (COLS > 4) {
-    if (namewidth > COLS - 2) {
+    if (namewidth > (COLS - 2)) {
       char *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, FALSE, FALSE);
       mvwaddstr(footwin, 0, 0, "...");
       waddstr(footwin, shortname);
@@ -2292,12 +2269,12 @@ void minibar(void) {
     }
   }
   /* Display the line/column position of the cursor. */
-  if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + placewidth + 32 < COLS) {
+  if (ISSET(CONSTANT_SHOW) && (namewidth + tallywidth + placewidth + 32) < COLS) {
     mvwaddstr(footwin, 0, COLS - 27 - placewidth, location);
   }
   /* Display the hexadecimal code of the character under the cursor,
    * plus the codes of up to two succeeding zero-width characters. */
-  if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + 28 < COLS) {
+  if (ISSET(CONSTANT_SHOW) && (namewidth + tallywidth + 28) < COLS) {
     char *this_position = openfile->current->data + openfile->current_x;
     if (*this_position == '\0') {
       sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
@@ -2336,8 +2313,8 @@ void minibar(void) {
   }
   /* Display how many percent the current line is into the file. */
   if ((namewidth + 6) < COLS) {
-    sprintf(location, "%3zi%%", 100 * openfile->current->lineno / openfile->filebot->lineno);
-    mvwaddstr(footwin, 0, COLS - 4 - padding, location);
+    sprintf(location, "%3zi%%", (100 * openfile->current->lineno / openfile->filebot->lineno));
+    mvwaddstr(footwin, 0, (COLS - 4 - padding), location);
   }
   wattroff(footwin, interface_color_pair[MINI_INFOBAR]);
   wrefresh(footwin);
@@ -2348,9 +2325,7 @@ void minibar(void) {
   free(ranking);
 }
 
-/* Display the given message on the status bar, but only if its importance
- * is higher than that of a message that is already there.
- * TODO: This function is a mess, FIX IT. */
+/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there. */
 void statusline(message_type importance, const char *msg, ...) {
   bool         showed_whitespace = ISSET(WHITESPACE_DISPLAY);
   static Ulong start_col         = 0;
@@ -2441,8 +2416,7 @@ void statusbar(const char *msg) {
   statusline(HUSH, msg);
 }
 
-/* Warn the user on the status bar and pause for a moment, so that the
- * message can be noticed and read. */
+/* Warn the user on the status bar and pause for a moment, so that the message can be noticed and read. */
 void warn_and_briefly_pause(const char *msg) {
   blank_bottombars();
   statusline(ALERT, msg);
@@ -2450,9 +2424,8 @@ void warn_and_briefly_pause(const char *msg) {
   napms(1500);
 }
 
-/* Write a key's representation plus a minute description of its function
- * to the screen.  For example, the key could be "^C" and its tag "Cancel".
- * Key plus tag may occupy at most width columns. */
+/* Write a key's representation plus a minute description of its function to the screen.  For example,
+ * the key could be "^C" and its tag "Cancel". Key plus tag may occupy at most width columns. */
 void post_one_key(const char *keystroke, const char *tag, int width) {
   wattron(footwin, interface_color_pair[KEY_COMBO]);
   waddnstr(footwin, keystroke, actual_x(keystroke, width));
@@ -2471,9 +2444,9 @@ void post_one_key(const char *keystroke, const char *tag, int width) {
 /* Display the shortcut list corresponding to menu on the last two rows
  * of the bottom portion of the window.  The shortcuts are shown in pairs. */
 void bottombars(const int menu) {
-  Ulong            index     = 0;
-  Ulong            number    = 0;
-  Ulong            itemwidth = 0;
+  Ulong index     = 0;
+  Ulong number    = 0;
+  Ulong itemwidth = 0;
   const keystruct *s;
   funcstruct      *f;
   /* Set the global variable to the given menu. */
@@ -2484,14 +2457,13 @@ void bottombars(const int menu) {
   /* Determine how many shortcuts must be shown. */
   number = shown_entries_for(menu);
   /* Compute the width of each keyname-plus-explanation pair. */
-  itemwidth = COLS / ((number + 1) / 2);
+  itemwidth = (COLS / ((number + 1) / 2));
   /* If there is no room, don't print anything. */
   if (itemwidth == 0) {
     return;
   }
   blank_bottombars();
-  /* Display the first number of shortcuts in the given menu that
-   * have a key combination assigned to them. */
+  /* Display the first number of shortcuts in the given menu that have a key combination assigned to them. */
   for (f = allfuncs, index = 0; f && index < number; f = f->next) {
     Ulong thiswidth = itemwidth;
     if (!(f->menus & menu)) {
@@ -2501,8 +2473,7 @@ void bottombars(const int menu) {
       continue;
     }
     wmove(footwin, 1 + index % 2, (index / 2) * itemwidth);
-    /* When the number is uneven, the penultimate item can be double wide.
-     */
+    /* When the number is uneven, the penultimate item can be double wide. */
     if ((number % 2) == 1 && (index + 2 == number)) {
       thiswidth += itemwidth;
     }
@@ -2527,7 +2498,7 @@ void place_the_cursor(void) {
     row -= chunk_for(openfile->firstcolumn, openfile->edittop);
     /* Calculate how many rows the lines from edittop to current use. */
     while (line && line != openfile->current) {
-      row += 1 + extra_chunks_in(line);
+      row += (1 + extra_chunks_in(line));
       line = line->next;
     }
     /* Add the number of wraps in the current line before the cursor. */
@@ -2535,11 +2506,11 @@ void place_the_cursor(void) {
     column -= leftedge;
   }
   else {
-    row = openfile->current->lineno - openfile->edittop->lineno;
+    row = (openfile->current->lineno - openfile->edittop->lineno);
     column -= get_page_start(column);
   }
   if (row < editwinrows) {
-    wmove(midwin, row, margin + column);
+    wmove(midwin, row, (margin + column));
   }
   else {
     statusline(ALERT, "Misplaced cursor -- please report a bug");
@@ -2711,8 +2682,8 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
     midwin_mv_add_nstr_color(row, margin + target_column, striped_char, charlen, GUIDE_STRIPE);
   }
   /* If the line is at least partially selected, paint the marked part. */
-  if (openfile->mark && ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno) ||
-                         (line->lineno <= openfile->mark->lineno && line->lineno >= openfile->current->lineno))) {
+  if (openfile->mark && ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno)
+                      || (line->lineno <= openfile->mark->lineno && line->lineno >= openfile->current->lineno))) {
     /* The lines where the marked region begins and ends. */
     linestruct *top, *bot;
     /* The x positions where the marked region begins and ends. */
@@ -2737,13 +2708,13 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
       if (start_col < 0) {
         start_col = 0;
       }
-      thetext = converted + actual_x(converted, start_col);
+      thetext = (converted + actual_x(converted, start_col));
       /* If the end of the mark is onscreen, compute how many characters to paint.  Otherwise, just paint all. */
       if (bot_x < till_x) {
         const Ulong end_col = (wideness(line->data, bot_x) - from_col);
-        paintlen            = actual_x(thetext, end_col - start_col);
+        paintlen            = actual_x(thetext, (end_col - start_col));
       }
-      midwin_mv_add_nstr_color(row, margin + start_col, thetext, paintlen, SELECTED_TEXT);
+      mv_add_nstr_color(midwin, row, (margin + start_col), thetext, paintlen, SELECTED_TEXT);
     }
   }
 }
@@ -3169,7 +3140,7 @@ bool current_is_offscreen(void) {
 /* Update any lines between old_current and current that need to be
  * updated.  Use this if we've moved without changing any text. */
 void edit_redraw(linestruct *old_current, update_type manner) {
-  Ulong was_pww         = openfile->placewewant;
+  Ulong was_pww = openfile->placewewant;
   openfile->placewewant = xplustabs();
   /* If the current line is offscreen, scroll until it's onscreen. */
   if (current_is_offscreen()) {
@@ -3193,8 +3164,8 @@ void edit_redraw(linestruct *old_current, update_type manner) {
   }
   /* Update current if the mark is on or it has changed "page", or if it
    * differs from old_current and needs to be horizontally scrolled. */
-  if (line_needs_update(was_pww, openfile->placewewant) ||
-      (old_current != openfile->current && get_page_start(openfile->placewewant) > 0)) {
+  if (line_needs_update(was_pww, openfile->placewewant)
+   || (old_current != openfile->current && get_page_start(openfile->placewewant) > 0)) {
     update_line(openfile->current, openfile->current_x);
   }
 }
@@ -3213,6 +3184,19 @@ void edit_refresh(void) {
   if (openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
     prepare_palette();
   }
+  /* If syntax is turned on, index the file. */
+  if (!ISSET(NO_SYNTAX)) {
+    if (openfile->type.is_set<BASH>()) {
+      // task_functionptr_t task = [](void *arg) -> void * {
+      //   char *file = (char *)arg;
+      //   free(file);
+      //   LSP->index_file(file, TRUE);
+      //   return NULL;
+      // };
+      // submit_task(task, copy_of(openfile->filename), NULL, NULL);
+      LSP->index_file(openfile->filename, TRUE);
+    }
+  }
   /* When the line above the viewport does not have multidata, recalculate all. */
   recook |= (ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata);
   if (recook) {
@@ -3225,7 +3209,7 @@ void edit_refresh(void) {
   }
   line = openfile->edittop;
   while (row < editwinrows && line) {
-    int result = update_line(line, (line == openfile->current) ? openfile->current_x : 0, offset);
+    int result = update_line(line, ((line == openfile->current) ? openfile->current_x : 0), offset);
     if (!result) {
       offset += 1;
     }
@@ -3236,7 +3220,7 @@ void edit_refresh(void) {
     blank_row(midwin, row);
     /* Only draw sidebar when on and when the file is longer then editwin rows. */
     if (sidebar && openfile->filebot->lineno > editwinrows) {
-      mvwaddch(midwin, row, COLS - 1, bardata[row]);
+      mvwaddch(midwin, row, (COLS - 1), bardata[row]);
     }
     ++row;
   }
@@ -3379,8 +3363,7 @@ void spotlight_softwrapped(Ulong from_col, Ulong to_col) {
 #define CREDIT_LEN   52
 #define XLCREDIT_LEN 9
 
-/* Fully blank the terminal screen, then slowly "crawl" the credits over it.
- * Abort the crawl upon any keystroke. */
+/* Fully blank the terminal screen, then slowly "crawl" the credits over it.  Abort the crawl upon any keystroke. */
 void do_credits(void) {
   bool        with_interface = !ISSET(ZERO);
   bool        with_help      = !ISSET(NO_HELP);

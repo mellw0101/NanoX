@@ -14,11 +14,11 @@ int IndexFile::open_file(FILE **f) {
     logI("File \"%s\" not found.", filename);
     return -1;
   }
-  block_sigwinch(true);
+  block_sigwinch(TRUE);
   install_handler_for_Ctrl_C();
   fd = open(full_filename, O_RDONLY);
   restore_handler_for_Ctrl_C();
-  block_sigwinch(false);
+  block_sigwinch(FALSE);
   if (fd == -1) {
     if (errno == EINTR || !errno) {
       logI("Interupted.");
@@ -50,11 +50,11 @@ void IndexFile::read_lines(FILE *f, int fd) {
   int         onevalue;
   int         errorcode;
   format_type format;
-  filetop = make_new_node(nullptr);
+  filetop = make_new_node(NULL);
   filebot = filetop;
-  block_sigwinch(true);
+  block_sigwinch(TRUE);
   flockfile(f);
-  control_C_was_pressed = false;
+  control_C_was_pressed = FALSE;
   while ((onevalue = getc_unlocked(f)) != EOF) {
     char input = (char)onevalue;
     if (control_C_was_pressed) {
@@ -92,7 +92,7 @@ void IndexFile::read_lines(FILE *f, int fd) {
   }
   errorcode = errno;
   funlockfile(f);
-  block_sigwinch(false);
+  block_sigwinch(FALSE);
   if (isendwin()) {
     if (!isatty(STDIN_FILENO)) {
       reconnect_and_store_state();
@@ -111,13 +111,13 @@ void IndexFile::read_lines(FILE *f, int fd) {
     filebot->data = copy_of("");
   }
   else {
-    bool mac_line_needs_newline = false;
+    bool mac_line_needs_newline = FALSE;
     if (buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
       if (!num_lines) {
         format = MAC_FILE;
       }
       buf[--len]             = '\0';
-      mac_line_needs_newline = true;
+      mac_line_needs_newline = TRUE;
     }
     filebot->data = encode_data(buf, len);
     ++num_lines;
@@ -152,22 +152,22 @@ bool IndexFile::has_changed(void) noexcept {
   time_t was_ltc = last_time_changed;
   get_last_time_changed();
   if (was_ltc != last_time_changed) {
-    return true;
+    return TRUE;
   }
-  return false;
+  return FALSE;
 }
 
 void IndexFile::delete_data(void) noexcept {
   free(filename);
-  filename = nullptr;
+  filename = NULL;
   while (filetop) {
     linestruct *node = filetop;
-    filetop          = node->next;
+    filetop = node->next;
     free(node->data);
     free(node);
   }
-  filetop = nullptr;
-  filebot = nullptr;
+  filetop = NULL;
+  filebot = NULL;
 }
 
 void IndexFile::read_file(const char *path) {

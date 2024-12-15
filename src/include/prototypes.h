@@ -2,11 +2,11 @@
 #pragma once
 
 #include "color.h"
-#include "definitions.h"
 #include "language_server/language_server.h"
 #include "render.h"
 #include "rendr/rendr.h"
 #include "task_types.h"
+#include "definitions.h"
 
 /* All external variables.  See global.c for their descriptions. */
 
@@ -98,6 +98,7 @@ extern bool on_a_vt;
 extern bool shifted_metas;
 extern bool meta_key;
 extern bool shift_held;
+extern bool keep_mark;
 extern bool mute_modifiers;
 extern bool bracketed_paste;
 extern bool we_are_running;
@@ -117,11 +118,10 @@ extern bool recook;
 extern bool refresh_needed;
 extern bool is_shorter;
 
-extern bool              suggest_on;
-extern char              suggest_buf[1024];
-extern char             *suggest_str;
-extern int               suggest_len;
-extern vec<const char *> types;
+extern bool  suggest_on;
+extern char  suggest_buf[1024];
+extern char *suggest_str;
+extern int   suggest_len;
 
 extern Ulong wrap_at;
 
@@ -237,47 +237,48 @@ void copy_text(void);
 void paste_text(void);
 
 /* Most functions in 'files.cpp'. */
-void        make_new_buffer(void);
-bool        delete_lockfile(const char *lockfilename);
-bool        has_valid_path(const char *filename);
-bool        open_buffer(const char *filename, bool new_one);
-void        open_buffer_browser(void);
-void        open_new_empty_buffer(void);
-void        set_modified(void);
-void        prepare_for_display(void);
-void        mention_name_and_linecount(void);
-void        switch_to_prev_buffer(void);
-void        switch_to_next_buffer(void);
-void        close_buffer(void);
-char       *encode_data(char *text, Ulong length);
-void        read_file(FILE *f, int fd, const char *filename, bool undoable);
-int         open_file(const char *filename, bool new_one, FILE **f);
-char       *get_next_filename(const char *name, const char *suffix);
-void        do_insertfile(void);
-void        do_execute(void);
-char       *get_full_path(const char *origpath);
-char       *safe_tempfile(FILE **stream);
-void        init_operating_dir(void);
-bool        outside_of_confinement(const char *currpath, bool allow_tabcomp);
-void        init_backup_dir(void);
-int         copy_file(FILE *inn, FILE *out, bool close_out);
-bool        write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
-bool        write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
-int         write_it_out(bool exiting, bool withprompt);
-void        do_writeout(void);
-void        do_savefile(void);
-char       *real_dir_from_tilde(const char *path);
-int         diralphasort(const void *va, const void *vb);
-bool        is_dir(const char *const path);
-char       *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *listed);
-bool        is_file_and_exists(const char *path);
-char      **retrieve_lines_from_file(const char *path, Ulong *nlines);
-char      **retrieve_words_from_file(const char *path, Ulong *nwords);
-char      **words_from_file(const char *path, Ulong *nwords);
-char      **words_from_current_file(Ulong *nwords);
-char      **dir_entrys_from(const char *path);
+void   make_new_buffer(void);
+bool   delete_lockfile(const char *lockfilename);
+bool   has_valid_path(const char *filename);
+bool   open_buffer(const char *filename, bool new_one);
+void   open_buffer_browser(void);
+void   open_new_empty_buffer(void);
+void   set_modified(void);
+void   prepare_for_display(void);
+void   mention_name_and_linecount(void);
+void   switch_to_prev_buffer(void);
+void   switch_to_next_buffer(void);
+void   close_buffer(void);
+char  *encode_data(char *text, Ulong length);
+void   read_file(FILE *f, int fd, const char *filename, bool undoable);
+int    open_file(const char *filename, bool new_one, FILE **f);
+char  *get_next_filename(const char *name, const char *suffix);
+void   do_insertfile(void);
+void   do_execute(void);
+char  *get_full_path(const char *origpath);
+char  *normalized_path(const char *path);
+char  *abs_path(const char *path);
+char  *safe_tempfile(FILE **stream);
+void   init_operating_dir(void);
+bool   outside_of_confinement(const char *currpath, bool allow_tabcomp);
+void   init_backup_dir(void);
+int    copy_file(FILE *inn, FILE *out, bool close_out);
+bool   write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
+bool   write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
+int    write_it_out(bool exiting, bool withprompt);
+void   do_writeout(void);
+void   do_savefile(void);
+char  *real_dir_from_tilde(const char *path);
+int    diralphasort(const void *va, const void *vb);
+bool   is_dir(const char *const path);
+char  *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *listed);
+bool   is_file_and_exists(const char *path);
+char **retrieve_lines_from_file(const char *path, Ulong *nlines);
+char **retrieve_words_from_file(const char *path, Ulong *nwords);
+char **words_from_file(const char *path, Ulong *nwords);
+char **dir_entrys_from(const char *path);
+int    entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) __nonnull((1, 2, 3, 4, 5));
 linestruct *retrieve_file_as_lines(const string &path);
-string      openfile_absolute_path(void);
 
 /* Some functions in 'global.cpp'. */
 functionptrtype  func_from_key(const int keycode);
@@ -288,11 +289,6 @@ Ulong            shown_entries_for(int menu);
 int              keycode_from_string(const char *keystring);
 void             shortcut_init(void);
 const char      *epithet_of_flag(const Uint flag);
-void             add_to_handled_includes_vec(const char *path);
-bool             is_in_handled_includes_vec(std::string_view path);
-bool             syntax_var(std::string_view str);
-void             new_syntax_var(const char *str);
-void             new_syntax_func(const char *str);
 
 /* Some functions in 'help.cpp'. */
 void wrap_help_text_into_buffer(void);
@@ -339,48 +335,47 @@ void do_left(void);
 void do_right(void);
 
 /* Most functions in 'nano.cpp'. */
-linestruct      *make_new_node(linestruct *prevnode);
-linestruct      *copy_buffer(const linestruct *src);
-void             splice_node(linestruct *afterthis, linestruct *newnode);
-void             unlink_node(linestruct *line);
-void             delete_node(linestruct *line);
-void             free_lines(linestruct *src);
-void             renumber_from(linestruct *line);
-void             print_view_warning(void);
-bool             in_restricted_mode(void);
-void             suggest_ctrlT_ctrlZ(void);
-void             finish(void);
-void             close_and_go(void);
-void             do_exit(void);
-void __no_return die(const char *msg, ...);
-void             window_init(void);
-void             install_handler_for_Ctrl_C(void);
-void             restore_handler_for_Ctrl_C(void);
-void             reconnect_and_store_state(void);
-void             handle_hupterm(int signal);
-void             handle_crash(int signal);
-void             suspend_nano(int signal);
-void             do_suspend(void);
-void             continue_nano(int signal);
-void             block_sigwinch(bool blockit);
-void             handle_sigwinch(int signal);
-void             regenerate_screen(void);
-void             disable_kb_interrupt(void);
-void             enable_kb_interrupt(void);
-void             disable_flow_control(void);
-void             enable_flow_control(void);
-void             terminal_init(void);
-void             confirm_margin(void);
-void             unbound_key(int code);
-bool             changes_something(functionptrtype f);
-void             inject(char *burst, Ulong count);
+linestruct *make_new_node(linestruct *prevnode);
+linestruct *copy_buffer(const linestruct *src);
+void splice_node(linestruct *afterthis, linestruct *newnode);
+void unlink_node(linestruct *line);
+void delete_node(linestruct *line);
+void free_lines(linestruct *src);
+void renumber_from(linestruct *line);
+void print_view_warning(void);
+bool in_restricted_mode(void);
+void suggest_ctrlT_ctrlZ(void);
+void finish(void);
+void close_and_go(void);
+void do_exit(void);
+void die(const char *msg, ...) __no_return;
+void window_init(void);
+void install_handler_for_Ctrl_C(void);
+void restore_handler_for_Ctrl_C(void);
+void reconnect_and_store_state(void);
+void handle_hupterm(int signal);
+void handle_crash(int signal);
+void suspend_nano(int signal);
+void do_suspend(void);
+void continue_nano(int signal);
+void block_sigwinch(bool blockit);
+void handle_sigwinch(int signal);
+void regenerate_screen(void);
+void disable_kb_interrupt(void);
+void enable_kb_interrupt(void);
+void disable_flow_control(void);
+void enable_flow_control(void);
+void terminal_init(void);
+void confirm_margin(void);
+void unbound_key(int code);
+bool changes_something(functionptrtype f);
+void inject(char *burst, Ulong count);
 
 /* Most functions in 'prompt.cpp'. */
 Ulong get_statusbar_page_start(Ulong base, Ulong column);
 void  put_cursor_at_end_of_answer(void);
 void  add_or_remove_pipe_symbol_from_answer(void);
-int   do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg,
-                ...);
+int   do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg, ...);
 int   ask_user(bool withall, const char *question);
 
 /* Most functions in 'rcfile.cpp'. */
@@ -405,8 +400,7 @@ void       do_rcfiles(void);
 /* Most functions in 'search.cpp'. */
 bool  regexp_init(const char *regexp);
 void  tidy_up_after_search(void);
-int   findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone,
-                  const linestruct *begin, Ulong begin_x);
+int   findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x);
 void  do_search_forward(void);
 void  do_search_backward(void);
 void  do_findprevious(void);
@@ -433,6 +427,7 @@ void  do_tab(void);
 void  do_indent(void);
 void  do_unindent(void);
 void  do_comment(void);
+void  enclose_marked_region(const char *s1, const char *s2);
 void  do_undo(void);
 void  do_redo(void);
 void  do_enter(void);
@@ -461,6 +456,8 @@ void        get_homedir(void);
 const char *tail(const char *path);
 const char *ext(const char *path);
 char       *concatenate(const char *path, const char *name);
+char       *concatenate_path(const char *prefix, const char *suffix);
+const char *concat_path(const char *s1, const char *s2);
 int         digits(long n);
 bool        parse_num(const char *string, long *result);
 bool        parse_line_column(const char *str, long *line, long *column);
@@ -468,8 +465,8 @@ void        recode_NUL_to_LF(char *string, Ulong length);
 Ulong       recode_LF_to_NUL(char *string);
 void        free_chararray(char **array, Ulong len);
 bool        is_separate_word(Ulong position, Ulong length, const char *buf);
-void       *nmalloc(Ulong howmuch);
-void       *nrealloc(void *ptr, Ulong howmuch);
+void       *nmalloc(Ulong howmuch) __returns_nonnull;
+void       *nrealloc(void *ptr, Ulong howmuch) __returns_nonnull __nonnull((1));
 #define     arealloc(ptr, howmuch) (decltype(ptr))nrealloc(ptr, howmuch)
 char       *measured_copy(const char *string, Ulong count);
 char       *measured_memmove_copy(const char *string, const Ulong count);
@@ -498,21 +495,12 @@ char       *alloced_full_current_file_dir(void);
 Ulong       word_index(bool prev);
 void        alloced_remove_at(char **str, int at);
 const char *word_strstr(const char *data, const char *needle);
-string      file_extention_str(void);
-string      current_file_dir(void);
 char      **retrieve_exec_output(const char *cmd, Uint *n_lines);
 const char *word_strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *string_strstr_array(const char *str, const vector<string> &substrs, Uint *index);
 
-template <typename T>
-T *anrealloc(T *ptr, Ulong howmush) {
-  T *data = (T *)realloc(ptr, howmush);
-  if (!data) {
-    die(_("Failed to reallocate ptr."));
-  }
-  return data;
-}
+template <typename T> __inline__ T *anrealloc(T *ptr, Ulong howmush) { return (T *)nrealloc(ptr, howmush); }
 
 /* Most functions in 'winio.cpp'. */
 void  record_macro(void);
@@ -592,7 +580,6 @@ void do_cancel(void);
 bool   isCppSyntaxChar(const char c);
 void   get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs) __nonnull((1, 2, 3, 4, 5));
 Ushort indent_char_len(linestruct *line);
-void   enclose_marked_region(const char *s1, const char *s2);
 void   do_block_comment(void);
 bool   enter_with_bracket(void);
 void   all_brackets_pos(void);
@@ -611,11 +598,9 @@ void   remove_local_vars_from(linestruct *line);
 void   remove_from_color_map(linestruct *line, int color, int type);
 
 /* 'syntax.cpp' */
-string get_word_after(const char *data, const char *word);
 void   syntax_check_file(openfilestruct *file);
 bool   parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr);
 void   do_syntax(void);
-void   handle_struct_syntax(char **word);
 void   find_block_comments(int before, int end);
 char **find_functions_in_file(char *path);
 char **find_variabels_in_file(char *path);
@@ -637,7 +622,6 @@ char        *get_file_extention(void);
 const char  *rgx_word(const char *word);
 bool         is_word_func(char *word, Ulong *at);
 void         remove_leading_char_type(char **word, const char c);
-const char  *concat_path(const char *s1, const char *s2);
 bool         word_more_than_one_char_away(bool forward, Ulong *nchars, const char ch);
 bool         word_more_than_one_white_away(bool forward, Ulong *nsteps);
 bool         word_more_than_one_space_away(bool forward, Ulong *nspaces);
@@ -656,15 +640,11 @@ const char  *substr(const char *str, Ulong end_index);
 /* 'lines.cpp' */
 bool  is_line_comment(linestruct *line);
 bool  is_line_start_end_bracket(linestruct *line, bool *is_start);
-bool  is_line_in_bracket_pair(const Ulong lineno);
-bool  is_empty_line(linestruct *line);
 void  inject_in_line(linestruct **line, const char *str, Ulong at);
-Ulong get_line_total_tabs(linestruct *line);
 void  move_line(linestruct **line, bool up, bool refresh);
 void  move_lines_up(void);
 void  move_lines_down(void);
 void  erase_in_line(linestruct *line, Ulong at, Ulong len);
-void  select_line(linestruct *line, Ulong from_col, Ulong to_col);
 Uint  total_tabs(linestruct *line);
 int   get_editwin_row(linestruct *line);
 
@@ -705,23 +685,24 @@ void block_pthread_sig(int sig, bool block);
 /* 'render.cpp' */
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col);
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
-void rendr_suggestion(void);
 
 /* 'render_utils.cpp' */
 void        get_next_word(const char **start, const char **end);
-void        clear_suggestion(void);
-void        find_suggestion(void);
-void        add_char_to_suggest_buf(void);
-void        draw_suggest_win(void);
 char       *parse_function_sig(linestruct *line);
-void        accept_suggestion(void);
-void        find_word(linestruct *line, const char *data, const char *word, const Ulong slen, const char **start,
-                      const char **end);
+void        find_word(linestruct *line, const char *data, const char *word, const Ulong slen, const char **start, const char **end);
 int         preprossesor_data_from_key(const char *key);
 void        free_local_var(local_var_t *var);
 local_var_t parse_local_var(linestruct *line);
 int         find_class_end_line(linestruct *from);
 void        add_rm_color_map(string str, syntax_data_t data);
+
+/* suggestion.cpp */
+void do_suggestion(void);
+void find_suggestion(void);
+void clear_suggestion(void);
+void add_char_to_suggest_buf(void);
+void draw_suggest_win(void);
+void accept_suggestion(void);
 
 /* 'parse.cpp' */
 void parse_class_data(linestruct *from);
@@ -738,8 +719,12 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 // void init_window(void);
 // int run_gui(void) noexcept;
 
-/* 'cfg/cfg_file.cpp'. */
-void init_cfg_file(void);
+/* 'cfg.cpp'. */
+void init_cfg(void);
+void cleanup_cfg(void);
+
+/* bash_lsp.cpp */
+void get_env_path_binaries(void);
 
 #include <Mlib/def.h>
 #include "c_proto.h"

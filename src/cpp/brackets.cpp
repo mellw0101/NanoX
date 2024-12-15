@@ -3,8 +3,7 @@
 void highlight_current_bracket(void) {
 }
 
-bool do_find_a_bracket(linestruct *start_line, Ulong start_index, bool reverse, const char *bracket_pair,
-                       linestruct **found_line, Ulong *found_index) {
+bool do_find_a_bracket(linestruct *start_line, Ulong start_index, bool reverse, const char *bracket_pair, linestruct **found_line, Ulong *found_index) {
   linestruct *line = start_line;
   const char *pointer, *found;
   if (reverse) {
@@ -12,18 +11,18 @@ bool do_find_a_bracket(linestruct *start_line, Ulong start_index, bool reverse, 
     if (!start_index) {
       line = line->prev;
       if (!line) {
-        return false;
+        return FALSE;
       }
-      pointer = line->data + strlen(line->data);
+      pointer = (line->data + strlen(line->data));
     }
     else {
-      pointer = line->data + step_left(line->data, start_index);
+      pointer = (line->data + step_left(line->data, start_index));
     }
     /* Now seek for any of the two brackets we are interested in. */
     while (!(found = mbrevstrpbrk(line->data, bracket_pair, pointer))) {
       line = line->prev;
       if (!line) {
-        return false;
+        return FALSE;
       }
       pointer = (line->data + strlen(line->data));
     }
@@ -33,7 +32,7 @@ bool do_find_a_bracket(linestruct *start_line, Ulong start_index, bool reverse, 
     while (!(found = mbstrpbrk(pointer, bracket_pair))) {
       line = line->next;
       if (!line) {
-        return false;
+        return FALSE;
       }
       pointer = line->data;
     }
@@ -41,23 +40,23 @@ bool do_find_a_bracket(linestruct *start_line, Ulong start_index, bool reverse, 
   /* Set the found line and index. */
   *found_line  = line;
   *found_index = (found - line->data);
-  return true;
+  return TRUE;
 }
 
 bool find_matching_bracket(linestruct *start_line, Ulong start_index, linestruct **to_line, Ulong *to_index) {
   linestruct *line = start_line;
   const char *ch, *wanted_ch;
-  int         ch_len, wanted_ch_len;
-  char        bracket_pair_buf[MAXCHARLEN * 2 + 1];
-  Ulong       halfway   = 0;
-  Ulong       charcount = mbstrlen(matchbrackets) / 2;
-  Ulong       balance   = 1;
-  bool        reverse;
+  int   ch_len, wanted_ch_len;
+  char  bracket_pair_buf[MAXCHARLEN * 2 + 1];
+  Ulong halfway   = 0;
+  Ulong charcount = (mbstrlen(matchbrackets) / 2);
+  Ulong balance   = 1;
+  bool  reverse;
   /* Find the bracket at the starting position */
   ch = mbstrchr(matchbrackets, line->data + start_index);
   /* Not a bracket */
   if (!ch) {
-    return false;
+    return FALSE;
   }
   /* Find the halfway point in matchbrackets, where the closing ones start */
   for (Ulong i = 0; i < charcount; ++i) {
@@ -90,21 +89,21 @@ bool find_matching_bracket(linestruct *start_line, Ulong start_index, linestruct
     if (balance == 0) {
       *to_line  = line;
       *to_index = start_index;
-      return true;
+      return TRUE;
     }
   }
   /* No matching bracket found */
-  return false;
+  return FALSE;
 }
 
 bool find_end_bracket(linestruct *from, Ulong index, linestruct **end, Ulong *end_index) {
   PROFILE_FUNCTION;
   if (!from || index >= strlen(from->data)) {
-    return false;
+    return FALSE;
   }
   const char st_ch = from->data[index];
   if (st_ch != '{' && st_ch != '[' && st_ch != '(' && st_ch != '<') {
-    return false;
+    return FALSE;
   }
   const char  end_ch  = (st_ch == '[') ? ']' : (st_ch == '(') ? ')' : (st_ch == '<') ? '>' : '}';
   int         lvl     = 0;
@@ -140,14 +139,14 @@ bool find_end_bracket(linestruct *from, Ulong index, linestruct **end, Ulong *en
           if (!lvl) {
             *end       = line;
             *end_index = (b_end - line->data);
-            return true;
+            return TRUE;
           }
         }
         b_end += 1;
       }
     } while (b_end);
   }
-  return false;
+  return FALSE;
 }
 
 char *fetch_bracket_body(linestruct *from, Ulong index) {

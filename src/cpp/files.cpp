@@ -489,8 +489,8 @@ void switch_to_next_buffer(void) {
   redecorate_after_switch();
 }
 
-/* Remove the current buffer from the circular list of buffers.
- * When just one buffer remains open, show "Exit" in the help lines. */
+/// Remove the current buffer from the circular list of buffers.
+/// When just one buffer remains open, show "Exit" in the help lines.
 void close_buffer(void) {
   openfilestruct *orphan = openfile;
   if (orphan == startfile) {
@@ -516,8 +516,8 @@ void close_buffer(void) {
   }
 }
 
-/* Encode any NUL bytes in the given line of text (of the given length),
- * and return a dynamically allocated copy of the resultant string. */
+/// Encode any NUL bytes in the given line of text (of the given length),
+/// and return a dynamically allocated copy of the resultant string.
 char *encode_data(char *text, Ulong length) {
   recode_NUL_to_LF(text, length);
   text[length] = '\0';
@@ -526,10 +526,10 @@ char *encode_data(char *text, Ulong length) {
 
 /* The number of bytes by which we expand the line buffer while reading. */
 #define LUMPSIZE 120
-/* Read the given open file f into the current buffer.  filename should be
- * set to the name of the file.  undoable means that undo records should be
- * created and that the file does not need to be checked for writability.
- * TODO: (read_file) - FIX IT. */
+
+/// Read the given open file f into the current buffer.  filename should be
+/// set to the name of the file.  undoable means that undo records should be
+/// created and that the file does not need to be checked for writability.
 void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   /* The line number where we start the insertion. */
   long was_lineno = openfile->current->lineno;
@@ -593,26 +593,23 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
     else {
       /* Store the byte. */
       buf[len] = input;
-      /* Keep track of the total length of the line.  It might have
-       * NUL bytes in it, so we can't just use strlen() later. */
-      len++;
-      /* When needed, increase the line-buffer size.  Don't bother
-       * decreasing it -- it gets freed when reading is finished. */
+      /* Keep track of the total length of the line.  It might have NUL bytes in it, so we can't just use strlen() later. */
+      ++len;
+      /* When needed, increase the line-buffer size.  Don't bother decreasing it -- it gets freed when reading is finished. */
       if (len == bufsize) {
         bufsize += LUMPSIZE;
-        buf = (char *)nrealloc(buf, bufsize);
+        buf = arealloc(buf, bufsize);
       }
       continue;
     }
     /* Store the data and make a new line. */
     bottomline->data = encode_data(buf, len);
     bottomline->next = make_new_node(bottomline);
-    bottomline       = bottomline->next;
-    num_lines++;
+    bottomline = bottomline->next;
+    ++num_lines;
     /* Reset the length in preparation for the next line. */
     len = 0;
-    /* If it was a Mac line, then store the byte after the \r
-     * as the first byte of the next line. */
+    /* If it was a Mac line, then store the byte after the \r as the first byte of the next line. */
     if (input != '\n') {
       buf[len++] = input;
     }
@@ -710,16 +707,16 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   }
 }
 
-/* Open the file with the given name.  If the file does not exist, display
- * "New File" if new_one is TRUE, and say "File not found" otherwise.
- * Return 0 if we say "New File", -1 upon failure, and the obtained file
- * descriptor otherwise.  The opened filestream is returned in *f. */
+/// Open the file with the given name.  If the file does not exist, display
+/// "New File" if new_one is TRUE, and say "File not found" otherwise.
+/// Return 0 if we say "New File", -1 upon failure, and the obtained file
+/// descriptor otherwise.  The opened filestream is returned in *f.
 int open_file(const char *filename, bool new_one, FILE **f) {
   struct stat fileinfo;
   char       *full_filename = get_full_path(filename);
   int         fd;
-  /* If the absolute path is unusable (due to some component's permissions),
-   * try the given path instead (as it is probably relative). */
+  // If the absolute path is unusable (due to some component's permissions),
+  // try the given path instead (as it is probably relative).
   if (!full_filename || stat(full_filename, &fileinfo) == -1) {
     full_filename = mallocstrcpy(full_filename, filename);
   }
@@ -767,15 +764,14 @@ int open_file(const char *filename, bool new_one, FILE **f) {
   return fd;
 }
 
-/* This function will return the name of the first available extension of a filename
- * (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
- * or the return value.  If no writable extension exists, we return "". */
+/// This function will return the name of the first available extension of a filename
+/// (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
+/// or the return value.  If no writable extension exists, we return "".
 char *get_next_filename(const char *name, const char *suffix) {
   Ulong wholenamelen = (strlen(name) + strlen(suffix));
-  Ulong i            = 0;
+  Ulong i = 0;
   char *buf;
-  /* Reserve space for: the name plus the suffix plus a dot plus
-   * possibly five digits plus a null byte. */
+  /* Reserve space for, the name plus the suffix plus a dot plus possibly five digits plus a null byte. */
   buf = (char *)nmalloc(wholenamelen + 7);
   sprintf(buf, "%s%s", name, suffix);
   while (TRUE) {
@@ -787,7 +783,7 @@ char *get_next_filename(const char *name, const char *suffix) {
     if (++i == 100000) {
       break;
     }
-    sprintf(buf + wholenamelen, ".%lu", i);
+    sprintf((buf + wholenamelen), ".%lu", i);
   }
   /* There is no possible save file: blank out the filename. */
   *buf = '\0';
@@ -801,7 +797,7 @@ static pid_t pid_of_sender = -1;
 /* Whether we are piping data to the external command. */
 static bool should_pipe = FALSE;
 
-/* Send an unconditional kill signal to the running external command. */
+/// Send an unconditional kill signal to the running external command.
 void cancel_the_command(int signal) {
   if (pid_of_command > 0) {
     kill(pid_of_command, SIGKILL);
@@ -811,7 +807,7 @@ void cancel_the_command(int signal) {
   }
 }
 
-/* Send the text that starts at the given line to file descriptor fd. */
+/// Send the text that starts at the given line to file descriptor fd.
 void send_data(const linestruct *line, int fd) {
   FILE *tube = fdopen(fd, "w");
   if (!tube) {
@@ -831,7 +827,7 @@ void send_data(const linestruct *line, int fd) {
   fclose(tube);
 }
 
-/* Execute the given command in a shell. */
+/// Execute the given command in a shell.
 void execute_command(const char *command) {
   /* The pipes through which text will be written and read. */
   int from_fd[2], to_fd[2];
@@ -974,9 +970,9 @@ void execute_command(const char *command) {
   terminal_init();
 }
 
-/* Insert a file into the current buffer (or into a new buffer).
- * But when execute is 'TRUE', run a command in the shell and insert its output
- * into the buffer, or just run one of the tools listed in the help lines. */
+/// Insert a file into the current buffer (or into a new buffer).
+/// But when execute is 'TRUE', run a command in the shell and insert its output
+/// into the buffer, or just run one of the tools listed in the help lines.
 void insert_a_file_or(bool execute) {
   int         response;
   const char *msg;
@@ -1126,24 +1122,24 @@ void insert_a_file_or(bool execute) {
   }
 }
 
-/* If the current mode of operation allows it, go insert a file. */
+/// If the current mode of operation allows it, go insert a file.
 void do_insertfile(void) {
   if (!in_restricted_mode()) {
     insert_a_file_or(FALSE);
   }
 }
 
-/* If the current mode of operation allows it, go prompt for a command. */
+/// If the current mode of operation allows it, go prompt for a command.
 void do_execute(void) {
   if (!in_restricted_mode()) {
     insert_a_file_or(TRUE);
   }
 }
 
-/* For the given bare path (or path plus filename), return the canonical,
- * absolute path (plus filename) when the path exists, and 'NULL' when not. */
+/// For the given bare path (or path plus filename), return the canonical,
+/// absolute path (plus filename) when the path exists, and 'NULL' when not.
 char *get_full_path(const char *origpath) {
-  char       *untilded, *target, *slash;
+  char *untilded, *target, *slash;
   struct stat fileinfo;
   if (!origpath) {
     return NULL;
@@ -1151,28 +1147,60 @@ char *get_full_path(const char *origpath) {
   untilded = real_dir_from_tilde(origpath);
   target   = realpath(untilded, NULL);
   slash    = strrchr(untilded, '/');
-  /* If realpath() returned NULL, try without the last component,
-   * as this can be a file that does not exist yet. */
+  /* If realpath() returned NULL, try without the last component, as this can be a file that does not exist yet. */
   if (!target && slash && slash[1]) {
     *slash = '\0';
     target = realpath(untilded, NULL);
     /* Upon success, re-add the last component of the original path. */
     if (target) {
-      target = (char *)nrealloc(target, strlen(target) + strlen(slash + 1) + 1);
-      strcat(target, slash + 1);
+      target = arealloc(target, (strlen(target) + strlen(slash + 1) + 1));
+      strcat(target, (slash + 1));
     }
   }
   /* Ensure that a non-apex directory path ends with a slash. */
   if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode)) {
-    target = (char *)nrealloc(target, strlen(target) + 2);
+    target = arealloc(target, (strlen(target) + 2));
     strcat(target, "/");
   }
   free(untilded);
   return target;
 }
 
-/* Check whether the given path refers to a directory that is writable.
- * Return the absolute form of the path on success, and 'NULL' on failure. */
+/// Returns a normalized path.  IE: Removes all /../ correctly.
+char *normalized_path(const char *path) {
+  char *ret  = copy_of(path);
+  const char *start = ret;
+  const char *end   = NULL;
+  while ((start = strstr(start, "/../"))) {
+    /* If the path starts with '/../' then it`s an invalid path. */
+    if (start == ret) {
+      break;
+    }
+    end = (start + 3);
+    if (!*end) {
+      break;
+    }
+    --start;
+    DCR_PTR(start, ret, (*start != '/'));
+    char *part_1 = measured_copy(ret, (start - ret));
+    char *part_2 = copy_of(end);
+    Ulong idx = (start - ret);
+    free(ret);
+    ret = alloc_str_free_substrs(part_1, part_2);
+    start = &ret[idx];
+  }
+  return ret;
+}
+
+/// Optimized for repeted calls where the first call makes sure to get the
+/// full path of a relative one, and once that is done normalized path is
+/// used as we already know that the relative path must be correct.
+char *abs_path(const char *path) {
+  return ((*path == '/') ? normalized_path(path) : get_full_path(path));
+}
+
+/// Check whether the given path refers to a directory that is writable.
+/// Return the absolute form of the path on success, and 'NULL' on failure.
 char *check_writable_directory(const char *path) {
   char *full_path = get_full_path(path);
   if (!full_path) {
@@ -1185,9 +1213,9 @@ char *check_writable_directory(const char *path) {
   return full_path;
 }
 
-/* Create, safely, a temporary file in the standard temp directory.
- * On success, return the malloc()ed filename, plus the corresponding
- * file stream opened in read-write mode.  On error, return 'NULL'. */
+/// Create, safely, a temporary file in the standard temp directory.
+/// On success, return the malloc()ed filename, plus the corresponding
+/// file stream opened in read-write mode.  On error, return 'NULL'.
 char *safe_tempfile(FILE **stream) {
   const char *env_dir = getenv("TMPDIR");
   char       *tempdir = NULL, *tempfile_name = NULL;
@@ -1223,7 +1251,7 @@ char *safe_tempfile(FILE **stream) {
   return tempfile_name;
 }
 
-/* Change to the specified operating directory, when it's valid. */
+/// Change to the specified operating directory, when it's valid.
 void init_operating_dir(void) {
   char *target = get_full_path(operating_dir);
   /* If the operating directory is inaccessible, fail. */
@@ -1234,10 +1262,10 @@ void init_operating_dir(void) {
   operating_dir = anrealloc(target, (strlen(target) + 1));
 }
 
-/* Check whether the given path is outside of the operating directory.
- * Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
- * incomplete names that can grow into matches for the operating directory
- * are considered to be inside, so that tab completion will work. */
+/// Check whether the given path is outside of the operating directory.
+/// Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
+/// incomplete names that can grow into matches for the operating directory
+/// are considered to be inside, so that tab completion will work.
 bool outside_of_confinement(const char *somepath, bool tabbing) {
   bool  is_inside, begins_to_be;
   char *fullpath;
@@ -1259,8 +1287,7 @@ bool outside_of_confinement(const char *somepath, bool tabbing) {
   return (!is_inside && !begins_to_be);
 }
 
-/* Transform the specified backup directory to an absolute path, and verify that
- * it is usable. */
+/// Transform the specified backup directory to an absolute path, and verify that it is usable. */
 void init_backup_dir(void) {
   char *target = get_full_path(backup_dir);
   /* If we can't get an absolute path (which means it doesn't exist or
@@ -1272,10 +1299,10 @@ void init_backup_dir(void) {
   backup_dir = (char *)nrealloc(target, strlen(target) + 1);
 }
 
-/* Read all data from inn, and write it to out.  File inn must be open for
- * reading, and out for writing.  Return 0 on success, a negative number on
- * read error, and a positive number on write error.  File inn is always
- * closed by this function, out is closed  only if close_out is TRUE. */
+/// Read all data from inn, and write it to out.  File inn must be open for
+/// reading, and out for writing.  Return 0 on success, a negative number on
+/// read error, and a positive number on write error.  File inn is always
+/// closed by this function, out is closed  only if close_out is TRUE.
 int copy_file(FILE *inn, FILE *out, bool close_out) {
   int   retval = 0;
   char  buf[BUFSIZ];
@@ -1301,9 +1328,9 @@ int copy_file(FILE *inn, FILE *out, bool close_out) {
   return retval;
 }
 
-/* Create a backup of an existing file.  If the user did not request backups,
- * make a temporary one.  (trying first in the directory of the original file,
- * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
+/// Create a backup of an existing file.  If the user did not request backups,
+/// make a temporary one.  (trying first in the directory of the original file,
+/// then in the user's home directory).  Return 'TRUE' if the save can proceed.
 bool make_backup_of(char *realname) {
   FILE           *original = NULL, *backup_file = NULL;
   static timespec filetime[2];
@@ -1439,12 +1466,11 @@ failure:
   return FALSE;
 }
 
-/* Write the current buffer to disk.  If thefile isn't NULL, we write to a temporary file that is already open.
- * If normal is 'FALSE' (for a spellcheck or an emergency save, for example), we don't make a backup and don't
- * give feedback.  If method is 'APPEND' or 'PREPEND', it means we will be appending or prepending instead of
- * overwriting the given file. If annotate is 'TRUE' and when writing a normal file, we set the current filename
- * and stat info. Return 'TRUE' on success, and 'FALSE' otherwise.
- * TODO : (write_file) - FIX IT. */
+/// Write the current buffer to disk.  If thefile isn't NULL, we write to a temporary file that is already open.
+/// If normal is 'FALSE' (for a spellcheck or an emergency save, for example), we don't make a backup and don't
+/// give feedback.  If method is 'APPEND' or 'PREPEND', it means we will be appending or prepending instead of
+/// overwriting the given file. If annotate is 'TRUE' and when writing a normal file, we set the current filename
+/// and stat info. Return 'TRUE' on success, and 'FALSE' otherwise.
 bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate) {
   PROFILE_FUNCTION;
   /* Becomes TRUE when the file is non-temporary and exists. */
@@ -1476,13 +1502,13 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
   }
   /* When the user requested a backup, we do this only if the file exists and isn't temporary AND the file has
    * not been modified by someone else since we opened it (or we are appending/prepending or writing a selection). */
-  if (ISSET(MAKE_BACKUP) && is_existing_file && !S_ISFIFO(fileinfo.st_mode) && openfile->statinfo &&
-      (openfile->statinfo->st_mtime == fileinfo.st_mtime || method != OVERWRITE || openfile->mark)) {
+  if (ISSET(MAKE_BACKUP) && is_existing_file && !S_ISFIFO(fileinfo.st_mode) && openfile->statinfo
+   && (openfile->statinfo->st_mtime == fileinfo.st_mtime || method != OVERWRITE || openfile->mark)) {
     if (!make_backup_of(realname)) {
       goto cleanup_and_exit;
     }
   }
-  /* When prepending, first copy the existing file to a temporary file. */
+  // When prepending, first copy the existing file to a temporary file.
   if (method == PREPEND) {
     FILE *source = NULL;
     FILE *target = NULL;
@@ -1517,8 +1543,8 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
   if (is_existing_file && S_ISFIFO(fileinfo.st_mode)) {
     statusbar(_("Writing to FIFO..."));
   }
-  /* When it's not a temporary file, this is where we open or create it.
-   * For an emergency file, access is restricted to just the owner. */
+  // When it's not a temporary file, this is where we open or create it.
+  // For an emergency file, access is restricted to just the owner. */
   if (!thefile) {
     mode_t permissions = (normal ? RW_FOR_ALL : S_IRUSR | S_IWUSR);
     block_sigwinch(TRUE);
@@ -1697,8 +1723,8 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
   return TRUE;
 }
 
-/* Write the marked region of the current buffer out to disk.
- * Return 'TRUE' on success and 'FALSE' on error. */
+/// Write the marked region of the current buffer out to disk.
+/// Return 'TRUE' on success and 'FALSE' on error.
 bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method) {
   linestruct *birthline, *topline, *botline, *stopper, *afterline;
   char       *was_datastart, saved_byte;
@@ -1734,11 +1760,11 @@ bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_w
   return retval;
 }
 
-/* Write the current buffer (or marked region) to disk.  'exiting' Indicates whether the program is exiting.
- * If exiting is 'TRUE', write the entire buffer regardless of whether the mark is on. Do not ask for a name
- * when 'withprompt' is 'FALSE'. Nor when doing save-on-exit and the buffer already has a name.  If 'withprompt'
- * is 'TRUE' then ask for (confirmation of) the filename.  And if 'FALSE' then do not ask for a the filename.
- * Return`s '0' if the operation is cancelled, '1' if the buffer is saved and '2' if the buffer is discarded. */
+/// Write the current buffer (or marked region) to disk.  'exiting' Indicates whether the program is exiting.
+/// If exiting is 'TRUE', write the entire buffer regardless of whether the mark is on. Do not ask for a name
+/// when 'withprompt' is 'FALSE'. Nor when doing save-on-exit and the buffer already has a name.  If 'withprompt'
+/// is 'TRUE' then ask for (confirmation of) the filename.  And if 'FALSE' then do not ask for a the filename.
+/// Return`s '0' if the operation is cancelled, '1' if the buffer is saved and '2' if the buffer is discarded.
 int write_it_out(bool exiting, bool withprompt) {
   char *given; /* The filename we offer, or what the user typed so far. */
   /* Whether it's okay to save the buffer under a different name. */
@@ -1935,23 +1961,23 @@ int write_it_out(bool exiting, bool withprompt) {
   }
 }
 
-/* Write the current buffer to disk, or discard it. */
+/// Write the current buffer to disk, or discard it.
 void do_writeout(void) {
-  /* If the user chose to discard the buffer, close it. */
+  // If the user chose to discard the buffer, close it.
   if (write_it_out(FALSE, TRUE) == 2) {
     close_and_go();
   }
 }
 
-/* If it has a name, write the current buffer to disk without prompting. */
+/// If it has a name, write the current buffer to disk without prompting.
 void do_savefile(void) {
   if (write_it_out(FALSE, FALSE) == 2) {
     close_and_go();
   }
 }
 
-/* Convert the tilde notation when the given path begins with ~/ or ~user/.
- * Return an allocated string containing the expanded path. */
+/// Convert the tilde notation when the given path begins with ~/ or ~user/.
+/// Return an allocated string containing the expanded path. */
 char *real_dir_from_tilde(const char *path) {
   char *tilded, *retval;
   Ulong i = 1;
@@ -1983,8 +2009,8 @@ char *real_dir_from_tilde(const char *path) {
   return retval;
 }
 
-/* Our sort routine for file listings.  Sort alphabetically and
- * case-insensitively, and sort directories before filenames. */
+/// Our sort routine for file listings.  Sort alphabetically and
+/// case-insensitively, and sort directories before filenames.
 int diralphasort(const void *va, const void *vb) {
   struct stat fileinfo;
   const char *a      = *(const char *const *)va;
@@ -2007,7 +2033,7 @@ int diralphasort(const void *va, const void *vb) {
   }
 }
 
-/* Return 'TRUE' when the given path is a directory. */
+/// Return 'TRUE' when the given path is a directory.
 bool is_dir(const char *const path) {
   char       *thepath = real_dir_from_tilde(path);
   struct stat fileinfo;
@@ -2017,12 +2043,11 @@ bool is_dir(const char *const path) {
   return retval;
 }
 
-/* Try to complete the given fragment of given length to a username. */
-char **username_completion(const char *morsel, Ulong length, Ulong &num_matches) {
-  char        **matches = NULL;
+/// Try to complete the given fragment of given length to a username.
+char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)  {
+  char **matches = NULL;
   const passwd *userdata;
-  /* Iterate through the entries in the passwd file, and
-   * add each fitting username to the list of matches. */
+  /* Iterate through the entries in the passwd file, and add each fitting username to the list of matches. */
   while ((userdata = getpwent())) {
     if (strncmp(userdata->pw_name, morsel + 1, length - 1) == 0) {
       /* Skip directories that are outside of the allowed area. */
@@ -2039,8 +2064,9 @@ char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)
   return matches;
 }
 
-/* The next two functions were adapted from busybox 0.46 (cmdedit.c).
- * Here is the tweaked notice from that file:
+/**
+  The next two functions were adapted from busybox 0.46 (cmdedit.c).
+  Here is the tweaked notice from that file:
 
   Termios command-line History and Editing, originally intended for NetBSD.
   Copyright (C) 1999, 2000
@@ -2051,28 +2077,29 @@ char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)
   You may use this code as you wish, so long as the original author(s)
   are attributed in any redistributions of the source code.
   This code is 'as is' with no warranty.
-  This code may safely be consumed by a BSD or GPL license. */
+  This code may safely be consumed by a BSD or GPL license.
+ */
 
-/* Try to complete the given fragment to an existing filename. */
+/// Try to complete the given fragment to an existing filename.
 char **filename_completion(const char *morsel, Ulong *num_matches) {
-  char         *dirname = copy_of(morsel);
-  char         *slash, *filename;
-  Ulong         filenamelen;
-  char         *fullname = NULL;
-  char        **matches  = NULL;
-  DIR          *dir;
+  char  *dirname = copy_of(morsel);
+  char  *slash, *filename;
+  Ulong filenamelen;
+  char  *fullname = NULL;
+  char  **matches = NULL;
+  DIR   *dir;
   const dirent *entry;
-  /* If there's a '/' in the name, split out filename and directory parts. */
+  // If there's a '/' in the name, split out filename and directory parts.
   slash = strrchr(dirname, '/');
   if (slash) {
     char *wasdirname = dirname;
     filename         = copy_of(++slash);
-    /* Cut off the filename part after the slash. */
+    // Cut off the filename part after the slash.
     *slash  = '\0';
     dirname = real_dir_from_tilde(dirname);
-    /* A non-absolute path is relative to the current browser directory. */
+    // A non-absolute path is relative to the current browser directory.
     if (dirname[0] != '/') {
-      dirname = (char *)nrealloc(dirname, strlen(present_path) + strlen(wasdirname) + 1);
+      dirname = arealloc(dirname, (strlen(present_path) + strlen(wasdirname) + 1));
       sprintf(dirname, "%s%s", present_path, wasdirname);
     }
     free(wasdirname);
@@ -2089,7 +2116,7 @@ char **filename_completion(const char *morsel, Ulong *num_matches) {
     return NULL;
   }
   filenamelen = strlen(filename);
-  /* Iterate through the filenames in the directory, and add each fitting one to the list of matches. */
+  // Iterate through the filenames in the directory, and add each fitting one to the list of matches.
   while ((entry = readdir(dir))) {
     if (strncmp(entry->d_name, filename, filenamelen) == 0 && strcmp(entry->d_name, ".") != 0 &&
         strcmp(entry->d_name, "..") != 0) {
@@ -2113,8 +2140,8 @@ char **filename_completion(const char *morsel, Ulong *num_matches) {
   return matches;
 }
 
-/* Do tab completion.  'place' is the position of the status-bar cursor, and
- * 'refresh_func' is the function to be called to refresh the edit window. */
+/// Do tab completion.  'place' is the position of the status-bar cursor, and
+/// 'refresh_func' is the function to be called to refresh the edit window.
 char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *listed) {
   Ulong  num_matches = 0;
   char **matches     = NULL;
@@ -2123,8 +2150,7 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
     beep();
     return morsel;
   }
-  /* If the fragment starts with a tilde and contains no slash,
-   * then try completing it as a username. */
+  /* If the fragment starts with a tilde and contains no slash, then try completing it as a username. */
   if (morsel[0] == '~' && !strchr(morsel, '/')) {
     matches = username_completion(morsel, *place, num_matches);
   }
@@ -2234,7 +2260,7 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
   return morsel;
 }
 
-/* Return`s 'TRUE' only when given 'path' exists, and is not a dir or device. */
+/// Return`s 'TRUE' only when given 'path' exists, and is not a dir or device.
 bool is_file_and_exists(const char *path) {
   struct stat st;
   if (access(path, R_OK) != 0) {
@@ -2266,7 +2292,7 @@ char **retrieve_lines_from_file(const char *path, Ulong *nlines) {
     }
     if (bsize == bcap) {
       bcap *= 2;
-      lines = (char **)nrealloc(lines, sizeof(char *) * bcap);
+      lines = arealloc(lines, (sizeof(char *) * bcap));
     }
     lines[bsize++] = measured_copy(buf, len);
   }
@@ -2305,9 +2331,9 @@ char **retrieve_words_from_file(const char *path, Ulong *nwords) {
   return words;
 }
 
-/* This function extract all words from a file and assigns the number of words
- * parsed to 'nwords'. Note that 'nwords' needs to be passed as a refrence.
- * This function is very fast, it can parse around 20 million words per second. */
+/// This function extract all words from a file and assigns the number of words
+/// parsed to 'nwords'. Note that 'nwords' needs to be passed as a refrence.
+/// This function is very fast, it can parse around 20 million words per second.
 char **words_from_file(const char *path, Ulong *nwords) {
   PROFILE_FUNCTION;
   if (!is_file_and_exists(path)) {
@@ -2344,36 +2370,11 @@ char **words_from_file(const char *path, Ulong *nwords) {
   return words;
 }
 
-char **words_from_current_file(Ulong *nwords) {
-  PROFILE_FUNCTION;
-  if (openfile->filename) {
-    const char *pwd = getenv("PWD"), *full_path = NULL;
-    if (pwd) {
-      char *file = copy_of(openfile->filename);
-      full_path  = concat_path(pwd, file);
-      free(file);
-      NLOG("%s\n", full_path);
-      return words_from_file(full_path, nwords);
-    }
-  }
-  return NULL;
-}
-
-char *full_current_file_path(void) {
-  static thread_local char buf[PATH_MAX];
-  const char              *pwd = getenv("PWD");
-  if (pwd == NULL) {
-    return NULL;
-  }
-  snprintf(buf, PATH_MAX, (openfile->filename[0] == '/') ? "%s%s" : "%s/%s", pwd, openfile->filename);
-  return copy_of(buf);
-}
-
 char **dir_entrys_from(const char *path) {
   static thread_local char **buf  = NULL;
-  thread_local Ulong         size = 0, cap = 10;
-  thread_local dirent       *entry;
-  thread_local DIR          *dir = opendir(path);
+  thread_local Ulong  size = 0, cap = 10;
+  thread_local dirent *entry;
+  thread_local DIR *dir = opendir(path);
   if (dir == NULL) {
     logE("Failed to open dir: '%s'.", path);
     return NULL;
@@ -2386,6 +2387,59 @@ char **dir_entrys_from(const char *path) {
   buf[size] = NULL;
   closedir(dir);
   return buf;
+}
+
+/* Retrieve files and dirs from path.  Returns -1 apon failure to open directory. */
+int entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) {
+  /* Open the target directory. */
+  dirent *directory_entry = NULL;
+  DIR *target_directory = opendir(path);
+  /* Return early apon failure to open directory. */
+  if (!target_directory) {
+    logE("Failed to open dir: %s.\n");
+    return -1;
+  }
+  /* Define our buffers, one for file entries and one for dirs. */
+  char **file_buf  = NULL, **dir_buf  = NULL;
+  Ulong  file_size = 0,      dir_size = 0;
+  Ulong  file_cap  = 40,     dir_cap  = 40;
+  /* Malloc our buffers. */
+  file_buf = (char **)nmalloc(sizeof(char *) * file_cap);
+  dir_buf  = (char **)nmalloc(sizeof(char *) * dir_cap);
+  /* Fetch all entries in the target directory. */
+  while ((directory_entry = readdir(target_directory))) {
+    switch (directory_entry->d_type) {
+      case DT_DIR: /* Directory entry. */ {
+        if (dir_size == dir_cap) {
+          dir_cap *= 2;
+          dir_buf = arealloc(dir_buf, (sizeof(char *) * dir_cap));
+        }
+        dir_buf[dir_size++] = measured_copy(directory_entry->d_name, _D_ALLOC_NAMLEN(directory_entry) - 1);
+        break;
+      }
+      case DT_REG: /* Regular file entry. */ {
+        if (file_size == file_cap) {
+          file_cap *= 2;
+          file_buf = arealloc(file_buf, (sizeof(char *) * file_cap));
+        }
+        file_buf[file_size++] = measured_copy(directory_entry->d_name, _D_ALLOC_NAMLEN(directory_entry) - 1);
+        break;
+      }
+    }
+  }
+  /* Trim data buffer`s to the size of data. */
+  file_buf = arealloc(file_buf, (sizeof(char *) * (file_size + 1)));
+  dir_buf  = arealloc(dir_buf,  (sizeof(char *) * (dir_size  + 1)));
+  /* NULL-terminate buffer`s to ensure NULL-safe operation`s. */
+  file_buf[file_size] = NULL;
+  dir_buf[dir_size]   = NULL;
+  closedir(target_directory);
+  /* Assign the data buffers. */
+  *files  = file_buf;
+  *nfiles = file_size;
+  *dirs  = dir_buf;
+  *ndirs = dir_size;
+  return 0;
 }
 
 linestruct *retrieve_file_as_lines(const string &path) {
@@ -2426,21 +2480,4 @@ linestruct *retrieve_file_as_lines(const string &path) {
   }
   fclose(file);
   return head;
-}
-
-string openfile_absolute_path(void) {
-  string ret = "";
-  if (openfile->filename == NULL) {
-    return {};
-  }
-  if (openfile->filename[0] != '/') {
-    const char *pwd = getenv("PWD");
-    if (pwd == NULL) {
-      return {};
-    }
-    ret = pwd;
-    ret += "/";
-  }
-  ret += openfile->filename;
-  return ret;
 }

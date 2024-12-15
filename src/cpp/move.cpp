@@ -1,10 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <Mlib/Debug.h>
-#include <Mlib/Profile.h>
-
-#include <cstring>
-
 /* Move to the first line of the file. */
 void to_first_line(void) {
   openfile->current     = openfile->filetop;
@@ -169,7 +164,7 @@ void do_center(void) {
 
 /* Move to the first beginning of a paragraph before the current line. */
 void do_para_begin(linestruct **line) {
-  if ((*line)->prev != NULL) {
+  if ((*line)->prev) {
     *line = (*line)->prev;
   }
   while (!begpar(*line, 0)) {
@@ -179,10 +174,10 @@ void do_para_begin(linestruct **line) {
 
 /* Move down to the last line of the first found paragraph. */
 void do_para_end(linestruct **line) {
-  while ((*line)->next != NULL && !inpar(*line)) {
+  while ((*line)->next && !inpar(*line)) {
     *line = (*line)->next;
   }
-  while ((*line)->next != NULL && inpar((*line)->next) && !begpar((*line)->next, 0)) {
+  while ((*line)->next && inpar((*line)->next) && !begpar((*line)->next, 0)) {
     *line = (*line)->next;
   }
 }
@@ -199,9 +194,8 @@ void to_para_begin(void) {
 void to_para_end(void) {
   linestruct *was_current = openfile->current;
   do_para_end(&openfile->current);
-  /* Step beyond the last line of the paragraph, if possible.
-   * Otherwise, move to the end of the line. */
-  if (openfile->current->next != NULL) {
+  /* Step beyond the last line of the paragraph, if possible.  Otherwise, move to the end of the line. */
+  if (openfile->current->next) {
     openfile->current   = openfile->current->next;
     openfile->current_x = 0;
   }
@@ -212,109 +206,91 @@ void to_para_end(void) {
   recook |= perturbed;
 }
 
-/* Move to the preceding block of text.  TODO: (to_prev_block) - Make this stop at indent as well. */
+/* Move to the preceding block of text. */
 void to_prev_block(void) {
-  int            lines = 0, cur_indent, was_indent = -1;
-  linestruct    *was_current = openfile->current;
-  bool           is_text = FALSE, seen_text = FALSE;
-  unsigned short tabs, spaces, t_char, t_tabs;
+  linestruct *was_current = openfile->current;
+  int  cur_indent, was_indent = -1;
+  bool is_text = FALSE, seen_text = FALSE;
   /* Skip backward until first blank line after some nonblank line(s). */
-  while (openfile->current->prev != NULL && (!seen_text || is_text)) {
-    if (is_empty_line(openfile->current)) {
-      /* If on line after starting line. */
-      if (lines == 1) {
-        /* Find first line that is not empty. */
-        for (; openfile->current->prev != NULL && is_empty_line(openfile->current);
-             openfile->current = openfile->current->prev);
-        get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
-        openfile->current_x = t_char;
-        edit_redraw(was_current, FLOWING);
-        return;
-      }
-      else if (openfile->current->prev != NULL) {
-        openfile->current = openfile->current->prev;
-        get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
-        openfile->current_x = t_char;
-        edit_redraw(was_current, FLOWING);
-        return;
-      }
+  while (openfile->current->prev && (!seen_text || is_text)) {
+    /* Current line is empty. */
+    if (!openfile->current->data[0]) {
+      /* Find first line that is not empty. */
+      for (; openfile->current->prev && !openfile->current->data[0]; openfile->current = openfile->current->prev)
+        ;
+      openfile->current_x = indent_length(openfile->current->data);
+      edit_redraw(was_current, FLOWING);
+      return;
     }
     else if (is_line_comment(openfile->current)) {
-      /* If not on the (first line / top) of a '//' comment. */
-      if (lines > 0) {
+      /* If not on the first line of a '//' comment block. */
+      if (openfile->current != was_current) {
         /* Iterate to the top of the comment. */
-        for (; openfile->current->prev != NULL && is_line_comment(openfile->current);
-             openfile->current = openfile->current->prev);
-        if (openfile->current->next != NULL) {
-          /* Back down one line. */
-          openfile->current = openfile->current->next;
-          get_line_indent(openfile->current, &spaces, &tabs, &t_char, &t_tabs);
-          openfile->current_x = t_char;
-          edit_redraw(was_current, FLOWING);
-        }
+        for (; openfile->current->prev && is_line_comment(openfile->current); openfile->current = openfile->current->prev)
+          ;
+        /* Back down one line. */
+        openfile->current   = openfile->current->next;
+        openfile->current_x = indent_length(openfile->current->data);
+        edit_redraw(was_current, FLOWING);
         return;
       }
     }
-    get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
-    cur_indent = t_tabs;
+    cur_indent = line_indent(openfile->current);
     if (was_indent == -1) {
       was_indent = cur_indent;
     }
+    /* Line indentation has changed. */
     else if (was_indent != cur_indent) {
-      if (lines > 1) {
+      /* Place cursor at top of current indent block, unless called from it. */
+      if (openfile->current != was_current->prev) {
         openfile->current = openfile->current->next;
-        get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
       }
-      openfile->current_x = t_char;
+      openfile->current_x = indent_length(openfile->current->data);
       edit_redraw(was_current, FLOWING);
       return;
     }
     openfile->current = openfile->current->prev;
-    is_text           = !white_string(openfile->current->data);
-    seen_text         = seen_text || is_text;
-    lines++;
+    is_text   = !white_string(openfile->current->data);
+    seen_text = seen_text || is_text;
   }
   /* Step forward one line again if we passed text but this line is blank. */
-  if (seen_text && openfile->current->next != NULL && white_string(openfile->current->data)) {
+  if (seen_text && openfile->current->next && white_string(openfile->current->data)) {
     openfile->current = openfile->current->next;
   }
-  get_line_indent(openfile->current, &tabs, &spaces, &t_char, &t_tabs);
-  openfile->current_x = t_char;
+  openfile->current_x = indent_length(openfile->current->data);
   edit_redraw(was_current, FLOWING);
 }
 
 /* Move to the next block of text. */
 void to_next_block(void) {
-  int         lines = 0, cur_indent, was_indent = -1;
   linestruct *was_current = openfile->current;
-  bool        is_white    = white_string(openfile->current->data);
-  bool        seen_white  = is_white;
+  int cur_indent, was_indent = -1;
+  bool is_white   = white_string(openfile->current->data);
+  bool seen_white = is_white;
   /* Skip forward until first nonblank line after some blank line(s). */
-  while (openfile->current->next != NULL && (!seen_white || is_white)) {
-    if (is_empty_line(openfile->current)) {
-      if (lines == 0)
-        ;
-      else if (lines == 1) {
-        for (; openfile->current->next != NULL && is_empty_line(openfile->current);
-             openfile->current = openfile->current->next);
-        openfile->current_x = indent_char_len(openfile->current);
-        edit_redraw(was_current, FLOWING);
-        recook |= perturbed;
-        return;
+  while (openfile->current->next && (!seen_white || is_white)) {
+    /* Current line is empty and is not starting line. */
+    if (!openfile->current->data[0] && openfile->current != was_current) {
+      /* When line after calling line is comment. */
+      if (openfile->current == was_current->next) {
+        /* Find first not empty line. */
+        for (; openfile->current->next && !openfile->current->data[0]; openfile->current = openfile->current->next);
       }
+      /* Stop at the end of text block when we see the first empty line. */
       else {
-        openfile->current   = openfile->current->prev;
-        openfile->current_x = indent_char_len(openfile->current);
-        edit_redraw(was_current, FLOWING);
-        recook |= perturbed;
-        return;
+        openfile->current = openfile->current->prev;
       }
+      openfile->current_x = indent_length(openfile->current->data);
+      edit_redraw(was_current, FLOWING);
+      recook |= perturbed;
+      return;
     }
     else if (is_line_comment(openfile->current)) {
-      if (lines > 0) {
-        for (; openfile->next && is_line_comment(openfile->current); openfile->current = openfile->current->next);
+      if (openfile->current != was_current) {
+        for (; openfile->next && is_line_comment(openfile->current); openfile->current = openfile->current->next)
+          ;
         openfile->current   = openfile->current->prev;
-        openfile->current_x = indent_char_len(openfile->current);
+        openfile->current_x = indent_length(openfile->current->data);
         edit_redraw(was_current, FLOWING);
         recook |= perturbed;
         return;
@@ -324,21 +300,22 @@ void to_next_block(void) {
     if (was_indent == -1) {
       was_indent = cur_indent;
     }
+    /* Line indentation has changed. */
     else if (was_indent != cur_indent) {
-      if (lines > 1) {
+      /* Place cursor at bottom of indent block, unless called from it. */
+      if (openfile->current != was_current->next) {
         openfile->current = openfile->current->prev;
       }
-      openfile->current_x = indent_char_len(openfile->current);
+      openfile->current_x = indent_length(openfile->current->data);
       edit_redraw(was_current, FLOWING);
       recook |= perturbed;
       return;
     }
     openfile->current = openfile->current->next;
-    is_white          = white_string(openfile->current->data);
-    seen_white        = seen_white || is_white;
-    lines++;
+    is_white   = white_string(openfile->current->data);
+    seen_white = seen_white || is_white;
   }
-  openfile->current_x = indent_char_len(openfile->current);
+  openfile->current_x = indent_length(openfile->current->data);
   edit_redraw(was_current, FLOWING);
   recook |= perturbed;
 }
@@ -346,8 +323,8 @@ void to_next_block(void) {
 /* Move to the previous word. */
 void do_prev_word(void) {
   bool punctuation_as_letters = ISSET(WORD_BOUNDS);
-  bool seen_a_word            = FALSE;
-  bool step_forward           = FALSE;
+  bool seen_a_word  = FALSE;
+  bool step_forward = FALSE;
   /* Move backward until we pass over the start of a word. */
   while (TRUE) {
     /* If at the head of a line, move to the end of the preceding one. */
@@ -387,15 +364,15 @@ void do_prev_word(void) {
  * instead of at their beginnings.  If 'after_ends' is 'TRUE', stop at the ends
  * of words instead of at their beginnings. Return 'TRUE' if we started on a word. */
 bool do_next_word(bool after_ends) {
-  bool     punct_as_letters = ISSET(WORD_BOUNDS);
-  bool     started_on_word  = is_word_char(openfile->current->data + openfile->current_x, punct_as_letters);
-  bool     seen_space       = !started_on_word;
-  bool     seen_word        = started_on_word;
-  unsigned i                = 0;
+  bool punct_as_letters = ISSET(WORD_BOUNDS);
+  bool started_on_word  = is_word_char(openfile->current->data + openfile->current_x, punct_as_letters);
+  bool seen_space       = !started_on_word;
+  bool seen_word        = started_on_word;
+  Uint i = 0;
   /* Move forward until we reach the start of a word. */
   while (TRUE) {
     /* If at the end of a line, move to the beginning of the next one. */
-    if (openfile->current->data[openfile->current_x] == '\0') {
+    if (!openfile->current->data[openfile->current_x]) {
       /* If not called starting at eof, stop here. */
       if (i != 0) {
         break;
@@ -407,10 +384,9 @@ bool do_next_word(bool after_ends) {
       openfile->current   = openfile->current->next;
       openfile->current_x = 0;
       if (after_ends) {
-        /* If we stop after the end of words then then the
-         * first iter will be at 0 were we reach '\0'. */
+        /* If we stop after the end of words then then the first iter will be at 0 were we reach '\0'. */
         if (i == 0) {
-          openfile->current_x = indent_char_len(openfile->current);
+          openfile->current_x = indent_length(openfile->current->data);
           break;
         }
       }
@@ -486,7 +462,7 @@ void do_home(void) {
   /* Save current column position. */
   was_column = xplustabs();
   /* Save current indent of line. */
-  cur_indent = indent_char_len(openfile->current);
+  cur_indent = indent_length(openfile->current->data);
   if (ISSET(SOFTWRAP)) {
     leftedge = leftedge_for(was_column, openfile->current);
     left_x   = proper_x(openfile->current, &leftedge, FALSE, leftedge, NULL);
@@ -659,15 +635,24 @@ void do_scroll_down(void) {
 /* Move left one character. */
 void do_left(void) {
   linestruct *was_current = openfile->current;
-  if (openfile->current_x > 0) {
-    openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-    while (openfile->current_x > 0 && is_zerowidth(openfile->current->data + openfile->current_x)) {
-      openfile->current_x = step_left(openfile->current->data, openfile->current_x);
+  /* If a section is highlighted and shift is not held, then place the cursor at the left side of the marked area. */
+  if (openfile->mark && !shift_held) {
+    if (mark_is_before_cursor()) {
+      openfile->current   = openfile->mark;
+      openfile->current_x = openfile->mark_x;
     }
   }
-  else if (openfile->current != openfile->filetop) {
-    openfile->current   = openfile->current->prev;
-    openfile->current_x = strlen(openfile->current->data);
+  else {
+    if (openfile->current_x > 0) {
+      openfile->current_x = step_left(openfile->current->data, openfile->current_x);
+      while (openfile->current_x > 0 && is_zerowidth(openfile->current->data + openfile->current_x)) {
+        openfile->current_x = step_left(openfile->current->data, openfile->current_x);
+      }
+    }
+    else if (openfile->current != openfile->filetop) {
+      openfile->current   = openfile->current->prev;
+      openfile->current_x = strlen(openfile->current->data);
+    }
   }
   edit_redraw(was_current, FLOWING);
 }
@@ -675,16 +660,24 @@ void do_left(void) {
 /* Move right one character. */
 void do_right(void) {
   linestruct *was_current = openfile->current;
-  if (openfile->current->data[openfile->current_x] != '\0') {
-    openfile->current_x = step_right(openfile->current->data, openfile->current_x);
-    while (openfile->current->data[openfile->current_x] != '\0' &&
-           is_zerowidth(openfile->current->data + openfile->current_x)) {
-      openfile->current_x = step_right(openfile->current->data, openfile->current_x);
+  /* If a section is highlighted and shift is not held, then place the cursor at the right side of the marked area. */
+  if (openfile->mark && !shift_held) {
+    if (!mark_is_before_cursor()) {
+      openfile->current   = openfile->mark;
+      openfile->current_x = openfile->mark_x;
     }
   }
-  else if (openfile->current != openfile->filebot) {
-    openfile->current   = openfile->current->next;
-    openfile->current_x = 0;
+  else {
+    if (openfile->current->data[openfile->current_x]) {
+      openfile->current_x = step_right(openfile->current->data, openfile->current_x);
+      while (openfile->current->data[openfile->current_x] && is_zerowidth(openfile->current->data + openfile->current_x)) {
+        openfile->current_x = step_right(openfile->current->data, openfile->current_x);
+      }
+    }
+    else if (openfile->current != openfile->filebot) {
+      openfile->current   = openfile->current->next;
+      openfile->current_x = 0;
+    }
   }
   edit_redraw(was_current, FLOWING);
 }

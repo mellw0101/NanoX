@@ -1,8 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <cerrno>
-#include <cstring>
-
 #ifndef SEARCH_HISTORY
 #  define SEARCH_HISTORY "search_history"
 #endif

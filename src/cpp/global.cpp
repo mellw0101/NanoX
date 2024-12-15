@@ -14,6 +14,8 @@ bool shifted_metas = FALSE;
 bool meta_key;
 /* Whether Shift was being held together with a movement key. */
 bool shift_held;
+/* Whether to keep mark when normaly we wouldent. */
+bool keep_mark = FALSE;
 /* Whether to ignore modifier keys while running a macro or string bind. */
 bool mute_modifiers = FALSE;
 /* Whether text is being pasted into nano from outside. */
@@ -201,23 +203,12 @@ Ulong light_from_col = 0;
 /* Where the spotlighted text ends. */
 Ulong light_to_col = 0;
 /* To make the functions and shortcuts lists clearer. */
-constexpr bool BLANKAFTER = TRUE;
-constexpr bool TOGETHER   = FALSE;
-/* If closing bracket char was printed then this is TRUE until another
- * key input has been prossesed. */
+#define BLANKAFTER TRUE
+#define TOGETHER   FALSE
+/* If closing bracket char was printed then this is TRUE until another key input has been prossesed. */
 bool        last_key_was_bracket = FALSE;
 colortype  *last_c_color         = NULL;
 syntaxtype *c_syntaxtype         = NULL;
-/* Vector to hold struct`s that are found, we use this to higlight created objects. */
-vector<string> syntax_structs;
-/* Vector to hold class`es that are found, we use this to higlight created objects. */
-vector<string> syntax_classes;
-/* This vector is used to store all vars, for live syntax. */
-vector<string> syntax_vars;
-/* This is to store functions to avoid douplicates. */
-vector<string> syntax_funcs;
-/* Vector for all includes that have been handled. */
-vector<string> handled_includes;
 
 bool gui_enabled = FALSE;
 
@@ -1096,36 +1087,4 @@ void shortcut_init(void) {
 /* Return the textual description that corresponds to the given flag. */
 const char *epithet_of_flag(const Uint flag) {
   return &epithetOfFlagMap[flag].value[0];
-}
-
-/* Add 'path' to 'handles_include' vector. */
-void add_to_handled_includes_vec(const char *path) {
-  handled_includes.push_back(path);
-}
-
-/* Return`s 'TRUE' if 'path' is found in 'handles_includes' vector. */
-bool is_in_handled_includes_vec(string_view path) {
-  for (const auto &p : handled_includes) {
-    if (p == path) {
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-bool syntax_var(string_view str) {
-  for (const auto &var : syntax_vars) {
-    if (str == var) {
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-void new_syntax_var(const char *str) {
-  syntax_vars.push_back(str);
-}
-
-void new_syntax_func(const char *str) {
-  syntax_funcs.push_back(str);
 }

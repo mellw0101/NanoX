@@ -168,19 +168,6 @@ const char *rgx_word(const char *word) {
   return buf;
 }
 
-/* Concat path from 2 string`s.  if end of 's1' is not '/', it is added. */
-const char *concat_path(const char *s1, const char *s2) {
-  static char buf[PATH_MAX];
-  Ulong       len_s1 = strlen(s1);
-  if (s1[len_s1 - 1] == '/') {
-    snprintf(buf, sizeof(buf), "%s%s", s1, s2);
-  }
-  else {
-    snprintf(buf, sizeof(buf), "%s%s%s", s1, "/", s2);
-  }
-  return buf;
-}
-
 /* Assigns the number of steps of char 'ch' to the prev/next word to 'nchars'.
  * Return`s 'true' when word is more then 2 steps of 'ch' away. */
 bool word_more_than_one_char_away(bool forward, Ulong *nchars, const char ch) {

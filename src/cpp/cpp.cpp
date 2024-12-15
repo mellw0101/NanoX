@@ -1,14 +1,13 @@
 #include "../include/prototypes.h"
 
-/* Returns 'true' if 'c' is a cpp syntax char. */
+/* Returns 'TRUE' if 'c' is a cpp syntax char. */
 bool isCppSyntaxChar(const char c) {
   return (c == '<' || c == '>' || c == '&' || c == '*' || c == '=' || c == '+' || c == '-' || c == '/' || c == '%' ||
           c == '!' || c == '^' || c == '|' || c == '~' || c == '{' || c == '}' || c == '[' || c == ']' || c == '(' ||
           c == ')' || c == ';' || c == ':' || c == ',' || c == '.' || c == '?' || c == '#');
 }
 
-/* Get indent in number of 'tabs', 'spaces', 'total chars', 'total tabs (based
- * on width of tab)'. */
+/* Get indent in number of 'tabs', 'spaces', 'total chars', 'total tabs (based on width of tab)'. */
 void get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs) {
   Ulong i;
   *tabs = 0, *spaces = 0, *t_char = 0, *t_tabs = 0;
@@ -26,17 +25,17 @@ void get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_c
       break;
     }
   }
-  *t_char = *tabs + *spaces;
+  *t_char = (*tabs + *spaces);
   *t_tabs = *tabs;
   if (*spaces > 0) {
-    *t_tabs += *spaces / WIDTH_OF_TAB;
+    *t_tabs += (*spaces / tabsize);
   }
 }
 
 /* Return the len of indent in terms of index off first non 'tab/space' char. */
 Ushort indent_char_len(linestruct *line) {
   Ushort i = 0;
-  for (; line->data[i]; i++) {
+  for (; line->data[i]; ++i) {
     if (line->data[i] != ' ' && line->data[i] != '\t') {
       break;
     }
@@ -44,52 +43,21 @@ Ushort indent_char_len(linestruct *line) {
   return i;
 }
 
-/* If an area is marked then plase the 'str' at mark and current_x, thereby enclosing the marked area.
- * TODO: (enclose_marked_region) - Make the undo one action insted of two seprate once. */
-void enclose_marked_region(const char *s1, const char *s2) {
-  /* Sanity check, Returns is there is no mark */
-  if (openfile->mark == nullptr) {
-    return;
-  }
-  linestruct *was_current = openfile->current, *top, *bot;
-  Ulong       top_x, bot_x;
-  get_region(&top, &top_x, &bot, &bot_x);
-  openfile->current = top;
-  add_undo(REPLACE, nullptr);
-  inject_in_line(&top, s1, top_x);
-  /* If top and bot is equal, move mark to the right by 's1' len. */
-  (top == bot) ? (bot_x += strlen(s1)) : 0;
-  openfile->current = bot;
-  add_undo(REPLACE, nullptr);
-  inject_in_line(&bot, s2, bot_x);
-  openfile->mark_x++;
-  /* If top and bot is the same, move cursor one step right. */
-  (top == bot) ? do_right() : void();
-  openfile->current = was_current;
-  set_modified();
-}
-
-/* This is a shortcut to make marked area a block comment. */
-void do_block_comment(void) {
-  enclose_marked_region("/* ", " */");
-  refresh_needed = true;
-}
-
-/* Check if enter is requested when betweeen '{' and '}'.
- * if so properly open the brackets, place cursor in the middle and indent once.
- * Return`s 'false' if not between them, otherwise return`s 'true' */
+// Check if enter is requested when betweeen '{' and '}'. if so properly
+// open the brackets, place cursor in the middle and indent once.
+// Return`s 'FALSE' if not between them, otherwise return`s 'TRUE'.
 bool enter_with_bracket(void) {
   char        c, c_prev;
   linestruct *was_current = openfile->current, *middle, *end;
-  bool        allblanks   = false;
+  bool        allblanks   = FALSE;
   Ulong       extra;
   if (!openfile->current->data[openfile->current_x - 1]) {
-    return false;
+    return FALSE;
   }
   c_prev = openfile->current->data[openfile->current_x - 1];
   c      = openfile->current->data[openfile->current_x];
   if (c_prev != '{' || c != '}') {
-    return false;
+    return FALSE;
   }
   extra = indent_length(was_current->data);
   if (extra == openfile->current_x) {
@@ -109,7 +77,7 @@ bool enter_with_bracket(void) {
     openfile->current_x = 0;
   }
   openfile->current->data[openfile->current_x] = '\0';
-  add_undo(ENTER, nullptr);
+  add_undo(ENTER, NULL);
   splice_node(openfile->current, middle);
   renumber_from(middle);
   openfile->current     = middle;
@@ -127,7 +95,7 @@ bool enter_with_bracket(void) {
   strcpy(&end->data[extra], openfile->current->data + openfile->current_x);
   strncpy(end->data, was_current->data, extra);
   openfile->current->data[openfile->current_x] = '\0';
-  add_undo(ENTER, nullptr);
+  add_undo(ENTER, NULL);
   splice_node(openfile->current, end);
   renumber_from(end);
   openfile->current     = end;
@@ -141,18 +109,18 @@ bool enter_with_bracket(void) {
   /* Place cursor at correct pos. */
   do_up();
   do_tab();
-  refresh_needed = true;
-  focusing       = false;
-  return true;
+  refresh_needed = TRUE;
+  focusing       = FALSE;
+  return TRUE;
 }
 
 void all_brackets_pos(void) {
   linestruct *line;
   long        start_pos = -1, end_pos = -1;
   bool        is_start;
-  for (line = openfile->filetop; line != nullptr; line = line->next) {
+  for (line = openfile->filetop; line; line = line->next) {
     if (is_line_start_end_bracket(line, &is_start)) {
-      if (is_start == true) {
+      if (is_start == TRUE) {
         start_pos = line->lineno;
       }
       else {
@@ -189,41 +157,22 @@ void do_close_bracket(void) {
 }
 
 void do_parse(void) {
-  LSP->index_file(openfile->filename);
-  unix_socket_debug("got here\n");
-  unix_socket_debug("include size: %u\n", LSP->index.include.size());
-  unix_socket_debug("define size: %u\n", LSP->index.defines.size());
-  unix_socket_debug("class size: %u\n", LSP->index.classes.size());
-  unix_socket_debug("structs size: %u\n", LSP->index.structs.size());
-  unix_socket_debug("typedef_structs size: %u\n", LSP->index.tdstructs.size());
-  unix_socket_debug("enums size: %u\n", LSP->index.enums.size());
-  unix_socket_debug("main file function size: %u\n", LSP->index.functiondefs.size());
-  unix_socket_debug("main file var size: %u\n", LSP->index.vars.size());
-  edit_refresh();
-  /* if (!openfile->filename[0]) {
-     return;
-   }
-   char *abs_path = get_full_path(openfile->filename);
-   if (abs_path) {
-     IndexFile idfile;
-     idfile.file = abs_path;
-     LSP->check(&idfile);
-     unix_socket_debug("got here.\n");
-     unix_socket_debug("define size: %u\n", LSP->index.defines.size());
-     unix_socket_debug("class size: %u\n", LSP->index.classes.size());
-     unix_socket_debug("var size: %u\n", LSP->index.variabels.size());
-     unix_socket_debug("rawstructs size: %u\n", LSP->index.rawstruct.size());
-     unix_socket_debug("rawtypedefs size: %u\n", LSP->index.rawtypedef.size());
-     unix_socket_debug("rawenums size: %u\n", LSP->index.rawenum.size());
-   }
-   if (test_map.find("int") != test_map.end()) {
-     unix_socket_debug("int still in map.\n");
-   } */
-  /* linestruct *end;
-  Ulong index;
-  if (find_end_bracket(openfile->current, openfile->current_x, &end, &index)) {
-    unix_socket_debug("found: %lu:%lu\n", end->lineno, index);
-  } */
+  if (openfile->type.is_set<C_CPP>()) {
+    LSP->index_file(openfile->filename);
+    unix_socket_debug("got here\n");
+    unix_socket_debug("include size: %u\n", LSP->index.include.size());
+    unix_socket_debug("define size: %u\n", LSP->index.defines.size());
+    unix_socket_debug("class size: %u\n", LSP->index.classes.size());
+    unix_socket_debug("structs size: %u\n", LSP->index.structs.size());
+    unix_socket_debug("typedef_structs size: %u\n", LSP->index.tdstructs.size());
+    unix_socket_debug("enums size: %u\n", LSP->index.enums.size());
+    unix_socket_debug("main file function size: %u\n", LSP->index.functiondefs.size());
+    unix_socket_debug("main file var size: %u\n", LSP->index.vars.size());
+    edit_refresh();
+  }
+  else if (openfile->type.is_set<BASH>()) {
+    get_env_path_binaries();
+  }
 }
 
 void do_test(void) {
@@ -235,7 +184,7 @@ void do_test(void) {
 
 void do_test_window(void) {
   nlog("test win\n");
-  if (suggestwin != nullptr) {
+  if (suggestwin != NULL) {
     delwin(suggestwin);
   }
   suggestwin = newwin(20, 20, 0, 0);
@@ -270,7 +219,7 @@ function_info_t *parse_func(const char *str) {
   for (i = 0; i < len && copy[i] != '('; i++);
   if (copy[i] != '(') {
     free(copy);
-    return nullptr;
+    return NULL;
   }
   pos = i;
   for (i = 0; i < pos; i++) {
@@ -283,16 +232,16 @@ function_info_t *parse_func(const char *str) {
   }
   if (copy[pos + i] != ')') {
     free(copy);
-    return nullptr;
+    return NULL;
   }
   params[i]                  = '\0';
   function_info_t *info      = (function_info_t *)nmalloc(sizeof(*info));
   info->full_function        = copy_of(str);
-  info->name                 = nullptr;
-  info->return_type          = nullptr;
-  info->params               = nullptr;
+  info->name                 = NULL;
+  info->return_type          = NULL;
+  info->params               = NULL;
   info->number_of_params     = 0;
-  info->attributes           = nullptr;
+  info->attributes           = NULL;
   info->number_of_attributes = 0;
   /* Now the buffer contains all text before the '(' char. */
   const int slen  = strlen(prefix);
@@ -331,24 +280,24 @@ function_info_t *parse_func(const char *str) {
       pos = i;
     }
   }
-  param_array[size]      = nullptr;
+  param_array[size]      = NULL;
   info->number_of_params = size;
   for (i = 0; i < size; i++) {
     variable_t *var   = (variable_t *)nmalloc(sizeof(*var));
-    var->name         = nullptr;
-    var->value        = nullptr;
-    var->next         = nullptr;
+    var->name         = NULL;
+    var->value        = NULL;
+    var->next         = NULL;
     const char *start = param_array[i];
     const char *end   = param_array[i];
     end               = strrchr(param_array[i], '*');
-    if (end == nullptr) {
+    if (end == NULL) {
       end = strrchr(param_array[i], ' ');
-      if (end == nullptr) {
+      if (end == NULL) {
         end = start;
         for (; *end; end++);
         var->type = measured_memmove_copy(param_array[i], (end - start));
-        if (info->params == nullptr) {
-          var->prev    = nullptr;
+        if (info->params == NULL) {
+          var->prev    = NULL;
           info->params = var;
         }
         else {
@@ -364,8 +313,8 @@ function_info_t *parse_func(const char *str) {
     for (; *end; end++);
     var->name = measured_copy(param_array[i] + (start - param_array[i]), (end - start));
     var->type = measured_copy(param_array[i], (start - param_array[i]));
-    if (info->params == nullptr) {
-      var->prev    = nullptr;
+    if (info->params == NULL) {
+      var->prev    = NULL;
       info->params = var;
     }
     else {
@@ -408,11 +357,11 @@ function_info_t parse_local_func(const char *str) {
   params[i] = '\0';
   function_info_t info;
   info.full_function        = copy_of(str);
-  info.name                 = nullptr;
-  info.return_type          = nullptr;
-  info.params               = nullptr;
+  info.name                 = NULL;
+  info.return_type          = NULL;
+  info.params               = NULL;
   info.number_of_params     = 0;
-  info.attributes           = nullptr;
+  info.attributes           = NULL;
   info.number_of_attributes = 0;
   /* Now the buffer contains all text before the '(' char. */
   const int slen  = strlen(prefix);
@@ -451,27 +400,27 @@ function_info_t parse_local_func(const char *str) {
       pos = i;
     }
   }
-  param_array[size]     = nullptr;
+  param_array[size]     = NULL;
   info.number_of_params = size;
   for (i = 0; i < size; i++) {
     variable_t *var   = (variable_t *)nmalloc(sizeof(*var));
-    var->name         = nullptr;
-    var->value        = nullptr;
-    var->next         = nullptr;
+    var->name         = NULL;
+    var->value        = NULL;
+    var->next         = NULL;
     const char *start = param_array[i];
     const char *end   = param_array[i];
     end               = strrchr(param_array[i], '*');
-    if (end == nullptr) {
+    if (end == NULL) {
       end = strrchr(param_array[i], '&');
     }
-    if (end == nullptr) {
+    if (end == NULL) {
       end = strrchr(param_array[i], ' ');
-      if (end == nullptr) {
+      if (end == NULL) {
         end = start;
         for (; *end; end++);
         var->type = measured_memmove_copy(param_array[i], (end - start));
-        if (info.params == nullptr) {
-          var->prev   = nullptr;
+        if (info.params == NULL) {
+          var->prev   = NULL;
           info.params = var;
         }
         else {
@@ -487,8 +436,8 @@ function_info_t parse_local_func(const char *str) {
     for (; *end; end++);
     var->name = measured_copy(param_array[i] + (start - param_array[i]), (end - start));
     var->type = measured_copy(param_array[i], (start - param_array[i]));
-    if (info.params == nullptr) {
-      var->prev   = nullptr;
+    if (info.params == NULL) {
+      var->prev   = NULL;
       info.params = var;
     }
     else {
@@ -505,36 +454,36 @@ function_info_t parse_local_func(const char *str) {
   return info;
 }
 
-/* Return`s 'true' if 'sig' is not a valid variable decl. */
+/* Return`s 'TRUE' if 'sig' is not a valid variable decl. */
 bool invalid_variable_sig(const char *sig) {
   if (strstr(sig, "|=") || strstr(sig, "+=") || strstr(sig, "-=") || *sig == '{' || strchr(sig, '#') ||
       strncmp(sig, "return", 6) == 0) {
-    return true;
+    return TRUE;
   }
   const char *p_eql    = strchr(sig, '=');
   const char *p_parent = strchr(sig, '(');
   if (p_parent && p_eql) {
     if ((p_parent - sig) < (p_eql - sig)) {
-      return true;
+      return TRUE;
     }
   }
   if (p_parent && !p_eql) {
-    return true;
+    return TRUE;
   }
-  return false;
+  return FALSE;
 }
 
 void parse_variable(const char *sig, char **type, char **name, char **value) {
-  /* Set all refreces to 'nullptr' so we can return when we want. */
-  *type  = nullptr;
-  *name  = nullptr;
-  *value = nullptr;
+  /* Set all refreces to 'NULL' so we can return when we want. */
+  *type  = NULL;
+  *name  = NULL;
+  *value = NULL;
   if (invalid_variable_sig(sig)) {
     return;
   }
   const char *start = sig;
   const char *end   = start;
-  const char *p     = nullptr;
+  const char *p     = NULL;
   adv_ptr_to_ch(end, ';');
   if (!*end) {
     return;
@@ -545,7 +494,7 @@ void parse_variable(const char *sig, char **type, char **name, char **value) {
     p = start;
     p += 1;
     for (; *p && (*p == ' ' || *p == '\t'); p++);
-    (value != nullptr) ? *value = measured_copy(p, (end - p)) : nullptr;
+    (value != NULL) ? *value = measured_copy(p, (end - p)) : NULL;
   }
   else {
     start = end;
@@ -558,18 +507,18 @@ void parse_variable(const char *sig, char **type, char **name, char **value) {
   if (start > sig) {
     p += 1;
   }
-  (name != nullptr) ? *name = measured_copy(p, (end - p) + 1) : nullptr;
+  (name != NULL) ? *name = measured_copy(p, (end - p) + 1) : NULL;
   if (start == sig) {
     return;
   }
   end = p - 1;
   for (; end > sig && (*end == ' ' || *end == '\t'); end--);
   end += 1;
-  (type != nullptr) ? *type = measured_copy(sig, (end - sig)) : nullptr;
+  (type != NULL) ? *type = measured_copy(sig, (end - sig)) : NULL;
 }
 
 void flag_all_brackets(void) {
-  for (linestruct *line = openfile->filetop; line != nullptr; line = line->next) {
+  for (linestruct *line = openfile->filetop; line != NULL; line = line->next) {
     const char *start = strchr(line->data, '{');
     const char *end   = strrchr(line->data, '}');
     /* Start bracket line was found. */
@@ -598,7 +547,7 @@ void flag_all_brackets(void) {
       }
     }
     /* Was not found. */
-    else if ((start == nullptr && end == nullptr) || (start != nullptr && end != nullptr)) {
+    else if ((start == NULL && end == NULL) || (start != NULL && end != NULL)) {
       if (line->prev && ((line->prev->flags.is_set(IN_BRACKET)) || (line->prev->flags.is_set(BRACKET_START)))) {
         line->flags.set(IN_BRACKET);
       }
@@ -611,16 +560,16 @@ void flag_all_brackets(void) {
 
 /* Set comment flags for all lines in current file. */
 void flag_all_block_comments(linestruct *from) {
-  for (linestruct *line = from; line != nullptr; line = line->next) {
+  for (linestruct *line = from; line != NULL; line = line->next) {
     const char *found_start = strstr(line->data, "/*");
     const char *found_end   = strstr(line->data, "*/");
     const char *found_slash = strstr(line->data, "//");
     /* First line for a block comment. */
-    if (found_start != nullptr && found_end == nullptr) {
+    if (found_start != NULL && found_end == NULL) {
       /* If a slash comment is found and it is before the block start,
        * we adjust the start and end pos.  We also make sure to unset
        * 'BLOCK_COMMENT_START' for the line. */
-      if (found_slash != nullptr && found_slash < found_start) {
+      if (found_slash != NULL && found_slash < found_start) {
         line->flags.unset(BLOCK_COMMENT_START);
       }
       else {
@@ -631,7 +580,7 @@ void flag_all_block_comments(linestruct *from) {
       line->flags.unset(BLOCK_COMMENT_END);
     }
     /* Either inside of a block comment or not a block comment at all. */
-    else if (found_start == nullptr && found_end == nullptr) {
+    else if (found_start == NULL && found_end == NULL) {
       if (line->prev &&
           ((line->prev->flags.is_set(IN_BLOCK_COMMENT)) || (line->prev->flags.is_set(BLOCK_COMMENT_START))) &&
           !(line->prev->flags.is_set(SINGLE_LINE_BLOCK_COMMENT))) {
@@ -650,7 +599,7 @@ void flag_all_block_comments(linestruct *from) {
       }
     }
     /* End of a block comment. */
-    else if (found_start == nullptr && found_end != nullptr) {
+    else if (found_start == NULL && found_end != NULL) {
       /* If last line is in a comment block or is the start of the block.
        */
       if (line->prev &&
@@ -672,7 +621,7 @@ remove_local_vars_from(linestruct *line)
     {
         return;
     }
-    bool done = false;
+    bool done = FALSE;
     while (!done)
     {
         auto it = test_map.begin();
@@ -691,7 +640,7 @@ remove_local_vars_from(linestruct *line)
         }
         if (it == test_map.end())
         {
-            done = true;
+            done = TRUE;
         }
     }
 } */
@@ -716,7 +665,7 @@ void remove_local_vars_from(linestruct *line) {
 }
 
 void remove_from_color_map(linestruct *line, int color, int type) {
-  bool done = false;
+  bool done = FALSE;
   while (!done) {
     auto it = test_map.begin();
     for (; it != test_map.end(); it++) {
@@ -730,7 +679,7 @@ void remove_from_color_map(linestruct *line, int color, int type) {
       }
     }
     if (it == test_map.end()) {
-      done = true;
+      done = TRUE;
     }
   }
 }

@@ -3,8 +3,7 @@
 #include "def.h"
 
 inline namespace utils {
-  /* fd[0] is the read pipe, fd[1] is the write pipe.
-   * Remember to exit at the end of the function and make sure it terminates. */
+  /* fd[0] is the read pipe, fd[1] is the write pipe.  Remember to exit at the end of the function and make sure it terminates. */
   template <typename Function, typename... Args>
   __inline__ int fork_function(pid_t *pid, Function &&function, Args &&...args) {
     int fd[2];
@@ -27,7 +26,7 @@ inline namespace utils {
     close(fd[1]);
     return fd[0];
   }
-  string parse_full_define(linestruct *from, const char **ptr, int *endline = nullptr);
+  string parse_full_define(linestruct *from, const char **ptr, int *endline = NULL);
 }
 
 /* preprossesor */
@@ -44,6 +43,7 @@ namespace Parse {
   void function(linestruct **line, const char *current_file);
 }
 void do_parse(linestruct **line, const char *current_file);
+void do_bash_parse(linestruct *line, const char *current_file);
 
 class LanguageServer {
   static LanguageServer *_instance;
@@ -57,16 +57,31 @@ class LanguageServer {
  public:
   Index index;
 
-  static LanguageServer *const & instance(void);
+  static LanguageServer *const &instance(void);
 
   auto find_endif(linestruct *) -> int;
   auto is_defined(const string &) -> int;
   auto define_value(const string &) -> string;
-  string parse_full_pp_delc(linestruct *, const char **, int * = nullptr);
+  string parse_full_pp_delc(linestruct *, const char **, int * = NULL);
   void check(IndexFile *idfile);
 
   bool has_been_included(const char *path);
-  int index_file(const char *path);
+  int index_file(const char *path, bool reindex = FALSE);
+};
+#define LSP LanguageServer::instance()
+
+struct bash_calleble {
+
 };
 
-#define LSP LanguageServer::instance()
+#define blsp bash_language_server_protocol
+class blsp {
+ private:
+  static blsp *_instance;
+
+ public:
+  static blsp *const &instance(void);
+
+  unordered_map<string, bash_calleble> calleble;
+};
+#define bash_lsp blsp::instance()

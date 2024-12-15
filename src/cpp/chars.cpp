@@ -403,15 +403,14 @@ char *mbstrcasestr(const char *haystack, const char *const needle) {
       }
       haystack += char_length(haystack);
     }
-    return nullptr;
+    return NULL;
   }
   else {
     return (char *)strcasestr(haystack, needle);
   }
 }
 
-/* This function is equivalent to strstr(), except in that
- * it scans the string in reverse, starting at pointer. */
+/* This function is equivalent to strstr(), except in that it scans the string in reverse, starting at pointer. */
 char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) {
   const Ulong needle_len = strlen(needle), tail_len = strlen(pointer);
   if (tail_len < needle_len) {
@@ -423,11 +422,10 @@ char *revstrstr(const char *const haystack, const char *const needle, const char
     }
     pointer--;
   }
-  return nullptr;
+  return NULL;
 }
 
-/* This function is equivalent to strcasestr(), except in that it scans
- * the string in reverse, starting at pointer. */
+/* This function is equivalent to strcasestr(), except in that it scans the string in reverse, starting at pointer. */
 char *revstrcasestr(const char *const haystack, const char *const needle, const char *pointer) {
   const Ulong needle_len = strlen(needle);
   const Ulong tail_len   = strlen(pointer);
@@ -440,7 +438,7 @@ char *revstrcasestr(const char *const haystack, const char *const needle, const 
     }
     pointer--;
   }
-  return nullptr;
+  return NULL;
 }
 
 /* This function is equivalent to strcasestr() for multibyte strings,
@@ -453,14 +451,14 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
       pointer -= (needle_len - tail_len);
     }
     if (pointer < haystack) {
-      return nullptr;
+      return NULL;
     }
     while (TRUE) {
       if (!mbstrncasecmp(pointer, needle, needle_len)) {
         return (char *)pointer;
       }
       if (pointer == haystack) {
-        return nullptr;
+        return NULL;
       }
       pointer = haystack + step_left(haystack, pointer - haystack);
     }
@@ -470,9 +468,9 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
   }
 }
 
-/* This function is equivalent to strchr() for multibyte strings.  It is used to find the first
- * occurrence of a character in a string.  The character to find is given as a multibyte string.
- * The function is used in justify.c to find the first space in a line. */
+/// This function is equivalent to strchr() for multibyte strings.  It is used to find the
+/// first occurrence of a character in a string.  The character to find is given as a
+/// multibyte string.  The function is used in justify.c to find the first space in a line.
 char *mbstrchr(const char *string, const char *const chr) {
   if (use_utf8) {
     bool    bad_s = FALSE;
@@ -495,7 +493,7 @@ char *mbstrchr(const char *string, const char *const chr) {
       string += symlen;
     }
     if (!*string) {
-      return nullptr;
+      return NULL;
     }
     return (char *)string;
   }
@@ -512,15 +510,15 @@ char *mbstrpbrk(const char *str, const char *accept) {
     }
     str += char_length(str);
   }
-  return nullptr;
+  return NULL;
 }
 
-/* Locate, in the string that starts at head, the first occurrence of any of
- * the characters in accept, starting from pointer and searching backwards. */
+/// Locate, in the string that starts at head, the first occurrence of any of
+/// the characters in accept, starting from pointer and searching backwards.
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer) {
   if (!*pointer) {
     if (pointer == head) {
-      return nullptr;
+      return NULL;
     }
     pointer = head + step_left(head, pointer - head);
   }
@@ -528,9 +526,9 @@ char *mbrevstrpbrk(const char *const head, const char *const accept, const char 
     if (mbstrchr(accept, pointer)) {
       return (char *)pointer;
     }
-    /* If we've reached the head of the string, we found nothing. */
+    // If we've reached the head of the string, we found nothing.
     if (pointer == head) {
-      return nullptr;
+      return NULL;
     }
     pointer = head + step_left(head, pointer - head);
   }
@@ -552,19 +550,18 @@ bool white_string(const char *str) {
   return !*str;
 }
 
-/* This is the original code from 'nano', and I must say, this is fucking horible.
- * Honestly why the fuck even do it like this, it is the most inefficient way to do it.
- *
- * Remove leading whitespace from the given string.
-void
-strip_leading_blanks_from(char *str)
-{
-    while (str && (*str == ' ' || *str == '\t'))
-    {
-        memmove(str, str + 1, strlen(str));
-    }
+/**
+  This is the original code from 'nano', and I must say, this is fucking horible.
+  Honestly why the fuck even do it like this, it is the most inefficient way to do it.
+
+  Remove leading whitespace from the given string.
+
+void strip_leading_blanks_from(char *str) {
+  while (str && (*str == ' ' || *str == '\t')) {
+    memmove(str, str + 1, strlen(str));
+  }
 }
-*/
+ */
 
 /* Remove leading whitespace from a given string */
 void strip_leading_blanks_from(char *str) {
@@ -591,7 +588,7 @@ const char *nstrchr_ccpp(const char *__s, const char __c) noexcept {
       ++end;
       ADV_PTR(end, *end != '"');
       if (!*end) {
-        return nullptr;
+        return NULL;
       }
       ++end;
     }
@@ -600,22 +597,22 @@ const char *nstrchr_ccpp(const char *__s, const char __c) noexcept {
       ++end;
       ADV_PTR(end, *end != '\'');
       if (!*end) {
-        return nullptr;
+        return NULL;
       }
       ++end;  
     }
     /* Check if start of a comment. */
     else if (*end == '/') {
       ++end;
-      /* If 'EOL' or start of a slash comment.  Return 'nullptr' emidietly. */
+      /* If 'EOL' or start of a slash comment.  Return 'NULL' emidietly. */
       if (!*end || *end == '/') {
-        return nullptr;
+        return NULL;
       }
       /* Start of block comment. */
       else if (*end == '*') {
         ++end;
         if (!*end) {
-          return nullptr;
+          return NULL;
         }
         /* Find end of block comment. */
         do {
@@ -623,12 +620,12 @@ const char *nstrchr_ccpp(const char *__s, const char __c) noexcept {
           if (*end == '*') {
             ++end;
             if (!*end) {
-              return nullptr;
+              return NULL;
             }
             else if (*end == '/') {
               ++end;
               if (!*end) {
-                return nullptr;
+                return NULL;
               }
               break;
             }
@@ -638,10 +635,10 @@ const char *nstrchr_ccpp(const char *__s, const char __c) noexcept {
     }
   } while (*end && *end != __c);
   if (!*end) {
-    return nullptr;
+    return NULL;
   }
   else if (*end == __c) {
     return end;
   }
-  return nullptr;
+  return NULL;
 }

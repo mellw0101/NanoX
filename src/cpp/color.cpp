@@ -22,7 +22,7 @@
 #include "../include/prototypes.h"
 
 #ifdef HAVE_MAGIC_H
-// #    include <magic.h>
+/* #    include <magic.h> */
 #endif
 
 /* Whether ncurses accepts -1 to mean "default color". */
@@ -35,7 +35,6 @@ void set_interface_colorpairs(void) {
   defaults_allowed = (use_default_colors() == OK);
   /* Initialize the color pairs for nano's interface elements. */
   for (Ulong index = 0; index < NUMBER_OF_ELEMENTS; ++index) {
-    
     colortype *combo = color_combo[index];
     if (combo) {
       if (!defaults_allowed) {
@@ -46,7 +45,7 @@ void set_interface_colorpairs(void) {
           combo->bg = COLOR_BLACK;
         }
       }
-      init_pair(index + 1, combo->fg, combo->bg);
+      init_pair((index + 1), combo->fg, combo->bg);
       interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
       rescind_colors              = FALSE;
     }
@@ -55,11 +54,11 @@ void set_interface_colorpairs(void) {
         interface_color_pair[index] = A_NORMAL;
       }
       else if (index == GUIDE_STRIPE) {
-        init_pair(index + 1, COLOR_BLUE, COLOR_BLACK);
-        interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
+        init_pair((index + 1), COLOR_BLUE, COLOR_BLACK);
+        interface_color_pair[index] = (COLOR_PAIR(index + 1) | A_BOLD);
       }
       else if (index == SPOTLIGHTED) {
-        init_pair(index + 1, COLOR_BLACK, COLOR_YELLOW + (COLORS > 15 ? 8 : 0));
+        init_pair((index + 1), COLOR_BLACK, (COLOR_YELLOW + (COLORS > 15 ? 8 : 0)));
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
       else if (index == MINI_INFOBAR || index == PROMPT_BAR) {
@@ -67,7 +66,7 @@ void set_interface_colorpairs(void) {
       }
       else if (index == ERROR_MESSAGE) {
         init_pair(index + 1, COLOR_WHITE, COLOR_RED);
-        interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
+        interface_color_pair[index] = (COLOR_PAIR(index + 1) | A_BOLD);
       }
       else if (index == LINE_NUMBER) {
         color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
@@ -257,11 +256,11 @@ void find_and_prime_applicable_syntax(void) {
  * and if not, schedule a screen refresh, so things will be repainted. */
 void check_the_multis(linestruct *line) {
   const colortype *ink;
-  regmatch_t       startmatch;
-  regmatch_t       endmatch;
-  bool             astart;
-  bool             anend;
-  char            *afterstart;
+  regmatch_t startmatch;
+  regmatch_t endmatch;
+  bool  astart;
+  bool  anend;
+  char *afterstart;
   /* If there is no syntax or no multiline regex, there is nothing to do. */
   if (!openfile->syntax || !openfile->syntax->multiscore) {
     return;
@@ -276,7 +275,7 @@ void check_the_multis(linestruct *line) {
       continue;
     }
     astart     = (regexec(ink->start, line->data, 1, &startmatch, 0) == 0);
-    afterstart = line->data + (astart ? startmatch.rm_eo : 0);
+    afterstart = (line->data + (astart ? startmatch.rm_eo : 0));
     anend      = (regexec(ink->end, afterstart, 1, &endmatch, 0) == 0);
     /* Check whether the multidata still matches the current situation. */
     if (line->multidata[ink->id] == NOTHING) {
@@ -313,8 +312,7 @@ void check_the_multis(linestruct *line) {
   }
 }
 
-/* Precalculate the multi-line start and end regex info so we can
- * speed up rendering (with any hope at all...). */
+/* Precalculate the multi-line start and end regex info so we can speed up rendering (with any hope at all...). */
 void precalc_multicolorinfo(void) {
   PROFILE_FUNCTION;
   const colortype *ink;
@@ -340,18 +338,18 @@ void precalc_multicolorinfo(void) {
       line->multidata[ink->id] = NOTHING;
       /* When the line contains a start match, look for an end,
        * and if found, mark all the lines that are affected. */
-      while (regexec(ink->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0) {
+      while (regexec(ink->start, (line->data + index), 1, &startmatch, ((index == 0) ? 0 : REG_NOTBOL)) == 0) {
         /* Begin looking for an end match after the start match. */
         index += startmatch.rm_eo;
         /* If there is an end match on this same line, mark the line,
          * but continue looking for other starts after it. */
-        if (regexec(ink->end, line->data + index, 1, &endmatch, (index == 0) ? 0 : REG_NOTBOL) == 0) {
+        if (regexec(ink->end, (line->data + index), 1, &endmatch, ((index == 0) ? 0 : REG_NOTBOL)) == 0) {
           line->multidata[ink->id] = JUSTONTHIS;
           index += endmatch.rm_eo;
           /* If the total match has zero length, force an advance. */
           if (startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo == 0) {
             /* When at end-of-line, there is no other start. */
-            if (line->data[index] == '\0') {
+            if (!line->data[index]) {
               break;
             }
             index = step_right(line->data, index);
@@ -368,7 +366,7 @@ void precalc_multicolorinfo(void) {
         for (line = line->next; line != tailline; line = line->next) {
           line->multidata[ink->id] = WHOLELINE;
         }
-        if (tailline == NULL) {
+        if (!tailline) {
           line = openfile->filebot;
           break;
         }

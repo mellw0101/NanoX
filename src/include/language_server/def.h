@@ -44,6 +44,36 @@ typedef struct VarDecl {
   Uint decl_end;
 } VarDecl;
 
+typedef struct BashIndexFileError {
+  char *msg;
+  int line;
+  int startx;
+  int endx;
+} BashIndexFileError;
+
+typedef struct BashIndexFileVariable {
+  char *name;
+  char *value;
+  int lineno;
+} BashIndexFileVariable;
+
+typedef struct BashIndexFileData {
+  MVector<BashIndexFileError> error;
+  unordered_map<string, BashIndexFileVariable> variable;
+
+  void delete_data(void) {
+    for (auto &e : error) {
+      free(e.msg);
+    }
+    error.resize(0);
+    for (auto &[name, data] : variable) {
+      free(data.name);
+      free(data.value);
+    }
+    variable.clear();
+  }
+} BashIndexFileData;
+
 typedef struct IndexFile {
  private:
   time_t last_time_changed;
@@ -76,6 +106,8 @@ typedef struct ClassData {
 } ClassData;
 
 typedef struct Index {
+  BashIndexFileData bash_data;
+
   unordered_map<string, IndexFile> include;
   unordered_map<string, DefineEntry> defines;
   unordered_map<string, EnumEntry> enums;

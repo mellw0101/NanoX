@@ -1,16 +1,16 @@
 #include "../include/prototypes.h"
 
-/* Returns 'true' when a line is a '//' comment. */
+/* Returns 'TRUE' when a line is a '//' comment. */
 bool is_line_comment(linestruct *line) {
   for (Uint i = indent_char_len(line); line->data[i]; i++) {
     if (!line->data[i + 1]) {
       break;
     }
     if (line->data[i] == '/' && line->data[i + 1] == '/') {
-      return true;
+      return TRUE;
     }
   }
-  return false;
+  return FALSE;
 }
 
 bool is_line_start_end_bracket(linestruct *line, bool *is_start) {
@@ -19,25 +19,18 @@ bool is_line_start_end_bracket(linestruct *line, bool *is_start) {
     if (line->data[i] == '{') {
       if (line->data[i + 1]) {
         if (line->data[i + 1] == '}') {
-          return false;
+          return FALSE;
         }
       }
-      *is_start = true;
-      return true;
+      *is_start = TRUE;
+      return TRUE;
     }
     else if (line->data[i] == '}') {
-      *is_start = false;
-      return true;
+      *is_start = FALSE;
+      return TRUE;
     }
   }
-  return false;
-}
-
-/* Return`s 'true' if the first char in a line is '\0'. */
-bool is_empty_line(linestruct *line) {
-  Ulong i = 0;
-  for (; line->data[i] && i < 1; i++);
-  return (i == 0);
+  return FALSE;
 }
 
 /* Inject a string into a line at an index. */
@@ -47,29 +40,9 @@ void inject_in_line(linestruct **line, const char *str, Ulong at) {
   if (at > len) {
     return;
   }
-  (*line)->data = (char *)nrealloc((*line)->data, len + s_len + 1);
-  memmove((*line)->data + at + s_len, (*line)->data + at, len - at + 1);
-  memmove((*line)->data + at, str, s_len);
-}
-
-Ulong get_line_total_tabs(linestruct *line) {
-  Ulong i, tabs = 0, spaces = 0, total = 0;
-  if (line->data[0] != ' ' && line->data[0] != '\t') {
-    return 0;
-  }
-  for (i = 0; line->data[i]; i++) {
-    if (line->data[i] == ' ') {
-      spaces++;
-    }
-    else if (line->data[i] == '\t') {
-      tabs++;
-    }
-  }
-  total = tabs;
-  if (spaces) {
-    total += spaces / tabsize;
-  }
-  return total;
+  (*line)->data = arealloc((*line)->data, (len + s_len + 1));
+  memmove(((*line)->data + at + s_len), (*line)->data + at, (len - at + 1));
+  memmove(((*line)->data + at), str, s_len);
 }
 
 /* Move a single line up or down. */
@@ -79,7 +52,7 @@ void move_line(linestruct **line, bool up, bool refresh) {
       return;
     }
   }
-  char *tmp_data = nullptr;
+  char *tmp_data = NULL;
   if (up) {
     if ((*line)->prev) {
       tmp_data = copy_of((*line)->prev->data);
@@ -102,7 +75,7 @@ void move_line(linestruct **line, bool up, bool refresh) {
   }
   set_modified();
   if (refresh) {
-    refresh_needed = true;
+    refresh_needed = TRUE;
   }
 }
 
@@ -121,7 +94,7 @@ void move_lines(bool up) {
     bot_line = bot->lineno;
     if (top->prev) {
       for (line = top->prev; line->lineno != bot_line; line = line->next) {
-        move_line(&line, false, false);
+        move_line(&line, FALSE, FALSE);
       }
       mark = mark->prev;
       cur  = cur->prev;
@@ -139,8 +112,8 @@ void move_lines_up(void) {
   if (openfile->current->lineno == 1) {
     return;
   }
-  add_undo(MOVE_LINE_UP, nullptr);
-  move_line(&openfile->current, true, true);
+  add_undo(MOVE_LINE_UP, NULL);
+  move_line(&openfile->current, TRUE, TRUE);
 }
 
 /* Function to move line/lines down shortcut. */
@@ -148,8 +121,8 @@ void move_lines_down(void) {
   if (!openfile->current->next) {
     return;
   }
-  add_undo(MOVE_LINE_DOWN, nullptr);
-  move_line(&openfile->current, false, true);
+  add_undo(MOVE_LINE_DOWN, NULL);
+  move_line(&openfile->current, FALSE, TRUE);
 }
 
 /* Remove 'len' of char`s 'at' pos in line. */
@@ -165,19 +138,11 @@ void erase_in_line(linestruct *line, Ulong at, Ulong len) {
   line->data = data;
 }
 
-void select_line(linestruct *line, Ulong from_col, Ulong to_col) {
-  const char *data     = line->data + actual_x(line->data, from_col);
-  const Ulong paintlen = actual_x(line->data, to_col - from_col);
-  wattron(midwin, interface_color_pair[SELECTED_TEXT]);
-  mvwaddnstr(midwin, line->lineno, margin + from_col, data, paintlen);
-  wattroff(midwin, interface_color_pair[SELECTED_TEXT]);
-}
-
 linestruct *find_next_bracket(bool up, linestruct *from_line) {
   if (up) {
-    for (linestruct *line = from_line; line != nullptr; line = line->prev) {
+    for (linestruct *line = from_line; line; line = line->prev) {
       if (!(line->flags.is_set(IN_BRACKET))) {
-        return nullptr;
+        return NULL;
       }
       else if ((line->flags.is_set(BRACKET_END))) {
         return line;
@@ -187,7 +152,7 @@ linestruct *find_next_bracket(bool up, linestruct *from_line) {
       }
     }
   }
-  return nullptr;
+  return NULL;
 }
 
 Uint total_tabs(linestruct *line) {
@@ -211,4 +176,20 @@ int get_editwin_row(linestruct *line) {
     return -1;
   }
   return row;
+}
+
+Uint indent_tab_len(linestruct *line) {
+  Uint i = 0, spaces = 0, tabs = 0;
+  for (; line->data[i]; ++i) {
+    if (line->data[i] == ' ') {
+      ++spaces;
+    }
+    else if (line->data[i] == '\t') {
+      ++tabs;
+    }
+    else {
+      break;
+    }
+  }
+  return (tabs + (spaces / tabsize));
 }

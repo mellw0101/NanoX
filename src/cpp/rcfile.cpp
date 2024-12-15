@@ -76,7 +76,7 @@ static const rcoption rcopts[] = {
   {           "errorcolor",                0},
   {             "keycolor",                0},
   {        "functioncolor",                0},
-  {                NULL,                0}
+  {                   NULL,                0}
 };
 /* The line number of the last encountered error. */
 static Ulong lineno = 0;
@@ -130,7 +130,7 @@ void jot_error(const char *msg, ...) {
     length = snprintf(textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanorc, lineno);
   }
   va_start(ap, msg);
-  length += vsnprintf(textbuf + length, MAXSIZE - length, _(msg), ap);
+  length += vsnprintf((textbuf + length), (MAXSIZE - length), _(msg), ap);
   va_end(ap);
   error->data = (char *)nmalloc(length + 1);
   sprintf(error->data, "%s", textbuf);
@@ -313,7 +313,7 @@ char *parse_argument(char *ptr) {
     return NULL;
   }
   *last_quote = '\0';
-  ptr         = last_quote + 1;
+  ptr         = (last_quote + 1);
   while (isblank((Uchar)*ptr)) {
     ptr++;
   }
@@ -458,8 +458,7 @@ void check_for_nonempty_syntax(void) {
 /* Return TRUE when the given function is present in almost all menus. */
 bool is_universal(void (*f)(void)) {
   return (f == do_left || f == do_right || f == do_home || f == do_end || f == to_prev_word || f == to_next_word ||
-          f == do_delete || f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter ||
-          f == do_verbatim_input);
+    f == do_delete || f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter || f == do_verbatim_input);
 }
 
 /* Bind or unbind a key combo, to or from a function. */
@@ -512,8 +511,7 @@ void parse_binding(char *ptr, bool dobind) {
   ptr     = parse_next_word(ptr);
   if (!menuptr[0]) {
     /* TRANSLATORS: Do not translate the word "all". */
-    jot_error(N_("Must specify a menu (or \"all\") "
-                 "in which to bind/unbind the key"));
+    jot_error(N_("Must specify a menu (or \"all\") in which to bind/unbind the key"));
     goto free_things;
   }
   menu = nameToMenu(menuptr);
@@ -522,8 +520,7 @@ void parse_binding(char *ptr, bool dobind) {
     goto free_things;
   }
   if (dobind) {
-    /* If the thing to bind starts with a double quote, it is a string,
-     * otherwise it is the name of a function. */
+    /* If the thing to bind starts with a double quote, it is a string, otherwise it is the name of a function. */
     if (*funcptr == '"') {
       newsc            = (keystruct *)nmalloc(sizeof(keystruct));
       newsc->func      = (functionptrtype)implant;
@@ -548,8 +545,7 @@ void parse_binding(char *ptr, bool dobind) {
   if (!dobind) {
     goto free_things;
   }
-  /* Limit the given menu to those where the function exists;
-   * first handle five special cases, then the general case. */
+  /* Limit the given menu to those where the function exists; first handle five special cases, then the general case. */
   if (is_universal(newsc->func)) {
     menu &= MMOST | MBROWSER;
   }
@@ -622,8 +618,7 @@ bool is_good_file(char *file) {
   return TRUE;
 }
 
-/* Partially parse the syntaxes in the given file, or (when syntax is not NULL)
- * fully parse one specific syntax from the file. */
+/* Partially parse the syntaxes in the given file, or (when syntax is not NULL) fully parse one specific syntax from the file. */
 void parse_one_include(char *file, syntaxtype *syntax) {
   char          *was_nanorc = nanorc;
   Ulong          was_lineno = lineno;
@@ -638,8 +633,7 @@ void parse_one_include(char *file, syntaxtype *syntax) {
     jot_error(N_("Error reading %s: %s"), file, strerror(errno));
     return;
   }
-  /* Use the name and line number position of the included syntax file
-   * while parsing it, so we can know where any errors in it are. */
+  /* Use the name and line number position of the included syntax file while parsing it, so we can know where any errors in it are. */
   nanorc = file;
   lineno = 0;
   /* If this is the first pass, parse only the prologue. */
@@ -690,8 +684,7 @@ void parse_includes(char *ptr) {
   /* Expand a tilde first, then try to match the globbing pattern. */
   expanded = real_dir_from_tilde(pattern);
   result   = glob(expanded, GLOB_ERR | GLOB_NOCHECK, NULL, &files);
-  /* If there are matches, process each of them. Otherwise, only
-   * report an error if it's something other than zero matches. */
+  /* If there are matches, process each of them. Otherwise, only report an error if it's something other than zero matches. */
   if (!result) {
     for (Ulong i = 0; i < files.gl_pathc; ++i) {
       parse_one_include(files.gl_pathv[i], NULL);
@@ -704,9 +697,8 @@ void parse_includes(char *ptr) {
   free(expanded);
 }
 
-/* Return the index of the color that is closest to the given RGB levels,
- * assuming that the terminal uses the 6x6x6 color cube of xterm-256color.
- * When red == green == blue, return an index in the xterm gray scale. */
+/* Return the index of the color that is closest to the given RGB levels, assuming that the terminal uses the
+ * 6x6x6 color cube of xterm-256color. When red == green == blue, return an index in the xterm gray scale. */
 short closest_index_color(short red, short green, short blue) {
   /* Translation table, from 16 intended color levels to 6 available levels. */
   static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
@@ -716,7 +708,7 @@ short closest_index_color(short red, short green, short blue) {
     return THE_DEFAULT;
   }
   else if (red == green && green == blue && 0 < red && red < 0xF) {
-    return 232 + gray[red - 1];
+    return (232 + gray[red - 1]);
   }
   else {
     return (36 * level[red] + 6 * level[green] + level[blue] + 16);

@@ -9,14 +9,6 @@ static const char *converted = NULL;
 static linestruct *line      = NULL;
 static Ulong       from_col  = 0;
 
-char              suggest_buf[1024] = "";
-char             *suggest_str       = NULL;
-int               suggest_len       = 0;
-vec<const char *> types             = {
-  "void", "char",  "int",   "unsigned", "extern",  "volatile", "static",
-  "long", "short", "const", "bool",     "typedef", "class",
-};
-
 unordered_map<string, syntax_data_t> test_map;
 
 void render_part(Ulong match_start, Ulong match_end, short color) {
@@ -51,9 +43,9 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
   }
 }
 
-/* Render the text of a given line.  Note that this function only renders the
- * text and nothing else. */
+/* Render the text of a given line.  Note that this function only renders the text and nothing else. */
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) {
+  PROFILE_FUNCTION;
   if (margin > 0) {
     WIN_COLOR_ON(midwin, LINE_NUMBER);
     if (ISSET(SOFTWRAP) && from_col) {
@@ -911,6 +903,11 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
     }
   }
   else if (openfile->type.is_set<BASH>()) {
+    /* Return early when line is empty. */
+    if (!line->data[0]) {
+      return;
+    }
+    /* Look for comments. */
     const char *comment = strchr(line->data, '#');
     if (comment) {
       if (comment == line->data || line->data[(comment - line->data) - 1] != '$') {
@@ -923,14 +920,22 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
     line_word_t *head = line_word_list(line->data, till_x);
     while (head) {
       line_word_t *node = head;
-      head              = node->next;
+      head = node->next;
+      /* If current pos is after comment then continue. */
       if (comment && node->start > (comment - line->data)) {
         free_node(node);
         continue;
       }
-      const auto &it = test_map.find(node->str);
-      if (it != test_map.end()) {
-        midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, it->second.color);
+      if (test_map.count(node->str)) {
+        mv_add_nstr_color(midwin, row, get_start_col(line, node), node->str, node->len, test_map[node->str].color);
+      }
+      else if (LSP->index.bash_data.variable.count(node->str)) {
+        if (line->lineno == LSP->index.bash_data.variable[node->str].lineno) {
+          mv_add_nstr_color(midwin, row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BRIGHT_CYAN);
+        }
+        else if (node->start > 0 && line->data[node->start - 1] == '$') {
+          mv_add_nstr_color(midwin, row, (get_start_col(line, node) - 1), &line->data[node->start - 1], (node->len + 1), FG_VS_CODE_BRIGHT_CYAN);
+        }
       }
       free_node(node);
     }
@@ -980,23 +985,19 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
       free_node(node);
     }
   }
-}
-
-void rendr_suggestion(void) {
-  PROFILE_FUNCTION;
-  suggest_str = NULL;
-  if (suggestwin) {
-    delwin(suggestwin);
+  else if (openfile->type.is_set<SYSTEMD_SERVICE>()) {
+    /* Return early on empty line. */
+    if (!line->data[0]) {
+      return;
+    }
+    line_word_t *head = line_word_list(line->data, till_x);
+    while (head) {
+      line_word_t *node = head;
+      head = node->next;
+      if (test_map.count(node->str)) {
+        mv_add_nstr_color(midwin, row, get_start_col(line, node), node->str, node->len, test_map[node->str].color);
+      }
+      free_node(node);
+    }
   }
-  if (!openfile->current_x || (!is_word_char(&openfile->current->data[openfile->current_x - 1], false) &&
-                               openfile->current->data[openfile->current_x - 1] != '_')) {
-    clear_suggestion();
-    return;
-  }
-  if (suggest_len < 0) {
-    clear_suggestion();
-  }
-  add_char_to_suggest_buf();
-  find_suggestion();
-  draw_suggest_win();
 }

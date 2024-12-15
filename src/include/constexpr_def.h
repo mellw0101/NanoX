@@ -371,24 +371,25 @@ constexpr_map<Uint, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
   (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | \
    MGOTODIR | MFINDINHELP | MSPELL | MLINTER)
 #define MSOME (MMOST | MBROWSER)
+
 /* The menus map. */
-constexpr_map<std::string_view, unsigned short, 16> menuOptionMap = {
-  {{"main", MMAIN},
-    {"search", MWHEREIS},
-    {"replace", MREPLACE},
-    {"replacewith", MREPLACEWITH},
-    {"yesno", MYESNO},
-    {"gotoline", MGOTOLINE},
-    {"writeout", MWRITEFILE},
-    {"insert", MINSERTFILE},
-    {"execute", MEXECUTE},
-    {"help", MHELP},
-    {"spell", MSPELL},
-    {"linter", MLINTER},
-    {"browser", MBROWSER},
-    {"whereisfile", MWHEREISFILE},
-    {"gotodir", MGOTODIR},
-    {"all", MMOST | MBROWSER | MHELP | MYESNO}}
+constexpr_map<std::string_view, Ushort, 16> menuOptionMap = {
+  {{"main",        MMAIN},
+   {"search",      MWHEREIS},
+   {"replace",     MREPLACE},
+   {"replacewith", MREPLACEWITH},
+   {"yesno",       MYESNO},
+   {"gotoline",    MGOTOLINE},
+   {"writeout",    MWRITEFILE},
+   {"insert",      MINSERTFILE},
+   {"execute",     MEXECUTE},
+   {"help",        MHELP},
+   {"spell",       MSPELL},
+   {"linter",      MLINTER},
+   {"browser",     MBROWSER},
+   {"whereisfile", MWHEREISFILE},
+   {"gotodir",     MGOTODIR},
+   {"all",         (MMOST | MBROWSER | MHELP | MYESNO)}}
 };
 
 constexpr_map<std::string_view, Uint, 14> toggleOptionMap = {

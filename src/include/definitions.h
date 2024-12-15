@@ -18,16 +18,6 @@
 #include <limits>
 // #include <linux/limits.h>
 
-#include <Mlib/Debug.h>
-#include <Mlib/FileSys.h>
-#include <Mlib/Flag.h>
-#include <Mlib/Profile.h>
-#include <Mlib/String.h>
-#include <Mlib/Vector.h>
-#include <Mlib/constexpr.hpp>
-#include <Mlib/def.h>
-
-#include <Mlib/Attributes.h>
 #include <cctype>
 #include <cerrno>
 #include <clocale>
@@ -56,6 +46,16 @@
 #include <vector>
 
 #include <ncursesw/ncurses.h>
+
+#include <Mlib/Attributes.h>
+#include <Mlib/Debug.h>
+#include <Mlib/FileSys.h>
+#include <Mlib/Flag.h>
+#include <Mlib/Profile.h>
+#include <Mlib/String.h>
+#include <Mlib/Vector.h>
+#include <Mlib/constexpr.hpp>
+#include <Mlib/def.h>
 
 using std::hash;
 using std::string;
@@ -97,12 +97,12 @@ using std::vector;
   } while (0)
 
 /* Macros for flags, indexing each bit in a small array. */
-#define FLAGS(flag)                   flags[((flag) / (sizeof(unsigned long) * 8))]
-#define FLAGMASK(flag)                ((unsigned long)1 << ((flag) % (sizeof(unsigned long) * 8)))
-#define SET(flag)                     FLAGS(flag) |= FLAGMASK(flag)
-#define UNSET(flag)                   FLAGS(flag) &= ~FLAGMASK(flag)
-#define ISSET(flag)                   ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-#define TOGGLE(flag)                  FLAGS(flag) ^= FLAGMASK(flag)
+#define FLAGS(flag)    flags[((flag) / (sizeof(Ulong) * 8))]
+#define FLAGMASK(flag) ((Ulong)1 << ((flag) % (sizeof(Ulong) * 8)))
+#define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
+#define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
+#define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+#define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
 
 #define CALCULATE_MS_TIME(start_time) (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
 
@@ -122,110 +122,110 @@ using std::vector;
 #define LINE_BIT_FLAG_SIZE            16
 
 /* Some other define`s. */
-#define BACKWARD                      FALSE
-#define FORWARD                       TRUE
-#define YESORNO                       FALSE
-#define YESORALLORNO                  TRUE
-#define BLIND                         FALSE
-#define VISIBLE                       TRUE
-#define YES                           1
-#define ALL                           2
-#define NO                            0
-#define CANCEL                        -1
-#define JUSTFIND                      0
-#define REPLACING                     1
-#define INREGION                      2
-#define NORMAL                        TRUE
-#define SPECIAL                       FALSE
-#define TEMPORARY                     FALSE
-#define ANNOTATE                      TRUE
-#define NONOTES                       FALSE
-#define PRUNE_DUPLICATE               TRUE
-#define IGNORE_DUPLICATES             FALSE
+#define BACKWARD          FALSE
+#define FORWARD           TRUE
+#define YESORNO           FALSE
+#define YESORALLORNO      TRUE
+#define BLIND             FALSE
+#define VISIBLE           TRUE
+#define YES               1
+#define ALL               2
+#define NO                0
+#define CANCEL           -1
+#define JUSTFIND          0
+#define REPLACING         1
+#define INREGION          2
+#define NORMAL            TRUE
+#define SPECIAL           FALSE
+#define TEMPORARY         FALSE
+#define ANNOTATE          TRUE
+#define NONOTES           FALSE
+#define PRUNE_DUPLICATE   TRUE
+#define IGNORE_DUPLICATES FALSE
 
-#define MAXCHARLEN                    4
+#define MAXCHARLEN                4
 /* The default width of a tab in spaces. */
-#define WIDTH_OF_TAB                  2
+#define WIDTH_OF_TAB              2
 /* The default number of columns from end of line where wrapping occurs. */
-#define COLUMNS_FROM_EOL              8
+#define COLUMNS_FROM_EOL          8
 /* The default comment character when a syntax does not specify any. */
-#define GENERAL_COMMENT_CHARACTER     "#"
+#define GENERAL_COMMENT_CHARACTER "#"
 /* The maximum number of search/replace history strings saved. */
-#define MAX_SEARCH_HISTORY            100
-/* The largest unsigned long number that doesn't have the high bit set. */
-#define HIGHEST_POSITIVE              ((~(Ulong)0) >> 1)
+#define MAX_SEARCH_HISTORY        100
+/* The largest Ulong number that doesn't have the high bit set. */
+#define HIGHEST_POSITIVE          ((~(Ulong)0) >> 1)
 
-#define THE_DEFAULT                   -1
-#define BAD_COLOR                     -2
+#define THE_DEFAULT -1
+#define BAD_COLOR   -2
 
 /* Flags for indicating how a multiline regex pair apply to a line. */
 
 /* The start/end regexes don't cover this line at all. */
-#define NOTHING                       (1 << 1)
+#define NOTHING    (1 << 1)
 /* The start regex matches on this line, the end regex on a later one. */
-#define STARTSHERE                    (1 << 2)
+#define STARTSHERE (1 << 2)
 /* The start regex matches on an earlier line, the end regex on a later one. */
-#define WHOLELINE                     (1 << 3)
+#define WHOLELINE  (1 << 3)
 /* The start regex matches on an earlier line, the end regex on this one. */
-#define ENDSHERE                      (1 << 4)
+#define ENDSHERE   (1 << 4)
 /* Both the start and end regexes match within this line. */
-#define JUSTONTHIS                    (1 << 5)
+#define JUSTONTHIS (1 << 5)
 
 /* Basic control codes. */
-#define ESC_CODE                      0x1B
-#define DEL_CODE                      0x7F
+#define ESC_CODE 0x1B
+#define DEL_CODE 0x7F
 
 /* Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses. */
-#define CONTROL_LEFT                  0x401
-#define CONTROL_RIGHT                 0x402
-#define CONTROL_UP                    0x403
-#define CONTROL_DOWN                  0x404
-#define CONTROL_HOME                  0x405
-#define CONTROL_END                   0x406
-#define CONTROL_DELETE                0x40D
-#define SHIFT_CONTROL_LEFT            0x411
-#define SHIFT_CONTROL_RIGHT           0x412
-#define SHIFT_CONTROL_UP              0x413
-#define SHIFT_CONTROL_DOWN            0x414
-#define SHIFT_CONTROL_HOME            0x415
-#define SHIFT_CONTROL_END             0x416
-#define CONTROL_SHIFT_DELETE          0x41D
-#define ALT_LEFT                      0x421
-#define ALT_RIGHT                     0x422
-#define ALT_UP                        0x423
-#define ALT_DOWN                      0x424
-#define ALT_HOME                      0x425
-#define ALT_END                       0x426
-#define ALT_PAGEUP                    0x427
-#define ALT_PAGEDOWN                  0x428
-#define ALT_INSERT                    0x42C
-#define ALT_DELETE                    0x42D
-#define SHIFT_ALT_LEFT                0x431
-#define SHIFT_ALT_RIGHT               0x432
-#define SHIFT_ALT_UP                  0x433
-#define SHIFT_ALT_DOWN                0x434
+#define CONTROL_LEFT         0x401
+#define CONTROL_RIGHT        0x402
+#define CONTROL_UP           0x403
+#define CONTROL_DOWN         0x404
+#define CONTROL_HOME         0x405
+#define CONTROL_END          0x406
+#define CONTROL_DELETE       0x40D
+#define SHIFT_CONTROL_LEFT   0x411
+#define SHIFT_CONTROL_RIGHT  0x412
+#define SHIFT_CONTROL_UP     0x413
+#define SHIFT_CONTROL_DOWN   0x414
+#define SHIFT_CONTROL_HOME   0x415
+#define SHIFT_CONTROL_END    0x416
+#define CONTROL_SHIFT_DELETE 0x41D
+#define ALT_LEFT             0x421
+#define ALT_RIGHT            0x422
+#define ALT_UP               0x423
+#define ALT_DOWN             0x424
+#define ALT_HOME             0x425
+#define ALT_END              0x426
+#define ALT_PAGEUP           0x427
+#define ALT_PAGEDOWN         0x428
+#define ALT_INSERT           0x42C
+#define ALT_DELETE           0x42D
+#define SHIFT_ALT_LEFT       0x431
+#define SHIFT_ALT_RIGHT      0x432
+#define SHIFT_ALT_UP         0x433
+#define SHIFT_ALT_DOWN       0x434
 // #define SHIFT_LEFT 0x451
 // #define SHIFT_RIGHT 0x452
-#define SHIFT_UP                      0x453
-#define SHIFT_DOWN                    0x454
-#define SHIFT_HOME                    0x455
-#define SHIFT_END                     0x456
-#define SHIFT_PAGEUP                  0x457
-#define SHIFT_PAGEDOWN                0x458
-#define SHIFT_DELETE                  0x45D
-#define SHIFT_TAB                     0x45F
-#define CONTROL_BSP                   0x460
+#define SHIFT_UP             0x453
+#define SHIFT_DOWN           0x454
+#define SHIFT_HOME           0x455
+#define SHIFT_END            0x456
+#define SHIFT_PAGEUP         0x457
+#define SHIFT_PAGEDOWN       0x458
+#define SHIFT_DELETE         0x45D
+#define SHIFT_TAB            0x45F
+#define CONTROL_BSP          0x460
 
-#define FOCUS_IN                      0x491
-#define FOCUS_OUT                     0x499
+#define FOCUS_IN             0x491
+#define FOCUS_OUT            0x499
 
 #define MOD_KEY_SHIFT 0
 #define MOD_KEY_ALT   1
 #define MOD_KEY_CTRL  2
 
-/* Special keycodes for when a string bind has been partially implanted
- * or has an unpaired opening brace, or when a function in a string bind
- * needs execution or a specified function name is invalid. */
+// Special keycodes for when a string bind has been partially implanted
+// or has an unpaired opening brace, or when a function in a string bind
+// needs execution or a specified function name is invalid.
 #define MORE_PLANTS                   0x4EA
 #define MISSING_BRACE                 0x4EB
 #define PLANTED_A_COMMAND             0x4EC
@@ -247,13 +247,7 @@ using std::vector;
 #define CURSOR_WAS_AT_HEAD            (1 << 5)
 #define HAD_ANCHOR_AT_START           (1 << 6)
 
-/* Color defines for diffrent types. */
-#define VAR_COLOR                     "lagoon"
-#define CONTROL_COLOR                 "bold,mauve"
-#define DEFINE_COLOR                  "bold,blue"
-#define STRUCT_COLOR                  "brightgreen"
-#define FUNC_COLOR                    "yellow"
-#define XTERM_CONTROL_COLOR           "brightmagenta"
+#define REFRESH_NEEDED refresh_needed = TRUE
 
 #define TASK_STRUCT(name, ...) \
   typedef struct {             \
@@ -264,6 +258,15 @@ using std::vector;
   typedef struct name {        \
     __VA_ARGS__                \
   } name;
+
+#define NULL_safe_free(ptr) ptr ? free(ptr) : void()
+
+#define ASM_FUNCTION(ret) extern "C" ret __attribute__((__const__, __nodebug__, __nothrow__))
+
+/* Used to encode both parts when enclosing a region. */
+#define ENCLOSE_DELIM ":;:"
+
+#include "constexpr_utils.h"
 
 /* Null def. */
 #ifdef NULL
@@ -286,24 +289,25 @@ using std::vector;
   #define FALSE 0
 #endif
 
+/* clang-format off */
 
-#define NULL_safe_free(ptr) ptr ? free(ptr) : void()
-
-#define ASM_FUNCTION(ret) extern "C" ret __attribute__((__const__, __nodebug__, __nothrow__))
-
-#include "constexpr_utils.h"
 
 /* Enumeration types. */
-enum file_type : Uint {
+typedef enum {
+  #define FILE_TYPE_SIZE 8
   C_CPP,
+  #define C_CPP C_CPP
   ASM,
+  #define ASM ASM
   BASH,
-  GLSL
-};
+  #define BASH BASH
+  GLSL,
+  #define GLSL GLSL
+  SYSTEMD_SERVICE
+  #define SYSTEMD_SERVICE SYSTEMD_SERVICE
+} file_type;
 
-#define OPENFILE_TYPE_SIZE 8
-
-typedef enum : int {
+typedef enum {
   LOCAL_VAR_SYNTAX = 1,
   CLASS_SYNTAX,
   CLASS_METHOD_SYNTAX,
@@ -321,72 +325,108 @@ typedef enum : int {
   ASM_CONTROL
 } syntax_type;
 
-enum DirEntryTypeEnum {
-  REGULAR_FILE_ENTRY,
-  DIRECTORY_ENTRY,
-  SYMLINK_ENTRY
-};
-
-/* clang-format off */
-
 typedef enum {
   UNSPECIFIED,
+  #define UNSPECIFIED UNSPECIFIED
   NIX_FILE,
+  #define NIX_FILE NIX_FILE
   DOS_FILE,
+  #define DOS_FILE DOS_FILE
   MAC_FILE
+  #define MAC_FILE MAC_FILE
 } format_type;
 
 typedef enum {
   VACUUM,
+  #define VACUUM VACUUM
   HUSH,
+  #define HUSH HUSH
   REMARK,
+  #define REMARK REMARK
   INFO,
+  #define INFO INFO
   NOTICE,
+  #define NOTICE NOTICE
   AHEM,
+  #define AHEM AHEM
   MILD,
+  #define MILD MILD
   ALERT
+  #define ALERT ALERT
 } message_type;
 
 typedef enum {
   OVERWRITE,
+  #define OVERWRITE OVERWRITE
   APPEND,
+  #define APPEND APPEND
   PREPEND,
+  #define PREPEND PREPEND
   EMERGENCY
+  #define EMERGENCY EMERGENCY
 } kind_of_writing_type;
 
 typedef enum {
   CENTERING,
+  #define CENTERING CENTERING
   FLOWING,
+  #define FLOWING FLOWING
   STATIONARY
+  #define STATIONARY STATIONARY
 } update_type;
 
 /* The kinds of undo actions.  ADD...REPLACE must come first. */
 typedef enum {
   ADD,
+  #define ADD ADD
   ENTER,
+  #define ENTER ENTER
   BACK,
+  #define BACK BACK
   DEL,
+  #define DEL DEL
   JOIN,
+  #define JOIN JOIN
   REPLACE,
+  #define REPLACE REPLACE
   SPLIT_BEGIN,
+  #define SPLIT_BEGIN SPLIT_BEGIN
   SPLIT_END,
+  #define SPLIT_END SPLIT_END
   INDENT,
+  #define INDENT INDENT
   UNINDENT,
+  #define UNINDENT UNINDENT
   COMMENT,
+  #define COMMENT COMMENT
   UNCOMMENT,
+  #define UNCOMMENT UNCOMMENT
   PREFLIGHT,
+  #define PREFLIGHT PREFLIGHT
   ZAP,
+  #define ZAP ZAP
   CUT,
+  #define CUT CUT
   CUT_TO_EOF,
+  #define CUT_TO_EOF CUT_TO_EOF
   COPY,
+  #define COPY COPY
   PASTE,
+  #define PASTE PASTE
   INSERT,
+  #define INSERT INSERT
   COUPLE_BEGIN,
+  #define COUPLE_BEGIN COUPLE_BEGIN
   COUPLE_END,
+  #define COUPLE_END COUPLE_END
   OTHER,
+  #define OTHER OTHER
   MOVE_LINE_UP,
+  #define MOVE_LINE_UP MOVE_LINE_UP
   MOVE_LINE_DOWN,
+  #define MOVE_LINE_DOWN MOVE_LINE_DOWN
   ENCLOSE
+  #define ENCLOSE ENCLOSE
 } undo_type;
 
 /* Structure types. */
@@ -416,7 +456,7 @@ typedef struct augmentstruct {
 typedef struct syntaxtype {
   char *name;                   /* The name of this syntax. */
   char *filename;               /* File where the syntax is defined, or nullptr if not an included file. */
-  unsigned long lineno;         /* The line number where the 'syntax' command was found. */
+  Ulong lineno;                 /* The line number where the 'syntax' command was found. */
   augmentstruct *augmentations; /* List of extendsyntax commands to apply when loaded. */
   regexlisttype *extensions;    /* The list of extensions that this syntax applies to. */
   regexlisttype *headers;       /* The list of headerlines that this syntax applies to. */
@@ -449,13 +489,15 @@ typedef struct linestruct {
   bool has_anchor;    /* Whether the user has placed an anchor at this line. */
   /* The state of the line. */
   bit_flag_t<LINE_BIT_FLAG_SIZE> flags;       
+  /* Some short-hands to simplyfiy linestruct loop`s. */
+  #define FOR_EACH_LINE_NEXT(name, start) \
+    for (linestruct *name = start; name; name = name->next)
+  #define FOR_EACH_LINE_PREV(name, start) \
+    for (linestruct *name = start; name; name = name->prev)
+  /* Usefull line helpers. */
+  #define line_indent(line) \
+    wideness(line->data, indent_length(line->data))
 } linestruct;
-
-/* Some short-hands to simplyfiy linestruct loop`s. */
-#define FOR_EACH_LINE_NEXT(name, start) \
-  for (linestruct *name = start; name != nullptr; name = name->next)
-#define FOR_EACH_LINE_PREV(name, start) \
-  for (linestruct *name = start; name != nullptr; name = name->prev)
 
 typedef struct groupstruct {
   groupstruct *next;   /* The next group, if any. */
@@ -465,25 +507,25 @@ typedef struct groupstruct {
 } groupstruct;
 
 typedef struct undostruct {
-  undo_type type;         /* The operation type that this undo item is for. */
-  int xflags;             /* Some flag data to mark certain corner cases. */
-  long head_lineno;       /* The line number where the operation began or ended. */
-  unsigned long head_x;   /* The x position where the operation began or ended. */
-  char *strdata;          /* String data to help restore the affected line. */
-  unsigned long wassize;  /* The file size before the action. */
-  unsigned long newsize;  /* The file size after the action. */
-  groupstruct *grouping;  /* Undo info specific to groups of lines. */
-  linestruct *cutbuffer;  /* A copy of the cutbuffer. */
-  long tail_lineno;       /* Mostly the line number of the current line; sometimes something else. */
-  unsigned long tail_x;   /* The x position corresponding to the above line number. */
-  undostruct *next;       /* A pointer to the undo item of the preceding action. */
+  undo_type type;        /* The operation type that this undo item is for. */
+  int xflags;            /* Some flag data to mark certain corner cases. */
+  long head_lineno;      /* The line number where the operation began or ended. */
+  Ulong head_x;          /* The x position where the operation began or ended. */
+  char *strdata;         /* String data to help restore the affected line. */
+  Ulong wassize;         /* The file size before the action. */
+  Ulong newsize;         /* The file size after the action. */
+  groupstruct *grouping; /* Undo info specific to groups of lines. */
+  linestruct *cutbuffer; /* A copy of the cutbuffer. */
+  long tail_lineno;      /* Mostly the line number of the current line; sometimes something else. */
+  Ulong tail_x;          /* The x position corresponding to the above line number. */
+  undostruct *next;      /* A pointer to the undo item of the preceding action. */
 } undostruct;
 
 typedef struct poshiststruct {
-  char *filename;      /* <-- The full path plus name of the file.                   */
-  long linenumber;     /* <-- The line where the cursor was when we closed the file. */
-  long columnnumber;   /* <-- The column where the cursor was.                       */
-  poshiststruct *next; /* <-- The next item of position history.                     */
+  char *filename;      /* The full path plus name of the file. */
+  long linenumber;     /* The line where the cursor was when we closed the file. */
+  long columnnumber;   /* The column where the cursor was. */
+  poshiststruct *next; /* The next item of position history. */
 } poshiststruct;
 
 typedef struct openfilestruct {
@@ -511,7 +553,7 @@ typedef struct openfilestruct {
   bool modified;              /* Whether the file has been modified. */
   syntaxtype *syntax;         /* The syntax that applies to this file, if any. */
   char *errormessage;         /* The ALERT message (if any) that occurred when opening the file. */
-  bit_flag_t<OPENFILE_TYPE_SIZE> type;
+  bit_flag_t<FILE_TYPE_SIZE> type;
   openfilestruct *next;       /* The next open file, if any. */
   openfilestruct *prev;       /* The preceding open file, if any. */
 } openfilestruct;
@@ -522,30 +564,29 @@ typedef struct rcoption {
 } rcoption;
 
 typedef struct keystruct {
-    const char *keystr; /* The string that describes the keystroke, like "^C" or "M-R". */
-    int keycode;        /* The integer that, together with meta, identifies the keystroke. */
-    int menus;          /* The menus in which this keystroke is bound. */
-    CFuncPtr func;      /* The function to which this keystroke is bound. */
-    int toggle;         /* If a toggle, what we're toggling. */
-    int ordinal;        /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
-    char *expansion;    /* The string of keycodes to which this shortcut is expanded. */
-    keystruct *next;    /* Next in the list. */
+  const char *keystr; /* The string that describes the keystroke, like "^C" or "M-R". */
+  int keycode;        /* The integer that, together with meta, identifies the keystroke. */
+  int menus;          /* The menus in which this keystroke is bound. */
+  CFuncPtr func;      /* The function to which this keystroke is bound. */
+  int toggle;         /* If a toggle, what we're toggling. */
+  int ordinal;        /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
+  char *expansion;    /* The string of keycodes to which this shortcut is expanded. */
+  keystruct *next;    /* Next in the list. */
 } keystruct;
 
 typedef struct funcstruct {
-    void (*func)(void); /* The actual function to call. */
-    const char *tag;    /* The function's help-line label, for example "Where Is". */
-    const char *phrase; /* The function's description for in the help viewer. */
-    bool blank_after;   /* Whether to distance this function from the next in the help viewer. */
-    int menus;          /* In what menus this function applies. */
-    funcstruct *next;   /* Next item in the list. */
+  void (*func)(void); /* The actual function to call. */
+  const char *tag;    /* The function's help-line label, for example "Where Is". */
+  const char *phrase; /* The function's description for in the help viewer. */
+  bool blank_after;   /* Whether to distance this function from the next in the help viewer. */
+  int menus;          /* In what menus this function applies. */
+  funcstruct *next;   /* Next item in the list. */
 } funcstruct;
 
 typedef struct completionstruct {
-  char             *word;
+  char *word;
   completionstruct *next;
 } completionstruct;
-/* clang-format on */
 
 enum syntax_flag_t { NEXT_WORD_ALSO = 1 };
 
@@ -555,9 +596,8 @@ typedef struct line_word_t {
   Ushort       end;
   Ushort       len;
   line_word_t *next;
+  #define free_node(node) free(node->str), free(node)
 } line_word_t;
-
-#define free_node(node) free(node->str), free(node)
 
 typedef struct variable_t {
   char       *type  = nullptr;
@@ -631,7 +671,7 @@ class vec_t {
     data = (T *)malloc(sizeof(T) * cap);
   }
 
-  vec(const T *array, unsigned long len = 0) {
+  vec(const T *array, Ulong len = 0) {
     pthread_mutex_init(&mutex, nullptr);
     pthread_mutex_guard_t guard(&mutex);
     PROFILE_FUNCTION;
@@ -660,8 +700,8 @@ class vec_t {
 
   vec<char> &operator<<=(const char *str) {
     pthread_mutex_guard_t guard(&this->mutex);
-    unsigned long         str_size = strlen(str);
-    unsigned long         nsize    = this->size + str_size;
+    Ulong         str_size = strlen(str);
+    Ulong         nsize    = this->size + str_size;
     if (nsize >= this->cap) {
       this->cap = nsize;
       this->resize();
@@ -695,7 +735,7 @@ class vec_t {
     }
   }
 
-  T &operator[](unsigned long index) {
+  T &operator[](Ulong index) {
     pthread_mutex_guard_t guard(&mutex);
     if (index >= size || index < 0) {
       logE("Invalid index: '%lu'.", index);
@@ -703,11 +743,11 @@ class vec_t {
     return data[index];
   }
 
-  unsigned long get_size(void) const {
+  Ulong get_size(void) const {
     return size;
   }
 
-  unsigned long get_cap(void) const {
+  Ulong get_cap(void) const {
     return cap;
   }
 
@@ -743,8 +783,8 @@ class vec_t {
 
   pthread_mutex_t mutex;
   T              *data;
-  unsigned long   cap;
-  unsigned long   size;
+  Ulong   cap;
+  Ulong   size;
 };
 #define vec vec_t
 

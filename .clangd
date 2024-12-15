@@ -2,11 +2,11 @@ Diagnostics:
   # MissingIncludes: None
   UnusedIncludes: None
 CompileFlags:
-  Add: 
-    - -I/usr/lib/clang/18/include/
-    - -I/usr/include/c++/v1/   # Include path for libc++ headers
-    - -stdlib=libc++     # Use libc++ as the standard library
-    # - -std=c++23        # Specify C++20 standard
+  Add:
+    # - -std=c++23              # Specify C++23 standard
+    - -stdlib=libc++          # Use libc++ as the standard library
+    - -I/usr/include/c++/v1/  # Include path for libc++ headers
+    # - -Isrc/include         # Specify include directories
 #    - -fmodules      # Enable C++20 module support
 #    - -fmodules-cache-path=./module-cache  # Cache the modules in a directory (optional)
 #    - -Iinclude         # Specify include directories

@@ -1,12 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <cerrno>
-#include <cstdint>
-#include <cstring>
-#include <unistd.h>
-#include <libevdev-1.0/libevdev/libevdev.h>
-
-
 /* The list of files to display in the file browser. */
 static char **filelist = NULL;
 /* The number of files in the list. */
@@ -20,14 +13,14 @@ static int gauge = 0;
 /* The currently selected filename in the list; zero-based. */
 static Ulong selected = 0;
 
-/* Fill 'filelist' with the names of the files in the given directory, set 'list_length' to the
- * number of names in that list, set 'gauge' to the width of the widest filename plus ten, and
- * set 'piles' to the number of files that can be displayed per screen row.  And sort the list too. */
+// Fill 'filelist' with the names of the files in the given directory, set 'list_length' to the
+// number of names in that list, set 'gauge' to the width of the widest filename plus ten, and
+// set 'piles' to the number of files that can be displayed per screen row.  And sort the list too.
 void read_the_list(const char *path, DIR *dir) {
-  Ulong                path_len = strlen(path);
+  Ulong path_len = strlen(path);
+  Ulong widest = 0;
+  Ulong index  = 0;
   const struct dirent *entry;
-  Ulong                widest = 0;
-  Ulong                index  = 0;
   /* Find the width of the widest filename in the current folder. */
   while ((entry = readdir(dir))) {
     Ulong span = breadth(entry->d_name);
@@ -64,8 +57,8 @@ void read_the_list(const char *path, DIR *dir) {
   list_length = index;
   /* Sort the list of names. */
   qsort(filelist, list_length, sizeof(char *), diralphasort);
-  /* Calculate how many files fit on a line -- feigning room for two spaces beyond
-   * the right edge, and adding two spaces of padding between columns. */
+  /* Calculate how many files fit on a line -- feigning room for two spaces
+   * beyond the right edge, and adding two spaces of padding between columns. */
   piles       = ((COLS + 2) / (gauge + 2));
   usable_rows = editwinrows - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
 }
@@ -82,7 +75,7 @@ void reselect(const char *const name) {
     selected = looking_at;
   }
   else if (selected > list_length) {
-    selected = list_length - 1;
+    selected = (list_length - 1);
   }
   else {
     --selected;
@@ -99,7 +92,7 @@ void browser_refresh(void) {
   char *info;
   titlebar(present_path);
   blank_edit();
-  for (Ulong index = (selected - selected % (usable_rows * piles)); (index < list_length) && (row < usable_rows); index++) {
+  for (Ulong index = (selected - selected % (usable_rows * piles)); (index < list_length) && (row < usable_rows); ++index) {
     /* The filename we display, minus the path. */
     const char *thename = tail(filelist[index]);
     /* The file extention. */
@@ -140,7 +133,7 @@ void browser_refresh(void) {
     else if (S_ISDIR(state.st_mode)) {
       if (strcmp(thename, "..") == 0) {
         /* TRANSLATORS: Anything more than 12 cells gets clipped. */
-        info       = copy_of(_("(parent dir)"));
+        info = copy_of(_("(parent dir)"));
         infomaxlen = 12;
       }
       else {
@@ -182,22 +175,31 @@ void browser_refresh(void) {
         /* TRANSLATORS: Anything more than 7 cells gets clipped.  If necessary, you can leave out the parentheses. */
         info = mallocstrcpy(info, _("(huge)"));
       }
-      /* Apply extention based colors when not selected. */
-      if (file_ext && index != selected) {
-        if (strcmp(file_ext, "cpp") == 0) {
-          apply_color = FG_VS_CODE_BRIGHT_GREEN;
-          did_apply_color = TRUE;
+      /* Only check further color coding when not selected. */
+      if (index != selected) {
+        /* Apply extention based colors when not selected. */
+        if (file_ext) {
+          if (strcmp(file_ext, "cpp") == 0) {
+            apply_color = FG_VS_CODE_BRIGHT_GREEN;
+            did_apply_color = TRUE;
+          }
+          if (strcmp(file_ext, "h") == 0) {
+            apply_color = FG_VS_CODE_MAGENTA;
+            did_apply_color = TRUE;
+          }
+          if (strcmp(file_ext, "tar") == 0 || strcmp(file_ext, "gz") == 0) {
+            apply_color = FG_VS_CODE_RED;
+            did_apply_color = TRUE;
+          }
+          if (strcmp(file_ext, "conf") == 0 || strcmp(file_ext, "cfg") == 0) {
+            apply_color = FG_VS_CODE_BRIGHT_MAGENTA;
+            did_apply_color = TRUE;
+          }
         }
-        if (strcmp(file_ext, "h") == 0) {
-          apply_color = FG_VS_CODE_MAGENTA;
-          did_apply_color = TRUE;
-        }
-        if (strcmp(file_ext, "tar") == 0 || strcmp(file_ext, "gz") == 0) {
-          apply_color = FG_VS_CODE_RED;
-          did_apply_color = TRUE;
-        }
-        if (strcmp(file_ext, "conf") == 0 || strcmp(file_ext, "cfg") == 0) {
-          apply_color = FG_VS_CODE_BRIGHT_MAGENTA;
+        /* If the file is executeble. */
+        if (state.st_mode & S_IXUSR) {
+          apply_color = FG_VS_CODE_GREEN;
+          apply_color_mod = A_BOLD;
           did_apply_color = TRUE;
         }
       }
@@ -285,17 +287,17 @@ void findfile(const char *needle, bool forwards) {
   }
 }
 
-/* Prepare the prompt and ask the user what to search for; then search for it.
- * If forwards is TRUE, search forward in the list; otherwise, search backward. */
+// Prepare the prompt and ask the user what to search for; then search for it.
+// If forwards is TRUE, search forward in the list; otherwise, search backward.
 void search_filename(bool forwards) {
   char *thedefault;
   int   response;
   /* If something was searched for before, show it between square brackets. */
-  if (*last_search != '\0') {
-    char *disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
+  if (*last_search) {
+    char *disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
     thedefault = (char *)nmalloc(strlen(disp) + 7);
     /* We use (COLS / 3) here because we need to see more on the line. */
-    sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > COLS / 3) ? "..." : "");
+    sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > (COLS / 3)) ? "..." : "");
     free(disp);
   }
   else {
@@ -308,16 +310,16 @@ void search_filename(bool forwards) {
   free(thedefault);
   /* If the user cancelled, or typed <Enter> on a blank answer and
    * nothing was searched for yet during this session, get out. */
-  if (response == -1 || (response == -2 && *last_search == '\0')) {
+  if (response == -1 || (response == -2 && !*last_search)) {
     statusbar(_("Cancelled"));
     return;
   }
   /* If the user typed an answer, remember it. */
-  if (*answer != '\0') {
+  if (*answer) {
     last_search = mallocstrcpy(last_search, answer);
     update_history(&search_history, answer, PRUNE_DUPLICATE);
   }
-  if (response == 0 || response == -2) {
+  if (!response || response == -2) {
     findfile(last_search, forwards);
   }
 }
@@ -344,13 +346,13 @@ void to_first_file(void) {
 
 /* Select the last file in the list -- called by ^W^V. */
 void to_last_file(void) {
-  selected = list_length - 1;
+  selected = (list_length - 1);
 }
 
-/* Strip one element from the end of path, and return the stripped path.
- * The returned string is dynamically allocated, and should be freed. */
+// Strip one element from the end of path, and return the stripped path.
+// The returned string is dynamically allocated, and should be freed.
 char *strip_last_component(const char *path) {
-  char *copy       = copy_of(path);
+  char *copy = copy_of(path);
   char *last_slash = strrchr(copy, '/');
   if (last_slash) {
     *last_slash = '\0';
@@ -358,9 +360,9 @@ char *strip_last_component(const char *path) {
   return copy;
 }
 
-/* Allow the user to browse through the directories in the filesystem, starting at the
- * given path.  The user can select a file, which will be returned.  The user can also
- * select a directory, which will be entered.  The user can also cancel the browsing. */
+// Allow the user to browse through the directories in the filesystem, starting at the
+// given path.  The user can select a file, which will be returned.  The user can also
+// select a directory, which will be entered.  The user can also cancel the browsing.
 char *browse(char *path) {
   /* The name of the currently selected file, or of the directory we were in before backing up to "..". */
   char *present_name = NULL;
@@ -639,10 +641,10 @@ read_directory_contents:
   return chosen;
 }
 
-/* Prepare to start browsing.  If the given path has a directory part, start browsing in that
- * directory, otherwise in the current directory.  If the path is not a directory, try to strip
- * a filename from it; if then still not a directory, use the current working directory instead.
- * If the resulting path isn't in the operating directory, use the operating directory instead. */
+// Prepare to start browsing.  If the given path has a directory part, start browsing in that
+// directory, otherwise in the current directory.  If the path is not a directory, try to strip
+// a filename from it; if then still not a directory, use the current working directory instead.
+// If the resulting path isn't in the operating directory, use the operating directory instead.
 char *browse_in(const char *inpath) {
   char       *path = real_dir_from_tilde(inpath);
   struct stat fileinfo;

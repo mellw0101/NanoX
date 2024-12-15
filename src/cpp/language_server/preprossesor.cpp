@@ -7,17 +7,17 @@ inline namespace utils {
       const char *start = found + 1;
       ADV_TO_NEXT_WORD(start);
       if (!*start) {
-        return nullptr;
+        return NULL;
       }
       const char *end = start;
       ADV_PAST_WORD(end);
       if (start == end) {
-        return nullptr;
+        return NULL;
       }
       *word = measured_copy(start, (end - start));
       return end;
     }
-    return nullptr;
+    return NULL;
   }
 
   char *get_next_word(const char **ptr) {
@@ -25,7 +25,7 @@ inline namespace utils {
     const char *end   = *ptr;
     ADV_TO_NEXT_WORD(start);
     if (!*start) {
-      return nullptr;
+      return NULL;
     }
     end = start;
     ADV_PAST_WORD(end);
@@ -78,7 +78,7 @@ inline namespace utils {
 
   int get_include_path(const char *current_file, const char **ptr, char **path, bool *local) {
     const char *start = *ptr;
-    const char *end   = nullptr;
+    const char *end   = NULL;
     ADV_PTR(start, (*start != '"' && *start != '<'));
     if (*start) {
       if (*start == '<') {
@@ -89,7 +89,7 @@ inline namespace utils {
           return -2;
         }
         *path  = measured_copy(start, (end - start));
-        *local = false;
+        *local = FALSE;
         return 0;
       }
       else if (*start == '"') {
@@ -102,7 +102,7 @@ inline namespace utils {
         char *p      = measured_copy(start, (end - start));
         char *op_dir = get_file_dir(current_file);
         *path        = alloc_str_free_substrs(op_dir, p);
-        *local       = true;
+        *local       = TRUE;
         return 0;
       }
     }
@@ -389,12 +389,12 @@ inline namespace DefineTools {
     const char *st = *ptr;
     ADV_TO_NEXT_WORD(st);
     if (!*st) {
-      return nullptr;
+      return NULL;
     }
     const char *end = st;
     ADV_PTR(end, *end != '(' && *end != ' ' && *end != '\t');
     if (st == end) {
-      return nullptr;
+      return NULL;
     }
     *ptr = end;
     return measured_memmove_copy(st, (end - st));
@@ -426,9 +426,9 @@ void do_define(linestruct *line, const char *current_file, const char **ptr) {
     free(name);
     return;
   }
-  string val                  = parse_full_define(line, &start, &de.decl_end_line);
-  de.value                    = string(val.c_str(), val.length());
-  de.file                     = string(current_file);
+  string val = parse_full_define(line, &start, &de.decl_end_line);
+  de.value   = string(val.c_str(), val.length());
+  de.file    = string(current_file);
   LSP->index.defines[de.name] = de;
 }
 
@@ -448,7 +448,7 @@ void do_ifdef(const string &define, linestruct *current_line) {
     return;
   }
   int endif = LSP->find_endif(current_line->next);
-  for (linestruct *line = current_line->next; line != nullptr && (line->lineno != endif); line = line->next) {
+  for (linestruct *line = current_line->next; line != NULL && (line->lineno != endif); line = line->next) {
     line->flags.set<DONT_PREPROSSES_LINE>();
   }
 }

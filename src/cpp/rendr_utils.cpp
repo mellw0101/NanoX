@@ -6,58 +6,12 @@ void get_next_word(const char **start, const char **end) {
   adv_ptr((*end), (*(*end) != ' ' && *(*end) != '\t'));
 }
 
-/* Search for any match to the current suggest buf. */
-void find_suggestion(void) {}
-
-/* Clear suggest buffer and len as well as setting the
- * current suggest str to nullptr. */
-void clear_suggestion(void) {
-  suggest_on               = false;
-  suggest_str              = nullptr;
-  suggest_len              = 0;
-  suggest_buf[suggest_len] = '\0';
-}
-
-/* Add last typed char to the suggest buffer. */
-void add_char_to_suggest_buf(void) {
-  if (openfile->current_x > 0) {
-    const char *c = &openfile->current->data[openfile->current_x - 1];
-    if (is_word_char(c - 1, false)) {
-      suggest_len     = 0;
-      const Ulong pos = word_index(true);
-      for (int i = pos; i < openfile->current_x - 1; suggest_len++, i++) {
-        suggest_buf[suggest_len] = openfile->current->data[i];
-      }
-      suggest_buf[suggest_len] = '\0';
-    }
-    suggest_buf[suggest_len++] = *c;
-    suggest_buf[suggest_len]   = '\0';
-  }
-}
-
-/* Draw current suggestion if found to the suggest window. */
-void draw_suggest_win(void) {
-  if (!suggest_str) {
-    return;
-  }
-  Ulong col_len = strlen(suggest_str) + 2;
-  Ulong row_len = 1;
-  Ulong row_pos = (openfile->cursor_row > editwinrows - 2) ? openfile->cursor_row - row_len : openfile->cursor_row + 1;
-  Ulong col_pos = xplustabs() + margin - suggest_len - 1;
-  suggestwin    = newwin(row_len, col_len, row_pos, col_pos);
-  mvwprintw(suggestwin, 0, 1, "%s", suggest_str);
-  wrefresh(suggestwin);
-  if (ISSET(SUGGEST_INLINE)) {
-    RENDR(SUGGEST, suggest_str);
-  }
-}
-
 /* Parse a function declaration that is over multiple lines. */
 char *parse_split_decl(linestruct *line) {
-  char       *data = nullptr;
+  char       *data = NULL;
   const char *p    = strchr(line->data, ')');
   if (!p) {
-    return nullptr;
+    return NULL;
   }
   line            = line->prev;
   char *cur_data  = copy_of(line->data);
@@ -71,7 +25,7 @@ char *parse_split_decl(linestruct *line) {
   data = alloc_str_free_substrs(cur_data, next_data);
   if (!line->prev->data[0]) {
     free(data);
-    return nullptr;
+    return NULL;
   }
   char *ret_t = copy_of(line->prev->data);
   append_str(&ret_t, " ");
@@ -79,10 +33,8 @@ char *parse_split_decl(linestruct *line) {
   return ret;
 }
 
-/* Return the correct line to start parsing function delc.
- * if '{' is on 'line' then we simply return 'line',
- * else we iterate until we find the first line
- * after '{' line that has text on it. */
+/* Return the correct line to start parsing function delc.  if '{' is on 'line' then we simply
+ * return 'line', else we iterate until we find the first line after '{' line that has text on it. */
 linestruct *get_func_decl_last_line(linestruct *line) {
   const char *p = strchr(line->data, '{');
   if (p && (p == line->data || *p == line->data[indent_char_len(line)])) {
@@ -96,8 +48,8 @@ linestruct *get_func_decl_last_line(linestruct *line) {
 
 /* Parse function signature. */
 char *parse_function_sig(linestruct *line) {
-  const char *p           = nullptr;
-  const char *param_start = nullptr;
+  const char *p           = NULL;
+  const char *param_start = NULL;
   /* If the bracket is alone on a line then go to prev line. */
   line = get_func_decl_last_line(line);
   /* If the line does not contain '(', so it must be a split decl. */
@@ -106,9 +58,9 @@ char *parse_function_sig(linestruct *line) {
     return parse_split_decl(line);
   }
   p           = strchr(line->data, ' ');
-  char *sig   = nullptr;
-  char *ret_t = nullptr;
-  char *ret   = nullptr;
+  char *sig   = NULL;
+  char *ret_t = NULL;
+  char *ret   = NULL;
   if (p && p < (param_start - 1)) {
     if (p == line->data) {
       for (; *p && (*p == ' ' || *p == '\t'); p++);
@@ -128,7 +80,7 @@ char *parse_function_sig(linestruct *line) {
   }
   if (!ret) {
     if (!line->prev->data[0]) {
-      return nullptr;
+      return NULL;
     }
     ret_t = copy_of(line->prev->data);
     append_str(&ret_t, " ");
@@ -137,28 +89,19 @@ char *parse_function_sig(linestruct *line) {
   return ret;
 }
 
-/* Inject a suggestion. */
-void accept_suggestion(void) {
-  if (suggest_str != nullptr) {
-    inject(suggest_str + suggest_len, strlen(suggest_str) - suggest_len);
-  }
-  clear_suggestion();
-}
-
-void find_word(linestruct *line, const char *data, const char *word, const Ulong slen, const char **start,
-               const char **end) {
+void find_word(linestruct *line, const char *data, const char *word, const Ulong slen, const char **start, const char **end) {
   *start = strstr(data, word);
   if (*start) {
     *end = (*start) + slen;
-    if (!is_word_char(&line->data[((*end) - line->data)], false) &&
-        (*start == line->data || (!is_word_char(&line->data[((*start) - line->data) - 1], false) &&
+    if (!is_word_char(&line->data[((*end) - line->data)], FALSE) &&
+        (*start == line->data || (!is_word_char(&line->data[((*start) - line->data) - 1], FALSE) &&
                                   line->data[((*start) - line->data) - 1] != '_'))) {}
     else {
-      *start = nullptr;
+      *start = NULL;
     }
   }
   else {
-    *end = nullptr;
+    *end = NULL;
   }
 }
 
@@ -176,11 +119,11 @@ void free_local_var(local_var_t *var) {
 
 local_var_t parse_local_var(linestruct *line) {
   local_var_t var;
-  var.type         = nullptr;
-  var.name         = nullptr;
-  var.value        = nullptr;
-  const char *end  = nullptr;
-  const char *data = nullptr;
+  var.type         = NULL;
+  var.name         = NULL;
+  var.value        = NULL;
+  const char *end  = NULL;
+  const char *data = NULL;
   data             = &line->data[indent_char_len(line)];
   end              = strchr(data, ';');
   if (end) {
@@ -227,8 +170,8 @@ local_var_t parse_local_var(linestruct *line) {
 
 int find_class_end_line(linestruct *from) {
   int         lvl     = 0;
-  const char *b_start = nullptr;
-  const char *b_end   = nullptr;
+  const char *b_start = NULL;
+  const char *b_end   = NULL;
   for (linestruct *line = from; line; line = line->next) {
     b_start = line->data;
     do {
