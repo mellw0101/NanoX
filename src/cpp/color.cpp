@@ -28,8 +28,8 @@
 /* Whether ncurses accepts -1 to mean "default color". */
 static bool defaults_allowed = FALSE;
 
-/* Initialize the color pairs for nano's interface.  Ask ncurses to allow -1 to
- * mean "default color".  Initialize the color pairs for nano's interface elements. */
+// Initialize the color pairs for nano's interface.  Ask ncurses to allow -1 to
+// mean "default color".  Initialize the color pairs for nano's interface elements.
 void set_interface_colorpairs(void) {
   /* Ask ncurses to allow -1 to mean "default color". */
   defaults_allowed = (use_default_colors() == OK);
@@ -47,7 +47,7 @@ void set_interface_colorpairs(void) {
       }
       init_pair((index + 1), combo->fg, combo->bg);
       interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
-      rescind_colors              = FALSE;
+      rescind_colors = FALSE;
     }
     else {
       if (index == FUNCTION_TAG || index == SCROLL_BAR) {
@@ -70,7 +70,7 @@ void set_interface_colorpairs(void) {
       }
       else if (index == LINE_NUMBER) {
         color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
-        init_pair(index + 1, XTERM_GREY_2, COLOR_BLACK);
+        init_pair((index + 1), XTERM_GREY_2, (defaults_allowed ? THE_DEFAULT : COLOR_BLACK));
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
       else if (index >= FG_BLUE && index <= FG_MAUVE) {
@@ -91,7 +91,7 @@ void set_interface_colorpairs(void) {
         interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
       }
       else if (index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY) {
-        init_pair(index + 1, color_index_map[index - FG_VS_CODE_RED].value, COLOR_BLACK);
+        init_pair(index + 1, color_index_map[index - FG_VS_CODE_RED].value, (defaults_allowed ? THE_DEFAULT : COLOR_BLACK));
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
       else {
@@ -108,10 +108,9 @@ void set_interface_colorpairs(void) {
   }
 }
 
-/* Assign a pair number to each of the foreground/background color combinations
- * in the given syntax, giving identical combinations the same number. */
+/* Assign a pair number to each of the foreground/background color combinations in the given syntax, giving identical combinations the same number. */
 void set_syntax_colorpairs(syntaxtype *sntx) {
-  short      number = NUMBER_OF_ELEMENTS;
+  short number = NUMBER_OF_ELEMENTS;
   colortype *older;
   for (colortype *ink = sntx->color; ink; ink = ink->next) {
     if (!defaults_allowed) {
@@ -144,8 +143,7 @@ void prepare_palette(void) {
   have_palette = TRUE;
 }
 
-/* Try to match the given shibboleth string with, one of the regexes
- * in the list starting at head.  Return 'TRUE' upon success. */
+/* Try to match the given shibboleth string with, one of the regexes in the list starting at head.  Return 'TRUE' upon success. */
 bool found_in_list(regexlisttype *head, const char *shibboleth) {
   for (regexlisttype *item = head; item; item = item->next) {
     if (regexec(item->one_rgx, shibboleth, 0, NULL, 0) == 0) {
@@ -155,8 +153,7 @@ bool found_in_list(regexlisttype *head, const char *shibboleth) {
   return FALSE;
 }
 
-/* Find a syntax that applies to the current buffer, based upon filename
- * or buffer content, and load and prime this syntax when needed. */
+/* Find a syntax that applies to the current buffer, based upon filename or buffer content, and load and prime this syntax when needed. */
 void find_and_prime_applicable_syntax(void) {
   syntaxtype *sntx = NULL;
   /* If the rcfiles were not read, or contained no syntaxes, get out. */
@@ -252,8 +249,7 @@ void find_and_prime_applicable_syntax(void) {
   openfile->syntax = sntx;
 }
 
-/* Determine whether the matches of multiline regexes are still the same,
- * and if not, schedule a screen refresh, so things will be repainted. */
+/* Determine whether the matches of multiline regexes are still the same, and if not, schedule a screen refresh, so things will be repainted. */
 void check_the_multis(linestruct *line) {
   const colortype *ink;
   regmatch_t startmatch;

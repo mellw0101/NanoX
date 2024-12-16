@@ -202,6 +202,17 @@ void free_chararray(char **array, Ulong len) {
   free(array);
 }
 
+/* Append an array onto 'array'.  Free 'append' but not any elements in it after call. */
+void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) {
+  Ulong new_len = ((*len) + append_len);
+  *array = (char **)realloc(*array, (sizeof(char *) * (new_len + 1)));
+  for (Ulong i = 0; i < append_len; ++i) {
+    (*array)[(*len) + i] = append[i];
+  }
+  *len = new_len;
+  (*array)[*len] = NULL;
+}
+
 // Is the word starting at the given position in 'text' and of the given
 // length a separate word?  That is: is it not part of a longer word?
 bool is_separate_word(Ulong position, Ulong length, const char *text) {
@@ -227,14 +238,13 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
         return NULL;
       }
       far_end   = strlen(haystack);
-      ceiling   = start - haystack;
+      ceiling   = (start - haystack);
       last_find = regmatches[0].rm_so;
       /* A result beyond the search range also means: no match. */
       if (last_find > ceiling) {
         return NULL;
       }
-      /* Move the start-of-range forward until there is no more match;
-       * then the last match found is the first match backwards. */
+      /* Move the start-of-range forward until there is no more match; then the last match found is the first match backwards. */
       while (regmatches[0].rm_so <= ceiling) {
         floor     = next_rung;
         last_find = regmatches[0].rm_so;
@@ -242,7 +252,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
         if (last_find == ceiling) {
           break;
         }
-        next_rung           = step_right(haystack, last_find);
+        next_rung = step_right(haystack, last_find);
         regmatches[0].rm_so = next_rung;
         regmatches[0].rm_eo = far_end;
         if (regexec(&search_regexp, haystack, 1, regmatches, REG_STARTEND)) {
@@ -255,7 +265,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
       if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
         return NULL;
       }
-      return haystack + regmatches[0].rm_so;
+      return (haystack + regmatches[0].rm_so);
     }
     /* Do a forward regex search from the starting point. */
     regmatches[0].rm_so = start - haystack;
@@ -264,7 +274,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
       return NULL;
     }
     else {
-      return haystack + regmatches[0].rm_so;
+      return (haystack + regmatches[0].rm_so);
     }
   }
   if (ISSET(CASE_SENSITIVE)) {
@@ -365,7 +375,7 @@ Ulong actual_x(const char *text, Ulong column) {
   const char *start = text;
   /* The current accumulated span, in columns. */
   Ulong width = 0;
-  while (*text != '\0') {
+  while (*text) {
     int charlen = advance_over(text, width);
     if (width > column) {
       break;
@@ -389,7 +399,8 @@ Ulong wideness(const char *text, Ulong maxlen) {
 /* Return the number of columns that the given text occupies. */
 Ulong breadth(const char *text) {
   Ulong span = 0;
-  for (; *text; text += advance_over(text, span));
+  for (; *text; text += advance_over(text, span))
+    ;
   return span;
 }
 
@@ -416,8 +427,8 @@ void remove_magicline(void) {
 
 /* Return 'true' when the mark is before or at the cursor, and FALSE otherwise. */
 bool mark_is_before_cursor(void) {
-  return (
-    openfile->mark->lineno < openfile->current->lineno
+  return
+    (openfile->mark->lineno < openfile->current->lineno
     || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
 }
 

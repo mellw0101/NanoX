@@ -42,14 +42,14 @@ void read_the_list(const char *path, DIR *dir) {
   rewinddir(dir);
   free_chararray(filelist, list_length);
   list_length = index;
-  index       = 0;
-  filelist    = (char **)nmalloc(list_length * sizeof(char *));
+  index = 0;
+  filelist = (char **)nmalloc(list_length * sizeof(char *));
   while ((entry = readdir(dir)) && index < list_length) {
     /* Don't show the useless dot item. */
     if (strcmp(entry->d_name, ".") == 0) {
       continue;
     }
-    filelist[index] = (char *)nmalloc(path_len + strlen(entry->d_name) + 1);
+    filelist[index] = (char *)nmalloc(path_len + _D_ALLOC_NAMLEN(entry));
     sprintf(filelist[index], "%s%s", path, entry->d_name);
     ++index;
   }
@@ -59,8 +59,8 @@ void read_the_list(const char *path, DIR *dir) {
   qsort(filelist, list_length, sizeof(char *), diralphasort);
   /* Calculate how many files fit on a line -- feigning room for two spaces
    * beyond the right edge, and adding two spaces of padding between columns. */
-  piles       = ((COLS + 2) / (gauge + 2));
-  usable_rows = editwinrows - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
+  piles = ((COLS + 2) / (gauge + 2));
+  usable_rows = (editwinrows - (ISSET(ZERO) && (LINES > 1) ? 1 : 0));
 }
 
 /* Reselect the given file or directory name, if it still exists. */
@@ -304,12 +304,10 @@ void search_filename(bool forwards) {
     thedefault = copy_of("");
   }
   /* Now ask what to search for. */
-  response = do_prompt(MWHEREISFILE, "", &search_history, browser_refresh, "%s%s%s", _("Search"),
-                       /* TRANSLATORS: A modifier of the Search prompt. */
-                       !forwards ? _(" [Backwards]") : "", thedefault);
+  response = do_prompt(MWHEREISFILE, "", &search_history, browser_refresh, "%s%s%s",
+    _("Search"), /* TRANSLATORS: A modifier of the Search prompt. */ !forwards ? _(" [Backwards]") : "", thedefault);
   free(thedefault);
-  /* If the user cancelled, or typed <Enter> on a blank answer and
-   * nothing was searched for yet during this session, get out. */
+  /* If the user cancelled, or typed <Enter> on a blank answer and nothing was searched for yet during this session, get out. */
   if (response == -1 || (response == -2 && !*last_search)) {
     statusbar(_("Cancelled"));
     return;

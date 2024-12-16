@@ -45,6 +45,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <stdatomic.h>
+
 #include <ncursesw/ncurses.h>
 
 #include <Mlib/Attributes.h>
@@ -55,6 +57,7 @@
 #include <Mlib/String.h>
 #include <Mlib/Vector.h>
 #include <Mlib/constexpr.hpp>
+#include <Mlib/Notify.h>
 #include <Mlib/def.h>
 
 using std::hash;
@@ -259,9 +262,13 @@ using std::vector;
     __VA_ARGS__                \
   } name;
 
-#define NULL_safe_free(ptr) ptr ? free(ptr) : void()
+#define ASM_FUNCTION(ret) extern "C" ret __attribute__((__nodebug__, __nothrow__))
 
-#define ASM_FUNCTION(ret) extern "C" ret __attribute__((__const__, __nodebug__, __nothrow__))
+#if defined (__aarch64__)
+#define atomic_xchg(ptr, value) __atomic_exchange_n(ptr, value, __ATOMIC_SEQ_CST)
+#else
+#define atomic_xchg(ptr, value) asm_atomic_xchg(ptr, value)
+#endif
 
 /* Used to encode both parts when enclosing a region. */
 #define ENCLOSE_DELIM ":;:"
@@ -473,8 +480,8 @@ typedef struct syntaxtype {
 typedef struct lintstruct {
   lintstruct *next; /* Next error. */
   lintstruct *prev; /* Previous error. */
-  long lineno;      /* Line number of the error. */
-  long colno;       /* Column # of the error. */
+  long  lineno;     /* Line number of the error. */
+  long  colno;      /* Column # of the error. */
   char *msg;        /* Error message text. */
   char *filename;   /* Filename. */
 } lintstruct;
@@ -557,6 +564,11 @@ typedef struct openfilestruct {
   openfilestruct *next;       /* The next open file, if any. */
   openfilestruct *prev;       /* The preceding open file, if any. */
 } openfilestruct;
+
+typedef struct colorfilestruct {
+  char *filepath;
+  short linenumber;
+} colorfilestruct; 
 
 typedef struct rcoption {
   const char *name; /* The name of the rcfile option. */

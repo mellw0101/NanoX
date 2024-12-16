@@ -134,7 +134,7 @@ void init_queue_task(void) {
   if (task_queue) {
     return;
   }
-  task_queue        = (task_queue_t *)nmalloc(sizeof(task_queue_t));
+  task_queue = (task_queue_t *)nmalloc(sizeof(task_queue_t));
   task_queue->front = 0;
   task_queue->rear  = 0;
   task_queue->count = 0;

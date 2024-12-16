@@ -216,6 +216,10 @@ const char *term = NULL;
 const char *term_program = NULL;
 bit_flag_t<8> mod_key;
 
+file_listener_handler_t file_listener;
+
+short line_number_color = LINE_NUMBER;
+
 /* Empty functions, for the most part corresponding to toggles. */
 
 void case_sens_void(void) {

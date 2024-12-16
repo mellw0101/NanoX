@@ -2,10 +2,9 @@
 
 /* Open a file.  Return`s the fd and assigns the stream to 'f'. */
 int IndexFile::open_file(FILE **f) {
-  PROFILE_FUNCTION;
-  int         fd;
+  int fd;
+  char *full_filename = get_full_path(filename);
   struct stat fileinfo;
-  char       *full_filename = get_full_path(filename);
   if (!full_filename || stat(full_filename, &fileinfo) == -1) {
     full_filename = mallocstrcpy(full_filename, filename);
   }
@@ -42,7 +41,6 @@ int IndexFile::open_file(FILE **f) {
 #define LUMP 120
 
 void IndexFile::read_lines(FILE *f, int fd) {
-  PROFILE_FUNCTION;
   Ulong       bufsize   = LUMP;
   Ulong       len       = 0;
   Ulong       num_lines = 0;
@@ -77,7 +75,7 @@ void IndexFile::read_lines(FILE *f, int fd) {
       ++len;
       if (len == bufsize) {
         bufsize += LUMP;
-        buf = (char *)nrealloc(buf, bufsize);
+        buf = arealloc(buf, bufsize);
       }
       continue;
     }
@@ -116,7 +114,7 @@ void IndexFile::read_lines(FILE *f, int fd) {
       if (!num_lines) {
         format = MAC_FILE;
       }
-      buf[--len]             = '\0';
+      buf[--len] = '\0';
       mac_line_needs_newline = TRUE;
     }
     filebot->data = encode_data(buf, len);
@@ -160,12 +158,7 @@ bool IndexFile::has_changed(void) noexcept {
 void IndexFile::delete_data(void) noexcept {
   free(filename);
   filename = NULL;
-  while (filetop) {
-    linestruct *node = filetop;
-    filetop = node->next;
-    free(node->data);
-    free(node);
-  }
+  free_lines(filetop);
   filetop = NULL;
   filebot = NULL;
 }
@@ -178,5 +171,6 @@ void IndexFile::read_file(const char *path) {
     return;
   }
   read_lines(f, fd);
+  close(fd);
   get_last_time_changed();
 }

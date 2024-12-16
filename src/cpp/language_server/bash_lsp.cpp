@@ -16,9 +16,13 @@ blsp *const &blsp::instance(void) {
 
 void get_env_path_binaries(void) {
   if (!env_path_task_running) {
-    char **files, **dirs;
-    Ulong nfiles,  ndirs;
-    if (entries_in_dir("/usr/bin", &files, &nfiles, &dirs, &ndirs) == 0) {
+    const char *path_env = getenv("PATH");
+    if (!path_env) {
+      return;
+    }
+    char **files, **dirs ;
+    Ulong  nfiles,  ndirs;
+    if (get_all_entries_in_dir("/home/mellw/projects/NanoX", &files, &nfiles, &dirs, &ndirs) == 0) {
       free_chararray(files, nfiles);
       free_chararray(dirs, ndirs);
     }

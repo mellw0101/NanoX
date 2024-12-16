@@ -165,10 +165,17 @@ extern main_thread_t         *main_thread;
 
 extern unordered_map<string, syntax_data_t> test_map;
 
+extern file_listener_handler_t file_listener;
+
+extern short line_number_color;
+
 typedef void (*functionptrtype)(void);
 
 /* Asm functions. */
 ASM_FUNCTION(int) SSE_strlen(const char *str);
+ASM_FUNCTION(void) asm_atomic_add(int *ptr, int value);
+ASM_FUNCTION(void) asm_atomic_sub(int *ptr, int value);
+ASM_FUNCTION(int) asm_atomic_xchg(int *ptr, int value);
 
 /* The two needed functions from 'browser.cpp'. */
 void  browser_refresh(void);
@@ -278,6 +285,8 @@ char **retrieve_words_from_file(const char *path, Ulong *nwords);
 char **words_from_file(const char *path, Ulong *nwords);
 char **dir_entrys_from(const char *path);
 int    entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) __nonnull((1, 2, 3, 4, 5));
+int    recursive_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs);
+int    get_all_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs);
 linestruct *retrieve_file_as_lines(const string &path);
 
 /* Some functions in 'global.cpp'. */
@@ -464,6 +473,7 @@ bool        parse_line_column(const char *str, long *line, long *column);
 void        recode_NUL_to_LF(char *string, Ulong length);
 Ulong       recode_LF_to_NUL(char *string);
 void        free_chararray(char **array, Ulong len);
+void        append_chararray(char ***array, Ulong *len, char **append, Ulong append_len);
 bool        is_separate_word(Ulong position, Ulong length, const char *buf);
 void       *nmalloc(Ulong howmuch) __returns_nonnull;
 void       *nrealloc(void *ptr, Ulong howmuch) __returns_nonnull __nonnull((1));

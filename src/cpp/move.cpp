@@ -515,31 +515,28 @@ void do_home(void) {
   }
 }
 
-/* Move to the end of the current line (or softwrapped 'chunk').  When softwrapping
- * and already at the end of a 'chunk', go to the end of the full line. */
+/* Move to the end of the current line (or softwrapped 'chunk').  When softwrapping and already at the end of a 'chunk', go to the end of the full line. */
 void do_end(void) {
-  bool        moved_off_chunk, kickoff, last_chunk;
-  Ulong       was_column, line_len, leftedge, rightedge, right_x;
+  bool  moved_off_chunk, kickoff, last_chunk;
+  Ulong was_column, line_len, leftedge, rightedge, right_x;
   linestruct *was_current;
-  was_current     = openfile->current;
-  was_column      = xplustabs();
-  line_len        = strlen(openfile->current->data);
+  was_current = openfile->current;
+  was_column  = xplustabs();
+  line_len    = strlen(openfile->current->data);
   moved_off_chunk = TRUE;
   if (ISSET(SOFTWRAP)) {
     kickoff    = TRUE;
     last_chunk = FALSE;
     leftedge   = leftedge_for(was_column, openfile->current);
     rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk);
-    /* If we're on the last chunk, we're already at the end of the line.
-     * Otherwise, we're one column past the end of the line.  Shifting
-     * backwards one column might put us in the middle of a multi-column
-     * character, but actual_x() will fix that. */
+    /* If we're on the last chunk, we're already at the end of the line.  Otherwise,
+     * we're one column past the end of the line.  Shifting backwards one column might
+     * put us in the middle of a multi-column character, but actual_x() will fix that. */
     if (!last_chunk) {
       rightedge--;
     }
     right_x = actual_x(openfile->current->data, rightedge);
-    /* If already at the right edge of the screen, move fully to
-     * the end of the line.  Otherwise, move to the right edge. */
+    /* If already at the right edge of the screen, move fully to the end of the line.  Otherwise, move to the right edge. */
     if (openfile->current_x == right_x) {
       openfile->current_x = line_len;
     }
@@ -555,8 +552,7 @@ void do_end(void) {
   if (moved_off_chunk) {
     openfile->placewewant = xplustabs();
   }
-  /* If we changed chunk, we might be offscreen.  Otherwise,
-   * update current if the mark is on or we changed "page". */
+  /* If we changed chunk, we might be offscreen.  Otherwise, update current if the mark is on or we changed "page". */
   if (ISSET(SOFTWRAP) && moved_off_chunk) {
     edit_redraw(was_current, FLOWING);
   }
@@ -568,14 +564,14 @@ void do_end(void) {
 /* Move the cursor to the preceding line or chunk. */
 void do_up(void) {
   linestruct *was_current = openfile->current;
-  Ulong       leftedge, target_column;
+  Ulong leftedge, target_column;
   get_edge_and_target(&leftedge, &target_column);
   /* If we can't move up one line or chunk, we're at top of file. */
   if (go_back_chunks(1, &openfile->current, &leftedge) > 0) {
     return;
   }
   set_proper_index_and_pww(&leftedge, target_column, FALSE);
-  if (openfile->cursor_row == 0 && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
+  if (!openfile->cursor_row && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
     edit_scroll(BACKWARD);
   }
   else {
@@ -588,31 +584,30 @@ void do_up(void) {
 /* Move the cursor to next line or chunk. */
 void do_down(void) {
   linestruct *was_current = openfile->current;
-  Ulong       leftedge, target_column;
+  Ulong leftedge, target_column;
   get_edge_and_target(&leftedge, &target_column);
   /* If we can't move down one line or chunk, we're at bottom of file. */
   if (go_forward_chunks(1, &openfile->current, &leftedge) > 0) {
     return;
   }
   set_proper_index_and_pww(&leftedge, target_column, TRUE);
-  if (openfile->cursor_row == editwinrows - 1 && !ISSET(JUMPY_SCROLLING) &&
-      (tabsize < editwincols || !ISSET(SOFTWRAP))) {
+  if (openfile->cursor_row == editwinrows - 1 && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
     edit_scroll(FORWARD);
   }
   else {
     edit_redraw(was_current, FLOWING);
   }
   /* <Down> should not change placewewant, so restore it. */
-  openfile->placewewant = leftedge + target_column;
+  openfile->placewewant = (leftedge + target_column);
 }
 
 /* Scroll up one line or chunk without moving the cursor textwise. */
 void do_scroll_up(void) {
   /* When the top of the file is onscreen, we can't scroll. */
-  if (openfile->edittop->prev == NULL && openfile->firstcolumn == 0) {
+  if (!openfile->edittop->prev && !openfile->firstcolumn) {
     return;
   }
-  if (openfile->cursor_row == editwinrows - 1) {
+  if (openfile->cursor_row == (editwinrows - 1)) {
     do_up();
   }
   if (editwinrows > 1) {
@@ -625,9 +620,8 @@ void do_scroll_down(void) {
   if (openfile->cursor_row == 0) {
     do_down();
   }
-  if (editwinrows > 1 &&
-      (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
-                                                               chunk_for(openfile->firstcolumn, openfile->edittop))))) {
+  if (editwinrows > 1
+   && (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) > chunk_for(openfile->firstcolumn, openfile->edittop))))) {
     edit_scroll(FORWARD);
   }
 }

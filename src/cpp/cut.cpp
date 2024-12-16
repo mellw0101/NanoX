@@ -1,4 +1,4 @@
-/** @file @c cut.cpp */
+/** @file cut.cpp */
 #include "../include/prototypes.h"
 
 /* Delete the character at the current position, and add or update an undo item for the given action. */
@@ -290,13 +290,13 @@ void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x)
 
 /* Meld the buffer that starts at topline into the current file buffer at the current cursor position. */
 void ingraft_buffer(linestruct *topline) {
-  linestruct *line         = openfile->current;
-  Ulong       length       = strlen(line->data);
-  Ulong       extralen     = strlen(topline->data);
-  Ulong       xpos         = openfile->current_x;
-  char       *tailtext     = copy_of(line->data + xpos);
-  bool        mark_follows = (openfile->mark == line && !mark_is_before_cursor());
-  linestruct *botline      = topline;
+  linestruct *line    = openfile->current;
+  linestruct *botline = topline;
+  Ulong length       = strlen(line->data);
+  Ulong extralen     = strlen(topline->data);
+  Ulong xpos         = openfile->current_x;
+  char *tailtext     = copy_of(line->data + xpos);
+  bool  mark_follows = (openfile->mark == line && !mark_is_before_cursor());
   while (botline->next) {
     botline = botline->next;
   }
@@ -307,8 +307,8 @@ void ingraft_buffer(linestruct *topline) {
   }
   if (extralen > 0) {
     /* Insert the text of topline at the current cursor position. */
-    line->data = (char *)nrealloc(line->data, length + extralen + 1);
-    memmove(line->data + xpos + extralen, line->data + xpos, length - xpos + 1);
+    line->data = arealloc(line->data, (length + extralen + 1));
+    memmove((line->data + xpos + extralen), (line->data + xpos), (length - xpos + 1));
     constexpr_strncpy(line->data + xpos, topline->data, extralen);
   }
   if (topline != botline) {
@@ -325,9 +325,9 @@ void ingraft_buffer(linestruct *topline) {
     openfile->current->next = topline->next;
     topline->next->prev     = openfile->current;
     /* Add the text after the cursor position at the end of botline. */
-    length        = strlen(botline->data);
-    extralen      = strlen(tailtext);
-    botline->data = (char *)nrealloc(botline->data, length + extralen + 1);
+    length   = strlen(botline->data);
+    extralen = strlen(tailtext);
+    botline->data = arealloc(botline->data, (length + extralen + 1));
     constexpr_strcpy(botline->data + length, tailtext);
     /* Put the cursor at the end of the grafted text. */
     openfile->current   = botline;
@@ -339,7 +339,7 @@ void ingraft_buffer(linestruct *topline) {
   /* When needed, update the mark's pointer and position. */
   if (mark_follows && topline != botline) {
     openfile->mark = botline;
-    openfile->mark_x += length - xpos;
+    openfile->mark_x += (length - xpos);
   }
   else if (mark_follows) {
     openfile->mark_x += extralen;
@@ -348,7 +348,7 @@ void ingraft_buffer(linestruct *topline) {
   free(tailtext);
   renumber_from(line);
   /* If the text doesn't end with a newline, and it should, add one. */
-  if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0] != '\0') {
+  if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0]) {
     new_magicline();
   }
 }
@@ -406,8 +406,7 @@ void do_snip(bool marked, bool until_eof, bool append) {
     }
   }
   else {
-    /* When not at end-of-buffer, move one full line into the cutbuffer;
-     * otherwise, move all text until end-of-line into the cutbuffer. */
+    /* When not at end-of-buffer, move one full line into the cutbuffer; otherwise, move all text until end-of-line into the cutbuffer. */
     if (openfile->current != openfile->filebot) {
       extract_segment(line, 0, line->next, 0);
     }

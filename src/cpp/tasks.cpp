@@ -274,8 +274,8 @@ struct main_thread_function {
         } */
       }
       else {
-        NULL_safe_free(gv.type);
-        NULL_safe_free(gv.value);
+        free(gv.type);
+        free(gv.value);
       }
       free(vars[i]);
     }

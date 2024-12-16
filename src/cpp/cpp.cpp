@@ -157,6 +157,7 @@ void do_close_bracket(void) {
 }
 
 void do_parse(void) {
+  PROFILE_FUNCTION;
   if (openfile->type.is_set<C_CPP>()) {
     LSP->index_file(openfile->filename);
     unix_socket_debug("got here\n");

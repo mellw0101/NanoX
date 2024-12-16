@@ -153,8 +153,8 @@ void suggest_ctrlT_ctrlZ(void) {
   }
 }
 
-/// Make sure the cursor is visible, then exit from curses mode, disable
-/// bracketed-paste mode, and restore the original terminal settings.
+// Make sure the cursor is visible, then exit from curses mode, disable
+// bracketed-paste mode, and restore the original terminal settings.
 void restore_terminal(void) {
   curs_set(1);
   endwin();
@@ -163,7 +163,7 @@ void restore_terminal(void) {
   tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
-/// Exit normally: restore terminal state and report any startup errors.
+/* Exit normally: restore terminal state and report any startup errors. */
 void finish(void) {
   /* Blank the status bar and (if applicable) the shortcut list. */
   blank_statusbar();
@@ -183,7 +183,7 @@ void finish(void) {
   exit(0);
 }
 
-/// Close the current buffer, freeing its memory.
+/* Close the current buffer, freeing its memory. */
 void close_and_go(void) {
   if (openfile->lock_filename) {
     delete_lockfile(openfile->lock_filename);
@@ -208,8 +208,8 @@ void close_and_go(void) {
   }
 }
 
-/// Close the current buffer if it is unmodified.  Otherwise (when not doing automatic saving),
-/// ask the user whether to save it, then close it and exit, or return when the user cancelled.
+// Close the current buffer if it is unmodified.  Otherwise (when not doing automatic saving),
+// ask the user whether to save it, then close it and exit, or return when the user cancelled.
 void do_exit(void) {
   int choice;
   /* When unmodified, simply close.  Else, when doing automatic saving and the
@@ -235,8 +235,8 @@ void do_exit(void) {
   }
 }
 
-/// Save the current buffer under the given name (or "nano.<pid>" when nameless)
-/// with suffix ".save". If needed, the name is further suffixed to be unique.
+// Save the current buffer under the given name (or "nano.<pid>" when nameless)
+// with suffix ".save". If needed, the name is further suffixed to be unique.
 void emergency_save(const char *filename) {
   char *plainname, *targetname;
   if (!*filename) {
@@ -257,7 +257,7 @@ void emergency_save(const char *filename) {
   free(plainname);
 }
 
-/// Die gracefully, by restoring the terminal state and, saving any buffers that were modified.
+/* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
 void die(const char *msg, ...) {
   openfilestruct *firstone;
   static int      stabs = 0;
@@ -292,7 +292,7 @@ void die(const char *msg, ...) {
   exit(1);
 }
 
-/// Initialize the three window portions nano uses.
+/* Initialize the three window portions nano uses. */
 void window_init(void) {
   /* When resizing, first delete the existing windows. */
   if (midwin) {
@@ -355,7 +355,7 @@ void enable_mouse_support(void) {
   oldinterval = mouseinterval(50);
 }
 
-/// Switch mouse support on or off, as needed.
+/* Switch mouse support on or off, as needed. */
 void mouse_init(void) {
   if (ISSET(USE_MOUSE)) {
     enable_mouse_support();
@@ -365,7 +365,7 @@ void mouse_init(void) {
   }
 }
 
-/// Print the usage line for the given option to the screen.
+/* Print the usage line for the given option to the screen. */
 void print_opt(const char *const shortflag, const char *const longflag, const char *const description) {
   const int firstwidth  = breadth(shortflag);
   const int secondwidth = breadth(longflag);
@@ -655,7 +655,7 @@ void block_sigwinch(bool blockit) {
   sigset_t winch;
   sigemptyset(&winch);
   sigaddset(&winch, SIGWINCH);
-  sigprocmask(blockit ? SIG_BLOCK : SIG_UNBLOCK, &winch, NULL);
+  sigprocmask((blockit ? SIG_BLOCK : SIG_UNBLOCK), &winch, NULL);
   if (the_window_resized) {
     regenerate_screen();
   }
@@ -1138,7 +1138,7 @@ void process_a_keystroke(void) {
       /* When the input buffer (plus room for terminating NUL) is full, extend it. Otherwise, if it does not exist yet, create it. */
       if (depth + 1 == capacity) {
         capacity *= 2;
-        puddle   = arealloc(puddle, capacity);
+        puddle = arealloc(puddle, capacity);
       }
       else if (!puddle) {
         puddle = (char *)nmalloc(capacity);
@@ -1241,7 +1241,6 @@ void process_a_keystroke(void) {
   function();
   /* When the marked region changes without Shift being held, discard a soft mark. And when the set of lines changes, reset the "last line too" flag. */
   if (openfile->mark && openfile->softmark && !shift_held && (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)) && !keep_mark) {
-    NLOG("Removing mark.\n");
     openfile->mark = NULL;
     refresh_needed = TRUE;
   }

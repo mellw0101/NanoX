@@ -448,6 +448,7 @@ void enclose_marked_region(const char *s1, const char *s2) {
 /* This is a shortcut to make marked area a block comment. */
 void do_block_comment(void) {
   enclose_marked_region("/* ", " */");
+  keep_mark = TRUE;
 }
 
 /* Undo the last thing(s) we did. */

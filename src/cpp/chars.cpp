@@ -63,10 +63,10 @@ bool is_punct_char(const char *const c) {
   return iswpunct(wc);
 }
 
-/* Return 'TRUE' when the given character is word-forming (it is alphanumeric or
- * specified in 'wordchars', or it is punctuation when allow_punct is TRUE). */
+// Return 'TRUE' when the given character is word-forming (it is alphanumeric or
+// specified in 'wordchars', or it is punctuation when allow_punct is TRUE).
 bool is_word_char(const char *const c, bool allow_punct) {
-  if (*c == '\0') {
+  if (!*c) {
     return FALSE;
   }
   if (is_alnum_char(c)) {
@@ -76,9 +76,9 @@ bool is_word_char(const char *const c, bool allow_punct) {
     return TRUE;
   }
   if (word_chars && *word_chars) {
-    char      symbol[MAXCHARLEN + 1];
+    char symbol[MAXCHARLEN + 1];
     const int symlen = collect_char(c, symbol);
-    symbol[symlen]   = '\0';
+    symbol[symlen] = '\0';
     return constexpr_strstr(word_chars, symbol);
   }
   else {
@@ -95,10 +95,10 @@ char control_rep(const signed char c) {
     return '=';
   }
   else if (c < 0) {
-    return c + 224;
+    return (c + 224);
   }
   else {
-    return c + 64;
+    return (c + 64);
   }
 }
 
@@ -121,8 +121,8 @@ char control_mbrep(const char *const c, bool isdata) {
   }
 }
 
-/* Convert the given multibyte sequence c to wide character wc, and return
- * the number of bytes in the sequence, or -1 for an invalid sequence. */
+// Convert the given multibyte sequence c to wide character wc, and return
+// the number of bytes in the sequence, or -1 for an invalid sequence.
 int mbtowide(wchar_t &wc, const char *const c) {
   if ((signed char)*c < 0 && use_utf8) {
     Uchar v1 = (Uchar)c[0];
@@ -240,8 +240,7 @@ Ulong mbstrlen(const char *pointer) {
   return count;
 }
 
-/* Return the length (in bytes) of the character at the start of the
- * given string, and return a copy of this character in *thechar. */
+/* Return the length (in bytes) of the character at the start of the given string, and return a copy of this character in *thechar. */
 int collect_char(const char *const str, char *c) {
   const int charlen = char_length(str);
   for (int i = 0; i < charlen; i++) {
@@ -250,8 +249,7 @@ int collect_char(const char *const str, char *c) {
   return charlen;
 }
 
-/* Return the length ( in bytes ) of the character at the start of
- * the given string, and add this character's width to '*column'. */
+/* Return the length ( in bytes ) of the character at the start of the given string, and add this character's width to '*column'. */
 int advance_over(const char *const str, Ulong &column) {
   if (*str < 0 && use_utf8) {
     /* A UTF-8 upper control code has two bytes and takes two columns. */
@@ -260,7 +258,7 @@ int advance_over(const char *const str, Ulong &column) {
       return 2;
     }
     else {
-      wchar_t   wc;
+      wchar_t wc;
       const int charlen = mbtowide(wc, str);
       if (charlen < 0) {
         column += 1;
@@ -268,7 +266,7 @@ int advance_over(const char *const str, Ulong &column) {
       }
       const int width = wcwidth(wc);
 #if defined(__OpenBSD__)
-      *column += (width < 0 || wc >= 0xF0000) ? 1 : width;
+      *column += ((width < 0 || wc >= 0xF0000) ? 1 : width);
 #else
       column += (width < 0) ? 1 : width;
 #endif
@@ -277,7 +275,7 @@ int advance_over(const char *const str, Ulong &column) {
   }
   if ((Uchar)*str < 0x20) {
     if (*str == '\t') {
-      column += tabsize - column % tabsize;
+      column += (tabsize - column % tabsize);
     }
     else {
       column += 2;
@@ -300,40 +298,39 @@ Ulong step_left(const char *const buf, const Ulong pos) {
       before = 0;
     }
     else {
-      const char *ptr = buf + pos;
+      const char *ptr = (buf + pos);
       /* Probe for a valid starter byte in the preceding four bytes. */
       if ((signed char)*--ptr > -65) {
-        before = pos - 1;
+        before = (pos - 1);
       }
       else if ((signed char)*--ptr > -65) {
-        before = pos - 2;
+        before = (pos - 2);
       }
       else if ((signed char)*--ptr > -65) {
-        before = pos - 3;
+        before = (pos - 3);
       }
       else if ((signed char)*--ptr > -65) {
-        before = pos - 4;
+        before = (pos - 4);
       }
       else {
-        before = pos - 1;
+        before = (pos - 1);
       }
     }
-    /* Move forward again until we reach the original character,
-     * so we know the length of its preceding character. */
+    /* Move forward again until we reach the original character, so we know the length of its preceding character. */
     while (before < pos) {
       charlen = char_length(buf + before);
       before += charlen;
     }
-    return before - charlen;
+    return (before - charlen);
   }
   else {
-    return (pos == 0 ? 0 : pos - 1);
+    return (!pos ? 0 : (pos - 1));
   }
 }
 
 /* Return the index in buf of the beginning of the multibyte character after the one at pos. */
 Ulong step_right(const char *const buf, const Ulong pos) {
-  return pos + char_length(buf + pos);
+  return (pos + char_length(buf + pos));
 }
 
 /* This function is equivalent to strcasecmp() for multibyte strings. */
@@ -441,8 +438,7 @@ char *revstrcasestr(const char *const haystack, const char *const needle, const 
   return NULL;
 }
 
-/* This function is equivalent to strcasestr() for multibyte strings,
- * except in that it scans the string in reverse, starting at pointer. */
+/* This function is equivalent to strcasestr() for multibyte strings, except in that it scans the string in reverse, starting at pointer. */
 char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) {
   if (use_utf8) {
     const Ulong needle_len = mbstrlen(needle);
@@ -468,9 +464,9 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
   }
 }
 
-/// This function is equivalent to strchr() for multibyte strings.  It is used to find the
-/// first occurrence of a character in a string.  The character to find is given as a
-/// multibyte string.  The function is used in justify.c to find the first space in a line.
+// This function is equivalent to strchr() for multibyte strings.  It is used to find the
+// first occurrence of a character in a string.  The character to find is given as a
+// multibyte string.  The function is used in justify.c to find the first space in a line.
 char *mbstrchr(const char *string, const char *const chr) {
   if (use_utf8) {
     bool    bad_s = FALSE;
@@ -513,24 +509,24 @@ char *mbstrpbrk(const char *str, const char *accept) {
   return NULL;
 }
 
-/// Locate, in the string that starts at head, the first occurrence of any of
-/// the characters in accept, starting from pointer and searching backwards.
+// Locate, in the string that starts at head, the first occurrence of any of
+// the characters in accept, starting from pointer and searching backwards.
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer) {
   if (!*pointer) {
     if (pointer == head) {
       return NULL;
     }
-    pointer = head + step_left(head, pointer - head);
+    pointer = (head + step_left(head, (pointer - head)));
   }
   while (TRUE) {
     if (mbstrchr(accept, pointer)) {
       return (char *)pointer;
     }
-    // If we've reached the head of the string, we found nothing.
+    /* If we've reached the head of the string, we found nothing. */
     if (pointer == head) {
       return NULL;
     }
-    pointer = head + step_left(head, pointer - head);
+    pointer = (head + step_left(head, (pointer - head)));
   }
 }
 
@@ -566,18 +562,19 @@ void strip_leading_blanks_from(char *str) {
 /* Remove leading whitespace from a given string */
 void strip_leading_blanks_from(char *str) {
   char *start = str;
-  for (; start && (*start == '\t' || *start == ' '); start++);
-  (start != str) ? memmove(str, start, strlen(start) + 1) : 0;
+  for (; start && (*start == '\t' || *start == ' '); start++)
+    ;
+  (start != str) ? memmove(str, start, (strlen(start) + 1)) : 0;
 }
 
 void strip_leading_chars_from(char *str, const char ch) {
   char *start = str;
-  for (; start && *start == ch; start++);
+  for (; start && *start == ch; start++)
+    ;
   (start != str) ? memmove(str, start, (strlen(start) + 1)) : 0;
 }
 
-/* Works like 'strchr' except made for c/cpp code so it skips all
- * 'string literals', 'char literals', slash and block comments. */
+/* Works like 'strchr' except made for c/cpp code so it skips all 'string literals', 'char literals', slash and block comments. */
 const char *nstrchr_ccpp(const char *__s, const char __c) noexcept {
   PROFILE_FUNCTION;
   const char *end = __s;

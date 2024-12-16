@@ -420,20 +420,20 @@ char *replace_line(const char *needle) {
   return copy;
 }
 
-/* Step through each occurrence of the search string and prompt the user before replacing it.  We seek for needle,
- * and replace it with answer.  The parameters real_current and real_current_x are needed in order to allow the
- * cursor position to be updated when a word before the cursor is replaced by a shorter word.  Return -1 if needle
- * isn't found, -2 if the seeking is aborted, else the number of replacements performed. */
+// Step through each occurrence of the search string and prompt the user before replacing it.  We seek for needle,
+// and replace it with answer.  The parameters real_current and real_current_x are needed in order to allow the
+// cursor position to be updated when a word before the cursor is replaced by a shorter word.  Return -1 if needle
+// isn't found, -2 if the seeking is aborted, else the number of replacements performed.
 long do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, Ulong *real_current_x) {
-  bool        skipone       = ISSET(BACKWARDS_SEARCH);
-  bool        replaceall    = FALSE;
-  int         modus         = REPLACING;
-  bool        right_side_up = (openfile->mark && mark_is_before_cursor());
-  long        numreplaced   = -1;
-  Ulong       match_len;
-  Ulong       top_x, bot_x;
   linestruct *was_mark = openfile->mark;
   linestruct *top, *bot;
+  Ulong top_x, bot_x;
+  bool  skipone       = ISSET(BACKWARDS_SEARCH);
+  bool  replaceall    = FALSE;
+  int   modus         = REPLACING;
+  bool  right_side_up = (openfile->mark && mark_is_before_cursor());
+  long  numreplaced   = -1;
+  Ulong match_len;
   /* If the mark is on, frame the region, and turn the mark off. */
   if (openfile->mark) {
     get_region(&top, &top_x, &bot, &bot_x);
@@ -462,9 +462,8 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
       break;
     }
     /* An occurrence outside of the marked region means we're done. */
-    if (was_mark && (openfile->current->lineno > bot->lineno || openfile->current->lineno < top->lineno ||
-                     (openfile->current == bot && openfile->current_x + match_len > bot_x) ||
-                     (openfile->current == top && openfile->current_x < top_x))) {
+    if (was_mark && (openfile->current->lineno > bot->lineno || openfile->current->lineno < top->lineno
+     || (openfile->current == bot && openfile->current_x + match_len > bot_x) || (openfile->current == top && openfile->current_x < top_x))) {
       break;
     }
     /* Indicate that we found the search string. */
@@ -484,8 +483,7 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
         break;
       }
       replaceall = (choice == ALL);
-      /* When "No" or moving backwards, the search routine should
-       * first move one character further before continuing. */
+      /* When "No" or moving backwards, the search routine should first move one character further before continuing. */
       skipone = (!choice || ISSET(BACKWARDS_SEARCH));
     }
     if (choice == YES || replaceall) {
@@ -494,8 +492,7 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
       altered       = replace_line(needle);
       length_change = strlen(altered) - strlen(openfile->current->data);
       add_undo(REPLACE, NULL);
-      /* If the mark was on and it was located after the cursor,
-       * then adjust its x position for any text length changes. */
+      /* If the mark was on and it was located after the cursor, then adjust its x position for any text length changes. */
       if (was_mark && !right_side_up) {
         if (openfile->current == was_mark && openfile->mark_x > openfile->current_x) {
           if (openfile->mark_x < openfile->current_x + match_len) {
@@ -507,8 +504,7 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
           bot_x = openfile->mark_x;
         }
       }
-      /* If the mark was not on or it was before the cursor, then
-       * adjust the cursor's x position for any text length changes. */
+      /* If the mark was not on or it was before the cursor, then adjust the cursor's x position for any text length changes. */
       if (!was_mark || right_side_up) {
         if (openfile->current == real_current && openfile->current_x < *real_current_x) {
           if (*real_current_x < openfile->current_x + match_len) {
@@ -522,8 +518,7 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
       if (!match_len || (*needle == '^' && ISSET(USE_REGEXP))) {
         skipone = TRUE;
       }
-      /* When moving forward, put the cursor just after the replacement
-       * text, so that searching will continue there. */
+      /* When moving forward, put the cursor just after the replacement text, so that searching will continue there. */
       if (!ISSET(BACKWARDS_SEARCH)) {
         openfile->current_x += match_len + length_change;
       }
@@ -558,15 +553,13 @@ void do_replace(void) {
 
 /* Ask the user what to replace the search string with, and do the replacements. */
 void ask_for_and_do_replacements(void) {
-  linestruct *was_edittop     = openfile->edittop;
-  Ulong       was_firstcolumn = openfile->firstcolumn;
-  linestruct *beginline       = openfile->current;
-  Ulong       begin_x         = openfile->current_x;
-  char       *replacee        = copy_of(last_search);
-  long        numreplaced;
-  int         response = do_prompt(MREPLACEWITH, "", &replace_history,
-                                   /* TRANSLATORS: This is a prompt. */
-                                   edit_refresh, _("Replace with"));
+  linestruct *was_edittop = openfile->edittop;
+  linestruct *beginline   = openfile->current;
+  Ulong was_firstcolumn = openfile->firstcolumn;
+  Ulong begin_x         = openfile->current_x;
+  char *replacee        = copy_of(last_search);
+  long  numreplaced;
+  int   response = do_prompt(MREPLACEWITH, "", &replace_history, /* TRANSLATORS: This is a prompt. */ edit_refresh, _("Replace with"));
   /* Set the string to be searched, as it might have changed at the prompt. */
   free(last_search);
   last_search = replacee;

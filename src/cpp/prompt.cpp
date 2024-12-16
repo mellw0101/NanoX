@@ -312,8 +312,8 @@ void draw_the_promptbar(void) {
   expanded = display_string(answer, the_page, COLS - base, FALSE, TRUE);
   waddstr(footwin, expanded);
   free(expanded);
-  if (the_page < end_page && base + breadth(answer) - the_page > COLS) {
-    mvwaddch(footwin, 0, COLS - 1, '>');
+  if (the_page < end_page && (base + breadth(answer) - the_page) > COLS) {
+    mvwaddch(footwin, 0, (COLS - 1), '>');
   }
   wattroff(footwin, interface_color_pair[PROMPT_BAR]);
 #if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20210220)
