@@ -37,7 +37,7 @@ void send_signal_to_main_thread(void (*func)(void *), void *arg) {
         break;
       }
       default : {
-        logE("sigqueue failed with errno: %d.", errno);
+        logE("sigqueue failed with errno: %d.  strerror: %s", errno, strerror(errno));
       }
     }
   }

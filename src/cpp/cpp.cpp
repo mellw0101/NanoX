@@ -65,8 +65,7 @@ bool enter_with_bracket(void) {
   }
   middle       = make_new_node(openfile->current);
   middle->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
-  /* Here we pass the first char as a ref, i.e: A ptr to the first actual
-   * char. */
+  /* Here we pass the first char as a ref, i.e: A ptr to the first actual char. */
   strcpy(&middle->data[extra], openfile->current->data + openfile->current_x);
   if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
     openfile->mark = middle;
@@ -209,14 +208,12 @@ int current_line_scope_end(linestruct *line) {
   return cur_line;
 }
 
-/* This function extracts info about a function declaration.  It retrieves all
- * the param data as well, like type, name and value.
- * TODO: 'void (*func)()' needs to be fixed. */
+/* This function extracts info about a function declaration.  It retrieves all the param data as well, like type, name and value. */
 function_info_t *parse_func(const char *str) {
-  int          i, pos;
-  char        *copy        = copy_of(str);
-  unsigned int len         = strlen(copy);
-  char         prefix[256] = "", params[256] = "";
+  int  i, pos;
+  char *copy = copy_of(str);
+  Uint  len  = strlen(copy);
+  char prefix[256] = "", params[256] = "";
   for (i = 0; i < len && copy[i] != '('; i++);
   if (copy[i] != '(') {
     free(copy);
@@ -335,7 +332,7 @@ function_info_t *parse_func(const char *str) {
 function_info_t parse_local_func(const char *str) {
   int          i, pos;
   char        *copy        = copy_of(str);
-  unsigned int len         = strlen(copy);
+  Uint len         = strlen(copy);
   char         prefix[256] = "", params[256] = "";
   for (i = 0; i < len && copy[i] != '('; i++);
   if (copy[i] != '(') {

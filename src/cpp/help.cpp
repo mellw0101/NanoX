@@ -9,24 +9,24 @@ static char *end_of_intro = NULL;
 /* The offset (in bytes) of the topleft of the shown help text. */
 static Ulong location;
 
-/* Allocate space for the help text for the current menu,
- * and concatenate the different pieces of text into it.
- * The help text is divided into three parts:
- * - The untranslated introduction,
- * - The untranslated function key list, and
- * - The untranslated function key descriptions.
- * The function key list is built by iterating over all functions,
- * and for each function, iterating over all shortcuts.
- * The function key descriptions are built by iterating over all functions. */
+// Allocate space for the help text for the current menu,
+// and concatenate the different pieces of text into it.
+// The help text is divided into three parts:
+// - The untranslated introduction,
+// - The untranslated function key list, and
+// - The untranslated function key descriptions.
+// The function key list is built by iterating over all functions,
+// and for each function, iterating over all shortcuts.
+// The function key descriptions are built by iterating over all functions.
 void help_init(void) {
   Ulong allocsize = 0;
   /* Space needed for help_text. */
   const char *htx[3];
-  /* Untranslated help introduction.  We break it up into three chunks
+  /* Untranslated help introduction.  We break it up into three chunks 
    * in case the full string is too long for the compiler to handle. */
   const funcstruct *f;
   const keystruct  *s;
-  char             *ptr;
+  char *ptr;
   /* First, set up the initial help text for the current function. */
   if (currmenu & (MWHEREIS | MREPLACE)) {
     htx[0] = N_("Search Command Help Text\n\n "
@@ -167,8 +167,7 @@ void help_init(void) {
     htx[2] = NULL;
   }
   else {
-    /* Default to the main help list. */
-    /** TODO: Change to NanoX help text. */
+    // Default to the main help list.
     htx[0] = N_("Main nano help text\n\n "
                 "The nano editor is designed to emulate the "
                 "functionality and ease-of-use of the UW Pico text "
@@ -207,8 +206,8 @@ void help_init(void) {
   if (htx[2]) {
     allocsize += strlen(htx[2]);
   }
-  /* Calculate the length of the descriptions of the shortcuts.  Each entry has one or
-   * two keystrokes, which fill 17 cells, plus translated text, plus one or two \n's. */
+  // Calculate the length of the descriptions of the shortcuts.  Each entry has one or
+  // two keystrokes, which fill 17 cells, plus translated text, plus one or two \n's.
   for (f = allfuncs; f; f = f->next) {
     if (f->menus & currmenu) {
       allocsize += strlen(_(f->phrase)) + 21;

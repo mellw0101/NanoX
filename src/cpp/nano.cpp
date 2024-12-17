@@ -26,12 +26,11 @@ linestruct *make_new_node(linestruct *prevnode) {
   newnode->lineno     = (prevnode) ? prevnode->lineno + 1 : 1;
   newnode->has_anchor = FALSE;
   newnode->flags.clear();
-  if (prevnode != NULL) {
+  if (prevnode) {
     ((prevnode->flags.is_set(IN_BLOCK_COMMENT)) || (prevnode->flags.is_set(BLOCK_COMMENT_START)))
-      ? newnode->flags.set(IN_BLOCK_COMMENT)
-      : newnode->flags.unset(IN_BLOCK_COMMENT);
-    ((prevnode->flags.is_set(IN_BRACKET)) || (prevnode->flags.is_set(BRACKET_START))) ? newnode->flags.set(IN_BRACKET)
-                                                                                      : (void)0;
+      ? newnode->flags.set(IN_BLOCK_COMMENT) : newnode->flags.unset(IN_BLOCK_COMMENT);
+    ((prevnode->flags.is_set(IN_BRACKET)) || (prevnode->flags.is_set(BRACKET_START)))
+      ? newnode->flags.set(IN_BRACKET) : (void)0;
   }
   return newnode;
 }
@@ -473,10 +472,7 @@ void usage(void) {
  * information, and the configuration options this nano was compiled with. */
 void version(void) {
   printf(_(" NanoX, version %s\n"), VERSION);
-  printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git "
-         "source code, converted "
-         "into C++\n",
-         REVISION);
+  printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code, converted into C++\n", REVISION);
   /* TRANSLATORS: The %s is the year of the latest release. */
   printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
 #ifdef DEBUG
@@ -491,13 +487,13 @@ void version(void) {
 void list_syntax_names(void) {
   int width = 0;
   printf(_("Available syntaxes:\n"));
-  for (syntaxtype *sntx = syntaxes; sntx != NULL; sntx = sntx->next) {
+  for (syntaxtype *sntx = syntaxes; sntx; sntx = sntx->next) {
     if (width > 45) {
       printf("\n");
       width = 0;
     }
     printf(" %s", sntx->name);
-    width += wideness(sntx->name, 45 * 4);
+    width += wideness(sntx->name, (45 * 4));
   }
   printf("\n");
 }

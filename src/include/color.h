@@ -86,38 +86,25 @@ static constexpr short VS_CODE_BRIGHT_CYAN_GRAYSCALE    = xterm_grayscale_color_
 #define FG_VS_CODE_BRIGHT_CYAN               35
 #define FG_COMMENT_GREEN                     36
 #define FG_SUGGEST_GRAY                      37
+#define BG_VS_CODE_RED                       38
 /* Total elements. */
-#define NUMBER_OF_ELEMENTS                   38
+#define NUMBER_OF_ELEMENTS                   39
 
-#define LOCAL_VAR                            -1
-
-constexpr_map<int, short, 15> color_index_map = {
-  {{FG_VS_CODE_RED,            VS_CODE_RED},
-   {FG_VS_CODE_GREEN,          VS_CODE_GREEN},
-   {FG_VS_CODE_YELLOW,         VS_CODE_YELLOW},
-   {FG_VS_CODE_BLUE,           VS_CODE_BLUE},
-   {FG_VS_CODE_MAGENTA,        VS_CODE_MAGENTA},
-   {FG_VS_CODE_CYAN,           VS_CODE_CYAN},
-   {FG_VS_CODE_WHITE,          VS_CODE_WHITE},
-   {FG_VS_CODE_BRIGHT_RED,     VS_CODE_BRIGHT_RED},
-   {FG_VS_CODE_BRIGHT_GREEN,   VS_CODE_BRIGHT_GREEN},
-   {FG_VS_CODE_BRIGHT_YELLOW,  VS_CODE_BRIGHT_YELLOW},
-   {FG_VS_CODE_BRIGHT_BLUE,    VS_CODE_BRIGHT_BLUE},
-   {FG_VS_CODE_BRIGHT_MAGENTA, VS_CODE_BRIGHT_MAGENTA},
-   {FG_VS_CODE_BRIGHT_CYAN,    VS_CODE_BRIGHT_CYAN},
-   {FG_COMMENT_GREEN,          COMMENT_GREEN},
-   {FG_SUGGEST_GRAY,           XTERM_GREY_1}}
+constexpr short color_array[] {
+  VS_CODE_RED,
+  VS_CODE_GREEN,
+  VS_CODE_YELLOW,
+  VS_CODE_BLUE,
+  VS_CODE_MAGENTA,
+  VS_CODE_CYAN,
+  VS_CODE_WHITE,
+  VS_CODE_BRIGHT_RED,
+  VS_CODE_BRIGHT_GREEN,
+  VS_CODE_BRIGHT_YELLOW,
+  VS_CODE_BRIGHT_BLUE,
+  VS_CODE_BRIGHT_MAGENTA,
+  VS_CODE_BRIGHT_CYAN,
+  COMMENT_GREEN,
+  XTERM_GREY_1,
+  VS_CODE_RED
 };
-
-#define do_word_in_color(word, color)                \
-  const Uint slen  = strlen(word);                   \
-  const char *data = line->data;                     \
-  do {                                               \
-    find_word(line, data, word, slen, &start, &end); \
-    if (start) {                                     \
-      rendr(R, color, start, end);                   \
-    }                                                \
-    data = end;                                      \
-  } while (data);
-
-

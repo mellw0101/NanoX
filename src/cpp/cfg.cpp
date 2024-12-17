@@ -1,4 +1,4 @@
-#include "../include/prototypes.h"
+#include "prototypes.h"
 
 #define CONFIGFILE_EXT ".nxcfg"
 #define CONFIGDIR      ".config/nanox/"
@@ -61,6 +61,7 @@ bool unlock_file(int fd, flock *lock) {
     return FALSE;
   }
   return TRUE;
+  nmalloc(2);
 }
 
 /* Lock a file, then write data to it. */
@@ -79,6 +80,7 @@ void lock_and_write(const char *file, const void *data, Ulong len, kind_of_writi
   close(fd);
 }
 
+
 /* Lock a file, then read it. */
 char *lock_and_read(const char *file_path, Ulong *file_size) {
   int fd = open_fd(file_path, O_RDONLY, TERMINATE, 0);
@@ -95,6 +97,8 @@ char *lock_and_read(const char *file_path, Ulong *file_size) {
   while ((len = read(fd, buffer, sizeof(buffer))) > 0) {
     if (len == -1) {
       logE("read failed.");
+      close(fd);
+      free(ret);
       exit(errno);
     }
     if ((byread + len) >= ret_len) {
@@ -121,7 +125,7 @@ static void update_colorfile(void *arg) {
 /* Load colorfile with values from disk. */
 void load_colorfile(void) {
   if (!is_file_and_exists(colorfile->filepath)) {
-    lock_and_write(colorfile->filepath, "linenumber_color=default\n", strlen("linenumber_color=default\n"), OVERWRITE);
+    lock_and_write(colorfile->filepath, "linenumber_color=\n", strlen("linenumber_color=\n"), OVERWRITE);
   }
   Ulong file_size;
   char *data = lock_and_read(colorfile->filepath, &file_size);
@@ -142,6 +146,12 @@ void load_colorfile(void) {
       }
       else if (strcmp(color, "green") == 0) {
         colorfile->linenumber = FG_VS_CODE_GREEN;
+      }
+      else if (strcmp(color, "blue") == 0) {
+        colorfile->linenumber = FG_VS_CODE_BLUE;
+      }
+      else if (strcmp(color, "bg-red") == 0) {
+        colorfile->linenumber = BG_VS_CODE_RED;
       }
       else {
         colorfile->linenumber = LINE_NUMBER;
@@ -166,10 +176,9 @@ void init_cfg(void) {
   colorfile->filepath = concatenate_path(configdir, COLORFILE_NAME);
   load_colorfile();
   file_listener_t *colorfile_listener = file_listener.add_listener(colorfile->filepath);
-  colorfile_listener->set_event_callback(IN_CLOSE_WRITE, NULL, [](void *) {
-    NLOG("loading colorfile.\n");
+  colorfile_listener->set_event_callback(IN_CLOSE_WRITE, NULL, FL_ACTION(
     load_colorfile();
-  });
+  ));
   colorfile_listener->start_listening();
 }
 

@@ -52,11 +52,11 @@ char *concatenate_path(const char *prefix, const char *suffix) {
   Ulong prefix_len = strlen(prefix);
   char *ret = NULL;
   if (prefix[prefix_len - 1] == '/') {
-    ret = (char *)malloc(prefix_len + strlen(suffix) + 1);
+    ret = (char *)nmalloc(prefix_len + strlen(suffix) + 1);
     sprintf(ret, "%s%s", prefix, suffix);
   }
   else {
-    ret = (char *)malloc(prefix_len + strlen(suffix) + 2);
+    ret = (char *)nmalloc(prefix_len + strlen(suffix) + 2);
     sprintf(ret, "%s%s%s", prefix, "/", suffix);
   }
   return ret;
@@ -65,7 +65,7 @@ char *concatenate_path(const char *prefix, const char *suffix) {
 /* Return a path copy of two strings, appending '/' to the prefix if needed. */
 const char *concat_path(const char *s1, const char *s2) {
   static char buf[PATH_MAX];
-  Ulong       len_s1 = strlen(s1);
+  Ulong len_s1 = strlen(s1);
   if (s1[len_s1 - 1] == '/') {
     snprintf(buf, sizeof(buf), "%s%s", s1, s2);
   }
@@ -670,4 +670,15 @@ string tern_statement(const string &str, string *if_true, string *if_false) {
   ret = string(start, (end - start));
   NLOG("%s\n", ret.c_str());
   return "";
+}
+
+/* Set the mark at specific line and column. */
+void set_mark(long lineno, Ulong pos_x) {
+  if (lineno < openfile->filebot->lineno) {
+    openfile->mark = line_from_number(lineno);
+  }
+  else {
+    openfile->mark = openfile->filebot;
+  }
+  openfile->mark_x = pos_x;
 }

@@ -45,8 +45,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <stdatomic.h>
-
 #include <ncursesw/ncurses.h>
 
 #include <Mlib/Attributes.h>
@@ -276,9 +274,9 @@ using std::vector;
 #include "constexpr_utils.h"
 
 /* Null def. */
-#ifdef NULL
-  #undef NULL
-#endif
+// #ifdef NULL
+//   #undef NULL
+// #endif
 /* Bool def. */
 #ifdef TRUE
   #undef TRUE
@@ -287,11 +285,11 @@ using std::vector;
   #undef FALSE
 #endif
 #ifdef __cplusplus
-  #define NULL nullptr
+  // #define NULL nullptr
   #define TRUE true
   #define FALSE false
 #else
-  #define NULL __null
+  // #define NULL __null
   #define TRUE 1
   #define FALSE 0
 #endif
@@ -455,7 +453,7 @@ typedef struct regexlisttype {
 
 typedef struct augmentstruct { 
   char *filename;      /* The file where the syntax is extended. */
-  long lineno;         /* The number of the line of the extendsyntax command. */
+  long  lineno;        /* The number of the line of the extendsyntax command. */
   char *data;          /* The text of the line. */
   augmentstruct *next; /* Next node. */
 } augmentstruct;
@@ -488,22 +486,19 @@ typedef struct lintstruct {
 
 /* More structure types. */
 typedef struct linestruct {
-  linestruct *next;   /* Next node. */
-  linestruct *prev;   /* Previous node. */
-  char *data;         /* The text of this line. */
-  long lineno;        /* The number of this line. */
-  short *multidata;   /* Array of which multi-line regexes apply to this line. */
-  bool has_anchor;    /* Whether the user has placed an anchor at this line. */
+  linestruct *next; /* Next node. */
+  linestruct *prev; /* Previous node. */
+  char *data;       /* The text of this line. */
+  long lineno;      /* The number of this line. */
+  short *multidata; /* Array of which multi-line regexes apply to this line. */
+  bool has_anchor;  /* Whether the user has placed an anchor at this line. */
   /* The state of the line. */
-  bit_flag_t<LINE_BIT_FLAG_SIZE> flags;       
+  bit_flag_t<LINE_BIT_FLAG_SIZE> flags;
   /* Some short-hands to simplyfiy linestruct loop`s. */
-  #define FOR_EACH_LINE_NEXT(name, start) \
-    for (linestruct *name = start; name; name = name->next)
-  #define FOR_EACH_LINE_PREV(name, start) \
-    for (linestruct *name = start; name; name = name->prev)
+  #define FOR_EACH_LINE_NEXT(name, start) for (linestruct *name = start; name; name = name->next)
+  #define FOR_EACH_LINE_PREV(name, start) for (linestruct *name = start; name; name = name->prev)
   /* Usefull line helpers. */
-  #define line_indent(line) \
-    wideness(line->data, indent_length(line->data))
+  #define line_indent(line) wideness(line->data, indent_length(line->data))
 } linestruct;
 
 typedef struct groupstruct {
@@ -579,7 +574,7 @@ typedef struct keystruct {
   const char *keystr; /* The string that describes the keystroke, like "^C" or "M-R". */
   int keycode;        /* The integer that, together with meta, identifies the keystroke. */
   int menus;          /* The menus in which this keystroke is bound. */
-  CFuncPtr func;      /* The function to which this keystroke is bound. */
+  void (*func)();     /* The function to which this keystroke is bound. */
   int toggle;         /* If a toggle, what we're toggling. */
   int ordinal;        /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
   char *expansion;    /* The string of keycodes to which this shortcut is expanded. */

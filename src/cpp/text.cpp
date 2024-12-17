@@ -16,8 +16,7 @@ void do_mark(void) {
   }
 }
 
-/* Insert a tab.  Or, if --tabstospaces is in effect, insert the number
- * of spaces that a tab would normally take up at this position. */
+/* Insert a tab.  Or, if --tabstospaces is in effect, insert the number of spaces that a tab would normally take up at this position. */
 void do_tab(void) {
   /* When <Tab> is pressed while a region is marked, indent the region. */
   if (openfile->mark && openfile->mark != openfile->current) {
@@ -32,7 +31,7 @@ void do_tab(void) {
   }
   else if (ISSET(TABS_TO_SPACES)) {
     char *spaces = (char *)nmalloc(tabsize + 1);
-    Ulong length = tabsize - (xplustabs() % tabsize);
+    Ulong length = (tabsize - (xplustabs() % tabsize));
     memset(spaces, ' ', length);
     spaces[length] = '\0';
     inject(spaces, length);
@@ -44,6 +43,26 @@ void do_tab(void) {
       return;
     }
     inject((char *)"\t", 1);
+  }
+}
+
+/* Restore the cursor and mark from a undostruct. */
+void restore_undo_posx(undostruct *u) {
+  /* Restore the mark if it was set. */
+  if (u->xflags & MARK_WAS_SET) {
+    if (u->xflags & CURSOR_WAS_AT_HEAD) {
+      goto_line_posx(u->head_lineno, u->head_x);
+      set_mark(u->tail_lineno, u->tail_x);
+    }
+    else {
+      goto_line_posx(u->tail_lineno, u->tail_x);
+      set_mark(u->head_lineno, u->head_x);
+    }
+    keep_mark = TRUE;
+  }
+  /* Otherwise just restore the cursor. */
+  else {
+    goto_line_posx(u->head_lineno, u->head_x);
   }
 }
 
@@ -213,7 +232,7 @@ void handle_indent_action(undostruct *u, bool undoing, bool add_indent) {
   linestruct  *line  = line_from_number(group->top_line);
   /* When redoing, reposition the cursor and let the indenter adjust it. */
   if (!undoing) {
-    goto_line_posx(u->head_lineno, u->head_x);
+    restore_undo_posx(u);
   }
   /* For each line in the group, add or remove the individual indent. */
   while (line && line->lineno <= group->bottom_line) {
@@ -228,7 +247,7 @@ void handle_indent_action(undostruct *u, bool undoing, bool add_indent) {
   }
   /* When undoing, reposition the cursor to the recorded location. */
   if (undoing) {
-    goto_line_posx(u->head_lineno, u->head_x);
+    restore_undo_posx(u);
   }
   refresh_needed = TRUE;
 }
@@ -241,47 +260,47 @@ bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
   /* The postfix, if this is a bracketing type comment sequence. */
   const char *post_seq = strchr(comment_seq, '|');
   /* Length of prefix. */
-  Ulong pre_len = post_seq ? post_seq++ - comment_seq : comment_seq_len;
+  Ulong pre_len = (post_seq ? (post_seq++ - comment_seq) : comment_seq_len);
   /* Length of postfix. */
-  Ulong  post_len   = post_seq ? comment_seq_len - pre_len - 1 : 0;
+  Ulong  post_len   = (post_seq ? comment_seq_len - pre_len - 1 : 0);
   Ulong  line_len   = strlen(line->data);
-  Ushort indent_len = indent_char_len(line);
+  Ushort indent_len = indent_length(line->data);
   if (!ISSET(NO_NEWLINES) && line == openfile->filebot) {
     return FALSE;
   }
   if (action == COMMENT) {
     /* Make room for the comment sequence(s), move the text right and copy them in. */
     line->data = (char *)nrealloc(line->data, line_len + pre_len + post_len + 1);
-    memmove(line->data + pre_len + indent_len, line->data + indent_len, line_len - indent_len + 1);
-    memmove(line->data + indent_len, comment_seq, pre_len);
-    inject_in_line(&line, " ", indent_len + comment_seq_len);
+    memmove((line->data + pre_len + indent_len), (line->data + indent_len), (line_len - indent_len + 1));
+    memmove((line->data + indent_len), comment_seq, pre_len);
+    inject_in_line(line, " ", (indent_len + comment_seq_len));
     if (post_len > 0) {
       memmove(line->data + pre_len + line_len, post_seq, post_len + 1);
     }
-    openfile->totsize += pre_len + post_len;
+    openfile->totsize += (pre_len + post_len);
     /* If needed, adjust the position of the mark and of the cursor. */
     if (line == openfile->mark && openfile->mark_x > 0) {
-      openfile->mark_x += pre_len + 1;
+      openfile->mark_x += (pre_len + 1);
     }
     if (line == openfile->current && openfile->current_x > 0) {
-      openfile->current_x += pre_len + 1;
+      openfile->current_x += (pre_len + 1);
       openfile->placewewant = xplustabs();
     }
     return TRUE;
   }
   /* If the line is commented, report it as uncommentable, or uncomment it. */
-  if (strncmp(line->data + indent_len, comment_seq, pre_len) == 0
-   && (!post_len || strcmp(line->data + line_len - post_len, post_seq) == 0)) {
+  if (strncmp((line->data + indent_len), comment_seq, pre_len) == 0
+   && (!post_len || strcmp((line->data + line_len - post_len), post_seq) == 0)) {
     if (action == PREFLIGHT) {
       return TRUE;
     }
     /* Erase the comment prefix by moving the non-comment part. */
-    memmove(line->data + indent_len, line->data + indent_len + pre_len + 1, line_len - pre_len - indent_len);
+    memmove((line->data + indent_len), (line->data + indent_len + pre_len + 1), (line_len - pre_len - indent_len));
     /* Truncate the postfix if there was one. */
     line->data[line_len - pre_len - post_len] = '\0';
-    openfile->totsize -= pre_len + post_len;
+    openfile->totsize -= (pre_len + post_len);
     /* Adjust the positions of mark and cursor, when needed. */
-    compensate_leftward(line, pre_len + 1);
+    compensate_leftward(line, (pre_len + 1));
     return TRUE;
   }
   return FALSE;
@@ -346,19 +365,19 @@ void handle_comment_action(undostruct *u, bool undoing, bool add_comment) {
   groupstruct *group = u->grouping;
   /* When redoing, reposition the cursor and let the commenter adjust it. */
   if (!undoing) {
-    goto_line_posx(u->head_lineno, u->head_x);
+    restore_undo_posx(u);
   }
   while (group) {
     linestruct *line = line_from_number(group->top_line);
     while (line && line->lineno <= group->bottom_line) {
-      comment_line((undoing ^ add_comment ? COMMENT : UNCOMMENT), line, u->strdata);
+      comment_line(((undoing ^ add_comment) ? COMMENT : UNCOMMENT), line, u->strdata);
       line = line->next;
     }
     group = group->next;
   }
   /* When undoing, reposition the cursor to the recorded location. */
   if (undoing) {
-    goto_line_posx(u->head_lineno, u->head_x);
+    restore_undo_posx(u);
   }
   refresh_needed = TRUE;
 }
@@ -426,20 +445,20 @@ void enclose_marked_region(const char *s1, const char *s2) {
   free(part);
   const Ulong s1_len = strlen(s1);
   if (mark_is_before_cursor()) {
-    inject_in_line(&openfile->mark, s1, openfile->mark_x);
+    inject_in_line(openfile->mark, s1, openfile->mark_x);
     openfile->mark_x += s1_len;
     if (openfile->mark == openfile->current) {
       openfile->current_x += s1_len;
     }
-    inject_in_line(&openfile->current, s2, openfile->current_x);
+    inject_in_line(openfile->current, s2, openfile->current_x);
   }
   else {
-    inject_in_line(&openfile->current, s1, openfile->current_x);
+    inject_in_line(openfile->current, s1, openfile->current_x);
     openfile->current_x += s1_len;
     if (openfile->current == openfile->mark) {
       openfile->mark_x += s1_len;
     }
-    inject_in_line(&openfile->mark, s2, openfile->mark_x);
+    inject_in_line(openfile->mark, s2, openfile->mark_x);
   }
   set_modified();
   refresh_needed = TRUE;
@@ -619,13 +638,99 @@ void do_undo(void) {
       break;
     }
     case MOVE_LINE_UP : {
-      openfile->current = line_from_number(u->head_lineno - 1);
-      move_line(&openfile->current, FALSE, TRUE);
+      /* Single line move. */
+      if (u->head_lineno == u->tail_lineno) {
+        openfile->current = line_from_number(u->head_lineno - 1);
+        move_line(openfile->current, FALSE);
+        openfile->current = openfile->current->next;
+        /* Restore the mark if it was set. */
+        if (u->xflags & MARK_WAS_SET) {
+          openfile->mark = openfile->current;
+          if (u->xflags & CURSOR_WAS_AT_HEAD) {
+            openfile->current_x = u->head_x;
+            openfile->mark_x    = u->tail_x;
+          }
+          else {
+            openfile->current_x = u->tail_x;
+            openfile->mark_x    = u->head_x;
+          }
+          keep_mark = TRUE;
+        }
+        /* Otherwise just restore the cursor pos. */
+        else {
+          openfile->current_x = u->head_x;
+        }
+      }
+      /* Multi-line move. */
+      else {
+        linestruct *top = line_from_number(u->head_lineno);
+        linestruct *bot = line_from_number(u->tail_lineno);
+        for (linestruct *line = bot; line->lineno != (u->head_lineno - 1); line = line->prev) {
+          move_line(line, TRUE);
+        }
+        /* Restore mark. */
+        if (u->xflags & CURSOR_WAS_AT_HEAD) {
+          openfile->current   = top;
+          openfile->current_x = u->head_x;
+          openfile->mark      = bot;
+          openfile->mark_x    = u->tail_x;
+        }
+        else {
+          openfile->current   = bot;
+          openfile->current_x = u->tail_x;
+          openfile->mark      = top;
+          openfile->mark_x    = u->head_x;
+        }
+        keep_mark = TRUE;
+      }
       break;
     }
     case MOVE_LINE_DOWN : {
-      openfile->current = line_from_number(u->head_lineno + 1);
-      move_line(&openfile->current, TRUE, TRUE);
+      /* Single line move. */
+      if (u->head_lineno == u->tail_lineno) {
+        openfile->current = line_from_number(u->head_lineno + 1);
+        move_line(openfile->current, TRUE);
+        openfile->current = openfile->current->prev;
+        /* Restore the mark if it was set. */
+        if (u->xflags & MARK_WAS_SET) {
+          openfile->mark = openfile->current;
+          if (u->xflags & CURSOR_WAS_AT_HEAD) {
+            openfile->current_x = u->head_x;
+            openfile->mark_x    = u->tail_x;
+          }
+          else {
+            openfile->current_x = u->tail_x;
+            openfile->mark_x    = u->head_x;
+          }
+          keep_mark = TRUE;
+        }
+        /* Otherwise just restore the cursor pos. */
+        else {
+          openfile->current_x = u->head_x;
+        }
+      }
+      /* Multi-line move. */
+      else {
+        linestruct *top = line_from_number(u->head_lineno);
+        linestruct *bot = line_from_number(u->tail_lineno);
+        for (linestruct *line = top; line->lineno != (u->tail_lineno + 1); line = line->next) {
+          move_line(line, FALSE);
+        }
+        /* Restore mark. */
+        if (u->xflags & CURSOR_WAS_AT_HEAD) {
+          openfile->current   = top;
+          openfile->current_x = u->head_x;
+          openfile->mark      = bot;
+          openfile->mark_x    = u->tail_x;
+        }
+        else {
+          openfile->current   = bot;
+          openfile->current_x = u->tail_x;
+          openfile->mark      = top;
+          openfile->mark_x    = u->head_x;
+        }
+        keep_mark = TRUE;
+      }
       break;
     }
     case ENCLOSE : {
@@ -841,13 +946,99 @@ void do_redo(void) {
       break;
     }
     case MOVE_LINE_UP: {
-      openfile->current = line_from_number(u->head_lineno);
-      move_line(&openfile->current, TRUE, TRUE);
+      /* Single line move. */
+      if (u->head_lineno == u->tail_lineno) {
+        openfile->current = line_from_number(u->head_lineno);
+        move_line(openfile->current, TRUE);
+        openfile->current = openfile->current->prev;
+        /* Restore the mark if it was set. */
+        if (u->xflags & MARK_WAS_SET) {
+          openfile->mark = openfile->current;
+          keep_mark = TRUE;
+          if (u->xflags & CURSOR_WAS_AT_HEAD) {
+            openfile->current_x = u->head_x;
+            openfile->mark_x    = u->tail_x;
+          }
+          else {
+            openfile->current_x = u->tail_x;
+            openfile->mark_x    = u->head_x;
+          }
+        }
+        /* Otherwise just restore the cursor pos. */
+        else {
+          openfile->current_x = u->head_x;
+        }
+      }
+      /* Multi-line move. */
+      else {
+        linestruct *top = line_from_number(u->head_lineno - 1);
+        linestruct *bot = line_from_number(u->tail_lineno - 1);
+        for (linestruct *line = top; line->lineno != u->tail_lineno; line = line->next) {
+          move_line(line, FALSE);
+        }
+        /* Restore mark. */
+        if (u->xflags & CURSOR_WAS_AT_HEAD) {
+          openfile->current   = top;
+          openfile->current_x = u->head_x;
+          openfile->mark      = bot;
+          openfile->mark_x    = u->tail_x;
+        }
+        else {
+          openfile->current   = bot;
+          openfile->current_x = u->tail_x;
+          openfile->mark      = top;
+          openfile->mark_x    = u->head_x;
+        }
+        keep_mark = TRUE;
+      }
       break;
     }
     case MOVE_LINE_DOWN: {
-      openfile->current = line_from_number(u->head_lineno);
-      move_line(&openfile->current, FALSE, TRUE);
+      /* Single line move. */
+      if (u->head_lineno == u->tail_lineno) {
+        openfile->current = line_from_number(u->head_lineno);
+        move_line(openfile->current, FALSE);
+        openfile->current = openfile->current->next;
+        /* Restore the mark if it was set. */
+        if (u->xflags & MARK_WAS_SET) {
+          openfile->mark = openfile->current;
+          keep_mark = TRUE;
+          if (u->xflags & CURSOR_WAS_AT_HEAD) {
+            openfile->current_x = u->head_x;
+            openfile->mark_x    = u->tail_x;
+          }
+          else {
+            openfile->current_x = u->tail_x;
+            openfile->mark_x    = u->head_x;
+          }
+        }
+        /* Otherwise just restore the cursor pos. */
+        else {
+          openfile->current_x = u->head_x;
+        }
+      }
+      /* Multi-line move. */
+      else {
+        linestruct *top = line_from_number(u->head_lineno + 1);
+        linestruct *bot = line_from_number(u->tail_lineno + 1);
+        for (linestruct *line = bot; line->lineno != u->head_lineno; line = line->prev) {
+          move_line(line, TRUE);
+        }
+        /* Restore mark. */
+        if (u->xflags & CURSOR_WAS_AT_HEAD) {
+          openfile->current   = top;
+          openfile->current_x = u->head_x;
+          openfile->mark      = bot;
+          openfile->mark_x    = u->tail_x;
+        }
+        else {
+          openfile->current   = bot;
+          openfile->current_x = u->tail_x;
+          openfile->mark      = top;
+          openfile->mark_x    = u->head_x;
+        }
+        keep_mark = TRUE;
+      }
       break;
     }
     case ENCLOSE: {
@@ -858,8 +1049,8 @@ void do_redo(void) {
       linestruct *tail = line_from_number(u->tail_lineno);
       const Ulong head_x = (u->head_x + s1_len);
       const Ulong tail_x = (head == tail) ? (u->tail_x + s1_len) : u->tail_x;
-      inject_in_line(&head, s1, u->head_x);
-      inject_in_line(&tail, s2, tail_x);
+      inject_in_line(head, s1, u->head_x);
+      inject_in_line(tail, s2, tail_x);
       free(s1);
       free(s2);
       if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -1021,9 +1212,9 @@ void add_undo(undo_type action, const char *message) {
   /* If some action caused automatic long-line wrapping, insert the SPLIT_BEGIN item underneath
    * that action's undo item.  Otherwise, just add the new item to the top of the undo stack. */
   if (u->type == SPLIT_BEGIN) {
-    action                  = openfile->undotop->type;
-    u->wassize              = openfile->undotop->wassize;
-    u->next                 = openfile->undotop->next;
+    action     = openfile->undotop->type;
+    u->wassize = openfile->undotop->wassize;
+    u->next    = openfile->undotop->next;
     openfile->undotop->next = u;
   }
   else {
@@ -1046,7 +1237,7 @@ void add_undo(undo_type action, const char *message) {
     case BACK : {
       /* If the next line is the magic line, don't ever undo this
        * backspace, as it won't actually have deleted anything. */
-      if (thisline->next == openfile->filebot && thisline->data[0] != '\0') {
+      if (thisline->next == openfile->filebot && thisline->data[0]) {
         u->xflags |= WAS_BACKSPACE_AT_EOF;
       }
       /* Fall-through. */
@@ -1054,7 +1245,7 @@ void add_undo(undo_type action, const char *message) {
     case DEL : {
       /* When not at the end of a line, store the deleted character;
        * otherwise, morph the undo item into a line join. */
-      if (thisline->data[openfile->current_x] != '\0') {
+      if (thisline->data[openfile->current_x]) {
         int charlen = char_length(thisline->data + u->head_x);
         u->strdata  = measured_copy(thisline->data + u->head_x, charlen);
         if (u->type == BACK) {
@@ -1063,7 +1254,7 @@ void add_undo(undo_type action, const char *message) {
         break;
       }
       action = JOIN;
-      if (thisline->next != NULL) {
+      if (thisline->next) {
         if (u->type == BACK) {
           u->head_lineno = thisline->next->lineno;
           u->head_x      = 0;
@@ -1143,11 +1334,21 @@ void add_undo(undo_type action, const char *message) {
     case INDENT :
     case UNINDENT :
     case COMMENT :
-    case UNCOMMENT : {
-      break;
-    }
+    case UNCOMMENT :
     case MOVE_LINE_UP :
     case MOVE_LINE_DOWN : {
+      if (openfile->mark) {
+        if (mark_is_before_cursor()) {
+          u->head_lineno = openfile->mark->lineno;
+          u->head_x      = openfile->mark_x;
+          u->xflags |= MARK_WAS_SET;
+        }
+        else {
+          u->tail_lineno = openfile->mark->lineno;
+          u->tail_x      = openfile->mark_x;
+          u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
+        }
+      }
       break;
     }
     case ENCLOSE : {
@@ -1177,7 +1378,7 @@ void update_multiline_undo(long lineno, char *indentation) {
   undostruct *u = openfile->current_undo;
   /* If there already is a group and the current line is contiguous with it, extend the group; otherwise, create a new group. */
   if (u->grouping && (u->grouping->bottom_line + 1) == lineno) {
-    Ulong number_of_lines     = lineno - u->grouping->top_line + 1;
+    Ulong number_of_lines     = (lineno - u->grouping->top_line + 1);
     u->grouping->bottom_line  = lineno;
     u->grouping->indentations = arealloc(u->grouping->indentations, (number_of_lines * sizeof(char *)));
     u->grouping->indentations[number_of_lines - 1] = copy_of(indentation);
@@ -1969,12 +2170,12 @@ void do_full_justify(void) {
 /* Set up an argument list for executing the given command. */
 void construct_argument_list(char ***arguments, char *command, char *filename) {
   char *copy_of_command = copy_of(command);
-  char *element         = strtok(copy_of_command, " ");
-  int   count           = 2;
+  char *element = strtok(copy_of_command, " ");
+  int count = 2;
   while (element) {
-    (*arguments)            = anrealloc(*arguments, (++count * sizeof(char *)));
+    (*arguments) = anrealloc(*arguments, (++count * sizeof(char *)));
     (*arguments)[count - 3] = element;
-    element                 = strtok(NULL, " ");
+    element = strtok(NULL, " ");
   }
   (*arguments)[count - 2] = filename;
   (*arguments)[count - 1] = NULL;
@@ -2577,23 +2778,18 @@ void do_linter(void) {
   tmplint = NULL;
   curlint = lints;
   while (TRUE) {
-    int             kbinput;
+    int kbinput;
     functionptrtype function;
-    struct stat     lintfileinfo;
-    if (stat(curlint->filename, &lintfileinfo) != -1 &&
-        (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
+    struct stat lintfileinfo;
+    if (stat(curlint->filename, &lintfileinfo) != -1 && (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
       const openfilestruct *started_at = openfile;
-      openfile                         = openfile->next;
-      while (openfile != started_at &&
-             (openfile->statinfo == NULL || openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
+      openfile = openfile->next;
+      while (openfile != started_at && (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
         openfile = openfile->next;
       }
-      if (openfile->statinfo == NULL || openfile->statinfo->st_ino != lintfileinfo.st_ino) {
+      if (!openfile->statinfo || openfile->statinfo->st_ino != lintfileinfo.st_ino) {
         char *msg = (char *)nmalloc(1024 + strlen(curlint->filename));
-        sprintf(msg,
-                _("This message is for unopened file %s,"
-                  " open it in a new buffer?"),
-                curlint->filename);
+        sprintf(msg, _("This message is for unopened file %s, open it in a new buffer?"), curlint->filename);
         int choice = ask_user(YESORNO, msg);
         free(msg);
         currmenu = MLINTER;
@@ -2605,9 +2801,9 @@ void do_linter(void) {
           open_buffer(curlint->filename, TRUE);
         }
         else {
-          char       *dontwantfile = copy_of(curlint->filename);
-          lintstruct *restlint     = NULL;
-          while (curlint != NULL) {
+          char *dontwantfile = copy_of(curlint->filename);
+          lintstruct *restlint = NULL;
+          while (curlint) {
             if (strcmp(curlint->filename, dontwantfile) == 0) {
               if (curlint == lints) {
                 lints = curlint->next;
@@ -2615,7 +2811,7 @@ void do_linter(void) {
               else {
                 curlint->prev->next = curlint->next;
               }
-              if (curlint->next != NULL) {
+              if (curlint->next) {
                 curlint->next->prev = curlint->prev;
               }
               tmplint = curlint;
@@ -2625,14 +2821,14 @@ void do_linter(void) {
               free(tmplint);
             }
             else {
-              if (restlint == NULL) {
+              if (!restlint) {
                 restlint = curlint;
               }
               curlint = curlint->next;
             }
           }
           free(dontwantfile);
-          if (restlint == NULL) {
+          if (!restlint) {
             statusline(REMARK, _("No messages for this file"));
             break;
           }
@@ -2646,7 +2842,7 @@ void do_linter(void) {
     if (tmplint != curlint) {
       /* Put the cursor at the reported position, but don't go beyond EOL
        * when the second number is a column number instead of an index. */
-      goto_line_posx(curlint->lineno, curlint->colno - 1);
+      goto_line_posx(curlint->lineno, (curlint->colno - 1));
       openfile->current_x = actual_x(openfile->current->data, openfile->placewewant);
       titlebar(NULL);
       adjust_viewport(CENTERING);
@@ -2685,7 +2881,7 @@ void do_linter(void) {
       }
     }
     else if (function == do_page_down || function == to_next_block) {
-      if (curlint->next != NULL) {
+      if (curlint->next) {
         curlint = curlint->next;
       }
       else if (last_wait != time(NULL)) {
@@ -2717,8 +2913,7 @@ void do_linter(void) {
   titlebar(NULL);
 }
 
-/* Run a manipulation program on the contents of the buffer.
- * TODO: (do_formatter) - Implement propper native formating for 'c/c++'. */
+/* Run a manipulation program on the contents of the buffer. */
 void do_formatter(void) {
   FILE *stream;
   char *temp_name;
@@ -2732,7 +2927,7 @@ void do_formatter(void) {
     return;
   }
   openfile->mark = NULL;
-  temp_name      = safe_tempfile(&stream);
+  temp_name = safe_tempfile(&stream);
   if (temp_name) {
     okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
   }
@@ -2746,8 +2941,7 @@ void do_formatter(void) {
   free(temp_name);
 }
 
-/* Our own version of "wc".  * Note that the character count
- * is in multibyte characters instead of single-byte characters. */
+/* Our own version of "wc".  Note that the character count is in multibyte characters instead of single-byte characters. */
 void count_lines_words_and_characters(void) {
   linestruct *was_current = openfile->current;
   Ulong       was_x       = openfile->current_x;
@@ -2776,9 +2970,8 @@ void count_lines_words_and_characters(void) {
   lines += (bot_x == 0 || (topline == botline && top_x == bot_x)) ? 0 : 1;
   openfile->current   = topline;
   openfile->current_x = top_x;
-  /* Keep stepping to the next word (considering punctuation as part of a
-   * word, as "wc -w" does), until we reach the end of the relevant area,
-   * incrementing the word count for each successful step. */
+  /* Keep stepping to the next word (considering punctuation as part of a word, as "wc -w" does),
+   * until we reach the end of the relevant area, incrementing the word count for each successful step. */
   while (openfile->current->lineno < botline->lineno || (openfile->current == botline && openfile->current_x < bot_x)) {
     if (do_next_word(FALSE)) {
       words++;

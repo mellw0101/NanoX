@@ -503,10 +503,10 @@ void copy_marked_region(void) {
 /* Copy text from the current buffer into the cutbuffer.  The text is either the marked region, the whole line,
  * the text from cursor to end-of-line, just the line break, or nothing, depending on mode and cursor position. */
 void copy_text(void) {
-  bool        at_eol       = !openfile->current->data[openfile->current_x];
-  bool        sans_newline = (ISSET(NO_NEWLINES) && !openfile->current->next);
-  Ulong       from_x       = ((ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0);
-  linestruct *was_current  = openfile->current;
+  bool  at_eol = !openfile->current->data[openfile->current_x];
+  Ulong from_x = ((ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0);
+  bool  sans_newline = (ISSET(NO_NEWLINES) && !openfile->current->next);
+  linestruct *was_current = openfile->current;
   linestruct *addition;
   if (openfile->mark || openfile->last_action != COPY) {
     keep_cutbuffer = FALSE;
@@ -521,8 +521,7 @@ void copy_text(void) {
     return;
   }
   /* When at the very end of the buffer, there is nothing to do. */
-  if (openfile->current->next == NULL && at_eol &&
-      (ISSET(CUT_FROM_CURSOR) || openfile->current_x == 0 || cutbuffer)) {
+  if (!openfile->current->next && at_eol && (ISSET(CUT_FROM_CURSOR) || !openfile->current_x || cutbuffer)) {
     statusbar(_("Copied nothing"));
     return;
   }

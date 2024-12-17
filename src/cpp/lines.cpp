@@ -34,95 +34,102 @@ bool is_line_start_end_bracket(linestruct *line, bool *is_start) {
 }
 
 /* Inject a string into a line at an index. */
-void inject_in_line(linestruct **line, const char *str, Ulong at) {
-  Ulong len   = strlen((*line)->data);
+void inject_in_line(linestruct *line, const char *str, Ulong at) {
+  Ulong len   = strlen(line->data);
   Ulong s_len = strlen(str);
   if (at > len) {
     return;
   }
-  (*line)->data = arealloc((*line)->data, (len + s_len + 1));
-  memmove(((*line)->data + at + s_len), (*line)->data + at, (len - at + 1));
-  memmove(((*line)->data + at), str, s_len);
+  line->data = arealloc(line->data, (len + s_len + 1));
+  memmove((line->data + at + s_len), line->data + at, (len - at + 1));
+  memmove((line->data + at), str, s_len);
 }
 
 /* Move a single line up or down. */
-void move_line(linestruct **line, bool up, bool refresh) {
-  if (openfile->mark) {
-    if (openfile->current != openfile->mark) {
-      return;
-    }
-  }
+void move_line(linestruct *line, bool up) {
   char *tmp_data = NULL;
   if (up) {
-    if ((*line)->prev) {
-      tmp_data = copy_of((*line)->prev->data);
-      free((*line)->prev->data);
-      (*line)->prev->data = copy_of((*line)->data);
-      free((*line)->data);
-      (*line)->data     = tmp_data;
-      openfile->current = (*line)->prev;
-    }
+    tmp_data         = line->prev->data;
+    line->prev->data = line->data;
+    line->data       = tmp_data;
   }
   else {
-    if ((*line)->next) {
-      tmp_data = copy_of((*line)->next->data);
-      free((*line)->next->data);
-      (*line)->next->data = copy_of((*line)->data);
-      free((*line)->data);
-      (*line)->data     = tmp_data;
-      openfile->current = (*line)->next;
-    }
+    tmp_data         = line->next->data;
+    line->next->data = line->data;
+    line->data       = tmp_data;
   }
   set_modified();
-  if (refresh) {
-    refresh_needed = TRUE;
-  }
-}
-
-void move_lines(bool up) {
-  linestruct *top, *bot, *line, *mark, *cur;
-  Ulong       x_top, x_bot, bot_line, x_mark, x_cur;
-  get_region(&top, &x_top, &bot, &x_bot);
-  if (top == bot) {
-    return;
-  }
-  mark   = openfile->mark;
-  x_mark = openfile->mark_x;
-  cur    = openfile->current;
-  x_cur  = openfile->current_x;
-  if (up) {
-    bot_line = bot->lineno;
-    if (top->prev) {
-      for (line = top->prev; line->lineno != bot_line; line = line->next) {
-        move_line(&line, FALSE, FALSE);
-      }
-      mark = mark->prev;
-      cur  = cur->prev;
-      NLOG("%lu\n%s\n%lu\n%s\n", x_cur, cur->data, x_mark, mark->data);
-      openfile->mark      = mark;
-      openfile->mark_x    = x_mark;
-      openfile->current   = cur;
-      openfile->current_x = x_cur;
-    }
-  }
+  refresh_needed = TRUE;
 }
 
 /* Function to move line/lines up shortcut. */
 void move_lines_up(void) {
-  if (openfile->current->lineno == 1) {
-    return;
+  /* Multi line move. */
+  if (openfile->mark && openfile->mark != openfile->current) {
+    bool mark_top = mark_is_before_cursor();
+    linestruct *top = (mark_top ? openfile->mark : openfile->current);
+    linestruct *bot = (mark_top ? openfile->current : openfile->mark);
+    if (top->lineno == 1) {
+      return;
+    }
+    add_undo(MOVE_LINE_UP, NULL);
+    Ulong end_line = bot->lineno;
+    for (linestruct *line = top->prev; line->lineno != end_line; line = line->next) {
+      move_line(line, FALSE);
+    }
+    openfile->current = openfile->current->prev;
+    openfile->mark    = openfile->mark->prev;
+    keep_mark = TRUE;
   }
-  add_undo(MOVE_LINE_UP, NULL);
-  move_line(&openfile->current, TRUE, TRUE);
+  /* Single line move. */
+  else {
+    /* We cannot move the first line up. */
+    if (openfile->current->lineno == 1) {
+      return;
+    }
+    add_undo(MOVE_LINE_UP, NULL);
+    move_line(openfile->current, TRUE);
+    openfile->current = openfile->current->prev;
+    if (openfile->mark) {
+      openfile->mark = openfile->current;
+      keep_mark = TRUE;
+    }
+  }
 }
 
 /* Function to move line/lines down shortcut. */
 void move_lines_down(void) {
-  if (!openfile->current->next) {
-    return;
+  /* Multi line move. */
+  if (openfile->mark && openfile->mark != openfile->current) {
+    bool mark_top = mark_is_before_cursor();
+    linestruct *top = (mark_top ? openfile->mark : openfile->current);
+    linestruct *bot = (mark_top ? openfile->current : openfile->mark);
+    if (!bot->next) {
+      return;
+    }
+    add_undo(MOVE_LINE_DOWN, NULL);
+    Ulong end_line = top->lineno;
+    for (linestruct *line = bot->next; line->lineno != end_line; line = line->prev) {
+      move_line(line, TRUE);
+    }
+    openfile->current = openfile->current->next;
+    openfile->mark    = openfile->mark->next;
+    keep_mark = TRUE;
   }
-  add_undo(MOVE_LINE_DOWN, NULL);
-  move_line(&openfile->current, FALSE, TRUE);
+  /* Single line move. */
+  else {
+    /* We cannot move the last line down. */
+    if (!openfile->current->next) {
+      return;
+    }
+    add_undo(MOVE_LINE_DOWN, NULL);
+    move_line(openfile->current, FALSE);
+    openfile->current = openfile->current->next;
+    if (openfile->mark) {
+      openfile->mark = openfile->current;
+      keep_mark = TRUE;
+    }
+  }
 }
 
 /* Remove 'len' of char`s 'at' pos in line. */
@@ -171,7 +178,7 @@ Uint total_tabs(linestruct *line) {
 
 /* Returns '-1' on failure. */
 int get_editwin_row(linestruct *line) {
-  int row = line->lineno - openfile->edittop->lineno;
+  int row = (line->lineno - openfile->edittop->lineno);
   if (row >= editwinrows) {
     return -1;
   }

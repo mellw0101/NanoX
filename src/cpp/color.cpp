@@ -46,7 +46,7 @@ void set_interface_colorpairs(void) {
         }
       }
       init_pair((index + 1), combo->fg, combo->bg);
-      interface_color_pair[index] = COLOR_PAIR(index + 1) | combo->attributes;
+      interface_color_pair[index] = (COLOR_PAIR(index + 1) | combo->attributes);
       rescind_colors = FALSE;
     }
     else {
@@ -69,7 +69,6 @@ void set_interface_colorpairs(void) {
         interface_color_pair[index] = (COLOR_PAIR(index + 1) | A_BOLD);
       }
       else if (index == LINE_NUMBER) {
-        color_combo[index] = (colortype *)nmalloc(sizeof(*(color_combo[index])));
         init_pair((index + 1), XTERM_GREY_2, (defaults_allowed ? THE_DEFAULT : COLOR_BLACK));
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
@@ -87,18 +86,27 @@ void set_interface_colorpairs(void) {
                            : (index == FG_PURPLE)  ? COLOR_PURPLE
                            : (index == FG_MAUVE)   ? COLOR_MAUVE
                                                    : 1;
-        init_pair(index + 1, color, COLOR_BLACK);
+        init_pair((index + 1), color, (defaults_allowed ? THE_DEFAULT : COLOR_BLACK));
         interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
       }
       else if (index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY) {
-        init_pair(index + 1, color_index_map[index - FG_VS_CODE_RED].value, (defaults_allowed ? THE_DEFAULT : COLOR_BLACK));
+        init_pair((index + 1), color_array[index - FG_VS_CODE_RED], (defaults_allowed ? THE_DEFAULT : COLOR_BLACK));
+        interface_color_pair[index] = COLOR_PAIR(index + 1);
+      }
+      else if (index >= BG_VS_CODE_RED && index <= BG_VS_CODE_RED) {
+        if (COLORS > 15) {
+          init_pair((index + 1), xterm_color_index(0, 0, 0), color_array[index - FG_VS_CODE_RED]);
+        }
+        else {
+          init_pair((index + 1), COLOR_BLACK, COLOR_RED);
+        }
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
       else {
         interface_color_pair[index] = hilite_attribute;
       }
     }
-    if (!(index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY)) {
+    if (index < FG_VS_CODE_RED && index != LINE_NUMBER) {
       free(color_combo[index]);
     }
   }

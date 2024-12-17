@@ -509,6 +509,7 @@ char      **retrieve_exec_output(const char *cmd, Uint *n_lines);
 const char *word_strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *string_strstr_array(const char *str, const vector<string> &substrs, Uint *index);
+void        set_mark(long lineno, Ulong pos_x);
 
 template <typename T> __inline__ T *anrealloc(T *ptr, Ulong howmush) { return (T *)nrealloc(ptr, howmush); }
 
@@ -650,8 +651,8 @@ const char  *substr(const char *str, Ulong end_index);
 /* 'lines.cpp' */
 bool  is_line_comment(linestruct *line);
 bool  is_line_start_end_bracket(linestruct *line, bool *is_start);
-void  inject_in_line(linestruct **line, const char *str, Ulong at);
-void  move_line(linestruct **line, bool up, bool refresh);
+void  inject_in_line(linestruct *line, const char *str, Ulong at);
+void  move_line(linestruct *line, bool up);
 void  move_lines_up(void);
 void  move_lines_down(void);
 void  erase_in_line(linestruct *line, Ulong at, Ulong len);

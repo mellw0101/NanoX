@@ -52,16 +52,14 @@ Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bo
   return index;
 }
 
-/* Adjust the values for current_x and placewewant in case we have landed in
- * the middle of a tab that crosses a row boundary. */
+/* Adjust the values for current_x and placewewant in case we have landed in the middle of a tab that crosses a row boundary. */
 void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) {
-  Ulong was_edge      = *leftedge;
-  bool  shifted       = FALSE;
+  Ulong was_edge = *leftedge;
+  bool  shifted  = FALSE;
   openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
   /* If the index was incremented, try going to the target column. */
   if (shifted || *leftedge < was_edge) {
-    openfile->current_x =
-      proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
+    openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
   }
   openfile->placewewant = *leftedge + target;
 }

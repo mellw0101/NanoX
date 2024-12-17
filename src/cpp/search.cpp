@@ -128,11 +128,10 @@ void search_init(bool replacing, bool retain_answer) {
   free(thedefault);
 }
 
-/* Look for needle, starting at (current, current_x).  Begin is the line where we first started searching,
- * at column begin_x.  Return 1 when we found something, 0 when nothing, and -2 on cancel.  When match_len is
- * not NULL, set it to the length of the found string, if any.  TODO: (findnextstr) - This can be usefull. */
-int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone,
-                const linestruct *begin, Ulong begin_x) {
+// Look for needle, starting at (current, current_x).  Begin is the line where we first started searching,
+// at column begin_x.  Return 1 when we found something, 0 when nothing, and -2 on cancel.  When match_len is
+// not NULL, set it to the length of the found string, if any.  TODO: (findnextstr) - This can be usefull.
+int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x) {
   /* The length of a match -- will be recomputed for a regex. */
   Ulong found_len = strlen(needle);
   /* When bigger than zero, show and wipe the "Searching..." message. */
@@ -631,11 +630,11 @@ void goto_line_and_column(long line, long column, bool retain_answer, bool inter
     }
   }
   else {
-    if (line == 0) {
+    if (!line) {
       line = openfile->current->lineno;
     }
-    if (column == 0) {
-      column = openfile->placewewant + 1;
+    if (!column) {
+      column = (openfile->placewewant + 1);
     }
   }
   /* Take a negative line number to mean: from the end of the file. */

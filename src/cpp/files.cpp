@@ -1569,7 +1569,9 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
     }
   }
   if (normal) {
-    statusbar(_("Writing..."));
+    if (!ISSET(MINIBAR)) {
+      statusbar(_("Writing..."));
+    }
   }
   while (TRUE) {
     Ulong data_len, wrote;

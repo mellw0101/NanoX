@@ -2197,19 +2197,18 @@ void titlebar(const char *path) {
   wrefresh(topwin);
 }
 
-/* Draw a bar at the bottom with some minimal state information.
- * TODO: (minibar) - Profile later.  Also make this way better. */
+/* Draw a bar at the bottom with some minimal state information. */
 void minibar(void) {
-  char   *thename         = NULL;
-  char   *number_of_lines = NULL;
-  char   *ranking         = NULL;
-  char   *successor       = NULL;
-  char   *location        = (char *)nmalloc(44);
-  char   *hexadecimal     = (char *)nmalloc(9);
-  Ulong   namewidth;
-  Ulong   placewidth;
-  Ulong   tallywidth = 0;
-  Ulong   padding    = 2;
+  char *thename         = NULL;
+  char *number_of_lines = NULL;
+  char *ranking         = NULL;
+  char *successor       = NULL;
+  char *location        = (char *)nmalloc(44);
+  char *hexadecimal     = (char *)nmalloc(9);
+  Ulong namewidth;
+  Ulong placewidth;
+  Ulong tallywidth = 0;
+  Ulong padding    = 2;
   wchar_t widecode;
   /* Draw a colored bar over the full width of the screen. */
   wattron(footwin, interface_color_pair[MINI_INFOBAR]);
@@ -2231,7 +2230,7 @@ void minibar(void) {
   /* Display the name of the current file (dottifying it if it doesn't fit), plus a star when the file has been modified. */
   if (COLS > 4) {
     if (namewidth > (COLS - 2)) {
-      char *shortname = display_string(thename, namewidth - COLS + 5, COLS - 5, FALSE, FALSE);
+      char *shortname = display_string(thename, (namewidth - COLS + 5), (COLS - 5), FALSE, FALSE);
       mvwaddstr(footwin, 0, 0, "...");
       waddstr(footwin, shortname);
       free(shortname);
@@ -2244,7 +2243,7 @@ void minibar(void) {
   /* Right after reading or writing a file, display its number of lines;
    * otherwise, when there are multiple buffers, display an [x/n] counter. */
   if (report_size && COLS > 35) {
-    Ulong count     = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0');
+    Ulong count = (openfile->filebot->lineno - (openfile->filebot->data[0] == '\0'));
     number_of_lines = (char *)nmalloc(49);
     if (openfile->fmt == NIX_FILE || openfile->fmt == UNSPECIFIED) {
       sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
@@ -2327,12 +2326,12 @@ void minibar(void) {
 
 /* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there. */
 void statusline(message_type importance, const char *msg, ...) {
-  bool         showed_whitespace = ISSET(WHITESPACE_DISPLAY);
   static Ulong start_col         = 0;
-  char        *compound, *message;
-  bool         bracketed;
-  int          colorpair;
-  va_list      ap;
+  bool  showed_whitespace = ISSET(WHITESPACE_DISPLAY);
+  char *compound, *message;
+  bool  bracketed;
+  int   colorpair;
+  va_list ap;
   /* Drop all waiting keystrokes upon any kind of 'error'. */
   if (importance >= AHEM) {
     waiting_codes = 0;
@@ -2344,7 +2343,7 @@ void statusline(message_type importance, const char *msg, ...) {
   /* Construct the message out of all the arguments. */
   compound = (char *)nmalloc(MAXCHARLEN * COLS + 1);
   va_start(ap, msg);
-  vsnprintf(compound, MAXCHARLEN * COLS + 1, msg, ap);
+  vsnprintf(compound, (MAXCHARLEN * COLS + 1), msg, ap);
   va_end(ap);
   /* When not in curses mode, write the message to standard error. */
   if (isendwin()) {
@@ -2353,8 +2352,7 @@ void statusline(message_type importance, const char *msg, ...) {
     free(compound);
     return;
   }
-  if (!we_are_running && importance == ALERT && openfile && !openfile->fmt && !openfile->errormessage &&
-      openfile->next != openfile) {
+  if (!we_are_running && importance == ALERT && openfile && !openfile->fmt && !openfile->errormessage && openfile->next != openfile) {
     openfile->errormessage = copy_of(compound);
   }
   /* On a one-row terminal, ensure that any changes in the edit window are
@@ -2365,7 +2363,7 @@ void statusline(message_type importance, const char *msg, ...) {
   /* If there are multiple alert messages, add trailing dots to the first. */
   if (lastmessage == ALERT) {
     if (start_col > 4) {
-      wmove(footwin, 0, COLS + 2 - start_col);
+      wmove(footwin, 0, (COLS + 2 - start_col));
       wattron(footwin, interface_color_pair[ERROR_MESSAGE]);
       waddstr(footwin, "...");
       wattroff(footwin, interface_color_pair[ERROR_MESSAGE]);
@@ -2525,10 +2523,10 @@ void place_the_cursor(void) {
 /* The number of bytes after which to stop painting, to avoid major slowdowns. */
 #define PAINT_LIMIT 2000
 
-/* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
- * is the actual string to be written with tabs and control characters replaced by strings of regular
- * characters.  'from_col' is the column number of the first character of this "page". */
-/** TODO: (draw_row) - Implement a way to close and open brackets (will probebly be hard as fuck!!!). */
+// Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
+// is the actual string to be written with tabs and control characters replaced by strings of regular
+// characters.  'from_col' is the column number of the first character of this "page".
+// TODO: (draw_row) - Implement a way to close and open brackets (will probebly be hard as fuck!!!).
 void draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col) {
   render_line_text(row, converted, line, from_col);
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
@@ -2659,11 +2657,11 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
     char  striped_char[MAXCHARLEN];
     Ulong charlen = 1;
     if (*(converted + target_x)) {
-      charlen       = collect_char(converted + target_x, striped_char);
+      charlen       = collect_char((converted + target_x), striped_char);
       target_column = wideness(converted, target_x);
 #ifdef USING_OLDER_LIBVTE
     }
-    else if (target_column + 1 == editwincols) {
+    else if ((target_column + 1) == editwincols) {
       /* Defeat a VTE bug -- see https://sv.gnu.org/bugs/?55896. */
 #  ifdef ENABLE_UTF8
       if (using_utf8()) {
@@ -2679,7 +2677,7 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
     else {
       striped_char[0] = ' ';
     }
-    midwin_mv_add_nstr_color(row, margin + target_column, striped_char, charlen, GUIDE_STRIPE);
+    mv_add_nstr_color(midwin, row, (margin + target_column), striped_char, charlen, GUIDE_STRIPE);
   }
   /* If the line is at least partially selected, paint the marked part. */
   if (openfile->mark && ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno)
@@ -2730,8 +2728,8 @@ int update_line(linestruct *line, const Ulong index, int offset) {
     return update_softwrapped_line(line);
   }
   sequel_column = 0;
-  row           = line->lineno - openfile->edittop->lineno - offset;
-  from_col      = get_page_start(wideness(line->data, index));
+  row = line->lineno - openfile->edittop->lineno - offset;
+  from_col = get_page_start(wideness(line->data, index));
   /* Expand the piece to be drawn to its representable form, and draw it. */
   converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
   draw_row(row, converted, line, from_col);

@@ -780,6 +780,7 @@ Implement CTRL+ENTER so that it goes to newline from the end of the line and, CT
 	STATUS:
 		Not started yet.
 
-	
+('27').
+Change move_lines_(up/down) to use get_range and also so it properly moves correctly based on mark.
 
         
