@@ -1,4 +1,4 @@
-#include "prototypes.h"
+#include "../include/prototypes.h"
 
 #define CONFIGFILE_EXT ".nxcfg"
 #define CONFIGDIR      ".config/nanox/"
