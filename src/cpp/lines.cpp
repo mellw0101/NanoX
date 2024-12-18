@@ -48,15 +48,18 @@ void inject_in_line(linestruct *line, const char *str, Ulong at) {
 /* Move a single line up or down. */
 void move_line(linestruct *line, bool up) {
   char *tmp_data = NULL;
-  if (up) {
+  if (up && line->prev) {
     tmp_data         = line->prev->data;
     line->prev->data = line->data;
     line->data       = tmp_data;
   }
-  else {
+  else if (!up && line->next) {
     tmp_data         = line->next->data;
     line->next->data = line->data;
     line->data       = tmp_data;
+  }
+  else {
+    return;
   }
   set_modified();
   refresh_needed = TRUE;
