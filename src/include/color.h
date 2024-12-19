@@ -86,9 +86,18 @@ static constexpr short VS_CODE_BRIGHT_CYAN_GRAYSCALE    = xterm_grayscale_color_
 #define FG_VS_CODE_BRIGHT_CYAN               35
 #define FG_COMMENT_GREEN                     36
 #define FG_SUGGEST_GRAY                      37
+/* Bg vs-code colors. */
 #define BG_VS_CODE_RED                       38
+#define BG_VS_CODE_BLUE                      39
+#define BG_VS_CODE_GREEN                     40
 /* Total elements. */
-#define NUMBER_OF_ELEMENTS                   39
+#define NUMBER_OF_ELEMENTS                   41
+
+#define FG_VS_CODE_START   FG_VS_CODE_RED
+#define FG_VS_CODE_END     (BG_VS_CODE_RED - 1)
+
+#define BG_VS_CODE_START  BG_VS_CODE_RED
+#define BG_VS_CODE_END    BG_VS_CODE_GREEN
 
 constexpr short color_array[] {
   VS_CODE_RED,
@@ -105,6 +114,12 @@ constexpr short color_array[] {
   VS_CODE_BRIGHT_MAGENTA,
   VS_CODE_BRIGHT_CYAN,
   COMMENT_GREEN,
-  XTERM_GREY_1,
-  VS_CODE_RED
+  XTERM_GREY_1
 };
+
+constexpr short bg_vs_code_color_array[] {
+  VS_CODE_RED,
+  VS_CODE_BLUE,
+  VS_CODE_GREEN
+};
+#define BG_COLOR(index) bg_vs_code_color_array[index - BG_VS_CODE_START]

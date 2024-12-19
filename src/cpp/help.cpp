@@ -17,7 +17,7 @@ static Ulong location;
 // - The untranslated function key descriptions.
 // The function key list is built by iterating over all functions,
 // and for each function, iterating over all shortcuts.
-// The function key descriptions are built by iterating over all functions.
+// The function key descriptions are built by iterating over all functions. 
 void help_init(void) {
   Ulong allocsize = 0;
   /* Space needed for help_text. */
@@ -167,7 +167,7 @@ void help_init(void) {
     htx[2] = NULL;
   }
   else {
-    // Default to the main help list.
+    /* Default to the main help list. */
     htx[0] = N_("Main nano help text\n\n "
                 "The nano editor is designed to emulate the "
                 "functionality and ease-of-use of the UW Pico text "
@@ -206,8 +206,8 @@ void help_init(void) {
   if (htx[2]) {
     allocsize += strlen(htx[2]);
   }
-  // Calculate the length of the descriptions of the shortcuts.  Each entry has one or
-  // two keystrokes, which fill 17 cells, plus translated text, plus one or two \n's.
+  /* Calculate the length of the descriptions of the shortcuts.  Each entry has one or
+   * two keystrokes, which fill 17 cells, plus translated text, plus one or two \n's. */
   for (f = allfuncs; f; f = f->next) {
     if (f->menus & currmenu) {
       allocsize += strlen(_(f->phrase)) + 21;
@@ -280,11 +280,10 @@ void help_init(void) {
     }
     /* Now show them in the original order. */
     while (counter < maximum) {
-      counter++;
-      for (s = sclist; s != NULL; s = s->next) {
+      ++counter;
+      for (s = sclist; s; s = s->next) {
         if (s->toggle && s->ordinal == counter) {
-          ptr += sprintf(ptr, "%s\t\t %s %s\n", (s->menus & MMAIN ? s->keystr : ""), _(epithet_of_flag(s->toggle)),
-                         _("enable/disable"));
+          ptr += sprintf(ptr, "%s\t\t %s %s\n", (s->menus & MMAIN ? s->keystr : ""), _(epithet_of_flag(s->toggle)), _("enable/disable"));
           /* Add a blank like between two groups. */
           if (s->toggle == NO_SYNTAX) {
             ptr += sprintf(ptr, "\n");
@@ -299,9 +298,9 @@ void help_init(void) {
 /* Hard-wrap the concatenated help text, and write it into a new buffer. */
 void wrap_help_text_into_buffer(void) {
   /* Avoid overtight and overwide paragraphs in the introductory text. */
-  Ulong       wrapping_point = ((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar;
-  const char *ptr            = start_of_body;
-  Ulong       sum            = 0;
+  const char *ptr = start_of_body;
+  Ulong wrapping_point = (((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar);
+  Ulong sum = 0;
   make_new_buffer();
   /* Ensure there is a blank line at the top of the text, for esthetics. */
   if ((ISSET(MINIBAR) || !ISSET(EMPTY_LINE)) && LINES > 6) {
@@ -314,24 +313,24 @@ void wrap_help_text_into_buffer(void) {
     int   length, shim;
     char *oneline;
     if (ptr == end_of_intro) {
-      wrapping_point = ((COLS < 40) ? 40 : COLS) - sidebar;
+      wrapping_point = (((COLS < 40) ? 40 : COLS) - sidebar);
     }
     if (ptr < end_of_intro || *(ptr - 1) == '\n') {
       length  = break_line(ptr, wrapping_point, TRUE);
       oneline = (char *)nmalloc(length + 1);
-      shim    = (*(ptr + length - 1) == ' ') ? 0 : 1;
-      snprintf(oneline, length + shim, "%s", ptr);
+      shim    = ((*(ptr + length - 1) == ' ') ? 0 : 1);
+      snprintf(oneline, (length + shim), "%s", ptr);
     }
     else {
-      length  = break_line(ptr, ((COLS < 40) ? 22 : COLS - 18) - sidebar, TRUE);
+      length  = break_line(ptr, (((COLS < 40) ? 22 : (COLS - 18)) - sidebar), TRUE);
       oneline = (char *)nmalloc(length + 5);
-      snprintf(oneline, length + 5, "\t\t  %s", ptr);
+      snprintf(oneline, (length + 5), "\t\t  %s", ptr);
     }
     free(openfile->current->data);
     openfile->current->data = oneline;
     ptr += length;
     if (*ptr != '\n') {
-      ptr--;
+      --ptr;
     }
     /* Create a new line, and then one more for each extra \n. */
     do {
@@ -368,8 +367,8 @@ void show_help(void) {
   long  was_tabsize = tabsize;
   char *was_syntax  = syntaxstr;
   /* The current answer when the user invokes help at the prompt. */
-  char *saved_answer = answer ? copy_of(answer) : NULL;
-  Ulong stash[sizeof(flags) / sizeof(flags[0])];
+  char *saved_answer = (answer ? copy_of(answer) : NULL);
+  Ulong stash[ARRAY_SIZE(flags)];
   /* A storage place for the current flag settings. */
   linestruct *line;
   int         length;
@@ -389,7 +388,7 @@ void show_help(void) {
   UNSET(CASE_SENSITIVE);
   UNSET(USE_REGEXP);
   UNSET(WHITESPACE_DISPLAY);
-  editwincols = COLS - sidebar;
+  editwincols = (COLS - sidebar);
   margin      = 0;
   tabsize     = 8;
   syntaxstr   = _("nanohelp");
@@ -405,9 +404,9 @@ void show_help(void) {
   title  = measured_copy(help_text, length);
   titlebar(title);
   /* Skip over the title to point at the start of the body text. */
-  start_of_body = help_text + length;
+  start_of_body = (help_text + length);
   while (*start_of_body == '\n') {
-    start_of_body++;
+    ++start_of_body;
   }
   wrap_help_text_into_buffer();
   edit_refresh();
@@ -415,7 +414,7 @@ void show_help(void) {
     lastmessage = VACUUM;
     focusing    = TRUE;
     /* Show the cursor when we searched and found something. */
-    kbinput     = get_kbinput(midwin, didfind == 1 || ISSET(SHOW_CURSOR));
+    kbinput     = get_kbinput(midwin, (didfind == 1 || ISSET(SHOW_CURSOR)));
     didfind     = 0;
     spotlighted = FALSE;
     if (bracketed_paste || kbinput == BRACKETED_PASTE_MARKER) {
@@ -433,7 +432,7 @@ void show_help(void) {
       do_scroll_up();
     }
     else if (function == do_down || function == do_scroll_down) {
-      if (openfile->edittop->lineno + editwinrows - 1 < openfile->filebot->lineno) {
+      if ((openfile->edittop->lineno + editwinrows - 1) < openfile->filebot->lineno) {
         do_scroll_down();
       }
     }

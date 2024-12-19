@@ -1302,7 +1302,7 @@ int copy_file(FILE *inn, FILE *out, bool close_out) {
   int   retval = 0;
   char  buf[BUFSIZ];
   Ulong charsread;
-  int (*flush_out_fnc)(FILE *) = (close_out) ? fclose : fflush;
+  int (*flush_out_fnc)(FILE *) = ((close_out) ? fclose : fflush);
   do {
     charsread = fread(buf, 1, BUFSIZ, inn);
     if (charsread == 0 && ferror(inn)) {

@@ -217,7 +217,9 @@ bit_flag_t<8> mod_key;
 
 file_listener_handler_t file_listener;
 
-short line_number_color = LINE_NUMBER;
+/* Some colors used for dynamic color swithing. */
+int line_number_color  = LINE_NUMBER;
+int mini_infobar_color = MINI_INFOBAR;
 
 /* Empty functions, for the most part corresponding to toggles. */
 

@@ -257,8 +257,8 @@ constexpr auto retriveScFromStr(std::string_view str) {
 /* Interpret a function string given in the rc file, and return a
  * shortcut record with the corresponding function filled in. */
 keystruct *strtosc(const char *input) {
-  keystruct *s             = (keystruct *)nmalloc(sizeof(keystruct));
-  s->toggle                = 0;
+  keystruct *s = (keystruct *)nmalloc(sizeof(keystruct));
+  s->toggle = 0;
   const functionptrtype it = retriveScFromStr(input);
   if (it) {
     s->func = it;
@@ -281,7 +281,7 @@ keystruct *strtosc(const char *input) {
  * after the null terminator.  The returned pointer will point to '\0' if we hit the end of the line. */
 char *parse_next_word(char *ptr) {
   while (!isblank((Uchar)*ptr) && *ptr) {
-    ptr++;
+    ++ptr;
   }
   if (!*ptr) {
     return ptr;
@@ -289,7 +289,7 @@ char *parse_next_word(char *ptr) {
   /* Null-terminate and advance ptr. */
   *ptr++ = '\0';
   while (isblank((Uchar)*ptr)) {
-    ptr++;
+    ++ptr;
   }
   return ptr;
 }

@@ -360,32 +360,30 @@ void go_looking(void) {
 /* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into account.
  * Return the replacement text in the passed string only when create is TRUE. */
 int replace_regexp(char *string, bool create) {
-  Ulong       replacement_size = 0;
-  const char *c                = answer;
-  /* Iterate through the replacement text to handle subexpression
-   * replacement using \1, \2, \3, etc. */
+  Ulong replacement_size = 0;
+  const char *c = answer;
+  /* Iterate through the replacement text to handle subexpression replacement using \1, \2, \3, etc. */
   while (*c) {
     int num = (*(c + 1) - '0');
     if (*c != '\\' || num < 1 || num > 9 || num > search_regexp.re_nsub) {
-      (create) ? *string++ = *c : 0;
-      c++;
-      replacement_size++;
+      create ? *string++ = *c : 0;
+      ++c;
+      ++replacement_size;
     }
     else {
-      Ulong i = regmatches[num].rm_eo - regmatches[num].rm_so;
+      Ulong i = (regmatches[num].rm_eo - regmatches[num].rm_so);
       /* Skip over the replacement expression. */
       c += 2;
       /* But add the length of the subexpression to new_size. */
       replacement_size += i;
-      /* And if create is TRUE, append the result of the
-       * subexpression match to the new line. */
+      /* And if create is TRUE, append the result of the subexpression match to the new line. */
       if (create) {
-        strncpy(string, openfile->current->data + regmatches[num].rm_so, i);
+        strncpy(string, (openfile->current->data + regmatches[num].rm_so), i);
         string += i;
       }
     }
   }
-  (create) ? *string = '\0' : 0;
+  create ? *string = '\0' : 0;
   return replacement_size;
 }
 

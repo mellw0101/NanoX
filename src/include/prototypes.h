@@ -167,7 +167,8 @@ extern unordered_map<string, syntax_data_t> test_map;
 
 extern file_listener_handler_t file_listener;
 
-extern short line_number_color;
+extern int line_number_color;
+extern int mini_infobar_color;
 
 typedef void (*functionptrtype)(void);
 

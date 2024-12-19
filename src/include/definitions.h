@@ -271,6 +271,10 @@ using std::vector;
 /* Used to encode both parts when enclosing a region. */
 #define ENCLOSE_DELIM ":;:"
 
+/* Config helpers. */
+#define STRLTRLEN(str) (sizeof(str) - 1)
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
+
 #include "constexpr_utils.h"
 
 /* Null def. */
@@ -560,9 +564,16 @@ typedef struct openfilestruct {
   openfilestruct *prev;       /* The preceding open file, if any. */
 } openfilestruct;
 
+typedef struct coloroption {
+  const char *name; /* Name of the option. */
+  int name_len;     /* Length of the name. */
+  int color_index;  /* Index of the color. */
+} coloroption;
+
 typedef struct colorfilestruct {
-  char *filepath;
-  short linenumber;
+  char *filepath; /* Full path to the color config file. */
+  int linenumber; /* Linenumber color. */
+  int minibar;    /* Minibar color. */
 } colorfilestruct; 
 
 typedef struct rcoption {

@@ -1292,7 +1292,7 @@ int main(int argc, char **argv) {
   /* Get the state of standard input and ensure it uses blocking mode. */
   stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
   if (stdin_flags != -1) {
-    fcntl(STDIN_FILENO, F_SETFL, stdin_flags & ~O_NONBLOCK);
+    fcntl(STDIN_FILENO, F_SETFL, (stdin_flags & ~O_NONBLOCK));
   }
   /* If setting the locale is successful and it uses UTF-8, we will need to use the multibyte functions for text processing. */
   if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0) {

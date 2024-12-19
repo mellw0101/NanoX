@@ -61,7 +61,6 @@ bool unlock_file(int fd, flock *lock) {
     return FALSE;
   }
   return TRUE;
-  nmalloc(2);
 }
 
 /* Lock a file, then write data to it. */
@@ -119,46 +118,85 @@ char *lock_and_read(const char *file_path, Ulong *file_size) {
 /* Callback that the main thread runs to update colors in a thread-safe manner. */
 static void update_colorfile(void *arg) {
   colorfilestruct *file = (colorfilestruct *)arg;
-  line_number_color = file->linenumber;
+  line_number_color  = file->linenumber;
+  mini_infobar_color = file->minibar;
+}
+
+#define LINENUMBER_OPTION "linenumber_color="
+#define MINIBAR_OPTION    "minibar_color="
+#define COLORFILE_DEFAULT_TEXT \
+  LINENUMBER_OPTION "\n"       \
+  MINIBAR_OPTION    "\n"
+
+/* Lookup-table for available color opt`s. */
+static const coloroption coloropt_lookup_table[] {
+  {           "red", STRLTRLEN("red"),            FG_VS_CODE_RED},
+  {         "green", STRLTRLEN("green"),          FG_VS_CODE_GREEN},
+  {        "yellow", STRLTRLEN("yellow"),         FG_VS_CODE_YELLOW},
+  {          "blue", STRLTRLEN("blue"),           FG_VS_CODE_BLUE},
+  {       "magenta", STRLTRLEN("magenta"),        FG_VS_CODE_MAGENTA},
+  {          "cyan", STRLTRLEN("cyan"),           FG_VS_CODE_CYAN},
+  {         "white", STRLTRLEN("white"),          FG_VS_CODE_WHITE},
+  {    "bright-red", STRLTRLEN("bright-red"),     FG_VS_CODE_BRIGHT_RED},
+  {  "bright-green", STRLTRLEN("bright-green"),   FG_VS_CODE_BRIGHT_GREEN},
+  { "bright-yellow", STRLTRLEN("bright-yellow"),  FG_VS_CODE_BRIGHT_YELLOW},
+  {   "bright-blue", STRLTRLEN("bright-blue"),    FG_VS_CODE_BRIGHT_BLUE},
+  {"bright-magenta", STRLTRLEN("bright-magenta"), FG_VS_CODE_BRIGHT_MAGENTA},
+  {   "bright-cyan", STRLTRLEN("bright-cyan"),    FG_VS_CODE_BRIGHT_CYAN},
+  {          "grey", STRLTRLEN("grey"),           FG_SUGGEST_GRAY},
+  {        "bg-red", STRLTRLEN("bg-red"),         BG_VS_CODE_RED},
+  {       "bg-blue", STRLTRLEN("bg-blue"),        BG_VS_CODE_BLUE},
+  {      "bg-green", STRLTRLEN("bg-green"),       BG_VS_CODE_GREEN},
+};
+constexpr Ulong COLOROPT_LOOKUP_TABLE_SIZE = ARRAY_SIZE(coloropt_lookup_table);
+#define COLOROPT_LOOKUP_TABLE_SIZE COLOROPT_LOOKUP_TABLE_SIZE
+
+/* Optimized lookup for color opt.  Uses opt name len to minimize overhead. */
+bool lookup_coloropt(const char *color, int len, int *color_opt) {
+  for (Ulong i = 0; i < COLOROPT_LOOKUP_TABLE_SIZE; ++i) {
+    if (len == coloropt_lookup_table[i].name_len && strncmp(color, coloropt_lookup_table[i].name, len) == 0) {
+      *color_opt = coloropt_lookup_table[i].color_index;
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/* Fetch the color for an option.  Return`s TRUE on success, otherwise FALSE. */
+bool get_color_option(const char *data, const char *option, int *color_opt) {
+  /* Fetch the color data, if any. */
+  const char *opt = strstr(data, option);
+  if (opt) {
+    opt += const_strlen(option);
+    const char *end = opt;
+    ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
+    /* If there is nothing after opt.  Return early. */
+    if (opt == end) {
+      return FALSE;
+    }
+    /* Otherwise, check if the str matches any of the available colors. */
+    if (lookup_coloropt(opt, (end - opt), color_opt)) {
+      return TRUE;
+    }
+    logW("%s: Invalid color option: '%.*s'.", option, (int)(end - opt), opt);
+  }
+  return FALSE;
 }
 
 /* Load colorfile with values from disk. */
 void load_colorfile(void) {
+  /* Make sure the file always exists. */
   if (!is_file_and_exists(colorfile->filepath)) {
-    lock_and_write(colorfile->filepath, "linenumber_color=\n", strlen("linenumber_color=\n"), OVERWRITE);
+    lock_and_write(colorfile->filepath, COLORFILE_DEFAULT_TEXT, STRLTRLEN(COLORFILE_DEFAULT_TEXT), OVERWRITE);
   }
+  /* Read the colorfile. */
   Ulong file_size;
   char *data = lock_and_read(colorfile->filepath, &file_size);
-  const char *line_color = strstr(data, "linenumber_color=");
-  if (line_color) {
-    /* Define a callback for the main thread to set the line color. */
-    line_color += strlen("linenumber_color=");
-    const char *end = line_color;
-    ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
-    /* There is no string after '='. */
-    if (line_color == end) {
-      colorfile->linenumber = LINE_NUMBER;
-    }
-    else {
-      char *color = measured_copy(line_color, (end - line_color));
-      if (strcmp(color, "red") == 0) {
-        colorfile->linenumber = FG_VS_CODE_RED;
-      }
-      else if (strcmp(color, "green") == 0) {
-        colorfile->linenumber = FG_VS_CODE_GREEN;
-      }
-      else if (strcmp(color, "blue") == 0) {
-        colorfile->linenumber = FG_VS_CODE_BLUE;
-      }
-      else if (strcmp(color, "bg-red") == 0) {
-        colorfile->linenumber = BG_VS_CODE_RED;
-      }
-      else {
-        colorfile->linenumber = LINE_NUMBER;
-      }
-      free(color);
-    }
-  }
+  int color;
+  /* Get color opts, if any.  Otherwise, fall back to the default color. */
+  colorfile->linenumber = (get_color_option(data, LINENUMBER_OPTION, &color) ? color : LINE_NUMBER);
+  colorfile->minibar    = (get_color_option(data, MINIBAR_OPTION, &color)    ? color : MINI_INFOBAR);
+  free(data);
   enqueue_callback(update_colorfile, colorfile);
 }
 

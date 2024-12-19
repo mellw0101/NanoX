@@ -1810,7 +1810,7 @@ void blank_titlebar(void) {
 
 /* Blank all lines of the middle portion of the screen (the edit window). */
 void blank_edit(void) {
-  for (int row = 0; row < editwinrows; row++) {
+  for (int row = 0; row < editwinrows; ++row) {
     blank_row(midwin, row);
   }
 }
@@ -2069,13 +2069,13 @@ void titlebar(const char *path) {
   blank_titlebar();
   as_an_at = FALSE;
   /* Do as Pico:
-   *  if there is not enough width available for all items,
-   *  first sacrifice the version string, then eat up the side spaces,
-   *  then sacrifice the prefix, and only then start dottifying.
+   *   if there is not enough width available for all items,
+   *   first sacrifice the version string, then eat up the side spaces,
+   *   then sacrifice the prefix, and only then start dottifying.
    */
   /* Figure out the path, prefix and state strings. */
   if (currmenu == MLINTER) {
-    /** TRANSLATORS: The next five are "labels" in the title bar. */
+    /* TRANSLATORS: The next five are "labels" in the title bar. */
     prefix = _("Linting --");
     path   = openfile->filename;
   }
@@ -2085,8 +2085,7 @@ void titlebar(const char *path) {
     }
     else {
       if (!inhelp) {
-        /* If there are/were multiple buffers, show which out of how
-         * many. */
+        /* If there are/were multiple buffers, show which out of how many. */
         if (more_than_one) {
           ranking = (char *)nmalloc(24);
           sprintf(ranking, "[%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
@@ -2211,7 +2210,7 @@ void minibar(void) {
   Ulong padding    = 2;
   wchar_t widecode;
   /* Draw a colored bar over the full width of the screen. */
-  wattron(footwin, interface_color_pair[MINI_INFOBAR]);
+  WIN_COLOR_ON(footwin, mini_infobar_color);
   mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
   if (openfile->filename[0]) {
     as_an_at = FALSE;
@@ -2249,10 +2248,10 @@ void minibar(void) {
       sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
     }
     else {
-      sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count, (openfile->fmt == DOS_FILE) ? "DOS" : "Mac");
+      sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count, ((openfile->fmt == DOS_FILE) ? "DOS" : "Mac"));
     }
     tallywidth = breadth(number_of_lines);
-    if (namewidth + tallywidth + 11 < COLS) {
+    if ((namewidth + tallywidth + 11) < COLS) {
       waddstr(footwin, number_of_lines);
     }
     else {
@@ -2263,16 +2262,15 @@ void minibar(void) {
   else if (openfile->next != openfile && COLS > 35) {
     ranking = ranking = (char *)nmalloc(24);
     sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
-    if (namewidth + placewidth + breadth(ranking) + 32 < COLS) {
+    if ((namewidth + placewidth + breadth(ranking) + 32) < COLS) {
       waddstr(footwin, ranking);
     }
   }
   /* Display the line/column position of the cursor. */
   if (ISSET(CONSTANT_SHOW) && (namewidth + tallywidth + placewidth + 32) < COLS) {
-    mvwaddstr(footwin, 0, COLS - 27 - placewidth, location);
+    mvwaddstr(footwin, 0, (COLS - 27 - placewidth), location);
   }
-  /* Display the hexadecimal code of the character under the cursor,
-   * plus the codes of up to two succeeding zero-width characters. */
+  /* Display the hexadecimal code of the character under the cursor, plus the codes of up to two succeeding zero-width characters. */
   if (ISSET(CONSTANT_SHOW) && (namewidth + tallywidth + 28) < COLS) {
     char *this_position = openfile->current->data + openfile->current_x;
     if (*this_position == '\0') {
@@ -2290,8 +2288,8 @@ void minibar(void) {
     else {
       sprintf(hexadecimal, "  0x%02X", (Uchar)*this_position);
     }
-    mvwaddstr(footwin, 0, COLS - 23, hexadecimal);
-    successor = this_position + char_length(this_position);
+    mvwaddstr(footwin, 0, (COLS - 23), hexadecimal);
+    successor = (this_position + char_length(this_position));
     if (*this_position && *successor && is_zerowidth(successor) && mbtowide(widecode, successor) > 0) {
       sprintf(hexadecimal, "|%04X", (int)widecode);
       waddstr(footwin, hexadecimal);
@@ -2307,7 +2305,7 @@ void minibar(void) {
   }
   /* Display the state of three flags, and the state of macro and mark. */
   if (ISSET(STATEFLAGS) && !successor && ((namewidth + tallywidth + 14 + 2 * padding) < COLS)) {
-    wmove(footwin, 0, COLS - 11 - padding);
+    wmove(footwin, 0, (COLS - 11 - padding));
     show_states_at(footwin);
   }
   /* Display how many percent the current line is into the file. */
@@ -2315,7 +2313,7 @@ void minibar(void) {
     sprintf(location, "%3zi%%", (100 * openfile->current->lineno / openfile->filebot->lineno));
     mvwaddstr(footwin, 0, (COLS - 4 - padding), location);
   }
-  wattroff(footwin, interface_color_pair[MINI_INFOBAR]);
+  WIN_COLOR_OFF(footwin, mini_infobar_color);
   wrefresh(footwin);
   free(number_of_lines);
   free(hexadecimal);
@@ -2728,7 +2726,7 @@ int update_line(linestruct *line, const Ulong index, int offset) {
     return update_softwrapped_line(line);
   }
   sequel_column = 0;
-  row = line->lineno - openfile->edittop->lineno - offset;
+  row = (line->lineno - openfile->edittop->lineno - offset);
   from_col = get_page_start(wideness(line->data, index));
   /* Expand the piece to be drawn to its representable form, and draw it. */
   converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
@@ -2772,8 +2770,8 @@ int update_softwrapped_line(linestruct *line) {
     row -= chunk_for(openfile->firstcolumn, openfile->edittop);
   }
   /* Find out on which screen row the target line should be shown. */
-  while (someline != line && someline != NULL) {
-    row += 1 + extra_chunks_in(someline);
+  while (someline != line && someline) {
+    row += (1 + extra_chunks_in(someline));
     someline = someline->next;
   }
   /* If the first chunk is offscreen, don't even try to display it. */
@@ -2783,9 +2781,9 @@ int update_softwrapped_line(linestruct *line) {
   starting_row = row;
   while (!end_of_line && row < editwinrows) {
     to_col        = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line);
-    sequel_column = (end_of_line) ? 0 : to_col;
+    sequel_column = (end_of_line ? 0 : to_col);
     /* Convert the chunk to its displayable form and draw it. */
-    converted = display_string(line->data, from_col, to_col - from_col, TRUE, FALSE);
+    converted = display_string(line->data, from_col, (to_col - from_col), TRUE, FALSE);
     draw_row(row++, converted, line, from_col);
     free(converted);
     from_col = to_col;
@@ -2851,7 +2849,7 @@ int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) {
     current_leftedge = *leftedge;
     kickoff          = TRUE;
     /* Advance through the requested number of chunks. */
-    for (i = nrows; i > 0; i--) {
+    for (i = nrows; i > 0; --i) {
       end_of_line      = FALSE;
       current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
       if (!end_of_line) {
@@ -2870,7 +2868,7 @@ int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) {
     }
   }
   else {
-    for (i = nrows; i > 0 && (*line)->next; i--) {
+    for (i = nrows; i > 0 && (*line)->next; --i) {
       *line = (*line)->next;
     }
   }
@@ -2896,24 +2894,24 @@ bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
 
 /* Draw a "scroll bar" on the righthand side of the edit window. */
 void draw_scrollbar(void) {
-  int fromline     = openfile->edittop->lineno - 1;
+  int fromline     = (openfile->edittop->lineno - 1);
   int totallines   = openfile->filebot->lineno;
   int coveredlines = editwinrows;
   if (ISSET(SOFTWRAP)) {
-    linestruct *line   = openfile->edittop;
-    int         extras = extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line);
-    while (line->lineno + extras < fromline + editwinrows && line->next) {
+    linestruct *line = openfile->edittop;
+    int extras = (extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line));
+    while ((line->lineno + extras) < (fromline + editwinrows) && line->next) {
       line = line->next;
       extras += extra_chunks_in(line);
     }
-    coveredlines = line->lineno - fromline;
+    coveredlines = (line->lineno - fromline);
   }
-  int lowest  = (fromline * editwinrows) / totallines;
-  int highest = lowest + (editwinrows * coveredlines) / totallines;
+  int lowest  = ((fromline * editwinrows) / totallines);
+  int highest = (lowest + (editwinrows * coveredlines) / totallines);
   if (editwinrows > totallines && !ISSET(SOFTWRAP)) {
     highest = editwinrows;
   }
-  for (int row = 0; row < editwinrows; row++) {
+  for (int row = 0; row < editwinrows; ++row) {
     bardata[row] = ' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE);
     mvwaddch(midwin, row, COLS - 1, bardata[row]);
   }
@@ -2934,12 +2932,12 @@ void edit_scroll(bool direction) {
   }
   /* Actually scroll the text of the edit window one row up or down. */
   scrollok(midwin, TRUE);
-  wscrl(midwin, (direction == BACKWARD) ? -1 : 1);
+  wscrl(midwin, ((direction == BACKWARD) ? -1 : 1));
   scrollok(midwin, FALSE);
   /* If we're not on the first "page" (when not softwrapping), or the mark
    * is on, the row next to the scrolled region needs to be redrawn too. */
   if (line_needs_update(openfile->placewewant, 0) && nrows < editwinrows) {
-    nrows++;
+    ++nrows;
   }
   /* If we scrolled backward, the top row needs to be redrawn. */
   line     = openfile->edittop;
@@ -2962,7 +2960,7 @@ void edit_scroll(bool direction) {
   /* Draw new content on the blank row (and on the bordering row too
    * when it was deemed necessary). */
   while (nrows > 0 && line) {
-    nrows -= update_line(line, (line == openfile->current) ? openfile->current_x : 0);
+    nrows -= update_line(line, ((line == openfile->current) ? openfile->current_x : 0));
     line = line->next;
   }
 }
@@ -3017,7 +3015,7 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
     Ulong aftertheblank = last_blank_col;
     Ulong onestep       = advance_over(farthest_blank, aftertheblank);
     if (aftertheblank <= rightside) {
-      text   = farthest_blank + onestep;
+      text   = (farthest_blank + onestep);
       column = aftertheblank;
       return aftertheblank;
     }
@@ -3050,7 +3048,7 @@ Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) {
       return current_chunk;
     }
     start_col = end_col;
-    current_chunk++;
+    ++current_chunk;
   }
 }
 
@@ -3094,11 +3092,11 @@ Ulong actual_last_column(Ulong leftedge, Ulong column) {
   if (ISSET(SOFTWRAP)) {
     kickoff    = TRUE;
     last_chunk = FALSE;
-    end_col    = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge;
+    end_col    = (get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge);
     /* If we're not on the last chunk, we're one column past the end of the row.  Shifting back one column
      * might put us in the middle of a multi-column character, but 'actual_x()' will fix that later. */
     if (!last_chunk) {
-      end_col--;
+      --end_col;
     }
     if (column > end_col) {
       column = end_col;
@@ -3110,8 +3108,7 @@ Ulong actual_last_column(Ulong leftedge, Ulong column) {
 /* Return TRUE if current[current_x] is before the viewport. */
 bool current_is_above_screen(void) {
   if (ISSET(SOFTWRAP)) {
-    return (openfile->current->lineno < openfile->edittop->lineno || 
-           (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
+    return (openfile->current->lineno < openfile->edittop->lineno || (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
   }
   return (openfile->current->lineno < openfile->edittop->lineno);
 }
@@ -3238,10 +3235,10 @@ void adjust_viewport(update_type manner) {
     goal = openfile->cursor_row;
   }
   else if (manner == CENTERING) {
-    goal = editwinrows / 2;
+    goal = (editwinrows / 2);
   }
   else if (!current_is_above_screen()) {
-    goal = editwinrows - 1 - SHIM;
+    goal = (editwinrows - 1 - SHIM);
   }
   openfile->edittop = openfile->current;
   if (ISSET(SOFTWRAP)) {
@@ -3275,27 +3272,24 @@ void draw_all_subwindows(void) {
 /* Display on the status bar details about the current cursor position. */
 void report_cursor_position(void) {
   int   linepct, colpct, charpct;
-  Ulong fullwidth                              = breadth(openfile->current->data) + 1;
-  Ulong column                                 = xplustabs() + 1;
-  char  saved_byte                             = openfile->current->data[openfile->current_x];
+  Ulong fullwidth  = (breadth(openfile->current->data) + 1);
+  Ulong column     = (xplustabs() + 1);
+  char  saved_byte = openfile->current->data[openfile->current_x];
   openfile->current->data[openfile->current_x] = '\0';
   /* Determine the size of the file up to the cursor. */
-  Ulong sum                                    = number_of_characters_in(openfile->filetop, openfile->current);
+  Ulong sum = number_of_characters_in(openfile->filetop, openfile->current);
   openfile->current->data[openfile->current_x] = saved_byte;
   /* Calculate the percentages. */
   linepct = 100 * openfile->current->lineno / openfile->filebot->lineno;
   colpct  = 100 * column / fullwidth;
   charpct = (openfile->totsize == 0) ? 0 : 100 * sum / openfile->totsize;
-  statusline(INFO,
-             _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu "
-               "(%2d%%)"),
-             digits(openfile->filebot->lineno), openfile->current->lineno, openfile->filebot->lineno, linepct, column,
-             fullwidth, colpct, digits(openfile->totsize), sum, openfile->totsize, charpct);
+  statusline(INFO, _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu (%2d%%)"), digits(openfile->filebot->lineno),
+    openfile->current->lineno, openfile->filebot->lineno, linepct, column, fullwidth, colpct, digits(openfile->totsize), sum, openfile->totsize, charpct);
 }
 
 /* Highlight the text between the given two columns on the current line. */
 void spotlight(Ulong from_col, Ulong to_col) {
-  Ulong right_edge = get_page_start(from_col) + editwincols;
+  Ulong right_edge = (get_page_start(from_col) + editwincols);
   bool  overshoots = (to_col > right_edge);
   char *word;
   place_the_cursor();
@@ -3309,7 +3303,7 @@ void spotlight(Ulong from_col, Ulong to_col) {
     to_col++;
   }
   else {
-    word = display_string(openfile->current->data, from_col, to_col - from_col, FALSE, overshoots);
+    word = display_string(openfile->current->data, from_col, (to_col - from_col), FALSE, overshoots);
   }
   wattron(midwin, interface_color_pair[SPOTLIGHTED]);
   waddnstr(midwin, word, actual_x(word, to_col));
@@ -3343,7 +3337,7 @@ void spotlight_softwrapped(Ulong from_col, Ulong to_col) {
       break_col++;
     }
     else {
-      word = display_string(openfile->current->data, from_col, break_col - from_col, FALSE, FALSE);
+      word = display_string(openfile->current->data, from_col, (break_col - from_col), FALSE, FALSE);
     }
     wattron(midwin, interface_color_pair[SPOTLIGHTED]);
     waddnstr(midwin, word, actual_x(word, break_col));

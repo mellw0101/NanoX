@@ -89,16 +89,24 @@ void set_interface_colorpairs(void) {
         init_pair((index + 1), color, (defaults_allowed ? THE_DEFAULT : COLOR_BLACK));
         interface_color_pair[index] = COLOR_PAIR(index + 1) | A_BOLD;
       }
-      else if (index >= FG_VS_CODE_RED && index <= FG_SUGGEST_GRAY) {
+      else if (index >= FG_VS_CODE_START && index <= FG_VS_CODE_END) {
         init_pair((index + 1), color_array[index - FG_VS_CODE_RED], (defaults_allowed ? THE_DEFAULT : COLOR_BLACK));
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
-      else if (index >= BG_VS_CODE_RED && index <= BG_VS_CODE_RED) {
+      else if (index >= BG_VS_CODE_START && index <= BG_VS_CODE_END) {
         if (COLORS > 15) {
-          init_pair((index + 1), xterm_color_index(0, 0, 0), color_array[index - FG_VS_CODE_RED]);
+          init_pair((index + 1), xterm_color_index(0, 0, 0), BG_COLOR(index));
         }
         else {
-          init_pair((index + 1), COLOR_BLACK, COLOR_RED);
+          if (index == BG_VS_CODE_RED) {
+            init_pair((index + 1), COLOR_BLACK, COLOR_RED);
+          }
+          else if (index == BG_VS_CODE_BLUE) {
+            init_pair((index + 1), COLOR_BLACK, COLOR_BLUE);
+          }
+          else if (index == BG_VS_CODE_GREEN) {
+            init_pair((index + 1), COLOR_BLACK, COLOR_GREEN);
+          }
         }
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
@@ -294,8 +302,7 @@ void check_the_multis(linestruct *line) {
       }
     }
     else if (line->multidata[ink->id] == JUSTONTHIS) {
-      if (astart && anend &&
-          regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch, 0) != 0) {
+      if (astart && anend && regexec(ink->start, line->data + startmatch.rm_eo + endmatch.rm_eo, 1, &startmatch, 0) != 0) {
         continue;
       }
     }
@@ -320,8 +327,8 @@ void check_the_multis(linestruct *line) {
 void precalc_multicolorinfo(void) {
   PROFILE_FUNCTION;
   const colortype *ink;
-  regmatch_t       startmatch, endmatch;
-  linestruct      *line, *tailline;
+  regmatch_t startmatch, endmatch;
+  linestruct *line, *tailline;
   if (!openfile->syntax || !openfile->syntax->multiscore || ISSET(NO_SYNTAX)) {
     return;
   }
@@ -340,13 +347,11 @@ void precalc_multicolorinfo(void) {
       int index = 0;
       /* Assume nothing applies until proven otherwise below. */
       line->multidata[ink->id] = NOTHING;
-      /* When the line contains a start match, look for an end,
-       * and if found, mark all the lines that are affected. */
+      /* When the line contains a start match, look for an end, and if found, mark all the lines that are affected. */
       while (regexec(ink->start, (line->data + index), 1, &startmatch, ((index == 0) ? 0 : REG_NOTBOL)) == 0) {
         /* Begin looking for an end match after the start match. */
         index += startmatch.rm_eo;
-        /* If there is an end match on this same line, mark the line,
-         * but continue looking for other starts after it. */
+        /* If there is an end match on this same line, mark the line, but continue looking for other starts after it. */
         if (regexec(ink->end, (line->data + index), 1, &endmatch, ((index == 0) ? 0 : REG_NOTBOL)) == 0) {
           line->multidata[ink->id] = JUSTONTHIS;
           index += endmatch.rm_eo;
