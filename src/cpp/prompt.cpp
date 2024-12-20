@@ -351,10 +351,10 @@ functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **histor
   /* Whether the previous keystroke was an attempt at tab completion. */
   bool previous_was_tab = FALSE;
   /* The length of the fragment that the user tries to tab complete. */
-  Ulong            fragment_length = 0;
+  Ulong fragment_length = 0;
   const keystruct *shortcut;
   functionptrtype  function;
-  int              input;
+  int input;
   if (typing_x > strlen(answer)) {
     typing_x = strlen(answer);
   }
@@ -489,7 +489,7 @@ int do_prompt(int menu, const char *provided, linestruct **history_list, functio
 redo_theprompt:
   prompt = (char *)nmalloc((COLS * MAXCHARLEN) + 1);
   va_start(ap, msg);
-  vsnprintf(prompt, COLS * MAXCHARLEN, msg, ap);
+  vsnprintf(prompt, (COLS * MAXCHARLEN), msg, ap);
   va_end(ap);
   /* Reserve five columns for colon plus angles plus answer, ":<aa>". */
   prompt[actual_x(prompt, (COLS < 5) ? 0 : COLS - 5)] = '\0';
@@ -585,7 +585,7 @@ int ask_user(bool withall, const char *question) {
     letter[index++] = (Uchar)kbinput;
     /* If the received code is a UTF-8 starter byte, get also the continuation bytes and assemble them into one letter. */
     if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7) {
-      int extras = (kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0);
+      int extras = ((kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0));
       while (extras <= waiting_keycodes() && extras-- > 0) {
         letter[index++] = (Uchar)get_kbinput(footwin, !withall);
       }
@@ -642,12 +642,11 @@ int ask_user(bool withall, const char *question) {
     else if (kbinput == KEY_MOUSE) {
       int mouse_x, mouse_y;
       /* We can click on the Yes/No/All shortcuts to select an answer. */
-      if (get_mouseinput(&mouse_y, &mouse_x, FALSE) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE)
-       && mouse_x < (width * 2) && mouse_y > 0) {
+      if (get_mouseinput(&mouse_y, &mouse_x, FALSE) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE) && mouse_x < (width * 2) && mouse_y > 0) {
         int x = mouse_x / width;
         int y = mouse_y - 1;
         /* x == 0 means Yes or No, y == 0 means Yes or All. */
-        choice = -2 * x * y + x - y + 1;
+        choice = (-2 * x * y + x - y + 1);
         if (choice == ALL && !withall) {
           choice = UNDECIDED;
         }

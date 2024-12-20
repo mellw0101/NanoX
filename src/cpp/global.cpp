@@ -217,10 +217,6 @@ bit_flag_t<8> mod_key;
 
 file_listener_handler_t file_listener;
 
-/* Some colors used for dynamic color swithing. */
-int line_number_color  = LINE_NUMBER;
-int mini_infobar_color = MINI_INFOBAR;
-
 /* Empty functions, for the most part corresponding to toggles. */
 
 void case_sens_void(void) {
@@ -314,7 +310,7 @@ void do_cancel(void) {
 /* Add a function to the linked list of functions. */
 void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) {
   funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
-  !allfuncs ? allfuncs = f : tailfunc->next = f;
+  !allfuncs ? (allfuncs = f) : (tailfunc->next = f);
   tailfunc       = f;
   f->next        = NULL;
   f->func        = function;
@@ -359,8 +355,7 @@ int keycode_from_string(const char *keystring) {
       return -1;
     }
   }
-  else if (constexpr_strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) &&
-           (keystring[5] | 0x20) <= 'z' && keystring[6] == '\0') {
+  else if (constexpr_strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) && (keystring[5] | 0x20) <= 'z' && keystring[6] == '\0') {
     shifted_metas = TRUE;
     return (keystring[5] & 0x5F);
   }
@@ -369,7 +364,7 @@ int keycode_from_string(const char *keystring) {
     if (fn < 1 || fn > 24) {
       return -1;
     }
-    return KEY_F0 + fn;
+    return (KEY_F0 + fn);
   }
   else if (constexpr_strcasecmp(keystring, "Ins") == 0) {
     return KEY_IC;

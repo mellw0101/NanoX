@@ -72,7 +72,13 @@
 #define mvwaddchwattr(win, row, col, char, attributes) \
   wattron(win, attributes);                            \
   mvwaddch(win, row, col, char);                       \
-  midwin_attr_off(attributes)
+  wattroff(win, attributes)
+
+/* Move then add char to midwin, with color. */
+#define mvwaddchcolor(win, row, col, char, color) \
+  wattron(win, interface_color_pair[color]);      \
+  mvwaddch(win, row, col, char);                  \
+  wattroff(win, interface_color_pair[color])
 
 #define midwin_printw(...)              wprintw(midwin, __VA_ARGS__)
 #define midwin_mv_printw(row, col, ...) mvwprintw(midwin, row, col, __VA_ARGS__)

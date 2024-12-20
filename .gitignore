@@ -2,6 +2,7 @@
 /build/
 /build/bin/
 /build/bin/NanoX
+/build/lib/
 /build/lib/*.a
 /build/obj/*.o
 /module-cache/

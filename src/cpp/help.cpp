@@ -22,8 +22,7 @@ void help_init(void) {
   Ulong allocsize = 0;
   /* Space needed for help_text. */
   const char *htx[3];
-  /* Untranslated help introduction.  We break it up into three chunks 
-   * in case the full string is too long for the compiler to handle. */
+  /* Untranslated help introduction.  We break it up into three chunks in case the full string is too long for the compiler to handle. */
   const funcstruct *f;
   const keystruct  *s;
   char *ptr;
@@ -210,17 +209,16 @@ void help_init(void) {
    * two keystrokes, which fill 17 cells, plus translated text, plus one or two \n's. */
   for (f = allfuncs; f; f = f->next) {
     if (f->menus & currmenu) {
-      allocsize += strlen(_(f->phrase)) + 21;
+      allocsize += (strlen(_(f->phrase)) + 21);
     }
   }
-  /* If we're on the main list, we also count the toggle help text.
-   * Each entry has "M-%c\t\t ", six chars which fill 17 cells, plus
-   * two translated texts, plus a space, plus one or two '\n's. */
+  /* If we're on the main list, we also count the toggle help text.  Each entry has "M-%c\t\t ", six
+   * chars which fill 17 cells, plus two translated texts, plus a space, plus one or two '\n's. */
   if (currmenu == MMAIN) {
     Ulong onoff_len = strlen(_("enable/disable"));
     for (s = sclist; s; s = s->next) {
       if (s->func == do_toggle) {
-        allocsize += strlen(_(epithet_of_flag(s->toggle))) + onoff_len + 9;
+        allocsize += (strlen(_(epithet_of_flag(s->toggle))) + onoff_len + 9);
       }
     }
   }
@@ -235,8 +233,8 @@ void help_init(void) {
     strcat(help_text, htx[2]);
   }
   /* Remember this end-of-introduction, start-of-shortcuts. */
-  end_of_intro = help_text + strlen(help_text);
-  ptr          = end_of_intro;
+  end_of_intro = (help_text + strlen(help_text));
+  ptr = end_of_intro;
   /* Now add the shortcuts and their descriptions. */
   for (f = allfuncs; f; f = f->next) {
     int tally = 0;
@@ -244,7 +242,7 @@ void help_init(void) {
       continue;
     }
     /* Show the first two shortcuts (if any) for each function. */
-    for (s = sclist; s != NULL; s = s->next) {
+    for (s = sclist; s; s = s->next) {
       if ((s->menus & currmenu) && s->func == f->func && s->keystr[0]) {
         /* Make the first column 7 cells wide and the second 10. */
         if (++tally == 1) {
@@ -276,7 +274,7 @@ void help_init(void) {
     int maximum = 0, counter = 0;
     /* First see how many toggles there are. */
     for (s = sclist; s; s = s->next) {
-      maximum = (s->toggle && s->ordinal > maximum) ? s->ordinal : maximum;
+      maximum = ((s->toggle && s->ordinal > maximum) ? s->ordinal : maximum);
     }
     /* Now show them in the original order. */
     while (counter < maximum) {
@@ -473,7 +471,7 @@ void show_help(void) {
   /* Restore the settings of all flags. */
   memcpy(flags, stash, sizeof(flags));
   margin       = was_margin;
-  editwincols  = COLS - margin - sidebar;
+  editwincols  = (COLS - margin - sidebar);
   tabsize      = was_tabsize;
   syntaxstr    = was_syntax;
   have_palette = FALSE;

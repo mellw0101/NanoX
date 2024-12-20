@@ -63,7 +63,7 @@ constexpr Uint retriveToggleOptionFromStr(string_view str) {
 
 /* Function to retrive the menu option from a string literal. */
 constexpr Uint nameToMenu(string_view str) {
-  for (const auto &[key, val] : menuOptionMap) {
+  for (const auto &[key, val] : menu_name_map) {
     if (key == str) {
       return val;
     }
@@ -71,8 +71,8 @@ constexpr Uint nameToMenu(string_view str) {
   return 0;
 }
 
-constexpr string_view menuToName(const Ushort value) {
-  for (const auto &[key, val] : menuOptionMap) {
+constexpr string_view menu_to_name(const Ushort value) {
+  for (const auto &[key, val] : menu_name_map) {
     if (val == value) {
       return key;
     }

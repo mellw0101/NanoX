@@ -41,6 +41,7 @@
 #include <sys/vt.h>
 #include <sys/wait.h>
 #include <termios.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
@@ -248,8 +249,6 @@ using std::vector;
 #define CURSOR_WAS_AT_HEAD            (1 << 5)
 #define HAD_ANCHOR_AT_START           (1 << 6)
 
-#define REFRESH_NEEDED refresh_needed = TRUE
-
 #define TASK_STRUCT(name, ...) \
   typedef struct {             \
     __VA_ARGS__                \
@@ -273,14 +272,20 @@ using std::vector;
 
 /* Config helpers. */
 #define STRLTRLEN(str) (sizeof(str) - 1)
+#define STRLTR_COPY_OF(str) \
+  [](void) -> char * {                             \
+    char *__strptr = (char *)nmalloc(sizeof(str)); \
+    memmove(__strptr, str, (sizeof(str) - 1));     \
+    __strptr[sizeof(str) - 1] = '\0';              \
+    return __strptr;                               \
+  }()
+
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
 #include "constexpr_utils.h"
 
-/* Null def. */
-// #ifdef NULL
-//   #undef NULL
-// #endif
+#define NOTREBOUND (first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07)
+
 /* Bool def. */
 #ifdef TRUE
   #undef TRUE
@@ -289,17 +294,14 @@ using std::vector;
   #undef FALSE
 #endif
 #ifdef __cplusplus
-  // #define NULL nullptr
   #define TRUE true
   #define FALSE false
 #else
-  // #define NULL __null
   #define TRUE 1
   #define FALSE 0
 #endif
 
 /* clang-format off */
-
 
 /* Enumeration types. */
 typedef enum {
@@ -315,6 +317,12 @@ typedef enum {
   SYSTEMD_SERVICE
   #define SYSTEMD_SERVICE SYSTEMD_SERVICE
 } file_type;
+
+typedef enum {
+  LINENUMBER_STYLING
+  #define LINENUMBER_STYLING LINENUMBER_STYLING
+  #define LINENUMBER_STYLING_DEFAULT TRUE
+} config_opt_type;
 
 typedef enum {
   LOCAL_VAR_SYNTAX = 1,
@@ -570,11 +578,24 @@ typedef struct coloroption {
   int color_index;  /* Index of the color. */
 } coloroption;
 
-typedef struct colorfilestruct {
-  char *filepath; /* Full path to the color config file. */
-  int linenumber; /* Linenumber color. */
-  int minibar;    /* Minibar color. */
-} colorfilestruct; 
+typedef struct configstruct {
+  int linenumber_color;         /* Linenumber color. */
+  int linenumberstyling_color;  /* Linenumber styling color. */
+  int minibar_color;            /* Minibar color. */
+  int selectedtext_color;       /* Selected text color. */
+  bit_flag_t<8> opt;            /* Binary options.  I.e: (On/Off). */
+  #define linenumber_color_DEFAULT        LINE_NUMBER
+  #define linenumberstyling_color_DEFAULT configfile->data.linenumber_color
+  #define minibar_color_DEFAULT           MINI_INFOBAR
+  #define selectedtext_color_DEFAULT      SELECTED_TEXT
+  #define DEFAULT_CONFIG(field)           field##_DEFAULT
+} configstruct;
+
+typedef struct configfilestruct {
+  char *filepath;    /* Full path to the config file. */
+  configstruct data; /* Holds data while reading the config file. */
+  #define SETCONFIGFILE(setopt) configfile->data.opt.set<setopt>()
+} configfilestruct;
 
 typedef struct rcoption {
   const char *name; /* The name of the rcfile option. */

@@ -1,4 +1,4 @@
-/// @file definitions.h
+/** @file prototypes.h */
 #pragma once
 
 #include "color.h"
@@ -167,16 +167,15 @@ extern unordered_map<string, syntax_data_t> test_map;
 
 extern file_listener_handler_t file_listener;
 
-extern int line_number_color;
-extern int mini_infobar_color;
+extern configstruct *config;
 
 typedef void (*functionptrtype)(void);
 
 /* Asm functions. */
-ASM_FUNCTION(int) SSE_strlen(const char *str);
+ASM_FUNCTION(int)  SSE_strlen(const char *str);
 ASM_FUNCTION(void) asm_atomic_add(int *ptr, int value);
 ASM_FUNCTION(void) asm_atomic_sub(int *ptr, int value);
-ASM_FUNCTION(int) asm_atomic_xchg(int *ptr, int value);
+ASM_FUNCTION(int)  asm_atomic_xchg(int *ptr, int value);
 
 /* The two needed functions from 'browser.cpp'. */
 void  browser_refresh(void);

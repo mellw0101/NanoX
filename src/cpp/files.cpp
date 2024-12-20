@@ -20,7 +20,7 @@ void make_new_buffer(void) {
     openfile->next       = newnode;
     /* There is more than one buffer: show "Close" in help lines. */
     exitfunc->tag = close_tag;
-    more_than_one = !inhelp || more_than_one;
+    more_than_one = (!inhelp || more_than_one);
   }
   /* Make the new buffer the current one, and start initializing it */
   openfile                = newnode;
@@ -830,12 +830,11 @@ void execute_command(const char *command) {
   int from_fd[2], to_fd[2];
   /* Original and temporary handlers for SIGINT. */
   struct sigaction oldaction, newaction = {{0}};
-  long             was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
-  int              command_status, sender_status;
-  FILE            *stream;
+  long  was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
+  int   command_status, sender_status;
+  FILE *stream;
   should_pipe = (command[0] == '|');
-  /* Create a pipe to read the command's output from, and,
-   * if needed, a pipe to feed the command's input through. */
+  /* Create a pipe to read the command's output from, and, if needed, a pipe to feed the command's input through. */
   if (pipe(from_fd) == -1 || (should_pipe && pipe(to_fd) == -1)) {
     statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
     return;
@@ -920,8 +919,7 @@ void execute_command(const char *command) {
     free_lines(cutbuffer);
     cutbuffer = was_cutbuffer;
   }
-  /* Re-enable interpretation of the special control keys so that we get
-   * SIGINT when Ctrl-C is pressed. */
+  /* Re-enable interpretation of the special control keys so that we get SIGINT when Ctrl-C is pressed. */
   enable_kb_interrupt();
   /* Set up a signal handler so that ^C will terminate the forked process. */
   newaction.sa_handler = cancel_the_command;
@@ -962,8 +960,7 @@ void execute_command(const char *command) {
   }
   /* Restore the original handler for SIGINT. */
   sigaction(SIGINT, &oldaction, NULL);
-  /* Restore the terminal to its desired state, and disable
-   * interpretation of the special control keys again. */
+  /* Restore the terminal to its desired state, and disable interpretation of the special control keys again. */
   terminal_init();
 }
 
@@ -1009,19 +1006,17 @@ void insert_a_file_or(bool execute) {
       }
     }
     present_path = mallocstrcpy(present_path, "./");
-    response = do_prompt(execute ? MEXECUTE : MINSERTFILE, given, execute ? &execute_history : NULL, edit_refresh,
-                         msg, operating_dir != NULL ? operating_dir : "./");
-    /* If we're in multibuffer mode and the filename or command is blank,
-     * open a new buffer instead of canceling. */
+    response = do_prompt((execute ? MEXECUTE : MINSERTFILE), given, (execute ? &execute_history : NULL), edit_refresh, msg, (operating_dir ? operating_dir : "./"));
+    /* If we're in multibuffer mode and the filename or command is blank, open a new buffer instead of canceling. */
     if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER))) {
       statusbar(_("Cancelled"));
       break;
     }
     else {
-      long            was_current_lineno = openfile->current->lineno;
-      Ulong           was_current_x      = openfile->current_x;
-      functionptrtype function           = func_from_key(response);
-      given                              = mallocstrcpy(given, answer);
+      long  was_current_lineno = openfile->current->lineno;
+      Ulong was_current_x      = openfile->current_x;
+      functionptrtype function = func_from_key(response);
+      given = mallocstrcpy(given, answer);
       if (ran_a_tool) {
         break;
       }
@@ -1067,8 +1062,7 @@ void insert_a_file_or(bool execute) {
         if (ISSET(MULTIBUFFER)) {
           open_buffer("", TRUE);
         }
-        /* If the command is not empty, execute it and read its output
-         * into the buffer, and add the command to the history list. */
+        /* If the command is not empty, execute it and read its output into the buffer, and add the command to the history list. */
         if (*answer) {
           execute_command(answer);
           update_history(&execute_history, answer, PRUNE_DUPLICATE);
@@ -1966,7 +1960,7 @@ char *real_dir_from_tilde(const char *path) {
   }
   /* Figure out how much of the string we need to compare. */
   while (path[i] != '/' && path[i]) {
-    i++;
+    ++i;
   }
   if (i == 1) {
     get_homedir();
@@ -1984,7 +1978,7 @@ char *real_dir_from_tilde(const char *path) {
     }
   }
   retval = (char *)nmalloc(strlen(tilded) + strlen(path + i) + 1);
-  sprintf(retval, "%s%s", tilded, path + i);
+  sprintf(retval, "%s%s", tilded, (path + i));
   free(tilded);
   return retval;
 }
@@ -2142,12 +2136,12 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
     beep();
     return morsel;
   }
-  const char *lastslash      = revstrstr(morsel, "/", morsel + *place);
-  Ulong       length_of_path = !lastslash ? 0 : lastslash - morsel + 1;
-  Ulong       match, common_len = 0;
-  char       *shared, *glued;
-  char        char1[MAXCHARLEN], char2[MAXCHARLEN];
-  int         len1, len2;
+  const char *lastslash = revstrstr(morsel, "/", morsel + *place);
+  Ulong length_of_path = (!lastslash ? 0 : lastslash - morsel + 1);
+  Ulong match, common_len = 0;
+  char *shared, *glued;
+  char  char1[MAXCHARLEN], char2[MAXCHARLEN];
+  int   len1, len2;
   /* Determine the number of characters that all matches have in common. */
   while (TRUE) {
     len1 = collect_char(matches[0] + common_len, char1);
@@ -2178,14 +2172,14 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
     morsel = (char *)nrealloc(morsel, common_len + 1);
     strncpy(morsel, shared, common_len);
     morsel[common_len] = '\0';
-    *place             = common_len;
+    *place = common_len;
   }
   else if (num_matches == 1) {
     beep();
   }
   /* If there is more than one possible completion, show a sorted list. */
   if (num_matches > 1) {
-    int   lastrow      = editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0);
+    int   lastrow      = (editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0));
     Ulong longest_name = 0;
     Ulong nrows, ncols;
     int   row;
@@ -2200,14 +2194,14 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
         longest_name = namelen;
       }
     }
-    if (longest_name > COLS - 1) {
-      longest_name = COLS - 1;
+    if (longest_name > (COLS - 1)) {
+      longest_name = (COLS - 1);
     }
     /* The columns of names will be separated by two spaces,
      * but the last column will have just one space after it. */
     ncols = (COLS + 1) / (longest_name + 2);
-    nrows = (num_matches + ncols - 1) / ncols;
-    row   = (nrows < lastrow) ? lastrow - nrows : 0;
+    nrows = ((num_matches + ncols - 1) / ncols);
+    row   = ((nrows < lastrow) ? lastrow - nrows : 0);
     /* Blank the edit window and hide the cursor. */
     blank_edit();
     curs_set(0);
@@ -2223,7 +2217,7 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
       waddstr(midwin, disp);
       free(disp);
       if ((match + 1) % ncols == 0) {
-        row++;
+        ++row;
       }
     }
     wnoutrefresh(midwin);

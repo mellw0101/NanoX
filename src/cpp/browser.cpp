@@ -149,22 +149,22 @@ void browser_refresh(void) {
       info = (char *)nmalloc(infomaxlen + 1);
       /* Massage the file size into a human-readable form. */
       if (state.st_size < (1 << 10)) {
-        /* bytes */
+        /* Bytes. */
         modifier = ' ';
       }
       else if (state.st_size < (1 << 20)) {
         result >>= 10;
-        /* kilobytes */
+        /* Kilobytes. */
         modifier = 'K';
       }
       else if (state.st_size < (1 << 30)) {
         result >>= 20;
-        /* megabytes */
+        /* Megabytes. */
         modifier = 'M';
       }
       else {
         result >>= 30;
-        /* gigabytes */
+        /* Gigabytes. */
         modifier = 'G';
       }
       /* Show the size if less than a terabyte, else show "(huge)". */

@@ -1476,7 +1476,7 @@ void update_undo(undo_type action) {
         u->tail_lineno = u->head_lineno + count;
         if (ISSET(CUT_FROM_CURSOR) || u->type == CUT_TO_EOF) {
           u->tail_x = strlen(bottomline->data);
-          if (count == 0) {
+          if (!count) {
             u->tail_x += u->head_x;
           }
         }
@@ -1596,8 +1596,8 @@ void do_wrap(void) {
   if (quot_len > 0) {
     line       = line->next;
     line_len   = strlen(line->data);
-    line->data = (char *)nrealloc(line->data, lead_len + line_len + 1);
-    memmove(line->data + lead_len, line->data, line_len + 1);
+    line->data = arealloc(line->data, (lead_len + line_len + 1));
+    memmove((line->data + lead_len), line->data, (line_len + 1));
     strncpy(line->data, line->prev->data, lead_len);
     openfile->current_x += lead_len;
     openfile->totsize += lead_len;
@@ -1807,7 +1807,7 @@ void copy_character(char **from, char **to) {
  * spaces (if there are two) after any closing punctuation, and remove all blanks from
  * the end of the line.  Leave the first skip number of characters untreated. */
 void squeeze(linestruct *line, Ulong skip) {
-  char *start = line->data + skip;
+  char *start = (line->data + skip);
   char *from = start, *to = start;
   /* For each character, 1) when a blank, change it to a space, and pass over all blanks after it;
    * 2) if it is punctuation, copy it plus a possible tailing bracket, and change at most two subsequent
@@ -1848,24 +1848,21 @@ void squeeze(linestruct *line, Ulong skip) {
   *to = '\0';
 }
 
-/* Rewrap the given line (that starts with the given lead string which is of
- * the given length), into lines that fit within the target width (wrap_at). */
+/* Rewrap the given line (that starts with the given lead string which is of the given length), into lines that fit within the target width (wrap_at). */
 void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len) {
   /* The x-coordinate where the current line is to be broken. */
   long break_pos;
   while (breadth((*line)->data) > wrap_at) {
     Ulong line_len = strlen((*line)->data);
     /* Find a point in the line where it can be broken. */
-    break_pos = break_line((*line)->data + lead_len, wrap_at - wideness((*line)->data, lead_len), FALSE);
+    break_pos = break_line(((*line)->data + lead_len), (wrap_at - wideness((*line)->data, lead_len)), FALSE);
     /* If we can't break the line, or don't need to, we're done. */
     if (break_pos < 0 || lead_len + break_pos == line_len) {
       break;
     }
-    /* Adjust the breaking position for the leading part and
-     * move it beyond the found whitespace character. */
-    break_pos += lead_len + 1;
-    /* Insert a new line after the current one, and copy the leading part
-     * plus the text after the breaking point into it. */
+    /* Adjust the breaking position for the leading part and move it beyond the found whitespace character. */
+    break_pos += (lead_len + 1);
+    /* Insert a new line after the current one, and copy the leading part plus the text after the breaking point into it. */
     splice_node(*line, make_new_node(*line));
     (*line)->next->data = (char *)nmalloc(lead_len + line_len - break_pos + 1);
     strncpy((*line)->next->data, lead_string, lead_len);
@@ -1873,7 +1870,7 @@ void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len) {
     /* When requested, snip the one or two trailing spaces. */
     if (ISSET(TRIM_BLANKS)) {
       while (break_pos > 0 && (*line)->data[break_pos - 1] == ' ') {
-        break_pos--;
+        --break_pos;
       }
     }
     /* Now actually break the current line, and go to the next. */
@@ -2570,8 +2567,7 @@ void do_int_speller(const char *const tempfile_name) {
   }
 }
 
-/* Spell check the current file.  If an alternate spell checker
- * is specified, use it.  Otherwise, use the internal spell checker. */
+/* Spell check the current file.  If an alternate spell checker is specified, use it.  Otherwise, use the internal spell checker. */
 void do_spell(void) {
   FILE *stream;
   char *temp_name;
@@ -2692,7 +2688,7 @@ void do_linter(void) {
   block_sigwinch(TRUE);
   /* Read in the returned syntax errors. */
   totalread  = 0;
-  buffersize = pipesize + 1;
+  buffersize = (pipesize + 1);
   lintings   = (char *)nmalloc(buffersize);
   pointer    = lintings;
   while ((bytesread = read(lint_fd[0], pointer, pipesize)) > 0) {
@@ -2714,8 +2710,7 @@ void do_linter(void) {
         char *filename, *linestring, *colstring;
         char *complaint = copy_of(onelint);
         char *spacer    = strstr(complaint, " ");
-        /* The recognized format is "filename:line:column: message",
-         * where ":column" may be absent or be ",column" instead. */
+        /* The recognized format is "filename:line:column: message", where ":column" may be absent or be ",column" instead. */
         if ((filename = strtok(onelint, ":")) && spacer) {
           if ((linestring = strtok(NULL, ":"))) {
             if ((colstring = strtok(NULL, " "))) {
@@ -2723,7 +2718,7 @@ void do_linter(void) {
               long colnumber  = strtol(colstring, NULL, 10);
               if (linenumber <= 0) {
                 free(complaint);
-                pointer++;
+                ++pointer;
                 continue;
               }
               if (colnumber <= 0) {
@@ -2753,9 +2748,9 @@ void do_linter(void) {
         }
         free(complaint);
       }
-      onelint = pointer + 1;
+      onelint = (pointer + 1);
     }
-    pointer++;
+    ++pointer;
   }
   free(lintings);
   /* Process the end of the linting process. */
@@ -3186,9 +3181,9 @@ void complete_a_word(void) {
 
 /* Return`s a all lower case str of 'str'. */
 char *lower_case_word(const char *str) {
-  char       *ret  = (char *)nmalloc(strlen(str + 1));
+  char *ret = (char *)nmalloc(strlen(str + 1));
   const char *copy = str;
-  Uint        i    = 0;
+  Uint i = 0;
   for (; *copy; ++copy, ++i) {
     ret[i] = *copy;
     if (*copy >= 'A' && *copy <= 'Z') {

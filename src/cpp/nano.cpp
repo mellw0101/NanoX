@@ -1272,7 +1272,7 @@ int main(int argc, char **argv) {
   atexit([] {
     vector<string> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
     for (const string &str : gprof_report) {
-      NETLOGGER << str << NETLOG_ENDL;
+      NETLOGGER << str << ESC_CODE_RESET << NETLOG_ENDL;
       unix_socket_debug("%s", str.c_str());
     }
     NETLOGGER.send_to_server("\nExiting NanoX.\n");
@@ -1548,12 +1548,14 @@ int main(int argc, char **argv) {
   /* If the whitespace option wasn't specified, set its default value. */
   if (!whitespace) {
     if (using_utf8()) {
+      logI("Using utf8.");
       /* A tab is shown as a Right-Pointing Double Angle Quotation Mark (U+00BB), and a space as a Middle Dot (U+00B7). */
       whitespace  = copy_of("\xC2\xBB\xC2\xB7");
       whitelen[0] = 2;
       whitelen[1] = 2;
     }
     else {
+      logI("Not using utf8.");
       whitespace  = copy_of(">.");
       whitelen[0] = 1;
       whitelen[1] = 1;
@@ -1589,8 +1591,8 @@ int main(int argc, char **argv) {
   /* Create the three subwindows, based on the current screen dimensions. */
   window_init();
   curs_set(0);
-  sidebar     = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
-  bardata     = arealloc(bardata, (LINES * sizeof(int)));
+  sidebar = ((ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0);
+  bardata = arealloc(bardata, (LINES * sizeof(int)));
   editwincols = (COLS - sidebar);
   /* Set up the signal handlers. */
   signal_init();
@@ -1676,7 +1678,7 @@ int main(int argc, char **argv) {
         else {
           statusline(ALERT, _("Empty search string"));
         }
-        optind++;
+        ++optind;
       }
       else {
         /* When there is nothing after the "+", understand it as go-to-EOF, otherwise parse and store the given number(s). */
@@ -1688,10 +1690,9 @@ int main(int argc, char **argv) {
         }
       }
     }
-    /* If the filename is a dash, read from standard input; otherwise,
-     * open the file; skip positioning the cursor if either failed. */
+    /* If the filename is a dash, read from standard input; otherwise, open the file; skip positioning the cursor if either failed. */
     if (strcmp(argv[optind], "-") == 0) {
-      optind++;
+      ++optind;
       if (!scoop_stdin()) {
         continue;
       }
@@ -1700,7 +1701,7 @@ int main(int argc, char **argv) {
       /* Consume any flags in cmd line. */
       const Uint flag = retriveFlagFromStr(argv[optind]);
       if (flag) {
-        optind++;
+        ++optind;
         continue;
       }
       /* Consume any options in cmd line. */
@@ -1765,7 +1766,7 @@ int main(int argc, char **argv) {
       last_search  = searchstring;
       searchstring = NULL;
     }
-    else if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0') {
+    else if (ISSET(POSITIONLOG) && openfile->filename[0]) {
       long savedline, savedcol;
       /* If edited before, restore the last cursor position. */
       if (has_old_position(argv[optind - 1], &savedline, &savedcol)) {
@@ -1779,9 +1780,8 @@ int main(int argc, char **argv) {
   if (!isatty(STDIN_FILENO)) {
     die(_("Standard input is not a terminal\n"));
   }
-  /* If no filenames were given, or all of them were invalid things like
-   * directories, then open a blank buffer and allow editing.  Otherwise,
-   * switch from the last opened file to the next, that is: the first. */
+  /* If no filenames were given, or all of them were invalid things like directories, then open a blank
+   * buffer and allow editing.  Otherwise, switch from the last opened file to the next, that is: the first. */
   if (!openfile) {
     open_buffer("", TRUE);
     UNSET(VIEW_MODE);
@@ -1798,17 +1798,12 @@ int main(int argc, char **argv) {
   if (startup_problem) {
     statusline(ALERT, "%s", startup_problem);
   }
-  /* THIS: -> #define NOTREBOUND first_sc_for(MMAIN, do_help) &&
-   * first_sc_for(MMAIN, do_help)->keycode == 0x07 Is form nano c source code
-   * We will not use this for now as it is not needed */
-  if (!*openfile->filename && openfile->totsize == 0 && openfile->next == openfile && !ISSET(NO_HELP) &&
-      (first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07)) {
+  if (!*openfile->filename && openfile->totsize == 0 && openfile->next == openfile && !ISSET(NO_HELP) && NOTREBOUND) {
     statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
   }
   do_syntax();
-  // init_cfg_file();
   /* Set the margin to an impossible value to force re-evaluation. */
-  margin         = 12345;
+  margin = 12345;
   we_are_running = TRUE;
   logI("Reached main loop.");
   if (gui_enabled) {
@@ -1833,7 +1828,7 @@ int main(int argc, char **argv) {
     }
     else {
       /* Update the displayed current cursor position only when there is no message and no keys are waiting in the input buffer. */
-      if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && waiting_keycodes() == 0) {
+      if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && !waiting_keycodes()) {
         report_cursor_position();
       }
     }
@@ -1846,7 +1841,7 @@ int main(int argc, char **argv) {
     }
     /* In barless mode, either redraw a relevant status message, or overwrite a minor, redundant one. */
     if (ISSET(ZERO) && lastmessage > HUSH) {
-      if (openfile->cursor_row == editwinrows - 1 && LINES > 1) {
+      if (openfile->cursor_row == (editwinrows - 1) && LINES > 1) {
         edit_scroll(FORWARD);
         wnoutrefresh(midwin);
       }
@@ -1855,9 +1850,9 @@ int main(int argc, char **argv) {
       place_the_cursor();
     }
     else if (ISSET(ZERO) && lastmessage > VACUUM) {
-      wredrawln(midwin, editwinrows - 1, 1);
+      wredrawln(midwin, (editwinrows - 1), 1);
     }
-    errno    = 0;
+    errno = 0;
     focusing = TRUE;
     /* Forget any earlier cursor position at the prompt. */
     put_cursor_at_end_of_answer();

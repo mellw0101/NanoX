@@ -17,8 +17,7 @@ static time_t latest_timestamp = 942927132;
 /* The list of filenames with their last cursor positions. */
 static poshiststruct *position_history = NULL;
 
-/* Initialize the lists of historical search and replace strings
- * and the list of historical executed commands. */
+/* Initialize the lists of historical search and replace strings and the list of historical executed commands. */
 void history_init(void) {
   search_history        = make_new_node(NULL);
   search_history->data  = copy_of("");

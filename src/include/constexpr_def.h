@@ -1,5 +1,6 @@
 /** @file constexpr_def.h */
 #pragma once
+/* clang-format off */
 
 #include <Mlib/constexpr.hpp>
 
@@ -20,7 +21,7 @@ using std::string_view;
 #define FUNCTION_TAG  11
 
 /* The color options map. */
-constexpr_map<std::string_view, unsigned char, 12> colorOptionMap = {
+constexpr_map<string_view, Uchar, 12> colorOptionMap = {
   {{"titlecolor", TITLE_BAR},
     {"numbercolor", LINE_NUMBER},
     {"stripecolor", GUIDE_STRIPE},
@@ -49,20 +50,20 @@ constexpr_map<std::string_view, unsigned char, 12> colorOptionMap = {
 #define GUIDESTRIPE      (1 << 10)
 #define CONF_OPT_TABSIZE (1 << 11)
 /* The configuration options map. */
-constexpr_map<std::string_view, unsigned short, 12> configOptionMap = {
-  {{"operatingdir", OPERATINGDIR},
-    {"fill", FILL},
-    {"matchbrackets", MATCHBRACKETS},
-    {"whitespace", WHITESPACE},
-    {"punct", PUNCT},
-    {"brackets", BRACKETS},
-    {"quotestr", QUOTESTR},
-    {"speller", SPELLER},
-    {"backupdir", BACKUPDIR},
-    {"wordchars", WORDCHARS},
-    {"guidestripe", GUIDESTRIPE},
-    {"tabsize", CONF_OPT_TABSIZE}}
-};
+constexpr_map<string_view, Ushort, 12> configOptionMap = {{
+  {  "operatingdir", OPERATINGDIR     },
+  {          "fill", FILL             },
+  { "matchbrackets", MATCHBRACKETS    },
+  {    "whitespace", WHITESPACE       },
+  {         "punct", PUNCT            },
+  {      "brackets", BRACKETS         },
+  {      "quotestr", QUOTESTR         },
+  {       "speller", SPELLER          },
+  {     "backupdir", BACKUPDIR        },
+  {     "wordchars", WORDCHARS        },
+  {   "guidestripe", GUIDESTRIPE      },
+  {       "tabsize", CONF_OPT_TABSIZE }
+}};
 
 /* Identifiers for the different syntax options. */
 #define SYNTAX_OPT_COLOR     (1 << 0)
@@ -72,14 +73,14 @@ constexpr_map<std::string_view, unsigned short, 12> configOptionMap = {
 #define SYNTAX_OPT_LINTER    (1 << 4)
 #define SYNTAX_OPT_FORMATTER (1 << 5)
 /* The syntax options map. */
-constexpr_map<std::string_view, unsigned char, 6> syntaxOptionMap = {
-  {{"color", SYNTAX_OPT_COLOR},
-    {"icolor", SYNTAX_OPT_ICOLOR},
-    {"comment", SYNTAX_OPT_COMMENT},
-    {"tabgives", SYNTAX_OPT_TABGIVES},
-    {"linter", SYNTAX_OPT_LINTER},
-    {"formatter", SYNTAX_OPT_FORMATTER}}
-};
+constexpr_map<string_view, Uchar, 6> syntaxOptionMap = {{
+  {     "color", SYNTAX_OPT_COLOR     },
+  {    "icolor", SYNTAX_OPT_ICOLOR    },
+  {   "comment", SYNTAX_OPT_COMMENT   },
+  {  "tabgives", SYNTAX_OPT_TABGIVES  },
+  {    "linter", SYNTAX_OPT_LINTER    },
+  { "formatter", SYNTAX_OPT_FORMATTER }
+}};
 
 /* Identifiers for the different flags. */
 
@@ -140,102 +141,102 @@ constexpr_map<std::string_view, unsigned char, 6> syntaxOptionMap = {
 #define SUGGEST                       52
 #define SUGGEST_INLINE                53
 /* The flags map. */
-constexpr_map<std::string_view, unsigned char, 94> flagOptionsMap = {
-  {{"-A", SMART_HOME},
-    {"--smarthome", SMART_HOME},
-    {"-B", MAKE_BACKUP},
-    {"--backup", MAKE_BACKUP},
-    {"-C", INSECURE_BACKUP},
-    {"--backupdir", INSECURE_BACKUP},
-    {"-D", BOLD_TEXT},
-    {"--boldtext", BOLD_TEXT},
-    {"-E", TABS_TO_SPACES},
-    {"--tabstospaces", TABS_TO_SPACES},
-    {"-F", MULTIBUFFER},
-    {"--multibuffer", MULTIBUFFER},
-    {"-G", LOCKING},
-    {"--locking", LOCKING},
-    {"-H", HISTORYLOG},
-    {"--historylog", HISTORYLOG},
-    {"-J", NO_WRAP},
-    {"--guidestripe", NO_WRAP},
-    {"-K", RAW_SEQUENCES},
-    {"--rawsequences", RAW_SEQUENCES},
-    {"-L", NO_NEWLINES},
-    {"--nonewlines", NO_NEWLINES},
-    {"-M", TRIM_BLANKS},
-    {"--trimblanks", TRIM_BLANKS},
-    {"-N", NO_CONVERT},
-    {"--noconvert", NO_CONVERT},
-    {"-O", BOOKSTYLE},
-    {"--bookstyle", BOOKSTYLE},
-    {"-P", POSITIONLOG},
-    {"--positionlog", POSITIONLOG},
-    {"-Q", NO_SYNTAX},
-    {"--quotestr", NO_SYNTAX},
-    {"-R", RESTRICTED},
-    {"--restricted", RESTRICTED},
-    {"-S", SOFTWRAP},
-    {"--softwrap", SOFTWRAP},
-    {"-U", QUICK_BLANK},
-    {"--quickblank", QUICK_BLANK},
-    {"-W", WORD_BOUNDS},
-    {"--wordbounds", WORD_BOUNDS},
-    {"-Z", LET_THEM_ZAP},
-    {"--zap", LET_THEM_ZAP},
-    {"-a", AT_BLANKS},
-    {"--atblanks", AT_BLANKS},
-    {"-c", CONSTANT_SHOW},
-    {"--constantshow", CONSTANT_SHOW},
-    {"-d", REBIND_DELETE},
-    {"--rebinddelete", REBIND_DELETE},
-    {"-e", EMPTY_LINE},
-    {"--emptyline", EMPTY_LINE},
-    {"-g", SHOW_CURSOR},
-    {"--showcursor", SHOW_CURSOR},
-    {"-h", NO_HELP},
-    {"--help", NO_HELP},
-    {"-i", AUTOINDENT},
-    {"--autoindent", AUTOINDENT},
-    {"-j", JUMPY_SCROLLING},
-    {"--jumpyscrolling", JUMPY_SCROLLING},
-    {"-k", CUT_FROM_CURSOR},
-    {"--cutfromcursor", CUT_FROM_CURSOR},
-    {"-l", LINE_NUMBERS},
-    {"--linenumbers", LINE_NUMBERS},
-    {"-m", USE_MOUSE},
-    {"--mouse", USE_MOUSE},
-    {"-n", NOREAD_MODE},
-    {"--noread", NOREAD_MODE},
-    {"-p", PRESERVE},
-    {"--preserve", PRESERVE},
-    {"-q", INDICATOR},
-    {"--indicator", INDICATOR},
-    {"-t", SAVE_ON_EXIT},
-    {"--saveonexit", SAVE_ON_EXIT},
-    {"-u", MAKE_IT_UNIX},
-    {"--unix", MAKE_IT_UNIX},
-    {"-v", VIEW_MODE},
-    {"--view", VIEW_MODE},
-    {"-w", NO_WRAP},
-    {"--nowrap", NO_WRAP},
-    {"-x", NO_HELP},
-    {"--nohelp", NO_HELP},
-    {"-y", AFTER_ENDS},
-    {"--afterends", AFTER_ENDS},
-    {"/", MODERN_BINDINGS},
-    {"--modernbindings", MODERN_BINDINGS},
-    {"@", COLON_PARSING},
-    {"--colonparsing", COLON_PARSING},
-    {"%", STATEFLAGS},
-    {"--stateflags", STATEFLAGS},
-    {"_", MINIBAR},
-    {"--minibar", MINIBAR},
-    {"0", ZERO},
-    {"--zero", ZERO},
-    {"!", USE_MAGIC},
-    {"--magic", USE_MAGIC}}
-};
+constexpr_map<string_view, Uchar, 94> flagOptionsMap = {{
+  {               "-A", SMART_HOME      },
+  {      "--smarthome", SMART_HOME      },
+  {               "-B", MAKE_BACKUP     },
+  {         "--backup", MAKE_BACKUP     },
+  {               "-C", INSECURE_BACKUP },
+  {      "--backupdir", INSECURE_BACKUP },
+  {               "-D", BOLD_TEXT       },
+  {       "--boldtext", BOLD_TEXT       },
+  {               "-E", TABS_TO_SPACES  },
+  {   "--tabstospaces", TABS_TO_SPACES  },
+  {               "-F", MULTIBUFFER     },
+  {    "--multibuffer", MULTIBUFFER     },
+  {               "-G", LOCKING         },
+  {        "--locking", LOCKING         },
+  {               "-H", HISTORYLOG      },
+  {     "--historylog", HISTORYLOG      },
+  {               "-J", NO_WRAP         },
+  {    "--guidestripe", NO_WRAP         },
+  {               "-K", RAW_SEQUENCES   },
+  {   "--rawsequences", RAW_SEQUENCES   },
+  {               "-L", NO_NEWLINES     },
+  {     "--nonewlines", NO_NEWLINES     },
+  {               "-M", TRIM_BLANKS     },
+  {     "--trimblanks", TRIM_BLANKS     },
+  {               "-N", NO_CONVERT      },
+  {      "--noconvert", NO_CONVERT      },
+  {               "-O", BOOKSTYLE       },
+  {      "--bookstyle", BOOKSTYLE       },
+  {               "-P", POSITIONLOG     },
+  {    "--positionlog", POSITIONLOG     },
+  {               "-Q", NO_SYNTAX       },
+  {       "--quotestr", NO_SYNTAX       },
+  {               "-R", RESTRICTED      },
+  {     "--restricted", RESTRICTED      },
+  {               "-S", SOFTWRAP        },
+  {       "--softwrap", SOFTWRAP        },
+  {               "-U", QUICK_BLANK     },
+  {     "--quickblank", QUICK_BLANK     },
+  {               "-W", WORD_BOUNDS     },
+  {     "--wordbounds", WORD_BOUNDS     },
+  {               "-Z", LET_THEM_ZAP    },
+  {            "--zap", LET_THEM_ZAP    },
+  {               "-a", AT_BLANKS       },
+  {       "--atblanks", AT_BLANKS       },
+  {               "-c", CONSTANT_SHOW   },
+  {   "--constantshow", CONSTANT_SHOW   },
+  {               "-d", REBIND_DELETE   },
+  {   "--rebinddelete", REBIND_DELETE   },
+  {               "-e", EMPTY_LINE      },
+  {      "--emptyline", EMPTY_LINE      },
+  {               "-g", SHOW_CURSOR     },
+  {     "--showcursor", SHOW_CURSOR     },
+  {               "-h", NO_HELP         },
+  {           "--help", NO_HELP         },
+  {               "-i", AUTOINDENT      },
+  {     "--autoindent", AUTOINDENT      },
+  {               "-j", JUMPY_SCROLLING },
+  { "--jumpyscrolling", JUMPY_SCROLLING },
+  {               "-k", CUT_FROM_CURSOR },
+  {  "--cutfromcursor", CUT_FROM_CURSOR },
+  {               "-l", LINE_NUMBERS    },
+  {    "--linenumbers", LINE_NUMBERS    },
+  {               "-m", USE_MOUSE       },
+  {          "--mouse", USE_MOUSE       },
+  {               "-n", NOREAD_MODE     },
+  {         "--noread", NOREAD_MODE     },
+  {               "-p", PRESERVE        },
+  {       "--preserve", PRESERVE        },
+  {               "-q", INDICATOR       },
+  {      "--indicator", INDICATOR       },
+  {               "-t", SAVE_ON_EXIT    },
+  {     "--saveonexit", SAVE_ON_EXIT    },
+  {               "-u", MAKE_IT_UNIX    },
+  {           "--unix", MAKE_IT_UNIX    },
+  {               "-v", VIEW_MODE       },
+  {           "--view", VIEW_MODE       },
+  {               "-w", NO_WRAP         },
+  {         "--nowrap", NO_WRAP         },
+  {               "-x", NO_HELP         },
+  {         "--nohelp", NO_HELP         },
+  {               "-y", AFTER_ENDS      },
+  {      "--afterends", AFTER_ENDS      },
+  {                "/", MODERN_BINDINGS },
+  { "--modernbindings", MODERN_BINDINGS },
+  {                "@", COLON_PARSING   },
+  {   "--colonparsing", COLON_PARSING   },
+  {                "%", STATEFLAGS      },
+  {     "--stateflags", STATEFLAGS      },
+  {                "_", MINIBAR         },
+  {        "--minibar", MINIBAR         },
+  {                "0", ZERO            },
+  {           "--zero", ZERO            },
+  {                "!", USE_MAGIC       },
+  {          "--magic", USE_MAGIC       }
+}};
 
 /* Identifiers for the different command line options. */
 #define CLI_OPT_IGNORERCFILE   (1 << 0)
@@ -349,48 +350,65 @@ constexpr_map<Uint, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
     {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE}}
 };
 
-//  Legazy code, from nano source code.
 /* Identifiers for the different menus. */
-#define MMAIN        (1 << 0)
-#define MWHEREIS     (1 << 1)
-#define MREPLACE     (1 << 2)
-#define MREPLACEWITH (1 << 3)
-#define MGOTOLINE    (1 << 4)
-#define MWRITEFILE   (1 << 5)
-#define MINSERTFILE  (1 << 6)
-#define MEXECUTE     (1 << 7)
-#define MHELP        (1 << 8)
-#define MSPELL       (1 << 9)
-#define MBROWSER     (1 << 10)
-#define MWHEREISFILE (1 << 11)
-#define MGOTODIR     (1 << 12)
-#define MYESNO       (1 << 13)
-#define MLINTER      (1 << 14)
-#define MFINDINHELP  (1 << 15)
-#define MMOST                                                                                                    \
-  (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | \
-   MGOTODIR | MFINDINHELP | MSPELL | MLINTER)
-#define MSOME (MMOST | MBROWSER)
+typedef enum {
+  MMAIN = (1 << 0),
+  #define MMAIN MMAIN
+  MWHEREIS = (1 << 1),
+  #define MWHEREIS MWHEREIS
+  MREPLACE = (1 << 2),
+  #define MREPLACE MREPLACE
+  MREPLACEWITH = (1 << 3),
+  #define MREPLACEWITH MREPLACEWITH
+  MGOTOLINE = (1 << 4),
+  #define MGOTOLINE MGOTOLINE
+  MWRITEFILE = (1 << 5),
+  #define MWRITEFILE MWRITEFILE
+  MINSERTFILE = (1 << 6),
+  #define MINSERTFILE MINSERTFILE
+  MEXECUTE = (1 << 7),
+  #define MEXECUTE MEXECUTE
+  MHELP = (1 << 8),
+  #define MHELP MHELP
+  MSPELL = (1 << 9),
+  #define MSPELL MSPELL
+  MBROWSER = (1 << 10),
+  #define MBROWSER MBROWSER
+  MWHEREISFILE = (1 << 11),
+  #define MWHEREISFILE MWHEREISFILE
+  MGOTODIR = (1 << 12),
+  #define MGOTODIR MGOTODIR
+  MYESNO = (1 << 13),
+  #define MYESNO MYESNO
+  MLINTER = (1 << 14),
+  #define MLINTER MLINTER
+  MFINDINHELP = (1 << 15),
+  #define MFINDINHELP MFINDINHELP
+  MMOST = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER),
+  #define MMOST MMOST
+  MSOME = (MMOST | MBROWSER)
+  #define MSOME MSOME
+} menu_type;
 
 /* The menus map. */
-constexpr_map<std::string_view, Ushort, 16> menuOptionMap = {
-  {{"main",        MMAIN},
-   {"search",      MWHEREIS},
-   {"replace",     MREPLACE},
-   {"replacewith", MREPLACEWITH},
-   {"yesno",       MYESNO},
-   {"gotoline",    MGOTOLINE},
-   {"writeout",    MWRITEFILE},
-   {"insert",      MINSERTFILE},
-   {"execute",     MEXECUTE},
-   {"help",        MHELP},
-   {"spell",       MSPELL},
-   {"linter",      MLINTER},
-   {"browser",     MBROWSER},
-   {"whereisfile", MWHEREISFILE},
-   {"gotodir",     MGOTODIR},
-   {"all",         (MMOST | MBROWSER | MHELP | MYESNO)}}
-};
+constexpr_map<string_view, Ushort, 16> menu_name_map = {{
+  {        "main", MMAIN                               },
+  {      "search", MWHEREIS                            },
+  {     "replace", MREPLACE                            },
+  { "replacewith", MREPLACEWITH                        },
+  {       "yesno", MYESNO                              },
+  {    "gotoline", MGOTOLINE                           },
+  {    "writeout", MWRITEFILE                          },
+  {      "insert", MINSERTFILE                         },
+  {     "execute", MEXECUTE                            },
+  {        "help", MHELP                               },
+  {       "spell", MSPELL                              },
+  {      "linter", MLINTER                             },
+  {     "browser", MBROWSER                            },
+  { "whereisfile", MWHEREISFILE                        },
+  {     "gotodir", MGOTODIR                            },
+  {         "all", (MMOST | MBROWSER | MHELP | MYESNO) }
+}};
 
 constexpr_map<std::string_view, Uint, 14> toggleOptionMap = {
   {{"nohelp", NO_HELP},

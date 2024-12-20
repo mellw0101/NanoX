@@ -13,6 +13,7 @@ void do_suggestion(void) {
   suggest_str = NULL;
   if (suggestwin) {
     delwin(suggestwin);
+    suggestwin = NULL;
   }
   if (!openfile->current_x || (!is_word_char(&openfile->current->data[openfile->current_x - 1], FALSE) && openfile->current->data[openfile->current_x - 1] != '_')) {
     clear_suggestion();
@@ -37,9 +38,9 @@ void find_suggestion(void) {
 
 /* Clear suggest buffer and len as well as setting the current suggest str to NULL. */
 void clear_suggestion(void) {
-  suggest_on               = FALSE;
-  suggest_str              = NULL;
-  suggest_len              = 0;
+  suggest_on  = FALSE;
+  suggest_str = NULL;
+  suggest_len = 0;
   suggest_buf[suggest_len] = '\0';
 }
 
@@ -65,11 +66,11 @@ void draw_suggest_win(void) {
   if (!suggest_str) {
     return;
   }
-  Ulong col_len = strlen(suggest_str) + 2;
+  Ulong col_len = (strlen(suggest_str) + 2);
   Ulong row_len = 1;
-  Ulong row_pos = (openfile->cursor_row > editwinrows - 2) ? openfile->cursor_row - row_len : openfile->cursor_row + 1;
-  Ulong col_pos = xplustabs() + margin - suggest_len - 1;
-  suggestwin    = newwin(row_len, col_len, row_pos, col_pos);
+  Ulong row_pos = ((openfile->cursor_row > editwinrows - 2) ? (openfile->cursor_row - row_len) : (openfile->cursor_row + 1));
+  Ulong col_pos = (xplustabs() + margin - suggest_len - 1);
+  suggestwin = newwin(row_len, col_len, row_pos, col_pos);
   mvwprintw(suggestwin, 0, 1, "%s", suggest_str);
   wrefresh(suggestwin);
   if (ISSET(SUGGEST_INLINE)) {

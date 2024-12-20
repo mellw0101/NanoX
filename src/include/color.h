@@ -58,6 +58,8 @@ static constexpr short VS_CODE_BRIGHT_BLUE_GRAYSCALE    = xterm_grayscale_color_
 static constexpr short VS_CODE_BRIGHT_MAGENTA_GRAYSCALE = xterm_grayscale_color_index(214, 112, 214);
 static constexpr short VS_CODE_BRIGHT_CYAN_GRAYSCALE    = xterm_grayscale_color_index(41, 184, 219);
 
+#define XTERM_DIRECT_SOFT_BLUE 24464
+
 /* Base colors. */
 #define FG_BLUE                              12
 #define FG_GREEN                             13

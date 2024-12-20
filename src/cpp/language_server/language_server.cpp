@@ -245,7 +245,9 @@ int LanguageServer::index_file(const char *path, bool reindex) {
     }
     index.include[absolute_path].delete_data();
     index.include.erase(absolute_path);
-    index.bash_data.delete_data();
+    if (openfile->type.is_set<BASH>()) {
+      index.bash_data.delete_data();
+    }
   }
   IndexFile idfile;
   idfile.read_file(absolute_path);

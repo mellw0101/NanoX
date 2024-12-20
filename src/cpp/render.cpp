@@ -47,14 +47,14 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) {
   PROFILE_FUNCTION;
   if (margin > 0) {
-    WIN_COLOR_ON(midwin, line_number_color);
+    WIN_COLOR_ON(midwin, config->linenumber_color);
     if (ISSET(SOFTWRAP) && from_col) {
-      mvwprintw(midwin, row, 0, "%*s", margin - 1, " ");
+      mvwprintw(midwin, row, 0, "%*s", (margin - 1), " ");
     }
     else {
-      mvwprintw(midwin, row, 0, "%*lu", margin - 1, line->lineno);
+      mvwprintw(midwin, row, 0, "%*lu", (margin - 1), line->lineno);
     }
-    WIN_COLOR_OFF(midwin, line_number_color);
+    WIN_COLOR_OFF(midwin, config->linenumber_color);
     if (line->has_anchor == TRUE && (from_col == 0 || !ISSET(SOFTWRAP))) {
       if (using_utf8()) {
         wprintw(midwin, "\xE2\xAC\xA5");
@@ -64,16 +64,24 @@ void render_line_text(int row, const char *str, linestruct *line, Ulong from_col
       }
     }
     else {
-      wprintw(midwin, " ");
+      if (config->opt.is_set<LINENUMBER_STYLING>()) {
+        WIN_COLOR_ON(midwin, config->linenumberstyling_color);
+        waddch(midwin, ACS_VLINE);
+        WIN_COLOR_OFF(midwin, config->linenumberstyling_color);
+      }
+      else {
+        wprintw(midwin, " ");
+      }
     }
   }
+  /* Testing using range based printing of the str for better performance. */
   mvwaddstr(midwin, row, margin, str);
   if (is_shorter || ISSET(SOFTWRAP)) {
     wclrtoeol(midwin);
   }
   /* Only draw sidebar when file is longer then editwin rows. */
   if (sidebar && openfile->filebot->lineno > editwinrows) {
-    mvwaddch(midwin, row, COLS - 1, bardata[row]);
+    mvwaddch(midwin, row, (COLS - 1), bardata[row]);
   }
 }
 
@@ -97,10 +105,8 @@ void render_comment(void) {
     line->flags.unset<BLOCK_COMMENT_END>();
     line->flags.unset<IN_BLOCK_COMMENT>();
     render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
-    /* Highlight the block start if prev line is in a
-     * block comment or the start of a block comment. */
-    if (line->prev &&
-        (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>())) {
+    /* Highlight the block start if prev line is in a block comment or the start of a block comment. */
+    if (line->prev && (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>())) {
       if ((end - line->data) > 0 && line->data[(end - line->data) - 1] != '/') {
         midwin_mv_add_nstr_color(row, (wideness(line->data, (start - line->data)) + margin), start, 2, ERROR_MESSAGE);
         /* If there is a slash comment infront the block comment. Then of cource we still color
@@ -128,7 +134,7 @@ void render_comment(void) {
       }
     }
     while (start && end) {
-      /** TODO: Here we need to fix the issue of multiple block comments on a single line. */
+      /* TODO: Here we need to fix the issue of multiple block comments on a single line. */
       start = strstr(start + 2, "/*");
       end   = strstr(end + 2, "*/");
       slash = strstr(slash ? slash + 2 : line->data, "//");
@@ -176,9 +182,8 @@ void render_comment(void) {
   }
   /* Either inside of a block comment or not a block comment at all. */
   else if (!start && !end) {
-    if (line->prev &&
-        (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()) &&
-        !line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>()) {
+    if (line->prev
+     && (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()) && !line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>()) {
       block_comment_start = 0;
       block_comment_end   = till_x;
       render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
@@ -187,8 +192,7 @@ void render_comment(void) {
       line->flags.unset<BLOCK_COMMENT_END>();
       line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
     }
-    /* If the prev line is not in a block comment or the
-     * start block line we are not inside a comment block. */
+    /* If the prev line is not in a block comment or the start block line we are not inside a comment block. */
     else {
       block_comment_start = till_x;
       block_comment_end   = 0;
@@ -207,9 +211,8 @@ void render_comment(void) {
   /* End of a block comment. */
   else if (!start && end) {
     /* If last line is in a comment block or is the start of the block. */
-    if (line->prev &&
-        (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()) &&
-        !line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>()) {
+    if (line->prev
+     && (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>()) && !line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>()) {
       block_comment_start = 0;
       block_comment_end   = (end - line->data) + 2;
       render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
@@ -268,14 +271,14 @@ void render_string_literals(void) {
   const char *start = line->data;
   const char *end   = NULL;
   while ((start = strchr(start, '"'))) {
-    end = strchr(start + 1, '"');
+    end = strchr((start + 1), '"');
     if (end) {
-      render_part((start - line->data), (end - line->data) + 1, FG_YELLOW);
+      render_part((start - line->data), ((end - line->data) + 1), FG_YELLOW);
     }
     else {
       return;
     }
-    start = end + 1;
+    start = (end + 1);
   }
 }
 

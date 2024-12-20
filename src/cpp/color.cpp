@@ -58,7 +58,7 @@ void set_interface_colorpairs(void) {
         interface_color_pair[index] = (COLOR_PAIR(index + 1) | A_BOLD);
       }
       else if (index == SPOTLIGHTED) {
-        init_pair((index + 1), COLOR_BLACK, (COLOR_YELLOW + (COLORS > 15 ? 8 : 0)));
+        init_pair((index + 1), COLOR_BLACK, (COLOR_YELLOW + ((COLORS > 15) ? 8 : 0)));
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
       else if (index == MINI_INFOBAR || index == PROMPT_BAR) {
@@ -94,7 +94,18 @@ void set_interface_colorpairs(void) {
         interface_color_pair[index] = COLOR_PAIR(index + 1);
       }
       else if (index >= BG_VS_CODE_START && index <= BG_VS_CODE_END) {
-        if (COLORS > 15) {
+        if (COLORS > 256) {
+          if (index == BG_VS_CODE_RED) {
+            init_extended_pair((index + 1), COLOR_BLACK, VS_CODE_RED);
+          }
+          else if (index == BG_VS_CODE_GREEN) {
+            init_extended_pair((index + 1), COLOR_BLACK, 50000);
+          }
+          else if (index == BG_VS_CODE_BLUE) {
+            init_extended_pair((index + 1), COLOR_BLACK, XTERM_DIRECT_SOFT_BLUE);
+          }
+        }
+        else if (COLORS > 15) {
           init_pair((index + 1), xterm_color_index(0, 0, 0), BG_COLOR(index));
         }
         else {

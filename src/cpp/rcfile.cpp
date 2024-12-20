@@ -1046,18 +1046,14 @@ bool parse_syntax_commands(const char *keyword, char *ptr) {
 #define VITALS 4
 /* Verify that the user has not unmapped every shortcut for a function that we consider 'vital' (such as 'do_exit'). */
 static void check_vitals_mapped(void) {
-  void (*vitals[VITALS])() = {do_exit, do_exit, do_exit, do_cancel};
-  int inmenus[VITALS]      = {MMAIN, MBROWSER, MHELP, MYESNO};
-  for (Uint v = 0; v < VITALS; v++) {
+  void (*vitals[VITALS])() = { do_exit, do_exit, do_exit, do_cancel };
+  int inmenus[VITALS]      = { MMAIN, MBROWSER, MHELP, MYESNO };
+  for (Uint v = 0; v < VITALS; ++v) {
     for (funcstruct *f = allfuncs; f; f = f->next) {
       if (f->func == vitals[v] && (f->menus & inmenus[v])) {
         if (first_sc_for(inmenus[v], f->func) == NULL) {
-          jot_error(N_("No key is bound to function '%s' in menu "
-                       "'%s'.  Exiting.\n"),
-                    f->tag, menuToName(inmenus[v]));
-          die(_("If needed, use nano with the -I option to adjust "
-                "your nanorc "
-                "settings.\n"));
+          jot_error(N_("No key is bound to function '%s' in menu '%s'.  Exiting.\n"), f->tag, menu_to_name(inmenus[v]));
+          die(_("If needed, use nano with the -I option to adjust your nanorc settings.\n"));
         }
         else {
           break;

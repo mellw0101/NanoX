@@ -3,7 +3,7 @@
 /* Configure color map with base c/cpp syntax. */
 static void set_c_cpp_synx(openfilestruct *file) {
   file->type.clear_and_set<C_CPP>();
-  // Types.
+  /* Types. */
   test_map["bool"]      = {FG_VS_CODE_BLUE};
   test_map["char"]      = {FG_VS_CODE_BLUE};
   test_map["short"]     = {FG_VS_CODE_BLUE};
@@ -39,7 +39,8 @@ static void set_c_cpp_synx(openfilestruct *file) {
   test_map["union"]     = {FG_VS_CODE_BLUE};
   test_map["auto"]      = {FG_VS_CODE_BLUE};
   test_map["noexcept"]  = {FG_VS_CODE_BLUE, -1, -1, DEFAULT_TYPE_SYNTAX};
-  // Control statements.
+  test_map["protected"] = {FG_VS_CODE_BLUE};
+  /* Control statements. */
   test_map["if"]       = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
   test_map["else"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
   test_map["case"]     = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};

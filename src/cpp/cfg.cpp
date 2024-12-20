@@ -4,11 +4,26 @@
 #define CONFIGDIR      ".config/nanox/"
 #define COLORFILE_NAME "color" CONFIGFILE_EXT
 
-static char *configdir = NULL;
-static colorfilestruct *colorfile = NULL;
+#define LINENUMBER_OPT                "linenumber_color="
+#define MINIBAR_OPT                   "minibar_color="
+#define SELECTED_TEXT_OPT             "selectedtext_color="
+#define LINENUMBER_STYLING_OPT        "linenumber_styling="
+#define LINENUMBER_STYLING_COLOR_OPT  "linenumber_styling_color="
+#define CONFIGFILE_DEFAULT_TEXT \
+  LINENUMBER_OPT                "\n"  \
+  LINENUMBER_STYLING_OPT        "\n"  \
+  LINENUMBER_STYLING_COLOR_OPT  "\n"  \
+  MINIBAR_OPT                   "\n"  \
+  SELECTED_TEXT_OPT             "\n"
 
 #define TERMINATE TRUE
 #define DO_NOT_TERMINATE FALSE
+
+static char *configdir = NULL;
+/* Holds data gathered from the config file. */
+static configfilestruct *configfile = NULL;
+/* Global config to store data retrieved from config file. */
+configstruct *config = NULL;
 
 /* Open a fd for file_path. */
 int open_fd(const char *file_path, int flags, bool on_failure, mode_t permissions)  {
@@ -79,7 +94,6 @@ void lock_and_write(const char *file, const void *data, Ulong len, kind_of_writi
   close(fd);
 }
 
-
 /* Lock a file, then read it. */
 char *lock_and_read(const char *file_path, Ulong *file_size) {
   int fd = open_fd(file_path, O_RDONLY, TERMINATE, 0);
@@ -117,16 +131,14 @@ char *lock_and_read(const char *file_path, Ulong *file_size) {
 
 /* Callback that the main thread runs to update colors in a thread-safe manner. */
 static void update_colorfile(void *arg) {
-  colorfilestruct *file = (colorfilestruct *)arg;
-  line_number_color  = file->linenumber;
-  mini_infobar_color = file->minibar;
+  configfilestruct *file = (configfilestruct *)arg;
+  config->linenumber_color        = file->data.linenumber_color;
+  config->linenumberstyling_color = file->data.linenumberstyling_color;
+  config->minibar_color           = file->data.minibar_color;
+  config->selectedtext_color      = file->data.selectedtext_color;
+  config->opt = file->data.opt;
+  refresh_needed = TRUE;
 }
-
-#define LINENUMBER_OPTION "linenumber_color="
-#define MINIBAR_OPTION    "minibar_color="
-#define COLORFILE_DEFAULT_TEXT \
-  LINENUMBER_OPTION "\n"       \
-  MINIBAR_OPTION    "\n"
 
 /* Lookup-table for available color opt`s. */
 static const coloroption coloropt_lookup_table[] {
@@ -178,26 +190,61 @@ bool get_color_option(const char *data, const char *option, int *color_opt) {
     if (lookup_coloropt(opt, (end - opt), color_opt)) {
       return TRUE;
     }
+    /* If not a valid color str, log an warning. */
     logW("%s: Invalid color option: '%.*s'.", option, (int)(end - opt), opt);
   }
   return FALSE;
 }
 
-/* Load colorfile with values from disk. */
+/* Fetch a binary opt, return`s value from file.  Or when not in file, then default_opt. */
+bool get_binary_option(const char *data, const char *option, bool default_opt) {
+  /* Fetch binary option str. */
+  const char *opt = strstr(data, option);
+  if (opt) {
+    opt += const_strlen(option);
+    const char *end = opt;
+    ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
+    /* If there is no str after option, return early. */
+    if (opt == end) {
+      return default_opt;
+    }
+    /* Otherwise, check if the str is either "TRUE/true" or "FALSE/false". */
+    if ((end - opt) == STRLTRLEN("TRUE") || (end - opt) == STRLTRLEN("FALSE")) {
+      /* Set *binary_opt to TRUE. */
+      if (strncasecmp(opt, "TRUE", STRLTRLEN("TRUE")) == 0) {
+        return TRUE;
+      }
+      /* Set *binary_opt to FALSE. */
+      else if (strncasecmp(opt, "FALSE", STRLTRLEN("FALSE")) == 0) {
+        return FALSE;
+      }
+    }
+    /* Log a warning if the str was invalid. */
+    logW("%s: Invalid binary option: '%.*s'.  Valid values: 'TRUE/true', 'FALSE/false'.", option, (end - opt), opt);
+  }
+  return default_opt;
+}
+#define SET_BINARY_OPT(option) get_binary_option(data, option##_OPT, DEFAULT_CONFIG(option)) ? SETCONFIGFILE(option) : void()
+
+/* Load configfile with values from disk. */
 void load_colorfile(void) {
   /* Make sure the file always exists. */
-  if (!is_file_and_exists(colorfile->filepath)) {
-    lock_and_write(colorfile->filepath, COLORFILE_DEFAULT_TEXT, STRLTRLEN(COLORFILE_DEFAULT_TEXT), OVERWRITE);
+  if (!is_file_and_exists(configfile->filepath)) {
+    lock_and_write(configfile->filepath, CONFIGFILE_DEFAULT_TEXT, STRLTRLEN(CONFIGFILE_DEFAULT_TEXT), OVERWRITE);
   }
-  /* Read the colorfile. */
+  /* Read the configfile. */
   Ulong file_size;
-  char *data = lock_and_read(colorfile->filepath, &file_size);
+  char *data = lock_and_read(configfile->filepath, &file_size);
   int color;
   /* Get color opts, if any.  Otherwise, fall back to the default color. */
-  colorfile->linenumber = (get_color_option(data, LINENUMBER_OPTION, &color) ? color : LINE_NUMBER);
-  colorfile->minibar    = (get_color_option(data, MINIBAR_OPTION, &color)    ? color : MINI_INFOBAR);
+  configfile->data.linenumber_color        = (get_color_option(data, LINENUMBER_OPT,               &color) ? color : DEFAULT_CONFIG(linenumber_color));
+  configfile->data.linenumberstyling_color = (get_color_option(data, LINENUMBER_STYLING_COLOR_OPT, &color) ? color : DEFAULT_CONFIG(linenumberstyling_color));
+  configfile->data.minibar_color           = (get_color_option(data, MINIBAR_OPT,                  &color) ? color : DEFAULT_CONFIG(minibar_color));
+  configfile->data.selectedtext_color      = (get_color_option(data, SELECTED_TEXT_OPT,            &color) ? color : DEFAULT_CONFIG(selectedtext_color));
+  configfile->data.opt.clear();
+  SET_BINARY_OPT(LINENUMBER_STYLING);
   free(data);
-  enqueue_callback(update_colorfile, colorfile);
+  enqueue_callback(update_colorfile, configfile);
 }
 
 /* Init NanoX config. */
@@ -206,14 +253,15 @@ void init_cfg(void) {
   if (!homedir) {
     return;
   }
+  config = (configstruct *)nmalloc(sizeof(*config));
   configdir = concatenate_path(homedir, CONFIGDIR);
   if (!is_dir(configdir)) {
     mkdir(configdir, 0755);
   }
-  colorfile = (colorfilestruct *)nmalloc(sizeof(*colorfile));
-  colorfile->filepath = concatenate_path(configdir, COLORFILE_NAME);
+  configfile = (configfilestruct *)nmalloc(sizeof(*configfile));
+  configfile->filepath = concatenate_path(configdir, COLORFILE_NAME);
   load_colorfile();
-  file_listener_t *colorfile_listener = file_listener.add_listener(colorfile->filepath);
+  file_listener_t *colorfile_listener = file_listener.add_listener(configfile->filepath);
   colorfile_listener->set_event_callback(IN_CLOSE_WRITE, NULL, FL_ACTION(
     load_colorfile();
   ));
@@ -222,6 +270,7 @@ void init_cfg(void) {
 
 void cleanup_cfg(void) {
   free(configdir);
-  free(colorfile->filepath);
-  free(colorfile);
+  free(configfile->filepath);
+  free(configfile);
+  free(config);
 }
