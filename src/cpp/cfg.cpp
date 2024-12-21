@@ -4,17 +4,15 @@
 #define CONFIGDIR      ".config/nanox/"
 #define COLORFILE_NAME "color" CONFIGFILE_EXT
 
-#define LINENUMBER_OPT                "linenumber_color="
 #define MINIBAR_OPT                   "minibar_color="
 #define SELECTED_TEXT_OPT             "selectedtext_color="
-#define LINENUMBER_STYLING_OPT        "linenumber_styling="
-#define LINENUMBER_STYLING_COLOR_OPT  "linenumber_styling_color="
 #define CONFIGFILE_DEFAULT_TEXT \
-  LINENUMBER_OPT                "\n"  \
-  LINENUMBER_STYLING_OPT        "\n"  \
-  LINENUMBER_STYLING_COLOR_OPT  "\n"  \
-  MINIBAR_OPT                   "\n"  \
-  SELECTED_TEXT_OPT             "\n"
+  "linenumber:color="             "\n"  \
+  "linenumber:barcolor="          "\n"  \
+  "// Options: TRUE, FALSE, FULL" "\n"  \
+  "linenumber:bar="               "\n"  \
+  MINIBAR_OPT                     "\n"  \
+  SELECTED_TEXT_OPT               "\n"
 
 #define TERMINATE TRUE
 #define DO_NOT_TERMINATE FALSE
@@ -132,11 +130,13 @@ char *lock_and_read(const char *file_path, Ulong *file_size) {
 /* Callback that the main thread runs to update colors in a thread-safe manner. */
 static void update_colorfile(void *arg) {
   configfilestruct *file = (configfilestruct *)arg;
-  config->linenumber_color        = file->data.linenumber_color;
-  config->linenumberstyling_color = file->data.linenumberstyling_color;
-  config->minibar_color           = file->data.minibar_color;
-  config->selectedtext_color      = file->data.selectedtext_color;
-  config->opt = file->data.opt;
+  /* Line configuration. */
+  config->linenumber.color           = file->data.linenumber.color;
+  config->linenumber.barcolor        = file->data.linenumber.barcolor;
+  config->linenumber.verticalbar     = file->data.linenumber.verticalbar;
+  config->linenumber.fullverticalbar = file->data.linenumber.fullverticalbar;
+  config->minibar_color       = file->data.minibar_color;
+  config->selectedtext_color  = file->data.selectedtext_color;
   refresh_needed = TRUE;
 }
 
@@ -166,7 +166,8 @@ constexpr Ulong COLOROPT_LOOKUP_TABLE_SIZE = ARRAY_SIZE(coloropt_lookup_table);
 /* Optimized lookup for color opt.  Uses opt name len to minimize overhead. */
 bool lookup_coloropt(const char *color, int len, int *color_opt) {
   for (Ulong i = 0; i < COLOROPT_LOOKUP_TABLE_SIZE; ++i) {
-    if (len == coloropt_lookup_table[i].name_len && strncmp(color, coloropt_lookup_table[i].name, len) == 0) {
+    if (len == coloropt_lookup_table[i].name_len
+     && strncmp(color, coloropt_lookup_table[i].name, len) == 0) {
       *color_opt = coloropt_lookup_table[i].color_index;
       return TRUE;
     }
@@ -226,6 +227,28 @@ bool get_binary_option(const char *data, const char *option, bool default_opt) {
 }
 #define SET_BINARY_OPT(option) get_binary_option(data, option##_OPT, DEFAULT_CONFIG(option)) ? SETCONFIGFILE(option) : void()
 
+void get_linenumber_bar_option(const char *data) {
+  configfile->data.linenumber.verticalbar     = FALSE;
+  configfile->data.linenumber.fullverticalbar = FALSE;
+  const char *opt = strstr(data, "linenumber:bar=");
+  if (opt) {
+    opt += STRLTRLEN("linenumber:bar=");
+    const char *end = opt;
+    ADV_PTR(end, (*end != ' ' && *end != '\t' && *end != '\n'));
+    if (end == opt) {
+      return;
+    }
+    else {
+      if (strncasecmp(opt, "TRUE", STRLTRLEN("TRUE")) == 0) {
+        configfile->data.linenumber.verticalbar = TRUE;
+      }
+      else if (strncasecmp(opt, "FULL", STRLTRLEN("FULL")) == 0) {
+        configfile->data.linenumber.fullverticalbar = TRUE;
+      }
+    }
+  }
+}
+
 /* Load configfile with values from disk. */
 void load_colorfile(void) {
   /* Make sure the file always exists. */
@@ -237,12 +260,11 @@ void load_colorfile(void) {
   char *data = lock_and_read(configfile->filepath, &file_size);
   int color;
   /* Get color opts, if any.  Otherwise, fall back to the default color. */
-  configfile->data.linenumber_color        = (get_color_option(data, LINENUMBER_OPT,               &color) ? color : DEFAULT_CONFIG(linenumber_color));
-  configfile->data.linenumberstyling_color = (get_color_option(data, LINENUMBER_STYLING_COLOR_OPT, &color) ? color : DEFAULT_CONFIG(linenumberstyling_color));
-  configfile->data.minibar_color           = (get_color_option(data, MINIBAR_OPT,                  &color) ? color : DEFAULT_CONFIG(minibar_color));
-  configfile->data.selectedtext_color      = (get_color_option(data, SELECTED_TEXT_OPT,            &color) ? color : DEFAULT_CONFIG(selectedtext_color));
-  configfile->data.opt.clear();
-  SET_BINARY_OPT(LINENUMBER_STYLING);
+  configfile->data.linenumber.color    = (get_color_option(data, "linenumber:color=",    &color) ? color : LINE_NUMBER);
+  configfile->data.linenumber.barcolor = (get_color_option(data, "linenumber:barcolor=", &color) ? color : LINE_NUMBER);
+  configfile->data.minibar_color       = (get_color_option(data, MINIBAR_OPT,            &color) ? color : MINI_INFOBAR);
+  configfile->data.selectedtext_color  = (get_color_option(data, SELECTED_TEXT_OPT,      &color) ? color : SELECTED_TEXT);
+  get_linenumber_bar_option(data);
   free(data);
   enqueue_callback(update_colorfile, configfile);
 }

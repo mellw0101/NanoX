@@ -47,14 +47,14 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) {
   PROFILE_FUNCTION;
   if (margin > 0) {
-    WIN_COLOR_ON(midwin, config->linenumber_color);
+    WIN_COLOR_ON(midwin, config->linenumber.color);
     if (ISSET(SOFTWRAP) && from_col) {
       mvwprintw(midwin, row, 0, "%*s", (margin - 1), " ");
     }
     else {
       mvwprintw(midwin, row, 0, "%*lu", (margin - 1), line->lineno);
     }
-    WIN_COLOR_OFF(midwin, config->linenumber_color);
+    WIN_COLOR_OFF(midwin, config->linenumber.color);
     if (line->has_anchor == TRUE && (from_col == 0 || !ISSET(SOFTWRAP))) {
       if (using_utf8()) {
         wprintw(midwin, "\xE2\xAC\xA5");
@@ -64,10 +64,10 @@ void render_line_text(int row, const char *str, linestruct *line, Ulong from_col
       }
     }
     else {
-      if (config->opt.is_set<LINENUMBER_STYLING>()) {
-        WIN_COLOR_ON(midwin, config->linenumberstyling_color);
+      if (config->linenumber.verticalbar || config->linenumber.fullverticalbar) {
+        WIN_COLOR_ON(midwin, config->linenumber.barcolor);
         waddch(midwin, ACS_VLINE);
-        WIN_COLOR_OFF(midwin, config->linenumberstyling_color);
+        WIN_COLOR_OFF(midwin, config->linenumber.barcolor);
       }
       else {
         wprintw(midwin, " ");

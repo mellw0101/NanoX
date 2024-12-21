@@ -579,22 +579,20 @@ typedef struct coloroption {
 } coloroption;
 
 typedef struct configstruct {
-  int linenumber_color;         /* Linenumber color. */
-  int linenumberstyling_color;  /* Linenumber styling color. */
+  struct {
+    int color;            /* Line number color. */
+    int attr;             /* Line number attribute. */
+    int barcolor;         /* If verticalbar or fullverticalbar is set then this is the color of that bar. */
+    bool verticalbar;     /* TRUE if user wants vertical bar next to linenumbers. */
+    bool fullverticalbar; /* TRUE if user wants vertican bar next to linenumbers no matter the current amount off lines. */
+  } linenumber;
   int minibar_color;            /* Minibar color. */
   int selectedtext_color;       /* Selected text color. */
-  bit_flag_t<8> opt;            /* Binary options.  I.e: (On/Off). */
-  #define linenumber_color_DEFAULT        LINE_NUMBER
-  #define linenumberstyling_color_DEFAULT configfile->data.linenumber_color
-  #define minibar_color_DEFAULT           MINI_INFOBAR
-  #define selectedtext_color_DEFAULT      SELECTED_TEXT
-  #define DEFAULT_CONFIG(field)           field##_DEFAULT
 } configstruct;
 
 typedef struct configfilestruct {
   char *filepath;    /* Full path to the config file. */
   configstruct data; /* Holds data while reading the config file. */
-  #define SETCONFIGFILE(setopt) configfile->data.opt.set<setopt>()
 } configfilestruct;
 
 typedef struct rcoption {

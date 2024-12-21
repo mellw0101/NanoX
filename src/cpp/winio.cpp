@@ -236,11 +236,11 @@ void read_keys_from(WINDOW *frame) {
   /* Restore blocking-input mode. */
   nodelay(frame, FALSE);
   /* Netlog the raw keycodes. */
-  NLOG("\nSequence of hex codes:");
+  /* NLOG("\nSequence of hex codes:");
   for (Ulong i = 0; i < waiting_codes; ++i) {
     NLOG(" %3x", key_buffer[i]);
   }
-  NLOG("\n");
+  NLOG("\n"); */
 #ifdef DEBUG
   fprintf(stderr, "\nSequence of hex codes:");
   for (Ulong i = 0; i < waiting_codes; i++) {
@@ -1180,7 +1180,6 @@ int parse_kbinput(WINDOW *frame) {
       }
       else {
         keycode = convert_to_control(keycode);
-        unix_socket_debug("convert_to_control: keycode: %d\n", keycode);
       }
     }
   }
@@ -2057,7 +2056,8 @@ void titlebar(const char *path) {
   wattron(topwin, interface_color_pair[TITLE_BAR]);
   blank_titlebar();
   as_an_at = FALSE;
-  /* Do as Pico:
+  /**
+   * Do as Pico:
    *   if there is not enough width available for all items,
    *   first sacrifice the version string, then eat up the side spaces,
    *   then sacrifice the prefix, and only then start dottifying.
@@ -2111,25 +2111,25 @@ void titlebar(const char *path) {
   verlen    = breadth(upperleft) + 3;
   prefixlen = breadth(prefix);
   if (prefixlen > 0) {
-    prefixlen++;
+    ++prefixlen;
   }
   pathlen  = breadth(path);
   statelen = breadth(state) + 2;
   if (statelen > 2) {
-    pathlen++;
+    ++pathlen;
   }
   /* Only print the version message when there is room for it. */
-  if (verlen + prefixlen + pathlen + pluglen + statelen <= COLS) {
+  if ((verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
     mvwaddstr(topwin, 0, 2, upperleft);
   }
   else {
     verlen = 2;
     /* If things don't fit yet, give up the placeholder. */
-    if (verlen + prefixlen + pathlen + pluglen + statelen > COLS) {
+    if ((verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
       pluglen = 0;
     }
     /* If things still don't fit, give up the side spaces. */
-    if (verlen + prefixlen + pathlen + pluglen + statelen > COLS) {
+    if ((verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
       verlen = 0;
       statelen -= 2;
     }
@@ -2951,11 +2951,11 @@ void edit_scroll(bool direction) {
   }
 }
 
-/* Get the column number after leftedge where we can break the given linedata,
- * and return it.  (This will always be at most editwincols after leftedge.)
- * When kickoff is TRUE, start at the beginning of the linedata; otherwise,
- * continue from where the previous call left off.  Set end_of_line to TRUE
- * when end-of-line is reached while searching for a possible breakpoint. */
+// Get the column number after leftedge where we can break the given linedata,
+// and return it.  (This will always be at most editwincols after leftedge.)
+// When kickoff is TRUE, start at the beginning of the linedata; otherwise,
+// continue from where the previous call left off.  Set end_of_line to TRUE
+// when end-of-line is reached while searching for a possible breakpoint.
 Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) {
   /* Pointer at the current character in this line's data. */
   static const char *text;
@@ -3014,9 +3014,8 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
   return (editwincols > 1) ? breaking_col : column - 1;
 }
 
-/* Return the row number of the softwrapped chunk in the given line that the
- * given column is on, relative to the first row (zero-based).  If leftedge
- * isn't NULL, return in it the leftmost column of the chunk. */
+// Return the row number of the softwrapped chunk in the given line that the given column is on, relative
+// to the first row (zero-based).  If leftedge isn't NULL, return in it the leftmost column of the chunk.
 Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) {
   Ulong end_col, current_chunk, start_col;
   bool  end_of_line, kickoff;
@@ -3055,9 +3054,9 @@ Ulong leftedge_for(Ulong column, linestruct *line) {
   return leftedge;
 }
 
-/* Ensure that firstcolumn is at the starting column of the softwrapped chunk
- * it's on.  We need to do this when the number of columns of the edit window
- * has changed, because then the width of softwrapped chunks has changed. */
+// Ensure that firstcolumn is at the starting column of the softwrapped chunk
+// it's on.  We need to do this when the number of columns of the edit window
+// has changed, because then the width of softwrapped chunks has changed.
 void ensure_firstcolumn_is_aligned(void) {
   if (ISSET(SOFTWRAP)) {
     openfile->firstcolumn = leftedge_for(openfile->firstcolumn, openfile->edittop);
@@ -3069,9 +3068,9 @@ void ensure_firstcolumn_is_aligned(void) {
   focusing = FALSE;
 }
 
-/* When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
- * chunk, shift it back to the last column before the breakpoint.  The given column is relative
- * to the given leftedge in current.  The returned column is relative to the start of the text. */
+// When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
+// chunk, shift it back to the last column before the breakpoint.  The given column is relative
+// to the given leftedge in current.  The returned column is relative to the start of the text.
 Ulong actual_last_column(Ulong leftedge, Ulong column) {
   bool  kickoff, last_chunk;
   Ulong end_col;
@@ -3190,9 +3189,9 @@ void edit_refresh(void) {
   }
   while (row < editwinrows) {
     blank_row(midwin, row);
-    /* If linenumber styling is enabled then draw it. */
-    if (config->opt.is_set<LINENUMBER_STYLING>()) {
-      mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumberstyling_color);
+    /* If full linenumber bar is enabled, then draw it. */
+    if (config->linenumber.fullverticalbar) {
+      mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumber.barcolor);
     }
     /* Only draw sidebar when on and when the file is longer then editwin rows. */
     if (sidebar && openfile->filebot->lineno > editwinrows) {
