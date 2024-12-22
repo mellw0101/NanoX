@@ -504,6 +504,7 @@ void auto_bracket(linestruct *line, Ulong posx) {
   }
   /* Set up end line. */
   memcpy((end->data + indentlen), (line->data + posx), (lenleft + 1));
+  memcpy(end->data, line->data, indentlen);
   /* Set up start line. */
   line->data = arealloc(line->data, (posx + 1));
   *(line->data + posx) = '\0';
