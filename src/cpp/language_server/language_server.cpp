@@ -209,25 +209,6 @@ bool LanguageServer::has_been_included(const char *path) {
   return false;
 }
 
-char *get_absolute_path(const char *path) {
-  if (!path) {
-    logE("param: 'path', Is invalid.");
-    return NULL;
-  }
-  char *absolute_path = NULL;
-  if (*path == '/') {
-    string normalise_path = Parse::normalise_path(path);
-    absolute_path         = copy_of(normalise_path.c_str());
-  }
-  else {
-    absolute_path = get_full_path(path);
-  }
-  if (!absolute_path || !is_file_and_exists(absolute_path)) {
-    return NULL;
-  }
-  return absolute_path;
-}
-
 int LanguageServer::index_file(const char *path, bool reindex) {
   PROFILE_FUNCTION;
   if (!path) {

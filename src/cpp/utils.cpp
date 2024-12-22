@@ -19,6 +19,36 @@ void get_homedir(void) {
   }
 }
 
+/* Return a malloc`ed 'char **' with malloc`ed 'char *' strings containing all paths in the env var 'PATH'.  Return`s NULL on failure. */
+char **get_env_paths(Ulong *npaths) {
+  /* Get the PATH env var. */
+  const char *path_env = getenv("PATH");
+  /* If this fails, return NULL. */
+  if (!path_env) {
+    return NULL;
+  }
+  /* Set up the array size and cap.  Start with a cap of 10. */
+  Ulong size = 0, cap = 10;
+  char **paths = (char **)nmalloc(sizeof(char *) * cap);
+  const char *start = path_env, *end = NULL;
+  for (Ulong i = 0; path_env[i]; ++i) {
+    if (path_env[i] == ':' || !path_env[i + 1]) {
+      end = (!path_env[i + 1] ? &path_env[i + 1] : &path_env[i]);
+      /* Realloc the array when needed. */
+      if (size == cap) {
+        cap *= 2;
+        paths = arealloc(paths, (sizeof(char *) * cap));
+      }
+      paths[size++] = measured_copy(start, (end - start));
+      start = (end + 1);
+    }
+  }
+  /* Resize the array to the exact number of paths, to save memory. */
+  arealloc(paths, (sizeof(char *) * size));
+  *npaths = size;
+  return paths;
+}
+
 /* Return the filename part of the given path. */
 const char *tail(const char *path) {
   const char *slash = strrchr(path, '/');
@@ -597,15 +627,15 @@ char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
     return NULL;
   }
   static char buf[PATH_MAX];
-  Uint        size  = 0;
-  Uint        cap   = 10;
-  char      **lines = AMALLOC_ARRAY(lines, cap);
-  char       *copy  = NULL;
+  Uint   size  = 0;
+  Uint   cap   = 10;
+  char **lines = (char **)nmalloc(sizeof(char *) * cap);
+  char  *copy  = NULL;
   while (fgets(buf, sizeof(buf), prog)) {
     Uint len = strlen(buf);
     buf[len - 1] == '\n' ? buf[--len] = '\0' : 0;
     copy = measured_copy(buf, len);
-    size == cap ? cap *= 2, lines = AREALLOC_ARRAY(lines, cap) : 0;
+    (size == cap) ? ((cap *= 2), (lines = arealloc(lines, (sizeof(char *) * cap)))) : 0;
     lines[size++] = copy;
   }
   pclose(prog);

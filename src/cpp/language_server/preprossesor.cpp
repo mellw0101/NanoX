@@ -166,7 +166,6 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
   if (local) {
     LSP->index_file(path);
     free(path);
-    return;
   }
   else {
     string check_file = string(path);
@@ -189,7 +188,6 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
         break;
       }
     }
-    return;
   }
 }
 

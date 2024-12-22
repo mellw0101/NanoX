@@ -14,34 +14,24 @@ blsp *const &blsp::instance(void) {
   return _instance;
 }
 
+/* Get all executables in all PATH env var parts. */
 void get_env_path_binaries(void) {
   if (!env_path_task_running) {
-    const char *path_env = getenv("PATH");
-    if (!path_env) {
-      return;
-    }
-    char **files, **dirs ;
-    Ulong  nfiles,  ndirs;
-    if (get_all_entries_in_dir("/home/mellw/projects/NanoX", &files, &nfiles, &dirs, &ndirs) == 0) {
+    Ulong npaths;
+    char **paths = get_env_paths(&npaths);
+    for (Ulong i = 0; i < npaths; ++i) {
+      char **files, **dirs;
+      Ulong  nfiles,  ndirs;
+      if (get_all_entries_in_dir(paths[i], &files, &nfiles, &dirs, &ndirs) != 0) {
+        logE("Failed to get entries in dir: '%s'.\n", paths[i]);
+        continue;
+      }
+      for (Ulong i = 0; i < nfiles; ++i) {
+        test_map[files[i]] = {FG_VS_CODE_YELLOW};
+      }
       free_chararray(files, nfiles);
       free_chararray(dirs, ndirs);
     }
-    // env_path_task_running = TRUE;
-    // auto task = [](void *) -> void * {
-    //   char **files, **dirs;
-    //   Ulong nfiles,  ndirs;
-    //   if (entries_in_dir("/usr/bin", &files, &nfiles, &dirs, &ndirs) == 0) {
-    //     free_chararray(files, nfiles);
-    //     for (Uint i = 0; i < ndirs; ++i) {
-    //       NLOG("Dir: %s\n", dirs[i]);
-    //     }
-    //     free_chararray(dirs, ndirs);
-    //   }
-    //   return NULL;
-    // };
-    // auto callback = [](void *) {
-    //   env_path_task_running = FALSE;
-    // };
-    // submit_task(task, NULL, NULL, callback);
+    free_chararray(paths, npaths);
   }
 }

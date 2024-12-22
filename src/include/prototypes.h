@@ -354,10 +354,10 @@ void renumber_from(linestruct *line);
 void print_view_warning(void);
 bool in_restricted_mode(void);
 void suggest_ctrlT_ctrlZ(void);
-void finish(void);
+void finish(void) __no_return;
 void close_and_go(void);
 void do_exit(void);
-void die(const char *msg, ...) __no_return;
+void die(const char *msg, ...) __no_return __nonnull((1));
 void window_init(void);
 void install_handler_for_Ctrl_C(void);
 void restore_handler_for_Ctrl_C(void);
@@ -462,6 +462,7 @@ char *lower_case_word(const char *str);
 
 /* All functions in 'utils.cpp' */
 void        get_homedir(void);
+char      **get_env_paths(Ulong *npaths) __warn_unused __nonnull((1));
 const char *tail(const char *path);
 const char *ext(const char *path);
 char       *concatenate(const char *path, const char *name);

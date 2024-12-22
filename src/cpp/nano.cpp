@@ -93,8 +93,7 @@ void free_lines(linestruct *src) {
 
 /* Make a copy of a linestruct node. */
 linestruct *copy_node(const linestruct *src) {
-  linestruct *dst;
-  dst             = (linestruct *)nmalloc(sizeof(linestruct));
+  linestruct *dst = (linestruct *)nmalloc(sizeof(*dst));
   dst->data       = copy_of(src->data);
   dst->multidata  = NULL;
   dst->lineno     = src->lineno;
@@ -121,11 +120,10 @@ linestruct *copy_buffer(const linestruct *src) {
 
 /* Renumber the lines in a buffer, from the given line onwards. */
 void renumber_from(linestruct *line) {
-  long number;
-  number = !line->prev ? 0 : line->prev->lineno;
+  long number = (!line->prev ? 0 : line->prev->lineno);
   while (line) {
     line->lineno = ++number;
-    line         = line->next;
+    line = line->next;
   }
 }
 
@@ -190,7 +188,7 @@ void close_and_go(void) {
   if (ISSET(POSITIONLOG)) {
     update_poshistory();
   }
-  /* If there is another buffer, close this one.  Otherwise just terminate. */
+  /* If there is another buffer, close this one. */
   if (openfile != openfile->next) {
     switch_to_next_buffer();
     openfile = openfile->prev;
@@ -199,6 +197,7 @@ void close_and_go(void) {
     /* Adjust the count in the top bar. */
     titlebar(NULL);
   }
+  /* Otherwise just terminate. */
   else {
     if (ISSET(HISTORYLOG)) {
       save_history();
@@ -211,14 +210,15 @@ void close_and_go(void) {
 // ask the user whether to save it, then close it and exit, or return when the user cancelled.
 void do_exit(void) {
   int choice;
-  /* When unmodified, simply close.  Else, when doing automatic saving and the
-   * file has a name, simply save.  Otherwise, ask the user. */
+  /* When unmodified, simply close. */
   if (!openfile->modified || ISSET(VIEW_MODE)) {
     choice = NO;
   }
+  /* Else, when doing automatic saving and the file has a name, simply save. */
   else if (ISSET(SAVE_ON_EXIT) && openfile->filename[0]) {
     choice = YES;
   }
+  /* Otherwise, ask the user. */
   else {
     if (ISSET(SAVE_ON_EXIT)) {
       warn_and_briefly_pause(_("No file name"));
@@ -258,10 +258,9 @@ void emergency_save(const char *filename) {
 
 /* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
 void die(const char *msg, ...) {
-  openfilestruct *firstone;
-  static int      stabs = 0;
-  va_list         ap;
-  firstone = openfile;
+  openfilestruct *firstone = openfile;
+  static int stabs = 0;
+  va_list ap;
   /* When dying for a second time, just give up. */
   if (++stabs > 1) {
     exit(11);
@@ -270,15 +269,14 @@ void die(const char *msg, ...) {
   display_rcfile_errors();
   va_start(ap, msg);
   /* Display the dying message */
-  vfprintf(stderr, &msg[0], ap);
+  vfprintf(stderr, msg, ap);
   va_end(ap);
   while (openfile) {
     /* If the current buffer has a lock file, remove it. */
     if (openfile->lock_filename) {
       delete_lockfile(openfile->lock_filename);
     }
-    /* When modified, save the current buffer when not when in restricted
-     * mode, as it would write a file not mentioned on the command line. */
+    /* When modified, save the current buffer when not when in restricted mode, as it would write a file not mentioned on the command line. */
     if (openfile->modified && !ISSET(RESTRICTED)) {
       emergency_save(openfile->filename);
     }
@@ -333,11 +331,11 @@ void window_init(void) {
     keypad(footwin, TRUE);
   }
   /* Set up the wrapping point, accounting for screen width when negative. */
-  if (COLS + fill < 0) {
+  if ((COLS + fill) < 0) {
     wrap_at = 0;
   }
   else if (fill <= 0) {
-    wrap_at = COLS + fill;
+    wrap_at = (COLS + fill);
   }
   else {
     wrap_at = fill;
@@ -384,10 +382,8 @@ void usage(void) {
   printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
   /* TRANSLATORS: The next two strings are part of the --help output.
    * It's best to keep its lines within 80 characters. */
-  printf(_("To place the cursor on a specific line of a file,"
-           "put the line number with\n"
-           "a '+' before the filename.  The column number can be added after "
-           "a comma.\n"));
+  printf(_("To place the cursor on a specific line of a file, put the line number with\n"
+           "a '+' before the filename.  The column number can be added after a comma.\n"));
   /* TRANSLATORS: The next three are column headers of the --help output. */
   printf(_("When a filename is '-', nano reads data from standard input.\n\n"));
   print_opt(_("Option"), _("Long option"), N_("Meaning"));
@@ -980,10 +976,10 @@ bool changes_something(functionptrtype f) {
 /* Read in all waiting input bytes and paste them into the buffer in one go. */
 void suck_up_input_and_paste_it(void) {
   linestruct *was_cutbuffer = cutbuffer;
-  linestruct *line          = make_new_node(NULL);
-  Ulong       index         = 0;
-  line->data                = copy_of("");
-  cutbuffer                 = line;
+  linestruct *line = make_new_node(NULL);
+  Ulong index = 0;
+  line->data = copy_of("");
+  cutbuffer = line;
   while (bracketed_paste) {
     int input = get_kbinput(midwin, BLIND);
     if (input == '\r' || input == '\n') {
@@ -993,9 +989,9 @@ void suck_up_input_and_paste_it(void) {
       index      = 0;
     }
     else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
-      line->data          = arealloc(line->data, index + 2);
+      line->data = arealloc(line->data, index + 2);
       line->data[index++] = (char)input;
-      line->data[index]   = '\0';
+      line->data[index] = '\0';
     }
     else if (input != BRACKETED_PASTE_MARKER) {
       beep();
@@ -1018,7 +1014,7 @@ void inject(char *burst, Ulong count) {
   Ulong       original_row = 0;
   Ulong       old_amount   = 0;
   if (ISSET(SOFTWRAP)) {
-    if (openfile->cursor_row == editwinrows - 1) {
+    if (openfile->cursor_row == (editwinrows - 1)) {
       original_row = chunk_for(xplustabs(), thisline);
     }
     old_amount = extra_chunks_in(thisline);
@@ -1132,7 +1128,7 @@ void process_a_keystroke(void) {
     }
     else {
       /* When the input buffer (plus room for terminating NUL) is full, extend it. Otherwise, if it does not exist yet, create it. */
-      if (depth + 1 == capacity) {
+      if ((depth + 1) == capacity) {
         capacity *= 2;
         puddle = arealloc(puddle, capacity);
       }
@@ -1476,8 +1472,7 @@ int main(int argc, char **argv) {
   if (ISSET(BOLD_TEXT)) {
     hilite_attribute = A_BOLD;
   }
-  /* When in restricted mode, disable backups and history files, since they
-   * would allow writing to files not specified on the command line. */
+  /* When in restricted mode, disable backups and history files, since they would allow writing to files not specified on the command line. */
   if (ISSET(RESTRICTED)) {
     UNSET(MAKE_BACKUP);
     UNSET(HISTORYLOG);

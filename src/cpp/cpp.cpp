@@ -43,71 +43,54 @@ Ushort indent_char_len(linestruct *line) {
   return i;
 }
 
+/* Return TRUE when cursor is after '{' and directly at '}'. */
+bool is_between_brackets(void) {
+  if (openfile->current_x == 0 || openfile->current->data[openfile->current_x - 1] != '{' || openfile->current->data[openfile->current_x] != '}') {
+    return FALSE;
+  }
+  return TRUE;
+}
+
 // Check if enter is requested when betweeen '{' and '}'. if so properly
 // open the brackets, place cursor in the middle and indent once.
 // Return`s 'FALSE' if not between them, otherwise return`s 'TRUE'.
 bool enter_with_bracket(void) {
-  char        c, c_prev;
-  linestruct *was_current = openfile->current, *middle, *end;
-  bool        allblanks   = FALSE;
-  Ulong       extra;
-  if (!openfile->current->data[openfile->current_x - 1]) {
+  if (!is_between_brackets()) {
     return FALSE;
   }
-  c_prev = openfile->current->data[openfile->current_x - 1];
-  c      = openfile->current->data[openfile->current_x];
-  if (c_prev != '{' || c != '}') {
-    return FALSE;
+  add_undo(AUTO_BRACKET, NULL);
+  /* Get the number of white chars at start of current line. */
+  Ulong extra = indent_length(openfile->current->data);
+  /* Make, then copy in the indent into the middle line. */
+  linestruct *middle = make_new_node(openfile->current), *end = make_new_node(middle);
+  middle->data = (char *)nmalloc(extra + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 1);
+  strncpy(middle->data, openfile->current->data, extra);
+  if (ISSET(TABS_TO_SPACES)) {
+    sprintf((middle->data + extra), "%*s", (int)tabsize, " ");
+    middle->data[extra + tabsize] = '\0';
   }
-  extra = indent_length(was_current->data);
-  if (extra == openfile->current_x) {
-    allblanks = (indent_length(openfile->current->data) == extra);
+  else {
+    *(middle->data + extra) = '\t';
+    *(middle->data + extra + 1) = '\0';
   }
-  middle       = make_new_node(openfile->current);
-  middle->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
-  /* Here we pass the first char as a ref, i.e: A ptr to the first actual char. */
-  strcpy(&middle->data[extra], openfile->current->data + openfile->current_x);
-  if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
-    openfile->mark = middle;
-    openfile->mark_x += extra - openfile->current_x;
-  }
-  strncpy(middle->data, was_current->data, extra);
-  if (allblanks) {
-    openfile->current_x = 0;
-  }
-  openfile->current->data[openfile->current_x] = '\0';
-  add_undo(ENTER, NULL);
   splice_node(openfile->current, middle);
-  renumber_from(middle);
-  openfile->current     = middle;
-  openfile->current_x   = extra;
-  openfile->placewewant = xplustabs();
-  openfile->totsize++;
-  set_modified();
-  if (ISSET(AUTOINDENT) && !allblanks) {
-    openfile->totsize += extra;
-  }
-  update_undo(ENTER);
+  openfile->totsize += (extra + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 1);
   /* End of 'middle' and start of 'end' */
-  end       = make_new_node(openfile->current);
   end->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
   strcpy(&end->data[extra], openfile->current->data + openfile->current_x);
-  strncpy(end->data, was_current->data, extra);
+  strncpy(end->data, openfile->current->data, extra);
   openfile->current->data[openfile->current_x] = '\0';
-  add_undo(ENTER, NULL);
-  splice_node(openfile->current, end);
-  renumber_from(end);
+  splice_node(middle, end);
+  renumber_from(middle);
   openfile->current     = end;
   openfile->current_x   = extra;
   openfile->placewewant = xplustabs();
   openfile->totsize++;
-  if (ISSET(AUTOINDENT) && !allblanks) {
-    openfile->totsize += extra;
-  }
-  update_undo(ENTER);
+  openfile->totsize += extra;
   /* Place cursor at correct pos. */
-  do_up();
-  do_tab();
+  openfile->current = openfile->current->prev;
+  openfile->current_x = (extra + (ISSET(TABS_TO_SPACES) ? tabsize : 1));
+  set_modified();
   refresh_needed = TRUE;
   focusing       = FALSE;
   return TRUE;

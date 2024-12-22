@@ -140,7 +140,6 @@ void reserve_space_for(Ulong newsize) {
  */
 /* Read in at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
 void read_keys_from(WINDOW *frame) {
-  PROFILE_FUNCTION;
   int   input    = ERR;
   Ulong errcount = 0;
   bool  timed    = FALSE;
@@ -288,7 +287,7 @@ int get_code_from_plantation(void) {
     }
     if (plants_pointer[1] == '{' && plants_pointer[2] == '}') {
       plants_pointer += 3;
-      if (*plants_pointer != '\0') {
+      if (*plants_pointer) {
         put_back(MORE_PLANTS);
       }
       return '{';
@@ -301,7 +300,7 @@ int get_code_from_plantation(void) {
       return NO_SUCH_FUNCTION;
     }
     plants_pointer = (closing + 1);
-    if (*plants_pointer != '\0') {
+    if (*plants_pointer) {
       put_back(MORE_PLANTS);
     }
     return PLANTED_A_COMMAND;
@@ -317,7 +316,7 @@ int get_code_from_plantation(void) {
     else {
       length = strlen(plants_pointer);
     }
-    for (int index = length - 1; index > 0; index--) {
+    for (int index = (length - 1); index > 0; index--) {
       put_back((Uchar)plants_pointer[index]);
     }
     plants_pointer += length;
@@ -2102,19 +2101,19 @@ void titlebar(const char *path) {
           state = _("Restricted");
         }
         else {
-          pluglen = breadth(_("Modified")) + 1;
+          pluglen = (breadth(_("Modified")) + 1);
         }
       }
     }
   }
   /* Determine the widths of the four elements, including their padding. */
-  verlen    = breadth(upperleft) + 3;
+  verlen    = (breadth(upperleft) + 3);
   prefixlen = breadth(prefix);
   if (prefixlen > 0) {
     ++prefixlen;
   }
   pathlen  = breadth(path);
-  statelen = breadth(state) + 2;
+  statelen = (breadth(state) + 2);
   if (statelen > 2) {
     ++pathlen;
   }
@@ -2137,45 +2136,44 @@ void titlebar(const char *path) {
   free(ranking);
   /* If we have side spaces left, center the path name. */
   if (verlen > 0) {
-    offset = verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2;
+    offset = (verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2);
   }
   /* Only print the prefix when there is room for it. */
-  if (verlen + prefixlen + pathlen + pluglen + statelen <= COLS) {
+  if ((verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
     mvwaddstr(topwin, 0, offset, prefix);
     if (prefixlen > 0) {
-      waddstr(topwin, (char *)" ");
+      waddstr(topwin, " ");
     }
   }
   else {
     wmove(topwin, 0, offset);
   }
   /* Print the full path if there's room; otherwise, dottify it. */
-  if (pathlen + pluglen + statelen <= COLS) {
+  if ((pathlen + pluglen + statelen) <= COLS) {
     caption = display_string(path, 0, pathlen, FALSE, FALSE);
     waddstr(topwin, caption);
     free(caption);
   }
-  else if (5 + statelen <= COLS) {
-    waddstr(topwin, (char *)"...");
-    caption = display_string(path, 3 + pathlen - COLS + statelen, COLS - statelen, FALSE, FALSE);
+  else if ((5 + statelen) <= COLS) {
+    waddstr(topwin, "...");
+    caption = display_string(path, (3 + pathlen - COLS + statelen), (COLS - statelen), FALSE, FALSE);
     waddstr(topwin, caption);
     free(caption);
   }
-  /* When requested, show on the title bar the state of three options and
-   * the state of the mark and whether a macro is being recorded. */
+  /* When requested, show on the title bar the state of three options and the state of the mark and whether a macro is being recorded. */
   if (*state && ISSET(STATEFLAGS) && !ISSET(VIEW_MODE)) {
     if (openfile->modified && COLS > 1) {
-      waddstr(topwin, (char *)" *");
+      waddstr(topwin, " *");
     }
     if (statelen < COLS) {
-      wmove(topwin, 0, COLS + 2 - statelen);
+      wmove(topwin, 0, (COLS + 2 - statelen));
       show_states_at(topwin);
     }
   }
   else {
     /* If there's room, right-align the state word; otherwise, clip it. */
     if (statelen > 0 && statelen <= COLS) {
-      mvwaddstr(topwin, 0, COLS - statelen, state);
+      mvwaddstr(topwin, 0, (COLS - statelen), state);
     }
     else if (statelen > 0) {
       mvwaddnstr(topwin, 0, 0, state, actual_x(state, COLS));
@@ -3106,8 +3104,8 @@ bool current_is_below_screen(void) {
     linestruct *line     = openfile->edittop;
     Ulong       leftedge = openfile->firstcolumn;
     /* If current[current_x] is more than a screen's worth of lines after edittop at column firstcolumn, it's below the screen. */
-    return (go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 && (line->lineno < openfile->current->lineno || 
-           (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
+    return (go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 && (line->lineno < openfile->current->lineno
+     || (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
   }
   return (openfile->current->lineno >= (openfile->edittop->lineno + editwinrows - SHIM));
 }
@@ -3162,11 +3160,11 @@ void edit_refresh(void) {
     prepare_palette();
   }
   /* If syntax is turned on, index the file. */
-  if (!ISSET(NO_SYNTAX)) {
-    if (openfile->type.is_set<BASH>() || openfile->type.is_set<C_CPP>()) {
-      LSP->index_file(openfile->filename, TRUE);
-    }
-  }
+  // if (!ISSET(NO_SYNTAX)) {
+  //   if (openfile->type.is_set<BASH>() || openfile->type.is_set<C_CPP>()) {
+  //     LSP->index_file(openfile->filename, TRUE);
+  //   }
+  // }
   /* When the line above the viewport does not have multidata, recalculate all. */
   recook |= (ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata);
   if (recook) {

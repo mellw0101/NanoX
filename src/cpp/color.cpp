@@ -1,5 +1,5 @@
 /**************************************************************************
- *   color.c  --  This file is part of GNU nano.                          *
+ *   color.cpp  --  This file is part of GNU nano.                        *
  *                                                                        *
  *   Copyright (C) 2001-2011, 2013-2024 Free Software Foundation, Inc.    *
  *   Copyright (C) 2014-2017, 2020, 2021 Benno Schulenberg                *

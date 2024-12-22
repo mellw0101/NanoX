@@ -159,14 +159,13 @@ void render_comment(void) {
     render_part(block_comment_start, block_comment_end, FG_COMMENT_GREEN);
     /* Do some error checking and highlight the block start if it`s found
      * while the block above it being a start block or inside a block. */
-    if (line->prev &&
-        (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>())) {
+    if (line->prev
+     && (line->prev->flags.is_set<IN_BLOCK_COMMENT>() || line->prev->flags.is_set<BLOCK_COMMENT_START>())) {
       RENDR(R_LEN, ERROR_MESSAGE, start, 2);
       block_comment_start = (start - line->data) + 2;
     }
-    /* If a slash comment is found and it is before the block start,
-     * we adjust the start and end pos.  We also make sure to unset
-     * 'BLOCK_COMMENT_START' for the line. */
+    /* If a slash comment is found and it is before the block start, we adjust the start
+     * and end pos.  We also make sure to unset 'BLOCK_COMMENT_START' for the line. */
     if (slash && (slash - line->data) < block_comment_start) {
       block_comment_start = (slash - line->data);
       block_comment_end   = till_x;
@@ -232,7 +231,7 @@ void render_comment(void) {
       RENDR(R_LEN, ERROR_MESSAGE, end, 2);
     }
   }
-  refresh_needed = true;
+  refresh_needed = TRUE;
 }
 
 /* Color brackets based on indent. */
@@ -242,7 +241,7 @@ void render_bracket(void) {
   do {
     found = strstr_array(found, (const char *[]){ "{", "}", "[", "]", "(", ")" }, 6, NULL);
     if (found) {
-      RENDR(R_LEN, color_bi[((*found == '{' || *found == '}') ? line_indent(line) : line_indent(line) + 1) % 3], found, 1 );
+      RENDR(R_LEN, color_bi[((*found == '{' || *found == '}') ? line_indent(line) : line_indent(line) + 1) % 3], found, 1);
       ++found;
     }
   } while (found && *found);
@@ -309,8 +308,8 @@ void render_char_strings(void) {
 
 void rendr_define(Uint index) {
   const char *start = NULL, *end = NULL, *param = NULL;
-  char       *word = NULL;
-  start            = &line->data[index];
+  char *word = NULL;
+  start = &line->data[index];
   if (!*start) {
     RENDR(E, "<-(Macro name missing)");
     return;
@@ -522,9 +521,9 @@ void rendr_if_preprosses(Uint index) {
 
 /* This 'render' sub-system is responsible for handeling all pre-prossesor syntax. */
 void render_preprossesor(void) {
-  char       *current_word = NULL;
-  const char *start        = strchr(line->data, '#');
-  const char *end          = NULL;
+  char *current_word = NULL;
+  const char *end = NULL;
+  const char *start = strchr(line->data, '#');
   if (start) {
     RENDR(R_CHAR, FG_VS_CODE_BRIGHT_MAGENTA, start);
     ++start;
@@ -532,6 +531,7 @@ void render_preprossesor(void) {
       return;
     }
     end = start;
+    /* Skip all, if any whitespaces after '#'. */
     ADV_PTR(end, (*end == ' ' || *end == '\t'));
     if (!*end) {
       return;
@@ -588,7 +588,9 @@ void render_preprossesor(void) {
       case include_hash : {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         ADV_PTR(end, (*end == ' ' || *end == '\t'));
-        rendr_include((end - line->data));
+        if (end != start) {
+          rendr_include((end - line->data));
+        }
         break;
       }
       case "undef"_uint_hash : {

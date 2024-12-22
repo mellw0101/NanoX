@@ -400,7 +400,10 @@ void undo_cut(undostruct *u) {
    && openfile->filebot != openfile->current && !openfile->filebot->prev->data[0]) {
     remove_magicline();
   }
-  if (u->xflags & CURSOR_WAS_AT_HEAD) {
+  if (u->type == ZAP) {
+    restore_undo_posx(u);
+  }
+  else {
     goto_line_posx(u->head_lineno, u->head_x);
   }
 }
@@ -468,6 +471,56 @@ void enclose_marked_region(const char *s1, const char *s2) {
 void do_block_comment(void) {
   enclose_marked_region("/* ", " */");
   keep_mark = TRUE;
+}
+
+/* Return TRUE when cursor is after '{' and directly at '}'. */
+bool is_between_brackets(linestruct *line, Ulong posx) {
+  if (posx == 0 || line->data[posx - 1] != '{' || line->data[posx] != '}') {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
+void auto_bracket(linestruct *line, Ulong posx) {
+  linestruct *middle = make_new_node(line);
+  linestruct *end    = make_new_node(middle);
+  splice_node(line, middle);
+  splice_node(middle, end);
+  renumber_from(middle);
+  Ulong indentlen = indent_length(line->data);
+  Ulong lenleft = strlen(line->data + posx);
+  middle->data = (char *)nmalloc(indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 1);
+  end->data    = (char *)nmalloc(indentlen + lenleft + 1);
+  /* Set up the middle line. */
+  memcpy(middle->data, line->data, indentlen);
+  if (ISSET(TABS_TO_SPACES)) {
+    sprintf((middle->data + indentlen), "%*s", (int)tabsize, " ");
+    *(middle->data + indentlen + tabsize) = '\0';
+  }
+  else {
+    *(middle->data + indentlen)     = '\t';
+    *(middle->data + indentlen + 1) = '\0';
+  }
+  /* Set up end line. */
+  memcpy((end->data + indentlen), (line->data + posx), (lenleft + 1));
+  /* Set up start line. */
+  line->data = arealloc(line->data, (posx + 1));
+  *(line->data + posx) = '\0';
+  openfile->current   = middle; 
+  openfile->current_x = (indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1));
+  openfile->placewewant = xplustabs();
+  refresh_needed = TRUE;
+}
+
+/* Do auto bracket at current position. */
+void do_auto_bracket(void) {
+  add_undo(AUTO_BRACKET, NULL);
+  Ulong indentlen = indent_length(openfile->current->data);
+  auto_bracket(openfile->current, openfile->current_x);
+  openfile->totsize += ((indentlen * 2) + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 2);
+  openfile->undotop->newsize = openfile->totsize;
+  set_modified();
 }
 
 /* Undo the last thing(s) we did. */
@@ -756,6 +809,20 @@ void do_undo(void) {
       keep_mark      = TRUE;
       break;
     }
+    case AUTO_BRACKET: {
+      line = line_from_number(u->head_lineno);
+      unlink_node(line->next->next);
+      unlink_node(line->next);
+      Ulong addlen = strlen(u->strdata);
+      line->data = arealloc(line->data, (u->head_x + addlen + 1));
+      memcpy((line->data + u->head_x), u->strdata, (addlen + 1));
+      renumber_from(line);
+      openfile->current     = line;
+      openfile->current_x   = u->head_x;
+      openfile->placewewant = xplustabs();
+      refresh_needed = TRUE;
+      break;
+    }
     default : {
       break;
     }
@@ -833,8 +900,7 @@ void do_redo(void) {
     case BACK:
     case DEL: {
       redidmsg = _("deletion");
-      memmove(line->data + u->head_x, line->data + u->head_x + strlen(u->strdata),
-        (strlen(line->data + u->head_x) - strlen(u->strdata) + 1));
+      memmove((line->data + u->head_x), (line->data + u->head_x + strlen(u->strdata)), (strlen(line->data + u->head_x) - strlen(u->strdata) + 1));
       goto_line_posx(u->head_lineno, u->head_x);
       break;
     }
@@ -1067,6 +1133,15 @@ void do_redo(void) {
       keep_mark      = TRUE;
       break;
     }
+    case AUTO_BRACKET: {
+      line = line_from_number(u->head_lineno);
+      /* Ensure that undo-redo correctness is maintained. */
+      if (!is_between_brackets(line, u->head_x)) {
+        die("Undo-redo stack is not correct.\n");
+      }
+      auto_bracket(line, u->head_x);
+      break;
+    }
     default : {
       break;
     }
@@ -1104,7 +1179,8 @@ void do_enter(void) {
     return;
   }
   /* Check if cursor is between two brackets. */
-  if (enter_with_bracket()) {
+  if (is_between_brackets(openfile->current, openfile->current_x)) {
+    do_auto_bracket();
     return;
   }
   char c_prev = '\0';
@@ -1134,7 +1210,7 @@ void do_enter(void) {
   /* Adjust the mark if it is on the current line after the cursor. */
   if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
     openfile->mark = newnode;
-    openfile->mark_x += extra - openfile->current_x;
+    openfile->mark_x += (extra - openfile->current_x);
   }
   if (ISSET(AUTOINDENT)) {
     /* Copy the whitespace from the sample line to the new one. */
@@ -1218,23 +1294,23 @@ void add_undo(undo_type action, const char *message) {
     openfile->undotop->next = u;
   }
   else {
-    u->next                = openfile->undotop;
+    u->next = openfile->undotop;
     openfile->undotop      = u;
     openfile->current_undo = u;
   }
   /* Record the info needed to be able to undo each possible action. */
   switch (u->type) {
-    case ADD : {
+    case ADD: {
       /* If a new magic line will be added, an undo should remove it. */
       if (thisline == openfile->filebot) {
         u->xflags |= INCLUDED_LAST_LINE;
       }
       break;
     }
-    case ENTER : {
+    case ENTER: {
       break;
     }
-    case BACK : {
+    case BACK: {
       /* If the next line is the magic line, don't ever undo this
        * backspace, as it won't actually have deleted anything. */
       if (thisline->next == openfile->filebot && thisline->data[0]) {
@@ -1242,7 +1318,7 @@ void add_undo(undo_type action, const char *message) {
       }
       /* Fall-through. */
     }
-    case DEL : {
+    case DEL: {
       /* When not at the end of a line, store the deleted character;
        * otherwise, morph the undo item into a line join. */
       if (thisline->data[openfile->current_x]) {
@@ -1264,26 +1340,26 @@ void add_undo(undo_type action, const char *message) {
       u->type = JOIN;
       break;
     }
-    case REPLACE : {
+    case REPLACE: {
       u->strdata = copy_of(thisline->data);
       if (thisline == openfile->filebot && answer[0]) {
         u->xflags |= INCLUDED_LAST_LINE;
       }
       break;
     }
-    case SPLIT_BEGIN :
-    case SPLIT_END : {
+    case SPLIT_BEGIN:
+    case SPLIT_END: {
       break;
     }
-    case CUT_TO_EOF : {
+    case CUT_TO_EOF: {
       u->xflags |= (INCLUDED_LAST_LINE | CURSOR_WAS_AT_HEAD);
       if (openfile->current->has_anchor) {
         u->xflags |= HAD_ANCHOR_AT_START;
       }
       break;
     }
-    case ZAP :
-    case CUT : {
+    case ZAP:
+    case CUT: {
       if (openfile->mark) {
         if (mark_is_before_cursor()) {
           u->head_lineno = openfile->mark->lineno;
@@ -1313,30 +1389,30 @@ void add_undo(undo_type action, const char *message) {
       }
       break;
     }
-    case PASTE : {
+    case PASTE: {
       u->cutbuffer = copy_buffer(cutbuffer);
       /* Fall-through. */
     }
-    case INSERT : {
+    case INSERT: {
       if (thisline == openfile->filebot) {
         u->xflags |= INCLUDED_LAST_LINE;
       }
       break;
     }
-    case COUPLE_BEGIN : {
+    case COUPLE_BEGIN: {
       u->tail_lineno = openfile->cursor_row;
       /* Fall-through. */
     }
-    case COUPLE_END : {
+    case COUPLE_END: {
       u->strdata = copy_of(_(message));
       break;
     }
-    case INDENT :
-    case UNINDENT :
-    case COMMENT :
-    case UNCOMMENT :
-    case MOVE_LINE_UP :
-    case MOVE_LINE_DOWN : {
+    case INDENT:
+    case UNINDENT:
+    case COMMENT:
+    case UNCOMMENT:
+    case MOVE_LINE_UP:
+    case MOVE_LINE_DOWN: {
       if (openfile->mark) {
         if (mark_is_before_cursor()) {
           u->head_lineno = openfile->mark->lineno;
@@ -1351,7 +1427,7 @@ void add_undo(undo_type action, const char *message) {
       }
       break;
     }
-    case ENCLOSE : {
+    case ENCLOSE: {
       if (mark_is_before_cursor()) {
         u->head_lineno = openfile->mark->lineno;
         u->head_x      = openfile->mark_x;
@@ -1363,6 +1439,10 @@ void add_undo(undo_type action, const char *message) {
         u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
       }
       u->strdata = copy_of(message);
+      break;
+    }
+    case AUTO_BRACKET: {
+      u->strdata = copy_of(openfile->current->data + openfile->current_x);
       break;
     }
     default : {
@@ -1512,7 +1592,7 @@ void do_wrap(void) {
   /* The length of the quoting part of this line. */
   Ulong quot_len = quote_length(line->data);
   /* The length of the quoting part plus subsequent whitespace. */
-  Ulong lead_len = quot_len + indent_length(line->data + quot_len);
+  Ulong lead_len = (quot_len + indent_length(line->data + quot_len));
   /* The current cursor position, for comparison with the wrap point. */
   Ulong cursor_x = openfile->current_x;
   /* The position in the line's text where we wrap. */
@@ -1527,8 +1607,7 @@ void do_wrap(void) {
   if (wrap_loc < 0 || lead_len + wrap_loc == line_len) {
     return;
   }
-  /* Adjust the wrap location to its position in the full line,
-   * and step forward to the character just after the blank. */
+  /* Adjust the wrap location to its position in the full line, and step forward to the character just after the blank. */
   wrap_loc = (lead_len + step_right(line->data + lead_len, wrap_loc));
   /* When now at end-of-line, no need to wrap. */
   if (!line->data[wrap_loc]) {
@@ -1545,8 +1624,7 @@ void do_wrap(void) {
   /* When prepending and the remainder of this line will not make the next
    * line too long, then join the two lines, so that, after the line wrap,
    * the remainder will effectively have been prefixed to the next line. */
-  if (openfile->spillage_line && openfile->spillage_line == line->next
-   && (rest_length + breadth(line->next->data)) <= wrap_at) {
+  if (openfile->spillage_line && openfile->spillage_line == line->next && (rest_length + breadth(line->next->data)) <= wrap_at) {
     /* Go to the end of this line. */
     openfile->current_x = line_len;
     /* If the remainder doesn't end in a blank, add a space. */
@@ -1735,7 +1813,7 @@ bool begpar(const linestruct *const line, int depth) {
     return FALSE;
   }
   /* Otherwise, this is a BOP if the preceding line is not. */
-  return !begpar(line->prev, depth + 1);
+  return !begpar(line->prev, (depth + 1));
 }
 
 /* Return TRUE when the given line is part of a paragraph.  A line is part of a
@@ -1770,11 +1848,11 @@ bool find_paragraph(linestruct **firstline, Ulong *linecount) {
  * consists of 'count' lines, skipping the quoting and indentation on all lines after the first. */
 void concat_paragraph(linestruct *line, Ulong count) {
   while (count > 1) {
-    linestruct *next_line     = line->next;
-    Ulong       next_line_len = strlen(next_line->data);
-    Ulong       next_quot_len = quote_length(next_line->data);
-    Ulong       next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
-    Ulong       line_len      = strlen(line->data);
+    linestruct *next_line = line->next;
+    Ulong next_line_len = strlen(next_line->data);
+    Ulong next_quot_len = quote_length(next_line->data);
+    Ulong next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
+    Ulong line_len      = strlen(line->data);
     /* We're just about to tack the next line onto this one.  If this line isn't empty, make sure it ends in a space. */
     if (line_len > 0 && line->data[line_len - 1] != ' ') {
       line->data             = arealloc(line->data, (line_len + 2));
@@ -1895,10 +1973,10 @@ void justify_paragraph(linestruct **line, Ulong count) {
   Ulong lead_len;         /* Length of the quote part plus the indentation part. */
   char *lead_string;      /* The quote+indent stuff that is copied from the sample line. */
   /* The sample line is either the only line or the second line. */
-  sampleline = (count == 1 ? *line : (*line)->next);
+  sampleline = ((count == 1) ? *line : (*line)->next);
   /* Copy the leading part (quoting + indentation) of the sample line. */
   quot_len    = quote_length(sampleline->data);
-  lead_len    = quot_len + indent_length(sampleline->data + quot_len);
+  lead_len    = (quot_len + indent_length(sampleline->data + quot_len));
   lead_string = measured_copy(sampleline->data, lead_len);
   /* Concatenate all lines of the paragraph into a single line. */
   concat_paragraph(*line, count);

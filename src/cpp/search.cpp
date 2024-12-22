@@ -47,11 +47,11 @@ void search_init(bool replacing, bool retain_answer) {
   /* What will be searched for when the user types just <Enter>. */
   char *thedefault;
   /* If something was searched for earlier, include it in the prompt. */
-  if (*last_search != '\0') {
-    char *disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
+  if (*last_search) {
+    char *disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
     thedefault = (char *)nmalloc(strlen(disp) + 7);
     /* We use (COLS / 3) here because we need to see more on the line. */
-    sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > COLS / 3) ? "..." : "");
+    sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > (COLS / 3)) ? "..." : "");
     free(disp);
   }
   else {
@@ -60,25 +60,27 @@ void search_init(bool replacing, bool retain_answer) {
   while (TRUE) {
     functionptrtype function;
     /* Ask the user what to search for (or replace). */
-    int response =
-      do_prompt(inhelp ? MFINDINHELP : (replacing ? MREPLACE : MWHEREIS), retain_answer ? answer : "", &search_history,
-                edit_refresh,
-                /* TRANSLATORS: This is the main search prompt. */
-                "%s%s%s%s%s%s", _("Search"),
-                /* TRANSLATORS: The next four modify the search prompt. */
-                ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : "", ISSET(USE_REGEXP) ? _(" [Regexp]") : "",
-                ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : "",
-                replacing ? openfile->mark ? _(" (to replace) in selection") : _(" (to replace)") : "", thedefault);
-    /* If the search was cancelled, or we have a blank answer and
-     * nothing was searched for yet during this session, get out. */
-    if (response == -1 || (response == -2 && *last_search == '\0')) {
+    int response = do_prompt(
+      (inhelp ? MFINDINHELP : (replacing ? MREPLACE : MWHEREIS)),
+      (retain_answer ? answer : ""),
+      &search_history,
+      edit_refresh,
+      /* TRANSLATORS: This is the main search prompt. */
+      "%s%s%s%s%s%s", _("Search"),
+      /* TRANSLATORS: The next four modify the search prompt. */
+      ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : "", ISSET(USE_REGEXP) ? _(" [Regexp]") : "",
+      ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : "",
+      (replacing ? openfile->mark ? _(" (to replace) in selection") : _(" (to replace)") : ""), thedefault
+    );
+    /* If the search was cancelled, or we have a blank answer and nothing was searched for yet during this session, get out. */
+    if (response == -1 || (response == -2 && !*last_search)) {
       statusbar(_("Cancelled"));
       break;
     }
     /* If Enter was pressed, prepare to do a replace or a search. */
     if (response == 0 || response == -2) {
       /* If an actual answer was typed, remember it. */
-      if (*answer != '\0') {
+      if (*answer) {
         last_search = mallocstrcpy(last_search, answer);
         update_history(&search_history, answer, PRUNE_DUPLICATE);
       }
@@ -115,7 +117,7 @@ void search_init(bool replacing, bool retain_answer) {
       }
     }
     else if (function == flip_goto) {
-      goto_line_and_column(openfile->current->lineno, openfile->placewewant + 1, TRUE, TRUE);
+      goto_line_and_column(openfile->current->lineno, (openfile->placewewant + 1), TRUE, TRUE);
       break;
     }
     else {
@@ -139,7 +141,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
   /* The line that we will search through now. */
   linestruct *line = openfile->current;
   /* The point in the line from where we start searching. */
-  const char *from = line->data + openfile->current_x;
+  const char *from = (line->data + openfile->current_x);
   /* A pointer to the location of the match, if any. */
   const char *found = NULL;
   /* The x coordinate of a found occurrence. */
@@ -148,17 +150,16 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
   time_t lastkbcheck = time(NULL);
   /* Set non-blocking input so that we can just peek for a Cancel. */
   nodelay(midwin, TRUE);
-  (!begin) ? came_full_circle = FALSE : 0;
+  !begin ? came_full_circle = FALSE : 0;
   while (TRUE) {
-    /* When starting a new search, skip the first character, then
-     * (in either case) search for the needle in the current line. */
+    /* When starting a new search, skip the first character, then (in either case) search for the needle in the current line. */
     if (skipone) {
       skipone = FALSE;
       if (ISSET(BACKWARDS_SEARCH) && from != line->data) {
-        from  = line->data + step_left(line->data, from - line->data);
+        from  = (line->data + step_left(line->data, from - line->data));
         found = strstrwrapper(line->data, needle, from);
       }
-      else if (!ISSET(BACKWARDS_SEARCH) && *from != '\0') {
+      else if (!ISSET(BACKWARDS_SEARCH) && *from) {
         from += char_length(from);
         found = strstrwrapper(line->data, needle, from);
       }
@@ -169,12 +170,12 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
     if (found) {
       /* When doing a regex search, compute the length of the match. */
       if (ISSET(USE_REGEXP)) {
-        found_len = regmatches[0].rm_eo - regmatches[0].rm_so;
+        found_len = (regmatches[0].rm_eo - regmatches[0].rm_so);
       }
       /* When we're spell checking, a match should be a separate word;
        * if it's not, continue looking in the rest of the line. */
       if (whole_word_only && !is_separate_word(found - line->data, found_len, line->data)) {
-        from = found + char_length(found);
+        from = (found + char_length(found));
         continue;
       }
       /* When not on the magic line, the match is valid. */
@@ -195,8 +196,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
     }
     /* Move to the previous or next line in the file. */
     line = ISSET(BACKWARDS_SEARCH) ? line->prev : line->next;
-    /* If we've reached the start or end of the buffer, wrap around;
-     * but stop when spell-checking or replacing in a region. */
+    /* If we've reached the start or end of the buffer, wrap around; but stop when spell-checking or replacing in a region. */
     if (!line) {
       if (whole_word_only || modus == INREGION) {
         nodelay(midwin, FALSE);
@@ -217,14 +217,14 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
       from += strlen(line->data);
     }
     /* Glance at the keyboard once every second, to check for a Cancel. */
-    if (time(NULL) - lastkbcheck > 0) {
+    if ((time(NULL) - lastkbcheck) > 0) {
       int input   = wgetch(midwin);
       lastkbcheck = time(NULL);
       /* Consume any queued-up keystrokes, until a Cancel or nothing. */
       while (input != ERR) {
         if (input == ESC_CODE) {
           napms(20);
-          input    = wgetch(midwin);
+          input = wgetch(midwin);
           meta_key = TRUE;
         }
         else {
@@ -250,23 +250,22 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
       }
     }
   }
-  found_x = found - line->data;
+  found_x = (found - line->data);
   nodelay(midwin, FALSE);
   /* Ensure that the found occurrence is not beyond the starting x. */
-  if (came_full_circle &&
-      ((!ISSET(BACKWARDS_SEARCH) && (found_x > begin_x || (modus == REPLACING && found_x == begin_x))) ||
-       (ISSET(BACKWARDS_SEARCH) && found_x < begin_x))) {
+  if (came_full_circle
+   && ((!ISSET(BACKWARDS_SEARCH) && (found_x > begin_x || (modus == REPLACING && found_x == begin_x))) || (ISSET(BACKWARDS_SEARCH) && found_x < begin_x))) {
     return 0;
   }
   /* Set the current position to point at what we found. */
   openfile->current   = line;
   openfile->current_x = found_x;
   /* When requested, pass back the length of the match. */
-  (match_len) ? *match_len = found_len : 0;
+  match_len ? (*match_len = found_len) : 0;
   if (modus == JUSTFIND && (!openfile->mark || openfile->softmark)) {
     spotlighted    = TRUE;
     light_from_col = xplustabs();
-    light_to_col   = wideness(line->data, found_x + found_len);
+    light_to_col   = wideness(line->data, (found_x + found_len));
     refresh_needed = TRUE;
   }
   if (feedback > 0) {
@@ -387,33 +386,32 @@ int replace_regexp(char *string, bool create) {
   return replacement_size;
 }
 
-/* Return a copy of the current line with one needle replaced.
- * TODO: (replace_line) - What does this mean like replace with what ? */
+/* Return a copy of the current line with one needle replaced. */
 char *replace_line(const char *needle) {
-  Ulong new_size = strlen(openfile->current->data) + 1;
+  Ulong new_size = (strlen(openfile->current->data) + 1);
   Ulong match_len;
   char *copy;
   /* First adjust the size of the new line for the change. */
   if (ISSET(USE_REGEXP)) {
-    match_len = regmatches[0].rm_eo - regmatches[0].rm_so;
-    new_size += replace_regexp(NULL, FALSE) - match_len;
+    match_len = (regmatches[0].rm_eo - regmatches[0].rm_so);
+    new_size += (replace_regexp(NULL, FALSE) - match_len);
   }
   else {
     match_len = strlen(needle);
-    new_size += strlen(answer) - match_len;
+    new_size += (strlen(answer) - match_len);
   }
   copy = (char *)nmalloc(new_size);
   /* Copy the head of the original line. */
   strncpy(copy, openfile->current->data, openfile->current_x);
   /* Add the replacement text. */
   if (ISSET(USE_REGEXP)) {
-    replace_regexp(copy + openfile->current_x, TRUE);
+    replace_regexp((copy + openfile->current_x), TRUE);
   }
   else {
-    strcpy(copy + openfile->current_x, answer);
+    strcpy((copy + openfile->current_x), answer);
   }
   /* Copy the tail of the original line. */
-  strcat(copy, openfile->current->data + openfile->current_x + match_len);
+  strcat(copy, (openfile->current->data + openfile->current_x + match_len));
   return copy;
 }
 
@@ -460,7 +458,7 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
     }
     /* An occurrence outside of the marked region means we're done. */
     if (was_mark && (openfile->current->lineno > bot->lineno || openfile->current->lineno < top->lineno
-     || (openfile->current == bot && openfile->current_x + match_len > bot_x) || (openfile->current == top && openfile->current_x < top_x))) {
+     || (openfile->current == bot && (openfile->current_x + match_len) > bot_x) || (openfile->current == top && openfile->current_x < top_x))) {
       break;
     }
     /* Indicate that we found the search string. */
@@ -470,11 +468,11 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
     if (!replaceall) {
       spotlighted    = TRUE;
       light_from_col = xplustabs();
-      light_to_col   = wideness(openfile->current->data, openfile->current_x + match_len);
+      light_to_col   = wideness(openfile->current->data, (openfile->current_x + match_len));
       /* Refresh the edit window, scrolling it if necessary. */
       edit_refresh();
       /* TRANSLATORS: This is a prompt. */
-      choice      = ask_user(YESORALLORNO, _("Replace this instance?"));
+      choice = ask_user(YESORALLORNO, _("Replace this instance?"));
       spotlighted = FALSE;
       if (choice == CANCEL) {
         break;
@@ -486,13 +484,13 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
     if (choice == YES || replaceall) {
       Ulong length_change;
       char *altered;
-      altered       = replace_line(needle);
-      length_change = strlen(altered) - strlen(openfile->current->data);
+      altered = replace_line(needle);
+      length_change = (strlen(altered) - strlen(openfile->current->data));
       add_undo(REPLACE, NULL);
       /* If the mark was on and it was located after the cursor, then adjust its x position for any text length changes. */
       if (was_mark && !right_side_up) {
         if (openfile->current == was_mark && openfile->mark_x > openfile->current_x) {
-          if (openfile->mark_x < openfile->current_x + match_len) {
+          if (openfile->mark_x < (openfile->current_x + match_len)) {
             openfile->mark_x = openfile->current_x;
           }
           else {
@@ -504,8 +502,8 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
       /* If the mark was not on or it was before the cursor, then adjust the cursor's x position for any text length changes. */
       if (!was_mark || right_side_up) {
         if (openfile->current == real_current && openfile->current_x < *real_current_x) {
-          if (*real_current_x < openfile->current_x + match_len) {
-            *real_current_x = openfile->current_x + match_len;
+          if (*real_current_x < (openfile->current_x + match_len)) {
+            *real_current_x = (openfile->current_x + match_len);
           }
           *real_current_x += length_change;
           bot_x = *real_current_x;
@@ -517,17 +515,17 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
       }
       /* When moving forward, put the cursor just after the replacement text, so that searching will continue there. */
       if (!ISSET(BACKWARDS_SEARCH)) {
-        openfile->current_x += match_len + length_change;
+        openfile->current_x += (match_len + length_change);
       }
       /* Update the file size, and put the changed line into place. */
-      openfile->totsize += mbstrlen(altered) - mbstrlen(openfile->current->data);
+      openfile->totsize += (mbstrlen(altered) - mbstrlen(openfile->current->data));
       free(openfile->current->data);
       openfile->current->data = altered;
       check_the_multis(openfile->current);
       refresh_needed = FALSE;
       set_modified();
       as_an_at = TRUE;
-      numreplaced++;
+      ++numreplaced;
     }
   }
   if (numreplaced == -1) {

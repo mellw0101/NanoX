@@ -1,3 +1,4 @@
+/** @file help.cpp */
 #include "../include/prototypes.h"
 
 /* The text displayed in the help window. */

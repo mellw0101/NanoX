@@ -316,8 +316,7 @@ bool open_buffer(const char *filename, bool new_one) {
       statusline(ALERT, _("%s is meant to be read-only"), realname);
     }
   }
-  /* When loading into a new buffer, first check the file's path is valid,
-   * and then (if requested and possible) create a lock file for it. */
+  /* When loading into a new buffer, first check the file's path is valid, and then (if requested and possible) create a lock file for it. */
   if (new_one) {
     make_new_buffer();
     if (has_valid_path(realname)) {
@@ -357,16 +356,16 @@ bool open_buffer(const char *filename, bool new_one) {
   }
   /* If a new buffer was opened, check whether a syntax can be applied. */
   if (new_one) {
-    // file_listener.add_listener(openfile->filename, [](const char *file, inotify_event *e) {
-    //   if (e->mask & IN_ACCESS) {
-        
-    //   }
-    //   if (e->mask & IN_MODIFY) {
-    //     statusline(ALERT, "File has changed.");
-    //   }
-    // });
     find_and_prime_applicable_syntax();
     syntax_check_file(openfile);
+    if (openfile->type.is_set<C_CPP>() || openfile->type.is_set<BASH>()) {
+      file_listener_t *listener = file_listener.add_listener(openfile->filename);
+      listener->set_event_callback(IN_CLOSE_WRITE, NULL, [](void *) {
+        enqueue_callback([](void *) { LSP->index_file(openfile->filename, TRUE); }, NULL);
+      });
+      listener->start_listening();
+      LSP->index_file(openfile->filename);
+    }
   }
   free(realname);
   return TRUE;
@@ -498,6 +497,9 @@ void close_buffer(void) {
   }
   orphan->prev->next = orphan->next;
   orphan->next->prev = orphan->prev;
+  if (orphan->type.is_set<C_CPP>() || orphan->type.is_set<BASH>()) {
+    file_listener.stop_listener(orphan->filename);
+  }
   free(orphan->filename);
   free_lines(orphan->filetop);
   free(orphan->statinfo);
@@ -897,7 +899,7 @@ void execute_command(const char *command) {
         openfile->current_x = 0;
       }
       add_undo(CUT, NULL);
-      do_snip(openfile->mark != NULL, openfile->mark == NULL, FALSE);
+      do_snip((openfile->mark != NULL), (openfile->mark == NULL), FALSE);
       if (!openfile->filetop->next) {
         openfile->filetop->has_anchor = FALSE;
       }
@@ -905,7 +907,7 @@ void execute_command(const char *command) {
     }
     /* Create a separate process for piping the data to the command. */
     if (!(pid_of_sender = fork())) {
-      send_data(whole_buffer ? openfile->filetop : cutbuffer, to_fd[1]);
+      send_data((whole_buffer ? openfile->filetop : cutbuffer), to_fd[1]);
       exit(0);
     }
     if (pid_of_sender == -1) {
@@ -1226,11 +1228,11 @@ char *safe_tempfile(FILE **stream) {
   if (!extension || strchr(extension, '/')) {
     extension = openfile->filename + strlen(openfile->filename);
   }
-  tempfile_name = (char *)nrealloc(tempdir, strlen(tempdir) + 12 + strlen(extension));
+  tempfile_name = arealloc(tempdir, (strlen(tempdir) + 12 + strlen(extension)));
   strcat(tempfile_name, "nano.XXXXXX");
   strcat(tempfile_name, extension);
   descriptor = mkstemps(tempfile_name, strlen(extension));
-  *stream    = ((descriptor > 0) ? fdopen(descriptor, "r+b") : NULL);
+  *stream = ((descriptor > 0) ? fdopen(descriptor, "r+b") : NULL);
   if (!(*stream)) {
     if (descriptor > 0) {
       close(descriptor);
@@ -2441,6 +2443,8 @@ int get_all_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char 
   Ulong  local_nfiles = 0;
   Ulong  local_ndirs  = 0;
   if (recursive_entries_in_dir(path, &local_files, &local_nfiles, &local_dirs, &local_ndirs) == -1) {
+    free_chararray(local_files, local_nfiles);
+    free_chararray(local_dirs, local_ndirs);
     *files  = NULL;
     *dirs   = NULL;
     *nfiles = 0;

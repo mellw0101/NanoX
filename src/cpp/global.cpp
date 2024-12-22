@@ -458,7 +458,7 @@ const keystruct *get_shortcut(const int keycode) {
 /* Return a pointer to the function that is bound to the given key. */
 functionptrtype func_from_key(const int keycode) {
   const keystruct *sc = get_shortcut(keycode);
-  return (sc) ? sc->func : NULL;
+  return (sc ? sc->func : NULL);
 }
 
 /* Return the function that is bound to the given key in the file browser or

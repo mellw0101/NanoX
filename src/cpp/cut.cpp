@@ -328,7 +328,7 @@ void ingraft_buffer(linestruct *topline) {
     length   = strlen(botline->data);
     extralen = strlen(tailtext);
     botline->data = arealloc(botline->data, (length + extralen + 1));
-    constexpr_strcpy(botline->data + length, tailtext);
+    constexpr_strcpy((botline->data + length), tailtext);
     /* Put the cursor at the end of the grafted text. */
     openfile->current   = botline;
     openfile->current_x = length;
@@ -369,7 +369,7 @@ void copy_from_buffer(linestruct *somebuffer) {
 /* Move all marked text from the current buffer into the cutbuffer. */
 void cut_marked_region(void) {
   linestruct *top, *bot;
-  Ulong       top_x, bot_x;
+  Ulong top_x, bot_x;
   get_region(&top, &top_x, &bot, &bot_x);
   extract_segment(top, top_x, bot, bot_x);
   openfile->placewewant = xplustabs();
@@ -479,9 +479,8 @@ void copy_marked_region(void) {
   Ulong       top_x, bot_x;
   get_region(&topline, &top_x, &botline, &bot_x);
   openfile->last_action = OTHER;
-  keep_cutbuffer        = FALSE;
-  openfile->mark        = NULL;
-  refresh_needed        = TRUE;
+  keep_cutbuffer = FALSE;
+  refresh_needed = TRUE;
   if (topline == botline && top_x == bot_x) {
     statusbar(_("Copied nothing"));
     return;
@@ -530,8 +529,7 @@ void copy_text(void) {
   if (ISSET(CUT_FROM_CURSOR)) {
     sans_newline = !at_eol;
   }
-  /* Create the cutbuffer OR add to it, depending on the mode, the position
-   * of the cursor, and whether or not the cutbuffer is currently empty. */
+  /* Create the cutbuffer OR add to it, depending on the mode, the position of the cursor, and whether or not the cutbuffer is currently empty. */
   if (!cutbuffer && sans_newline) {
     cutbuffer = addition;
     cutbottom = addition;
@@ -559,17 +557,17 @@ void copy_text(void) {
     addition->next       = cutbottom;
     cutbottom->prev      = addition;
   }
-  /* When needed and possible, move the cursor to the next line. */
-  if ((!ISSET(CUT_FROM_CURSOR) || at_eol) && openfile->current->next) {
-    openfile->current   = openfile->current->next;
-    openfile->current_x = 0;
-  }
-  else {
-    openfile->current_x = strlen(openfile->current->data);
-  }
+  // /* When needed and possible, move the cursor to the next line. */
+  // if ((!ISSET(CUT_FROM_CURSOR) || at_eol) && openfile->current->next) {
+  //   openfile->current   = openfile->current->next;
+  //   openfile->current_x = 0;
+  // }
+  // else {
+  //   openfile->current_x = strlen(openfile->current->data);
+  // }
   edit_redraw(was_current, FLOWING);
   openfile->last_action = COPY;
-  keep_cutbuffer        = TRUE;
+  // keep_cutbuffer        = TRUE;
 }
 
 /* Copy text from the cutbuffer into the current buffer. */

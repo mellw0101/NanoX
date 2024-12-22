@@ -1,3 +1,4 @@
+/** @file browser.cpp */
 #include "../include/prototypes.h"
 
 /* The list of files to display in the file browser. */
@@ -66,7 +67,7 @@ void read_the_list(const char *path, DIR *dir) {
 /* Reselect the given file or directory name, if it still exists. */
 void reselect(const char *const name) {
   Ulong looking_at = 0;
-  while (looking_at < list_length && strcmp(filelist[looking_at], name)) {
+  while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0) {
     ++looking_at;
   }
   /* If the sought name was found, select it; otherwise, just move the highlight so that the

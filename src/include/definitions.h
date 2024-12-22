@@ -23,7 +23,7 @@
 #include <clocale>
 #include <csignal>
 #include <cstdio>
-#include <cstdlib>
+// #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
 #include <execinfo.h> // For backtrace functions
@@ -270,13 +270,12 @@ using std::vector;
 /* Used to encode both parts when enclosing a region. */
 #define ENCLOSE_DELIM ":;:"
 
-/* Config helpers. */
 #define STRLTRLEN(str) (sizeof(str) - 1)
+/* Make copy of string literal. */
 #define STRLTR_COPY_OF(str) \
   [](void) -> char * {                             \
     char *__strptr = (char *)nmalloc(sizeof(str)); \
-    memmove(__strptr, str, (sizeof(str) - 1));     \
-    __strptr[sizeof(str) - 1] = '\0';              \
+    memmove(__strptr, str, sizeof(str));           \
     return __strptr;                               \
   }()
 
@@ -442,8 +441,10 @@ typedef enum {
   #define MOVE_LINE_UP MOVE_LINE_UP
   MOVE_LINE_DOWN,
   #define MOVE_LINE_DOWN MOVE_LINE_DOWN
-  ENCLOSE
+  ENCLOSE,
   #define ENCLOSE ENCLOSE
+  AUTO_BRACKET
+  #define AUTO_BRACKET AUTO_BRACKET
 } undo_type;
 
 /* Structure types. */

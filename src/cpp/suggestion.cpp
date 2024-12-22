@@ -51,7 +51,7 @@ void add_char_to_suggest_buf(void) {
     if (is_word_char(c - 1, FALSE)) {
       suggest_len     = 0;
       const Ulong pos = word_index(TRUE);
-      for (int i = pos; i < openfile->current_x - 1; suggest_len++, i++) {
+      for (int i = pos; i < (openfile->current_x - 1); suggest_len++, i++) {
         suggest_buf[suggest_len] = openfile->current->data[i];
       }
       suggest_buf[suggest_len] = '\0';

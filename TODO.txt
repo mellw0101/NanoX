@@ -10,34 +10,43 @@ Change it so that when using CTRL+(UP/DOWN) it stops at indent diffs.
         better(at least for me) for example it stops at indent changes only when not empty line as well as
         stopping at start and end brackets for 'c/c++' I.E. '{', '}'.  As well as make it more friendly
         for coding as it puts the cursor in the correct indent when jumping into a bracket`ed area.
+
     STATUS:
         DONE!!!.
+
 ('2').
-Make 'prev_word' stop at eol if done from start of next line.
-Also make it more intuative to use.
+Make 'prev_word' stop at eol if done from start of next line.  Also make it more intuative to use.
 
     NOTES:
         I dont know how i want this to behave yet so i will probebly change this.
+
     STATUS:
         KINDA DONE!!.
+
 ('3').
-Fix both next_word and prev_word so that cut_next_word and 
-cut_prev_word works properly.
-    
+Fix both next_word and prev_word so that cut_next_word and cut_prev_word works properly.
+
     NOTES:
         This mostly works like in 'vs-code' right now, I will need to conduct more test`s to find sinarios
         where it missbehaves, I have`t yet found any places where it directly missbehaves thoue it just need`s
         more rules to behave exactly the way I want in all case`s.
+
     STATUS:
         KINDA DONE!!.
+
 ('4').
 Make it so that when text is marked and '/" is pressed it 'text'/"text".
-    
+
     NOTES:
         I also added so that '{', '[' and '(' puts closing brackets around marked region.
-        I.E.  '{text}', '[text]' and '(text)'.  @see @file 'cpp.cpp' @func 'enclose_marked_region'. 
+        I.E.  '{text}', '[text]' and '(text)'.  @see @file 'cpp.cpp' @func 'enclose_marked_region'.
+
+        I have also added full undo and redo support with full mark support, meaning that the marked region
+        is also saved into the undostruct and is perserved.  Exactly like vs-code.
+
     STATUS:
         DONE!!.
+
 ('5').
 Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
 
@@ -45,8 +54,12 @@ Make 'to_next_block' and 'to_prev_block' stop at '//' comments top and bottom.
         It currently stops at top when going up and bottom when going down.
         I dont yet know if i want to change it.
 
+        I have updated this system to fully support wide char`s as well as well as improved its
+        reliability and optimized it to perform the same task using less operations.
+
     STATUS:
         ALMOST DONE!!!!.
+
 ('6').
 Implement a way to close and open brackets (will probebly be very HARD!!!).
 
@@ -70,15 +83,19 @@ Implement a way to close and open brackets (will probebly be very HARD!!!).
         So this is basicly done i can visualy hide whatever lines i want i just have to figure out
         how to jump over them entirely and not interact with them at all.
 
+        This has been paused for a while now as i feelt i was not ready to fully implement this and i will
+        try again soon but like i said the hiding of lines is already compleat.
+
     FUNC`S OF INTREST:
         'edit_refresh'
         'draw_row'
-    
+
     STATUS:
         NOT DONE.
+
 ('7').
 Implement live syntax.
-    
+
     NOTES:
         I just need to make a system to save types and structs of function calls
         and such for help and error checking, also make the syntax highlighting of func
@@ -131,10 +148,17 @@ Implement live syntax.
 
         Var parsing needs work so that:  int this, that;  Will be parsed correctly.
         struct, class and enum parsing needs work and needs to be integrated properly so that all elements and methods
-        are stored for later error checking. 
-    
+        are stored for later error checking.
+
+        I have split this system into two parts, one handles the renering and one handles the parsing.
+        For now as far as c/cpp is conserned i can fully parse the entire include tree so that may be
+        over 1000 files for any given file depending on the includes the file has, this is very optimized
+        already as i can currently parse more then 10 times faster then clangd, given the same number of files.
+        Obviusly i currently do not parse the same number of objects, but i will soon.
+
     STATUS:
         ALMOST DONE!!.
+
 ('8').
 Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
 
@@ -155,6 +179,7 @@ Make 'ctrl+backspace' chop prev word, like most modern editors like 'vs-code'.
     
     STATUS:
         DONE!!.
+
 ('9').
 Make it possible to move one line up and down holding 'alt'.
 
@@ -165,9 +190,12 @@ Make it possible to move one line up and down holding 'alt'.
         one line up and down.  I`m very happy with how it works.  I just need
         to figure out how to make selected text stay selected after the line
         has been moved, after that it`s complete.
+
+        Fully implemnted with full undo-redo support and mark perservesion.
     
     STATUS:
         DONE!!.
+
 ('10').
 Make it possible to move all selected lines up and down one line.
 
@@ -181,9 +209,16 @@ Make it possible to move all selected lines up and down one line.
         current pos after we are done.  I think i need to make the this possible when
         moving just one line then this will be fixed, and if not I will have lerned
         how it works better.
+
+        I have almost fully implemented this now, currently I have fully implemted
+        all things related to it, that is full undo-redo support as well as full
+        mark perservesion, the only thing that remains is to implement the functionality
+        where if the start or end of the marked region is at index 0 that line does
+        not get included.
     
     STATUS:
-        NOT DONE.
+        ALMOST DONE.
+
 ('11').
 Make auto bracket placement and proper indent if enter is pressed between '{}',
     
@@ -200,23 +235,28 @@ Make auto bracket placement and proper indent if enter is pressed between '{}',
         Was not that hard i just have to decide how i want the undo to work, in one go or two meaning
         undo the indent then separating or just return directly in one go.  I also added a check where
         it indents one if pressing enter when 'prev char' == '{' and 'next char' != '}'.
-    
-    STATUS:
-        DONE!!.
-('12').
-Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace
-is pressed directly after remove both char`s.
 
-    NOTES:
-        I added so that '<' so that creates a '>' if after #include.
-        This will be improved for edge case`s 
-        when found so it is not yet done.
+        I need to implement full undo-redo support in a way where this is considered one action instead of
+        3 seperate once.
 
     STATUS:
         ALMOST DONE!!.
+
+('12').
+Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace is pressed directly after remove both char`s.
+
+    NOTES:
+        I added so that '<' so that creates a '>' if after #include.
+        This will be improved for edge case`s when found so it is not yet done.
+
+        This is mostly perfect now, full undo-redo support has been added and
+        full mark perservesion is also implemented.
+
+    STATUS:
+        ALMOST DONE!!.
+
 ('13').
-Make '^Bsp' and '^Del' remove all spaces if more then one space to next/prev
-word, like 'vs-code'.
+Make '^Bsp' and '^Del' remove all spaces if more then one space to next/prev word, like 'vs-code'.
 
     NOTES:
         This was quite fun to be honest I remade the function 8 times and
@@ -225,12 +265,13 @@ word, like 'vs-code'.
 
     STATUS:
         DONE!!.  FOR NOW.
+
 ('14').
-Extend functionality of execute so you can do more when using '^E', for example
-run formater and such.
+Extend functionality of execute so you can do more when using '^E', for example run formater and such.
 
     STATUS:
         NOT DONE.
+
 ('15').
 Create a system to find header file`s based on the file they are found in.
     
@@ -239,11 +280,17 @@ Create a system to find header file`s based on the file they are found in.
         all files in the folder that the current file is in for local(") header
         files.  And for global(<) i will just parse the entire '/usr/include/'
         folder.
-    
+
+        I will also add error checking to this as i have developed a system to fully
+        parse all files in a dir, incluing all sub-dirs as well.  This will enable me
+        to fully implement error checking, that is checking if a file exist and it will
+        be extreamly fast.
+
     STATUS:
         NOT DONE.
+
 ('16').
-Multithreding just dropped bois!!!
+Add full multithreding support and a async way to operate things.
 
     NOTES:
         Now this is amazing i coded this for 9 hours and it worked when i tested
@@ -329,6 +376,7 @@ Multithreding just dropped bois!!!
 
     STATUS:
         OBVIUSLY NOT DONE BUT NO ERRORS AT ALL!!
+
 ('17').
 Create a rendering engine.
 
@@ -488,11 +536,16 @@ Create a rendering engine.
 
     STATUS:
         NOT DONE.  But started and implemented.
+
 ('18').
 Implement a way to search for header files.
 
+    NOTES:
+        This will be done soon.
+
     STATUS:
         NOT DONE.
+
 ('19').
 Implement GOOD methods for the line struct.
 
@@ -501,18 +554,22 @@ Implement GOOD methods for the line struct.
 
     STATUS:
         NOT DONE.
+
 ('20').
 Create suggestion system.
 
     NOTES:
-        The system is very basic and just shows one suggestion for.  It also inject`s the suggestion into the current
-        line and pos correctly when the user presses enter.
+        The system is very basic and just shows one suggestion for.  It also inject`s
+        the suggestion into the current line and pos correctly when the user presses enter.
+
+        I have waited with this a while as i want to parse more correct data before i start
+        this.  As well as making this a fully async routine.
 
     STATUS:
         IMPLEMENTED, NOT DONE.
+
 ('21').
-Implement a real parent and bracket color system based on nesting rather
-then just on indent.
+Implement a real parent and bracket color system based on nesting rather then just on indent.
 
     NOTES:
         I have a plan on how to implement this as i have already made the
@@ -524,6 +581,7 @@ then just on indent.
 
     STATUS:
         DONE!!, But not yet implemented.
+
 ('22').
 Make GUI.
 
@@ -540,11 +598,13 @@ Make GUI.
 
     STATUS:
         NOT STARTED YET.
+
 ('23').
 Add a 'c/cpp' formatter that formats on save.
 
     STATUS:
         NOT STARTED YET.
+
 ('24').
 Fully render defines.
 
@@ -747,6 +807,7 @@ Fully render defines.
         retrieve_file_as_lines        : Mean = 0.0322359 ms, Stddev = 0.0544763 ms,    Min = 0.00721 ms,    Max = 0.548041 ms,  Count = 184
         syntax_check_file             : Mean = 71.0182 ms, Stddev = 0 ms,    Min = 71.0182 ms,    Max = 71.0182 ms,  Count = 1
         update_line                   : Mean = 0.00199175 ms, Stddev = 0.00135052 ms,    Min = 0.00061 ms,    Max = 0.01906 ms,  Count = 3906
+
 ('25').
 Implement a filetype for 'NanoX' configuration.  As well as real-time syntax for this format as well as FULL error handeling live.
 
@@ -759,28 +820,15 @@ Implement a filetype for 'NanoX' configuration.  As well as real-time syntax for
       .nxconf
     I think that '.nxcfg' is what i will use but we will see.
 
+    I have fully implemented a config file that is read async, by a file listener i made
+    this makes live updating possible while editing the config file.  This will also make it
+    possible to add a options menu and have it be persistent and live.
+
   STATUS:
-    Not started yet.
-
-NCURSES_HELP:
-    'wattron' turns on an attribute for a 'WINDOW*'. 
-
-NOTES:
-    constexpr_atoi is slower then atoi.
-    constexpr_tolower is faster then tolower.
-    constexpr_strcasecmp is faster then strcasecmp.
-
-OPTIMIZE:
-    #pragma unroll 4.  Can be used to tell the compiler to unroll a loop.
-    #pragma omp simd.  Can be used to tell the compiler to try to vectorize the loop. 
+    NOT DONE.
 
 ('26').
 Implement CTRL+ENTER so that it goes to newline from the end of the line and, CTRL+SHIFT+ENTER goes to newline from start of line then moves up once.  Like in vs-code.
 
 	STATUS:
 		Not started yet.
-
-('27').
-Change move_lines_(up/down) to use get_range and also so it properly moves correctly based on mark.
-
-        
