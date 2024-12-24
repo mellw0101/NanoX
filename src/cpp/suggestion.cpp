@@ -151,67 +151,73 @@ void add_char_to_suggest_buf(void) {
 /* Draw current suggestion if found to the suggest window. */
 void draw_suggest_win(void) {
   if (list_of_completions) {
-    completionstruct *completion;
-    Ulong width, height = 0, posx, posy, wordlen, top_margin, bot_margin, count = 0;
-    bool list_up;
-    top_margin = openfile->cursor_row;
-    bot_margin = (editwinrows - openfile->cursor_row - 1);
-    completion = list_of_completions;
-    while (completion) {
-      ++count;
-      completion = completion->next;
-    }
-    /* Orient the list where it fits the best. */
-    if (top_margin > bot_margin && count > bot_margin) {
-      list_up = TRUE;
+    if (ISSET(SUGGEST_INLINE)) {
+      RENDR(SUGGEST, list_of_completions->word);
+      return;
     }
     else {
-      list_up = FALSE;
-    }
-    /* Calculate height. */
-    if (list_up) {
-      if (count > top_margin) {
-        height = top_margin;
-      }
-      else {
-        height = count;
-      }
-    }
-    else {
-      if (count > bot_margin) {
-        height = bot_margin;
-      }
-      else {
-        height = count;
-      }
-    }
-    completion = list_of_completions;
-    /* Calculate width and height of the entire window. */
-    for (Uint i = 0; i < height; ++i) {
-      wordlen = (breadth(completion->word) + 2);
-      if (wordlen > width) {
-        width = wordlen;
-      }
-      completion = completion->next;
-    }
-    posx = (xplustabs() + margin - suggest_len - 1);
-    posy = (!list_up ? (openfile->cursor_row + 1) : (openfile->cursor_row - height));
-    suggestwin = newwin(height, width, posy, posx);
-    completion = list_of_completions;
-    /* Render the list in the correct order, starting with the first completion closest to the cursor. */
-    if (list_up) {
-      for (Ulong i = (height - 1); completion && i >= 0; --i) {
-        mvwprintw(suggestwin, i, 1, "%s", completion->word);
+      completionstruct *completion;
+      Ulong width, height = 0, posx, posy, wordlen, top_margin, bot_margin, count = 0;
+      bool list_up;
+      top_margin = openfile->cursor_row;
+      bot_margin = (editwinrows - openfile->cursor_row - 1);
+      completion = list_of_completions;
+      while (completion) {
+        ++count;
         completion = completion->next;
       }
-    }
-    else {
-      for (Ulong i = 0; completion && i < height; ++i) {
-        mvwprintw(suggestwin, i, 1, "%s", completion->word);
+      /* Orient the list where it fits the best. */
+      if (top_margin > bot_margin && count > bot_margin) {
+        list_up = TRUE;
+      }
+      else {
+        list_up = FALSE;
+      }
+      /* Calculate height. */
+      if (list_up) {
+        if (count > top_margin) {
+          height = top_margin;
+        }
+        else {
+          height = count;
+        }
+      }
+      else {
+        if (count > bot_margin) {
+          height = bot_margin;
+        }
+        else {
+          height = count;
+        }
+      }
+      completion = list_of_completions;
+      /* Calculate width and height of the entire window. */
+      for (Uint i = 0; i < height; ++i) {
+        wordlen = (breadth(completion->word) + 2);
+        if (wordlen > width) {
+          width = wordlen;
+        }
         completion = completion->next;
       }
+      posx = (xplustabs() + margin - suggest_len - 1);
+      posy = (!list_up ? (openfile->cursor_row + 1) : (openfile->cursor_row - height));
+      suggestwin = newwin(height, width, posy, posx);
+      completion = list_of_completions;
+      /* Render the list in the correct order, starting with the first completion closest to the cursor. */
+      if (list_up) {
+        for (Ulong i = (height - 1); completion && i >= 0; --i) {
+          mvwprintw(suggestwin, i, 1, "%s", completion->word);
+          completion = completion->next;
+        }
+      }
+      else {
+        for (Ulong i = 0; completion && i < height; ++i) {
+          mvwprintw(suggestwin, i, 1, "%s", completion->word);
+          completion = completion->next;
+        }
+      }
+      wrefresh(suggestwin);
     }
-    wrefresh(suggestwin);
   }
 }
 

@@ -1306,6 +1306,9 @@ int main(int argc, char **argv) {
   SET(LINE_NUMBERS);
   SET(SUGGEST);
   SET(SUGGEST_INLINE);
+  if (ISSET(SUGGEST_INLINE)) {
+    NETLOG("SUGGEST_INLINE is set.");
+  }
   /* This is my new system for live syntax, and it`s fucking fast. */
   SET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
   /* If the executable's name starts with 'r', activate restricted mode. */
