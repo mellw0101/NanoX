@@ -290,7 +290,7 @@ using std::vector;
 #define STRLTRLEN(str) (sizeof(str) - 1)
 /* Make copy of a string literal. */
 #define STRLTR_COPY_OF(str)                        \
-  [](void) _NO_EXCEPT -> char * {                             \
+  [](void) _NO_EXCEPT -> char * {                  \
     char *__strptr = (char *)nmalloc(sizeof(str)); \
     memcpy(__strptr, str, sizeof(str));            \
     return __strptr;                               \

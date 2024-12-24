@@ -380,9 +380,9 @@ bool changes_something(functionptrtype f);
 void inject(char *burst, Ulong count);
 
 /* Most functions in 'prompt.cpp'. */
-Ulong get_statusbar_page_start(Ulong base, Ulong column);
-void  put_cursor_at_end_of_answer(void);
-void  add_or_remove_pipe_symbol_from_answer(void);
+Ulong get_statusbar_page_start(Ulong base, Ulong column) _NO_EXCEPT;
+void  put_cursor_at_end_of_answer(void) _NO_EXCEPT;
+void  add_or_remove_pipe_symbol_from_answer(void) _NO_EXCEPT;
 int   do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg, ...);
 int   ask_user(bool withall, const char *question);
 
@@ -456,6 +456,7 @@ void  do_linter(void);
 void  do_formatter(void);
 void  count_lines_words_and_characters(void);
 void  do_verbatim_input(void);
+char *copy_completion(char *text);
 void  complete_a_word(void);
 char *lower_case_word(const char *str);
 
@@ -478,7 +479,7 @@ bool        is_separate_word(Ulong position, Ulong length, const char *buf) _NO_
 void       *nmalloc(const Ulong howmuch) _NO_EXCEPT __returns_nonnull;
 void       *nrealloc(void *ptr, const Ulong howmuch) _NO_EXCEPT __returns_nonnull __nonnull((1));
 #define     arealloc(ptr, howmuch) (decltype(ptr))nrealloc(ptr, howmuch)
-char       *mallocstrcpy(char *dest, const char *src);
+char       *mallocstrcpy(char *dest, const char *src) _NO_EXCEPT;
 char       *measured_copy(const char *string, Ulong count) _NO_EXCEPT __returns_nonnull __nonnull((1));
 char       *copy_of(const char *string) _NO_EXCEPT __returns_nonnull __nonnull((1));
 char       *measured_memmove_copy(const char *string, const Ulong count) _NO_EXCEPT __returns_nonnull __nonnull((1));
@@ -502,7 +503,6 @@ char       *alloc_str_free_substrs(char *str_1, char *str_2) _NO_EXCEPT __nonnul
 void        append_str(char **str, const char *appen_str);
 char       *alloced_current_file_dir(void);
 char       *alloced_full_current_file_dir(void);
-Ulong       word_index(bool prev);
 void        alloced_remove_at(char **str, int at);
 const char *word_strstr(const char *data, const char *needle);
 char      **retrieve_exec_output(const char *cmd, Uint *n_lines);
@@ -648,6 +648,7 @@ Uint         last_strchr(const char *str, const char ch, Uint maxlen);
 char        *memmove_concat(const char *s1, const char *s2);
 const char  *substr(const char *str, Ulong end_index);
 Ulong        get_prev_word_start_index(const char *line, const Ulong cursor_x) _NO_EXCEPT __nonnull((1)) __warn_unused;
+Ulong        get_cursor_prev_word_start_index(void) _NO_EXCEPT;
 char        *get_prev_word(const char *cursorline, const Ulong cursor_x, Ulong *wordlen) __nonnull((1));
 char        *get_prev_cursor_word(Ulong *wordlen);
 

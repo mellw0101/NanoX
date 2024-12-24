@@ -359,9 +359,16 @@ bool open_buffer(const char *filename, bool new_one) {
     find_and_prime_applicable_syntax();
     syntax_check_file(openfile);
     if (openfile->type.is_set<C_CPP>() || openfile->type.is_set<BASH>()) {
+      /* Add a new file listener, so we can reindex when the file is saved. */
       file_listener_t *listener = file_listener.add_listener(openfile->filename);
-      listener->set_event_callback(IN_CLOSE_WRITE, NULL, [](void *) {
-        enqueue_callback([](void *) { LSP->index_file(openfile->filename, TRUE); }, NULL);
+      /* Pass the ptr to the filename. */
+      listener->set_event_callback(IN_CLOSE_WRITE, openfile->filename, [](void *arg) {
+        char *filename = (char *)arg;
+        /* When the event is detected, enqueue a callback to the main thread to reindex and pass the filename ptr. */
+        enqueue_callback([](void *arg) {
+          char *filename = (char *)arg;
+          LSP->index_file(filename, TRUE);
+        }, filename);
       });
       listener->start_listening();
       LSP->index_file(openfile->filename);
@@ -1761,8 +1768,7 @@ int write_it_out(bool exiting, bool withprompt) {
     functionptrtype function;
     int response = 0, choice = NO;
     const char *msg;
-    const char *formatstr =
-      (openfile->fmt == DOS_FILE) ? _(" [DOS Format]") : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]") : "";
+    const char *formatstr = (openfile->fmt == DOS_FILE) ? _(" [DOS Format]") : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]") : "";
     const char *backupstr = ISSET(MAKE_BACKUP) ? _(" [Backup]") : "";
     /* When the mark is on, offer to write the selection to disk, but not when in restricted
      * mode, because it would allow writing to a file not specified on the command line. */
@@ -1860,8 +1866,7 @@ int write_it_out(bool exiting, bool withprompt) {
           do_warning = name_exists;
         }
         else {
-          do_warning =
-            (strcmp((!full_answer) ? answer : full_answer, (!full_filename) ? openfile->filename : full_filename) != 0);
+          do_warning = (strcmp((!full_answer) ? answer : full_answer, (!full_filename) ? openfile->filename : full_filename) != 0);
         }
         free(full_filename);
         free(full_answer);

@@ -327,7 +327,7 @@ void *nrealloc(void *section, const Ulong howmuch) _NO_EXCEPT {
 }
 
 /* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
-char *mallocstrcpy(char *dest, const char *src) {
+char *mallocstrcpy(char *dest, const char *src) _NO_EXCEPT {
   const Ulong count = (strlen(src) + 1);
   dest = arealloc(dest, count);
   constexpr_strncpy(dest, src, count);
@@ -570,17 +570,9 @@ char *alloced_full_current_file_dir(void) {
   return pwd;
 }
 
-Ulong word_index(bool prev) {
-  int i = openfile->current_x;
-  if (prev) {
-    for (; i > 0 && openfile->current->data[i - 1] != ' ' && openfile->current->data[i - 1] != '\t'; i--);
-  }
-  return i;
-}
-
 void alloced_remove_at(char **str, int at) {
   int slen = strlen(*str);
-  memmove(*str + at, *str + at + 1, slen - at);
+  memmove((*str + at), (*str + at + 1), (slen - at));
 }
 
 /* Return 'NULL' if 'needle' is not found by itself. */

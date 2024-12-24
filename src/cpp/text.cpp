@@ -3208,8 +3208,8 @@ void complete_a_word(void) {
       }
       /* Add the found word to the list of completions. */
       some_word = (completionstruct *)nmalloc(sizeof(*some_word));
-      some_word->word     = completion;
-      some_word->next     = list_of_completions;
+      some_word->word = completion;
+      some_word->next = list_of_completions;
       list_of_completions = some_word;
       /* Temporarily disable wrapping so only one undo item is added. */
       UNSET(BREAK_LONG_LINES);

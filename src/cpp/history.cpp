@@ -439,7 +439,7 @@ void update_poshistory(void) {
   /* If we didn't find it, make a new node; otherwise, if we're
    * not at the end, move the matching one to the end. */
   if (!theone) {
-    theone           = (poshiststruct *)nmalloc(sizeof(poshiststruct));
+    theone = (poshiststruct *)nmalloc(sizeof(poshiststruct));
     theone->filename = copy_of(fullpath);
     if (!position_history) {
       position_history = theone;
@@ -471,7 +471,7 @@ void update_poshistory(void) {
 /* Check whether the given file matches an existing entry in the recorded last file positions.
  * If not, return 'FALSE'.  If yes, return 'TRUE' and set line and column to the retrieved values. */
 bool has_old_position(const char *file, long *line, long *column) {
-  char          *fullpath = get_full_path(file);
+  char *fullpath = get_full_path(file);
   poshiststruct *item;
   if (!fullpath) {
     return FALSE;

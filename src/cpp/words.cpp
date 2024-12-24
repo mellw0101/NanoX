@@ -378,6 +378,11 @@ Ulong get_prev_word_start_index(const char *line, const Ulong cursor_x) _NO_EXCE
   return start_index;
 }
 
+/* Return the start index of the previus word from 'openfile->current_x' in 'openfile->current->data', if any.  Otherwise return 'openfile->current_x'. */
+Ulong get_cursor_prev_word_start_index(void) _NO_EXCEPT {
+  return get_prev_word_start_index(openfile->current->data, openfile->current_x);
+}
+
 /* Return the prev word at cursor_x in line cursorline.  Otherwise return NULL when
  * there is no word * to the left.  Also asigns the length of the word to 'wordlen'. */
 char *get_prev_word(const char *line, const Ulong cursor_x, Ulong *wordlen) {

@@ -225,7 +225,7 @@ void absorb_character(int input, functionptrtype function) {
 }
 
 /* Handle any editing shortcut, and return TRUE when handled. */
-bool handle_editing(functionptrtype function) {
+static bool handle_editing(functionptrtype function) _NO_EXCEPT {
   if (function == do_left) {
     do_statusbar_left();
   }
@@ -278,7 +278,7 @@ bool handle_editing(functionptrtype function) {
 
 /* Return the column number of the first character of the answer that is displayed in the status bar when the cursor is at the given
  * column, with the available room for the answer starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
-Ulong get_statusbar_page_start(Ulong base, Ulong column) {
+Ulong get_statusbar_page_start(Ulong base, Ulong column) _NO_EXCEPT {
   if (column == base || column < (COLS - 1)) {
     return 0;
   }
@@ -291,12 +291,12 @@ Ulong get_statusbar_page_start(Ulong base, Ulong column) {
 }
 
 /* Reinitialize the cursor position in the answer. */
-void put_cursor_at_end_of_answer(void) {
+void put_cursor_at_end_of_answer(void) _NO_EXCEPT {
   typing_x = HIGHEST_POSITIVE;
 }
 
 /* Redraw the prompt bar and place the cursor at the right spot. */
-void draw_the_promptbar(void) {
+void draw_the_promptbar(void) _NO_EXCEPT {
   Ulong base   = (breadth(prompt) + 2);
   Ulong column = (base + wideness(answer, typing_x));
   Ulong the_page, end_page;
@@ -329,7 +329,7 @@ void draw_the_promptbar(void) {
 }
 
 /* Remove or add the pipe character at the answer's head. */
-void add_or_remove_pipe_symbol_from_answer(void) {
+void add_or_remove_pipe_symbol_from_answer(void) _NO_EXCEPT {
   if (answer[0] == '|') {
     memmove(answer, (answer + 1), strlen(answer));
     if (typing_x > 0) {
