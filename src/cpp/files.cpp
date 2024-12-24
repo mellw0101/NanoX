@@ -4,7 +4,7 @@
 #define RW_FOR_ALL (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 /* Add an item to the circular list of openfile structs. */
-void make_new_buffer(void) {
+void make_new_buffer(void) _NO_EXCEPT {
   openfilestruct *newnode = (openfilestruct *)nmalloc(sizeof(openfilestruct));
   if (!openfile) {
     /* Make the first buffer the only element in the list. */
@@ -51,7 +51,7 @@ void make_new_buffer(void) {
 }
 
 /* Return the given file name in a way that fits within the given space. */
-char *crop_to_fit(const char *name, int room) {
+static char *crop_to_fit(const char *name, int room) _NO_EXCEPT {
   char *clipped;
   if (breadth(name) <= room) {
     return display_string(name, 0, room, FALSE, FALSE);
@@ -69,7 +69,7 @@ char *crop_to_fit(const char *name, int room) {
 }
 
 /* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
-bool delete_lockfile(const char *lockfilename) {
+bool delete_lockfile(const char *lockfilename) _NO_EXCEPT {
   if (unlink(lockfilename) < 0 && errno != ENOENT) {
     statusline(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
     return FALSE;
@@ -165,7 +165,7 @@ bool write_lockfile(const char *lockfilename, const char *filename, bool modifie
 char *do_lockfile(const char *filename, bool ask_the_user) {
   char *namecopy     = copy_of(filename);
   char *secondcopy   = copy_of(filename);
-  Ulong locknamesize = (strlen(filename) + strlen(locking_prefix) + strlen(locking_suffix) + 3);
+  Ulong locknamesize = (strlen(filename) + STRLTRLEN(locking_prefix) + STRLTRLEN(locking_suffix) + 3);
   char *lockfilename = (char *)nmalloc(locknamesize);
   struct stat fileinfo;
   snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy), locking_suffix);
@@ -208,7 +208,7 @@ char *do_lockfile(const char *filename, bool ask_the_user) {
     as_an_at = FALSE;
     /* TRANSLATORS: The second %s is the name of the user, the third that of the editor. */
     question = (char *)_("File %s is being edited by %s (with %s, PID %s); open anyway?");
-    postedname = crop_to_fit(filename, COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) - breadth(pidstring) + 7);
+    postedname = crop_to_fit(filename, (COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) - breadth(pidstring) + 7));
     /* Allow extra space for username (14), program name (8), PID (8), and terminating \0 (1), minus the %s (2) for the file name. */
     promptstr = (char *)nmalloc(strlen(question) + 29 + strlen(postedname));
     sprintf(promptstr, question, postedname, lockuser, lockprog, pidstring);
@@ -235,7 +235,7 @@ char *do_lockfile(const char *filename, bool ask_the_user) {
 
 /* Perform a stat call on the given filename, allocating a stat struct if necessary. On success,
  * '*pstat' points to the stat's result.  On failure, '*pstat' is freed and made 'NULL'. */
-void stat_with_alloc(const char *filename, struct stat **pstat) {
+static void stat_with_alloc(const char *filename, struct stat **pstat) _NO_EXCEPT {
   !*pstat ? (*pstat = (struct stat *)nmalloc(sizeof(**pstat))) : 0;
   if (stat(filename, *pstat)) {
     free(*pstat);
@@ -244,7 +244,7 @@ void stat_with_alloc(const char *filename, struct stat **pstat) {
 }
 
 /* Verify that the containing directory of the given filename exists. */
-bool has_valid_path(const char *filename) {
+bool has_valid_path(const char *filename) _NO_EXCEPT {
   char *namecopy  = copy_of(filename);
   char *parentdir = dirname(namecopy);
   bool  validity  = FALSE;
@@ -766,7 +766,7 @@ int open_file(const char *filename, bool new_one, FILE **f) {
 // This function will return the name of the first available extension of a filename
 // (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
 // or the return value.  If no writable extension exists, we return "".
-char *get_next_filename(const char *name, const char *suffix) {
+char *get_next_filename(const char *name, const char *suffix) _NO_EXCEPT {
   Ulong wholenamelen = (strlen(name) + strlen(suffix));
   Ulong i = 0;
   char *buf;
@@ -1131,7 +1131,7 @@ void do_execute(void) {
 
 // For the given bare path (or path plus filename), return the canonical,
 // absolute path (plus filename) when the path exists, and 'NULL' when not.
-char *get_full_path(const char *origpath) {
+char *get_full_path(const char *origpath) _NO_EXCEPT {
   char *untilded, *target, *slash;
   struct stat fileinfo;
   if (!origpath) {
@@ -1258,7 +1258,7 @@ void init_operating_dir(void) {
 // Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
 // incomplete names that can grow into matches for the operating directory
 // are considered to be inside, so that tab completion will work.
-bool outside_of_confinement(const char *somepath, bool tabbing) {
+bool outside_of_confinement(const char *somepath, bool tabbing) _NO_EXCEPT {
   bool  is_inside, begins_to_be;
   char *fullpath;
   /* If no operating directory is set, there is nothing to check. */
@@ -1287,7 +1287,7 @@ void init_backup_dir(void) {
     die(_("Invalid backup directory: %s\n"), backup_dir);
   }
   free(backup_dir);
-  backup_dir = (char *)nrealloc(target, strlen(target) + 1);
+  backup_dir = arealloc(target, (strlen(target) + 1));
 }
 
 // Read all data from inn, and write it to out.  File inn must be open for
@@ -1954,7 +1954,7 @@ void do_savefile(void) {
 }
 
 /* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
-char *real_dir_from_tilde(const char *path) {
+char *real_dir_from_tilde(const char *path) _NO_EXCEPT {
   char *tilded, *retval;
   Ulong i = 1;
   if (*path != '~') {

@@ -5,47 +5,47 @@
 static bool use_utf8 = FALSE;
 
 /* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
-void utf8_init(void) {
+void utf8_init(void) _NO_EXCEPT {
   use_utf8 = TRUE;
 }
 
 /* Checks if UTF-8 support has been enabled. */
-bool using_utf8(void) {
+bool using_utf8(void) _NO_EXCEPT {
   return use_utf8;
 }
 
 /* Return 'TRUE' when the given character is some kind of letter. */
-bool is_alpha_char(const char *const c) {
+bool is_alpha_char(const char *const c) _NO_EXCEPT {
   wchar_t wc;
-  if (mbtowide(wc, c) < 0) {
+  if (mbtowide(&wc, c) < 0) {
     return FALSE;
   }
   return iswalpha(wc);
 }
 
 /* Return 'TRUE' when the given character is some kind of letter or a digit. */
-bool is_alnum_char(const char *const c) {
+bool __warn_unused is_alnum_char(const char *const c) _NO_EXCEPT {
   wchar_t wc;
-  if (mbtowide(wc, c) < 0) {
+  if (mbtowide(&wc, c) < 0) {
     return FALSE;
   }
   return iswalnum(wc);
 }
 
 /* Return 'TRUE' when the given character is space or tab or other whitespace. */
-bool is_blank_char(const char *const c) {
+bool is_blank_char(const char *const c) _NO_EXCEPT {
   wchar_t wc;
   if ((signed char)*c >= 0) {
     return (*c == ' ' || *c == '\t');
   }
-  if (mbtowide(wc, c) < 0) {
+  if (mbtowide(&wc, c) < 0) {
     return FALSE;
   }
   return iswblank(wc);
 }
 
 /* Return 'TRUE' when the given character is a control character. */
-bool is_cntrl_char(const char *const c) {
+bool is_cntrl_char(const char *const c) _NO_EXCEPT {
   if (use_utf8) {
     return (!(c[0] & 0xE0) || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
   }
@@ -55,9 +55,9 @@ bool is_cntrl_char(const char *const c) {
 }
 
 /* Return 'TRUE' when the given character is a punctuation character. */
-bool is_punct_char(const char *const c) {
+bool __warn_unused is_punct_char(const char *const c) _NO_EXCEPT {
   wchar_t wc;
-  if (mbtowide(wc, c) < 0) {
+  if (mbtowide(&wc, c) < 0) {
     return FALSE;
   }
   return iswpunct(wc);
@@ -65,7 +65,7 @@ bool is_punct_char(const char *const c) {
 
 // Return 'TRUE' when the given character is word-forming (it is alphanumeric or
 // specified in 'wordchars', or it is punctuation when allow_punct is TRUE).
-bool is_word_char(const char *const c, bool allow_punct) {
+bool is_word_char(const char *const c, bool allow_punct) _NO_EXCEPT {
   if (!*c) {
     return FALSE;
   }
@@ -87,7 +87,7 @@ bool is_word_char(const char *const c, bool allow_punct) {
 }
 
 /* Return the visible representation of control character c. */
-char control_rep(const signed char c) {
+static char __warn_unused control_rep(const signed char c) _NO_EXCEPT {
   if (c == DEL_CODE) {
     return '?';
   }
@@ -103,7 +103,7 @@ char control_rep(const signed char c) {
 }
 
 /* Return the visible representation of multibyte control character 'c'. */
-char control_mbrep(const char *const c, bool isdata) {
+char control_mbrep(const char *const c, bool isdata) _NO_EXCEPT {
   /* An embedded newline is an encoded NUL if 'isdata' is TRUE. */
   if (*c == '\n' && (isdata || as_an_at)) {
     return '@';
@@ -123,7 +123,7 @@ char control_mbrep(const char *const c, bool isdata) {
 
 // Convert the given multibyte sequence c to wide character wc, and return
 // the number of bytes in the sequence, or -1 for an invalid sequence.
-int mbtowide(wchar_t &wc, const char *const c) {
+int mbtowide(wchar_t *wc, const char *const c) _NO_EXCEPT {
   if ((signed char)*c < 0 && use_utf8) {
     Uchar v1 = (Uchar)c[0];
     Uchar v2 = (Uchar)c[1] ^ 0x80;
@@ -131,7 +131,7 @@ int mbtowide(wchar_t &wc, const char *const c) {
       return -1;
     }
     if (v1 < 0xE0) {
-      wc = (((Uint)(v1 & 0x1F) << 6) | (Uint)v2);
+      *wc = (((Uint)(v1 & 0x1F) << 6) | (Uint)v2);
       return 2;
     }
     Uchar v3 = (Uchar)c[2] ^ 0x80;
@@ -140,7 +140,7 @@ int mbtowide(wchar_t &wc, const char *const c) {
     }
     if (v1 < 0xF0) {
       if ((v1 > 0xE0 || v2 >= 0x20) && (v1 != 0xED || v2 < 0x20)) {
-        wc = (((Uint)(v1 & 0x0F) << 12) | ((Uint)v2 << 6) | (Uint)v3);
+        *wc = (((Uint)(v1 & 0x0F) << 12) | ((Uint)v2 << 6) | (Uint)v3);
         return 3;
       }
       else {
@@ -152,38 +152,38 @@ int mbtowide(wchar_t &wc, const char *const c) {
       return -1;
     }
     if ((v1 > 0xF0 || v2 >= 0x10) && (v1 != 0xF4 || v2 < 0x10)) {
-      wc = (((Uint)(v1 & 0x07) << 18) | ((Uint)v2 << 12) | ((Uint)v3 << 6) | (Uint)v4);
+      *wc = (((Uint)(v1 & 0x07) << 18) | ((Uint)v2 << 12) | ((Uint)v3 << 6) | (Uint)v4);
       return 4;
     }
     else {
       return -1;
     }
   }
-  wc = (Uint)*c;
+  *wc = (Uint)*c;
   return 1;
 }
 
 /* Return 'TRUE' when the given character occupies two cells. */
-bool is_doublewidth(const char *const ch) {
+bool is_doublewidth(const char *const ch) _NO_EXCEPT {
   wchar_t wc;
   /* Only from U+1100 can code points have double width. */
   if ((Uchar)*ch < 0xE1 || !use_utf8) {
     return FALSE;
   }
-  if (mbtowide(wc, ch) < 0) {
+  if (mbtowide(&wc, ch) < 0) {
     return FALSE;
   }
   return (wcwidth(wc) == 2);
 }
 
 /* Return 'TRUE' when the given character occupies zero cells. */
-bool is_zerowidth(const char *ch) {
+bool is_zerowidth(const char *ch) _NO_EXCEPT {
   wchar_t wc;
   /* Only from U+0300 can code points have zero width. */
   if ((Uchar)*ch < 0xCC || !use_utf8) {
     return FALSE;
   }
-  if (mbtowide(wc, ch) < 0) {
+  if (mbtowide(&wc, ch) < 0) {
     return FALSE;
   }
 #if defined(__OpenBSD__)
@@ -196,7 +196,7 @@ bool is_zerowidth(const char *ch) {
 }
 
 /* Return the number of bytes in the character that starts at *pointer. */
-int char_length(const char *const &pointer) {
+int char_length(const char *const &pointer) _NO_EXCEPT {
   if ((Uchar)*pointer > 0xC1 && use_utf8) {
     const Uchar c1 = (Uchar)pointer[0];
     const Uchar c2 = (Uchar)pointer[1];
@@ -231,26 +231,26 @@ int char_length(const char *const &pointer) {
 }
 
 /* Return the number of (multibyte) characters in the given string. */
-Ulong mbstrlen(const char *pointer) {
+Ulong mbstrlen(const char *pointer) _NO_EXCEPT {
   Ulong count = 0;
-  while (*pointer != '\0') {
+  while (*pointer) {
     pointer += char_length(pointer);
-    count++;
+    ++count;
   }
   return count;
 }
 
 /* Return the length (in bytes) of the character at the start of the given string, and return a copy of this character in *thechar. */
-int collect_char(const char *const str, char *c) {
+int collect_char(const char *const str, char *c) _NO_EXCEPT {
   const int charlen = char_length(str);
-  for (int i = 0; i < charlen; i++) {
+  for (int i = 0; i < charlen; ++i) {
     c[i] = str[i];
   }
   return charlen;
 }
 
 /* Return the length ( in bytes ) of the character at the start of the given string, and add this character's width to '*column'. */
-int advance_over(const char *const str, Ulong &column) {
+int advance_over(const char *const str, Ulong &column) _NO_EXCEPT {
   if (*str < 0 && use_utf8) {
     /* A UTF-8 upper control code has two bytes and takes two columns. */
     if ((Uchar)str[0] == 0xC2 && (signed char)str[1] < -96) {
@@ -259,7 +259,7 @@ int advance_over(const char *const str, Ulong &column) {
     }
     else {
       wchar_t wc;
-      const int charlen = mbtowide(wc, str);
+      const int charlen = mbtowide(&wc, str);
       if (charlen < 0) {
         column += 1;
         return 1;
@@ -268,7 +268,7 @@ int advance_over(const char *const str, Ulong &column) {
 #if defined(__OpenBSD__)
       *column += ((width < 0 || wc >= 0xF0000) ? 1 : width);
 #else
-      column += (width < 0) ? 1 : width;
+      column += ((width < 0) ? 1 : width);
 #endif
       return charlen;
     }
@@ -291,7 +291,7 @@ int advance_over(const char *const str, Ulong &column) {
 }
 
 /* Return the index in buf of the beginning of the multibyte character before the one at pos. */
-Ulong step_left(const char *const buf, const Ulong pos) {
+Ulong step_left(const char *const buf, const Ulong pos) _NO_EXCEPT {
   if (use_utf8) {
     Ulong before, charlen = 0;
     if (pos < 4) {
@@ -329,17 +329,17 @@ Ulong step_left(const char *const buf, const Ulong pos) {
 }
 
 /* Return the index in buf of the beginning of the multibyte character after the one at pos. */
-Ulong step_right(const char *const buf, const Ulong pos) {
+Ulong step_right(const char *const buf, const Ulong pos) _NO_EXCEPT {
   return (pos + char_length(buf + pos));
 }
 
 /* This function is equivalent to strcasecmp() for multibyte strings. */
-int mbstrcasecmp(const char *s1, const char *s2) {
+int mbstrcasecmp(const char *s1, const char *s2) _NO_EXCEPT {
   return mbstrncasecmp(s1, s2, HIGHEST_POSITIVE);
 }
 
 /* This function is equivalent to strncasecmp() for multibyte strings. */
-int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
+int mbstrncasecmp(const char *s1, const char *s2, Ulong n) _NO_EXCEPT {
   if (use_utf8) {
     wchar_t wc1, wc2;
     while (*s1 && *s2 && n > 0) {
@@ -360,12 +360,13 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
         else if (*s1 != *s2) {
           return ((int)*s1 - (int)*s2);
         }
-        s1++;
-        s2++;
-        n--;
+        ++s1;
+        ++s2;
+        --n;
         continue;
       }
-      bool bad1 = (mbtowide(wc1, s1) < 0), bad2 = (mbtowide(wc2, s2) < 0);
+      bool bad1 = (mbtowide(&wc1, s1) < 0);
+      bool bad2 = (mbtowide(&wc2, s2) < 0);
       if (bad1 || bad2) {
         if (*s1 != *s2) {
           return (int)((Uchar)*s1 - (Uchar)*s2);
@@ -380,10 +381,11 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
           return difference;
         }
       }
-      s1 += char_length(s1), s2 += char_length(s2);
+      s1 += char_length(s1);
+      s2 += char_length(s2);
       n--;
     }
-    return (n > 0) ? (int)((Uchar)*s1 - (Uchar)*s2) : 0;
+    return ((n > 0) ? (int)((Uchar)*s1 - (Uchar)*s2) : 0);
   }
   else {
     return strncasecmp(s1, s2, n);
@@ -391,7 +393,7 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) {
 }
 
 /* This function is equivalent to strcasestr() for multibyte strings. */
-char *mbstrcasestr(const char *haystack, const char *const needle) {
+char *mbstrcasestr(const char *haystack, const char *const needle) _NO_EXCEPT {
   if (use_utf8) {
     const Ulong needle_len = mbstrlen(needle);
     while (*haystack) {
@@ -408,8 +410,9 @@ char *mbstrcasestr(const char *haystack, const char *const needle) {
 }
 
 /* This function is equivalent to strstr(), except in that it scans the string in reverse, starting at pointer. */
-char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) {
-  const Ulong needle_len = strlen(needle), tail_len = strlen(pointer);
+char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) _NO_EXCEPT {
+  const Ulong needle_len = strlen(needle);
+  const Ulong tail_len   = strlen(pointer);
   if (tail_len < needle_len) {
     pointer -= (needle_len - tail_len);
   }
@@ -417,13 +420,13 @@ char *revstrstr(const char *const haystack, const char *const needle, const char
     if (strncmp(pointer, needle, needle_len) == 0) {
       return (char *)pointer;
     }
-    pointer--;
+    --pointer;
   }
   return NULL;
 }
 
 /* This function is equivalent to strcasestr(), except in that it scans the string in reverse, starting at pointer. */
-char *revstrcasestr(const char *const haystack, const char *const needle, const char *pointer) {
+static char *__warn_unused revstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _NO_EXCEPT  {
   const Ulong needle_len = strlen(needle);
   const Ulong tail_len   = strlen(pointer);
   if (tail_len < needle_len) {
@@ -436,10 +439,10 @@ char *revstrcasestr(const char *const haystack, const char *const needle, const 
     pointer--;
   }
   return NULL;
-}
+} __nonnull((1, 2, 3))
 
 /* This function is equivalent to strcasestr() for multibyte strings, except in that it scans the string in reverse, starting at pointer. */
-char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) {
+char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _NO_EXCEPT {
   if (use_utf8) {
     const Ulong needle_len = mbstrlen(needle);
     const Ulong tail_len   = mbstrlen(pointer);
@@ -456,7 +459,7 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
       if (pointer == haystack) {
         return NULL;
       }
-      pointer = haystack + step_left(haystack, pointer - haystack);
+      pointer = (haystack + step_left(haystack, (pointer - haystack)));
     }
   }
   else {
@@ -467,20 +470,20 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
 // This function is equivalent to strchr() for multibyte strings.  It is used to find the
 // first occurrence of a character in a string.  The character to find is given as a
 // multibyte string.  The function is used in justify.c to find the first space in a line.
-char *mbstrchr(const char *string, const char *const chr) {
+char *mbstrchr(const char *string, const char *const chr) _NO_EXCEPT {
   if (use_utf8) {
     bool    bad_s = FALSE;
     bool    bad_c = FALSE;
     wchar_t ws;
     wchar_t wc;
-    if (mbtowide(wc, chr) < 0) {
-      wc    = (Uchar)*chr;
+    if (mbtowide(&wc, chr) < 0) {
+      wc = (Uchar)*chr;
       bad_c = TRUE;
     }
     while (*string) {
-      const int symlen = mbtowide(ws, string);
+      const int symlen = mbtowide(&ws, string);
       if (symlen < 0) {
-        ws    = (Uchar)*string;
+        ws = (Uchar)*string;
         bad_s = TRUE;
       }
       if (ws == wc && bad_s == bad_c) {
@@ -499,7 +502,7 @@ char *mbstrchr(const char *string, const char *const chr) {
 }
 
 /* Locate, in the given string, the first occurrence of any of the characters in accept, searching forward. */
-char *mbstrpbrk(const char *str, const char *accept) {
+char *mbstrpbrk(const char *str, const char *accept) _NO_EXCEPT {
   while (*str) {
     if (mbstrchr(accept, str)) {
       return (char *)str;
@@ -511,7 +514,7 @@ char *mbstrpbrk(const char *str, const char *accept) {
 
 // Locate, in the string that starts at head, the first occurrence of any of
 // the characters in accept, starting from pointer and searching backwards.
-char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer) {
+char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer) _NO_EXCEPT {
   if (!*pointer) {
     if (pointer == head) {
       return NULL;
@@ -531,7 +534,7 @@ char *mbrevstrpbrk(const char *const head, const char *const accept, const char 
 }
 
 /* Return 'TRUE' if the given string contains at least one blank character. */
-bool has_blank_char(const char *str) {
+bool has_blank_char(const char *str) _NO_EXCEPT {
   while (*str && !is_blank_char(str)) {
     str += char_length(str);
   }
@@ -539,7 +542,7 @@ bool has_blank_char(const char *str) {
 }
 
 /* Return 'TRUE' when the given string is empty or consists of only blanks. */
-bool white_string(const char *str) {
+bool white_string(const char *str) _NO_EXCEPT {
   while (*str && (is_blank_char(str) || *str == '\r')) {
     str += char_length(str);
   }
@@ -552,22 +555,21 @@ bool white_string(const char *str) {
 
   Remove leading whitespace from the given string.
 
-void strip_leading_blanks_from(char *str) {
-  while (str && (*str == ' ' || *str == '\t')) {
-    memmove(str, str + 1, strlen(str));
+  void strip_leading_blanks_from(char *str) {
+    while (str && (*str == ' ' || *str == '\t')) {
+      memmove(str, str + 1, strlen(str));
+    }
   }
-}
  */
-
 /* Remove leading whitespace from a given string */
-void strip_leading_blanks_from(char *str) {
+void strip_leading_blanks_from(char *str) _NO_EXCEPT {
   char *start = str;
-  for (; start && (*start == '\t' || *start == ' '); start++)
+  for (; start && (*start == '\t' || *start == ' '); ++start)
     ;
   (start != str) ? memmove(str, start, (strlen(start) + 1)) : 0;
 }
 
-void strip_leading_chars_from(char *str, const char ch) {
+void strip_leading_chars_from(char *str, const char ch) _NO_EXCEPT {
   char *start = str;
   for (; start && *start == ch; start++)
     ;
@@ -575,7 +577,7 @@ void strip_leading_chars_from(char *str, const char ch) {
 }
 
 /* Works like 'strchr' except made for c/cpp code so it skips all 'string literals', 'char literals', slash and block comments. */
-const char *nstrchr_ccpp(const char *__s, const char __c) noexcept {
+const char *nstrchr_ccpp(const char *__s, const char __c) _NO_EXCEPT {
   PROFILE_FUNCTION;
   const char *end = __s;
   do {

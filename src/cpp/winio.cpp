@@ -1952,7 +1952,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
     int charlength, charwidth;
     wchar_t wc;
     /* Convert a multibyte character to a single code. */
-    charlength = mbtowide(wc, text);
+    charlength = mbtowide(&wc, text);
     /* Represent an invalid character with the Replacement Character. */
     if (charlength < 0) {
       converted[index++] = '\xEF';
@@ -2269,7 +2269,7 @@ void minibar(void) {
     else if ((Uchar)*this_position < 0x80 && using_utf8()) {
       sprintf(hexadecimal, "U+%04X", (Uchar)*this_position);
     }
-    else if (using_utf8() && mbtowide(widecode, this_position) > 0) {
+    else if (using_utf8() && mbtowide(&widecode, this_position) > 0) {
       sprintf(hexadecimal, "U+%04X", (int)widecode);
     }
     else {
@@ -2277,11 +2277,11 @@ void minibar(void) {
     }
     mvwaddstr(footwin, 0, (COLS - 23), hexadecimal);
     successor = (this_position + char_length(this_position));
-    if (*this_position && *successor && is_zerowidth(successor) && mbtowide(widecode, successor) > 0) {
+    if (*this_position && *successor && is_zerowidth(successor) && mbtowide(&widecode, successor) > 0) {
       sprintf(hexadecimal, "|%04X", (int)widecode);
       waddstr(footwin, hexadecimal);
       successor += char_length(successor);
-      if (is_zerowidth(successor) && mbtowide(widecode, successor) > 0) {
+      if (is_zerowidth(successor) && mbtowide(&widecode, successor) > 0) {
         sprintf(hexadecimal, "|%04X", (int)widecode);
         waddstr(footwin, hexadecimal);
       }
@@ -2310,7 +2310,7 @@ void minibar(void) {
 }
 
 /* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there. */
-void statusline(message_type importance, const char *msg, ...) {
+void statusline(message_type importance, const char *msg, ...) _NO_EXCEPT {
   static Ulong start_col = 0;
   bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
   char *compound, *message;

@@ -321,7 +321,7 @@ void add_to_funcs(functionptrtype function, const int menus, const char *tag, co
 }
 
 /* Parse the given keystring and return the corresponding keycode, or return -1 when the string is invalid. */
-int keycode_from_string(const char *keystring) {
+int keycode_from_string(const char *keystring) _NO_EXCEPT {
   if (keystring[0] == '^') {
     if (keystring[2] == '\0') {
       if (keystring[1] == '/' || keystring[1] == '-') {
@@ -403,8 +403,8 @@ void add_to_sclist(const int menus, const char *scstring, const int keycode, fun
 }
 
 /* Return the first shortcut in the list of shortcuts that, matches the given function in the given menu. */
-const keystruct *first_sc_for(const int menu, functionptrtype function) {
-  for (keystruct *sc = sclist; sc != NULL; sc = sc->next) {
+const keystruct *first_sc_for(const int menu, functionptrtype function) _NO_EXCEPT {
+  for (keystruct *sc = sclist; sc; sc = sc->next) {
     if ((sc->menus & menu) && sc->func == function && sc->keystr[0]) {
       return sc;
     }
@@ -431,7 +431,7 @@ Ulong shown_entries_for(const int menu) {
 }
 
 /* Return the first shortcut in the current menu that matches the given input. */
-const keystruct *get_shortcut(const int keycode) {
+const keystruct *get_shortcut(const int keycode) _NO_EXCEPT {
   /* Plain characters and upper control codes cannot be shortcuts. */
   if (!meta_key && 0x20 <= keycode && keycode <= 0xFF) {
     return NULL;
@@ -456,7 +456,7 @@ const keystruct *get_shortcut(const int keycode) {
 }
 
 /* Return a pointer to the function that is bound to the given key. */
-functionptrtype func_from_key(const int keycode) {
+functionptrtype func_from_key(const int keycode) _NO_EXCEPT {
   const keystruct *sc = get_shortcut(keycode);
   return (sc ? sc->func : NULL);
 }
@@ -1082,9 +1082,4 @@ void shortcut_init(void) {
   add_to_sclist(MMAIN, "", KEY_SIC, do_insertfile, 0);
   /* Catch and ignore bracketed paste marker keys. */
   add_to_sclist((MMOST | MBROWSER | MHELP) | MYESNO, "", BRACKETED_PASTE_MARKER, do_nothing, 0);
-}
-
-/* Return the textual description that corresponds to the given flag. */
-const char *epithet_of_flag(const Uint flag) {
-  return &epithetOfFlagMap[flag].value[0];
 }

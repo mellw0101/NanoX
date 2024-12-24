@@ -541,10 +541,9 @@ void render_preprossesor(void) {
     if (end == start) {
       return;
     }
-    current_word   = measured_copy(start, (end - start));
-    const int type = hash_string(current_word);
-    switch (type) {
-      case define_hash : {
+    current_word = measured_copy(start, (end - start));
+    switch (hash_string(current_word)) {
+      case hash_string("define"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         ADV_PTR(end, (*end == ' ' || *end == '\t'));
         if (!*end) {
@@ -553,39 +552,39 @@ void render_preprossesor(void) {
         rendr_define((end - line->data));
         break;
       }
-      case if_hash : {
+      case hash_string("if"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         ADV_PTR(end, (*end == ' ' || *end == '\t'));
         rendr_if_preprosses((end - line->data));
         break;
       }
-      case endif_hash : {
+      case hash_string("endif"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         break;
       }
-      case ifndef_hash : {
+      case hash_string("ifndef"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         get_next_word(&start, &end);
         RENDR(R, FG_VS_CODE_BLUE, start, end);
         break;
       }
-      case pragma_hash : {
+      case hash_string("pragma"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         get_next_word(&start, &end);
         RENDR(R, FG_LAGOON, start, end);
         break;
       }
-      case ifdef_hash : {
+      case hash_string("ifdef"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         get_next_word(&start, &end);
         RENDR(R, FG_VS_CODE_BLUE, start, end);
         break;
       }
-      case else_hash : {
+      case hash_string("else"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         break;
       }
-      case include_hash : {
+      case hash_string("include"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         ADV_PTR(end, (*end == ' ' || *end == '\t'));
         if (end != start) {
@@ -593,7 +592,7 @@ void render_preprossesor(void) {
         }
         break;
       }
-      case "undef"_uint_hash : {
+      case hash_string("undef"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         get_next_word(&start, &end);
         RENDR(R, FG_VS_CODE_BLUE, start, end);

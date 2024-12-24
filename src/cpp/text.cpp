@@ -474,7 +474,7 @@ void do_block_comment(void) {
 }
 
 /* Return TRUE when cursor is after '{' and directly at '}'. */
-bool is_between_brackets(linestruct *line, Ulong posx) {
+bool is_between_brackets(const linestruct *line, const Ulong posx) {
   if (posx == 0 || line->data[posx - 1] != '{' || line->data[posx] != '}') {
     return FALSE;
   }
@@ -482,14 +482,14 @@ bool is_between_brackets(linestruct *line, Ulong posx) {
 }
 
 /* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
-void auto_bracket(linestruct *line, Ulong posx) {
+void auto_bracket(linestruct *line, const Ulong posx) {
   linestruct *middle = make_new_node(line);
   linestruct *end    = make_new_node(middle);
   splice_node(line, middle);
   splice_node(middle, end);
   renumber_from(middle);
-  Ulong indentlen = indent_length(line->data);
-  Ulong lenleft = strlen(line->data + posx);
+  const Ulong indentlen = indent_length(line->data);
+  const Ulong lenleft = strlen(line->data + posx);
   middle->data = (char *)nmalloc(indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 1);
   end->data    = (char *)nmalloc(indentlen + lenleft + 1);
   /* Set up the middle line. */
@@ -3119,22 +3119,22 @@ char *copy_completion(char *text) {
 /* Look at the fragment the user has typed, then search all buffers for the first word that starts with this fragment,
  * and tentatively complete the fragment.  If the user hits 'Complete' again, search and paste the next possible completion. */
 void complete_a_word(void) {
+  PROFILE_FUNCTION;
   /* The buffer that is being searched for possible completions. */
   static openfilestruct *scouring = NULL;
   /* A linked list of the completions that have been attempted. */
   static completionstruct *list_of_completions;
   /* The x position in `pletion_line` of the last found completion. */
-  static int pletion_x        = 0;
-  bool       was_set_wrapping = ISSET(BREAK_LONG_LINES);
-  Ulong      start_of_shard;
-  Ulong      shard_length = 0;
-  char      *shard;
+  static int pletion_x = 0;
+  bool  was_set_wrapping = ISSET(BREAK_LONG_LINES);
+  Ulong shard_length = 0;
+  char *shard;
   /* If this is a fresh completion attempt... */
   if (!pletion_line) {
     /* Clear the list of words of a previous completion run. */
     while (list_of_completions) {
       completionstruct *dropit = list_of_completions;
-      list_of_completions      = list_of_completions->next;
+      list_of_completions = list_of_completions->next;
       free(dropit->word);
       free(dropit);
     }
@@ -3152,42 +3152,29 @@ void complete_a_word(void) {
     do_undo();
   }
   /* Find the start of the fragment that the user typed. */
-  start_of_shard = openfile->current_x;
-  while (start_of_shard > 0) {
-    Ulong oneleft = step_left(openfile->current->data, start_of_shard);
-    if (!is_word_char(&openfile->current->data[oneleft], FALSE)) {
-      break;
-    }
-    start_of_shard = oneleft;
-  }
+  shard = get_prev_cursor_word(&shard_length);
   /* If there is no word fragment before the cursor, do nothing. */
-  if (start_of_shard == openfile->current_x) {
+  if (!shard) {
     /* TRANSLATORS: Shown when no text is directly left of the cursor. */
     statusline(AHEM, _("No word fragment"));
     pletion_line = NULL;
     return;
   }
-  shard = (char *)nmalloc(openfile->current_x - start_of_shard + 1);
-  /* Copy the fragment that has to be searched for. */
-  while (start_of_shard < openfile->current_x) {
-    shard[shard_length++] = openfile->current->data[start_of_shard++];
-  }
-  shard[shard_length] = '\0';
   /* Run through all of the lines in the buffer, looking for shard. */
   while (pletion_line) {
     /* The point where we can stop searching for shard. */
-    long              threshold = (strlen(pletion_line->data) - shard_length - 1);
     completionstruct *some_word;
-    char             *completion;
-    Ulong             i, j;
+    long  threshold = (strlen(pletion_line->data) - shard_length - 1);
+    char *completion;
+    Ulong i, j;
     /* Traverse the whole line, looking for shard. */
-    for (i = pletion_x; (long)i < threshold; i++) {
+    for (i = pletion_x; (long)i < threshold; ++i) {
       /* If the first byte doesn't match, run on. */
       if (pletion_line->data[i] != shard[0]) {
         continue;
       }
       /* Compare the rest of the bytes in shard. */
-      for (j = 1; j < shard_length; j++) {
+      for (j = 1; j < shard_length; ++j) {
         if (pletion_line->data[i + j] != shard[j]) {
           break;
         }
@@ -3205,7 +3192,7 @@ void complete_a_word(void) {
         continue;
       }
       /* If this match is the shard itself, ignore it. */
-      if (pletion_line == openfile->current && i == openfile->current_x - shard_length) {
+      if (pletion_line == openfile->current && i == (openfile->current_x - shard_length)) {
         continue;
       }
       completion = copy_completion(pletion_line->data + i);
@@ -3215,19 +3202,19 @@ void complete_a_word(void) {
         some_word = some_word->next;
       }
       /* If we've already tried this word, skip it. */
-      if (some_word != NULL) {
+      if (some_word) {
         free(completion);
         continue;
       }
       /* Add the found word to the list of completions. */
-      some_word           = (completionstruct *)nmalloc(sizeof(completionstruct));
+      some_word = (completionstruct *)nmalloc(sizeof(*some_word));
       some_word->word     = completion;
       some_word->next     = list_of_completions;
       list_of_completions = some_word;
       /* Temporarily disable wrapping so only one undo item is added. */
       UNSET(BREAK_LONG_LINES);
       /* Inject the completion into the buffer. */
-      inject(&completion[shard_length], strlen(completion) - shard_length);
+      inject(&completion[shard_length], (strlen(completion) - shard_length));
       /* If needed, reenable wrapping and wrap the current line. */
       if (was_set_wrapping) {
         SET(BREAK_LONG_LINES);
@@ -3241,7 +3228,7 @@ void complete_a_word(void) {
     pletion_line = pletion_line->next;
     pletion_x    = 0;
     /* When at end of buffer and there is another, search that one. */
-    if (pletion_line == NULL && scouring->next != openfile) {
+    if (!pletion_line && scouring->next != openfile) {
       scouring     = scouring->next;
       pletion_line = scouring->filetop;
     }

@@ -96,7 +96,7 @@ static linestruct *errors_head = NULL;
 static linestruct *errors_tail = NULL;
 
 /* Send the gathered error messages (if any) to the terminal. */
-void display_rcfile_errors(void) {
+void display_rcfile_errors(void) _NO_EXCEPT {
   for (linestruct *error = errors_head; error; error = error->next) {
     fprintf(stderr, "%s\n", error->data);
   }

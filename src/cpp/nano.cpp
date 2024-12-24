@@ -17,7 +17,7 @@ static struct sigaction oldaction, newaction;
 main_thread_t *main_thread = NULL;
 
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'. */
-linestruct *make_new_node(linestruct *prevnode) {
+linestruct *make_new_node(linestruct *prevnode) _NO_EXCEPT {
   linestruct *newnode = (linestruct *)nmalloc(sizeof(linestruct));
   newnode->prev       = prevnode;
   newnode->next       = NULL;
@@ -36,7 +36,7 @@ linestruct *make_new_node(linestruct *prevnode) {
 }
 
 /* Splice a new node into an existing linked list of linestructs. */
-void splice_node(linestruct *afterthis, linestruct *newnode) {
+void splice_node(linestruct *afterthis, linestruct *newnode) _NO_EXCEPT {
   newnode->next = afterthis->next;
   newnode->prev = afterthis;
   if (afterthis->next) {
@@ -50,7 +50,7 @@ void splice_node(linestruct *afterthis, linestruct *newnode) {
 }
 
 /* Free the data structures in the given node */
-void delete_node(linestruct *line) {
+void delete_node(linestruct *line) _NO_EXCEPT {
   /* If the first line on the screen gets deleted, step one back. */
   if (line == openfile->edittop) {
     openfile->edittop = line->prev;
@@ -65,7 +65,7 @@ void delete_node(linestruct *line) {
 }
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
-void unlink_node(linestruct *line) {
+void unlink_node(linestruct *line) _NO_EXCEPT {
   if (line->prev) {
     line->prev->next = line->next;
   }
@@ -80,7 +80,7 @@ void unlink_node(linestruct *line) {
 }
 
 /* Free an entire linked list of linestructs. */
-void free_lines(linestruct *src) {
+void free_lines(linestruct *src) _NO_EXCEPT {
   if (!src) {
     return;
   }
@@ -119,7 +119,7 @@ linestruct *copy_buffer(const linestruct *src) {
 }
 
 /* Renumber the lines in a buffer, from the given line onwards. */
-void renumber_from(linestruct *line) {
+void renumber_from(linestruct *line) _NO_EXCEPT {
   long number = (!line->prev ? 0 : line->prev->lineno);
   while (line) {
     line->lineno = ++number;
@@ -143,20 +143,19 @@ bool in_restricted_mode(void) {
 }
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
-void suggest_ctrlT_ctrlZ(void) {
-  if (first_sc_for(MMAIN, do_execute) && first_sc_for(MMAIN, do_execute)->keycode == 0x14 &&
-      first_sc_for(MEXECUTE, do_suspend) && first_sc_for(MEXECUTE, do_suspend)->keycode == 0x1A) {
+void suggest_ctrlT_ctrlZ(void) _NO_EXCEPT {
+  if (first_sc_for(MMAIN, do_execute) && first_sc_for(MMAIN, do_execute)->keycode == 0x14
+   && first_sc_for(MEXECUTE, do_suspend) && first_sc_for(MEXECUTE, do_suspend)->keycode == 0x1A) {
     statusline(AHEM, _("To suspend, type ^T^Z"));
   }
 }
 
 // Make sure the cursor is visible, then exit from curses mode, disable
 // bracketed-paste mode, and restore the original terminal settings.
-void restore_terminal(void) {
+void restore_terminal(void) _NO_EXCEPT {
   curs_set(1);
   endwin();
-  printf("\x1B[?2004l");
-  fflush(stdout);
+  STRLTR_WRITE(STDOUT_FILENO, "\x1B[?2004l");
   tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
@@ -257,7 +256,7 @@ void emergency_save(const char *filename) {
 }
 
 /* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
-void die(const char *msg, ...) {
+void die(const char *msg, ...) /* _NO_EXCEPT */ {
   openfilestruct *firstone = openfile;
   static int stabs = 0;
   va_list ap;
@@ -290,7 +289,7 @@ void die(const char *msg, ...) {
 }
 
 /* Initialize the three window portions nano uses. */
-void window_init(void) {
+void window_init(void) _NO_EXCEPT {
   /* When resizing, first delete the existing windows. */
   if (midwin) {
     if (topwin) {
@@ -1009,10 +1008,10 @@ void suck_up_input_and_paste_it(void) {
 
 /* Insert the given short burst of bytes into the edit buffer. */
 void inject(char *burst, Ulong count) {
-  linestruct *thisline     = openfile->current;
-  Ulong       datalen      = strlen(thisline->data);
-  Ulong       original_row = 0;
-  Ulong       old_amount   = 0;
+  linestruct *thisline = openfile->current;
+  Ulong datalen = strlen(thisline->data);
+  Ulong original_row = 0;
+  Ulong old_amount = 0;
   if (ISSET(SOFTWRAP)) {
     if (openfile->cursor_row == (editwinrows - 1)) {
       original_row = chunk_for(xplustabs(), thisline);
@@ -1025,8 +1024,7 @@ void inject(char *burst, Ulong count) {
       burst[index] = '\n';
     }
   }
-  /* Only add a new undo item when the current item is not an ADD or when
-   * the current typing is not contiguous with the previous typing. */
+  /* Only add a new undo item when the current item is not an ADD or when the current typing is not contiguous with the previous typing. */
   if (openfile->last_action != ADD || openfile->current_undo->tail_lineno != thisline->lineno || openfile->current_undo->tail_x != openfile->current_x) {
     add_undo(ADD, NULL);
   }
@@ -1034,9 +1032,8 @@ void inject(char *burst, Ulong count) {
   thisline->data = arealloc(thisline->data, (datalen + count + 1));
   memmove((thisline->data + openfile->current_x + count), (thisline->data + openfile->current_x), (datalen - openfile->current_x + 1));
   strncpy(thisline->data + openfile->current_x, burst, count);
-  /* When the cursor is on the top row and not on the first chunk
-   * of a line, adding text there might change the preceding chunk
-   * and thus require an adjustment of firstcolumn. */
+  /* When the cursor is on the top row and not on the first chunk of a line, adding text
+   * there might change the preceding chunk and thus require an adjustment of firstcolumn. */
   if (thisline == openfile->edittop && openfile->firstcolumn > 0) {
     ensure_firstcolumn_is_aligned();
     refresh_needed = TRUE;
@@ -1052,10 +1049,8 @@ void inject(char *burst, Ulong count) {
   if (thisline == openfile->filebot && !ISSET(NO_NEWLINES)) {
     new_magicline();
     if (margin || (openfile->syntax && openfile->syntax->multiscore)) {
-      if (margin) {
-        if (openfile->cursor_row < editwinrows - 1) {
-          update_line(thisline->next, 0);
-        }
+      if (margin && openfile->cursor_row < (editwinrows - 1)) {
+        update_line(thisline->next, 0);
       }
     }
   }
@@ -1066,11 +1061,10 @@ void inject(char *burst, Ulong count) {
   openfile->placewewant = xplustabs();
   /* When softwrapping and the number of chunks in the current line changed, or we were
    * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
-  if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current) != old_amount ||
-                          (openfile->cursor_row == editwinrows - 1 &&
-                           chunk_for(openfile->placewewant, openfile->current) > original_row))) {
+  if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current) != old_amount
+   || (openfile->cursor_row == editwinrows - 1 && chunk_for(openfile->placewewant, openfile->current) > original_row))) {
     refresh_needed = TRUE;
-    focusing       = FALSE;
+    focusing = FALSE;
   }
   if (!refresh_needed) {
     check_the_multis(openfile->current);
@@ -1253,14 +1247,14 @@ int main(int argc, char **argv) {
   init_queue_task();
   init_event_handler();
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
-  LOUT.setOutputFile("/home/mellw/.NanoX.log");
+  LOUTPTR->setOutputFile("/home/mellw/.NanoX.log");
   logI("Starting NanoX");
   term         = getenv("TERM");
   term_program = getenv("TERM_PROGRAM");
   const char *netlogger = getenv("NETLOGGER");
   if (netlogger) {
-    NETLOGGER.enable();
-    NETLOGGER.init(netlogger, 8080);
+    NETLOGGERPTR->enable();
+    NETLOGGERPTR->init(netlogger, 8080);
   }
   NETLOGGER.send_to_server("Starting NanoX.\n");
   unix_socket_connect(UNIX_DOMAIN_SOCKET_PATH);
@@ -1513,9 +1507,9 @@ int main(int argc, char **argv) {
     init_operating_dir();
   }
   /* Set the default value for things that weren't specified. */
-  (!punct) ? punct = copy_of("!.?") : 0;
-  (!brackets) ? brackets = copy_of("\"')>]}") : 0;
-  (!quotestr) ? quotestr = copy_of("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
+  (!punct) ? punct = STRLTR_COPY_OF("!.?") : 0;
+  (!brackets) ? brackets = STRLTR_COPY_OF("\"')>]}") : 0;
+  (!quotestr) ? quotestr = STRLTR_COPY_OF("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
   /* Compile the quoting regex, and exit when it's invalid. */
   quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
   if (quoterc) {
@@ -1557,7 +1551,7 @@ int main(int argc, char **argv) {
     }
   }
   /* Initialize the search string. */
-  last_search = copy_of("");
+  last_search = STRLTR_COPY_OF("");
   UNSET(BACKWARDS_SEARCH);
   /* If tabsize wasn't specified, set its default value. */
   if (tabsize == -1) {
@@ -1710,13 +1704,13 @@ int main(int argc, char **argv) {
         }
         continue;
       }
-      char       *filename = argv[optind++];
+      char *filename = argv[optind++];
       struct stat fileinfo;
       /* If the filename contains a colon and this file does not exist, then check if the filename ends with digits
        * preceded by a colon (possibly preceded by more digits and a colon).  If there is or are such trailing
        * numbers, chop the colons plus numbers off.  The number is later used to place the cursor on that line. */
       if (ISSET(COLON_PARSING) && !givenline && strchr(filename, ':') && !givencol && stat(filename, &fileinfo) < 0) {
-        char *coda = filename + strlen(filename);
+        char *coda = (filename + strlen(filename));
       maybe_two:
         while (--coda > filename + 1 && ('0' <= *coda && *coda <= '9'));
         if (*coda == ':' && ('0' <= *(coda + 1) && *(coda + 1) <= '9')) {

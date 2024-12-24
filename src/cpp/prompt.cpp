@@ -566,7 +566,7 @@ int ask_user(bool withall, const char *question) {
     /* Color the prompt bar over its full width and display the question. */
     wattron(footwin, interface_color_pair[PROMPT_BAR]);
     mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
-    mvwaddnstr(footwin, 0, 0, question, actual_x(question, COLS - 1));
+    mvwaddnstr(footwin, 0, 0, question, actual_x(question, (COLS - 1)));
     wattroff(footwin, interface_color_pair[PROMPT_BAR]);
     wnoutrefresh(footwin);
     currmenu = MYESNO;

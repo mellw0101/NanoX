@@ -139,7 +139,13 @@ void do_close_bracket(void) {
 }
 
 void do_parse(void) {
-  PROFILE_FUNCTION;
+  Ulong wordlen;
+  char *cursorword = get_prev_cursor_word(&wordlen);
+  if (cursorword) {
+    NETLOG("Cursor word: '%s'.\n", cursorword);
+    free(cursorword);
+  }
+  /* PROFILE_FUNCTION;
   if (openfile->type.is_set<C_CPP>()) {
     LSP->index_file(openfile->filename);
     unix_socket_debug("got here\n");
@@ -155,7 +161,7 @@ void do_parse(void) {
   }
   else if (openfile->type.is_set<BASH>()) {
     get_env_path_binaries();
-  }
+  } */
 }
 
 void do_test(void) {

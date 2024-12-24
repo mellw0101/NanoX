@@ -1,6 +1,6 @@
 #include "../../include/prototypes.h"
 
-inline namespace utils {
+inline namespace LSP_utils {
   const char *get_preprosses_type(linestruct *line, char **word) {
     const char *found = strchr(line->data, '#');
     if (found) {

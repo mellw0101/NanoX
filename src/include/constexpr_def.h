@@ -19,9 +19,8 @@ using std::string_view;
 #define ERROR_MESSAGE 9
 #define KEY_COMBO     10
 #define FUNCTION_TAG  11
-
 /* The color options map. */
-constexpr_map<string_view, Uchar, 12> colorOptionMap = {
+constexpr_map<string_view, Uchar, 12> color_option_map = {
   {{"titlecolor", TITLE_BAR},
     {"numbercolor", LINE_NUMBER},
     {"stripecolor", GUIDE_STRIPE},
@@ -35,6 +34,15 @@ constexpr_map<string_view, Uchar, 12> colorOptionMap = {
     {"keycolor", KEY_COMBO},
     {"functioncolor", FUNCTION_TAG}}
 };
+/* Function to retrive the color option from a string literal. */
+constexpr int retriveColorOptionFromStr(string_view str) {
+  for (const auto &[key, val] : color_option_map) {
+    if (key == str) {
+      return val;
+    }
+  }
+  return (Uint)-1;
+}
 
 /* Identifiers for the different configuration options. */
 #define OPERATINGDIR     (1 << 0)
@@ -50,7 +58,7 @@ constexpr_map<string_view, Uchar, 12> colorOptionMap = {
 #define GUIDESTRIPE      (1 << 10)
 #define CONF_OPT_TABSIZE (1 << 11)
 /* The configuration options map. */
-constexpr_map<string_view, Ushort, 12> configOptionMap = {{
+constexpr_map<string_view, Ushort, 12> config_option_map = {{
   {  "operatingdir", OPERATINGDIR     },
   {          "fill", FILL             },
   { "matchbrackets", MATCHBRACKETS    },
@@ -64,6 +72,15 @@ constexpr_map<string_view, Ushort, 12> configOptionMap = {{
   {   "guidestripe", GUIDESTRIPE      },
   {       "tabsize", CONF_OPT_TABSIZE }
 }};
+/* Function to retrive a color option from a string literal. */
+constexpr int retriveConfigOptionFromStr(string_view str) {
+  for (const auto &[key, val] : config_option_map) {
+    if (key == str) {
+      return val;
+    }
+  }
+  return 0;
+}
 
 /* Identifiers for the different syntax options. */
 #define SYNTAX_OPT_COLOR     (1 << 0)
@@ -73,7 +90,7 @@ constexpr_map<string_view, Ushort, 12> configOptionMap = {{
 #define SYNTAX_OPT_LINTER    (1 << 4)
 #define SYNTAX_OPT_FORMATTER (1 << 5)
 /* The syntax options map. */
-constexpr_map<string_view, Uchar, 6> syntaxOptionMap = {{
+constexpr_map<string_view, Uchar, 6> syntax_option_map = {{
   {     "color", SYNTAX_OPT_COLOR     },
   {    "icolor", SYNTAX_OPT_ICOLOR    },
   {   "comment", SYNTAX_OPT_COMMENT   },
@@ -81,6 +98,15 @@ constexpr_map<string_view, Uchar, 6> syntaxOptionMap = {{
   {    "linter", SYNTAX_OPT_LINTER    },
   { "formatter", SYNTAX_OPT_FORMATTER }
 }};
+/* Function to retrive a syntax option from a string literal. */
+constexpr Uchar retriveSyntaxOptionFromStr(string_view str) {
+  for (const auto &[key, val] : syntax_option_map) {
+    if (key == str) {
+      return val;
+    }
+  }
+  return 0;
+}
 
 /* Identifiers for the different flags. */
 
@@ -237,6 +263,15 @@ constexpr_map<string_view, Uchar, 94> flagOptionsMap = {{
   {                "!", USE_MAGIC       },
   {          "--magic", USE_MAGIC       }
 }};
+/* Function to retrive flags from a string literal. */
+constexpr Uint retriveFlagFromStr(string_view str) {
+  for (const auto &[key, value] : flagOptionsMap) {
+    if (key == str) {
+      return value;
+    }
+  }
+  return 0;
+}
 
 /* Identifiers for the different command line options. */
 #define CLI_OPT_IGNORERCFILE   (1 << 0)
@@ -256,35 +291,44 @@ constexpr_map<string_view, Uchar, 94> flagOptionsMap = {{
 #define CLI_OPT_GUI            (1 << 14)
 #define CLI_OPT_SAFE           (1 << 15)
 /* The command line options map. */
-constexpr_map<std::string_view, Uint, 27> cliOptionMap = {
-  {{"-I", CLI_OPT_IGNORERCFILE},
-    {"--ignorercfiles", CLI_OPT_IGNORERCFILE},
-    {"-V", CLI_OPT_VERSION},
-    {"--version", CLI_OPT_VERSION},
-    {"-h", CLI_OPT_HELP},
-    {"--help", CLI_OPT_HELP},
-    {"-Y", CLI_OPT_SYNTAX},
-    {"--syntax", CLI_OPT_SYNTAX},
-    {"-X", CLI_OPT_WORDCHARS},
-    {"--wordchars", CLI_OPT_WORDCHARS},
-    {"-f", CLI_OPT_RCFILE},
-    {"--rcfile", CLI_OPT_RCFILE},
-    {"-T", CLI_OPT_TABSIZE},
-    {"--tabsize", CLI_OPT_TABSIZE},
-    {"--rcfile", CLI_OPT_RCFILE},
-    {"-o", CLI_OPT_OPERATINGDIR},
-    {"--operatingdir", CLI_OPT_OPERATINGDIR},
-    {"-r", CLI_OPT_FILL},
-    {"--fill", CLI_OPT_FILL},
-    {"-s", CLI_OPT_SPELLER},
-    {"--speller", CLI_OPT_SPELLER},
-    {"-z", CLI_OPT_LISTSYNTAX},
-    {"--listsyntaxes", CLI_OPT_LISTSYNTAX},
-    {"-b", CLI_OPT_BREAKLONGLINES},
-    {"--breaklonglines", CLI_OPT_BREAKLONGLINES},
-    {"--gui", CLI_OPT_GUI},
-    {"--safe", CLI_OPT_SAFE}}
-};
+constexpr_map<std::string_view, Uint, 27> cliOptionMap = {{
+  {               "-I", CLI_OPT_IGNORERCFILE   },
+  {  "--ignorercfiles", CLI_OPT_IGNORERCFILE   },
+  {               "-V", CLI_OPT_VERSION        },
+  {        "--version", CLI_OPT_VERSION        },
+  {               "-h", CLI_OPT_HELP           },
+  {           "--help", CLI_OPT_HELP           },
+  {               "-Y", CLI_OPT_SYNTAX         },
+  {         "--syntax", CLI_OPT_SYNTAX         },
+  {               "-X", CLI_OPT_WORDCHARS      },
+  {      "--wordchars", CLI_OPT_WORDCHARS      },
+  {               "-f", CLI_OPT_RCFILE         },
+  {         "--rcfile", CLI_OPT_RCFILE         },
+  {               "-T", CLI_OPT_TABSIZE        },
+  {        "--tabsize", CLI_OPT_TABSIZE        },
+  {         "--rcfile", CLI_OPT_RCFILE         },
+  {               "-o", CLI_OPT_OPERATINGDIR   },
+  {   "--operatingdir", CLI_OPT_OPERATINGDIR   },
+  {               "-r", CLI_OPT_FILL           },
+  {           "--fill", CLI_OPT_FILL           },
+  {               "-s", CLI_OPT_SPELLER        },
+  {        "--speller", CLI_OPT_SPELLER        },
+  {               "-z", CLI_OPT_LISTSYNTAX     },
+  {   "--listsyntaxes", CLI_OPT_LISTSYNTAX     },
+  {               "-b", CLI_OPT_BREAKLONGLINES },
+  { "--breaklonglines", CLI_OPT_BREAKLONGLINES },
+  {            "--gui", CLI_OPT_GUI            },
+  {           "--safe", CLI_OPT_SAFE           }
+}};
+constexpr Uint retriveCliOptionFromStr(string_view str) {
+  for (const auto &[key, val] : cliOptionMap) {
+    if (key == str) {
+      return val;
+    }
+  }
+  return 0;
+}
+
 
 #define NUMBER_OF_FLAGS 51
 constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
@@ -296,7 +340,7 @@ constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";
  * USAGE:
  * - (&epithetOfFlagMap[flag].value[0]) will return the underlying ptr to the
  * description of the flag The (flag / description) map. */
-constexpr_map<Uint, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
+constexpr_map<Uint, string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
   {{DONTUSE, DEFAULT_RESPONSE_ON_NONE},
     {CASE_SENSITIVE, DEFAULT_RESPONSE_ON_NONE},
     {CONSTANT_SHOW, "Constant cursor position display"},
@@ -349,6 +393,10 @@ constexpr_map<Uint, std::string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
     {ZERO, "Hidden interface"},
     {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE}}
 };
+/* Return the textual description that corresponds to the given flag. */
+constexpr const char *const epithet_of_flag(const Uint flag) {
+  return &epithetOfFlagMap[flag].value[0];
+}
 
 /* Identifiers for the different menus. */
 typedef enum {
@@ -389,7 +437,6 @@ typedef enum {
   MSOME = (MMOST | MBROWSER)
   #define MSOME MSOME
 } menu_type;
-
 /* The menus map. */
 constexpr_map<string_view, Ushort, 16> menu_name_map = {{
   {        "main", MMAIN                               },
@@ -409,8 +456,25 @@ constexpr_map<string_view, Ushort, 16> menu_name_map = {{
   {     "gotodir", MGOTODIR                            },
   {         "all", (MMOST | MBROWSER | MHELP | MYESNO) }
 }};
+/* Function to retrive the menu option from a string literal. */
+constexpr Uint nameToMenu(string_view str) {
+  for (const auto &[key, val] : menu_name_map) {
+    if (key == str) {
+      return val;
+    }
+  }
+  return 0;
+}
+constexpr string_view menu_to_name(const Ushort value) {
+  for (const auto &[key, val] : menu_name_map) {
+    if (val == value) {
+      return key;
+    }
+  }
+  return "boooo";
+}
 
-constexpr_map<std::string_view, Uint, 14> toggleOptionMap = {
+constexpr_map<string_view, Uint, 14> toggleOptionMap = {
   {{"nohelp", NO_HELP},
     {"zero", ZERO},
     {"constantshow", CONSTANT_SHOW},
@@ -426,6 +490,14 @@ constexpr_map<std::string_view, Uint, 14> toggleOptionMap = {
     {"tabstospaces", TABS_TO_SPACES},
     {"mouse", USE_MOUSE}}
 };
+constexpr Uint retriveToggleOptionFromStr(string_view str) {
+  for (const auto &[key, value] : toggleOptionMap) {
+    if (key == str) {
+      return value;
+    }
+  }
+  return 0;
+}
 
 #define CS_STRUCT    (1 << 0)
 #define CS_ENUM      (1 << 1)
@@ -492,6 +564,14 @@ constexpr_map<std::string_view, Uint, 31> c_syntax_map = {
     {"break", CS_BREAK},
     {"do", CS_DO}}
 };
+constexpr Uint retrieve_c_syntax_type(string_view str) {
+  for (const auto &[key, val] : c_syntax_map) {
+    if (key == str) {
+      return val;
+    }
+  }
+  return 0;
+}
 
 constexpr Uint hash_string(const char *str, int h = 0) {
   return !str[h] ? 5381 : (hash_string(str, h + 1) * 33) ^ str[h];
@@ -500,18 +580,6 @@ constexpr Uint hash_string(const char *str, int h = 0) {
 constexpr Uint operator""_uint_hash(const char *str, unsigned long) {
   return hash_string(str);
 }
-
-constexpr int define_hash  = hash_string("define");
-constexpr int if_hash      = hash_string("if");
-constexpr int endif_hash   = hash_string("endif");
-constexpr int ifndef_hash  = hash_string("ifndef");
-constexpr int pragma_hash  = hash_string("pragma");
-constexpr int ifdef_hash   = hash_string("ifdef");
-constexpr int else_hash    = hash_string("else");
-constexpr int include_hash = hash_string("include");
-constexpr int undef_hash   = hash_string("undef");
-constexpr int elif_hash    = hash_string("elif");
-constexpr int warning_hash = hash_string("warning");
 
 #define PP_define  1
 #define PP_if      2
@@ -533,6 +601,14 @@ constexpr_map<std::string_view, Uint, 9> c_preprossesor_map = {
     {"include", 8},
     {"undef", 9}}
 };
+constexpr Uint retrieve_preprossesor_type(string_view str) {
+  for (const auto &[key, val] : c_preprossesor_map) {
+    if (key == str) {
+      return val;
+    }
+  }
+  return 0;
+}
 
 #define STRSTR(return_str, haystack, needle)    \
   do {                                          \

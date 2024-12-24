@@ -2,7 +2,7 @@
 
 #include "def.h"
 
-inline namespace utils {
+inline namespace LSP_utils {
   /* fd[0] is the read pipe, fd[1] is the write pipe.  Remember to exit at the end of the function and make sure it terminates. */
   template <typename Function, typename... Args>
   __inline__ int fork_function(pid_t *pid, Function &&function, Args &&...args) {

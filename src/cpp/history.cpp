@@ -184,18 +184,12 @@ bool have_statedir(void) {
       free(statepath);
     }
     if (mkdir(statedir, S_IRWXU) == -1) {
-      jot_error(N_("Unable to create directory %s: %s\n"
-                   "It is required for saving/loading "
-                   "search history or cursor positions.\n"),
-                statedir, strerror(errno));
+      jot_error(N_("Unable to create directory %s: %s\nIt is required for 'saving/loading' search history or cursor positions.\n"), statedir, strerror(errno));
       return FALSE;
     }
   }
   else if (!S_ISDIR(dirinfo.st_mode)) {
-    jot_error(N_("Path %s is not a directory and needs to be.\n"
-                 "Nano will be unable to load or save "
-                 "search history or cursor positions.\n"),
-              statedir);
+    jot_error(N_("Path %s is not a directory and needs to be.\nNano will be unable to load or save search history or cursor positions.\n"), statedir);
     return FALSE;
   }
   poshistname = concatenate(statedir, POSITION_HISTORY);

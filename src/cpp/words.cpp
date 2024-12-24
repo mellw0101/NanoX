@@ -361,6 +361,35 @@ char *memmove_concat(const char *s1, const char *s2) {
 
 const char *substr(const char *str, Ulong end_index) {
   static char buf[PATH_MAX];
-  for (uint i = 0; i < end_index; buf[i] = str[i], i++);
+  for (Uint i = 0; i < end_index; buf[i] = str[i], i++);
   return buf;
+}
+
+/* Return the start index of the previus word, if any.  Otherwise return cursor_x. */
+Ulong get_prev_word_start_index(const char *line, const Ulong cursor_x) _NO_EXCEPT {
+  Ulong start_index = cursor_x;
+  while (start_index > 0) {
+    Ulong oneleft = step_left(line, start_index);
+    if (!is_word_char(&line[oneleft], FALSE)) {
+      break;
+    }
+    start_index = oneleft;
+  }
+  return start_index;
+}
+
+/* Return the prev word at cursor_x in line cursorline.  Otherwise return NULL when
+ * there is no word * to the left.  Also asigns the length of the word to 'wordlen'. */
+char *get_prev_word(const char *line, const Ulong cursor_x, Ulong *wordlen) {
+  Ulong start_index = get_prev_word_start_index(line, cursor_x);
+  if (start_index == cursor_x) {
+    return NULL;
+  }
+  *wordlen = (cursor_x - start_index);
+  return measured_copy(&line[start_index], *wordlen);
+}
+
+/* Return the word to the left of the cursor, if any.  Otherwise return NULL.  Also assign the word length to 'wordlen'. */
+char *get_prev_cursor_word(Ulong *wordlen) {
+  return get_prev_word(openfile->current->data, openfile->current_x, wordlen);
 }

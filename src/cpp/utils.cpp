@@ -78,7 +78,7 @@ char *concatenate(const char *path, const char *name) {
 }
 
 /* Return a path copy of two strings, appending '/' to the prefix if needed. */
-char *concatenate_path(const char *prefix, const char *suffix) {
+char *concatenate_path(const char *prefix, const char *suffix) _NO_EXCEPT {
   Ulong prefix_len = strlen(prefix);
   char *ret = NULL;
   if (prefix[prefix_len - 1] == '/') {
@@ -93,10 +93,9 @@ char *concatenate_path(const char *prefix, const char *suffix) {
 }
 
 /* Return a path copy of two strings, appending '/' to the prefix if needed. */
-const char *concat_path(const char *s1, const char *s2) {
+const char *concat_path(const char *s1, const char *s2) _NO_EXCEPT {
   static char buf[PATH_MAX];
-  Ulong len_s1 = strlen(s1);
-  if (s1[len_s1 - 1] == '/') {
+  if (s1[strlen(s1) - 1] == '/') {
     snprintf(buf, sizeof(buf), "%s%s", s1, s2);
   }
   else {
@@ -106,7 +105,7 @@ const char *concat_path(const char *s1, const char *s2) {
 }
 
 /* Return the number of digits that the given integer n takes up. */
-int digits(const long n) {
+int digits(const long n) _NO_EXCEPT {
   if (n < 100000) {
     if (n < 1000) {
       if (n < 100) {
@@ -145,22 +144,8 @@ int digits(const long n) {
   }
 }
 
-/* Original code: From GNU nano 8.0.1
-  // Read an integer from the given string.  If it parses okay,
-  // store it in *result and return true; otherwise, return FALSE.
-  bool parseNum(STRING_VIEW string, long &result) {
-    char *end;
-    errno      = 0;
-    long value = constexpr_strtoll(&string[0], &end, 10);
-    if (errno == ERANGE || *end != '\0' || string[0] == '\0') {
-      return FALSE;
-    }
-    result = value;
-    return true;
-  }
-*/
-
-bool parse_num(const char *string, long *result) {
+/* Read an integer from the given string.  If it parses okay, store it in *result and return TRUE; otherwise, return FALSE. */
+bool parse_num(const char *string, long *result) _NO_EXCEPT {
   Ulong value;
   char *excess;
   /* Clear the error number so that we can check it afterward. */
@@ -170,59 +155,59 @@ bool parse_num(const char *string, long *result) {
     return false;
   }
   *result = value;
-  return true;
+  return TRUE;
 }
 
 // Read one number (or two numbers separated by comma, period, or colon)
 // from the given string and store the number(s) in *line (and *column).
-// Return 'FALSE' on a failed parsing, and 'true' otherwise.
-bool parse_line_column(const char *string, long *line, long *column) {
+// Return 'FALSE' on a failed parsing, and 'TRUE' otherwise.
+bool parse_line_column(const char *string, long *line, long *column) _NO_EXCEPT {
   const char *comma;
   char *firstpart;
   bool retval;
   while (*string == ' ') {
-    string++;
+    ++string;
   }
   comma = strpbrk(string, ",.:");
   if (!comma) {
     return parse_num(string, line);
   }
-  retval = parse_num(comma + 1, column);
+  retval = parse_num((comma + 1), column);
   if (comma == string) {
     return retval;
   }
   firstpart = copy_of(string);
   firstpart[comma - string] = '\0';
-  retval = parse_num(firstpart, line) && retval;
+  retval = (parse_num(firstpart, line) && retval);
   free(firstpart);
   return retval;
 }
 
 /* In the given string, recode each embedded NUL as a newline. */
-void recode_NUL_to_LF(char *string, Ulong length) {
+void recode_NUL_to_LF(char *string, Ulong length) _NO_EXCEPT {
   while (length > 0) {
     if (!*string) {
       *string = '\n';
     }
-    length--;
-    string++;
+    --length;
+    ++string;
   }
 }
 
 /* In the given string, recode each embedded newline as a NUL, and return the number of bytes in the string. */
-Ulong recode_LF_to_NUL(char *string) {
+Ulong recode_LF_to_NUL(char *string) _NO_EXCEPT {
   char *beginning = string;
   while (*string) {
     if (*string == '\n') {
       *string = '\0';
     }
-    string++;
+    ++string;
   }
   return (Ulong)(string - beginning);
 }
 
 /* Free the memory of the given array, which should contain len elements. */
-void free_chararray(char **array, Ulong len) {
+void free_chararray(char **array, Ulong len) _NO_EXCEPT {
   if (!array) {
     return;
   }
@@ -233,9 +218,9 @@ void free_chararray(char **array, Ulong len) {
 }
 
 /* Append an array onto 'array'.  Free 'append' but not any elements in it after call. */
-void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) {
+void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NO_EXCEPT {
   Ulong new_len = ((*len) + append_len);
-  *array = (char **)realloc(*array, (sizeof(char *) * (new_len + 1)));
+  *array = (char **)nrealloc(*array, (sizeof(char *) * (new_len + 1)));
   for (Ulong i = 0; i < append_len; ++i) {
     (*array)[(*len) + i] = append[i];
   }
@@ -245,7 +230,7 @@ void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len
 
 // Is the word starting at the given position in 'text' and of the given
 // length a separate word?  That is: is it not part of a longer word?
-bool is_separate_word(Ulong position, Ulong length, const char *text) {
+bool is_separate_word(Ulong position, Ulong length, const char *text) _NO_EXCEPT {
   const char *before = text + step_left(text, position);
   const char *after  = text + position + length;
   /* If the word starts at the beginning of the line OR the character before the word isn't a letter, and if
@@ -324,7 +309,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
 }
 
 /* Allocate the given amount of memory and return a pointer to it. */
-void *nmalloc(Ulong howmuch) {
+void *nmalloc(Ulong howmuch) _NO_EXCEPT {
   void *section = malloc(howmuch);
   if (!section) {
     die(_("NanoX is out of memory!\n"));
@@ -333,7 +318,7 @@ void *nmalloc(Ulong howmuch) {
 }
 
 /* Reallocate the given section of memory to have the given size. */
-void *nrealloc(void *section, Ulong howmuch) {
+void *nrealloc(void *section, const Ulong howmuch) _NO_EXCEPT {
   section = realloc(section, howmuch);
   if (!section) {
     die(_("NanoX is out of memory!\n"));
@@ -343,38 +328,38 @@ void *nrealloc(void *section, Ulong howmuch) {
 
 /* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
 char *mallocstrcpy(char *dest, const char *src) {
-  Ulong count = (strlen(src) + 1);
+  const Ulong count = (strlen(src) + 1);
   dest = arealloc(dest, count);
   constexpr_strncpy(dest, src, count);
   return dest;
 }
 
 /* Return an allocated copy of the first count characters of the given string, and 'null-terminate' the copy. */
-char *measured_copy(const char *string, const Ulong count) {
+char *measured_copy(const char *string, const Ulong count) _NO_EXCEPT {
   char *thecopy = (char *)nmalloc(count + 1);
   memcpy(thecopy, string, count);
   thecopy[count] = '\0';
   return thecopy;
 }
 
-char *measured_memmove_copy(const char *string, const Ulong count) {
+/* Return an allocated copy of the given string. */
+char *copy_of(const char *string) _NO_EXCEPT {
+  return measured_copy(string, strlen(string));
+}
+
+char *measured_memmove_copy(const char *string, const Ulong count) _NO_EXCEPT {
   char *thecopy = (char *)nmalloc(count + 1);
   memmove(thecopy, string, count);
   thecopy[count] = '\0';
   return thecopy;
 }
 
-/* Return an allocated copy of the given string. */
-char *copy_of(const char *string) {
-  return measured_copy(string, strlen(string));
-}
-
-char *memmove_copy_of(const char *string) {
+char *memmove_copy_of(const char *string) _NO_EXCEPT {
   return measured_memmove_copy(string, strlen(string));
 }
 
 /* Free the string at dest and return the string at src. */
-char *free_and_assign(char *dest, char *src) {
+char *free_and_assign(char *dest, char *src) _NO_EXCEPT {
   free(dest);
   return src;
 }
@@ -382,7 +367,7 @@ char *free_and_assign(char *dest, char *src) {
 // When not softwrapping, nano scrolls the current line horizontally by
 // chunks ("pages").  Return the column number of the first character
 // displayed in the edit window when the cursor is at the given column.
-Ulong get_page_start(const Ulong column) {
+Ulong get_page_start(const Ulong column) _NO_EXCEPT {
   if (!column || (column + 2) < editwincols || ISSET(SOFTWRAP)) {
     return 0;
   }
@@ -395,12 +380,12 @@ Ulong get_page_start(const Ulong column) {
 }
 
 /* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
-Ulong xplustabs(void) {
+Ulong xplustabs(void) _NO_EXCEPT {
   return wideness(openfile->current->data, openfile->current_x);
 }
 
 /* Return the index in text of the character that (when displayed) will not overshoot the given column. */
-Ulong actual_x(const char *text, Ulong column) {
+Ulong actual_x(const char *text, Ulong column) _NO_EXCEPT {
   /* From where we start walking through the text. */
   const char *start = text;
   /* The current accumulated span, in columns. */
@@ -416,7 +401,7 @@ Ulong actual_x(const char *text, Ulong column) {
 }
 
 /* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
-Ulong wideness(const char *text, Ulong maxlen) {
+Ulong wideness(const char *text, Ulong maxlen) _NO_EXCEPT {
   if (!maxlen) {
     return 0;
   }
@@ -427,7 +412,7 @@ Ulong wideness(const char *text, Ulong maxlen) {
 }
 
 /* Return the number of columns that the given text occupies. */
-Ulong breadth(const char *text) {
+Ulong breadth(const char *text) _NO_EXCEPT {
   Ulong span = 0;
   for (; *text; text += advance_over(text, span))
     ;
@@ -435,15 +420,15 @@ Ulong breadth(const char *text) {
 }
 
 /* Append a new magic line to the end of the buffer. */
-void new_magicline(void) {
+void new_magicline(void) _NO_EXCEPT {
   openfile->filebot->next       = make_new_node(openfile->filebot);
-  openfile->filebot->next->data = copy_of("");
+  openfile->filebot->next->data = STRLTR_COPY_OF("");
   openfile->filebot             = openfile->filebot->next;
   ++openfile->totsize;
 }
 
 /* Remove the magic line from the end of the buffer, if there is one and it isn't the only line in the file. */
-void remove_magicline(void) {
+void remove_magicline(void) _NO_EXCEPT {
   if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
     if (openfile->current == openfile->filebot) {
       openfile->current = openfile->current->prev;
@@ -455,15 +440,15 @@ void remove_magicline(void) {
   }
 }
 
-/* Return 'true' when the mark is before or at the cursor, and FALSE otherwise. */
-bool mark_is_before_cursor(void) {
+/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
+bool mark_is_before_cursor(void) _NO_EXCEPT {
   return
     (openfile->mark->lineno < openfile->current->lineno
     || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
 }
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
-void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) {
+void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NO_EXCEPT {
   if (mark_is_before_cursor()) {
     *top   = openfile->mark;
     *top_x = openfile->mark_x;
@@ -481,7 +466,7 @@ void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) 
 // Get the set of lines to work on -- either just the current line, or the
 // first to last lines of the marked region.  When the cursor (or mark) is
 // at the start of the last line of the region, exclude that line.
-void get_range(linestruct **top, linestruct **bot) {
+void get_range(linestruct **top, linestruct **bot) _NO_EXCEPT {
   if (!openfile->mark) {
     *top = openfile->current;
     *bot = openfile->current;
@@ -493,13 +478,13 @@ void get_range(linestruct **top, linestruct **bot) {
       *bot = (*bot)->prev;
     }
     else {
-      also_the_last = true;
+      also_the_last = TRUE;
     }
   }
 }
 
 /* Return a pointer to the line that has the given line number. */
-linestruct *line_from_number(long number) {
+linestruct *line_from_number(long number) _NO_EXCEPT {
   linestruct *line = openfile->current;
   if (line->lineno > number) {
     while (line->lineno != number) {
@@ -515,12 +500,12 @@ linestruct *line_from_number(long number) {
 }
 
 /* Count the number of characters from begin to end, and return it. */
-Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) {
+Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) _NO_EXCEPT {
   const linestruct *line;
   Ulong count = 0;
   /* Sum the number of characters (plus a newline) in each line. */
   for (line = begin; line != end->next; line = line->next) {
-    count += mbstrlen(line->data) + 1;
+    count += (mbstrlen(line->data) + 1);
   }
   /* Do not count the final newline. */
   return (count - 1);
@@ -533,15 +518,11 @@ char *alloced_pwd(void) {
     logE("Failed to get pwd.");
     die("Failed to get pwd");
   }
-  Ulong len = strlen(pwd);
-  char *ret = (char *)nmalloc(len + 1);
-  memmove(ret, pwd, len);
-  ret[len] = '\0';
-  return ret;
+  return copy_of(pwd);
 }
 
 /* Return`s malloc`ed str containing both substr`s, this also free`s both str_1 and str_2. */
-char *alloc_str_free_substrs(char *str_1, char *str_2) {
+char *alloc_str_free_substrs(char *str_1, char *str_2) _NO_EXCEPT {
   Ulong len_1 = strlen(str_1);
   Ulong len_2 = strlen(str_2);
   char *ret = (char *)nmalloc(len_1 + len_2 + 1);
@@ -703,7 +684,7 @@ string tern_statement(const string &str, string *if_true, string *if_false) {
 }
 
 /* Set the mark at specific line and column. */
-void set_mark(long lineno, Ulong pos_x) {
+void set_mark(long lineno, Ulong pos_x) _NO_EXCEPT {
   if (lineno < openfile->filebot->lineno) {
     openfile->mark = line_from_number(lineno);
   }

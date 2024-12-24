@@ -270,18 +270,37 @@ using std::vector;
 /* Used to encode both parts when enclosing a region. */
 #define ENCLOSE_DELIM ":;:"
 
+#define IS_POINTER_TYPE(x) \
+  _Generic((x), \
+    void *: 1, \
+    const void *: 1, \
+    char *: 1, \
+    const char *: 1, \
+    int *: 1, \
+    const int *: 1, \
+    long *: 1, \
+    const long *: 1, \
+    float *: 1, \
+    const float *: 1, \
+    double *: 1, \
+    const double *: 1, \
+    default: 0 \
+  )
+
 #define STRLTRLEN(str) (sizeof(str) - 1)
-/* Make copy of string literal. */
-#define STRLTR_COPY_OF(str) \
-  [](void) -> char * {                             \
+/* Make copy of a string literal. */
+#define STRLTR_COPY_OF(str)                        \
+  [](void) _NO_EXCEPT -> char * {                             \
     char *__strptr = (char *)nmalloc(sizeof(str)); \
-    memmove(__strptr, str, sizeof(str));           \
+    memcpy(__strptr, str, sizeof(str));            \
     return __strptr;                               \
   }()
 
+#define STRLTR_WRITE(fd, str) write(fd, str, (sizeof(str) - 1))
+
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
-#include "constexpr_utils.h"
+#include "constexpr_def.h"
 
 #define NOTREBOUND (first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07)
 
@@ -299,6 +318,8 @@ using std::vector;
   #define TRUE 1
   #define FALSE 0
 #endif
+
+#define _NO_EXCEPT noexcept(TRUE)
 
 /* clang-format off */
 
