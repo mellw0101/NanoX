@@ -150,43 +150,66 @@ void add_char_to_suggest_buf(void) {
 
 /* Draw current suggestion if found to the suggest window. */
 void draw_suggest_win(void) {
-  /* if (!suggest_str) {
-    return;
-  }
-  Ulong col_len = (strlen(suggest_str) + 2);
-  Ulong row_len = 1;
-  Ulong row_pos = ((openfile->cursor_row > editwinrows - 2) ? (openfile->cursor_row - row_len) : (openfile->cursor_row + 1));
-  Ulong col_pos = (xplustabs() + margin - suggest_len - 1);
-  suggestwin = newwin(row_len, col_len, row_pos, col_pos);
-  mvwprintw(suggestwin, 0, 1, "%s", suggest_str);
-  wrefresh(suggestwin);
-  if (ISSET(SUGGEST_INLINE)) {
-    RENDR(SUGGEST, suggest_str);
-  } */
-  bool list_up = FALSE;
   if (list_of_completions) {
     completionstruct *completion;
-    Ulong width  = 0;
-    Ulong height = 0;
+    Ulong width, height = 0, posx, posy, wordlen, top_margin, bot_margin, count = 0;
+    bool list_up;
+    top_margin = openfile->cursor_row;
+    bot_margin = (editwinrows - openfile->cursor_row - 1);
     completion = list_of_completions;
     while (completion) {
-      Ulong wordlen = (breadth(completion->word) + 2);
+      ++count;
+      completion = completion->next;
+    }
+    /* Orient the list where it fits the best. */
+    if (top_margin > bot_margin && count > bot_margin) {
+      list_up = TRUE;
+    }
+    else {
+      list_up = FALSE;
+    }
+    /* Calculate height. */
+    if (list_up) {
+      if (count > top_margin) {
+        height = top_margin;
+      }
+      else {
+        height = count;
+      }
+    }
+    else {
+      if (count > bot_margin) {
+        height = bot_margin;
+      }
+      else {
+        height = count;
+      }
+    }
+    completion = list_of_completions;
+    /* Calculate width and height of the entire window. */
+    for (Uint i = 0; i < height; ++i) {
+      wordlen = (breadth(completion->word) + 2);
       if (wordlen > width) {
         width = wordlen;
       }
-      if (++height > (editwinrows - (openfile->cursor_row + 2)) /* && height > (openfile->cursor_row - 1) */) {
-        list_up = FALSE;
-        break;
-      }
       completion = completion->next;
     }
-    Ulong posx = (xplustabs() + margin - suggest_len - 1);
-    Ulong posy = (!list_up ? (openfile->cursor_row + 1) : 0) /* ((openfile->cursor_row > (editwinrows - (height + 1))) ? (openfile->cursor_row - height) : (openfile->cursor_row + 1)) */;
+    posx = (xplustabs() + margin - suggest_len - 1);
+    posy = (!list_up ? (openfile->cursor_row + 1) : (openfile->cursor_row - height));
     suggestwin = newwin(height, width, posy, posx);
     completion = list_of_completions;
-    for (Ulong i = 0; completion && i < height; ++i) {
-      mvwprintw(suggestwin, i, 1, "%s", completion->word);
-      completion = completion->next;
+    /* Render the list in the correct order, starting with the first completion closest to the cursor. */
+    if (list_up) {
+      for (Ulong i = (height - 1); completion && i >= 0; --i) {
+        mvwprintw(suggestwin, i, 1, "%s", completion->word);
+        completion = completion->next;
+      }
+    }
+    else {
+      for (Ulong i = 0; completion && i < height; ++i) {
+        mvwprintw(suggestwin, i, 1, "%s", completion->word);
+        completion = completion->next;
+      }
     }
     wrefresh(suggestwin);
   }
