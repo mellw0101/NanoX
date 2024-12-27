@@ -1,6 +1,5 @@
 #include "../include/prototypes.h"
 
-#include <term.h>
 
 /* Global variables. */
 
@@ -213,7 +212,6 @@ bool gui_enabled = FALSE;
 
 const char *term = NULL;
 const char *term_program = NULL;
-bit_flag_t<8> mod_key;
 
 file_listener_handler_t file_listener;
 
@@ -308,7 +306,7 @@ void do_cancel(void) {
 }
 
 /* Add a function to the linked list of functions. */
-void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) {
+static void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) _NO_EXCEPT {
   funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
   !allfuncs ? (allfuncs = f) : (tailfunc->next = f);
   tailfunc       = f;
@@ -377,7 +375,7 @@ int keycode_from_string(const char *keystring) _NO_EXCEPT {
   }
 }
 
-void show_curses_version(void) {
+static void show_curses_version(void) _NO_EXCEPT {
   statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
 
@@ -413,19 +411,19 @@ const keystruct *first_sc_for(const int menu, functionptrtype function) _NO_EXCE
 }
 
 /* Return the number of entries that can be shown in the given menu. */
-Ulong shown_entries_for(const int menu) {
-  funcstruct *item    = allfuncs;
-  Ulong       maximum = ((COLS + 40) / 20) * 2;
-  Ulong       count   = 0;
+Ulong shown_entries_for(const int menu) _NO_EXCEPT {
+  funcstruct *item = allfuncs;
+  Ulong maximum = (((COLS + 40) / 20) * 2);
+  Ulong count = 0;
   while (count < maximum && item) {
     if (item->menus & menu) {
-      count++;
+      ++count;
     }
     item = item->next;
   }
   /* When --saveonexit is not used, widen the grid of the WriteOut menu. */
   if (menu == MWRITEFILE && !item && !first_sc_for(menu, discard_buffer)) {
-    count--;
+    --count;
   }
   return count;
 }

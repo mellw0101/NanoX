@@ -1,5 +1,7 @@
 /** @file winio.cpp */
+#include <ncursesw/ncurses.h>
 #include "../include/prototypes.h"
+#include "constexpr_def.h"
 
 #define BRANDING PACKAGE_STRING
 
@@ -92,7 +94,7 @@ void run_macro(void) {
 }
 
 /* Allocate the requested space for the keystroke. */
-void reserve_space_for(Ulong newsize) {
+void reserve_space_for(Ulong newsize) _NO_EXCEPT {
   if (newsize < capacity) {
     die(_("Too much input at once\n"));
   }
@@ -235,11 +237,11 @@ void read_keys_from(WINDOW *frame) {
   /* Restore blocking-input mode. */
   nodelay(frame, FALSE);
   /* Netlog the raw keycodes. */
-  /* NLOG("\nSequence of hex codes:");
+  /* NETLOG("\nSequence of hex codes:");
   for (Ulong i = 0; i < waiting_codes; ++i) {
-    NLOG(" %3x", key_buffer[i]);
+    NETLOG(" %3x", key_buffer[i]);
   }
-  NLOG("\n"); */
+  NETLOG("\n"); */
 #ifdef DEBUG
   fprintf(stderr, "\nSequence of hex codes:");
   for (Ulong i = 0; i < waiting_codes; i++) {
@@ -255,7 +257,7 @@ Ulong waiting_keycodes(void) {
 }
 
 /* Add the given keycode to the front of the keystroke buffer. */
-void put_back(int keycode) {
+static void put_back(int keycode) _NO_EXCEPT {
   /* If there is no room at the head of the keystroke buffer, make room. */
   if (nextcodes == key_buffer) {
     if (waiting_codes == capacity) {
@@ -264,10 +266,10 @@ void put_back(int keycode) {
     memmove((key_buffer + 1), key_buffer, (waiting_codes * sizeof(int)));
   }
   else {
-    nextcodes--;
+    --nextcodes;
   }
   *nextcodes = keycode;
-  waiting_codes++;
+  ++waiting_codes;
 }
 
 /* Set up the given expansion string to be ingested by the keyboard routines. */
@@ -316,11 +318,11 @@ int get_code_from_plantation(void) {
     else {
       length = strlen(plants_pointer);
     }
-    for (int index = (length - 1); index > 0; index--) {
+    for (int index = (length - 1); index > 0; --index) {
       put_back((Uchar)plants_pointer[index]);
     }
     plants_pointer += length;
-    return (firstbyte) ? firstbyte : ERR;
+    return ((firstbyte) ? firstbyte : ERR);
   }
 }
 
@@ -422,8 +424,8 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
             return CONTROL_LEFT;
           }
         }
-        /* Translate Shift+digit on the keypad to the digit (Esc O 2 p == Shift-0, ...),
-         * modifier+operator to the operator, and modifier+Enter to CR. */
+        /* Translate 'Shift+digit' on the keypad to the digit (Esc O 2 p == Shift-0, ...),
+         * 'modifier+operator' to the operator, and 'modifier+Enter' to CR. */
         return (seq[1] - 0x40);
       }
       break;
@@ -1021,36 +1023,39 @@ Uchar get_mod_key(void) {
 int parse_kbinput(WINDOW *frame) {
   static bool first_escape_was_alone = FALSE;
   static bool last_escape_was_alone  = FALSE;
-  static int  escapes                = 0;
-  int         keycode;
+  static int  escapes = 0;
+  int keycode;
   meta_key   = FALSE;
   shift_held = FALSE;
   /* Get one code from the input stream. */
   keycode = get_input(frame);
+  #ifdef KEY_DEBUG
+    NETLOG("%d\n", keycode);
+  #endif
   /* Check for '^Bsp'. */
   if (term) {
-    /* First we check if we are running in xterm.  And if so then check if the
-     * appropriet key was pressed, for xterm the correct keycode if '127' and for
-     * most other term`s it`s '263'.  If we detect '^Bsp' then we return 'CONTROL_BSP'. */
+    /* First we check if we are running in xterm.  And if so then check if the appropriet key was pressed. */
     if (strcmp(term, "xterm") == 0) {
-      if (keycode == 127) {
+      if (ISSET(REBIND_DELETE) && keycode == DEL_CODE) {
         return CONTROL_BSP;
+      }
+      else if (!ISSET(REBIND_DELETE) && keycode == KEY_BACKSPACE) {
+        return CONTROL_BSP;
+      }
+      else if (keycode == 8) {
+        return KEY_BACKSPACE;
       }
     }
     else {
       if (term_program && (strcmp(term_program, "vscode") == 0) && (keycode == 23)) {
         return CONTROL_BSP;
       }
-      else if (ISSET(RAW_SEQUENCES) && keycode == 8) {
-        return CONTROL_BSP;
-      }
-      else if (keycode == 263) {
+      else if (keycode == 8) {
         return CONTROL_BSP;
       }
     }
   }
-  /* For an Esc, remember whether the last two arrived by themselves.
-   * Then increment the counter, rolling around on three escapes. */
+  /* For an Esc, remember whether the last two arrived by themselves.  Then increment the counter, rolling around on three escapes. */
   if (keycode == ESC_CODE) {
     first_escape_was_alone = last_escape_was_alone;
     last_escape_was_alone  = (waiting_codes == 0);
@@ -1169,11 +1174,10 @@ int parse_kbinput(WINDOW *frame) {
       }
     }
     else if (!digit_count) {
-      /* If the first escape arrived alone but not the second, then it
-       * is a Meta keystroke; otherwise, it is an "Esc Esc control". */
+      /* If the first escape arrived alone but not the second, then it is a Meta keystroke; otherwise, it is an "Esc Esc control". */
       if (first_escape_was_alone && !last_escape_was_alone) {
         if (!shifted_metas) {
-          keycode = constexpr_tolower(keycode);
+          keycode = tolower(keycode);
         }
         meta_key = TRUE;
       }
@@ -1288,23 +1292,26 @@ int parse_kbinput(WINDOW *frame) {
     return FOREIGN_SEQUENCE;
   }
 #ifdef __linux__
-  mod_key.clear();
-  /* When not running under X, check for the bare arrow keys whether
-   * Shift/Ctrl/Alt are being held together with them. */
+  /* When not running under X, check for the bare arrow keys whether Shift/Ctrl/Alt are being held together with them. */
   Uchar modifiers = 6;
   /* Modifiers are: Alt (8), Ctrl (4), Shift (1). */
   if (on_a_vt && !mute_modifiers && ioctl(0, TIOCLINUX, &modifiers) >= 0) {
     /* Is Shift being held? */
     if (modifiers & 0x01) {
-      mod_key.set<MOD_KEY_SHIFT>();
       if (keycode == '\t') {
         return SHIFT_TAB;
       }
       if (keycode == KEY_DC && modifiers == 0x01) {
         return SHIFT_DELETE;
+        #ifdef KEY_DEBUG
+          NETLOG("keycode == KEY_DC && modifiers == 0x01\n");
+        #endif
       }
       if (keycode == KEY_DC && modifiers == 0x05) {
         return CONTROL_SHIFT_DELETE;
+        #ifdef KEY_DEBUG
+          NETLOG("keycode == KEY_DC && modifiers == 0x05\n");
+        #endif
       }
       if (!meta_key) {
         shift_held = TRUE;
@@ -1312,7 +1319,6 @@ int parse_kbinput(WINDOW *frame) {
     }
     /* Is only Alt being held? */
     if (modifiers == 0x08) {
-      mod_key.clear_and_set<MOD_KEY_ALT>();
       switch (keycode) {
         case KEY_UP : {
           return ALT_UP;
@@ -1342,7 +1348,6 @@ int parse_kbinput(WINDOW *frame) {
     }
     /* Is Ctrl being held? */
     if (modifiers & 0x04) {
-      mod_key.set<MOD_KEY_CTRL>();
       switch (keycode) {
         case KEY_UP : {
           return CONTROL_UP;
@@ -1510,6 +1515,9 @@ int get_kbinput(WINDOW *frame, bool showcursor) {
   /* Extract one keystroke from the input stream. */
   while (kbinput == ERR) {
     kbinput = parse_kbinput(frame);
+    #ifdef KEY_DEBUG
+      NETLOG("kbinput: %d\n", kbinput);
+    #endif
   }
   /* If we read from the edit window, blank the status bar when it's time. */
   if (frame == midwin) {
@@ -1522,15 +1530,15 @@ int get_kbinput(WINDOW *frame, bool showcursor) {
 /* For each consecutive call, gather the given symbol into a Unicode code point.  When it's complete
  * (with six digits, or when Space or Enter is typed), return the assembled code. Until then, return
  * PROCEED when the symbol is valid, or an error code for anything other than hexadecimal, Space, and Enter. */
-long assemble_unicode(int symbol) {
+static long assemble_unicode(int symbol) _NO_EXCEPT {
   static long unicode = 0;
   static int  digits  = 0;
-  int         outcome = PROCEED;
+  int outcome = PROCEED;
   if ('0' <= symbol && symbol <= '9') {
-    unicode = (unicode << 4) + symbol - '0';
+    unicode = ((unicode << 4) + symbol - '0');
   }
   else if ('a' <= (symbol | 0x20) && (symbol | 0x20) <= 'f') {
-    unicode = (unicode << 4) + (symbol | 0x20) - 'a' + 10;
+    unicode = ((unicode << 4) + (symbol | 0x20) - 'a' + 10);
   }
   else if (symbol == '\r' || symbol == ' ') {
     outcome = unicode;
@@ -1545,7 +1553,7 @@ long assemble_unicode(int symbol) {
   /* Show feedback only when editing, not when at a prompt. */
   if (outcome == PROCEED && currmenu == MMAIN) {
     char partial[7] = "      ";
-    sprintf(partial + 6 - digits, "%0*lX", digits, unicode);
+    sprintf((partial + 6 - digits), "%0*lX", digits, unicode);
     /* TRANSLATORS: This is shown while a six-digit hexadecimal Unicode character code (%s) is being typed in. */
     statusline(INFO, _("Unicode Input: %s"), partial);
   }
@@ -1786,30 +1794,30 @@ int get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) {
 }
 
 /* Move (in the given window) to the given row and wipe it clean. */
-void blank_row(WINDOW *window, int row) {
+void blank_row(WINDOW *window, int row) _NO_EXCEPT {
   wmove(window, row, 0);
   wclrtoeol(window);
 }
 
 /* Blank the first line of the top portion of the screen. */
-void blank_titlebar(void) {
+void blank_titlebar(void) _NO_EXCEPT {
   mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
 }
 
 /* Blank all lines of the middle portion of the screen (the edit window). */
-void blank_edit(void) {
+void blank_edit(void) _NO_EXCEPT {
   for (int row = 0; row < editwinrows; ++row) {
     blank_row(midwin, row);
   }
 }
 
 /* Blank the first line of the bottom portion of the screen. */
-void blank_statusbar(void) {
+void blank_statusbar(void) _NO_EXCEPT {
   blank_row(footwin, 0);
 }
 
 /* Wipe the status bar clean and include this in the next screen update. */
-void wipe_statusbar(void) {
+void wipe_statusbar(void) _NO_EXCEPT {
   lastmessage = VACUUM;
   if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN) {
     return;
@@ -1819,7 +1827,7 @@ void wipe_statusbar(void) {
 }
 
 /* Blank out the two help lines (when they are present). */
-void blank_bottombars(void) {
+void blank_bottombars(void) _NO_EXCEPT {
   if (!ISSET(NO_HELP) && LINES > 5) {
     blank_row(footwin, 1);
     blank_row(footwin, 2);
@@ -1827,7 +1835,7 @@ void blank_bottombars(void) {
 }
 
 /* When some number of keystrokes has been reached, wipe the status bar. */
-void blank_it_when_expired(void) {
+void blank_it_when_expired(void) _NO_EXCEPT {
   if (countdown == 0) {
     return;
   }
@@ -1842,7 +1850,7 @@ void blank_it_when_expired(void) {
 }
 
 /* Ensure that the status bar will be wiped upon the next keystroke. */
-void set_blankdelay_to_one(void) {
+void set_blankdelay_to_one(void) _NO_EXCEPT {
   countdown = 1;
 }
 
@@ -1855,7 +1863,7 @@ void set_blankdelay_to_one(void) {
  * allocated, and should be freed. If isdata is TRUE, the caller might put "<"
  * at the beginning or ">" at the end of the line if it's too long. If isprompt
  * is TRUE, the caller might put ">" at the end of the line if it's too long. */
-char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt) {
+char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt) _NO_EXCEPT {
   PROFILE_FUNCTION;
   /* The beginning of the text, to later determine the covered part. */
   const char *origin = text;
@@ -2007,7 +2015,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
 }
 
 /* Determine the sequence number of the given buffer in the circular list. */
-int buffer_number(openfilestruct *buffer) {
+static int buffer_number(openfilestruct *buffer) _NO_EXCEPT {
   int count = 1;
   while (buffer != startfile) {
     buffer = buffer->prev;
@@ -2018,12 +2026,12 @@ int buffer_number(openfilestruct *buffer) {
 
 /* Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
  * and soft-wrapping by showing corresponding letters in the given window. */
-void show_states_at(WINDOW *window) {
-  waddstr(window, ISSET(AUTOINDENT) ? (char *)"I" : (char *)" ");
-  waddstr(window, openfile->mark ? (char *)"M" : (char *)" ");
-  waddstr(window, ISSET(BREAK_LONG_LINES) ? (char *)"L" : (char *)" ");
-  waddstr(window, recording ? (char *)"R" : (char *)" ");
-  waddstr(window, ISSET(SOFTWRAP) ? (char *)"S" : (char *)" ");
+static void show_states_at(WINDOW *window) _NO_EXCEPT {
+  waddstr(window, ISSET(AUTOINDENT) ? "I" : " ");
+  waddstr(window, openfile->mark ? "M" : " ");
+  waddstr(window, ISSET(BREAK_LONG_LINES) ? "L" : " ");
+  waddstr(window, recording ? "R" : " ");
+  waddstr(window, ISSET(SOFTWRAP) ? "S" : " ");
 }
 
 /* If path is NULL, we're in normal editing mode, so display the current
@@ -2184,7 +2192,7 @@ void titlebar(const char *path) {
 }
 
 /* Draw a bar at the bottom with some minimal state information. */
-void minibar(void) {
+void minibar(void) _NO_EXCEPT {
   char *thename         = NULL;
   char *number_of_lines = NULL;
   char *ranking         = NULL;
@@ -2261,7 +2269,7 @@ void minibar(void) {
   if (ISSET(CONSTANT_SHOW) && (namewidth + tallywidth + 28) < COLS) {
     char *this_position = openfile->current->data + openfile->current_x;
     if (!*this_position) {
-      sprintf(hexadecimal, openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----");
+      sprintf(hexadecimal, (openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----"));
     }
     else if (*this_position == '\n') {
       sprintf(hexadecimal, "  0x00");
@@ -2394,12 +2402,12 @@ void statusline(message_type importance, const char *msg, ...) _NO_EXCEPT {
 }
 
 /* Display a normal message on the status bar, quietly. */
-void statusbar(const char *msg) {
+void statusbar(const char *msg) _NO_EXCEPT {
   statusline(HUSH, msg);
 }
 
 /* Warn the user on the status bar and pause for a moment, so that the message can be noticed and read. */
-void warn_and_briefly_pause(const char *msg) {
+void warn_and_briefly_pause(const char *msg) _NO_EXCEPT {
   blank_bottombars();
   statusline(ALERT, msg);
   lastmessage = VACUUM;
@@ -2408,7 +2416,7 @@ void warn_and_briefly_pause(const char *msg) {
 
 /* Write a key's representation plus a minute description of its function to the screen.  For example,
  * the key could be "^C" and its tag "Cancel". Key plus tag may occupy at most width columns. */
-void post_one_key(const char *keystroke, const char *tag, int width) {
+void post_one_key(const char *keystroke, const char *tag, int width) _NO_EXCEPT {
   wattron(footwin, interface_color_pair[KEY_COMBO]);
   waddnstr(footwin, keystroke, actual_x(keystroke, width));
   wattroff(footwin, interface_color_pair[KEY_COMBO]);
@@ -2419,12 +2427,12 @@ void post_one_key(const char *keystroke, const char *tag, int width) {
   }
   waddch(footwin, ' ');
   wattron(footwin, interface_color_pair[FUNCTION_TAG]);
-  waddnstr(footwin, tag, actual_x(tag, width - 1));
+  waddnstr(footwin, tag, actual_x(tag, (width - 1)));
   wattroff(footwin, interface_color_pair[FUNCTION_TAG]);
 }
 
 /* Display the shortcut list corresponding to menu on the last two rows of the bottom portion of the window.  The shortcuts are shown in pairs. */
-void bottombars(const int menu) {
+void bottombars(const int menu) _NO_EXCEPT {
   Ulong index     = 0;
   Ulong number    = 0;
   Ulong itemwidth = 0;
@@ -2474,7 +2482,7 @@ void place_the_cursor(void) {
   Ulong column = xplustabs();
   if (ISSET(SOFTWRAP)) {
     linestruct *line = openfile->edittop;
-    Ulong       leftedge;
+    Ulong leftedge;
     row -= chunk_for(openfile->firstcolumn, openfile->edittop);
     /* Calculate how many rows the lines from edittop to current use. */
     while (line && line != openfile->current) {
@@ -2793,16 +2801,16 @@ bool line_needs_update(const Ulong old_column, const Ulong new_column) {
 /* Try to move up nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move up, which will be zero if we completely succeeded. */
-int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) {
+int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT {
   int i;
   Ulong chunk;
   if (ISSET(SOFTWRAP)) {
     /* Recede through the requested number of chunks. */
-    for (i = nrows; i > 0; i--) {
+    for (i = nrows; i > 0; --i) {
       chunk     = chunk_for(*leftedge, *line);
       *leftedge = 0;
       if (chunk >= i) {
-        return go_forward_chunks(chunk - i, line, leftedge);
+        return go_forward_chunks((chunk - i), line, leftedge);
       }
       if (*line == openfile->filetop) {
         break;
@@ -2816,7 +2824,7 @@ int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) {
     }
   }
   else {
-    for (i = nrows; i > 0 && (*line)->prev; i--) {
+    for (i = nrows; i > 0 && (*line)->prev; --i) {
       *line = (*line)->prev;
     }
   }
@@ -2826,7 +2834,7 @@ int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) {
 /* Try to move down nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move down, which will be zero if we completely succeeded. */
-int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) {
+int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT {
   int   i;
   Ulong current_leftedge;
   bool  kickoff, end_of_line;
@@ -2954,13 +2962,13 @@ void edit_scroll(bool direction) {
 // When kickoff is TRUE, start at the beginning of the linedata; otherwise,
 // continue from where the previous call left off.  Set end_of_line to TRUE
 // when end-of-line is reached while searching for a possible breakpoint.
-Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) {
+Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NO_EXCEPT {
   /* Pointer at the current character in this line's data. */
   static const char *text;
   /* Column position that corresponds to the above pointer. */
   static Ulong column;
   /* The place at or before which text must be broken. */
-  Ulong rightside = leftedge + editwincols;
+  Ulong rightside = (leftedge + editwincols);
   /* The column where text can be broken, when there's no better. */
   Ulong breaking_col = rightside;
   /* The column position of the last seen whitespace character. */
@@ -3009,12 +3017,12 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
     }
   }
   /* Otherwise, break at the last character that doesn't overshoot. */
-  return (editwincols > 1) ? breaking_col : column - 1;
+  return ((editwincols > 1) ? breaking_col : (column - 1));
 }
 
 // Return the row number of the softwrapped chunk in the given line that the given column is on, relative
 // to the first row (zero-based).  If leftedge isn't NULL, return in it the leftmost column of the chunk.
-Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) {
+Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NO_EXCEPT {
   Ulong end_col, current_chunk, start_col;
   bool  end_of_line, kickoff;
   current_chunk = 0;
@@ -3036,17 +3044,17 @@ Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) {
 }
 
 /* Return how many extra rows the given line needs when softwrapping. */
-Ulong extra_chunks_in(linestruct *line) {
+Ulong extra_chunks_in(linestruct *line) _NO_EXCEPT {
   return get_chunk_and_edge((Ulong)-1, line, NULL);
 }
 
 /* Return the row of the softwrapped chunk of the given line that column is on, relative to the first row (zero-based). */
-Ulong chunk_for(Ulong column, linestruct *line) {
+Ulong chunk_for(Ulong column, linestruct *line) _NO_EXCEPT {
   return get_chunk_and_edge(column, line, NULL);
 }
 
 /* Return the leftmost column of the softwrapped chunk of the given line that the given column is on. */
-Ulong leftedge_for(Ulong column, linestruct *line) {
+Ulong leftedge_for(Ulong column, linestruct *line) _NO_EXCEPT {
   Ulong leftedge;
   get_chunk_and_edge(column, line, &leftedge);
   return leftedge;
@@ -3055,7 +3063,7 @@ Ulong leftedge_for(Ulong column, linestruct *line) {
 // Ensure that firstcolumn is at the starting column of the softwrapped chunk
 // it's on.  We need to do this when the number of columns of the edit window
 // has changed, because then the width of softwrapped chunks has changed.
-void ensure_firstcolumn_is_aligned(void) {
+void ensure_firstcolumn_is_aligned(void) _NO_EXCEPT {
   if (ISSET(SOFTWRAP)) {
     openfile->firstcolumn = leftedge_for(openfile->firstcolumn, openfile->edittop);
   }
@@ -3069,7 +3077,7 @@ void ensure_firstcolumn_is_aligned(void) {
 // When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
 // chunk, shift it back to the last column before the breakpoint.  The given column is relative
 // to the given leftedge in current.  The returned column is relative to the start of the text.
-Ulong actual_last_column(Ulong leftedge, Ulong column) {
+Ulong actual_last_column(Ulong leftedge, Ulong column) _NO_EXCEPT {
   bool  kickoff, last_chunk;
   Ulong end_col;
   if (ISSET(SOFTWRAP)) {
@@ -3089,7 +3097,7 @@ Ulong actual_last_column(Ulong leftedge, Ulong column) {
 }
 
 /* Return TRUE if current[current_x] is before the viewport. */
-bool current_is_above_screen(void) {
+static bool current_is_above_screen(void) _NO_EXCEPT {
   if (ISSET(SOFTWRAP)) {
     return (openfile->current->lineno < openfile->edittop->lineno || (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
   }
@@ -3099,19 +3107,19 @@ bool current_is_above_screen(void) {
 #define SHIM (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
 
 /* Return TRUE if current[current_x] is beyond the viewport. */
-bool current_is_below_screen(void) {
+static bool current_is_below_screen(void) _NO_EXCEPT {
   if (ISSET(SOFTWRAP)) {
     linestruct *line     = openfile->edittop;
     Ulong       leftedge = openfile->firstcolumn;
     /* If current[current_x] is more than a screen's worth of lines after edittop at column firstcolumn, it's below the screen. */
-    return (go_forward_chunks(editwinrows - 1 - SHIM, &line, &leftedge) == 0 && (line->lineno < openfile->current->lineno
+    return (go_forward_chunks((editwinrows - 1 - SHIM), &line, &leftedge) == 0 && (line->lineno < openfile->current->lineno
      || (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
   }
   return (openfile->current->lineno >= (openfile->edittop->lineno + editwinrows - SHIM));
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */
-bool current_is_offscreen(void) {
+static bool current_is_offscreen(void) _NO_EXCEPT {
   return (current_is_above_screen() || current_is_below_screen());
 }
 
@@ -3207,7 +3215,7 @@ void edit_refresh(void) {
 // CENTERING means that current should end up in the middle of the screen,
 // and FLOWING means that it should scroll no more than needed to bring
 // current into view.
-void adjust_viewport(update_type manner) {
+void adjust_viewport(update_type manner) _NO_EXCEPT {
   int goal = 0;
   if (manner == STATIONARY) {
     goal = openfile->cursor_row;
@@ -3227,7 +3235,7 @@ void adjust_viewport(update_type manner) {
 }
 
 /* Tell curses to unconditionally redraw whatever was on the screen. */
-void full_refresh(void) {
+void full_refresh(void) _NO_EXCEPT {
   wrefresh(curscr);
 }
 
@@ -3247,7 +3255,7 @@ void draw_all_subwindows(void) {
 }
 
 /* Display on the status bar details about the current cursor position. */
-void report_cursor_position(void) {
+void report_cursor_position(void) _NO_EXCEPT {
   int   linepct, colpct, charpct;
   Ulong fullwidth  = (breadth(openfile->current->data) + 1);
   Ulong column     = (xplustabs() + 1);

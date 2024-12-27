@@ -1,6 +1,7 @@
 /** @file prototypes.h */
 #pragma once
 
+#include <Mlib/Attributes.h>
 #include "color.h"
 #include "language_server/language_server.h"
 #include "render.h"
@@ -155,8 +156,6 @@ extern bool gui_enabled;
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
-extern bit_flag_t<8> mod_key;
-
 extern task_queue_t          *task_queue;
 extern pthread_t             *threads;
 extern volatile sig_atomic_t *stop_thread_flags;
@@ -180,8 +179,8 @@ ASM_FUNCTION(int)  asm_atomic_xchg(int *ptr, int value);
 /* The two needed functions from 'browser.cpp'. */
 void  browser_refresh(void);
 char *browse_in(const char *inpath);
-void  to_first_file(void);
-void  to_last_file(void);
+void  to_first_file(void) _NO_EXCEPT;
+void  to_last_file(void) _NO_EXCEPT;
 
 /* Most functions in 'chars.cpp'. */
 void  utf8_init(void) _NO_EXCEPT;
@@ -232,7 +231,7 @@ void do_backspace(void);
 void chop_previous_word(void);
 void chop_next_word(void);
 void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x);
-void ingraft_buffer(linestruct *topline);
+void ingraft_buffer(linestruct *topline) _NO_EXCEPT;
 void copy_from_buffer(linestruct *somebuffer);
 void cut_marked_region(void);
 void do_snip(bool marked, bool until_eof, bool append);
@@ -263,8 +262,8 @@ char  *get_next_filename(const char *name, const char *suffix) _NO_EXCEPT;
 void   do_insertfile(void);
 void   do_execute(void);
 char  *get_full_path(const char *origpath) _NO_EXCEPT;
-char  *normalized_path(const char *path);
-char  *abs_path(const char *path);
+char  *normalized_path(const char *path) _NO_EXCEPT;
+char  *abs_path(const char *path) _NO_EXCEPT;
 char  *safe_tempfile(FILE **stream);
 void   init_operating_dir(void);
 bool   outside_of_confinement(const char *currpath, bool allow_tabcomp) _NO_EXCEPT;
@@ -292,7 +291,7 @@ linestruct *retrieve_file_as_lines(const string &path);
 /* Some functions in 'global.cpp'. */
 int              keycode_from_string(const char *keystring) _NO_EXCEPT;
 const keystruct *first_sc_for(const int menu, void (*function)(void)) _NO_EXCEPT;
-Ulong            shown_entries_for(int menu);
+Ulong            shown_entries_for(int menu) _NO_EXCEPT;
 const keystruct *get_shortcut(const int keycode) _NO_EXCEPT;
 functionptrtype  func_from_key(const int keycode) _NO_EXCEPT;
 functionptrtype  interpret(const int keycode);
@@ -344,40 +343,41 @@ void do_right(void);
 
 /* Most functions in 'nano.cpp'. */
 linestruct *make_new_node(linestruct *prevnode) _NO_EXCEPT;
-linestruct *copy_buffer(const linestruct *src);
-void splice_node(linestruct *afterthis, linestruct *newnode) _NO_EXCEPT;
-void unlink_node(linestruct *line) _NO_EXCEPT;
-void delete_node(linestruct *line) _NO_EXCEPT;
-void free_lines(linestruct *src) _NO_EXCEPT;
-void renumber_from(linestruct *line) _NO_EXCEPT;
-void print_view_warning(void);
-bool in_restricted_mode(void);
-void suggest_ctrlT_ctrlZ(void) _NO_EXCEPT;
-void finish(void) __no_return;
-void close_and_go(void);
-void do_exit(void);
-void die(const char *msg, ...) /* _NO_EXCEPT */ __no_return __nonnull((1));
-void window_init(void) _NO_EXCEPT;
-void install_handler_for_Ctrl_C(void);
-void restore_handler_for_Ctrl_C(void);
-void reconnect_and_store_state(void);
-void handle_hupterm(int signal);
-void handle_crash(int signal);
-void suspend_nano(int signal);
-void do_suspend(void);
-void continue_nano(int signal);
-void block_sigwinch(bool blockit);
-void handle_sigwinch(int signal);
-void regenerate_screen(void);
-void disable_kb_interrupt(void);
-void enable_kb_interrupt(void);
-void disable_flow_control(void);
-void enable_flow_control(void);
-void terminal_init(void);
-void confirm_margin(void);
-void unbound_key(int code);
-bool changes_something(functionptrtype f);
-void inject(char *burst, Ulong count);
+void        splice_node(linestruct *afterthis, linestruct *newnode) _NO_EXCEPT;
+void        delete_node(linestruct *line) _NO_EXCEPT;
+void        unlink_node(linestruct *line) _NO_EXCEPT;
+void        free_lines(linestruct *src) _NO_EXCEPT;
+linestruct *copy_node(const linestruct *src) _NO_EXCEPT __warn_unused __nonnull((1));
+linestruct *copy_buffer(const linestruct *src) _NO_EXCEPT __warn_unused;
+void        renumber_from(linestruct *line) _NO_EXCEPT;
+void        print_view_warning(void) _NO_EXCEPT;
+bool        in_restricted_mode(void) _NO_EXCEPT;
+void        suggest_ctrlT_ctrlZ(void) _NO_EXCEPT;
+void        finish(void) __no_return;
+void        close_and_go(void);
+void        do_exit(void);
+void        die(const char *msg, ...) /* _NO_EXCEPT */ __no_return __nonnull((1));
+void        window_init(void) _NO_EXCEPT;
+void        install_handler_for_Ctrl_C(void);
+void        restore_handler_for_Ctrl_C(void);
+void        reconnect_and_store_state(void);
+void        handle_hupterm(int signal);
+void        handle_crash(int signal);
+void        suspend_nano(int signal);
+void        do_suspend(void);
+void        continue_nano(int signal);
+void        block_sigwinch(bool blockit);
+void        handle_sigwinch(int signal);
+void        regenerate_screen(void);
+void        disable_kb_interrupt(void) _NO_EXCEPT;
+void        enable_kb_interrupt(void) _NO_EXCEPT;
+void        disable_flow_control(void) _NO_EXCEPT;
+void        enable_flow_control(void) _NO_EXCEPT;
+void        terminal_init(void);
+void        confirm_margin(void);
+void        unbound_key(int code);
+bool        changes_something(functionptrtype f);
+void        inject(char *burst, Ulong count);
 
 /* Most functions in 'prompt.cpp'. */
 Ulong get_statusbar_page_start(Ulong base, Ulong column) _NO_EXCEPT;
@@ -413,16 +413,16 @@ void  do_search_forward(void);
 void  do_search_backward(void);
 void  do_findprevious(void);
 void  do_findnext(void);
-void  not_found_msg(const char *str);
+void  not_found_msg(const char *str) _NO_EXCEPT;
 void  go_looking(void);
 long  do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, Ulong *real_current_x);
 void  do_replace(void);
 void  ask_for_and_do_replacements(void);
-void  goto_line_posx(long line, Ulong pos_x);
+void  goto_line_posx(long line, Ulong pos_x) _NO_EXCEPT;
 void  goto_line_and_column(long line, long column, bool retain_answer, bool interactive);
 void  do_gotolinecolumn(void);
-bool  find_a_bracket(bool reverse, const char *bracket_pair);
-void  do_find_bracket(void);
+bool  find_a_bracket(bool reverse, const char *bracket_pair) _NO_EXCEPT;
+void  do_find_bracket(void) _NO_EXCEPT;
 void  put_or_lift_anchor(void);
 void  to_prev_anchor(void);
 void  to_next_anchor(void);
@@ -516,49 +516,49 @@ template <typename T> __inline__ T *anrealloc(T *ptr, Ulong howmush) { return (T
 /* Most functions in 'winio.cpp'. */
 void  record_macro(void);
 void  run_macro(void);
-void  reserve_space_for(Ulong newsize);
+void  reserve_space_for(Ulong newsize) _NO_EXCEPT;
 Ulong waiting_keycodes(void);
 void  implant(const char *string);
 int   get_input(WINDOW *win);
 int   get_kbinput(WINDOW *win, bool showcursor);
 char *get_verbatim_kbinput(WINDOW *win, Ulong *count);
 int   get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts);
-void  blank_edit(void);
-void  blank_statusbar(void);
-void  wipe_statusbar(void);
-void  blank_bottombars(void);
-void  blank_it_when_expired(void);
-void  set_blankdelay_to_one(void);
-char *display_string(const char *buf, Ulong column, Ulong span, bool isdata, bool isprompt);
+void  blank_edit(void) _NO_EXCEPT;
+void  blank_statusbar(void) _NO_EXCEPT;
+void  wipe_statusbar(void) _NO_EXCEPT;
+void  blank_bottombars(void) _NO_EXCEPT;
+void  blank_it_when_expired(void) _NO_EXCEPT;
+void  set_blankdelay_to_one(void) _NO_EXCEPT;
+char *display_string(const char *buf, Ulong column, Ulong span, bool isdata, bool isprompt) _NO_EXCEPT;
 void  titlebar(const char *path);
-void  minibar(void);
+void  minibar(void) _NO_EXCEPT;
 void  statusline(message_type importance, const char *msg, ...) _NO_EXCEPT;
-void  statusbar(const char *msg);
-void  warn_and_briefly_pause(const char *msg);
-void  bottombars(int menu);
-void  post_one_key(const char *keystroke, const char *tag, int width);
+void  statusbar(const char *msg) _NO_EXCEPT;
+void  warn_and_briefly_pause(const char *msg) _NO_EXCEPT __nonnull((1));
+void  bottombars(int menu) _NO_EXCEPT;
+void  post_one_key(const char *keystroke, const char *tag, int width) _NO_EXCEPT;
 void  place_the_cursor(void);
 void  draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col);
 int   update_line(linestruct *line, Ulong index, int offset = 0);
 int   update_softwrapped_line(linestruct *line);
 bool  line_needs_update(const Ulong old_column, const Ulong new_column);
-int   go_back_chunks(int nrows, linestruct **line, Ulong *leftedge);
-int   go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge);
+int   go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT;
+int   go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT;
 bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge);
 void  edit_scroll(bool direction);
-Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line);
-Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge);
-Ulong chunk_for(Ulong column, linestruct *line);
-Ulong leftedge_for(Ulong column, linestruct *line);
-Ulong extra_chunks_in(linestruct *line);
-void  ensure_firstcolumn_is_aligned(void);
-Ulong actual_last_column(Ulong leftedge, Ulong column);
+Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NO_EXCEPT;
+Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NO_EXCEPT __nonnull((2));
+Ulong chunk_for(Ulong column, linestruct *line) _NO_EXCEPT;
+Ulong leftedge_for(Ulong column, linestruct *line) _NO_EXCEPT;
+Ulong extra_chunks_in(linestruct *line) _NO_EXCEPT __warn_unused __nonnull((1));
+void  ensure_firstcolumn_is_aligned(void) _NO_EXCEPT;
+Ulong actual_last_column(Ulong leftedge, Ulong column) _NO_EXCEPT;
 void  edit_redraw(linestruct *old_current, update_type manner);
 void  edit_refresh(void);
-void  adjust_viewport(update_type manner);
-void  full_refresh(void);
+void  adjust_viewport(update_type manner) _NO_EXCEPT;
+void  full_refresh(void) _NO_EXCEPT;
 void  draw_all_subwindows(void);
-void  report_cursor_position(void);
+void  report_cursor_position(void) _NO_EXCEPT;
 void  spotlight(Ulong from_col, Ulong to_col);
 void  spotlight_softwrapped(Ulong from_col, Ulong to_col);
 void  do_credits(void);
@@ -623,34 +623,23 @@ void netlog_func_info(function_info_t *info);
 void debug_define(const DefineEntry &de);
 
 /* 'words.cpp' */
-void         remove_tabs_from_word(char **word);
-char       **words_in_line(linestruct *line);
-char       **words_in_str(const char *str, Ulong *size = NULL);
 char       **delim_str(const char *str, const char *delim, Ulong *size);
 char       **split_into_words(const char *str, const u_int len, u_int *word_count);
-const char  *extract_include(char *str);
-char        *get_file_extention(void);
-const char  *rgx_word(const char *word);
-bool         is_word_func(char *word, Ulong *at);
+char        *rgx_word(const char *word);
 void         remove_leading_char_type(char **word, const char c);
-bool         word_more_than_one_char_away(bool forward, Ulong *nchars, const char ch);
 bool         word_more_than_one_white_away(bool forward, Ulong *nsteps);
-bool         word_more_than_one_space_away(bool forward, Ulong *nspaces);
-bool         word_more_than_one_tab_away(bool forward, Ulong *ntabs);
 bool         prev_word_is_comment_start(Ulong *nsteps);
 bool         char_is_in_word(const char *word, const char ch, Ulong *at);
 char        *retrieve_word_from_cursor_pos(bool forward);
 char       **fast_words_from_str(const char *str, Ulong slen, Ulong *nwords);
 line_word_t *line_word_list(const char *str, Ulong slen);
-line_word_t *line_word_list_is_word_char(const char *str, Ulong slen);
-line_word_t *make_line_word(char *str, u_short start, u_short len, u_short end);
 Uint         last_strchr(const char *str, const char ch, Uint maxlen);
 char        *memmove_concat(const char *s1, const char *s2);
 const char  *substr(const char *str, Ulong end_index);
-Ulong        get_prev_word_start_index(const char *line, const Ulong cursor_x) _NO_EXCEPT __nonnull((1)) __warn_unused;
-Ulong        get_cursor_prev_word_start_index(void) _NO_EXCEPT;
-char        *get_prev_word(const char *cursorline, const Ulong cursor_x, Ulong *wordlen) __nonnull((1));
-char        *get_prev_cursor_word(Ulong *wordlen);
+Ulong        get_prev_word_start_index(const char *line, const Ulong cursor_x) _NO_EXCEPT __warn_unused __nonnull((1));
+Ulong        get_cursor_prev_word_start_index(void) _NO_EXCEPT __warn_unused;
+char        *get_prev_word(const char *cursorline, const Ulong cursor_x, Ulong *wordlen) _NO_EXCEPT __warn_unused __nonnull((1, 3));
+char        *get_prev_cursor_word(Ulong *wordlen) _NO_EXCEPT __warn_unused __nonnull((1));
 
 /* 'lines.cpp' */
 bool  is_line_comment(linestruct *line);
@@ -740,6 +729,12 @@ void cleanup_cfg(void);
 
 /* bash_lsp.cpp */
 void get_env_path_binaries(void);
+
+/* nstring.cpp */
+Ulong inject_in(char **dst, Ulong dstlen, const char *src, Ulong srclen, Ulong at) _NO_EXCEPT;
+Ulong inject_in(char **dst, const char *src, Ulong at) _NO_EXCEPT;
+Ulong erase_in(char **str, Ulong slen, Ulong at, Ulong eraselen, bool do_realloc) _NO_EXCEPT;
+Ulong erase_in(char **str, Ulong at, Ulong eraselen, bool do_realloc = TRUE) _NO_EXCEPT;
 
 #include <Mlib/def.h>
 #include "c_proto.h"

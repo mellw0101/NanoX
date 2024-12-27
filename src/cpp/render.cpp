@@ -552,6 +552,7 @@ void render_preprossesor(void) {
         rendr_define((end - line->data));
         break;
       }
+      case hash_string("elif"):
       case hash_string("if"): {
         RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
         ADV_PTR(end, (*end == ' ' || *end == '\t'));
@@ -598,21 +599,6 @@ void render_preprossesor(void) {
         RENDR(R, FG_VS_CODE_BLUE, start, end);
         break;
       }
-      /* case "error"_uint_hash : {
-        RENDR(R, FG_VS_CODE_BRIGHT_MAGENTA, start, end);
-        ADV_PTR(end, (*end == ' ' || *end == '\t'));
-        if (!*end || *end != '"') {
-          break;
-        }
-        start = end;
-        end += 1;
-        ADV_PTR(end, (*end != '"'));
-        if (*end) {
-          end += 1;
-        }
-        render_part((start - line->data), (end - line->data), FG_YELLOW);
-        break;
-      } */
     }
     free(current_word);
   }
@@ -794,6 +780,10 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
   ::converted = converted;
   ::line      = line;
   ::from_col  = from_col;
+  // Ulong resultno;
+  // Ulong *result = find_char_avx(line->data, till_x, ' ', &resultno);
+  // NETLOG("Found %lu spaces in line.\n", resultno);
+  // free(result);
   if (openfile->type.is_set<C_CPP>()) {
     render_bracket();
     render_comment();

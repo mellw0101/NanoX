@@ -238,7 +238,7 @@ int LanguageServer::index_file(const char *path, bool reindex) {
     if (openfile->type.is_set<C_CPP>()) {
       Parse::comment(line);
       if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>()
-      || line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
+       || line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
         continue;
       }
       if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {

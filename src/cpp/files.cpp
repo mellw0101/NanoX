@@ -1167,8 +1167,8 @@ char *get_full_path(const char *origpath) _NO_EXCEPT {
 }
 
 /* Returns a normalized path.  IE: Removes all /../ correctly. */
-char *normalized_path(const char *path) {
-  char *ret  = copy_of(path);
+char *normalized_path(const char *path) _NO_EXCEPT {
+  char *ret = copy_of(path);
   const char *start = ret;
   const char *end   = NULL;
   while ((start = strstr(start, "/../"))) {
@@ -1195,13 +1195,13 @@ char *normalized_path(const char *path) {
 // Optimized for repeted calls where the first call makes sure to get the
 // full path of a relative one, and once that is done normalized path is
 // used as we already know that the relative path must be correct.
-char *abs_path(const char *path) {
+char *abs_path(const char *path) _NO_EXCEPT {
   return ((*path == '/') ? normalized_path(path) : get_full_path(path));
 }
 
 // Check whether the given path refers to a directory that is writable.
 // Return the absolute form of the path on success, and 'NULL' on failure.
-char *check_writable_directory(const char *path) {
+char *check_writable_directory(const char *path) _NO_EXCEPT {
   char *full_path = get_full_path(path);
   if (!full_path) {
     return NULL;
@@ -1768,8 +1768,8 @@ int write_it_out(bool exiting, bool withprompt) {
     functionptrtype function;
     int response = 0, choice = NO;
     const char *msg;
-    const char *formatstr = (openfile->fmt == DOS_FILE) ? _(" [DOS Format]") : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]") : "";
-    const char *backupstr = ISSET(MAKE_BACKUP) ? _(" [Backup]") : "";
+    const char *formatstr = ((openfile->fmt == DOS_FILE) ? _(" [DOS Format]") : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]") : "");
+    const char *backupstr = (ISSET(MAKE_BACKUP) ? _(" [Backup]") : "");
     /* When the mark is on, offer to write the selection to disk, but not when in restricted
      * mode, because it would allow writing to a file not specified on the command line. */
     if (openfile->mark && !exiting && !ISSET(RESTRICTED)) {
@@ -1779,7 +1779,7 @@ int write_it_out(bool exiting, bool withprompt) {
                                 : _("Write Selection to File");
     }
     else if (method != OVERWRITE) {
-      msg = (method == PREPEND) ? _("File Name to Prepend to") : _("File Name to Append to");
+      msg = ((method == PREPEND) ? _("File Name to Prepend to") : _("File Name to Append to"));
     }
     else {
       msg = _("File Name to Write");

@@ -2,6 +2,7 @@
 #include "../include/revision.h"
 
 #include "../include/c_proto.h"
+#include <term.h>
 
 #ifdef ENABLE_UTF8
 #  include <langinfo.h>
@@ -23,13 +24,13 @@ linestruct *make_new_node(linestruct *prevnode) _NO_EXCEPT {
   newnode->next       = NULL;
   newnode->data       = NULL;
   newnode->multidata  = NULL;
-  newnode->lineno     = (prevnode) ? prevnode->lineno + 1 : 1;
+  newnode->lineno     = ((prevnode) ? (prevnode->lineno + 1) : 1);
   newnode->has_anchor = FALSE;
   newnode->flags.clear();
   if (prevnode) {
-    ((prevnode->flags.is_set(IN_BLOCK_COMMENT)) || (prevnode->flags.is_set(BLOCK_COMMENT_START)))
+    (prevnode->flags.is_set(IN_BLOCK_COMMENT) || prevnode->flags.is_set(BLOCK_COMMENT_START))
       ? newnode->flags.set(IN_BLOCK_COMMENT) : newnode->flags.unset(IN_BLOCK_COMMENT);
-    ((prevnode->flags.is_set(IN_BRACKET)) || (prevnode->flags.is_set(BRACKET_START)))
+    (prevnode->flags.is_set(IN_BRACKET) || prevnode->flags.is_set(BRACKET_START))
       ? newnode->flags.set(IN_BRACKET) : (void)0;
   }
   return newnode;
@@ -92,7 +93,7 @@ void free_lines(linestruct *src) _NO_EXCEPT {
 }
 
 /* Make a copy of a linestruct node. */
-linestruct *copy_node(const linestruct *src) {
+linestruct *copy_node(const linestruct *src) _NO_EXCEPT {
   linestruct *dst = (linestruct *)nmalloc(sizeof(*dst));
   dst->data       = copy_of(src->data);
   dst->multidata  = NULL;
@@ -102,7 +103,7 @@ linestruct *copy_node(const linestruct *src) {
 }
 
 /* Duplicate an entire linked list of linestructs. */
-linestruct *copy_buffer(const linestruct *src) {
+linestruct *copy_buffer(const linestruct *src) _NO_EXCEPT {
   linestruct *head, *item;
   head       = copy_node(src);
   head->prev = NULL;
@@ -128,12 +129,12 @@ void renumber_from(linestruct *line) _NO_EXCEPT {
 }
 
 /* Display a warning about a key disabled in view mode. */
-void print_view_warning(void) {
+void print_view_warning(void) _NO_EXCEPT {
   statusline(AHEM, _("Key is invalid in view mode"));
 }
 
 /* When in restricted mode, show a warning and return 'TRUE'. */
-bool in_restricted_mode(void) {
+bool in_restricted_mode(void) _NO_EXCEPT {
   if (ISSET(RESTRICTED)) {
     statusline(AHEM, _("This function is disabled in restricted mode"));
     beep();
@@ -367,11 +368,11 @@ void print_opt(const char *const shortflag, const char *const longflag, const ch
   const int secondwidth = breadth(longflag);
   printf(" %s", shortflag);
   if (firstwidth < 14) {
-    printf("%*s", 14 - firstwidth, " ");
+    printf("%*s", (14 - firstwidth), " ");
   }
   printf(" %s", longflag);
   if (secondwidth < 24) {
-    printf("%*s", 24 - secondwidth, " ");
+    printf("%*s", (24 - secondwidth), " ");
   }
   printf("%s\n", _(description));
 }
@@ -559,7 +560,7 @@ bool scoop_stdin(void) {
 }
 
 /* Register half a dozen signal handlers. */
-void signal_init(void) {
+void signal_init(void) _NO_EXCEPT {
   struct sigaction deed = {{0}};
   /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
   deed.sa_handler = SIG_IGN;
@@ -773,7 +774,7 @@ void toggle_this(const int flag) {
 }
 
 /* Disable extended input and output processing in our terminal settings. */
-void disable_extended_io(void) {
+void disable_extended_io(void) _NO_EXCEPT {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~IEXTEN;
@@ -782,7 +783,7 @@ void disable_extended_io(void) {
 }
 
 /* Stop ^C from generating a SIGINT. */
-void disable_kb_interrupt(void) {
+void disable_kb_interrupt(void) _NO_EXCEPT {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~ISIG;
@@ -790,7 +791,7 @@ void disable_kb_interrupt(void) {
 }
 
 /* Make ^C generate a SIGINT. */
-void enable_kb_interrupt(void) {
+void enable_kb_interrupt(void) _NO_EXCEPT {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag |= ISIG;
@@ -798,7 +799,7 @@ void enable_kb_interrupt(void) {
 }
 
 /* Disable the terminal's XON/XOFF flow-control characters. */
-void disable_flow_control(void) {
+void disable_flow_control(void) _NO_EXCEPT {
   termios settings;
   tcgetattr(0, &settings);
   settings.c_iflag &= ~IXON;
@@ -806,7 +807,7 @@ void disable_flow_control(void) {
 }
 
 /* Enable the terminal's XON/XOFF flow-control characters. */
-void enable_flow_control(void) {
+void enable_flow_control(void) _NO_EXCEPT {
   termios settings;
   tcgetattr(0, &settings);
   settings.c_iflag |= IXON;
@@ -870,8 +871,7 @@ void confirm_margin(void) {
 /* Say that an unbound key was struck, and if possible which one. */
 void unbound_key(int code) {
   if (code == FOREIGN_SEQUENCE) {
-    /* TRANSLATORS: This refers to a sequence of escape codes
-     *              (from the keyboard) that nano does not recognize. */
+    /* TRANSLATORS: This refers to a sequence of escape codes (from the keyboard) that nano does not recognize. */
     statusline(AHEM, _("Unknown sequence"));
   }
   else if (code == NO_SUCH_FUNCTION) {
@@ -889,7 +889,7 @@ void unbound_key(int code) {
   }
   else if (meta_key) {
     if (code < 0x20) {
-      statusline(AHEM, _("Unbindable key: M-^%c"), code + 0x40);
+      statusline(AHEM, _("Unbindable key: M-^%c"), (code + 0x40));
     }
     else if (shifted_metas && 'A' <= code && code <= 'Z') {
       statusline(AHEM, _("Unbound key: %s%c"), "Sh-M-", code);
@@ -902,7 +902,7 @@ void unbound_key(int code) {
     statusline(AHEM, _("Unbindable key: ^["));
   }
   else if (code < 0x20) {
-    statusline(AHEM, _("Unbound key: %s%c"), "^", code + 0x40);
+    statusline(AHEM, _("Unbound key: %s%c"), "^", (code + 0x40));
   }
   else {
     statusline(AHEM, _("Unbound key: %s%c"), "", code);
@@ -977,18 +977,18 @@ void suck_up_input_and_paste_it(void) {
   linestruct *was_cutbuffer = cutbuffer;
   linestruct *line = make_new_node(NULL);
   Ulong index = 0;
-  line->data = copy_of("");
+  line->data = STRLTR_COPY_OF("");
   cutbuffer = line;
   while (bracketed_paste) {
     int input = get_kbinput(midwin, BLIND);
     if (input == '\r' || input == '\n') {
       line->next = make_new_node(line);
       line       = line->next;
-      line->data = copy_of("");
+      line->data = STRLTR_COPY_OF("");
       index      = 0;
     }
     else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
-      line->data = arealloc(line->data, index + 2);
+      line->data = arealloc(line->data, (index + 2));
       line->data[index++] = (char)input;
       line->data[index] = '\0';
     }
@@ -1031,7 +1031,7 @@ void inject(char *burst, Ulong count) {
   /* Make room for the new bytes and copy them into the line. */
   thisline->data = arealloc(thisline->data, (datalen + count + 1));
   memmove((thisline->data + openfile->current_x + count), (thisline->data + openfile->current_x), (datalen - openfile->current_x + 1));
-  strncpy(thisline->data + openfile->current_x, burst, count);
+  strncpy((thisline->data + openfile->current_x), burst, count);
   /* When the cursor is on the top row and not on the first chunk of a line, adding text
    * there might change the preceding chunk and thus require an adjustment of firstcolumn. */
   if (thisline == openfile->edittop && openfile->firstcolumn > 0) {
@@ -1302,13 +1302,10 @@ int main(int argc, char **argv) {
   SET(NO_HELP);
   SET(INDICATOR);
   SET(AFTER_ENDS);
-  SET(RAW_SEQUENCES);
+  // SET(RAW_SEQUENCES);
   SET(LINE_NUMBERS);
-  SET(SUGGEST);
-  SET(SUGGEST_INLINE);
-  if (ISSET(SUGGEST_INLINE)) {
-    NETLOG("SUGGEST_INLINE is set.");
-  }
+  // SET(SUGGEST);
+  // SET(SUGGEST_INLINE);
   /* This is my new system for live syntax, and it`s fucking fast. */
   SET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
   /* If the executable's name starts with 'r', activate restricted mode. */
@@ -1395,8 +1392,7 @@ int main(int argc, char **argv) {
   }
   /* When requested, suppress the default spotlight and error colors. */
   rescind_colors = (getenv("NO_COLOR") != NULL);
-  /* Set up the function and shortcut lists.  This needs to be done
-   * before reading the rcfile, to be able to rebind/unbind keys. */
+  /* Set up the function and shortcut lists.  This needs to be done before reading the rcfile, to be able to rebind/unbind keys. */
   shortcut_init();
   if (!ignore_rcfiles) {
     /* Back up the command-line options that take an argument. */
@@ -1535,7 +1531,7 @@ int main(int argc, char **argv) {
   }
   /* If matchbrackets wasn't specified, set its default value. */
   if (!matchbrackets) {
-    matchbrackets = copy_of("(<[{)>]}");
+    matchbrackets = STRLTR_COPY_OF("(<[{)>]}");
   }
   /* If the whitespace option wasn't specified, set its default value. */
   if (!whitespace) {
@@ -1793,7 +1789,6 @@ int main(int argc, char **argv) {
   if (!*openfile->filename && openfile->totsize == 0 && openfile->next == openfile && !ISSET(NO_HELP) && NOTREBOUND) {
     statusbar(_("Welcome to NanoX.  For help, type Ctrl+G."));
   }
-  do_syntax();
   /* Set the margin to an impossible value to force re-evaluation. */
   margin = 12345;
   we_are_running = TRUE;

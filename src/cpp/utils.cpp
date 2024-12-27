@@ -1,4 +1,5 @@
 /** @file utils.cpp */
+#include <Mlib/Profile.h>
 #include "../include/prototypes.h"
 
 /* Return the user's home directory.  We use $HOME, and if that fails, we fall back on the home directory of the effective user ID. */

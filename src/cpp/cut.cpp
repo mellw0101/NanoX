@@ -108,7 +108,7 @@ void do_backspace(void) {
 
 /* Return 'FALSE' when a cut command would not actually cut anything: when on an empty line at EOF, or when
  * the mark covers zero characters, or (when test_cliff is 'TRUE') when the magic line would be cut. */
-bool is_cuttable(bool test_cliff) {
+static bool is_cuttable(bool test_cliff) _NO_EXCEPT {
   Ulong from = (test_cliff) ? openfile->current_x : 0;
   if ((!openfile->current->next && !openfile->current->data[from] && !openfile->mark)
    || (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x)
@@ -214,14 +214,14 @@ void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x)
   }
   if (top == bot) {
     taken       = make_new_node(NULL);
-    taken->data = measured_copy(top->data + top_x, bot_x - top_x);
+    taken->data = measured_copy((top->data + top_x), (bot_x - top_x));
     memmove((top->data + top_x), (top->data + bot_x), (strlen(top->data + bot_x) + 1));
     last = taken;
   }
   else if (!top_x && !bot_x) {
     taken            = top;
     last             = make_new_node(NULL);
-    last->data       = copy_of("");
+    last->data       = STRLTR_COPY_OF("");
     last->has_anchor = bot->has_anchor;
     last->prev       = bot->prev;
     bot->prev->next  = last;
@@ -262,10 +262,10 @@ void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x)
     delete_node(taken);
     if (cutbottom->next) {
       cutbottom->next->prev = cutbottom;
-      cutbottom             = last;
+      cutbottom = last;
     }
   }
-  openfile->current_x           = top_x;
+  openfile->current_x = top_x;
   openfile->current->has_anchor = had_anchor;
   if (post_marked || same_line) {
     openfile->mark = openfile->current;
@@ -289,7 +289,7 @@ void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x)
 }
 
 /* Meld the buffer that starts at topline into the current file buffer at the current cursor position. */
-void ingraft_buffer(linestruct *topline) {
+void ingraft_buffer(linestruct *topline) _NO_EXCEPT {
   linestruct *line    = openfile->current;
   linestruct *botline = topline;
   Ulong length       = strlen(line->data);

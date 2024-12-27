@@ -47,7 +47,7 @@ void do_tab(void) {
 }
 
 /* Restore the cursor and mark from a undostruct. */
-void restore_undo_posx(undostruct *u) {
+static void restore_undo_posx(undostruct *u) _NO_EXCEPT {
   /* Restore the mark if it was set. */
   if (u->xflags & MARK_WAS_SET) {
     if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -77,7 +77,9 @@ void indent_a_line(linestruct *line, char *indentation) {
   }
   /* Add the fabricated indentation to the beginning of the line. */
   line->data = arealloc(line->data, (length + indent_len + 1));
+  /* Move the data already on the line forwards. */
   memmove((line->data + indent_len), line->data, (length + 1));
+  /* Insert the indentation at the start of the line. */
   memcpy(line->data, indentation, indent_len);
   openfile->totsize += indent_len;
   /* Compensate for the change in the current line. */
@@ -136,7 +138,7 @@ void do_indent(void) {
 }
 
 /* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
-Ulong length_of_white(const char *text) {
+static Ulong length_of_white(const char *text) _NO_EXCEPT {
   Ulong white_count = 0;
   if (openfile->syntax && openfile->syntax->tabstring) {
     Ulong thelength = strlen(openfile->syntax->tabstring);
@@ -157,12 +159,12 @@ Ulong length_of_white(const char *text) {
     if (++white_count == tabsize) {
       return tabsize;
     }
-    text++;
+    ++text;
   }
-}
+} __nonnull((1))
 
 /* Adjust the positions of mark and cursor when they are on the given line. */
-void compensate_leftward(linestruct *line, Ulong leftshift) {
+static void compensate_leftward(linestruct *line, Ulong leftshift) _NO_EXCEPT {
   if (line == openfile->mark) {
     if (openfile->mark_x < leftshift) {
       openfile->mark_x = 0;
@@ -180,7 +182,7 @@ void compensate_leftward(linestruct *line, Ulong leftshift) {
     }
     openfile->placewewant = xplustabs();
   }
-}
+} __nonnull((1))
 
 /* Remove an indent from the given line. */
 void unindent_a_line(linestruct *line, Ulong indent_len) {
@@ -262,7 +264,7 @@ bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
   /* Length of prefix. */
   Ulong pre_len = (post_seq ? (post_seq++ - comment_seq) : comment_seq_len);
   /* Length of postfix. */
-  Ulong  post_len   = (post_seq ? comment_seq_len - pre_len - 1 : 0);
+  Ulong  post_len   = (post_seq ? (comment_seq_len - pre_len - 1) : 0);
   Ulong  line_len   = strlen(line->data);
   Ushort indent_len = indent_length(line->data);
   if (!ISSET(NO_NEWLINES) && line == openfile->filebot) {
@@ -270,12 +272,12 @@ bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
   }
   if (action == COMMENT) {
     /* Make room for the comment sequence(s), move the text right and copy them in. */
-    line->data = (char *)nrealloc(line->data, line_len + pre_len + post_len + 1);
+    line->data = arealloc(line->data, (line_len + pre_len + post_len + 1));
     memmove((line->data + pre_len + indent_len), (line->data + indent_len), (line_len - indent_len + 1));
     memmove((line->data + indent_len), comment_seq, pre_len);
-    inject_in_line(line, " ", (indent_len + comment_seq_len));
+    inject_in(&line->data, " ", (indent_len + comment_seq_len));
     if (post_len > 0) {
-      memmove(line->data + pre_len + line_len, post_seq, post_len + 1);
+      memmove(line->data + pre_len + line_len, post_seq, (post_len + 1));
     }
     openfile->totsize += (pre_len + post_len);
     /* If needed, adjust the position of the mark and of the cursor. */
@@ -294,8 +296,14 @@ bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
     if (action == PREFLIGHT) {
       return TRUE;
     }
-    /* Erase the comment prefix by moving the non-comment part. */
-    memmove((line->data + indent_len), (line->data + indent_len + pre_len + 1), (line_len - pre_len - indent_len));
+    if (*(line->data + indent_len + pre_len) == ' ') {
+      /* Erase the comment prefix by moving the non-comment part. */
+      memmove((line->data + indent_len), (line->data + indent_len + pre_len + 1), (line_len - pre_len - indent_len));
+    }
+    else {
+      /* Erase the comment prefix by moving the non-comment part. */
+      memmove((line->data + indent_len), (line->data + indent_len + pre_len), (line_len - pre_len - indent_len));
+    }
     /* Truncate the postfix if there was one. */
     line->data[line_len - pre_len - post_len] = '\0';
     openfile->totsize -= (pre_len + post_len);
@@ -321,6 +329,9 @@ void do_comment(void) {
   else if (openfile->type.is_set<ASM>()) {
     comment_seq = ";";
   }
+  else if (openfile->type.is_set<BASH>()) {
+    comment_seq = "#";
+  }
   /* This is when 'openfile->syntax' says comments are foridden. */
   if (!*comment_seq) {
     statusline(AHEM, _("Commenting is not supported for this file type"));
@@ -344,7 +355,7 @@ void do_comment(void) {
     all_empty = (all_empty && empty);
   }
   /* If all selected lines are blank, we comment them. */
-  action = all_empty ? COMMENT : action;
+  action = (all_empty ? COMMENT : action);
   add_undo(action, NULL);
   /* Store the comment sequence used for the operation, because it could change when the file name changes; we need to know what it was. */
   openfile->current_undo->strdata = copy_of(comment_seq);
@@ -448,20 +459,20 @@ void enclose_marked_region(const char *s1, const char *s2) {
   free(part);
   const Ulong s1_len = strlen(s1);
   if (mark_is_before_cursor()) {
-    inject_in_line(openfile->mark, s1, openfile->mark_x);
+    inject_in(&openfile->mark->data, strlen(openfile->mark->data), s1, s1_len, openfile->mark_x);
     openfile->mark_x += s1_len;
     if (openfile->mark == openfile->current) {
       openfile->current_x += s1_len;
     }
-    inject_in_line(openfile->current, s2, openfile->current_x);
+    inject_in(&openfile->current->data, s2, openfile->current_x);
   }
   else {
-    inject_in_line(openfile->current, s1, openfile->current_x);
+    inject_in(&openfile->current->data, strlen(openfile->current->data), s1, s1_len, openfile->current_x);
     openfile->current_x += s1_len;
     if (openfile->current == openfile->mark) {
       openfile->mark_x += s1_len;
     }
-    inject_in_line(openfile->mark, s2, openfile->mark_x);
+    inject_in(&openfile->mark->data, s2, openfile->mark_x);
   }
   set_modified();
   refresh_needed = TRUE;
@@ -792,8 +803,8 @@ void do_undo(void) {
       decode_enclose_str(u->strdata, &s1, &s2);
       linestruct *head = line_from_number(u->head_lineno);
       linestruct *tail = line_from_number(u->tail_lineno);
-      erase_in_line(head, u->head_x, strlen(s1));
-      erase_in_line(tail, u->tail_x, strlen(s2));
+      erase_in(&head->data, u->head_x, strlen(s1));
+      erase_in(&tail->data, u->tail_x, strlen(s2));
       free(s1);
       free(s2);
       if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -1115,9 +1126,9 @@ void do_redo(void) {
       linestruct *head = line_from_number(u->head_lineno);
       linestruct *tail = line_from_number(u->tail_lineno);
       const Ulong head_x = (u->head_x + s1_len);
-      const Ulong tail_x = (head == tail) ? (u->tail_x + s1_len) : u->tail_x;
-      inject_in_line(head, s1, u->head_x);
-      inject_in_line(tail, s2, tail_x);
+      const Ulong tail_x = ((head == tail) ? (u->tail_x + s1_len) : u->tail_x);
+      inject_in(&head->data, strlen(head->data), s1, s1_len, u->head_x);
+      inject_in(&tail->data, s2, tail_x);
       free(s1);
       free(s2);
       if (u->xflags & CURSOR_WAS_AT_HEAD) {

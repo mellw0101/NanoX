@@ -109,64 +109,119 @@ constexpr Uchar retriveSyntaxOptionFromStr(string_view str) {
 }
 
 /* Identifiers for the different flags. */
-
-/* This flag is not used as this is part of a bitfield and 0 is not a unique
- * value, in terms of bitwise operations as the default all non set value is 0. */
-#define DONTUSE                       0
-#define CASE_SENSITIVE                1
-#define CONSTANT_SHOW                 2
-#define NO_HELP                       3
-#define NO_WRAP                       4
-#define AUTOINDENT                    5
-#define VIEW_MODE                     6
-#define USE_MOUSE                     7
-#define USE_REGEXP                    8
-#define SAVE_ON_EXIT                  9
-#define CUT_FROM_CURSOR               10
-#define BACKWARDS_SEARCH              11
-#define MULTIBUFFER                   12
-#define REBIND_DELETE                 13
-#define RAW_SEQUENCES                 14
-#define NO_CONVERT                    15
-#define MAKE_BACKUP                   16
-#define INSECURE_BACKUP               17
-#define NO_SYNTAX                     18
-#define PRESERVE                      19
-#define HISTORYLOG                    20
-#define RESTRICTED                    21
-#define SMART_HOME                    22
-#define WHITESPACE_DISPLAY            23
-#define TABS_TO_SPACES                24
-#define QUICK_BLANK                   25
-#define WORD_BOUNDS                   26
-#define NO_NEWLINES                   27
-#define BOLD_TEXT                     28
-#define SOFTWRAP                      29
-#define POSITIONLOG                   30
-#define LOCKING                       31
-#define NOREAD_MODE                   32
-#define MAKE_IT_UNIX                  33
-#define TRIM_BLANKS                   34
-#define SHOW_CURSOR                   35
-#define LINE_NUMBERS                  36
-#define AT_BLANKS                     37
-#define AFTER_ENDS                    38
-#define LET_THEM_ZAP                  39
-#define BREAK_LONG_LINES              40
-#define JUMPY_SCROLLING               41
-#define EMPTY_LINE                    42
-#define INDICATOR                     43
-#define BOOKSTYLE                     44
-#define COLON_PARSING                 45
-#define STATEFLAGS                    46
-#define USE_MAGIC                     47
-#define MINIBAR                       48
-#define ZERO                          49
-#define MODERN_BINDINGS               50
-#define EXPERIMENTAL_FAST_LIVE_SYNTAX 51
-#define SUGGEST                       52
-#define SUGGEST_INLINE                53
-/* The flags map. */
+typedef enum {
+  /* This flag is not used as this is part of a bitfield and 0 is not a unique
+  * value, in terms of bitwise operations as the default all non set value is 0. */
+  DONTUSE,
+  #define DONTUSE DONTUSE
+  CASE_SENSITIVE,
+  #define CASE_SENSITIVE CASE_SENSITIVE
+  CONSTANT_SHOW,
+  #define CONSTANT_SHOW CONSTANT_SHOW
+  NO_HELP,
+  #define NO_HELP NO_HELP
+  NO_WRAP,
+  #define NO_WRAP NO_WRAP
+  AUTOINDENT,
+  #define AUTOINDENT AUTOINDENT
+  VIEW_MODE,
+  #define VIEW_MODE VIEW_MODE
+  USE_MOUSE,
+  #define USE_MOUSE USE_MOUSE
+  USE_REGEXP,
+  #define USE_REGEXP USE_REGEXP
+  SAVE_ON_EXIT,
+  #define SAVE_ON_EXIT SAVE_ON_EXIT
+  CUT_FROM_CURSOR,
+  #define CUT_FROM_CURSOR CUT_FROM_CURSOR
+  BACKWARDS_SEARCH,
+  #define BACKWARDS_SEARCH BACKWARDS_SEARCH
+  MULTIBUFFER,
+  #define MULTIBUFFER MULTIBUFFER
+  REBIND_DELETE,
+  #define REBIND_DELETE REBIND_DELETE
+  RAW_SEQUENCES,
+  #define RAW_SEQUENCES RAW_SEQUENCES
+  NO_CONVERT,
+  #define NO_CONVERT NO_CONVERT
+  MAKE_BACKUP,
+  #define MAKE_BACKUP MAKE_BACKUP
+  INSECURE_BACKUP,
+  #define INSECURE_BACKUP INSECURE_BACKUP
+  NO_SYNTAX,
+  #define NO_SYNTAX NO_SYNTAX
+  PRESERVE,
+  #define PRESERVE PRESERVE
+  HISTORYLOG,
+  #define HISTORYLOG HISTORYLOG
+  RESTRICTED,
+  #define RESTRICTED RESTRICTED
+  SMART_HOME,
+  #define SMART_HOME SMART_HOME
+  WHITESPACE_DISPLAY,
+  #define WHITESPACE_DISPLAY WHITESPACE_DISPLAY
+  TABS_TO_SPACES,
+  #define TABS_TO_SPACES TABS_TO_SPACES
+  QUICK_BLANK,
+  #define QUICK_BLANK QUICK_BLANK
+  WORD_BOUNDS,
+  #define WORD_BOUNDS WORD_BOUNDS
+  NO_NEWLINES,
+  #define NO_NEWLINES NO_NEWLINES
+  BOLD_TEXT,
+  #define BOLD_TEXT BOLD_TEXT
+  SOFTWRAP,
+  #define SOFTWRAP SOFTWRAP
+  POSITIONLOG,
+  #define POSITIONLOG POSITIONLOG
+  LOCKING,
+  #define LOCKING LOCKING
+  NOREAD_MODE,
+  #define NOREAD_MODE NOREAD_MODE
+  MAKE_IT_UNIX,
+  #define MAKE_IT_UNIX MAKE_IT_UNIX
+  TRIM_BLANKS,
+  #define TRIM_BLANKS TRIM_BLANKS
+  SHOW_CURSOR,
+  #define SHOW_CURSOR SHOW_CURSOR
+  LINE_NUMBERS,
+  #define LINE_NUMBERS LINE_NUMBERS
+  AT_BLANKS,
+  #define AT_BLANKS AT_BLANKS
+  AFTER_ENDS,
+  #define AFTER_ENDS AFTER_ENDS
+  LET_THEM_ZAP,
+  #define LET_THEM_ZAP LET_THEM_ZAP
+  BREAK_LONG_LINES,
+  #define BREAK_LONG_LINES BREAK_LONG_LINES
+  JUMPY_SCROLLING,
+  #define JUMPY_SCROLLING JUMPY_SCROLLING
+  EMPTY_LINE,
+  #define EMPTY_LINE EMPTY_LINE
+  INDICATOR,
+  #define INDICATOR INDICATOR
+  BOOKSTYLE,
+  #define BOOKSTYLE BOOKSTYLE
+  COLON_PARSING,
+  #define COLON_PARSING COLON_PARSING
+  STATEFLAGS,
+  #define STATEFLAGS STATEFLAGS
+  USE_MAGIC,
+  #define USE_MAGIC USE_MAGIC
+  MINIBAR,
+  #define MINIBAR MINIBAR
+  ZERO,
+  #define ZERO ZERO
+  MODERN_BINDINGS,
+  #define MODERN_BINDINGS MODERN_BINDINGS
+  EXPERIMENTAL_FAST_LIVE_SYNTAX,
+  #define EXPERIMENTAL_FAST_LIVE_SYNTAX EXPERIMENTAL_FAST_LIVE_SYNTAX
+  SUGGEST,
+  #define SUGGEST SUGGEST
+  SUGGEST_INLINE
+  #define SUGGEST_INLINE SUGGEST_INLINE
+} flag_type;
+/* The flag map. */
 constexpr_map<string_view, Uchar, 94> flagOptionsMap = {{
   {               "-A", SMART_HOME      },
   {      "--smarthome", SMART_HOME      },
@@ -328,7 +383,6 @@ constexpr Uint retriveCliOptionFromStr(string_view str) {
   }
   return 0;
 }
-
 
 #define NUMBER_OF_FLAGS 51
 constexpr const char *const DEFAULT_RESPONSE_ON_NONE = "Ehm...";

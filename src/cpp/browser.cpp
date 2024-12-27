@@ -65,7 +65,7 @@ void read_the_list(const char *path, DIR *dir) {
 }
 
 /* Reselect the given file or directory name, if it still exists. */
-void reselect(const char *const name) {
+static void reselect(const char *const name) _NO_EXCEPT {
   Ulong looking_at = 0;
   while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0) {
     ++looking_at;
@@ -180,11 +180,11 @@ void browser_refresh(void) {
       if (index != selected) {
         /* Apply extention based colors when not selected. */
         if (file_ext) {
-          if (strcmp(file_ext, "cpp") == 0) {
+          if (strcmp(file_ext, "c") == 0 || strcmp(file_ext, "cpp") == 0) {
             apply_color = FG_VS_CODE_BRIGHT_GREEN;
             did_apply_color = TRUE;
           }
-          if (strcmp(file_ext, "h") == 0) {
+          if (strcmp(file_ext, "h") == 0 || strcmp(file_ext, "hpp") == 0) {
             apply_color = FG_VS_CODE_MAGENTA;
             did_apply_color = TRUE;
           }
@@ -242,7 +242,7 @@ void browser_refresh(void) {
     /* Add some space between the columns. */
     col += 2;
     /* If the next item will not fit on this row, move to next row. */
-    if (col > COLS - gauge) {
+    if (col > (COLS - gauge)) {
       ++row;
       col = 0;
     }
@@ -339,18 +339,18 @@ void research_filename(bool forwards) {
 }
 
 /* Select the first file in the list -- called by ^W^Y. */
-void to_first_file(void) {
+void to_first_file(void) _NO_EXCEPT {
   selected = 0;
 }
 
 /* Select the last file in the list -- called by ^W^V. */
-void to_last_file(void) {
+void to_last_file(void) _NO_EXCEPT {
   selected = (list_length - 1);
 }
 
 // Strip one element from the end of path, and return the stripped path.
 // The returned string is dynamically allocated, and should be freed.
-char *strip_last_component(const char *path) {
+static char *strip_last_component(const char *path) _NO_EXCEPT {
   char *copy = copy_of(path);
   char *last_slash = strrchr(copy, '/');
   if (last_slash) {
@@ -428,10 +428,10 @@ read_directory_contents:
         int mouse_x, mouse_y;
         /* When the user clicked in the file list, select a filename. */
         if (get_mouseinput(&mouse_y, &mouse_x, TRUE) == 0 && wmouse_trafo(midwin, &mouse_y, &mouse_x, FALSE)) {
-          selected = selected - selected % (usable_rows * piles) + (mouse_y * piles) + (mouse_x / (gauge + 2));
+          selected = (selected - selected % (usable_rows * piles) + (mouse_y * piles) + (mouse_x / (gauge + 2)));
           /* When beyond end-of-row, select the preceding filename. */
           if (mouse_x > piles * (gauge + 2)) {
-            selected--;
+            --selected;
           }
           /* When beyond end-of-list, select the last filename. */
           if (selected > list_length - 1) {
@@ -456,8 +456,7 @@ read_directory_contents:
       function = interpret(kbinput);
       if (function == full_refresh || function == do_help) {
         function();
-        /* Simulate a terminal resize to force a directory reread,
-         * or because the terminal dimensions might have changed. */
+        /* Simulate a terminal resize to force a directory reread, or because the terminal dimensions might have changed. */
         kbinput = KEY_WINCH;
       }
       else if (function == do_toggle && get_shortcut(kbinput)->toggle == NO_HELP) {
@@ -479,21 +478,21 @@ read_directory_contents:
       }
       else if (function == do_left) {
         if (selected > 0) {
-          selected--;
+          --selected;
         }
       }
       else if (function == do_right) {
-        if (selected < list_length - 1) {
-          selected++;
+        if (selected < (list_length - 1)) {
+          ++selected;
         }
       }
       else if (function == to_prev_word) {
         selected -= (selected % piles);
       }
       else if (function == to_next_word) {
-        selected += piles - 1 - (selected % piles);
+        selected += (piles - 1 - (selected % piles));
         if (selected >= list_length) {
-          selected = list_length - 1;
+          selected = (list_length - 1);
         }
       }
       else if (function == do_up) {
@@ -510,8 +509,7 @@ read_directory_contents:
         selected = ((selected / (usable_rows * piles)) * usable_rows * piles) + selected % piles;
       }
       else if (function == to_next_block) {
-        selected =
-            ((selected / (usable_rows * piles)) * usable_rows * piles) + selected % piles + usable_rows * piles - piles;
+        selected = (((selected / (usable_rows * piles)) * usable_rows * piles) + selected % piles + usable_rows * piles - piles);
         if (selected >= list_length) {
           selected = (list_length / piles) * piles + selected % piles;
         }
@@ -523,15 +521,15 @@ read_directory_contents:
         if (selected < piles) {
           selected = 0;
         }
-        else if (selected < usable_rows * piles) {
+        else if (selected < (usable_rows * piles)) {
           selected = selected % piles;
         }
         else {
-          selected -= usable_rows * piles;
+          selected -= (usable_rows * piles);
         }
       }
       else if (function == do_page_down) {
-        if (selected + piles >= list_length - 1) {
+        if ((selected + piles) >= (list_length - 1)) {
           selected = (list_length - 1);
         }
         else if ((selected + usable_rows * piles) >= list_length) {
@@ -556,7 +554,7 @@ read_directory_contents:
         path = free_and_assign(path, real_dir_from_tilde(answer));
         /* If the given path is relative, join it with the current path. */
         if (*path != '/') {
-          path = arealloc(path, strlen(present_path) + strlen(answer) + 1);
+          path = arealloc(path, (strlen(present_path) + strlen(answer) + 1));
           sprintf(path, "%s%s", present_path, answer);
         }
         /* This refers to the confining effect of the option '--operatingdir', not of '--restricted'. */
@@ -571,7 +569,7 @@ read_directory_contents:
         }
         /* In case the specified directory cannot be entered, select it
          * (if it is in the current list) so it will be highlighted. */
-        for (Ulong j = 0; j < list_length; j++) {
+        for (Ulong j = 0; j < list_length; ++j) {
           if (strcmp(filelist[j], path) == 0) {
             selected = j;
           }

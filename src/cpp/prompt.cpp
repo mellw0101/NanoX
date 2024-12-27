@@ -7,17 +7,17 @@ static char *prompt = NULL;
 static Ulong typing_x = HIGHEST_POSITIVE;
 
 /* Move to the beginning of the answer. */
-void do_statusbar_home(void) {
+void do_statusbar_home(void) _NO_EXCEPT {
   typing_x = 0;
 }
 
 /* Move to the end of the answer. */
-void do_statusbar_end(void) {
+void do_statusbar_end(void) _NO_EXCEPT {
   typing_x = strlen(answer);
 }
 
 /* Move to the previous word in the answer. */
-void do_statusbar_prev_word(void) {
+void do_statusbar_prev_word(void) _NO_EXCEPT {
   bool seen_a_word = FALSE, step_forward = FALSE;
   /* Move backward until we pass over the start of a word. */
   while (typing_x) {
@@ -41,7 +41,7 @@ void do_statusbar_prev_word(void) {
 }
 
 /* Move to the next word in the answer. */
-void do_statusbar_next_word(void) {
+void do_statusbar_next_word(void) _NO_EXCEPT {
   bool seen_space = !is_word_char(answer + typing_x, FALSE);
   bool seen_word  = !seen_space;
   /* Move forward until we reach either the end or the start of a word, depending on whether the AFTER_ENDS flag is set or not. */

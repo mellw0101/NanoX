@@ -50,7 +50,6 @@
 
 #include <Mlib/Attributes.h>
 #include <Mlib/Debug.h>
-#include <Mlib/FileSys.h>
 #include <Mlib/Flag.h>
 #include <Mlib/Profile.h>
 #include <Mlib/String.h>
@@ -65,6 +64,8 @@ using std::string_view;
 using std::to_string;
 using std::unordered_map;
 using std::vector;
+
+#define KEY_DEBUG
 
 /* Native language support. */
 #ifdef ENABLE_NLS

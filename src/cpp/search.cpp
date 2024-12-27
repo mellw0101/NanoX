@@ -324,9 +324,9 @@ void do_findnext(void) {
 }
 
 /* Report on the status bar that the given string was not found. */
-void not_found_msg(const char *str) {
-  char *disp     = display_string(str, 0, (COLS / 2) + 1, FALSE, FALSE);
-  Ulong numchars = actual_x(disp, wideness(disp, COLS / 2));
+void not_found_msg(const char *str) _NO_EXCEPT {
+  char *disp     = display_string(str, 0, ((COLS / 2) + 1), FALSE, FALSE);
+  Ulong numchars = actual_x(disp, wideness(disp, (COLS / 2)));
   statusline(AHEM, _("\"%.*s%s\" not found"), numchars, disp, (disp[numchars] == '\0') ? "" : "...");
   free(disp);
 }
@@ -583,7 +583,7 @@ void ask_for_and_do_replacements(void) {
 }
 
 /* Go to the specified line and x position. */
-void goto_line_posx(long linenumber, Ulong pos_x) {
+void goto_line_posx(long linenumber, Ulong pos_x) _NO_EXCEPT {
   if (linenumber > (openfile->edittop->lineno + editwinrows) || (ISSET(SOFTWRAP) && linenumber > openfile->current->lineno)) {
     recook |= perturbed;
   }
@@ -595,7 +595,7 @@ void goto_line_posx(long linenumber, Ulong pos_x) {
   }
   openfile->current_x   = pos_x;
   openfile->placewewant = xplustabs();
-  refresh_needed        = TRUE;
+  refresh_needed = TRUE;
 }
 
 /* Go to the specified line and column, or ask for them if interactive is TRUE.  In the latter case also
@@ -689,12 +689,12 @@ void goto_line_and_column(long line, long column, bool retain_answer, bool inter
 
 /* Go to the specified line and column, asking for them beforehand. */
 void do_gotolinecolumn(void) {
-  goto_line_and_column(openfile->current->lineno, openfile->placewewant + 1, FALSE, TRUE);
+  goto_line_and_column(openfile->current->lineno, (openfile->placewewant + 1), FALSE, TRUE);
 }
 
 /* Search, starting from the current position, for any of the two characters in bracket_pair.  If reverse is TRUE,
  * search backwards, otherwise forwards.  Return TRUE when one of the brackets was found, and FALSE otherwise. */
-bool find_a_bracket(bool reverse, const char *bracket_pair) {
+bool find_a_bracket(bool reverse, const char *bracket_pair) _NO_EXCEPT {
   linestruct *line = openfile->current;
   const char *pointer, *found;
   if (reverse) {
@@ -704,22 +704,22 @@ bool find_a_bracket(bool reverse, const char *bracket_pair) {
       if (!line) {
         return FALSE;
       }
-      pointer = line->data + strlen(line->data);
+      pointer = (line->data + strlen(line->data));
     }
     else {
-      pointer = line->data + step_left(line->data, openfile->current_x);
+      pointer = (line->data + step_left(line->data, openfile->current_x));
     }
     /* Now seek for any of the two brackets we are interested in. */
     while (!(found = mbrevstrpbrk(line->data, bracket_pair, pointer))) {
       line = line->prev;
-      if (line == NULL) {
+      if (!line) {
         return FALSE;
       }
-      pointer = line->data + strlen(line->data);
+      pointer = (line->data + strlen(line->data));
     }
   }
   else {
-    pointer = line->data + step_right(line->data, openfile->current_x);
+    pointer = (line->data + step_right(line->data, openfile->current_x));
     while (!(found = mbstrpbrk(pointer, bracket_pair))) {
       line = line->next;
       if (!line) {
@@ -730,12 +730,12 @@ bool find_a_bracket(bool reverse, const char *bracket_pair) {
   }
   /* Set the current position to the found bracket. */
   openfile->current   = line;
-  openfile->current_x = found - line->data;
+  openfile->current_x = (found - line->data);
   return TRUE;
 }
 
 /* Search for a match to the bracket at the current cursor position, if there is one. */
-void do_find_bracket(void) {
+void do_find_bracket(void) _NO_EXCEPT {
   linestruct *was_current = openfile->current;
   /* The current cursor position, in case we don't find a complement. */
   Ulong was_current_x = openfile->current_x;
@@ -757,13 +757,13 @@ void do_find_bracket(void) {
   Ulong balance = 1;
   /* The direction we search. */
   bool reverse;
-  ch = mbstrchr(matchbrackets, openfile->current->data + openfile->current_x);
+  ch = mbstrchr(matchbrackets, (openfile->current->data + openfile->current_x));
   if (!ch) {
     statusline(AHEM, _("Not a bracket"));
     return;
   }
   /* Find the halfway point in matchbrackets, where the closing ones start. */
-  for (Ulong i = 0; i < charcount; i++) {
+  for (Ulong i = 0; i < charcount; ++i) {
     halfway += char_length(matchbrackets + halfway);
   }
   /* When on a closing bracket, we have to search backwards for a matching
@@ -774,7 +774,7 @@ void do_find_bracket(void) {
   wanted_ch = ch;
   while (charcount-- > 0) {
     if (reverse) {
-      wanted_ch = matchbrackets + step_left(matchbrackets, wanted_ch - matchbrackets);
+      wanted_ch = (matchbrackets + step_left(matchbrackets, (wanted_ch - matchbrackets)));
     }
     else {
       wanted_ch += char_length(wanted_ch);
@@ -784,11 +784,11 @@ void do_find_bracket(void) {
   wanted_ch_len = char_length(wanted_ch);
   /* Copy the two complementary brackets into a single string. */
   strncpy(bracket_pair, ch, ch_len);
-  strncpy(bracket_pair + ch_len, wanted_ch, wanted_ch_len);
+  strncpy((bracket_pair + ch_len), wanted_ch, wanted_ch_len);
   bracket_pair[ch_len + wanted_ch_len] = '\0';
   while (find_a_bracket(reverse, bracket_pair)) {
     /* Increment/decrement balance for an identical/other bracket. */
-    balance += (strncmp(openfile->current->data + openfile->current_x, ch, ch_len) == 0) ? 1 : -1;
+    balance += ((strncmp((openfile->current->data + openfile->current_x), ch, ch_len) == 0) ? 1 : -1);
     /* When balance reached zero, we've found the complementary bracket. */
     if (balance == 0) {
       edit_redraw(was_current, FLOWING);

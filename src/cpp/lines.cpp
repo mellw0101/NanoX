@@ -41,7 +41,7 @@ void inject_in_line(linestruct *line, const char *str, Ulong at) {
     return;
   }
   line->data = arealloc(line->data, (len + s_len + 1));
-  memmove((line->data + at + s_len), line->data + at, (len - at + 1));
+  memmove((line->data + at + s_len), (line->data + at), (len - at + 1));
   memmove((line->data + at), str, s_len);
 }
 
@@ -138,12 +138,12 @@ void move_lines_down(void) {
 /* Remove 'len' of char`s 'at' pos in line. */
 void erase_in_line(linestruct *line, Ulong at, Ulong len) {
   Ulong slen = strlen(line->data);
-  if (at + len > slen) {
+  if ((at + len) > slen) {
     return;
   }
   char *data = (char *)nmalloc(slen - len + 1);
   memmove(data, line->data, at);
-  memmove(data + at, line->data + at + len, slen - at - len + 1);
+  memmove((data + at), (line->data + at + len), (slen - at - len + 1));
   free(line->data);
   line->data = data;
 }
