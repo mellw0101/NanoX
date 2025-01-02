@@ -6,6 +6,10 @@
 /* Witness that <config.h> has been included.  */
 #define _GL_CONFIG_H_INCLUDED 1
 
+/* General setup. */
+#define LOCALEDIR             "/usr/share/locale"
+#define PROJECT_NAME          "NanoX"
+#define SYSCONFDIR            "/etc"
 
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
@@ -55,11 +59,10 @@
 /* #undef DIR_FD_MEMBER_NAME */
 
 #ifdef DIR_FD_MEMBER_NAME
-#    define DIR_TO_FD(Dir_p) ((Dir_p)->DIR_FD_MEMBER_NAME)
+#  define DIR_TO_FD(Dir_p) ((Dir_p)->DIR_FD_MEMBER_NAME)
 #else
-#    define DIR_TO_FD(Dir_p) -1
+#  define DIR_TO_FD(Dir_p) -1
 #endif
-
 
 // Define to 1 if // is a file system root distinct from /.
 // #undef DOUBLE_SLASH_IS_DISTINCT_ROOT
@@ -547,8 +550,7 @@
 /* Define to 1 when the gnulib module wmempcpy should be tested. */
 #define GNULIB_TEST_WMEMPCPY                    1
 
-/* Define to 1 if you have 'alloca' after including <alloca.h>, a header that
-   may be supplied by this distribution. */
+/* Define to 1 if you have 'alloca' after including <alloca.h>, a header that may be supplied by this distribution. */
 #define HAVE_ALLOCA                             1
 
 /* Define to 1 if <alloca.h> works. */
@@ -566,12 +568,10 @@
 /* Define to 1 if you have the 'canonicalize_file_name' function. */
 #define HAVE_CANONICALIZE_FILE_NAME             1
 
-/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
-   CoreFoundation framework. */
+/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the CoreFoundation framework. */
 /* #undef HAVE_CFLOCALECOPYCURRENT */
 
-/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
-   the CoreFoundation framework. */
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in the CoreFoundation framework. */
 /* #undef HAVE_CFPREFERENCESCOPYAPPVALUE */
 
 /* Define to 1 if you have the 'chmod' function. */
@@ -592,16 +592,13 @@
 /* Define to 1 if you have the 'closedir' function. */
 #define HAVE_CLOSEDIR                           1
 
-/* Define if the copysignf function is declared in <math.h> and available in
-   libc. */
+/* Define if the copysignf function is declared in <math.h> and available in libc. */
 /* #undef HAVE_COPYSIGNF_IN_LIBC */
 
-/* Define if the copysignl function is declared in <math.h> and available in
-   libc. */
+/* Define if the copysignl function is declared in <math.h> and available in libc. */
 /* #undef HAVE_COPYSIGNL_IN_LIBC */
 
-/* Define if the copysign function is declared in <math.h> and available in
-   libc. */
+/* Define if the copysign function is declared in <math.h> and available in libc. */
 /* #undef HAVE_COPYSIGN_IN_LIBC */
 
 /* Define to 1 if you have the <crtdefs.h> header file. */
@@ -619,164 +616,124 @@
 /* Define to 1 if C supports variable-length arrays. */
 #define HAVE_C_VARARRAYS                        1
 
-/* Define if the GNU dcgettext() function is already present or preinstalled.
- */
+/* Define if the GNU dcgettext() function is already present or preinstalled. */
 #define HAVE_DCGETTEXT                          1
 
-/* Define to 1 if you have the declaration of 'alarm', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'alarm', and to 0 if you don't. */
 #define HAVE_DECL_ALARM                         1
 
-/* Define to 1 if you have the declaration of 'copysign', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'copysign', and to 0 if you don't. */
 /* #undef HAVE_DECL_COPYSIGN */
 
-/* Define to 1 if you have the declaration of 'copysignf', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'copysignf', and to 0 if you don't. */
 /* #undef HAVE_DECL_COPYSIGNF */
 
-/* Define to 1 if you have the declaration of 'copysignl', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'copysignl', and to 0 if you don't. */
 /* #undef HAVE_DECL_COPYSIGNL */
 
-/* Define to 1 if you have the declaration of 'dirfd', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'dirfd', and to 0 if you don't. */
 #define HAVE_DECL_DIRFD                         1
 
-/* Define to 1 if you have the declaration of 'ecvt', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'ecvt', and to 0 if you don't. */
 #define HAVE_DECL_ECVT                          1
 
-/* Define to 1 if you have the declaration of 'execvpe', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'execvpe', and to 0 if you don't. */
 #define HAVE_DECL_EXECVPE                       1
 
-/* Define to 1 if you have the declaration of 'fchdir', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'fchdir', and to 0 if you don't. */
 #define HAVE_DECL_FCHDIR                        1
 
-/* Define to 1 if you have the declaration of 'fcloseall', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'fcloseall', and to 0 if you don't. */
 #define HAVE_DECL_FCLOSEALL                     1
 
-/* Define to 1 if you have the declaration of 'fcvt', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'fcvt', and to 0 if you don't. */
 #define HAVE_DECL_FCVT                          1
 
-/* Define to 1 if you have the declaration of 'gcvt', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'gcvt', and to 0 if you don't. */
 #define HAVE_DECL_GCVT                          1
 
-/* Define to 1 if you have the declaration of 'getc_unlocked', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'getc_unlocked', and to 0 if you don't. */
 /* #undef HAVE_DECL_GETC_UNLOCKED */
 
-/* Define to 1 if you have the declaration of 'getdelim', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'getdelim', and to 0 if you don't. */
 #define HAVE_DECL_GETDELIM                      1
 
-/* Define to 1 if you have the declaration of 'getdtablesize', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'getdtablesize', and to 0 if you don't. */
 #define HAVE_DECL_GETDTABLESIZE                 1
 
-/* Define to 1 if you have the declaration of 'getline', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'getline', and to 0 if you don't. */
 #define HAVE_DECL_GETLINE                       1
 
-/* Define to 1 if you have the declaration of 'getlogin', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'getlogin', and to 0 if you don't. */
 #define HAVE_DECL_GETLOGIN                      1
 
-/* Define to 1 if you have the declaration of 'getlogin_r', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'getlogin_r', and to 0 if you don't. */
 #define HAVE_DECL_GETLOGIN_R                    1
 
-/* Define to 1 if you have the declaration of 'getw', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'getw', and to 0 if you don't. */
 #define HAVE_DECL_GETW                          1
 
-/* Define to 1 if you have the declaration of 'isblank', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'isblank', and to 0 if you don't. */
 /* #undef HAVE_DECL_ISBLANK */
 
-/* Define to 1 if you have the declaration of 'iswblank', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'iswblank', and to 0 if you don't. */
 #define HAVE_DECL_ISWBLANK                      1
 
-/* Define to 1 if you have the declaration of 'mbrtowc', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'mbrtowc', and to 0 if you don't. */
 /* #undef HAVE_DECL_MBRTOWC */
 
-/* Define to 1 if you have the declaration of 'mbsinit', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'mbsinit', and to 0 if you don't. */
 /* #undef HAVE_DECL_MBSINIT */
 
-/* Define to 1 if you have the declaration of 'mbsrtowcs', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'mbsrtowcs', and to 0 if you don't. */
 /* #undef HAVE_DECL_MBSRTOWCS */
 
-/* Define to 1 if you have the declaration of 'memrchr', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'memrchr', and to 0 if you don't. */
 #define HAVE_DECL_MEMRCHR                       1
 
-/* Define to 1 if you have the declaration of 'program_invocation_name', and
-   to 0 if you don't. */
+/* Define to 1 if you have the declaration of 'program_invocation_name', and to 0 if you don't. */
 #define HAVE_DECL_PROGRAM_INVOCATION_NAME       1
 
-/* Define to 1 if you have the declaration of 'program_invocation_short_name',
-   and to 0 if you don't. */
+/* Define to 1 if you have the declaration of 'program_invocation_short_name', and to 0 if you don't. */
 #define HAVE_DECL_PROGRAM_INVOCATION_SHORT_NAME 1
 
-/* Define to 1 if you have the declaration of 'putw', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'putw', and to 0 if you don't. */
 #define HAVE_DECL_PUTW                          1
 
-/* Define to 1 if you have the declaration of 'snprintf', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'snprintf', and to 0 if you don't. */
 #define HAVE_DECL_SNPRINTF                      1
 
-/* Define to 1 if you have the declaration of 'strdup', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'strdup', and to 0 if you don't. */
 #define HAVE_DECL_STRDUP                        1
 
-/* Define to 1 if you have the declaration of 'strerror_r', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'strerror_r', and to 0 if you don't. */
 #define HAVE_DECL_STRERROR_R                    1
 
-/* Define to 1 if you have the declaration of 'strncasecmp', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'strncasecmp', and to 0 if you don't. */
 #define HAVE_DECL_STRNCASECMP                   1
 
-/* Define to 1 if you have the declaration of 'strnlen', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'strnlen', and to 0 if you don't. */
 #define HAVE_DECL_STRNLEN                       1
 
-/* Define to 1 if you have the declaration of 'towlower', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'towlower', and to 0 if you don't. */
 /* #undef HAVE_DECL_TOWLOWER */
 
-/* Define to 1 if you have the declaration of 'vsnprintf', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'vsnprintf', and to 0 if you don't. */
 #define HAVE_DECL_VSNPRINTF                     1
 
-/* Define to 1 if you have the declaration of 'wcrtomb', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'wcrtomb', and to 0 if you don't. */
 /* #undef HAVE_DECL_WCRTOMB */
 
-/* Define to 1 if you have the declaration of 'wcsdup', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of 'wcsdup', and to 0 if you don't. */
 #define HAVE_DECL_WCSDUP                        1
 
-/* Define to 1 if you have the declaration of 'wcwidth', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of 'wcwidth', and to 0 if you don't. */
 #define HAVE_DECL_WCWIDTH                       1
 
-/* Define to 1 if you have the declaration of '_snprintf', and to 0 if you
-   don't. */
+/* Define to 1 if you have the declaration of '_snprintf', and to 0 if you don't. */
 #define HAVE_DECL__SNPRINTF                     0
 
-/* Define to 1 if you have the declaration of '__argv', and to 0 if you don't.
- */
+/* Define to 1 if you have the declaration of '__argv', and to 0 if you don't. */
 #define HAVE_DECL___ARGV                        0
 
 /* Define to 1 if you have the <dirent.h> header file. */
@@ -902,9 +859,7 @@
 /* Define if you have the iconv() function and it works. */
 /* #undef HAVE_ICONV */
 
-/* Define to 1 if the compiler supports one of the keywords 'inline',
-   '__inline__', '__inline' and effectively inlines functions marked as such.
-   */
+/* Define to 1 if the compiler supports one of the keywords 'inline', * '__inline__', '__inline' and effectively inlines functions marked as such. */
 #define HAVE_INLINE                             1
 
 /* Define if you have the 'intmax_t' type in <stdint.h> or <inttypes.h>. */
@@ -913,8 +868,7 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H                         1
 
-/* Define if <inttypes.h> exists, doesn't clash with <sys/types.h>, and
-   declares uintmax_t. */
+/* Define if <inttypes.h> exists, doesn't clash with <sys/types.h>, and declares uintmax_t. */
 #define HAVE_INTTYPES_H_WITH_UINTMAX            1
 
 /* Define to 1 if you have the 'isblank' function. */
@@ -966,7 +920,7 @@
 #define HAVE_LIBINTL_H                          1
 
 /* Define to 1 if you have the 'magic' library (-lmagic). */
-#define HAVE_LIBMAGIC                           1
+/* #define HAVE_LIBMAGIC                           1 */
 
 /* Define to 1 if you have the 'z' library (-lz). */
 #define HAVE_LIBZ                               1
@@ -987,7 +941,9 @@
 #define HAVE_LUTIMES                            1
 
 /* Define to 1 if you have the <magic.h> header file. */
-#define HAVE_MAGIC_H                            1
+#ifdef HAVE_LIBMAGIC
+#  define HAVE_MAGIC_H                          1
+#endif
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #define HAVE_MALLOC_H                           1
@@ -1069,8 +1025,7 @@
 /* Define if the POSIX multithreading library has read/write locks. */
 #define HAVE_PTHREAD_RWLOCK                     1
 
-/* Define if the 'pthread_rwlock_rdlock' function prefers a writer to a
-   reader. */
+/* Define if the 'pthread_rwlock_rdlock' function prefers a writer to a reader. */
 /* #undef HAVE_PTHREAD_RWLOCK_RDLOCK_PREFER_WRITER */
 
 /* Define to 1 if you have the <pwd.h> header file. */
@@ -1130,9 +1085,8 @@
 /* Define to 1 if you have the 'snprintf' function. */
 #define HAVE_SNPRINTF                           1
 
-/* Define if the return value of the snprintf function is the number of of
-   bytes (excluding the terminating NUL) that would have been produced if the
-   buffer had been large enough. */
+/* Define if the return value of the snprintf function is the number of of bytes (excluding
+ * the terminating NUL) that would have been produced if the buffer had been large enough. */
 #define HAVE_SNPRINTF_RETVAL_C99                1
 
 /* Define if the string produced by the snprintf function is always NUL
@@ -1148,8 +1102,7 @@
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H                           1
 
-/* Define if <stdint.h> exists, doesn't clash with <sys/types.h>, and declares
-   uintmax_t. */
+/* Define if <stdint.h> exists, doesn't clash with <sys/types.h>, and declares uintmax_t. */
 #define HAVE_STDINT_H_WITH_UINTMAX              1
 
 /* Define to 1 if you have the <stdio.h> header file. */
@@ -1179,8 +1132,7 @@
 /* Define to 1 if you have the 'strnlen' function. */
 #define HAVE_STRNLEN                            1
 
-/* Define if there is a member named d_type in the struct describing directory
-   headers. */
+/* Define if there is a member named d_type in the struct describing directory headers. */
 #define HAVE_STRUCT_DIRENT_D_TYPE               1
 
 /* Define to 1 if 'decimal_point' is a member of 'struct lconv'. */
@@ -1295,8 +1247,7 @@
 /* Define to 1 if you have the 'vasnprintf' function. */
 /* #undef HAVE_VASNPRINTF */
 
-/* Define to 1 or 0, depending whether the compiler supports simple visibility
-   declarations. */
+/* Define to 1 or 0, depending whether the compiler supports simple visibility declarations. */
 /* #undef HAVE_VISIBILITY */
 
 /* Define to 1 if you have the 'vsnprintf' function. */
@@ -1329,8 +1280,7 @@
 /* Define to 1 if you have the 'wcwidth' function. */
 #define HAVE_WCWIDTH                            1
 
-/* Define to 1 if the compiler and linker support weak declarations of
-   symbols. */
+/* Define to 1 if the compiler and linker support weak declarations of symbols. */
 #define HAVE_WEAK_SYMBOLS                       1
 
 /* Define to 1 if you have the <winsock2.h> header file. */
@@ -1342,8 +1292,7 @@
 /* Define to 1 if you have the `wmempcpy' function. */
 #define HAVE_WMEMPCPY                           1
 
-/* Define to 1 if fstatat (..., 0) works. For example, it does not work in AIX
-   7.1. */
+/* Define to 1 if fstatat (..., 0) works. For example, it does not work in AIX 7.1. */
 /* #undef HAVE_WORKING_FSTATAT_ZERO_FLAG */
 
 /* Define if the mbrtoc32 function basically works. */
@@ -1371,11 +1320,10 @@
    and to 2 if <builtins.h> does.  */
 #define HAVE___BUILTIN_EXPECT                   1
 #ifndef HAVE___BUILTIN_EXPECT
-#    define __builtin_expect(e, c) (e)
+#  define __builtin_expect(e, c) (e)
 #elif HAVE___BUILTIN_EXPECT == 2
-#    include <builtins.h>
+#  include <builtins.h>
 #endif
-
 
 /* Define to 1 if ctype.h defines __header_inline. */
 /* #undef HAVE___HEADER_INLINE */
@@ -1424,33 +1372,30 @@
      warning: to disable this warning use -fgnu89-inline or the gnu_inline function attribute
    It defines a macro __GNUC_GNU_INLINE__ to indicate this situation.
  */
-#if (((defined __APPLE__ && defined __MACH__) || defined __DragonFly__ || defined __FreeBSD__) && \
-     (defined HAVE___HEADER_INLINE                                                                \
-          ? (defined __cplusplus && defined __GNUC_STDC_INLINE__ && !defined __clang__)           \
-          : ((!defined _DONT_USE_CTYPE_INLINE_ && (defined __GNUC__ || defined __cplusplus)) ||   \
-             (defined _FORTIFY_SOURCE && 0 < _FORTIFY_SOURCE && defined __GNUC__ && !defined __cplusplus))))
-#    define _GL_EXTERN_INLINE_STDHEADER_BUG
+#if (((defined __APPLE__ && defined __MACH__) || defined __DragonFly__ || defined __FreeBSD__) &&                        \
+     (defined HAVE___HEADER_INLINE ? (defined __cplusplus && defined __GNUC_STDC_INLINE__ && !defined __clang__)         \
+                                   : ((!defined _DONT_USE_CTYPE_INLINE_ && (defined __GNUC__ || defined __cplusplus)) || \
+                                      (defined _FORTIFY_SOURCE && 0 < _FORTIFY_SOURCE && defined __GNUC__ && !defined __cplusplus))))
+#  define _GL_EXTERN_INLINE_STDHEADER_BUG
 #endif
-#if ((__GNUC__ ? (defined __GNUC_STDC_INLINE__ && __GNUC_STDC_INLINE__ && !defined __PCC__) \
-               : (199901L <= __STDC_VERSION__ && !defined __HP_cc && !defined __PGI &&      \
-                  !(defined __SUNPRO_C && __STDC__))) &&                                    \
+#if ((__GNUC__ ? (defined __GNUC_STDC_INLINE__ && __GNUC_STDC_INLINE__ && !defined __PCC__)                                   \
+               : (199901L <= __STDC_VERSION__ && !defined __HP_cc && !defined __PGI && !(defined __SUNPRO_C && __STDC__))) && \
      !defined _GL_EXTERN_INLINE_STDHEADER_BUG)
-#    define _GL_INLINE        inline
-#    define _GL_EXTERN_INLINE extern inline
-#    define _GL_EXTERN_INLINE_IN_USE
-#elif (2 < __GNUC__ + (7 <= __GNUC_MINOR__) && !defined __STRICT_ANSI__ && !defined __PCC__ && \
-       !defined                                                                     _GL_EXTERN_INLINE_STDHEADER_BUG)
-#    if defined __GNUC_GNU_INLINE__ && __GNUC_GNU_INLINE__
+#  define _GL_INLINE        inline
+#  define _GL_EXTERN_INLINE extern inline
+#  define _GL_EXTERN_INLINE_IN_USE
+#elif (2 < __GNUC__ + (7 <= __GNUC_MINOR__) && !defined __STRICT_ANSI__ && !defined __PCC__ && !defined _GL_EXTERN_INLINE_STDHEADER_BUG)
+#  if defined __GNUC_GNU_INLINE__ && __GNUC_GNU_INLINE__
 /* __gnu_inline__ suppresses a GCC 4.2 diagnostic.  */
-#        define _GL_INLINE extern inline __attribute__((__gnu_inline__))
-#    else
-#        define _GL_INLINE extern inline
-#    endif
-#    define _GL_EXTERN_INLINE extern
-#    define _GL_EXTERN_INLINE_IN_USE
+#    define _GL_INLINE extern inline __attribute__((__gnu_inline__))
+#  else
+#    define _GL_INLINE extern inline
+#  endif
+#  define _GL_EXTERN_INLINE extern
+#  define _GL_EXTERN_INLINE_IN_USE
 #else
-#    define _GL_INLINE        _GL_UNUSED static
-#    define _GL_EXTERN_INLINE _GL_UNUSED static
+#  define _GL_INLINE        _GL_UNUSED static
+#  define _GL_EXTERN_INLINE _GL_UNUSED static
 #endif
 
 /* In GCC 4.6 (inclusive) to 5.1 (exclusive),
@@ -1460,39 +1405,36 @@
    <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54113> and
    <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63877>.  */
 #if __GNUC__ == 4 && 6 <= __GNUC_MINOR__
-#    if defined __GNUC_STDC_INLINE__ && __GNUC_STDC_INLINE__
-#        define _GL_INLINE_HEADER_CONST_PRAGMA
-#    else
-#        define _GL_INLINE_HEADER_CONST_PRAGMA _Pragma("GCC diagnostic ignored \"-Wsuggest-attribute=const\"")
-#    endif
-#    define _GL_INLINE_HEADER_BEGIN                                                               \
-        _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wmissing-prototypes\"") \
-            _Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"") _GL_INLINE_HEADER_CONST_PRAGMA
-#    define _GL_INLINE_HEADER_END _Pragma("GCC diagnostic pop")
+#  if defined __GNUC_STDC_INLINE__ && __GNUC_STDC_INLINE__
+#    define _GL_INLINE_HEADER_CONST_PRAGMA
+#  else
+#    define _GL_INLINE_HEADER_CONST_PRAGMA _Pragma("GCC diagnostic ignored \"-Wsuggest-attribute=const\"")
+#  endif
+#  define _GL_INLINE_HEADER_BEGIN                                                             \
+    _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wmissing-prototypes\"") \
+      _Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"") _GL_INLINE_HEADER_CONST_PRAGMA
+#  define _GL_INLINE_HEADER_END _Pragma("GCC diagnostic pop")
 #else
-#    define _GL_INLINE_HEADER_BEGIN
-#    define _GL_INLINE_HEADER_END
+#  define _GL_INLINE_HEADER_BEGIN
+#  define _GL_INLINE_HEADER_END
 #endif
 
 /* Define to 1 if the compiler supports the keyword '__inline'. */
 #define HAVE___INLINE                     1
 
-/* Define as the bit index in the word where to find bit 0 of the exponent of
-   'long double'. */
+/* Define as the bit index in the word where to find bit 0 of the exponent of 'long double'. */
 #define LDBL_EXPBIT0_BIT                  0
 
 /* Define as the word index where to find the exponent of 'long double'. */
 #define LDBL_EXPBIT0_WORD                 2
 
-/* Define as the bit index in the word where to find the sign of 'long
-   double'. */
+/* Define as the bit index in the word where to find the sign of 'long double'. */
 /* #undef LDBL_SIGNBIT_BIT */
 
 /* Define as the word index where to find the sign of 'long double'. */
 /* #undef LDBL_SIGNBIT_WORD */
 
-/* Define to 1 if 'lstat' dereferences a symlink specified with a trailing
-   slash. */
+/* Define to 1 if 'lstat' dereferences a symlink specified with a trailing slash. */
 #define LSTAT_FOLLOWS_SLASHED_SYMLINK     1
 
 /* If malloc(0) is != NULL, define this to 1. Otherwise define this to 0. */
@@ -1501,20 +1443,16 @@
 /* Define to a substitute value for mmap()'s MAP_ANONYMOUS flag. */
 /* #undef MAP_ANONYMOUS */
 
-/* Define if the mbrtoc32 function does not return (size_t) -2 for empty
-   input. */
+/* Define if the mbrtoc32 function does not return (size_t) -2 for empty input. */
 /* #undef MBRTOC32_EMPTY_INPUT_BUG */
 
-/* Define if the mbrtoc32 function may signal encoding errors in the C locale.
- */
+/* Define if the mbrtoc32 function may signal encoding errors in the C locale. */
 #define MBRTOC32_IN_C_LOCALE_MAYBE_EILSEQ 1
 
-/* Define if the mbrtowc function does not return (size_t) -2 for empty input.
- */
+/* Define if the mbrtowc function does not return (size_t) -2 for empty input. */
 /* #undef MBRTOWC_EMPTY_INPUT_BUG */
 
-/* Define if the mbrtowc function may signal encoding errors in the C locale.
- */
+/* Define if the mbrtowc function may signal encoding errors in the C locale. */
 #define MBRTOWC_IN_C_LOCALE_MAYBE_EILSEQ  1
 
 /* Define if the mbrtowc function has the NULL pwc argument bug. */
@@ -1529,21 +1467,20 @@
 /* Define if the mbrtowc function returns a wrong return value. */
 /* #undef MBRTOWC_RETVAL_BUG */
 
-/* Define if the mbrtowc function stores a wide character when reporting
-   incomplete input. */
+/* Define if the mbrtowc function stores a wide character when reporting incomplete input. */
 /* #undef MBRTOWC_STORES_INCOMPLETE_BUG */
 
 /* Use GNU style printf and scanf.  */
 #ifndef __USE_MINGW_ANSI_STDIO
-#    define __USE_MINGW_ANSI_STDIO 1
+#  define __USE_MINGW_ANSI_STDIO 1
 #endif
-
 
 /* Define to 1 on musl libc. */
 /* #undef MUSL_LIBC */
 
 /* Flag(s) to use to get the full range of extended regular expressions */
 #define NANO_REG_EXTENDED         REG_EXTENDED
+// #define NANO_REG_EXTENDED 1
 
 /* Define this to make the nano executable as small as possible. */
 /* #undef NANO_TINY */
@@ -1551,68 +1488,52 @@
 /* Shut up assert warnings :-) */
 #define NDEBUG                    1
 
-/* Define if the vasnprintf implementation needs special code for the 'a' and
-   'A' directives. */
+/* Define if the vasnprintf implementation needs special code for the 'a' and 'A' directives. */
 /* #undef NEED_PRINTF_DIRECTIVE_A */
 
-/* Define if the vasnprintf implementation needs special code for the 'b'
-   directive. */
+/* Define if the vasnprintf implementation needs special code for the 'b' directive. */
 /* #undef NEED_PRINTF_DIRECTIVE_B */
 
-/* Define if the vasnprintf implementation needs special code for the 'F'
-   directive. */
+/* Define if the vasnprintf implementation needs special code for the 'F' directive. */
 /* #undef NEED_PRINTF_DIRECTIVE_F */
 
-/* Define if the vasnprintf implementation needs special code for the 'lc'
-   directive. */
+/* Define if the vasnprintf implementation needs special code for the 'lc' directive. */
 /* #undef NEED_PRINTF_DIRECTIVE_LC */
 
-/* Define if the vasnprintf implementation needs special code for the 'ls'
-   directive. */
+/* Define if the vasnprintf implementation needs special code for the 'ls' directive. */
 /* #undef NEED_PRINTF_DIRECTIVE_LS */
 
-/* Define if the vasnprintf implementation needs special code for 'double'
-   arguments. */
+/* Define if the vasnprintf implementation needs special code for 'double' arguments. */
 /* #undef NEED_PRINTF_DOUBLE */
 
-/* Define if the vasnprintf implementation needs special code for surviving
-   out-of-memory conditions. */
+/* Define if the vasnprintf implementation needs special code for surviving out-of-memory conditions. */
 /* #undef NEED_PRINTF_ENOMEM */
 
-/* Define if the vasnprintf implementation needs special code for the # flag
-   with a zero precision and a zero value in the 'x' and 'X' directives. */
+/* Define if the vasnprintf implementation needs special code for the # flag with a zero precision and a zero value in the 'x' and 'X' directives. */
 /* #undef NEED_PRINTF_FLAG_ALT_PRECISION_ZERO */
 
-/* Define if the vasnprintf implementation needs special code for the ' flag.
- */
+/* Define if the vasnprintf implementation needs special code for the ' flag. */
 /* #undef NEED_PRINTF_FLAG_GROUPING */
 
-/* Define if the vasnprintf implementation needs special code for the '-'
-   flag. */
+/* Define if the vasnprintf implementation needs special code for the '-' flag. */
 /* #undef NEED_PRINTF_FLAG_LEFTADJUST */
 
-/* Define if the vasnprintf implementation needs special code for the 0 flag.
- */
+/* Define if the vasnprintf implementation needs special code for the 0 flag. */
 /* #undef NEED_PRINTF_FLAG_ZERO */
 
-/* Define if the vasnprintf implementation needs special code for infinite
-   'double' arguments. */
+/* Define if the vasnprintf implementation needs special code for infinite 'double' arguments. */
 /* #undef NEED_PRINTF_INFINITE_DOUBLE */
 
-/* Define if the vasnprintf implementation needs special code for infinite
-   'long double' arguments. */
+/* Define if the vasnprintf implementation needs special code for infinite 'long double' arguments. */
 /* #undef NEED_PRINTF_INFINITE_LONG_DOUBLE */
 
-/* Define if the vasnprintf implementation needs special code for 'long
-   double' arguments. */
+/* Define if the vasnprintf implementation needs special code for 'long double' arguments. */
 /* #undef NEED_PRINTF_LONG_DOUBLE */
 
-/* Define if the vasnprintf implementation needs special code for supporting
-   large precisions without arbitrary bounds. */
+/* Define if the vasnprintf implementation needs special code for supporting large precisions without arbitrary bounds. */
 /* #undef NEED_PRINTF_UNBOUNDED_PRECISION */
 
-/* Define this if you need the _XOPEN_SOURCE_EXTENDED macro for color support.
- */
+/* Define this if you need the _XOPEN_SOURCE_EXTENDED macro for color support. */
 /* #undef NEED_XOPEN_SOURCE_EXTENDED */
 
 /* Define to 1 if nl_langinfo is multithread-safe. */
@@ -1622,16 +1543,21 @@
 /* #undef OPEN_TRAILING_SLASH_BUG */
 
 /* Name of package */
-#define PACKAGE                   "nano"
+// #define PACKAGE                   "nano"
+#define PACKAGE                   PROJECT_NAME
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT         "nano-devel@gnu.org"
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME              "GNU nano"
+/* #define PACKAGE_NAME              "GNU nano" */
+#define PACKAGE_NAME              "nanox"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING            "GNU nano 8.0"
+/* #define PACKAGE_STRING            "GNU nano 8.0" */
+#define PACKAGE_STRING            "NanoX v0.0.1"
+#define FORKED_FROM_STRING        "GNU nano 8.0"
+
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME           "nano"
@@ -1640,7 +1566,8 @@
 #define PACKAGE_URL               "https://www.gnu.org/software/nano/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION           "8.0"
+/* #define PACKAGE_VERSION "8.0" */
+#define PACKAGE_VERSION           "0.0.1"
 
 /* Where data are placed to. */
 #define PKGDATADIR                "/usr/local/share/nano"
@@ -1660,26 +1587,22 @@
 /* Define to 1 if readlink fails to recognize a trailing slash. */
 /* #undef READLINK_TRAILING_SLASH_BUG */
 
-/* Define to 1 if readlink sets errno instead of truncating a too-long link.
- */
+/* Define to 1 if readlink sets errno instead of truncating a too-long link. */
 /* #undef READLINK_TRUNCATE_BUG */
 
 /* Define to 1 if gnulib's fchdir() replacement is used. */
 /* #undef REPLACE_FCHDIR */
 
-/* Define to 1 if stat needs help when passed a file name with a trailing
-   slash */
+/* Define to 1 if stat needs help when passed a file name with a trailing slash */
 /* #undef REPLACE_FUNC_STAT_FILE */
 
-/* Define to 1 if utime needs help when passed a file name with a trailing
-   slash */
+/* Define to 1 if utime needs help when passed a file name with a trailing slash */
 /* #undef REPLACE_FUNC_UTIME_FILE */
 
 /* Define if nl_langinfo exists but is overridden by gnulib. */
 /* #undef REPLACE_NL_LANGINFO */
 
-/* Define to 1 if open() should work around the inability to open a directory.
- */
+/* Define to 1 if open() should work around the inability to open a directory. */
 /* #undef REPLACE_OPEN_DIRECTORY */
 
 /* Define to 1 if strerror(0) does not return a message implying success. */
@@ -1694,45 +1617,38 @@
 /* Define to 1 if setlocale (category, NULL) is multithread-safe. */
 #define SETLOCALE_NULL_ONE_MTSAFE 1
 
-/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
-   'sig_atomic_t'. */
+/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type 'sig_atomic_t'. */
 /* #undef SIG_ATOMIC_T_SUFFIX */
 
-/* Define as the maximum value of type 'size_t', if the system doesn't define
-   it. */
+/* Define as the maximum value of type 'size_t', if the system doesn't define it. */
 #ifndef SIZE_MAX
 /* # undef SIZE_MAX */
 #endif
 
-/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
-   'size_t'. */
+/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type 'size_t'. */
 /* #undef SIZE_T_SUFFIX */
 
-/* If using the C implementation of alloca, define if you know the
-   direction of stack growth for your system; otherwise it will be
-   automatically deduced at runtime.
-    STACK_DIRECTION > 0 => grows toward higher addresses
-    STACK_DIRECTION < 0 => grows toward lower addresses
-    STACK_DIRECTION = 0 => direction of growth unknown */
+/* If using the C implementation of alloca, define if you know the direction of stack
+ * growth for your system; otherwise it will be automatically deduced at runtime.
+   STACK_DIRECTION > 0 => grows toward higher addresses
+   STACK_DIRECTION < 0 => grows toward lower addresses
+   STACK_DIRECTION = 0 => direction of growth unknown */
 /* #undef STACK_DIRECTION */
 
 /* Define to 1 if the 'S_IS*' macros in <sys/stat.h> do not work properly. */
 /* #undef STAT_MACROS_BROKEN */
 
-/* Define to 1 if all of the C89 standard headers exist (not just the ones
-   required in a freestanding environment). This macro is provided for
-   backward compatibility; new code need not use it. */
+/* Define to 1 if all of the C89 standard headers exist (not just the ones required in a freestanding
+ * environment). This macro is provided for backward compatibility; new code need not use it. */
 #define STDC_HEADERS                                  1
 
 /* Define to 1 if strerror_r returns char *. */
 #define STRERROR_R_CHAR_P                             1
 
-/* Define to 1 if the type of the st_atim member of a struct stat is struct
-   timespec. */
+/* Define to 1 if the type of the st_atim member of a struct stat is struct timespec. */
 #define TYPEOF_STRUCT_STAT_ST_ATIM_IS_STRUCT_TIMESPEC 1
 
-/* Define if the combination of the ISO C and POSIX multithreading APIs can be
-   used. */
+/* Define if the combination of the ISO C and POSIX multithreading APIs can be used. */
 /* #undef USE_ISOC_AND_POSIX_THREADS */
 
 /* Define if the ISO C multithreading library can be used. */
@@ -1751,40 +1667,38 @@
 
 /* Enable extensions on AIX, Interix, z/OS.  */
 #ifndef _ALL_SOURCE
-#    define _ALL_SOURCE 1
+#  define _ALL_SOURCE 1
 #endif
 /* Enable general extensions on macOS.  */
 #ifndef _DARWIN_C_SOURCE
-#    define _DARWIN_C_SOURCE 1
+#  define _DARWIN_C_SOURCE 1
 #endif
 /* Enable general extensions on Solaris.  */
 #ifndef __EXTENSIONS__
-#    define __EXTENSIONS__ 1
+#  define __EXTENSIONS__ 1
 #endif
-/* Enable GNU extensions on systems that have them.  */
+/* Enable GNU extensions on systems that have them. */
 #ifndef _GNU_SOURCE
-#    define _GNU_SOURCE 1
+#  define _GNU_SOURCE 1
 #endif
-/* Enable X/Open compliant socket functions that do not require linking
-   with -lxnet on HP-UX 11.11.  */
+/* Enable X/Open compliant socket functions that do not require linking with -lxnet on HP-UX 11.11. */
 #ifndef _HPUX_ALT_XOPEN_SOCKET_API
-#    define _HPUX_ALT_XOPEN_SOCKET_API 1
+#  define _HPUX_ALT_XOPEN_SOCKET_API 1
 #endif
-/* Identify the host operating system as Minix.
-   This macro does not affect the system headers' behavior.
-   A future release of Autoconf may stop defining this macro.  */
+/* Identify the host operating system as Minix.  This macro does not affect the system
+ * headers' behavior. A future release of Autoconf may stop defining this macro. */
 #ifndef _MINIX
 /* # undef _MINIX */
 #endif
 /* Enable general extensions on NetBSD.
    Enable NetBSD compatibility extensions on Minix.  */
 #ifndef _NETBSD_SOURCE
-#    define _NETBSD_SOURCE 1
+#  define _NETBSD_SOURCE 1
 #endif
 /* Enable OpenBSD compatibility extensions on NetBSD.
    Oddly enough, this does nothing on OpenBSD.  */
 #ifndef _OPENBSD_SOURCE
-#    define _OPENBSD_SOURCE 1
+#  define _OPENBSD_SOURCE 1
 #endif
 /* Define to 1 if needed for POSIX-compatible behavior.  */
 #ifndef _POSIX_SOURCE
@@ -1796,50 +1710,48 @@
 #endif
 /* Enable POSIX-compatible threading on Solaris.  */
 #ifndef _POSIX_PTHREAD_SEMANTICS
-#    define _POSIX_PTHREAD_SEMANTICS 1
+#  define _POSIX_PTHREAD_SEMANTICS 1
 #endif
 /* Enable extensions specified by ISO/IEC TS 18661-5:2014.  */
 #ifndef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
-#    define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
+#  define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
 #endif
 /* Enable extensions specified by ISO/IEC TS 18661-1:2014.  */
 #ifndef __STDC_WANT_IEC_60559_BFP_EXT__
-#    define __STDC_WANT_IEC_60559_BFP_EXT__ 1
+#  define __STDC_WANT_IEC_60559_BFP_EXT__ 1
 #endif
 /* Enable extensions specified by ISO/IEC TS 18661-2:2015.  */
 #ifndef __STDC_WANT_IEC_60559_DFP_EXT__
-#    define __STDC_WANT_IEC_60559_DFP_EXT__ 1
+#  define __STDC_WANT_IEC_60559_DFP_EXT__ 1
 #endif
 /* Enable extensions specified by C23 Annex F.  */
 #ifndef __STDC_WANT_IEC_60559_EXT__
-#    define __STDC_WANT_IEC_60559_EXT__ 1
+#  define __STDC_WANT_IEC_60559_EXT__ 1
 #endif
 /* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
 #ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
-#    define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
+#  define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
 #endif
 /* Enable extensions specified by C23 Annex H and ISO/IEC TS 18661-3:2015.  */
 #ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
-#    define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
+#  define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
 #endif
 /* Enable extensions specified by ISO/IEC TR 24731-2:2010.  */
 #ifndef __STDC_WANT_LIB_EXT2__
-#    define __STDC_WANT_LIB_EXT2__ 1
+#  define __STDC_WANT_LIB_EXT2__ 1
 #endif
 /* Enable extensions specified by ISO/IEC 24747:2009.  */
 #ifndef __STDC_WANT_MATH_SPEC_FUNCS__
-#    define __STDC_WANT_MATH_SPEC_FUNCS__ 1
+#  define __STDC_WANT_MATH_SPEC_FUNCS__ 1
 #endif
 /* Enable extensions on HP NonStop.  */
 #ifndef _TANDEM_SOURCE
-#    define _TANDEM_SOURCE 1
+#  define _TANDEM_SOURCE 1
 #endif
-/* Enable X/Open extensions.  Define to 500 only if necessary
-   to make mbstate_t available.  */
+/* Enable X/Open extensions.  Define to 500 only if necessary to make mbstate_t available.  */
 #ifndef _XOPEN_SOURCE
 /* # undef _XOPEN_SOURCE */
 #endif
-
 
 /* Define if the native Windows multithreading API can be used. */
 /* #undef USE_WINDOWS_THREADS */
@@ -1847,8 +1759,7 @@
 /* Version number of package */
 #define VERSION "8.0"
 
-/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
-   'wchar_t'. */
+/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type 'wchar_t'. */
 /* #undef WCHAR_T_SUFFIX */
 
 /* Define if the wcrtomb function does not work in the C locale. */
@@ -1857,20 +1768,19 @@
 /* Define if the wcrtomb function has an incorrect return value. */
 /* #undef WCRTOMB_RETVAL_BUG */
 
-/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
-   'wint_t'. */
+/* Define to l, ll, u, ul, ull, etc., as suitable for constants of type 'wint_t'. */
 /* #undef WINT_T_SUFFIX */
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel). */
+ * significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD
-#    if defined __BIG_ENDIAN__
-#        define WORDS_BIGENDIAN 1
-#    endif
+#  if defined __BIG_ENDIAN__
+#    define WORDS_BIGENDIAN 1
+#  endif
 #else
-#    ifndef WORDS_BIGENDIAN
+#  ifndef WORDS_BIGENDIAN
 /* #  undef WORDS_BIGENDIAN */
-#    endif
+#  endif
 #endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
@@ -1878,11 +1788,10 @@
 
 /* True if the compiler says it groks GNU C version MAJOR.MINOR.  */
 #if defined __GNUC__ && defined __GNUC_MINOR__
-#    define _GL_GNUC_PREREQ(major, minor) ((major) < __GNUC__ + ((minor) <= __GNUC_MINOR__))
+#  define _GL_GNUC_PREREQ(major, minor) ((major) < __GNUC__ + ((minor) <= __GNUC_MINOR__))
 #else
-#    define _GL_GNUC_PREREQ(major, minor) 0
+#  define _GL_GNUC_PREREQ(major, minor) 0
 #endif
-
 
 /* Define to enable the declarations of ISO C 11 types and functions. */
 /* #undef _ISOC11_SOURCE */
@@ -1895,40 +1804,33 @@
 
 /* The _Noreturn keyword of C11.  */
 #ifndef _Noreturn
-#    if (defined __cplusplus &&                                                 \
-         ((201103 <= __cplusplus && !(__GNUC__ == 4 && __GNUC_MINOR__ == 7)) || \
-          (defined _MSC_VER && 1900 <= _MSC_VER)) &&                            \
-         0)
+#  if (defined __cplusplus && ((201103 <= __cplusplus && !(__GNUC__ == 4 && __GNUC_MINOR__ == 7)) || (defined _MSC_VER && 1900 <= _MSC_VER)) && 0)
 /* [[noreturn]] is not practically usable, because with it the syntax
      extern _Noreturn void func (...);
    would not be valid; such a declaration would only be valid with 'extern'
    and '_Noreturn' swapped, or without the 'extern' keyword.  However, some
    AIX system header files and several gnulib header files use precisely
    this syntax with 'extern'.  */
-#        define _Noreturn [[noreturn]]
-#    elif (defined __clang__ && __clang_major__ < 16 && defined _GL_WORK_AROUND_LLVM_BUG_59792)
-/* Compile with -D_GL_WORK_AROUND_LLVM_BUG_59792 to work around
-   that rare LLVM bug, though you may get many false-alarm warnings.  */
-#        define _Noreturn
-#    elif ((!defined __cplusplus || defined __clang__) &&                           \
-           (201112 <= (defined __STDC_VERSION__ ? __STDC_VERSION__ : 0) ||          \
-            (!defined __STRICT_ANSI__ &&                                            \
-             (_GL_GNUC_PREREQ(4, 7) ||                                              \
-              (defined __apple_build_version__ ? 6000000 <= __apple_build_version__ \
-                                               : 3 < __clang_major__ + (5 <= __clang_minor__))))))
+#    define _Noreturn [[noreturn]]
+#  elif (defined __clang__ && __clang_major__ < 16 && defined _GL_WORK_AROUND_LLVM_BUG_59792)
+/* Compile with -D_GL_WORK_AROUND_LLVM_BUG_59792 to work around that rare LLVM bug, though you may get many false-alarm warnings.  */
+#    define _Noreturn
+#  elif (                                                                                                                         \
+    (!defined __cplusplus || defined __clang__) &&                                                                                \
+    (201112 <= (defined __STDC_VERSION__ ? __STDC_VERSION__ : 0) ||                                                               \
+     (!defined __STRICT_ANSI__ && (_GL_GNUC_PREREQ(4, 7) || (defined __apple_build_version__ ? 6000000 <= __apple_build_version__ \
+                                                                                             : 3 < __clang_major__ + (5 <= __clang_minor__))))))
 /* _Noreturn works as-is.  */
-#    elif _GL_GNUC_PREREQ(2, 8) || defined __clang__ || 0x5110 <= __SUNPRO_C
-#        define _Noreturn __attribute__((__noreturn__))
-#    elif 1200 <= (defined _MSC_VER ? _MSC_VER : 0)
-#        define _Noreturn __declspec(noreturn)
-#    else
-#        define _Noreturn
-#    endif
+#  elif _GL_GNUC_PREREQ(2, 8) || defined __clang__ || 0x5110 <= __SUNPRO_C
+#    define _Noreturn __attribute__((__noreturn__))
+#  elif 1200 <= (defined _MSC_VER ? _MSC_VER : 0)
+#    define _Noreturn __declspec(noreturn)
+#  else
+#    define _Noreturn
+#  endif
 #endif
 
-
-/* Define if you want <regex.h> to include <limits.h>, so that it consistently
-   overrides <limits.h>'s RE_DUP_MAX. */
+/* Define if you want <regex.h> to include <limits.h>, so that it consistently overrides <limits.h>'s RE_DUP_MAX. */
 /* #undef _REGEX_INCLUDE_LIMITS_H */
 
 /* Define if you want regoff_t to be at least as wide POSIX requires. */
@@ -1940,8 +1842,7 @@
 /* For standard stat data types on VMS. */
 #define _USE_STD_STAT 1
 
-/* Define to rpl_ if the getopt replacement functions and variables should be
-   used. */
+/* Define to rpl_ if the getopt replacement functions and variables should be used. */
 /* #undef __GETOPT_PREFIX */
 
 /* Define to 1 on platforms where this makes time_t a 64-bit type. */
@@ -1953,8 +1854,7 @@
 /* Define to 1 if the system <stdint.h> predates C++11. */
 /* #undef __STDC_LIMIT_MACROS */
 
-/* Define to 1 if C does not support variable-length arrays, and if the
-   compiler does not already define this. */
+/* Define to 1 if C does not support variable-length arrays, and if the compiler does not already define this. */
 /* #undef __STDC_NO_VLA__ */
 
 /* The _GL_ASYNC_SAFE marker should be attached to functions that are
@@ -1983,57 +1883,54 @@
        errno.  */
 #define _GL_ASYNC_SAFE
 
-
 /* Attributes.  */
 /* Define _GL_HAS_ATTRIBUTE only once, because on FreeBSD, with gcc < 5, if
    <config.h> gets included once again after <sys/cdefs.h>, __has_attribute(x)
    expands to 0 always, and redefining _GL_HAS_ATTRIBUTE would turn off all
    attributes.  */
 #ifndef _GL_HAS_ATTRIBUTE
-#    if (defined __has_attribute &&   \
-         (!defined __clang_minor__ || \
-          (defined __apple_build_version__ ? 7000000 <= __apple_build_version__ : 5 <= __clang_major__)))
-#        define _GL_HAS_ATTRIBUTE(attr) __has_attribute(__##attr##__)
+#  if (defined __has_attribute && \
+       (!defined __clang_minor__ || (defined __apple_build_version__ ? 7000000 <= __apple_build_version__ : 5 <= __clang_major__)))
+#    define _GL_HAS_ATTRIBUTE(attr) __has_attribute(__##attr##__)
+#  else
+#    define _GL_HAS_ATTRIBUTE(attr)     _GL_ATTR_##attr
+#    define _GL_ATTR_alloc_size         _GL_GNUC_PREREQ(4, 3)
+#    define _GL_ATTR_always_inline      _GL_GNUC_PREREQ(3, 2)
+#    define _GL_ATTR_artificial         _GL_GNUC_PREREQ(4, 3)
+#    define _GL_ATTR_cold               _GL_GNUC_PREREQ(4, 3)
+#    define _GL_ATTR_const              _GL_GNUC_PREREQ(2, 95)
+#    define _GL_ATTR_deprecated         _GL_GNUC_PREREQ(3, 1)
+#    define _GL_ATTR_diagnose_if        0
+#    define _GL_ATTR_error              _GL_GNUC_PREREQ(4, 3)
+#    define _GL_ATTR_externally_visible _GL_GNUC_PREREQ(4, 1)
+#    define _GL_ATTR_fallthrough        _GL_GNUC_PREREQ(7, 0)
+#    define _GL_ATTR_format             _GL_GNUC_PREREQ(2, 7)
+#    define _GL_ATTR_leaf               _GL_GNUC_PREREQ(4, 6)
+#    define _GL_ATTR_malloc             _GL_GNUC_PREREQ(3, 0)
+#    ifdef _ICC
+#      define _GL_ATTR_may_alias 0
 #    else
-#        define _GL_HAS_ATTRIBUTE(attr)     _GL_ATTR_##attr
-#        define _GL_ATTR_alloc_size         _GL_GNUC_PREREQ(4, 3)
-#        define _GL_ATTR_always_inline      _GL_GNUC_PREREQ(3, 2)
-#        define _GL_ATTR_artificial         _GL_GNUC_PREREQ(4, 3)
-#        define _GL_ATTR_cold               _GL_GNUC_PREREQ(4, 3)
-#        define _GL_ATTR_const              _GL_GNUC_PREREQ(2, 95)
-#        define _GL_ATTR_deprecated         _GL_GNUC_PREREQ(3, 1)
-#        define _GL_ATTR_diagnose_if        0
-#        define _GL_ATTR_error              _GL_GNUC_PREREQ(4, 3)
-#        define _GL_ATTR_externally_visible _GL_GNUC_PREREQ(4, 1)
-#        define _GL_ATTR_fallthrough        _GL_GNUC_PREREQ(7, 0)
-#        define _GL_ATTR_format             _GL_GNUC_PREREQ(2, 7)
-#        define _GL_ATTR_leaf               _GL_GNUC_PREREQ(4, 6)
-#        define _GL_ATTR_malloc             _GL_GNUC_PREREQ(3, 0)
-#        ifdef _ICC
-#            define _GL_ATTR_may_alias 0
-#        else
-#            define _GL_ATTR_may_alias _GL_GNUC_PREREQ(3, 3)
-#        endif
-#        define _GL_ATTR_noinline           _GL_GNUC_PREREQ(3, 1)
-#        define _GL_ATTR_nonnull            _GL_GNUC_PREREQ(3, 3)
-#        define _GL_ATTR_nonstring          _GL_GNUC_PREREQ(8, 0)
-#        define _GL_ATTR_nothrow            _GL_GNUC_PREREQ(3, 3)
-#        define _GL_ATTR_packed             _GL_GNUC_PREREQ(2, 7)
-#        define _GL_ATTR_pure               _GL_GNUC_PREREQ(2, 96)
-#        define _GL_ATTR_returns_nonnull    _GL_GNUC_PREREQ(4, 9)
-#        define _GL_ATTR_sentinel           _GL_GNUC_PREREQ(4, 0)
-#        define _GL_ATTR_unused             _GL_GNUC_PREREQ(2, 7)
-#        define _GL_ATTR_warn_unused_result _GL_GNUC_PREREQ(3, 4)
+#      define _GL_ATTR_may_alias _GL_GNUC_PREREQ(3, 3)
 #    endif
+#    define _GL_ATTR_noinline           _GL_GNUC_PREREQ(3, 1)
+#    define _GL_ATTR_nonnull            _GL_GNUC_PREREQ(3, 3)
+#    define _GL_ATTR_nonstring          _GL_GNUC_PREREQ(8, 0)
+#    define _GL_ATTR_nothrow            _GL_GNUC_PREREQ(3, 3)
+#    define _GL_ATTR_packed             _GL_GNUC_PREREQ(2, 7)
+#    define _GL_ATTR_pure               _GL_GNUC_PREREQ(2, 96)
+#    define _GL_ATTR_returns_nonnull    _GL_GNUC_PREREQ(4, 9)
+#    define _GL_ATTR_sentinel           _GL_GNUC_PREREQ(4, 0)
+#    define _GL_ATTR_unused             _GL_GNUC_PREREQ(2, 7)
+#    define _GL_ATTR_warn_unused_result _GL_GNUC_PREREQ(3, 4)
+#  endif
 #endif
 
 /* Use __has_c_attribute if available.  However, do not use with
    pre-C23 GCC, which can issue false positives if -Wpedantic.  */
-#if (defined __has_c_attribute && \
-     !(_GL_GNUC_PREREQ(4, 6) && (defined __STDC_VERSION__ ? __STDC_VERSION__ : 0) <= 201710))
-#    define _GL_HAVE___HAS_C_ATTRIBUTE 1
+#if (defined __has_c_attribute && !(_GL_GNUC_PREREQ(4, 6) && (defined __STDC_VERSION__ ? __STDC_VERSION__ : 0) <= 201710))
+#  define _GL_HAVE___HAS_C_ATTRIBUTE 1
 #else
-#    define _GL_HAVE___HAS_C_ATTRIBUTE 0
+#  define _GL_HAVE___HAS_C_ATTRIBUTE 0
 #endif
 
 /* Define if, in a function declaration, the attributes in bracket syntax
@@ -2042,13 +1939,13 @@
    various _GL_ATTRIBUTE_* can be cumulated on the same declaration in any
    order.  */
 #ifdef __cplusplus
-#    if defined __clang__
-#        define _GL_BRACKET_BEFORE_ATTRIBUTE 1
-#    endif
+#  if defined __clang__
+#    define _GL_BRACKET_BEFORE_ATTRIBUTE 1
+#  endif
 #else
-#    if defined __GNUC__ && !defined __clang__
-#        define _GL_BRACKET_BEFORE_ATTRIBUTE 1
-#    endif
+#  if defined __GNUC__ && !defined __clang__
+#    define _GL_BRACKET_BEFORE_ATTRIBUTE 1
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_ALLOC_SIZE ((N)) declares that the Nth argument of the function
@@ -2058,22 +1955,22 @@
  */
 /* Applies to: function, pointer to function, function types.  */
 #ifndef _GL_ATTRIBUTE_ALLOC_SIZE
-#    if _GL_HAS_ATTRIBUTE(alloc_size)
-#        define _GL_ATTRIBUTE_ALLOC_SIZE(args) __attribute__((__alloc_size__ args))
-#    else
-#        define _GL_ATTRIBUTE_ALLOC_SIZE(args)
-#    endif
+#  if _GL_HAS_ATTRIBUTE(alloc_size)
+#    define _GL_ATTRIBUTE_ALLOC_SIZE(args) __attribute__((__alloc_size__ args))
+#  else
+#    define _GL_ATTRIBUTE_ALLOC_SIZE(args)
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_ALWAYS_INLINE tells that the compiler should always inline the
    function and report an error if it cannot do so.  */
 /* Applies to: function.  */
 #ifndef _GL_ATTRIBUTE_ALWAYS_INLINE
-#    if _GL_HAS_ATTRIBUTE(always_inline)
-#        define _GL_ATTRIBUTE_ALWAYS_INLINE __attribute__((__always_inline__))
-#    else
-#        define _GL_ATTRIBUTE_ALWAYS_INLINE
-#    endif
+#  if _GL_HAS_ATTRIBUTE(always_inline)
+#    define _GL_ATTRIBUTE_ALWAYS_INLINE __attribute__((__always_inline__))
+#  else
+#    define _GL_ATTRIBUTE_ALWAYS_INLINE
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_ARTIFICIAL declares that the function is not important to show
@@ -2081,11 +1978,11 @@
     stack traces.  */
 /* Applies to: function.  */
 #ifndef _GL_ATTRIBUTE_ARTIFICIAL
-#    if _GL_HAS_ATTRIBUTE(artificial)
-#        define _GL_ATTRIBUTE_ARTIFICIAL __attribute__((__artificial__))
-#    else
-#        define _GL_ATTRIBUTE_ARTIFICIAL
-#    endif
+#  if _GL_HAS_ATTRIBUTE(artificial)
+#    define _GL_ATTRIBUTE_ARTIFICIAL __attribute__((__artificial__))
+#  else
+#    define _GL_ATTRIBUTE_ARTIFICIAL
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_COLD declares that the function is rarely executed.  */
@@ -2094,15 +1991,15 @@
    <https://lists.gnu.org/r/emacs-devel/2019-04/msg01152.html>.
    Also, Oracle Studio 12.6 requires 'cold' not '__cold__'.  */
 #ifndef _GL_ATTRIBUTE_COLD
-#    if _GL_HAS_ATTRIBUTE(cold) && !defined __MINGW32__
-#        ifndef __SUNPRO_C
-#            define _GL_ATTRIBUTE_COLD __attribute__((__cold__))
-#        else
-#            define _GL_ATTRIBUTE_COLD __attribute__((cold))
-#        endif
+#  if _GL_HAS_ATTRIBUTE(cold) && !defined __MINGW32__
+#    ifndef __SUNPRO_C
+#      define _GL_ATTRIBUTE_COLD __attribute__((__cold__))
 #    else
-#        define _GL_ATTRIBUTE_COLD
+#      define _GL_ATTRIBUTE_COLD __attribute__((cold))
 #    endif
+#  else
+#    define _GL_ATTRIBUTE_COLD
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_CONST declares that it is OK for a compiler to omit duplicate
@@ -2113,11 +2010,11 @@
    (This attribute is stricter than _GL_ATTRIBUTE_PURE.)  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_CONST
-#    if _GL_HAS_ATTRIBUTE(const)
-#        define _GL_ATTRIBUTE_CONST __attribute__((__const__))
-#    else
-#        define _GL_ATTRIBUTE_CONST
-#    endif
+#  if _GL_HAS_ATTRIBUTE(const)
+#    define _GL_ATTRIBUTE_CONST __attribute__((__const__))
+#  else
+#    define _GL_ATTRIBUTE_CONST
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_DEALLOC (F, I) declares that the function returns pointers
@@ -2127,26 +2024,25 @@
    can be freed via 'free'; it can be used only after declaring 'free'.  */
 /* Applies to: functions.  Cannot be used on inline functions.  */
 #ifndef _GL_ATTRIBUTE_DEALLOC
-#    if _GL_GNUC_PREREQ(11, 0)
-#        define _GL_ATTRIBUTE_DEALLOC(f, i) __attribute__((__malloc__(f, i)))
-#    else
-#        define _GL_ATTRIBUTE_DEALLOC(f, i)
-#    endif
+#  if _GL_GNUC_PREREQ(11, 0)
+#    define _GL_ATTRIBUTE_DEALLOC(f, i) __attribute__((__malloc__(f, i)))
+#  else
+#    define _GL_ATTRIBUTE_DEALLOC(f, i)
+#  endif
 #endif
 /* If gnulib's <string.h> or <wchar.h> has already defined this macro, continue
    to use this earlier definition, since <stdlib.h> may not have been included
    yet.  */
 #ifndef _GL_ATTRIBUTE_DEALLOC_FREE
-#    if defined __cplusplus && defined __GNUC__ && !defined __clang__
+#  if defined __cplusplus && defined __GNUC__ && !defined __clang__
 /* Work around GCC bug <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108231> */
-#        define _GL_ATTRIBUTE_DEALLOC_FREE _GL_ATTRIBUTE_DEALLOC((void (*)(void *))free, 1)
-#    else
-#        define _GL_ATTRIBUTE_DEALLOC_FREE _GL_ATTRIBUTE_DEALLOC(free, 1)
-#    endif
+#    define _GL_ATTRIBUTE_DEALLOC_FREE _GL_ATTRIBUTE_DEALLOC((void (*)(void *))free, 1)
+#  else
+#    define _GL_ATTRIBUTE_DEALLOC_FREE _GL_ATTRIBUTE_DEALLOC(free, 1)
+#  endif
 #endif
 
-/* _GL_ATTRIBUTE_DEPRECATED: Declares that an entity is deprecated.
-   The compiler may warn if the entity is used.  */
+/* _GL_ATTRIBUTE_DEPRECATED: Declares that an entity is deprecated.  The compiler may warn if the entity is used.  */
 /* Applies to:
      - function, variable,
      - struct, union, struct/union member,
@@ -2154,48 +2050,46 @@
      - typedef,
    in C++ also: namespace, class, template specialization.  */
 #ifndef _GL_ATTRIBUTE_DEPRECATED
-#    ifndef _GL_BRACKET_BEFORE_ATTRIBUTE
-#        if _GL_HAVE___HAS_C_ATTRIBUTE
-#            if __has_c_attribute(__deprecated__)
-#                define _GL_ATTRIBUTE_DEPRECATED [[__deprecated__]]
-#            endif
-#        endif
+#  ifndef _GL_BRACKET_BEFORE_ATTRIBUTE
+#    if _GL_HAVE___HAS_C_ATTRIBUTE
+#      if __has_c_attribute(__deprecated__)
+#        define _GL_ATTRIBUTE_DEPRECATED [[__deprecated__]]
+#      endif
 #    endif
-#    if !defined _GL_ATTRIBUTE_DEPRECATED && _GL_HAS_ATTRIBUTE(deprecated)
-#        define _GL_ATTRIBUTE_DEPRECATED __attribute__((__deprecated__))
-#    endif
-#    ifndef _GL_ATTRIBUTE_DEPRECATED
-#        define _GL_ATTRIBUTE_DEPRECATED
-#    endif
+#  endif
+#  if !defined _GL_ATTRIBUTE_DEPRECATED && _GL_HAS_ATTRIBUTE(deprecated)
+#    define _GL_ATTRIBUTE_DEPRECATED __attribute__((__deprecated__))
+#  endif
+#  ifndef _GL_ATTRIBUTE_DEPRECATED
+#    define _GL_ATTRIBUTE_DEPRECATED
+#  endif
 #endif
 
-/* _GL_ATTRIBUTE_ERROR(msg) requests an error if a function is called and
-   the function call is not optimized away.
-   _GL_ATTRIBUTE_WARNING(msg) requests a warning if a function is called and
-   the function call is not optimized away.  */
+/* _GL_ATTRIBUTE_ERROR(msg) requests an error if a function is called and the function call is not optimized away.
+ * _GL_ATTRIBUTE_WARNING(msg) requests a warning if a function is called and the function call is not optimized away.  */
 /* Applies to: functions.  */
 #if !(defined _GL_ATTRIBUTE_ERROR && defined _GL_ATTRIBUTE_WARNING)
-#    if _GL_HAS_ATTRIBUTE(error)
-#        define _GL_ATTRIBUTE_ERROR(msg)   __attribute__((__error__(msg)))
-#        define _GL_ATTRIBUTE_WARNING(msg) __attribute__((__warning__(msg)))
-#    elif _GL_HAS_ATTRIBUTE(diagnose_if)
-#        define _GL_ATTRIBUTE_ERROR(msg)   __attribute__((__diagnose_if__(1, msg, "error")))
-#        define _GL_ATTRIBUTE_WARNING(msg) __attribute__((__diagnose_if__(1, msg, "warning")))
-#    else
-#        define _GL_ATTRIBUTE_ERROR(msg)
-#        define _GL_ATTRIBUTE_WARNING(msg)
-#    endif
+#  if _GL_HAS_ATTRIBUTE(error)
+#    define _GL_ATTRIBUTE_ERROR(msg)   __attribute__((__error__(msg)))
+#    define _GL_ATTRIBUTE_WARNING(msg) __attribute__((__warning__(msg)))
+#  elif _GL_HAS_ATTRIBUTE(diagnose_if)
+#    define _GL_ATTRIBUTE_ERROR(msg)   __attribute__((__diagnose_if__(1, msg, "error")))
+#    define _GL_ATTRIBUTE_WARNING(msg) __attribute__((__diagnose_if__(1, msg, "warning")))
+#  else
+#    define _GL_ATTRIBUTE_ERROR(msg)
+#    define _GL_ATTRIBUTE_WARNING(msg)
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_EXTERNALLY_VISIBLE declares that the entity should remain
    visible to debuggers etc., even with '-fwhole-program'.  */
 /* Applies to: functions, variables.  */
 #ifndef _GL_ATTRIBUTE_EXTERNALLY_VISIBLE
-#    if _GL_HAS_ATTRIBUTE(externally_visible)
-#        define _GL_ATTRIBUTE_EXTERNALLY_VISIBLE __attribute__((externally_visible))
-#    else
-#        define _GL_ATTRIBUTE_EXTERNALLY_VISIBLE
-#    endif
+#  if _GL_HAS_ATTRIBUTE(externally_visible)
+#    define _GL_ATTRIBUTE_EXTERNALLY_VISIBLE __attribute__((externally_visible))
+#  else
+#    define _GL_ATTRIBUTE_EXTERNALLY_VISIBLE
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_FALLTHROUGH declares that it is not a programming mistake if
@@ -2204,17 +2098,17 @@
 /* Applies to: Empty statement (;), inside a 'switch' statement.  */
 /* Always expands to something.  */
 #ifndef _GL_ATTRIBUTE_FALLTHROUGH
-#    if _GL_HAVE___HAS_C_ATTRIBUTE
-#        if __has_c_attribute(__fallthrough__)
-#            define _GL_ATTRIBUTE_FALLTHROUGH [[__fallthrough__]]
-#        endif
+#  if _GL_HAVE___HAS_C_ATTRIBUTE
+#    if __has_c_attribute(__fallthrough__)
+#      define _GL_ATTRIBUTE_FALLTHROUGH [[__fallthrough__]]
 #    endif
-#    if !defined _GL_ATTRIBUTE_FALLTHROUGH && _GL_HAS_ATTRIBUTE(fallthrough)
-#        define _GL_ATTRIBUTE_FALLTHROUGH __attribute__((__fallthrough__))
-#    endif
-#    ifndef _GL_ATTRIBUTE_FALLTHROUGH
-#        define _GL_ATTRIBUTE_FALLTHROUGH ((void)0)
-#    endif
+#  endif
+#  if !defined _GL_ATTRIBUTE_FALLTHROUGH && _GL_HAS_ATTRIBUTE(fallthrough)
+#    define _GL_ATTRIBUTE_FALLTHROUGH __attribute__((__fallthrough__))
+#  endif
+#  ifndef _GL_ATTRIBUTE_FALLTHROUGH
+#    define _GL_ATTRIBUTE_FALLTHROUGH ((void)0)
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_FORMAT ((ARCHETYPE, STRING-INDEX, FIRST-TO-CHECK))
@@ -2229,11 +2123,11 @@
    are suitable for the format string.  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_FORMAT
-#    if _GL_HAS_ATTRIBUTE(format)
-#        define _GL_ATTRIBUTE_FORMAT(spec) __attribute__((__format__ spec))
-#    else
-#        define _GL_ATTRIBUTE_FORMAT(spec)
-#    endif
+#  if _GL_HAS_ATTRIBUTE(format)
+#    define _GL_ATTRIBUTE_FORMAT(spec) __attribute__((__format__ spec))
+#  else
+#    define _GL_ATTRIBUTE_FORMAT(spec)
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_LEAF declares that if the function is called from some other
@@ -2242,22 +2136,22 @@
    more aggressively.  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_LEAF
-#    if _GL_HAS_ATTRIBUTE(leaf)
-#        define _GL_ATTRIBUTE_LEAF __attribute__((__leaf__))
-#    else
-#        define _GL_ATTRIBUTE_LEAF
-#    endif
+#  if _GL_HAS_ATTRIBUTE(leaf)
+#    define _GL_ATTRIBUTE_LEAF __attribute__((__leaf__))
+#  else
+#    define _GL_ATTRIBUTE_LEAF
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_MALLOC declares that the function returns a pointer to freshly
    allocated memory.  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_MALLOC
-#    if _GL_HAS_ATTRIBUTE(malloc)
-#        define _GL_ATTRIBUTE_MALLOC __attribute__((__malloc__))
-#    else
-#        define _GL_ATTRIBUTE_MALLOC
-#    endif
+#  if _GL_HAS_ATTRIBUTE(malloc)
+#    define _GL_ATTRIBUTE_MALLOC __attribute__((__malloc__))
+#  else
+#    define _GL_ATTRIBUTE_MALLOC
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_MAY_ALIAS declares that pointers to the type may point to the
@@ -2266,11 +2160,11 @@
 /* Applies to: types.  */
 /* Oracle Studio 12.6 mishandles may_alias despite __has_attribute OK.  */
 #ifndef _GL_ATTRIBUTE_MAY_ALIAS
-#    if _GL_HAS_ATTRIBUTE(may_alias) && !defined __SUNPRO_C
-#        define _GL_ATTRIBUTE_MAY_ALIAS __attribute__((__may_alias__))
-#    else
-#        define _GL_ATTRIBUTE_MAY_ALIAS
-#    endif
+#  if _GL_HAS_ATTRIBUTE(may_alias) && !defined __SUNPRO_C
+#    define _GL_ATTRIBUTE_MAY_ALIAS __attribute__((__may_alias__))
+#  else
+#    define _GL_ATTRIBUTE_MAY_ALIAS
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_MAYBE_UNUSED declares that it is not a programming mistake if
@@ -2288,20 +2182,20 @@
    __has_c_attribute (__maybe_unused__) yields true but the use of
    [[__maybe_unused__]] nevertheless produces a warning.  */
 #ifndef _GL_ATTRIBUTE_MAYBE_UNUSED
-#    ifndef _GL_BRACKET_BEFORE_ATTRIBUTE
-#        if defined __clang__ && defined __cplusplus
-#            if !defined __apple_build_version__ && __clang_major__ >= 10
-#                define _GL_ATTRIBUTE_MAYBE_UNUSED [[__maybe_unused__]]
-#            endif
-#        elif _GL_HAVE___HAS_C_ATTRIBUTE
-#            if __has_c_attribute(__maybe_unused__)
-#                define _GL_ATTRIBUTE_MAYBE_UNUSED [[__maybe_unused__]]
-#            endif
-#        endif
+#  ifndef _GL_BRACKET_BEFORE_ATTRIBUTE
+#    if defined __clang__ && defined __cplusplus
+#      if !defined __apple_build_version__ && __clang_major__ >= 10
+#        define _GL_ATTRIBUTE_MAYBE_UNUSED [[__maybe_unused__]]
+#      endif
+#    elif _GL_HAVE___HAS_C_ATTRIBUTE
+#      if __has_c_attribute(__maybe_unused__)
+#        define _GL_ATTRIBUTE_MAYBE_UNUSED [[__maybe_unused__]]
+#      endif
 #    endif
-#    ifndef _GL_ATTRIBUTE_MAYBE_UNUSED
-#        define _GL_ATTRIBUTE_MAYBE_UNUSED _GL_ATTRIBUTE_UNUSED
-#    endif
+#  endif
+#  ifndef _GL_ATTRIBUTE_MAYBE_UNUSED
+#    define _GL_ATTRIBUTE_MAYBE_UNUSED _GL_ATTRIBUTE_UNUSED
+#  endif
 #endif
 /* Alternative spelling of this macro, for convenience and for
    compatibility with glibc/include/libc-symbols.h.  */
@@ -2314,39 +2208,39 @@
    the return value, unless the caller uses something like ignore_value.  */
 /* Applies to: function, enumeration, class.  */
 #ifndef _GL_ATTRIBUTE_NODISCARD
-#    ifndef _GL_BRACKET_BEFORE_ATTRIBUTE
-#        if defined __clang__ && defined __cplusplus
+#  ifndef _GL_BRACKET_BEFORE_ATTRIBUTE
+#    if defined __clang__ && defined __cplusplus
 /* With clang up to 15.0.6 (at least), in C++ mode, [[__nodiscard__]] produces
    a warning.
    The 1000 below means a yet unknown threshold.  When clang++ version X
    starts supporting [[__nodiscard__]] without warning about it, you can
    replace the 1000 with X.  */
-#            if __clang_major__ >= 1000
-#                define _GL_ATTRIBUTE_NODISCARD [[__nodiscard__]]
-#            endif
-#        elif _GL_HAVE___HAS_C_ATTRIBUTE
-#            if __has_c_attribute(__nodiscard__)
-#                define _GL_ATTRIBUTE_NODISCARD [[__nodiscard__]]
-#            endif
-#        endif
+#      if __clang_major__ >= 1000
+#        define _GL_ATTRIBUTE_NODISCARD [[__nodiscard__]]
+#      endif
+#    elif _GL_HAVE___HAS_C_ATTRIBUTE
+#      if __has_c_attribute(__nodiscard__)
+#        define _GL_ATTRIBUTE_NODISCARD [[__nodiscard__]]
+#      endif
 #    endif
-#    if !defined _GL_ATTRIBUTE_NODISCARD && _GL_HAS_ATTRIBUTE(warn_unused_result)
-#        define _GL_ATTRIBUTE_NODISCARD __attribute__((__warn_unused_result__))
-#    endif
-#    ifndef _GL_ATTRIBUTE_NODISCARD
-#        define _GL_ATTRIBUTE_NODISCARD
-#    endif
+#  endif
+#  if !defined _GL_ATTRIBUTE_NODISCARD && _GL_HAS_ATTRIBUTE(warn_unused_result)
+#    define _GL_ATTRIBUTE_NODISCARD __attribute__((__warn_unused_result__))
+#  endif
+#  ifndef _GL_ATTRIBUTE_NODISCARD
+#    define _GL_ATTRIBUTE_NODISCARD
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_NOINLINE tells that the compiler should not inline the
    function.  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_NOINLINE
-#    if _GL_HAS_ATTRIBUTE(noinline)
-#        define _GL_ATTRIBUTE_NOINLINE __attribute__((__noinline__))
-#    else
-#        define _GL_ATTRIBUTE_NOINLINE
-#    endif
+#  if _GL_HAS_ATTRIBUTE(noinline)
+#    define _GL_ATTRIBUTE_NOINLINE __attribute__((__noinline__))
+#  else
+#    define _GL_ATTRIBUTE_NOINLINE
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_NONNULL ((N1, N2,...)) declares that the arguments N1, N2,...
@@ -2355,11 +2249,11 @@
    null.  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_NONNULL
-#    if _GL_HAS_ATTRIBUTE(nonnull)
-#        define _GL_ATTRIBUTE_NONNULL(args) __attribute__((__nonnull__ args))
-#    else
-#        define _GL_ATTRIBUTE_NONNULL(args)
-#    endif
+#  if _GL_HAS_ATTRIBUTE(nonnull)
+#    define _GL_ATTRIBUTE_NONNULL(args) __attribute__((__nonnull__ args))
+#  else
+#    define _GL_ATTRIBUTE_NONNULL(args)
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_NONSTRING declares that the contents of a character array is
@@ -2367,38 +2261,36 @@
 /* Applies to: struct/union members and variables that are arrays of element
    type '[[un]signed] char'.  */
 #ifndef _GL_ATTRIBUTE_NONSTRING
-#    if _GL_HAS_ATTRIBUTE(nonstring)
-#        define _GL_ATTRIBUTE_NONSTRING __attribute__((__nonstring__))
-#    else
-#        define _GL_ATTRIBUTE_NONSTRING
-#    endif
+#  if _GL_HAS_ATTRIBUTE(nonstring)
+#    define _GL_ATTRIBUTE_NONSTRING __attribute__((__nonstring__))
+#  else
+#    define _GL_ATTRIBUTE_NONSTRING
+#  endif
 #endif
 
 /* There is no _GL_ATTRIBUTE_NORETURN; use _Noreturn instead.  */
 
-/* _GL_ATTRIBUTE_NOTHROW declares that the function does not throw exceptions.
- */
+/* _GL_ATTRIBUTE_NOTHROW declares that the function does not throw exceptions. */
 /* Applies to: functions.  */
-/* After a function's parameter list, this attribute must come first, before
-   other attributes.  */
+/* After a function's parameter list, this attribute must come first, before other attributes.  */
 #ifndef _GL_ATTRIBUTE_NOTHROW
-#    if defined __cplusplus
-#        if _GL_GNUC_PREREQ(2, 8) || __clang_major >= 4
-#            if __cplusplus >= 201103L
-#                define _GL_ATTRIBUTE_NOTHROW noexcept(true)
-#            else
-#                define _GL_ATTRIBUTE_NOTHROW throw()
-#            endif
-#        else
-#            define _GL_ATTRIBUTE_NOTHROW
-#        endif
+#  if defined __cplusplus
+#    if _GL_GNUC_PREREQ(2, 8) || __clang_major >= 4
+#      if __cplusplus >= 201103L
+#        define _GL_ATTRIBUTE_NOTHROW noexcept(true)
+#      else
+#        define _GL_ATTRIBUTE_NOTHROW throw()
+#      endif
 #    else
-#        if _GL_HAS_ATTRIBUTE(nothrow)
-#            define _GL_ATTRIBUTE_NOTHROW __attribute__((__nothrow__))
-#        else
-#            define _GL_ATTRIBUTE_NOTHROW
-#        endif
+#      define _GL_ATTRIBUTE_NOTHROW
 #    endif
+#  else
+#    if _GL_HAS_ATTRIBUTE(nothrow)
+#      define _GL_ATTRIBUTE_NOTHROW __attribute__((__nothrow__))
+#    else
+#      define _GL_ATTRIBUTE_NOTHROW
+#    endif
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_PACKED declares:
@@ -2410,11 +2302,11 @@
 /* Oracle Studio 12.6 miscompiles code with __attribute__ ((__packed__)) despite
    __has_attribute OK.  */
 #ifndef _GL_ATTRIBUTE_PACKED
-#    if _GL_HAS_ATTRIBUTE(packed) && !defined __SUNPRO_C
-#        define _GL_ATTRIBUTE_PACKED __attribute__((__packed__))
-#    else
-#        define _GL_ATTRIBUTE_PACKED
-#    endif
+#  if _GL_HAS_ATTRIBUTE(packed) && !defined __SUNPRO_C
+#    define _GL_ATTRIBUTE_PACKED __attribute__((__packed__))
+#  else
+#    define _GL_ATTRIBUTE_PACKED
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_PURE declares that It is OK for a compiler to omit duplicate
@@ -2425,22 +2317,21 @@
    (This attribute is looser than _GL_ATTRIBUTE_CONST.)  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_PURE
-#    if _GL_HAS_ATTRIBUTE(pure)
-#        define _GL_ATTRIBUTE_PURE __attribute__((__pure__))
-#    else
-#        define _GL_ATTRIBUTE_PURE
-#    endif
+#  if _GL_HAS_ATTRIBUTE(pure)
+#    define _GL_ATTRIBUTE_PURE __attribute__((__pure__))
+#  else
+#    define _GL_ATTRIBUTE_PURE
+#  endif
 #endif
 
-/* _GL_ATTRIBUTE_RETURNS_NONNULL declares that the function's return value is
-   a non-NULL pointer.  */
+/* _GL_ATTRIBUTE_RETURNS_NONNULL declares that the function's return value is a non-NULL pointer.  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_RETURNS_NONNULL
-#    if _GL_HAS_ATTRIBUTE(returns_nonnull)
-#        define _GL_ATTRIBUTE_RETURNS_NONNULL __attribute__((__returns_nonnull__))
-#    else
-#        define _GL_ATTRIBUTE_RETURNS_NONNULL
-#    endif
+#  if _GL_HAS_ATTRIBUTE(returns_nonnull)
+#    define _GL_ATTRIBUTE_RETURNS_NONNULL __attribute__((__returns_nonnull__))
+#  else
+#    define _GL_ATTRIBUTE_RETURNS_NONNULL
+#  endif
 #endif
 
 /* _GL_ATTRIBUTE_SENTINEL(pos) declares that the variadic function expects a
@@ -2449,51 +2340,47 @@
    _GL_ATTRIBUTE_SENTINEL ((N)) - The (N+1)st argument from the end is NULL.  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_SENTINEL
-#    if _GL_HAS_ATTRIBUTE(sentinel)
-#        define _GL_ATTRIBUTE_SENTINEL(pos) __attribute__((__sentinel__ pos))
-#    else
-#        define _GL_ATTRIBUTE_SENTINEL(pos)
-#    endif
+#  if _GL_HAS_ATTRIBUTE(sentinel)
+#    define _GL_ATTRIBUTE_SENTINEL(pos) __attribute__((__sentinel__ pos))
+#  else
+#    define _GL_ATTRIBUTE_SENTINEL(pos)
+#  endif
 #endif
 
 /* A helper macro.  Don't use it directly.  */
 #ifndef _GL_ATTRIBUTE_UNUSED
-#    if _GL_HAS_ATTRIBUTE(unused)
-#        define _GL_ATTRIBUTE_UNUSED __attribute__((__unused__))
-#    else
-#        define _GL_ATTRIBUTE_UNUSED
-#    endif
+#  if _GL_HAS_ATTRIBUTE(unused)
+#    define _GL_ATTRIBUTE_UNUSED __attribute__((__unused__))
+#  else
+#    define _GL_ATTRIBUTE_UNUSED
+#  endif
 #endif
 
-
-/* _GL_UNUSED_LABEL; declares that it is not a programming mistake if the
-   immediately preceding label is not used.  The compiler should not warn
-   if the label is not used.  */
+/* _GL_UNUSED_LABEL; declares that it is not a programming mistake if the immediately
+ * preceding label is not used.  The compiler should not warn if the label is not used.  */
 /* Applies to: label (both in C and C++).  */
 /* Note that g++ < 4.5 does not support the '__attribute__ ((__unused__)) ;'
    syntax.  But clang does.  */
 #ifndef _GL_UNUSED_LABEL
-#    if !(defined __cplusplus && !_GL_GNUC_PREREQ(4, 5)) || defined __clang__
-#        define _GL_UNUSED_LABEL _GL_ATTRIBUTE_UNUSED
-#    else
-#        define _GL_UNUSED_LABEL
-#    endif
+#  if !(defined __cplusplus && !_GL_GNUC_PREREQ(4, 5)) || defined __clang__
+#    define _GL_UNUSED_LABEL _GL_ATTRIBUTE_UNUSED
+#  else
+#    define _GL_UNUSED_LABEL
+#  endif
 #endif
-
 
 /* In C++, there is the concept of "language linkage", that encompasses
     name mangling and function calling conventions.
     The following macros start and end a block of "C" linkage.  */
 #ifdef __cplusplus
-#    define _GL_BEGIN_C_LINKAGE \
-        extern "C"              \
-        {
-#    define _GL_END_C_LINKAGE }
+#  define _GL_BEGIN_C_LINKAGE \
+    extern "C"                \
+    {
+#  define _GL_END_C_LINKAGE }
 #else
-#    define _GL_BEGIN_C_LINKAGE
-#    define _GL_END_C_LINKAGE
+#  define _GL_BEGIN_C_LINKAGE
+#  define _GL_END_C_LINKAGE
 #endif
-
 
 /* Define as 'int' if <sys/types.h> doesn't define. */
 /* #undef gid_t */
@@ -2516,9 +2403,9 @@
    __APPLE__ && __MACH__ test for Mac OS X.
    __APPLE_CC__ tests for the Apple compiler and its version.
    __STDC_VERSION__ tests for the C99 mode.  */
-#if defined __APPLE__ && defined __MACH__ && __APPLE_CC__ >= 5465 && !defined __cplusplus && \
-    __STDC_VERSION__ >= 199901L && !defined                                   __GNUC_STDC_INLINE__
-#    define __GNUC_STDC_INLINE__ 1
+#if defined __APPLE__ && defined __MACH__ && __APPLE_CC__ >= 5465 && !defined __cplusplus && __STDC_VERSION__ >= 199901L && \
+  !defined __GNUC_STDC_INLINE__
+#  define __GNUC_STDC_INLINE__ 1
 #endif
 
 /* Define to a type if <wchar.h> does not define. */
@@ -2531,14 +2418,10 @@
      1  if n1 > n2
      0  if n1 == n2
      -1 if n1 < n2
-   The naïve code   (n1 > n2 ? 1 : n1 < n2 ? -1 : 0)  produces a conditional
-   jump with nearly all GCC versions up to GCC 10.
-   This variant     (n1 < n2 ? -1 : n1 > n2)  produces a conditional with many
-   GCC versions up to GCC 9.
-   The better code  (n1 > n2) - (n1 < n2)  from Hacker's Delight § 2-9
-   avoids conditional jumps in all GCC versions >= 3.4.  */
+   The naïve code   (n1 > n2 ? 1 : n1 < n2 ? -1 : 0)  produces a conditional jump with nearly all GCC versions up to GCC 10.
+   This variant     (n1 < n2 ? -1 : n1 > n2)  produces a conditional with many GCC versions up to GCC 9.
+   The better code  (n1 > n2) - (n1 < n2)  from Hacker's Delight § 2-9 avoids conditional jumps in all GCC versions >= 3.4.  */
 #define _GL_CMP(n1, n2) (((n1) > (n2)) - ((n1) < (n2)))
-
 
 /* Define to 'int' if <sys/types.h> does not define. */
 /* #undef mode_t */
@@ -2549,8 +2432,7 @@
 /* Define as a signed integer type capable of holding a process identifier. */
 /* #undef pid_t */
 
-/* Define as the type of the result of subtracting two pointers, if the system
-   doesn't define it. */
+/* Define as the type of the result of subtracting two pointers, if the system doesn't define it. */
 /* #undef ptrdiff_t */
 
 /* Define to rpl_re_comp if the replacement should be used. */
@@ -2598,19 +2480,15 @@
 /* Define to rpl_regfree if the replacement should be used. */
 /* #undef regfree */
 
-/* Define to the equivalent of the C99 'restrict' keyword, or to
-   nothing if this is not supported.  Do not define if restrict is
-   supported only directly.  */
+/* Define to the equivalent of the C99 'restrict' keyword, or to nothing if this
+ * is not supported.  Do not define if restrict is supported only directly.  */
 #define restrict        __restrict__
-/* Work around a bug in older versions of Sun C++, which did not
-   #define __restrict__ or support _Restrict or __restrict__
-   even though the corresponding Sun C compiler ended up with
-   "#define restrict _Restrict" or "#define restrict __restrict__"
-   in the previous line.  This workaround can be removed once
-   we assume Oracle Developer Studio 12.5 (2016) or later.  */
+/* Work around a bug in older versions of Sun C++, which did not #define __restrict__ or support _Restrict or __restrict__
+ * even though the corresponding Sun C compiler ended up with "#define restrict _Restrict" or "#define restrict __restrict__"
+ * in the previous line.  This workaround can be removed once we assume Oracle Developer Studio 12.5 (2016) or later.  */
 #if defined __SUNPRO_CC && !defined __RESTRICT && !defined __restrict__
-#    define _Restrict
-#    define __restrict__
+#  define _Restrict
+#  define __restrict__
 #endif
 
 /* Define as 'unsigned int' if <stddef.h> doesn't define. */
@@ -2622,52 +2500,50 @@
 /* Define as 'int' if <sys/types.h> doesn't define. */
 /* #undef uid_t */
 
-
 /* This definition is a duplicate of the one in unitypes.h.
    It is here so that we can cope with an older version of unitypes.h
    that does not contain this definition and that is pre-installed among
    the public header files.  */
 #if defined __restrict || 2 < __GNUC__ + (95 <= __GNUC_MINOR__) || __clang_major__ >= 3
-#    define _UC_RESTRICT __restrict
+#  define _UC_RESTRICT __restrict
 #elif 199901L <= __STDC_VERSION__ || defined restrict
-#    define _UC_RESTRICT restrict
+#  define _UC_RESTRICT restrict
 #else
-#    define _UC_RESTRICT
+#  define _UC_RESTRICT
 #endif
-
 
 /* Define as a macro for copying va_list variables. */
 /* #undef va_copy */
 
 #ifndef HAVE_C_BOOL
-#    if !defined __cplusplus && !defined __bool_true_false_are_defined
-#        if HAVE_STDBOOL_H
-#            include <stdbool.h>
-#        else
-#            if defined __SUNPRO_C
-#                error "<stdbool.h> is not usable with this configuration. To make it usable, add -D_STDC_C99= to $CC."
-#            else
-#                error \
-                    "<stdbool.h> does not exist on this platform. Use gnulib module 'stdbool-c99' instead of gnulib module 'stdbool'."
-#            endif
-#        endif
+#  if !defined __cplusplus && !defined __bool_true_false_are_defined
+#    if HAVE_STDBOOL_H
+#      include <stdbool.h>
+#    else
+#      if defined __SUNPRO_C
+#        error "<stdbool.h> is not usable with this configuration. To make it usable, add -D_STDC_C99= to $CC."
+#      else
+#        error "<stdbool.h> does not exist on this platform. Use gnulib module 'stdbool-c99' instead of gnulib module 'stdbool'."
+#      endif
 #    endif
-#    if !true
-#        define true (!false)
-#    endif
+#  endif
+#  if !true
+#    define true (!false)
+#  endif
 #endif
 
-#if (!defined HAVE_C_STATIC_ASSERT && !defined assert && \
-     (!defined __cplusplus || (__cpp_static_assert < 201411 && __GNUG__ < 6 && __clang_major__ < 6)))
-#    include <assert.h>
-#    undef /**/ assert
-#    ifdef __sgi
-#        undef /**/ __ASSERT_H__
-#    endif
-/* Solaris 11.4 <assert.h> defines static_assert as a macro with 2 arguments.
-   We need it also to be invocable with a single argument.  */
-#    if defined __sun && (__STDC_VERSION__ - 0 >= 201112L) && !defined __cplusplus
-#        undef /**/ static_assert
-#        define static_assert _Static_assert
-#    endif
+#if (!defined HAVE_C_STATIC_ASSERT && !defined assert && (!defined __cplusplus || (__cpp_static_assert < 201411 && __GNUG__ < 6 && __clang_major__ < 6)))
+#  include <assert.h>
+#  undef /**/ assert
+#  ifdef __sgi
+#    undef /**/ __ASSERT_H__
+#  endif
+/* Solaris 11.4 <assert.h> defines static_assert as a macro with 2 arguments.  We need it also to be invocable with a single argument.  */
+#  if defined __sun && (__STDC_VERSION__ - 0 >= 201112L) && !defined __cplusplus
+#    undef /**/ static_assert
+#    define static_assert _Static_assert
+#  endif
 #endif
+
+/* This is defined by the installer if glfw is installed staticly and localaly. */
+#define HAVE_GLFW 1

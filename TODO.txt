@@ -237,7 +237,7 @@ Make auto bracket placement and proper indent if enter is pressed between '{}',
         it indents one if pressing enter when 'prev char' == '{' and 'next char' != '}'.
 
         I need to implement full undo-redo support in a way where this is considered one action instead of
-        3 seperate once.
+        3 seperate once.  This is now done and full undo-redo support is now implemented.
 
     STATUS:
         ALMOST DONE!!.

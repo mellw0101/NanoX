@@ -55,7 +55,7 @@ void search_init(bool replacing, bool retain_answer) {
     free(disp);
   }
   else {
-    thedefault = copy_of("");
+    thedefault = STRLTR_COPY_OF("");
   }
   while (TRUE) {
     functionptrtype function;
@@ -68,9 +68,11 @@ void search_init(bool replacing, bool retain_answer) {
       /* TRANSLATORS: This is the main search prompt. */
       "%s%s%s%s%s%s", _("Search"),
       /* TRANSLATORS: The next four modify the search prompt. */
-      ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : "", ISSET(USE_REGEXP) ? _(" [Regexp]") : "",
-      ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : "",
-      (replacing ? openfile->mark ? _(" (to replace) in selection") : _(" (to replace)") : ""), thedefault
+      (ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : ""),
+      (ISSET(USE_REGEXP) ? _(" [Regexp]") : ""),
+      (ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : ""),
+      (replacing ? openfile->mark ? _(" (to replace) in selection") : _(" (to replace)") : ""),
+      thedefault
     );
     /* If the search was cancelled, or we have a blank answer and nothing was searched for yet during this session, get out. */
     if (response == -1 || (response == -2 && !*last_search)) {
@@ -358,7 +360,7 @@ void go_looking(void) {
 
 /* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into account.
  * Return the replacement text in the passed string only when create is TRUE. */
-int replace_regexp(char *string, bool create) {
+static int replace_regexp(char *string, bool create) _NO_EXCEPT {
   Ulong replacement_size = 0;
   const char *c = answer;
   /* Iterate through the replacement text to handle subexpression replacement using \1, \2, \3, etc. */
@@ -433,7 +435,7 @@ long do_replace_loop(const char *needle, bool whole_word_only, const linestruct 
   if (openfile->mark) {
     get_region(&top, &top_x, &bot, &bot_x);
     openfile->mark = NULL;
-    modus          = INREGION;
+    modus = INREGION;
     /* Start either at the top or the bottom of the marked region. */
     if (!ISSET(BACKWARDS_SEARCH)) {
       openfile->current   = top;

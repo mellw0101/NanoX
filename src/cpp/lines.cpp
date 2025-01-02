@@ -203,3 +203,10 @@ Uint indent_tab_len(linestruct *line) {
   }
   return (tabs + (spaces / tabsize));
 }
+
+/* Return 'TRUE' when 'line' is part of the marked region. */
+bool line_in_marked_region(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
+  return (openfile->mark
+   && ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno)
+   || (line->lineno <= openfile->mark->lineno && line->lineno >= openfile->current->lineno)));
+}

@@ -22,7 +22,7 @@
 #include "../include/prototypes.h"
 
 #ifdef HAVE_MAGIC_H
-/* #    include <magic.h> */
+#    include <magic.h>
 #endif
 
 /* Whether ncurses accepts -1 to mean "default color". */
@@ -171,7 +171,7 @@ void prepare_palette(void) {
 }
 
 /* Try to match the given shibboleth string with, one of the regexes in the list starting at head.  Return 'TRUE' upon success. */
-bool found_in_list(regexlisttype *head, const char *shibboleth) {
+static bool found_in_list(regexlisttype *head, const char *shibboleth) _GL_ATTRIBUTE_NOTHROW {
   for (regexlisttype *item = head; item; item = item->next) {
     if (regexec(item->one_rgx, shibboleth, 0, NULL, 0) == 0) {
       return TRUE;
@@ -335,7 +335,7 @@ void check_the_multis(linestruct *line) {
 }
 
 /* Precalculate the multi-line start and end regex info so we can speed up rendering (with any hope at all...). */
-void precalc_multicolorinfo(void) {
+void precalc_multicolorinfo(void) _GL_ATTRIBUTE_NOTHROW {
   PROFILE_FUNCTION;
   const colortype *ink;
   regmatch_t startmatch, endmatch;
@@ -367,7 +367,7 @@ void precalc_multicolorinfo(void) {
           line->multidata[ink->id] = JUSTONTHIS;
           index += endmatch.rm_eo;
           /* If the total match has zero length, force an advance. */
-          if (startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo == 0) {
+          if ((startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo) == 0) {
             /* When at end-of-line, there is no other start. */
             if (!line->data[index]) {
               break;

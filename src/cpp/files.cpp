@@ -24,9 +24,9 @@ void make_new_buffer(void) _NO_EXCEPT {
   }
   /* Make the new buffer the current one, and start initializing it */
   openfile                = newnode;
-  openfile->filename      = copy_of("");
+  openfile->filename      = STRLTR_COPY_OF("");
   openfile->filetop       = make_new_node(NULL);
-  openfile->filetop->data = copy_of("");
+  openfile->filetop->data = STRLTR_COPY_OF("");
   openfile->filebot       = openfile->filetop;
   openfile->current       = openfile->filetop;
   openfile->current_x     = 0;
@@ -85,7 +85,7 @@ bool delete_lockfile(const char *lockfilename) _NO_EXCEPT {
 
 // Write a lock file, under the given lockfilename.  This always annihilates an
 // existing version of that file.  Return TRUE on success; FALSE otherwise.
-bool write_lockfile(const char *lockfilename, const char *filename, bool modified) {
+static bool write_lockfile(const char *lockfilename, const char *filename, bool modified) _NO_EXCEPT {
   int     mypid   = getpid();
   uid_t   myuid   = geteuid();
   passwd *mypwuid = getpwuid(myuid);
@@ -142,15 +142,15 @@ bool write_lockfile(const char *lockfilename, const char *filename, bool modifie
   lockdata[1] = 0x30;
   /* It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway. */
   snprintf(&lockdata[2], 11, "nano %s", VERSION);
-  lockdata[24] = mypid % 256;
-  lockdata[25] = (mypid / 256) % 256;
-  lockdata[26] = (mypid / (256 * 256)) % 256;
-  lockdata[27] = mypid / (256 * 256 * 256);
+  lockdata[24] = (mypid % 256);
+  lockdata[25] = ((mypid / 256) % 256);
+  lockdata[26] = ((mypid / (256 * 256)) % 256);
+  lockdata[27] = (mypid / (256 * 256 * 256));
   strncpy(&lockdata[28], mypwuid->pw_name, 16);
   strncpy(&lockdata[68], myhostname, 32);
   strncpy(&lockdata[108], filename, 768);
   lockdata[1007] = (modified) ? 0x55 : 0x00;
-  wroteamt       = fwrite(lockdata, 1, LOCKSIZE, filestream);
+  wroteamt = fwrite(lockdata, 1, LOCKSIZE, filestream);
   free(lockdata);
   if (fclose(filestream) == EOF || wroteamt < LOCKSIZE) {
     statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
@@ -421,7 +421,7 @@ void set_modified(void) {
 }
 
 /* Update the title bar and the multiline cache to match the current buffer. */
-void prepare_for_display(void) {
+void prepare_for_display(void) _NO_EXCEPT {
   /* Update the title bar, since the filename may have changed. */
   if (!inhelp) {
     titlebar(NULL);
@@ -435,7 +435,7 @@ void prepare_for_display(void) {
 }
 
 /* Show name of current buffer and its number of lines on the status bar. */
-void mention_name_and_linecount(void) {
+void mention_name_and_linecount(void) _NO_EXCEPT {
   Ulong count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0' ? 1 : 0);
   if (ISSET(MINIBAR)) {
     report_size = TRUE;
@@ -448,16 +448,16 @@ void mention_name_and_linecount(void) {
     /* TRANSLATORS: First %s is file name, second %s is file format. */
     statusline(
       HUSH, P_("%s -- %zu line (%s)", "%s -- %zu lines (%s)", count),
-      (openfile->filename[0] == '\0' ? _("New Buffer") : tail(openfile->filename)),
-      count, (openfile->fmt == DOS_FILE ? _("DOS") : _("Mac")));
+      ((openfile->filename[0] == '\0') ? _("New Buffer") : tail(openfile->filename)),
+      count, ((openfile->fmt == DOS_FILE) ? _("DOS") : _("Mac")));
   }
   else {
-    statusline(HUSH, P_("%s -- %zu line", "%s -- %zu lines", count), openfile->filename[0] == '\0' ? _("New Buffer") : tail(openfile->filename), count);
+    statusline(HUSH, P_("%s -- %zu line", "%s -- %zu lines", count), ((openfile->filename[0] == '\0') ? _("New Buffer") : tail(openfile->filename)), count);
   }
 }
 
 /* Update title bar and such after switching to another buffer. */
-void redecorate_after_switch(void) {
+static void redecorate_after_switch(void) _NO_EXCEPT {
   /* If only one file buffer is open, there is nothing to update. */
   if (openfile == openfile->next) {
     statusline(AHEM, _("No more open file buffers"));
@@ -485,19 +485,19 @@ void redecorate_after_switch(void) {
 }
 
 /* Switch to the previous entry in the circular list of buffers. */
-void switch_to_prev_buffer(void) {
+void switch_to_prev_buffer(void) _NO_EXCEPT {
   openfile = openfile->prev;
   redecorate_after_switch();
 }
 
 /* Switch to the next entry in the circular list of buffers. */
-void switch_to_next_buffer(void) {
+void switch_to_next_buffer(void) _NO_EXCEPT {
   openfile = openfile->next;
   redecorate_after_switch();
 }
 
 /* Remove the current buffer from the circular list of buffers.  When just one buffer remains open, show "Exit" in the help lines. */
-void close_buffer(void) {
+void close_buffer(void) _NO_EXCEPT {
   openfilestruct *orphan = openfile;
   if (orphan == startfile) {
     startfile = startfile->next;
@@ -526,7 +526,7 @@ void close_buffer(void) {
 }
 
 /* Encode any NUL bytes in the given line of text (of the given length), and return a dynamically allocated copy of the resultant string. */
-char *encode_data(char *text, Ulong length) {
+char *encode_data(char *text, Ulong length) _NO_EXCEPT {
   recode_NUL_to_LF(text, length);
   text[length] = '\0';
   return copy_of(text);
@@ -590,12 +590,12 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
         if (num_lines == 0) {
           format = DOS_FILE;
         }
-        len--;
+        --len;
       }
     }
     else if ((num_lines == 0 || format == MAC_FILE) && len > 0 && buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
       format = MAC_FILE;
-      len--;
+      --len;
     }
     else {
       /* Store the byte. */
@@ -956,7 +956,7 @@ void execute_command(const char *command) {
   if (!WIFEXITED(command_status) || WEXITSTATUS(command_status)) {
     statusline(ALERT, WIFSIGNALED(command_status) ? _("Cancelled") : _("Error: %s"),
                openfile->current->prev && strstr(openfile->current->prev->data, ": ")
-                 ? strstr(openfile->current->prev->data, ": ") + 2
+                 ? (strstr(openfile->current->prev->data, ": ") + 2)
                  : "---");
   }
   else if (should_pipe && pid_of_sender > 0 && (!WIFEXITED(sender_status) || WEXITSTATUS(sender_status))) {
@@ -1201,7 +1201,7 @@ char *abs_path(const char *path) _NO_EXCEPT {
 
 // Check whether the given path refers to a directory that is writable.
 // Return the absolute form of the path on success, and 'NULL' on failure.
-char *check_writable_directory(const char *path) _NO_EXCEPT {
+static char *check_writable_directory(const char *path) _NO_EXCEPT {
   char *full_path = get_full_path(path);
   if (!full_path) {
     return NULL;
@@ -1229,7 +1229,7 @@ char *safe_tempfile(FILE **stream) {
     tempdir = check_writable_directory(P_tmpdir);
   }
   if (!tempdir) {
-    tempdir = copy_of("/tmp/");
+    tempdir = STRLTR_COPY_OF("/tmp/");
   }
   extension = strrchr(openfile->filename, '.');
   if (!extension || strchr(extension, '/')) {
@@ -1251,14 +1251,14 @@ char *safe_tempfile(FILE **stream) {
 }
 
 /* Change to the specified operating directory, when it's valid. */
-void init_operating_dir(void) {
+void init_operating_dir(void) _NO_EXCEPT {
   char *target = get_full_path(operating_dir);
   /* If the operating directory is inaccessible, fail. */
   if (!target || chdir(target) == -1) {
     die(_("Invalid operating directory: %s\n"), operating_dir);
   }
   free(operating_dir);
-  operating_dir = anrealloc(target, (strlen(target) + 1));
+  operating_dir = arealloc(target, (strlen(target) + 1));
 }
 
 // Check whether the given path is outside of the operating directory.
@@ -1945,7 +1945,7 @@ int write_it_out(bool exiting, bool withprompt) {
 
 /* Write the current buffer to disk, or discard it. */
 void do_writeout(void) {
-  // If the user chose to discard the buffer, close it.
+  /* If the user chose to discard the buffer, close it. */
   if (write_it_out(FALSE, TRUE) == 2) {
     close_and_go();
   }
@@ -2144,16 +2144,16 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
     return morsel;
   }
   const char *lastslash = revstrstr(morsel, "/", morsel + *place);
-  Ulong length_of_path = (!lastslash ? 0 : lastslash - morsel + 1);
+  Ulong length_of_path = (!lastslash ? 0 : (lastslash - morsel + 1));
   Ulong match, common_len = 0;
   char *shared, *glued;
   char  char1[MAXCHARLEN], char2[MAXCHARLEN];
   int   len1, len2;
   /* Determine the number of characters that all matches have in common. */
   while (TRUE) {
-    len1 = collect_char(matches[0] + common_len, char1);
-    for (match = 1; match < num_matches; match++) {
-      len2 = collect_char(matches[match] + common_len, char2);
+    len1 = collect_char((matches[0] + common_len), char1);
+    for (match = 1; match < num_matches; ++match) {
+      len2 = collect_char((matches[match] + common_len), char2);
       if (len1 != len2 || strncmp(char1, char2, len2) != 0) {
         break;
       }
@@ -2176,7 +2176,7 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
   }
   /* If the matches have something in common, copy that part. */
   if (common_len != *place) {
-    morsel = (char *)nrealloc(morsel, common_len + 1);
+    morsel = (char *)nrealloc(morsel, (common_len + 1));
     strncpy(morsel, shared, common_len);
     morsel[common_len] = '\0';
     *place = common_len;

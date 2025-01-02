@@ -1,7 +1,34 @@
 #!/bin/bash
 
+CONFIG_FILE="config.h"
+GLFW_DEFINE="#define HAVE_GLFW 1"
+
+# Check if this has already been checked and defined in the config file.
+if ! grep -qF "$GLFW_DEFINE" "$CONFIG_FILE" 2>/dev/null; then
+cat <<EOF > test_glfw.c
+#include "src/lib/include/GLFW/glfw3.h"
+int main() {
+	if (!glfwInit()) {
+		return -1;
+  }
+  glfwTerminate();
+  return 0;
+}
+EOF
+  if gcc -o test_glfw test_glfw.c src/lib/bin/libglfw3.a -lm 2>/dev/null; then
+    echo "" >> "$CONFIG_FILE"
+    echo "" >> "$CONFIG_FILE"
+    echo "/* This is defined by the installer if glfw is installed staticly and localaly. */" >> "$CONFIG_FILE"
+    echo "$GLFW_DEFINE" >> "$CONFIG_FILE"
+    rm -f test_glfw
+  else
+    echo "Could not find static glfw lib installed.  Use 'AmakeCpp --lib glfw-static' to install."
+  fi
+  rm -f test_glfw.c
+fi
+
 AmakeCpp --test
-sudo AmakeCpp --link --bin /usr/lib/Mlib.a
+sudo AmakeCpp --link --bin -lGLEW -lGL -lfreetype /usr/lib/Mlib.a /usr/lib/freetype-gl.a
 if [ -f build/bin/NanoX ]; then
   sudo cp build/bin/NanoX /usr/bin/nanox
 fi

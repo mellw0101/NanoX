@@ -1,7 +1,5 @@
 /** @file winio.cpp */
-#include <ncursesw/ncurses.h>
 #include "../include/prototypes.h"
-#include "constexpr_def.h"
 
 #define BRANDING PACKAGE_STRING
 
@@ -49,7 +47,7 @@ static Ulong milestone = 0;
 
 /* Add the given code to the macro buffer. */
 void add_to_macrobuffer(int code) {
-  macro_length++;
+  ++macro_length;
   macro_buffer = arealloc(macro_buffer, (macro_length * sizeof(int)));
   macro_buffer[macro_length - 1] = code;
 }
@@ -94,7 +92,7 @@ void run_macro(void) {
 }
 
 /* Allocate the requested space for the keystroke. */
-void reserve_space_for(Ulong newsize) _NO_EXCEPT {
+void reserve_space_for(Ulong newsize) _GL_ATTRIBUTE_NOTHROW {
   if (newsize < capacity) {
     die(_("Too much input at once\n"));
   }
@@ -257,7 +255,7 @@ Ulong waiting_keycodes(void) {
 }
 
 /* Add the given keycode to the front of the keystroke buffer. */
-static void put_back(int keycode) _NO_EXCEPT {
+static void put_back(int keycode) _GL_ATTRIBUTE_NOTHROW {
   /* If there is no room at the head of the keystroke buffer, make room. */
   if (nextcodes == key_buffer) {
     if (waiting_codes == capacity) {
@@ -312,7 +310,7 @@ int get_code_from_plantation(void) {
     Uchar firstbyte = *plants_pointer;
     int   length;
     if (opening) {
-      length = opening - plants_pointer;
+      length = (opening - plants_pointer);
       put_back(MORE_PLANTS);
     }
     else {
@@ -541,8 +539,7 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
           case '5' : { /* Esc [ 1 5 ~ == F5 on xterm/rxvt/Eterm. */
             return KEY_F(seq[1] - '0');
           }
-          case '7' :   /* Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux
-                          console/xterm/rxvt/Eterm. */
+          case '7' :   /* Esc [ 1 7 ~ == F6 on VT220/VT320/  * Linux console/xterm/rxvt/Eterm. */
           case '8' :   /* Esc [ 1 8 ~ == F7 on the same. */
           case '9' : { /* Esc [ 1 9 ~ == F8 on the same. */
             return KEY_F(seq[1] - '1');
@@ -595,8 +592,7 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
             break;
           }
           case '4' : {
-            /* When the arrow keys are held together with Shift+Meta,
-             * act as if they are Home/End/PgUp/PgDown with Shift. */
+            /* When the arrow keys are held together with Shift+Meta, act as if they are Home/End/PgUp/PgDown with Shift. */
             switch (seq[3]) {
               case 'A' : { /* Esc [ 1 ; 4 A == Shift-Alt-Up on xterm. */
                 return SHIFT_PAGEUP;
@@ -1004,14 +1000,6 @@ int convert_to_control(int kbinput) {
     return 31;
   }
   return kbinput;
-}
-
-Uchar get_mod_key(void) {
-  Uchar modifiers = 6;
-  if (ioctl(STDIN_FILENO, TIOCLINUX, &modifiers) >= 0) {
-    return modifiers;
-  }
-  return 0;
 }
 
 /* Extract one keystroke from the input stream.  Translate escape sequences and possibly keypad codes into
@@ -1530,7 +1518,7 @@ int get_kbinput(WINDOW *frame, bool showcursor) {
 /* For each consecutive call, gather the given symbol into a Unicode code point.  When it's complete
  * (with six digits, or when Space or Enter is typed), return the assembled code. Until then, return
  * PROCEED when the symbol is valid, or an error code for anything other than hexadecimal, Space, and Enter. */
-static long assemble_unicode(int symbol) _NO_EXCEPT {
+static long assemble_unicode(int symbol) _GL_ATTRIBUTE_NOTHROW {
   static long unicode = 0;
   static int  digits  = 0;
   int outcome = PROCEED;
@@ -1777,7 +1765,7 @@ int get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) {
       wmouse_trafo(footwin, mouse_y, mouse_x, FALSE);
     }
     if (in_middle || (in_footer && *mouse_y == 0)) {
-      int keycode = (event.bstate & BUTTON4_PRESSED) ? ALT_UP : ALT_DOWN;
+      int keycode = ((event.bstate & BUTTON4_PRESSED) ? ALT_UP : ALT_DOWN);
       /* One bump of the mouse wheel should scroll two lines. */
       put_back(keycode);
       put_back(keycode);
@@ -1794,30 +1782,30 @@ int get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) {
 }
 
 /* Move (in the given window) to the given row and wipe it clean. */
-void blank_row(WINDOW *window, int row) _NO_EXCEPT {
+void blank_row(WINDOW *window, int row) _GL_ATTRIBUTE_NOTHROW {
   wmove(window, row, 0);
   wclrtoeol(window);
 }
 
 /* Blank the first line of the top portion of the screen. */
-void blank_titlebar(void) _NO_EXCEPT {
+void blank_titlebar(void) _GL_ATTRIBUTE_NOTHROW {
   mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
 }
 
 /* Blank all lines of the middle portion of the screen (the edit window). */
-void blank_edit(void) _NO_EXCEPT {
+void blank_edit(void) _GL_ATTRIBUTE_NOTHROW {
   for (int row = 0; row < editwinrows; ++row) {
     blank_row(midwin, row);
   }
 }
 
 /* Blank the first line of the bottom portion of the screen. */
-void blank_statusbar(void) _NO_EXCEPT {
+void blank_statusbar(void) _GL_ATTRIBUTE_NOTHROW {
   blank_row(footwin, 0);
 }
 
 /* Wipe the status bar clean and include this in the next screen update. */
-void wipe_statusbar(void) _NO_EXCEPT {
+void wipe_statusbar(void) _GL_ATTRIBUTE_NOTHROW {
   lastmessage = VACUUM;
   if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN) {
     return;
@@ -1827,7 +1815,7 @@ void wipe_statusbar(void) _NO_EXCEPT {
 }
 
 /* Blank out the two help lines (when they are present). */
-void blank_bottombars(void) _NO_EXCEPT {
+void blank_bottombars(void) _GL_ATTRIBUTE_NOTHROW {
   if (!ISSET(NO_HELP) && LINES > 5) {
     blank_row(footwin, 1);
     blank_row(footwin, 2);
@@ -1835,7 +1823,7 @@ void blank_bottombars(void) _NO_EXCEPT {
 }
 
 /* When some number of keystrokes has been reached, wipe the status bar. */
-void blank_it_when_expired(void) _NO_EXCEPT {
+void blank_it_when_expired(void) _GL_ATTRIBUTE_NOTHROW {
   if (countdown == 0) {
     return;
   }
@@ -1850,7 +1838,7 @@ void blank_it_when_expired(void) _NO_EXCEPT {
 }
 
 /* Ensure that the status bar will be wiped upon the next keystroke. */
-void set_blankdelay_to_one(void) _NO_EXCEPT {
+void set_blankdelay_to_one(void) _GL_ATTRIBUTE_NOTHROW {
   countdown = 1;
 }
 
@@ -1863,8 +1851,7 @@ void set_blankdelay_to_one(void) _NO_EXCEPT {
  * allocated, and should be freed. If isdata is TRUE, the caller might put "<"
  * at the beginning or ">" at the end of the line if it's too long. If isprompt
  * is TRUE, the caller might put ">" at the end of the line if it's too long. */
-char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt) _NO_EXCEPT {
-  PROFILE_FUNCTION;
+char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt) _GL_ATTRIBUTE_NOTHROW {
   /* The beginning of the text, to later determine the covered part. */
   const char *origin = text;
   /* The index of the first character that the caller wishes to show. */
@@ -1874,7 +1861,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   /* The number of zero-width characters for which to reserve space. */
   Ulong stowaways = 20;
   /* The amount of memory to reserve for the displayable string. */
-  Ulong allocsize = ((COLS + stowaways) * MAXCHARLEN + 1);
+  Ulong allocsize = (((ISSET(GUI_RUNNING) ? (editwincols) : COLS) + stowaways) * MAXCHARLEN + 1);
   /* The displayable string we will return. */
   char *converted = (char *)nmalloc(allocsize);
   /* Current position in converted. */
@@ -1888,8 +1875,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
     converted[0] = '\0';
     return converted;
   }
-  /* If the first character starts before the left edge, or would be
-   * overwritten by a "<" token, then show placeholders instead. */
+  /* If the first character starts before the left edge, or would be overwritten by a "<" token, then show placeholders instead. */
   if ((start_col < column || (start_col > 0 && isdata && !ISSET(SOFTWRAP))) && *text && *text != '\t') {
     if (is_cntrl_char(text)) {
       if (start_col < column) {
@@ -1978,14 +1964,13 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
       allocsize += stowaways * MAXCHARLEN;
       converted = (char *)nrealloc(converted, allocsize);
     }
-    /* On a Linux console, skip zero-width characters, as it would show
-     * them WITH a width, thus messing up the display.  See bug #52954. */
+    /* On a Linux console, skip zero-width characters, as it would show them WITH a width, thus messing up the display.  See bug #52954. */
     if (on_a_vt && charwidth == 0) {
       text += charlength;
       continue;
     }
     /* For any valid character, just copy its bytes. */
-    for (; charlength > 0; charlength--) {
+    for (; charlength > 0; --charlength) {
       converted[index++] = *(text++);
     }
     /* If the codepoint is unassigned, assume a width of one. */
@@ -2015,7 +2000,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
 }
 
 /* Determine the sequence number of the given buffer in the circular list. */
-static int buffer_number(openfilestruct *buffer) _NO_EXCEPT {
+static int buffer_number(openfilestruct *buffer) _GL_ATTRIBUTE_NOTHROW {
   int count = 1;
   while (buffer != startfile) {
     buffer = buffer->prev;
@@ -2026,12 +2011,12 @@ static int buffer_number(openfilestruct *buffer) _NO_EXCEPT {
 
 /* Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
  * and soft-wrapping by showing corresponding letters in the given window. */
-static void show_states_at(WINDOW *window) _NO_EXCEPT {
-  waddstr(window, ISSET(AUTOINDENT) ? "I" : " ");
-  waddstr(window, openfile->mark ? "M" : " ");
-  waddstr(window, ISSET(BREAK_LONG_LINES) ? "L" : " ");
-  waddstr(window, recording ? "R" : " ");
-  waddstr(window, ISSET(SOFTWRAP) ? "S" : " ");
+static void show_states_at(WINDOW *window) _GL_ATTRIBUTE_NOTHROW {
+  waddstr(window, (ISSET(AUTOINDENT) ? "I" : " "));
+  waddstr(window, (openfile->mark ? "M" : " "));
+  waddstr(window, (ISSET(BREAK_LONG_LINES) ? "L" : " "));
+  waddstr(window, (recording ? "R" : " "));
+  waddstr(window, (ISSET(SOFTWRAP) ? "S" : " "));
 }
 
 /* If path is NULL, we're in normal editing mode, so display the current
@@ -2039,7 +2024,7 @@ static void show_states_at(WINDOW *window) _NO_EXCEPT {
  * has been modified on the title bar.  If path isn't NULL, we're either
  * in the file browser or the help viewer, so show either the current
  * directory or the title of help text, that is: whatever is in path. */
-void titlebar(const char *path) {
+void titlebar(const char *path) _GL_ATTRIBUTE_NOTHROW {
   /* The width of the different title-bar elements, in columns. */
   Ulong verlen, prefixlen, pathlen, statelen;
   /* The width that "Modified" would take up. */
@@ -2115,7 +2100,7 @@ void titlebar(const char *path) {
     }
   }
   /* Determine the widths of the four elements, including their padding. */
-  verlen    = (breadth(upperleft) + 3);
+  verlen = (breadth(upperleft) + 3);
   prefixlen = breadth(prefix);
   if (prefixlen > 0) {
     ++prefixlen;
@@ -2192,7 +2177,7 @@ void titlebar(const char *path) {
 }
 
 /* Draw a bar at the bottom with some minimal state information. */
-void minibar(void) _NO_EXCEPT {
+void minibar(void) _GL_ATTRIBUTE_NOTHROW {
   char *thename         = NULL;
   char *number_of_lines = NULL;
   char *ranking         = NULL;
@@ -2318,7 +2303,7 @@ void minibar(void) _NO_EXCEPT {
 }
 
 /* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there. */
-void statusline(message_type importance, const char *msg, ...) _NO_EXCEPT {
+void statusline(message_type importance, const char *msg, ...) _GL_ATTRIBUTE_NOTHROW {
   static Ulong start_col = 0;
   bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
   char *compound, *message;
@@ -2340,8 +2325,7 @@ void statusline(message_type importance, const char *msg, ...) _NO_EXCEPT {
   va_end(ap);
   /* When not in curses mode, write the message to standard error. */
   if (isendwin()) {
-    logI(compound);
-    fprintf(stderr, "\n%s\n", compound);
+    fprintf(stderr, "%s\n", compound);
     free(compound);
     return;
   }
@@ -2384,12 +2368,11 @@ void statusline(message_type importance, const char *msg, ...) _NO_EXCEPT {
   if (showed_whitespace) {
     SET(WHITESPACE_DISPLAY);
   }
-  start_col = (COLS - breadth(message)) / 2;
+  start_col = ((COLS - breadth(message)) / 2);
   bracketed = (start_col > 1);
-  wmove(footwin, 0, (bracketed ? start_col - 2 : start_col));
+  wmove(footwin, 0, (bracketed ? (start_col - 2) : start_col));
   wattron(footwin, colorpair);
   bracketed ? waddstr(footwin, "[ ") : 0;
-  logI(message);
   waddstr(footwin, message);
   bracketed ? waddstr(footwin, " ]") : 0;
   wattroff(footwin, colorpair);
@@ -2402,12 +2385,12 @@ void statusline(message_type importance, const char *msg, ...) _NO_EXCEPT {
 }
 
 /* Display a normal message on the status bar, quietly. */
-void statusbar(const char *msg) _NO_EXCEPT {
+void statusbar(const char *msg) _GL_ATTRIBUTE_NOTHROW {
   statusline(HUSH, msg);
 }
 
 /* Warn the user on the status bar and pause for a moment, so that the message can be noticed and read. */
-void warn_and_briefly_pause(const char *msg) _NO_EXCEPT {
+void warn_and_briefly_pause(const char *msg) _GL_ATTRIBUTE_NOTHROW {
   blank_bottombars();
   statusline(ALERT, msg);
   lastmessage = VACUUM;
@@ -2416,7 +2399,7 @@ void warn_and_briefly_pause(const char *msg) _NO_EXCEPT {
 
 /* Write a key's representation plus a minute description of its function to the screen.  For example,
  * the key could be "^C" and its tag "Cancel". Key plus tag may occupy at most width columns. */
-void post_one_key(const char *keystroke, const char *tag, int width) _NO_EXCEPT {
+void post_one_key(const char *keystroke, const char *tag, int width) _GL_ATTRIBUTE_NOTHROW {
   wattron(footwin, interface_color_pair[KEY_COMBO]);
   waddnstr(footwin, keystroke, actual_x(keystroke, width));
   wattroff(footwin, interface_color_pair[KEY_COMBO]);
@@ -2432,7 +2415,7 @@ void post_one_key(const char *keystroke, const char *tag, int width) _NO_EXCEPT 
 }
 
 /* Display the shortcut list corresponding to menu on the last two rows of the bottom portion of the window.  The shortcuts are shown in pairs. */
-void bottombars(const int menu) _NO_EXCEPT {
+void bottombars(const int menu) _GL_ATTRIBUTE_NOTHROW {
   Ulong index     = 0;
   Ulong number    = 0;
   Ulong itemwidth = 0;
@@ -2477,7 +2460,7 @@ void bottombars(const int menu) _NO_EXCEPT {
 }
 
 /* Redetermine `cursor_row` from the position of current relative to edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
-void place_the_cursor(void) {
+void place_the_cursor(void) _GL_ATTRIBUTE_NOTHROW {
   long  row    = 0;
   Ulong column = xplustabs();
   if (ISSET(SOFTWRAP)) {
@@ -2498,10 +2481,14 @@ void place_the_cursor(void) {
     column -= get_page_start(column);
   }
   if (row < editwinrows) {
-    wmove(midwin, row, (margin + column));
+    if (!ISSET(USING_GUI)) {
+      wmove(midwin, row, (margin + column));
+    }
   }
   else {
-    statusline(ALERT, "Misplaced cursor -- please report a bug");
+    if (!ISSET(USING_GUI)) {
+      statusline(ALERT, "Misplaced cursor -- please report a bug");
+    }
   }
 #ifdef _CURSES_H_
   /* Only needed for NetBSD curses. */
@@ -2649,20 +2636,20 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
     if (*(converted + target_x)) {
       charlen       = collect_char((converted + target_x), striped_char);
       target_column = wideness(converted, target_x);
-#ifdef USING_OLDER_LIBVTE
-    }
-    else if ((target_column + 1) == editwincols) {
-      /* Defeat a VTE bug -- see https://sv.gnu.org/bugs/?55896. */
-#  ifdef ENABLE_UTF8
-      if (using_utf8()) {
-        striped_char[0] = '\xC2';
-        striped_char[1] = '\xA0';
-        charlen         = 2;
+    #ifdef USING_OLDER_LIBVTE
       }
-      else
-#  endif
-        striped_char[0] = '.';
-#endif
+      else if ((target_column + 1) == editwincols) {
+        /* Defeat a VTE bug -- see https://sv.gnu.org/bugs/?55896. */
+        #ifdef ENABLE_UTF8
+          if (using_utf8()) {
+            striped_char[0] = '\xC2';
+            striped_char[1] = '\xA0';
+            charlen         = 2;
+          }
+          else
+        #endif
+          striped_char[0] = '.';
+    #endif
     }
     else {
       striped_char[0] = ' ';
@@ -2670,9 +2657,7 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
     mv_add_nstr_color(midwin, row, (margin + target_column), striped_char, charlen, GUIDE_STRIPE);
   }
   /* If the line is at least partially selected, paint the marked part. */
-  if (openfile->mark
-   && ((line->lineno >= openfile->mark->lineno && line->lineno <= openfile->current->lineno)
-   || (line->lineno <= openfile->mark->lineno && line->lineno >= openfile->current->lineno))) {
+  if (line_in_marked_region(line)) {
     /* The lines where the marked region begins and ends. */
     linestruct *top, *bot;
     /* The x positions where the marked region begins and ends. */
@@ -2711,7 +2696,6 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
 /* Redraw the given line so that the character at the given index is visible -- if necessary, scroll the line
  * horizontally (when not softwrapping). Return the number of rows "consumed" (relevant when softwrapping). */
 int update_line(linestruct *line, const Ulong index, int offset) {
-  PROFILE_FUNCTION;
   int   row;       /* The row in the edit window we will be updating. */
   char *converted; /* The data of the line with tabs and control characters expanded. */
   Ulong from_col;  /* From which column a horizontally scrolled line is displayed. */
@@ -2789,7 +2773,7 @@ int update_softwrapped_line(linestruct *line) {
 
 /* Check whether the mark is on, or whether old_column and new_column are on different "pages"
  * (in softwrap mode, only the former applies), which means that the relevant line needs to be redrawn. */
-bool line_needs_update(const Ulong old_column, const Ulong new_column) {
+bool line_needs_update(const Ulong old_column, const Ulong new_column) _GL_ATTRIBUTE_NOTHROW {
   if (openfile->mark) {
     return TRUE;
   }
@@ -2801,7 +2785,7 @@ bool line_needs_update(const Ulong old_column, const Ulong new_column) {
 /* Try to move up nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move up, which will be zero if we completely succeeded. */
-int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT {
+int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _GL_ATTRIBUTE_NOTHROW {
   int i;
   Ulong chunk;
   if (ISSET(SOFTWRAP)) {
@@ -2834,7 +2818,7 @@ int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT {
 /* Try to move down nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move down, which will be zero if we completely succeeded. */
-int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT {
+int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _GL_ATTRIBUTE_NOTHROW {
   int   i;
   Ulong current_leftedge;
   bool  kickoff, end_of_line;
@@ -2843,7 +2827,7 @@ int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT 
     kickoff          = TRUE;
     /* Advance through the requested number of chunks. */
     for (i = nrows; i > 0; --i) {
-      end_of_line      = FALSE;
+      end_of_line = FALSE;
       current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
       if (!end_of_line) {
         continue;
@@ -2851,9 +2835,9 @@ int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT 
       if (*line == openfile->filebot) {
         break;
       }
-      *line            = (*line)->next;
+      *line = (*line)->next;
       current_leftedge = 0;
-      kickoff          = TRUE;
+      kickoff = TRUE;
     }
     /* Only change leftedge when we actually could move. */
     if (i < nrows) {
@@ -2871,22 +2855,22 @@ int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NO_EXCEPT 
 /* Return 'TRUE' if there are fewer than a screen's worth of lines between the line at line number
  * was_lineno (and column was_leftedge, if we're in softwrap mode) and the line at current[current_x]. */
 bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
-  int         rows_left;
-  Ulong       leftedge;
+  int rows_left;
+  Ulong leftedge;
   linestruct *line;
   if (ISSET(SOFTWRAP)) {
-    line      = openfile->current;
+    line = openfile->current;
     leftedge  = leftedge_for(xplustabs(), openfile->current);
     rows_left = go_back_chunks((editwinrows - 1), &line, &leftedge);
     return (rows_left > 0 || line->lineno < was_lineno || (line->lineno == was_lineno && leftedge <= was_leftedge));
   }
   else {
-    return (openfile->current->lineno - was_lineno < editwinrows);
+    return ((openfile->current->lineno - was_lineno) < editwinrows);
   }
 }
 
 /* Draw a "scroll bar" on the righthand side of the edit window. */
-void draw_scrollbar(void) {
+static void draw_scrollbar(void) _GL_ATTRIBUTE_NOTHROW {
   int fromline     = (openfile->edittop->lineno - 1);
   int totallines   = openfile->filebot->lineno;
   int coveredlines = editwinrows;
@@ -2922,6 +2906,10 @@ void edit_scroll(bool direction) {
   else {
     go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
   }
+  /* If using gui return early. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
   /* Actually scroll the text of the edit window one row up or down. */
   scrollok(midwin, TRUE);
   wscrl(midwin, ((direction == BACKWARD) ? -1 : 1));
@@ -2936,7 +2924,7 @@ void edit_scroll(bool direction) {
   leftedge = openfile->firstcolumn;
   /* If we scrolled forward, the bottom row needs to be redrawn. */
   if (direction == FORWARD) {
-    go_forward_chunks(editwinrows - nrows, &line, &leftedge);
+    go_forward_chunks((editwinrows - nrows), &line, &leftedge);
   }
   if (sidebar) {
     draw_scrollbar();
@@ -2962,7 +2950,7 @@ void edit_scroll(bool direction) {
 // When kickoff is TRUE, start at the beginning of the linedata; otherwise,
 // continue from where the previous call left off.  Set end_of_line to TRUE
 // when end-of-line is reached while searching for a possible breakpoint.
-Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NO_EXCEPT {
+Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _GL_ATTRIBUTE_NOTHROW {
   /* Pointer at the current character in this line's data. */
   static const char *text;
   /* Column position that corresponds to the above pointer. */
@@ -2977,8 +2965,8 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
   const char *farthest_blank = NULL;
   /* Initialize the static variables when it's another line. */
   if (*kickoff) {
-    text     = linedata;
-    column   = 0;
+    text = linedata;
+    column = 0;
     *kickoff = FALSE;
   }
   /* First find the place in text where the current chunk starts. */
@@ -3005,9 +2993,9 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
    * after that blank -- if it doesn't overshoot the screen's edge. */
   if (farthest_blank) {
     Ulong aftertheblank = last_blank_col;
-    Ulong onestep       = advance_over(farthest_blank, aftertheblank);
+    Ulong onestep = advance_over(farthest_blank, aftertheblank);
     if (aftertheblank <= rightside) {
-      text   = (farthest_blank + onestep);
+      text = (farthest_blank + onestep);
       column = aftertheblank;
       return aftertheblank;
     }
@@ -3022,13 +3010,13 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
 
 // Return the row number of the softwrapped chunk in the given line that the given column is on, relative
 // to the first row (zero-based).  If leftedge isn't NULL, return in it the leftmost column of the chunk.
-Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NO_EXCEPT {
+Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _GL_ATTRIBUTE_NOTHROW {
   Ulong end_col, current_chunk, start_col;
   bool  end_of_line, kickoff;
   current_chunk = 0;
-  start_col     = 0;
-  end_of_line   = FALSE;
-  kickoff       = TRUE;
+  start_col = 0;
+  end_of_line = FALSE;
+  kickoff = TRUE;
   while (TRUE) {
     end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line);
     /* When the column is in range or we reached end-of-line, we're done. */
@@ -3044,17 +3032,17 @@ Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NO_EX
 }
 
 /* Return how many extra rows the given line needs when softwrapping. */
-Ulong extra_chunks_in(linestruct *line) _NO_EXCEPT {
+Ulong extra_chunks_in(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
   return get_chunk_and_edge((Ulong)-1, line, NULL);
 }
 
 /* Return the row of the softwrapped chunk of the given line that column is on, relative to the first row (zero-based). */
-Ulong chunk_for(Ulong column, linestruct *line) _NO_EXCEPT {
+Ulong chunk_for(Ulong column, linestruct *line) _GL_ATTRIBUTE_NOTHROW {
   return get_chunk_and_edge(column, line, NULL);
 }
 
 /* Return the leftmost column of the softwrapped chunk of the given line that the given column is on. */
-Ulong leftedge_for(Ulong column, linestruct *line) _NO_EXCEPT {
+Ulong leftedge_for(Ulong column, linestruct *line) _GL_ATTRIBUTE_NOTHROW {
   Ulong leftedge;
   get_chunk_and_edge(column, line, &leftedge);
   return leftedge;
@@ -3063,7 +3051,7 @@ Ulong leftedge_for(Ulong column, linestruct *line) _NO_EXCEPT {
 // Ensure that firstcolumn is at the starting column of the softwrapped chunk
 // it's on.  We need to do this when the number of columns of the edit window
 // has changed, because then the width of softwrapped chunks has changed.
-void ensure_firstcolumn_is_aligned(void) _NO_EXCEPT {
+void ensure_firstcolumn_is_aligned(void) _GL_ATTRIBUTE_NOTHROW {
   if (ISSET(SOFTWRAP)) {
     openfile->firstcolumn = leftedge_for(openfile->firstcolumn, openfile->edittop);
   }
@@ -3077,7 +3065,7 @@ void ensure_firstcolumn_is_aligned(void) _NO_EXCEPT {
 // When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
 // chunk, shift it back to the last column before the breakpoint.  The given column is relative
 // to the given leftedge in current.  The returned column is relative to the start of the text.
-Ulong actual_last_column(Ulong leftedge, Ulong column) _NO_EXCEPT {
+Ulong actual_last_column(Ulong leftedge, Ulong column) _GL_ATTRIBUTE_NOTHROW {
   bool  kickoff, last_chunk;
   Ulong end_col;
   if (ISSET(SOFTWRAP)) {
@@ -3097,7 +3085,7 @@ Ulong actual_last_column(Ulong leftedge, Ulong column) _NO_EXCEPT {
 }
 
 /* Return TRUE if current[current_x] is before the viewport. */
-static bool current_is_above_screen(void) _NO_EXCEPT {
+static bool current_is_above_screen(void) _GL_ATTRIBUTE_NOTHROW {
   if (ISSET(SOFTWRAP)) {
     return (openfile->current->lineno < openfile->edittop->lineno || (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
   }
@@ -3107,7 +3095,7 @@ static bool current_is_above_screen(void) _NO_EXCEPT {
 #define SHIM (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
 
 /* Return TRUE if current[current_x] is beyond the viewport. */
-static bool current_is_below_screen(void) _NO_EXCEPT {
+static bool current_is_below_screen(void) _GL_ATTRIBUTE_NOTHROW {
   if (ISSET(SOFTWRAP)) {
     linestruct *line     = openfile->edittop;
     Ulong       leftedge = openfile->firstcolumn;
@@ -3119,7 +3107,7 @@ static bool current_is_below_screen(void) _NO_EXCEPT {
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */
-static bool current_is_offscreen(void) _NO_EXCEPT {
+bool current_is_offscreen(void) _GL_ATTRIBUTE_NOTHROW {
   return (current_is_above_screen() || current_is_below_screen());
 }
 
@@ -3131,6 +3119,10 @@ void edit_redraw(linestruct *old_current, update_type manner) {
   if (current_is_offscreen()) {
     adjust_viewport(ISSET(JUMPY_SCROLLING) ? CENTERING : manner);
     refresh_needed = TRUE;
+    return;
+  }
+  /* Return early if running in gui mode. */
+  if (ISSET(USING_GUI)) {
     return;
   }
   /* If the mark is on, update all lines between old_current and current. */
@@ -3167,12 +3159,6 @@ void edit_refresh(void) {
   if (openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
     prepare_palette();
   }
-  /* If syntax is turned on, index the file. */
-  // if (!ISSET(NO_SYNTAX)) {
-  //   if (openfile->type.is_set<BASH>() || openfile->type.is_set<C_CPP>()) {
-  //     LSP->index_file(openfile->filename, TRUE);
-  //   }
-  // }
   /* When the line above the viewport does not have multidata, recalculate all. */
   recook |= (ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata);
   if (recook) {
@@ -3215,7 +3201,7 @@ void edit_refresh(void) {
 // CENTERING means that current should end up in the middle of the screen,
 // and FLOWING means that it should scroll no more than needed to bring
 // current into view.
-void adjust_viewport(update_type manner) _NO_EXCEPT {
+void adjust_viewport(update_type manner) _GL_ATTRIBUTE_NOTHROW {
   int goal = 0;
   if (manner == STATIONARY) {
     goal = openfile->cursor_row;
@@ -3235,7 +3221,7 @@ void adjust_viewport(update_type manner) _NO_EXCEPT {
 }
 
 /* Tell curses to unconditionally redraw whatever was on the screen. */
-void full_refresh(void) _NO_EXCEPT {
+void full_refresh(void) _GL_ATTRIBUTE_NOTHROW {
   wrefresh(curscr);
 }
 
@@ -3255,7 +3241,7 @@ void draw_all_subwindows(void) {
 }
 
 /* Display on the status bar details about the current cursor position. */
-void report_cursor_position(void) _NO_EXCEPT {
+void report_cursor_position(void) _GL_ATTRIBUTE_NOTHROW {
   int   linepct, colpct, charpct;
   Ulong fullwidth  = (breadth(openfile->current->data) + 1);
   Ulong column     = (xplustabs() + 1);
@@ -3267,13 +3253,13 @@ void report_cursor_position(void) _NO_EXCEPT {
   /* Calculate the percentages. */
   linepct = (100 * openfile->current->lineno / openfile->filebot->lineno);
   colpct  = (100 * column / fullwidth);
-  charpct = (openfile->totsize == 0) ? 0 : 100 * sum / openfile->totsize;
+  charpct = ((openfile->totsize == 0) ? 0 : (100 * sum / openfile->totsize));
   statusline(INFO, _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu (%2d%%)"), digits(openfile->filebot->lineno),
     openfile->current->lineno, openfile->filebot->lineno, linepct, column, fullwidth, colpct, digits(openfile->totsize), sum, openfile->totsize, charpct);
 }
 
 /* Highlight the text between the given two columns on the current line. */
-void spotlight(Ulong from_col, Ulong to_col) {
+void spotlight(Ulong from_col, Ulong to_col) _GL_ATTRIBUTE_NOTHROW {
   Ulong right_edge = (get_page_start(from_col) + editwincols);
   bool  overshoots = (to_col > right_edge);
   char *word;
@@ -3284,7 +3270,7 @@ void spotlight(Ulong from_col, Ulong to_col) {
   }
   /* If the target text is of zero length, highlight a space instead. */
   if (to_col == from_col) {
-    word = copy_of(" ");
+    word = STRLTR_COPY_OF(" ");
     ++to_col;
   }
   else {
@@ -3300,7 +3286,7 @@ void spotlight(Ulong from_col, Ulong to_col) {
 }
 
 /* Highlight the text between the given two columns on the current line. */
-void spotlight_softwrapped(Ulong from_col, Ulong to_col) {
+void spotlight_softwrapped(Ulong from_col, Ulong to_col) _GL_ATTRIBUTE_NOTHROW {
   long  row;
   Ulong leftedge = leftedge_for(from_col, openfile->current);
   Ulong break_col;
@@ -3318,7 +3304,7 @@ void spotlight_softwrapped(Ulong from_col, Ulong to_col) {
     }
     /* If the target text is of zero length, highlight a space instead. */
     if (break_col == from_col) {
-      word = copy_of(" ");
+      word = STRLTR_COPY_OF(" ");
       break_col++;
     }
     else {

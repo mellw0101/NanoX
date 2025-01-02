@@ -7,17 +7,17 @@ static char *prompt = NULL;
 static Ulong typing_x = HIGHEST_POSITIVE;
 
 /* Move to the beginning of the answer. */
-void do_statusbar_home(void) _NO_EXCEPT {
+void do_statusbar_home(void) _GL_ATTRIBUTE_NOTHROW {
   typing_x = 0;
 }
 
 /* Move to the end of the answer. */
-void do_statusbar_end(void) _NO_EXCEPT {
+void do_statusbar_end(void) _GL_ATTRIBUTE_NOTHROW {
   typing_x = strlen(answer);
 }
 
 /* Move to the previous word in the answer. */
-void do_statusbar_prev_word(void) _NO_EXCEPT {
+void do_statusbar_prev_word(void) _GL_ATTRIBUTE_NOTHROW {
   bool seen_a_word = FALSE, step_forward = FALSE;
   /* Move backward until we pass over the start of a word. */
   while (typing_x) {
@@ -41,7 +41,7 @@ void do_statusbar_prev_word(void) _NO_EXCEPT {
 }
 
 /* Move to the next word in the answer. */
-void do_statusbar_next_word(void) _NO_EXCEPT {
+void do_statusbar_next_word(void) _GL_ATTRIBUTE_NOTHROW {
   bool seen_space = !is_word_char(answer + typing_x, FALSE);
   bool seen_word  = !seen_space;
   /* Move forward until we reach either the end or the start of a word, depending on whether the AFTER_ENDS flag is set or not. */
@@ -77,7 +77,7 @@ void do_statusbar_next_word(void) _NO_EXCEPT {
 }
 
 /* Move left one character in the answer. */
-void do_statusbar_left(void) {
+void do_statusbar_left(void) _GL_ATTRIBUTE_NOTHROW {
   if (typing_x > 0) {
     typing_x = step_left(answer, typing_x);
     while (typing_x > 0 && is_zerowidth(answer + typing_x)) {
@@ -87,7 +87,7 @@ void do_statusbar_left(void) {
 }
 
 /* Move right one character in the answer. */
-void do_statusbar_right(void) {
+void do_statusbar_right(void) _GL_ATTRIBUTE_NOTHROW {
   if (answer[typing_x]) {
     typing_x = step_right(answer, typing_x);
     while (answer[typing_x] && is_zerowidth(answer + typing_x)) {
@@ -97,7 +97,7 @@ void do_statusbar_right(void) {
 }
 
 /* Backspace over one character in the answer. */
-void do_statusbar_backspace(void) {
+void do_statusbar_backspace(void) _GL_ATTRIBUTE_NOTHROW {
   if (typing_x > 0) {
     Ulong was_x = typing_x;
     typing_x    = step_left(answer, typing_x);
@@ -106,8 +106,8 @@ void do_statusbar_backspace(void) {
 }
 
 /* Delete one character in the answer. */
-void do_statusbar_delete(void) {
-  if (answer[typing_x] != '\0') {
+void do_statusbar_delete(void) _GL_ATTRIBUTE_NOTHROW {
+  if (answer[typing_x]) {
     int charlen = char_length(answer + typing_x);
     memmove((answer + typing_x), (answer + typing_x + charlen), (strlen(answer) - typing_x - charlen + 1));
     if (is_zerowidth(answer + typing_x)) {
@@ -117,7 +117,7 @@ void do_statusbar_delete(void) {
 }
 
 /* Zap the part of the answer after the cursor, or the whole answer. */
-void lop_the_answer(void) {
+void lop_the_answer(void) _GL_ATTRIBUTE_NOTHROW {
   if (!answer[typing_x]) {
     typing_x = 0;
   }
@@ -125,7 +125,7 @@ void lop_the_answer(void) {
 }
 
 /* Copy the current answer (if any) into the cutbuffer. */
-void copy_the_answer(void) {
+void copy_the_answer(void) _GL_ATTRIBUTE_NOTHROW {
   if (*answer) {
     free_lines(cutbuffer);
     cutbuffer       = make_new_node(NULL);
@@ -137,7 +137,7 @@ void copy_the_answer(void) {
 /* Paste the first line of the cutbuffer into the current answer. */
 void paste_into_answer(void) {
   Ulong pastelen = strlen(cutbuffer->data);
-  answer         = arealloc(answer, (strlen(answer) + pastelen + 1));
+  answer = arealloc(answer, (strlen(answer) + pastelen + 1));
   memmove((answer + typing_x + pastelen), (answer + typing_x), (strlen(answer) - typing_x + 1));
   strncpy((answer + typing_x), cutbuffer->data, pastelen);
   typing_x += pastelen;
@@ -225,7 +225,7 @@ void absorb_character(int input, functionptrtype function) {
 }
 
 /* Handle any editing shortcut, and return TRUE when handled. */
-static bool handle_editing(functionptrtype function) _NO_EXCEPT {
+static bool handle_editing(functionptrtype function) _GL_ATTRIBUTE_NOTHROW {
   if (function == do_left) {
     do_statusbar_left();
   }
@@ -278,7 +278,7 @@ static bool handle_editing(functionptrtype function) _NO_EXCEPT {
 
 /* Return the column number of the first character of the answer that is displayed in the status bar when the cursor is at the given
  * column, with the available room for the answer starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
-Ulong get_statusbar_page_start(Ulong base, Ulong column) _NO_EXCEPT {
+Ulong get_statusbar_page_start(Ulong base, Ulong column) _GL_ATTRIBUTE_NOTHROW {
   if (column == base || column < (COLS - 1)) {
     return 0;
   }
@@ -291,12 +291,12 @@ Ulong get_statusbar_page_start(Ulong base, Ulong column) _NO_EXCEPT {
 }
 
 /* Reinitialize the cursor position in the answer. */
-void put_cursor_at_end_of_answer(void) _NO_EXCEPT {
+void put_cursor_at_end_of_answer(void) _GL_ATTRIBUTE_NOTHROW {
   typing_x = HIGHEST_POSITIVE;
 }
 
 /* Redraw the prompt bar and place the cursor at the right spot. */
-void draw_the_promptbar(void) _NO_EXCEPT {
+void draw_the_promptbar(void) _GL_ATTRIBUTE_NOTHROW {
   Ulong base   = (breadth(prompt) + 2);
   Ulong column = (base + wideness(answer, typing_x));
   Ulong the_page, end_page;
@@ -304,7 +304,7 @@ void draw_the_promptbar(void) _NO_EXCEPT {
   the_page = get_statusbar_page_start(base, column);
   end_page = get_statusbar_page_start(base, (base + breadth(answer) - 1));
   /* Color the prompt bar over its full width. */
-  wattron(footwin, interface_color_pair[PROMPT_BAR]);
+  wattron(footwin, interface_color_pair[config->prompt.color]);
   mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
   mvwaddstr(footwin, 0, 0, prompt);
   waddch(footwin, ':');
@@ -315,7 +315,7 @@ void draw_the_promptbar(void) _NO_EXCEPT {
   if (the_page < end_page && (base + breadth(answer) - the_page) > COLS) {
     mvwaddch(footwin, 0, (COLS - 1), '>');
   }
-  wattroff(footwin, interface_color_pair[PROMPT_BAR]);
+  wattroff(footwin, interface_color_pair[config->prompt.color]);
 #if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20210220)
   /* Work around a cursor-misplacement bug -- https://sv.gnu.org/bugs/?59808. */
   if (ISSET(NO_HELP)) {
@@ -329,7 +329,7 @@ void draw_the_promptbar(void) _NO_EXCEPT {
 }
 
 /* Remove or add the pipe character at the answer's head. */
-void add_or_remove_pipe_symbol_from_answer(void) _NO_EXCEPT {
+void add_or_remove_pipe_symbol_from_answer(void) _GL_ATTRIBUTE_NOTHROW {
   if (answer[0] == '|') {
     memmove(answer, (answer + 1), strlen(answer));
     if (typing_x > 0) {

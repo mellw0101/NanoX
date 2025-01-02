@@ -1,7 +1,9 @@
 /** @file definitions.h */
 #pragma once
+/* clang-format off */
 
-#include "../include/config.h"
+// #include "../include/config.h"
+#include "../../config.h"
 
 #ifndef _XOPEN_SOURCE_EXTENDED
 #  define _XOPEN_SOURCE_EXTENDED 1
@@ -15,15 +17,13 @@
 // We are using limits instead of limits.h,
 // because limits.h is for c and limits is for c++
 // we alse include linux/limits.h as this is a linux project
-#include <limits>
+// #include <limits>
 // #include <linux/limits.h>
 
 #include <cctype>
 #include <cerrno>
 #include <clocale>
 #include <csignal>
-#include <cstdio>
-// #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
 #include <execinfo.h> // For backtrace functions
@@ -38,6 +38,7 @@
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/cdefs.h>
 #include <sys/vt.h>
 #include <sys/wait.h>
 #include <termios.h>
@@ -58,14 +59,23 @@
 #include <Mlib/Notify.h>
 #include <Mlib/def.h>
 
+#ifdef HAVE_GLFW
+  #include "../lib/include/GL/glew.h"
+  #include "../lib/include/GLFW/glfw3.h"
+  #include <Mlib/openGL/shader.h>
+  #include <ft2build.h>
+  #include FT_FREETYPE_H
+  #define GLYPH_KERNING_DEBUG
+  #include <freetype-gl/freetype-gl.h>
+  #include <freetype-gl/matrix4x4.h>
+#endif
+
 using std::hash;
 using std::string;
 using std::string_view;
 using std::to_string;
 using std::unordered_map;
 using std::vector;
-
-#define KEY_DEBUG
 
 /* Native language support. */
 #ifdef ENABLE_NLS
@@ -83,8 +93,7 @@ using std::vector;
 #define gettext_noop(string) (string)
 #define N_(string)           gettext_noop(string)
 
-/* If we aren't using an ncurses with mouse support, then
- * exclude the mouse routines, as they are useless then. */
+/* If we aren't using an ncurses with mouse support, then exclude the mouse routines, as they are useless then. */
 #ifndef NCURSES_MOUSE_VERSION
 #  undef ENABLE_MOUSE
 #endif
@@ -108,21 +117,6 @@ using std::vector;
 #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
 
 #define CALCULATE_MS_TIME(start_time) (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
-
-/* Some line flags. */
-#define BLOCK_COMMENT_START           1
-#define BLOCK_COMMENT_END             2
-#define IN_BLOCK_COMMENT              3
-#define SINGLE_LINE_BLOCK_COMMENT     4
-#define IS_HIDDEN                     5
-#define BRACKET_START                 6
-#define IN_BRACKET                    7
-#define BRACKET_END                   8
-#define FUNCTION_OPEN_BRACKET         9
-#define DONT_PREPROSSES_LINE          10
-#define PP_LINE                       11
-/* Helpers to unset all line flags. */
-#define LINE_BIT_FLAG_SIZE            16
 
 /* Some other define`s. */
 #define BACKWARD          FALSE
@@ -242,14 +236,6 @@ using std::vector;
 /* A special keycode for when we get a SIGWINCH (a window resize). */
 #define KEY_WINCH                     -2
 
-/* Some extra flags for the undo function. */
-#define WAS_BACKSPACE_AT_EOF          (1 << 1)
-#define WAS_WHOLE_LINE                (1 << 2)
-#define INCLUDED_LAST_LINE            (1 << 3)
-#define MARK_WAS_SET                  (1 << 4)
-#define CURSOR_WAS_AT_HEAD            (1 << 5)
-#define HAD_ANCHOR_AT_START           (1 << 6)
-
 #define TASK_STRUCT(name, ...) \
   typedef struct {             \
     __VA_ARGS__                \
@@ -270,6 +256,13 @@ using std::vector;
 
 /* Used to encode both parts when enclosing a region. */
 #define ENCLOSE_DELIM ":;:"
+
+#ifdef HAVE_GLFW 
+  #define FONT_WIDTH(font)  (font->face->max_advance_width >> 6)
+  #define FONT_HEIGHT(font) (font->height - font->linegap)
+  /* Size of each grid in the gridmap. */
+  #define GRIDMAP_GRIDSIZE 20
+#endif
 
 #define IS_POINTER_TYPE(x) \
   _Generic((x), \
@@ -301,6 +294,8 @@ using std::vector;
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
+#define SET_BIT(bit) (1 << bit)
+
 #include "constexpr_def.h"
 
 #define NOTREBOUND (first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07)
@@ -322,9 +317,47 @@ using std::vector;
 
 #define _NO_EXCEPT noexcept(TRUE)
 
-/* clang-format off */
-
 /* Enumeration types. */
+
+/* Some line flags. */
+typedef enum {
+  #define LINE_BIT_FLAG_SIZE 16
+  BLOCK_COMMENT_START,
+  #define BLOCK_COMMENT_START BLOCK_COMMENT_START
+  BLOCK_COMMENT_END,
+  #define BLOCK_COMMENT_END BLOCK_COMMENT_END
+  IN_BLOCK_COMMENT,
+  #define IN_BLOCK_COMMENT IN_BLOCK_COMMENT
+  SINGLE_LINE_BLOCK_COMMENT,
+  #define SINGLE_LINE_BLOCK_COMMENT SINGLE_LINE_BLOCK_COMMENT
+  IS_HIDDEN,
+  #define IS_HIDDEN IS_HIDDEN
+  BRACKET_START,
+  #define BRACKET_START BRACKET_START
+  IN_BRACKET,
+  #define IN_BRACKET IN_BRACKET
+  BRACKET_END,
+  #define BRACKET_END BRACKET_END
+  FUNCTION_OPEN_BRACKET,
+  #define FUNCTION_OPEN_BRACKET FUNCTION_OPEN_BRACKET
+  DONT_PREPROSSES_LINE,
+  #define DONT_PREPROSSES_LINE DONT_PREPROSSES_LINE
+  PP_LINE,
+  #define PP_LINE PP_LINE
+} lineflag_type;
+
+typedef enum {
+  GUI_NORMAL_TEXT,
+  #define GUI_NORMAL_TEXT GUI_NORMAL_TEXT
+  GUI_SELECTED_TEXT,
+  #define GUI_SELECTED_TEXT GUI_SELECTED_TEXT
+} font_type;
+
+typedef enum {
+  GUI_RUNNING,
+  #define GUI_RUNNING GUI_RUNNING
+} guiflag_type;
+
 typedef enum {
   #define FILE_TYPE_SIZE 8
   C_CPP,
@@ -335,8 +368,10 @@ typedef enum {
   #define BASH BASH
   GLSL,
   #define GLSL GLSL
-  SYSTEMD_SERVICE
+  SYSTEMD_SERVICE,
   #define SYSTEMD_SERVICE SYSTEMD_SERVICE
+  NANOX_CONFIG,
+  #define NANOX_CONFIG NANOX_CONFIG
 } file_type;
 
 typedef enum {
@@ -465,9 +500,29 @@ typedef enum {
   #define MOVE_LINE_DOWN MOVE_LINE_DOWN
   ENCLOSE,
   #define ENCLOSE ENCLOSE
-  AUTO_BRACKET
+  AUTO_BRACKET,
   #define AUTO_BRACKET AUTO_BRACKET
+  ZAP_REPLACE,
+  #define ZAP_REPLACE ZAP_REPLACE
 } undo_type;
+
+/* Some extra flags for the undo function. */
+typedef enum {
+  WAS_BACKSPACE_AT_EOF = (1 << 1),
+  #define WAS_BACKSPACE_AT_EOF WAS_BACKSPACE_AT_EOF
+  WAS_WHOLE_LINE       = (1 << 2),
+  #define WAS_WHOLE_LINE WAS_WHOLE_LINE
+  INCLUDED_LAST_LINE   = (1 << 3),
+  #define INCLUDED_LAST_LINE INCLUDED_LAST_LINE
+  MARK_WAS_SET         = (1 << 4),
+  #define MARK_WAS_SET MARK_WAS_SET
+  CURSOR_WAS_AT_HEAD   = (1 << 5),
+  #define CURSOR_WAS_AT_HEAD CURSOR_WAS_AT_HEAD
+  HAD_ANCHOR_AT_START  = (1 << 6),
+  #define HAD_ANCHOR_AT_START HAD_ANCHOR_AT_START
+  SHOULD_NOT_KEEP_MARK = (1 << 7),
+  #define SHOULD_NOT_KEEP_MARK SHOULD_NOT_KEEP_MARK
+} undo_modifier_type;
 
 /* Structure types. */
 typedef struct colortype {
@@ -495,7 +550,7 @@ typedef struct augmentstruct {
 
 typedef struct syntaxtype {
   char *name;                   /* The name of this syntax. */
-  char *filename;               /* File where the syntax is defined, or nullptr if not an included file. */
+  char *filename;               /* File where the syntax is defined, or NULL if not an included file. */
   Ulong lineno;                 /* The line number where the 'syntax' command was found. */
   augmentstruct *augmentations; /* List of extendsyntax commands to apply when loaded. */
   regexlisttype *extensions;    /* The list of extensions that this syntax applies to. */
@@ -503,7 +558,7 @@ typedef struct syntaxtype {
   regexlisttype *magics;        /* The list of libmagic results that this syntax applies to. */
   char *linter;                 /* The command with which to lint this type of file. */
   char *formatter;              /* The command with which to format/modify/arrange this type of file. */
-  char *tabstring;              /* What the Tab key should produce; nullptr for default behavior. */
+  char *tabstring;              /* What the Tab key should produce; NULL for default behavior. */
   char *comment;                /* The line comment prefix (and postfix) for this type of file. */
   colortype *color;             /* The colors and their regexes used in this syntax. */
   short multiscore;             /* How many multiline regex strings this syntax has. */
@@ -532,6 +587,10 @@ typedef struct linestruct {
   /* Some short-hands to simplyfiy linestruct loop`s. */
   #define FOR_EACH_LINE_NEXT(name, start) for (linestruct *name = start; name; name = name->next)
   #define FOR_EACH_LINE_PREV(name, start) for (linestruct *name = start; name; name = name->prev)
+  #define FOREACH_FROMTO_NEXT(name, start, end) for (linestruct *name = start; name != end->next && name; name = name->next)
+  #define FOREACH_FROMTO_PREV(name, start, end) for (linestruct *name = start; name != end->prev && name; name = name->prev)
+  #define CONST_FOREACH_FROMTO_NEXT(name, start, end) for (const linestruct *name = start; name != end->next && name; name = name->next)
+  #define CONST_FOREACH_FROMTO_PREV(name, start, end) for (const linestruct *name = start; name != end->prev && name; name = name->prev)
   /* Usefull line helpers. */
   #define line_indent(line) wideness(line->data, indent_length(line->data))
 } linestruct;
@@ -578,7 +637,7 @@ typedef struct openfilestruct {
   long cursor_row;            /* The row in the edit window that the cursor is on. */
   struct stat *statinfo;      /* The file's stat information from when it was opened or last saved. */
   linestruct *spillage_line;  /* The line for prepending stuff to during automatic hard-wrapping. */
-  linestruct *mark;           /* The line in the file where the mark is set; nullptr if not set. */
+  linestruct *mark;           /* The line in the file where the mark is set; NULL if not set. */
   Ulong mark_x;               /* The mark's x position in the above line. */
   bool softmark;              /* Whether a marked region was made by holding Shift. */
   format_type fmt;            /* The file's format -- Unix or DOS or Mac. */
@@ -609,6 +668,9 @@ typedef struct configstruct {
     bool verticalbar;     /* TRUE if user wants vertical bar next to linenumbers. */
     bool fullverticalbar; /* TRUE if user wants vertican bar next to linenumbers no matter the current amount off lines. */
   } linenumber;
+  struct {
+    int color; /* Prompt bar color. */
+  } prompt;
   int minibar_color;            /* Minibar color. */
   int selectedtext_color;       /* Selected text color. */
 } configstruct;
@@ -648,6 +710,114 @@ typedef struct completionstruct {
   completionstruct *next;
 } completionstruct;
 
+/* Gui specific structs. */
+#ifdef HAVE_GLFW
+  typedef struct {
+    float x, y, z;
+    float s, t;
+    float r, g, b, a;
+  } vertex_t;
+
+  typedef struct {
+    vec2 pos;    /* Where in the window this element has (x,y). */
+    vec2 endoff; /* The distance from the width and height of the full window.  If any. */
+    vec2 size;   /* The size of this element. */
+  } uielementstruct;
+
+  typedef struct uicordinathashstruct {
+    Ulong operator()(const ivec2 &coord) const {
+      Ulong hash_x = std::hash<int>()(coord.x);
+      Ulong hash_y = std::hash<int>()(coord.y);
+      return hash_x ^ (hash_y * 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2));
+    }
+  } uicordinathashstruct;
+
+  class uigridmapclass {
+   private:
+    int cell_size;
+    std::unordered_map<ivec2, MVector<uielementstruct *>, uicordinathashstruct> grid;
+
+    ivec2 to_grid_pos(const ivec2 &pos) const _GL_ATTRIBUTE_NOTHROW {
+      return ivec2(pos / cell_size);
+    }
+
+   public:
+    uigridmapclass(int cell_size) : cell_size(cell_size) {};
+
+    /* Set all grids that an element encompuses. */
+    void set(uielementstruct *e) {
+      ivec2 start = to_grid_pos(e->pos);
+      ivec2 end   = to_grid_pos(e->pos + e->size);
+      for (int x = start.x; x <= end.x; ++x) {
+        for (int y = start.y; y <= end.y; ++y) {
+          grid[ivec2(x, y)].emplace_back(e);
+        }
+      }
+    }
+
+    /* Remove all entries for a given element, at all grids based on its size. */
+    void remove(uielementstruct *e) {
+      ivec2 start = to_grid_pos(e->pos);
+      ivec2 end   = to_grid_pos(e->pos + e->size);
+      for (int x = start.x; x <= end.x; ++x) {
+        for (int y = start.y; y <= end.y; ++y) {
+          ivec2 at_pos(x, y);
+          auto &vector = grid.at(at_pos);
+          for (Uint i = 0; i < vector.size(); ++i) {
+            if (vector[i] == e) {
+              vector.erase(&vector[i--]);
+            }
+          }
+          if (vector.empty()) {
+            grid.erase(at_pos);
+          }
+        }
+      }
+    }
+
+    uielementstruct *get(const ivec2 &pos) const {
+      auto it = grid.find(to_grid_pos(pos));
+      if (it == grid.end()) {
+        return NULL;
+      }
+      for (Uint i = 0; i < it->second.size(); ++i) {
+        if (pos.x >= it->second[i]->pos.x && pos.x <= (it->second[i]->pos.x + it->second[i]->size.x)
+        && pos.y >= it->second[i]->pos.y && pos.y <= (it->second[i]->pos.y + it->second[i]->size.y)) {
+          return it->second[i];
+        }
+      }
+      return NULL;
+    }
+
+    bool contains(const ivec2 &pos) const {
+      return (grid.find(to_grid_pos(pos)) != grid.end());
+    }
+  };
+
+  class frametimerclass {
+   private:
+    TIME_POINT<HIGH_RES_CLOCK> _start;
+    TIME_POINT<HIGH_RES_CLOCK> _end;
+
+   public:
+    Uint fps;
+
+    void start(void) {
+      _start = HIGH_RES_CLOCK::now();
+    }
+
+    void end(void) {
+      _end = HIGH_RES_CLOCK::now();
+      Duration<double, Milli> frame_duration = (_end - _start);
+      if (frame_duration.count() >= (1000.0f / fps)) {
+        return;
+      }
+      Duration<double, Milli> sleep_duration((1000.0f / fps) - frame_duration.count());
+      std::this_thread::sleep_for(sleep_duration);
+    }
+  };
+#endif
+
 enum syntax_flag_t { NEXT_WORD_ALSO = 1 };
 
 typedef struct line_word_t {
@@ -660,11 +830,11 @@ typedef struct line_word_t {
 } line_word_t;
 
 typedef struct variable_t {
-  char       *type  = nullptr;
-  char       *name  = nullptr;
-  char       *value = nullptr;
-  variable_t *next  = nullptr;
-  variable_t *prev  = nullptr;
+  char       *type  = NULL;
+  char       *name  = NULL;
+  char       *value = NULL;
+  variable_t *next  = NULL;
+  variable_t *prev  = NULL;
 } variable_t;
 
 struct glob_var_t {
@@ -684,169 +854,26 @@ struct local_var_t {
 typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
 
 /* This is from file: 'threadpool.cpp'. */
-void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock);
+void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NO_EXCEPT;
 /* RAII complient way to lock a pthread mutex.  This struct will lock
  * the mutex apon its creation, and unlock it when it goes out of scope. */
 struct pthread_mutex_guard_t {
-  pthread_mutex_t *mutex = nullptr;
-  explicit pthread_mutex_guard_t(pthread_mutex_t *m)
-      : mutex(m) {
+  pthread_mutex_t *mutex = NULL;
+  explicit pthread_mutex_guard_t(pthread_mutex_t *m) _NO_EXCEPT : mutex(m) {
     if (!mutex) {
-      logE("A 'nullptr' was passed to 'pthread_mutex_guard_t'.");
+      logE("A 'NULL' was passed to 'pthread_mutex_guard_t'.");
     }
     else {
-      lock_pthread_mutex(mutex, true);
+      lock_pthread_mutex(mutex, TRUE);
     }
   }
-  ~pthread_mutex_guard_t(void) {
+  ~pthread_mutex_guard_t(void) _NO_EXCEPT {
     if (mutex) {
-      lock_pthread_mutex(mutex, false);
+      lock_pthread_mutex(mutex, FALSE);
     }
   }
-  pthread_mutex_guard_t(const pthread_mutex_guard_t &)            = delete;
-  pthread_mutex_guard_t &operator=(const pthread_mutex_guard_t &) = delete;
+  DELETE_COPY_AND_MOVE_CONSTRUCTORS(pthread_mutex_guard_t);
 };
-
-#define vec vec_t
-template <class T>
-class vec_t {
- public:
-  vec(initializer_list<T> init_list) {
-    pthread_mutex_init(&mutex, nullptr);
-    pthread_mutex_guard_t guard(&mutex);
-    size    = init_list.size();
-    cap     = size * 2;
-    data    = (T *)malloc(cap * sizeof(T));
-    Ulong i = 0;
-    for (const auto &element : init_list) {
-      data[i++] = element;
-    }
-  }
-
-  vec(void)
-      : cap(10)
-      , size(0) {
-    pthread_mutex_init(&mutex, nullptr);
-    pthread_mutex_guard_t guard(&mutex);
-    data = (T *)malloc(sizeof(T) * cap);
-  }
-
-  vec(const T *array, Ulong len = 0) {
-    pthread_mutex_init(&mutex, nullptr);
-    pthread_mutex_guard_t guard(&mutex);
-    PROFILE_FUNCTION;
-    if constexpr (std::is_same<char, T>::value) {
-      size  = len ?: strlen(array);
-      cap   = size * 2;
-      data  = (char *)malloc(cap);
-      int i = 0;
-      for (; i < size; (data[i] = array[i]), i++);
-      data[i] = '\0';
-    }
-    else {
-      size = 0;
-      cap  = 10;
-      data = (T *)malloc(sizeof(T) * cap);
-      for (; array[size];
-           (size == cap) ? cap *= 2, data = (T *)realloc(data, sizeof(T) * cap) : 0, data[size] = array[size], size++);
-      data[size] = nullptr;
-    }
-  }
-
-  vec<T> &operator<<=(const T &value) {
-    this->push_back(value);
-    return *this;
-  }
-
-  vec<char> &operator<<=(const char *str) {
-    pthread_mutex_guard_t guard(&this->mutex);
-    Ulong         str_size = strlen(str);
-    Ulong         nsize    = this->size + str_size;
-    if (nsize >= this->cap) {
-      this->cap = nsize;
-      this->resize();
-    }
-    memmove(this->data + this->size, str, str_size);
-    this->size        = nsize;
-    this->data[nsize] = '\0';
-    return *this;
-  }
-
-  ~vec(void) {
-    {
-      pthread_mutex_guard_t guard(&mutex);
-      free(data);
-    }
-    pthread_mutex_destroy(&mutex);
-  }
-
-  void push_back(const T &value) {
-    pthread_mutex_guard_t guard(&mutex);
-    if (cap == size) {
-      resize();
-    }
-    data[size++] = value;
-  }
-
-  void pop_back(void) {
-    pthread_mutex_guard_t guard(&mutex);
-    if (size > 0) {
-      --size;
-    }
-  }
-
-  T &operator[](Ulong index) {
-    pthread_mutex_guard_t guard(&mutex);
-    if (index >= size || index < 0) {
-      logE("Invalid index: '%lu'.", index);
-    }
-    return data[index];
-  }
-
-  Ulong get_size(void) const {
-    return size;
-  }
-
-  Ulong get_cap(void) const {
-    return cap;
-  }
-
-  T *begin(void) const {
-    return data;
-  }
-
-  T *end(void) const {
-    return data + size;
-  }
-
-  T *find(const T &value) {
-    for (T *it = begin(); it != end(); ++it) {
-      if constexpr (std::is_same<T, char *>::value) {
-        if (strcmp(*it, value) == 0) {
-          return it;
-        }
-      }
-      else {
-        if (*it == value) {
-          return it;
-        }
-      }
-    }
-    return end();
-  }
-
- private:
-  void resize(void) {
-    cap *= 2;
-    data = (T *)realloc(data, sizeof(T) * cap);
-  }
-
-  pthread_mutex_t mutex;
-  T              *data;
-  Ulong   cap;
-  Ulong   size;
-};
-#define vec vec_t
 
 typedef struct {
   char       *full_function;
@@ -881,6 +908,3 @@ struct syntax_data_t {
   int to_line   = -1;
   int type      = -1;
 };
-
-#define NANO_REG_EXTENDED 1
-#define SYSCONFDIR        "/etc"

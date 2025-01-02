@@ -42,3 +42,7 @@
 #define HAVE_TERMIOS_H          1
 
 #define VERSION                 "0.0.1"
+
+#define SYSCONFDIR            "/etc"
+#define NANO_REG_EXTENDED     1
+

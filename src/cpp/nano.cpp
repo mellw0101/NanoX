@@ -18,7 +18,7 @@ static struct sigaction oldaction, newaction;
 main_thread_t *main_thread = NULL;
 
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'. */
-linestruct *make_new_node(linestruct *prevnode) _NO_EXCEPT {
+linestruct *make_new_node(linestruct *prevnode) _GL_ATTRIBUTE_NOTHROW {
   linestruct *newnode = (linestruct *)nmalloc(sizeof(linestruct));
   newnode->prev       = prevnode;
   newnode->next       = NULL;
@@ -37,7 +37,7 @@ linestruct *make_new_node(linestruct *prevnode) _NO_EXCEPT {
 }
 
 /* Splice a new node into an existing linked list of linestructs. */
-void splice_node(linestruct *afterthis, linestruct *newnode) _NO_EXCEPT {
+void splice_node(linestruct *afterthis, linestruct *newnode) _GL_ATTRIBUTE_NOTHROW {
   newnode->next = afterthis->next;
   newnode->prev = afterthis;
   if (afterthis->next) {
@@ -51,7 +51,7 @@ void splice_node(linestruct *afterthis, linestruct *newnode) _NO_EXCEPT {
 }
 
 /* Free the data structures in the given node */
-void delete_node(linestruct *line) _NO_EXCEPT {
+void delete_node(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
   /* If the first line on the screen gets deleted, step one back. */
   if (line == openfile->edittop) {
     openfile->edittop = line->prev;
@@ -66,7 +66,7 @@ void delete_node(linestruct *line) _NO_EXCEPT {
 }
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
-void unlink_node(linestruct *line) _NO_EXCEPT {
+void unlink_node(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
   if (line->prev) {
     line->prev->next = line->next;
   }
@@ -81,7 +81,7 @@ void unlink_node(linestruct *line) _NO_EXCEPT {
 }
 
 /* Free an entire linked list of linestructs. */
-void free_lines(linestruct *src) _NO_EXCEPT {
+void free_lines(linestruct *src) _GL_ATTRIBUTE_NOTHROW {
   if (!src) {
     return;
   }
@@ -93,7 +93,7 @@ void free_lines(linestruct *src) _NO_EXCEPT {
 }
 
 /* Make a copy of a linestruct node. */
-linestruct *copy_node(const linestruct *src) _NO_EXCEPT {
+linestruct *copy_node(const linestruct *src) _GL_ATTRIBUTE_NOTHROW {
   linestruct *dst = (linestruct *)nmalloc(sizeof(*dst));
   dst->data       = copy_of(src->data);
   dst->multidata  = NULL;
@@ -103,7 +103,7 @@ linestruct *copy_node(const linestruct *src) _NO_EXCEPT {
 }
 
 /* Duplicate an entire linked list of linestructs. */
-linestruct *copy_buffer(const linestruct *src) _NO_EXCEPT {
+linestruct *copy_buffer(const linestruct *src) _GL_ATTRIBUTE_NOTHROW {
   linestruct *head, *item;
   head       = copy_node(src);
   head->prev = NULL;
@@ -120,7 +120,7 @@ linestruct *copy_buffer(const linestruct *src) _NO_EXCEPT {
 }
 
 /* Renumber the lines in a buffer, from the given line onwards. */
-void renumber_from(linestruct *line) _NO_EXCEPT {
+void renumber_from(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
   long number = (!line->prev ? 0 : line->prev->lineno);
   while (line) {
     line->lineno = ++number;
@@ -129,12 +129,12 @@ void renumber_from(linestruct *line) _NO_EXCEPT {
 }
 
 /* Display a warning about a key disabled in view mode. */
-void print_view_warning(void) _NO_EXCEPT {
+void print_view_warning(void) _GL_ATTRIBUTE_NOTHROW {
   statusline(AHEM, _("Key is invalid in view mode"));
 }
 
 /* When in restricted mode, show a warning and return 'TRUE'. */
-bool in_restricted_mode(void) _NO_EXCEPT {
+bool in_restricted_mode(void) _GL_ATTRIBUTE_NOTHROW {
   if (ISSET(RESTRICTED)) {
     statusline(AHEM, _("This function is disabled in restricted mode"));
     beep();
@@ -144,7 +144,7 @@ bool in_restricted_mode(void) _NO_EXCEPT {
 }
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
-void suggest_ctrlT_ctrlZ(void) _NO_EXCEPT {
+void suggest_ctrlT_ctrlZ(void) _GL_ATTRIBUTE_NOTHROW {
   if (first_sc_for(MMAIN, do_execute) && first_sc_for(MMAIN, do_execute)->keycode == 0x14
    && first_sc_for(MEXECUTE, do_suspend) && first_sc_for(MEXECUTE, do_suspend)->keycode == 0x1A) {
     statusline(AHEM, _("To suspend, type ^T^Z"));
@@ -153,7 +153,7 @@ void suggest_ctrlT_ctrlZ(void) _NO_EXCEPT {
 
 // Make sure the cursor is visible, then exit from curses mode, disable
 // bracketed-paste mode, and restore the original terminal settings.
-void restore_terminal(void) _NO_EXCEPT {
+static void restore_terminal(void) _GL_ATTRIBUTE_NOTHROW {
   curs_set(1);
   endwin();
   STRLTR_WRITE(STDOUT_FILENO, "\x1B[?2004l");
@@ -161,7 +161,7 @@ void restore_terminal(void) _NO_EXCEPT {
 }
 
 /* Exit normally: restore terminal state and report any startup errors. */
-void finish(void) {
+void finish(void) _GL_ATTRIBUTE_NOTHROW {
   /* Blank the status bar and (if applicable) the shortcut list. */
   blank_statusbar();
   blank_bottombars();
@@ -257,7 +257,7 @@ void emergency_save(const char *filename) {
 }
 
 /* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
-void die(const char *msg, ...) /* _NO_EXCEPT */ {
+void die(const char *msg, ...) /* _GL_ATTRIBUTE_NOTHROW */ {
   openfilestruct *firstone = openfile;
   static int stabs = 0;
   va_list ap;
@@ -290,7 +290,7 @@ void die(const char *msg, ...) /* _NO_EXCEPT */ {
 }
 
 /* Initialize the three window portions nano uses. */
-void window_init(void) _NO_EXCEPT {
+void window_init(void) _GL_ATTRIBUTE_NOTHROW {
   /* When resizing, first delete the existing windows. */
   if (midwin) {
     if (topwin) {
@@ -304,24 +304,24 @@ void window_init(void) _NO_EXCEPT {
   if (LINES < 3) {
     editwinrows = (ISSET(ZERO) ? LINES : 1);
     /* Set up two subwindows.  If the terminal is just one line,
-     * edit window and status-bar window will cover each other. */
+    * edit window and status-bar window will cover each other. */
     midwin  = newwin(editwinrows, COLS, 0, 0);
-    footwin = newwin(1, COLS, LINES - 1, 0);
+    footwin = newwin(1, COLS, (LINES - 1), 0);
   }
   else {
-    int minimum    = (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5);
+    int minimum    = (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5));
     int toprows    = ((ISSET(EMPTY_LINE) && LINES > minimum) ? 2 : 1);
     int bottomrows = ((ISSET(NO_HELP) || LINES < minimum) ? 1 : 3);
     if (ISSET(MINIBAR) || ISSET(ZERO)) {
       toprows = 0;
     }
-    editwinrows = LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0);
+    editwinrows = (LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0));
     /* Set up the normal three subwindows. */
     if (toprows > 0) {
       topwin = newwin(toprows, COLS, 0, 0);
     }
     midwin  = newwin(editwinrows, COLS, toprows, 0);
-    footwin = newwin(bottomrows, COLS, LINES - bottomrows, 0);
+    footwin = newwin(bottomrows, COLS, (LINES - bottomrows), 0);
   }
   /* In case the terminal shrunk, make sure the status line is clear. */
   wnoutrefresh(footwin);
@@ -560,7 +560,7 @@ bool scoop_stdin(void) {
 }
 
 /* Register half a dozen signal handlers. */
-void signal_init(void) _NO_EXCEPT {
+void signal_init(void) _GL_ATTRIBUTE_NOTHROW {
   struct sigaction deed = {{0}};
   /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
   deed.sa_handler = SIG_IGN;
@@ -580,17 +580,17 @@ void signal_init(void) _NO_EXCEPT {
   sigfillset(&deed.sa_mask);
   deed.sa_handler = continue_nano;
   sigaction(SIGCONT, &deed, NULL);
-#if !defined(DEBUG)
-  if (!getenv("NANO_NOCATCH")) {
-    /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
-     * the terminal to a usable state.  Reset these handlers to their
-     * defaults as soon as their signal fires. */
-    deed.sa_handler = handle_crash;
-    deed.sa_flags |= SA_RESETHAND;
-    sigaction(SIGSEGV, &deed, NULL);
-    sigaction(SIGABRT, &deed, NULL);
-  }
-#endif
+  #if !defined(DEBUG)
+    if (!getenv("NANO_NOCATCH")) {
+      /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
+      * the terminal to a usable state.  Reset these handlers to their
+      * defaults as soon as their signal fires. */
+      deed.sa_handler = handle_crash;
+      deed.sa_flags |= SA_RESETHAND;
+      sigaction(SIGSEGV, &deed, NULL);
+      sigaction(SIGABRT, &deed, NULL);
+    }
+  #endif
 }
 
 /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
@@ -663,16 +663,13 @@ void handle_sigwinch(int signal) {
 void regenerate_screen(void) {
   /* Reset the trigger. */
   the_window_resized = FALSE;
-  /* Leave and immediately reenter curses mode, so that ncurses notices
-   * the new screen dimensions and sets LINES and COLS accordingly. */
+  /* Leave and immediately reenter curses mode, so that ncurses notices the new screen dimensions and sets LINES and COLS accordingly. */
   endwin();
   refresh();
-  /* TODO : (INDECATOR) - this is for the sidebar? */
-  sidebar     = (ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0;
-  bardata     = (int *)nrealloc(bardata, LINES * sizeof(int));
-  editwincols = COLS - margin - sidebar;
-  /* Put the terminal in the desired state again, and
-   * recreate the subwindows with their (new) sizes. */
+  sidebar     = ((ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0);
+  bardata     = (int *)nrealloc(bardata, (LINES * sizeof(int)));
+  editwincols = (COLS - margin - sidebar);
+  /* Put the terminal in the desired state again, and recreate the subwindows with their (new) sizes. */
   terminal_init();
   window_init();
   /* If we have an open buffer, redraw the contents of the subwindows. */
@@ -682,8 +679,7 @@ void regenerate_screen(void) {
   }
 }
 
-/* Invert the given global flag and adjust things for its new value.
- * TODO : FIX statusline as it takes up 94.1% of the time in this function. */
+/* Invert the given global flag and adjust things for its new value. */
 void toggle_this(const int flag) {
   bool enabled = !ISSET(flag);
   TOGGLE(flag);
@@ -695,7 +691,7 @@ void toggle_this(const int flag) {
       return;
     }
     case NO_HELP : {
-      if (LINES < (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5)) {
+      if (LINES < (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5))) {
         statusline(AHEM, _("Too tiny"));
         TOGGLE(flag);
         return;
@@ -709,7 +705,7 @@ void toggle_this(const int flag) {
         statusline(AHEM, _("Too tiny"));
         TOGGLE(flag);
       }
-      else if ISSET (ZERO) {
+      else if (ISSET(ZERO)) {
         SET(CONSTANT_SHOW);
         toggle_this(ZERO);
       }
@@ -766,15 +762,15 @@ void toggle_this(const int flag) {
     enabled = !enabled;
   }
   if (flag == NO_SYNTAX) {
-    statusline(REMARK, "%s %s", _("Real-Time experimental syntax"), enabled ? _("enabled") : _("disabled"));
+    statusline(REMARK, "%s %s", _("Real-Time experimental syntax"), (enabled ? _("enabled") : _("disabled")));
   }
   else {
-    statusline(REMARK, "%s %s", _(epithet_of_flag(flag)), enabled ? _("enabled") : _("disabled"));
+    statusline(REMARK, "%s %s", _(epithet_of_flag(flag)), (enabled ? _("enabled") : _("disabled")));
   }
 }
 
 /* Disable extended input and output processing in our terminal settings. */
-void disable_extended_io(void) _NO_EXCEPT {
+void disable_extended_io(void) _GL_ATTRIBUTE_NOTHROW {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~IEXTEN;
@@ -783,7 +779,7 @@ void disable_extended_io(void) _NO_EXCEPT {
 }
 
 /* Stop ^C from generating a SIGINT. */
-void disable_kb_interrupt(void) _NO_EXCEPT {
+void disable_kb_interrupt(void) _GL_ATTRIBUTE_NOTHROW {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~ISIG;
@@ -791,7 +787,7 @@ void disable_kb_interrupt(void) _NO_EXCEPT {
 }
 
 /* Make ^C generate a SIGINT. */
-void enable_kb_interrupt(void) _NO_EXCEPT {
+void enable_kb_interrupt(void) _GL_ATTRIBUTE_NOTHROW {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag |= ISIG;
@@ -799,7 +795,7 @@ void enable_kb_interrupt(void) _NO_EXCEPT {
 }
 
 /* Disable the terminal's XON/XOFF flow-control characters. */
-void disable_flow_control(void) _NO_EXCEPT {
+void disable_flow_control(void) _GL_ATTRIBUTE_NOTHROW {
   termios settings;
   tcgetattr(0, &settings);
   settings.c_iflag &= ~IXON;
@@ -807,7 +803,7 @@ void disable_flow_control(void) _NO_EXCEPT {
 }
 
 /* Enable the terminal's XON/XOFF flow-control characters. */
-void enable_flow_control(void) _NO_EXCEPT {
+void enable_flow_control(void) _GL_ATTRIBUTE_NOTHROW {
   termios settings;
   tcgetattr(0, &settings);
   settings.c_iflag |= IXON;
@@ -821,7 +817,7 @@ void enable_flow_control(void) _NO_EXCEPT {
  * and Ctrl-J, and disable echoing of characters as they're typed. Finally,
  * disable extended input and output processing, and, if we're not in preserve
  * mode, reenable interpretation of the flow control characters. */
-void terminal_init(void) {
+void terminal_init(void) _GL_ATTRIBUTE_NOTHROW {
   raw();
   nonl();
   noecho();
@@ -836,30 +832,30 @@ void terminal_init(void) {
 }
 
 /* Ask ncurses for@file definitions.h a keycode, or assign a default one. */
-int get_keycode(const char *const keyname, const int standard) {
+int get_keycode(const char *const keyname, const int standard) _GL_ATTRIBUTE_NOTHROW {
   const char *keyvalue = tigetstr(keyname);
   if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue)) {
     return key_defined(keyvalue);
   }
-#ifdef DEBUG
-  if (!ISSET(RAW_SEQUENCES)) {
-    fprintf(stderr, "Using fallback keycode for %s\n", keyname);
-  }
-#endif
+  #ifdef DEBUG
+    if (!ISSET(RAW_SEQUENCES)) {
+      fprintf(stderr, "Using fallback keycode for %s\n", keyname);
+    }
+  #endif
   return standard;
 }
 
 /* Ensure that the margin can accommodate the buffer's highest line number. */
-void confirm_margin(void) {
+void confirm_margin(void) _GL_ATTRIBUTE_NOTHROW {
   int needed_margin = (digits(openfile->filebot->lineno) + 1);
   /* When not requested or space is too tight, suppress line numbers. */
-  if (!ISSET(LINE_NUMBERS) || needed_margin > COLS - 4) {
+  if (!ISSET(LINE_NUMBERS) || needed_margin > (COLS - 4)) {
     needed_margin = 0;
   }
   if (needed_margin != margin) {
-    bool keep_focus = (margin > 0) && focusing;
+    bool keep_focus = ((margin > 0) && focusing);
     margin          = needed_margin;
-    editwincols     = COLS - margin - sidebar;
+    editwincols     = (COLS - margin - sidebar);
     /* Ensure a proper starting column for the first screen row. */
     ensure_firstcolumn_is_aligned();
     focusing = keep_focus;
@@ -869,7 +865,7 @@ void confirm_margin(void) {
 }
 
 /* Say that an unbound key was struck, and if possible which one. */
-void unbound_key(int code) {
+void unbound_key(int code) _GL_ATTRIBUTE_NOTHROW {
   if (code == FOREIGN_SEQUENCE) {
     /* TRANSLATORS: This refers to a sequence of escape codes (from the keyboard) that nano does not recognize. */
     statusline(AHEM, _("Unknown sequence"));
@@ -880,9 +876,9 @@ void unbound_key(int code) {
   else if (code == MISSING_BRACE) {
     statusline(AHEM, _("Missing }"));
   }
-  else if (code > KEY_F0 && code < KEY_F0 + 25) {
+  else if (code > KEY_F0 && code < (KEY_F0 + 25)) {
     /* TRANSLATORS : This refers to an unbound function key. */
-    statusline(AHEM, _("Unbound key: F%i"), code - KEY_F0);
+    statusline(AHEM, _("Unbound key: F%i"), (code - KEY_F0));
   }
   else if (code > 0x7F) {
     statusline(AHEM, _("Unbound key"));
@@ -1083,16 +1079,13 @@ void process_a_keystroke(void) {
   /* The size of the buffer, doubles when needed. */
   static Ulong capacity = 12;
   /* The current length of the buffer. */
-  static Ulong     depth                 = 0;
-  linestruct      *was_mark              = openfile->mark;
-  static bool      give_a_hint           = TRUE;
-  bool             was_open_bracket_char = FALSE;
+  static Ulong depth = 0;
+  linestruct  *was_mark = openfile->mark;
+  static bool  give_a_hint = TRUE;
   const keystruct *shortcut;
   functionptrtype  function;
   /* Read in a keystroke, and show the cursor while waiting. */
   input = get_kbinput(midwin, VISIBLE);
-  unix_socket_debug("input: %d\n", input);
-  /* NETLOGGER.log("input: %i.\n", input); */ 
   lastmessage = VACUUM;
   /* When the input is a window resize, do nothing. */
   if (input == KEY_WINCH) {
@@ -1130,49 +1123,70 @@ void process_a_keystroke(void) {
         puddle = (char *)nmalloc(capacity);
       }
       /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
-      if (openfile->mark) {
-        if (input == '"' || input == '\'' || input == '(' || input == '{' || input == '[') {
-          const char *s1, *s2;
-          input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(",
-                         s2 = ")" : input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : 0;
-          enclose_marked_region(s1, s2);
-          return;
-        }
+      if (openfile->mark && is_enclose_char(input)) {
+        const char *s1, *s2;
+        input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(", s2 = ")" :
+        input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" : 0;
+        enclose_marked_region(s1, s2);
+        return;
       }
-      if (openfile->mark && openfile->softmark) {
+      else if (openfile->mark && openfile->softmark) {
         openfile->mark = NULL;
         refresh_needed = TRUE;
       }
-      puddle[depth++] = (char)input;
-      /* Check for a bracketed input start.  Meaning a char that has a corresponding closing bracket. */
-      if (input == '(' || input == '[' || input == '{' || input == '<' || input == '\'' || input == '"') {
-        if (input == '<') {
-          (openfile->current->data[0] == '#') ? puddle[depth++] = '>' : 0;
+      /* If a enclose char is pressed without a having a marked region, we simply enclose in place. */
+      else if (is_enclose_char(input)) {
+        /* If quote or double quote was just enclosed in place just move once to the right. */
+        if ((input == '"' && last_key_was_bracket && last_bracket_char == '"') || (input == '\'' && last_key_was_bracket && last_bracket_char == '\'')) {
+          do_right();
+          last_key_was_bracket = FALSE;
+          last_bracket_char = '\0';
+          return;
+        }
+        /* Exceptions for enclosing quotes. */
+        else if (input == '"'
+         /* Before current cursor position. */
+         && (((is_prev_cursor_word_char() || is_prev_cursor_char_one_of("\"><")))
+         /* After current cursor position. */
+         || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char(';')))) {
+          ;
+        }
+        /* Exceptions for enclosing brackets. */
+        else if ((input == '(' || input == '[' || input == '{')
+         /* After current cursor position. */
+         && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";'")) || (is_cursor_char_one_of("({[")))) {
+          ;
+        }
+        /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
+        else if (input == '<' && openfile->current->data[indent_length(openfile->current->data)] != '#' && openfile->type.is_set<C_CPP>()) {
+          ;
         }
         else {
-          puddle[depth++] = input == '(' ? ')' : input == '[' ? ']' : input == '"' ? '"' : input == '\'' ? '\'' : '}';
+          const char *s1, *s2;
+          input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(", s2 = ")" :
+          input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" : 0;
+          /* 'Set' the mark, so that 'enclose_marked_region()' dosent exit because there is no marked region. */
+          openfile->mark = openfile->current;
+          openfile->mark_x = openfile->current_x;
+          enclose_marked_region(s1, s2);
+          /* Set the flag in the undo struct just created, marking an exception for future undo-redo actions. */
+          openfile->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
+          openfile->mark = NULL;
+          /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
+          last_key_was_bracket = TRUE;
+          last_bracket_char = (char)input;
+          return;
         }
-        /* Set a flag to remember that an open bracket character was inserted into the input buffer. */
-        was_open_bracket_char = TRUE;
       }
+      puddle[depth++] = (char)input;
     }
   }
   /* If there are gathered bytes and we have a command or no other key codes are waiting, it's time to insert these bytes into the edit buffer. */
   if (depth > 0 && (function || !waiting_keycodes())) {
     puddle[depth] = '\0';
     inject(puddle, depth);
-    if (was_open_bracket_char) {
-      if (puddle[depth - 1] != '<') {
-        do_left();
-        /* Set this flag so we can delete both of the brackeded char if Bsp is pressed directly after. */
-        last_key_was_bracket = TRUE;
-      }
-    }
-    else {
-      last_key_was_bracket = FALSE;
-      if (ISSET(SUGGEST)) {
-        suggest_on = TRUE;
-      }
+    if (ISSET(SUGGEST)) {
+      suggest_on = TRUE;
     }
     depth = 0;
   }
@@ -1239,7 +1253,8 @@ void process_a_keystroke(void) {
   if (ISSET(STATEFLAGS) && openfile->mark != was_mark) {
     titlebar(NULL);
   }
-  !was_open_bracket_char ? (last_key_was_bracket = FALSE) : 0;
+  last_key_was_bracket = FALSE;
+  last_bracket_char = '\0';
   keep_mark = FALSE;
 }
 
@@ -1371,7 +1386,11 @@ int main(int argc, char **argv) {
       }
     }
     if (cliCmd & CLI_OPT_GUI) {
-      gui_enabled = TRUE;
+      #ifdef HAVE_GLFW
+        SET(USING_GUI);
+      #else
+        die("NanoX was compiled without gui support.");
+      #endif
     }
     if (cliCmd & CLI_OPT_SAFE) {
       UNSET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
@@ -1538,13 +1557,13 @@ int main(int argc, char **argv) {
     if (using_utf8()) {
       logI("Using utf8.");
       /* A tab is shown as a Right-Pointing Double Angle Quotation Mark (U+00BB), and a space as a Middle Dot (U+00B7). */
-      whitespace  = copy_of("\xC2\xBB\xC2\xB7");
+      whitespace  = STRLTR_COPY_OF("\xC2\xBB\xC2\xB7");
       whitelen[0] = 2;
       whitelen[1] = 2;
     }
     else {
       logI("Not using utf8.");
-      whitespace  = copy_of(">.");
+      whitespace  = STRLTR_COPY_OF(">.");
       whitelen[0] = 1;
       whitelen[1] = 1;
     }
@@ -1621,10 +1640,11 @@ int main(int argc, char **argv) {
   mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
   /* Disable the type-ahead checking that ncurses normally does. */
   typeahead(-1);
-#ifdef HAVE_SET_ESCDELAY
-  /* Tell ncurses to pass the Esc key quickly. */
-  set_escdelay(50);
-#endif
+  #ifdef HAVE_SET_ESCDELAY
+    logI("Changing escdelay from %d to 50.", ESCDELAY);
+    /* Tell ncurses to pass the Esc key quickly. */
+    set_escdelay(50);
+  #endif
   /* Read the files mentioned on the command line into new buffers. */
   while (optind < argc && (!openfile || TRUE)) {
     long  givenline = 0, givencol = 0;
@@ -1793,8 +1813,11 @@ int main(int argc, char **argv) {
   margin = 12345;
   we_are_running = TRUE;
   logI("Reached main loop.");
-  if (gui_enabled) {
-    /* run_gui(); */
+  if (ISSET(USING_GUI)) {
+    restore_terminal();
+    init_gui();
+    glfw_loop();
+    do_exit();
   }
   /* TODO: This is the main loop of the editor. */
   while (TRUE) {

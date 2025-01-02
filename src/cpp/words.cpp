@@ -57,7 +57,7 @@ char *rgx_word(const char *word) {
 }
 
 /* Assigns the number of white char`s to the prev/next word to 'nchars'.  Return`s 'true' when word is more then 2 white`s away. */
-bool word_more_than_one_white_away(bool forward, Ulong *nsteps) {
+bool word_more_than_one_white_away(bool forward, Ulong *nsteps) _NO_EXCEPT {
   Ulong i = openfile->current_x, chars = 0;
   if (!forward) {
     i--;
@@ -77,10 +77,10 @@ bool prev_word_is_comment_start(Ulong *nsteps) {
     *nsteps = steps + 2;
     return true;
   }
-  return false;
+  return FALSE;
 }
 
-/* Return`s 'true' when 'ch' is found in 'word', and 'false' otherwise. */
+/* Return`s 'true' when 'ch' is found in 'word', and 'FALSE' otherwise. */
 bool char_is_in_word(const char *word, const char ch, Ulong *at) {
   *at = (Ulong)-1;
   for (Ulong i = 0; word[i] != '\0' && *at == (Ulong)-1; (word[i] == ch) ? *at = i : 0, i++);
@@ -91,7 +91,7 @@ char *retrieve_word_from_cursor_pos(bool forward) {
   const Ulong slen = strlen(openfile->current->data);
   Ulong       i;
   for (i = openfile->current_x; i < slen; i++) {
-    if (!is_word_char(openfile->current->data + i, false)) {
+    if (!is_word_char(openfile->current->data + i, FALSE)) {
       if (openfile->current->data[i] != '_') {
         break;
       }
@@ -135,11 +135,11 @@ line_word_t *line_word_list(const char *str, Ulong slen) {
     if (end == (str + slen)) {
       break;
     }
-    while (!is_word_char(end, false) && *end != '_') {
+    while (!is_word_char(end, FALSE) && *end != '_') {
       end += 1;
     }
     start = end;
-    for (; (end < (str + slen)) && (*end != ' ') && (*end != '\t') && (is_word_char(end, false) || *end == '_'); end++)
+    for (; (end < (str + slen)) && (*end != ' ') && (*end != '\t') && (is_word_char(end, FALSE) || *end == '_'); end++)
       ;
     const Uint word_len = (end - start);
     line_word_t *word = (line_word_t *)malloc(sizeof(*word));

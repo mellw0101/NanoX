@@ -218,8 +218,10 @@ typedef enum {
   #define EXPERIMENTAL_FAST_LIVE_SYNTAX EXPERIMENTAL_FAST_LIVE_SYNTAX
   SUGGEST,
   #define SUGGEST SUGGEST
-  SUGGEST_INLINE
+  SUGGEST_INLINE,
   #define SUGGEST_INLINE SUGGEST_INLINE
+  USING_GUI,
+  #define USING_GUI USING_GUI
 } flag_type;
 /* The flag map. */
 constexpr_map<string_view, Uchar, 94> flagOptionsMap = {{

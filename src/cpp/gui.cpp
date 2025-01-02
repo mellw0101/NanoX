@@ -1,221 +1,267 @@
-// #include "../include/prototypes.h"
+#include "../include/prototypes.h"
 
-// #include <SXL/SXL.h>
+#ifdef HAVE_GLFW
 
-// struct gui_t
-// {
-//     int          w             = 1200;
-//     int          h             = 800;
-//     TTF_Font    *font          = nullptr;
-//     element     *title_element = nullptr;
-//     SDL_Texture *title_texture = nullptr;
-//     string       win_title;
-// };
-// static gui_t gui;
+/* Main window for nanox. */
+static GLFWwindow *window = NULL;
+/* Window dimentions. */
+Uint window_width  = 1200;
+Uint window_height = 800;
+/* Holds the current fontsize for the editwindow. */
+static _GL_UNUSED Uint edit_fontsize = 17;
+/* Window title.  This may be changed so its dynamic. */
+static const char *window_title = "NanoX";
+/* Rect shader data. */
+Uint fontshader, rectshader;
+static glSsbo<vec2, 0> vertices_ssbo;
+static glSsbo<Uint, 1> indices_ssbo;
+/* The projection that all shaders follow. */
+mat4 projection;
+static mat4 view;
+static mat4 model;
+/* Hash based grid map for elements. */
+uigridmapclass gridmap(GRIDMAP_GRIDSIZE);
+/* Frame timer to keep a frame rate. */
+frametimerclass frametimer;
+/* The main edit element where the text is edited. */
+uielementstruct *editelement = NULL;
+/* The gutter of the main edit element. */
+uielementstruct *gutterelement = NULL;
+/* Gui flags. */
+bit_flag_t<8> guiflag;
 
-// #define GUI_TITLE_COLOR 80, 80, 80, 255
+markup_t font[2];
+texture_atlas_t *atlas = NULL;
+vertex_buffer_t *vertbuf = NULL;
+vec2 pen;
 
-// static void
-// init(void) noexcept
-// {
-//     APP->root->set_size(1400, 800);
-//     APP->root->framerate = 240;
-//     gui.font = APP->retrieve_new_font(
-//         18, "/home/mellw/.vscode-insiders/extensions/narasimapandiyan.jetbrainsmono-1.0.2/JetBrainsMono/"
-//             "JetBrainsMono-Medium.ttf");
-//     if (gui.font == nullptr)
-//     {
-//         do_exit();
-//     }
-//     gui.title_element = APP->root->new_element({GUI_TITLE_COLOR}, {0, 0, APP->width(), 20}, {element::ALIGN_WIDTH});
-//     if (openfile->filename != nullptr)
-//     {
-//         gui.win_title = PROJECT_NAME ": " + string(openfile->filename);
-//         APP->root->set_title(gui.win_title.c_str());
-//         gui.title_texture =
-//             APP->make_text_texture(gui.font, gui.win_title.c_str(), {0, 0, 0, 255}, {255, 255, 255, 255});
-//         if (gui.title_texture != nullptr)
-//         {
-//             gui.title_element->add_text_data(22, -4, gui.title_texture);
-//         }
-//     }
-//     APP->root->set_min_size(400, 200);
-// }
+static fvector4 _GL_UNUSED black_vec4 = {{0.0f, 0.0f, 0.0f, 1.0f}};
+static fvector4 _GL_UNUSED white_vec4 = {{1.0f, 1.0f, 1.0f, 1.0f}};
+static fvector4 _GL_UNUSED none_vec4  = {{0.0f, 0.0f, 1.0f, 0.0f}};
 
-// static MVector<pair<element *, SDL_Texture *>> lines;
-// #define LINE_HEIGHT 20
-// #define LINE_FG     255, 255, 255, 255
-// #define LINE_BG     30, 30, 30, 255
+#define FALLBACK_FONT_PATH "/usr/share/root/fonts/monotype.ttf"
+#define FALLBACK_FONT "fallback"
+#define JETBRAINS_REGULAR_FONT_PATH "/home/mellw/.vscode-insiders/extensions/narasimapandiyan.jetbrainsmono-1.0.2/JetBrainsMono/JetBrainsMono-Regular.ttf"
+#define JETBRAINS_REGULAR_FONT "jetbrains regular"
 
-// /* All this is temporary i will add a 'sdl_element *' and a 'SDL_Texture *'
-//  * to linestruct and create one of each for all lines in the file. */
-// static void
-// set_lines(void) noexcept
-// {
-//     if (lines.empty())
-//     {
-//         for (int i = 1; (i * LINE_HEIGHT) < (APP->height() * 2); i++)
-//         {
-//             element *line = APP->root->new_element(
-//                 {LINE_BG}, {0, (float)(i * LINE_HEIGHT), APP->width(), LINE_HEIGHT}, {element::ALIGN_WIDTH});
-//             lines.push_back({line, nullptr});
-//         }
-//         for (auto &[elem, texture] : lines)
-//         {
-//             SDL_Texture *line_texture = APP->make_text_texture(gui.font, "hello", {LINE_FG}, {LINE_BG});
-//             texture                   = line_texture;
-//         }
-//         NLOG("lines created: %i.\n", lines.size());
-//     }
-//     int i = 0;
-//     for (linestruct *line = openfile->filetop; line != nullptr && (line->lineno < lines.size()) && i < lines.size();
-//          line             = line->next)
-//     {
-//         lines[i].second = APP->make_destroy_text_texture(lines[i].second, gui.font, line->data, {LINE_FG}, {LINE_BG});
-//         lines[i].first->add_text_data(2, -2, lines[i].second);
-//         i++;
-//     }
-// }
+/* Define the vertices of a square (centered at the origin) */
+constexpr const vec2 vertices[] = {
+  /* Pos. */
+  vec2(0.0f, 0.0f), /* Bottom-left */
+  vec2(1.0f, 0.0f), /* Bottom-right */
+  vec2(1.0f, 1.0f), /* Top-right */
+  vec2(0.0f, 1.0f), /* Top-left */
+};
+constexpr const Uint indices[] = {
+  0, 1, 2, /* First triangle. */
+  2, 3, 0  /* Second triangle. */
+};
 
-// static button_element *left_menu_button = nullptr;
-// static bool            left_menu_open   = false;
-// static element        *left_menu        = nullptr;
+/* Init font shader and buffers. */
+static void setup_font_shader(void) {
+  /* Create shader. */
+  fontshader = openGL_create_shader_program_raw({
+    /* Font vertex shader. */
+    { STRLITERAL(\
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+        attribute vec3 vertex;
+        attribute vec2 tex_coord;
+        attribute vec4 color;
+        void main() {
+          gl_TexCoord[0].xy = tex_coord.xy;
+          gl_FrontColor     = color;
+          gl_Position       = projection * (view * (model * vec4(vertex, 1.0)));
+        }
+      ),
+      GL_VERTEX_SHADER },
+    /* Font fragment shader. */
+    { STRLITERAL(\
+        uniform sampler2D texture;
+        void main() {
+          float a = texture2D(texture, gl_TexCoord[0].xy).r;
+          gl_FragColor = vec4(gl_Color.rgb, gl_Color.a * a);
+        }
+      ),
+      GL_FRAGMENT_SHADER }
+  });
+  /* If there is a problem with the shader creation just die as we are
+   * passing string literals so there should not be alot that can go wrong. */
+  if (!fontshader) {
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    die("Failed to create font shader.");
+  }
+  /* Setup projection. */
+  update_projection_uniform(fontshader);
+  glUniformMatrix4fv(glGetUniformLocation(fontshader, "model"), 1, 0, &model[0][0]);
+  glUniformMatrix4fv(glGetUniformLocation(fontshader, "view"), 1, 0, &view[0][0]);
+  /* Load fallback font. */
+  if (is_file_and_exists(FALLBACK_FONT_PATH)) {
+    ;
+  }
+  else {
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    glDeleteProgram(fontshader);
+    die("Failed to find fallback font: '%s' does not exist.");
+  }
+  vertbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  /* Look for jetbrains regular font. */
+  if (is_file_and_exists(JETBRAINS_REGULAR_FONT_PATH)) {
+    atlas = texture_atlas_new(512, 512, 1);
+    glGenTextures(1, &atlas->id);
+    font[GUI_NORMAL_TEXT].family              = copy_of(JETBRAINS_REGULAR_FONT),
+    font[GUI_NORMAL_TEXT].size                = edit_fontsize;
+    font[GUI_NORMAL_TEXT].bold                = FALSE;
+    font[GUI_NORMAL_TEXT].italic              = FALSE;
+    font[GUI_NORMAL_TEXT].spacing             = 0.0f;
+    font[GUI_NORMAL_TEXT].gamma               = 1.0f;
+    font[GUI_NORMAL_TEXT].foreground_color    = white_vec4;
+    font[GUI_NORMAL_TEXT].background_color    = none_vec4;
+    font[GUI_NORMAL_TEXT].underline           = 0;
+    font[GUI_NORMAL_TEXT].underline_color     = white_vec4;
+    font[GUI_NORMAL_TEXT].overline            = 0;
+    font[GUI_NORMAL_TEXT].overline_color      = white_vec4;
+    font[GUI_NORMAL_TEXT].strikethrough       = 0;
+    font[GUI_NORMAL_TEXT].strikethrough_color = white_vec4;
+    font[GUI_NORMAL_TEXT].font = texture_font_new_from_file(atlas, edit_fontsize, JETBRAINS_REGULAR_FONT_PATH);
+    font[GUI_SELECTED_TEXT] = font[GUI_NORMAL_TEXT];
+    font[GUI_SELECTED_TEXT].foreground_color = {{ 0.0f, 0.0f, 0.5f, 1.0f }};
+  }
+}
 
-// #define ANIM_DURATION 50
+/* Init the rect shader and setup the ssbo`s for indices and vertices. */
+static void setup_rect_shader(void) {
+  rectshader = openGL_create_shader_program_raw({
+    { STRLITERAL(\
+        #version 450 core \n
+        layout(std430, binding = 0) buffer VertexBuffer {
+          vec2 vertices[];
+        };
+        layout(std430, binding = 1) buffer IndexBuffer {
+          uint indices[];
+        };
+        /* Output. */
+        out vec4 vertexColor;
+        /* Uniforms. */
+        uniform mat4 projection;
+        uniform vec2 elemsize;
+        uniform vec2 elempos;
+        /* Main vertex shader exec. */
+        void main() {
+          vec2 scaledPos = (vertices[indices[gl_VertexID]] * elemsize);
+          vec4 worldPos  = (projection * vec4(scaledPos + elempos, 0.0f, 1.0f));
+          gl_Position    = worldPos;
+        }
+      ),
+      GL_VERTEX_SHADER },
+    { STRLITERAL(\
+        #version 450 core \n
+        /* Output. */
+        out vec4 FragColor;
+        /* Uniforms. */
+        uniform vec4 rectcolor;
+        /* Main shader exec. */
+        void main() {
+          FragColor = rectcolor;
+        }
+      ),
+      GL_FRAGMENT_SHADER }
+  });
+  /* Init and setup the static indices and vertices ssbo. */
+  indices_ssbo.init(indices);
+  vertices_ssbo.init(vertices);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertices_ssbo.ssbo());
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indices_ssbo.ssbo());
+  /* Setup projection for the rect shader. */
+  update_projection_uniform(rectshader);
+}
 
-// int
-// run_gui(void) noexcept
-// {
-//     init();
-//     left_menu_button = APP->root->new_button_element({0, 0, 0, 255}, {2, 2, 16, 16}, {});
-//     left_menu_button->set_highlight_on_hover(RED);
-//     left_menu        = APP->root->new_element({255, 255, 255, 255}, {-100, 0, 100, APP->height()}, {});
-//     left_menu_button->action([](SDL_MouseButtonEvent e) {
-//         if (!left_menu_button->flags.is_set<element::IN_ANIMATION>())
-//         {
-//             if (left_menu_open == false)
-//             {
-//                 left_menu_open = true;
-//                 gui.title_element->animate(200, 0, APP->width() - 200, 20, ANIM_DURATION);
-//                 left_menu_button->animate(202, 2, 16, 16, ANIM_DURATION);
-//                 left_menu->animate(0, 0, 200, APP->height(), ANIM_DURATION);
-//                 for (const auto &[element, texture] : lines)
-//                 {
-//                     element->animate(202, element->rect.y, APP->width() - 200, LINE_HEIGHT, ANIM_DURATION);
-//                     if (element->rect.y > APP->height())
-//                     {
-//                         break;
-//                     }
-//                 }
-//             }
-//             else
-//             {
-//                 left_menu_open = false;
-//                 gui.title_element->animate(0, 0, APP->width(), 20, ANIM_DURATION);
-//                 left_menu_button->animate(2, 2, 16, 16, ANIM_DURATION);
-//                 left_menu->animate(-200, 0, 200, APP->height(), ANIM_DURATION);
-//                 for (const auto &[element, texture] : lines)
-//                 {
-//                     element->animate(2, element->rect.y, APP->width(), LINE_HEIGHT, ANIM_DURATION);
-//                     if (element->rect.y > APP->height())
-//                     {
-//                         break;
-//                     }
-//                 }
-//             }
-//         }
-//     });
-//     set_lines();
-//     APP->set_main_loop([]() {
-//         gui.title_element->draw();
-//         left_menu_button->draw();
-//         left_menu->draw();
-//     });
-//     EVENT_HANDLER->event_action(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED, [](SDL_Event ev) {
-//         SDL_WindowEvent e = ev.window;
-//         gui.title_element->rect.w = e.data1;
+/* Allocate and init the edit element. */
+static void setup_edit_element(void) {
+  /* Confirm the margin first to determen how wide the gutter has to be. */
+  confirm_margin();
+  /* Place the cursor at the correct position. */
+  place_the_cursor();
+  /* Alloc and init the gutter. */
+  gutterelement = (uielementstruct *)nmalloc(sizeof(*gutterelement));
+  gutterelement->pos    = 0.0f;
+  gutterelement->size   = vec2(((font[GUI_NORMAL_TEXT].font->face->max_advance_width >> 6) * margin + 1), window_height);
+  gutterelement->endoff = 0.0f;
+  gridmap.set(gutterelement);
+  /* Alloc and init the edit element. */
+  editelement = (uielementstruct *)nmalloc(sizeof(*editelement));
+  editelement->pos    = vec2(gutterelement->size.w, 0.0f);
+  editelement->size   = vec2(window_width, window_height);
+  editelement->endoff = 0.0f;
+  gridmap.set(editelement);
+}
 
-//         left_menu->rect.h         = e.data2;
-//         for (const auto &[element, texture] : lines)
-//         {
-//             if (left_menu_open == false)
-//             {
-//                 element->rect.w = e.data1;
-//             }
-//             else
-//             {
-//                 element->rect.x = 200;
-//                 element->rect.w = e.data1 - 200;
-//             }
-//             if (element->rect.y > e.data2)
-//             {
-//                 break;
-//             }
-//         }
-//     });
-//     EVENT_HANDLER->event_action(SDL_EVENT_KEY_DOWN, [](SDL_Event ev) {
-//         SDL_KeyboardEvent e = ev.key;
-//         switch (e.scancode)
-//         {
-//             case SDL_SCANCODE_Q :
-//             {
-//                 if (e.mod & SDL_KMOD_LCTRL)
-//                 {
-//                     APP->quit();
-//                 }
-//                 break;
-//             }
-//             case SDL_SCANCODE_B :
-//             {
-//                 if (e.mod & SDL_KMOD_LCTRL)
-//                 {
-//                     SDL_MouseButtonEvent e;
-//                     left_menu_button->_action(e);
-//                 }
-//                 break;
-//             }
-//             default :
-//             {
-//                 break;
-//             }
-//         }
-//     });
-//     APP->run();
-//     do_exit();
-//     return 0;
-// }
+/* Init glfw. */
+void init_gui(void) {
+  /* Init glfw. */
+  if (!glfwInit()) {
+    die("Failed to init glfw.\n");
+  }
+  window = glfwCreateWindow(window_width, window_height, window_title, NULL, NULL);
+  if (!window) {
+    glfwTerminate();
+    die("Failed to create glfw window.\n");
+  }
+  glfwMakeContextCurrent(window);
+  /* Init glew. */
+  if (glewInit() != GLEW_OK) {
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    die("Failed to init glew.\n");
+  }
+  /* Init the font shader. */
+  setup_font_shader();
+  /* Init the rect shader. */
+  setup_rect_shader();
+  /* Init the edit element. */
+  setup_edit_element();
+  /* Set some callbacks. */
+  glfwSetWindowSizeCallback(window, window_resize_callback);
+  glfwSetKeyCallback(window, key_callback);
+  glfwSetCharCallback(window, char_callback);
+  glfwSetWindowMaximizeCallback(window, window_maximize_callback);
+  frametimer.fps = 120;
+  // glClearColor(1.00, 1.00, 1.00, 1.00);
+  glDisable(GL_DEPTH_TEST);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_TEXTURE_2D);
+  glEnable(GL_BLEND);
+  /* Set the window size. */
+  window_resize_callback(window, window_width, window_height);
+}
 
-// /*
-// #include <xcb/xcb.h>
+/* Main gui loop. */
+void glfw_loop(void) {
+  guiflag.set<GUI_RUNNING>();
+  while (!glfwWindowShouldClose(window) && guiflag.is_set<GUI_RUNNING>()) {
+    frametimer.start();
+    confirm_margin();
+    place_the_cursor();
+    glClear(GL_COLOR_BUFFER_BIT);
+    /* Draw the edit element. */
+    draw_editelement();
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+    frametimer.end();
+  }
+  glfwDestroyWindow(window);
+  glfwTerminate();
+  glDeleteProgram(fontshader);
+  glDeleteProgram(rectshader);
+  free(editelement);
+  free(gutterelement);
+  free(font[GUI_NORMAL_TEXT].family);
+  glDeleteTextures(1, &atlas->id);
+  atlas->id = 0;
+  texture_atlas_delete(atlas);
+}
 
-// void
-// init_window(void)
-// {
-//     xcb_connection_t *conn    = xcb_connect(NULL, NULL);
-//     xcb_screen_t     *screen  =
-// xcb_setup_roots_iterator(xcb_get_setup(conn)).data; unsigned int      window  =
-// xcb_generate_id(conn); unsigned int      mask    = XCB_CW_BACK_PIXEL |
-// XCB_CW_EVENT_MASK; unsigned int      value[] = {screen->black_pixel,
-// XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS}; xcb_create_window(conn, 0L,
-// window, screen->root, 0, 0, 800, 600, 10, XCB_WINDOW_CLASS_INPUT_OUTPUT,
-//                       screen->root_visual, mask, value);
-//     xcb_map_window(conn, window);
-//     xcb_flush(conn);
-//     xcb_generic_event_t *event;
-//     bool                 running = TRUE;
-//     while (running && (event = xcb_wait_for_event(conn)))
-//     {
-//         switch (event->response_type & ~0x80)
-//         {
-//             case XCB_EXPOSE :
-//                 xcb_flush(conn);
-//                 break;
-//             case XCB_KEY_PRESS :
-//                 running = FALSE;
-//                 break;
-//         }
-//         free(event);
-//     }
-//     xcb_disconnect(conn);
-// }
-//  */
+#endif

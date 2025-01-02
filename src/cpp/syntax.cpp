@@ -233,6 +233,9 @@ void syntax_check_file(openfilestruct *file) {
       else if (strcmp(file_ext, "service") == 0) {
         set_systemd_service_synx(file);
       }
+      else if (strcmp(file_ext, "nxcfg") == 0) {
+        file->type.clear_and_set<NANOX_CONFIG>();
+      }
     }
     /* TODO: Check that this is fully safe. */
     else {
@@ -317,8 +320,8 @@ void find_block_comments(int from, int end) {
       continue;
     }
     else if (!found_start && !found_end) {
-      if (line->prev != NULL &&
-          ((line->prev->flags.is_set(BLOCK_COMMENT_START)) || (line->prev->flags.is_set(IN_BLOCK_COMMENT)))) {
+      if (line->prev != NULL
+       && ((line->prev->flags.is_set(BLOCK_COMMENT_START)) || (line->prev->flags.is_set(IN_BLOCK_COMMENT)))) {
         line->flags.set(IN_BLOCK_COMMENT);
       }
     }

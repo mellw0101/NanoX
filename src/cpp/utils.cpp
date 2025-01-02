@@ -3,7 +3,7 @@
 #include "../include/prototypes.h"
 
 /* Return the user's home directory.  We use $HOME, and if that fails, we fall back on the home directory of the effective user ID. */
-void get_homedir(void) {
+void get_homedir(void) _GL_ATTRIBUTE_NOTHROW {
   if (!homedir) {
     const char *homenv = getenv("HOME");
     /* When HOME isn't set,or when we're root, get the home directory from the password file instead. */
@@ -21,7 +21,7 @@ void get_homedir(void) {
 }
 
 /* Return a malloc`ed 'char **' with malloc`ed 'char *' strings containing all paths in the env var 'PATH'.  Return`s NULL on failure. */
-char **get_env_paths(Ulong *npaths) {
+char **get_env_paths(Ulong *npaths) _GL_ATTRIBUTE_NOTHROW {
   /* Get the PATH env var. */
   const char *path_env = getenv("PATH");
   /* If this fails, return NULL. */
@@ -45,13 +45,13 @@ char **get_env_paths(Ulong *npaths) {
     }
   }
   /* Resize the array to the exact number of paths, to save memory. */
-  arealloc(paths, (sizeof(char *) * size));
+  paths = arealloc(paths, (sizeof(char *) * size));
   *npaths = size;
   return paths;
 }
 
 /* Return the filename part of the given path. */
-const char *tail(const char *path) {
+const char *tail(const char *path) _GL_ATTRIBUTE_NOTHROW {
   const char *slash = strrchr(path, '/');
   if (!slash) {
     return path;
@@ -60,7 +60,7 @@ const char *tail(const char *path) {
 }
 
 /* Return the extention of the given path.  Else if no extention, return 'NULL'. */
-const char *ext(const char *path) {
+const char *ext(const char *path) _GL_ATTRIBUTE_NOTHROW {
   const char *ext = strrchr(path, '.');
   const char *slash = tail(path);
   if (!ext || (ext && ext < slash)) {
@@ -70,7 +70,7 @@ const char *ext(const char *path) {
 }
 
 /* Return a copy of the two given strings, welded together. */
-char *concatenate(const char *path, const char *name) {
+char *concatenate(const char *path, const char *name) _GL_ATTRIBUTE_NOTHROW {
   Ulong pathlen = strlen(path);
   char *joined  = (char *)nmalloc(pathlen + strlen(name) + 1);
   strcpy(joined, path);
@@ -79,13 +79,20 @@ char *concatenate(const char *path, const char *name) {
 }
 
 /* Return a path copy of two strings, appending '/' to the prefix if needed. */
-char *concatenate_path(const char *prefix, const char *suffix) _NO_EXCEPT {
+char *concatenate_path(const char *prefix, const char *suffix) _GL_ATTRIBUTE_NOTHROW {
   Ulong prefix_len = strlen(prefix);
   char *ret = NULL;
-  if (prefix[prefix_len - 1] == '/') {
+  /* Either the prefix ends with / or suffix starts with /. */
+  if ((prefix[prefix_len - 1] == '/' && *suffix != '/') || (prefix[prefix_len - 1] != '/' && *suffix == '/')) {
     ret = (char *)nmalloc(prefix_len + strlen(suffix) + 1);
     sprintf(ret, "%s%s", prefix, suffix);
   }
+  /* Both prefix and suffix has / at end and start. */
+  else if (prefix[prefix_len - 1] == '/' && *suffix == '/') {
+    ret = (char *)nmalloc(prefix_len + strlen(suffix));
+    sprintf(ret, "%s%s", prefix, (suffix + 1));
+  }
+  /* None have delimiter /. */
   else {
     ret = (char *)nmalloc(prefix_len + strlen(suffix) + 2);
     sprintf(ret, "%s%s%s", prefix, "/", suffix);
@@ -94,7 +101,7 @@ char *concatenate_path(const char *prefix, const char *suffix) _NO_EXCEPT {
 }
 
 /* Return a path copy of two strings, appending '/' to the prefix if needed. */
-const char *concat_path(const char *s1, const char *s2) _NO_EXCEPT {
+const char *concat_path(const char *s1, const char *s2) _GL_ATTRIBUTE_NOTHROW {
   static char buf[PATH_MAX];
   if (s1[strlen(s1) - 1] == '/') {
     snprintf(buf, sizeof(buf), "%s%s", s1, s2);
@@ -106,7 +113,7 @@ const char *concat_path(const char *s1, const char *s2) _NO_EXCEPT {
 }
 
 /* Return the number of digits that the given integer n takes up. */
-int digits(const long n) _NO_EXCEPT {
+int digits(const long n) _GL_ATTRIBUTE_NOTHROW {
   if (n < 100000) {
     if (n < 1000) {
       if (n < 100) {
@@ -146,7 +153,7 @@ int digits(const long n) _NO_EXCEPT {
 }
 
 /* Read an integer from the given string.  If it parses okay, store it in *result and return TRUE; otherwise, return FALSE. */
-bool parse_num(const char *string, long *result) _NO_EXCEPT {
+bool parse_num(const char *string, long *result) _GL_ATTRIBUTE_NOTHROW {
   Ulong value;
   char *excess;
   /* Clear the error number so that we can check it afterward. */
@@ -162,7 +169,7 @@ bool parse_num(const char *string, long *result) _NO_EXCEPT {
 // Read one number (or two numbers separated by comma, period, or colon)
 // from the given string and store the number(s) in *line (and *column).
 // Return 'FALSE' on a failed parsing, and 'TRUE' otherwise.
-bool parse_line_column(const char *string, long *line, long *column) _NO_EXCEPT {
+bool parse_line_column(const char *string, long *line, long *column) _GL_ATTRIBUTE_NOTHROW {
   const char *comma;
   char *firstpart;
   bool retval;
@@ -185,7 +192,7 @@ bool parse_line_column(const char *string, long *line, long *column) _NO_EXCEPT 
 }
 
 /* In the given string, recode each embedded NUL as a newline. */
-void recode_NUL_to_LF(char *string, Ulong length) _NO_EXCEPT {
+void recode_NUL_to_LF(char *string, Ulong length) _GL_ATTRIBUTE_NOTHROW {
   while (length > 0) {
     if (!*string) {
       *string = '\n';
@@ -196,7 +203,7 @@ void recode_NUL_to_LF(char *string, Ulong length) _NO_EXCEPT {
 }
 
 /* In the given string, recode each embedded newline as a NUL, and return the number of bytes in the string. */
-Ulong recode_LF_to_NUL(char *string) _NO_EXCEPT {
+Ulong recode_LF_to_NUL(char *string) _GL_ATTRIBUTE_NOTHROW {
   char *beginning = string;
   while (*string) {
     if (*string == '\n') {
@@ -208,7 +215,7 @@ Ulong recode_LF_to_NUL(char *string) _NO_EXCEPT {
 }
 
 /* Free the memory of the given array, which should contain len elements. */
-void free_chararray(char **array, Ulong len) _NO_EXCEPT {
+void free_chararray(char **array, Ulong len) _GL_ATTRIBUTE_NOTHROW {
   if (!array) {
     return;
   }
@@ -219,7 +226,7 @@ void free_chararray(char **array, Ulong len) _NO_EXCEPT {
 }
 
 /* Append an array onto 'array'.  Free 'append' but not any elements in it after call. */
-void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NO_EXCEPT {
+void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _GL_ATTRIBUTE_NOTHROW {
   Ulong new_len = ((*len) + append_len);
   *array = (char **)nrealloc(*array, (sizeof(char *) * (new_len + 1)));
   for (Ulong i = 0; i < append_len; ++i) {
@@ -231,7 +238,7 @@ void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len
 
 // Is the word starting at the given position in 'text' and of the given
 // length a separate word?  That is: is it not part of a longer word?
-bool is_separate_word(Ulong position, Ulong length, const char *text) _NO_EXCEPT {
+bool is_separate_word(Ulong position, Ulong length, const char *text) _GL_ATTRIBUTE_NOTHROW {
   const char *before = text + step_left(text, position);
   const char *after  = text + position + length;
   /* If the word starts at the beginning of the line OR the character before the word isn't a letter, and if
@@ -244,7 +251,7 @@ bool is_separate_word(Ulong position, Ulong length, const char *text) _NO_EXCEPT
 // than the given start; otherwise, we find the first match starting no earlier
 // than start.  If we are doing a regexp search, and we find a match, we fill
 // in the global variable regmatches with at most 9 subexpression matches.
-const char *strstrwrapper(const char *const haystack, const char *const needle, const char *const start) {
+const char *strstrwrapper(const char *const haystack, const char *const needle, const char *const start) _GL_ATTRIBUTE_NOTHROW {
   if (ISSET(USE_REGEXP)) {
     if (ISSET(BACKWARDS_SEARCH)) {
       Ulong last_find, ceiling, far_end, floor, next_rung;
@@ -284,7 +291,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
       return (haystack + regmatches[0].rm_so);
     }
     /* Do a forward regex search from the starting point. */
-    regmatches[0].rm_so = start - haystack;
+    regmatches[0].rm_so = (start - haystack);
     regmatches[0].rm_eo = strlen(haystack);
     if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
       return NULL;
@@ -310,7 +317,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
 }
 
 /* Allocate the given amount of memory and return a pointer to it. */
-void *nmalloc(Ulong howmuch) _NO_EXCEPT {
+void *nmalloc(Ulong howmuch) _GL_ATTRIBUTE_NOTHROW {
   void *section = malloc(howmuch);
   if (!section) {
     die(_("NanoX is out of memory!\n"));
@@ -319,7 +326,7 @@ void *nmalloc(Ulong howmuch) _NO_EXCEPT {
 }
 
 /* Reallocate the given section of memory to have the given size. */
-void *nrealloc(void *section, const Ulong howmuch) _NO_EXCEPT {
+void *nrealloc(void *section, const Ulong howmuch) _GL_ATTRIBUTE_NOTHROW {
   section = realloc(section, howmuch);
   if (!section) {
     die(_("NanoX is out of memory!\n"));
@@ -328,7 +335,7 @@ void *nrealloc(void *section, const Ulong howmuch) _NO_EXCEPT {
 }
 
 /* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
-char *mallocstrcpy(char *dest, const char *src) _NO_EXCEPT {
+char *mallocstrcpy(char *dest, const char *src) _GL_ATTRIBUTE_NOTHROW {
   const Ulong count = (strlen(src) + 1);
   dest = arealloc(dest, count);
   constexpr_strncpy(dest, src, count);
@@ -336,7 +343,7 @@ char *mallocstrcpy(char *dest, const char *src) _NO_EXCEPT {
 }
 
 /* Return an allocated copy of the first count characters of the given string, and 'null-terminate' the copy. */
-char *measured_copy(const char *string, const Ulong count) _NO_EXCEPT {
+char *measured_copy(const char *string, const Ulong count) _GL_ATTRIBUTE_NOTHROW {
   char *thecopy = (char *)nmalloc(count + 1);
   memcpy(thecopy, string, count);
   thecopy[count] = '\0';
@@ -344,23 +351,23 @@ char *measured_copy(const char *string, const Ulong count) _NO_EXCEPT {
 }
 
 /* Return an allocated copy of the given string. */
-char *copy_of(const char *string) _NO_EXCEPT {
+char *copy_of(const char *string) _GL_ATTRIBUTE_NOTHROW {
   return measured_copy(string, strlen(string));
 }
 
-char *measured_memmove_copy(const char *string, const Ulong count) _NO_EXCEPT {
+char *measured_memmove_copy(const char *string, const Ulong count) _GL_ATTRIBUTE_NOTHROW {
   char *thecopy = (char *)nmalloc(count + 1);
   memmove(thecopy, string, count);
   thecopy[count] = '\0';
   return thecopy;
 }
 
-char *memmove_copy_of(const char *string) _NO_EXCEPT {
+char *memmove_copy_of(const char *string) _GL_ATTRIBUTE_NOTHROW {
   return measured_memmove_copy(string, strlen(string));
 }
 
 /* Free the string at dest and return the string at src. */
-char *free_and_assign(char *dest, char *src) _NO_EXCEPT {
+char *free_and_assign(char *dest, char *src) _GL_ATTRIBUTE_NOTHROW {
   free(dest);
   return src;
 }
@@ -368,7 +375,7 @@ char *free_and_assign(char *dest, char *src) _NO_EXCEPT {
 // When not softwrapping, nano scrolls the current line horizontally by
 // chunks ("pages").  Return the column number of the first character
 // displayed in the edit window when the cursor is at the given column.
-Ulong get_page_start(const Ulong column) _NO_EXCEPT {
+Ulong get_page_start(const Ulong column) _GL_ATTRIBUTE_NOTHROW {
   if (!column || (column + 2) < editwincols || ISSET(SOFTWRAP)) {
     return 0;
   }
@@ -381,12 +388,12 @@ Ulong get_page_start(const Ulong column) _NO_EXCEPT {
 }
 
 /* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
-Ulong xplustabs(void) _NO_EXCEPT {
+Ulong xplustabs(void) _GL_ATTRIBUTE_NOTHROW {
   return wideness(openfile->current->data, openfile->current_x);
 }
 
 /* Return the index in text of the character that (when displayed) will not overshoot the given column. */
-Ulong actual_x(const char *text, Ulong column) _NO_EXCEPT {
+Ulong actual_x(const char *text, Ulong column) _GL_ATTRIBUTE_NOTHROW {
   /* From where we start walking through the text. */
   const char *start = text;
   /* The current accumulated span, in columns. */
@@ -402,7 +409,7 @@ Ulong actual_x(const char *text, Ulong column) _NO_EXCEPT {
 }
 
 /* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
-Ulong wideness(const char *text, Ulong maxlen) _NO_EXCEPT {
+Ulong wideness(const char *text, Ulong maxlen) _GL_ATTRIBUTE_NOTHROW {
   if (!maxlen) {
     return 0;
   }
@@ -413,7 +420,7 @@ Ulong wideness(const char *text, Ulong maxlen) _NO_EXCEPT {
 }
 
 /* Return the number of columns that the given text occupies. */
-Ulong breadth(const char *text) _NO_EXCEPT {
+Ulong breadth(const char *text) _GL_ATTRIBUTE_NOTHROW {
   Ulong span = 0;
   for (; *text; text += advance_over(text, span))
     ;
@@ -421,15 +428,15 @@ Ulong breadth(const char *text) _NO_EXCEPT {
 }
 
 /* Append a new magic line to the end of the buffer. */
-void new_magicline(void) _NO_EXCEPT {
-  openfile->filebot->next       = make_new_node(openfile->filebot);
+void new_magicline(void) _GL_ATTRIBUTE_NOTHROW {
+  openfile->filebot->next = make_new_node(openfile->filebot);
   openfile->filebot->next->data = STRLTR_COPY_OF("");
-  openfile->filebot             = openfile->filebot->next;
+  openfile->filebot = openfile->filebot->next;
   ++openfile->totsize;
 }
 
 /* Remove the magic line from the end of the buffer, if there is one and it isn't the only line in the file. */
-void remove_magicline(void) _NO_EXCEPT {
+void remove_magicline(void) _GL_ATTRIBUTE_NOTHROW {
   if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
     if (openfile->current == openfile->filebot) {
       openfile->current = openfile->current->prev;
@@ -442,14 +449,14 @@ void remove_magicline(void) _NO_EXCEPT {
 }
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
-bool mark_is_before_cursor(void) _NO_EXCEPT {
+bool mark_is_before_cursor(void) _GL_ATTRIBUTE_NOTHROW {
   return
     (openfile->mark->lineno < openfile->current->lineno
     || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
 }
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
-void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NO_EXCEPT {
+void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _GL_ATTRIBUTE_NOTHROW {
   if (mark_is_before_cursor()) {
     *top   = openfile->mark;
     *top_x = openfile->mark_x;
@@ -467,7 +474,7 @@ void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) 
 // Get the set of lines to work on -- either just the current line, or the
 // first to last lines of the marked region.  When the cursor (or mark) is
 // at the start of the last line of the region, exclude that line.
-void get_range(linestruct **top, linestruct **bot) _NO_EXCEPT {
+void get_range(linestruct **top, linestruct **bot) _GL_ATTRIBUTE_NOTHROW {
   if (!openfile->mark) {
     *top = openfile->current;
     *bot = openfile->current;
@@ -485,7 +492,7 @@ void get_range(linestruct **top, linestruct **bot) _NO_EXCEPT {
 }
 
 /* Return a pointer to the line that has the given line number. */
-linestruct *line_from_number(long number) _NO_EXCEPT {
+linestruct *line_from_number(long number) _GL_ATTRIBUTE_NOTHROW {
   linestruct *line = openfile->current;
   if (line->lineno > number) {
     while (line->lineno != number) {
@@ -501,7 +508,7 @@ linestruct *line_from_number(long number) _NO_EXCEPT {
 }
 
 /* Count the number of characters from begin to end, and return it. */
-Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) _NO_EXCEPT {
+Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) _GL_ATTRIBUTE_NOTHROW {
   const linestruct *line;
   Ulong count = 0;
   /* Sum the number of characters (plus a newline) in each line. */
@@ -523,7 +530,7 @@ char *alloced_pwd(void) {
 }
 
 /* Return`s malloc`ed str containing both substr`s, this also free`s both str_1 and str_2. */
-char *alloc_str_free_substrs(char *str_1, char *str_2) _NO_EXCEPT {
+char *alloc_str_free_substrs(char *str_1, char *str_2) _GL_ATTRIBUTE_NOTHROW {
   Ulong len_1 = strlen(str_1);
   Ulong len_2 = strlen(str_2);
   char *ret = (char *)nmalloc(len_1 + len_2 + 1);
@@ -677,7 +684,7 @@ string tern_statement(const string &str, string *if_true, string *if_false) {
 }
 
 /* Set the mark at specific line and column. */
-void set_mark(long lineno, Ulong pos_x) _NO_EXCEPT {
+void set_mark(long lineno, Ulong pos_x) _GL_ATTRIBUTE_NOTHROW {
   if (lineno < openfile->filebot->lineno) {
     openfile->mark = line_from_number(lineno);
   }

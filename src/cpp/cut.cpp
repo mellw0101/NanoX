@@ -109,7 +109,7 @@ void do_backspace(void) {
 /* Return 'FALSE' when a cut command would not actually cut anything: when on an empty line at EOF, or when
  * the mark covers zero characters, or (when test_cliff is 'TRUE') when the magic line would be cut. */
 static bool is_cuttable(bool test_cliff) _NO_EXCEPT {
-  Ulong from = (test_cliff) ? openfile->current_x : 0;
+  Ulong from = ((test_cliff) ? openfile->current_x : 0);
   if ((!openfile->current->next && !openfile->current->data[from] && !openfile->mark)
    || (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x)
    || (from > 0 && !ISSET(NO_NEWLINES) && !openfile->current->data[from] && openfile->current->next == openfile->filebot)) {

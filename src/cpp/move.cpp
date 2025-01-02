@@ -1,7 +1,7 @@
 #include "../include/prototypes.h"
 
 /* Move to the first line of the file. */
-void to_first_line(void) {
+void to_first_line(void) _GL_ATTRIBUTE_NOTHROW {
   openfile->current     = openfile->filetop;
   openfile->current_x   = 0;
   openfile->placewewant = 0;
@@ -9,7 +9,7 @@ void to_first_line(void) {
 }
 
 /* Move to the last line of the file. */
-void to_last_line(void) {
+void to_last_line(void) _GL_ATTRIBUTE_NOTHROW {
   openfile->current     = openfile->filebot;
   openfile->current_x   = (inhelp) ? 0 : strlen(openfile->filebot->data);
   openfile->placewewant = xplustabs();
@@ -21,11 +21,11 @@ void to_last_line(void) {
 }
 
 /* Determine the actual current chunk and the target column. */
-void get_edge_and_target(Ulong *leftedge, Ulong *target_column) {
+void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _GL_ATTRIBUTE_NOTHROW {
   if (ISSET(SOFTWRAP)) {
     Ulong shim     = (editwincols * (1 + (tabsize / editwincols)));
     *leftedge      = leftedge_for(xplustabs(), openfile->current);
-    *target_column = (openfile->placewewant + shim - *leftedge) % editwincols;
+    *target_column = ((openfile->placewewant + shim - *leftedge) % editwincols);
   }
   else {
     *leftedge      = 0;
@@ -37,11 +37,11 @@ void get_edge_and_target(Ulong *leftedge, Ulong *target_column) {
 // chunk that starts at the given leftedge.  If the target column has landed
 // on a tab, prevent the cursor from falling back a row when moving forward,
 // or from skipping a row when moving backward, by incrementing the index.
-Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) {
+Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _GL_ATTRIBUTE_NOTHROW {
   Ulong index = actual_x(line->data, column);
   if (ISSET(SOFTWRAP) && line->data[index] == '\t' && ((forward && wideness(line->data, index) < *leftedge)
-   || (!forward && column / tabsize == (*leftedge - 1) / tabsize && column / tabsize < (*leftedge + editwincols - 1) / tabsize))) {
-    index++;
+   || (!forward && (column / tabsize) == ((*leftedge - 1) / tabsize) && (column / tabsize) < ((*leftedge + editwincols - 1) / tabsize)))) {
+    ++index;
     if (shifted) {
       *shifted = TRUE;
     }
@@ -53,7 +53,7 @@ Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bo
 }
 
 /* Adjust the values for current_x and placewewant in case we have landed in the middle of a tab that crosses a row boundary. */
-void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) {
+void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _GL_ATTRIBUTE_NOTHROW {
   Ulong was_edge = *leftedge;
   bool  shifted  = FALSE;
   openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
@@ -65,12 +65,11 @@ void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) {
 }
 
 /* Move up almost one screenful. */
-void do_page_up(void) {
-  int   mustmove = (editwinrows < 3) ? 1 : editwinrows - 2;
+void do_page_up(void) _GL_ATTRIBUTE_NOTHROW {
+  int   mustmove = ((editwinrows < 3) ? 1 : editwinrows - 2);
   Ulong leftedge, target_column;
-  /* If we're not in smooth scrolling mode, put the cursor at the
-   * beginning of the top line of the edit window, as Pico does. */
-  if ISSET (JUMPY_SCROLLING) {
+  /* If we're not in smooth scrolling mode, put the cursor at the beginning of the top line of the edit window, as Pico does. */
+  if (ISSET(JUMPY_SCROLLING)) {
     openfile->current    = openfile->edittop;
     leftedge             = openfile->firstcolumn;
     openfile->cursor_row = 0;
@@ -79,9 +78,7 @@ void do_page_up(void) {
   else {
     get_edge_and_target(&leftedge, &target_column);
   }
-  /* Move up the required number of lines or chunks.
-   * If we can't, we're at the top of the file,
-   * so put the cursor there and get out. */
+  /* Move up the required number of lines or chunks.  If we can't, we're at the top of the file, so put the cursor there and get out. */
   if (go_back_chunks(mustmove, &openfile->current, &leftedge) > 0) {
     to_first_line();
     return;
@@ -93,12 +90,11 @@ void do_page_up(void) {
 }
 
 /* Move down almost one screenful. */
-void do_page_down(void) {
-  int   mustmove = (editwinrows < 3) ? 1 : editwinrows - 2;
+void do_page_down(void) _GL_ATTRIBUTE_NOTHROW {
+  int   mustmove = ((editwinrows < 3) ? 1 : (editwinrows - 2));
   Ulong leftedge, target_column;
-  /* If we're not in smooth scrolling mode, put the cursor at the
-   * beginning of the top line of the edit window, as Pico does. */
-  if ISSET (JUMPY_SCROLLING) {
+  /* If we're not in smooth scrolling mode, put the cursor at the beginning of the top line of the edit window, as Pico does. */
+  if (ISSET(JUMPY_SCROLLING)) {
     openfile->current    = openfile->edittop;
     leftedge             = openfile->firstcolumn;
     openfile->cursor_row = 0;
@@ -107,8 +103,7 @@ void do_page_down(void) {
   else {
     get_edge_and_target(&leftedge, &target_column);
   }
-  /* Move down the required number of lines or chunks.  If we can't, we're
-   * at the bottom of the file, so put the cursor there and get out. */
+  /* Move down the required number of lines or chunks.  If we can't, we're at the bottom of the file, so put the cursor there and get out. */
   if (go_forward_chunks(mustmove, &openfile->current, &leftedge) > 0) {
     to_last_line();
     return;
@@ -120,7 +115,7 @@ void do_page_down(void) {
 }
 
 /* Place the cursor on the first row in the viewport. */
-void to_top_row(void) {
+void to_top_row(void) _GL_ATTRIBUTE_NOTHROW {
   Ulong leftedge, offset;
   get_edge_and_target(&leftedge, &offset);
   openfile->current = openfile->edittop;
@@ -130,7 +125,7 @@ void to_top_row(void) {
 }
 
 /* Place the cursor on the last row in the viewport, when possible. */
-void to_bottom_row(void) {
+void to_bottom_row(void) _GL_ATTRIBUTE_NOTHROW {
   Ulong leftedge, offset;
   get_edge_and_target(&leftedge, &offset);
   openfile->current = openfile->edittop;
@@ -146,7 +141,7 @@ void do_cycle(void) {
     adjust_viewport(CENTERING);
   }
   else {
-    openfile->cursor_row = (cycling_aim == 1) ? 0 : editwinrows - 1;
+    openfile->cursor_row = ((cycling_aim == 1) ? 0 : editwinrows - 1);
     adjust_viewport(STATIONARY);
   }
   cycling_aim = (cycling_aim + 1) % 3;
@@ -161,7 +156,7 @@ void do_center(void) {
 }
 
 /* Move to the first beginning of a paragraph before the current line. */
-void do_para_begin(linestruct **line) {
+void do_para_begin(linestruct **line) _GL_ATTRIBUTE_NOTHROW {
   if ((*line)->prev) {
     *line = (*line)->prev;
   }
@@ -171,7 +166,7 @@ void do_para_begin(linestruct **line) {
 }
 
 /* Move down to the last line of the first found paragraph. */
-void do_para_end(linestruct **line) {
+void do_para_end(linestruct **line) _GL_ATTRIBUTE_NOTHROW {
   while ((*line)->next && !inpar(*line)) {
     *line = (*line)->next;
   }
@@ -319,24 +314,24 @@ void to_next_block(void) {
 }
 
 /* Move to the previous word. */
-void do_prev_word(void) {
+void do_prev_word(void) _GL_ATTRIBUTE_NOTHROW {
   bool punctuation_as_letters = ISSET(WORD_BOUNDS);
   bool seen_a_word  = FALSE;
   bool step_forward = FALSE;
   /* Move backward until we pass over the start of a word. */
   while (TRUE) {
     /* If at the head of a line, move to the end of the preceding one. */
-    if (openfile->current_x == 0) {
-      if (openfile->current->prev == NULL) {
+    if (!openfile->current_x) {
+      if (!openfile->current->prev) {
         break;
       }
       openfile->current   = openfile->current->prev;
-      openfile->current_x = constexpr_strlen(openfile->current->data);
+      openfile->current_x = strlen(openfile->current->data);
       break;
     }
     /* Step back one character. */
     openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-    if (is_word_char(openfile->current->data + openfile->current_x, punctuation_as_letters)) {
+    if (is_word_char((openfile->current->data + openfile->current_x), punctuation_as_letters)) {
       seen_a_word = TRUE;
       /* If at the head of a line now, this surely is a word start. */
       if (openfile->current_x == 0) {
@@ -361,9 +356,9 @@ void do_prev_word(void) {
 /* Move to the next word.  If after_ends is 'TRUE', stop at the ends of words
  * instead of at their beginnings.  If 'after_ends' is 'TRUE', stop at the ends
  * of words instead of at their beginnings. Return 'TRUE' if we started on a word. */
-bool do_next_word(bool after_ends) {
+bool do_next_word(bool after_ends) _GL_ATTRIBUTE_NOTHROW {
   bool punct_as_letters = ISSET(WORD_BOUNDS);
-  bool started_on_word  = is_word_char(openfile->current->data + openfile->current_x, punct_as_letters);
+  bool started_on_word  = is_word_char((openfile->current->data + openfile->current_x), punct_as_letters);
   bool seen_space       = !started_on_word;
   bool seen_word        = started_on_word;
   Uint i = 0;
@@ -411,17 +406,9 @@ bool do_next_word(bool after_ends) {
       if (is_zerowidth(openfile->current->data + openfile->current_x)) {
         ;
       }
-      /* Checks for cpp syntax characters, and if TRUE then break. */
-      else if (isCppSyntaxChar(openfile->current->data[openfile->current_x])) {
-        break;
-      }
       else {
-        /* If this is not a word character, then it's a separator.
-         * Else, if we've already seen a separator, then it's a word start. */
-        if (!is_word_char(openfile->current->data + openfile->current_x, punct_as_letters)) {
-          seen_space = TRUE;
-        }
-        else if (isCppSyntaxChar(openfile->current->data[openfile->current_x])) {
+        /* If this is not a word character, then it's a separator.  Else, if we've already seen a separator, then it's a word start. */
+        if (!is_word_char((openfile->current->data + openfile->current_x), punct_as_letters)) {
           seen_space = TRUE;
         }
         else if (seen_space) {
@@ -429,7 +416,7 @@ bool do_next_word(bool after_ends) {
         }
       }
     }
-    i++;
+    ++i;
   }
   return started_on_word;
 }
@@ -504,6 +491,10 @@ void do_home(void) {
   if (moved_off_chunk) {
     openfile->placewewant = xplustabs();
   }
+  /* Return early here when using the gui. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
   /* If we changed chunk, we might be offscreen.  Otherwise, update current if the mark is on or we changed 'page'. */
   if (ISSET(SOFTWRAP) && moved_off_chunk) {
     edit_redraw(was_current, FLOWING);
@@ -550,6 +541,10 @@ void do_end(void) {
   if (moved_off_chunk) {
     openfile->placewewant = xplustabs();
   }
+  /* Return early here when using the gui. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
   /* If we changed chunk, we might be offscreen.  Otherwise, update current if the mark is on or we changed "page". */
   if (ISSET(SOFTWRAP) && moved_off_chunk) {
     edit_redraw(was_current, FLOWING);
@@ -576,7 +571,7 @@ void do_up(void) {
     edit_redraw(was_current, FLOWING);
   }
   /* <Up> should not change placewewant, so restore it. */
-  openfile->placewewant = leftedge + target_column;
+  openfile->placewewant = (leftedge + target_column);
 }
 
 /* Move the cursor to next line or chunk. */

@@ -105,7 +105,7 @@ void display_rcfile_errors(void) _NO_EXCEPT {
 #define MAXSIZE (PATH_MAX + 200)
 
 /* Store the given error message in a linked list, to be printed upon exit. */
-void jot_error(const char *msg, ...) {
+void jot_error(const char *msg, ...) _NO_EXCEPT {
   linestruct *error = make_new_node(errors_tail);
   va_list     ap;
   char        textbuf[MAXSIZE];
@@ -245,7 +245,7 @@ constexpr_map<std::string_view, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {
    {"firstfile", to_first_file},
    {"lastfile", to_last_file}}
 };
-constexpr auto retriveScFromStr(std::string_view str) {
+static constexpr auto retrive_sc_from_str(std::string_view str) _NO_EXCEPT {
   for (const auto &[key, value] : keyMap) {
     if (key == str) {
       return value;
@@ -254,17 +254,16 @@ constexpr auto retriveScFromStr(std::string_view str) {
   return (functionptrtype) NULL;
 }
 
-/* Interpret a function string given in the rc file, and return a
- * shortcut record with the corresponding function filled in. */
+/* Interpret a function string given in the rc file, and return a shortcut record with the corresponding function filled in. */
 keystruct *strtosc(const char *input) {
   keystruct *s = (keystruct *)nmalloc(sizeof(keystruct));
   s->toggle = 0;
-  const functionptrtype it = retriveScFromStr(input);
+  const functionptrtype it = retrive_sc_from_str(input);
   if (it) {
     s->func = it;
   }
   else {
-    s->func           = do_toggle;
+    s->func = do_toggle;
     const Uint toggle = retriveToggleOptionFromStr(input);
     if (toggle) {
       s->toggle = toggle;
@@ -279,7 +278,7 @@ keystruct *strtosc(const char *input) {
 
 /* Parse the next word from the string, null-terminate it, and return a pointer to the first character
  * after the null terminator.  The returned pointer will point to '\0' if we hit the end of the line. */
-char *parse_next_word(char *ptr) {
+char *parse_next_word(char *ptr) _NO_EXCEPT {
   while (!isblank((Uchar)*ptr) && *ptr) {
     ++ptr;
   }
@@ -297,7 +296,7 @@ char *parse_next_word(char *ptr) {
 /* Parse an argument, with optional quotes, after a keyword that takes one.  If the
  * next word starts with a ", we say that it ends with the last " of the line.
  * Otherwise, we interpret it as usual, so that the arguments can contain "'s too. */
-char *parse_argument(char *ptr) {
+static char *parse_argument(char *ptr) _NO_EXCEPT {
   const char *ptr_save   = ptr;
   char       *last_quote = NULL;
   if (*ptr != '"') {
@@ -320,8 +319,7 @@ char *parse_argument(char *ptr) {
   return ptr;
 }
 
-/* Advance over one regular expression in the line starting at ptr,
- * null-terminate it, and return a pointer to the succeeding text. */
+/* Advance over one regular expression in the line starting at ptr, null-terminate it, and return a pointer to the succeeding text. */
 char *parse_next_regex(char *ptr) {
   char *starting_point = ptr;
   if (*(ptr - 1) != '"') {
@@ -330,7 +328,7 @@ char *parse_next_regex(char *ptr) {
   }
   /* Continue until the end of the line, or until a double quote followed by
    * end-of-line or a blank. */
-  while (*ptr && (*ptr != '"' || (ptr[1] && !constexpr_isblank((Uchar)ptr[1])))) {
+  while (*ptr && (*ptr != '"' || (ptr[1] && !isblank((Uchar)ptr[1])))) {
     ptr++;
   }
   if (!*ptr) {
@@ -343,7 +341,7 @@ char *parse_next_regex(char *ptr) {
   }
   /* Null-terminate the regex and skip until the next non-blank. */
   *ptr++ = '\0';
-  while (constexpr_isblank((Uchar)*ptr)) {
+  while (isblank((Uchar)*ptr)) {
     ptr++;
   }
   return ptr;
@@ -604,7 +602,7 @@ void parse_binding(char *ptr, bool dobind) {
 }
 
 /* Verify that the given file exists, is not a folder nor a device. */
-bool is_good_file(char *file) {
+bool is_good_file(char *file) _NO_EXCEPT {
   struct stat rcinfo;
   /* First check that the file exists and is readable. */
   if (access(file, R_OK) != 0) {

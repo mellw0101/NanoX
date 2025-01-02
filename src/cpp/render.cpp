@@ -44,7 +44,7 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
 }
 
 /* Render the text of a given line.  Note that this function only renders the text and nothing else. */
-void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) {
+void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) _NO_EXCEPT {
   PROFILE_FUNCTION;
   if (margin > 0) {
     WIN_COLOR_ON(midwin, config->linenumber.color);
@@ -780,10 +780,6 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
   ::converted = converted;
   ::line      = line;
   ::from_col  = from_col;
-  // Ulong resultno;
-  // Ulong *result = find_char_avx(line->data, till_x, ' ', &resultno);
-  // NETLOG("Found %lu spaces in line.\n", resultno);
-  // free(result);
   if (openfile->type.is_set<C_CPP>()) {
     render_bracket();
     render_comment();
@@ -990,6 +986,26 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
       head = node->next;
       if (test_map.count(node->str)) {
         mv_add_nstr_color(midwin, row, get_start_col(line, node), node->str, node->len, test_map[node->str].color);
+      }
+      free_node(node);
+    }
+  }
+  else if (openfile->type.is_set<NANOX_CONFIG>()) {
+    line_word_t *head = line_word_list(line->data, till_x);
+    const char *comment = strstr(line->data, "//");
+    if (comment) {
+      render_part((comment - line->data), till_x, FG_COMMENT_GREEN);
+    }
+    while (head) {
+      line_word_t *node = head;
+      head = head->next;
+      if (comment && node->start > (comment - line->data)) {
+        free_node(node);
+        continue;
+      }
+      int color;
+      if (lookup_coloropt(node->str, node->len, &color)) {
+        mv_add_nstr_color(midwin, row, get_start_col(line, node), node->str, node->len, color);
       }
       free_node(node);
     }

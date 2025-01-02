@@ -1,11 +1,11 @@
 #include "../include/prototypes.h"
 
 #ifndef SEARCH_HISTORY
-#  define SEARCH_HISTORY "search_history"
+  #define SEARCH_HISTORY "search_history"
 #endif
 
 #ifndef POSITION_HISTORY
-#  define POSITION_HISTORY "filepos_history"
+  #define POSITION_HISTORY "filepos_history"
 #endif
 
 /* Whether any of the history lists has changed. */
@@ -18,23 +18,23 @@ static time_t latest_timestamp = 942927132;
 static poshiststruct *position_history = NULL;
 
 /* Initialize the lists of historical search and replace strings and the list of historical executed commands. */
-void history_init(void) {
+void history_init(void) _NO_EXCEPT {
   search_history        = make_new_node(NULL);
-  search_history->data  = copy_of("");
+  search_history->data  = STRLTR_COPY_OF("");
   searchtop             = search_history;
   searchbot             = search_history;
   replace_history       = make_new_node(NULL);
-  replace_history->data = copy_of("");
+  replace_history->data = STRLTR_COPY_OF("");
   replacetop            = replace_history;
   replacebot            = replace_history;
   execute_history       = make_new_node(NULL);
-  execute_history->data = copy_of("");
+  execute_history->data = STRLTR_COPY_OF("");
   executetop            = execute_history;
   executebot            = execute_history;
 }
 
 /* Reset the pointer into the history list that contains item to the bottom. */
-void reset_history_pointer_for(const linestruct *item) {
+void reset_history_pointer_for(const linestruct *item) _NO_EXCEPT {
   if (item == search_history) {
     search_history = searchbot;
   }
@@ -48,9 +48,8 @@ void reset_history_pointer_for(const linestruct *item) {
 
 /* Return from the history list that starts at start and ends at end the first node that
  * contains the first len characters of the given text, or NULL if there is no such node. */
-linestruct *find_in_history(const linestruct *start, const linestruct *end, const char *text, Ulong len) {
-  const linestruct *item;
-  for (item = start; item != end->prev && item; item = item->prev) {
+static linestruct *find_in_history(const linestruct *start, const linestruct *end, const char *text, Ulong len) _NO_EXCEPT {
+  CONST_FOREACH_FROMTO_PREV(item, start, end) {
     if (strncmp(item->data, text, len) == 0) {
       return (linestruct *)item;
     }
@@ -60,7 +59,7 @@ linestruct *find_in_history(const linestruct *start, const linestruct *end, cons
 
 /* Update a history list (the one in which item is the current position)
  * with a fresh string text.  That is: add text, or move it to the end. */
-void update_history(linestruct **item, const char *text, bool avoid_duplicates) {
+void update_history(linestruct **item, const char *text, bool avoid_duplicates) _NO_EXCEPT {
   linestruct **htop    = NULL;
   linestruct **hbot    = NULL;
   linestruct  *thesame = NULL;
@@ -101,8 +100,8 @@ void update_history(linestruct **item, const char *text, bool avoid_duplicates) 
   /* Store the fresh string in the last item, then create a new item. */
   (*hbot)->data = mallocstrcpy((*hbot)->data, text);
   splice_node(*hbot, make_new_node(*hbot));
-  *hbot         = (*hbot)->next;
-  (*hbot)->data = copy_of("");
+  *hbot = (*hbot)->next;
+  (*hbot)->data = STRLTR_COPY_OF("");
   /* Indicate that the history needs to be saved on exit. */
   history_changed = TRUE;
   /* Set the current position in the list to the bottom. */
@@ -113,7 +112,7 @@ void update_history(linestruct **item, const char *text, bool avoid_duplicates) 
  * searching for a string that is a tab completion of the given string,
  * looking at only its first len characters.  When found, make *here point
  * at the item and return its string; otherwise, just return the string. */
-char *get_history_completion(linestruct **here, char *string, Ulong len) {
+char *get_history_completion(linestruct **here, char *string, Ulong len) _NO_EXCEPT {
   linestruct *htop = NULL, *hbot = NULL;
   linestruct *item;
   if (*here == search_history) {

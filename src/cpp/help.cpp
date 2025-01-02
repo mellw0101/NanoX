@@ -335,7 +335,7 @@ void wrap_help_text_into_buffer(void) {
     do {
       openfile->current->next = make_new_node(openfile->current);
       openfile->current       = openfile->current->next;
-      openfile->current->data = copy_of("");
+      openfile->current->data = STRLTR_COPY_OF("");
     } while (*(++ptr) == '\n');
   }
   openfile->filebot = openfile->current;

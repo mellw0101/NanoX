@@ -4,7 +4,7 @@ inline namespace LSP_utils {
   const char *get_preprosses_type(linestruct *line, char **word) {
     const char *found = strchr(line->data, '#');
     if (found) {
-      const char *start = found + 1;
+      const char *start = (found + 1);
       ADV_TO_NEXT_WORD(start);
       if (!*start) {
         return NULL;

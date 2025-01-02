@@ -11,6 +11,7 @@
   "linenumber:barcolor="          "\n"  \
   "// Options: TRUE, FALSE, FULL" "\n"  \
   "linenumber:bar="               "\n"  \
+  "prompt:color="                 "\n"  \
   MINIBAR_OPT                     "\n"  \
   SELECTED_TEXT_OPT               "\n"
 
@@ -135,8 +136,9 @@ static void update_colorfile(void *arg) {
   config->linenumber.barcolor        = file->data.linenumber.barcolor;
   config->linenumber.verticalbar     = file->data.linenumber.verticalbar;
   config->linenumber.fullverticalbar = file->data.linenumber.fullverticalbar;
-  config->minibar_color       = file->data.minibar_color;
-  config->selectedtext_color  = file->data.selectedtext_color;
+  config->prompt.color       = file->data.prompt.color;
+  config->minibar_color      = file->data.minibar_color;
+  config->selectedtext_color = file->data.selectedtext_color;
   refresh_needed = TRUE;
 }
 
@@ -262,6 +264,7 @@ void load_colorfile(void) {
   /* Get color opts, if any.  Otherwise, fall back to the default color. */
   configfile->data.linenumber.color    = (get_color_option(data, "linenumber:color=",    &color) ? color : LINE_NUMBER);
   configfile->data.linenumber.barcolor = (get_color_option(data, "linenumber:barcolor=", &color) ? color : LINE_NUMBER);
+  configfile->data.prompt.color        = (get_color_option(data, "prompt:color=",        &color) ? color : PROMPT_BAR);
   configfile->data.minibar_color       = (get_color_option(data, MINIBAR_OPT,            &color) ? color : MINI_INFOBAR);
   configfile->data.selectedtext_color  = (get_color_option(data, SELECTED_TEXT_OPT,      &color) ? color : SELECTED_TEXT);
   get_linenumber_bar_option(data);
@@ -290,7 +293,7 @@ void init_cfg(void) {
   colorfile_listener->start_listening();
 }
 
-void cleanup_cfg(void) {
+void cleanup_cfg(void) _NO_EXCEPT {
   free(configdir);
   free(configfile->filepath);
   free(configfile);
