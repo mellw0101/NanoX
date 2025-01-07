@@ -65,7 +65,7 @@ void read_the_list(const char *path, DIR *dir) {
 }
 
 /* Reselect the given file or directory name, if it still exists. */
-static void reselect(const char *const name) _NO_EXCEPT {
+static void reselect(const char *const name) _NOTHROW {
   Ulong looking_at = 0;
   while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0) {
     ++looking_at;
@@ -298,15 +298,15 @@ void search_filename(bool forwards) {
     char *disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
     thedefault = (char *)nmalloc(strlen(disp) + 7);
     /* We use (COLS / 3) here because we need to see more on the line. */
-    sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > (COLS / 3)) ? "..." : "");
+    sprintf(thedefault, " [%s%s]", disp, ((breadth(last_search) > (COLS / 3)) ? "..." : ""));
     free(disp);
   }
   else {
-    thedefault = copy_of("");
+    thedefault = STRLTR_COPY_OF("");
   }
   /* Now ask what to search for. */
   response = do_prompt(MWHEREISFILE, "", &search_history, browser_refresh, "%s%s%s",
-    _("Search"), /* TRANSLATORS: A modifier of the Search prompt. */ !forwards ? _(" [Backwards]") : "", thedefault);
+    _("Search"), /* TRANSLATORS: A modifier of the Search prompt. */ (!forwards ? _(" [Backwards]") : "", thedefault));
   free(thedefault);
   /* If the user cancelled, or typed <Enter> on a blank answer and nothing was searched for yet during this session, get out. */
   if (response == -1 || (response == -2 && !*last_search)) {
@@ -339,18 +339,18 @@ void research_filename(bool forwards) {
 }
 
 /* Select the first file in the list -- called by ^W^Y. */
-void to_first_file(void) _NO_EXCEPT {
+void to_first_file(void) _NOTHROW {
   selected = 0;
 }
 
 /* Select the last file in the list -- called by ^W^V. */
-void to_last_file(void) _NO_EXCEPT {
+void to_last_file(void) _NOTHROW {
   selected = (list_length - 1);
 }
 
 // Strip one element from the end of path, and return the stripped path.
 // The returned string is dynamically allocated, and should be freed.
-static char *strip_last_component(const char *path) _NO_EXCEPT {
+static char *strip_last_component(const char *path) _NOTHROW {
   char *copy = copy_of(path);
   char *last_slash = strrchr(copy, '/');
   if (last_slash) {

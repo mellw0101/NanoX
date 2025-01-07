@@ -428,8 +428,7 @@ void to_prev_word(void) {
   edit_redraw(was_current, FLOWING);
 }
 
-/* Move to the next word in the file. If the AFTER_ENDS flag is set,
- * stop at word ends instead of beginnings.  Update the screen afterwards. */
+/* Move to the next word in the file. If the AFTER_ENDS flag is set, stop at word ends instead of beginnings.  Update the screen afterwards. */
 void to_next_word(void) {
   linestruct *was_current = openfile->current;
   do_next_word(ISSET(AFTER_ENDS));
@@ -518,11 +517,10 @@ void do_end(void) {
     last_chunk = FALSE;
     leftedge   = leftedge_for(was_column, openfile->current);
     rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk);
-    /* If we're on the last chunk, we're already at the end of the line.  Otherwise,
-     * we're one column past the end of the line.  Shifting backwards one column might
-     * put us in the middle of a multi-column character, but actual_x() will fix that. */
+    /* If we're on the last chunk, we're already at the end of the line.  Otherwise, we're one column past the end of the line.
+     * Shifting backwards one column might put us in the middle of a multi-column character, but actual_x() will fix that. */
     if (!last_chunk) {
-      rightedge--;
+      --rightedge;
     }
     right_x = actual_x(openfile->current->data, rightedge);
     /* If already at the right edge of the screen, move fully to the end of the line.  Otherwise, move to the right edge. */

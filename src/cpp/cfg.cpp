@@ -293,7 +293,7 @@ void init_cfg(void) {
   colorfile_listener->start_listening();
 }
 
-void cleanup_cfg(void) _NO_EXCEPT {
+void cleanup_cfg(void) _NOTHROW {
   free(configdir);
   free(configfile->filepath);
   free(configfile);

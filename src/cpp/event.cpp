@@ -3,24 +3,24 @@
 callback_queue_t *callback_queue = NULL;
 
 /* Return`s 'TRUE' when called from the main thread, otherwise return`s 'FALSE'. */
-bool is_main_thread(void) _NO_EXCEPT {
+bool is_main_thread(void) _NOTHROW {
   return (pthread_equal(main_thread->thread, pthread_self()));
 }
 
 /* Helper function to perform actions protected by the 'callback_queue' mutex. */
 template <typename Callback>
-static inline void under_callback_mutex(Callback &&callback) _NO_EXCEPT {
+static inline void under_callback_mutex(Callback &&callback) _NOTHROW {
   pthread_mutex_guard_t guard(&callback_queue->mutex);
   callback();
 }
 
 /* Helper func to lock the callback queue`s mutex. */
-static inline void lock_callback_mutex(bool lock) _NO_EXCEPT {
+static inline void lock_callback_mutex(bool lock) _NOTHROW {
   lock_pthread_mutex(&callback_queue->mutex, lock);
 }
 
 /* Init the 'callback_queue'. */
-static void init_callback_queue(void) _NO_EXCEPT {
+static void init_callback_queue(void) _NOTHROW {
   callback_queue = (callback_queue_t *)nmalloc(sizeof(callback_queue_t));
   callback_queue->head = NULL;
   callback_queue->tail = NULL;
@@ -28,13 +28,13 @@ static void init_callback_queue(void) _NO_EXCEPT {
 }
 
 /* This is the main init function for the event handler.  This is used to init all subfunctions of the event handler. */
-void init_event_handler(void) _NO_EXCEPT {
+void init_event_handler(void) _NOTHROW {
   init_callback_queue();
   init_main_thread();
 }
 
 /* Place a callback at the end of the queue. */
-void enqueue_callback(callback_functionptr_t callback, void *result) _NO_EXCEPT {
+void enqueue_callback(callback_functionptr_t callback, void *result) _NOTHROW {
   callback_node_t *node = (callback_node_t *)nmalloc(sizeof(callback_node_t));
   node->callback = callback;
   node->result   = result;
@@ -49,7 +49,7 @@ void enqueue_callback(callback_functionptr_t callback, void *result) _NO_EXCEPT 
 }
 
 /* This function is used by the main thread to perform all callbacks in the queue. */
-void prosses_callback_queue(void) _NO_EXCEPT {
+void prosses_callback_queue(void) _NOTHROW {
   /* Lock the callback mutex while we retrieve a callback. */
   lock_callback_mutex(TRUE);
   /* Here we fetch all callbacks until there are no more left. */
@@ -73,13 +73,13 @@ void prosses_callback_queue(void) _NO_EXCEPT {
 }
 
 /* Clean up and destory the callback queue. */
-static void cleanup_callback_queue(void) _NO_EXCEPT {
+static void cleanup_callback_queue(void) _NOTHROW {
   pthread_mutex_destroy(&callback_queue->mutex);
   free(callback_queue);
 }
 
 /* This is the main cleanup function for the event handler, this is used to clean up all subfunctions
  * of the event handler, this way we can ensure everything gets cleaned in the correct order. */
-void cleanup_event_handler(void) _NO_EXCEPT {
+void cleanup_event_handler(void) _NOTHROW {
   cleanup_callback_queue();
 }

@@ -1,11 +1,11 @@
 #include "../include/prototypes.h"
 
-void send_SIGUSR1_to_main_thread(void) _NO_EXCEPT {
+void send_SIGUSR1_to_main_thread(void) _NOTHROW {
   pthread_kill(main_thread->thread, SIGUSR1);
 }
 
 /* This function is called by the main thread when it recieves a signal. */
-static void handle_main_thread_signal(int sig, siginfo_t *si, void *context) _NO_EXCEPT {
+static void handle_main_thread_signal(int sig, siginfo_t *si, void *context) _NOTHROW {
   if (sig >= SIGRTMIN && sig <= SIGRTMAX) {
     signal_payload_t *payload = (signal_payload_t *)si->si_value.sival_ptr;
     if (payload && payload->func) {
@@ -16,7 +16,7 @@ static void handle_main_thread_signal(int sig, siginfo_t *si, void *context) _NO
 }
 
 /* Send a function and arg to the main thread for direct handeling. */
-void send_signal_to_main_thread(void (*func)(void *), void *arg) _NO_EXCEPT {
+void send_signal_to_main_thread(void (*func)(void *), void *arg) _NOTHROW {
   signal_payload_t *payload = (signal_payload_t *)nmalloc(sizeof(signal_payload_t));
   payload->func = func;
   payload->arg  = arg;
@@ -44,7 +44,7 @@ void send_signal_to_main_thread(void (*func)(void *), void *arg) _NO_EXCEPT {
 }
 
 /* Init the main thread, then setup SIGRTMIN. */
-void init_main_thread(void) _NO_EXCEPT {
+void init_main_thread(void) _NOTHROW {
   if (main_thread) {
     logE("main_thread should only be allocated once.");
     return;
@@ -64,12 +64,12 @@ void init_main_thread(void) _NO_EXCEPT {
 }
 
 /* Free the ptr to the main thread. */
-void cleanup_main_thread(void) _NO_EXCEPT {
+void cleanup_main_thread(void) _NOTHROW {
   free(main_thread);
 }
 
 /* Setup 'SIGUSR1' and 'SIGUSR2' for subtread. to be used for pause then resume. */
-void setup_signal_handler_on_sub_thread(void (*handler)(int)) _NO_EXCEPT {
+void setup_signal_handler_on_sub_thread(void (*handler)(int)) _NOTHROW {
   struct sigaction sig_act;
   sig_act.sa_handler = handler;
   sigemptyset(&sig_act.sa_mask);
@@ -99,7 +99,7 @@ void setup_signal_handler_on_sub_thread(void (*handler)(int)) _NO_EXCEPT {
   block_pthread_sig(SIGUSR1, FALSE);
 }
 
-void block_pthread_sig(int sig, bool block) _NO_EXCEPT {
+void block_pthread_sig(int sig, bool block) _NOTHROW {
   sigset_t mask;
   /* Apply mask to calling thread. */
   sigemptyset(&mask);

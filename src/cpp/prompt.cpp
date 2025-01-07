@@ -7,17 +7,17 @@ static char *prompt = NULL;
 static Ulong typing_x = HIGHEST_POSITIVE;
 
 /* Move to the beginning of the answer. */
-void do_statusbar_home(void) _GL_ATTRIBUTE_NOTHROW {
+static void do_statusbar_home(void) _NOTHROW {
   typing_x = 0;
 }
 
 /* Move to the end of the answer. */
-void do_statusbar_end(void) _GL_ATTRIBUTE_NOTHROW {
+static void do_statusbar_end(void) _NOTHROW {
   typing_x = strlen(answer);
 }
 
 /* Move to the previous word in the answer. */
-void do_statusbar_prev_word(void) _GL_ATTRIBUTE_NOTHROW {
+static void do_statusbar_prev_word(void) _NOTHROW {
   bool seen_a_word = FALSE, step_forward = FALSE;
   /* Move backward until we pass over the start of a word. */
   while (typing_x) {
@@ -41,7 +41,7 @@ void do_statusbar_prev_word(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Move to the next word in the answer. */
-void do_statusbar_next_word(void) _GL_ATTRIBUTE_NOTHROW {
+static void do_statusbar_next_word(void) _NOTHROW {
   bool seen_space = !is_word_char(answer + typing_x, FALSE);
   bool seen_word  = !seen_space;
   /* Move forward until we reach either the end or the start of a word, depending on whether the AFTER_ENDS flag is set or not. */
@@ -77,7 +77,7 @@ void do_statusbar_next_word(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Move left one character in the answer. */
-void do_statusbar_left(void) _GL_ATTRIBUTE_NOTHROW {
+static void do_statusbar_left(void) _NOTHROW {
   if (typing_x > 0) {
     typing_x = step_left(answer, typing_x);
     while (typing_x > 0 && is_zerowidth(answer + typing_x)) {
@@ -87,7 +87,7 @@ void do_statusbar_left(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Move right one character in the answer. */
-void do_statusbar_right(void) _GL_ATTRIBUTE_NOTHROW {
+static void do_statusbar_right(void) _NOTHROW {
   if (answer[typing_x]) {
     typing_x = step_right(answer, typing_x);
     while (answer[typing_x] && is_zerowidth(answer + typing_x)) {
@@ -97,7 +97,7 @@ void do_statusbar_right(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Backspace over one character in the answer. */
-void do_statusbar_backspace(void) _GL_ATTRIBUTE_NOTHROW {
+static void do_statusbar_backspace(void) _NOTHROW {
   if (typing_x > 0) {
     Ulong was_x = typing_x;
     typing_x    = step_left(answer, typing_x);
@@ -106,7 +106,7 @@ void do_statusbar_backspace(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Delete one character in the answer. */
-void do_statusbar_delete(void) _GL_ATTRIBUTE_NOTHROW {
+static void do_statusbar_delete(void) _NOTHROW {
   if (answer[typing_x]) {
     int charlen = char_length(answer + typing_x);
     memmove((answer + typing_x), (answer + typing_x + charlen), (strlen(answer) - typing_x - charlen + 1));
@@ -117,7 +117,7 @@ void do_statusbar_delete(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Zap the part of the answer after the cursor, or the whole answer. */
-void lop_the_answer(void) _GL_ATTRIBUTE_NOTHROW {
+static void lop_the_answer(void) _NOTHROW {
   if (!answer[typing_x]) {
     typing_x = 0;
   }
@@ -125,7 +125,7 @@ void lop_the_answer(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Copy the current answer (if any) into the cutbuffer. */
-void copy_the_answer(void) _GL_ATTRIBUTE_NOTHROW {
+static void copy_the_answer(void) _NOTHROW {
   if (*answer) {
     free_lines(cutbuffer);
     cutbuffer       = make_new_node(NULL);
@@ -135,7 +135,7 @@ void copy_the_answer(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Paste the first line of the cutbuffer into the current answer. */
-void paste_into_answer(void) {
+static void paste_into_answer(void) _NOTHROW {
   Ulong pastelen = strlen(cutbuffer->data);
   answer = arealloc(answer, (strlen(answer) + pastelen + 1));
   memmove((answer + typing_x + pastelen), (answer + typing_x), (strlen(answer) - typing_x + 1));
@@ -144,7 +144,7 @@ void paste_into_answer(void) {
 }
 
 /* Handle a mouse click on the status-bar prompt or the shortcut list. */
-int do_statusbar_mouse(void) {
+static int do_statusbar_mouse(void) {
   int click_row = 0;
   int click_col = 0;
   int retval    = get_mouseinput(&click_row, &click_col, TRUE);
@@ -160,7 +160,7 @@ int do_statusbar_mouse(void) {
 }
 
 /* Insert the given short burst of bytes into the answer. */
-void inject_into_answer(char *burst, Ulong count) {
+static void inject_into_answer(char *burst, Ulong count) {
   /* First encode any embedded NUL byte as 0x0A. */
   for (Ulong index = 0; index < count; index++) {
     if (!burst[index]) {
@@ -174,7 +174,7 @@ void inject_into_answer(char *burst, Ulong count) {
 }
 
 /* Get a verbatim keystroke and insert it into the answer. */
-void do_statusbar_verbatim_input(void) {
+static void do_statusbar_verbatim_input(void) {
   Ulong count = 1;
   char *bytes;
   bytes = get_verbatim_kbinput(footwin, &count);
@@ -188,23 +188,21 @@ void do_statusbar_verbatim_input(void) {
 }
 
 /* Add the given input to the input buffer when it's a normal byte, and inject the gathered bytes into the answer when ready. */
-void absorb_character(int input, functionptrtype function) {
+static void absorb_character(int input, functionptrtype function) {
   /* The input buffer. */
   static char *puddle = NULL;
   /* The size of the input buffer; gets doubled whenever needed. */
   static Ulong capacity = 8;
   /* The length of the input buffer. */
   static Ulong depth = 0;
-  /* If not a command, discard anything that is not a normal character byte.
-   * Apart from that, only accept input when not in restricted mode, or when
-   * not at the "Write File" prompt, or when there is no filename yet. */
+  /* If not a command, discard anything that is not a normal character byte.  Apart from that, only accept input
+   * when not in restricted mode, or when not at the "Write File" prompt, or when there is no filename yet. */
   if (!function) {
     if (input < 0x20 || input > 0xFF || meta_key) {
       beep();
     }
     else if (!ISSET(RESTRICTED) || currmenu != MWRITEFILE || !openfile->filename[0]) {
-      /* When the input buffer (plus room for terminating NUL) is full,
-       * extend it; otherwise, if it does not exist yet, create it. */
+      /* When the input buffer (plus room for terminating NUL) is full, extend it; otherwise, if it does not exist yet, create it. */
       if ((depth + 1) == capacity) {
         capacity = (2 * capacity);
         puddle   = arealloc(puddle, capacity);
@@ -215,8 +213,7 @@ void absorb_character(int input, functionptrtype function) {
       puddle[depth++] = (char)input;
     }
   }
-  /* If there are gathered bytes and we have a command or no other key codes
-   * are waiting, it's time to insert these bytes into the answer. */
+  /* If there are gathered bytes and we have a command or no other key codes are waiting, it's time to insert these bytes into the answer. */
   if (depth > 0 && (function || !waiting_keycodes())) {
     puddle[depth] = '\0';
     inject_into_answer(puddle, depth);
@@ -225,7 +222,7 @@ void absorb_character(int input, functionptrtype function) {
 }
 
 /* Handle any editing shortcut, and return TRUE when handled. */
-static bool handle_editing(functionptrtype function) _GL_ATTRIBUTE_NOTHROW {
+static bool handle_editing(functionptrtype function) _NOTHROW {
   if (function == do_left) {
     do_statusbar_left();
   }
@@ -278,7 +275,7 @@ static bool handle_editing(functionptrtype function) _GL_ATTRIBUTE_NOTHROW {
 
 /* Return the column number of the first character of the answer that is displayed in the status bar when the cursor is at the given
  * column, with the available room for the answer starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
-Ulong get_statusbar_page_start(Ulong base, Ulong column) _GL_ATTRIBUTE_NOTHROW {
+Ulong get_statusbar_page_start(Ulong base, Ulong column) _NOTHROW {
   if (column == base || column < (COLS - 1)) {
     return 0;
   }
@@ -291,12 +288,12 @@ Ulong get_statusbar_page_start(Ulong base, Ulong column) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Reinitialize the cursor position in the answer. */
-void put_cursor_at_end_of_answer(void) _GL_ATTRIBUTE_NOTHROW {
+void put_cursor_at_end_of_answer(void) _NOTHROW {
   typing_x = HIGHEST_POSITIVE;
 }
 
 /* Redraw the prompt bar and place the cursor at the right spot. */
-void draw_the_promptbar(void) _GL_ATTRIBUTE_NOTHROW {
+static void draw_the_promptbar(void) _NOTHROW {
   Ulong base   = (breadth(prompt) + 2);
   Ulong column = (base + wideness(answer, typing_x));
   Ulong the_page, end_page;
@@ -329,7 +326,7 @@ void draw_the_promptbar(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Remove or add the pipe character at the answer's head. */
-void add_or_remove_pipe_symbol_from_answer(void) _GL_ATTRIBUTE_NOTHROW {
+void add_or_remove_pipe_symbol_from_answer(void) _NOTHROW {
   if (answer[0] == '|') {
     memmove(answer, (answer + 1), strlen(answer));
     if (typing_x > 0) {
@@ -345,7 +342,7 @@ void add_or_remove_pipe_symbol_from_answer(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Get a string of input at the status-bar prompt. */
-functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **history_list, functionptrtype refresh_func) {
+static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **history_list, functionptrtype refresh_func) {
   /* Whatever the answer was before the user foraged into history. */
   char *stored_string = NULL;
   /* Whether the previous keystroke was an attempt at tab completion. */
@@ -492,7 +489,7 @@ redo_theprompt:
   vsnprintf(prompt, (COLS * MAXCHARLEN), msg, ap);
   va_end(ap);
   /* Reserve five columns for colon plus angles plus answer, ":<aa>". */
-  prompt[actual_x(prompt, (COLS < 5) ? 0 : COLS - 5)] = '\0';
+  prompt[actual_x(prompt, ((COLS < 5) ? 0 : (COLS - 5)))] = '\0';
   lastmessage = VACUUM;
   function    = acquire_an_answer(&retval, &listed, history_list, refresh_func);
   free(prompt);
@@ -529,11 +526,11 @@ int ask_user(bool withall, const char *question) {
   int width  = 16;
   /* TRANSLATORS : For the next three strings, specify the starting letters of the translations for "Yes"/"No"/"All".
    *               The first letter of each of these strings MUST be a single-byte letter; others may be multi-byte. */
-  const char      *yesstr = _("Yy");
-  const char      *nostr  = _("Nn");
-  const char      *allstr = _("Aa");
+  const char *yesstr = _("Yy");
+  const char *nostr  = _("Nn");
+  const char *allstr = _("Aa");
   const keystruct *shortcut;
-  functionptrtype  function;
+  functionptrtype function;
   while (choice == UNDECIDED) {
     char letter[MAXCHARLEN + 1];
     int  index = 0;

@@ -46,7 +46,7 @@ void inject_in_line(linestruct *line, const char *str, Ulong at) {
 }
 
 /* Move a single line up or down. */
-void move_line(linestruct *line, bool up) {
+void move_line(linestruct *line, bool up) _NOTHROW {
   char *tmp_data = NULL;
   if (up && line->prev) {
     tmp_data         = line->prev->data;
@@ -58,15 +58,12 @@ void move_line(linestruct *line, bool up) {
     line->next->data = line->data;
     line->data       = tmp_data;
   }
-  else {
-    return;
-  }
   set_modified();
   refresh_needed = TRUE;
 }
 
 /* Function to move line/lines up shortcut. */
-void move_lines_up(void) {
+void move_lines_up(void) _NOTHROW {
   /* Multi line move. */
   if (openfile->mark && openfile->mark != openfile->current) {
     bool mark_top = mark_is_before_cursor();
@@ -101,7 +98,7 @@ void move_lines_up(void) {
 }
 
 /* Function to move line/lines down shortcut. */
-void move_lines_down(void) {
+void move_lines_down(void) _NOTHROW {
   /* Multi line move. */
   if (openfile->mark && openfile->mark != openfile->current) {
     bool mark_top = mark_is_before_cursor();

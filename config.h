@@ -2232,8 +2232,7 @@
 #  endif
 #endif
 
-/* _GL_ATTRIBUTE_NOINLINE tells that the compiler should not inline the
-   function.  */
+/* _GL_ATTRIBUTE_NOINLINE tells that the compiler should not inline the function. */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_NOINLINE
 #  if _GL_HAS_ATTRIBUTE(noinline)
@@ -2243,10 +2242,8 @@
 #  endif
 #endif
 
-/* _GL_ATTRIBUTE_NONNULL ((N1, N2,...)) declares that the arguments N1, N2,...
-   must not be NULL.
-   _GL_ATTRIBUTE_NONNULL () declares that all pointer arguments must not be
-   null.  */
+/* _GL_ATTRIBUTE_NONNULL ((N1, N2,...)) declares that the arguments N1, N2,... must not be NULL.
+   _GL_ATTRIBUTE_NONNULL () declares that all pointer arguments must not be null. */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_NONNULL
 #  if _GL_HAS_ATTRIBUTE(nonnull)
@@ -2256,10 +2253,8 @@
 #  endif
 #endif
 
-/* _GL_ATTRIBUTE_NONSTRING declares that the contents of a character array is
-   not meant to be NUL-terminated.  */
-/* Applies to: struct/union members and variables that are arrays of element
-   type '[[un]signed] char'.  */
+/* _GL_ATTRIBUTE_NONSTRING declares that the contents of a character array is not meant to be NUL-terminated. */
+/* Applies to: struct/union members and variables that are arrays of element type '[[un]signed] char'. */
 #ifndef _GL_ATTRIBUTE_NONSTRING
 #  if _GL_HAS_ATTRIBUTE(nonstring)
 #    define _GL_ATTRIBUTE_NONSTRING __attribute__((__nonstring__))
@@ -2295,12 +2290,9 @@
 
 /* _GL_ATTRIBUTE_PACKED declares:
    For struct members: The member has the smallest possible alignment.
-   For struct, union, class: All members have the smallest possible alignment,
-   minimizing the memory required.  */
-/* Applies to: struct members, struct, union,
-   in C++ also: class.  */
-/* Oracle Studio 12.6 miscompiles code with __attribute__ ((__packed__)) despite
-   __has_attribute OK.  */
+   For struct, union, class: All members have the smallest possible alignment, minimizing the memory required. */
+/* Applies to: struct members, struct, union, in C++ also: class. */
+/* Oracle Studio 12.6 miscompiles code with __attribute__ ((__packed__)) despite __has_attribute OK. */
 #ifndef _GL_ATTRIBUTE_PACKED
 #  if _GL_HAS_ATTRIBUTE(packed) && !defined __SUNPRO_C
 #    define _GL_ATTRIBUTE_PACKED __attribute__((__packed__))
@@ -2310,10 +2302,8 @@
 #endif
 
 /* _GL_ATTRIBUTE_PURE declares that It is OK for a compiler to omit duplicate
-   calls to the function with the same arguments if observable state is not
-   changed between calls.
-   This attribute is safe for a function that does not affect
-   observable state, and always returns exactly once.
+   calls to the function with the same arguments if observable state is not changed between calls.
+   This attribute is safe for a function that does not affect observable state, and always returns exactly once.
    (This attribute is looser than _GL_ATTRIBUTE_CONST.)  */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_PURE
@@ -2324,7 +2314,7 @@
 #  endif
 #endif
 
-/* _GL_ATTRIBUTE_RETURNS_NONNULL declares that the function's return value is a non-NULL pointer.  */
+/* _GL_ATTRIBUTE_RETURNS_NONNULL declares that the function's return value is a non-NULL pointer. */
 /* Applies to: functions.  */
 #ifndef _GL_ATTRIBUTE_RETURNS_NONNULL
 #  if _GL_HAS_ATTRIBUTE(returns_nonnull)
@@ -2542,6 +2532,56 @@
 #  if defined __sun && (__STDC_VERSION__ - 0 >= 201112L) && !defined __cplusplus
 #    undef /**/ static_assert
 #    define static_assert _Static_assert
+#  endif
+#endif
+
+#ifndef _RETURNS_NONNULL
+#  if _GL_HAS_ATTRIBUTE(returns_nonnull)
+#     define _RETURNS_NONNULL __attribute__((__returns_nonnull__))
+#  else
+#     define _RETURNS_NONNULL
+#  endif
+#endif
+
+#ifndef _PACKED
+#  if _GL_HAS_ATTRIBUTE(packed) && !defined __SUNPRO_C
+#     define _PACKED __attribute__((__packed__)) 
+#  else
+#     define _PACKED
+#  endif
+#endif
+
+#ifndef _NOTHROW
+#  if defined __cplusplus
+#     if _GL_GNUC_PREREQ(2, 8) || __clang_major >= 4
+#        if __cplusplus >= 201103L
+#           define _NOTHROW noexcept(true)
+#        else
+#           define _NOTHROW throw()
+#        endif
+#     else
+#        if _GL_HAS_ATTRIBUTE(nothrow)
+#           define _NOTHROW __attribute__((__nothrow__))
+#        else
+#           define _NOTHROW
+#        endif
+#     endif
+#  endif
+#endif
+
+#ifndef _NONNULL
+#  if _GL_HAS_ATTRIBUTE(nonnull)
+#     define _NONNULL(...) __attribute__((__nonnull__(__VA_ARGS__)))
+#  else
+#     define _NONNULL
+#  endif
+#endif
+
+#ifndef _NODISCARD
+#  if _GL_HAS_ATTRIBUTE(warn_unused_result)
+#     define _NODISCARD __attribute__((__warn_unused_result__))
+#  else
+#     define _NODISCARD
 #  endif
 #endif
 

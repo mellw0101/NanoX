@@ -1,7 +1,11 @@
 #include "../../include/prototypes.h"
 
+#ifdef HAVE_GLFW
+
+#define TOP_BAR_COLOR vec4(vec3(0.5f), 1.0f)
+
 /* If the line is part of the marked region, then draw a rect that reprecents the marked region. */
-void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, markup_t *markup) {
+void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *font) {
   /* If the line is at least partially selected, paint the marked part. */
   if (line_in_marked_region(line)) {
     /* The top and bot line where the marked region begins and ends. */
@@ -38,31 +42,31 @@ void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, m
       }
       /* Otherwise, calculate the end index of the text on screen. */
       if (paintlen == -1) {
-        paintlen = (strlen(converted) - start_col);
+        paintlen = strlen(thetext);
       }
       if (ISSET(LINE_NUMBERS)) {
-        Ulong offset = gui_calculate_lineno_offset(line, markup);
-        rect.x = (gui_calculate_string_offset(line->data, " ", start_col, markup) + offset);
+        Ulong offset = get_line_number_pixel_offset(line, font);
+        rect.x = (string_pixel_offset(line->data, " ", start_col, font) + offset);
         /* Calculate the number of pixels for the rect that will represent the painted section. */
         if (converted == thetext) {
-          rect.width = gui_calculate_string_offset(thetext, " ", paintlen, markup);
+          rect.width = string_pixel_offset(thetext, " ", paintlen, font);
         }
         else {
-          rect.width = gui_calculate_string_offset(thetext, &converted[(thetext - converted) - 1], paintlen, markup);
+          rect.width = string_pixel_offset(thetext, &converted[(thetext - converted) - 1], paintlen, font);
         }
       }
       else {
-        rect.x = gui_calculate_string_offset(line->data, NULL, start_col, markup);
+        rect.x = string_pixel_offset(line->data, NULL, start_col, font);
         /* Calculate the number of pixels for the rect that will represent the painted section. */
         if (converted == thetext) {
-          rect.width = gui_calculate_string_offset(thetext, NULL, paintlen, markup);
+          rect.width = string_pixel_offset(thetext, NULL, paintlen, font);
         }
         else {
-          rect.width = gui_calculate_string_offset(thetext, &converted[(thetext - converted) - 1], paintlen, markup);
+          rect.width = string_pixel_offset(thetext, &converted[(thetext - converted) - 1], paintlen, font);
         }
       }
-      rect.y = (calculate_line_y_offset(line, markup) - markup->font->descender);
-      rect.height = FONT_HEIGHT(markup->font);
+      rect.y = line_y_pixel_offset(line, font);
+      rect.height = FONT_HEIGHT(font);
       draw_rect(rect.xy(), rect.zw(), vec4(0.0f, 0.0f, 0.8f, 0.25f));
     }
   }
@@ -70,14 +74,18 @@ void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, m
 
 /* Draw rect to the window. */
 void draw_rect(vec2 pos, vec2 size, vec4 color) {
-  glUseProgram(rectshader);
-  {
+  glUseProgram(rectshader); {
     /* Pass the color to the rect shader color uniform. */
     glUniform4fv(glGetUniformLocation(rectshader, "rectcolor"), 1, &color[0]);
     glUniform2fv(glGetUniformLocation(rectshader, "elempos"), 1, &pos[0]);
     glUniform2fv(glGetUniformLocation(rectshader, "elemsize"), 1, &size[0]);
     glDrawArrays(GL_TRIANGLES, 0, 6);
   }
+}
+
+/* Draw a ui-element`s rect. */
+void draw_uielement_rect(uielementstruct *element) {
+  draw_rect(element->pos, element->size, element->color);
 }
 
 /* Resize an element as well as correctly adjust it in the gridmap. */
@@ -87,87 +95,135 @@ void resize_element(uielementstruct *e, vec2 size) {
   gridmap.set(e);
 }
 
-/* Resize an element as well as correctly adjust it in the gridmap. */
+/* Move an element as well as correctly adjust it in the gridmap. */
 void move_element(uielementstruct *e, vec2 pos) {
   gridmap.remove(e);
   e->pos = pos;
   gridmap.set(e);
 }
 
+/* Move and resize an element and correctly set it in the gridmap. */
+void move_resize_element(uielementstruct *e, vec2 pos, vec2 size) {
+  gridmap.remove(e);
+  e->pos  = pos;
+  e->size = size;
+  gridmap.set(e);
+}
+
+static void render_vertex_buffer(Uint shader, vertex_buffer_t *buffer) {
+  glEnable(GL_TEXTURE_2D);
+  glUseProgram(shader); {
+    glUniform1i(glGetUniformLocation(shader, "texture"), 0);
+    vertex_buffer_render(buffer, GL_TRIANGLES);
+  }
+}
+
 /* Render the editelement. */
 void draw_editelement(void) {
   int row = 0;
+  Ulong from_col;
   char *converted = NULL;
-  char *cur_char;
   char *prev_char = NULL;
   char linenobuffer[margin + 1];
   linestruct *line = openfile->edittop;
   /* Draw the edit element first. */
-  draw_rect(editelement->pos, editelement->size, vec4(0.2f, 0.2f, 0.2f, 1.0f));
+  draw_uielement_rect(editelement);
   /* Then draw the gutter. */
-  draw_rect(gutterelement->pos, gutterelement->size, vec4(0.2f, 0.2f, 0.2f, 1.0f));
-  /* Now handle the text. */
-  pen.y = 0;
-  vertex_buffer_clear(vertbuf);
-  while (line && ++row <= editwinrows) {
-    /* Reset the pen pos. */
-    pen.x = 0;
-    pen.y += (font[GUI_NORMAL_TEXT].font->height - font[GUI_NORMAL_TEXT].font->linegap);
-    /* If line numbers are turned on, draw them. */
-    if (ISSET(LINE_NUMBERS)) {
-      sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
-      for (Ulong i = 0; i < margin; ++i) {
-        cur_char = &linenobuffer[i];
-        add_glyph(cur_char, prev_char, vertbuf, &font[GUI_NORMAL_TEXT], &pen);
-        prev_char = cur_char;
+  draw_uielement_rect(gutterelement);
+  if (refresh_needed) {
+    /* Now handle the text. */
+    pen.y = editelement->pos.y;
+    vertex_buffer_clear(vertbuf);
+    while (line && ++row <= editwinrows) {
+      /* Reset the pen pos. */
+      pen.x = 0;
+      pen.y += FONT_HEIGHT(markup.font);
+      /* If line numbers are turned on, draw them. */
+      if (ISSET(LINE_NUMBERS)) {
+        sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
+        vertex_buffer_add_string(vertbuf, linenobuffer, margin, prev_char, markup.font, vec4(1.0f), &pen);
+        prev_char = (char *)" ";
       }
-    }
-    /* If there is atleast one char in the line, draw it. */
-    if (*line->data) {
-      Ulong from_col = get_page_start(wideness(line->data, ((line == openfile->current) ? openfile->current_x : 0)));
-      converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
-      for (Ulong i = 0; converted[i]; ++i) {
-        cur_char = (converted + i);
-        add_glyph(cur_char, prev_char, vertbuf, &font[GUI_NORMAL_TEXT], &pen);
-        prev_char = cur_char;
+      /* If there is atleast one char in the line, draw it. */
+      if (*line->data) {
+        from_col = get_page_start(wideness(line->data, ((line == openfile->current) ? openfile->current_x : 0)));
+        converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
+        vertex_buffer_add_string(vertbuf, converted, strlen(converted), prev_char, markup.font, vec4(1.0f), &pen);
+        draw_marked_part(line, converted, from_col, markup.font);
+        free(converted);
       }
-      draw_marked_part(line, converted, from_col, &font[GUI_NORMAL_TEXT]);
-      free(converted);
+      line = line->next;
     }
-    line = line->next;
+    upload_texture_atlas(atlas);
+    /* Add the cursor to the buffer. */
+    add_cursor(markup.font, vertbuf, vec4(1.0f));
   }
-  glBindTexture(GL_TEXTURE_2D, atlas->id);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas->width, atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, atlas->data);
-  /* Cursor (we use the black character (NULL) as texture). */
-  texture_glyph_t *glyph = texture_font_get_glyph(font[GUI_NORMAL_TEXT].font, NULL);
-  float r = font[GUI_NORMAL_TEXT].foreground_color.r;
-  float g = font[GUI_NORMAL_TEXT].foreground_color.g;
-  float b = font[GUI_NORMAL_TEXT].foreground_color.b;
-  float a = font[GUI_NORMAL_TEXT].foreground_color.a;
-  int x0 = gui_calculate_cursor_x(&font[GUI_NORMAL_TEXT]);
-  int y0 = (gui_calculate_cursor_y(&font[GUI_NORMAL_TEXT]) - font[GUI_NORMAL_TEXT].font->descender);
-  int x1 = (x0 + 2);
-  int y1 = (y0 + font[GUI_NORMAL_TEXT].font->height - font[GUI_NORMAL_TEXT].font->linegap);
-  float s0 = glyph->s0;
-  float t0 = glyph->t0;
-  float s1 = glyph->s1;
-  float t1 = glyph->t1;
-  Uint indices[] = { 0, 1, 2, 0, 2, 3 };
-  vertex_t vertices[] = {
-    {(float)x0, (float)y0, 0, s0, t0, r, g, b, a},
-    {(float)x0, (float)y1, 0, s0, t1, r, g, b, a},
-    {(float)x1, (float)y1, 0, s1, t1, r, g, b, a},
-    {(float)x1, (float)y0, 0, s1, t0, r, g, b, a}
-  };
-  vertex_buffer_push_back(vertbuf, vertices, 4, indices, 6);
-  glEnable(GL_TEXTURE_2D);
-  glUseProgram(fontshader);
-  {
-    glUniform1i(glGetUniformLocation(fontshader, "texture"), 0);
-    vertex_buffer_render(vertbuf, GL_TRIANGLES);
+  /* When the text has not changed just render the marked regions before drawing the same text again. */
+  else {
+    while (line && ++row <= editwinrows) {
+      /* Only check the line if there is any data on it. */
+      if (*line->data) {
+        from_col = get_page_start(wideness(line->data, (line == openfile->current) ? openfile->current_x : 0));
+        converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
+        draw_marked_part(line, converted, from_col, markup.font);
+        free(converted);
+      }
+      line = line->next;
+    }
   }
+  render_vertex_buffer(fontshader, vertbuf);
 }
+
+/* Draw the top menu bar. */
+void draw_top_bar(void) {
+  draw_uielement_rect(top_bar);
+  if (guiflag.is_set<GUI_PROMPT>()) {
+    vertex_buffer_clear(topbuf);
+  }
+  else {
+    draw_uielement_rect(file_menu_element);
+    if (refresh_needed) {
+      vertex_buffer_clear(topbuf);
+      vertex_buffer_add_element_lable(file_menu_element, markup.font, topbuf);
+    }
+    for (auto child : file_menu_element->children) {
+      if (!child->flag.is_set<UIELEMENT_HIDDEN>()) {
+        draw_uielement_rect(child);
+        if (refresh_needed) {
+          vertex_buffer_add_element_lable(child, markup.font, topbuf);
+        }
+      }
+    }
+    if (refresh_needed) {
+      upload_texture_atlas(atlas);
+    }
+  }
+  render_vertex_buffer(fontshader, topbuf);
+}
+
+/* Toggle fullscreen state. */
+void do_fullscreen(GLFWwindow *window) {
+  static bool is_fullscreen = FALSE;
+  static ivec4 rect = 0.0f;
+  if (!is_fullscreen) {
+    /* Save the window size and position. */
+    glfwGetWindowPos(window, &rect.x, &rect.y);
+    glfwGetWindowSize(window, &rect.width, &rect.height);
+    /* Get monitor size. */
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    /* Set the window pos and size. */
+    glfwSetWindowAttrib(window, GLFW_AUTO_ICONIFY, FALSE);
+    glfwMaximizeWindow(window);
+    glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
+  }
+  else {
+    /* Set the window pos and size. */
+    glfwSetWindowMonitor(window, NULL, rect.x, rect.y, rect.width, rect.height, GLFW_DONT_CARE);
+    glfwRestoreWindow(window);
+  }
+  /* Toggle the fullscreen flag. */
+  is_fullscreen = !is_fullscreen;
+}
+
+#endif

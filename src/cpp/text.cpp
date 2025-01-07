@@ -47,7 +47,7 @@ void do_tab(void) {
 }
 
 /* Restore the cursor and mark from a undostruct. */
-static void restore_undo_posx(undostruct *u) _NO_EXCEPT {
+static void restore_undo_posx(undostruct *u) _NOTHROW {
   /* Restore the mark if it was set. */
   if (u->xflags & MARK_WAS_SET) {
     if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -96,7 +96,7 @@ void indent_a_line(linestruct *line, char *indentation) {
  * tab character or a tab's worth of spaces, depending on whether --tabstospaces is in effect. */
 void do_indent(void) {
   linestruct *top, *bot, *line;
-  char       *indentation;
+  char *indentation;
   /* Use either all the marked lines or just the current line. */
   get_range(&top, &bot);
   /* Skip any leading empty lines. */
@@ -123,10 +123,9 @@ void do_indent(void) {
     }
   }
   add_undo(INDENT, NULL);
-  /* Go through each of the lines, adding an indent to the non-empty ones,
-   * and recording whatever was added in the undo item. */
+  /* Go through each of the lines, adding an indent to the non-empty ones, and recording whatever was added in the undo item. */
   for (line = top; line != bot->next; line = line->next) {
-    char *real_indent = !line->data[0] ? (char *)"" : indentation;
+    char *real_indent = (!*line->data ? (char *)"" : indentation);
     indent_a_line(line, real_indent);
     update_multiline_undo(line->lineno, real_indent);
   }
@@ -138,7 +137,7 @@ void do_indent(void) {
 }
 
 /* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
-static Ulong length_of_white(const char *text) _NO_EXCEPT {
+static Ulong length_of_white(const char *text) _NOTHROW {
   Ulong white_count = 0;
   if (openfile->syntax && openfile->syntax->tabstring) {
     Ulong thelength = strlen(openfile->syntax->tabstring);
@@ -161,10 +160,10 @@ static Ulong length_of_white(const char *text) _NO_EXCEPT {
     }
     ++text;
   }
-} __nonnull((1))
+} _NONNULL(1)
 
 /* Adjust the positions of mark and cursor when they are on the given line. */
-static void compensate_leftward(linestruct *line, Ulong leftshift) _NO_EXCEPT {
+static void compensate_leftward(linestruct *line, Ulong leftshift) _NOTHROW {
   if (line == openfile->mark) {
     if (openfile->mark_x < leftshift) {
       openfile->mark_x = 0;
@@ -182,10 +181,10 @@ static void compensate_leftward(linestruct *line, Ulong leftshift) _NO_EXCEPT {
     }
     openfile->placewewant = xplustabs();
   }
-} __nonnull((1))
+} _NONNULL(1)
 
 /* Remove an indent from the given line. */
-void unindent_a_line(linestruct *line, Ulong indent_len) {
+static void unindent_a_line(linestruct *line, Ulong indent_len) _NOTHROW {
   Ulong length = strlen(line->data);
   /* If the indent is empty, don't change the line. */
   if (!indent_len) {
@@ -198,14 +197,13 @@ void unindent_a_line(linestruct *line, Ulong indent_len) {
   compensate_leftward(line, indent_len);
 }
 
-/* Unindent the current line (or the marked lines) by tabsize columns.
- * The removed indent can be a mixture of spaces plus at most one tab. */
-void do_unindent(void) {
+/* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
+void do_unindent(void) _NOTHROW {
   linestruct *top, *bot, *line;
   /* Use either all the marked lines or just the current line. */
   get_range(&top, &bot);
   /* Skip any leading lines that cannot be unindented. */
-  while (top != bot->next && length_of_white(top->data) == 0) {
+  while (top != bot->next && !length_of_white(top->data)) {
     top = top->next;
   }
   /* If none of the lines can be unindented, there is nothing to do. */
@@ -213,8 +211,7 @@ void do_unindent(void) {
     return;
   }
   add_undo(UNINDENT, NULL);
-  /* Go through each of the lines, removing their leading indent where
-   * possible, and saving the removed whitespace in the undo item. */
+  /* Go through each of the lines, removing their leading indent where possible, and saving the removed whitespace in the undo item. */
   for (line = top; line != bot->next; line = line->next) {
     Ulong indent_len  = length_of_white(line->data);
     char *indentation = measured_copy(line->data, indent_len);
@@ -432,14 +429,14 @@ void redo_cut(undostruct *u) {
 }
 
 /* Return`s a malloc`ed str encoded with enclose delimiter. */
-char *encode_enclose_str(const char *s1, const char *s2) _NO_EXCEPT {
+static char *encode_enclose_str(const char *s1, const char *s2) _NOTHROW {
   char *part = (char *)nmalloc(strlen(s1) + strlen(ENCLOSE_DELIM) + strlen(s2) + 1);
   sprintf(part, "%s" ENCLOSE_DELIM "%s", s1, s2);
   return part;
 }
 
 /* Decode s1 and s2 from a encoded enclose str. */
-void decode_enclose_str(const char *str, char **s1, char **s2) _NO_EXCEPT {
+static void decode_enclose_str(const char *str, char **s1, char **s2) _NOTHROW {
   const char *enclose_delim = strstr(str, ENCLOSE_DELIM);
   if (!enclose_delim) {
     die("%s: str ('%s') was not encoded properly.  Could not find ENCLOSE_DELIM '%s'.\n", __func__, str, ENCLOSE_DELIM);
@@ -449,7 +446,7 @@ void decode_enclose_str(const char *str, char **s1, char **s2) _NO_EXCEPT {
 }
 
 /* If an area is marked then plase the 'str' at mark and current_x, thereby enclosing the marked area. */
-void enclose_marked_region(const char *s1, const char *s2) {
+void enclose_marked_region(const char *s1, const char *s2) _NOTHROW {
   /* Return early if there is no mark. */
   if (!openfile->mark) {
     return;
@@ -488,18 +485,18 @@ void enclose_marked_region(const char *s1, const char *s2) {
 }
 
 /* This is a shortcut to make marked area a block comment. */
-void do_block_comment(void) {
+void do_block_comment(void) _NOTHROW {
   enclose_marked_region("/* ", " */");
   keep_mark = TRUE;
 }
 
 /* Return TRUE when cursor is after '{' and directly at '}'. */
-bool is_between_brackets(const char *line, const Ulong posx) {
+static bool is_between_brackets(const char *line, const Ulong posx) _NOTHROW {
   return (is_between_chars(line, posx, '{', '}') || is_between_chars(line, posx, '[', ']') || is_between_chars(line, posx, '(', ')'));
 }
 
 /* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
-void auto_bracket(linestruct *line, const Ulong posx) {
+static void auto_bracket(linestruct *line, const Ulong posx) _NOTHROW {
   linestruct *middle = make_new_node(line);
   linestruct *end    = make_new_node(middle);
   splice_node(line, middle);
@@ -512,7 +509,7 @@ void auto_bracket(linestruct *line, const Ulong posx) {
   /* Set up the middle line. */
   memcpy(middle->data, line->data, indentlen);
   if (ISSET(TABS_TO_SPACES)) {
-    sprintf((middle->data + indentlen), "%*s", (int)tabsize, " ");
+    memset((middle->data + indentlen), ' ', tabsize);
     *(middle->data + indentlen + tabsize) = '\0';
   }
   else {
@@ -532,7 +529,7 @@ void auto_bracket(linestruct *line, const Ulong posx) {
 }
 
 /* Do auto bracket at current position. */
-void do_auto_bracket(void) {
+static void do_auto_bracket(void) _NOTHROW {
   add_undo(AUTO_BRACKET, NULL);
   Ulong indentlen = indent_length(openfile->current->data);
   auto_bracket(openfile->current, openfile->current_x);
@@ -1272,7 +1269,7 @@ void do_enter(void) {
 }
 
 /* Discard undo items that are newer than the given one, or all if NULL. */
-void discard_until(const undostruct *thisitem) _NO_EXCEPT {
+void discard_until(const undostruct *thisitem) _NOTHROW {
   undostruct  *dropit = openfile->undotop;
   groupstruct *group;
   while (dropit && dropit != thisitem) {
@@ -1296,7 +1293,7 @@ void discard_until(const undostruct *thisitem) _NO_EXCEPT {
 }
 
 /* Add a new undo item of the given type to the top of the current pile. */
-void add_undo(undo_type action, const char *message) {
+void add_undo(undo_type action, const char *message) _NOTHROW {
   undostruct *u = (undostruct *)nmalloc(sizeof(undostruct));
   linestruct *thisline = openfile->current;
   /* Initialize the newly allocated undo item. */
@@ -1339,19 +1336,17 @@ void add_undo(undo_type action, const char *message) {
       break;
     }
     case BACK: {
-      /* If the next line is the magic line, don't ever undo this
-       * backspace, as it won't actually have deleted anything. */
+      /* If the next line is the magic line, don't ever undo this backspace, as it won't actually have deleted anything. */
       if (thisline->next == openfile->filebot && thisline->data[0]) {
         u->xflags |= WAS_BACKSPACE_AT_EOF;
       }
       /* Fall-through. */
     }
     case DEL: {
-      /* When not at the end of a line, store the deleted character;
-       * otherwise, morph the undo item into a line join. */
+      /* When not at the end of a line, store the deleted character; otherwise, morph the undo item into a line join. */
       if (thisline->data[openfile->current_x]) {
         int charlen = char_length(thisline->data + u->head_x);
-        u->strdata  = measured_copy(thisline->data + u->head_x, charlen);
+        u->strdata  = measured_copy((thisline->data + u->head_x), charlen);
         if (u->type == BACK) {
           u->tail_x += charlen;
         }
@@ -1488,7 +1483,7 @@ void add_undo(undo_type action, const char *message) {
 
 // Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
 // feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
-void update_multiline_undo(long lineno, char *indentation) {
+void update_multiline_undo(long lineno, char *indentation) _NOTHROW {
   undostruct *u = openfile->current_undo;
   /* If there already is a group and the current line is contiguous with it, extend the group; otherwise, create a new group. */
   if (u->grouping && (u->grouping->bottom_line + 1) == lineno) {
@@ -1511,7 +1506,7 @@ void update_multiline_undo(long lineno, char *indentation) {
 }
 
 /* Update an undo item with (among other things) the file size and cursor position after the given action. */
-void update_undo(undo_type action) {
+void update_undo(undo_type action) _NOTHROW {
   undostruct *u = openfile->undotop;
   Ulong datalen, newlen;
   char *textposition;
@@ -1537,16 +1532,16 @@ void update_undo(undo_type action) {
     case BACK :
     case DEL : {
       textposition = (openfile->current->data + openfile->current_x);
-      charlen      = char_length(textposition);
-      datalen      = strlen(u->strdata);
+      charlen = char_length(textposition);
+      datalen = strlen(u->strdata);
       if (openfile->current_x == u->head_x) {
         /* They deleted more: add removed character after earlier stuff. */
         u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
         strncpy((u->strdata + datalen), textposition, charlen);
         u->strdata[datalen + charlen] = '\0';
-        u->tail_x                     = openfile->current_x;
+        u->tail_x = openfile->current_x;
       }
-      else if (openfile->current_x == u->head_x - charlen) {
+      else if (openfile->current_x == (u->head_x - charlen)) {
         /* They backspaced further: add removed character before earlier. */
         u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
         memmove((u->strdata + charlen), u->strdata, (datalen + 1));
@@ -1587,7 +1582,7 @@ void update_undo(undo_type action) {
           bottomline = bottomline->next;
           ++count;
         }
-        u->tail_lineno = u->head_lineno + count;
+        u->tail_lineno = (u->head_lineno + count);
         if (ISSET(CUT_FROM_CURSOR) || u->type == CUT_TO_EOF) {
           u->tail_x = strlen(bottomline->data);
           if (!count) {
@@ -1655,29 +1650,27 @@ void do_wrap(void) {
   /* The remainder is the text that will be wrapped to the next line. */
   remainder   = (line->data + wrap_loc);
   rest_length = (line_len - wrap_loc);
-  /* When prepending and the remainder of this line will not make the next
-   * line too long, then join the two lines, so that, after the line wrap,
-   * the remainder will effectively have been prefixed to the next line. */
+  /* When prepending and the remainder of this line will not make the next line too long, then join the two
+   * lines, so that, after the line wrap, the remainder will effectively have been prefixed to the next line. */
   if (openfile->spillage_line && openfile->spillage_line == line->next && (rest_length + breadth(line->next->data)) <= wrap_at) {
     /* Go to the end of this line. */
     openfile->current_x = line_len;
     /* If the remainder doesn't end in a blank, add a space. */
     if (!is_blank_char(remainder + step_left(remainder, rest_length))) {
       add_undo(ADD, NULL);
-      line->data               = arealloc(line->data, (line_len + 2));
-      line->data[line_len]     = ' ';
+      line->data = arealloc(line->data, (line_len + 2));
+      line->data[line_len] = ' ';
       line->data[line_len + 1] = '\0';
-      rest_length++;
-      openfile->totsize++;
-      openfile->current_x++;
+      ++rest_length;
+      ++openfile->totsize;
+      ++openfile->current_x;
       update_undo(ADD);
     }
     /* Join the next line to this one. */
     expunge(DEL);
-    /* If the leading part of the current line equals the leading part of
-     * what was the next line, then strip this second leading part. */
+    /* If the leading part of the current line equals the leading part of what was the next line, then strip this second leading part. */
     if (strncmp(line->data, line->data + openfile->current_x, lead_len) == 0) {
-      for (Ulong i = lead_len; i > 0; i--) {
+      for (Ulong i = lead_len; i > 0; --i) {
         expunge(DEL);
       }
     }
@@ -1735,7 +1728,7 @@ void do_wrap(void) {
 // Find the last blank in the given piece of text such that the display width to that point is at most
 // (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
 // blank in that group of blanks. When snap_at_nl is TRUE, a newline character counts as a blank too.
-long break_line(const char *textstart, long goal, bool snap_at_nl) _NO_EXCEPT {
+long break_line(const char *textstart, long goal, bool snap_at_nl) _NOTHROW {
   /* The point where the last blank was found, if any. */
   const char *lastblank = NULL;
   /* An iterator through the given line of text. */
@@ -1788,7 +1781,7 @@ long break_line(const char *textstart, long goal, bool snap_at_nl) _NO_EXCEPT {
 }
 
 /* Return the length of the indentation part of the given line.  The "indentation" of a line is the leading consecutive whitespace. */
-Ulong indent_length(const char *line) _NO_EXCEPT {
+Ulong indent_length(const char *line) _NOTHROW {
   const char *start = line;
   while (*line && is_blank_char(line)) {
     line += char_length(line);
@@ -1798,7 +1791,7 @@ Ulong indent_length(const char *line) _NO_EXCEPT {
 
 // Return the length of the quote part of the given line.  The 'quote part'
 // of a line is the largest initial substring matching the quoting regex.
-Ulong quote_length(const char *line) _NO_EXCEPT {
+Ulong quote_length(const char *line) _NOTHROW {
   regmatch_t matches;
   int rc = regexec(&quotereg, line, 1, &matches, 0);
   if (rc == REG_NOMATCH || matches.rm_so == (regoff_t)-1) {
@@ -1811,7 +1804,7 @@ Ulong quote_length(const char *line) _NO_EXCEPT {
 #define RECURSION_LIMIT 222
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
-bool begpar(const linestruct *const line, int depth) _NO_EXCEPT {
+bool begpar(const linestruct *const line, int depth) _NOTHROW {
   Ulong quot_len      = 0;
   Ulong indent_len    = 0;
   Ulong prev_dent_len = 0;
@@ -1852,7 +1845,7 @@ bool begpar(const linestruct *const line, int depth) _NO_EXCEPT {
 
 /* Return TRUE when the given line is part of a paragraph.  A line is part of a
  * paragraph if it contains something more than quoting and leading whitespace. */
-bool inpar(const linestruct *const line) _NO_EXCEPT {
+bool inpar(const linestruct *const line) _NOTHROW {
   Ulong quot_len   = quote_length(line->data);
   Ulong indent_len = indent_length(line->data + quot_len);
   return (line->data[quot_len + indent_len]);
@@ -1880,7 +1873,7 @@ bool find_paragraph(linestruct **firstline, Ulong *linecount) {
 
 /* Concatenate into a single line all the lines of the paragraph that starts at 'line' and
  * consists of 'count' lines, skipping the quoting and indentation on all lines after the first. */
-static void concat_paragraph(linestruct *line, Ulong count) _NO_EXCEPT {
+static void concat_paragraph(linestruct *line, Ulong count) _NOTHROW {
   while (count > 1) {
     linestruct *next_line = line->next;
     Ulong next_line_len = strlen(next_line->data);
@@ -1902,7 +1895,7 @@ static void concat_paragraph(linestruct *line, Ulong count) _NO_EXCEPT {
 }
 
 /* Copy a character from one place to another. */
-static void copy_character(char **from, char **to) _NO_EXCEPT {
+static void copy_character(char **from, char **to) _NOTHROW {
   int charlen = char_length(*from);
   if (*from == *to) {
     *from += charlen;
@@ -1918,7 +1911,7 @@ static void copy_character(char **from, char **to) _NO_EXCEPT {
 /* In the given line, replace any series of blanks with a single space, but keep two
  * spaces (if there are two) after any closing punctuation, and remove all blanks from
  * the end of the line.  Leave the first skip number of characters untreated. */
-static void squeeze(linestruct *line, Ulong skip) _NO_EXCEPT {
+static void squeeze(linestruct *line, Ulong skip) _NOTHROW {
   char *start = (line->data + skip);
   char *from = start, *to = start;
   /* For each character, 1) when a blank, change it to a space, and pass over all blanks after it;
@@ -1961,7 +1954,7 @@ static void squeeze(linestruct *line, Ulong skip) _NO_EXCEPT {
 }
 
 /* Rewrap the given line (that starts with the given lead string which is of the given length), into lines that fit within the target width (wrap_at). */
-static void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len) _NO_EXCEPT {
+static void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len) _NOTHROW {
   /* The x-coordinate where the current line is to be broken. */
   long break_pos;
   while (breadth((*line)->data) > wrap_at) {
@@ -2001,7 +1994,7 @@ static void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_le
 
 /* Justify the lines of the given paragraph (that starts at *line, and consists of 'count' lines)
  * so they all fit within the target width (wrap_at) and have their whitespace normalized. */
-static void justify_paragraph(linestruct **line, Ulong count) _NO_EXCEPT {
+static void justify_paragraph(linestruct **line, Ulong count) _NOTHROW {
   linestruct *sampleline; /* The line from which the indentation is copied. */
   Ulong quot_len;         /* Length of the quote part. */
   Ulong lead_len;         /* Length of the quote part plus the indentation part. */

@@ -5,16 +5,16 @@ char **delim_str(const char *str, const char *delim, Ulong *size) {
   if (!str) {
     return NULL;
   }
-  Uint   bsize = 0, cap = 10;
+  Uint bsize = 0, cap = 10;
   char **words = (char **)nmalloc(sizeof(char *) * cap);
-  char  *tok   = strtok((char *)str, delim);
+  char *tok = strtok((char *)str, delim);
   while (tok != NULL) {
     if (bsize == cap) {
       cap *= 2;
       words = (char **)nrealloc(words, sizeof(char *) * cap);
     }
     words[bsize++] = copy_of(tok);
-    tok            = strtok(NULL, delim);
+    tok = strtok(NULL, delim);
   }
   words[bsize] = NULL;
   (size != NULL) ? *size = bsize : 0;
@@ -57,7 +57,7 @@ char *rgx_word(const char *word) {
 }
 
 /* Assigns the number of white char`s to the prev/next word to 'nchars'.  Return`s 'true' when word is more then 2 white`s away. */
-bool word_more_than_one_white_away(bool forward, Ulong *nsteps) _NO_EXCEPT {
+bool word_more_than_one_white_away(bool forward, Ulong *nsteps) _GL_ATTRIBUTE_NOTHROW {
   Ulong i = openfile->current_x, chars = 0;
   if (!forward) {
     i--;
@@ -187,11 +187,11 @@ const char *substr(const char *str, Ulong end_index) {
 }
 
 /* Return the start index of the previus word, if any.  Otherwise return cursor_x. */
-Ulong get_prev_word_start_index(const char *line, const Ulong cursor_x) _NO_EXCEPT {
+Ulong get_prev_word_start_index(const char *line, Ulong cursor_x, bool allow_underscore) _GL_ATTRIBUTE_NOTHROW {
   Ulong start_index = cursor_x;
   while (start_index > 0) {
     Ulong oneleft = step_left(line, start_index);
-    if (!is_word_char(&line[oneleft], FALSE)) {
+    if (!is_word_char(&line[oneleft], FALSE) && (!allow_underscore || line[oneleft] != '_')) {
       break;
     }
     start_index = oneleft;
@@ -200,13 +200,13 @@ Ulong get_prev_word_start_index(const char *line, const Ulong cursor_x) _NO_EXCE
 }
 
 /* Return the start index of the previus word from 'openfile->current_x' in 'openfile->current->data', if any.  Otherwise return 'openfile->current_x'. */
-Ulong get_cursor_prev_word_start_index(void) _NO_EXCEPT {
-  return get_prev_word_start_index(openfile->current->data, openfile->current_x);
+Ulong get_prev_cursor_word_start_index(bool allow_underscore) _GL_ATTRIBUTE_NOTHROW {
+  return get_prev_word_start_index(openfile->current->data, openfile->current_x, allow_underscore);
 }
 
 /* Return the prev word at cursor_x in line cursorline.  Otherwise return NULL when
  * there is no word * to the left.  Also asigns the length of the word to 'wordlen'. */
-char *get_prev_word(const char *line, const Ulong cursor_x, Ulong *wordlen) _NO_EXCEPT {
+char *get_prev_word(const char *line, const Ulong cursor_x, Ulong *wordlen) _GL_ATTRIBUTE_NOTHROW {
   Ulong start_index = get_prev_word_start_index(line, cursor_x);
   if (start_index == cursor_x) {
     return NULL;
@@ -216,6 +216,24 @@ char *get_prev_word(const char *line, const Ulong cursor_x, Ulong *wordlen) _NO_
 }
 
 /* Return the word to the left of the cursor, if any.  Otherwise return NULL.  Also assign the word length to 'wordlen'. */
-char *get_prev_cursor_word(Ulong *wordlen) _NO_EXCEPT {
+char *get_prev_cursor_word(Ulong *wordlen) _GL_ATTRIBUTE_NOTHROW {
   return get_prev_word(openfile->current->data, openfile->current_x, wordlen);
+}
+
+/* Return the end index of the current word, if any.  Otherwise, return from_index if already at end index or if at whitespace. */
+Ulong get_current_word_end_index(const char *line, Ulong from_index, bool allow_underscore) _GL_ATTRIBUTE_NOTHROW {
+  Ulong index = from_index;
+  while (line[index]) {
+    if (!is_word_char(&line[index], FALSE) && (!allow_underscore || line[index] != '_')) {
+      break;
+    }
+    index = step_right(line, index);
+  }
+  return index;
+}
+
+/* Return the end index of the current word at 'openfile->current_x' in 'openfile->current->data',
+ * if any.  Otherwise, return from_index if already at end index or if at whitespace. */
+Ulong get_current_cursor_word_end_index(bool allow_underscore) _GL_ATTRIBUTE_NOTHROW {
+  return get_current_word_end_index(openfile->current->data, openfile->current_x, allow_underscore);
 }

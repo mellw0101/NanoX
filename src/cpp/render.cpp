@@ -44,7 +44,7 @@ void render_part_raw(Ulong start_index, Ulong end_index, short color) {
 }
 
 /* Render the text of a given line.  Note that this function only renders the text and nothing else. */
-void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) _NO_EXCEPT {
+void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) _NOTHROW {
   PROFILE_FUNCTION;
   if (margin > 0) {
     WIN_COLOR_ON(midwin, config->linenumber.color);

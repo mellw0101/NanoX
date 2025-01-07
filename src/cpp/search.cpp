@@ -326,7 +326,7 @@ void do_findnext(void) {
 }
 
 /* Report on the status bar that the given string was not found. */
-void not_found_msg(const char *str) _NO_EXCEPT {
+void not_found_msg(const char *str) _NOTHROW {
   char *disp     = display_string(str, 0, ((COLS / 2) + 1), FALSE, FALSE);
   Ulong numchars = actual_x(disp, wideness(disp, (COLS / 2)));
   statusline(AHEM, _("\"%.*s%s\" not found"), numchars, disp, (disp[numchars] == '\0') ? "" : "...");
@@ -360,7 +360,7 @@ void go_looking(void) {
 
 /* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into account.
  * Return the replacement text in the passed string only when create is TRUE. */
-static int replace_regexp(char *string, bool create) _NO_EXCEPT {
+static int replace_regexp(char *string, bool create) _NOTHROW {
   Ulong replacement_size = 0;
   const char *c = answer;
   /* Iterate through the replacement text to handle subexpression replacement using \1, \2, \3, etc. */
@@ -585,7 +585,7 @@ void ask_for_and_do_replacements(void) {
 }
 
 /* Go to the specified line and x position. */
-void goto_line_posx(long linenumber, Ulong pos_x) _NO_EXCEPT {
+void goto_line_posx(long linenumber, Ulong pos_x) _NOTHROW {
   if (linenumber > (openfile->edittop->lineno + editwinrows) || (ISSET(SOFTWRAP) && linenumber > openfile->current->lineno)) {
     recook |= perturbed;
   }
@@ -696,7 +696,7 @@ void do_gotolinecolumn(void) {
 
 /* Search, starting from the current position, for any of the two characters in bracket_pair.  If reverse is TRUE,
  * search backwards, otherwise forwards.  Return TRUE when one of the brackets was found, and FALSE otherwise. */
-bool find_a_bracket(bool reverse, const char *bracket_pair) _NO_EXCEPT {
+bool find_a_bracket(bool reverse, const char *bracket_pair) _NOTHROW {
   linestruct *line = openfile->current;
   const char *pointer, *found;
   if (reverse) {
@@ -737,7 +737,7 @@ bool find_a_bracket(bool reverse, const char *bracket_pair) _NO_EXCEPT {
 }
 
 /* Search for a match to the bracket at the current cursor position, if there is one. */
-void do_find_bracket(void) _NO_EXCEPT {
+void do_find_bracket(void) _NOTHROW {
   linestruct *was_current = openfile->current;
   /* The current cursor position, in case we don't find a complement. */
   Ulong was_current_x = openfile->current_x;

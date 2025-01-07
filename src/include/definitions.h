@@ -249,9 +249,9 @@ using std::vector;
 #define ASM_FUNCTION(ret) extern "C" ret __attribute__((__nodebug__, __nothrow__))
 
 #if defined (__aarch64__)
-#define atomic_xchg(ptr, value) __atomic_exchange_n(ptr, value, __ATOMIC_SEQ_CST)
+  #define atomic_xchg(ptr, value) __atomic_exchange_n(ptr, value, __ATOMIC_SEQ_CST)
 #else
-#define atomic_xchg(ptr, value) asm_atomic_xchg(ptr, value)
+  #define atomic_xchg(ptr, value) asm_atomic_xchg(ptr, value)
 #endif
 
 /* Used to encode both parts when enclosing a region. */
@@ -284,11 +284,19 @@ using std::vector;
 #define STRLTRLEN(str) (sizeof(str) - 1)
 /* Make copy of a string literal. */
 #define STRLTR_COPY_OF(str)                        \
-  [](void) _NO_EXCEPT -> char * {                  \
+  [](void) _NOTHROW -> char * {                  \
     char *__strptr = (char *)nmalloc(sizeof(str)); \
     memcpy(__strptr, str, sizeof(str));            \
     return __strptr;                               \
   }()
+
+#define ENSURE_CHARARRAY_CAPACITY(array, cap, size) \
+  do {\
+    if (size == cap) {\
+      cap *= 2;\
+      array = arealloc(array, (sizeof(char *) * cap)); \
+    } \
+  } while(0)
 
 #define STRLTR_WRITE(fd, str) write(fd, str, (sizeof(str) - 1))
 
@@ -314,8 +322,6 @@ using std::vector;
   #define TRUE 1
   #define FALSE 0
 #endif
-
-#define _NO_EXCEPT noexcept(TRUE)
 
 /* Enumeration types. */
 
@@ -345,18 +351,6 @@ typedef enum {
   PP_LINE,
   #define PP_LINE PP_LINE
 } lineflag_type;
-
-typedef enum {
-  GUI_NORMAL_TEXT,
-  #define GUI_NORMAL_TEXT GUI_NORMAL_TEXT
-  GUI_SELECTED_TEXT,
-  #define GUI_SELECTED_TEXT GUI_SELECTED_TEXT
-} font_type;
-
-typedef enum {
-  GUI_RUNNING,
-  #define GUI_RUNNING GUI_RUNNING
-} guiflag_type;
 
 typedef enum {
   #define FILE_TYPE_SIZE 8
@@ -524,6 +518,31 @@ typedef enum {
   #define SHOULD_NOT_KEEP_MARK SHOULD_NOT_KEEP_MARK
 } undo_modifier_type;
 
+#ifdef HAVE_GLFW
+typedef enum {
+  GUI_RUNNING,
+  #define GUI_RUNNING GUI_RUNNING
+  GUI_PROMPT,
+  #define GUI_PROMPT GUI_PROMPT
+} guiflag_type;
+
+typedef enum {
+  UIELEMENT_HIDDEN,
+  #define UIELEMENT_HIDDEN UIELEMENT_HIDDEN
+  UIELEMENT_HAS_LABLE,
+  #define UIELEMENT_HAS_LABLE UIELEMENT_HAS_LABLE
+} elementflag_type;
+
+typedef enum {
+  UIELEMENT_ENTER_CALLBACK,
+  #define UIELEMENT_ENTER_CALLBACK UIELEMENT_ENTER_CALLBACK
+  UIELEMENT_LEAVE_CALLBACK,
+  #define UIELEMENT_LEAVE_CALLBACK UIELEMENT_LEAVE_CALLBACK
+  UIELEMENT_CLICK_CALLBACK,
+  #define UIELEMENT_CLICK_CALLBACK UIELEMENT_CLICK_CALLBACK
+} uielement_callback_type;
+#endif
+
 /* Structure types. */
 typedef struct colortype {
   short id;        /* An ordinal number (if this color combo is for a multiline regex). */
@@ -541,7 +560,7 @@ typedef struct regexlisttype {
   regexlisttype *next; /* The next regex. */
 } regexlisttype;
 
-typedef struct augmentstruct { 
+typedef struct augmentstruct {
   char *filename;      /* The file where the syntax is extended. */
   long  lineno;        /* The number of the line of the extendsyntax command. */
   char *data;          /* The text of the line. */
@@ -718,10 +737,18 @@ typedef struct completionstruct {
     float r, g, b, a;
   } vertex_t;
 
-  typedef struct {
-    vec2 pos;    /* Where in the window this element has (x,y). */
-    vec2 endoff; /* The distance from the width and height of the full window.  If any. */
-    vec2 size;   /* The size of this element. */
+  typedef struct uielementstruct {
+    vec2 pos;                            /* Where in the window this element has (x,y). */
+    vec2 endoff;                         /* The distance from the width and height of the full window.  If any. */
+    vec2 size;                           /* The size of this element. */
+    vec4 color;                          /* Color this element should be. */
+    vec4 textcolor;                      /* Color that text draw in this element should be. */
+    char *lable;                         /* If this ui element is a button or has static text. */
+    Uint lablelen;                       /* The length of the static text.  If any. */
+    bit_flag_t<8> flag;                  /* Flags for the element. */
+    void (*callback)(int);               /* Callback for all action types. */
+    uielementstruct *parent;             /* This element`s parent, or NULL when there is none. */
+    MVector<uielementstruct *> children; /* This elements children, for menus and such. */
   } uielementstruct;
 
   typedef struct uicordinathashstruct {
@@ -781,8 +808,11 @@ typedef struct completionstruct {
         return NULL;
       }
       for (Uint i = 0; i < it->second.size(); ++i) {
+        if (it->second[i]->flag.is_set<UIELEMENT_HIDDEN>()) {
+          continue;
+        }
         if (pos.x >= it->second[i]->pos.x && pos.x <= (it->second[i]->pos.x + it->second[i]->size.x)
-        && pos.y >= it->second[i]->pos.y && pos.y <= (it->second[i]->pos.y + it->second[i]->size.y)) {
+         && pos.y >= it->second[i]->pos.y && pos.y <= (it->second[i]->pos.y + it->second[i]->size.y)) {
           return it->second[i];
         }
       }
@@ -854,12 +884,12 @@ struct local_var_t {
 typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
 
 /* This is from file: 'threadpool.cpp'. */
-void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NO_EXCEPT;
+void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NOTHROW;
 /* RAII complient way to lock a pthread mutex.  This struct will lock
  * the mutex apon its creation, and unlock it when it goes out of scope. */
 struct pthread_mutex_guard_t {
   pthread_mutex_t *mutex = NULL;
-  explicit pthread_mutex_guard_t(pthread_mutex_t *m) _NO_EXCEPT : mutex(m) {
+  explicit pthread_mutex_guard_t(pthread_mutex_t *m) _NOTHROW : mutex(m) {
     if (!mutex) {
       logE("A 'NULL' was passed to 'pthread_mutex_guard_t'.");
     }
@@ -867,7 +897,7 @@ struct pthread_mutex_guard_t {
       lock_pthread_mutex(mutex, TRUE);
     }
   }
-  ~pthread_mutex_guard_t(void) _NO_EXCEPT {
+  ~pthread_mutex_guard_t(void) _NOTHROW {
     if (mutex) {
       lock_pthread_mutex(mutex, FALSE);
     }

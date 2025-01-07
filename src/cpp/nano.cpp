@@ -18,7 +18,7 @@ static struct sigaction oldaction, newaction;
 main_thread_t *main_thread = NULL;
 
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'. */
-linestruct *make_new_node(linestruct *prevnode) _GL_ATTRIBUTE_NOTHROW {
+linestruct *make_new_node(linestruct *prevnode) _NOTHROW {
   linestruct *newnode = (linestruct *)nmalloc(sizeof(linestruct));
   newnode->prev       = prevnode;
   newnode->next       = NULL;
@@ -37,7 +37,7 @@ linestruct *make_new_node(linestruct *prevnode) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Splice a new node into an existing linked list of linestructs. */
-void splice_node(linestruct *afterthis, linestruct *newnode) _GL_ATTRIBUTE_NOTHROW {
+void splice_node(linestruct *afterthis, linestruct *newnode) _NOTHROW {
   newnode->next = afterthis->next;
   newnode->prev = afterthis;
   if (afterthis->next) {
@@ -51,7 +51,7 @@ void splice_node(linestruct *afterthis, linestruct *newnode) _GL_ATTRIBUTE_NOTHR
 }
 
 /* Free the data structures in the given node */
-void delete_node(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
+void delete_node(linestruct *line) _NOTHROW {
   /* If the first line on the screen gets deleted, step one back. */
   if (line == openfile->edittop) {
     openfile->edittop = line->prev;
@@ -66,7 +66,7 @@ void delete_node(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
-void unlink_node(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
+void unlink_node(linestruct *line) _NOTHROW {
   if (line->prev) {
     line->prev->next = line->next;
   }
@@ -81,7 +81,7 @@ void unlink_node(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Free an entire linked list of linestructs. */
-void free_lines(linestruct *src) _GL_ATTRIBUTE_NOTHROW {
+void free_lines(linestruct *src) _NOTHROW {
   if (!src) {
     return;
   }
@@ -93,7 +93,7 @@ void free_lines(linestruct *src) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Make a copy of a linestruct node. */
-linestruct *copy_node(const linestruct *src) _GL_ATTRIBUTE_NOTHROW {
+linestruct *copy_node(const linestruct *src) _NOTHROW {
   linestruct *dst = (linestruct *)nmalloc(sizeof(*dst));
   dst->data       = copy_of(src->data);
   dst->multidata  = NULL;
@@ -103,7 +103,7 @@ linestruct *copy_node(const linestruct *src) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Duplicate an entire linked list of linestructs. */
-linestruct *copy_buffer(const linestruct *src) _GL_ATTRIBUTE_NOTHROW {
+linestruct *copy_buffer(const linestruct *src) _NOTHROW {
   linestruct *head, *item;
   head       = copy_node(src);
   head->prev = NULL;
@@ -120,7 +120,7 @@ linestruct *copy_buffer(const linestruct *src) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Renumber the lines in a buffer, from the given line onwards. */
-void renumber_from(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
+void renumber_from(linestruct *line) _NOTHROW {
   long number = (!line->prev ? 0 : line->prev->lineno);
   while (line) {
     line->lineno = ++number;
@@ -129,12 +129,12 @@ void renumber_from(linestruct *line) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Display a warning about a key disabled in view mode. */
-void print_view_warning(void) _GL_ATTRIBUTE_NOTHROW {
+void print_view_warning(void) _NOTHROW {
   statusline(AHEM, _("Key is invalid in view mode"));
 }
 
 /* When in restricted mode, show a warning and return 'TRUE'. */
-bool in_restricted_mode(void) _GL_ATTRIBUTE_NOTHROW {
+bool in_restricted_mode(void) _NOTHROW {
   if (ISSET(RESTRICTED)) {
     statusline(AHEM, _("This function is disabled in restricted mode"));
     beep();
@@ -144,7 +144,7 @@ bool in_restricted_mode(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
-void suggest_ctrlT_ctrlZ(void) _GL_ATTRIBUTE_NOTHROW {
+void suggest_ctrlT_ctrlZ(void) _NOTHROW {
   if (first_sc_for(MMAIN, do_execute) && first_sc_for(MMAIN, do_execute)->keycode == 0x14
    && first_sc_for(MEXECUTE, do_suspend) && first_sc_for(MEXECUTE, do_suspend)->keycode == 0x1A) {
     statusline(AHEM, _("To suspend, type ^T^Z"));
@@ -153,7 +153,7 @@ void suggest_ctrlT_ctrlZ(void) _GL_ATTRIBUTE_NOTHROW {
 
 // Make sure the cursor is visible, then exit from curses mode, disable
 // bracketed-paste mode, and restore the original terminal settings.
-static void restore_terminal(void) _GL_ATTRIBUTE_NOTHROW {
+static void restore_terminal(void) _NOTHROW {
   curs_set(1);
   endwin();
   STRLTR_WRITE(STDOUT_FILENO, "\x1B[?2004l");
@@ -161,7 +161,7 @@ static void restore_terminal(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Exit normally: restore terminal state and report any startup errors. */
-void finish(void) _GL_ATTRIBUTE_NOTHROW {
+void finish(void) _NOTHROW {
   /* Blank the status bar and (if applicable) the shortcut list. */
   blank_statusbar();
   blank_bottombars();
@@ -257,7 +257,7 @@ void emergency_save(const char *filename) {
 }
 
 /* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
-void die(const char *msg, ...) /* _GL_ATTRIBUTE_NOTHROW */ {
+void die(const char *msg, ...) /* _NOTHROW */ {
   openfilestruct *firstone = openfile;
   static int stabs = 0;
   va_list ap;
@@ -290,7 +290,7 @@ void die(const char *msg, ...) /* _GL_ATTRIBUTE_NOTHROW */ {
 }
 
 /* Initialize the three window portions nano uses. */
-void window_init(void) _GL_ATTRIBUTE_NOTHROW {
+void window_init(void) _NOTHROW {
   /* When resizing, first delete the existing windows. */
   if (midwin) {
     if (topwin) {
@@ -342,18 +342,18 @@ void window_init(void) _GL_ATTRIBUTE_NOTHROW {
   }
 }
 
-void disable_mouse_support(void) {
+static void disable_mouse_support(void) _NOTHROW {
   mousemask(0, NULL);
   mouseinterval(oldinterval);
 }
 
-void enable_mouse_support(void) {
+static void enable_mouse_support(void) _NOTHROW {
   mousemask(ALL_MOUSE_EVENTS, NULL);
   oldinterval = mouseinterval(50);
 }
 
 /* Switch mouse support on or off, as needed. */
-void mouse_init(void) {
+static void mouse_init(void) _NOTHROW {
   if (ISSET(USE_MOUSE)) {
     enable_mouse_support();
   }
@@ -560,7 +560,7 @@ bool scoop_stdin(void) {
 }
 
 /* Register half a dozen signal handlers. */
-void signal_init(void) _GL_ATTRIBUTE_NOTHROW {
+void signal_init(void) _NOTHROW {
   struct sigaction deed = {{0}};
   /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
   deed.sa_handler = SIG_IGN;
@@ -770,7 +770,7 @@ void toggle_this(const int flag) {
 }
 
 /* Disable extended input and output processing in our terminal settings. */
-void disable_extended_io(void) _GL_ATTRIBUTE_NOTHROW {
+void disable_extended_io(void) _NOTHROW {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~IEXTEN;
@@ -779,7 +779,7 @@ void disable_extended_io(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Stop ^C from generating a SIGINT. */
-void disable_kb_interrupt(void) _GL_ATTRIBUTE_NOTHROW {
+void disable_kb_interrupt(void) _NOTHROW {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~ISIG;
@@ -787,7 +787,7 @@ void disable_kb_interrupt(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Make ^C generate a SIGINT. */
-void enable_kb_interrupt(void) _GL_ATTRIBUTE_NOTHROW {
+void enable_kb_interrupt(void) _NOTHROW {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag |= ISIG;
@@ -795,7 +795,7 @@ void enable_kb_interrupt(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Disable the terminal's XON/XOFF flow-control characters. */
-void disable_flow_control(void) _GL_ATTRIBUTE_NOTHROW {
+void disable_flow_control(void) _NOTHROW {
   termios settings;
   tcgetattr(0, &settings);
   settings.c_iflag &= ~IXON;
@@ -803,7 +803,7 @@ void disable_flow_control(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Enable the terminal's XON/XOFF flow-control characters. */
-void enable_flow_control(void) _GL_ATTRIBUTE_NOTHROW {
+void enable_flow_control(void) _NOTHROW {
   termios settings;
   tcgetattr(0, &settings);
   settings.c_iflag |= IXON;
@@ -817,7 +817,7 @@ void enable_flow_control(void) _GL_ATTRIBUTE_NOTHROW {
  * and Ctrl-J, and disable echoing of characters as they're typed. Finally,
  * disable extended input and output processing, and, if we're not in preserve
  * mode, reenable interpretation of the flow control characters. */
-void terminal_init(void) _GL_ATTRIBUTE_NOTHROW {
+void terminal_init(void) _NOTHROW {
   raw();
   nonl();
   noecho();
@@ -832,7 +832,7 @@ void terminal_init(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Ask ncurses for@file definitions.h a keycode, or assign a default one. */
-int get_keycode(const char *const keyname, const int standard) _GL_ATTRIBUTE_NOTHROW {
+int get_keycode(const char *const keyname, const int standard) _NOTHROW {
   const char *keyvalue = tigetstr(keyname);
   if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue)) {
     return key_defined(keyvalue);
@@ -846,7 +846,7 @@ int get_keycode(const char *const keyname, const int standard) _GL_ATTRIBUTE_NOT
 }
 
 /* Ensure that the margin can accommodate the buffer's highest line number. */
-void confirm_margin(void) _GL_ATTRIBUTE_NOTHROW {
+void confirm_margin(void) _NOTHROW {
   int needed_margin = (digits(openfile->filebot->lineno) + 1);
   /* When not requested or space is too tight, suppress line numbers. */
   if (!ISSET(LINE_NUMBERS) || needed_margin > (COLS - 4)) {
@@ -865,7 +865,7 @@ void confirm_margin(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Say that an unbound key was struck, and if possible which one. */
-void unbound_key(int code) _GL_ATTRIBUTE_NOTHROW {
+void unbound_key(int code) _NOTHROW {
   if (code == FOREIGN_SEQUENCE) {
     /* TRANSLATORS: This refers to a sequence of escape codes (from the keyboard) that nano does not recognize. */
     statusline(AHEM, _("Unknown sequence"));
@@ -1058,14 +1058,14 @@ void inject(char *burst, Ulong count) {
   /* When softwrapping and the number of chunks in the current line changed, or we were
    * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
   if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current) != old_amount
-   || (openfile->cursor_row == editwinrows - 1 && chunk_for(openfile->placewewant, openfile->current) > original_row))) {
+   || (openfile->cursor_row == (editwinrows - 1) && chunk_for(openfile->placewewant, openfile->current) > original_row))) {
     refresh_needed = TRUE;
     focusing = FALSE;
   }
   if (!refresh_needed) {
     check_the_multis(openfile->current);
   }
-  if (!refresh_needed) {
+  if (!refresh_needed && !ISSET(USING_GUI)) {
     update_line(openfile->current, openfile->current_x);
   }
 }

@@ -140,7 +140,7 @@ void clear_suggestion(void) {
 void add_char_to_suggest_buf(void) {
   if (openfile->current_x > 0) {
     suggest_len = 0;
-    Ulong pos = get_cursor_prev_word_start_index();
+    Ulong pos = get_prev_cursor_word_start_index();
     while (pos < openfile->current_x) {
       suggest_buf[suggest_len++] = openfile->current->data[pos++];
     }

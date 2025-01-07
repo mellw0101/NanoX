@@ -4,7 +4,7 @@
 #define RW_FOR_ALL (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 /* Add an item to the circular list of openfile structs. */
-void make_new_buffer(void) _NO_EXCEPT {
+void make_new_buffer(void) _NOTHROW {
   openfilestruct *newnode = (openfilestruct *)nmalloc(sizeof(openfilestruct));
   if (!openfile) {
     /* Make the first buffer the only element in the list. */
@@ -51,7 +51,7 @@ void make_new_buffer(void) _NO_EXCEPT {
 }
 
 /* Return the given file name in a way that fits within the given space. */
-static char *crop_to_fit(const char *name, int room) _NO_EXCEPT {
+static char *crop_to_fit(const char *name, int room) _NOTHROW {
   char *clipped;
   if (breadth(name) <= room) {
     return display_string(name, 0, room, FALSE, FALSE);
@@ -69,7 +69,7 @@ static char *crop_to_fit(const char *name, int room) _NO_EXCEPT {
 }
 
 /* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
-bool delete_lockfile(const char *lockfilename) _NO_EXCEPT {
+bool delete_lockfile(const char *lockfilename) _NOTHROW {
   if (unlink(lockfilename) < 0 && errno != ENOENT) {
     statusline(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
     return FALSE;
@@ -85,7 +85,7 @@ bool delete_lockfile(const char *lockfilename) _NO_EXCEPT {
 
 // Write a lock file, under the given lockfilename.  This always annihilates an
 // existing version of that file.  Return TRUE on success; FALSE otherwise.
-static bool write_lockfile(const char *lockfilename, const char *filename, bool modified) _NO_EXCEPT {
+static bool write_lockfile(const char *lockfilename, const char *filename, bool modified) _NOTHROW {
   int     mypid   = getpid();
   uid_t   myuid   = geteuid();
   passwd *mypwuid = getpwuid(myuid);
@@ -235,7 +235,7 @@ char *do_lockfile(const char *filename, bool ask_the_user) {
 
 /* Perform a stat call on the given filename, allocating a stat struct if necessary. On success,
  * '*pstat' points to the stat's result.  On failure, '*pstat' is freed and made 'NULL'. */
-static void stat_with_alloc(const char *filename, struct stat **pstat) _NO_EXCEPT {
+static void stat_with_alloc(const char *filename, struct stat **pstat) _NOTHROW {
   !*pstat ? (*pstat = (struct stat *)nmalloc(sizeof(**pstat))) : 0;
   if (stat(filename, *pstat)) {
     free(*pstat);
@@ -244,7 +244,7 @@ static void stat_with_alloc(const char *filename, struct stat **pstat) _NO_EXCEP
 }
 
 /* Verify that the containing directory of the given filename exists. */
-bool has_valid_path(const char *filename) _NO_EXCEPT {
+bool has_valid_path(const char *filename) _NOTHROW {
   char *namecopy  = copy_of(filename);
   char *parentdir = dirname(namecopy);
   bool  validity  = FALSE;
@@ -409,7 +409,7 @@ void open_new_empty_buffer(void) {
 }
 
 /* Mark the current buffer as modified if it isn't already, and then update the title bar to display the buffer's new status. */
-void set_modified(void) {
+void set_modified(void) _NOTHROW {
   if (openfile->modified) {
     return;
   }
@@ -421,7 +421,7 @@ void set_modified(void) {
 }
 
 /* Update the title bar and the multiline cache to match the current buffer. */
-void prepare_for_display(void) _NO_EXCEPT {
+void prepare_for_display(void) _NOTHROW {
   /* Update the title bar, since the filename may have changed. */
   if (!inhelp) {
     titlebar(NULL);
@@ -435,7 +435,7 @@ void prepare_for_display(void) _NO_EXCEPT {
 }
 
 /* Show name of current buffer and its number of lines on the status bar. */
-void mention_name_and_linecount(void) _NO_EXCEPT {
+void mention_name_and_linecount(void) _NOTHROW {
   Ulong count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0' ? 1 : 0);
   if (ISSET(MINIBAR)) {
     report_size = TRUE;
@@ -457,7 +457,7 @@ void mention_name_and_linecount(void) _NO_EXCEPT {
 }
 
 /* Update title bar and such after switching to another buffer. */
-static void redecorate_after_switch(void) _NO_EXCEPT {
+static void redecorate_after_switch(void) _NOTHROW {
   /* If only one file buffer is open, there is nothing to update. */
   if (openfile == openfile->next) {
     statusline(AHEM, _("No more open file buffers"));
@@ -485,19 +485,19 @@ static void redecorate_after_switch(void) _NO_EXCEPT {
 }
 
 /* Switch to the previous entry in the circular list of buffers. */
-void switch_to_prev_buffer(void) _NO_EXCEPT {
+void switch_to_prev_buffer(void) _NOTHROW {
   openfile = openfile->prev;
   redecorate_after_switch();
 }
 
 /* Switch to the next entry in the circular list of buffers. */
-void switch_to_next_buffer(void) _NO_EXCEPT {
+void switch_to_next_buffer(void) _NOTHROW {
   openfile = openfile->next;
   redecorate_after_switch();
 }
 
 /* Remove the current buffer from the circular list of buffers.  When just one buffer remains open, show "Exit" in the help lines. */
-void close_buffer(void) _NO_EXCEPT {
+void close_buffer(void) _NOTHROW {
   openfilestruct *orphan = openfile;
   if (orphan == startfile) {
     startfile = startfile->next;
@@ -526,7 +526,7 @@ void close_buffer(void) _NO_EXCEPT {
 }
 
 /* Encode any NUL bytes in the given line of text (of the given length), and return a dynamically allocated copy of the resultant string. */
-char *encode_data(char *text, Ulong length) _NO_EXCEPT {
+char *encode_data(char *text, Ulong length) _NOTHROW {
   recode_NUL_to_LF(text, length);
   text[length] = '\0';
   return copy_of(text);
@@ -644,29 +644,27 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   if (fd > 0 && !undoable && !ISSET(VIEW_MODE)) {
     writable = (access(filename, W_OK) == 0);
   }
-  /* If the file ended with a newline, or it was entirely empty,
-   * make the last line blank.  Otherwise, put the last read data in. */
+  /* If the file ended with a newline, or it was entirely empty, make the last line blank.  Otherwise, put the last read data in. */
   if (len == 0) {
-    bottomline->data = copy_of("");
+    bottomline->data = STRLTR_COPY_OF("");
   }
   else {
     bool mac_line_needs_newline = FALSE;
-    /* If the final character is a CR and file conversion isn't disabled,
-     * strip this CR and indicate that an extra blank line is needed. */
+    /* If the final character is a CR and file conversion isn't disabled, strip this CR and indicate that an extra blank line is needed. */
     if (buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
       if (num_lines == 0) {
         format = MAC_FILE;
       }
-      buf[--len]             = '\0';
+      buf[--len] = '\0';
       mac_line_needs_newline = TRUE;
     }
     /* Store the data of the final line. */
     bottomline->data = encode_data(buf, len);
-    num_lines++;
+    ++num_lines;
     if (mac_line_needs_newline) {
       bottomline->next = make_new_node(bottomline);
       bottomline       = bottomline->next;
-      bottomline->data = copy_of("");
+      bottomline->data = STRLTR_COPY_OF("");
     }
   }
   free(buf);
@@ -680,16 +678,12 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   else if ((ISSET(ZERO) || ISSET(MINIBAR)) && !(we_are_running && undoable)) {
     ; /* No blurb for new buffers with --zero or --mini. */
   }
-  /** TRANSLATORS: Keep the next three messages at most 78 characters. */
+  /* TRANSLATORS: Keep the next three messages at most 78 characters. */
   else if (format == MAC_FILE) {
-    statusline(REMARK,
-               P_("Read %zu line (converted from Mac format)", "Read %zu lines (converted from Mac format)", num_lines),
-               num_lines);
+    statusline(REMARK, P_("Read %zu line (converted from Mac format)", "Read %zu lines (converted from Mac format)", num_lines), num_lines);
   }
   else if (format == DOS_FILE) {
-    statusline(REMARK,
-               P_("Read %zu line (converted from DOS format)", "Read %zu lines (converted from DOS format)", num_lines),
-               num_lines);
+    statusline(REMARK, P_("Read %zu line (converted from DOS format)", "Read %zu lines (converted from DOS format)", num_lines), num_lines);
   }
   else {
     statusline(REMARK, P_("Read %zu line", "Read %zu lines", num_lines), num_lines);
@@ -773,7 +767,7 @@ int open_file(const char *filename, bool new_one, FILE **f) {
 // This function will return the name of the first available extension of a filename
 // (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
 // or the return value.  If no writable extension exists, we return "".
-char *get_next_filename(const char *name, const char *suffix) _NO_EXCEPT {
+char *get_next_filename(const char *name, const char *suffix) _NOTHROW {
   Ulong wholenamelen = (strlen(name) + strlen(suffix));
   Ulong i = 0;
   char *buf;
@@ -1138,7 +1132,7 @@ void do_execute(void) {
 
 // For the given bare path (or path plus filename), return the canonical,
 // absolute path (plus filename) when the path exists, and 'NULL' when not.
-char *get_full_path(const char *origpath) _NO_EXCEPT {
+char *get_full_path(const char *origpath) _NOTHROW {
   char *untilded, *target, *slash;
   struct stat fileinfo;
   if (!origpath) {
@@ -1167,7 +1161,7 @@ char *get_full_path(const char *origpath) _NO_EXCEPT {
 }
 
 /* Returns a normalized path.  IE: Removes all /../ correctly. */
-char *normalized_path(const char *path) _NO_EXCEPT {
+char *normalized_path(const char *path) _NOTHROW {
   char *ret = copy_of(path);
   const char *start = ret;
   const char *end   = NULL;
@@ -1195,13 +1189,13 @@ char *normalized_path(const char *path) _NO_EXCEPT {
 // Optimized for repeted calls where the first call makes sure to get the
 // full path of a relative one, and once that is done normalized path is
 // used as we already know that the relative path must be correct.
-char *abs_path(const char *path) _NO_EXCEPT {
+char *abs_path(const char *path) _NOTHROW {
   return ((*path == '/') ? normalized_path(path) : get_full_path(path));
 }
 
 // Check whether the given path refers to a directory that is writable.
 // Return the absolute form of the path on success, and 'NULL' on failure.
-static char *check_writable_directory(const char *path) _NO_EXCEPT {
+static char *check_writable_directory(const char *path) _NOTHROW {
   char *full_path = get_full_path(path);
   if (!full_path) {
     return NULL;
@@ -1251,7 +1245,7 @@ char *safe_tempfile(FILE **stream) {
 }
 
 /* Change to the specified operating directory, when it's valid. */
-void init_operating_dir(void) _NO_EXCEPT {
+void init_operating_dir(void) _NOTHROW {
   char *target = get_full_path(operating_dir);
   /* If the operating directory is inaccessible, fail. */
   if (!target || chdir(target) == -1) {
@@ -1265,7 +1259,7 @@ void init_operating_dir(void) _NO_EXCEPT {
 // Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
 // incomplete names that can grow into matches for the operating directory
 // are considered to be inside, so that tab completion will work.
-bool outside_of_confinement(const char *somepath, bool tabbing) _NO_EXCEPT {
+bool outside_of_confinement(const char *somepath, bool tabbing) _NOTHROW {
   bool  is_inside, begins_to_be;
   char *fullpath;
   /* If no operating directory is set, there is nothing to check. */
@@ -1959,7 +1953,7 @@ void do_savefile(void) {
 }
 
 /* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
-char *real_dir_from_tilde(const char *path) _NO_EXCEPT {
+char *real_dir_from_tilde(const char *path) _NOTHROW {
   char *tilded, *retval;
   Ulong i = 1;
   if (*path != '~') {
@@ -2443,6 +2437,7 @@ int recursive_entries_in_dir(const char *path, char ***files, Ulong *nfiles, cha
 
 /* Helper to correctly get all entries in a starting path. */
 int get_all_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) {
+  /* Init the arrays. */
   char **local_files  = (char **)nmalloc(sizeof(char *));
   char **local_dirs   = (char **)nmalloc(sizeof(char *));
   Ulong  local_nfiles = 0;

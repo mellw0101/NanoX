@@ -277,7 +277,7 @@ void find_and_prime_applicable_syntax(void) {
 }
 
 /* Determine whether the matches of multiline regexes are still the same, and if not, schedule a screen refresh, so things will be repainted. */
-void check_the_multis(linestruct *line) {
+void check_the_multis(linestruct *line) _NOTHROW {
   const colortype *ink;
   regmatch_t startmatch;
   regmatch_t endmatch;
@@ -285,7 +285,7 @@ void check_the_multis(linestruct *line) {
   bool  anend;
   char *afterstart;
   /* If there is no syntax or no multiline regex, there is nothing to do. */
-  if (!openfile->syntax || !openfile->syntax->multiscore) {
+  if (!openfile->syntax || !openfile->syntax->multiscore || ISSET(USING_GUI)) {
     return;
   }
   if (!line->multidata) {

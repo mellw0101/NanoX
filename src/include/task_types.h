@@ -38,8 +38,8 @@ typedef struct syntax_search_t {
 TASK_STRUCT(signal_payload_t, void (*func)(void *); void *arg;)
 TASK_STRUCT(main_thread_t, pthread_t thread; pid_t pid;)
 
-bool is_main_thread(void) _NO_EXCEPT;
-void pause_all_sub_threads(bool pause) _NO_EXCEPT;
+bool is_main_thread(void) _NOTHROW;
+void pause_all_sub_threads(bool pause) _NOTHROW;
 
 struct pause_sub_threads_guard_t {
   bool from_main_thread;

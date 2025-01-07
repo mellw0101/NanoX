@@ -96,7 +96,7 @@ static linestruct *errors_head = NULL;
 static linestruct *errors_tail = NULL;
 
 /* Send the gathered error messages (if any) to the terminal. */
-void display_rcfile_errors(void) _NO_EXCEPT {
+void display_rcfile_errors(void) _NOTHROW {
   for (linestruct *error = errors_head; error; error = error->next) {
     fprintf(stderr, "%s\n", error->data);
   }
@@ -105,7 +105,7 @@ void display_rcfile_errors(void) _NO_EXCEPT {
 #define MAXSIZE (PATH_MAX + 200)
 
 /* Store the given error message in a linked list, to be printed upon exit. */
-void jot_error(const char *msg, ...) _NO_EXCEPT {
+void jot_error(const char *msg, ...) _NOTHROW {
   linestruct *error = make_new_node(errors_tail);
   va_list     ap;
   char        textbuf[MAXSIZE];
@@ -245,7 +245,7 @@ constexpr_map<std::string_view, functionptrtype, FUNCTION_MAP_COUNT> keyMap = {
    {"firstfile", to_first_file},
    {"lastfile", to_last_file}}
 };
-static constexpr auto retrive_sc_from_str(std::string_view str) _NO_EXCEPT {
+static constexpr auto retrive_sc_from_str(std::string_view str) _NOTHROW {
   for (const auto &[key, value] : keyMap) {
     if (key == str) {
       return value;
@@ -278,7 +278,7 @@ keystruct *strtosc(const char *input) {
 
 /* Parse the next word from the string, null-terminate it, and return a pointer to the first character
  * after the null terminator.  The returned pointer will point to '\0' if we hit the end of the line. */
-char *parse_next_word(char *ptr) _NO_EXCEPT {
+char *parse_next_word(char *ptr) _NOTHROW {
   while (!isblank((Uchar)*ptr) && *ptr) {
     ++ptr;
   }
@@ -296,7 +296,7 @@ char *parse_next_word(char *ptr) _NO_EXCEPT {
 /* Parse an argument, with optional quotes, after a keyword that takes one.  If the
  * next word starts with a ", we say that it ends with the last " of the line.
  * Otherwise, we interpret it as usual, so that the arguments can contain "'s too. */
-static char *parse_argument(char *ptr) _NO_EXCEPT {
+static char *parse_argument(char *ptr) _NOTHROW {
   const char *ptr_save   = ptr;
   char       *last_quote = NULL;
   if (*ptr != '"') {
@@ -602,7 +602,7 @@ void parse_binding(char *ptr, bool dobind) {
 }
 
 /* Verify that the given file exists, is not a folder nor a device. */
-bool is_good_file(char *file) _NO_EXCEPT {
+bool is_good_file(char *file) _NOTHROW {
   struct stat rcinfo;
   /* First check that the file exists and is readable. */
   if (access(file, R_OK) != 0) {

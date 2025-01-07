@@ -2,6 +2,27 @@
 
 #ifdef HAVE_GLFW
 
+#define DOUBLE_PRESS_THRESHOLD 0.2
+
+typedef enum {
+  #define MOUSEFLAG_SIZE 8
+  LEFT_MOUSE_BUTTON_HELD,
+  #define LEFT_MOUSE_BUTTON_HELD LEFT_MOUSE_BUTTON_HELD
+  RIGHT_MOUSE_BUTTON_HELD,
+  #define RIGHT_MOUSE_BUTTON_HELD RIGHT_MOUSE_BUTTON_HELD
+  WAS_MOUSE_DOUBLE_PRESS,
+  #define WAS_MOUSE_DOUBLE_PRESS WAS_MOUSE_DOUBLE_PRESS
+  WAS_MOUSE_TRIPPLE_PRESS,
+  #define WAS_MOUSE_TRIPPLE_PRESS WAS_MOUSE_TRIPPLE_PRESS
+} mouseflag_type;
+
+/* Flags to represent what the mouse is currently doing, across callback functions. */
+static bit_flag_t<MOUSEFLAG_SIZE> mouse_flag;
+/* The element that was last entered, and witch element just ran its enter callback. */
+static uielementstruct *entered_element = NULL;
+/* The mouse position. */
+vec2 mousepos;
+
 /* Window resize callback. */
 void window_resize_callback(GLFWwindow *window, int newwidth, int newheight) {
   window_width  = newwidth;
@@ -10,29 +31,30 @@ void window_resize_callback(GLFWwindow *window, int newwidth, int newheight) {
   glViewport(0, 0, window_width, window_height);
   /* Set the projection. */
   projection = ortho_projection(0.0f, window_width, 0.0f, window_height);
-  // matrix4x4_set_orthographic(&projection, 0, window_width, 0, window_height, -1, 1);
   /* Upload it to both the shaders. */
   update_projection_uniform(fontshader);
   update_projection_uniform(rectshader);
   /* Confirm the margin before we calculate the size of the gutter. */
   confirm_margin();
   /* Calculate the font size. */
-  resize_element(gutterelement, vec2((FONT_WIDTH(font[GUI_NORMAL_TEXT].font) * margin), window_height));
-  move_element(editelement, vec2((gutterelement->pos.x + gutterelement->size.w), editelement->pos.y));
+  resize_element(top_bar, vec2(window_width, FONT_HEIGHT(markup.font)));
+  move_element(gutterelement, vec2(0.0f, top_bar->size.h));
+  resize_element(gutterelement, vec2((FONT_WIDTH(markup.font) * margin), window_height));
+  move_element(editelement, vec2((gutterelement->pos.x + gutterelement->size.w), top_bar->size.h));
   /* Ensure the edit element is correctly sized. */
-  resize_element(editelement, vec2(window_width - (gutterelement->pos.x + gutterelement->size.w), window_height));
-  NETLOG("editelement_size: %f:%f\n", editelement->size.w, editelement->size.h);
+  resize_element(editelement, vec2(window_width - (gutterelement->pos.x + gutterelement->size.w), (window_height - top_bar->size.h)));
   /* Calculate the rows and columns. */
-  editwinrows = (editelement->size.h / FONT_HEIGHT(font[GUI_NORMAL_TEXT].font));
-  if (texture_font_is_mono(font[GUI_NORMAL_TEXT].font)) {
-    NETLOG("Font is mono.\n");
-    texture_glyph_t *glyph = texture_font_get_glyph(font[GUI_NORMAL_TEXT].font, " ");
+  editwinrows = (editelement->size.h / FONT_HEIGHT(markup.font));
+  /* If the font is a mono font then calculate the number of columns by the width of ' '. */
+  if (texture_font_is_mono(markup.font)) {
+    texture_glyph_t *glyph = texture_font_get_glyph(markup.font, " ");
     editwincols = (editelement->size.w / glyph->advance_x);
   }
+  /* Otherwise, just guess for now. */
   else {
-    editwincols = (editelement->size.w / FONT_WIDTH(font[GUI_NORMAL_TEXT].font)) * 0.9f;
+    editwincols = (editelement->size.w / FONT_WIDTH(markup.font)) * 0.9f;
   }
-  NETLOG("editwincols: %d\nwincols:%d\n", editwincols, (window_width / FONT_WIDTH(font[GUI_NORMAL_TEXT].font)));
+  refresh_needed = TRUE;
 }
 
 /* Maximize callback. */
@@ -44,6 +66,7 @@ void window_maximize_callback(GLFWwindow *window, int maximized) {
 
 /* Key callback. */
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  mouse_flag.clear();
   /* Reset shift. */
   shift_held = FALSE;
   /* What function does the key entail. */
@@ -87,6 +110,96 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
       case GLFW_KEY_Y: {
         if (mods == GLFW_MOD_CONTROL) {
           function = do_redo;
+        }
+        break;
+      }
+      /* Paste action. */
+      case GLFW_KEY_V: {
+        if (mods == GLFW_MOD_CONTROL) {
+          const char *string = glfwGetClipboardString(NULL);
+          if (string) {
+            /* Free the cutbuffer if there is anything in it. */
+            free_lines(cutbuffer);
+            cutbuffer = NULL;
+            Ulong linenum;
+            char **line_strings = split_string(string, '\n', &linenum);
+            if (line_strings) {
+              linestruct *item = make_new_node(NULL);
+              linestruct *head = item;
+              NETLOG("num: %lu\n", linenum);
+              for (Ulong i = 0; i < linenum; ++i) {
+                item->data = line_strings[i];
+                recode_NUL_to_LF(item->data, strlen(item->data));
+                NETLOG("%s\n", item->data);
+                if ((i + 1) < linenum) {
+                  item->next = make_new_node(item);
+                  item = item->next;
+                }
+              }
+              free(line_strings);
+              cutbuffer = head;
+              function = paste_text;
+            }
+          }
+        }
+        break;
+      }
+      /* Copy action.  Make this more complete. */
+      case GLFW_KEY_C: {
+        if (mods == GLFW_MOD_CONTROL) {
+          if (openfile->mark) {
+            copy_marked_region();
+            linestruct *bottom = cutbuffer;
+            while (bottom->next) {
+              bottom = bottom->next;
+            }
+            char *string = (char *)nmalloc(1);
+            *string = '\0';
+            Ulong len = 0;
+            for (linestruct *line = cutbuffer; line; line = line->next) {
+              if (!*line->data) {
+                len = append_to(&string, len, "\n", 1);
+              }
+              else {
+                len = append_to(&string, line->data);
+                len = append_to(&string, len, "\n", 1);
+              }
+            }
+            string[len - 1] = '\0';
+            free_lines(cutbuffer);
+            cutbuffer = NULL;
+            glfwSetClipboardString(NULL, string);
+            free(string);
+          }
+        }
+        break;
+      }
+      /* Cut line or marked region. */
+      case GLFW_KEY_X: {
+        if (mods == GLFW_MOD_CONTROL) {
+          function = cut_text;
+        }
+        break;
+      }
+      /* Saving action. */
+      case GLFW_KEY_S: {
+        if (mods == GLFW_MOD_CONTROL) {
+          guiflag.set<GUI_PROMPT>();
+          return;
+        }
+        break;
+      };
+      /* Debuging. */
+      case GLFW_KEY_P: {
+        if (mods == GLFW_MOD_CONTROL) {
+          Ulong endidx = get_current_cursor_word_end_index();
+          if (endidx != openfile->current_x) {
+            NETLOG("End index: '%lu'.\n", endidx);
+          }
+          Ulong prev_stidx = get_prev_cursor_word_start_index();
+          if (prev_stidx != openfile->current_x) {
+            NETLOG("Prev start index: '%lu'.\n", prev_stidx);
+          }
         }
         break;
       }
@@ -279,6 +392,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         break;
       }
+      /* Fullscreen toggle. */
+      case GLFW_KEY_F11: {
+        if (!mods) {
+          do_fullscreen(window);
+        }
+        break;
+      }
     }
   }
   if (function != do_cycle) {
@@ -328,6 +448,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   last_key_was_bracket = FALSE;
   last_bracket_char = '\0';
   keep_mark = FALSE;
+  refresh_needed = TRUE;
 }
 
 /* Char input callback. */
@@ -392,11 +513,262 @@ void char_callback(GLFWwindow *window, Uint ch) {
         return;
       }
     }
-    inject((char *)&ch, 1);
+    inject(&input, 1);
     last_key_was_bracket = FALSE;
     last_bracket_char = '\0';
     keep_mark = FALSE;
+    refresh_needed = TRUE;
   }
+}
+
+/* Mouse button callback. */
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
+  /* Some static vars to track double clicking. */
+  static double last_time     = 0.0;
+  static int    last_button   = 0;
+  static vec2   last_mousepos = 0.0f;
+  /* Determen if this was a double or tripple click. */
+  if (action == GLFW_PRESS) {
+    /* Give some wiggle room for the position of the mouse click as it is represented as while numbers only. */
+    if (last_button == button && (glfwGetTime() - last_time) < DOUBLE_PRESS_THRESHOLD && mousepos > (last_mousepos - 3.0f) && mousepos < (last_mousepos + 3.0f)) {
+      /* Check tripple press first. */
+      (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>() && !mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>())
+        ? mouse_flag.set<WAS_MOUSE_TRIPPLE_PRESS>()  : mouse_flag.unset<WAS_MOUSE_TRIPPLE_PRESS>();
+      /* Then check for double press. */
+      (!mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>() && !mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>())
+        ? mouse_flag.set<WAS_MOUSE_DOUBLE_PRESS>() : mouse_flag.unset<WAS_MOUSE_DOUBLE_PRESS>();
+    }
+    /* Otherwise, clear both double and tripple flags. */
+    else {
+      mouse_flag.unset<WAS_MOUSE_DOUBLE_PRESS>();
+      mouse_flag.unset<WAS_MOUSE_TRIPPLE_PRESS>();
+    }
+  }
+  /* Left mouse button. */
+  if (button == GLFW_MOUSE_BUTTON_1) {
+    if (action == GLFW_PRESS) {
+      uielementstruct *element = element_from_mousepos();
+      /* When the mouse is pressed in the editelement. */
+      if (element == editelement) {
+        mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
+        /* Get the line and index from the mouse position. */
+        Ulong index;
+        linestruct *line = line_and_index_from_mousepos(markup.font, &index);
+        if (line) {
+          openfile->current   = line;
+          openfile->mark      = line;
+          openfile->current_x = index;
+          openfile->mark_x    = index;
+          openfile->softmark  = TRUE;
+          if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
+            /* If this was a double click then select the current word, if any. */
+            Ulong st, end;
+            st  = get_prev_cursor_word_start_index(TRUE);
+            end = get_current_cursor_word_end_index(TRUE);
+            if (st != openfile->current_x && end != openfile->current_x) {
+              /* If the double click was inside of a word. */
+              openfile->mark_x    = st;
+              openfile->current_x = end;
+            }
+            else if (st != openfile->current_x && end == openfile->current_x) {
+              /* The double click was done at the end of the word.  So we select that word. */
+              openfile->mark_x = st;
+            }
+            else if (st == openfile->current_x && end != openfile->current_x) {
+              /* The double click was done at the begining of the word.  So we select that word. */
+              openfile->mark_x    = st;
+              openfile->current_x = end;
+            }
+          }
+          else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
+            openfile->mark_x = 0;
+            openfile->current_x = strlen(openfile->current->data);
+          }
+        }
+      }
+      /* And, when pressed in any other element. */
+      else if (element && element->callback) {
+        element->callback(UIELEMENT_CLICK_CALLBACK);
+      }
+    }
+    else if (action == GLFW_RELEASE) {
+      /* If when the left mouse button is relesed without moving, set the mark to NULL. */
+      if (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) {
+        openfile->mark = NULL;
+      }
+      mouse_flag.unset<LEFT_MOUSE_BUTTON_HELD>();
+    }
+  }
+  /* Right mouse button. */
+  else if (button == GLFW_MOUSE_BUTTON_2) {
+    if (action == GLFW_PRESS) {
+      mouse_flag.set<RIGHT_MOUSE_BUTTON_HELD>();
+    }
+    else if (action == GLFW_RELEASE) {
+      mouse_flag.unset<RIGHT_MOUSE_BUTTON_HELD>();
+    }
+  }
+  /* Middle mouse button. */
+  else if (button == GLFW_MOUSE_BUTTON_3) {
+    NETLOG("Mouse button 3 pressed.\n");
+  }
+  else if (button == GLFW_MOUSE_BUTTON_4) {
+    NETLOG("Mouse button 4 pressed.\n");
+  }
+  else if (button == GLFW_MOUSE_BUTTON_5) {
+    NETLOG("Mouse button 5 pressed.\n");
+  }
+  else if (button == GLFW_MOUSE_BUTTON_6) {
+    NETLOG("Mouse button 6 pressed.\n");
+  }
+  else if (button == GLFW_MOUSE_BUTTON_7) {
+    NETLOG("Mouse button 7 pressed.\n");
+  }
+  else if (button == GLFW_MOUSE_BUTTON_8) {
+    NETLOG("Mouse button 8 pressed.\n");
+  }
+  /* Set the static vars for the next callback.  But only do this for actual singular presses. */
+  if (action == GLFW_PRESS) {
+    /* If we just had a tripple click ensure that the next press will not be detected as a double press. */
+    last_time     = (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>() ? 0.0 : glfwGetTime());
+    last_button   = button;
+    last_mousepos = mousepos;
+  }
+  refresh_needed = TRUE;
+}
+
+/* Mouse pos callback. */
+void mouse_pos_callback(GLFWwindow *window, double x, double y) {
+  mousepos = vec2(x, y);
+  if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
+    Ulong index;
+    linestruct *line = line_and_index_from_mousepos(markup.font, &index);
+    if (line) {
+      openfile->current   = line;
+      openfile->current_x = index;
+      /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
+      if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
+        Ulong st, end;
+        st  = 0;
+        end = strlen(openfile->mark->data);
+        /* If the current cursor line is the same as mark, mark the entire line no matter the cursor pos inside it. */
+        if (openfile->current == openfile->mark) {
+          openfile->mark_x    = st;
+          openfile->current_x = end;
+        }
+        /* If the current line is above the line where the mark was placed, set the mark index at the end of the line. */
+        if (openfile->current->lineno < openfile->mark->lineno) {
+          openfile->mark_x = end;
+        }
+        /* Otherwise, place it at the start. */
+        else {
+          openfile->mark_x = st;
+        }
+      }
+      /* If the left press was a double press. */
+      else if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
+        /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
+        Ulong st, end;
+        st  = get_prev_word_start_index(openfile->mark->data, openfile->mark_x, TRUE);
+        end = get_current_word_end_index(openfile->mark->data, openfile->mark_x, TRUE);
+        /* If the current line is the same as the mark line. */
+        if (openfile->current == openfile->mark) {
+          /* When the current cursor pos is inside the the word, just mark the entire word. */
+          if (openfile->current_x >= st && openfile->current_x <= end) {
+            openfile->mark_x    = st;
+            openfile->current_x = end;
+          }
+          /* Or, when the cursor if before the word, set the mark at the end of the word. */
+          else if (openfile->current_x < st) {
+            openfile->mark_x = end;
+          }
+          /* And when the cursor is after the word, place the mark at the start. */
+          else if (openfile->current_x > end) {
+            openfile->mark_x = st;
+          }
+        }
+        /* Otherwise, when the cursor line is above the mark, place the mark at the end of the word. */
+        else if (openfile->current->lineno < openfile->mark->lineno) {
+          openfile->mark_x = end;
+        }
+        /* And when the cursor line is below the mark line, place the mark at the start of the word. */
+        else {
+          openfile->mark_x = st;
+        }
+      }
+    }
+  }
+  /* Get the element that the mouse is on. */
+  uielementstruct *mouse_element = element_from_mousepos();
+  if (mouse_element) {
+    /* If the current mouse element is not the current entered element. */
+    if (mouse_element != entered_element) {
+      /* Run the enter element for the mouse element, if any. */
+      if (mouse_element->callback) {
+        mouse_element->callback(UIELEMENT_ENTER_CALLBACK);
+      }
+      /* If the old entered element was not NULL. */
+      if (entered_element) {
+        /* Run the leave event for the old entered element, if any. */
+        if (entered_element->callback) {
+          entered_element->callback(UIELEMENT_LEAVE_CALLBACK);
+        }
+      }
+      entered_element = mouse_element;
+    }
+  }
+  refresh_needed = TRUE;
+}
+
+/* Window entering and leaving callback. */
+void window_enter_callback(GLFWwindow *window, int entered) {
+  if (!entered) {
+    if (mousepos.x <= ((float)window_width / 2)) {
+      mousepos.x = -30.0f;
+    }
+    else if (mousepos.x >= ((float)window_width / 2)) {
+      mousepos.x = (window_width + 30.0f);
+    }
+    if (mousepos.y <= ((float)window_height / 2)) {
+      mousepos.y = -30.0f;
+    }
+    else if (mousepos.y >= ((float)window_height / 2)) {
+      mousepos.y = (window_height + 30.0f);
+    }
+    /* If there is a currently entered element, call its leave callback.  If it has one. */
+    if (entered_element) {
+      if (entered_element->callback) {
+        entered_element->callback(UIELEMENT_LEAVE_CALLBACK);
+      }
+      entered_element = NULL;
+    }
+  }
+}
+
+/* Scroll callback. */
+void scroll_callback(GLFWwindow *window, double x, double y) {
+  uielementstruct *element = element_from_mousepos();
+  if (element == editelement) {
+    /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
+    if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
+      Ulong index;
+      linestruct *line = line_and_index_from_mousepos(markup.font, &index);
+      if (line) {
+        openfile->current   = line;
+        openfile->current_x = index;
+      }
+    }
+    /* Up and down scroll. */
+    edit_scroll((y > 0.0) ? BACKWARD : FORWARD);
+  }
+  /* Right and left scroll. */
+  if (x < 0.0) {
+    NETLOG("scroll right.\n");
+  }
+  else if (x > 0.0) {
+    NETLOG("scroll left.\n");
+  }
+  refresh_needed = TRUE;
 }
 
 #endif

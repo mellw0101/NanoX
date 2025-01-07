@@ -301,7 +301,7 @@ void do_cancel(void) {
 }
 
 /* Add a function to the linked list of functions. */
-static void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) _NO_EXCEPT {
+static void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) _NOTHROW {
   funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
   !allfuncs ? (allfuncs = f) : (tailfunc->next = f);
   tailfunc       = f;
@@ -314,7 +314,7 @@ static void add_to_funcs(functionptrtype function, const int menus, const char *
 }
 
 /* Parse the given keystring and return the corresponding keycode, or return -1 when the string is invalid. */
-int keycode_from_string(const char *keystring) _NO_EXCEPT {
+int keycode_from_string(const char *keystring) _NOTHROW {
   if (keystring[0] == '^') {
     if (keystring[2] == '\0') {
       if (keystring[1] == '/' || keystring[1] == '-') {
@@ -370,12 +370,12 @@ int keycode_from_string(const char *keystring) _NO_EXCEPT {
   }
 }
 
-static void show_curses_version(void) _NO_EXCEPT {
+static void show_curses_version(void) _NOTHROW {
   statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
 
 /* Add a key combo to the linked list of shortcuts. */
-static void add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function, const int toggle) _NO_EXCEPT {
+static void add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function, const int toggle) _NOTHROW {
   static keystruct *tailsc;
   static int counter = 0;
   keystruct *sc = (keystruct *)nmalloc(sizeof(keystruct));
@@ -396,7 +396,7 @@ static void add_to_sclist(const int menus, const char *scstring, const int keyco
 }
 
 /* Return the first shortcut in the list of shortcuts that, matches the given function in the given menu. */
-const keystruct *first_sc_for(const int menu, functionptrtype function) _NO_EXCEPT {
+const keystruct *first_sc_for(const int menu, functionptrtype function) _NOTHROW {
   for (keystruct *sc = sclist; sc; sc = sc->next) {
     if ((sc->menus & menu) && sc->func == function && sc->keystr[0]) {
       return sc;
@@ -406,7 +406,7 @@ const keystruct *first_sc_for(const int menu, functionptrtype function) _NO_EXCE
 }
 
 /* Return the number of entries that can be shown in the given menu. */
-Ulong shown_entries_for(const int menu) _NO_EXCEPT {
+Ulong shown_entries_for(const int menu) _NOTHROW {
   funcstruct *item = allfuncs;
   Ulong maximum = (((COLS + 40) / 20) * 2);
   Ulong count = 0;
@@ -424,7 +424,7 @@ Ulong shown_entries_for(const int menu) _NO_EXCEPT {
 }
 
 /* Return the first shortcut in the current menu that matches the given input. */
-const keystruct *get_shortcut(const int keycode) _NO_EXCEPT {
+const keystruct *get_shortcut(const int keycode) _NOTHROW {
   /* Plain characters and upper control codes cannot be shortcuts. */
   if (!meta_key && 0x20 <= keycode && keycode <= 0xFF) {
     return NULL;
@@ -449,7 +449,7 @@ const keystruct *get_shortcut(const int keycode) _NO_EXCEPT {
 }
 
 /* Return a pointer to the function that is bound to the given key. */
-functionptrtype func_from_key(const int keycode) _NO_EXCEPT {
+functionptrtype func_from_key(const int keycode) _NOTHROW {
   const keystruct *sc = get_shortcut(keycode);
   return (sc ? sc->func : NULL);
 }
@@ -781,26 +781,26 @@ void shortcut_init(void) {
   /* TRANSLATORS: The next two strings may be up to 37 characters each. */
   add_to_funcs(do_page_up, MLINTER, N_("Previous Linter message"), WHENHELP(prevlint_gist), TOGETHER);
   add_to_funcs(do_page_down, MLINTER, N_("Next Linter message"), WHENHELP(nextlint_gist), TOGETHER);
-  #define SLASH_OR_DASH (on_a_vt) ? "^-" : "^/"
+  #define SLASH_OR_DASH ((on_a_vt) ? "^-" : "^/")
   /* Link key combos to functions in certain menus. */
-  add_to_sclist(MMOST | MBROWSER, "^M", '\r', do_enter, 0);
-  add_to_sclist(MMOST | MBROWSER, "Enter", KEY_ENTER, do_enter, 0);
+  add_to_sclist((MMOST | MBROWSER), "^M", '\r', do_enter, 0);
+  add_to_sclist((MMOST | MBROWSER), "Enter", KEY_ENTER, do_enter, 0);
   add_to_sclist(MMOST, "^I", '\t', do_tab, 0);
   /* add_to_sclist(MMOST, "^I", 0, do_test_window, 0); */
   add_to_sclist(MMOST, "Tab", '\t', do_tab, 0);
-  add_to_sclist(MMAIN | MBROWSER | MHELP, "^B", 0, do_search_backward, 0);
-  add_to_sclist(MMAIN | MBROWSER | MHELP, "^F", 0, do_search_forward, 0);
+  add_to_sclist((MMAIN | MBROWSER | MHELP), "^B", 0, do_search_backward, 0);
+  add_to_sclist((MMAIN | MBROWSER | MHELP), "^F", 0, do_search_forward, 0);
   if (ISSET(MODERN_BINDINGS)) {
     /* add_to_sclist((MMOST | MBROWSER) & ~MFINDINHELP, help_key, 0, do_help, 0);
     add_to_sclist(MHELP, help_key, 0, do_exit, 0); */
     add_to_sclist(MMAIN, "^N", 0, open_new_empty_buffer, 0);
-    add_to_sclist(MMAIN | MBROWSER | MHELP, "^Q", 0, do_exit, 0);
+    add_to_sclist((MMAIN | MBROWSER | MHELP), "^Q", 0, do_exit, 0);
     add_to_sclist(MMAIN, "^S", 0, do_savefile, 0);
     add_to_sclist(MMAIN, "^W", 0, do_writeout, 0);
     /* add_to_sclist(MMAIN, "^O", 0, do_insertfile, 0); */
     add_to_sclist(MMAIN, "^O", 0, open_buffer_browser, 0);
-    add_to_sclist(MMAIN | MBROWSER | MHELP, "^D", 0, do_findprevious, 0);
-    add_to_sclist(MMAIN | MBROWSER | MHELP, "^G", 0, do_findnext, 0);
+    add_to_sclist((MMAIN | MBROWSER | MHELP), "^D", 0, do_findprevious, 0);
+    add_to_sclist((MMAIN | MBROWSER | MHELP), "^G", 0, do_findnext, 0);
     add_to_sclist(MMAIN, "^R", 0, do_replace, 0);
     add_to_sclist(MMAIN, "^T", 0, do_gotolinecolumn, 0);
     /* add_to_sclist(MMAIN, "^P", 0, report_cursor_position, 0); */
@@ -814,7 +814,7 @@ void shortcut_init(void) {
     add_to_sclist(MMAIN, "^V", 0, paste_text, 0);
   }
   else {
-    add_to_sclist((MMOST | MBROWSER) & ~MFINDINHELP, "^G", 0, do_help, 0);
+    add_to_sclist(((MMOST | MBROWSER) & ~MFINDINHELP), "^G", 0, do_help, 0);
     add_to_sclist((MMAIN | MBROWSER | MHELP), "^X", 0, do_exit, 0);
     if (!ISSET(PRESERVE)) {
       add_to_sclist(MMAIN, "^S", 0, do_savefile, 0);
@@ -1069,5 +1069,5 @@ void shortcut_init(void) {
   add_to_sclist((MMOST & ~MMAIN) | MYESNO, "", KEY_CANCEL, do_cancel, 0);
   add_to_sclist(MMAIN, "", KEY_SIC, do_insertfile, 0);
   /* Catch and ignore bracketed paste marker keys. */
-  add_to_sclist((MMOST | MBROWSER | MHELP) | MYESNO, "", BRACKETED_PASTE_MARKER, do_nothing, 0);
+  add_to_sclist(((MMOST | MBROWSER | MHELP) | MYESNO), "", BRACKETED_PASTE_MARKER, do_nothing, 0);
 }

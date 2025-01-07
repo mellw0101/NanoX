@@ -18,7 +18,7 @@ static time_t latest_timestamp = 942927132;
 static poshiststruct *position_history = NULL;
 
 /* Initialize the lists of historical search and replace strings and the list of historical executed commands. */
-void history_init(void) _NO_EXCEPT {
+void history_init(void) _NOTHROW {
   search_history        = make_new_node(NULL);
   search_history->data  = STRLTR_COPY_OF("");
   searchtop             = search_history;
@@ -34,7 +34,7 @@ void history_init(void) _NO_EXCEPT {
 }
 
 /* Reset the pointer into the history list that contains item to the bottom. */
-void reset_history_pointer_for(const linestruct *item) _NO_EXCEPT {
+void reset_history_pointer_for(const linestruct *item) _NOTHROW {
   if (item == search_history) {
     search_history = searchbot;
   }
@@ -48,7 +48,7 @@ void reset_history_pointer_for(const linestruct *item) _NO_EXCEPT {
 
 /* Return from the history list that starts at start and ends at end the first node that
  * contains the first len characters of the given text, or NULL if there is no such node. */
-static linestruct *find_in_history(const linestruct *start, const linestruct *end, const char *text, Ulong len) _NO_EXCEPT {
+static linestruct *find_in_history(const linestruct *start, const linestruct *end, const char *text, Ulong len) _NOTHROW {
   CONST_FOREACH_FROMTO_PREV(item, start, end) {
     if (strncmp(item->data, text, len) == 0) {
       return (linestruct *)item;
@@ -59,7 +59,7 @@ static linestruct *find_in_history(const linestruct *start, const linestruct *en
 
 /* Update a history list (the one in which item is the current position)
  * with a fresh string text.  That is: add text, or move it to the end. */
-void update_history(linestruct **item, const char *text, bool avoid_duplicates) _NO_EXCEPT {
+void update_history(linestruct **item, const char *text, bool avoid_duplicates) _NOTHROW {
   linestruct **htop    = NULL;
   linestruct **hbot    = NULL;
   linestruct  *thesame = NULL;
@@ -112,7 +112,7 @@ void update_history(linestruct **item, const char *text, bool avoid_duplicates) 
  * searching for a string that is a tab completion of the given string,
  * looking at only its first len characters.  When found, make *here point
  * at the item and return its string; otherwise, just return the string. */
-char *get_history_completion(linestruct **here, char *string, Ulong len) _NO_EXCEPT {
+char *get_history_completion(linestruct **here, char *string, Ulong len) _NOTHROW {
   linestruct *htop = NULL, *hbot = NULL;
   linestruct *item;
   if (*here == search_history) {
@@ -349,22 +349,21 @@ void load_poshistory(void) {
 
 /* Save the recorded cursor positions for files that were edited. */
 void save_poshistory(void) {
-  FILE          *histfile = fopen(poshistname, "wb");
-  struct stat    fileinfo;
+  FILE *histfile = fopen(poshistname, "wb");
+  struct stat fileinfo;
   poshiststruct *item;
   if (!histfile) {
     jot_error(N_("Error writing %s: %s"), poshistname, strerror(errno));
     return;
   }
   /* Don't allow others to read or write the history file. */
-  if (chmod(poshistname, S_IRUSR | S_IWUSR) < 0) {
+  if (chmod(poshistname, (S_IRUSR | S_IWUSR)) < 0) {
     jot_error(N_("Cannot limit permissions on %s: %s"), poshistname, strerror(errno));
   }
-  for (item = position_history; item != NULL; item = item->next) {
+  for (item = position_history; item; item = item->next) {
     char *path_and_place;
     Ulong length;
-    /* Assume 20 decimal positions each for line and column number,
-     * plus two spaces, plus the line feed, plus the null byte. */
+    /* Assume 20 decimal positions each for line and column number, plus two spaces, plus the line feed, plus the null byte. */
     path_and_place = (char *)nmalloc(strlen(item->filename) + 44);
     sprintf(path_and_place, "%s %zd %zd\n", item->filename, item->linenumber, item->columnnumber);
     /* Encode newlines in filenames as NULs. */
