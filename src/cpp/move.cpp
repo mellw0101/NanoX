@@ -1,7 +1,7 @@
 #include "../include/prototypes.h"
 
 /* Move to the first line of the file. */
-void to_first_line(void) _GL_ATTRIBUTE_NOTHROW {
+void to_first_line(void) _NOTHROW {
   openfile->current     = openfile->filetop;
   openfile->current_x   = 0;
   openfile->placewewant = 0;
@@ -9,7 +9,7 @@ void to_first_line(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Move to the last line of the file. */
-void to_last_line(void) _GL_ATTRIBUTE_NOTHROW {
+void to_last_line(void) _NOTHROW {
   openfile->current     = openfile->filebot;
   openfile->current_x   = (inhelp) ? 0 : strlen(openfile->filebot->data);
   openfile->placewewant = xplustabs();
@@ -21,7 +21,7 @@ void to_last_line(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Determine the actual current chunk and the target column. */
-void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _GL_ATTRIBUTE_NOTHROW {
+void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
   if (ISSET(SOFTWRAP)) {
     Ulong shim     = (editwincols * (1 + (tabsize / editwincols)));
     *leftedge      = leftedge_for(xplustabs(), openfile->current);
@@ -37,7 +37,7 @@ void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _GL_ATTRIBUTE_NO
 // chunk that starts at the given leftedge.  If the target column has landed
 // on a tab, prevent the cursor from falling back a row when moving forward,
 // or from skipping a row when moving backward, by incrementing the index.
-Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _GL_ATTRIBUTE_NOTHROW {
+Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _NOTHROW {
   Ulong index = actual_x(line->data, column);
   if (ISSET(SOFTWRAP) && line->data[index] == '\t' && ((forward && wideness(line->data, index) < *leftedge)
    || (!forward && (column / tabsize) == ((*leftedge - 1) / tabsize) && (column / tabsize) < ((*leftedge + editwincols - 1) / tabsize)))) {
@@ -53,7 +53,7 @@ Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bo
 }
 
 /* Adjust the values for current_x and placewewant in case we have landed in the middle of a tab that crosses a row boundary. */
-void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _GL_ATTRIBUTE_NOTHROW {
+void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _NOTHROW {
   Ulong was_edge = *leftedge;
   bool  shifted  = FALSE;
   openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
@@ -65,7 +65,7 @@ void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _GL_A
 }
 
 /* Move up almost one screenful. */
-void do_page_up(void) _GL_ATTRIBUTE_NOTHROW {
+void do_page_up(void) _NOTHROW {
   int   mustmove = ((editwinrows < 3) ? 1 : editwinrows - 2);
   Ulong leftedge, target_column;
   /* If we're not in smooth scrolling mode, put the cursor at the beginning of the top line of the edit window, as Pico does. */
@@ -90,7 +90,7 @@ void do_page_up(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Move down almost one screenful. */
-void do_page_down(void) _GL_ATTRIBUTE_NOTHROW {
+void do_page_down(void) _NOTHROW {
   int   mustmove = ((editwinrows < 3) ? 1 : (editwinrows - 2));
   Ulong leftedge, target_column;
   /* If we're not in smooth scrolling mode, put the cursor at the beginning of the top line of the edit window, as Pico does. */
@@ -115,7 +115,7 @@ void do_page_down(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Place the cursor on the first row in the viewport. */
-void to_top_row(void) _GL_ATTRIBUTE_NOTHROW {
+void to_top_row(void) _NOTHROW {
   Ulong leftedge, offset;
   get_edge_and_target(&leftedge, &offset);
   openfile->current = openfile->edittop;
@@ -125,7 +125,7 @@ void to_top_row(void) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Place the cursor on the last row in the viewport, when possible. */
-void to_bottom_row(void) _GL_ATTRIBUTE_NOTHROW {
+void to_bottom_row(void) _NOTHROW {
   Ulong leftedge, offset;
   get_edge_and_target(&leftedge, &offset);
   openfile->current = openfile->edittop;
@@ -156,7 +156,7 @@ void do_center(void) {
 }
 
 /* Move to the first beginning of a paragraph before the current line. */
-void do_para_begin(linestruct **line) _GL_ATTRIBUTE_NOTHROW {
+void do_para_begin(linestruct **line) _NOTHROW {
   if ((*line)->prev) {
     *line = (*line)->prev;
   }
@@ -166,7 +166,7 @@ void do_para_begin(linestruct **line) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Move down to the last line of the first found paragraph. */
-void do_para_end(linestruct **line) _GL_ATTRIBUTE_NOTHROW {
+void do_para_end(linestruct **line) _NOTHROW {
   while ((*line)->next && !inpar(*line)) {
     *line = (*line)->next;
   }
@@ -314,7 +314,7 @@ void to_next_block(void) {
 }
 
 /* Move to the previous word. */
-void do_prev_word(void) _GL_ATTRIBUTE_NOTHROW {
+void do_prev_word(void) _NOTHROW {
   bool punctuation_as_letters = ISSET(WORD_BOUNDS);
   bool seen_a_word  = FALSE;
   bool step_forward = FALSE;
@@ -356,7 +356,7 @@ void do_prev_word(void) _GL_ATTRIBUTE_NOTHROW {
 /* Move to the next word.  If after_ends is 'TRUE', stop at the ends of words
  * instead of at their beginnings.  If 'after_ends' is 'TRUE', stop at the ends
  * of words instead of at their beginnings. Return 'TRUE' if we started on a word. */
-bool do_next_word(bool after_ends) _GL_ATTRIBUTE_NOTHROW {
+bool do_next_word(bool after_ends) _NOTHROW {
   bool punct_as_letters = ISSET(WORD_BOUNDS);
   bool started_on_word  = is_word_char((openfile->current->data + openfile->current_x), punct_as_letters);
   bool seen_space       = !started_on_word;

@@ -162,7 +162,7 @@ static bool write_lockfile(const char *lockfilename, const char *filename, bool 
 // First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask
 // whether to open the corresponding file anyway.  Return SKIPTHISFILE when the user
 // answers "No", return the name of the lock file on success, and return NULL on failure.
-char *do_lockfile(const char *filename, bool ask_the_user) {
+static char *do_lockfile(const char *filename, bool ask_the_user) {
   char *namecopy     = copy_of(filename);
   char *secondcopy   = copy_of(filename);
   Ulong locknamesize = (strlen(filename) + STRLTRLEN(locking_prefix) + STRLTRLEN(locking_suffix) + 3);
@@ -798,7 +798,7 @@ static pid_t pid_of_sender = -1;
 static bool should_pipe = FALSE;
 
 /* Send an unconditional kill signal to the running external command. */
-void cancel_the_command(int signal) {
+static void cancel_the_command(int signal) _NOTHROW {
   if (pid_of_command > 0) {
     kill(pid_of_command, SIGKILL);
   }

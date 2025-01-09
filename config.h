@@ -942,45 +942,45 @@
 
 /* Define to 1 if you have the <magic.h> header file. */
 #ifdef HAVE_LIBMAGIC
-#  define HAVE_MAGIC_H                          1
+#  define HAVE_MAGIC_H 1
 #endif
 
 /* Define to 1 if you have the <malloc.h> header file. */
-#define HAVE_MALLOC_H                           1
+#define HAVE_MALLOC_H                      1
 
 /* Define if malloc, realloc, and calloc set errno on allocation failure. */
-#define HAVE_MALLOC_POSIX                       1
+#define HAVE_MALLOC_POSIX                  1
 
 /* Define to 1 if mmap()'s MAP_ANONYMOUS flag is available after including
    config.h and <sys/mman.h>. */
-#define HAVE_MAP_ANONYMOUS                      1
+#define HAVE_MAP_ANONYMOUS                 1
 
 /* Define to 1 if you have the <math.h> header file. */
-#define HAVE_MATH_H                             1
+#define HAVE_MATH_H                        1
 
 /* Define to 1 if you have the 'mbrtowc' function. */
-#define HAVE_MBRTOWC                            1
+#define HAVE_MBRTOWC                       1
 
 /* Define to 1 if you have the 'mbsinit' function. */
-#define HAVE_MBSINIT                            1
+#define HAVE_MBSINIT                       1
 
 /* Define to 1 if you have the 'mbsrtowcs' function. */
-#define HAVE_MBSRTOWCS                          1
+#define HAVE_MBSRTOWCS                     1
 
 /* Define to 1 if <wchar.h> declares mbstate_t. */
-#define HAVE_MBSTATE_T                          1
+#define HAVE_MBSTATE_T                     1
 
 /* Define to 1 if you have the 'mbstowcs' function. */
-#define HAVE_MBSTOWCS                           1
+#define HAVE_MBSTOWCS                      1
 
 /* Define to 1 if you have the `mbtowc' function. */
-#define HAVE_MBTOWC                             1
+#define HAVE_MBTOWC                        1
 
 /* Define to 1 if you have the `mempcpy' function. */
-#define HAVE_MEMPCPY                            1
+#define HAVE_MEMPCPY                       1
 
 /* Define to 1 if you have the 'memrchr' function. */
-#define HAVE_MEMRCHR                            1
+#define HAVE_MEMRCHR                       1
 
 /* Define to 1 if you have the <minix/config.h> header file. */
 /* #undef HAVE_MINIX_CONFIG_H */
@@ -989,13 +989,13 @@
 /* #undef HAVE_MINMAX_IN_LIMITS_H */
 
 /* Define to 1 if <sys/param.h> defines the MIN and MAX macros. */
-#define HAVE_MINMAX_IN_SYS_PARAM_H              1
+#define HAVE_MINMAX_IN_SYS_PARAM_H         1
 
 /* Define to 1 if you have the 'mkstemps' function. */
-#define HAVE_MKSTEMPS                           1
+#define HAVE_MKSTEMPS                      1
 
 /* Define to 1 if you have the 'mprotect' function. */
-#define HAVE_MPROTECT                           1
+#define HAVE_MPROTECT                      1
 
 /* Define to 1 on MSVC platforms that have the "invalid parameter handler"
    concept. */
@@ -1005,46 +1005,46 @@
 /* #undef HAVE_NCURSES_H */
 
 /* Define to 1 if you have the `nl_langinfo' function. */
-#define HAVE_NL_LANGINFO                        1
+#define HAVE_NL_LANGINFO                   1
 
 /* Define to 1 if you have the 'openat' function. */
-#define HAVE_OPENAT                             1
+#define HAVE_OPENAT                        1
 
 /* Define to 1 if you have the 'opendir' function. */
-#define HAVE_OPENDIR                            1
+#define HAVE_OPENDIR                       1
 
 /* Define to 1 if you have the 'pipe' function. */
-#define HAVE_PIPE                               1
+#define HAVE_PIPE                          1
 
 /* Define if you have the <pthread.h> header and the POSIX threads API. */
-#define HAVE_PTHREAD_API                        1
+#define HAVE_PTHREAD_API                   1
 
 /* Define if the <pthread.h> defines PTHREAD_MUTEX_RECURSIVE. */
-#define HAVE_PTHREAD_MUTEX_RECURSIVE            1
+#define HAVE_PTHREAD_MUTEX_RECURSIVE       1
 
 /* Define if the POSIX multithreading library has read/write locks. */
-#define HAVE_PTHREAD_RWLOCK                     1
+#define HAVE_PTHREAD_RWLOCK                1
 
 /* Define if the 'pthread_rwlock_rdlock' function prefers a writer to a reader. */
 /* #undef HAVE_PTHREAD_RWLOCK_RDLOCK_PREFER_WRITER */
 
 /* Define to 1 if you have the <pwd.h> header file. */
-#define HAVE_PWD_H                              1
+#define HAVE_PWD_H                         1
 
 /* Define to 1 if you have the 'raise' function. */
-#define HAVE_RAISE                              1
+#define HAVE_RAISE                         1
 
 /* Define to 1 if you have the 'rawmemchr' function. */
-#define HAVE_RAWMEMCHR                          1
+#define HAVE_RAWMEMCHR                     1
 
 /* Define to 1 if you have the 'readdir' function. */
-#define HAVE_READDIR                            1
+#define HAVE_READDIR                       1
 
 /* Define to 1 if you have the 'readlink' function. */
-#define HAVE_READLINK                           1
+#define HAVE_READLINK                      1
 
 /* Define to 1 if you have the 'realpath' function. */
-#define HAVE_REALPATH                           1
+#define HAVE_REALPATH                      1
 
 /* Define to 1 if 'long double' and 'double' have the same representation. */
 /* #undef HAVE_SAME_LONG_DOUBLE_AS_DOUBLE */
@@ -1056,19 +1056,19 @@
 /* #undef HAVE_SETDTABLESIZE */
 
 /* Define this if your curses library has the set_escdelay() function. */
-#define HAVE_SET_ESCDELAY                       1
+#define HAVE_SET_ESCDELAY                  1
 
 /* Define to 1 if you have the 'sigaction' function. */
-#define HAVE_SIGACTION                          1
+#define HAVE_SIGACTION                     1
 
 /* Define to 1 if you have the 'sigaltstack' function. */
-#define HAVE_SIGALTSTACK                        1
+#define HAVE_SIGALTSTACK                   1
 
 /* Define to 1 if the system has the type 'siginfo_t'. */
 /* #undef HAVE_SIGINFO_T */
 
 /* Define to 1 if you have the 'siginterrupt' function. */
-#define HAVE_SIGINTERRUPT                       1
+#define HAVE_SIGINTERRUPT                  1
 
 /* Define to 1 if 'sig_atomic_t' is a signed integer type. */
 /* #undef HAVE_SIGNED_SIG_ATOMIC_T */
@@ -1080,60 +1080,60 @@
 /* #undef HAVE_SIGNED_WINT_T */
 
 /* Define to 1 if the system has the type 'sigset_t'. */
-#define HAVE_SIGSET_T                           1
+#define HAVE_SIGSET_T                      1
 
 /* Define to 1 if you have the 'snprintf' function. */
-#define HAVE_SNPRINTF                           1
+#define HAVE_SNPRINTF                      1
 
 /* Define if the return value of the snprintf function is the number of of bytes (excluding
  * the terminating NUL) that would have been produced if the buffer had been large enough. */
-#define HAVE_SNPRINTF_RETVAL_C99                1
+#define HAVE_SNPRINTF_RETVAL_C99           1
 
 /* Define if the string produced by the snprintf function is always NUL
    terminated. */
-#define HAVE_SNPRINTF_TRUNCATION_C99            1
+#define HAVE_SNPRINTF_TRUNCATION_C99       1
 
 /* Define to 1 if you have the <stdbool.h> header file. */
-#define HAVE_STDBOOL_H                          1
+#define HAVE_STDBOOL_H                     1
 
 /* Define to 1 if you have the <stdckdint.h> header file. */
 /* #undef HAVE_STDCKDINT_H */
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#define HAVE_STDINT_H                           1
+#define HAVE_STDINT_H                      1
 
 /* Define if <stdint.h> exists, doesn't clash with <sys/types.h>, and declares uintmax_t. */
-#define HAVE_STDINT_H_WITH_UINTMAX              1
+#define HAVE_STDINT_H_WITH_UINTMAX         1
 
 /* Define to 1 if you have the <stdio.h> header file. */
-#define HAVE_STDIO_H                            1
+#define HAVE_STDIO_H                       1
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#define HAVE_STDLIB_H                           1
+#define HAVE_STDLIB_H                      1
 
 /* Define to 1 if you have the 'strcasecmp' function. */
-#define HAVE_STRCASECMP                         1
+#define HAVE_STRCASECMP                    1
 
 /* Define to 1 if you have the 'strcasestr' function. */
-#define HAVE_STRCASESTR                         1
+#define HAVE_STRCASESTR                    1
 
 /* Define if you have 'strerror_r'. */
-#define HAVE_STRERROR_R                         1
+#define HAVE_STRERROR_R                    1
 
 /* Define to 1 if you have the <strings.h> header file. */
-#define HAVE_STRINGS_H                          1
+#define HAVE_STRINGS_H                     1
 
 /* Define to 1 if you have the <string.h> header file. */
-#define HAVE_STRING_H                           1
+#define HAVE_STRING_H                      1
 
 /* Define to 1 if you have the 'strncasecmp' function. */
-#define HAVE_STRNCASECMP                        1
+#define HAVE_STRNCASECMP                   1
 
 /* Define to 1 if you have the 'strnlen' function. */
-#define HAVE_STRNLEN                            1
+#define HAVE_STRNLEN                       1
 
 /* Define if there is a member named d_type in the struct describing directory headers. */
-#define HAVE_STRUCT_DIRENT_D_TYPE               1
+#define HAVE_STRUCT_DIRENT_D_TYPE          1
 
 /* Define to 1 if 'decimal_point' is a member of 'struct lconv'. */
 /* #undef HAVE_STRUCT_LCONV_DECIMAL_POINT */
@@ -1142,7 +1142,7 @@
 /* #undef HAVE_STRUCT_LCONV_INT_P_CS_PRECEDES */
 
 /* Define to 1 if 'sa_sigaction' is a member of 'struct sigaction'. */
-#define HAVE_STRUCT_SIGACTION_SA_SIGACTION      1
+#define HAVE_STRUCT_SIGACTION_SA_SIGACTION 1
 
 /* Define to 1 if 'st_atimensec' is a member of 'struct stat'. */
 /* #undef HAVE_STRUCT_STAT_ST_ATIMENSEC */
@@ -1154,7 +1154,7 @@
 /* #undef HAVE_STRUCT_STAT_ST_ATIM_ST__TIM_TV_NSEC */
 
 /* Define to 1 if 'st_atim.tv_nsec' is a member of 'struct stat'. */
-#define HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC        1
+#define HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC   1
 
 /* Define to 1 if 'st_birthtimensec' is a member of 'struct stat'. */
 /* #undef HAVE_STRUCT_STAT_ST_BIRTHTIMENSEC */
@@ -1166,80 +1166,80 @@
 /* #undef HAVE_STRUCT_STAT_ST_BIRTHTIM_TV_NSEC */
 
 /* Define to 1 if you have the 'symlink' function. */
-#define HAVE_SYMLINK                            1
+#define HAVE_SYMLINK                       1
 
 /* Define to 1 if you have the <sys/bitypes.h> header file. */
 /* #undef HAVE_SYS_BITYPES_H */
 
 /* Define to 1 if you have the <sys/cdefs.h> header file. */
-#define HAVE_SYS_CDEFS_H                        1
+#define HAVE_SYS_CDEFS_H                   1
 
 /* Define to 1 if you have the <sys/inttypes.h> header file. */
 /* #undef HAVE_SYS_INTTYPES_H */
 
 /* Define to 1 if you have the <sys/mman.h> header file. */
-#define HAVE_SYS_MMAN_H                         1
+#define HAVE_SYS_MMAN_H                    1
 
 /* Define to 1 if you have the <sys/param.h> header file. */
-#define HAVE_SYS_PARAM_H                        1
+#define HAVE_SYS_PARAM_H                   1
 
 /* Define to 1 if you have the <sys/random.h> header file. */
-#define HAVE_SYS_RANDOM_H                       1
+#define HAVE_SYS_RANDOM_H                  1
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
-#define HAVE_SYS_SOCKET_H                       1
+#define HAVE_SYS_SOCKET_H                  1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#define HAVE_SYS_STAT_H                         1
+#define HAVE_SYS_STAT_H                    1
 
 /* Define to 1 if you have the <sys/time.h> header file. */
-#define HAVE_SYS_TIME_H                         1
+#define HAVE_SYS_TIME_H                    1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#define HAVE_SYS_TYPES_H                        1
+#define HAVE_SYS_TYPES_H                   1
 
 /* Define to 1 if you have the <sys/wait.h> header file. */
-#define HAVE_SYS_WAIT_H                         1
+#define HAVE_SYS_WAIT_H                    1
 
 /* Define to 1 if you have the <termios.h> header file. */
-#define HAVE_TERMIOS_H                          1
+#define HAVE_TERMIOS_H                     1
 
 /* Define to 1 if you have the `thrd_create' function. */
 /* #undef HAVE_THRD_CREATE */
 
 /* Define to 1 if you have the <threads.h> header file. */
-#define HAVE_THREADS_H                          1
+#define HAVE_THREADS_H                     1
 
 /* Define if you have the timespec_get function. */
-#define HAVE_TIMESPEC_GET                       1
+#define HAVE_TIMESPEC_GET                  1
 
 /* Define to 1 if you have the 'towlower' function. */
-#define HAVE_TOWLOWER                           1
+#define HAVE_TOWLOWER                      1
 
 /* Define to 1 if you have the <uchar.h> header file. */
-#define HAVE_UCHAR_H                            1
+#define HAVE_UCHAR_H                       1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H                           1
+#define HAVE_UNISTD_H                      1
 
 /* Define to 1 if you have the <unistring/woe32dll.h> header file. */
 /* #undef HAVE_UNISTRING_WOE32DLL_H */
 
 /* Define to 1 if the system has the type 'unsigned long long int'. */
-#define HAVE_UNSIGNED_LONG_LONG_INT             1
+#define HAVE_UNSIGNED_LONG_LONG_INT        1
 
 /* Define this if your curses library has the use_default_colors() function.
  */
-#define HAVE_USE_DEFAULT_COLORS                 1
+#define HAVE_USE_DEFAULT_COLORS            1
 
 /* Define to 1 if you have the 'utime' function. */
-#define HAVE_UTIME                              1
+#define HAVE_UTIME                         1
 
 /* Define to 1 if you have the `utimensat' function. */
-#define HAVE_UTIMENSAT                          1
+#define HAVE_UTIMENSAT                     1
 
 /* Define to 1 if you have the <utime.h> header file. */
-#define HAVE_UTIME_H                            1
+#define HAVE_UTIME_H                       1
 
 /* Define if you have a global __progname variable */
 /* #undef HAVE_VAR___PROGNAME */
@@ -1251,74 +1251,74 @@
 /* #undef HAVE_VISIBILITY */
 
 /* Define to 1 if you have the 'vsnprintf' function. */
-#define HAVE_VSNPRINTF                          1
+#define HAVE_VSNPRINTF                     1
 
 /* Define to 1 if you have the 'wait' function. */
-#define HAVE_WAIT                               1
+#define HAVE_WAIT                          1
 
 /* Define to 1 if you have the 'waitpid' function. */
-#define HAVE_WAITPID                            1
+#define HAVE_WAITPID                       1
 
 /* Define to 1 if you have the <wchar.h> header file. */
-#define HAVE_WCHAR_H                            1
+#define HAVE_WCHAR_H                       1
 
 /* Define if you have the 'wchar_t' type. */
-#define HAVE_WCHAR_T                            1
+#define HAVE_WCHAR_T                       1
 
 /* Define to 1 if you have the 'wcrtomb' function. */
-#define HAVE_WCRTOMB                            1
+#define HAVE_WCRTOMB                       1
 
 /* Define to 1 if you have the 'wcslen' function. */
-#define HAVE_WCSLEN                             1
+#define HAVE_WCSLEN                        1
 
 /* Define to 1 if you have the 'wctomb' function. */
-#define HAVE_WCTOMB                             1
+#define HAVE_WCTOMB                        1
 
 /* Define to 1 if you have the <wctype.h> header file. */
-#define HAVE_WCTYPE_H                           1
+#define HAVE_WCTYPE_H                      1
 
 /* Define to 1 if you have the 'wcwidth' function. */
-#define HAVE_WCWIDTH                            1
+#define HAVE_WCWIDTH                       1
 
 /* Define to 1 if the compiler and linker support weak declarations of symbols. */
-#define HAVE_WEAK_SYMBOLS                       1
+#define HAVE_WEAK_SYMBOLS                  1
 
 /* Define to 1 if you have the <winsock2.h> header file. */
 /* #undef HAVE_WINSOCK2_H */
 
 /* Define if you have the 'wint_t' type. */
-#define HAVE_WINT_T                             1
+#define HAVE_WINT_T                        1
 
 /* Define to 1 if you have the `wmempcpy' function. */
-#define HAVE_WMEMPCPY                           1
+#define HAVE_WMEMPCPY                      1
 
 /* Define to 1 if fstatat (..., 0) works. For example, it does not work in AIX 7.1. */
 /* #undef HAVE_WORKING_FSTATAT_ZERO_FLAG */
 
 /* Define if the mbrtoc32 function basically works. */
-#define HAVE_WORKING_MBRTOC32                   1
+#define HAVE_WORKING_MBRTOC32              1
 
 /* Define to 1 if O_NOATIME works. */
-#define HAVE_WORKING_O_NOATIME                  1
+#define HAVE_WORKING_O_NOATIME             1
 
 /* Define to 1 if O_NOFOLLOW works. */
-#define HAVE_WORKING_O_NOFOLLOW                 1
+#define HAVE_WORKING_O_NOFOLLOW            1
 
 /* Define if utimes works properly. */
-#define HAVE_WORKING_UTIMES                     1
+#define HAVE_WORKING_UTIMES                1
 
 /* Define to 1 if you have the <xlocale.h> header file. */
 /* #undef HAVE_XLOCALE_H */
 
 /* Define to 1 if you have the <zlib.h> header file. */
-#define HAVE_ZLIB_H                             1
+#define HAVE_ZLIB_H                        1
 
 /* Define to 1 if you have the '_set_invalid_parameter_handler' function. */
 /* #undef HAVE__SET_INVALID_PARAMETER_HANDLER */
 
 /* Define to 1 if the compiler supports __builtin_expect,
    and to 2 if <builtins.h> does.  */
-#define HAVE___BUILTIN_EXPECT                   1
+#define HAVE___BUILTIN_EXPECT              1
 #ifndef HAVE___BUILTIN_EXPECT
 #  define __builtin_expect(e, c) (e)
 #elif HAVE___BUILTIN_EXPECT == 2
@@ -1557,7 +1557,6 @@
 /* #define PACKAGE_STRING            "GNU nano 8.0" */
 #define PACKAGE_STRING            "NanoX v0.0.1"
 #define FORKED_FROM_STRING        "GNU nano 8.0"
-
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME           "nano"
@@ -2522,7 +2521,8 @@
 #  endif
 #endif
 
-#if (!defined HAVE_C_STATIC_ASSERT && !defined assert && (!defined __cplusplus || (__cpp_static_assert < 201411 && __GNUG__ < 6 && __clang_major__ < 6)))
+#if (!defined HAVE_C_STATIC_ASSERT && !defined assert && \
+     (!defined __cplusplus || (__cpp_static_assert < 201411 && __GNUG__ < 6 && __clang_major__ < 6)))
 #  include <assert.h>
 #  undef /**/ assert
 #  ifdef __sgi
@@ -2537,53 +2537,61 @@
 
 #ifndef _RETURNS_NONNULL
 #  if _GL_HAS_ATTRIBUTE(returns_nonnull)
-#     define _RETURNS_NONNULL __attribute__((__returns_nonnull__))
+#    define _RETURNS_NONNULL __attribute__((__returns_nonnull__))
 #  else
-#     define _RETURNS_NONNULL
+#    define _RETURNS_NONNULL
 #  endif
 #endif
 
 #ifndef _PACKED
 #  if _GL_HAS_ATTRIBUTE(packed) && !defined __SUNPRO_C
-#     define _PACKED __attribute__((__packed__)) 
+#    define _PACKED __attribute__((__packed__))
 #  else
-#     define _PACKED
+#    define _PACKED
 #  endif
 #endif
 
 #ifndef _NOTHROW
 #  if defined __cplusplus
-#     if _GL_GNUC_PREREQ(2, 8) || __clang_major >= 4
-#        if __cplusplus >= 201103L
-#           define _NOTHROW noexcept(true)
-#        else
-#           define _NOTHROW throw()
-#        endif
-#     else
-#        if _GL_HAS_ATTRIBUTE(nothrow)
-#           define _NOTHROW __attribute__((__nothrow__))
-#        else
-#           define _NOTHROW
-#        endif
-#     endif
+#    if _GL_GNUC_PREREQ(2, 8) || __clang_major >= 4
+#      if __cplusplus >= 201103L
+#        define _NOTHROW noexcept(true)
+#      else
+#        define _NOTHROW throw()
+#      endif
+#    else
+#      if _GL_HAS_ATTRIBUTE(nothrow)
+#        define _NOTHROW __attribute__((__nothrow__))
+#      else
+#        define _NOTHROW
+#      endif
+#    endif
 #  endif
 #endif
 
 #ifndef _NONNULL
 #  if _GL_HAS_ATTRIBUTE(nonnull)
-#     define _NONNULL(...) __attribute__((__nonnull__(__VA_ARGS__)))
+#    define _NONNULL(...) __attribute__((__nonnull__(__VA_ARGS__)))
 #  else
-#     define _NONNULL
+#    define _NONNULL
 #  endif
 #endif
 
 #ifndef _NODISCARD
 #  if _GL_HAS_ATTRIBUTE(warn_unused_result)
-#     define _NODISCARD __attribute__((__warn_unused_result__))
+#    define _NODISCARD __attribute__((__warn_unused_result__))
 #  else
-#     define _NODISCARD
+#    define _NODISCARD
 #  endif
 #endif
+
+#ifndef _NORETURN
+
+#  endif
+
+/* This is defined by the installer if glfw is installed staticly and localaly. */
+#  define HAVE_GLFW 1
+
 
 /* This is defined by the installer if glfw is installed staticly and localaly. */
 #define HAVE_GLFW 1

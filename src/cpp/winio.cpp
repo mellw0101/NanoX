@@ -46,14 +46,14 @@ static Ulong macro_length = 0;
 static Ulong milestone = 0;
 
 /* Add the given code to the macro buffer. */
-void add_to_macrobuffer(int code) {
+static void add_to_macrobuffer(int code) _NOTHROW {
   ++macro_length;
   macro_buffer = arealloc(macro_buffer, (macro_length * sizeof(int)));
   macro_buffer[macro_length - 1] = code;
 }
 
 /* Start or stop the recording of keystrokes. */
-void record_macro(void) {
+void record_macro(void) _NOTHROW {
   recording = !recording;
   if (recording) {
     macro_length = 0;
@@ -138,7 +138,7 @@ void reserve_space_for(Ulong newsize) _NOTHROW {
  * - F10 on FreeBSD console == PageUp on Mach console; the former is
  *   omitted.  (Same as above.)
  */
-/* Read in at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
+/* Read in_NOTHROW at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
 void read_keys_from(WINDOW *frame) {
   int   input    = ERR;
   Ulong errcount = 0;
@@ -349,7 +349,7 @@ int get_input(WINDOW *frame) {
 
 /* Return the arrow-key code that corresponds to the given letter.
  * (This mapping is common to a handful of escape sequences). */
-int arrow_from_ABCD(const int letter) {
+static int arrow_from_ABCD(const int letter) _NOTHROW {
   if (letter < 'C') {
     return ((letter == 'A') ? KEY_UP : KEY_DOWN);
   }
@@ -357,7 +357,7 @@ int arrow_from_ABCD(const int letter) {
 }
 
 /* Translate a sequence that began with "Esc O" to its corresponding key code. */
-int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
+static int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW {
   switch (seq[0]) {
     case '1' : {
       if (length > 3 && seq[1] == ';') {
@@ -519,7 +519,7 @@ int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) {
 }
 
 /* Translate a sequence that began with "Esc [" to its corresponding key code. */
-int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
+static int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW {
   if (seq[0] < '9' && length > 1) {
     *consumed = 2;
   }
@@ -922,10 +922,8 @@ int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) {
   return FOREIGN_SEQUENCE;
 }
 
-/* Interpret an escape sequence that has the given post-ESC starter byte
- * and with the rest of the sequence still in the keystroke buffer.
- * TODO: (parse_escape_sequence) - Use this to get 'Ctrl+Bsp/^Bsp'. */
-int parse_escape_sequence(int starter) {
+/* Interpret an escape sequence that has the given post-ESC starter byte and with the rest of the sequence still in the keystroke buffer. */
+static int parse_escape_sequence(int starter) _NOTHROW {
   int consumed = 1;
   int keycode  = 0;
   if (starter == 'O') {
@@ -944,7 +942,7 @@ int parse_escape_sequence(int starter) {
 /* For each consecutive call, gather the given digit into a three-digit decimal byte
  * code (from 000 to 255).  Return the assembled code when it is complete, but until
  * then return PROCEED when the given digit is valid, and the given digit itself otherwise. */
-int assemble_byte_code(int keycode) {
+static int assemble_byte_code(int keycode) _NOTHROW {
   static int byte = 0;
   digit_count++;
   /* The first digit is either 0, 1, or 2 (checked before the call). */
@@ -980,7 +978,7 @@ int assemble_byte_code(int keycode) {
  * - Ctrl-6 == Ctrl-^ == Ctrl-~
  * - Ctrl-7 == Ctrl-/ == Ctrl-_
  * - Ctrl-8 == Ctrl-? */
-int convert_to_control(int kbinput) {
+static int convert_to_control(int kbinput) _NOTHROW {
   if ('@' <= kbinput && kbinput <= '_') {
     return kbinput - '@';
   }
@@ -1008,7 +1006,7 @@ int convert_to_control(int kbinput) {
  * (Many of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or Shift+Alt). The function keys
  * (F1-F12), and the numeric keypad with NumLock off. The function also handles UTF-8 sequences, and
  * converts them to Unicode.  The function returns the corresponding value for the given keystroke. */
-int parse_kbinput(WINDOW *frame) {
+static int parse_kbinput(WINDOW *frame) {
   static bool first_escape_was_alone = FALSE;
   static bool last_escape_was_alone  = FALSE;
   static int  escapes = 0;
@@ -1555,7 +1553,7 @@ static long assemble_unicode(int symbol) _NOTHROW {
 
 /* Read in one control character (or an iTerm/Eterm/rxvt double Escape), or convert a series of six digits into a Unicode codepoint.
  * Return in count either 1 (for a control character or the first byte of a multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
-int *parse_verbatim_kbinput(WINDOW *frame, Ulong *count) {
+static int *parse_verbatim_kbinput(WINDOW *frame, Ulong *count) {
   int keycode, *yield;
   reveal_cursor = TRUE;
   keycode       = get_input(frame);
@@ -1622,7 +1620,7 @@ int *parse_verbatim_kbinput(WINDOW *frame, Ulong *count) {
 
 /* Read in one control code, one character byte, or the leading escapes of
  * an escape sequence, and return the resulting number of bytes in count. */
-char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) {
+char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) _NOTHROW {
   char *bytes = (char *)nmalloc(MAXCHARLEN + 2);
   int  *input;
   /* Turn off flow control characters if necessary so that we can type them in verbatim,

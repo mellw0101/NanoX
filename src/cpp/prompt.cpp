@@ -144,7 +144,7 @@ static void paste_into_answer(void) _NOTHROW {
 }
 
 /* Handle a mouse click on the status-bar prompt or the shortcut list. */
-static int do_statusbar_mouse(void) {
+static int do_statusbar_mouse(void) _NOTHROW {
   int click_row = 0;
   int click_col = 0;
   int retval    = get_mouseinput(&click_row, &click_col, TRUE);
@@ -160,7 +160,7 @@ static int do_statusbar_mouse(void) {
 }
 
 /* Insert the given short burst of bytes into the answer. */
-static void inject_into_answer(char *burst, Ulong count) {
+static void inject_into_answer(char *burst, Ulong count) _NOTHROW {
   /* First encode any embedded NUL byte as 0x0A. */
   for (Ulong index = 0; index < count; index++) {
     if (!burst[index]) {

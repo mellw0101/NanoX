@@ -17,7 +17,7 @@ static Ulong selected = 0;
 // Fill 'filelist' with the names of the files in the given directory, set 'list_length' to the
 // number of names in that list, set 'gauge' to the width of the widest filename plus ten, and
 // set 'piles' to the number of files that can be displayed per screen row.  And sort the list too.
-void read_the_list(const char *path, DIR *dir) {
+static void read_the_list(const char *path, DIR *dir) {
   Ulong path_len = strlen(path);
   Ulong widest = 0;
   Ulong index  = 0;
@@ -256,7 +256,7 @@ void browser_refresh(void) {
 }
 
 /* Look for the given needle in the list of files, forwards or backwards. */
-void findfile(const char *needle, bool forwards) {
+static void findfile(const char *needle, bool forwards) _NOTHROW {
   Ulong began_at = selected;
   /* Iterate through the list of filenames, until a match is found or
    * we've come back to the point where we started. */
@@ -290,7 +290,7 @@ void findfile(const char *needle, bool forwards) {
 
 // Prepare the prompt and ask the user what to search for; then search for it.
 // If forwards is TRUE, search forward in the list; otherwise, search backward.
-void search_filename(bool forwards) {
+static void search_filename(bool forwards) {
   char *thedefault;
   int   response;
   /* If something was searched for before, show it between square brackets. */
@@ -324,7 +324,7 @@ void search_filename(bool forwards) {
 }
 
 /* Search again without prompting for the last given search string, either forwards or backwards. */
-void research_filename(bool forwards) {
+static void research_filename(bool forwards) _NOTHROW {
   /* If nothing was searched for yet, take the last item from history. */
   if (!*last_search && searchbot->prev) {
     last_search = mallocstrcpy(last_search, searchbot->prev->data);
@@ -362,7 +362,7 @@ static char *strip_last_component(const char *path) _NOTHROW {
 // Allow the user to browse through the directories in the filesystem, starting at the
 // given path.  The user can select a file, which will be returned.  The user can also
 // select a directory, which will be entered.  The user can also cancel the browsing.
-char *browse(char *path) {
+static char *browse(char *path) {
   /* The name of the currently selected file, or of the directory we were in before backing up to "..". */
   char *present_name = NULL;
   /* The number of the selected file before the current selected file. */
@@ -643,10 +643,9 @@ read_directory_contents:
 // a filename from it; if then still not a directory, use the current working directory instead.
 // If the resulting path isn't in the operating directory, use the operating directory instead.
 char *browse_in(const char *inpath) {
-  char       *path = real_dir_from_tilde(inpath);
+  char *path = real_dir_from_tilde(inpath);
   struct stat fileinfo;
-  /* If path is not a directory, try to strip a filename from it; if then
-   * still not a directory, use the current working directory instead. */
+  /* If path is not a directory, try to strip a filename from it; if then still not a directory, use the current working directory instead. */
   if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode)) {
     path = free_and_assign(path, strip_last_component(path));
     if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode)) {

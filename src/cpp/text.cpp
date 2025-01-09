@@ -2,7 +2,7 @@
 #include "../include/prototypes.h"
 
 /* Toggle the mark. */
-void do_mark(void) {
+void do_mark(void) _NOTHROW {
   if (!openfile->mark) {
     openfile->mark     = openfile->current;
     openfile->mark_x   = openfile->current_x;
@@ -67,7 +67,7 @@ static void restore_undo_posx(undostruct *u) _NOTHROW {
 }
 
 /* Add an indent to the given line. */
-void indent_a_line(linestruct *line, char *indentation) {
+static void indent_a_line(linestruct *line, char *indentation) _NOTHROW {
   Ulong length, indent_len;
   length     = strlen(line->data);
   indent_len = strlen(indentation);
@@ -94,7 +94,7 @@ void indent_a_line(linestruct *line, char *indentation) {
 
 /* Indent the current line (or the marked lines) by tabsize columns.  This inserts either a
  * tab character or a tab's worth of spaces, depending on whether --tabstospaces is in effect. */
-void do_indent(void) {
+void do_indent(void) _NOTHROW {
   linestruct *top, *bot, *line;
   char *indentation;
   /* Use either all the marked lines or just the current line. */
@@ -226,7 +226,7 @@ void do_unindent(void) _NOTHROW {
 }
 
 /* Perform an undo or redo for an indent or unindent action. */
-void handle_indent_action(undostruct *u, bool undoing, bool add_indent) {
+static void handle_indent_action(undostruct *u, bool undoing, bool add_indent) _NOTHROW {
   groupstruct *group = u->grouping;
   linestruct  *line  = line_from_number(group->top_line);
   /* When redoing, reposition the cursor and let the indenter adjust it. */
@@ -254,7 +254,7 @@ void handle_indent_action(undostruct *u, bool undoing, bool add_indent) {
 // Test whether the given line can be uncommented, or add or remove a comment, depending on action.
 // Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
 // ADDED: Also takes indentation into account.
-bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
+static bool comment_line(undo_type action, linestruct *line, const char *comment_seq) _NOTHROW {
   Ulong comment_seq_len = strlen(comment_seq);
   /* The postfix, if this is a bracketing type comment sequence. */
   const char *post_seq = strchr(comment_seq, '|');
@@ -312,7 +312,7 @@ bool comment_line(undo_type action, linestruct *line, const char *comment_seq) {
 }
 
 /* Comment or uncomment the current line or the marked lines. */
-void do_comment(void) {
+void do_comment(void) _NOTHROW {
   const char *comment_seq = GENERAL_COMMENT_CHARACTER;
   undo_type action = UNCOMMENT;
   linestruct *top, *bot, *line;
@@ -369,7 +369,7 @@ void do_comment(void) {
 }
 
 /* Perform an undo or redo for a comment or uncomment action. */
-void handle_comment_action(undostruct *u, bool undoing, bool add_comment) {
+static void handle_comment_action(undostruct *u, bool undoing, bool add_comment) _NOTHROW {
   groupstruct *group = u->grouping;
   /* When redoing, reposition the cursor and let the commenter adjust it. */
   if (!undoing) {
@@ -394,7 +394,7 @@ void handle_comment_action(undostruct *u, bool undoing, bool add_comment) {
 #define undo_paste redo_cut
 
 /* Undo a cut, or redo a paste. */
-void undo_cut(undostruct *u) {
+static void undo_cut(undostruct *u) _NOTHROW {
   goto_line_posx(u->head_lineno, ((u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x));
   /* Clear an inherited anchor but not a user-placed one. */
   if (!(u->xflags & HAD_ANCHOR_AT_START)) {
@@ -417,7 +417,7 @@ void undo_cut(undostruct *u) {
 }
 
 /* Redo a cut, or undo a paste. */
-void redo_cut(undostruct *u) {
+static void redo_cut(undostruct *u) _NOTHROW {
   linestruct *oldcutbuffer = cutbuffer;
   cutbuffer = NULL;
   openfile->mark   = line_from_number(u->head_lineno);
@@ -1853,7 +1853,7 @@ bool inpar(const linestruct *const line) _NOTHROW {
 
 /* Find the first occurring paragraph in the forward direction.  Return 'TRUE' when a paragraph was found,
  * and 'FALSE' otherwise.  Furthermore, return the first line and the number of lines of the paragraph. */
-bool find_paragraph(linestruct **firstline, Ulong *linecount) {
+static bool find_paragraph(linestruct **firstline, Ulong *linecount) {
   linestruct *line = *firstline;
   /* When not currently in a paragraph, move forward to a line that is. */
   while (!inpar(line) && line->next) {
@@ -2019,7 +2019,7 @@ static void justify_paragraph(linestruct **line, Ulong count) _NOTHROW {
 
 /* Justify the current paragraph, or the entire buffer when whole_buffer is
  * 'TRUE'.  But if the mark is on, justify only the marked text instead. */
-void justify_text(bool whole_buffer) {
+static void justify_text(bool whole_buffer) {
   /* The number of lines in the original paragraph. */
   Ulong linecount;
   /* The line where the paragraph or region starts. */
@@ -2270,7 +2270,7 @@ void do_full_justify(void) {
 }
 
 /* Set up an argument list for executing the given command. */
-void construct_argument_list(char ***arguments, char *command, char *filename) {
+static void construct_argument_list(char ***arguments, char *command, char *filename) {
   char *copy_of_command = copy_of(command);
   char *element = strtok(copy_of_command, " ");
   int count = 2;
@@ -2285,7 +2285,7 @@ void construct_argument_list(char ***arguments, char *command, char *filename) {
 
 /* Open the specified file, and if that succeeds, remove the text of the marked
  * region or of the entire buffer and read the file contents into its place. */
-bool replace_buffer(const char *filename, undo_type action, const char *operation) {
+static bool replace_buffer(const char *filename, undo_type action, const char *operation) {
   linestruct *was_cutbuffer = cutbuffer;
   int         descriptor;
   FILE       *stream;
@@ -2314,7 +2314,7 @@ bool replace_buffer(const char *filename, undo_type action, const char *operatio
 }
 
 /* Execute the given program, with the given temp file as last argument. */
-void treat(char *tempfile_name, char *theprogram, bool spelling) {
+static void treat(char *tempfile_name, char *theprogram, bool spelling) {
   static char **arguments = NULL;
   struct stat fileinfo;
   long  was_lineno = openfile->current->lineno;
@@ -2430,7 +2430,7 @@ void treat(char *tempfile_name, char *theprogram, bool spelling) {
 }
 
 /* Let the user edit the misspelled word.  Return 'FALSE' if the user cancels. */
-bool fix_spello(const char *word) {
+static bool fix_spello(const char *word) {
   linestruct *was_edittop = openfile->edittop;
   linestruct *was_current = openfile->current;
   linestruct *top, *bot;
@@ -2511,7 +2511,7 @@ bool fix_spello(const char *word) {
 
 /* Run a spell-check on the given file, using 'spell' to produce a list of all misspelled words, then feeding those through
  * 'sort' and 'uniq' to obtain an alphabetical list, which words are then offered one by one to the user for correction. */
-void do_int_speller(const char *const tempfile_name) {
+static void do_int_speller(const char *const tempfile_name) {
   char *misspellings, *pointer, *oneword;
   long  pipesize;
   Ulong buffersize, bytesread, totalread;

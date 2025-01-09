@@ -144,29 +144,29 @@ static void update_colorfile(void *arg) {
 
 /* Lookup-table for available color opt`s. */
 static const coloroption coloropt_lookup_table[] {
-  {           "red", STRLTRLEN("red"),            FG_VS_CODE_RED},
-  {         "green", STRLTRLEN("green"),          FG_VS_CODE_GREEN},
-  {        "yellow", STRLTRLEN("yellow"),         FG_VS_CODE_YELLOW},
-  {          "blue", STRLTRLEN("blue"),           FG_VS_CODE_BLUE},
-  {       "magenta", STRLTRLEN("magenta"),        FG_VS_CODE_MAGENTA},
-  {          "cyan", STRLTRLEN("cyan"),           FG_VS_CODE_CYAN},
-  {         "white", STRLTRLEN("white"),          FG_VS_CODE_WHITE},
-  {    "bright-red", STRLTRLEN("bright-red"),     FG_VS_CODE_BRIGHT_RED},
-  {  "bright-green", STRLTRLEN("bright-green"),   FG_VS_CODE_BRIGHT_GREEN},
-  { "bright-yellow", STRLTRLEN("bright-yellow"),  FG_VS_CODE_BRIGHT_YELLOW},
-  {   "bright-blue", STRLTRLEN("bright-blue"),    FG_VS_CODE_BRIGHT_BLUE},
-  {"bright-magenta", STRLTRLEN("bright-magenta"), FG_VS_CODE_BRIGHT_MAGENTA},
-  {   "bright-cyan", STRLTRLEN("bright-cyan"),    FG_VS_CODE_BRIGHT_CYAN},
-  {          "grey", STRLTRLEN("grey"),           FG_SUGGEST_GRAY},
-  {        "bg-red", STRLTRLEN("bg-red"),         BG_VS_CODE_RED},
-  {       "bg-blue", STRLTRLEN("bg-blue"),        BG_VS_CODE_BLUE},
-  {      "bg-green", STRLTRLEN("bg-green"),       BG_VS_CODE_GREEN},
+  {           "red", STRLTRLEN("red"),            FG_VS_CODE_RED            },
+  {         "green", STRLTRLEN("green"),          FG_VS_CODE_GREEN          },
+  {        "yellow", STRLTRLEN("yellow"),         FG_VS_CODE_YELLOW         },
+  {          "blue", STRLTRLEN("blue"),           FG_VS_CODE_BLUE           },
+  {       "magenta", STRLTRLEN("magenta"),        FG_VS_CODE_MAGENTA        },
+  {          "cyan", STRLTRLEN("cyan"),           FG_VS_CODE_CYAN           },
+  {         "white", STRLTRLEN("white"),          FG_VS_CODE_WHITE          },
+  {    "bright-red", STRLTRLEN("bright-red"),     FG_VS_CODE_BRIGHT_RED     },
+  {  "bright-green", STRLTRLEN("bright-green"),   FG_VS_CODE_BRIGHT_GREEN   },
+  { "bright-yellow", STRLTRLEN("bright-yellow"),  FG_VS_CODE_BRIGHT_YELLOW  },
+  {   "bright-blue", STRLTRLEN("bright-blue"),    FG_VS_CODE_BRIGHT_BLUE    },
+  {"bright-magenta", STRLTRLEN("bright-magenta"), FG_VS_CODE_BRIGHT_MAGENTA },
+  {   "bright-cyan", STRLTRLEN("bright-cyan"),    FG_VS_CODE_BRIGHT_CYAN    },
+  {          "grey", STRLTRLEN("grey"),           FG_SUGGEST_GRAY           },
+  {        "bg-red", STRLTRLEN("bg-red"),         BG_VS_CODE_RED            },
+  {       "bg-blue", STRLTRLEN("bg-blue"),        BG_VS_CODE_BLUE           },
+  {      "bg-green", STRLTRLEN("bg-green"),       BG_VS_CODE_GREEN          },
 };
 constexpr Ulong COLOROPT_LOOKUP_TABLE_SIZE = ARRAY_SIZE(coloropt_lookup_table);
 #define COLOROPT_LOOKUP_TABLE_SIZE COLOROPT_LOOKUP_TABLE_SIZE
 
 /* Optimized lookup for color opt.  Uses opt name len to minimize overhead. */
-bool lookup_coloropt(const char *color, int len, int *color_opt) {
+bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW {
   for (Ulong i = 0; i < COLOROPT_LOOKUP_TABLE_SIZE; ++i) {
     if (len == coloropt_lookup_table[i].name_len
      && strncmp(color, coloropt_lookup_table[i].name, len) == 0) {
@@ -178,7 +178,7 @@ bool lookup_coloropt(const char *color, int len, int *color_opt) {
 }
 
 /* Fetch the color for an option.  Return`s TRUE on success, otherwise FALSE. */
-bool get_color_option(const char *data, const char *option, int *color_opt) {
+static bool get_color_option(const char *data, const char *option, int *color_opt) {
   /* Fetch the color data, if any. */
   const char *opt = strstr(data, option);
   if (opt) {

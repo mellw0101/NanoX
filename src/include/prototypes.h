@@ -197,9 +197,9 @@ ASM_FUNCTION(int)  asm_atomic_xchg(int *ptr, int value);
 
 /* The two needed functions from 'browser.cpp'. */
 void  browser_refresh(void);
-char *browse_in(const char *inpath);
 void  to_first_file(void) _NOTHROW;
 void  to_last_file(void) _NOTHROW;
+char *browse_in(const char *inpath);
 
 /* Most functions in 'chars.cpp'. */
 void  utf8_init(void) _NOTHROW;
@@ -391,11 +391,11 @@ void        suggest_ctrlT_ctrlZ(void) _NOTHROW;
 void        finish(void) _NOTHROW __no_return;
 void        close_and_go(void);
 void        do_exit(void);
-void        die(const char *msg, ...) /* _NOTHROW */ __no_return __nonnull((1));
+void        die(const char *msg, ...) __no_return __nonnull((1));
 void        window_init(void) _NOTHROW;
-void        install_handler_for_Ctrl_C(void);
-void        restore_handler_for_Ctrl_C(void);
-void        reconnect_and_store_state(void);
+void        install_handler_for_Ctrl_C(void) _NOTHROW;
+void        restore_handler_for_Ctrl_C(void) _NOTHROW;
+void        reconnect_and_store_state(void) _NOTHROW;
 void        handle_hupterm(int signal);
 void        handle_crash(int signal);
 void        suspend_nano(int signal);
@@ -466,11 +466,11 @@ char *find_global_header(const char *str);
 char *find_local_header(const char *str);
 
 /* Most functions in 'text.cpp'. */
-void  do_mark(void);
+void  do_mark(void) _NOTHROW;
 void  do_tab(void);
-void  do_indent(void);
+void  do_indent(void) _NOTHROW;
 void  do_unindent(void) _NOTHROW;
-void  do_comment(void);
+void  do_comment(void) _NOTHROW;
 void  enclose_marked_region(const char *s1, const char *s2) _NOTHROW;
 void  do_undo(void);
 void  do_redo(void);
@@ -548,14 +548,14 @@ const char *string_strstr_array(const char *str, const vector<string> &substrs, 
 void        set_mark(long lineno, Ulong pos_x) _NOTHROW;
 
 /* Most functions in 'winio.cpp'. */
-void  record_macro(void);
+void  record_macro(void) _NOTHROW;
 void  run_macro(void);
 void  reserve_space_for(Ulong newsize) _NOTHROW;
 Ulong waiting_keycodes(void);
 void  implant(const char *string);
 int   get_input(WINDOW *win);
 int   get_kbinput(WINDOW *win, bool showcursor);
-char *get_verbatim_kbinput(WINDOW *win, Ulong *count);
+char *get_verbatim_kbinput(WINDOW *win, Ulong *count) _NOTHROW;
 int   get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) _NOTHROW;
 void  blank_edit(void) _NOTHROW;
 void  blank_statusbar(void) _NOTHROW;
@@ -804,7 +804,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 #endif
 
 /* 'cfg.cpp'. */
-bool lookup_coloropt(const char *color, int len, int *color_opt);
+bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW;
 void init_cfg(void);
 void cleanup_cfg(void) _NOTHROW;
 

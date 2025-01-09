@@ -236,7 +236,7 @@ void do_exit(void) {
 
 // Save the current buffer under the given name (or "nano.<pid>" when nameless)
 // with suffix ".save". If needed, the name is further suffixed to be unique.
-void emergency_save(const char *filename) {
+static void emergency_save(const char *filename) {
   char *plainname, *targetname;
   if (!*filename) {
     plainname = (char *)nmalloc(28);
@@ -257,7 +257,7 @@ void emergency_save(const char *filename) {
 }
 
 /* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
-void die(const char *msg, ...) /* _NOTHROW */ {
+void die(const char *msg, ...) {
   openfilestruct *firstone = openfile;
   static int stabs = 0;
   va_list ap;
@@ -303,8 +303,7 @@ void window_init(void) _NOTHROW {
   /* If the terminal is very flat, don't set up a title bar */
   if (LINES < 3) {
     editwinrows = (ISSET(ZERO) ? LINES : 1);
-    /* Set up two subwindows.  If the terminal is just one line,
-    * edit window and status-bar window will cover each other. */
+    /* Set up two subwindows.  If the terminal is just one line, edit window and status-bar window will cover each other. */
     midwin  = newwin(editwinrows, COLS, 0, 0);
     footwin = newwin(1, COLS, (LINES - 1), 0);
   }
@@ -363,7 +362,7 @@ static void mouse_init(void) _NOTHROW {
 }
 
 /* Print the usage line for the given option to the screen. */
-void print_opt(const char *const shortflag, const char *const longflag, const char *const description) {
+static void print_opt(const char *const shortflag, const char *const longflag, const char *const description) _NOTHROW {
   const int firstwidth  = breadth(shortflag);
   const int secondwidth = breadth(longflag);
   printf(" %s", shortflag);
@@ -378,7 +377,7 @@ void print_opt(const char *const shortflag, const char *const longflag, const ch
 }
 
 /* Explain how to properly use NanoX and its command-line options. */
-void usage(void) {
+static void usage(void) {
   printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
   /* TRANSLATORS: The next two strings are part of the --help output.
    * It's best to keep its lines within 80 characters. */
@@ -466,7 +465,7 @@ void usage(void) {
 
 /* Display the version number of this nano, a copyright notice, some contact
  * information, and the configuration options this nano was compiled with. */
-void version(void) {
+static void version(void) _NOTHROW {
   printf(_(" NanoX, version %s\n"), VERSION);
   printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code, converted into C++\n", REVISION);
   /* TRANSLATORS: The %s is the year of the latest release. */
@@ -495,12 +494,12 @@ void list_syntax_names(void) {
 }
 
 /* Register that Ctrl+C was pressed during some system call. */
-void make_a_note(int signal) {
+static void make_a_note(int signal) _NOTHROW {
   control_C_was_pressed = TRUE;
 }
 
 /* Make ^C interrupt a system call and set a flag. */
-void install_handler_for_Ctrl_C(void) {
+void install_handler_for_Ctrl_C(void) _NOTHROW {
   /* Enable the generation of a SIGINT when ^C is pressed. */
   enable_kb_interrupt();
   /* Set up a signal handler so that pressing ^C will set a flag. */
@@ -510,13 +509,13 @@ void install_handler_for_Ctrl_C(void) {
 }
 
 /* Go back to ignoring ^C. */
-void restore_handler_for_Ctrl_C(void) {
+void restore_handler_for_Ctrl_C(void) _NOTHROW {
   sigaction(SIGINT, &oldaction, NULL);
   disable_kb_interrupt();
 }
 
 /* Reconnect standard input to the tty, and store its state. */
-void reconnect_and_store_state(void) {
+void reconnect_and_store_state(void) _NOTHROW {
   int thetty = open("/dev/tty", O_RDONLY);
   if (thetty < 0 || dup2(thetty, STDIN_FILENO) < 0) {
     die(_("Could not reconnect stdin to keyboard\n"));
@@ -529,7 +528,7 @@ void reconnect_and_store_state(void) {
 }
 
 /* Read whatever comes from standard input into a new buffer. */
-bool scoop_stdin(void) {
+static bool scoop_stdin(void) {
   FILE *stream;
   restore_terminal();
   /* When input comes from a terminal, show a helpful message. */
@@ -560,7 +559,7 @@ bool scoop_stdin(void) {
 }
 
 /* Register half a dozen signal handlers. */
-void signal_init(void) _NOTHROW {
+static void signal_init(void) _NOTHROW {
   struct sigaction deed = {{0}};
   /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
   deed.sa_handler = SIG_IGN;
@@ -580,17 +579,17 @@ void signal_init(void) _NOTHROW {
   sigfillset(&deed.sa_mask);
   deed.sa_handler = continue_nano;
   sigaction(SIGCONT, &deed, NULL);
-  #if !defined(DEBUG)
-    if (!getenv("NANO_NOCATCH")) {
-      /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
-      * the terminal to a usable state.  Reset these handlers to their
-      * defaults as soon as their signal fires. */
-      deed.sa_handler = handle_crash;
-      deed.sa_flags |= SA_RESETHAND;
-      sigaction(SIGSEGV, &deed, NULL);
-      sigaction(SIGABRT, &deed, NULL);
-    }
-  #endif
+#if !defined(DEBUG)
+  if (!getenv("NANO_NOCATCH")) {
+    /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
+    * the terminal to a usable state.  Reset these handlers to their
+    * defaults as soon as their signal fires. */
+    deed.sa_handler = handle_crash;
+    deed.sa_flags |= SA_RESETHAND;
+    sigaction(SIGSEGV, &deed, NULL);
+    sigaction(SIGABRT, &deed, NULL);
+  }
+#endif
 }
 
 /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
@@ -1114,11 +1113,12 @@ void process_a_keystroke(void) {
       print_view_warning();
     }
     else {
-      /* When the input buffer (plus room for terminating NUL) is full, extend it. Otherwise, if it does not exist yet, create it. */
+      /* When the input buffer (plus room for terminating NUL) is full, extend it. */
       if ((depth + 1) == capacity) {
         capacity *= 2;
         puddle = arealloc(puddle, capacity);
       }
+      /* Otherwise, if it does not exist yet, create it. */
       else if (!puddle) {
         puddle = (char *)nmalloc(capacity);
       }
@@ -1148,13 +1148,13 @@ void process_a_keystroke(void) {
          /* Before current cursor position. */
          && (((is_prev_cursor_word_char() || is_prev_cursor_char_one_of("\"><")))
          /* After current cursor position. */
-         || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char(';')))) {
+         || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(";)}]")))) {
           ;
         }
         /* Exceptions for enclosing brackets. */
         else if ((input == '(' || input == '[' || input == '{')
          /* After current cursor position. */
-         && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";'")) || (is_cursor_char_one_of("({[")))) {
+         && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}]")) || (is_cursor_char_one_of("({[")))) {
           ;
         }
         /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
@@ -1179,6 +1179,8 @@ void process_a_keystroke(void) {
         }
       }
       puddle[depth++] = (char)input;
+      last_key_was_bracket = FALSE;
+      last_bracket_char    = '\0';
     }
   }
   /* If there are gathered bytes and we have a command or no other key codes are waiting, it's time to insert these bytes into the edit buffer. */

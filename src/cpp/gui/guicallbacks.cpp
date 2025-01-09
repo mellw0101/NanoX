@@ -188,7 +188,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           return;
         }
         break;
-      };
+      }
       /* Debuging. */
       case GLFW_KEY_P: {
         if (mods == GLFW_MOD_CONTROL) {
