@@ -354,8 +354,7 @@ void wrap_help_text_into_buffer(void) {
   openfile->edittop = openfile->current;
 }
 
-/* Assemble a help text, display it, and allow scrolling through it.
- * TODO : (show_help) : Change to NanoX help text. */
+/* Assemble a help text, display it, and allow scrolling through it.  TODO: (show_help) : Change to NanoX help text. */
 void show_help(void) {
   int kbinput = ERR;
   /* The function of the key the user typed in. */
@@ -370,7 +369,7 @@ void show_help(void) {
   Ulong stash[ARRAY_SIZE(flags)];
   /* A storage place for the current flag settings. */
   linestruct *line;
-  int         length;
+  int length;
   /* Save the settings of all flags. */
   memcpy(stash, flags, sizeof(flags));
   /* Ensure that the help screen's shortcut list can be displayed. */

@@ -176,7 +176,7 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
     vector<string> dirs = {
       "/usr/local/include/" + check_file,
       "/usr/include/" + check_file,
-      "/usr/lib/clang/18/include/" + check_file,
+      "/usr/lib/clang/19/include/" + check_file,
       "/usr/include/c++/v1/" + check_file,
     };
     for (const auto &it : dirs) {
@@ -395,7 +395,7 @@ inline namespace DefineTools {
       return NULL;
     }
     *ptr = end;
-    return measured_memmove_copy(st, (end - st));
+    return measured_copy(st, (end - st));
   }
 };
 

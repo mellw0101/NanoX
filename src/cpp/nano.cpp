@@ -479,7 +479,7 @@ static void version(void) _NOTHROW {
 }
 
 /* List the names of the available syntaxes. */
-void list_syntax_names(void) {
+static void list_syntax_names(void) _NOTHROW {
   int width = 0;
   printf(_("Available syntaxes:\n"));
   for (syntaxtype *sntx = syntaxes; sntx; sntx = sntx->next) {
@@ -679,7 +679,7 @@ void regenerate_screen(void) {
 }
 
 /* Invert the given global flag and adjust things for its new value. */
-void toggle_this(const int flag) {
+static void toggle_this(const int flag) {
   bool enabled = !ISSET(flag);
   TOGGLE(flag);
   focusing = FALSE;
@@ -769,7 +769,7 @@ void toggle_this(const int flag) {
 }
 
 /* Disable extended input and output processing in our terminal settings. */
-void disable_extended_io(void) _NOTHROW {
+static void disable_extended_io(void) _NOTHROW {
   termios settings = {0};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~IEXTEN;
@@ -831,16 +831,16 @@ void terminal_init(void) _NOTHROW {
 }
 
 /* Ask ncurses for@file definitions.h a keycode, or assign a default one. */
-int get_keycode(const char *const keyname, const int standard) _NOTHROW {
+static int get_keycode(const char *const keyname, const int standard) _NOTHROW {
   const char *keyvalue = tigetstr(keyname);
   if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue)) {
     return key_defined(keyvalue);
   }
-  #ifdef DEBUG
-    if (!ISSET(RAW_SEQUENCES)) {
-      fprintf(stderr, "Using fallback keycode for %s\n", keyname);
-    }
-  #endif
+#ifdef DEBUG
+  if (!ISSET(RAW_SEQUENCES)) {
+    fprintf(stderr, "Using fallback keycode for %s\n", keyname);
+  }
+#endif
   return standard;
 }
 
@@ -906,7 +906,7 @@ void unbound_key(int code) _NOTHROW {
 }
 
 /* Handle a mouse click on the edit window or the shortcut list. */
-int do_mouse(void) {
+static int do_mouse(void) {
   int click_row;
   int click_col;
   int retval = get_mouseinput(&click_row, &click_col, TRUE);
@@ -968,7 +968,7 @@ bool changes_something(functionptrtype f) {
 }
 
 /* Read in all waiting input bytes and paste them into the buffer in one go. */
-void suck_up_input_and_paste_it(void) {
+static void suck_up_input_and_paste_it(void) {
   linestruct *was_cutbuffer = cutbuffer;
   linestruct *line = make_new_node(NULL);
   Ulong index = 0;
@@ -1070,7 +1070,7 @@ void inject(char *burst, Ulong count) {
 }
 
 /* Read in a keystroke, and execute its command or insert it into the buffer. */
-void process_a_keystroke(void) {
+static void process_a_keystroke(void) {
   /* The keystroke we read in, this can be a char or a shortcut. */
   int input;
   /* The buffer to hold the actual chars. */
@@ -1172,6 +1172,7 @@ void process_a_keystroke(void) {
           /* Set the flag in the undo struct just created, marking an exception for future undo-redo actions. */
           openfile->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
           openfile->mark = NULL;
+          keep_mark = FALSE;
           /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
           last_key_was_bracket = TRUE;
           last_bracket_char = (char)input;
@@ -1533,7 +1534,7 @@ int main(int argc, char **argv) {
   /* Compile the quoting regex, and exit when it's invalid. */
   quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
   if (quoterc) {
-    Ulong size    = regerror(quoterc, &quotereg, NULL, 0);
+    Ulong size = regerror(quoterc, &quotereg, NULL, 0);
     char *message = (char *)nmalloc(size);
     regerror(quoterc, &quotereg, message, size);
     die(_("Bad quoting regex \"%s\": %s\n"), quotestr, message);
@@ -1821,7 +1822,7 @@ int main(int argc, char **argv) {
     glfw_loop();
     do_exit();
   }
-  /* TODO: This is the main loop of the editor. */
+  /* This is the main loop of the cli-editor. */
   while (TRUE) {
     prosses_callback_queue();
     confirm_margin();

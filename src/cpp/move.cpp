@@ -322,6 +322,7 @@ void do_prev_word(void) _NOTHROW {
   while (TRUE) {
     /* If at the head of a line, move to the end of the preceding one. */
     if (!openfile->current_x) {
+      /* If we are at the first line, do nothing. */
       if (!openfile->current->prev) {
         break;
       }
@@ -331,14 +332,14 @@ void do_prev_word(void) _NOTHROW {
     }
     /* Step back one character. */
     openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-    if (is_word_char((openfile->current->data + openfile->current_x), punctuation_as_letters)) {
+    if (is_cursor_word_char(punctuation_as_letters) || is_cursor_language_word_char()) {
       seen_a_word = TRUE;
       /* If at the head of a line now, this surely is a word start. */
-      if (openfile->current_x == 0) {
+      if (!openfile->current_x) {
         break;
       }
     }
-    else if (is_zerowidth(openfile->current->data + openfile->current_x)) {
+    else if (is_cursor_zerowidth()) {
       ; /* Do nothing. */
     }
     else if (seen_a_word) {
@@ -358,7 +359,7 @@ void do_prev_word(void) _NOTHROW {
  * of words instead of at their beginnings. Return 'TRUE' if we started on a word. */
 bool do_next_word(bool after_ends) _NOTHROW {
   bool punct_as_letters = ISSET(WORD_BOUNDS);
-  bool started_on_word  = is_word_char((openfile->current->data + openfile->current_x), punct_as_letters);
+  bool started_on_word  = (is_cursor_word_char(punct_as_letters) || is_cursor_language_word_char());
   bool seen_space       = !started_on_word;
   bool seen_word        = started_on_word;
   Uint i = 0;
@@ -390,27 +391,28 @@ bool do_next_word(bool after_ends) _NOTHROW {
       openfile->current_x = step_right(openfile->current->data, openfile->current_x);
     }
     if (after_ends) {
-      /* If this is a word character, continue.  Else, it's a separator,
-       * and if we've already seen a word, then it's a word end. */
-      if (is_word_char(openfile->current->data + openfile->current_x, punct_as_letters)) {
+      /* If this is a word character, continue. */
+      if (is_cursor_word_char(punct_as_letters) || is_cursor_language_word_char()) {
         seen_word = TRUE;
       }
-      else if (is_zerowidth(openfile->current->data + openfile->current_x)) {
+      else if (is_cursor_zerowidth()) {
         ; /* Skip */
       }
+      /* Else, it's a separator, and if we've already seen a word, then it's a word end. */
       else if (seen_word) {
         break;
       }
     }
     else {
-      if (is_zerowidth(openfile->current->data + openfile->current_x)) {
+      if (is_cursor_zerowidth()) {
         ;
       }
       else {
-        /* If this is not a word character, then it's a separator.  Else, if we've already seen a separator, then it's a word start. */
-        if (!is_word_char((openfile->current->data + openfile->current_x), punct_as_letters)) {
+        /* If this is not a word character, then it's a separator. */
+        if (!is_cursor_word_char(punct_as_letters)) {
           seen_space = TRUE;
         }
+        /* Else, if we've already seen a separator, then it's a word start. */
         else if (seen_space) {
           break;
         }
@@ -439,8 +441,8 @@ void to_next_word(void) {
 // When softwrapping, go the beginning of the full line when already at the start of a chunk.
 void do_home(void) {
   linestruct *was_current = openfile->current;
-  bool        moved_off_chunk, moved;
-  Ulong       was_column, leftedge, left_x, cur_indent;
+  bool moved_off_chunk, moved;
+  Ulong was_column, leftedge, left_x, cur_indent;
   moved_off_chunk = TRUE;
   moved           = FALSE;
   /* Save current column position. */

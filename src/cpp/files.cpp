@@ -2384,18 +2384,12 @@ int entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs,
         if (strcmp(directory_entry->d_name, "..") == 0 || strcmp(directory_entry->d_name, ".") == 0) {
           continue;
         }
-        if (dir_size == dir_cap) {
-          dir_cap *= 2;
-          dir_buf = arealloc(dir_buf, (sizeof(char *) * dir_cap));
-        }
+        ENSURE_CHARARRAY_CAPACITY(dir_buf, dir_cap, dir_size);
         dir_buf[dir_size++] = measured_copy(directory_entry->d_name, (_D_ALLOC_NAMLEN(directory_entry) - 1));
         break;
       }
       case DT_REG: /* Regular file entry. */ {
-        if (file_size == file_cap) {
-          file_cap *= 2;
-          file_buf = arealloc(file_buf, (sizeof(char *) * file_cap));
-        }
+        ENSURE_CHARARRAY_CAPACITY(file_buf, file_cap, file_size);
         file_buf[file_size++] = measured_copy(directory_entry->d_name, (_D_ALLOC_NAMLEN(directory_entry) - 1));
         break;
       }

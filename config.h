@@ -2590,8 +2590,4 @@
 #  endif
 
 /* This is defined by the installer if glfw is installed staticly and localaly. */
-#  define HAVE_GLFW 1
-
-
-/* This is defined by the installer if glfw is installed staticly and localaly. */
 #define HAVE_GLFW 1

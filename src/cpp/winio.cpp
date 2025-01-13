@@ -70,7 +70,7 @@ void record_macro(void) _NOTHROW {
 }
 
 /* Copy the stored sequence of codes into the regular key buffer, so they will be "executed" again. */
-void run_macro(void) {
+void run_macro(void) _NOTHROW {
   if (recording) {
     statusline(AHEM, _("Cannot run macro while recording"));
     macro_length = milestone;
@@ -139,7 +139,7 @@ void reserve_space_for(Ulong newsize) _NOTHROW {
  *   omitted.  (Same as above.)
  */
 /* Read in_NOTHROW at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
-void read_keys_from(WINDOW *frame) {
+static void read_keys_from(WINDOW *frame) {
   int   input    = ERR;
   Ulong errcount = 0;
   bool  timed    = FALSE;
@@ -250,7 +250,7 @@ void read_keys_from(WINDOW *frame) {
 }
 
 /* Return the number of key codes waiting in the keystroke buffer. */
-Ulong waiting_keycodes(void) {
+Ulong waiting_keycodes(void) _NOTHROW {
   return waiting_codes;
 }
 
@@ -271,14 +271,14 @@ static void put_back(int keycode) _NOTHROW {
 }
 
 /* Set up the given expansion string to be ingested by the keyboard routines. */
-void implant(const char *string) {
+void implant(const char *string) _NOTHROW {
   plants_pointer = string;
   put_back(MORE_PLANTS);
   mute_modifiers = TRUE;
 }
 
 /* Continue processing an expansion string.  Returns either an error code, a plain character byte, or a placeholder for a command shortcut. */
-int get_code_from_plantation(void) {
+static int get_code_from_plantation(void) {
   PROFILE_FUNCTION;
   if (*plants_pointer == '{') {
     char *closing = (char *)constexpr_strchr((plants_pointer + 1), '}');
@@ -1779,13 +1779,13 @@ int get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) _NOTHROW {
 }
 
 /* Move (in the given window) to the given row and wipe it clean. */
-void blank_row(WINDOW *window, int row) _NOTHROW {
+static void blank_row(WINDOW *window, int row) _NOTHROW {
   wmove(window, row, 0);
   wclrtoeol(window);
 }
 
 /* Blank the first line of the top portion of the screen. */
-void blank_titlebar(void) _NOTHROW {
+static void blank_titlebar(void) _NOTHROW {
   mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
 }
 
@@ -2754,7 +2754,7 @@ int update_softwrapped_line(linestruct *line) {
   }
   starting_row = row;
   while (!end_of_line && row < editwinrows) {
-    to_col        = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line);
+    to_col = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line);
     sequel_column = (end_of_line ? 0 : to_col);
     /* Convert the chunk to its displayable form and draw it. */
     converted = display_string(line->data, from_col, (to_col - from_col), TRUE, FALSE);
@@ -2851,7 +2851,7 @@ int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW {
 
 /* Return 'TRUE' if there are fewer than a screen's worth of lines between the line at line number
  * was_lineno (and column was_leftedge, if we're in softwrap mode) and the line at current[current_x]. */
-bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
+bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW {
   int rows_left;
   Ulong leftedge;
   linestruct *line;

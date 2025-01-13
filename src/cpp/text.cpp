@@ -47,7 +47,7 @@ void do_tab(void) {
 }
 
 /* Restore the cursor and mark from a undostruct. */
-static void restore_undo_posx(undostruct *u) _NOTHROW {
+static void restore_undo_posx_and_mark(undostruct *u) _NOTHROW {
   /* Restore the mark if it was set. */
   if (u->xflags & MARK_WAS_SET) {
     if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -231,7 +231,7 @@ static void handle_indent_action(undostruct *u, bool undoing, bool add_indent) _
   linestruct  *line  = line_from_number(group->top_line);
   /* When redoing, reposition the cursor and let the indenter adjust it. */
   if (!undoing) {
-    restore_undo_posx(u);
+    restore_undo_posx_and_mark(u);
   }
   /* For each line in the group, add or remove the individual indent. */
   while (line && line->lineno <= group->bottom_line) {
@@ -246,7 +246,7 @@ static void handle_indent_action(undostruct *u, bool undoing, bool add_indent) _
   }
   /* When undoing, reposition the cursor to the recorded location. */
   if (undoing) {
-    restore_undo_posx(u);
+    restore_undo_posx_and_mark(u);
   }
   refresh_needed = TRUE;
 }
@@ -373,7 +373,7 @@ static void handle_comment_action(undostruct *u, bool undoing, bool add_comment)
   groupstruct *group = u->grouping;
   /* When redoing, reposition the cursor and let the commenter adjust it. */
   if (!undoing) {
-    restore_undo_posx(u);
+    restore_undo_posx_and_mark(u);
   }
   while (group) {
     linestruct *line = line_from_number(group->top_line);
@@ -385,7 +385,7 @@ static void handle_comment_action(undostruct *u, bool undoing, bool add_comment)
   }
   /* When undoing, reposition the cursor to the recorded location. */
   if (undoing) {
-    restore_undo_posx(u);
+    restore_undo_posx_and_mark(u);
   }
   refresh_needed = TRUE;
 }
@@ -408,11 +408,18 @@ static void undo_cut(undostruct *u) _NOTHROW {
    && openfile->filebot != openfile->current && !openfile->filebot->prev->data[0]) {
     remove_magicline();
   }
+  /* If the action was a ZAP, then restore the mark as well as the cursor. */
   if (u->type == ZAP) {
-    restore_undo_posx(u);
+    restore_undo_posx_and_mark(u);
   }
+  /* Otherwise, just restore the cursor to where it was. */
   else {
-    goto_line_posx(u->head_lineno, u->head_x);
+    if (u->xflags & CURSOR_WAS_AT_HEAD) {
+      goto_line_posx(u->head_lineno, u->head_x);
+    }
+    else {
+      goto_line_posx(u->tail_lineno, u->tail_x);
+    }
   }
 }
 
@@ -1343,7 +1350,7 @@ void add_undo(undo_type action, const char *message) _NOTHROW {
       /* Fall-through. */
     }
     case DEL: {
-      /* When not at the end of a line, store the deleted character; otherwise, morph the undo item into a line join. */
+      /* When not at the end of a line, store the deleted character. */
       if (thisline->data[openfile->current_x]) {
         int charlen = char_length(thisline->data + u->head_x);
         u->strdata  = measured_copy((thisline->data + u->head_x), charlen);
@@ -1352,6 +1359,7 @@ void add_undo(undo_type action, const char *message) _NOTHROW {
         }
         break;
       }
+      /* Otherwise, morph the undo item into a line join. */
       action = JOIN;
       if (thisline->next) {
         if (u->type == BACK) {
@@ -1534,22 +1542,22 @@ void update_undo(undo_type action) _NOTHROW {
       textposition = (openfile->current->data + openfile->current_x);
       charlen = char_length(textposition);
       datalen = strlen(u->strdata);
+      /* They deleted more: add removed character after earlier stuff. */
       if (openfile->current_x == u->head_x) {
-        /* They deleted more: add removed character after earlier stuff. */
         u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
         strncpy((u->strdata + datalen), textposition, charlen);
         u->strdata[datalen + charlen] = '\0';
         u->tail_x = openfile->current_x;
       }
+      /* They backspaced further: add removed character before earlier. */
       else if (openfile->current_x == (u->head_x - charlen)) {
-        /* They backspaced further: add removed character before earlier. */
         u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
         memmove((u->strdata + charlen), u->strdata, (datalen + 1));
         strncpy(u->strdata, textposition, charlen);
         u->head_x = openfile->current_x;
       }
+      /* They deleted *elsewhere* on the line: start a new undo item. */
       else {
-        /* They deleted *elsewhere* on the line: start a new undo item. */
         add_undo(u->type, NULL);
       }
       break;
@@ -2102,10 +2110,10 @@ static void justify_text(bool whole_buffer) {
      * (if any):  the quoting of the first line, plus the indentation of the second line. */
     other_quot_len  = quote_length(sampleline->data);
     other_white_len = indent_length(sampleline->data + other_quot_len);
-    secondary_len   = quot_len + other_white_len;
+    secondary_len   = (quot_len + other_white_len);
     secondary_lead  = (char *)nmalloc(secondary_len + 1);
     strncpy(secondary_lead, startline->data, quot_len);
-    strncpy(secondary_lead + quot_len, sampleline->data + other_quot_len, other_white_len);
+    strncpy((secondary_lead + quot_len), (sampleline->data + other_quot_len), other_white_len);
     secondary_lead[secondary_len] = '\0';
     /* Include preceding and succeeding leads into the marked region. */
     openfile->mark      = startline;

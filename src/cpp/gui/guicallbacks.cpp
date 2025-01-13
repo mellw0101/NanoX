@@ -30,19 +30,25 @@ void window_resize_callback(GLFWwindow *window, int newwidth, int newheight) {
   /* Set viewport. */
   glViewport(0, 0, window_width, window_height);
   /* Set the projection. */
-  projection = ortho_projection(0.0f, window_width, 0.0f, window_height);
+  // projection = ortho_projection(0.0f, window_width, 0.0f, window_height);
+  matrix4x4_set_orthographic(&projection, 0.0f, window_width, window_height, 0.0f, -1.0f, 1.0f);
   /* Upload it to both the shaders. */
   update_projection_uniform(fontshader);
   update_projection_uniform(rectshader);
   /* Confirm the margin before we calculate the size of the gutter. */
   confirm_margin();
-  /* Calculate the font size. */
   resize_element(top_bar, vec2(window_width, FONT_HEIGHT(markup.font)));
-  move_element(gutterelement, vec2(0.0f, top_bar->size.h));
-  resize_element(gutterelement, vec2((FONT_WIDTH(markup.font) * margin), window_height));
-  move_element(editelement, vec2((gutterelement->pos.x + gutterelement->size.w), top_bar->size.h));
+  move_resize_element(
+    gutterelement,
+    vec2(0.0f, top_bar->size.h),
+    vec2((FONT_WIDTH(markup.font) * margin), window_height)
+  );
   /* Ensure the edit element is correctly sized. */
-  resize_element(editelement, vec2(window_width - (gutterelement->pos.x + gutterelement->size.w), (window_height - top_bar->size.h)));
+  move_resize_element(
+    editelement,
+    vec2((gutterelement->pos.x + gutterelement->size.w), top_bar->size.h),
+    vec2(window_width - (gutterelement->pos.x + gutterelement->size.w), (window_height - top_bar->size.h))
+  );
   /* Calculate the rows and columns. */
   editwinrows = (editelement->size.h / FONT_HEIGHT(markup.font));
   /* If the font is a mono font then calculate the number of columns by the width of ' '. */
@@ -483,13 +489,13 @@ void char_callback(GLFWwindow *window, Uint ch) {
         /* Before current cursor position. */
         && (((is_prev_cursor_word_char() || is_prev_cursor_char_one_of("\"><")))
         /* After current cursor position. */
-        || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char(';')))) {
+        || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(";)}]")))) {
         ;
       }
       /* Exceptions for enclosing brackets. */
       else if ((input == '(' || input == '[' || input == '{')
         /* After current cursor position. */
-        && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";'")) || (is_cursor_char_one_of("({[")))) {
+        && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}]")) || (is_cursor_char_one_of("({[")))) {
         ;
       }
       /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
@@ -507,6 +513,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
         /* Set the flag in the undo struct just created, marking an exception for future undo-redo actions. */
         openfile->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
         openfile->mark = NULL;
+        keep_mark      = FALSE;
         /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
         last_key_was_bracket = TRUE;
         last_bracket_char = input;
@@ -555,11 +562,12 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         Ulong index;
         linestruct *line = line_and_index_from_mousepos(markup.font, &index);
         if (line) {
-          openfile->current   = line;
-          openfile->mark      = line;
-          openfile->current_x = index;
-          openfile->mark_x    = index;
-          openfile->softmark  = TRUE;
+          openfile->current     = line;
+          openfile->mark        = line;
+          openfile->current_x   = index;
+          openfile->mark_x      = index;
+          openfile->softmark    = TRUE;
+          openfile->placewewant = xplustabs();
           if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
             /* If this was a double click then select the current word, if any. */
             Ulong st, end;

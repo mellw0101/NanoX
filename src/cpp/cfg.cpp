@@ -25,7 +25,7 @@ static configfilestruct *configfile = NULL;
 configstruct *config = NULL;
 
 /* Open a fd for file_path. */
-int open_fd(const char *file_path, int flags, bool on_failure, mode_t permissions)  {
+static int open_fd(const char *file_path, int flags, bool on_failure, mode_t permissions)  {
   block_sigwinch(TRUE);
   int fd;
   if (!permissions) {
@@ -55,7 +55,7 @@ int open_fd(const char *file_path, int flags, bool on_failure, mode_t permission
 }
 
 /* Lock a file.  Return`s FALSE on failure. */
-bool lock_file(int fd, short type, long start, long len, flock *lock) {
+static bool lock_file(int fd, short type, long start, long len, flock *lock) {
   lock->l_type   = type;     /* Lock type, i.e: F_WRLCK, F_RDLCK. */
   lock->l_whence = SEEK_SET; /* Where start relates to. */
   lock->l_start  = start;    /* Start offset. */
@@ -68,7 +68,7 @@ bool lock_file(int fd, short type, long start, long len, flock *lock) {
 }
 
 /* Unlock a file using lock struct that was used to lock. */
-bool unlock_file(int fd, flock *lock) {
+static bool unlock_file(int fd, flock *lock) {
   lock->l_type = F_UNLCK;
   if (fcntl(fd, F_SETLK, lock) == -1) {
     logE("Failed to unlock fd: %s", strerror(errno));
@@ -78,7 +78,7 @@ bool unlock_file(int fd, flock *lock) {
 }
 
 /* Lock a file, then write data to it. */
-void lock_and_write(const char *file, const void *data, Ulong len, kind_of_writing_type method) {
+static void lock_and_write(const char *file, const void *data, Ulong len, kind_of_writing_type method) {
   int fd =  open_fd(file, (O_WRONLY | O_CREAT | (method == APPEND ? O_APPEND : O_TRUNC)), TERMINATE, 0666);
   flock lock;
   if (!lock_file(fd, F_WRLCK, 0,  0, &lock)) {
@@ -94,7 +94,7 @@ void lock_and_write(const char *file, const void *data, Ulong len, kind_of_writi
 }
 
 /* Lock a file, then read it. */
-char *lock_and_read(const char *file_path, Ulong *file_size) {
+static char *lock_and_read(const char *file_path, Ulong *file_size) {
   int fd = open_fd(file_path, O_RDONLY, TERMINATE, 0);
   flock lock;
   if (!lock_file(fd, F_RDLCK, 0, 0, &lock)) {

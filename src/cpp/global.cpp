@@ -1070,4 +1070,8 @@ void shortcut_init(void) {
   add_to_sclist(MMAIN, "", KEY_SIC, do_insertfile, 0);
   /* Catch and ignore bracketed paste marker keys. */
   add_to_sclist(((MMOST | MBROWSER | MHELP) | MYESNO), "", BRACKETED_PASTE_MARKER, do_nothing, 0);
+  /* Some key-bindings for the prompt bar. */
+  add_to_sclist(MWRITEFILE, "^Del", CONTROL_DELETE, chop_next_word, 0);
+  add_to_sclist(MWRITEFILE, "^Z", 0, do_undo, 0);
+  add_to_sclist(MWRITEFILE, "^Y", 0, do_redo, 0);
 }

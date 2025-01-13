@@ -75,7 +75,7 @@ void do_delete(void) {
   }
   else {
     expunge(DEL);
-    while (openfile->current->data[openfile->current_x] != '\0' && is_zerowidth(openfile->current->data + openfile->current_x)) {
+    while (openfile->current->data[openfile->current_x] && is_zerowidth(openfile->current->data + openfile->current_x)) {
       expunge(DEL);
     }
   }
@@ -135,7 +135,7 @@ static void chop_word(bool forward) _NOTHROW {
    * edge instead, so that lines will not be joined unexpectedly.  I also made it so that if next
    * word is more than one 'tab/space' away, then just put put the cursor to remove the 'tabs/spaces'. */
   if (!forward) {
-    if (word_more_than_one_white_away(FALSE, &steps)) {
+    if (cursor_word_more_than_one_white_away(FALSE, &steps)) {
       openfile->current_x -= steps;
     }
     else {
@@ -152,7 +152,7 @@ static void chop_word(bool forward) _NOTHROW {
     }
   }
   else {
-    if (word_more_than_one_white_away(TRUE, &steps)) {
+    if (cursor_word_more_than_one_white_away(TRUE, &steps)) {
       openfile->current_x += steps;
     }
     else {
@@ -179,7 +179,7 @@ static void chop_word(bool forward) _NOTHROW {
 }
 
 /* Delete a word leftward. */
-void chop_previous_word(void) {
+void chop_previous_word(void) _NOTHROW {
   if (!openfile->current->prev && !openfile->current_x) {
     statusbar(_("Nothing was cut"));
   }
@@ -189,7 +189,7 @@ void chop_previous_word(void) {
 }
 
 /* Delete a word rightward. */
-void chop_next_word(void) {
+void chop_next_word(void) _NOTHROW {
   openfile->mark = NULL;
   if (is_cuttable(TRUE)) {
     chop_word(FORWARD);

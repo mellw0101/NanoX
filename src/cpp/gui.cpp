@@ -16,9 +16,7 @@ Uint fontshader, rectshader;
 static glSsbo<vec2, 0> vertices_ssbo;
 static glSsbo<Uint, 1> indices_ssbo;
 /* The projection that all shaders follow. */
-mat4 projection;
-static mat4 view;
-static mat4 model;
+matrix4x4 projection;
 /* Hash based grid map for elements. */
 uigridmapclass gridmap(GRIDMAP_GRIDSIZE);
 /* Frame timer to keep a frame rate. */
@@ -97,8 +95,6 @@ static void setup_font_shader(void) {
   fontshader = openGL_create_shader_program_raw({
     /* Font vertex shader. */
     { STRLITERAL(\
-        uniform mat4 model;
-        uniform mat4 view;
         uniform mat4 projection;
         attribute vec3 vertex;
         attribute vec2 tex_coord;
@@ -106,7 +102,7 @@ static void setup_font_shader(void) {
         void main() {
           gl_TexCoord[0].xy = tex_coord.xy;
           gl_FrontColor     = color;
-          gl_Position       = projection * (view * (model * vec4(vertex, 1.0)));
+          gl_Position       = projection * (vec4(vertex, 1.0));
         }
       ),
       GL_VERTEX_SHADER },
@@ -120,17 +116,11 @@ static void setup_font_shader(void) {
       ),
       GL_FRAGMENT_SHADER }
   });
-  /* If there is a problem with the shader creation just die as we are
-   * passing string literals so there should not be alot that can go wrong. */
+  /* If there is a problem with the shader creation just die as we are passing string literals so there should not be alot that can go wrong. */
   if (!fontshader) {
     glfwDestroyWindow(window);
     glfwTerminate();
     die("Failed to create font shader.");
-  }
-  /* Setup projection. */
-  glUseProgram(fontshader); {
-    glUniformMatrix4fv(glGetUniformLocation(fontshader, "model"), 1, 0, &model[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(fontshader, "view"), 1, 0, &view[0][0]);
   }
   /* Load fallback font. */
   if (is_file_and_exists(FALLBACK_FONT_PATH)) {
@@ -289,13 +279,13 @@ static void setup_edit_element(void) {
     vec2(0.0f, top_bar->size.h),
     vec2(((markup.font->face->max_advance_width >> 6) * margin + 1), window_height),
     0.0f,
-    vec4(vec3(0.2f), 1.0f)
+    EDIT_BACKGROUND_COLOR
   );
   editelement = make_element(
     vec2(gutterelement->size.w, top_bar->size.h),
     vec2(window_width, window_height),
     0.0f,
-    vec4(vec3(0.2f), 1.0f)
+    EDIT_BACKGROUND_COLOR
   );
 }
 

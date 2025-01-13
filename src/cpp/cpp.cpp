@@ -261,7 +261,7 @@ function_info_t *parse_func(const char *str) {
     if (params[i] == ',' || params[i + 1] == '\0') {
       (params[i + 1] == '\0') ? (i += 1) : 0;
       (cap == size) ? cap *= 2, param_array = (char **)nrealloc(param_array, cap * sizeof(char *)) : 0;
-      param_array[size++] = measured_memmove_copy(param_buf, i - pos);
+      param_array[size++] = measured_copy(param_buf, i - pos);
       (params[i + 1] == ' ') ? (i += 2) : (i += 1);
       param_buf += i - pos;
       pos = i;
@@ -282,7 +282,7 @@ function_info_t *parse_func(const char *str) {
       if (end == NULL) {
         end = start;
         for (; *end; end++);
-        var->type = measured_memmove_copy(param_array[i], (end - start));
+        var->type = measured_copy(param_array[i], (end - start));
         if (info->params == NULL) {
           var->prev    = NULL;
           info->params = var;
@@ -381,7 +381,7 @@ function_info_t parse_local_func(const char *str) {
     if (params[i] == ',' || params[i + 1] == '\0') {
       (params[i + 1] == '\0') ? (i += 1) : 0;
       (cap == size) ? cap *= 2, param_array = (char **)nrealloc(param_array, cap * sizeof(char *)) : 0;
-      param_array[size++] = measured_memmove_copy(param_buf, i - pos);
+      param_array[size++] = measured_copy(param_buf, i - pos);
       (params[i + 1] == ' ') ? (i += 2) : (i += 1);
       param_buf += i - pos;
       pos = i;
@@ -405,7 +405,7 @@ function_info_t parse_local_func(const char *str) {
       if (end == NULL) {
         end = start;
         for (; *end; end++);
-        var->type = measured_memmove_copy(param_array[i], (end - start));
+        var->type = measured_copy(param_array[i], (end - start));
         if (info.params == NULL) {
           var->prev   = NULL;
           info.params = var;

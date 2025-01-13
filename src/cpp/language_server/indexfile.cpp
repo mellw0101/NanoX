@@ -164,7 +164,7 @@ void IndexFile::delete_data(void) noexcept {
 }
 
 void IndexFile::read_file(const char *path) {
-  filename = memmove_copy_of(path);
+  filename = copy_of(path);
   FILE *f;
   int   fd = open_file(&f);
   if (fd < 0) {

@@ -6,6 +6,205 @@ static char *prompt = NULL;
 /* The cursor position in answer. */
 static Ulong typing_x = HIGHEST_POSITIVE;
 
+static statusbar_undostruct *statusbar_undotop      = NULL;
+static statusbar_undostruct *statusbar_current_undo = NULL;
+static statusbar_undo_type   statusbar_last_action  = STATUSBAR_OTHER;
+
+/* Discard the current redo stack to make the undo-redo path a singular path. */
+static void statusbar_discard_until(const statusbar_undostruct *item) _NOTHROW {
+  statusbar_undostruct *dropit = statusbar_undotop;
+  while (dropit && dropit != item) {
+    statusbar_undotop = dropit->next;
+    free(dropit->answerdata);
+    free(dropit);
+    dropit = statusbar_undotop;
+  }
+  statusbar_current_undo = (statusbar_undostruct *)item;
+  statusbar_last_action  = STATUSBAR_OTHER; 
+}
+
+/* Discard both the current undo stack and redo stack, used for clearing all undo-redo items. */
+static void statusbar_discard_all_undo_redo(void) _NOTHROW {
+  statusbar_undostruct *dropit;
+  /* First clear the redo stack. */
+  dropit = statusbar_undotop;
+  while (dropit) {
+    statusbar_undotop = dropit->next;
+    free(dropit->answerdata);
+    free(dropit);
+    dropit = statusbar_undotop;
+  }
+  /* Then clear the undo stack. */
+  dropit = statusbar_current_undo;
+  while (dropit) {
+    statusbar_current_undo = dropit->next;
+    free(dropit->answerdata);
+    free(dropit);
+    dropit = statusbar_current_undo;
+  }
+}
+
+/* Init a new 'statusbar_undostruct *' and add to the stack.  Then based on action perform nessesary actions. */
+static void statusbar_add_undo(statusbar_undo_type action, const char *message) _NOTHROW {
+  statusbar_undostruct *u = (statusbar_undostruct *)nmalloc(sizeof(*u));
+  /* Init the new undo item. */
+  u->type       = action;
+  u->xflags     = 0;
+  u->head_x     = typing_x;
+  u->tail_x     = typing_x;
+  u->answerdata = NULL;
+  /* Discard the redo stack, as this will create a new branch. */
+  statusbar_discard_until(statusbar_current_undo);
+  /* Ensure correct order. */ {
+    u->next = statusbar_undotop;
+    statusbar_undotop      = u;
+    statusbar_current_undo = u;
+  }
+  /* Record all relevent data for the undo type. */
+  switch (u->type) {
+    case STATUSBAR_ADD: {
+      u->answerdata = STRLTR_COPY_OF("");
+      break;
+    }
+    case STATUSBAR_BACK:
+    case STATUSBAR_DEL: {
+      if (answer[u->head_x]) {
+        int charlen   = char_length(answer + u->head_x);
+        u->answerdata = measured_copy((answer + u->head_x), charlen);
+        if (u->type == STATUSBAR_BACK) {
+          u->tail_x += charlen;
+        }
+      }
+      break;
+    }
+    case STATUSBAR_CHOP_NEXT_WORD: {
+      /* Save the data that will be cut. */
+      u->answerdata = copy_of(message);
+      /* And save the length of that data, so we can later inject and erase it. */
+      u->tail_x = strlen(u->answerdata);
+      break;
+    }
+    default: {
+      die("%s: Bad undo type.\n", __func__);
+    }
+  }
+  statusbar_last_action = action;
+}
+
+/* Update a undo of the same type as the current undo-stack top. */
+static void statusbar_update_undo(statusbar_undo_type action) _NOTHROW {
+  statusbar_undostruct *u = statusbar_undotop;
+  if (u->type != action) {
+    die("%s: Missmatching undo type.\n", __func__);
+  }
+  switch (u->type) {
+    case STATUSBAR_ADD: {
+      Ulong newlen = (typing_x - u->head_x);
+      u->answerdata = arealloc(u->answerdata, (newlen + 1));
+      memcpy(u->answerdata, (answer + u->head_x), newlen);
+      u->answerdata[newlen] = '\0';
+      u->tail_x = typing_x;
+      break;
+    }
+    case STATUSBAR_BACK:
+    case STATUSBAR_DEL: {
+      char *textpos = (answer + typing_x);
+      int   charlen = char_length(textpos);
+      Ulong datalen = strlen(u->answerdata);
+      /* One more deletion. */  
+      if (typing_x == u->head_x) {
+        inject_in(&u->answerdata, textpos, charlen, datalen);
+        u->tail_x = typing_x;
+      }
+      /* Another backspace. */
+      else if (typing_x == (u->head_x - charlen)) {
+        inject_in(&u->answerdata, textpos, charlen, 0, TRUE);
+        u->head_x = typing_x;
+      }
+      /* Deletion not related to current item. */
+      else {
+        statusbar_add_undo(u->type, NULL);
+      }
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+}
+
+/* Perform the undo at the top of the undo-stack. */
+static void do_statusbar_undo(void) _NOTHROW {
+  statusbar_undostruct *u = statusbar_current_undo;
+  /* If there is no item at the top of the undo-stack, return. */
+  if (!u) {
+    return;
+  }
+  switch (u->type) {
+    case STATUSBAR_ADD: {
+      erase_in(&answer, u->head_x, strlen(u->answerdata));
+      typing_x = u->head_x;
+      break;
+    }
+    case STATUSBAR_BACK:
+    case STATUSBAR_DEL: {
+      inject_in(&answer, u->answerdata, u->head_x);
+      typing_x = u->tail_x;
+      break;
+    }
+    case STATUSBAR_CHOP_NEXT_WORD: {
+      /* Inject the chop`ed string into the answer at the correct position. */
+      inject_in(&answer, u->answerdata, u->head_x, TRUE);
+      /* Set the cursor position in the status-bar correctly. */
+      typing_x = u->head_x;
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  statusbar_current_undo = statusbar_current_undo->next;
+  statusbar_last_action  = STATUSBAR_OTHER;
+}
+
+/* Redo the last undid item. */
+static void do_statusbar_redo(void) _NOTHROW {
+  statusbar_undostruct *u = statusbar_undotop;
+  /* If the redo item at the top of the redo-stack does not exist, or if we are on the last redo, return. */
+  if (!u || u == statusbar_current_undo) {
+    return;
+  }
+  /* Find the item before the current one in the status-bar undo-stack. */
+  while (u->next != statusbar_current_undo) {
+    u = u->next;
+  }
+  switch (u->type) {
+    case STATUSBAR_ADD: {
+      inject_in(&answer, u->answerdata, u->head_x);
+      typing_x = u->tail_x;
+      break;
+    }
+    case STATUSBAR_BACK:
+    case STATUSBAR_DEL: {
+      erase_in(&answer, u->head_x, strlen(u->answerdata));
+      typing_x = u->head_x;
+      break;
+    }
+    case STATUSBAR_CHOP_NEXT_WORD: {
+      /* Erase the cut string`s length in the answer at the recorded position where it happend. */
+      erase_in(&answer, u->head_x, u->tail_x, TRUE);
+      /* Then set the status-bar cursor pos corrently. */
+      typing_x = u->head_x;
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  statusbar_current_undo = u;
+  statusbar_last_action  = STATUSBAR_OTHER;
+}
+
 /* Move to the beginning of the answer. */
 static void do_statusbar_home(void) _NOTHROW {
   typing_x = 0;
@@ -100,19 +299,37 @@ static void do_statusbar_right(void) _NOTHROW {
 static void do_statusbar_backspace(void) _NOTHROW {
   if (typing_x > 0) {
     Ulong was_x = typing_x;
-    typing_x    = step_left(answer, typing_x);
+    typing_x = step_left(answer, typing_x);
+    if (statusbar_last_action != STATUSBAR_BACK) {
+      statusbar_add_undo(STATUSBAR_BACK, NULL);
+    }
+    else {
+      statusbar_update_undo(STATUSBAR_BACK);
+    }
     memmove((answer + typing_x), (answer + was_x), (strlen(answer) - was_x + 1));
+  }
+}
+
+static void statusbar_delete(void) _NOTHROW {
+  if (answer[typing_x]) {
+    int charlen = char_length(answer + typing_x);
+    erase_in(&answer, typing_x, charlen, FALSE);
+    if (is_zerowidth(answer + typing_x)) {
+      statusbar_delete();
+    }
   }
 }
 
 /* Delete one character in the answer. */
 static void do_statusbar_delete(void) _NOTHROW {
   if (answer[typing_x]) {
-    int charlen = char_length(answer + typing_x);
-    memmove((answer + typing_x), (answer + typing_x + charlen), (strlen(answer) - typing_x - charlen + 1));
-    if (is_zerowidth(answer + typing_x)) {
-      do_statusbar_delete();
+    if (statusbar_last_action != STATUSBAR_DEL) {
+      statusbar_add_undo(STATUSBAR_DEL, NULL);
     }
+    else {
+      statusbar_update_undo(STATUSBAR_DEL);
+    }
+    statusbar_delete();
   }
 }
 
@@ -162,19 +379,23 @@ static int do_statusbar_mouse(void) _NOTHROW {
 /* Insert the given short burst of bytes into the answer. */
 static void inject_into_answer(char *burst, Ulong count) _NOTHROW {
   /* First encode any embedded NUL byte as 0x0A. */
-  for (Ulong index = 0; index < count; index++) {
+  for (Ulong index = 0; index < count; ++index) {
     if (!burst[index]) {
       burst[index] = '\n';
     }
+  }
+  if (statusbar_last_action != STATUSBAR_ADD || statusbar_current_undo->tail_x != typing_x) {
+    statusbar_add_undo(STATUSBAR_ADD, NULL);
   }
   answer = arealloc(answer, (strlen(answer) + count + 1));
   memmove((answer + typing_x + count), (answer + typing_x), (strlen(answer) - typing_x + 1));
   strncpy((answer + typing_x), burst, count);
   typing_x += count;
+  statusbar_update_undo(STATUSBAR_ADD);
 }
 
 /* Get a verbatim keystroke and insert it into the answer. */
-static void do_statusbar_verbatim_input(void) {
+static void do_statusbar_verbatim_input(void) _NOTHROW {
   Ulong count = 1;
   char *bytes;
   bytes = get_verbatim_kbinput(footwin, &count);
@@ -188,7 +409,7 @@ static void do_statusbar_verbatim_input(void) {
 }
 
 /* Add the given input to the input buffer when it's a normal byte, and inject the gathered bytes into the answer when ready. */
-static void absorb_character(int input, functionptrtype function) {
+static void absorb_character(int input, functionptrtype function) _NOTHROW {
   /* The input buffer. */
   static char *puddle = NULL;
   /* The size of the input buffer; gets doubled whenever needed. */
@@ -221,9 +442,50 @@ static void absorb_character(int input, functionptrtype function) {
   }
 }
 
+/* Chop prev word. */
+static void do_statusbar_chop_next_word(void) {
+  Ulong steps = 0, was_x;
+  /* If there is more then one whitespace to the next word, just delete the white chars until the next word. */
+  if (word_more_than_one_white_away(answer, typing_x, TRUE, &steps)) {
+    ;
+  }
+  /* Otherwise, delete the next word. */
+  else {
+    /* Save the current x pos. */
+    was_x = typing_x;
+    /* Move to the next word. */
+    do_statusbar_next_word();
+    if (was_x != typing_x) {
+      /* If there was any movement, calculate the steps, then restore the x pos. */
+      steps = (typing_x - was_x);
+      typing_x = was_x;
+    }
+  }
+  /* Only perform the cutting action when appropriet. */
+  if (steps) {
+    /* Save the text that will be cut, and pass it when adding the undo item. */
+    char *cutting_section = measured_copy((answer + typing_x), steps);
+    statusbar_add_undo(STATUSBAR_CHOP_NEXT_WORD, cutting_section);
+    free(cutting_section);
+    /* Now perform the cutting. */
+    while (steps--) {
+      statusbar_delete();
+    }
+  }
+}
+
 /* Handle any editing shortcut, and return TRUE when handled. */
 static bool handle_editing(functionptrtype function) _NOTHROW {
-  if (function == do_left) {
+  if (function == chop_next_word) {
+    do_statusbar_chop_next_word();
+  }
+  else if (function == do_undo) {
+    do_statusbar_undo();
+  }
+  else if (function == do_redo) {
+    do_statusbar_redo();
+  }
+  else if (function == do_left) {
     do_statusbar_left();
   }
   else if (function == do_right) {
@@ -380,6 +642,7 @@ static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct *
     /* When it's a normal character, add it to the answer. */
     absorb_character(input, function);
     if (function == do_cancel || function == do_enter) {
+      statusbar_discard_all_undo_redo();
       break;
     }
     if (function == do_tab) {
@@ -473,9 +736,9 @@ static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct *
  * keycode when a valid shortcut key was pressed.  The 'provided' parameter is the default answer for when simply Enter is typed. */
 int do_prompt(int menu, const char *provided, linestruct **history_list, functionptrtype refresh_func, const char *msg, ...) {
   functionptrtype function = NULL;
-  va_list         ap;
-  bool            listed = FALSE;
-  int             retval;
+  va_list ap;
+  bool listed = FALSE;
+  int retval;
   /* Save a possible current status-bar x position and prompt. */
   Ulong was_typing_x = typing_x;
   char *saved_prompt = prompt;
@@ -498,8 +761,7 @@ redo_theprompt:
   }
   /* Restore a possible previous prompt and maybe the typing position. */
   prompt = saved_prompt;
-  if (function == do_cancel || function == do_enter || function == to_first_file
-   || function == to_last_file || function == to_first_line || function == to_last_line) {
+  if (function == do_cancel || function == do_enter || function == to_first_file || function == to_last_file || function == to_first_line || function == to_last_line) {
     typing_x = was_typing_x;
   }
   /* Set the proper return value for Cancel and Enter. */

@@ -5,22 +5,35 @@
 static bool use_utf8 = FALSE;
 
 /* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
-void utf8_init(void) _GL_ATTRIBUTE_NOTHROW {
+void utf8_init(void) _NOTHROW {
   use_utf8 = TRUE;
 }
 
 /* Checks if UTF-8 support has been enabled. */
-bool using_utf8(void) _GL_ATTRIBUTE_NOTHROW {
+bool using_utf8(void) _NOTHROW {
   return use_utf8;
 }
 
+/* Return 'TRUE' when for the openfile language this char represents a stopping point when doing prev/next word. */
+bool is_language_word_char(const char *pointer, Ulong index) _NOTHROW {
+  if (openfile->type.is_set<C_CPP>() && is_char_one_of(pointer, index, "{}=|&!")) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/* Same as is_language_word_char().  But for the char at 'openfile->current->data+openfile->current_x'. */
+bool is_cursor_language_word_char(void) _NOTHROW {
+  return is_language_word_char(openfile->current->data, openfile->current_x);
+}
+
 /* Return 'TRUE' when 'ch' is a opening enclose char.  Meaning it`s a char that can be enclosed, for example: '"{(< */
-bool is_enclose_char(const char ch) _GL_ATTRIBUTE_NOTHROW {
+bool is_enclose_char(const char ch) _NOTHROW {
   return (ch == '"' || ch == '\'' || ch == '(' || ch == '{' || ch == '[' || ch == '<');
 }
 
 /* Return 'TRUE' when the given character is some kind of letter. */
-bool is_alpha_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
+bool is_alpha_char(const char *const c) _NOTHROW {
   wchar_t wc;
   if (mbtowide(&wc, c) < 0) {
     return FALSE;
@@ -29,7 +42,7 @@ bool is_alpha_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return 'TRUE' when the given character is some kind of letter or a digit. */
-bool is_alnum_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
+bool is_alnum_char(const char *const c) _NOTHROW {
   wchar_t wc;
   if (mbtowide(&wc, c) < 0) {
     return FALSE;
@@ -38,7 +51,7 @@ bool is_alnum_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return 'TRUE' when the given character is space or tab or other whitespace. */
-bool is_blank_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
+bool is_blank_char(const char *const c) _NOTHROW {
   wchar_t wc;
   if ((signed char)*c >= 0) {
     return (*c == ' ' || *c == '\t');
@@ -50,7 +63,7 @@ bool is_blank_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return 'TRUE' when prev char is blank. */
-bool is_prev_blank_char(const char *pointer, Ulong index) _GL_ATTRIBUTE_NOTHROW {
+bool is_prev_blank_char(const char *pointer, Ulong index) _NOTHROW {
   if (index && is_blank_char(pointer + index - 1)) {
     return TRUE;
   }
@@ -58,17 +71,17 @@ bool is_prev_blank_char(const char *pointer, Ulong index) _GL_ATTRIBUTE_NOTHROW 
 }
 
 /* Return 'TRUE' when prev cursor position is blank char or other whitespace. */
-bool is_prev_cursor_blank_char(void) _GL_ATTRIBUTE_NOTHROW {
+bool is_prev_cursor_blank_char(void) _NOTHROW {
   return is_prev_blank_char(openfile->current->data, openfile->current_x);
 }
 
 /* Return 'TRUE' when current cursor position is a blank char or other whitespace. */
-bool is_cursor_blank_char(void) _GL_ATTRIBUTE_NOTHROW {
+bool is_cursor_blank_char(void) _NOTHROW {
   return is_blank_char(openfile->current->data + openfile->current_x);
 }
  
 /* Return 'TRUE' when the given character is a control character. */
-bool is_cntrl_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
+bool is_cntrl_char(const char *const c) _NOTHROW {
   if (use_utf8) {
     return (!(c[0] & 0xE0) || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
   }
@@ -78,7 +91,7 @@ bool is_cntrl_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return 'TRUE' when the given character is a punctuation character. */
-bool __warn_unused is_punct_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
+bool _NODISCARD is_punct_char(const char *const c) _NOTHROW {
   wchar_t wc;
   if (mbtowide(&wc, c) < 0) {
     return FALSE;
@@ -88,7 +101,7 @@ bool __warn_unused is_punct_char(const char *const c) _GL_ATTRIBUTE_NOTHROW {
 
 // Return 'TRUE' when the given character is word-forming (it is alphanumeric or
 // specified in 'wordchars', or it is punctuation when allow_punct is TRUE).
-bool is_word_char(const char *const c, bool allow_punct) _GL_ATTRIBUTE_NOTHROW {
+bool is_word_char(const char *const c, bool allow_punct) _NOTHROW {
   if (!*c) {
     return FALSE;
   }
@@ -109,8 +122,13 @@ bool is_word_char(const char *const c, bool allow_punct) _GL_ATTRIBUTE_NOTHROW {
   }
 }
 
+/* See is_word_char().  This does the same but for the current char at 'openfile->current->data+openfile->current_x'. */
+bool is_cursor_word_char(bool allow_punct) _NOTHROW {
+  return is_word_char((openfile->current->data + openfile->current_x), allow_punct);
+}
+
 /* Return 'TRUE' when char at prev index is a word char. */
-bool is_prev_word_char(const char *pointer, Ulong index, bool allow_punct) _GL_ATTRIBUTE_NOTHROW {
+bool is_prev_word_char(const char *pointer, Ulong index, bool allow_punct) _NOTHROW {
   if (index && is_word_char((pointer + index - 1), allow_punct)) {
     return TRUE;
   }
@@ -118,12 +136,12 @@ bool is_prev_word_char(const char *pointer, Ulong index, bool allow_punct) _GL_A
 }
 
 /* Return 'TRUE' when char at prev cursor pos is word char. */
-bool is_prev_cursor_word_char(bool allow_punct) _GL_ATTRIBUTE_NOTHROW {
+bool is_prev_cursor_word_char(bool allow_punct) _NOTHROW {
   return is_prev_word_char(openfile->current->data, openfile->current_x, allow_punct);
 }
 
 /* Return 'TRUE' when the char before index is 'ch'. */
-bool is_prev_char(const char *pointer, Ulong index, const char ch) _GL_ATTRIBUTE_NOTHROW {
+bool is_prev_char(const char *pointer, Ulong index, const char ch) _NOTHROW {
   if (index && *(pointer + index - 1) == ch) {
     return TRUE;
   }
@@ -131,22 +149,22 @@ bool is_prev_char(const char *pointer, Ulong index, const char ch) _GL_ATTRIBUTE
 }
 
 /* Return 'TRUE' when the char at prev cursor position is 'ch'. */
-bool is_prev_cursor_char(const char ch) _GL_ATTRIBUTE_NOTHROW {
+bool is_prev_cursor_char(const char ch) _NOTHROW {
   return is_prev_char(openfile->current->data, openfile->current_x, ch);
 }
 
 /* Return 'TRUE' when any of the char`s is 'chars' matches the previus char in 'pointer' at 'index'. */
-bool is_prev_char_one_of(const char *pointer, Ulong index, const char *chars) _GL_ATTRIBUTE_NOTHROW {
+bool is_prev_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW {
   return (index && strchr(chars, *(pointer + index - 1)));
 }
 
 /* Return 'TRUE' when any of the char`s is 'chars' matches the previus char at cursor. */
-bool is_prev_cursor_char_one_of(const char *chars) _GL_ATTRIBUTE_NOTHROW {
+bool is_prev_cursor_char_one_of(const char *chars) _NOTHROW {
   return is_prev_char_one_of(openfile->current->data, openfile->current_x, chars);
 }
 
 /* Return 'TRUE' when char at current cursor pos is 'ch'. */
-bool is_cursor_char(const char ch) _GL_ATTRIBUTE_NOTHROW {
+bool is_cursor_char(const char ch) _NOTHROW {
   if (*(openfile->current->data + openfile->current_x) == ch) {
     return TRUE;
   }
@@ -154,17 +172,17 @@ bool is_cursor_char(const char ch) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return 'TRUE' when one char in 'chars' matches the char at 'pointer+index'. */
-bool is_char_one_of(const char *pointer, Ulong index, const char *chars) _GL_ATTRIBUTE_NOTHROW {
+bool is_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW {
   return (*(pointer + index) && strchr(chars, *(pointer + index)));
 }
 
 /* Return 'TRUE' when one char in 'chars' matches the char at 'openfile->current->data+openfile->current_x'. */
-bool is_cursor_char_one_of(const char *chars) _GL_ATTRIBUTE_NOTHROW {
+bool is_cursor_char_one_of(const char *chars) _NOTHROW {
   return is_char_one_of(openfile->current->data, openfile->current_x, chars);
 }
 
 /* Return 'TRUE' when pointer+index-1 is equal to 'pre_ch' and 'pointer+index' is equal to 'post_ch'. */
-bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch) _GL_ATTRIBUTE_NOTHROW {
+bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch) _NOTHROW {
   if (index && *(pointer + index - 1) == pre_ch && *(pointer + index) == post_ch) {
     return TRUE;
   }
@@ -172,12 +190,12 @@ bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const
 }
 
 /* Return 'TRUE' when char before cursor is equal to 'pre_ch' and char at cursor is equal to 'post_ch'. */
-bool is_cursor_between_chars(const char pre_ch, const char post_ch) _GL_ATTRIBUTE_NOTHROW {
+bool is_cursor_between_chars(const char pre_ch, const char post_ch) _NOTHROW {
   return is_between_chars(openfile->current->data, openfile->current_x, pre_ch, post_ch);
 }
 
 /* Return the visible representation of control character c. */
-static char __warn_unused control_rep(const signed char c) _GL_ATTRIBUTE_NOTHROW {
+static char _NODISCARD control_rep(const signed char c) _NOTHROW {
   if (c == DEL_CODE) {
     return '?';
   }
@@ -193,7 +211,7 @@ static char __warn_unused control_rep(const signed char c) _GL_ATTRIBUTE_NOTHROW
 }
 
 /* Return the visible representation of multibyte control character 'c'. */
-char control_mbrep(const char *const c, bool isdata) _GL_ATTRIBUTE_NOTHROW {
+char control_mbrep(const char *const c, bool isdata) _NOTHROW {
   /* An embedded newline is an encoded NUL if 'isdata' is TRUE. */
   if (*c == '\n' && (isdata || as_an_at)) {
     return '@';
@@ -213,7 +231,7 @@ char control_mbrep(const char *const c, bool isdata) _GL_ATTRIBUTE_NOTHROW {
 
 // Convert the given multibyte sequence c to wide character wc, and return
 // the number of bytes in the sequence, or -1 for an invalid sequence.
-int mbtowide(wchar_t *wc, const char *const c) _GL_ATTRIBUTE_NOTHROW {
+int mbtowide(wchar_t *wc, const char *const c) _NOTHROW {
   if ((signed char)*c < 0 && use_utf8) {
     Uchar v1 = (Uchar)c[0];
     Uchar v2 = (Uchar)c[1] ^ 0x80;
@@ -254,7 +272,7 @@ int mbtowide(wchar_t *wc, const char *const c) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return 'TRUE' when the given character occupies two cells. */
-bool is_doublewidth(const char *const ch) _GL_ATTRIBUTE_NOTHROW {
+bool is_doublewidth(const char *const ch) _NOTHROW {
   wchar_t wc;
   /* Only from U+1100 can code points have double width. */
   if ((Uchar)*ch < 0xE1 || !use_utf8) {
@@ -267,7 +285,7 @@ bool is_doublewidth(const char *const ch) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return 'TRUE' when the given character occupies zero cells. */
-bool is_zerowidth(const char *ch) _GL_ATTRIBUTE_NOTHROW {
+bool is_zerowidth(const char *ch) _NOTHROW {
   wchar_t wc;
   /* Only from U+0300 can code points have zero width. */
   if ((Uchar)*ch < 0xCC || !use_utf8) {
@@ -285,8 +303,13 @@ bool is_zerowidth(const char *ch) _GL_ATTRIBUTE_NOTHROW {
   return (wcwidth(wc) == 0);
 }
 
+/* Return 'TRUE' when the character at 'openfile->current->data+openfile->current_x' occupies zero cells. */
+bool is_cursor_zerowidth(void) _NOTHROW {
+  return is_zerowidth(openfile->current->data + openfile->current_x);
+}
+
 /* Return the number of bytes in the character that starts at *pointer. */
-int char_length(const char *const &pointer) _GL_ATTRIBUTE_NOTHROW {
+int char_length(const char *const &pointer) _NOTHROW {
   if ((Uchar)*pointer > 0xC1 && use_utf8) {
     const Uchar c1 = (Uchar)pointer[0];
     const Uchar c2 = (Uchar)pointer[1];
@@ -321,7 +344,7 @@ int char_length(const char *const &pointer) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return the number of (multibyte) characters in the given string. */
-Ulong mbstrlen(const char *pointer) _GL_ATTRIBUTE_NOTHROW {
+Ulong mbstrlen(const char *pointer) _NOTHROW {
   Ulong count = 0;
   while (*pointer) {
     pointer += char_length(pointer);
@@ -331,7 +354,7 @@ Ulong mbstrlen(const char *pointer) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return the length (in bytes) of the character at the start of the given string, and return a copy of this character in *thechar. */
-int collect_char(const char *const str, char *c) _GL_ATTRIBUTE_NOTHROW {
+int collect_char(const char *const str, char *c) _NOTHROW {
   const int charlen = char_length(str);
   for (int i = 0; i < charlen; ++i) {
     c[i] = str[i];
@@ -340,7 +363,7 @@ int collect_char(const char *const str, char *c) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return the length ( in bytes ) of the character at the start of the given string, and add this character's width to '*column'. */
-int advance_over(const char *const str, Ulong &column) _GL_ATTRIBUTE_NOTHROW {
+int advance_over(const char *const str, Ulong &column) _NOTHROW {
   if (*str < 0 && use_utf8) {
     /* A UTF-8 upper control code has two bytes and takes two columns. */
     if ((Uchar)str[0] == 0xC2 && (signed char)str[1] < -96) {
@@ -381,7 +404,7 @@ int advance_over(const char *const str, Ulong &column) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return the index in buf of the beginning of the multibyte character before the one at pos. */
-Ulong step_left(const char *const buf, const Ulong pos) _GL_ATTRIBUTE_NOTHROW {
+Ulong step_left(const char *const buf, const Ulong pos) _NOTHROW {
   if (use_utf8) {
     Ulong before, charlen = 0;
     if (pos < 4) {
@@ -419,17 +442,17 @@ Ulong step_left(const char *const buf, const Ulong pos) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return the index in buf of the beginning of the multibyte character after the one at pos. */
-Ulong step_right(const char *const buf, const Ulong pos) _GL_ATTRIBUTE_NOTHROW {
+Ulong step_right(const char *const buf, const Ulong pos) _NOTHROW {
   return (pos + char_length(buf + pos));
 }
 
 /* This function is equivalent to strcasecmp() for multibyte strings. */
-int mbstrcasecmp(const char *s1, const char *s2) _GL_ATTRIBUTE_NOTHROW {
+int mbstrcasecmp(const char *s1, const char *s2) _NOTHROW {
   return mbstrncasecmp(s1, s2, HIGHEST_POSITIVE);
 }
 
 /* This function is equivalent to strncasecmp() for multibyte strings. */
-int mbstrncasecmp(const char *s1, const char *s2, Ulong n) _GL_ATTRIBUTE_NOTHROW {
+int mbstrncasecmp(const char *s1, const char *s2, Ulong n) _NOTHROW {
   if (use_utf8) {
     wchar_t wc1, wc2;
     while (*s1 && *s2 && n > 0) {
@@ -483,7 +506,7 @@ int mbstrncasecmp(const char *s1, const char *s2, Ulong n) _GL_ATTRIBUTE_NOTHROW
 }
 
 /* This function is equivalent to strcasestr() for multibyte strings. */
-char *mbstrcasestr(const char *haystack, const char *const needle) _GL_ATTRIBUTE_NOTHROW {
+char *mbstrcasestr(const char *haystack, const char *const needle) _NOTHROW {
   if (use_utf8) {
     const Ulong needle_len = mbstrlen(needle);
     while (*haystack) {
@@ -500,7 +523,7 @@ char *mbstrcasestr(const char *haystack, const char *const needle) _GL_ATTRIBUTE
 }
 
 /* This function is equivalent to strstr(), except in that it scans the string in reverse, starting at pointer. */
-char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) _GL_ATTRIBUTE_NOTHROW {
+char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) _NOTHROW {
   const Ulong needle_len = strlen(needle);
   const Ulong tail_len   = strlen(pointer);
   if (tail_len < needle_len) {
@@ -516,7 +539,7 @@ char *revstrstr(const char *const haystack, const char *const needle, const char
 }
 
 /* This function is equivalent to strcasestr(), except in that it scans the string in reverse, starting at pointer. */
-static char *__warn_unused revstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _GL_ATTRIBUTE_NOTHROW  {
+static char *_NODISCARD revstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _NOTHROW  {
   const Ulong needle_len = strlen(needle);
   const Ulong tail_len   = strlen(pointer);
   if (tail_len < needle_len) {
@@ -532,7 +555,7 @@ static char *__warn_unused revstrcasestr(const char *const haystack, const char 
 } __nonnull((1, 2, 3))
 
 /* This function is equivalent to strcasestr() for multibyte strings, except in that it scans the string in reverse, starting at pointer. */
-char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _GL_ATTRIBUTE_NOTHROW {
+char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _NOTHROW {
   if (use_utf8) {
     const Ulong needle_len = mbstrlen(needle);
     const Ulong tail_len   = mbstrlen(pointer);
@@ -560,7 +583,7 @@ char *mbrevstrcasestr(const char *const haystack, const char *const needle, cons
 // This function is equivalent to strchr() for multibyte strings.  It is used to find the
 // first occurrence of a character in a string.  The character to find is given as a
 // multibyte string.  The function is used in justify.c to find the first space in a line.
-char *mbstrchr(const char *string, const char *const chr) _GL_ATTRIBUTE_NOTHROW {
+char *mbstrchr(const char *string, const char *const chr) _NOTHROW {
   if (use_utf8) {
     bool    bad_s = FALSE;
     bool    bad_c = FALSE;
@@ -592,7 +615,7 @@ char *mbstrchr(const char *string, const char *const chr) _GL_ATTRIBUTE_NOTHROW 
 }
 
 /* Locate, in the given string, the first occurrence of any of the characters in accept, searching forward. */
-char *mbstrpbrk(const char *str, const char *accept) _GL_ATTRIBUTE_NOTHROW {
+char *mbstrpbrk(const char *str, const char *accept) _NOTHROW {
   while (*str) {
     if (mbstrchr(accept, str)) {
       return (char *)str;
@@ -604,7 +627,7 @@ char *mbstrpbrk(const char *str, const char *accept) _GL_ATTRIBUTE_NOTHROW {
 
 // Locate, in the string that starts at head, the first occurrence of any of
 // the characters in accept, starting from pointer and searching backwards.
-char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer) _GL_ATTRIBUTE_NOTHROW {
+char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer) _NOTHROW {
   if (!*pointer) {
     if (pointer == head) {
       return NULL;
@@ -624,7 +647,7 @@ char *mbrevstrpbrk(const char *const head, const char *const accept, const char 
 }
 
 /* Return 'TRUE' if the given string contains at least one blank character. */
-bool has_blank_char(const char *str) _GL_ATTRIBUTE_NOTHROW {
+bool has_blank_char(const char *str) _NOTHROW {
   while (*str && !is_blank_char(str)) {
     str += char_length(str);
   }
@@ -632,7 +655,7 @@ bool has_blank_char(const char *str) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Return 'TRUE' when the given string is empty or consists of only blanks. */
-bool white_string(const char *str) _GL_ATTRIBUTE_NOTHROW {
+bool white_string(const char *str) _NOTHROW {
   while (*str && (is_blank_char(str) || *str == '\r')) {
     str += char_length(str);
   }
@@ -652,14 +675,14 @@ bool white_string(const char *str) _GL_ATTRIBUTE_NOTHROW {
   }
  */
 /* Remove leading whitespace from a given string */
-void strip_leading_blanks_from(char *str) _GL_ATTRIBUTE_NOTHROW {
+void strip_leading_blanks_from(char *str) _NOTHROW {
   char *start = str;
   for (; start && (*start == '\t' || *start == ' '); ++start)
     ;
   (start != str) ? memmove(str, start, (strlen(start) + 1)) : 0;
 }
 
-void strip_leading_chars_from(char *str, const char ch) _GL_ATTRIBUTE_NOTHROW {
+void strip_leading_chars_from(char *str, const char ch) _NOTHROW {
   char *start = str;
   for (; start && *start == ch; start++)
     ;
@@ -667,7 +690,7 @@ void strip_leading_chars_from(char *str, const char ch) _GL_ATTRIBUTE_NOTHROW {
 }
 
 /* Works like 'strchr' except made for c/cpp code so it skips all 'string literals', 'char literals', slash and block comments. */
-const char *nstrchr_ccpp(const char *__s, const char __c) _GL_ATTRIBUTE_NOTHROW {
+const char *nstrchr_ccpp(const char *__s, const char __c) _NOTHROW {
   PROFILE_FUNCTION;
   const char *end = __s;
   do {

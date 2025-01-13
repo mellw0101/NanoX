@@ -119,13 +119,6 @@ void find_suggestion(void) {
   else {
     NETLOG("Found no completions.\n");
   }
-
-  /* if (openfile->type.is_set<C_CPP>()) {
-    NETLOG("suggest_buf: %s\n", suggest_buf);
-    if (strncmp("char", suggest_buf, suggest_len) == 0) {
-      suggest_str = (char *)"char";
-    }
-  } */
 }
 
 /* Clear suggest buffer and len as well as setting the current suggest str to NULL. */

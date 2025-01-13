@@ -58,21 +58,27 @@ long index_from_mouse_x(const char *string, Uint len, texture_font_t *font, floa
   }
   const char *cur;
   const char *prev = (ISSET(LINE_NUMBERS) ? " " : NULL);
-  float st_x = 0.0f;
+  float st_x  = 0.0f;
   float end_x = 0.0f;
   Ulong i = 0;
   for (; i < len; ++i) {
     /* Set the start x pos to the end pos x. */
     st_x = end_x;
     cur = &string[i];
-    end_x += glyph_width(cur, prev, font);
+    if (*cur == '\t') {
+      cur = " ";
+      end_x += (glyph_width(cur, prev, font) * tabsize);
+    }
+    else {
+      end_x += glyph_width(cur, prev, font);
+    }
     prev = cur;
     if (mousepos.x > (st_x + offset) && mousepos.x < (end_x + offset)) {
       break;
     }
   }
   /* If the x position is bigger then the string, return the index of the last char. */
-  return actual_x(string, i);
+  return actual_x(string, wideness(string, i));
 }
 
 /* Returns character index from x pixel position in string. */
@@ -187,7 +193,6 @@ void add_glyph(const char *current, const char *previous, vertex_buffer_t *buffe
   };
   vertex_buffer_push_back(buffer, vertices, 4, indices, 6);
   pen->x += glyph->advance_x;
-  pen->y += glyph->advance_y;
 }
 
 void vertex_buffer_add_string(vertex_buffer_t *buffer, const char *string, Ulong slen, const char *previous, texture_font_t *font, vec4 color, vec2 *pen) {
@@ -221,7 +226,7 @@ void add_cursor(texture_font_t *font, vertex_buffer_t *buffer, vec4 color) {
 /* Update projection for a shader. */
 void update_projection_uniform(Uint shader) {
   glUseProgram(shader); {
-    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, FALSE, &projection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, FALSE, projection.data);
   }
 }
 
@@ -243,6 +248,7 @@ void vertex_buffer_add_element_lable(uielementstruct *element, texture_font_t *f
   vertex_buffer_add_string(buffer, element->lable, element->lablelen, NULL, font, element->textcolor, &pos);
 }
 
+/* Returns 'TRUE' when 'ancestor' is an ancestor to e or is e itself. */
 bool is_ancestor(uielementstruct *e, uielementstruct *ancestor) {
   uielementstruct *element = e;
   while (element) {
@@ -252,6 +258,53 @@ bool is_ancestor(uielementstruct *e, uielementstruct *ancestor) {
     element = element->parent;
   }
   return FALSE;
+}
+
+#define PF8BIT(bit_value) (bit_value / 255.0f)
+#define VEC4_8BIT(r, g, b, a) vec4(PF8BIT(r), PF8BIT(g), PF8BIT(b), a)
+
+vec4 color_idx_to_vec4(int index) {
+  switch (index) {
+    case FG_VS_CODE_RED: {
+      return VEC4_8BIT(205, 49, 49, 1);
+    }
+    case FG_VS_CODE_GREEN: {
+      return VEC4_8BIT(13, 188, 121, 1);
+    }
+    case FG_VS_CODE_YELLOW: {
+      return VEC4_8BIT(229, 229, 16, 1);
+    }
+    case FG_VS_CODE_BLUE: {
+      return VEC4_8BIT(36, 114, 200, 1);
+    }
+    case FG_VS_CODE_MAGENTA: {
+      return VEC4_8BIT(188, 63, 188, 1);
+    }
+    case FG_VS_CODE_CYAN: {
+      return VEC4_8BIT(17, 168, 205, 1);
+    }
+    case FG_VS_CODE_BRIGHT_RED: {
+      return VEC4_8BIT(241, 76, 76, 1);
+    }
+    case FG_VS_CODE_BRIGHT_GREEN: {
+      return VEC4_8BIT(35, 209, 139, 1);
+    }
+    case FG_VS_CODE_BRIGHT_YELLOW: {
+      return VEC4_8BIT(245, 245, 67, 1);
+    }
+    case FG_VS_CODE_BRIGHT_BLUE: {
+      return VEC4_8BIT(59, 142, 234, 1);
+    }
+    case FG_VS_CODE_BRIGHT_MAGENTA: {
+      return VEC4_8BIT(214, 112, 214, 1);
+    }
+    case FG_VS_CODE_BRIGHT_CYAN: {
+      return VEC4_8BIT(41, 184, 219, 1);
+    }
+    default: {
+      return vec4(1.0f);
+    }
+  }
 }
 
 #endif

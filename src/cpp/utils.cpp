@@ -335,17 +335,6 @@ char *copy_of(const char *string) _NOTHROW {
   return measured_copy(string, strlen(string));
 }
 
-char *measured_memmove_copy(const char *string, const Ulong count) _NOTHROW {
-  char *thecopy = (char *)nmalloc(count + 1);
-  memmove(thecopy, string, count);
-  thecopy[count] = '\0';
-  return thecopy;
-}
-
-char *memmove_copy_of(const char *string) _NOTHROW {
-  return measured_memmove_copy(string, strlen(string));
-}
-
 /* Free the string at dest and return the string at src. */
 char *free_and_assign(char *dest, char *src) _NOTHROW {
   free(dest);
@@ -619,7 +608,7 @@ const char *word_strstr_array(const char *str, const char **substrs, Uint count,
 
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index) {
   const char *first = NULL;
-  for (Uint i = 0; i < count; i++) {
+  for (Uint i = 0; i < count; ++i) {
     const char *match = strstr(str, substrs[i]);
     if (match && (!first || match < first)) {
       first = match;

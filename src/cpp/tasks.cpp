@@ -190,7 +190,7 @@ struct sub_thread_function {
 
   static void *find_file_in_dir(void *arg) {
     dir_search_task_t *task = (dir_search_task_t *)arg;
-    task->entrys            = dir_entrys_from(task->dir);
+    task->entrys = dir_entrys_from(task->dir);
     Ulong i         = 0;
     for (; task->entrys[i]; i++) {
       if (strcmp(task->find, task->entrys[i]) == 0) {

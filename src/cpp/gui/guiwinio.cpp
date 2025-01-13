@@ -19,7 +19,7 @@ void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, t
     /* The number of columns to paint. */
     int paintlen = -1;
     /* The rect to draw. */
-    vec4 rect;
+    vec4 rect, mark_color;
     get_region(&top, &top_x, &bot, &bot_x);
     if (top->lineno < line->lineno || top_x < from_x) {
       top_x = from_x;
@@ -67,7 +67,10 @@ void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, t
       }
       rect.y = line_y_pixel_offset(line, font);
       rect.height = FONT_HEIGHT(font);
-      draw_rect(rect.xy(), rect.zw(), vec4(0.0f, 0.0f, 0.8f, 0.25f));
+      mark_color = EDIT_BACKGROUND_COLOR + vec4(0.05f);
+      mark_color.alpha = 0.35f;
+      mark_color.blue += 0.20f;
+      draw_rect(rect.xy(), rect.zw(), mark_color);
     }
   }
 }
@@ -75,10 +78,14 @@ void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, t
 /* Draw rect to the window. */
 void draw_rect(vec2 pos, vec2 size, vec4 color) {
   glUseProgram(rectshader); {
+    /* Get the locations for the rect shader uniforms. */
+    static int rectcolor_loc = glGetUniformLocation(rectshader, "rectcolor");
+    static int elempos_loc   = glGetUniformLocation(rectshader, "elempos");
+    static int elemsize_loc  = glGetUniformLocation(rectshader, "elemsize");
     /* Pass the color to the rect shader color uniform. */
-    glUniform4fv(glGetUniformLocation(rectshader, "rectcolor"), 1, &color[0]);
-    glUniform2fv(glGetUniformLocation(rectshader, "elempos"), 1, &pos[0]);
-    glUniform2fv(glGetUniformLocation(rectshader, "elemsize"), 1, &size[0]);
+    glUniform4fv(rectcolor_loc, 1, &color[0]);
+    glUniform2fv(elempos_loc, 1, &pos[0]);
+    glUniform2fv(elemsize_loc, 1, &size[0]);
     glDrawArrays(GL_TRIANGLES, 0, 6);
   }
 }
@@ -113,63 +120,114 @@ void move_resize_element(uielementstruct *e, vec2 pos, vec2 size) {
 static void render_vertex_buffer(Uint shader, vertex_buffer_t *buffer) {
   glEnable(GL_TEXTURE_2D);
   glUseProgram(shader); {
-    glUniform1i(glGetUniformLocation(shader, "texture"), 0);
+    static int texture_loc = glGetUniformLocation(shader, "texture");
+    glUniform1i(texture_loc, 0);
     vertex_buffer_render(buffer, GL_TRIANGLES);
   }
+}
+
+/* Draw one row onto the gui window. */
+static void gui_draw_row(linestruct *line, texture_font_t *font, vec2 *pen) {
+  const char *prev_char = NULL;
+  char linenobuffer[margin + 1];
+  /* If line numbers are turned on, draw them.  But only when a refresh is needed. */
+  if (refresh_needed && ISSET(LINE_NUMBERS)) {
+    sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
+    vertex_buffer_add_string(vertbuf, linenobuffer, margin, prev_char, markup.font, vec4(1.0f), pen);
+    prev_char = " ";
+  }
+  /* Return early if the line is empty. */
+  if (!*line->data) {
+    return;
+  }
+  Ulong from_col  = get_page_start(wideness(line->data, ((line == openfile->current) ? openfile->current_x : 0)));
+  char *converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
+  if (refresh_needed) {
+    Ulong converted_len = strlen(converted);
+    /* For c/cpp files. */
+    if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX) && openfile->type.is_set<C_CPP>()) {
+      Ulong index = 0;
+      line_word_t *head = get_line_words(converted, converted_len);
+      while (head) {
+        line_word_t *node = head;
+        head = node->next;
+        /* The global map. */
+        if (test_map.find(node->str) != test_map.end()) {
+          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
+          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(test_map[node->str].color), pen);
+          index = node->end;
+        }
+        /* The variable map in the language server. */
+        else if (LSP->index.vars.find(node->str) != LSP->index.vars.end()) {
+          for (const auto &v : LSP->index.vars[node->str]) {
+            if (strcmp(tail(v.file), tail(openfile->filename)) == 0) {
+              if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
+                vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
+                vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), pen);
+                index = node->end;
+              }
+            }
+          }
+        }
+        /* The define map in the language server. */
+        else if (LSP->index.defines.find(node->str) != LSP->index.defines.end()) {
+          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
+          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BLUE), pen);
+          index = node->end;
+        }
+        /* The map for typedefined structs and normal structs. */
+        else if (LSP->index.tdstructs.find(node->str) != LSP->index.tdstructs.end() || LSP->index.structs.find(node->str) != LSP->index.structs.end()) {
+          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
+          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_GREEN), pen);
+          index = node->end;
+        }
+        /* The function name map in the language server. */
+        else if (LSP->index.functiondefs.find(node->str) != LSP->index.functiondefs.end()) {
+          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
+          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), pen);
+          index = node->end;
+        }
+        free_node(node);
+      }
+      vertex_buffer_add_string(vertbuf, (converted + index), (converted_len - index), prev_char, markup.font, vec4(1.0f), pen);
+    }
+    /* Otherwise just draw white text. */
+    else {
+      vertex_buffer_add_string(vertbuf, converted, converted_len, prev_char, markup.font, vec4(1.0f), pen);
+    }
+  }
+  draw_marked_part(line, converted, from_col, markup.font);
+  free(converted);
 }
 
 /* Render the editelement. */
 void draw_editelement(void) {
   int row = 0;
-  Ulong from_col;
-  char *converted = NULL;
-  char *prev_char = NULL;
-  char linenobuffer[margin + 1];
   linestruct *line = openfile->edittop;
   /* Draw the edit element first. */
   draw_uielement_rect(editelement);
   /* Then draw the gutter. */
   draw_uielement_rect(gutterelement);
+  /* When required, clear the vertex. */
   if (refresh_needed) {
     /* Now handle the text. */
     pen.y = editelement->pos.y;
     vertex_buffer_clear(vertbuf);
-    while (line && ++row <= editwinrows) {
+  }
+  while (line && ++row <= editwinrows) {
+    /* Only set the pen if required. */
+    if (refresh_needed) {
       /* Reset the pen pos. */
       pen.x = 0;
       pen.y += FONT_HEIGHT(markup.font);
-      /* If line numbers are turned on, draw them. */
-      if (ISSET(LINE_NUMBERS)) {
-        sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
-        vertex_buffer_add_string(vertbuf, linenobuffer, margin, prev_char, markup.font, vec4(1.0f), &pen);
-        prev_char = (char *)" ";
-      }
-      /* If there is atleast one char in the line, draw it. */
-      if (*line->data) {
-        from_col = get_page_start(wideness(line->data, ((line == openfile->current) ? openfile->current_x : 0)));
-        converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
-        vertex_buffer_add_string(vertbuf, converted, strlen(converted), prev_char, markup.font, vec4(1.0f), &pen);
-        draw_marked_part(line, converted, from_col, markup.font);
-        free(converted);
-      }
-      line = line->next;
     }
+    gui_draw_row(line, markup.font, &pen);
+    line = line->next;
+  }
+  if (refresh_needed) {
     upload_texture_atlas(atlas);
     /* Add the cursor to the buffer. */
     add_cursor(markup.font, vertbuf, vec4(1.0f));
-  }
-  /* When the text has not changed just render the marked regions before drawing the same text again. */
-  else {
-    while (line && ++row <= editwinrows) {
-      /* Only check the line if there is any data on it. */
-      if (*line->data) {
-        from_col = get_page_start(wideness(line->data, (line == openfile->current) ? openfile->current_x : 0));
-        converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
-        draw_marked_part(line, converted, from_col, markup.font);
-        free(converted);
-      }
-      line = line->next;
-    }
   }
   render_vertex_buffer(fontshader, vertbuf);
 }

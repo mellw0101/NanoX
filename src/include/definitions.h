@@ -65,7 +65,6 @@
   #include <Mlib/openGL/shader.h>
   #include <ft2build.h>
   #include FT_FREETYPE_H
-  #define GLYPH_KERNING_DEBUG
   #include <freetype-gl/freetype-gl.h>
   #include <freetype-gl/matrix4x4.h>
 #endif
@@ -262,6 +261,7 @@ using std::vector;
   #define FONT_HEIGHT(font) (font->height - font->linegap)
   /* Size of each grid in the gridmap. */
   #define GRIDMAP_GRIDSIZE 20
+  #define EDIT_BACKGROUND_COLOR vec4(vec3(0.1f), 1.0f)
 #endif
 
 #define IS_POINTER_TYPE(x) \
@@ -500,6 +500,19 @@ typedef enum {
   #define ZAP_REPLACE ZAP_REPLACE
 } undo_type;
 
+typedef enum {
+  STATUSBAR_ADD,
+  #define STATUSBAR_ADD STATUSBAR_ADD
+  STATUSBAR_BACK,
+  #define STATUSBAR_BACK STATUSBAR_BACK
+  STATUSBAR_DEL,
+  #define STATUSBAR_DEL STATUSBAR_DEL
+  STATUSBAR_CHOP_NEXT_WORD,
+  #define STATUSBAR_CHOP_NEXT_WORD STATUSBAR_CHOP_NEXT_WORD
+  STATUSBAR_OTHER,
+  #define STATUSBAR_OTHER STATUSBAR_OTHER
+} statusbar_undo_type;
+
 /* Some extra flags for the undo function. */
 typedef enum {
   WAS_BACKSPACE_AT_EOF = (1 << 1),
@@ -635,6 +648,15 @@ typedef struct undostruct {
   Ulong tail_x;          /* The x position corresponding to the above line number. */
   undostruct *next;      /* A pointer to the undo item of the preceding action. */
 } undostruct;
+
+typedef struct statusbar_undostruct {
+  statusbar_undo_type type;
+  int xflags;
+  Ulong head_x;
+  Ulong tail_x; /* Used to indicate the end pos of this action or sometimes used to hold the length of something. */
+  char *answerdata;
+  statusbar_undostruct *next;
+} statusbar_undostruct;
 
 typedef struct poshiststruct {
   char *filename;      /* The full path plus name of the file. */

@@ -22,7 +22,7 @@
 #include "../include/prototypes.h"
 
 #ifdef HAVE_MAGIC_H
-#    include <magic.h>
+# include <magic.h>
 #endif
 
 /* Whether ncurses accepts -1 to mean "default color". */

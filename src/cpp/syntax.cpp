@@ -372,7 +372,7 @@ char **find_functions_in_file(char *path) {
         }
         end = strchr(line, ';');
         if (end) {
-          char *func_str    = measured_memmove_copy(start, (end - start));
+          char *func_str    = measured_copy(start, (end - start));
           char *return_type = copy_of("void ");
           char *full_func   = alloc_str_free_substrs(return_type, func_str);
           if (acap == asize) {
@@ -421,7 +421,7 @@ char **find_variabels_in_file(char *path) {
       continue;
     }
     if (assign) {
-      char *str = measured_memmove_copy(line, (assign - line) + 1);
+      char *str = measured_copy(line, (assign - line) + 1);
       if (acap == asize) {
         acap *= 2;
         var_str_array = (char **)nrealloc(var_str_array, acap * sizeof(char *));

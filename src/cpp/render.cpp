@@ -236,7 +236,6 @@ void render_comment(void) {
 
 /* Color brackets based on indent. */
 void render_bracket(void) {
-  PROFILE_FUNCTION;
   const char *found = line->data;
   do {
     found = strstr_array(found, (const char *[]){ "{", "}", "[", "]", "(", ")" }, 6, NULL);
@@ -786,7 +785,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
     if (!line->data[0] || (block_comment_start == 0 && block_comment_end == till_x)) {
       return;
     }
-    line_word_t *head = line_word_list(line->data, till_x);
+    line_word_t *head = get_line_words(line->data, till_x);
     while (head) {
       line_word_t *node = head;
       head              = node->next;
@@ -874,17 +873,17 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
     if (comment) {
       render_part((comment - line->data), till_x, FG_COMMENT_GREEN);
     }
-    line_word_t *head = line_word_list(line->data, till_x);
+    line_word_t *head = get_line_words(line->data, till_x);
     while (head) {
       line_word_t *node = head;
-      head              = node->next;
+      head = node->next;
       /* If there is a comment on the line skip all other words. */
       if (comment && node->start > (comment - line->data)) {
         free_node(node);
         continue;
       }
-      char       *word = lower_case_word(node->str);
-      const auto &it   = test_map.find(word);
+      char *word = lower_case_word(node->str);
+      const auto &it = test_map.find(word);
       free(word);
       if (it != test_map.end()) {
         midwin_mv_add_nstr_color(row, get_start_col(line, node), node->str, node->len, it->second.color);
@@ -907,7 +906,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
         comment = NULL;
       }
     }
-    line_word_t *head = line_word_list(line->data, till_x);
+    line_word_t *head = get_line_words(line->data, till_x);
     while (head) {
       line_word_t *node = head;
       head = node->next;
@@ -916,10 +915,10 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
         free_node(node);
         continue;
       }
-      if (test_map.count(node->str)) {
+      if (test_map.find(node->str) != test_map.end()) {
         mv_add_nstr_color(midwin, row, get_start_col(line, node), node->str, node->len, test_map[node->str].color);
       }
-      else if (LSP->index.bash_data.variable.count(node->str)) {
+      else if (LSP->index.bash_data.variable.find(node->str) != LSP->index.bash_data.variable.end()) {
         if (line->lineno == LSP->index.bash_data.variable[node->str].lineno) {
           mv_add_nstr_color(midwin, row, get_start_col(line, node), node->str, node->len, FG_VS_CODE_BRIGHT_CYAN);
         }
@@ -940,7 +939,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
     }
     render_comment();
     /* Retrieve all words in the current line. */
-    line_word_t *head = line_word_list(line->data, till_x);
+    line_word_t *head = get_line_words(line->data, till_x);
     while (head) {
       /* Assign head to node, and assign head to the next word. */
       line_word_t *node = head;
@@ -980,7 +979,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
     if (!line->data[0]) {
       return;
     }
-    line_word_t *head = line_word_list(line->data, till_x);
+    line_word_t *head = get_line_words(line->data, till_x);
     while (head) {
       line_word_t *node = head;
       head = node->next;
@@ -991,7 +990,7 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
     }
   }
   else if (openfile->type.is_set<NANOX_CONFIG>()) {
-    line_word_t *head = line_word_list(line->data, till_x);
+    line_word_t *head = get_line_words(line->data, till_x);
     const char *comment = strstr(line->data, "//");
     if (comment) {
       render_part((comment - line->data), till_x, FG_COMMENT_GREEN);
