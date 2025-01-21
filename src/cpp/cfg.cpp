@@ -25,14 +25,14 @@ static configfilestruct *configfile = NULL;
 configstruct *config = NULL;
 
 /* Open a fd for file_path. */
-static int open_fd(const char *file_path, int flags, bool on_failure, mode_t permissions)  {
+static int open_fd(const char *file_path, int fdflags, bool on_failure, mode_t permissions)  {
   block_sigwinch(TRUE);
   int fd;
   if (!permissions) {
-    fd = open(file_path, flags);
+    fd = open(file_path, fdflags);
   }
   else {
-    fd = open(file_path, flags, permissions);
+    fd = open(file_path, fdflags, permissions);
   }
   block_sigwinch(FALSE);
   if (fd < 0) {
@@ -113,7 +113,7 @@ static char *lock_and_read(const char *file_path, Ulong *file_size) {
       free(ret);
       exit(errno);
     }
-    if ((byread + len) >= ret_len) {
+    if ((byread + len) >= (long)ret_len) {
       ret_len = ((byread + len) * 2);
       ret = arealloc(ret, ret_len);
     }
@@ -200,7 +200,7 @@ static bool get_color_option(const char *data, const char *option, int *color_op
 }
 
 /* Fetch a binary opt, return`s value from file.  Or when not in file, then default_opt. */
-bool get_binary_option(const char *data, const char *option, bool default_opt) {
+static _UNUSED bool get_binary_option(const char *data, const char *option, bool default_opt) {
   /* Fetch binary option str. */
   const char *opt = strstr(data, option);
   if (opt) {
@@ -229,7 +229,7 @@ bool get_binary_option(const char *data, const char *option, bool default_opt) {
 }
 #define SET_BINARY_OPT(option) get_binary_option(data, option##_OPT, DEFAULT_CONFIG(option)) ? SETCONFIGFILE(option) : void()
 
-void get_linenumber_bar_option(const char *data) {
+static void get_linenumber_bar_option(const char *data) {
   configfile->data.linenumber.verticalbar     = FALSE;
   configfile->data.linenumber.fullverticalbar = FALSE;
   const char *opt = strstr(data, "linenumber:bar=");
@@ -252,7 +252,7 @@ void get_linenumber_bar_option(const char *data) {
 }
 
 /* Load configfile with values from disk. */
-void load_colorfile(void) {
+static void load_colorfile(void) {
   /* Make sure the file always exists. */
   if (!is_file_and_exists(configfile->filepath)) {
     lock_and_write(configfile->filepath, CONFIGFILE_DEFAULT_TEXT, STRLTRLEN(CONFIGFILE_DEFAULT_TEXT), OVERWRITE);

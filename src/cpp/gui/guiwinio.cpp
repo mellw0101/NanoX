@@ -4,8 +4,15 @@
 
 #define TOP_BAR_COLOR vec4(vec3(0.5f), 1.0f)
 
+/* The message to be drawn at the bottom bar. */
+static char *statusmsg = NULL;
+/* The time the message should be shown. */
+static float statustime = 0.0f;
+/* The type for the currently displayed status message. */
+static message_type statustype = VACUUM;
+
 /* If the line is part of the marked region, then draw a rect that reprecents the marked region. */
-void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *font) {
+void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *withfont) {
   /* If the line is at least partially selected, paint the marked part. */
   if (line_in_marked_region(line)) {
     /* The top and bot line where the marked region begins and ends. */
@@ -45,31 +52,31 @@ void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, t
         paintlen = strlen(thetext);
       }
       if (ISSET(LINE_NUMBERS)) {
-        Ulong offset = get_line_number_pixel_offset(line, font);
-        rect.x = (string_pixel_offset(line->data, " ", start_col, font) + offset);
+        Ulong offset = get_line_number_pixel_offset(line, withfont);
+        rect.x = (string_pixel_offset(line->data, " ", start_col, withfont) + offset);
         /* Calculate the number of pixels for the rect that will represent the painted section. */
         if (converted == thetext) {
-          rect.width = string_pixel_offset(thetext, " ", paintlen, font);
+          rect.width = string_pixel_offset(thetext, " ", paintlen, withfont);
         }
         else {
-          rect.width = string_pixel_offset(thetext, &converted[(thetext - converted) - 1], paintlen, font);
+          rect.width = string_pixel_offset(thetext, &converted[(thetext - converted) - 1], paintlen, withfont);
         }
       }
       else {
-        rect.x = string_pixel_offset(line->data, NULL, start_col, font);
+        rect.x = string_pixel_offset(line->data, NULL, start_col, withfont);
         /* Calculate the number of pixels for the rect that will represent the painted section. */
         if (converted == thetext) {
-          rect.width = string_pixel_offset(thetext, NULL, paintlen, font);
+          rect.width = string_pixel_offset(thetext, NULL, paintlen, withfont);
         }
         else {
-          rect.width = string_pixel_offset(thetext, &converted[(thetext - converted) - 1], paintlen, font);
+          rect.width = string_pixel_offset(thetext, &converted[(thetext - converted) - 1], paintlen, withfont);
         }
       }
-      rect.y = line_y_pixel_offset(line, font);
-      rect.height = FONT_HEIGHT(font);
-      mark_color = EDIT_BACKGROUND_COLOR + vec4(0.05f);
-      mark_color.alpha = 0.35f;
-      mark_color.blue += 0.20f;
+      rect.y = line_y_pixel_offset(line, withfont);
+      rect.height = FONT_HEIGHT(withfont);
+      mark_color  = EDIT_BACKGROUND_COLOR + vec4(0.05f);
+      mark_color.alpha = 0.45f;
+      mark_color.blue += 0.30f;
       draw_rect(rect.xy(), rect.zw(), mark_color);
     }
   }
@@ -119,7 +126,8 @@ void move_resize_element(uielementstruct *e, vec2 pos, vec2 size) {
 
 static void render_vertex_buffer(Uint shader, vertex_buffer_t *buffer) {
   glEnable(GL_TEXTURE_2D);
-  glUseProgram(shader); {
+  glUseProgram(shader);
+  {
     static int texture_loc = glGetUniformLocation(shader, "texture");
     glUniform1i(texture_loc, 0);
     vertex_buffer_render(buffer, GL_TRIANGLES);
@@ -127,13 +135,13 @@ static void render_vertex_buffer(Uint shader, vertex_buffer_t *buffer) {
 }
 
 /* Draw one row onto the gui window. */
-static void gui_draw_row(linestruct *line, texture_font_t *font, vec2 *pen) {
+static void gui_draw_row(linestruct *line, texture_font_t *withfont, vec2 *draw_pos) {
   const char *prev_char = NULL;
   char linenobuffer[margin + 1];
   /* If line numbers are turned on, draw them.  But only when a refresh is needed. */
   if (refresh_needed && ISSET(LINE_NUMBERS)) {
     sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
-    vertex_buffer_add_string(vertbuf, linenobuffer, margin, prev_char, markup.font, vec4(1.0f), pen);
+    vertex_buffer_add_string(vertbuf, linenobuffer, margin, prev_char, markup.font, vec4(1.0f), draw_pos);
     prev_char = " ";
   }
   /* Return early if the line is empty. */
@@ -153,8 +161,8 @@ static void gui_draw_row(linestruct *line, texture_font_t *font, vec2 *pen) {
         head = node->next;
         /* The global map. */
         if (test_map.find(node->str) != test_map.end()) {
-          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
-          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(test_map[node->str].color), pen);
+          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), draw_pos);
+          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(test_map[node->str].color), draw_pos);
           index = node->end;
         }
         /* The variable map in the language server. */
@@ -162,8 +170,8 @@ static void gui_draw_row(linestruct *line, texture_font_t *font, vec2 *pen) {
           for (const auto &v : LSP->index.vars[node->str]) {
             if (strcmp(tail(v.file), tail(openfile->filename)) == 0) {
               if (line->lineno >= v.decl_st && line->lineno <= v.decl_end) {
-                vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
-                vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), pen);
+                vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), draw_pos);
+                vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BRIGHT_CYAN), draw_pos);
                 index = node->end;
               }
             }
@@ -171,33 +179,51 @@ static void gui_draw_row(linestruct *line, texture_font_t *font, vec2 *pen) {
         }
         /* The define map in the language server. */
         else if (LSP->index.defines.find(node->str) != LSP->index.defines.end()) {
-          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
-          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BLUE), pen);
+          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), draw_pos);
+          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BLUE), draw_pos);
           index = node->end;
         }
         /* The map for typedefined structs and normal structs. */
         else if (LSP->index.tdstructs.find(node->str) != LSP->index.tdstructs.end() || LSP->index.structs.find(node->str) != LSP->index.structs.end()) {
-          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
-          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_GREEN), pen);
+          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), draw_pos);
+          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_GREEN), draw_pos);
           index = node->end;
         }
         /* The function name map in the language server. */
         else if (LSP->index.functiondefs.find(node->str) != LSP->index.functiondefs.end()) {
-          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), pen);
-          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), pen);
+          vertex_buffer_add_string(vertbuf, (converted + index), (node->start - index), prev_char, markup.font, vec4(1.0f), draw_pos);
+          vertex_buffer_add_string(vertbuf, (converted + node->start), node->len, prev_char, markup.font, color_idx_to_vec4(FG_VS_CODE_BRIGHT_YELLOW), draw_pos);
           index = node->end;
         }
         free_node(node);
       }
-      vertex_buffer_add_string(vertbuf, (converted + index), (converted_len - index), prev_char, markup.font, vec4(1.0f), pen);
+      vertex_buffer_add_string(vertbuf, (converted + index), (converted_len - index), prev_char, markup.font, vec4(1.0f), draw_pos);
     }
     /* Otherwise just draw white text. */
     else {
-      vertex_buffer_add_string(vertbuf, converted, converted_len, prev_char, markup.font, vec4(1.0f), pen);
+      vertex_buffer_add_string(vertbuf, converted, converted_len, prev_char, markup.font, vec4(1.0f), draw_pos);
     }
   }
   draw_marked_part(line, converted, from_col, markup.font);
   free(converted);
+}
+
+/* Show a status message of `type`, for `seconds`.  Note that the type will determen if the
+ * message will be shown, depending if there is a more urgent message already being shown. */
+void show_statusmsg(message_type type, float seconds, const char *format, ...) {
+  bool tolong = FALSE;
+  int len;
+  char buffer[4096];
+  va_list ap;
+  va_start(ap, format);
+  len = vsnprintf(buffer, sizeof(buffer), format, ap);
+  va_end(ap);
+  if (len > editwincols) {
+    tolong = TRUE;
+  }
+  statustype = type;
+  statusmsg  = free_and_assign(statusmsg, measured_copy(buffer, (tolong ? editwincols : len)));
+  statustime = seconds;
 }
 
 /* Render the editelement. */
@@ -215,9 +241,8 @@ void draw_editelement(void) {
     vertex_buffer_clear(vertbuf);
   }
   while (line && ++row <= editwinrows) {
-    /* Only set the pen if required. */
     if (refresh_needed) {
-      /* Reset the pen pos. */
+      /* Only set the pen if required. */
       pen.x = 0;
       pen.y += FONT_HEIGHT(markup.font);
     }
@@ -226,18 +251,39 @@ void draw_editelement(void) {
   }
   if (refresh_needed) {
     upload_texture_atlas(atlas);
-    /* Add the cursor to the buffer. */
-    add_cursor(markup.font, vertbuf, vec4(1.0f));
+    if (!guiflag.is_set<GUI_PROMPT>()) {
+      /* Add the cursor to the buffer, when not in prompt-mode. */
+      add_openfile_cursor(markup.font, vertbuf, vec4(1.0f));
+    }
   }
   render_vertex_buffer(fontshader, vertbuf);
 }
 
 /* Draw the top menu bar. */
 void draw_top_bar(void) {
-  draw_uielement_rect(top_bar);
   if (guiflag.is_set<GUI_PROMPT>()) {
-    vertex_buffer_clear(topbuf);
+    top_bar->color = color_idx_to_vec4(FG_VS_CODE_RED);
   }
+  else {
+    top_bar->color = EDIT_BACKGROUND_COLOR;
+  }
+  /* Always draw the top-bar.  For now. */
+  draw_uielement_rect(top_bar);
+  /* When in prompt mode.  Only draw the prompt and the answer. */
+  if (guiflag.is_set<GUI_PROMPT>()) {
+    if (refresh_needed) {
+      vertex_buffer_clear(topbuf);
+      vec2 penpos((top_bar->pos.x + pixel_breadth(markup.font, " ")), (top_bar->pos.y + FONT_HEIGHT(markup.font) + markup.font->descender));
+      vertex_buffer_add_string(topbuf, prompt, strlen(prompt), NULL, markup.font, vec4(1.0f), &penpos);
+      vertex_buffer_add_string(topbuf, answer, strlen(answer), " ", markup.font, vec4(1.0f), &penpos);
+      vec2 cursor_pos(
+        (top_bar->pos.x + pixel_breadth(markup.font, " ") + pixel_breadth(markup.font, prompt) + string_pixel_offset(answer, " ", typing_x, markup.font)),
+        top_bar->pos.y
+      );
+      add_cursor(markup.font, topbuf, vec4(1.0f), cursor_pos);
+    }
+  }
+  /* Otherwise, draw the menu elements as usual. */
   else {
     draw_uielement_rect(file_menu_element);
     if (refresh_needed) {
@@ -252,11 +298,41 @@ void draw_top_bar(void) {
         }
       }
     }
-    if (refresh_needed) {
-      upload_texture_atlas(atlas);
-    }
+  }
+  /* If a refresh is needed, meaning that we have cleared and reinput the data in the vertex buffer. */
+  if (refresh_needed) {
+    upload_texture_atlas(atlas);
   }
   render_vertex_buffer(fontshader, topbuf);
+}
+
+/* Draw the bottom bar. */
+void draw_botbar(void) {
+  if (statustype != VACUUM) {
+    /* Check it the message has been shown for the set time. */
+    statustime -= (1.0f / frametimer.fps);
+    if (statustime < 0) {
+      /* If the set time has elapsed, then reset the status element. */
+      statustype = VACUUM;
+      botbar->flag.set<UIELEMENT_HIDDEN>();
+      return;
+    }
+    if (refresh_needed) {
+      botbar->flag.unset<UIELEMENT_HIDDEN>();
+      float msgwidth = (pixel_breadth(markup.font, statusmsg) + pixel_breadth(markup.font, "  "));
+      vertex_buffer_clear(botbuf);
+      move_resize_element(
+        botbar,
+        vec2((((float)window_width / 2) - (msgwidth / 2)), (window_height - FONT_HEIGHT(markup.font))),
+        vec2(msgwidth, FONT_HEIGHT(markup.font))
+      );
+      vec2 penpos((botbar->pos.x + pixel_breadth(markup.font, " ")), (botbar->pos.y + FONT_HEIGHT(markup.font) + markup.font->descender));
+      vertex_buffer_add_string(botbuf, statusmsg, strlen(statusmsg), " ", markup.font, vec4(1.0f), &penpos);
+      upload_texture_atlas(atlas);
+    }
+    draw_uielement_rect(botbar);
+    render_vertex_buffer(fontshader, botbuf);
+  }
 }
 
 /* Toggle fullscreen state. */

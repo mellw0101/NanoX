@@ -57,7 +57,7 @@ static linestruct *find_in_history(const linestruct *start, const linestruct *en
   return NULL;
 }
 
-/* Update a history list (the one in which item is the current position)
+/* Update a history list (the one in which item is the current position) 
  * with a fresh string text.  That is: add text, or move it to the end. */
 void update_history(linestruct **item, const char *text, bool avoid_duplicates) _NOTHROW {
   linestruct **htop    = NULL;
@@ -238,7 +238,7 @@ void load_history(void) {
 
 /* Write the lines of a history list, starting at head, from oldest to newest, to
  * the given file.  Return 'TRUE' if writing succeeded, and 'FALSE' otherwise. */
-bool write_list(const linestruct *head, FILE *histfile) {
+static bool write_list(const linestruct *head, FILE *histfile) {
   const linestruct *item;
   for (item = head; item; item = item->next) {
     /* Decode 0x0A bytes as embedded NULs. */
@@ -348,7 +348,7 @@ void load_poshistory(void) {
 }
 
 /* Save the recorded cursor positions for files that were edited. */
-void save_poshistory(void) {
+static void save_poshistory(void) {
   FILE *histfile = fopen(poshistname, "wb");
   struct stat fileinfo;
   poshiststruct *item;
@@ -384,7 +384,7 @@ void save_poshistory(void) {
 }
 
 /* Reload the position history file if it has been modified since last load. */
-void reload_positions_if_needed(void) {
+static void reload_positions_if_needed(void) {
   poshiststruct *item, *nextone;
   struct stat    fileinfo;
   if (stat(poshistname, &fileinfo) != 0 || fileinfo.st_mtime == latest_timestamp) {

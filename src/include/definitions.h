@@ -59,6 +59,16 @@
 #include <Mlib/Notify.h>
 #include <Mlib/def.h>
 
+#include "../c/event/nevhandler.h"
+#include "../c/event/nfdreader.h"
+#include "../c/event/nfdwriter.h"
+#include "../c/term/terminfo.h"
+#include "../c/term/move.h"
+#include "../c/term/input.h"
+#include "../c/window/window.h"
+#include "../c/term/tui.h"
+#include "../c/input/key.h"
+
 #ifdef HAVE_GLFW
   #include "../lib/include/GL/glew.h"
   #include "../lib/include/GLFW/glfw3.h"
@@ -264,6 +274,8 @@ using std::vector;
   #define EDIT_BACKGROUND_COLOR vec4(vec3(0.1f), 1.0f)
 #endif
 
+#define NETLOG_FUNC_ST NETLOG("%s\n", __func__)
+
 #define IS_POINTER_TYPE(x) \
   _Generic((x), \
     void *: 1, \
@@ -307,6 +319,62 @@ using std::vector;
 #include "constexpr_def.h"
 
 #define NOTREBOUND (first_sc_for(MMAIN, do_help) && first_sc_for(MMAIN, do_help)->keycode == 0x07)
+
+/* Macro to help call the correct function based on if we are using out custom tui or ncurses. */
+
+#define nanox_waddnstr(window, string, len) \
+  (ISSET(NO_NCURSES) ? nwindow_add_nstr(tui_##window, string, len) : (void)waddnstr(window, string, len))
+
+#define nanox_mvwaddnstr(window, row, column, string, len) \
+  (ISSET(NO_NCURSES) ? nwindow_move_add_nstr(tui_##window, row, column, string, len) : (void)mvwaddstr(window, row, column, string))
+
+#define nanox_mvwaddstr(window, row, column, string) \
+  (ISSET(NO_NCURSES) ? nwindow_move_add_str(tui_##window, row, column, string) : (void)mvwaddstr(window, row, column, string))
+
+#define nanox_waddstr(window, string) \
+  (ISSET(NO_NCURSES) ? nwindow_add_str(tui_##window, string) : (void)waddstr(window, string))
+
+#define nanox_mvwprintw(window, row, column, ...) \
+  (ISSET(NO_NCURSES) ? nwindow_move_printf(tui_##window, row, column, __VA_ARGS__) : (void)mvwprintw(window, row, column, __VA_ARGS__))
+
+#define nanox_wprintw(window, ...) \
+  (ISSET(NO_NCURSES) ? nwindow_printf(tui_##window, __VA_ARGS__) : (void)wprintw(window, __VA_ARGS__))
+
+#define nanox_wmove(window, row, column) \
+  (ISSET(NO_NCURSES) ? nwindow_move(tui_##window, row, column) : wmove(window, row, column))
+
+#define nanox_wcoloron(window, color) \
+  (ISSET(NO_NCURSES) ? nwindow_set_rgb(tui_##window, encoded_idx_color[color][0], encoded_idx_color[color][1]) : (void)wattron(window, interface_color_pair[color]))
+
+#define nanox_wcoloroff(window, color) \
+  (ISSET(NO_NCURSES) ? nwindow_set_rgb(tui_##window, -1, -1) : (void)wattroff(window, interface_color_pair[color]))
+
+#define nanox_wclrtoeol(window) \
+  (ISSET(NO_NCURSES) ? nwindow_clrtoeol(tui_##window) : (void)wclrtoeol((window)))
+
+#define nanox_wnoutrefresh(window) \
+  (ISSET(NO_NCURSES) ? (void)0 : (void)wnoutrefresh((window)))
+
+#define nanox_wredrawln(window, from, howmeny) \
+  (ISSET(NO_NCURSES) ? nwindow_redrawln(tui_##window, (from), (howmeny)) : (void)wredrawln((window), (from), (howmeny)))
+
+#define nanox_curs_set(on) \
+  (ISSET(NO_NCURSES) ? /* tui_curs_visible(on) */(void)0 : (void)curs_set(on))
+
+#define nanox_wrefresh(window) \
+  (ISSET(NO_NCURSES) ? (void)0 : (void)wrefresh(window))
+
+#define nanox_waddch(window, ch) \
+  (ISSET(NO_NCURSES) ? nwindow_add_ch(tui_##window, ch) : (void)waddch(window, ch))
+
+#define nanox_mvwaddch(window, row, column, ch) \
+  (ISSET(NO_NCURSES) ? nwindow_move_add_ch(tui_##window, row, column, ch) : (void)mvwaddch(window, row, column, ch))
+
+#define LINES  (ISSET(NO_NCURSES) ? NLINES : LINES)
+#define COLS   (ISSET(NO_NCURSES) ? NCOLS : COLS)
+#define COLORS (ISSET(NO_NCURSES) ? terminfo->max_colors_num : COLORS)
+
+#define IS_VOIDPTR_WIN(w1, w2) (ISSET(NO_NCURSES) ? tui_##w1 == w2 : w1 == w2)
 
 /* Bool def. */
 #ifdef TRUE
@@ -498,6 +566,8 @@ typedef enum {
   #define AUTO_BRACKET AUTO_BRACKET
   ZAP_REPLACE,
   #define ZAP_REPLACE ZAP_REPLACE
+  INSERT_EMPTY_LINE,
+  #define INSERT_EMPTY_LINE INSERT_EMPTY_LINE
 } undo_type;
 
 typedef enum {
@@ -509,11 +579,13 @@ typedef enum {
   #define STATUSBAR_DEL STATUSBAR_DEL
   STATUSBAR_CHOP_NEXT_WORD,
   #define STATUSBAR_CHOP_NEXT_WORD STATUSBAR_CHOP_NEXT_WORD
+  STATUSBAR_CHOP_PREV_WORD,
+  #define STATUSBAR_CHOP_PREV_WORD STATUSBAR_CHOP_PREV_WORD
   STATUSBAR_OTHER,
   #define STATUSBAR_OTHER STATUSBAR_OTHER
 } statusbar_undo_type;
 
-/* Some extra flags for the undo function. */
+/* Some extra flags for the undo function(s). */
 typedef enum {
   WAS_BACKSPACE_AT_EOF = (1 << 1),
   #define WAS_BACKSPACE_AT_EOF WAS_BACKSPACE_AT_EOF
@@ -529,31 +601,38 @@ typedef enum {
   #define HAD_ANCHOR_AT_START HAD_ANCHOR_AT_START
   SHOULD_NOT_KEEP_MARK = (1 << 7),
   #define SHOULD_NOT_KEEP_MARK SHOULD_NOT_KEEP_MARK
+  INSERT_WAS_ABOVE     = (1 << 8)
+  #define INSERT_WAS_ABOVE INSERT_WAS_ABOVE
 } undo_modifier_type;
 
 #ifdef HAVE_GLFW
-typedef enum {
-  GUI_RUNNING,
-  #define GUI_RUNNING GUI_RUNNING
-  GUI_PROMPT,
-  #define GUI_PROMPT GUI_PROMPT
-} guiflag_type;
+  typedef enum {
+    GUI_PROMPT_SAVEFILE,
+    #define GUI_PROMPT_SAVEFILE GUI_PROMPT_SAVEFILE
+  } guiprompt_type;
 
-typedef enum {
-  UIELEMENT_HIDDEN,
-  #define UIELEMENT_HIDDEN UIELEMENT_HIDDEN
-  UIELEMENT_HAS_LABLE,
-  #define UIELEMENT_HAS_LABLE UIELEMENT_HAS_LABLE
-} elementflag_type;
+  typedef enum {
+    GUI_RUNNING,
+    #define GUI_RUNNING GUI_RUNNING
+    GUI_PROMPT,
+    #define GUI_PROMPT GUI_PROMPT
+  } guiflag_type;
 
-typedef enum {
-  UIELEMENT_ENTER_CALLBACK,
-  #define UIELEMENT_ENTER_CALLBACK UIELEMENT_ENTER_CALLBACK
-  UIELEMENT_LEAVE_CALLBACK,
-  #define UIELEMENT_LEAVE_CALLBACK UIELEMENT_LEAVE_CALLBACK
-  UIELEMENT_CLICK_CALLBACK,
-  #define UIELEMENT_CLICK_CALLBACK UIELEMENT_CLICK_CALLBACK
-} uielement_callback_type;
+  typedef enum {
+    UIELEMENT_HIDDEN,
+    #define UIELEMENT_HIDDEN UIELEMENT_HIDDEN
+    UIELEMENT_HAS_LABLE,
+    #define UIELEMENT_HAS_LABLE UIELEMENT_HAS_LABLE
+  } elementflag_type;
+
+  typedef enum {
+    UIELEMENT_ENTER_CALLBACK,
+    #define UIELEMENT_ENTER_CALLBACK UIELEMENT_ENTER_CALLBACK
+    UIELEMENT_LEAVE_CALLBACK,
+    #define UIELEMENT_LEAVE_CALLBACK UIELEMENT_LEAVE_CALLBACK
+    UIELEMENT_CLICK_CALLBACK,
+    #define UIELEMENT_CLICK_CALLBACK UIELEMENT_CLICK_CALLBACK
+  } uielement_callback_type;
 #endif
 
 /* Structure types. */
@@ -730,7 +809,7 @@ typedef struct keystruct {
   const char *keystr; /* The string that describes the keystroke, like "^C" or "M-R". */
   int keycode;        /* The integer that, together with meta, identifies the keystroke. */
   int menus;          /* The menus in which this keystroke is bound. */
-  void (*func)();     /* The function to which this keystroke is bound. */
+  void (*func)(void); /* The function to which this keystroke is bound. */
   int toggle;         /* If a toggle, what we're toggling. */
   int ordinal;        /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
   char *expansion;    /* The string of keycodes to which this shortcut is expanded. */
@@ -754,9 +833,9 @@ typedef struct completionstruct {
 /* Gui specific structs. */
 #ifdef HAVE_GLFW
   typedef struct {
-    float x, y, z;
-    float s, t;
-    float r, g, b, a;
+    float x, y, z;      /* Position-data. */
+    float s, t;         /* Tex-data. */
+    float r, g, b, a;   /* Color-data. */
   } vertex_t;
 
   typedef struct uielementstruct {
@@ -861,10 +940,10 @@ typedef struct completionstruct {
     void end(void) {
       _end = HIGH_RES_CLOCK::now();
       Duration<double, Milli> frame_duration = (_end - _start);
-      if (frame_duration.count() >= (1000.0f / fps)) {
+      if (frame_duration.count() >= (1000.0 / fps)) {
         return;
       }
-      Duration<double, Milli> sleep_duration((1000.0f / fps) - frame_duration.count());
+      Duration<double, Milli> sleep_duration((1000.0 / fps) - frame_duration.count());
       std::this_thread::sleep_for(sleep_duration);
     }
   };

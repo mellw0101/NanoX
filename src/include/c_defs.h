@@ -26,7 +26,16 @@
 #define BOOL Uchar
 #endif
 
+#ifndef __cplusplus
+  #define TRUE  1
+  #define FALSE 0
+#endif
+
 #define SOCKLOG(...) unix_socket_debug(__VA_ARGS__)
 
 #define UNIX_DOMAIN_SOCKET_PATH "/tmp/test"
 #define BUF_SIZE 16384
+
+#define MACRO_DO_WHILE(...) do { __VA_ARGS__ } while(0)
+
+#define S__LEN(s) s, sizeof(s) -1

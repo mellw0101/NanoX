@@ -138,8 +138,9 @@ void reserve_space_for(Ulong newsize) _NOTHROW {
  * - F10 on FreeBSD console == PageUp on Mach console; the former is
  *   omitted.  (Same as above.)
  */
-/* Read in_NOTHROW at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
+/* Read in at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
 static void read_keys_from(WINDOW *frame) {
+  NETLOG_FUNC_ST;
   int   input    = ERR;
   Ulong errcount = 0;
   bool  timed    = FALSE;
@@ -149,6 +150,7 @@ static void read_keys_from(WINDOW *frame) {
     curs_set(1);
   }
   if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH && lastmessage < ALERT && lastmessage != INFO) || spotlighted)) {
+    NETLOG("Turning on halfdelay mode.\n");
     timed = TRUE;
     halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
     /* Counteract a side effect of half-delay mode. */
@@ -235,11 +237,11 @@ static void read_keys_from(WINDOW *frame) {
   /* Restore blocking-input mode. */
   nodelay(frame, FALSE);
   /* Netlog the raw keycodes. */
-  /* NETLOG("\nSequence of hex codes:");
+  NETLOG("\nSequence of hex codes:");
   for (Ulong i = 0; i < waiting_codes; ++i) {
     NETLOG(" %3x", key_buffer[i]);
   }
-  NETLOG("\n"); */
+  NETLOG("\n");
 #ifdef DEBUG
   fprintf(stderr, "\nSequence of hex codes:");
   for (Ulong i = 0; i < waiting_codes; i++) {
@@ -326,6 +328,7 @@ static int get_code_from_plantation(void) {
 
 /* Return one code from the keystroke buffer.  If the buffer is empty but frame is given, first read more codes from the keyboard. */
 int get_input(WINDOW *frame) {
+  NETLOG_FUNC_ST;
   if (waiting_codes) {
     spotlighted = FALSE;
   }
@@ -519,7 +522,7 @@ static int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) _NO
 }
 
 /* Translate a sequence that began with "Esc [" to its corresponding key code. */
-static int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW {
+int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW {
   if (seq[0] < '9' && length > 1) {
     *consumed = 2;
   }
@@ -1007,6 +1010,7 @@ static int convert_to_control(int kbinput) _NOTHROW {
  * (F1-F12), and the numeric keypad with NumLock off. The function also handles UTF-8 sequences, and
  * converts them to Unicode.  The function returns the corresponding value for the given keystroke. */
 static int parse_kbinput(WINDOW *frame) {
+  NETLOG_FUNC_ST;
   static bool first_escape_was_alone = FALSE;
   static bool last_escape_was_alone  = FALSE;
   static int  escapes = 0;
@@ -1015,6 +1019,9 @@ static int parse_kbinput(WINDOW *frame) {
   shift_held = FALSE;
   /* Get one code from the input stream. */
   keycode = get_input(frame);
+  if (keycode == KEY_SRIGHT) {
+    NETLOG("Shift-right.\n");
+  }
   #ifdef KEY_DEBUG
     NETLOG("%d\n", keycode);
   #endif
@@ -1416,6 +1423,7 @@ static int parse_kbinput(WINDOW *frame) {
 #endif
     case SHIFT_HOME : {
       shift_held = TRUE;
+      _FALLTHROUGH;
     }
     case KEY_A1 : { /* Home (7) on keypad with NumLock off. */
       return KEY_HOME;
@@ -1425,6 +1433,7 @@ static int parse_kbinput(WINDOW *frame) {
 #endif
     case SHIFT_END : {
       shift_held = TRUE;
+      _FALLTHROUGH;
     }
     case KEY_C1 : { /* End (1) on keypad with NumLock off. */
       return KEY_END;
@@ -1439,6 +1448,7 @@ static int parse_kbinput(WINDOW *frame) {
 #endif
     case SHIFT_PAGEUP : { /* Fake key, from Shift+Alt+Up. */
       shift_held = TRUE;
+      _FALLTHROUGH;
     }
     case KEY_A3 : {       /* PageUp (9) on keypad with NumLock off. */
       return KEY_PPAGE;
@@ -1448,6 +1458,7 @@ static int parse_kbinput(WINDOW *frame) {
 #endif
     case SHIFT_PAGEDOWN : { /* Fake key, from Shift+Alt+Down. */
       shift_held = TRUE;
+      _FALLTHROUGH;
     }
     case KEY_C3 : {         /* PageDown (3) on keypad with NumLock off. */
       return KEY_NPAGE;
@@ -1722,11 +1733,11 @@ int get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) _NOTHROW {
       /* Calculate the one-based index in the shortcut list. */
       index = ((*mouse_x / width) * 2 + *mouse_y);
       /* Adjust the index if we hit the last two wider ones. */
-      if ((index > number) && (*mouse_x % width < COLS % width)) {
+      if ((index > (int)number) && (*mouse_x % width < COLS % width)) {
         index -= 2;
       }
       /* Ignore clicks beyond the last shortcut. */
-      if (index > number) {
+      if (index > (int)number) {
         return 2;
       }
       /* Search through the list of functions to determine which shortcut in the current menu
@@ -1783,22 +1794,27 @@ static void blank_row(WINDOW *window, int row) _NOTHROW {
   wmove(window, row, 0);
   wclrtoeol(window);
 }
+static void tui_blank_row(nwindow *window, short row) {
+  nwindow_move(window, row, 0);
+  nwindow_clrtoeol(window);
+}
+#define nanox_blank_row(window, row) (ISSET(NO_NCURSES) ? tui_blank_row(tui_##window, row) : blank_row(window, row))
 
 /* Blank the first line of the top portion of the screen. */
 static void blank_titlebar(void) _NOTHROW {
-  mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
+  nanox_mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
 }
 
 /* Blank all lines of the middle portion of the screen (the edit window). */
 void blank_edit(void) _NOTHROW {
   for (int row = 0; row < editwinrows; ++row) {
-    blank_row(midwin, row);
+    nanox_blank_row(midwin, row);
   }
 }
 
 /* Blank the first line of the bottom portion of the screen. */
 void blank_statusbar(void) _NOTHROW {
-  blank_row(footwin, 0);
+  nanox_blank_row(footwin, 0);
 }
 
 /* Wipe the status bar clean and include this in the next screen update. */
@@ -1807,15 +1823,15 @@ void wipe_statusbar(void) _NOTHROW {
   if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN) {
     return;
   }
-  blank_row(footwin, 0);
-  wnoutrefresh(footwin);
+  nanox_blank_row(footwin, 0);
+  nanox_wnoutrefresh(footwin);
 }
 
 /* Blank out the two help lines (when they are present). */
 void blank_bottombars(void) _NOTHROW {
   if (!ISSET(NO_HELP) && LINES > 5) {
-    blank_row(footwin, 1);
-    blank_row(footwin, 2);
+    nanox_blank_row(footwin, 1);
+    nanox_blank_row(footwin, 2);
   }
 }
 
@@ -1829,8 +1845,8 @@ void blank_it_when_expired(void) _NOTHROW {
   }
   /* When windows overlap, make sure to show the edit window now. */
   if (currmenu == MMAIN && (ISSET(ZERO) || LINES == 1)) {
-    wredrawln(midwin, editwinrows - 1, 1);
-    wnoutrefresh(midwin);
+    nanox_wredrawln(midwin, editwinrows - 1, 1);
+    nanox_wnoutrefresh(midwin);
   }
 }
 
@@ -2009,12 +2025,29 @@ static int buffer_number(openfilestruct *buffer) _NOTHROW {
 /* Show the state of auto-indenting, the mark, hard-wrapping, macro recording,
  * and soft-wrapping by showing corresponding letters in the given window. */
 static void show_states_at(WINDOW *window) _NOTHROW {
-  waddstr(window, (ISSET(AUTOINDENT) ? "I" : " "));
-  waddstr(window, (openfile->mark ? "M" : " "));
-  waddstr(window, (ISSET(BREAK_LONG_LINES) ? "L" : " "));
-  waddstr(window, (recording ? "R" : " "));
-  waddstr(window, (ISSET(SOFTWRAP) ? "S" : " "));
+  if (!window) {
+    return;
+  }
+  waddnstr(window, (ISSET(AUTOINDENT) ? "I" : " "), 1);
+  waddnstr(window, (openfile->mark ? "M" : " "), 1);
+  waddnstr(window, (ISSET(BREAK_LONG_LINES) ? "L" : " "), 1);
+  waddnstr(window, (recording ? "R" : " "), 1);
+  waddnstr(window, (ISSET(SOFTWRAP) ? "S" : " "), 1);
 }
+
+static void tui_show_states_at(nwindow *window) _NOTHROW {
+  if (!window) {
+    return;
+  }
+  nwindow_add_nstr(window, (ISSET(AUTOINDENT) ? "I" : " "), 1);
+  nwindow_add_nstr(window, (openfile->mark ? "M" : " "), 1);
+  nwindow_add_nstr(window, (ISSET(BREAK_LONG_LINES) ? "L" : " "), 1);
+  nwindow_add_nstr(window, (recording ? "R" : " "), 1);
+  nwindow_add_nstr(window, (ISSET(SOFTWRAP) ? "S" : " "), 1);
+}
+
+#define nanox_show_states_at(window) \
+  (ISSET(NO_NCURSES) ? tui_show_states_at(tui_##window) : show_states_at(window))
 
 /* If path is NULL, we're in normal editing mode, so display the current
  * version of nano, the current filename, and whether the current file
@@ -2039,10 +2072,10 @@ void titlebar(const char *path) _NOTHROW {
   /* The buffer sequence number plus the total buffer count. */
   char *ranking = NULL;
   /* If the screen is too small, there is no title bar. */
-  if (!topwin) {
+  if (ISSET(NO_NCURSES) ? !tui_topwin : !topwin) {
     return;
   }
-  wattron(topwin, interface_color_pair[TITLE_BAR]);
+  nanox_wcoloron(topwin, TITLE_BAR);
   blank_titlebar();
   as_an_at = FALSE;
   /**
@@ -2108,17 +2141,17 @@ void titlebar(const char *path) _NOTHROW {
     ++pathlen;
   }
   /* Only print the version message when there is room for it. */
-  if ((verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
-    mvwaddstr(topwin, 0, 2, upperleft);
+  if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
+    nanox_mvwaddstr(topwin, 0, 2, upperleft);
   }
   else {
     verlen = 2;
     /* If things don't fit yet, give up the placeholder. */
-    if ((verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
+    if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
       pluglen = 0;
     }
     /* If things still don't fit, give up the side spaces. */
-    if ((verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
+    if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
       verlen = 0;
       statelen -= 2;
     }
@@ -2129,48 +2162,48 @@ void titlebar(const char *path) _NOTHROW {
     offset = (verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2);
   }
   /* Only print the prefix when there is room for it. */
-  if ((verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
-    mvwaddstr(topwin, 0, offset, prefix);
+  if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
+    nanox_mvwaddstr(topwin, 0, offset, prefix);
     if (prefixlen > 0) {
-      waddstr(topwin, " ");
+      nanox_waddstr(topwin, " ");
     }
   }
   else {
-    wmove(topwin, 0, offset);
+    nanox_wmove(topwin, 0, offset);
   }
   /* Print the full path if there's room; otherwise, dottify it. */
-  if ((pathlen + pluglen + statelen) <= COLS) {
+  if ((int)(pathlen + pluglen + statelen) <= COLS) {
     caption = display_string(path, 0, pathlen, FALSE, FALSE);
-    waddstr(topwin, caption);
+    nanox_waddstr(topwin, caption);
     free(caption);
   }
-  else if ((5 + statelen) <= COLS) {
-    waddstr(topwin, "...");
+  else if ((int)(5 + statelen) <= COLS) {
+    nanox_waddstr(topwin, "...");
     caption = display_string(path, (3 + pathlen - COLS + statelen), (COLS - statelen), FALSE, FALSE);
-    waddstr(topwin, caption);
+    nanox_waddstr(topwin, caption);
     free(caption);
   }
   /* When requested, show on the title bar the state of three options and the state of the mark and whether a macro is being recorded. */
   if (*state && ISSET(STATEFLAGS) && !ISSET(VIEW_MODE)) {
     if (openfile->modified && COLS > 1) {
-      waddstr(topwin, " *");
+      nanox_waddstr(topwin, " *");
     }
-    if (statelen < COLS) {
-      wmove(topwin, 0, (COLS + 2 - statelen));
-      show_states_at(topwin);
+    if ((int)statelen < COLS) {
+      nanox_wmove(topwin, 0, (COLS + 2 - statelen));
+      nanox_show_states_at(topwin);
     }
   }
   else {
     /* If there's room, right-align the state word; otherwise, clip it. */
-    if (statelen > 0 && statelen <= COLS) {
-      mvwaddstr(topwin, 0, (COLS - statelen), state);
+    if (statelen > 0 && (int)statelen <= COLS) {
+      nanox_mvwaddstr(topwin, 0, (COLS - statelen), state);
     }
     else if (statelen > 0) {
-      mvwaddnstr(topwin, 0, 0, state, actual_x(state, COLS));
+      nanox_mvwaddnstr(topwin, 0, 0, state, actual_x(state, COLS));
     }
   }
-  wattroff(topwin, interface_color_pair[TITLE_BAR]);
-  wrefresh(topwin);
+  nanox_wcoloroff(topwin, TITLE_BAR);
+  nanox_wrefresh(topwin);
 }
 
 /* Draw a bar at the bottom with some minimal state information. */
@@ -2187,8 +2220,8 @@ void minibar(void) _NOTHROW {
   Ulong padding    = 2;
   wchar_t widecode;
   /* Draw a colored bar over the full width of the screen. */
-  WIN_COLOR_ON(footwin, config->minibar_color);
-  mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
+  nanox_wcoloron(footwin, config->minibar_color);
+  nanox_mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
   if (openfile->filename[0]) {
     as_an_at = FALSE;
     thename  = display_string(openfile->filename, 0, COLS, FALSE, FALSE);
@@ -2200,21 +2233,21 @@ void minibar(void) _NOTHROW {
   placewidth = strlen(location);
   namewidth  = breadth(thename);
   /* If the file name is relatively long drop the side spaces. */
-  if ((namewidth + 19) > COLS) {
+  if ((int)(namewidth + 19) > COLS) {
     padding = 0;
   }
   /* Display the name of the current file (dottifying it if it doesn't fit), plus a star when the file has been modified. */
   if (COLS > 4) {
-    if (namewidth > (COLS - 2)) {
+    if ((int)namewidth > (COLS - 2)) {
       char *shortname = display_string(thename, (namewidth - COLS + 5), (COLS - 5), FALSE, FALSE);
-      mvwaddnstr(footwin, 0, 0, "...", STRLTRLEN("..."));
-      waddstr(footwin, shortname);
+      nanox_mvwaddnstr(footwin, 0, 0, "...", STRLTRLEN("..."));
+      nanox_waddstr(footwin, shortname);
       free(shortname);
     }
     else {
-      mvwaddstr(footwin, 0, padding, thename);
+      nanox_mvwaddstr(footwin, 0, padding, thename);
     }
-    waddstr(footwin, openfile->modified ? " *" : "  ");
+    nanox_waddstr(footwin, openfile->modified ? " *" : "  ");
   }
   /* Right after reading or writing a file, display its number of lines;
    * otherwise, when there are multiple buffers, display an [x/n] counter. */
@@ -2228,8 +2261,8 @@ void minibar(void) _NOTHROW {
       sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count, ((openfile->fmt == DOS_FILE) ? "DOS" : "Mac"));
     }
     tallywidth = breadth(number_of_lines);
-    if ((namewidth + tallywidth + 11) < COLS) {
-      waddstr(footwin, number_of_lines);
+    if ((int)(namewidth + tallywidth + 11) < COLS) {
+      nanox_waddstr(footwin, number_of_lines);
     }
     else {
       tallywidth = 0;
@@ -2239,16 +2272,16 @@ void minibar(void) _NOTHROW {
   else if (openfile->next != openfile && COLS > 35) {
     ranking = ranking = (char *)nmalloc(24);
     sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
-    if ((namewidth + placewidth + breadth(ranking) + 32) < COLS) {
-      waddstr(footwin, ranking);
+    if ((int)(namewidth + placewidth + breadth(ranking) + 32) < COLS) {
+      nanox_waddstr(footwin, ranking);
     }
   }
   /* Display the line/column position of the cursor. */
-  if (ISSET(CONSTANT_SHOW) && (namewidth + tallywidth + placewidth + 32) < COLS) {
-    mvwaddstr(footwin, 0, (COLS - 27 - placewidth), location);
+  if (ISSET(CONSTANT_SHOW) && (int)(namewidth + tallywidth + placewidth + 32) < COLS) {
+    nanox_mvwaddstr(footwin, 0, (COLS - 27 - placewidth), location);
   }
   /* Display the hexadecimal code of the character under the cursor, plus the codes of up to two succeeding zero-width characters. */
-  if (ISSET(CONSTANT_SHOW) && (namewidth + tallywidth + 28) < COLS) {
+  if (ISSET(CONSTANT_SHOW) && (int)(namewidth + tallywidth + 28) < COLS) {
     char *this_position = openfile->current->data + openfile->current_x;
     if (!*this_position) {
       sprintf(hexadecimal, (openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----"));
@@ -2265,15 +2298,15 @@ void minibar(void) _NOTHROW {
     else {
       sprintf(hexadecimal, "  0x%02X", (Uchar)*this_position);
     }
-    mvwaddstr(footwin, 0, (COLS - 23), hexadecimal);
+    nanox_mvwaddstr(footwin, 0, (COLS - 23), hexadecimal);
     successor = (this_position + char_length(this_position));
     if (*this_position && *successor && is_zerowidth(successor) && mbtowide(&widecode, successor) > 0) {
       sprintf(hexadecimal, "|%04X", (int)widecode);
-      waddstr(footwin, hexadecimal);
+      nanox_waddstr(footwin, hexadecimal);
       successor += char_length(successor);
       if (is_zerowidth(successor) && mbtowide(&widecode, successor) > 0) {
         sprintf(hexadecimal, "|%04X", (int)widecode);
-        waddstr(footwin, hexadecimal);
+        nanox_waddstr(footwin, hexadecimal);
       }
     }
     else {
@@ -2281,17 +2314,17 @@ void minibar(void) _NOTHROW {
     }
   }
   /* Display the state of three flags, and the state of macro and mark. */
-  if (ISSET(STATEFLAGS) && !successor && ((namewidth + tallywidth + 14 + 2 * padding) < COLS)) {
-    wmove(footwin, 0, (COLS - 11 - padding));
-    show_states_at(footwin);
+  if (ISSET(STATEFLAGS) && !successor && ((int)(namewidth + tallywidth + 14 + 2 * padding) < COLS)) {
+    nanox_wmove(footwin, 0, (COLS - 11 - padding));
+    nanox_show_states_at(footwin);
   }
   /* Display how many percent the current line is into the file. */
-  if ((namewidth + 6) < COLS) {
+  if ((int)(namewidth + 6) < COLS) {
     sprintf(location, "%3zi%%", (100 * openfile->current->lineno / openfile->filebot->lineno));
-    mvwaddstr(footwin, 0, (COLS - 4 - padding), location);
+    nanox_mvwaddstr(footwin, 0, (COLS - 4 - padding), location);
   }
-  WIN_COLOR_OFF(footwin, config->minibar_color);
-  wrefresh(footwin);
+  nanox_wcoloroff(footwin, config->minibar_color);
+  nanox_wrefresh(footwin);
   free(number_of_lines);
   free(hexadecimal);
   free(location);
@@ -2305,7 +2338,7 @@ void statusline(message_type importance, const char *msg, ...) _NOTHROW {
   bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
   char *compound, *message;
   bool bracketed;
-  int  colorpair;
+  int  coloridx;
   va_list ap;
   /* Drop all waiting keystrokes upon any kind of 'error'. */
   if (importance >= AHEM) {
@@ -2321,7 +2354,7 @@ void statusline(message_type importance, const char *msg, ...) _NOTHROW {
   vsnprintf(compound, (MAXCHARLEN * COLS + 1), msg, ap);
   va_end(ap);
   /* When not in curses mode, write the message to standard error. */
-  if (isendwin()) {
+  if (!ISSET(NO_NCURSES) && isendwin()) {
     fprintf(stderr, "%s\n", compound);
     free(compound);
     return;
@@ -2331,32 +2364,34 @@ void statusline(message_type importance, const char *msg, ...) _NOTHROW {
   }
   /* On a one-row terminal, ensure that any changes in the edit window are written out first, to prevent them from overwriting the message. */
   if (LINES == 1 && importance < INFO) {
-    wnoutrefresh(midwin);
+    nanox_wnoutrefresh(midwin);
   }
   /* If there are multiple alert messages, add trailing dots to the first. */
   if (lastmessage == ALERT) {
     if (start_col > 4) {
-      wmove(footwin, 0, (COLS + 2 - start_col));
-      wattron(footwin, interface_color_pair[ERROR_MESSAGE]);
-      waddnstr(footwin, "...", STRLTRLEN("..."));
-      wattroff(footwin, interface_color_pair[ERROR_MESSAGE]);
-      wnoutrefresh(footwin);
+      nanox_wmove(footwin, 0, (COLS + 2 - start_col));
+      nanox_wcoloron(footwin, ERROR_MESSAGE);
+      nanox_waddnstr(footwin, "...", STRLTRLEN("..."));
+      nanox_wcoloroff(footwin, ERROR_MESSAGE);
+      nanox_wnoutrefresh(footwin);
       start_col = 0;
-      napms(100);
-      beep();
+      if (!ISSET(NO_NCURSES)) {
+        napms(100);
+        beep();
+      }
     }
     free(compound);
     return;
   }
   if (importance > NOTICE) {
-    (importance == ALERT) ? beep() : 0;
-    colorpair = interface_color_pair[ERROR_MESSAGE];
+    (importance == ALERT && !ISSET(NO_NCURSES)) ? beep() : 0;
+    coloridx = ERROR_MESSAGE;
   }
   else if (importance == NOTICE) {
-    colorpair = interface_color_pair[SELECTED_TEXT];
+    coloridx = SELECTED_TEXT;
   }
   else {
-    colorpair = interface_color_pair[STATUS_BAR];
+    coloridx = STATUS_BAR;
   }
   lastmessage = importance;
   blank_statusbar();
@@ -2367,14 +2402,14 @@ void statusline(message_type importance, const char *msg, ...) _NOTHROW {
   }
   start_col = ((COLS - breadth(message)) / 2);
   bracketed = (start_col > 1);
-  wmove(footwin, 0, (bracketed ? (start_col - 2) : start_col));
-  wattron(footwin, colorpair);
-  bracketed ? waddstr(footwin, "[ ") : 0;
-  waddstr(footwin, message);
-  bracketed ? waddstr(footwin, " ]") : 0;
-  wattroff(footwin, colorpair);
+  nanox_wmove(footwin, 0, (bracketed ? (start_col - 2) : start_col));
+  nanox_wcoloron(footwin, coloridx);
+  bracketed ? nanox_waddstr(footwin, "[ ") : (void)0;
+  nanox_waddstr(footwin, message);
+  bracketed ? nanox_waddstr(footwin, " ]") : (void)0;
+  nanox_wcoloroff(footwin, coloridx);
   /* Push the message to the screen straightaway. */
-  wrefresh(footwin);
+  nanox_wrefresh(footwin);
   free(compound);
   free(message);
   /* When requested, wipe the status bar after just one keystroke. */
@@ -2397,18 +2432,18 @@ void warn_and_briefly_pause(const char *msg) _NOTHROW {
 /* Write a key's representation plus a minute description of its function to the screen.  For example,
  * the key could be "^C" and its tag "Cancel". Key plus tag may occupy at most width columns. */
 void post_one_key(const char *keystroke, const char *tag, int width) _NOTHROW {
-  wattron(footwin, interface_color_pair[KEY_COMBO]);
-  waddnstr(footwin, keystroke, actual_x(keystroke, width));
-  wattroff(footwin, interface_color_pair[KEY_COMBO]);
+  nanox_wcoloron(footwin, KEY_COMBO);
+  nanox_waddnstr(footwin, keystroke, actual_x(keystroke, width));
+  nanox_wcoloroff(footwin, KEY_COMBO);
   /* If the remaining space is too small, skip the description. */
   width -= breadth(keystroke);
   if (width < 2) {
     return;
   }
-  waddch(footwin, ' ');
-  wattron(footwin, interface_color_pair[FUNCTION_TAG]);
-  waddnstr(footwin, tag, actual_x(tag, (width - 1)));
-  wattroff(footwin, interface_color_pair[FUNCTION_TAG]);
+  nanox_waddch(footwin, ' ');
+  nanox_wcoloron(footwin, FUNCTION_TAG);
+  nanox_waddnstr(footwin, tag, actual_x(tag, (width - 1)));
+  nanox_wcoloroff(footwin, FUNCTION_TAG);
 }
 
 /* Display the shortcut list corresponding to menu on the last two rows of the bottom portion of the window.  The shortcuts are shown in pairs. */
@@ -2441,7 +2476,7 @@ void bottombars(const int menu) _NOTHROW {
     if (!(s = first_sc_for(menu, f->func))) {
       continue;
     }
-    wmove(footwin, (1 + index % 2), ((index / 2) * itemwidth));
+    nanox_wmove(footwin, (1 + index % 2), ((index / 2) * itemwidth));
     /* When the number is uneven, the penultimate item can be double wide. */
     if ((number % 2) == 1 && (index + 2) == number) {
       thiswidth += itemwidth;
@@ -2453,7 +2488,7 @@ void bottombars(const int menu) _NOTHROW {
     post_one_key(s->keystr, _(f->tag), thiswidth);
     ++index;
   }
-  wrefresh(footwin);
+  nanox_wrefresh(footwin);
 }
 
 /* Redetermine `cursor_row` from the position of current relative to edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
@@ -2479,7 +2514,7 @@ void place_the_cursor(void) _NOTHROW {
   }
   if (row < editwinrows) {
     if (!ISSET(USING_GUI)) {
-      wmove(midwin, row, (margin + column));
+      nanox_wmove(midwin, row, (margin + column));
     }
   }
   else {
@@ -2502,6 +2537,7 @@ void place_the_cursor(void) _NOTHROW {
 // characters.  'from_col' is the column number of the first character of this "page".
 // TODO: (draw_row) - Implement a way to close and open brackets (will probebly be hard as fuck!!!).
 void draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col) {
+  PROFILE_FUNCTION;
   render_line_text(row, converted, line, from_col);
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
     apply_syntax_to_line(row, converted, line, from_col);
@@ -2542,7 +2578,7 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
           index = match.rm_eo;
           /* If the match is offscreen to the right, this rule is
            * done. */
-          if (match.rm_so >= till_x) {
+          if (match.rm_so >= (int)till_x) {
             break;
           }
           /* If the match has length zero, advance over it. */
@@ -2554,10 +2590,10 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
             continue;
           }
           /* If the match is offscreen to the left, skip to next. */
-          if (match.rm_eo <= from_x) {
+          if (match.rm_eo <= (int)from_x) {
             continue;
           }
-          if (match.rm_so > from_x) {
+          if (match.rm_so > (int)from_x) {
             start_col = wideness(line->data, match.rm_so) - from_col;
           }
           thetext  = converted + actual_x(converted, start_col);
@@ -2581,7 +2617,7 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
             continue;
           }
           /* Only if it is visible, paint the part to be coloured. */
-          if (endmatch.rm_eo > from_x) {
+          if (endmatch.rm_eo > (int)from_x) {
             paintlen = actual_x(converted, wideness(line->data, endmatch.rm_eo) - from_col);
             midwin_mv_add_nstr_wattr(row, margin, converted, paintlen, varnish->attributes);
           }
@@ -2594,7 +2630,7 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
         /* Make the match relative to the beginning of the line. */
         startmatch.rm_so += index;
         startmatch.rm_eo += index;
-        if (startmatch.rm_so > from_x) {
+        if (startmatch.rm_so > (int)from_x) {
           start_col = wideness(line->data, startmatch.rm_so) - from_col;
         }
         thetext = converted + actual_x(converted, start_col);
@@ -2603,7 +2639,7 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
           endmatch.rm_so += startmatch.rm_eo;
           endmatch.rm_eo += startmatch.rm_eo;
           /* Only paint the match if it is visible on screen and it is more than zero characters long. */
-          if (endmatch.rm_eo > from_x && endmatch.rm_eo > startmatch.rm_so) {
+          if (endmatch.rm_eo > (int)from_x && endmatch.rm_eo > startmatch.rm_so) {
             paintlen = actual_x(thetext, wideness(line->data, endmatch.rm_eo) - from_col - start_col);
             midwin_mv_add_nstr_wattr(row, margin + start_col, thetext, paintlen, varnish->attributes);
             line->multidata[varnish->id] = JUSTONTHIS;
@@ -2625,7 +2661,7 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
       }
     }
   }
-  if (stripe_column > from_col && !inhelp && (!sequel_column || stripe_column <= sequel_column) && stripe_column <= (from_col + editwincols)) {
+  if (stripe_column > (long)from_col && !inhelp && (!sequel_column || stripe_column <= (long)sequel_column) && stripe_column <= (long)(from_col + editwincols)) {
     long  target_column = (stripe_column - from_col - 1);
     Ulong target_x      = actual_x(converted, target_column);
     char  striped_char[MAXCHARLEN];
@@ -2651,7 +2687,12 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
     else {
       striped_char[0] = ' ';
     }
-    mv_add_nstr_color(midwin, row, (margin + target_column), striped_char, charlen, GUIDE_STRIPE);
+    if (ISSET(NO_NCURSES)) {
+      
+    }
+    else {
+      mv_add_nstr_color(midwin, row, (margin + target_column), striped_char, charlen, GUIDE_STRIPE);
+    }
   }
   /* If the line is at least partially selected, paint the marked part. */
   if (line_in_marked_region(line)) {
@@ -2685,7 +2726,14 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
         const Ulong end_col = (wideness(line->data, bot_x) - from_col);
         paintlen = actual_x(thetext, (end_col - start_col));
       }
-      mv_add_nstr_color(midwin, row, (margin + start_col), thetext, paintlen, config->selectedtext_color);
+      if (ISSET(NO_NCURSES)) {
+        nwindow_set_rgb(tui_midwin, encoded_idx_color[config->selectedtext_color][0], encoded_idx_color[config->selectedtext_color][1]);
+        nwindow_move_add_nstr(tui_midwin, row, (margin + start_col), thetext, paintlen);
+        nwindow_set_rgb(tui_midwin, -1, -1);
+      }
+      else {
+        mv_add_nstr_color(midwin, row, (margin + start_col), thetext, paintlen, config->selectedtext_color);
+      }
     }
   }
 }
@@ -2693,6 +2741,7 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
 /* Redraw the given line so that the character at the given index is visible -- if necessary, scroll the line
  * horizontally (when not softwrapping). Return the number of rows "consumed" (relevant when softwrapping). */
 int update_line(linestruct *line, const Ulong index, int offset) {
+  PROFILE_FUNCTION;
   int   row;       /* The row in the edit window we will be updating. */
   char *converted; /* The data of the line with tabs and control characters expanded. */
   Ulong from_col;  /* From which column a horizontally scrolled line is displayed. */
@@ -2706,11 +2755,13 @@ int update_line(linestruct *line, const Ulong index, int offset) {
   converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
   draw_row(row, converted, line, from_col);
   free(converted);
-  if (from_col > 0) {
-    mvwaddchwattr(midwin, row, margin, '<', hilite_attribute);
-  }
-  if (has_more) {
-    mvwaddchwattr(midwin, row, (COLS - 1), '>', hilite_attribute);
+  if (!ISSET(NO_NCURSES)) {
+    if (from_col > 0) {
+      mvwaddchwattr(midwin, row, margin, '<', hilite_attribute);
+    }
+    if (has_more) {
+      mvwaddchwattr(midwin, row, (COLS - 1), '>', hilite_attribute);
+    }
   }
   if (spotlighted && line == openfile->current) {
     spotlight(light_from_col, light_to_col);
@@ -2790,7 +2841,7 @@ int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW {
     for (i = nrows; i > 0; --i) {
       chunk     = chunk_for(*leftedge, *line);
       *leftedge = 0;
-      if (chunk >= i) {
+      if ((int)chunk >= i) {
         return go_forward_chunks((chunk - i), line, leftedge);
       }
       if (*line == openfile->filetop) {
@@ -2859,14 +2910,14 @@ bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW {
     line = openfile->current;
     leftedge  = leftedge_for(xplustabs(), openfile->current);
     rows_left = go_back_chunks((editwinrows - 1), &line, &leftedge);
-    return (rows_left > 0 || line->lineno < was_lineno || (line->lineno == was_lineno && leftedge <= was_leftedge));
+    return (rows_left > 0 || line->lineno < (long)was_lineno || (line->lineno == (long)was_lineno && leftedge <= was_leftedge));
   }
   else {
-    return ((openfile->current->lineno - was_lineno) < editwinrows);
+    return ((int)(openfile->current->lineno - was_lineno) < editwinrows);
   }
 }
 
-/* Draw a "scroll bar" on the righthand side of the edit window. */
+/* Draw a `scroll bar` on the righthand side of the edit window. */
 static void draw_scrollbar(void) _NOTHROW {
   int fromline     = (openfile->edittop->lineno - 1);
   int totallines   = openfile->filebot->lineno;
@@ -2886,8 +2937,10 @@ static void draw_scrollbar(void) _NOTHROW {
     highest = editwinrows;
   }
   for (int row = 0; row < editwinrows; ++row) {
-    bardata[row] = ' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE);
-    mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+    if (!ISSET(NO_NCURSES)) {
+      bardata[row] = ' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE);
+      mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+    }
   }
 }
 
@@ -2907,10 +2960,15 @@ void edit_scroll(bool direction) {
   if (ISSET(USING_GUI)) {
     return;
   }
-  /* Actually scroll the text of the edit window one row up or down. */
-  scrollok(midwin, TRUE);
-  wscrl(midwin, ((direction == BACKWARD) ? -1 : 1));
-  scrollok(midwin, FALSE);
+  if (!ISSET(NO_NCURSES)) {
+    /* Actually scroll the text of the edit window one row up or down. */
+    scrollok(midwin, TRUE);
+    wscrl(midwin, ((direction == BACKWARD) ? -1 : 1));
+    scrollok(midwin, FALSE);
+  }
+  else {
+    nwindow_scroll(tui_midwin, ((direction == BACKWARD) ? -1 : 1));
+  }
   /* If we're not on the first "page" (when not softwrapping), or the mark
    * is on, the row next to the scrolled region needs to be redrawn too. */
   if (line_needs_update(openfile->placewewant, 0) && nrows < editwinrows) {
@@ -3007,12 +3065,11 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
 // Return the row number of the softwrapped chunk in the given line that the given column is on, relative
 // to the first row (zero-based).  If leftedge isn't NULL, return in it the leftmost column of the chunk.
 Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NOTHROW {
-  Ulong end_col, current_chunk, start_col;
-  bool  end_of_line, kickoff;
-  current_chunk = 0;
-  start_col = 0;
-  end_of_line = FALSE;
-  kickoff = TRUE;
+  Ulong end_col;
+  Ulong current_chunk = 0;
+  Ulong start_col     = 0;
+  bool end_of_line    = FALSE;
+  bool kickoff        = TRUE;
   while (TRUE) {
     end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line);
     /* When the column is in range or we reached end-of-line, we're done. */
@@ -3109,6 +3166,7 @@ bool current_is_offscreen(void) _NOTHROW {
 
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
 void edit_redraw(linestruct *old_current, update_type manner) {
+  PROFILE_FUNCTION;
   Ulong was_pww = openfile->placewewant;
   openfile->placewewant = xplustabs();
   /* If the current line is offscreen, scroll until it's onscreen. */
@@ -3152,7 +3210,7 @@ void edit_refresh(void) {
     adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
   }
   /* When needed and useful, initialize the colors for the current syntax. */
-  if (openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
+  if (!ISSET(NO_NCURSES) && openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
     prepare_palette();
   }
   /* When the line above the viewport does not have multidata, recalculate all. */
@@ -3176,7 +3234,7 @@ void edit_refresh(void) {
     line = line->next;
   }
   while (row < editwinrows) {
-    blank_row(midwin, row);
+    nanox_blank_row(midwin, row);
     /* If full linenumber bar is enabled, then draw it. */
     if (config->linenumber.fullverticalbar) {
       mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumber.barcolor);
@@ -3188,7 +3246,7 @@ void edit_refresh(void) {
     ++row;
   }
   place_the_cursor();
-  wnoutrefresh(midwin);
+  nanox_wnoutrefresh(midwin);
   refresh_needed = FALSE;
 }
 
@@ -3272,12 +3330,12 @@ void spotlight(Ulong from_col, Ulong to_col) _NOTHROW {
   else {
     word = display_string(openfile->current->data, from_col, (to_col - from_col), FALSE, overshoots);
   }
-  wattron(midwin, interface_color_pair[SPOTLIGHTED]);
-  waddnstr(midwin, word, actual_x(word, to_col));
+  nanox_wcoloron(midwin, SPOTLIGHTED);
+  nanox_waddnstr(midwin, word, actual_x(word, to_col));
   if (overshoots) {
-    mvwaddch(midwin, openfile->cursor_row, (COLS - 1 - sidebar), '>');
+    nanox_mvwaddch(midwin, openfile->cursor_row, (COLS - 1 - sidebar), '>');
   }
-  wattroff(midwin, interface_color_pair[SPOTLIGHTED]);
+  nanox_wcoloroff(midwin, SPOTLIGHTED);
   free(word);
 }
 

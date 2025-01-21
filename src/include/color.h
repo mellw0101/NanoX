@@ -43,6 +43,7 @@ static constexpr short VS_CODE_BRIGHT_BLUE    = xterm_color_index(59, 142, 234);
 static constexpr short VS_CODE_BRIGHT_MAGENTA = xterm_color_index(214, 112, 214);
 static constexpr short VS_CODE_BRIGHT_CYAN    = xterm_color_index(41, 184, 219);
 static constexpr short COMMENT_GREEN          = xterm_color_index(0, 77, 0);
+
 /* Grayscale vs-code colors. */
 static constexpr short VS_CODE_RED_GRAYSCALE            = xterm_grayscale_color_index(205, 49, 49);
 static constexpr short VS_CODE_GREEN_GRAYSCALE          = xterm_grayscale_color_index(13, 188, 121);
@@ -94,6 +95,51 @@ static constexpr short VS_CODE_BRIGHT_CYAN_GRAYSCALE    = xterm_grayscale_color_
 #define BG_VS_CODE_GREEN                     40
 /* Total elements. */
 #define NUMBER_OF_ELEMENTS                   41
+
+#define ENCODE_RGB_VALUE(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
+static int encoded_idx_color[NUMBER_OF_ELEMENTS][2] = {
+  {  0, ENCODE_RGB_VALUE(255, 255, 255) },
+  { -1, -1 },
+  {  ENCODE_RGB_VALUE( 36, 114, 200), 0 },
+  { -1, -1 },
+  {  0, ENCODE_RGB_VALUE(255, 255, 255) },
+  { -1, -1 },
+  {  0, ENCODE_RGB_VALUE(255, 255, 255) },
+  { -1, -1 },
+  { -1, -1 },
+  {  ENCODE_RGB_VALUE(255, 255, 255), ENCODE_RGB_VALUE(205, 49, 49) },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { -1, -1 },
+  { ENCODE_RGB_VALUE(205,  49,  49), -1 },
+  { ENCODE_RGB_VALUE( 13, 188, 121), -1 },
+  { ENCODE_RGB_VALUE(229, 229,  16), -1 },
+  { ENCODE_RGB_VALUE( 36, 114, 200), -1 },
+  { ENCODE_RGB_VALUE(188,  63, 188), -1 },
+  { ENCODE_RGB_VALUE( 17, 168, 205), -1 },
+  { ENCODE_RGB_VALUE(229, 229, 229), -1 },
+  { ENCODE_RGB_VALUE(241,  76,  76), -1 },
+  { ENCODE_RGB_VALUE( 35, 209, 139), -1 },
+  { ENCODE_RGB_VALUE(245, 245,  67), -1 },
+  { ENCODE_RGB_VALUE( 59, 142, 234), -1 },
+  { ENCODE_RGB_VALUE(214, 112, 214), -1 },
+  { ENCODE_RGB_VALUE( 41, 184, 219), -1 },
+  { ENCODE_RGB_VALUE(  0,  77,   0), -1 },
+  { ENCODE_RGB_VALUE( 80,  80,  80), -1 },
+  { -1, ENCODE_RGB_VALUE(205,  49,  49) },
+  { -1, ENCODE_RGB_VALUE( 36, 114, 200) },
+  { -1, ENCODE_RGB_VALUE( 13, 188, 121) },
+};
 
 #define FG_VS_CODE_START   FG_VS_CODE_RED
 #define FG_VS_CODE_END     (BG_VS_CODE_RED - 1)

@@ -155,7 +155,7 @@ static Ulong length_of_white(const char *text) _NOTHROW {
     if (*text != ' ') {
       return white_count;
     }
-    if (++white_count == tabsize) {
+    if ((long)(++white_count) == tabsize) {
       return tabsize;
     }
     ++text;
@@ -529,6 +529,7 @@ static void auto_bracket(linestruct *line, const Ulong posx) _NOTHROW {
   /* Set up start line. */
   line->data = arealloc(line->data, (posx + 1));
   *(line->data + posx) = '\0';
+  /* Set the cursor line and x pos to the middle line. */
   openfile->current   = middle; 
   openfile->current_x = (indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1));
   openfile->placewewant = xplustabs();
@@ -543,6 +544,42 @@ static void do_auto_bracket(void) _NOTHROW {
   openfile->totsize += ((indentlen * 2) + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 2);
   openfile->undotop->newsize = openfile->totsize;
   set_modified();
+}
+
+/* Insert a new empty line, either `above` or `below` `line`.  */
+void insert_empty_line(linestruct *line, bool above) _NOTHROW {
+  linestruct *topline, *newline;
+  if (above) {
+    topline = line->prev;
+  }
+  else {
+    topline = line;
+  }
+  newline = make_new_node(topline);
+  splice_node(topline, newline);
+  renumber_from(newline);
+  newline->data = STRLTR_COPY_OF("");
+}
+
+/* Insert a new empty line above `openfile->current`, and add an undo-item to the undo-stack. */
+void do_insert_empty_line_above(void) _NOTHROW {
+  if (!openfile->current->prev) {
+    return;
+  }
+  add_undo(INSERT_EMPTY_LINE, NULL);
+  insert_empty_line(openfile->current, TRUE);
+  openfile->current = openfile->current->prev;
+  update_undo(INSERT_EMPTY_LINE);
+  refresh_needed = TRUE;
+}
+
+/* Insert a new empty line below `openfile->current`, and add an undo-item to the undo-stack. */
+void do_insert_empty_line_below(void) _NOTHROW {
+  add_undo(INSERT_EMPTY_LINE, NULL);
+  insert_empty_line(openfile->current, FALSE);
+  openfile->current = openfile->current->next;
+  update_undo(INSERT_EMPTY_LINE);
+  refresh_needed = TRUE;
 }
 
 /* Undo the last thing(s) we did. */
@@ -561,7 +598,7 @@ void do_undo(void) {
     line = line_from_number(u->tail_lineno);
   }
   switch (u->type) {
-    case ADD : {
+    case ADD: {
       /* TRANSLATORS: The next thirteen strings describe actions that are undone or redone.  They are all nouns, not verbs. */
       undidmsg = _("addition");
       if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
@@ -571,7 +608,7 @@ void do_undo(void) {
       goto_line_posx(u->head_lineno, u->head_x);
       break;
     }
-    case ENTER : {
+    case ENTER: {
       undidmsg = _("line break");
       /* An <Enter> at the end of leading whitespace while autoindenting has deleted the whitespace, and
        * stored an x position of zero. In that case, adjust the positions to return to and to scoop data from. */
@@ -586,8 +623,8 @@ void do_undo(void) {
       goto_line_posx(u->head_lineno, original_x);
       break;
     }
-    case BACK :
-    case DEL : {
+    case BACK:
+    case DEL: {
       undidmsg = (char *)_("deletion");
       data     = (char *)nmalloc(strlen(line->data) + strlen(u->strdata) + 1);
       strncpy(data, line->data, u->head_x);
@@ -598,7 +635,7 @@ void do_undo(void) {
       goto_line_posx(u->tail_lineno, u->tail_x);
       break;
     }
-    case JOIN : {
+    case JOIN: {
       undidmsg = _("line join");
       /**
         When the join was done by a Backspace at the tail of the file,
@@ -618,7 +655,7 @@ void do_undo(void) {
       goto_line_posx(u->head_lineno, u->head_x);
       break;
     }
-    case REPLACE : {
+    case REPLACE: {
       undidmsg = _("replacement");
       if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
         remove_magicline();
@@ -629,11 +666,11 @@ void do_undo(void) {
       goto_line_posx(u->head_lineno, u->head_x);
       break;
     }
-    case SPLIT_BEGIN : {
+    case SPLIT_BEGIN: {
       undidmsg = _("addition");
       break;
     }
-    case SPLIT_END : {
+    case SPLIT_END: {
       openfile->current_undo = openfile->current_undo->next;
       while (openfile->current_undo->type != SPLIT_BEGIN) {
         do_undo();
@@ -641,19 +678,19 @@ void do_undo(void) {
       u = openfile->current_undo;
       break;
     }
-    case ZAP : {
+    case ZAP: {
       undidmsg = _("erasure");
       undo_cut(u);
       break;
     }
-    case CUT_TO_EOF :
-    case CUT : {
+    case CUT_TO_EOF:
+    case CUT: {
       /* TRANSLATORS: Remember: these are nouns, NOT verbs. */
       undidmsg = _("cut");
       undo_cut(u);
       break;
     }
-    case PASTE : {
+    case PASTE: {
       undidmsg = _("paste");
       undo_paste(u);
       if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES) && openfile->filebot != openfile->current) {
@@ -661,7 +698,7 @@ void do_undo(void) {
       }
       break;
     }
-    case INSERT : {
+    case INSERT: {
       undidmsg     = _("insertion");
       oldcutbuffer = cutbuffer;
       cutbuffer    = NULL;
@@ -676,14 +713,14 @@ void do_undo(void) {
       }
       break;
     }
-    case COUPLE_BEGIN : {
+    case COUPLE_BEGIN: {
       undidmsg = u->strdata;
       goto_line_posx(u->head_lineno, u->head_x);
       openfile->cursor_row = u->tail_lineno;
       adjust_viewport(STATIONARY);
       break;
     }
-    case COUPLE_END : {
+    case COUPLE_END: {
       /* Remember the row of the cursor for a possible redo. */
       openfile->current_undo->head_lineno = openfile->cursor_row;
       openfile->current_undo = openfile->current_undo->next;
@@ -692,27 +729,27 @@ void do_undo(void) {
       do_undo();
       return;
     }
-    case INDENT : {
+    case INDENT: {
       handle_indent_action(u, TRUE, TRUE);
       undidmsg = _("indent");
       break;
     }
-    case UNINDENT : {
+    case UNINDENT: {
       handle_indent_action(u, TRUE, FALSE);
       undidmsg = _("unindent");
       break;
     }
-    case COMMENT : {
+    case COMMENT: {
       handle_comment_action(u, TRUE, TRUE);
       undidmsg = _("comment");
       break;
     }
-    case UNCOMMENT : {
+    case UNCOMMENT: {
       handle_comment_action(u, TRUE, FALSE);
       undidmsg = _("uncomment");
       break;
     }
-    case MOVE_LINE_UP : {
+    case MOVE_LINE_UP: {
       /* Single line move. */
       if (u->head_lineno == u->tail_lineno) {
         openfile->current = line_from_number(u->head_lineno - 1);
@@ -740,8 +777,8 @@ void do_undo(void) {
       else {
         linestruct *top = line_from_number(u->head_lineno);
         linestruct *bot = line_from_number(u->tail_lineno);
-        for (linestruct *line = bot; line->lineno != (u->head_lineno - 1); line = line->prev) {
-          move_line(line, TRUE);
+        for (linestruct *l = bot; l->lineno != (u->head_lineno - 1); l = l->prev) {
+          move_line(l, TRUE);
         }
         /* Restore mark. */
         if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -760,7 +797,7 @@ void do_undo(void) {
       }
       break;
     }
-    case MOVE_LINE_DOWN : {
+    case MOVE_LINE_DOWN: {
       /* Single line move. */
       if (u->head_lineno == u->tail_lineno) {
         openfile->current = line_from_number(u->head_lineno + 1);
@@ -788,8 +825,8 @@ void do_undo(void) {
       else {
         linestruct *top = line_from_number(u->head_lineno);
         linestruct *bot = line_from_number(u->tail_lineno);
-        for (linestruct *line = top; line->lineno != (u->tail_lineno + 1); line = line->next) {
-          move_line(line, FALSE);
+        for (linestruct *l = top; l->lineno != (u->tail_lineno + 1); l = l->next) {
+          move_line(l, FALSE);
         }
         /* Restore mark. */
         if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -808,7 +845,7 @@ void do_undo(void) {
       }
       break;
     }
-    case ENCLOSE : {
+    case ENCLOSE: {
       /* If the enclose involved the last line remove it. */
       if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
         remove_magicline();
@@ -849,6 +886,42 @@ void do_undo(void) {
       refresh_needed = TRUE;
       break;
     }
+    case INSERT_EMPTY_LINE: {
+      linestruct *current, *mark = NULL;
+      Ulong current_x, mark_x = 0;
+      /* Get the cursor and mark position before we do anything. */
+      if (u->xflags & MARK_WAS_SET) {
+        if (u->xflags & CURSOR_WAS_AT_HEAD) {
+          current = line_from_number(u->head_lineno);
+          mark    = line_from_number(u->tail_lineno);
+          current_x = u->head_x;
+          mark_x    = u->tail_x;
+        }
+        else {
+          current = line_from_number(u->tail_lineno);
+          mark    = line_from_number(u->head_lineno);
+          current_x = u->tail_x;
+          mark_x    = u->head_x;
+        }
+      }
+      else {
+        current   = line_from_number(u->head_lineno);
+        current_x = u->head_x;
+      }
+      /* Remove the line that was inserted. */
+      unlink_node((u->xflags & INSERT_WAS_ABOVE) ? current->prev : current->next);
+      renumber_from(current);
+      /* Then reset the cursor line and pos. */
+      openfile->current   = current;
+      openfile->current_x = current_x;
+      if (u->xflags & MARK_WAS_SET) {
+        openfile->mark   = mark;
+        openfile->mark_x = mark_x;
+        keep_mark = TRUE;
+      }
+      refresh_needed = TRUE;
+      break;
+    }
     default : {
       break;
     }
@@ -858,6 +931,7 @@ void do_undo(void) {
   }
   openfile->current_undo = openfile->current_undo->next;
   openfile->last_action  = OTHER;
+  /* If 'keep_mark' has not been explicitly set, or when it has been set but this is an exception, remove the mark. */
   if (!keep_mark || u->xflags & SHOULD_NOT_KEEP_MARK) {
     openfile->mark = NULL;
     keep_mark = FALSE;
@@ -1066,8 +1140,8 @@ void do_redo(void) {
       else {
         linestruct *top = line_from_number(u->head_lineno - 1);
         linestruct *bot = line_from_number(u->tail_lineno - 1);
-        for (linestruct *line = top; line->lineno != u->tail_lineno; line = line->next) {
-          move_line(line, FALSE);
+        for (linestruct *l = top; l->lineno != u->tail_lineno; l = l->next) {
+          move_line(l, FALSE);
         }
         /* Restore mark. */
         if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -1114,8 +1188,8 @@ void do_redo(void) {
       else {
         linestruct *top = line_from_number(u->head_lineno + 1);
         linestruct *bot = line_from_number(u->tail_lineno + 1);
-        for (linestruct *line = bot; line->lineno != u->head_lineno; line = line->prev) {
-          move_line(line, TRUE);
+        for (linestruct *l = bot; l->lineno != u->head_lineno; l = l->prev) {
+          move_line(l, TRUE);
         }
         /* Restore mark. */
         if (u->xflags & CURSOR_WAS_AT_HEAD) {
@@ -1173,6 +1247,41 @@ void do_redo(void) {
       auto_bracket(line, u->head_x);
       break;
     }
+    case INSERT_EMPTY_LINE: {
+      linestruct *current;
+      if (u->xflags & INSERT_WAS_ABOVE) {
+        if (u->xflags & MARK_WAS_SET) {
+          if (u->xflags & CURSOR_WAS_AT_HEAD) {
+            current = line_from_number(u->head_lineno - 1);
+          }
+          else {
+            current = line_from_number(u->tail_lineno - 1);
+          }
+        }
+        else {
+          current = line_from_number(u->head_lineno - 1);
+        }
+        insert_empty_line(current, TRUE);
+        openfile->current = current->prev;
+      }
+      else {
+        if (u->xflags & MARK_WAS_SET) {
+          if (u->xflags & CURSOR_WAS_AT_HEAD) {
+            current = line_from_number(u->head_lineno);
+          }
+          else {
+            current = line_from_number(u->tail_lineno);
+          }
+        }
+        else {
+          current = line_from_number(u->head_lineno);
+        }
+        insert_empty_line(current, FALSE);
+        openfile->current = current->next;
+      }
+      refresh_needed = TRUE;
+      break;
+    }
     default : {
       break;
     }
@@ -1216,7 +1325,7 @@ void do_enter(void) {
     return;
   }
   char c_prev = '\0';
-  if (openfile->current->data[openfile->current_x - 1]) {
+  if (openfile->current_x > 0) {
     c_prev = openfile->current->data[openfile->current_x - 1];
   }
   linestruct *newnode    = make_new_node(openfile->current);
@@ -1348,6 +1457,7 @@ void add_undo(undo_type action, const char *message) _NOTHROW {
         u->xflags |= WAS_BACKSPACE_AT_EOF;
       }
       /* Fall-through. */
+      _FALLTHROUGH;
     }
     case DEL: {
       /* When not at the end of a line, store the deleted character. */
@@ -1423,6 +1533,7 @@ void add_undo(undo_type action, const char *message) _NOTHROW {
     case PASTE: {
       u->cutbuffer = copy_buffer(cutbuffer);
       /* Fall-through. */
+      _FALLTHROUGH;
     }
     case INSERT: {
       if (thisline == openfile->filebot) {
@@ -1433,6 +1544,7 @@ void add_undo(undo_type action, const char *message) _NOTHROW {
     case COUPLE_BEGIN: {
       u->tail_lineno = openfile->cursor_row;
       /* Fall-through. */
+      _FALLTHROUGH;
     }
     case COUPLE_END: {
       u->strdata = copy_of(_(message));
@@ -1443,7 +1555,8 @@ void add_undo(undo_type action, const char *message) _NOTHROW {
     case COMMENT:
     case UNCOMMENT:
     case MOVE_LINE_UP:
-    case MOVE_LINE_DOWN: {
+    case MOVE_LINE_DOWN:
+    case INSERT_EMPTY_LINE: {
       if (openfile->mark) {
         if (mark_is_before_cursor()) {
           u->head_lineno = openfile->mark->lineno;
@@ -1613,6 +1726,39 @@ void update_undo(undo_type action) _NOTHROW {
       u->tail_x      = openfile->current_x;
       break;
     }
+    case INSERT_EMPTY_LINE: {
+      /* If the mark was set then check the one that represents where the cursor was.  When inserting a line above cursor. */
+      if (((u->xflags & MARK_WAS_SET) && openfile->current->lineno == ((u->xflags & CURSOR_WAS_AT_HEAD) ? u->head_lineno : u->tail_lineno))
+       /* Otherwise, just check the head. */
+       || (openfile->current->lineno == u->head_lineno)) {
+        u->xflags |= INSERT_WAS_ABOVE;
+        /* If the mark was set. */
+        if ((u->xflags & MARK_WAS_SET)) {
+          /* And cursor was at head.  Then the mark must be after, so increment it to, to compensate for the newly inserted line above. */
+          if (u->xflags & CURSOR_WAS_AT_HEAD) {
+            ++u->head_lineno;
+            ++u->tail_lineno;
+          }
+          /* Otherwise, if the mark is before the cursor.  Check if its on the same line as cursor.
+           * If so, increment the mark to to compensate for the newly inserted line above. */
+          else {
+            if (u->head_lineno == u->tail_lineno) {
+              ++u->head_lineno;
+            }
+            ++u->tail_lineno;
+          }
+        }
+        /* Otherwise just increment the cursor line, to compensate for the inserted line above. */
+        else {
+          ++u->head_lineno;
+        }
+      }
+      /* If the mark was set then check if the cursor is below where the cursor was, this means this was a insertion below the cursor. */
+      else if ((u->xflags & MARK_WAS_SET) && (u->xflags & CURSOR_WAS_AT_HEAD) && openfile->current->lineno <= u->tail_lineno) {
+        ++u->tail_lineno;
+      }
+      break;
+    }
     default : {
       die("Bad undo type -- please report a bug\n");
     }
@@ -1693,7 +1839,7 @@ void do_wrap(void) {
   if (ISSET(TRIM_BLANKS)) {
     Ulong rear_x  = step_left(line->data, wrap_loc);
     Ulong typed_x = step_left(line->data, cursor_x);
-    while ((rear_x != typed_x || cursor_x >= wrap_loc) && is_blank_char(line->data + rear_x)) {
+    while ((rear_x != typed_x || (long)cursor_x >= wrap_loc) && is_blank_char(line->data + rear_x)) {
       openfile->current_x = rear_x;
       expunge(DEL);
       rear_x = step_left(line->data, rear_x);
@@ -1702,7 +1848,7 @@ void do_wrap(void) {
   /* Now split the line. */
   do_enter();
   /* When wrapping a partially visible line, adjust start-of-screen. */
-  if (openfile->edittop == line && openfile->firstcolumn > 0 && cursor_x >= wrap_loc) {
+  if (openfile->edittop == line && openfile->firstcolumn > 0 && (long)cursor_x >= wrap_loc) {
     go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
   }
   /* If the original line has quoting, copy it to the spillage line. */
@@ -1721,7 +1867,7 @@ void do_wrap(void) {
     }
   }
   openfile->spillage_line = openfile->current;
-  if (cursor_x < wrap_loc) {
+  if ((long)cursor_x < wrap_loc) {
     openfile->current   = openfile->current->prev;
     openfile->current_x = cursor_x;
   }
@@ -2295,8 +2441,8 @@ static void construct_argument_list(char ***arguments, char *command, char *file
  * region or of the entire buffer and read the file contents into its place. */
 static bool replace_buffer(const char *filename, undo_type action, const char *operation) {
   linestruct *was_cutbuffer = cutbuffer;
-  int         descriptor;
-  FILE       *stream;
+  int descriptor;
+  FILE *stream;
   descriptor = open_file(filename, FALSE, &stream);
   if (descriptor < 0) {
     return FALSE;

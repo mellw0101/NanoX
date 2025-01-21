@@ -91,7 +91,7 @@ bool is_cntrl_char(const char *const c) _NOTHROW {
 }
 
 /* Return 'TRUE' when the given character is a punctuation character. */
-bool _NODISCARD is_punct_char(const char *const c) _NOTHROW {
+static bool _NODISCARD is_punct_char(const char *const c) _NOTHROW {
   wchar_t wc;
   if (mbtowide(&wc, c) < 0) {
     return FALSE;

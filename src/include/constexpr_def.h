@@ -222,6 +222,8 @@ typedef enum {
   #define SUGGEST_INLINE SUGGEST_INLINE
   USING_GUI,
   #define USING_GUI USING_GUI
+  NO_NCURSES,
+  #define NO_NCURSES NO_NCURSES
 } flag_type;
 /* The flag map. */
 constexpr_map<string_view, Uchar, 94> flagOptionsMap = {{
@@ -347,8 +349,9 @@ constexpr Uint retriveFlagFromStr(string_view str) {
 #define CLI_OPT_BREAKLONGLINES (1 << 13)
 #define CLI_OPT_GUI            (1 << 14)
 #define CLI_OPT_SAFE           (1 << 15)
+#define CLI_OPT_TEST           (1 << 16)
 /* The command line options map. */
-constexpr_map<std::string_view, Uint, 27> cliOptionMap = {{
+constexpr_map<std::string_view, Uint, 28> cliOptionMap = {{
   {               "-I", CLI_OPT_IGNORERCFILE   },
   {  "--ignorercfiles", CLI_OPT_IGNORERCFILE   },
   {               "-V", CLI_OPT_VERSION        },
@@ -375,7 +378,8 @@ constexpr_map<std::string_view, Uint, 27> cliOptionMap = {{
   {               "-b", CLI_OPT_BREAKLONGLINES },
   { "--breaklonglines", CLI_OPT_BREAKLONGLINES },
   {            "--gui", CLI_OPT_GUI            },
-  {           "--safe", CLI_OPT_SAFE           }
+  {           "--safe", CLI_OPT_SAFE           },
+  {           "--test", CLI_OPT_TEST           }
 }};
 constexpr Uint retriveCliOptionFromStr(string_view str) {
   for (const auto &[key, val] : cliOptionMap) {
@@ -450,7 +454,7 @@ constexpr_map<Uint, string_view, NUMBER_OF_FLAGS> epithetOfFlagMap = {
     {MODERN_BINDINGS, DEFAULT_RESPONSE_ON_NONE}}
 };
 /* Return the textual description that corresponds to the given flag. */
-constexpr const char *const epithet_of_flag(const Uint flag) {
+constexpr const char *epithet_of_flag(const Uint flag) {
   return &epithetOfFlagMap[flag].value[0];
 }
 

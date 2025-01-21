@@ -14,7 +14,7 @@ typedef void (*callback_functionptr_t)(void *);
 
 /* These are the callback struct`s. */
 LIST_STRUCT(callback_node_t, callback_functionptr_t callback; void *result; callback_node_t * next;)
-TASK_STRUCT(callback_queue_t, callback_node_t *head; callback_node_t * tail; pthread_mutex_t mutex;)
+TASK_STRUCT(callback_queue_t, callback_node_t *head; callback_node_t *tail; pthread_mutex_t mutex;)
 
 /* Task struct`s to perform action`s. */
 TASK_STRUCT(word_search_task_t, char **words; unsigned long nwords; char *path;)

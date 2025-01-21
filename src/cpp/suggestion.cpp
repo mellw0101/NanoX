@@ -61,13 +61,13 @@ void find_suggestion(void) {
         continue;
       }
       /* Check the rest of the bytes. */
-      for (j = 1; j < suggest_len; ++j) {
+      for (j = 1; (int)j < suggest_len; ++j) {
         if (search_line->data[i + j] != suggest_buf[j]) {
           break;
         }
       }
       /* Continue searching if all bytes did not match. */
-      if (j < suggest_len) {
+      if ((int)j < suggest_len) {
         continue;
       }
       /* If the match is an exact copy of 'suggest_buf', skip it. */

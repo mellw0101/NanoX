@@ -30,14 +30,22 @@ uielementstruct *top_bar = NULL;
 /* The file menu button element. */
 uielementstruct *file_menu_element = NULL;
 uielementstruct *open_file_element = NULL;
+/* The bottom bar element. */
+uielementstruct *botbar = NULL;
+/* The vertex buffer for the bottom bar. */
+vertex_buffer_t *botbuf = NULL;
 
 /* Gui flags. */
 bit_flag_t<8> guiflag;
 
 markup_t markup;
-texture_atlas_t *atlas = NULL;
+// texture_font_t *font;
+
+nevhandler *ev_handler = NULL;
+
+texture_atlas_t *atlas   = NULL;
 vertex_buffer_t *vertbuf = NULL;
-vertex_buffer_t *topbuf = NULL;
+vertex_buffer_t *topbuf  = NULL;
 vec2 pen;
 
 static vec4 _GL_UNUSED black_vec4 = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -62,7 +70,8 @@ constexpr const Uint indices[] = {
   2, 3, 0  /* Second triangle. */
 };
 
-uielementstruct *make_element(vec2 pos, vec2 size, vec2 endoff, vec4 color) _NOTHROW {
+/* Create a ui element. */
+static uielementstruct *make_element(vec2 pos, vec2 size, vec2 endoff, vec4 color) _NOTHROW {
   uielementstruct *newelement = (uielementstruct *)nmalloc(sizeof(*newelement));
   newelement->pos       = pos;
   newelement->size      = size;
@@ -102,7 +111,7 @@ static void setup_font_shader(void) {
         void main() {
           gl_TexCoord[0].xy = tex_coord.xy;
           gl_FrontColor     = color;
-          gl_Position       = projection * (vec4(vertex, 1.0));
+          gl_Position       = projection * (vec4(vertex,1.0));
         }
       ),
       GL_VERTEX_SHADER },
@@ -111,7 +120,7 @@ static void setup_font_shader(void) {
         uniform sampler2D texture;
         void main() {
           float a = texture2D(texture, gl_TexCoord[0].xy).r;
-          gl_FragColor = vec4(gl_Color.rgb, gl_Color.a * a);
+          gl_FragColor = vec4(gl_Color.rgb, (gl_Color.a * a));
         }
       ),
       GL_FRAGMENT_SHADER }
@@ -120,7 +129,7 @@ static void setup_font_shader(void) {
   if (!fontshader) {
     glfwDestroyWindow(window);
     glfwTerminate();
-    die("Failed to create font shader.");
+    die("Failed to create font shader.\n");
   }
   /* Load fallback font. */
   if (is_file_and_exists(FALLBACK_FONT_PATH)) {
@@ -130,7 +139,7 @@ static void setup_font_shader(void) {
     glfwDestroyWindow(window);
     glfwTerminate();
     glDeleteProgram(fontshader);
-    die("Failed to find fallback font: '%s' does not exist.");
+    die("Failed to find fallback font: '%s' does not exist.\n");
   }
   vertbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
   /* Look for jetbrains regular font. */
@@ -270,6 +279,18 @@ static void setup_top_bar(void) {
   };
 }
 
+/* Set up the bottom bar. */
+static void setup_botbar(void) {
+  botbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  botbar = make_element(
+    vec2(0, window_height),
+    vec2(window_height, FONT_HEIGHT(markup.font)),
+    0.0f,
+    color_idx_to_vec4(FG_VS_CODE_RED)
+  );
+  botbar->flag.set<UIELEMENT_HIDDEN>();
+}
+
 /* Allocate and init the edit element. */
 static void setup_edit_element(void) {
   /* Confirm the margin first to determen how wide the gutter has to be. */
@@ -306,10 +327,12 @@ static void cleanup(void) {
   texture_atlas_delete(atlas);
   vertex_buffer_delete(vertbuf);
   vertex_buffer_delete(topbuf);
+  nevhandler_stop(ev_handler, 0);
+  nevhandler_free(ev_handler);
 }
 
 /* Init glew and check for errors.  Terminates on fail to init glew. */
-void init_glew(void) {
+static void init_glew(void) {
   /* Enable glew experimental features. */
   glewExperimental = TRUE;
   Uint err = glewInit();
@@ -342,6 +365,8 @@ void init_gui(void) {
   setup_rect_shader();
   /* Init the top menu bar. */
   setup_top_bar();
+  /* Init the bottom bar, that will be used for status updates, among other thing. */
+  setup_botbar();
   /* Init the edit element. */
   setup_edit_element();
   /* Set some callbacks. */
@@ -361,10 +386,13 @@ void init_gui(void) {
   glEnable(GL_BLEND);
   /* Set the window size. */
   window_resize_callback(window, window_width, window_height);
+  /* Create the event-handler. */
+  ev_handler = nevhandler_create();
 }
 
 /* Main gui loop. */
 void glfw_loop(void) {
+  nevhandler_start(ev_handler, TRUE);
   guiflag.set<GUI_RUNNING>();
   while (!glfwWindowShouldClose(window) && guiflag.is_set<GUI_RUNNING>()) {
     frametimer.start();
@@ -375,6 +403,8 @@ void glfw_loop(void) {
     draw_editelement();
     /* Draw the top menu bar. */
     draw_top_bar();
+    /* Draw the bottom bar, if there is any status messages. */
+    draw_botbar();
     /* If refresh was needed it has been done so set it to FALSE. */
     refresh_needed = FALSE;
     glfwSwapBuffers(window);

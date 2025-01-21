@@ -51,7 +51,7 @@ void make_new_buffer(void) _NOTHROW {
 }
 
 /* Return the given file name in a way that fits within the given space. */
-static char *crop_to_fit(const char *name, int room) _NOTHROW {
+static char *crop_to_fit(const char *name, Ulong room) _NOTHROW {
   char *clipped;
   if (breadth(name) <= room) {
     return display_string(name, 0, room, FALSE, FALSE);
@@ -808,7 +808,7 @@ static void cancel_the_command(int signal) _NOTHROW {
 }
 
 /* Send the text that starts at the given line to file descriptor fd. */
-void send_data(const linestruct *line, int fd) {
+static void send_data(const linestruct *line, int fd) {
   FILE *tube = fdopen(fd, "w");
   if (!tube) {
     exit(4);
@@ -828,11 +828,11 @@ void send_data(const linestruct *line, int fd) {
 }
 
 /* Execute the given command in a shell. */
-void execute_command(const char *command) {
+static void execute_command(const char *command) {
   /* The pipes through which text will be written and read. */
   int from_fd[2], to_fd[2];
   /* Original and temporary handlers for SIGINT. */
-  struct sigaction oldaction, newaction = {{0}};
+  struct sigaction oldaction, newaction = {};
   long  was_lineno = (openfile->mark ? 0 : openfile->current->lineno);
   int   command_status, sender_status;
   FILE *stream;
@@ -970,12 +970,12 @@ void execute_command(const char *command) {
 // Insert a file into the current buffer (or into a new buffer).
 // But when execute is 'TRUE', run a command in the shell and insert its output
 // into the buffer, or just run one of the tools listed in the help lines.
-void insert_a_file_or(bool execute) {
-  int         response;
+static void insert_a_file_or(bool execute) {
+  int response;
   const char *msg;
   /* The last answer the user typed at the status-bar prompt. */
-  char *given           = copy_of("");
-  bool  was_multibuffer = ISSET(MULTIBUFFER);
+  char *given = STRLTR_COPY_OF("");
+  bool was_multibuffer = ISSET(MULTIBUFFER);
   /* Display newlines in filenames as ^J. */
   as_an_at = FALSE;
   /* Reset the flag that is set by the Spell Checker and Linter and such. */
@@ -1323,7 +1323,7 @@ int copy_file(FILE *inn, FILE *out, bool close_out) {
 // Create a backup of an existing file.  If the user did not request backups,
 // make a temporary one.  (trying first in the directory of the original file,
 // then in the user's home directory).  Return 'TRUE' if the save can proceed.
-bool make_backup_of(char *realname) {
+static bool make_backup_of(char *realname) {
   static timespec filetime[2];
   FILE *original = NULL, *backup_file = NULL;
   int   creation_flags, descriptor;
@@ -1361,7 +1361,7 @@ bool make_backup_of(char *realname) {
     free(backupname);
     backupname = thename;
     /* If all numbered backup names are taken, the user must be fond of backups.  Thus, without one, do not go on. */
-    if (*backupname == '\0') {
+    if (!*backupname) {
       statusline(ALERT, _("Too many existing backup files"));
       free(backupname);
       return FALSE;
@@ -1501,7 +1501,7 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
   if (method == PREPEND) {
     FILE *source = NULL;
     FILE *target = NULL;
-    int   verdict;
+    int verdict;
     if (is_existing_file && S_ISFIFO(fileinfo.st_mode)) {
       statusline(ALERT, _("Error writing %s: %s"), realname, "FIFO");
       goto cleanup_and_exit;
@@ -1586,7 +1586,7 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
      * line is empty, it means zero bytes are written for it, and we don't count it in the number of lines. */
     if (!line->next) {
       if (line->data[0]) {
-        lineswritten++;
+        ++lineswritten;
       }
       break;
     }
@@ -1710,14 +1710,14 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
 /* Write the marked region of the current buffer out to disk.  Return 'TRUE' on success and 'FALSE' on error. */
 bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method) {
   linestruct *birthline, *topline, *botline, *stopper, *afterline;
-  char       *was_datastart, saved_byte;
-  Ulong       top_x, bot_x;
-  bool        retval;
+  char *was_datastart, saved_byte;
+  Ulong top_x, bot_x;
+  bool  retval;
   get_region(&topline, &top_x, &botline, &bot_x);
   /* When needed, prepare a magic end line for the region. */
   if (normal && (bot_x > 0) && !ISSET(NO_NEWLINES)) {
-    stopper       = make_new_node(botline);
-    stopper->data = copy_of("");
+    stopper = make_new_node(botline);
+    stopper->data = STRLTR_COPY_OF("");
   }
   else {
     stopper = NULL;
@@ -1728,10 +1728,10 @@ bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_w
   saved_byte           = botline->data[bot_x];
   botline->data[bot_x] = '\0';
   was_datastart        = topline->data;
-  topline->data += top_x;
-  birthline         = openfile->filetop;
-  openfile->filetop = topline;
-  retval = write_file(name, stream, normal, method, NONOTES);
+  topline->data       += top_x;
+  birthline            = openfile->filetop;
+  openfile->filetop    = topline;
+  retval               = write_file(name, stream, normal, method, NONOTES);
   /* Restore the proper state of the buffer. */
   openfile->filetop    = birthline;
   topline->data        = was_datastart;
@@ -1752,12 +1752,12 @@ int write_it_out(bool exiting, bool withprompt) {
   /* The filename we offer, or what the user typed so far. */
   char *given;
   /* Whether it's okay to save the buffer under a different name. */
-  bool                 maychange   = (openfile->filename[0] == '\0');
-  kind_of_writing_type method      = OVERWRITE;
-  static bool          did_credits = FALSE;
+  bool maychange = (openfile->filename[0] == '\0');
+  kind_of_writing_type method = OVERWRITE;
+  static bool did_credits = FALSE;
   /* Display newlines in filenames as ^J. */
   as_an_at = FALSE;
-  given    = copy_of((openfile->mark && !exiting) ? "" : openfile->filename);
+  given = copy_of((openfile->mark && !exiting) ? "" : openfile->filename);
   while (TRUE) {
     functionptrtype function;
     int response = 0, choice = NO;
@@ -1836,8 +1836,7 @@ int write_it_out(bool exiting, bool withprompt) {
       }
       /* If the user pressed Ctrl-X in the edit window, and answered 'Y' at the "Save modified buffer?"
        * prompt, and entered "zzy" as filename, and this is the first time around, show an Easter egg. */
-      if (exiting && !ISSET(SAVE_ON_EXIT) && openfile->filename[0] == '\0' && constexpr_strcmp(answer, "zzy") == 0 &&
-          !did_credits) {
+      if (exiting && !ISSET(SAVE_ON_EXIT) && openfile->filename[0] == '\0' && constexpr_strcmp(answer, "zzy") == 0 && !did_credits) {
         if (LINES > 5 && COLS > 31) {
           do_credits();
           did_credits = TRUE;
@@ -2017,7 +2016,7 @@ bool is_dir(const char *const path) {
 }
 
 /* Try to complete the given fragment of given length to a username. */
-char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)  {
+static char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)  {
   char **matches = NULL;
   const passwd *userdata;
   /* Iterate through the entries in the passwd file, and add each fitting username to the list of matches. */
@@ -2053,7 +2052,7 @@ char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)
   This code may safely be consumed by a BSD or GPL license.
  */
 /* Try to complete the given fragment to an existing filename. */
-char **filename_completion(const char *morsel, Ulong *num_matches) {
+static char **filename_completion(const char *morsel, Ulong *num_matches) {
   char  *dirname = copy_of(morsel);
   char  *slash, *filename;
   Ulong filenamelen;
@@ -2180,10 +2179,10 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
   }
   /* If there is more than one possible completion, show a sorted list. */
   if (num_matches > 1) {
-    int   lastrow      = (editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0));
+    int lastrow = (editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0));
     Ulong longest_name = 0;
     Ulong nrows, ncols;
-    int   row;
+    int row;
     if (!listed) {
       beep();
     }
@@ -2195,14 +2194,14 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
         longest_name = namelen;
       }
     }
-    if (longest_name > (COLS - 1)) {
+    if (longest_name > (Ulong)(COLS - 1)) {
       longest_name = (COLS - 1);
     }
     /* The columns of names will be separated by two spaces,
      * but the last column will have just one space after it. */
     ncols = (COLS + 1) / (longest_name + 2);
     nrows = ((num_matches + ncols - 1) / ncols);
-    row   = ((nrows < lastrow) ? lastrow - nrows : 0);
+    row   = ((nrows < (Ulong)lastrow) ? lastrow - nrows : 0);
     /* Blank the edit window and hide the cursor. */
     blank_edit();
     curs_set(0);
@@ -2249,14 +2248,15 @@ char **retrieve_lines_from_file(const char *path, Ulong *nlines) {
     return NULL;
   }
   char  *buf = NULL;
-  Ulong  len, size, i = 0, bcap = 200, bsize = 0;
+  long len;
+  Ulong size, i = 0, bcap = 200, bsize = 0;
   char **lines = (char **)nmalloc(sizeof(char *) * bcap);
   FILE  *file  = fopen(path, "rb");
   if (!file) {
     logE("Failed to open file: '%s'", path);
     return NULL;
   }
-  for (; (len = getline(&buf, &size, file)) != EOF; i++) {
+  for (; (len = getline(&buf, &size, file)) != -1; i++) {
     if (buf[len - 1] == '\n') {
       buf[--len] = '\0';
     }

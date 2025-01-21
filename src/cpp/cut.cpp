@@ -354,7 +354,7 @@ void ingraft_buffer(linestruct *topline) _NOTHROW {
 
 /* Meld a copy of the given buffer into the current file buffer. */
 void copy_from_buffer(linestruct *somebuffer) _NOTHROW {
-  Ulong threshold = (openfile->edittop->lineno + editwinrows - 1);
+  long threshold = (openfile->edittop->lineno + editwinrows - 1);
   linestruct *the_copy = copy_buffer(somebuffer);
   ingraft_buffer(the_copy);
   if (openfile->current->lineno > threshold || ISSET(SOFTWRAP)) {
@@ -500,7 +500,7 @@ void copy_marked_region(void) {
  * the text from cursor to end-of-line, just the line break, or nothing, depending on mode and cursor position. */
 void copy_text(void) {
   bool  at_eol = !openfile->current->data[openfile->current_x];
-  Ulong from_x = ((ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0);
+  Ulong start_x = ((ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0);
   bool  sans_newline = (ISSET(NO_NEWLINES) && !openfile->current->next);
   linestruct *was_current = openfile->current;
   linestruct *addition;
@@ -522,7 +522,7 @@ void copy_text(void) {
     return;
   }
   addition       = make_new_node(NULL);
-  addition->data = copy_of(openfile->current->data + from_x);
+  addition->data = copy_of(openfile->current->data + start_x);
   if (ISSET(CUT_FROM_CURSOR)) {
     sans_newline = !at_eol;
   }

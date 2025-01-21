@@ -5,8 +5,8 @@
 #define rgb_8bit_in_xterm_color(r, g, b) \
   xterm_byte_scale(r) * 4 - 1, xterm_byte_scale(g) * 4 - 1, xterm_byte_scale(b) * 4 - 1
 
-#define get_start_col(line, node)            wideness((line)->data, (node)->start) + margin
-#define start_column(line, index)            wideness((line)->data, index) + margin
+#define get_start_col(line, node)            (wideness((line)->data, (node)->start) + margin)
+#define start_column(line, index)            (wideness((line)->data, index) + margin)
 #define PTR_POS(data, ptr)                   (wideness(data, (ptr - data)) + margin)
 /* Retrieve correct visual position of a ptr in a line`s data. */
 #define PTR_POS_LINE(line, char_ptr)         (wideness((line)->data, (char_ptr - (line)->data)) + margin)
@@ -18,7 +18,7 @@
 #define win_attr_off(win, attr)              wattr_off(win, (attr_t)attr, NULL)
 #define WIN_COLOR_ON(win, color)             win_attr_on(win, interface_color_pair[color])
 #define WIN_COLOR_OFF(win, color)            win_attr_off(win, interface_color_pair[color])
-#define mv_add_nstr(win, row, col, str, len) (wmove(win, row, col) == (-1)) ?: waddnstr(win, str, len)
+#define mv_add_nstr(win, row, col, str, len) (wmove(win, row, col) == (-1)) ? 0: waddnstr(win, str, len)
 #define mv_add_nstr_color(win, row, col, str, len, color) \
   wattron(win, interface_color_pair[color]);                               \
   mv_add_nstr(win, row, col, str, len);                   \
@@ -45,7 +45,7 @@
 /* Add a str to midwin. */
 #define midwin_add_str(str)                    midwin_add_nstr(str, -1)
 /* Move to 'row', 'col', then draw 'len' of 'str' at 'row','col' in midwin. */
-#define midwin_mv_add_nstr(row, col, str, len) (midwin_move(row, col) == (-1)) ?: midwin_add_nstr(str, len)
+#define midwin_mv_add_nstr(row, col, str, len) (midwin_move(row, col) == (-1)) ? 0 : midwin_add_nstr(str, len)
 /* Move then add str to midwin. */
 #define midwin_mv_add_str(row, col, str)       (midwin_move(row, col) == (-1)) ?: midwin_add_str(str)
 /* Move then add str to midwin, with attributes */

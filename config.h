@@ -2585,9 +2585,53 @@
 #  endif
 #endif
 
-#ifndef _NORETURN
-
+#ifndef _FALLTHROUGH
+#  if _GL_HAVE___HAS_C_ATTRIBUTE
+#    if __has_c_attribute(__fallthrough__)
+#      define _FALLTHROUGH [[__fallthrough__]]
+#    endif
 #  endif
+#  if !defined _FALLTHROUGH && _GL_HAS_ATTRIBUTE(fallthrough)
+#    define _FALLTHROUGH __attribute__((__fallthrough__))
+#  endif
+#  ifndef _FALLTHROUGH
+#    define _FALLTHROUGH ((void)0)
+#  endif
+#endif
+
+#define __at(...) __attribute__((__VA_ARGS__))
+
+#ifndef _NO_RETURN
+#  if _GL_HAVE___HAS_C_ATTRIBUTE
+#    if __has_c_attribute(__noreturn__)
+#      define _NO_RETURN [[__noreturn__]]
+#    endif
+#  endif
+#  if !defined _NO_RETURN && _GL_HAS_ATTRIBUTE(fallthrough)
+#    define _NO_RETURN __at(__noreturn__)
+#  endif
+#  ifndef _NO_RETURN
+#    define _NO_RETURN
+#  endif
+#endif
+
+#define _CONST _GL_ATTRIBUTE_CONST
+#define _ALWAYS_INLINE _GL_ATTRIBUTE_ALWAYS_INLINE
+
+#define _BEGIN_C_LINKAGE _GL_BEGIN_C_LINKAGE
+#define _END_C_LINKAGE   _GL_END_C_LINKAGE
+
+#ifndef _UNUSED
+# define _UNUSED _GL_ATTRIBUTE_UNUSED
+#endif
+
+#if !defined _PRINTFLIKE
+# if _GL_HAS_ATTRIBUTE(format)
+#   define _PRINTFLIKE(...) __attribute__((__format__(printf, __VA_ARGS__)))
+# else
+#   define _PRINTFLIKE(...)
+# endif
+#endif
 
 /* This is defined by the installer if glfw is installed staticly and localaly. */
 #define HAVE_GLFW 1

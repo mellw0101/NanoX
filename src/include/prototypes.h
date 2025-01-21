@@ -18,6 +18,10 @@ extern WINDOW *midwin;
 extern WINDOW *footwin;
 extern WINDOW *suggestwin;
 
+extern nwindow *tui_topwin;
+extern nwindow *tui_midwin;
+extern nwindow *tui_footwin;
+
 extern syntaxtype *syntaxes;
 
 extern openfilestruct *openfile;
@@ -168,11 +172,19 @@ extern file_listener_handler_t file_listener;
 
 extern configstruct *config;
 
+/* Some prompt decl's. */
+extern char *prompt;
+extern Ulong typing_x;
+
+typedef void (*functionptrtype)(void);
+
 #ifdef HAVE_GLFW
   extern bit_flag_t<8> guiflag;
   extern uielementstruct *editelement;
   extern Uint window_width, window_height;
   extern markup_t markup;
+  extern nevhandler *ev_handler;
+  // extern texture_font_t *font;
   extern texture_atlas_t *atlas;
   extern vertex_buffer_t *vertbuf;
   extern vertex_buffer_t *topbuf;
@@ -183,12 +195,18 @@ extern configstruct *config;
   extern uielementstruct *gutterelement;
   extern uielementstruct *top_bar;
   extern uielementstruct *file_menu_element;
+  /* The bottom bar. */
+  extern uielementstruct *botbar;
+  extern vertex_buffer_t *botbuf;
   extern Uint fontshader, rectshader;
-  extern uigridmapclass gridmap;
+  extern uigridmapclass  gridmap;
+  extern frametimerclass frametimer;
   extern vec2 mousepos;
+  /* guiprompt.cpp */
+  extern Ulong gui_prompt_mark_x;
+  extern bool  gui_prompt_mark;
+  extern int   gui_prompt_type;
 #endif
-
-typedef void (*functionptrtype)(void);
 
 /* Asm functions. */
 ASM_FUNCTION(int)  SSE_strlen(const char *str);
@@ -208,30 +226,30 @@ bool  using_utf8(void) _NOTHROW _NODISCARD;
 bool  is_language_word_char(const char *pointer, Ulong index) _NOTHROW _NODISCARD _NONNULL(1);
 bool  is_cursor_language_word_char(void) _NOTHROW _NODISCARD;
 bool  is_enclose_char(const char ch) _NOTHROW _NODISCARD;
-bool  is_alpha_char(const char *c) _NOTHROW _NODISCARD __nonnull((1));
-bool  is_alnum_char(const char *const c) _NOTHROW _NODISCARD __nonnull((1));
-bool  is_blank_char(const char *c) _NOTHROW _NODISCARD __nonnull((1));
-bool  is_prev_blank_char(const char *pointer, Ulong index) _NOTHROW _NODISCARD __nonnull((1));
+bool  is_alpha_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
+bool  is_alnum_char(const char *const c) _NOTHROW _NODISCARD _NONNULL(1);
+bool  is_blank_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
+bool  is_prev_blank_char(const char *pointer, Ulong index) _NOTHROW _NODISCARD _NONNULL(1);
 bool  is_prev_cursor_blank_char(void) _NOTHROW _NODISCARD;
 bool  is_cursor_blank_char(void) _NOTHROW _NODISCARD;
-bool  is_cntrl_char(const char *c) _NOTHROW _NODISCARD __nonnull((1));
-bool  is_word_char(const char *c, bool allow_punct) _NOTHROW _NODISCARD __nonnull((1));
+bool  is_cntrl_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
+bool  is_word_char(const char *c, bool allow_punct) _NOTHROW _NODISCARD _NONNULL(1);
 bool  is_cursor_word_char(bool allow_punct) _NOTHROW _NODISCARD;
-bool  is_prev_word_char(const char *pointer, Ulong index, bool allow_punct = FALSE) _NOTHROW _NODISCARD __nonnull((1));
+bool  is_prev_word_char(const char *pointer, Ulong index, bool allow_punct = FALSE) _NOTHROW _NODISCARD _NONNULL(1);
 bool  is_prev_cursor_word_char(bool allow_punct = FALSE) _NOTHROW _NODISCARD;
-bool  is_prev_char(const char *pointer, Ulong index, const char ch) _NOTHROW _NODISCARD __nonnull((1));
+bool  is_prev_char(const char *pointer, Ulong index, const char ch) _NOTHROW _NODISCARD _NONNULL(1);
 bool  is_prev_cursor_char(const char ch) _NOTHROW _NODISCARD;
-bool  is_prev_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW _NODISCARD __nonnull((1, 3));
-bool  is_prev_cursor_char_one_of(const char *chars) _NOTHROW _NODISCARD __nonnull((1));
+bool  is_prev_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW _NODISCARD _NONNULL(1, 3);
+bool  is_prev_cursor_char_one_of(const char *chars) _NOTHROW _NODISCARD _NONNULL(1);
 bool  is_cursor_char(const char ch) _NOTHROW _NODISCARD;
-bool  is_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW _NODISCARD __nonnull((1, 3));
-bool  is_cursor_char_one_of(const char *chars) _NOTHROW _NODISCARD __nonnull((1));
-bool  is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch) _NOTHROW _NODISCARD __nonnull((1));
+bool  is_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW _NODISCARD _NONNULL(1, 3);
+bool  is_cursor_char_one_of(const char *chars) _NOTHROW _NODISCARD _NONNULL(1);
+bool  is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch) _NOTHROW _NODISCARD _NONNULL(1);
 bool  is_cursor_between_chars(const char pre_ch, const char post_ch) _NOTHROW _NODISCARD;
-char  control_mbrep(const char *c, bool isdata) _NOTHROW _NODISCARD __nonnull((1));
-int   mbtowide(wchar_t *wc, const char *c) _NOTHROW _NODISCARD __nonnull((1));
-bool  is_doublewidth(const char *ch) _NOTHROW _NODISCARD __nonnull((1));
-bool  is_zerowidth(const char *ch) _NOTHROW _NODISCARD __nonnull((1));
+char  control_mbrep(const char *c, bool isdata) _NOTHROW _NODISCARD _NONNULL(1);
+int   mbtowide(wchar_t *wc, const char *c) _NOTHROW _NODISCARD _NONNULL(1);
+bool  is_doublewidth(const char *ch) _NOTHROW _NODISCARD _NONNULL(1);
+bool  is_zerowidth(const char *ch) _NOTHROW _NODISCARD _NONNULL(1);
 bool  is_cursor_zerowidth(void) _NOTHROW _NODISCARD;
 int   char_length(const char *const &pointer) _NOTHROW _NODISCARD;
 Ulong mbstrlen(const char *pointer) _NOTHROW;
@@ -263,6 +281,7 @@ void  check_the_multis(linestruct *line) _NOTHROW;
 void  precalc_multicolorinfo(void) _NOTHROW;
 bool  str_equal_to_rgx(const char *str, const regex_t *rgx);
 short rgb_to_ncurses(Uchar value);
+void  attr_idx_int_code(int idx, int *fg, int *bg);
 
 /* Most functions in 'cut.cpp'. */
 void expunge(undo_type action);
@@ -323,7 +342,7 @@ char **retrieve_lines_from_file(const char *path, Ulong *nlines);
 char **retrieve_words_from_file(const char *path, Ulong *nwords);
 char **words_from_file(const char *path, Ulong *nwords);
 char **dir_entrys_from(const char *path);
-int    entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) __nonnull((1, 2, 3, 4, 5));
+int    entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) _NONNULL(1, 2, 3, 4, 5);
 int    recursive_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs);
 int    get_all_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs);
 linestruct *retrieve_file_as_lines(const string &path);
@@ -387,16 +406,16 @@ void        splice_node(linestruct *afterthis, linestruct *newnode) _NOTHROW;
 void        delete_node(linestruct *line) _NOTHROW;
 void        unlink_node(linestruct *line) _NOTHROW;
 void        free_lines(linestruct *src) _NOTHROW;
-linestruct *copy_node(const linestruct *src) _NOTHROW _NODISCARD __nonnull((1));
+linestruct *copy_node(const linestruct *src) _NOTHROW _NODISCARD _NONNULL(1);
 linestruct *copy_buffer(const linestruct *src) _NOTHROW _NODISCARD;
 void        renumber_from(linestruct *line) _NOTHROW;
 void        print_view_warning(void) _NOTHROW;
 bool        in_restricted_mode(void) _NOTHROW;
 void        suggest_ctrlT_ctrlZ(void) _NOTHROW;
-void        finish(void) _NOTHROW __no_return;
+void        finish(void) _NOTHROW _NO_RETURN;
 void        close_and_go(void);
 void        do_exit(void);
-void        die(const char *msg, ...) __no_return __nonnull((1));
+void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
 void        window_init(void) _NOTHROW;
 void        install_handler_for_Ctrl_C(void) _NOTHROW;
 void        restore_handler_for_Ctrl_C(void) _NOTHROW;
@@ -421,6 +440,20 @@ bool        changes_something(functionptrtype f);
 void        inject(char *burst, Ulong count);
 
 /* Most functions in 'prompt.cpp'. */
+void  statusbar_discard_all_undo_redo(void) _NOTHROW;
+void  do_statusbar_undo(void) _NOTHROW;
+void  do_statusbar_redo(void) _NOTHROW;
+void  do_statusbar_home(void) _NOTHROW;
+void  do_statusbar_end(void) _NOTHROW;
+void  do_statusbar_prev_word(void) _NOTHROW;
+void  do_statusbar_next_word(void) _NOTHROW;
+void  do_statusbar_left(void) _NOTHROW;
+void  do_statusbar_right(void) _NOTHROW;
+void  do_statusbar_backspace(bool with_undo) _NOTHROW;
+void  do_statusbar_delete(void) _NOTHROW;
+void  inject_into_answer(char *burst, Ulong count) _NOTHROW;
+void  do_statusbar_chop_next_word(void);
+void  do_statusbar_chop_prev_word(void);
 Ulong get_statusbar_page_start(Ulong base, Ulong column) _NOTHROW;
 void  put_cursor_at_end_of_answer(void) _NOTHROW;
 void  add_or_remove_pipe_symbol_from_answer(void) _NOTHROW;
@@ -477,6 +510,9 @@ void  do_indent(void) _NOTHROW;
 void  do_unindent(void) _NOTHROW;
 void  do_comment(void) _NOTHROW;
 void  enclose_marked_region(const char *s1, const char *s2) _NOTHROW;
+void  insert_empty_line(linestruct *line, bool above) _NOTHROW;
+void  do_insert_empty_line_above(void) _NOTHROW;
+void  do_insert_empty_line_below(void) _NOTHROW;
 void  do_undo(void);
 void  do_redo(void);
 void  do_enter(void);
@@ -503,42 +539,42 @@ char *lower_case_word(const char *str);
 
 /* All functions in 'utils.cpp' */
 void        get_homedir(void) _NOTHROW;
-char      **get_env_paths(Ulong *npaths) _NOTHROW _NODISCARD __nonnull((1));
-const char *tail(const char *path) _NOTHROW __returns_nonnull __nonnull((1));
-const char *ext(const char *path) _NOTHROW __nonnull((1));
-char       *concatenate(const char *path, const char *name) _NOTHROW _NODISCARD __returns_nonnull __nonnull((1, 2));
-char       *concatenate_path(const char *prefix, const char *suffix) _NOTHROW _NODISCARD __returns_nonnull __nonnull((1, 2));
-const char *concat_path(const char *s1, const char *s2) _NOTHROW __nonnull((1, 2));
+char      **get_env_paths(Ulong *npaths) _NOTHROW _NODISCARD _NONNULL(1);
+const char *tail(const char *path) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
+const char *ext(const char *path) _NOTHROW _NONNULL(1);
+char       *concatenate(const char *path, const char *name) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
+char       *concatenate_path(const char *prefix, const char *suffix) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
+const char *concat_path(const char *s1, const char *s2) _NOTHROW _NONNULL(1, 2);
 int         digits(long n) _NOTHROW _NODISCARD;
-bool        parse_num(const char *string, long *result) _NOTHROW _NODISCARD __nonnull((1, 2));
-bool        parse_line_column(const char *str, long *line, long *column) _NOTHROW __nonnull((1, 2, 3));
-void        recode_NUL_to_LF(char *string, Ulong length) _NOTHROW __nonnull((1));
-Ulong       recode_LF_to_NUL(char *string) _NOTHROW __nonnull((1));
+bool        parse_num(const char *string, long *result) _NOTHROW _NODISCARD _NONNULL(1, 2);
+bool        parse_line_column(const char *str, long *line, long *column) _NOTHROW _NONNULL(1, 2, 3);
+void        recode_NUL_to_LF(char *string, Ulong length) _NOTHROW _NONNULL(1);
+Ulong       recode_LF_to_NUL(char *string) _NOTHROW _NONNULL(1);
 void        free_chararray(char **array, Ulong len) _NOTHROW;
-void        append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NOTHROW __nonnull((1, 2, 3));
+void        append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NOTHROW _NONNULL(1, 2, 3);
 bool        is_separate_word(Ulong position, Ulong length, const char *buf) _NOTHROW;
-void       *nmalloc(const Ulong howmuch) _NOTHROW __returns_nonnull;
-void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW __returns_nonnull __nonnull((1));
+void       *nmalloc(const Ulong howmuch) _NOTHROW _RETURNS_NONNULL;
+void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
 #define     arealloc(ptr, howmuch) (decltype(ptr))nrealloc(ptr, howmuch)
 char       *mallocstrcpy(char *dest, const char *src) _NOTHROW;
-char       *measured_copy(const char *string, Ulong count) _NOTHROW __returns_nonnull __nonnull((1));
-char       *copy_of(const char *string) _NOTHROW __returns_nonnull __nonnull((1));
+char       *measured_copy(const char *string, Ulong count) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
+char       *copy_of(const char *string) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
 char       *free_and_assign(char *dest, char *src) _NOTHROW;
 Ulong       get_page_start(Ulong column) _NOTHROW;
 Ulong       xplustabs(void) _NOTHROW _NODISCARD;
-Ulong       actual_x(const char *text, Ulong column) _NOTHROW _NODISCARD __nonnull((1));
-Ulong       wideness(const char *text, Ulong maxlen) _NOTHROW _NODISCARD __nonnull((1));
-Ulong       breadth(const char *text) _NOTHROW _NODISCARD __nonnull((1));
+Ulong       actual_x(const char *text, Ulong column) _NOTHROW _NODISCARD _NONNULL(1);
+Ulong       wideness(const char *text, Ulong maxlen) _NOTHROW _NODISCARD _NONNULL(1);
+Ulong       breadth(const char *text) _NOTHROW _NODISCARD _NONNULL(1);
 void        new_magicline(void) _NOTHROW;
 void        remove_magicline(void) _NOTHROW;
 bool        mark_is_before_cursor(void) _NOTHROW;
 void        get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NOTHROW;
 void        get_range(linestruct **top, linestruct **bot) _NOTHROW;
 linestruct *line_from_number(long number) _NOTHROW;
-Ulong       number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW __nonnull((1, 2));
-const char *strstrwrapper(const char *haystack, const char *needle, const char *start) _NOTHROW __nonnull((1));
+Ulong       number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW _NONNULL(1, 2);
+const char *strstrwrapper(const char *haystack, const char *needle, const char *start) _NOTHROW _NONNULL(1);
 char       *alloced_pwd(void);
-char       *alloc_str_free_substrs(char *str_1, char *str_2) _NOTHROW __nonnull((1, 2));
+char       *alloc_str_free_substrs(char *str_1, char *str_2) _NOTHROW _NONNULL(1, 2);
 void        append_str(char **str, const char *appen_str);
 char       *alloced_current_file_dir(void);
 char       *alloced_full_current_file_dir(void);
@@ -557,6 +593,7 @@ void  reserve_space_for(Ulong newsize) _NOTHROW;
 Ulong waiting_keycodes(void) _NOTHROW;
 void  implant(const char *string) _NOTHROW;
 int   get_input(WINDOW *win);
+int   convert_CSI_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW;
 int   get_kbinput(WINDOW *win, bool showcursor);
 char *get_verbatim_kbinput(WINDOW *win, Ulong *count) _NOTHROW;
 int   get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) _NOTHROW;
@@ -571,7 +608,7 @@ void  titlebar(const char *path) _NOTHROW;
 void  minibar(void) _NOTHROW;
 void  statusline(message_type importance, const char *msg, ...) _NOTHROW;
 void  statusbar(const char *msg) _NOTHROW;
-void  warn_and_briefly_pause(const char *msg) _NOTHROW __nonnull((1));
+void  warn_and_briefly_pause(const char *msg) _NOTHROW _NONNULL(1);
 void  bottombars(int menu) _NOTHROW;
 void  post_one_key(const char *keystroke, const char *tag, int width) _NOTHROW;
 void  place_the_cursor(void) _NOTHROW;
@@ -584,10 +621,10 @@ int   go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
 bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW _NODISCARD;
 void  edit_scroll(bool direction);
 Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NOTHROW;
-Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NOTHROW __nonnull((2));
+Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NOTHROW _NONNULL(2);
 Ulong chunk_for(Ulong column, linestruct *line) _NOTHROW;
 Ulong leftedge_for(Ulong column, linestruct *line) _NOTHROW;
-Ulong extra_chunks_in(linestruct *line) _NOTHROW _NODISCARD __nonnull((1));
+Ulong extra_chunks_in(linestruct *line) _NOTHROW _NODISCARD _NONNULL(1);
 void  ensure_firstcolumn_is_aligned(void) _NOTHROW;
 Ulong actual_last_column(Ulong leftedge, Ulong column) _NOTHROW;
 bool  current_is_offscreen(void) _NOTHROW;
@@ -627,7 +664,7 @@ void do_cancel(void);
 
 /* All functions in 'cpp.cpp'. */
 bool   isCppSyntaxChar(const char c);
-void   get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs) __nonnull((1, 2, 3, 4, 5));
+void   get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs) _NONNULL(1, 2, 3, 4, 5);
 Ushort indent_char_len(linestruct *line);
 void   do_block_comment(void) _NOTHROW;
 bool   enter_with_bracket(void);
@@ -671,11 +708,11 @@ line_word_t *get_line_words(const char *string, Ulong slen);
 Uint         last_strchr(const char *str, const char ch, Uint maxlen);
 char        *memmove_concat(const char *s1, const char *s2);
 const char  *substr(const char *str, Ulong end_index);
-Ulong        get_prev_word_start_index(const char *line, Ulong cursor_x, bool allow_underscore = FALSE) _NOTHROW _NODISCARD __nonnull((1));
+Ulong        get_prev_word_start_index(const char *line, Ulong cursor_x, bool allow_underscore = FALSE) _NOTHROW _NODISCARD _NONNULL(1);
 Ulong        get_prev_cursor_word_start_index(bool allow_underscore = FALSE) _NOTHROW _NODISCARD;
-char        *get_prev_word(const char *cursorline, const Ulong cursor_x, Ulong *wordlen) _NOTHROW _NODISCARD __nonnull((1, 3));
-char        *get_prev_cursor_word(Ulong *wordlen) _NOTHROW _NODISCARD __nonnull((1));
-Ulong        get_current_word_end_index(const char *line, Ulong from_index, bool allow_underscore = FALSE) _NOTHROW _NODISCARD __nonnull((1));
+char        *get_prev_word(const char *cursorline, const Ulong cursor_x, Ulong *wordlen) _NOTHROW _NODISCARD _NONNULL(1, 3);
+char        *get_prev_cursor_word(Ulong *wordlen) _NOTHROW _NODISCARD _NONNULL(1);
+Ulong        get_current_word_end_index(const char *line, Ulong from_index, bool allow_underscore = FALSE) _NOTHROW _NODISCARD _NONNULL(1);
 Ulong        get_current_cursor_word_end_index(bool allow_underscore = FALSE) _NOTHROW;
 
 /* 'lines.cpp' */
@@ -688,7 +725,7 @@ void  move_lines_down(void) _NOTHROW;
 void  erase_in_line(linestruct *line, Ulong at, Ulong len);
 Uint  total_tabs(linestruct *line);
 int   get_editwin_row(linestruct *line);
-bool  line_in_marked_region(linestruct *line) _NOTHROW _NODISCARD __nonnull((1));
+bool  line_in_marked_region(linestruct *line) _NOTHROW _NODISCARD _NONNULL(1);
 
 /* 'threadpool.cpp' */
 void  lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NOTHROW;
@@ -778,7 +815,8 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   float cursor_pixel_y_pos(texture_font_t *font);
   void  add_glyph(const char *current, const char *previous, vertex_buffer_t *buffer, texture_font_t *font, vec4 color, vec2 *pen);
   void  vertex_buffer_add_string(vertex_buffer_t *buffer, const char *string, Ulong slen, const char *previous, texture_font_t *font, vec4 color, vec2 *pen);
-  void  add_cursor(texture_font_t *font, vertex_buffer_t *buffer, vec4 color);
+  void  add_openfile_cursor(texture_font_t *font, vertex_buffer_t *buffer, vec4 color);
+  void  add_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color, vec2 at);
   void  update_projection_uniform(Uint shader);
   uielementstruct *element_from_mousepos(void);
   void vertex_buffer_add_element_lable(uielementstruct *element, texture_font_t *font, vertex_buffer_t *buffer);
@@ -800,9 +838,14 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void resize_element(uielementstruct *e, vec2 size);
   void move_element(uielementstruct *e, vec2 pos);
   void move_resize_element(uielementstruct *e, vec2 pos, vec2 size);
+  void show_statusmsg(message_type type, float seconds, const char *format, ...);
   void draw_editelement(void);
   void draw_top_bar(void);
+  void draw_botbar(void);
   void do_fullscreen(GLFWwindow *window);
+  /* gui/guiprompt.cpp */
+  void gui_ask_user(const char *question, guiprompt_type type);
+  long prompt_index_from_mouse(bool allow_outside);
 #endif
 
 /* 'cfg.cpp'. */
@@ -814,14 +857,14 @@ void cleanup_cfg(void) _NOTHROW;
 void get_env_path_binaries(void);
 
 /* nstring.cpp */
-Ulong  inject_in(char **dst, Ulong dstlen, const char *src, Ulong srclen, Ulong at, bool realloc = TRUE) _NOTHROW __nonnull((1, 3));
-Ulong  inject_in(char **dst, const char *src, Ulong srclen, Ulong at, bool realloc = TRUE) _NOTHROW __nonnull((1, 2));
-Ulong  inject_in(char **dst, const char *src, Ulong at, bool realloc = TRUE) _NOTHROW __nonnull((1, 2));
-Ulong  erase_in(char **str, Ulong slen, Ulong at, Ulong eraselen, bool do_realloc) _NOTHROW __nonnull((1));
-Ulong  erase_in(char **str, Ulong at, Ulong eraselen, bool do_realloc = TRUE) _NOTHROW __nonnull((1));
-Ulong  append_to(char **dst, Ulong dstlen, const char *src, Ulong srclen) _NOTHROW __nonnull((1, 3));
-Ulong  append_to(char **dst, const char *src) _NOTHROW __nonnull((1, 2));
-char **split_string(const char *string, const char delim, Ulong *n) _NOTHROW _NODISCARD __nonnull((1, 3));
+Ulong  inject_in(char **dst, Ulong dstlen, const char *src, Ulong srclen, Ulong at, bool realloc = TRUE) _NOTHROW _NONNULL(1, 3);
+Ulong  inject_in(char **dst, const char *src, Ulong srclen, Ulong at, bool realloc = TRUE) _NOTHROW _NONNULL(1, 2);
+Ulong  inject_in(char **dst, const char *src, Ulong at, bool realloc = TRUE) _NOTHROW _NONNULL(1, 2);
+Ulong  erase_in(char **str, Ulong slen, Ulong at, Ulong eraselen, bool do_realloc) _NOTHROW _NONNULL(1);
+Ulong  erase_in(char **str, Ulong at, Ulong eraselen, bool do_realloc = TRUE) _NOTHROW _NONNULL(1);
+Ulong  append_to(char **dst, Ulong dstlen, const char *src, Ulong srclen) _NOTHROW _NONNULL(1, 3);
+Ulong  append_to(char **dst, const char *src) _NOTHROW _NONNULL(1, 2);
+char **split_string(const char *string, const char delim, Ulong *n) _NOTHROW _NODISCARD _NONNULL(1, 3);
 
 #include <Mlib/def.h>
 #include "c_proto.h"

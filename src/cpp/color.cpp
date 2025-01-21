@@ -402,6 +402,26 @@ bool str_equal_to_rgx(const char *str, const regex_t *rgx) {
   return (regexec(rgx, str, 0, NULL, 0) == 0);
 }
 
-short rgb_to_ncurses(unsigned char value) {
+short rgb_to_ncurses(Uchar value) {
   return short(value * 1000 / 255);
+}
+
+/**
+  Encodes `fg` and `bg` with a rgb value for a given idx.
+
+  To use the rgb value encoded into `color_int` do:
+  - `r` (color_int & 0xff)
+  - `g` ((color_int >> 8) & 0xff)
+  - `b` ((color_int >> 16) & 0xff)
+
+  Note that both `fg` and `bg` will return `-1` when `idx` represents nothing.
+ */
+void attr_idx_int_code(int idx, int *fg, int *bg) {
+  if (!fg || !bg || idx < 0 || idx >= NUMBER_OF_ELEMENTS) {
+    *fg = -1;
+    *bg = -1;
+    return;
+  }
+  *fg = encoded_idx_color[idx][0];
+  *bg = encoded_idx_color[idx][1];
 }

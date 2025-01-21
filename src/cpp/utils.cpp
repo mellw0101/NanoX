@@ -1,5 +1,4 @@
 /** @file utils.cpp */
-#include <Mlib/Profile.h>
 #include "../include/prototypes.h"
 
 /* Return the user's home directory.  We use $HOME, and if that fails, we fall back on the home directory of the effective user ID. */
@@ -248,7 +247,7 @@ const char *strstrwrapper(const char *const haystack, const char *const needle, 
         return NULL;
       }
       /* Move the start-of-range forward until there is no more match; then the last match found is the first match backwards. */
-      while (regmatches[0].rm_so <= ceiling) {
+      while (regmatches[0].rm_so <= (int)ceiling) {
         floor     = next_rung;
         last_find = regmatches[0].rm_so;
         /* If this is the last possible match, don't try to advance. */
@@ -345,7 +344,7 @@ char *free_and_assign(char *dest, char *src) _NOTHROW {
 // chunks ("pages").  Return the column number of the first character
 // displayed in the edit window when the cursor is at the given column.
 Ulong get_page_start(const Ulong column) _NOTHROW {
-  if (!column || (column + 2) < editwincols || ISSET(SOFTWRAP)) {
+  if (!column || (int)(column + 2) < editwincols || ISSET(SOFTWRAP)) {
     return 0;
   }
   else if (editwincols > 8) {
@@ -515,7 +514,7 @@ char *alloc_str_free_substrs(char *str_1, char *str_2) _NOTHROW {
 void append_str(char **str, const char *appen_str) {
   Ulong slen      = strlen(*str);
   Ulong appendlen = strlen(appen_str);
-  *str            = (char *)nrealloc(*str, (slen + appendlen + 1));
+  *str = (char *)nrealloc(*str, (slen + appendlen + 1));
   memmove((*str + slen), appen_str, appendlen);
   (*str)[slen + appendlen] = '\0';
 }
@@ -630,27 +629,27 @@ const char *string_strstr_array(const char *str, const vector<string> &substrs, 
   return first;
 }
 
-string tern_statement(const string &str, string *if_true, string *if_false) {
-  static constexpr char rule_count        = 2;
-  static const char    *rules[rule_count] = {"?", ":"};
-  const char           *start             = &str[0];
-  const char           *end               = start;
-  const char           *found             = NULL;
-  string                ret               = "";
-  Uint                  index;
-  found = strstr_array(start, rules, rule_count, &index);
-  if (!found) {
-    return "";
-  }
-  if (index != 0) {
-    return "";
-  }
-  found = end;
-  ADV_TO_NEXT_WORD(start);
-  ret = string(start, (end - start));
-  NLOG("%s\n", ret.c_str());
-  return "";
-}
+// string tern_statement(const string &str, string *if_true, string *if_false) {
+//   static constexpr char rule_count        = 2;
+//   static const char    *rules[rule_count] = {"?", ":"};
+//   const char           *start             = &str[0];
+//   const char           *end               = start;
+//   const char           *found             = NULL;
+//   string                ret               = "";
+//   Uint                  index;
+//   found = strstr_array(start, rules, rule_count, &index);
+//   if (!found) {
+//     return "";
+//   }
+//   if (index != 0) {
+//     return "";
+//   }
+//   found = end;
+//   ADV_TO_NEXT_WORD(start);
+//   ret = string(start, (end - start));
+//   NLOG("%s\n", ret.c_str());
+//   return "";
+// }
 
 /* Set the mark at specific line and column. */
 void set_mark(long lineno, Ulong pos_x) _NOTHROW {

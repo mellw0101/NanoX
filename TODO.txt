@@ -552,6 +552,12 @@ Implement GOOD methods for the line struct.
     NOTES:
         I will need to do this with care, as i want to simplyfy not make the struct more complex.
 
+        I have decided to not do this at all as i have found that i enjoy the c peradime way more,
+        and i feel that its way easier to never get to a point where the struct or class feels like a
+        chore to do anything with as the struct or class is mainly a data holding thing without methods at
+        all.  As for me this is just mush more elegant and way simpler in the end as i can look at all things
+        a function does, nothing has ambiguity. 
+
     STATUS:
         NOT DONE.
 
@@ -564,6 +570,11 @@ Create suggestion system.
 
         I have waited with this a while as i want to parse more correct data before i start
         this.  As well as making this a fully async routine.
+
+        I have redone this completly using a algo to check for any matches of any current words in all open files.
+        This performs way better and faster, like it's insane how fast it is.
+
+        I will add this to the gui then flesh out the system mush more when i have created a dedicated language-server.
 
     STATUS:
         IMPLEMENTED, NOT DONE.
@@ -579,8 +590,12 @@ Implement a real parent and bracket color system based on nesting rather then ju
         like it to be as fast as possible directly so i never need to change
         it out of slowness.
 
+        Well i removed the entire system as i need to create a new system entirely.
+        I will focus on this when the gui is more feature compleate and i can create a
+        fully threaded language-server.
+
     STATUS:
-        DONE!!, But not yet implemented.
+        Not DONE.
 
 ('22').
 Make GUI.
@@ -596,8 +611,13 @@ Make GUI.
         for faster development.  This is one of the end goals atleast for
         VERSION '0.0.1', after that we will be on VERSION '0.0.2'.
 
+        This has been implemented successfully, using openGL and glfw.
+        I will probebly switch to vulkan later as the possible shaders will be better as they can be compiled.
+        This will make it so that creating more complex and better optimized shaders easier.  But this has been
+        started and is working very well. 
+
     STATUS:
-        NOT STARTED YET.
+        STARTED.
 
 ('23').
 Add a 'c/cpp' formatter that formats on save.
@@ -827,8 +847,15 @@ Implement a filetype for 'NanoX' configuration.  As well as real-time syntax for
   STATUS:
     NOT DONE.
 
-('26').
+('26'). <<-(WORKING ON THIS NOW)
 Implement CTRL+ENTER so that it goes to newline from the end of the line and, CTRL+SHIFT+ENTER goes to newline from start of line then moves up once.  Like in vs-code.
 
 	STATUS:
 		Not started yet.
+
+
+/* Some new small goals. */
+
+    First add a way to create a new empty line above or below the line, wherever you are in the line based on ctrl and shift+ctrl.
+
+    Make so that when auto tab after : or { one undo obj.

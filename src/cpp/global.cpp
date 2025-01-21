@@ -76,10 +76,13 @@ long fill = -COLUMNS_FROM_EOL;
 Ulong wrap_at = 0;
 /* The top portion of the screen, showing the version number of nano, the name of the file, and whether the buffer was modified. */
 WINDOW *topwin = NULL;
+nwindow *tui_topwin = NULL;
 /* The middle portion of the screen: the edit window, showing the contents of the current buffer, the file we are editing. */
 WINDOW *midwin = NULL;
+nwindow *tui_midwin = NULL;
 /* The bottom portion of the screen, where status-bar messages, the status-bar prompt, and a list of shortcuts are shown. */
 WINDOW *footwin = NULL;
+nwindow *tui_footwin = NULL;
 /* Test window for sugestions. */
 WINDOW *suggestwin = NULL;
 /* How many rows does the edit window take up? */
@@ -615,19 +618,19 @@ void shortcut_init(void) {
 #define WHENHELP(description) description
   /* Start populating the different menus with functions. */
   /** TRANSLATORS: Try to keep the next thirteen strings at most 10 characters. */
-  add_to_funcs(do_help, (MMOST | MBROWSER) & ~MFINDINHELP, N_("Help"), WHENHELP(help_gist), TOGETHER);
-  add_to_funcs(do_cancel, ((MMOST & ~MMAIN) | MYESNO), N_("Cancel"), WHENHELP(cancel_gist), BLANKAFTER);
+  add_to_funcs(do_help,   ((MMOST | MBROWSER) & ~MFINDINHELP), N_("Help"),   WHENHELP(help_gist),   TOGETHER);
+  add_to_funcs(do_cancel, ((MMOST & ~MMAIN) | MYESNO),         N_("Cancel"), WHENHELP(cancel_gist), BLANKAFTER);
   /* Remember the entry for Exit, to be able to replace it with Close. */
   add_to_funcs(do_exit, MMAIN, exit_tag, WHENHELP(exit_gist), TOGETHER);
   exitfunc = tailfunc;
-  add_to_funcs(do_exit, MBROWSER, close_tag, WHENHELP(exitbrowser_gist), TOGETHER);
-  add_to_funcs(do_writeout, MMAIN, N_("Write Out"), WHENHELP(writeout_gist), TOGETHER);
+  add_to_funcs(do_exit,     MBROWSER, close_tag,       WHENHELP(exitbrowser_gist), TOGETHER);
+  add_to_funcs(do_writeout, MMAIN,    N_("Write Out"), WHENHELP(writeout_gist),    TOGETHER);
   /* In restricted mode, replace Insert with Justify, when possible; otherwise, show Insert anyway, to keep the help items paired. */
   if (!ISSET(RESTRICTED)) {
     add_to_funcs(do_insertfile, MMAIN, N_("Read File"), WHENHELP(readfile_gist), BLANKAFTER);
   }
   else {
-    add_to_funcs(do_justify, MMAIN, N_("Justify"), WHENHELP(justify_gist), BLANKAFTER);
+    add_to_funcs(do_justify,    MMAIN, N_("Justify"),   WHENHELP(justify_gist),  BLANKAFTER);
   }
   /* The description ("x") and blank_after (0) are irrelevant, because the help viewer does not have a help text. */
   add_to_funcs(full_refresh, MHELP, N_("Refresh"), "x", 0);
@@ -645,15 +648,15 @@ void shortcut_init(void) {
   /* Conditionally placing this one here or further on, to keep the help items nicely paired in most conditions. */
   add_to_funcs(do_gotolinecolumn, MMAIN, N_("Go To Line"), WHENHELP(gotoline_gist), BLANKAFTER);
   /* TRANSLATORS : Try to keep the next ten strings at most 12 characters. */
-  add_to_funcs(do_undo, MMAIN, N_("Undo"), WHENHELP(undo_gist), TOGETHER);
-  add_to_funcs(do_redo, MMAIN, N_("Redo"), WHENHELP(redo_gist), BLANKAFTER);
-  add_to_funcs(do_mark, MMAIN, N_("Set Mark"), WHENHELP(mark_gist), TOGETHER);
-  add_to_funcs(copy_text, MMAIN, N_("Copy"), WHENHELP(copy_gist), BLANKAFTER);
-  add_to_funcs(case_sens_void, (MWHEREIS | MREPLACE), N_("Case Sens"), WHENHELP(case_gist), TOGETHER);
-  add_to_funcs(regexp_void, (MWHEREIS | MREPLACE), N_("Reg.exp."), WHENHELP(regexp_gist), TOGETHER);
-  add_to_funcs(backwards_void, (MWHEREIS | MREPLACE), N_("Backwards"), WHENHELP(reverse_gist), BLANKAFTER);
-  add_to_funcs(flip_replace, MWHEREIS, N_("Replace"), WHENHELP(replace_gist), BLANKAFTER);
-  add_to_funcs(flip_replace, MREPLACE, N_("No Replace"), WHENHELP(whereis_gist), BLANKAFTER);
+  add_to_funcs(do_undo,         MMAIN,                N_("Undo"),       WHENHELP(undo_gist),    TOGETHER);
+  add_to_funcs(do_redo,         MMAIN,                N_("Redo"),       WHENHELP(redo_gist),    BLANKAFTER);
+  add_to_funcs(do_mark,         MMAIN,                N_("Set Mark"),   WHENHELP(mark_gist),    TOGETHER);
+  add_to_funcs(copy_text,       MMAIN,                N_("Copy"),       WHENHELP(copy_gist),    BLANKAFTER);
+  add_to_funcs(case_sens_void, (MWHEREIS | MREPLACE), N_("Case Sens"),  WHENHELP(case_gist),    TOGETHER);
+  add_to_funcs(regexp_void,    (MWHEREIS | MREPLACE), N_("Reg.exp."),   WHENHELP(regexp_gist),  TOGETHER);
+  add_to_funcs(backwards_void, (MWHEREIS | MREPLACE), N_("Backwards"),  WHENHELP(reverse_gist), BLANKAFTER);
+  add_to_funcs(flip_replace,    MWHEREIS,             N_("Replace"),    WHENHELP(replace_gist), BLANKAFTER);
+  add_to_funcs(flip_replace,    MREPLACE,             N_("No Replace"), WHENHELP(whereis_gist), BLANKAFTER);
   add_to_funcs(get_older_item, (MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE), N_("Older"), WHENHELP(older_gist), TOGETHER);
   add_to_funcs(get_newer_item, (MWHEREIS | MREPLACE | MREPLACEWITH | MWHEREISFILE), N_("Newer"), WHENHELP(newer_gist), BLANKAFTER);
   add_to_funcs(get_older_item, MEXECUTE, N_("Older"), WHENHELP(older_command_gist), TOGETHER);
@@ -1071,7 +1074,8 @@ void shortcut_init(void) {
   /* Catch and ignore bracketed paste marker keys. */
   add_to_sclist(((MMOST | MBROWSER | MHELP) | MYESNO), "", BRACKETED_PASTE_MARKER, do_nothing, 0);
   /* Some key-bindings for the prompt bar. */
-  add_to_sclist(MWRITEFILE, "^Del", CONTROL_DELETE, chop_next_word, 0);
+  add_to_sclist(MWRITEFILE, "^Del", CONTROL_DELETE, chop_next_word,     0);
+  add_to_sclist(MWRITEFILE, "^Bsp", CONTROL_BSP,    chop_previous_word, 0);
   add_to_sclist(MWRITEFILE, "^Z", 0, do_undo, 0);
   add_to_sclist(MWRITEFILE, "^Y", 0, do_redo, 0);
 }

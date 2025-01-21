@@ -2,9 +2,9 @@
 #include "../include/prototypes.h"
 
 /* The prompt string used for status-bar questions. */
-static char *prompt = NULL;
+char *prompt = NULL;
 /* The cursor position in answer. */
-static Ulong typing_x = HIGHEST_POSITIVE;
+Ulong typing_x = HIGHEST_POSITIVE;
 
 static statusbar_undostruct *statusbar_undotop      = NULL;
 static statusbar_undostruct *statusbar_current_undo = NULL;
@@ -24,24 +24,19 @@ static void statusbar_discard_until(const statusbar_undostruct *item) _NOTHROW {
 }
 
 /* Discard both the current undo stack and redo stack, used for clearing all undo-redo items. */
-static void statusbar_discard_all_undo_redo(void) _NOTHROW {
-  statusbar_undostruct *dropit;
-  /* First clear the redo stack. */
-  dropit = statusbar_undotop;
+void statusbar_discard_all_undo_redo(void) _NOTHROW {
+  /* Start at the very top of the undo stack. */
+  statusbar_undostruct *dropit = statusbar_undotop;
   while (dropit) {
     statusbar_undotop = dropit->next;
     free(dropit->answerdata);
     free(dropit);
     dropit = statusbar_undotop;
   }
-  /* Then clear the undo stack. */
-  dropit = statusbar_current_undo;
-  while (dropit) {
-    statusbar_current_undo = dropit->next;
-    free(dropit->answerdata);
-    free(dropit);
-    dropit = statusbar_current_undo;
-  }
+  /* Once all items have been deleted, reset both pointers and the last action. */
+  statusbar_undotop      = NULL;
+  statusbar_current_undo = NULL;
+  statusbar_last_action  = STATUSBAR_OTHER;
 }
 
 /* Init a new 'statusbar_undostruct *' and add to the stack.  Then based on action perform nessesary actions. */
@@ -77,6 +72,7 @@ static void statusbar_add_undo(statusbar_undo_type action, const char *message) 
       }
       break;
     }
+    case STATUSBAR_CHOP_PREV_WORD:
     case STATUSBAR_CHOP_NEXT_WORD: {
       /* Save the data that will be cut. */
       u->answerdata = copy_of(message);
@@ -134,7 +130,7 @@ static void statusbar_update_undo(statusbar_undo_type action) _NOTHROW {
 }
 
 /* Perform the undo at the top of the undo-stack. */
-static void do_statusbar_undo(void) _NOTHROW {
+void do_statusbar_undo(void) _NOTHROW {
   statusbar_undostruct *u = statusbar_current_undo;
   /* If there is no item at the top of the undo-stack, return. */
   if (!u) {
@@ -152,11 +148,15 @@ static void do_statusbar_undo(void) _NOTHROW {
       typing_x = u->tail_x;
       break;
     }
+    case STATUSBAR_CHOP_PREV_WORD:
     case STATUSBAR_CHOP_NEXT_WORD: {
       /* Inject the chop`ed string into the answer at the correct position. */
       inject_in(&answer, u->answerdata, u->head_x, TRUE);
       /* Set the cursor position in the status-bar correctly. */
       typing_x = u->head_x;
+      if (u->type == STATUSBAR_CHOP_PREV_WORD) {
+        typing_x += u->tail_x;
+      }
       break;
     }
     default: {
@@ -168,7 +168,7 @@ static void do_statusbar_undo(void) _NOTHROW {
 }
 
 /* Redo the last undid item. */
-static void do_statusbar_redo(void) _NOTHROW {
+void do_statusbar_redo(void) _NOTHROW {
   statusbar_undostruct *u = statusbar_undotop;
   /* If the redo item at the top of the redo-stack does not exist, or if we are on the last redo, return. */
   if (!u || u == statusbar_current_undo) {
@@ -190,6 +190,7 @@ static void do_statusbar_redo(void) _NOTHROW {
       typing_x = u->head_x;
       break;
     }
+    case STATUSBAR_CHOP_PREV_WORD:
     case STATUSBAR_CHOP_NEXT_WORD: {
       /* Erase the cut string`s length in the answer at the recorded position where it happend. */
       erase_in(&answer, u->head_x, u->tail_x, TRUE);
@@ -206,22 +207,22 @@ static void do_statusbar_redo(void) _NOTHROW {
 }
 
 /* Move to the beginning of the answer. */
-static void do_statusbar_home(void) _NOTHROW {
+void do_statusbar_home(void) _NOTHROW {
   typing_x = 0;
 }
 
 /* Move to the end of the answer. */
-static void do_statusbar_end(void) _NOTHROW {
+void do_statusbar_end(void) _NOTHROW {
   typing_x = strlen(answer);
 }
 
 /* Move to the previous word in the answer. */
-static void do_statusbar_prev_word(void) _NOTHROW {
+void do_statusbar_prev_word(void) _NOTHROW {
   bool seen_a_word = FALSE, step_forward = FALSE;
   /* Move backward until we pass over the start of a word. */
   while (typing_x) {
     typing_x = step_left(answer, typing_x);
-    if (is_word_char(answer + typing_x, FALSE)) {
+    if (is_word_char((answer + typing_x), FALSE)) {
       seen_a_word = TRUE;
     }
     else if (is_zerowidth(answer + typing_x)) {
@@ -240,8 +241,8 @@ static void do_statusbar_prev_word(void) _NOTHROW {
 }
 
 /* Move to the next word in the answer. */
-static void do_statusbar_next_word(void) _NOTHROW {
-  bool seen_space = !is_word_char(answer + typing_x, FALSE);
+void do_statusbar_next_word(void) _NOTHROW {
+  bool seen_space = !is_word_char((answer + typing_x), FALSE);
   bool seen_word  = !seen_space;
   /* Move forward until we reach either the end or the start of a word, depending on whether the AFTER_ENDS flag is set or not. */
   while (answer[typing_x]) {
@@ -276,7 +277,7 @@ static void do_statusbar_next_word(void) _NOTHROW {
 }
 
 /* Move left one character in the answer. */
-static void do_statusbar_left(void) _NOTHROW {
+void do_statusbar_left(void) _NOTHROW {
   if (typing_x > 0) {
     typing_x = step_left(answer, typing_x);
     while (typing_x > 0 && is_zerowidth(answer + typing_x)) {
@@ -286,7 +287,7 @@ static void do_statusbar_left(void) _NOTHROW {
 }
 
 /* Move right one character in the answer. */
-static void do_statusbar_right(void) _NOTHROW {
+void do_statusbar_right(void) _NOTHROW {
   if (answer[typing_x]) {
     typing_x = step_right(answer, typing_x);
     while (answer[typing_x] && is_zerowidth(answer + typing_x)) {
@@ -295,16 +296,20 @@ static void do_statusbar_right(void) _NOTHROW {
   }
 }
 
-/* Backspace over one character in the answer. */
-static void do_statusbar_backspace(void) _NOTHROW {
+/* Backspace over one character in the answer.  And if `with_undo` is `TRUE`, add a undo-object. */
+void do_statusbar_backspace(bool with_undo) _NOTHROW {
   if (typing_x > 0) {
     Ulong was_x = typing_x;
     typing_x = step_left(answer, typing_x);
-    if (statusbar_last_action != STATUSBAR_BACK) {
-      statusbar_add_undo(STATUSBAR_BACK, NULL);
-    }
-    else {
-      statusbar_update_undo(STATUSBAR_BACK);
+    if (with_undo) {
+      /* Only add a new undo-object when the last undo-action was not 'STATUSBAR_BACK'. */
+      if (statusbar_last_action != STATUSBAR_BACK) {
+        statusbar_add_undo(STATUSBAR_BACK, NULL);
+      }
+      /* Otherwise, if create a new undo-object. */
+      else {
+        statusbar_update_undo(STATUSBAR_BACK);
+      }
     }
     memmove((answer + typing_x), (answer + was_x), (strlen(answer) - was_x + 1));
   }
@@ -321,7 +326,7 @@ static void statusbar_delete(void) _NOTHROW {
 }
 
 /* Delete one character in the answer. */
-static void do_statusbar_delete(void) _NOTHROW {
+void do_statusbar_delete(void) _NOTHROW {
   if (answer[typing_x]) {
     if (statusbar_last_action != STATUSBAR_DEL) {
       statusbar_add_undo(STATUSBAR_DEL, NULL);
@@ -369,7 +374,7 @@ static int do_statusbar_mouse(void) _NOTHROW {
   if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, FALSE)) {
     Ulong start_col = (breadth(prompt) + 2);
     /* Move to where the click occurred. */
-    if (click_row == 0 && click_col >= start_col) {
+    if (click_row == 0 && click_col >= (int)start_col) {
       typing_x = actual_x(answer, get_statusbar_page_start(start_col, ((start_col + wideness(answer, typing_x)) + click_col - start_col)));
     }
   }
@@ -377,13 +382,14 @@ static int do_statusbar_mouse(void) _NOTHROW {
 }
 
 /* Insert the given short burst of bytes into the answer. */
-static void inject_into_answer(char *burst, Ulong count) _NOTHROW {
+void inject_into_answer(char *burst, Ulong count) _NOTHROW {
   /* First encode any embedded NUL byte as 0x0A. */
   for (Ulong index = 0; index < count; ++index) {
     if (!burst[index]) {
       burst[index] = '\n';
     }
   }
+  /* Only add a new undo-object if the last undo-action was not also 'STATUSBAR_ADD'. */
   if (statusbar_last_action != STATUSBAR_ADD || statusbar_current_undo->tail_x != typing_x) {
     statusbar_add_undo(STATUSBAR_ADD, NULL);
   }
@@ -442,8 +448,8 @@ static void absorb_character(int input, functionptrtype function) _NOTHROW {
   }
 }
 
-/* Chop prev word. */
-static void do_statusbar_chop_next_word(void) {
+/* Chop next word. */
+void do_statusbar_chop_next_word(void) {
   Ulong steps = 0, was_x;
   /* If there is more then one whitespace to the next word, just delete the white chars until the next word. */
   if (word_more_than_one_white_away(answer, typing_x, TRUE, &steps)) {
@@ -474,10 +480,43 @@ static void do_statusbar_chop_next_word(void) {
   }
 }
 
+/* Chop prev word. */
+void do_statusbar_chop_prev_word(void) {
+  Ulong steps = 0, was_x;
+  /* If there is more then one whitespace to the prev word, just delete all white chars until the prev word. */
+  if (word_more_than_one_white_away(answer, typing_x, FALSE, &steps)) {
+    ;
+  }
+  else {
+    /* Save the prompt x position. */
+    was_x = typing_x;
+    /* Move to the prev word. */
+    do_statusbar_prev_word();
+    if (was_x != typing_x) {
+      /* If there was any movement, calculate the steps, then restore the prompt x position. */
+      steps = (was_x - typing_x);
+    }
+  }
+  /* Only perform the cutting action when appropriet. */
+  if (steps) {
+    char *cutting_section = measured_copy((answer + typing_x), steps);
+    statusbar_add_undo(STATUSBAR_CHOP_PREV_WORD, cutting_section);
+    free(cutting_section);
+    /* Now do the cutting. */
+    typing_x += steps;
+    while (steps--) {
+      do_statusbar_backspace(FALSE);
+    }
+  }
+}
+
 /* Handle any editing shortcut, and return TRUE when handled. */
 static bool handle_editing(functionptrtype function) _NOTHROW {
   if (function == chop_next_word) {
     do_statusbar_chop_next_word();
+  }
+  else if (function == chop_previous_word) {
+    do_statusbar_chop_prev_word();
   }
   else if (function == do_undo) {
     do_statusbar_undo();
@@ -515,7 +554,7 @@ static bool handle_editing(functionptrtype function) _NOTHROW {
     do_statusbar_delete();
   }
   else if (function == do_backspace) {
-    do_statusbar_backspace();
+    do_statusbar_backspace(TRUE);
   }
   else if (function == cut_text) {
     lop_the_answer();
@@ -538,10 +577,10 @@ static bool handle_editing(functionptrtype function) _NOTHROW {
 /* Return the column number of the first character of the answer that is displayed in the status bar when the cursor is at the given
  * column, with the available room for the answer starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
 Ulong get_statusbar_page_start(Ulong base, Ulong column) _NOTHROW {
-  if (column == base || column < (COLS - 1)) {
+  if (column == base || (int)column < (COLS - 1)) {
     return 0;
   }
-  else if (COLS > base + 2) {
+  else if (COLS > (int)(base + 2)) {
     return (column - base - 1 - (column - base - 1) % (COLS - base - 2));
   }
   else {
@@ -568,10 +607,10 @@ static void draw_the_promptbar(void) _NOTHROW {
   mvwaddstr(footwin, 0, 0, prompt);
   waddch(footwin, ':');
   waddch(footwin, (the_page == 0) ? ' ' : '<');
-  expanded = display_string(answer, the_page, COLS - base, FALSE, TRUE);
+  expanded = display_string(answer, the_page, (COLS - base), FALSE, TRUE);
   waddstr(footwin, expanded);
   free(expanded);
-  if (the_page < end_page && (base + breadth(answer) - the_page) > COLS) {
+  if (the_page < end_page && (int)(base + breadth(answer) - the_page) > COLS) {
     mvwaddch(footwin, 0, (COLS - 1), '>');
   }
   wattroff(footwin, interface_color_pair[config->prompt.color]);
@@ -845,7 +884,7 @@ int ask_user(bool withall, const char *question) {
     /* If the received code is a UTF-8 starter byte, get also the continuation bytes and assemble them into one letter. */
     if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7) {
       int extras = ((kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0));
-      while (extras <= waiting_keycodes() && extras-- > 0) {
+      while (extras <= (int)waiting_keycodes() && extras-- > 0) {
         letter[index++] = (Uchar)get_kbinput(footwin, !withall);
       }
     }

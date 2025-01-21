@@ -320,7 +320,7 @@ static char *parse_argument(char *ptr) _NOTHROW {
 }
 
 /* Advance over one regular expression in the line starting at ptr, null-terminate it, and return a pointer to the succeeding text. */
-char *parse_next_regex(char *ptr) {
+static char *parse_next_regex(char *ptr) {
   char *starting_point = ptr;
   if (*(ptr - 1) != '"') {
     jot_error(N_("Regex strings must begin and end with a \" character"));
@@ -357,25 +357,6 @@ bool compile(const char *expression, int rex_flags, regex_t **packed) {
     char *message = (char *)nmalloc(length);
     regerror(outcome, compiled, message, length);
     jot_error(N_("Bad regex \"%s\": %s"), expression, message);
-    free(message);
-    regfree(compiled);
-    free(compiled);
-  }
-  else {
-    *packed = compiled;
-  }
-  return (outcome == 0);
-}
-
-/* Same as compile but errors with origin file. */
-bool compile_with_callback(const char *expression, int rex_flags, regex_t **packed, const char *from_file) {
-  regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
-  int      outcome  = regcomp(compiled, expression, rex_flags);
-  if (outcome != 0) {
-    Ulong length  = regerror(outcome, compiled, NULL, 0);
-    char *message = (char *)nmalloc(length);
-    regerror(outcome, compiled, message, length);
-    jot_error(N_("Bad regex \"%s\": %s, from file '%s'"), expression, message, from_file);
     free(message);
     regfree(compiled);
     free(compiled);
@@ -443,7 +424,7 @@ void begin_new_syntax(char *ptr) {
 }
 
 /* Verify that a syntax definition contains at least one color command. */
-void check_for_nonempty_syntax(void) {
+static void check_for_nonempty_syntax(void) {
   if (opensyntax && !seen_color_command) {
     Ulong current_lineno = lineno;
     lineno               = live_syntax->lineno;
@@ -454,13 +435,13 @@ void check_for_nonempty_syntax(void) {
 }
 
 /* Return TRUE when the given function is present in almost all menus. */
-bool is_universal(void (*f)(void)) {
+static bool is_universal(void (*f)(void)) {
   return (f == do_left || f == do_right || f == do_home || f == do_end || f == to_prev_word || f == to_next_word ||
     f == do_delete || f == do_backspace || f == cut_text || f == paste_text || f == do_tab || f == do_enter || f == do_verbatim_input);
 }
 
 /* Bind or unbind a key combo, to or from a function. */
-void parse_binding(char *ptr, bool dobind) {
+static void parse_binding(char *ptr, bool dobind) {
   char      *keyptr  = NULL;
   char      *keycopy = NULL;
   char      *funcptr = NULL;
@@ -664,7 +645,7 @@ void parse_one_include(char *file, syntaxtype *syntax) {
 }
 
 /* Expand globs in the passed name, and parse the resultant files. */
-void parse_includes(char *ptr) {
+static void parse_includes(char *ptr) {
   char  *pattern;
   char  *expanded;
   glob_t files;
@@ -992,7 +973,7 @@ void grab_and_store(const char *kind, char *ptr, regexlisttype **storage) {
 }
 
 /* Gather and store the string after a comment/linter command. */
-void pick_up_name(const char *kind, char *ptr, char **storage) {
+static void pick_up_name(const char *kind, char *ptr, char **storage) {
   if (!*ptr) {
     jot_error(N_("Missing argument after '%s'"), kind);
     return;
@@ -1345,7 +1326,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
 }
 
 /* Read and interpret one of the two nanorc files. */
-void parse_one_nanorc(void) {
+static void parse_one_nanorc(void) {
   FILE *rcstream = fopen(nanorc, "rb");
   /* If opening the file succeeded, parse it.  Otherwise, only complain if the file actually exists. */
   if (rcstream) {
@@ -1356,7 +1337,7 @@ void parse_one_nanorc(void) {
   }
 }
 
-bool have_nanorc(const char *path, const char *name) {
+static bool have_nanorc(const char *path, const char *name) {
   if (!path) {
     return FALSE;
   }

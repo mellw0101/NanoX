@@ -74,7 +74,7 @@ static void sub_thread_signal_handler(int sig) _NOTHROW {
   }
 }
 
-void pause_sub_thread(bool pause, Uchar thread_id) _NOTHROW {
+static void pause_sub_thread(bool pause, Uchar thread_id) _NOTHROW {
   if (thread_id < MAX_THREADS) {
     // pthread_mutex_guard_t guard(&task_queue->mutex);
     pthread_kill(threads[thread_id], (pause) ? SIGUSR1 : SIGUSR2);
@@ -168,6 +168,7 @@ void shutdown_queue(void) _NOTHROW {
   free(threads);
   free((void *)stop_thread_flags);
   pthread_mutex_destroy(&task_queue->mutex);
+  pthread_cond_destroy(&task_queue->cond);
   free(task_queue);
 }
 

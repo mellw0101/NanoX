@@ -21,7 +21,7 @@ void to_last_line(void) _NOTHROW {
 }
 
 /* Determine the actual current chunk and the target column. */
-void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
+static void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
   if (ISSET(SOFTWRAP)) {
     Ulong shim     = (editwincols * (1 + (tabsize / editwincols)));
     *leftedge      = leftedge_for(xplustabs(), openfile->current);
@@ -37,7 +37,7 @@ void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
 // chunk that starts at the given leftedge.  If the target column has landed
 // on a tab, prevent the cursor from falling back a row when moving forward,
 // or from skipping a row when moving backward, by incrementing the index.
-Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _NOTHROW {
+static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _NOTHROW {
   Ulong index = actual_x(line->data, column);
   if (ISSET(SOFTWRAP) && line->data[index] == '\t' && ((forward && wideness(line->data, index) < *leftedge)
    || (!forward && (column / tabsize) == ((*leftedge - 1) / tabsize) && (column / tabsize) < ((*leftedge + editwincols - 1) / tabsize)))) {
@@ -53,7 +53,7 @@ Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bo
 }
 
 /* Adjust the values for current_x and placewewant in case we have landed in the middle of a tab that crosses a row boundary. */
-void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _NOTHROW {
+static void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _NOTHROW {
   Ulong was_edge = *leftedge;
   bool  shifted  = FALSE;
   openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);

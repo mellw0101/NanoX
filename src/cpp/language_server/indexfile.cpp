@@ -91,7 +91,7 @@ void IndexFile::read_lines(FILE *f, int fd) {
   errorcode = errno;
   funlockfile(f);
   block_sigwinch(FALSE);
-  if (isendwin()) {
+  if (!ISSET(USING_GUI) && isendwin()) {
     if (!isatty(STDIN_FILENO)) {
       reconnect_and_store_state();
     }
@@ -106,7 +106,7 @@ void IndexFile::read_lines(FILE *f, int fd) {
   }
   fclose(f);
   if (!len) {
-    filebot->data = copy_of("");
+    filebot->data = STRLTR_COPY_OF("");
   }
   else {
     bool mac_line_needs_newline = FALSE;
@@ -122,7 +122,7 @@ void IndexFile::read_lines(FILE *f, int fd) {
     if (mac_line_needs_newline) {
       filebot->next = make_new_node(filebot);
       filebot       = filebot->next;
-      filebot->data = copy_of("");
+      filebot->data = STRLTR_COPY_OF("");
     }
   }
   free(buf);

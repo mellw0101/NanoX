@@ -154,9 +154,17 @@ void suggest_ctrlT_ctrlZ(void) _NOTHROW {
 // Make sure the cursor is visible, then exit from curses mode, disable
 // bracketed-paste mode, and restore the original terminal settings.
 static void restore_terminal(void) _NOTHROW {
-  curs_set(1);
-  endwin();
-  STRLTR_WRITE(STDOUT_FILENO, "\x1B[?2004l");
+  /* When using our tui. */
+  if (ISSET(NO_NCURSES)) {
+    tui_curs_visible(TRUE);
+    tui_disable_bracketed_pastes();
+  }
+  /* Otherwise, when using ncurses. */
+  else {
+    curs_set(1);
+    endwin();
+    STRLTR_WRITE(STDOUT_FILENO, "\x1B[?2004l");
+  }
   tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
@@ -165,14 +173,25 @@ void finish(void) _NOTHROW {
   /* Blank the status bar and (if applicable) the shortcut list. */
   blank_statusbar();
   blank_bottombars();
-  wrefresh(footwin);
-  /* Deallocate the two or three subwindows. */
-  if (topwin) {
-    delwin(topwin);
+  if (ISSET(NO_NCURSES)) {
+    tui_curs_visible(TRUE);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_state);
+    tui_disable_bracketed_pastes();
+    nevhandler_stop(tui_handler, 0);
+    nfdreader_stop(nfdreader_stdin);
+    nfdreader_free(nfdreader_stdin);
+    nevhandler_free(tui_handler);
   }
-  delwin(midwin);
-  delwin(footwin);
-  restore_terminal();
+  else {
+    wrefresh(footwin);
+    /* Deallocate the two or three subwindows. */
+    if (topwin) {
+      delwin(topwin);
+    }
+    delwin(midwin);
+    delwin(footwin);
+    restore_terminal();
+  }
   display_rcfile_errors();
   cleanup_event_handler();
   shutdown_queue();
@@ -291,53 +310,95 @@ void die(const char *msg, ...) {
 
 /* Initialize the three window portions nano uses. */
 void window_init(void) _NOTHROW {
-  /* When resizing, first delete the existing windows. */
-  if (midwin) {
-    if (topwin) {
-      delwin(topwin);
+  /* When using our custom tui. */
+  if (ISSET(NO_NCURSES)) {
+    /* Update the terminal size. */
+    tui_update_size();
+    /* When resizing, free the existing windows. */
+    nwindow_free(tui_topwin);
+    nwindow_free(tui_midwin);
+    nwindow_free(tui_footwin);
+    if (NLINES < 3) {
+      editwinrows = (ISSET(ZERO) ? NLINES : 1);
+      tui_midwin  = nwindow_create(editwinrows, NCOLS, 0, 0);
+      tui_footwin = nwindow_create(1, NCOLS, (NLINES - 1), 0); 
     }
-    delwin(midwin);
-    delwin(footwin);
+    else {
+      int minimum    = (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5));
+      int toprows    = ((ISSET(EMPTY_LINE) && NLINES > minimum) ? 2 : 1);
+      int bottomrows = ((ISSET(NO_HELP) || NLINES < minimum) ? 1 : 3);
+      if (ISSET(MINIBAR) || ISSET(ZERO)) {
+        toprows = 0;
+      }
+      editwinrows = (NLINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0));
+      /* Set up the three subwindows. */
+      if (toprows > 0) {
+        tui_topwin = nwindow_create(toprows, NCOLS, 0, 0);
+      }
+      tui_midwin  = nwindow_create(editwinrows, NCOLS, toprows, 0);
+      tui_footwin = nwindow_create(bottomrows, NCOLS, (NLINES - bottomrows), 0); 
+    }
+    /* Set up the wrapping point, accounting for screen width when negative. */
+    if ((NCOLS + fill) < 0) {
+      wrap_at = 0;
+    }
+    else if (fill < 0) {
+      wrap_at = (NCOLS + fill);
+    }
+    else {
+      wrap_at = fill;
+    }
   }
-  topwin = NULL;
-  /* If the terminal is very flat, don't set up a title bar */
-  if (LINES < 3) {
-    editwinrows = (ISSET(ZERO) ? LINES : 1);
-    /* Set up two subwindows.  If the terminal is just one line, edit window and status-bar window will cover each other. */
-    midwin  = newwin(editwinrows, COLS, 0, 0);
-    footwin = newwin(1, COLS, (LINES - 1), 0);
-  }
+  /* When using ncurses. */
   else {
-    int minimum    = (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5));
-    int toprows    = ((ISSET(EMPTY_LINE) && LINES > minimum) ? 2 : 1);
-    int bottomrows = ((ISSET(NO_HELP) || LINES < minimum) ? 1 : 3);
-    if (ISSET(MINIBAR) || ISSET(ZERO)) {
-      toprows = 0;
+    /* When resizing, first delete the existing windows. */
+    if (midwin) {
+      if (topwin) {
+        delwin(topwin);
+      }
+      delwin(midwin);
+      delwin(footwin);
     }
-    editwinrows = (LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0));
-    /* Set up the normal three subwindows. */
-    if (toprows > 0) {
-      topwin = newwin(toprows, COLS, 0, 0);
+    topwin = NULL;
+    /* If the terminal is very flat, don't set up a title bar */
+    if (LINES < 3) {
+      editwinrows = (ISSET(ZERO) ? LINES : 1);
+      /* Set up two subwindows.  If the terminal is just one line, edit window and status-bar window will cover each other. */
+      midwin  = newwin(editwinrows, COLS, 0, 0);
+      footwin = newwin(1, COLS, (LINES - 1), 0);
     }
-    midwin  = newwin(editwinrows, COLS, toprows, 0);
-    footwin = newwin(bottomrows, COLS, (LINES - bottomrows), 0);
-  }
-  /* In case the terminal shrunk, make sure the status line is clear. */
-  wnoutrefresh(footwin);
-  /* When not disabled, turn escape-sequence translation on. */
-  if (!ISSET(RAW_SEQUENCES)) {
-    keypad(midwin, TRUE);
-    keypad(footwin, TRUE);
-  }
-  /* Set up the wrapping point, accounting for screen width when negative. */
-  if ((COLS + fill) < 0) {
-    wrap_at = 0;
-  }
-  else if (fill <= 0) {
-    wrap_at = (COLS + fill);
-  }
-  else {
-    wrap_at = fill;
+    else {
+      int minimum    = (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5));
+      int toprows    = ((ISSET(EMPTY_LINE) && LINES > minimum) ? 2 : 1);
+      int bottomrows = ((ISSET(NO_HELP) || LINES < minimum) ? 1 : 3);
+      if (ISSET(MINIBAR) || ISSET(ZERO)) {
+        toprows = 0;
+      }
+      editwinrows = (LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0));
+      /* Set up the normal three subwindows. */
+      if (toprows > 0) {
+        topwin = newwin(toprows, COLS, 0, 0);
+      }
+      midwin  = newwin(editwinrows, COLS, toprows, 0);
+      footwin = newwin(bottomrows, COLS, (LINES - bottomrows), 0);
+    }
+    /* In case the terminal shrunk, make sure the status line is clear. */
+    wnoutrefresh(footwin);
+    /* When not disabled, turn escape-sequence translation on. */
+    if (!ISSET(RAW_SEQUENCES)) {
+      keypad(midwin, TRUE);
+      keypad(footwin, TRUE);
+    }
+    /* Set up the wrapping point, accounting for screen width when negative. */
+    if ((COLS + fill) < 0) {
+      wrap_at = 0;
+    }
+    else if (fill <= 0) {
+      wrap_at = (COLS + fill);
+    }
+    else {
+      wrap_at = fill;
+    }
   }
 }
 
@@ -353,7 +414,10 @@ static void enable_mouse_support(void) _NOTHROW {
 
 /* Switch mouse support on or off, as needed. */
 static void mouse_init(void) _NOTHROW {
-  if (ISSET(USE_MOUSE)) {
+  if (ISSET(NO_NCURSES)) {
+    return;
+  }
+  else if (ISSET(USE_MOUSE)) {
     enable_mouse_support();
   }
   else {
@@ -377,7 +441,7 @@ static void print_opt(const char *const shortflag, const char *const longflag, c
 }
 
 /* Explain how to properly use NanoX and its command-line options. */
-static void usage(void) {
+static void _NO_RETURN usage(void) {
   printf(_("Usage: %s [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n\n"), PROJECT_NAME);
   /* TRANSLATORS: The next two strings are part of the --help output.
    * It's best to keep its lines within 80 characters. */
@@ -465,7 +529,7 @@ static void usage(void) {
 
 /* Display the version number of this nano, a copyright notice, some contact
  * information, and the configuration options this nano was compiled with. */
-static void version(void) _NOTHROW {
+static void _NO_RETURN version(void) _NOTHROW {
   printf(_(" NanoX, version %s\n"), VERSION);
   printf(" 'NanoX %s' is a Fork of 'GNU nano v8.0-44-gef1c9b9f' from git source code, converted into C++\n", REVISION);
   /* TRANSLATORS: The %s is the year of the latest release. */
@@ -560,7 +624,7 @@ static bool scoop_stdin(void) {
 
 /* Register half a dozen signal handlers. */
 static void signal_init(void) _NOTHROW {
-  struct sigaction deed = {{0}};
+  struct sigaction deed = {};
   /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
   deed.sa_handler = SIG_IGN;
   sigaction(SIGINT, &deed, NULL);
@@ -593,13 +657,13 @@ static void signal_init(void) _NOTHROW {
 }
 
 /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
-void handle_hupterm(int signal) {
+void _NO_RETURN handle_hupterm(int signal) {
   die(_("Received SIGHUP or SIGTERM\n"));
 }
 
 #if !defined(DEBUG)
 /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
-void handle_crash(int signal) {
+void _NO_RETURN handle_crash(int signal) {
   die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
 }
 #endif
@@ -770,7 +834,7 @@ static void toggle_this(const int flag) {
 
 /* Disable extended input and output processing in our terminal settings. */
 static void disable_extended_io(void) _NOTHROW {
-  termios settings = {0};
+  termios settings = {};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~IEXTEN;
   settings.c_oflag &= ~OPOST;
@@ -779,7 +843,7 @@ static void disable_extended_io(void) _NOTHROW {
 
 /* Stop ^C from generating a SIGINT. */
 void disable_kb_interrupt(void) _NOTHROW {
-  termios settings = {0};
+  termios settings = {};
   tcgetattr(0, &settings);
   settings.c_lflag &= ~ISIG;
   tcsetattr(0, TCSANOW, &settings);
@@ -787,7 +851,7 @@ void disable_kb_interrupt(void) _NOTHROW {
 
 /* Make ^C generate a SIGINT. */
 void enable_kb_interrupt(void) _NOTHROW {
-  termios settings = {0};
+  termios settings = {};
   tcgetattr(0, &settings);
   settings.c_lflag |= ISIG;
   tcsetattr(0, TCSANOW, &settings);
@@ -817,20 +881,35 @@ void enable_flow_control(void) _NOTHROW {
  * disable extended input and output processing, and, if we're not in preserve
  * mode, reenable interpretation of the flow control characters. */
 void terminal_init(void) _NOTHROW {
-  raw();
-  nonl();
-  noecho();
-  disable_extended_io();
-  if (ISSET(PRESERVE)) {
-    enable_flow_control();
+  /* If we are using our custom tui. */
+  if (ISSET(NO_NCURSES)) {
+    struct termios raw;
+    raw = original_state;
+    raw.c_lflag &= ~(ECHO | ICANON | ISIG);
+    raw.c_oflag &= ~ONLCR;
+    raw.c_iflag &= ~(IXON | ICRNL | INLCR);
+    raw.c_iflag |= IGNBRK;
+    tcsetattr(STDIN_FILENO, TCSANOW, &raw);
+    disable_extended_io();
+    tui_enable_bracketed_pastes();
   }
-  disable_kb_interrupt();
-  /* Tell the terminal to enable bracketed pastes. */
-  printf("\x1B[?2004h");
-  fflush(stdout);
+  /* When using ncurses. */
+  else {
+    raw();
+    nonl();
+    noecho();
+    disable_extended_io();
+    if (ISSET(PRESERVE)) {
+      enable_flow_control();
+    }
+    disable_kb_interrupt();
+    /* Tell the terminal to enable bracketed pastes. */
+    printf("\x1B[?2004h");
+    fflush(stdout);
+  }
 }
 
-/* Ask ncurses for@file definitions.h a keycode, or assign a default one. */
+/* Ask ncurses for a keycode, or assign a default one. */
 static int get_keycode(const char *const keyname, const int standard) _NOTHROW {
   const char *keyvalue = tigetstr(keyname);
   if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue)) {
@@ -1261,6 +1340,185 @@ static void process_a_keystroke(void) {
   keep_mark = FALSE;
 }
 
+static void tui_main_loop(void *arg) {
+  prosses_callback_queue();
+  confirm_margin();
+  if (currmenu != MMAIN) {
+    bottombars(MMAIN);
+  }
+  if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1 && lastmessage < REMARK) {
+    minibar();
+  }
+  else {
+    /* Update the displayed current cursor position only when there is no message and no keys are waiting in the input buffer. */
+    if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 && !ISSET(ZERO) && !waiting_keycodes()) {
+      report_cursor_position();
+    }
+  }
+  as_an_at = TRUE;
+  if ((refresh_needed && LINES > 1) || (LINES == 1 && lastmessage <= HUSH)) {
+    edit_refresh();
+  }
+  else {
+    place_the_cursor();
+  }
+  /* In barless mode, either redraw a relevant status message, or overwrite a minor, redundant one. */
+  if (ISSET(ZERO) && lastmessage > HUSH) {
+    if (openfile->cursor_row == (editwinrows - 1) && LINES > 1) {
+      edit_scroll(FORWARD);
+    }
+    // nwindow_redrawln(tui_footwin, 0, 1);
+    place_the_cursor();
+  }
+  else if (ISSET(ZERO) && lastmessage > VACUUM) {
+    nanox_wredrawln(midwin, (editwinrows - 1), 1);
+  }
+  errno = 0;
+  focusing = TRUE;
+  tui_curs_visible(TRUE);
+  nfdwriter_flush(nfdwriter_stdout);
+}
+
+static _UNUSED void debug_key(int keycode, const Uchar *data, long len) {
+#define PRINT_IF_KEY(key) if (keycode == key) { nfdwriter_printf(nfdwriter_stdout, "%s\n", #key); }
+  PRINT_IF_KEY(TUI_KEY_e)
+  else PRINT_IF_KEY(TUI_KEY_BSP)
+  else PRINT_IF_KEY(TUI_KEY_UP)
+  else PRINT_IF_KEY(TUI_KEY_DOWN)
+  else PRINT_IF_KEY(TUI_KEY_RIGHT)
+  else PRINT_IF_KEY(TUI_KEY_LEFT)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_TAB)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_UP)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_DOWN)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_RIGHT)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_LEFT)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_D)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_E)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_F)
+  else PRINT_IF_KEY(TUI_KEY_TAB)
+  else PRINT_IF_KEY(TUI_KEY_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_Q)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_R)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_S)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_W)
+  else PRINT_IF_KEY(TUI_KEY_ALT_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_ALT_MINUS)
+  else PRINT_IF_KEY(TUI_KEY_ALT_ZERO)
+  else PRINT_IF_KEY(TUI_KEY_ALT_ONE)
+  else PRINT_IF_KEY(TUI_KEY_ALT_TWO)
+  else PRINT_IF_KEY(TUI_KEY_ALT_THREE)
+  else PRINT_IF_KEY(TUI_KEY_ALT_FOUR)
+  else PRINT_IF_KEY(TUI_KEY_ALT_FIVE)
+  else PRINT_IF_KEY(TUI_KEY_ALT_SIX)
+  else PRINT_IF_KEY(TUI_KEY_ALT_SEVEN)
+  else PRINT_IF_KEY(TUI_KEY_ALT_EIGHT)
+  else PRINT_IF_KEY(TUI_KEY_ALT_NINE)
+  else PRINT_IF_KEY(TUI_KEY_ALT_COLON)
+  else PRINT_IF_KEY(TUI_KEY_ALT_SEMICOLON)
+  else PRINT_IF_KEY(TUI_KEY_ALT_EQUAL)
+  else PRINT_IF_KEY(TUI_KEY_ALT_N)
+  else PRINT_IF_KEY(TUI_KEY_ALT_Q)
+  else PRINT_IF_KEY(TUI_KEY_ALT_W)
+  else PRINT_IF_KEY(TUI_KEY_ALT_Z)
+  else PRINT_IF_KEY(TUI_KEY_ALT_BSP)
+  else PRINT_IF_KEY(TUI_KEY_ALT_UP)
+  else PRINT_IF_KEY(TUI_KEY_ALT_DOWN)
+  else PRINT_IF_KEY(TUI_KEY_ALT_RIGHT)
+  else PRINT_IF_KEY(TUI_KEY_ALT_LEFT)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_ALT_C)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_ALT_Q)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_ALT_W)
+  // else PRINT_IF_KEY(TUI_KEY_SHIFT_ALT_Z)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_BSP)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_UP)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_DOWN)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_RIGHT)
+  else PRINT_IF_KEY(TUI_KEY_CTRL_LEFT)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_CTRL_UP)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_CTRL_DOWN)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_CTRL_RIGHT)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_CTRL_LEFT)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_CTRL_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_ALT_UP)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_ALT_DOWN)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_ALT_RIGHT)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_ALT_LEFT)
+  else PRINT_IF_KEY(TUI_KEY_SUPER_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_SUPER_BSP)
+  else PRINT_IF_KEY(TUI_KEY_SUPER_ALT_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_SUPER_SHIFT_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_SUPER_SHIFT_ALT_ENTER)
+  else PRINT_IF_KEY(TUI_KEY_SHIFT_BSP)
+  nfdwriter_printf(nfdwriter_stdout, "len: %lu\n", len);
+  for (long i = 0; i < len; ++i) {
+    nfdwriter_printf(nfdwriter_stdout, "%hhu ", data[i]);
+  }
+  nfdwriter_printf(nfdwriter_stdout, "\n");
+  for (long i = 0; i < len; ++i) {
+    nfdwriter_printf(nfdwriter_stdout, "0x%02x ", data[i]);
+  }
+  nfdwriter_printf(nfdwriter_stdout, "\n");
+}
+
+static void tui_process_a_key_string(nevhandler *handler, const Uchar *data, long len) {
+  tui_curs_visible(FALSE);
+  shift_held = FALSE;
+  int keycode = parse_input_key(data, len, &shift_held);
+  // debug_key(keycode, data, len);
+  keybindaction action = keybind_get(keycode);
+  if (!action) {
+    tui_curs_visible(TRUE);
+    return;
+  }
+  linestruct *was_current = openfile->current;
+  Ulong       was_x       = openfile->current_x;
+  if (shift_held && !openfile->mark) {
+    openfile->mark     = openfile->current;
+    openfile->mark_x   = openfile->current_x;
+    openfile->softmark = TRUE;
+  }
+  action();
+  if (openfile->mark && openfile->softmark && !shift_held && (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(action)) && !keep_mark) {
+    openfile->mark = NULL;
+    refresh_needed = TRUE;
+  }
+  keep_mark = FALSE;
+  tui_main_loop(NULL);
+}
+
+static void init_tui(void) {
+  tui_handler = nevhandler_create();
+  nfdwriter_stdout = nfdwriter_create(STDOUT_FILENO);
+  nfdreader_stdin  = nfdreader_create(tui_handler, STDIN_FILENO, tui_process_a_key_string);
+  /* Init the terminal info we need for our custom tui. */
+  terminfo_init();
+  /* Set up the terminal state. */
+  terminal_init();
+  tui_clear_screen();
+  tui_update_size();
+  tui_set_curs_blink(FALSE);
+  /* Set some key-binding actions. */
+  keybind_add(TUI_KEY_UP,                0, do_up);
+  keybind_add(TUI_KEY_DOWN,              0, do_down);
+  keybind_add(TUI_KEY_RIGHT,             0, do_right);
+  keybind_add(TUI_KEY_LEFT,              0, do_left);
+  keybind_add(TUI_KEY_SHIFT_UP,          0, do_up);
+  keybind_add(TUI_KEY_SHIFT_DOWN,        0, do_down);
+  keybind_add(TUI_KEY_SHIFT_RIGHT,       0, do_right);
+  keybind_add(TUI_KEY_SHIFT_LEFT,        0, do_left);
+  keybind_add(TUI_KEY_CTRL_UP,           0, to_prev_block);
+  keybind_add(TUI_KEY_CTRL_DOWN,         0, to_next_block);
+  keybind_add(TUI_KEY_CTRL_RIGHT,        0, to_next_word);
+  keybind_add(TUI_KEY_CTRL_LEFT,         0, to_prev_word);
+  keybind_add(TUI_KEY_SHIFT_CTRL_UP,     0, to_prev_block);
+  keybind_add(TUI_KEY_SHIFT_CTRL_DOWN,   0, to_next_block);
+  keybind_add(TUI_KEY_SHIFT_CTRL_RIGHT,  0, to_next_word);
+  keybind_add(TUI_KEY_SHIFT_CTRL_LEFT,   0, to_prev_word);
+  keybind_add(TUI_KEY_CTRL_Q,            0, do_exit);
+} 
+
 int main(int argc, char **argv) {
   init_queue_task();
   init_event_handler();
@@ -1271,6 +1529,7 @@ int main(int argc, char **argv) {
   term_program = getenv("TERM_PROGRAM");
   const char *netlogger = getenv("NETLOGGER");
   if (netlogger) {
+    // nfdwriter_netlog_init(netlogger, 8080);
     NETLOGGERPTR->enable();
     NETLOGGERPTR->init(netlogger, 8080);
   }
@@ -1279,14 +1538,39 @@ int main(int argc, char **argv) {
   unix_socket_debug("Hello unix domain socket.\n");
   atexit([] {
     vector<string> gprof_report = GLOBALPROFILER->retrveFormatedStrVecStats();
+    int i = 0;
     for (const string &str : gprof_report) {
-      NETLOGGER << str << ESC_CODE_RESET << NETLOG_ENDL;
+      int line_color = (i++ % 4);
+      switch (line_color) {
+        case 0: {
+          NETLOG(ESC_CODE_RED);
+          break;
+        }
+        case 1: {
+          NETLOG(ESC_CODE_GREEN);
+          break;
+        }
+        case 2: {
+          NETLOG(ESC_CODE_MAGENTA);
+          break;
+        }
+        case 3: {
+          NETLOG(ESC_CODE_CYAN);
+          break;
+        }
+        case 4: {
+          NETLOG(ESC_CODE_YELLOW);
+          break;
+        }
+      }
+      NETLOG("%s%s", str.c_str(), ESC_CODE_RESET);
       unix_socket_debug("%s", str.c_str());
     }
-    NETLOGGER.send_to_server("\nExiting NanoX.\n");
+    NETLOG("\nExiting NanoX.\n");
     (unix_socket_fd < 0) ? 0 : close(unix_socket_fd);
   });
   init_cfg();
+  set_c_die_callback(die);
   int  stdin_flags;
   bool ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
   bool fill_used      = FALSE; /* Was the fill option used on the command line? */
@@ -1389,14 +1673,17 @@ int main(int argc, char **argv) {
       }
     }
     if (cliCmd & CLI_OPT_GUI) {
-      #ifdef HAVE_GLFW
-        SET(USING_GUI);
-      #else
-        die("NanoX was compiled without gui support.");
-      #endif
+    #ifdef HAVE_GLFW
+      SET(USING_GUI);
+    #else
+      die("NanoX was compiled without gui support.\n");
+    #endif
     }
     if (cliCmd & CLI_OPT_SAFE) {
       UNSET(EXPERIMENTAL_FAST_LIVE_SYNTAX);
+    }
+    if (cliCmd & CLI_OPT_TEST) {
+      SET(NO_NCURSES);
     }
   }
   /* Curses needs TERM; if it is unset, try falling back to a VT220. */
@@ -1404,77 +1691,84 @@ int main(int argc, char **argv) {
     putenv((char *)"TERM=vt220");
     setenv("TERM", "vt220", 1);
   }
+  /* When using our custom tui. */
+  if (ISSET(NO_NCURSES)) {
+    init_tui();
+  }
   /* Enter into curses mode.  Abort if this fails. */
-  if (!initscr()) {
+  if (!ISSET(NO_NCURSES) && !initscr()) {
     exit(1);
   }
   /* If the terminal can do colors, tell ncurses to switch them on. */
-  if (has_colors()) {
+  if (!ISSET(NO_NCURSES) && has_colors()) {
     start_color();
   }
   /* When requested, suppress the default spotlight and error colors. */
   rescind_colors = (getenv("NO_COLOR") != NULL);
-  /* Set up the function and shortcut lists.  This needs to be done before reading the rcfile, to be able to rebind/unbind keys. */
-  shortcut_init();
-  if (!ignore_rcfiles) {
-    /* Back up the command-line options that take an argument. */
-    long  fill_cmdline          = fill;
-    Ulong stripeclm_cmdline     = stripe_column;
-    long  tabsize_cmdline       = tabsize;
-    char *backup_dir_cmdline    = backup_dir;
-    char *word_chars_cmdline    = word_chars;
-    char *operating_dir_cmdline = operating_dir;
-    char *quotestr_cmdline      = quotestr;
-    char *alt_speller_cmdline   = alt_speller;
-    /* Back up the command-line flags. */
-    Ulong flags_cmdline[sizeof(flags) / sizeof(flags[0])];
-    memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
-    /* Clear the string options, to not overwrite the specified ones. */
-    backup_dir    = NULL;
-    word_chars    = NULL;
-    operating_dir = NULL;
-    quotestr      = NULL;
-    alt_speller   = NULL;
-    /* Now process the system's and the user's nanorc file, if any. */
-    do_rcfiles();
-    /* If the backed-up command-line options have a value, restore them. */
-    if (fill_used) {
-      fill = fill_cmdline;
-    }
-    if (backup_dir_cmdline) {
-      free(backup_dir);
-      backup_dir = backup_dir_cmdline;
-    }
-    if (word_chars_cmdline) {
-      free(word_chars);
-      word_chars = word_chars_cmdline;
-    }
-    if (stripeclm_cmdline > 0) {
-      stripe_column = stripeclm_cmdline;
-    }
-    if (tabsize_cmdline != -1) {
-      tabsize = tabsize_cmdline;
-    }
-    if (operating_dir_cmdline || ISSET(RESTRICTED)) {
-      free(operating_dir);
-      operating_dir = operating_dir_cmdline;
-    }
-    if (quotestr_cmdline) {
-      free(quotestr);
-      quotestr = quotestr_cmdline;
-    }
-    if (alt_speller_cmdline) {
-      free(alt_speller);
-      alt_speller = alt_speller_cmdline;
-    }
-    strip_leading_blanks_from(alt_speller);
-    /* If an rcfile undid the default setting, copy it to the new flag. */
-    if (!ISSET(NO_WRAP)) {
-      SET(BREAK_LONG_LINES);
-    }
-    /* Simply OR the boolean flags from rcfile and command line. */
-    for (Ulong i = 0; i < (sizeof(flags) / sizeof(flags[0])); ++i) {
-      flags[i] |= flags_cmdline[i];
+  /* When using ncurses, set up the shortcuts we use with it. */
+  if (!ISSET(NO_NCURSES)) {
+    /* Set up the function and shortcut lists.  This needs to be done before reading the rcfile, to be able to rebind/unbind keys. */
+    shortcut_init();
+    if (!ignore_rcfiles) {
+      /* Back up the command-line options that take an argument. */
+      long  fill_cmdline          = fill;
+      Ulong stripeclm_cmdline     = stripe_column;
+      long  tabsize_cmdline       = tabsize;
+      char *backup_dir_cmdline    = backup_dir;
+      char *word_chars_cmdline    = word_chars;
+      char *operating_dir_cmdline = operating_dir;
+      char *quotestr_cmdline      = quotestr;
+      char *alt_speller_cmdline   = alt_speller;
+      /* Back up the command-line flags. */
+      Ulong flags_cmdline[sizeof(flags) / sizeof(flags[0])];
+      memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
+      /* Clear the string options, to not overwrite the specified ones. */
+      backup_dir    = NULL;
+      word_chars    = NULL;
+      operating_dir = NULL;
+      quotestr      = NULL;
+      alt_speller   = NULL;
+      /* Now process the system's and the user's nanorc file, if any. */
+      do_rcfiles();
+      /* If the backed-up command-line options have a value, restore them. */
+      if (fill_used) {
+        fill = fill_cmdline;
+      }
+      if (backup_dir_cmdline) {
+        free(backup_dir);
+        backup_dir = backup_dir_cmdline;
+      }
+      if (word_chars_cmdline) {
+        free(word_chars);
+        word_chars = word_chars_cmdline;
+      }
+      if (stripeclm_cmdline > 0) {
+        stripe_column = stripeclm_cmdline;
+      }
+      if (tabsize_cmdline != -1) {
+        tabsize = tabsize_cmdline;
+      }
+      if (operating_dir_cmdline || ISSET(RESTRICTED)) {
+        free(operating_dir);
+        operating_dir = operating_dir_cmdline;
+      }
+      if (quotestr_cmdline) {
+        free(quotestr);
+        quotestr = quotestr_cmdline;
+      }
+      if (alt_speller_cmdline) {
+        free(alt_speller);
+        alt_speller = alt_speller_cmdline;
+      }
+      strip_leading_blanks_from(alt_speller);
+      /* If an rcfile undid the default setting, copy it to the new flag. */
+      if (!ISSET(NO_WRAP)) {
+        SET(BREAK_LONG_LINES);
+      }
+      /* Simply OR the boolean flags from rcfile and command line. */
+      for (Ulong i = 0; i < (sizeof(flags) / sizeof(flags[0])); ++i) {
+        flags[i] |= flags_cmdline[i];
+      }
     }
   }
   if (!hardwrap) {
@@ -1578,29 +1872,31 @@ int main(int argc, char **argv) {
   if (tabsize == -1) {
     tabsize = WIDTH_OF_TAB;
   }
-  /* On capable terminals, use colors, otherwise just reverse or bold. */
-  if (has_colors()) {
-    set_interface_colorpairs();
-  }
-  else {
-    interface_color_pair[TITLE_BAR]     = hilite_attribute;
-    interface_color_pair[LINE_NUMBER]   = hilite_attribute;
-    interface_color_pair[GUIDE_STRIPE]  = A_REVERSE;
-    interface_color_pair[SCROLL_BAR]    = A_NORMAL;
-    interface_color_pair[SELECTED_TEXT] = hilite_attribute;
-    interface_color_pair[SPOTLIGHTED]   = A_REVERSE;
-    interface_color_pair[MINI_INFOBAR]  = hilite_attribute;
-    interface_color_pair[PROMPT_BAR]    = hilite_attribute;
-    interface_color_pair[STATUS_BAR]    = hilite_attribute;
-    interface_color_pair[ERROR_MESSAGE] = hilite_attribute;
-    interface_color_pair[KEY_COMBO]     = hilite_attribute;
-    interface_color_pair[FUNCTION_TAG]  = A_NORMAL;
+  if (!ISSET(NO_NCURSES)) {
+    /* On capable terminals, use colors, otherwise just reverse or bold. */
+    if (has_colors()) {
+      set_interface_colorpairs();
+    }
+    else {
+      interface_color_pair[TITLE_BAR]     = hilite_attribute;
+      interface_color_pair[LINE_NUMBER]   = hilite_attribute;
+      interface_color_pair[GUIDE_STRIPE]  = A_REVERSE;
+      interface_color_pair[SCROLL_BAR]    = A_NORMAL;
+      interface_color_pair[SELECTED_TEXT] = hilite_attribute;
+      interface_color_pair[SPOTLIGHTED]   = A_REVERSE;
+      interface_color_pair[MINI_INFOBAR]  = hilite_attribute;
+      interface_color_pair[PROMPT_BAR]    = hilite_attribute;
+      interface_color_pair[STATUS_BAR]    = hilite_attribute;
+      interface_color_pair[ERROR_MESSAGE] = hilite_attribute;
+      interface_color_pair[KEY_COMBO]     = hilite_attribute;
+      interface_color_pair[FUNCTION_TAG]  = A_NORMAL;
+    }
   }
   /* Set up the terminal state. */
   terminal_init();
   /* Create the three subwindows, based on the current screen dimensions. */
   window_init();
-  curs_set(0);
+  nanox_curs_set(0);
   sidebar = ((ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0);
   bardata = arealloc(bardata, (LINES * sizeof(int)));
   editwincols = (COLS - sidebar);
@@ -1608,46 +1904,48 @@ int main(int argc, char **argv) {
   signal_init();
   /* Initialize mouse support. */
   mouse_init();
-  /* Ask ncurses for the key codes for most modified editing keys. */
-  controlleft        = get_keycode("kLFT5", CONTROL_LEFT);
-  controlright       = get_keycode("kRIT5", CONTROL_RIGHT);
-  controlup          = get_keycode("kUP5", CONTROL_UP);
-  controldown        = get_keycode("kDN5", CONTROL_DOWN);
-  controlhome        = get_keycode("kHOM5", CONTROL_HOME);
-  controlend         = get_keycode("kEND5", CONTROL_END);
-  controldelete      = get_keycode("kDC5", CONTROL_DELETE);
-  controlshiftdelete = get_keycode("kDC6", CONTROL_SHIFT_DELETE);
-  shiftup            = get_keycode("kUP", SHIFT_UP);
-  shiftdown          = get_keycode("kDN", SHIFT_DOWN);
-  shiftcontrolleft   = get_keycode("kLFT6", SHIFT_CONTROL_LEFT);
-  shiftcontrolright  = get_keycode("kRIT6", SHIFT_CONTROL_RIGHT);
-  shiftcontrolup     = get_keycode("kUP6", SHIFT_CONTROL_UP);
-  shiftcontroldown   = get_keycode("kDN6", SHIFT_CONTROL_DOWN);
-  shiftcontrolhome   = get_keycode("kHOM6", SHIFT_CONTROL_HOME);
-  shiftcontrolend    = get_keycode("kEND6", SHIFT_CONTROL_END);
-  altleft            = get_keycode("kLFT3", ALT_LEFT);
-  altright           = get_keycode("kRIT3", ALT_RIGHT);
-  altup              = get_keycode("kUP3", ALT_UP);
-  altdown            = get_keycode("kDN3", ALT_DOWN);
-  althome            = get_keycode("kHOM3", ALT_HOME);
-  altend             = get_keycode("kEND3", ALT_END);
-  altpageup          = get_keycode("kPRV3", ALT_PAGEUP);
-  altpagedown        = get_keycode("kNXT3", ALT_PAGEDOWN);
-  altinsert          = get_keycode("kIC3", ALT_INSERT);
-  altdelete          = get_keycode("kDC3", ALT_DELETE);
-  shiftaltleft       = get_keycode("kLFT4", SHIFT_ALT_LEFT);
-  shiftaltright      = get_keycode("kRIT4", SHIFT_ALT_RIGHT);
-  shiftaltup         = get_keycode("kUP4", SHIFT_ALT_UP);
-  shiftaltdown       = get_keycode("kDN4", SHIFT_ALT_DOWN);
-  mousefocusin       = get_keycode("kxIN", FOCUS_IN);
-  mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
-  /* Disable the type-ahead checking that ncurses normally does. */
-  typeahead(-1);
-  #ifdef HAVE_SET_ESCDELAY
+  if (!ISSET(NO_NCURSES)) {
+    /* Ask ncurses for the key codes for most modified editing keys. */
+    controlleft        = get_keycode("kLFT5", CONTROL_LEFT);
+    controlright       = get_keycode("kRIT5", CONTROL_RIGHT);
+    controlup          = get_keycode("kUP5", CONTROL_UP);
+    controldown        = get_keycode("kDN5", CONTROL_DOWN);
+    controlhome        = get_keycode("kHOM5", CONTROL_HOME);
+    controlend         = get_keycode("kEND5", CONTROL_END);
+    controldelete      = get_keycode("kDC5", CONTROL_DELETE);
+    controlshiftdelete = get_keycode("kDC6", CONTROL_SHIFT_DELETE);
+    shiftup            = get_keycode("kUP", SHIFT_UP);
+    shiftdown          = get_keycode("kDN", SHIFT_DOWN);
+    shiftcontrolleft   = get_keycode("kLFT6", SHIFT_CONTROL_LEFT);
+    shiftcontrolright  = get_keycode("kRIT6", SHIFT_CONTROL_RIGHT);
+    shiftcontrolup     = get_keycode("kUP6", SHIFT_CONTROL_UP);
+    shiftcontroldown   = get_keycode("kDN6", SHIFT_CONTROL_DOWN);
+    shiftcontrolhome   = get_keycode("kHOM6", SHIFT_CONTROL_HOME);
+    shiftcontrolend    = get_keycode("kEND6", SHIFT_CONTROL_END);
+    altleft            = get_keycode("kLFT3", ALT_LEFT);
+    altright           = get_keycode("kRIT3", ALT_RIGHT);
+    altup              = get_keycode("kUP3", ALT_UP);
+    altdown            = get_keycode("kDN3", ALT_DOWN);
+    althome            = get_keycode("kHOM3", ALT_HOME);
+    altend             = get_keycode("kEND3", ALT_END);
+    altpageup          = get_keycode("kPRV3", ALT_PAGEUP);
+    altpagedown        = get_keycode("kNXT3", ALT_PAGEDOWN);
+    altinsert          = get_keycode("kIC3", ALT_INSERT);
+    altdelete          = get_keycode("kDC3", ALT_DELETE);
+    shiftaltleft       = get_keycode("kLFT4", SHIFT_ALT_LEFT);
+    shiftaltright      = get_keycode("kRIT4", SHIFT_ALT_RIGHT);
+    shiftaltup         = get_keycode("kUP4", SHIFT_ALT_UP);
+    shiftaltdown       = get_keycode("kDN4", SHIFT_ALT_DOWN);
+    mousefocusin       = get_keycode("kxIN", FOCUS_IN);
+    mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
+    /* Disable the type-ahead checking that ncurses normally does. */
+    typeahead(-1);
+#ifdef HAVE_SET_ESCDELAY
     logI("Changing escdelay from %d to 50.", ESCDELAY);
     /* Tell ncurses to pass the Esc key quickly. */
     set_escdelay(50);
-  #endif
+#endif
+  }
   /* Read the files mentioned on the command line into new buffers. */
   while (optind < argc && (!openfile || TRUE)) {
     long  givenline = 0, givencol = 0;
@@ -1718,7 +2016,7 @@ int main(int argc, char **argv) {
       /* Consume any options in cmd line. */
       const Uint cliCmd = retriveCliOptionFromStr(argv[optind]);
       if (cliCmd) {
-        if (cliCmd & CLI_OPT_GUI || cliCmd & CLI_OPT_SAFE) {
+        if (cliCmd & CLI_OPT_GUI || cliCmd & CLI_OPT_SAFE || cliCmd & CLI_OPT_TEST) {
           optind += 1;
         }
         else {
@@ -1739,13 +2037,12 @@ int main(int argc, char **argv) {
           *coda = '\0';
           if (stat(filename, &fileinfo) < 0) {
             *coda = ':';
-            /* If this was the first colon, look for a second one.
-             */
-            if (!constexpr_strchr(coda + 1, ':')) {
+            /* If this was the first colon, look for a second one. */
+            if (!strchr((coda + 1), ':')) {
               goto maybe_two;
             }
           }
-          else if (!parse_line_column(coda + 1, &givenline, &givencol)) {
+          else if (!parse_line_column((coda + 1), &givenline, &givencol)) {
             die(_("Invalid number\n"));
           }
         }
@@ -1817,10 +2114,16 @@ int main(int argc, char **argv) {
   we_are_running = TRUE;
   logI("Reached main loop.");
   if (ISSET(USING_GUI)) {
+    prosses_callback_queue();
     restore_terminal();
     init_gui();
     glfw_loop();
     do_exit();
+  }
+  else if (ISSET(NO_NCURSES)) {
+    tui_main_loop(NULL);
+    nevhandler_start(tui_handler, FALSE);
+    exit(0);
   }
   /* This is the main loop of the cli-editor. */
   while (TRUE) {
