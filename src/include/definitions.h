@@ -12,6 +12,7 @@
 #if defined(__HAIKU__) && !defined(_DEFAULT_SOURCE)
 #  define _DEFAULT_SOURCE 1
 #endif
+
 #define ROOT_UID 0
 
 // We are using limits instead of limits.h,
@@ -21,7 +22,7 @@
 // #include <linux/limits.h>
 
 #include <cctype>
-#include <cerrno>
+#include <errno.h>
 #include <clocale>
 #include <csignal>
 #include <cstring>
@@ -62,6 +63,7 @@
 #include "../c/event/nevhandler.h"
 #include "../c/event/nfdreader.h"
 #include "../c/event/nfdwriter.h"
+#include "../c/event/nfdlistener.h"
 #include "../c/term/terminfo.h"
 #include "../c/term/move.h"
 #include "../c/term/input.h"

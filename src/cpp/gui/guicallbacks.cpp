@@ -643,6 +643,8 @@ void char_callback(GLFWwindow *window, Uint ch) {
       return;
     }
     else if (openfile->mark && openfile->softmark) {
+      // zap_replace_text(&input, 1);
+      // return;
       openfile->mark = NULL;
     }
     /* If a enclose char is pressed without a having a marked region, we simply enclose in place. */

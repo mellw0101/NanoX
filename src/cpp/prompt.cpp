@@ -449,7 +449,7 @@ static void absorb_character(int input, functionptrtype function) _NOTHROW {
 }
 
 /* Chop next word. */
-void do_statusbar_chop_next_word(void) {
+void do_statusbar_chop_next_word(void) _NOTHROW {
   Ulong steps = 0, was_x;
   /* If there is more then one whitespace to the next word, just delete the white chars until the next word. */
   if (word_more_than_one_white_away(answer, typing_x, TRUE, &steps)) {
@@ -481,7 +481,7 @@ void do_statusbar_chop_next_word(void) {
 }
 
 /* Chop prev word. */
-void do_statusbar_chop_prev_word(void) {
+void do_statusbar_chop_prev_word(void) _NOTHROW {
   Ulong steps = 0, was_x;
   /* If there is more then one whitespace to the prev word, just delete all white chars until the prev word. */
   if (word_more_than_one_white_away(answer, typing_x, FALSE, &steps)) {

@@ -211,7 +211,7 @@ Make it possible to move all selected lines up and down one line.
         how it works better.
 
         I have almost fully implemented this now, currently I have fully implemted
-        all things related to it, that is full undo-redo support as well as full
+        all things related to it.  That is, full undo-redo support as well as full
         mark perservesion, the only thing that remains is to implement the functionality
         where if the start or end of the marked region is at index 0 that line does
         not get included.
@@ -237,10 +237,12 @@ Make auto bracket placement and proper indent if enter is pressed between '{}',
         it indents one if pressing enter when 'prev char' == '{' and 'next char' != '}'.
 
         I need to implement full undo-redo support in a way where this is considered one action instead of
-        3 seperate once.  This is now done and full undo-redo support is now implemented.
+        3 seperate once.  This is now done and full undo-redo support has been implemented.
+
+        This has now been completed, undo-redo has been fully implemented.
 
     STATUS:
-        ALMOST DONE!!.
+        DONE.
 
 ('12').
 Make doubles when typing '{', '(', '[', ' and ", also make this so if backspace is pressed directly after remove both char`s.
@@ -847,15 +849,21 @@ Implement a filetype for 'NanoX' configuration.  As well as real-time syntax for
   STATUS:
     NOT DONE.
 
-('26'). <<-(WORKING ON THIS NOW)
+('26').
 Implement CTRL+ENTER so that it goes to newline from the end of the line and, CTRL+SHIFT+ENTER goes to newline from start of line then moves up once.  Like in vs-code.
 
-	STATUS:
-		Not started yet.
+    NOTES:
+        This has mostly been completed, i will have to do some edge case testing and sush before i can call this completly done.
 
+	STATUS:
+		Mostly DONE.
+
+('27'). <<-(WORKING ON THIS).
+Make it so that when a section is selected and something i typed it replaces the section and adds the typed text.
+
+    STATUS:
+        Not DONE.
 
 /* Some new small goals. */
-
-    First add a way to create a new empty line above or below the line, wherever you are in the line based on ctrl and shift+ctrl.
 
     Make so that when auto tab after : or { one undo obj.

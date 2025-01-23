@@ -547,38 +547,59 @@ static void do_auto_bracket(void) _NOTHROW {
 }
 
 /* Insert a new empty line, either `above` or `below` `line`.  */
-void insert_empty_line(linestruct *line, bool above) _NOTHROW {
+void insert_empty_line(linestruct *line, bool above, bool autoindent) _NOTHROW {
   linestruct *topline, *newline;
   if (above) {
-    topline = line->prev;
+    if (!line->prev) {
+      newline = make_new_node(NULL);
+      newline->next = line;
+      line->prev = newline;
+      if (line == openfile->filetop) {
+        openfile->filetop = newline;
+      }
+      if (line == openfile->edittop) {
+        openfile->edittop = newline;
+      }
+    }
+    else {
+      topline = line->prev;
+      newline = make_new_node(topline);
+      splice_node(topline, newline);
+    }
   }
   else {
     topline = line;
+    newline = make_new_node(topline);
+    splice_node(topline, newline);
   }
-  newline = make_new_node(topline);
-  splice_node(topline, newline);
   renumber_from(newline);
-  newline->data = STRLTR_COPY_OF("");
+  if (!autoindent) {
+    newline->data = STRLTR_COPY_OF("");
+  }
+  else {
+    newline->data = measured_copy(line->data, indent_length(line->data));
+  }
 }
 
 /* Insert a new empty line above `openfile->current`, and add an undo-item to the undo-stack. */
 void do_insert_empty_line_above(void) _NOTHROW {
-  if (!openfile->current->prev) {
-    return;
-  }
   add_undo(INSERT_EMPTY_LINE, NULL);
-  insert_empty_line(openfile->current, TRUE);
+  insert_empty_line(openfile->current, TRUE, TRUE);
   openfile->current = openfile->current->prev;
   update_undo(INSERT_EMPTY_LINE);
+  openfile->current_x   = strlen(openfile->current->data);
+  openfile->placewewant = xplustabs();
   refresh_needed = TRUE;
 }
 
 /* Insert a new empty line below `openfile->current`, and add an undo-item to the undo-stack. */
 void do_insert_empty_line_below(void) _NOTHROW {
   add_undo(INSERT_EMPTY_LINE, NULL);
-  insert_empty_line(openfile->current, FALSE);
+  insert_empty_line(openfile->current, FALSE, TRUE);
   openfile->current = openfile->current->next;
   update_undo(INSERT_EMPTY_LINE);
+  openfile->current_x   = strlen(openfile->current->data);
+  openfile->placewewant = xplustabs();
   refresh_needed = TRUE;
 }
 
@@ -886,6 +907,18 @@ void do_undo(void) {
       refresh_needed = TRUE;
       break;
     }
+    case ZAP_REPLACE: {
+      NETLOG("u->head_x: %lu\n", u->head_x);
+      line = line_from_number(u->head_lineno);
+      NETLOG("(line->data + u->head_x): %s\n", (line->data + u->head_x));
+      NETLOG("u->strdata: %s\n", u->strdata);
+      if (strncmp((line->data + u->head_x), u->strdata, strlen(u->strdata)) != 0) {
+        die("Data does not match for ZAP_REPLACE.");
+      }
+      erase_in(&line->data, u->head_x, strlen(u->strdata));
+      copy_from_buffer(u->cutbuffer);
+      break;
+    }
     case INSERT_EMPTY_LINE: {
       linestruct *current, *mark = NULL;
       Ulong current_x, mark_x = 0;
@@ -908,12 +941,19 @@ void do_undo(void) {
         current   = line_from_number(u->head_lineno);
         current_x = u->head_x;
       }
+      if ((u->xflags & INSERT_WAS_ABOVE) && current->prev == openfile->filetop) {
+        openfile->filetop = current;
+        if (current->prev == openfile->edittop) {
+          openfile->edittop = current;
+        }
+      }
       /* Remove the line that was inserted. */
       unlink_node((u->xflags & INSERT_WAS_ABOVE) ? current->prev : current->next);
       renumber_from(current);
       /* Then reset the cursor line and pos. */
       openfile->current   = current;
       openfile->current_x = current_x;
+      /* And if the mark was set, then reset it to. */
       if (u->xflags & MARK_WAS_SET) {
         openfile->mark   = mark;
         openfile->mark_x = mark_x;
@@ -1261,7 +1301,7 @@ void do_redo(void) {
         else {
           current = line_from_number(u->head_lineno - 1);
         }
-        insert_empty_line(current, TRUE);
+        insert_empty_line(current, TRUE, TRUE);
         openfile->current = current->prev;
       }
       else {
@@ -1276,7 +1316,7 @@ void do_redo(void) {
         else {
           current = line_from_number(u->head_lineno);
         }
-        insert_empty_line(current, FALSE);
+        insert_empty_line(current, FALSE, TRUE);
         openfile->current = current->next;
       }
       refresh_needed = TRUE;
@@ -1550,6 +1590,13 @@ void add_undo(undo_type action, const char *message) _NOTHROW {
       u->strdata = copy_of(_(message));
       break;
     }
+    case ZAP_REPLACE: {
+      if (!openfile->mark) {
+        die("ZAP_REPLACE should only be done when there is a marked region.\n");
+      }
+      u->strdata = copy_of(message);
+      _FALLTHROUGH;
+    }
     case INDENT:
     case UNINDENT:
     case COMMENT:
@@ -1757,6 +1804,10 @@ void update_undo(undo_type action) _NOTHROW {
       else if ((u->xflags & MARK_WAS_SET) && (u->xflags & CURSOR_WAS_AT_HEAD) && openfile->current->lineno <= u->tail_lineno) {
         ++u->tail_lineno;
       }
+      break;
+    }
+    case ZAP_REPLACE: {
+      u->cutbuffer = cutbuffer;
       break;
     }
     default : {
@@ -2007,7 +2058,7 @@ bool inpar(const linestruct *const line) _NOTHROW {
 
 /* Find the first occurring paragraph in the forward direction.  Return 'TRUE' when a paragraph was found,
  * and 'FALSE' otherwise.  Furthermore, return the first line and the number of lines of the paragraph. */
-static bool find_paragraph(linestruct **firstline, Ulong *linecount) {
+static bool find_paragraph(linestruct **firstline, Ulong *linecount) _NOTHROW {
   linestruct *line = *firstline;
   /* When not currently in a paragraph, move forward to a line that is. */
   while (!inpar(line) && line->next) {

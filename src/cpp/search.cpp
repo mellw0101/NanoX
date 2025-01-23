@@ -1,9 +1,9 @@
-/// @file - search.cpp
+/** @file search.cpp */
 #include "../include/prototypes.h"
 
 #include <Mlib/Profile.h>
-#include <cstring>
-#include <ctime>
+#include <string.h>
+#include <time.h>
 
 /* Have we reached the starting line again while searching? */
 static bool came_full_circle = FALSE;
@@ -43,7 +43,7 @@ void tidy_up_after_search(void) {
 /* Prepare the prompt and ask the user what to search for.  Keep looping
  * as long as the user presses a toggle, and only take action and exit
  * when <Enter> is pressed or a non-toggle shortcut was executed. */
-void search_init(bool replacing, bool retain_answer) {
+static void search_init(bool replacing, bool retain_answer) {
   /* What will be searched for when the user types just <Enter>. */
   char *thedefault;
   /* If something was searched for earlier, include it in the prompt. */
@@ -51,7 +51,7 @@ void search_init(bool replacing, bool retain_answer) {
     char *disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
     thedefault = (char *)nmalloc(strlen(disp) + 7);
     /* We use (COLS / 3) here because we need to see more on the line. */
-    sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > (COLS / 3)) ? "..." : "");
+    sprintf(thedefault, " [%s%s]", disp, ((long)breadth(last_search) > (COLS / 3)) ? "..." : "");
     free(disp);
   }
   else {
@@ -152,7 +152,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
   time_t lastkbcheck = time(NULL);
   /* Set non-blocking input so that we can just peek for a Cancel. */
   nodelay(midwin, TRUE);
-  !begin ? came_full_circle = FALSE : 0;
+  !begin ? (came_full_circle = FALSE) : 0;
   while (TRUE) {
     /* When starting a new search, skip the first character, then (in either case) search for the needle in the current line. */
     if (skipone) {
@@ -289,7 +289,7 @@ void do_search_backward(void) {
 }
 
 /* Search for the last string without prompting. */
-void do_research(void) {
+static void do_research(void) {
   /* If nothing was searched for yet during this run of nano, but
    * there is a search history, take the most recent item. */
   if (!*last_search && searchbot->prev) {
@@ -366,7 +366,7 @@ static int replace_regexp(char *string, bool create) _NOTHROW {
   /* Iterate through the replacement text to handle subexpression replacement using \1, \2, \3, etc. */
   while (*c) {
     int num = (*(c + 1) - '0');
-    if (*c != '\\' || num < 1 || num > 9 || num > search_regexp.re_nsub) {
+    if (*c != '\\' || num < 1 || num > 9 || num > (long)search_regexp.re_nsub) {
       create ? *string++ = *c : 0;
       ++c;
       ++replacement_size;
@@ -389,7 +389,7 @@ static int replace_regexp(char *string, bool create) _NOTHROW {
 }
 
 /* Return a copy of the current line with one needle replaced. */
-char *replace_line(const char *needle) {
+static char *replace_line(const char *needle) {
   Ulong new_size = (strlen(openfile->current->data) + 1);
   Ulong match_len;
   char *copy;
@@ -816,7 +816,7 @@ void put_or_lift_anchor(void) {
 }
 
 /* Make the given line the current line, or report the anchoredness. */
-void go_to_and_confirm(linestruct *line) {
+static void go_to_and_confirm(linestruct *line) {
   linestruct *was_current = openfile->current;
   if (line != openfile->current) {
     openfile->current   = line;
@@ -856,7 +856,7 @@ void to_next_anchor(void) {
   go_to_and_confirm(line);
 }
 
-bool search_file_in_dir(const char *file, const char *dir) {
+static bool search_file_in_dir(const char *file, const char *dir) {
   DIR *d = opendir(dir);
   if (!d) {
     return FALSE;

@@ -1,11 +1,9 @@
 #ifndef _C_PROTO__H
 #define _C_PROTO__H
 
-#include "../../config.h"
+#include "c_defs.h"
 
 _BEGIN_C_LINKAGE
-
-#include "c_defs.h"
 
 extern int unix_socket_fd;
 

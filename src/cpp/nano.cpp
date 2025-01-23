@@ -657,13 +657,20 @@ static void signal_init(void) _NOTHROW {
 }
 
 /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
-void _NO_RETURN handle_hupterm(int signal) {
+void handle_hupterm(int signal) {
   die(_("Received SIGHUP or SIGTERM\n"));
 }
 
 #if !defined(DEBUG)
 /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
-void _NO_RETURN handle_crash(int signal) {
+void handle_crash(int signal) {
+  void *buffer[256];
+  int size = backtrace(buffer, 256);
+  char **symbols = backtrace_symbols(buffer, size);
+  /* When we are dying from a signal, try to print the last ran functions. */
+  for (int i=0; i<size; ++i) {
+    fprintf(stderr, "%s\n", symbols[i]);
+  }
   die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
 }
 #endif

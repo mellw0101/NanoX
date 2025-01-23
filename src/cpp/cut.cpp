@@ -469,6 +469,21 @@ void zap_text(void) _NOTHROW {
   cutbuffer = was_cutbuffer;
 }
 
+/* Erase currently marked region, and replace it with `replacewith`. */
+void zap_replace_text(const char *replacewith, Ulong len) _NOTHROW {
+  /* Save the current cutbuffer, so we can restore it. */
+  linestruct *was_cutbuffer = cutbuffer;
+  if (!openfile->mark) {
+    return;
+  }
+  add_undo(ZAP_REPLACE, replacewith);
+  cutbuffer = openfile->current_undo->cutbuffer;
+  do_snip(TRUE, FALSE, TRUE);
+  update_undo(ZAP_REPLACE);
+  cutbuffer = was_cutbuffer;
+  inject_in(&openfile->current->data, replacewith, len, openfile->current_x);
+}
+
 /* Make a copy of the marked region, putting it in the cutbuffer. */
 void copy_marked_region(void) {
   linestruct *topline, *botline, *afterline;

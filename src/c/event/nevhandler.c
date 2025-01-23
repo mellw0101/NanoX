@@ -113,6 +113,7 @@ int nevhandler_start(nevhandler *handler, bool spawn_thread) {
     if (pthread_create(&handler->thread, NULL, nevhandler_task, handler) != 0) {
       return -1;
     }
+    pthread_detach(handler->thread);
   }
   else {
     nevhandler_task(handler);
