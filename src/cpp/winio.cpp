@@ -1874,7 +1874,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   /* The number of zero-width characters for which to reserve space. */
   Ulong stowaways = 20;
   /* The amount of memory to reserve for the displayable string. */
-  Ulong allocsize = (((ISSET(GUI_RUNNING) ? (editwincols) : COLS) + stowaways) * MAXCHARLEN + 1);
+  Ulong allocsize = (((ISSET(USING_GUI) ? (editwincols) : COLS) + stowaways) * MAXCHARLEN + 1);
   /* The displayable string we will return. */
   char *converted = (char *)nmalloc(allocsize);
   /* Current position in converted. */

@@ -179,29 +179,19 @@ extern Ulong typing_x;
 typedef void (*functionptrtype)(void);
 
 #ifdef HAVE_GLFW
-  extern bit_flag_t<8> guiflag;
-  extern uielementstruct *editelement;
-  extern Uint window_width, window_height;
-  extern markup_t markup;
-  extern nevhandler *ev_handler;
-  // extern texture_font_t *font;
-  extern texture_atlas_t *atlas;
   extern vertex_buffer_t *vertbuf;
-  extern vertex_buffer_t *topbuf;
+  // extern vertex_buffer_t *topbuf;
   extern vec2 pen;
-  // extern mat4 projection;
-  extern matrix4x4 projection;
-  extern uielementstruct *editelement;
-  extern uielementstruct *gutterelement;
-  extern uielementstruct *top_bar;
+  // extern uielementstruct *top_bar;
   extern uielementstruct *file_menu_element;
   /* The bottom bar. */
-  extern uielementstruct *botbar;
-  extern vertex_buffer_t *botbuf;
-  extern Uint fontshader, rectshader;
-  extern uigridmapclass  gridmap;
+  // extern uielementstruct *botbar;
+  // extern vertex_buffer_t *botbuf;
   extern frametimerclass frametimer;
   extern vec2 mousepos;
+  extern guieditor *openeditor;
+  extern guistruct *gui;
+  extern uigridmapclass gridmap;
   /* guiprompt.cpp */
   extern Ulong gui_prompt_mark_x;
   extern bool  gui_prompt_mark;
@@ -840,7 +830,9 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void move_element(uielementstruct *e, vec2 pos);
   void move_resize_element(uielementstruct *e, vec2 pos, vec2 size);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
+  void show_toggle_statusmsg(int flag);
   void draw_editelement(void);
+  void draw_editor(guieditor *editor);
   void draw_top_bar(void);
   void draw_botbar(void);
   void do_fullscreen(GLFWwindow *window);
@@ -861,11 +853,14 @@ void get_env_path_binaries(void);
 Ulong  inject_in(char **dst, Ulong dstlen, const char *src, Ulong srclen, Ulong at, bool realloc = TRUE) _NOTHROW _NONNULL(1, 3);
 Ulong  inject_in(char **dst, const char *src, Ulong srclen, Ulong at, bool realloc = TRUE) _NOTHROW _NONNULL(1, 2);
 Ulong  inject_in(char **dst, const char *src, Ulong at, bool realloc = TRUE) _NOTHROW _NONNULL(1, 2);
+void   inject_in_cursor(const char *src, Ulong srclen, bool advance_x) _NOTHROW _NONNULL(1);
 Ulong  erase_in(char **str, Ulong slen, Ulong at, Ulong eraselen, bool do_realloc) _NOTHROW _NONNULL(1);
 Ulong  erase_in(char **str, Ulong at, Ulong eraselen, bool do_realloc = TRUE) _NOTHROW _NONNULL(1);
 Ulong  append_to(char **dst, Ulong dstlen, const char *src, Ulong srclen) _NOTHROW _NONNULL(1, 3);
+Ulong  append_to(char **dst, const char *src, Ulong srclen) _NOTHROW _NONNULL(1, 2);
 Ulong  append_to(char **dst, const char *src) _NOTHROW _NONNULL(1, 2);
 char **split_string(const char *string, const char delim, Ulong *n) _NOTHROW _NODISCARD _NONNULL(1, 3);
+char  *fmtstr(const char *format, ...) _NOTHROW _NODISCARD _PRINTFLIKE(1, 2);
 
 #include <Mlib/def.h>
 #include "c_proto.h"

@@ -2,7 +2,6 @@
 #pragma once
 /* clang-format off */
 
-// #include "../include/config.h"
 #include "../../config.h"
 
 #ifndef _XOPEN_SOURCE_EXTENDED
@@ -47,6 +46,9 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
+
+/* stdlib */
+#include <assert.h>
 
 #include <ncursesw/ncurses.h>
 
@@ -611,11 +613,11 @@ typedef enum {
   typedef enum {
     GUI_PROMPT_SAVEFILE,
     #define GUI_PROMPT_SAVEFILE GUI_PROMPT_SAVEFILE
+    GUI_PROMPT_EXIT_NO_SAVE
+    #define GUI_PROMPT_EXIT_NO_SAVE GUI_PROMPT_EXIT_NO_SAVE
   } guiprompt_type;
 
   typedef enum {
-    GUI_RUNNING,
-    #define GUI_RUNNING GUI_RUNNING
     GUI_PROMPT,
     #define GUI_PROMPT GUI_PROMPT
   } guiflag_type;
@@ -949,6 +951,39 @@ typedef struct completionstruct {
       std::this_thread::sleep_for(sleep_duration);
     }
   };
+
+  typedef struct guieditor {
+    vertex_buffer_t *buffer;    /* The buffer that holds all this editors data to be drawn. */
+    openfilestruct **files;     /* A buffer of all files open inside this editor. */
+    Ulong            filesno;   /* The number of files in `files` buffer. */
+    openfilestruct  *openfile;  /* The currently open file. */
+    texture_font_t  *font;
+    uielementstruct *gutter;
+    uielementstruct *main;
+    vec2             pen;
+    guieditor       *next;
+    guieditor       *prev;
+  } guieditor;
+
+  typedef struct {
+    char            *title;           /* The window title. */
+    Uint             width;           /* The window width. */
+    Uint             height;          /* The window height. */
+    GLFWwindow      *window;          /* The glfw window. */
+    bit_flag_t<8>    flag;            /* Flags to track the state of the gui. */
+    nevhandler      *handler;         /* Threaded event handler, to enqueue tasks to. */
+    uielementstruct *topbar;          /* The `top-bar` for the entire ui. */
+    vertex_buffer_t *topbuf;          /* The text buffer for `topbar`. */
+    uielementstruct *botbar;          /* The `bottom-bar` for the entire ui. */
+    vertex_buffer_t *botbuf;          /* The text buffer for `botbar`. */
+    uielementstruct *entered;         /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
+    matrix4x4        projection;      /* The projection to pass to the shaders. */
+    Uint             font_shader;     /* The font shader. */
+    Uint             font_size;       /* The font size. */
+    texture_font_t  *font;            /* The font the gui is using. */
+    texture_atlas_t *atlas;           /* The atlas the font is using. */
+    Uint             rect_shader;     /* The rect shader. */
+  } guistruct;
 #endif
 
 enum syntax_flag_t { NEXT_WORD_ALSO = 1 };

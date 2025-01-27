@@ -1,3 +1,9 @@
+/** @file nstring.cpp
+
+  @author  Melwin Svensson.
+  @date    27-12-2024.
+
+ */
 #include "../include/prototypes.h"
 
 /* Reallocate and then inject a src into dst at position at.  Return`s the new length of dst.  This overload
@@ -22,6 +28,19 @@ Ulong inject_in(char **dst, const char *src, Ulong at, bool realloc) _NOTHROW {
   return inject_in(dst, strlen(*dst), src, strlen(src), at, realloc);
 }
 
+/* Using `inject_in()` to inject `src` at `openfile->current->data + openfile->current_x`,
+ * also advances `openfile->current_x` by `srclen` if `advance_x` is `TRUE`.
+ * Note that this also adds `scrlen` to `openfile->totsize`. */
+void inject_in_cursor(const char *src, Ulong srclen, bool advance_x) _NOTHROW {
+  inject_in(&openfile->current->data, src, srclen, openfile->current_x);
+  if (advance_x) {
+    while (srclen--) {
+      openfile->current_x = step_right(openfile->current->data, openfile->current_x);
+    }
+  }
+  openfile->totsize += srclen;
+}
+
 /* Erase 'eraselen' of 'str' at position 'at', if 'do_realloc' is TRUE, reallocates string so its exactly the new len.  Also return`s the new len. */
 Ulong erase_in(char **str, Ulong slen, Ulong at, Ulong eraselen, bool do_realloc) _NOTHROW {
   memmove((*str + at), (*str + at + eraselen), (slen - at - eraselen + 1));
@@ -43,6 +62,11 @@ Ulong append_to(char **dst, Ulong dstlen, const char *src, Ulong srclen) _NOTHRO
   memmove((*dst + dstlen), src, srclen);
   (*dst)[newlen] = '\0';
   return newlen;
+}
+
+/* Append source string to destination str.  Return`s the new len of the string. */
+Ulong append_to(char **dst, const char *src, Ulong srclen) _NOTHROW {
+  return append_to(dst, strlen(*dst), src, srclen);
 }
 
 /* Append source string to destination str.  Return`s the new len of the string. */
@@ -90,4 +114,25 @@ char **split_string(const char *string, const char delim, Ulong *n) _NOTHROW {
   parts = arealloc(parts, (sizeof(char *) * size));
   *n = size;
   return parts;
+}
+
+/* Return's a malloc'ed formated string. */
+char *fmtstr(const char *format, ...) _NOTHROW {
+  char *ret;
+  int len;
+  va_list dummy, ap;
+  /* First, get the total length the formated sting will need. */
+  va_start(dummy, format);
+  len = vsnprintf(NULL, 0, format, dummy);
+  va_end(dummy);
+  /* If vsnprintf fails, we die. */
+  if (len < 0) {
+    die("vsnprintf failed.");
+  }
+  /* Then allocate ret using the len we got, and run vsnprintf again. */
+  va_start(ap, format);
+  ret = (char *)nmalloc(len + 1);
+  vsnprintf(ret, (len + 1), format, ap);
+  va_end(ap);
+  return ret;
 }

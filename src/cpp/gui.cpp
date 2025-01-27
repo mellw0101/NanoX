@@ -2,55 +2,28 @@
 
 #ifdef HAVE_GLFW
 
-/* Main window for nanox. */
-static GLFWwindow *window = NULL;
-/* Window dimentions. */
-Uint window_width  = 1200;
-Uint window_height = 800;
-/* Holds the current fontsize for the editwindow. */
-static _GL_UNUSED Uint edit_fontsize = 17;
-/* Window title.  This may be changed so its dynamic. */
-static const char *window_title = "NanoX";
 /* Rect shader data. */
-Uint fontshader, rectshader;
 static glSsbo<vec2, 0> vertices_ssbo;
 static glSsbo<Uint, 1> indices_ssbo;
-/* The projection that all shaders follow. */
-matrix4x4 projection;
 /* Hash based grid map for elements. */
 uigridmapclass gridmap(GRIDMAP_GRIDSIZE);
 /* Frame timer to keep a frame rate. */
 frametimerclass frametimer;
-/* The main edit element where the text is edited. */
-uielementstruct *editelement = NULL;
-/* The gutter of the main edit element. */
-uielementstruct *gutterelement = NULL;
-/* The top menu bar element. */
-uielementstruct *top_bar = NULL;
 /* The file menu button element. */
 uielementstruct *file_menu_element = NULL;
 uielementstruct *open_file_element = NULL;
-/* The bottom bar element. */
-uielementstruct *botbar = NULL;
-/* The vertex buffer for the bottom bar. */
-vertex_buffer_t *botbuf = NULL;
 
-/* Gui flags. */
-bit_flag_t<8> guiflag;
-
-markup_t markup;
-// texture_font_t *font;
-
-nevhandler *ev_handler = NULL;
-
-texture_atlas_t *atlas   = NULL;
 vertex_buffer_t *vertbuf = NULL;
-vertex_buffer_t *topbuf  = NULL;
 vec2 pen;
 
-static vec4 _GL_UNUSED black_vec4 = { 0.0f, 0.0f, 0.0f, 1.0f };
-static vec4 _GL_UNUSED white_vec4 = { 1.0f, 1.0f, 1.0f, 1.0f };
-static vec4 _GL_UNUSED none_vec4  = { 0.0f, 0.0f, 1.0f, 0.0f };
+static fvector4 _GL_UNUSED black_vec4 = {{ 0.0f, 0.0f, 0.0f, 1.0f }};
+static fvector4 _GL_UNUSED white_vec4 = {{ 1.0f, 1.0f, 1.0f, 1.0f }};
+static fvector4 _GL_UNUSED none_vec4  = {{ 0.0f, 0.0f, 1.0f, 0.0f }};
+
+guieditor *openeditor = NULL;
+
+/* The main structure that holds all the data the gui needs. */
+guistruct *gui = NULL;
 
 #define FALLBACK_FONT_PATH "/usr/share/root/fonts/monotype.ttf"
 #define FALLBACK_FONT "fallback"
@@ -88,6 +61,55 @@ static uielementstruct *make_element(vec2 pos, vec2 size, vec2 endoff, vec4 colo
   return newelement;
 }
 
+/* Delete a element and all its children. */
+static void delete_element(uielementstruct *element) {
+  if (!element) {
+    return;
+  }
+  for (Ulong i = 0; i < element->children.size(); ++i) {
+    delete_element(element->children[i]);
+    element->children[i] = NULL;
+  }
+  free(element->lable);
+  free(element);
+  element = NULL;
+}
+
+/* Create a new editor. */
+static guieditor *make_new_editor(void) {
+  guieditor *neweditor = (guieditor *)nmalloc(sizeof(*neweditor));
+  neweditor->buffer    = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  neweditor->openfile  = openfile;
+  neweditor->font      = gui->font;
+  neweditor->next      = NULL;
+  neweditor->prev      = NULL;
+  neweditor->pen       = 0.0f;
+  neweditor->gutter = make_element(
+    vec2(0.0f, gui->topbar->size.h),
+    vec2(((gui->font->face->max_advance_width >> 6) * margin + 1), gui->height),
+    0.0f,
+    EDIT_BACKGROUND_COLOR
+  );
+  neweditor->main = make_element(
+    vec2(neweditor->gutter->size.w, gui->topbar->size.h),
+    vec2(gui->width, gui->height),
+    0.0f,
+    EDIT_BACKGROUND_COLOR
+  );
+  return neweditor;
+}
+
+static void delete_editor(guieditor *editor) {
+  if (!editor) {
+    return;
+  }
+  vertex_buffer_delete(editor->buffer);
+  delete_element(editor->gutter);
+  delete_element(editor->main);
+  free(editor);
+  editor = NULL;
+}
+
 /* Set an elements lable text. */
 void set_element_lable(uielementstruct *element, const char *string) _NOTHROW {
   if (element->flag.is_set<UIELEMENT_HAS_LABLE>()) {
@@ -101,7 +123,7 @@ void set_element_lable(uielementstruct *element, const char *string) _NOTHROW {
 /* Init font shader and buffers. */
 static void setup_font_shader(void) {
   /* Create shader. */
-  fontshader = openGL_create_shader_program_raw({
+  gui->font_shader = openGL_create_shader_program_raw({
     /* Font vertex shader. */
     { STRLITERAL(\
         uniform mat4 projection;
@@ -126,8 +148,8 @@ static void setup_font_shader(void) {
       GL_FRAGMENT_SHADER }
   });
   /* If there is a problem with the shader creation just die as we are passing string literals so there should not be alot that can go wrong. */
-  if (!fontshader) {
-    glfwDestroyWindow(window);
+  if (!gui->font_shader) {
+    glfwDestroyWindow(gui->window);
     glfwTerminate();
     die("Failed to create font shader.\n");
   }
@@ -136,37 +158,23 @@ static void setup_font_shader(void) {
     ;
   }
   else {
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(gui->window);
     glfwTerminate();
-    glDeleteProgram(fontshader);
+    glDeleteProgram(gui->font_shader);
     die("Failed to find fallback font: '%s' does not exist.\n");
   }
   vertbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
   /* Look for jetbrains regular font. */
   if (is_file_and_exists(JETBRAINS_REGULAR_FONT_PATH)) {
-    atlas = texture_atlas_new(512, 512, 1);
-    glGenTextures(1, &atlas->id);
-    markup.family              = copy_of(JETBRAINS_REGULAR_FONT),
-    markup.size                = edit_fontsize;
-    markup.bold                = FALSE;
-    markup.italic              = FALSE;
-    markup.spacing             = 0.0f;
-    markup.gamma               = 1.0f;
-    markup.foreground_color    = white_vec4;
-    markup.background_color    = none_vec4;
-    markup.underline           = 0;
-    markup.underline_color     = white_vec4;
-    markup.overline            = 0;
-    markup.overline_color      = white_vec4;
-    markup.strikethrough       = 0;
-    markup.strikethrough_color = white_vec4;
-    markup.font = texture_font_new_from_file(atlas, edit_fontsize, JETBRAINS_REGULAR_FONT_PATH);
+    gui->atlas = texture_atlas_new(512, 512, 1);
+    glGenTextures(1, &gui->atlas->id);
+    gui->font = texture_font_new_from_file(gui->atlas, gui->font_size, JETBRAINS_REGULAR_FONT_PATH);
   }
 }
 
 /* Init the rect shader and setup the ssbo`s for indices and vertices. */
 static void setup_rect_shader(void) {
-  rectshader = openGL_create_shader_program_raw({
+  gui->rect_shader = openGL_create_shader_program_raw({
     { STRLITERAL(\
         #version 450 core \n
         layout(std430, binding = 0) buffer VertexBuffer {
@@ -211,25 +219,25 @@ static void setup_rect_shader(void) {
 
 /* Setup the top menu bar. */
 static void setup_top_bar(void) {
-  topbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  gui->topbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
   /* Make the top bar parent element. */
-  top_bar = make_element(
+  gui->topbar = make_element(
     0.0f,
-    vec2(window_width, FONT_HEIGHT(markup.font)),
+    vec2(gui->width, FONT_HEIGHT(gui->font)),
     0.0f,
     vec4(vec3(0.1f), 1.0f)
   );
   /* Make file menu element. */
   file_menu_element = make_element(
     0.0f,
-    vec2(pixel_breadth(markup.font, " File "), top_bar->size.h),
+    vec2(pixel_breadth(gui->font, " File "), gui->topbar->size.h),
     0.0f,
     vec4(vec3(0.0f), 1.0f)
   );
   set_element_lable(file_menu_element, " File ");
   file_menu_element->textcolor = vec4(1.0f);
-  file_menu_element->parent    = top_bar;
-  top_bar->children.push_back(file_menu_element);
+  file_menu_element->parent    = gui->topbar;
+  gui->topbar->children.push_back(file_menu_element);
   file_menu_element->callback = [](int type) {
     if (type == UIELEMENT_ENTER_CALLBACK) {
       file_menu_element->color     = vec4(1.0f);
@@ -254,7 +262,7 @@ static void setup_top_bar(void) {
   /* Make the open file element in the file menu. */
   open_file_element = make_element(
     vec2(file_menu_element->pos.x, (file_menu_element->pos.y + file_menu_element->size.h)),
-    vec2(pixel_breadth(markup.font, " Open File "), top_bar->size.h),
+    vec2(pixel_breadth(gui->font, " Open File "), gui->topbar->size.h),
     0.0f,
     file_menu_element->color
   );
@@ -281,54 +289,89 @@ static void setup_top_bar(void) {
 
 /* Set up the bottom bar. */
 static void setup_botbar(void) {
-  botbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
-  botbar = make_element(
-    vec2(0, window_height),
-    vec2(window_height, FONT_HEIGHT(markup.font)),
+  gui->botbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  gui->botbar = make_element(
+    vec2(0, gui->height),
+    vec2(gui->height, FONT_HEIGHT(gui->font)),
     0.0f,
     color_idx_to_vec4(FG_VS_CODE_RED)
   );
-  botbar->flag.set<UIELEMENT_HIDDEN>();
+  gui->botbar->flag.set<UIELEMENT_HIDDEN>();
 }
 
 /* Allocate and init the edit element. */
 static void setup_edit_element(void) {
   /* Confirm the margin first to determen how wide the gutter has to be. */
   confirm_margin();
-  /* Create the gutter and the edit element for the main edit portion. */
-  gutterelement = make_element(
-    vec2(0.0f, top_bar->size.h),
-    vec2(((markup.font->face->max_advance_width >> 6) * margin + 1), window_height),
-    0.0f,
-    EDIT_BACKGROUND_COLOR
-  );
-  editelement = make_element(
-    vec2(gutterelement->size.w, top_bar->size.h),
-    vec2(window_width, window_height),
-    0.0f,
-    EDIT_BACKGROUND_COLOR
-  );
+  /* Create the editor circular list. */
+  openeditor = make_new_editor();
+}
+
+/* Init the gui struct, it reprecents everything that the gui needs. */
+static void init_guistruct(const char *win_title, Uint win_width, Uint win_height, Uint fps, Uint font_size) {
+  gui = (guistruct *)nmalloc(sizeof(*gui));
+  gui->font_shader = 0;
+  gui->rect_shader = 0;
+  gui->topbar = NULL;
+  gui->topbuf = NULL;
+  gui->botbar = NULL;
+  gui->botbuf = NULL;
+  gui->font   = NULL;
+  gui->atlas  = NULL;
+  /* Set the basic data needed to init the window. */
+  gui->title  = copy_of(win_title);
+  gui->width  = win_width;
+  gui->height = win_height;
+  /* Then create the glfw window. */
+  gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
+  if (!gui->window) {
+    glfwTerminate();
+    die("Failed to create glfw window.\n");
+  }
+  glfwMakeContextCurrent(gui->window);
+  gui->flag.clear();
+  frametimer.fps = fps;
+  /* Create and start the event handler. */
+  gui->handler = nevhandler_create();
+  nevhandler_start(gui->handler, TRUE);
+  gui->font_size = font_size;
+}
+
+static void delete_guistruct(void) {
+  free(gui->title);
+  glfwDestroyWindow(gui->window);
+  glfwTerminate();
+  if (gui->font_shader) {
+    glDeleteProgram(gui->font_shader);
+  }
+  if (gui->rect_shader) {
+    glDeleteProgram(gui->rect_shader);
+  }
+  delete_element(gui->topbar);
+  delete_element(gui->botbar);
+  if (gui->atlas) {
+    glDeleteTextures(1, &gui->atlas->id);
+    gui->atlas->id = 0;
+    texture_atlas_delete(gui->atlas);
+  }
+  if (gui->topbuf) {
+    vertex_buffer_delete(gui->topbuf);
+  }
+  if (gui->botbuf) {
+    vertex_buffer_delete(gui->botbuf);
+  }
+  texture_font_delete(gui->font);
+  nevhandler_stop(gui->handler, 0);
+  nevhandler_free(gui->handler);
 }
 
 /* Cleanup before exit. */
 static void cleanup(void) {
-  glfwDestroyWindow(window);
-  glfwTerminate();
-  glDeleteProgram(fontshader);
-  glDeleteProgram(rectshader);
-  free(open_file_element);
-  free(file_menu_element);
-  free(top_bar);
-  free(editelement);
-  free(gutterelement);
-  free(markup.family);
-  glDeleteTextures(1, &atlas->id);
-  atlas->id = 0;
-  texture_atlas_delete(atlas);
+  // delete_element(top_bar);
   vertex_buffer_delete(vertbuf);
-  vertex_buffer_delete(topbuf);
-  nevhandler_stop(ev_handler, 0);
-  nevhandler_free(ev_handler);
+  // vertex_buffer_delete(topbuf);
+  delete_editor(openeditor);
+  delete_guistruct();
 }
 
 /* Init glew and check for errors.  Terminates on fail to init glew. */
@@ -338,7 +381,7 @@ static void init_glew(void) {
   Uint err = glewInit();
   /* If we could not init glew, terminate directly. */
   if (err != GLEW_OK) {
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(gui->window);
     glfwTerminate();
     die("GLEW: ERROR: %s\n", glewGetErrorString(err));
   }
@@ -351,12 +394,8 @@ void init_gui(void) {
   if (!glfwInit()) {
     die("Failed to init glfw.\n");
   }
-  window = glfwCreateWindow(window_width, window_height, window_title, NULL, NULL);
-  if (!window) {
-    glfwTerminate();
-    die("Failed to create glfw window.\n");
-  }
-  glfwMakeContextCurrent(window);
+  /* Init the main gui structure. */
+  init_guistruct("NanoX", 1200, 800, 120, 17);
   /* Init glew. */
   init_glew();
   /* Init the font shader. */
@@ -370,14 +409,14 @@ void init_gui(void) {
   /* Init the edit element. */
   setup_edit_element();
   /* Set some callbacks. */
-  glfwSetWindowSizeCallback(window, window_resize_callback);
-  glfwSetKeyCallback(window, key_callback);
-  glfwSetCharCallback(window, char_callback);
-  glfwSetWindowMaximizeCallback(window, window_maximize_callback);
-  glfwSetMouseButtonCallback(window, mouse_button_callback);
-  glfwSetCursorPosCallback(window, mouse_pos_callback);
-  glfwSetCursorEnterCallback(window, window_enter_callback);
-  glfwSetScrollCallback(window, scroll_callback);
+  glfwSetWindowSizeCallback(gui->window, window_resize_callback);
+  glfwSetKeyCallback(gui->window, key_callback);
+  glfwSetCharCallback(gui->window, char_callback);
+  glfwSetWindowMaximizeCallback(gui->window, window_maximize_callback);
+  glfwSetMouseButtonCallback(gui->window, mouse_button_callback);
+  glfwSetCursorPosCallback(gui->window, mouse_pos_callback);
+  glfwSetCursorEnterCallback(gui->window, window_enter_callback);
+  glfwSetScrollCallback(gui->window, scroll_callback);
   frametimer.fps = 120;
   // glClearColor(1.00, 1.00, 1.00, 1.00);
   glDisable(GL_DEPTH_TEST);
@@ -385,33 +424,31 @@ void init_gui(void) {
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_BLEND);
   /* Set the window size. */
-  window_resize_callback(window, window_width, window_height);
-  /* Create the event-handler. */
-  ev_handler = nevhandler_create();
+  window_resize_callback(gui->window, gui->width, gui->height);
 }
 
 /* Main gui loop. */
 void glfw_loop(void) {
-  nevhandler_start(ev_handler, TRUE);
-  guiflag.set<GUI_RUNNING>();
-  while (!glfwWindowShouldClose(window) && guiflag.is_set<GUI_RUNNING>()) {
+  while (!glfwWindowShouldClose(gui->window)) {
     frametimer.start();
     confirm_margin();
     place_the_cursor();
     glClear(GL_COLOR_BUFFER_BIT);
     /* Draw the edit element. */
-    draw_editelement();
+    // draw_editelement();
+    draw_editor(openeditor);
     /* Draw the top menu bar. */
     draw_top_bar();
     /* Draw the bottom bar, if there is any status messages. */
     draw_botbar();
     /* If refresh was needed it has been done so set it to FALSE. */
     refresh_needed = FALSE;
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(gui->window);
     glfwPollEvents();
     frametimer.end();
   }
   cleanup();
+  close_and_go();
 }
 
 #endif

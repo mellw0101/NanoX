@@ -1,4 +1,4 @@
-/*! @file guiprompt.cpp
+/** @file guiprompt.cpp
 
   @author  Melwin Svensson.
   @date    19-1-2025.
@@ -18,15 +18,15 @@ int gui_prompt_type = 0;
 /* Set up the prompt. */
 void gui_ask_user(const char *question, guiprompt_type type) {
   /* Set this flag so that the key and char callbacks both go into prompt-mode. */
-  guiflag.set<GUI_PROMPT>();
+  gui->flag.set<GUI_PROMPT>();
   prompt = free_and_assign(prompt, copy_of(question));
-  append_to(&prompt, ": ");
+  append_to(&prompt, S__LEN(": "));
   /* Reset the gui answer string. */
   if (answer) {
     *answer = '\0';
   }
   else {
-    answer = copy_of("");
+    answer = STRLTR_COPY_OF("");
   }
   typing_x = 0;
   /* Set the type so that we know what to do upon a responce. */
@@ -38,7 +38,7 @@ void gui_ask_user(const char *question, guiprompt_type type) {
 long prompt_index_from_mouse(bool allow_outside) {
   /* When we dont allow a valid return value when outside the confinement of top-bar, just return -1. 
    * This is usefull for when we are tracking a hold after the user has pressed inside the top-bar, then drags outside it. */
-  if (!allow_outside && (mousepos.y < top_bar->pos.y || mousepos.y > top_bar->pos.y + top_bar->size.h)) {
+  if (!allow_outside && (mousepos.y < gui->topbar->pos.y || mousepos.y > gui->topbar->pos.y + gui->topbar->size.h)) {
     return -1;
   }
   bool no_linenums = !ISSET(LINE_NUMBERS);
@@ -46,7 +46,7 @@ long prompt_index_from_mouse(bool allow_outside) {
   if (no_linenums) {
     SET(LINE_NUMBERS);
   }
-  ret = index_from_mouse_x(answer, markup.font, (top_bar->pos.x + (pixel_breadth(markup.font, " ") / 2) + pixel_breadth(markup.font, prompt)));
+  ret = index_from_mouse_x(answer, gui->font, (gui->topbar->pos.x + (pixel_breadth(gui->font, " ") / 2) + pixel_breadth(gui->font, prompt)));
   if (no_linenums) {
     UNSET(LINE_NUMBERS);
   }

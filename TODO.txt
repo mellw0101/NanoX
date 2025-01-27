@@ -858,12 +858,15 @@ Implement CTRL+ENTER so that it goes to newline from the end of the line and, CT
 	STATUS:
 		Mostly DONE.
 
-('27'). <<-(WORKING ON THIS).
+('27').
 Make it so that when a section is selected and something i typed it replaces the section and adds the typed text.
 
     STATUS:
         Not DONE.
 
-/* Some new small goals. */
+('28').
+Implement a scroll bar into the gui.
 
-    Make so that when auto tab after : or { one undo obj.
+    STATUS:
+        Not DONE.
+

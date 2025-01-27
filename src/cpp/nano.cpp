@@ -1536,7 +1536,6 @@ int main(int argc, char **argv) {
   term_program = getenv("TERM_PROGRAM");
   const char *netlogger = getenv("NETLOGGER");
   if (netlogger) {
-    // nfdwriter_netlog_init(netlogger, 8080);
     NETLOGGERPTR->enable();
     NETLOGGERPTR->init(netlogger, 8080);
   }
@@ -2125,7 +2124,6 @@ int main(int argc, char **argv) {
     restore_terminal();
     init_gui();
     glfw_loop();
-    do_exit();
   }
   else if (ISSET(NO_NCURSES)) {
     tui_main_loop(NULL);

@@ -908,15 +908,19 @@ void do_undo(void) {
       break;
     }
     case ZAP_REPLACE: {
-      NETLOG("u->head_x: %lu\n", u->head_x);
-      line = line_from_number(u->head_lineno);
-      NETLOG("(line->data + u->head_x): %s\n", (line->data + u->head_x));
-      NETLOG("u->strdata: %s\n", u->strdata);
-      if (strncmp((line->data + u->head_x), u->strdata, strlen(u->strdata)) != 0) {
-        die("Data does not match for ZAP_REPLACE.");
+      Ulong datalen = strlen(u->strdata);
+      /* Set the cursor line and x pos. */
+      goto_line_posx(u->head_lineno, u->head_x);
+      /* Ensure correctness by comparing the data currently on the line, with the data that replaced it. */
+      if (strncmp((openfile->current->data + openfile->current_x), u->strdata, datalen) != 0) {
+        die("Data does not match for ZAP_REPLACE.\n");
       }
-      erase_in(&line->data, u->head_x, strlen(u->strdata));
+      /* Erase the inserted data. */
+      erase_in(&openfile->current->data, openfile->current_x, datalen);
+      /* And restore the data that was cut. */
       copy_from_buffer(u->cutbuffer);
+      /* Then restore the position of the cursor and the mark. */
+      restore_undo_posx_and_mark(u);
       break;
     }
     case INSERT_EMPTY_LINE: {
@@ -1322,6 +1326,31 @@ void do_redo(void) {
       refresh_needed = TRUE;
       break;
     }
+    case ZAP_REPLACE: {
+      if (u->xflags & CURSOR_WAS_AT_HEAD) {
+        openfile->current = line_from_number(u->head_lineno);
+        openfile->mark    = line_from_number(u->tail_lineno);
+        openfile->current_x = u->head_x;
+        openfile->mark_x    = u->tail_x;
+      }
+      else {
+        openfile->current = line_from_number(u->tail_lineno);
+        openfile->mark    = line_from_number(u->head_lineno);
+        openfile->current_x = u->tail_x;
+        openfile->mark_x    = u->head_x;
+      }
+      /* Save the cutbuffer, so we can restore it later. */
+      linestruct *was_cutbuffer = cutbuffer;
+      cutbuffer = NULL;
+      /* Perform the cut. */
+      cut_marked_region();
+      u->cutbuffer = cutbuffer;
+      /* Now restore the cutbuffer. */
+      cutbuffer = was_cutbuffer;
+      /* Then insert the correct data, as well as advance the cursor pos. */
+      inject_in_cursor(u->strdata, strlen(u->strdata), TRUE);
+      break;
+    }
     default : {
       break;
     }
@@ -1364,10 +1393,8 @@ void do_enter(void) {
     do_auto_bracket();
     return;
   }
-  char c_prev = '\0';
-  if (openfile->current_x > 0) {
-    c_prev = openfile->current->data[openfile->current_x - 1];
-  }
+  /* If the prev char is one of the usual section start chars, or a lable, we should indent once more. */
+  bool do_another_indent = is_prev_cursor_char_one_of("{:");
   linestruct *newnode    = make_new_node(openfile->current);
   linestruct *sampleline = openfile->current;
   Ulong       extra      = 0;
@@ -1416,10 +1443,25 @@ void do_enter(void) {
   if (ISSET(AUTOINDENT) && !allblanks) {
     openfile->totsize += extra;
   }
-  update_undo(ENTER);
-  if (c_prev == '{' || c_prev == ':') {
-    do_tab();
+  /* When approptiet, add another indent. */
+  if (do_another_indent) {
+    /* If the indent of the new line is the same as the line we came from.  I.E: Autoindent is turned on. */
+    if (line_indent(openfile->current) == line_indent(openfile->current->prev)) {
+      if (ISSET(TABS_TO_SPACES)) {
+        char *apstr = fmtstr("%*s", (int)tabsize, " ");
+        append_to(&openfile->current->data, apstr);
+        free(apstr);
+        openfile->current_x += tabsize;
+        openfile->totsize   += tabsize;
+      }
+      else {
+        append_to(&openfile->current->data, S__LEN("\t"));
+        ++openfile->current_x;
+        ++openfile->totsize;
+      }
+    }
   }
+  update_undo(ENTER);
   refresh_needed = TRUE;
   focusing       = FALSE;
 }

@@ -113,13 +113,13 @@ linestruct *line_from_mouse_y(texture_font_t *withfont, float offset) {
 /* Return the line and the index in the line, from a x and y position. */
 linestruct *line_and_index_from_mousepos(texture_font_t *withfont, Ulong *index) {
   /* If outside editelement confinement. */
-  if (mousepos.y < editelement->pos.y) {
+  if (mousepos.y < openeditor->main->pos.y) {
     *index = 0;
     return openfile->edittop;
   }
-  linestruct *line = line_from_mouse_y(withfont, editelement->pos.y);
+  linestruct *line = line_from_mouse_y(withfont, openeditor->main->pos.y);
   if (line) {
-    *index = index_from_mouse_x(line->data, withfont, editelement->pos.x);
+    *index = index_from_mouse_x(line->data, withfont, openeditor->main->pos.x);
   }
   return line;
 }
@@ -164,9 +164,9 @@ float line_y_pixel_offset(linestruct *line, texture_font_t *withfont) {
   }
   /* Otherwise, if the cursor is below the editelement, return one line below the entire window. */
   else if (relative_row > editwinrows) {
-    return window_height;
+    return gui->height;
   }
-  return ((relative_row * FONT_HEIGHT(withfont)) - withfont->descender + editelement->pos.y);
+  return ((relative_row * FONT_HEIGHT(withfont)) - withfont->descender + openeditor->main->pos.y);
 }
 
 /* Calculates cursor y position for the gui. */
@@ -233,7 +233,7 @@ void add_openfile_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color)
 void update_projection_uniform(Uint shader) {
   glUseProgram(shader);
   {
-    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, FALSE, projection.data);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, FALSE, gui->projection.data);
   }
 }
 
@@ -307,6 +307,9 @@ vec4 color_idx_to_vec4(int index) {
     }
     case FG_VS_CODE_BRIGHT_CYAN: {
       return VEC4_8BIT(41, 184, 219, 1);
+    }
+    case FG_COMMENT_GREEN: {
+      return VEC4_8BIT(0, 77, 0, 1);
     }
     default: {
       return vec4(1.0f);

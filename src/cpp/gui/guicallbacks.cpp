@@ -31,40 +31,39 @@ vec2 mousepos;
 
 /* Window resize callback. */
 void window_resize_callback(GLFWwindow *window, int newwidth, int newheight) {
-  window_width  = newwidth;
-  window_height = newheight;
+  gui->width  = newwidth;
+  gui->height = newheight;
   /* Set viewport. */
-  glViewport(0, 0, window_width, window_height);
+  glViewport(0, 0, gui->width, gui->height);
   /* Set the projection. */
-  // projection = ortho_projection(0.0f, window_width, 0.0f, window_height);
-  matrix4x4_set_orthographic(&projection, 0.0f, window_width, window_height, 0.0f, -1.0f, 1.0f);
+  matrix4x4_set_orthographic(&gui->projection, 0.0f, gui->width, gui->height, 0.0f, -1.0f, 1.0f);
   /* Upload it to both the shaders. */
-  update_projection_uniform(fontshader);
-  update_projection_uniform(rectshader);
+  update_projection_uniform(gui->font_shader);
+  update_projection_uniform(gui->rect_shader);
   /* Confirm the margin before we calculate the size of the gutter. */
   confirm_margin();
-  resize_element(top_bar, vec2(window_width, FONT_HEIGHT(markup.font)));
+  resize_element(gui->topbar, vec2(gui->width, FONT_HEIGHT(gui->font)));
   move_resize_element(
-    gutterelement,
-    vec2(0.0f, top_bar->size.h),
-    vec2((FONT_WIDTH(markup.font) * margin), window_height)
+    openeditor->gutter,
+    vec2(0.0f, gui->topbar->size.h),
+    vec2((FONT_WIDTH(gui->font) * margin), gui->height)
   );
   /* Ensure the edit element is correctly sized. */
   move_resize_element(
-    editelement,
-    vec2((gutterelement->pos.x + gutterelement->size.w), top_bar->size.h),
-    vec2(window_width - (gutterelement->pos.x + gutterelement->size.w), (window_height - top_bar->size.h))
+    openeditor->main,
+    vec2((openeditor->gutter->pos.x + openeditor->gutter->size.w), gui->topbar->size.h),
+    vec2(gui->width - (openeditor->gutter->pos.x + openeditor->gutter->size.w), (gui->height - gui->topbar->size.h))
   );
   /* Calculate the rows and columns. */
-  editwinrows = (editelement->size.h / FONT_HEIGHT(markup.font));
+  editwinrows = (openeditor->main->size.h / FONT_HEIGHT(gui->font));
   /* If the font is a mono font then calculate the number of columns by the width of ' '. */
-  if (texture_font_is_mono(markup.font)) {
-    texture_glyph_t *glyph = texture_font_get_glyph(markup.font, " ");
-    editwincols = (editelement->size.w / glyph->advance_x);
+  if (texture_font_is_mono(gui->font)) {
+    texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
+    editwincols = (openeditor->main->size.w / glyph->advance_x);
   }
   /* Otherwise, just guess for now. */
   else {
-    editwincols = ((editelement->size.w / FONT_WIDTH(markup.font)) * 0.9f);
+    editwincols = ((openeditor->main->size.w / FONT_WIDTH(gui->font)) * 0.9f);
   }
   refresh_needed = TRUE;
 }
@@ -79,7 +78,7 @@ void window_maximize_callback(GLFWwindow *window, int maximized) {
 /* Key callback. */
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
   /* Key-callbacks for when we are when inside the prompt-mode. */
-  if (guiflag.is_set<GUI_PROMPT>()) {
+  if (gui->flag.is_set<GUI_PROMPT>()) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
       switch (key) {
         case GLFW_KEY_ENTER: {
@@ -100,7 +99,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                 }
                 /* Otherwise if the current file has no name, then just save using the answer. */
                 else {
-                  show_statusmsg(INFO, 5.0f, "Saving file: %s", answer);
+                  show_statusmsg(INFO, 5, "Saving file: %s", answer);
                   /* Free the openfile filename, and assign answer to it. */
                   openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
                   /* Then save the file. */
@@ -108,7 +107,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                     logE("Failed to save file, this needs fixing and the reason needs to be found out.");
                     close_and_go();
                   }
-                  guiflag.unset<GUI_PROMPT>();
+                  gui->flag.unset<GUI_PROMPT>();
                 }
                 free(full_path);
               }
@@ -126,7 +125,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_ESCAPE: {
           statusbar_discard_all_undo_redo();
-          guiflag.unset<GUI_PROMPT>();
+          gui->flag.unset<GUI_PROMPT>();
           break;
         }
         /* Undo */
@@ -207,19 +206,37 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     /* Check what action was done, if any. */
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
       switch (key) {
-        /* Enclose marked region. */
         case GLFW_KEY_A: {
+          /* Shift+Ctrl+A.  Enclose marked region. */
           if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
+            /* When the file type is c based allow for creating block comment around the marked region. */
             if (openfile->type.is_set<C_CPP>() || openfile->type.is_set<GLSL>()) {
               function = do_block_comment;
             }
+          }
+          /* Ctrl+A.  Mark the entire file. */
+          else if (mods == GLFW_MOD_CONTROL) {
+            openfile->mark      = openfile->filetop;
+            openfile->mark_x    = 0;
+            openfile->current   = openfile->filebot;
+            openfile->current_x = strlen(openfile->filebot->data);
+            openfile->softmark  = TRUE;
+            refresh_needed      = TRUE;
           }
           break;
         }
         /* If CTRL+Q is pressed, quit. */
         case GLFW_KEY_Q: {
           if (mods == GLFW_MOD_CONTROL) {
-            guiflag.unset<GUI_RUNNING>();
+            if (!openfile->modified || ISSET(VIEW_MODE)) {
+              glfwSetWindowShouldClose(window, TRUE);
+            }
+            else if (ISSET(SAVE_ON_EXIT) && *openfile->filename) {
+              ;
+            }
+            else {
+              gui_ask_user("Close without saving? ", GUI_PROMPT_EXIT_NO_SAVE);
+            }
           }
           break;
         }
@@ -228,7 +245,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
             TOGGLE(LINE_NUMBERS);
             confirm_margin();
-            window_resize_callback(window, window_width, window_height);
+            window_resize_callback(window, gui->width, gui->height);
+            show_toggle_statusmsg(LINE_NUMBERS);
           }
           break;
         }
@@ -314,8 +332,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        /* Saving action. */
         case GLFW_KEY_S: {
+          /* Saving action. */
           if (mods == GLFW_MOD_CONTROL) {
             /* True if the current file has a name. */
             bool has_name = *openfile->filename;
@@ -334,12 +352,21 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               return;
             }
           }
+          /* Softwrap toggle. */
+          else if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
+            TOGGLE(SOFTWRAP);
+            if (!ISSET(SOFTWRAP)) {
+              openfile->firstcolumn = 0;
+            }
+            show_toggle_statusmsg(SOFTWRAP);
+            refresh_needed = TRUE;
+          }
           break;
         }
         /* Debuging. */
         case GLFW_KEY_P: {
           if (mods == GLFW_MOD_CONTROL) {
-            nevhandler_submit(ev_handler, [](void *arg) {
+            nevhandler_submit(gui->handler, [](void *arg) {
               NETLOG("Hello.\n");
             }, NULL);
             Ulong endidx = get_current_cursor_word_end_index();
@@ -461,7 +488,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_BACKSPACE: {
           /* Simple backspace. */
-          if (!mods) {
+          if (!mods || mods == GLFW_MOD_SHIFT) {
             function = do_backspace;
           }
           /* Backspace+CTRL. */
@@ -627,9 +654,19 @@ void char_callback(GLFWwindow *window, Uint ch) {
   if (ISSET(VIEW_MODE)) {
     return;
   }
-  else if (guiflag.is_set<GUI_PROMPT>()) {
+  else if (gui->flag.is_set<GUI_PROMPT>()) {
     char input = (char)ch;
-    inject_into_answer(&input, 1);
+    if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
+      if (is_char_one_of(&input, 0, "Yy")) {
+        glfwSetWindowShouldClose(window, TRUE);
+      }
+      else if (is_char_one_of(&input, 0, "Nn")) {
+        gui->flag.unset<GUI_PROMPT>();
+      }
+    }
+    else {
+      inject_into_answer(&input, 1);
+    }
     refresh_needed = TRUE;
   }
   else {
@@ -643,17 +680,22 @@ void char_callback(GLFWwindow *window, Uint ch) {
       return;
     }
     else if (openfile->mark && openfile->softmark) {
-      // zap_replace_text(&input, 1);
-      // return;
-      openfile->mark = NULL;
+      zap_replace_text(&input, 1);
+      keep_mark            = FALSE;
+      last_key_was_bracket = FALSE;
+      last_bracket_char    = '\0';
+      openfile->mark       = NULL;
+      return;
     }
     /* If a enclose char is pressed without a having a marked region, we simply enclose in place. */
     else if (is_enclose_char(input)) {
       /* If quote or double quote was just enclosed in place just move once to the right. */
       if ((input == '"' && last_key_was_bracket && last_bracket_char == '"') || (input == '\'' && last_key_was_bracket && last_bracket_char == '\'')) {
         do_right();
+        keep_mark = FALSE;
         last_key_was_bracket = FALSE;
         last_bracket_char = '\0';
+        refresh_needed = TRUE;
         return;
       }
       /* Exceptions for enclosing quotes. */
@@ -727,13 +769,13 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   if (button == GLFW_MOUSE_BUTTON_1) {
     if (action == GLFW_PRESS) {
       /* When in prompt-mode. */
-      if (guiflag.is_set<GUI_PROMPT>()) {
+      if (gui->flag.is_set<GUI_PROMPT>()) {
         mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
         /* Get the index in the prompt. */
         long index = prompt_index_from_mouse(FALSE);
         /* If the mouse press was on anything other then inside the top-bar, exit prompt-mode. */
         if (index == -1) {
-          guiflag.unset<GUI_PROMPT>();
+          gui->flag.unset<GUI_PROMPT>();
         }
         /* Otherwise, set prompt x pos. */
         else {
@@ -742,11 +784,11 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
       uielementstruct *element = element_from_mousepos();
       /* When the mouse is pressed in the editelement. */
-      if (element == editelement) {
+      if (element == openeditor->main) {
         mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
         /* Get the line and index from the mouse position. */
         Ulong index;
-        linestruct *line = line_and_index_from_mousepos(markup.font, &index);
+        linestruct *line = line_and_index_from_mousepos(gui->font, &index);
         if (line) {
           openfile->current     = line;
           openfile->mark        = line;
@@ -836,7 +878,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 void mouse_pos_callback(GLFWwindow *window, double x, double y) {
   mousepos = vec2(x, y);
   if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
-    if (guiflag.is_set<GUI_PROMPT>()) {
+    if (gui->flag.is_set<GUI_PROMPT>()) {
       long index = prompt_index_from_mouse(TRUE);
       if (index != -1) {
         typing_x = index;
@@ -844,7 +886,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     }
     else {
       Ulong index;
-      linestruct *line = line_and_index_from_mousepos(markup.font, &index);
+      linestruct *line = line_and_index_from_mousepos(gui->font, &index);
       if (line) {
         openfile->current   = line;
         openfile->current_x = index;
@@ -926,17 +968,17 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
 /* Window entering and leaving callback. */
 void window_enter_callback(GLFWwindow *window, int entered) {
   if (!entered) {
-    if (mousepos.x <= ((float)window_width / 2)) {
+    if (mousepos.x <= ((float)gui->width / 2)) {
       mousepos.x = -30.0f;
     }
-    else if (mousepos.x >= ((float)window_width / 2)) {
-      mousepos.x = (window_width + 30.0f);
+    else if (mousepos.x >= ((float)gui->width / 2)) {
+      mousepos.x = (gui->width + 30.0f);
     }
-    if (mousepos.y <= ((float)window_height / 2)) {
+    if (mousepos.y <= ((float)gui->height / 2)) {
       mousepos.y = -30.0f;
     }
-    else if (mousepos.y >= ((float)window_height / 2)) {
-      mousepos.y = (window_height + 30.0f);
+    else if (mousepos.y >= ((float)gui->height / 2)) {
+      mousepos.y = (gui->height + 30.0f);
     }
     /* If there is a currently entered element, call its leave callback.  If it has one. */
     if (entered_element) {
@@ -951,11 +993,11 @@ void window_enter_callback(GLFWwindow *window, int entered) {
 /* Scroll callback. */
 void scroll_callback(GLFWwindow *window, double x, double y) {
   uielementstruct *element = element_from_mousepos();
-  if (element == editelement) {
+  if (element == openeditor->main) {
     /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
     if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
       Ulong index;
-      linestruct *line = line_and_index_from_mousepos(markup.font, &index);
+      linestruct *line = line_and_index_from_mousepos(gui->font, &index);
       if (line) {
         openfile->current   = line;
         openfile->current_x = index;
