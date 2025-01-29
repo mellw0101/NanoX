@@ -1466,28 +1466,53 @@ void do_enter(void) {
   focusing       = FALSE;
 }
 
-/* Discard undo items that are newer than the given one, or all if NULL. */
-void discard_until(const undostruct *thisitem) _NOTHROW {
-  undostruct  *dropit = openfile->undotop;
-  groupstruct *group;
+/* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
+void discard_until_in_buffer(openfilestruct *buffer, const undostruct *thisitem) {
+  undostruct  *dropit = buffer->undotop;
+  groupstruct *group, *next;
   while (dropit && dropit != thisitem) {
-    openfile->undotop = dropit->next;
+    buffer->undotop = dropit->next;
     free(dropit->strdata);
-    free_lines(dropit->cutbuffer);
+    free(dropit->cutbuffer);
     group = dropit->grouping;
     while (group) {
-      groupstruct *next = group->next;
+      next = group->next;
       free_chararray(group->indentations, (group->bottom_line - group->top_line + 1));
       free(group);
       group = next;
     }
     free(dropit);
-    dropit = openfile->undotop;
+    dropit = buffer->undotop;
   }
-  /* Adjust the pointer to the top of the undo stack. */
-  openfile->current_undo = (undostruct *)thisitem;
-  /* Prevent a chain of editing actions from continuing. */
-  openfile->last_action = OTHER;
+  /* Adjust the pointer to the top of the undo struct. */
+  buffer->current_undo = (undostruct *)thisitem;
+  /* Prevent a chain of edition actions from continuing. */
+  buffer->last_action = OTHER;
+}
+
+/* Discard undo items that are newer than the given one, or all if NULL. */
+void discard_until(const undostruct *thisitem) _NOTHROW {
+  // undostruct  *dropit = openfile->undotop;
+  // groupstruct *group;
+  // while (dropit && dropit != thisitem) {
+  //   openfile->undotop = dropit->next;
+  //   free(dropit->strdata);
+  //   free_lines(dropit->cutbuffer);
+  //   group = dropit->grouping;
+  //   while (group) {
+  //     groupstruct *next = group->next;
+  //     free_chararray(group->indentations, (group->bottom_line - group->top_line + 1));
+  //     free(group);
+  //     group = next;
+  //   }
+  //   free(dropit);
+  //   dropit = openfile->undotop;
+  // }
+  // /* Adjust the pointer to the top of the undo stack. */
+  // openfile->current_undo = (undostruct *)thisitem;
+  // /* Prevent a chain of editing actions from continuing. */
+  // openfile->last_action = OTHER;
+  discard_until_in_buffer(openfile, thisitem);
 }
 
 /* Add a new undo item of the given type to the top of the current pile. */

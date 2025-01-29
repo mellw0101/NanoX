@@ -10,17 +10,19 @@ uigridmapclass gridmap(GRIDMAP_GRIDSIZE);
 /* Frame timer to keep a frame rate. */
 frametimerclass frametimer;
 /* The file menu button element. */
-uielementstruct *file_menu_element = NULL;
-uielementstruct *open_file_element = NULL;
+guielement *file_menu_element = NULL;
+guielement *open_file_element = NULL;
 
-vertex_buffer_t *vertbuf = NULL;
 vec2 pen;
 
 static fvector4 _GL_UNUSED black_vec4 = {{ 0.0f, 0.0f, 0.0f, 1.0f }};
 static fvector4 _GL_UNUSED white_vec4 = {{ 1.0f, 1.0f, 1.0f, 1.0f }};
 static fvector4 _GL_UNUSED none_vec4  = {{ 0.0f, 0.0f, 1.0f, 0.0f }};
 
+/* The list of all `gui-editors`. */
 guieditor *openeditor = NULL;
+/* The first open `gui-editor`. */
+guieditor *starteditor = NULL;
 
 /* The main structure that holds all the data the gui needs. */
 guistruct *gui = NULL;
@@ -42,83 +44,6 @@ constexpr const Uint indices[] = {
   0, 1, 2, /* First triangle. */
   2, 3, 0  /* Second triangle. */
 };
-
-/* Create a ui element. */
-static uielementstruct *make_element(vec2 pos, vec2 size, vec2 endoff, vec4 color) _NOTHROW {
-  uielementstruct *newelement = (uielementstruct *)nmalloc(sizeof(*newelement));
-  newelement->pos       = pos;
-  newelement->size      = size;
-  newelement->endoff    = endoff;
-  newelement->color     = color;
-  newelement->textcolor = 0.0f;
-  newelement->lable     = NULL;
-  newelement->lablelen  = 0;
-  newelement->callback  = NULL;
-  newelement->parent    = NULL;
-  newelement->children  = MVector<uielementstruct*>{};
-  gridmap.set(newelement);
-  newelement->flag.clear();
-  return newelement;
-}
-
-/* Delete a element and all its children. */
-static void delete_element(uielementstruct *element) {
-  if (!element) {
-    return;
-  }
-  for (Ulong i = 0; i < element->children.size(); ++i) {
-    delete_element(element->children[i]);
-    element->children[i] = NULL;
-  }
-  free(element->lable);
-  free(element);
-  element = NULL;
-}
-
-/* Create a new editor. */
-static guieditor *make_new_editor(void) {
-  guieditor *neweditor = (guieditor *)nmalloc(sizeof(*neweditor));
-  neweditor->buffer    = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
-  neweditor->openfile  = openfile;
-  neweditor->font      = gui->font;
-  neweditor->next      = NULL;
-  neweditor->prev      = NULL;
-  neweditor->pen       = 0.0f;
-  neweditor->gutter = make_element(
-    vec2(0.0f, gui->topbar->size.h),
-    vec2(((gui->font->face->max_advance_width >> 6) * margin + 1), gui->height),
-    0.0f,
-    EDIT_BACKGROUND_COLOR
-  );
-  neweditor->main = make_element(
-    vec2(neweditor->gutter->size.w, gui->topbar->size.h),
-    vec2(gui->width, gui->height),
-    0.0f,
-    EDIT_BACKGROUND_COLOR
-  );
-  return neweditor;
-}
-
-static void delete_editor(guieditor *editor) {
-  if (!editor) {
-    return;
-  }
-  vertex_buffer_delete(editor->buffer);
-  delete_element(editor->gutter);
-  delete_element(editor->main);
-  free(editor);
-  editor = NULL;
-}
-
-/* Set an elements lable text. */
-void set_element_lable(uielementstruct *element, const char *string) _NOTHROW {
-  if (element->flag.is_set<UIELEMENT_HAS_LABLE>()) {
-    free(element->lable);
-  }
-  element->lable    = copy_of(string);
-  element->lablelen = strlen(string);
-  element->flag.set<UIELEMENT_HAS_LABLE>();
-}
 
 /* Init font shader and buffers. */
 static void setup_font_shader(void) {
@@ -163,7 +88,6 @@ static void setup_font_shader(void) {
     glDeleteProgram(gui->font_shader);
     die("Failed to find fallback font: '%s' does not exist.\n");
   }
-  vertbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
   /* Look for jetbrains regular font. */
   if (is_file_and_exists(JETBRAINS_REGULAR_FONT_PATH)) {
     gui->atlas = texture_atlas_new(512, 512, 1);
@@ -238,22 +162,22 @@ static void setup_top_bar(void) {
   file_menu_element->textcolor = vec4(1.0f);
   file_menu_element->parent    = gui->topbar;
   gui->topbar->children.push_back(file_menu_element);
-  file_menu_element->callback = [](int type) {
-    if (type == UIELEMENT_ENTER_CALLBACK) {
+  file_menu_element->callback = [](guielement *self, guielement_callback_type type) {
+    if (type == GUIELEMENT_ENTER_CALLBACK) {
       file_menu_element->color     = vec4(1.0f);
       file_menu_element->textcolor = vec4(vec3(0.0f), 1.0f);
       /* Show all children of the file menu. */
       for (auto child : file_menu_element->children) {
-        child->flag.unset<UIELEMENT_HIDDEN>();
+        child->flag.unset<GUIELEMENT_HIDDEN>();
       }
     }
-    else if (type == UIELEMENT_LEAVE_CALLBACK) {
+    else if (type == GUIELEMENT_LEAVE_CALLBACK) {
       file_menu_element->color     = vec4(vec3(0.0f), 1.0f);
       file_menu_element->textcolor = vec4(1.0f);
       /* Only close all this when the currently entered window is not file_menu_element or its children. */
       if (!is_ancestor(element_from_mousepos(), file_menu_element)) {
         for (auto child : file_menu_element->children) {
-          child->flag.set<UIELEMENT_HIDDEN>();
+          child->flag.set<GUIELEMENT_HIDDEN>();
         }
       }
       refresh_needed = TRUE;  
@@ -268,19 +192,19 @@ static void setup_top_bar(void) {
   );
   set_element_lable(open_file_element, " Open File ");
   open_file_element->textcolor = vec4(1.0f);
-  open_file_element->flag.set<UIELEMENT_HIDDEN>();
+  open_file_element->flag.set<GUIELEMENT_HIDDEN>();
   open_file_element->parent = file_menu_element;
   file_menu_element->children.push_back(open_file_element);
-  open_file_element->callback = [](int type) {
-    if (type == UIELEMENT_ENTER_CALLBACK) {
+  open_file_element->callback = [](guielement *self, guielement_callback_type type) {
+    if (type == GUIELEMENT_ENTER_CALLBACK) {
       open_file_element->color     = vec4(1.0f);
       open_file_element->textcolor = vec4(vec3(0.0f), 1.0f);  
     }
-    else if (type == UIELEMENT_LEAVE_CALLBACK) {
+    else if (type == GUIELEMENT_LEAVE_CALLBACK) {
       open_file_element->color     = vec4(vec3(0.0f), 1.0f);
       open_file_element->textcolor = vec4(1.0f);
       if (!is_ancestor(element_from_mousepos(), file_menu_element)) {
-        open_file_element->flag.set<UIELEMENT_HIDDEN>();
+        open_file_element->flag.set<GUIELEMENT_HIDDEN>();
       }
       refresh_needed = TRUE;  
     }
@@ -296,7 +220,7 @@ static void setup_botbar(void) {
     0.0f,
     color_idx_to_vec4(FG_VS_CODE_RED)
   );
-  gui->botbar->flag.set<UIELEMENT_HIDDEN>();
+  gui->botbar->flag.set<GUIELEMENT_HIDDEN>();
 }
 
 /* Allocate and init the edit element. */
@@ -304,24 +228,44 @@ static void setup_edit_element(void) {
   /* Confirm the margin first to determen how wide the gutter has to be. */
   confirm_margin();
   /* Create the editor circular list. */
-  openeditor = make_new_editor();
+  make_new_editor(FALSE);
+}
+
+/* Create the main guistruct, completely blank. */
+static void make_guistruct(void) {
+  /* Allocate the gui object. */
+  gui = (guistruct *)nmalloc(sizeof(*gui));
+  /* Then init all fields to something invalid, this is important if we need to abort. */
+  gui->title       = NULL;
+  gui->width       = 0;
+  gui->height      = 0;
+  gui->window      = NULL;
+  gui->flag        = bit_flag_t<8>();
+  gui->handler     = NULL;
+  gui->topbar      = NULL;
+  gui->topbuf      = NULL;
+  gui->botbar      = NULL;
+  gui->botbuf      = NULL;
+  gui->entered     = NULL;
+  gui->projection  = NULL;
+  gui->font_shader = 0;
+  gui->uifont      = NULL;
+  gui->uifont_size = 0;
+  gui->font        = NULL;
+  gui->font_size   = 0;
+  gui->atlas       = NULL;
+  gui->rect_shader = 0;
 }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */
 static void init_guistruct(const char *win_title, Uint win_width, Uint win_height, Uint fps, Uint font_size) {
-  gui = (guistruct *)nmalloc(sizeof(*gui));
-  gui->font_shader = 0;
-  gui->rect_shader = 0;
-  gui->topbar = NULL;
-  gui->topbuf = NULL;
-  gui->botbar = NULL;
-  gui->botbuf = NULL;
-  gui->font   = NULL;
-  gui->atlas  = NULL;
+  /* Create the fully blank guistruct. */
+  make_guistruct();
   /* Set the basic data needed to init the window. */
-  gui->title  = copy_of(win_title);
-  gui->width  = win_width;
-  gui->height = win_height;
+  gui->title      = copy_of(win_title);
+  gui->width      = win_width;
+  gui->height     = win_height;
+  gui->projection = (matrix4x4 *)nmalloc(sizeof(*gui->projection));
   /* Then create the glfw window. */
   gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
   if (!gui->window) {
@@ -329,7 +273,6 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
     die("Failed to create glfw window.\n");
   }
   glfwMakeContextCurrent(gui->window);
-  gui->flag.clear();
   frametimer.fps = fps;
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
@@ -367,9 +310,6 @@ static void delete_guistruct(void) {
 
 /* Cleanup before exit. */
 static void cleanup(void) {
-  // delete_element(top_bar);
-  vertex_buffer_delete(vertbuf);
-  // vertex_buffer_delete(topbuf);
   delete_editor(openeditor);
   delete_guistruct();
 }

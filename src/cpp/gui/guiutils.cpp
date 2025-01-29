@@ -113,13 +113,13 @@ linestruct *line_from_mouse_y(texture_font_t *withfont, float offset) {
 /* Return the line and the index in the line, from a x and y position. */
 linestruct *line_and_index_from_mousepos(texture_font_t *withfont, Ulong *index) {
   /* If outside editelement confinement. */
-  if (mousepos.y < openeditor->main->pos.y) {
+  if (mousepos.y < openeditor->text->pos.y) {
     *index = 0;
     return openfile->edittop;
   }
-  linestruct *line = line_from_mouse_y(withfont, openeditor->main->pos.y);
+  linestruct *line = line_from_mouse_y(withfont, openeditor->text->pos.y);
   if (line) {
-    *index = index_from_mouse_x(line->data, withfont, openeditor->main->pos.x);
+    *index = index_from_mouse_x(line->data, withfont, openeditor->text->pos.x);
   }
   return line;
 }
@@ -166,7 +166,7 @@ float line_y_pixel_offset(linestruct *line, texture_font_t *withfont) {
   else if (relative_row > editwinrows) {
     return gui->height;
   }
-  return ((relative_row * FONT_HEIGHT(withfont)) - withfont->descender + openeditor->main->pos.y);
+  return ((relative_row * FONT_HEIGHT(withfont)) - withfont->descender + openeditor->text->pos.y);
 }
 
 /* Calculates cursor y position for the gui. */
@@ -233,31 +233,32 @@ void add_openfile_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color)
 void update_projection_uniform(Uint shader) {
   glUseProgram(shader);
   {
-    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, FALSE, gui->projection.data);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, FALSE, gui->projection->data);
   }
-}
-
-/* Get ui element from current mouse position. */
-uielementstruct *element_from_mousepos(void) {
-  ivec2 pos(mousepos);
-  if (gridmap.contains(pos)) {
-    return gridmap.get(pos);
-  }
-  return NULL;
 }
 
 /* Add a ui element`s lable to the vertex-buffer. */
-void vertex_buffer_add_element_lable(uielementstruct *element, texture_font_t *withfont, vertex_buffer_t *buffer) {
-  if (!element->flag.is_set<UIELEMENT_HAS_LABLE>()) {
+void vertex_buffer_add_element_lable(guielement *element, texture_font_t *withfont, vertex_buffer_t *buffer) {
+  if (!element->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
     die("%s: Element had no text.\n", __func__);
   }
   vec2 pos(element->pos.x, (element->pos.y + FONT_HEIGHT(withfont) + withfont->descender));
   vertex_buffer_add_string(buffer, element->lable, element->lablelen, NULL, withfont, element->textcolor, &pos);
 }
 
+/* Add a ui element`s lable to the vertex-buffer, offset by `offset`. */
+void vertex_buffer_add_element_lable_offset(guielement *element, texture_font_t *font, vertex_buffer_t *buf, vec2 offset) {
+  if (!element->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
+    die("%s: Element had no text.\n", __func__);
+  }
+  vec2 pos(element->pos.x, (element->pos.y + FONT_HEIGHT(font) + font->descender));
+  pos += offset;
+  vertex_buffer_add_string(buf, element->lable, element->lablelen, NULL, font, element->textcolor, &pos);
+}
+
 /* Returns 'TRUE' when 'ancestor' is an ancestor to e or is e itself. */
-bool is_ancestor(uielementstruct *e, uielementstruct *ancestor) {
-  uielementstruct *element = e;
+bool is_ancestor(guielement *e, guielement *ancestor) {
+  guielement *element = e;
   while (element) {
     if (element == ancestor) {
       return TRUE;
@@ -269,8 +270,6 @@ bool is_ancestor(uielementstruct *e, uielementstruct *ancestor) {
 
 /* Return's a `vec4` of scaled 8bit values to the scale of `0-1.0f`. */
 vec4 color_idx_to_vec4(int index) {
-#define PF8BIT(bit_value) (bit_value / 255.0f)
-#define VEC4_8BIT(r, g, b, a) vec4(PF8BIT(r), PF8BIT(g), PF8BIT(b), a)
   switch (index) {
     case FG_VS_CODE_RED: {
       return VEC4_8BIT(205, 49, 49, 1);

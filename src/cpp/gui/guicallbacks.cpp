@@ -25,7 +25,7 @@ typedef enum {
 /* Flags to represent what the mouse is currently doing, across callback functions. */
 static bit_flag_t<MOUSEFLAG_SIZE> mouse_flag;
 /* The element that was last entered, and witch element just ran its enter callback. */
-static uielementstruct *entered_element = NULL;
+static guielement *entered_element = NULL;
 /* The mouse position. */
 vec2 mousepos;
 
@@ -36,7 +36,7 @@ void window_resize_callback(GLFWwindow *window, int newwidth, int newheight) {
   /* Set viewport. */
   glViewport(0, 0, gui->width, gui->height);
   /* Set the projection. */
-  matrix4x4_set_orthographic(&gui->projection, 0.0f, gui->width, gui->height, 0.0f, -1.0f, 1.0f);
+  matrix4x4_set_orthographic(gui->projection, 0.0f, gui->width, gui->height, 0.0f, -1.0f, 1.0f);
   /* Upload it to both the shaders. */
   update_projection_uniform(gui->font_shader);
   update_projection_uniform(gui->rect_shader);
@@ -48,22 +48,23 @@ void window_resize_callback(GLFWwindow *window, int newwidth, int newheight) {
     vec2(0.0f, gui->topbar->size.h),
     vec2((FONT_WIDTH(gui->font) * margin), gui->height)
   );
+  move_resize_element(openeditor->topbar, (gui->topbar->pos + vec2(0, FONT_HEIGHT(openeditor->font))), gui->topbar->size);
   /* Ensure the edit element is correctly sized. */
   move_resize_element(
-    openeditor->main,
-    vec2((openeditor->gutter->pos.x + openeditor->gutter->size.w), gui->topbar->size.h),
+    openeditor->text,
+    vec2((openeditor->gutter->pos.x + openeditor->gutter->size.w), (openeditor->topbar->pos.y + openeditor->topbar->size.h)),
     vec2(gui->width - (openeditor->gutter->pos.x + openeditor->gutter->size.w), (gui->height - gui->topbar->size.h))
   );
   /* Calculate the rows and columns. */
-  editwinrows = (openeditor->main->size.h / FONT_HEIGHT(gui->font));
+  editwinrows = (openeditor->text->size.h / FONT_HEIGHT(gui->font));
   /* If the font is a mono font then calculate the number of columns by the width of ' '. */
   if (texture_font_is_mono(gui->font)) {
     texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
-    editwincols = (openeditor->main->size.w / glyph->advance_x);
+    editwincols = (openeditor->text->size.w / glyph->advance_x);
   }
   /* Otherwise, just guess for now. */
   else {
-    editwincols = ((openeditor->main->size.w / FONT_WIDTH(gui->font)) * 0.9f);
+    editwincols = ((openeditor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
   }
   refresh_needed = TRUE;
 }
@@ -196,7 +197,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
       refresh_needed = TRUE;
     }
   }
-  /* Otherwise, do the main bindings. */
+  /* Otherwise, do the text bindings. */
   else {
     mouse_flag.clear();
     /* Reset shift. */
@@ -229,7 +230,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_Q: {
           if (mods == GLFW_MOD_CONTROL) {
             if (!openfile->modified || ISSET(VIEW_MODE)) {
-              glfwSetWindowShouldClose(window, TRUE);
+              if (gui_close_and_go()) {
+                glfwSetWindowShouldClose(window, TRUE);
+              }
             }
             else if (ISSET(SAVE_ON_EXIT) && *openfile->filename) {
               ;
@@ -377,27 +380,33 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             if (prev_stidx != openfile->current_x) {
               NETLOG("Prev start index: '%lu'.\n", prev_stidx);
             }
+            move_element(openeditor->topbar, (openeditor->topbar->pos + vec2(0, 20)));
           }
           break;
         }
         case GLFW_KEY_RIGHT: {
           switch (mods) {
-            /* Move to next word with shift held. */
+            /* Alt+Right.  Switch to the next buffer inside this editor. */
+            case GLFW_MOD_ALT: {
+              function = gui_switch_to_next_buffer;
+              break;
+            }
+            /* Ctrl+Shift+Right.  Move to next word with shift held. */
             case (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT): {
               shift_held = TRUE;
               _FALLTHROUGH;
             }
-            /* Move to next word. */
+            /* Ctrl+Right.  Move to next word. */
             case GLFW_MOD_CONTROL: {
               function = to_next_word;
               break;
             }
-            /* Shift+Right. */
+            /* Shift+Right.  Move to the right with shift held. */
             case GLFW_MOD_SHIFT: {
               shift_held = TRUE;
               _FALLTHROUGH;
             }
-            /* Move right. */
+            /* Right.  Move right. */
             case 0: {
               function = do_right;
             }
@@ -406,22 +415,27 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_LEFT: {
           switch (mods) {
-            /* Move to prev word with shift held. */
+            /* Alt+Left.  Switch to the previous buffer inside this editor. */
+            case GLFW_MOD_ALT: {
+              function = gui_switch_to_prev_buffer;
+              break;
+            }
+            /* Ctrl+Shift+Left.  Move to prev word with shift held. */
             case (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT): {
               shift_held = TRUE;
               _FALLTHROUGH;
             }
-            /* Move to prev word. */
+            /* Ctrl+Left.  Move to prev word. */
             case GLFW_MOD_CONTROL: {
               function = to_prev_word;
               break;
             }
-            /* Shift+Left. */
+            /* Shift+Left.  Move left with shift held. */
             case GLFW_MOD_SHIFT: {
               shift_held = TRUE;
               _FALLTHROUGH;
             }
-            /* Move left. */
+            /* Left.  Move left. */
             case 0: {
               function = do_left;
             }
@@ -782,9 +796,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           typing_x = index;
         }
       }
-      uielementstruct *element = element_from_mousepos();
+      guielement *element = element_from_mousepos();
       /* When the mouse is pressed in the editelement. */
-      if (element == openeditor->main) {
+      if (element == openeditor->text) {
         mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
         /* Get the line and index from the mouse position. */
         Ulong index;
@@ -825,7 +839,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       /* For when the top bar is pressed, like when in prompt-mode. */
       /* And, when pressed in any other element. */
       else if (element && element->callback) {
-        element->callback(UIELEMENT_CLICK_CALLBACK);
+        element->callback(element, GUIELEMENT_CLICK_CALLBACK);
       }
     }
     else if (action == GLFW_RELEASE) {
@@ -944,19 +958,19 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     }
   }
   /* Get the element that the mouse is on. */
-  uielementstruct *mouse_element = element_from_mousepos();
+  guielement *mouse_element = element_from_mousepos();
   if (mouse_element) {
     /* If the current mouse element is not the current entered element. */
     if (mouse_element != entered_element) {
       /* Run the enter element for the mouse element, if any. */
       if (mouse_element->callback) {
-        mouse_element->callback(UIELEMENT_ENTER_CALLBACK);
+        mouse_element->callback(mouse_element, GUIELEMENT_ENTER_CALLBACK);
       }
       /* If the old entered element was not NULL. */
       if (entered_element) {
         /* Run the leave event for the old entered element, if any. */
         if (entered_element->callback) {
-          entered_element->callback(UIELEMENT_LEAVE_CALLBACK);
+          entered_element->callback(entered_element, GUIELEMENT_LEAVE_CALLBACK);
         }
       }
       entered_element = mouse_element;
@@ -983,7 +997,7 @@ void window_enter_callback(GLFWwindow *window, int entered) {
     /* If there is a currently entered element, call its leave callback.  If it has one. */
     if (entered_element) {
       if (entered_element->callback) {
-        entered_element->callback(UIELEMENT_LEAVE_CALLBACK);
+        entered_element->callback(entered_element, GUIELEMENT_LEAVE_CALLBACK);
       }
       entered_element = NULL;
     }
@@ -992,8 +1006,8 @@ void window_enter_callback(GLFWwindow *window, int entered) {
 
 /* Scroll callback. */
 void scroll_callback(GLFWwindow *window, double x, double y) {
-  uielementstruct *element = element_from_mousepos();
-  if (element == openeditor->main) {
+  guielement *element = element_from_mousepos();
+  if (element == openeditor->text) {
     /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
     if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
       Ulong index;

@@ -98,33 +98,6 @@ void draw_rect(vec2 pos, vec2 size, vec4 color) {
   }
 }
 
-/* Draw a ui-element`s rect. */
-void draw_uielement_rect(uielementstruct *element) {
-  draw_rect(element->pos, element->size, element->color);
-}
-
-/* Resize an element as well as correctly adjust it in the gridmap. */
-void resize_element(uielementstruct *e, vec2 size) {
-  gridmap.remove(e);
-  e->size = size;
-  gridmap.set(e);
-}
-
-/* Move an element as well as correctly adjust it in the gridmap. */
-void move_element(uielementstruct *e, vec2 pos) {
-  gridmap.remove(e);
-  e->pos = pos;
-  gridmap.set(e);
-}
-
-/* Move and resize an element and correctly set it in the gridmap. */
-void move_resize_element(uielementstruct *e, vec2 pos, vec2 size) {
-  gridmap.remove(e);
-  e->pos  = pos;
-  e->size = size;
-  gridmap.set(e);
-}
-
 static void render_vertex_buffer(Uint shader, vertex_buffer_t *buffer) {
   glEnable(GL_TEXTURE_2D);
   glUseProgram(shader);
@@ -264,51 +237,43 @@ void show_toggle_statusmsg(int flag) {
   show_statusmsg(REMARK, 2, "%s %s", epithet_of_flag(flag), (ISSET(flag) ? "enabled" : "disabled"));
 }
 
-/* Render the editelement. */
-void draw_editelement(void) {
-  int row = 0;
-  linestruct *line = openfile->edittop;
-  /* Draw the edit element first. */
-  draw_uielement_rect(openeditor->main);
-  /* Then draw the gutter. */
-  draw_uielement_rect(openeditor->gutter);
-  /* When required, clear the vertex. */
-  if (refresh_needed) {
-    /* Now handle the text. */
-    pen.y = openeditor->main->pos.y;
-    vertex_buffer_clear(vertbuf);
-  }
-  while (line && ++row <= editwinrows) {
-    if (refresh_needed) {
-      /* Only set the pen if required. */
-      pen.x = 0;
-      pen.y += FONT_HEIGHT(gui->font);
-    }
-    gui_draw_row(line, openeditor, &pen);
-    line = line->next;
-  }
-  if (refresh_needed) {
-    upload_texture_atlas(gui->atlas);
-    if (!gui->flag.is_set<GUI_PROMPT>()) {
-      /* Add the cursor to the buffer, when not in prompt-mode. */
-      add_openfile_cursor(gui->font, vertbuf, vec4(1.0f));
-    }
-  }
-  render_vertex_buffer(gui->font_shader, vertbuf);
-}
-
 /* Draw a editor. */
 void draw_editor(guieditor *editor) {
   int row = 0;
   linestruct *line = editor->openfile->edittop;
-  /* Draw the main editor element. */
-  draw_uielement_rect(editor->main);
+  /* Draw the text editor element. */
+  draw_element_rect(editor->text);
   /* Draw the gutter element of the editor. */
-  draw_uielement_rect(editor->gutter);
+  draw_element_rect(editor->gutter);
+  /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
+  draw_element_rect(editor->topbar);
+  if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
+    vertex_buffer_clear(editor->topbuf);
+    for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
+      /* Assign the child to a new ptr for readbility. */
+      guielement *child = editor->topbar->children[i];
+      /* Draw the child rect. */
+      draw_element_rect(child);
+      /* Update the data in the topbuf. */
+      if (child->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
+        vertex_buffer_add_element_lable_offset(child, editor->font, editor->topbuf, vec2(pixel_breadth(editor->font, " "), 0));
+      }
+    }
+    upload_texture_atlas(gui->atlas);
+  }
+  else {
+    for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
+      /* Assign the child to a new ptr for readbility. */
+      guielement *child = editor->topbar->children[i];
+      /* Draw the child rect. */
+      draw_element_rect(child);
+    }
+  }
+  render_vertex_buffer(gui->font_shader, editor->topbuf);
   if (refresh_needed) {
-    editor->pen.y = editor->main->pos.y;
+    editor->pen.y = editor->text->pos.y;
     vertex_buffer_clear(editor->buffer);
-    while (line && ++row <= editwinrows) {
+    while (line && ++row < editwinrows) {
       editor->pen.x = 0;
       editor->pen.y += FONT_HEIGHT(editor->font);
       gui_draw_row(line, editor, &editor->pen);
@@ -337,7 +302,7 @@ void draw_top_bar(void) {
     gui->topbar->color = EDIT_BACKGROUND_COLOR;
   }
   /* Always draw the top-bar.  For now. */
-  draw_uielement_rect(gui->topbar);
+  draw_element_rect(gui->topbar);
   /* When in prompt mode.  Only draw the prompt and the answer. */
   if (gui->flag.is_set<GUI_PROMPT>()) {
     if (refresh_needed) {
@@ -354,14 +319,14 @@ void draw_top_bar(void) {
   }
   /* Otherwise, draw the menu elements as usual. */
   else {
-    draw_uielement_rect(file_menu_element);
+    draw_element_rect(file_menu_element);
     if (refresh_needed) {
       vertex_buffer_clear(gui->topbuf);
       vertex_buffer_add_element_lable(file_menu_element, gui->font, gui->topbuf);
     }
     for (auto child : file_menu_element->children) {
-      if (!child->flag.is_set<UIELEMENT_HIDDEN>()) {
-        draw_uielement_rect(child);
+      if (!child->flag.is_set<GUIELEMENT_HIDDEN>()) {
+        draw_element_rect(child);
         if (refresh_needed) {
           vertex_buffer_add_element_lable(child, gui->font, gui->topbuf);
         }
@@ -383,11 +348,11 @@ void draw_botbar(void) {
     if (statustime < 0) {
       /* If the set time has elapsed, then reset the status element. */
       statustype = VACUUM;
-      gui->botbar->flag.set<UIELEMENT_HIDDEN>();
+      gui->botbar->flag.set<GUIELEMENT_HIDDEN>();
       return;
     }
     if (refresh_needed) {
-      gui->botbar->flag.unset<UIELEMENT_HIDDEN>();
+      gui->botbar->flag.unset<GUIELEMENT_HIDDEN>();
       float msgwidth = (pixel_breadth(gui->font, statusmsg) + pixel_breadth(gui->font, "  "));
       vertex_buffer_clear(gui->botbuf);
       move_resize_element(
@@ -399,7 +364,7 @@ void draw_botbar(void) {
       vertex_buffer_add_string(gui->botbuf, statusmsg, strlen(statusmsg), " ", gui->font, vec4(1.0f), &penpos);
       upload_texture_atlas(gui->atlas);
     }
-    draw_uielement_rect(gui->botbar);
+    draw_element_rect(gui->botbar);
     render_vertex_buffer(gui->font_shader, gui->botbuf);
   }
 }

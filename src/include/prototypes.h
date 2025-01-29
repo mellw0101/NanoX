@@ -179,17 +179,13 @@ extern Ulong typing_x;
 typedef void (*functionptrtype)(void);
 
 #ifdef HAVE_GLFW
-  extern vertex_buffer_t *vertbuf;
-  // extern vertex_buffer_t *topbuf;
   extern vec2 pen;
-  // extern uielementstruct *top_bar;
-  extern uielementstruct *file_menu_element;
+  extern guielement *file_menu_element;
   /* The bottom bar. */
-  // extern uielementstruct *botbar;
-  // extern vertex_buffer_t *botbuf;
   extern frametimerclass frametimer;
   extern vec2 mousepos;
   extern guieditor *openeditor;
+  extern guieditor *starteditor;
   extern guistruct *gui;
   extern uigridmapclass gridmap;
   /* guiprompt.cpp */
@@ -304,6 +300,7 @@ void   prepare_for_display(void) _NOTHROW;
 void   mention_name_and_linecount(void) _NOTHROW;
 void   switch_to_prev_buffer(void) _NOTHROW;
 void   switch_to_next_buffer(void) _NOTHROW;
+void   free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) _NOTHROW;
 void   close_buffer(void) _NOTHROW;
 char  *encode_data(char *text, Ulong length) _NOTHROW;
 void   read_file(FILE *f, int fd, const char *filename, bool undoable);
@@ -507,6 +504,7 @@ void  do_insert_empty_line_below(void) _NOTHROW;
 void  do_undo(void);
 void  do_redo(void);
 void  do_enter(void);
+void  discard_until_in_buffer(openfilestruct *buffer, const undostruct *thisitem);
 void  discard_until(const undostruct *thisitem) _NOTHROW;
 void  add_undo(undo_type action, const char *message) _NOTHROW;
 void  update_multiline_undo(long lineno, char *indentation) _NOTHROW;
@@ -787,9 +785,9 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 
 #ifdef HAVE_GLFW
   /* 'gui.cpp' */
-  void set_element_lable(uielementstruct *element, const char *string) _NOTHROW;
   void init_gui(void);
   void glfw_loop(void);
+  
   /* 'gui/guiutils.cpp' */
   void  upload_texture_atlas(texture_atlas_t *atlas);
   float glyph_width(const char *current, const char *prev, texture_font_t *font);
@@ -809,10 +807,11 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void  add_openfile_cursor(texture_font_t *font, vertex_buffer_t *buffer, vec4 color);
   void  add_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color, vec2 at);
   void  update_projection_uniform(Uint shader);
-  uielementstruct *element_from_mousepos(void);
-  void vertex_buffer_add_element_lable(uielementstruct *element, texture_font_t *font, vertex_buffer_t *buffer);
-  bool is_ancestor(uielementstruct *e, uielementstruct *ancestor);
+  void vertex_buffer_add_element_lable(guielement *element, texture_font_t *font, vertex_buffer_t *buffer);
+  void vertex_buffer_add_element_lable_offset(guielement *element, texture_font_t *font, vertex_buffer_t *buf, vec2 offset);
+  bool is_ancestor(guielement *e, guielement *ancestor);
   vec4 color_idx_to_vec4(int index);
+  
   /* 'gui/guicallbacks.cpp' */
   void window_resize_callback(GLFWwindow *window, int newwidth, int newheight);
   void window_maximize_callback(GLFWwindow *window, int maximized);
@@ -822,23 +821,50 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void mouse_pos_callback(GLFWwindow *window, double x, double y);
   void window_enter_callback(GLFWwindow *window, int entered);
   void scroll_callback(GLFWwindow *window, double x, double y);
+  
   /* 'gui/guiwinio.cpp' */
   void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *font);
   void draw_rect(vec2 pos, vec2 size, vec4 color);
-  void draw_uielement_rect(uielementstruct *element);
-  void resize_element(uielementstruct *e, vec2 size);
-  void move_element(uielementstruct *e, vec2 pos);
-  void move_resize_element(uielementstruct *e, vec2 pos, vec2 size);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
   void show_toggle_statusmsg(int flag);
-  void draw_editelement(void);
   void draw_editor(guieditor *editor);
   void draw_top_bar(void);
   void draw_botbar(void);
   void do_fullscreen(GLFWwindow *window);
+  
   /* gui/guiprompt.cpp */
   void gui_ask_user(const char *question, guiprompt_type type);
   long prompt_index_from_mouse(bool allow_outside);
+
+  /* gui/guifiles.cpp */
+  void gui_switch_to_prev_buffer(void);
+  void gui_switch_to_next_buffer(void);
+  void gui_set_openfile(openfilestruct *file);
+  bool gui_delete_lockfile(const char *lockfile);
+  bool gui_close_and_go(void);
+  
+  /* gui/guielement.cpp */
+  guielement *make_element(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
+  guielement *make_element(bool in_gridmap = TRUE) _NOTHROW;
+  guielement *make_element_child(guielement *parent, bool in_gridmap = TRUE);
+  void delete_element(guielement *element);
+  void set_element_lable(guielement *element, const char *string) _NOTHROW;
+  void delete_guielement_children(guielement *element) _NOTHROW;
+  guielement *element_from_mousepos(void);
+  void resize_element(guielement *e, vec2 size);
+  void move_element(guielement *e, vec2 pos);
+  void move_resize_element(guielement *e, vec2 pos, vec2 size);
+  void delete_element_borders(guielement *e);
+  void set_element_borders(guielement *e, vec4 size, vec4 color);
+  void draw_element_rect(guielement *element);
+
+  /* gui/guieditor.cpp */
+  void update_editor_topbar(guieditor *editor);
+  void make_new_editor(bool new_buffer);
+  void delete_editor(guieditor *editor);
+  void free_editor_buffers(guieditor *editor);
+  guieditor *get_element_editor(guielement *e);
+  guieditor *get_file_editor(openfilestruct *file);
 #endif
 
 /* 'cfg.cpp'. */

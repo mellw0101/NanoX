@@ -379,6 +379,15 @@ using std::vector;
 #define COLORS (ISSET(NO_NCURSES) ? terminfo->max_colors_num : COLORS)
 
 #define IS_VOIDPTR_WIN(w1, w2) (ISSET(NO_NCURSES) ? tui_##w1 == w2 : w1 == w2)
+#define IS_VOIDPTR_WIN(w1, w2) (ISSET(NO_NCURSES) ? tui_##w1 == w2 : w1 == w2)
+
+/* Undefine MIN and MAX before we define them, to avoide warnings. */
+#undef MIN
+#undef MAX
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+#define VEC4_8BIT(r, g, b, a) vec4(MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1))
 
 /* Bool def. */
 #ifdef TRUE
@@ -394,6 +403,8 @@ using std::vector;
   #define TRUE 1
   #define FALSE 0
 #endif
+
+
 
 /* Enumeration types. */
 
@@ -623,21 +634,52 @@ typedef enum {
   } guiflag_type;
 
   typedef enum {
-    UIELEMENT_HIDDEN,
-    #define UIELEMENT_HIDDEN UIELEMENT_HIDDEN
-    UIELEMENT_HAS_LABLE,
-    #define UIELEMENT_HAS_LABLE UIELEMENT_HAS_LABLE
-  } elementflag_type;
+    /* This element is hidden, meaning it should never be returned by gridmap and it should not be rendered. */
+    GUIELEMENT_HIDDEN,
+    #define GUIELEMENT_HIDDEN GUIELEMENT_HIDDEN
+    /* The element has a lable, this simplifyes adding this and drawing this lable. */
+    GUIELEMENT_HAS_LABLE,
+    #define GUIELEMENT_HAS_LABLE GUIELEMENT_HAS_LABLE
+    /* Element uses relative positioning.  Note that when using this `relative_pos`
+     * should be set, so that when the parent is resized or moved it will follow. */
+    GUIELEMENT_RELATIVE_POS,
+    #define GUIELEMENT_RELATIVE_POS GUIELEMENT_RELATIVE_POS
+    /* The reverse of relative pos, in that the relative pos is based on the
+     * `right-bottom of the parent`, as apposed to the normal `(top-left of the parent)`. */
+    GUIELEMENT_REVERSE_RELATIVE_POS,
+    #define GUIELEMENT_REVERSE_RELATIVE_POS GUIELEMENT_REVERSE_RELATIVE_POS
+    /* This will be set only for elements that are borders. */
+    GUIELEMENT_IS_BORDER,
+    #define GUIELEMENT_IS_BORDER GUIELEMENT_IS_BORDER
+    GUIELEMENT_HAS_BORDERS,
+    #define GUIELEMENT_HAS_BORDERS GUIELEMENT_HAS_BORDERS
+    /* When this is set the gridmap will not add an element, even when called to do so.
+     * Usefull for things that will never need to interact with the mouse. */
+    GUIELEMENT_NOT_IN_GRIDMAP,
+    #define GUIELEMENT_NOT_IN_GRIDMAP GUIELEMENT_NOT_IN_GRIDMAP
+  } guielement_flag_type;
 
   typedef enum {
-    UIELEMENT_ENTER_CALLBACK,
-    #define UIELEMENT_ENTER_CALLBACK UIELEMENT_ENTER_CALLBACK
-    UIELEMENT_LEAVE_CALLBACK,
-    #define UIELEMENT_LEAVE_CALLBACK UIELEMENT_LEAVE_CALLBACK
-    UIELEMENT_CLICK_CALLBACK,
-    #define UIELEMENT_CLICK_CALLBACK UIELEMENT_CLICK_CALLBACK
-  } uielement_callback_type;
+    GUIELEMENT_ENTER_CALLBACK,
+    #define GUIELEMENT_ENTER_CALLBACK GUIELEMENT_ENTER_CALLBACK
+    GUIELEMENT_LEAVE_CALLBACK,
+    #define GUIELEMENT_LEAVE_CALLBACK GUIELEMENT_LEAVE_CALLBACK
+    GUIELEMENT_CLICK_CALLBACK,
+    #define GUIELEMENT_CLICK_CALLBACK GUIELEMENT_CLICK_CALLBACK
+  } guielement_callback_type;
+
+  typedef enum {
+    #define GUIEDITOR_FLAGSIZE 8
+    GUIEDITOR_TOPBAR_REFRESH_NEEDED
+    #define GUIEDITOR_TOPBAR_REFRESH_NEEDED GUIEDITOR_TOPBAR_REFRESH_NEEDED
+  } guieditor_flagtype;
 #endif
+
+/* Some forward declarations. */
+typedef struct guielement guielement;
+
+/* Some typedefs. */
+typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
 
 /* Structure types. */
 typedef struct colortype {
@@ -718,10 +760,10 @@ typedef struct groupstruct {
 } groupstruct;
 
 typedef struct undostruct {
-  undo_type type;        /* The operation type that this undo item is for. */
-  int xflags;            /* Some flag data to mark certain corner cases. */
+  undo_type type;        /* The `operation type` that this undo item is for. */
+  int xflags;            /* Some `flag data` to mark certain corner cases. */
   long head_lineno;      /* The line number where the operation began or ended. */
-  Ulong head_x;          /* The x position where the operation began or ended. */
+  Ulong head_x;          /* The `x position` where the operation `began` or `ended`. */
   char *strdata;         /* String data to help restore the affected line. */
   Ulong wassize;         /* The file size before the action. */
   Ulong newsize;         /* The file size after the action. */
@@ -842,34 +884,36 @@ typedef struct completionstruct {
     float r, g, b, a;   /* Color-data. */
   } vertex_t;
 
-  typedef struct uielementstruct {
-    vec2 pos;                            /* Where in the window this element has (x,y). */
-    vec2 endoff;                         /* The distance from the width and height of the full window.  If any. */
-    vec2 size;                           /* The size of this element. */
-    vec4 color;                          /* Color this element should be. */
-    vec4 textcolor;                      /* Color that text draw in this element should be. */
-    char *lable;                         /* If this ui element is a button or has static text. */
-    Uint lablelen;                       /* The length of the static text.  If any. */
-    bit_flag_t<8> flag;                  /* Flags for the element. */
-    void (*callback)(int);               /* Callback for all action types. */
-    uielementstruct *parent;             /* This element`s parent, or NULL when there is none. */
-    MVector<uielementstruct *> children; /* This elements children, for menus and such. */
-  } uielementstruct;
-
-  typedef struct uicordinathashstruct {
-    Ulong operator()(const ivec2 &coord) const {
-      Ulong hash_x = std::hash<int>()(coord.x);
-      Ulong hash_y = std::hash<int>()(coord.y);
-      return hash_x ^ (hash_y * 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2));
-    }
-  } uicordinathashstruct;
+  typedef struct guielement {
+    vec2                  pos;           /* Where in the window this element has (x,y). */
+    vec2                  relative_pos;  /* When relative position is used, this is the position relative to `parent`. */
+    vec2                  endoff;        /* The distance from the width and height of the full window.  If any. */
+    vec2                  size;          /* The size of this element. */
+    vec4                  color;         /* Color this element should be. */
+    vec4                  textcolor;     /* Color that text draw in this element should be. */
+    char                 *lable;         /* If this ui element is a button or has static text. */
+    Uint                  lablelen;      /* The length of the static text.  If any. */
+    bit_flag_t<8>         flag;          /* Flags for the element. */
+    guielement           *parent;        /* This element`s parent, or NULL when there is none. */
+    MVector<guielement *> children;      /* This elements children, for menus and such. */
+    guielement_callback callback;        /* Callback for all action types. */
+  } guielement;
 
   class uigridmapclass {
    private:
-    int cell_size;
-    std::unordered_map<ivec2, MVector<uielementstruct *>, uicordinathashstruct> grid;
+    struct cordinathash {
+      /* The hashing function to we use for the map. */
+      Ulong operator()(const ivec2 &coord) const {
+        Ulong hash_x = std::hash<int>()(coord.x);
+        Ulong hash_y = std::hash<int>()(coord.y);
+        return (hash_x ^ (hash_y * 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2)));
+      }
+    };
 
-    ivec2 to_grid_pos(const ivec2 &pos) const _GL_ATTRIBUTE_NOTHROW {
+    int cell_size;
+    std::unordered_map<ivec2, MVector<guielement *>, cordinathash> grid;
+
+    ivec2 to_grid_pos(const ivec2 &pos) const _NOTHROW {
       return ivec2(pos / cell_size);
     }
 
@@ -877,7 +921,11 @@ typedef struct completionstruct {
     uigridmapclass(int cell_size) : cell_size(cell_size) {};
 
     /* Set all grids that an element encompuses. */
-    void set(uielementstruct *e) {
+    void set(guielement *e) {
+      /* If this element should never be in the gridmap, just exit. */
+      if (e->flag.is_set<GUIELEMENT_NOT_IN_GRIDMAP>()) {
+        return;
+      }
       ivec2 start = to_grid_pos(e->pos);
       ivec2 end   = to_grid_pos(e->pos + e->size);
       for (int x = start.x; x <= end.x; ++x) {
@@ -888,7 +936,11 @@ typedef struct completionstruct {
     }
 
     /* Remove all entries for a given element, at all grids based on its size. */
-    void remove(uielementstruct *e) {
+    void remove(guielement *e) {
+      /* If this element should never be in the gridmap, just exit. */
+      if (e->flag.is_set<GUIELEMENT_NOT_IN_GRIDMAP>()) {
+        return;
+      }
       ivec2 start = to_grid_pos(e->pos);
       ivec2 end   = to_grid_pos(e->pos + e->size);
       for (int x = start.x; x <= end.x; ++x) {
@@ -907,13 +959,13 @@ typedef struct completionstruct {
       }
     }
 
-    uielementstruct *get(const ivec2 &pos) const {
+    guielement *get(const ivec2 &pos) const {
       auto it = grid.find(to_grid_pos(pos));
       if (it == grid.end()) {
         return NULL;
       }
       for (Uint i = 0; i < it->second.size(); ++i) {
-        if (it->second[i]->flag.is_set<UIELEMENT_HIDDEN>()) {
+        if (it->second[i]->flag.is_set<GUIELEMENT_HIDDEN>()) {
           continue;
         }
         if (pos.x >= it->second[i]->pos.x && pos.x <= (it->second[i]->pos.x + it->second[i]->size.x)
@@ -954,35 +1006,55 @@ typedef struct completionstruct {
 
   typedef struct guieditor {
     vertex_buffer_t *buffer;    /* The buffer that holds all this editors data to be drawn. */
-    openfilestruct **files;     /* A buffer of all files open inside this editor. */
-    Ulong            filesno;   /* The number of files in `files` buffer. */
+    
+    /* The buffer for the `topbar`, this is a seperete buffer because this does not need updating very often. */
+    vertex_buffer_t *topbuf;
+    
     openfilestruct  *openfile;  /* The currently open file. */
+    openfilestruct  *startfile; /* The first file in the circular list. */
+    
+    /* A pointer to the font this editor should use, note that this
+     * `guieditor` never owns this nor should it ever free this. */
     texture_font_t  *font;
-    uielementstruct *gutter;
-    uielementstruct *main;
-    vec2             pen;
-    guieditor       *next;
-    guieditor       *prev;
+    
+    /* The `main` element of this `guieditor`, all other elements are children of this element.
+     * This means we just need to set up the children using relative positioning, making resizing,
+     * and other things related to the management alot simpler. */
+    guielement *main;
+    
+    guielement *topbar; /* The `topbar` element, this holds buttons with the open buffers names. */
+    guielement *gutter; /* The `gutter` element, this holds the line numbers. */
+    guielement *text;   /* The `text` element, this holds the editors text for the currently open file. */
+    
+    vec2 pen;
+    
+    /* Flags to keep track of the state of the `editor`. */
+    bit_flag_t<GUIEDITOR_FLAGSIZE> flag;
+    
+    guieditor *next; /* Pointer to the next editor in the circular linked list. */
+    guieditor *prev; /* Pointer to the previous editor in the circular linked list. */
   } guieditor;
 
   typedef struct {
-    char            *title;           /* The window title. */
-    Uint             width;           /* The window width. */
-    Uint             height;          /* The window height. */
-    GLFWwindow      *window;          /* The glfw window. */
-    bit_flag_t<8>    flag;            /* Flags to track the state of the gui. */
-    nevhandler      *handler;         /* Threaded event handler, to enqueue tasks to. */
-    uielementstruct *topbar;          /* The `top-bar` for the entire ui. */
-    vertex_buffer_t *topbuf;          /* The text buffer for `topbar`. */
-    uielementstruct *botbar;          /* The `bottom-bar` for the entire ui. */
-    vertex_buffer_t *botbuf;          /* The text buffer for `botbar`. */
-    uielementstruct *entered;         /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
-    matrix4x4        projection;      /* The projection to pass to the shaders. */
-    Uint             font_shader;     /* The font shader. */
-    Uint             font_size;       /* The font size. */
-    texture_font_t  *font;            /* The font the gui is using. */
-    texture_atlas_t *atlas;           /* The atlas the font is using. */
-    Uint             rect_shader;     /* The rect shader. */
+    char            *title;        /* The window title. */
+    Uint             width;        /* The window width. */
+    Uint             height;       /* The window height. */
+    GLFWwindow      *window;       /* The glfw window. */
+    bit_flag_t<8>    flag;         /* Flags to track the state of the gui. */
+    nevhandler      *handler;      /* Threaded event handler, to enqueue tasks to. */
+    guielement *topbar;            /* The `top-bar` for the entire ui. */
+    guielement *botbar;            /* The `bottom-bar` for the entire ui. */
+    guielement *entered;           /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
+    vertex_buffer_t *topbuf;       /* The text buffer for `topbar`. */
+    vertex_buffer_t *botbuf;       /* The text buffer for `botbar`. */
+    matrix4x4       *projection;   /* The projection to pass to the shaders. */
+    Uint             font_shader;  /* The font shader. */
+    texture_font_t  *uifont;       /* The ui font. */
+    Uint             uifont_size;  /* The ui font size. */
+    texture_font_t  *font;         /* The font the gui is using. */
+    Uint             font_size;    /* The font size. */
+    texture_atlas_t *atlas;        /* The atlas the font is using. */
+    Uint             rect_shader;  /* The rect shader. */
   } guistruct;
 #endif
 

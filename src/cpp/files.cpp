@@ -496,6 +496,39 @@ void switch_to_next_buffer(void) _NOTHROW {
   redecorate_after_switch();
 }
 
+void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) _NOTHROW {
+  /* If the buffer to free is the start buffer, advance the start buffer. */
+  if (orphan == *start) {
+    *start = (*start)->next;
+  }
+  orphan->prev->next = orphan->next;
+  orphan->next->prev = orphan->prev;
+  if (orphan->type.is_set<C_CPP>() || orphan->type.is_set<BASH>()) {
+    file_listener.stop_listener(orphan->filename);
+  }
+  free(orphan->filename);
+  free_lines(orphan->filetop);
+  free(orphan->statinfo);
+  free(orphan->lock_filename);
+  /* Free the undo stack for the orphan file. */
+  discard_until_in_buffer(orphan, NULL);
+  free(orphan->errormessage);
+  /* If the buffer to free is the open buffer, decrament it once. */
+  if (orphan == *open) {
+    *open = (*open)->prev;
+    /* If the buffer to free was the singular and only buffer in the list, set open and start to NULL. */
+    if (orphan == *open) {
+      *open  = NULL;
+      *start = NULL;
+    }
+  }
+  free(orphan);
+  /* When just one buffer ramains, set the legacy help bar text for the exit function. */
+  if (*open && *open == (*open)->next) {
+    exitfunc->tag = exit_tag;
+  }
+}
+
 /* Remove the current buffer from the circular list of buffers.  When just one buffer remains open, show "Exit" in the help lines. */
 void close_buffer(void) _NOTHROW {
   openfilestruct *orphan = openfile;
