@@ -11,144 +11,179 @@
  */
 #include "../../include/prototypes.h"
 
-/* The callback for the topbar buttons. */
-static void editor_topbar_button_callback(guielement *self, guielement_callback_type type) {
-  switch (type) {
-    case GUIELEMENT_ENTER_CALLBACK: {
-      self->color     = vec4(1);
-      self->textcolor = vec4(0, 0, 0, 1);
-      break;
-    }
-    case GUIELEMENT_LEAVE_CALLBACK: {
-      self->color     = EDIT_BACKGROUND_COLOR;
-      self->textcolor = vec4(1);
-      if (strcmp(self->lable, openeditor->openfile->filename) == 0) {  
-        self->color += vec3(0.1);
-      }
-      break;
-    }
-    case GUIELEMENT_CLICK_CALLBACK: {
-      guieditor *editor = get_element_editor(self);
-      openfilestruct *file = editor->startfile;
-      do {
-        if (strcmp(self->lable, file->filename) == 0) {
-          gui_set_openfile(file);
-          break;
-        }
-        file = file->next;
-      } while (file != editor->startfile);
-      break;
-    }
-  }
-}
-
 /* Remove the existing buffer name buttons and create new ones based on the currently open files of `editor`. */
-void update_editor_topbar(guieditor *editor) {
-  openfilestruct *file = editor->startfile;
+void refresh_editor_topbar(guieditor *editor) {
+  ASSERT(editor);
   vec2 pos = editor->topbar->pos;
   guielement *button;
   /* First remove all existing children of the topbar. */
   delete_guielement_children(editor->topbar);
   /* If there are any open files, create buttons for them. */
-  if (file) {
-    do {
-      button = make_element_child(editor->topbar);
-      if (*file->filename) {
-        char *display_str = fmtstr(" %s ", file->filename);
-        move_resize_element(
-          button,
-          pos,
-          vec2((pixel_breadth(editor->font, display_str)), editor->topbar->size.h)
-        );
-        free(display_str);
-        set_element_lable(button, file->filename);
+  ITER_OVER_ALL_OPENFILES(editor->startfile, file,
+    button = make_element_child(editor->topbar);
+    if (*file->filename) {
+      move_resize_element(
+        button,
+        pos,
+        vec2((pixel_breadth(editor->font, file->filename) + pixel_breadth(editor->font, "  ")), editor->topbar->size.h)
+      );
+      set_element_lable(button, file->filename);
+    }
+    else {
+      move_resize_element(button, pos, vec2(pixel_breadth(editor->font, " Nameless "), editor->topbar->size.h));
+      set_element_lable(button, "Nameless");
+    }
+    /* Set a diffrent color on the button that holds the editor openfile. */
+    if (file == editor->openfile) {
+      button->color = EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR;
+    }
+    /* Otherwise, just set the inactive color. */
+    else {
+      button->color = EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR;
+    }
+    button->textcolor = GUI_WHITE_COLOR;
+    /* Make the element use relative positioning so that when we move the topbar the buttons follows. */
+    button->flag.set<GUIELEMENT_RELATIVE_POS>();
+    button->relative_pos = (button->pos - editor->topbar->pos);
+    /* When there is only a single file open make all borders equal. */
+    if (file == file->next) {
+      set_element_borders(button, 2, GUI_BLACK_COLOR);
+    }
+    /* Otherwise, when this is the first file, make the right border half size. */
+    else if (file == editor->startfile) {
+      set_element_borders(button, vec4(2, 1, 2, 2), GUI_BLACK_COLOR);
+    }
+    /* When this is the last file. */
+    else if (file->next == editor->startfile) {
+      set_element_borders(button, vec4(1, 2, 2, 2), GUI_BLACK_COLOR);
+    }
+    /* Else, if this is a file in the middle or the last file, make both the left and right border half size. */
+    else {
+      set_element_borders(button, vec4(1, 1, 2, 2), GUI_BLACK_COLOR);
+    }
+    pos.x += button->size.w;
+    set_element_file_data(button, file);
+  );
+}
+
+/* Set all elements color in topbar, setting the active one to the active color. */
+void update_editor_topbar(guieditor *editor) {
+  ASSERT(editor);
+  guielement *button;
+  /* Iterate over every open file in the editor, if any. */
+  for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
+    button = editor->topbar->children[i];
+    if (button->flag.is_set<GUIELEMENT_HAS_FILE_DATA>()) {
+      if (button->data.file == editor->openfile) {
+        button->color = EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR;
       }
       else {
-        move_resize_element(button, pos, vec2(pixel_breadth(editor->font, "Nameless"), editor->topbar->size.h));
-        set_element_lable(button, "Nameless");
+        button->color = EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR;
       }
-      button->color     = EDIT_BACKGROUND_COLOR;
-      button->textcolor = vec4(1);
-      /* Make the element use relative positioning so that when we move the topbar the buttons follows. */
-      button->flag.set<GUIELEMENT_RELATIVE_POS>();
-      button->relative_pos = (button->pos - editor->topbar->pos);
-      /* When there is only a single file open make all borders equal. */
-      if (file == file->next) {
-        set_element_borders(button, 2, vec4(0, 0, 0, 1));
-      }
-      /* Otherwise, when this is the first file, make the right border half size. */
-      else if (file == editor->startfile) {
-        set_element_borders(button, vec4(2, 1, 2, 2), vec4(0, 0, 0, 1));
-      }
-      /* And when this is the last file, make the left border half size. */
-      else if (file->next == editor->startfile) {
-        set_element_borders(button, vec4(1, 2, 2, 2), vec4(0, 0, 0, 1));
-      }
-      /* Else, if this is a file in the middle, make both the left and right border half size. */
-      else {
-        set_element_borders(button, vec4(1, 1, 2, 2), vec4(0, 0, 0, 1));
-      }
-      pos.x += button->size.w;
-      button->callback = editor_topbar_button_callback;
-      file = file->next;
-    } while (file != editor->startfile);
+    }
   }
-  editor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-  move_element(editor->topbar, editor->topbar->pos);
+}
+
+/* Create the editor scrollbar. */
+static void make_editor_scrollbar(guieditor *editor) {
+  ASSERT(editor);
+  editor->scrollbar = make_element_child(editor->text);
+  set_element_editor_data(editor->scrollbar, editor);
+  editor->scrollbar->flag.set<GUIELEMENT_ABOVE>();
+  move_resize_element(editor->scrollbar, 10, 10);
+  editor->scrollbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_X_POS>();
+  editor->scrollbar->relative_pos.x = editor->scrollbar->size.w;
+  editor->scrollbar->flag.set<GUIELEMENT_RELATIVE_Y_POS>();
+  editor->scrollbar->color = GUI_WHITE_COLOR;
+}
+
+/* Update the `scroll-bar's` position and height.  */
+void update_editor_scrollbar(guieditor *editor) {
+  /* When debugging, check everything we will use. */
+  ASSERT(editor);
+  ASSERT(editor->openfile);
+  ASSERT(editor->openfile->edittop);
+  ASSERT(editor->openfile->filebot);
+  ASSERT(editor->text);
+  ASSERT(editor->scrollbar);
+  /* The ratio of the current top line of the text area. */
+  float ratio = ((float)editor->openfile->edittop->lineno / editor->openfile->filebot->lineno);
+  /* The height that the scrollbar should be. */
+  float height = (((float)editor->rows / editor->openfile->filebot->lineno) * editor->text->size.h);
+  /* The relative y position of the scrollbar inside the editor's text element.  */
+  float ypos = (ratio * (editor->text->size.h - height));
+  /* When we scroll bellow the end of the window, stop the scrollbar at the bottom.
+   * This is possible because we allow to scroll bellow the last line. */
+  if ((ypos + height) > editor->text->size.h) {
+    ypos = (editor->text->size.h - height);
+  }
+  editor->scrollbar->relative_pos.y = ypos;
+  move_resize_element(
+    editor->scrollbar,
+    vec2(editor->scrollbar->pos.x, (editor->text->pos.y + ypos)),
+    vec2(editor->scrollbar->size.w, height)
+  );
 }
 
 /* Create a new editor. */
 void make_new_editor(bool new_buffer) {
-  guieditor *newnode = (guieditor *)nmalloc(sizeof(*newnode));
+  guieditor *node = (guieditor *)nmalloc(sizeof(*node));
   /* If this is the first editor. */
   if (!openeditor) {
     /* Make the first editor the only element in the list. */
-    newnode->prev = newnode;
-    newnode->next = newnode;
-    starteditor   = newnode;
+    node->prev  = node;
+    node->next  = node;
+    starteditor = node;
     /* When creating the first editor use this openfile and startfile that was made when we started. */
-    newnode->openfile  = openfile;
-    newnode->startfile = startfile;
+    node->openfile  = openfile;
+    node->startfile = startfile;
+    openfile  = node->openfile;
+    startfile = node->startfile;
   }
   /* Otherwise, if there is already an existing editor. */
   else {
     /* Add the new editor after the current one in the list. */
-    newnode->prev          = openeditor;
-    newnode->next          = openeditor->next;
-    openeditor->next->prev = newnode;
-    openeditor->next       = newnode;
+    node->prev             = openeditor;
+    node->next             = openeditor->next;
+    openeditor->next->prev = node;
+    openeditor->next       = node;
     if (new_buffer) {
       openfile  = NULL;
       startfile = NULL;
       make_new_buffer();
     }
-    newnode->openfile  = openfile;
-    newnode->startfile = startfile;
+    node->openfile  = openfile;
+    node->startfile = startfile;
   }
-  openeditor           = newnode;
-  openeditor->buffer   = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  openeditor           = node;
+  openeditor->buffer   = make_new_font_buffer();
   openeditor->topbuf   = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
   openeditor->openfile = openfile;
   openeditor->font     = gui->font;
-  openeditor->next     = NULL;
-  openeditor->prev     = NULL;
-  openeditor->pen      = 0.0f;
+  openeditor->pen      = 0;
+  openeditor->rows     = 0;
   /* Create the main editor element. */
   openeditor->main = make_element(
     vec2(0, (gui->topbar->pos.x + gui->topbar->size.h)),
-    vec2(gui->width, (gui->height - gui->topbar->size.h)),
+    vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)),
     0,
     EDIT_BACKGROUND_COLOR,
     FALSE
   );
   /* Create the topbar element as a child to the main element. */
   openeditor->topbar = make_element_child(openeditor->main);
-  openeditor->topbar->color = vec4(1);
+  openeditor->topbar->color = EDIT_BACKGROUND_COLOR;
   move_resize_element(
     openeditor->topbar,
     vec2(openeditor->main->pos.x, openeditor->main->pos.y),
     vec2(openeditor->main->size.w, FONT_HEIGHT(openeditor->font))
   );
+  /* Set relative positioning for the topbar. */
+  openeditor->topbar->flag.set<GUIELEMENT_RELATIVE_POS>();
+  openeditor->topbar->relative_pos = 0;
+  /* Also set relative width for the topbar, so it always spans the width of the editor. */
+  openeditor->topbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
+  openeditor->topbar->relative_size = 0;
   /* Create the gutter element as a child to the main element. */
   openeditor->gutter = make_element_child(openeditor->main);
   openeditor->gutter->color = EDIT_BACKGROUND_COLOR;
@@ -160,6 +195,9 @@ void make_new_editor(bool new_buffer) {
   /* Set relative positioning for the gutter, so it follows the editor. */
   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_POS>();
   openeditor->gutter->relative_pos = vec2(0, openeditor->topbar->size.h);
+  /* Also set relative height for the gutter element so that it follows the editors height. */
+  openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
+  openeditor->gutter->relative_size = 0;
   /* Create the text element as a child to the main element. */
   openeditor->text = make_element_child(openeditor->main);
   openeditor->text->color = EDIT_BACKGROUND_COLOR;
@@ -168,8 +206,22 @@ void make_new_editor(bool new_buffer) {
     vec2((openeditor->main->pos.x + openeditor->gutter->size.w), (openeditor->main->pos.y + openeditor->topbar->size.h)),
     vec2((openeditor->main->size.w - openeditor->gutter->size.w), (openeditor->main->size.h - openeditor->topbar->size.h))
   );
+  /* Set relative positioning for the text elemenent, so it follows the editor. */
+  openeditor->text->flag.set<GUIELEMENT_RELATIVE_POS>();
+  openeditor->text->relative_pos = vec2(openeditor->gutter->size.w, openeditor->topbar->size.h);
+  /* Also set relative width and height for the text element so that it follows the size of the editor. */
+  openeditor->text->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
+  openeditor->text->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
+  openeditor->text->relative_size = 0;
+  /* Set the editor ptr of this all elements as this editor. */
+  set_element_editor_data(openeditor->main, openeditor);
+  set_element_editor_data(openeditor->topbar, openeditor);
+  set_element_editor_data(openeditor->gutter, openeditor);
+  set_element_editor_data(openeditor->text, openeditor);
   openeditor->flag = bit_flag_t<GUIEDITOR_FLAGSIZE>();
-  update_editor_topbar(openeditor);
+  openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+  make_editor_scrollbar(openeditor);
+  openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
 }
 
 /* Delete the data of a editor. */
@@ -177,11 +229,34 @@ void delete_editor(guieditor *editor) {
   if (!editor) {
     return;
   }
-  vertex_buffer_delete(editor->buffer);
+  if (editor->buffer) {
+    vertex_buffer_delete(editor->buffer);
+    editor->buffer = NULL;
+  }
   delete_element(editor->gutter);
   delete_element(editor->text);
   free(editor);
   editor = NULL;
+}
+
+/* Close the currently active editor. */
+void close_editor(void) {
+  guieditor *editor = openeditor;
+  if (editor == starteditor) {
+    starteditor = starteditor->next;
+  }
+  editor->prev->next = editor->next;
+  editor->next->prev = editor->prev;
+  openeditor = editor->prev;
+  if (openeditor == editor) {
+    openeditor  = NULL;
+    starteditor = NULL;
+  }
+  else {
+    openfile  = openeditor->openfile;
+    startfile = openeditor->startfile;
+  }
+  delete_editor(editor);
 }
 
 /* Free a circular list of buffers. */
@@ -201,36 +276,91 @@ void free_editor_buffers(guieditor *editor) {
   startfile = was_startfile;
 }
 
+void hide_editor(guieditor *editor, bool hide) {
+  if (hide) {
+    editor->flag.set<GUIEDITOR_HIDDEN>();
+  }
+  else {
+    editor->flag.unset<GUIEDITOR_HIDDEN>();
+  }
+  set_element_flag_recurse(editor->main, hide, GUIELEMENT_HIDDEN);
+}
+
+/* Switch to the previous editor.  */
+void switch_to_prev_editor(void) {
+  if (openeditor == openeditor->next) {
+    show_statusmsg(MILD, 2, "Only one editor open");
+    return;
+  }
+  openeditor = openeditor->prev;
+  openfile   = openeditor->openfile;
+  startfile  = openeditor->startfile;
+  hide_editor(openeditor->next, TRUE);
+  hide_editor(openeditor, FALSE);
+  gui_redecorate_after_switch();
+}
+
+/* Switch to the next editor. */
+void switch_to_next_editor(void) {
+  if (openeditor == openeditor->next) {
+    show_statusmsg(MILD, 2, "Only one editor open");
+    return;
+  }
+  openeditor = openeditor->next;
+  openfile   = openeditor->openfile;
+  startfile  = openeditor->startfile;
+  hide_editor(openeditor->prev, TRUE);
+  hide_editor(openeditor, FALSE);
+  gui_redecorate_after_switch();
+}
+
+/* Set `openeditor` to editor, if its not already. */
+void set_openeditor(guieditor *editor) {
+  /* Return early if editor is already the open editor. */
+  if (editor == openeditor) {
+    return;
+  }
+  openfile   = editor->openfile;
+  startfile  = editor->startfile;
+  openeditor = editor;
+  gui_redecorate_after_switch();
+}
+
 /* If the element `e` has any relation to an editor, return that editor. */
 guieditor *get_element_editor(guielement *e) {
   guieditor *editor = starteditor;
-  do {
-    if (is_ancestor(e, editor->main)) {
-      return editor;
-    }
-    editor = editor->next;
-  } while (editor != starteditor);
+  if (editor) {
+    do {
+      if (is_ancestor(e, editor->main)) {
+        return editor;
+      }
+      editor = editor->next;
+    } while (editor != starteditor);
+  }
   return NULL;
 }
 
 /* Get the editor that `file` belongs to. */
 guieditor *get_file_editor(openfilestruct *file) {
-  guieditor *editor = starteditor;
-  openfilestruct *check;
-  /* Check all editors. */
-  do {
-    check = editor->startfile;
-    /* Check all files in the editor, if any. */
-    if (check) {
-      do {
-        if (check == file) {
-          return editor;
+  guieditor *&editor = starteditor;
+  guielement *button;
+  if (!editor) {
+    die("%s: starteditor is not valid.\n", __func__);
+  }
+  else {
+    /* Check all editors. */
+    do {
+      for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
+        button = editor->topbar->children[i];
+        if (button->flag.is_set<GUIELEMENT_HAS_FILE_DATA>()) {
+          if (button->data.file == file) {
+            return editor;
+          }
         }
-        check = check->next;
-      } while (check != editor->startfile);
-    }
-    editor = editor->next;
-  } while (editor != starteditor);
-  die("%s: The passed file does not belong to any editor, something is very wrong.\n", __func__);
+      }
+      editor = editor->next;
+    } while (editor != starteditor);
+    die("%s: The passed file does not belong to any editor, something is very wrong.\n", __func__);
+  }
   return NULL;
 }

@@ -6,24 +6,9 @@
  */
 #pragma once
 
-#include "../../../config.h"
-#include "../../include/c_proto.h"
-
-#include "nevhandler.h"
+#include "../c_defs.h"
 
 _BEGIN_C_LINKAGE
-
-/* `Opaque`  Structure to listen to file events. */
-typedef struct nfdlistener nfdlistener;
-
-/* Structure that represents the event that the callback gets. */
-typedef struct {
-  Uint  mask;
-  Uint  cookie;
-  const char *file; /* The file this event is from. */
-} nfdlistener_event;
-
-typedef void (*nfdlistener_cb)(nfdlistener_event *);
 
 /* Create a `file-listener` that calls `cb` when a event occurs.  Note that this will free
  * itself when it has stopped, so all that needs to be called is `nfdlistener_stop()`. */

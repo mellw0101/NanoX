@@ -1,4 +1,6 @@
 #include <Mlib/constexpr.hpp>
+#include <Mlib/openGL/vec.h>
+#include "../../config.h"
 
 #define round_short(x)        ((x) >= 0 ? (short)((x) + 0.5) : (short)((x) - 0.5))
 
@@ -96,6 +98,9 @@ static constexpr short VS_CODE_BRIGHT_CYAN_GRAYSCALE    = xterm_grayscale_color_
 /* Total elements. */
 #define NUMBER_OF_ELEMENTS                   41
 
+/* Some gui colors, these will not be counted as 'elements'. */
+#define EDITOR_TOPBAR_BUTTON_ENTER     1003
+
 #define ENCODE_RGB_VALUE(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
 static int encoded_idx_color[NUMBER_OF_ELEMENTS][2] = {
   {  0, ENCODE_RGB_VALUE(255, 255, 255) },
@@ -171,3 +176,18 @@ constexpr short bg_vs_code_color_array[] {
   VS_CODE_GREEN
 };
 #define BG_COLOR(index) bg_vs_code_color_array[index - BG_VS_CODE_START]
+
+#ifdef HAVE_GLFW
+  /* Some colors. */
+  static constexpr vec4 GUI_WHITE_COLOR                     = vec4( 1.0f,  1.0f,  1.0f, 1.0f);
+  static constexpr vec4 GUI_BLACK_COLOR                     = vec4( 0.0f,  0.0f,  0.0f, 1.0f);
+  static constexpr vec4 EDIT_BACKGROUND_COLOR               = vec4( 0.1f,  0.1f,  0.1f, 1.0f);
+  static constexpr vec4 EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR = vec4(0.08f, 0.08f, 0.08f, 1.0f);
+  static constexpr vec4 EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR   = vec4(0.14f, 0.14f, 0.14f, 1.0f);
+  /* Defines of those colors. */
+# define GUI_WHITE_COLOR                      GUI_WHITE_COLOR
+# define GUI_BLACK_COLOR                      GUI_BLACK_COLOR
+# define EDIT_BACKGROUND_COLOR                EDIT_BACKGROUND_COLOR
+# define EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR  EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR
+# define EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR    EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR
+#endif

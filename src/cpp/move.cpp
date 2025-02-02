@@ -21,7 +21,7 @@ void to_last_line(void) _NOTHROW {
 }
 
 /* Determine the actual current chunk and the target column. */
-static void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
+void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
   if (ISSET(SOFTWRAP)) {
     Ulong shim     = (editwincols * (1 + (tabsize / editwincols)));
     *leftedge      = leftedge_for(xplustabs(), openfile->current);
@@ -584,7 +584,7 @@ void do_down(void) {
     return;
   }
   set_proper_index_and_pww(&leftedge, target_column, TRUE);
-  if (openfile->cursor_row == editwinrows - 1 && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
+  if (openfile->cursor_row == (editwinrows - 1) && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
     edit_scroll(FORWARD);
   }
   else {

@@ -179,7 +179,6 @@ void finish(void) _NOTHROW {
     tui_disable_bracketed_pastes();
     nevhandler_stop(tui_handler, 0);
     nfdreader_stop(nfdreader_stdin);
-    nfdreader_free(nfdreader_stdin);
     nevhandler_free(tui_handler);
   }
   else {

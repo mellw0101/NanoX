@@ -15,10 +15,34 @@ bool gui_prompt_mark = FALSE;
 /* The type of prompt this is */
 int gui_prompt_type = 0;
 
+/* Enter the gui prompt mode, by setting the prompt mode flag and showing the topbar. */
+void gui_enter_prompt_mode(void) {
+  gui->flag.set<GUI_PROMPT>();
+  move_element(gui->topbar, 0);
+  gui->topbar->relative_pos.y = 0;
+  resize_element(gui->root, gui->root->size);
+  ITER_OVER_ALL_OPENEDITORS(starteditor, editor, 
+    move_element(editor->main, (editor->main->pos + vec2(0, gui->topbar->size.h)));
+    editor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+  );
+}
+
+/* Leave the gui prompt mode, by unsetting the prompt mode flag and hiding the topbar. */
+void gui_leave_prompt_mode(void) {
+  gui->flag.unset<GUI_PROMPT>();
+  move_element(gui->topbar, vec2(0, -gui->topbar->size.h));
+  gui->topbar->relative_pos.y = -gui->topbar->size.h;
+  resize_element(gui->root, gui->root->size);
+  ITER_OVER_ALL_OPENEDITORS(starteditor, editor, 
+    move_element(editor->main, (editor->main->pos + vec2(0, -gui->topbar->size.h)));
+    editor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+  );
+}
+
 /* Set up the prompt. */
 void gui_ask_user(const char *question, guiprompt_type type) {
   /* Set this flag so that the key and char callbacks both go into prompt-mode. */
-  gui->flag.set<GUI_PROMPT>();
+  gui_enter_prompt_mode();
   prompt = free_and_assign(prompt, copy_of(question));
   append_to(&prompt, S__LEN(": "));
   /* Reset the gui answer string. */

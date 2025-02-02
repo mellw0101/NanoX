@@ -2,6 +2,9 @@
 #define _C_PROTO__H
 
 #include "c_defs.h"
+#include "c/nfdreader.h"
+#include "c/nevhandler.h"
+#include "c/nfdlistener.h"
 
 _BEGIN_C_LINKAGE
 

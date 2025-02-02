@@ -45,6 +45,18 @@ constexpr const Uint indices[] = {
   2, 3, 0  /* Second triangle. */
 };
 
+/* Print a error to stderr.  Used when using the gui. */
+void log_error_gui(const char *format, ...) {
+  va_list ap;
+  int len;
+  va_start(ap, format);
+  len = vfprintf(stderr, format, ap);
+  if (len < 0) {
+    die("%s: vfprintf failed.\n", __func__);
+  }
+  va_end(ap);
+}
+
 /* Init font shader and buffers. */
 static void setup_font_shader(void) {
   /* Create shader. */
@@ -96,6 +108,13 @@ static void setup_font_shader(void) {
   }
 }
 
+/* Create a buffer using the structure of the font shader. */
+vertex_buffer_t *make_new_font_buffer(void) {
+  vertex_buffer_t *buf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  ALWAYS_ASSERT(buf);
+  return buf;
+}
+
 /* Init the rect shader and setup the ssbo`s for indices and vertices. */
 static void setup_rect_shader(void) {
   gui->rect_shader = openGL_create_shader_program_raw({
@@ -141,86 +160,113 @@ static void setup_rect_shader(void) {
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indices_ssbo.ssbo());
 }
 
-/* Setup the top menu bar. */
-static void setup_top_bar(void) {
-  gui->topbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
-  /* Make the top bar parent element. */
-  gui->topbar = make_element(
-    0.0f,
-    vec2(gui->width, FONT_HEIGHT(gui->font)),
-    0.0f,
-    vec4(vec3(0.1f), 1.0f)
+/* Setup the top bar for the gui. */
+static void setup_topbar(void) {
+  gui->topbuf = make_new_font_buffer();
+  gui->topbar = make_element_child(gui->root, FALSE);
+  move_resize_element(
+    gui->topbar,
+    vec2(0, -FONT_HEIGHT(gui->font)),
+    vec2(gui->width, FONT_HEIGHT(gui->font))
   );
-  /* Make file menu element. */
-  file_menu_element = make_element(
-    0.0f,
-    vec2(pixel_breadth(gui->font, " File "), gui->topbar->size.h),
-    0.0f,
-    vec4(vec3(0.0f), 1.0f)
+  gui->topbar->color = GUI_BLACK_COLOR;
+  gui->topbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
+  gui->topbar->relative_size = 0;
+  gui->topbar->flag.set<GUIELEMENT_RELATIVE_Y_POS>();
+  gui->topbar->relative_pos = vec2(0, -gui->topbar->size.h);
+  // /* Make the top bar parent element. */
+  // gui->topbar = make_element(
+  //   0.0f,
+  //   vec2(gui->width, FONT_HEIGHT(gui->font)),
+  //   0.0f,
+  //   vec4(vec3(0.1f), 1.0f)
+  // );
+  // /* Make file menu element. */
+  // file_menu_element = make_element(
+  //   0.0f,
+  //   vec2(pixel_breadth(gui->font, " File "), gui->topbar->size.h),
+  //   0.0f,
+  //   vec4(vec3(0.0f), 1.0f)
+  // );
+  // set_element_lable(file_menu_element, " File ");
+  // file_menu_element->textcolor = vec4(1.0f);
+  // file_menu_element->parent    = gui->topbar;
+  // gui->topbar->children.push_back(file_menu_element);
+  // file_menu_element->callback = [](guielement *self, guielement_callback_type type) {
+  //   if (type == GUIELEMENT_ENTER_CALLBACK) {
+  //     file_menu_element->color     = vec4(1.0f);
+  //     file_menu_element->textcolor = vec4(vec3(0.0f), 1.0f);
+  //     /* Show all children of the file menu. */
+  //     for (auto child : file_menu_element->children) {
+  //       child->flag.unset<GUIELEMENT_HIDDEN>();
+  //     }
+  //   }
+  //   else if (type == GUIELEMENT_LEAVE_CALLBACK) {
+  //     file_menu_element->color     = vec4(vec3(0.0f), 1.0f);
+  //     file_menu_element->textcolor = vec4(1.0f);
+  //     /* Only close all this when the currently entered window is not file_menu_element or its children. */
+  //     if (!is_ancestor(element_from_mousepos(), file_menu_element)) {
+  //       for (auto child : file_menu_element->children) {
+  //         child->flag.set<GUIELEMENT_HIDDEN>();
+  //       }
+  //     }
+  //     refresh_needed = TRUE;  
+  //   }
+  // };
+  // /* Make the open file element in the file menu. */
+  // open_file_element = make_element(
+  //   vec2(file_menu_element->pos.x, (file_menu_element->pos.y + file_menu_element->size.h)),
+  //   vec2(pixel_breadth(gui->font, " Open File "), gui->topbar->size.h),
+  //   0.0f,
+  //   file_menu_element->color
+  // );
+  // set_element_lable(open_file_element, " Open File ");
+  // open_file_element->textcolor = vec4(1.0f);
+  // open_file_element->flag.set<GUIELEMENT_HIDDEN>();
+  // open_file_element->parent = file_menu_element;
+  // file_menu_element->children.push_back(open_file_element);
+  // open_file_element->callback = [](guielement *self, guielement_callback_type type) {
+  //   if (type == GUIELEMENT_ENTER_CALLBACK) {
+  //     open_file_element->color     = vec4(1.0f);
+  //     open_file_element->textcolor = vec4(vec3(0.0f), 1.0f);  
+  //   }
+  //   else if (type == GUIELEMENT_LEAVE_CALLBACK) {
+  //     open_file_element->color     = vec4(vec3(0.0f), 1.0f);
+  //     open_file_element->textcolor = vec4(1.0f);
+  //     if (!is_ancestor(element_from_mousepos(), file_menu_element)) {
+  //       open_file_element->flag.set<GUIELEMENT_HIDDEN>();
+  //     }
+  //     refresh_needed = TRUE;  
+  //   }
+  // };
+}
+
+/* Setup the bottom bar for the gui. */
+static void setup_botbar(void) {
+  gui->botbuf = make_new_font_buffer();
+  gui->botbar = make_element_child(gui->root, FALSE);
+  move_resize_element(
+    gui->botbar,
+    vec2(0, (gui->height - FONT_HEIGHT(gui->font))),
+    vec2(gui->width, FONT_HEIGHT(gui->font))
   );
-  set_element_lable(file_menu_element, " File ");
-  file_menu_element->textcolor = vec4(1.0f);
-  file_menu_element->parent    = gui->topbar;
-  gui->topbar->children.push_back(file_menu_element);
-  file_menu_element->callback = [](guielement *self, guielement_callback_type type) {
-    if (type == GUIELEMENT_ENTER_CALLBACK) {
-      file_menu_element->color     = vec4(1.0f);
-      file_menu_element->textcolor = vec4(vec3(0.0f), 1.0f);
-      /* Show all children of the file menu. */
-      for (auto child : file_menu_element->children) {
-        child->flag.unset<GUIELEMENT_HIDDEN>();
-      }
-    }
-    else if (type == GUIELEMENT_LEAVE_CALLBACK) {
-      file_menu_element->color     = vec4(vec3(0.0f), 1.0f);
-      file_menu_element->textcolor = vec4(1.0f);
-      /* Only close all this when the currently entered window is not file_menu_element or its children. */
-      if (!is_ancestor(element_from_mousepos(), file_menu_element)) {
-        for (auto child : file_menu_element->children) {
-          child->flag.set<GUIELEMENT_HIDDEN>();
-        }
-      }
-      refresh_needed = TRUE;  
-    }
-  };
-  /* Make the open file element in the file menu. */
-  open_file_element = make_element(
-    vec2(file_menu_element->pos.x, (file_menu_element->pos.y + file_menu_element->size.h)),
-    vec2(pixel_breadth(gui->font, " Open File "), gui->topbar->size.h),
-    0.0f,
-    file_menu_element->color
-  );
-  set_element_lable(open_file_element, " Open File ");
-  open_file_element->textcolor = vec4(1.0f);
-  open_file_element->flag.set<GUIELEMENT_HIDDEN>();
-  open_file_element->parent = file_menu_element;
-  file_menu_element->children.push_back(open_file_element);
-  open_file_element->callback = [](guielement *self, guielement_callback_type type) {
-    if (type == GUIELEMENT_ENTER_CALLBACK) {
-      open_file_element->color     = vec4(1.0f);
-      open_file_element->textcolor = vec4(vec3(0.0f), 1.0f);  
-    }
-    else if (type == GUIELEMENT_LEAVE_CALLBACK) {
-      open_file_element->color     = vec4(vec3(0.0f), 1.0f);
-      open_file_element->textcolor = vec4(1.0f);
-      if (!is_ancestor(element_from_mousepos(), file_menu_element)) {
-        open_file_element->flag.set<GUIELEMENT_HIDDEN>();
-      }
-      refresh_needed = TRUE;  
-    }
-  };
+  gui->botbar->color = GUI_BLACK_COLOR;
+  gui->botbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_Y_POS>();
+  gui->botbar->relative_pos = vec2(0, gui->botbar->size.h);
+  gui->botbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
+  gui->botbar->relative_size = 0;
 }
 
 /* Set up the bottom bar. */
-static void setup_botbar(void) {
-  gui->botbuf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
-  gui->botbar = make_element(
+static void setup_statusbar(void) {
+  gui->statusbuf = make_new_font_buffer();
+  gui->statusbar = make_element(
     vec2(0, gui->height),
-    vec2(gui->height, FONT_HEIGHT(gui->font)),
+    vec2(gui->width, FONT_HEIGHT(gui->font)),
     0.0f,
     color_idx_to_vec4(FG_VS_CODE_RED)
   );
-  gui->botbar->flag.set<GUIELEMENT_HIDDEN>();
+  gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
 }
 
 /* Allocate and init the edit element. */
@@ -243,10 +289,13 @@ static void make_guistruct(void) {
   gui->flag        = bit_flag_t<8>();
   gui->handler     = NULL;
   gui->topbar      = NULL;
-  gui->topbuf      = NULL;
   gui->botbar      = NULL;
-  gui->botbuf      = NULL;
+  gui->statusbar   = NULL;
   gui->entered     = NULL;
+  gui->clicked     = NULL;
+  gui->topbuf      = NULL;
+  gui->botbuf      = NULL;
+  gui->statusbuf   = NULL;
   gui->projection  = NULL;
   gui->font_shader = 0;
   gui->uifont      = NULL;
@@ -278,38 +327,52 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
   gui->font_size = font_size;
+  gui->root = make_element(0, vec2(gui->height, gui->width), 0, 0, FALSE);
 }
 
+/* Delete the gui struct. */
 static void delete_guistruct(void) {
   free(gui->title);
+  /* Destroy glfw window, then terminate glfw. */
   glfwDestroyWindow(gui->window);
   glfwTerminate();
+  /* Destroy the shaders. */
   if (gui->font_shader) {
     glDeleteProgram(gui->font_shader);
   }
   if (gui->rect_shader) {
     glDeleteProgram(gui->rect_shader);
   }
-  delete_element(gui->topbar);
-  delete_element(gui->botbar);
+  /* Delete all elements used by 'gui'. */
+  delete_element(gui->root);
+  delete_element(gui->statusbar);
+  /* Delete the texture, and texture atlas. */
   if (gui->atlas) {
     glDeleteTextures(1, &gui->atlas->id);
     gui->atlas->id = 0;
     texture_atlas_delete(gui->atlas);
   }
+  /* Delete all the vertex buffers. */
   if (gui->topbuf) {
     vertex_buffer_delete(gui->topbuf);
   }
   if (gui->botbuf) {
     vertex_buffer_delete(gui->botbuf);
   }
+  if (gui->statusbuf) {
+    vertex_buffer_delete(gui->statusbuf);
+  }
+  /* Delete the font. */
   texture_font_delete(gui->font);
+  /* Stop and free the event handler. */
   nevhandler_stop(gui->handler, 0);
   nevhandler_free(gui->handler);
+  free(gui);
+  gui = NULL;
 }
 
 /* Cleanup before exit. */
-static void cleanup(void) {
+static void cleanup(void) { 
   delete_editor(openeditor);
   delete_guistruct();
 }
@@ -342,10 +405,12 @@ void init_gui(void) {
   setup_font_shader();
   /* Init the rect shader. */
   setup_rect_shader();
-  /* Init the top menu bar. */
-  setup_top_bar();
-  /* Init the bottom bar, that will be used for status updates, among other thing. */
+  /* Init the top bar. */
+  setup_topbar();
+  /* Init the bottom bar. */
   setup_botbar();
+  /* Init the bottom bar, that will be used for status updates, among other thing. */
+  setup_statusbar();
   /* Init the edit element. */
   setup_edit_element();
   /* Set some callbacks. */
@@ -374,13 +439,16 @@ void glfw_loop(void) {
     confirm_margin();
     place_the_cursor();
     glClear(GL_COLOR_BUFFER_BIT);
-    /* Draw the edit element. */
-    // draw_editelement();
-    draw_editor(openeditor);
+    /* Draw the editors. */
+    ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
+      draw_editor(editor);
+    );
     /* Draw the top menu bar. */
-    draw_top_bar();
-    /* Draw the bottom bar, if there is any status messages. */
+    draw_topbar();
+    /* Draw the bottom bar. */
     draw_botbar();
+    /* Draw the status bar, if there is any status messages. */
+    draw_statusbar();
     /* If refresh was needed it has been done so set it to FALSE. */
     refresh_needed = FALSE;
     glfwSwapBuffers(gui->window);

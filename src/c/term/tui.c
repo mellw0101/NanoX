@@ -1,8 +1,15 @@
+/** @file tui.c
+
+  @author  Melwin Svensson.
+  @date    14-1-2025.
+
+ */
 #include "tui.h"
+
+#include "../../include/c_proto.h"
 
 #include "terminfo.h"
 #include "../event/nfdwriter.h"
-#include "../event/nevhandler.h"
 
 #include <fcntl.h>
 #include <unibilium.h>

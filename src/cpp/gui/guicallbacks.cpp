@@ -20,6 +20,10 @@ typedef enum {
   #define WAS_MOUSE_DOUBLE_PRESS WAS_MOUSE_DOUBLE_PRESS
   WAS_MOUSE_TRIPPLE_PRESS,
   #define WAS_MOUSE_TRIPPLE_PRESS WAS_MOUSE_TRIPPLE_PRESS
+  WAS_EDITOR_TEXT_PRESS,
+  #define WAS_EDITOR_TEXT_PRESS WAS_EDITOR_TEXT_PRESS
+  WAS_EDITOR_SCROLL_PRESS,
+  #define WAS_EDITOR_SCROLL_PRESS WAS_EDITOR_SCROLL_PRESS
 } mouseflag_type;
 
 /* Flags to represent what the mouse is currently doing, across callback functions. */
@@ -30,36 +34,27 @@ static guielement *entered_element = NULL;
 vec2 mousepos;
 
 /* Window resize callback. */
-void window_resize_callback(GLFWwindow *window, int newwidth, int newheight) {
-  gui->width  = newwidth;
-  gui->height = newheight;
+void window_resize_callback(GLFWwindow *window, int width, int height) {
+  if (!gui) {
+    die("%s: gui has not been init.\n", __func__);
+  }
+  gui->width  = width;
+  gui->height = height;
   /* Set viewport. */
   glViewport(0, 0, gui->width, gui->height);
   /* Set the projection. */
-  matrix4x4_set_orthographic(gui->projection, 0.0f, gui->width, gui->height, 0.0f, -1.0f, 1.0f);
+  matrix4x4_set_orthographic(gui->projection, 0, gui->width, gui->height, 0, -1.0f, 1.0f);
   /* Upload it to both the shaders. */
   update_projection_uniform(gui->font_shader);
   update_projection_uniform(gui->rect_shader);
-  /* Confirm the margin before we calculate the size of the gutter. */
-  confirm_margin();
-  resize_element(gui->topbar, vec2(gui->width, FONT_HEIGHT(gui->font)));
-  move_resize_element(
-    openeditor->gutter,
-    vec2(0.0f, gui->topbar->size.h),
-    vec2((FONT_WIDTH(gui->font) * margin), gui->height)
-  );
-  move_resize_element(openeditor->topbar, (gui->topbar->pos + vec2(0, FONT_HEIGHT(openeditor->font))), gui->topbar->size);
-  /* Ensure the edit element is correctly sized. */
-  move_resize_element(
-    openeditor->text,
-    vec2((openeditor->gutter->pos.x + openeditor->gutter->size.w), (openeditor->topbar->pos.y + openeditor->topbar->size.h)),
-    vec2(gui->width - (openeditor->gutter->pos.x + openeditor->gutter->size.w), (gui->height - gui->topbar->size.h))
-  );
   /* Calculate the rows and columns. */
   editwinrows = (openeditor->text->size.h / FONT_HEIGHT(gui->font));
-  /* If the font is a mono font then calculate the number of columns by the width of ' '. */
+  /* If the font is a mono font then calculate the number of columns by the gui->width of ' '. */
   if (texture_font_is_mono(gui->font)) {
     texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
+    if (glyph == 0) {
+      die("%s: Atlas is not big egnofe.\n", __func__);
+    }
     editwincols = (openeditor->text->size.w / glyph->advance_x);
   }
   /* Otherwise, just guess for now. */
@@ -67,13 +62,33 @@ void window_resize_callback(GLFWwindow *window, int newwidth, int newheight) {
     editwincols = ((openeditor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
   }
   refresh_needed = TRUE;
+  resize_element(gui->root, vec2(gui->width, gui->height));
+  move_resize_element(openeditor->main, vec2(0, (gui->topbar->pos.y + gui->topbar->size.h)), vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)));
+  /* Calculate the rows for all editors. */
+  ITER_OVER_ALL_OPENEDITORS(starteditor, editor, 
+    editor->rows = (editor->text->size.h / FONT_HEIGHT(editor->font));
+    if (texture_font_is_mono(editor->font)) {
+      texture_glyph_t *glyph = texture_font_get_glyph(editor->font, " ");
+      if (glyph == 0) {
+        die("%s: Atlas is to small.\n", __func__);
+      }
+      editor->cols = (editor->text->size.w / glyph->advance_x);
+    }
+    else {
+      editor->cols = ((editor->text->size.w / FONT_WIDTH(editor->font)) * 0.9f);
+    }
+    editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+  );
 }
 
 /* Maximize callback. */
 void window_maximize_callback(GLFWwindow *window, int maximized) {
+  glfwGetError(NULL);
   ivec2 size;
   glfwGetWindowSize(window, &size.w, &size.h);
-  window_resize_callback(window, size.w, size.h);
+  if (glfwGetError(NULL) == GLFW_NO_ERROR) {
+    window_resize_callback(window, size.w, size.h);
+  }
 }
 
 /* Key callback. */
@@ -108,7 +123,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                     logE("Failed to save file, this needs fixing and the reason needs to be found out.");
                     close_and_go();
                   }
-                  gui->flag.unset<GUI_PROMPT>();
+                  gui_leave_prompt_mode();
                 }
                 free(full_path);
               }
@@ -126,7 +141,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_ESCAPE: {
           statusbar_discard_all_undo_redo();
-          gui->flag.unset<GUI_PROMPT>();
+          gui_leave_prompt_mode();
           break;
         }
         /* Undo */
@@ -197,6 +212,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
       refresh_needed = TRUE;
     }
   }
+  /* When inside the guieditor key mode, do nothing as we handle further keys in the char callback. */
+  else if (gui->flag.is_set<GUI_EDITOR_MODE_KEY>()) {
+    ;
+  }
   /* Otherwise, do the text bindings. */
   else {
     mouse_flag.clear();
@@ -226,6 +245,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
+        case GLFW_KEY_E: {
+          if (mods == GLFW_MOD_CONTROL) {
+            gui->flag.set<GUI_EDITOR_MODE_KEY>();
+          }
+          break;
+        }
         /* If CTRL+Q is pressed, quit. */
         case GLFW_KEY_Q: {
           if (mods == GLFW_MOD_CONTROL) {
@@ -250,6 +275,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             confirm_margin();
             window_resize_callback(window, gui->width, gui->height);
             show_toggle_statusmsg(LINE_NUMBERS);
+          }
+          else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
+            make_new_editor(TRUE);
+            gui_redecorate_after_switch();
+          }
+          else if (mods == GLFW_MOD_CONTROL) {
+            gui_open_new_empty_buffer();
           }
           break;
         }
@@ -380,12 +412,19 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             if (prev_stidx != openfile->current_x) {
               NETLOG("Prev start index: '%lu'.\n", prev_stidx);
             }
-            move_element(openeditor->topbar, (openeditor->topbar->pos + vec2(0, 20)));
+            move_element(openeditor->main, (openeditor->main->pos + vec2(0, 20)));
+            // resize_element(openeditor->main, (openeditor->main->size + vec2(-20, 0)));
+            refresh_needed = TRUE;
           }
           break;
         }
         case GLFW_KEY_RIGHT: {
           switch (mods) {
+            /* Alt+Shift+Right.  Switch to the next editor. */
+            case (GLFW_MOD_ALT | GLFW_MOD_SHIFT): {
+              function = switch_to_next_editor;
+              break;
+            }
             /* Alt+Right.  Switch to the next buffer inside this editor. */
             case GLFW_MOD_ALT: {
               function = gui_switch_to_next_buffer;
@@ -415,6 +454,11 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_LEFT: {
           switch (mods) {
+            /* Alt+Shift+Left.  Switch to the previous editor. */
+            case (GLFW_MOD_ALT | GLFW_MOD_SHIFT): {
+              function = switch_to_prev_editor;
+              break;
+            }
             /* Alt+Left.  Switch to the previous buffer inside this editor. */
             case GLFW_MOD_ALT: {
               function = gui_switch_to_prev_buffer;
@@ -496,6 +540,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             /* Move down. */
             case 0: {
               function = do_down;
+              if (openeditor->openfile->cursor_row == (openeditor->rows - 1)) {
+                openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+              }
             }
           }
           break;
@@ -665,17 +712,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 /* Char input callback. */
 void char_callback(GLFWwindow *window, Uint ch) {
-  if (ISSET(VIEW_MODE)) {
-    return;
-  }
-  else if (gui->flag.is_set<GUI_PROMPT>()) {
+  /* When in the gui prompt mode. */
+  if (gui->flag.is_set<GUI_PROMPT>()) {
     char input = (char)ch;
     if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
       if (is_char_one_of(&input, 0, "Yy")) {
         glfwSetWindowShouldClose(window, TRUE);
       }
       else if (is_char_one_of(&input, 0, "Nn")) {
-        gui->flag.unset<GUI_PROMPT>();
+        gui_leave_prompt_mode();
       }
     }
     else {
@@ -683,7 +728,22 @@ void char_callback(GLFWwindow *window, Uint ch) {
     }
     refresh_needed = TRUE;
   }
+  /* Otherwise, when we are inside gui editor mode. */
+  else if (gui->flag.is_set<GUI_EDITOR_MODE_KEY>()) {
+    char input = (char)ch;
+    /* Open a new seperate editor. */
+    if (is_char_one_of(&input, 0, "Nn")) {
+      make_new_editor(TRUE);
+      hide_editor(openeditor->prev, TRUE);
+      gui_redecorate_after_switch();
+    }
+    gui->flag.unset<GUI_EDITOR_MODE_KEY>();
+  }
   else {
+    /* If we are in restricted move dont add anything to the editor. */
+    if (ISSET(VIEW_MODE)) {
+      return;
+    }
     char input = (char)ch;
     /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
     if (openfile->mark && is_enclose_char((char)ch)) {
@@ -789,7 +849,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         long index = prompt_index_from_mouse(FALSE);
         /* If the mouse press was on anything other then inside the top-bar, exit prompt-mode. */
         if (index == -1) {
-          gui->flag.unset<GUI_PROMPT>();
+          gui_leave_prompt_mode();
         }
         /* Otherwise, set prompt x pos. */
         else {
@@ -797,49 +857,61 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         }
       }
       guielement *element = element_from_mousepos();
-      /* When the mouse is pressed in the editelement. */
-      if (element == openeditor->text) {
-        mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
-        /* Get the line and index from the mouse position. */
-        Ulong index;
-        linestruct *line = line_and_index_from_mousepos(gui->font, &index);
-        if (line) {
-          openfile->current     = line;
-          openfile->mark        = line;
-          openfile->current_x   = index;
-          openfile->mark_x      = index;
-          openfile->softmark    = TRUE;
-          openfile->placewewant = xplustabs();
-          if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
-            /* If this was a double click then select the current word, if any. */
-            Ulong st, end;
-            st  = get_prev_cursor_word_start_index(TRUE);
-            end = get_current_cursor_word_end_index(TRUE);
-            if (st != openfile->current_x && end != openfile->current_x) {
-              /* If the double click was inside of a word. */
-              openfile->mark_x    = st;
-              openfile->current_x = end;
-            }
-            else if (st != openfile->current_x && end == openfile->current_x) {
-              /* The double click was done at the end of the word.  So we select that word. */
-              openfile->mark_x = st;
-            }
-            else if (st == openfile->current_x && end != openfile->current_x) {
-              /* The double click was done at the begining of the word.  So we select that word. */
-              openfile->mark_x    = st;
-              openfile->current_x = end;
+      if (element) {
+        /* When the mouse is pressed in the text element of a editor. */
+        if (element->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>()) {
+          if (element == element->data.editor->text) {
+            /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
+            set_openeditor(element->data.editor);
+            mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
+            /* Get the line and index from the mouse position. */
+            Ulong index;
+            linestruct *line = line_and_index_from_mousepos(element->data.editor->font, &index);
+            if (line) {
+              openfile->current     = line;
+              openfile->mark        = line;
+              openfile->current_x   = index;
+              openfile->mark_x      = index;
+              openfile->softmark    = TRUE;
+              openfile->placewewant = xplustabs();
+              if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
+                /* If this was a double click then select the current word, if any. */
+                Ulong st, end;
+                st  = get_prev_cursor_word_start_index(TRUE);
+                end = get_current_cursor_word_end_index(TRUE);
+                if (st != openfile->current_x && end != openfile->current_x) {
+                  /* If the double click was inside of a word. */
+                  openfile->mark_x    = st;
+                  openfile->current_x = end;
+                }
+                else if (st != openfile->current_x && end == openfile->current_x) {
+                  /* The double click was done at the end of the word.  So we select that word. */
+                  openfile->mark_x = st;
+                }
+                else if (st == openfile->current_x && end != openfile->current_x) {
+                  /* The double click was done at the begining of the word.  So we select that word. */
+                  openfile->mark_x    = st;
+                  openfile->current_x = end;
+                }
+              }
+              else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
+                openfile->mark_x = 0;
+                openfile->current_x = strlen(openfile->current->data);
+              }
             }
           }
-          else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
-            openfile->mark_x = 0;
-            openfile->current_x = strlen(openfile->current->data);
+          else if (element == element->data.editor->scrollbar) {
+            mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
+            mouse_flag.set<WAS_EDITOR_SCROLL_PRESS>();
+            gui->clicked = element;
+            NETLOG("Clicked scrollbar.\n");
           }
         }
-      }
-      /* For when the top bar is pressed, like when in prompt-mode. */
-      /* And, when pressed in any other element. */
-      else if (element && element->callback) {
-        element->callback(element, GUIELEMENT_CLICK_CALLBACK);
+        /* For when the top bar is pressed, like when in prompt-mode. */
+        /* And, when pressed in any other element. */
+        else if (element->callback) {
+          element->callback(element, GUIELEMENT_CLICK_CALLBACK);
+        }
       }
     }
     else if (action == GLFW_RELEASE) {
@@ -848,6 +920,8 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         openfile->mark = NULL;
       }
       mouse_flag.unset<LEFT_MOUSE_BUTTON_HELD>();
+      mouse_flag.unset<WAS_EDITOR_SCROLL_PRESS>();
+      gui->clicked = NULL;
     }
   }
   /* Right mouse button. */
@@ -890,12 +964,31 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 
 /* Mouse pos callback. */
 void mouse_pos_callback(GLFWwindow *window, double x, double y) {
+  static vec2 last_mousepos = mousepos;
   mousepos = vec2(x, y);
   if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
     if (gui->flag.is_set<GUI_PROMPT>()) {
       long index = prompt_index_from_mouse(TRUE);
       if (index != -1) {
         typing_x = index;
+      }
+    }
+    else if (mouse_flag.is_set<WAS_EDITOR_SCROLL_PRESS>()) {
+      if (gui->clicked && gui->clicked->parent && gui->clicked->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>() && (mousepos.y != last_mousepos.y)) {
+        vec2 newpos = gui->clicked->pos;
+        newpos.y += (mousepos.y - last_mousepos.y);
+        if (newpos.y < gui->clicked->parent->pos.y) {
+          newpos.y = gui->clicked->parent->pos.y;
+        }
+        else if ((newpos.y + gui->clicked->size.h) > (gui->clicked->parent->pos.y + gui->clicked->parent->size.h)) {
+          newpos.y = (gui->clicked->parent->pos.y + gui->clicked->parent->size.h - gui->clicked->size.h);
+        }
+        move_element(gui->clicked, newpos);
+        gui->clicked->data.editor->openfile->edittop = gui_line_from_number(
+          gui->clicked->data.editor,
+          get_lineno_from_scrollbar_position(gui->clicked->data.editor, (gui->clicked->pos.y - gui->clicked->parent->pos.y))
+        );
+        refresh_needed = TRUE;
       }
     }
     else {
@@ -954,6 +1047,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
             openfile->mark_x = st;
           }
         }
+        openfile->placewewant = xplustabs();
       }
     }
   }
@@ -976,6 +1070,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       entered_element = mouse_element;
     }
   }
+  last_mousepos = mousepos;
   refresh_needed = TRUE;
 }
 
@@ -1007,27 +1102,41 @@ void window_enter_callback(GLFWwindow *window, int entered) {
 /* Scroll callback. */
 void scroll_callback(GLFWwindow *window, double x, double y) {
   guielement *element = element_from_mousepos();
-  if (element == openeditor->text) {
-    /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
-    if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
-      Ulong index;
-      linestruct *line = line_and_index_from_mousepos(gui->font, &index);
-      if (line) {
-        openfile->current   = line;
-        openfile->current_x = index;
+  if (element) {
+    /* Check if the element belongs to a editor. */
+    if (element->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>()) {
+      /* If the scroll happend where the text is then adjust that editor, even if not the currently focused one. */
+      if (element == element->data.editor->text) {
+        /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
+        if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
+          Ulong index;
+          linestruct *line = line_and_index_from_mousepos(element->data.editor->font, &index);
+          if (line) {
+            element->data.editor->openfile->current   = line;
+            element->data.editor->openfile->current_x = index;
+          }
+        }
+        /* Up and down scroll. */
+        edit_scroll((y > 0.0) ? BACKWARD : FORWARD);
+      }
+      /* Right and left scroll. */
+      if (x < 0.0) {
+        NETLOG("scroll right.\n");
+      }
+      else if (x > 0.0) {
+        NETLOG("scroll left.\n");
+      }
+      refresh_needed = TRUE;
+      element->data.editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+    }
+    /* Otherwise check if this is a child to a element that belongs to a editor. */
+    else if (element->parent && element->parent->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>()) {
+      /* Check if the element is a child of the editors topbar. */
+      if (element->parent == element->parent->data.editor->topbar) {
+        NETLOG("Is topbar ancestor.\n");
       }
     }
-    /* Up and down scroll. */
-    edit_scroll((y > 0.0) ? BACKWARD : FORWARD);
   }
-  /* Right and left scroll. */
-  if (x < 0.0) {
-    NETLOG("scroll right.\n");
-  }
-  else if (x > 0.0) {
-    NETLOG("scroll left.\n");
-  }
-  refresh_needed = TRUE;
 }
 
 #endif

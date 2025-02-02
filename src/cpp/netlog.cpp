@@ -42,3 +42,16 @@ void debug_define(const DefineEntry &de) {
                     "\n",
                     de.name, de.full_decl.c_str(), de.value.c_str(), de.file.c_str(), de.decl_start_line, de.decl_end_line);
 }
+
+#ifdef HAVE_GLFW
+
+void netlog_openfiles(void) {
+  NETLOG("%s: Listing all files.\n", __func__);
+  ITER_OVER_ALL_OPENFILES(startfile, file,
+    NETLOG("%s\n", file->filename);
+    file = file->next;
+  );
+  NETLOG("\n%s: Done\n", __func__);
+}
+
+#endif

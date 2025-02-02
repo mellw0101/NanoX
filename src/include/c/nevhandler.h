@@ -1,11 +1,8 @@
 #pragma once
 
-#include "../../../config.h"
+#include "../c_defs.h"
 
 _BEGIN_C_LINKAGE
-
-/* Opaque structure that represents a event loop. */
-typedef struct nevhandler nevhandler;
 
 /* The main event-handler for the tui. */
 extern nevhandler *tui_handler;

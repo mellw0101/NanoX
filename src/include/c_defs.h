@@ -38,4 +38,27 @@
 
 #define MACRO_DO_WHILE(...) do { __VA_ARGS__ } while(0)
 
-#define S__LEN(s) s, sizeof(s) -1
+#define S__LEN(s) (s), (sizeof(s) -1)
+
+_BEGIN_C_LINKAGE
+
+/* --------------------------------------------- nevhandler --------------------------------------------- */
+
+/* Opaque structure that represents a event loop. */
+typedef struct nevhandler nevhandler;
+
+/* --------------------------------------------- nfdlistener --------------------------------------------- */
+
+/* `Opaque`  Structure to listen to file events. */
+typedef struct nfdlistener nfdlistener;
+
+/* Structure that represents the event that the callback gets. */
+typedef struct {
+  Uint  mask;
+  Uint  cookie;
+  const char *file; /* The file this event is from. */
+} nfdlistener_event;
+
+typedef void (*nfdlistener_cb)(nfdlistener_event *);
+
+_END_C_LINKAGE

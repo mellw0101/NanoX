@@ -214,6 +214,8 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *draw_pos) {
 /* Show a status message of `type`, for `seconds`.  Note that the type will determen if the
  * message will be shown, depending if there is a more urgent message already being shown. */
 void show_statusmsg(message_type type, float seconds, const char *format, ...) {
+  ASSERT(seconds);
+  ASSERT(format);
   int len;
   char buffer[4096];
   va_list ap;
@@ -239,15 +241,31 @@ void show_toggle_statusmsg(int flag) {
 
 /* Draw a editor. */
 void draw_editor(guieditor *editor) {
+  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  ASSERT(editor->openfile->edittop);
+  ASSERT(editor->topbar);
+  ASSERT(editor->topbuf);
+  ASSERT(editor->text);
+  ASSERT(editor->buffer);
+  ASSERT(editor->gutter);
+  ASSERT(editor->scrollbar);
+  ASSERT(editor->font);
+  ASSERT(gui->font_shader);
   int row = 0;
   linestruct *line = editor->openfile->edittop;
+  if (editor->flag.is_set<GUIEDITOR_HIDDEN>()) {
+    return;
+  }
   /* Draw the text editor element. */
   draw_element_rect(editor->text);
   /* Draw the gutter element of the editor. */
   draw_element_rect(editor->gutter);
   /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
   draw_element_rect(editor->topbar);
+  /* Render the topbar of the editor. */
   if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
+    refresh_editor_topbar(editor);
     vertex_buffer_clear(editor->topbuf);
     for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
       /* Assign the child to a new ptr for readbility. */
@@ -260,8 +278,15 @@ void draw_editor(guieditor *editor) {
       }
     }
     upload_texture_atlas(gui->atlas);
+    editor->flag.unset<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+    editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
   }
   else {
+    /* When the active file has changed, adjust the colors of the topbar. */
+    if (editor->flag.is_set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>()) {
+      update_editor_topbar(editor);
+      editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
+    }
     for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
       /* Assign the child to a new ptr for readbility. */
       guielement *child = editor->topbar->children[i];
@@ -270,10 +295,11 @@ void draw_editor(guieditor *editor) {
     }
   }
   render_vertex_buffer(gui->font_shader, editor->topbuf);
+  /* Render the text element of the editor. */
   if (refresh_needed) {
     editor->pen.y = editor->text->pos.y;
     vertex_buffer_clear(editor->buffer);
-    while (line && ++row < editwinrows) {
+    while (line && ++row <= editwinrows) {
       editor->pen.x = 0;
       editor->pen.y += FONT_HEIGHT(editor->font);
       gui_draw_row(line, editor, &editor->pen);
@@ -281,7 +307,7 @@ void draw_editor(guieditor *editor) {
     }
     upload_texture_atlas(gui->atlas);
     if (!gui->flag.is_set<GUI_PROMPT>()) {
-      add_openfile_cursor(editor->font, editor->buffer, vec4(1.0f));
+      add_openfile_cursor(editor->font, editor->buffer, vec4(1));
     }
   }
   else {
@@ -291,10 +317,15 @@ void draw_editor(guieditor *editor) {
     }
   }
   render_vertex_buffer(gui->font_shader, editor->buffer);
+  if (editor->flag.is_set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>()) {
+    update_editor_scrollbar(editor);
+    editor->flag.unset<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+  }
+  draw_element_rect(editor->scrollbar);
 }
 
-/* Draw the top menu bar. */
-void draw_top_bar(void) {
+/* Draw the top bar of the gui. */
+void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
     gui->topbar->color = color_idx_to_vec4(FG_VS_CODE_RED);
   }
@@ -319,19 +350,19 @@ void draw_top_bar(void) {
   }
   /* Otherwise, draw the menu elements as usual. */
   else {
-    draw_element_rect(file_menu_element);
+    // draw_element_rect(file_menu_element);
     if (refresh_needed) {
       vertex_buffer_clear(gui->topbuf);
-      vertex_buffer_add_element_lable(file_menu_element, gui->font, gui->topbuf);
+      // vertex_buffer_add_element_lable(file_menu_element, gui->font, gui->topbuf);
     }
-    for (auto child : file_menu_element->children) {
-      if (!child->flag.is_set<GUIELEMENT_HIDDEN>()) {
-        draw_element_rect(child);
-        if (refresh_needed) {
-          vertex_buffer_add_element_lable(child, gui->font, gui->topbuf);
-        }
-      }
-    }
+    // for (auto child : file_menu_element->children) {
+    //   if (!child->flag.is_set<GUIELEMENT_HIDDEN>()) {
+    //     draw_element_rect(child);
+    //     if (refresh_needed) {
+    //       vertex_buffer_add_element_lable(child, gui->font, gui->topbuf);
+    //     }
+    //   }
+    // }
   }
   /* If a refresh is needed, meaning that we have cleared and reinput the data in the vertex buffer. */
   if (refresh_needed) {
@@ -340,32 +371,37 @@ void draw_top_bar(void) {
   render_vertex_buffer(gui->font_shader, gui->topbuf);
 }
 
-/* Draw the bottom bar. */
+/* Draw the bottom bar of the gui. */
 void draw_botbar(void) {
+  draw_element_rect(gui->botbar);
+}
+
+/* Draw the status bar for the gui. */
+void draw_statusbar(void) {
   if (statustype != VACUUM) {
     /* Check it the message has been shown for the set time. */
     statustime -= (1.0f / frametimer.fps);
     if (statustime < 0) {
       /* If the set time has elapsed, then reset the status element. */
       statustype = VACUUM;
-      gui->botbar->flag.set<GUIELEMENT_HIDDEN>();
+      gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
       return;
     }
     if (refresh_needed) {
-      gui->botbar->flag.unset<GUIELEMENT_HIDDEN>();
+      gui->statusbar->flag.unset<GUIELEMENT_HIDDEN>();
       float msgwidth = (pixel_breadth(gui->font, statusmsg) + pixel_breadth(gui->font, "  "));
-      vertex_buffer_clear(gui->botbuf);
+      vertex_buffer_clear(gui->statusbuf);
       move_resize_element(
-        gui->botbar,
-        vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - FONT_HEIGHT(gui->font))),
+        gui->statusbar,
+        vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - gui->botbar->size.h - gui->statusbar->size.h)),
         vec2(msgwidth, FONT_HEIGHT(gui->font))
       );
-      vec2 penpos((gui->botbar->pos.x + pixel_breadth(gui->font, " ")), (gui->botbar->pos.y + FONT_HEIGHT(gui->font) + gui->font->descender));
-      vertex_buffer_add_string(gui->botbuf, statusmsg, strlen(statusmsg), " ", gui->font, vec4(1.0f), &penpos);
+      vec2 penpos((gui->statusbar->pos.x + pixel_breadth(gui->font, " ")), (gui->statusbar->pos.y + FONT_HEIGHT(gui->font) + gui->font->descender));
+      vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui->font, vec4(1.0f), &penpos);
       upload_texture_atlas(gui->atlas);
     }
-    draw_element_rect(gui->botbar);
-    render_vertex_buffer(gui->font_shader, gui->botbuf);
+    draw_element_rect(gui->statusbar);
+    render_vertex_buffer(gui->font_shader, gui->statusbuf);
   }
 }
 
@@ -379,7 +415,15 @@ void do_fullscreen(GLFWwindow *window) {
     glfwGetWindowSize(window, &rect.width, &rect.height);
     /* Get monitor size. */
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    if (!monitor) {
+      log_error_gui("%s: Monitor is invalid.\n", __func__);
+      return;
+    }
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    if (!mode) {
+      log_error_gui("%s: Mode is invalid.\n", __func__);
+      return;
+    }
     /* Set the window pos and size. */
     glfwSetWindowAttrib(window, GLFW_AUTO_ICONIFY, FALSE);
     glfwMaximizeWindow(window);

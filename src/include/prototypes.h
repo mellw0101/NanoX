@@ -363,6 +363,7 @@ bool  has_old_position(const char *file, long *line, long *column);
 /* Most functions in 'move.cpp'. */
 void to_first_line(void) _NOTHROW;
 void to_last_line(void) _NOTHROW;
+void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW;
 void do_page_up(void) _NOTHROW;
 void do_page_down(void) _NOTHROW;
 void to_top_row(void) _NOTHROW;
@@ -685,6 +686,7 @@ void netlog_syntaxtype(syntaxtype *s);
 void netlog_colortype(colortype *c);
 void netlog_func_info(function_info_t *info);
 void debug_define(const DefineEntry &de);
+void netlog_openfiles(void);
 
 /* 'words.cpp' */
 char       **split_into_words(const char *str, const u_int len, u_int *word_count);
@@ -785,6 +787,8 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 
 #ifdef HAVE_GLFW
   /* 'gui.cpp' */
+  void log_error_gui(const char *format, ...);
+  vertex_buffer_t *make_new_font_buffer(void) _NODISCARD;
   void init_gui(void);
   void glfw_loop(void);
   
@@ -810,7 +814,9 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void vertex_buffer_add_element_lable(guielement *element, texture_font_t *font, vertex_buffer_t *buffer);
   void vertex_buffer_add_element_lable_offset(guielement *element, texture_font_t *font, vertex_buffer_t *buf, vec2 offset);
   bool is_ancestor(guielement *e, guielement *ancestor);
-  vec4 color_idx_to_vec4(int index);
+  vec4 color_idx_to_vec4(int index) _NOTHROW;
+  linestruct *gui_line_from_number(guieditor *editor, long number);
+  long get_lineno_from_scrollbar_position(guieditor *editor, float ypos);
   
   /* 'gui/guicallbacks.cpp' */
   void window_resize_callback(GLFWwindow *window, int newwidth, int newheight);
@@ -828,20 +834,26 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
   void show_toggle_statusmsg(int flag);
   void draw_editor(guieditor *editor);
-  void draw_top_bar(void);
+  void draw_topbar(void);
   void draw_botbar(void);
+  void draw_statusbar(void);
   void do_fullscreen(GLFWwindow *window);
   
   /* gui/guiprompt.cpp */
+  void gui_enter_prompt_mode(void);
+  void gui_leave_prompt_mode(void);
   void gui_ask_user(const char *question, guiprompt_type type);
   long prompt_index_from_mouse(bool allow_outside);
 
   /* gui/guifiles.cpp */
+  void gui_redecorate_after_switch(void);
   void gui_switch_to_prev_buffer(void);
   void gui_switch_to_next_buffer(void);
   void gui_set_openfile(openfilestruct *file);
   bool gui_delete_lockfile(const char *lockfile);
+  void gui_close_buffer(void);
   bool gui_close_and_go(void);
+  void gui_open_new_empty_buffer(void);
   
   /* gui/guielement.cpp */
   guielement *make_element(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
@@ -849,7 +861,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   guielement *make_element_child(guielement *parent, bool in_gridmap = TRUE);
   void delete_element(guielement *element);
   void set_element_lable(guielement *element, const char *string) _NOTHROW;
-  void delete_guielement_children(guielement *element) _NOTHROW;
+  void delete_guielement_children(guielement *element);
   guielement *element_from_mousepos(void);
   void resize_element(guielement *e, vec2 size);
   void move_element(guielement *e, vec2 pos);
@@ -857,14 +869,31 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void delete_element_borders(guielement *e);
   void set_element_borders(guielement *e, vec4 size, vec4 color);
   void draw_element_rect(guielement *element);
+  void set_element_raw_data(guielement *element, void *data);
+  void set_element_file_data(guielement *element, openfilestruct *file);
+  void set_element_editor_data(guielement *element, guieditor *editor);
+  void set_element_flag_recurse(guielement *element, bool set, Uint flag);
 
   /* gui/guieditor.cpp */
+  void refresh_editor_topbar(guieditor *editor);
   void update_editor_topbar(guieditor *editor);
+  void update_editor_scrollbar(guieditor *editor);
   void make_new_editor(bool new_buffer);
   void delete_editor(guieditor *editor);
+  void close_editor(void);
   void free_editor_buffers(guieditor *editor);
+  void hide_editor(guieditor *editor, bool hide);
+  void switch_to_prev_editor(void);
+  void switch_to_next_editor(void);
+  void set_openeditor(guieditor *editor);
   guieditor *get_element_editor(guielement *e);
   guieditor *get_file_editor(openfilestruct *file);
+
+  /* gui/guigrid.cpp */
+  guigridsection *make_new_gridsection(void);
+  void gridsection_resize(guigridsection *section, Ulong newsize);
+  void gridsection_add_editor(guigridsection *section, guieditor *editor);
+  guigrid *make_new_grid(void);
 #endif
 
 /* 'cfg.cpp'. */

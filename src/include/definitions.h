@@ -62,16 +62,18 @@
 #include <Mlib/Notify.h>
 #include <Mlib/def.h>
 
-#include "../c/event/nevhandler.h"
-#include "../c/event/nfdreader.h"
 #include "../c/event/nfdwriter.h"
-#include "../c/event/nfdlistener.h"
 #include "../c/term/terminfo.h"
 #include "../c/term/move.h"
 #include "../c/term/input.h"
 #include "../c/window/window.h"
 #include "../c/term/tui.h"
 #include "../c/input/key.h"
+#include "../c/math.h"
+/* Undefine this to make ASSERT do nothing,  Note that ALWAYS_ASSERT will always assert. */
+#define ASSERT_DEBUG
+#include "c/nassert.h"
+#include "c_proto.h"
 
 #ifdef HAVE_GLFW
   #include "../lib/include/GL/glew.h"
@@ -275,7 +277,6 @@ using std::vector;
   #define FONT_HEIGHT(font) (font->height - font->linegap)
   /* Size of each grid in the gridmap. */
   #define GRIDMAP_GRIDSIZE 20
-  #define EDIT_BACKGROUND_COLOR vec4(vec3(0.1f), 1.0f)
 #endif
 
 #define NETLOG_FUNC_ST NETLOG("%s\n", __func__)
@@ -384,8 +385,8 @@ using std::vector;
 /* Undefine MIN and MAX before we define them, to avoide warnings. */
 #undef MIN
 #undef MAX
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(x, min) (((x) < (min)) ? (min) : (x))
+#define MAX(x, max) (((x) > (max)) ? (max) : (x))
 
 #define VEC4_8BIT(r, g, b, a) vec4(MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1))
 
@@ -403,7 +404,6 @@ using std::vector;
   #define TRUE 1
   #define FALSE 0
 #endif
-
 
 
 /* Enumeration types. */
@@ -631,9 +631,13 @@ typedef enum {
   typedef enum {
     GUI_PROMPT,
     #define GUI_PROMPT GUI_PROMPT
+    GUI_EDITOR_MODE_KEY,
+    #define GUI_EDITOR_MODE_KEY GUI_EDITOR_MODE_KEY
+    GUI_HAS_CHANGED_SIZE,
   } guiflag_type;
 
   typedef enum {
+    #define GUIELEMENT_FLAG_SIZE 24
     /* This element is hidden, meaning it should never be returned by gridmap and it should not be rendered. */
     GUIELEMENT_HIDDEN,
     #define GUIELEMENT_HIDDEN GUIELEMENT_HIDDEN
@@ -644,19 +648,49 @@ typedef enum {
      * should be set, so that when the parent is resized or moved it will follow. */
     GUIELEMENT_RELATIVE_POS,
     #define GUIELEMENT_RELATIVE_POS GUIELEMENT_RELATIVE_POS
+    GUIELEMENT_RELATIVE_X_POS,
+    #define GUIELEMENT_RELATIVE_X_POS GUIELEMENT_RELATIVE_X_POS
+    GUIELEMENT_RELATIVE_Y_POS,
+    #define GUIELEMENT_RELATIVE_Y_POS GUIELEMENT_RELATIVE_Y_POS
     /* The reverse of relative pos, in that the relative pos is based on the
      * `right-bottom of the parent`, as apposed to the normal `(top-left of the parent)`. */
     GUIELEMENT_REVERSE_RELATIVE_POS,
     #define GUIELEMENT_REVERSE_RELATIVE_POS GUIELEMENT_REVERSE_RELATIVE_POS
+    /* For when we only want to reverse the relative x position. */
+    GUIELEMENT_REVERSE_RELATIVE_X_POS,
+    #define GUIELEMENT_REVERSE_RELATIVE_X_POS GUIELEMENT_REVERSE_RELATIVE_X_POS
+    /* For when we only want to reverse the relative y position */
+    GUIELEMENT_REVERSE_RELATIVE_Y_POS,
+    #define GUIELEMENT_REVERSE_RELATIVE_Y_POS GUIELEMENT_REVERSE_RELATIVE_Y_POS
+    /* When this is set the width of the element will be dependent on the parent of the element.  This means
+     * that if we want to make a element so its width is as long as its parent - 10 pixels,  we set
+     * `element->relative_size = vec2(10, 0)`, the same goes for height just keep in mind that then
+     * `GUIELEMENT_RELATIVE_HEIGHT` must be set.  Note that the same vec2 is used for both relative width and height. */
+    GUIELEMENT_RELATIVE_WIDTH,
+    #define GUIELEMENT_RELATIVE_WIDTH GUIELEMENT_RELATIVE_WIDTH
+    GUIELEMENT_RELATIVE_HEIGHT,
+    #define GUIELEMENT_RELATIVE_HEIGHT GUIELEMENT_RELATIVE_HEIGHT
     /* This will be set only for elements that are borders. */
     GUIELEMENT_IS_BORDER,
     #define GUIELEMENT_IS_BORDER GUIELEMENT_IS_BORDER
+    /* If the element has active borders, mening they have been created. */
     GUIELEMENT_HAS_BORDERS,
     #define GUIELEMENT_HAS_BORDERS GUIELEMENT_HAS_BORDERS
     /* When this is set the gridmap will not add an element, even when called to do so.
      * Usefull for things that will never need to interact with the mouse. */
     GUIELEMENT_NOT_IN_GRIDMAP,
     #define GUIELEMENT_NOT_IN_GRIDMAP GUIELEMENT_NOT_IN_GRIDMAP
+    /* If the element has something assigned to `element->data.raw`. */
+    GUIELEMENT_HAS_RAW_DATA,
+    #define GUIELEMENT_HAS_RAW_DATA GUIELEMENT_HAS_RAW_DATA
+    /* If the element has a `openfilestruct *` assigned to `element->data.file`. */
+    GUIELEMENT_HAS_FILE_DATA,
+    #define GUIELEMENT_HAS_FILE_DATA GUIELEMENT_HAS_FILE_DATA
+    /* The `element` has a `guieditor *` assigned to `element->data.editor`. */
+    GUIELEMENT_HAS_EDITOR_DATA,
+    #define GUIELEMENT_HAS_EDITOR_DATA GUIELEMENT_HAS_EDITOR_DATA
+    GUIELEMENT_ABOVE,
+    #define GUIELEMENT_ABOVE GUIELEMENT_ABOVE
   } guielement_flag_type;
 
   typedef enum {
@@ -670,13 +704,22 @@ typedef enum {
 
   typedef enum {
     #define GUIEDITOR_FLAGSIZE 8
-    GUIEDITOR_TOPBAR_REFRESH_NEEDED
+    GUIEDITOR_TOPBAR_REFRESH_NEEDED,
     #define GUIEDITOR_TOPBAR_REFRESH_NEEDED GUIEDITOR_TOPBAR_REFRESH_NEEDED
-  } guieditor_flagtype;
+    GUIEDITOR_TOPBAR_UPDATE_ACTIVE,
+    #define GUIEDITOR_TOPBAR_UPDATE_ACTIVE GUIEDITOR_TOPBAR_UPDATE_ACTIVE
+    GUIEDITOR_TEXT_REFRESH_NEEDED,
+    #define GUIEDITOR_TEXT_REFRESH_NEEDED GUIEDITOR_TEXT_REFRESH_NEEDED
+    GUIEDITOR_SCROLLBAR_REFRESH_NEEDED,
+    #define GUIEDITOR_SCROLLBAR_REFRESH_NEEDED GUIEDITOR_SCROLLBAR_REFRESH_NEEDED
+    GUIEDITOR_HIDDEN,
+    #define GUIEDITOR_HIDDEN GUIEDITOR_HIDDEN
+  } guieditor_flag_type;
 #endif
 
 /* Some forward declarations. */
 typedef struct guielement guielement;
+typedef struct guieditor  guieditor;
 
 /* Some typedefs. */
 typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
@@ -818,6 +861,27 @@ typedef struct openfilestruct {
   bit_flag_t<FILE_TYPE_SIZE> type;
   openfilestruct *next;       /* The next open file, if any. */
   openfilestruct *prev;       /* The preceding open file, if any. */
+
+  /* Itherate over all files in the circular linked list once per file.
+   * Never modify the ptr 'name' under any conditions.  Its handled by
+   * the macro, if one wants to continue inside the action, just do that
+   * and nothing else. */
+  #define ITER_OVER_ALL_OPENFILES(startfile, name, action)  \
+    MACRO_DO_WHILE(                                         \
+      if (startfile && startfile->next) {                   \
+        openfilestruct *name = startfile;                   \
+        bool changed_file = TRUE;                           \
+        do {                                                \
+          if (!changed_file) {                              \
+            file = file->next;                              \
+          }                                                 \
+          changed_file = FALSE;                             \
+          MACRO_DO_WHILE(action);                           \
+          name = name->next;                                \
+          changed_file = TRUE;                              \
+        } while (name != startfile);                        \
+      }                                                     \
+    )
 } openfilestruct;
 
 typedef struct coloroption {
@@ -879,24 +943,39 @@ typedef struct completionstruct {
 /* Gui specific structs. */
 #ifdef HAVE_GLFW
   typedef struct {
-    float x, y, z;      /* Position-data. */
-    float s, t;         /* Tex-data. */
-    float r, g, b, a;   /* Color-data. */
+    float x, y, z;    /* Position. */
+    float s, t;       /* Tex. */
+    float r, g, b, a; /* Color. */
   } vertex_t;
 
+  typedef union {
+    void           *raw;      /* A `raw` data ptr, this can be anything but it means casting every time we use. */
+    openfilestruct *file;     /* A ptr to a `openfilestruct`. */
+    guieditor      *editor;   /* A ptr to a `guieditor`. */
+  } guielement_data_type;
+
   typedef struct guielement {
-    vec2                  pos;           /* Where in the window this element has (x,y). */
-    vec2                  relative_pos;  /* When relative position is used, this is the position relative to `parent`. */
-    vec2                  endoff;        /* The distance from the width and height of the full window.  If any. */
-    vec2                  size;          /* The size of this element. */
-    vec4                  color;         /* Color this element should be. */
-    vec4                  textcolor;     /* Color that text draw in this element should be. */
-    char                 *lable;         /* If this ui element is a button or has static text. */
-    Uint                  lablelen;      /* The length of the static text.  If any. */
-    bit_flag_t<8>         flag;          /* Flags for the element. */
-    guielement           *parent;        /* This element`s parent, or NULL when there is none. */
-    MVector<guielement *> children;      /* This elements children, for menus and such. */
-    guielement_callback callback;        /* Callback for all action types. */
+    vec2                  pos;            /* Where in the window this element has (x,y). */
+    vec2                  relative_pos;   /* When relative position is used, this is the position relative to `parent`. */
+    vec2                  endoff;         /* The distance from the width and height of the full window.  If any. */
+    vec2                  size;           /* The size of this element. */
+    
+    /* When relative width or height is enabled this is the offset
+     * from the right-bottom of parent to resize this element to. */
+    vec2 relative_size;
+
+    /* Custom data this element needs, this is a union of only
+     * ptr types, this helps to not have to cast everything. */
+    guielement_data_type data;
+    
+    vec4                  color;          /* Color this element should be. */
+    vec4                  textcolor;      /* Color that text draw in this element should be. */
+    char                 *lable;          /* If this ui element is a button or has static text. */
+    Uint                  lablelen;       /* The length of the static text.  If any. */
+    bit_flag_t<GUIELEMENT_FLAG_SIZE>flag; /* Flags for the element. */
+    guielement           *parent;         /* This element`s parent, or NULL when there is none. */
+    MVector<guielement *> children;       /* This elements children, for menus and such. */
+    guielement_callback callback;         /* Callback for all action types. */
   } guielement;
 
   class uigridmapclass {
@@ -964,16 +1043,25 @@ typedef struct completionstruct {
       if (it == grid.end()) {
         return NULL;
       }
+      guielement *ret = NULL;
       for (Uint i = 0; i < it->second.size(); ++i) {
         if (it->second[i]->flag.is_set<GUIELEMENT_HIDDEN>()) {
           continue;
         }
         if (pos.x >= it->second[i]->pos.x && pos.x <= (it->second[i]->pos.x + it->second[i]->size.x)
          && pos.y >= it->second[i]->pos.y && pos.y <= (it->second[i]->pos.y + it->second[i]->size.y)) {
-          return it->second[i];
+          if (ret && it->second[i]->flag.is_set<GUIELEMENT_ABOVE>()) {
+            ret = it->second[i];
+          }
+          else if (ret) {
+            ;
+          }
+          else  {
+            ret = it->second[i];
+          }
         }
       }
-      return NULL;
+      return ret;
     }
 
     bool contains(const ivec2 &pos) const {
@@ -1005,7 +1093,7 @@ typedef struct completionstruct {
   };
 
   typedef struct guieditor {
-    vertex_buffer_t *buffer;    /* The buffer that holds all this editors data to be drawn. */
+    vertex_buffer_t *buffer;    /* The buffer that holds all this editors text data to be drawn. */
     
     /* The buffer for the `topbar`, this is a seperete buffer because this does not need updating very often. */
     vertex_buffer_t *topbuf;
@@ -1026,14 +1114,54 @@ typedef struct completionstruct {
     guielement *gutter; /* The `gutter` element, this holds the line numbers. */
     guielement *text;   /* The `text` element, this holds the editors text for the currently open file. */
     
+    /* The scrollbar for this editor. */
+    guielement *scrollbar;
+
     vec2 pen;
+
+    Uint rows; /* How meny rows this `guieditor` can fit in its current size. */
+    Uint cols; /* How meny columns this guieditor's text element can fit in its current size. */
     
     /* Flags to keep track of the state of the `editor`. */
     bit_flag_t<GUIEDITOR_FLAGSIZE> flag;
     
     guieditor *next; /* Pointer to the next editor in the circular linked list. */
     guieditor *prev; /* Pointer to the previous editor in the circular linked list. */
+
+    #define ITER_OVER_ALL_OPENEDITORS(starteditor, name, action)                          \
+      MACRO_DO_WHILE(                                                                     \
+        if (starteditor && starteditor->next) {                                           \
+          guieditor *name = starteditor;                                                  \
+          do {                                                                            \
+            MACRO_DO_WHILE(action);                                                       \
+            name = name->next;                                                            \
+          } while (name != starteditor);                                                  \
+        }                                                                                 \
+        else {                                                                            \
+          die("%s: guieditor linked circular list is not correctly set up.\n", __func__); \
+        }                                                                                 \
+      )
   } guieditor;
+
+  typedef struct {
+    guieditor **array;
+    Ulong len;
+    Ulong cap;
+  } guigridsection;
+
+  typedef struct {
+    guigridsection **sections;
+    Ulong len;
+    Ulong cap;
+  } guigrid;
+
+  typedef struct guiscreen {
+    guieditor *starteditor;  /* The first editor in the circular linked list. */
+    guieditor *openeditor;   /* The editor currently in focus. */
+    guigrid   *grid;         /* Visual representation of th */
+    guiscreen *next;
+    guiscreen *prev;
+  } guiscreen;
 
   typedef struct {
     char            *title;        /* The window title. */
@@ -1042,11 +1170,15 @@ typedef struct completionstruct {
     GLFWwindow      *window;       /* The glfw window. */
     bit_flag_t<8>    flag;         /* Flags to track the state of the gui. */
     nevhandler      *handler;      /* Threaded event handler, to enqueue tasks to. */
-    guielement *topbar;            /* The `top-bar` for the entire ui. */
-    guielement *botbar;            /* The `bottom-bar` for the entire ui. */
-    guielement *entered;           /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
+    guielement      *root;         /* The main element of the gui. */
+    guielement      *topbar;       /* The `top-bar` for the ui. */
+    guielement      *botbar;       /* The `bottom-bar` for the ui. */ 
+    guielement      *statusbar;    /* The `statusbar` for the ui. */
+    guielement      *entered;      /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
+    guielement      *clicked;      /* The element that was last clicked. */
     vertex_buffer_t *topbuf;       /* The text buffer for `topbar`. */
     vertex_buffer_t *botbuf;       /* The text buffer for `botbar`. */
+    vertex_buffer_t *statusbuf;    /* The text buffer for `statusbar`. */
     matrix4x4       *projection;   /* The projection to pass to the shaders. */
     Uint             font_shader;  /* The font shader. */
     texture_font_t  *uifont;       /* The ui font. */

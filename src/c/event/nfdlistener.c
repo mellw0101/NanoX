@@ -4,8 +4,7 @@
   @date    22-1-2025.
 
  */
-#include "nfdlistener.h"
-#include "nevhandler.h"
+#include "../../include/c_proto.h"
 
 #include "../mem.h"
 #include "../xstring.h"
@@ -16,12 +15,15 @@
 #define EVENT_SIZE    (sizeof(struct inotify_event))
 #define EVENT_BUF_LEN (1024 * (EVENT_SIZE + 16))
 
+/* `Internal`  Structure that reprecents the package that holds all nessesary data the
+ * the event handler will need to perform the callback that is passed to the fd listener. */
 typedef struct {
   nevhandler *handler;
   nfdlistener_cb cb;
   nfdlistener_event *ev;
 } nfdlistener_package;
 
+/* `Opaque`  Structure that reprecents the fd listener.  This is opaque to ensure correctness. */
 struct nfdlistener {
   nevhandler *handler;
   int fd;
@@ -33,6 +35,7 @@ struct nfdlistener {
   bool stop;
 };
 
+/* `Internal`  Create the package that gets sent to the event handler when its performing the callback. */
 static nfdlistener_package *nfdlistener_package_create(nfdlistener *listener, struct inotify_event *ev) {
   nfdlistener_package *package = xmalloc(sizeof(*package));
   package->handler = listener->handler;
@@ -44,6 +47,7 @@ static nfdlistener_package *nfdlistener_package_create(nfdlistener *listener, st
   return package;
 }
 
+/* `Internal`  The task that the event handler runs. */
 static void nfdlistener_handler_task(void *arg) {
   nfdlistener_package *package = arg;
   package->cb(package->ev);
@@ -51,6 +55,7 @@ static void nfdlistener_handler_task(void *arg) {
   free(package);
 }
 
+/* `Internal`  Free the fd listener, this is internal because this is done when the listener is stopped by the thread that ran it. */
 static void nfdlistener_free(nfdlistener *listener) {
   if (!listener) {
     return;
@@ -68,6 +73,7 @@ static void nfdlistener_free(nfdlistener *listener) {
   free(listener);
 }
 
+/* `Internal`  The task the fd listener performs in a seperate thread. */
 static void *nfdlistener_task(void *arg) {
   nfdlistener *listener = arg;
   char buffer[EVENT_BUF_LEN];
