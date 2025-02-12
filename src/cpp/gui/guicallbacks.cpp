@@ -35,9 +35,7 @@ vec2 mousepos;
 
 /* Window resize callback. */
 void window_resize_callback(GLFWwindow *window, int width, int height) {
-  if (!gui) {
-    die("%s: gui has not been init.\n", __func__);
-  }
+  ASSERT_MSG(gui, "gui has not been init.");
   gui->width  = width;
   gui->height = height;
   /* Set viewport. */
@@ -63,19 +61,19 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
   }
   refresh_needed = TRUE;
   resize_element(gui->root, vec2(gui->width, gui->height));
-  move_resize_element(openeditor->main, vec2(0, (gui->topbar->pos.y + gui->topbar->size.h)), vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)));
   /* Calculate the rows for all editors. */
-  ITER_OVER_ALL_OPENEDITORS(starteditor, editor, 
-    editor->rows = (editor->text->size.h / FONT_HEIGHT(editor->font));
-    if (texture_font_is_mono(editor->font)) {
-      texture_glyph_t *glyph = texture_font_get_glyph(editor->font, " ");
+  ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
+    move_resize_element(editor->main, vec2(0, (gui->topbar->pos.y + gui->topbar->size.h)), vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)));
+    editor->rows = (editor->text->size.h / FONT_HEIGHT(gui->font));
+    if (texture_font_is_mono(gui->font)) {
+      texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
       if (glyph == 0) {
         die("%s: Atlas is to small.\n", __func__);
       }
       editor->cols = (editor->text->size.w / glyph->advance_x);
     }
     else {
-      editor->cols = ((editor->text->size.w / FONT_WIDTH(editor->font)) * 0.9f);
+      editor->cols = ((editor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
     }
     editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
   );
@@ -93,6 +91,8 @@ void window_maximize_callback(GLFWwindow *window, int maximized) {
 
 /* Key callback. */
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   /* Key-callbacks for when we are when inside the prompt-mode. */
   if (gui->flag.is_set<GUI_PROMPT>()) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
@@ -401,19 +401,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         /* Debuging. */
         case GLFW_KEY_P: {
           if (mods == GLFW_MOD_CONTROL) {
-            nevhandler_submit(gui->handler, [](void *arg) {
-              NETLOG("Hello.\n");
-            }, NULL);
-            Ulong endidx = get_current_cursor_word_end_index();
-            if (endidx != openfile->current_x) {
-              NETLOG("End index: '%lu'.\n", endidx);
+            SyntaxFile *sfile = syntaxfile_create();
+            syntaxfile_read(sfile, openfile->filename);
+            for (SyntaxFileLine *line = sfile->filetop; line; line = line->next) {
+              printf("%s\n", line->data);
             }
-            Ulong prev_stidx = get_prev_cursor_word_start_index();
-            if (prev_stidx != openfile->current_x) {
-              NETLOG("Prev start index: '%lu'.\n", prev_stidx);
-            }
-            move_element(openeditor->main, (openeditor->main->pos + vec2(0, 20)));
-            // resize_element(openeditor->main, (openeditor->main->size + vec2(-20, 0)));
+            syntaxfile_free(sfile);
             refresh_needed = TRUE;
           }
           break;
@@ -703,6 +696,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     else if (openfile->current != was_current) {
       also_the_last = FALSE;
     }
+    /* When we have moved or changed something, tell the openeditor it needs to update the scrollbar. */
+    if (wanted_to_move(function) || changes_something(function) || function == do_undo || function == do_redo) {
+      openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+    }
     last_key_was_bracket = FALSE;
     last_bracket_char = '\0';
     keep_mark = FALSE;
@@ -866,7 +863,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
             mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
             /* Get the line and index from the mouse position. */
             Ulong index;
-            linestruct *line = line_and_index_from_mousepos(element->data.editor->font, &index);
+            linestruct *line = line_and_index_from_mousepos(gui->font, &index);
             if (line) {
               openfile->current     = line;
               openfile->mark        = line;
@@ -973,16 +970,17 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         typing_x = index;
       }
     }
-    else if (mouse_flag.is_set<WAS_EDITOR_SCROLL_PRESS>()) {
-      if (gui->clicked && gui->clicked->parent && gui->clicked->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>() && (mousepos.y != last_mousepos.y)) {
+    /* When the clicked element is the scrollbar of any editor, scroll that editor. */
+    else if (element_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->scrollbar) {
+      /* Only update the postion when the mouse y position has changed. */
+      if (mousepos.y != last_mousepos.y) {
         vec2 newpos = gui->clicked->pos;
         newpos.y += (mousepos.y - last_mousepos.y);
-        if (newpos.y < gui->clicked->parent->pos.y) {
-          newpos.y = gui->clicked->parent->pos.y;
-        }
-        else if ((newpos.y + gui->clicked->size.h) > (gui->clicked->parent->pos.y + gui->clicked->parent->size.h)) {
-          newpos.y = (gui->clicked->parent->pos.y + gui->clicked->parent->size.h - gui->clicked->size.h);
-        }
+        newpos.y = fclamp(
+          newpos.y,
+          gui->clicked->parent->pos.y,
+          (gui->clicked->parent->pos.y + gui->clicked->parent->size.h - gui->clicked->size.h)
+        );
         move_element(gui->clicked, newpos);
         gui->clicked->data.editor->openfile->edittop = gui_line_from_number(
           gui->clicked->data.editor,
@@ -1110,7 +1108,7 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
         /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
         if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
           Ulong index;
-          linestruct *line = line_and_index_from_mousepos(element->data.editor->font, &index);
+          linestruct *line = line_and_index_from_mousepos(gui->font, &index);
           if (line) {
             element->data.editor->openfile->current   = line;
             element->data.editor->openfile->current_x = index;

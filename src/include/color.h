@@ -177,16 +177,26 @@ constexpr short bg_vs_code_color_array[] {
 };
 #define BG_COLOR(index) bg_vs_code_color_array[index - BG_VS_CODE_START]
 
+/* Undefine MIN and MAX before we define them, to avoide warnings. */
+#undef MIN
+#undef MAX
+#define MIN(x, min) (((x) < (min)) ? (min) : (x))
+#define MAX(x, max) (((x) > (max)) ? (max) : (x))
+
+#define VEC4_8BIT(r, g, b, a) vec4(MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1))
+
 #ifdef HAVE_GLFW
   /* Some colors. */
   static constexpr vec4 GUI_WHITE_COLOR                     = vec4( 1.0f,  1.0f,  1.0f, 1.0f);
   static constexpr vec4 GUI_BLACK_COLOR                     = vec4( 0.0f,  0.0f,  0.0f, 1.0f);
+  static constexpr vec4 GUI_DEFAULT_COMMENT_COLOR           = VEC4_8BIT(106, 153, 85, 1);
   static constexpr vec4 EDIT_BACKGROUND_COLOR               = vec4( 0.1f,  0.1f,  0.1f, 1.0f);
   static constexpr vec4 EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR = vec4(0.08f, 0.08f, 0.08f, 1.0f);
   static constexpr vec4 EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR   = vec4(0.14f, 0.14f, 0.14f, 1.0f);
   /* Defines of those colors. */
 # define GUI_WHITE_COLOR                      GUI_WHITE_COLOR
 # define GUI_BLACK_COLOR                      GUI_BLACK_COLOR
+# define GUI_DEFAULT_COMMENT_COLOR            GUI_DEFAULT_COMMENT_COLOR
 # define EDIT_BACKGROUND_COLOR                EDIT_BACKGROUND_COLOR
 # define EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR  EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR
 # define EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR    EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR

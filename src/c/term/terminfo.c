@@ -1,8 +1,6 @@
 #include "../../include/c_proto.h"
-#include "../mem.h"
 #include "terminfo.h"
 #include "tui.h"
-#include "../ascii_defs.h"
 
 #include <stdlib.h>
 #include <sys/ioctl.h>

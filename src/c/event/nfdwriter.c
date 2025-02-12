@@ -8,10 +8,6 @@
 
 #include "../../include/c_proto.h"
 
-#include "../fd.h"
-#include "../xstring.h"
-#include "../mem.h"
-
 #include <pthread.h>
 #include <fcntl.h>
 

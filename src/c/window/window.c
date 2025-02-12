@@ -1,7 +1,5 @@
 #include "window.h"
 
-#include "../mem.h"
-#include "../xstring.h"
 #include "../event/nfdwriter.h"
 #include "../term/move.h"
 #include "../term/tui.h"

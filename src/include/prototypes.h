@@ -172,6 +172,8 @@ extern file_listener_handler_t file_listener;
 
 extern configstruct *config;
 
+extern HashMap *test_hashmap;
+
 /* Some prompt decl's. */
 extern char *prompt;
 extern Ulong typing_x;
@@ -869,9 +871,11 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void delete_element_borders(guielement *e);
   void set_element_borders(guielement *e, vec4 size, vec4 color);
   void draw_element_rect(guielement *element);
-  void set_element_raw_data(guielement *element, void *data);
-  void set_element_file_data(guielement *element, openfilestruct *file);
-  void set_element_editor_data(guielement *element, guieditor *editor);
+  void set_element_raw_data(guielement *element, void *data) _NOTHROW;
+  void set_element_file_data(guielement *element, openfilestruct *file) _NOTHROW;
+  void set_element_editor_data(guielement *element, guieditor *editor) _NOTHROW;
+  bool element_has_file_data(guielement *element) _NOTHROW;
+  bool element_has_editor_data(guielement *element) _NOTHROW;
   void set_element_flag_recurse(guielement *element, bool set, Uint flag);
 
   /* gui/guieditor.cpp */

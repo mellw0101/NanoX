@@ -1523,7 +1523,7 @@ static void init_tui(void) {
   keybind_add(TUI_KEY_SHIFT_CTRL_RIGHT,  0, to_next_word);
   keybind_add(TUI_KEY_SHIFT_CTRL_LEFT,   0, to_prev_word);
   keybind_add(TUI_KEY_CTRL_Q,            0, do_exit);
-} 
+}
 
 int main(int argc, char **argv) {
   init_queue_task();

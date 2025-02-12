@@ -213,6 +213,8 @@ const char *term_program = NULL;
 
 file_listener_handler_t file_listener;
 
+HashMap *test_hashmap = NULL;
+
 /* Empty functions, for the most part corresponding to toggles. */
 
 void case_sens_void(void) {

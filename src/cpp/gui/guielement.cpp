@@ -271,7 +271,7 @@ void draw_element_rect(guielement *element) {
 }
 
 /* Set the raw data of an element.  This should be used as apposed to directly setting the raw ptr. */
-void set_element_raw_data(guielement *element, void *data) {
+void set_element_raw_data(guielement *element, void *data) _NOTHROW {
   ASSERT(element);
   ASSERT(data);
   element->flag.set<GUIELEMENT_HAS_RAW_DATA>();
@@ -281,7 +281,7 @@ void set_element_raw_data(guielement *element, void *data) {
 }
 
 /* Set the file data for `element`.  This should be used as apposed to directly setting the file ptr. */
-void set_element_file_data(guielement *element, openfilestruct *file) {
+void set_element_file_data(guielement *element, openfilestruct *file) _NOTHROW {
   ASSERT(element);
   ASSERT(file);
   element->flag.set<GUIELEMENT_HAS_FILE_DATA>();
@@ -291,13 +291,23 @@ void set_element_file_data(guielement *element, openfilestruct *file) {
 }
 
 /* Set the editor data for `element`.  This should be used as apposed to directly setting the editor ptr. */
-void set_element_editor_data(guielement *element, guieditor *editor) {
+void set_element_editor_data(guielement *element, guieditor *editor) _NOTHROW {
   ASSERT(element);
   ASSERT(editor);
   element->flag.set<GUIELEMENT_HAS_EDITOR_DATA>();
   element->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
   element->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
   element->data.editor = editor;
+}
+
+/* Returns `TRUE` when `element` has editor data. */
+bool element_has_file_data(guielement *element) _NOTHROW {
+  return (element && element->flag.is_set<GUIELEMENT_HAS_FILE_DATA>());
+}
+
+/* Returns `TRUE` when `element` has editor data. */
+bool element_has_editor_data(guielement *element) _NOTHROW {
+  return (element && element->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>());
 }
 
 /* If `set` is `TRUE` set `flag` for all children of `element` recurivly, otherwise,

@@ -2,7 +2,7 @@
 
 namespace Parse {
   inline namespace utils {
-    string parse_multiline_bracket_var(linestruct *from, const char **data, const char **end) {
+    static string parse_multiline_bracket_var(linestruct *from, const char **data, const char **end) {
       string value;
       adv_ptr_to_ch((*end), '}');
       if (*(*end) == '\0') {

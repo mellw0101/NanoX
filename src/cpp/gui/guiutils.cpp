@@ -426,7 +426,7 @@ long get_lineno_from_scrollbar_position(guieditor *editor, float ypos) {
   ASSERT(editor->text);
   float height, max_ypos, ratio;
   /* Calculate the height that the scrollbar should be and the maximum y positon possible. */
-  height   = (((float)editor->rows / editor->openfile->filebot->lineno) * editor->text->size.h);
+  height   = (((float)editor->rows / (editor->openfile->filebot->lineno + editor->rows - 1)) * editor->text->size.h);
   max_ypos = (editor->text->size.h - height);
   /* Clamp the y position to within the valid range (0 - (editor->text->size.h - height)). */
   ypos = fclamp(ypos, 0, max_ypos);

@@ -1101,10 +1101,6 @@ typedef struct completionstruct {
     openfilestruct  *openfile;  /* The currently open file. */
     openfilestruct  *startfile; /* The first file in the circular list. */
     
-    /* A pointer to the font this editor should use, note that this
-     * `guieditor` never owns this nor should it ever free this. */
-    texture_font_t  *font;
-    
     /* The `main` element of this `guieditor`, all other elements are children of this element.
      * This means we just need to set up the children using relative positioning, making resizing,
      * and other things related to the management alot simpler. */

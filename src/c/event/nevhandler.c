@@ -5,7 +5,6 @@
 
  */
 #include "../../include/c_proto.h"
-#include "../mem.h"
 
 #include <pthread.h>
 #include <ck_array.h>

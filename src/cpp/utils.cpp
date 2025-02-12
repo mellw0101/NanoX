@@ -139,7 +139,7 @@ bool parse_num(const char *string, long *result) _NOTHROW {
   errno = 0;
   value = (long)strtol(string, &excess, 10);
   if (errno == ERANGE || !*string || *excess) {
-    return false;
+    return FALSE;
   }
   *result = value;
   return TRUE;

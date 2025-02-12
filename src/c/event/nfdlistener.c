@@ -6,9 +6,6 @@
  */
 #include "../../include/c_proto.h"
 
-#include "../mem.h"
-#include "../xstring.h"
-
 #include <pthread.h>
 #include <sys/inotify.h>
 

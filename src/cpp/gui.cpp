@@ -104,7 +104,8 @@ static void setup_font_shader(void) {
   if (is_file_and_exists(JETBRAINS_REGULAR_FONT_PATH)) {
     gui->atlas = texture_atlas_new(512, 512, 1);
     glGenTextures(1, &gui->atlas->id);
-    gui->font = texture_font_new_from_file(gui->atlas, gui->font_size, JETBRAINS_REGULAR_FONT_PATH);
+    gui->font   = texture_font_new_from_file(gui->atlas, gui->font_size, JETBRAINS_REGULAR_FONT_PATH);
+    gui->uifont = texture_font_new_from_file(gui->atlas, gui->uifont_size, JETBRAINS_REGULAR_FONT_PATH);
   }
 }
 
@@ -166,8 +167,8 @@ static void setup_topbar(void) {
   gui->topbar = make_element_child(gui->root, FALSE);
   move_resize_element(
     gui->topbar,
-    vec2(0, -FONT_HEIGHT(gui->font)),
-    vec2(gui->width, FONT_HEIGHT(gui->font))
+    vec2(0, -FONT_HEIGHT(gui->uifont)),
+    vec2(gui->width, FONT_HEIGHT(gui->uifont))
   );
   gui->topbar->color = GUI_BLACK_COLOR;
   gui->topbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
@@ -307,7 +308,7 @@ static void make_guistruct(void) {
 }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */
-static void init_guistruct(const char *win_title, Uint win_width, Uint win_height, Uint fps, Uint font_size) {
+static void init_guistruct(const char *win_title, Uint win_width, Uint win_height, Uint fps, Uint font_size, Uint uifont_size) {
   /* Create the fully blank guistruct. */
   make_guistruct();
   /* Set the basic data needed to init the window. */
@@ -326,7 +327,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
-  gui->font_size = font_size;
+  gui->font_size   = font_size;
+  gui->uifont_size = uifont_size;
   gui->root = make_element(0, vec2(gui->height, gui->width), 0, 0, FALSE);
 }
 
@@ -398,7 +400,7 @@ void init_gui(void) {
     die("Failed to init glfw.\n");
   }
   /* Init the main gui structure. */
-  init_guistruct("NanoX", 1200, 800, 120, 17);
+  init_guistruct("NanoX", 1200, 800, 120, 17, 14);
   /* Init glew. */
   init_glew();
   /* Init the font shader. */

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include "../../config.h"
+#include "../../../config.h"
 
 #define CTRL(x) (x&037)
 
@@ -16,7 +16,7 @@
 #define CAN     0x18
 #define ESC     '\033'
 #define ESC_STR "\033"
-#define DEL     0x7f
+#define DELC      0x7f
 #define DEL_STR "\177"
 #define CSI     0x9b    /* Control string introducer. */
 #define CSI_STR "\233"

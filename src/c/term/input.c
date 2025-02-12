@@ -1,6 +1,6 @@
 #include "input.h"
 
-#include "../ascii_defs.h"
+#include "../../include/c/ascii_defs.h"
 #include "terminfo.h"
 
 #include <sys/ioctl.h>
@@ -50,7 +50,7 @@ int parse_input_key(const Uchar *data, Ulong len, bool *shift) {
         }
         return TUI_KEY_ENTER;
       }
-      else if ((terminfo->backspace_key == TUI_KEY_CTRL_H && *data == DEL) || (terminfo->backspace_key == DEL && *data == TUI_KEY_CTRL_H)) {
+      else if ((terminfo->backspace_key == TUI_KEY_CTRL_H && *data == DELC) || (terminfo->backspace_key == DELC && *data == TUI_KEY_CTRL_H)) {
         return TUI_KEY_CTRL_BSP;
       }
       else {
@@ -152,7 +152,7 @@ int parse_input_key(const Uchar *data, Ulong len, bool *shift) {
             case TUI_KEY_z: {
               return TUI_KEY_ALT_Z;
             }
-            case DEL: {
+            case DELC: {
               return TUI_KEY_ALT_BSP;
             }
           }
@@ -379,7 +379,7 @@ int parse_input_key(const Uchar *data, Ulong len, bool *shift) {
                     case TUI_KEY_ENTER: {
                       return TUI_KEY_SUPER_ENTER;
                     }
-                    case DEL: {
+                    case DELC: {
                       return TUI_KEY_SUPER_BSP;
                     }
                   }

@@ -8,8 +8,6 @@
   Making fd handling easier.
 
  */
-#include "fd.h"
-
 #include "../include/c_proto.h"
 
 #include <arpa/inet.h>
@@ -17,29 +15,28 @@
 #include <netinet/in.h>
 #include <stdbool.h>
 
+/* Fully lock a `file-descriptor`. */
 bool lock_fd(int fd, short lock_type) {
-  if (fd < 0) {
-    return FALSE;
-  }
-  struct flock lock = {
-    .l_type   = lock_type,
-    .l_whence = SEEK_SET,
-    .l_start  = 0,
-    .l_len    = 0
-  };
-  if (fcntl(fd, F_SETLKW, &lock) == -1) {
-    return FALSE;
-  }
-  return TRUE;
+  ALWAYS_ASSERT(fd >= 0);
+  struct flock lock;
+  lock.l_type   = lock_type;
+  lock.l_whence = SEEK_SET;
+  lock.l_start  = 0;
+  lock.l_len    = 0;
+  lock.l_pid    = getpid();
+  return (fcntl(fd, F_SETLKW, &lock) != -1);
 }
 
+/* Unlock a `file-descriptor` that was locked by `lock_fd()`. */
 bool unlock_fd(int fd) {
-  struct flock lock = {0};
-  lock.l_type = F_UNLCK;
-  if (fcntl(fd, F_SETLK, &lock) == -1) {
-    return FALSE;
-  }
-  return TRUE;
+  ALWAYS_ASSERT(fd >= 0);
+  struct flock lock;
+  lock.l_type   = F_UNLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start  = 0;
+  lock.l_len    = 0;
+  lock.l_pid    = getpid();
+  return (fcntl(fd, F_SETLK, &lock) != -1);
 }
 
 int opennetfd(const char *address, Ushort port) {
