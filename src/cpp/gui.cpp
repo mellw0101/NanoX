@@ -400,7 +400,7 @@ void init_gui(void) {
     die("Failed to init glfw.\n");
   }
   /* Init the main gui structure. */
-  init_guistruct("NanoX", 1200, 800, 120, 17, 14);
+  init_guistruct("NanoX", 1400, 800, 120, 17, 14);
   /* Init glew. */
   init_glew();
   /* Init the font shader. */

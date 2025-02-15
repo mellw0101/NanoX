@@ -1609,6 +1609,7 @@ int main(int argc, char **argv) {
   SET(NO_HELP);
   SET(INDICATOR);
   SET(AFTER_ENDS);
+  SET(TABS_TO_SPACES);
   // SET(RAW_SEQUENCES);
   SET(LINE_NUMBERS);
   // SET(SUGGEST);

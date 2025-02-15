@@ -251,8 +251,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        /* If CTRL+Q is pressed, quit. */
         case GLFW_KEY_Q: {
+          /* If CTRL+Q is pressed, quit. */
           if (mods == GLFW_MOD_CONTROL) {
             if (!openfile->modified || ISSET(VIEW_MODE)) {
               if (gui_close_and_go()) {
@@ -268,8 +268,17 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        /* Line numbers toggle. */
+        case GLFW_KEY_T: {
+          /* Toggle tabs to spaces. */
+          if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
+            TOGGLE(TABS_TO_SPACES);
+            show_toggle_statusmsg(TABS_TO_SPACES);
+            refresh_needed = TRUE;
+          }
+          break;
+        }
         case GLFW_KEY_N: {
+          /* Line numbers toggle. */
           if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
             TOGGLE(LINE_NUMBERS);
             confirm_margin();
@@ -285,22 +294,22 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        /* Undo action. */
         case GLFW_KEY_Z: {
+          /* Undo action. */
           if (mods == GLFW_MOD_CONTROL) {
             function = do_undo;
           }
           break;
         }
-        /* Redo action. */
         case GLFW_KEY_Y: {
+          /* Redo action. */
           if (mods == GLFW_MOD_CONTROL) {
             function = do_redo;
           }
           break;
         }
-        /* Paste action. */
         case GLFW_KEY_V: {
+          /* Paste action. */
           if (mods == GLFW_MOD_CONTROL) {
             const char *string = glfwGetClipboardString(NULL);
             if (string) {
@@ -330,8 +339,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        /* Copy action.  Make this more complete. */
         case GLFW_KEY_C: {
+          /* Copy action.  TODO: Make this more complete. */
           if (mods == GLFW_MOD_CONTROL) {
             if (openfile->mark) {
               copy_marked_region();
@@ -360,8 +369,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        /* Cut line or marked region. */
         case GLFW_KEY_X: {
+          /* Cut line or marked region. */
           if (mods == GLFW_MOD_CONTROL) {
             function = cut_text;
           }
@@ -401,12 +410,26 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         /* Debuging. */
         case GLFW_KEY_P: {
           if (mods == GLFW_MOD_CONTROL) {
-            SyntaxFile *sfile = syntaxfile_create();
-            syntaxfile_read(sfile, openfile->filename);
-            for (SyntaxFileLine *line = sfile->filetop; line; line = line->next) {
-              printf("%s\n", line->data);
+            SyntaxFile *sf = syntaxfile_create();
+            syntaxfile_read(sf, openfile->filename);
+            process_syntaxfile_c(sf);
+            for (SyntaxFileError *err = sf->errtop; err; err = err->next) {
+              printf("SyntaxFileError: %d:%d '%s'\n", err->pos->row, err->pos->column, err->msg);
             }
-            syntaxfile_free(sfile);
+            hashmap_forall(sf->objects, [](const char *const __restrict key, void *value) {
+              SyntaxObject *obj = (SyntaxObject *)value;
+              while (obj) {
+                if (obj->type == SYNTAX_OBJECT_TYPE_C_MACRO) {
+                  // printf("%s: %d:%d\n", key, obj->pos->row, obj->pos->column);
+                  CSyntaxMacro *macro = (CSyntaxMacro *)obj->data;
+                  if (macro->empty) {
+                    printf("Macro: '%s' is empty.\n", key);
+                  }
+                }
+                obj = obj->next;
+              }
+            });
+            syntaxfile_free(sf);
             refresh_needed = TRUE;
           }
           break;
@@ -636,15 +659,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        /* Comment action. */
         case GLFW_KEY_SLASH: {
+          /* Comment action. */
           if (mods == GLFW_MOD_CONTROL) {
             function = do_comment;
           }
           break;
         }
-        /* Fullscreen toggle. */
         case GLFW_KEY_F11: {
+          /* Fullscreen toggle. */
           if (!mods) {
             do_fullscreen(window);
           }

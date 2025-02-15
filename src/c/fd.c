@@ -54,3 +54,11 @@ int opennetfd(const char *address, Ushort port) {
   }
   return sock;
 }
+
+/* Return's a local `UNIX` fd. */
+int unixfd(void) {
+  int ret;
+  /* Ensure this never fails, as if it does we have big problems. */
+  ALWAYS_ASSERT_MSG(((ret = socket(AF_UNIX, SOCK_STREAM, 0)) != -1), strerror(errno));
+  return ret;
+}

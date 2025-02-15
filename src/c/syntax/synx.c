@@ -7,26 +7,21 @@
 #include "../../include/c_proto.h"
 
 
-/* -------------------------------------------------------- Struct's -------------------------------------------------------- */
+/* -------------------------------------------------------- SyntaxFileError -------------------------------------------------------- */
 
 
-/* A structure that reprecents a position inside a `SyntaxFile` structure. */
-struct SyntaxFilePos {
-  int row;
-  int column;
-};
+/* Create a new allocated `SyntaxFilePos` structure. */
+SyntaxFilePos *syntaxfilepos_create(int row, int column) {
+  SyntaxFilePos *pos = xmalloc(sizeof(*pos));
+  pos->row    = row;
+  pos->column = column;
+  return pos;
+}
 
-/* The values in the hashmap that `syntax_file_t` uses. */
-struct SyntaxObject {
-  /* The color this should be draw as. */
-  SyntaxColor color;
-
-  /* Type of syntax this object this is. */
-  SyntaxObjectType type;
-  
-  /* Only used when there is more then one object with the same name. */
-  SyntaxObject *next;
-};
+/* Free a `SyntaxFilePos` structure. */
+void syntaxfilepos_free(SyntaxFilePos *const pos) {
+  free(pos);
+}
 
 
 /* -------------------------------------------------------- SyntaxFileLine -------------------------------------------------------- */
@@ -93,7 +88,8 @@ void syntaxfileline_from_str(const char *const string, SyntaxFileLine **const he
     while (*end && *end != '\n') {
       ++end;
     }
-    filebot->data = measured_copy(start, (end - start));
+    filebot->len  = (end - start);
+    filebot->data = measured_copy(start, filebot->len);
     /* If we have retched the end of the file, just break. */
     if (!*end) {
       break;
@@ -124,16 +120,132 @@ void syntaxfileline_from_str(const char *const string, SyntaxFileLine **const he
 /* Create a allocated blank `SyntaxObject` structure. */
 SyntaxObject *syntaxobject_create(void) {
   SyntaxObject *object = xmalloc(sizeof(*object));
-  object->color = SYNTAX_COLOR_NONE;
-  object->type  = SYNTAX_OBJECT_TYPE_NONE;
+  object->prev     = NULL;
+  object->next     = NULL;
+  object->color    = SYNTAX_COLOR_NONE;
+  object->type     = SYNTAX_OBJECT_TYPE_NONE;
+  object->pos      = syntaxfilepos_create(0, 0);
+  object->data     = NULL;
+  object->freedata = NULL;
   return object;
 }
 
 /* Free a `SyntaxObject` structure. */
-void syntaxobject_free(void *ptr) {
-  ASSERT(ptr);
-  SyntaxObject *object = ptr;
-  free(object);
+void syntaxobject_free(SyntaxObject *const obj) {
+  ASSERT(obj);
+  ASSERT(obj->pos);
+  /* Then free the last one. */
+  if (obj->data) {
+    CALL_IF_VALID(obj->freedata, obj->data);
+  }
+  syntaxfilepos_free(obj->pos);
+  free(obj);
+}
+
+/* Unlink and free a `SyntaxObject` structure from its double linked list. */
+void syntaxobject_unlink(SyntaxObject *const obj) {
+  ASSERT(obj);
+  ASSERT(obj->pos);
+  if (obj->prev) {
+    obj->prev->next = obj->next;
+  }
+  if (obj->next) {
+    obj->next->prev = obj->prev;
+  }
+  syntaxobject_free(obj);
+}
+
+/* Free a entire double linked list of `SyntaxObject` structure's. */
+void syntaxobject_free_objects(void *ptr) {
+  SyntaxObject *head = ptr;
+  ASSERT(head);
+  ASSERT(head->pos);
+  /* If there are any stacked objects, free all of them. */
+  while (head->next) {
+    head = head->next;
+    syntaxobject_free(head->prev);
+  }
+  syntaxobject_free(head);
+}
+
+/* Set a `SyntaxObject`'s data, and the function that will be used to free it, or `NULL` when not needed. */
+void syntaxobject_setdata(SyntaxObject *const obj, void *const data, FreeFuncPtr freedatafunc) {
+  ASSERT(obj);
+  ASSERT(obj->pos);
+  ASSERT(data);
+  obj->data     = data;
+  obj->freedata = freedatafunc;
+}
+
+/* Set the row and column of this `SyntaxObject`. */
+void syntaxobject_setpos(SyntaxObject *const obj, int row, int column) {
+  ASSERT(obj);
+  ASSERT(obj->pos);
+  obj->pos->row    = row;
+  obj->pos->column = column;
+}
+
+/* Set the color of a `SyntaxObject`.  NOTE: we will probebly change the internal strucure later to just have a 4 float or 4 char based color. */
+void syntaxobject_setcolor(SyntaxObject *const obj, SyntaxColor color) {
+  ASSERT(obj);
+  ASSERT(obj->pos);
+  obj->color = color;
+}
+
+/* Set the `type` of a `SyntaxObject`. */
+void syntaxobject_settype(SyntaxObject *const obj, SyntaxObjectType type) {
+  ASSERT(obj);
+  ASSERT(obj->pos);
+  obj->type = type;
+}
+
+
+/* -------------------------------------------------------- SyntaxFileError -------------------------------------------------------- */
+
+
+/* Create a new `SyntaxFileError *` and append it to the end of a double linked list of errors, or `NULL` for first error. */
+SyntaxFileError *syntaxfileerror_create(SyntaxFileError *const prev) {
+  SyntaxFileError *node = xmalloc(sizeof(*node));
+  node->prev = prev;
+  node->next = NULL;
+  node->msg  = NULL;
+  node->pos  = syntaxfilepos_create(0, 0);
+  return node;
+}
+
+/* Free a allocated `SyntaxFileError` struct. */
+void syntaxfileerror_free(SyntaxFileError *const err) {
+  ASSERT(err);
+  ASSERT(err->pos);
+  syntaxfilepos_free(err->pos);
+  free(err->msg);
+  free(err);
+}
+
+/* Unlink `error` from the double linked list. */
+void syntaxfileerror_unlink(SyntaxFileError *const err) {
+  ASSERT(err);
+  ASSERT(err->pos);
+  if (err->prev) {
+    err->prev->next = err->next;
+  }
+  if (err->next) {
+    err->next->prev = err->prev;
+  }
+  syntaxfileerror_free(err);
+}
+
+/* Free a entire double linked list of `SyntaxFileError` structure's. */
+void syntaxfileerror_free_errors(SyntaxFileError *head) {
+  /* Make this function NULL-SAFE. */
+  if (!head) {
+    return;
+  }
+  while (head->next) {
+    head = head->next;
+    syntaxfileerror_free(head->prev);
+  }
+  syntaxfileerror_free(head);
 }
 
 
@@ -144,27 +256,30 @@ void syntaxobject_free(void *ptr) {
 SyntaxFile *syntaxfile_create(void) {
   SyntaxFile *sfile = xmalloc(sizeof(*sfile));
   sfile->path    = NULL;
-  sfile->objects = hashmap_create();
   sfile->filetop = NULL;
   sfile->filebot = NULL;
+  sfile->errtop  = NULL;
+  sfile->errbot  = NULL;
   sfile->stat    = NULL;
-  hashmap_set_free_value_callback(sfile->objects, syntaxobject_free);
+  sfile->objects = hashmap_create();
+  hashmap_set_free_value_callback(sfile->objects, syntaxobject_free_objects);
   return sfile;
 }
 
 /* Free a `SyntaxFile` structure. */
-void syntaxfile_free(SyntaxFile *const sfile) {
-  ASSERT(sfile);
-  ASSERT(sfile->objects);
-  free(sfile->path);
-  hashmap_free(sfile->objects);
-  syntaxfileline_free_lines(sfile->filetop);
-  free(sfile);
+void syntaxfile_free(SyntaxFile *const sf) {
+  ASSERT(sf);
+  ASSERT(sf->objects);
+  free(sf->path);
+  hashmap_free(sf->objects);
+  syntaxfileline_free_lines(sf->filetop);
+  syntaxfileerror_free_errors(sf->errtop);
+  free(sf);
 }
 
 /* Read the file at `path` into the `SyntaxFile` struct `sfile`. */
-void syntaxfile_read(SyntaxFile *const sfile, const char *const __restrict path) {
-  ASSERT(sfile);
+void syntaxfile_read(SyntaxFile *const sf, const char *const __restrict path) {
+  ASSERT(sf);
   ASSERT(path);
   char *data;
   char  buffer[4096];
@@ -175,7 +290,7 @@ void syntaxfile_read(SyntaxFile *const sfile, const char *const __restrict path)
     return;
   }
   /* If the file exists, set the syntaxfile path to its path. */
-  sfile->path = copy_of(path);
+  sf->path = copy_of(path);
   /* Init the data ptr. */
   data = xmalloc(1);
   /* Open the fd as a read only file-descriptor. */
@@ -194,7 +309,44 @@ void syntaxfile_read(SyntaxFile *const sfile, const char *const __restrict path)
   data[total_bytes] = '\0';
   close(fd);
   /* Split the data into lines. */
-  syntaxfileline_from_str(data, &sfile->filetop, &sfile->filebot);
+  syntaxfileline_from_str(data, &sf->filetop, &sf->filebot);
+}
+
+/* Add a error to the `SyntaxFile`. */
+void syntaxfile_adderror(SyntaxFile *const sf, int row, int column, const char *const __restrict msg) {
+  ASSERT(sf);
+  /* If this is the first error, both errtop and errbot will point to the same data. */
+  if (!sf->errtop) {
+    sf->errtop = syntaxfileerror_create(NULL);
+    sf->errbot = sf->errtop;
+  }
+  /* Otherwise, append a new error to errbot, and set errbot to the new error. */
+  else {
+    sf->errbot->next = syntaxfileerror_create(sf->errbot);
+    sf->errbot = sf->errbot->next;
+  }
+  /* Set the position data for the error. */
+  sf->errbot->pos->row    = row;
+  sf->errbot->pos->column = column;
+  /* Set the message of the error. */
+  sf->errbot->msg = copy_of(msg);
+}
+
+/* Add a `SyntaxObject` to the hashmap of a `SyntaxFile` structure, and if it exists, append it to the double linked list that is the object's. */
+void syntaxfile_addobject(SyntaxFile *const sf, const char *const __restrict key, SyntaxObject *const value) {
+  ASSERT(sf);
+  ASSERT(key);
+  ASSERT(value);
+  SyntaxObject *existing = hashmap_get(sf->objects, key);
+  /* If there does not exist any objects with the same key, insert it. */
+  if (!existing) {
+    hashmap_insert(sf->objects, key, value);
+  }
+  /* Otherwise, append the object to the double linked list. */
+  else {
+    existing->next = value;
+    value->prev = existing;
+  }
 }
 
 

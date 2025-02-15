@@ -49,3 +49,16 @@ thread *get_nthreads(Ulong howmeny) {
   return xmalloc(sizeof(thread) * howmeny);
 }
 
+/* Free's a `NULL-TERMINATED` char array. */
+void free_nulltermchararray(char **const argv) {
+  char **copy = argv;
+  /* Make this function `NULL-SAFE`. */
+  if (!argv) {
+    return;
+  }
+  while (*copy) {
+    free(*copy);
+    ++copy;
+  }
+  free(argv);
+}

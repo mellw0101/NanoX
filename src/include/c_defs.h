@@ -22,6 +22,7 @@
 /* Linux */
 #include <sys/cdefs.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #include <sys/un.h>
 #include <sys/stat.h>
 
@@ -51,7 +52,12 @@
 
 #define MACRO_DO_WHILE(...) do {__VA_ARGS__} while(0)
 
-#define S__LEN(s) (s), (sizeof(s) -1)
+#define STRLEN(s)    (sizeof((s)) - 1)
+#define S__LEN(s)    (s), STRLEN(s)
+#define BUF__LEN(b)  S__LEN(b)
+
+/* Some compile const defenitions. */
+#define _ptrsize  (sizeof(void *))
 
 /* Some pthread mutex shorthands, to make usage painless. */
 #define mutex_t        pthread_mutex_t
@@ -68,9 +74,7 @@
 #define under_mutex(mutex, action)  \
   MACRO_DO_WHILE(                   \
     pthread_mutex_lock(mutex);      \
-    {                               \
-      MACRO_DO_WHILE(action);       \
-    }                               \
+    MACRO_DO_WHILE(action);         \
     pthread_mutex_unlock(mutex);    \
   )
 
@@ -94,6 +98,11 @@
     time_ms_name = US_TO_MS(time_ms_name); \
   )
 
+#define TIMER_PRINT(ms) \
+  MACRO_DO_WHILE(\
+    printf("%s: Time: %.5f ms\n", __func__, (double)ms); \
+  )
+
 #define US_TO_MS(us)  ((us) / 1000.0f)
 
 #define ENSURE_PTR_ARRAY_SIZE(array, cap, size)         \
@@ -110,7 +119,17 @@
     array = xrealloc(array, (sizeof(void *) * cap));  \
   )
 
+#define ITER_SFL_TOP(syntaxfile, name, action) \
+  MACRO_DO_WHILE(\
+    for (SyntaxFileLine *name = syntaxfile->filetop; name; name = name->next) {\
+      MACRO_DO_WHILE(action); \
+    } \
+  )
+
 _BEGIN_C_LINKAGE
+
+
+typedef void (*FreeFuncPtr)(void *);
 
 
 /* --------------------------------------------- nevhandler.c --------------------------------------------- */
@@ -124,7 +143,7 @@ typedef struct nevhandler nevhandler;
 
 
 /* `Opaque`  Structure to listen to file events. */
-typedef struct nfdlistener nfdlistener;
+typedef struct nfdlistener  nfdlistener;
 
 /* Structure that represents the event that the callback gets. */
 typedef struct {
@@ -139,8 +158,8 @@ typedef void (*nfdlistener_cb)(nfdlistener_event *);
 /* --------------------------------------------- hashmap.c --------------------------------------------- */
 
 
-typedef struct HashNode HashNode;
-typedef struct HashMap  HashMap;
+typedef struct HashNode  HashNode;
+typedef struct HashMap   HashMap;
 
 typedef void (*HashNodeValueFreeCb)(void *);
 
@@ -149,6 +168,7 @@ typedef void (*HashNodeValueFreeCb)(void *);
 
 
 /* ---------------------- Enums ---------------------- */
+
 typedef enum {
   SYNTAX_COLOR_NONE,
   SYNTAX_COLOR_RED,
@@ -159,52 +179,123 @@ typedef enum {
 } SyntaxColor;
 
 typedef enum {
+  /* General types. */
   SYNTAX_OBJECT_TYPE_NONE,
   SYNTAX_OBJECT_TYPE_KEYWORD,
-  SYNTAX_OBJECT_TYPE_DEFINE,
-  #define SYNTAX_OBJECT_TYPE_NONE     SYNTAX_OBJECT_TYPE_NONE
-  #define SYNTAX_OBJECT_TYPE_KEYWORD  SYNTAX_OBJECT_TYPE_KEYWORD
-  #define SYNTAX_OBJECT_TYPE_DEFINE   SYNTAX_OBJECT_TYPE_DEFINE
+  
+  /* C specific types. */
+  SYNTAX_OBJECT_TYPE_C_MACRO,
+
+  /* Defines for all types. */
+  #define SYNTAX_OBJECT_TYPE_NONE      SYNTAX_OBJECT_TYPE_NONE
+  #define SYNTAX_OBJECT_TYPE_KEYWORD   SYNTAX_OBJECT_TYPE_KEYWORD
+  #define SYNTAX_OBJECT_TYPE_C_MACRO   SYNTAX_OBJECT_TYPE_C_MACRO
 } SyntaxObjectType;
 
 
 /* ---------------------- Structs ---------------------- */
-typedef struct SyntaxFilePos  SyntaxFilePos;
 
-/* A structure that reprecents a line inside a 'SyntaxFile' structure. */
+typedef struct SyntaxFilePos  SyntaxFilePos;
+/* A structure that reprecents a position inside a `SyntaxFile` structure. */
+struct SyntaxFilePos {
+  int row;
+  int column;
+};
+
 typedef struct SyntaxFileLine  SyntaxFileLine;
+/* A structure that reprecents a line inside a 'SyntaxFile' structure. */
 struct SyntaxFileLine {
   /* The next line in the double linked list of lines. */
   SyntaxFileLine *next;
-
+  
   /* The previous line in the double linked list of lines. */
   SyntaxFileLine *prev;
-
+  
   char *data;
   Ulong len;
   long  lineno;
 };
 
 typedef struct SyntaxObject  SyntaxObject;
+/* The values in the hashmap that `syntax_file_t` uses. */
+struct SyntaxObject {
+  /* Only used when there is more then one object with the same name. */
+  SyntaxObject *next;
+  SyntaxObject *prev;
 
-/* The structure that holds the data when parsing a file. */
+  /* The color this should be draw as. */
+  SyntaxColor color;
+
+  /* Type of syntax this object this is. */
+  SyntaxObjectType type;
+
+  /* The `position` in the `SyntaxFile` structure that this object is at. */
+  SyntaxFilePos *pos;
+
+  /* A ptr to unique data to this type of object. */
+  void *data;
+
+  /* Function ptr to be called to free the `data`, or `NULL`. */
+  FreeFuncPtr freedata;
+};
+
+typedef struct SyntaxFileError  SyntaxFileError;
+/* This reprecents a error found during parsing of a `SyntaxFile`. */
+struct SyntaxFileError {
+  /* This struct is a double linked list, this is most usefull when
+   * we always keep the errors sorted by position in the file. */
+  SyntaxFileError *next;
+  SyntaxFileError *prev;
+
+  /* A string describing the error, or `NULL`. */
+  char *msg;
+
+  /* The position in the `SyntaxFile` where this error happened. */
+  SyntaxFilePos *pos;
+};
+
 typedef struct SyntaxFile  SyntaxFile;
+/* The structure that holds the data when parsing a file. */
 struct SyntaxFile {
   /* The absolut path to the file. */
   char *path;
+  
+  /* First line of the file. */
+  SyntaxFileLine *filetop;
+  
+  /* Last line of the file. */
+  SyntaxFileLine *filebot;
+  
+  /* First error of the file, if any. */
+  SyntaxFileError *errtop;
+  
+  /* Last error of the file, if any. */
+  SyntaxFileError *errbot;
+  
+  /* A ptr to stat structure for this file, useful to have. */
+  struct stat *stat;
 
   /* Hash map that holds all objects parsed from the given file. */
   HashMap *objects;
-
-  /* First line of the file. */
-  SyntaxFileLine *filetop;
-
-  /* Last line of the file. */
-  SyntaxFileLine *filebot;
-
-  /* A ptr to stat structure for this file, useful to have. */
-  struct stat *stat;
 };
+
+
+
+/* --------------------------------------------- csyntax.c --------------------------------------------- */
+
+
+typedef struct {
+  char **argv;     /* The arguments of this macro, if any, otherwise `NULL`. */
+  char *expanded;  /* What this macro expands to, or in other words the value of the macro. */
+  
+  /* The exact row and column the expanded macro decl starts. */
+  SyntaxFilePos *expandstart;
+
+  /* The exact row and column the expanded macro decl ends. */
+  SyntaxFilePos *expandend;
+
+  bool empty : 1;  /* Is set to `TRUE` if the macro does not have anything after its name. */
+} CSyntaxMacro;
 
 
 /* --------------------------------------------- dirs.c --------------------------------------------- */

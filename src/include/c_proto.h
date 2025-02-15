@@ -32,6 +32,8 @@ void    *hashmap_get(HashMap *map, const char *key);
 void     hashmap_remove(HashMap *map, const char *key);
 int      hashmap_size(HashMap *const map);
 int      hashmap_cap(HashMap *const map);
+void     hashmap_forall(HashMap *const map, void (*action)(const char *const __restrict key, void *value));
+void     hashmap_clear(HashMap *const map);
 
 
 /* ------------ Tests ------------ */
@@ -66,6 +68,7 @@ char **split_string(const char *const string, const char delim, bool allow_empty
   void        die(const char *format, ...);
   thread     *get_nthreads(Ulong howmeny);
 #endif
+void free_nulltermchararray(char **const argv);
 
 
 /* ----------------------------------------------- mem.c ----------------------------------------------- */
@@ -84,6 +87,13 @@ void *xcalloc(Ulong elemno, Ulong elemsize)
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
 
 
+/* ------------ SyntaxFilePos ------------ */
+
+
+SyntaxFilePos *syntaxfilepos_create(int row, int column) __THROW _RETURNS_NONNULL;
+void           syntaxfilepos_free(SyntaxFilePos *const pos) __THROW _NONNULL(1);
+
+
 /* ------------ SyntaxFileLine ------------ */
 
 
@@ -98,15 +108,32 @@ void            syntaxfileline_from_str(const char *const string, SyntaxFileLine
 
 
 SyntaxObject *syntaxobject_create(void);
-void          syntaxobject_free(void *ptr);
+void          syntaxobject_free(SyntaxObject *const obj);
+void          syntaxobject_unlink(SyntaxObject *const obj);
+void          syntaxobject_free_objects(void *ptr);
+void          syntaxobject_setdata(SyntaxObject *const sfobj, void *const data, FreeFuncPtr freedatafunc);
+void          syntaxobject_setpos(SyntaxObject *const obj, int row, int column);
+void          syntaxobject_setcolor(SyntaxObject *const obj, SyntaxColor color);
+void          syntaxobject_settype(SyntaxObject *const obj, SyntaxObjectType type);
+
+
+/* ------------ SyntaxFile ------------ */
+
+
+SyntaxFileError *syntaxfileerror_create(SyntaxFileError *const prev) __THROW;
+void             syntaxfileerror_free(SyntaxFileError *const err) __THROW _NONNULL(1);
+void             syntaxfileerror_unlink(SyntaxFileError *const err);
+void             syntaxfileerror_free_errors(SyntaxFileError *head);
 
 
 /* ------------ SyntaxFile ------------ */
 
 
 SyntaxFile *syntaxfile_create(void);
-void        syntaxfile_free(SyntaxFile *const sfile);
-void        syntaxfile_read(SyntaxFile *const sfile, const char *const __restrict path);
+void        syntaxfile_free(SyntaxFile *const sf);
+void        syntaxfile_read(SyntaxFile *const sf, const char *const __restrict path);
+void        syntaxfile_adderror(SyntaxFile *const sf, int row, int column, const char *const __restrict msg);
+void        syntaxfile_addobject(SyntaxFile *const sf, const char *const __restrict key, SyntaxObject *const value);
 
 
 /* ------------ Tests ------------ */
@@ -129,7 +156,19 @@ void statalloc(const char *const __restrict path, struct stat **ptr);
 bool lock_fd(int fd, short lock_type);
 bool unlock_fd(int fd);
 int  opennetfd(const char *address, Ushort port);
+int  unixfd(void);
 
+
+/* ----------------------------------------------- socket.c ----------------------------------------------- */
+
+
+extern int serverfd;
+extern int globclientfd;
+
+
+void nanox_fork_socket(void);
+int  nanox_socketrun(void);
+int  nanox_socket_client(void);
 
 /* ----------------------------------------------- dirs.c ----------------------------------------------- */
 
@@ -155,7 +194,25 @@ void test_directory_t(const char *const dirpath);
 /* ----------------------------------------------- text.c ----------------------------------------------- */
 
 
-Ulong indentlen(const char *const string);
+Ulong indentlen(const char *const string) __THROW _NODISCARD _CONST _NONNULL(1);
+
+
+/* ----------------------------------------------- csyntax.c ----------------------------------------------- */
+
+
+void process_syntaxfile_c(SyntaxFile *const sf) _NONNULL(1);
+
+/* ----------------- CSyntaxMacro ----------------- */
+
+CSyntaxMacro *csyntaxmacro_create(void);
+void          csyntaxmacro_free(void *ptr);
+
+
+/* ----------------------------------------------- csyntax.c ----------------------------------------------- */
+
+
+Ulong wordstartindex(const char *const __restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
+Ulong wordendindex(const char *const __restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 
 
 _END_C_LINKAGE

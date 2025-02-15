@@ -239,6 +239,51 @@ int hashmap_cap(HashMap *const map) {
   return cap;
 }
 
+/* Perform some action on all entries in the map.  Its importent to not run other hashmap
+ * functions inside `action`, as this is thread-safe, and will cause a deadlock. */
+void hashmap_forall(HashMap *const map, void (*action)(const char *const __restrict key, void *value)) {
+  ASSERT(map);
+  ASSERT(action);
+  HashNode *node;
+  /* Ensure thread-safe operation. */
+  under_mutex(&map->globmutex,
+    ASSERT(map->cap);
+    ASSERT(map->buckets);
+    for (int i=0; i<map->cap; ++i) {
+      node = map->buckets[i];
+      while (node) {
+        action(node->key, node->value);
+        node = node->next;
+      }
+    }
+  );
+}
+
+/* Clear and return `map` to original state when created. */
+void hashmap_clear(HashMap *const map) {
+  ASSERT(map);
+  HashNode *node, *next;
+  under_mutex(&map->globmutex,
+    ASSERT(map->cap);
+    ASSERT(map->buckets);
+    /* First free all entries. */
+    for (int i=0; i<map->cap; ++i) {
+      node = map->buckets[i];
+      while (node) {
+        next = node->next;
+        hashmap_free_node(map, node);
+        node = next;
+      }
+    }
+    /* Free the buckets. */
+    free(map->buckets);
+    /* Reallocate the buckets. */
+    map->size = 0;
+    map->cap  = INITIAL_CAP;
+    map->buckets = xcalloc(map->cap, _ptrsize);
+  );
+}
+
 
 /* ------------ Tests ------------ */
 

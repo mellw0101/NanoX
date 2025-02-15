@@ -9,17 +9,8 @@
 #include "../include/c_proto.h"
 
 
-static bool utf8_enabled = FALSE;
+static bool utf8_enabled = TRUE;
 
-
-bool ctrl_char(const char *const c) {
-  if (utf8_enabled) {
-    return (!(c[0] & 0xe0) || c[0] == DELC || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
-  }
-  else {
-    return (!(*c & 0x60) || *c == DELC);
-  }
-}
 
 int ctowc(wchar *const wc, const char *const c) {
   /* Insure valid params. */
@@ -69,6 +60,7 @@ int ctowc(wchar *const wc, const char *const c) {
   }
 }
 
+/* Return's the number of bytes in the char that starts at `*c`. */
 int charlen(const char *const c) {
   ASSERT(c);
   Uchar c0, c1, c2, c3;
@@ -104,15 +96,27 @@ int charlen(const char *const c) {
   return 1;
 }
 
-bool doublewidth(const char *const c) {
-  wchar wc;
-  if ((Uchar)*c < 0xe1 || !utf8_enabled) {
-    return FALSE;
+/* Return the length `in bytes` of the character at the start of the given `string`, and return a copy of this character in `*c`. */
+int collectc(const char *const __restrict string, char *const __restrict c) {
+  ASSERT(string);
+  ASSERT(c);
+  const int clen = charlen(string);
+  for (int i = 0; i < clen; ++i) {
+    c[i] = string[i];
   }
-  else if (ctowc(&wc, c) < 0) {
-    return FALSE;
+  return clen;
+}
+
+/* Return's the number of multibyte char's in `string`. */
+Ulong wstrlen(const char *const __restrict string) {
+  ASSERT(string);
+  const char *ptr = string;
+  Ulong count = 0;
+  while (*ptr) {
+    ptr += charlen(ptr);
+    ++count;
   }
-  return (wcwidth(wc) == 2);
+  return count;
 }
 
 static char _NODISCARD ctrl_rep(const Schar c) {
@@ -148,6 +152,78 @@ char ctrl_mbrep(const char *const c, bool isdata) {
   }
 }
 
+/* Returns the index in `string` of the beginning of the multibyte char before the one at pos. */
+Ulong step_left(const char *const __restrict string, Ulong pos) {
+  /* Ensure input string is valid. */
+  ASSERT(string);
+  const char *ptr;
+  Ulong before, clen=0;
+  /* When utf8 is enabled, ensure correctness with multibyte chars. */
+  if (utf8_enabled) {
+    if (pos < 4) {
+      before = 0;
+    }
+    else {
+      ptr = (string + pos);
+      /* Probe for a valid starter byte in the preciding four bytes. */
+      if ((Schar)*--ptr > -65) {
+        before = (pos - 1);
+      }
+      else if ((Schar)*--ptr > -65) {
+        before = (pos - 2);
+      }
+      else if ((Schar)*--ptr > -65) {
+        before = (pos - 3);
+      }
+      else if ((Schar)*--ptr > -65) {
+        before = (pos - 4);
+      }
+      else {
+        before = (pos - 1);
+      }
+    }
+    /* Move forward until we reach the original char, so we know the length of its preceding char. */
+    while (before < pos) {
+      clen = charlen(string + before);
+      before += clen;
+    }
+    return (before - clen);
+  }
+  /* Otherwise, unless pos is zero return 'pos - 1'. */
+  else {
+    return (!pos ? 0 : (pos - 1));
+  }
+}
+
+/* Return's the index in `string` of the beginning of the multibyte char after the one at pos. */
+Ulong step_right(const char *const __restrict string, Ulong pos) {
+  return (pos + charlen(string + pos));
+}
+
+
+/* ------------------------------------ Boolian char checks ------------------------------------ */
+
+
+bool isctrlc(const char *const c) {
+  if (utf8_enabled) {
+    return (!(c[0] & 0xe0) || c[0] == DELC || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
+  }
+  else {
+    return (!(*c & 0x60) || *c == DELC);
+  }
+}
+
+bool doublewidth(const char *const c) {
+  wchar wc;
+  if ((Uchar)*c < 0xe1 || !utf8_enabled) {
+    return FALSE;
+  }
+  else if (ctowc(&wc, c) < 0) {
+    return FALSE;
+  }
+  return (wcwidth(wc) == 2);
+}
+
 bool zerowidth(const char *const c) {
   wchar wc;
   /* Only form U+0300 can code points have zero width. */
@@ -170,10 +246,56 @@ bool isblankc(const char *const c) {
   ASSERT(c);
   wchar wc;
   if ((Schar)*c >= 0) {
-    return (*c == ' ' || *c == '\t');
+    return ascii_iswhite(*c);
   }
-  else if (ctowc(&wc, c) < 0) {
+  return (!(ctowc(&wc, c) < 0) && iswblank(wc));
+}
+
+/* Return's `TRUE` when `c` is either a blank char or a `NUL` char. */
+bool isblankornulc(const char *const c) {
+  return (isblankc(c) || *c == NUL);
+}
+
+/* Return's true when `*c` is some kind of letter. */
+bool isalphac(const char *const __restrict c) {
+  ASSERT(c);
+  wchar wc;
+  return (!(ctowc(&wc, c) < 0) && iswalpha(wc));
+}
+
+/* Return's true when `*c` is some kind of letter or number. */
+bool isalnumc(const char *const __restrict c) {
+  ASSERT(c);
+  wchar wc;
+  return (!(ctowc(&wc, c) < 0) && iswalnum(wc));
+}
+
+/* Return's `TRUE` when the given char is a `punctuation` char. */
+bool ispunctc(const char *const __restrict c) {
+  ASSERT(c);
+  wchar wc;
+  return (!(ctowc(&wc, c) < 0) && iswpunct(wc));
+}
+
+/* Return's `TRUE` if `c` is a char used in words or when `allowedchars` are not `NULL`, if it matches one of them. */
+bool iswordc(const char *const __restrict c, bool allow_punct, const char *const __restrict allowedchars) {
+  ASSERT(c);
+  char symbol[sizeof(wchar) + 1];
+  int symlen;
+  /* If 'c' points to the end of the sequence return 'FALSE'. */
+  if (!*c) {
     return FALSE;
   }
-  return iswblank(wc);
+  else if (isalnumc(c)) {
+    return TRUE;
+  }
+  else if (allow_punct && ispunctc(c)) {
+    return TRUE;
+  }
+  else if (allowedchars && *allowedchars) {
+    symlen = collectc(c, symbol);
+    symbol[symlen] = '\0';
+    return strstr(allowedchars, symbol);
+  }
+  return FALSE;
 }

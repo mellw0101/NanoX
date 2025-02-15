@@ -858,7 +858,10 @@ typedef struct openfilestruct {
   bool modified;              /* Whether the file has been modified. */
   syntaxtype *syntax;         /* The syntax that applies to this file, if any. */
   char *errormessage;         /* The ALERT message (if any) that occurred when opening the file. */
+
+  /* What type of file this is, in terms of syntax and family of language. */
   bit_flag_t<FILE_TYPE_SIZE> type;
+
   openfilestruct *next;       /* The next open file, if any. */
   openfilestruct *prev;       /* The preceding open file, if any. */
 
