@@ -136,3 +136,19 @@ char **split_string(const char *const string, const char delim, bool allow_empty
 #endif
   return result;
 }
+
+/* Append `src` to the end of `dst`. */
+char *xstrcat(char *__restrict dst, const char *const __restrict src) {
+  ASSERT(dst);
+  ASSERT(src);
+  /* Get the length of both dst and src. */
+  Ulong dstlen = strlen(dst);
+  Ulong srclen = strlen(src);
+  /* Reallocate dst to fit all of the text plus a NULL-TERMINATOR. */
+  dst = xrealloc(dst, (dstlen + srclen + 1));
+  /* Append src to dst, and NULL-TERMINATE dst. */
+  memcpy((dst + dstlen), src, srclen);
+  dst[dstlen + srclen] = '\0';
+  /* Then return dst. */
+  return dst;
+}

@@ -420,10 +420,26 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               SyntaxObject *obj = (SyntaxObject *)value;
               while (obj) {
                 if (obj->type == SYNTAX_OBJECT_TYPE_C_MACRO) {
-                  // printf("%s: %d:%d\n", key, obj->pos->row, obj->pos->column);
                   CSyntaxMacro *macro = (CSyntaxMacro *)obj->data;
-                  if (macro->empty) {
-                    printf("Macro: '%s' is empty.\n", key);
+                  printf("\nMacro: %s\n", key);
+                  printf("  Start pos: (%d:%d)\n", macro->expandstart->row, macro->expandstart->column);
+                  printf("  End pos: (%d:%d)\n", macro->expandend->row, macro->expandend->column);
+                  printf("  Full macro:\n");
+                  printf("    %s", key);
+                  if (macro->argv) {
+                    printf("( ");
+                    for (char **arg = macro->argv; *arg; ++arg) {
+                      printf("%s ", *arg);
+                    }
+                    printf(") ");
+                  }
+                  else {
+                    printf(" ");
+                  }
+                  if (macro->expanded) {
+                    char *trimmed = stripleadblanks(copy_of(macro->expanded), NULL);
+                    printf("%s\n", trimmed);
+                    free(trimmed);
                   }
                 }
                 obj = obj->next;

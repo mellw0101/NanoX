@@ -53,7 +53,7 @@ bool find_matching_bracket(linestruct *start_line, Ulong start_index, linestruct
   Ulong balance   = 1;
   bool  reverse;
   /* Find the bracket at the starting position */
-  ch = mbstrchr(matchbrackets, line->data + start_index);
+  ch = mbstrchr(matchbrackets, (line->data + start_index));
   /* Not a bracket */
   if (!ch) {
     return FALSE;
@@ -84,7 +84,7 @@ bool find_matching_bracket(linestruct *start_line, Ulong start_index, linestruct
   /* Start searching for the matching bracket */
   while (do_find_a_bracket(line, start_index, reverse, bracket_pair_buf, &line, &start_index)) {
     /* Adjust balance based on whether we found the same or the complementary bracket */
-    balance += (strncmp(line->data + start_index, ch, ch_len) == 0) ? 1 : -1;
+    balance += (strncmp((line->data + start_index), ch, ch_len) == 0) ? 1 : -1;
     /* If balance reaches zero, the matching bracket is found */
     if (balance == 0) {
       *to_line  = line;
@@ -120,8 +120,7 @@ bool find_end_bracket(linestruct *from, Ulong index, linestruct **end, Ulong *en
     do {
       b_start = strchr(b_start, st_ch);
       if (b_start) {
-        if (b_start == line->data ||
-            !(line->data[(b_start - line->data) - 1] == '\'' && line->data[(b_start - line->data) + 1] == '\'')) {
+        if (b_start == line->data || !(line->data[(b_start - line->data) - 1] == '\'' && line->data[(b_start - line->data) + 1] == '\'')) {
           lvl += 1;
         }
         b_start += 1;
@@ -133,8 +132,7 @@ bool find_end_bracket(linestruct *from, Ulong index, linestruct **end, Ulong *en
     do {
       b_end = strchr(b_end, end_ch);
       if (b_end) {
-        if (b_end == line->data ||
-            !(line->data[(b_end - line->data) - 1] == '\'' && line->data[(b_end - line->data) + 1] == '\'')) {
+        if (b_end == line->data || !(line->data[(b_end - line->data) - 1] == '\'' && line->data[(b_end - line->data) + 1] == '\'')) {
           lvl -= 1;
           if (!lvl) {
             *end       = line;

@@ -74,6 +74,7 @@
 #define ASSERT_DEBUG
 #include "c/nassert.h"
 #include "c_proto.h"
+#include "c/wchars.h"
 
 #ifdef HAVE_GLFW
   #include "../lib/include/GL/glew.h"

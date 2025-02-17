@@ -23,6 +23,13 @@ void syntaxfilepos_free(SyntaxFilePos *const pos) {
   free(pos);
 }
 
+/* Set the values for a allocated `SyntaxFilePos` structure. */
+void syntaxfilepos_set(SyntaxFilePos *const pos, int row, int column) {
+  ASSERT(pos);
+  pos->row    = row;
+  pos->column = column;
+}
+
 
 /* -------------------------------------------------------- SyntaxFileLine -------------------------------------------------------- */
 
@@ -60,7 +67,7 @@ void syntaxfileline_unlink(SyntaxFileLine *const line) {
   syntaxfileline_free(line);
 }
 
-/* Free a entire double linked list of `SyntaxFileLine` structures. */
+/* Free a entire double linked list of `SyntaxFileLine` structures.  This function is `NULL-SAFE`. */
 void syntaxfileline_free_lines(SyntaxFileLine *head) {
   if (!head) {
     return;
@@ -73,7 +80,7 @@ void syntaxfileline_free_lines(SyntaxFileLine *head) {
 }
 
 /* Create a double linked list from string. */
-void syntaxfileline_from_str(const char *const string, SyntaxFileLine **const head, SyntaxFileLine **const tail) {
+void syntaxfileline_from_str(const char *const __restrict string, SyntaxFileLine **const head, SyntaxFileLine **const tail) {
   ASSERT(string);
   ASSERT(head);
   ASSERT(tail);

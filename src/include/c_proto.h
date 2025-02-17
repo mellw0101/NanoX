@@ -58,6 +58,7 @@ char  *copy_of(const char *const __restrict string) _RETURNS_NONNULL _NODISCARD 
 char **split_string(const char *const string, const char delim, bool allow_empty, Ulong *n) _RETURNS_NONNULL _NODISCARD _NONNULL(1);
 #endif
 
+char *xstrcat(char *__restrict dst, const char *const __restrict src) _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2);
 
 /* ----------------------------------------------- utils.c ----------------------------------------------- */
 
@@ -90,18 +91,19 @@ void *xcalloc(Ulong elemno, Ulong elemsize)
 /* ------------ SyntaxFilePos ------------ */
 
 
-SyntaxFilePos *syntaxfilepos_create(int row, int column) __THROW _RETURNS_NONNULL;
+SyntaxFilePos *syntaxfilepos_create(int row, int column) __THROW _NODISCARD _RETURNS_NONNULL;
 void           syntaxfilepos_free(SyntaxFilePos *const pos) __THROW _NONNULL(1);
+void           syntaxfilepos_set(SyntaxFilePos *const pos, int row, int column) __THROW _NONNULL(1);
 
 
 /* ------------ SyntaxFileLine ------------ */
 
 
-SyntaxFileLine *syntaxfileline_create(SyntaxFileLine *const prev);
-void            syntaxfileline_free(SyntaxFileLine *const line);
-void            syntaxfileline_unlink(SyntaxFileLine *const line);
-void            syntaxfileline_free_lines(SyntaxFileLine *head);
-void            syntaxfileline_from_str(const char *const string, SyntaxFileLine **head, SyntaxFileLine **tail) __THROW _NONNULL(1, 2, 3);
+SyntaxFileLine *syntaxfileline_create(SyntaxFileLine *const prev) __THROW _NODISCARD _RETURNS_NONNULL;
+void            syntaxfileline_free(SyntaxFileLine *const line) __THROW _NONNULL(1);
+void            syntaxfileline_unlink(SyntaxFileLine *const line) __THROW _NONNULL(1);
+void            syntaxfileline_free_lines(SyntaxFileLine *head) __THROW;
+void            syntaxfileline_from_str(const char *const __restrict string, SyntaxFileLine **head, SyntaxFileLine **tail) __THROW _NONNULL(1, 2, 3);
 
 
 /* ------------ SyntaxObject ------------ */

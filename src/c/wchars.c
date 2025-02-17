@@ -119,6 +119,45 @@ Ulong wstrlen(const char *const __restrict string) {
   return count;
 }
 
+/* Like `strchr()` but for wide chars. */
+char *wstrchr(const char *const __restrict string, const char *const __restrict ch) {
+  ASSERT(string);
+  ASSERT(ch);
+  /* These are 'TRUE' when we failed to make the code points into wide chars. */
+  bool badc=FALSE, bads=FALSE;
+  /* The wide chars we will compare. */
+  wchar wc, ws;
+  /* A copy of the data we want to search. */
+  const char *data = string;
+  /* The length of wide char we are currently comparing to in data. */
+  int symlen;
+  /* When utf8 is enabled, use our routine. */
+  if (utf8_enabled) {
+    if (ctowc(&wc, ch) < 0) {
+      wc = (Uchar)*ch;
+      badc = TRUE;
+    }
+    while (*data) {
+      if ((symlen = ctowc(&ws, data)) < 0) {
+        ws = (Uchar)*data;
+        bads = TRUE;
+      }
+      if (wc == ws && badc == bads) {
+        break;
+      }
+      data += symlen;
+    }
+    if (*data) {
+      return NULL;
+    }
+    return (char *)data;
+  }
+  /* Otherwise, just use 'strchr()'. */
+  else {
+    return strchr(data, *ch);
+  }
+}
+
 static char _NODISCARD ctrl_rep(const Schar c) {
   if (c == DELC) {
     return '?';
@@ -150,6 +189,21 @@ char ctrl_mbrep(const char *const c, bool isdata) {
   else {
     return ctrl_rep(*c);
   }
+}
+
+/* Strip all leading blank char's in `string`. */
+char *stripleadblanks(char *string, Ulong *const moveno) {
+  ASSERT(string);
+  char *ptr = string;
+  while (*ptr && isblankc(ptr)) {
+    ++ptr;
+  }
+  ASSIGN_IF_VALID(moveno, (ptr - string));
+  /* When ptr has moved, move the string. */
+  if (ptr != string) {
+    memmove(string, ptr, (strlen(ptr) + 1));
+  }
+  return string;
 }
 
 /* Returns the index in `string` of the beginning of the multibyte char before the one at pos. */
@@ -298,4 +352,9 @@ bool iswordc(const char *const __restrict c, bool allow_punct, const char *const
     return strstr(allowedchars, symbol);
   }
   return FALSE;
+}
+
+/* Return's `TRUE` if `c` is any char in `string`. */
+bool isconeof(const char c, const char *const __restrict string) {
+  return (strchr(string, c));
 }
