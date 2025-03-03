@@ -28,7 +28,7 @@ EOF
 fi
 
 AmakeCpp --test
-sudo AmakeCpp --link --bin -lGLEW -lGL -lfreetype -lunibilium /usr/lib/Mlib.a /usr/lib/freetype-gl.a
+sudo AmakeCpp --link --bin -lGLEW -lGL -lfreetype -lunibilium /usr/lib/Mlib.a /usr/lib/ftgl.a
 if [ -f build/bin/NanoX ]; then
   sudo cp build/bin/NanoX /usr/bin/nanox
 fi

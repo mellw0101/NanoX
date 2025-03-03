@@ -16,7 +16,7 @@
 
 
 /* Parse the arguments of a c macro definition.  Return's `-1` on incompleat macro argument parse, otherwise, `0`. */
-static int macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, SyntaxFileLine **const outline, const char **const outptr) {
+_UNUSED static int macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, SyntaxFileLine **const outline, const char **const outptr) {
   ASSERT(sf);
   ASSERT(macro);
   ASSERT(outline);
@@ -234,6 +234,116 @@ static void macroexpantion(SyntaxFile *const sf, CSyntaxMacro *const macro, Synt
 #endif
 }
 
+static void csyntax_macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, SyntaxFileLine **outline, const char **const outdata) {
+  /* Ensure all parameters are valid. */
+  ASSERT(sf);
+  ASSERT(macro);
+  ASSERT(outline);
+  ASSERT(outdata);
+  /* The current line we are working on. */
+  SyntaxFileLine *line = *outline;
+  /* The data ptr where we are in 'line->data'. */
+  const char *data = *outdata;
+  /* The index of something we ran. */
+  Ulong idx;
+  /* If we accept a comma if its the next thing parsed.  This starts as
+   * TRUE meaning we do not accept another ',' until text is parsed. */
+  bool wascomma = TRUE;
+  /* Ensure this is the start of arguments. */
+  ASSERT(*data == '(');
+  /* Move the ptr past the '(' char. */
+  data += step_right(data, 0);
+  /* Parse the arguments. */
+  while (TRUE) {
+    /* When we are at a blank char, advance the ptr. */
+    if (isblankc(data)) {
+      data += indentlen(data);
+    }
+    /* Something other then blank or word chars. */
+    else if (isconeof(*data, "\\,)\0")) {
+      if (*data == ',') {
+        /* If the last thing we had was a comma. */
+        if (wascomma) {
+          syntaxfile_adderror(sf, line->lineno, (data - line->data), "Expected argument name");
+        }
+        else {
+          wascomma = TRUE;
+        }
+        data += step_right(data, 0);
+      }
+      else if (*data == ')') {
+        /* When the last thing was a comma, report an error. */
+        if (wascomma) {
+          syntaxfile_adderror(sf, line->lineno, (data - line->data), "Expected argument name");
+        }
+        break;
+      }
+      else if (*data == '\\') {
+        idx = step_right(data, 0);
+        /* When eol is not directly after the backslash.  Add a error. */
+        if (*(data + idx) != '\0') {
+          syntaxfile_adderror(sf, line->lineno, (data - line->data), "Expected newline directly after backslash");
+        }
+        /* Continue like normal even when there is wierd backslash usage. */
+        if (line->next) {
+          line = line->next;
+          data = line->data;
+        }
+        /* There is no line after this one, so just leave. */
+        else {
+          return;
+        }
+      }
+      else if (*data == '\0') {
+        syntaxfile_adderror(sf, line->lineno, (data - line->data), "Unexpected eol");
+        break;
+      }
+    }
+    /* Comment. */
+    else if (data[0] == '/' && data[1] == '*') {
+      findblockcommentmatch(line, (data - line->data), &line, &idx);
+      data = (line->data + idx);
+    }
+    /* Otherwise when we are at a word forming char. */
+    else if (iswordc(data, FALSE, "_.")) {
+      if (*data == '.') {
+        /* This is a valid variatic parameter argument. */
+        if (strncmp(data, S__LEN("...")) == 0 && (isblankornulc(data + STRLEN("...")) || isconeof(*(data + STRLEN("...")), "\\),"))) {
+          cvec_push(macro->args, COPY_OF("..."));
+          idx = 3;
+        }
+        /* Add error. */
+        else {
+          syntaxfile_adderror(sf, line->lineno, (data - line->data), "Expected a comma");
+          idx = 0;
+          while (*data == '.') {
+            data += step_right(data, 0);
+            ++idx;
+          }
+        }
+      }
+      else {
+        ASSERT((idx = wordendindex(data, 0, TRUE)) != 0);
+        cvec_push(macro->args, measured_copy(data, idx));
+      }
+      // printf("Arg: %s\n", (char *)cvec_back(macro->args));
+      data += idx;
+      /* If this text was after anoter argument without a comma between them. */
+      if (!wascomma) {
+        syntaxfile_adderror(sf, line->lineno, (data - line->data), "Expected a comma");
+      }
+      wascomma = FALSE;
+    }
+    /* As a last safety macanicam, if none of these are true, we just report a error and return. */
+    else {
+      syntaxfile_adderror(sf, line->lineno, (data - line->data), "Failed to parse macro, unexpected error.");
+    }
+  }
+  /* Assign the current line and data ptr to the parameters passed by caller. */
+  *outline = line;
+  *outdata = data;
+}
+
 /* Process a `c` based `SyntaxFile`. */
 void process_syntaxfile_c(SyntaxFile *const sf) {
   /* Assert the 'SyntaxFile'. */
@@ -301,10 +411,11 @@ void process_syntaxfile_c(SyntaxFile *const sf) {
           }
           /* This macro has args. */
           else if (data[0] == '(') {
-            if (macroargv(sf, macro, &line, &data) != -1) {
-              ALWAYS_ASSERT(data[0] == ')');
-              ++data;
-            }
+            csyntax_macroargv(sf, macro, &line, &data);
+            // if (macroargv(sf, macro, &line, &data) != -1) {
+            //   ALWAYS_ASSERT(data[0] == ')');
+            //   ++data;
+            // }
           }
           /* Advance the ptr to the first non blank char. */
           whitelen = indentlen(data); 

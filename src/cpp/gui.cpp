@@ -27,10 +27,12 @@ guieditor *starteditor = NULL;
 /* The main structure that holds all the data the gui needs. */
 guistruct *gui = NULL;
 
-#define FALLBACK_FONT_PATH "/usr/share/root/fonts/monotype.ttf"
-#define FALLBACK_FONT "fallback"
-#define JETBRAINS_REGULAR_FONT_PATH "/home/mellw/.vscode-insiders/extensions/narasimapandiyan.jetbrainsmono-1.0.2/JetBrainsMono/JetBrainsMono-Regular.ttf"
-#define JETBRAINS_REGULAR_FONT "jetbrains regular"
+// #define FALLBACK_FONT_PATH "/usr/share/root/fonts/monotype.ttf"
+#define FALLBACK_FONT_PATH  "/usr/share/fonts/TTF/Hack-Regular.ttf"
+#define FALLBACK_FONT  "fallback"
+// #define JETBRAINS_REGULAR_FONT_PATH "/home/mellw/.vscode-insiders/extensions/narasimapandiyan.jetbrainsmono-1.0.2/JetBrainsMono/JetBrainsMono-Regular.ttf"
+#define JETBRAINS_REGULAR_FONT_PATH  "/usr/share/fonts/TTF/Hack-Regular.ttf"
+#define JETBRAINS_REGULAR_FONT  "jetbrains regular"
 
 /* Define the vertices of a square (centered at the origin). */
 constexpr const vec2 vertices[] = {
@@ -436,6 +438,7 @@ void init_gui(void) {
 
 /* Main gui loop. */
 void glfw_loop(void) {
+  // syntaxfile_test_read();
   while (!glfwWindowShouldClose(gui->window)) {
     frametimer.start();
     confirm_margin();

@@ -56,6 +56,8 @@
 #define S__LEN(s)    (s), STRLEN(s)
 #define BUF__LEN(b)  S__LEN(b)
 
+#define COPY_OF(literal)  measured_copy(S__LEN(literal))
+
 /* Some compile const defenitions. */
 #define _ptrsize  (sizeof(void *))
 
@@ -280,11 +282,17 @@ struct SyntaxFile {
 };
 
 
+/* --------------------------------------------- cvec.c --------------------------------------------- */
+
+
+typedef struct CVec CVec;
+
 
 /* --------------------------------------------- csyntax.c --------------------------------------------- */
 
 
 typedef struct {
+  CVec *args;
   char **argv;     /* The arguments of this macro, if any, otherwise `NULL`. */
   char *expanded;  /* What this macro expands to, or in other words the value of the macro. */
   

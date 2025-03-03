@@ -416,35 +416,35 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             for (SyntaxFileError *err = sf->errtop; err; err = err->next) {
               printf("SyntaxFileError: %d:%d '%s'\n", err->pos->row, err->pos->column, err->msg);
             }
-            hashmap_forall(sf->objects, [](const char *const __restrict key, void *value) {
-              SyntaxObject *obj = (SyntaxObject *)value;
-              while (obj) {
-                if (obj->type == SYNTAX_OBJECT_TYPE_C_MACRO) {
-                  CSyntaxMacro *macro = (CSyntaxMacro *)obj->data;
-                  printf("\nMacro: %s\n", key);
-                  printf("  Start pos: (%d:%d)\n", macro->expandstart->row, macro->expandstart->column);
-                  printf("  End pos: (%d:%d)\n", macro->expandend->row, macro->expandend->column);
-                  printf("  Full macro:\n");
-                  printf("    %s", key);
-                  if (macro->argv) {
-                    printf("( ");
-                    for (char **arg = macro->argv; *arg; ++arg) {
-                      printf("%s ", *arg);
-                    }
-                    printf(") ");
-                  }
-                  else {
-                    printf(" ");
-                  }
-                  if (macro->expanded) {
-                    char *trimmed = stripleadblanks(copy_of(macro->expanded), NULL);
-                    printf("%s\n", trimmed);
-                    free(trimmed);
-                  }
-                }
-                obj = obj->next;
-              }
-            });
+            // hashmap_forall(sf->objects, [](const char *const __restrict key, void *value) {
+            //   SyntaxObject *obj = (SyntaxObject *)value;
+            //   while (obj) {
+            //     if (obj->type == SYNTAX_OBJECT_TYPE_C_MACRO) {
+            //       CSyntaxMacro *macro = (CSyntaxMacro *)obj->data;
+            //       printf("\nMacro: %s\n", key);
+            //       printf("  Start pos: (%d:%d)\n", macro->expandstart->row, macro->expandstart->column);
+            //       printf("  End pos: (%d:%d)\n", macro->expandend->row, macro->expandend->column);
+            //       printf("  Full macro:\n");
+            //       printf("    %s", key);
+            //       if (macro->argv) {
+            //         printf("( ");
+            //         for (char **arg = macro->argv; *arg; ++arg) {
+            //           printf("%s ", *arg);
+            //         }
+            //         printf(") ");
+            //       }
+            //       else {
+            //         printf(" ");
+            //       }
+            //       if (macro->expanded) {
+            //         char *trimmed = stripleadblanks(copy_of(macro->expanded), NULL);
+            //         printf("%s\n", trimmed);
+            //         free(trimmed);
+            //       }
+            //     }
+            //     obj = obj->next;
+            //   }
+            // });
             syntaxfile_free(sf);
             refresh_needed = TRUE;
           }
@@ -878,6 +878,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   /* Left mouse button. */
   if (button == GLFW_MOUSE_BUTTON_1) {
     if (action == GLFW_PRESS) {
+      printf("mousepos.x: %.5f\n", mousepos.x);
       /* When in prompt-mode. */
       if (gui->flag.is_set<GUI_PROMPT>()) {
         mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();

@@ -217,6 +217,21 @@ Ulong wordstartindex(const char *const __restrict string, Ulong pos, bool allowu
 Ulong wordendindex(const char *const __restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 
 
+/* ----------------------------------------------- cvec.c ----------------------------------------------- */
+
+CVec *cvec_create(void);
+void cvec_free(CVec *const v);
+void cvec_setfree(CVec *const v, FreeFuncPtr free);
+void cvec_push(CVec *const v, void *const item);
+void cvec_trim(CVec *const v);
+void *cvec_get(CVec *const v, int index);
+
+
+/* ----------------------------------------------- bracket.c ----------------------------------------------- */
+
+
+void findblockcommentmatch(SyntaxFileLine *const startline, Ulong startidx, SyntaxFileLine **const endline, Ulong *endidx);
+
 _END_C_LINKAGE
 
 #endif /* _C_PROTO__H */

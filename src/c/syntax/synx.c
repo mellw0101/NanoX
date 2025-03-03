@@ -124,53 +124,98 @@ void syntaxfileline_from_str(const char *const __restrict string, SyntaxFileLine
 /* -------------------------------------------------------- SyntaxObject -------------------------------------------------------- */
 
 
-/* Create a allocated blank `SyntaxObject` structure. */
+// /* Create a allocated blank `SyntaxObject` structure. */
+// SyntaxObject *syntaxobject_create(void) {
+//   SyntaxObject *object = xmalloc(sizeof(*object));
+//   object->prev     = NULL;
+//   object->next     = NULL;
+//   object->color    = SYNTAX_COLOR_NONE;
+//   object->type     = SYNTAX_OBJECT_TYPE_NONE;
+//   object->pos      = syntaxfilepos_create(0, 0);
+//   object->data     = NULL;
+//   object->freedata = NULL;
+//   return object;
+// }
+
+// /* Free a `SyntaxObject` structure. */
+// void syntaxobject_free(SyntaxObject *const obj) {
+//   ASSERT(obj);
+//   ASSERT(obj->pos);
+//   /* Then free the last one. */
+//   if (obj->data) {
+//     CALL_IF_VALID(obj->freedata, obj->data);
+//   }
+//   syntaxfilepos_free(obj->pos);
+//   free(obj);
+// }
+
+// /* Unlink and free a `SyntaxObject` structure from its double linked list. */
+// void syntaxobject_unlink(SyntaxObject *const obj) {
+//   ASSERT(obj);
+//   ASSERT(obj->pos);
+//   if (obj->prev) {
+//     obj->prev->next = obj->next;
+//   }
+//   if (obj->next) {
+//     obj->next->prev = obj->prev;
+//   }
+//   syntaxobject_free(obj);
+// }
+
+// /* Free a entire double linked list of `SyntaxObject` structure's. */
+// void syntaxobject_free_objects(void *ptr) {
+//   SyntaxObject *head = ptr;
+//   ASSERT(head);
+//   ASSERT(head->pos);
+//   /* If there are any stacked objects, free all of them. */
+//   while (head->next) {
+//     head = head->next;
+//     syntaxobject_free(head->prev);
+//   }
+//   syntaxobject_free(head);
+// }
+
+
+/* Create a allocated blank SyntaxObject structure. */
 SyntaxObject *syntaxobject_create(void) {
-  SyntaxObject *object = xmalloc(sizeof(*object));
-  object->prev     = NULL;
-  object->next     = NULL;
-  object->color    = SYNTAX_COLOR_NONE;
-  object->type     = SYNTAX_OBJECT_TYPE_NONE;
-  object->pos      = syntaxfilepos_create(0, 0);
-  object->data     = NULL;
-  object->freedata = NULL;
-  return object;
+  SyntaxObject *node = xmalloc(sizeof(*node));
+  /* Make this the only object in the double circular list. */
+  node->prev     = node;
+  node->next     = node;
+  node->color    = SYNTAX_COLOR_NONE;
+  node->type     = SYNTAX_OBJECT_TYPE_NONE;
+  node->pos      = syntaxfilepos_create(0, 0);
+  node->data     = NULL;
+  node->freedata = NULL;
+  return node;
 }
 
-/* Free a `SyntaxObject` structure. */
+/* Free a SyntaxObject structure. */
 void syntaxobject_free(SyntaxObject *const obj) {
   ASSERT(obj);
   ASSERT(obj->pos);
-  /* Then free the last one. */
-  if (obj->data) {
-    CALL_IF_VALID(obj->freedata, obj->data);
-  }
+  CALL_IF_VALID(obj->freedata, obj->data);
   syntaxfilepos_free(obj->pos);
   free(obj);
 }
 
-/* Unlink and free a `SyntaxObject` structure from its double linked list. */
+/* Unlink and free a SyntaxObject structure from its double linked list. */
 void syntaxobject_unlink(SyntaxObject *const obj) {
   ASSERT(obj);
   ASSERT(obj->pos);
-  if (obj->prev) {
-    obj->prev->next = obj->next;
-  }
-  if (obj->next) {
-    obj->next->prev = obj->prev;
-  }
+  obj->prev->next = obj->next;
+  obj->next->prev = obj->prev;
   syntaxobject_free(obj);
 }
 
-/* Free a entire double linked list of `SyntaxObject` structure's. */
+/* Free a entire double linked list of SyntaxObject structure's. */
 void syntaxobject_free_objects(void *ptr) {
   SyntaxObject *head = ptr;
   ASSERT(head);
   ASSERT(head->pos);
   /* If there are any stacked objects, free all of them. */
-  while (head->next) {
-    head = head->next;
-    syntaxobject_free(head->prev);
+  while (head != head->next) {
+    syntaxobject_unlink(head->next);
   }
   syntaxobject_free(head);
 }
@@ -339,22 +384,42 @@ void syntaxfile_adderror(SyntaxFile *const sf, int row, int column, const char *
   sf->errbot->msg = copy_of(msg);
 }
 
-/* Add a `SyntaxObject` to the hashmap of a `SyntaxFile` structure, and if it exists, append it to the double linked list that is the object's. */
-void syntaxfile_addobject(SyntaxFile *const sf, const char *const __restrict key, SyntaxObject *const value) {
+/* Add a SyntaxObject to the hashmap of a SyntaxFile structure, and if it exists, append it to the double linked list that is the object's. */
+void syntaxfile_addobject(SyntaxFile *const sf, const char *const __restrict key, SyntaxObject *const obj) {
   ASSERT(sf);
   ASSERT(key);
-  ASSERT(value);
+  ASSERT(obj);
   SyntaxObject *existing = hashmap_get(sf->objects, key);
   /* If there does not exist any objects with the same key, insert it. */
   if (!existing) {
-    hashmap_insert(sf->objects, key, value);
+    hashmap_insert(sf->objects, key, obj);
   }
   /* Otherwise, append the object to the double linked list. */
   else {
-    existing->next = value;
-    value->prev = existing;
+    /* Add the new object before the first one, i.e: in the back. */
+    obj->next = existing;
+    obj->prev = existing->prev;
+    existing->prev->next = obj;
+    existing->prev       = obj;
   }
 }
+
+// /* Add a `SyntaxObject` to the hashmap of a `SyntaxFile` structure, and if it exists, append it to the double linked list that is the object's. */
+// void syntaxfile_addobject(SyntaxFile *const sf, const char *const __restrict key, SyntaxObject *const value) {
+//   ASSERT(sf);
+//   ASSERT(key);
+//   ASSERT(value);
+//   SyntaxObject *existing = hashmap_get(sf->objects, key);
+//   /* If there does not exist any objects with the same key, insert it. */
+//   if (!existing) {
+//     hashmap_insert(sf->objects, key, value);
+//   }
+//   /* Otherwise, append the object to the double linked list. */
+//   else {
+//     existing->next = value;
+//     value->prev = existing;
+//   }
+// }
 
 
 /* -------------------------------------------------------- Tests -------------------------------------------------------- */

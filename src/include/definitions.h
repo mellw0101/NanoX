@@ -82,8 +82,8 @@
   #include <Mlib/openGL/shader.h>
   #include <ft2build.h>
   #include FT_FREETYPE_H
-  #include <freetype-gl/freetype-gl.h>
-  #include <freetype-gl/matrix4x4.h>
+  #include <ftgl/freetype-gl.h>
+  #include <ftgl/matrix4x4.h>
 #endif
 
 using std::hash;

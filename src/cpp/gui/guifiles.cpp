@@ -102,12 +102,7 @@ bool gui_close_and_go(void) {
   /* When there is more then one file open in the open editor. */
   if (openeditor->openfile != openeditor->openfile->next) {
     gui_close_buffer();
-    if (openeditor->openfile != openeditor->openfile->next) {
-      gui_switch_to_next_buffer();
-    }
-    else {
-      gui_redecorate_after_switch();
-    }
+    gui_redecorate_after_switch();
     openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
     return FALSE;
   }
@@ -137,5 +132,3 @@ void gui_open_new_empty_buffer(void) {
   gui_redecorate_after_switch();
   openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
 }
-
-
