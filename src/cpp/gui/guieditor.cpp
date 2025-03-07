@@ -213,7 +213,7 @@ void make_new_editor(bool new_buffer) {
   move_resize_element(
     openeditor->gutter,
     vec2(0.0f, (openeditor->main->pos.y + openeditor->topbar->size.h)),
-    vec2((FONT_WIDTH(gui->font) * margin + 1), (openeditor->main->size.h - openeditor->topbar->size.h))
+    vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui->font)/* FONT_WIDTH(gui->font) * margin + 1) */, (openeditor->main->size.h - openeditor->topbar->size.h))
   );
   /* Set relative positioning for the gutter, so it follows the editor. */
   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_POS>();

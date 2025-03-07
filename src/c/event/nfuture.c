@@ -7,12 +7,12 @@
 #include <malloc.h>
 
 /* The struct that holds the opaque future data, hidden from api. */
-typedef struct nfuture {
+struct nfuture {
   pthread_mutex_t mutex;  /* The mutex to protect the setting of the result and ready flag. */
   pthread_cond_t  cond;   /* Condition to signal when `result` is ready, if there is anyone listening. */
   bool  ready;            /* Flag to tell potention listeners (or checkers) that the data is ready to be read. */
   void *result;           /* Ptr to the data. */
-} nfuture;
+};
 
 /* Fully intenal data struct that represents the task. */
 typedef struct {

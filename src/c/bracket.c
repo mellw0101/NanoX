@@ -8,12 +8,12 @@
 
 #include "../include/c/wchars.h"
 
-void findbracketmatch(SyntaxFileLine *const startline, Ulong startidx,  SyntaxFileLine **const endline, Ulong endidx) {
-  ASSERT(startline);
-  ASSERT(startidx);
-  ASSERT(endline);
-  ASSERT(endidx);
-}
+// void findbracketmatch(SyntaxFileLine *const startline, Ulong startidx,  SyntaxFileLine **const endline, Ulong endidx) {
+//   ASSERT(startline);
+//   ASSERT(startidx);
+//   ASSERT(endline);
+//   ASSERT(endidx);
+// }
 
 void findblockcommentmatch(SyntaxFileLine *const startline, Ulong startidx, SyntaxFileLine **const endline, Ulong *endidx) {
   ASSERT(startline);
