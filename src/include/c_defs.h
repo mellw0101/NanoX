@@ -1,11 +1,12 @@
 #pragma once
 
 #include "c/ascii_defs.h"
+#include <fcio/proto.h>
 
 /* NanoX */
 #include "../../config.h"
-#define ASSERT_DEBUG
-#include "c/nassert.h"
+// #define ASSERT_DEBUG
+// #include "c/nassert.h"
 
 /* stdlib */
 #include <stdio.h>
@@ -50,81 +51,15 @@
 #define UNIX_DOMAIN_SOCKET_PATH "/tmp/test"
 #define BUF_SIZE 16384
 
-#define MACRO_DO_WHILE(...) do {__VA_ARGS__} while(0)
-
-#define STRLEN(s)    (sizeof((s)) - 1)
-#define S__LEN(s)    (s), STRLEN(s)
 #define BUF__LEN(b)  S__LEN(b)
-
-#define COPY_OF(literal)  measured_copy(S__LEN(literal))
 
 /* Some compile const defenitions. */
 #define _ptrsize  (sizeof(void *))
 
-/* Some pthread mutex shorthands, to make usage painless. */
-#define mutex_t        pthread_mutex_t
-#define lock_mutex     pthread_mutex_lock
-#define unlock_mutex   pthread_mutex_unlock
-#define destroy_mutex  pthread_mutex_destroy
-#define init_mutex     pthread_mutex_init
-
-#ifndef __cplusplus
-/* Shorthand for a thread. */
-# define thread  pthread_t
-#endif
-
-#define under_mutex(mutex, action)  \
-  MACRO_DO_WHILE(                   \
-    pthread_mutex_lock(mutex);      \
-    MACRO_DO_WHILE(action);         \
-    pthread_mutex_unlock(mutex);    \
-  )
-
-#define ASSIGN_IF_VALID(ptr, value) MACRO_DO_WHILE( ((ptr) ? (*(ptr) = (value)) : ((int)0)); )
-#define CALL_IF_VALID(funcptr, ...) MACRO_DO_WHILE( (funcptr) ? (funcptr)(__VA_ARGS__) : ((void)0); )
-
-#define TIMER_START(name) \
-  struct timespec name; \
-  MACRO_DO_WHILE(\
-    clock_gettime(CLOCK_MONOTONIC, &name);\
-  )
-
-#define TIMER_END(start, time_ms_name) \
-  float time_ms_name; \
-  MACRO_DO_WHILE(\
-    struct timespec __timer_end;\
-    clock_gettime(CLOCK_MONOTONIC, &__timer_end);\
-    time_ms_name = \
-      (((__timer_end.tv_sec - (start).tv_sec) * 1000000.0f) +\
-      ((__timer_end.tv_nsec - (start).tv_nsec) / 1000.0f)); \
-    time_ms_name = US_TO_MS(time_ms_name); \
-  )
-
-#define TIMER_PRINT(ms) \
-  MACRO_DO_WHILE(\
-    printf("%s: Time: %.5f ms\n", __func__, (double)ms); \
-  )
-
-#define US_TO_MS(us)  ((us) / 1000.0f)
-
-#define ENSURE_PTR_ARRAY_SIZE(array, cap, size)         \
-  MACRO_DO_WHILE(                                       \
-    if (size == cap) {                                  \
-      cap *= 2;                                         \
-      array = xrealloc(array, (sizeof(void *) * cap));  \
-    }                                                   \
-  )
-
-#define TRIM_PTR_ARRAY(array, cap, size)              \
-  MACRO_DO_WHILE(                                     \
-    cap = (size + 1);                                 \
-    array = xrealloc(array, (sizeof(void *) * cap));  \
-  )
-
-#define ITER_SFL_TOP(syntaxfile, name, action) \
-  MACRO_DO_WHILE(\
+#define ITER_SFL_TOP(syntaxfile, name, ...) \
+  DO_WHILE(\
     for (SyntaxFileLine *name = syntaxfile->filetop; name; name = name->next) {\
-      MACRO_DO_WHILE(action); \
+      DO_WHILE(__VA_ARGS__); \
     } \
   )
 
@@ -282,12 +217,6 @@ struct SyntaxFile {
 };
 
 
-/* --------------------------------------------- cvec.c --------------------------------------------- */
-
-
-typedef struct CVec CVec;
-
-
 /* --------------------------------------------- csyntax.c --------------------------------------------- */
 
 
@@ -308,22 +237,6 @@ typedef struct {
 
 /* --------------------------------------------- dirs.c --------------------------------------------- */
 
-
-typedef struct {
-  Uchar type;         /* The type of entry this is.  Uses `dirent->d_type`. */
-  char *name;         /* Name of the entry. */
-  char *path;         /* The full path of the entry. */
-  char *ext;          /* The extention, if any. */
-  char *clean_name;   /* When `name` has a extention, this is `name` without that extention, otherwise this is `NULL`. */
-  struct stat *stat;  /* Stat data for the entry. */
-} directory_entry_t;
-
-typedef struct {
-  directory_entry_t **entries;
-  Ulong   cap;
-  Ulong   len;
-  mutex_t mutex;
-} directory_t;
 
 typedef struct {
   char *path;

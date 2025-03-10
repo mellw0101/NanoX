@@ -49,6 +49,6 @@ bool  isalphac(const char *const __restrict c) __THROW _NODISCARD _CONST _NONNUL
 bool  isalnumc(const char *const __restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
 bool  ispunctc(const char *const __restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
 bool  iswordc(const char *const __restrict c, bool allow_punct, const char *const __restrict allowedchars) __THROW _NODISCARD _CONST _NONNULL(1);
-bool  isconeof(const char c, const char *const __restrict string) __THROW _NODISCARD _CONST _NONNULL(2);
+// bool  isconeof(const char c, const char *const __restrict string) __THROW _NODISCARD _CONST _NONNULL(2);
 
 _END_C_LINKAGE

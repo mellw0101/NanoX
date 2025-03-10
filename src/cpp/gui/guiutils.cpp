@@ -109,8 +109,8 @@ static void get_row_y_pixel_region(texture_font_t *font, Uint row, Uint *top_y, 
 /* Return the line from that a pixel is on, inside the editelement. */
 linestruct *line_from_mouse_y(texture_font_t *font, float offset) {
   /* When debugging is enabled, assert everything we use. */
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(font);
   /* The current row. */
   Uint row = 0;
@@ -131,8 +131,8 @@ linestruct *line_from_mouse_y(texture_font_t *font, float offset) {
 /* Return the line and the index in the line, from a x and y position. */
 linestruct *line_and_index_from_mousepos(texture_font_t *font, Ulong *index) {
   /* When debugging is enabled, assert everything we use. */
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(openeditor->openfile->edittop);
   ASSERT(openeditor->text);
   ASSERT(font);
@@ -161,8 +161,8 @@ float get_line_number_pixel_offset(linestruct *line, texture_font_t *font) {
 /* Calculates cursor x position for the gui. */
 float line_pixel_x_pos(linestruct *line, Ulong index, texture_font_t *font) {
   /* When debugging is enabled, check the entire list of editors and everything we use. */
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(line);
   ASSERT(font);
   float ret = 0;
@@ -180,16 +180,16 @@ float line_pixel_x_pos(linestruct *line, Ulong index, texture_font_t *font) {
 
 /* Calculates cursor x position for the gui. */
 float cursor_pixel_x_pos(texture_font_t *font) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(font);
   return line_pixel_x_pos(openeditor->openfile->current, openeditor->openfile->current_x, font);
 }
 
 /* Calculates the vertical offset of a given line within the window, based on its position relative to the top of the editable area. */
 float line_y_pixel_offset(linestruct *line, texture_font_t *font) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(openeditor->openfile->edittop);
   ASSERT(openeditor->text);
   ASSERT(gui);
@@ -209,8 +209,8 @@ float line_y_pixel_offset(linestruct *line, texture_font_t *font) {
 
 /* Calculates cursor y position for the gui. */
 float cursor_pixel_y_pos(texture_font_t *font) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   return line_y_pixel_offset(openeditor->openfile->current, font);
 }
 
@@ -390,9 +390,9 @@ vec4 color_idx_to_vec4(int index) _NOTHROW {
  */
 linestruct *gui_line_from_number(guieditor *editor, long number) {
   /* When debugging is enabled, check everything we will use. */
-  ASSERT_CIRCULAR_LIST_PTR(editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  // ASSERT_CIRCULAR_LIST_PTR(editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->openfile->current);
   ASSERT(editor->openfile->filetop);
   ASSERT(editor->openfile->filebot);
@@ -423,8 +423,8 @@ linestruct *gui_line_from_number(guieditor *editor, long number) {
 /* Get the line number coresponding to the relative `ypos` in `editor` text element. */
 long get_lineno_from_scrollbar_position(guieditor *editor, float ypos) {
   /* When debugging is turned on, check all things we will use. */
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->openfile->filebot);
   ASSERT(editor->text);
   float height, max_ypos, ratio;

@@ -45,44 +45,24 @@ void hashmap_thread_test(void);
 /* ----------------------------------------------- xstring.c ----------------------------------------------- */
 
 
-char *xstrl_copy(const char *string, Ulong len);
-char *xstr_copy(const char *string);
+// char *xstrl_copy(const char *string, Ulong len);
+// char *xstr_copy(const char *string);
 void *xmeml_copy(const void *data, Ulong len);
-char *valstr(const char *format, va_list ap);
 
 #ifndef __cplusplus
-char  *fmtstr(const char *format, ...) __THROW _RETURNS_NONNULL _NODISCARD _PRINTFLIKE(1, 2);
-char  *concatpath(const char *const __restrict s1, const char *const __restrict s2) __THROW _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2);
-char  *measured_copy(const char *const __restrict string, Ulong len) _RETURNS_NONNULL _NODISCARD _NONNULL(1);
-char  *copy_of(const char *const __restrict string) _RETURNS_NONNULL _NODISCARD _NONNULL(1);
-char **split_string(const char *const string, const char delim, bool allow_empty, Ulong *n) _RETURNS_NONNULL _NODISCARD _NONNULL(1);
+char **split_string_nano(const char *const string, const char delim, bool allow_empty, Ulong *n) _RETURNS_NONNULL _NODISCARD _NONNULL(1);
 #endif
-
-char *xstrcat(char *__restrict dst, const char *const __restrict src) _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2);
 
 /* ----------------------------------------------- utils.c ----------------------------------------------- */
 
 
 #if !defined(__cplusplus)
-  const char *tail(const char *const path);
-  const char *ext(const char *const path);
+  // const char *tail(const char *const path);
+  // const char *ext(const char *const path);
   void        die(const char *format, ...);
-  thread     *get_nthreads(Ulong howmeny);
+  thread_t   *get_nthreads(Ulong howmeny);
 #endif
 void free_nulltermchararray(char **const argv);
-
-
-/* ----------------------------------------------- mem.c ----------------------------------------------- */
-
-
-void *xmalloc(Ulong howmush)
- _RETURNS_NONNULL _NODISCARD;
-
-void *xrealloc(void *ptr, Ulong howmush)
- _RETURNS_NONNULL _NODISCARD;
-
-void *xcalloc(Ulong elemno, Ulong elemsize)
- _RETURNS_NONNULL _NODISCARD;
 
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
@@ -147,9 +127,9 @@ void syntaxfile_test_read(void);
 /* ----------------------------------------------- files.c ----------------------------------------------- */
 
 
-bool file_exists(const char *const __restrict path);
+// bool file_exists(const char *const __restrict path);
 bool non_exec_file_exists(const char *const __restrict path);
-void statalloc(const char *const __restrict path, struct stat **ptr);
+// void statalloc(const char *const __restrict path, struct stat **ptr);
 
 
 /* ----------------------------------------------- fd.c ----------------------------------------------- */
@@ -171,26 +151,6 @@ extern int globclientfd;
 void nanox_fork_socket(void);
 int  nanox_socketrun(void);
 int  nanox_socket_client(void);
-
-/* ----------------------------------------------- dirs.c ----------------------------------------------- */
-
-
-bool               dir_exists(const char *const __restrict path) __THROW _NODISCARD _NONNULL(1);
-directory_entry_t *directory_entry_make(void) __THROW _NODISCARD _RETURNS_NONNULL;
-directory_entry_t *directory_entry_extract(directory_t *const dir, Ulong idx) __THROW _NODISCARD _RETURNS_NONNULL _NONNULL(1);
-bool               directory_entry_is_file(directory_entry_t *const entry);
-bool               directory_entry_is_non_exec_file(directory_entry_t *const entry);
-void               directory_entry_free(directory_entry_t *const entry) __THROW _NONNULL(1);
-void               directory_data_init(directory_t *const dir) __THROW _NONNULL(1);
-void               directory_data_free(directory_t *const dir) __THROW _NONNULL(1);
-int                directory_get(const char *const __restrict path, directory_t *const output);
-int                directory_get_recurse(const char *const __restrict path, directory_t *const output);
-
-
-/* -------------- Tests -------------- */
-
-
-void test_directory_t(const char *const dirpath);
 
 
 /* ----------------------------------------------- text.c ----------------------------------------------- */
@@ -215,16 +175,6 @@ void          csyntaxmacro_free(void *ptr);
 
 Ulong wordstartindex(const char *const __restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 Ulong wordendindex(const char *const __restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
-
-
-/* ----------------------------------------------- cvec.c ----------------------------------------------- */
-
-CVec *cvec_create(void);
-void cvec_free(CVec *const v);
-void cvec_setfree(CVec *const v, FreeFuncPtr free);
-void cvec_push(CVec *const v, void *const item);
-void cvec_trim(CVec *const v);
-void *cvec_get(CVec *const v, int index);
 
 
 /* ----------------------------------------------- bracket.c ----------------------------------------------- */

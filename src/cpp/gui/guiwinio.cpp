@@ -102,8 +102,7 @@ static void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
   ASSERT(buf);
   glEnable(GL_TEXTURE_2D);
   glUseProgram(shader); {
-    static int texture_loc = glGetUniformLocation(shader, "texture");
-    glUniform1i(texture_loc, 0);
+    glUniform1i(glGetUniformLocation(shader, "texture"), 0);
     vertex_buffer_render(buf, GL_TRIANGLES);
   }
 }
@@ -112,8 +111,8 @@ static void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
 static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   /* When debugging is enabled, assert everything we will use. */
   ASSERT(line);
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(drawpos);
   const char *prev_char = NULL;
   char linenobuffer[margin + 1];
@@ -291,8 +290,8 @@ void show_toggle_statusmsg(int flag) {
 /* Draw a editor. */
 void draw_editor(guieditor *editor) {
   /* When dubugging is enabled, assert everything we use. */
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->openfile->edittop);
   ASSERT(editor->topbar);
   ASSERT(editor->topbuf);

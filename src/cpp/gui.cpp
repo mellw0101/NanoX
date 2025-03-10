@@ -419,9 +419,10 @@ void init_gui(void) {
   setup_edit_element();
   /* Set some callbacks. */
   glfwSetWindowSizeCallback(gui->window, window_resize_callback);
+  glfwSetWindowMaximizeCallback(gui->window, window_maximize_callback);
+  glfwSetFramebufferSizeCallback(gui->window, framebuffer_resize_callback);
   glfwSetKeyCallback(gui->window, key_callback);
   glfwSetCharCallback(gui->window, char_callback);
-  glfwSetWindowMaximizeCallback(gui->window, window_maximize_callback);
   glfwSetMouseButtonCallback(gui->window, mouse_button_callback);
   glfwSetCursorPosCallback(gui->window, mouse_pos_callback);
   glfwSetCursorEnterCallback(gui->window, window_enter_callback);

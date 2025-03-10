@@ -330,7 +330,7 @@ void syntaxfile_free(SyntaxFile *const sf) {
 }
 
 /* Read the file at `path` into the `SyntaxFile` struct `sfile`. */
-void syntaxfile_read(SyntaxFile *const sf, const char *const __restrict path) {
+void syntaxfile_read(SyntaxFile *const sf, const char *const restrict path) {
   ASSERT(sf);
   ASSERT(path);
   char *data;
@@ -362,10 +362,12 @@ void syntaxfile_read(SyntaxFile *const sf, const char *const __restrict path) {
   close(fd);
   /* Split the data into lines. */
   syntaxfileline_from_str(data, &sf->filetop, &sf->filebot);
+  /* Free the data after we create the lines. */
+  free(data);
 }
 
 /* Add a error to the `SyntaxFile`. */
-void syntaxfile_adderror(SyntaxFile *const sf, int row, int column, const char *const __restrict msg) {
+void syntaxfile_adderror(SyntaxFile *const sf, int row, int column, const char *const restrict msg) {
   ASSERT(sf);
   /* If this is the first error, both errtop and errbot will point to the same data. */
   if (!sf->errtop) {
@@ -385,7 +387,7 @@ void syntaxfile_adderror(SyntaxFile *const sf, int row, int column, const char *
 }
 
 /* Add a SyntaxObject to the hashmap of a SyntaxFile structure, and if it exists, append it to the double linked list that is the object's. */
-void syntaxfile_addobject(SyntaxFile *const sf, const char *const __restrict key, SyntaxObject *const obj) {
+void syntaxfile_addobject(SyntaxFile *const sf, const char *const restrict key, SyntaxObject *const obj) {
   ASSERT(sf);
   ASSERT(key);
   ASSERT(obj);
@@ -429,30 +431,30 @@ static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines) {
   ASSERT(path);
   SyntaxFile *sfile = syntaxfile_create();
   syntaxfile_read(sfile, path);
+  process_syntaxfile_c(sfile);
   ASSIGN_IF_VALID(nlines, sfile->filebot->lineno);
   syntaxfile_free(sfile);
 }
 
 void syntaxfile_test_read(void) {
-  TIMER_START(timer);
   Ulong num_lines, total_lines=0, files_read=0;
   directory_t dir;
   directory_entry_t *entry;
-  directory_data_init(&dir);
-  if (directory_get_recurse("/usr/include", &dir) != -1) {
-    for (Ulong i = 0; i < dir.len; ++i) {
-      entry = dir.entries[i];
-      if (directory_entry_is_non_exec_file(entry) && entry->ext && (strcmp(entry->ext, "xml") == 0 || strcmp(entry->ext, "c") == 0 || strcmp(entry->ext, "cpp") == 0
-       || strcmp(entry->ext, "h") == 0 || strcmp(entry->ext, "hpp") == 0 || strcmp(entry->ext, "txt") == 0 || strcmp(entry->ext, "log") == 0)) {
-        syntaxfile_test_read_one_file(entry->path, &num_lines);
-        total_lines += num_lines;
-        ++files_read;
+  timer_action(ms,
+    directory_data_init(&dir);
+    if (directory_get_recurse("/usr/include", &dir) != -1) {
+      for (Ulong i = 0; i < dir.len; ++i) {
+        entry = dir.entries[i];
+        if (directory_entry_is_non_exec_file(entry) && entry->ext && (strcmp(entry->ext, "h") == 0 || strcmp(entry->ext, "c") == 0)) {
+          syntaxfile_test_read_one_file(entry->path, &num_lines);
+          total_lines += num_lines;
+          ++files_read;
+        }
+        free(entry->stat);
+        entry->stat = NULL;
       }
-      free(entry->stat);
-      entry->stat = NULL;
     }
-  }
+  );
   directory_data_free(&dir);
-  TIMER_END(timer, ms);
   printf("\n%s: Files read: %lu: Lines read: %lu: Time: %.5f ms\n\n", __func__, files_read, total_lines, (double)ms);
 }

@@ -69,7 +69,6 @@
 #include "../c/window/window.h"
 #include "../c/term/tui.h"
 #include "../c/input/key.h"
-#include "../c/math.h"
 /* Undefine this to make ASSERT do nothing,  Note that ALWAYS_ASSERT will always assert. */
 #define ASSERT_DEBUG
 #include "c/nassert.h"
@@ -318,7 +317,7 @@ using std::vector;
 
 #define STRLTR_WRITE(fd, str) write(fd, str, (sizeof(str) - 1))
 
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
+// #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
 #define SET_BIT(bit) (1 << bit)
 
@@ -870,8 +869,8 @@ typedef struct openfilestruct {
    * Never modify the ptr 'name' under any conditions.  Its handled by
    * the macro, if one wants to continue inside the action, just do that
    * and nothing else. */
-  #define ITER_OVER_ALL_OPENFILES(startfile, name, action)  \
-    MACRO_DO_WHILE(                                         \
+  #define ITER_OVER_ALL_OPENFILES(startfile, name, ...)  \
+    DO_WHILE(                                         \
       if (startfile && startfile->next) {                   \
         openfilestruct *name = startfile;                   \
         bool changed_file = TRUE;                           \
@@ -880,7 +879,7 @@ typedef struct openfilestruct {
             file = file->next;                              \
           }                                                 \
           changed_file = FALSE;                             \
-          MACRO_DO_WHILE(action);                           \
+          DO_WHILE(__VA_ARGS__);                           \
           name = name->next;                                \
           changed_file = TRUE;                              \
         } while (name != startfile);                        \
@@ -1129,11 +1128,11 @@ typedef struct completionstruct {
     guieditor *prev; /* Pointer to the previous editor in the circular linked list. */
 
     #define ITER_OVER_ALL_OPENEDITORS(starteditor, name, action)                          \
-      MACRO_DO_WHILE(                                                                     \
+      DO_WHILE(                                                                     \
         if (starteditor && starteditor->next) {                                           \
           guieditor *name = starteditor;                                                  \
           do {                                                                            \
-            MACRO_DO_WHILE(action);                                                       \
+            DO_WHILE(action);                                                       \
             name = name->next;                                                            \
           } while (name != starteditor);                                                  \
         }                                                                                 \

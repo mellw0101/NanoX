@@ -81,18 +81,20 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
 
 /* Maximize callback. */
 void window_maximize_callback(GLFWwindow *window, int maximized) {
-  glfwGetError(NULL);
   ivec2 size;
   glfwGetWindowSize(window, &size.w, &size.h);
-  if (glfwGetError(NULL) == GLFW_NO_ERROR) {
-    window_resize_callback(window, size.w, size.h);
-  }
+  window_resize_callback(window, size.w, size.h);
+}
+
+/* Framebuffer resize callback. */
+void framebuffer_resize_callback(GLFWwindow *window, int width, int height) {
+  window_resize_callback(window, width, height);
 }
 
 /* Key callback. */
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   /* Key-callbacks for when we are when inside the prompt-mode. */
   if (gui->flag.is_set<GUI_PROMPT>()) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
@@ -317,7 +319,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               free_lines(cutbuffer);
               cutbuffer = NULL;
               Ulong linenum;
-              char **line_strings = split_string(string, '\n', &linenum);
+              char **line_strings = split_string_nano(string, '\n', &linenum);
               if (line_strings) {
                 linestruct *item = make_new_node(NULL);
                 linestruct *head = item;
@@ -447,6 +449,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             // });
             syntaxfile_free(sf);
             refresh_needed = TRUE;
+          }
+          else if (mods == GLFW_MOD_ALT) {
+            syntaxfile_test_read();
           }
           break;
         }
@@ -878,7 +883,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   /* Left mouse button. */
   if (button == GLFW_MOUSE_BUTTON_1) {
     if (action == GLFW_PRESS) {
-      printf("mousepos.x: %.5f\n", mousepos.x);
+      printf("mousepos.x: %.5f\n", (double)mousepos.x);
       /* When in prompt-mode. */
       if (gui->flag.is_set<GUI_PROMPT>()) {
         mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();

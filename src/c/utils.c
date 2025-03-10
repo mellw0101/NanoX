@@ -10,7 +10,7 @@ void die(const char *format, ...) {
   char *msg;
   va_list ap;
   va_start(ap, format);
-  msg = valstr(format, ap);
+  msg = valstr(format, ap, NULL);
   va_end(ap);
   if (die_cb) {
     die_cb("%s", msg);
@@ -21,32 +21,32 @@ void die(const char *format, ...) {
   }
 }
 
-/* Return a ptr to the last part of a path, if there are no '/' in the path, just return `path`. */
-const char *tail(const char *const path) {
-  ASSERT(path);
-  const char *slash = strrchr(path, '/');
-  if (slash) {
-    return (slash + 1);
-  }
-  else {
-    return path;
-  }
-}
+// /* Return a ptr to the last part of a path, if there are no '/' in the path, just return `path`. */
+// const char *tail(const char *const path) {
+//   ASSERT(path);
+//   const char *slash = strrchr(path, '/');
+//   if (slash) {
+//     return (slash + 1);
+//   }
+//   else {
+//     return path;
+//   }
+// }
 
-/* Return the extention of `path`, if any.  Otherwise, return NULL. */
-const char *ext(const char *const path) {
-  ASSERT(path);
-  const char *pathtail = tail(path);
-  /* If the tail of the path starts with '.', then this is not a extention. */
-  if (*pathtail == '.') {
-    return NULL;
-  }
-  return (strrchr(pathtail, '.'));
-}
+// /* Return the extention of `path`, if any.  Otherwise, return NULL. */
+// const char *ext(const char *const path) {
+//   ASSERT(path);
+//   const char *pathtail = tail(path);
+//   /* If the tail of the path starts with '.', then this is not a extention. */
+//   if (*pathtail == '.') {
+//     return NULL;
+//   }
+//   return (strrchr(pathtail, '.'));
+// }
 
 /* Return's a allocated ptr of `howmeny` threads. */
-thread *get_nthreads(Ulong howmeny) {
-  return xmalloc(sizeof(thread) * howmeny);
+thread_t *get_nthreads(Ulong howmeny) {
+  return xmalloc(sizeof(thread_t) * howmeny);
 }
 
 /* Free's a `NULL-TERMINATED` char array. */

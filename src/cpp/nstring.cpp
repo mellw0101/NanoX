@@ -75,7 +75,7 @@ Ulong append_to(char **dst, const char *src) _NOTHROW {
 }
 
 /* Split a sting into a malloc`ed 'char **' containing malloc`ed 'char *'. */
-char **split_string(const char *string, const char delim, Ulong *n) _NOTHROW {
+char **split_string_nano(const char *string, const char delim, Ulong *n) _NOTHROW {
   /* If the string is empty, return NULL. */
   if (!*string) {
     *n = 0;
@@ -116,23 +116,23 @@ char **split_string(const char *string, const char delim, Ulong *n) _NOTHROW {
   return parts;
 }
 
-/* Return's a malloc'ed formated string. */
-char *fmtstr(const char *format, ...) _NOTHROW {
-  char *ret;
-  int len;
-  va_list dummy, ap;
-  /* First, get the total length the formated sting will need. */
-  va_start(dummy, format);
-  len = vsnprintf(NULL, 0, format, dummy);
-  va_end(dummy);
-  /* If vsnprintf fails, we die. */
-  if (len < 0) {
-    die("vsnprintf failed.");
-  }
-  /* Then allocate ret using the len we got, and run vsnprintf again. */
-  va_start(ap, format);
-  ret = (char *)nmalloc(len + 1);
-  vsnprintf(ret, (len + 1), format, ap);
-  va_end(ap);
-  return ret;
-}
+// /* Return's a malloc'ed formated string. */
+// char *fmtstr(const char *format, ...) _NOTHROW {
+//   char *ret;
+//   int len;
+//   va_list dummy, ap;
+//   /* First, get the total length the formated sting will need. */
+//   va_start(dummy, format);
+//   len = vsnprintf(NULL, 0, format, dummy);
+//   va_end(dummy);
+//   /* If vsnprintf fails, we die. */
+//   if (len < 0) {
+//     die("vsnprintf failed.");
+//   }
+//   /* Then allocate ret using the len we got, and run vsnprintf again. */
+//   va_start(ap, format);
+//   ret = (char *)nmalloc(len + 1);
+//   vsnprintf(ret, (len + 1), format, ap);
+//   va_end(ap);
+//   return ret;
+// }

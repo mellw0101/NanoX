@@ -26,27 +26,27 @@ char **get_env_paths(Ulong *npaths) _NOTHROW {
   if (!path_env) {
     return NULL;
   }
-  return split_string(path_env, ':', npaths);
+  return split_string_nano(path_env, ':', npaths);
 }
 
-/* Return the filename part of the given path. */
-const char *tail(const char *path) _NOTHROW {
-  const char *slash = strrchr(path, '/');
-  if (!slash) {
-    return path;
-  }  
-  return (slash + 1);
-}
+// /* Return the filename part of the given path. */
+// const char *tail(const char *path) _NOTHROW {
+//   const char *slash = strrchr(path, '/');
+//   if (!slash) {
+//     return path;
+//   }  
+//   return (slash + 1);
+// }
 
-/* Return the extention of the given path.  Else if no extention, return 'NULL'. */
-const char *ext(const char *path) _NOTHROW {
-  const char *ext = strrchr(path, '.');
-  const char *slash = tail(path);
-  if (!ext || (ext && ext < slash)) {
-    return NULL;
-  }
-  return (ext + 1);
-}
+// /* Return the extention of the given path.  Else if no extention, return 'NULL'. */
+// const char *ext(const char *path) _NOTHROW {
+//   const char *ext = strrchr(path, '.');
+//   const char *slash = tail(path);
+//   if (!ext || (ext && ext < slash)) {
+//     return NULL;
+//   }
+//   return (ext + 1);
+// }
 
 /* Return a copy of the two given strings, welded together. */
 char *concatenate(const char *path, const char *name) _NOTHROW {
@@ -131,19 +131,19 @@ int digits(const long n) _NOTHROW {
   }
 }
 
-/* Read an integer from the given string.  If it parses okay, store it in *result and return TRUE; otherwise, return FALSE. */
-bool parse_num(const char *string, long *result) _NOTHROW {
-  Ulong value;
-  char *excess;
-  /* Clear the error number so that we can check it afterward. */
-  errno = 0;
-  value = (long)strtol(string, &excess, 10);
-  if (errno == ERANGE || !*string || *excess) {
-    return FALSE;
-  }
-  *result = value;
-  return TRUE;
-}
+// /* Read an integer from the given string.  If it parses okay, store it in *result and return TRUE; otherwise, return FALSE. */
+// bool parse_num(const char *string, long *result) _NOTHROW {
+//   Ulong value;
+//   char *excess;
+//   /* Clear the error number so that we can check it afterward. */
+//   errno = 0;
+//   value = (long)strtol(string, &excess, 10);
+//   if (errno == ERANGE || !*string || *excess) {
+//     return FALSE;
+//   }
+//   *result = value;
+//   return TRUE;
+// }
 
 // Read one number (or two numbers separated by comma, period, or colon)
 // from the given string and store the number(s) in *line (and *column).
@@ -215,8 +215,8 @@ void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len
   (*array)[*len] = NULL;
 }
 
-// Is the word starting at the given position in 'text' and of the given
-// length a separate word?  That is: is it not part of a longer word?
+/* Is the word starting at the given position in 'text' and of the given
+ * length a separate word?  That is: is it not part of a longer word? */
 bool is_separate_word(Ulong position, Ulong length, const char *text) _NOTHROW {
   const char *before = text + step_left(text, position);
   const char *after  = text + position + length;
@@ -225,11 +225,11 @@ bool is_separate_word(Ulong position, Ulong length, const char *text) _NOTHROW {
   return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
 }
 
-// Return the position of the needle in the haystack, or NULL if not found.
-// When searching backwards, we will find the last match that starts no later
-// than the given start; otherwise, we find the first match starting no earlier
-// than start.  If we are doing a regexp search, and we find a match, we fill
-// in the global variable regmatches with at most 9 subexpression matches.
+/* Return the position of the needle in the haystack, or NULL if not found.
+ * When searching backwards, we will find the last match that starts no later
+ * than the given start; otherwise, we find the first match starting no earlier
+ * than start.  If we are doing a regexp search, and we find a match, we fill
+ * in the global variable regmatches with at most 9 subexpression matches. */
 const char *strstrwrapper(const char *const haystack, const char *const needle, const char *const start) _NOTHROW {
   if (ISSET(USE_REGEXP)) {
     if (ISSET(BACKWARDS_SEARCH)) {
@@ -321,18 +321,18 @@ char *mallocstrcpy(char *dest, const char *src) _NOTHROW {
   return dest;
 }
 
-/* Return an allocated copy of the first count characters of the given string, and 'null-terminate' the copy. */
-char *measured_copy(const char *string, const Ulong count) _NOTHROW {
-  char *thecopy = (char *)nmalloc(count + 1);
-  memcpy(thecopy, string, count);
-  thecopy[count] = '\0';
-  return thecopy;
-}
+// /* Return an allocated copy of the first count characters of the given string, and 'null-terminate' the copy. */
+// char *measured_copy(const char *string, const Ulong count) _NOTHROW {
+//   char *thecopy = (char *)nmalloc(count + 1);
+//   memcpy(thecopy, string, count);
+//   thecopy[count] = '\0';
+//   return thecopy;
+// }
 
-/* Return an allocated copy of the given string. */
-char *copy_of(const char *string) _NOTHROW {
-  return measured_copy(string, strlen(string));
-}
+// /* Return an allocated copy of the given string. */
+// char *copy_of(const char *string) _NOTHROW {
+//   return measured_copy(string, strlen(string));
+// }
 
 /* Free the string at dest and return the string at src. */
 char *free_and_assign(char *dest, char *src) _NOTHROW {

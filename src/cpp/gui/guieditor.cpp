@@ -13,7 +13,7 @@
 
 /* Create the editor scrollbar. */
 static void make_editor_scrollbar(guieditor *editor) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
   ASSERT(editor->text);
   editor->scrollbar = make_element_child(editor->text);
   set_element_editor_data(editor->scrollbar, editor);
@@ -27,8 +27,8 @@ static void make_editor_scrollbar(guieditor *editor) {
 
 /* Create the editor topbar. */
 static void make_editor_topbar(guieditor *editor) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->main);
   ASSERT(gui);
   ASSERT(gui->uifont);
@@ -51,8 +51,8 @@ static void make_editor_topbar(guieditor *editor) {
 /* Remove the existing buffer name buttons and create new ones based on the currently open files of `editor`. */
 void refresh_editor_topbar(guieditor *editor) {
   /* When debugging is enabled, assert everything we use. */
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->topbar);
   ASSERT(gui);
   ASSERT(gui->uifont);
@@ -111,8 +111,8 @@ void refresh_editor_topbar(guieditor *editor) {
 
 /* Set all elements color in topbar, setting the active one to the active color. */
 void update_editor_topbar(guieditor *editor) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->topbar);
   guielement *button;
   /* Iterate over every open file in the editor, if any. */
@@ -132,8 +132,8 @@ void update_editor_topbar(guieditor *editor) {
 /* Update the `scroll-bar's` position and height.  */
 void update_editor_scrollbar(guieditor *editor) {
   /* When debugging, check everything we will use. */
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->openfile->edittop);
   ASSERT(editor->openfile->filebot);
   ASSERT(editor->text);
@@ -261,7 +261,7 @@ void delete_editor(guieditor *editor) {
 
 /* Close the currently active editor. */
 void close_editor(void) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
   guieditor *editor = openeditor;
   if (editor == starteditor) {
     starteditor = starteditor->next;
@@ -298,7 +298,7 @@ void free_editor_buffers(guieditor *editor) {
 }
 
 void hide_editor(guieditor *editor, bool hide) {
-  ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
   if (hide) {
     editor->flag.set<GUIEDITOR_HIDDEN>();
   }

@@ -101,7 +101,7 @@ nfdlistener *nfdlistener_create(nevhandler *handler, const char *file, Uint mask
   listener->stop    = FALSE;
   listener->handler = handler;
   listener->cb      = cb;
-  listener->file    = xstr_copy(file);
+  listener->file    = copy_of(file);
   pthread_mutex_init(&listener->mutex, NULL);
   listener->wd = -1;
   listener->fd = inotify_init();

@@ -388,7 +388,7 @@ void process_syntaxfile_c(SyntaxFile *const sf) {
         /* Otherwise get the macro data. */
         else {
           /* Get the index of the end of the define name. */
-          ALWAYS_ASSERT((endidx = wordendindex((data + whitelen), 0, TRUE)) != whitelen);
+          endidx = wordendindex((data + whitelen), 0, TRUE);
           /* Get the name. */
           ptr = measured_copy((data + whitelen), endidx);
           /* Create a syntax-object for the define. */
@@ -442,6 +442,7 @@ void process_syntaxfile_c(SyntaxFile *const sf) {
 /* Create a blank allocated `CSyntaxMacro` structure. */
 CSyntaxMacro *csyntaxmacro_create(void) {
   CSyntaxMacro *macro = xmalloc(sizeof(*macro));
+  macro->args        = cvec_create();
   macro->argv        = NULL;
   macro->expanded    = NULL;
   macro->expandstart = syntaxfilepos_create(0, 0);
@@ -453,6 +454,7 @@ CSyntaxMacro *csyntaxmacro_create(void) {
 void csyntaxmacro_free(void *ptr) {
   CSyntaxMacro *macro = ptr;
   ASSERT(macro);
+  cvec_free(macro->args);
   free_nulltermchararray(macro->argv);
   free(macro->expanded);
   syntaxfilepos_free(macro->expandstart);

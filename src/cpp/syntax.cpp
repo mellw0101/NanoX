@@ -203,7 +203,7 @@ void syntax_check_file(openfilestruct *file) {
   file->type.clear();
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
     const char *file_ext = ext(file->filename);
-    if (file_ext && *file_ext) {
+    if (file_ext && *(++file_ext)) {
       if (strcmp(file_ext, "cpp") == 0 || strcmp(file_ext, "c") == 0 || strcmp(file_ext, "cc") == 0
        || strcmp(file_ext, "h") == 0 || strcmp(file_ext, "hpp") == 0) {
         set_c_cpp_synx(file);
