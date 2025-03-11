@@ -870,20 +870,20 @@ typedef struct openfilestruct {
    * the macro, if one wants to continue inside the action, just do that
    * and nothing else. */
   #define ITER_OVER_ALL_OPENFILES(startfile, name, ...)  \
-    DO_WHILE(                                         \
-      if (startfile && startfile->next) {                   \
-        openfilestruct *name = startfile;                   \
-        bool changed_file = TRUE;                           \
-        do {                                                \
-          if (!changed_file) {                              \
-            file = file->next;                              \
-          }                                                 \
-          changed_file = FALSE;                             \
-          DO_WHILE(__VA_ARGS__);                           \
-          name = name->next;                                \
-          changed_file = TRUE;                              \
-        } while (name != startfile);                        \
-      }                                                     \
+    DO_WHILE(                                            \
+      if (startfile && startfile->next) {                \
+        openfilestruct *name = startfile;                \
+        bool changed_file = TRUE;                        \
+        do {                                             \
+          if (!changed_file) {                           \
+            file = file->next;                           \
+          }                                              \
+          changed_file = FALSE;                          \
+          DO_WHILE(__VA_ARGS__);                         \
+          name = name->next;                             \
+          changed_file = TRUE;                           \
+        } while (name != startfile);                     \
+      }                                                  \
     )
 } openfilestruct;
 

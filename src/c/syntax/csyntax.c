@@ -192,10 +192,8 @@ static void macroexpantion(SyntaxFile *const sf, CSyntaxMacro *const macro, Synt
   /* Copy of the data we are working with. */
   const char *start = *outptr;
   const char *end = *outptr;
-  /* A ptr to hold string for us. */
-  char *ptr;
   /* The string we will construct. */
-  char *expanded = copy_of("");
+  char *expanded = COPY_OF("");
   /* The length of blank chars. */
   Ulong whitelen;
   /* Set the start position of this macro exantion inside the `SyntaxFile` structure. */
@@ -206,10 +204,8 @@ static void macroexpantion(SyntaxFile *const sf, CSyntaxMacro *const macro, Synt
     while (*end && *end != '\\') {
       end += step_right(end, 0);
     }
-    ptr = measured_copy(start, (end - start));
     /* Append the parsed line to expanded. */
-    expanded = xstrcat(expanded, ptr);
-    free(ptr);
+    expanded = xstrncat(expanded, start, (end - start));
     /* If we found a backslash. */
     if (*end == '\\') {
       /* Advance to the next line. */
@@ -234,7 +230,7 @@ static void macroexpantion(SyntaxFile *const sf, CSyntaxMacro *const macro, Synt
 #endif
 }
 
-static void csyntax_macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, SyntaxFileLine **outline, const char **const outdata) {
+_UNUSED static void csyntax_macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, SyntaxFileLine **outline, const char **const outdata) {
   /* Ensure all parameters are valid. */
   ASSERT(sf);
   ASSERT(macro);
@@ -399,6 +395,9 @@ void process_syntaxfile_c(SyntaxFile *const sf) {
           syntaxobject_setcolor(obj, SYNTAX_COLOR_BLUE);
           /* Add the 'SyntaxObject' to the 'sf'. */
           syntaxfile_addobject(sf, ptr, obj);
+          /* Free and reset the ptr we used for the name of the macro. */
+          free(ptr);
+          ptr = NULL;
           /* Move the ptr to the end of the macro name. */
           data += (whitelen + endidx);
           /* And get the index of the first non blank char. */
@@ -424,9 +423,6 @@ void process_syntaxfile_c(SyntaxFile *const sf) {
           /* Parse the full expansion of this macro. */
           macroexpantion(sf, macro, &line, &data);
           syntaxobject_setdata(obj, macro, csyntaxmacro_free);
-          /* Free and reset the ptr we used for the name of the macro. */
-          free(ptr);
-          ptr = NULL;
         }
       }
     }
@@ -435,14 +431,12 @@ void process_syntaxfile_c(SyntaxFile *const sf) {
   TIMER_PRINT(ms);
 }
 
-
 /* --------------------- CSyntaxMacro --------------------- */
-
 
 /* Create a blank allocated `CSyntaxMacro` structure. */
 CSyntaxMacro *csyntaxmacro_create(void) {
   CSyntaxMacro *macro = xmalloc(sizeof(*macro));
-  macro->args        = cvec_create();
+  macro->args        = cvec_create_setfree(free);
   macro->argv        = NULL;
   macro->expanded    = NULL;
   macro->expandstart = syntaxfilepos_create(0, 0);

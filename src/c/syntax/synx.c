@@ -9,7 +9,6 @@
 
 /* -------------------------------------------------------- SyntaxFileError -------------------------------------------------------- */
 
-
 /* Create a new allocated `SyntaxFilePos` structure. */
 SyntaxFilePos *syntaxfilepos_create(int row, int column) {
   SyntaxFilePos *pos = xmalloc(sizeof(*pos));
@@ -30,9 +29,7 @@ void syntaxfilepos_set(SyntaxFilePos *const pos, int row, int column) {
   pos->column = column;
 }
 
-
 /* -------------------------------------------------------- SyntaxFileLine -------------------------------------------------------- */
-
 
 /* Create a new `SyntaxFileLine *` and append it to the end of a double linked list of lines, or NULL for first line. */
 SyntaxFileLine *syntaxfileline_create(SyntaxFileLine *const prev) {
@@ -120,61 +117,7 @@ void syntaxfileline_from_str(const char *const __restrict string, SyntaxFileLine
   *tail = filebot;
 }
 
-
 /* -------------------------------------------------------- SyntaxObject -------------------------------------------------------- */
-
-
-// /* Create a allocated blank `SyntaxObject` structure. */
-// SyntaxObject *syntaxobject_create(void) {
-//   SyntaxObject *object = xmalloc(sizeof(*object));
-//   object->prev     = NULL;
-//   object->next     = NULL;
-//   object->color    = SYNTAX_COLOR_NONE;
-//   object->type     = SYNTAX_OBJECT_TYPE_NONE;
-//   object->pos      = syntaxfilepos_create(0, 0);
-//   object->data     = NULL;
-//   object->freedata = NULL;
-//   return object;
-// }
-
-// /* Free a `SyntaxObject` structure. */
-// void syntaxobject_free(SyntaxObject *const obj) {
-//   ASSERT(obj);
-//   ASSERT(obj->pos);
-//   /* Then free the last one. */
-//   if (obj->data) {
-//     CALL_IF_VALID(obj->freedata, obj->data);
-//   }
-//   syntaxfilepos_free(obj->pos);
-//   free(obj);
-// }
-
-// /* Unlink and free a `SyntaxObject` structure from its double linked list. */
-// void syntaxobject_unlink(SyntaxObject *const obj) {
-//   ASSERT(obj);
-//   ASSERT(obj->pos);
-//   if (obj->prev) {
-//     obj->prev->next = obj->next;
-//   }
-//   if (obj->next) {
-//     obj->next->prev = obj->prev;
-//   }
-//   syntaxobject_free(obj);
-// }
-
-// /* Free a entire double linked list of `SyntaxObject` structure's. */
-// void syntaxobject_free_objects(void *ptr) {
-//   SyntaxObject *head = ptr;
-//   ASSERT(head);
-//   ASSERT(head->pos);
-//   /* If there are any stacked objects, free all of them. */
-//   while (head->next) {
-//     head = head->next;
-//     syntaxobject_free(head->prev);
-//   }
-//   syntaxobject_free(head);
-// }
-
 
 /* Create a allocated blank SyntaxObject structure. */
 SyntaxObject *syntaxobject_create(void) {
@@ -225,6 +168,7 @@ void syntaxobject_setdata(SyntaxObject *const obj, void *const data, FreeFuncPtr
   ASSERT(obj);
   ASSERT(obj->pos);
   ASSERT(data);
+  ASSERT(freedatafunc);
   obj->data     = data;
   obj->freedata = freedatafunc;
 }
@@ -251,9 +195,7 @@ void syntaxobject_settype(SyntaxObject *const obj, SyntaxObjectType type) {
   obj->type = type;
 }
 
-
 /* -------------------------------------------------------- SyntaxFileError -------------------------------------------------------- */
-
 
 /* Create a new `SyntaxFileError *` and append it to the end of a double linked list of errors, or `NULL` for first error. */
 SyntaxFileError *syntaxfileerror_create(SyntaxFileError *const prev) {
@@ -269,8 +211,8 @@ SyntaxFileError *syntaxfileerror_create(SyntaxFileError *const prev) {
 void syntaxfileerror_free(SyntaxFileError *const err) {
   ASSERT(err);
   ASSERT(err->pos);
-  syntaxfilepos_free(err->pos);
   free(err->msg);
+  syntaxfilepos_free(err->pos);
   free(err);
 }
 
@@ -300,9 +242,7 @@ void syntaxfileerror_free_errors(SyntaxFileError *head) {
   syntaxfileerror_free(head);
 }
 
-
 /* -------------------------------------------------------- SyntaxFile -------------------------------------------------------- */
-
 
 /* Create a allocated blank `SyntaxFile` structure. */
 SyntaxFile *syntaxfile_create(void) {
@@ -347,16 +287,15 @@ void syntaxfile_read(SyntaxFile *const sf, const char *const restrict path) {
   data = xmalloc(1);
   /* Open the fd as a read only file-descriptor. */
   ALWAYS_ASSERT_MSG(((fd = open(path, O_RDONLY)) >= 0), strerror(errno));
-  /* Lock the file-descriptor. */
-  ALWAYS_ASSERT(lock_fd(fd, F_RDLCK));
-  /* Then read all data from fd. */
-  while ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
-    data = xrealloc(data, (bytes_read + total_bytes + 1));
-    memcpy((data + total_bytes), buffer, bytes_read);
-    total_bytes += bytes_read;
-  }
-  /* Unlock the file-descriptor. */
-  ALWAYS_ASSERT(unlock_fd(fd));
+  /* Perform the reading under lock. */
+  fdlock_action(fd, F_RDLCK,
+    /* Read all data from fd. */
+    while ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
+      data = xrealloc(data, (bytes_read + total_bytes + 1));
+      memcpy((data + total_bytes), buffer, bytes_read);
+      total_bytes += bytes_read;
+    }
+  );
   /* Null terminate the data buffer and close the fd. */
   data[total_bytes] = '\0';
   close(fd);
@@ -406,55 +345,36 @@ void syntaxfile_addobject(SyntaxFile *const sf, const char *const restrict key, 
   }
 }
 
-// /* Add a `SyntaxObject` to the hashmap of a `SyntaxFile` structure, and if it exists, append it to the double linked list that is the object's. */
-// void syntaxfile_addobject(SyntaxFile *const sf, const char *const __restrict key, SyntaxObject *const value) {
-//   ASSERT(sf);
-//   ASSERT(key);
-//   ASSERT(value);
-//   SyntaxObject *existing = hashmap_get(sf->objects, key);
-//   /* If there does not exist any objects with the same key, insert it. */
-//   if (!existing) {
-//     hashmap_insert(sf->objects, key, value);
-//   }
-//   /* Otherwise, append the object to the double linked list. */
-//   else {
-//     existing->next = value;
-//     value->prev = existing;
-//   }
-// }
-
-
 /* -------------------------------------------------------- Tests -------------------------------------------------------- */
 
-
-static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines) {
+static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines, Ulong *nobj) {
   ASSERT(path);
   SyntaxFile *sfile = syntaxfile_create();
   syntaxfile_read(sfile, path);
   process_syntaxfile_c(sfile);
   ASSIGN_IF_VALID(nlines, sfile->filebot->lineno);
+  ASSIGN_IF_VALID(nobj, hashmap_size(sfile->objects));
   syntaxfile_free(sfile);
 }
 
 void syntaxfile_test_read(void) {
-  Ulong num_lines, total_lines=0, files_read=0;
+  Ulong num_lines, total_lines=0, files_read=0, num_obj, tot_obj=0;
   directory_t dir;
   directory_entry_t *entry;
+  directory_data_init(&dir);
   timer_action(ms,
-    directory_data_init(&dir);
     if (directory_get_recurse("/usr/include", &dir) != -1) {
       for (Ulong i = 0; i < dir.len; ++i) {
         entry = dir.entries[i];
         if (directory_entry_is_non_exec_file(entry) && entry->ext && (strcmp(entry->ext, "h") == 0 || strcmp(entry->ext, "c") == 0)) {
-          syntaxfile_test_read_one_file(entry->path, &num_lines);
+          syntaxfile_test_read_one_file(entry->path, &num_lines, &num_obj);
           total_lines += num_lines;
           ++files_read;
+          tot_obj += num_obj;
         }
-        free(entry->stat);
-        entry->stat = NULL;
       }
     }
   );
   directory_data_free(&dir);
-  printf("\n%s: Files read: %lu: Lines read: %lu: Time: %.5f ms\n\n", __func__, files_read, total_lines, (double)ms);
+  printf("\n%s: Files read: %lu: Lines read: %lu: Total objects: %lu: Time: %.5f ms\n\n", __func__, files_read, total_lines, tot_obj, (double)ms);
 }
