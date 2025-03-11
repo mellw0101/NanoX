@@ -21,25 +21,25 @@ static inline void set_c_die_callback(void (*cb)(const char *, ...)) {
 }
 
 
-/* ----------------------------------------------- hashmap.c ----------------------------------------------- */
+// /* ----------------------------------------------- hashmap.c ----------------------------------------------- */
 
 
-HashMap *hashmap_create(void);
-void     hashmap_free(HashMap *const map);
-void     hashmap_set_free_value_callback(HashMap *const map, HashNodeValueFreeCb callback);
-void     hashmap_insert(HashMap *map, const char *key, void *value);
-void    *hashmap_get(HashMap *map, const char *key);
-void     hashmap_remove(HashMap *map, const char *key);
-int      hashmap_size(HashMap *const map);
-int      hashmap_cap(HashMap *const map);
-void     hashmap_forall(HashMap *const map, void (*action)(const char *const __restrict key, void *value));
-void     hashmap_clear(HashMap *const map);
+// HashMap *hashmap_create(void);
+// void     hashmap_free(HashMap *const map);
+// void     hashmap_set_free_value_callback(HashMap *const map, HashNodeValueFreeCb callback);
+// void     hashmap_insert(HashMap *map, const char *key, void *value);
+// void    *hashmap_get(HashMap *map, const char *key);
+// void     hashmap_remove(HashMap *map, const char *key);
+// int      hashmap_size(HashMap *const map);
+// int      hashmap_cap(HashMap *const map);
+// void     hashmap_forall(HashMap *const map, void (*action)(const char *const __restrict key, void *value));
+// void     hashmap_clear(HashMap *const map);
 
 
-/* ------------ Tests ------------ */
+// /* ------------ Tests ------------ */
 
 
-void hashmap_thread_test(void);
+// void hashmap_thread_test(void);
 
 
 /* ----------------------------------------------- xstring.c ----------------------------------------------- */
@@ -135,8 +135,6 @@ bool non_exec_file_exists(const char *const __restrict path);
 /* ----------------------------------------------- fd.c ----------------------------------------------- */
 
 
-bool lock_fd(int fd, short lock_type);
-bool unlock_fd(int fd);
 int  opennetfd(const char *address, Ushort port);
 int  unixfd(void);
 
@@ -163,6 +161,7 @@ Ulong indentlen(const char *const string) __THROW _NODISCARD _CONST _NONNULL(1);
 
 
 void process_syntaxfile_c(SyntaxFile *const sf) _NONNULL(1);
+void syntaxfile_parse_csyntax(SyntaxFile *const sf);
 
 /* ----------------- CSyntaxMacro ----------------- */
 

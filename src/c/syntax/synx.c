@@ -351,7 +351,8 @@ static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines, Ulong
   ASSERT(path);
   SyntaxFile *sfile = syntaxfile_create();
   syntaxfile_read(sfile, path);
-  process_syntaxfile_c(sfile);
+  // process_syntaxfile_c(sfile);
+  syntaxfile_parse_csyntax(sfile);
   ASSIGN_IF_VALID(nlines, sfile->filebot->lineno);
   ASSIGN_IF_VALID(nobj, hashmap_size(sfile->objects));
   syntaxfile_free(sfile);
@@ -360,19 +361,17 @@ static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines, Ulong
 void syntaxfile_test_read(void) {
   Ulong num_lines, total_lines=0, files_read=0, num_obj, tot_obj=0;
   directory_t dir;
-  directory_entry_t *entry;
   directory_data_init(&dir);
   timer_action(ms,
     if (directory_get_recurse("/usr/include", &dir) != -1) {
-      for (Ulong i = 0; i < dir.len; ++i) {
-        entry = dir.entries[i];
+      DIRECTORY_ITER(dir, i, entry,
         if (directory_entry_is_non_exec_file(entry) && entry->ext && (strcmp(entry->ext, "h") == 0 || strcmp(entry->ext, "c") == 0)) {
           syntaxfile_test_read_one_file(entry->path, &num_lines, &num_obj);
           total_lines += num_lines;
           ++files_read;
           tot_obj += num_obj;
         }
-      }
+      );
     }
   );
   directory_data_free(&dir);

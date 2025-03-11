@@ -46,25 +46,26 @@ static inline void add_data_to_buffer(nfdwriter *writer, const void *data, Ulong
 /* `Internal`  The task the fd-writer run's. */
 static void *nfdwriter_thread_task(void *arg) {
   nfdwriter *writer = arg;
+  nfdwriter_task task;
   while (1) {
-    pthread_mutex_lock(&writer->mutex);
-    while (!writer->count && !writer->stop) {
-      pthread_cond_wait(&writer->cond, &writer->mutex);
-    }
-    if (writer->stop) {
-      lock_fd(writer->fd, F_WRLCK);
-      write(writer->fd, writer->buffer, writer->buffer_size);
-      unlock_fd(writer->fd);
-      pthread_mutex_unlock(&writer->mutex);
-      break;
-    }
-    nfdwriter_task task = writer->tasks[writer->front];
-    writer->front = ((writer->front + 1) % TASKS_SIZE);
-    --writer->count;
-    pthread_mutex_unlock(&writer->mutex);
-    lock_fd(writer->fd, F_WRLCK);
-    write(writer->fd, task.data, task.len);
-    unlock_fd(writer->fd);
+    mutex_action(&writer->mutex,
+      while (!writer->count && !writer->stop) {
+        cond_wait(&writer->cond, &writer->mutex);
+      }
+      if (writer->stop) {
+        fdlock_action(writer->fd, F_WRLCK,
+          write(writer->fd, writer->buffer, writer->buffer_size);
+        );
+        mutex_unlock(&writer->mutex);
+        break;
+      }
+      task = writer->tasks[writer->front];
+      writer->front = ((writer->front + 1) % TASKS_SIZE);
+      --writer->count;
+    );
+    fdlock_action(writer->fd, F_WRLCK,
+      write(writer->fd, task.data, task.len);
+    );
     free(task.data);
     task.data = NULL;
   }

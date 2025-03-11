@@ -69,17 +69,16 @@ static void *nfdreader_thread_task(void *arg) {
   Uchar buffer[4096];
   long bytes_read;
   while (1) {
-    pthread_mutex_lock(&reader->mutex);
-    if (reader->stop) {
-      pthread_mutex_unlock(&reader->mutex);
-      break;
-    }
-    pthread_mutex_unlock(&reader->mutex);
+    mutex_action(&reader->mutex,
+      if (reader->stop) {
+        mutex_unlock(&reader->mutex);
+        break;
+      }
+    );
     /* Lock then read the file descriptor. */
-    lock_fd(reader->fd, F_RDLCK);
-    bytes_read = read(reader->fd, buffer, sizeof(buffer));
-    /* Once we have read the file-descriptor, unlock it. */
-    unlock_fd(reader->fd);
+    fdlock_action(reader->fd, F_RDLCK,
+      bytes_read = read(reader->fd, buffer, sizeof(buffer));
+    );
     if (bytes_read > 0) {
       nevhandler_submit(reader->handler, nfdreader_package_callback, nfdreader_package_create(reader, buffer, bytes_read));
     }

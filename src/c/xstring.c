@@ -1,88 +1,10 @@
 #include "../include/c_proto.h"
 
-// char *xstrl_copy(const char *string, Ulong len) {
-//   ASSERT(string);
-//   char *ret = xmalloc(len + 1);
-//   memcpy(ret, string, len);
-//   ret[len] = '\0';
-//   return ret;
-// }
-
-// char *xstr_copy(const char *string) {
-//   return xstrl_copy(string, strlen(string));
-// }
-
 void *xmeml_copy(const void *data, Ulong len) {
   void *ret = xmalloc(len);
   memcpy(ret, data, len);
   return ret;
 }
-
-// char *valstr(const char *format, va_list ap) {
-//   char *ret;
-//   int len;
-//   va_list copy;
-//   va_copy(copy, ap);
-//   len = vsnprintf(NULL, 0, format, copy);
-//   va_end(copy);
-//   if (len < 0) {
-//     return NULL;
-//   }
-//   ret = xmalloc(len + 1);
-//   vsnprintf(ret, (len + 1), format, ap);
-//   return ret;
-// }
-
-// /* Return a allocated formatted string, like sprintf, just better and safe. */
-// char *fmtstr(const char *format, ...) {
-//   ASSERT(format);
-//   char   *ret;
-//   int     len;
-//   va_list ap;
-//   va_list dummy;
-//   /* Get the lengt we need to allocate. */
-//   va_start(dummy, format);
-//   ALWAYS_ASSERT((len = vsnprintf(NULL, 0, format, dummy)) > 0);
-//   va_end(dummy);
-//   /* Allocate the return ptr to the correct len. */
-//   ret = xmalloc(len + 1);
-//   /* Format the string into ret. */
-//   va_start(ap, format);
-//   ALWAYS_ASSERT(vsnprintf(ret, (len + 1), format, ap) > 0);
-//   va_end(ap);
-//   return ret;
-// }
-
-// /* Concatate a path, taking into account trailing and leading '/' for a proper path. */
-// char *concatpath(const char *const __restrict s1, const char *const __restrict s2) {
-//   Ulong s1len = strlen(s1);
-//   /* If either s1 end with '/' or s2 starts with '/'. */
-//   if ((s1[s1len - 1] == '/' && *s2 != '/') || (s1[s1len - 1] != '/' && *s2 == '/')) {
-//     return fmtstr("%s%s", s1, s2);
-//   }
-//   /* When both s1 and s2 starts with '/'. */
-//   else if (s1[s1len - 1] == '/' && *s2 == '/') {
-//     return fmtstr("%s%s", s1, (s2 + 1));
-//   }
-//   /* And when niether s1 end with '/' or s2 starts with '/'. */
-//   else {
-//     return fmtstr("%s/%s", s1, s2);
-//   }
-// }
-
-// /* Return's a allocated string of `len` chars of `string`. */
-// char *measured_copy(const char *const __restrict string, Ulong len) {
-//   ASSERT(string);
-//   char *ret = xmalloc(len + 1);
-//   memcpy(ret, string, len);
-//   ret[len] = '\0';
-//   return ret;
-// }
-
-// /* Return's a allocated copy of `string`. */
-// char *copy_of(const char *const __restrict string) {
-//   return measured_copy(string, strlen(string));
-// }
 
 #define SPLIT_STRING_TIMER
 
@@ -136,19 +58,3 @@ char **split_string_nano(const char *const string, const char delim, bool allow_
 #endif
   return result;
 }
-
-// /* Append `src` to the end of `dst`. */
-// char *xstrcat(char *__restrict dst, const char *const __restrict src) {
-//   ASSERT(dst);
-//   ASSERT(src);
-//   /* Get the length of both dst and src. */
-//   Ulong dstlen = strlen(dst);
-//   Ulong srclen = strlen(src);
-//   /* Reallocate dst to fit all of the text plus a NULL-TERMINATOR. */
-//   dst = xrealloc(dst, (dstlen + srclen + 1));
-//   /* Append src to dst, and NULL-TERMINATE dst. */
-//   memcpy((dst + dstlen), src, srclen);
-//   dst[dstlen + srclen] = '\0';
-//   /* Then return dst. */
-//   return dst;
-// }

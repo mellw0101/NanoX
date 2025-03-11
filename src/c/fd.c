@@ -15,30 +15,6 @@
 #include <netinet/in.h>
 #include <stdbool.h>
 
-/* Fully lock a `file-descriptor`. */
-bool lock_fd(int fd, short lock_type) {
-  ALWAYS_ASSERT(fd >= 0);
-  struct flock lock;
-  lock.l_type   = lock_type;
-  lock.l_whence = SEEK_SET;
-  lock.l_start  = 0;
-  lock.l_len    = 0;
-  lock.l_pid    = getpid();
-  return (fcntl(fd, F_SETLKW, &lock) != -1);
-}
-
-/* Unlock a `file-descriptor` that was locked by `lock_fd()`. */
-bool unlock_fd(int fd) {
-  ALWAYS_ASSERT(fd >= 0);
-  struct flock lock;
-  lock.l_type   = F_UNLCK;
-  lock.l_whence = SEEK_SET;
-  lock.l_start  = 0;
-  lock.l_len    = 0;
-  lock.l_pid    = getpid();
-  return (fcntl(fd, F_SETLK, &lock) != -1);
-}
-
 int opennetfd(const char *address, Ushort port) {
   struct sockaddr_in addr;
   int sock = socket(AF_INET,SOCK_STREAM,0);

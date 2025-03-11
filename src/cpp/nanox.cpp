@@ -1526,6 +1526,7 @@ static void init_tui(void) {
 }
 
 int main(int argc, char **argv) {
+  fcio_set_die_callback(die);
   init_queue_task();
   init_event_handler();
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");

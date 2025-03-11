@@ -5,15 +5,7 @@
 
  */
 #include "../../include/c_proto.h"
-
 #include "../../include/c/wchars.h"
-
-
-/* When this is 1 'macroargv()' will print the args it parses. */
-#define MACROARGV_DEBUG_PRINT 0
-/* When this is 1 'macroexpantion()' will print the full expanded string of the macro. */
-#define MACROEXPANTION_DEBUG_PRINT 0
-
 
 /* Parse the arguments of a c macro definition.  Return's `-1` on incompleat macro argument parse, otherwise, `0`. */
 _UNUSED static int macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, SyntaxFileLine **const outline, const char **const outptr) {
@@ -225,12 +217,9 @@ static void macroexpantion(SyntaxFile *const sf, CSyntaxMacro *const macro, Synt
   *outline = line;
   /* Also assign the data ptr to *outptr. */
   *outptr = end;
-#if (MACROEXPANTION_DEBUG_PRINT == 1)
-  printf("  Expantion: %s\n", expanded);
-#endif
 }
 
-_UNUSED static void csyntax_macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, SyntaxFileLine **outline, const char **const outdata) {
+static void csyntax_macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, SyntaxFileLine **outline, const char **const outdata) {
   /* Ensure all parameters are valid. */
   ASSERT(sf);
   ASSERT(macro);
@@ -344,7 +333,6 @@ _UNUSED static void csyntax_macroargv(SyntaxFile *const sf, CSyntaxMacro *const 
 void process_syntaxfile_c(SyntaxFile *const sf) {
   /* Assert the 'SyntaxFile'. */
   ASSERT(sf);
-  TIMER_START(timer);
   /* Copy of the data for each line. */
   const char *data;
   /* Ptr to hold a string when needed. */
@@ -411,10 +399,6 @@ void process_syntaxfile_c(SyntaxFile *const sf) {
           /* This macro has args. */
           else if (data[0] == '(') {
             csyntax_macroargv(sf, macro, &line, &data);
-            // if (macroargv(sf, macro, &line, &data) != -1) {
-            //   ALWAYS_ASSERT(data[0] == ')');
-            //   ++data;
-            // }
           }
           /* Advance the ptr to the first non blank char. */
           whitelen = indentlen(data); 
@@ -427,8 +411,69 @@ void process_syntaxfile_c(SyntaxFile *const sf) {
       }
     }
   );
-  TIMER_END(timer, ms);
-  TIMER_PRINT(ms);
+}
+
+void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
+  ASSERT(sf);
+  const char *data;
+  char *ptr;
+  Ulong endidx;
+  SyntaxObject *obj;
+  CSyntaxMacro *macro;
+  /* Iter all lines in the syntax file. */
+  ITER_SFL_TOP(sf, line,
+    /* Start by assigning the data ptr to the first non blank char in the line. */
+    data = &line->data[indentlen(line->data)];
+    /* If this line is a preprocessor line. */
+    if (*data == '#') {
+      data += (indentlen(data + STRLEN("#")) + STRLEN("#"));
+      /* 'EOL' here means an error. */
+      if (!*data) {
+        syntaxfile_adderror(sf, line->lineno, (data - line->data), "'#' Needs a preprocessor directive");
+      }
+      /* Define directive. */
+      else if (strncmp(data, S__LEN("define")) == 0 && isblankornulc(data + STRLEN("define"))) {
+        data += (indentlen(data + STRLEN("define")) + STRLEN("define"));
+        /* 'EOL' here means this macro has no name, so add a error. */
+        if (!*data) {
+          syntaxfile_adderror(sf, line->lineno, (data - line->data), "Macro must have a name");
+        }
+        else {
+          endidx = wordendindex(data, 0, TRUE);
+          /* The macro name is invalid. */
+          if (!endidx) {
+            syntaxfile_adderror(sf, line->lineno, (data - line->data), "Macro name is invalid");
+          }
+          else {
+            /* Create the syntaxfile object. */
+            obj = syntaxobject_create();
+            syntaxobject_setcolor(obj, SYNTAX_COLOR_BLUE);
+            syntaxobject_settype(obj, SYNTAX_OBJECT_TYPE_C_MACRO);
+            syntaxobject_setpos(obj, line->lineno, (data - line->data));
+            /* Allocate the name, so we can add it to the object map. */
+            ptr = measured_copy(data, endidx);
+            syntaxfile_addobject(sf, ptr, obj);
+            free(ptr);
+            /* Adv data ptr. */
+            data += endidx;
+            macro = csyntaxmacro_create();
+            if (*data == '(') {
+              csyntax_macroargv(sf, macro, &line, &data);
+              if (*data != ')') {
+                syntaxfile_adderror(sf, line->lineno, (data - line->data), "Failed to parse macro arguments");
+              }
+              else {
+                data += STRLEN(")");
+              }
+            }
+            data += indentlen(data);
+            macroexpantion(sf, macro, &line, &data);
+            syntaxobject_setdata(obj, macro, csyntaxmacro_free);
+          }
+        }
+      }
+    }
+  );
 }
 
 /* --------------------- CSyntaxMacro --------------------- */
