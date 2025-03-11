@@ -321,7 +321,8 @@ static void csyntax_macroargv(SyntaxFile *const sf, CSyntaxMacro *const macro, S
     }
     /* As a last safety macanicam, if none of these are true, we just report a error and return. */
     else {
-      syntaxfile_adderror(sf, line->lineno, (data - line->data), "Failed to parse macro, unexpected error.");
+      syntaxfile_adderror(sf, line->lineno, (data - line->data), "Failed to parse macro arguments, unexpected error.");
+      break;
     }
   }
   /* Assign the current line and data ptr to the parameters passed by caller. */
