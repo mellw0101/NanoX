@@ -247,11 +247,34 @@ Ulong step_left(const char *const restrict string, Ulong pos) {
   }
 }
 
+/* Move `steps` to the left in a utf8 safe mannor. */
+Ulong step_nleft(const char *const restrict string, Ulong pos, Ulong steps) {
+  ASSERT(string);
+  ASSERT(pos);
+  ASSERT(steps);
+  Ulong ret = pos;
+  while (steps--) {
+    ret = step_left(string, ret);
+  }
+  return ret;
+}
+
 /* Return's the index in `string` of the beginning of the multibyte char after the one at pos. */
 Ulong step_right(const char *const restrict string, Ulong pos) {
   return (pos + charlen(string + pos));
 }
 
+/* Move `steps` to the left in a utf8 safe mannor. */
+Ulong step_nright(const char *const restrict string, Ulong pos, Ulong steps) {
+  ASSERT(string);
+  ASSERT(pos);
+  ASSERT(steps);
+  Ulong ret = pos;
+  while (steps--) {
+    ret = step_right(string, ret);
+  }
+  return ret;
+}
 
 /* ------------------------------------ Boolian char checks ------------------------------------ */
 

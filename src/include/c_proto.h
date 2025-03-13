@@ -137,6 +137,7 @@ Ulong wordendindex(const char *const __restrict string, Ulong pos, bool allowund
 
 
 void findblockcommentmatch(SyntaxFileLine *const startline, Ulong startidx, SyntaxFileLine **const endline, Ulong *endidx);
+void findbracketmatch(SyntaxFileLine **const outline, const char **const outdata);
 
 
 _END_C_LINKAGE

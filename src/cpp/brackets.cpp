@@ -3,7 +3,7 @@
 void highlight_current_bracket(void) {
 }
 
-bool do_find_a_bracket(linestruct *start_line, Ulong start_index, bool reverse, const char *bracket_pair, linestruct **found_line, Ulong *found_index) {
+static bool do_find_a_bracket(linestruct *start_line, Ulong start_index, bool reverse, const char *bracket_pair, linestruct **found_line, Ulong *found_index) {
   linestruct *line = start_line;
   const char *pointer, *found;
   if (reverse) {

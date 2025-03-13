@@ -6,18 +6,17 @@
  */
 #include "../../include/c_proto.h"
 #include "../../include/c/wchars.h"
-#include <sys/uio.h>
 
 /* --------------------- CSyntaxMacro --------------------- */
 
 /* Create a blank allocated `CSyntaxMacro` structure. */
 CSyntaxMacro *csyntaxmacro_create(void) {
   CSyntaxMacro *macro = xmalloc(sizeof(*macro));
-  macro->args        = cvec_create_setfree(free);
-  macro->expanded    = NULL;
-  macro->expandstart = syntaxfilepos_create(0, 0);
-  macro->expandend   = syntaxfilepos_create(0, 0);
-  macro->empty       = FALSE;
+  macro->args         = cvec_create_setfree(free);
+  macro->expanded     = NULL;
+  macro->expandstart  = syntaxfilepos_create(0, 0);
+  macro->expandend    = syntaxfilepos_create(0, 0);
+  macro->empty        = FALSE;
   return macro;
 }
 
@@ -254,6 +253,8 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
   ASSERT(sf);
   /* Pointer to the data of the current line. */
   const char *data;
+  char *ptr;
+  Ulong endidx;
   /* Iter all lines in the syntax file. */
   ITER_SFL_TOP(sf, line,
     /* If the line is empty, just continue. */
@@ -279,6 +280,40 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
         data += (indentlen(data + STRLEN("define")) + STRLEN("define"));
         /* Parse the macro. */
         csyntaxmacro_parse(sf, &line, &data);
+      }
+    }
+// recheck:
+    /* When we reach `EOL` here, just go to the next line. */
+    if (!*data) {
+      continue;
+    }
+    else if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + STRLEN("struct"))) {
+      data += (indentlen(data + STRLEN("struct")) + STRLEN("struct"));
+      /* `EOL` here means either this is a multiline decl, or its invalid. */
+      if (!*data) {
+        syntaxfile_adderror(sf, line->lineno, (data - line->data), "`struct` type must have a name");
+      }
+      /* Anonomus struct. */
+      else if (*data == '{') {
+
+      }
+      else {
+        endidx = wordendindex(data, 0, TRUE);
+        /* Struct has an invalid name. */
+        if (!endidx) {
+          syntaxfile_adderror(sf, line->lineno, (data - line->data), "Struct has an invalid name");
+        }
+        else {
+          ptr = measured_copy(data, endidx);
+          data += endidx;
+          data += indentlen(data);
+          writef("%s:[%lu:%lu]: %s %s\n", sf->path, line->lineno, (data - line->data), ptr, data);
+          if (*data == '{') {
+            findbracketmatch(&line, &data);  
+          }
+          writef("%s\n", data);
+          free(ptr);
+        }
       }
     }
   );

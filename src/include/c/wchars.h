@@ -36,8 +36,10 @@ char  ctrl_mbrep(const char *const c, bool isdata) __THROW _NODISCARD _CONST _NO
 char *stripleadblanks(char *string, Ulong *const moveno);
 
 #ifndef __cplusplus
-Ulong step_left(const char *const __restrict string, Ulong pos) __THROW _NODISCARD _CONST _NONNULL(1);
-Ulong step_right(const char *const __restrict string, Ulong pos) __THROW _NODISCARD _CONST _NONNULL(1);
+Ulong step_left(const char *const restrict string, Ulong pos) __THROW _NODISCARD _CONST _NONNULL(1);
+Ulong step_nleft(const char *const restrict string, Ulong pos, Ulong steps) __THROW _NODISCARD _CONST _NONNULL(1);
+Ulong step_right(const char *const restrict string, Ulong pos) __THROW _NODISCARD _CONST _NONNULL(1);
+Ulong step_nright(const char *const restrict string, Ulong pos, Ulong steps) __THROW _NODISCARD _CONST _NONNULL(1);
 #endif
 
 bool  isctrlc(const char *const c) __THROW _NODISCARD _CONST _NONNULL(1);
