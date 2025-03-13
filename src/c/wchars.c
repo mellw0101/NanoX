@@ -54,10 +54,8 @@ int ctowc(wchar *const wc, const char *const c) {
     }
   }
   /* Otherwise, just return one. */
-  else {
-    *wc = (Uint)*c;
-    return 1;
-  }
+  *wc = (Uint)*c;
+  return 1;
 }
 
 /* Return's the number of bytes in the char that starts at `*c`. */
@@ -97,10 +95,10 @@ int charlen(const char *const c) {
 }
 
 /* Return the length `in bytes` of the character at the start of the given `string`, and return a copy of this character in `*c`. */
-int collectc(const char *const __restrict string, char *const __restrict c) {
+int collectc(const char *const restrict string, char *const restrict c) {
   ASSERT(string);
   ASSERT(c);
-  const int clen = charlen(string);
+  int clen = charlen(string);
   for (int i = 0; i < clen; ++i) {
     c[i] = string[i];
   }
@@ -108,7 +106,7 @@ int collectc(const char *const __restrict string, char *const __restrict c) {
 }
 
 /* Return's the number of multibyte char's in `string`. */
-Ulong wstrlen(const char *const __restrict string) {
+Ulong wstrlen(const char *const restrict string) {
   ASSERT(string);
   const char *ptr = string;
   Ulong count = 0;
@@ -120,7 +118,7 @@ Ulong wstrlen(const char *const __restrict string) {
 }
 
 /* Like `strchr()` but for wide chars. */
-char *wstrchr(const char *const __restrict string, const char *const __restrict ch) {
+char *wstrchr(const char *const restrict string, const char *const restrict ch) {
   ASSERT(string);
   ASSERT(ch);
   /* These are 'TRUE' when we failed to make the code points into wide chars. */
@@ -207,7 +205,7 @@ char *stripleadblanks(char *string, Ulong *const moveno) {
 }
 
 /* Returns the index in `string` of the beginning of the multibyte char before the one at pos. */
-Ulong step_left(const char *const __restrict string, Ulong pos) {
+Ulong step_left(const char *const restrict string, Ulong pos) {
   /* Ensure input string is valid. */
   ASSERT(string);
   const char *ptr;
@@ -250,7 +248,7 @@ Ulong step_left(const char *const __restrict string, Ulong pos) {
 }
 
 /* Return's the index in `string` of the beginning of the multibyte char after the one at pos. */
-Ulong step_right(const char *const __restrict string, Ulong pos) {
+Ulong step_right(const char *const restrict string, Ulong pos) {
   return (pos + charlen(string + pos));
 }
 
@@ -260,7 +258,7 @@ Ulong step_right(const char *const __restrict string, Ulong pos) {
 
 bool isctrlc(const char *const c) {
   if (utf8_enabled) {
-    return (!(c[0] & 0xe0) || c[0] == DELC || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
+    return (!(c[0] & 0xe0) || c[0] == DELC || ((Schar)c[0] == -62 && (Schar)c[1] < -96));
   }
   else {
     return (!(*c & 0x60) || *c == DELC);
@@ -311,28 +309,28 @@ bool isblankornulc(const char *const c) {
 }
 
 /* Return's true when `*c` is some kind of letter. */
-bool isalphac(const char *const __restrict c) {
+bool isalphac(const char *const restrict c) {
   ASSERT(c);
   wchar wc;
   return (!(ctowc(&wc, c) < 0) && iswalpha(wc));
 }
 
 /* Return's true when `*c` is some kind of letter or number. */
-bool isalnumc(const char *const __restrict c) {
+bool isalnumc(const char *const restrict c) {
   ASSERT(c);
   wchar wc;
   return (!(ctowc(&wc, c) < 0) && iswalnum(wc));
 }
 
 /* Return's `TRUE` when the given char is a `punctuation` char. */
-bool ispunctc(const char *const __restrict c) {
+bool ispunctc(const char *const restrict c) {
   ASSERT(c);
   wchar wc;
   return (!(ctowc(&wc, c) < 0) && iswpunct(wc));
 }
 
 /* Return's `TRUE` if `c` is a char used in words or when `allowedchars` are not `NULL`, if it matches one of them. */
-bool iswordc(const char *const __restrict c, bool allow_punct, const char *const __restrict allowedchars) {
+bool iswordc(const char *const restrict c, bool allow_punct, const char *const restrict allowedchars) {
   ASSERT(c);
   char symbol[sizeof(wchar) + 1];
   int symlen;
@@ -355,6 +353,6 @@ bool iswordc(const char *const __restrict c, bool allow_punct, const char *const
 }
 
 /* Return's `TRUE` if `c` is any char in `string`. */
-bool isconeof(const char c, const char *const __restrict string) {
+bool isconeof(const char c, const char *const restrict string) {
   return (strchr(string, c));
 }

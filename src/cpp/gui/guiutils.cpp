@@ -69,8 +69,6 @@ long index_from_mouse_x(const char *string, Uint len, texture_font_t *font, floa
   float st_x  = 0.0f;
   float end_x = 0.0f;
   Ulong i = 0;
-  printf("(mousepos.x + offset): %.5f\n", (double)(mousepos.x + offset));
-  printf("offset: %.5f\n", (double)offset);
   for (; i < len; ++i) {
     /* Set the start x pos to the end pos x. */
     st_x = end_x;
@@ -84,7 +82,6 @@ long index_from_mouse_x(const char *string, Uint len, texture_font_t *font, floa
     }
     prev = cur;
     if (mousepos.x > (st_x + offset) && mousepos.x < (end_x + offset)) {
-      printf("index: %lu  st: %.5f  end: %.5f\n", i, (st_x), (end_x));
       break;
     }
   }

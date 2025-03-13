@@ -77,7 +77,7 @@ void syntaxfileline_free_lines(SyntaxFileLine *head) {
 }
 
 /* Create a double linked list from string. */
-void syntaxfileline_from_str(const char *const __restrict string, SyntaxFileLine **const head, SyntaxFileLine **const tail) {
+void syntaxfileline_from_str(const char *const restrict string, SyntaxFileLine **const head, SyntaxFileLine **const tail) {
   ASSERT(string);
   ASSERT(head);
   ASSERT(tail);
@@ -202,6 +202,7 @@ SyntaxFileError *syntaxfileerror_create(SyntaxFileError *const prev) {
   SyntaxFileError *node = xmalloc(sizeof(*node));
   node->prev = prev;
   node->next = NULL;
+  node->file = NULL;
   node->msg  = NULL;
   node->pos  = syntaxfilepos_create(0, 0);
   return node;
@@ -211,6 +212,7 @@ SyntaxFileError *syntaxfileerror_create(SyntaxFileError *const prev) {
 void syntaxfileerror_free(SyntaxFileError *const err) {
   ASSERT(err);
   ASSERT(err->pos);
+  free(err->file);
   free(err->msg);
   syntaxfilepos_free(err->pos);
   free(err);
@@ -321,6 +323,8 @@ void syntaxfile_adderror(SyntaxFile *const sf, int row, int column, const char *
   /* Set the position data for the error. */
   sf->errbot->pos->row    = row;
   sf->errbot->pos->column = column;
+  /* Set the file this error is from. */
+  sf->errbot->file = copy_of(sf->path);
   /* Set the message of the error. */
   sf->errbot->msg = copy_of(msg);
 }
@@ -345,20 +349,34 @@ void syntaxfile_addobject(SyntaxFile *const sf, const char *const restrict key, 
   }
 }
 
+
 /* -------------------------------------------------------- Tests -------------------------------------------------------- */
+
+_UNUSED static HashMap *globmap = NULL;
 
 static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines, Ulong *nobj) {
   ASSERT(path);
+  SyntaxFileError *err;
   SyntaxFile *sfile = syntaxfile_create();
   syntaxfile_read(sfile, path);
   // process_syntaxfile_c(sfile);
   syntaxfile_parse_csyntax(sfile);
+  if (sfile->errtop) {
+    err = sfile->errtop;
+    while (err) {
+      writef("%s:[%d:%d]: %s\n", err->file, err->pos->row, err->pos->column, err->msg);
+      err = err->next;
+    }
+  }
   ASSIGN_IF_VALID(nlines, sfile->filebot->lineno);
   ASSIGN_IF_VALID(nobj, hashmap_size(sfile->objects));
+  hashmap_append(globmap, sfile->objects);
   syntaxfile_free(sfile);
 }
 
 void syntaxfile_test_read(void) {
+  globmap = hashmap_create();
+  hashmap_set_free_value_callback(globmap, syntaxobject_free_objects);
   Ulong num_lines, total_lines=0, files_read=0, num_obj, tot_obj=0;
   directory_t dir;
   directory_data_init(&dir);
@@ -375,5 +393,7 @@ void syntaxfile_test_read(void) {
     }
   );
   directory_data_free(&dir);
-  printf("\n%s: Files read: %lu: Lines read: %lu: Total objects: %lu: Time: %.5f ms\n\n", __func__, files_read, total_lines, tot_obj, (double)ms);
+  writef("\n%s: Files read: %lu: Lines read: %lu: Total objects: %lu: Time: %.5f ms\n\n", __func__, files_read, total_lines, tot_obj, (double)ms);
+  writef("%d\n", hashmap_size(globmap));
+  hashmap_free(globmap);
 }

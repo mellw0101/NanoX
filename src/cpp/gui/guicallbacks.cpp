@@ -33,6 +33,8 @@ static guielement *entered_element = NULL;
 /* The mouse position. */
 vec2 mousepos;
 
+SyntaxFile *sf = NULL;
+
 /* Window resize callback. */
 void window_resize_callback(GLFWwindow *window, int width, int height) {
   ASSERT_MSG(gui, "gui has not been init.");
@@ -412,12 +414,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         /* Debuging. */
         case GLFW_KEY_P: {
           if (mods == GLFW_MOD_CONTROL) {
-            SyntaxFile *sf = syntaxfile_create();
+            if (sf) {
+              syntaxfile_free(sf);
+            }
+            sf = syntaxfile_create();
             syntaxfile_read(sf, openfile->filename);
-            process_syntaxfile_c(sf);
+            syntaxfile_parse_csyntax(sf);
             for (SyntaxFileError *err = sf->errtop; err; err = err->next) {
               printf("SyntaxFileError: %d:%d '%s'\n", err->pos->row, err->pos->column, err->msg);
             }
+            hashmap_forall(sf->objects, [](const char *const restrict path, void *arg) {
+              writef("%s\n", path);
+            });
             // hashmap_forall(sf->objects, [](const char *const __restrict key, void *value) {
             //   SyntaxObject *obj = (SyntaxObject *)value;
             //   while (obj) {
@@ -447,7 +455,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             //     obj = obj->next;
             //   }
             // });
-            syntaxfile_free(sf);
+            // syntaxfile_free(sf);
             refresh_needed = TRUE;
           }
           else if (mods == GLFW_MOD_ALT) {
@@ -883,7 +891,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   /* Left mouse button. */
   if (button == GLFW_MOUSE_BUTTON_1) {
     if (action == GLFW_PRESS) {
-      printf("mousepos.x: %.5f\n", (double)mousepos.x);
       /* When in prompt-mode. */
       if (gui->flag.is_set<GUI_PROMPT>()) {
         mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();

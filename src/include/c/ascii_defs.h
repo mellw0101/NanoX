@@ -55,7 +55,7 @@ static inline bool _CONST _ALWAYS_INLINE ascii_isident(int c) {
   return (ASCII_ISALNUM(c) || c == '_');
 }
 
-/// @returns `TRUE` when `c` is a binary digit.
+/** @returns `TRUE` when `c` is a binary digit. */
 static inline bool _CONST _ALWAYS_INLINE ascii_isbdigit(int c) {
   return (c == '0' || c == '1');
 }
@@ -64,7 +64,7 @@ static inline bool _CONST _ALWAYS_INLINE ascii_isodigit(int c) {
   return (c >= '0' && c <= '7');
 }
 
-/// @returns `TRUE` when `c` is one of \f, \n, \r, \t, \v. 
+/** @returns `TRUE` when `c` is one of \f, \n, \r, \t, \v.  */
 static inline bool _CONST _ALWAYS_INLINE ascii_isspace(int c) {
   return ((c >= 9 && c <= 23) || c == ' ');
 }

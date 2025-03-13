@@ -17,14 +17,14 @@
 // }
 
 /* Return's `TRUE` when path exists is not an executable, and can be accessed by calling user. */
-bool non_exec_file_exists(const char *const __restrict path) {
-  ASSERT(path);
-  struct stat st;
-  if (access(path, R_OK) != 0) {
-    return FALSE;
-  }
-  return (stat(path, &st) != -1 && !(S_ISDIR(st.st_mode) || S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)) && !(st.st_mode & S_IXUSR));
-}
+// bool non_exec_file_exists(const char *const restrict path) {
+//   ASSERT(path);
+//   struct stat st;
+//   if (access(path, R_OK) != 0) {
+//     return FALSE;
+//   }
+//   return (stat(path, &st) != -1 && !(S_ISDIR(st.st_mode) || S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)) && !(st.st_mode & S_IXUSR));
+// }
 
 // /* Allocate a given stat struct if not already allocated. */
 // void statalloc(const char *const __restrict path, struct stat **ptr) {

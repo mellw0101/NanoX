@@ -5,7 +5,7 @@
 #include <term.h>
 
 #ifdef ENABLE_UTF8
-#  include <langinfo.h>
+# include <langinfo.h>
 #endif
 
 /* Used to store the user's original mouse click interval. */
@@ -151,8 +151,8 @@ void suggest_ctrlT_ctrlZ(void) _NOTHROW {
   }
 }
 
-// Make sure the cursor is visible, then exit from curses mode, disable
-// bracketed-paste mode, and restore the original terminal settings.
+/* Make sure the cursor is visible, then exit from curses mode, disable
+ * bracketed-paste mode, and restore the original terminal settings. */
 static void restore_terminal(void) _NOTHROW {
   /* When using our tui. */
   if (ISSET(NO_NCURSES)) {
@@ -224,8 +224,8 @@ void close_and_go(void) {
   }
 }
 
-// Close the current buffer if it is unmodified.  Otherwise (when not doing automatic saving),
-// ask the user whether to save it, then close it and exit, or return when the user cancelled.
+/* Close the current buffer if it is unmodified.  Otherwise (when not doing automatic saving),
+ * ask the user whether to save it, then close it and exit, or return when the user cancelled. */
 void do_exit(void) {
   int choice;
   /* When unmodified, simply close. */
@@ -252,8 +252,8 @@ void do_exit(void) {
   }
 }
 
-// Save the current buffer under the given name (or "nano.<pid>" when nameless)
-// with suffix ".save". If needed, the name is further suffixed to be unique.
+/* Save the current buffer under the given name (or "nano.<pid>" when nameless)
+ * with suffix ".save". If needed, the name is further suffixed to be unique. */
 static void emergency_save(const char *filename) {
   char *plainname, *targetname;
   if (!*filename) {

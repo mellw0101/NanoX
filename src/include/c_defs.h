@@ -27,24 +27,9 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 
-
-#undef Ulong
-#undef Uint
-#undef Ushort
-#undef Uchar
-#undef Schar
-#define Ulong   unsigned long
-#define Uint    unsigned int
-#define Ushort  unsigned short
-#define Uchar   unsigned char
 #define Schar   signed   char
 #define BOOL    Uchar
 #define wchar   wchar_t
-
-#ifndef __cplusplus
-  #define TRUE  1
-  #define FALSE 0
-#endif
 
 #define SOCKLOG(...) unix_socket_debug(__VA_ARGS__)
 
@@ -52,9 +37,6 @@
 #define BUF_SIZE 16384
 
 #define BUF__LEN(b)  S__LEN(b)
-
-/* Some compile const defenitions. */
-#define _ptrsize  (sizeof(void *))
 
 #define ITER_SFL_TOP(syntaxfile, name, ...) \
   DO_WHILE(\
@@ -129,7 +111,6 @@ typedef enum {
   #define SYNTAX_OBJECT_TYPE_C_MACRO   SYNTAX_OBJECT_TYPE_C_MACRO
 } SyntaxObjectType;
 
-
 /* ---------------------- Structs ---------------------- */
 
 typedef struct SyntaxFilePos  SyntaxFilePos;
@@ -180,9 +161,12 @@ typedef struct SyntaxFileError  SyntaxFileError;
 /* This reprecents a error found during parsing of a `SyntaxFile`. */
 struct SyntaxFileError {
   /* This struct is a double linked list, this is most usefull when
-   * we always keep the errors sorted by position in the file. */
+  * we always keep the errors sorted by position in the file. */
   SyntaxFileError *next;
   SyntaxFileError *prev;
+
+  /* The file where this error is from. */
+  char *file;
 
   /* A string describing the error, or `NULL`. */
   char *msg;
@@ -222,7 +206,6 @@ struct SyntaxFile {
 
 typedef struct {
   CVec *args;
-  char **argv;     /* The arguments of this macro, if any, otherwise `NULL`. */
   char *expanded;  /* What this macro expands to, or in other words the value of the macro. */
   
   /* The exact row and column the expanded macro decl starts. */

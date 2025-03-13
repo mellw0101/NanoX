@@ -178,6 +178,8 @@ extern HashMap *test_hashmap;
 extern char *prompt;
 extern Ulong typing_x;
 
+extern SyntaxFile *sf;
+
 typedef void (*functionptrtype)(void);
 
 #ifdef HAVE_GLFW

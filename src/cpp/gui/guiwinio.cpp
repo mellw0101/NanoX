@@ -114,6 +114,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
   // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(drawpos);
+  SyntaxObject *obj;
   const char *prev_char = NULL;
   char linenobuffer[margin + 1];
   /* If line numbers are turned on, draw them.  But only when a refresh is needed. */
@@ -138,6 +139,18 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
         while (head) {
           line_word_t *node = head;
           head = node->next;
+          if (sf) {
+            obj = (SyntaxObject *)hashmap_get(sf->objects, node->str);
+            if (obj) {
+              if (obj->color == SYNTAX_COLOR_BLUE) {
+                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui->font, vec4(1.0f), drawpos);
+                vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui->font, VEC4_8BIT(36, 114, 200, 1), drawpos);
+                index = node->end;
+                free_node(node);
+                continue;
+              }
+            }
+          }
           /* The global map. */
           if (test_map.find(node->str) != test_map.end()) {
             vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui->font, vec4(1.0f), drawpos);
