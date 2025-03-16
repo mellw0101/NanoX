@@ -36,7 +36,7 @@ void findblockcommentmatch(SyntaxFileLine *const startline, Ulong startidx, Synt
   *endidx = idx;
 }
 
-_UNUSED static void skip_blkcomment(SyntaxFileLine **const outline, const char **const outdata) {
+void skip_blkcomment(SyntaxFileLine **const outline, const char **const outdata) {
   ASSERT(outline);
   ASSERT(outdata);
   /* The current line we are at. */
@@ -72,15 +72,16 @@ _UNUSED static void skip_blkcomment(SyntaxFileLine **const outline, const char *
 void findbracketmatch(SyntaxFileLine **const outline, const char **const outdata) {
   ASSERT(outline);
   ASSERT(outdata);
+  int lvl = 0;
   SyntaxFileLine *line = *outline;
   const char *data = *outdata;
+  /* Assert that we start at a bracket. */
+  ALWAYS_ASSERT(*data == '{');
+  data += step_right(data, 0);
   while (TRUE) {
     if (*data == '/' && *(data + 1) == '*') {
-      data += step_nright(data, 0, 2);
+      data += step_nright(data, 0, STRLEN("/*"));
       skip_blkcomment(&line, &data);
-    }
-    else if (*data == '}') {
-      break;
     }
     else if (!*data) {
       if (!line->next) {
@@ -90,6 +91,15 @@ void findbracketmatch(SyntaxFileLine **const outline, const char **const outdata
       data = line->data;
     }
     else {
+      if (*data == '{') {
+        ++lvl;
+      }
+      else if (*data == '}') {
+        if (!lvl) { 
+          break;
+        }
+        --lvl;
+      }
       data += step_right(data, 0);
     }
   }

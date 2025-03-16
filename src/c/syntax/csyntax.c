@@ -282,7 +282,6 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
         csyntaxmacro_parse(sf, &line, &data);
       }
     }
-// recheck:
     /* When we reach `EOL` here, just go to the next line. */
     if (!*data) {
       continue;
@@ -311,11 +310,10 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
           if (*data == '{') {
             findbracketmatch(&line, &data);  
           }
-          writef("%s\n", data);
+          writef("Line: %lu: %s\n", line->lineno, data);
           free(ptr);
         }
       }
     }
   );
 }
-
