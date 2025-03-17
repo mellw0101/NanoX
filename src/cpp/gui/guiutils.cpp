@@ -31,12 +31,13 @@ float glyph_width(const char *current, const char *prev, texture_font_t *font) {
 float string_pixel_offset(const char *string, const char *previous_char, Ulong index, texture_font_t *font) {
   ASSERT(string);
   ASSERT(font);
-  if (!index) {
-    return 0;
-  }
   const char *current = &string[0];
   const char *prev = previous_char;
   float ret = 0.0f;
+  /* When the passed index is zero, just return zero. */
+  if (!index) {
+    return 0.0f;
+  }
   for (Uint i = 0; string[index - 1] && i < (index + 1); ++i) {
     current = &string[i];
     ret += glyph_width(current, prev, font);

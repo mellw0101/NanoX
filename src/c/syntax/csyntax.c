@@ -303,14 +303,17 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
           syntaxfile_adderror(sf, line->lineno, (data - line->data), "Struct has an invalid name");
         }
         else {
+          /* Allocate and ptint the structure name, for now. */
           ptr = measured_copy(data, endidx);
           data += endidx;
-          data += indentlen(data);
-          writef("%s:[%lu:%lu]: %s %s\n", sf->path, line->lineno, (data - line->data), ptr, data);
+          findnextchar(&line, &data);
           if (*data == '{') {
-            findbracketmatch(&line, &data);  
+            findbracketmatch(&line, &data);
+            writef("%s:[%lu:%lu]: Found struct decl: %s {}\n", sf->path, line->lineno, (data - line->data), ptr);
           }
-          writef("Line: %lu: %s\n", line->lineno, data);
+          else if (*data == ';') {
+            writef("%s:[%lu:%lu]: Found forward struct decl: %s;\n", sf->path, line->lineno, (data - line->data), ptr);
+          }
           free(ptr);
         }
       }

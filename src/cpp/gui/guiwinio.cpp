@@ -52,8 +52,7 @@ void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, t
         paintlen = strlen(thetext);
       }
       if (ISSET(LINE_NUMBERS)) {
-        Ulong offset = get_line_number_pixel_offset(line, withfont);
-        rect.x = (string_pixel_offset(line->data, " ", start_col, withfont) + offset);
+        rect.x = (string_pixel_offset(line->data, " ", start_col, withfont) + get_line_number_pixel_offset(line, withfont));
         /* Calculate the number of pixels for the rect that will represent the painted section. */
         if (converted == thetext) {
           rect.width = string_pixel_offset(thetext, " ", paintlen, withfont);
@@ -111,8 +110,6 @@ static void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
 static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   /* When debugging is enabled, assert everything we will use. */
   ASSERT(line);
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(drawpos);
   SyntaxObject *obj;
   const char *prev_char = NULL;

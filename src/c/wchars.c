@@ -20,7 +20,7 @@ int ctowc(wchar *const wc, const char *const c) {
   /* When utf8 is enabled. */
   if ((Schar)*c < 0 && utf8_enabled) {
     v0 = (Uchar)c[0];
-    v1 = (Uchar)c[1];
+    v1 = ((Uchar)c[1] ^ 0x80);
     if (v1 > 0x3F || v0 < 0xC2) {
       return -1;
     }

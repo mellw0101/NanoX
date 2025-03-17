@@ -106,3 +106,28 @@ void findbracketmatch(SyntaxFileLine **const outline, const char **const outdata
   *outline = line;
   *outdata = data;
 }
+
+/* Move to the next non blank char, even if its ten lines down. */
+void findnextchar(SyntaxFileLine **const outline, const char **const outdata) {
+  ASSERT(outline);
+  ASSERT(outdata);
+  SyntaxFileLine *line = *outline;
+  const char *data = *outdata;
+  while (TRUE) {
+    if (isblankc(data)) {
+      data += step_right(data, 0);
+    }
+    else if (!*data) {
+      if (!line->next) {
+        break;
+      }
+      line = line->next;
+      data = line->data;
+    }
+    else {
+      break;
+    }
+  }
+  *outline = line;
+  *outdata = data;
+}

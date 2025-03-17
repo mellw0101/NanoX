@@ -53,7 +53,7 @@ bool is_alnum_char(const char *const c) _NOTHROW {
 /* Return 'TRUE' when the given character is space or tab or other whitespace. */
 bool is_blank_char(const char *const c) _NOTHROW {
   wchar_t wc;
-  if ((signed char)*c >= 0) {
+  if ((Schar)*c >= 0) {
     return (*c == ' ' || *c == '\t');
   }
   if (mbtowide(&wc, c) < 0) {
@@ -83,7 +83,7 @@ bool is_cursor_blank_char(void) _NOTHROW {
 /* Return 'TRUE' when the given character is a control character. */
 bool is_cntrl_char(const char *const c) _NOTHROW {
   if (use_utf8) {
-    return (!(c[0] & 0xE0) || c[0] == DEL_CODE || ((signed char)c[0] == -62 && (signed char)c[1] < -96));
+    return (!(c[0] & 0xE0) || c[0] == DEL_CODE || ((Schar)c[0] == -62 && (Schar)c[1] < -96));
   }
   else {
     return (!(*c & 0x60) || *c == DEL_CODE);
@@ -232,7 +232,7 @@ char control_mbrep(const char *const c, bool isdata) _NOTHROW {
 // Convert the given multibyte sequence c to wide character wc, and return
 // the number of bytes in the sequence, or -1 for an invalid sequence.
 int mbtowide(wchar_t *wc, const char *const c) _NOTHROW {
-  if ((signed char)*c < 0 && use_utf8) {
+  if ((Schar)*c < 0 && use_utf8) {
     Uchar v1 = (Uchar)c[0];
     Uchar v2 = (Uchar)c[1] ^ 0x80;
     if (v2 > 0x3F || v1 < 0xC2) {
@@ -366,7 +366,7 @@ int collect_char(const char *const str, char *c) _NOTHROW {
 int advance_over(const char *const str, Ulong &column) _NOTHROW {
   if (*str < 0 && use_utf8) {
     /* A UTF-8 upper control code has two bytes and takes two columns. */
-    if ((Uchar)str[0] == 0xC2 && (signed char)str[1] < -96) {
+    if ((Uchar)str[0] == 0xC2 && (Schar)str[1] < -96) {
       column += 2;
       return 2;
     }
