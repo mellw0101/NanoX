@@ -1,8 +1,10 @@
 /** @file chars.cpp */
 #include "../include/prototypes.h"
 
+
 /* Whether we've enabled UTF-8 support.  Initially set to 'FALSE', and then set to 'TRUE' by utf8_init(). */
 static bool use_utf8 = FALSE;
+
 
 /* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
 void utf8_init(void) _NOTHROW {

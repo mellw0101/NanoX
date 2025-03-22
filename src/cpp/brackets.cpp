@@ -1,7 +1,7 @@
 #include "../include/prototypes.h"
 
-void highlight_current_bracket(void) {
-}
+// void highlight_current_bracket(void) {
+// }
 
 static bool do_find_a_bracket(linestruct *start_line, Ulong start_index, bool reverse, const char *bracket_pair, linestruct **found_line, Ulong *found_index) {
   linestruct *line = start_line;
@@ -174,4 +174,3 @@ char *fetch_bracket_body(linestruct *from, Ulong index) {
   }
   return nullptr;
 }
-

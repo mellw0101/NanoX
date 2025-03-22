@@ -25,6 +25,9 @@ void findblockcommentmatch(SyntaxFileLine *const startline, Ulong startidx, Synt
       break;
     }
     else if (!data[idx]) {
+      if (!line->next) {
+        break;
+      }
       line = line->next;
       data = line->data;
     }
@@ -116,6 +119,9 @@ void findnextchar(SyntaxFileLine **const outline, const char **const outdata) {
   while (TRUE) {
     if (isblankc(data)) {
       data += step_right(data, 0);
+    }
+    else if (*data == '/' && *(data + 1) == '*') {
+      skip_blkcomment(&line, &data);
     }
     else if (!*data) {
       if (!line->next) {

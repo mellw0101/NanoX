@@ -146,6 +146,13 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
                 free_node(node);
                 continue;
               }
+              else if (obj->color == SYNTAX_COLOR_GREEN) {
+                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui->font, vec4(1.0f), drawpos);
+                vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui->font, VEC4_8BIT(13, 188, 121, 1), drawpos);
+                index = node->end;
+                free_node(node);
+                continue;
+              }
             }
           }
           /* The global map. */

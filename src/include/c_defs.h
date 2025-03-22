@@ -92,9 +92,11 @@ typedef enum {
   SYNTAX_COLOR_NONE,
   SYNTAX_COLOR_RED,
   SYNTAX_COLOR_BLUE,
-  #define SYNTAX_COLOR_NONE  SYNTAX_COLOR_NONE
-  #define SYNTAX_COLOR_RED   SYNTAX_COLOR_RED
-  #define SYNTAX_COLOR_BLUE  SYNTAX_COLOR_BLUE
+  SYNTAX_COLOR_GREEN,
+  #define SYNTAX_COLOR_NONE   SYNTAX_COLOR_NONE
+  #define SYNTAX_COLOR_RED    SYNTAX_COLOR_RED
+  #define SYNTAX_COLOR_BLUE   SYNTAX_COLOR_BLUE
+  #define SYNTAX_COLOR_GREEN  SYNTAX_COLOR_GREEN
 } SyntaxColor;
 
 typedef enum {
@@ -104,11 +106,13 @@ typedef enum {
   
   /* C specific types. */
   SYNTAX_OBJECT_TYPE_C_MACRO,
+  SYNTAX_OBJECT_TYPE_C_STRUCT,
 
   /* Defines for all types. */
-  #define SYNTAX_OBJECT_TYPE_NONE      SYNTAX_OBJECT_TYPE_NONE
-  #define SYNTAX_OBJECT_TYPE_KEYWORD   SYNTAX_OBJECT_TYPE_KEYWORD
-  #define SYNTAX_OBJECT_TYPE_C_MACRO   SYNTAX_OBJECT_TYPE_C_MACRO
+  #define SYNTAX_OBJECT_TYPE_NONE       SYNTAX_OBJECT_TYPE_NONE
+  #define SYNTAX_OBJECT_TYPE_KEYWORD    SYNTAX_OBJECT_TYPE_KEYWORD
+  #define SYNTAX_OBJECT_TYPE_C_MACRO    SYNTAX_OBJECT_TYPE_C_MACRO
+  #define SYNTAX_OBJECT_TYPE_C_STRUCT   SYNTAX_OBJECT_TYPE_C_STRUCT
 } SyntaxObjectType;
 
 /* ---------------------- Structs ---------------------- */
@@ -217,6 +221,9 @@ typedef struct {
   bool empty : 1;  /* Is set to `TRUE` if the macro does not have anything after its name. */
 } CSyntaxMacro;
 
+typedef struct {
+  bool forward_decl : 1;  /* This struct is a forward declaration, and does not actuly declare anything. */
+} CSyntaxStruct;
 
 /* --------------------------------------------- dirs.c --------------------------------------------- */
 

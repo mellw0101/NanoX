@@ -352,7 +352,20 @@ void syntaxfile_addobject(SyntaxFile *const sf, const char *const restrict key, 
 
 /* -------------------------------------------------------- Tests -------------------------------------------------------- */
 
-_UNUSED static HashMap *globmap = NULL;
+static HashMap *globmap = NULL;
+
+_UNUSED static void syntaxfile_test_append_node(void *dst, void *src) {
+  ASSERT(dst);
+  ASSERT(src);
+  SyntaxObject *dst_head = dst;
+  SyntaxObject *src_head = src;
+  SyntaxObject *dst_tail = dst_head->prev;
+  SyntaxObject *src_tail = src_head->prev;
+  dst_tail->next = src_head;
+  src_head->prev = dst_tail;
+  src_tail->next = dst_head;
+  dst_head->prev = src_tail;
+}
 
 static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines, Ulong *nobj) {
   ASSERT(path);
@@ -370,7 +383,7 @@ static void syntaxfile_test_read_one_file(const char *path, Ulong *nlines, Ulong
   }
   ASSIGN_IF_VALID(nlines, sfile->filebot->lineno);
   ASSIGN_IF_VALID(nobj, hashmap_size(sfile->objects));
-  hashmap_append(globmap, sfile->objects);
+  hashmap_append_waction(globmap, sfile->objects, syntaxfile_test_append_node);
   syntaxfile_free(sfile);
 }
 
