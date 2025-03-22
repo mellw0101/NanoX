@@ -335,9 +335,8 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
       if (!*data) {
         syntaxfile_adderror(sf, line->lineno, (data - line->data), "`struct` type must have a name");
       }
-      /* Anonomus struct. */
+      /* Anonomus struct.  Note that in some c standard's this must be named, always... */
       else if (*data == '{') {
-
       }
       else {
         endidx = wordendindex(data, 0, TRUE);
