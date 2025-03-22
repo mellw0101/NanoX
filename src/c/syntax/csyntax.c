@@ -385,6 +385,7 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
         csyntaxpp_parse(sf, &line, &data);
       }
     }
+    /* If the line is a pure struct declaration.  So no typedef or such. */
     else if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + STRLEN("struct"))) {
       csyntaxstruct_parse(sf, &line, &data);
     }
