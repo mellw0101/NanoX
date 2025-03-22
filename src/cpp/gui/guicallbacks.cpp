@@ -421,7 +421,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             syntaxfile_read(sf, openfile->filename);
             syntaxfile_parse_csyntax(sf);
             for (SyntaxFileError *err = sf->errtop; err; err = err->next) {
-              printf("SyntaxFileError: %d:%d '%s'\n", err->pos->row, err->pos->column, err->msg);
+              printf("%s:[%d:%d]: %s\n", err->file, err->pos->row, err->pos->column, err->msg);
             }
             hashmap_forall(sf->objects, [](const char *const restrict path, void *arg) {
               writef("%s\n", path);
