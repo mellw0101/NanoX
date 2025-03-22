@@ -354,7 +354,7 @@ void syntaxfile_addobject(SyntaxFile *const sf, const char *const restrict key, 
 
 static HashMap *globmap = NULL;
 
-_UNUSED static void syntaxfile_test_append_node(void *dst, void *src) {
+static void syntaxfile_test_append_node(void *dst, void *src) {
   ASSERT(dst);
   ASSERT(src);
   SyntaxObject *dst_head = dst;

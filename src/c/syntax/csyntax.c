@@ -13,6 +13,7 @@
 /* Create a blank allocated `CSyntaxMacro` structure. */
 CSyntaxMacro *csyntaxmacro_create(void) {
   CSyntaxMacro *macro = xmalloc(sizeof(*macro));
+  macro->file         = NULL;
   macro->args         = cvec_create_setfree(free);
   macro->expanded     = NULL;
   macro->expandstart  = syntaxfilepos_create(0, 0);
@@ -25,6 +26,7 @@ CSyntaxMacro *csyntaxmacro_create(void) {
 void csyntaxmacro_free(void *ptr) {
   CSyntaxMacro *macro = ptr;
   ASSERT(macro);
+  free(macro->file);
   cvec_free(macro->args);
   free(macro->expanded);
   syntaxfilepos_free(macro->expandstart);
@@ -226,6 +228,8 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
       /* Adv data ptr. */
       data += endidx;
       macro = csyntaxmacro_create();
+      /* Copy the path to the file where this macro is declared. */
+      macro->file = copy_of(sf->path);
       /* If there is a '(' char directly after the macro name, this macro could have arguments. */
       if (*data == '(') {
         /* Parse the arguments. */
@@ -249,7 +253,7 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
 
 /* ----------------------------- CSyntaxPp ----------------------------- */
 
-_UNUSED static void csyntaxpp_parse(SyntaxFile *const sf, SyntaxFileLine **const outline, const char **const outdata) {
+static void csyntaxpp_parse(SyntaxFile *const sf, SyntaxFileLine **const outline, const char **const outdata) {
   ASSERT(sf);
   ASSERT(outline);
   ASSERT(outdata);
@@ -271,28 +275,84 @@ _UNUSED static void csyntaxpp_parse(SyntaxFile *const sf, SyntaxFileLine **const
 /* Create a new blank allocated `CSyntaxStruct` structure. */
 static CSyntaxStruct *csyntaxstruct_create(void) {
   CSyntaxStruct *st = xmalloc(sizeof(*st));
-  st->forward_decl = FALSE;
+  st->file          = NULL;
+  st->bodystpos     = syntaxfilepos_create(0, 0);
+  st->bodyendpos    = syntaxfilepos_create(0, 0);
+  st->forward_decl  = FALSE;
   return st;
 }
 
 /* Free a allocated `CSyntaxStruct` structure. */
-static void csyntaxstruct_free(void *st) {
+static void csyntaxstruct_free(void *ptr) {
+  CSyntaxStruct *st = ptr;
   ASSERT(st);
+  free(st->file);
+  syntaxfilepos_free(st->bodystpos);
+  syntaxfilepos_free(st->bodyendpos);
   free(st);
 }
 
-_UNUSED static void csyntaxstruct_add_forward_decl(SyntaxFile *const sf, int lineno, int colno,  const char *const restrict name) {
+/* Add a c struct object forward declaration to the syntaxfile hashmap. */
+static void csyntaxstruct_add_forward_decl(SyntaxFile *const sf, int lineno, int colno,  const char *const restrict name) {
   ASSERT(sf);
   ASSERT(name);
   ASSERT(lineno > 0);
   CSyntaxStruct *st = csyntaxstruct_create();
   SyntaxObject *obj = syntaxobject_create();
+  st->file = copy_of(sf->path);
   syntaxobject_setcolor(obj, SYNTAX_COLOR_GREEN);
   syntaxobject_settype(obj, SYNTAX_OBJECT_TYPE_C_STRUCT);
   syntaxobject_setpos(obj, lineno, colno);
   st->forward_decl = TRUE;
   syntaxobject_setdata(obj, st, csyntaxstruct_free);
   syntaxfile_addobject(sf, name, obj);
+}
+
+/* Parse a c struct. */
+static void csyntaxstruct_parse(SyntaxFile *const sf, SyntaxFileLine **const outline, const char **const outdata) {
+  ASSERT(sf);
+  ASSERT(outline);
+  ASSERT(outdata);
+  int row, col, endidx;
+  SyntaxFileLine *line = *outline;
+  const char *data = *outdata;
+  char *ptr;
+  /* Move the ptr to the first non blank char after struct. */
+  data += (indentlen(data + STRLEN("struct")) + STRLEN("struct"));
+  findnextchar(&line, &data);
+  /* `EOL` here means either this is a multiline decl, or its invalid. */
+  if (!*data) {
+    syntaxfile_adderror(sf, line->lineno, (data - line->data), "`struct` type must have a name");
+  }
+  /* Anonomus struct.  Note that in some c standard's this must be named, always... */
+  else if (*data == '{') {
+  }
+  else {
+    endidx = wordendindex(data, 0, TRUE);
+    /* Struct has an invalid name. */
+    if (!endidx) {
+      syntaxfile_adderror(sf, line->lineno, (data - line->data), "Struct has an invalid name");
+    }
+    else {
+      row = line->lineno;
+      col = (data - line->data);  
+      /* Allocate and ptint the structure name, for now. */
+      ptr = measured_copy(data, endidx);
+      data += endidx;
+      findnextchar(&line, &data);
+      if (*data == '{') {
+        findbracketmatch(&line, &data);
+        writef("%s:[%d:%d]: Found struct decl: %s {}\n", sf->path, row, col, ptr);
+      }
+      else if (*data == ';') {
+        writef("%s:[%d:%d]: Found forward struct decl: %s;\n", sf->path, row, col, ptr);
+        csyntaxstruct_add_forward_decl(sf, row, col, ptr);
+      }
+      free(ptr);
+    }
+  }
+  *outline = line;
+  *outdata = data;
 }
 
 /* ----------------------------- Main parsing function ----------------------------- */
@@ -302,9 +362,6 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
   ASSERT(sf);
   /* Pointer to the data of the current line. */
   const char *data;
-  char *ptr;
-  Ulong endidx;
-  int row, col;
   /* Iter all lines in the syntax file. */
   ITER_SFL_TOP(sf, line,
     /* If the line is empty, just continue. */
@@ -329,39 +386,7 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
       }
     }
     else if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + STRLEN("struct"))) {
-      data += (indentlen(data + STRLEN("struct")) + STRLEN("struct"));
-      findnextchar(&line, &data);
-      /* `EOL` here means either this is a multiline decl, or its invalid. */
-      if (!*data) {
-        syntaxfile_adderror(sf, line->lineno, (data - line->data), "`struct` type must have a name");
-      }
-      /* Anonomus struct.  Note that in some c standard's this must be named, always... */
-      else if (*data == '{') {
-      }
-      else {
-        endidx = wordendindex(data, 0, TRUE);
-        /* Struct has an invalid name. */
-        if (!endidx) {
-          syntaxfile_adderror(sf, line->lineno, (data - line->data), "Struct has an invalid name");
-        }
-        else {
-          row = line->lineno;
-          col = (data - line->data);  
-          /* Allocate and ptint the structure name, for now. */
-          ptr = measured_copy(data, endidx);
-          data += endidx;
-          findnextchar(&line, &data);
-          if (*data == '{') {
-            findbracketmatch(&line, &data);
-            writef("%s:[%d:%d]: Found struct decl: %s {}\n", sf->path, row, col, ptr);
-          }
-          else if (*data == ';') {
-            writef("%s:[%d:%d]: Found forward struct decl: %s;\n", sf->path, row, col, ptr);
-            csyntaxstruct_add_forward_decl(sf, row, col, ptr);
-          }
-          free(ptr);
-        }
-      }
+      csyntaxstruct_parse(sf, &line, &data);
     }
   );
 }

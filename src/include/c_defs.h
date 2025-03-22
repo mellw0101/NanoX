@@ -209,6 +209,9 @@ struct SyntaxFile {
 
 
 typedef struct {
+  /* The file this macro is defined in. */
+  char *file;
+  
   CVec *args;
   char *expanded;  /* What this macro expands to, or in other words the value of the macro. */
   
@@ -222,6 +225,9 @@ typedef struct {
 } CSyntaxMacro;
 
 typedef struct {
+  char *file;
+  SyntaxFilePos *bodystpos;
+  SyntaxFilePos *bodyendpos;
   bool forward_decl : 1;  /* This struct is a forward declaration, and does not actuly declare anything. */
 } CSyntaxStruct;
 
