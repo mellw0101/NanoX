@@ -122,6 +122,7 @@ void syntaxfileline_from_str(const char *const restrict string, SyntaxFileLine *
 /* Create a allocated blank SyntaxObject structure. */
 SyntaxObject *syntaxobject_create(void) {
   SyntaxObject *node = xmalloc(sizeof(*node));
+  node->file = NULL;
   /* Make this the only object in the double circular list. */
   node->prev     = node;
   node->next     = node;
@@ -137,6 +138,7 @@ SyntaxObject *syntaxobject_create(void) {
 void syntaxobject_free(SyntaxObject *const obj) {
   ASSERT(obj);
   ASSERT(obj->pos);
+  free(obj->file);
   CALL_IF_VALID(obj->freedata, obj->data);
   syntaxfilepos_free(obj->pos);
   free(obj);
@@ -161,6 +163,13 @@ void syntaxobject_free_objects(void *ptr) {
     syntaxobject_unlink(head->next);
   }
   syntaxobject_free(head);
+}
+
+/* Set the file in `obj` so we know where it was parsed from. */
+void syntaxobject_setfile(SyntaxObject *const obj, const char *const restrict file) {
+  ASSERT(obj);
+  ASSERT(file);
+  obj->file = copy_of(file);
 }
 
 /* Set a `SyntaxObject`'s data, and the function that will be used to free it, or `NULL` when not needed. */

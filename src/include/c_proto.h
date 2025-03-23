@@ -63,6 +63,7 @@ SyntaxObject *syntaxobject_create(void);
 void          syntaxobject_free(SyntaxObject *const obj);
 void          syntaxobject_unlink(SyntaxObject *const obj);
 void          syntaxobject_free_objects(void *ptr);
+void          syntaxobject_setfile(SyntaxObject *const obj, const char *const restrict file);
 void          syntaxobject_setdata(SyntaxObject *const sfobj, void *const data, FreeFuncPtr freedatafunc);
 void          syntaxobject_setpos(SyntaxObject *const obj, int row, int column);
 void          syntaxobject_setcolor(SyntaxObject *const obj, SyntaxColor color);

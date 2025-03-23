@@ -141,6 +141,8 @@ struct SyntaxFileLine {
 typedef struct SyntaxObject  SyntaxObject;
 /* The values in the hashmap that `syntax_file_t` uses. */
 struct SyntaxObject {
+  char *file;
+
   /* Only used when there is more then one object with the same name. */
   SyntaxObject *next;
   SyntaxObject *prev;
@@ -209,9 +211,6 @@ struct SyntaxFile {
 
 
 typedef struct {
-  /* The file this macro is defined in. */
-  char *file;
-  
   CVec *args;
   char *expanded;  /* What this macro expands to, or in other words the value of the macro. */
   
@@ -225,11 +224,11 @@ typedef struct {
 } CSyntaxMacro;
 
 typedef struct {
-  char *file;
   SyntaxFilePos *bodystpos;
   SyntaxFilePos *bodyendpos;
   bool forward_decl : 1;  /* This struct is a forward declaration, and does not actuly declare anything. */
 } CSyntaxStruct;
+
 
 /* --------------------------------------------- dirs.c --------------------------------------------- */
 

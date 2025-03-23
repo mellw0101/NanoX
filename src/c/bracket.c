@@ -46,6 +46,8 @@ void skip_blkcomment(SyntaxFileLine **const outline, const char **const outdata)
   SyntaxFileLine *line = *outline;
   /* A ptr to the data of the current line. */
   const char *data = *outdata;
+  ALWAYS_ASSERT_MSG((*data == '/' && *(data + 1) == '*'), "This function should only be called when at the start of a block comment");
+  data += 2;
   while (TRUE) {
     /* The end of the block comment. */
     if (*data == '*' && *(data + 1) == '/') {
@@ -83,10 +85,9 @@ void findbracketmatch(SyntaxFileLine **const outline, const char **const outdata
   data += step_right(data, 0);
   while (TRUE) {
     if (*data == '/' && *(data + 1) == '*') {
-      data += step_nright(data, 0, STRLEN("/*"));
       skip_blkcomment(&line, &data);
     }
-    else if (!*data) {
+    else if (!*data || (*data == '/' && *(data + 1) == '/')) {
       if (!line->next) {
         break;
       }
@@ -123,7 +124,7 @@ void findnextchar(SyntaxFileLine **const outline, const char **const outdata) {
     else if (*data == '/' && *(data + 1) == '*') {
       skip_blkcomment(&line, &data);
     }
-    else if (!*data) {
+    else if (!*data || (*data == '/' && *(data + 1) == '/')) {
       if (!line->next) {
         break;
       }

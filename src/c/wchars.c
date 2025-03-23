@@ -267,7 +267,6 @@ Ulong step_right(const char *const restrict string, Ulong pos) {
 /* Move `steps` to the left in a utf8 safe mannor. */
 Ulong step_nright(const char *const restrict string, Ulong pos, Ulong steps) {
   ASSERT(string);
-  ASSERT(pos);
   ASSERT(steps);
   Ulong ret = pos;
   while (steps--) {

@@ -13,7 +13,6 @@
 /* Create a blank allocated `CSyntaxMacro` structure. */
 CSyntaxMacro *csyntaxmacro_create(void) {
   CSyntaxMacro *macro = xmalloc(sizeof(*macro));
-  macro->file         = NULL;
   macro->args         = cvec_create_setfree(free);
   macro->expanded     = NULL;
   macro->expandstart  = syntaxfilepos_create(0, 0);
@@ -26,7 +25,6 @@ CSyntaxMacro *csyntaxmacro_create(void) {
 void csyntaxmacro_free(void *ptr) {
   CSyntaxMacro *macro = ptr;
   ASSERT(macro);
-  free(macro->file);
   cvec_free(macro->args);
   free(macro->expanded);
   syntaxfilepos_free(macro->expandstart);
@@ -218,6 +216,7 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
     else {
       /* Create the syntaxfile object. */
       obj = syntaxobject_create();
+      syntaxobject_setfile(obj, sf->path);
       syntaxobject_setcolor(obj, SYNTAX_COLOR_BLUE);
       syntaxobject_settype(obj, SYNTAX_OBJECT_TYPE_C_MACRO);
       syntaxobject_setpos(obj, line->lineno, (data - line->data));
@@ -228,8 +227,6 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
       /* Adv data ptr. */
       data += endidx;
       macro = csyntaxmacro_create();
-      /* Copy the path to the file where this macro is declared. */
-      macro->file = copy_of(sf->path);
       /* If there is a '(' char directly after the macro name, this macro could have arguments. */
       if (*data == '(') {
         /* Parse the arguments. */
@@ -275,7 +272,6 @@ static void csyntaxpp_parse(SyntaxFile *const sf, SyntaxFileLine **const outline
 /* Create a new blank allocated `CSyntaxStruct` structure. */
 static CSyntaxStruct *csyntaxstruct_create(void) {
   CSyntaxStruct *st = xmalloc(sizeof(*st));
-  st->file          = NULL;
   st->bodystpos     = syntaxfilepos_create(0, 0);
   st->bodyendpos    = syntaxfilepos_create(0, 0);
   st->forward_decl  = FALSE;
@@ -286,20 +282,19 @@ static CSyntaxStruct *csyntaxstruct_create(void) {
 static void csyntaxstruct_free(void *ptr) {
   CSyntaxStruct *st = ptr;
   ASSERT(st);
-  free(st->file);
   syntaxfilepos_free(st->bodystpos);
   syntaxfilepos_free(st->bodyendpos);
   free(st);
 }
 
-/* Add a c struct object forward declaration to the syntaxfile hashmap. */
+/* Add a c struct forward declaration object to the syntaxfile hashmap. */
 static void csyntaxstruct_add_forward_decl(SyntaxFile *const sf, int lineno, int colno,  const char *const restrict name) {
   ASSERT(sf);
   ASSERT(name);
   ASSERT(lineno > 0);
   CSyntaxStruct *st = csyntaxstruct_create();
   SyntaxObject *obj = syntaxobject_create();
-  st->file = copy_of(sf->path);
+  syntaxobject_setfile(obj, sf->path);
   syntaxobject_setcolor(obj, SYNTAX_COLOR_GREEN);
   syntaxobject_settype(obj, SYNTAX_OBJECT_TYPE_C_STRUCT);
   syntaxobject_setpos(obj, lineno, colno);
@@ -308,8 +303,34 @@ static void csyntaxstruct_add_forward_decl(SyntaxFile *const sf, int lineno, int
   syntaxfile_addobject(sf, name, obj);
 }
 
+/* Add a c struct declaration objecty to the syntaxfile hashmap.  TODO: Parse the data of the struct not just move the line and data ptr's to the end. */
+static void csyntaxstruct_add_decl(SyntaxFile *const sf, SyntaxFileLine **const outline, const char **const outdata, int row, int col, const char *const restrict name) {
+  ASSERT(sf);
+  ASSERT(outline);
+  ASSERT(outdata);
+  ASSERT(name);
+  CSyntaxStruct *st = csyntaxstruct_create();
+  SyntaxObject *obj = syntaxobject_create();
+  SyntaxFileLine *line = *outline;
+  const char *data = *outdata;
+  ALWAYS_ASSERT(*data == '{');
+  syntaxobject_setfile(obj, sf->path);
+  syntaxobject_setcolor(obj, SYNTAX_COLOR_GREEN);
+  syntaxobject_settype(obj, SYNTAX_OBJECT_TYPE_C_STRUCT);
+  syntaxobject_setpos(obj, row, col);
+  st->forward_decl = FALSE;
+  syntaxfilepos_set(st->bodystpos, line->lineno, (data - line->data));
+  findbracketmatch(&line, &data);
+  syntaxfilepos_set(st->bodyendpos, line->lineno, (data - line->data));
+  syntaxobject_setdata(obj, st, csyntaxstruct_free);
+  syntaxfile_addobject(sf, name, obj);
+  /* Set the current line and data ptr before we return. */
+  *outline = line;
+  *outdata = data;
+}
+
 /* Parse a c struct. */
-static void csyntaxstruct_parse(SyntaxFile *const sf, SyntaxFileLine **const outline, const char **const outdata) {
+static void csyntaxstruct_parse(SyntaxFile *const sf, SyntaxFileLine **const outline, const char **const outdata, bool *recheck) {
   ASSERT(sf);
   ASSERT(outline);
   ASSERT(outdata);
@@ -335,19 +356,61 @@ static void csyntaxstruct_parse(SyntaxFile *const sf, SyntaxFileLine **const out
     }
     else {
       row = line->lineno;
-      col = (data - line->data);  
+      col = (data - line->data);
       /* Allocate and ptint the structure name, for now. */
       ptr = measured_copy(data, endidx);
       data += endidx;
       findnextchar(&line, &data);
+      /* The strucure has a body. */
       if (*data == '{') {
-        findbracketmatch(&line, &data);
         writef("%s:[%d:%d]: Found struct decl: %s {}\n", sf->path, row, col, ptr);
+        csyntaxstruct_add_decl(sf, &line, &data, row, col, ptr);
+        /* If we are not at the end bracket of the struct body, add a error. */
+        if (*data != '}') {
+          syntaxfile_adderror(sf, row, col, "Struct does not have closing bracket to its body");
+        }
+        /* Otherwise, check if the struct has the correct ending. */
+        else {
+          data += 1;
+          findnextchar(&line, &data);
+          /* This struct ends correctly with a ';' char after the closing bracket. */
+          if (*data == ';') {
+            data += 1;
+            findnextchar(&line, &data);
+            ASSIGN_IF_VALID(recheck, TRUE);
+          }
+          /* Otherwise, check if this struct has a varable declared at its end. */
+          else {
+            endidx = wordendindex(data, 0, TRUE);
+            /* If the name is invalid. */
+            if (!endidx) {
+              syntaxfile_adderror(sf, line->lineno, (data - line->data), "Variable declaration has an invalid name");
+            }
+            else {
+              /* TODO: Parse the variable declared here. */
+              data += endidx;
+              findnextchar(&line, &data);
+              if (*data != ';') {
+                syntaxfile_adderror(sf, line->lineno, (data - line->data), "Expected ';' after struct");
+              }
+              else {
+                data += 1;
+                findnextchar(&line, &data);
+                ASSIGN_IF_VALID(recheck, TRUE);
+              }
+            }
+          }
+        }
       }
+      /* This structure declaration is a forward declaration. */
       else if (*data == ';') {
         writef("%s:[%d:%d]: Found forward struct decl: %s;\n", sf->path, row, col, ptr);
         csyntaxstruct_add_forward_decl(sf, row, col, ptr);
+        data += 1;
+        findnextchar(&line, &data);
+        ASSIGN_IF_VALID(recheck, TRUE);
       }
+      /* TODO: If none of these are true, this could be a variable declaration. */
       free(ptr);
     }
   }
@@ -362,6 +425,7 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
   ASSERT(sf);
   /* Pointer to the data of the current line. */
   const char *data;
+  bool recheck = FALSE;
   /* Iter all lines in the syntax file. */
   ITER_SFL_TOP(sf, line,
     /* If the line is empty, just continue. */
@@ -370,9 +434,15 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
     }
     /* Start by assigning the data ptr to the first non blank char in the line. */
     data = &line->data[indentlen(line->data)];
+recheck:
     /* If this line contains only blank chars, continue. */
     if (!*data) {
       continue;
+    }
+    else if (*data == '/' && *(data + 1) == '*') {
+      skip_blkcomment(&line, &data);
+      findnextchar(&line, &data);
+      goto recheck;
     }
     /* If this line is a preprocessor line. */
     else if (*data == '#') {
@@ -387,7 +457,10 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf) {
     }
     /* If the line is a pure struct declaration.  So no typedef or such. */
     else if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + STRLEN("struct"))) {
-      csyntaxstruct_parse(sf, &line, &data);
+      csyntaxstruct_parse(sf, &line, &data, &recheck);
+      if (recheck) {
+        goto recheck;
+      }
     }
   );
 }
