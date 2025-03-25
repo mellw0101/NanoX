@@ -325,11 +325,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               if (line_strings) {
                 linestruct *item = make_new_node(NULL);
                 linestruct *head = item;
-                NETLOG("num: %lu\n", linenum);
                 for (Ulong i = 0; i < linenum; ++i) {
                   item->data = line_strings[i];
                   recode_NUL_to_LF(item->data, strlen(item->data));
-                  NETLOG("%s\n", item->data);
                   if ((i + 1) < linenum) {
                     item->next = make_new_node(item);
                     item = item->next;
@@ -352,7 +350,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               while (bottom->next) {
                 bottom = bottom->next;
               }
-              char *string = (char *)nmalloc(1);
+              char *string = (char *)xmalloc(1);
               *string = '\0';
               Ulong len = 0;
               for (linestruct *line = cutbuffer; line; line = line->next) {
@@ -368,6 +366,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               free_lines(cutbuffer);
               cutbuffer = NULL;
               glfwSetClipboardString(NULL, string);
+              free(string);
+            }
+            /* When there is not a marked region, just copy the data on the current line. */
+            else {
+              char *string = fmtstr("%s\n", openfile->current->data);
+              glfwSetClipboardString(window, string);
               free(string);
             }
           }
@@ -460,6 +464,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           else if (mods == GLFW_MOD_ALT) {
             syntaxfile_test_read();
+          }
+          else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
+            list_available_fonts();
           }
           break;
         }

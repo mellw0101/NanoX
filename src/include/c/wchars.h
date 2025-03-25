@@ -24,7 +24,7 @@ _BEGIN_C_LINKAGE
 #define wchar wchar_t
 
 int   ctowc(wchar *const wc, const char *const c) __THROW _NODISCARD _CONST _NONNULL(1, 2);
-int   charlen(const char *const c) __THROW _NODISCARD _CONST _NONNULL(1);
+// int   charlen(const char *const c) __THROW _NODISCARD _CONST _NONNULL(1);
 int   collectc(const char *const __restrict string, char *const __restrict c) __THROW _NODISCARD _CONST _NONNULL(1, 2);
 Ulong wstrlen(const char *const __restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
 char *wstrchr(const char *const __restrict string, const char *const __restrict ch);

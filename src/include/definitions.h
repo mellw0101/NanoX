@@ -81,8 +81,6 @@
   #include <Mlib/openGL/shader.h>
   #include <ft2build.h>
   #include FT_FREETYPE_H
-  #include <ftgl/freetype-gl.h>
-  #include <ftgl/matrix4x4.h>
 #endif
 
 using std::hash;
@@ -389,21 +387,6 @@ using std::vector;
 #define MAX(x, max) (((x) > (max)) ? (max) : (x))
 
 #define VEC4_8BIT(r, g, b, a) vec4(MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1))
-
-/* Bool def. */
-#ifdef TRUE
-  #undef TRUE
-#endif
-#ifdef FALSE
-  #undef FALSE
-#endif
-#ifdef __cplusplus
-  #define TRUE true
-  #define FALSE false
-#else
-  #define TRUE 1
-  #define FALSE 0
-#endif
 
 
 /* Enumeration types. */
@@ -1163,29 +1146,32 @@ typedef struct completionstruct {
   } guiscreen;
 
   typedef struct {
-    char            *title;        /* The window title. */
-    Uint             width;        /* The window width. */
-    Uint             height;       /* The window height. */
-    GLFWwindow      *window;       /* The glfw window. */
-    bit_flag_t<8>    flag;         /* Flags to track the state of the gui. */
-    nevhandler      *handler;      /* Threaded event handler, to enqueue tasks to. */
-    guielement      *root;         /* The main element of the gui. */
-    guielement      *topbar;       /* The `top-bar` for the ui. */
-    guielement      *botbar;       /* The `bottom-bar` for the ui. */ 
-    guielement      *statusbar;    /* The `statusbar` for the ui. */
-    guielement      *entered;      /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
-    guielement      *clicked;      /* The element that was last clicked. */
-    vertex_buffer_t *topbuf;       /* The text buffer for `topbar`. */
-    vertex_buffer_t *botbuf;       /* The text buffer for `botbar`. */
-    vertex_buffer_t *statusbuf;    /* The text buffer for `statusbar`. */
-    matrix4x4       *projection;   /* The projection to pass to the shaders. */
-    Uint             font_shader;  /* The font shader. */
-    texture_font_t  *uifont;       /* The ui font. */
-    Uint             uifont_size;  /* The ui font size. */
-    texture_font_t  *font;         /* The font the gui is using. */
-    Uint             font_size;    /* The font size. */
-    texture_atlas_t *atlas;        /* The atlas the font is using. */
-    Uint             rect_shader;  /* The rect shader. */
+    char            *title;                  /* The window title. */
+    Uint             width;                  /* The window width. */
+    Uint             height;                 /* The window height. */
+    GLFWwindow      *window;                 /* The glfw window. */
+    bit_flag_t<8>    flag;                   /* Flags to track the state of the gui. */
+    nevhandler      *handler;                /* Threaded event handler, to enqueue tasks to. */
+    guielement      *root;                   /* The main element of the gui. */
+    guielement      *topbar;                 /* The `top-bar` for the ui. */
+    guielement      *botbar;                 /* The `bottom-bar` for the ui. */ 
+    guielement      *statusbar;              /* The `statusbar` for the ui. */
+    guielement      *entered;                /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
+    guielement      *clicked;                /* The element that was last clicked. */
+    vertex_buffer_t *topbuf;                 /* The text buffer for `topbar`. */
+    vertex_buffer_t *botbuf;                 /* The text buffer for `botbar`. */
+    vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
+    matrix4x4       *projection;             /* The projection to pass to the shaders. */
+    Uint             font_shader;            /* The font shader. */
+    texture_font_t  *uifont;                 /* The ui font. */
+    Uint             uifont_size;            /* The ui font size. */
+    texture_atlas_t *uiatlas;                /* The atlas for the ui font. */
+    texture_font_t  *font;                   /* The font the gui is using. */
+    Uint             font_size;              /* The font size. */
+    float            font_lineheight_scale;  /* The scale witch the default line height is multiplied. */
+    Uint             font_lineheight;        /* The calculated line height from the ('default font height' * font_lineheight_scale). */
+    texture_atlas_t *atlas;                  /* The atlas the font is using. */
+    Uint             rect_shader;            /* The rect shader. */
   } guistruct;
 #endif
 

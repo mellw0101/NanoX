@@ -32,3 +32,6 @@ sudo AmakeCpp --link --bin -lGLEW -lGL -lfreetype -lunibilium /usr/lib/Mlib.a /u
 if [ -f build/bin/NanoX ]; then
   sudo cp build/bin/NanoX /usr/bin/nanox
 fi
+
+mkdir -p ~/.config/nanox/fonts/
+cp fonts/unifont.ttf ~/.config/nanox/fonts/unifont.ttf

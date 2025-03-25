@@ -49,10 +49,10 @@ float string_pixel_offset(const char *string, const char *previous_char, Ulong i
   return ret;
 }
 
-float pixel_breadth(texture_font_t *withfont, const char *text) {
+float pixel_breadth(texture_font_t *font, const char *text) {
   float ret = 0.0f;
   for (const char *cur = text, *prev = NULL; *cur; ++cur) {
-    ret += glyph_width(cur, prev, withfont);
+    ret += glyph_width(cur, prev, font);
     prev = cur;
   }
   return ret;
@@ -91,8 +91,8 @@ long index_from_mouse_x(const char *string, Uint len, texture_font_t *font, floa
 }
 
 /* Returns character index from x pixel position in string. */
-long index_from_mouse_x(const char *string, texture_font_t *withfont, float offset) {
-  return index_from_mouse_x(string, strlen(string), withfont, offset);
+long index_from_mouse_x(const char *string, texture_font_t *font, float offset) {
+  return index_from_mouse_x(string, strlen(string), font, offset);
 }
 
 /* Get the y pixel region that the given row span`s. */

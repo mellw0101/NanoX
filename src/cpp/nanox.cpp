@@ -1527,6 +1527,7 @@ static void init_tui(void) {
 
 int main(int argc, char **argv) {
   fcio_set_die_callback(die);
+  initcheck_utf8();
   init_queue_task();
   init_event_handler();
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
@@ -2141,7 +2142,7 @@ int main(int argc, char **argv) {
     if (currmenu != MMAIN) {
       bottombars(MMAIN);
     }
-    if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1 && lastmessage < REMARK) {
+    if (ISSET(MINIBAR) && !ISSET(ZERO) && (LINES > 1) && (lastmessage < REMARK)) {
       minibar();
       if (suggest_on) {
         edit_refresh();

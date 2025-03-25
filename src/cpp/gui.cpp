@@ -15,10 +15,6 @@ guielement *open_file_element = NULL;
 
 vec2 pen;
 
-static fvector4 _GL_UNUSED black_vec4 = {{ 0.0f, 0.0f, 0.0f, 1.0f }};
-static fvector4 _GL_UNUSED white_vec4 = {{ 1.0f, 1.0f, 1.0f, 1.0f }};
-static fvector4 _GL_UNUSED none_vec4  = {{ 0.0f, 0.0f, 1.0f, 0.0f }};
-
 /* The list of all `gui-editors`. */
 guieditor *openeditor = NULL;
 /* The first open `gui-editor`. */
@@ -92,23 +88,27 @@ static void setup_font_shader(void) {
     glfwTerminate();
     die("Failed to create font shader.\n");
   }
-  /* Load fallback font. */
-  if (is_file_and_exists(FALLBACK_FONT_PATH)) {
-    ;
-  }
-  else {
-    glfwDestroyWindow(gui->window);
-    glfwTerminate();
-    glDeleteProgram(gui->font_shader);
-    die("Failed to find fallback font: '%s' does not exist.\n");
-  }
-  /* Look for jetbrains regular font. */
-  if (is_file_and_exists(JETBRAINS_REGULAR_FONT_PATH)) {
-    gui->atlas = texture_atlas_new(512, 512, 1);
-    glGenTextures(1, &gui->atlas->id);
-    gui->font   = texture_font_new_from_file(gui->atlas, gui->font_size, JETBRAINS_REGULAR_FONT_PATH);
-    gui->uifont = texture_font_new_from_file(gui->atlas, gui->uifont_size, JETBRAINS_REGULAR_FONT_PATH);
-  }
+  /* Load the font and uifont. */
+  set_gui_font(FALLBACK_FONT_PATH, gui->font_size);
+  set_gui_uifont(FALLBACK_FONT_PATH, gui->uifont_size);
+  // /* Load fallback font. */
+  // if (is_file_and_exists(FALLBACK_FONT_PATH)) {
+  //   ;
+  // }
+  // else {
+  //   glfwDestroyWindow(gui->window);
+  //   glfwTerminate();
+  //   glDeleteProgram(gui->font_shader);
+  //   die("Failed to find fallback font: '%s' does not exist.\n");
+  // }
+  // /* Look for jetbrains regular font. */
+  // if (is_file_and_exists(JETBRAINS_REGULAR_FONT_PATH)) {
+    
+  //   gui->atlas = texture_atlas_new(512, 512, 1);
+  //   glGenTextures(1, &gui->atlas->id);
+  //   gui->font   = texture_font_new_from_file(gui->atlas, gui->font_size, JETBRAINS_REGULAR_FONT_PATH);
+  //   gui->uifont = texture_font_new_from_file(gui->atlas, gui->uifont_size, JETBRAINS_REGULAR_FONT_PATH);
+  // }
 }
 
 /* Create a buffer using the structure of the font shader. */
@@ -283,30 +283,33 @@ static void setup_edit_element(void) {
 /* Create the main guistruct, completely blank. */
 static void make_guistruct(void) {
   /* Allocate the gui object. */
-  gui = (guistruct *)nmalloc(sizeof(*gui));
+  gui = (guistruct *)xmalloc(sizeof(*gui));
   /* Then init all fields to something invalid, this is important if we need to abort. */
-  gui->title       = NULL;
-  gui->width       = 0;
-  gui->height      = 0;
-  gui->window      = NULL;
-  gui->flag        = bit_flag_t<8>();
-  gui->handler     = NULL;
-  gui->topbar      = NULL;
-  gui->botbar      = NULL;
-  gui->statusbar   = NULL;
-  gui->entered     = NULL;
-  gui->clicked     = NULL;
-  gui->topbuf      = NULL;
-  gui->botbuf      = NULL;
-  gui->statusbuf   = NULL;
-  gui->projection  = NULL;
-  gui->font_shader = 0;
-  gui->uifont      = NULL;
-  gui->uifont_size = 0;
-  gui->font        = NULL;
-  gui->font_size   = 0;
-  gui->atlas       = NULL;
-  gui->rect_shader = 0;
+  gui->title                 = NULL;
+  gui->width                 = 0;
+  gui->height                = 0;
+  gui->window                = NULL;
+  gui->flag                  = bit_flag_t<8>();
+  gui->handler               = NULL;
+  gui->topbar                = NULL;
+  gui->botbar                = NULL;
+  gui->statusbar             = NULL;
+  gui->entered               = NULL;
+  gui->clicked               = NULL;
+  gui->topbuf                = NULL;
+  gui->botbuf                = NULL;
+  gui->statusbuf             = NULL;
+  gui->projection            = NULL;
+  gui->font_shader           = 0;
+  gui->uifont                = NULL;
+  gui->uifont_size           = 0;
+  gui->uiatlas               = NULL;
+  gui->font                  = NULL;
+  gui->font_size             = 0;
+  gui->font_lineheight_scale = 1.0f;
+  gui->font_lineheight       = 0;
+  gui->atlas                 = NULL;
+  gui->rect_shader           = 0;
 }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */
@@ -317,7 +320,7 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   gui->title      = copy_of(win_title);
   gui->width      = win_width;
   gui->height     = win_height;
-  gui->projection = (matrix4x4 *)nmalloc(sizeof(*gui->projection));
+  gui->projection = (matrix4x4 *)xmalloc(sizeof(*gui->projection));
   /* Then create the glfw window. */
   gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
   if (!gui->window) {

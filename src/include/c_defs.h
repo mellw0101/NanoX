@@ -1,5 +1,9 @@
 #pragma once
 
+
+/* ---------------------------------------------------------- Include's ---------------------------------------------------------- */
+
+
 #include "c/ascii_defs.h"
 #include <fcio/proto.h>
 
@@ -27,6 +31,13 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 
+#include <ftgl/freetype-gl.h>
+#include <ftgl/matrix4x4.h>
+
+
+/* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
+
+
 #define Schar   signed   char
 #define BOOL    Uchar
 #define wchar   wchar_t
@@ -45,48 +56,29 @@
     } \
   )
 
-_BEGIN_C_LINKAGE
 
+/* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
+
+
+/* ----------------------------- General ----------------------------- */
 
 typedef void (*FreeFuncPtr)(void *);
 
-
-/* --------------------------------------------- nevhandler.c --------------------------------------------- */
-
+/* ----------------------------- nevhandler.c ----------------------------- */
 
 /* Opaque structure that represents a event loop. */
 typedef struct nevhandler nevhandler;
 
-
-/* --------------------------------------------- nfdlistener.c --------------------------------------------- */
-
+/* ----------------------------- nfdlistener.c ----------------------------- */
 
 /* `Opaque`  Structure to listen to file events. */
 typedef struct nfdlistener  nfdlistener;
 
-/* Structure that represents the event that the callback gets. */
-typedef struct {
-  Uint  mask;
-  Uint  cookie;
-  const char *file; /* The file this event is from. */
-} nfdlistener_event;
 
-typedef void (*nfdlistener_cb)(nfdlistener_event *);
+/* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
 
 
-/* --------------------------------------------- hashmap.c --------------------------------------------- */
-
-
-typedef struct HashNode  HashNode;
-typedef struct HashMap   HashMap;
-
-typedef void (*HashNodeValueFreeCb)(void *);
-
-
-/* --------------------------------------------- synx.c --------------------------------------------- */
-
-
-/* ---------------------- Enums ---------------------- */
+/* ----------------------------- synx.c ----------------------------- */
 
 typedef enum {
   SYNTAX_COLOR_NONE,
@@ -115,7 +107,21 @@ typedef enum {
   #define SYNTAX_OBJECT_TYPE_C_STRUCT   SYNTAX_OBJECT_TYPE_C_STRUCT
 } SyntaxObjectType;
 
-/* ---------------------- Structs ---------------------- */
+
+/* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
+
+
+/* ----------------------------- nfdlistener.c ----------------------------- */
+
+/* Structure that represents the event that the callback gets. */
+typedef struct {
+  Uint  mask;
+  Uint  cookie;
+  const char *file; /* The file this event is from. */
+} nfdlistener_event;
+typedef void (*nfdlistener_cb)(nfdlistener_event *);
+
+/* ----------------------------- synx.c ----------------------------- */
 
 typedef struct SyntaxFilePos  SyntaxFilePos;
 /* A structure that reprecents a position inside a `SyntaxFile` structure. */
@@ -206,9 +212,7 @@ struct SyntaxFile {
   HashMap *objects;
 };
 
-
-/* --------------------------------------------- csyntax.c --------------------------------------------- */
-
+/* ----------------------------- csyntax.c ----------------------------- */
 
 typedef struct {
   CVec *args;
@@ -229,14 +233,10 @@ typedef struct {
   bool forward_decl : 1;  /* This struct is a forward declaration, and does not actuly declare anything. */
 } CSyntaxStruct;
 
-
-/* --------------------------------------------- dirs.c --------------------------------------------- */
-
+/* ----------------------------- dirs.c ----------------------------- */
 
 typedef struct {
   char *path;
   directory_t *dir;
 } directory_thread_data_t;
 
-
-_END_C_LINKAGE

@@ -922,7 +922,16 @@ Ulong  append_to(char **dst, Ulong dstlen, const char *src, Ulong srclen) _NOTHR
 Ulong  append_to(char **dst, const char *src, Ulong srclen) _NOTHROW _NONNULL(1, 2);
 Ulong  append_to(char **dst, const char *src) _NOTHROW _NONNULL(1, 2);
 char **split_string_nano(const char *string, const char delim, Ulong *n) _NOTHROW _NODISCARD _NONNULL(1, 3);
-char  *fmtstr(const char *format, ...) _NOTHROW _NODISCARD _PRINTFLIKE(1, 2);
+// char  *fmtstr(const char *format, ...) _NOTHROW _NODISCARD _PRINTFLIKE(1, 2);
+
+
+/* ---------------------------------------------------------- gui/font/loading.cpp ---------------------------------------------------------- */
+
+
+void set_gui_font(const char *const restrict path, Uint size);
+void set_gui_uifont(const char *const restrict path, Uint size);
+void list_available_fonts(void);
+
 
 #include <Mlib/def.h>
 #include "c_proto.h"

@@ -250,6 +250,7 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
 
 /* ----------------------------- CSyntaxPp ----------------------------- */
 
+/* Parse a c preprocessor line. */
 static void csyntaxpp_parse(SyntaxFile *const sf, SyntaxFileLine **const outline, const char **const outdata) {
   ASSERT(sf);
   ASSERT(outline);
@@ -460,6 +461,17 @@ recheck:
       csyntaxstruct_parse(sf, &line, &data, &recheck);
       if (recheck) {
         goto recheck;
+      }
+    }
+    else if (strncmp(data, S__LEN("typedef")) == 0 && isblankornulc(data + STRLEN("typedef"))) {
+      data += STRLEN("typedef");
+      findnextchar(&line, &data);
+      /* Typedef struct. */
+      if (strncmp(data, S__LEN("struct")) == 0 && isblankornulc(data + STRLEN("struct"))) {
+        writef("%s:[%lu:%lu]: Found typedef struct: %s\n", sf->path, line->lineno, (data - line->data), data);
+      }
+      else if (strncmp(data, S__LEN("enum")) == 0 && isblankornulc(data + STRLEN("enum"))) {
+        writef("%s:[%lu:%lu]: Found typedef enum: %s\n", sf->path, line->lineno, (data - line->data), data);
       }
     }
   );

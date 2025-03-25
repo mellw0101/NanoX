@@ -58,41 +58,41 @@ int ctowc(wchar *const wc, const char *const c) {
   return 1;
 }
 
-/* Return's the number of bytes in the char that starts at `*c`. */
-int charlen(const char *const c) {
-  ASSERT(c);
-  Uchar c0, c1, c2, c3;
-  if ((Uchar)*c > 0xC1 && utf8_enabled) {
-    c0 = (Uchar)c[0];
-    c1 = (Uchar)c[1];
-    if ((c1 ^ 0x80) > 0x3F) {
-      return 1;
-    }
-    else if (c0 < 0xE0) {
-      return 2;
-    }
-    c2 = (Uchar)c[2];
-    if ((c2 ^ 0x80) > 0x3F) {
-      return 1;
-    }
-    else if (c0 < 0xF0) {
-      if ((c0 > 0xE0 || c1 >= 0xA0) && (c0 != 0xED || c1 < 0xA0)) {
-        return 3;
-      }
-      else {
-        return 1;
-      }
-    }
-    c3 = (Uchar)c[3];
-    if ((c3 ^ 0x80) > 0x3F || c0 > 0xF4) {
-      return 1;
-    }
-    else if ((c0 > 0xF0 || c1 >= 0x90) && (c0 != 0xF4 || c2 < 0x90)) {
-      return 4;
-    }
-  }
-  return 1;
-}
+// /* Return's the number of bytes in the char that starts at `*c`. */
+// int charlen(const char *const c) {
+//   ASSERT(c);
+//   Uchar c0, c1, c2, c3;
+//   if ((Uchar)*c > 0xC1 && utf8_enabled) {
+//     c0 = (Uchar)c[0];
+//     c1 = (Uchar)c[1];
+//     if ((c1 ^ 0x80) > 0x3F) {
+//       return 1;
+//     }
+//     else if (c0 < 0xE0) {
+//       return 2;
+//     }
+//     c2 = (Uchar)c[2];
+//     if ((c2 ^ 0x80) > 0x3F) {
+//       return 1;
+//     }
+//     else if (c0 < 0xF0) {
+//       if ((c0 > 0xE0 || c1 >= 0xA0) && (c0 != 0xED || c1 < 0xA0)) {
+//         return 3;
+//       }
+//       else {
+//         return 1;
+//       }
+//     }
+//     c3 = (Uchar)c[3];
+//     if ((c3 ^ 0x80) > 0x3F || c0 > 0xF4) {
+//       return 1;
+//     }
+//     else if ((c0 > 0xF0 || c1 >= 0x90) && (c0 != 0xF4 || c2 < 0x90)) {
+//       return 4;
+//     }
+//   }
+//   return 1;
+// }
 
 /* Return the length `in bytes` of the character at the start of the given `string`, and return a copy of this character in `*c`. */
 int collectc(const char *const restrict string, char *const restrict c) {
@@ -374,7 +374,7 @@ bool iswordc(const char *const restrict c, bool allow_punct, const char *const r
   return FALSE;
 }
 
-/* Return's `TRUE` if `c` is any char in `string`. */
-bool isconeof(const char c, const char *const restrict string) {
-  return (strchr(string, c));
-}
+// /* Return's `TRUE` if `c` is any char in `string`. */
+// bool isconeof(const char c, const char *const restrict string) {
+//   return (strchr(string, c));
+// }

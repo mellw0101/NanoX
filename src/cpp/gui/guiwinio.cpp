@@ -11,6 +11,62 @@ static float statustime = 0.0f;
 /* The type for the currently displayed status message. */
 static message_type statustype = VACUUM;
 
+_UNUSED static void draw_marked(linestruct *const line, const char *const restrict convert, Ulong fromcol) {
+  /* The top and bottom line where the marked region begins and ends. */
+  linestruct *top, *bot;
+  /* The start position in the top line and the end position in the bottom line. */
+  Ulong xtop, xbot;
+  /* Start index for where to draw in this line. */
+  int startcol;
+  /* End index for where to draw in this line. */
+  Ulong endcol;
+  /* Where in convert the marked region begins. */
+  const char *thetext;
+  /* The number of columns the marked region covers in this line. */
+  int paintlen = -1;
+  /* The rect we will draw, and the color of it. */
+  vec4 rect, color;
+  /* If the line is at least partially selected, paint the marked part. */
+  if (line_in_marked_region(line)) {
+    get_region(&top, &xtop, &bot, &xbot);
+    /* Set xtop and xbot to reflect the start and end on this line. */
+    if ((top->lineno < line->lineno) || (xtop < from_x)) {
+      xtop = from_x;
+    }
+    if ((bot->lineno > line->lineno) || (xbot > till_x)) {
+      xbot = till_x;
+    }
+    /* Only paint if the marked part of the line is on this page. */
+    if (xtop < till_x && xbot > from_x) {
+      /* Compute the start column. */
+      startcol = (wideness(line->data, xtop) - fromcol);
+      CLAMP_MIN(startcol, 0);
+      thetext = (convert + actual_x(convert, startcol));
+      /* If the end mark is onscreen, compute how meny columns to paint. */
+      if (xbot < till_x) {
+        endcol = (wideness(line->data, xbot) - fromcol);
+        paintlen = actual_x(thetext, (endcol - startcol));
+      }
+      /* Otherwise, calculate the end index of the text on screen. */
+      if (paintlen == -1) {
+        paintlen = strlen(thetext);
+      }
+      rect.x = (string_pixel_offset(line->data, NULL, startcol, gui->font) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui->font) : 0));
+      /* Calculate the width of the marked region in pixels. */
+      rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui->font);
+      /* Get the y offset for the given line. */
+      rect.y = line_y_pixel_offset(line, gui->font);
+      rect.height = FONT_HEIGHT(gui->font);
+      /* Setup the color. */
+      color = EDIT_BACKGROUND_COLOR + vec4(0.05f);
+      color.alpha = 0.45f;
+      color.blue += 0.30f;
+      /* Draw the rect to the screen. */
+      draw_rect(rect.xy(), rect.zw(), color);
+    }
+  }
+}
+
 /* If the line is part of the marked region, then draw a rect that reprecents the marked region. */
 void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *withfont) {
   /* If the line is at least partially selected, paint the marked part. */
@@ -272,7 +328,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
       vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui->font, vec4(1.0f), drawpos);
     }
   }
-  draw_marked_part(line, converted, from_col, gui->font);
+  draw_marked(line, converted, from_col);
   free(converted);
 }
 
@@ -307,8 +363,6 @@ void show_toggle_statusmsg(int flag) {
 /* Draw a editor. */
 void draw_editor(guieditor *editor) {
   /* When dubugging is enabled, assert everything we use. */
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->openfile->edittop);
   ASSERT(editor->topbar);
   ASSERT(editor->topbuf);
@@ -347,7 +401,6 @@ void draw_editor(guieditor *editor) {
         vertex_buffer_add_element_lable_offset(child, gui->uifont, editor->topbuf, vec2(pixel_breadth(gui->uifont, " "), 0));
       }
     }
-    upload_texture_atlas(gui->atlas);
     editor->flag.unset<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
     editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
   }
@@ -364,6 +417,7 @@ void draw_editor(guieditor *editor) {
       draw_element_rect(child);
     }
   }
+  upload_texture_atlas(gui->uiatlas);
   render_vertex_buffer(gui->font_shader, editor->topbuf);
   /* Render the text element of the editor. */
   if (refresh_needed) {
@@ -375,7 +429,6 @@ void draw_editor(guieditor *editor) {
       gui_draw_row(line, editor, &editor->pen);
       line = line->next;
     }
-    upload_texture_atlas(gui->atlas);
     if (!gui->flag.is_set<GUI_PROMPT>()) {
       add_openfile_cursor(gui->font, editor->buffer, vec4(1));
     }
@@ -386,6 +439,7 @@ void draw_editor(guieditor *editor) {
       line = line->next;
     }
   }
+  upload_texture_atlas(gui->atlas);
   render_vertex_buffer(gui->font_shader, editor->buffer);
   if (editor->flag.is_set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>()) {
     update_editor_scrollbar(editor);
