@@ -466,7 +466,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             syntaxfile_test_read();
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
-            list_available_fonts();
+            static int toggle=0;
+            if (!(toggle % 2)) {
+              set_gui_font("/usr/share/fonts/balle.ttf", gui->font_size);
+            }
+            else {
+              set_gui_font("/usr/share/fonts/TTF/Hack-Regular.ttf", gui->font_size);
+            }
+            ++toggle;
+            refresh_needed = TRUE;
           }
           break;
         }

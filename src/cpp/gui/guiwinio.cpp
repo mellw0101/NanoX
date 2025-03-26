@@ -425,7 +425,8 @@ void draw_editor(guieditor *editor) {
     vertex_buffer_clear(editor->buffer);
     while (line && ++row <= editwinrows) {
       editor->pen.x = 0;
-      editor->pen.y += FONT_HEIGHT(gui->font);
+      // editor->pen.y += FONT_HEIGHT(gui->font);
+      editor->pen.y = (line_y_pixel_offset(line, gui->font) + editor->text->pos.y);
       gui_draw_row(line, editor, &editor->pen);
       line = line->next;
     }

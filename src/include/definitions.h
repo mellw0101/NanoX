@@ -272,7 +272,8 @@ using std::vector;
 
 #ifdef HAVE_GLFW 
   #define FONT_WIDTH(font)  (font->face->max_advance_width >> 6)
-  #define FONT_HEIGHT(font) (font->height - font->linegap)
+  // #define FONT_HEIGHT(font) (font->height - font->linegap)
+  #define FONT_HEIGHT(font)  (font->ascender - font->descender + font->linegap)
   /* Size of each grid in the gridmap. */
   #define GRIDMAP_GRIDSIZE 20
 #endif

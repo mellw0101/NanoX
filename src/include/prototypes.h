@@ -930,6 +930,7 @@ char **split_string_nano(const char *string, const char delim, Ulong *n) _NOTHRO
 
 void set_gui_font(const char *const restrict path, Uint size);
 void set_gui_uifont(const char *const restrict path, Uint size);
+void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize);
 void list_available_fonts(void);
 
 

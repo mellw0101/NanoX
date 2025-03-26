@@ -202,7 +202,7 @@ float line_y_pixel_offset(linestruct *line, texture_font_t *font) {
   else if (relative_row > openeditor->rows) {
     return gui->height;
   }
-  return ((relative_row * FONT_HEIGHT(font)) - font->descender + openeditor->text->pos.y);
+  return ((relative_row * FONT_HEIGHT(font)) + openeditor->text->pos.y);
 }
 
 /* Calculates cursor y position for the gui. */

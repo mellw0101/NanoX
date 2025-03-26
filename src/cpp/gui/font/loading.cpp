@@ -130,6 +130,29 @@ void set_gui_uifont(const char *const restrict path, Uint size) {
   }
 }
 
+/* Set the font and uifont for the gui using the same font file. */
+void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize) {
+  ASSERT(gui);
+  ASSERT(path);
+  ASSERT(size);
+  ASSERT(uisize);
+  /* Ensure the uifontsize and the fontsize in the gui structure aligns with the actual size. */
+  gui->font_size   = size;
+  gui->uifont_size = uisize;
+  /* When the provided path does not exist, revert to the fallback font. */
+  if (!file_exists(path)) {
+    set_fallback_uifont(uisize);
+    set_fallback_font(size);
+  }
+  /* Otherwise, set the provided  */
+  else {
+    free_current_font();
+    free_current_uifont();
+    set_font(path, size, &gui->font, &gui->atlas);
+    set_font(path, size, &gui->uifont, &gui->uiatlas);
+  }
+}
+
 void list_available_fonts(void) {
   static const char *const fontdir = "/usr/share/fonts";
   directory_t dir;
