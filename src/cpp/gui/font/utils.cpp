@@ -7,11 +7,6 @@
 #include "../../../include/prototypes.h"
 
 
-/* Return's `TRUE` if `font` is a true bitmap font. */
-bool is_bitmap_font(texture_font_t *const font) {
-  return !(font->face->face_flags & FT_FACE_FLAG_SCALABLE);
-}
-
 float line_baseline_pixel(long lineno, texture_font_t *const font) {
   ASSERT(lineno >= 0);
   ASSERT(font);

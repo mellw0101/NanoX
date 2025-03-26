@@ -928,6 +928,7 @@ char **split_string_nano(const char *string, const char delim, Ulong *n) _NOTHRO
 /* ---------------------------------------------------------- gui/font/loading.cpp ---------------------------------------------------------- */
 
 
+void free_atlas(texture_atlas_t *atlas);
 void set_gui_font(const char *const restrict path, Uint size);
 void set_gui_uifont(const char *const restrict path, Uint size);
 void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize);
@@ -940,6 +941,14 @@ void list_available_fonts(void);
 float line_baseline_pixel(long lineno, texture_font_t *const font);
 void line_cursor_metrics(long lineno, texture_font_t *const font, float *const top, float *const bot);
 void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset);
+
+
+/* ---------------------------------------------------------- gui/rendering/utils.cpp ---------------------------------------------------------- */
+
+
+float pixnbreadth_prev(const char *const restrict string, long len, const char *const restrict prev_char);
+float pixnbreadth(const char *const restrict string, long len);
+float pixbreadth(texture_font_t *const font, const char *const restrict string);
 
 
 #include <Mlib/def.h>

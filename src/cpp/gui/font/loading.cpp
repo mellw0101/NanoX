@@ -25,7 +25,7 @@ static void set_font(const char *const restrict path, Uint size, texture_font_t 
 }
 
 /* Free an allocated `texture_atlas_t` strucure properly.  Note that this function is `NOT NULL-SAFE`. */
-static void free_atlas(texture_atlas_t *atlas) {
+void free_atlas(texture_atlas_t *atlas) {
   ASSERT(atlas);
   glDeleteTextures(1, &atlas->id);
   atlas->id = 0;

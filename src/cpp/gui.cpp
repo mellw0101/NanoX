@@ -302,7 +302,7 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   gui->title      = copy_of(win_title);
   gui->width      = win_width;
   gui->height     = win_height;
-  gui->projection = (matrix4x4 *)xmalloc(sizeof(*gui->projection));
+  gui->projection = matrix4x4_new(); /* (matrix4x4 *)xmalloc(sizeof(*gui->projection)); */
   /* Then create the glfw window. */
   gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
   if (!gui->window) {
@@ -335,11 +335,12 @@ static void delete_guistruct(void) {
   /* Delete all elements used by 'gui'. */
   delete_element(gui->root);
   delete_element(gui->statusbar);
-  /* Delete the texture, and texture atlas. */
+  /* Free the ui atlas and the main one. */
   if (gui->atlas) {
-    glDeleteTextures(1, &gui->atlas->id);
-    gui->atlas->id = 0;
-    texture_atlas_delete(gui->atlas);
+    free_atlas(gui->atlas);
+  }
+  if (gui->uiatlas) {
+    free_atlas(gui->uiatlas);
   }
   /* Delete all the vertex buffers. */
   if (gui->topbuf) {
@@ -352,7 +353,13 @@ static void delete_guistruct(void) {
     vertex_buffer_delete(gui->statusbuf);
   }
   /* Delete the font. */
-  texture_font_delete(gui->font);
+  if (gui->font) {
+    texture_font_delete(gui->font);
+  }
+  /* Delete the uifont. */
+  if (gui->uifont) {
+    texture_font_delete(gui->uifont);
+  }
   /* Stop and free the event handler. */
   nevhandler_stop(gui->handler, 0);
   nevhandler_free(gui->handler);
@@ -387,7 +394,7 @@ void init_gui(void) {
     die("Failed to init glfw.\n");
   }
   /* Init the main gui structure. */
-  init_guistruct("NanoX", 1400, 800, 120, 35, 14);
+  init_guistruct("NanoX", 1400, 800, 120, 17, 14);
   /* Init glew. */
   init_glew();
   /* Init the font shader. */

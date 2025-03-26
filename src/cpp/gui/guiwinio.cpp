@@ -427,9 +427,6 @@ void draw_editor(guieditor *editor) {
     vertex_buffer_clear(editor->buffer);
     while (line && ++row <= editwinrows) {
       editor->pen.x = 0;
-      // editor->pen.y += (gui->font->height - gui->font->linegap);
-      // editor->pen.y += FONT_HEIGHT(gui->font);
-      // editor->pen.y = (line_y_pixel_offset(line, gui->font)/*  + editor->text->pos.y */ + gui->font->descender);
       editor->pen.y = (line_baseline_pixel((line->lineno - editor->openfile->edittop->lineno), gui->font) + editor->text->pos.y);
       gui_draw_row(line, editor, &editor->pen);
       line = line->next;
@@ -468,14 +465,17 @@ void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
     if (refresh_needed) {
       vertex_buffer_clear(gui->topbuf);
-      vec2 penpos((gui->topbar->pos.x + pixel_breadth(gui->font, " ")), (gui->topbar->pos.y + FONT_HEIGHT(gui->font) + gui->font->descender));
-      vertex_buffer_add_string(gui->topbuf, prompt, strlen(prompt), NULL, gui->font, vec4(1.0f), &penpos);
-      vertex_buffer_add_string(gui->topbuf, answer, strlen(answer), " ", gui->font, vec4(1.0f), &penpos);
-      vec2 cursor_pos(
-        (gui->topbar->pos.x + pixel_breadth(gui->font, " ") + pixel_breadth(gui->font, prompt) + string_pixel_offset(answer, " ", typing_x, gui->font)),
+      vec2 penpos((gui->topbar->pos.x + pixbreadth(gui->uifont, " ")), (gui->uifont->ascender + gui->topbar->pos.y));
+      vertex_buffer_add_string(gui->topbuf, prompt, strlen(prompt), NULL, gui->uifont, vec4(1), &penpos);
+      vertex_buffer_add_string(gui->topbuf, answer, strlen(answer), " ", gui->uifont, vec4(1), &penpos);
+      line_add_cursor(
+        0,
+        gui->uifont,
+        gui->topbuf,
+        vec4(1),
+        (gui->topbar->pos.x + pixel_breadth(gui->uifont, " ") + pixel_breadth(gui->uifont, prompt) + string_pixel_offset(answer, " ", typing_x, gui->uifont)),
         gui->topbar->pos.y
       );
-      add_cursor(gui->font, gui->topbuf, vec4(1.0f), cursor_pos);
     }
   }
   /* Otherwise, draw the menu elements as usual. */
@@ -494,10 +494,7 @@ void draw_topbar(void) {
     //   }
     // }
   }
-  /* If a refresh is needed, meaning that we have cleared and reinput the data in the vertex buffer. */
-  if (refresh_needed) {
-    upload_texture_atlas(gui->atlas);
-  }
+  upload_texture_atlas(gui->uiatlas);
   render_vertex_buffer(gui->font_shader, gui->topbuf);
 }
 

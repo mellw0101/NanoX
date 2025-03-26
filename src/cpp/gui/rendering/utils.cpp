@@ -27,12 +27,12 @@ float pixnbreadth(const char *const restrict string, long len) {
   return pixnbreadth_prev(string, len, NULL);
 }
 
-float pixbreadth(const char *const restrict string) {
+float pixbreadth(texture_font_t *const font, const char *const restrict string) {
   ASSERT(string);
   float ret = 0;
   for (const char *ch=string, *prev=NULL; *ch; ++ch) {
-    ret += glyph_width(ch, prev, gui->font);
-    ch = prev;
+    ret += glyph_width(ch, prev, font);
+    prev = ch;
   }
   return ret;
 }
