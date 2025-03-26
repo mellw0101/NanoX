@@ -32,29 +32,30 @@ static void free_atlas(texture_atlas_t *atlas) {
   texture_atlas_delete(atlas);
 }
 
-/* Free the current uifont.  Note that this funtion is `NULL-SAFE`. */
-static void free_current_uifont(void) {
+/* When `uifont` is `TRUE` free the uifont, otherwise free the textfont. */
+static void free_gui_font(bool uifont) {
   ASSERT(gui);
-  if (gui->uiatlas) {
-    free_atlas(gui->uiatlas);
-    gui->uiatlas = NULL;
+  /* Delete the current uifont. */
+  if (uifont) {
+    if (gui->uiatlas) {
+      free_atlas(gui->uiatlas);
+      gui->uiatlas = NULL;
+    }
+    if (gui->uifont) {
+      texture_font_delete(gui->uifont);
+      gui->uifont = NULL;
+    }
   }
-  if (gui->uifont) {
-    texture_font_delete(gui->uifont);
-    gui->uifont = NULL;
-  }
-}
-
-/* Free the current font.  Note that this function is `NULL-SAFE`. */
-static void free_current_font(void) {
-  ASSERT(gui);
-  if (gui->atlas) {
-    free_atlas(gui->atlas);
-    gui->atlas = NULL;
-  }
-  if (gui->font) {
-    texture_font_delete(gui->font);
-    gui->font = NULL;
+  /* Otherwise, delete the textfont. */
+  else {
+    if (gui->atlas) {
+      free_atlas(gui->atlas);
+      gui->atlas = NULL;
+    }
+    if (gui->font) {
+      texture_font_delete(gui->font);
+      gui->font = NULL;
+    }
   }
 }
 
@@ -69,7 +70,7 @@ static void set_fallback_font(Uint size) {
   /* Construct the path to the fallback font file. */
   path = fmtstr("%s/%s", homedir, ".config/nanox/fonts/unifont.ttf");
   /* Free the existing font, if any. */
-  free_current_font();
+  free_gui_font(FALSE);
   /* Set the font. */
   set_font(path, size, &gui->font, &gui->atlas);
   /* Free the constructed path. */
@@ -87,7 +88,7 @@ static void set_fallback_uifont(Uint size) {
   /* Construct the path to the fallback font file. */
   path = fmtstr("%s/%s", homedir, ".config/nanox/fonts/unifont.ttf");
   /* Free the existing font, if any. */
-  free_current_uifont();
+  free_gui_font(TRUE);
   /* Set the font. */
   set_font(path, size, &gui->uifont, &gui->uiatlas);
   /* Free the constructed path. */
@@ -107,7 +108,7 @@ void set_gui_font(const char *const restrict path, Uint size) {
   }
   /* Otherwise, set the provided  */
   else {
-    free_current_font();
+    free_gui_font(FALSE);
     set_font(path, size, &gui->font, &gui->atlas);
   }
 }
@@ -125,7 +126,7 @@ void set_gui_uifont(const char *const restrict path, Uint size) {
   }
   /* Otherwise, set the provided  */
   else {
-    free_current_uifont();
+    free_gui_font(TRUE);
     set_font(path, size, &gui->uifont, &gui->uiatlas);
   }
 }
@@ -146,10 +147,10 @@ void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize) 
   }
   /* Otherwise, set the provided  */
   else {
-    free_current_font();
-    free_current_uifont();
+    free_gui_font(FALSE);
+    free_gui_font(TRUE);
     set_font(path, size, &gui->font, &gui->atlas);
-    set_font(path, size, &gui->uifont, &gui->uiatlas);
+    set_font(path, uisize, &gui->uifont, &gui->uiatlas);
   }
 }
 

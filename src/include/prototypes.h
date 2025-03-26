@@ -934,5 +934,13 @@ void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize);
 void list_available_fonts(void);
 
 
+/* ---------------------------------------------------------- gui/font/utils.cpp ---------------------------------------------------------- */
+
+
+float line_baseline_pixel(long lineno, texture_font_t *const font);
+void line_cursor_metrics(long lineno, texture_font_t *const font, float *const top, float *const bot);
+void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset);
+
+
 #include <Mlib/def.h>
 #include "c_proto.h"

@@ -91,24 +91,6 @@ static void setup_font_shader(void) {
   /* Load the font and uifont. */
   set_gui_font(FALLBACK_FONT_PATH, gui->font_size);
   set_gui_uifont(FALLBACK_FONT_PATH, gui->uifont_size);
-  // /* Load fallback font. */
-  // if (is_file_and_exists(FALLBACK_FONT_PATH)) {
-  //   ;
-  // }
-  // else {
-  //   glfwDestroyWindow(gui->window);
-  //   glfwTerminate();
-  //   glDeleteProgram(gui->font_shader);
-  //   die("Failed to find fallback font: '%s' does not exist.\n");
-  // }
-  // /* Look for jetbrains regular font. */
-  // if (is_file_and_exists(JETBRAINS_REGULAR_FONT_PATH)) {
-    
-  //   gui->atlas = texture_atlas_new(512, 512, 1);
-  //   glGenTextures(1, &gui->atlas->id);
-  //   gui->font   = texture_font_new_from_file(gui->atlas, gui->font_size, JETBRAINS_REGULAR_FONT_PATH);
-  //   gui->uifont = texture_font_new_from_file(gui->atlas, gui->uifont_size, JETBRAINS_REGULAR_FONT_PATH);
-  // }
 }
 
 /* Create a buffer using the structure of the font shader. */
@@ -386,16 +368,16 @@ static void cleanup(void) {
 
 /* Init glew and check for errors.  Terminates on fail to init glew. */
 static void init_glew(void) {
+  Uint err;
   /* Enable glew experimental features. */
   glewExperimental = TRUE;
-  Uint err = glewInit();
   /* If we could not init glew, terminate directly. */
-  if (err != GLEW_OK) {
+  if ((err = glewInit()) != GLEW_OK) {
     glfwDestroyWindow(gui->window);
     glfwTerminate();
     die("GLEW: ERROR: %s\n", glewGetErrorString(err));
   }
-  fprintf(stderr, "Using GLEW %s\n", glewGetString(GLEW_VERSION));
+  writef("Using GLEW %s\n", glewGetString(GLEW_VERSION));
 }
 
 /* Init glfw. */
@@ -405,7 +387,7 @@ void init_gui(void) {
     die("Failed to init glfw.\n");
   }
   /* Init the main gui structure. */
-  init_guistruct("NanoX", 1400, 800, 120, 17, 14);
+  init_guistruct("NanoX", 1400, 800, 120, 35, 14);
   /* Init glew. */
   init_glew();
   /* Init the font shader. */

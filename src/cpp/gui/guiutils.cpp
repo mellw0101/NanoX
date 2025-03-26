@@ -186,14 +186,12 @@ float cursor_pixel_x_pos(texture_font_t *font) {
 
 /* Calculates the vertical offset of a given line within the window, based on its position relative to the top of the editable area. */
 float line_y_pixel_offset(linestruct *line, texture_font_t *font) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(openeditor->openfile->edittop);
   ASSERT(openeditor->text);
   ASSERT(gui);
   ASSERT(line);
   ASSERT(font);
-  long relative_row = (line->lineno - openeditor->openfile->edittop->lineno);
+  long relative_row = (line->lineno - openeditor->openfile->edittop->lineno + 1);
   /* If the cursor is above the editelement, return one line above the entire window. */
   if (relative_row < 0) {
     return -FONT_HEIGHT(font);
@@ -207,8 +205,6 @@ float line_y_pixel_offset(linestruct *line, texture_font_t *font) {
 
 /* Calculates cursor y position for the gui. */
 float cursor_pixel_y_pos(texture_font_t *font) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   return line_y_pixel_offset(openeditor->openfile->current, font);
 }
 
@@ -223,16 +219,16 @@ void add_glyph(const char *current, const char *prev, vertex_buffer_t *buf, text
   if (prev) {
     penpos->x += texture_glyph_get_kerning(glyph, prev);
   }
-  int x0 = (penpos->x + glyph->offset_x);
-  int y0 = (penpos->y - glyph->offset_y);
-  int x1 = (x0 + glyph->width);
-  int y1 = (y0 + glyph->height);
+  float x0 = (int)(penpos->x + glyph->offset_x);
+  float y0 = (int)(penpos->y - glyph->offset_y);
+  float x1 = (int)(x0 + glyph->width);
+  float y1 = (int)(y0 + glyph->height);
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };
   vertex_t vertices[] = {
-    {(float)x0, (float)y0, 0, glyph->s0, glyph->t0, color.r, color.g, color.b, color.a},
-    {(float)x0, (float)y1, 0, glyph->s0, glyph->t1, color.r, color.g, color.b, color.a},
-    {(float)x1, (float)y1, 0, glyph->s1, glyph->t1, color.r, color.g, color.b, color.a},
-    {(float)x1, (float)y0, 0, glyph->s1, glyph->t0, color.r, color.g, color.b, color.a}
+    { x0, y0, 0, glyph->s0, glyph->t0, color.r, color.g, color.b, color.a},
+    { x0, y1, 0, glyph->s0, glyph->t1, color.r, color.g, color.b, color.a},
+    { x1, y1, 0, glyph->s1, glyph->t1, color.r, color.g, color.b, color.a},
+    { x1, y0, 0, glyph->s1, glyph->t0, color.r, color.g, color.b, color.a}
   };
   vertex_buffer_push_back(buf, vertices, 4, indices, 6);
   penpos->x += glyph->advance_x;
@@ -260,7 +256,7 @@ void add_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color, vec2 at)
   texture_glyph_t *glyph = texture_font_get_glyph(font, NULL);
   ALWAYS_ASSERT(glyph);
   float x0 = (int)at.x;
-  float y0 = (int)at.y;
+  float y0 = (int)(at.y - FONT_HEIGHT(font));
   float x1 = (int)(x0 + 1);
   float y1 = (int)(y0 + FONT_HEIGHT(font));
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };

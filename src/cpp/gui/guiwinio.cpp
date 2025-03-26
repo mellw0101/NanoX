@@ -11,7 +11,7 @@ static float statustime = 0.0f;
 /* The type for the currently displayed status message. */
 static message_type statustype = VACUUM;
 
-_UNUSED static void draw_marked(linestruct *const line, const char *const restrict convert, Ulong fromcol) {
+static void draw_marked(guieditor *const editor, linestruct *const line, const char *const restrict convert, Ulong fromcol) {
   /* The top and bottom line where the marked region begins and ends. */
   linestruct *top, *bot;
   /* The start position in the top line and the end position in the bottom line. */
@@ -26,6 +26,8 @@ _UNUSED static void draw_marked(linestruct *const line, const char *const restri
   int paintlen = -1;
   /* The rect we will draw, and the color of it. */
   vec4 rect, color;
+  /* The top and bottom pixels for the line. */
+  float pixtop, pixbot;
   /* If the line is at least partially selected, paint the marked part. */
   if (line_in_marked_region(line)) {
     get_region(&top, &xtop, &bot, &xbot);
@@ -55,10 +57,11 @@ _UNUSED static void draw_marked(linestruct *const line, const char *const restri
       /* Calculate the width of the marked region in pixels. */
       rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui->font);
       /* Get the y offset for the given line. */
-      rect.y = line_y_pixel_offset(line, gui->font);
-      rect.height = FONT_HEIGHT(gui->font);
+      line_cursor_metrics((line->lineno - editor->openfile->edittop->lineno), gui->font, &pixtop, &pixbot);
+      rect.y = (pixtop + editor->text->pos.y);
+      rect.height = (pixbot - pixtop);
       /* Setup the color. */
-      color = EDIT_BACKGROUND_COLOR + vec4(0.05f);
+      color = (EDIT_BACKGROUND_COLOR + vec4(0.05f));
       color.alpha = 0.45f;
       color.blue += 0.30f;
       /* Draw the rect to the screen. */
@@ -328,7 +331,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
       vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui->font, vec4(1.0f), drawpos);
     }
   }
-  draw_marked(line, converted, from_col);
+  draw_marked(editor, line, converted, from_col);
   free(converted);
 }
 
@@ -421,17 +424,19 @@ void draw_editor(guieditor *editor) {
   render_vertex_buffer(gui->font_shader, editor->topbuf);
   /* Render the text element of the editor. */
   if (refresh_needed) {
-    editor->pen.y = editor->text->pos.y;
     vertex_buffer_clear(editor->buffer);
     while (line && ++row <= editwinrows) {
       editor->pen.x = 0;
+      // editor->pen.y += (gui->font->height - gui->font->linegap);
       // editor->pen.y += FONT_HEIGHT(gui->font);
-      editor->pen.y = (line_y_pixel_offset(line, gui->font) + editor->text->pos.y);
+      // editor->pen.y = (line_y_pixel_offset(line, gui->font)/*  + editor->text->pos.y */ + gui->font->descender);
+      editor->pen.y = (line_baseline_pixel((line->lineno - editor->openfile->edittop->lineno), gui->font) + editor->text->pos.y);
       gui_draw_row(line, editor, &editor->pen);
       line = line->next;
     }
     if (!gui->flag.is_set<GUI_PROMPT>()) {
-      add_openfile_cursor(gui->font, editor->buffer, vec4(1));
+      // add_openfile_cursor(gui->font, editor->buffer, vec4(1));
+      line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui->font, editor->buffer, vec4(1), cursor_pixel_x_pos(gui->font), editor->text->pos.y);
     }
   }
   else {
