@@ -433,7 +433,9 @@ void draw_editor(guieditor *editor) {
     }
     if (!gui->flag.is_set<GUI_PROMPT>()) {
       // add_openfile_cursor(gui->font, editor->buffer, vec4(1));
-      line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui->font, editor->buffer, vec4(1), cursor_pixel_x_pos(gui->font), editor->text->pos.y);
+      if ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0) {
+        line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui->font, editor->buffer, vec4(1), cursor_pixel_x_pos(gui->font), editor->text->pos.y);
+      }
     }
   }
   else {

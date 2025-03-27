@@ -712,7 +712,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_MINUS: {
           if (mods == GLFW_MOD_CONTROL) {
-            writef("%s\n", gui->font_path);
             change_gui_font_size(gui->font_size - 1);
             refresh_needed = TRUE;
           }

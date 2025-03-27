@@ -8,13 +8,11 @@
 
 
 float line_baseline_pixel(long lineno, texture_font_t *const font) {
-  ASSERT(lineno >= 0);
   ASSERT(font);
   return ((lineno * FONT_HEIGHT(font)) + font->ascender);
 }
 
 void line_cursor_metrics(long lineno, texture_font_t *const font, float *const top, float *const bot) {
-  ASSERT(lineno >= 0);
   ASSERT(font);
   float baseline = line_baseline_pixel(lineno, font);
   *top = (baseline - font->ascender);

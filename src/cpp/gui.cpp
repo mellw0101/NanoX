@@ -111,8 +111,6 @@ static void setup_rect_shader(void) {
         layout(std430, binding = 1) buffer IndexBuffer {
           uint indices[];
         };
-        /* Output. */
-        out vec4 vertexColor;
         /* Uniforms. */
         uniform mat4 projection;
         uniform vec2 elemsize;
@@ -127,6 +125,8 @@ static void setup_rect_shader(void) {
       GL_VERTEX_SHADER },
     { STRLITERAL(\
         #version 450 core\n
+        /* Input. */
+        in vec2 frag_uv;
         /* Output. */
         out vec4 FragColor;
         /* Uniforms. */
