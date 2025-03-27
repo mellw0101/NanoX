@@ -1167,6 +1167,7 @@ typedef struct completionstruct {
     texture_font_t  *uifont;                 /* The ui font. */
     Uint             uifont_size;            /* The ui font size. */
     texture_atlas_t *uiatlas;                /* The atlas for the ui font. */
+    char            *font_path;              /* Path of currently loaded font. */
     texture_font_t  *font;                   /* The font the gui is using. */
     Uint             font_size;              /* The font size. */
     float            font_lineheight_scale;  /* The scale witch the default line height is multiplied. */

@@ -1,4 +1,4 @@
-/** @file gui/font/utils.c
+/** @file gui/font/utils.cpp
 
   @author  Melwin Svensson.
   @date    26-3-2025.

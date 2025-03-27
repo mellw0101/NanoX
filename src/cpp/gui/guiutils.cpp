@@ -106,9 +106,6 @@ static void get_row_y_pixel_region(texture_font_t *font, Uint row, Uint *top_y, 
 
 /* Return the line from that a pixel is on, inside the editelement. */
 linestruct *line_from_mouse_y(texture_font_t *font, float offset) {
-  /* When debugging is enabled, assert everything we use. */
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(font);
   /* The current row. */
   Uint row = 0;
@@ -129,8 +126,6 @@ linestruct *line_from_mouse_y(texture_font_t *font, float offset) {
 /* Return the line and the index in the line, from a x and y position. */
 linestruct *line_and_index_from_mousepos(texture_font_t *font, Ulong *index) {
   /* When debugging is enabled, assert everything we use. */
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(openeditor->openfile->edittop);
   ASSERT(openeditor->text);
   ASSERT(font);
@@ -140,7 +135,8 @@ linestruct *line_and_index_from_mousepos(texture_font_t *font, Ulong *index) {
     *index = 0;
     return openeditor->openfile->edittop;
   }
-  linestruct *line = line_from_mouse_y(font, openeditor->text->pos.y);
+  // linestruct *line = line_from_mouse_y(font, openeditor->text->pos.y);
+  linestruct *line = line_from_cursor_pos(openeditor);
   if (line) {
     *index = index_from_mouse_x(line->data, font, (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(openeditor->openfile->filetop, gui->font) : openeditor->main->pos.x));
   }

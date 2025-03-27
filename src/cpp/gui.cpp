@@ -286,6 +286,7 @@ static void make_guistruct(void) {
   gui->uifont                = NULL;
   gui->uifont_size           = 0;
   gui->uiatlas               = NULL;
+  gui->font_path             = NULL;
   gui->font                  = NULL;
   gui->font_size             = 0;
   gui->font_lineheight_scale = 1.0f;
@@ -335,6 +336,8 @@ static void delete_guistruct(void) {
   /* Delete all elements used by 'gui'. */
   delete_element(gui->root);
   delete_element(gui->statusbar);
+  /* Free the path of the currently loaded font. */
+  free(gui->font_path);
   /* Free the ui atlas and the main one. */
   if (gui->atlas) {
     free_atlas(gui->atlas);

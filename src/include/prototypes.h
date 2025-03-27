@@ -932,6 +932,7 @@ void free_atlas(texture_atlas_t *atlas);
 void set_gui_font(const char *const restrict path, Uint size);
 void set_gui_uifont(const char *const restrict path, Uint size);
 void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize);
+void change_gui_font_size(Uint size);
 void list_available_fonts(void);
 
 
@@ -949,6 +950,12 @@ void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *c
 float pixnbreadth_prev(const char *const restrict string, long len, const char *const restrict prev_char);
 float pixnbreadth(const char *const restrict string, long len);
 float pixbreadth(texture_font_t *const font, const char *const restrict string);
+
+
+/* ---------------------------------------------------------- gui/cursor/cursor.cpp ---------------------------------------------------------- */
+
+
+linestruct *line_from_cursor_pos(guieditor *const editor);
 
 
 #include <Mlib/def.h>

@@ -1,4 +1,4 @@
-/** @file loading.c
+/** @file gui/font/loading.cpp
 
   @author  Melwin Svensson.
   @date    25-3-2025.
@@ -69,6 +69,8 @@ static void set_fallback_font(Uint size) {
   ALWAYS_ASSERT(homedir);
   /* Construct the path to the fallback font file. */
   path = fmtstr("%s/%s", homedir, ".config/nanox/fonts/unifont.ttf");
+  /* Set the font path to the fallback font path. */
+  gui->font_path = free_and_assign(gui->font_path, copy_of(path));
   /* Free the existing font, if any. */
   free_gui_font(FALSE);
   /* Set the font. */
@@ -108,6 +110,8 @@ void set_gui_font(const char *const restrict path, Uint size) {
   }
   /* Otherwise, set the provided  */
   else {
+    /* Set the path of the loaded font. */
+    gui->font_path = free_and_assign(gui->font_path, copy_of(path));
     free_gui_font(FALSE);
     set_font(path, size, &gui->font, &gui->atlas);
   }
@@ -137,21 +141,22 @@ void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize) 
   ASSERT(path);
   ASSERT(size);
   ASSERT(uisize);
-  /* Ensure the uifontsize and the fontsize in the gui structure aligns with the actual size. */
-  gui->font_size   = size;
-  gui->uifont_size = uisize;
-  /* When the provided path does not exist, revert to the fallback font. */
-  if (!file_exists(path)) {
-    set_fallback_uifont(uisize);
-    set_fallback_font(size);
+  set_gui_font(path, size);
+  set_gui_uifont(path, uisize);
+}
+
+/* Change the size of the currently loaded font. */
+void change_gui_font_size(Uint size) {
+  ASSERT(size);
+  char *path;
+  if (!gui->font_path) {
+    return;
   }
-  /* Otherwise, set the provided  */
-  else {
-    free_gui_font(FALSE);
-    free_gui_font(TRUE);
-    set_font(path, size, &gui->font, &gui->atlas);
-    set_font(path, uisize, &gui->uifont, &gui->uiatlas);
-  }
+  /* Make a copy of the current font path, as otherwise there will be issues with free'ing and assigning `gui->font_path` using itself. */
+  path = copy_of(gui->font_path);
+  free_gui_font(FALSE);
+  set_gui_font(path, size);
+  free(path);
 }
 
 void list_available_fonts(void) {
