@@ -157,6 +157,10 @@ void change_gui_font_size(Uint size) {
   free_gui_font(FALSE);
   set_gui_font(path, size);
   free(path);
+  ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
+    guieditor_calculate_rows(editor);
+    editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+  );
 }
 
 void list_available_fonts(void) {

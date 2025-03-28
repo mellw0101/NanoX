@@ -895,6 +895,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void set_openeditor(guieditor *editor);
   guieditor *get_element_editor(guielement *e);
   guieditor *get_file_editor(openfilestruct *file);
+  void guieditor_calculate_rows(guieditor *const editor);
 
   /* gui/guigrid.cpp */
   guigridsection *make_new_gridsection(void);
@@ -956,7 +957,6 @@ float pixbreadth(texture_font_t *const font, const char *const restrict string);
 
 
 linestruct *line_from_cursor_pos(guieditor *const editor);
-
 
 
 /* ---------------------------------------------------------- gui/scollbar.cpp ---------------------------------------------------------- */

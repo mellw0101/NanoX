@@ -379,10 +379,7 @@ vec4 color_idx_to_vec4(int index) _NOTHROW {
   Chooses shortest path to target line.
  */
 linestruct *gui_line_from_number(guieditor *editor, long number) {
-  /* When debugging is enabled, check everything we will use. */
-  // ASSERT_CIRCULAR_LIST_PTR(editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  ASSERT(editor);
   ASSERT(editor->openfile->current);
   ASSERT(editor->openfile->filetop);
   ASSERT(editor->openfile->filebot);

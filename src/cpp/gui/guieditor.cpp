@@ -125,17 +125,14 @@ void update_editor_topbar(guieditor *editor) {
 
 /* Update the `scroll-bar's` position and height.  */
 void update_editor_scrollbar(guieditor *editor) {
-  /* When debugging, check everything we will use. */
+  ASSERT(editor);
   ASSERT(editor->openfile->edittop);
   ASSERT(editor->openfile->filebot);
   ASSERT(editor->text);
   ASSERT(editor->scrollbar);
-  // /* The ratio of the current top line of the text area. */
-  // float ratio = fclamp(((float)(editor->openfile->edittop->lineno - 1) / (editor->openfile->filebot->lineno - 1)), 0, 1);
-  // // /* The height that the scrollbar should be. */
-  // float height = fclamp((((float)editor->rows / (editor->openfile->filebot->lineno + editor->rows - 1)) * editor->text->size.h), 0, editor->text->size.h);
   float height, ypos;
   calculate_scrollbar(editor->text->size.h, editor->openfile->filetop->lineno, editor->openfile->filebot->lineno, editor->rows, editor->openfile->edittop->lineno, &height, &ypos);
+  editor->scrollbar->relative_pos.y = ypos;
   /* If the height of the scrollbar is the entire size of the text element, then hide the scrollbar and return. */
   if (height == editor->text->size.h) {
     editor->scrollbar->flag.set<GUIELEMENT_HIDDEN>();
@@ -145,9 +142,6 @@ void update_editor_scrollbar(guieditor *editor) {
   else {
     editor->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
   }
-  // /* The relative y position of the scrollbar inside the editor's text element. */
-  // float ypos = fclamp((ratio * (editor->text->size.h - height)), 0, (editor->text->size.h - height));
-  editor->scrollbar->relative_pos.y = ypos;
   move_resize_element(
     editor->scrollbar,
     vec2(editor->scrollbar->pos.x, (editor->text->pos.y + ypos)),
@@ -379,4 +373,19 @@ guieditor *get_file_editor(openfilestruct *file) {
     die("%s: The passed file does not belong to any editor, something is very wrong.\n", __func__);
   }
   return NULL;
+}
+
+void guieditor_calculate_rows(guieditor *const editor) {
+  ASSERT(editor);
+  ASSERT(editor->text);
+  Uint row = 0;
+  float top, bot;
+  while (TRUE) {
+    line_cursor_metrics(row, gui->font, &top, &bot);
+    if (top > editor->text->size.h) {
+      break;
+    }
+    ++row;
+  }
+  editor->rows = row;
 }

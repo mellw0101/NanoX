@@ -11,6 +11,7 @@
 void calculate_scrollbar(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, Uint currentidx, float *height, float *ypos) {
   ASSERT(height);
   ASSERT(ypos);
+  /* Calculate the index ratio of  */
   float ratio = fclamp(((float)(currentidx - startidx) / (endidx - startidx)), 0, 1);
   *height = fclamp((((float)visable_idxno / ((endidx - startidx) + visable_idxno - 1)) * total_pixel_length), 0, total_pixel_length);
   *ypos = fclamp((ratio * (total_pixel_length - (*height))), 0, (total_pixel_length - (*height)));

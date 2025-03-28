@@ -66,7 +66,8 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
   /* Calculate the rows for all editors. */
   ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
     move_resize_element(editor->main, vec2(0, (gui->topbar->pos.y + gui->topbar->size.h)), vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)));
-    editor->rows = (editor->text->size.h / FONT_HEIGHT(gui->font));
+    // editor->rows = (editor->text->size.h / FONT_HEIGHT(gui->font));
+    guieditor_calculate_rows(editor);
     if (texture_font_is_mono(gui->font)) {
       texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
       if (glyph == 0) {
