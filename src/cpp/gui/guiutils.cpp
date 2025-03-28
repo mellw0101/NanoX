@@ -412,22 +412,10 @@ linestruct *gui_line_from_number(guieditor *editor, long number) {
 
 /* Get the line number coresponding to the relative `ypos` in `editor` text element. */
 long get_lineno_from_scrollbar_position(guieditor *editor, float ypos) {
-  /* When debugging is turned on, check all things we will use. */
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  ASSERT(editor);
   ASSERT(editor->openfile->filebot);
   ASSERT(editor->text);
-  float height, max_ypos, ratio;
-  /* Calculate the height that the scrollbar should be and the maximum y positon possible. */
-  height   = (((float)editor->rows / (editor->openfile->filebot->lineno + editor->rows - 1)) * editor->text->size.h);
-  max_ypos = (editor->text->size.h - height);
-  /* Clamp the y position to within the valid range (0 - (editor->text->size.h - height)). */
-  ypos = fclamp(ypos, 0, max_ypos);
-  /* Calculate the ratio of the max y position that should be used to calculate
-   * the line number.  We also clamp the line number to ensure correctness. */
-  ratio = fclamp((ypos / max_ypos), 0, 1);
-  /* Ensure the returned line is valid in the context of the openfile. */
-  return lclamp((long)(ratio * editor->openfile->filebot->lineno), 1, editor->openfile->filebot->lineno);
+  return index_from_scrollbar_pos(editor->text->size.h, editor->openfile->filetop->lineno, editor->openfile->filebot->lineno, editor->rows, ypos);
 }
 
 #endif

@@ -125,8 +125,6 @@ static void setup_rect_shader(void) {
       GL_VERTEX_SHADER },
     { STRLITERAL(\
         #version 450 core\n
-        /* Input. */
-        in vec2 frag_uv;
         /* Output. */
         out vec4 FragColor;
         /* Uniforms. */

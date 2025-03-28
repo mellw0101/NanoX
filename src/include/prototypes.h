@@ -958,5 +958,13 @@ float pixbreadth(texture_font_t *const font, const char *const restrict string);
 linestruct *line_from_cursor_pos(guieditor *const editor);
 
 
+
+/* ---------------------------------------------------------- gui/scollbar.cpp ---------------------------------------------------------- */
+
+
+void calculate_scrollbar(float total_pixel_length, Uint start_entry, Uint total_entries, Uint visable_entries, Uint current_entry, float *height, float *relative_y_position);
+long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, float ypos);
+
+
 #include <Mlib/def.h>
 #include "c_proto.h"

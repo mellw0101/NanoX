@@ -13,7 +13,6 @@
 
 /* Create the editor scrollbar. */
 static void make_editor_scrollbar(guieditor *editor) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
   ASSERT(editor->text);
   editor->scrollbar = make_element_child(editor->text);
   set_element_editor_data(editor->scrollbar, editor);
@@ -27,8 +26,6 @@ static void make_editor_scrollbar(guieditor *editor) {
 
 /* Create the editor topbar. */
 static void make_editor_topbar(guieditor *editor) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->main);
   ASSERT(gui);
   ASSERT(gui->uifont);
@@ -51,8 +48,6 @@ static void make_editor_topbar(guieditor *editor) {
 /* Remove the existing buffer name buttons and create new ones based on the currently open files of `editor`. */
 void refresh_editor_topbar(guieditor *editor) {
   /* When debugging is enabled, assert everything we use. */
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->topbar);
   ASSERT(gui);
   ASSERT(gui->uifont);
@@ -111,8 +106,7 @@ void refresh_editor_topbar(guieditor *editor) {
 
 /* Set all elements color in topbar, setting the active one to the active color. */
 void update_editor_topbar(guieditor *editor) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
+  ASSERT(editor);
   ASSERT(editor->topbar);
   guielement *button;
   /* Iterate over every open file in the editor, if any. */
@@ -132,16 +126,16 @@ void update_editor_topbar(guieditor *editor) {
 /* Update the `scroll-bar's` position and height.  */
 void update_editor_scrollbar(guieditor *editor) {
   /* When debugging, check everything we will use. */
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, editor->openfile);
   ASSERT(editor->openfile->edittop);
   ASSERT(editor->openfile->filebot);
   ASSERT(editor->text);
   ASSERT(editor->scrollbar);
-  /* The ratio of the current top line of the text area. */
-  float ratio = fclamp(((float)editor->openfile->edittop->lineno / editor->openfile->filebot->lineno), 0, 1);
-  /* The height that the scrollbar should be. */
-  float height = fclamp((((float)editor->rows / (editor->openfile->filebot->lineno + editor->rows - 1)) * editor->text->size.h), 0, editor->text->size.h);
+  // /* The ratio of the current top line of the text area. */
+  // float ratio = fclamp(((float)(editor->openfile->edittop->lineno - 1) / (editor->openfile->filebot->lineno - 1)), 0, 1);
+  // // /* The height that the scrollbar should be. */
+  // float height = fclamp((((float)editor->rows / (editor->openfile->filebot->lineno + editor->rows - 1)) * editor->text->size.h), 0, editor->text->size.h);
+  float height, ypos;
+  calculate_scrollbar(editor->text->size.h, editor->openfile->filetop->lineno, editor->openfile->filebot->lineno, editor->rows, editor->openfile->edittop->lineno, &height, &ypos);
   /* If the height of the scrollbar is the entire size of the text element, then hide the scrollbar and return. */
   if (height == editor->text->size.h) {
     editor->scrollbar->flag.set<GUIELEMENT_HIDDEN>();
@@ -151,8 +145,8 @@ void update_editor_scrollbar(guieditor *editor) {
   else {
     editor->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
   }
-  /* The relative y position of the scrollbar inside the editor's text element. */
-  float ypos = fclamp((ratio * (editor->text->size.h - height)), 0, (editor->text->size.h - height));
+  // /* The relative y position of the scrollbar inside the editor's text element. */
+  // float ypos = fclamp((ratio * (editor->text->size.h - height)), 0, (editor->text->size.h - height));
   editor->scrollbar->relative_pos.y = ypos;
   move_resize_element(
     editor->scrollbar,
