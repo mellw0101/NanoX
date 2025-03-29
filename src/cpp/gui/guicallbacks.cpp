@@ -20,10 +20,6 @@ typedef enum {
   #define WAS_MOUSE_DOUBLE_PRESS WAS_MOUSE_DOUBLE_PRESS
   WAS_MOUSE_TRIPPLE_PRESS,
   #define WAS_MOUSE_TRIPPLE_PRESS WAS_MOUSE_TRIPPLE_PRESS
-  WAS_EDITOR_TEXT_PRESS,
-  #define WAS_EDITOR_TEXT_PRESS WAS_EDITOR_TEXT_PRESS
-  WAS_EDITOR_SCROLL_PRESS,
-  #define WAS_EDITOR_SCROLL_PRESS WAS_EDITOR_SCROLL_PRESS
 } mouseflag_type;
 
 /* Flags to represent what the mouse is currently doing, across callback functions. */
@@ -714,6 +710,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_MINUS: {
           if (mods == GLFW_MOD_CONTROL) {
             change_gui_font_size(gui->font_size - 1);
+            show_statusmsg(AHEM, 2, "Font size: %u", gui->font_size);
             refresh_needed = TRUE;
           }
           break;
@@ -721,6 +718,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_EQUAL: {
           if (mods == GLFW_MOD_CONTROL) {
             change_gui_font_size(gui->font_size + 1);
+            show_statusmsg(AHEM, 2, "Font size: %u", gui->font_size);
             refresh_needed = TRUE;
           }
           break;
@@ -921,9 +919,10 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   /* Left mouse button. */
   if (button == GLFW_MOUSE_BUTTON_1) {
     if (action == GLFW_PRESS) {
+      /* Indicate that the left mouse button is currently held. */
+      mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
       /* When in prompt-mode. */
       if (gui->flag.is_set<GUI_PROMPT>()) {
-        mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
         /* Get the index in the prompt. */
         long index = prompt_index_from_mouse(FALSE);
         /* If the mouse press was on anything other then inside the top-bar, exit prompt-mode. */
@@ -937,53 +936,47 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
       guielement *element = element_from_mousepos();
       if (element) {
+        /* Save the element that was clicked. */
+        gui->clicked = element;
         /* When the mouse is pressed in the text element of a editor. */
-        if (element->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>()) {
-          if (element == element->data.editor->text) {
-            /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
-            set_openeditor(element->data.editor);
-            mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
-            /* Get the line and index from the mouse position. */
-            Ulong index;
-            linestruct *line = line_and_index_from_mousepos(gui->font, &index);
-            if (line) {
-              openfile->current     = line;
-              openfile->mark        = line;
-              openfile->current_x   = index;
-              openfile->mark_x      = index;
-              openfile->softmark    = TRUE;
-              openfile->placewewant = xplustabs();
-              if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
-                /* If this was a double click then select the current word, if any. */
-                Ulong st, end;
-                st  = get_prev_cursor_word_start_index(TRUE);
-                end = get_current_cursor_word_end_index(TRUE);
-                if (st != openfile->current_x && end != openfile->current_x) {
-                  /* If the double click was inside of a word. */
-                  openfile->mark_x    = st;
-                  openfile->current_x = end;
-                }
-                else if (st != openfile->current_x && end == openfile->current_x) {
-                  /* The double click was done at the end of the word.  So we select that word. */
-                  openfile->mark_x = st;
-                }
-                else if (st == openfile->current_x && end != openfile->current_x) {
-                  /* The double click was done at the begining of the word.  So we select that word. */
-                  openfile->mark_x    = st;
-                  openfile->current_x = end;
-                }
+        if (element_has_editor_data(element) && element == element->data.editor->text) {
+          /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
+          set_openeditor(element->data.editor);
+          mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
+          /* Get the line and index from the mouse position. */
+          Ulong index;
+          linestruct *line = line_and_index_from_mousepos(gui->font, &index);
+          if (line) {
+            openfile->current     = line;
+            openfile->mark        = line;
+            openfile->current_x   = index;
+            openfile->mark_x      = index;
+            openfile->softmark    = TRUE;
+            openfile->placewewant = xplustabs();
+            if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
+              /* If this was a double click then select the current word, if any. */
+              Ulong st, end;
+              st  = get_prev_cursor_word_start_index(TRUE);
+              end = get_current_cursor_word_end_index(TRUE);
+              if (st != openfile->current_x && end != openfile->current_x) {
+                /* If the double click was inside of a word. */
+                openfile->mark_x    = st;
+                openfile->current_x = end;
               }
-              else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
-                openfile->mark_x = 0;
-                openfile->current_x = strlen(openfile->current->data);
+              else if (st != openfile->current_x && end == openfile->current_x) {
+                /* The double click was done at the end of the word.  So we select that word. */
+                openfile->mark_x = st;
+              }
+              else if (st == openfile->current_x && end != openfile->current_x) {
+                /* The double click was done at the begining of the word.  So we select that word. */
+                openfile->mark_x    = st;
+                openfile->current_x = end;
               }
             }
-          }
-          else if (element == element->data.editor->scrollbar) {
-            mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
-            mouse_flag.set<WAS_EDITOR_SCROLL_PRESS>();
-            gui->clicked = element;
-            NETLOG("Clicked scrollbar.\n");
+            else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
+              openfile->mark_x = 0;
+              openfile->current_x = strlen(openfile->current->data);
+            }
           }
         }
         /* For when the top bar is pressed, like when in prompt-mode. */
@@ -999,7 +992,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         openfile->mark = NULL;
       }
       mouse_flag.unset<LEFT_MOUSE_BUTTON_HELD>();
-      mouse_flag.unset<WAS_EDITOR_SCROLL_PRESS>();
       gui->clicked = NULL;
     }
   }
@@ -1071,7 +1063,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         refresh_needed = TRUE;
       }
     }
-    else {
+    else if (element_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->text) {
       Ulong index;
       linestruct *line = line_and_index_from_mousepos(gui->font, &index);
       if (line) {

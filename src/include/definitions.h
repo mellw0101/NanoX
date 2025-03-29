@@ -1112,11 +1112,11 @@ typedef struct completionstruct {
     guieditor *prev; /* Pointer to the previous editor in the circular linked list. */
 
     #define ITER_OVER_ALL_OPENEDITORS(starteditor, name, action)                          \
-      DO_WHILE(                                                                     \
+      DO_WHILE(                                                                           \
         if (starteditor && starteditor->next) {                                           \
           guieditor *name = starteditor;                                                  \
           do {                                                                            \
-            DO_WHILE(action);                                                       \
+            DO_WHILE(action);                                                             \
             name = name->next;                                                            \
           } while (name != starteditor);                                                  \
         }                                                                                 \

@@ -154,9 +154,6 @@ float get_line_number_pixel_offset(linestruct *line, texture_font_t *font) {
 
 /* Calculates cursor x position for the gui. */
 float line_pixel_x_pos(linestruct *line, Ulong index, texture_font_t *font) {
-  /* When debugging is enabled, check the entire list of editors and everything we use. */
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(line);
   ASSERT(font);
   float ret = 0;
@@ -174,8 +171,6 @@ float line_pixel_x_pos(linestruct *line, Ulong index, texture_font_t *font) {
 
 /* Calculates cursor x position for the gui. */
 float cursor_pixel_x_pos(texture_font_t *font) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   ASSERT(font);
   return line_pixel_x_pos(openeditor->openfile->current, openeditor->openfile->current_x, font);
 }
@@ -221,10 +216,10 @@ void add_glyph(const char *current, const char *prev, vertex_buffer_t *buf, text
   float y1 = (int)(y0 + glyph->height);
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };
   vertex_t vertices[] = {
-    { x0, y0, 0, glyph->s0, glyph->t0, color.r, color.g, color.b, color.a},
-    { x0, y1, 0, glyph->s0, glyph->t1, color.r, color.g, color.b, color.a},
-    { x1, y1, 0, glyph->s1, glyph->t1, color.r, color.g, color.b, color.a},
-    { x1, y0, 0, glyph->s1, glyph->t0, color.r, color.g, color.b, color.a}
+    { x0,y0,0, glyph->s0,glyph->t0, color.r,color.g,color.b,color.a },
+    { x0,y1,0, glyph->s0,glyph->t1, color.r,color.g,color.b,color.a },
+    { x1,y1,0, glyph->s1,glyph->t1, color.r,color.g,color.b,color.a },
+    { x1,y0,0, glyph->s1,glyph->t0, color.r,color.g,color.b,color.a }
   };
   vertex_buffer_push_back(buf, vertices, 4, indices, 6);
   penpos->x += glyph->advance_x;

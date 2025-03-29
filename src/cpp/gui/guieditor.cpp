@@ -11,6 +11,7 @@
  */
 #include "../../include/prototypes.h"
 
+
 /* Create the editor scrollbar. */
 static void make_editor_scrollbar(guieditor *editor) {
   ASSERT(editor->text);
@@ -249,7 +250,6 @@ void delete_editor(guieditor *editor) {
 
 /* Close the currently active editor. */
 void close_editor(void) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
   guieditor *editor = openeditor;
   if (editor == starteditor) {
     starteditor = starteditor->next;
@@ -381,7 +381,7 @@ void guieditor_calculate_rows(guieditor *const editor) {
   Uint row = 0;
   float top, bot;
   while (TRUE) {
-    line_cursor_metrics(row, gui->font, &top, &bot);
+    row_top_bot_pixel(row, gui->font, &top, &bot);
     if (top > editor->text->size.h) {
       break;
     }

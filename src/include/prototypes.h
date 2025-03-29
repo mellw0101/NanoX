@@ -923,7 +923,6 @@ Ulong  append_to(char **dst, Ulong dstlen, const char *src, Ulong srclen) _NOTHR
 Ulong  append_to(char **dst, const char *src, Ulong srclen) _NOTHROW _NONNULL(1, 2);
 Ulong  append_to(char **dst, const char *src) _NOTHROW _NONNULL(1, 2);
 char **split_string_nano(const char *string, const char delim, Ulong *n) _NOTHROW _NODISCARD _NONNULL(1, 3);
-// char  *fmtstr(const char *format, ...) _NOTHROW _NODISCARD _PRINTFLIKE(1, 2);
 
 
 /* ---------------------------------------------------------- gui/font/loading.cpp ---------------------------------------------------------- */
@@ -940,8 +939,8 @@ void list_available_fonts(void);
 /* ---------------------------------------------------------- gui/font/utils.cpp ---------------------------------------------------------- */
 
 
-float line_baseline_pixel(long lineno, texture_font_t *const font);
-void line_cursor_metrics(long lineno, texture_font_t *const font, float *const top, float *const bot);
+float row_baseline_pixel(long lineno, texture_font_t *const font);
+void row_top_bot_pixel(long lineno, texture_font_t *const font, float *const top, float *const bot);
 void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset);
 
 

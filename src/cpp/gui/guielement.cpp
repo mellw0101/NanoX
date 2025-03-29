@@ -8,7 +8,7 @@
 
 /* Dont use yet. */
 _UNUSED static guielement *make_new_element(void) {
-  guielement *element   = (guielement *)nmalloc(sizeof(*element));
+  guielement *element   = (guielement *)xmalloc(sizeof(*element));
   element->pos          = -100;
   element->relative_pos = 0;
   element->endoff       = 0;
@@ -83,8 +83,8 @@ void set_element_lable(guielement *element, const char *string) _NOTHROW {
   if (element->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
     free(element->lable);
   }
-  element->lable    = copy_of(string);
   element->lablelen = strlen(string);
+  element->lable    = measured_copy(string, element->lablelen);
   element->flag.set<GUIELEMENT_HAS_LABLE>();
 }
 

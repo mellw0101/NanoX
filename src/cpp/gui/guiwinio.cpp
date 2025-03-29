@@ -57,7 +57,7 @@ static void draw_marked(guieditor *const editor, linestruct *const line, const c
       /* Calculate the width of the marked region in pixels. */
       rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui->font);
       /* Get the y offset for the given line. */
-      line_cursor_metrics((line->lineno - editor->openfile->edittop->lineno), gui->font, &pixtop, &pixbot);
+      row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui->font, &pixtop, &pixbot);
       rect.y = (pixtop + editor->text->pos.y);
       rect.height = (pixbot - pixtop);
       /* Setup the color. */
@@ -427,7 +427,7 @@ void draw_editor(guieditor *editor) {
     vertex_buffer_clear(editor->buffer);
     while (line && ++row <= editwinrows) {
       editor->pen.x = 0;
-      editor->pen.y = (line_baseline_pixel((line->lineno - editor->openfile->edittop->lineno), gui->font) + editor->text->pos.y);
+      editor->pen.y = (row_baseline_pixel((line->lineno - editor->openfile->edittop->lineno), gui->font) + editor->text->pos.y);
       gui_draw_row(line, editor, &editor->pen);
       line = line->next;
     }
@@ -527,9 +527,9 @@ void draw_statusbar(void) {
       );
       vec2 penpos((gui->statusbar->pos.x + pixel_breadth(gui->font, " ")), (gui->statusbar->pos.y + FONT_HEIGHT(gui->font) + gui->font->descender));
       vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui->font, vec4(1.0f), &penpos);
-      upload_texture_atlas(gui->atlas);
     }
     draw_element_rect(gui->statusbar);
+    upload_texture_atlas(gui->atlas);
     render_vertex_buffer(gui->font_shader, gui->statusbuf);
   }
 }

@@ -8,13 +8,13 @@
 
 
 /* Calculate the height and the top y position relative to `total_pixel_length` of a scrollbar. */
-void calculate_scrollbar(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, Uint currentidx, float *height, float *ypos) {
-  ASSERT(height);
-  ASSERT(ypos);
+void calculate_scrollbar(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, Uint currentidx, float *length, float *relative_pos) {
+  ASSERT(length);
+  ASSERT(relative_pos);
   /* Calculate the index ratio of  */
   float ratio = fclamp(((float)(currentidx - startidx) / (endidx - startidx)), 0, 1);
-  *height = fclamp((((float)visable_idxno / ((endidx - startidx) + visable_idxno - 1)) * total_pixel_length), 0, total_pixel_length);
-  *ypos = fclamp((ratio * (total_pixel_length - (*height))), 0, (total_pixel_length - (*height)));
+  *length = fclamp((((float)visable_idxno / ((endidx - startidx) + visable_idxno - 1)) * total_pixel_length), 0, total_pixel_length);
+  *relative_pos = fclamp((ratio * (total_pixel_length - (*length))), 0, (total_pixel_length - (*length)));
 }
 
 /* Return's the index based on a scrollbar's top `ypos` relative to `total_pixel_length`. */

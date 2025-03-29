@@ -7,14 +7,15 @@
 #include "../../../include/prototypes.h"
 
 
-float line_baseline_pixel(long lineno, texture_font_t *const font) {
+/* Return the pixel where the baseline of the given `row` is.  Note that this is 0 indexed, so it starts at row 0 for the first row. */
+float row_baseline_pixel(long row, texture_font_t *const font) {
   ASSERT(font);
-  return ((lineno * FONT_HEIGHT(font)) + font->ascender);
+  return ((row * FONT_HEIGHT(font)) + font->ascender);
 }
 
-void line_cursor_metrics(long lineno, texture_font_t *const font, float *const top, float *const bot) {
+void row_top_bot_pixel(long lineno, texture_font_t *const font, float *const top, float *const bot) {
   ASSERT(font);
-  float baseline = line_baseline_pixel(lineno, font);
+  float baseline = row_baseline_pixel(lineno, font);
   *top = (baseline - font->ascender);
   *bot = (baseline - font->descender);
 }
@@ -25,7 +26,7 @@ void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *c
   /* Use the NULL texture as the cursor texture, so just a rectangle. */
   texture_glyph_t *glyph = texture_font_get_glyph(font, NULL);
   ALWAYS_ASSERT(glyph);
-  line_cursor_metrics(lineno, font, &top, &bot);
+  row_top_bot_pixel(lineno, font, &top, &bot);
   x0 = (int)xpos;
   y0 = (int)(top + yoffset);
   x1 = (int)(x0 + 1);
