@@ -64,12 +64,12 @@ void refresh_editor_topbar(guieditor *editor) {
       move_resize_element(
         button,
         pos,
-        vec2((pixel_breadth(gui->uifont, file->filename) + pixel_breadth(gui->uifont, "  ")), editor->topbar->size.h)
+        vec2((pixbreadth(gui->uifont, file->filename) + pixbreadth(gui->uifont, "  ")), editor->topbar->size.h)
       );
       set_element_lable(button, file->filename);
     }
     else {
-      move_resize_element(button, pos, vec2(pixel_breadth(gui->uifont, " Nameless "), editor->topbar->size.h));
+      move_resize_element(button, pos, vec2(pixbreadth(gui->uifont, " Nameless "), editor->topbar->size.h));
       set_element_lable(button, "Nameless");
     }
     /* Set a diffrent color on the button that holds the editor openfile. */
