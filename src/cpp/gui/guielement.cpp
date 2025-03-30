@@ -174,6 +174,15 @@ void move_element(guielement *e, vec2 pos) {
   gridmap.set(e);
 }
 
+/* Move an `guielement's` y position to `ypos` while clamping it to be constrained to `min` and `max`. */
+void move_element_y_clamp(guielement *const e, float ypos, float min, float max) {
+  ASSERT(e);
+  gridmap.remove(e);
+  e->pos.y = fclamp(ypos, min, max);
+  check_element_children_relative_pos_size(e);
+  gridmap.set(e);
+}
+
 /* Move and resize an element and correctly set it in the gridmap. */
 void move_resize_element(guielement *e, vec2 pos, vec2 size) {
   ASSERT(e);

@@ -944,10 +944,10 @@ typedef struct completionstruct {
   } guielement_data_type;
 
   typedef struct guielement {
-    vec2                  pos;            /* Where in the window this element has (x,y). */
-    vec2                  relative_pos;   /* When relative position is used, this is the position relative to `parent`. */
-    vec2                  endoff;         /* The distance from the width and height of the full window.  If any. */
-    vec2                  size;           /* The size of this element. */
+    vec2 pos;           /* Where in the window this element has (x,y). */
+    vec2 relative_pos;  /* When relative position is used, this is the position relative to `parent`. */
+    vec2 endoff;        /* The distance from the width and height of the full window.  If any. */
+    vec2 size;          /* The size of this element. */
     
     /* When relative width or height is enabled this is the offset
      * from the right-bottom of parent to resize this element to. */
@@ -957,14 +957,14 @@ typedef struct completionstruct {
      * ptr types, this helps to not have to cast everything. */
     guielement_data_type data;
     
-    vec4                  color;          /* Color this element should be. */
-    vec4                  textcolor;      /* Color that text draw in this element should be. */
-    char                 *lable;          /* If this ui element is a button or has static text. */
-    Uint                  lablelen;       /* The length of the static text.  If any. */
-    bit_flag_t<GUIELEMENT_FLAG_SIZE>flag; /* Flags for the element. */
-    guielement           *parent;         /* This element`s parent, or NULL when there is none. */
-    MVector<guielement *> children;       /* This elements children, for menus and such. */
-    guielement_callback callback;         /* Callback for all action types. */
+    vec4                  color;            /* Color this element should be. */
+    vec4                  textcolor;        /* Color that text draw in this element should be. */
+    char                 *lable;            /* If this ui element is a button or has static text. */
+    Uint                  lablelen;         /* The length of the static text.  If any. */
+    bit_flag_t<GUIELEMENT_FLAG_SIZE> flag;  /* Flags for the element. */
+    guielement           *parent;           /* This element`s parent, or NULL when there is none. */
+    MVector<guielement *> children;         /* This elements children, for menus and such. */
+    guielement_callback callback;           /* Callback for all action types. */
   } guielement;
 
   class uigridmapclass {
@@ -1149,9 +1149,24 @@ typedef struct completionstruct {
   } guiscreen;
 
   typedef struct {
+    struct {
+      bool refresh_needed : 1;
+    } flag;
     vertex_buffer_t *buffer;
     guielement      *element;
   } GuiPromptMenu;
+
+  /** TODO: Implement this. */
+  /* typedef struct {
+    struct {
+      bool refresh_needed : 1;
+    } flag;
+    char            *msg;
+    float            time;
+    message_type     msgtype;
+    vertex_buffer_t *buffer;
+    guielement      *element;
+  } GuiStatusbar; */
 
   typedef struct {
     char            *title;                  /* The window title. */

@@ -871,6 +871,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   guielement *element_from_mousepos(void);
   void resize_element(guielement *e, vec2 size);
   void move_element(guielement *e, vec2 pos);
+  void move_element_y_clamp(guielement *const e, float ypos, float min, float max);
   void move_resize_element(guielement *e, vec2 pos, vec2 size);
   void delete_element_borders(guielement *e);
   void set_element_borders(guielement *e, vec4 size, vec4 color);
@@ -897,6 +898,8 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   guieditor *get_element_editor(guielement *e);
   guieditor *get_file_editor(openfilestruct *file);
   void guieditor_calculate_rows(guieditor *const editor);
+  long guieditor_lineno_from_scrollbar_pos(guieditor *const editor);
+  void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor);
 
   /* gui/guigrid.cpp */
   guigridsection *make_new_gridsection(void);

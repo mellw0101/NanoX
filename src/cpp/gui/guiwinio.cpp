@@ -456,16 +456,9 @@ void draw_editor(guieditor *editor) {
 /* Draw the top bar of the gui. */
 void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
-    gui->promptmenu->element->color = VEC4_VS_CODE_RED;
-  }
-  else {
-    gui->promptmenu->element->color = EDIT_BACKGROUND_COLOR;
-  }
-  /* Always draw the top-bar.  For now. */
-  draw_element_rect(gui->promptmenu->element);
-  /* When in prompt mode.  Only draw the prompt and the answer. */
-  if (gui->flag.is_set<GUI_PROMPT>()) {
-    if (refresh_needed) {
+    draw_element_rect(gui->promptmenu->element);
+    /* Only refresh the promptmenu buffer if it has changed. */
+    if (gui->promptmenu->flag.refresh_needed) {
       vertex_buffer_clear(gui->promptmenu->buffer);
       vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ")), (row_baseline_pixel(0, gui->uifont) + gui->promptmenu->element->pos.y));
       vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui->uifont, vec4(1), &penpos);
@@ -474,20 +467,15 @@ void draw_topbar(void) {
         0,
         gui->uifont,
         gui->promptmenu->buffer,
-        vec4(1),
-        (gui->promptmenu->element->pos.x + pixel_breadth(gui->uifont, " ") + pixel_breadth(gui->uifont, prompt) + string_pixel_offset(answer, " ", typing_x, gui->uifont)),
+        1,
+        (gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ") + pixbreadth(gui->uifont, prompt) + string_pixel_offset(answer, " ", typing_x, gui->uifont)),
         gui->promptmenu->element->pos.y
       );
+      gui->promptmenu->flag.refresh_needed = FALSE;
     }
+    upload_texture_atlas(gui->uiatlas);
+    render_vertex_buffer(gui->font_shader, gui->promptmenu->buffer);
   }
-  /* Otherwise, draw the menu elements as usual. */
-  else {
-    if (refresh_needed) {
-      vertex_buffer_clear(gui->promptmenu->buffer);
-    }
-  }
-  upload_texture_atlas(gui->uiatlas);
-  render_vertex_buffer(gui->font_shader, gui->promptmenu->buffer);
 }
 
 /* Draw the bottom bar of the gui. */
@@ -508,18 +496,18 @@ void draw_statusbar(void) {
     }
     if (refresh_needed) {
       gui->statusbar->flag.unset<GUIELEMENT_HIDDEN>();
-      float msgwidth = (pixel_breadth(gui->font, statusmsg) + pixel_breadth(gui->font, "  "));
+      float msgwidth = (pixbreadth(gui->uifont, statusmsg) + pixbreadth(gui->uifont, "  "));
       vertex_buffer_clear(gui->statusbuf);
       move_resize_element(
         gui->statusbar,
         vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - gui->botbar->size.h - gui->statusbar->size.h)),
-        vec2(msgwidth, FONT_HEIGHT(gui->font))
+        vec2(msgwidth, FONT_HEIGHT(gui->uifont))
       );
-      vec2 penpos((gui->statusbar->pos.x + pixel_breadth(gui->font, " ")), (gui->statusbar->pos.y + FONT_HEIGHT(gui->font) + gui->font->descender));
-      vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui->font, vec4(1.0f), &penpos);
+      vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui->uifont, " ")), (row_baseline_pixel(0, gui->uifont) + gui->statusbar->pos.y));
+      vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui->uifont, 1, &penpos);
     }
     draw_element_rect(gui->statusbar);
-    upload_texture_atlas(gui->atlas);
+    upload_texture_atlas(gui->uiatlas);
     render_vertex_buffer(gui->font_shader, gui->statusbuf);
   }
 }

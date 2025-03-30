@@ -61,9 +61,7 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
   resize_element(gui->root, vec2(gui->width, gui->height));
   /* Calculate the rows for all editors. */
   ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
-    // move_resize_element(editor->main, vec2(0, (gui->topbar->pos.y + gui->topbar->size.h)), vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)));
-    move_resize_element(editor->main, vec2(0, (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h)), vec2(gui->width, (gui->height - (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h) - gui->botbar->size.h)));
-    // editor->rows = (editor->text->size.h / FONT_HEIGHT(gui->font));
+    move_resize_element(editor->main, 0, vec2(gui->width, (gui->height - gui->botbar->size.h)));
     guieditor_calculate_rows(editor);
     if (texture_font_is_mono(gui->font)) {
       texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
@@ -211,7 +209,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
       }
-      refresh_needed = TRUE;
+      gui->promptmenu->flag.refresh_needed = TRUE;
     }
   }
   /* When inside the guieditor key mode, do nothing as we handle further keys in the char callback. */
@@ -808,7 +806,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
     else {
       inject_into_answer(&input, 1);
     }
-    refresh_needed = TRUE;
+    gui->promptmenu->flag.refresh_needed = TRUE;
   }
   /* Otherwise, when we are inside gui editor mode. */
   else if (gui->flag.is_set<GUI_EDITOR_MODE_KEY>()) {
@@ -992,11 +990,16 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
     }
     else if (action == GLFW_RELEASE) {
+      mouse_flag.unset<LEFT_MOUSE_BUTTON_HELD>();
       /* If when the left mouse button is relesed without moving, set the mark to NULL. */
       if (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) {
         openfile->mark = NULL;
       }
-      mouse_flag.unset<LEFT_MOUSE_BUTTON_HELD>();
+      /* If the clicked element was the scrollbar of any editor, then set the flag so that the position
+       * of the scrollbar gets corrected to exactly a step, as it might have been moved to inbetween 2 steps. */
+      if (element_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->scrollbar) {
+        gui->clicked->data.editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+      }
       gui->clicked = NULL;
     }
   }
@@ -1041,95 +1044,100 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 /* Mouse pos callback. */
 void mouse_pos_callback(GLFWwindow *window, double x, double y) {
   static vec2 last_mousepos = mousepos;
+  guielement *mouse_element;
+  /* Set the global mouse position. */
   mousepos = vec2(x, y);
+  /* If the left mouse button is being held. */
   if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
+    /* When inside prompt mode. */
     if (gui->flag.is_set<GUI_PROMPT>()) {
       long index = prompt_index_from_mouse(TRUE);
       if (index != -1) {
         typing_x = index;
       }
     }
-    /* When the clicked element is the scrollbar of any editor, scroll that editor. */
-    else if (element_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->scrollbar) {
-      /* Only update the postion when the mouse y position has changed. */
-      if (mousepos.y != last_mousepos.y) {
-        vec2 newpos = gui->clicked->pos;
-        newpos.y += (mousepos.y - last_mousepos.y);
-        newpos.y = fclamp(
-          newpos.y,
-          gui->clicked->parent->pos.y,
-          (gui->clicked->parent->pos.y + gui->clicked->parent->size.h - gui->clicked->size.h)
-        );
-        move_element(gui->clicked, newpos);
-        gui->clicked->data.editor->openfile->edittop = gui_line_from_number(
-          gui->clicked->data.editor,
-          get_lineno_from_scrollbar_position(gui->clicked->data.editor, (gui->clicked->pos.y - gui->clicked->parent->pos.y))
-        );
-        refresh_needed = TRUE;
-      }
-    }
-    else if (element_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->text) {
-      Ulong index;
-      linestruct *line = line_and_index_from_mousepos(gui->font, &index);
-      if (line) {
-        openfile->current   = line;
-        openfile->current_x = index;
-        /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
-        if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
-          Ulong st, end;
-          st  = 0;
-          end = strlen(openfile->mark->data);
-          /* If the current cursor line is the same as mark, mark the entire line no matter the cursor pos inside it. */
-          if (openfile->current == openfile->mark) {
-            openfile->mark_x    = st;
-            openfile->current_x = end;
-          }
-          /* If the current line is above the line where the mark was placed, set the mark index at the end of the line. */
-          if (openfile->current->lineno < openfile->mark->lineno) {
-            openfile->mark_x = end;
-          }
-          /* Otherwise, place it at the start. */
-          else {
-            openfile->mark_x = st;
-          }
+    /* If the clicked element is a part of an editor. */
+    else if (element_has_editor_data(gui->clicked)) {
+      /* When the clicked element is the scrollbar of any editor, scroll that editor. */
+      if (gui->clicked == gui->clicked->data.editor->scrollbar) {
+        /* Only update the postion when the mouse y position has changed. */
+        if (mousepos.y != last_mousepos.y) {
+          /* Move the scrollbar only in the y axis. */
+          move_element_y_clamp(
+            gui->clicked,
+            (gui->clicked->pos.y + (mousepos.y - last_mousepos.y)),
+            gui->clicked->data.editor->text->pos.y,
+            (gui->clicked->data.editor->text->pos.y + gui->clicked->data.editor->text->size.h - gui->clicked->size.h)
+          );
+          /* Set the new edittop line based on the new scrollbar position. */
+          guieditor_set_edittop_from_scrollbar_pos(gui->clicked->data.editor);
+          refresh_needed = TRUE;
         }
-        /* If the left press was a double press. */
-        else if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
-          /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
-          Ulong st, end;
-          st  = get_prev_word_start_index(openfile->mark->data, openfile->mark_x, TRUE);
-          end = get_current_word_end_index(openfile->mark->data, openfile->mark_x, TRUE);
-          /* If the current line is the same as the mark line. */
-          if (openfile->current == openfile->mark) {
-            /* When the current cursor pos is inside the the word, just mark the entire word. */
-            if (openfile->current_x >= st && openfile->current_x <= end) {
+      }
+      /* Otherwise if the clicked element is a editor's text element. */
+      else if (gui->clicked == gui->clicked->data.editor->text) {
+        Ulong index;
+        linestruct *line = line_and_index_from_mousepos(gui->font, &index);
+        if (line) {
+          openfile->current   = line;
+          openfile->current_x = index;
+          /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
+          if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
+            Ulong st, end;
+            st  = 0;
+            end = strlen(openfile->mark->data);
+            /* If the current cursor line is the same as mark, mark the entire line no matter the cursor pos inside it. */
+            if (openfile->current == openfile->mark) {
               openfile->mark_x    = st;
               openfile->current_x = end;
             }
-            /* Or, when the cursor if before the word, set the mark at the end of the word. */
-            else if (openfile->current_x < st) {
+            /* If the current line is above the line where the mark was placed, set the mark index at the end of the line. */
+            if (openfile->current->lineno < openfile->mark->lineno) {
               openfile->mark_x = end;
             }
-            /* And when the cursor is after the word, place the mark at the start. */
-            else if (openfile->current_x > end) {
+            /* Otherwise, place it at the start. */
+            else {
               openfile->mark_x = st;
             }
           }
-          /* Otherwise, when the cursor line is above the mark, place the mark at the end of the word. */
-          else if (openfile->current->lineno < openfile->mark->lineno) {
-            openfile->mark_x = end;
+          /* If the left press was a double press. */
+          else if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
+            /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
+            Ulong st, end;
+            st  = get_prev_word_start_index(openfile->mark->data, openfile->mark_x, TRUE);
+            end = get_current_word_end_index(openfile->mark->data, openfile->mark_x, TRUE);
+            /* If the current line is the same as the mark line. */
+            if (openfile->current == openfile->mark) {
+              /* When the current cursor pos is inside the the word, just mark the entire word. */
+              if (openfile->current_x >= st && openfile->current_x <= end) {
+                openfile->mark_x    = st;
+                openfile->current_x = end;
+              }
+              /* Or, when the cursor if before the word, set the mark at the end of the word. */
+              else if (openfile->current_x < st) {
+                openfile->mark_x = end;
+              }
+              /* And when the cursor is after the word, place the mark at the start. */
+              else if (openfile->current_x > end) {
+                openfile->mark_x = st;
+              }
+            }
+            /* Otherwise, when the cursor line is above the mark, place the mark at the end of the word. */
+            else if (openfile->current->lineno < openfile->mark->lineno) {
+              openfile->mark_x = end;
+            }
+            /* And when the cursor line is below the mark line, place the mark at the start of the word. */
+            else {
+              openfile->mark_x = st;
+            }
           }
-          /* And when the cursor line is below the mark line, place the mark at the start of the word. */
-          else {
-            openfile->mark_x = st;
-          }
+          openfile->placewewant = xplustabs();
         }
-        openfile->placewewant = xplustabs();
       }
     }
   }
   /* Get the element that the mouse is on. */
-  guielement *mouse_element = element_from_mousepos();
+  mouse_element = element_from_mousepos();
   if (mouse_element) {
     /* If the current mouse element is not the current entered element. */
     if (mouse_element != entered_element) {
@@ -1147,6 +1155,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       entered_element = mouse_element;
     }
   }
+  /* Save the current mouse position. */
   last_mousepos = mousepos;
   refresh_needed = TRUE;
 }

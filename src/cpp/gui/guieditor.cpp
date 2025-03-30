@@ -188,8 +188,8 @@ void make_new_editor(bool new_buffer) {
   openeditor->rows     = 0;
   /* Create the main editor element. */
   openeditor->main = make_element(
-    vec2(0, (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h)),
-    vec2(gui->width, (gui->height - (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h) - gui->botbar->size.h)),
+    0,
+    vec2(gui->width, (gui->height - gui->botbar->size.h)),
     0,
     EDIT_BACKGROUND_COLOR,
     FALSE
@@ -375,6 +375,7 @@ guieditor *get_file_editor(openfilestruct *file) {
   return NULL;
 }
 
+/* Calculate the amount of rows that fit in the text element of `editor` based on the current font. */
 void guieditor_calculate_rows(guieditor *const editor) {
   ASSERT(editor);
   ASSERT(editor->text);
@@ -388,4 +389,29 @@ void guieditor_calculate_rows(guieditor *const editor) {
     ++row;
   }
   editor->rows = row;
+}
+
+/* Return the edittop line number based on the current position of the editor's scrollbar. */
+long guieditor_lineno_from_scrollbar_pos(guieditor *const editor) {
+  ASSERT(editor);
+  ASSERT(editor->openfile);
+  ASSERT(editor->openfile->filetop);
+  ASSERT(editor->openfile->filebot);
+  ASSERT(editor->text);
+  ASSERT(editor->scrollbar);
+  return index_from_scrollbar_pos(
+    editor->text->size.h,
+    editor->openfile->filetop->lineno,
+    editor->openfile->filebot->lineno,
+    editor->rows,
+    (editor->scrollbar->pos.y - editor->text->pos.y)
+  );
+}
+
+/* Set the editor's currently openfile's edittop based on the current position of the scrollbar. */
+void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor) {
+  ASSERT(editor);
+  ASSERT(editor->openfile);
+  ASSERT(editor->openfile->edittop);
+  editor->openfile->edittop = gui_line_from_number(editor, guieditor_lineno_from_scrollbar_pos(editor));
 }

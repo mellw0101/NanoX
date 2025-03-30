@@ -157,7 +157,7 @@ static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
   gui->statusbar = make_element(
     vec2(0, gui->height),
-    vec2(gui->width, FONT_HEIGHT(gui->font)),
+    vec2(gui->width, FONT_HEIGHT(gui->uifont)),
     0.0f,
     color_idx_to_vec4(FG_VS_CODE_RED)
   );
@@ -214,7 +214,7 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   gui->title      = copy_of(win_title);
   gui->width      = win_width;
   gui->height     = win_height;
-  gui->projection = matrix4x4_new(); /* (matrix4x4 *)xmalloc(sizeof(*gui->projection)); */
+  gui->projection = matrix4x4_new();
   /* Then create the glfw window. */
   gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
   if (!gui->window) {

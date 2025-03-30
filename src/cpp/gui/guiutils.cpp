@@ -62,15 +62,15 @@ float pixel_breadth(texture_font_t *font, const char *text) {
 long index_from_mouse_x(const char *string, Uint len, texture_font_t *font, float offset) {
   ASSERT(string);
   ASSERT(font);
-  if (mousepos.x <= offset) {
-    return 0;
-  }
   const char *cur;
   const char *prev = (ISSET(LINE_NUMBERS) ? " " : NULL);
   float st_x  = 0.0f;
   float end_x = 0.0f;
-  Ulong i = 0;
-  for (; i < len; ++i) {
+  Ulong i;
+  if (mousepos.x <= offset) {
+    return 0;
+  }
+  for (i=0; i<len; ++i) {
     /* Set the start x pos to the end pos x. */
     st_x = end_x;
     cur = &string[i];
