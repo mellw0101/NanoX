@@ -456,48 +456,38 @@ void draw_editor(guieditor *editor) {
 /* Draw the top bar of the gui. */
 void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
-    gui->topbar->color = color_idx_to_vec4(FG_VS_CODE_RED);
+    gui->promptmenu->element->color = VEC4_VS_CODE_RED;
   }
   else {
-    gui->topbar->color = EDIT_BACKGROUND_COLOR;
+    gui->promptmenu->element->color = EDIT_BACKGROUND_COLOR;
   }
   /* Always draw the top-bar.  For now. */
-  draw_element_rect(gui->topbar);
+  draw_element_rect(gui->promptmenu->element);
   /* When in prompt mode.  Only draw the prompt and the answer. */
   if (gui->flag.is_set<GUI_PROMPT>()) {
     if (refresh_needed) {
-      vertex_buffer_clear(gui->topbuf);
-      vec2 penpos((gui->topbar->pos.x + pixbreadth(gui->uifont, " ")), (gui->uifont->ascender + gui->topbar->pos.y));
-      vertex_buffer_add_string(gui->topbuf, prompt, strlen(prompt), NULL, gui->uifont, vec4(1), &penpos);
-      vertex_buffer_add_string(gui->topbuf, answer, strlen(answer), " ", gui->uifont, vec4(1), &penpos);
+      vertex_buffer_clear(gui->promptmenu->buffer);
+      vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ")), (row_baseline_pixel(0, gui->uifont) + gui->promptmenu->element->pos.y));
+      vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui->uifont, vec4(1), &penpos);
+      vertex_buffer_add_string(gui->promptmenu->buffer, answer, strlen(answer), " ", gui->uifont, vec4(1), &penpos);
       line_add_cursor(
         0,
         gui->uifont,
-        gui->topbuf,
+        gui->promptmenu->buffer,
         vec4(1),
-        (gui->topbar->pos.x + pixel_breadth(gui->uifont, " ") + pixel_breadth(gui->uifont, prompt) + string_pixel_offset(answer, " ", typing_x, gui->uifont)),
-        gui->topbar->pos.y
+        (gui->promptmenu->element->pos.x + pixel_breadth(gui->uifont, " ") + pixel_breadth(gui->uifont, prompt) + string_pixel_offset(answer, " ", typing_x, gui->uifont)),
+        gui->promptmenu->element->pos.y
       );
     }
   }
   /* Otherwise, draw the menu elements as usual. */
   else {
-    // draw_element_rect(file_menu_element);
     if (refresh_needed) {
-      vertex_buffer_clear(gui->topbuf);
-      // vertex_buffer_add_element_lable(file_menu_element, gui->font, gui->topbuf);
+      vertex_buffer_clear(gui->promptmenu->buffer);
     }
-    // for (auto child : file_menu_element->children) {
-    //   if (!child->flag.is_set<GUIELEMENT_HIDDEN>()) {
-    //     draw_element_rect(child);
-    //     if (refresh_needed) {
-    //       vertex_buffer_add_element_lable(child, gui->font, gui->topbuf);
-    //     }
-    //   }
-    // }
   }
   upload_texture_atlas(gui->uiatlas);
-  render_vertex_buffer(gui->font_shader, gui->topbuf);
+  render_vertex_buffer(gui->font_shader, gui->promptmenu->buffer);
 }
 
 /* Draw the bottom bar of the gui. */

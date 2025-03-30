@@ -249,19 +249,20 @@ void set_element_borders(guielement *e, vec4 size, vec4 color) {
 }
 
 /* Draw a ui-element`s rect. */
-void draw_element_rect(guielement *element) {
-  ASSERT(element);
+void draw_element_rect(guielement *const e) {
+  ASSERT(e);
+  guielement *child;
   /* If the element is hidden, dont draw it. */
-  if (element->flag.is_set<GUIELEMENT_HIDDEN>()) {
+  if (e->flag.is_set<GUIELEMENT_HIDDEN>()) {
     return;
   }
   /* Otherwise, we draw it. */
   else {
-    draw_rect(element->pos, element->size, element->color);
+    draw_rect(e->pos, e->size, e->color);
     /* If element has borders, draw them to. */
-    if (element->flag.is_set<GUIELEMENT_HAS_BORDERS>()) {
-      for (Ulong i = 0; i < element->children.size(); ++i) {
-        guielement *child = element->children[i];
+    if (e->flag.is_set<GUIELEMENT_HAS_BORDERS>()) {
+      for (Ulong i = 0; i < e->children.size(); ++i) {
+        child = e->children[i];
         if (child->flag.is_set<GUIELEMENT_IS_BORDER>()) {
           draw_rect(child->pos, child->size, child->color);
         }
@@ -271,43 +272,43 @@ void draw_element_rect(guielement *element) {
 }
 
 /* Set the raw data of an element.  This should be used as apposed to directly setting the raw ptr. */
-void set_element_raw_data(guielement *element, void *data) _NOTHROW {
-  ASSERT(element);
+void set_element_raw_data(guielement *e, void *data) _NOTHROW {
+  ASSERT(e);
   ASSERT(data);
-  element->flag.set<GUIELEMENT_HAS_RAW_DATA>();
-  element->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
-  element->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
-  element->data.raw = data;
+  e->flag.set<GUIELEMENT_HAS_RAW_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
+  e->data.raw = data;
 }
 
 /* Set the file data for `element`.  This should be used as apposed to directly setting the file ptr. */
-void set_element_file_data(guielement *element, openfilestruct *file) _NOTHROW {
-  ASSERT(element);
+void set_element_file_data(guielement *e, openfilestruct *file) _NOTHROW {
+  ASSERT(e);
   ASSERT(file);
-  element->flag.set<GUIELEMENT_HAS_FILE_DATA>();
-  element->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
-  element->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
-  element->data.file = file;
+  e->flag.set<GUIELEMENT_HAS_FILE_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
+  e->data.file = file;
 }
 
 /* Set the editor data for `element`.  This should be used as apposed to directly setting the editor ptr. */
-void set_element_editor_data(guielement *element, guieditor *editor) _NOTHROW {
-  ASSERT(element);
+void set_element_editor_data(guielement *e, guieditor *editor) _NOTHROW {
+  ASSERT(e);
   ASSERT(editor);
-  element->flag.set<GUIELEMENT_HAS_EDITOR_DATA>();
-  element->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
-  element->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
-  element->data.editor = editor;
+  e->flag.set<GUIELEMENT_HAS_EDITOR_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
+  e->data.editor = editor;
 }
 
 /* Returns `TRUE` when `element` has editor data. */
-bool element_has_file_data(guielement *element) _NOTHROW {
-  return (element && element->flag.is_set<GUIELEMENT_HAS_FILE_DATA>());
+bool element_has_file_data(guielement *e) _NOTHROW {
+  return (e && e->flag.is_set<GUIELEMENT_HAS_FILE_DATA>());
 }
 
 /* Returns `TRUE` when `element` has editor data. */
-bool element_has_editor_data(guielement *element) _NOTHROW {
-  return (element && element->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>());
+bool element_has_editor_data(guielement *e) _NOTHROW {
+  return (e && e->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>());
 }
 
 /* If `set` is `TRUE` set `flag` for all children of `element` recurivly, otherwise,

@@ -193,6 +193,37 @@ constexpr short bg_vs_code_color_array[] {
   static constexpr vec4 EDIT_BACKGROUND_COLOR               = vec4( 0.1f,  0.1f,  0.1f, 1.0f);
   static constexpr vec4 EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR = vec4(0.08f, 0.08f, 0.08f, 1.0f);
   static constexpr vec4 EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR   = vec4(0.14f, 0.14f, 0.14f, 1.0f);
+  /* Vs-code colors. */
+  static constexpr vec4 VEC4_VS_CODE_RED                    = VEC4_8BIT(205,  49,  49, 1);
+  static constexpr vec4 VEC4_VS_CODE_GREEN                  = VEC4_8BIT( 13, 188, 121, 1);
+  static constexpr vec4 VEC4_VS_CODE_YELLOW                 = VEC4_8BIT(229, 229,  16, 1);
+  static constexpr vec4 VEC4_VS_CODE_BLUE                   = VEC4_8BIT( 36, 114, 200, 1);
+  static constexpr vec4 VEC4_VS_CODE_MAGENTA                = VEC4_8BIT(188,  63, 188, 1);
+  static constexpr vec4 VEC4_VS_CODE_CYAN                   = VEC4_8BIT( 17, 168, 205, 1);
+  static constexpr vec4 VEC4_VS_CODE_WHITE                  = VEC4_8BIT(229, 229, 229, 1);
+  static constexpr vec4 VEC4_VS_CODE_BRIGHT_RED             = VEC4_8BIT(241,  76,  76, 1);
+  static constexpr vec4 VEC4_VS_CODE_BRIGHT_GREEN           = VEC4_8BIT( 35, 209, 139, 1);
+  static constexpr vec4 VEC4_VS_CODE_BRIGHT_YELLOW          = VEC4_8BIT(245, 245,  67, 1);
+  static constexpr vec4 VEC4_VS_CODE_BRIGHT_BLUE            = VEC4_8BIT( 59, 142, 234, 1);
+  static constexpr vec4 VEC4_VS_CODE_BRIGHT_MAGENTA         = VEC4_8BIT(214, 112, 214, 1);
+  static constexpr vec4 VEC4_VS_CODE_BRIGHT_CYAN            = VEC4_8BIT( 41, 184, 219, 1);
+  static constexpr vec4 VEC4_COMMENT_GREEN                  = VEC4_8BIT(  0,  77,   0, 1);
+  static constexpr vec4 VEC4_SUGGEST_GRAY                   = VEC4_8BIT( 80,  80,  80, 1);
+# define VEC4_VS_CODE_RED             VEC4_VS_CODE_RED
+# define VEC4_VS_CODE_GREEN           VEC4_VS_CODE_GREEN
+# define VEC4_VS_CODE_YELLOW          VEC4_VS_CODE_YELLOW
+# define VEC4_VS_CODE_BLUE            VEC4_VS_CODE_BLUE
+# define VEC4_VS_CODE_MAGENTA         VEC4_VS_CODE_MAGENTA
+# define VEC4_VS_CODE_CYAN            VEC4_VS_CODE_CYAN
+# define VEC4_VS_CODE_WHITE           VEC4_VS_CODE_WHITE
+# define VEC4_VS_CODE_BRIGHT_RED      VEC4_VS_CODE_BRIGHT_RED
+# define VEC4_VS_CODE_BRIGHT_GREEN    VEC4_VS_CODE_BRIGHT_GREEN
+# define VEC4_VS_CODE_BRIGHT_YELLOW   VEC4_VS_CODE_BRIGHT_YELLOW
+# define VEC4_VS_CODE_BRIGHT_BLUE     VEC4_VS_CODE_BRIGHT_BLUE
+# define VEC4_VS_CODE_BRIGHT_MAGENTA  VEC4_VS_CODE_BRIGHT_MAGENTA
+# define VEC4_VS_CODE_BRIGHT_CYAN     VEC4_VS_CODE_BRIGHT_CYAN
+# define VEC4_COMMENT_GREEN           VEC4_COMMENT_GREEN
+# define VEC4_SUGGEST_GRAY            VEC4_SUGGEST_GRAY
   /* Defines of those colors. */
 # define GUI_WHITE_COLOR                      GUI_WHITE_COLOR
 # define GUI_BLACK_COLOR                      GUI_BLACK_COLOR

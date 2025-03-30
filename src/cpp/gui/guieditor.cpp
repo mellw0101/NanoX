@@ -188,8 +188,8 @@ void make_new_editor(bool new_buffer) {
   openeditor->rows     = 0;
   /* Create the main editor element. */
   openeditor->main = make_element(
-    vec2(0, (gui->topbar->pos.y + gui->topbar->size.h)),
-    vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)),
+    vec2(0, (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h)),
+    vec2(gui->width, (gui->height - (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h) - gui->botbar->size.h)),
     0,
     EDIT_BACKGROUND_COLOR,
     FALSE

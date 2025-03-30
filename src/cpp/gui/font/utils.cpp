@@ -13,9 +13,10 @@ float row_baseline_pixel(long row, texture_font_t *const font) {
   return ((row * FONT_HEIGHT(font)) + font->ascender);
 }
 
-void row_top_bot_pixel(long lineno, texture_font_t *const font, float *const top, float *const bot) {
+/* Assign's the top and bottom pixels of the `row` to `*top` and `*bot`.  Note that this is 0 indexed, so it starts at row 0 for the first row. */
+void row_top_bot_pixel(long row, texture_font_t *const font, float *const top, float *const bot) {
   ASSERT(font);
-  float baseline = row_baseline_pixel(lineno, font);
+  float baseline = row_baseline_pixel(row, font);
   *top = (baseline - font->ascender);
   *bot = (baseline - font->descender);
 }
@@ -42,3 +43,9 @@ void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *c
   vertex_buffer_push_back(buf, vertices, 4, indices, 6);
 }
 
+/* Create a buffer using the structure of the font shader. */
+vertex_buffer_t *make_new_font_buffer(void) {
+  vertex_buffer_t *buf = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+  ALWAYS_ASSERT(buf);
+  return buf;
+}

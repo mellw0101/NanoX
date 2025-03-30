@@ -792,7 +792,6 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 #ifdef HAVE_GLFW
   /* 'gui.cpp' */
   void log_error_gui(const char *format, ...);
-  vertex_buffer_t *make_new_font_buffer(void) _NODISCARD;
   void init_gui(void);
   void glfw_loop(void);
   
@@ -849,6 +848,8 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void gui_leave_prompt_mode(void);
   void gui_ask_user(const char *question, guiprompt_type type);
   long prompt_index_from_mouse(bool allow_outside);
+  void gui_promptmenu_init(void);
+  void gui_promptmenu_delete(void);
 
   /* gui/guifiles.cpp */
   void gui_redecorate_after_switch(void);
@@ -873,7 +874,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void move_resize_element(guielement *e, vec2 pos, vec2 size);
   void delete_element_borders(guielement *e);
   void set_element_borders(guielement *e, vec4 size, vec4 color);
-  void draw_element_rect(guielement *element);
+  void draw_element_rect(guielement *const e);
   void set_element_raw_data(guielement *element, void *data) _NOTHROW;
   void set_element_file_data(guielement *element, openfilestruct *file) _NOTHROW;
   void set_element_editor_data(guielement *element, guieditor *editor) _NOTHROW;
@@ -929,6 +930,7 @@ char **split_string_nano(const char *string, const char delim, Ulong *n) _NOTHRO
 
 
 void free_atlas(texture_atlas_t *atlas);
+void free_gui_font(bool uifont);
 void set_gui_font(const char *const restrict path, Uint size);
 void set_gui_uifont(const char *const restrict path, Uint size);
 void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize);
@@ -942,6 +944,7 @@ void list_available_fonts(void);
 float row_baseline_pixel(long lineno, texture_font_t *const font);
 void row_top_bot_pixel(long lineno, texture_font_t *const font, float *const top, float *const bot);
 void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset);
+vertex_buffer_t *make_new_font_buffer(void) _NODISCARD;
 
 
 /* ---------------------------------------------------------- gui/rendering/utils.cpp ---------------------------------------------------------- */

@@ -33,7 +33,7 @@ void free_atlas(texture_atlas_t *atlas) {
 }
 
 /* When `uifont` is `TRUE` free the uifont, otherwise free the textfont. */
-static void free_gui_font(bool uifont) {
+void free_gui_font(bool uifont) {
   ASSERT(gui);
   /* Delete the current uifont. */
   if (uifont) {

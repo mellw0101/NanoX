@@ -607,9 +607,11 @@ typedef enum {
 #ifdef HAVE_GLFW
   typedef enum {
     GUI_PROMPT_SAVEFILE,
-    #define GUI_PROMPT_SAVEFILE GUI_PROMPT_SAVEFILE
-    GUI_PROMPT_EXIT_NO_SAVE
-    #define GUI_PROMPT_EXIT_NO_SAVE GUI_PROMPT_EXIT_NO_SAVE
+    GUI_PROMPT_EXIT_NO_SAVE,
+    GUI_PROMPT_MENU,
+    #define GUI_PROMPT_SAVEFILE      GUI_PROMPT_SAVEFILE
+    #define GUI_PROMPT_EXIT_NO_SAVE  GUI_PROMPT_EXIT_NO_SAVE
+    #define GUI_PROMPT_MENU          GUI_PROMPT_MENU
   } guiprompt_type;
 
   typedef enum {
@@ -1147,6 +1149,11 @@ typedef struct completionstruct {
   } guiscreen;
 
   typedef struct {
+    vertex_buffer_t *buffer;
+    guielement      *element;
+  } GuiPromptMenu;
+
+  typedef struct {
     char            *title;                  /* The window title. */
     Uint             width;                  /* The window width. */
     Uint             height;                 /* The window height. */
@@ -1154,12 +1161,10 @@ typedef struct completionstruct {
     bit_flag_t<8>    flag;                   /* Flags to track the state of the gui. */
     nevhandler      *handler;                /* Threaded event handler, to enqueue tasks to. */
     guielement      *root;                   /* The main element of the gui. */
-    guielement      *topbar;                 /* The `top-bar` for the ui. */
     guielement      *botbar;                 /* The `bottom-bar` for the ui. */ 
     guielement      *statusbar;              /* The `statusbar` for the ui. */
     guielement      *entered;                /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
     guielement      *clicked;                /* The element that was last clicked. */
-    vertex_buffer_t *topbuf;                 /* The text buffer for `topbar`. */
     vertex_buffer_t *botbuf;                 /* The text buffer for `botbar`. */
     vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
     matrix4x4       *projection;             /* The projection to pass to the shaders. */
@@ -1174,6 +1179,7 @@ typedef struct completionstruct {
     Uint             font_lineheight;        /* The calculated line height from the ('default font height' * font_lineheight_scale). */
     texture_atlas_t *atlas;                  /* The atlas the font is using. */
     Uint             rect_shader;            /* The rect shader. */
+    GuiPromptMenu   *promptmenu;
   } guistruct;
 #endif
 

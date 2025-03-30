@@ -61,7 +61,8 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
   resize_element(gui->root, vec2(gui->width, gui->height));
   /* Calculate the rows for all editors. */
   ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
-    move_resize_element(editor->main, vec2(0, (gui->topbar->pos.y + gui->topbar->size.h)), vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)));
+    // move_resize_element(editor->main, vec2(0, (gui->topbar->pos.y + gui->topbar->size.h)), vec2(gui->width, (gui->height - (gui->topbar->pos.y + gui->topbar->size.h) - gui->botbar->size.h)));
+    move_resize_element(editor->main, vec2(0, (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h)), vec2(gui->width, (gui->height - (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h) - gui->botbar->size.h)));
     // editor->rows = (editor->text->size.h / FONT_HEIGHT(gui->font));
     guieditor_calculate_rows(editor);
     if (texture_font_is_mono(gui->font)) {
@@ -92,8 +93,6 @@ void framebuffer_resize_callback(GLFWwindow *window, int width, int height) {
 
 /* Key callback. */
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, openeditor);
-  // ASSERT_WHOLE_CIRCULAR_LIST(openfilestruct *, openeditor->openfile);
   /* Key-callbacks for when we are when inside the prompt-mode. */
   if (gui->flag.is_set<GUI_PROMPT>()) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
@@ -129,6 +128,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                 free(full_path);
               }
             }
+            else if (gui_prompt_type == GUI_PROMPT_MENU) {
+              gui_leave_prompt_mode();
+            }
           }
           break;
         }
@@ -141,7 +143,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           _FALLTHROUGH;
         }
         case GLFW_KEY_ESCAPE: {
-          statusbar_discard_all_undo_redo();
           gui_leave_prompt_mode();
           break;
         }
@@ -412,8 +413,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        /* Debuging. */
         case GLFW_KEY_P: {
+          /* Debuging. */
           if (mods == GLFW_MOD_CONTROL) {
             if (sf) {
               syntaxfile_free(sf);
@@ -472,6 +473,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             }
             ++toggle;
             refresh_needed = TRUE;
+          }
+          /* Prompt-Menu */
+          else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
+            gui_ask_user(">", GUI_PROMPT_MENU);
           }
           break;
         }
