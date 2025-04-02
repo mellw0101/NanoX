@@ -28,3 +28,91 @@ linestruct *line_from_cursor_pos(guieditor *const editor) {
   }
   return line;
 }
+
+
+/** TODO: Make these three into actualy intuative functions and remake them for a more clean operation.  This was done
+ * in 20 min just to test and its already perfect as it just cannot preduce the problems we had with the old system. */
+
+
+float *pixpositions(const char *const restrict string, float normx, Ulong *outlen, texture_font_t *const font) {
+  ASSERT(string);
+  Ulong len=strlen(string), i;
+  float *array, start=normx, end=normx;
+  const char *current, *prev=NULL, *ptr;
+  if (!len) {
+    return NULL;
+  }
+  array = (float *)xmalloc((len + 1) * sizeof(float));
+  for (i=0; i<len; ++i) {
+    start = end;
+    current = &string[i];
+    if (*current == '\t') {
+      ptr = " ";
+      end += (glyph_width(ptr, prev, font) * tabsize);
+    }
+    else {
+      end += glyph_width(current, prev, font);
+    }
+    array[i] = start;
+    prev = current;
+  }
+  array[len++] = end;
+  ASSIGN_IF_VALID(outlen, len);
+  return array;
+}
+
+Ulong closest_index(float *array, Ulong len, float rawx, texture_font_t *const font) {
+  ASSERT(array);
+  ASSERT(len);
+  Ulong index=0;
+  float closest_value=(array[0] - rawx), value;
+  if (closest_value < 0) {
+    closest_value *= -1;
+  }
+  for (Ulong i=1; i<len; ++i) {
+    value = (array[i] - rawx);
+    if (value < 0) {
+      value *= -1;
+    }
+    if (value < closest_value) {
+      index = i;
+      closest_value = value;
+    }
+  }
+  return index;
+}
+
+Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float normx, texture_font_t *const font) {
+  ASSERT(string);
+  ASSERT(font);
+  // float start=normx, end=normx;
+  // const char *current, *prev, *ptr;
+  // /* If rawpos is infront of the normalized x position, I.E: its infront of the start position of the string, just return 0. */
+  // if (rawx <= normx) {
+  //   return 0;
+  // }
+  // for (current=string, prev=NULL; *current; ++current) {
+  //   /* Before we calculate how big this index is set the start to the last end. */
+  //   start = end;
+  //   if (*current == '\t') {
+  //     ptr = " ";
+  //     end += (glyph_width(ptr, prev, font) * tabsize);
+  //   }
+  //   else {
+  //     end += glyph_width(current, prev, font);
+  //   }
+  //   prev = current;
+  //   if (rawx >= (start - ((end - start) / 2)) && rawx <= (end - ((end - start) / 2))) {
+  //     break;
+  //   }
+  // }
+  // return actual_x(string, wideness(string, (current - string)));
+  Ulong len, index;
+  float *array = pixpositions(string, normx, &len, font);
+  if (!array) {
+    return 0;
+  }
+  index = closest_index(array, len, rawx, font);
+  free(array);
+  return index;
+}

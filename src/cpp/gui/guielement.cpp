@@ -334,7 +334,7 @@ void set_element_flag_recurse(guielement *element, bool set, Uint flag) {
   else {
     element->flag.unset(flag);
   }
-  for (Ulong i = 0; i < size; ++i) {
+  for (Ulong i=0; i<size; ++i) {
     set_element_flag_recurse(ptr[i], set, flag);
   }
 }

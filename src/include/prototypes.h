@@ -962,6 +962,9 @@ float pixbreadth(texture_font_t *const font, const char *const restrict string);
 
 
 linestruct *line_from_cursor_pos(guieditor *const editor);
+float *pixpositions(const char *const restrict string, float normx, Ulong *outlen, texture_font_t *const font);
+Ulong closest_index(float *array, Ulong len, float rawx, texture_font_t *const font);
+Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float normx, texture_font_t *const font);
 
 
 /* ---------------------------------------------------------- gui/scollbar.cpp ---------------------------------------------------------- */

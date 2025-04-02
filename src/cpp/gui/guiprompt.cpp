@@ -76,6 +76,14 @@ long prompt_index_from_mouse(bool allow_outside) {
   return ret;
 }
 
+_UNUSED static GuiPromptMenuEntry *gui_promptmenu_entry_create(GuiPromptMenuEntry *prev) {
+  GuiPromptMenuEntry *entry = (__TYPE(entry))xmalloc(sizeof(*entry));
+  entry->description = NULL;
+  entry->next = NULL;
+  entry->prev = prev;
+  return entry;
+}
+
 /* Create the gui `prompt-menu` struct. */
 void gui_promptmenu_init(void) {
   ASSERT(gui);

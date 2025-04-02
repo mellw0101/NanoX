@@ -462,15 +462,24 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             syntaxfile_test_read();
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
-            static int toggle=0;
-            if (!(toggle % 2)) {
-              set_gui_font("/usr/share/fonts/balle.ttf", gui->font_size);
+            Ulong len;
+            float *array = pixpositions("\t\tballe", 0, &len, gui->font);
+            for (Ulong i=0; i<len; ++i) {
+              writef("Index %lu: %.2f\n", i, (double)array[i]);
             }
-            else {
-              set_gui_font("/usr/share/fonts/TTF/Hack-Regular.ttf", gui->font_size);
-            }
-            ++toggle;
-            refresh_needed = TRUE;
+            Ulong index = closest_index(array, len, 17.5, gui->font);
+            writef("\nClosest Index: %lu\n", index);
+            free(array);
+
+            // static int toggle=0;
+            // if (!(toggle % 2)) {
+            //   set_gui_font("/usr/share/fonts/balle.ttf", gui->font_size);
+            // }
+            // else {
+            //   set_gui_font("/usr/share/fonts/TTF/Hack-Regular.ttf", gui->font_size);
+            // }
+            // ++toggle;
+            // refresh_needed = TRUE;
           }
           /* Prompt-Menu */
           else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
@@ -792,9 +801,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 /* Char input callback. */
 void char_callback(GLFWwindow *window, Uint ch) {
+  char input;
   /* When in the gui prompt mode. */
   if (gui->flag.is_set<GUI_PROMPT>()) {
-    char input = (char)ch;
+    input = (char)ch;
     if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
       if (is_char_one_of(&input, 0, "Yy")) {
         glfwSetWindowShouldClose(window, TRUE);
@@ -810,7 +820,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
   }
   /* Otherwise, when we are inside gui editor mode. */
   else if (gui->flag.is_set<GUI_EDITOR_MODE_KEY>()) {
-    char input = (char)ch;
+    input = (char)ch;
     /* Open a new seperate editor. */
     if (is_char_one_of(&input, 0, "Nn")) {
       make_new_editor(TRUE);
@@ -824,7 +834,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
     if (ISSET(VIEW_MODE)) {
       return;
     }
-    char input = (char)ch;
+    input = (char)ch;
     /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
     if (openfile->mark && is_enclose_char((char)ch)) {
       const char *s1, *s2;

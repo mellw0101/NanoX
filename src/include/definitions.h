@@ -1148,6 +1148,12 @@ typedef struct completionstruct {
     guiscreen *prev;
   } guiscreen;
 
+  typedef struct GuiPromptMenuEntry {
+    char *description;
+    GuiPromptMenuEntry *prev;
+    GuiPromptMenuEntry *next;
+  } GuiPromptMenuEntry;
+
   typedef struct {
     struct {
       bool refresh_needed : 1;
