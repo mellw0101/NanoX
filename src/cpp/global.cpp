@@ -126,8 +126,6 @@ char *quotestr = NULL;
 regex_t quotereg;
 /* Nonalphanumeric characters that also form words. */
 char *word_chars = NULL;
-/* The width of a tab in spaces.  The default is set in main(). */
-long tabsize = -1;
 /* The directory where we store backup files. */
 char *backup_dir = NULL;
 /* The path to our confining "operating" directory, when given. */

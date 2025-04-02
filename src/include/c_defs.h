@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <math.h>
 
 /* Linux */
 #include <sys/cdefs.h>

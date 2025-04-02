@@ -139,7 +139,7 @@ linestruct *line_and_index_from_mousepos(texture_font_t *font, Ulong *index) {
   linestruct *line = line_from_cursor_pos(openeditor);
   if (line) {
     // *index = index_from_mouse_x(line->data, font, (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(openeditor->openfile->filetop, gui->font) : openeditor->main->pos.x));
-    *index = index_from_pix_xpos(line->data, mousepos.x, openeditor->text->pos.x, gui->font);
+    *index = index_from_pix_xpos(line->data, mousepos.x, (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(openeditor->openfile->filetop, gui->font) : openeditor->main->pos.x)/* openeditor->text->pos.x */, gui->font);
   }
   return line;
 }

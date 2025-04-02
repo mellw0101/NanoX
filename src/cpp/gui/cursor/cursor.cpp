@@ -38,7 +38,7 @@ float *pixpositions(const char *const restrict string, float normx, Ulong *outle
   ASSERT(string);
   Ulong len=strlen(string), i;
   float *array, start=normx, end=normx;
-  const char *current, *prev=NULL, *ptr;
+  const char *current, *prev=NULL;
   if (!len) {
     return NULL;
   }
@@ -47,8 +47,8 @@ float *pixpositions(const char *const restrict string, float normx, Ulong *outle
     start = end;
     current = &string[i];
     if (*current == '\t') {
-      ptr = " ";
-      end += (glyph_width(ptr, prev, font) * tabsize);
+      current = " ";
+      end += (glyph_width(current, prev, font) * tabsize);
     }
     else {
       end += glyph_width(current, prev, font);
@@ -86,7 +86,7 @@ Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float n
   ASSERT(string);
   ASSERT(font);
   Ulong len, index;
-  float *array = pixpositions(string, normx, &len, font);
+  float *array = strpx_array(string, strlen(string), normx, &len, font);
   if (!array) {
     return 0;
   }

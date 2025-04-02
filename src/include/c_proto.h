@@ -6,6 +6,13 @@
 #include "c/nevhandler.h"
 #include "c/nfdlistener.h"
 
+
+/* ---------------------------------------------------------- Extern variable's ---------------------------------------------------------- */
+
+
+extern long tabsize;
+
+
 _BEGIN_C_LINKAGE
 
 extern int unix_socket_fd;
@@ -21,7 +28,7 @@ static inline void set_c_die_callback(void (*cb)(const char *, ...)) {
 }
 
 
-/* ----------------------------------------------- xstring.c ----------------------------------------------- */
+/* ---------------------------------------------------------- xstring.c ---------------------------------------------------------- */
 
 
 void *xmeml_copy(const void *data, Ulong len);
@@ -29,6 +36,7 @@ void *xmeml_copy(const void *data, Ulong len);
 #ifndef __cplusplus
 char **split_string_nano(const char *const string, const char delim, bool allow_empty, Ulong *n) _RETURNS_NONNULL _NODISCARD _NONNULL(1);
 #endif
+
 
 /* ----------------------------------------------- utils.c ----------------------------------------------- */
 
@@ -141,6 +149,13 @@ void findblockcommentmatch(SyntaxFileLine *const startline, Ulong startidx, Synt
 void skip_blkcomment(SyntaxFileLine **const outline, const char **const outdata);
 void findbracketmatch(SyntaxFileLine **const outline, const char **const outdata);
 void findnextchar(SyntaxFileLine **const outline, const char **const outdata);
+
+
+/* ---------------------------------------------------------- gui/strpx.c ---------------------------------------------------------- */
+
+
+float strpx_glyphlen(const char *const restrict current, const char *const restrict previous, texture_font_t *const font);
+float *strpx_array(const char *const restrict str, Ulong len, float normx, Ulong *const outlen, texture_font_t *const font);
 
 
 _END_C_LINKAGE
