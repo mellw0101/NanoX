@@ -85,28 +85,6 @@ Ulong closest_index(float *array, Ulong len, float rawx, texture_font_t *const f
 Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float normx, texture_font_t *const font) {
   ASSERT(string);
   ASSERT(font);
-  // float start=normx, end=normx;
-  // const char *current, *prev, *ptr;
-  // /* If rawpos is infront of the normalized x position, I.E: its infront of the start position of the string, just return 0. */
-  // if (rawx <= normx) {
-  //   return 0;
-  // }
-  // for (current=string, prev=NULL; *current; ++current) {
-  //   /* Before we calculate how big this index is set the start to the last end. */
-  //   start = end;
-  //   if (*current == '\t') {
-  //     ptr = " ";
-  //     end += (glyph_width(ptr, prev, font) * tabsize);
-  //   }
-  //   else {
-  //     end += glyph_width(current, prev, font);
-  //   }
-  //   prev = current;
-  //   if (rawx >= (start - ((end - start) / 2)) && rawx <= (end - ((end - start) / 2))) {
-  //     break;
-  //   }
-  // }
-  // return actual_x(string, wideness(string, (current - string)));
   Ulong len, index;
   float *array = pixpositions(string, normx, &len, font);
   if (!array) {
