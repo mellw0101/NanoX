@@ -85,12 +85,50 @@ Ulong closest_index(float *array, Ulong len, float rawx, texture_font_t *const f
 Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float normx, texture_font_t *const font) {
   ASSERT(string);
   ASSERT(font);
-  Ulong len, index;
+  Ulong len;
   float *array = strpx_array(string, strlen(string), normx, &len, font);
-  if (!array) {
-    return 0;
-  }
-  index = closest_index(array, len, rawx, font);
+  Ulong index = strpx_array_index(array, len, rawx);
   free(array);
   return index;
+}
+
+/** TODO: Test this and see witch other ways exists. */
+
+void set_cursor_type(GLFWwindow *window, int type) {
+  static GLFWcursor *arrow=NULL, *ibeam=NULL, *crosshair=NULL, *hand=NULL;
+  GLFWcursor *cursor=NULL;
+  switch (type) {
+    case GLFW_ARROW_CURSOR: {
+      if (!arrow) {
+        arrow = glfwCreateStandardCursor(type);
+      }
+      cursor = arrow;
+      break;
+    }
+    case GLFW_IBEAM_CURSOR: {
+      if (!ibeam) {
+        ibeam = glfwCreateStandardCursor(type);
+      }
+      cursor = ibeam;
+      break;
+    }
+    case GLFW_CROSSHAIR_CURSOR: {
+      if (!crosshair) {
+        crosshair = glfwCreateStandardCursor(type);
+      }
+      cursor = crosshair;
+      break;
+    }
+    case GLFW_HAND_CURSOR: {
+      if (!hand) {
+        hand = glfwCreateStandardCursor(type);
+      }
+      cursor = hand;
+      break;
+    }
+    default: {
+      die("%s: Unknown cursor passed.\n");
+    }
+  }
+  glfwSetCursor(window, cursor);
 }

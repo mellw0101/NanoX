@@ -58,20 +58,21 @@ float *strpx_array(const char *const restrict str, Ulong len, float normx, Ulong
   return array;
 }
 
-/** TODO: Finish making the two remaining functions. */
-
+/* Return's the index of the point closest to `rawx`. */
 Ulong strpx_array_index(float *const array, Ulong len, float rawx) {
   ASSERT(array);
   ASSERT(len);
-  Ulong ret=0;
+  /* The index we will return.  Start by setting it to zero as that would happen anyway. */
+  Ulong index=0;
+  /* Set the closest distance as the first element in the array. */
   float closest = absf(array[0] - rawx);
   float value;
-  for (Ulong i=0; i<len; ++i) {
+  for (Ulong i=1; i<len; ++i) {
     if ((value = absf(array[i] - rawx)) < closest) {
-      ret = i;
+      index = i;
       closest = value;
     }
   }
-  return ret;
+  return index;
 }
 

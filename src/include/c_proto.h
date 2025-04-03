@@ -156,6 +156,7 @@ void findnextchar(SyntaxFileLine **const outline, const char **const outdata);
 
 float strpx_glyphlen(const char *const restrict current, const char *const restrict previous, texture_font_t *const font);
 float *strpx_array(const char *const restrict str, Ulong len, float normx, Ulong *const outlen, texture_font_t *const font);
+Ulong strpx_array_index(float *const array, Ulong len, float rawx);
 
 
 _END_C_LINKAGE
