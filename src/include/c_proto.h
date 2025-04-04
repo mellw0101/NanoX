@@ -159,6 +159,12 @@ float *strpx_array(const char *const restrict str, Ulong len, float normx, Ulong
 Ulong strpx_array_index(float *const array, Ulong len, float rawx);
 
 
+/* ---------------------------------------------------------- gui/cursor.c ---------------------------------------------------------- */
+
+
+void set_cursor_type(GLFWwindow *const window, int type) _NONNULL(1);
+
+
 _END_C_LINKAGE
 
 

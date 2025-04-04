@@ -46,6 +46,7 @@ guielement *make_element(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_g
     element->flag.set<GUIELEMENT_NOT_IN_GRIDMAP>();
   }
   gridmap.set(element);
+  element->cursor_type = GLFW_ARROW_CURSOR;
   return element;
 }
 

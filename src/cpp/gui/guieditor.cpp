@@ -225,7 +225,8 @@ void make_new_editor(bool new_buffer) {
   openeditor->text->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
   openeditor->text->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
   openeditor->text->relative_size = 0;
-  /* Set the editor ptr of this all elements as this editor. */
+  openeditor->text->cursor_type = GLFW_IBEAM_CURSOR;
+  /* Set the editor data ptr of all elements as this editor. */
   set_element_editor_data(openeditor->main, openeditor);
   set_element_editor_data(openeditor->topbar, openeditor);
   set_element_editor_data(openeditor->gutter, openeditor);
@@ -352,7 +353,7 @@ guieditor *get_element_editor(guielement *e) {
 
 /* Get the editor that `file` belongs to. */
 guieditor *get_file_editor(openfilestruct *file) {
-  guieditor *&editor = starteditor;
+  guieditor *editor = starteditor;
   guielement *button;
   if (!editor) {
     die("%s: starteditor is not valid.\n", __func__);
@@ -360,7 +361,7 @@ guieditor *get_file_editor(openfilestruct *file) {
   else {
     /* Check all editors. */
     do {
-      for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
+      for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
         button = editor->topbar->children[i];
         if (button->flag.is_set<GUIELEMENT_HAS_FILE_DATA>()) {
           if (button->data.file == file) {

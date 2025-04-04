@@ -204,6 +204,7 @@ static void make_guistruct(void) {
   gui->atlas                 = NULL;
   gui->rect_shader           = 0;
   gui->promptmenu            = NULL;
+  gui->current_cursor_type   = GLFW_ARROW_CURSOR;
 }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */

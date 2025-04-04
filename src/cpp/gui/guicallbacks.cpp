@@ -912,6 +912,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   static double last_time     = 0.0;
   static int    last_button   = 0;
   static vec2   last_mousepos = 0.0f;
+  guielement *element;
   /* Determen if this was a double or tripple click. */
   if (action == GLFW_PRESS) {
     /* Give some wiggle room for the position of the mouse click as it is represented as while numbers only. */
@@ -947,7 +948,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           typing_x = index;
         }
       }
-      guielement *element = element_from_mousepos();
+      element = element_from_mousepos();
       if (element) {
         /* Save the element that was clicked. */
         gui->clicked = element;
@@ -1145,18 +1146,19 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
   /* Get the element that the mouse is on. */
   mouse_element = element_from_mousepos();
   if (mouse_element) {
+    /* If the element currently hovered on has a diffrent cursor then the active one, change it. */
+    if (mouse_element->cursor_type != gui->current_cursor_type) {
+      set_cursor_type(window, mouse_element->cursor_type);
+      gui->current_cursor_type = mouse_element->cursor_type;
+    }
     /* If the current mouse element is not the current entered element. */
     if (mouse_element != entered_element) {
       /* Run the enter element for the mouse element, if any. */
-      if (mouse_element->callback) {
-        mouse_element->callback(mouse_element, GUIELEMENT_ENTER_CALLBACK);
-      }
+      CALL_IF_VALID(mouse_element->callback, mouse_element, GUIELEMENT_ENTER_CALLBACK);
       /* If the old entered element was not NULL. */
       if (entered_element) {
         /* Run the leave event for the old entered element, if any. */
-        if (entered_element->callback) {
-          entered_element->callback(entered_element, GUIELEMENT_LEAVE_CALLBACK);
-        }
+        CALL_IF_VALID(entered_element->callback, entered_element, GUIELEMENT_LEAVE_CALLBACK);
       }
       entered_element = mouse_element;
     }

@@ -965,6 +965,8 @@ typedef struct completionstruct {
     guielement           *parent;           /* This element`s parent, or NULL when there is none. */
     MVector<guielement *> children;         /* This elements children, for menus and such. */
     guielement_callback callback;           /* Callback for all action types. */
+
+    int cursor_type;                        /* The cursor type this element should display on hover. */
   } guielement;
 
   class uigridmapclass {
@@ -996,8 +998,8 @@ typedef struct completionstruct {
       }
       ivec2 start = to_grid_pos(e->pos);
       ivec2 end   = to_grid_pos(e->pos + e->size);
-      for (int x = start.x; x <= end.x; ++x) {
-        for (int y = start.y; y <= end.y; ++y) {
+      for (int x=start.x; x<=end.x; ++x) {
+        for (int y=start.y; y<=end.y; ++y) {
           grid[ivec2(x, y)].emplace_back(e);
         }
       }
@@ -1201,6 +1203,7 @@ typedef struct completionstruct {
     texture_atlas_t *atlas;                  /* The atlas the font is using. */
     Uint             rect_shader;            /* The rect shader. */
     GuiPromptMenu   *promptmenu;
+    int              current_cursor_type;    /* The currently active cursor type. */
   } guistruct;
 #endif
 

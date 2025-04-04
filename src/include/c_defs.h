@@ -35,6 +35,10 @@
 #include <ftgl/freetype-gl.h>
 #include <ftgl/matrix4x4.h>
 
+/* gl */
+#include "../lib/include/GL/glew.h"
+#include "../lib/include/GLFW/glfw3.h"
+
 
 /* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
 
