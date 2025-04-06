@@ -5,7 +5,7 @@
 
 /* When having an older ncurses, then most likely libvte is older too. */
 #if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20200212)
-#  define USING_OLDER_LIBVTE yes
+# define USING_OLDER_LIBVTE yes
 #endif
 
 /* A buffer for the keystrokes that haven't been handled. */
@@ -2532,10 +2532,9 @@ void place_the_cursor(void) _NOTHROW {
 /* The number of bytes after which to stop painting, to avoid major slowdowns. */
 #define PAINT_LIMIT 2000
 
-// Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
-// is the actual string to be written with tabs and control characters replaced by strings of regular
-// characters.  'from_col' is the column number of the first character of this "page".
-// TODO: (draw_row) - Implement a way to close and open brackets (will probebly be hard as fuck!!!).
+/* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
+ * is the actual string to be written with tabs and control characters replaced by strings of regular
+ * characters.  'from_col' is the column number of the first character of this "page". */
 void draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col) {
   PROFILE_FUNCTION;
   render_line_text(row, converted, line, from_col);
@@ -2922,23 +2921,25 @@ static void draw_scrollbar(void) _NOTHROW {
   int fromline     = (openfile->edittop->lineno - 1);
   int totallines   = openfile->filebot->lineno;
   int coveredlines = editwinrows;
+  linestruct *line;
+  int lowest, highest, extras;
   if (ISSET(SOFTWRAP)) {
-    linestruct *line = openfile->edittop;
-    int extras = (extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line));
+    line = openfile->edittop;
+    extras = (extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line));
     while ((line->lineno + extras) < (fromline + editwinrows) && line->next) {
       line = line->next;
       extras += extra_chunks_in(line);
     }
     coveredlines = (line->lineno - fromline);
   }
-  int lowest  = ((fromline * editwinrows) / totallines);
-  int highest = (lowest + (editwinrows * coveredlines) / totallines);
+  lowest  = ((fromline * editwinrows) / totallines);
+  highest = (lowest + (editwinrows * coveredlines) / totallines);
   if (editwinrows > totallines && !ISSET(SOFTWRAP)) {
     highest = editwinrows;
   }
-  for (int row = 0; row < editwinrows; ++row) {
+  for (int row=0; row<editwinrows; ++row) {
     if (!ISSET(NO_NCURSES)) {
-      bardata[row] = ' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE);
+      bardata[row] = (' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE));
       mvwaddch(midwin, row, (COLS - 1), bardata[row]);
     }
   }
@@ -3101,9 +3102,9 @@ Ulong leftedge_for(Ulong column, linestruct *line) _NOTHROW {
   return leftedge;
 }
 
-// Ensure that firstcolumn is at the starting column of the softwrapped chunk
-// it's on.  We need to do this when the number of columns of the edit window
-// has changed, because then the width of softwrapped chunks has changed.
+/* Ensure that firstcolumn is at the starting column of the softwrapped chunk
+ * it's on.  We need to do this when the number of columns of the edit window
+ * has changed, because then the width of softwrapped chunks has changed. */
 void ensure_firstcolumn_is_aligned(void) _NOTHROW {
   if (ISSET(SOFTWRAP)) {
     openfile->firstcolumn = leftedge_for(openfile->firstcolumn, openfile->edittop);
@@ -3115,9 +3116,9 @@ void ensure_firstcolumn_is_aligned(void) _NOTHROW {
   focusing = FALSE;
 }
 
-// When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
-// chunk, shift it back to the last column before the breakpoint.  The given column is relative
-// to the given leftedge in current.  The returned column is relative to the start of the text.
+/* When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
+ * chunk, shift it back to the last column before the breakpoint.  The given column is relative
+ * to the given leftedge in current.  The returned column is relative to the start of the text. */
 Ulong actual_last_column(Ulong leftedge, Ulong column) _NOTHROW {
   bool  kickoff, last_chunk;
   Ulong end_col;
@@ -3250,11 +3251,11 @@ void edit_refresh(void) {
   refresh_needed = FALSE;
 }
 
-// Move edittop so that current is on the screen.  manner says how:
-// STATIONARY means that the cursor should stay on the same screen row,
-// CENTERING means that current should end up in the middle of the screen,
-// and FLOWING means that it should scroll no more than needed to bring
-// current into view.
+/* Move edittop so that current is on the screen.  manner says how:
+ * STATIONARY means that the cursor should stay on the same screen row,
+ * CENTERING means that current should end up in the middle of the screen,
+ * and FLOWING means that it should scroll no more than needed to bring
+ * current into view. */
 void adjust_viewport(update_type manner) _NOTHROW {
   int goal = 0;
   if (manner == STATIONARY) {

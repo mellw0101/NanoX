@@ -462,14 +462,16 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             syntaxfile_test_read();
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
-            Ulong len;
-            float *array = pixpositions("\t\tballe", 0, &len, gui->font);
-            for (Ulong i=0; i<len; ++i) {
-              writef("Index %lu: %.2f\n", i, (double)array[i]);
-            }
-            Ulong index = closest_index(array, len, 17.5, gui->font);
-            writef("\nClosest Index: %lu\n", index);
-            free(array);
+            
+            
+            // Ulong len;
+            // float *array = pixpositions("\t\tballe", 0, &len, gui->font);
+            // for (Ulong i=0; i<len; ++i) {
+            //   writef("Index %lu: %.2f\n", i, (double)array[i]);
+            // }
+            // Ulong index = closest_index(array, len, 17.5, gui->font);
+            // writef("\nClosest Index: %lu\n", index);
+            // free(array);
 
             // static int toggle=0;
             // if (!(toggle % 2)) {
@@ -953,7 +955,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         /* Save the element that was clicked. */
         gui->clicked = element;
         /* When the mouse is pressed in the text element of a editor. */
-        if (element_has_editor_data(element) && element == element->data.editor->text) {
+        if (guielement_has_editor_data(element) && element == element->data.editor->text) {
           /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
           set_openeditor(element->data.editor);
           mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
@@ -967,31 +969,41 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
             openfile->mark_x      = index;
             openfile->softmark    = TRUE;
             openfile->placewewant = xplustabs();
+            /* If this was a double click then select the current word, if any. */
             if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
-              /* If this was a double click then select the current word, if any. */
               Ulong st, end;
               st  = get_prev_cursor_word_start_index(TRUE);
               end = get_current_cursor_word_end_index(TRUE);
+              /* If the double click was inside of a word. */
               if (st != openfile->current_x && end != openfile->current_x) {
-                /* If the double click was inside of a word. */
                 openfile->mark_x    = st;
                 openfile->current_x = end;
               }
+              /* The double click was done at the end of the word.  So we select that word. */
               else if (st != openfile->current_x && end == openfile->current_x) {
-                /* The double click was done at the end of the word.  So we select that word. */
                 openfile->mark_x = st;
               }
+              /* The double click was done at the begining of the word.  So we select that word. */
               else if (st == openfile->current_x && end != openfile->current_x) {
-                /* The double click was done at the begining of the word.  So we select that word. */
                 openfile->mark_x    = st;
                 openfile->current_x = end;
               }
             }
+            /* Otherwise, if this was a tripple click then select the whole line. */
             else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
               openfile->mark_x = 0;
               openfile->current_x = strlen(openfile->current->data);
             }
           }
+        }
+        /* Otherwise, if the element is part of the topbar of an editor. */
+        else if (guielement_has_file_data(element) && guielement_has_editor_data(element->parent) && element->parent == element->parent->data.editor->topbar) {
+          if (element->data.file != element->parent->data.editor->openfile) {
+            element->parent->data.editor->openfile = element->data.file;
+            openfile = element->data.file;
+            gui_redecorate_after_switch();
+          }
+          writef("here\n");
         }
         /* For when the top bar is pressed, like when in prompt-mode. */
         /* And, when pressed in any other element. */
@@ -1008,7 +1020,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
       /* If the clicked element was the scrollbar of any editor, then set the flag so that the position
        * of the scrollbar gets corrected to exactly a step, as it might have been moved to inbetween 2 steps. */
-      if (element_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->scrollbar) {
+      if (guielement_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->scrollbar) {
         gui->clicked->data.editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
       }
       gui->clicked = NULL;
@@ -1068,7 +1080,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       }
     }
     /* If the clicked element is a part of an editor. */
-    else if (element_has_editor_data(gui->clicked)) {
+    else if (guielement_has_editor_data(gui->clicked)) {
       /* When the clicked element is the scrollbar of any editor, scroll that editor.  But only when the mouse y position has changed. */
       if (gui->clicked == gui->clicked->data.editor->scrollbar && mousepos.y != last_mousepos.y) {
         /* Move the scrollbar only in the y axis. */

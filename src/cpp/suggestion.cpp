@@ -55,13 +55,13 @@ void find_suggestion(void) {
     char *completion;
     Ulong i, j;
     /* Treverse the whole line. */
-    for (i = search_x; (long)i < threshhold; ++i) {
+    for (i=search_x; (long)i<threshhold; ++i) {
       /* If the first byte does not match, move on. */
       if (search_line->data[i] != suggest_buf[0]) {
         continue;
       }
       /* Check the rest of the bytes. */
-      for (j = 1; (int)j < suggest_len; ++j) {
+      for (j=1; (int)j<suggest_len; ++j) {
         if (search_line->data[i + j] != suggest_buf[j]) {
           break;
         }

@@ -312,12 +312,12 @@ void set_element_editor_data(guielement *e, guieditor *editor) _NOTHROW {
 }
 
 /* Returns `TRUE` when `element` has editor data. */
-bool element_has_file_data(guielement *e) _NOTHROW {
+bool guielement_has_file_data(guielement *e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_FILE_DATA>());
 }
 
 /* Returns `TRUE` when `element` has editor data. */
-bool element_has_editor_data(guielement *e) _NOTHROW {
+bool guielement_has_editor_data(guielement *e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>());
 }
 

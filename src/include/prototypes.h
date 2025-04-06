@@ -879,8 +879,8 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void set_element_raw_data(guielement *element, void *data) _NOTHROW;
   void set_element_file_data(guielement *element, openfilestruct *file) _NOTHROW;
   void set_element_editor_data(guielement *element, guieditor *editor) _NOTHROW;
-  bool element_has_file_data(guielement *element) _NOTHROW;
-  bool element_has_editor_data(guielement *element) _NOTHROW;
+  bool guielement_has_file_data(guielement *element) _NOTHROW;
+  bool guielement_has_editor_data(guielement *element) _NOTHROW;
   void set_element_flag_recurse(guielement *element, bool set, Uint flag);
 
   /* gui/guieditor.cpp */

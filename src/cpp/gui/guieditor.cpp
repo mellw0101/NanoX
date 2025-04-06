@@ -13,7 +13,7 @@
 
 
 /* Create the editor scrollbar. */
-static void make_editor_scrollbar(guieditor *editor) {
+static void guieditor_scrollbar_create(guieditor *editor) {
   ASSERT(editor->text);
   editor->scrollbar = make_element_child(editor->text);
   set_element_editor_data(editor->scrollbar, editor);
@@ -26,12 +26,12 @@ static void make_editor_scrollbar(guieditor *editor) {
 }
 
 /* Create the editor topbar. */
-static void make_editor_topbar(guieditor *editor) {
+static void guieditor_topbar_create(guieditor *editor) {
   ASSERT(editor->main);
   ASSERT(gui);
   ASSERT(gui->uifont);
   /* Create the topbar element as a child to the main element. */
-  editor->topbar = make_element_child(editor->main);
+  editor->topbar = make_element_child(editor->main, FALSE);
   editor->topbar->color = EDIT_BACKGROUND_COLOR;
   move_resize_element(
     editor->topbar,
@@ -61,11 +61,7 @@ void refresh_editor_topbar(guieditor *editor) {
   ITER_OVER_ALL_OPENFILES(editor->startfile, file,
     button = make_element_child(editor->topbar);
     if (*file->filename) {
-      move_resize_element(
-        button,
-        pos,
-        vec2((pixbreadth(gui->uifont, file->filename) + pixbreadth(gui->uifont, "  ")), editor->topbar->size.h)
-      );
+      move_resize_element(button, pos, vec2((pixbreadth(gui->uifont, file->filename) + pixbreadth(gui->uifont, "  ")), editor->topbar->size.h));
       set_element_lable(button, file->filename);
     }
     else {
@@ -113,7 +109,7 @@ void update_editor_topbar(guieditor *editor) {
   /* Iterate over every open file in the editor, if any. */
   for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
     button = editor->topbar->children[i];
-    if (element_has_file_data(button)) {
+    if (guielement_has_file_data(button)) {
       if (button->data.file == editor->openfile) {
         button->color = EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR;
       }
@@ -195,7 +191,7 @@ void make_new_editor(bool new_buffer) {
     FALSE
   );
   /* Create the topbar element for the editor. */
-  make_editor_topbar(openeditor);
+  guieditor_topbar_create(openeditor);
   /* Create the gutter element as a child to the main element. */
   openeditor->gutter = make_element_child(openeditor->main);
   openeditor->gutter->color = EDIT_BACKGROUND_COLOR;
@@ -233,7 +229,7 @@ void make_new_editor(bool new_buffer) {
   set_element_editor_data(openeditor->text, openeditor);
   openeditor->flag = bit_flag_t<GUIEDITOR_FLAGSIZE>();
   openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-  make_editor_scrollbar(openeditor);
+  guieditor_scrollbar_create(openeditor);
   openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
 }
 
@@ -353,26 +349,11 @@ guieditor *get_element_editor(guielement *e) {
 
 /* Get the editor that `file` belongs to. */
 guieditor *get_file_editor(openfilestruct *file) {
-  guieditor *editor = starteditor;
-  guielement *button;
-  if (!editor) {
-    die("%s: starteditor is not valid.\n", __func__);
-  }
-  else {
-    /* Check all editors. */
-    do {
-      for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
-        button = editor->topbar->children[i];
-        if (button->flag.is_set<GUIELEMENT_HAS_FILE_DATA>()) {
-          if (button->data.file == file) {
-            return editor;
-          }
-        }
-      }
-      editor = editor->next;
-    } while (editor != starteditor);
-    die("%s: The passed file does not belong to any editor, something is very wrong.\n", __func__);
-  }
+  ITER_OVER_ALL_OPENEDITORS(starteditor, editor, ITER_OVER_ALL_OPENFILES(editor->startfile, afile,
+    if (afile == file) {
+      return editor;
+    }
+  ););
   return NULL;
 }
 
