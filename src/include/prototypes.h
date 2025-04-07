@@ -770,7 +770,9 @@ local_var_t parse_local_var(linestruct *line);
 int         find_class_end_line(linestruct *from);
 void        add_rm_color_map(string str, syntax_data_t data);
 
-/* suggestion.cpp */
+
+/* ---------------------------------------------------------- suggestion.cpp ---------------------------------------------------------- */
+
 void do_suggestion(void);
 void find_suggestion(void);
 void clear_suggestion(void);
@@ -778,13 +780,27 @@ void add_char_to_suggest_buf(void);
 void draw_suggest_win(void);
 void accept_suggestion(void);
 
-/* 'parse.cpp' */
+/* ----------------------------- Gui suggestmenu ----------------------------- */
+
+void gui_suggestmenu_create(void);
+void gui_suggestmenu_free(void);
+void gui_suggestmenu_clear(void);
+void gui_suggestmenu_check(void);
+void gui_suggestmenu_find(void);
+
+
+/* ---------------------------------------------------------- parse.cpp ---------------------------------------------------------- */
+
+
 void parse_class_data(linestruct *from);
 void parse_var_type(const char *data);
 void line_variable(linestruct *line, vector<var_t> &var_vector);
 void func_decl(linestruct *line);
 
-/* 'backets.cpp' */
+
+/* ---------------------------------------------------------- brackets.cpp ---------------------------------------------------------- */
+
+
 bool  find_matching_bracket(linestruct *start_line, Ulong start_index, linestruct **to_line, Ulong *to_index);
 bool  find_end_bracket(linestruct *from, Ulong index, linestruct **end, Ulong *end_index);
 char *fetch_bracket_body(linestruct *from, Ulong index);

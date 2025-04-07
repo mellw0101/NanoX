@@ -905,6 +905,17 @@ void char_callback(GLFWwindow *window, Uint ch) {
     last_bracket_char    = '\0';
     keep_mark            = FALSE;
     refresh_needed       = TRUE;
+    gui_suggestmenu_check();
+    writef("%s\n", gui->suggestmenu->buf);
+    gui_suggestmenu_find();
+    if (gui->suggestmenu->completions_head) {
+      writef("Found completions:\n");
+      completionstruct *completion = gui->suggestmenu->completions_head;
+      while (completion) {
+        writef("  %s\n", completion->word);
+        completion = completion->next;
+      }
+    }
   }
 }
 

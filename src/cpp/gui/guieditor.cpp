@@ -349,6 +349,7 @@ guieditor *get_element_editor(guielement *e) {
 
 /* Get the editor that `file` belongs to. */
 guieditor *get_file_editor(openfilestruct *file) {
+  ASSERT(file);
   ITER_OVER_ALL_OPENEDITORS(starteditor, editor, ITER_OVER_ALL_OPENFILES(editor->startfile, afile,
     if (afile == file) {
       return editor;

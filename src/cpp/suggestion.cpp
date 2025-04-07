@@ -221,3 +221,132 @@ void accept_suggestion(void) {
   }
   clear_suggestion();
 }
+
+/* ----------------------------- Gui suggestmenu ----------------------------- */
+
+_UNUSED static inline void gui_suggestmenu_free_completions(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  completionstruct *dropit;
+  while (gui->suggestmenu->completions_head) {
+    dropit = gui->suggestmenu->completions_head;
+    gui->suggestmenu->completions_head = gui->suggestmenu->completions_head->next;
+    free(dropit->word);
+    free(dropit);
+  }
+  gui->suggestmenu->completions_tail = NULL;
+}
+
+void gui_suggestmenu_create(void) {
+  ASSERT(gui);
+  gui->suggestmenu = (GuiSuggestMenu *)xmalloc(sizeof(*gui->suggestmenu));
+  gui->suggestmenu->completions_head = NULL;
+  gui->suggestmenu->buf[0] = '\0';
+  gui->suggestmenu->len    = 0;
+}
+
+void gui_suggestmenu_free(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  gui_suggestmenu_free_completions();
+  free(gui->suggestmenu);
+}
+
+void gui_suggestmenu_clear(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  gui->suggestmenu->buf[0] = '\0';
+  gui->suggestmenu->len    = 0;
+}
+
+void gui_suggestmenu_check(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  Ulong pos;
+  if (openfile->current_x > 0 && openfile->current_x < 128) {
+    gui->suggestmenu->len = 0;
+    pos = get_prev_cursor_word_start_index();
+    while (pos < openfile->current_x) {
+      gui->suggestmenu->buf[gui->suggestmenu->len++] = openfile->current->data[pos++];
+    }
+    gui->suggestmenu->buf[gui->suggestmenu->len] = '\0';
+  }
+}
+
+void gui_suggestmenu_find(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  TIMER_START(timer);
+  HashMap *hash_map;
+  openfilestruct *current_file;
+  linestruct *search_line;
+  int search_x;
+  completionstruct *some_word;
+  long threshhold;
+  char *completion;
+  Ulong i, j;
+  gui_suggestmenu_free_completions();
+  if (!gui->suggestmenu->len) {
+    return;
+  }
+  hash_map = hashmap_create();
+  current_file = openfile;
+  search_line  = current_file->filetop;
+  search_x     = 0;
+  while (search_line) {
+    threshhold = (strlen(search_line->data) - gui->suggestmenu->len - 1);
+    /* Go thrue whole line. */
+    for (i=search_x; (long)i<threshhold; ++i) {
+      /* If the first byte does not match, move on. */
+      if (search_line->data[i] != gui->suggestmenu->buf[0]) {
+        continue;
+      }
+      /* When it does match, check the rest of the bytes. */
+      for (j=1; (int)j<gui->suggestmenu->len; ++j) {
+        if (search_line->data[i + j] != gui->suggestmenu->buf[j]) {
+          break;
+        }
+      }
+      /* Continue searching if all bytes did not match. */
+      if ((int)j < gui->suggestmenu->len) {
+        continue;
+      }
+      /* If the match is an exact copy of `gui->suggestmenu->buf`, skip it. */
+      if (!is_word_char(&search_line->data[i + j], FALSE)) {
+        continue;
+      }
+      /* If the match is not a seperate word, skip it. */
+      if (i > 0 && is_word_char(&search_line->data[step_left(search_line->data, i)], FALSE)) {
+        continue;
+      }
+      /* If the match is the `gui->suggestmenu->buf` itself, ignore it. */
+      if (search_line == openfile->current && i == (openfile->current_x - gui->suggestmenu->len)) {
+        continue;
+      }
+      completion = copy_completion(search_line->data + i);
+      /* Look for duplicates in the already found completions. */
+      if (hashmap_get(hash_map, completion)) {
+        free(completion);
+        continue;
+      }
+      hashmap_insert(hash_map, completion, (void *)completion);
+      some_word = (completionstruct *)xmalloc(sizeof(*some_word));
+      some_word->word = completion;
+      some_word->next = gui->suggestmenu->completions_head;
+      gui->suggestmenu->completions_head = some_word;
+      if (!gui->suggestmenu->completions_tail) {
+        gui->suggestmenu->completions_tail = some_word;
+      }
+      search_x = ++i;
+    }
+    search_line = search_line->next;
+    search_x = 0;
+    if (!search_line && current_file->next != openfile) {
+      current_file = current_file->next;
+      search_line = current_file->filetop;
+    }
+  }
+  hashmap_free(hash_map);
+  TIMER_END(timer, ms);
+  TIMER_PRINT(ms);
+}

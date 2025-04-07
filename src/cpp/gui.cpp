@@ -205,6 +205,7 @@ static void make_guistruct(void) {
   gui->rect_shader           = 0;
   gui->promptmenu            = NULL;
   gui->current_cursor_type   = GLFW_ARROW_CURSOR;
+  gui->suggestmenu           = NULL;
 }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */
@@ -230,6 +231,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   gui->font_size   = font_size;
   gui->uifont_size = uifont_size;
   gui->root = make_element(0, vec2(gui->height, gui->width), 0, 0, FALSE);
+  /* Init the gui suggestmenu substructure. */
+  gui_suggestmenu_create();
 }
 
 /* Delete the gui struct. */
@@ -265,6 +268,8 @@ static void delete_guistruct(void) {
   nevhandler_free(gui->handler);
   /* Delete the prompt-menu struct. */
   gui_promptmenu_delete();
+  /* Free the gui suggestmenu substructure. */
+  gui_suggestmenu_free();
   free(gui);
   gui = NULL;
 }

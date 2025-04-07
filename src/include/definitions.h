@@ -1177,6 +1177,13 @@ typedef struct completionstruct {
   } GuiStatusbar; */
 
   typedef struct {
+    completionstruct *completions_head;
+    completionstruct *completions_tail;
+    char  buf[128];
+    int   len;
+  } GuiSuggestMenu;
+
+  typedef struct {
     char            *title;                  /* The window title. */
     Uint             width;                  /* The window width. */
     Uint             height;                 /* The window height. */
@@ -1204,6 +1211,7 @@ typedef struct completionstruct {
     Uint             rect_shader;            /* The rect shader. */
     GuiPromptMenu   *promptmenu;
     int              current_cursor_type;    /* The currently active cursor type. */
+    GuiSuggestMenu  *suggestmenu;
   } guistruct;
 #endif
 
