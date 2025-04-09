@@ -16,9 +16,11 @@ float row_baseline_pixel(long row, texture_font_t *const font) {
 /* Assign's the top and bottom pixels of the `row` to `*top` and `*bot`.  Note that this is 0 indexed, so it starts at row 0 for the first row. */
 void row_top_bot_pixel(long row, texture_font_t *const font, float *const top, float *const bot) {
   ASSERT(font);
+  /* Ensure atleast one of the values are used, otherwise this is a no-op call. */
+  ALWAYS_ASSERT(top || bot);
   float baseline = row_baseline_pixel(row, font);
-  *top = (baseline - font->ascender);
-  *bot = (baseline - font->descender);
+  ASSIGN_IF_VALID(top, (baseline - font->ascender));
+  ASSIGN_IF_VALID(bot, (baseline - font->descender));
 }
 
 void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset) {

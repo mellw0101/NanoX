@@ -1,4 +1,4 @@
-/** @file definitions.h */
+s/** @file definitions.h */
 #pragma once
 /* clang-format off */
 
@@ -1177,14 +1177,13 @@ typedef struct completionstruct {
   } GuiStatusbar; */
 
   typedef struct {
-    struct {
-      Uint should_draw : 1;
-    } flag;
-    CVec *completions;
+    // completionstruct *completions_head;  /* Head/Top of single linked list. */
+    // completionstruct *completions_tail;  /* Tail/Bottom of single linked list. */
+    char **completions;
+    int size;
+    int cap;
     char  buf[128];
     int   len;
-    guielement *element;
-    vertex_buffer_t *vertbuf;
   } GuiSuggestMenu;
 
   typedef struct {

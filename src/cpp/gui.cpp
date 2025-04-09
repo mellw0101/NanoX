@@ -347,6 +347,8 @@ void glfw_loop(void) {
     ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
       draw_editor(editor);
     );
+    /* Draw the suggestmenu. */
+    draw_suggestmenu();
     /* Draw the top menu bar. */
     draw_topbar();
     /* Draw the bottom bar. */

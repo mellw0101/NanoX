@@ -908,12 +908,10 @@ void char_callback(GLFWwindow *window, Uint ch) {
     gui_suggestmenu_check();
     writef("%s\n", gui->suggestmenu->buf);
     gui_suggestmenu_find();
-    if (gui->suggestmenu->completions_head) {
+    if (cvec_len(gui->suggestmenu->completions)) {
       writef("Found completions:\n");
-      completionstruct *completion = gui->suggestmenu->completions_head;
-      while (completion) {
-        writef("  %s\n", completion->word);
-        completion = completion->next;
+      for (int i=0; i<cvec_len(gui->suggestmenu->completions); ++i) {
+        writef("  %s\n", (char *)cvec_get(gui->suggestmenu->completions, i));
       }
     }
   }

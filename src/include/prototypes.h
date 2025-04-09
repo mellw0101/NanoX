@@ -784,7 +784,6 @@ void accept_suggestion(void);
 
 void gui_suggestmenu_create(void);
 void gui_suggestmenu_free(void);
-void gui_suggestmenu_clear(void);
 void gui_suggestmenu_check(void);
 void gui_suggestmenu_find(void);
 
@@ -848,13 +847,17 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void window_enter_callback(GLFWwindow *window, int entered);
   void scroll_callback(GLFWwindow *window, double x, double y);
   
-  /* 'gui/guiwinio.cpp' */
+  
+  /* ---------------------------------------------------------- gui/guiwinio.cpp ---------------------------------------------------------- */
+  
+  
   void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *font);
   void draw_rect(vec2 pos, vec2 size, vec4 color);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
   void show_toggle_statusmsg(int flag);
   void draw_editor(guieditor *editor);
   void draw_topbar(void);
+  void draw_suggestmenu(void);
   void draw_botbar(void);
   void draw_statusbar(void);
   void do_fullscreen(GLFWwindow *window);

@@ -478,6 +478,44 @@ void draw_topbar(void) {
   }
 }
 
+void draw_suggestmenu(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  char *str;
+  vec2 pos, size, textpen;
+  int row, len;
+  /* Get the current number of suggestions. */
+  len = cvec_len(gui->suggestmenu->completions);
+  if (len) {
+    CLAMP_MAX(len, 8);  
+    gui->suggestmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
+    row_top_bot_pixel((openfile->current->lineno - openfile->edittop->lineno), gui->font, NULL, &pos.y);
+    pos.y += openeditor->text->pos.y;
+    pos.x = cursor_pixel_x_pos(gui->font);
+    size.y = (len * FONT_HEIGHT(gui->font));
+    CLAMP_MAX(size.y, (8 * FONT_HEIGHT(gui->font)));
+    /* Set the width arbitrary for now. */
+    size.x = 200;
+    move_resize_element(gui->suggestmenu->element, pos, size);
+    draw_element_rect(gui->suggestmenu->element);
+    vertex_buffer_clear(gui->suggestmenu->vertbuf);
+    row = 0;
+    while (row < len) {
+      str = (char *)cvec_get(gui->suggestmenu->completions, row);
+      textpen.x = pos.x;
+      textpen.y = (row_baseline_pixel(row, gui->font) + pos.y);
+      vertex_buffer_add_string(gui->suggestmenu->vertbuf, str, strlen(str), NULL, gui->font, GUI_WHITE_COLOR, &textpen);
+      ++row;
+    }
+    upload_texture_atlas(gui->atlas);
+    render_vertex_buffer(gui->font_shader, gui->suggestmenu->vertbuf);
+  }
+  else {
+    gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+  }
+}
+
 /* Draw the bottom bar of the gui. */
 void draw_botbar(void) {
   draw_element_rect(gui->botbar);

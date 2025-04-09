@@ -224,39 +224,36 @@ void accept_suggestion(void) {
 
 /* ----------------------------- Gui suggestmenu ----------------------------- */
 
-_UNUSED static inline void gui_suggestmenu_free_completions(void) {
+/* `INTERNAL`  Clean up the current completions, and reset the state. */
+static inline void gui_suggestmenu_free_completions(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
-  completionstruct *dropit;
-  while (gui->suggestmenu->completions_head) {
-    dropit = gui->suggestmenu->completions_head;
-    gui->suggestmenu->completions_head = gui->suggestmenu->completions_head->next;
-    free(dropit->word);
-    free(dropit);
-  }
-  gui->suggestmenu->completions_tail = NULL;
+  cvec_clear(gui->suggestmenu->completions);
 }
 
+/* Init the gui suggestmenu substructure. */
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
   gui->suggestmenu = (GuiSuggestMenu *)xmalloc(sizeof(*gui->suggestmenu));
-  gui->suggestmenu->completions_head = NULL;
+  gui->suggestmenu->flag.should_draw = FALSE;
+  gui->suggestmenu->completions = cvec_create_setfree(free);
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len    = 0;
+  gui->suggestmenu->element = make_element_child(gui->root);
+  gui->suggestmenu->element->color = GUI_BLACK_COLOR; 
+  gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+  gui->suggestmenu->vertbuf = make_new_font_buffer();
 }
 
 void gui_suggestmenu_free(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  ASSERT(gui->suggestmenu->vertbuf);
   gui_suggestmenu_free_completions();
+  cvec_free(gui->suggestmenu->completions);
+  vertex_buffer_delete(gui->suggestmenu->vertbuf);
   free(gui->suggestmenu);
-}
-
-void gui_suggestmenu_clear(void) {
-  ASSERT(gui);
-  ASSERT(gui->suggestmenu);
-  gui->suggestmenu->buf[0] = '\0';
-  gui->suggestmenu->len    = 0;
 }
 
 void gui_suggestmenu_check(void) {
@@ -273,15 +270,28 @@ void gui_suggestmenu_check(void) {
   }
 }
 
+/* Comparison function to order all suggestions from shortest to longest string meaning the highest % of the current word has been typed. */
+static int cmp(const void *a, const void *b) {
+  const char *lhs = *(const char **)a;
+  const char *rhs = *(const char **)b;
+  long lhs_len = strlen(lhs);
+  long rhs_len = strlen(rhs);
+  if (lhs_len == rhs_len) {
+    return strcmp(lhs, rhs);
+  }
+  return (lhs_len - rhs_len);
+}
+
+/* Perform the searching throue all openfiles and all lines. */
 void gui_suggestmenu_find(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   TIMER_START(timer);
+  /* We use our hash map for fast lookup. */
   HashMap *hash_map;
   openfilestruct *current_file;
   linestruct *search_line;
   int search_x;
-  completionstruct *some_word;
   long threshhold;
   char *completion;
   Ulong i, j;
@@ -307,19 +317,19 @@ void gui_suggestmenu_find(void) {
           break;
         }
       }
-      /* Continue searching if all bytes did not match. */
+      /* Continue if all bytes did not match. */
       if ((int)j < gui->suggestmenu->len) {
         continue;
       }
-      /* If the match is an exact copy of `gui->suggestmenu->buf`, skip it. */
+      /* Or the match is an exact copy of `gui->suggestmenu->buf`. */
       if (!is_word_char(&search_line->data[i + j], FALSE)) {
         continue;
       }
-      /* If the match is not a seperate word, skip it. */
+      /* Or the match is not a seperate word. */
       if (i > 0 && is_word_char(&search_line->data[step_left(search_line->data, i)], FALSE)) {
         continue;
       }
-      /* If the match is the `gui->suggestmenu->buf` itself, ignore it. */
+      /* Or the match is the `gui->suggestmenu->buf` itself. */
       if (search_line == openfile->current && i == (openfile->current_x - gui->suggestmenu->len)) {
         continue;
       }
@@ -329,14 +339,9 @@ void gui_suggestmenu_find(void) {
         free(completion);
         continue;
       }
+      /* Add to the hashmap, using the ptr to the word as it will live longer then this hashmap. */
       hashmap_insert(hash_map, completion, (void *)completion);
-      some_word = (completionstruct *)xmalloc(sizeof(*some_word));
-      some_word->word = completion;
-      some_word->next = gui->suggestmenu->completions_head;
-      gui->suggestmenu->completions_head = some_word;
-      if (!gui->suggestmenu->completions_tail) {
-        gui->suggestmenu->completions_tail = some_word;
-      }
+      cvec_push(gui->suggestmenu->completions, completion);
       search_x = ++i;
     }
     search_line = search_line->next;
@@ -347,6 +352,7 @@ void gui_suggestmenu_find(void) {
     }
   }
   hashmap_free(hash_map);
+  cvec_qsort(gui->suggestmenu->completions, cmp);
   TIMER_END(timer, ms);
   TIMER_PRINT(ms);
 }
