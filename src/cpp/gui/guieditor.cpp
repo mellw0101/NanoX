@@ -82,19 +82,19 @@ void refresh_editor_topbar(guieditor *editor) {
     button->relative_pos = (button->pos - editor->topbar->pos);
     /* When there is only a single file open make all borders equal. */
     if (file == file->next) {
-      set_element_borders(button, 2, GUI_BLACK_COLOR);
+      gui_element_set_borders(button, 2, GUI_BLACK_COLOR);
     }
     /* Otherwise, when this is the first file, make the right border half size. */
     else if (file == editor->startfile) {
-      set_element_borders(button, vec4(2, 1, 2, 2), GUI_BLACK_COLOR);
+      gui_element_set_borders(button, vec4(2, 1, 2, 2), GUI_BLACK_COLOR);
     }
     /* When this is the last file. */
     else if (file->next == editor->startfile) {
-      set_element_borders(button, vec4(1, 2, 2, 2), GUI_BLACK_COLOR);
+      gui_element_set_borders(button, vec4(1, 2, 2, 2), GUI_BLACK_COLOR);
     }
     /* Else, if this is a file in the middle or the last file, make both the left and right border half size. */
     else {
-      set_element_borders(button, vec4(1, 1, 2, 2), GUI_BLACK_COLOR);
+      gui_element_set_borders(button, vec4(1, 1, 2, 2), GUI_BLACK_COLOR);
     }
     pos.x += button->size.w;
     set_element_file_data(button, file);

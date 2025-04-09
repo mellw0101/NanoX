@@ -463,7 +463,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
             
-            
             // Ulong len;
             // float *array = pixpositions("\t\tballe", 0, &len, gui->font);
             // for (Ulong i=0; i<len; ++i) {
@@ -486,6 +485,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* Prompt-Menu */
           else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
             gui_ask_user(">", GUI_PROMPT_MENU);
+          }
+          break;
+        }
+        case GLFW_KEY_ESCAPE: {
+          if (!mods) {
+            // if ()
           }
           break;
         }
@@ -794,6 +799,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     if (wanted_to_move(function) || changes_something(function) || function == do_undo || function == do_redo) {
       openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
     }
+    /* If we are already showing suggestions, then update them. */
+    if (cvec_len(gui->suggestmenu->completions)) {
+      gui_suggestmenu_run();
+    }
     last_key_was_bracket = FALSE;
     last_bracket_char = '\0';
     keep_mark = FALSE;
@@ -905,15 +914,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
     last_bracket_char    = '\0';
     keep_mark            = FALSE;
     refresh_needed       = TRUE;
-    gui_suggestmenu_check();
-    writef("%s\n", gui->suggestmenu->buf);
-    gui_suggestmenu_find();
-    if (cvec_len(gui->suggestmenu->completions)) {
-      writef("Found completions:\n");
-      for (int i=0; i<cvec_len(gui->suggestmenu->completions); ++i) {
-        writef("  %s\n", (char *)cvec_get(gui->suggestmenu->completions, i));
-      }
-    }
+    gui_suggestmenu_run();
   }
 }
 

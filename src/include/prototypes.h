@@ -784,8 +784,9 @@ void accept_suggestion(void);
 
 void gui_suggestmenu_create(void);
 void gui_suggestmenu_free(void);
-void gui_suggestmenu_check(void);
+void gui_suggestmenu_load_str(void);
 void gui_suggestmenu_find(void);
+void gui_suggestmenu_run(void);
 
 
 /* ---------------------------------------------------------- parse.cpp ---------------------------------------------------------- */
@@ -893,7 +894,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void move_element_y_clamp(guielement *const e, float ypos, float min, float max);
   void move_resize_element(guielement *e, vec2 pos, vec2 size);
   void delete_element_borders(guielement *e);
-  void set_element_borders(guielement *e, vec4 size, vec4 color);
+  void gui_element_set_borders(guielement *e, vec4 size, vec4 color);
   void draw_element_rect(guielement *const e);
   void set_element_raw_data(guielement *element, void *data) _NOTHROW;
   void set_element_file_data(guielement *element, openfilestruct *file) _NOTHROW;

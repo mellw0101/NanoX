@@ -208,7 +208,7 @@ void delete_element_borders(guielement *e) {
 }
 
 /* Create borders for element `e` of `size` with `color`. */
-void set_element_borders(guielement *e, vec4 size, vec4 color) {
+void gui_element_set_borders(guielement *e, vec4 size, vec4 color) {
   ASSERT(e);
   guielement *left, *top, *right, *bottom;
   /* First remove the current border, if it has them. */

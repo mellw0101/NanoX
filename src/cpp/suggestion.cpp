@@ -242,6 +242,7 @@ void gui_suggestmenu_create(void) {
   gui->suggestmenu->element = make_element_child(gui->root);
   gui->suggestmenu->element->color = GUI_BLACK_COLOR; 
   gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+  gui_element_set_borders(gui->suggestmenu->element, vec4(1), GUI_WHITE_COLOR); 
   gui->suggestmenu->vertbuf = make_new_font_buffer();
 }
 
@@ -256,10 +257,13 @@ void gui_suggestmenu_free(void) {
   free(gui->suggestmenu);
 }
 
-void gui_suggestmenu_check(void) {
+/* Load the word cursor is currently on into the suggestmenu buffer, from the cursor to the beginning of the word, if any. */
+void gui_suggestmenu_load_str(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   Ulong pos;
+  /* Ensure we clear the buffer every time. */
+  gui->suggestmenu->buf[0] = '\0';
   if (openfile->current_x > 0 && openfile->current_x < 128) {
     gui->suggestmenu->len = 0;
     pos = get_prev_cursor_word_start_index();
@@ -281,6 +285,17 @@ static int cmp(const void *a, const void *b) {
   }
   return (lhs_len - rhs_len);
 }
+
+/* Copy the word that begins at `*text`. */
+static char *gui_suggestmenu_copy_completion(char *const restrict text) {
+  Ulong len=0;
+  /* Find the end of the word to get the length. */
+  while (is_word_char(&text[len], FALSE) || text[len] == '_') {
+    len = step_right(text, len);
+  }
+  /* Return a copy of the word. */
+  return measured_copy(text, len);
+} 
 
 /* Perform the searching throue all openfiles and all lines. */
 void gui_suggestmenu_find(void) {
@@ -322,7 +337,7 @@ void gui_suggestmenu_find(void) {
         continue;
       }
       /* Or the match is an exact copy of `gui->suggestmenu->buf`. */
-      if (!is_word_char(&search_line->data[i + j], FALSE)) {
+      if (!is_word_char(&search_line->data[i + j], FALSE) && search_line->data[i + j] != '_') {
         continue;
       }
       /* Or the match is not a seperate word. */
@@ -333,7 +348,7 @@ void gui_suggestmenu_find(void) {
       if (search_line == openfile->current && i == (openfile->current_x - gui->suggestmenu->len)) {
         continue;
       }
-      completion = copy_completion(search_line->data + i);
+      completion = gui_suggestmenu_copy_completion(search_line->data + i);
       /* Look for duplicates in the already found completions. */
       if (hashmap_get(hash_map, completion)) {
         free(completion);
@@ -355,4 +370,16 @@ void gui_suggestmenu_find(void) {
   cvec_qsort(gui->suggestmenu->completions, cmp);
   TIMER_END(timer, ms);
   TIMER_PRINT(ms);
+}
+
+void gui_suggestmenu_run(void) {
+  gui_suggestmenu_load_str();
+  writef("%s\n", gui->suggestmenu->buf);
+  gui_suggestmenu_find();
+  if (cvec_len(gui->suggestmenu->completions)) {
+    writef("Found completions:\n");
+    for (int i=0; i<cvec_len(gui->suggestmenu->completions); ++i) {
+      writef("  %s\n", (char *)cvec_get(gui->suggestmenu->completions, i));
+    }
+  } 
 }

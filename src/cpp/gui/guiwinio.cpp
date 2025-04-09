@@ -488,23 +488,23 @@ void draw_suggestmenu(void) {
   /* Get the current number of suggestions. */
   len = cvec_len(gui->suggestmenu->completions);
   if (len) {
-    CLAMP_MAX(len, 8);  
+    CLAMP_MAX(len, 8);
     gui->suggestmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
     row_top_bot_pixel((openfile->current->lineno - openfile->edittop->lineno), gui->font, NULL, &pos.y);
     pos.y += openeditor->text->pos.y;
     pos.x = cursor_pixel_x_pos(gui->font);
-    size.y = (len * FONT_HEIGHT(gui->font));
-    CLAMP_MAX(size.y, (8 * FONT_HEIGHT(gui->font)));
+    size.y = ((len * FONT_HEIGHT(gui->font)) + 4);
+    CLAMP_MAX(size.y, ((8 * FONT_HEIGHT(gui->font)) + 4));
     /* Set the width arbitrary for now. */
-    size.x = 200;
+    size.x = (pixbreadth(gui->font, (char *)cvec_get(gui->suggestmenu->completions, (len - 1))) + 4);
     move_resize_element(gui->suggestmenu->element, pos, size);
     draw_element_rect(gui->suggestmenu->element);
     vertex_buffer_clear(gui->suggestmenu->vertbuf);
     row = 0;
     while (row < len) {
       str = (char *)cvec_get(gui->suggestmenu->completions, row);
-      textpen.x = pos.x;
-      textpen.y = (row_baseline_pixel(row, gui->font) + pos.y);
+      textpen.x = (pos.x + 2);
+      textpen.y = (row_baseline_pixel(row, gui->font) + pos.y + 2);
       vertex_buffer_add_string(gui->suggestmenu->vertbuf, str, strlen(str), NULL, gui->font, GUI_WHITE_COLOR, &textpen);
       ++row;
     }
