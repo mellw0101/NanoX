@@ -240,9 +240,9 @@ void gui_suggestmenu_create(void) {
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len    = 0;
   gui->suggestmenu->element = make_element_child(gui->root);
-  gui->suggestmenu->element->color = GUI_BLACK_COLOR; 
+  gui->suggestmenu->element->color = GUI_BLACK_COLOR;
   gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
-  gui_element_set_borders(gui->suggestmenu->element, vec4(1), GUI_WHITE_COLOR); 
+  gui_element_set_borders(gui->suggestmenu->element, 1, vec4(vec3(0.5), 1));
   gui->suggestmenu->vertbuf = make_new_font_buffer();
 }
 
@@ -383,3 +383,14 @@ void gui_suggestmenu_run(void) {
     }
   } 
 }
+
+// void gui_suggestmenu_calculate(void) {
+//   ASSERT(gui);
+//   ASSERT(gui->suggestmenu);
+//   ASSERT(gui->suggestmenu->completions);
+//   int len = cvec_len(gui->suggestmenu->completions);
+//   if (!len) {
+//     return;
+//   }
+//   CLAMP_MAX(len, 8);
+// }

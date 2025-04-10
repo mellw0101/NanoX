@@ -841,6 +841,10 @@ void char_callback(GLFWwindow *window, Uint ch) {
     gui->flag.unset<GUI_EDITOR_MODE_KEY>();
   }
   else {
+    /* Adjust the viewport if the cursor is offscreen. */
+    if (current_is_offscreen()) {
+      adjust_viewport(CENTERING);
+    }
     /* If we are in restricted move dont add anything to the editor. */
     if (ISSET(VIEW_MODE)) {
       return;

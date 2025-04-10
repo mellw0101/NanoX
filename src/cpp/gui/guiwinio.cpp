@@ -495,7 +495,6 @@ void draw_suggestmenu(void) {
     pos.x = cursor_pixel_x_pos(gui->font);
     size.y = ((len * FONT_HEIGHT(gui->font)) + 4);
     CLAMP_MAX(size.y, ((8 * FONT_HEIGHT(gui->font)) + 4));
-    /* Set the width arbitrary for now. */
     size.x = (pixbreadth(gui->font, (char *)cvec_get(gui->suggestmenu->completions, (len - 1))) + 4);
     move_resize_element(gui->suggestmenu->element, pos, size);
     draw_element_rect(gui->suggestmenu->element);
