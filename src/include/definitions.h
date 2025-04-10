@@ -1180,10 +1180,20 @@ typedef struct completionstruct {
     struct {
       Uint should_draw : 1;
     } flag;
+
     CVec *completions;
+    int viewtop;
+    int selected;
+    int maxrows;
+    int rows;
+
+    /* The current string used to search, and its length. */
     char  buf[128];
     int   len;
+
     guielement *element;
+    guielement *scrollbar;
+
     vertex_buffer_t *vertbuf;
   } GuiSuggestMenu;
 

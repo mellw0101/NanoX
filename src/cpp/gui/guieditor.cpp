@@ -121,7 +121,7 @@ void update_editor_topbar(guieditor *editor) {
 }
 
 /* Update the `scroll-bar's` position and height.  */
-void update_editor_scrollbar(guieditor *editor) {
+void guieditor_update_scrollbar(guieditor *editor) {
   ASSERT(editor);
   ASSERT(editor->openfile->edittop);
   ASSERT(editor->openfile->filebot);

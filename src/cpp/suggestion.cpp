@@ -237,12 +237,19 @@ void gui_suggestmenu_create(void) {
   gui->suggestmenu = (GuiSuggestMenu *)xmalloc(sizeof(*gui->suggestmenu));
   gui->suggestmenu->flag.should_draw = FALSE;
   gui->suggestmenu->completions = cvec_create_setfree(free);
+  gui->suggestmenu->maxrows = 8;
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len    = 0;
   gui->suggestmenu->element = make_element_child(gui->root);
   gui->suggestmenu->element->color = GUI_BLACK_COLOR;
   gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
   gui_element_set_borders(gui->suggestmenu->element, 1, vec4(vec3(0.5), 1));
+  gui->suggestmenu->scrollbar = make_element_child(gui->suggestmenu->element);
+  move_resize_element(gui->suggestmenu->scrollbar, 10, 10);
+  gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_ABOVE>();
+  gui->suggestmenu->scrollbar->color = 1;
+  gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_X_POS>();
+  gui->suggestmenu->scrollbar->relative_pos.x = gui->suggestmenu->scrollbar->size.w;
   gui->suggestmenu->vertbuf = make_new_font_buffer();
 }
 
@@ -368,6 +375,9 @@ void gui_suggestmenu_find(void) {
   }
   hashmap_free(hash_map);
   cvec_qsort(gui->suggestmenu->completions, cmp);
+  /* Set the view top and the selected to the first suggestion. */
+  gui->suggestmenu->viewtop  = 0;
+  gui->suggestmenu->selected = 0;
   TIMER_END(timer, ms);
   TIMER_PRINT(ms);
 }
@@ -384,13 +394,70 @@ void gui_suggestmenu_run(void) {
   } 
 }
 
-// void gui_suggestmenu_calculate(void) {
-//   ASSERT(gui);
-//   ASSERT(gui->suggestmenu);
-//   ASSERT(gui->suggestmenu->completions);
-//   int len = cvec_len(gui->suggestmenu->completions);
-//   if (!len) {
-//     return;
-//   }
-//   CLAMP_MAX(len, 8);
-// }
+/* Calculate the number of visable rows and the final size of the suggestmenu element, then resize it. */
+void gui_suggestmenu_resize(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  vec2 pos, size;
+  int len = cvec_len(gui->suggestmenu->completions);
+  /* If there are no completions available, just return. */
+  if (!len) {
+    return;
+  }
+  /* Set the number of visable rows. */
+  if (len > gui->suggestmenu->maxrows) {
+    gui->suggestmenu->rows = gui->suggestmenu->maxrows;
+  }
+  else {
+    gui->suggestmenu->rows = len;
+  }
+  /* Calculate the correct position for the suggestmenu window. */
+  pos.x = cursor_pixel_x_pos(gui->font);
+  row_top_bot_pixel((openfile->current->lineno - openfile->edittop->lineno), gui->font, NULL, &pos.y);
+  pos.y += openeditor->text->pos.y;
+  /* Calculate the size of the suggestmenu window. */
+  size.w = (pixbreadth(gui->font, (char *)cvec_get(gui->suggestmenu->completions, (len - 1))) + 4);
+  size.h = ((gui->suggestmenu->rows * FONT_HEIGHT(gui->font)) + 4);
+  /* Move and resize the element. */
+  move_resize_element(gui->suggestmenu->element, pos, size);
+}
+
+void gui_suggestmenu_update_scrollbar(void) {
+  float height;
+  float ypos;
+  calculate_scrollbar(gui->suggestmenu->element->size.h, 0, (cvec_len(gui->suggestmenu->completions) - 1), gui->suggestmenu->rows, gui->suggestmenu->selected, &height, &ypos);
+  if (height == gui->suggestmenu->element->size.h) {
+    gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_HIDDEN>();
+    return;
+  }
+  else {
+    gui->suggestmenu->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
+  }
+  move_resize_element(
+    gui->suggestmenu->scrollbar,
+    vec2(gui->suggestmenu->scrollbar->pos.x, (gui->suggestmenu->element->pos.y + ypos)),
+    vec2(gui->suggestmenu->scrollbar->size.w, height)
+  );
+}
+
+void gui_suggestmenu_draw_text(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  int row = 0;
+  char *str;
+  vec2 textpen;
+  vertex_buffer_clear(gui->suggestmenu->vertbuf);
+  while (row < gui->suggestmenu->rows) {
+    str = (char *)cvec_get(gui->suggestmenu->completions, (gui->suggestmenu->viewtop + row));
+    textpen = vec2(
+      (gui->suggestmenu->element->pos.x + 2),
+      (row_baseline_pixel(row, gui->font) + gui->suggestmenu->element->pos.y + 2)
+    );
+    vertex_buffer_add_string(gui->suggestmenu->vertbuf, str, strlen(str), NULL, gui->font, 1, &textpen);
+    ++row;
+  }
+  upload_texture_atlas(gui->atlas);
+  render_vertex_buffer(gui->font_shader, gui->suggestmenu->vertbuf);
+}

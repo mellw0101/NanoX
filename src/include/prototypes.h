@@ -787,6 +787,9 @@ void gui_suggestmenu_free(void);
 void gui_suggestmenu_load_str(void);
 void gui_suggestmenu_find(void);
 void gui_suggestmenu_run(void);
+void gui_suggestmenu_resize(void);
+void gui_suggestmenu_update_scrollbar(void);
+void gui_suggestmenu_draw_text(void);
 
 
 /* ---------------------------------------------------------- parse.cpp ---------------------------------------------------------- */
@@ -854,6 +857,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   
   void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *font);
   void draw_rect(vec2 pos, vec2 size, vec4 color);
+  void render_vertex_buffer(Uint shader, vertex_buffer_t *buf);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
   void show_toggle_statusmsg(int flag);
   void draw_editor(guieditor *editor);
@@ -906,7 +910,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* gui/guieditor.cpp */
   void refresh_editor_topbar(guieditor *editor);
   void update_editor_topbar(guieditor *editor);
-  void update_editor_scrollbar(guieditor *editor);
+  void guieditor_update_scrollbar(guieditor *editor);
   void make_new_editor(bool new_buffer);
   void delete_editor(guieditor *editor);
   void close_editor(void);
