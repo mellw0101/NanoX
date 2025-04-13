@@ -60,6 +60,7 @@ void refresh_editor_topbar(guieditor *editor) {
   /* If there are any open files, create buttons for them. */
   ITER_OVER_ALL_OPENFILES(editor->startfile, file,
     button = make_element_child(editor->topbar);
+    button->cursor_type = GLFW_HAND_CURSOR;
     if (*file->filename) {
       move_resize_element(button, pos, vec2((pixbreadth(gui->uifont, file->filename) + pixbreadth(gui->uifont, "  ")), editor->topbar->size.h));
       set_element_lable(button, file->filename);
@@ -82,19 +83,19 @@ void refresh_editor_topbar(guieditor *editor) {
     button->relative_pos = (button->pos - editor->topbar->pos);
     /* When there is only a single file open make all borders equal. */
     if (file == file->next) {
-      gui_element_set_borders(button, 1, GUI_WHITE_COLOR);
+      gui_element_set_borders(button, 1, /* GUI_WHITE_COLOR */ vec4(vec3(0.5), 1));
     }
     /* Otherwise, when this is the first file, make the right border half size. */
     else if (file == editor->startfile) {
-      gui_element_set_borders(button, vec4(1, 0, 1, 1), GUI_WHITE_COLOR);
+      gui_element_set_borders(button, vec4(1, 0, 1, 1), vec4(vec3(0.5), 1));
     }
     /* When this is the last file. */
     else if (file->next == editor->startfile) {
-      gui_element_set_borders(button, vec4(1, 1, 1, 1), GUI_WHITE_COLOR);
+      gui_element_set_borders(button, vec4(1, 1, 1, 1), vec4(vec3(0.5), 1));
     }
     /* Else, if this is a file in the middle or the last file, make both the left and right border half size. */
     else {
-      gui_element_set_borders(button, vec4(1, 0, 1, 1), GUI_WHITE_COLOR);
+      gui_element_set_borders(button, vec4(1, 0, 1, 1), vec4(vec3(0.5), 1));
     }
     pos.x += button->size.w;
     set_element_file_data(button, file);
