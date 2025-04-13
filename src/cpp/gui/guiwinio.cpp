@@ -432,7 +432,6 @@ void draw_editor(guieditor *editor) {
       line = line->next;
     }
     if (!gui->flag.is_set<GUI_PROMPT>()) {
-      // add_openfile_cursor(gui->font, editor->buffer, vec4(1));
       if ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0) {
         line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui->font, editor->buffer, vec4(1), cursor_pixel_x_pos(gui->font), editor->text->pos.y);
       }
@@ -482,18 +481,16 @@ void draw_suggestmenu(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   ASSERT(gui->suggestmenu->completions);
-  int len;
   int selected_row;
   vec2 pos, size;
   /* Get the current number of suggestions. */
-  len = cvec_len(gui->suggestmenu->completions);
-  if (len) {
+  if (cvec_len(gui->suggestmenu->completions)) {
     gui->suggestmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
-    CLAMP_MAX(len, 8);
     gui_suggestmenu_resize();
     draw_element_rect(gui->suggestmenu->element);
+    /* Draw the rect that indicated the currently selected entry. */
     selected_row = (gui->suggestmenu->selected - gui->suggestmenu->viewtop);
-    if (selected_row >= 0 && selected_row <= gui->suggestmenu->rows) {
+    if (selected_row >= 0 && selected_row < gui->suggestmenu->rows) {
       pos.x = (gui->suggestmenu->element->pos.x + 1);
       size.w = (gui->suggestmenu->element->size.w - 2);
       row_top_bot_pixel(selected_row, gui->font, &pos.y, &size.h);

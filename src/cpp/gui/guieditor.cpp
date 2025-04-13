@@ -82,19 +82,19 @@ void refresh_editor_topbar(guieditor *editor) {
     button->relative_pos = (button->pos - editor->topbar->pos);
     /* When there is only a single file open make all borders equal. */
     if (file == file->next) {
-      gui_element_set_borders(button, 2, GUI_BLACK_COLOR);
+      gui_element_set_borders(button, 1, GUI_WHITE_COLOR);
     }
     /* Otherwise, when this is the first file, make the right border half size. */
     else if (file == editor->startfile) {
-      gui_element_set_borders(button, vec4(2, 1, 2, 2), GUI_BLACK_COLOR);
+      gui_element_set_borders(button, vec4(1, 0, 1, 1), GUI_WHITE_COLOR);
     }
     /* When this is the last file. */
     else if (file->next == editor->startfile) {
-      gui_element_set_borders(button, vec4(1, 2, 2, 2), GUI_BLACK_COLOR);
+      gui_element_set_borders(button, vec4(1, 1, 1, 1), GUI_WHITE_COLOR);
     }
     /* Else, if this is a file in the middle or the last file, make both the left and right border half size. */
     else {
-      gui_element_set_borders(button, vec4(1, 1, 2, 2), GUI_BLACK_COLOR);
+      gui_element_set_borders(button, vec4(1, 0, 1, 1), GUI_WHITE_COLOR);
     }
     pos.x += button->size.w;
     set_element_file_data(button, file);
@@ -397,4 +397,19 @@ void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor) {
   ASSERT(editor->openfile);
   ASSERT(editor->openfile->edittop);
   editor->openfile->edittop = gui_line_from_number(editor, guieditor_lineno_from_scrollbar_pos(editor));
+}
+
+void guieditor_resize(guieditor *const editor) {
+  ASSERT(editor);
+  if (!ISSET(LINE_NUMBERS)) {
+    editor->text->relative_pos.x = 0;
+    editor->gutter->flag.set<GUIELEMENT_HIDDEN>();
+  }
+  else {
+    editor->text->relative_pos.x = editor->gutter->size.w;
+    editor->gutter->flag.unset<GUIELEMENT_HIDDEN>();
+  }
+  move_resize_element(editor->main, 0, vec2(gui->width, (gui->height - gui->botbar->size.h)));
+  guieditor_calculate_rows(editor);
+  editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
 }

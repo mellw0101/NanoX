@@ -790,6 +790,8 @@ void gui_suggestmenu_run(void);
 void gui_suggestmenu_resize(void);
 void gui_suggestmenu_update_scrollbar(void);
 void gui_suggestmenu_draw_text(void);
+void gui_suggestmenu_selected_up(void);
+void gui_suggestmenu_selected_down(void);
 
 
 /* ---------------------------------------------------------- parse.cpp ---------------------------------------------------------- */
@@ -924,6 +926,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void guieditor_calculate_rows(guieditor *const editor);
   long guieditor_lineno_from_scrollbar_pos(guieditor *const editor);
   void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor);
+  void guieditor_resize(guieditor *const editor);
 
   /* gui/guigrid.cpp */
   guigridsection *make_new_gridsection(void);

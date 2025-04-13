@@ -61,11 +61,10 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
   resize_element(gui->root, vec2(gui->width, gui->height));
   /* Calculate the rows for all editors. */
   ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
-    move_resize_element(editor->main, 0, vec2(gui->width, (gui->height - gui->botbar->size.h)));
-    guieditor_calculate_rows(editor);
+    guieditor_resize(editor);
     if (texture_font_is_mono(gui->font)) {
       texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
-      if (glyph == 0) {
+      if (!glyph) {
         die("%s: Atlas is to small.\n", __func__);
       }
       editor->cols = (editor->text->size.w / glyph->advance_x);
@@ -73,7 +72,6 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
     else {
       editor->cols = ((editor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
     }
-    editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
   );
 }
 
@@ -563,6 +561,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_UP: {
+          if (cvec_len(gui->suggestmenu->completions)) {
+            gui_suggestmenu_selected_up();
+            return;
+          }
           switch (mods) {
             /* Move line or lines up. */
             case GLFW_MOD_ALT: {
@@ -592,6 +594,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_DOWN: {
+          if (cvec_len(gui->suggestmenu->completions)) {
+            gui_suggestmenu_selected_down();
+            return;
+          }
           switch (mods) {
             /* Moves line or lines down. */
             case GLFW_MOD_ALT: {
@@ -1017,7 +1023,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
             openfile = element->data.file;
             gui_redecorate_after_switch();
           }
-          writef("here\n");
         }
         /* For when the top bar is pressed, like when in prompt-mode. */
         /* And, when pressed in any other element. */

@@ -235,7 +235,7 @@ static inline void gui_suggestmenu_free_completions(void) {
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
   gui->suggestmenu = (GuiSuggestMenu *)xmalloc(sizeof(*gui->suggestmenu));
-  gui->suggestmenu->flag.should_draw = FALSE;
+  gui->suggestmenu->flag.active = FALSE;
   gui->suggestmenu->completions = cvec_create_setfree(free);
   gui->suggestmenu->maxrows = 8;
   gui->suggestmenu->buf[0] = '\0';
@@ -419,6 +419,10 @@ void gui_suggestmenu_resize(void) {
   /* Calculate the size of the suggestmenu window. */
   size.w = (pixbreadth(gui->font, (char *)cvec_get(gui->suggestmenu->completions, (len - 1))) + 4);
   size.h = ((gui->suggestmenu->rows * FONT_HEIGHT(gui->font)) + 4);
+  /* Add the size of the scrollbar if there is a scrollbar. */
+  if (len > gui->suggestmenu->maxrows) {
+    size.w += gui->suggestmenu->scrollbar->size.w;
+  }
   /* Move and resize the element. */
   move_resize_element(gui->suggestmenu->element, pos, size);
 }
@@ -426,17 +430,18 @@ void gui_suggestmenu_resize(void) {
 void gui_suggestmenu_update_scrollbar(void) {
   float height;
   float ypos;
-  calculate_scrollbar(gui->suggestmenu->element->size.h, 0, (cvec_len(gui->suggestmenu->completions) - 1), gui->suggestmenu->rows, gui->suggestmenu->selected, &height, &ypos);
-  if (height == gui->suggestmenu->element->size.h) {
+  int len = cvec_len(gui->suggestmenu->completions);
+  if (len <= gui->suggestmenu->maxrows) {
     gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_HIDDEN>();
     return;
   }
   else {
     gui->suggestmenu->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
   }
+  calculate_scrollbar((gui->suggestmenu->element->size.h - 2), 0, (cvec_len(gui->suggestmenu->completions) - gui->suggestmenu->maxrows), gui->suggestmenu->rows, gui->suggestmenu->viewtop, &height, &ypos);
   move_resize_element(
     gui->suggestmenu->scrollbar,
-    vec2(gui->suggestmenu->scrollbar->pos.x, (gui->suggestmenu->element->pos.y + ypos)),
+    vec2(gui->suggestmenu->scrollbar->pos.x, (gui->suggestmenu->element->pos.y + ypos + 1)),
     vec2(gui->suggestmenu->scrollbar->size.w, height)
   );
 }
@@ -460,4 +465,46 @@ void gui_suggestmenu_draw_text(void) {
   }
   upload_texture_atlas(gui->atlas);
   render_vertex_buffer(gui->font_shader, gui->suggestmenu->vertbuf);
+}
+
+void gui_suggestmenu_selected_up(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  int len = cvec_len(gui->suggestmenu->completions);
+  if (len) {
+    /* If we are at the first entry. */
+    if (gui->suggestmenu->selected == 0) {
+      gui->suggestmenu->selected = (len - 1);
+      if (len > gui->suggestmenu->maxrows) {
+        gui->suggestmenu->viewtop = (len - gui->suggestmenu->maxrows);
+      }
+    }
+    else {
+      if (gui->suggestmenu->viewtop == gui->suggestmenu->selected) {
+        --gui->suggestmenu->viewtop;
+      }
+      --gui->suggestmenu->selected;
+    }
+  }
+}
+
+void gui_suggestmenu_selected_down(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  int len = cvec_len(gui->suggestmenu->completions);
+  if (len) {
+    /* If we are at the last entry. */
+    if (gui->suggestmenu->selected == (len - 1)) {
+      gui->suggestmenu->selected = 0;
+      gui->suggestmenu->viewtop  = 0;
+    }
+    else {
+      if (gui->suggestmenu->selected == (gui->suggestmenu->viewtop + gui->suggestmenu->maxrows - 1)) {
+        ++gui->suggestmenu->viewtop;
+      }
+      ++gui->suggestmenu->selected;
+    }
+  }
 }

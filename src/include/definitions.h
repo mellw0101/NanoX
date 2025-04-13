@@ -1178,7 +1178,7 @@ typedef struct completionstruct {
 
   typedef struct {
     struct {
-      Uint should_draw : 1;
+      Uint active : 1;
     } flag;
 
     CVec *completions;
