@@ -488,7 +488,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_ESCAPE: {
           if (!mods) {
-            // if ()
+            if (cvec_len(gui->suggestmenu->completions)) {
+              cvec_clear(gui->suggestmenu->completions);
+              return;
+            }
           }
           break;
         }
@@ -667,6 +670,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_TAB: {
+          if (cvec_len(gui->suggestmenu->completions)) {
+            char *str = (char *)cvec_get(gui->suggestmenu->completions, gui->suggestmenu->selected);
+            inject((str + gui->suggestmenu->len), (strlen(str) - gui->suggestmenu->len));
+            refresh_needed = TRUE;
+            cvec_clear(gui->suggestmenu->completions);
+            return;
+          }
           /* Simple tab. */
           if (!mods) {
             function = do_tab;
@@ -1086,7 +1096,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 /* Mouse pos callback. */
 void mouse_pos_callback(GLFWwindow *window, double x, double y) {
   static vec2 last_mousepos = mousepos;
-  guielement *mouse_element;
+  guielement *element;
   /* Set the global mouse position. */
   mousepos = vec2(x, y);
   /* If the left mouse button is being held. */
@@ -1175,23 +1185,23 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     }
   }
   /* Get the element that the mouse is on. */
-  mouse_element = element_from_mousepos();
-  if (mouse_element) {
+  element = element_from_mousepos();
+  if (element) {
     /* If the element currently hovered on has a diffrent cursor then the active one, change it. */
-    if (mouse_element->cursor_type != gui->current_cursor_type) {
-      set_cursor_type(window, mouse_element->cursor_type);
-      gui->current_cursor_type = mouse_element->cursor_type;
+    if (element->cursor_type != gui->current_cursor_type) {
+      set_cursor_type(window, element->cursor_type);
+      gui->current_cursor_type = element->cursor_type;
     }
     /* If the current mouse element is not the current entered element. */
-    if (mouse_element != entered_element) {
+    if (element != entered_element) {
       /* Run the enter element for the mouse element, if any. */
-      CALL_IF_VALID(mouse_element->callback, mouse_element, GUIELEMENT_ENTER_CALLBACK);
+      CALL_IF_VALID(element->callback, element, GUIELEMENT_ENTER_CALLBACK);
       /* If the old entered element was not NULL. */
       if (entered_element) {
         /* Run the leave event for the old entered element, if any. */
         CALL_IF_VALID(entered_element->callback, entered_element, GUIELEMENT_LEAVE_CALLBACK);
       }
-      entered_element = mouse_element;
+      entered_element = element;
     }
   }
   /* Save the current mouse position. */

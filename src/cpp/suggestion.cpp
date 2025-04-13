@@ -253,6 +253,7 @@ void gui_suggestmenu_create(void) {
   gui->suggestmenu->vertbuf = make_new_font_buffer();
 }
 
+/* Free the suggestmenu substructure. */
 void gui_suggestmenu_free(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
@@ -438,7 +439,15 @@ void gui_suggestmenu_update_scrollbar(void) {
   else {
     gui->suggestmenu->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
   }
-  calculate_scrollbar((gui->suggestmenu->element->size.h - 2), 0, (cvec_len(gui->suggestmenu->completions) - gui->suggestmenu->maxrows), gui->suggestmenu->rows, gui->suggestmenu->viewtop, &height, &ypos);
+  calculate_scrollbar(
+    (gui->suggestmenu->element->size.h - 2),
+    0,
+    (cvec_len(gui->suggestmenu->completions) - gui->suggestmenu->maxrows),
+    gui->suggestmenu->rows,
+    gui->suggestmenu->viewtop,
+    &height,
+    &ypos
+  );
   move_resize_element(
     gui->suggestmenu->scrollbar,
     vec2(gui->suggestmenu->scrollbar->pos.x, (gui->suggestmenu->element->pos.y + ypos + 1)),

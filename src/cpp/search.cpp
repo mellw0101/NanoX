@@ -1,9 +1,6 @@
 /** @file search.cpp */
 #include "../include/prototypes.h"
 
-#include <Mlib/Profile.h>
-#include <string.h>
-#include <time.h>
 
 /* Have we reached the starting line again while searching? */
 static bool came_full_circle = FALSE;
@@ -44,11 +41,14 @@ void tidy_up_after_search(void) {
  * as long as the user presses a toggle, and only take action and exit
  * when <Enter> is pressed or a non-toggle shortcut was executed. */
 static void search_init(bool replacing, bool retain_answer) {
+  functionptrtype function;
+  char *disp;
+  int response;
   /* What will be searched for when the user types just <Enter>. */
   char *thedefault;
   /* If something was searched for earlier, include it in the prompt. */
   if (*last_search) {
-    char *disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
+    disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
     thedefault = (char *)nmalloc(strlen(disp) + 7);
     /* We use (COLS / 3) here because we need to see more on the line. */
     sprintf(thedefault, " [%s%s]", disp, ((long)breadth(last_search) > (COLS / 3)) ? "..." : "");
@@ -58,9 +58,8 @@ static void search_init(bool replacing, bool retain_answer) {
     thedefault = STRLTR_COPY_OF("");
   }
   while (TRUE) {
-    functionptrtype function;
     /* Ask the user what to search for (or replace). */
-    int response = do_prompt(
+    response = do_prompt(
       (inhelp ? MFINDINHELP : (replacing ? MREPLACE : MWHEREIS)),
       (retain_answer ? answer : ""),
       &search_history,
@@ -110,7 +109,7 @@ static void search_init(bool replacing, bool retain_answer) {
       TOGGLE(USE_REGEXP);
     }
     else if (function == flip_replace) {
-      if ISSET (VIEW_MODE) {
+      if (ISSET(VIEW_MODE)) {
         print_view_warning();
         napms(600);
       }
@@ -132,9 +131,9 @@ static void search_init(bool replacing, bool retain_answer) {
   free(thedefault);
 }
 
-// Look for needle, starting at (current, current_x).  Begin is the line where we first started searching,
-// at column begin_x.  Return 1 when we found something, 0 when nothing, and -2 on cancel.  When match_len is
-// not NULL, set it to the length of the found string, if any.  TODO: (findnextstr) - This can be usefull.
+/* Look for needle, starting at (current, current_x).  Begin is the line where we first started searching,
+ * at column begin_x.  Return 1 when we found something, 0 when nothing, and -2 on cancel.  When match_len is
+ * not NULL, set it to the length of the found string, if any.  TODO: (findnextstr) - This can be usefull. */
 int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x) {
   /* The length of a match -- will be recomputed for a regex. */
   Ulong found_len = strlen(needle);
@@ -290,8 +289,7 @@ void do_search_backward(void) {
 
 /* Search for the last string without prompting. */
 static void do_research(void) {
-  /* If nothing was searched for yet during this run of nano, but
-   * there is a search history, take the most recent item. */
+  /* If nothing was searched for yet during this run of nano, but there is a search history, take the most recent item. */
   if (!*last_search && searchbot->prev) {
     last_search = mallocstrcpy(last_search, searchbot->prev->data);
   }
@@ -361,18 +359,19 @@ void go_looking(void) {
 /* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into account.
  * Return the replacement text in the passed string only when create is TRUE. */
 static int replace_regexp(char *string, bool create) _NOTHROW {
-  Ulong replacement_size = 0;
+  Ulong replacement_size=0, i;
   const char *c = answer;
+  int num;
   /* Iterate through the replacement text to handle subexpression replacement using \1, \2, \3, etc. */
   while (*c) {
-    int num = (*(c + 1) - '0');
+    num = (*(c + 1) - '0');
     if (*c != '\\' || num < 1 || num > 9 || num > (long)search_regexp.re_nsub) {
       create ? *string++ = *c : 0;
       ++c;
       ++replacement_size;
     }
     else {
-      Ulong i = (regmatches[num].rm_eo - regmatches[num].rm_so);
+      i = (regmatches[num].rm_eo - regmatches[num].rm_so);
       /* Skip over the replacement expression. */
       c += 2;
       /* But add the length of the subexpression to new_size. */
@@ -384,7 +383,7 @@ static int replace_regexp(char *string, bool create) _NOTHROW {
       }
     }
   }
-  create ? *string = '\0' : 0;
+  create ? (*string = '\0') : 0;
   return replacement_size;
 }
 
@@ -402,7 +401,7 @@ static char *replace_line(const char *needle) {
     match_len = strlen(needle);
     new_size += (strlen(answer) - match_len);
   }
-  copy = (char *)nmalloc(new_size);
+  copy = (char *)xmalloc(new_size);
   /* Copy the head of the original line. */
   strncpy(copy, openfile->current->data, openfile->current_x);
   /* Add the replacement text. */
@@ -417,10 +416,10 @@ static char *replace_line(const char *needle) {
   return copy;
 }
 
-// Step through each occurrence of the search string and prompt the user before replacing it.  We seek for needle,
-// and replace it with answer.  The parameters real_current and real_current_x are needed in order to allow the
-// cursor position to be updated when a word before the cursor is replaced by a shorter word.  Return -1 if needle
-// isn't found, -2 if the seeking is aborted, else the number of replacements performed.
+/* Step through each occurrence of the search string and prompt the user before replacing it.  We seek for needle,
+ * and replace it with answer.  The parameters real_current and real_current_x are needed in order to allow the
+ * cursor position to be updated when a word before the cursor is replaced by a shorter word.  Return -1 if needle
+ * isn't found, -2 if the seeking is aborted, else the number of replacements performed. */
 long do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, Ulong *real_current_x) {
   linestruct *was_mark = openfile->mark;
   linestruct *top, *bot;
