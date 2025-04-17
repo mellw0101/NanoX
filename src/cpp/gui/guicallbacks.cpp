@@ -670,11 +670,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_TAB: {
-          if (cvec_len(gui->suggestmenu->completions)) {
-            char *str = (char *)cvec_get(gui->suggestmenu->completions, gui->suggestmenu->selected);
-            inject((str + gui->suggestmenu->len), (strlen(str) - gui->suggestmenu->len));
-            refresh_needed = TRUE;
-            cvec_clear(gui->suggestmenu->completions);
+          /* This return's true when there was a suggestion acception. */
+          if (gui_suggestmenu_accept()) {
             return;
           }
           /* Simple tab. */
@@ -982,6 +979,10 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
       element = element_from_mousepos();
       if (element) {
+        /* If this click was not related to the suggestmenu, clear the suggestmenu. */
+        if (!is_ancestor(element, gui->suggestmenu->element)) {
+          gui_suggestmenu_clear();
+        }
         /* Save the element that was clicked. */
         gui->clicked = element;
         /* When the mouse is pressed in the text element of a editor. */
@@ -1027,14 +1028,13 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           }
         }
         /* Otherwise, if the element is part of the topbar of an editor. */
-        else if (guielement_has_file_data(element) && guielement_has_editor_data(element->parent) && element->parent == element->parent->data.editor->topbar) {
+        else if (guielement_has_file_data(element) && guielement_has_editor_data(element->parent) && element->parent == element->parent->data.editor->topbar && !gui->flag.is_set<GUI_PROMPT>()) {
           if (element->data.file != element->parent->data.editor->openfile) {
             element->parent->data.editor->openfile = element->data.file;
             openfile = element->data.file;
             gui_redecorate_after_switch();
           }
         }
-        /* For when the top bar is pressed, like when in prompt-mode. */
         /* And, when pressed in any other element. */
         else if (element->callback) {
           element->callback(element, GUIELEMENT_CLICK_CALLBACK);

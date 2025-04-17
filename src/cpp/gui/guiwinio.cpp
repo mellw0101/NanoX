@@ -485,7 +485,6 @@ void draw_suggestmenu(void) {
   vec2 pos, size;
   /* Get the current number of suggestions. */
   if (cvec_len(gui->suggestmenu->completions)) {
-    gui->suggestmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
     gui_suggestmenu_resize();
     draw_element_rect(gui->suggestmenu->element);
     /* Draw the rect that indicated the currently selected entry. */
@@ -501,9 +500,6 @@ void draw_suggestmenu(void) {
     gui_suggestmenu_update_scrollbar();
     draw_element_rect(gui->suggestmenu->scrollbar);
     gui_suggestmenu_draw_text();
-  }
-  else {
-    gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
   }
 }
 

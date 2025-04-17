@@ -17,7 +17,7 @@ static void handle_main_thread_signal(int sig, siginfo_t *si, void *context) _NO
 
 /* Send a function and arg to the main thread for direct handeling. */
 void send_signal_to_main_thread(void (*func)(void *), void *arg) _NOTHROW {
-  signal_payload_t *payload = (signal_payload_t *)nmalloc(sizeof(signal_payload_t));
+  signal_payload_t *payload = (signal_payload_t *)xmalloc(sizeof(signal_payload_t));
   payload->func = func;
   payload->arg  = arg;
   union sigval sig_data;
@@ -104,7 +104,7 @@ void block_pthread_sig(int sig, bool block) _NOTHROW {
   /* Apply mask to calling thread. */
   sigemptyset(&mask);
   sigaddset(&mask, sig);
-  if (pthread_sigmask((block) ? SIG_BLOCK : SIG_UNBLOCK, &mask, NULL) != 0) {
+  if (pthread_sigmask((block ? SIG_BLOCK : SIG_UNBLOCK), &mask, NULL) != 0) {
     logE("Failed to %s.", (block) ? "SIG_BLOCK" : "SIG_UNBLOCK");
     return;
   }

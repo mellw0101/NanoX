@@ -157,7 +157,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
     if (skipone) {
       skipone = FALSE;
       if (ISSET(BACKWARDS_SEARCH) && from != line->data) {
-        from  = (line->data + step_left(line->data, from - line->data));
+        from  = (line->data + step_left(line->data, (from - line->data)));
         found = strstrwrapper(line->data, needle, from);
       }
       else if (!ISSET(BACKWARDS_SEARCH) && *from) {
@@ -175,7 +175,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
       }
       /* When we're spell checking, a match should be a separate word;
        * if it's not, continue looking in the rest of the line. */
-      if (whole_word_only && !is_separate_word(found - line->data, found_len, line->data)) {
+      if (whole_word_only && !is_separate_word((found - line->data), found_len, line->data)) {
         from = (found + char_length(found));
         continue;
       }
@@ -196,14 +196,14 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
       return 0;
     }
     /* Move to the previous or next line in the file. */
-    line = ISSET(BACKWARDS_SEARCH) ? line->prev : line->next;
+    line = (ISSET(BACKWARDS_SEARCH) ? line->prev : line->next);
     /* If we've reached the start or end of the buffer, wrap around; but stop when spell-checking or replacing in a region. */
     if (!line) {
       if (whole_word_only || modus == INREGION) {
         nodelay(midwin, FALSE);
         return 0;
       }
-      line = ISSET(BACKWARDS_SEARCH) ? openfile->filebot : openfile->filetop;
+      line = (ISSET(BACKWARDS_SEARCH) ? openfile->filebot : openfile->filetop);
       if (modus == JUSTFIND) {
         statusline(REMARK, _("Search Wrapped"));
         /* Delay the "Searching..." message for at least two seconds. */
@@ -211,7 +211,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
       }
     }
     /* If we've reached the original starting line, take note. */
-    (line == begin) ? came_full_circle = TRUE : 0;
+    (line == begin) ? (came_full_circle = TRUE) : 0;
     /* Set the starting x to the start or end of the line. */
     from = line->data;
     if (ISSET(BACKWARDS_SEARCH)) {
@@ -254,8 +254,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
   found_x = (found - line->data);
   nodelay(midwin, FALSE);
   /* Ensure that the found occurrence is not beyond the starting x. */
-  if (came_full_circle
-   && ((!ISSET(BACKWARDS_SEARCH) && (found_x > begin_x || (modus == REPLACING && found_x == begin_x))) || (ISSET(BACKWARDS_SEARCH) && found_x < begin_x))) {
+  if (came_full_circle && ((!ISSET(BACKWARDS_SEARCH) && (found_x > begin_x || (modus == REPLACING && found_x == begin_x))) || (ISSET(BACKWARDS_SEARCH) && found_x < begin_x))) {
     return 0;
   }
   /* Set the current position to point at what we found. */
@@ -602,9 +601,12 @@ void goto_line_posx(long linenumber, Ulong pos_x) _NOTHROW {
 /* Go to the specified line and column, or ask for them if interactive is TRUE.  In the latter case also
  * update the screen afterwards.  Note that both the line and column number should be one-based. */
 void goto_line_and_column(long line, long column, bool retain_answer, bool interactive) {
+  int response, rows_from_tail;
+  linestruct *currentline;
+  Ulong leftedge;
   if (interactive) {
     /* Ask for the line and column.  TRANSLATOR: This is a prompt. */
-    int response = do_prompt(MGOTOLINE, retain_answer ? answer : "", NULL, edit_refresh, _("Enter line number, column number"));
+    response = do_prompt(MGOTOLINE, retain_answer ? answer : "", NULL, edit_refresh, _("Enter line number, column number"));
     /* If the user cancelled or gave a blank answer, get out. */
     if (response < 0) {
       statusbar(_("Cancelled"));
@@ -636,12 +638,12 @@ void goto_line_and_column(long line, long column, bool retain_answer, bool inter
   }
   /* Take a negative line number to mean: from the end of the file. */
   if (line < 0) {
-    line = openfile->filebot->lineno + line + 1;
+    line = (openfile->filebot->lineno + line + 1);
   }
   if (line < 1) {
     line = 1;
   }
-  if (line > openfile->edittop->lineno + editwinrows || (ISSET(SOFTWRAP) && line > openfile->current->lineno)) {
+  if (line > (openfile->edittop->lineno + editwinrows) || (ISSET(SOFTWRAP) && line > openfile->current->lineno)) {
     recook |= perturbed;
   }
   /* Iterate to the requested line. */
@@ -656,9 +658,9 @@ void goto_line_and_column(long line, long column, bool retain_answer, bool inter
     column = 1;
   }
   /* Set the x position that corresponds to the requested column. */
-  openfile->current_x   = actual_x(openfile->current->data, column - 1);
-  openfile->placewewant = column - 1;
-  if (ISSET(SOFTWRAP) && openfile->placewewant / editwincols > breadth(openfile->current->data) / editwincols) {
+  openfile->current_x   = actual_x(openfile->current->data, (column - 1));
+  openfile->placewewant = (column - 1);
+  if (ISSET(SOFTWRAP) && (openfile->placewewant / editwincols) > (breadth(openfile->current->data) / editwincols)) {
     openfile->placewewant = breadth(openfile->current->data);
   }
   /* When a line number was manually given, center the target line. */
@@ -667,19 +669,18 @@ void goto_line_and_column(long line, long column, bool retain_answer, bool inter
     refresh_needed = TRUE;
   }
   else {
-    int rows_from_tail;
     if (ISSET(SOFTWRAP)) {
-      linestruct *currentline = openfile->current;
-      Ulong       leftedge    = leftedge_for(xplustabs(), openfile->current);
-      rows_from_tail          = (editwinrows / 2) - go_forward_chunks(editwinrows / 2, &currentline, &leftedge);
+      currentline    = openfile->current;
+      leftedge       = leftedge_for(xplustabs(), openfile->current);
+      rows_from_tail = ((editwinrows / 2) - go_forward_chunks((editwinrows / 2), &currentline, &leftedge));
     }
     else {
-      rows_from_tail = openfile->filebot->lineno - openfile->current->lineno;
+      rows_from_tail = (openfile->filebot->lineno - openfile->current->lineno);
     }
-    /* If the target line is close to the tail of the file, put the last line or chunk on
-     * the bottom line of the screen; otherwise, just center the target line. */
+    /* If the target line is close to the tail of the file, put the last line or chunk
+     * on the bottom line of the screen; otherwise, just center the target line. */
     if (rows_from_tail < editwinrows / 2 && !ISSET(JUMPY_SCROLLING)) {
-      openfile->cursor_row = editwinrows - 1 - rows_from_tail;
+      openfile->cursor_row = (editwinrows - 1 - rows_from_tail);
       adjust_viewport(STATIONARY);
     }
     else {
@@ -820,8 +821,7 @@ static void go_to_and_confirm(linestruct *line) {
   if (line != openfile->current) {
     openfile->current   = line;
     openfile->current_x = 0;
-    if (line->lineno > openfile->edittop->lineno + editwinrows ||
-        (ISSET(SOFTWRAP) && line->lineno > was_current->lineno)) {
+    if (line->lineno > openfile->edittop->lineno + editwinrows || (ISSET(SOFTWRAP) && line->lineno > was_current->lineno)) {
       recook |= perturbed;
     }
     edit_redraw(was_current, CENTERING);
@@ -839,9 +839,8 @@ static void go_to_and_confirm(linestruct *line) {
 void to_prev_anchor(void) {
   linestruct *line = openfile->current;
   do {
-    line = (line->prev) ? line->prev : openfile->filebot;
-  }
-  while (!line->has_anchor && line != openfile->current);
+    line = (line->prev ? line->prev : openfile->filebot);
+  } while (!line->has_anchor && line != openfile->current);
   go_to_and_confirm(line);
 }
 
@@ -849,18 +848,17 @@ void to_prev_anchor(void) {
 void to_next_anchor(void) {
   linestruct *line = openfile->current;
   do {
-    line = (line->next) ? line->next : openfile->filetop;
-  }
-  while (!line->has_anchor && line != openfile->current);
+    line = (line->next ? line->next : openfile->filetop);
+  } while (!line->has_anchor && line != openfile->current);
   go_to_and_confirm(line);
 }
 
 static bool search_file_in_dir(const char *file, const char *dir) {
   DIR *d = opendir(dir);
+  dirent *e;
   if (!d) {
     return FALSE;
   }
-  dirent *e;
   while ((e = readdir(d))) {
     if (strcmp(file, e->d_name) == 0) {
       return TRUE;

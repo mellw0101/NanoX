@@ -242,7 +242,7 @@ void gui_suggestmenu_create(void) {
   gui->suggestmenu->len    = 0;
   gui->suggestmenu->element = make_element_child(gui->root);
   gui->suggestmenu->element->color = GUI_BLACK_COLOR;
-  gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+  gui->suggestmenu->element->flag.set<GUIELEMENT_ABOVE>();
   gui_element_set_borders(gui->suggestmenu->element, 1, vec4(vec3(0.5), 1));
   gui->suggestmenu->scrollbar = make_element_child(gui->suggestmenu->element);
   move_resize_element(gui->suggestmenu->scrollbar, 10, 10);
@@ -263,6 +263,16 @@ void gui_suggestmenu_free(void) {
   cvec_free(gui->suggestmenu->completions);
   vertex_buffer_delete(gui->suggestmenu->vertbuf);
   free(gui->suggestmenu);
+}
+
+/* Fully clear the suggestions and reset the suggestmenu buffer. */
+void gui_suggestmenu_clear(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  cvec_clear(gui->suggestmenu->completions);
+  gui->suggestmenu->buf[0] = '\0';
+  gui->suggestmenu->len = 0;
 }
 
 /* Load the word cursor is currently on into the suggestmenu buffer, from the cursor to the beginning of the word, if any. */
@@ -303,7 +313,7 @@ static char *gui_suggestmenu_copy_completion(char *const restrict text) {
   }
   /* Return a copy of the word. */
   return measured_copy(text, len);
-} 
+}
 
 /* Perform the searching throue all openfiles and all lines. */
 void gui_suggestmenu_find(void) {
@@ -516,4 +526,20 @@ void gui_suggestmenu_selected_down(void) {
       ++gui->suggestmenu->selected;
     }
   }
+}
+
+/* Return's `TRUE` when the suggest menu had entries and one could be injected. */
+bool gui_suggestmenu_accept(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  char *str;
+  if (cvec_len(gui->suggestmenu->completions)) {
+    str = (char *)cvec_get(gui->suggestmenu->completions, gui->suggestmenu->selected);
+    inject((str + gui->suggestmenu->len), (strlen(str) - gui->suggestmenu->len));
+    cvec_clear(gui->suggestmenu->completions);
+    refresh_needed = TRUE;
+    return TRUE;
+  }
+  return FALSE;
 }

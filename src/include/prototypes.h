@@ -784,6 +784,7 @@ void accept_suggestion(void);
 
 void gui_suggestmenu_create(void);
 void gui_suggestmenu_free(void);
+void gui_suggestmenu_clear(void);
 void gui_suggestmenu_load_str(void);
 void gui_suggestmenu_find(void);
 void gui_suggestmenu_run(void);
@@ -792,6 +793,7 @@ void gui_suggestmenu_update_scrollbar(void);
 void gui_suggestmenu_draw_text(void);
 void gui_suggestmenu_selected_up(void);
 void gui_suggestmenu_selected_down(void);
+bool gui_suggestmenu_accept(void);
 
 
 /* ---------------------------------------------------------- parse.cpp ---------------------------------------------------------- */
@@ -811,11 +813,14 @@ bool  find_end_bracket(linestruct *from, Ulong index, linestruct **end, Ulong *e
 char *fetch_bracket_body(linestruct *from, Ulong index);
 
 #ifdef HAVE_GLFW
-  /* 'gui.cpp' */
+  /* ---------------------------------------------------------- gui.cpp ---------------------------------------------------------- */
+  
+
   void log_error_gui(const char *format, ...);
   void init_gui(void);
   void glfw_loop(void);
   
+
   /* 'gui/guiutils.cpp' */
   void  upload_texture_atlas(texture_atlas_t *atlas);
   float glyph_width(const char *current, const char *prev, texture_font_t *font);
