@@ -356,6 +356,7 @@ guieditor *get_file_editor(openfilestruct *file) {
       return editor;
     }
   ););
+  ALWAYS_ASSERT_MSG(0, "This should never happen, every openfile must be linked to a editor.");
   return NULL;
 }
 

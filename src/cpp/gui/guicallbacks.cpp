@@ -114,6 +114,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                   show_statusmsg(INFO, 5, "Saving file: %s", answer);
                   /* Free the openfile filename, and assign answer to it. */
                   openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
+                  get_file_editor(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
                   /* Then save the file. */
                   if (write_it_out(FALSE, FALSE) == 2) {
                     logE("Failed to save file, this needs fixing and the reason needs to be found out.");

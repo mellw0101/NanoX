@@ -284,7 +284,7 @@ void gui_suggestmenu_load_str(void) {
   gui->suggestmenu->buf[0] = '\0';
   if (openfile->current_x > 0 && openfile->current_x < 128) {
     gui->suggestmenu->len = 0;
-    pos = get_prev_cursor_word_start_index();
+    pos = get_prev_cursor_word_start_index(TRUE);
     while (pos < openfile->current_x) {
       gui->suggestmenu->buf[gui->suggestmenu->len++] = openfile->current->data[pos++];
     }
