@@ -172,7 +172,8 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   ASSERT(drawpos);
   SyntaxObject *obj;
   const char *prev_char = NULL;
-  char linenobuffer[margin + 1];
+  char linenobuffer[margin + 1], *converted;
+  Ulong from_col, converted_len;
   /* If line numbers are turned on, draw them.  But only when a refresh is needed. */
   if (refresh_needed && ISSET(LINE_NUMBERS)) {
     sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
@@ -183,10 +184,10 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   if (!*line->data) {
     return;
   }
-  Ulong from_col  = get_page_start(wideness(line->data, ((line == editor->openfile->current) ? editor->openfile->current_x : 0)));
-  char *converted = display_string(line->data, from_col, editor->cols, TRUE, FALSE);
+  from_col  = get_page_start(wideness(line->data, ((line == editor->openfile->current) ? editor->openfile->current_x : 0)));
+  converted = display_string(line->data, from_col, editor->cols, TRUE, FALSE);
   if (refresh_needed) {
-    Ulong converted_len = strlen(converted);
+    converted_len = strlen(converted);
     /* For c/cpp files. */
     if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
       if (editor->openfile->type.is_set<C_CPP>()) {
@@ -254,7 +255,51 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
         }
         vertex_buffer_add_string(editor->buffer, (converted + index), (converted_len - index), prev_char, gui->font, vec4(1.0f), drawpos);
       }
-      /* Asm syntax. */
+      /* AT&T asm syntax. */
+      else if (editor->openfile->type.is_set<ATNT_ASM>()) {
+        vec4 color;
+        Ulong index = 0;
+        line_word_t *head, *node;
+        const char *comment = strchr(converted, '#');
+        if (comment) {
+          vec2 origin = *drawpos;
+          origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui->font);
+          vertex_buffer_add_string(
+            editor->buffer,
+            (converted + (comment - converted)),
+            (converted_len - (comment - converted)),
+            ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
+            gui->font,
+            color_idx_to_vec4(FG_COMMENT_GREEN),
+            &origin
+          );
+        }
+        /* If the comment is not the first char. */
+        if (!comment || (comment - converted)) {
+          head = get_line_words(converted, (comment ? (comment - converted) : converted_len));
+          while (head) {
+            node = head;
+            head = node->next;
+            if (syntax_map_exists(node->str, &color)) {
+              vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui->font, vec4(1.0f), drawpos);
+              vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui->font, color, drawpos);
+              index = node->end; 
+            }
+            free_node(node);
+          }
+          vertex_buffer_add_string(editor->buffer, (converted + index), ((comment ? (comment - converted) : converted_len) - index), prev_char, gui->font, 1, drawpos);
+          // vertex_buffer_add_string(
+          //   editor->buffer,
+          //   converted,
+          //   (comment ? (comment - converted) : converted_len),
+          //   (ISSET(LINE_NUMBERS) ? " " : NULL),
+          //   gui->font,
+          //   vec4(1.0f),
+          //   drawpos
+          // );
+        }
+      }
+      /* Nasm syntax. */
       else if (openfile->type.is_set<ASM>()) {
         const char *comment = strchr(converted, ';');
         if (comment) {
@@ -271,7 +316,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
           );
         }
         /* If the comment is not the first char. */
-        if (comment - converted) {
+        if (!comment || (comment - converted)) {
           vertex_buffer_add_string(
             editor->buffer,
             converted,
@@ -490,11 +535,11 @@ void draw_suggestmenu(void) {
     /* Draw the rect that indicated the currently selected entry. */
     selected_row = (gui->suggestmenu->selected - gui->suggestmenu->viewtop);
     if (selected_row >= 0 && selected_row < gui->suggestmenu->rows) {
-      pos.x = (gui->suggestmenu->element->pos.x + 1);
+      pos.x  = (gui->suggestmenu->element->pos.x + 1);
       size.w = (gui->suggestmenu->element->size.w - 2);
       row_top_bot_pixel(selected_row, gui->font, &pos.y, &size.h);
       size.h -= pos.y;
-      pos.y += gui->suggestmenu->element->pos.y;
+      pos.y  += gui->suggestmenu->element->pos.y;
       draw_rect(pos, size, vec4(vec3(1), 0.4));
     }
     gui_suggestmenu_update_scrollbar();

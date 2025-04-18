@@ -41,19 +41,19 @@ struct sub_thread_function {
     return head;
   }
 
-  static void *functions_from(void *arg) {
-    char  *path      = (char *)arg;
-    char **functions = find_functions_in_file(path);
-    free(path);
-    return functions;
-  }
+  // static void *functions_from(void *arg) {
+  //   char  *path      = (char *)arg;
+  //   char **functions = find_functions_in_file(path);
+  //   free(path);
+  //   return functions;
+  // }
 
-  static void *glob_vars_from(void *arg) {
-    char  *path      = (char *)arg;
-    char **glob_vars = find_variabels_in_file(path);
-    free(path);
-    return glob_vars;
-  }
+  // static void *glob_vars_from(void *arg) {
+  //   char  *path      = (char *)arg;
+  //   char **glob_vars = find_variabels_in_file(path);
+  //   free(path);
+  //   return glob_vars;
+  // }
 };
 
 /* Callback`s that the main thread performs. */
@@ -231,15 +231,15 @@ struct task_creator {
 
 /* Calleble functions begin here.  Above are staic functions. */
 
-void find_functions_task(const char *path) {
-  char *alloced_path = copy_of(path);
-  submit_task(sub_thread_function::functions_from, alloced_path, NULL, main_thread_function::handle_found_functions);
-}
+// void find_functions_task(const char *path) {
+//   char *alloced_path = copy_of(path);
+//   submit_task(sub_thread_function::functions_from, alloced_path, NULL, main_thread_function::handle_found_functions);
+// }
 
-void find_glob_vars_task(const char *path) {
-  char *alloced_path = copy_of(path);
-  submit_task(sub_thread_function::glob_vars_from, alloced_path, NULL, main_thread_function::handle_found_glob_vars);
-}
+// void find_glob_vars_task(const char *path) {
+//   char *alloced_path = copy_of(path);
+//   submit_task(sub_thread_function::glob_vars_from, alloced_path, NULL, main_thread_function::handle_found_glob_vars);
+// }
 
 void get_line_list_task(const char *path) {
   char *arg = copy_of(path);

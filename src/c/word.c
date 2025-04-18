@@ -9,7 +9,7 @@
 #include "../include/c/wchars.h"
 
 /* Return's the start index of the word at pos, if any Otherwise return's pos. */
-Ulong wordstartindex(const char *const __restrict string, Ulong pos, bool allowunderscore) {
+Ulong wordstartindex(const char *const restrict string, Ulong pos, bool allowunderscore) {
   ASSERT(string);
   Ulong idx=pos, oneleft;
   while (idx > 0) {
@@ -23,7 +23,7 @@ Ulong wordstartindex(const char *const __restrict string, Ulong pos, bool allowu
 }
 
 /* Return the end index of the word at `pos`, if any.  Otherwise, return `pos` if already at end index or if at whitespace. */
-Ulong wordendindex(const char *const __restrict string, Ulong pos, bool allowunderscore) {
+Ulong wordendindex(const char *const restrict string, Ulong pos, bool allowunderscore) {
   ASSERT(string);
   Ulong idx = pos;
   while (*(string + idx)) {

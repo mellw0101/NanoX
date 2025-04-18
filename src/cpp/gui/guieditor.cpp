@@ -401,6 +401,16 @@ void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor) {
   editor->openfile->edittop = gui_line_from_number(editor, guieditor_lineno_from_scrollbar_pos(editor));
 }
 
+/* Determen the size of the gutter based on the total size of the last line number. */
+static void guieditor_set_gutter_width(guieditor *const editor) {
+  ASSERT(editor);
+  ASSERT(editor->openfile);
+  ASSERT(editor->openfile->filebot);
+  char *linenostr = fmtstr("%*lu ", (margin - 1), editor->openfile->filebot->lineno);
+  editor->gutter->size.w = pixbreadth(gui->font, linenostr);
+  free(linenostr);
+}
+
 void guieditor_resize(guieditor *const editor) {
   ASSERT(editor);
   if (!ISSET(LINE_NUMBERS)) {
@@ -408,6 +418,7 @@ void guieditor_resize(guieditor *const editor) {
     editor->gutter->flag.set<GUIELEMENT_HIDDEN>();
   }
   else {
+    guieditor_set_gutter_width(editor);
     editor->text->relative_pos.x = editor->gutter->size.w;
     editor->gutter->flag.unset<GUIELEMENT_HIDDEN>();
   }

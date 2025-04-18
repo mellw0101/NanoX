@@ -115,6 +115,12 @@ void set_gui_font(const char *const restrict path, Uint size) {
     free_gui_font(FALSE);
     set_font(path, size, &gui->font, &gui->atlas);
   }
+  /* If the editor's have been initilazed, then recheck the size of each editor. */
+  if (openeditor) {
+    ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
+      guieditor_resize(editor);
+    );
+  }
 }
 
 /* Set the gui uifont using `path` with `size`.  If the provided file does not exist, the fallback font will be set. */
@@ -157,10 +163,6 @@ void change_gui_font_size(Uint size) {
   free_gui_font(FALSE);
   set_gui_font(path, size);
   free(path);
-  ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
-    guieditor_calculate_rows(editor);
-    editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
-  );
 }
 
 void list_available_fonts(void) {

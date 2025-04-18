@@ -138,8 +138,8 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf);
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
 
 
-Ulong wordstartindex(const char *const __restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
-Ulong wordendindex(const char *const __restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
+Ulong wordstartindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
+Ulong wordendindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 
 
 /* ----------------------------------------------- bracket.c ----------------------------------------------- */

@@ -420,19 +420,21 @@ typedef enum {
 } lineflag_type;
 
 typedef enum {
-  #define FILE_TYPE_SIZE 8
   C_CPP,
-  #define C_CPP C_CPP
   ASM,
-  #define ASM ASM
+  ATNT_ASM,
   BASH,
-  #define BASH BASH
   GLSL,
-  #define GLSL GLSL
   SYSTEMD_SERVICE,
-  #define SYSTEMD_SERVICE SYSTEMD_SERVICE
   NANOX_CONFIG,
-  #define NANOX_CONFIG NANOX_CONFIG
+# define FILE_TYPE_SIZE   8
+# define C_CPP            C_CPP
+# define ASM              ASM
+# define ATNT_ASM         ATNT_ASM
+# define BASH             BASH
+# define GLSL             GLSL
+# define SYSTEMD_SERVICE  SYSTEMD_SERVICE
+# define NANOX_CONFIG     NANOX_CONFIG
 } file_type;
 
 typedef enum {

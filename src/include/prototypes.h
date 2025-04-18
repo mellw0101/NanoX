@@ -670,11 +670,7 @@ void   remove_from_color_map(linestruct *line, int color, int type);
 
 /* 'syntax.cpp' */
 void   syntax_check_file(openfilestruct *file);
-bool   parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr);
-void   do_syntax(void);
-void   find_block_comments(int before, int end);
-char **find_functions_in_file(char *path);
-char **find_variabels_in_file(char *path);
+bool   syntax_map_exists(const char *const restrict key, vec4 *const color);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
@@ -734,8 +730,6 @@ void cleanup_event_handler(void) _NOTHROW;
 
 /* 'tasks.cpp' */
 void sub_thread_find_syntax(const char *path);
-void find_functions_task(const char *path);
-void find_glob_vars_task(const char *path);
 void get_line_list_task(const char *path);
 
 /* 'signal.cpp' */

@@ -1,8 +1,54 @@
-/** @file syntax.cpp */
+/** @file syntax.cpp
+
+  @author  Melwin Svensson.
+  
+ */
 #include "../include/prototypes.h"
 
+
+/* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
+
+
+typedef struct {
+  vec4 color;
+} SyntaxMapNode;
+
+
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
+
+_UNUSED static HashMap *syntax_map = NULL;
+
+
+/* ---------------------------------------------------------- Function's ---------------------------------------------------------- */
+
+
+/* Function to be called by `atexit()` to free `syntax_map`. */
+static void syntax_map_free(void) {
+  hashmap_free(syntax_map);
+  syntax_map = NULL;
+}
+
+/* Add a `key` to the `syntax_map` with `color`. */
+static void syntax_map_add(const char *const restrict key, vec4 color) {
+  ASSERT(key);
+  SyntaxMapNode *node;
+  if (!syntax_map) {
+    syntax_map = hashmap_create_wfreefunc(free);
+    atexit(syntax_map_free);
+  }
+  /* If the node already exists, just modify the color. */
+  if ((node = (__TYPE(node))hashmap_get(syntax_map, key))) {
+    node->color = color;
+    return;
+  }
+  node = (__TYPE(node))xmalloc(sizeof(*node));
+  node->color = color;
+  hashmap_insert(syntax_map, key, node);
+}
+
 /* Configure color map with base c/cpp syntax. */
-static void set_c_cpp_synx(openfilestruct *file) {
+static void set_c_cpp_synx(openfilestruct *const file) {
   file->type.clear_and_set<C_CPP>();
   /* Types. */
   test_map["bool"]      = {FG_VS_CODE_BLUE};
@@ -59,8 +105,26 @@ static void set_c_cpp_synx(openfilestruct *file) {
   test_map["catch"]    = {FG_VS_CODE_BRIGHT_MAGENTA, -1, -1, DEFAULT_TYPE_SYNTAX};
 }
 
+/* Set the `AT&T asm` syntax in `syntax_map` as well as setting the type flag in `file` to `ATNT_ASM`. */
+static void set_atnt_asm_syntax(openfilestruct *const file) {
+  ASSERT(file);
+  file->type.set<ATNT_ASM>();
+  /* Instruction's */
+  syntax_map_add("movl", VEC4_VS_CODE_BLUE);
+  syntax_map_add("movq", VEC4_VS_CODE_BLUE);
+  syntax_map_add("cmpb", VEC4_VS_CODE_BLUE);
+  syntax_map_add("je",   VEC4_VS_CODE_BLUE);
+  syntax_map_add("incq", VEC4_VS_CODE_BLUE);
+  syntax_map_add("jmp",  VEC4_VS_CODE_BLUE);
+  syntax_map_add("subq", VEC4_VS_CODE_BLUE);
+  syntax_map_add("ret",  VEC4_VS_CODE_BLUE);
+  /* Register's */
+  syntax_map_add("rdi", VEC4_VS_CODE_GREEN);
+  syntax_map_add("rax", VEC4_VS_CODE_GREEN);
+}
+
 /* Configure color map with base asm syntax. */
-static void set_asm_synx(openfilestruct *file) {
+static void set_asm_synx(openfilestruct *const file) {
   file->type.clear_and_set<ASM>();
   /* 64-bit registers. */
   test_map["rax"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
@@ -147,7 +211,8 @@ static void set_asm_synx(openfilestruct *file) {
 }
 
 /* Configure color map with base bash syntax. */
-static void set_bash_synx(openfilestruct *file) {
+static void set_bash_synx(openfilestruct *const file) {
+  ASSERT(file);
   file->type.clear_and_set<BASH>();
   test_map["if"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
   test_map["elif"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
@@ -201,14 +266,19 @@ static void set_systemd_service_synx(openfilestruct *file) {
 /* Function to check syntax for a open buffer. */
 void syntax_check_file(openfilestruct *file) {
   file->type.clear();
+  const char *file_ext;
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
-    const char *file_ext = ext(file->filename);
+    file_ext = ext(file->filename);
     if (file_ext && *(++file_ext)) {
-      if (strcmp(file_ext, "cpp") == 0 || strcmp(file_ext, "c") == 0 || strcmp(file_ext, "cc") == 0
-       || strcmp(file_ext, "h") == 0 || strcmp(file_ext, "hpp") == 0) {
+      if (strcmp(file_ext, "cpp") == 0 || strcmp(file_ext, "c") == 0 || strcmp(file_ext, "cc") == 0 || strcmp(file_ext, "h") == 0 || strcmp(file_ext, "hpp") == 0) {
         set_c_cpp_synx(file);
       }
-      else if (strcmp(file_ext, "asm") == 0 || strcmp(file_ext, "s") == 0 || strcmp(file_ext, "S") == 0) {
+      /* AT&T asm syntax. */
+      else if (strcmp(file_ext, "S") == 0 || strcmp(file_ext, "s") == 0) {
+        set_atnt_asm_syntax(file);
+      }
+      /* NASM syntax. */
+      else if (strcmp(file_ext, "asm") == 0) {
         set_asm_synx(file);
       }
       else if (strcmp(file_ext, "sh") == 0) {
@@ -250,186 +320,13 @@ void syntax_check_file(openfilestruct *file) {
   }
 }
 
-bool parse_color_opts(const char *color_fg, const char *color_bg, short *fg, short *bg, int *attr) {
-  bool vivid, thick;
-  *attr = A_NORMAL;
-  if (color_fg != NULL) {
-    if (strncmp(color_fg, "bold", 4) == 0) {
-      *attr |= A_BOLD, color_fg += 5;
-    }
-    if (strncmp(color_fg, "italic", 6) == 0) {
-      *attr |= A_ITALIC, color_fg += 7;
-    }
-    *fg = color_to_short(color_fg, vivid, thick);
-    if (*fg == BAD_COLOR) {
-      return false;
-    }
-    if (vivid && !thick && COLORS > 8) {
-      fg += 8;
-    }
-    else if (vivid) {
-      *attr |= A_BOLD;
-    }
+bool syntax_map_exists(const char *const restrict key, vec4 *const color) {
+  ASSERT(key);
+  ASSERT(color);
+  SyntaxMapNode *node;
+  if (!syntax_map || !(node = (__TYPE(node))hashmap_get(syntax_map, key))) {
+    return FALSE;
   }
-  else {
-    *fg = THE_DEFAULT;
-  }
-  if (color_bg != NULL) {
-    if (strncmp(color_bg, "bold", 4) == 0) {
-      *attr |= A_BOLD;
-      color_bg += 5;
-    }
-    if (strncmp(color_bg, "italic", 6) == 0) {
-      *attr |= A_ITALIC;
-      color_bg += 7;
-    }
-    *bg = color_to_short(color_bg, vivid, thick);
-    if (*bg == BAD_COLOR) {
-      return false;
-    }
-    if (vivid && COLORS > 8) {
-      bg += 8;
-    }
-  }
-  else {
-    *bg = THE_DEFAULT;
-  }
-  return true;
-}
-
-/* Add some "basic" cpp syntax. */
-void do_syntax(void) {
-  // flag_all_brackets();
-  // flag_all_block_comments(openfile->filetop);
-}
-
-void find_block_comments(int from, int end) {
-  PROFILE_FUNCTION;
-  linestruct *line = line_from_number(from);
-  for (; line && line->lineno != end; line = line->next) {
-    const char *found_start = strstr(line->data, "/*");
-    const char *found_end   = strstr(line->data, "*/");
-    if (found_start && found_end)
-      ;
-    else if (found_start && !found_end) {
-      line->flags.set(BLOCK_COMMENT_START);
-      continue;
-    }
-    else if (!found_start && found_end) {
-      line->flags.set(BLOCK_COMMENT_END);
-      continue;
-    }
-    else if (!found_start && !found_end) {
-      if (line->prev != NULL
-       && ((line->prev->flags.is_set(BLOCK_COMMENT_START)) || (line->prev->flags.is_set(IN_BLOCK_COMMENT)))) {
-        line->flags.set(IN_BLOCK_COMMENT);
-      }
-    }
-  }
-}
-
-char **find_functions_in_file(char *path) {
-  FILE *file = fopen(path, "rb");
-  if (!file) {
-    return NULL;
-  }
-  long         len;
-  Ulong        size;
-  static char *line;
-  Ulong        acap = 10, asize = 0;
-  char       **func_str_array = (char **)nmalloc(acap * sizeof(char *));
-  bool         in_bracket     = false;
-  while ((len = getline(&line, &size, file)) != EOF) {
-    if (line[len - 1] == '\n') {
-      line[--len] = '\0';
-    }
-    if (strchr(line, '{')) {
-      in_bracket = true;
-    }
-    if (strchr(line, '}')) {
-      in_bracket = false;
-    }
-    if (in_bracket) {
-      continue;
-    }
-    const char *p = line;
-    while (*p == ' ' || *p == '\t') {
-      p++;
-    }
-    if (strchr(line, '#') || strstr(line, "operator") || strchr(line, '[')) {
-      continue;
-    }
-    const char *start        = line;
-    const char *end          = line;
-    const char *parent_start = strchr(line, '(');
-    if (parent_start) {
-      start = parent_start;
-      for (; start > line && *start != ' ' && *start != '\t' && *start != '*' && *start != '&'; start--);
-      if (start > p) {
-        start += 1;
-        if (strstr(line, "__nonnull") != NULL || line[(start - line) + 1] == '*' || *start == '(') {
-          continue;
-        }
-        end = strchr(line, ';');
-        if (end) {
-          char *func_str    = measured_copy(start, (end - start));
-          char *return_type = copy_of("void ");
-          char *full_func   = alloc_str_free_substrs(return_type, func_str);
-          if (acap == asize) {
-            acap *= 2;
-            func_str_array = (char **)nrealloc(func_str_array, acap * sizeof(char *));
-          }
-          func_str_array[asize++] = full_func;
-        }
-        /* Here we can check for edge cases. */
-      }
-    }
-  }
-  fclose(file);
-  func_str_array[asize] = NULL;
-  return func_str_array;
-}
-
-char **find_variabels_in_file(char *path) {
-  FILE *file = fopen(path, "rb");
-  if (!file) {
-    return NULL;
-  }
-  long         len;
-  Ulong        size;
-  static char *line;
-  Ulong        acap = 10, asize = 0;
-  char       **var_str_array = (char **)nmalloc(acap * sizeof(char *));
-  bool         in_bracket    = false;
-  while ((len = getline(&line, &size, file)) != EOF) {
-    if (line[len - 1] == '\n') {
-      line[--len] = '\0';
-    }
-    if (strchr(line, '{')) {
-      in_bracket = true;
-    }
-    if (strchr(line, '}')) {
-      in_bracket = false;
-    }
-    if (in_bracket) {
-      continue;
-    }
-    const char *parent_start = strchr(line, '(');
-    const char *parent_end   = strchr(line, ')');
-    const char *assign       = strchr(line, ';');
-    if (parent_start || parent_end) {
-      continue;
-    }
-    if (assign) {
-      char *str = measured_copy(line, (assign - line) + 1);
-      if (acap == asize) {
-        acap *= 2;
-        var_str_array = (char **)nrealloc(var_str_array, acap * sizeof(char *));
-      }
-      var_str_array[asize++] = str;
-    }
-  }
-  fclose(file);
-  var_str_array[asize] = NULL;
-  return var_str_array;
+  *color = node->color;
+  return TRUE;
 }

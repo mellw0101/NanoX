@@ -901,8 +901,9 @@ void char_callback(GLFWwindow *window, Uint ch) {
       }
       /* Exceptions for enclosing brackets. */
       else if ((input == '(' || input == '[' || input == '{')
-       /* After current cursor position. */
-       && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}]")) || (is_cursor_char_one_of("({[")))) {
+       /* We only allow the insertion of double brackets when the cursor is either at a blank char or at EOL, or at any of the
+        * given chars, all other sinarios with other chars at the cursor will result in only the start bracket beeing inserted. */
+       && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}],")))) {
         ;
       }
       /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
