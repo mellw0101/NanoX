@@ -216,7 +216,7 @@ int LanguageServer::index_file(const char *path, bool reindex) {
     return -1;
   }
   char *absolute_path = abs_path(path);
-  if (!absolute_path || !is_file_and_exists(absolute_path)) {
+  if (!absolute_path || !file_exists(absolute_path)) {
     return -1;
   }
   if (has_been_included(absolute_path)) {

@@ -102,7 +102,7 @@ static char *lock_and_read(const char *file_path, Ulong *file_size) {
     exit(errno);
   }
   Ulong ret_len = 120;
-  char *ret = (char *)malloc(ret_len);
+  char *ret = (char *)xmalloc(ret_len);
   long byread = 0;
   long len = 0;
   char buffer[4096];
@@ -254,7 +254,7 @@ static void get_linenumber_bar_option(const char *data) {
 /* Load configfile with values from disk. */
 static void load_colorfile(void) {
   /* Make sure the file always exists. */
-  if (!is_file_and_exists(configfile->filepath)) {
+  if (!file_exists(configfile->filepath)) {
     lock_and_write(configfile->filepath, CONFIGFILE_DEFAULT_TEXT, STRLTRLEN(CONFIGFILE_DEFAULT_TEXT), OVERWRITE);
   }
   /* Read the configfile. */
@@ -278,12 +278,12 @@ void init_cfg(void) {
   if (!homedir) {
     return;
   }
-  config = (configstruct *)nmalloc(sizeof(*config));
-  configdir = concatenate_path(homedir, CONFIGDIR);
+  config = (configstruct *)xmalloc(sizeof(*config));
+  configdir = concatpath(homedir, CONFIGDIR);
   if (!is_dir(configdir)) {
     mkdir(configdir, 0755);
   }
-  configfile = (configfilestruct *)nmalloc(sizeof(*configfile));
+  configfile = (configfilestruct *)xmalloc(sizeof(*configfile));
   configfile->filepath = concatenate_path(configdir, COLORFILE_NAME);
   load_colorfile();
   file_listener_t *colorfile_listener = file_listener.add_listener(configfile->filepath);

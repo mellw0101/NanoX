@@ -16,21 +16,18 @@ blsp *const &blsp::instance(void) {
 
 /* Get all executables in all PATH env var parts. */
 void get_env_path_binaries(void) {
+  directory_t dir;
   if (!env_path_task_running) {
     Ulong npaths;
     char **paths = get_env_paths(&npaths);
     for (Ulong i = 0; i < npaths; ++i) {
-      char **files, **dirs;
-      Ulong  nfiles,  ndirs;
-      if (get_all_entries_in_dir(paths[i], &files, &nfiles, &dirs, &ndirs) != 0) {
-        logE("Failed to get entries in dir: '%s'.\n", paths[i]);
-        continue;
+      directory_data_init(&dir);
+      if (directory_get_recurse(paths[i], &dir) != -1) {
+        DIRECTORY_ITER(dir, j, entry,
+          test_map[entry->name] = {FG_VS_CODE_YELLOW};
+        );
       }
-      for (Ulong i = 0; i < nfiles; ++i) {
-        test_map[files[i]] = {FG_VS_CODE_YELLOW};
-      }
-      free_chararray(files, nfiles);
-      free_chararray(dirs, ndirs);
+      directory_data_free(&dir);
     }
     free_chararray(paths, npaths);
   }

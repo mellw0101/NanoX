@@ -83,8 +83,8 @@ bool delete_lockfile(const char *lockfilename) _NOTHROW {
 #define locking_prefix "."
 #define locking_suffix ".swp"
 
-// Write a lock file, under the given lockfilename.  This always annihilates an
-// existing version of that file.  Return TRUE on success; FALSE otherwise.
+/* Write a lock file, under the given lockfilename.  This always annihilates an
+ * existing version of that file.  Return TRUE on success; FALSE otherwise. */
 static bool write_lockfile(const char *lockfilename, const char *filename, bool modified) _NOTHROW {
   int     mypid   = getpid();
   uid_t   myuid   = geteuid();
@@ -159,9 +159,9 @@ static bool write_lockfile(const char *lockfilename, const char *filename, bool 
   return TRUE;
 }
 
-// First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask
-// whether to open the corresponding file anyway.  Return SKIPTHISFILE when the user
-// answers "No", return the name of the lock file on success, and return NULL on failure.
+/* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask
+ * whether to open the corresponding file anyway.  Return SKIPTHISFILE when the user
+ * answers "No", return the name of the lock file on success, and return NULL on failure. */
 static char *do_lockfile(const char *filename, bool ask_the_user) {
   char *namecopy     = copy_of(filename);
   char *secondcopy   = copy_of(filename);
@@ -568,9 +568,9 @@ char *encode_data(char *text, Ulong length) _NOTHROW {
 /* The number of bytes by which we expand the line buffer while reading. */
 #define LUMPSIZE 120
 
-// Read the given open file f into the current buffer.  filename should be
-// set to the name of the file.  undoable means that undo records should be
-// created and that the file does not need to be checked for writability.
+/* Read the given open file f into the current buffer.  filename should be
+ * set to the name of the file.  undoable means that undo records should be
+ * created and that the file does not need to be checked for writability. */
 void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   /* The line number where we start the insertion. */
   long was_lineno = openfile->current->lineno;
@@ -741,10 +741,10 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   }
 }
 
-// Open the file with the given name.  If the file does not exist, display
-// "New File" if new_one is TRUE, and say "File not found" otherwise.
-// Return 0 if we say "New File", -1 upon failure, and the obtained file
-// descriptor otherwise.  The opened filestream is returned in *f.
+/* Open the file with the given name.  If the file does not exist, display
+ * "New File" if new_one is TRUE, and say "File not found" otherwise.
+ * Return 0 if we say "New File", -1 upon failure, and the obtained file
+ * descriptor otherwise.  The opened filestream is returned in *f. */
 int open_file(const char *filename, bool new_one, FILE **f) {
   int fd;
   char *full_filename = get_full_path(filename);
@@ -797,9 +797,9 @@ int open_file(const char *filename, bool new_one, FILE **f) {
   return fd;
 }
 
-// This function will return the name of the first available extension of a filename
-// (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
-// or the return value.  If no writable extension exists, we return "".
+/* This function will return the name of the first available extension of a filename
+ * (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
+ * or the return value.  If no writable extension exists, we return "". */
 char *get_next_filename(const char *name, const char *suffix) _NOTHROW {
   Ulong wholenamelen = (strlen(name) + strlen(suffix));
   Ulong i = 0;
@@ -1000,9 +1000,9 @@ static void execute_command(const char *command) {
   terminal_init();
 }
 
-// Insert a file into the current buffer (or into a new buffer).
-// But when execute is 'TRUE', run a command in the shell and insert its output
-// into the buffer, or just run one of the tools listed in the help lines.
+/* Insert a file into the current buffer (or into a new buffer).
+ * But when execute is 'TRUE', run a command in the shell and insert its output
+ * into the buffer, or just run one of the tools listed in the help lines. */
 static void insert_a_file_or(bool execute) {
   int response;
   const char *msg;
@@ -1163,8 +1163,8 @@ void do_execute(void) {
   }
 }
 
-// For the given bare path (or path plus filename), return the canonical,
-// absolute path (plus filename) when the path exists, and 'NULL' when not.
+/* For the given bare path (or path plus filename), return the canonical,
+ * absolute path (plus filename) when the path exists, and 'NULL' when not. */
 char *get_full_path(const char *origpath) _NOTHROW {
   char *untilded, *target, *slash;
   struct stat fileinfo;
@@ -1219,15 +1219,15 @@ char *normalized_path(const char *path) _NOTHROW {
   return ret;
 }
 
-// Optimized for repeted calls where the first call makes sure to get the
-// full path of a relative one, and once that is done normalized path is
-// used as we already know that the relative path must be correct.
+/* Optimized for repeted calls where the first call makes sure to get the
+ * full path of a relative one, and once that is done normalized path is
+ * used as we already know that the relative path must be correct. */
 char *abs_path(const char *path) _NOTHROW {
   return ((*path == '/') ? normalized_path(path) : get_full_path(path));
 }
 
-// Check whether the given path refers to a directory that is writable.
-// Return the absolute form of the path on success, and 'NULL' on failure.
+/* Check whether the given path refers to a directory that is writable.
+ * Return the absolute form of the path on success, and 'NULL' on failure. */
 static char *check_writable_directory(const char *path) _NOTHROW {
   char *full_path = get_full_path(path);
   if (!full_path) {
@@ -1240,9 +1240,9 @@ static char *check_writable_directory(const char *path) _NOTHROW {
   return full_path;
 }
 
-// Create, safely, a temporary file in the standard temp directory.
-// On success, return the malloc()ed filename, plus the corresponding
-// file stream opened in read-write mode.  On error, return 'NULL'.
+/* Create, safely, a temporary file in the standard temp directory.
+ * On success, return the malloc()ed filename, plus the corresponding
+ * file stream opened in read-write mode.  On error, return 'NULL'. */
 char *safe_tempfile(FILE **stream) {
   const char *env_dir = getenv("TMPDIR");
   char *tempdir = NULL, *tempfile_name = NULL;
@@ -1288,10 +1288,10 @@ void init_operating_dir(void) _NOTHROW {
   operating_dir = arealloc(target, (strlen(target) + 1));
 }
 
-// Check whether the given path is outside of the operating directory.
-// Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
-// incomplete names that can grow into matches for the operating directory
-// are considered to be inside, so that tab completion will work.
+/* Check whether the given path is outside of the operating directory.
+ * Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
+ * incomplete names that can grow into matches for the operating directory
+ * are considered to be inside, so that tab completion will work. */
 bool outside_of_confinement(const char *somepath, bool tabbing) _NOTHROW {
   bool  is_inside, begins_to_be;
   char *fullpath;
@@ -1307,7 +1307,7 @@ bool outside_of_confinement(const char *somepath, bool tabbing) _NOTHROW {
   if (!fullpath) {
     return tabbing;
   }
-  is_inside    = (strstr(fullpath, operating_dir) == fullpath);
+  is_inside = (strstr(fullpath, operating_dir) == fullpath);
   begins_to_be = (tabbing && strstr(operating_dir, fullpath) == operating_dir);
   free(fullpath);
   return (!is_inside && !begins_to_be);
@@ -1324,10 +1324,10 @@ void init_backup_dir(void) {
   backup_dir = arealloc(target, (strlen(target) + 1));
 }
 
-// Read all data from inn, and write it to out.  File inn must be open for
-// reading, and out for writing.  Return 0 on success, a negative number on
-// read error, and a positive number on write error.  File inn is always
-// closed by this function, out is closed  only if close_out is TRUE.
+/* Read all data from inn, and write it to out.  File inn must be open for
+ * reading, and out for writing.  Return 0 on success, a negative number on
+ * read error, and a positive number on write error.  File inn is always
+ * closed by this function, out is closed  only if close_out is TRUE. */
 int copy_file(FILE *inn, FILE *out, bool close_out) {
   int   retval = 0;
   char  buf[BUFSIZ];
@@ -1776,11 +1776,11 @@ bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_w
   return retval;
 }
 
-// Write the current buffer (or marked region) to disk.  'exiting' Indicates whether the program is exiting.
-// If exiting is 'TRUE', write the entire buffer regardless of whether the mark is on. Do not ask for a name
-// when 'withprompt' is 'FALSE'. Nor when doing save-on-exit and the buffer already has a name.  If 'withprompt'
-// is 'TRUE' then ask for (confirmation of) the filename.  And if 'FALSE' then do not ask for a the filename.
-// Return`s '0' if the operation is cancelled, '1' if the buffer is saved and '2' if the buffer is discarded.
+/* Write the current buffer (or marked region) to disk.  'exiting' Indicates whether the program is exiting.
+ * If exiting is 'TRUE', write the entire buffer regardless of whether the mark is on. Do not ask for a name
+ * when 'withprompt' is 'FALSE'. Nor when doing save-on-exit and the buffer already has a name.  If 'withprompt'
+ * is 'TRUE' then ask for (confirmation of) the filename.  And if 'FALSE' then do not ask for a the filename.
+ * Return`s '0' if the operation is cancelled, '1' if the buffer is saved and '2' if the buffer is discarded. */
 int write_it_out(bool exiting, bool withprompt) {
   /* The filename we offer, or what the user typed so far. */
   char *given;
@@ -2010,7 +2010,7 @@ char *real_dir_from_tilde(const char *path) _NOTHROW {
       tilded = mallocstrcpy(tilded, userdata->pw_dir);
     }
   }
-  retval = (char *)nmalloc(strlen(tilded) + strlen(path + i) + 1);
+  retval = (char *)xmalloc(strlen(tilded) + strlen(path + i) + 1);
   sprintf(retval, "%s%s", tilded, (path + i));
   free(tilded);
   return retval;
@@ -2260,267 +2260,4 @@ char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *
   free(glued);
   free(shared);
   return morsel;
-}
-
-/* Return`s 'TRUE' only when given 'path' exists, and is not a dir or device. */
-bool is_file_and_exists(const char *path) {
-  struct stat st;
-  if (access(path, R_OK) != 0) {
-    return FALSE;
-  }
-  if (stat(path, &st) != -1 && (S_ISDIR(st.st_mode) || S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode))) {
-    return FALSE;
-  }
-  return TRUE;
-}
-
-char **retrieve_lines_from_file(const char *path, Ulong *nlines) {
-  PROFILE_FUNCTION;
-  if (!is_file_and_exists(path)) {
-    logE("Path: '%s' is not a file", path);
-    return NULL;
-  }
-  char  *buf = NULL;
-  long len;
-  Ulong size, i = 0, bcap = 200, bsize = 0;
-  char **lines = (char **)nmalloc(sizeof(char *) * bcap);
-  FILE  *file  = fopen(path, "rb");
-  if (!file) {
-    logE("Failed to open file: '%s'", path);
-    return NULL;
-  }
-  for (; (len = getline(&buf, &size, file)) != -1; i++) {
-    if (buf[len - 1] == '\n') {
-      buf[--len] = '\0';
-    }
-    if (bsize == bcap) {
-      bcap *= 2;
-      lines = arealloc(lines, (sizeof(char *) * bcap));
-    }
-    lines[bsize++] = measured_copy(buf, len);
-  }
-  nlines ? (*nlines = i) : 0;
-  fclose(file);
-  return lines;
-}
-
-char **retrieve_words_from_file(const char *path, Ulong *nwords) {
-  PROFILE_FUNCTION;
-  Ulong  nlines, linei = 0, i, size = 0, cap = 100;
-  Uint   word_count;
-  char **lines = retrieve_lines_from_file(path, &nlines);
-  if (!lines) {
-    return NULL;
-  }
-  char **words = (char **)nmalloc(sizeof(char *) * cap);
-  for (; linei < nlines; linei++) {
-    char **twords = split_into_words(lines[linei], strlen(lines[linei]), &word_count);
-    if (!twords) {
-      free(lines[linei]);
-      continue;
-    }
-    for (i = 0; i < word_count; i++) {
-      if (size == cap) {
-        cap *= 2;
-        words = (char **)nrealloc(words, sizeof(char *) * cap);
-      }
-      words[size++] = copy_of(twords[i]);
-    }
-    free(twords);
-    free(lines[linei]);
-  }
-  nwords ? (*nwords = size) : 0;
-  free(lines);
-  return words;
-}
-
-// This function extract all words from a file and assigns the number of words
-// parsed to 'nwords'. Note that 'nwords' needs to be passed as a refrence.
-// This function is very fast, it can parse around 20 million words per second.
-char **words_from_file(const char *path, Ulong *nwords) {
-  PROFILE_FUNCTION;
-  if (!is_file_and_exists(path)) {
-    logE("Path: '%s' in not a file or does not exist.", path);
-    return NULL;
-  }
-  FILE *file = fopen(path, "rb");
-  if (!file) {
-    logE("Failed to open file: '%s'.", path);
-    return NULL;
-  }
-  static thread_local char *buf = NULL;
-  Ulong                     size, bsize = 0, bcap = 100;
-  long                      len;
-  char                    **words = (char **)nmalloc(sizeof(char *) * bcap);
-  while ((len = getline(&buf, &size, file)) != EOF) {
-    (buf[len - 1] == '\n') ? buf[--len] = '\0' : 0;
-    const char *start = buf, *end = buf;
-    while (end < (buf + len)) {
-      for (; end < (buf + len) && (*end == ' ' || *end == '\t'); end++);
-      if (end == (buf + len)) {
-        break;
-      }
-      start = end;
-      for (; end < (buf + len) && *end != ' '; end++);
-      const Uint word_len = end - start;
-      (bsize == bcap) ? bcap *= 2, words = (char **)nrealloc(words, sizeof(char *) * bcap) : 0;
-      words[bsize++] = measured_copy(start, word_len);
-    }
-  }
-  words[bsize] = NULL;
-  fclose(file);
-  *nwords = bsize;
-  return words;
-}
-
-char **dir_entrys_from(const char *path) {
-  static thread_local char **buf  = NULL;
-  thread_local Ulong  size = 0, cap = 10;
-  thread_local dirent *entry;
-  thread_local DIR *dir = opendir(path);
-  if (dir == NULL) {
-    logE("Failed to open dir: '%s'.", path);
-    return NULL;
-  }
-  buf = (char **)nmalloc(sizeof(char *) * cap);
-  while ((entry = readdir(dir))) {
-    (size == cap) ? cap *= 2, buf = (char **)nrealloc(buf, sizeof(char *) * cap) : 0;
-    buf[size++] = copy_of(entry->d_name);
-  }
-  buf[size] = NULL;
-  closedir(dir);
-  return buf;
-}
-
-/* Retrieve files and dirs from path.  Returns -1 apon failure to open directory. */
-int entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) {
-  /* Open the target directory. */
-  dirent *directory_entry = NULL;
-  DIR *target_directory = opendir(path);
-  /* Return early apon failure to open directory. */
-  if (!target_directory) {
-    logE("Failed to open dir: %s.\n");
-    return -1;
-  }
-  /* Define our buffers, one for file entries and one for dirs. */
-  char **file_buf  = NULL, **dir_buf  = NULL;
-  Ulong  file_size = 0,      dir_size = 0;
-  Ulong  file_cap  = 40,     dir_cap  = 40;
-  /* Malloc our buffers. */
-  file_buf = (char **)nmalloc(sizeof(char *) * file_cap);
-  dir_buf  = (char **)nmalloc(sizeof(char *) * dir_cap);
-  /* Fetch all entries in the target directory. */
-  while ((directory_entry = readdir(target_directory))) {
-    switch (directory_entry->d_type) {
-      case DT_DIR: /* Directory entry. */ {
-        /* Skip directory traversers. */
-        if (strcmp(directory_entry->d_name, "..") == 0 || strcmp(directory_entry->d_name, ".") == 0) {
-          continue;
-        }
-        ENSURE_CHARARRAY_CAPACITY(dir_buf, dir_cap, dir_size);
-        dir_buf[dir_size++] = measured_copy(directory_entry->d_name, (_D_ALLOC_NAMLEN(directory_entry) - 1));
-        break;
-      }
-      case DT_REG: /* Regular file entry. */ {
-        ENSURE_CHARARRAY_CAPACITY(file_buf, file_cap, file_size);
-        file_buf[file_size++] = measured_copy(directory_entry->d_name, (_D_ALLOC_NAMLEN(directory_entry) - 1));
-        break;
-      }
-    }
-  }
-  /* Trim data buffer`s to the size of data. */
-  file_buf = arealloc(file_buf, (sizeof(char *) * (file_size + 1)));
-  dir_buf  = arealloc(dir_buf,  (sizeof(char *) * (dir_size  + 1)));
-  /* NULL-terminate buffer`s to ensure NULL-safe operation`s. */
-  file_buf[file_size] = NULL;
-  dir_buf[dir_size]   = NULL;
-  closedir(target_directory);
-  /* Assign the data buffers. */
-  *files  = file_buf;
-  *nfiles = file_size;
-  *dirs  = dir_buf;
-  *ndirs = dir_size;
-  return 0;
-}
-
-/* Recursivly get all files and dirs from a starting path. */
-int recursive_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) {
-  char **local_files, **local_dirs;
-  Ulong  local_nfiles,  local_ndirs;
-  if (entries_in_dir(path, &local_files, &local_nfiles, &local_dirs, &local_ndirs) == -1) {
-    return -1;
-  }
-  append_chararray(files, nfiles, local_files, local_nfiles);
-  append_chararray(dirs,  ndirs,  local_dirs,  local_ndirs);
-  for (Ulong i = 0; i < local_ndirs; ++i) {
-    char *subdir = concatenate_path(path, local_dirs[i]);
-    recursive_entries_in_dir(subdir, files, nfiles, dirs, ndirs);
-    free(subdir);
-  }
-  free(local_files);
-  free(local_dirs);
-  return 0;
-}
-
-/* Helper to correctly get all entries in a starting path. */
-int get_all_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) {
-  /* Init the arrays. */
-  char **local_files  = (char **)nmalloc(sizeof(char *));
-  char **local_dirs   = (char **)nmalloc(sizeof(char *));
-  Ulong  local_nfiles = 0;
-  Ulong  local_ndirs  = 0;
-  if (recursive_entries_in_dir(path, &local_files, &local_nfiles, &local_dirs, &local_ndirs) == -1) {
-    free_chararray(local_files, local_nfiles);
-    free_chararray(local_dirs, local_ndirs);
-    *files  = NULL;
-    *dirs   = NULL;
-    *nfiles = 0;
-    *ndirs  = 0;
-    return -1;
-  }
-  *files  = local_files;
-  *dirs   = local_dirs;
-  *nfiles = local_nfiles;
-  *ndirs  = local_ndirs;
-  return 0;
-}
-
-linestruct *retrieve_file_as_lines(const string &path) {
-  PROFILE_FUNCTION;
-  if (!is_file_and_exists(path.c_str())) {
-    logE("Path: '%s' is not a file or does not exist.", path.c_str());
-    return NULL;
-  }
-  FILE *file = fopen(path.c_str(), "rb");
-  if (!file) {
-    logE("Failed to open file '%s'.", path.c_str());
-    return NULL;
-  }
-  static thread_local char *buf = NULL;
-  Ulong                     size;
-  long                      len;
-  linestruct               *head = NULL;
-  linestruct               *tail = NULL;
-  while ((len = getline(&buf, &size, file)) != EOF) {
-    if (buf[len - 1] == '\n') {
-      buf[--len] = '\0';
-    }
-    linestruct *line = make_new_node(tail);
-    if (len == 0) {
-      line->data = copy_of("");
-    }
-    else {
-      line->data = measured_copy(buf, len);
-    }
-    if (!tail) {
-      head = line;
-      tail = line;
-    }
-    else {
-      tail->next = line;
-      tail       = tail->next;
-    }
-  }
-  fclose(file);
-  return head;
 }

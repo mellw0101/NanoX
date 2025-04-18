@@ -329,15 +329,6 @@ char  *real_dir_from_tilde(const char *path) _NOTHROW;
 int    diralphasort(const void *va, const void *vb);
 bool   is_dir(const char *const path);
 char  *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *listed);
-bool   is_file_and_exists(const char *path);
-char **retrieve_lines_from_file(const char *path, Ulong *nlines);
-char **retrieve_words_from_file(const char *path, Ulong *nwords);
-char **words_from_file(const char *path, Ulong *nwords);
-char **dir_entrys_from(const char *path);
-int    entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs) _NONNULL(1, 2, 3, 4, 5);
-int    recursive_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs);
-int    get_all_entries_in_dir(const char *path, char ***files, Ulong *nfiles, char ***dirs, Ulong *ndirs);
-linestruct *retrieve_file_as_lines(const string &path);
 
 /* Some functions in 'global.cpp'. */
 int              keycode_from_string(const char *keystring) _NOTHROW;
@@ -742,10 +733,7 @@ void prosses_callback_queue(void) _NOTHROW;
 void cleanup_event_handler(void) _NOTHROW;
 
 /* 'tasks.cpp' */
-void submit_search_task(const char *path);
-void submit_find_in_dir(const char *file, const char *in_dir);
 void sub_thread_find_syntax(const char *path);
-void sub_thread_parse_funcs(const char *path);
 void find_functions_task(const char *path);
 void find_glob_vars_task(const char *path);
 void get_line_list_task(const char *path);

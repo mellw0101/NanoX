@@ -29,25 +29,6 @@ char **get_env_paths(Ulong *npaths) _NOTHROW {
   return split_string_nano(path_env, ':', npaths);
 }
 
-// /* Return the filename part of the given path. */
-// const char *tail(const char *path) _NOTHROW {
-//   const char *slash = strrchr(path, '/');
-//   if (!slash) {
-//     return path;
-//   }  
-//   return (slash + 1);
-// }
-
-// /* Return the extention of the given path.  Else if no extention, return 'NULL'. */
-// const char *ext(const char *path) _NOTHROW {
-//   const char *ext = strrchr(path, '.');
-//   const char *slash = tail(path);
-//   if (!ext || (ext && ext < slash)) {
-//     return NULL;
-//   }
-//   return (ext + 1);
-// }
-
 /* Return a copy of the two given strings, welded together. */
 char *concatenate(const char *path, const char *name) _NOTHROW {
   Ulong pathlen = strlen(path);

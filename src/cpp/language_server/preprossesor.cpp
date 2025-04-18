@@ -184,7 +184,7 @@ void do_include(linestruct *line, const char *current_file, const char **ptr) {
         break;
       }
       LSP->index_file(it.c_str());
-      if (is_file_and_exists(it.c_str())) {
+      if (file_exists(it.c_str())) {
         break;
       }
     }

@@ -384,7 +384,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             /* True if the current file has a name. */
             bool has_name = *openfile->filename;
             /* If the openfile has a name, and if the file already exists. */
-            if (has_name && is_file_and_exists(openfile->filename)) {
+            if (has_name && file_exists(openfile->filename)) {
               function = do_savefile;
             }
             /* Otherwise, ask if the user wants to save the file. */

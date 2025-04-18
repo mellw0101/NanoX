@@ -2,86 +2,9 @@
 
 /* These are the functions that the sub threads perform. */
 struct sub_thread_function {
-  /* This is the task performed by the other thread. */
-  static void *search_word_task(void *arg) {
-    word_search_task_t *task = (word_search_task_t *)arg;
-    NLOG("path: '%s'.\n", task->path);
-    task->words = words_from_file(task->path, &task->nwords);
-    return task;
-  }
-
-  /* Use a sub thread to find syntax from a header file and put them all into
-   * a format we can use. Here we put them into a list that we return for the
-   * main thread to prosses. */
-  static void *syntax_from(void *arg) {
-    clock_t       start_time = clock();
-    char         *path       = (char *)arg;
-    Ulong nwords, i;
-    char        **words = words_from_file(path, &nwords);
-    if (!words) {
-      free(path);
-      return NULL;
-    }
-    syntax_search_t *result = (syntax_search_t *)nmalloc(sizeof(*result));
-    result->functions_head  = NULL;
-    result->functions_tail  = NULL;
-    for (i = 0; i < nwords; i++) {
-      if (strncmp(words[i], "void", 4) == 0 || strncmp(words[i], "int", 3) == 0) {
-        if (words[++i] != NULL) {
-          if (strncmp(words[i], "*__restrict", 12) == 0 || strncmp(words[i], "*/", 2) == 0) {
-            if (words[++i] == NULL) {
-              continue;
-            }
-          }
-          Ulong j = 0;
-          for (; words[i][j]; j++) {
-            if (words[i][j] == ',' || words[i][j] == ')' || words[i][j] == ';') {
-              j = 0;
-              break;
-            }
-            if (words[i][j] == '(') {
-              words[i][j] = '\0';
-              break;
-            }
-          }
-          if (j != 0) {
-            while (*words[i] == '*') {
-              char *p = copy_of(words[i] + 1);
-              free(words[i]);
-              words[i] = p;
-            }
-            syntax_word_t *word = (syntax_word_t *)nmalloc(sizeof(*word));
-            word->str           = copy_of(words[i]);
-            word->return_type   = NULL;
-            word->next          = NULL;
-            if (result->functions_tail == NULL) {
-              result->functions_tail = word;
-              result->functions_head = word;
-            }
-            else {
-              result->functions_tail->next = word;
-              result->functions_tail       = result->functions_tail->next;
-            }
-          }
-        }
-      }
-      free(words[i]);
-    }
-    double tot_time = CALCULATE_MS_TIME(start_time);
-    NLOG("nwords found: %lu, in file: %s\n", nwords, path);
-    free(words);
-    free(path);
-    NLOG("time took: %lf m/s.\n", tot_time);
-    if (result->functions_head == NULL) {
-      free(result);
-      return NULL;
-    }
-    return result;
-  }
-
   static void *make_line_list_from_file(void *arg) {
     char *path = (char *)arg;
-    if (!is_file_and_exists(path)) {
+    if (!file_exists(path)) {
       logE("Path: '%s' is not a file or does not exist.", path);
       free(path);
       return NULL;
@@ -131,83 +54,11 @@ struct sub_thread_function {
     free(path);
     return glob_vars;
   }
-
-  static void *parse_funcs_from(void *arg) {
-    clock_t       t_start = clock();
-    char         *path    = (char *)arg;
-    Ulong nwords, i;
-    char        **words = words_from_file(path, &nwords);
-    if (words == NULL) {
-      free(path);
-      return NULL;
-    }
-    char  *start      = NULL;
-    char  *end        = NULL;
-    int    func_words = 0;
-    char   buf[1024];
-    int    cap = 10, size = 0;
-    char **funcs = (char **)nmalloc(cap * sizeof(char *));
-    for (i = 0; i < nwords; i++) {
-      const unsigned int type = retrieve_c_syntax_type(words[i]);
-      if (type & CS_INT || type & CS_VOID) {
-        func_words = 0;
-        while (end == NULL) {
-          if (strncmp(words[i + func_words], "__REDIRECT", 11) == 0 ||
-              strncmp(words[i + func_words], "__REDIRECT_NTH", 15) == 0 ||
-              strchr(words[i + func_words - 1], ';') != NULL) {
-            break;
-          }
-          if (start == NULL) {
-            start = strchr(words[i + func_words++], '(');
-            end   = strchr(words[i + func_words - 1], ')');
-          }
-          if (start != NULL && end == NULL) {
-            end = strchr(words[i + func_words++], ')');
-          }
-          if (end != NULL) {
-            buf[0] = '\0';
-            for (int j = 0; j < func_words; j++) {
-              strcat(buf, words[i]);
-              free(words[i++]);
-              strcat(buf, " ");
-            }
-            (cap == size) ? cap *= 2, funcs = (char **)nrealloc(funcs, cap * sizeof(char *)) : 0;
-            funcs[size++] = copy_of(buf);
-            start         = NULL;
-            end           = NULL;
-            break;
-          }
-        }
-      }
-      free(words[i]);
-    }
-    funcs[size] = NULL;
-    free(words);
-    NLOG("%s: file: %s, time: %lf m/s.\n", __func__, path, CALCULATE_MS_TIME(t_start));
-    free(path);
-    return funcs;
-  }
-
-  static void *find_file_in_dir(void *arg) {
-    dir_search_task_t *task = (dir_search_task_t *)arg;
-    task->entrys = dir_entrys_from(task->dir);
-    Ulong i         = 0;
-    for (; task->entrys[i]; i++) {
-      if (strcmp(task->find, task->entrys[i]) == 0) {
-        task->found = TRUE;
-      }
-      free(task->entrys[i]);
-    }
-    free(task->entrys);
-    task->entrys = NULL;
-    return task;
-  }
 };
 
 /* Callback`s that the main thread performs. */
 struct main_thread_function {
-  /* This is the function that the main thread will perform
-   * when it is placed in the callback queue. */
+  /* This is the function that the main thread will perform when it is placed in the callback queue. */
   static void on_search_complete(void *result) {
     word_search_task_t *search_result = (word_search_task_t *)result;
     if (!search_result->words) {
@@ -215,8 +66,6 @@ struct main_thread_function {
       return;
     }
     Ulong i;
-    /* for (i = 0; i < search_result->nwords; i++)
-    {} */
     NETLOGGER.log("words fetched: %lu.\n", search_result->nwords);
     for (i = 0; i < search_result->nwords; i++) {
       free(search_result->words[i]);
@@ -381,20 +230,6 @@ struct task_creator {
 };
 
 /* Calleble functions begin here.  Above are staic functions. */
-
-void submit_search_task(const char *path) {
-  word_search_task_t *task = task_creator::create_word_search_task(path);
-  submit_task(sub_thread_function::search_word_task, task, NULL, main_thread_function::on_search_complete);
-}
-
-void submit_find_in_dir(const char *find, const char *in_dir) {
-  dir_search_task_t *task = task_creator::create_dir_search_task(find, in_dir);
-  submit_task(sub_thread_function::find_file_in_dir, task, NULL, main_thread_function::on_find_file_in_dir);
-}
-
-void sub_thread_parse_funcs(const char *path) {
-  submit_task(sub_thread_function::parse_funcs_from, copy_of(path), NULL, main_thread_function::handle_parsed_funcs);
-}
 
 void find_functions_task(const char *path) {
   char *alloced_path = copy_of(path);

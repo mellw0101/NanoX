@@ -51,9 +51,9 @@ bool is_between_brackets(void) {
   return TRUE;
 }
 
-// Check if enter is requested when betweeen '{' and '}'. if so properly
-// open the brackets, place cursor in the middle and indent once.
-// Return`s 'FALSE' if not between them, otherwise return`s 'TRUE'.
+/* Check if enter is requested when betweeen '{' and '}'. if so properly
+ * open the brackets, place cursor in the middle and indent once.
+ * Return`s 'FALSE' if not between them, otherwise return`s 'TRUE'. */
 bool enter_with_bracket(void) {
   if (!is_between_brackets()) {
     return FALSE;
