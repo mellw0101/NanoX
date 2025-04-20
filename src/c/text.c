@@ -9,7 +9,7 @@
 #include "../include/c/wchars.h"
 
 /* Return's the length of whilespace until first non blank char in `string`. */
-Ulong indentlen(const char *const string) {
+Ulong indentlen(const char *const restrict string) {
   ASSERT(string);
   const char *ptr = string;
   while (*ptr && isblankc(ptr)) {

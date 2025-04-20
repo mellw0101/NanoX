@@ -231,6 +231,22 @@ static inline void gui_suggestmenu_free_completions(void) {
   cvec_clear(gui->suggestmenu->completions);
 }
 
+/* Set (`TRUE`) or unset (`FALSE`) the hidden flag for the suggestmenu element and scrollbar. */
+_UNUSED static inline void gui_suggestmenu_hide(bool hide) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->element);
+  ASSERT(gui->suggestmenu->scrollbar);
+  if (hide) {
+    gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+    gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_HIDDEN>();
+  }
+  else {
+    gui->suggestmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
+    gui->suggestmenu->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
+  }
+}
+
 /* Init the gui suggestmenu substructure. */
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
@@ -273,6 +289,7 @@ void gui_suggestmenu_clear(void) {
   cvec_clear(gui->suggestmenu->completions);
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len = 0;
+  gui_suggestmenu_hide(TRUE);
 }
 
 /* Load the word cursor is currently on into the suggestmenu buffer, from the cursor to the beginning of the word, if any. */
@@ -395,13 +412,14 @@ void gui_suggestmenu_find(void) {
 
 void gui_suggestmenu_run(void) {
   gui_suggestmenu_load_str();
-  writef("%s\n", gui->suggestmenu->buf);
+  // writef("%s\n", gui->suggestmenu->buf);
   gui_suggestmenu_find();
   if (cvec_len(gui->suggestmenu->completions)) {
-    writef("Found completions:\n");
-    for (int i=0; i<cvec_len(gui->suggestmenu->completions); ++i) {
-      writef("  %s\n", (char *)cvec_get(gui->suggestmenu->completions, i));
-    }
+    gui_suggestmenu_hide(FALSE);
+    // writef("Found completions:\n");
+    // for (int i=0; i<cvec_len(gui->suggestmenu->completions); ++i) {
+    //   writef("  %s\n", (char *)cvec_get(gui->suggestmenu->completions, i));
+    // }
   } 
 }
 

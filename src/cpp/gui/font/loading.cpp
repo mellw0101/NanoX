@@ -162,7 +162,7 @@ void change_gui_font_size(Uint size) {
   path = copy_of(gui->font_path);
   free_gui_font(FALSE);
   set_gui_font(path, size);
-  free(path);
+  free(path); 
 }
 
 void list_available_fonts(void) {

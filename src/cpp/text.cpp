@@ -96,7 +96,7 @@ static void indent_a_line(linestruct *line, char *indentation) _NOTHROW {
  * tab character or a tab's worth of spaces, depending on whether --tabstospaces is in effect. */
 void do_indent(void) _NOTHROW {
   linestruct *top, *bot, *line;
-  char *indentation;
+  char *indentation, *real_indent;
   /* Use either all the marked lines or just the current line. */
   get_range(&top, &bot);
   /* Skip any leading empty lines. */
@@ -107,16 +107,18 @@ void do_indent(void) _NOTHROW {
   if (top == bot->next) {
     return;
   }
-  indentation = (char *)nmalloc(tabsize + 1);
+  /* Allocate the tabsize plus the 'NULL-Terminator', as that is the maximum we will use. */
+  indentation = (char *)xmalloc(tabsize + 1);
   if (openfile->syntax && openfile->syntax->tabstring) {
     indentation = mallocstrcpy(indentation, openfile->syntax->tabstring);
   }
   else {
-    /* Set the indentation to either a bunch of spaces or a single tab. */
+    /* When `TABS_TO_SPACES` is enabled, we only insert a tabsize worth of spaces. */
     if (ISSET(TABS_TO_SPACES)) {
       memset(indentation, ' ', tabsize);
       indentation[tabsize] = '\0';
     }
+    /* Otherwise, we just insert a single tab char. */
     else {
       indentation[0] = '\t';
       indentation[1] = '\0';
@@ -125,7 +127,7 @@ void do_indent(void) _NOTHROW {
   add_undo(INDENT, NULL);
   /* Go through each of the lines, adding an indent to the non-empty ones, and recording whatever was added in the undo item. */
   for (line = top; line != bot->next; line = line->next) {
-    char *real_indent = (!*line->data ? (char *)"" : indentation);
+    real_indent = (!*line->data ? (char *)"" : indentation);
     indent_a_line(line, real_indent);
     update_multiline_undo(line->lineno, real_indent);
   }
@@ -138,9 +140,9 @@ void do_indent(void) _NOTHROW {
 
 /* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
 static Ulong length_of_white(const char *text) _NOTHROW {
-  Ulong white_count = 0;
+  Ulong white_count=0, thelength;
   if (openfile->syntax && openfile->syntax->tabstring) {
-    Ulong thelength = strlen(openfile->syntax->tabstring);
+    thelength = strlen(openfile->syntax->tabstring);
     while (text[white_count] == openfile->syntax->tabstring[white_count]) {
       if (++white_count == thelength) {
         return thelength;
@@ -150,7 +152,7 @@ static Ulong length_of_white(const char *text) _NOTHROW {
   }
   while (TRUE) {
     if (*text == '\t') {
-      return white_count + 1;
+      return (white_count + 1);
     }
     if (*text != ' ') {
       return white_count;
@@ -369,14 +371,16 @@ void do_comment(void) _NOTHROW {
 }
 
 /* Perform an undo or redo for a comment or uncomment action. */
-static void handle_comment_action(undostruct *u, bool undoing, bool add_comment) _NOTHROW {
+static void handle_comment_action(undostruct *const u, bool undoing, bool add_comment) _NOTHROW {
+  ASSERT(u);
   groupstruct *group = u->grouping;
+  linestruct *line;
   /* When redoing, reposition the cursor and let the commenter adjust it. */
   if (!undoing) {
     restore_undo_posx_and_mark(u);
   }
   while (group) {
-    linestruct *line = line_from_number(group->top_line);
+    line = line_from_number(group->top_line);
     while (line && line->lineno <= group->bottom_line) {
       comment_line(((undoing ^ add_comment) ? COMMENT : UNCOMMENT), line, u->strdata);
       line = line->next;
@@ -454,14 +458,18 @@ static void decode_enclose_str(const char *str, char **s1, char **s2) _NOTHROW {
 
 /* If an area is marked then plase the 'str' at mark and current_x, thereby enclosing the marked area. */
 void enclose_marked_region(const char *s1, const char *s2) _NOTHROW {
+  ASSERT(s1);
+  ASSERT(s2);
+  char *part;
+  Ulong s1_len;
   /* Return early if there is no mark. */
   if (!openfile->mark) {
     return;
   }
-  char *part = encode_enclose_str(s1, s2);
+  part = encode_enclose_str(s1, s2);
   add_undo(ENCLOSE, part);
   free(part);
-  const Ulong s1_len = strlen(s1);
+  s1_len = strlen(s1);
   if (mark_is_before_cursor()) {
     inject_in(&openfile->mark->data, s1, s1_len, openfile->mark_x);
     openfile->mark_x += s1_len;
@@ -1716,22 +1724,24 @@ void add_undo(undo_type action, const char *message) _NOTHROW {
   openfile->last_action = action;
 }
 
-// Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
-// feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
+/* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
+ * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
 void update_multiline_undo(long lineno, char *indentation) _NOTHROW {
   undostruct *u = openfile->current_undo;
+  groupstruct *born;
+  Ulong number_of_lines;
   /* If there already is a group and the current line is contiguous with it, extend the group; otherwise, create a new group. */
   if (u->grouping && (u->grouping->bottom_line + 1) == lineno) {
-    Ulong number_of_lines     = (lineno - u->grouping->top_line + 1);
+    number_of_lines           = (lineno - u->grouping->top_line + 1);
     u->grouping->bottom_line  = lineno;
-    u->grouping->indentations = arealloc(u->grouping->indentations, (number_of_lines * sizeof(char *)));
+    u->grouping->indentations = (char **)xrealloc(u->grouping->indentations, (number_of_lines * _PTRSIZE));
     u->grouping->indentations[number_of_lines - 1] = copy_of(indentation);
   }
   else {
-    groupstruct *born     = (groupstruct *)nmalloc(sizeof(groupstruct));
+    born                  = (groupstruct *)xmalloc(sizeof(*born));
     born->top_line        = lineno;
     born->bottom_line     = lineno;
-    born->indentations    = (char **)nmalloc(sizeof(char *));
+    born->indentations    = (char **)xmalloc(_PTRSIZE);
     born->indentations[0] = copy_of(indentation);
     born->next            = u->grouping;
     u->grouping           = born;
@@ -1883,8 +1893,8 @@ void update_undo(undo_type action) _NOTHROW {
   }
 }
 
-// When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
-// and prepend the excess part to an "overflow" line (when it already exists, otherwise create one).
+/* When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
+ * and prepend the excess part to an "overflow" line (when it already exists, otherwise create one). */
 void do_wrap(void) {
   /* The line to be wrapped, if needed and possible. */
   linestruct *line = openfile->current;
@@ -1997,9 +2007,9 @@ void do_wrap(void) {
   refresh_needed = TRUE;
 }
 
-// Find the last blank in the given piece of text such that the display width to that point is at most
-// (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
-// blank in that group of blanks. When snap_at_nl is TRUE, a newline character counts as a blank too.
+/* Find the last blank in the given piece of text such that the display width to that point is at most
+ * (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
+ * blank in that group of blanks. When snap_at_nl is TRUE, a newline character counts as a blank too. */
 long break_line(const char *textstart, long goal, bool snap_at_nl) _NOTHROW {
   /* The point where the last blank was found, if any. */
   const char *lastblank = NULL;
@@ -2061,8 +2071,8 @@ Ulong indent_length(const char *line) _NOTHROW {
   return (Ulong)(line - start);
 }
 
-// Return the length of the quote part of the given line.  The 'quote part'
-// of a line is the largest initial substring matching the quoting regex.
+/* Return the length of the quote part of the given line.  The 'quote part'
+ * of a line is the largest initial substring matching the quoting regex. */
 Ulong quote_length(const char *line) _NOTHROW {
   regmatch_t matches;
   int rc = regexec(&quotereg, line, 1, &matches, 0);

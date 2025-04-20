@@ -119,7 +119,7 @@ int  nanox_socket_client(void);
 /* ----------------------------------------------- text.c ----------------------------------------------- */
 
 
-Ulong indentlen(const char *const string) __THROW _NODISCARD _CONST _NONNULL(1);
+Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */

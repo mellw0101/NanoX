@@ -33,6 +33,7 @@ static void syntax_map_free(void) {
 static void syntax_map_add(const char *const restrict key, vec4 color) {
   ASSERT(key);
   SyntaxMapNode *node;
+  /* If the syntax map has not been initilized, then initialize it and setup it so its freed by 'atexit()'.  */
   if (!syntax_map) {
     syntax_map = hashmap_create_wfreefunc(free);
     atexit(syntax_map_free);
@@ -108,19 +109,87 @@ static void set_c_cpp_synx(openfilestruct *const file) {
 /* Set the `AT&T asm` syntax in `syntax_map` as well as setting the type flag in `file` to `ATNT_ASM`. */
 static void set_atnt_asm_syntax(openfilestruct *const file) {
   ASSERT(file);
-  file->type.set<ATNT_ASM>();
+  file->type.clear_and_set<ATNT_ASM>();
   /* Instruction's */
+  syntax_map_add("movb", VEC4_VS_CODE_BLUE);
+  syntax_map_add("movw", VEC4_VS_CODE_BLUE);
   syntax_map_add("movl", VEC4_VS_CODE_BLUE);
   syntax_map_add("movq", VEC4_VS_CODE_BLUE);
   syntax_map_add("cmpb", VEC4_VS_CODE_BLUE);
-  syntax_map_add("je",   VEC4_VS_CODE_BLUE);
-  syntax_map_add("incq", VEC4_VS_CODE_BLUE);
-  syntax_map_add("jmp",  VEC4_VS_CODE_BLUE);
+  syntax_map_add("cmpw", VEC4_VS_CODE_BLUE);
+  syntax_map_add("cmpl", VEC4_VS_CODE_BLUE);
+  syntax_map_add("cmpq", VEC4_VS_CODE_BLUE);
+  syntax_map_add("subd", VEC4_VS_CODE_BLUE);
+  syntax_map_add("subw", VEC4_VS_CODE_BLUE);
+  syntax_map_add("subl", VEC4_VS_CODE_BLUE);
   syntax_map_add("subq", VEC4_VS_CODE_BLUE);
+  syntax_map_add("incd", VEC4_VS_CODE_BLUE);
+  syntax_map_add("incw", VEC4_VS_CODE_BLUE);
+  syntax_map_add("incl", VEC4_VS_CODE_BLUE);
+  syntax_map_add("incq", VEC4_VS_CODE_BLUE);
+  syntax_map_add("leab", VEC4_VS_CODE_BLUE);
+  syntax_map_add("leaw", VEC4_VS_CODE_BLUE);
+  syntax_map_add("leal", VEC4_VS_CODE_BLUE);
+  syntax_map_add("leaq", VEC4_VS_CODE_BLUE);
+  syntax_map_add("xorb", VEC4_VS_CODE_BLUE);
+  syntax_map_add("xorw", VEC4_VS_CODE_BLUE);
+  syntax_map_add("xorl", VEC4_VS_CODE_BLUE);
+  syntax_map_add("xorq", VEC4_VS_CODE_BLUE);
+  syntax_map_add("jmp",  VEC4_VS_CODE_BLUE);
+  syntax_map_add("je",   VEC4_VS_CODE_BLUE);  /* Jump when equal. */
+  syntax_map_add("jne",  VEC4_VS_CODE_BLUE);  /* Jump when not equal. */
+  syntax_map_add("jz",   VEC4_VS_CODE_BLUE);  /* Jump when last result was zero. */
+  syntax_map_add("jg",   VEC4_VS_CODE_BLUE);  /* Jump when greater then. */
+  syntax_map_add("jge",  VEC4_VS_CODE_BLUE);  /* Jump when greater then or equal to. */
+  syntax_map_add("jl",   VEC4_VS_CODE_BLUE);  /* Jump when less then. */
+  syntax_map_add("jle",  VEC4_VS_CODE_BLUE);  /* Jump when less then or equal to. */
   syntax_map_add("ret",  VEC4_VS_CODE_BLUE);
-  /* Register's */
+  syntax_map_add("syscall", VEC4_VS_CODE_BLUE);
+  syntax_map_add("call", VEC4_VS_CODE_BLUE);
+  /* 64-bit register's */
+  syntax_map_add("rax", VEC4_VS_CODE_GREEN);  /* Return register. */
   syntax_map_add("rdi", VEC4_VS_CODE_GREEN);
-  syntax_map_add("rax", VEC4_VS_CODE_GREEN);
+  syntax_map_add("rsi", VEC4_VS_CODE_GREEN);
+  syntax_map_add("rdx", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r10", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r8", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r9", VEC4_VS_CODE_GREEN);
+  syntax_map_add("rbx", VEC4_VS_CODE_GREEN);
+  syntax_map_add("rbp", VEC4_VS_CODE_GREEN);
+  syntax_map_add("rsp", VEC4_VS_CODE_GREEN);
+  syntax_map_add("rip", VEC4_VS_CODE_GREEN);  /* Instruction pointer. */
+  /* 32-bit register's */
+  syntax_map_add("eax", VEC4_VS_CODE_GREEN);
+  syntax_map_add("ebx", VEC4_VS_CODE_GREEN);
+  syntax_map_add("ecx", VEC4_VS_CODE_GREEN);
+  syntax_map_add("edx", VEC4_VS_CODE_GREEN);
+  syntax_map_add("esi", VEC4_VS_CODE_GREEN);
+  syntax_map_add("edi", VEC4_VS_CODE_GREEN);
+  syntax_map_add("esp", VEC4_VS_CODE_GREEN);  /* Stack pointer. */
+  syntax_map_add("ebp", VEC4_VS_CODE_GREEN);  /* Base pointer. */
+  /* 16-bit register's */
+  syntax_map_add("ax", VEC4_VS_CODE_GREEN);
+  syntax_map_add("bx", VEC4_VS_CODE_GREEN);
+  syntax_map_add("cx", VEC4_VS_CODE_GREEN);
+  syntax_map_add("dx", VEC4_VS_CODE_GREEN);
+  /* High 8-bit register's */
+  syntax_map_add("ah", VEC4_VS_CODE_GREEN);
+  syntax_map_add("bh", VEC4_VS_CODE_GREEN);
+  syntax_map_add("ch", VEC4_VS_CODE_GREEN);
+  syntax_map_add("dh", VEC4_VS_CODE_GREEN);
+  /* Low 8-bit register's */
+  syntax_map_add("al", VEC4_VS_CODE_GREEN);
+  syntax_map_add("bl", VEC4_VS_CODE_GREEN);
+  syntax_map_add("cl", VEC4_VS_CODE_GREEN);
+  syntax_map_add("dl", VEC4_VS_CODE_GREEN);
+  /* Directive's */
+  syntax_map_add("section", VEC4_VS_CODE_MAGENTA);
+  syntax_map_add("text", VEC4_VS_CODE_MAGENTA);
+  syntax_map_add("data", VEC4_VS_CODE_MAGENTA);
+  syntax_map_add("globl", VEC4_VS_CODE_MAGENTA);
+  syntax_map_add("extern", VEC4_VS_CODE_MAGENTA);
+  syntax_map_add("type", VEC4_VS_CODE_MAGENTA);
+  syntax_map_add("asciz", VEC4_VS_CODE_MAGENTA);
 }
 
 /* Configure color map with base asm syntax. */
