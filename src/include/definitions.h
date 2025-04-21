@@ -971,6 +971,10 @@ typedef struct completionstruct {
     int cursor_type;                        /* The cursor type this element should display on hover. */
   } guielement;
 
+  typedef struct {
+    guielement *base;
+  } GuiScrollbar;
+
   class uigridmapclass {
    private:
     struct cordinathash {

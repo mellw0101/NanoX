@@ -291,7 +291,7 @@ void hide_editor(guieditor *editor, bool hide) {
   else {
     editor->flag.unset<GUIEDITOR_HIDDEN>();
   }
-  set_element_flag_recurse(editor->main, hide, GUIELEMENT_HIDDEN);
+  guielement_set_flag_recurse(editor->main, hide, GUIELEMENT_HIDDEN);
 }
 
 /* Switch to the previous editor.  */

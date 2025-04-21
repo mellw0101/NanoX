@@ -323,7 +323,7 @@ bool guielement_has_editor_data(guielement *e) _NOTHROW {
 
 /* If `set` is `TRUE` set `flag` for all children of `element` recurivly, otherwise,
  * when `set` is `FALSE` unset `flag` for all children of `element` recurivly. */
-void set_element_flag_recurse(guielement *element, bool set, Uint flag) {
+void guielement_set_flag_recurse(guielement *const element, bool set, Uint flag) {
   ASSERT(element);
   /* Always assert that the passed flag is valid in the context of a elemnent flag. */
   ALWAYS_ASSERT(flag >= 0 && flag <= GUIELEMENT_FLAG_SIZE);
@@ -336,6 +336,6 @@ void set_element_flag_recurse(guielement *element, bool set, Uint flag) {
     element->flag.unset(flag);
   }
   for (Ulong i=0; i<size; ++i) {
-    set_element_flag_recurse(ptr[i], set, flag);
+    guielement_set_flag_recurse(ptr[i], set, flag);
   }
 }

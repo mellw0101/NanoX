@@ -931,15 +931,16 @@ static int get_keycode(const char *const keyname, const int standard) _NOTHROW {
 
 /* Ensure that the margin can accommodate the buffer's highest line number. */
 void confirm_margin(void) _NOTHROW {
+  bool keep_focus;
   int needed_margin = (digits(openfile->filebot->lineno) + 1);
   /* When not requested or space is too tight, suppress line numbers. */
   if (!ISSET(LINE_NUMBERS) || needed_margin > (COLS - 4)) {
     needed_margin = 0;
   }
   if (needed_margin != margin) {
-    bool keep_focus = ((margin > 0) && focusing);
-    margin          = needed_margin;
-    editwincols     = (COLS - margin - sidebar);
+    keep_focus  = ((margin > 0) && focusing);
+    margin      = needed_margin;
+    editwincols = (COLS - margin - sidebar);
     /* Ensure a proper starting column for the first screen row. */
     ensure_firstcolumn_is_aligned();
     focusing = keep_focus;
@@ -992,19 +993,18 @@ void unbound_key(int code) _NOTHROW {
 
 /* Handle a mouse click on the edit window or the shortcut list. */
 static int do_mouse(void) {
-  int click_row;
-  int click_col;
-  int retval = get_mouseinput(&click_row, &click_col, TRUE);
+  linestruct *was_current = openfile->current;
+  long row_count;
+  Ulong leftedge, was_x=openfile->current_x;
+  int click_row, click_col, retval=get_mouseinput(&click_row, &click_col, TRUE);
   /* If the click is wrong or already handled, we're done. */
   if (retval) {
     return retval;
   }
   /* If the click was in the edit window, put the cursor in that spot. */
   if (wmouse_trafo(midwin, &click_row, &click_col, FALSE)) {
-    linestruct *was_current = openfile->current;
-    long        row_count   = click_row - openfile->cursor_row;
-    Ulong       leftedge;
-    Ulong       was_x = openfile->current_x;
+    row_count = (click_row - openfile->cursor_row);
+    was_x     = openfile->current_x;
     if (ISSET(SOFTWRAP)) {
       leftedge = leftedge_for(xplustabs(), openfile->current);
     }
@@ -1099,7 +1099,7 @@ void inject(char *burst, Ulong count) {
     old_amount = extra_chunks_in(thisline);
   }
   /* Encode an embedded NUL byte as 0x0A. */
-  for (Ulong index = 0; index < count; ++index) {
+  for (Ulong index=0; index<count; ++index) {
     if (!burst[index]) {
       burst[index] = '\n';
     }

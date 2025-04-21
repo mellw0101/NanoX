@@ -209,7 +209,7 @@ static void make_guistruct(void) {
 }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */
-static void init_guistruct(const char *win_title, Uint win_width, Uint win_height, Uint fps, Uint font_size, Uint uifont_size) {
+static void init_guistruct(const char *win_title, Uint win_width, Uint win_height, int fps, Uint font_size, Uint uifont_size) {
   /* Create the fully blank guistruct. */
   make_guistruct();
   /* Set the basic data needed to init the window. */
@@ -224,7 +224,7 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
     die("Failed to create glfw window.\n");
   }
   glfwMakeContextCurrent(gui->window);
-  frametimer.fps = fps;
+  frametimer.fps = ((fps == -1) ? 240 : fps);
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
@@ -301,7 +301,7 @@ void init_gui(void) {
     die("Failed to init glfw.\n");
   }
   /* Init the main gui structure. */
-  init_guistruct("NanoX", 1400, 800, 120, 17, 15);
+  init_guistruct("NanoX", 1400, 800, glfw_get_framerate(), 17, 15);
   /* Init glew. */
   init_glew();
   /* Init the font shader. */
@@ -326,7 +326,7 @@ void init_gui(void) {
   glfwSetCursorPosCallback(gui->window, mouse_pos_callback);
   glfwSetCursorEnterCallback(gui->window, window_enter_callback);
   glfwSetScrollCallback(gui->window, scroll_callback);
-  frametimer.fps = 120;
+  writef("Current fps: %d\n", frametimer.fps);
   // glClearColor(1.00, 1.00, 1.00, 1.00);
   glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

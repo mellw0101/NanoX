@@ -194,6 +194,7 @@ constexpr short bg_vs_code_color_array[] {
   static constexpr vec4 EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR = vec4(0.08f, 0.08f, 0.08f, 1.0f);
   static constexpr vec4 EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR   = vec4(0.14f, 0.14f, 0.14f, 1.0f);
   static constexpr vec4 GUI_BASE_BORDER_COLOR               = vec4(0.5, 0.5, 0.5, 1);
+  static constexpr vec4 GUI_MARKED_REGION_COLOR             = vec4( 0.2f,  0.2f,  0.5f, 0.45f);
   /* Vs-code colors. */
   static constexpr vec4 VEC4_VS_CODE_RED                    = VEC4_8BIT(205,  49,  49, 1);
   static constexpr vec4 VEC4_VS_CODE_GREEN                  = VEC4_8BIT( 13, 188, 121, 1);
@@ -233,4 +234,5 @@ constexpr short bg_vs_code_color_array[] {
 # define EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR  EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR
 # define EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR    EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR
 # define GUI_BASE_BORDER_COLOR                GUI_BASE_BORDER_COLOR
+# define GUI_MARKED_REGION_COLOR              GUI_MARKED_REGION_COLOR
 #endif

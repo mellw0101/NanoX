@@ -25,7 +25,7 @@ static void draw_marked(guieditor *const editor, linestruct *const line, const c
   /* The number of columns the marked region covers in this line. */
   int paintlen = -1;
   /* The rect we will draw, and the color of it. */
-  vec4 rect, color;
+  vec4 rect;
   /* The top and bottom pixels for the line. */
   float pixtop, pixbot;
   /* If the line is at least partially selected, paint the marked part. */
@@ -57,15 +57,14 @@ static void draw_marked(guieditor *const editor, linestruct *const line, const c
       /* Calculate the width of the marked region in pixels. */
       rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui->font);
       /* Get the y offset for the given line. */
-      row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui->font, &pixtop, &pixbot);
+      row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno), gui->font, &pixtop, NULL);
       rect.y = (pixtop + editor->text->pos.y);
+      /* To ensure that there is no overlap and no space between lines by calculating
+       * the height of the marked box based on the top of the next line. */
+      row_top_bot_pixel((line->lineno - editor->openfile->edittop->lineno + 1), gui->font, &pixbot, NULL);
       rect.height = (pixbot - pixtop);
-      /* Setup the color. */
-      color = (EDIT_BACKGROUND_COLOR + vec4(0.05f));
-      color.alpha = 0.45f;
-      color.blue += 0.30f;
       /* Draw the rect to the screen. */
-      draw_rect(rect.xy(), rect.zw(), color);
+      draw_rect(rect.xy(), rect.zw(), GUI_MARKED_REGION_COLOR);
     }
   }
 }
@@ -389,7 +388,7 @@ void show_statusmsg(message_type type, float seconds, const char *format, ...) {
   char buffer[4096];
   va_list ap;
   /* Ignore updates when the type of this message is lower then the currently displayed message. */
-  if (type < statustype && statustype > NOTICE) {
+  if ((type < statustype) && (statustype > NOTICE)) {
     return;
   }
   va_start(ap, format);
@@ -582,21 +581,40 @@ void draw_statusbar(void) {
   }
 }
 
+static inline const GLFWvidmode *glfw_get_primary_monitor_mode(void) {
+  GLFWmonitor *monitor;
+  const GLFWvidmode *mode;
+  /* Get primary monitor. */
+  monitor = glfwGetPrimaryMonitor();
+  if (!monitor) {
+    writeferr("%s: Monitor is invalid.\n", __func__);
+    return NULL;
+  }
+  mode = glfwGetVideoMode(monitor);
+  if (!mode) {
+    writeferr("%s: Mode is invalid.\n", __func__);
+    return NULL;
+  }
+  return mode;
+} 
+
 /* Toggle fullscreen state. */
 void do_fullscreen(GLFWwindow *window) {
   static bool is_fullscreen = FALSE;
   static ivec4 rect = 0.0f;
+  GLFWmonitor *monitor;
+  const GLFWvidmode *mode;
   if (!is_fullscreen) {
     /* Save the window size and position. */
     glfwGetWindowPos(window, &rect.x, &rect.y);
     glfwGetWindowSize(window, &rect.width, &rect.height);
     /* Get monitor size. */
-    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    monitor = glfwGetPrimaryMonitor();
     if (!monitor) {
       log_error_gui("%s: Monitor is invalid.\n", __func__);
       return;
     }
-    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    mode = glfwGetVideoMode(monitor);
     if (!mode) {
       log_error_gui("%s: Mode is invalid.\n", __func__);
       return;
@@ -613,6 +631,12 @@ void do_fullscreen(GLFWwindow *window) {
   }
   /* Toggle the fullscreen flag. */
   is_fullscreen = !is_fullscreen;
+}
+
+/* Get the refreshrate of the current monitor. */
+int glfw_get_framerate(void) {
+  const GLFWvidmode *mode = glfw_get_primary_monitor_mode();
+  return (mode ? mode->refreshRate : -1);
 }
 
 #endif

@@ -222,7 +222,11 @@ void accept_suggestion(void) {
   clear_suggestion();
 }
 
-/* ----------------------------- Gui suggestmenu ----------------------------- */
+
+/* ---------------------------------------------------------- Gui suggestmenu ---------------------------------------------------------- */
+
+
+/* ----------------------------- Static helper function's. ----------------------------- */
 
 /* `INTERNAL`  Clean up the current completions, and reset the state. */
 static inline void gui_suggestmenu_free_completions(void) {
@@ -232,7 +236,7 @@ static inline void gui_suggestmenu_free_completions(void) {
 }
 
 /* Set (`TRUE`) or unset (`FALSE`) the hidden flag for the suggestmenu element and scrollbar. */
-_UNUSED static inline void gui_suggestmenu_hide(bool hide) {
+static inline void gui_suggestmenu_hide(bool hide) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   ASSERT(gui->suggestmenu->element);
@@ -246,6 +250,31 @@ _UNUSED static inline void gui_suggestmenu_hide(bool hide) {
     gui->suggestmenu->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
   }
 }
+
+/* Comparison function to order all suggestions from shortest to longest string meaning the highest % of the current word has been typed. */
+static int gui_suggestmenu_cmp(const void *a, const void *b) {
+  const char *lhs = *(const char **)a;
+  const char *rhs = *(const char **)b;
+  long lhs_len = strlen(lhs);
+  long rhs_len = strlen(rhs);
+  if (lhs_len == rhs_len) {
+    return strcmp(lhs, rhs);
+  }
+  return (lhs_len - rhs_len);
+}
+
+/* Copy the word that begins at `*text`. */
+static char *gui_suggestmenu_copy_completion(char *const restrict text) {
+  Ulong len = 0;
+  /* Find the end of the word to get the length. */
+  while (iswordc(&text[len], FALSE, "_")) {
+    len = step_right(text, len);
+  }
+  /* Return a copy of the word. */
+  return measured_copy(text, len);
+}
+
+/* ----------------------------- Global function's ----------------------------- */
 
 /* Init the gui suggestmenu substructure. */
 void gui_suggestmenu_create(void) {
@@ -309,29 +338,6 @@ void gui_suggestmenu_load_str(void) {
   }
 }
 
-/* Comparison function to order all suggestions from shortest to longest string meaning the highest % of the current word has been typed. */
-static int cmp(const void *a, const void *b) {
-  const char *lhs = *(const char **)a;
-  const char *rhs = *(const char **)b;
-  long lhs_len = strlen(lhs);
-  long rhs_len = strlen(rhs);
-  if (lhs_len == rhs_len) {
-    return strcmp(lhs, rhs);
-  }
-  return (lhs_len - rhs_len);
-}
-
-/* Copy the word that begins at `*text`. */
-static char *gui_suggestmenu_copy_completion(char *const restrict text) {
-  Ulong len=0;
-  /* Find the end of the word to get the length. */
-  while (is_word_char(&text[len], FALSE) || text[len] == '_') {
-    len = step_right(text, len);
-  }
-  /* Return a copy of the word. */
-  return measured_copy(text, len);
-}
-
 /* Perform the searching throue all openfiles and all lines. */
 void gui_suggestmenu_find(void) {
   ASSERT(gui);
@@ -372,7 +378,7 @@ void gui_suggestmenu_find(void) {
         continue;
       }
       /* Or the match is an exact copy of `gui->suggestmenu->buf`. */
-      if (!is_word_char(&search_line->data[i + j], FALSE) && search_line->data[i + j] != '_') {
+      if (!iswordc(&search_line->data[i + j], FALSE, "_") /* is_word_char(&search_line->data[i + j], FALSE) && search_line->data[i + j] != '_' */) {
         continue;
       }
       /* Or the match is not a seperate word. */
@@ -402,7 +408,7 @@ void gui_suggestmenu_find(void) {
     }
   }
   hashmap_free(hash_map);
-  cvec_qsort(gui->suggestmenu->completions, cmp);
+  cvec_qsort(gui->suggestmenu->completions, gui_suggestmenu_cmp);
   /* Set the view top and the selected to the first suggestion. */
   gui->suggestmenu->viewtop  = 0;
   gui->suggestmenu->selected = 0;
@@ -553,9 +559,10 @@ bool gui_suggestmenu_accept(void) {
   ASSERT(gui->suggestmenu->completions);
   char *str;
   if (cvec_len(gui->suggestmenu->completions)) {
+    openfile->last_action = OTHER;
     str = (char *)cvec_get(gui->suggestmenu->completions, gui->suggestmenu->selected);
     inject((str + gui->suggestmenu->len), (strlen(str) - gui->suggestmenu->len));
-    cvec_clear(gui->suggestmenu->completions);
+    gui_suggestmenu_clear();
     refresh_needed = TRUE;
     return TRUE;
   }

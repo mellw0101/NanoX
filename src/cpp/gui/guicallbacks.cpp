@@ -891,19 +891,27 @@ void char_callback(GLFWwindow *window, Uint ch) {
         refresh_needed = TRUE;
         return;
       }
-      /* Exceptions for enclosing quotes. */
+      /* Exceptions for enclosing double quotes. */
       else if (input == '"'
        /* Before current cursor position. */
        && (((is_prev_cursor_word_char() || is_prev_cursor_char_one_of("\"><")))
        /* After current cursor position. */
-       || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(";)}]")))) {
+       || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(")}]")))) {
+        ;
+      }
+      /* Exceptions for enclosing single quotes. */
+      else if (input == '\''
+       /* Before current cursor position. */
+       && (((is_prev_cursor_word_char() || is_prev_cursor_char_one_of("'><")))
+       /* After current cursor position. */
+       || (!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of(")}]")))) {
         ;
       }
       /* Exceptions for enclosing brackets. */
       else if ((input == '(' || input == '[' || input == '{')
        /* We only allow the insertion of double brackets when the cursor is either at a blank char or at EOL, or at any of the
         * given chars, all other sinarios with other chars at the cursor will result in only the start bracket beeing inserted. */
-       && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\";')}],")))) {
+       && ((!is_cursor_blank_char() && !is_cursor_char('\0') && !is_cursor_char_one_of("\":;')}],")))) {
         ;
       }
       /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
@@ -912,8 +920,12 @@ void char_callback(GLFWwindow *window, Uint ch) {
       }
       else {
         const char *s1, *s2;
-        input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(", s2 = ")" :
-        input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" : 0;
+        input == '"'  ? s1 = "\"", s2 = s1 :
+        input == '\'' ? s1 = "'",  s2 = s1 :
+        input == '('  ? s1 = "(",  s2 = ")" :
+        input == '{'  ? s1 = "{",  s2 = "}" :
+        input == '['  ? s1 = "[",  s2 = "]" :
+        input == '<'  ? s1 = "<",  s2 = ">" : 0;
         /* 'Set' the mark, so that 'enclose_marked_region()' dosent exit because there is no marked region. */
         openfile->mark = openfile->current;
         openfile->mark_x = openfile->current_x;

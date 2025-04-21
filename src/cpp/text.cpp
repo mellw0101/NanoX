@@ -253,10 +253,11 @@ static void handle_indent_action(undostruct *u, bool undoing, bool add_indent) _
   refresh_needed = TRUE;
 }
 
-// Test whether the given line can be uncommented, or add or remove a comment, depending on action.
-// Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
-// ADDED: Also takes indentation into account.
+/* Test whether the given line can be uncommented, or add or remove a comment, depending on action.
+ * Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
+ * ADDED: Also takes indentation into account. */
 static bool comment_line(undo_type action, linestruct *line, const char *comment_seq) _NOTHROW {
+  bool space_existed;
   Ulong comment_seq_len = strlen(comment_seq);
   /* The postfix, if this is a bracketing type comment sequence. */
   const char *post_seq = strchr(comment_seq, '|');
@@ -265,49 +266,57 @@ static bool comment_line(undo_type action, linestruct *line, const char *comment
   /* Length of postfix. */
   Ulong  post_len   = (post_seq ? (comment_seq_len - pre_len - 1) : 0);
   Ulong  line_len   = strlen(line->data);
-  Ushort indent_len = indent_length(line->data);
+  Ushort indent_len = indentlen(line->data);
   if (!ISSET(NO_NEWLINES) && line == openfile->filebot) {
     return FALSE;
   }
   if (action == COMMENT) {
     /* Make room for the comment sequence(s), move the text right and copy them in. */
-    line->data = arealloc(line->data, (line_len + pre_len + post_len + 1));
+    line->data = (char *)xrealloc(line->data, (line_len + pre_len + post_len + 1));
     memmove((line->data + pre_len + indent_len), (line->data + indent_len), (line_len - indent_len + 1));
     memmove((line->data + indent_len), comment_seq, pre_len);
     inject_in(&line->data, " ", (indent_len + comment_seq_len));
     if (post_len > 0) {
-      memmove(line->data + pre_len + line_len, post_seq, (post_len + 1));
+      memmove((line->data + pre_len + line_len), post_seq, (post_len + 1));
     }
     openfile->totsize += (pre_len + post_len);
     /* If needed, adjust the position of the mark and of the cursor. */
-    if (line == openfile->mark && openfile->mark_x > 0) {
+    if (line == openfile->mark && openfile->mark_x >= indent_len) {
       openfile->mark_x += (pre_len + 1);
     }
-    if (line == openfile->current && openfile->current_x > 0) {
+    if (line == openfile->current && openfile->current_x >= indent_len) {
       openfile->current_x += (pre_len + 1);
       openfile->placewewant = xplustabs();
     }
     return TRUE;
   }
   /* If the line is commented, report it as uncommentable, or uncomment it. */
-  if (strncmp((line->data + indent_len), comment_seq, pre_len) == 0
-   && (!post_len || strcmp((line->data + line_len - post_len), post_seq) == 0)) {
+  if (strncmp((line->data + indent_len), comment_seq, pre_len) == 0 && (!post_len || strcmp((line->data + line_len - post_len), post_seq) == 0)) {
     if (action == PREFLIGHT) {
       return TRUE;
     }
     if (*(line->data + indent_len + pre_len) == ' ') {
+      space_existed = TRUE;
       /* Erase the comment prefix by moving the non-comment part. */
       memmove((line->data + indent_len), (line->data + indent_len + pre_len + 1), (line_len - pre_len - indent_len));
     }
     else {
+      space_existed = FALSE;
       /* Erase the comment prefix by moving the non-comment part. */
       memmove((line->data + indent_len), (line->data + indent_len + pre_len), (line_len - pre_len - indent_len));
     }
     /* Truncate the postfix if there was one. */
     line->data[line_len - pre_len - post_len] = '\0';
     openfile->totsize -= (pre_len + post_len);
-    /* Adjust the positions of mark and cursor, when needed. */
-    compensate_leftward(line, (pre_len + 1));
+    /* Adjust the positions of the cursor, when it is behind the comment. */
+    if (line == openfile->current && openfile->current_x > indent_len) {
+      openfile->current_x -= (pre_len + space_existed);
+      openfile->placewewant = xplustabs();
+    }
+    /* Adjust the position of the mark when it is behind the comment. */
+    if (line == openfile->mark && openfile->mark_x > indent_len) {
+      openfile->mark_x -= (pre_len + space_existed);
+    }
     return TRUE;
   }
   return FALSE;
@@ -328,7 +337,7 @@ void do_comment(void) _NOTHROW {
   else if (openfile->type.is_set<ASM>()) {
     comment_seq = ";";
   }
-  else if (openfile->type.is_set<BASH>()) {
+  else if (openfile->type.is_set<BASH>() || openfile->type.is_set<ATNT_ASM>()) {
     comment_seq = "#";
   }
   /* This is when 'openfile->syntax' says comments are foridden. */
@@ -340,7 +349,12 @@ void do_comment(void) _NOTHROW {
   get_range(&top, &bot);
   /* If only the magic line is selected, don't do anything. */
   if (top == bot && bot == openfile->filebot && !ISSET(NO_NEWLINES)) {
-    statusline(AHEM, _("Cannot comment past end of file"));
+    if (ISSET(USING_GUI)) {
+      show_statusmsg(AHEM, 2, _("Cannot comment past end of file"));
+    }
+    else {
+      statusline(AHEM, _("Cannot comment past end of file"));
+    }
     return;
   }
   /* Figure out whether to comment or uncomment the selected line or lines. */
@@ -512,13 +526,14 @@ static bool is_between_brackets(const char *line, const Ulong posx) _NOTHROW {
 
 /* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
 static void auto_bracket(linestruct *line, const Ulong posx) _NOTHROW {
+  Ulong indentlen, lenleft;
   linestruct *middle = make_new_node(line);
   linestruct *end    = make_new_node(middle);
   splice_node(line, middle);
   splice_node(middle, end);
   renumber_from(middle);
-  const Ulong indentlen = indent_length(line->data);
-  const Ulong lenleft = strlen(line->data + posx);
+  indentlen = indent_length(line->data);
+  lenleft   = strlen(line->data + posx);
   middle->data = (char *)nmalloc(indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 1);
   end->data    = (char *)nmalloc(indentlen + lenleft + 1);
   /* Set up the middle line. */
@@ -535,7 +550,7 @@ static void auto_bracket(linestruct *line, const Ulong posx) _NOTHROW {
   memcpy((end->data + indentlen), (line->data + posx), (lenleft + 1));
   memcpy(end->data, line->data, indentlen);
   /* Set up start line. */
-  line->data = arealloc(line->data, (posx + 1));
+  line->data = (char *)xrealloc(line->data, (posx + 1));
   *(line->data + posx) = '\0';
   /* Set the cursor line and x pos to the middle line. */
   openfile->current   = middle; 
@@ -1392,21 +1407,25 @@ void do_redo(void) {
 
 /* Break the current line at the cursor position. */
 void do_enter(void) {
+  bool do_another_indent, allblanks=FALSE;
+  linestruct *newnode, *sampleline=openfile->current;
+  Ulong extra = 0;
   if (suggest_on && suggest_str) {
     accept_suggestion();
     return;
   }
+  else if (cvec_len(gui->suggestmenu->completions)) {
+    gui_suggestmenu_accept();
+    return;
+  }
   /* Check if cursor is between two brackets. */
-  if (is_between_brackets(openfile->current->data, openfile->current_x)) {
+  else if (is_between_brackets(openfile->current->data, openfile->current_x)) {
     do_auto_bracket();
     return;
   }
   /* If the prev char is one of the usual section start chars, or a lable, we should indent once more. */
-  bool do_another_indent = is_prev_cursor_char_one_of("{:");
-  linestruct *newnode    = make_new_node(openfile->current);
-  linestruct *sampleline = openfile->current;
-  Ulong       extra      = 0;
-  bool        allblanks  = FALSE;
+  do_another_indent = is_prev_cursor_char_one_of("{:");
+  newnode    = make_new_node(openfile->current);
   if (ISSET(AUTOINDENT)) {
     /* When doing automatic long-line wrapping and the next line is in this same paragraph, use its indentation as the model. */
     if (ISSET(BREAK_LONG_LINES) && sampleline->next && inpar(sampleline->next) && !begpar(sampleline->next, 0)) {
@@ -1430,7 +1449,7 @@ void do_enter(void) {
   }
   if (ISSET(AUTOINDENT)) {
     /* Copy the whitespace from the sample line to the new one. */
-    strncpy(newnode->data, sampleline->data, extra);
+    memcpy(newnode->data, sampleline->data, extra);
     /* If there were only blanks before the cursor, trim them. */
     if (allblanks) {
       openfile->current_x = 0;
@@ -1475,7 +1494,7 @@ void do_enter(void) {
 }
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
-void discard_until_in_buffer(openfilestruct *buffer, const undostruct *thisitem) {
+void discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem) {
   undostruct  *dropit = buffer->undotop;
   groupstruct *group, *next;
   while (dropit && dropit != thisitem) {

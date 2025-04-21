@@ -42,11 +42,11 @@ bool  isctrlc(const char *const c) __THROW _NODISCARD _CONST _NONNULL(1);
 bool  doublewidth(const char *const c) __THROW _NODISCARD _CONST _NONNULL(1);
 bool  zerowidth(const char *const c) __THROW _NODISCARD _CONST _NONNULL(1);
 bool  isblankc(const char *const c) __THROW _NODISCARD _CONST _NONNULL(1);
-bool  isblankornulc(const char *const c) __THROW _NODISCARD _CONST _NONNULL(1);
-bool  isalphac(const char *const __restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
-bool  isalnumc(const char *const __restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
-bool  ispunctc(const char *const __restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
-bool  iswordc(const char *const __restrict c, bool allow_punct, const char *const __restrict allowedchars) __THROW _NODISCARD _CONST _NONNULL(1);
+bool  isblankornulc(const char *const restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
+bool  isalphac(const char *const restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
+bool  isalnumc(const char *const restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
+bool  ispunctc(const char *const restrict c) __THROW _NODISCARD _CONST _NONNULL(1);
+bool  iswordc(const char *const restrict c, bool allow_punct, const char *const restrict allowedchars) __THROW _NODISCARD _CONST _NONNULL(1);
 // bool  isconeof(const char c, const char *const __restrict string) __THROW _NODISCARD _CONST _NONNULL(2);
 
 _END_C_LINKAGE

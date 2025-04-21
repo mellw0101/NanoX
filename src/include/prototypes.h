@@ -500,7 +500,7 @@ void  do_insert_empty_line_below(void) _NOTHROW;
 void  do_undo(void);
 void  do_redo(void);
 void  do_enter(void);
-void  discard_until_in_buffer(openfilestruct *buffer, const undostruct *thisitem);
+void  discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
 void  discard_until(const undostruct *thisitem) _NOTHROW;
 void  add_undo(undo_type action, const char *message) _NOTHROW;
 void  update_multiline_undo(long lineno, char *indentation) _NOTHROW;
@@ -855,6 +855,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void draw_botbar(void);
   void draw_statusbar(void);
   void do_fullscreen(GLFWwindow *window);
+  int  glfw_get_framerate(void);
   
   /* gui/guiprompt.cpp */
   void gui_enter_prompt_mode(void);
@@ -894,7 +895,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void set_element_editor_data(guielement *element, guieditor *editor) _NOTHROW;
   bool guielement_has_file_data(guielement *element) _NOTHROW;
   bool guielement_has_editor_data(guielement *element) _NOTHROW;
-  void set_element_flag_recurse(guielement *element, bool set, Uint flag);
+  void guielement_set_flag_recurse(guielement *const element, bool set, Uint flag);
 
   /* gui/guieditor.cpp */
   void refresh_editor_topbar(guieditor *editor);

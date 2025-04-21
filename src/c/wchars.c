@@ -327,6 +327,7 @@ bool isblankc(const char *const c) {
 
 /* Return's `TRUE` when `c` is either a blank char or a `NUL` char. */
 bool isblankornulc(const char *const c) {
+  ASSERT(c);
   return (isblankc(c) || *c == NUL);
 }
 

@@ -151,9 +151,14 @@ static void set_atnt_asm_syntax(openfilestruct *const file) {
   syntax_map_add("rdi", VEC4_VS_CODE_GREEN);
   syntax_map_add("rsi", VEC4_VS_CODE_GREEN);
   syntax_map_add("rdx", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r8",  VEC4_VS_CODE_GREEN);
+  syntax_map_add("r9",  VEC4_VS_CODE_GREEN);
   syntax_map_add("r10", VEC4_VS_CODE_GREEN);
-  syntax_map_add("r8", VEC4_VS_CODE_GREEN);
-  syntax_map_add("r9", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r11", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r12", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r13", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r14", VEC4_VS_CODE_GREEN);
+  syntax_map_add("r15", VEC4_VS_CODE_GREEN);
   syntax_map_add("rbx", VEC4_VS_CODE_GREEN);
   syntax_map_add("rbp", VEC4_VS_CODE_GREEN);
   syntax_map_add("rsp", VEC4_VS_CODE_GREEN);
