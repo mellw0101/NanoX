@@ -412,7 +412,7 @@ static void handle_comment_action(undostruct *const u, bool undoing, bool add_co
 #define undo_paste redo_cut
 
 /* Undo a cut, or redo a paste. */
-static void undo_cut(undostruct *u) _NOTHROW {
+static void undo_cut(undostruct *const u) _NOTHROW {
   goto_line_posx(u->head_lineno, ((u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x));
   /* Clear an inherited anchor but not a user-placed one. */
   if (!(u->xflags & HAD_ANCHOR_AT_START)) {
@@ -442,7 +442,7 @@ static void undo_cut(undostruct *u) _NOTHROW {
 }
 
 /* Redo a cut, or undo a paste. */
-static void redo_cut(undostruct *u) _NOTHROW {
+static void redo_cut(undostruct *const u) _NOTHROW {
   linestruct *oldcutbuffer = cutbuffer;
   cutbuffer = NULL;
   openfile->mark   = line_from_number(u->head_lineno);
@@ -455,8 +455,9 @@ static void redo_cut(undostruct *u) _NOTHROW {
 
 /* Return`s a malloc`ed str encoded with enclose delimiter. */
 static char *encode_enclose_str(const char *s1, const char *s2) _NOTHROW {
-  char *part = (char *)nmalloc(strlen(s1) + strlen(ENCLOSE_DELIM) + strlen(s2) + 1);
-  sprintf(part, "%s" ENCLOSE_DELIM "%s", s1, s2);
+  // char *part = (char *)xmalloc(strlen(s1) + strlen(ENCLOSE_DELIM) + strlen(s2) + 1);
+  // sprintf(part, "%s" ENCLOSE_DELIM "%s", s1, s2);
+  char *part = fmtstr("%s" ENCLOSE_DELIM "%s", s1, s2);
   return part;
 }
 
