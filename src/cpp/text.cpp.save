@@ -1,4 +1,4 @@
-/** @file text.cpp */
+s/** @file text.cpp */
 #include "../include/prototypes.h"
 
 /* Toggle the mark. */

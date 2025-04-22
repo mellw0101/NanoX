@@ -677,6 +677,8 @@ typedef enum {
     /* The `element` has a `guieditor *` assigned to `element->data.editor`. */
     GUIELEMENT_HAS_EDITOR_DATA,
     #define GUIELEMENT_HAS_EDITOR_DATA GUIELEMENT_HAS_EDITOR_DATA
+    GUIELEMENT_HAS_SB_DATA,
+    #define GUIELEMENT_HAS_SB_DATA  GUIELEMENT_HAS_SB_DATA
     GUIELEMENT_ABOVE,
     #define GUIELEMENT_ABOVE GUIELEMENT_ABOVE
   } guielement_flag_type;
@@ -698,19 +700,20 @@ typedef enum {
     #define GUIEDITOR_TOPBAR_UPDATE_ACTIVE GUIEDITOR_TOPBAR_UPDATE_ACTIVE
     GUIEDITOR_TEXT_REFRESH_NEEDED,
     #define GUIEDITOR_TEXT_REFRESH_NEEDED GUIEDITOR_TEXT_REFRESH_NEEDED
-    GUIEDITOR_SCROLLBAR_REFRESH_NEEDED,
-    #define GUIEDITOR_SCROLLBAR_REFRESH_NEEDED GUIEDITOR_SCROLLBAR_REFRESH_NEEDED
     GUIEDITOR_HIDDEN,
     #define GUIEDITOR_HIDDEN GUIEDITOR_HIDDEN
   } guieditor_flag_type;
 #endif
 
 /* Some forward declarations. */
-typedef struct guielement guielement;
-typedef struct guieditor  guieditor;
+typedef struct guielement    guielement;
+typedef struct guieditor     guieditor;
+typedef struct GuiScrollbar  GuiScrollbar;
 
 /* Some typedefs. */
 typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
+typedef void (*GuiScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *offset);
+typedef void (*GuiScrollbarMoveFunc)(void *, long);
 
 /* Structure types. */
 typedef struct colortype {
@@ -943,6 +946,7 @@ typedef struct completionstruct {
     void           *raw;      /* A `raw` data ptr, this can be anything but it means casting every time we use. */
     openfilestruct *file;     /* A ptr to a `openfilestruct`. */
     guieditor      *editor;   /* A ptr to a `guieditor`. */
+    GuiScrollbar   *sb;       /* A ptr to a `GuiScrollbar`. */
   } guielement_data_type;
 
   typedef struct guielement {
@@ -970,10 +974,6 @@ typedef struct completionstruct {
 
     int cursor_type;                        /* The cursor type this element should display on hover. */
   } guielement;
-
-  typedef struct {
-    guielement *base;
-  } GuiScrollbar;
 
   class uigridmapclass {
    private:
@@ -1107,8 +1107,9 @@ typedef struct completionstruct {
     guielement *gutter; /* The `gutter` element, this holds the line numbers. */
     guielement *text;   /* The `text` element, this holds the editors text for the currently open file. */
     
+    // guielement *scrollbar;
     /* The scrollbar for this editor. */
-    guielement *scrollbar;
+    GuiScrollbar *sb;
 
     vec2 pen;
 
@@ -1183,9 +1184,8 @@ typedef struct completionstruct {
   } GuiStatusbar; */
 
   typedef struct {
-    struct {
-      Uint active : 1;
-    } flag;
+    bool text_refresh_needed : 1;
+    bool pos_refresh_needed : 1;
 
     CVec *completions;
     int viewtop;
@@ -1198,7 +1198,7 @@ typedef struct completionstruct {
     int   len;
 
     guielement *element;
-    guielement *scrollbar;
+    GuiScrollbar *sb;
 
     vertex_buffer_t *vertbuf;
   } GuiSuggestMenu;

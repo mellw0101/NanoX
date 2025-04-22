@@ -11,6 +11,7 @@ static float statustime = 0.0f;
 /* The type for the currently displayed status message. */
 static message_type statustype = VACUUM;
 
+/* If the line is part of the marked region, then draw a rect that reprecents the marked region. */
 static void draw_marked(guieditor *const editor, linestruct *const line, const char *const restrict convert, Ulong fromcol) {
   /* The top and bottom line where the marked region begins and ends. */
   linestruct *top, *bot;
@@ -69,76 +70,6 @@ static void draw_marked(guieditor *const editor, linestruct *const line, const c
   }
 }
 
-/* If the line is part of the marked region, then draw a rect that reprecents the marked region. */
-void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *withfont) {
-  /* If the line is at least partially selected, paint the marked part. */
-  if (line_in_marked_region(line)) {
-    /* The top and bot line where the marked region begins and ends. */
-    linestruct *top, *bot;
-    /* The x pos in the top and bot line. */
-    Ulong top_x, bot_x;
-    /* Start index for where to draw in this line. */
-    int start_col;
-    /* Where in converted the painting starts. */
-    const char *thetext;
-    /* The number of columns to paint. */
-    int paintlen = -1;
-    /* The rect to draw. */
-    vec4 rect, mark_color;
-    get_region(&top, &top_x, &bot, &bot_x);
-    if (top->lineno < line->lineno || top_x < from_x) {
-      top_x = from_x;
-    }
-    if (bot->lineno > line->lineno || bot_x > till_x) {
-      bot_x = till_x;
-    }
-    /* Only paint if the marked part of the line is on this page. */
-    if (top_x < till_x && bot_x > from_x) {
-      /* Compute on witch column to start painting. */
-      start_col = (wideness(line->data, top_x) - from_col);
-      if (start_col < 0) {
-        start_col = 0;
-      }
-      thetext = (converted + actual_x(converted, start_col));
-      /* If the end of the mark is onscreen, compute how meny characters to paint. */
-      if (bot_x < till_x) {
-        Ulong end_col = (wideness(line->data, bot_x) - from_col);
-        paintlen = actual_x(thetext, (end_col - start_col));
-      }
-      /* Otherwise, calculate the end index of the text on screen. */
-      if (paintlen == -1) {
-        paintlen = strlen(thetext);
-      }
-      if (ISSET(LINE_NUMBERS)) {
-        rect.x = (string_pixel_offset(line->data, " ", start_col, withfont) + get_line_number_pixel_offset(line, withfont));
-        /* Calculate the number of pixels for the rect that will represent the painted section. */
-        if (converted == thetext) {
-          rect.width = string_pixel_offset(thetext, " ", paintlen, withfont);
-        }
-        else {
-          rect.width = string_pixel_offset(thetext, &converted[(thetext - converted) - 1], paintlen, withfont);
-        }
-      }
-      else {
-        rect.x = string_pixel_offset(line->data, NULL, start_col, withfont);
-        /* Calculate the number of pixels for the rect that will represent the painted section. */
-        if (converted == thetext) {
-          rect.width = string_pixel_offset(thetext, NULL, paintlen, withfont);
-        }
-        else {
-          rect.width = string_pixel_offset(thetext, &converted[(thetext - converted) - 1], paintlen, withfont);
-        }
-      }
-      rect.y = line_y_pixel_offset(line, withfont);
-      rect.height = FONT_HEIGHT(withfont);
-      mark_color  = EDIT_BACKGROUND_COLOR + vec4(0.05f);
-      mark_color.alpha = 0.45f;
-      mark_color.blue += 0.30f;
-      draw_rect(rect.xy(), rect.zw(), mark_color);
-    }
-  }
-}
-
 /* Draw rect to the window. */
 void draw_rect(vec2 pos, vec2 size, vec4 color) {
   glUseProgram(gui->rect_shader); {
@@ -185,6 +116,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   }
   from_col  = get_page_start(wideness(line->data, ((line == editor->openfile->current) ? editor->openfile->current_x : 0)));
   converted = display_string(line->data, from_col, editor->cols, TRUE, FALSE);
+  drawpos->x = editor->text->pos.x;
   if (refresh_needed) {
     converted_len = strlen(converted);
     /* For c/cpp files. */
@@ -416,7 +348,7 @@ void draw_editor(guieditor *editor) {
   ASSERT(editor->text);
   ASSERT(editor->buffer);
   ASSERT(editor->gutter);
-  ASSERT(editor->scrollbar);
+  // ASSERT(editor->scrollbar);
   ASSERT(gui->font_shader);
   ASSERT(gui);
   ASSERT(gui->font);
@@ -429,11 +361,11 @@ void draw_editor(guieditor *editor) {
   int row = 0;
   linestruct *line = editor->openfile->edittop;
   /* Draw the text editor element. */
-  draw_element_rect(editor->text);
+  guielement_draw(editor->text);
   /* Draw the gutter element of the editor. */
-  draw_element_rect(editor->gutter);
+  guielement_draw(editor->gutter);
   /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
-  draw_element_rect(editor->topbar);
+  guielement_draw(editor->topbar);
   /* Render the topbar of the editor. */
   if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
     refresh_editor_topbar(editor);
@@ -442,7 +374,7 @@ void draw_editor(guieditor *editor) {
       /* Assign the child to a new ptr for readbility. */
       guielement *child = editor->topbar->children[i];
       /* Draw the child rect. */
-      draw_element_rect(child);
+      guielement_draw(child);
       /* Update the data in the topbuf. */
       if (child->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
         vertex_buffer_add_element_lable_offset(child, gui->uifont, editor->topbuf, vec2(pixel_breadth(gui->uifont, " "), 0));
@@ -461,7 +393,7 @@ void draw_editor(guieditor *editor) {
       /* Assign the child to a new ptr for readbility. */
       guielement *child = editor->topbar->children[i];
       /* Draw the child rect. */
-      draw_element_rect(child);
+      guielement_draw(child);
     }
   }
   upload_texture_atlas(gui->uiatlas);
@@ -489,17 +421,17 @@ void draw_editor(guieditor *editor) {
   }
   upload_texture_atlas(gui->atlas);
   render_vertex_buffer(gui->font_shader, editor->buffer);
-  if (editor->flag.is_set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>()) {
-    guieditor_update_scrollbar(editor);
-    editor->flag.unset<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
-  }
-  draw_element_rect(editor->scrollbar);
+  // if (editor->flag.is_set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>()) {
+  //   editor->sb->refresh_needed = TRUE;
+  //   editor->flag.unset<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+  // }
+  guiscrollbar_draw(editor->sb);
 }
 
 /* Draw the top bar of the gui. */
 void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
-    draw_element_rect(gui->promptmenu->element);
+    guielement_draw(gui->promptmenu->element);
     /* Only refresh the promptmenu buffer if it has changed. */
     if (gui->promptmenu->flag.refresh_needed) {
       vertex_buffer_clear(gui->promptmenu->buffer);
@@ -525,12 +457,21 @@ void draw_suggestmenu(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   ASSERT(gui->suggestmenu->completions);
+  static int was_viewtop = gui->suggestmenu->viewtop;
   int selected_row;
   vec2 pos, size;
   /* Get the current number of suggestions. */
   if (cvec_len(gui->suggestmenu->completions)) {
-    gui_suggestmenu_resize();
-    draw_element_rect(gui->suggestmenu->element);
+    /* Only redraw text when viewtop has changed. */
+    if (was_viewtop != gui->suggestmenu->viewtop) {
+      gui->suggestmenu->text_refresh_needed = TRUE;
+      was_viewtop = gui->suggestmenu->viewtop;
+    }
+    if (gui->suggestmenu->pos_refresh_needed) {
+      gui_suggestmenu_resize();
+      gui->suggestmenu->pos_refresh_needed = FALSE;
+    }
+    guielement_draw(gui->suggestmenu->element);
     /* Draw the rect that indicated the currently selected entry. */
     selected_row = (gui->suggestmenu->selected - gui->suggestmenu->viewtop);
     if (selected_row >= 0 && selected_row < gui->suggestmenu->rows) {
@@ -541,15 +482,14 @@ void draw_suggestmenu(void) {
       pos.y  += gui->suggestmenu->element->pos.y;
       draw_rect(pos, size, vec4(vec3(1), 0.4));
     }
-    gui_suggestmenu_update_scrollbar();
-    draw_element_rect(gui->suggestmenu->scrollbar);
+    guiscrollbar_draw(gui->suggestmenu->sb);
     gui_suggestmenu_draw_text();
   }
 }
 
 /* Draw the bottom bar of the gui. */
 void draw_botbar(void) {
-  draw_element_rect(gui->botbar);
+  guielement_draw(gui->botbar);
 }
 
 /* Draw the status bar for the gui. */
@@ -567,7 +507,7 @@ void draw_statusbar(void) {
       gui->statusbar->flag.unset<GUIELEMENT_HIDDEN>();
       float msgwidth = (pixbreadth(gui->uifont, statusmsg) + pixbreadth(gui->uifont, "  "));
       vertex_buffer_clear(gui->statusbuf);
-      move_resize_element(
+      guielement_move_resize(
         gui->statusbar,
         vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - gui->botbar->size.h - gui->statusbar->size.h)),
         vec2(msgwidth, FONT_HEIGHT(gui->uifont))
@@ -575,7 +515,7 @@ void draw_statusbar(void) {
       vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui->uifont, " ")), (row_baseline_pixel(0, gui->uifont) + gui->statusbar->pos.y));
       vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui->uifont, 1, &penpos);
     }
-    draw_element_rect(gui->statusbar);
+    guielement_draw(gui->statusbar);
     upload_texture_atlas(gui->uiatlas);
     render_vertex_buffer(gui->font_shader, gui->statusbuf);
   }

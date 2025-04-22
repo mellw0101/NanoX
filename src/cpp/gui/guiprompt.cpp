@@ -90,8 +90,8 @@ void gui_promptmenu_init(void) {
   gui->promptmenu = (GuiPromptMenu *)xmalloc(sizeof(*gui->promptmenu));
   gui->promptmenu->flag.refresh_needed = FALSE;
   gui->promptmenu->buffer = make_new_font_buffer();
-  gui->promptmenu->element = make_element_child(gui->root, FALSE);
-  move_resize_element(
+  gui->promptmenu->element = guielement_create(gui->root, FALSE);
+  guielement_move_resize(
     gui->promptmenu->element,
     vec2(0/* , -FONT_HEIGHT(gui->uifont) */),
     vec2(gui->width, FONT_HEIGHT(gui->uifont))

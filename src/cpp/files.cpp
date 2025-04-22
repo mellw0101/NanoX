@@ -283,9 +283,9 @@ bool has_valid_path(const char *filename) _NOTHROW {
   return validity;
 }
 
-// This does one of three things.  If the filename is "", it just creates
-// a new empty buffer.  When the filename is not empty, it reads that file
-// into a new buffer when requested, otherwise into the existing buffer.
+/* This does one of three things.  If the filename is "", it just creates
+ * a new empty buffer.  When the filename is not empty, it reads that file
+ * into a new buffer when requested, otherwise into the existing buffer. */
 bool open_buffer(const char *filename, bool new_one) {
   /* The filename after tilde expansion. */
   char *realname;

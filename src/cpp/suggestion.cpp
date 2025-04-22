@@ -240,15 +240,7 @@ static inline void gui_suggestmenu_hide(bool hide) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   ASSERT(gui->suggestmenu->element);
-  ASSERT(gui->suggestmenu->scrollbar);
-  if (hide) {
-    gui->suggestmenu->element->flag.set<GUIELEMENT_HIDDEN>();
-    gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_HIDDEN>();
-  }
-  else {
-    gui->suggestmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
-    gui->suggestmenu->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
-  }
+  guielement_set_flag_recurse(gui->suggestmenu->element, hide, GUIELEMENT_HIDDEN);
 }
 
 /* Comparison function to order all suggestions from shortest to longest string meaning the highest % of the current word has been typed. */
@@ -274,28 +266,41 @@ static char *gui_suggestmenu_copy_completion(char *const restrict text) {
   return measured_copy(text, len);
 }
 
+static void gui_suggestmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *offset) {
+  ASSERT(arg);
+  GuiSuggestMenu *sm = (__TYPE(sm))arg;
+  ASSIGN_IF_VALID(total_length, sm->element->size.h - 2);
+  ASSIGN_IF_VALID(start, 0);
+  ASSIGN_IF_VALID(total, cvec_len(sm->completions) - sm->maxrows);
+  ASSIGN_IF_VALID(visible, sm->rows);
+  ASSIGN_IF_VALID(current, sm->viewtop);
+  ASSIGN_IF_VALID(offset, 1);
+}
+
+static void gui_suggestmenu_scrollbar_moving_routine(void *arg, long index) {
+  ASSERT(arg);
+  GuiSuggestMenu *sm = (__TYPE(sm))arg;
+  sm->viewtop = index;
+}
+
 /* ----------------------------- Global function's ----------------------------- */
 
 /* Init the gui suggestmenu substructure. */
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
   gui->suggestmenu = (GuiSuggestMenu *)xmalloc(sizeof(*gui->suggestmenu));
-  gui->suggestmenu->flag.active = FALSE;
+  gui->suggestmenu->text_refresh_needed = FALSE;
+  gui->suggestmenu->pos_refresh_needed  = FALSE;
   gui->suggestmenu->completions = cvec_create_setfree(free);
   gui->suggestmenu->maxrows = 8;
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len    = 0;
-  gui->suggestmenu->element = make_element_child(gui->root);
+  gui->suggestmenu->element = guielement_create(gui->root);
   gui->suggestmenu->element->color = GUI_BLACK_COLOR;
   gui->suggestmenu->element->flag.set<GUIELEMENT_ABOVE>();
-  gui_element_set_borders(gui->suggestmenu->element, 1, vec4(vec3(0.5), 1));
-  gui->suggestmenu->scrollbar = make_element_child(gui->suggestmenu->element);
-  move_resize_element(gui->suggestmenu->scrollbar, 10, 10);
-  gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_ABOVE>();
-  gui->suggestmenu->scrollbar->color = 1;
-  gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_X_POS>();
-  gui->suggestmenu->scrollbar->relative_pos.x = gui->suggestmenu->scrollbar->size.w;
+  guielement_set_borders(gui->suggestmenu->element, 1, vec4(vec3(0.5f), 1.0f));
   gui->suggestmenu->vertbuf = make_new_font_buffer();
+  gui->suggestmenu->sb = guiscrollbar_create(gui->suggestmenu->element, gui->suggestmenu, gui_suggestmenu_scrollbar_update_routine, gui_suggestmenu_scrollbar_moving_routine);
 }
 
 /* Free the suggestmenu substructure. */
@@ -307,6 +312,7 @@ void gui_suggestmenu_free(void) {
   gui_suggestmenu_free_completions();
   cvec_free(gui->suggestmenu->completions);
   vertex_buffer_delete(gui->suggestmenu->vertbuf);
+  free(gui->suggestmenu->sb);
   free(gui->suggestmenu);
 }
 
@@ -422,6 +428,9 @@ void gui_suggestmenu_run(void) {
   gui_suggestmenu_find();
   if (cvec_len(gui->suggestmenu->completions)) {
     gui_suggestmenu_hide(FALSE);
+    guiscrollbar_refresh_needed(gui->suggestmenu->sb);
+    gui->suggestmenu->text_refresh_needed = TRUE;
+    gui->suggestmenu->pos_refresh_needed = TRUE;
     // writef("Found completions:\n");
     // for (int i=0; i<cvec_len(gui->suggestmenu->completions); ++i) {
     //   writef("  %s\n", (char *)cvec_get(gui->suggestmenu->completions, i));
@@ -436,8 +445,8 @@ void gui_suggestmenu_resize(void) {
   ASSERT(gui->suggestmenu->completions);
   vec2 pos, size;
   int len = cvec_len(gui->suggestmenu->completions);
-  /* If there are no completions available, just return. */
-  if (!len) {
+  /* If there are no completions available or we dont need to recalculate the position, just return. */
+  if (!len || !gui->suggestmenu->pos_refresh_needed) {
     return;
   }
   /* Set the number of visable rows. */
@@ -456,37 +465,10 @@ void gui_suggestmenu_resize(void) {
   size.h = ((gui->suggestmenu->rows * FONT_HEIGHT(gui->font)) + 4);
   /* Add the size of the scrollbar if there is a scrollbar. */
   if (len > gui->suggestmenu->maxrows) {
-    size.w += gui->suggestmenu->scrollbar->size.w;
+    size.w += guiscrollbar_width(gui->suggestmenu->sb);
   }
   /* Move and resize the element. */
-  move_resize_element(gui->suggestmenu->element, pos, size);
-}
-
-void gui_suggestmenu_update_scrollbar(void) {
-  float height;
-  float ypos;
-  int len = cvec_len(gui->suggestmenu->completions);
-  if (len <= gui->suggestmenu->maxrows) {
-    gui->suggestmenu->scrollbar->flag.set<GUIELEMENT_HIDDEN>();
-    return;
-  }
-  else {
-    gui->suggestmenu->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
-  }
-  calculate_scrollbar(
-    (gui->suggestmenu->element->size.h - 2),
-    0,
-    (cvec_len(gui->suggestmenu->completions) - gui->suggestmenu->maxrows),
-    gui->suggestmenu->rows,
-    gui->suggestmenu->viewtop,
-    &height,
-    &ypos
-  );
-  move_resize_element(
-    gui->suggestmenu->scrollbar,
-    vec2(gui->suggestmenu->scrollbar->pos.x, (gui->suggestmenu->element->pos.y + ypos + 1)),
-    vec2(gui->suggestmenu->scrollbar->size.w, height)
-  );
+  guielement_move_resize(gui->suggestmenu->element, pos, size);
 }
 
 void gui_suggestmenu_draw_text(void) {
@@ -496,15 +478,18 @@ void gui_suggestmenu_draw_text(void) {
   int row = 0;
   char *str;
   vec2 textpen;
-  vertex_buffer_clear(gui->suggestmenu->vertbuf);
-  while (row < gui->suggestmenu->rows) {
-    str = (char *)cvec_get(gui->suggestmenu->completions, (gui->suggestmenu->viewtop + row));
-    textpen = vec2(
-      (gui->suggestmenu->element->pos.x + 2),
-      (row_baseline_pixel(row, gui->font) + gui->suggestmenu->element->pos.y + 2)
-    );
-    vertex_buffer_add_string(gui->suggestmenu->vertbuf, str, strlen(str), NULL, gui->font, 1, &textpen);
-    ++row;
+  if (gui->suggestmenu->text_refresh_needed) {
+    vertex_buffer_clear(gui->suggestmenu->vertbuf);
+    while (row < gui->suggestmenu->rows) {
+      str = (char *)cvec_get(gui->suggestmenu->completions, (gui->suggestmenu->viewtop + row));
+      textpen = vec2(
+        (gui->suggestmenu->element->pos.x + 2),
+        (row_baseline_pixel(row, gui->font) + gui->suggestmenu->element->pos.y + 2)
+      );
+      vertex_buffer_add_string(gui->suggestmenu->vertbuf, str, strlen(str), NULL, gui->font, 1, &textpen);
+      ++row;
+    }
+    gui->suggestmenu->text_refresh_needed = FALSE;
   }
   upload_texture_atlas(gui->atlas);
   render_vertex_buffer(gui->font_shader, gui->suggestmenu->vertbuf);
@@ -529,6 +514,7 @@ void gui_suggestmenu_selected_up(void) {
       }
       --gui->suggestmenu->selected;
     }
+    guiscrollbar_refresh_needed(gui->suggestmenu->sb);
   }
 }
 
@@ -549,6 +535,7 @@ void gui_suggestmenu_selected_down(void) {
       }
       ++gui->suggestmenu->selected;
     }
+    guiscrollbar_refresh_needed(gui->suggestmenu->sb);
   }
 }
 

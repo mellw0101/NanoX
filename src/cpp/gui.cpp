@@ -139,8 +139,8 @@ static void setup_rect_shader(void) {
 /* Setup the bottom bar for the gui. */
 static void setup_botbar(void) {
   gui->botbuf = make_new_font_buffer();
-  gui->botbar = make_element_child(gui->root, FALSE);
-  move_resize_element(
+  gui->botbar = guielement_create(gui->root, FALSE);
+  guielement_move_resize(
     gui->botbar,
     vec2(0, (gui->height - FONT_HEIGHT(gui->font))),
     vec2(gui->width, FONT_HEIGHT(gui->font))
@@ -155,7 +155,7 @@ static void setup_botbar(void) {
 /* Set up the bottom bar. */
 static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
-  gui->statusbar = make_element(
+  gui->statusbar = guielement_create(
     vec2(0, gui->height),
     vec2(gui->width, FONT_HEIGHT(gui->uifont)),
     0.0f,
@@ -230,7 +230,7 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   nevhandler_start(gui->handler, TRUE);
   gui->font_size   = font_size;
   gui->uifont_size = uifont_size;
-  gui->root = make_element(0, vec2(gui->height, gui->width), 0, 0, FALSE);
+  gui->root = guielement_create(0, vec2(gui->height, gui->width), 0, 0, FALSE);
   /* Init the gui suggestmenu substructure. */
   gui_suggestmenu_create();
 }
@@ -249,8 +249,8 @@ static void delete_guistruct(void) {
     glDeleteProgram(gui->rect_shader);
   }
   /* Delete all elements used by 'gui'. */
-  delete_element(gui->root);
-  delete_element(gui->statusbar);
+  guielement_free(gui->root);
+  guielement_free(gui->statusbar);
   /* Free the path of the currently loaded font. */
   free(gui->font_path);
   /* Free the main font and the uifont. */

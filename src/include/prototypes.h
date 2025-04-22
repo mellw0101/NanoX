@@ -771,7 +771,7 @@ void gui_suggestmenu_load_str(void);
 void gui_suggestmenu_find(void);
 void gui_suggestmenu_run(void);
 void gui_suggestmenu_resize(void);
-void gui_suggestmenu_update_scrollbar(void);
+// void gui_suggestmenu_update_scrollbar(void);
 void gui_suggestmenu_draw_text(void);
 void gui_suggestmenu_selected_up(void);
 void gui_suggestmenu_selected_down(void);
@@ -811,7 +811,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   long  index_from_mouse_x(const char *string, Uint len, texture_font_t *font, float start_x);
   long  index_from_mouse_x(const char *string, texture_font_t *font, float start_x);
   linestruct *line_from_mouse_y(texture_font_t *font, float y);
-  linestruct *line_and_index_from_mousepos(texture_font_t *font, Ulong *index);
+  linestruct *line_and_index_from_mousepos(texture_font_t *const font, Ulong *const index) _RETURNS_NONNULL _NONNULL(1, 2);
   float get_line_number_pixel_offset(linestruct *line, texture_font_t *font);
   float line_pixel_x_pos(linestruct *line, Ulong index, texture_font_t *font);
   float cursor_pixel_x_pos(texture_font_t *font);
@@ -844,7 +844,6 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui/guiwinio.cpp ---------------------------------------------------------- */
   
   
-  void draw_marked_part(linestruct *line, const char *converted, Ulong from_col, texture_font_t *font);
   void draw_rect(vec2 pos, vec2 size, vec4 color);
   void render_vertex_buffer(Uint shader, vertex_buffer_t *buf);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
@@ -876,31 +875,33 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void gui_open_new_empty_buffer(void);
   
   /* gui/guielement.cpp */
-  guielement *make_element(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
-  guielement *make_element(bool in_gridmap = TRUE) _NOTHROW;
-  guielement *make_element_child(guielement *parent, bool in_gridmap = TRUE);
-  void delete_element(guielement *element);
-  void set_element_lable(guielement *element, const char *string) _NOTHROW;
-  void delete_guielement_children(guielement *element);
-  guielement *element_from_mousepos(void);
-  void resize_element(guielement *e, vec2 size);
-  void move_element(guielement *e, vec2 pos);
-  void move_element_y_clamp(guielement *const e, float ypos, float min, float max);
-  void move_resize_element(guielement *e, vec2 pos, vec2 size);
-  void delete_element_borders(guielement *e);
-  void gui_element_set_borders(guielement *e, vec4 size, vec4 color);
-  void draw_element_rect(guielement *const e);
-  void set_element_raw_data(guielement *element, void *data) _NOTHROW;
-  void set_element_file_data(guielement *element, openfilestruct *file) _NOTHROW;
-  void set_element_editor_data(guielement *element, guieditor *editor) _NOTHROW;
-  bool guielement_has_file_data(guielement *element) _NOTHROW;
-  bool guielement_has_editor_data(guielement *element) _NOTHROW;
+  guielement *guielement_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
+  guielement *guielement_create(bool in_gridmap = TRUE) _NOTHROW;
+  guielement *guielement_create(guielement *const parent, bool in_gridmap = TRUE) _NOTHROW;
+  void guielement_free(guielement *const element);
+  void guielement_set_lable(guielement *const element, const char *string) _NOTHROW;
+  void guielement_delete_children(guielement *const element);
+  guielement *guielement_from_mousepos(void);
+  void guielement_resize(guielement *const e, vec2 size);
+  void guielement_move(guielement *const e, vec2 pos);
+  void guielement_move_y_clamp(guielement *const e, float ypos, float min, float max);
+  void guielement_move_resize(guielement *const e, vec2 pos, vec2 size);
+  void guielement_delete_borders(guielement *const e);
+  void guielement_set_borders(guielement *const e, vec4 size, vec4 color);
+  void guielement_draw(guielement *const e);
+  void guielement_set_raw_data(guielement *const element, void *const data) _NOTHROW;
+  void guielement_set_file_data(guielement *const element, openfilestruct *const file) _NOTHROW;
+  void guielement_set_editor_data(guielement *const element, guieditor *const editor) _NOTHROW;
+  void guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHROW;
+  bool guielement_has_file_data(guielement *const element) _NOTHROW;
+  bool guielement_has_editor_data(guielement *const element) _NOTHROW;
+  bool guielement_has_sb_data(guielement *const e) _NOTHROW;
   void guielement_set_flag_recurse(guielement *const element, bool set, Uint flag);
 
   /* gui/guieditor.cpp */
   void refresh_editor_topbar(guieditor *editor);
   void update_editor_topbar(guieditor *editor);
-  void guieditor_update_scrollbar(guieditor *editor);
+  // void guieditor_update_scrollbar(guieditor *editor);
   void make_new_editor(bool new_buffer);
   void delete_editor(guieditor *editor);
   void close_editor(void);
@@ -912,8 +913,8 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   guieditor *get_element_editor(guielement *e);
   guieditor *get_file_editor(openfilestruct *file);
   void guieditor_calculate_rows(guieditor *const editor);
-  long guieditor_lineno_from_scrollbar_pos(guieditor *const editor);
-  void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor);
+  // long guieditor_lineno_from_scrollbar_pos(guieditor *const editor);
+  // void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor);
   void guieditor_resize(guieditor *const editor);
 
   /* gui/guigrid.cpp */
@@ -976,7 +977,7 @@ float pixbreadth(texture_font_t *const font, const char *const restrict string);
 /* ---------------------------------------------------------- gui/cursor/cursor.cpp ---------------------------------------------------------- */
 
 
-linestruct *line_from_cursor_pos(guieditor *const editor);
+linestruct *line_from_cursor_pos(guieditor *const editor) _RETURNS_NONNULL;
 float *pixpositions(const char *const restrict string, float normx, Ulong *outlen, texture_font_t *const font);
 Ulong closest_index(float *array, Ulong len, float rawx, texture_font_t *const font);
 Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float normx, texture_font_t *const font);
@@ -985,8 +986,15 @@ Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float n
 /* ---------------------------------------------------------- gui/scollbar.cpp ---------------------------------------------------------- */
 
 
-void calculate_scrollbar(float total_pixel_length, Uint start_entry, Uint total_entries, Uint visable_entries, Uint current_entry, float *height, float *relative_y_position);
-long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, float ypos);
+void          calculate_scrollbar(float total_pixel_length, Uint start_entry, Uint total_entries, Uint visable_entries, Uint current_entry, float *height, float *relative_y_position);
+long          index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, float ypos) __THROW _NODISCARD;
+GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2, 3);
+void          guiscrollbar_move(GuiScrollbar *const sb, float change) _NONNULL(1);
+void          guiscrollbar_draw(GuiScrollbar *const sb) _NONNULL(1);
+void          guiscrollbar_refresh_needed(GuiScrollbar *const sb) _NONNULL(1);
+bool          guiscrollbar_element_is_base(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
+bool          guiscrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
+float         guiscrollbar_width(GuiScrollbar *const sb);
 
 
 #include <Mlib/def.h>

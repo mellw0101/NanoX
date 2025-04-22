@@ -58,7 +58,7 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
     editwincols = ((openeditor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
   }
   refresh_needed = TRUE;
-  resize_element(gui->root, vec2(gui->width, gui->height));
+  guielement_resize(gui->root, vec2(gui->width, gui->height));
   /* Calculate the rows for all editors. */
   ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
     guieditor_resize(editor);
@@ -627,7 +627,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             case 0: {
               function = do_down;
               if (openeditor->openfile->cursor_row == (openeditor->rows - 1)) {
-                openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+                // openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+                guiscrollbar_refresh_needed(openeditor->sb);
               }
             }
           }
@@ -811,7 +812,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
     /* When we have moved or changed something, tell the openeditor it needs to update the scrollbar. */
     if (wanted_to_move(function) || changes_something(function) || function == do_undo || function == do_redo) {
-      openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+      guiscrollbar_refresh_needed(openeditor->sb);
     }
     /* If we are already showing suggestions, then update them. */
     if (cvec_len(gui->suggestmenu->completions)) {
@@ -991,7 +992,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           typing_x = index;
         }
       }
-      element = element_from_mousepos();
+      element = guielement_from_mousepos();
       if (element) {
         /* If this click was not related to the suggestmenu, clear the suggestmenu. */
         if (!is_ancestor(element, gui->suggestmenu->element)) {
@@ -1007,38 +1008,36 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           /* Get the line and index from the mouse position. */
           Ulong index;
           linestruct *line = line_and_index_from_mousepos(gui->font, &index);
-          if (line) {
-            openfile->current     = line;
-            openfile->mark        = line;
-            openfile->current_x   = index;
-            openfile->mark_x      = index;
-            openfile->softmark    = TRUE;
-            openfile->placewewant = xplustabs();
-            /* If this was a double click then select the current word, if any. */
-            if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
-              Ulong st, end;
-              st  = get_prev_cursor_word_start_index(TRUE);
-              end = get_current_cursor_word_end_index(TRUE);
-              /* If the double click was inside of a word. */
-              if (st != openfile->current_x && end != openfile->current_x) {
-                openfile->mark_x    = st;
-                openfile->current_x = end;
-              }
-              /* The double click was done at the end of the word.  So we select that word. */
-              else if (st != openfile->current_x && end == openfile->current_x) {
-                openfile->mark_x = st;
-              }
-              /* The double click was done at the begining of the word.  So we select that word. */
-              else if (st == openfile->current_x && end != openfile->current_x) {
-                openfile->mark_x    = st;
-                openfile->current_x = end;
-              }
+          openfile->current     = line;
+          openfile->mark        = line;
+          openfile->current_x   = index;
+          openfile->mark_x      = index;
+          openfile->softmark    = TRUE;
+          openfile->placewewant = xplustabs();
+          /* If this was a double click then select the current word, if any. */
+          if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
+            Ulong st, end;
+            st  = get_prev_cursor_word_start_index(TRUE);
+            end = get_current_cursor_word_end_index(TRUE);
+            /* If the double click was inside of a word. */
+            if (st != openfile->current_x && end != openfile->current_x) {
+              openfile->mark_x    = st;
+              openfile->current_x = end;
             }
-            /* Otherwise, if this was a tripple click then select the whole line. */
-            else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
-              openfile->mark_x = 0;
-              openfile->current_x = strlen(openfile->current->data);
+            /* The double click was done at the end of the word.  So we select that word. */
+            else if (st != openfile->current_x && end == openfile->current_x) {
+              openfile->mark_x = st;
             }
+            /* The double click was done at the begining of the word.  So we select that word. */
+            else if (st == openfile->current_x && end != openfile->current_x) {
+              openfile->mark_x    = st;
+              openfile->current_x = end;
+            }
+          }
+          /* Otherwise, if this was a tripple click then select the whole line. */
+          else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
+            openfile->mark_x = 0;
+            openfile->current_x = strlen(openfile->current->data);
           }
         }
         /* Otherwise, if the element is part of the topbar of an editor. */
@@ -1063,8 +1062,12 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
       /* If the clicked element was the scrollbar of any editor, then set the flag so that the position
        * of the scrollbar gets corrected to exactly a step, as it might have been moved to inbetween 2 steps. */
-      if (guielement_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->scrollbar) {
-        gui->clicked->data.editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+      // if (guielement_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->scrollbar) {
+      //   gui->clicked->data.editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+      // }
+      else if (guielement_has_sb_data(gui->clicked)) {
+        // gui->clicked->data.sb->refresh_needed = TRUE;
+        guiscrollbar_refresh_needed(gui->clicked->data.sb);
       }
       gui->clicked = NULL;
     }
@@ -1125,81 +1128,83 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     /* If the clicked element is a part of an editor. */
     else if (guielement_has_editor_data(gui->clicked)) {
       /* When the clicked element is the scrollbar of any editor, scroll that editor.  But only when the mouse y position has changed. */
-      if (gui->clicked == gui->clicked->data.editor->scrollbar && mousepos.y != last_mousepos.y) {
-        /* Move the scrollbar only in the y axis. */
-        move_element_y_clamp(
-          gui->clicked,
-          (gui->clicked->pos.y + (mousepos.y - last_mousepos.y)),
-          gui->clicked->data.editor->text->pos.y,
-          (gui->clicked->data.editor->text->pos.y + gui->clicked->data.editor->text->size.h - gui->clicked->size.h)
-        );
-        /* Set the new edittop line based on the new scrollbar position. */
-        guieditor_set_edittop_from_scrollbar_pos(gui->clicked->data.editor);
-      }
+      // if (gui->clicked == gui->clicked->data.editor->scrollbar && mousepos.y != last_mousepos.y) {
+      //   /* Move the scrollbar only in the y axis. */
+      //   move_element_y_clamp(
+      //     gui->clicked,
+      //     (gui->clicked->pos.y + (mousepos.y - last_mousepos.y)),
+      //     gui->clicked->data.editor->text->pos.y,
+      //     (gui->clicked->data.editor->text->pos.y + gui->clicked->data.editor->text->size.h - gui->clicked->size.h)
+      //   );
+      //   /* Set the new edittop line based on the new scrollbar position. */
+      //   guieditor_set_edittop_from_scrollbar_pos(gui->clicked->data.editor);
+      // }
       /* Otherwise if the clicked element is a editor's text element. */
-      else if (gui->clicked == gui->clicked->data.editor->text) {
+      if (gui->clicked == gui->clicked->data.editor->text) {
         Ulong index;
         linestruct *line = line_and_index_from_mousepos(gui->font, &index);
-        if (line) {
-          openfile->current   = line;
-          openfile->current_x = index;
-          /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
-          if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
-            Ulong st, end;
-            st  = 0;
-            end = strlen(openfile->mark->data);
-            /* If the current cursor line is the same as mark, mark the entire line no matter the cursor pos inside it. */
-            if (openfile->current == openfile->mark) {
+        openfile->current   = line;
+        openfile->current_x = index;
+        /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
+        if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
+          Ulong st, end;
+          st  = 0;
+          end = strlen(openfile->mark->data);
+          /* If the current cursor line is the same as mark, mark the entire line no matter the cursor pos inside it. */
+          if (openfile->current == openfile->mark) {
+            openfile->mark_x    = st;
+            openfile->current_x = end;
+          }
+          /* If the current line is above the line where the mark was placed, set the mark index at the end of the line. */
+          if (openfile->current->lineno < openfile->mark->lineno) {
+            openfile->mark_x = end;
+          }
+          /* Otherwise, place it at the start. */
+          else {
+            openfile->mark_x = st;
+          }
+        }
+        /* If the left press was a double press. */
+        else if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
+          /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
+          Ulong st, end;
+          st  = get_prev_word_start_index(openfile->mark->data, openfile->mark_x, TRUE);
+          end = get_current_word_end_index(openfile->mark->data, openfile->mark_x, TRUE);
+          /* If the current line is the same as the mark line. */
+          if (openfile->current == openfile->mark) {
+            /* When the current cursor pos is inside the the word, just mark the entire word. */
+            if (openfile->current_x >= st && openfile->current_x <= end) {
               openfile->mark_x    = st;
               openfile->current_x = end;
             }
-            /* If the current line is above the line where the mark was placed, set the mark index at the end of the line. */
-            if (openfile->current->lineno < openfile->mark->lineno) {
+            /* Or, when the cursor if before the word, set the mark at the end of the word. */
+            else if (openfile->current_x < st) {
               openfile->mark_x = end;
             }
-            /* Otherwise, place it at the start. */
-            else {
+            /* And when the cursor is after the word, place the mark at the start. */
+            else if (openfile->current_x > end) {
               openfile->mark_x = st;
             }
           }
-          /* If the left press was a double press. */
-          else if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
-            /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
-            Ulong st, end;
-            st  = get_prev_word_start_index(openfile->mark->data, openfile->mark_x, TRUE);
-            end = get_current_word_end_index(openfile->mark->data, openfile->mark_x, TRUE);
-            /* If the current line is the same as the mark line. */
-            if (openfile->current == openfile->mark) {
-              /* When the current cursor pos is inside the the word, just mark the entire word. */
-              if (openfile->current_x >= st && openfile->current_x <= end) {
-                openfile->mark_x    = st;
-                openfile->current_x = end;
-              }
-              /* Or, when the cursor if before the word, set the mark at the end of the word. */
-              else if (openfile->current_x < st) {
-                openfile->mark_x = end;
-              }
-              /* And when the cursor is after the word, place the mark at the start. */
-              else if (openfile->current_x > end) {
-                openfile->mark_x = st;
-              }
-            }
-            /* Otherwise, when the cursor line is above the mark, place the mark at the end of the word. */
-            else if (openfile->current->lineno < openfile->mark->lineno) {
-              openfile->mark_x = end;
-            }
-            /* And when the cursor line is below the mark line, place the mark at the start of the word. */
-            else {
-              openfile->mark_x = st;
-            }
+          /* Otherwise, when the cursor line is above the mark, place the mark at the end of the word. */
+          else if (openfile->current->lineno < openfile->mark->lineno) {
+            openfile->mark_x = end;
+          }
+          /* And when the cursor line is below the mark line, place the mark at the start of the word. */
+          else {
+            openfile->mark_x = st;
           }
           openfile->placewewant = xplustabs();
         }
       }
     }
+    /* The clicked element is a part of some scrollbar. */
+    else if (guielement_has_sb_data(gui->clicked) && guiscrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && (mousepos.y != last_mousepos.y)) {
+      guiscrollbar_move(gui->clicked->data.sb, (mousepos.y - last_mousepos.y));
+    }
   }
   /* Get the element that the mouse is on. */
-  element = element_from_mousepos();
+  element = guielement_from_mousepos();
   if (element) {
     /* If the element currently hovered on has a diffrent cursor then the active one, change it. */
     if (element->cursor_type != gui->current_cursor_type) {
@@ -1217,6 +1222,10 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       }
       entered_element = element;
     }
+  }
+  else if (gui->current_cursor_type != GLFW_ARROW_CURSOR) {
+    set_cursor_type(window, GLFW_ARROW_CURSOR);
+    gui->current_cursor_type = GLFW_ARROW_CURSOR;
   }
   /* Save the current mouse position. */
   last_mousepos = mousepos;
@@ -1250,20 +1259,19 @@ void window_enter_callback(GLFWwindow *window, int entered) {
 
 /* Scroll callback. */
 void scroll_callback(GLFWwindow *window, double x, double y) {
-  guielement *element = element_from_mousepos();
+  guielement *element = guielement_from_mousepos();
+  Ulong index;
+  linestruct *line;
   if (element) {
     /* Check if the element belongs to a editor. */
-    if (element->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>()) {
+    if (guielement_has_editor_data(element)) {
       /* If the scroll happend where the text is then adjust that editor, even if not the currently focused one. */
       if (element == element->data.editor->text) {
         /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
         if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
-          Ulong index;
-          linestruct *line = line_and_index_from_mousepos(gui->font, &index);
-          if (line) {
-            element->data.editor->openfile->current   = line;
-            element->data.editor->openfile->current_x = index;
-          }
+          line = line_and_index_from_mousepos(gui->font, &index);
+          element->data.editor->openfile->current   = line;
+          element->data.editor->openfile->current_x = index;
         }
         /* Up and down scroll. */
         edit_scroll((y > 0.0) ? BACKWARD : FORWARD);
@@ -1276,10 +1284,10 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
         NETLOG("scroll left.\n");
       }
       refresh_needed = TRUE;
-      element->data.editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+      guiscrollbar_refresh_needed(element->data.editor->sb);
     }
     /* Otherwise check if this is a child to a element that belongs to a editor. */
-    else if (element->parent && element->parent->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>()) {
+    else if (guielement_has_editor_data(element->parent)) {
       /* Check if the element is a child of the editors topbar. */
       if (element->parent == element->parent->data.editor->topbar) {
         NETLOG("Is topbar ancestor.\n");

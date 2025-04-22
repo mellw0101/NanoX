@@ -12,17 +12,32 @@
 #include "../../include/prototypes.h"
 
 
+/* The editor's routine to fetch the data the scrollbar need's. */
+static void guieditor_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *offset) {
+  ASSERT(arg);
+  guieditor *editor = (guieditor *)arg;
+  ASSIGN_IF_VALID(total_length, editor->text->size.h);
+  ASSIGN_IF_VALID(start, editor->openfile->filetop->lineno);
+  ASSIGN_IF_VALID(total, editor->openfile->filebot->lineno);
+  ASSIGN_IF_VALID(visible, editor->rows);
+  ASSIGN_IF_VALID(current, editor->openfile->edittop->lineno);
+  ASSIGN_IF_VALID(offset, 0);
+}
+
+/* The editor's routine to respond to a calculated index based on the scrollbars's current position. */
+static void guieditor_scrollbar_moving_routine(void *arg, long index) {
+  ASSERT(arg);
+  guieditor *editor = (guieditor *)arg;
+  ASSERT(editor->openfile);
+  ASSERT(editor->openfile->edittop);
+  editor->openfile->edittop = gui_line_from_number(editor, index);
+}
+
 /* Create the editor scrollbar. */
 static void guieditor_scrollbar_create(guieditor *editor) {
+  ASSERT(editor);
   ASSERT(editor->text);
-  editor->scrollbar = make_element_child(editor->text);
-  set_element_editor_data(editor->scrollbar, editor);
-  editor->scrollbar->flag.set<GUIELEMENT_ABOVE>();
-  move_resize_element(editor->scrollbar, 10, 10);
-  editor->scrollbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_X_POS>();
-  editor->scrollbar->relative_pos.x = editor->scrollbar->size.w;
-  editor->scrollbar->flag.set<GUIELEMENT_RELATIVE_Y_POS>();
-  editor->scrollbar->color = GUI_WHITE_COLOR;
+  editor->sb = guiscrollbar_create(editor->text, editor, guieditor_scrollbar_update_routine, guieditor_scrollbar_moving_routine);
 }
 
 /* Create the editor topbar. */
@@ -31,9 +46,9 @@ static void guieditor_topbar_create(guieditor *editor) {
   ASSERT(gui);
   ASSERT(gui->uifont);
   /* Create the topbar element as a child to the main element. */
-  editor->topbar = make_element_child(editor->main, FALSE);
+  editor->topbar = guielement_create(editor->main, FALSE);
   editor->topbar->color = EDIT_BACKGROUND_COLOR;
-  move_resize_element(
+  guielement_move_resize(
     editor->topbar,
     vec2(editor->main->pos.x, editor->main->pos.y),
     vec2(editor->main->size.w, FONT_HEIGHT(gui->uifont))
@@ -56,18 +71,18 @@ void refresh_editor_topbar(guieditor *editor) {
   vec2 pos = editor->topbar->pos;
   guielement *button;
   /* First remove all existing children of the topbar. */
-  delete_guielement_children(editor->topbar);
+  guielement_delete_children(editor->topbar);
   /* If there are any open files, create buttons for them. */
   ITER_OVER_ALL_OPENFILES(editor->startfile, file,
-    button = make_element_child(editor->topbar);
+    button = guielement_create(editor->topbar);
     button->cursor_type = GLFW_HAND_CURSOR;
     if (*file->filename) {
-      move_resize_element(button, pos, vec2((pixbreadth(gui->uifont, file->filename) + pixbreadth(gui->uifont, "  ")), editor->topbar->size.h));
-      set_element_lable(button, file->filename);
+      guielement_move_resize(button, pos, vec2((pixbreadth(gui->uifont, file->filename) + pixbreadth(gui->uifont, "  ")), editor->topbar->size.h));
+      guielement_set_lable(button, file->filename);
     }
     else {
-      move_resize_element(button, pos, vec2(pixbreadth(gui->uifont, " Nameless "), editor->topbar->size.h));
-      set_element_lable(button, "Nameless");
+      guielement_move_resize(button, pos, vec2(pixbreadth(gui->uifont, " Nameless "), editor->topbar->size.h));
+      guielement_set_lable(button, "Nameless");
     }
     /* Set a diffrent color on the button that holds the editor openfile. */
     if (file == editor->openfile) {
@@ -83,22 +98,22 @@ void refresh_editor_topbar(guieditor *editor) {
     button->relative_pos = (button->pos - editor->topbar->pos);
     /* When there is only a single file open make all borders equal. */
     if (file == file->next) {
-      gui_element_set_borders(button, 1, /* GUI_WHITE_COLOR */ vec4(vec3(0.5), 1));
+      guielement_set_borders(button, 1, /* GUI_WHITE_COLOR */ vec4(vec3(0.5), 1));
     }
     /* Otherwise, when this is the first file, make the right border half size. */
     else if (file == editor->startfile) {
-      gui_element_set_borders(button, vec4(1, 0, 1, 1), vec4(vec3(0.5), 1));
+      guielement_set_borders(button, vec4(1, 0, 1, 1), vec4(vec3(0.5), 1));
     }
     /* When this is the last file. */
     else if (file->next == editor->startfile) {
-      gui_element_set_borders(button, vec4(1, 1, 1, 1), vec4(vec3(0.5), 1));
+      guielement_set_borders(button, vec4(1, 1, 1, 1), vec4(vec3(0.5), 1));
     }
     /* Else, if this is a file in the middle or the last file, make both the left and right border half size. */
     else {
-      gui_element_set_borders(button, vec4(1, 0, 1, 1), vec4(vec3(0.5), 1));
+      guielement_set_borders(button, vec4(1, 0, 1, 1), vec4(vec3(0.5), 1));
     }
     pos.x += button->size.w;
-    set_element_file_data(button, file);
+    guielement_set_file_data(button, file);
   );
 }
 
@@ -119,32 +134,6 @@ void update_editor_topbar(guieditor *editor) {
       }
     }
   }
-}
-
-/* Update the `scroll-bar's` position and height.  */
-void guieditor_update_scrollbar(guieditor *editor) {
-  ASSERT(editor);
-  ASSERT(editor->openfile->edittop);
-  ASSERT(editor->openfile->filebot);
-  ASSERT(editor->text);
-  ASSERT(editor->scrollbar);
-  float height, ypos;
-  calculate_scrollbar(editor->text->size.h, editor->openfile->filetop->lineno, editor->openfile->filebot->lineno, editor->rows, editor->openfile->edittop->lineno, &height, &ypos);
-  editor->scrollbar->relative_pos.y = ypos;
-  /* If the height of the scrollbar is the entire size of the text element, then hide the scrollbar and return. */
-  if (height == editor->text->size.h) {
-    editor->scrollbar->flag.set<GUIELEMENT_HIDDEN>();
-    return;
-  }
-  /* Otherwise, show the scrollbar. */
-  else {
-    editor->scrollbar->flag.unset<GUIELEMENT_HIDDEN>();
-  }
-  move_resize_element(
-    editor->scrollbar,
-    vec2(editor->scrollbar->pos.x, (editor->text->pos.y + ypos)),
-    vec2(editor->scrollbar->size.w, height)
-  );
 }
 
 /* Create a new editor. */
@@ -184,7 +173,7 @@ void make_new_editor(bool new_buffer) {
   openeditor->pen      = 0;
   openeditor->rows     = 0;
   /* Create the main editor element. */
-  openeditor->main = make_element(
+  openeditor->main = guielement_create(
     0,
     vec2(gui->width, (gui->height - gui->botbar->size.h)),
     0,
@@ -194,9 +183,9 @@ void make_new_editor(bool new_buffer) {
   /* Create the topbar element for the editor. */
   guieditor_topbar_create(openeditor);
   /* Create the gutter element as a child to the main element. */
-  openeditor->gutter = make_element_child(openeditor->main);
+  openeditor->gutter = guielement_create(openeditor->main);
   openeditor->gutter->color = EDIT_BACKGROUND_COLOR;
-  move_resize_element(
+  guielement_move_resize(
     openeditor->gutter,
     vec2(0.0f, (openeditor->main->pos.y + openeditor->topbar->size.h)),
     vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui->font)/* FONT_WIDTH(gui->font) * margin + 1) */, (openeditor->main->size.h - openeditor->topbar->size.h))
@@ -208,9 +197,9 @@ void make_new_editor(bool new_buffer) {
   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
   openeditor->gutter->relative_size = 0;
   /* Create the text element as a child to the main element. */
-  openeditor->text = make_element_child(openeditor->main);
+  openeditor->text = guielement_create(openeditor->main);
   openeditor->text->color = EDIT_BACKGROUND_COLOR;
-  move_resize_element(
+  guielement_move_resize(
     openeditor->text,
     vec2((openeditor->main->pos.x + openeditor->gutter->size.w), (openeditor->main->pos.y + openeditor->topbar->size.h)),
     vec2((openeditor->main->size.w - openeditor->gutter->size.w), (openeditor->main->size.h - openeditor->topbar->size.h))
@@ -224,14 +213,13 @@ void make_new_editor(bool new_buffer) {
   openeditor->text->relative_size = 0;
   openeditor->text->cursor_type = GLFW_IBEAM_CURSOR;
   /* Set the editor data ptr of all elements as this editor. */
-  set_element_editor_data(openeditor->main, openeditor);
-  set_element_editor_data(openeditor->topbar, openeditor);
-  set_element_editor_data(openeditor->gutter, openeditor);
-  set_element_editor_data(openeditor->text, openeditor);
+  guielement_set_editor_data(openeditor->main, openeditor);
+  guielement_set_editor_data(openeditor->topbar, openeditor);
+  guielement_set_editor_data(openeditor->gutter, openeditor);
+  guielement_set_editor_data(openeditor->text, openeditor);
   openeditor->flag = bit_flag_t<GUIEDITOR_FLAGSIZE>();
   openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
   guieditor_scrollbar_create(openeditor);
-  openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
 }
 
 /* Delete the data of a editor. */
@@ -241,8 +229,9 @@ void delete_editor(guieditor *editor) {
     vertex_buffer_delete(editor->buffer);
     editor->buffer = NULL;
   }
-  delete_element(editor->gutter);
-  delete_element(editor->text);
+  guielement_free(editor->gutter);
+  guielement_free(editor->text);
+  free(editor->sb);
   free(editor);
 }
 
@@ -284,7 +273,7 @@ void free_editor_buffers(guieditor *editor) {
 }
 
 void hide_editor(guieditor *editor, bool hide) {
-  // ASSERT_WHOLE_CIRCULAR_LIST(guieditor *, editor);
+  ASSERT(editor);
   if (hide) {
     editor->flag.set<GUIEDITOR_HIDDEN>();
   }
@@ -376,31 +365,6 @@ void guieditor_calculate_rows(guieditor *const editor) {
   editor->rows = row;
 }
 
-/* Return the edittop line number based on the current position of the editor's scrollbar. */
-long guieditor_lineno_from_scrollbar_pos(guieditor *const editor) {
-  ASSERT(editor);
-  ASSERT(editor->openfile);
-  ASSERT(editor->openfile->filetop);
-  ASSERT(editor->openfile->filebot);
-  ASSERT(editor->text);
-  ASSERT(editor->scrollbar);
-  return index_from_scrollbar_pos(
-    editor->text->size.h,
-    editor->openfile->filetop->lineno,
-    editor->openfile->filebot->lineno,
-    editor->rows,
-    (editor->scrollbar->pos.y - editor->text->pos.y)
-  );
-}
-
-/* Set the editor's currently openfile's edittop based on the current position of the scrollbar. */
-void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor) {
-  ASSERT(editor);
-  ASSERT(editor->openfile);
-  ASSERT(editor->openfile->edittop);
-  editor->openfile->edittop = gui_line_from_number(editor, guieditor_lineno_from_scrollbar_pos(editor));
-}
-
 /* Determen the size of the gutter based on the total size of the last line number. */
 static void guieditor_set_gutter_width(guieditor *const editor) {
   ASSERT(editor);
@@ -422,7 +386,7 @@ void guieditor_resize(guieditor *const editor) {
     editor->text->relative_pos.x = editor->gutter->size.w;
     editor->gutter->flag.unset<GUIELEMENT_HIDDEN>();
   }
-  move_resize_element(editor->main, 0, vec2(gui->width, (gui->height - gui->botbar->size.h)));
+  guielement_move_resize(editor->main, 0, vec2(gui->width, (gui->height - gui->botbar->size.h)));
   guieditor_calculate_rows(editor);
-  editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
+  guiscrollbar_refresh_needed(editor->sb);
 }
