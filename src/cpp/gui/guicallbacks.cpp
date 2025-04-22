@@ -833,7 +833,12 @@ void char_callback(GLFWwindow *window, Uint ch) {
     input = (char)ch;
     if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
       if (is_char_one_of(&input, 0, "Yy")) {
-        glfwSetWindowShouldClose(window, TRUE);
+        if (gui_close_and_go()) {
+          glfwSetWindowShouldClose(window, TRUE);
+        }
+        else {
+          gui_leave_prompt_mode();
+        }
       }
       else if (is_char_one_of(&input, 0, "Nn")) {
         gui_leave_prompt_mode();

@@ -281,7 +281,7 @@ void guielement_draw(guielement *const e) {
   }
 }
 
-/* Set the raw data of an element.  This should be used as apposed to directly setting the raw ptr. */
+/* Set the union data ptr for `e` as a `void *`.  This should be used as apposed to directly setting the data ptr. */
 void guielement_set_raw_data(guielement *const e, void *const data) _NOTHROW {
   ASSERT(e);
   ASSERT(data);
@@ -292,7 +292,7 @@ void guielement_set_raw_data(guielement *const e, void *const data) _NOTHROW {
   e->data.raw = data;
 }
 
-/* Set the file data for `element`.  This should be used as apposed to directly setting the file ptr. */
+/* Set the union data ptr for `e` as a `openfilestruct *`.  This should be used as apposed to directly setting the data ptr. */
 void guielement_set_file_data(guielement *const e, openfilestruct *const file) _NOTHROW {
   ASSERT(e);
   ASSERT(file);
@@ -303,7 +303,7 @@ void guielement_set_file_data(guielement *const e, openfilestruct *const file) _
   e->data.file = file;
 }
 
-/* Set the editor data for `element`.  This should be used as apposed to directly setting the editor ptr. */
+/* Set the union data ptr for `e` as a `guieditor *`.  This should be used as apposed to directly setting the data ptr. */
 void guielement_set_editor_data(guielement *const e, guieditor *const editor) _NOTHROW {
   ASSERT(e);
   ASSERT(editor);
@@ -314,6 +314,7 @@ void guielement_set_editor_data(guielement *const e, guieditor *const editor) _N
   e->data.editor = editor;
 }
 
+/* Set the union data ptr for `e` as a `GuiScrollbar *`.  This should be used as apposed to directly setting the data ptr. */
 void guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHROW {
   ASSERT(e);
   ASSERT(sb);
@@ -324,16 +325,22 @@ void guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHRO
   e->data.sb = sb;
 }
 
-/* Returns `TRUE` when `element` has editor data. */
+/* Return's `TRUE` when `e` has `void *` data. */
+bool guielement_has_raw_data(guielement *const e) _NOTHROW {
+  return (e && e->flag.is_set<GUIELEMENT_HAS_RAW_DATA>());
+}
+
+/* Return's `TRUE` when `e` has `openfilestruct *` data. */
 bool guielement_has_file_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_FILE_DATA>());
 }
 
-/* Returns `TRUE` when `element` has editor data. */
+/* Return's `TRUE` when `e` has `guieditor *` data. */
 bool guielement_has_editor_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>());
 }
 
+/* Return's `TRUE` when `e` has `GuiScrollbar *` data. */
 bool guielement_has_sb_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_SB_DATA>());
 }

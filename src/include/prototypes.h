@@ -893,6 +893,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void guielement_set_file_data(guielement *const element, openfilestruct *const file) _NOTHROW;
   void guielement_set_editor_data(guielement *const element, guieditor *const editor) _NOTHROW;
   void guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHROW;
+  bool guielement_has_raw_data(guielement *const e) _NOTHROW;
   bool guielement_has_file_data(guielement *const element) _NOTHROW;
   bool guielement_has_editor_data(guielement *const element) _NOTHROW;
   bool guielement_has_sb_data(guielement *const e) _NOTHROW;
