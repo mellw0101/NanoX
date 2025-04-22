@@ -12,9 +12,10 @@
 
 #define ASSERT_SB              \
   ASSERT(sb);                  \
+  ASSERT(sb->base);            \
+  ASSERT(sb->thumb);           \
   ASSERT(sb->update_routine);  \
   ASSERT(sb->moving_routine)
-
 
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
@@ -76,7 +77,7 @@ GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata
   ASSERT(parent);
   GuiScrollbar *sb = (GuiScrollbar *)xmalloc(sizeof(*sb));
   sb->data = userdata;
-  sb->base = guielement_create(parent);
+  sb->base  = guielement_create(parent);
   sb->thumb = guielement_create(sb->base);
   guielement_set_sb_data(sb->base, sb);
   guielement_set_sb_data(sb->thumb, sb);
@@ -101,7 +102,7 @@ static void guiscrollbar_calculate(GuiScrollbar *const sb) {
   float total_length, length, ypos, offset;
   Uint start, total, visible, current;
   /* Use the update routine to get all needed data. */
-  sb->update_routine(sb->data, &total_length, &start, &total, &visible, &current, &offset); 
+  sb->update_routine(sb->data, &total_length, &start, &total, &visible, &current, &offset);
   /* Calculate the size and position of the thumb. */
   calculate_scrollbar(total_length, start, total, visible, current, &length, &ypos);
   /* If the height of the thumb is the entire length of the base, then just hide the entire scrollbar. */
@@ -109,9 +110,11 @@ static void guiscrollbar_calculate(GuiScrollbar *const sb) {
     guielement_set_flag_recurse(sb->base, TRUE, GUIELEMENT_HIDDEN);
   }
   else {
+    sb->base->relative_pos.y = offset;
+    sb->base->relative_pos.x = (sb->base->size.w + offset);
     guielement_set_flag_recurse(sb->base, FALSE, GUIELEMENT_HIDDEN);
     guielement_resize(sb->thumb, vec2(sb->thumb->size.w, length));
-    sb->thumb->relative_pos.y = (ypos + offset);
+    sb->thumb->relative_pos.y = ypos;
     /* Set the base of the scrollbar to the total movable length of the thumb. */
     guielement_resize(sb->base, vec2(sb->base->size.w, total_length));
     /* Move the thumb again so it's above the base. */
@@ -122,17 +125,17 @@ static void guiscrollbar_calculate(GuiScrollbar *const sb) {
 /* Move the thumb part of `sb` by `change`.  Note that this is fully clamped and cannot exceed the base element.  Note that this is the only way `moving_routine` gets called. */
 void guiscrollbar_move(GuiScrollbar *const sb, float change) {
   ASSERT_SB;
-  float total_length;
+  float total_length, offset;
   Uint start, total, visible;
+  /* Use the update routine to get all needed data. */
+  sb->update_routine(sb->data, &total_length, &start, &total, &visible, NULL, &offset);
   /* Move the element by the given change, this is clamped to never go outside the constraint's of the base element. */
   guielement_move_y_clamp(
     sb->thumb,
     (sb->thumb->pos.y + change),
-    sb->base->pos.y,
-    (sb->base->pos.y + sb->base->size.h)
+    (sb->base->pos.y),
+    (sb->base->pos.y + sb->base->size.h - sb->thumb->size.h)
   );
-  /* Use the update routine to get all needed data. */
-  sb->update_routine(sb->data, &total_length, &start, &total, &visible, NULL, NULL);
   /* Run the moving routine using the index the current position represents. */
   sb->moving_routine(sb->data, index_from_scrollbar_pos(total_length, start, total, visible, (sb->thumb->pos.y - sb->base->pos.y)));
 }
@@ -140,7 +143,10 @@ void guiscrollbar_move(GuiScrollbar *const sb, float change) {
 /* Draw the scrollbar as well as updating it if `sb->refresh_needed` has been set. */
 void guiscrollbar_draw(GuiScrollbar *const sb) {
   ASSERT_SB;
-  if (sb->refresh_needed) {
+  if (sb->base->flag.is_set<GUIELEMENT_HIDDEN>()) {
+    return;
+  }
+  else if (sb->refresh_needed) {
     guiscrollbar_calculate(sb);
     sb->refresh_needed = FALSE;
   }
@@ -150,7 +156,7 @@ void guiscrollbar_draw(GuiScrollbar *const sb) {
 
 /* Tell the scrollbar that it needs to recalculate before the next draw.  The reason this needs to be a flag and not directly
  * recalculating is so that no matter how meny times or from how meny seperate function's this gets called it only recalculates once. */
-void guiscrollbar_refresh_needed(GuiScrollbar *const sb) {
+void guiscrollbar_refresh_needed(GuiScrollbar *const sb) __THROW {
   ASSERT_SB;
   sb->refresh_needed = TRUE;
 }

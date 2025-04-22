@@ -1127,19 +1127,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     }
     /* If the clicked element is a part of an editor. */
     else if (guielement_has_editor_data(gui->clicked)) {
-      /* When the clicked element is the scrollbar of any editor, scroll that editor.  But only when the mouse y position has changed. */
-      // if (gui->clicked == gui->clicked->data.editor->scrollbar && mousepos.y != last_mousepos.y) {
-      //   /* Move the scrollbar only in the y axis. */
-      //   move_element_y_clamp(
-      //     gui->clicked,
-      //     (gui->clicked->pos.y + (mousepos.y - last_mousepos.y)),
-      //     gui->clicked->data.editor->text->pos.y,
-      //     (gui->clicked->data.editor->text->pos.y + gui->clicked->data.editor->text->size.h - gui->clicked->size.h)
-      //   );
-      //   /* Set the new edittop line based on the new scrollbar position. */
-      //   guieditor_set_edittop_from_scrollbar_pos(gui->clicked->data.editor);
-      // }
-      /* Otherwise if the clicked element is a editor's text element. */
+      /* If the clicked element is a editor's text element. */
       if (gui->clicked == gui->clicked->data.editor->text) {
         Ulong index;
         linestruct *line = line_and_index_from_mousepos(gui->font, &index);

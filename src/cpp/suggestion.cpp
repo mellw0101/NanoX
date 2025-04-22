@@ -269,7 +269,7 @@ static char *gui_suggestmenu_copy_completion(char *const restrict text) {
 static void gui_suggestmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *offset) {
   ASSERT(arg);
   GuiSuggestMenu *sm = (__TYPE(sm))arg;
-  ASSIGN_IF_VALID(total_length, sm->element->size.h - 2);
+  ASSIGN_IF_VALID(total_length, (sm->element->size.h - 2));
   ASSIGN_IF_VALID(start, 0);
   ASSIGN_IF_VALID(total, cvec_len(sm->completions) - sm->maxrows);
   ASSIGN_IF_VALID(visible, sm->rows);
@@ -300,7 +300,7 @@ void gui_suggestmenu_create(void) {
   gui->suggestmenu->element->flag.set<GUIELEMENT_ABOVE>();
   guielement_set_borders(gui->suggestmenu->element, 1, vec4(vec3(0.5f), 1.0f));
   gui->suggestmenu->vertbuf = make_new_font_buffer();
-  gui->suggestmenu->sb = guiscrollbar_create(gui->suggestmenu->element, gui->suggestmenu, gui_suggestmenu_scrollbar_update_routine, gui_suggestmenu_scrollbar_moving_routine);
+  gui->suggestmenu->sb      = guiscrollbar_create(gui->suggestmenu->element, gui->suggestmenu, gui_suggestmenu_scrollbar_update_routine, gui_suggestmenu_scrollbar_moving_routine);
 }
 
 /* Free the suggestmenu substructure. */

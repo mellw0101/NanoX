@@ -991,7 +991,7 @@ long          index_from_scrollbar_pos(float total_pixel_length, Uint startidx, 
 GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2, 3);
 void          guiscrollbar_move(GuiScrollbar *const sb, float change) _NONNULL(1);
 void          guiscrollbar_draw(GuiScrollbar *const sb) _NONNULL(1);
-void          guiscrollbar_refresh_needed(GuiScrollbar *const sb) _NONNULL(1);
+void          guiscrollbar_refresh_needed(GuiScrollbar *const sb) __THROW _NONNULL(1);
 bool          guiscrollbar_element_is_base(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
 bool          guiscrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
 float         guiscrollbar_width(GuiScrollbar *const sb);
