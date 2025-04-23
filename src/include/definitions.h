@@ -389,6 +389,10 @@ using std::vector;
 
 #define VEC4_8BIT(r, g, b, a) vec4(MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1))
 
+#define GUISB_BASE_COLOR          vec4(0.05f, 0.05f, 0.05f, 0.3f)
+#define GUISB_THUMB_COLOR         vec4(1.0f, 1.0f, 1.0f, 0.3f)
+#define GUISB_ACTIVE_THUMB_COLOR  vec4(1.0f, 1.0f, 1.0f, 0.7f)
+
 
 /* Enumeration types. */
 

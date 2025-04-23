@@ -213,7 +213,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   }
   /* When inside the guieditor key mode, do nothing as we handle further keys in the char callback. */
   else if (gui->flag.is_set<GUI_EDITOR_MODE_KEY>()) {
-    ;
+    if ((action == GLFW_PRESS || action == GLFW_REPEAT) && mods) {
+      gui->flag.unset<GUI_EDITOR_MODE_KEY>();
+    }
   }
   /* Otherwise, do the text bindings. */
   else {
@@ -1071,7 +1073,10 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       //   gui->clicked->data.editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
       // }
       else if (guielement_has_sb_data(gui->clicked)) {
-        // gui->clicked->data.sb->refresh_needed = TRUE;
+        /* If the clicked  */
+        if (guiscrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && gui->clicked != guielement_from_mousepos()) {
+          gui->clicked->color = GUISB_THUMB_COLOR;
+        }
         guiscrollbar_refresh_needed(gui->clicked->data.sb);
       }
       gui->clicked = NULL;
@@ -1206,16 +1211,23 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     }
     /* If the current mouse element is not the current entered element. */
     if (element != entered_element) {
+      if (!gui->clicked && guielement_has_sb_data(element) && guiscrollbar_element_is_thumb(element->data.sb, element)) {
+        element->color = GUISB_ACTIVE_THUMB_COLOR;
+      }
       /* Run the enter element for the mouse element, if any. */
       CALL_IF_VALID(element->callback, element, GUIELEMENT_ENTER_CALLBACK);
       /* If the old entered element was not NULL. */
       if (entered_element) {
+        if (!gui->clicked && guielement_has_sb_data(entered_element) && guiscrollbar_element_is_thumb(entered_element->data.sb, entered_element)) {
+          entered_element->color = GUISB_THUMB_COLOR;
+        }
         /* Run the leave event for the old entered element, if any. */
         CALL_IF_VALID(entered_element->callback, entered_element, GUIELEMENT_LEAVE_CALLBACK);
       }
       entered_element = element;
     }
   }
+  /* In all other cases reset the cursor type to the arrow when its not the current cursor. */
   else if (gui->current_cursor_type != GLFW_ARROW_CURSOR) {
     set_cursor_type(window, GLFW_ARROW_CURSOR);
     gui->current_cursor_type = GLFW_ARROW_CURSOR;
@@ -1242,6 +1254,10 @@ void window_enter_callback(GLFWwindow *window, int entered) {
     }
     /* If there is a currently entered element, call its leave callback.  If it has one. */
     if (entered_element) {
+      /* Reset the color of any scrollbar if it was the last element the mouse was on and its not currently clicked. */
+      if (!gui->clicked && guielement_has_sb_data(entered_element) && guiscrollbar_element_is_thumb(entered_element->data.sb, entered_element)) {
+        entered_element->color = GUISB_THUMB_COLOR;
+      }
       if (entered_element->callback) {
         entered_element->callback(entered_element, GUIELEMENT_LEAVE_CALLBACK);
       }

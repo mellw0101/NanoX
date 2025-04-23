@@ -34,14 +34,14 @@ static void guieditor_scrollbar_moving_routine(void *arg, long index) {
 }
 
 /* Create the editor scrollbar. */
-static void guieditor_scrollbar_create(guieditor *editor) {
+static void guieditor_scrollbar_create(guieditor *const editor) {
   ASSERT(editor);
   ASSERT(editor->text);
   editor->sb = guiscrollbar_create(editor->text, editor, guieditor_scrollbar_update_routine, guieditor_scrollbar_moving_routine);
 }
 
 /* Create the editor topbar. */
-static void guieditor_topbar_create(guieditor *editor) {
+static void guieditor_topbar_create(guieditor *const editor) {
   ASSERT(editor->main);
   ASSERT(gui);
   ASSERT(gui->uifont);
@@ -325,14 +325,11 @@ void set_openeditor(guieditor *editor) {
 
 /* If the element `e` has any relation to an editor, return that editor. */
 guieditor *get_element_editor(guielement *e) {
-  guieditor *editor = starteditor;
-  if (editor) {
-    do {
-      if (is_ancestor(e, editor->main)) {
-        return editor;
-      }
-      editor = editor->next;
-    } while (editor != starteditor);
+  if (guielement_has_editor_data(e)) {
+    return e->data.editor;
+  }
+  else if (guielement_has_editor_data(e->parent)) {
+    return e->parent->data.editor;
   }
   return NULL;
 }

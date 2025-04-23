@@ -75,8 +75,8 @@ long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endi
 /* Create a scrollbar that will be on the left side of `parent` and use `userdata` as the parameter when running all callbacks. */
 GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW {
   ASSERT(parent);
-  GuiScrollbar *sb = (GuiScrollbar *)xmalloc(sizeof(*sb));
-  sb->data = userdata;
+  GuiScrollbar *sb = (__TYPE(sb))xmalloc(sizeof(*sb));
+  sb->data  = userdata;
   sb->base  = guielement_create(parent);
   sb->thumb = guielement_create(sb->base);
   guielement_set_sb_data(sb->base, sb);
@@ -88,8 +88,10 @@ GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata
   guielement_move_resize(sb->base, 10, 10);
   guielement_move_resize(sb->thumb, 10, 10);
   sb->base->relative_pos.x = sb->base->size.w;
-  sb->base->color  = GUI_BLACK_COLOR;
-  sb->thumb->color = GUI_WHITE_COLOR;
+  // sb->base->color  = GUI_BLACK_COLOR;
+  // sb->thumb->color = GUI_WHITE_COLOR;
+  sb->base->color  = GUISB_BASE_COLOR;
+  sb->thumb->color = GUISB_THUMB_COLOR;
   sb->update_routine = update_routine;
   sb->moving_routine = moving_routine;
   sb->refresh_needed = TRUE;
@@ -143,12 +145,12 @@ void guiscrollbar_move(GuiScrollbar *const sb, float change) {
 /* Draw the scrollbar as well as updating it if `sb->refresh_needed` has been set. */
 void guiscrollbar_draw(GuiScrollbar *const sb) {
   ASSERT_SB;
-  if (sb->base->flag.is_set<GUIELEMENT_HIDDEN>()) {
-    return;
-  }
-  else if (sb->refresh_needed) {
+  if (sb->refresh_needed) {
     guiscrollbar_calculate(sb);
     sb->refresh_needed = FALSE;
+    if (sb->base->flag.is_set<GUIELEMENT_HIDDEN>()) {
+      return;
+    }
   }
   guielement_draw(sb->base);
   guielement_draw(sb->thumb);

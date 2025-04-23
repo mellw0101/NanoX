@@ -421,10 +421,6 @@ void draw_editor(guieditor *editor) {
   }
   upload_texture_atlas(gui->atlas);
   render_vertex_buffer(gui->font_shader, editor->buffer);
-  // if (editor->flag.is_set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>()) {
-  //   editor->sb->refresh_needed = TRUE;
-  //   editor->flag.unset<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
-  // }
   guiscrollbar_draw(editor->sb);
 }
 

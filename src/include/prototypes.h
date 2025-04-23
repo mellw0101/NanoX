@@ -902,7 +902,6 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* gui/guieditor.cpp */
   void refresh_editor_topbar(guieditor *editor);
   void update_editor_topbar(guieditor *editor);
-  // void guieditor_update_scrollbar(guieditor *editor);
   void make_new_editor(bool new_buffer);
   void delete_editor(guieditor *editor);
   void close_editor(void);
@@ -914,8 +913,6 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   guieditor *get_element_editor(guielement *e);
   guieditor *get_file_editor(openfilestruct *file);
   void guieditor_calculate_rows(guieditor *const editor);
-  // long guieditor_lineno_from_scrollbar_pos(guieditor *const editor);
-  // void guieditor_set_edittop_from_scrollbar_pos(guieditor *const editor);
   void guieditor_resize(guieditor *const editor);
 
   /* gui/guigrid.cpp */
