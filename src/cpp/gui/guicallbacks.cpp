@@ -114,7 +114,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                   show_statusmsg(INFO, 5, "Saving file: %s", answer);
                   /* Free the openfile filename, and assign answer to it. */
                   openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
-                  get_file_editor(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+                  guieditor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
                   /* Then save the file. */
                   if (write_it_out(FALSE, FALSE) == 2) {
                     logE("Failed to save file, this needs fixing and the reason needs to be found out.");
@@ -497,7 +497,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_ESCAPE: {
           if (!mods) {
             if (cvec_len(gui->suggestmenu->completions)) {
-              cvec_clear(gui->suggestmenu->completions);
+              gui_suggestmenu_clear();
               return;
             }
           }
@@ -1015,7 +1015,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         /* When the mouse is pressed in the text element of a editor. */
         if (guielement_has_editor_data(element) && element == element->data.editor->text) {
           /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
-          set_openeditor(element->data.editor);
+          guieditor_set_open(element->data.editor);
           /* Get the line and index from the mouse position. */
           Ulong index;
           linestruct *line = line_and_index_from_mousepos(gui->font, &index);

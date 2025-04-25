@@ -904,11 +904,12 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void hide_editor(guieditor *editor, bool hide);
   void switch_to_prev_editor(void);
   void switch_to_next_editor(void);
-  void set_openeditor(guieditor *editor);
-  guieditor *get_element_editor(guielement *e);
-  guieditor *get_file_editor(openfilestruct *file);
+  void guieditor_set_open(guieditor *editor);
+  guieditor *guieditor_from_element(guielement *e);
+  guieditor *guieditor_from_file(openfilestruct *file);
   void guieditor_calculate_rows(guieditor *const editor);
   void guieditor_resize(guieditor *const editor);
+  void guieditor_redecorate(guieditor *const editor);
 
   /* gui/guigrid.cpp */
   guigridsection *make_new_gridsection(void);

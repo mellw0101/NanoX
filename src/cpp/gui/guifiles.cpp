@@ -37,7 +37,8 @@ void gui_switch_to_prev_buffer(void) {
   /* After we have moved to the previous file in the editor, set
    * the global file pointer to match the currently open editor. */
   openfile = openeditor->openfile;
-  gui_redecorate_after_switch();
+  // gui_redecorate_after_switch();
+  guieditor_redecorate(openeditor);
 }
 
 /* When using the gui, switch to the next entry in the circular list of buffers. */
@@ -51,14 +52,15 @@ void gui_switch_to_next_buffer(void) {
   /* After we have moved to the next file in the editor, set the
    * global file pointer to match the currently open editor. */
   openfile = openeditor->openfile;
-  gui_redecorate_after_switch();
+  // gui_redecorate_after_switch();
+  guieditor_redecorate(openeditor);
 }
 
 /* Set openfile as `file`. */
 void gui_set_openfile(openfilestruct *file) {
   ASSERT(file);
   openfile = file;
-  openeditor = get_file_editor(file);
+  openeditor = guieditor_from_file(file);
   openeditor->openfile = file;
   gui_redecorate_after_switch();
 }
@@ -114,6 +116,8 @@ void gui_open_new_empty_buffer(void) {
    * the open editor, as the startfile might have changed as well. */
   openeditor->openfile  = openfile;
   openeditor->startfile = startfile;
-  gui_redecorate_after_switch();
-  openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+  // gui_redecorate_after_switch();
+  // openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+  // guiscrollbar_refresh_needed(openeditor->sb);
+  guieditor_redecorate(openeditor);
 }

@@ -312,7 +312,7 @@ void switch_to_next_editor(void) {
 }
 
 /* Set `openeditor` to editor, if its not already. */
-void set_openeditor(guieditor *editor) {
+void guieditor_set_open(guieditor *editor) {
   /* Return early if editor is already the open editor. */
   if (editor == openeditor) {
     return;
@@ -324,7 +324,7 @@ void set_openeditor(guieditor *editor) {
 }
 
 /* If the element `e` has any relation to an editor, return that editor. */
-guieditor *get_element_editor(guielement *e) {
+guieditor *guieditor_from_element(guielement *e) {
   if (guielement_has_editor_data(e)) {
     return e->data.editor;
   }
@@ -335,7 +335,7 @@ guieditor *get_element_editor(guielement *e) {
 }
 
 /* Get the editor that `file` belongs to. */
-guieditor *get_file_editor(openfilestruct *file) {
+guieditor *guieditor_from_file(openfilestruct *file) {
   ASSERT(file);
   ITER_OVER_ALL_OPENEDITORS(starteditor, editor, ITER_OVER_ALL_OPENFILES(editor->startfile, afile,
     if (afile == file) {
@@ -385,5 +385,23 @@ void guieditor_resize(guieditor *const editor) {
   }
   guielement_move_resize(editor->main, 0, vec2(gui->width, (gui->height - gui->botbar->size.h)));
   guieditor_calculate_rows(editor);
+  guiscrollbar_refresh_needed(editor->sb);
+}
+
+/* Used to ensure the correct state of an editor after we have switched to a new one or changed the currently open file. */
+void guieditor_redecorate(guieditor *const editor) {
+  /* If there is a error with the currently opened file, show it in the statusbar and log it. */
+  if (editor->openfile->errormessage) {
+    show_statusmsg(ALERT, 2, editor->openfile->errormessage);
+    logE("%s", editor->openfile->errormessage);
+    free(editor->openfile->errormessage);
+    editor->openfile->errormessage = NULL;
+  }
+  ensure_firstcolumn_is_aligned();
+  currmenu       = MMOST;
+  shift_held     = TRUE;
+  refresh_needed = TRUE;
+  editor->flag.set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
+  editor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
   guiscrollbar_refresh_needed(editor->sb);
 }
