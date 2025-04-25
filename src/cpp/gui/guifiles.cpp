@@ -102,7 +102,7 @@ bool gui_close_and_go(void) {
     }
     else {
       close_editor();
-      hide_editor(openeditor, FALSE);
+      guieditor_hide(openeditor, FALSE);
       gui_redecorate_after_switch();
       return FALSE;
     }

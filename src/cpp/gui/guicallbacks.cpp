@@ -507,7 +507,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           switch (mods) {
             /* Alt+Shift+Right.  Switch to the next editor. */
             case (GLFW_MOD_ALT | GLFW_MOD_SHIFT): {
-              function = switch_to_next_editor;
+              function = guieditor_switch_to_next;
               break;
             }
             /* Alt+Right.  Switch to the next buffer inside this editor. */
@@ -541,7 +541,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           switch (mods) {
             /* Alt+Shift+Left.  Switch to the previous editor. */
             case (GLFW_MOD_ALT | GLFW_MOD_SHIFT): {
-              function = switch_to_prev_editor;
+              function = guieditor_switch_to_prev;
               break;
             }
             /* Alt+Left.  Switch to the previous buffer inside this editor. */
@@ -862,8 +862,9 @@ void char_callback(GLFWwindow *window, Uint ch) {
     /* Open a new seperate editor. */
     if (is_char_one_of(&input, 0, "Nn")) {
       make_new_editor(TRUE);
-      hide_editor(openeditor->prev, TRUE);
-      gui_redecorate_after_switch();
+      guieditor_hide(openeditor->prev, TRUE);
+      // gui_redecorate_after_switch();
+      guieditor_redecorate(openeditor);
     }
     gui->flag.unset<GUI_EDITOR_MODE_KEY>();
   }

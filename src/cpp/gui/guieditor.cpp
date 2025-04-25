@@ -255,24 +255,7 @@ void close_editor(void) {
   delete_editor(editor);
 }
 
-/* Free a circular list of buffers. */
-void free_editor_buffers(guieditor *editor) {
-  /* Save the current open and start file. */
-  openfilestruct *was_openfile  = openfile;
-  openfilestruct *was_startfile = startfile;
-  /* Then set the editors start and open file as the open and start file. */
-  openfile  = editor->openfile;
-  startfile = editor->startfile;
-  /* Now close all buffers. */
-  while (openfile) {
-    close_buffer();
-  }
-  /* Then we restore the open and start file. */
-  openfile  = was_openfile;
-  startfile = was_startfile;
-}
-
-void hide_editor(guieditor *editor, bool hide) {
+void guieditor_hide(guieditor *editor, bool hide) {
   ASSERT(editor);
   if (hide) {
     editor->flag.set<GUIEDITOR_HIDDEN>();
@@ -284,7 +267,7 @@ void hide_editor(guieditor *editor, bool hide) {
 }
 
 /* Switch to the previous editor.  */
-void switch_to_prev_editor(void) {
+void guieditor_switch_to_prev(void) {
   if (openeditor == openeditor->next) {
     show_statusmsg(MILD, 2, "Only one editor open");
     return;
@@ -292,13 +275,15 @@ void switch_to_prev_editor(void) {
   openeditor = openeditor->prev;
   openfile   = openeditor->openfile;
   startfile  = openeditor->startfile;
-  hide_editor(openeditor->next, TRUE);
-  hide_editor(openeditor, FALSE);
-  gui_redecorate_after_switch();
+  guieditor_hide(openeditor->next, TRUE);
+  guieditor_hide(openeditor, FALSE);
+  // gui_redecorate_after_switch();
+  guieditor_redecorate(openeditor);
+  editwinrows = openeditor->rows;
 }
 
 /* Switch to the next editor. */
-void switch_to_next_editor(void) {
+void guieditor_switch_to_next(void) {
   if (openeditor == openeditor->next) {
     show_statusmsg(MILD, 2, "Only one editor open");
     return;
@@ -306,9 +291,11 @@ void switch_to_next_editor(void) {
   openeditor = openeditor->next;
   openfile   = openeditor->openfile;
   startfile  = openeditor->startfile;
-  hide_editor(openeditor->prev, TRUE);
-  hide_editor(openeditor, FALSE);
-  gui_redecorate_after_switch();
+  guieditor_hide(openeditor->prev, TRUE);
+  guieditor_hide(openeditor, FALSE);
+  // gui_redecorate_after_switch();
+  guieditor_redecorate(openeditor);
+  editwinrows = openeditor->rows;
 }
 
 /* Set `openeditor` to editor, if its not already. */
@@ -320,7 +307,8 @@ void guieditor_set_open(guieditor *editor) {
   openfile   = editor->openfile;
   startfile  = editor->startfile;
   openeditor = editor;
-  gui_redecorate_after_switch();
+  // gui_redecorate_after_switch();
+  guieditor_redecorate(editor);
 }
 
 /* If the element `e` has any relation to an editor, return that editor. */
@@ -372,6 +360,7 @@ static void guieditor_set_gutter_width(guieditor *const editor) {
   free(linenostr);
 }
 
+/* Resize `editor` to the size of the gui, this needs to be changed later when we add a grid to hold editors. */
 void guieditor_resize(guieditor *const editor) {
   ASSERT(editor);
   if (!ISSET(LINE_NUMBERS)) {
@@ -403,5 +392,5 @@ void guieditor_redecorate(guieditor *const editor) {
   refresh_needed = TRUE;
   editor->flag.set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
   editor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-  guiscrollbar_refresh_needed(editor->sb);
+  guieditor_resize(editor);
 }
