@@ -525,13 +525,10 @@ char *lower_case_word(const char *str);
 /* All functions in 'utils.cpp' */
 void        get_homedir(void) _NOTHROW;
 char      **get_env_paths(Ulong *npaths) _NOTHROW _NODISCARD _NONNULL(1);
-// const char *tail(const char *path) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
-// const char *ext(const char *path) _NOTHROW _NONNULL(1);
 char       *concatenate(const char *path, const char *name) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 char       *concatenate_path(const char *prefix, const char *suffix) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 const char *concat_path(const char *s1, const char *s2) _NOTHROW _NONNULL(1, 2);
 int         digits(long n) _NOTHROW _NODISCARD;
-// bool        parse_num(const char *string, long *result) _NOTHROW _NODISCARD _NONNULL(1, 2);
 bool        parse_line_column(const char *str, long *line, long *column) _NOTHROW _NONNULL(1, 2, 3);
 void        recode_NUL_to_LF(char *string, Ulong length) _NOTHROW _NONNULL(1);
 Ulong       recode_LF_to_NUL(char *string) _NOTHROW _NONNULL(1);
@@ -540,10 +537,8 @@ void        append_chararray(char ***array, Ulong *len, char **append, Ulong app
 bool        is_separate_word(Ulong position, Ulong length, const char *buf) _NOTHROW;
 void       *nmalloc(const Ulong howmuch) _NOTHROW _RETURNS_NONNULL;
 void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
-#define     arealloc(ptr, howmuch) (decltype(ptr))nrealloc(ptr, howmuch)
+#define     arealloc(ptr, howmuch) (__TYPE(ptr))xrealloc(ptr, howmuch)
 char       *mallocstrcpy(char *dest, const char *src) _NOTHROW;
-// char       *measured_copy(const char *string, Ulong count) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
-// char       *copy_of(const char *string) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
 char       *free_and_assign(char *dest, char *src) _NOTHROW;
 Ulong       get_page_start(Ulong column) _NOTHROW;
 Ulong       xplustabs(void) _NOTHROW _NODISCARD;

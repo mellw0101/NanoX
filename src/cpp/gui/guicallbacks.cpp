@@ -463,7 +463,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             syntaxfile_test_read();
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
-            
+            if (begpar(openfile->current, 0)) {
+              writef("Line is begpar.\n");
+            }
+            else {
+              writef("Line is not begpar.\n");
+            }
             // Ulong len;
             // float *array = pixpositions("\t\tballe", 0, &len, gui->font);
             // for (Ulong i=0; i<len; ++i) {
@@ -1001,17 +1006,16 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
       element = guielement_from_mousepos();
       if (element) {
+        /* Save the element that was clicked. */
+        gui->clicked = element;
         /* If this click was not related to the suggestmenu, clear the suggestmenu. */
         if (!is_ancestor(element, gui->suggestmenu->element)) {
           gui_suggestmenu_clear();
         }
-        /* Save the element that was clicked. */
-        gui->clicked = element;
         /* When the mouse is pressed in the text element of a editor. */
         if (guielement_has_editor_data(element) && element == element->data.editor->text) {
           /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
           set_openeditor(element->data.editor);
-          mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
           /* Get the line and index from the mouse position. */
           Ulong index;
           linestruct *line = line_and_index_from_mousepos(gui->font, &index);
@@ -1067,18 +1071,15 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       if (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) {
         openfile->mark = NULL;
       }
-      /* If the clicked element was the scrollbar of any editor, then set the flag so that the position
-       * of the scrollbar gets corrected to exactly a step, as it might have been moved to inbetween 2 steps. */
-      // if (guielement_has_editor_data(gui->clicked) && gui->clicked == gui->clicked->data.editor->scrollbar) {
-      //   gui->clicked->data.editor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
-      // }
+      /* If the clicked element is any part of any scrollbar. */
       else if (guielement_has_sb_data(gui->clicked)) {
-        /* If the clicked  */
+        /* Only reset the given element is the scrollbar's thumb and is not the currently hovered element. */
         if (guiscrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && gui->clicked != guielement_from_mousepos()) {
           gui->clicked->color = GUISB_THUMB_COLOR;
         }
         guiscrollbar_refresh_needed(gui->clicked->data.sb);
       }
+      CALL_IF_VALID(gui->clicked->callback, gui->clicked, GUIELEMENT_LEFT_MOUSE_UNCLICK);
       gui->clicked = NULL;
     }
   }
@@ -1211,6 +1212,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     }
     /* If the current mouse element is not the current entered element. */
     if (element != entered_element) {
+      /* If there is no clicked element currently and the newly entered element is the thumb of any scrollbar, highlight the color of it. */
       if (!gui->clicked && guielement_has_sb_data(element) && guiscrollbar_element_is_thumb(element->data.sb, element)) {
         element->color = GUISB_ACTIVE_THUMB_COLOR;
       }
@@ -1218,6 +1220,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       CALL_IF_VALID(element->callback, element, GUIELEMENT_ENTER_CALLBACK);
       /* If the old entered element was not NULL. */
       if (entered_element) {
+        /* If there is no clicked element currently and the recently left element is the thumb of any scrollbar, reset the color of it. */
         if (!gui->clicked && guielement_has_sb_data(entered_element) && guiscrollbar_element_is_thumb(entered_element->data.sb, entered_element)) {
           entered_element->color = GUISB_THUMB_COLOR;
         }
@@ -1258,9 +1261,7 @@ void window_enter_callback(GLFWwindow *window, int entered) {
       if (!gui->clicked && guielement_has_sb_data(entered_element) && guiscrollbar_element_is_thumb(entered_element->data.sb, entered_element)) {
         entered_element->color = GUISB_THUMB_COLOR;
       }
-      if (entered_element->callback) {
-        entered_element->callback(entered_element, GUIELEMENT_LEAVE_CALLBACK);
-      }
+      CALL_IF_VALID(entered_element->callback, entered_element, GUIELEMENT_LEAVE_CALLBACK);
       entered_element = NULL;
     }
   }

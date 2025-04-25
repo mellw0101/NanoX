@@ -59,13 +59,13 @@ void gui_ask_user(const char *question, guiprompt_type type) {
 
 /* Return's the index of a mouse press, but only when inside the scope of the `top-bar`, in the case it's not inside the scope, then return `-1`. */
 long prompt_index_from_mouse(bool allow_outside) {
+  bool no_linenums = !ISSET(LINE_NUMBERS);
+  long ret = 0;
   /* When we dont allow a valid return value when outside the confinement of top-bar, just return -1. 
    * This is usefull for when we are tracking a hold after the user has pressed inside the top-bar, then drags outside it. */
   if (!allow_outside && (mousepos.y < gui->promptmenu->element->pos.y || mousepos.y > (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h))) {
     return -1;
   }
-  bool no_linenums = !ISSET(LINE_NUMBERS);
-  long ret = 0;
   if (no_linenums) {
     SET(LINE_NUMBERS);
   }

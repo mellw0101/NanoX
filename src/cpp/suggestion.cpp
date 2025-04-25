@@ -271,7 +271,7 @@ static void gui_suggestmenu_scrollbar_update_routine(void *arg, float *total_len
   GuiSuggestMenu *sm = (__TYPE(sm))arg;
   ASSIGN_IF_VALID(total_length, (sm->element->size.h - 2));
   ASSIGN_IF_VALID(start, 0);
-  ASSIGN_IF_VALID(total, cvec_len(sm->completions) - sm->maxrows);
+  ASSIGN_IF_VALID(total, cvec_len(sm->completions) - sm->rows);
   ASSIGN_IF_VALID(visible, sm->rows);
   ASSIGN_IF_VALID(current, sm->viewtop);
   ASSIGN_IF_VALID(offset, 1);
@@ -469,16 +469,20 @@ void gui_suggestmenu_resize(void) {
   }
   /* Move and resize the element. */
   guielement_move_resize(gui->suggestmenu->element, pos, size);
+  gui->suggestmenu->pos_refresh_needed = FALSE;
 }
 
+/* Draw the correct text in the suggestmenu based on the current viewtop of the suggestmenu. */
 void gui_suggestmenu_draw_text(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   ASSERT(gui->suggestmenu->completions);
+  static int was_viewtop = gui->suggestmenu->viewtop;
   int row = 0;
   char *str;
   vec2 textpen;
-  if (gui->suggestmenu->text_refresh_needed) {
+  /* Only clear and reconstruct the vertex buffer when asked or when the viewtop has changed. */
+  if (gui->suggestmenu->text_refresh_needed || was_viewtop != gui->suggestmenu->viewtop) {
     vertex_buffer_clear(gui->suggestmenu->vertbuf);
     while (row < gui->suggestmenu->rows) {
       str = (char *)cvec_get(gui->suggestmenu->completions, (gui->suggestmenu->viewtop + row));
@@ -489,12 +493,14 @@ void gui_suggestmenu_draw_text(void) {
       vertex_buffer_add_string(gui->suggestmenu->vertbuf, str, strlen(str), NULL, gui->font, 1, &textpen);
       ++row;
     }
+    was_viewtop = gui->suggestmenu->viewtop;
     gui->suggestmenu->text_refresh_needed = FALSE;
   }
   upload_texture_atlas(gui->atlas);
   render_vertex_buffer(gui->font_shader, gui->suggestmenu->vertbuf);
 }
 
+/* Move the currently selected suggestmenu entry up once or when at the very top move it to the bottom.  This also ensures that viewtop moves as well when moving from the top of it. */
 void gui_suggestmenu_selected_up(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);

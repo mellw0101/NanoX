@@ -214,20 +214,11 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
             if (syntax_map_exists(node->str, &color)) {
               vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui->font, vec4(1.0f), drawpos);
               vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui->font, color, drawpos);
-              index = node->end; 
+              index = node->end;
             }
             free_node(node);
           }
           vertex_buffer_add_string(editor->buffer, (converted + index), ((comment ? (comment - converted) : converted_len) - index), prev_char, gui->font, 1, drawpos);
-          // vertex_buffer_add_string(
-          //   editor->buffer,
-          //   converted,
-          //   (comment ? (comment - converted) : converted_len),
-          //   (ISSET(LINE_NUMBERS) ? " " : NULL),
-          //   gui->font,
-          //   vec4(1.0f),
-          //   drawpos
-          // );
         }
       }
       /* Nasm syntax. */
@@ -370,14 +361,14 @@ void draw_editor(guieditor *editor) {
   if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
     refresh_editor_topbar(editor);
     vertex_buffer_clear(editor->topbuf);
-    for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
+    for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
       /* Assign the child to a new ptr for readbility. */
       guielement *child = editor->topbar->children[i];
       /* Draw the child rect. */
       guielement_draw(child);
       /* Update the data in the topbuf. */
       if (child->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
-        vertex_buffer_add_element_lable_offset(child, gui->uifont, editor->topbuf, vec2(pixel_breadth(gui->uifont, " "), 0));
+        vertex_buffer_add_element_lable_offset(child, gui->uifont, editor->topbuf, vec2(pixbreadth(gui->uifont, " "), 0));
       }
     }
     editor->flag.unset<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
@@ -449,24 +440,16 @@ void draw_topbar(void) {
   }
 }
 
+/* Draw the gui suggestmenu. */
 void draw_suggestmenu(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   ASSERT(gui->suggestmenu->completions);
-  static int was_viewtop = gui->suggestmenu->viewtop;
   int selected_row;
   vec2 pos, size;
   /* Get the current number of suggestions. */
   if (cvec_len(gui->suggestmenu->completions)) {
-    /* Only redraw text when viewtop has changed. */
-    if (was_viewtop != gui->suggestmenu->viewtop) {
-      gui->suggestmenu->text_refresh_needed = TRUE;
-      was_viewtop = gui->suggestmenu->viewtop;
-    }
-    if (gui->suggestmenu->pos_refresh_needed) {
-      gui_suggestmenu_resize();
-      gui->suggestmenu->pos_refresh_needed = FALSE;
-    }
+    gui_suggestmenu_resize();
     guielement_draw(gui->suggestmenu->element);
     /* Draw the rect that indicated the currently selected entry. */
     selected_row = (gui->suggestmenu->selected - gui->suggestmenu->viewtop);
@@ -475,7 +458,7 @@ void draw_suggestmenu(void) {
       size.w = (gui->suggestmenu->element->size.w - 2);
       row_top_bot_pixel(selected_row, gui->font, &pos.y, &size.h);
       size.h -= pos.y;
-      pos.y  += gui->suggestmenu->element->pos.y;
+      pos.y  += (gui->suggestmenu->element->pos.y + 1);
       draw_rect(pos, size, vec4(vec3(1), 0.4));
     }
     guiscrollbar_draw(gui->suggestmenu->sb);

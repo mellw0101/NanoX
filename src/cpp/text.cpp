@@ -76,7 +76,7 @@ static void indent_a_line(linestruct *line, char *indentation) _NOTHROW {
     return;
   }
   /* Add the fabricated indentation to the beginning of the line. */
-  line->data = arealloc(line->data, (length + indent_len + 1));
+  line->data = (char *)xrealloc(line->data, (length + indent_len + 1));
   /* Move the data already on the line forwards. */
   memmove((line->data + indent_len), line->data, (length + 1));
   /* Insert the indentation at the start of the line. */
@@ -679,11 +679,8 @@ void do_undo(void) {
     }
     case JOIN: {
       undidmsg = _("line join");
-      /**
-        When the join was done by a Backspace at the tail of the file,
-        and the nonewlines flag isn't set, do not re-add a newline that
-        wasn't actually deleted; just position the cursor.
-       */
+      /* When the join was done by a Backspace at the tail of the file, and the nonewlines flag
+       * isn't set, do not re-add a newline that wasn't actually deleted; just position the cursor. */
       if ((u->xflags & WAS_BACKSPACE_AT_EOF) && !ISSET(NO_NEWLINES)) {
         goto_line_posx(openfile->filebot->lineno, 0);
         focusing = FALSE;
@@ -987,7 +984,7 @@ void do_undo(void) {
       refresh_needed = TRUE;
       break;
     }
-    default : {
+    default: {
       break;
     }
   }
@@ -999,7 +996,7 @@ void do_undo(void) {
   /* If 'keep_mark' has not been explicitly set, or when it has been set but this is an exception, remove the mark. */
   if (!keep_mark || u->xflags & SHOULD_NOT_KEEP_MARK) {
     openfile->mark = NULL;
-    keep_mark = FALSE;
+    keep_mark      = FALSE;
   }
   openfile->placewewant  = xplustabs();
   openfile->totsize      = u->wassize;
@@ -1072,16 +1069,13 @@ void do_redo(void) {
     }
     case JOIN: {
       redidmsg = _("line join");
-      /**
-        When the join was done by a Backspace at the tail of the file,
-        and the nonewlines flag isn't set, do not join anything, as
-        nothing was actually deleted; just position the cursor.
-       */
+      /* When the join was done by a Backspace at the tail of the file, and the nonewlines flag
+       * isn't set, do not join anything, as nothing was actually deleted; just position the cursor. */
       if ((u->xflags & WAS_BACKSPACE_AT_EOF) && !ISSET(NO_NEWLINES)) {
         goto_line_posx(u->tail_lineno, u->tail_x);
         break;
       }
-      line->data = arealloc(line->data, (strlen(line->data) + strlen(u->strdata) + 1));
+      line->data = (char *)xrealloc(line->data, (strlen(line->data) + strlen(u->strdata) + 1));
       strcat(line->data, u->strdata);
       unlink_node(line->next);
       renumber_from(line);
@@ -1372,7 +1366,7 @@ void do_redo(void) {
       inject_in_cursor(u->strdata, strlen(u->strdata), TRUE);
       break;
     }
-    default : {
+    default: {
       break;
     }
   }
@@ -1932,11 +1926,11 @@ void do_wrap(void) {
   /* First find the last blank character where we can break the line. */
   wrap_loc = break_line((line->data + lead_len), (wrap_at - wideness(line->data, lead_len)), FALSE);
   /* If no wrapping point was found before end-of-line, we don't wrap. */
-  if (wrap_loc < 0 || lead_len + wrap_loc == line_len) {
+  if (wrap_loc < 0 || (lead_len + wrap_loc) == line_len) {
     return;
   }
   /* Adjust the wrap location to its position in the full line, and step forward to the character just after the blank. */
-  wrap_loc = (lead_len + step_right(line->data + lead_len, wrap_loc));
+  wrap_loc = (lead_len + step_right((line->data + lead_len), wrap_loc));
   /* When now at end-of-line, no need to wrap. */
   if (!line->data[wrap_loc]) {
     return;
@@ -1957,7 +1951,7 @@ void do_wrap(void) {
     /* If the remainder doesn't end in a blank, add a space. */
     if (!is_blank_char(remainder + step_left(remainder, rest_length))) {
       add_undo(ADD, NULL);
-      line->data = arealloc(line->data, (line_len + 2));
+      line->data = (char *)xrealloc(line->data, (line_len + 2));
       line->data[line_len] = ' ';
       line->data[line_len + 1] = '\0';
       ++rest_length;
@@ -1968,8 +1962,8 @@ void do_wrap(void) {
     /* Join the next line to this one. */
     expunge(DEL);
     /* If the leading part of the current line equals the leading part of what was the next line, then strip this second leading part. */
-    if (strncmp(line->data, line->data + openfile->current_x, lead_len) == 0) {
-      for (Ulong i = lead_len; i > 0; --i) {
+    if (strncmp(line->data, (line->data + openfile->current_x), lead_len) == 0) {
+      for (Ulong i=lead_len; i>0; --i) {
         expunge(DEL);
       }
     }
@@ -2000,7 +1994,7 @@ void do_wrap(void) {
   if (quot_len > 0) {
     line       = line->next;
     line_len   = strlen(line->data);
-    line->data = arealloc(line->data, (lead_len + line_len + 1));
+    line->data = (char *)xrealloc(line->data, (lead_len + line_len + 1));
     memmove((line->data + lead_len), line->data, (line_len + 1));
     strncpy(line->data, line->prev->data, lead_len);
     openfile->current_x += lead_len;
@@ -2056,7 +2050,7 @@ long break_line(const char *textstart, long goal, bool snap_at_nl) _NOTHROW {
   }
   /* When wrapping a help text and no blank was found, force a line break. */
   if (snap_at_nl && !lastblank) {
-    return (long)step_left(textstart, pointer - textstart);
+    return (long)step_left(textstart, (pointer - textstart));
   }
   /* If no blank was found within the goal width, seek one after it. */
   while (!lastblank) {
@@ -2135,7 +2129,7 @@ bool begpar(const linestruct *const line, int depth) _NOTHROW {
     return TRUE;
   }
   /* If indentation of this and preceding line are equal, this is not a BOP. */
-  if (wideness(line->prev->data, quot_len + prev_dent_len) == wideness(line->data, quot_len + indent_len)) {
+  if (wideness(line->prev->data, (quot_len + prev_dent_len)) == wideness(line->data, (quot_len + indent_len))) {
     return FALSE;
   }
   /* Otherwise, this is a BOP if the preceding line is not. */
@@ -2261,16 +2255,16 @@ static void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_le
     /* Find a point in the line where it can be broken. */
     break_pos = break_line(((*line)->data + lead_len), (wrap_at - wideness((*line)->data, lead_len)), FALSE);
     /* If we can't break the line, or don't need to, we're done. */
-    if (break_pos < 0 || lead_len + break_pos == line_len) {
+    if (break_pos < 0 || (lead_len + break_pos) == line_len) {
       break;
     }
     /* Adjust the breaking position for the leading part and move it beyond the found whitespace character. */
     break_pos += (lead_len + 1);
     /* Insert a new line after the current one, and copy the leading part plus the text after the breaking point into it. */
     splice_node(*line, make_new_node(*line));
-    (*line)->next->data = (char *)nmalloc(lead_len + line_len - break_pos + 1);
+    (*line)->next->data = (char *)xmalloc(lead_len + line_len - break_pos + 1);
     strncpy((*line)->next->data, lead_string, lead_len);
-    strcpy((*line)->next->data + lead_len, (*line)->data + break_pos);
+    strcpy(((*line)->next->data + lead_len), ((*line)->data + break_pos));
     /* When requested, snip the one or two trailing spaces. */
     if (ISSET(TRIM_BLANKS)) {
       while (break_pos > 0 && (*line)->data[break_pos - 1] == ' ') {

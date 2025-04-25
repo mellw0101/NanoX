@@ -38,6 +38,7 @@ typedef struct GuiScrollbar {
   
   /* Callback witch will pass the calculated index based on current position as the second parameter. */
   GuiScrollbarMoveFunc moving_routine;
+
   bool refresh_needed : 1;
 } GuiScrollbar;
 
@@ -72,6 +73,38 @@ long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endi
 
 /* ----------------------------- GuiScrollbar ----------------------------- */
 
+/* At the surface this seams to be much better to use then then directly handleing the logic in inside the main function,
+ * mainly because we would not need any checking of the element as only this element would have this callback.  But be that
+ * as it may i find the structure of the whole becomes mush worse to manage and to implement complext things that relay on
+ * much more context that would be mush easier to design as a whole not as scattered callbacks.  At least for now. */
+_UNUSED static void guiscrollbar_callback(guielement *e, guielement_callback_type type) {
+  ASSERT(e);
+  switch (type) {
+    case GUIELEMENT_ENTER_CALLBACK: {
+      if (!gui->clicked) {
+        e->color = GUISB_ACTIVE_THUMB_COLOR;
+      }
+      break;
+    }
+    case GUIELEMENT_LEAVE_CALLBACK: {
+      if (!gui->clicked) {
+        e->color = GUISB_THUMB_COLOR;
+      }
+      break;
+    }
+    case GUIELEMENT_LEFT_MOUSE_UNCLICK: {
+      if (e != guielement_from_mousepos()) {
+        e->color = GUISB_THUMB_COLOR;
+      }
+      e->data.sb->refresh_needed = TRUE;
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+}
+
 /* Create a scrollbar that will be on the left side of `parent` and use `userdata` as the parameter when running all callbacks. */
 GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW {
   ASSERT(parent);
@@ -88,13 +121,11 @@ GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata
   guielement_move_resize(sb->base, 10, 10);
   guielement_move_resize(sb->thumb, 10, 10);
   sb->base->relative_pos.x = sb->base->size.w;
-  // sb->base->color  = GUI_BLACK_COLOR;
-  // sb->thumb->color = GUI_WHITE_COLOR;
-  sb->base->color  = GUISB_BASE_COLOR;
-  sb->thumb->color = GUISB_THUMB_COLOR;
-  sb->update_routine = update_routine;
-  sb->moving_routine = moving_routine;
-  sb->refresh_needed = TRUE;
+  sb->base->color          = GUISB_BASE_COLOR;
+  sb->thumb->color         = GUISB_THUMB_COLOR;
+  sb->update_routine       = update_routine;
+  sb->moving_routine       = moving_routine;
+  sb->refresh_needed       = TRUE;
   return sb;
 }
 
@@ -107,8 +138,8 @@ static void guiscrollbar_calculate(GuiScrollbar *const sb) {
   sb->update_routine(sb->data, &total_length, &start, &total, &visible, &current, &offset);
   /* Calculate the size and position of the thumb. */
   calculate_scrollbar(total_length, start, total, visible, current, &length, &ypos);
-  /* If the height of the thumb is the entire length of the base, then just hide the entire scrollbar. */
-  if (length == total_length) {
+  /* If the height of the thumb is the entire length of the base or longer, then just hide the entire scrollbar. */
+  if (length >= total_length) {
     guielement_set_flag_recurse(sb->base, TRUE, GUIELEMENT_HIDDEN);
   }
   else {
