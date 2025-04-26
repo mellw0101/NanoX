@@ -3000,11 +3000,11 @@ void edit_scroll(bool direction) {
   }
 }
 
-// Get the column number after leftedge where we can break the given linedata,
-// and return it.  (This will always be at most editwincols after leftedge.)
-// When kickoff is TRUE, start at the beginning of the linedata; otherwise,
-// continue from where the previous call left off.  Set end_of_line to TRUE
-// when end-of-line is reached while searching for a possible breakpoint.
+/* Get the column number after leftedge where we can break the given linedata,
+ * and return it.  (This will always be at most editwincols after leftedge.)
+ * When kickoff is TRUE, start at the beginning of the linedata; otherwise,
+ * continue from where the previous call left off.  Set end_of_line to TRUE
+ * when end-of-line is reached while searching for a possible breakpoint. */
 Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NOTHROW {
   /* Pointer at the current character in this line's data. */
   static const char *text;
@@ -3063,8 +3063,8 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
   return ((editwincols > 1) ? breaking_col : (column - 1));
 }
 
-// Return the row number of the softwrapped chunk in the given line that the given column is on, relative
-// to the first row (zero-based).  If leftedge isn't NULL, return in it the leftmost column of the chunk.
+/* Return the row number of the softwrapped chunk in the given line that the given column is on, relative
+ * to the first row (zero-based).  If leftedge isn't NULL, return in it the leftmost column of the chunk. */
 Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NOTHROW {
   Ulong end_col;
   Ulong current_chunk = 0;

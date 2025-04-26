@@ -276,7 +276,7 @@ static void delete_guistruct(void) {
 
 /* Cleanup before exit. */
 static void cleanup(void) { 
-  delete_editor(openeditor);
+  guieditor_free(openeditor);
   delete_guistruct();
 }
 
@@ -363,6 +363,40 @@ void glfw_loop(void) {
   }
   cleanup();
   close_and_go();
+}
+
+/* Quit the current context, and if we are at only one editor open with only one buffer open, then this function return's `TRUE`.
+ * Indecating we should shut down.  Note that this function handles everything and should be used as the only thing to close the current context.
+ * Also this function is designed so that when it tells glfw that we should close the window there should be one editor and one buffer in that 
+ * editor open this is to ensure that from start to termination there is always an active editor and openeditor. */
+bool gui_quit(void) {
+  ASSERT(openeditor);
+  ASSERT(openeditor->openfile);
+  /* If the buffer has a lock file, delete it. */
+  if (openeditor->openfile->lock_filename) {
+    gui_delete_lockfile(openeditor->openfile->lock_filename);
+  }
+  /* When there is more then a single file open in the currently open editor. */
+  if (!CLIST_SINGLE(openeditor->openfile)) {
+    guieditor_close_open_buffer();
+    guieditor_redecorate(openeditor);
+    guieditor_resize(openeditor);
+    return FALSE;
+  }
+  else {
+    /* If there is only one editor open.  We tell glfw we should quit, we also return `TRUE` so that the calling function can halt execution. */
+    if (CLIST_SINGLE(openeditor)) {
+      glfwSetWindowShouldClose(gui->window, TRUE);
+      return TRUE;
+    }
+    else {
+      guieditor_close();
+      guieditor_hide(openeditor, FALSE);
+      guieditor_redecorate(openeditor);
+      guieditor_resize(openeditor);
+      return FALSE;
+    }
+  }
 }
 
 #endif

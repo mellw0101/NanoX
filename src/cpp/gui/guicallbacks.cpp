@@ -34,45 +34,50 @@ SyntaxFile *sf = NULL;
 /* Window resize callback. */
 void window_resize_callback(GLFWwindow *window, int width, int height) {
   ASSERT_MSG(gui, "gui has not been init.");
-  gui->width  = width;
-  gui->height = height;
-  /* Set viewport. */
-  glViewport(0, 0, gui->width, gui->height);
-  /* Set the projection. */
-  matrix4x4_set_orthographic(gui->projection, 0, gui->width, gui->height, 0, -1.0f, 1.0f);
-  /* Upload it to both the shaders. */
-  update_projection_uniform(gui->font_shader);
-  update_projection_uniform(gui->rect_shader);
-  /* Calculate the rows and columns. */
-  editwinrows = (openeditor->text->size.h / FONT_HEIGHT(gui->font));
-  /* If the font is a mono font then calculate the number of columns by the gui->width of ' '. */
-  if (texture_font_is_mono(gui->font)) {
-    texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
-    if (glyph == 0) {
-      die("%s: Atlas is not big egnofe.\n", __func__);
-    }
-    editwincols = (openeditor->text->size.w / glyph->advance_x);
-  }
-  /* Otherwise, just guess for now. */
-  else {
-    editwincols = ((openeditor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
-  }
-  refresh_needed = TRUE;
-  guielement_resize(gui->root, vec2(gui->width, gui->height));
-  /* Calculate the rows for all editors. */
-  ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
-    guieditor_resize(editor);
+  static ivec2 was_size = -1;
+  /* To reduce the number of updates, only update the size when it changes. */
+  if (was_size != ivec2(width, height)) {
+    was_size = ivec2(width, height);
+    gui->width  = width;
+    gui->height = height;
+    /* Set viewport. */
+    glViewport(0, 0, gui->width, gui->height);
+    /* Set the projection. */
+    matrix4x4_set_orthographic(gui->projection, 0, gui->width, gui->height, 0, -1.0f, 1.0f);
+    /* Upload it to both the shaders. */
+    update_projection_uniform(gui->font_shader);
+    update_projection_uniform(gui->rect_shader);
+    /* Calculate the rows and columns. */
+    editwinrows = (openeditor->text->size.h / FONT_HEIGHT(gui->font));
+    /* If the font is a mono font then calculate the number of columns by the gui->width of ' '. */
     if (texture_font_is_mono(gui->font)) {
       texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
-      if (!glyph) {
-        die("%s: Atlas is to small.\n", __func__);
+      if (glyph == 0) {
+        die("%s: Atlas is not big egnofe.\n", __func__);
       }
-      editor->cols = (editor->text->size.w / glyph->advance_x);
+      editwincols = (openeditor->text->size.w / glyph->advance_x);
     }
+    /* Otherwise, just guess for now. */
     else {
-      editor->cols = ((editor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
+      editwincols = ((openeditor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
     }
-  );
+    refresh_needed = TRUE;
+    guielement_resize(gui->root, vec2(gui->width, gui->height));
+    /* Calculate the rows for all editors. */
+    ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
+      guieditor_resize(editor);
+      if (texture_font_is_mono(gui->font)) {
+        texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
+        if (!glyph) {
+          die("%s: Atlas is to small.\n", __func__);
+        }
+        editor->cols = (editor->text->size.w / glyph->advance_x);
+      }
+      else {
+        editor->cols = ((editor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
+      }
+    );
+  }
 }
 
 /* Maximize callback. */
@@ -126,6 +131,20 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               }
             }
             else if (gui_prompt_type == GUI_PROMPT_MENU) {
+              if (strcasecmp(answer, "open file") == 0) {
+                gui_ask_user("File to open", GUI_PROMPT_OPEN_FILE);
+              }
+              else {
+                gui_leave_prompt_mode();
+              }
+            }
+            else if (gui_prompt_type == GUI_PROMPT_OPEN_FILE) {
+              if (*answer) {
+                writef("%s\n", answer);
+                if (file_exists(answer)) {
+                  writef("File exists.\n");
+                }
+              }
               gui_leave_prompt_mode();
             }
           }
@@ -256,9 +275,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* If CTRL+Q is pressed, quit. */
           if (mods == GLFW_MOD_CONTROL) {
             if (!openfile->modified || ISSET(VIEW_MODE)) {
-              if (gui_close_and_go()) {
-                glfwSetWindowShouldClose(window, TRUE);
-              }
+              // if (gui_close_and_go()) {
+              //   glfwSetWindowShouldClose(window, TRUE);
+              // }
+              gui_quit();
             }
             else if (ISSET(SAVE_ON_EXIT) && *openfile->filename) {
               ;
@@ -288,10 +308,11 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
             make_new_editor(TRUE);
-            gui_redecorate_after_switch();
+            guieditor_redecorate(openeditor);
+            guieditor_resize(openeditor);
           }
           else if (mods == GLFW_MOD_CONTROL) {
-            gui_open_new_empty_buffer();
+            guieditor_open_new_empty_buffer();
           }
           break;
         }
@@ -512,7 +533,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             }
             /* Alt+Right.  Switch to the next buffer inside this editor. */
             case GLFW_MOD_ALT: {
-              function = gui_switch_to_next_buffer;
+              function = guieditor_switch_openfile_to_next;
               break;
             }
             /* Ctrl+Shift+Right.  Move to next word with shift held. */
@@ -546,7 +567,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             }
             /* Alt+Left.  Switch to the previous buffer inside this editor. */
             case GLFW_MOD_ALT: {
-              function = gui_switch_to_prev_buffer;
+              function = guieditor_switch_openfile_to_prev;
               break;
             }
             /* Ctrl+Shift+Left.  Move to prev word with shift held. */
@@ -840,8 +861,8 @@ void char_callback(GLFWwindow *window, Uint ch) {
     input = (char)ch;
     if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
       if (is_char_one_of(&input, 0, "Yy")) {
-        if (gui_close_and_go()) {
-          glfwSetWindowShouldClose(window, TRUE);
+        if (gui_quit()) {
+          ;
         }
         else {
           gui_leave_prompt_mode();
@@ -863,8 +884,8 @@ void char_callback(GLFWwindow *window, Uint ch) {
     if (is_char_one_of(&input, 0, "Nn")) {
       make_new_editor(TRUE);
       guieditor_hide(openeditor->prev, TRUE);
-      // gui_redecorate_after_switch();
       guieditor_redecorate(openeditor);
+      guieditor_resize(openeditor);
     }
     gui->flag.unset<GUI_EDITOR_MODE_KEY>();
   }
@@ -1057,7 +1078,8 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           if (element->data.file != element->parent->data.editor->openfile) {
             element->parent->data.editor->openfile = element->data.file;
             openfile = element->data.file;
-            gui_redecorate_after_switch();
+            guieditor_redecorate(element->parent->data.editor);
+            guieditor_resize(element->parent->data.editor);
           }
         }
         /* And, when pressed in any other element. */
@@ -1072,16 +1094,18 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       if (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) {
         openfile->mark = NULL;
       }
-      /* If the clicked element is any part of any scrollbar. */
-      else if (guielement_has_sb_data(gui->clicked)) {
-        /* Only reset the given element is the scrollbar's thumb and is not the currently hovered element. */
-        if (guiscrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && gui->clicked != guielement_from_mousepos()) {
-          gui->clicked->color = GUISB_THUMB_COLOR;
+      if (gui->clicked) {  
+        /* If the clicked element is any part of any scrollbar. */
+        if (guielement_has_sb_data(gui->clicked)) {
+          /* Only reset the given element is the scrollbar's thumb and is not the currently hovered element. */
+          if (guiscrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && gui->clicked != guielement_from_mousepos()) {
+            gui->clicked->color = GUISB_THUMB_COLOR;
+          }
+          guiscrollbar_refresh_needed(gui->clicked->data.sb);
         }
-        guiscrollbar_refresh_needed(gui->clicked->data.sb);
+        CALL_IF_VALID(gui->clicked->callback, gui->clicked, GUIELEMENT_LEFT_MOUSE_UNCLICK);
+        gui->clicked = NULL;
       }
-      CALL_IF_VALID(gui->clicked->callback, gui->clicked, GUIELEMENT_LEFT_MOUSE_UNCLICK);
-      gui->clicked = NULL;
     }
   }
   /* Right mouse button. */

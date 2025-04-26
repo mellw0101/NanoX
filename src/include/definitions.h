@@ -393,7 +393,6 @@ using std::vector;
 #define GUISB_THUMB_COLOR         vec4(1.0f, 1.0f, 1.0f, 0.3f)
 #define GUISB_ACTIVE_THUMB_COLOR  vec4(1.0f, 1.0f, 1.0f, 0.7f)
 
-
 /* Enumeration types. */
 
 /* Some line flags. */
@@ -615,9 +614,11 @@ typedef enum {
     GUI_PROMPT_SAVEFILE,
     GUI_PROMPT_EXIT_NO_SAVE,
     GUI_PROMPT_MENU,
-    #define GUI_PROMPT_SAVEFILE      GUI_PROMPT_SAVEFILE
-    #define GUI_PROMPT_EXIT_NO_SAVE  GUI_PROMPT_EXIT_NO_SAVE
-    #define GUI_PROMPT_MENU          GUI_PROMPT_MENU
+    GUI_PROMPT_OPEN_FILE,
+  # define GUI_PROMPT_SAVEFILE      GUI_PROMPT_SAVEFILE
+  # define GUI_PROMPT_EXIT_NO_SAVE  GUI_PROMPT_EXIT_NO_SAVE
+  # define GUI_PROMPT_MENU          GUI_PROMPT_MENU
+  # define GUI_PROMPT_OPEN_FILE     GUI_PROMPT_OPEN_FILE
   } guiprompt_type;
 
   typedef enum {

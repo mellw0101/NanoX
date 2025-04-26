@@ -472,6 +472,24 @@ void gui_suggestmenu_resize(void) {
   gui->suggestmenu->pos_refresh_needed = FALSE;
 }
 
+/* When the selected entry of the suggestmenu inside the viewport of the suggestmenu, highlight it. */
+void gui_suggestmenu_draw_selected(void) {
+  ASSERT(gui);
+  ASSERT(gui->suggestmenu);
+  ASSERT(gui->suggestmenu->completions);
+  int selected_row = (gui->suggestmenu->selected - gui->suggestmenu->viewtop);
+  vec2 pos, size;
+  /* Draw the selected entry, if its on screen. */
+  if (selected_row >= 0 && selected_row < gui->suggestmenu->rows) {
+    pos.x  = (gui->suggestmenu->element->pos.x + 1);
+    size.w = (gui->suggestmenu->element->size.w - 2);
+    row_top_bot_pixel(selected_row, gui->font, &pos.y, &size.h);
+    size.h -= pos.y;
+    pos.y  += (gui->suggestmenu->element->pos.y + ((selected_row == (gui->suggestmenu->rows - 1)) ? 2 : 1));
+    draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));
+  }
+}
+
 /* Draw the correct text in the suggestmenu based on the current viewtop of the suggestmenu. */
 void gui_suggestmenu_draw_text(void) {
   ASSERT(gui);

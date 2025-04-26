@@ -766,7 +766,7 @@ void gui_suggestmenu_load_str(void);
 void gui_suggestmenu_find(void);
 void gui_suggestmenu_run(void);
 void gui_suggestmenu_resize(void);
-// void gui_suggestmenu_update_scrollbar(void);
+void gui_suggestmenu_draw_selected(void);
 void gui_suggestmenu_draw_text(void);
 void gui_suggestmenu_selected_up(void);
 void gui_suggestmenu_selected_down(void);
@@ -796,6 +796,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void log_error_gui(const char *format, ...);
   void init_gui(void);
   void glfw_loop(void);
+  bool gui_quit(void);
   
 
   /* 'gui/guiutils.cpp' */
@@ -860,14 +861,11 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void gui_promptmenu_delete(void);
 
   /* gui/guifiles.cpp */
-  void gui_redecorate_after_switch(void);
   void gui_switch_to_prev_buffer(void);
   void gui_switch_to_next_buffer(void);
-  void gui_set_openfile(openfilestruct *file);
   bool gui_delete_lockfile(const char *lockfile);
   void gui_close_buffer(void);
   bool gui_close_and_go(void);
-  void gui_open_new_empty_buffer(void);
   
   /* gui/guielement.cpp */
   guielement *guielement_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
@@ -895,20 +893,24 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void guielement_set_flag_recurse(guielement *const element, bool set, Uint flag);
 
   /* gui/guieditor.cpp */
-  void refresh_editor_topbar(guieditor *editor);
-  void update_editor_topbar(guieditor *editor);
+  void guieditor_refresh_topbar(guieditor *editor);
+  void guieditor_update_active_topbar(guieditor *editor);
   void make_new_editor(bool new_buffer);
-  void delete_editor(guieditor *editor);
-  void close_editor(void);
-  void guieditor_hide(guieditor *editor, bool hide);
+  void guieditor_free(guieditor *const editor);
+  void guieditor_close(void);
+  void guieditor_hide(guieditor *const editor, bool hide);
   void guieditor_switch_to_prev(void);
   void guieditor_switch_to_next(void);
-  void guieditor_set_open(guieditor *editor);
+  void guieditor_switch_openfile_to_prev(void);
+  void guieditor_switch_openfile_to_next(void);
+  void guieditor_set_open(guieditor *const editor);
   guieditor *guieditor_from_element(guielement *e);
   guieditor *guieditor_from_file(openfilestruct *file);
   void guieditor_calculate_rows(guieditor *const editor);
   void guieditor_resize(guieditor *const editor);
   void guieditor_redecorate(guieditor *const editor);
+  void guieditor_open_new_empty_buffer(void);
+  void guieditor_close_open_buffer(void);
 
   /* gui/guigrid.cpp */
   guigridsection *make_new_gridsection(void);

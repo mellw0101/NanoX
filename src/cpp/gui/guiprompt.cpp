@@ -89,7 +89,7 @@ void gui_promptmenu_init(void) {
   ASSERT(gui);
   gui->promptmenu = (GuiPromptMenu *)xmalloc(sizeof(*gui->promptmenu));
   gui->promptmenu->flag.refresh_needed = FALSE;
-  gui->promptmenu->buffer = make_new_font_buffer();
+  gui->promptmenu->buffer  = make_new_font_buffer();
   gui->promptmenu->element = guielement_create(gui->root, FALSE);
   guielement_move_resize(
     gui->promptmenu->element,

@@ -359,7 +359,7 @@ void draw_editor(guieditor *editor) {
   guielement_draw(editor->topbar);
   /* Render the topbar of the editor. */
   if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
-    refresh_editor_topbar(editor);
+    guieditor_refresh_topbar(editor);
     vertex_buffer_clear(editor->topbuf);
     for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
       /* Assign the child to a new ptr for readbility. */
@@ -377,7 +377,7 @@ void draw_editor(guieditor *editor) {
   else {
     /* When the active file has changed, adjust the colors of the topbar. */
     if (editor->flag.is_set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>()) {
-      update_editor_topbar(editor);
+      guieditor_update_active_topbar(editor);
       editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
     }
     for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
@@ -445,23 +445,16 @@ void draw_suggestmenu(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   ASSERT(gui->suggestmenu->completions);
-  int selected_row;
-  vec2 pos, size;
-  /* Get the current number of suggestions. */
+  /* Only draw the suggestmenu if there are any available suggestions. */
   if (cvec_len(gui->suggestmenu->completions)) {
     gui_suggestmenu_resize();
+    /* Draw the main element of the suggestmenu. */
     guielement_draw(gui->suggestmenu->element);
-    /* Draw the rect that indicated the currently selected entry. */
-    selected_row = (gui->suggestmenu->selected - gui->suggestmenu->viewtop);
-    if (selected_row >= 0 && selected_row < gui->suggestmenu->rows) {
-      pos.x  = (gui->suggestmenu->element->pos.x + 1);
-      size.w = (gui->suggestmenu->element->size.w - 2);
-      row_top_bot_pixel(selected_row, gui->font, &pos.y, &size.h);
-      size.h -= pos.y;
-      pos.y  += (gui->suggestmenu->element->pos.y + 1);
-      draw_rect(pos, size, vec4(vec3(1), 0.4));
-    }
+    /* Highlight the selected entry in the suggestmenu when its on the screen. */
+    gui_suggestmenu_draw_selected();
+    /* Draw the scrollbar of the suggestmenu. */
     guiscrollbar_draw(gui->suggestmenu->sb);
+    /* Draw the text of the suggestmenu entries. */
     gui_suggestmenu_draw_text();
   }
 }

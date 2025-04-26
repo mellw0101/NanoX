@@ -10,21 +10,6 @@
  */
 #include "../../include/prototypes.h"
 
-/* Ensure correctness when switching buffers inside when using the gui, also display any errors from the buffer. */
-void gui_redecorate_after_switch(void) {
-  /* If there is a error in the open file show it on the statusbar, and log it. */
-  if (openeditor->openfile->errormessage) {
-    show_statusmsg(ALERT, 2, openeditor->openfile->errormessage);
-    logE("%s", openeditor->openfile->errormessage);
-    free(openeditor->openfile->errormessage);
-    openeditor->openfile->errormessage = NULL;
-  }
-  ensure_firstcolumn_is_aligned();
-  currmenu       = MMOST;
-  shift_held     = TRUE;
-  refresh_needed = TRUE;
-  openeditor->flag.set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
-}
 
 /* When using the gui, switch to the previous entry in the circular list of buffers. */
 void gui_switch_to_prev_buffer(void) {
@@ -37,7 +22,6 @@ void gui_switch_to_prev_buffer(void) {
   /* After we have moved to the previous file in the editor, set
    * the global file pointer to match the currently open editor. */
   openfile = openeditor->openfile;
-  // gui_redecorate_after_switch();
   guieditor_redecorate(openeditor);
 }
 
@@ -52,17 +36,7 @@ void gui_switch_to_next_buffer(void) {
   /* After we have moved to the next file in the editor, set the
    * global file pointer to match the currently open editor. */
   openfile = openeditor->openfile;
-  // gui_redecorate_after_switch();
   guieditor_redecorate(openeditor);
-}
-
-/* Set openfile as `file`. */
-void gui_set_openfile(openfilestruct *file) {
-  ASSERT(file);
-  openfile = file;
-  openeditor = guieditor_from_file(file);
-  openeditor->openfile = file;
-  gui_redecorate_after_switch();
 }
 
 /* Delete the lock file when in gui mode, this will show any error on the gui.  Returns `TRUE` on success, and `FALSE` otherwise. */
@@ -91,8 +65,7 @@ bool gui_close_and_go(void) {
   /* When there is more then one file open in the open editor. */
   if (openeditor->openfile != openeditor->openfile->next) {
     gui_close_buffer();
-    gui_redecorate_after_switch();
-    openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+    guieditor_redecorate(openeditor);
     return FALSE;
   }
   else {
@@ -101,23 +74,11 @@ bool gui_close_and_go(void) {
       return TRUE;
     }
     else {
-      close_editor();
+      guieditor_close();
       guieditor_hide(openeditor, FALSE);
-      gui_redecorate_after_switch();
+      guieditor_redecorate(openeditor);
+      guieditor_resize(openeditor);
       return FALSE;
     }
   }
-}
-
-/* Open a new empty buffer. */
-void gui_open_new_empty_buffer(void) {
-  make_new_buffer();
-  /* After the new buffer has been created, ensure correctness in
-   * the open editor, as the startfile might have changed as well. */
-  openeditor->openfile  = openfile;
-  openeditor->startfile = startfile;
-  // gui_redecorate_after_switch();
-  // openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-  // guiscrollbar_refresh_needed(openeditor->sb);
-  guieditor_redecorate(openeditor);
 }

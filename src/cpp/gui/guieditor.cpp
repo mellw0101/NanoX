@@ -62,7 +62,7 @@ static void guieditor_topbar_create(guieditor *const editor) {
 }
 
 /* Remove the existing buffer name buttons and create new ones based on the currently open files of `editor`. */
-void refresh_editor_topbar(guieditor *editor) {
+void guieditor_refresh_topbar(guieditor *editor) {
   /* When debugging is enabled, assert everything we use. */
   ASSERT(editor->topbar);
   ASSERT(gui);
@@ -118,12 +118,12 @@ void refresh_editor_topbar(guieditor *editor) {
 }
 
 /* Set all elements color in topbar, setting the active one to the active color. */
-void update_editor_topbar(guieditor *editor) {
+void guieditor_update_active_topbar(guieditor *editor) {
   ASSERT(editor);
   ASSERT(editor->topbar);
   guielement *button;
   /* Iterate over every open file in the editor, if any. */
-  for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
+  for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
     button = editor->topbar->children[i];
     if (guielement_has_file_data(button)) {
       if (button->data.file == editor->openfile) {
@@ -174,9 +174,9 @@ void make_new_editor(bool new_buffer) {
   openeditor->rows     = 0;
   /* Create the main editor element. */
   openeditor->main = guielement_create(
-    0,
+    0.0f,
     vec2(gui->width, (gui->height - gui->botbar->size.h)),
-    0,
+    0.0f,
     EDIT_BACKGROUND_COLOR,
     FALSE
   );
@@ -188,7 +188,7 @@ void make_new_editor(bool new_buffer) {
   guielement_move_resize(
     openeditor->gutter,
     vec2(0.0f, (openeditor->main->pos.y + openeditor->topbar->size.h)),
-    vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui->font)/* FONT_WIDTH(gui->font) * margin + 1) */, (openeditor->main->size.h - openeditor->topbar->size.h))
+    vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui->font), (openeditor->main->size.h - openeditor->topbar->size.h))
   );
   /* Set relative positioning for the gutter, so it follows the editor. */
   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_POS>();
@@ -223,26 +223,24 @@ void make_new_editor(bool new_buffer) {
 }
 
 /* Delete the data of a editor. */
-void delete_editor(guieditor *editor) {
+void guieditor_free(guieditor *const editor) {
   ASSERT(editor);
   if (editor->buffer) {
     vertex_buffer_delete(editor->buffer);
     editor->buffer = NULL;
   }
-  guielement_free(editor->gutter);
-  guielement_free(editor->text);
+  guielement_free(editor->main);
   free(editor->sb);
   free(editor);
 }
 
 /* Close the currently active editor. */
-void close_editor(void) {
+void guieditor_close(void) {
   guieditor *editor = openeditor;
   if (editor == starteditor) {
     starteditor = starteditor->next;
   }
-  editor->prev->next = editor->next;
-  editor->next->prev = editor->prev;
+  CLIST_UNLINK(editor);
   openeditor = editor->prev;
   if (openeditor == editor) {
     openeditor  = NULL;
@@ -252,10 +250,10 @@ void close_editor(void) {
     openfile  = openeditor->openfile;
     startfile = openeditor->startfile;
   }
-  delete_editor(editor);
+  guieditor_free(editor);
 }
 
-void guieditor_hide(guieditor *editor, bool hide) {
+void guieditor_hide(guieditor *const editor, bool hide) {
   ASSERT(editor);
   if (hide) {
     editor->flag.set<GUIEDITOR_HIDDEN>();
@@ -268,47 +266,84 @@ void guieditor_hide(guieditor *editor, bool hide) {
 
 /* Switch to the previous editor.  */
 void guieditor_switch_to_prev(void) {
-  if (openeditor == openeditor->next) {
+  ASSERT(openeditor);
+  /* If there is only one editor open, just print a message and return. */
+  if (CLIST_SINGLE(openeditor)) {
     show_statusmsg(MILD, 2, "Only one editor open");
     return;
   }
-  openeditor = openeditor->prev;
-  openfile   = openeditor->openfile;
-  startfile  = openeditor->startfile;
+  CLIST_ADV_PREV(openeditor);
+  openfile  = openeditor->openfile;
+  startfile = openeditor->startfile;
   guieditor_hide(openeditor->next, TRUE);
   guieditor_hide(openeditor, FALSE);
-  // gui_redecorate_after_switch();
   guieditor_redecorate(openeditor);
+  guieditor_resize(openeditor);
   editwinrows = openeditor->rows;
 }
 
 /* Switch to the next editor. */
 void guieditor_switch_to_next(void) {
-  if (openeditor == openeditor->next) {
+  ASSERT(openeditor);
+  /* When there is only a single open editor, just tell the user and return. */
+  if (CLIST_SINGLE(openeditor)) {
     show_statusmsg(MILD, 2, "Only one editor open");
     return;
   }
-  openeditor = openeditor->next;
-  openfile   = openeditor->openfile;
-  startfile  = openeditor->startfile;
+  CLIST_ADV_NEXT(openeditor);
+  openfile  = openeditor->openfile;
+  startfile = openeditor->startfile;
   guieditor_hide(openeditor->prev, TRUE);
   guieditor_hide(openeditor, FALSE);
-  // gui_redecorate_after_switch();
   guieditor_redecorate(openeditor);
+  guieditor_resize(openeditor);
   editwinrows = openeditor->rows;
 }
 
+/* Within the currently open editor, switch to the prev buffer. */
+void guieditor_switch_openfile_to_prev(void) {
+  ASSERT(openeditor);
+  ASSERT(openeditor->openfile);
+  /* If there is only one open buffer in the currently open editor, there is nothing to do. */
+  if (CLIST_SINGLE(openeditor->openfile)) {
+    show_statusmsg(AHEM, 2, "No more open file buffers in the current editor");
+    return;
+  }
+  CLIST_ADV_PREV(openeditor->openfile);
+  openfile = openeditor->openfile;
+  guieditor_redecorate(openeditor);
+  guieditor_resize(openeditor);
+}
+
+/* Within the currently open editor, switch to the prev buffer. */
+void guieditor_switch_openfile_to_next(void) {
+  ASSERT(openeditor);
+  ASSERT(openeditor->openfile);
+  /* If there is only one open file in the currently active editor, print a msg telling the user and return. */
+  if (CLIST_SINGLE(openeditor->openfile)) {
+    show_statusmsg(AHEM, 2, "No more open file buffers in the current editor");
+    return;
+  }
+  CLIST_ADV_NEXT(openeditor->openfile);
+  openfile = openeditor->openfile;
+  guieditor_redecorate(openeditor);
+  guieditor_resize(openeditor);
+}
+
 /* Set `openeditor` to editor, if its not already. */
-void guieditor_set_open(guieditor *editor) {
+void guieditor_set_open(guieditor *const editor) {
+  ASSERT(openeditor);
+  ASSERT(editor);
   /* Return early if editor is already the open editor. */
   if (editor == openeditor) {
     return;
   }
+  /* Ensure the global ptr's to the openfile and startfile are set as the new open editor. */
   openfile   = editor->openfile;
   startfile  = editor->startfile;
   openeditor = editor;
-  // gui_redecorate_after_switch();
   guieditor_redecorate(editor);
+  guieditor_resize(editor);
 }
 
 /* If the element `e` has any relation to an editor, return that editor. */
@@ -355,14 +390,21 @@ static void guieditor_set_gutter_width(guieditor *const editor) {
   ASSERT(editor);
   ASSERT(editor->openfile);
   ASSERT(editor->openfile->filebot);
-  char *linenostr = fmtstr("%*lu ", (margin - 1), editor->openfile->filebot->lineno);
+  char *linenostr;
+  confirm_margin();
+  linenostr = fmtstr("%*lu ", (margin - 1), editor->openfile->filebot->lineno);
   editor->gutter->size.w = pixbreadth(gui->font, linenostr);
   free(linenostr);
 }
 
 /* Resize `editor` to the size of the gui, this needs to be changed later when we add a grid to hold editors. */
 void guieditor_resize(guieditor *const editor) {
+  ASSERT(gui);
+  ASSERT(gui->botbar);
   ASSERT(editor);
+  ASSERT(editor->main);
+  ASSERT(editor->text);
+  ASSERT(editor->gutter);
   if (!ISSET(LINE_NUMBERS)) {
     editor->text->relative_pos.x = 0;
     editor->gutter->flag.set<GUIELEMENT_HIDDEN>();
@@ -379,6 +421,8 @@ void guieditor_resize(guieditor *const editor) {
 
 /* Used to ensure the correct state of an editor after we have switched to a new one or changed the currently open file. */
 void guieditor_redecorate(guieditor *const editor) {
+  ASSERT(editor);
+  ASSERT(editor->openfile);
   /* If there is a error with the currently opened file, show it in the statusbar and log it. */
   if (editor->openfile->errormessage) {
     show_statusmsg(ALERT, 2, editor->openfile->errormessage);
@@ -392,5 +436,26 @@ void guieditor_redecorate(guieditor *const editor) {
   refresh_needed = TRUE;
   editor->flag.set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
   editor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-  guieditor_resize(editor);
+  guiscrollbar_refresh_needed(editor->sb);
+}
+
+/* Open a new empty `openfilestruct *` in the currently open editor. */
+void guieditor_open_new_empty_buffer(void) {
+  ASSERT(openeditor);
+  ASSERT(openeditor->openfile);
+  /* Make a new buffer related to the global pointer. */
+  make_new_buffer();
+  /* Set the open editor's currently open file to the global ptr. */
+  openeditor->openfile = openfile;
+  guieditor_redecorate(openeditor);
+  guieditor_resize(openeditor);
+}
+
+/* Close the currently open editor's currently open buffer. */
+void guieditor_close_open_buffer(void) {
+  ASSERT(openeditor);
+  ASSERT(openeditor->openfile);
+  close_buffer();
+  openeditor->openfile  = openfile;
+  openeditor->startfile = startfile;
 }

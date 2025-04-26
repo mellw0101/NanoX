@@ -68,9 +68,13 @@ guielement *guielement_create(guielement *const parent, bool in_gridmap) _NOTHRO
 void guielement_free(guielement *const element) {
   /* Assert that the passed element is valid. */
   ASSERT(element);
-  /* First start by running this function recursivly on all children of element. */
-  for (Ulong i = 0; i < element->children.size(); ++i) {
-    guielement_free(element->children[i]);
+  /* If this element has a parent, remove the element from the parent. */
+  if (element->parent) {
+    element->parent->children.erase(element);
+  }
+  /* Free children until there are none. */
+  while (!element->children.empty()) {
+    guielement_free(element->children.back());
   }
   /* Then remove it from the global gridmap and freeing the lable and the element itself. */
   gridmap.remove(element);
@@ -92,11 +96,9 @@ void guielement_set_lable(guielement *const element, const char *string) _NOTHRO
 /* Delete all children of `element`. */
 void guielement_delete_children(guielement *const element) {
   ASSERT(element);
-  for (Ulong i=0; i<element->children.size(); ++i) {
-    guielement_free(element->children[i]);
-    element->children[i] = NULL;
+  while (!element->children.empty()) {
+    guielement_free(element->children.back());
   }
-  element->children.clear();
 }
 
 /* Get ui element from current mouse position. */

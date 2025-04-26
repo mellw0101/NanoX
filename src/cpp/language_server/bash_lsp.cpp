@@ -20,7 +20,7 @@ void get_env_path_binaries(void) {
   if (!env_path_task_running) {
     Ulong npaths;
     char **paths = get_env_paths(&npaths);
-    for (Ulong i = 0; i < npaths; ++i) {
+    for (Ulong i=0; i<npaths; ++i) {
       directory_data_init(&dir);
       if (directory_get_recurse(paths[i], &dir) != -1) {
         DIRECTORY_ITER(dir, j, entry,

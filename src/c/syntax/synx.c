@@ -148,8 +148,7 @@ void syntaxobject_free(SyntaxObject *const obj) {
 void syntaxobject_unlink(SyntaxObject *const obj) {
   ASSERT(obj);
   ASSERT(obj->pos);
-  obj->prev->next = obj->next;
-  obj->next->prev = obj->prev;
+  CLIST_UNLINK(obj);
   syntaxobject_free(obj);
 }
 

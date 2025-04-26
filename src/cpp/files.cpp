@@ -1353,9 +1353,9 @@ int copy_file(FILE *inn, FILE *out, bool close_out) {
   return retval;
 }
 
-// Create a backup of an existing file.  If the user did not request backups,
-// make a temporary one.  (trying first in the directory of the original file,
-// then in the user's home directory).  Return 'TRUE' if the save can proceed.
+/* Create a backup of an existing file.  If the user did not request backups,
+ * make a temporary one.  (trying first in the directory of the original file,
+ * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
 static bool make_backup_of(char *realname) {
   static timespec filetime[2];
   FILE *original = NULL, *backup_file = NULL;
@@ -1488,11 +1488,11 @@ failure:
   return FALSE;
 }
 
-// Write the current buffer to disk.  If thefile isn't NULL, we write to a temporary file that is already open.
-// If normal is 'FALSE' (for a spellcheck or an emergency save, for example), we don't make a backup and don't
-// give feedback.  If method is 'APPEND' or 'PREPEND', it means we will be appending or prepending instead of
-// overwriting the given file. If annotate is 'TRUE' and when writing a normal file, we set the current filename
-// and stat info. Return 'TRUE' on success, and 'FALSE' otherwise.
+/* Write the current buffer to disk.  If thefile isn't NULL, we write to a temporary file that is already open.
+ * If normal is 'FALSE' (for a spellcheck or an emergency save, for example), we don't make a backup and don't
+ * give feedback.  If method is 'APPEND' or 'PREPEND', it means we will be appending or prepending instead of
+ * overwriting the given file. If annotate is 'TRUE' and when writing a normal file, we set the current filename
+ * and stat info. Return 'TRUE' on success, and 'FALSE' otherwise. */
 bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate) {
   PROFILE_FUNCTION;
   /* Becomes TRUE when the file is non-temporary and exists. */
