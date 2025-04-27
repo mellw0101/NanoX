@@ -192,7 +192,7 @@ constexpr short bg_vs_code_color_array[] {
   static constexpr vec4 GUI_DEFAULT_COMMENT_COLOR           = VEC4_8BIT(106, 153, 85, 1);
   static constexpr vec4 EDIT_BACKGROUND_COLOR               = vec4( 0.1f,  0.1f,  0.1f, 1.0f);
   static constexpr vec4 EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR = vec4(0.08f, 0.08f, 0.08f, 1.0f);
-  static constexpr vec4 EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR   = vec4(0.14f, 0.14f, 0.14f, 1.0f);
+  static constexpr vec4 EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR   = vec4(0.25f, 0.25f, 0.25f, 1.0f);
   static constexpr vec4 GUI_BASE_BORDER_COLOR               = vec4(0.5, 0.5, 0.5, 1);
   static constexpr vec4 GUI_MARKED_REGION_COLOR             = vec4( 0.2f,  0.2f,  0.5f, 0.45f);
   /* Vs-code colors. */

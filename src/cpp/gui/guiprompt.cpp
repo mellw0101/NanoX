@@ -114,7 +114,6 @@ void gui_promptmenu_delete(void) {
 
 void gui_promptmenu_open_file(void) {
   if (*answer) {
-    writef("%s\n", answer);
     /* Path is a directory. */
     if (dir_exists(answer)) {
       show_statusmsg(AHEM, 2, "'%s' is a directory", answer);
@@ -127,8 +126,8 @@ void gui_promptmenu_open_file(void) {
     else if (!file_exists(answer)) {
       show_statusmsg(AHEM, 2, "'%s' does not exist", answer);
     }
-    else { 
-      writef("File exists.\n");
+    else {
+      guieditor_open_buffer(answer);
     }
   }
   gui_leave_prompt_mode();

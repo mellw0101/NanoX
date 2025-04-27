@@ -110,7 +110,7 @@ void syntaxfileline_from_str(const char *const restrict string, SyntaxFileLine *
   /* When the file ends with just a '\n' char, the last line->data will
    * be NULL, this is because we make the new line last in the loop. */
   if (!filebot->data) {
-    filebot->data = copy_of("");
+    filebot->data = COPY_OF("");
   }
   /* Assign filetop and filebot to head and tail. */
   *head = filetop;

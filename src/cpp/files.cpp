@@ -535,8 +535,7 @@ void close_buffer(void) _NOTHROW {
   if (orphan == startfile) {
     startfile = startfile->next;
   }
-  orphan->prev->next = orphan->next;
-  orphan->next->prev = orphan->prev;
+  CLIST_UNLINK(orphan);
   if (orphan->type.is_set<C_CPP>() || orphan->type.is_set<BASH>()) {
     file_listener.stop_listener(orphan->filename);
   }
@@ -572,6 +571,7 @@ char *encode_data(char *text, Ulong length) _NOTHROW {
  * set to the name of the file.  undoable means that undo records should be
  * created and that the file does not need to be checked for writability. */
 void read_file(FILE *f, int fd, const char *filename, bool undoable) {
+  TIMER_START(timer);
   /* The line number where we start the insertion. */
   long was_lineno = openfile->current->lineno;
   /* The leftedge where we start the insertion. */
@@ -583,7 +583,7 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   /* The size of the line buffer; increased as needed. */
   Ulong bufsize = LUMPSIZE;
   /* The buffer in which we assemble each line of the file. */
-  char *buf = (char *)nmalloc(bufsize);
+  char *buf = (char *)xmalloc(bufsize);
   /* The top of the new buffer where we store the read file. */
   linestruct *topline;
   /* The bottom of the new buffer. */
@@ -659,7 +659,7 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   funlockfile(f);
   block_sigwinch(FALSE);
   /* When reading from stdin, restore the terminal and reenter curses mode. */
-  if (isendwin()) {
+  if (!ISSET(USING_GUI) && isendwin()) {
     if (!isatty(STDIN_FILENO)) {
       reconnect_and_store_state();
     }
@@ -739,6 +739,8 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   else if (openfile->fmt == UNSPECIFIED) {
     openfile->fmt = format;
   }
+  TIMER_END(timer, ms);
+  TIMER_PRINT(ms);
 }
 
 /* Open the file with the given name.  If the file does not exist, display

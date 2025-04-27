@@ -912,6 +912,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void       guieditor_redecorate(guieditor *const editor);
   void       guieditor_open_new_empty_buffer(void);
   void       guieditor_close_open_buffer(void);
+  void guieditor_open_buffer(const char *const restrict path);
 
   /* gui/guigrid.cpp */
   guigridsection *make_new_gridsection(void);

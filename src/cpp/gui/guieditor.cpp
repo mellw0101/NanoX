@@ -463,8 +463,27 @@ void guieditor_close_open_buffer(void) {
   openeditor->startfile = startfile;
 }
 
+/* Open a new buffer in the currently open editor using `path`. */
 void guieditor_open_buffer(const char *const restrict path) {
   ASSERT(openeditor);
   ASSERT(openeditor->openfile);
   ASSERT(path);
+  openfilestruct *was_openfile = openfile;
+  openfilestruct *new_openfile;
+  /* In this case we should always terminate apon the file not existing as this function
+   * should never be called in this case.  Note that this should be handeled before
+   * the call to this function, because this function has one job, to open a file. */
+  ALWAYS_ASSERT(file_exists(path));
+  open_buffer(path, TRUE);
+  /* If the buffer this was called from is empty, then the newly opened one should replace it. */
+  if (!*was_openfile->filename && !was_openfile->totsize) {
+    new_openfile = openfile;
+    openfile = was_openfile;
+    close_buffer();
+    /* Make the new buffer the currently open one. */
+    openfile = new_openfile;
+  }
+  openeditor->openfile = openfile;
+  guieditor_redecorate(openeditor);
+  guieditor_resize(openeditor);
 }
