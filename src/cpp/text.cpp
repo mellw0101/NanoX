@@ -1772,7 +1772,7 @@ void update_undo(undo_type action) _NOTHROW {
   }
   u->newsize = openfile->totsize;
   switch (u->type) {
-    case ADD : {
+    case ADD: {
       newlen = (openfile->current_x - u->head_x);
       u->strdata = arealloc(u->strdata, (newlen + 1));
       strncpy(u->strdata, (openfile->current->data + u->head_x), newlen);
@@ -1780,13 +1780,13 @@ void update_undo(undo_type action) _NOTHROW {
       u->tail_x = openfile->current_x;
       break;
     }
-    case ENTER : {
+    case ENTER: {
       u->strdata = copy_of(openfile->current->data);
       u->tail_x  = openfile->current_x;
       break;
     }
-    case BACK :
-    case DEL : {
+    case BACK:
+    case DEL: {
       textposition = (openfile->current->data + openfile->current_x);
       charlen = char_length(textposition);
       datalen = strlen(u->strdata);
@@ -1810,16 +1810,16 @@ void update_undo(undo_type action) _NOTHROW {
       }
       break;
     }
-    case REPLACE : {
+    case REPLACE: {
       break;
     }
-    case SPLIT_BEGIN :
-    case SPLIT_END : {
+    case SPLIT_BEGIN:
+    case SPLIT_END: {
       break;
     }
-    case ZAP :
-    case CUT_TO_EOF :
-    case CUT : {
+    case ZAP:
+    case CUT_TO_EOF:
+    case CUT: {
       if (u->type == ZAP) {
         u->cutbuffer = cutbuffer;
       }
@@ -1851,12 +1851,12 @@ void update_undo(undo_type action) _NOTHROW {
       }
       break;
     }
-    case COUPLE_BEGIN : {
+    case COUPLE_BEGIN: {
       break;
     }
-    case COUPLE_END :
-    case PASTE :
-    case INSERT : {
+    case COUPLE_END:
+    case PASTE:
+    case INSERT: {
       u->tail_lineno = openfile->current->lineno;
       u->tail_x      = openfile->current_x;
       break;
@@ -1898,7 +1898,7 @@ void update_undo(undo_type action) _NOTHROW {
       u->cutbuffer = cutbuffer;
       break;
     }
-    default : {
+    default: {
       die("Bad undo type -- please report a bug\n");
     }
   }
@@ -1998,7 +1998,7 @@ void do_wrap(void) {
     memmove((line->data + lead_len), line->data, (line_len + 1));
     strncpy(line->data, line->prev->data, lead_len);
     openfile->current_x += lead_len;
-    openfile->totsize += lead_len;
+    openfile->totsize   += lead_len;
     free(openfile->undotop->strdata);
     update_undo(ENTER);
     if (autowhite) {

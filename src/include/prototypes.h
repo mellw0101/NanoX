@@ -859,6 +859,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   long prompt_index_from_mouse(bool allow_outside);
   void gui_promptmenu_init(void);
   void gui_promptmenu_delete(void);
+  void gui_promptmenu_open_file(void);
 
   /* gui/guifiles.cpp */
   void gui_switch_to_prev_buffer(void);

@@ -100,52 +100,57 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
       switch (key) {
         case GLFW_KEY_ENTER: {
           if (!mods) {
-            if (gui_prompt_type == GUI_PROMPT_SAVEFILE) {
-              if (*answer) {
-                /* Get the full path to of the answer. */
-                char *full_path = get_full_path(answer);
-                /* If the currently open file has a name, and that name does not match the answer. */
-                if (*openfile->filename && strcmp(answer, openfile->filename) != 0) {
-                  /* When the given path does not exist. */
-                  if (!full_path) {
-                    NETLOG("Save file using diffrent name?\n");
+            switch (gui_prompt_type) {
+              case GUI_PROMPT_SAVEFILE: {
+                if (*answer) {
+                  /* Get the full path to of the answer. */
+                  char *full_path = get_full_path(answer);
+                  /* If the currently open file has a name, and that name does not match the answer. */
+                  if (*openfile->filename && strcmp(answer, openfile->filename) != 0) {
+                    /* When the given path does not exist. */
+                    if (!full_path) {
+                      NETLOG("Save file using diffrent name?\n");
+                    }
+                    else {
+                      NETLOG("Overwrite file: '%s'?\n", answer);
+                    }
                   }
+                  /* Otherwise if the current file has no name, then just save using the answer. */
                   else {
-                    NETLOG("Overwrite file: '%s'?\n", answer);
+                    show_statusmsg(INFO, 5, "Saving file: %s", answer);
+                    /* Free the openfile filename, and assign answer to it. */
+                    openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
+                    guieditor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+                    /* Then save the file. */
+                    if (write_it_out(FALSE, FALSE) == 2) {
+                      logE("Failed to save file, this needs fixing and the reason needs to be found out.");
+                      close_and_go();
+                    }
+                    gui_leave_prompt_mode();
+                  }
+                  free(full_path);
+                }
+                break;
+              }
+              case GUI_PROMPT_MENU: {
+                if (strcasecmp(answer, "open file") == 0) {
+                  gui_ask_user("File to open", GUI_PROMPT_OPEN_FILE);
+                  answer = free_and_assign(answer, getpwd());
+                  typing_x = strlen(answer);
+                  if (answer[typing_x - 1] != '/') {
+                    answer = xnstrncat(answer, typing_x, S__LEN("/"));
+                    typing_x += 1;
                   }
                 }
-                /* Otherwise if the current file has no name, then just save using the answer. */
                 else {
-                  show_statusmsg(INFO, 5, "Saving file: %s", answer);
-                  /* Free the openfile filename, and assign answer to it. */
-                  openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
-                  guieditor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-                  /* Then save the file. */
-                  if (write_it_out(FALSE, FALSE) == 2) {
-                    logE("Failed to save file, this needs fixing and the reason needs to be found out.");
-                    close_and_go();
-                  }
                   gui_leave_prompt_mode();
                 }
-                free(full_path);
+                break;
               }
-            }
-            else if (gui_prompt_type == GUI_PROMPT_MENU) {
-              if (strcasecmp(answer, "open file") == 0) {
-                gui_ask_user("File to open", GUI_PROMPT_OPEN_FILE);
+              case GUI_PROMPT_OPEN_FILE: {
+                gui_promptmenu_open_file();
+                break;
               }
-              else {
-                gui_leave_prompt_mode();
-              }
-            }
-            else if (gui_prompt_type == GUI_PROMPT_OPEN_FILE) {
-              if (*answer) {
-                writef("%s\n", answer);
-                if (file_exists(answer)) {
-                  writef("File exists.\n");
-                }
-              }
-              gui_leave_prompt_mode();
             }
           }
           break;
@@ -275,9 +280,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* If CTRL+Q is pressed, quit. */
           if (mods == GLFW_MOD_CONTROL) {
             if (!openfile->modified || ISSET(VIEW_MODE)) {
-              // if (gui_close_and_go()) {
-              //   glfwSetWindowShouldClose(window, TRUE);
-              // }
               gui_quit();
             }
             else if (ISSET(SAVE_ON_EXIT) && *openfile->filename) {
@@ -416,7 +418,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               gui_ask_user("Save file", GUI_PROMPT_SAVEFILE);
               /* If the file has a name but is not a file yet then add that name to the answer. */
               if (has_name) {
-                answer   = copy_of(openfile->filename);
+                answer   = free_and_assign(answer, copy_of(openfile->filename));
                 typing_x = strlen(answer);
               }
               return;

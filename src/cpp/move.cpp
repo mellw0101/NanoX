@@ -33,10 +33,10 @@ void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
   }
 }
 
-// Return the index in line->data that corresponds to the given column on the
-// chunk that starts at the given leftedge.  If the target column has landed
-// on a tab, prevent the cursor from falling back a row when moving forward,
-// or from skipping a row when moving backward, by incrementing the index.
+/* Return the index in line->data that corresponds to the given column on the
+ * chunk that starts at the given leftedge.  If the target column has landed
+ * on a tab, prevent the cursor from falling back a row when moving forward,
+ * or from skipping a row when moving backward, by incrementing the index. */
 static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _NOTHROW {
   Ulong index = actual_x(line->data, column);
   if (ISSET(SOFTWRAP) && line->data[index] == '\t' && ((forward && wideness(line->data, index) < *leftedge)
@@ -437,8 +437,8 @@ void to_next_word(void) {
   edit_redraw(was_current, FLOWING);
 }
 
-// Move to the beginning of the current line (or softwrapped chunk).  When enabled, do a smart home.
-// When softwrapping, go the beginning of the full line when already at the start of a chunk.
+/* Move to the beginning of the current line (or softwrapped chunk).  When enabled, do a smart home.
+ * When softwrapping, go the beginning of the full line when already at the start of a chunk. */
 void do_home(void) {
   linestruct *was_current = openfile->current;
   bool moved_off_chunk, moved;

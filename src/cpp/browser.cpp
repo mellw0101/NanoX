@@ -1,6 +1,7 @@
 /** @file browser.cpp */
 #include "../include/prototypes.h"
 
+
 /* The list of files to display in the file browser. */
 static char **filelist = NULL;
 /* The number of files in the list. */
@@ -14,9 +15,10 @@ static int gauge = 0;
 /* The currently selected filename in the list; zero-based. */
 static Ulong selected = 0;
 
-// Fill 'filelist' with the names of the files in the given directory, set 'list_length' to the
-// number of names in that list, set 'gauge' to the width of the widest filename plus ten, and
-// set 'piles' to the number of files that can be displayed per screen row.  And sort the list too.
+
+/* Fill 'filelist' with the names of the files in the given directory, set 'list_length' to the
+ * number of names in that list, set 'gauge' to the width of the widest filename plus ten, and
+ * set 'piles' to the number of files that can be displayed per screen row.  And sort the list too. */
 static void read_the_list(const char *path, DIR *dir) {
   Ulong path_len = strlen(path);
   Ulong widest = 0;
@@ -86,14 +88,14 @@ static void reselect(const char *const name) _NOTHROW {
 /* Display at most a screenful of filenames from the gleaned filelist. */
 void browser_refresh(void) {
   /* The current row and column while the list is getting displayed. */
-  int row = 0, col = 0;
+  int row=0, col=0;
   /* The row and column of the selected item. */
-  int the_row = 0, the_column = 0;
+  int the_row=0, the_column=0;
   /* The additional information that we'll display about a file. */
   char *info;
   titlebar(present_path);
   blank_edit();
-  for (Ulong index = (selected - selected % (usable_rows * piles)); (index < list_length) && (row < usable_rows); ++index) {
+  for (Ulong index = (selected - selected % (usable_rows * piles)); (index < list_length) && (row < (long)usable_rows); ++index) {
     /* The filename we display, minus the path. */
     const char *thename = tail(filelist[index]);
     /* The file extention. */
@@ -288,8 +290,8 @@ static void findfile(const char *needle, bool forwards) _NOTHROW {
   }
 }
 
-// Prepare the prompt and ask the user what to search for; then search for it.
-// If forwards is TRUE, search forward in the list; otherwise, search backward.
+/* Prepare the prompt and ask the user what to search for; then search for it.
+ * If forwards is TRUE, search forward in the list; otherwise, search backward. */
 static void search_filename(bool forwards) {
   char *thedefault;
   int   response;
@@ -298,7 +300,7 @@ static void search_filename(bool forwards) {
     char *disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
     thedefault = (char *)nmalloc(strlen(disp) + 7);
     /* We use (COLS / 3) here because we need to see more on the line. */
-    sprintf(thedefault, " [%s%s]", disp, ((breadth(last_search) > (COLS / 3)) ? "..." : ""));
+    sprintf(thedefault, " [%s%s]", disp, (((long)breadth(last_search) > (COLS / 3)) ? "..." : ""));
     free(disp);
   }
   else {
@@ -348,8 +350,8 @@ void to_last_file(void) _NOTHROW {
   selected = (list_length - 1);
 }
 
-// Strip one element from the end of path, and return the stripped path.
-// The returned string is dynamically allocated, and should be freed.
+/* Strip one element from the end of path, and return the stripped path.
+ * The returned string is dynamically allocated, and should be freed. */
 static char *strip_last_component(const char *path) _NOTHROW {
   char *copy = copy_of(path);
   char *last_slash = strrchr(copy, '/');
@@ -359,9 +361,9 @@ static char *strip_last_component(const char *path) _NOTHROW {
   return copy;
 }
 
-// Allow the user to browse through the directories in the filesystem, starting at the
-// given path.  The user can select a file, which will be returned.  The user can also
-// select a directory, which will be entered.  The user can also cancel the browsing.
+/* Allow the user to browse through the directories in the filesystem, starting at the
+ * given path.  The user can select a file, which will be returned.  The user can also
+ * select a directory, which will be entered.  The user can also cancel the browsing. */
 static char *browse(char *path) {
   /* The name of the currently selected file, or of the directory we were in before backing up to "..". */
   char *present_name = NULL;
@@ -496,7 +498,7 @@ read_directory_contents:
         }
       }
       else if (function == do_up) {
-        if (selected >= piles) {
+        if ((long)selected >= piles) {
           selected -= piles;
         }
       }
@@ -518,7 +520,7 @@ read_directory_contents:
         }
       }
       else if (function == do_page_up) {
-        if (selected < piles) {
+        if ((long)selected < piles) {
           selected = 0;
         }
         else if (selected < (usable_rows * piles)) {
@@ -638,10 +640,10 @@ read_directory_contents:
   return chosen;
 }
 
-// Prepare to start browsing.  If the given path has a directory part, start browsing in that
-// directory, otherwise in the current directory.  If the path is not a directory, try to strip
-// a filename from it; if then still not a directory, use the current working directory instead.
-// If the resulting path isn't in the operating directory, use the operating directory instead.
+/* Prepare to start browsing.  If the given path has a directory part, start browsing in that
+ * directory, otherwise in the current directory.  If the path is not a directory, try to strip
+ * a filename from it; if then still not a directory, use the current working directory instead.
+ * If the resulting path isn't in the operating directory, use the operating directory instead. */
 char *browse_in(const char *inpath) {
   char *path = real_dir_from_tilde(inpath);
   struct stat fileinfo;

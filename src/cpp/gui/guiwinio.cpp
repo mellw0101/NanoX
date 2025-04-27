@@ -339,7 +339,6 @@ void draw_editor(guieditor *editor) {
   ASSERT(editor->text);
   ASSERT(editor->buffer);
   ASSERT(editor->gutter);
-  // ASSERT(editor->scrollbar);
   ASSERT(gui->font_shader);
   ASSERT(gui);
   ASSERT(gui->font);
@@ -392,7 +391,7 @@ void draw_editor(guieditor *editor) {
   /* Render the text element of the editor. */
   if (refresh_needed) {
     vertex_buffer_clear(editor->buffer);
-    while (line && ++row <= editwinrows) {
+    while (line && ++row <= (int)editor->rows) {
       editor->pen.x = 0;
       editor->pen.y = (row_baseline_pixel((line->lineno - editor->openfile->edittop->lineno), gui->font) + editor->text->pos.y);
       gui_draw_row(line, editor, &editor->pen);
@@ -405,7 +404,7 @@ void draw_editor(guieditor *editor) {
     }
   }
   else {
-    while (line && ++row <= editwinrows) {
+    while (line && ++row <= (int)editor->rows) {
       gui_draw_row(line, editor, &editor->pen);
       line = line->next;
     }

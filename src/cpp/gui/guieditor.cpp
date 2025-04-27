@@ -383,6 +383,9 @@ void guieditor_calculate_rows(guieditor *const editor) {
     ++row;
   }
   editor->rows = row;
+  if (editor == openeditor) {
+    editwinrows = (editor->rows - 1);
+  }
 }
 
 /* Determen the size of the gutter based on the total size of the last line number. */
@@ -458,4 +461,10 @@ void guieditor_close_open_buffer(void) {
   close_buffer();
   openeditor->openfile  = openfile;
   openeditor->startfile = startfile;
+}
+
+void guieditor_open_buffer(const char *const restrict path) {
+  ASSERT(openeditor);
+  ASSERT(openeditor->openfile);
+  ASSERT(path);
 }

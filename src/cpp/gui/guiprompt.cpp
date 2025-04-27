@@ -25,6 +25,7 @@ int gui_prompt_type = 0;
 
 /* Enter the gui prompt mode, by setting the prompt mode flag and showing the topbar. */
 void gui_enter_prompt_mode(void) {
+  statusbar_discard_all_undo_redo();
   gui->flag.set<GUI_PROMPT>();
   gui->promptmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
   gui->promptmenu->flag.refresh_needed = TRUE;
@@ -109,4 +110,26 @@ void gui_promptmenu_delete(void) {
   ASSERT(gui->promptmenu->buffer);
   vertex_buffer_delete(gui->promptmenu->buffer);
   free(gui->promptmenu);
+}
+
+void gui_promptmenu_open_file(void) {
+  if (*answer) {
+    writef("%s\n", answer);
+    /* Path is a directory. */
+    if (dir_exists(answer)) {
+      show_statusmsg(AHEM, 2, "'%s' is a directory", answer);
+    }
+    /* Path is a block device. */
+    else if (blkdev_exists(answer)) {
+      show_statusmsg(AHEM, 2, "'%s' is a block device", answer);
+    }
+    /* If there is no file at the given path. */
+    else if (!file_exists(answer)) {
+      show_statusmsg(AHEM, 2, "'%s' does not exist", answer);
+    }
+    else { 
+      writef("File exists.\n");
+    }
+  }
+  gui_leave_prompt_mode();
 }
