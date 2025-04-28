@@ -444,7 +444,10 @@ void  add_or_remove_pipe_symbol_from_answer(void) _NOTHROW;
 int   do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg, ...);
 int   ask_user(bool withall, const char *question);
 
-/* Most functions in 'rcfile.cpp'. */
+
+/* ---------------------------------------------------------- rcfile.cpp ---------------------------------------------------------- */
+
+
 short      color_to_short(const char *colorname, bool &vivid, bool &thick);
 char      *parse_next_word(char *ptr) _NOTHROW;
 void       parse_rule(char *ptr, int rex_flags);
@@ -463,7 +466,10 @@ bool       parse_syntax_commands(const char *keyword, char *ptr);
 void       parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
 void       do_rcfiles(void);
 
-/* Most functions in 'search.cpp'. */
+
+/* ---------------------------------------------------------- search.cpp ---------------------------------------------------------- */
+
+
 bool  regexp_init(const char *regexp);
 void  tidy_up_after_search(void);
 int   findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x);
@@ -487,7 +493,10 @@ void  to_next_anchor(void);
 char *find_global_header(const char *str);
 char *find_local_header(const char *str);
 
-/* Most functions in 'text.cpp'. */
+
+/* ---------------------------------------------------------- text.cpp ---------------------------------------------------------- */
+
+
 void  do_mark(void) _NOTHROW;
 void  do_tab(void);
 void  do_indent(void) _NOTHROW;
@@ -522,7 +531,10 @@ char *copy_completion(char *text);
 void  complete_a_word(void);
 char *lower_case_word(const char *str);
 
-/* All functions in 'utils.cpp' */
+
+/* ---------------------------------------------------------- utils.cpp ---------------------------------------------------------- */
+
+
 void        get_homedir(void) _NOTHROW;
 char      **get_env_paths(Ulong *npaths) _NOTHROW _NODISCARD _NONNULL(1);
 char       *concatenate(const char *path, const char *name) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
@@ -565,6 +577,7 @@ const char *word_strstr_array(const char *str, const char **substrs, Uint count,
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *string_strstr_array(const char *str, const vector<string> &substrs, Uint *index);
 void        set_mark(long lineno, Ulong pos_x) _NOTHROW;
+int         qsort_strlen(const void *a, const void *b);
 
 /* Most functions in 'winio.cpp'. */
 void  record_macro(void) _NOTHROW;
@@ -750,6 +763,7 @@ void        add_rm_color_map(string str, syntax_data_t data);
 
 /* ---------------------------------------------------------- suggestion.cpp ---------------------------------------------------------- */
 
+
 void do_suggestion(void);
 void find_suggestion(void);
 void clear_suggestion(void);
@@ -798,8 +812,10 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void glfw_loop(void);
   bool gui_quit(void);
   
-
-  /* 'gui/guiutils.cpp' */
+  
+  /* ---------------------------------------------------------- gui/guiutils.cpp ---------------------------------------------------------- */
+  
+  
   void  upload_texture_atlas(texture_atlas_t *atlas);
   float glyph_width(const char *current, const char *prev, texture_font_t *font);
   float string_pixel_offset(const char *string, const char *previous_char, Ulong index, texture_font_t *font);
@@ -825,7 +841,10 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   linestruct *gui_line_from_number(guieditor *editor, long number);
   long get_lineno_from_scrollbar_position(guieditor *editor, float ypos);
   
-  /* 'gui/guicallbacks.cpp' */
+  
+  /* ---------------------------------------------------------- gui/guicallback.cpp ---------------------------------------------------------- */
+  
+  
   void window_resize_callback(GLFWwindow *window, int newwidth, int newheight);
   void window_maximize_callback(GLFWwindow *window, int maximized);
   void framebuffer_resize_callback(GLFWwindow *window, int width, int height);
@@ -852,23 +871,34 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void do_fullscreen(GLFWwindow *window);
   int  glfw_get_framerate(void);
   
-  /* gui/guiprompt.cpp */
-  void gui_enter_prompt_mode(void);
-  void gui_leave_prompt_mode(void);
+  
+  /* ---------------------------------------------------------- gui/guiprompt.cpp ---------------------------------------------------------- */
+  
+  
+  void gui_promptmode_enter(void);
+  void gui_promptmode_leave(void);
   void gui_ask_user(const char *question, guiprompt_type type);
   long prompt_index_from_mouse(bool allow_outside);
-  void gui_promptmenu_init(void);
-  void gui_promptmenu_delete(void);
+  void gui_promptmenu_create(void);
+  void gui_promptmenu_free(void);
+  void gui_promptmenu_open_file_search(void);
   void gui_promptmenu_open_file(void);
+  void gui_promptmenu_enter_action(void);
 
-  /* gui/guifiles.cpp */
+  
+  /* ---------------------------------------------------------- gui/guifiles.cpp ---------------------------------------------------------- */
+  
+  
   void gui_switch_to_prev_buffer(void);
   void gui_switch_to_next_buffer(void);
   bool gui_delete_lockfile(const char *lockfile);
   void gui_close_buffer(void);
   bool gui_close_and_go(void);
   
-  /* gui/guielement.cpp */
+  
+  /* ---------------------------------------------------------- gui/guielement.cpp ---------------------------------------------------------- */
+  
+  
   guielement *guielement_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
   guielement *guielement_create(bool in_gridmap = TRUE) _NOTHROW;
   guielement *guielement_create(guielement *const parent, bool in_gridmap = TRUE) _NOTHROW;
@@ -893,7 +923,10 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   bool        guielement_has_sb_data(guielement *const e) _NOTHROW;
   void        guielement_set_flag_recurse(guielement *const element, bool set, Uint flag);
 
-  /* gui/guieditor.cpp */
+  
+  /* ---------------------------------------------------------- gui/guieditor.cpp ---------------------------------------------------------- */
+  
+  
   void       guieditor_refresh_topbar(guieditor *editor);
   void       guieditor_update_active_topbar(guieditor *editor);
   void       make_new_editor(bool new_buffer);
@@ -912,7 +945,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void       guieditor_redecorate(guieditor *const editor);
   void       guieditor_open_new_empty_buffer(void);
   void       guieditor_close_open_buffer(void);
-  void guieditor_open_buffer(const char *const restrict path);
+  void       guieditor_open_buffer(const char *const restrict path);
 
   /* gui/guigrid.cpp */
   guigridsection *make_new_gridsection(void);

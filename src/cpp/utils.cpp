@@ -126,9 +126,9 @@ int digits(const long n) _NOTHROW {
 //   return TRUE;
 // }
 
-// Read one number (or two numbers separated by comma, period, or colon)
-// from the given string and store the number(s) in *line (and *column).
-// Return 'FALSE' on a failed parsing, and 'TRUE' otherwise.
+/* Read one number (or two numbers separated by comma, period, or colon)
+ * from the given string and store the number(s) in *line (and *column).
+ * Return 'FALSE' on a failed parsing, and 'TRUE' otherwise. */
 bool parse_line_column(const char *string, long *line, long *column) _NOTHROW {
   const char *comma;
   char *firstpart;
@@ -545,11 +545,11 @@ const char *word_strstr(const char *data, const char *needle) {
   return NULL;
 }
 
-// Retrieve a malloc`ed 'char **' containing the output of cmd,
-// in line format.  This function also allows to input a refrece to
-// an 'Uint' to retrieve the line count.  Note that each line
-// is malloc`ed as well and will need to be free`d, as does the entire
-// array.  Return`s 'NULL' apon failure.
+/* Retrieve a malloc`ed 'char **' containing the output of cmd,
+ * in line format.  This function also allows to input a refrece to
+ * an 'Uint' to retrieve the line count.  Note that each line
+ * is malloc`ed as well and will need to be free`d, as does the entire
+ * array.  Return`s 'NULL' apon failure. */
 char **retrieve_exec_output(const char *cmd, Uint *n_lines) {
   FILE *prog = popen(cmd, "r");
   if (!prog) {
@@ -641,4 +641,16 @@ void set_mark(long lineno, Ulong pos_x) _NOTHROW {
     openfile->mark = openfile->filebot;
   }
   openfile->mark_x = pos_x;
+}
+
+/* Function used for sorting strings by length.  Note that this should be passed to `qsort()` */
+int qsort_strlen(const void *a, const void *b) {
+  const char *lhs = *(const char **)a;
+  const char *rhs = *(const char **)b;
+  long lhs_len = strlen(lhs);
+  long rhs_len = strlen(rhs);
+  if (lhs_len == rhs_len) {
+    return strcmp(lhs, rhs);
+  }
+  return (lhs_len - rhs_len); 
 }

@@ -121,6 +121,11 @@ void set_gui_font(const char *const restrict path, Uint size) {
       guieditor_resize(editor);
     );
   }
+  /* If the completion menu is active.  Ensure that it is updated. */
+  if (gui->suggestmenu && cvec_len(gui->suggestmenu->completions)) {
+    gui->suggestmenu->pos_refresh_needed  = TRUE;
+    gui->suggestmenu->text_refresh_needed = TRUE;
+  }
 }
 
 /* Set the gui uifont using `path` with `size`.  If the provided file does not exist, the fallback font will be set. */

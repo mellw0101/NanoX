@@ -45,31 +45,98 @@ typedef struct GuiScrollbar {
 
 /* ---------------------------------------------------------- Function's ---------------------------------------------------------- */
 
+static inline float scrollbar_length(float total_length, Uint startidx, Uint endidx, Uint visible_idxno) {
+  return fclamp((((float)visible_idxno / ((endidx - startidx) + visible_idxno)) * total_length), 0, total_length);
+}
+
+static inline float scrollbar_step_value_for(Uint idx, float total_length, float length, Uint startidx, Uint endidx, Uint visible_idxno) {
+  float ratio = fclamp((float)(idx - startidx) / (endidx - startidx), 0.0f, 1.0f);
+  return fclamp((ratio * (total_length - length)), 0, (total_length - length));
+} 
+
+static float *scrollbar_step_values(float total_length, Uint startidx, Uint endidx, Uint visible_idxno) {
+  float *array;
+  float len = ((endidx - startidx) + 1);
+  float length = scrollbar_length(total_length, startidx, endidx, visible_idxno);
+  __avx avx_startidx((float)startidx);
+  __avx avx_endidx((float)endidx);
+  __avx avx_total_entries(avx_endidx - avx_startidx);
+  __avx avx_length(length);
+  __avx avx_visible_idxno((float)visible_idxno);
+  __avx avx_total_length(total_length);
+  __avx<float> values;
+  __avx<float> ratio;
+  __avx<float> result;
+  Ulong i = 0;
+  ALWAYS_ASSERT((array = (float *)aligned_alloc((sizeof(float) * 8), (sizeof(float) * len))));
+  for (; (i + 8)<len; i+=8) {
+    values = __avx<float>(i, i+1, i+2, i+3, i+4, i+5, i+6, i+7);
+    ratio  = (values / avx_total_entries);
+    result = ((ratio * (avx_total_length - avx_length)));
+    for (Ulong k=0; k<8; ++k) {
+      array[i+k] = result[k];
+    }
+  }
+  for (; i<len; ++i) {
+    array[i] = scrollbar_step_value_for((i + startidx), total_length, length, startidx, endidx, visible_idxno);
+  }
+  return array;
+}
+
+_UNUSED static Ulong scrollbar_closest_idx(float *const array, Ulong len, float rawpos) {
+  ASSERT(array);
+  ASSERT(len);
+  Ulong index=0;
+  float closest = absf(array[0] - rawpos);
+  float value;
+  for (Ulong i=1; i<len; ++i) {
+    if ((value = absf(array[i] - rawpos)) < closest) {
+      index = i;
+      closest = value;
+    }
+  }
+  return index;
+}
 
 /* Calculate the height and the top y position relative to `total_pixel_length` of a scrollbar. */
 void calculate_scrollbar(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, Uint currentidx, float *length, float *relative_pos) {
   ASSERT(length);
   ASSERT(relative_pos);
-  /* Calculate the index ratio of  */
-  float ratio = fclamp(((float)(currentidx - startidx) / (endidx - startidx)), 0, 1);
-  *length = fclamp((((float)visable_idxno / ((endidx - startidx) + visable_idxno - 1)) * total_pixel_length), 0, total_pixel_length);
-  *relative_pos = fclamp((ratio * (total_pixel_length - (*length))), 0, (total_pixel_length - (*length)));
+  *length       = scrollbar_length(total_pixel_length, startidx, endidx, visable_idxno);
+  *relative_pos = scrollbar_step_value_for(currentidx, total_pixel_length, *length, startidx, endidx, visable_idxno);
 }
 
 /* Return's the index based on a scrollbar's top `ypos` relative to `total_pixel_length`. */
 long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, float ypos) __THROW {
-  float height, max_ypos, ratio;
+  float height, max_ypos, *array;
+  Ulong index;
   /* Calculate the height that the scrollbar should be and the maximum y positon possible. */
-  height   = (((float)visable_idxno / ((endidx - startidx) + visable_idxno - 1)) * total_pixel_length);
+  height   = (((float)visable_idxno / ((endidx - startidx) + visable_idxno /* - 1 */)) * total_pixel_length);
   max_ypos = (total_pixel_length - height);
   /* Clamp the y position to within the valid range (0 - (editor->text->size.h - height)). */
   ypos = fclamp(ypos, 0, max_ypos);
   /* Calculate the ratio of the max y position that should be used to calculate
-   * the line number.  We also clamp the line number to ensure correctness. */
-  ratio = fclamp((ypos / max_ypos), 0, 1);
-  /* Ensure the returned line is valid in the context of the openfile. */
-  return (lclamp((long)(ratio * (endidx - startidx)), 0, (endidx - startidx)) + startidx);
+  * the line number.  We also clamp the line number to ensure correctness. */
+  array = scrollbar_step_values(total_pixel_length, startidx, endidx, visable_idxno);
+  index = scrollbar_closest_idx(array, (endidx - startidx + 1), ypos);
+  free(array);
+  return (index + startidx);
 }
+
+/* Return's the index based on a scrollbar's top `ypos` relative to `total_pixel_length`. */
+// long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, float ypos) __THROW {
+//   float height, max_ypos, ratio;
+//   /* Calculate the height that the scrollbar should be and the maximum y positon possible. */
+//   height   = (((float)visable_idxno / ((endidx - startidx) + visable_idxno /* - 1 */)) * total_pixel_length);
+//   max_ypos = (total_pixel_length - height);
+//   /* Clamp the y position to within the valid range (0 - (editor->text->size.h - height)). */
+//   ypos = fclamp(ypos, 0, max_ypos);
+//   /* Calculate the ratio of the max y position that should be used to calculate
+//   * the line number.  We also clamp the line number to ensure correctness. */
+//   ratio = fclamp((ypos / max_ypos), 0, 1);
+//   /* Ensure the returned line is valid in the context of the openfile. */
+//   return (lclamp((long)(ratio * (endidx - startidx)), 0, (endidx - startidx)) + startidx);
+// }
 
 /* ----------------------------- GuiScrollbar ----------------------------- */
 

@@ -393,6 +393,8 @@ using std::vector;
 #define GUISB_THUMB_COLOR         vec4(1.0f, 1.0f, 1.0f, 0.3f)
 #define GUISB_ACTIVE_THUMB_COLOR  vec4(1.0f, 1.0f, 1.0f, 0.7f)
 
+#define MALLOC_STRUCT(ptr)  DO_WHILE((ptr) = (__TYPE(ptr))xmalloc(sizeof(*(ptr)));)
+
 /* Enumeration types. */
 
 /* Some line flags. */
@@ -1173,11 +1175,16 @@ typedef struct completionstruct {
   } GuiPromptMenuEntry;
 
   typedef struct {
-    struct {
-      bool refresh_needed : 1;
-    } flag;
+    bool refresh_needed : 1;
     vertex_buffer_t *buffer;
     guielement      *element;
+
+    CVec *search_vec;
+    CVec *completions;
+    int viewtop;
+    int selected;
+    int maxrows;
+    int rows;
   } GuiPromptMenu;
 
   /** TODO: Implement this. */

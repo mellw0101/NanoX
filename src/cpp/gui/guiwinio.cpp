@@ -419,7 +419,7 @@ void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
     guielement_draw(gui->promptmenu->element);
     /* Only refresh the promptmenu buffer if it has changed. */
-    if (gui->promptmenu->flag.refresh_needed) {
+    if (gui->promptmenu->refresh_needed) {
       vertex_buffer_clear(gui->promptmenu->buffer);
       vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ")), (row_baseline_pixel(0, gui->uifont) + gui->promptmenu->element->pos.y));
       vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui->uifont, vec4(1), &penpos);
@@ -432,7 +432,7 @@ void draw_topbar(void) {
         (gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ") + pixbreadth(gui->uifont, prompt) + string_pixel_offset(answer, " ", typing_x, gui->uifont)),
         gui->promptmenu->element->pos.y
       );
-      gui->promptmenu->flag.refresh_needed = FALSE;
+      gui->promptmenu->refresh_needed = FALSE;
     }
     upload_texture_atlas(gui->uiatlas);
     render_vertex_buffer(gui->font_shader, gui->promptmenu->buffer);

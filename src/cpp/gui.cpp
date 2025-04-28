@@ -267,7 +267,7 @@ static void delete_guistruct(void) {
   nevhandler_stop(gui->handler, 0);
   nevhandler_free(gui->handler);
   /* Delete the prompt-menu struct. */
-  gui_promptmenu_delete();
+  gui_promptmenu_free();
   /* Free the gui suggestmenu substructure. */
   gui_suggestmenu_free();
   free(gui);
@@ -309,7 +309,7 @@ void init_gui(void) {
   /* Init the rect shader. */
   setup_rect_shader();
   /* Init the top bar. */
-  gui_promptmenu_init();
+  gui_promptmenu_create();
   /* Init the bottom bar. */
   setup_botbar();
   /* Init the bottom bar, that will be used for status updates, among other thing. */

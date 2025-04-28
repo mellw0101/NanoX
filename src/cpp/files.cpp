@@ -571,7 +571,6 @@ char *encode_data(char *text, Ulong length) _NOTHROW {
  * set to the name of the file.  undoable means that undo records should be
  * created and that the file does not need to be checked for writability. */
 void read_file(FILE *f, int fd, const char *filename, bool undoable) {
-  TIMER_START(timer);
   /* The line number where we start the insertion. */
   long was_lineno = openfile->current->lineno;
   /* The leftedge where we start the insertion. */
@@ -596,6 +595,9 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   bool writable = TRUE;
   /* The type of line ending the file uses: Unix, DOS, or Mac. */
   format_type format = NIX_FILE;
+  /* The char we are currently processing. */
+  char input;
+  /* When the caller knows we can write to this file. */
   if (undoable) {
     add_undo(INSERT, NULL);
   }
@@ -611,7 +613,7 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   control_C_was_pressed = FALSE;
   /* Read in the entire file, byte by byte, line by line. */
   while ((onevalue = getc_unlocked(f)) != EOF) {
-    char input = (char)onevalue;
+    input = (char)onevalue;
     if (control_C_was_pressed) {
       break;
     }
@@ -739,8 +741,6 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
   else if (openfile->fmt == UNSPECIFIED) {
     openfile->fmt = format;
   }
-  TIMER_END(timer, ms);
-  TIMER_PRINT(ms);
 }
 
 /* Open the file with the given name.  If the file does not exist, display

@@ -243,18 +243,6 @@ static inline void gui_suggestmenu_hide(bool hide) {
   guielement_set_flag_recurse(gui->suggestmenu->element, hide, GUIELEMENT_HIDDEN);
 }
 
-/* Comparison function to order all suggestions from shortest to longest string meaning the highest % of the current word has been typed. */
-static int gui_suggestmenu_cmp(const void *a, const void *b) {
-  const char *lhs = *(const char **)a;
-  const char *rhs = *(const char **)b;
-  long lhs_len = strlen(lhs);
-  long rhs_len = strlen(rhs);
-  if (lhs_len == rhs_len) {
-    return strcmp(lhs, rhs);
-  }
-  return (lhs_len - rhs_len);
-}
-
 /* Copy the word that begins at `*text`. */
 static char *gui_suggestmenu_copy_completion(char *const restrict text) {
   Ulong len = 0;
@@ -289,8 +277,8 @@ static void gui_suggestmenu_scrollbar_moving_routine(void *arg, long index) {
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
   gui->suggestmenu = (GuiSuggestMenu *)xmalloc(sizeof(*gui->suggestmenu));
-  gui->suggestmenu->text_refresh_needed = FALSE;
-  gui->suggestmenu->pos_refresh_needed  = FALSE;
+  gui->suggestmenu->text_refresh_needed = TRUE;
+  gui->suggestmenu->pos_refresh_needed  = TRUE;
   gui->suggestmenu->completions = cvec_create_setfree(free);
   gui->suggestmenu->maxrows = 8;
   gui->suggestmenu->buf[0] = '\0';
@@ -384,7 +372,7 @@ void gui_suggestmenu_find(void) {
         continue;
       }
       /* Or the match is an exact copy of `gui->suggestmenu->buf`. */
-      if (!iswordc(&search_line->data[i + j], FALSE, "_") /* is_word_char(&search_line->data[i + j], FALSE) && search_line->data[i + j] != '_' */) {
+      if (!iswordc(&search_line->data[i + j], FALSE, "_")) {
         continue;
       }
       /* Or the match is not a seperate word. */
@@ -414,7 +402,7 @@ void gui_suggestmenu_find(void) {
     }
   }
   hashmap_free(hash_map);
-  cvec_qsort(gui->suggestmenu->completions, gui_suggestmenu_cmp);
+  cvec_qsort(gui->suggestmenu->completions, qsort_strlen);
   /* Set the view top and the selected to the first suggestion. */
   gui->suggestmenu->viewtop  = 0;
   gui->suggestmenu->selected = 0;
@@ -484,8 +472,8 @@ void gui_suggestmenu_draw_selected(void) {
     pos.x  = (gui->suggestmenu->element->pos.x + 1);
     size.w = (gui->suggestmenu->element->size.w - 2);
     row_top_bot_pixel(selected_row, gui->font, &pos.y, &size.h);
-    size.h -= pos.y;
-    pos.y  += (gui->suggestmenu->element->pos.y + ((selected_row == (gui->suggestmenu->rows - 1)) ? 2 : 1));
+    size.h -= (pos.y - ((selected_row == gui->suggestmenu->rows - 1) ? 1 : 0));
+    pos.y  += (gui->suggestmenu->element->pos.y + 1);
     draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));
   }
 }

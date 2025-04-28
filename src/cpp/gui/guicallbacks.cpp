@@ -100,58 +100,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
       switch (key) {
         case GLFW_KEY_ENTER: {
           if (!mods) {
-            switch (gui_prompt_type) {
-              case GUI_PROMPT_SAVEFILE: {
-                if (*answer) {
-                  /* Get the full path to of the answer. */
-                  char *full_path = get_full_path(answer);
-                  /* If the currently open file has a name, and that name does not match the answer. */
-                  if (*openfile->filename && strcmp(answer, openfile->filename) != 0) {
-                    /* When the given path does not exist. */
-                    if (!full_path) {
-                      NETLOG("Save file using diffrent name?\n");
-                    }
-                    else {
-                      NETLOG("Overwrite file: '%s'?\n", answer);
-                    }
-                  }
-                  /* Otherwise if the current file has no name, then just save using the answer. */
-                  else {
-                    show_statusmsg(INFO, 5, "Saving file: %s", answer);
-                    /* Free the openfile filename, and assign answer to it. */
-                    openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
-                    guieditor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-                    /* Then save the file. */
-                    if (write_it_out(FALSE, FALSE) == 2) {
-                      logE("Failed to save file, this needs fixing and the reason needs to be found out.");
-                      close_and_go();
-                    }
-                    gui_leave_prompt_mode();
-                  }
-                  free(full_path);
-                }
-                break;
-              }
-              case GUI_PROMPT_MENU: {
-                if (strcasecmp(answer, "open file") == 0) {
-                  gui_ask_user("File to open", GUI_PROMPT_OPEN_FILE);
-                  answer = free_and_assign(answer, getpwd());
-                  typing_x = strlen(answer);
-                  if (answer[typing_x - 1] != '/') {
-                    answer = xnstrncat(answer, typing_x, S__LEN("/"));
-                    typing_x += 1;
-                  }
-                }
-                else {
-                  gui_leave_prompt_mode();
-                }
-                break;
-              }
-              case GUI_PROMPT_OPEN_FILE: {
-                gui_promptmenu_open_file();
-                break;
-              }
-            }
+            gui_promptmenu_enter_action();
           }
           break;
         }
@@ -164,7 +113,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           _FALLTHROUGH;
         }
         case GLFW_KEY_ESCAPE: {
-          gui_leave_prompt_mode();
+          gui_promptmode_leave();
           break;
         }
         /* Undo */
@@ -232,7 +181,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
       }
-      gui->promptmenu->flag.refresh_needed = TRUE;
+      gui->promptmenu->refresh_needed = TRUE;
     }
   }
   /* When inside the guieditor key mode, do nothing as we handle further keys in the char callback. */
@@ -267,97 +216,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             openfile->current_x = strlen(openfile->filebot->data);
             openfile->softmark  = TRUE;
             refresh_needed      = TRUE;
-          }
-          break;
-        }
-        case GLFW_KEY_E: {
-          if (mods == GLFW_MOD_CONTROL) {
-            gui->flag.set<GUI_EDITOR_MODE_KEY>();
-          }
-          break;
-        }
-        case GLFW_KEY_Q: {
-          /* If CTRL+Q is pressed, quit. */
-          if (mods == GLFW_MOD_CONTROL) {
-            if (!openfile->modified || ISSET(VIEW_MODE)) {
-              gui_quit();
-            }
-            else if (ISSET(SAVE_ON_EXIT) && *openfile->filename) {
-              ;
-            }
-            else {
-              gui_ask_user("Close without saving? ", GUI_PROMPT_EXIT_NO_SAVE);
-            }
-          }
-          break;
-        }
-        case GLFW_KEY_T: {
-          /* Toggle tabs to spaces. */
-          if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
-            TOGGLE(TABS_TO_SPACES);
-            show_toggle_statusmsg(TABS_TO_SPACES);
-            refresh_needed = TRUE;
-          }
-          break;
-        }
-        case GLFW_KEY_N: {
-          /* Line numbers toggle. */
-          if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
-            TOGGLE(LINE_NUMBERS);
-            confirm_margin();
-            window_resize_callback(window, gui->width, gui->height);
-            show_toggle_statusmsg(LINE_NUMBERS);
-          }
-          else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
-            make_new_editor(TRUE);
-            guieditor_redecorate(openeditor);
-            guieditor_resize(openeditor);
-          }
-          else if (mods == GLFW_MOD_CONTROL) {
-            guieditor_open_new_empty_buffer();
-          }
-          break;
-        }
-        case GLFW_KEY_Z: {
-          /* Undo action. */
-          if (mods == GLFW_MOD_CONTROL) {
-            function = do_undo;
-          }
-          break;
-        }
-        case GLFW_KEY_Y: {
-          /* Redo action. */
-          if (mods == GLFW_MOD_CONTROL) {
-            function = do_redo;
-          }
-          break;
-        }
-        case GLFW_KEY_V: {
-          /* Paste action. */
-          if (mods == GLFW_MOD_CONTROL) {
-            const char *string = glfwGetClipboardString(NULL);
-            if (string) {
-              /* Free the cutbuffer if there is anything in it. */
-              free_lines(cutbuffer);
-              cutbuffer = NULL;
-              Ulong linenum;
-              char **line_strings = split_string_nano(string, '\n', &linenum);
-              if (line_strings) {
-                linestruct *item = make_new_node(NULL);
-                linestruct *head = item;
-                for (Ulong i = 0; i < linenum; ++i) {
-                  item->data = line_strings[i];
-                  recode_NUL_to_LF(item->data, strlen(item->data));
-                  if ((i + 1) < linenum) {
-                    item->next = make_new_node(item);
-                    item = item->next;
-                  }
-                }
-                free(line_strings);
-                cutbuffer = head;
-                function = paste_text;
-              }
-            }
           }
           break;
         }
@@ -397,41 +255,33 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
-        case GLFW_KEY_X: {
-          /* Cut line or marked region. */
+        case GLFW_KEY_E: {
           if (mods == GLFW_MOD_CONTROL) {
-            function = cut_text;
+            gui->flag.set<GUI_EDITOR_MODE_KEY>();
           }
           break;
         }
-        case GLFW_KEY_S: {
-          /* Saving action. */
-          if (mods == GLFW_MOD_CONTROL) {
-            /* True if the current file has a name. */
-            bool has_name = *openfile->filename;
-            /* If the openfile has a name, and if the file already exists. */
-            if (has_name && file_exists(openfile->filename)) {
-              function = do_savefile;
-            }
-            /* Otherwise, ask if the user wants to save the file. */
-            else {
-              gui_ask_user("Save file", GUI_PROMPT_SAVEFILE);
-              /* If the file has a name but is not a file yet then add that name to the answer. */
-              if (has_name) {
-                answer   = free_and_assign(answer, copy_of(openfile->filename));
-                typing_x = strlen(answer);
-              }
-              return;
-            }
+        case GLFW_KEY_N: {
+          /* Line numbers toggle. */
+          if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
+            TOGGLE(LINE_NUMBERS);
+            confirm_margin();
+            window_resize_callback(window, gui->width, gui->height);
+            show_toggle_statusmsg(LINE_NUMBERS);
           }
-          /* Softwrap toggle. */
-          else if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
-            TOGGLE(SOFTWRAP);
-            if (!ISSET(SOFTWRAP)) {
-              openfile->firstcolumn = 0;
-            }
-            show_toggle_statusmsg(SOFTWRAP);
-            refresh_needed = TRUE;
+          else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
+            make_new_editor(TRUE);
+            guieditor_redecorate(openeditor);
+            guieditor_resize(openeditor);
+          }
+          else if (mods == GLFW_MOD_CONTROL) {
+            guieditor_open_new_empty_buffer();
+          }
+          break;
+        }
+        case GLFW_KEY_O: {
+          if (mods == GLFW_MOD_CONTROL) {
+            gui_promptmenu_open_file();
           }
           break;
         }
@@ -514,6 +364,111 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* Prompt-Menu */
           else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
             gui_ask_user(">", GUI_PROMPT_MENU);
+          }
+          break;
+        }
+        case GLFW_KEY_Q: {
+          /* If CTRL+Q is pressed, quit. */
+          if (mods == GLFW_MOD_CONTROL) {
+            if (!openfile->modified || ISSET(VIEW_MODE)) {
+              gui_quit();
+            }
+            else if (ISSET(SAVE_ON_EXIT) && *openfile->filename) {
+              ;
+            }
+            else {
+              gui_ask_user("Close without saving? ", GUI_PROMPT_EXIT_NO_SAVE);
+            }
+          }
+          break;
+        }
+        case GLFW_KEY_S: {
+          /* Saving action. */
+          if (mods == GLFW_MOD_CONTROL) {
+            /* True if the current file has a name. */
+            bool has_name = *openfile->filename;
+            /* If the openfile has a name, and if the file already exists. */
+            if (has_name && file_exists(openfile->filename)) {
+              function = do_savefile;
+            }
+            /* Otherwise, ask if the user wants to save the file. */
+            else {
+              gui_ask_user("Save file", GUI_PROMPT_SAVEFILE);
+              /* If the file has a name but is not a file yet then add that name to the answer. */
+              if (has_name) {
+                answer   = free_and_assign(answer, copy_of(openfile->filename));
+                typing_x = strlen(answer);
+              }
+              return;
+            }
+          }
+          /* Softwrap toggle. */
+          else if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
+            TOGGLE(SOFTWRAP);
+            if (!ISSET(SOFTWRAP)) {
+              openfile->firstcolumn = 0;
+            }
+            show_toggle_statusmsg(SOFTWRAP);
+            refresh_needed = TRUE;
+          }
+          break;
+        }
+        case GLFW_KEY_T: {
+          /* Toggle tabs to spaces. */
+          if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
+            TOGGLE(TABS_TO_SPACES);
+            show_toggle_statusmsg(TABS_TO_SPACES);
+            refresh_needed = TRUE;
+          }
+          break;
+        }
+        case GLFW_KEY_V: {
+          /* Paste action. */
+          if (mods == GLFW_MOD_CONTROL) {
+            const char *string = glfwGetClipboardString(NULL);
+            if (string) {
+              /* Free the cutbuffer if there is anything in it. */
+              free_lines(cutbuffer);
+              cutbuffer = NULL;
+              Ulong linenum;
+              char **line_strings = split_string_nano(string, '\n', &linenum);
+              if (line_strings) {
+                linestruct *item = make_new_node(NULL);
+                linestruct *head = item;
+                for (Ulong i = 0; i < linenum; ++i) {
+                  item->data = line_strings[i];
+                  recode_NUL_to_LF(item->data, strlen(item->data));
+                  if ((i + 1) < linenum) {
+                    item->next = make_new_node(item);
+                    item = item->next;
+                  }
+                }
+                free(line_strings);
+                cutbuffer = head;
+                function = paste_text;
+              }
+            }
+          }
+          break;
+        }
+        case GLFW_KEY_X: {
+          /* Cut line or marked region. */
+          if (mods == GLFW_MOD_CONTROL) {
+            function = cut_text;
+          }
+          break;
+        }
+        case GLFW_KEY_Y: {
+          /* Redo action. */
+          if (mods == GLFW_MOD_CONTROL) {
+            function = do_redo;
+          }
+          break;
+        }
+        case GLFW_KEY_Z: {
+          /* Undo action. */
+          if (mods == GLFW_MOD_CONTROL) {
+            function = do_undo;
           }
           break;
         }
@@ -867,17 +822,20 @@ void char_callback(GLFWwindow *window, Uint ch) {
           ;
         }
         else {
-          gui_leave_prompt_mode();
+          gui_promptmode_leave();
         }
       }
       else if (is_char_one_of(&input, 0, "Nn")) {
-        gui_leave_prompt_mode();
+        gui_promptmode_leave();
       }
     }
     else {
       inject_into_answer(&input, 1);
+      if (gui_prompt_type == GUI_PROMPT_OPEN_FILE) {
+        gui_promptmenu_open_file_search();
+      }
     }
-    gui->promptmenu->flag.refresh_needed = TRUE;
+    gui->promptmenu->refresh_needed = TRUE;
   }
   /* Otherwise, when we are inside gui editor mode. */
   else if (gui->flag.is_set<GUI_EDITOR_MODE_KEY>()) {
@@ -1021,7 +979,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         long index = prompt_index_from_mouse(FALSE);
         /* If the mouse press was on anything other then inside the top-bar, exit prompt-mode. */
         if (index == -1) {
-          gui_leave_prompt_mode();
+          gui_promptmode_leave();
         }
         /* Otherwise, set prompt x pos. */
         else {
