@@ -881,9 +881,17 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   long prompt_index_from_mouse(bool allow_outside);
   void gui_promptmenu_create(void);
   void gui_promptmenu_free(void);
+  void gui_promptmenu_resize(void);
+  void gui_promptmenu_draw_text(void);
+  void gui_promptmenu_draw_selected(void);
+  void gui_promptmenu_selected_up(void);
+  void gui_promptmenu_selected_down(void);
+  void gui_promptmenu_enter_action(void);
+  
+  /* ----------------------------- Open file ----------------------------- */
+  
   void gui_promptmenu_open_file_search(void);
   void gui_promptmenu_open_file(void);
-  void gui_promptmenu_enter_action(void);
 
   
   /* ---------------------------------------------------------- gui/guifiles.cpp ---------------------------------------------------------- */

@@ -45,6 +45,9 @@ typedef struct GuiScrollbar {
 
 /* ---------------------------------------------------------- Function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Static ----------------------------- */
+
 static inline float scrollbar_length(float total_length, Uint startidx, Uint endidx, Uint visible_idxno) {
   return fclamp((((float)visible_idxno / ((endidx - startidx) + visible_idxno)) * total_length), 0, total_length);
 }
@@ -75,6 +78,7 @@ static float *scrollbar_closest_step_values(Uint idx, float total_length, Uint s
   return array;
 }
 
+/* Return's the true index based on the inaccuret index and current raw position of the scrollbar. */
 static Ulong scrollbar_closest_step_index(Uint idx, float rawpos, float *const array, Ulong arraylen) {
   ASSERT(array);
   ASSERT(arraylen);
@@ -97,6 +101,8 @@ static Ulong scrollbar_closest_step_index(Uint idx, float rawpos, float *const a
   }
   return (idx - 1 + index);
 }
+
+/* ----------------------------- Global ----------------------------- */
 
 /* Calculate the height and the top y position relative to `total_pixel_length` of a scrollbar. */
 void calculate_scrollbar(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, Uint currentidx, float *length, float *relative_pos) {

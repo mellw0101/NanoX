@@ -149,6 +149,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           break;
         }
+        case GLFW_KEY_DOWN: {
+          gui_promptmenu_selected_down();
+          break;
+        }
+        case GLFW_KEY_UP: {
+          gui_promptmenu_selected_up();
+          break;
+        }
         case GLFW_KEY_HOME: {
           if (!mods) {
             do_statusbar_home();
@@ -165,6 +173,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_BACKSPACE: {
           if (!mods) {
             do_statusbar_backspace(TRUE);
+            if (gui_prompt_type == GUI_PROMPT_OPEN_FILE) {
+              gui_promptmenu_open_file_search();
+            }
           }
           else if (mods == GLFW_MOD_CONTROL) {
             do_statusbar_chop_prev_word();
@@ -1280,6 +1291,11 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       }
       refresh_needed = TRUE;
       guiscrollbar_refresh_needed(element->data.editor->sb);
+      /* If the suggestmenu is active then make sure it updates the position and text. */
+      if (cvec_len(gui->suggestmenu->completions)) {
+        gui->suggestmenu->pos_refresh_needed  = TRUE;
+        gui->suggestmenu->text_refresh_needed = TRUE;
+      }
     }
     /* Otherwise check if this is a child to a element that belongs to a editor. */
     else if (guielement_has_editor_data(element->parent)) {

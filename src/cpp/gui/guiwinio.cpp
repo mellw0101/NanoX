@@ -417,25 +417,10 @@ void draw_editor(guieditor *editor) {
 /* Draw the top bar of the gui. */
 void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
+    gui_promptmenu_resize();
     guielement_draw(gui->promptmenu->element);
-    /* Only refresh the promptmenu buffer if it has changed. */
-    if (gui->promptmenu->refresh_needed) {
-      vertex_buffer_clear(gui->promptmenu->buffer);
-      vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ")), (row_baseline_pixel(0, gui->uifont) + gui->promptmenu->element->pos.y));
-      vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui->uifont, vec4(1), &penpos);
-      vertex_buffer_add_string(gui->promptmenu->buffer, answer, strlen(answer), " ", gui->uifont, vec4(1), &penpos);
-      line_add_cursor(
-        0,
-        gui->uifont,
-        gui->promptmenu->buffer,
-        1,
-        (gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ") + pixbreadth(gui->uifont, prompt) + string_pixel_offset(answer, " ", typing_x, gui->uifont)),
-        gui->promptmenu->element->pos.y
-      );
-      gui->promptmenu->refresh_needed = FALSE;
-    }
-    upload_texture_atlas(gui->uiatlas);
-    render_vertex_buffer(gui->font_shader, gui->promptmenu->buffer);
+    gui_promptmenu_draw_text();
+    gui_promptmenu_draw_selected();
   }
 }
 
