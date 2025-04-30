@@ -112,7 +112,7 @@ int digits(const long n) _NOTHROW {
   }
 }
 
-// /* Read an integer from the given string.  If it parses okay, store it in *result and return TRUE; otherwise, return FALSE. */
+/* Read an integer from the given string.  If it parses okay, store it in *result and return TRUE; otherwise, return FALSE. */
 // bool parse_num(const char *string, long *result) _NOTHROW {
 //   Ulong value;
 //   char *excess;
@@ -321,9 +321,9 @@ char *free_and_assign(char *dest, char *src) _NOTHROW {
   return src;
 }
 
-// When not softwrapping, nano scrolls the current line horizontally by
-// chunks ("pages").  Return the column number of the first character
-// displayed in the edit window when the cursor is at the given column.
+/* When not softwrapping, nano scrolls the current line horizontally by
+ * chunks ("pages").  Return the column number of the first character
+ * displayed in the edit window when the cursor is at the given column. */
 Ulong get_page_start(const Ulong column) _NOTHROW {
   if (!column || (int)(column + 2) < editwincols || ISSET(SOFTWRAP)) {
     return 0;
@@ -347,32 +347,32 @@ Ulong actual_x(const char *text, Ulong column) _NOTHROW {
   const char *start = text;
   /* The current accumulated span, in columns. */
   Ulong width = 0;
+  /* Calculated length of the current char. */
+  int charlen;
   while (*text) {
-    int charlen = advance_over(text, width);
+    charlen = advance_over(text, width);
     if (width > column) {
       break;
     }
     text += charlen;
   }
-  return (Ulong)(text - start);
+  return (text - start);
 }
 
 /* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
 Ulong wideness(const char *text, Ulong maxlen) _NOTHROW {
+  Ulong width = 0;
   if (!maxlen) {
     return 0;
   }
-  Ulong width = 0;
-  for (Ulong charlen; *text && (maxlen > (charlen = advance_over(text, width))); maxlen -= charlen, text += charlen)
-    ;
+  for (Ulong charlen; *text && (maxlen > (charlen = advance_over(text, width))); maxlen -= charlen, text += charlen);
   return width;
 }
 
 /* Return the number of columns that the given text occupies. */
 Ulong breadth(const char *text) _NOTHROW {
   Ulong span = 0;
-  for (; *text; text += advance_over(text, span))
-    ;
+  for (; *text; text += advance_over(text, span));
   return span;
 }
 
@@ -399,9 +399,7 @@ void remove_magicline(void) _NOTHROW {
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
 bool mark_is_before_cursor(void) _NOTHROW {
-  return
-    (openfile->mark->lineno < openfile->current->lineno
-    || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
+  return (openfile->mark->lineno < openfile->current->lineno || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
 }
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
@@ -420,16 +418,16 @@ void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) 
   }
 }
 
-// Get the set of lines to work on -- either just the current line, or the
-// first to last lines of the marked region.  When the cursor (or mark) is
-// at the start of the last line of the region, exclude that line.
+/* Get the set of lines to work on -- either just the current line, or the
+ * first to last lines of the marked region.  When the cursor (or mark) is
+ * at the start of the last line of the region, exclude that line. */
 void get_range(linestruct **top, linestruct **bot) _NOTHROW {
+  Ulong top_x, bot_x;
   if (!openfile->mark) {
     *top = openfile->current;
     *bot = openfile->current;
   }
   else {
-    Ulong top_x, bot_x;
     get_region(top, &top_x, bot, &bot_x);
     if (bot_x == 0 && bot != top && !also_the_last) {
       *bot = (*bot)->prev;
@@ -513,9 +511,9 @@ char *alloced_current_file_dir(void) {
   return ret;
 }
 
-// Return`s the full path to the dir that current file is in,
-// for example if we open 'src/file.txt' then this will return
-// the full path to 'src' so '/full/path/to/src/'. */
+/* Return`s the full path to the dir that current file is in,
+ * for example if we open 'src/file.txt' then this will return
+ * the full path to 'src' so '/full/path/to/src/'. */
 char *alloced_full_current_file_dir(void) {
   char *pwd = alloced_pwd();
   append_str(&pwd, "/");

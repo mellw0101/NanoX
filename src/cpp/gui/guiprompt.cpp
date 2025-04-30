@@ -456,6 +456,14 @@ void gui_promptmenu_selected_down(void) {
   }
 }
 
+_UNUSED static bool gui_promptmenu_selected_is_above_screen(void) {
+  return (gui->promptmenu->selected < gui->promptmenu->viewtop);
+}
+
+_UNUSED static bool gui_promptmenu_selected_is_below_screen(void) {
+  return (gui->promptmenu->selected < gui->promptmenu->viewtop);
+}
+
 void gui_promptmenu_enter_action(void) {
   /* If there is a completion available, then copy the completion into answer before we proccess it. */
   if (cvec_len(gui->promptmenu->completions)) {
