@@ -12,8 +12,11 @@
 #include "../../include/prototypes.h"
 
 
+/* ---------------------------------------------------------- Gui editor scrollbar ---------------------------------------------------------- */
+
+
 /* The editor's routine to fetch the data the scrollbar need's. */
-static void guieditor_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *offset) {
+static void guieditor_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
   guieditor *editor = (guieditor *)arg;
   ASSIGN_IF_VALID(total_length, editor->text->size.h);
@@ -21,7 +24,8 @@ static void guieditor_scrollbar_update_routine(void *arg, float *total_length, U
   ASSIGN_IF_VALID(total, editor->openfile->filebot->lineno);
   ASSIGN_IF_VALID(visible, editor->rows);
   ASSIGN_IF_VALID(current, editor->openfile->edittop->lineno);
-  ASSIGN_IF_VALID(offset, 0);
+  ASSIGN_IF_VALID(top_offset, 0);
+  ASSIGN_IF_VALID(right_offset, 0);
 }
 
 /* The editor's routine to respond to a calculated index based on the scrollbars's current position. */
@@ -39,6 +43,10 @@ static void guieditor_scrollbar_create(guieditor *const editor) {
   ASSERT(editor->text);
   editor->sb = guiscrollbar_create(editor->text, editor, guieditor_scrollbar_update_routine, guieditor_scrollbar_moving_routine);
 }
+
+
+/* ---------------------------------------------------------- Gui editor topbar ---------------------------------------------------------- */
+
 
 /* Create the editor topbar. */
 static void guieditor_topbar_create(guieditor *const editor) {

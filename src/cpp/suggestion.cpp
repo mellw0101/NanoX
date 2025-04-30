@@ -254,7 +254,7 @@ static char *gui_suggestmenu_copy_completion(char *const restrict text) {
   return measured_copy(text, len);
 }
 
-static void gui_suggestmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *offset) {
+static void gui_suggestmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
   GuiSuggestMenu *sm = (__TYPE(sm))arg;
   ASSIGN_IF_VALID(total_length, (sm->element->size.h - 2));
@@ -262,7 +262,8 @@ static void gui_suggestmenu_scrollbar_update_routine(void *arg, float *total_len
   ASSIGN_IF_VALID(total, cvec_len(sm->completions) - sm->rows);
   ASSIGN_IF_VALID(visible, sm->rows);
   ASSIGN_IF_VALID(current, sm->viewtop);
-  ASSIGN_IF_VALID(offset, 1);
+  ASSIGN_IF_VALID(top_offset, 1);
+  ASSIGN_IF_VALID(right_offset, 1);
 }
 
 static void gui_suggestmenu_scrollbar_moving_routine(void *arg, long index) {
@@ -276,7 +277,7 @@ static void gui_suggestmenu_scrollbar_moving_routine(void *arg, long index) {
 /* Init the gui suggestmenu substructure. */
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
-  gui->suggestmenu = (GuiSuggestMenu *)xmalloc(sizeof(*gui->suggestmenu));
+  MALLOC_STRUCT(gui->suggestmenu);
   gui->suggestmenu->text_refresh_needed = TRUE;
   gui->suggestmenu->pos_refresh_needed  = TRUE;
   gui->suggestmenu->completions = cvec_create_setfree(free);

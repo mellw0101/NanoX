@@ -29,7 +29,8 @@ void gui_promptmode_enter(void) {
   statusbar_discard_all_undo_redo();
   gui->flag.set<GUI_PROMPT>();
   gui->promptmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
-  gui->promptmenu->refresh_needed = TRUE;
+  gui->promptmenu->text_refresh_needed = TRUE;
+  gui->promptmenu->size_refresh_needed = TRUE;
   refresh_needed = TRUE;
 }
 
@@ -193,7 +194,7 @@ static inline void gui_promptmenu_add_completions_text(void) {
   /* Only perfomn any action if there are any current completions available. */
   if (cvec_len(gui->promptmenu->completions)) {
     /* Only add the text to the vertex buffer if asked or if the current viewtop has changed. */
-    if (gui->promptmenu->refresh_needed || was_viewtop != gui->promptmenu->viewtop) {
+    if (gui->promptmenu->text_refresh_needed || was_viewtop != gui->promptmenu->viewtop) {
       while (row < gui->promptmenu->rows) {
         text = (char *)cvec_get(gui->promptmenu->completions, (gui->promptmenu->viewtop + row));
         textpen = vec2(
@@ -209,6 +210,44 @@ static inline void gui_promptmenu_add_completions_text(void) {
 }
 
 /* ----------------------------- Open file ----------------------------- */
+
+static void gui_promptmenu_open_file_search(void) {
+  ASSERT(gui);
+  directory_t dir;
+  char *last_slash;
+  char *dirpath;
+  cvec_clear(gui->promptmenu->search_vec);
+  if (*answer) {
+    directory_data_init(&dir);
+    /* If the current answer is a dir itself. */
+    if (dir_exists(answer)) {
+      directory_get(answer, &dir);
+    }
+    else {
+      last_slash = strrchr(answer, '/');
+      if (last_slash && last_slash != answer) {
+        dirpath = measured_copy(answer, (last_slash - answer));
+        directory_get(dirpath, &dir);
+        free(dirpath);
+      }
+    }
+    if (dir.len) {
+      DIRECTORY_ITER(dir, i, entry,
+        cvec_push(gui->promptmenu->search_vec, (void *)copy_of(entry->path));
+      );
+      gui_promptmenu_find_completions();
+      if (cvec_len(gui->promptmenu->completions)) {
+        writef("\nPrompt menu: open file: result:\n");
+        for (int i=0, len=cvec_len(gui->promptmenu->completions); i<len; ++i) {
+          writef("%s\n", (char *)cvec_get(gui->promptmenu->completions, i));
+        }
+      }
+    }
+    directory_data_free(&dir);
+  }
+  guiscrollbar_refresh_needed(gui->promptmenu->sb);
+  gui->promptmenu->size_refresh_needed = TRUE;
+}
 
 /* Routine for when enter is pressed in open file mode for the gui promptmode. */
 static void gui_promptmenu_open_file_enter_action(void) {
@@ -243,6 +282,33 @@ static void gui_promptmenu_open_file_enter_action(void) {
   gui_promptmode_leave();
 }
 
+/* ----------------------------- Scroll bar ----------------------------- */
+
+static void gui_promptmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
+  ASSERT(arg);
+  GuiPromptMenu *pm = (__TYPE(pm))arg;
+  ASSIGN_IF_VALID(total_length, (pm->element->size.h - FONT_HEIGHT(gui->uifont)));
+  ASSIGN_IF_VALID(start, 0);
+  ASSIGN_IF_VALID(total, (cvec_len(pm->completions) - pm->rows));
+  ASSIGN_IF_VALID(visible, pm->rows);
+  ASSIGN_IF_VALID(current, pm->viewtop);
+  ASSIGN_IF_VALID(top_offset, FONT_HEIGHT(gui->uifont));
+  ASSIGN_IF_VALID(right_offset, 0);
+}
+
+static void gui_promptmenu_scrollbar_moving_routine(void *arg, long index) {
+  ASSERT(arg);
+  GuiPromptMenu *pm = (__TYPE(pm))arg;
+  pm->viewtop = index;
+  pm->text_refresh_needed = TRUE;
+}
+
+static void gui_promptmenu_scrollbar_create(void) {
+  ASSERT(gui);
+  ASSERT(gui->promptmenu);
+  gui->promptmenu->sb = guiscrollbar_create(gui->promptmenu->element, gui->promptmenu, gui_promptmenu_scrollbar_update_routine, gui_promptmenu_scrollbar_moving_routine);
+}
+
 
 /* ---------------------------------------------------------- Promptmenu global function's ---------------------------------------------------------- */
 
@@ -251,9 +317,10 @@ static void gui_promptmenu_open_file_enter_action(void) {
 void gui_promptmenu_create(void) {
   ASSERT(gui);
   MALLOC_STRUCT(gui->promptmenu);
-  gui->promptmenu->refresh_needed = FALSE;
+  gui->promptmenu->text_refresh_needed = FALSE;
+  gui->promptmenu->size_refresh_needed = FALSE;
   gui->promptmenu->buffer  = make_new_font_buffer();
-  gui->promptmenu->element = guielement_create(gui->root, FALSE);
+  gui->promptmenu->element = guielement_create(gui->root);
   guielement_move_resize(
     gui->promptmenu->element,
     vec2(0/* , -FONT_HEIGHT(gui->uifont) */),
@@ -262,12 +329,17 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->element->color = VEC4_VS_CODE_RED;
   gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
   gui->promptmenu->element->relative_size = 0;
+  gui->promptmenu->element->flag.set<GUIELEMENT_ABOVE>();
   gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
   gui->promptmenu->search_vec  = cvec_create_setfree(free);
   gui->promptmenu->completions = cvec_create_setfree(free);
   gui->promptmenu->maxrows  = 8;
   gui->promptmenu->selected = 0;
   gui->promptmenu->viewtop  = 0;
+  gui_promptmenu_scrollbar_create();
+  /* For now this is needed to init the scrollbar offset position correctly on the first use otherwise it will be incorrect on first use. */
+  guielement_resize(gui->promptmenu->element, vec2(gui->promptmenu->element->size.w, (FONT_HEIGHT(gui->uifont) * 9)));
+  guiscrollbar_draw(gui->promptmenu->sb);
 }
 
 /* Delete the gui `prompt-menu` struct. */
@@ -287,16 +359,20 @@ void gui_promptmenu_resize(void) {
   ASSERT(gui->promptmenu);
   ASSERT(gui->promptmenu->completions);
   vec2 size;
-  int len = cvec_len(gui->promptmenu->completions);
-  if (len > gui->promptmenu->maxrows) {
-    gui->promptmenu->rows = gui->promptmenu->maxrows;
+  int len;
+  if (gui->promptmenu->size_refresh_needed) {
+    len = cvec_len(gui->promptmenu->completions);
+    if (len > gui->promptmenu->maxrows) {
+      gui->promptmenu->rows = gui->promptmenu->maxrows;
+    }
+    else {
+      gui->promptmenu->rows = len;
+    }
+    size.w = gui->promptmenu->element->size.w;
+    size.h = ((gui->promptmenu->rows + 1) * FONT_HEIGHT(gui->uifont));
+    guielement_resize(gui->promptmenu->element, size);
+    gui->promptmenu->size_refresh_needed = FALSE;
   }
-  else {
-    gui->promptmenu->rows = len;
-  }
-  size.w = gui->promptmenu->element->size.w;
-  size.h = ((gui->promptmenu->rows + 1) * FONT_HEIGHT(gui->uifont));
-  guielement_resize(gui->promptmenu->element, size);
 }
 
 /* Draw all text related to the promptmenu. */
@@ -304,12 +380,12 @@ void gui_promptmenu_draw_text(void) {
   ASSERT(gui);
   ASSERT(gui->promptmenu);
   ASSERT(gui->promptmenu->completions);
-  if (gui->promptmenu->refresh_needed) {
+  if (gui->promptmenu->text_refresh_needed) {
     vertex_buffer_clear(gui->promptmenu->buffer);
     gui_promptmenu_add_prompt_line_text();
     gui_promptmenu_add_cursor();
     gui_promptmenu_add_completions_text();
-    gui->promptmenu->refresh_needed = FALSE;
+    gui->promptmenu->text_refresh_needed = FALSE;
   }
   upload_texture_atlas(gui->uiatlas);
   render_vertex_buffer(gui->font_shader, gui->promptmenu->buffer);
@@ -434,43 +510,18 @@ void gui_promptmenu_enter_action(void) {
   }
 }
 
-/* ----------------------------- Open file ----------------------------- */
-
-void gui_promptmenu_open_file_search(void) {
-  ASSERT(gui);
-  directory_t dir;
-  char *last_slash;
-  char *dirpath;
-  cvec_clear(gui->promptmenu->search_vec);
-  if (*answer) {
-    directory_data_init(&dir);
-    /* If the current answer is a dir itself. */
-    if (dir_exists(answer)) {
-      directory_get(answer, &dir);
+void gui_promptmenu_completions_search(void) {
+  switch (gui_prompt_type) {
+    case GUI_PROMPT_OPEN_FILE: {
+      gui_promptmenu_open_file_search();
+      break;
     }
-    else {
-      last_slash = strrchr(answer, '/');
-      if (last_slash && last_slash != answer) {
-        dirpath = measured_copy(answer, (last_slash - answer));
-        directory_get(dirpath, &dir);
-        free(dirpath);
-      }
-    }
-    if (dir.len) {
-      DIRECTORY_ITER(dir, i, entry,
-        cvec_push(gui->promptmenu->search_vec, (void *)copy_of(entry->path));
-      );
-      gui_promptmenu_find_completions();
-      if (cvec_len(gui->promptmenu->completions)) {
-        writef("\nPrompt menu: open file: result:\n");
-        for (int i=0, len=cvec_len(gui->promptmenu->completions); i<len; ++i) {
-          writef("%s\n", (char *)cvec_get(gui->promptmenu->completions, i));
-        }
-      }
-    }
-    directory_data_free(&dir);
-  }
+  } 
+  guiscrollbar_refresh_needed(gui->promptmenu->sb);
+  gui->promptmenu->size_refresh_needed = TRUE;
 }
+
+/* ----------------------------- Open file ----------------------------- */
 
 void gui_promptmenu_open_file(void) {
   gui_ask_user("File to open", GUI_PROMPT_OPEN_FILE);

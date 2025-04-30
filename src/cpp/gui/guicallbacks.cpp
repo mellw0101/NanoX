@@ -173,9 +173,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_BACKSPACE: {
           if (!mods) {
             do_statusbar_backspace(TRUE);
-            if (gui_prompt_type == GUI_PROMPT_OPEN_FILE) {
-              gui_promptmenu_open_file_search();
-            }
+            gui_promptmenu_completions_search();
           }
           else if (mods == GLFW_MOD_CONTROL) {
             do_statusbar_chop_prev_word();
@@ -192,7 +190,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
       }
-      gui->promptmenu->refresh_needed = TRUE;
+      gui->promptmenu->text_refresh_needed = TRUE;
+      guiscrollbar_refresh_needed(gui->promptmenu->sb);
     }
   }
   /* When inside the guieditor key mode, do nothing as we handle further keys in the char callback. */
@@ -829,10 +828,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
     input = (char)ch;
     if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
       if (is_char_one_of(&input, 0, "Yy")) {
-        if (gui_quit()) {
-          ;
-        }
-        else {
+        if (!gui_quit()) {
           gui_promptmode_leave();
         }
       }
@@ -842,11 +838,9 @@ void char_callback(GLFWwindow *window, Uint ch) {
     }
     else {
       inject_into_answer(&input, 1);
-      if (gui_prompt_type == GUI_PROMPT_OPEN_FILE) {
-        gui_promptmenu_open_file_search();
-      }
+      gui_promptmenu_completions_search();
     }
-    gui->promptmenu->refresh_needed = TRUE;
+    gui->promptmenu->text_refresh_needed = TRUE;
   }
   /* Otherwise, when we are inside gui editor mode. */
   else if (gui->flag.is_set<GUI_EDITOR_MODE_KEY>()) {
@@ -995,6 +989,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         /* Otherwise, set prompt x pos. */
         else {
           typing_x = index;
+          gui->promptmenu->text_refresh_needed = TRUE;
         }
       }
       element = guielement_from_mousepos();
@@ -1194,7 +1189,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       }
     }
     /* The clicked element is a part of some scrollbar. */
-    else if (guielement_has_sb_data(gui->clicked) && guiscrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && (mousepos.y != last_mousepos.y)) {
+    if (guielement_has_sb_data(gui->clicked) && guiscrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && (mousepos.y != last_mousepos.y)) {
       guiscrollbar_move(gui->clicked->data.sb, (mousepos.y - last_mousepos.y));
     }
   }

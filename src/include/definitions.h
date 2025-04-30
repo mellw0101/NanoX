@@ -723,7 +723,7 @@ typedef struct GuiScrollbar  GuiScrollbar;
 
 /* Some typedefs. */
 typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
-typedef void (*GuiScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *offset);
+typedef void (*GuiScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset);
 typedef void (*GuiScrollbarMoveFunc)(void *, long);
 
 /* Structure types. */
@@ -1175,7 +1175,9 @@ typedef struct completionstruct {
   } GuiPromptMenuEntry;
 
   typedef struct {
-    bool refresh_needed : 1;
+    bool text_refresh_needed : 1;
+    bool size_refresh_needed : 1;
+
     vertex_buffer_t *buffer;
     guielement      *element;
 
@@ -1185,6 +1187,8 @@ typedef struct completionstruct {
     int selected;
     int maxrows;
     int rows;
+
+    GuiScrollbar *sb;
   } GuiPromptMenu;
 
   /** TODO: Implement this. */

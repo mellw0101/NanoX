@@ -750,7 +750,10 @@ void block_pthread_sig(int sig, bool block) _NOTHROW;
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) _NOTHROW;
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 
-/* 'render_utils.cpp' */
+
+/* ---------------------------------------------------------- render_utils.cpp ---------------------------------------------------------- */
+
+
 void        get_next_word(const char **start, const char **end);
 char       *parse_function_sig(linestruct *line);
 void        find_word(linestruct *line, const char *data, const char *word, const Ulong slen, const char **start, const char **end);
@@ -887,10 +890,10 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void gui_promptmenu_selected_up(void);
   void gui_promptmenu_selected_down(void);
   void gui_promptmenu_enter_action(void);
+  void gui_promptmenu_completions_search(void);
   
   /* ----------------------------- Open file ----------------------------- */
   
-  void gui_promptmenu_open_file_search(void);
   void gui_promptmenu_open_file(void);
 
   
@@ -1026,7 +1029,7 @@ Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float n
 
 void          calculate_scrollbar(float total_pixel_length, Uint start_entry, Uint total_entries, Uint visable_entries, Uint current_entry, float *height, float *relative_y_position);
 long          index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, float ypos) __THROW _NODISCARD;
-GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2, 3);
+GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const data, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2, 3);
 void          guiscrollbar_move(GuiScrollbar *const sb, float change) _NONNULL(1);
 void          guiscrollbar_draw(GuiScrollbar *const sb) _NONNULL(1);
 void          guiscrollbar_refresh_needed(GuiScrollbar *const sb) __THROW _NONNULL(1);

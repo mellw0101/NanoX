@@ -128,7 +128,7 @@ long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endi
   index = lclamp((long)(ratio * (endidx - startidx)), 0, (endidx - startidx));
   /* Then based on that index get the 3 closest positons to it, or just 2 when at the top(0) or bottom(endidx - startidx). */
   array = scrollbar_closest_step_values(index, total_pixel_length, startidx, endidx, visable_idxno, &arraylen);
-  /* Now get the true index based on the exact pixel position.  */
+  /* Now get the true index based on the exact pixel position. */
   index = scrollbar_closest_step_index(index, ypos, array, arraylen);
   free(array);
   /* Now return the appropriet index based on the start index. */
@@ -169,11 +169,14 @@ _UNUSED static void guiscrollbar_callback(guielement *e, guielement_callback_typ
   }
 }
 
-/* Create a scrollbar that will be on the left side of `parent` and use `userdata` as the parameter when running all callbacks. */
-GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW {
+/* Create a scrollbar that will be on the left side of `parent` and use `data` as the parameter when running all callbacks. */
+GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const data, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW {
   ASSERT(parent);
+  ASSERT(data);
+  ASSERT(update_routine);
+  ASSERT(moving_routine);
   GuiScrollbar *sb = (__TYPE(sb))xmalloc(sizeof(*sb));
-  sb->data  = userdata;
+  sb->data  = data;
   sb->base  = guielement_create(parent);
   sb->thumb = guielement_create(sb->base);
   guielement_set_sb_data(sb->base, sb);
@@ -196,19 +199,19 @@ GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const userdata
 /* `Internal`  This function calculates the scrollbar thumbs position and length using the values from the callback's. */
 static void guiscrollbar_calculate(GuiScrollbar *const sb) {
   ASSERT_SB;
-  float total_length, length, ypos, offset;
+  float total_length, length, ypos, top_offset, right_offset;
   Uint start, total, visible, current;
   /* Use the update routine to get all needed data. */
-  sb->update_routine(sb->data, &total_length, &start, &total, &visible, &current, &offset);
+  sb->update_routine(sb->data, &total_length, &start, &total, &visible, &current, &top_offset, &right_offset);
   /* Calculate the size and position of the thumb. */
   calculate_scrollbar(total_length, start, total, visible, current, &length, &ypos);
   /* If the height of the thumb is the entire length of the base or longer, then just hide the entire scrollbar. */
-  if (length >= total_length) {
+  if (!total_length || length >= total_length) {
     guielement_set_flag_recurse(sb->base, TRUE, GUIELEMENT_HIDDEN);
   }
   else {
-    sb->base->relative_pos.y = offset;
-    sb->base->relative_pos.x = (sb->base->size.w + offset);
+    sb->base->relative_pos.y = top_offset;
+    sb->base->relative_pos.x = (sb->base->size.w + right_offset);
     guielement_set_flag_recurse(sb->base, FALSE, GUIELEMENT_HIDDEN);
     guielement_resize(sb->thumb, vec2(sb->thumb->size.w, length));
     sb->thumb->relative_pos.y = ypos;
@@ -222,10 +225,10 @@ static void guiscrollbar_calculate(GuiScrollbar *const sb) {
 /* Move the thumb part of `sb` by `change`.  Note that this is fully clamped and cannot exceed the base element.  Note that this is the only way `moving_routine` gets called. */
 void guiscrollbar_move(GuiScrollbar *const sb, float change) {
   ASSERT_SB;
-  float total_length, offset;
+  float total_length;
   Uint start, total, visible;
   /* Use the update routine to get all needed data. */
-  sb->update_routine(sb->data, &total_length, &start, &total, &visible, NULL, &offset);
+  sb->update_routine(sb->data, &total_length, &start, &total, &visible, NULL, NULL, NULL);
   /* Move the element by the given change, this is clamped to never go outside the constraint's of the base element. */
   guielement_move_y_clamp(
     sb->thumb,

@@ -419,8 +419,9 @@ void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
     gui_promptmenu_resize();
     guielement_draw(gui->promptmenu->element);
-    gui_promptmenu_draw_text();
     gui_promptmenu_draw_selected();
+    guiscrollbar_draw(gui->promptmenu->sb);
+    gui_promptmenu_draw_text();
   }
 }
 
