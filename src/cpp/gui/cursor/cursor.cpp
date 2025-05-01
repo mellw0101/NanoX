@@ -18,7 +18,8 @@ linestruct *line_from_cursor_pos(guieditor *const editor) {
   }
   /* Check if the mouse y position is within any line in the text window. */
   while (line->next && row < (editor->rows - 1)) {
-    row_top_bot_pixel(row, gui->font, &top, &bot);
+    // row_top_bot_pixel(row, gui_font_get_font(gui->font), &top, &bot);
+    gui_font_row_top_bot(gui->font, row, &top, &bot);
     /* When checking the first row, if the y mousepos is above the top but
      * still inside text->pos.y, break directly and return the first line. */
     if (!row && mousepos.y < top) {

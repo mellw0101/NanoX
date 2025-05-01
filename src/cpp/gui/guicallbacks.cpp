@@ -48,10 +48,10 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
     update_projection_uniform(gui->font_shader);
     update_projection_uniform(gui->rect_shader);
     /* Calculate the rows and columns. */
-    editwinrows = (openeditor->text->size.h / FONT_HEIGHT(gui->font));
+    editwinrows = (openeditor->text->size.h / FONT_HEIGHT(gui_font_get_font(gui->font)));
     /* If the font is a mono font then calculate the number of columns by the gui->width of ' '. */
-    if (texture_font_is_mono(gui->font)) {
-      texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
+    if (gui_font_is_mono(gui->font)) {
+      texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(gui->font), " ");
       if (glyph == 0) {
         die("%s: Atlas is not big egnofe.\n", __func__);
       }
@@ -59,22 +59,22 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
     }
     /* Otherwise, just guess for now. */
     else {
-      editwincols = ((openeditor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
+      editwincols = ((openeditor->text->size.w / FONT_WIDTH(gui_font_get_font(gui->font))) * 0.9f);
     }
     refresh_needed = TRUE;
     guielement_resize(gui->root, vec2(gui->width, gui->height));
     /* Calculate the rows for all editors. */
     ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
       guieditor_resize(editor);
-      if (texture_font_is_mono(gui->font)) {
-        texture_glyph_t *glyph = texture_font_get_glyph(gui->font, " ");
+      if (texture_font_is_mono(gui_font_get_font(gui->font))) {
+        texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(gui->font), " ");
         if (!glyph) {
           die("%s: Atlas is to small.\n", __func__);
         }
         editor->cols = (editor->text->size.w / glyph->advance_x);
       }
       else {
-        editor->cols = ((editor->text->size.w / FONT_WIDTH(gui->font)) * 0.9f);
+        editor->cols = ((editor->text->size.w / FONT_WIDTH(gui_font_get_font(gui->font))) * 0.9f);
       }
     );
   }
@@ -738,16 +738,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_MINUS: {
           if (mods == GLFW_MOD_CONTROL) {
-            change_gui_font_size(gui->font_size - 1);
-            show_statusmsg(AHEM, 2, "Font size: %u", gui->font_size);
+            gui_font_decrease_size(gui->font);
+            // change_gui_font_size(gui->font_size - 1);
+            // show_statusmsg(AHEM, 2, "Font size: %u", gui->font_size);
             refresh_needed = TRUE;
           }
           break;
         }
         case GLFW_KEY_EQUAL: {
           if (mods == GLFW_MOD_CONTROL) {
-            change_gui_font_size(gui->font_size + 1);
-            show_statusmsg(AHEM, 2, "Font size: %u", gui->font_size);
+            gui_font_increase_size(gui->font);
+            // change_gui_font_size(gui->font_size + 1);
+            // show_statusmsg(AHEM, 2, "Font size: %u", gui->font_size);
             refresh_needed = TRUE;
           }
           break;
@@ -1006,7 +1008,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           guieditor_set_open(element->data.editor);
           /* Get the line and index from the mouse position. */
           Ulong index;
-          linestruct *line = line_and_index_from_mousepos(gui->font, &index);
+          linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
           openfile->current     = line;
           openfile->mark        = line;
           openfile->current_x   = index;
@@ -1132,7 +1134,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       /* If the clicked element is a editor's text element. */
       if (gui->clicked == gui->clicked->data.editor->text) {
         Ulong index;
-        linestruct *line = line_and_index_from_mousepos(gui->font, &index);
+        linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
         openfile->current   = line;
         openfile->current_x = index;
         /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
@@ -1270,7 +1272,7 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       if (element == element->data.editor->text) {
         /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
         if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
-          line = line_and_index_from_mousepos(gui->font, &index);
+          line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
           element->data.editor->openfile->current   = line;
           element->data.editor->openfile->current_x = index;
         }

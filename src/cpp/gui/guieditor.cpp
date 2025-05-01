@@ -196,7 +196,7 @@ void make_new_editor(bool new_buffer) {
   guielement_move_resize(
     openeditor->gutter,
     vec2(0.0f, (openeditor->main->pos.y + openeditor->topbar->size.h)),
-    vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui->font), (openeditor->main->size.h - openeditor->topbar->size.h))
+    vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui_font_get_font(gui->font)), (openeditor->main->size.h - openeditor->topbar->size.h))
   );
   /* Set relative positioning for the gutter, so it follows the editor. */
   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_POS>();
@@ -384,7 +384,8 @@ void guieditor_calculate_rows(guieditor *const editor) {
   Uint row = 0;
   float top, bot;
   while (TRUE) {
-    row_top_bot_pixel(row, gui->font, &top, &bot);
+    // row_top_bot_pixel(row, gui_font_get_font(gui->font), &top, &bot);
+    gui_font_row_top_bot(gui->font, row, &top, &bot);
     if (top > editor->text->size.h) {
       break;
     }
@@ -404,7 +405,7 @@ static void guieditor_set_gutter_width(guieditor *const editor) {
   char *linenostr;
   confirm_margin();
   linenostr = fmtstr("%*lu ", (margin - 1), editor->openfile->filebot->lineno);
-  editor->gutter->size.w = pixbreadth(gui->font, linenostr);
+  editor->gutter->size.w = pixbreadth(gui_font_get_font(gui->font), linenostr);
   free(linenostr);
 }
 

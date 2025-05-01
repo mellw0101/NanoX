@@ -89,7 +89,8 @@ static void setup_font_shader(void) {
     die("Failed to create font shader.\n");
   }
   /* Load the font and uifont. */
-  set_gui_font(FALLBACK_FONT_PATH, gui->font_size);
+  gui_font_load(gui->font, FALLBACK_FONT_PATH, 17, 512);
+  // set_gui_font(FALLBACK_FONT_PATH, gui->font_size);
   set_gui_uifont(FALLBACK_FONT_PATH, gui->uifont_size);
 }
 
@@ -142,8 +143,8 @@ static void setup_botbar(void) {
   gui->botbar = guielement_create(gui->root, FALSE);
   guielement_move_resize(
     gui->botbar,
-    vec2(0, (gui->height - FONT_HEIGHT(gui->font))),
-    vec2(gui->width, FONT_HEIGHT(gui->font))
+    vec2(0, (gui->height - FONT_HEIGHT(gui_font_get_font(gui->font)))),
+    vec2(gui->width, FONT_HEIGHT(gui_font_get_font(gui->font)))
   );
   gui->botbar->color = GUI_BLACK_COLOR;
   gui->botbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_Y_POS>();
@@ -175,7 +176,7 @@ static void setup_edit_element(void) {
 /* Create the main guistruct, completely blank. */
 static void make_guistruct(void) {
   /* Allocate the gui object. */
-  gui = (guistruct *)xmalloc(sizeof(*gui));
+  MALLOC_STRUCT(gui);
   /* Then init all fields to something invalid, this is important if we need to abort. */
   gui->title                 = NULL;
   gui->width                 = 0;
@@ -196,12 +197,12 @@ static void make_guistruct(void) {
   gui->uifont                = NULL;
   gui->uifont_size           = 0;
   gui->uiatlas               = NULL;
-  gui->font_path             = NULL;
+  // gui->font_path             = NULL;
   gui->font                  = NULL;
-  gui->font_size             = 0;
-  gui->font_lineheight_scale = 1.0f;
-  gui->font_lineheight       = 0;
-  gui->atlas                 = NULL;
+  // gui->font_size             = 0;
+  // gui->font_lineheight_scale = 1.0f;
+  // gui->font_lineheight       = 0;
+  // gui->atlas                 = NULL;
   gui->rect_shader           = 0;
   gui->promptmenu            = NULL;
   gui->current_cursor_type   = GLFW_ARROW_CURSOR;
@@ -228,7 +229,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
-  gui->font_size   = font_size;
+  gui->font = gui_font_create();
+  // gui->font_size   = font_size;
   gui->uifont_size = uifont_size;
   gui->root = guielement_create(0, vec2(gui->height, gui->width), 0, 0, FALSE);
   /* Init the gui suggestmenu substructure. */
@@ -252,7 +254,7 @@ static void delete_guistruct(void) {
   guielement_free(gui->root);
   guielement_free(gui->statusbar);
   /* Free the path of the currently loaded font. */
-  free(gui->font_path);
+  // free(gui->font_path);
   /* Free the main font and the uifont. */
   free_gui_font(FALSE);
   free_gui_font(TRUE);

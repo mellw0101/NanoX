@@ -393,7 +393,6 @@ using std::vector;
 #define GUISB_THUMB_COLOR         vec4(1.0f, 1.0f, 1.0f, 0.3f)
 #define GUISB_ACTIVE_THUMB_COLOR  vec4(1.0f, 1.0f, 1.0f, 0.7f)
 
-#define MALLOC_STRUCT(ptr)  DO_WHILE((ptr) = (__TYPE(ptr))xmalloc(sizeof(*(ptr)));)
 
 /* Enumeration types. */
 
@@ -720,6 +719,7 @@ typedef enum {
 typedef struct guielement    guielement;
 typedef struct guieditor     guieditor;
 typedef struct GuiScrollbar  GuiScrollbar;
+typedef struct GuiFont       GuiFont;
 
 /* Some typedefs. */
 typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
@@ -1242,12 +1242,13 @@ typedef struct completionstruct {
     texture_font_t  *uifont;                 /* The ui font. */
     Uint             uifont_size;            /* The ui font size. */
     texture_atlas_t *uiatlas;                /* The atlas for the ui font. */
-    char            *font_path;              /* Path of currently loaded font. */
-    texture_font_t  *font;                   /* The font the gui is using. */
-    Uint             font_size;              /* The font size. */
-    float            font_lineheight_scale;  /* The scale witch the default line height is multiplied. */
-    Uint             font_lineheight;        /* The calculated line height from the ('default font height' * font_lineheight_scale). */
-    texture_atlas_t *atlas;                  /* The atlas the font is using. */
+    GuiFont         *font;
+    // char            *font_path;              /* Path of currently loaded font. */
+    // texture_font_t  *font;                   /* The font the gui is using. */
+    // Uint             font_size;              /* The font size. */
+    // float            font_lineheight_scale;  /* The scale witch the default line height is multiplied. */
+    // Uint             font_lineheight;        /* The calculated line height from the ('default font height' * font_lineheight_scale). */
+    // texture_atlas_t *atlas;                  /* The atlas the font is using. */
     Uint             rect_shader;            /* The rect shader. */
     GuiPromptMenu   *promptmenu;
     int              current_cursor_type;    /* The currently active cursor type. */
