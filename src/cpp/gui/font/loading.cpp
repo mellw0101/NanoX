@@ -125,8 +125,10 @@ void gui_font_free(GuiFont *const f) {
   free(f->path);
   texture_atlas_free(f->atlas);
   texture_font_free(f->font);
+  free(f);
 }
 
+/* Load `path` in `f` at `size` and using an atlas of size `atlas_size`. */
 void gui_font_load(GuiFont *const f, const char *const restrict path, Uint size, Uint atlas_size) {
   ASSERT(f);
   char *fallback_path;

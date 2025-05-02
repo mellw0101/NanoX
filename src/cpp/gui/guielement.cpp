@@ -27,27 +27,28 @@ _UNUSED static guielement *make_new_element(void) {
 
 /* Create a ui element. */
 guielement *guielement_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap) _NOTHROW {
-  guielement *element    = (guielement *)nmalloc(sizeof(*element));
-  element->pos           = pos;
-  element->relative_pos  = 0;
-  element->size          = size;
-  element->endoff        = endoff;
-  element->relative_size = 0;
-  element->data.raw      = NULL;
-  element->color         = color;
-  element->textcolor     = 0.0f;
-  element->lable         = NULL;
-  element->lablelen      = 0;
-  element->callback      = NULL;
-  element->parent        = NULL;
-  element->children      = MVector<guielement*>{};
-  element->flag.clear();
+  guielement *e;
+  MALLOC_STRUCT(e);
+  e->pos           = pos;
+  e->relative_pos  = 0;
+  e->size          = size;
+  e->endoff        = endoff;
+  e->relative_size = 0;
+  e->data.raw      = NULL;
+  e->color         = color;
+  e->textcolor     = 0.0f;
+  e->lable         = NULL;
+  e->lablelen      = 0;
+  e->callback      = NULL;
+  e->parent        = NULL;
+  e->children      = MVector<guielement*>{};
+  e->flag.clear();
   if (!in_gridmap) {
-    element->flag.set<GUIELEMENT_NOT_IN_GRIDMAP>();
+    e->flag.set<GUIELEMENT_NOT_IN_GRIDMAP>();
   }
-  gridmap.set(element);
-  element->cursor_type = GLFW_ARROW_CURSOR;
-  return element;
+  gridmap.set(e);
+  e->cursor_type = GLFW_ARROW_CURSOR;
+  return e;
 }
 
 /* Create a blank element. */

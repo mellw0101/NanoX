@@ -938,7 +938,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui/guieditor.cpp ---------------------------------------------------------- */
   
   
-  void       guieditor_refresh_topbar(guieditor *editor);
+  void       guieditor_refresh_topbar(guieditor *const editor);
   void       guieditor_update_active_topbar(guieditor *editor);
   void       make_new_editor(bool new_buffer);
   void       guieditor_free(guieditor *const editor);
@@ -966,7 +966,10 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   guigrid *make_new_grid(void);
 #endif
 
-/* 'cfg.cpp'. */
+
+/* ---------------------------------------------------------- cfg.cpp ---------------------------------------------------------- */
+
+
 bool lookup_coloropt(const char *color, int len, int *color_opt) _NOTHROW;
 void init_cfg(void);
 void cleanup_cfg(void) _NOTHROW;

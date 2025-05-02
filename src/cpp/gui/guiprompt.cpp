@@ -212,6 +212,7 @@ static inline void gui_promptmenu_add_completions_text(void) {
 
 /* ----------------------------- Open file ----------------------------- */
 
+/* Routine to put all entries in the current dir into the search vector of the prompt menu. */
 static void gui_promptmenu_open_file_search(void) {
   ASSERT(gui);
   directory_t dir;
@@ -285,6 +286,7 @@ static void gui_promptmenu_open_file_enter_action(void) {
 
 /* ----------------------------- Scroll bar ----------------------------- */
 
+/* The update routine for the promptmenu scrollbar. */
 static void gui_promptmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
   GuiPromptMenu *pm = (__TYPE(pm))arg;
@@ -297,6 +299,7 @@ static void gui_promptmenu_scrollbar_update_routine(void *arg, float *total_leng
   ASSIGN_IF_VALID(right_offset, 0);
 }
 
+/* The moving routine for the promptmenu scrollbar. */
 static void gui_promptmenu_scrollbar_moving_routine(void *arg, long index) {
   ASSERT(arg);
   GuiPromptMenu *pm = (__TYPE(pm))arg;
@@ -304,6 +307,7 @@ static void gui_promptmenu_scrollbar_moving_routine(void *arg, long index) {
   pm->text_refresh_needed = TRUE;
 }
 
+/* Create and init the scrollbar for the prompmenu. */
 static void gui_promptmenu_scrollbar_create(void) {
   ASSERT(gui);
   ASSERT(gui->promptmenu);
@@ -324,8 +328,8 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->element = guielement_create(gui->root);
   guielement_move_resize(
     gui->promptmenu->element,
-    vec2(0/* , -FONT_HEIGHT(gui->uifont) */),
-    vec2(gui->width, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */)
+    0.0f,
+    vec2(gui->width, gui_font_height(gui->uifont))
   );
   gui->promptmenu->element->color = VEC4_VS_CODE_RED;
   gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();

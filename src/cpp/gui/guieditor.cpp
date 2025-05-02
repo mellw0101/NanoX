@@ -70,7 +70,7 @@ static void guieditor_topbar_create(guieditor *const editor) {
 }
 
 /* Remove the existing buffer name buttons and create new ones based on the currently open files of `editor`. */
-void guieditor_refresh_topbar(guieditor *editor) {
+void guieditor_refresh_topbar(guieditor *const editor) {
   /* When debugging is enabled, assert everything we use. */
   ASSERT(editor->topbar);
   ASSERT(gui);
@@ -146,7 +146,8 @@ void guieditor_update_active_topbar(guieditor *editor) {
 
 /* Create a new editor. */
 void make_new_editor(bool new_buffer) {
-  guieditor *node = (guieditor *)nmalloc(sizeof(*node));
+  guieditor *node;
+  MALLOC_STRUCT(node);
   /* If this is the first editor. */
   if (!openeditor) {
     /* Make the first editor the only element in the list. */
