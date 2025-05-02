@@ -90,8 +90,9 @@ static void setup_font_shader(void) {
   }
   /* Load the font and uifont. */
   gui_font_load(gui->font, FALLBACK_FONT_PATH, 17, 512);
+  gui_font_load(gui->uifont, FALLBACK_FONT_PATH, 15, 512);
   // set_gui_font(FALLBACK_FONT_PATH, gui->font_size);
-  set_gui_uifont(FALLBACK_FONT_PATH, gui->uifont_size);
+  // set_gui_uifont(FALLBACK_FONT_PATH, gui->uifont_size);
 }
 
 /* Init the rect shader and setup the ssbo`s for indices and vertices. */
@@ -158,7 +159,7 @@ static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
   gui->statusbar = guielement_create(
     vec2(0, gui->height),
-    vec2(gui->width, FONT_HEIGHT(gui->uifont)),
+    vec2(gui->width, gui_font_height(gui->uifont)/* FONT_HEIGHT(gui->uifont) */),
     0.0f,
     color_idx_to_vec4(FG_VS_CODE_RED)
   );
@@ -195,8 +196,8 @@ static void make_guistruct(void) {
   gui->projection            = NULL;
   gui->font_shader           = 0;
   gui->uifont                = NULL;
-  gui->uifont_size           = 0;
-  gui->uiatlas               = NULL;
+  // gui->uifont_size           = 0;
+  // gui->uiatlas               = NULL;
   // gui->font_path             = NULL;
   gui->font                  = NULL;
   // gui->font_size             = 0;
@@ -230,8 +231,9 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
   gui->font = gui_font_create();
+  gui->uifont = gui_font_create();
   // gui->font_size   = font_size;
-  gui->uifont_size = uifont_size;
+  // gui->uifont_size = uifont_size;
   gui->root = guielement_create(0, vec2(gui->height, gui->width), 0, 0, FALSE);
   /* Init the gui suggestmenu substructure. */
   gui_suggestmenu_create();
@@ -256,8 +258,10 @@ static void delete_guistruct(void) {
   /* Free the path of the currently loaded font. */
   // free(gui->font_path);
   /* Free the main font and the uifont. */
-  free_gui_font(FALSE);
-  free_gui_font(TRUE);
+  gui_font_free(gui->font);
+  gui_font_free(gui->uifont);
+  // free_gui_font(FALSE);
+  // free_gui_font(TRUE);
   /* Delete all the vertex buffers. */
   if (gui->botbuf) {
     vertex_buffer_delete(gui->botbuf);

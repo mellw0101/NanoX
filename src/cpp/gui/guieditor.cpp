@@ -59,7 +59,7 @@ static void guieditor_topbar_create(guieditor *const editor) {
   guielement_move_resize(
     editor->topbar,
     vec2(editor->main->pos.x, editor->main->pos.y),
-    vec2(editor->main->size.w, FONT_HEIGHT(gui->uifont))
+    vec2(editor->main->size.w, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */)
   );
   /* Set relative positioning for the topbar. */
   editor->topbar->flag.set<GUIELEMENT_RELATIVE_POS>();
@@ -81,15 +81,15 @@ void guieditor_refresh_topbar(guieditor *editor) {
   /* First remove all existing children of the topbar. */
   guielement_delete_children(editor->topbar);
   /* If there are any open files, create buttons for them. */
-  ITER_OVER_ALL_OPENFILES(editor->startfile, file,
+  CLIST_ITER(editor->startfile, file,
     button = guielement_create(editor->topbar);
     button->cursor_type = GLFW_HAND_CURSOR;
     if (*file->filename) {
-      guielement_move_resize(button, pos, vec2((pixbreadth(gui->uifont, file->filename) + pixbreadth(gui->uifont, "  ")), editor->topbar->size.h));
+      guielement_move_resize(button, pos, vec2((pixbreadth(gui_font_get_font(gui->uifont), file->filename) + pixbreadth(gui_font_get_font(gui->uifont), "  ")), editor->topbar->size.h));
       guielement_set_lable(button, file->filename);
     }
     else {
-      guielement_move_resize(button, pos, vec2(pixbreadth(gui->uifont, " Nameless "), editor->topbar->size.h));
+      guielement_move_resize(button, pos, vec2(pixbreadth(gui_font_get_font(gui->uifont), " Nameless "), editor->topbar->size.h));
       guielement_set_lable(button, "Nameless");
     }
     /* Set a diffrent color on the button that holds the editor openfile. */
@@ -495,4 +495,13 @@ void guieditor_open_buffer(const char *const restrict path) {
   openeditor->openfile = openfile;
   guieditor_redecorate(openeditor);
   guieditor_resize(openeditor);
+}
+
+void guieditor_update_all(void) {
+  ASSERT(starteditor);
+  ASSERT(openeditor);
+  CLIST_ITER(starteditor, editor,
+    guieditor_redecorate(editor);
+    guieditor_resize(editor);
+  );
 }

@@ -957,6 +957,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void       guieditor_open_new_empty_buffer(void);
   void       guieditor_close_open_buffer(void);
   void       guieditor_open_buffer(const char *const restrict path);
+  void       guieditor_update_all(void);
 
   /* gui/guigrid.cpp */
   guigridsection *make_new_gridsection(void);
@@ -994,22 +995,27 @@ char **split_string_nano(const char *string, const char delim, Ulong *n) _NOTHRO
 GuiFont         *gui_font_create(void);
 void             gui_font_free(GuiFont *const f);
 void             gui_font_load(GuiFont *const f, const char *const restrict path, Uint size, Uint atlas_size);
-void             gui_font_change_size(GuiFont *const f, Uint new_size);
-void             gui_font_increase_size(GuiFont *const f);
-void             gui_font_decrease_size(GuiFont *const f);
 texture_font_t  *gui_font_get_font(GuiFont *const f);
 texture_atlas_t *gui_font_get_atlas(GuiFont *const f);
+texture_glyph_t *gui_font_get_glyph(GuiFont *const f, const char *const restrict codepoint);
+Uint             gui_font_get_size(GuiFont *const f);
+long             gui_font_get_line_height(GuiFont *const f);
 bool             gui_font_is_mono(GuiFont *const f);
 float            gui_font_height(GuiFont *const f);
 float            gui_font_row_baseline(GuiFont *const f, long row);
 void             gui_font_row_top_bot(GuiFont *const f, long row, float *const top, float *const bot);
+void             gui_font_change_size(GuiFont *const f, Uint new_size);
+void             gui_font_increase_size(GuiFont *const f);
+void             gui_font_decrease_size(GuiFont *const f);
+void             gui_font_decrease_line_height(GuiFont *const f);
+void             gui_font_increase_line_height(GuiFont *const f);
 
 /* ----------------------------- General ----------------------------- */
 
 void free_atlas(texture_atlas_t *atlas);
-void free_gui_font(bool uifont);
+// void free_gui_font(bool uifont);
 // void set_gui_font(const char *const restrict path, Uint size);
-void set_gui_uifont(const char *const restrict path, Uint size);
+// void set_gui_uifont(const char *const restrict path, Uint size);
 // void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize);
 // void change_gui_font_size(Uint size);
 void list_available_fonts(void);
@@ -1018,9 +1024,9 @@ void list_available_fonts(void);
 /* ---------------------------------------------------------- gui/font/utils.cpp ---------------------------------------------------------- */
 
 
-float row_baseline_pixel(long lineno, texture_font_t *const font);
-void row_top_bot_pixel(long lineno, texture_font_t *const font, float *const top, float *const bot);
-void line_add_cursor(long lineno, texture_font_t *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset);
+// float row_baseline_pixel(long lineno, texture_font_t *const font);
+// void row_top_bot_pixel(long lineno, texture_font_t *const font, float *const top, float *const bot);
+void line_add_cursor(long lineno, GuiFont *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset);
 vertex_buffer_t *make_new_font_buffer(void) _NODISCARD;
 
 

@@ -737,19 +737,35 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_MINUS: {
+          /* Decrease the font size. */
           if (mods == GLFW_MOD_CONTROL) {
             gui_font_decrease_size(gui->font);
-            // change_gui_font_size(gui->font_size - 1);
-            // show_statusmsg(AHEM, 2, "Font size: %u", gui->font_size);
+            show_statusmsg(AHEM, 2, "Font size: %u", gui_font_get_size(gui->font));
+            guieditor_update_all();
+            refresh_needed = TRUE;
+          }
+          /* Decrease the font line height. */
+          else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
+            gui_font_decrease_line_height(gui->font);
+            show_statusmsg(AHEM, 2, "Font line height: %ld", gui_font_get_line_height(gui->font));
+            guieditor_update_all();
             refresh_needed = TRUE;
           }
           break;
         }
         case GLFW_KEY_EQUAL: {
+          /* increase the font size. */
           if (mods == GLFW_MOD_CONTROL) {
             gui_font_increase_size(gui->font);
-            // change_gui_font_size(gui->font_size + 1);
-            // show_statusmsg(AHEM, 2, "Font size: %u", gui->font_size);
+            show_statusmsg(AHEM, 2, "Font size: %u", gui_font_get_size(gui->font));
+            guieditor_update_all();
+            refresh_needed = TRUE;
+          }
+          /* increase the font line height. */
+          else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
+            gui_font_increase_line_height(gui->font);
+            show_statusmsg(AHEM, 2, "Font line height: %ld", gui_font_get_line_height(gui->font));
+            guieditor_update_all();
             refresh_needed = TRUE;
           }
           break;

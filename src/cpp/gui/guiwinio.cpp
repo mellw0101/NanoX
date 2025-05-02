@@ -369,7 +369,7 @@ void draw_editor(guieditor *editor) {
       guielement_draw(child);
       /* Update the data in the topbuf. */
       if (child->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
-        vertex_buffer_add_element_lable_offset(child, gui->uifont, editor->topbuf, vec2(pixbreadth(gui->uifont, " "), 0));
+        vertex_buffer_add_element_lable_offset(child, gui_font_get_font(gui->uifont), editor->topbuf, vec2(pixbreadth(gui_font_get_font(gui->uifont), " "), 0));
       }
     }
     editor->flag.unset<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
@@ -388,7 +388,7 @@ void draw_editor(guieditor *editor) {
       guielement_draw(child);
     }
   }
-  upload_texture_atlas(gui->uiatlas);
+  upload_texture_atlas(gui_font_get_atlas(gui->uifont));
   render_vertex_buffer(gui->font_shader, editor->topbuf);
   /* Render the text element of the editor. */
   if (refresh_needed) {
@@ -402,7 +402,7 @@ void draw_editor(guieditor *editor) {
     }
     if (!gui->flag.is_set<GUI_PROMPT>()) {
       if ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0) {
-        line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui_font_get_font(gui->font), editor->buffer, vec4(1), cursor_pixel_x_pos(gui_font_get_font(gui->font)), editor->text->pos.y);
+        line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui->font, editor->buffer, vec4(1), cursor_pixel_x_pos(gui_font_get_font(gui->font)), editor->text->pos.y);
       }
     }
   }
@@ -465,18 +465,18 @@ void draw_statusbar(void) {
     }
     if (refresh_needed) {
       gui->statusbar->flag.unset<GUIELEMENT_HIDDEN>();
-      float msgwidth = (pixbreadth(gui->uifont, statusmsg) + pixbreadth(gui->uifont, "  "));
+      float msgwidth = (pixbreadth(gui_font_get_font(gui->uifont), statusmsg) + pixbreadth(gui_font_get_font(gui->uifont), "  "));
       vertex_buffer_clear(gui->statusbuf);
       guielement_move_resize(
         gui->statusbar,
         vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - gui->botbar->size.h - gui->statusbar->size.h)),
-        vec2(msgwidth, FONT_HEIGHT(gui->uifont))
+        vec2(msgwidth, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */)
       );
-      vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui->uifont, " ")), (row_baseline_pixel(0, gui->uifont) + gui->statusbar->pos.y));
-      vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui->uifont, 1, &penpos);
+      vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (/* row_baseline_pixel(0, gui->uifont) */ gui_font_row_baseline(gui->uifont, 0) + gui->statusbar->pos.y));
+      vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui_font_get_font(gui->uifont), 1, &penpos);
     }
     guielement_draw(gui->statusbar);
-    upload_texture_atlas(gui->uiatlas);
+    upload_texture_atlas(gui_font_get_atlas(gui->uifont));
     render_vertex_buffer(gui->font_shader, gui->statusbuf);
   }
 }

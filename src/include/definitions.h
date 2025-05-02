@@ -1239,9 +1239,10 @@ typedef struct completionstruct {
     vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
     matrix4x4       *projection;             /* The projection to pass to the shaders. */
     Uint             font_shader;            /* The font shader. */
-    texture_font_t  *uifont;                 /* The ui font. */
-    Uint             uifont_size;            /* The ui font size. */
-    texture_atlas_t *uiatlas;                /* The atlas for the ui font. */
+    // texture_font_t  *uifont;                 /* The ui font. */
+    // Uint             uifont_size;            /* The ui font size. */
+    // texture_atlas_t *uiatlas;                /* The atlas for the ui font. */
+    GuiFont         *uifont;
     GuiFont         *font;
     // char            *font_path;              /* Path of currently loaded font. */
     // texture_font_t  *font;                   /* The font the gui is using. */

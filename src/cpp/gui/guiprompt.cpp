@@ -77,7 +77,7 @@ long prompt_index_from_mouse(bool allow_outside) {
   if (no_linenums) {
     SET(LINE_NUMBERS);
   }
-  ret = index_from_mouse_x(answer, gui->uifont, (gui->promptmenu->element->pos.x + (pixbreadth(gui->uifont, " ") / 2) + pixbreadth(gui->uifont, prompt)));
+  ret = index_from_mouse_x(answer, gui_font_get_font(gui->uifont), (gui->promptmenu->element->pos.x + (pixbreadth(gui_font_get_font(gui->uifont), " ") / 2) + pixbreadth(gui_font_get_font(gui->uifont), prompt)));
   if (no_linenums) {
     UNSET(LINE_NUMBERS);
   }
@@ -163,7 +163,7 @@ static inline void gui_promptmenu_add_cursor(void) {
     gui->uifont,
     gui->promptmenu->buffer,
     1,
-    (gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ") + pixbreadth(gui->uifont, prompt) + string_pixel_offset(answer, " ", typing_x, gui->uifont)),
+    (gui->promptmenu->element->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ") + pixbreadth(gui_font_get_font(gui->uifont), prompt) + string_pixel_offset(answer, " ", typing_x, gui_font_get_font(gui->uifont))),
     gui->promptmenu->element->pos.y
   );
 }
@@ -177,9 +177,9 @@ static inline void gui_promptmenu_add_prompt_line_text(void) {
   ASSERT(gui->promptmenu);
   ASSERT(gui->promptmenu->element);
   ASSERT(gui->promptmenu->buffer);
-  vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ")), (row_baseline_pixel(0, gui->uifont) + gui->promptmenu->element->pos.y));
-  vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui->uifont, vec4(1), &penpos);
-  vertex_buffer_add_string(gui->promptmenu->buffer, answer, strlen(answer), " ", gui->uifont, vec4(1), &penpos);
+  vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (/* row_baseline_pixel(0, gui->uifont) */ gui_font_row_baseline(gui->uifont, 0) + gui->promptmenu->element->pos.y));
+  vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui_font_get_font(gui->uifont), vec4(1), &penpos);
+  vertex_buffer_add_string(gui->promptmenu->buffer, answer, strlen(answer), " ", gui_font_get_font(gui->uifont), vec4(1), &penpos);
 }
 
 /* If there are any completions then draw them to the promptmenu.  TODO: Make a function that decides the text color of the completions based on the current prompt type. */
@@ -198,10 +198,11 @@ static inline void gui_promptmenu_add_completions_text(void) {
       while (row < gui->promptmenu->rows) {
         text = (char *)cvec_get(gui->promptmenu->completions, (gui->promptmenu->viewtop + row));
         textpen = vec2(
-          (gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ")),
-          (row_baseline_pixel((row + 1), gui->uifont) + gui->promptmenu->element->pos.y)
+          (gui->promptmenu->element->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")),
+          (gui_font_row_baseline(gui->uifont, (row + 1)) + gui->promptmenu->element->pos.y)
+          // (row_baseline_pixel((row + 1), gui->uifont) + gui->promptmenu->element->pos.y)
         );
-        vertex_buffer_add_string(gui->promptmenu->buffer, text, strlen(text), NULL, gui->uifont, 1, &textpen);
+        vertex_buffer_add_string(gui->promptmenu->buffer, text, strlen(text), NULL, gui_font_get_font(gui->uifont), 1, &textpen);
         ++row;
       }
       was_viewtop = gui->promptmenu->viewtop;
@@ -287,12 +288,12 @@ static void gui_promptmenu_open_file_enter_action(void) {
 static void gui_promptmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
   GuiPromptMenu *pm = (__TYPE(pm))arg;
-  ASSIGN_IF_VALID(total_length, (pm->element->size.h - FONT_HEIGHT(gui->uifont)));
+  ASSIGN_IF_VALID(total_length, (pm->element->size.h - gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */));
   ASSIGN_IF_VALID(start, 0);
   ASSIGN_IF_VALID(total, (cvec_len(pm->completions) - pm->rows));
   ASSIGN_IF_VALID(visible, pm->rows);
   ASSIGN_IF_VALID(current, pm->viewtop);
-  ASSIGN_IF_VALID(top_offset, FONT_HEIGHT(gui->uifont));
+  ASSIGN_IF_VALID(top_offset, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */);
   ASSIGN_IF_VALID(right_offset, 0);
 }
 
@@ -324,7 +325,7 @@ void gui_promptmenu_create(void) {
   guielement_move_resize(
     gui->promptmenu->element,
     vec2(0/* , -FONT_HEIGHT(gui->uifont) */),
-    vec2(gui->width, FONT_HEIGHT(gui->uifont))
+    vec2(gui->width, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */)
   );
   gui->promptmenu->element->color = VEC4_VS_CODE_RED;
   gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
@@ -338,7 +339,7 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->viewtop  = 0;
   gui_promptmenu_scrollbar_create();
   /* For now this is needed to init the scrollbar offset position correctly on the first use otherwise it will be incorrect on first use. */
-  guielement_resize(gui->promptmenu->element, vec2(gui->promptmenu->element->size.w, (FONT_HEIGHT(gui->uifont) * 9)));
+  guielement_resize(gui->promptmenu->element, vec2(gui->promptmenu->element->size.w, (gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */ * 9)));
   guiscrollbar_draw(gui->promptmenu->sb);
 }
 
@@ -369,7 +370,7 @@ void gui_promptmenu_resize(void) {
       gui->promptmenu->rows = len;
     }
     size.w = gui->promptmenu->element->size.w;
-    size.h = ((gui->promptmenu->rows + 1) * FONT_HEIGHT(gui->uifont));
+    size.h = ((gui->promptmenu->rows + 1) * gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */);
     guielement_resize(gui->promptmenu->element, size);
     gui->promptmenu->size_refresh_needed = FALSE;
   }
@@ -387,7 +388,8 @@ void gui_promptmenu_draw_text(void) {
     gui_promptmenu_add_completions_text();
     gui->promptmenu->text_refresh_needed = FALSE;
   }
-  upload_texture_atlas(gui->uiatlas);
+  // upload_texture_atlas(gui->uiatlas);
+  upload_texture_atlas(gui_font_get_atlas(gui->uifont));
   render_vertex_buffer(gui->font_shader, gui->promptmenu->buffer);
 }
 
@@ -403,7 +405,8 @@ void gui_promptmenu_draw_selected(void) {
     if (selected_row >= 0 && selected_row < gui->promptmenu->rows) {
       pos.x = gui->promptmenu->element->pos.x;
       size.w = gui->promptmenu->element->size.w;
-      row_top_bot_pixel((selected_row + 1), gui->uifont, &pos.y, &size.h);
+      // row_top_bot_pixel((selected_row + 1), gui->uifont, &pos.y, &size.h);
+      gui_font_row_top_bot(gui->uifont, (selected_row + 1), &pos.y, &size.h);
       size.h -= pos.y;
       pos.y  += gui->promptmenu->element->pos.y;
       draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));

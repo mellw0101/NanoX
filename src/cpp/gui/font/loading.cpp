@@ -101,6 +101,7 @@ static inline void gui_font_set_path(GuiFont *const f, const char *const restric
 
 /* ----------------------------- Global gui font ----------------------------- */
 
+/* Create a blank allocated `GuiFont` structure. */
 GuiFont *gui_font_create(void) {
   GuiFont *f;
   MALLOC_STRUCT(f);
@@ -115,6 +116,7 @@ GuiFont *gui_font_create(void) {
   return f;
 }
 
+/* Free a allocated `GuiFont` structure as well as loaded font if there was any. */
 void gui_font_free(GuiFont *const f) {
   /* Make this function a `NO-OP` when `f` is `NULL`. */
   if (!f) {
@@ -127,30 +129,19 @@ void gui_font_free(GuiFont *const f) {
 
 void gui_font_load(GuiFont *const f, const char *const restrict path, Uint size, Uint atlas_size) {
   ASSERT(f);
+  char *fallback_path;
   f->size       = size;
   f->atlas_size = atlas_size;
-  gui_font_set_path(f, path);
-  gui_font_reload(f);
-}
-
-void gui_font_change_size(GuiFont *const f, Uint new_size) {
-  ASSERT_GUI_FONT;
-  if (f->size == new_size) {
-    return;
+  /* If the given path does not exist, set the fallback font path as the path. */
+  if (!file_exists(path)) {
+    get_homedir();
+    fallback_path = fmtstr("%s/%s", homedir, FALLBACK_FONT_PATH);
+    gui_font_set_path(f, fallback_path);
   }
-  f->size = new_size;
-  gui_font_reload(f);
-}
-
-void gui_font_increase_size(GuiFont *const f) {
-  ASSERT_GUI_FONT;
-  ++f->size;
-  gui_font_reload(f);
-}
-
-void gui_font_decrease_size(GuiFont *const f) {
-  ASSERT_GUI_FONT;
-  --f->size;
+  /* Otherwise, just use the given path. */
+  else { 
+    gui_font_set_path(f, path);
+  }
   gui_font_reload(f);
 }
 
@@ -162,6 +153,23 @@ texture_font_t *gui_font_get_font(GuiFont *const f) {
 texture_atlas_t *gui_font_get_atlas(GuiFont *const f) {
   ASSERT_GUI_FONT;
   return f->atlas;
+}
+
+texture_glyph_t *gui_font_get_glyph(GuiFont *const f, const char *const restrict codepoint) {
+  ASSERT_GUI_FONT;
+  texture_glyph_t *glyph = texture_font_get_glyph(f->font, codepoint);
+  ALWAYS_ASSERT(glyph);
+  return glyph;
+}
+
+Uint gui_font_get_size(GuiFont *const f) {
+  ASSERT_GUI_FONT;
+  return f->size;
+}
+
+long gui_font_get_line_height(GuiFont *const f) {
+  ASSERT_GUI_FONT;
+  return f->line_height;
 }
 
 bool gui_font_is_mono(GuiFont *const f) {
@@ -187,24 +195,55 @@ void gui_font_row_top_bot(GuiFont *const f, long row, float *const top, float *c
   ASSIGN_IF_VALID(bot, GF_ROW_BOT(row));
 }
 
+void gui_font_change_size(GuiFont *const f, Uint new_size) {
+  ASSERT_GUI_FONT;
+  if (f->size == new_size) {
+    return;
+  }
+  f->size = new_size;
+  gui_font_reload(f);
+}
+
+void gui_font_increase_size(GuiFont *const f) {
+  ASSERT_GUI_FONT;
+  ++f->size;
+  gui_font_reload(f);
+}
+
+void gui_font_decrease_size(GuiFont *const f) {
+  ASSERT_GUI_FONT;
+  --f->size;
+  gui_font_reload(f);
+}
+
+void gui_font_decrease_line_height(GuiFont *const f) {
+  ASSERT_GUI_FONT;
+  --f->line_height;
+}
+
+void gui_font_increase_line_height(GuiFont *const f) {
+  ASSERT_GUI_FONT;
+  ++f->line_height;
+}
+
 /* ----------------------------- General ----------------------------- */
 
 /* Create a new font and atlas from `path`, and assign them to `*outfont` and `*outatlas`. */
-static void set_font(const char *const restrict path, Uint size, texture_font_t **const outfont, texture_atlas_t **const outatlas) {
-  ASSERT(path);
-  ASSERT(size);
-  ASSERT(file_exists(path));
-  texture_atlas_t *atlas;
-  texture_font_t *font;
-  /* Generate the new texture atlas. */
-  atlas = texture_atlas_new(512, 512, 1);
-  glGenTextures(1, &atlas->id);
-  /* Load the font file. */
-  font = texture_font_new_from_file(atlas, size, path);
-  /* Assign the new atlas and font to the passed ones. */
-  *outfont = font;
-  *outatlas = atlas;
-}
+// static void set_font(const char *const restrict path, Uint size, texture_font_t **const outfont, texture_atlas_t **const outatlas) {
+//   ASSERT(path);
+//   ASSERT(size);
+//   ASSERT(file_exists(path));
+//   texture_atlas_t *atlas;
+//   texture_font_t *font;
+//   /* Generate the new texture atlas. */
+//   atlas = texture_atlas_new(512, 512, 1);
+//   glGenTextures(1, &atlas->id);
+//   /* Load the font file. */
+//   font = texture_font_new_from_file(atlas, size, path);
+//   /* Assign the new atlas and font to the passed ones. */
+//   *outfont = font;
+//   *outatlas = atlas;
+// }
 
 /* Free an allocated `texture_atlas_t` strucure properly.  Note that this function is `NOT NULL-SAFE`. */
 void free_atlas(texture_atlas_t *atlas) {
@@ -217,35 +256,35 @@ void free_atlas(texture_atlas_t *atlas) {
 }
 
 /* When `uifont` is `TRUE` free the uifont, otherwise free the textfont. */
-void free_gui_font(bool uifont) {
-  ASSERT(gui);
-  /* Delete the current uifont. */
-  if (uifont) {
-    texture_atlas_free(gui->uiatlas);
-    texture_font_free(gui->uifont);
-    gui->uiatlas = NULL;
-    gui->uifont  = NULL;
-    // if (gui->uiatlas) {
-    //   free_atlas(gui->uiatlas);
-    //   gui->uiatlas = NULL;
-    // }
-    // if (gui->uifont) {
-    //   texture_font_delete(gui->uifont);
-    //   gui->uifont = NULL;
-    // }
-  }
-  /* Otherwise, delete the textfont. */
-  else {
-    // if (gui->atlas) {
-    //   free_atlas(gui->atlas);
-    //   gui->atlas = NULL;
-    // }
-    // if (gui->font) {
-    //   texture_font_delete(gui->font);
-    //   gui->font = NULL;
-    // }
-  }
-}
+// void free_gui_font(bool uifont) {
+//   ASSERT(gui);
+//   /* Delete the current uifont. */
+//   if (uifont) {
+//     texture_atlas_free(gui->uiatlas);
+//     texture_font_free(gui->uifont);
+//     gui->uiatlas = NULL;
+//     gui->uifont  = NULL;
+//     // if (gui->uiatlas) {
+//     //   free_atlas(gui->uiatlas);
+//     //   gui->uiatlas = NULL;
+//     // }
+//     // if (gui->uifont) {
+//     //   texture_font_delete(gui->uifont);
+//     //   gui->uifont = NULL;
+//     // }
+//   }
+//   /* Otherwise, delete the textfont. */
+//   else {
+//     // if (gui->atlas) {
+//     //   free_atlas(gui->atlas);
+//     //   gui->atlas = NULL;
+//     // }
+//     // if (gui->font) {
+//     //   texture_font_delete(gui->font);
+//     //   gui->font = NULL;
+//     // }
+//   }
+// }
 
 /* Set the font the gui uses to the fallback font, this should never fail unless the fallback font file is removed. */
 // static void set_fallback_font(Uint size) {
@@ -268,22 +307,22 @@ void free_gui_font(bool uifont) {
 // }
 
 /* Set the uifont the gui uses to the fallback font, this should never fail unless the fallback font file is removed. */
-static void set_fallback_uifont(Uint size) {
-  ASSERT(size);
-  char *path;
-  /* Get the current homedir. */
-  get_homedir();
-  /* Ensure it assigned a valid string to the ptr. */
-  ALWAYS_ASSERT(homedir);
-  /* Construct the path to the fallback font file. */
-  path = fmtstr("%s/%s", homedir, ".config/nanox/fonts/unifont.ttf");
-  /* Free the existing font, if any. */
-  free_gui_font(TRUE);
-  /* Set the font. */
-  set_font(path, size, &gui->uifont, &gui->uiatlas);
-  /* Free the constructed path. */
-  free(path);
-}
+// static void set_fallback_uifont(Uint size) {
+//   ASSERT(size);
+//   char *path;
+//   /* Get the current homedir. */
+//   get_homedir();
+//   /* Ensure it assigned a valid string to the ptr. */
+//   ALWAYS_ASSERT(homedir);
+//   /* Construct the path to the fallback font file. */
+//   path = fmtstr("%s/%s", homedir, ".config/nanox/fonts/unifont.ttf");
+//   /* Free the existing font, if any. */
+//   free_gui_font(TRUE);
+//   /* Set the font. */
+//   set_font(path, size, &gui->uifont, &gui->uiatlas);
+//   /* Free the constructed path. */
+//   free(path);
+// }
 
 /* Set the gui font using `path` with `size`.  If the provided file does not exist, the fallback font will be set. */
 // void set_gui_font(const char *const restrict path, Uint size) {
@@ -317,22 +356,22 @@ static void set_fallback_uifont(Uint size) {
 // }
 
 /* Set the gui uifont using `path` with `size`.  If the provided file does not exist, the fallback font will be set. */
-void set_gui_uifont(const char *const restrict path, Uint size) {
-  ASSERT(gui);
-  ASSERT(path);
-  ASSERT(size);
-  /* Ensure the uifontsize parameter in the gui structure aligns with the actual size. */
-  gui->uifont_size = size;
-  /* When the provided path does not exist, revert to the fallback font. */
-  if (!file_exists(path)) {
-    set_fallback_uifont(size);
-  }
-  /* Otherwise, set the provided  */
-  else {
-    free_gui_font(TRUE);
-    set_font(path, size, &gui->uifont, &gui->uiatlas);
-  }
-}
+// void set_gui_uifont(const char *const restrict path, Uint size) {
+//   ASSERT(gui);
+//   ASSERT(path);
+//   ASSERT(size);
+//   /* Ensure the uifontsize parameter in the gui structure aligns with the actual size. */
+//   gui->uifont_size = size;
+//   /* When the provided path does not exist, revert to the fallback font. */
+//   if (!file_exists(path)) {
+//     set_fallback_uifont(size);
+//   }
+//   /* Otherwise, set the provided  */
+//   else {
+//     free_gui_font(TRUE);
+//     set_font(path, size, &gui->uifont, &gui->uiatlas);
+//   }
+// }
 
 /* Set the font and uifont for the gui using the same font file. */
 // void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize) {
