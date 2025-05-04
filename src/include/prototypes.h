@@ -891,6 +891,9 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void gui_promptmenu_selected_down(void);
   void gui_promptmenu_enter_action(void);
   void gui_promptmenu_completions_search(void);
+  void gui_promptmenu_hover_action(float y_pos);
+  void gui_promptmenu_scroll_action(bool direction, float y_pos);
+  void gui_promptmenu_click_action(float y_pos);
   
   /* ----------------------------- Open file ----------------------------- */
   
@@ -1012,7 +1015,7 @@ void             gui_font_increase_size(GuiFont *const f);
 void             gui_font_decrease_size(GuiFont *const f);
 void             gui_font_decrease_line_height(GuiFont *const f);
 void             gui_font_increase_line_height(GuiFont *const f);
-bool gui_font_row_from_position(GuiFont *const f, float y_top, float y_bot, float y_pos, long *outrow);
+bool             gui_font_row_from_pos(GuiFont *const f, float y_top, float y_bot, float y_pos, long *outrow);
 
 /* ----------------------------- General ----------------------------- */
 

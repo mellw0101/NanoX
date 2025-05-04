@@ -448,7 +448,6 @@ void gui_suggestmenu_resize(void) {
   /* Calculate the correct position for the suggestmenu window. */
   pos.x = cursor_pixel_x_pos(gui_font_get_font(gui->font));
   gui_font_row_top_bot(gui->font, (openfile->current->lineno - openfile->edittop->lineno), NULL, &pos.y);
-  // row_top_bot_pixel((openfile->current->lineno - openfile->edittop->lineno), gui_font_get_font(gui->font), NULL, &pos.y);
   pos.y += openeditor->text->pos.y;
   /* Calculate the size of the suggestmenu window. */
   size.w = (pixbreadth(gui_font_get_font(gui->font), (char *)cvec_get(gui->suggestmenu->completions, (len - 1))) + 4);
@@ -474,7 +473,6 @@ void gui_suggestmenu_draw_selected(void) {
     pos.x  = (gui->suggestmenu->element->pos.x + 1);
     size.w = (gui->suggestmenu->element->size.w - 2);
     gui_font_row_top_bot(gui->font, selected_row, &pos.y, &size.h);
-    // row_top_bot_pixel(selected_row, gui_font_get_font(gui->font), &pos.y, &size.h);
     size.h -= (pos.y - ((selected_row == gui->suggestmenu->rows - 1) ? 1 : 0));
     pos.y  += (gui->suggestmenu->element->pos.y + 1);
     draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));
@@ -498,7 +496,6 @@ void gui_suggestmenu_draw_text(void) {
       textpen = vec2(
         (gui->suggestmenu->element->pos.x + 2),
         (gui_font_row_baseline(gui->font, row) + gui->suggestmenu->element->pos.y + 2)
-        // (row_baseline_pixel(row, gui_font_get_font(gui->font)) + gui->suggestmenu->element->pos.y + 2)
       );
       vertex_buffer_add_string(gui->suggestmenu->vertbuf, str, strlen(str), NULL, gui_font_get_font(gui->font), 1, &textpen);
       ++row;

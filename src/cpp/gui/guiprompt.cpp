@@ -418,6 +418,14 @@ void gui_promptmenu_draw_selected(void) {
   }
 }
 
+_UNUSED static bool gui_promptmenu_selected_is_above_screen(void) {
+  return (gui->promptmenu->selected < gui->promptmenu->viewtop);
+}
+
+_UNUSED static bool gui_promptmenu_selected_is_below_screen(void) {
+  return (gui->promptmenu->selected < gui->promptmenu->viewtop);
+}
+
 /* Move the currently selected promptmenu entry up once or when at the very top move it to the bottom.  This also ensures that viewtop moves as well when moving from the top of it. */
 void gui_promptmenu_selected_up(void) {
   ASSERT(gui);
@@ -438,7 +446,7 @@ void gui_promptmenu_selected_up(void) {
       }
       --gui->promptmenu->selected;
     }
-    // guiscrollbar_refresh_needed(gui->promptmenu->sb);
+    guiscrollbar_refresh_needed(gui->promptmenu->sb);
   }
 }
 
@@ -459,16 +467,8 @@ void gui_promptmenu_selected_down(void) {
       }
       ++gui->promptmenu->selected;
     }
-    // guiscrollbar_refresh_needed(gui->promptmenu->sb);
+    guiscrollbar_refresh_needed(gui->promptmenu->sb);
   }
-}
-
-_UNUSED static bool gui_promptmenu_selected_is_above_screen(void) {
-  return (gui->promptmenu->selected < gui->promptmenu->viewtop);
-}
-
-_UNUSED static bool gui_promptmenu_selected_is_below_screen(void) {
-  return (gui->promptmenu->selected < gui->promptmenu->viewtop);
 }
 
 void gui_promptmenu_enter_action(void) {
@@ -534,6 +534,61 @@ void gui_promptmenu_completions_search(void) {
   } 
   guiscrollbar_refresh_needed(gui->promptmenu->sb);
   gui->promptmenu->size_refresh_needed = TRUE;
+}
+
+void gui_promptmenu_hover_action(float y_pos) {
+  ASSERT(gui);
+  ASSERT(gui->uifont);
+  ASSERT(gui->promptmenu);
+  ASSERT(gui->promptmenu->element);
+  ASSERT(gui->promptmenu->completions);
+  long row;
+  float top;
+  float bot;
+  if (cvec_len(gui->promptmenu->completions)) {
+    /* Top of the completions menu. */
+    top = (gui->promptmenu->element->pos.y + gui_font_height(gui->uifont));
+    /* Bottom of the completions menu. */
+    bot = (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h);
+    /* If `y_pos` relates to a valid row in the promptmenu completion menu, then adjust the selected to that row. */
+    if (gui_font_row_from_pos(gui->uifont, top, bot, y_pos, &row)) {
+      gui->promptmenu->selected = lclamp((gui->promptmenu->viewtop + row), gui->promptmenu->viewtop, (gui->promptmenu->viewtop + gui->promptmenu->rows));
+    }
+  }
+}
+
+void gui_promptmenu_scroll_action(bool direction, float y_pos) {
+  ASSERT(gui);
+  ASSERT(gui->promptmenu);
+  ASSERT(gui->promptmenu->completions);
+  int len = cvec_len(gui->promptmenu->completions);
+  /* Only do anything if there are more entries then rows in the promptmenu. */
+  if (len > gui->promptmenu->maxrows) {
+    /* Only scroll when not already at the top or bottom. */
+    if ((direction == BACKWARD && gui->promptmenu->viewtop > 0) || (direction == FORWARD && gui->promptmenu->viewtop < (len - gui->promptmenu->maxrows))) {
+      gui->promptmenu->viewtop += (!direction ? -1 : 1);
+      gui->promptmenu->text_refresh_needed = TRUE;
+      /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
+      gui_promptmenu_hover_action(y_pos);  
+    }
+  }
+}
+
+void gui_promptmenu_click_action(float y_pos) {
+  ASSERT(gui);
+  ASSERT(gui->promptmenu);
+  ASSERT(gui->promptmenu->completions);
+  float top;
+  float bot;
+  /* Only perform any action when there are completions available. */
+  if (cvec_len(gui->promptmenu->completions)) {
+    top = (gui->promptmenu->element->pos.y + gui_font_height(gui->uifont));
+    bot = (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h);
+    if (y_pos >= top && y_pos <= bot) {
+      gui_promptmenu_hover_action(y_pos);
+      gui_promptmenu_enter_action();
+    }
+  }
 }
 
 /* ----------------------------- Open file ----------------------------- */

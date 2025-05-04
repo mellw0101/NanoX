@@ -1066,6 +1066,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
             guieditor_resize(element->parent->data.editor);
           }
         }
+        else if (element == gui->promptmenu->element) {
+          gui_promptmenu_click_action(mousepos.y);
+        }
         /* And, when pressed in any other element. */
         else if (element->callback) {
           element->callback(element, GUIELEMENT_CLICK_CALLBACK);
@@ -1143,11 +1146,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       long index = prompt_index_from_mouse(TRUE);
       if (index != -1) {
         typing_x = index;
-      }
-      long row;
-      if (gui_font_row_from_position(gui->uifont, (gui->promptmenu->element->pos.y + gui_font_height(gui->uifont)),
-        (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h), mousepos.y, &row)) {
-        writef("row: %ld\n", row);
+        gui->promptmenu->text_refresh_needed = TRUE;
       }
     }
     /* If the clicked element is a part of an editor. */
@@ -1223,6 +1222,10 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     if (element->cursor_type != gui->current_cursor_type) {
       set_cursor_type(window, element->cursor_type);
       gui->current_cursor_type = element->cursor_type;
+    }
+    /* If this is the promptmenu main element. */
+    if (element == gui->promptmenu->element) {
+      gui_promptmenu_hover_action(mousepos.y);
     }
     /* If the current mouse element is not the current entered element. */
     if (element != entered_element) {
@@ -1321,6 +1324,10 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       if (element->parent == element->parent->data.editor->topbar) {
         NETLOG("Is topbar ancestor.\n");
       }
+    }
+    /* If this element is the gui promptmenu main element.  Then call the scroll function. */
+    else if (element == gui->promptmenu->element) {
+      gui_promptmenu_scroll_action(((y > 0) ? BACKWARD : FORWARD), mousepos.y);
     }
   }
 }

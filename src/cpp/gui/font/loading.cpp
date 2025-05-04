@@ -28,6 +28,13 @@
 #define GF_ROW_TOP(r)  (GF_ROW_BASELINE(r) - f->font->ascender  - GF_HALF_LH)
 #define GF_ROW_BOT(r)  (GF_ROW_BASELINE(r) - f->font->descender + GF_HALF_LH)
 
+#define GUI_FONT_ROW_TOP_BOT_WOFF(row, top, bot, offset)  \
+  DO_WHILE(                                               \
+    gui_font_row_top_bot(f, (row), (top), (bot));         \
+    (top) += offset;                                      \
+    (bot) += offset;                                      \
+  )
+
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
@@ -235,34 +242,52 @@ void gui_font_increase_line_height(GuiFont *const f) {
   ++f->line_height;
 }
 
-/* Return's `FALSE` when outside `y_top` and `y_bot`, otherwise return's `TRUE`. */
-bool gui_font_row_from_position(GuiFont *const f, float y_top, float y_bot, float y_pos, long *outrow) {
+/* Return's `FALSE` when outside `y_top` and `y_bot`, otherwise return's `TRUE`, it always assigns the correct row
+ * even when outside that be it the first (0) or the last ('rows' - 1).  Note that `outrow` must always be valid. */
+bool gui_font_row_from_pos(GuiFont *const f, float y_top, float y_bot, float y_pos, long *outrow) {
   ASSERT_GUI_FONT;
   ASSERT(outrow);
+  ALWAYS_ASSERT(y_top < y_bot);
+  /* Calculate the number of `full` lines that fit in the length between `y_top` and `y_bot`. */
   long rows = ((y_bot - y_top) / GF_HEIGHT);
-  long row = 0;
+  long low = 0;
+  long high = (rows - 1);
+  long mid;
   float top;
   float bot;
-  /* If the y position is above the top position then set row to `0` and return `FALSE`. */
+  /* The position is above the passed range. */
   if (y_pos < y_top) {
-    *outrow = 0;
+    *outrow = low;
     return FALSE;
   }
+  /* The position is below the passed range. */
   else if (y_pos > y_bot) {
-    *outrow = (rows - 1);
+    *outrow = high;
     return FALSE;
   }
-  while (row < rows) {
-    gui_font_row_top_bot(f, row, &top, &bot);
-    top += y_top;
-    bot += y_top;
-    if (y_pos >= top && ((row == (rows - 1) && y_pos <= bot) || y_pos < bot)) {
-      *outrow = row;
-      return TRUE;
-    }
-    ++row;
+  /* The position is still inside the passed range, but its below all full rows. */
+  else if (y_pos > ((rows * GF_HEIGHT) + y_top)) {
+    *outrow = high;
+    return TRUE;
   }
-  return FALSE;
+  /* Otherwise, we go hunting. */
+  else {
+    while (low <= high) {
+      mid = ((low + high) / 2);
+      gui_font_row_top_bot(f, mid, &top, &bot);
+      if (y_pos < (top + y_top)) {
+        high = (mid - 1);
+      }
+      else if (y_pos > (bot + y_top)) {
+        low = (mid + 1);
+      }
+      else {
+        *outrow = mid;
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
 }
 
 /* ----------------------------- General ----------------------------- */
