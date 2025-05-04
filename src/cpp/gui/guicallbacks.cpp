@@ -1144,6 +1144,11 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       if (index != -1) {
         typing_x = index;
       }
+      long row;
+      if (gui_font_row_from_position(gui->uifont, (gui->promptmenu->element->pos.y + gui_font_height(gui->uifont)),
+        (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h), mousepos.y, &row)) {
+        writef("row: %ld\n", row);
+      }
     }
     /* If the clicked element is a part of an editor. */
     else if (guielement_has_editor_data(gui->clicked)) {

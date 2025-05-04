@@ -203,7 +203,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
             (converted_len - (comment - converted)),
             ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
             gui_font_get_font(gui->font),
-            color_idx_to_vec4(FG_COMMENT_GREEN),
+            GUI_DEFAULT_COMMENT_COLOR,
             &origin
           );
         }
@@ -213,7 +213,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
           while (head) {
             node = head;
             head = node->next;
-            if (syntax_map_exists(node->str, &color)) {
+            if (syntax_map_exists(ATNT_ASM, node->str, &color)) {
               vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
               vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), color, drawpos);
               index = node->end;
@@ -235,7 +235,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
             (converted_len - (comment - converted)),
             ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
             gui_font_get_font(gui->font),
-            color_idx_to_vec4(FG_COMMENT_GREEN),
+            GUI_DEFAULT_COMMENT_COLOR,
             &origin
           );
         }
@@ -275,7 +275,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
           }
         }
         /* If the comment is not the first char. */
-        if (comment - converted) {
+        if (!comment || (comment - converted)) {
           vertex_buffer_add_string(
             editor->buffer,
             converted,
@@ -285,9 +285,6 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
             GUI_WHITE_COLOR,
             drawpos
           );
-        }
-        else if (!comment) {
-          vertex_buffer_add_string(editor->buffer, converted, converted_len, NULL, gui_font_get_font(gui->font), GUI_WHITE_COLOR, drawpos);
         }
       }
       /* Otherwise just draw white text. */

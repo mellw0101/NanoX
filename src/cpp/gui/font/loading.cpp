@@ -147,16 +147,19 @@ void gui_font_load(GuiFont *const f, const char *const restrict path, Uint size,
   gui_font_reload(f);
 }
 
+/* Return's the internal `texture_font_t *` of `f`. */
 texture_font_t *gui_font_get_font(GuiFont *const f) {
   ASSERT_GUI_FONT;
   return f->font;
 }
 
+/* Return's the internal `texture_atlas_t *` of `f`. */
 texture_atlas_t *gui_font_get_atlas(GuiFont *const f) {
   ASSERT_GUI_FONT;
   return f->atlas;
 }
 
+/* Return's the glyph assisiated with `codepoint`. */
 texture_glyph_t *gui_font_get_glyph(GuiFont *const f, const char *const restrict codepoint) {
   ASSERT_GUI_FONT;
   texture_glyph_t *glyph = texture_font_get_glyph(f->font, codepoint);
@@ -164,21 +167,25 @@ texture_glyph_t *gui_font_get_glyph(GuiFont *const f, const char *const restrict
   return glyph;
 }
 
+/* Get the current size of `f`. */
 Uint gui_font_get_size(GuiFont *const f) {
   ASSERT_GUI_FONT;
   return f->size;
 }
 
+/* Get the current `line height modifier` of `f`. */
 long gui_font_get_line_height(GuiFont *const f) {
   ASSERT_GUI_FONT;
   return f->line_height;
 }
 
+/* Return's `TRUE` if the currently loaded font in `f` is a `mono` font. */
 bool gui_font_is_mono(GuiFont *const f) {
   ASSERT_GUI_FONT;
   return texture_font_is_mono(f->font);
 }
 
+/* Return's the full height of a line. */
 float gui_font_height(GuiFont *const f) {
   ASSERT_GUI_FONT;
   return GF_HEIGHT;
@@ -226,6 +233,36 @@ void gui_font_decrease_line_height(GuiFont *const f) {
 void gui_font_increase_line_height(GuiFont *const f) {
   ASSERT_GUI_FONT;
   ++f->line_height;
+}
+
+/* Return's `FALSE` when outside `y_top` and `y_bot`, otherwise return's `TRUE`. */
+bool gui_font_row_from_position(GuiFont *const f, float y_top, float y_bot, float y_pos, long *outrow) {
+  ASSERT_GUI_FONT;
+  ASSERT(outrow);
+  long rows = ((y_bot - y_top) / GF_HEIGHT);
+  long row = 0;
+  float top;
+  float bot;
+  /* If the y position is above the top position then set row to `0` and return `FALSE`. */
+  if (y_pos < y_top) {
+    *outrow = 0;
+    return FALSE;
+  }
+  else if (y_pos > y_bot) {
+    *outrow = (rows - 1);
+    return FALSE;
+  }
+  while (row < rows) {
+    gui_font_row_top_bot(f, row, &top, &bot);
+    top += y_top;
+    bot += y_top;
+    if (y_pos >= top && ((row == (rows - 1) && y_pos <= bot) || y_pos < bot)) {
+      *outrow = row;
+      return TRUE;
+    }
+    ++row;
+  }
+  return FALSE;
 }
 
 /* ----------------------------- General ----------------------------- */

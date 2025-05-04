@@ -678,7 +678,7 @@ void   remove_from_color_map(linestruct *line, int color, int type);
 
 /* 'syntax.cpp' */
 void   syntax_check_file(openfilestruct *file);
-bool   syntax_map_exists(const char *const restrict key, vec4 *const color);
+bool   syntax_map_exists(file_type type, const char *const restrict key, vec4 *const color);
 
 /* 'netlog.cpp' */
 void netlog_syntaxtype(syntaxtype *s);
@@ -1012,6 +1012,7 @@ void             gui_font_increase_size(GuiFont *const f);
 void             gui_font_decrease_size(GuiFont *const f);
 void             gui_font_decrease_line_height(GuiFont *const f);
 void             gui_font_increase_line_height(GuiFont *const f);
+bool gui_font_row_from_position(GuiFont *const f, float y_top, float y_bot, float y_pos, long *outrow);
 
 /* ----------------------------- General ----------------------------- */
 
