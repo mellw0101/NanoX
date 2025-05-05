@@ -488,8 +488,7 @@ void guieditor_open_buffer(const char *const restrict path) {
   /* If the buffer this was called from is empty, then the newly opened one should replace it. */
   if (!*was_openfile->filename && !was_openfile->totsize) {
     new_openfile = openfile;
-    openfile = was_openfile;
-    close_buffer();
+    free_one_buffer(was_openfile, &openeditor->openfile, &openeditor->startfile);
     /* Make the new buffer the currently open one. */
     openfile = new_openfile;
   }

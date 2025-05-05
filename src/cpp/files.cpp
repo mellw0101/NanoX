@@ -501,8 +501,7 @@ void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestru
   if (orphan == *start) {
     *start = (*start)->next;
   }
-  orphan->prev->next = orphan->next;
-  orphan->next->prev = orphan->prev;
+  CLIST_UNLINK(orphan);
   if (orphan->type.is_set<C_CPP>() || orphan->type.is_set<BASH>()) {
     file_listener.stop_listener(orphan->filename);
   }
