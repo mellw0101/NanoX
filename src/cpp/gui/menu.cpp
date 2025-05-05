@@ -256,6 +256,7 @@ void gui_menu_hide(GuiMenu *const gm, bool hide) {
 void gui_menu_push_back(GuiMenu *const gm, char *const ptr) {
   ASSERT_GM;
   cvec_push(gm->entries, ptr);
+  gui_menu_full_refresh_needed(gm);
 }
 
 void gui_menu_qsort(GuiMenu *const gm, CmpFuncPtr cmp_func) {
