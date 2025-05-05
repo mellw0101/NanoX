@@ -451,7 +451,7 @@ void gui_suggestmenu_resize(void) {
   pos.y += openeditor->text->pos.y;
   /* Calculate the size of the suggestmenu window. */
   size.w = (pixbreadth(gui_font_get_font(gui->font), (char *)cvec_get(gui->suggestmenu->completions, (len - 1))) + 4);
-  size.h = ((gui->suggestmenu->rows * FONT_HEIGHT(gui_font_get_font(gui->font))) + 4);
+  size.h = ((gui->suggestmenu->rows * gui_font_height(gui->font) /* FONT_HEIGHT(gui_font_get_font(gui->font)) */) + 4);
   /* Add the size of the scrollbar if there is a scrollbar. */
   if (len > gui->suggestmenu->maxrows) {
     size.w += guiscrollbar_width(gui->suggestmenu->sb);

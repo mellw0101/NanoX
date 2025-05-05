@@ -409,7 +409,6 @@ void gui_promptmenu_draw_selected(void) {
     if (selected_row >= 0 && selected_row < gui->promptmenu->rows) {
       pos.x = gui->promptmenu->element->pos.x;
       size.w = gui->promptmenu->element->size.w;
-      // row_top_bot_pixel((selected_row + 1), gui->uifont, &pos.y, &size.h);
       gui_font_row_top_bot(gui->uifont, (selected_row + 1), &pos.y, &size.h);
       size.h -= pos.y;
       pos.y  += gui->promptmenu->element->pos.y;

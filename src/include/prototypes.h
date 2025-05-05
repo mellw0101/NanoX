@@ -1043,6 +1043,7 @@ vertex_buffer_t *make_new_font_buffer(void) _NODISCARD;
 float pixnbreadth_prev(const char *const restrict string, long len, const char *const restrict prev_char);
 float pixnbreadth(const char *const restrict string, long len);
 float pixbreadth(texture_font_t *const font, const char *const restrict string);
+float pixbreadth(GuiFont *const font, const char *const restrict string);
 
 
 /* ---------------------------------------------------------- gui/cursor/cursor.cpp ---------------------------------------------------------- */
@@ -1066,6 +1067,11 @@ void          guiscrollbar_refresh_needed(GuiScrollbar *const sb) __THROW _NONNU
 bool          guiscrollbar_element_is_base(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
 bool          guiscrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
 float         guiscrollbar_width(GuiScrollbar *const sb);
+
+
+GuiMenu *gui_menu_create(guielement *const parent, void *const data, GuiMenuGetFontFunc get_font, GuiMenuGetPosFunc get_pos);
+void gui_menu_free(GuiMenu *const gm);
+void gui_menu_draw(GuiMenu *const gm);
 
 
 #include <Mlib/def.h>

@@ -394,6 +394,12 @@ using std::vector;
 #define GUISB_ACTIVE_THUMB_COLOR  vec4(1.0f, 1.0f, 1.0f, 0.7f)
 
 
+#define CAST(to, from)  \
+  DO_WHILE(\
+    (to) = (__TYPE(to))(from); \
+  )
+
+
 /* Enumeration types. */
 
 /* Some line flags. */
@@ -718,13 +724,19 @@ typedef enum {
 /* Some forward declarations. */
 typedef struct guielement    guielement;
 typedef struct guieditor     guieditor;
+
+/* Forward declarations of fully opaque structures. */
 typedef struct GuiScrollbar  GuiScrollbar;
 typedef struct GuiFont       GuiFont;
+typedef struct GuiMenu       GuiMenu;
 
 /* Some typedefs. */
 typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
 typedef void (*GuiScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset);
 typedef void (*GuiScrollbarMoveFunc)(void *, long);
+
+typedef GuiFont *(*GuiMenuGetFontFunc)(void *);
+typedef void (*GuiMenuGetPosFunc)(void *, vec2 *);
 
 /* Structure types. */
 typedef struct colortype {
