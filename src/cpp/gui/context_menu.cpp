@@ -9,6 +9,7 @@
 
 struct ContextMenu {
   Menu *menu;
+  Menu *edit_menu;
 };
 
 
@@ -33,27 +34,7 @@ ContextMenu *context_menu_create(void) {
   cxm->menu = gui_menu_create(gui->root, gui->font, gui, context_menu_pos_routine, context_menu_accept_routine);
   gui_menu_push_back(cxm->menu, "Test");
   gui_menu_push_back(cxm->menu, "Balle");
-  gui_menu_push_back(cxm->menu, "Number 2");
-  gui_menu_push_back(cxm->menu, "Test");
-  gui_menu_push_back(cxm->menu, "Balle");
-  gui_menu_push_back(cxm->menu, "Number 2");
-  gui_menu_push_back(cxm->menu, "Test");
-  gui_menu_push_back(cxm->menu, "Balle");
-  gui_menu_push_back(cxm->menu, "Number 2");
-  gui_menu_push_back(cxm->menu, "Test");
-  gui_menu_push_back(cxm->menu, "Balle");
-  gui_menu_push_back(cxm->menu, "Number 2");
-  gui_menu_push_back(cxm->menu, "Test");
-  gui_menu_push_back(cxm->menu, "Balle");
-  gui_menu_push_back(cxm->menu, "Number 2");
-  gui_menu_push_back(cxm->menu, "Test");
-  gui_menu_push_back(cxm->menu, "Balle");
-  gui_menu_push_back(cxm->menu, "Number 2");
-  gui_menu_push_back(cxm->menu, "Test");
-  gui_menu_push_back(cxm->menu, "Balle");
-  gui_menu_push_back(cxm->menu, "Number 2");
-  gui_menu_push_back(cxm->menu, "Test");
-  gui_menu_push_back(cxm->menu, "Balle");
+  gui_menu_push_back(cxm->menu, "Edit");
   gui_menu_set_tab_accept_behavior(cxm->menu, TRUE);
   gui_menu_set_static_width(cxm->menu, 100.0f);
   return cxm;

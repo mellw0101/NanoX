@@ -201,7 +201,7 @@ void guielement_move_resize(guielement *const e, vec2 pos, vec2 size) {
 /* Delete the border elements of element `e`. */
 void guielement_delete_borders(guielement *const e) {
   ASSERT(e);
-  for (Ulong i = 0; i < e->children.size(); ++i) {
+  for (Ulong i=0; i<e->children.size(); ++i) {
     if (e->children[i]->flag.is_set<GUIELEMENT_IS_BORDER>()) {
       guielement_free(e->children[i]);
       e->children.erase_at(i);
@@ -293,6 +293,7 @@ void guielement_set_raw_data(guielement *const e, void *const data) _NOTHROW {
   e->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
   e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
   e->flag.unset<GUIELEMENT_HAS_SB_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_MENU_DATA>();
   e->data.raw = data;
 }
 
@@ -304,6 +305,7 @@ void guielement_set_file_data(guielement *const e, openfilestruct *const file) _
   e->flag.set<GUIELEMENT_HAS_FILE_DATA>();
   e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
   e->flag.unset<GUIELEMENT_HAS_SB_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_MENU_DATA>();
   e->data.file = file;
 }
 
@@ -315,6 +317,7 @@ void guielement_set_editor_data(guielement *const e, guieditor *const editor) _N
   e->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
   e->flag.set<GUIELEMENT_HAS_EDITOR_DATA>();
   e->flag.unset<GUIELEMENT_HAS_SB_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_MENU_DATA>();
   e->data.editor = editor;
 }
 
@@ -326,7 +329,20 @@ void guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHRO
   e->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
   e->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
   e->flag.set<GUIELEMENT_HAS_SB_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_MENU_DATA>();
   e->data.sb = sb;
+}
+
+/* Set the union data ptr for `e` as a `Menu *`.  This should be used as apposed to directly setting the data ptr. */
+void guielement_set_menu_data(guielement *const e, Menu *const menu) _NOTHROW {
+  ASSERT(e);
+  ASSERT(menu);
+  e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
+  e->flag.unset<GUIELEMENT_HAS_SB_DATA>();
+  e->flag.set<GUIELEMENT_HAS_MENU_DATA>();
+  e->data.menu = menu;
 }
 
 /* Return's `TRUE` when `e` has `void *` data. */
@@ -347,6 +363,11 @@ bool guielement_has_editor_data(guielement *const e) _NOTHROW {
 /* Return's `TRUE` when `e` has `GuiScrollbar *` data. */
 bool guielement_has_sb_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_SB_DATA>());
+}
+
+/* Return's `TRUE` when `e` has `Menu *` data. */
+bool guielement_has_menu_data(guielement *const e) _NOTHROW {
+  return (e && e->flag.is_set<GUIELEMENT_HAS_MENU_DATA>());
 }
 
 /* If `set` is `TRUE` set `flag` for all children of `element` recurivly, otherwise,

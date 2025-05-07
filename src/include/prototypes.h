@@ -938,10 +938,12 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void        guielement_set_file_data(guielement *const element, openfilestruct *const file) _NOTHROW;
   void        guielement_set_editor_data(guielement *const element, guieditor *const editor) _NOTHROW;
   void        guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHROW;
+  void        guielement_set_menu_data(guielement *const e, Menu *const menu) _NOTHROW;
   bool        guielement_has_raw_data(guielement *const e) _NOTHROW;
   bool        guielement_has_file_data(guielement *const element) _NOTHROW;
   bool        guielement_has_editor_data(guielement *const element) _NOTHROW;
   bool        guielement_has_sb_data(guielement *const e) _NOTHROW;
+  bool        guielement_has_menu_data(guielement *const e) _NOTHROW;
   void        guielement_set_flag_recurse(guielement *const element, bool set, Uint flag);
 
   
@@ -1080,25 +1082,25 @@ float         guiscrollbar_width(GuiScrollbar *const sb);
 
 
 Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine);
-void gui_menu_free(Menu *const menu);
-void gui_menu_draw(Menu *const menu);
-void gui_menu_push_back(Menu *const menu, const char *const restrict string);
-void gui_menu_pos_refresh_needed(Menu *const menu);
-void gui_menu_text_refresh_needed(Menu *const menu);
-void gui_menu_scrollbar_refresh_needed(Menu *const menu);
-void gui_menu_show(Menu *const menu, bool show);
-void gui_menu_selected_up(Menu *const menu);
-void gui_menu_selected_down(Menu *const menu);
-void gui_menu_accept_action(Menu *const menu);
-void gui_menu_hover_action(Menu *const menu, float y_pos);
-void gui_menu_scroll_action(Menu *const menu, bool direction, float y_pos);
-void gui_menu_click_action(Menu *const menu, float y_pos);
-void gui_menu_clear_entries(Menu *const menu);
-void gui_menu_set_static_width(Menu *const menu, float width);
-void gui_menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
-bool gui_menu_owns_element(Menu *const menu, guielement *const e);
-bool gui_menu_element_is_main(Menu *const menu, guielement *const e);
-bool gui_menu_should_accept_on_tab(Menu *const menu);
+void  gui_menu_free(Menu *const menu);
+void  gui_menu_draw(Menu *const menu);
+void  gui_menu_push_back(Menu *const menu, const char *const restrict string);
+void  gui_menu_pos_refresh_needed(Menu *const menu);
+void  gui_menu_text_refresh_needed(Menu *const menu);
+void  gui_menu_scrollbar_refresh_needed(Menu *const menu);
+void  gui_menu_show(Menu *const menu, bool show);
+void  gui_menu_selected_up(Menu *const menu);
+void  gui_menu_selected_down(Menu *const menu);
+void  gui_menu_accept_action(Menu *const menu);
+void  gui_menu_hover_action(Menu *const menu, float y_pos);
+void  gui_menu_scroll_action(Menu *const menu, bool direction, float y_pos);
+void  gui_menu_click_action(Menu *const menu, float y_pos);
+void  gui_menu_clear_entries(Menu *const menu);
+void  gui_menu_set_static_width(Menu *const menu, float width);
+void  gui_menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
+bool  gui_menu_owns_element(Menu *const menu, guielement *const e);
+bool  gui_menu_element_is_main(Menu *const menu, guielement *const e);
+bool  gui_menu_should_accept_on_tab(Menu *const menu);
 
 
 /* ---------------------------------------------------------- gui/context_menu.cpp ---------------------------------------------------------- */

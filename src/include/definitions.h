@@ -684,15 +684,17 @@ typedef enum {
     #define GUIELEMENT_NOT_IN_GRIDMAP GUIELEMENT_NOT_IN_GRIDMAP
     /* If the element has something assigned to `element->data.raw`. */
     GUIELEMENT_HAS_RAW_DATA,
-    #define GUIELEMENT_HAS_RAW_DATA GUIELEMENT_HAS_RAW_DATA
     /* If the element has a `openfilestruct *` assigned to `element->data.file`. */
     GUIELEMENT_HAS_FILE_DATA,
-    #define GUIELEMENT_HAS_FILE_DATA GUIELEMENT_HAS_FILE_DATA
     /* The `element` has a `guieditor *` assigned to `element->data.editor`. */
     GUIELEMENT_HAS_EDITOR_DATA,
-    #define GUIELEMENT_HAS_EDITOR_DATA GUIELEMENT_HAS_EDITOR_DATA
     GUIELEMENT_HAS_SB_DATA,
-    #define GUIELEMENT_HAS_SB_DATA  GUIELEMENT_HAS_SB_DATA
+    GUIELEMENT_HAS_MENU_DATA,
+    #define GUIELEMENT_HAS_RAW_DATA     GUIELEMENT_HAS_RAW_DATA
+    #define GUIELEMENT_HAS_FILE_DATA    GUIELEMENT_HAS_FILE_DATA
+    #define GUIELEMENT_HAS_EDITOR_DATA  GUIELEMENT_HAS_EDITOR_DATA
+    #define GUIELEMENT_HAS_SB_DATA      GUIELEMENT_HAS_SB_DATA
+    #define GUIELEMENT_HAS_MENU_DATA    GUIELEMENT_HAS_MENU_DATA
     GUIELEMENT_ABOVE,
     #define GUIELEMENT_ABOVE GUIELEMENT_ABOVE
   } guielement_flag_type;
@@ -739,6 +741,7 @@ typedef void (*GuiScrollbarUpdateFunc)(void *, float *total_length, Uint *start,
 typedef void (*GuiScrollbarMoveFunc)(void *, long);
 typedef void (*MenuPosFunc)(void *, vec2, vec2 *);
 typedef void (*MenuAcceptFunc)(void *, const char *const restrict, int index);
+typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
 
 /* Structure types. */
 typedef struct colortype {
@@ -969,9 +972,10 @@ typedef struct completionstruct {
 
   typedef union {
     void           *raw;      /* A `raw` data ptr, this can be anything but it means casting every time we use. */
-    openfilestruct *file;     /* A ptr to a `openfilestruct`. */
-    guieditor      *editor;   /* A ptr to a `guieditor`. */
-    GuiScrollbar   *sb;       /* A ptr to a `GuiScrollbar`. */
+    openfilestruct *file;     /* A ptr to a `openfilestruct` structure. */
+    guieditor      *editor;   /* A ptr to a `guieditor` structure. */
+    GuiScrollbar   *sb;       /* A ptr to a `GuiScrollbar` structure. */
+    Menu           *menu;     /* A ptr to a `Menu` structure. */
   } guielement_data_type;
 
   typedef struct guielement {
@@ -1218,6 +1222,8 @@ typedef struct completionstruct {
   } GuiStatusbar; */
 
   typedef struct {
+
+
     bool text_refresh_needed : 1;
     bool pos_refresh_needed : 1;
 

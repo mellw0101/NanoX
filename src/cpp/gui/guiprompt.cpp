@@ -393,7 +393,7 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->viewtop  = 0;
   gui_promptmenu_scrollbar_create();
   /* For now this is needed to init the scrollbar offset position correctly on the first use otherwise it will be incorrect on first use. */
-  guielement_resize(gui->promptmenu->element, vec2(gui->promptmenu->element->size.w, (gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */ * 9)));
+  guielement_resize(gui->promptmenu->element, vec2(gui->promptmenu->element->size.w, (gui_font_height(gui->uifont) * 9)));
   guiscrollbar_draw(gui->promptmenu->sb);
 }
 

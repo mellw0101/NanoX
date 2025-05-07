@@ -21,6 +21,10 @@
   ASSERT(menu->position_routine);  \
   ASSERT(menu->accept_routine)
 
+#define GUI_MENU_DEFAULT_BORDER_SIZE   1
+#define GUI_MENU_DEFAULT_MAX_ROWS      8
+#define GUI_MENU_DEFAULT_BORDER_COLOR  vec4(vec3(0.5f), 1.0f)
+
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
@@ -62,13 +66,13 @@ struct Menu {
 static void gui_menu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
   Menu *menu = (__TYPE(menu))arg;
-  ASSIGN_IF_VALID(total_length, (menu->element->size.h - 2));
+  ASSIGN_IF_VALID(total_length, (menu->element->size.h - (menu->border_size * 2)));
   ASSIGN_IF_VALID(start, 0);
   ASSIGN_IF_VALID(total, cvec_len(menu->entries) - menu->rows);
   ASSIGN_IF_VALID(visible, menu->rows);
   ASSIGN_IF_VALID(current, menu->viewtop);
-  ASSIGN_IF_VALID(top_offset, 1);
-  ASSIGN_IF_VALID(right_offset, 1);
+  ASSIGN_IF_VALID(top_offset, menu->border_size);
+  ASSIGN_IF_VALID(right_offset, menu->border_size);
 }
 
 static void gui_menu_scrollbar_moving_routine(void *arg, long index) {
@@ -84,7 +88,6 @@ static void gui_menu_scrollbar_create(Menu *const menu) {
   menu->sb = guiscrollbar_create(menu->element, menu, gui_menu_scrollbar_update_routine, gui_menu_scrollbar_moving_routine);
 }
 
-/*  */
 static float gui_menu_calculate_width(Menu *const menu) {
   ASSERT_GUI_MENU;
   int len = cvec_len(menu->entries);
@@ -182,6 +185,7 @@ Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data,
   ASSERT(font);
   ASSERT(data);
   ASSERT(position_routine);
+  ASSERT(accept_routine);
   Menu *menu;
   MALLOC_STRUCT(menu);
   /* Boolian flags. */
@@ -190,7 +194,7 @@ Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data,
   menu->accept_on_tab        = FALSE;  /* The default for menu's if to have this disabled. */
   menu->width_refresh_needed = TRUE;
   /* Configuration variables. */
-  menu->border_size = 1;  /* The default border size is 1px. */
+  menu->border_size = GUI_MENU_DEFAULT_BORDER_SIZE;
   menu->width       = 0.0f;
   /* Vertex buffer. */
   menu->buffer  = make_new_font_buffer();
@@ -202,11 +206,12 @@ Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data,
   menu->element->flag.set<GUIELEMENT_ABOVE>();
   menu->element->flag.set<GUIELEMENT_HIDDEN>();
   /* As default all menus should have borders, to create a uniform look.  Note that this can be configured.  TODO: Implement the config of borders. */
-  guielement_set_borders(menu->element, 1, vec4(vec3(0.5f), 1.0f));
+  guielement_set_borders(menu->element, menu->border_size, GUI_MENU_DEFAULT_BORDER_COLOR);
+  guielement_set_menu_data(menu->element, menu);
   /* Row init. */
   menu->viewtop  = 0;
   menu->selected = 0;
-  menu->maxrows  = 8;
+  menu->maxrows  = GUI_MENU_DEFAULT_MAX_ROWS;
   menu->rows     = 0;
   gui_menu_scrollbar_create(menu);
   menu->font = font;
