@@ -354,7 +354,7 @@ void gui_menu_hover_action(Menu *const menu, float y_pos) {
   float bot;
   if (cvec_len(menu->entries)) {
     /* Top of the completions menu. */
-    top = (menu->element->pos.y);
+    top = menu->element->pos.y;
     /* Bottom of the completions menu. */
     bot = (menu->element->pos.y + menu->element->size.h);
     /* If `y_pos` relates to a valid row in the suggestmenu completion menu, then adjust the selected to that row. */
