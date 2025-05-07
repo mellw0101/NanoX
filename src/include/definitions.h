@@ -622,10 +622,12 @@ typedef enum {
     GUI_PROMPT_EXIT_NO_SAVE,
     GUI_PROMPT_MENU,
     GUI_PROMPT_OPEN_FILE,
+    GUI_PROMPT_FONT
   # define GUI_PROMPT_SAVEFILE      GUI_PROMPT_SAVEFILE
   # define GUI_PROMPT_EXIT_NO_SAVE  GUI_PROMPT_EXIT_NO_SAVE
   # define GUI_PROMPT_MENU          GUI_PROMPT_MENU
   # define GUI_PROMPT_OPEN_FILE     GUI_PROMPT_OPEN_FILE
+  # define GUI_PROMPT_FONT          GUI_PROMPT_FONT
   } guiprompt_type;
 
   typedef enum {
@@ -728,15 +730,15 @@ typedef struct guieditor     guieditor;
 /* Forward declarations of fully opaque structures. */
 typedef struct GuiScrollbar  GuiScrollbar;
 typedef struct GuiFont       GuiFont;
-typedef struct GuiMenu       GuiMenu;
+typedef struct Menu          Menu;
+typedef struct ContextMenu   ContextMenu;
 
 /* Some typedefs. */
 typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
 typedef void (*GuiScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset);
 typedef void (*GuiScrollbarMoveFunc)(void *, long);
-
-typedef GuiFont *(*GuiMenuGetFontFunc)(void *);
-typedef void (*GuiMenuGetPosFunc)(void *, vec2 *);
+typedef void (*MenuPosFunc)(void *, vec2, vec2 *);
+typedef void (*MenuAcceptFunc)(void *, const char *const restrict, int index);
 
 /* Structure types. */
 typedef struct colortype {
@@ -1251,21 +1253,17 @@ typedef struct completionstruct {
     vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
     matrix4x4       *projection;             /* The projection to pass to the shaders. */
     Uint             font_shader;            /* The font shader. */
-    // texture_font_t  *uifont;                 /* The ui font. */
-    // Uint             uifont_size;            /* The ui font size. */
-    // texture_atlas_t *uiatlas;                /* The atlas for the ui font. */
     GuiFont         *uifont;
     GuiFont         *font;
-    // char            *font_path;              /* Path of currently loaded font. */
-    // texture_font_t  *font;                   /* The font the gui is using. */
-    // Uint             font_size;              /* The font size. */
-    // float            font_lineheight_scale;  /* The scale witch the default line height is multiplied. */
-    // Uint             font_lineheight;        /* The calculated line height from the ('default font height' * font_lineheight_scale). */
-    // texture_atlas_t *atlas;                  /* The atlas the font is using. */
     Uint             rect_shader;            /* The rect shader. */
     GuiPromptMenu   *promptmenu;
     int              current_cursor_type;    /* The currently active cursor type. */
     GuiSuggestMenu  *suggestmenu;
+
+    Menu *active_menu;
+
+    /* The context menu for the gui. */
+    ContextMenu *context_menu;
   } guistruct;
 #endif
 

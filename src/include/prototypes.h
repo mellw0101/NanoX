@@ -788,6 +788,9 @@ void gui_suggestmenu_draw_text(void);
 void gui_suggestmenu_selected_up(void);
 void gui_suggestmenu_selected_down(void);
 bool gui_suggestmenu_accept(void);
+void gui_suggestmenu_hover_action(float y_pos);
+void gui_suggestmenu_scroll_action(bool direction, float y_pos);
+void gui_suggestmenu_click_action(float y_pos);
 
 
 /* ---------------------------------------------------------- parse.cpp ---------------------------------------------------------- */
@@ -898,6 +901,10 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ----------------------------- Open file ----------------------------- */
   
   void gui_promptmenu_open_file(void);
+
+  /* ----------------------------- Set font ----------------------------- */
+
+  void gui_promptmenu_set_font(void);
 
   
   /* ---------------------------------------------------------- gui/guifiles.cpp ---------------------------------------------------------- */
@@ -1069,9 +1076,38 @@ bool          guiscrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *
 float         guiscrollbar_width(GuiScrollbar *const sb);
 
 
-GuiMenu *gui_menu_create(guielement *const parent, void *const data, GuiMenuGetFontFunc get_font, GuiMenuGetPosFunc get_pos);
-void gui_menu_free(GuiMenu *const gm);
-void gui_menu_draw(GuiMenu *const gm);
+/* ---------------------------------------------------------- gui/menu.cpp ---------------------------------------------------------- */
+
+
+Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine);
+void gui_menu_free(Menu *const menu);
+void gui_menu_draw(Menu *const menu);
+void gui_menu_push_back(Menu *const menu, const char *const restrict string);
+void gui_menu_pos_refresh_needed(Menu *const menu);
+void gui_menu_text_refresh_needed(Menu *const menu);
+void gui_menu_scrollbar_refresh_needed(Menu *const menu);
+void gui_menu_show(Menu *const menu, bool show);
+void gui_menu_selected_up(Menu *const menu);
+void gui_menu_selected_down(Menu *const menu);
+void gui_menu_accept_action(Menu *const menu);
+void gui_menu_hover_action(Menu *const menu, float y_pos);
+void gui_menu_scroll_action(Menu *const menu, bool direction, float y_pos);
+void gui_menu_click_action(Menu *const menu, float y_pos);
+void gui_menu_clear_entries(Menu *const menu);
+void gui_menu_set_static_width(Menu *const menu, float width);
+void gui_menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
+bool gui_menu_owns_element(Menu *const menu, guielement *const e);
+bool gui_menu_element_is_main(Menu *const menu, guielement *const e);
+bool gui_menu_should_accept_on_tab(Menu *const menu);
+
+
+/* ---------------------------------------------------------- gui/context_menu.cpp ---------------------------------------------------------- */
+
+
+ContextMenu *context_menu_create(void);
+void context_menu_free(ContextMenu *const cxm);
+void context_menu_draw(ContextMenu *const cxm);
+void context_menu_show(ContextMenu *const cxm, bool show);
 
 
 #include <Mlib/def.h>

@@ -177,15 +177,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           else if (mods == GLFW_MOD_CONTROL) {
             do_statusbar_chop_prev_word();
+            gui_promptmenu_completions_search();
           }
           break;
         }
         case GLFW_KEY_DELETE: {
           if (!mods) {
             do_statusbar_delete();
+            gui_promptmenu_completions_search();
           }
           else if (mods == GLFW_MOD_CONTROL) {
             do_statusbar_chop_next_word();
+            gui_promptmenu_completions_search();
           }
           break;
         }
@@ -483,6 +486,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_ESCAPE: {
+          /* If there is an active menu, escape should exit that menu and not show it anymore. */
+          if (gui->active_menu) {
+            gui_menu_show(gui->active_menu, FALSE);
+          }
           if (!mods) {
             if (cvec_len(gui->suggestmenu->completions)) {
               gui_suggestmenu_clear();
@@ -564,6 +571,16 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             gui_suggestmenu_selected_up();
             return;
           }
+          /* If there is an active menu. */
+          if (gui->active_menu) {
+            switch (mods) {
+              case 0: {
+                gui_menu_selected_up(gui->active_menu);
+                return;
+              }
+            }
+          }
+          /* Otherwise, handle normaly. */
           switch (mods) {
             /* Move line or lines up. */
             case GLFW_MOD_ALT: {
@@ -596,6 +613,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           if (cvec_len(gui->suggestmenu->completions)) {
             gui_suggestmenu_selected_down();
             return;
+          }
+          /* If there is an active menu. */
+          if (gui->active_menu) {
+            switch (mods) {
+              case 0: {
+                gui_menu_selected_down(gui->active_menu);
+                return;
+              }
+            }
           }
           switch (mods) {
             /* Moves line or lines down. */
@@ -652,6 +678,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_ENTER: {
+          if (gui->active_menu) {
+            switch (mods) {
+              case 0: {
+                gui_menu_accept_action(gui->active_menu);
+                return;
+              }
+            }
+          }
           /* Simple enter. */
           if (!mods) {
             function = do_enter;
@@ -667,6 +701,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_TAB: {
+          /* If there is an active menu, and that menu accepts on tab. */
+          if (gui->active_menu && gui_menu_should_accept_on_tab(gui->active_menu)) {
+            switch (mods) {
+              case 0: {
+                gui_menu_accept_action(gui->active_menu);
+                return;
+              }
+            }
+          }
           /* This return's true when there was a suggestion acception. */
           if (gui_suggestmenu_accept()) {
             return;
@@ -1014,9 +1057,21 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       if (element) {
         /* Save the element that was clicked. */
         gui->clicked = element;
+        /* If there is an active menu and the clicked element is not part of that menu, stop showing the menu. */
+        if (gui->active_menu && !gui_menu_owns_element(gui->active_menu, element)) {
+          gui_menu_show(gui->active_menu, FALSE);
+        }
+        /* Otherwise, if there is an acive menu, and the clicked element is the main element. */
+        else if (gui->active_menu && gui_menu_element_is_main(gui->active_menu, element)) {
+          gui_menu_click_action(gui->active_menu, mousepos.y);
+        }
         /* If this click was not related to the suggestmenu, clear the suggestmenu. */
         if (!is_ancestor(element, gui->suggestmenu->element)) {
           gui_suggestmenu_clear();
+        }
+        /* Otherwise, if the clicked element is the main suggestmenu element, then run its click function. */
+        else if (element == gui->suggestmenu->element) {
+          gui_suggestmenu_click_action(mousepos.y);
         }
         /* When the mouse is pressed in the text element of a editor. */
         if (guielement_has_editor_data(element) && element == element->data.editor->text) {
@@ -1099,6 +1154,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   else if (button == GLFW_MOUSE_BUTTON_2) {
     if (action == GLFW_PRESS) {
       mouse_flag.set<RIGHT_MOUSE_BUTTON_HELD>();
+      context_menu_show(gui->context_menu, TRUE);
     }
     else if (action == GLFW_RELEASE) {
       mouse_flag.unset<RIGHT_MOUSE_BUTTON_HELD>();
@@ -1223,9 +1279,16 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       set_cursor_type(window, element->cursor_type);
       gui->current_cursor_type = element->cursor_type;
     }
-    /* If this is the promptmenu main element. */
-    if (element == gui->promptmenu->element) {
+    if (!gui->clicked && gui->active_menu && gui_menu_element_is_main(gui->active_menu, element)) {
+      gui_menu_hover_action(gui->active_menu, mousepos.y);
+    }
+    /* If this is the main promptmenu element. */
+    else if (!gui->clicked && element == gui->promptmenu->element) {
       gui_promptmenu_hover_action(mousepos.y);
+    }
+    /* Otherwise, if this is the main suggestmenu element. */
+    else if (!gui->clicked && element == gui->suggestmenu->element) {
+      gui_suggestmenu_hover_action(mousepos.y);
     }
     /* If the current mouse element is not the current entered element. */
     if (element != entered_element) {
@@ -1325,9 +1388,16 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
         NETLOG("Is topbar ancestor.\n");
       }
     }
+    else if (gui->active_menu && gui_menu_element_is_main(gui->active_menu, element)) {
+      gui_menu_scroll_action(gui->active_menu, ((y > 0) ? BACKWARD : FORWARD), mousepos.y);
+    }
     /* If this element is the gui promptmenu main element.  Then call the scroll function. */
     else if (element == gui->promptmenu->element) {
       gui_promptmenu_scroll_action(((y > 0) ? BACKWARD : FORWARD), mousepos.y);
+    }
+    /* Otherwise, if this is the main suggestmenu element.  Then call it's scroll function. */
+    else if (element == gui->suggestmenu->element) {
+      gui_suggestmenu_scroll_action(((y > 0) ? BACKWARD : FORWARD), mousepos.y);
     }
   }
 }

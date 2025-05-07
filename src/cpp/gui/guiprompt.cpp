@@ -7,6 +7,19 @@
 #include "../../include/prototypes.h"
 
 
+/* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
+
+
+#define ASSERT_GUI_PROMPTMENU            \
+  ASSERT(gui);                           \
+  ASSERT(gui->promptmenu);               \
+  ASSERT(gui->promptmenu->buffer);       \
+  ASSERT(gui->promptmenu->element);      \
+  ASSERT(gui->promptmenu->search_vec);   \
+  ASSERT(gui->promptmenu->completions);  \
+  ASSERT(gui->promptmenu->sb)
+
+
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
@@ -255,9 +268,15 @@ static void gui_promptmenu_open_file_search(void) {
 static void gui_promptmenu_open_file_enter_action(void) {
   char *pwd;
   Ulong pwdlen;
+  Ulong len;
   if (*answer) {
     /* Path is a directory. */
     if (dir_exists(answer)) {
+      len = strlen(answer);
+      if (answer[len - 1] != '/') {
+        answer = xstrncat(answer, S__LEN("/"));
+      }
+      typing_x = strlen(answer);
       gui_promptmenu_open_file_search();
       return;
     }
@@ -282,6 +301,37 @@ static void gui_promptmenu_open_file_enter_action(void) {
     }
   }
   gui_promptmode_leave();
+}
+
+/* ----------------------------- Set font ----------------------------- */
+
+static void gui_promptmenu_set_font_search(void) {
+# define FONT_DIR_PATH  "/usr/share/fonts"
+  directory_t dir;
+  cvec_clear(*answer ? gui->promptmenu->search_vec : gui->promptmenu->completions);
+  /* If the font dir does not exist, just return. */
+  if (!dir_exists(FONT_DIR_PATH)) {
+    return;
+  }
+  directory_data_init(&dir);
+  ALWAYS_ASSERT(directory_get_recurse(FONT_DIR_PATH, &dir) != -1);
+  DIRECTORY_ITER(dir, i, entry,
+    if (entry->ext && strcmp(entry->ext, "ttf") == 0) {
+      if (*answer) {
+        cvec_push(gui->promptmenu->search_vec, copy_of(entry->clean_name));
+      }
+      else {
+        cvec_push(gui->promptmenu->completions, copy_of(entry->clean_name));
+      }
+    }
+  );
+  directory_data_free(&dir);
+  if (*answer) {
+    gui_promptmenu_find_completions();
+  }
+  else {
+    cvec_qsort(gui->promptmenu->completions, qsort_strlen);
+  }
 }
 
 /* ----------------------------- Scroll bar ----------------------------- */
@@ -471,6 +521,7 @@ void gui_promptmenu_selected_down(void) {
 }
 
 void gui_promptmenu_enter_action(void) {
+  char *full_path;
   /* If there is a completion available, then copy the completion into answer before we proccess it. */
   if (cvec_len(gui->promptmenu->completions)) {
     answer = free_and_assign(answer, copy_of((char *)cvec_get(gui->promptmenu->completions, gui->promptmenu->selected)));
@@ -480,7 +531,7 @@ void gui_promptmenu_enter_action(void) {
     case GUI_PROMPT_SAVEFILE: {
       if (*answer) {
         /* Get the full path to of the answer. */
-        char *full_path = get_full_path(answer);
+        full_path = get_full_path(answer);
         /* If the currently open file has a name, and that name does not match the answer. */
         if (*openfile->filename && strcmp(answer, openfile->filename) != 0) {
           /* When the given path does not exist. */
@@ -509,8 +560,12 @@ void gui_promptmenu_enter_action(void) {
       break;
     }
     case GUI_PROMPT_MENU: {
+      /* Open a new file. */
       if (strcasecmp(answer, "open file") == 0) {
         gui_promptmenu_open_file();
+      }
+      else if (strcasecmp(answer, "set font") == 0) {
+        gui_promptmenu_set_font();
       }
       else {
         gui_promptmode_leave();
@@ -528,6 +583,10 @@ void gui_promptmenu_completions_search(void) {
   switch (gui_prompt_type) {
     case GUI_PROMPT_OPEN_FILE: {
       gui_promptmenu_open_file_search();
+      break;
+    }
+    case GUI_PROMPT_FONT: {
+      gui_promptmenu_set_font_search();
       break;
     }
   } 
@@ -568,7 +627,8 @@ void gui_promptmenu_scroll_action(bool direction, float y_pos) {
       gui->promptmenu->viewtop += (!direction ? -1 : 1);
       gui->promptmenu->text_refresh_needed = TRUE;
       /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
-      gui_promptmenu_hover_action(y_pos);  
+      gui_promptmenu_hover_action(y_pos);
+      guiscrollbar_refresh_needed(gui->promptmenu->sb);
     }
   }
 }
@@ -603,4 +663,11 @@ void gui_promptmenu_open_file(void) {
     ++typing_x;
   }
   gui_promptmenu_open_file_search();
+}
+
+/* ----------------------------- Set font ----------------------------- */
+
+void gui_promptmenu_set_font(void) {
+  gui_ask_user("Select font", GUI_PROMPT_FONT);
+  gui_promptmenu_set_font_search();
 }

@@ -159,7 +159,7 @@ static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
   gui->statusbar = guielement_create(
     vec2(0, gui->height),
-    vec2(gui->width, gui_font_height(gui->uifont)/* FONT_HEIGHT(gui->uifont) */),
+    vec2(gui->width, gui_font_height(gui->uifont)),
     0.0f,
     color_idx_to_vec4(FG_VS_CODE_RED)
   );
@@ -185,29 +185,22 @@ static void make_guistruct(void) {
   gui->window                = NULL;
   gui->flag                  = bit_flag_t<8>();
   gui->handler               = NULL;
-  // gui->topbar                = NULL;
   gui->botbar                = NULL;
   gui->statusbar             = NULL;
   gui->entered               = NULL;
   gui->clicked               = NULL;
-  // gui->topbuf                = NULL;
   gui->botbuf                = NULL;
   gui->statusbuf             = NULL;
   gui->projection            = NULL;
   gui->font_shader           = 0;
   gui->uifont                = NULL;
-  // gui->uifont_size           = 0;
-  // gui->uiatlas               = NULL;
-  // gui->font_path             = NULL;
   gui->font                  = NULL;
-  // gui->font_size             = 0;
-  // gui->font_lineheight_scale = 1.0f;
-  // gui->font_lineheight       = 0;
-  // gui->atlas                 = NULL;
   gui->rect_shader           = 0;
   gui->promptmenu            = NULL;
   gui->current_cursor_type   = GLFW_ARROW_CURSOR;
   gui->suggestmenu           = NULL;
+  gui->active_menu           = NULL;
+  gui->context_menu          = NULL;
 }
 
 /* Init the gui struct, it reprecents everything that the gui needs. */
@@ -230,10 +223,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   /* Create and start the event handler. */
   gui->handler = nevhandler_create();
   nevhandler_start(gui->handler, TRUE);
-  gui->font = gui_font_create();
+  gui->font   = gui_font_create();
   gui->uifont = gui_font_create();
-  // gui->font_size   = font_size;
-  // gui->uifont_size = uifont_size;
   gui->root = guielement_create(0, vec2(gui->height, gui->width), 0, 0, FALSE);
   /* Init the gui suggestmenu substructure. */
   gui_suggestmenu_create();
@@ -255,13 +246,9 @@ static void delete_guistruct(void) {
   /* Delete all elements used by 'gui'. */
   guielement_free(gui->root);
   guielement_free(gui->statusbar);
-  /* Free the path of the currently loaded font. */
-  // free(gui->font_path);
   /* Free the main font and the uifont. */
   gui_font_free(gui->font);
   gui_font_free(gui->uifont);
-  // free_gui_font(FALSE);
-  // free_gui_font(TRUE);
   /* Delete all the vertex buffers. */
   if (gui->botbuf) {
     vertex_buffer_delete(gui->botbuf);
@@ -276,6 +263,7 @@ static void delete_guistruct(void) {
   gui_promptmenu_free();
   /* Free the gui suggestmenu substructure. */
   gui_suggestmenu_free();
+  context_menu_free(gui->context_menu);
   free(gui);
   gui = NULL;
 }
@@ -312,6 +300,7 @@ void init_gui(void) {
   init_glew();
   /* Init the font shader. */
   setup_font_shader();
+  gui->context_menu = context_menu_create();
   /* Init the rect shader. */
   setup_rect_shader();
   /* Init the top bar. */
@@ -361,6 +350,7 @@ void glfw_loop(void) {
     draw_botbar();
     /* Draw the status bar, if there is any status messages. */
     draw_statusbar();
+    context_menu_draw(gui->context_menu);
     /* If refresh was needed it has been done so set it to FALSE. */
     refresh_needed = FALSE;
     glfwSwapBuffers(gui->window);
