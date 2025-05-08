@@ -1076,12 +1076,14 @@ void          guiscrollbar_refresh_needed(GuiScrollbar *const sb) __THROW _NONNU
 bool          guiscrollbar_element_is_base(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
 bool          guiscrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
 float         guiscrollbar_width(GuiScrollbar *const sb);
+void          gui_scrollbar_show(GuiScrollbar *const sb, bool show);
 
 
 /* ---------------------------------------------------------- gui/menu.cpp ---------------------------------------------------------- */
 
 
 Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine);
+Menu *gui_menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
 void  gui_menu_free(Menu *const menu);
 void  gui_menu_draw(Menu *const menu);
 void  gui_menu_push_back(Menu *const menu, const char *const restrict string);
@@ -1091,6 +1093,7 @@ void  gui_menu_scrollbar_refresh_needed(Menu *const menu);
 void  gui_menu_show(Menu *const menu, bool show);
 void  gui_menu_selected_up(Menu *const menu);
 void  gui_menu_selected_down(Menu *const menu);
+void  gui_menu_exit_submenu(Menu *const menu);
 void  gui_menu_accept_action(Menu *const menu);
 void  gui_menu_hover_action(Menu *const menu, float y_pos);
 void  gui_menu_scroll_action(Menu *const menu, bool direction, float y_pos);
@@ -1101,6 +1104,7 @@ void  gui_menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
 bool  gui_menu_owns_element(Menu *const menu, guielement *const e);
 bool  gui_menu_element_is_main(Menu *const menu, guielement *const e);
 bool  gui_menu_should_accept_on_tab(Menu *const menu);
+bool  gui_menu_is_ancestor(Menu *const menu, Menu *const ancestor);
 
 
 /* ---------------------------------------------------------- gui/context_menu.cpp ---------------------------------------------------------- */

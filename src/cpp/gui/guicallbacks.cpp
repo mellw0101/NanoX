@@ -533,6 +533,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_LEFT: {
+          if (gui->active_menu) {
+            switch (mods) {
+              case 0: {
+                gui_menu_exit_submenu(gui->active_menu);
+                return;
+              }
+            }
+          }
           switch (mods) {
             /* Alt+Shift+Left.  Switch to the previous editor. */
             case (GLFW_MOD_ALT | GLFW_MOD_SHIFT): {
@@ -1062,8 +1070,8 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           gui_menu_show(gui->active_menu, FALSE);
         }
         /* Otherwise, if there is an acive menu, and the clicked element is the main element. */
-        else if (gui->active_menu && gui_menu_element_is_main(gui->active_menu, element)) {
-          gui_menu_click_action(gui->active_menu, mousepos.y);
+        else if (gui->active_menu && guielement_has_menu_data(element) && gui_menu_is_ancestor(element->data.menu, gui->active_menu) && gui_menu_element_is_main(element->data.menu, element)) {
+          gui_menu_click_action(element->data.menu, mousepos.y);
         }
         /* If this click was not related to the suggestmenu, clear the suggestmenu. */
         if (!is_ancestor(element, gui->suggestmenu->element)) {
@@ -1279,8 +1287,9 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
       set_cursor_type(window, element->cursor_type);
       gui->current_cursor_type = element->cursor_type;
     }
-    if (!gui->clicked && gui->active_menu && gui_menu_element_is_main(gui->active_menu, element)) {
-      gui_menu_hover_action(gui->active_menu, mousepos.y);
+    /* When we hover over an element that is related to the active menu, correctly hover in that menu or any of its submenus. */
+    if (!gui->clicked && gui->active_menu && guielement_has_menu_data(element) && gui_menu_is_ancestor(element->data.menu, gui->active_menu) && gui_menu_element_is_main(element->data.menu, element)) {
+      gui_menu_hover_action(element->data.menu, mousepos.y);
     }
     /* If this is the main promptmenu element. */
     else if (!gui->clicked && element == gui->promptmenu->element) {
@@ -1388,8 +1397,11 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
         NETLOG("Is topbar ancestor.\n");
       }
     }
-    else if (gui->active_menu && gui_menu_element_is_main(gui->active_menu, element)) {
-      gui_menu_scroll_action(gui->active_menu, ((y > 0) ? BACKWARD : FORWARD), mousepos.y);
+    // else if (gui->active_menu && gui_menu_element_is_main(gui->active_menu, element)) {
+    //   gui_menu_scroll_action(gui->active_menu, ((y > 0) ? BACKWARD : FORWARD), mousepos.y);
+    // }
+    else if (gui->active_menu && guielement_has_menu_data(element) && gui_menu_is_ancestor(element->data.menu, gui->active_menu) && gui_menu_element_is_main(element->data.menu, element)) {
+      gui_menu_scroll_action(element->data.menu, ((y > 0) ? BACKWARD : FORWARD), mousepos.y);
     }
     /* If this element is the gui promptmenu main element.  Then call the scroll function. */
     else if (element == gui->promptmenu->element) {

@@ -29,6 +29,11 @@
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
 
+typedef struct {
+  char *lable;
+  Menu *menu;
+} MenuEntry;
+
 struct Menu {
   /* Boolian flags. */
   bool text_refresh_needed  : 1;
@@ -51,11 +56,46 @@ struct Menu {
   GuiScrollbar    *sb;
   GuiFont         *font;
 
+  /* Used when this menu is a `submenu`, otherwise always `NULL`. */
+  Menu *parent;
+
+  /* The currently open submenu, if any. */
+  Menu *active_submenu;
+
   /* Callback related data. */
   void          *data;              /* This ptr gets passed to all callbacks and should be passed to `gui_menu_create()` as `data`. */
   MenuPosFunc    position_routine;
   MenuAcceptFunc accept_routine;
 };
+
+
+/* ---------------------------------------------------------- MenuEntry function's ---------------------------------------------------------- */
+
+
+_UNUSED static MenuEntry *gui_menu_entry_create(const char *const restrict lable) {
+  MenuEntry *me;
+  MALLOC_STRUCT(me);
+  me->lable = copy_of(lable);
+  me->menu  = NULL;
+  return me;
+}
+
+_UNUSED static void gui_menu_entry_free(void *arg) {
+  ASSERT(arg);
+  MenuEntry *me;
+  CAST(me, arg);
+  free(me->lable);
+  gui_menu_free(me->menu);
+  free(me);
+}
+
+_UNUSED static MenuEntry *gui_menu_entry_create_with_menu(const char *const restrict lable, Menu *const menu) {
+  ASSERT(lable);
+  ASSERT(menu);
+  MenuEntry *me = gui_menu_entry_create(lable);
+  me->menu = menu;
+  return me;
+}
 
 
 /* ---------------------------------------------------------- Function's ---------------------------------------------------------- */
@@ -88,6 +128,61 @@ static void gui_menu_scrollbar_create(Menu *const menu) {
   menu->sb = guiscrollbar_create(menu->element, menu, gui_menu_scrollbar_update_routine, gui_menu_scrollbar_moving_routine);
 }
 
+/* Return's the `lable` of the entry at `index`. */
+static char *gui_menu_get_entry_lable(Menu *const menu, int index) {
+  ASSERT_GUI_MENU;
+  return ((MenuEntry *)cvec_get(menu->entries, index))->lable;
+}
+
+/* Return's the `menu` of the entry at `index`. */
+static Menu *gui_menu_get_entry_menu(Menu *const menu, int index) {
+  ASSERT_GUI_MENU;
+  return ((MenuEntry *)cvec_get(menu->entries, index))->menu;
+}
+
+static void gui_menu_show_internal(Menu *const menu, bool show) {
+  ASSERT_GUI_MENU;
+  if (show) {
+    menu->element->flag.unset<GUIELEMENT_HIDDEN>();
+    /* Ensure this menu gets fully updated. */
+    menu->text_refresh_needed = TRUE;
+    menu->pos_refresh_needed  = TRUE;
+    /* Also, reset the menu. */
+    menu->viewtop  = 0;
+    menu->selected = 0;
+    /* And tell the scrollbar it needs to be recalculated. */
+    guiscrollbar_refresh_needed(menu->sb);
+  }
+  else {
+    menu->element->flag.set<GUIELEMENT_HIDDEN>();
+  }
+  gui_scrollbar_show(menu->sb, show);
+}
+
+static bool gui_menu_selected_is_visible(Menu *const menu) {
+  int row = (menu->selected - menu->viewtop);
+  return (row >= 0 && row < menu->maxrows);
+}
+
+static void gui_menu_check_submenu(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  Menu *submenu;
+  if (gui_menu_selected_is_visible(menu) && (submenu = gui_menu_get_entry_menu(menu, menu->selected))) {
+    if (menu->active_submenu && submenu != menu->active_submenu) {
+      gui_menu_show_internal(menu->active_submenu, FALSE);
+    }
+    else {
+      gui_menu_show_internal(submenu, TRUE);
+      menu->active_submenu = submenu;
+    }
+  }
+  /* The currently selected row is outside the visible rows. */
+  else if (menu->active_submenu) {
+    gui_menu_show_internal(menu->active_submenu, FALSE);
+    menu->active_submenu = NULL;
+  }
+}
+
 static float gui_menu_calculate_width(Menu *const menu) {
   ASSERT_GUI_MENU;
   int len = cvec_len(menu->entries);
@@ -96,14 +191,14 @@ static float gui_menu_calculate_width(Menu *const menu) {
   Ulong value;
   if (len && !menu->width_is_static && menu->width_refresh_needed) {
     longest_index = 0;
-    longest_string = strlen((char *)cvec_get(menu->entries, 0));
+    longest_string = strlen(gui_menu_get_entry_lable(menu, 0));
     for (int i=1; i<len; ++i) {
-      if ((value = strlen((char *)cvec_get(menu->entries, i))) > longest_string) {
+      if ((value = strlen(gui_menu_get_entry_lable(menu, i))) > longest_string) {
         longest_index = i;
         longest_string = value;
       }
     }
-    menu->width = (pixbreadth(menu->font, (char *)cvec_get(menu->entries, longest_index)) + (menu->border_size * 2) + 2);
+    menu->width = (pixbreadth(menu->font, gui_menu_get_entry_lable(menu, longest_index)) + (menu->border_size * 2) + 2);
     menu->width_refresh_needed = FALSE;
   }
   return menu->width;
@@ -130,7 +225,12 @@ static void gui_menu_resize(Menu *const menu) {
       size.w += guiscrollbar_width(menu->sb);
     }
     /* Get the wanted position based on the calculated size. */
-    menu->position_routine(menu->data, size, &pos);
+    if (!menu->parent) {
+      menu->position_routine(menu->data, size, &pos);
+    }
+    else {
+      menu->position_routine(menu, size, &pos);
+    }
     /* Move and resize the element. */
     guielement_move_resize(menu->element, pos, size);
     menu->pos_refresh_needed = FALSE;
@@ -139,14 +239,14 @@ static void gui_menu_resize(Menu *const menu) {
 
 static void gui_menu_draw_selected(Menu *const menu) {
   ASSERT_GUI_MENU;
-  int selected_row = (menu->selected - menu->viewtop);
+  int row = (menu->selected - menu->viewtop);
   vec2 pos, size;
   /* Draw the selected entry, if its on screen. */
-  if (selected_row >= 0 && selected_row < menu->rows) {
+  if (row >= 0 && row < menu->rows) {
     pos.x  = (menu->element->pos.x + menu->border_size);
     size.w = (menu->element->size.w - (menu->border_size * 2));
-    gui_font_row_top_bot(menu->font, selected_row, &pos.y, &size.h);
-    size.h -= (pos.y - ((selected_row == menu->rows - 1) ? 1 : 0));
+    gui_font_row_top_bot(menu->font, row, &pos.y, &size.h);
+    size.h -= (pos.y - ((row == menu->rows - 1) ? 1 : 0));
     pos.y  += (menu->element->pos.y + menu->border_size);
     draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));
   }
@@ -162,7 +262,7 @@ static void gui_menu_draw_text(Menu *const menu) {
   if (menu->text_refresh_needed || was_viewtop != menu->viewtop) {
     vertex_buffer_clear(menu->buffer);
     while (row < menu->rows) {
-      str = (char *)cvec_get(menu->entries, (menu->viewtop + row));
+      str = gui_menu_get_entry_lable(menu, (menu->viewtop + row));
       textpen = vec2(
         (menu->element->pos.x + menu->border_size + 1),
         (gui_font_row_baseline(menu->font, row) + menu->element->pos.y + menu->border_size + 1)
@@ -175,6 +275,93 @@ static void gui_menu_draw_text(Menu *const menu) {
   }
   upload_texture_atlas(gui_font_get_atlas(menu->font));
   render_vertex_buffer(gui->font_shader, menu->buffer);
+}
+
+/* For a submenu the submenu itself needs to be passed as the routine. */
+static void gui_menu_submenu_pos_routine(void *arg, vec2 size, vec2 *pos) {
+  ASSERT(arg);
+  ASSERT(pos);
+  Menu *menu;
+  int index = 0;
+  CAST(menu, arg);
+  /* Get the true index of this submenu entry. */
+  while (((MenuEntry *)cvec_get(menu->parent->entries, index))->menu != menu) {
+    ++index;
+  }
+  /* Then offset the index to the visible entries. */
+  index -= menu->parent->viewtop;
+  /* And always ensure it falls inside it, as this function should not be called otherwise. */
+  ALWAYS_ASSERT(index >= 0 && index < menu->parent->maxrows);
+  pos->x = (menu->parent->element->pos.x + menu->parent->element->size.w);
+  gui_font_row_top_bot(menu->font, index, &pos->y, NULL);
+  pos->y += menu->parent->element->pos.y;
+}
+
+static void gui_menu_push_back_submenu(Menu *const menu, const char *const restrict lable, Menu *const submenu) {
+  ASSERT_GUI_MENU;
+  ASSERT(lable);
+  ASSERT(submenu);
+  cvec_push(menu->entries, gui_menu_entry_create_with_menu(lable, submenu));
+  menu->width_refresh_needed = TRUE;
+}
+
+static void gui_menu_selected_up_internal(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  int len = cvec_len(menu->entries);
+  if (len) {
+    /* If we are at the first entry. */
+    if (menu->selected == 0) {
+      menu->selected = (len - 1);
+      /* If there are more entries then visible rows, we also need to change the viewtop. */
+      if (len > menu->maxrows) {
+        menu->viewtop = (len - menu->maxrows);
+        /* Only update the scrollbar when the viewtop has changed. */
+        guiscrollbar_refresh_needed(menu->sb);
+      }
+    }
+    /* Otherwise, we are anywhere below that. */
+    else {
+      /* If the currently selected is the current viewtop.  Decrease it by one. */
+      if (menu->viewtop == menu->selected) {
+        --menu->viewtop;
+        /* Only update the scrollbar when the viewtop has changed. */
+        guiscrollbar_refresh_needed(menu->sb);
+      }
+      --menu->selected;
+    }
+    gui_menu_check_submenu(menu);
+  }
+}
+
+static void gui_menu_selected_down_internal(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  int len = cvec_len(menu->entries);
+  if (len) {
+    /* If we are at the last entry. */
+    if (menu->selected == (len - 1)) {
+      menu->selected = 0;
+      menu->viewtop  = 0;
+      /* Only update the scrollbar when the viewtop has changed. */
+      guiscrollbar_refresh_needed(menu->sb);
+    }
+    else {
+      if (menu->selected == (menu->viewtop + menu->maxrows - 1)) {
+        ++menu->viewtop;
+        /* Only update the scrollbar when the viewtop has changed. */
+        guiscrollbar_refresh_needed(menu->sb);
+      }
+      ++menu->selected;
+    }
+    gui_menu_check_submenu(menu);
+  }
+}
+
+_UNUSED static void gui_menu_exit_submenu_internal(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  if (menu->parent) {
+    gui_menu_show_internal(menu, FALSE);
+    menu->parent->active_submenu = NULL;
+  }
 }
 
 /* ----------------------------- Global ----------------------------- */
@@ -199,7 +386,7 @@ Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data,
   /* Vertex buffer. */
   menu->buffer  = make_new_font_buffer();
   /* Entries vector. */
-  menu->entries = cvec_create_setfree(free);
+  menu->entries = cvec_create_setfree(gui_menu_entry_free);
   /* Create the element of the menu. */
   menu->element = guielement_create(parent);
   menu->element->color = GUI_BLACK_COLOR;  /* The default background color for menu's is black. */
@@ -215,10 +402,23 @@ Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data,
   menu->rows     = 0;
   gui_menu_scrollbar_create(menu);
   menu->font = font;
+  /* Always init the `parent` and `active_submenu` as `NULL`. */
+  menu->parent = NULL;
+  menu->active_submenu = NULL;
   /* Callback's. */
   menu->data             = data;
   menu->position_routine = position_routine;
   menu->accept_routine   = accept_routine;
+  return menu;
+}
+
+Menu *gui_menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine) {
+  ASSERT(parent);
+  ASSERT(data);
+  ASSERT(accept_routine);
+  Menu *menu = gui_menu_create(parent->element, parent->font, data, gui_menu_submenu_pos_routine, accept_routine);
+  menu->parent = parent;
+  gui_menu_push_back_submenu(parent, lable, menu);
   return menu;
 }
 
@@ -232,8 +432,10 @@ void gui_menu_free(Menu *const menu) {
   free(menu);
 }
 
+/* Perform a draw call for a `Menu`.  Note that this should be called every frame for all root menu's and never for submenu's. */
 void gui_menu_draw(Menu *const menu) {
   ASSERT_GUI_MENU;
+  Menu *submenu;
   /* Only draw the suggestmenu if there are any available suggestions. */
   if (!menu->element->flag.is_set<GUIELEMENT_HIDDEN>() && cvec_len(menu->entries)) {
     gui_menu_resize(menu);
@@ -245,12 +447,19 @@ void gui_menu_draw(Menu *const menu) {
     guiscrollbar_draw(menu->sb);
     /* Draw the text of the suggestmenu entries. */
     gui_menu_draw_text(menu);
+    /*  */
+    for (int i=0; i<cvec_len(menu->entries); ++i) {
+      if ((submenu = gui_menu_get_entry_menu(menu, i))) {
+        gui_menu_draw(submenu);
+      }
+    }
   }
 }
 
 void gui_menu_push_back(Menu *const menu, const char *const restrict string) {
   ASSERT_GUI_MENU;
-  cvec_push(menu->entries, copy_of(string));
+  ASSERT(string);
+  cvec_push(menu->entries, gui_menu_entry_create(string));
   menu->width_refresh_needed = TRUE;
 }
 
@@ -274,65 +483,52 @@ void gui_menu_show(Menu *const menu, bool show) {
   /* Showing this menu. */
   if (show) {
     if (gui->active_menu && gui->active_menu != menu) {
-      guielement_set_flag_recurse(gui->active_menu->element, TRUE, GUIELEMENT_HIDDEN);
+      gui_menu_show_internal(gui->active_menu, FALSE);
     }
-    guielement_set_flag_recurse(menu->element, FALSE, GUIELEMENT_HIDDEN);
+    gui_menu_show_internal(menu, TRUE);
     gui->active_menu = menu;
-    /* Ensure this menu gets fully updated. */
-    menu->text_refresh_needed = TRUE;
-    menu->pos_refresh_needed  = TRUE;
-    guiscrollbar_refresh_needed(menu->sb);
-    /* Also, reset the menu. */
-    menu->viewtop  = 0;
-    menu->selected = 0;
   }
   /* Hiding this menu. */
   else {
     if (gui->active_menu) {
-      guielement_set_flag_recurse(gui->active_menu->element, TRUE, GUIELEMENT_HIDDEN);
+      gui_menu_show_internal(gui->active_menu, FALSE);
       gui->active_menu = NULL;
     }
-    guielement_set_flag_recurse(menu->element, TRUE, GUIELEMENT_HIDDEN);
+    gui_menu_show_internal(menu, FALSE);
   }
 }
 
 void gui_menu_selected_up(Menu *const menu) {
   ASSERT_GUI_MENU;
-  int len = cvec_len(menu->entries);
-  if (len) {
-    /* If we are at the first entry. */
-    if (menu->selected == 0) {
-      menu->selected = (len - 1);
-      if (len > menu->maxrows) {
-        menu->viewtop = (len - menu->maxrows);
-      }
-    }
-    else {
-      if (menu->viewtop == menu->selected) {
-        --menu->viewtop;
-      }
-      --menu->selected;
-    }
-    guiscrollbar_refresh_needed(menu->sb);
+  /* Recursivly call this function, until we reach the bottom. */
+  if (menu->active_submenu) {
+    gui_menu_selected_up(menu->active_submenu);
+  }
+  /* Then call the internal function that performs the action. */
+  else {
+    gui_menu_selected_up_internal(menu);
   }
 }
 
 void gui_menu_selected_down(Menu *const menu) {
   ASSERT_GUI_MENU;
-  int len = cvec_len(menu->entries);
-  if (len) {
-    /* If we are at the last entry. */
-    if (menu->selected == (len - 1)) {
-      menu->selected = 0;
-      menu->viewtop  = 0;
-    }
-    else {
-      if (menu->selected == (menu->viewtop + menu->maxrows - 1)) {
-        ++menu->viewtop;
-      }
-      ++menu->selected;
-    }
-    guiscrollbar_refresh_needed(menu->sb);
+  /* Recursivly call this function, until we reach the bottom. */
+  if (menu->active_submenu) {
+    gui_menu_selected_down(menu->active_submenu);
+  }
+  /* Then call the internal function that performs the action. */
+  else {
+    gui_menu_selected_down_internal(menu);
+  }
+}
+
+void gui_menu_exit_submenu(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  if (menu->active_submenu) {
+    gui_menu_exit_submenu(menu->active_submenu);
+  }
+  else {
+    gui_menu_exit_submenu_internal(menu);
   }
 }
 
@@ -341,7 +537,7 @@ void gui_menu_accept_action(Menu *const menu) {
   /* As a sanity check only perform any action when the menu is not empty. */
   if (cvec_len(menu->entries)) {
     /* Run the user's accept routine. */
-    menu->accept_routine(menu->data, (char *)cvec_get(menu->entries, menu->selected), menu->selected);
+    menu->accept_routine(menu->data, gui_menu_get_entry_lable(menu, menu->selected), menu->selected);
     /* Then stop showing the menu. */
     gui_menu_show(menu, FALSE);
   }
@@ -360,6 +556,7 @@ void gui_menu_hover_action(Menu *const menu, float y_pos) {
     /* If `y_pos` relates to a valid row in the suggestmenu completion menu, then adjust the selected to that row. */
     if (gui_font_row_from_pos(menu->font, top, bot, y_pos, &row)) {
       menu->selected = lclamp((menu->viewtop + row), menu->viewtop, (menu->viewtop + menu->rows));
+      gui_menu_check_submenu(menu);
     }
   }
 }
@@ -436,4 +633,18 @@ bool gui_menu_element_is_main(Menu *const menu, guielement *const e) {
 bool gui_menu_should_accept_on_tab(Menu *const menu) {
   ASSERT_GUI_MENU;
   return menu->accept_on_tab;
+}
+
+/* Return's `TRUE` when `ancestor` is an ancestor to `menu`. */
+bool gui_menu_is_ancestor(Menu *const menu, Menu *const ancestor) {
+  ASSERT(menu);
+  ASSERT(ancestor);
+  Menu *m = menu;
+  while (m) {
+    if (m == ancestor) {
+      return TRUE;
+    }
+    m = m->parent;
+  }
+  return FALSE;
 }

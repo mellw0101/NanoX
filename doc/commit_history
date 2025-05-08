@@ -83,3 +83,4 @@
 [2025-05-07 12:59:09]: No msg
 [2025-05-07 15:20:37]: No msg
 [2025-05-07 15:50:33]: No msg
+[2025-05-08 11:00:49]: Extended the menu structure, now there can be endless submenus of any menu and it handles it correctly

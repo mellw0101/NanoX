@@ -280,3 +280,8 @@ float guiscrollbar_width(GuiScrollbar *const sb) {
   ASSERT_SB;
   return sb->base->size.w;
 }
+
+void gui_scrollbar_show(GuiScrollbar *const sb, bool show) {
+  ASSERT_SB;
+  guielement_set_flag_recurse(sb->base, !show, GUIELEMENT_HIDDEN);
+}
