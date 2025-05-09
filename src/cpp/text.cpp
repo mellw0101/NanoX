@@ -1406,10 +1406,6 @@ void do_enter(void) {
     accept_suggestion();
     return;
   }
-  // else if (cvec_len(gui->suggestmenu->completions)) {
-  //   gui_suggestmenu_accept();
-  //   return;
-  // }
   /* Check if cursor is between two brackets. */
   else if (is_between_brackets(openfile->current->data, openfile->current_x)) {
     do_auto_bracket();

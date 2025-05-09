@@ -18,7 +18,12 @@ bool using_utf8(void) _NOTHROW {
 
 /* Return 'TRUE' when for the openfile language this char represents a stopping point when doing prev/next word. */
 bool is_language_word_char(const char *pointer, Ulong index) _NOTHROW {
-  if (openfile->type.is_set<C_CPP>() && is_char_one_of(pointer, index, "{}=|&!")) {
+  /* C/C++ */
+  if (openfile->type.is_set<C_CPP>() && is_char_one_of(pointer, index, "{}=|&!/")) {
+    return TRUE;
+  }
+  /* AT&T Asm. */
+  else if (openfile->type.is_set<ATNT_ASM>() && is_char_one_of(pointer, index, "#")) {
     return TRUE;
   }
   return FALSE;
