@@ -22,7 +22,7 @@ void gui_switch_to_prev_buffer(void) {
   /* After we have moved to the previous file in the editor, set
    * the global file pointer to match the currently open editor. */
   openfile = openeditor->openfile;
-  guieditor_redecorate(openeditor);
+  gui_editor_redecorate(openeditor);
 }
 
 /* When using the gui, switch to the next entry in the circular list of buffers. */
@@ -36,7 +36,7 @@ void gui_switch_to_next_buffer(void) {
   /* After we have moved to the next file in the editor, set the
    * global file pointer to match the currently open editor. */
   openfile = openeditor->openfile;
-  guieditor_redecorate(openeditor);
+  gui_editor_redecorate(openeditor);
 }
 
 /* Delete the lock file when in gui mode, this will show any error on the gui.  Returns `TRUE` on success, and `FALSE` otherwise. */
@@ -65,7 +65,7 @@ bool gui_close_and_go(void) {
   /* When there is more then one file open in the open editor. */
   if (openeditor->openfile != openeditor->openfile->next) {
     gui_close_buffer();
-    guieditor_redecorate(openeditor);
+    gui_editor_redecorate(openeditor);
     return FALSE;
   }
   else {
@@ -74,10 +74,10 @@ bool gui_close_and_go(void) {
       return TRUE;
     }
     else {
-      guieditor_close();
-      guieditor_hide(openeditor, FALSE);
-      guieditor_redecorate(openeditor);
-      guieditor_resize(openeditor);
+      gui_editor_close();
+      gui_editor_hide(openeditor, FALSE);
+      gui_editor_redecorate(openeditor);
+      gui_editor_resize(openeditor);
       return FALSE;
     }
   }

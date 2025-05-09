@@ -7,10 +7,7 @@
 #define ASSERT_SUGGEST_MENU               \
   ASSERT(gui);                            \
   ASSERT(gui->suggestmenu);               \
-  ASSERT(gui->suggestmenu->completions);  \
-  ASSERT(gui->suggestmenu->element);      \
-  ASSERT(gui->suggestmenu->sb);           \
-  ASSERT(gui->suggestmenu->vertbuf)
+  ASSERT(gui->suggestmenu->menu)
 
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
@@ -248,18 +245,6 @@ void accept_suggestion(void) {
 
 /* ----------------------------- Static helper function's. ----------------------------- */
 
-/* `INTERNAL`  Clean up the current completions, and reset the state. */
-static inline void gui_suggestmenu_free_completions(void) {
-  ASSERT_SUGGEST_MENU;
-  cvec_clear(gui->suggestmenu->completions);
-}
-
-/* Set (`TRUE`) or unset (`FALSE`) the hidden flag for the suggestmenu element and scrollbar. */
-static inline void gui_suggestmenu_hide(bool hide) {
-  ASSERT_SUGGEST_MENU;
-  guielement_set_flag_recurse(gui->suggestmenu->element, hide, GUIELEMENT_HIDDEN);
-}
-
 /* Copy the word that begins at `*text`. */
 static char *gui_suggestmenu_copy_completion(char *const restrict text) {
   Ulong len = 0;
@@ -271,22 +256,26 @@ static char *gui_suggestmenu_copy_completion(char *const restrict text) {
   return measured_copy(text, len);
 }
 
-static void gui_suggestmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
+static void gui_suggestmenu_pos_routine(void *arg, vec2 size, vec2 *pos) {
   ASSERT(arg);
+  ASSERT(pos);
   GuiSuggestMenu *sm = (__TYPE(sm))arg;
-  ASSIGN_IF_VALID(total_length, (sm->element->size.h - 2));
-  ASSIGN_IF_VALID(start, 0);
-  ASSIGN_IF_VALID(total, cvec_len(sm->completions) - sm->rows);
-  ASSIGN_IF_VALID(visible, sm->rows);
-  ASSIGN_IF_VALID(current, sm->viewtop);
-  ASSIGN_IF_VALID(top_offset, 1);
-  ASSIGN_IF_VALID(right_offset, 1);
+  /* Calculate the correct position for the suggestmenu window. */
+  pos->x = cursor_pixel_x_pos(gui_font_get_font(gui_menu_get_font(sm->menu)));
+  gui_font_row_top_bot(gui->font, (openfile->current->lineno - openfile->edittop->lineno), NULL, &pos->y);
+  pos->y += openeditor->text->pos.y;
 }
 
-static void gui_suggestmenu_scrollbar_moving_routine(void *arg, long index) {
+static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict lable, int index) {
   ASSERT(arg);
+  ASSERT(lable);
   GuiSuggestMenu *sm = (__TYPE(sm))arg;
-  sm->viewtop = index;
+  char *str = copy_of(lable);
+  openfile->last_action = OTHER;
+  inject((str + sm->len), (strlen(str) - sm->len));
+  free(str);
+  gui_suggestmenu_clear();
+  refresh_needed = TRUE;
 }
 
 /* ----------------------------- Global function's ----------------------------- */
@@ -295,37 +284,27 @@ static void gui_suggestmenu_scrollbar_moving_routine(void *arg, long index) {
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
   MALLOC_STRUCT(gui->suggestmenu);
-  gui->suggestmenu->text_refresh_needed = TRUE;
-  gui->suggestmenu->pos_refresh_needed  = TRUE;
-  gui->suggestmenu->completions = cvec_create_setfree(free);
-  gui->suggestmenu->maxrows = 8;
+  gui->suggestmenu->menu = gui_menu_create(gui->root, gui->font, gui->suggestmenu, gui_suggestmenu_pos_routine, gui_suggestmenu_accept_routine);
+  gui_menu_set_tab_accept_behavior(gui->suggestmenu->menu, TRUE);
+  gui_menu_set_arrow_depth_navigation(gui->suggestmenu->menu, FALSE);
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len    = 0;
-  gui->suggestmenu->element = guielement_create(gui->root);
-  gui->suggestmenu->element->color = GUI_BLACK_COLOR;
-  gui->suggestmenu->element->flag.set<GUIELEMENT_ABOVE>();
-  guielement_set_borders(gui->suggestmenu->element, 1, vec4(vec3(0.5f), 1.0f));
-  gui->suggestmenu->vertbuf = make_new_font_buffer();
-  gui->suggestmenu->sb      = guiscrollbar_create(gui->suggestmenu->element, gui->suggestmenu, gui_suggestmenu_scrollbar_update_routine, gui_suggestmenu_scrollbar_moving_routine);
 }
 
 /* Free the suggestmenu substructure. */
 void gui_suggestmenu_free(void) {
   ASSERT_SUGGEST_MENU;
-  gui_suggestmenu_free_completions();
-  cvec_free(gui->suggestmenu->completions);
-  vertex_buffer_delete(gui->suggestmenu->vertbuf);
-  free(gui->suggestmenu->sb);
+  gui_menu_free(gui->suggestmenu->menu);
   free(gui->suggestmenu);
 }
 
 /* Fully clear the suggestions and reset the suggestmenu buffer. */
 void gui_suggestmenu_clear(void) {
   ASSERT_SUGGEST_MENU;
-  cvec_clear(gui->suggestmenu->completions);
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len = 0;
-  gui_suggestmenu_hide(TRUE);
+  gui_menu_clear_entries(gui->suggestmenu->menu);
+  gui_menu_show(gui->suggestmenu->menu, FALSE);
 }
 
 /* Load the word cursor is currently on into the suggestmenu buffer, from the cursor to the beginning of the word, if any. */
@@ -356,11 +335,11 @@ void gui_suggestmenu_find(void) {
   long threshhold;
   char *completion;
   Ulong i, j;
-  gui_suggestmenu_free_completions();
+  gui_menu_clear_entries(gui->suggestmenu->menu);
   if (!gui->suggestmenu->len) {
     return;
   }
-  hash_map = hashmap_create();
+  hash_map = hashmap_create_wfreefunc(free);
   current_file = openfile;
   search_line  = current_file->filetop;
   search_x     = 0;
@@ -402,7 +381,7 @@ void gui_suggestmenu_find(void) {
       }
       /* Add to the hashmap, using the ptr to the word as it will live longer then this hashmap. */
       hashmap_insert(hash_map, completion, (void *)completion);
-      cvec_push(gui->suggestmenu->completions, completion);
+      gui_menu_push_back(gui->suggestmenu->menu, completion);
       search_x = ++i;
     }
     search_line = search_line->next;
@@ -413,10 +392,7 @@ void gui_suggestmenu_find(void) {
     }
   }
   hashmap_free(hash_map);
-  cvec_qsort(gui->suggestmenu->completions, qsort_strlen);
-  /* Set the view top and the selected to the first suggestion. */
-  gui->suggestmenu->viewtop  = 0;
-  gui->suggestmenu->selected = 0;
+  gui_menu_qsort(gui->suggestmenu->menu, gui_menu_entry_qsort_strlen_cb);
   TIMER_END(timer, ms);
   TIMER_PRINT(ms);
 }
@@ -424,196 +400,11 @@ void gui_suggestmenu_find(void) {
 void gui_suggestmenu_run(void) {
   ASSERT_SUGGEST_MENU;
   gui_suggestmenu_load_str();
-  // writef("%s\n", gui->suggestmenu->buf);
   gui_suggestmenu_find();
-  if (cvec_len(gui->suggestmenu->completions)) {
-    gui_suggestmenu_hide(FALSE);
-    guiscrollbar_refresh_needed(gui->suggestmenu->sb);
-    gui->suggestmenu->text_refresh_needed = TRUE;
-    gui->suggestmenu->pos_refresh_needed = TRUE;
-    // writef("Found completions:\n");
-    // for (int i=0; i<cvec_len(gui->suggestmenu->completions); ++i) {
-    //   writef("  %s\n", (char *)cvec_get(gui->suggestmenu->completions, i));
-    // }
-  } 
-}
-
-/* Calculate the number of visable rows and the final size of the suggestmenu element, then resize it. */
-void gui_suggestmenu_resize(void) {
-  ASSERT_SUGGEST_MENU;
-  vec2 pos, size;
-  int len = cvec_len(gui->suggestmenu->completions);
-  /* If there are no completions available or we dont need to recalculate the position, just return. */
-  if (!len || !gui->suggestmenu->pos_refresh_needed) {
-    return;
-  }
-  /* Set the number of visable rows. */
-  if (len > gui->suggestmenu->maxrows) {
-    gui->suggestmenu->rows = gui->suggestmenu->maxrows;
+  if (gui_menu_len(gui->suggestmenu->menu)) {
+    gui_menu_show(gui->suggestmenu->menu, TRUE);
   }
   else {
-    gui->suggestmenu->rows = len;
-  }
-  /* Calculate the correct position for the suggestmenu window. */
-  pos.x = cursor_pixel_x_pos(gui_font_get_font(gui->font));
-  gui_font_row_top_bot(gui->font, (openfile->current->lineno - openfile->edittop->lineno), NULL, &pos.y);
-  pos.y += openeditor->text->pos.y;
-  /* Calculate the size of the suggestmenu window. */
-  size.w = (pixbreadth(gui_font_get_font(gui->font), (char *)cvec_get(gui->suggestmenu->completions, (len - 1))) + 4);
-  size.h = ((gui->suggestmenu->rows * gui_font_height(gui->font) /* FONT_HEIGHT(gui_font_get_font(gui->font)) */) + 4);
-  /* Add the size of the scrollbar if there is a scrollbar. */
-  if (len > gui->suggestmenu->maxrows) {
-    size.w += guiscrollbar_width(gui->suggestmenu->sb);
-  }
-  /* Move and resize the element. */
-  guielement_move_resize(gui->suggestmenu->element, pos, size);
-  gui->suggestmenu->pos_refresh_needed = FALSE;
-}
-
-/* When the selected entry of the suggestmenu inside the viewport of the suggestmenu, highlight it. */
-void gui_suggestmenu_draw_selected(void) {
-  ASSERT_SUGGEST_MENU;
-  int selected_row = (gui->suggestmenu->selected - gui->suggestmenu->viewtop);
-  vec2 pos, size;
-  /* Draw the selected entry, if its on screen. */
-  if (selected_row >= 0 && selected_row < gui->suggestmenu->rows) {
-    pos.x  = (gui->suggestmenu->element->pos.x + 1);
-    size.w = (gui->suggestmenu->element->size.w - 2);
-    gui_font_row_top_bot(gui->font, selected_row, &pos.y, &size.h);
-    size.h -= (pos.y - ((selected_row == gui->suggestmenu->rows - 1) ? 1 : 0));
-    pos.y  += (gui->suggestmenu->element->pos.y + 1);
-    draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));
-  }
-}
-
-/* Draw the correct text in the suggestmenu based on the current viewtop of the suggestmenu. */
-void gui_suggestmenu_draw_text(void) {
-  ASSERT_SUGGEST_MENU;
-  static int was_viewtop = gui->suggestmenu->viewtop;
-  int row = 0;
-  char *str;
-  vec2 textpen;
-  /* Only clear and reconstruct the vertex buffer when asked or when the viewtop has changed. */
-  if (gui->suggestmenu->text_refresh_needed || was_viewtop != gui->suggestmenu->viewtop) {
-    vertex_buffer_clear(gui->suggestmenu->vertbuf);
-    while (row < gui->suggestmenu->rows) {
-      str = (char *)cvec_get(gui->suggestmenu->completions, (gui->suggestmenu->viewtop + row));
-      textpen = vec2(
-        (gui->suggestmenu->element->pos.x + 2),
-        (gui_font_row_baseline(gui->font, row) + gui->suggestmenu->element->pos.y + 2)
-      );
-      vertex_buffer_add_string(gui->suggestmenu->vertbuf, str, strlen(str), NULL, gui_font_get_font(gui->font), 1, &textpen);
-      ++row;
-    }
-    was_viewtop = gui->suggestmenu->viewtop;
-    gui->suggestmenu->text_refresh_needed = FALSE;
-  }
-  upload_texture_atlas(gui_font_get_atlas(gui->font));
-  render_vertex_buffer(gui->font_shader, gui->suggestmenu->vertbuf);
-}
-
-/* Move the currently selected suggestmenu entry up once or when at the very top move it to the bottom.  This also ensures that viewtop moves as well when moving from the top of it. */
-void gui_suggestmenu_selected_up(void) {
-  ASSERT_SUGGEST_MENU;
-  int len = cvec_len(gui->suggestmenu->completions);
-  if (len) {
-    /* If we are at the first entry. */
-    if (gui->suggestmenu->selected == 0) {
-      gui->suggestmenu->selected = (len - 1);
-      if (len > gui->suggestmenu->maxrows) {
-        gui->suggestmenu->viewtop = (len - gui->suggestmenu->maxrows);
-      }
-    }
-    else {
-      if (gui->suggestmenu->viewtop == gui->suggestmenu->selected) {
-        --gui->suggestmenu->viewtop;
-      }
-      --gui->suggestmenu->selected;
-    }
-    guiscrollbar_refresh_needed(gui->suggestmenu->sb);
-  }
-}
-
-void gui_suggestmenu_selected_down(void) {
-  ASSERT_SUGGEST_MENU;
-  int len = cvec_len(gui->suggestmenu->completions);
-  if (len) {
-    /* If we are at the last entry. */
-    if (gui->suggestmenu->selected == (len - 1)) {
-      gui->suggestmenu->selected = 0;
-      gui->suggestmenu->viewtop  = 0;
-    }
-    else {
-      if (gui->suggestmenu->selected == (gui->suggestmenu->viewtop + gui->suggestmenu->maxrows - 1)) {
-        ++gui->suggestmenu->viewtop;
-      }
-      ++gui->suggestmenu->selected;
-    }
-    guiscrollbar_refresh_needed(gui->suggestmenu->sb);
-  }
-}
-
-/* Return's `TRUE` when the suggest menu had entries and one could be injected. */
-bool gui_suggestmenu_accept(void) {
-  ASSERT_SUGGEST_MENU;
-  char *str;
-  if (cvec_len(gui->suggestmenu->completions)) {
-    openfile->last_action = OTHER;
-    str = (char *)cvec_get(gui->suggestmenu->completions, gui->suggestmenu->selected);
-    inject((str + gui->suggestmenu->len), (strlen(str) - gui->suggestmenu->len));
-    gui_suggestmenu_clear();
-    refresh_needed = TRUE;
-    return TRUE;
-  }
-  return FALSE;
-}
-
-void gui_suggestmenu_hover_action(float y_pos) {
-  ASSERT_SUGGEST_MENU;
-  ASSERT(gui->font);
-  long row;
-  float top;
-  float bot;
-  if (cvec_len(gui->suggestmenu->completions)) {
-    /* Top of the completions menu. */
-    top = (gui->suggestmenu->element->pos.y);
-    /* Bottom of the completions menu. */
-    bot = (gui->suggestmenu->element->pos.y + gui->suggestmenu->element->size.h);
-    /* If `y_pos` relates to a valid row in the suggestmenu completion menu, then adjust the selected to that row. */
-    if (gui_font_row_from_pos(gui->font, top, bot, y_pos, &row)) {
-      gui->suggestmenu->selected = lclamp((gui->suggestmenu->viewtop + row), gui->suggestmenu->viewtop, (gui->suggestmenu->viewtop + gui->suggestmenu->rows));
-    }
-  }
-}
-
-void gui_suggestmenu_scroll_action(bool direction, float y_pos) {
-  ASSERT_SUGGEST_MENU;
-  int len = cvec_len(gui->suggestmenu->completions);
-  /* Only do anything if there are more entries then rows in the suggestmenu. */
-  if (len > gui->suggestmenu->maxrows) {
-    /* Only scroll when not already at the top or bottom. */
-    if ((direction == BACKWARD && gui->suggestmenu->viewtop > 0) || (direction == FORWARD && gui->suggestmenu->viewtop < (len - gui->suggestmenu->maxrows))) {
-      gui->suggestmenu->viewtop += (!direction ? -1 : 1);
-      gui->suggestmenu->text_refresh_needed = TRUE;
-      /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
-      gui_suggestmenu_hover_action(y_pos);
-      guiscrollbar_refresh_needed(gui->suggestmenu->sb);
-    }
-  }
-}
-
-void gui_suggestmenu_click_action(float y_pos) {
-  ASSERT_SUGGEST_MENU;
-  ASSERT(gui->font);
-  float top;
-  float bot;
-  /* Only perform any action when there are completions available. */
-  if (cvec_len(gui->suggestmenu->completions)) {
-    top = gui->suggestmenu->element->pos.y;
-    bot = (gui->suggestmenu->element->pos.y + gui->suggestmenu->element->size.h);
-    if (y_pos >= top && y_pos <= bot) {
-      gui_suggestmenu_hover_action(y_pos);
-      gui_suggestmenu_accept();
-    }
+    gui_menu_show(gui->suggestmenu->menu, FALSE);
   }
 }

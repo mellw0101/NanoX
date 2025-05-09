@@ -27,7 +27,7 @@ _UNUSED static guielement *make_new_element(void) {
 }
 
 /* Create a ui element. */
-guielement *guielement_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap) _NOTHROW {
+guielement *gui_element_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap) _NOTHROW {
   guielement *e;
   MALLOC_STRUCT(e);
   e->pos           = pos;
@@ -53,21 +53,21 @@ guielement *guielement_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool
 }
 
 /* Create a blank element. */
-guielement *guielement_create(bool in_gridmap) _NOTHROW {
-  return guielement_create(-100.0f, 20.0f, 0.0f, 0.0f, in_gridmap);
+guielement *gui_element_create(bool in_gridmap) _NOTHROW {
+  return gui_element_create(-100.0f, 20.0f, 0.0f, 0.0f, in_gridmap);
 }
 
 /* Create a new child to element `parent`. */
-guielement *guielement_create(guielement *const parent, bool in_gridmap) _NOTHROW {
+guielement *gui_element_create(guielement *const parent, bool in_gridmap) _NOTHROW {
   ASSERT(parent);
-  guielement *element = guielement_create(in_gridmap);
+  guielement *element = gui_element_create(in_gridmap);
   element->parent = parent;
   parent->children.push_back(element);
   return element;
 }
 
 /* Delete a element and all its children. */
-void guielement_free(guielement *const element) {
+void gui_element_free(guielement *const element) {
   /* Assert that the passed element is valid. */
   ASSERT(element);
   /* If this element has a parent, remove the element from the parent. */
@@ -76,7 +76,7 @@ void guielement_free(guielement *const element) {
   }
   /* Free children until there are none. */
   while (!element->children.empty()) {
-    guielement_free(element->children.back());
+    gui_element_free(element->children.back());
   }
   /* Then remove it from the global gridmap and freeing the lable and the element itself. */
   gridmap.remove(element);
@@ -85,7 +85,7 @@ void guielement_free(guielement *const element) {
 }
 
 /* Set an elements lable text. */
-void guielement_set_lable(guielement *const element, const char *string) _NOTHROW {
+void gui_element_set_lable(guielement *const element, const char *string) _NOTHROW {
   ASSERT(element);
   if (element->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
     free(element->lable);
@@ -96,15 +96,15 @@ void guielement_set_lable(guielement *const element, const char *string) _NOTHRO
 }
 
 /* Delete all children of `element`. */
-void guielement_delete_children(guielement *const element) {
+void gui_element_delete_children(guielement *const element) {
   ASSERT(element);
   while (!element->children.empty()) {
-    guielement_free(element->children.back());
+    gui_element_free(element->children.back());
   }
 }
 
 /* Get ui element from current mouse position. */
-guielement *guielement_from_mousepos(void) {
+guielement *gui_element_from_mousepos(void) {
   ivec2 pos(mousepos);
   if (gridmap.contains(pos)) {
     return gridmap.get(pos);
@@ -121,11 +121,11 @@ static void guielement_check_children_relative_pos_size(guielement *const e) {
     child = e->children[i];
     /* If this child uses relative based positioning the adjust the child position based on the parent. */
     if (child->flag.is_set<GUIELEMENT_RELATIVE_POS>()) {
-      guielement_move(child, (e->pos + child->relative_pos));
+      gui_element_move(child, (e->pos + child->relative_pos));
     }
     /* Else, when the relative position is reversed as in the zero point is the right-down corner as apposed to normal (left-top side). */
     else if (child->flag.is_set<GUIELEMENT_REVERSE_RELATIVE_POS>()) {
-      guielement_move(child, ((e->pos + e->size) - child->relative_pos));
+      gui_element_move(child, ((e->pos + e->size) - child->relative_pos));
     }
     /* Otherwise, check if relative x or y pos is set. */
     else if (child->flag.is_set<GUIELEMENT_REVERSE_RELATIVE_X_POS>() || child->flag.is_set<GUIELEMENT_REVERSE_RELATIVE_Y_POS>()
@@ -143,7 +143,7 @@ static void guielement_check_children_relative_pos_size(guielement *const e) {
       if (child->flag.is_set<GUIELEMENT_REVERSE_RELATIVE_Y_POS>()) {
         newpos.y = ((e->pos.y + e->size.y) - child->relative_pos.y);
       }
-      guielement_move(child, newpos);
+      gui_element_move(child, newpos);
     }
     /* If either relative width or height is active for this child then resize the element. */
     if (child->flag.is_set<GUIELEMENT_RELATIVE_WIDTH>() || child->flag.is_set<GUIELEMENT_RELATIVE_HEIGHT>()) {
@@ -156,13 +156,13 @@ static void guielement_check_children_relative_pos_size(guielement *const e) {
       if (child->flag.is_set<GUIELEMENT_RELATIVE_HEIGHT>()) {
         newsize.h = (e->size.h - child->relative_pos.y - child->relative_size.h);
       }
-      guielement_resize(child, newsize);
+      gui_element_resize(child, newsize);
     }
   }
 }
 
 /* Resize an element as well as correctly adjust it in the gridmap. */
-void guielement_resize(guielement *const e, vec2 size) {
+void gui_element_resize(guielement *const e, vec2 size) {
   ASSERT(e);
   gridmap.remove(e);
   e->size = size;
@@ -171,7 +171,7 @@ void guielement_resize(guielement *const e, vec2 size) {
 }
 
 /* Move an element as well as correctly adjust it in the gridmap. */
-void guielement_move(guielement *const e, vec2 pos) {
+void gui_element_move(guielement *const e, vec2 pos) {
   ASSERT(e);
   gridmap.remove(e);
   e->pos = pos;
@@ -180,7 +180,7 @@ void guielement_move(guielement *const e, vec2 pos) {
 }
 
 /* Move an `guielement's` y position to `ypos` while clamping it to be constrained to `min` and `max`. */
-void guielement_move_y_clamp(guielement *const e, float ypos, float min, float max) {
+void gui_element_move_y_clamp(guielement *const e, float ypos, float min, float max) {
   ASSERT(e);
   gridmap.remove(e);
   e->pos.y = fclamp(ypos, min, max);
@@ -189,7 +189,7 @@ void guielement_move_y_clamp(guielement *const e, float ypos, float min, float m
 }
 
 /* Move and resize an element and correctly set it in the gridmap. */
-void guielement_move_resize(guielement *const e, vec2 pos, vec2 size) {
+void gui_element_move_resize(guielement *const e, vec2 pos, vec2 size) {
   ASSERT(e);
   gridmap.remove(e);
   e->pos  = pos;
@@ -199,11 +199,11 @@ void guielement_move_resize(guielement *const e, vec2 pos, vec2 size) {
 }
 
 /* Delete the border elements of element `e`. */
-void guielement_delete_borders(guielement *const e) {
+void gui_element_delete_borders(guielement *const e) {
   ASSERT(e);
   for (Ulong i=0; i<e->children.size(); ++i) {
     if (e->children[i]->flag.is_set<GUIELEMENT_IS_BORDER>()) {
-      guielement_free(e->children[i]);
+      gui_element_free(e->children[i]);
       e->children.erase_at(i);
       --i;
     }
@@ -212,16 +212,16 @@ void guielement_delete_borders(guielement *const e) {
 }
 
 /* Create borders for element `e` of `size` with `color`. */
-void guielement_set_borders(guielement *const e, vec4 size, vec4 color) {
+void gui_element_set_borders(guielement *const e, vec4 size, vec4 color) {
   ASSERT(e);
   guielement *left, *top, *right, *bottom;
   /* First remove the current border, if it has them. */
-  guielement_delete_borders(e);
+  gui_element_delete_borders(e);
   /* Create all sides as children of e. */
-  left   = guielement_create(e, FALSE);
-  top    = guielement_create(e, FALSE);
-  right  = guielement_create(e, FALSE);
-  bottom = guielement_create(e, FALSE);
+  left   = gui_element_create(e, FALSE);
+  top    = gui_element_create(e, FALSE);
+  right  = gui_element_create(e, FALSE);
+  bottom = gui_element_create(e, FALSE);
   /* Then set the flag to mark these as border elements. */
   left->flag.set<GUIELEMENT_IS_BORDER>();
   top->flag.set<GUIELEMENT_IS_BORDER>();
@@ -245,10 +245,10 @@ void guielement_set_borders(guielement *const e, vec4 size, vec4 color) {
   right->color  = color;
   bottom->color = color;
   /* Set the border positions. */
-  guielement_move_resize(left, e->pos, vec2(size.left, e->size.h));
-  guielement_move_resize(top, e->pos, vec2(e->size.w, size.top));
-  guielement_move_resize(right, vec2((e->pos.x + e->size.w - size.right), e->pos.y), vec2(size.right, e->size.h));
-  guielement_move_resize(bottom, vec2(e->pos.x, (e->pos.y + e->size.h - size.bottom)), vec2(e->size.w, size.bottom));
+  gui_element_move_resize(left, e->pos, vec2(size.left, e->size.h));
+  gui_element_move_resize(top, e->pos, vec2(e->size.w, size.top));
+  gui_element_move_resize(right, vec2((e->pos.x + e->size.w - size.right), e->pos.y), vec2(size.right, e->size.h));
+  gui_element_move_resize(bottom, vec2(e->pos.x, (e->pos.y + e->size.h - size.bottom)), vec2(e->size.w, size.bottom));
   /* Set relative height for left and right borders. */
   left->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
   right->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
@@ -263,7 +263,7 @@ void guielement_set_borders(guielement *const e, vec4 size, vec4 color) {
 }
 
 /* Draw a ui-element`s rect. */
-void guielement_draw(guielement *const e) {
+void gui_element_draw(guielement *const e) {
   ASSERT(e);
   guielement *child;
   /* If the element is hidden, dont draw it. */
@@ -286,7 +286,7 @@ void guielement_draw(guielement *const e) {
 }
 
 /* Set the union data ptr for `e` as a `void *`.  This should be used as apposed to directly setting the data ptr. */
-void guielement_set_raw_data(guielement *const e, void *const data) _NOTHROW {
+void gui_element_set_raw_data(guielement *const e, void *const data) _NOTHROW {
   ASSERT(e);
   ASSERT(data);
   e->flag.set<GUIELEMENT_HAS_RAW_DATA>();
@@ -298,7 +298,7 @@ void guielement_set_raw_data(guielement *const e, void *const data) _NOTHROW {
 }
 
 /* Set the union data ptr for `e` as a `openfilestruct *`.  This should be used as apposed to directly setting the data ptr. */
-void guielement_set_file_data(guielement *const e, openfilestruct *const file) _NOTHROW {
+void gui_element_set_file_data(guielement *const e, openfilestruct *const file) _NOTHROW {
   ASSERT(e);
   ASSERT(file);
   e->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
@@ -310,7 +310,7 @@ void guielement_set_file_data(guielement *const e, openfilestruct *const file) _
 }
 
 /* Set the union data ptr for `e` as a `guieditor *`.  This should be used as apposed to directly setting the data ptr. */
-void guielement_set_editor_data(guielement *const e, guieditor *const editor) _NOTHROW {
+void gui_element_set_editor_data(guielement *const e, guieditor *const editor) _NOTHROW {
   ASSERT(e);
   ASSERT(editor);
   e->flag.unset<GUIELEMENT_HAS_RAW_DATA>();
@@ -322,7 +322,7 @@ void guielement_set_editor_data(guielement *const e, guieditor *const editor) _N
 }
 
 /* Set the union data ptr for `e` as a `GuiScrollbar *`.  This should be used as apposed to directly setting the data ptr. */
-void guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHROW {
+void gui_element_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHROW {
   ASSERT(e);
   ASSERT(sb);
   e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
@@ -334,7 +334,7 @@ void guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHRO
 }
 
 /* Set the union data ptr for `e` as a `Menu *`.  This should be used as apposed to directly setting the data ptr. */
-void guielement_set_menu_data(guielement *const e, Menu *const menu) _NOTHROW {
+void gui_element_set_menu_data(guielement *const e, Menu *const menu) _NOTHROW {
   ASSERT(e);
   ASSERT(menu);
   e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
@@ -346,45 +346,52 @@ void guielement_set_menu_data(guielement *const e, Menu *const menu) _NOTHROW {
 }
 
 /* Return's `TRUE` when `e` has `void *` data. */
-bool guielement_has_raw_data(guielement *const e) _NOTHROW {
+bool gui_element_has_raw_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_RAW_DATA>());
 }
 
 /* Return's `TRUE` when `e` has `openfilestruct *` data. */
-bool guielement_has_file_data(guielement *const e) _NOTHROW {
+bool gui_element_has_file_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_FILE_DATA>());
 }
 
 /* Return's `TRUE` when `e` has `guieditor *` data. */
-bool guielement_has_editor_data(guielement *const e) _NOTHROW {
+bool gui_element_has_editor_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_EDITOR_DATA>());
 }
 
 /* Return's `TRUE` when `e` has `GuiScrollbar *` data. */
-bool guielement_has_sb_data(guielement *const e) _NOTHROW {
+bool gui_element_has_sb_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_SB_DATA>());
 }
 
 /* Return's `TRUE` when `e` has `Menu *` data. */
-bool guielement_has_menu_data(guielement *const e) _NOTHROW {
+bool gui_element_has_menu_data(guielement *const e) _NOTHROW {
   return (e && e->flag.is_set<GUIELEMENT_HAS_MENU_DATA>());
 }
 
 /* If `set` is `TRUE` set `flag` for all children of `element` recurivly, otherwise,
  * when `set` is `FALSE` unset `flag` for all children of `element` recurivly. */
-void guielement_set_flag_recurse(guielement *const element, bool set, Uint flag) {
-  ASSERT(element);
+void gui_element_set_flag_recurse(guielement *const e, bool set, Uint flag) {
+  ASSERT(e);
   /* Always assert that the passed flag is valid in the context of a elemnent flag. */
   ALWAYS_ASSERT(flag >= 0 && flag <= GUIELEMENT_FLAG_SIZE);
-  const Ulong size = element->children.size();
-  guielement **const &ptr = element->children.data();
+  const Ulong size = e->children.size();
+  guielement **const &ptr = e->children.data();
   if (set) {
-    element->flag.set(flag);
+    e->flag.set(flag);
   }
   else {
-    element->flag.unset(flag);
+    e->flag.unset(flag);
   }
   for (Ulong i=0; i<size; ++i) {
-    guielement_set_flag_recurse(ptr[i], set, flag);
+    gui_element_set_flag_recurse(ptr[i], set, flag);
+  }
+}
+
+/* Call the callback of `e` in a safe way, meaning this is a `NO-OP` function and will do nothing if `e` is `NULL`, or if `e` does not have a callback. */
+void gui_element_call_cb(guielement *const e, guielement_callback_type type) {
+  if (e) {
+    CALL_IF_VALID(e->callback, e, type);
   }
 }

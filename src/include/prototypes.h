@@ -705,7 +705,10 @@ char        *get_prev_cursor_word(Ulong *wordlen) _NOTHROW _NODISCARD _NONNULL(1
 Ulong        get_current_word_end_index(const char *line, Ulong from_index, bool allow_underscore = FALSE) _NOTHROW _NODISCARD _NONNULL(1);
 Ulong        get_current_cursor_word_end_index(bool allow_underscore = FALSE) _NOTHROW;
 
-/* 'lines.cpp' */
+
+/* ---------------------------------------------------------- lines.cpp ---------------------------------------------------------- */
+
+
 bool  is_line_comment(linestruct *line);
 bool  is_line_start_end_bracket(linestruct *line, bool *is_start);
 void  inject_in_line(linestruct *line, const char *str, Ulong at);
@@ -717,7 +720,10 @@ Uint  total_tabs(linestruct *line);
 int   get_editwin_row(linestruct *line);
 bool  line_in_marked_region(linestruct *line) _NOTHROW _NODISCARD _NONNULL(1);
 
-/* 'threadpool.cpp' */
+
+/* ---------------------------------------------------------- threadpool.cpp ---------------------------------------------------------- */
+
+
 void  lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NOTHROW;
 void  pause_all_sub_threads(bool pause) _NOTHROW;
 void  init_queue_task(void) _NOTHROW;
@@ -727,7 +733,10 @@ void  submit_task(task_functionptr_t function, void *arg, void **result, callbac
 void  stop_thread(Uchar thread_id) _NOTHROW;
 Uchar thread_id_from_pthread(pthread_t *thread) _NOTHROW;
 
-/* 'event.cpp' */
+
+/* ---------------------------------------------------------- event.cpp ---------------------------------------------------------- */
+
+
 bool is_main_thread(void) _NOTHROW;
 void send_SIGUSR1_to_main_thread(void) _NOTHROW;
 void send_signal_to_main_thread(callback_functionptr_t func, void *arg) _NOTHROW;
@@ -736,17 +745,26 @@ void enqueue_callback(callback_functionptr_t callback, void *result) _NOTHROW;
 void prosses_callback_queue(void) _NOTHROW;
 void cleanup_event_handler(void) _NOTHROW;
 
-/* 'tasks.cpp' */
+
+/* ---------------------------------------------------------- tasks.cpp ---------------------------------------------------------- */
+
+
 void sub_thread_find_syntax(const char *path);
 void get_line_list_task(const char *path);
 
-/* 'signal.cpp' */
+
+/* ---------------------------------------------------------- signal.cpp ---------------------------------------------------------- */
+
+
 void init_main_thread(void) _NOTHROW;
 void cleanup_main_thread(void) _NOTHROW;
 void setup_signal_handler_on_sub_thread(void (*handler)(int)) _NOTHROW;
 void block_pthread_sig(int sig, bool block) _NOTHROW;
 
-/* 'render.cpp' */
+
+/* ---------------------------------------------------------- render.cpp ---------------------------------------------------------- */
+
+
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) _NOTHROW;
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 
@@ -782,12 +800,12 @@ void gui_suggestmenu_clear(void);
 void gui_suggestmenu_load_str(void);
 void gui_suggestmenu_find(void);
 void gui_suggestmenu_run(void);
-void gui_suggestmenu_resize(void);
-void gui_suggestmenu_draw_selected(void);
-void gui_suggestmenu_draw_text(void);
-void gui_suggestmenu_selected_up(void);
-void gui_suggestmenu_selected_down(void);
-bool gui_suggestmenu_accept(void);
+// void gui_suggestmenu_resize(void);
+// void gui_suggestmenu_draw_selected(void);
+// void gui_suggestmenu_draw_text(void);
+// void gui_suggestmenu_selected_up(void);
+// void gui_suggestmenu_selected_down(void);
+// bool gui_suggestmenu_accept(void);
 void gui_suggestmenu_hover_action(float y_pos);
 void gui_suggestmenu_scroll_action(bool direction, float y_pos);
 void gui_suggestmenu_click_action(float y_pos);
@@ -920,58 +938,62 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui/guielement.cpp ---------------------------------------------------------- */
   
   
-  guielement *guielement_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
-  guielement *guielement_create(bool in_gridmap = TRUE) _NOTHROW;
-  guielement *guielement_create(guielement *const parent, bool in_gridmap = TRUE) _NOTHROW;
-  void        guielement_free(guielement *const element);
-  void        guielement_set_lable(guielement *const element, const char *string) _NOTHROW;
-  void        guielement_delete_children(guielement *const element);
-  guielement *guielement_from_mousepos(void);
-  void        guielement_resize(guielement *const e, vec2 size);
-  void        guielement_move(guielement *const e, vec2 pos);
-  void        guielement_move_y_clamp(guielement *const e, float ypos, float min, float max);
-  void        guielement_move_resize(guielement *const e, vec2 pos, vec2 size);
-  void        guielement_delete_borders(guielement *const e);
-  void        guielement_set_borders(guielement *const e, vec4 size, vec4 color);
-  void        guielement_draw(guielement *const e);
-  void        guielement_set_raw_data(guielement *const element, void *const data) _NOTHROW;
-  void        guielement_set_file_data(guielement *const element, openfilestruct *const file) _NOTHROW;
-  void        guielement_set_editor_data(guielement *const element, guieditor *const editor) _NOTHROW;
-  void        guielement_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHROW;
-  void        guielement_set_menu_data(guielement *const e, Menu *const menu) _NOTHROW;
-  bool        guielement_has_raw_data(guielement *const e) _NOTHROW;
-  bool        guielement_has_file_data(guielement *const element) _NOTHROW;
-  bool        guielement_has_editor_data(guielement *const element) _NOTHROW;
-  bool        guielement_has_sb_data(guielement *const e) _NOTHROW;
-  bool        guielement_has_menu_data(guielement *const e) _NOTHROW;
-  void        guielement_set_flag_recurse(guielement *const element, bool set, Uint flag);
+  guielement *gui_element_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
+  guielement *gui_element_create(bool in_gridmap = TRUE) _NOTHROW;
+  guielement *gui_element_create(guielement *const parent, bool in_gridmap = TRUE) _NOTHROW;
+  void        gui_element_free(guielement *const element);
+  void        gui_element_set_lable(guielement *const element, const char *string) _NOTHROW;
+  void        gui_element_delete_children(guielement *const element);
+  guielement *gui_element_from_mousepos(void);
+  void        gui_element_resize(guielement *const e, vec2 size);
+  void        gui_element_move(guielement *const e, vec2 pos);
+  void        gui_element_move_y_clamp(guielement *const e, float ypos, float min, float max);
+  void        gui_element_move_resize(guielement *const e, vec2 pos, vec2 size);
+  void        gui_element_delete_borders(guielement *const e);
+  void        gui_element_set_borders(guielement *const e, vec4 size, vec4 color);
+  void        gui_element_draw(guielement *const e);
+  void        gui_element_set_raw_data(guielement *const element, void *const data) _NOTHROW;
+  void        gui_element_set_file_data(guielement *const element, openfilestruct *const file) _NOTHROW;
+  void        gui_element_set_editor_data(guielement *const element, guieditor *const editor) _NOTHROW;
+  void        gui_element_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHROW;
+  void        gui_element_set_menu_data(guielement *const e, Menu *const menu) _NOTHROW;
+  bool        gui_element_has_raw_data(guielement *const e) _NOTHROW;
+  bool        gui_element_has_file_data(guielement *const element) _NOTHROW;
+  bool        gui_element_has_editor_data(guielement *const element) _NOTHROW;
+  bool        gui_element_has_sb_data(guielement *const e) _NOTHROW;
+  bool        gui_element_has_menu_data(guielement *const e) _NOTHROW;
+  void        gui_element_set_flag_recurse(guielement *const e, bool set, Uint flag);
+  void        gui_element_call_cb(guielement *const e, guielement_callback_type type);
 
   
   /* ---------------------------------------------------------- gui/guieditor.cpp ---------------------------------------------------------- */
   
   
-  void       guieditor_refresh_topbar(guieditor *const editor);
-  void       guieditor_update_active_topbar(guieditor *editor);
+  void       gui_editor_refresh_topbar(guieditor *const editor);
+  void       gui_editor_update_active_topbar(guieditor *editor);
   void       make_new_editor(bool new_buffer);
-  void       guieditor_free(guieditor *const editor);
-  void       guieditor_close(void);
-  void       guieditor_hide(guieditor *const editor, bool hide);
-  void       guieditor_switch_to_prev(void);
-  void       guieditor_switch_to_next(void);
-  void       guieditor_switch_openfile_to_prev(void);
-  void       guieditor_switch_openfile_to_next(void);
-  void       guieditor_set_open(guieditor *const editor);
-  guieditor *guieditor_from_element(guielement *e);
-  guieditor *guieditor_from_file(openfilestruct *file);
-  void       guieditor_calculate_rows(guieditor *const editor);
-  void       guieditor_resize(guieditor *const editor);
-  void       guieditor_redecorate(guieditor *const editor);
-  void       guieditor_open_new_empty_buffer(void);
-  void       guieditor_close_open_buffer(void);
-  void       guieditor_open_buffer(const char *const restrict path);
-  void       guieditor_update_all(void);
+  void       gui_editor_free(guieditor *const editor);
+  void       gui_editor_close(void);
+  void       gui_editor_hide(guieditor *const editor, bool hide);
+  void       gui_editor_switch_to_prev(void);
+  void       gui_editor_switch_to_next(void);
+  void       gui_editor_switch_openfile_to_prev(void);
+  void       gui_editor_switch_openfile_to_next(void);
+  void       gui_editor_set_open(guieditor *const editor);
+  guieditor *gui_editor_from_element(guielement *e);
+  guieditor *gui_editor_from_file(openfilestruct *file);
+  void       gui_editor_calculate_rows(guieditor *const editor);
+  void       gui_editor_resize(guieditor *const editor);
+  void       gui_editor_redecorate(guieditor *const editor);
+  void       gui_editor_open_new_empty_buffer(void);
+  void       gui_editor_close_open_buffer(void);
+  void       gui_editor_open_buffer(const char *const restrict path);
+  void       gui_editor_update_all(void);
 
-  /* gui/guigrid.cpp */
+  
+  /* ---------------------------------------------------------- gui/guigrid.cpp ---------------------------------------------------------- */
+  
+
   guigridsection *make_new_gridsection(void);
   void gridsection_resize(guigridsection *section, Ulong newsize);
   void gridsection_add_editor(guigridsection *section, guieditor *editor);
@@ -1069,42 +1091,56 @@ Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float n
 
 void          calculate_scrollbar(float total_pixel_length, Uint start_entry, Uint total_entries, Uint visable_entries, Uint current_entry, float *height, float *relative_y_position);
 long          index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endidx, Uint visable_idxno, float ypos) __THROW _NODISCARD;
-GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const data, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2, 3);
-void          guiscrollbar_move(GuiScrollbar *const sb, float change) _NONNULL(1);
-void          guiscrollbar_draw(GuiScrollbar *const sb) _NONNULL(1);
-void          guiscrollbar_refresh_needed(GuiScrollbar *const sb) __THROW _NONNULL(1);
-bool          guiscrollbar_element_is_base(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
-bool          guiscrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
-float         guiscrollbar_width(GuiScrollbar *const sb);
+GuiScrollbar *gui_scrollbar_create(guielement *const parent, void *const data, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW _RETURNS_NONNULL _NODISCARD _NONNULL(1, 2, 3);
+void          gui_scrollbar_move(GuiScrollbar *const sb, float change) _NONNULL(1);
+void          gui_scrollbar_draw(GuiScrollbar *const sb) _NONNULL(1);
+void          gui_scrollbar_refresh_needed(GuiScrollbar *const sb) __THROW _NONNULL(1);
+bool          gui_scrollbar_element_is_base(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
+bool          gui_scrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *const e) __THROW _NODISCARD _NONNULL(1, 2);
+float         gui_scrollbar_width(GuiScrollbar *const sb);
 void          gui_scrollbar_show(GuiScrollbar *const sb, bool show);
 
 
 /* ---------------------------------------------------------- gui/menu.cpp ---------------------------------------------------------- */
 
 
-Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine);
-Menu *gui_menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
-void  gui_menu_free(Menu *const menu);
-void  gui_menu_draw(Menu *const menu);
-void  gui_menu_push_back(Menu *const menu, const char *const restrict string);
-void  gui_menu_pos_refresh_needed(Menu *const menu);
-void  gui_menu_text_refresh_needed(Menu *const menu);
-void  gui_menu_scrollbar_refresh_needed(Menu *const menu);
-void  gui_menu_show(Menu *const menu, bool show);
-void  gui_menu_selected_up(Menu *const menu);
-void  gui_menu_selected_down(Menu *const menu);
-void  gui_menu_exit_submenu(Menu *const menu);
-void  gui_menu_accept_action(Menu *const menu);
-void  gui_menu_hover_action(Menu *const menu, float y_pos);
-void  gui_menu_scroll_action(Menu *const menu, bool direction, float y_pos);
-void  gui_menu_click_action(Menu *const menu, float y_pos);
-void  gui_menu_clear_entries(Menu *const menu);
-void  gui_menu_set_static_width(Menu *const menu, float width);
-void  gui_menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
-bool  gui_menu_owns_element(Menu *const menu, guielement *const e);
-bool  gui_menu_element_is_main(Menu *const menu, guielement *const e);
-bool  gui_menu_should_accept_on_tab(Menu *const menu);
-bool  gui_menu_is_ancestor(Menu *const menu, Menu *const ancestor);
+Menu    *gui_menu_create(guielement *const parent, GuiFont *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine);
+Menu    *gui_menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
+void     gui_menu_free(Menu *const menu);
+void     gui_menu_draw(Menu *const menu);
+void     gui_menu_push_back(Menu *const menu, const char *const restrict string);
+void     gui_menu_pos_refresh_needed(Menu *const menu);
+void     gui_menu_text_refresh_needed(Menu *const menu);
+void     gui_menu_scrollbar_refresh_needed(Menu *const menu);
+void     gui_menu_show(Menu *const menu, bool show);
+void     gui_menu_selected_up(Menu *const menu);
+void     gui_menu_selected_down(Menu *const menu);
+void     gui_menu_exit_submenu(Menu *const menu);
+void     gui_menu_enter_submenu(Menu *const menu);
+void     gui_menu_accept_action(Menu *const menu);
+void     gui_menu_hover_action(Menu *const menu, float x_pos, float y_pos);
+void     gui_menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_pos);
+void     gui_menu_click_action(Menu *const menu, float x_pos, float y_pos);
+void     gui_menu_clear_entries(Menu *const menu);
+void     gui_menu_set_static_width(Menu *const menu, float width);
+void     gui_menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab);
+void     gui_menu_set_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation);
+bool     gui_menu_owns_element(Menu *const menu, guielement *const e);
+bool     gui_menu_element_is_main(Menu *const menu, guielement *const e);
+bool     gui_menu_should_accept_on_tab(Menu *const menu);
+bool     gui_menu_allows_arrow_navigation(Menu *const menu);
+bool     gui_menu_is_ancestor(Menu *const menu, Menu *const ancestor);
+bool     gui_menu_is_shown(Menu *const menu);
+GuiFont *gui_menu_get_font(Menu *const menu);
+int      gui_menu_len(Menu *const menu);
+
+/* ----------------------------- Menu qsort callback's ----------------------------- */
+
+int gui_menu_entry_qsort_strlen_cb(const void *a, const void *b);
+
+/* ----------------------------- Menu qsort call ----------------------------- */
+
+void gui_menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
 
 
 /* ---------------------------------------------------------- gui/context_menu.cpp ---------------------------------------------------------- */

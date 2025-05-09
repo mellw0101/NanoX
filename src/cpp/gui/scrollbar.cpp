@@ -141,7 +141,7 @@ long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endi
  * mainly because we would not need any checking of the element as only this element would have this callback.  But be that
  * as it may i find the structure of the whole becomes mush worse to manage and to implement complext things that relay on
  * much more context that would be mush easier to design as a whole not as scattered callbacks.  At least for now. */
-_UNUSED static void guiscrollbar_callback(guielement *e, guielement_callback_type type) {
+_UNUSED static void gui_scrollbar_callback(guielement *e, guielement_callback_type type) {
   ASSERT(e);
   switch (type) {
     case GUIELEMENT_ENTER_CALLBACK: {
@@ -157,7 +157,7 @@ _UNUSED static void guiscrollbar_callback(guielement *e, guielement_callback_typ
       break;
     }
     case GUIELEMENT_LEFT_MOUSE_UNCLICK: {
-      if (e != guielement_from_mousepos()) {
+      if (e != gui_element_from_mousepos()) {
         e->color = GUISB_THUMB_COLOR;
       }
       e->data.sb->refresh_needed = TRUE;
@@ -170,34 +170,40 @@ _UNUSED static void guiscrollbar_callback(guielement *e, guielement_callback_typ
 }
 
 /* Create a scrollbar that will be on the left side of `parent` and use `data` as the parameter when running all callbacks. */
-GuiScrollbar *guiscrollbar_create(guielement *const parent, void *const data, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW {
+GuiScrollbar *gui_scrollbar_create(guielement *const parent, void *const data, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW {
   ASSERT(parent);
   ASSERT(data);
   ASSERT(update_routine);
   ASSERT(moving_routine);
-  GuiScrollbar *sb = (__TYPE(sb))xmalloc(sizeof(*sb));
+  float top_offset, right_offset;
+  GuiScrollbar *sb;
+  MALLOC_STRUCT(sb);
   sb->data  = data;
-  sb->base  = guielement_create(parent);
-  sb->thumb = guielement_create(sb->base);
-  guielement_set_sb_data(sb->base, sb);
-  guielement_set_sb_data(sb->thumb, sb);
-  guielement_set_flag_recurse(sb->base, TRUE, GUIELEMENT_ABOVE);
-  guielement_set_flag_recurse(sb->base, TRUE, GUIELEMENT_RELATIVE_Y_POS);
+  sb->base  = gui_element_create(parent);
+  sb->thumb = gui_element_create(sb->base);
+  gui_element_set_sb_data(sb->base, sb);
+  gui_element_set_sb_data(sb->thumb, sb);
+  gui_element_set_flag_recurse(sb->base, TRUE, GUIELEMENT_ABOVE);
+  gui_element_set_flag_recurse(sb->base, TRUE, GUIELEMENT_RELATIVE_Y_POS);
   sb->base->flag.set<GUIELEMENT_REVERSE_RELATIVE_X_POS>();
   sb->thumb->flag.set<GUIELEMENT_RELATIVE_X_POS>();
-  guielement_move_resize(sb->base, 10, 10);
-  guielement_move_resize(sb->thumb, 10, 10);
+  gui_element_move_resize(sb->base, 10, 10);
+  gui_element_move_resize(sb->thumb, 10, 10);
   sb->base->relative_pos.x = sb->base->size.w;
   sb->base->color          = GUISB_BASE_COLOR;
   sb->thumb->color         = GUISB_THUMB_COLOR;
   sb->update_routine       = update_routine;
   sb->moving_routine       = moving_routine;
   sb->refresh_needed       = TRUE;
+  /* Ensure correct placement directly. */
+  sb->update_routine(sb->data, NULL, NULL, NULL, NULL, NULL, &top_offset, &right_offset);
+  sb->base->relative_pos.x = (sb->base->size.w + right_offset);
+  sb->base->relative_pos.y = top_offset;
   return sb;
 }
 
 /* `Internal`  This function calculates the scrollbar thumbs position and length using the values from the callback's. */
-static void guiscrollbar_calculate(GuiScrollbar *const sb) {
+static void gui_scrollbar_calculate(GuiScrollbar *const sb) {
   ASSERT_SB;
   float total_length, length, ypos, top_offset, right_offset;
   Uint start, total, visible, current;
@@ -207,30 +213,30 @@ static void guiscrollbar_calculate(GuiScrollbar *const sb) {
   calculate_scrollbar(total_length, start, total, visible, current, &length, &ypos);
   /* If the height of the thumb is the entire length of the base or longer, then just hide the entire scrollbar. */
   if (!total_length || length >= total_length) {
-    guielement_set_flag_recurse(sb->base, TRUE, GUIELEMENT_HIDDEN);
+    gui_element_set_flag_recurse(sb->base, TRUE, GUIELEMENT_HIDDEN);
   }
   else {
     sb->base->relative_pos.y = top_offset;
     sb->base->relative_pos.x = (sb->base->size.w + right_offset);
-    guielement_set_flag_recurse(sb->base, FALSE, GUIELEMENT_HIDDEN);
-    guielement_resize(sb->thumb, vec2(sb->thumb->size.w, length));
+    gui_element_set_flag_recurse(sb->base, FALSE, GUIELEMENT_HIDDEN);
+    gui_element_resize(sb->thumb, vec2(sb->thumb->size.w, length));
     sb->thumb->relative_pos.y = ypos;
     /* Set the base of the scrollbar to the total movable length of the thumb. */
-    guielement_resize(sb->base, vec2(sb->base->size.w, total_length));
+    gui_element_resize(sb->base, vec2(sb->base->size.w, total_length));
     /* Move the thumb again so it's above the base. */
-    guielement_move(sb->thumb, sb->thumb->pos);
+    gui_element_move(sb->thumb, sb->thumb->pos);
   }
 }
 
 /* Move the thumb part of `sb` by `change`.  Note that this is fully clamped and cannot exceed the base element.  Note that this is the only way `moving_routine` gets called. */
-void guiscrollbar_move(GuiScrollbar *const sb, float change) {
+void gui_scrollbar_move(GuiScrollbar *const sb, float change) {
   ASSERT_SB;
   float total_length;
   Uint start, total, visible;
   /* Use the update routine to get all needed data. */
   sb->update_routine(sb->data, &total_length, &start, &total, &visible, NULL, NULL, NULL);
   /* Move the element by the given change, this is clamped to never go outside the constraint's of the base element. */
-  guielement_move_y_clamp(
+  gui_element_move_y_clamp(
     sb->thumb,
     (sb->thumb->pos.y + change),
     (sb->base->pos.y),
@@ -241,47 +247,47 @@ void guiscrollbar_move(GuiScrollbar *const sb, float change) {
 }
 
 /* Draw the scrollbar as well as updating it if `sb->refresh_needed` has been set. */
-void guiscrollbar_draw(GuiScrollbar *const sb) {
+void gui_scrollbar_draw(GuiScrollbar *const sb) {
   ASSERT_SB;
   if (sb->refresh_needed) {
-    guiscrollbar_calculate(sb);
+    gui_scrollbar_calculate(sb);
     sb->refresh_needed = FALSE;
     if (sb->base->flag.is_set<GUIELEMENT_HIDDEN>()) {
       return;
     }
   }
-  guielement_draw(sb->base);
-  guielement_draw(sb->thumb);
+  gui_element_draw(sb->base);
+  gui_element_draw(sb->thumb);
 }
 
 /* Tell the scrollbar that it needs to recalculate before the next draw.  The reason this needs to be a flag and not directly
  * recalculating is so that no matter how meny times or from how meny seperate function's this gets called it only recalculates once. */
-void guiscrollbar_refresh_needed(GuiScrollbar *const sb) __THROW {
+void gui_scrollbar_refresh_needed(GuiScrollbar *const sb) __THROW {
   ASSERT_SB;
   sb->refresh_needed = TRUE;
 }
 
 /* Return's `TRUE` when `e` is the `base` element of `sb`. */
-bool guiscrollbar_element_is_base(GuiScrollbar *const sb, guielement *const e) __THROW {
+bool gui_scrollbar_element_is_base(GuiScrollbar *const sb, guielement *const e) __THROW {
   ASSERT_SB;
   ASSERT(e);
   return (e == sb->base);
 }
 
 /* Return's `TRUE` when `e` is the `thumb` element of `sb`. */
-bool guiscrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *const e) __THROW {
+bool gui_scrollbar_element_is_thumb(GuiScrollbar *const sb, guielement *const e) __THROW {
   ASSERT_SB;
   ASSERT(e);
   return (e == sb->thumb);
 }
 
 /* Return's the current width of the scrollbar.  TODO: Add the ability to influens the width later. */
-float guiscrollbar_width(GuiScrollbar *const sb) {
+float gui_scrollbar_width(GuiScrollbar *const sb) {
   ASSERT_SB;
   return sb->base->size.w;
 }
 
 void gui_scrollbar_show(GuiScrollbar *const sb, bool show) {
   ASSERT_SB;
-  guielement_set_flag_recurse(sb->base, !show, GUIELEMENT_HIDDEN);
+  gui_element_set_flag_recurse(sb->base, !show, GUIELEMENT_HIDDEN);
 }

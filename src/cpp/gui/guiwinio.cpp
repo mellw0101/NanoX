@@ -350,20 +350,20 @@ void draw_editor(guieditor *editor) {
   int row = 0;
   linestruct *line = editor->openfile->edittop;
   /* Draw the text editor element. */
-  guielement_draw(editor->text);
+  gui_element_draw(editor->text);
   /* Draw the gutter element of the editor. */
-  guielement_draw(editor->gutter);
+  gui_element_draw(editor->gutter);
   /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
-  guielement_draw(editor->topbar);
+  gui_element_draw(editor->topbar);
   /* Render the topbar of the editor. */
   if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
-    guieditor_refresh_topbar(editor);
+    gui_editor_refresh_topbar(editor);
     vertex_buffer_clear(editor->topbuf);
     for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
       /* Assign the child to a new ptr for readbility. */
       guielement *child = editor->topbar->children[i];
       /* Draw the child rect. */
-      guielement_draw(child);
+      gui_element_draw(child);
       /* Update the data in the topbuf. */
       if (child->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
         vertex_buffer_add_element_lable_offset(child, gui_font_get_font(gui->uifont), editor->topbuf, vec2(pixbreadth(gui_font_get_font(gui->uifont), " "), 0));
@@ -375,14 +375,14 @@ void draw_editor(guieditor *editor) {
   else {
     /* When the active file has changed, adjust the colors of the topbar. */
     if (editor->flag.is_set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>()) {
-      guieditor_update_active_topbar(editor);
+      gui_editor_update_active_topbar(editor);
       editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
     }
     for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
       /* Assign the child to a new ptr for readbility. */
       guielement *child = editor->topbar->children[i];
       /* Draw the child rect. */
-      guielement_draw(child);
+      gui_element_draw(child);
     }
   }
   upload_texture_atlas(gui_font_get_atlas(gui->uifont));
@@ -411,16 +411,16 @@ void draw_editor(guieditor *editor) {
   }
   upload_texture_atlas(gui_font_get_atlas(gui->font));
   render_vertex_buffer(gui->font_shader, editor->buffer);
-  guiscrollbar_draw(editor->sb);
+  gui_scrollbar_draw(editor->sb);
 }
 
 /* Draw the top bar of the gui. */
 void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
     gui_promptmenu_resize();
-    guielement_draw(gui->promptmenu->element);
+    gui_element_draw(gui->promptmenu->element);
     gui_promptmenu_draw_selected();
-    guiscrollbar_draw(gui->promptmenu->sb);
+    gui_scrollbar_draw(gui->promptmenu->sb);
     gui_promptmenu_draw_text();
   }
 }
@@ -429,24 +429,25 @@ void draw_topbar(void) {
 void draw_suggestmenu(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
-  ASSERT(gui->suggestmenu->completions);
+  // ASSERT(gui->suggestmenu->completions);
   /* Only draw the suggestmenu if there are any available suggestions. */
-  if (cvec_len(gui->suggestmenu->completions)) {
-    gui_suggestmenu_resize();
-    /* Draw the main element of the suggestmenu. */
-    guielement_draw(gui->suggestmenu->element);
-    /* Highlight the selected entry in the suggestmenu when its on the screen. */
-    gui_suggestmenu_draw_selected();
-    /* Draw the scrollbar of the suggestmenu. */
-    guiscrollbar_draw(gui->suggestmenu->sb);
-    /* Draw the text of the suggestmenu entries. */
-    gui_suggestmenu_draw_text();
-  }
+  // if (cvec_len(gui->suggestmenu->completions)) {
+  //   gui_suggestmenu_resize();
+  //   /* Draw the main element of the suggestmenu. */
+  //   guielement_draw(gui->suggestmenu->element);
+  //   /* Highlight the selected entry in the suggestmenu when its on the screen. */
+  //   gui_suggestmenu_draw_selected();
+  //   /* Draw the scrollbar of the suggestmenu. */
+  //   guiscrollbar_draw(gui->suggestmenu->sb);
+  //   /* Draw the text of the suggestmenu entries. */
+  //   gui_suggestmenu_draw_text();
+  // }
+  gui_menu_draw(gui->suggestmenu->menu);
 }
 
 /* Draw the bottom bar of the gui. */
 void draw_botbar(void) {
-  guielement_draw(gui->botbar);
+  gui_element_draw(gui->botbar);
 }
 
 /* Draw the status bar for the gui. */
@@ -464,7 +465,7 @@ void draw_statusbar(void) {
       gui->statusbar->flag.unset<GUIELEMENT_HIDDEN>();
       float msgwidth = (pixbreadth(gui_font_get_font(gui->uifont), statusmsg) + pixbreadth(gui_font_get_font(gui->uifont), "  "));
       vertex_buffer_clear(gui->statusbuf);
-      guielement_move_resize(
+      gui_element_move_resize(
         gui->statusbar,
         vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - gui->botbar->size.h - gui->statusbar->size.h)),
         vec2(msgwidth, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */)
@@ -472,7 +473,7 @@ void draw_statusbar(void) {
       vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (/* row_baseline_pixel(0, gui->uifont) */ gui_font_row_baseline(gui->uifont, 0) + gui->statusbar->pos.y));
       vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui_font_get_font(gui->uifont), 1, &penpos);
     }
-    guielement_draw(gui->statusbar);
+    gui_element_draw(gui->statusbar);
     upload_texture_atlas(gui_font_get_atlas(gui->uifont));
     render_vertex_buffer(gui->font_shader, gui->statusbuf);
   }

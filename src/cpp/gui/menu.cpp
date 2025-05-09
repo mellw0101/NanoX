@@ -36,11 +36,12 @@ typedef struct {
 
 struct Menu {
   /* Boolian flags. */
-  bool text_refresh_needed  : 1;
-  bool pos_refresh_needed   : 1;
-  bool accept_on_tab        : 1;  /* If tab should act like enter when this menu is active. */
-  bool width_refresh_needed : 1;  /* When something has changed and the width of the menu must be recalculated. */
-  bool width_is_static      : 1;  /* The width of the menu is static, this can only be set by `gui_menu_set_static_width()`. */
+  bool text_refresh_needed    : 1;
+  bool pos_refresh_needed     : 1;
+  bool accept_on_tab          : 1;  /* If tab should act like enter when this menu is active. */
+  bool width_refresh_needed   : 1;  /* When something has changed and the width of the menu must be recalculated. */
+  bool width_is_static        : 1;  /* The width of the menu is static, this can only be set by `gui_menu_set_static_width()`. */
+  bool arrow_depth_navigation : 1;  /* Wether right and left arrows allows for closing and opening submenu's. */
 
   /* Configuration variables. */
   Uchar border_size;
@@ -72,7 +73,8 @@ struct Menu {
 /* ---------------------------------------------------------- MenuEntry function's ---------------------------------------------------------- */
 
 
-_UNUSED static MenuEntry *gui_menu_entry_create(const char *const restrict lable) {
+/* Create a allocated `MenuEntry` structure with a `lable` and no menu ptr. */
+static MenuEntry *gui_menu_entry_create(const char *const restrict lable) {
   MenuEntry *me;
   MALLOC_STRUCT(me);
   me->lable = copy_of(lable);
@@ -80,16 +82,16 @@ _UNUSED static MenuEntry *gui_menu_entry_create(const char *const restrict lable
   return me;
 }
 
-_UNUSED static void gui_menu_entry_free(void *arg) {
+/* Free callback for a `MenuEntry`. */
+static void gui_menu_entry_free(void *arg) {
   ASSERT(arg);
-  MenuEntry *me;
-  CAST(me, arg);
+  MenuEntry *me = (__TYPE(me))arg;
   free(me->lable);
   gui_menu_free(me->menu);
   free(me);
 }
 
-_UNUSED static MenuEntry *gui_menu_entry_create_with_menu(const char *const restrict lable, Menu *const menu) {
+static MenuEntry *gui_menu_entry_create_with_menu(const char *const restrict lable, Menu *const menu) {
   ASSERT(lable);
   ASSERT(menu);
   MenuEntry *me = gui_menu_entry_create(lable);
@@ -98,11 +100,10 @@ _UNUSED static MenuEntry *gui_menu_entry_create_with_menu(const char *const rest
 }
 
 
-/* ---------------------------------------------------------- Function's ---------------------------------------------------------- */
+/* ---------------------------------------------------------- Menu static function's ---------------------------------------------------------- */
 
 
-/* ----------------------------- Static ----------------------------- */
-
+/* The scrollbar update routine for the `Menu` structure. */
 static void gui_menu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
   Menu *menu = (__TYPE(menu))arg;
@@ -115,17 +116,18 @@ static void gui_menu_scrollbar_update_routine(void *arg, float *total_length, Ui
   ASSIGN_IF_VALID(right_offset, menu->border_size);
 }
 
+/* The scrollbar moving routine for the `Menu` structure. */
 static void gui_menu_scrollbar_moving_routine(void *arg, long index) {
   ASSERT(arg);
   Menu *menu = (__TYPE(menu))arg;
-  menu->viewtop = index;
+  menu->viewtop = lclamp(index, 0, (cvec_len(menu->entries) - menu->rows));
 }
 
 /* TODO: Make the menu tall enough so that the scrollbar gets corrently initilazed before first use. */
 static void gui_menu_scrollbar_create(Menu *const menu) {
   ASSERT(menu);
   ASSERT(menu->element);
-  menu->sb = guiscrollbar_create(menu->element, menu, gui_menu_scrollbar_update_routine, gui_menu_scrollbar_moving_routine);
+  menu->sb = gui_scrollbar_create(menu->element, menu, gui_menu_scrollbar_update_routine, gui_menu_scrollbar_moving_routine);
 }
 
 /* Return's the `lable` of the entry at `index`. */
@@ -140,26 +142,54 @@ static Menu *gui_menu_get_entry_menu(Menu *const menu, int index) {
   return ((MenuEntry *)cvec_get(menu->entries, index))->menu;
 }
 
+/* Assigns the global absolute y top and bottom position as well as the most right allowed x position. */
+static void gui_menu_event_bounds(Menu *const menu, float *const top, float *const bot, float *const right) {
+  ASSERT_GUI_MENU;
+  int len = cvec_len(menu->entries);
+  if (len) {
+    /* Top of the menu. */
+    ASSIGN_IF_VALID(top, (menu->element->pos.y + menu->border_size));
+    /* Bottom of the menu. */
+    ASSIGN_IF_VALID(bot, ((menu->element->pos.y + menu->border_size) + (menu->element->size.h - menu->border_size)));
+    /* The right most allowed position to register a event. */
+    ASSIGN_IF_VALID(right, ((menu->element->pos.x + menu->border_size) + (menu->element->size.w - menu->border_size) - ((len > menu->maxrows) ? gui_scrollbar_width(menu->sb) : 0)));
+  }
+}
+
+/* Reset's the state of menu and all its children recursivly. */
+static void gui_menu_reset(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  if (menu->active_submenu) {
+    gui_menu_reset(menu->active_submenu);
+  }
+  /* Ensure this menu gets fully updated. */
+  menu->text_refresh_needed = TRUE;
+  menu->pos_refresh_needed  = TRUE;
+  /* Also, reset the menu to the starting state. */
+  menu->viewtop  = 0;
+  menu->selected = 0;
+  /* And tell the scrollbar it needs to be updated. */
+  gui_scrollbar_refresh_needed(menu->sb);
+}
+
 static void gui_menu_show_internal(Menu *const menu, bool show) {
   ASSERT_GUI_MENU;
   if (show) {
     menu->element->flag.unset<GUIELEMENT_HIDDEN>();
-    /* Ensure this menu gets fully updated. */
-    menu->text_refresh_needed = TRUE;
-    menu->pos_refresh_needed  = TRUE;
-    /* Also, reset the menu. */
-    menu->viewtop  = 0;
-    menu->selected = 0;
-    /* And tell the scrollbar it needs to be recalculated. */
-    guiscrollbar_refresh_needed(menu->sb);
+    gui_menu_reset(menu);
   }
   else {
     menu->element->flag.set<GUIELEMENT_HIDDEN>();
+    if (menu->active_submenu) {
+      gui_menu_show_internal(menu->active_submenu, FALSE);
+      menu->active_submenu = NULL;
+    }
   }
   gui_scrollbar_show(menu->sb, show);
 }
 
 static bool gui_menu_selected_is_visible(Menu *const menu) {
+  ASSERT_GUI_MENU;
   int row = (menu->selected - menu->viewtop);
   return (row >= 0 && row < menu->maxrows);
 }
@@ -222,7 +252,7 @@ static void gui_menu_resize(Menu *const menu) {
     size.h = ((menu->rows * gui_font_height(menu->font)) + (menu->border_size * 2) + 2);
     /* Add the size of the scrollbar if there is one. */
     if (len > menu->maxrows) {
-      size.w += guiscrollbar_width(menu->sb);
+      size.w += gui_scrollbar_width(menu->sb);
     }
     /* Get the wanted position based on the calculated size. */
     if (!menu->parent) {
@@ -232,7 +262,7 @@ static void gui_menu_resize(Menu *const menu) {
       menu->position_routine(menu, size, &pos);
     }
     /* Move and resize the element. */
-    guielement_move_resize(menu->element, pos, size);
+    gui_element_move_resize(menu->element, pos, size);
     menu->pos_refresh_needed = FALSE;
   }
 }
@@ -316,7 +346,7 @@ static void gui_menu_selected_up_internal(Menu *const menu) {
       if (len > menu->maxrows) {
         menu->viewtop = (len - menu->maxrows);
         /* Only update the scrollbar when the viewtop has changed. */
-        guiscrollbar_refresh_needed(menu->sb);
+        gui_scrollbar_refresh_needed(menu->sb);
       }
     }
     /* Otherwise, we are anywhere below that. */
@@ -325,7 +355,7 @@ static void gui_menu_selected_up_internal(Menu *const menu) {
       if (menu->viewtop == menu->selected) {
         --menu->viewtop;
         /* Only update the scrollbar when the viewtop has changed. */
-        guiscrollbar_refresh_needed(menu->sb);
+        gui_scrollbar_refresh_needed(menu->sb);
       }
       --menu->selected;
     }
@@ -342,13 +372,13 @@ static void gui_menu_selected_down_internal(Menu *const menu) {
       menu->selected = 0;
       menu->viewtop  = 0;
       /* Only update the scrollbar when the viewtop has changed. */
-      guiscrollbar_refresh_needed(menu->sb);
+      gui_scrollbar_refresh_needed(menu->sb);
     }
     else {
       if (menu->selected == (menu->viewtop + menu->maxrows - 1)) {
         ++menu->viewtop;
         /* Only update the scrollbar when the viewtop has changed. */
-        guiscrollbar_refresh_needed(menu->sb);
+        gui_scrollbar_refresh_needed(menu->sb);
       }
       ++menu->selected;
     }
@@ -356,7 +386,8 @@ static void gui_menu_selected_down_internal(Menu *const menu) {
   }
 }
 
-_UNUSED static void gui_menu_exit_submenu_internal(Menu *const menu) {
+/* Used to exit a submenu when pressing left, this is used by `gui_menu_exit_submenu()`. */
+static void gui_menu_exit_submenu_internal(Menu *const menu) {
   ASSERT_GUI_MENU;
   if (menu->parent) {
     gui_menu_show_internal(menu, FALSE);
@@ -364,7 +395,9 @@ _UNUSED static void gui_menu_exit_submenu_internal(Menu *const menu) {
   }
 }
 
-/* ----------------------------- Global ----------------------------- */
+
+/* ---------------------------------------------------------- Menu global function's ---------------------------------------------------------- */
+
 
 /* Create a allocated `Menu`. */
 Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine) {
@@ -376,10 +409,11 @@ Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data,
   Menu *menu;
   MALLOC_STRUCT(menu);
   /* Boolian flags. */
-  menu->text_refresh_needed  = TRUE;
-  menu->pos_refresh_needed   = TRUE;
-  menu->accept_on_tab        = FALSE;  /* The default for menu's if to have this disabled. */
-  menu->width_refresh_needed = TRUE;
+  menu->text_refresh_needed    = TRUE;
+  menu->pos_refresh_needed     = TRUE;
+  menu->accept_on_tab          = FALSE;  /* The default for menu's if to have this disabled. */
+  menu->width_refresh_needed   = TRUE;
+  menu->arrow_depth_navigation = TRUE;   /* Default `arrow_depth_navigation` is `TRUE`/enabled. */
   /* Configuration variables. */
   menu->border_size = GUI_MENU_DEFAULT_BORDER_SIZE;
   menu->width       = 0.0f;
@@ -388,13 +422,13 @@ Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data,
   /* Entries vector. */
   menu->entries = cvec_create_setfree(gui_menu_entry_free);
   /* Create the element of the menu. */
-  menu->element = guielement_create(parent);
+  menu->element = gui_element_create(parent);
   menu->element->color = GUI_BLACK_COLOR;  /* The default background color for menu's is black. */
   menu->element->flag.set<GUIELEMENT_ABOVE>();
   menu->element->flag.set<GUIELEMENT_HIDDEN>();
   /* As default all menus should have borders, to create a uniform look.  Note that this can be configured.  TODO: Implement the config of borders. */
-  guielement_set_borders(menu->element, menu->border_size, GUI_MENU_DEFAULT_BORDER_COLOR);
-  guielement_set_menu_data(menu->element, menu);
+  gui_element_set_borders(menu->element, menu->border_size, GUI_MENU_DEFAULT_BORDER_COLOR);
+  gui_element_set_menu_data(menu->element, menu);
   /* Row init. */
   menu->viewtop  = 0;
   menu->selected = 0;
@@ -440,11 +474,11 @@ void gui_menu_draw(Menu *const menu) {
   if (!menu->element->flag.is_set<GUIELEMENT_HIDDEN>() && cvec_len(menu->entries)) {
     gui_menu_resize(menu);
     /* Draw the main element of the suggestmenu. */
-    guielement_draw(menu->element);
+    gui_element_draw(menu->element);
     /* Highlight the selected entry in the suggestmenu when its on the screen. */
     gui_menu_draw_selected(menu);
     /* Draw the scrollbar of the suggestmenu. */
-    guiscrollbar_draw(menu->sb);
+    gui_scrollbar_draw(menu->sb);
     /* Draw the text of the suggestmenu entries. */
     gui_menu_draw_text(menu);
     /*  */
@@ -475,14 +509,15 @@ void gui_menu_text_refresh_needed(Menu *const menu) {
 
 void gui_menu_scrollbar_refresh_needed(Menu *const menu) {
   ASSERT_GUI_MENU;
-  guiscrollbar_refresh_needed(menu->sb);
+  gui_scrollbar_refresh_needed(menu->sb);
 }
 
 void gui_menu_show(Menu *const menu, bool show) {
   ASSERT_GUI_MENU;
   /* Showing this menu. */
   if (show) {
-    if (gui->active_menu && gui->active_menu != menu) {
+    /* Always close the currently active menu, even when its the same as `menu`.  This ensures correctness related to submenus. */
+    if (gui->active_menu) {
       gui_menu_show_internal(gui->active_menu, FALSE);
     }
     gui_menu_show_internal(menu, TRUE);
@@ -532,62 +567,95 @@ void gui_menu_exit_submenu(Menu *const menu) {
   }
 }
 
+void gui_menu_enter_submenu(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  if (menu->active_submenu) {
+    gui_menu_enter_submenu(menu->active_submenu);
+  }
+  else {
+    gui_menu_check_submenu(menu);
+  }
+}
+
+/* This is used to perform the accept action of the depest opened menu's currently selected entry,
+ * or if that selected entry has a submenu and its not open, then it will open it.  This is used
+ * for both clicking and kb related execution of the accept routine for that menu. */
 void gui_menu_accept_action(Menu *const menu) {
   ASSERT_GUI_MENU;
   /* As a sanity check only perform any action when the menu is not empty. */
   if (cvec_len(menu->entries)) {
-    /* Run the user's accept routine. */
-    menu->accept_routine(menu->data, gui_menu_get_entry_lable(menu, menu->selected), menu->selected);
-    /* Then stop showing the menu. */
-    gui_menu_show(menu, FALSE);
+    /* If the currently selected entry of `menu` does not have a submenu, call the accept routine for `menu`. */
+    if (!gui_menu_get_entry_menu(menu, menu->selected)) {
+      /* Run the user's accept routine. */
+      menu->accept_routine(menu->data, gui_menu_get_entry_lable(menu, menu->selected), menu->selected);
+      /* Then stop showing the menu. */
+      gui_menu_show(menu, FALSE);
+    }
+    /* Otherwise, if the entry has a submenu but its not currently open, open it. */
+    else if (!menu->active_submenu) {
+      gui_menu_check_submenu(menu);
+    }
+    /* And if that menu is currently active, recursivly call this function on that menu. */
+    else {
+      gui_menu_accept_action(menu->active_submenu);
+    }
   }
 }
 
-void gui_menu_hover_action(Menu *const menu, float y_pos) {
+void gui_menu_hover_action(Menu *const menu, float x_pos, float y_pos) {
   ASSERT_GUI_MENU;
   long row;
   float top;
   float bot;
+  float right;
+  /* Only perform any action when there are entries in the menu. */
   if (cvec_len(menu->entries)) {
-    /* Top of the completions menu. */
-    top = menu->element->pos.y;
-    /* Bottom of the completions menu. */
-    bot = (menu->element->pos.y + menu->element->size.h);
+    /* Get the absolute values where events are allowed. */
+    gui_menu_event_bounds(menu, &top, &bot, &right);
     /* If `y_pos` relates to a valid row in the suggestmenu completion menu, then adjust the selected to that row. */
-    if (gui_font_row_from_pos(menu->font, top, bot, y_pos, &row)) {
+    if (gui_font_row_from_pos(menu->font, top, bot, y_pos, &row) && x_pos < right) {
       menu->selected = lclamp((menu->viewtop + row), menu->viewtop, (menu->viewtop + menu->rows));
       gui_menu_check_submenu(menu);
     }
   }
 }
 
-void gui_menu_scroll_action(Menu *const menu, bool direction, float y_pos) {
+void gui_menu_scroll_action(Menu *const menu, bool direction, float x_pos, float y_pos) {
   ASSERT_GUI_MENU;
+  float top;
+  float bot;
+  float right;
   int len = cvec_len(menu->entries);
-  /* Only do anything if there are more entries then rows in the suggestmenu. */
+  /* Only do anything if there are more entries then rows in the menu then maximum number of rows allowed. */
   if (len > menu->maxrows) {
-    /* Only scroll when not already at the top or bottom. */
-    if ((direction == BACKWARD && menu->viewtop > 0) || (direction == FORWARD && menu->viewtop < (len - menu->maxrows))) {
+    /* Get the absolute values where events are allowed. */
+    gui_menu_event_bounds(menu, &top, &bot, &right);
+    /* Only scroll when not already at the top or bottom.  And the call was made from a valid position. */
+    if (y_pos >= top && y_pos <= bot && x_pos < right && ((direction == BACKWARD && menu->viewtop > 0) || (direction == FORWARD && menu->viewtop < (len - menu->maxrows)))) {
       menu->viewtop += (!direction ? -1 : 1);
       menu->text_refresh_needed = TRUE;
       /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
-      gui_menu_hover_action(menu, y_pos);
-      guiscrollbar_refresh_needed(menu->sb);
+      gui_menu_hover_action(menu, x_pos, y_pos);
+      gui_scrollbar_refresh_needed(menu->sb);
     }
   }
 }
 
-void gui_menu_click_action(Menu *const menu, float y_pos) {
+void gui_menu_click_action(Menu *const menu, float x_pos, float y_pos) {
   ASSERT_GUI_MENU;
   float top;
   float bot;
-  /* Only perform any action when there are completions available. */
+  float right;
+  /* Only perform any action when there are entries in the menu. */
   if (cvec_len(menu->entries)) {
-    top = menu->element->pos.y;
-    bot = (menu->element->pos.y + menu->element->size.h);
-    if (y_pos >= top && y_pos <= bot) {
-      gui_menu_hover_action(menu, y_pos);
-      gui_menu_accept_action(menu);
+    /* Get the absolute values where events are allowed. */
+    gui_menu_event_bounds(menu, &top, &bot, &right);
+    if (y_pos >= top && y_pos <= bot && x_pos < right) {
+      gui_menu_hover_action(menu, x_pos, y_pos);
+      /* Only allow clickes on non submenu entries. */
+      if (!gui_menu_get_entry_menu(menu, menu->selected)) {
+        gui_menu_accept_action(menu);
+      }
     }
   }
 }
@@ -616,6 +684,14 @@ void gui_menu_set_tab_accept_behavior(Menu *const menu, bool accept_on_tab) {
   menu->accept_on_tab = accept_on_tab;
 }
 
+/* Configure's if `menu` should use right arrow to open the submenu at the currently selected entry if it exists and left arrow to close the currently open submenu. */
+void gui_menu_set_arrow_depth_navigation(Menu *const menu, bool enable_arrow_depth_navigation) {
+  ASSERT_GUI_MENU;
+  menu->arrow_depth_navigation = enable_arrow_depth_navigation;
+}
+
+/* ----------------------------- Boolian function's ----------------------------- */
+
 /* Return's `TRUE` if `e` is part of `menu`. */
 bool gui_menu_owns_element(Menu *const menu, guielement *const e) {
   ASSERT_GUI_MENU;
@@ -635,6 +711,12 @@ bool gui_menu_should_accept_on_tab(Menu *const menu) {
   return menu->accept_on_tab;
 }
 
+/* Return's `TRUE` if `menu` has `arrow_depth_navigation` flag set.  This means that `left` and `right arrow` close's and open's `submenu's`. */
+bool gui_menu_allows_arrow_navigation(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  return menu->arrow_depth_navigation;
+}
+
 /* Return's `TRUE` when `ancestor` is an ancestor to `menu`. */
 bool gui_menu_is_ancestor(Menu *const menu, Menu *const ancestor) {
   ASSERT(menu);
@@ -647,4 +729,42 @@ bool gui_menu_is_ancestor(Menu *const menu, Menu *const ancestor) {
     m = m->parent;
   }
   return FALSE;
+}
+
+bool gui_menu_is_shown(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  return (!menu->element->flag.is_set<GUIELEMENT_HIDDEN>() && cvec_len(menu->entries));
+}
+
+/* ----------------------------- Getter function's ----------------------------- */
+
+GuiFont *gui_menu_get_font(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  return menu->font;
+}
+
+int gui_menu_len(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  return cvec_len(menu->entries);
+}
+
+/* ----------------------------- Menu qsort callback's ----------------------------- */
+
+/* Function callback used for sorting menu entries by length of lable.  Note that this should be passed to `gui_menu_qsort()` */
+int gui_menu_entry_qsort_strlen_cb(const void *a, const void *b) {
+  const MenuEntry *lhs = *(const MenuEntry **)a;
+  const MenuEntry *rhs = *(const MenuEntry **)b;
+  long lhs_len = strlen(lhs->lable);
+  long rhs_len = strlen(rhs->lable);
+  if (lhs_len == rhs_len) {
+    return strcmp(lhs->lable, rhs->lable);
+  }
+  return (lhs_len - rhs_len); 
+}
+
+/* ----------------------------- Menu qsort call ----------------------------- */
+
+void gui_menu_qsort(Menu *const menu, CmpFuncPtr cmp_func) {
+  ASSERT_GUI_MENU;
+  cvec_qsort(menu->entries, cmp_func);
 }

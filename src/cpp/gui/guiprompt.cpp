@@ -260,7 +260,7 @@ static void gui_promptmenu_open_file_search(void) {
     }
     directory_data_free(&dir);
   }
-  guiscrollbar_refresh_needed(gui->promptmenu->sb);
+  gui_scrollbar_refresh_needed(gui->promptmenu->sb);
   gui->promptmenu->size_refresh_needed = TRUE;
 }
 
@@ -292,10 +292,10 @@ static void gui_promptmenu_open_file_enter_action(void) {
       pwd = getpwd();
       pwdlen = strlen(pwd);
       if (strncmp(answer, pwd, pwdlen) == 0 && file_exists(answer + pwdlen + 1)) {
-        guieditor_open_buffer(answer + pwdlen + 1);
+        gui_editor_open_buffer(answer + pwdlen + 1);
       }
       else {
-        guieditor_open_buffer(answer);
+        gui_editor_open_buffer(answer);
       }
       free(pwd);
     }
@@ -361,7 +361,7 @@ static void gui_promptmenu_scrollbar_moving_routine(void *arg, long index) {
 static void gui_promptmenu_scrollbar_create(void) {
   ASSERT(gui);
   ASSERT(gui->promptmenu);
-  gui->promptmenu->sb = guiscrollbar_create(gui->promptmenu->element, gui->promptmenu, gui_promptmenu_scrollbar_update_routine, gui_promptmenu_scrollbar_moving_routine);
+  gui->promptmenu->sb = gui_scrollbar_create(gui->promptmenu->element, gui->promptmenu, gui_promptmenu_scrollbar_update_routine, gui_promptmenu_scrollbar_moving_routine);
 }
 
 
@@ -375,8 +375,8 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->text_refresh_needed = FALSE;
   gui->promptmenu->size_refresh_needed = FALSE;
   gui->promptmenu->buffer  = make_new_font_buffer();
-  gui->promptmenu->element = guielement_create(gui->root);
-  guielement_move_resize(
+  gui->promptmenu->element = gui_element_create(gui->root);
+  gui_element_move_resize(
     gui->promptmenu->element,
     0.0f,
     vec2(gui->width, gui_font_height(gui->uifont))
@@ -393,8 +393,8 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->viewtop  = 0;
   gui_promptmenu_scrollbar_create();
   /* For now this is needed to init the scrollbar offset position correctly on the first use otherwise it will be incorrect on first use. */
-  guielement_resize(gui->promptmenu->element, vec2(gui->promptmenu->element->size.w, (gui_font_height(gui->uifont) * 9)));
-  guiscrollbar_draw(gui->promptmenu->sb);
+  gui_element_resize(gui->promptmenu->element, vec2(gui->promptmenu->element->size.w, (gui_font_height(gui->uifont) * 9)));
+  gui_scrollbar_draw(gui->promptmenu->sb);
 }
 
 /* Delete the gui `prompt-menu` struct. */
@@ -425,7 +425,7 @@ void gui_promptmenu_resize(void) {
     }
     size.w = gui->promptmenu->element->size.w;
     size.h = ((gui->promptmenu->rows + 1) * gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */);
-    guielement_resize(gui->promptmenu->element, size);
+    gui_element_resize(gui->promptmenu->element, size);
     gui->promptmenu->size_refresh_needed = FALSE;
   }
 }
@@ -495,7 +495,7 @@ void gui_promptmenu_selected_up(void) {
       }
       --gui->promptmenu->selected;
     }
-    guiscrollbar_refresh_needed(gui->promptmenu->sb);
+    gui_scrollbar_refresh_needed(gui->promptmenu->sb);
   }
 }
 
@@ -516,7 +516,7 @@ void gui_promptmenu_selected_down(void) {
       }
       ++gui->promptmenu->selected;
     }
-    guiscrollbar_refresh_needed(gui->promptmenu->sb);
+    gui_scrollbar_refresh_needed(gui->promptmenu->sb);
   }
 }
 
@@ -547,7 +547,7 @@ void gui_promptmenu_enter_action(void) {
           show_statusmsg(INFO, 5, "Saving file: %s", answer);
           /* Free the openfile filename, and assign answer to it. */
           openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
-          guieditor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+          gui_editor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
           /* Then save the file. */
           if (write_it_out(FALSE, FALSE) == 2) {
             logE("Failed to save file, this needs fixing and the reason needs to be found out.");
@@ -590,7 +590,7 @@ void gui_promptmenu_completions_search(void) {
       break;
     }
   } 
-  guiscrollbar_refresh_needed(gui->promptmenu->sb);
+  gui_scrollbar_refresh_needed(gui->promptmenu->sb);
   gui->promptmenu->size_refresh_needed = TRUE;
 }
 
@@ -628,7 +628,7 @@ void gui_promptmenu_scroll_action(bool direction, float y_pos) {
       gui->promptmenu->text_refresh_needed = TRUE;
       /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
       gui_promptmenu_hover_action(y_pos);
-      guiscrollbar_refresh_needed(gui->promptmenu->sb);
+      gui_scrollbar_refresh_needed(gui->promptmenu->sb);
     }
   }
 }

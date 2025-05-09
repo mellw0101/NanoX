@@ -1222,25 +1222,25 @@ typedef struct completionstruct {
   } GuiStatusbar; */
 
   typedef struct {
+    Menu *menu;
 
+    // bool text_refresh_needed : 1;
+    // bool pos_refresh_needed : 1;
 
-    bool text_refresh_needed : 1;
-    bool pos_refresh_needed : 1;
-
-    CVec *completions;
-    int viewtop;
-    int selected;
-    int maxrows;
-    int rows;
+    // CVec *completions;
+    // int viewtop;
+    // int selected;
+    // int maxrows;
+    // int rows;
 
     /* The current string used to search, and its length. */
     char  buf[128];
     int   len;
 
-    guielement *element;
-    GuiScrollbar *sb;
+    // guielement *element;
+    // GuiScrollbar *sb;
 
-    vertex_buffer_t *vertbuf;
+    // vertex_buffer_t *vertbuf;
   } GuiSuggestMenu;
 
   typedef struct {

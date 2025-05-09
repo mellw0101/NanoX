@@ -141,8 +141,8 @@ static void setup_rect_shader(void) {
 /* Setup the bottom bar for the gui. */
 static void setup_botbar(void) {
   gui->botbuf = make_new_font_buffer();
-  gui->botbar = guielement_create(gui->root, FALSE);
-  guielement_move_resize(
+  gui->botbar = gui_element_create(gui->root, FALSE);
+  gui_element_move_resize(
     gui->botbar,
     vec2(0, (gui->height - FONT_HEIGHT(gui_font_get_font(gui->font)))),
     vec2(gui->width, FONT_HEIGHT(gui_font_get_font(gui->font)))
@@ -157,7 +157,7 @@ static void setup_botbar(void) {
 /* Set up the bottom bar. */
 static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
-  gui->statusbar = guielement_create(
+  gui->statusbar = gui_element_create(
     vec2(0, gui->height),
     vec2(gui->width, gui_font_height(gui->uifont)),
     0.0f,
@@ -225,9 +225,7 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   nevhandler_start(gui->handler, TRUE);
   gui->font   = gui_font_create();
   gui->uifont = gui_font_create();
-  gui->root = guielement_create(0, vec2(gui->height, gui->width), 0, 0, FALSE);
-  /* Init the gui suggestmenu substructure. */
-  gui_suggestmenu_create();
+  gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, 0, FALSE);
 }
 
 /* Delete the gui struct. */
@@ -244,8 +242,8 @@ static void delete_guistruct(void) {
     glDeleteProgram(gui->rect_shader);
   }
   /* Delete all elements used by 'gui'. */
-  guielement_free(gui->root);
-  guielement_free(gui->statusbar);
+  gui_element_free(gui->root);
+  gui_element_free(gui->statusbar);
   /* Free the main font and the uifont. */
   gui_font_free(gui->font);
   gui_font_free(gui->uifont);
@@ -270,7 +268,7 @@ static void delete_guistruct(void) {
 
 /* Cleanup before exit. */
 static void cleanup(void) { 
-  guieditor_free(openeditor);
+  gui_editor_free(openeditor);
   delete_guistruct();
 }
 
@@ -303,6 +301,8 @@ void init_gui(void) {
   gui->context_menu = context_menu_create();
   /* Init the rect shader. */
   setup_rect_shader();
+  /* Init the gui suggestmenu substructure. */
+  gui_suggestmenu_create();
   /* Init the top bar. */
   gui_promptmenu_create();
   /* Init the bottom bar. */
@@ -374,9 +374,9 @@ bool gui_quit(void) {
   }
   /* When there is more then a single file open in the currently open editor. */
   if (!CLIST_SINGLE(openeditor->openfile)) {
-    guieditor_close_open_buffer();
-    guieditor_redecorate(openeditor);
-    guieditor_resize(openeditor);
+    gui_editor_close_open_buffer();
+    gui_editor_redecorate(openeditor);
+    gui_editor_resize(openeditor);
     return FALSE;
   }
   else {
@@ -386,10 +386,10 @@ bool gui_quit(void) {
       return TRUE;
     }
     else {
-      guieditor_close();
-      guieditor_hide(openeditor, FALSE);
-      guieditor_redecorate(openeditor);
-      guieditor_resize(openeditor);
+      gui_editor_close();
+      gui_editor_hide(openeditor, FALSE);
+      gui_editor_redecorate(openeditor);
+      gui_editor_resize(openeditor);
       return FALSE;
     }
   }
