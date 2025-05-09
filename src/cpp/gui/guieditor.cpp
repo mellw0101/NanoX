@@ -71,7 +71,7 @@ static void gui_editor_topbar_create(guieditor *const editor) {
 
 /* Remove the existing buffer name buttons and create new ones based on the currently open files of `editor`. */
 void gui_editor_refresh_topbar(guieditor *const editor) {
-  /* When debugging is enabled, assert everything we use. */
+  ASSERT(editor);
   ASSERT(editor->topbar);
   ASSERT(gui);
   ASSERT(gui->uifont);
@@ -135,12 +135,7 @@ void gui_editor_update_active_topbar(guieditor *editor) {
   for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
     button = editor->topbar->children[i];
     if (gui_element_has_file_data(button)) {
-      if (button->data.file == editor->openfile) {
-        button->color = EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR;
-      }
-      else {
-        button->color = EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR;
-      }
+      button->color = ((button->data.file == editor->openfile) ? EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR : EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR);
     }
   }
 }
@@ -230,6 +225,7 @@ void make_new_editor(bool new_buffer) {
   openeditor->flag = bit_flag_t<GUIEDITOR_FLAGSIZE>();
   openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
   gui_editor_scrollbar_create(openeditor);
+  
 }
 
 /* Delete the data of a editor. */

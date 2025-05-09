@@ -1135,8 +1135,7 @@ typedef struct completionstruct {
     guielement *topbar; /* The `topbar` element, this holds buttons with the open buffers names. */
     guielement *gutter; /* The `gutter` element, this holds the line numbers. */
     guielement *text;   /* The `text` element, this holds the editors text for the currently open file. */
-    
-    // guielement *scrollbar;
+
     /* The scrollbar for this editor. */
     GuiScrollbar *sb;
 
@@ -1223,24 +1222,9 @@ typedef struct completionstruct {
 
   typedef struct {
     Menu *menu;
-
-    // bool text_refresh_needed : 1;
-    // bool pos_refresh_needed : 1;
-
-    // CVec *completions;
-    // int viewtop;
-    // int selected;
-    // int maxrows;
-    // int rows;
-
     /* The current string used to search, and its length. */
     char  buf[128];
     int   len;
-
-    // guielement *element;
-    // GuiScrollbar *sb;
-
-    // vertex_buffer_t *vertbuf;
   } GuiSuggestMenu;
 
   typedef struct {
