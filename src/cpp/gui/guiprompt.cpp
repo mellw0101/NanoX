@@ -547,7 +547,8 @@ void gui_promptmenu_enter_action(void) {
           show_statusmsg(INFO, 5, "Saving file: %s", answer);
           /* Free the openfile filename, and assign answer to it. */
           openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
-          gui_editor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+          // gui_editor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+          gui_editor_topbar_entries_refresh_needed(gui_editor_from_file(openfile)->etb);
           /* Then save the file. */
           if (write_it_out(FALSE, FALSE) == 2) {
             logE("Failed to save file, this needs fixing and the reason needs to be found out.");

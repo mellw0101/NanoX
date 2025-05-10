@@ -938,7 +938,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui/guielement.cpp ---------------------------------------------------------- */
   
   
-  guielement *gui_element_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
+  guielement *gui_element_create(vec2 pos, vec2 size, vec4 color, bool in_gridmap = TRUE) _NOTHROW;
   guielement *gui_element_create(bool in_gridmap = TRUE) _NOTHROW;
   guielement *gui_element_create(guielement *const parent, bool in_gridmap = TRUE) _NOTHROW;
   void        gui_element_free(guielement *const element);
@@ -963,7 +963,6 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   bool        gui_element_has_sb_data(guielement *const e) _NOTHROW;
   bool        gui_element_has_menu_data(guielement *const e) _NOTHROW;
   void        gui_element_set_flag_recurse(guielement *const e, bool set, Uint flag);
-  void        gui_element_call_cb(guielement *const e, guielement_callback_type type);
 
   
   /* ---------------------------------------------------------- gui/guieditor.cpp ---------------------------------------------------------- */
@@ -989,6 +988,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void       gui_editor_close_open_buffer(void);
   void       gui_editor_open_buffer(const char *const restrict path);
   void       gui_editor_update_all(void);
+  Ulong      gui_editor_num_of_open_files(guieditor *const editor);
 
   
   /* ---------------------------------------------------------- gui/guigrid.cpp ---------------------------------------------------------- */
@@ -1141,6 +1141,16 @@ int gui_menu_entry_qsort_strlen_cb(const void *a, const void *b);
 /* ----------------------------- Menu qsort call ----------------------------- */
 
 void gui_menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
+
+
+/* ---------------------------------------------------------- gui/editor/topbar.cpp ---------------------------------------------------------- */
+
+
+EditorTopbar *gui_editor_topbar_create(guieditor *const editor);
+void gui_editor_topbar_free(EditorTopbar *const etb);
+void gui_editor_topbar_draw(EditorTopbar *const etb);
+void gui_editor_topbar_entries_refresh_needed(EditorTopbar *const etb);
+bool gui_editor_topbar_element_is_main(EditorTopbar *const etb, guielement *const e);
 
 
 /* ---------------------------------------------------------- gui/context_menu.cpp ---------------------------------------------------------- */

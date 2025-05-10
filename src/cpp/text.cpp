@@ -2284,10 +2284,14 @@ static void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_le
 /* Justify the lines of the given paragraph (that starts at *line, and consists of 'count' lines)
  * so they all fit within the target width (wrap_at) and have their whitespace normalized. */
 static void justify_paragraph(linestruct **line, Ulong count) _NOTHROW {
-  linestruct *sampleline; /* The line from which the indentation is copied. */
-  Ulong quot_len;         /* Length of the quote part. */
-  Ulong lead_len;         /* Length of the quote part plus the indentation part. */
-  char *lead_string;      /* The quote+indent stuff that is copied from the sample line. */
+  /* The line from which the indentation is copied. */
+  linestruct *sampleline;
+  /* Length of the quote part. */
+  Ulong quot_len;
+  /* Length of the quote part plus the indentation part. */
+  Ulong lead_len;
+  /* The quote+indent stuff that is copied from the sample line. */
+  char *lead_string;
   /* The sample line is either the only line or the second line. */
   sampleline = ((count == 1) ? *line : (*line)->next);
   /* Copy the leading part (quoting + indentation) of the sample line. */
@@ -2325,8 +2329,7 @@ static void justify_text(bool whole_buffer) {
   linestruct *jusline;
   /* Whether the end of a marked region is before the end of its line. */
   bool before_eol = FALSE;
-  /* The leading part (quoting + indentation) of the first line
-   * of the paragraph where the marked region begins. */
+  /* The leading part (quoting + indentation) of the first line of the paragraph where the marked region begins. */
   char *primary_lead = NULL;
   /* The length (in bytes) of the above first-line leading part. */
   Ulong primary_len = 0;
@@ -2925,9 +2928,9 @@ static void do_int_speller(const char *const tempfile_name) {
           break;
         }
       }
-      oneword = pointer + 1;
+      oneword = (pointer + 1);
     }
-    pointer++;
+    ++pointer;
   }
   /* Special case: the last word doesn't end with '\r' or '\n'. */
   if (oneword != pointer) {

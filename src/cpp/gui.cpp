@@ -160,7 +160,6 @@ static void setup_statusbar(void) {
   gui->statusbar = gui_element_create(
     vec2(0, gui->height),
     vec2(gui->width, gui_font_height(gui->uifont)),
-    0.0f,
     color_idx_to_vec4(FG_VS_CODE_RED)
   );
   gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
@@ -225,7 +224,7 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   nevhandler_start(gui->handler, TRUE);
   gui->font   = gui_font_create();
   gui->uifont = gui_font_create();
-  gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, 0, FALSE);
+  gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, FALSE);
 }
 
 /* Delete the gui struct. */
@@ -339,7 +338,7 @@ void glfw_loop(void) {
     place_the_cursor();
     glClear(GL_COLOR_BUFFER_BIT);
     /* Draw the editors. */
-    ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
+    CLIST_ITER(starteditor, editor,
       draw_editor(editor);
     );
     /* Draw the suggestmenu. */

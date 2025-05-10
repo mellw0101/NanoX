@@ -714,10 +714,10 @@ typedef enum {
 
   typedef enum {
     #define GUIEDITOR_FLAGSIZE 8
-    GUIEDITOR_TOPBAR_REFRESH_NEEDED,
-    #define GUIEDITOR_TOPBAR_REFRESH_NEEDED GUIEDITOR_TOPBAR_REFRESH_NEEDED
-    GUIEDITOR_TOPBAR_UPDATE_ACTIVE,
-    #define GUIEDITOR_TOPBAR_UPDATE_ACTIVE GUIEDITOR_TOPBAR_UPDATE_ACTIVE
+    // GUIEDITOR_TOPBAR_REFRESH_NEEDED,
+    // #define GUIEDITOR_TOPBAR_REFRESH_NEEDED GUIEDITOR_TOPBAR_REFRESH_NEEDED
+    // GUIEDITOR_TOPBAR_UPDATE_ACTIVE,
+    // #define GUIEDITOR_TOPBAR_UPDATE_ACTIVE GUIEDITOR_TOPBAR_UPDATE_ACTIVE
     GUIEDITOR_TEXT_REFRESH_NEEDED,
     #define GUIEDITOR_TEXT_REFRESH_NEEDED GUIEDITOR_TEXT_REFRESH_NEEDED
     GUIEDITOR_HIDDEN,
@@ -734,6 +734,7 @@ typedef struct GuiScrollbar  GuiScrollbar;
 typedef struct GuiFont       GuiFont;
 typedef struct Menu          Menu;
 typedef struct ContextMenu   ContextMenu;
+typedef struct EditorTopbar  EditorTopbar;
 
 /* Some typedefs. */
 typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
@@ -981,7 +982,6 @@ typedef struct completionstruct {
   typedef struct guielement {
     vec2 pos;           /* Where in the window this element has (x,y). */
     vec2 relative_pos;  /* When relative position is used, this is the position relative to `parent`. */
-    vec2 endoff;        /* The distance from the width and height of the full window.  If any. */
     vec2 size;          /* The size of this element. */
     
     /* When relative width or height is enabled this is the offset
@@ -999,7 +999,6 @@ typedef struct completionstruct {
     bit_flag_t<GUIELEMENT_FLAG_SIZE> flag;  /* Flags for the element. */
     guielement           *parent;           /* This element`s parent, or NULL when there is none. */
     MVector<guielement *> children;         /* This elements children, for menus and such. */
-    guielement_callback callback;           /* Callback for all action types. */
 
     int cursor_type;                        /* The cursor type this element should display on hover. */
   } guielement;
@@ -1122,7 +1121,7 @@ typedef struct completionstruct {
     vertex_buffer_t *buffer;    /* The buffer that holds all this editors text data to be drawn. */
     
     /* The buffer for the `topbar`, this is a seperete buffer because this does not need updating very often. */
-    vertex_buffer_t *topbuf;
+    // vertex_buffer_t *topbuf;
     
     openfilestruct  *openfile;  /* The currently open file. */
     openfilestruct  *startfile; /* The first file in the circular list. */
@@ -1132,12 +1131,14 @@ typedef struct completionstruct {
      * and other things related to the management alot simpler. */
     guielement *main;
     
-    guielement *topbar; /* The `topbar` element, this holds buttons with the open buffers names. */
+    // guielement *topbar; /* The `topbar` element, this holds buttons with the open buffers names. */
     guielement *gutter; /* The `gutter` element, this holds the line numbers. */
     guielement *text;   /* The `text` element, this holds the editors text for the currently open file. */
 
     /* The scrollbar for this editor. */
     GuiScrollbar *sb;
+
+    EditorTopbar *etb;
 
     vec2 pen;
 
@@ -1149,20 +1150,6 @@ typedef struct completionstruct {
     
     guieditor *next; /* Pointer to the next editor in the circular linked list. */
     guieditor *prev; /* Pointer to the previous editor in the circular linked list. */
-
-    #define ITER_OVER_ALL_OPENEDITORS(starteditor, name, action)                          \
-      DO_WHILE(                                                                           \
-        if (starteditor && starteditor->next) {                                           \
-          guieditor *name = starteditor;                                                  \
-          do {                                                                            \
-            DO_WHILE(action);                                                             \
-            name = name->next;                                                            \
-          } while (name != starteditor);                                                  \
-        }                                                                                 \
-        else {                                                                            \
-          die("%s: guieditor linked circular list is not correctly set up.\n", __func__); \
-        }                                                                                 \
-      )
   } guieditor;
 
   typedef struct {

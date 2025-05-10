@@ -333,8 +333,8 @@ void show_toggle_statusmsg(int flag) {
 void draw_editor(guieditor *editor) {
   /* When dubugging is enabled, assert everything we use. */
   ASSERT(editor->openfile->edittop);
-  ASSERT(editor->topbar);
-  ASSERT(editor->topbuf);
+  // ASSERT(editor->topbar);
+  // ASSERT(editor->topbuf);
   ASSERT(editor->text);
   ASSERT(editor->buffer);
   ASSERT(editor->gutter);
@@ -354,39 +354,40 @@ void draw_editor(guieditor *editor) {
   /* Draw the gutter element of the editor. */
   gui_element_draw(editor->gutter);
   /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
-  gui_element_draw(editor->topbar);
+  // gui_element_draw(editor->topbar);
   /* Render the topbar of the editor. */
-  if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
-    gui_editor_refresh_topbar(editor);
-    vertex_buffer_clear(editor->topbuf);
-    for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
-      /* Assign the child to a new ptr for readbility. */
-      guielement *child = editor->topbar->children[i];
-      /* Draw the child rect. */
-      gui_element_draw(child);
-      /* Update the data in the topbuf. */
-      if (child->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
-        vertex_buffer_add_element_lable_offset(child, gui_font_get_font(gui->uifont), editor->topbuf, vec2(pixbreadth(gui_font_get_font(gui->uifont), " "), 0));
-      }
-    }
-    editor->flag.unset<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-    editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
-  }
-  else {
-    /* When the active file has changed, adjust the colors of the topbar. */
-    if (editor->flag.is_set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>()) {
-      gui_editor_update_active_topbar(editor);
-      editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
-    }
-    for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
-      /* Assign the child to a new ptr for readbility. */
-      guielement *child = editor->topbar->children[i];
-      /* Draw the child rect. */
-      gui_element_draw(child);
-    }
-  }
-  upload_texture_atlas(gui_font_get_atlas(gui->uifont));
-  render_vertex_buffer(gui->font_shader, editor->topbuf);
+  // if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
+  //   gui_editor_refresh_topbar(editor);
+  //   vertex_buffer_clear(editor->topbuf);
+  //   for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
+  //     /* Assign the child to a new ptr for readbility. */
+  //     guielement *child = editor->topbar->children[i];
+  //     /* Draw the child rect. */
+  //     gui_element_draw(child);
+  //     /* Update the data in the topbuf. */
+  //     if (child->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
+  //       vertex_buffer_add_element_lable_offset(child, gui_font_get_font(gui->uifont), editor->topbuf, vec2(pixbreadth(gui_font_get_font(gui->uifont), " "), 0));
+  //     }
+  //   }
+  //   editor->flag.unset<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
+  //   editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
+  // }
+  // else {
+  //   /* When the active file has changed, adjust the colors of the topbar. */
+  //   if (editor->flag.is_set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>()) {
+  //     gui_editor_update_active_topbar(editor);
+  //     editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
+  //   }
+  //   for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
+  //     /* Assign the child to a new ptr for readbility. */
+  //     guielement *child = editor->topbar->children[i];
+  //     /* Draw the child rect. */
+  //     gui_element_draw(child);
+  //   }
+  // }
+  // upload_texture_atlas(gui_font_get_atlas(gui->uifont));
+  // render_vertex_buffer(gui->font_shader, editor->topbuf);
+  gui_editor_topbar_draw(editor->etb);
   /* Render the text element of the editor. */
   if (refresh_needed) {
     vertex_buffer_clear(editor->buffer);

@@ -12,7 +12,6 @@ _UNUSED static guielement *make_new_element(void) {
   guielement *element   = (guielement *)xmalloc(sizeof(*element));
   element->pos          = -100;
   element->relative_pos = 0;
-  element->endoff       = 0;
   element->size         = 20;
   element->data.raw     = NULL;
   element->color        = 0;
@@ -22,25 +21,22 @@ _UNUSED static guielement *make_new_element(void) {
   element->flag         = bit_flag_t<GUIELEMENT_FLAG_SIZE>();
   element->parent       = NULL;
   element->children     = MVector<guielement *>();
-  element->callback     = NULL;
   return element;
 }
 
 /* Create a ui element. */
-guielement *gui_element_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, bool in_gridmap) _NOTHROW {
+guielement *gui_element_create(vec2 pos, vec2 size, vec4 color, bool in_gridmap) _NOTHROW {
   guielement *e;
   MALLOC_STRUCT(e);
   e->pos           = pos;
   e->relative_pos  = 0;
   e->size          = size;
-  e->endoff        = endoff;
   e->relative_size = 0;
   e->data.raw      = NULL;
   e->color         = color;
   e->textcolor     = 0.0f;
   e->lable         = NULL;
   e->lablelen      = 0;
-  e->callback      = NULL;
   e->parent        = NULL;
   e->children      = MVector<guielement*>{};
   e->flag.clear();
@@ -54,7 +50,7 @@ guielement *gui_element_create(vec2 pos, vec2 size, vec2 endoff, vec4 color, boo
 
 /* Create a blank element. */
 guielement *gui_element_create(bool in_gridmap) _NOTHROW {
-  return gui_element_create(-100.0f, 20.0f, 0.0f, 0.0f, in_gridmap);
+  return gui_element_create(-100.0f, 20.0f, 0.0f, in_gridmap);
 }
 
 /* Create a new child to element `parent`. */
@@ -386,12 +382,5 @@ void gui_element_set_flag_recurse(guielement *const e, bool set, Uint flag) {
   }
   for (Ulong i=0; i<size; ++i) {
     gui_element_set_flag_recurse(ptr[i], set, flag);
-  }
-}
-
-/* Call the callback of `e` in a safe way, meaning this is a `NO-OP` function and will do nothing if `e` is `NULL`, or if `e` does not have a callback. */
-void gui_element_call_cb(guielement *const e, guielement_callback_type type) {
-  if (e) {
-    CALL_IF_VALID(e->callback, e, type);
   }
 }

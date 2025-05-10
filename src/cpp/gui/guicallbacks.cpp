@@ -64,7 +64,7 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
     refresh_needed = TRUE;
     gui_element_resize(gui->root, vec2(gui->width, gui->height));
     /* Calculate the rows for all editors. */
-    ITER_OVER_ALL_OPENEDITORS(starteditor, editor,
+    CLIST_ITER(starteditor, editor,
       gui_editor_resize(editor);
       if (texture_font_is_mono(gui_font_get_font(gui->font))) {
         texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(gui->font), " ");
@@ -1121,7 +1121,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           }
         }
         /* Otherwise, if the element is part of the topbar of an editor. */
-        else if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent) && element->parent == element->parent->data.editor->topbar && !gui->flag.is_set<GUI_PROMPT>()) {
+        else if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent) && /* element->parent == element->parent->data.editor->topbar */ gui_editor_topbar_element_is_main(element->parent->data.editor->etb, element->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
           if (element->data.file && element->data.file != element->parent->data.editor->openfile) {
             element->parent->data.editor->openfile = element->data.file;
             openfile = element->parent->data.editor->openfile;
@@ -1131,10 +1131,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         }
         else if (element == gui->promptmenu->element) {
           gui_promptmenu_click_action(mousepos.y);
-        }
-        /* And, when pressed in any other element. */
-        else if (element->callback) {
-          element->callback(element, GUIELEMENT_CLICK_CALLBACK);
         }
       }
     }
@@ -1349,7 +1345,6 @@ void window_enter_callback(GLFWwindow *window, int entered) {
       if (!gui->clicked && gui_element_has_sb_data(entered_element) && gui_scrollbar_element_is_thumb(entered_element->data.sb, entered_element)) {
         entered_element->color = GUISB_THUMB_COLOR;
       }
-      CALL_IF_VALID(entered_element->callback, entered_element, GUIELEMENT_LEAVE_CALLBACK);
       entered_element = NULL;
     }
   }
@@ -1390,12 +1385,12 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       }
     }
     /* Check if this is a child to a element that belongs to a editor. */
-    else if (gui_element_has_editor_data(element->parent)) {
-      /* Check if the element is a child of the editors topbar. */
-      if (element->parent == element->parent->data.editor->topbar) {
-        NETLOG("Is topbar ancestor.\n");
-      }
-    }
+    // else if (gui_element_has_editor_data(element->parent)) {
+    //   /* Check if the element is a child of the editors topbar. */
+    //   if (element->parent == element->parent->data.editor->topbar) {
+    //     NETLOG("Is topbar ancestor.\n");
+    //   }
+    // }
     /* If this is the main element of a menu.  Then call it's scroll function. */
     else if (gui->active_menu && gui_element_has_menu_data(element) && gui_menu_is_ancestor(element->data.menu, gui->active_menu) && gui_menu_element_is_main(element->data.menu, element)) {
       gui_menu_scroll_action(element->data.menu, ((y > 0) ? BACKWARD : FORWARD), mousepos.x, mousepos.y);
