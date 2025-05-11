@@ -48,98 +48,6 @@ static void gui_editor_scrollbar_create(guieditor *const editor) {
 /* ---------------------------------------------------------- Gui editor topbar ---------------------------------------------------------- */
 
 
-/* Create the editor topbar. */
-// static void gui_editor_topbar_create(guieditor *const editor) {
-//   ASSERT(editor->main);
-//   ASSERT(gui);
-//   ASSERT(gui->uifont);
-//   /* Create the topbar element as a child to the main element. */
-//   editor->topbar = gui_element_create(editor->main);
-//   editor->topbar->color = EDIT_BACKGROUND_COLOR;
-//   gui_element_move_resize(
-//     editor->topbar,
-//     vec2(editor->main->pos.x, editor->main->pos.y),
-//     vec2(editor->main->size.w, gui_font_height(gui->uifont))
-//   );
-//   /* Set relative positioning for the topbar. */
-//   editor->topbar->flag.set<GUIELEMENT_RELATIVE_POS>();
-//   editor->topbar->relative_pos = 0;
-//   /* Also set relative width for the topbar, so it always spans the width of the editor. */
-//   editor->topbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
-//   editor->topbar->relative_size = 0;
-// }
-
-/* Remove the existing buffer name buttons and create new ones based on the currently open files of `editor`. */
-// void gui_editor_refresh_topbar(guieditor *const editor) {
-//   ASSERT(editor);
-//   ASSERT(editor->topbar);
-//   ASSERT(gui);
-//   ASSERT(gui->uifont);
-//   /* Start at the topbar position. */
-//   vec2 pos = editor->topbar->pos;
-//   guielement *button;
-//   /* First remove all existing children of the topbar. */
-//   gui_element_delete_children(editor->topbar);
-//   /* If there are any open files, create buttons for them. */
-//   CLIST_ITER(editor->startfile, file,
-//     button = gui_element_create(editor->topbar);
-//     button->flag.set<GUIELEMENT_ABOVE>();
-//     button->cursor_type = GLFW_HAND_CURSOR;
-//     if (*file->filename) {
-//       gui_element_move_resize(button, pos, vec2((pixbreadth(gui_font_get_font(gui->uifont), file->filename) + pixbreadth(gui_font_get_font(gui->uifont), "  ")), editor->topbar->size.h));
-//       gui_element_set_lable(button, file->filename);
-//     }
-//     else {
-//       gui_element_move_resize(button, pos, vec2(pixbreadth(gui_font_get_font(gui->uifont), " Nameless "), editor->topbar->size.h));
-//       gui_element_set_lable(button, "Nameless");
-//     }
-//     /* Set a diffrent color on the button that holds the editor openfile. */
-//     if (file == editor->openfile) {
-//       button->color = EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR;
-//     }
-//     /* Otherwise, just set the inactive color. */
-//     else {
-//       button->color = EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR;
-//     }
-//     button->textcolor = GUI_WHITE_COLOR;
-//     /* Make the element use relative positioning so that when we move the topbar the buttons follows. */
-//     button->flag.set<GUIELEMENT_RELATIVE_POS>();
-//     button->relative_pos = (button->pos - editor->topbar->pos);
-//     /* When there is only a single file open make all borders equal. */
-//     if (file == file->next) {
-//       gui_element_set_borders(button, 1, /* GUI_WHITE_COLOR */ vec4(vec3(0.5), 1));
-//     }
-//     /* Otherwise, when this is the first file, make the right border half size. */
-//     else if (file == editor->startfile) {
-//       gui_element_set_borders(button, vec4(1, 0, 1, 1), vec4(vec3(0.5), 1));
-//     }
-//     /* When this is the last file. */
-//     else if (file->next == editor->startfile) {
-//       gui_element_set_borders(button, vec4(1, 1, 1, 1), vec4(vec3(0.5), 1));
-//     }
-//     /* Else, if this is a file in the middle or the last file, make both the left and right border half size. */
-//     else {
-//       gui_element_set_borders(button, vec4(1, 0, 1, 1), vec4(vec3(0.5), 1));
-//     }
-//     pos.x += button->size.w;
-//     gui_element_set_file_data(button, file);
-//   );
-// }
-
-/* Set all elements color in topbar, setting the active one to the active color. */
-// void gui_editor_update_active_topbar(guieditor *editor) {
-//   ASSERT(editor);
-//   ASSERT(editor->topbar);
-//   guielement *button;
-//   /* Iterate over every open file in the editor, if any. */
-//   for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
-//     button = editor->topbar->children[i];
-//     if (gui_element_has_file_data(button)) {
-//       button->color = ((button->data.file == editor->openfile) ? EDITOR_TOPBAR_BUTTON_ACTIVE_COLOR : EDITOR_TOPBAR_BUTTON_INACTIVE_COLOR);
-//     }
-//   }
-// }
-
 /* Create a new editor. */
 void make_new_editor(bool new_buffer) {
   guieditor *node;
@@ -172,8 +80,8 @@ void make_new_editor(bool new_buffer) {
     node->startfile = startfile;
   }
   openeditor           = node;
+  openeditor->should_close = FALSE;
   openeditor->buffer   = make_new_font_buffer();
-  // openeditor->topbuf   = make_new_font_buffer();
   openeditor->openfile = openfile;
   openeditor->pen      = 0;
   openeditor->rows     = 0;
@@ -186,18 +94,17 @@ void make_new_editor(bool new_buffer) {
   );
   /* Create the topbar element for the editor. */
   openeditor->etb = gui_editor_topbar_create(openeditor);
-  // gui_editor_topbar_create(openeditor);
   /* Create the gutter element as a child to the main element. */
   openeditor->gutter = gui_element_create(openeditor->main);
   openeditor->gutter->color = EDIT_BACKGROUND_COLOR;
   gui_element_move_resize(
     openeditor->gutter,
-    vec2(0.0f, (openeditor->main->pos.y + /* openeditor->topbar->size.h */ gui_font_height(gui->uifont))),
-    vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui_font_get_font(gui->font)), (openeditor->main->size.h - /* openeditor->topbar->size.h */ gui_font_height(gui->uifont)))
+    vec2(0.0f, (openeditor->main->pos.y + gui_font_height(gui->uifont))),
+    vec2(get_line_number_pixel_offset(openeditor->openfile->filetop, gui_font_get_font(gui->font)), (openeditor->main->size.h - gui_font_height(gui->uifont)))
   );
   /* Set relative positioning for the gutter, so it follows the editor. */
   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_POS>();
-  openeditor->gutter->relative_pos = vec2(0, /* openeditor->topbar->size.h */ gui_font_height(gui->uifont));
+  openeditor->gutter->relative_pos = vec2(0, gui_font_height(gui->uifont));
   /* Also set relative height for the gutter element so that it follows the editors height. */
   openeditor->gutter->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
   openeditor->gutter->relative_size = 0;
@@ -206,24 +113,22 @@ void make_new_editor(bool new_buffer) {
   openeditor->text->color = EDIT_BACKGROUND_COLOR;
   gui_element_move_resize(
     openeditor->text,
-    vec2((openeditor->main->pos.x + openeditor->gutter->size.w), (openeditor->main->pos.y + /* openeditor->topbar->size.h */ gui_font_height(gui->uifont))),
-    vec2((openeditor->main->size.w - openeditor->gutter->size.w), (openeditor->main->size.h - /* openeditor->topbar->size.h */ gui_font_height(gui->uifont)))
+    vec2((openeditor->main->pos.x + openeditor->gutter->size.w), (openeditor->main->pos.y + gui_font_height(gui->uifont))),
+    vec2((openeditor->main->size.w - openeditor->gutter->size.w), (openeditor->main->size.h - gui_font_height(gui->uifont)))
   );
   /* Set relative positioning for the text elemenent, so it follows the editor. */
   openeditor->text->flag.set<GUIELEMENT_RELATIVE_POS>();
-  openeditor->text->relative_pos = vec2(openeditor->gutter->size.w, /* openeditor->topbar->size.h */ gui_font_height(gui->uifont));
+  openeditor->text->relative_pos = vec2(openeditor->gutter->size.w, gui_font_height(gui->uifont));
   /* Also set relative width and height for the text element so that it follows the size of the editor. */
   openeditor->text->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
   openeditor->text->flag.set<GUIELEMENT_RELATIVE_HEIGHT>();
   openeditor->text->relative_size = 0;
   openeditor->text->cursor_type = GLFW_IBEAM_CURSOR;
   /* Set the editor data ptr of all elements as this editor. */
-  gui_element_set_editor_data(openeditor->main, openeditor);
-  // gui_element_set_editor_data(openeditor->topbar, openeditor);
+  gui_element_set_editor_data(openeditor->main,   openeditor);
   gui_element_set_editor_data(openeditor->gutter, openeditor);
-  gui_element_set_editor_data(openeditor->text, openeditor);
+  gui_element_set_editor_data(openeditor->text,   openeditor);
   openeditor->flag = bit_flag_t<GUIEDITOR_FLAGSIZE>();
-  // openeditor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
   gui_editor_scrollbar_create(openeditor);
   
 }
@@ -236,6 +141,7 @@ void gui_editor_free(guieditor *const editor) {
     editor->buffer = NULL;
   }
   gui_element_free(editor->main);
+  gui_editor_topbar_free(editor->etb);
   free(editor->sb);
   free(editor);
 }
@@ -259,6 +165,27 @@ void gui_editor_close(void) {
   gui_editor_free(editor);
 }
 
+void gui_editor_close(guieditor *const editor) {
+  if (editor == starteditor) {
+    starteditor = starteditor->next;
+  }
+  CLIST_UNLINK(editor);
+  if (editor == openeditor) {
+    gui_editor_hide(openeditor, TRUE);
+    openeditor = openeditor->prev;
+    if (editor == openeditor) {
+      openeditor  = NULL;
+      starteditor = NULL;
+    }
+    else {
+      openfile  = openeditor->openfile;
+      startfile = openeditor->startfile;
+      gui_editor_hide(openeditor, FALSE);
+    }
+  }
+  gui_editor_free(editor);
+}
+
 void gui_editor_hide(guieditor *const editor, bool hide) {
   ASSERT(editor);
   if (hide) {
@@ -268,6 +195,7 @@ void gui_editor_hide(guieditor *const editor, bool hide) {
     editor->flag.unset<GUIEDITOR_HIDDEN>();
   }
   gui_element_set_flag_recurse(editor->main, hide, GUIELEMENT_HIDDEN);
+  gui_editor_topbar_show_context_menu(openeditor->etb, NULL, FALSE);
 }
 
 /* Switch to the previous editor.  */
@@ -310,6 +238,7 @@ void gui_editor_switch_to_next(void) {
 void gui_editor_switch_openfile_to_prev(void) {
   ASSERT(openeditor);
   ASSERT(openeditor->openfile);
+  ASSERT(openeditor->etb);
   /* If there is only one open buffer in the currently open editor, there is nothing to do. */
   if (CLIST_SINGLE(openeditor->openfile)) {
     show_statusmsg(AHEM, 2, "No more open file buffers in the current editor");
@@ -319,12 +248,14 @@ void gui_editor_switch_openfile_to_prev(void) {
   openfile = openeditor->openfile;
   gui_editor_redecorate(openeditor);
   gui_editor_resize(openeditor);
+  gui_editor_topbar_active_refresh_needed(openeditor->etb);
 }
 
 /* Within the currently open editor, switch to the prev buffer. */
 void gui_editor_switch_openfile_to_next(void) {
   ASSERT(openeditor);
   ASSERT(openeditor->openfile);
+  ASSERT(openeditor->etb);
   /* If there is only one open file in the currently active editor, print a msg telling the user and return. */
   if (CLIST_SINGLE(openeditor->openfile)) {
     show_statusmsg(AHEM, 2, "No more open file buffers in the current editor");
@@ -334,6 +265,7 @@ void gui_editor_switch_openfile_to_next(void) {
   openfile = openeditor->openfile;
   gui_editor_redecorate(openeditor);
   gui_editor_resize(openeditor);
+  gui_editor_topbar_active_refresh_needed(openeditor->etb);
 }
 
 /* Set `openeditor` to editor, if its not already. */
@@ -444,9 +376,6 @@ void gui_editor_redecorate(guieditor *const editor) {
   currmenu       = MMOST;
   shift_held     = TRUE;
   refresh_needed = TRUE;
-  // editor->flag.set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
-  // editor->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-  gui_editor_topbar_entries_refresh_needed(editor->etb);
   gui_scrollbar_refresh_needed(editor->sb);
 }
 
@@ -460,6 +389,7 @@ void gui_editor_open_new_empty_buffer(void) {
   openeditor->openfile = openfile;
   gui_editor_redecorate(openeditor);
   gui_editor_resize(openeditor);
+  gui_editor_topbar_entries_refresh_needed(openeditor->etb);
 }
 
 /* Close the currently open editor's currently open buffer. */
@@ -469,6 +399,33 @@ void gui_editor_close_open_buffer(void) {
   close_buffer();
   openeditor->openfile  = openfile;
   openeditor->startfile = startfile;
+  gui_editor_topbar_entries_refresh_needed(openeditor->etb);
+}
+
+void gui_editor_close_a_open_buffer(guieditor *const editor, openfilestruct *const file) {
+  ASSERT(editor);
+  ASSERT(file);
+  if (file->lock_filename) {
+    gui_delete_lockfile(file->lock_filename);
+  }
+  if (!CLIST_SINGLE(file)) {
+    free_one_buffer(file, &editor->openfile, &editor->startfile);
+    if (editor == openeditor) {
+      openfile = editor->openfile;
+      startfile = editor->startfile;
+    }
+    gui_editor_topbar_entries_refresh_needed(editor->etb);
+    gui_editor_redecorate(editor);
+    gui_editor_resize(editor);
+  }
+  else {
+    if (CLIST_SINGLE(editor)) {
+      glfwSetWindowShouldClose(gui->window, TRUE);
+    }
+    else {
+      editor->should_close = TRUE;
+    }
+  }
 }
 
 /* Open a new buffer in the currently open editor using `path`. */
@@ -493,6 +450,7 @@ void gui_editor_open_buffer(const char *const restrict path) {
   openeditor->openfile = openfile;
   gui_editor_redecorate(openeditor);
   gui_editor_resize(openeditor);
+  gui_editor_topbar_entries_refresh_needed(openeditor->etb);
 }
 
 void gui_editor_update_all(void) {
@@ -511,4 +469,22 @@ Ulong gui_editor_num_of_open_files(guieditor *const editor) {
     ++ret;
   });
   return ret;
+}
+
+/* Check if any editor's has it's `should_close` flag set, and if so close them. */
+void gui_editor_check_should_close(void) {
+  bool close_starteditor = FALSE;
+  CLIST_ITER(starteditor, editor,
+    if (editor->should_close) {
+      if (editor == starteditor) {
+        close_starteditor = TRUE;
+      }
+      else {
+        gui_editor_close(editor);
+      }
+    }
+  );
+  if (close_starteditor) {
+    gui_editor_close(starteditor);
+  }
 }

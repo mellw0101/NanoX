@@ -18,10 +18,7 @@ struct ContextMenu {
 static void context_menu_pos_routine(void *arg, vec2 size, vec2 *pos) {
   ASSERT(arg);
   ASSERT(pos);
-  /* Calculate the correct position for the suggestmenu window. */
-  pos->x = mousepos.x;
-  gui_font_row_top_bot(gui->font, 0, NULL, &pos->y);
-  pos->y += mousepos.y;
+  *pos = mousepos; 
 }
 
 static void context_menu_accept_routine(void *arg, const char *const restrict entry_string, int index) {

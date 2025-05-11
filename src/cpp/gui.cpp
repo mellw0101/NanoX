@@ -337,6 +337,8 @@ void glfw_loop(void) {
     confirm_margin();
     place_the_cursor();
     glClear(GL_COLOR_BUFFER_BIT);
+    /* Check if any editor's has it's `should_close` flag set, and if so close them. */
+    gui_editor_check_should_close();
     /* Draw the editors. */
     CLIST_ITER(starteditor, editor,
       draw_editor(editor);
@@ -385,7 +387,8 @@ bool gui_quit(void) {
       return TRUE;
     }
     else {
-      gui_editor_close();
+      // gui_editor_close();
+      gui_editor_close(openeditor);
       gui_editor_hide(openeditor, FALSE);
       gui_editor_redecorate(openeditor);
       gui_editor_resize(openeditor);

@@ -290,7 +290,7 @@ void gui_element_set_raw_data(guielement *const e, void *const data) _NOTHROW {
   e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
   e->flag.unset<GUIELEMENT_HAS_SB_DATA>();
   e->flag.unset<GUIELEMENT_HAS_MENU_DATA>();
-  e->data.raw = data;
+  e->ed_raw = data;
 }
 
 /* Set the union data ptr for `e` as a `openfilestruct *`.  This should be used as apposed to directly setting the data ptr. */
@@ -302,7 +302,7 @@ void gui_element_set_file_data(guielement *const e, openfilestruct *const file) 
   e->flag.unset<GUIELEMENT_HAS_EDITOR_DATA>();
   e->flag.unset<GUIELEMENT_HAS_SB_DATA>();
   e->flag.unset<GUIELEMENT_HAS_MENU_DATA>();
-  e->data.file = file;
+  e->ed_file = file;
 }
 
 /* Set the union data ptr for `e` as a `guieditor *`.  This should be used as apposed to directly setting the data ptr. */
@@ -314,7 +314,7 @@ void gui_element_set_editor_data(guielement *const e, guieditor *const editor) _
   e->flag.set<GUIELEMENT_HAS_EDITOR_DATA>();
   e->flag.unset<GUIELEMENT_HAS_SB_DATA>();
   e->flag.unset<GUIELEMENT_HAS_MENU_DATA>();
-  e->data.editor = editor;
+  e->ed_editor = editor;
 }
 
 /* Set the union data ptr for `e` as a `GuiScrollbar *`.  This should be used as apposed to directly setting the data ptr. */
@@ -326,7 +326,7 @@ void gui_element_set_sb_data(guielement *const e, GuiScrollbar *const sb) _NOTHR
   e->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
   e->flag.set<GUIELEMENT_HAS_SB_DATA>();
   e->flag.unset<GUIELEMENT_HAS_MENU_DATA>();
-  e->data.sb = sb;
+  e->ed_sb = sb;
 }
 
 /* Set the union data ptr for `e` as a `Menu *`.  This should be used as apposed to directly setting the data ptr. */
@@ -338,7 +338,7 @@ void gui_element_set_menu_data(guielement *const e, Menu *const menu) _NOTHROW {
   e->flag.unset<GUIELEMENT_HAS_FILE_DATA>();
   e->flag.unset<GUIELEMENT_HAS_SB_DATA>();
   e->flag.set<GUIELEMENT_HAS_MENU_DATA>();
-  e->data.menu = menu;
+  e->ed_menu = menu;
 }
 
 /* Return's `TRUE` when `e` has `void *` data. */

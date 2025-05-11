@@ -973,6 +973,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void       make_new_editor(bool new_buffer);
   void       gui_editor_free(guieditor *const editor);
   void       gui_editor_close(void);
+  void       gui_editor_close(guieditor *const editor);
   void       gui_editor_hide(guieditor *const editor, bool hide);
   void       gui_editor_switch_to_prev(void);
   void       gui_editor_switch_to_next(void);
@@ -986,9 +987,11 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void       gui_editor_redecorate(guieditor *const editor);
   void       gui_editor_open_new_empty_buffer(void);
   void       gui_editor_close_open_buffer(void);
+  void       gui_editor_close_a_open_buffer(guieditor *const editor, openfilestruct *const file);
   void       gui_editor_open_buffer(const char *const restrict path);
   void       gui_editor_update_all(void);
   Ulong      gui_editor_num_of_open_files(guieditor *const editor);
+  void       gui_editor_check_should_close(void);
 
   
   /* ---------------------------------------------------------- gui/guigrid.cpp ---------------------------------------------------------- */
@@ -1149,8 +1152,11 @@ void gui_menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
 EditorTopbar *gui_editor_topbar_create(guieditor *const editor);
 void gui_editor_topbar_free(EditorTopbar *const etb);
 void gui_editor_topbar_draw(EditorTopbar *const etb);
+void gui_editor_topbar_active_refresh_needed(EditorTopbar *const etb);
 void gui_editor_topbar_entries_refresh_needed(EditorTopbar *const etb);
+void gui_editor_topbar_show_context_menu(EditorTopbar *const etb, guielement *const from_element, bool show);
 bool gui_editor_topbar_element_is_main(EditorTopbar *const etb, guielement *const e);
+bool gui_editor_topbar_owns_element(EditorTopbar *const etb, guielement *const e);
 
 
 /* ---------------------------------------------------------- gui/context_menu.cpp ---------------------------------------------------------- */

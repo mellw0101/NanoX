@@ -101,6 +101,7 @@ void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
 static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   /* When debugging is enabled, assert everything we will use. */
   ASSERT(line);
+  ASSERT(editor);
   ASSERT(drawpos);
   SyntaxObject *obj;
   const char *prev_char = NULL;
@@ -332,9 +333,9 @@ void show_toggle_statusmsg(int flag) {
 /* Draw a editor. */
 void draw_editor(guieditor *editor) {
   /* When dubugging is enabled, assert everything we use. */
+  ASSERT(editor);
+  ASSERT(editor->openfile);
   ASSERT(editor->openfile->edittop);
-  // ASSERT(editor->topbar);
-  // ASSERT(editor->topbuf);
   ASSERT(editor->text);
   ASSERT(editor->buffer);
   ASSERT(editor->gutter);
@@ -353,65 +354,29 @@ void draw_editor(guieditor *editor) {
   gui_element_draw(editor->text);
   /* Draw the gutter element of the editor. */
   gui_element_draw(editor->gutter);
-  /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
-  // gui_element_draw(editor->topbar);
-  /* Render the topbar of the editor. */
-  // if (editor->flag.is_set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>()) {
-  //   gui_editor_refresh_topbar(editor);
-  //   vertex_buffer_clear(editor->topbuf);
-  //   for (Ulong i=0; i<editor->topbar->children.size(); ++i) {
-  //     /* Assign the child to a new ptr for readbility. */
-  //     guielement *child = editor->topbar->children[i];
-  //     /* Draw the child rect. */
-  //     gui_element_draw(child);
-  //     /* Update the data in the topbuf. */
-  //     if (child->flag.is_set<GUIELEMENT_HAS_LABLE>()) {
-  //       vertex_buffer_add_element_lable_offset(child, gui_font_get_font(gui->uifont), editor->topbuf, vec2(pixbreadth(gui_font_get_font(gui->uifont), " "), 0));
-  //     }
-  //   }
-  //   editor->flag.unset<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-  //   editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
-  // }
-  // else {
-  //   /* When the active file has changed, adjust the colors of the topbar. */
-  //   if (editor->flag.is_set<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>()) {
-  //     gui_editor_update_active_topbar(editor);
-  //     editor->flag.unset<GUIEDITOR_TOPBAR_UPDATE_ACTIVE>();
-  //   }
-  //   for (Ulong i = 0; i < editor->topbar->children.size(); ++i) {
-  //     /* Assign the child to a new ptr for readbility. */
-  //     guielement *child = editor->topbar->children[i];
-  //     /* Draw the child rect. */
-  //     gui_element_draw(child);
-  //   }
-  // }
-  // upload_texture_atlas(gui_font_get_atlas(gui->uifont));
-  // render_vertex_buffer(gui->font_shader, editor->topbuf);
-  gui_editor_topbar_draw(editor->etb);
   /* Render the text element of the editor. */
   if (refresh_needed) {
     vertex_buffer_clear(editor->buffer);
-    while (line && ++row <= (int)editor->rows) {
+    while (line && row++ < (int)editor->rows) {
       editor->pen.x = 0;
-      // editor->pen.y = (row_baseline_pixel((line->lineno - editor->openfile->edittop->lineno), gui_font_get_font(gui->font)) + editor->text->pos.y);
       editor->pen.y = (gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->pos.y);
       gui_draw_row(line, editor, &editor->pen);
       line = line->next;
     }
-    if (!gui->flag.is_set<GUI_PROMPT>()) {
-      if ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0) {
-        line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui->font, editor->buffer, vec4(1), cursor_pixel_x_pos(gui_font_get_font(gui->font)), editor->text->pos.y);
-      }
+    if (!gui->flag.is_set<GUI_PROMPT>() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
+      line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui->font, editor->buffer, vec4(1), cursor_pixel_x_pos(gui_font_get_font(gui->font)), editor->text->pos.y);
     }
   }
   else {
-    while (line && ++row <= (int)editor->rows) {
+    while (line && row++ < (int)editor->rows) {
       gui_draw_row(line, editor, &editor->pen);
       line = line->next;
     }
   }
   upload_texture_atlas(gui_font_get_atlas(gui->font));
   render_vertex_buffer(gui->font_shader, editor->buffer);
+  /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
+  gui_editor_topbar_draw(editor->etb);
   gui_scrollbar_draw(editor->sb);
 }
 
@@ -430,19 +395,7 @@ void draw_topbar(void) {
 void draw_suggestmenu(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
-  // ASSERT(gui->suggestmenu->completions);
-  /* Only draw the suggestmenu if there are any available suggestions. */
-  // if (cvec_len(gui->suggestmenu->completions)) {
-  //   gui_suggestmenu_resize();
-  //   /* Draw the main element of the suggestmenu. */
-  //   guielement_draw(gui->suggestmenu->element);
-  //   /* Highlight the selected entry in the suggestmenu when its on the screen. */
-  //   gui_suggestmenu_draw_selected();
-  //   /* Draw the scrollbar of the suggestmenu. */
-  //   guiscrollbar_draw(gui->suggestmenu->sb);
-  //   /* Draw the text of the suggestmenu entries. */
-  //   gui_suggestmenu_draw_text();
-  // }
+  ASSERT(gui->suggestmenu->menu);
   gui_menu_draw(gui->suggestmenu->menu);
 }
 

@@ -399,6 +399,15 @@ using std::vector;
     (to) = (__TYPE(to))(from); \
   )
 
+#define GUI_ELEMENT_CHILDREN_ITER(element, iter, name, ...)                \
+  /* Iterate thrue all children of `element`.  And perform any action. */  \
+  DO_WHILE(                                                                \
+    for (Ulong iter=0; iter<element->children.size(); ++i) {               \
+      guielement *name = element->children[i];                             \
+      DO_WHILE(__VA_ARGS__);                                               \
+    }                                                                      \
+  )
+
 
 /* Enumeration types. */
 
@@ -714,10 +723,6 @@ typedef enum {
 
   typedef enum {
     #define GUIEDITOR_FLAGSIZE 8
-    // GUIEDITOR_TOPBAR_REFRESH_NEEDED,
-    // #define GUIEDITOR_TOPBAR_REFRESH_NEEDED GUIEDITOR_TOPBAR_REFRESH_NEEDED
-    // GUIEDITOR_TOPBAR_UPDATE_ACTIVE,
-    // #define GUIEDITOR_TOPBAR_UPDATE_ACTIVE GUIEDITOR_TOPBAR_UPDATE_ACTIVE
     GUIEDITOR_TEXT_REFRESH_NEEDED,
     #define GUIEDITOR_TEXT_REFRESH_NEEDED GUIEDITOR_TEXT_REFRESH_NEEDED
     GUIEDITOR_HIDDEN,
@@ -977,6 +982,12 @@ typedef struct completionstruct {
     guieditor      *editor;   /* A ptr to a `guieditor` structure. */
     GuiScrollbar   *sb;       /* A ptr to a `GuiScrollbar` structure. */
     Menu           *menu;     /* A ptr to a `Menu` structure. */
+    /* Some shorthand's to access the element data type. */
+  # define ed_raw /* Shorthand to access the `void *` data of a element. */ data.raw
+  # define ed_file /* Shorthand to access the `openfilestruct *` data of a element. */ data.file
+  # define ed_editor /* Shorthand to access the `guieditor *` data of a element. */ data.editor
+  # define ed_sb /* Shorthand to access the `GuiScrollbar *` data of a element. */ data.sb
+  # define ed_menu /* Shorthand to access the `Menu *` data of a element. */ data.menu
   } guielement_data_type;
 
   typedef struct guielement {
@@ -1118,10 +1129,9 @@ typedef struct completionstruct {
   };
 
   typedef struct guieditor {
+    bool should_close : 1;  /* This should be set to indecate that this editor should close. */
+
     vertex_buffer_t *buffer;    /* The buffer that holds all this editors text data to be drawn. */
-    
-    /* The buffer for the `topbar`, this is a seperete buffer because this does not need updating very often. */
-    // vertex_buffer_t *topbuf;
     
     openfilestruct  *openfile;  /* The currently open file. */
     openfilestruct  *startfile; /* The first file in the circular list. */
@@ -1131,7 +1141,6 @@ typedef struct completionstruct {
      * and other things related to the management alot simpler. */
     guielement *main;
     
-    // guielement *topbar; /* The `topbar` element, this holds buttons with the open buffers names. */
     guielement *gutter; /* The `gutter` element, this holds the line numbers. */
     guielement *text;   /* The `text` element, this holds the editors text for the currently open file. */
 

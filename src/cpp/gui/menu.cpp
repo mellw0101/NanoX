@@ -731,6 +731,7 @@ bool gui_menu_is_ancestor(Menu *const menu, Menu *const ancestor) {
   return FALSE;
 }
 
+/* Return's `TRUE` when `menu` is currently being shown and has more then zero entries. */
 bool gui_menu_is_shown(Menu *const menu) {
   ASSERT_GUI_MENU;
   return (!menu->element->flag.is_set<GUIELEMENT_HIDDEN>() && cvec_len(menu->entries));

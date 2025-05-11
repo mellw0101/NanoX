@@ -490,12 +490,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           if (gui->active_menu) {
             gui_menu_show(gui->active_menu, FALSE);
           }
-          // if (!mods) {
-          //   if (cvec_len(gui->suggestmenu->completions)) {
-          //     gui_suggestmenu_clear();
-          //     return;
-          //   }
-          // }
           break;
         }
         case GLFW_KEY_RIGHT: {
@@ -726,10 +720,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               }
             }
           }
-          /* This return's true when there was a suggestion acception. */
-          // if (gui_suggestmenu_accept()) {
-          //   return;
-          // }
           /* Simple tab. */
           if (!mods) {
             function = do_tab;
@@ -887,7 +877,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
       gui_scrollbar_refresh_needed(openeditor->sb);
     }
     /* If we are already showing suggestions, then update them. */
-    if (/* cvec_len(gui->suggestmenu->completions) */gui_menu_len(gui->suggestmenu->menu)) {
+    if (gui_menu_len(gui->suggestmenu->menu)) {
       gui_suggestmenu_run();
     }
     last_key_was_bracket = FALSE;
@@ -1121,12 +1111,14 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           }
         }
         /* Otherwise, if the element is part of the topbar of an editor. */
-        else if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent) && /* element->parent == element->parent->data.editor->topbar */ gui_editor_topbar_element_is_main(element->parent->data.editor->etb, element->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
-          if (element->data.file && element->data.file != element->parent->data.editor->openfile) {
-            element->parent->data.editor->openfile = element->data.file;
-            openfile = element->parent->data.editor->openfile;
-            gui_editor_redecorate(element->parent->data.editor);
-            gui_editor_resize(element->parent->data.editor);
+        else if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent)
+         && gui_editor_topbar_element_is_main(element->parent->ed_editor->etb, element->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
+          if (element->data.file && element->data.file != element->parent->ed_editor->openfile) {
+            element->parent->ed_editor->openfile = element->ed_file;
+            openfile = element->parent->ed_editor->openfile;
+            gui_editor_redecorate(element->parent->ed_editor);
+            gui_editor_resize(element->parent->ed_editor);
+            gui_editor_topbar_active_refresh_needed(element->parent->ed_editor->etb);
           }
         }
         else if (element == gui->promptmenu->element) {
@@ -1144,13 +1136,11 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         /* If the clicked element is any part of any scrollbar. */
         if (gui_element_has_sb_data(gui->clicked)) {
           /* Only reset the given element is the scrollbar's thumb and is not the currently hovered element. */
-          if (gui_scrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && gui->clicked != gui_element_from_mousepos()) {
+          if (gui_scrollbar_element_is_thumb(gui->clicked->ed_sb, gui->clicked) && gui->clicked != gui_element_from_mousepos()) {
             gui->clicked->color = GUISB_THUMB_COLOR;
           }
-          gui_scrollbar_refresh_needed(gui->clicked->data.sb);
+          gui_scrollbar_refresh_needed(gui->clicked->ed_sb);
         }
-        // gui_element_call_cb(gui->clicked, GUIELEMENT_LEFT_MOUSE_UNCLICK);
-        // CALL_IF_VALID(gui->clicked->callback, gui->clicked, GUIELEMENT_LEFT_MOUSE_UNCLICK);
       }
       gui->clicked = NULL;
     }
@@ -1159,7 +1149,14 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   else if (button == GLFW_MOUSE_BUTTON_2) {
     if (action == GLFW_PRESS) {
       mouse_flag.set<RIGHT_MOUSE_BUTTON_HELD>();
-      context_menu_show(gui->context_menu, TRUE);
+      element = gui_element_from_mousepos();
+      /* If the clicked element is a child of any editor's topbar, open the editor topbar context menu. */
+      if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent) && gui_editor_topbar_element_is_main(element->parent->ed_editor->etb, element->parent)) {
+        gui_editor_topbar_show_context_menu(element->parent->ed_editor->etb, element, TRUE);
+      }
+      else {
+        context_menu_show(gui->context_menu, TRUE);
+      }
     }
     else if (action == GLFW_RELEASE) {
       mouse_flag.unset<RIGHT_MOUSE_BUTTON_HELD>();
@@ -1299,16 +1296,12 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         if (!gui->clicked && gui_element_has_sb_data(element) && gui_scrollbar_element_is_thumb(element->data.sb, element)) {
           element->color = GUISB_ACTIVE_THUMB_COLOR;
         }
-        /* Run the enter element for the mouse element, if any. */
-        // gui_element_call_cb(element, GUIELEMENT_ENTER_CALLBACK);
         /* If the old entered element was not NULL. */
         if (entered_element) {
           /* If there is no clicked element currently and the recently left element is the thumb of any scrollbar, reset the color of it. */
           if (!gui->clicked && gui_element_has_sb_data(entered_element) && gui_scrollbar_element_is_thumb(entered_element->data.sb, entered_element)) {
             entered_element->color = GUISB_THUMB_COLOR;
           }
-          /* Run the leave event for the old entered element, if any. */
-          // gui_element_call_cb(entered_element, GUIELEMENT_LEAVE_CALLBACK);
         }
         entered_element = element;
       }
@@ -1359,12 +1352,12 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
     /* Check if the element belongs to a editor. */
     if (gui_element_has_editor_data(element)) {
       /* If the scroll happend where the text is then adjust that editor, even if not the currently focused one. */
-      if (element == element->data.editor->text) {
+      if (element == element->ed_editor->text) {
         /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
         if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
           line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
-          element->data.editor->openfile->current   = line;
-          element->data.editor->openfile->current_x = index;
+          element->ed_editor->openfile->current   = line;
+          element->ed_editor->openfile->current_x = index;
         }
         /* Up and down scroll. */
         edit_scroll((y > 0.0) ? BACKWARD : FORWARD);
@@ -1377,20 +1370,13 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
         NETLOG("scroll left.\n");
       }
       refresh_needed = TRUE;
-      gui_scrollbar_refresh_needed(element->data.editor->sb);
+      gui_scrollbar_refresh_needed(element->ed_editor->sb);
       /* If the suggestmenu is active then make sure it updates the position and text. */
       if (gui_menu_len(gui->suggestmenu->menu)) {
         gui_menu_text_refresh_needed(gui->suggestmenu->menu);
         gui_menu_pos_refresh_needed(gui->suggestmenu->menu);
       }
     }
-    /* Check if this is a child to a element that belongs to a editor. */
-    // else if (gui_element_has_editor_data(element->parent)) {
-    //   /* Check if the element is a child of the editors topbar. */
-    //   if (element->parent == element->parent->data.editor->topbar) {
-    //     NETLOG("Is topbar ancestor.\n");
-    //   }
-    // }
     /* If this is the main element of a menu.  Then call it's scroll function. */
     else if (gui->active_menu && gui_element_has_menu_data(element) && gui_menu_is_ancestor(element->data.menu, gui->active_menu) && gui_menu_element_is_main(element->data.menu, element)) {
       gui_menu_scroll_action(element->data.menu, ((y > 0) ? BACKWARD : FORWARD), mousepos.x, mousepos.y);
