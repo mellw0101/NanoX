@@ -137,8 +137,19 @@ static void gui_editor_topbar_context_menu_accept(void *arg, const char *const r
   ASSERT(arg);
   ASSERT(entry_string);
   EditorTopbar *etb = (__TYPE(etb))arg;
-  if (etb->context->clicked && gui_element_has_file_data(etb->context->clicked) && gui_element_has_editor_data(etb->context->clicked->parent) && etb->context->clicked->parent->ed_editor == openeditor) {
-    gui_editor_close_a_open_buffer(etb->context->clicked->parent->ed_editor, etb->context->clicked->ed_file);
+  if (etb->context->clicked && gui_element_has_file_data(etb->context->clicked) && gui_element_has_editor_data(etb->context->clicked->parent)) {
+    switch (index) {
+      case 0: {
+        gui_editor_close_a_open_buffer(etb->context->clicked->parent->ed_editor, etb->context->clicked->ed_file);
+        break;
+      }
+      case 1: {
+        while (!CLIST_SINGLE(etb->context->clicked->ed_file)) {
+          gui_editor_close_a_open_buffer(etb->context->clicked->parent->ed_editor, etb->context->clicked->ed_file->next);
+        }
+        break;
+      }
+    }
     etb->context->clicked = NULL;
   }
 }
@@ -152,6 +163,7 @@ static void gui_editor_topbar_context_menu_create(EditorTopbar *const etb) {
   etb->context->clicked = NULL;
   etb->context->menu = gui_menu_create(etb->element, gui->uifont, etb, gui_editor_topbar_context_menu_pos, gui_editor_topbar_context_menu_accept);
   gui_menu_push_back(etb->context->menu, "Close");
+  gui_menu_push_back(etb->context->menu, "Close Others");
 }
 
 static void gui_editor_topbar_context_menu_free(EditorTopbar *const etb) {
