@@ -392,6 +392,7 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->selected = 0;
   gui->promptmenu->viewtop  = 0;
   gui_promptmenu_scrollbar_create();
+  gui->promptmenu->closing_file = NULL;
 }
 
 /* Delete the gui `prompt-menu` struct. */
@@ -646,6 +647,53 @@ void gui_promptmenu_click_action(float y_pos) {
       gui_promptmenu_enter_action();
     }
   }
+}
+
+void gui_promptmenu_char_action(char input) {
+  ASSERT(gui);
+  ASSERT(gui->promptmenu);
+  /* Prompt when closing a single file that has not been saved. */
+  if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
+    ALWAYS_ASSERT(gui->promptmenu->closing_file);
+    if (isconeof(input, "Yy")) {
+      gui_editor_close_a_open_buffer(gui->promptmenu->closing_file);
+      gui->promptmenu->closing_file = NULL;
+      gui_promptmode_leave();
+    }
+    else if (isconeof(input, "Nn")) {
+      gui->promptmenu->closing_file = NULL;
+      gui_promptmode_leave();
+    }
+  }
+  else if (gui_prompt_type == GUI_PROMPT_EXIT_OTHERS_NO_SAVE) {
+    ALWAYS_ASSERT(gui->promptmenu->closing_file);
+    if (isconeof(input, "Yy")) {
+      gui_editor_close_a_open_buffer(gui->promptmenu->closing_file->next);
+      gui_promptmode_leave();
+      gui_editor_close_other_files(gui->promptmenu->closing_file);
+    }
+    else if (isconeof(input, "Nn")) {
+      gui->promptmenu->closing_file = NULL;
+      gui_promptmode_leave();
+    }
+  }
+  else if (gui_prompt_type == GUI_PROMPT_EXIT_ALL_NO_SAVE) {
+    ALWAYS_ASSERT(gui->promptmenu->closing_file);
+    if (isconeof(input, "Yy")) {
+      gui_editor_close_a_open_buffer(gui->promptmenu->closing_file->next);
+      gui_promptmode_leave();
+      gui_editor_close_all_files(gui->promptmenu->closing_file);
+    }
+    else if (isconeof(input, "Nn")) {
+      gui->promptmenu->closing_file = NULL;
+      gui_promptmode_leave();
+    }
+  }
+  else {
+    inject_into_answer(&input, 1);
+    gui_promptmenu_completions_search();
+  }
+  gui->promptmenu->text_refresh_needed = TRUE;
 }
 
 /* ----------------------------- Open file ----------------------------- */

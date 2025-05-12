@@ -402,9 +402,10 @@ void gui_editor_close_open_buffer(void) {
   gui_editor_topbar_entries_refresh_needed(openeditor->etb);
 }
 
-void gui_editor_close_a_open_buffer(guieditor *const editor, openfilestruct *const file) {
-  ASSERT(editor);
+void gui_editor_close_a_open_buffer(openfilestruct *const file) {
   ASSERT(file);
+  guieditor *editor;
+  ALWAYS_ASSERT((editor = gui_editor_from_file(file)));
   if (file->lock_filename) {
     gui_delete_lockfile(file->lock_filename);
   }
@@ -488,3 +489,66 @@ void gui_editor_check_should_close(void) {
     gui_editor_close(starteditor);
   }
 }
+
+void gui_editor_close_single(openfilestruct *const file) {
+  ASSERT(file);
+  guieditor *editor;
+  char *question;
+  ALWAYS_ASSERT((editor = gui_editor_from_file(file)));
+  if (!file->modified || ISSET(VIEW_MODE)) {
+    gui_editor_close_a_open_buffer(file);
+  }
+  else {
+    question = fmtstr("Close [%s] without saving?", (*file->filename ? file->filename : "Nameless"));
+    gui_ask_user(question, GUI_PROMPT_EXIT_NO_SAVE);
+    free(question);
+    gui->promptmenu->closing_file = file;
+  }
+}
+
+void gui_editor_close_other_files(openfilestruct *const file) {
+  ASSERT(file);
+  guieditor *editor;
+  char *question;
+  ALWAYS_ASSERT((editor = gui_editor_from_file(file)));
+  /* When there are multiple files open. */
+  while (!CLIST_SINGLE(file)) {
+    if (!file->next->modified || ISSET(VIEW_MODE)) {
+      gui_editor_close_a_open_buffer(file->next);
+    }
+    else {
+      question = fmtstr("Close [%s] without saving?", (*file->next->filename ? file->next->filename : "Nameless"));
+      gui_ask_user(question, GUI_PROMPT_EXIT_OTHERS_NO_SAVE);
+      gui->promptmenu->closing_file = file;
+      free(question);
+      break;
+    }
+  }
+  if (CLIST_SINGLE(file)) {
+    gui->promptmenu->closing_file = NULL;
+  }
+}
+
+void gui_editor_close_all_files(openfilestruct *const file) {
+  ASSERT(file);
+  guieditor *editor;
+  char *question;
+  ALWAYS_ASSERT((editor = gui_editor_from_file(file)));
+  /* When there are multiple files open. */
+  while (!CLIST_SINGLE(file)) {
+    if (!file->next->modified || ISSET(VIEW_MODE)) {
+      gui_editor_close_a_open_buffer(file->next);
+    }
+    else {
+      question = fmtstr("Close [%s] without saving?", (*file->next->filename ? file->next->filename : "Nameless"));
+      gui_ask_user(question, GUI_PROMPT_EXIT_ALL_NO_SAVE);
+      gui->promptmenu->closing_file = file;
+      free(question);
+      break;
+    }
+  }
+  if (CLIST_SINGLE(file)) {
+    gui_editor_close_single(file);
+  }
+}
+

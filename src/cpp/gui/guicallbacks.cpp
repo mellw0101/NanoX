@@ -390,7 +390,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               ;
             }
             else {
-              gui_ask_user("Close without saving? ", GUI_PROMPT_EXIT_NO_SAVE);
+              char *question = fmtstr("Close [%s] without saving?", (*openfile->filename ? openfile->filename : "Nameless"));
+              gui_ask_user(question, GUI_PROMPT_EXIT_NO_SAVE);
+              free(question);
+              gui->promptmenu->closing_file = openfile;
             }
           }
           break;
@@ -893,21 +896,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
   /* When in the gui prompt mode. */
   if (gui->flag.is_set<GUI_PROMPT>()) {
     input = (char)ch;
-    if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
-      if (is_char_one_of(&input, 0, "Yy")) {
-        if (!gui_quit()) {
-          gui_promptmode_leave();
-        }
-      }
-      else if (is_char_one_of(&input, 0, "Nn")) {
-        gui_promptmode_leave();
-      }
-    }
-    else {
-      inject_into_answer(&input, 1);
-      gui_promptmenu_completions_search();
-    }
-    gui->promptmenu->text_refresh_needed = TRUE;
+    gui_promptmenu_char_action(input);
   }
   /* Otherwise, when we are inside gui editor mode. */
   else if (gui->flag.is_set<GUI_EDITOR_MODE_KEY>()) {
@@ -1153,6 +1142,13 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       /* If the clicked element is a child of any editor's topbar, open the editor topbar context menu. */
       if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent) && gui_editor_topbar_element_is_main(element->parent->ed_editor->etb, element->parent)) {
         gui_editor_topbar_show_context_menu(element->parent->ed_editor->etb, element, TRUE);
+      }
+      /* The clicked element is the main element itself of any editor's topbar. */
+      else if (gui_element_has_editor_data(element) && gui_editor_topbar_element_is_main(element->ed_editor->etb, element)) {
+        gui_editor_topbar_show_context_menu(element->ed_editor->etb, element, TRUE);
+      }
+      else if (gui_element_has_menu_data(element)) {
+        gui_menu_show(element->ed_menu, FALSE);
       }
       else {
         context_menu_show(gui->context_menu, TRUE);

@@ -629,14 +629,18 @@ typedef enum {
   typedef enum {
     GUI_PROMPT_SAVEFILE,
     GUI_PROMPT_EXIT_NO_SAVE,
+    GUI_PROMPT_EXIT_OTHERS_NO_SAVE,
+    GUI_PROMPT_EXIT_ALL_NO_SAVE,
     GUI_PROMPT_MENU,
     GUI_PROMPT_OPEN_FILE,
     GUI_PROMPT_FONT
-  # define GUI_PROMPT_SAVEFILE      GUI_PROMPT_SAVEFILE
-  # define GUI_PROMPT_EXIT_NO_SAVE  GUI_PROMPT_EXIT_NO_SAVE
-  # define GUI_PROMPT_MENU          GUI_PROMPT_MENU
-  # define GUI_PROMPT_OPEN_FILE     GUI_PROMPT_OPEN_FILE
-  # define GUI_PROMPT_FONT          GUI_PROMPT_FONT
+  # define GUI_PROMPT_SAVEFILE             GUI_PROMPT_SAVEFILE
+  # define GUI_PROMPT_EXIT_NO_SAVE         GUI_PROMPT_EXIT_NO_SAVE
+  # define GUI_PROMPT_EXIT_OTHERS_NO_SAVE  GUI_PROMPT_EXIT_OTHERS_NO_SAVE
+  # define GUI_PROMPT_EXIT_ALL_NO_SAVE     GUI_PROMPT_EXIT_ALL_NO_SAVE
+  # define GUI_PROMPT_MENU                 GUI_PROMPT_MENU
+  # define GUI_PROMPT_OPEN_FILE            GUI_PROMPT_OPEN_FILE
+  # define GUI_PROMPT_FONT                 GUI_PROMPT_FONT
   } guiprompt_type;
 
   typedef enum {
@@ -1202,6 +1206,8 @@ typedef struct completionstruct {
     int rows;
 
     GuiScrollbar *sb;
+
+    openfilestruct *closing_file;
   } GuiPromptMenu;
 
   /** TODO: Implement this. */

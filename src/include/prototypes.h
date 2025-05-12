@@ -676,18 +676,27 @@ void   flag_all_block_comments(linestruct *from);
 void   remove_local_vars_from(linestruct *line);
 void   remove_from_color_map(linestruct *line, int color, int type);
 
-/* 'syntax.cpp' */
+
+/* ---------------------------------------------------------- syntax.cpp ---------------------------------------------------------- */
+
+
 void   syntax_check_file(openfilestruct *file);
 bool   syntax_map_exists(file_type type, const char *const restrict key, vec4 *const color);
 
-/* 'netlog.cpp' */
+
+/* ---------------------------------------------------------- netlog.cpp ---------------------------------------------------------- */
+
+
 void netlog_syntaxtype(syntaxtype *s);
 void netlog_colortype(colortype *c);
 void netlog_func_info(function_info_t *info);
 void debug_define(const DefineEntry &de);
 void netlog_openfiles(void);
 
-/* 'words.cpp' */
+
+/* ---------------------------------------------------------- words.cpp ---------------------------------------------------------- */
+
+
 char       **split_into_words(const char *str, const u_int len, u_int *word_count);
 bool         word_more_than_one_white_away(const char *string, Ulong index, bool forward, Ulong *nsteps) _NOTHROW _NODISCARD _NONNULL(1, 4);
 bool         cursor_word_more_than_one_white_away(bool forward, Ulong *nsteps) _NOTHROW;
@@ -915,6 +924,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void gui_promptmenu_hover_action(float y_pos);
   void gui_promptmenu_scroll_action(bool direction, float y_pos);
   void gui_promptmenu_click_action(float y_pos);
+  void gui_promptmenu_char_action(char input);
   
   /* ----------------------------- Open file ----------------------------- */
   
@@ -987,11 +997,14 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void       gui_editor_redecorate(guieditor *const editor);
   void       gui_editor_open_new_empty_buffer(void);
   void       gui_editor_close_open_buffer(void);
-  void       gui_editor_close_a_open_buffer(guieditor *const editor, openfilestruct *const file);
+  void       gui_editor_close_a_open_buffer(openfilestruct *const file);
   void       gui_editor_open_buffer(const char *const restrict path);
   void       gui_editor_update_all(void);
   Ulong      gui_editor_num_of_open_files(guieditor *const editor);
   void       gui_editor_check_should_close(void);
+  void       gui_editor_close_single(openfilestruct *const file);
+  void       gui_editor_close_other_files(openfilestruct *const file);
+  void       gui_editor_close_all_files(openfilestruct *const file);
 
   
   /* ---------------------------------------------------------- gui/guigrid.cpp ---------------------------------------------------------- */
