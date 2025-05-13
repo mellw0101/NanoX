@@ -728,9 +728,9 @@ typedef enum {
   typedef enum {
     #define GUIEDITOR_FLAGSIZE 8
     GUIEDITOR_TEXT_REFRESH_NEEDED,
-    #define GUIEDITOR_TEXT_REFRESH_NEEDED GUIEDITOR_TEXT_REFRESH_NEEDED
     GUIEDITOR_HIDDEN,
-    #define GUIEDITOR_HIDDEN GUIEDITOR_HIDDEN
+    #define GUIEDITOR_TEXT_REFRESH_NEEDED  GUIEDITOR_TEXT_REFRESH_NEEDED
+    #define GUIEDITOR_HIDDEN               GUIEDITOR_HIDDEN
   } guieditor_flag_type;
 #endif
 
@@ -743,7 +743,9 @@ typedef struct GuiScrollbar  GuiScrollbar;
 typedef struct GuiFont       GuiFont;
 typedef struct Menu          Menu;
 typedef struct ContextMenu   ContextMenu;
-typedef struct EditorTopbar  EditorTopbar;
+
+typedef struct EditorTb      EditorTb;
+typedef struct EditorText    EditorText;
 
 /* Some typedefs. */
 typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
@@ -1151,9 +1153,7 @@ typedef struct completionstruct {
     /* The scrollbar for this editor. */
     GuiScrollbar *sb;
 
-    EditorTopbar *etb;
-
-    vec2 pen;
+    EditorTb *etb;
 
     Uint rows; /* How meny rows this `guieditor` can fit in its current size. */
     Uint cols; /* How meny columns this guieditor's text element can fit in its current size. */
@@ -1184,12 +1184,6 @@ typedef struct completionstruct {
     guiscreen *next;
     guiscreen *prev;
   } guiscreen;
-
-  typedef struct GuiPromptMenuEntry {
-    char *description;
-    GuiPromptMenuEntry *prev;
-    GuiPromptMenuEntry *next;
-  } GuiPromptMenuEntry;
 
   typedef struct {
     bool text_refresh_needed : 1;

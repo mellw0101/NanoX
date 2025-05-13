@@ -39,16 +39,6 @@ void gui_switch_to_next_buffer(void) {
   gui_editor_redecorate(openeditor);
 }
 
-/* Delete the lock file when in gui mode, this will show any error on the gui.  Returns `TRUE` on success, and `FALSE` otherwise. */
-bool gui_delete_lockfile(const char *lockfile) {
-  ASSERT(lockfile);
-  if (unlink(lockfile) < 0 && errno != ENOENT) {
-    show_statusmsg(MILD, 2, "Error deleting lock file %s: %s", lockfile, strerror(errno));
-    return FALSE;
-  }
-  return TRUE;
-}
-
 /* Close the active buffer when using gui. */
 void gui_close_buffer(void) {
   close_buffer();
@@ -60,7 +50,7 @@ void gui_close_buffer(void) {
 bool gui_close_and_go(void) {
   /* If the open file has a lock file, delete it first. */
   if (openeditor->openfile->lock_filename) {
-    gui_delete_lockfile(openeditor->openfile->lock_filename);
+    delete_lockfile(openeditor->openfile->lock_filename);
   }
   /* When there is more then one file open in the open editor. */
   if (openeditor->openfile != openeditor->openfile->next) {

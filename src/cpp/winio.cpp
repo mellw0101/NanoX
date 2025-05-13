@@ -1918,7 +1918,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
     /* Show a space as a visible character, or as a space. */
     if (*text == ' ') {
       if (ISSET(WHITESPACE_DISPLAY)) {
-        for (int i = whitelen[0]; i < whitelen[0] + whitelen[1];) {
+        for (int i=whitelen[0]; i<(whitelen[0] + whitelen[1]);) {
           converted[index++] = whitespace[i++];
         }
       }

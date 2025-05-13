@@ -183,7 +183,6 @@ extern SyntaxFile *sf;
 typedef void (*functionptrtype)(void);
 
 #ifdef HAVE_GLFW
-  extern vec2 pen;
   extern guielement *file_menu_element;
   /* The bottom bar. */
   extern frametimerclass frametimer;
@@ -940,7 +939,6 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   
   void gui_switch_to_prev_buffer(void);
   void gui_switch_to_next_buffer(void);
-  bool gui_delete_lockfile(const char *lockfile);
   void gui_close_buffer(void);
   bool gui_close_and_go(void);
   
@@ -1005,6 +1003,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void       gui_editor_close_single(openfilestruct *const file);
   void       gui_editor_close_other_files(openfilestruct *const file);
   void       gui_editor_close_all_files(openfilestruct *const file);
+  float      gui_editor_cursor_x_pos(guieditor *const editor, linestruct *const line, Ulong index);
 
   
   /* ---------------------------------------------------------- gui/guigrid.cpp ---------------------------------------------------------- */
@@ -1162,14 +1161,29 @@ void gui_menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
 /* ---------------------------------------------------------- gui/editor/topbar.cpp ---------------------------------------------------------- */
 
 
-EditorTopbar *gui_editor_topbar_create(guieditor *const editor);
-void gui_editor_topbar_free(EditorTopbar *const etb);
-void gui_editor_topbar_draw(EditorTopbar *const etb);
-void gui_editor_topbar_active_refresh_needed(EditorTopbar *const etb);
-void gui_editor_topbar_entries_refresh_needed(EditorTopbar *const etb);
-void gui_editor_topbar_show_context_menu(EditorTopbar *const etb, guielement *const from_element, bool show);
-bool gui_editor_topbar_element_is_main(EditorTopbar *const etb, guielement *const e);
-bool gui_editor_topbar_owns_element(EditorTopbar *const etb, guielement *const e);
+EditorTb *gui_etb_create(guieditor *const editor);
+void gui_etb_free(EditorTb *const etb);
+void gui_etb_draw(EditorTb *const etb);
+void gui_etb_active_refresh_needed(EditorTb *const etb);
+void gui_etb_text_refresh_needed(EditorTb *const etb);
+void gui_etb_entries_refresh_needed(EditorTb *const etb);
+void gui_etb_show_context_menu(EditorTb *const etb, guielement *const from_element, bool show);
+bool gui_etb_element_is_main(EditorTb *const etb, guielement *const e);
+bool gui_etb_owns_element(EditorTb *const etb, guielement *const e);
+
+
+/* ---------------------------------------------------------- gui/editor/text.cpp ---------------------------------------------------------- */
+
+
+// EditorText *gui_editor_text_create(guieditor *const editor);
+// void gui_editor_text_free(EditorText *const et);
+// void gui_editor_text_get_rows_cols(EditorText *const et, int *const rows, int *const cols);
+// void gui_editor_text_sb_refresh_needed(EditorText *const et);
+// bool gui_editor_text_element_is_text(EditorText *const et, guielement *const e);
+// void gui_editor_text_resize(EditorText *const et);
+// void gui_editor_text_draw(EditorText *const et);
+// vec2 gui_editor_text_pos(EditorText *const et);
+// vec2 gui_editor_text_size(EditorText *const et);
 
 
 /* ---------------------------------------------------------- gui/context_menu.cpp ---------------------------------------------------------- */

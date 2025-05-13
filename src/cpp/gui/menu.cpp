@@ -103,6 +103,21 @@ static MenuEntry *gui_menu_entry_create_with_menu(const char *const restrict lab
 /* ---------------------------------------------------------- Menu static function's ---------------------------------------------------------- */
 
 
+static bool gui_menu_selected_is_above_screen(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  return (menu->selected < menu->viewtop);
+}
+
+static bool gui_menu_selected_is_below_screen(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  return (menu->selected >= (menu->viewtop + menu->rows));
+}
+
+_UNUSED static bool gui_menu_selected_is_off_screen(Menu *const menu) {
+  ASSERT_GUI_MENU;
+  return (gui_menu_selected_is_above_screen(menu) || gui_menu_selected_is_below_screen(menu));
+}
+
 /* The scrollbar update routine for the `Menu` structure. */
 static void gui_menu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
@@ -357,6 +372,11 @@ static void gui_menu_selected_up_internal(Menu *const menu) {
         /* Only update the scrollbar when the viewtop has changed. */
         gui_scrollbar_refresh_needed(menu->sb);
       }
+      else if (gui_menu_selected_is_off_screen(menu)) {
+        menu->viewtop = (menu->selected - 1);
+        /* Only update the scrollbar when the viewtop has changed. */
+        gui_scrollbar_refresh_needed(menu->sb);
+      }
       --menu->selected;
     }
     gui_menu_check_submenu(menu);
@@ -375,8 +395,15 @@ static void gui_menu_selected_down_internal(Menu *const menu) {
       gui_scrollbar_refresh_needed(menu->sb);
     }
     else {
+      /* If the currently selected entry is the last visible entry, move the viewtop down by one. */
       if (menu->selected == (menu->viewtop + menu->maxrows - 1)) {
         ++menu->viewtop;
+        /* Only update the scrollbar when the viewtop has changed. */
+        gui_scrollbar_refresh_needed(menu->sb);
+      }
+      /* Otherwise, if the currently selected entry if fully off screen, adjust the viewtop so that the selected is the last visible entry. */
+      else if (gui_menu_selected_is_off_screen(menu)) {
+        menu->viewtop = fclamp(((menu->selected + 1) - menu->rows + 1), 0, (cvec_len(menu->entries) - menu->rows));
         /* Only update the scrollbar when the viewtop has changed. */
         gui_scrollbar_refresh_needed(menu->sb);
       }
@@ -614,7 +641,7 @@ void gui_menu_hover_action(Menu *const menu, float x_pos, float y_pos) {
     gui_menu_event_bounds(menu, &top, &bot, &right);
     /* If `y_pos` relates to a valid row in the suggestmenu completion menu, then adjust the selected to that row. */
     if (gui_font_row_from_pos(menu->font, top, bot, y_pos, &row) && x_pos < right) {
-      menu->selected = lclamp((menu->viewtop + row), menu->viewtop, (menu->viewtop + menu->rows));
+      menu->selected = lclamp((menu->viewtop + row), menu->viewtop, (menu->viewtop + menu->rows - 1));
       gui_menu_check_submenu(menu);
     }
   }

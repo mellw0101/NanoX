@@ -55,8 +55,7 @@ void make_new_editor(bool new_buffer) {
   /* If this is the first editor. */
   if (!openeditor) {
     /* Make the first editor the only element in the list. */
-    node->prev  = node;
-    node->next  = node;
+    CLIST_INIT(node);
     starteditor = node;
     /* When creating the first editor use this openfile and startfile that was made when we started. */
     node->openfile  = openfile;
@@ -67,10 +66,7 @@ void make_new_editor(bool new_buffer) {
   /* Otherwise, if there is already an existing editor. */
   else {
     /* Add the new editor after the current one in the list. */
-    node->prev             = openeditor;
-    node->next             = openeditor->next;
-    openeditor->next->prev = node;
-    openeditor->next       = node;
+    CLIST_INSERT_AFTER(node, openeditor);
     if (new_buffer) {
       openfile  = NULL;
       startfile = NULL;
@@ -83,7 +79,6 @@ void make_new_editor(bool new_buffer) {
   openeditor->should_close = FALSE;
   openeditor->buffer   = make_new_font_buffer();
   openeditor->openfile = openfile;
-  openeditor->pen      = 0;
   openeditor->rows     = 0;
   /* Create the main editor element. */
   openeditor->main = gui_element_create(
@@ -93,7 +88,7 @@ void make_new_editor(bool new_buffer) {
     FALSE
   );
   /* Create the topbar element for the editor. */
-  openeditor->etb = gui_editor_topbar_create(openeditor);
+  openeditor->etb = gui_etb_create(openeditor);
   /* Create the gutter element as a child to the main element. */
   openeditor->gutter = gui_element_create(openeditor->main);
   openeditor->gutter->color = EDIT_BACKGROUND_COLOR;
@@ -141,7 +136,7 @@ void gui_editor_free(guieditor *const editor) {
     editor->buffer = NULL;
   }
   gui_element_free(editor->main);
-  gui_editor_topbar_free(editor->etb);
+  gui_etb_free(editor->etb);
   free(editor->sb);
   free(editor);
 }
@@ -195,7 +190,7 @@ void gui_editor_hide(guieditor *const editor, bool hide) {
     editor->flag.unset<GUIEDITOR_HIDDEN>();
   }
   gui_element_set_flag_recurse(editor->main, hide, GUIELEMENT_HIDDEN);
-  gui_editor_topbar_show_context_menu(openeditor->etb, NULL, FALSE);
+  gui_etb_show_context_menu(openeditor->etb, NULL, FALSE);
 }
 
 /* Switch to the previous editor.  */
@@ -248,7 +243,7 @@ void gui_editor_switch_openfile_to_prev(void) {
   openfile = openeditor->openfile;
   gui_editor_redecorate(openeditor);
   gui_editor_resize(openeditor);
-  gui_editor_topbar_active_refresh_needed(openeditor->etb);
+  gui_etb_active_refresh_needed(openeditor->etb);
 }
 
 /* Within the currently open editor, switch to the prev buffer. */
@@ -265,7 +260,7 @@ void gui_editor_switch_openfile_to_next(void) {
   openfile = openeditor->openfile;
   gui_editor_redecorate(openeditor);
   gui_editor_resize(openeditor);
-  gui_editor_topbar_active_refresh_needed(openeditor->etb);
+  gui_etb_active_refresh_needed(openeditor->etb);
 }
 
 /* Set `openeditor` to editor, if its not already. */
@@ -298,7 +293,7 @@ guieditor *gui_editor_from_element(guielement *e) {
 /* Get the editor that `file` belongs to. */
 guieditor *gui_editor_from_file(openfilestruct *file) {
   ASSERT(file);
-  CLIST_ITER(starteditor, editor, ITER_OVER_ALL_OPENFILES(editor->startfile, afile,
+  CLIST_ITER(starteditor, editor, CLIST_ITER(editor->startfile, afile,
     if (afile == file) {
       return editor;
     }
@@ -314,7 +309,6 @@ void gui_editor_calculate_rows(guieditor *const editor) {
   Uint row = 0;
   float top, bot;
   while (TRUE) {
-    // row_top_bot_pixel(row, gui_font_get_font(gui->font), &top, &bot);
     gui_font_row_top_bot(gui->font, row, &top, &bot);
     if (top > editor->text->size.h) {
       break;
@@ -358,7 +352,11 @@ void gui_editor_resize(guieditor *const editor) {
   }
   gui_element_move_resize(editor->main, 0, vec2(gui->width, (gui->height - gui->botbar->size.h)));
   gui_editor_calculate_rows(editor);
+  gui_etb_text_refresh_needed(editor->etb);
   gui_scrollbar_refresh_needed(editor->sb);
+  if (editor == openeditor) {
+    editwincols = editor->cols;
+  }
 }
 
 /* Used to ensure the correct state of an editor after we have switched to a new one or changed the currently open file. */
@@ -389,7 +387,7 @@ void gui_editor_open_new_empty_buffer(void) {
   openeditor->openfile = openfile;
   gui_editor_redecorate(openeditor);
   gui_editor_resize(openeditor);
-  gui_editor_topbar_entries_refresh_needed(openeditor->etb);
+  gui_etb_entries_refresh_needed(openeditor->etb);
 }
 
 /* Close the currently open editor's currently open buffer. */
@@ -399,7 +397,7 @@ void gui_editor_close_open_buffer(void) {
   close_buffer();
   openeditor->openfile  = openfile;
   openeditor->startfile = startfile;
-  gui_editor_topbar_entries_refresh_needed(openeditor->etb);
+  gui_etb_entries_refresh_needed(openeditor->etb);
 }
 
 void gui_editor_close_a_open_buffer(openfilestruct *const file) {
@@ -407,7 +405,7 @@ void gui_editor_close_a_open_buffer(openfilestruct *const file) {
   guieditor *editor;
   ALWAYS_ASSERT((editor = gui_editor_from_file(file)));
   if (file->lock_filename) {
-    gui_delete_lockfile(file->lock_filename);
+    delete_lockfile(file->lock_filename);
   }
   if (!CLIST_SINGLE(file)) {
     free_one_buffer(file, &editor->openfile, &editor->startfile);
@@ -415,7 +413,7 @@ void gui_editor_close_a_open_buffer(openfilestruct *const file) {
       openfile = editor->openfile;
       startfile = editor->startfile;
     }
-    gui_editor_topbar_entries_refresh_needed(editor->etb);
+    gui_etb_entries_refresh_needed(editor->etb);
     gui_editor_redecorate(editor);
     gui_editor_resize(editor);
   }
@@ -440,7 +438,9 @@ void gui_editor_open_buffer(const char *const restrict path) {
    * should never be called in this case.  Note that this should be handeled before
    * the call to this function, because this function has one job, to open a file. */
   ALWAYS_ASSERT(file_exists(path));
-  open_buffer(path, TRUE);
+  if (!open_buffer(path, TRUE)) {
+    return;
+  }
   /* If the buffer this was called from is empty, then the newly opened one should replace it. */
   if (!*was_openfile->filename && !was_openfile->totsize) {
     new_openfile = openfile;
@@ -451,7 +451,7 @@ void gui_editor_open_buffer(const char *const restrict path) {
   openeditor->openfile = openfile;
   gui_editor_redecorate(openeditor);
   gui_editor_resize(openeditor);
-  gui_editor_topbar_entries_refresh_needed(openeditor->etb);
+  gui_etb_entries_refresh_needed(openeditor->etb);
 }
 
 void gui_editor_update_all(void) {
@@ -465,10 +465,12 @@ void gui_editor_update_all(void) {
 
 Ulong gui_editor_num_of_open_files(guieditor *const editor) {
   ASSERT(editor);
-  Ulong ret = 0;
-  CLIST_ITER(editor->startfile, e, if (e) {
+  Ulong ret = 1;
+  openfilestruct *buf = editor->startfile->prev;
+  while (buf != editor->startfile) {
+    CLIST_ADV_PREV(buf);
     ++ret;
-  });
+  }
   return ret;
 }
 
@@ -552,3 +554,12 @@ void gui_editor_close_all_files(openfilestruct *const file) {
   }
 }
 
+float gui_editor_cursor_x_pos(guieditor *const editor, linestruct *const line, Ulong index) {
+  ASSERT(editor);
+  ASSERT(line);
+  Ulong from_col  = get_page_start(wideness(line->data, index));
+  char *converted = display_string(line->data, from_col, openeditor->cols, TRUE, FALSE);
+  float ret = (string_pixel_offset(converted, NULL, (wideness(line->data, index) - from_col), gui_font_get_font(gui->font)) + editor->text->pos.x);
+  free(converted);
+  return ret;
+}

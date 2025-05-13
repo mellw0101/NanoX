@@ -47,25 +47,8 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
     /* Upload it to both the shaders. */
     update_projection_uniform(gui->font_shader);
     update_projection_uniform(gui->rect_shader);
-    /* Calculate the rows and columns. */
-    editwinrows = (openeditor->text->size.h / FONT_HEIGHT(gui_font_get_font(gui->font)));
-    /* If the font is a mono font then calculate the number of columns by the gui->width of ' '. */
-    if (gui_font_is_mono(gui->font)) {
-      texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(gui->font), " ");
-      if (glyph == 0) {
-        die("%s: Atlas is not big egnofe.\n", __func__);
-      }
-      editwincols = (openeditor->text->size.w / glyph->advance_x);
-    }
-    /* Otherwise, just guess for now. */
-    else {
-      editwincols = ((openeditor->text->size.w / FONT_WIDTH(gui_font_get_font(gui->font))) * 0.9f);
-    }
-    refresh_needed = TRUE;
-    gui_element_resize(gui->root, vec2(gui->width, gui->height));
     /* Calculate the rows for all editors. */
     CLIST_ITER(starteditor, editor,
-      gui_editor_resize(editor);
       if (texture_font_is_mono(gui_font_get_font(gui->font))) {
         texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(gui->font), " ");
         if (!glyph) {
@@ -76,7 +59,10 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
       else {
         editor->cols = ((editor->text->size.w / FONT_WIDTH(gui_font_get_font(gui->font))) * 0.9f);
       }
+      gui_editor_resize(editor);
     );
+    gui_element_resize(gui->root, vec2(gui->width, gui->height));
+    refresh_needed = TRUE;
   }
 }
 
@@ -349,12 +335,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             syntaxfile_test_read();
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
-            if (begpar(openfile->current, 0)) {
-              writef("Line is begpar.\n");
-            }
-            else {
-              writef("Line is not begpar.\n");
-            }
+            gui_element_move_resize(openeditor->main, vec2(((float)gui->width / 2), openeditor->main->pos.y), vec2(((float)gui->width / 2), openeditor->main->size.h));
+            gui_etb_text_refresh_needed(openeditor->etb);
+            refresh_needed = TRUE;
+            // if (begpar(openfile->current, 0)) {
+            //   writef("Line is begpar.\n");
+            // }
+            // else {
+            //   writef("Line is not begpar.\n");
+            // }
             // Ulong len;
             // float *array = pixpositions("\t\tballe", 0, &len, gui->font);
             // for (Ulong i=0; i<len; ++i) {
@@ -623,10 +612,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_DOWN: {
-          // if (cvec_len(gui->suggestmenu->completions)) {
-          //   gui_suggestmenu_selected_down();
-          //   return;
-          // }
           /* If there is an active menu. */
           if (gui->active_menu) {
             switch (mods) {
@@ -661,7 +646,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             case 0: {
               function = do_down;
               if (openeditor->openfile->cursor_row == (openeditor->rows - 1)) {
-                // openeditor->flag.set<GUIEDITOR_SCROLLBAR_REFRESH_NEEDED>();
                 gui_scrollbar_refresh_needed(openeditor->sb);
               }
             }
@@ -1101,13 +1085,13 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         }
         /* Otherwise, if the element is part of the topbar of an editor. */
         else if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent)
-         && gui_editor_topbar_element_is_main(element->parent->ed_editor->etb, element->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
+         && gui_etb_element_is_main(element->parent->ed_editor->etb, element->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
           if (element->data.file && element->data.file != element->parent->ed_editor->openfile) {
             element->parent->ed_editor->openfile = element->ed_file;
             openfile = element->parent->ed_editor->openfile;
             gui_editor_redecorate(element->parent->ed_editor);
             gui_editor_resize(element->parent->ed_editor);
-            gui_editor_topbar_active_refresh_needed(element->parent->ed_editor->etb);
+            gui_etb_active_refresh_needed(element->parent->ed_editor->etb);
           }
         }
         else if (element == gui->promptmenu->element) {
@@ -1140,12 +1124,12 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       mouse_flag.set<RIGHT_MOUSE_BUTTON_HELD>();
       element = gui_element_from_mousepos();
       /* If the clicked element is a child of any editor's topbar, open the editor topbar context menu. */
-      if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent) && gui_editor_topbar_element_is_main(element->parent->ed_editor->etb, element->parent)) {
-        gui_editor_topbar_show_context_menu(element->parent->ed_editor->etb, element, TRUE);
+      if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent) && gui_etb_element_is_main(element->parent->ed_editor->etb, element->parent)) {
+        gui_etb_show_context_menu(element->parent->ed_editor->etb, element, TRUE);
       }
       /* The clicked element is the main element itself of any editor's topbar. */
-      else if (gui_element_has_editor_data(element) && gui_editor_topbar_element_is_main(element->ed_editor->etb, element)) {
-        gui_editor_topbar_show_context_menu(element->ed_editor->etb, element, TRUE);
+      else if (gui_element_has_editor_data(element) && gui_etb_element_is_main(element->ed_editor->etb, element)) {
+        gui_etb_show_context_menu(element->ed_editor->etb, element, TRUE);
       }
       else if (gui_element_has_menu_data(element)) {
         gui_menu_show(element->ed_menu, FALSE);

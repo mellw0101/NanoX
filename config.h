@@ -1756,7 +1756,7 @@
 /* #undef USE_WINDOWS_THREADS */
 
 /* Version number of package */
-#define VERSION "8.0"
+#define VERSION "0.1"
 
 /* Define to l, ll, u, ul, ull, etc., as suitable for constants of type 'wchar_t'. */
 /* #undef WCHAR_T_SUFFIX */

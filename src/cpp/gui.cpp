@@ -13,8 +13,6 @@ frametimerclass frametimer;
 guielement *file_menu_element = NULL;
 guielement *open_file_element = NULL;
 
-vec2 pen;
-
 /* The list of all `gui-editors`. */
 guieditor *openeditor = NULL;
 /* The first open `gui-editor`. */
@@ -371,7 +369,7 @@ bool gui_quit(void) {
   ASSERT(openeditor->openfile);
   /* If the buffer has a lock file, delete it. */
   if (openeditor->openfile->lock_filename) {
-    gui_delete_lockfile(openeditor->openfile->lock_filename);
+    delete_lockfile(openeditor->openfile->lock_filename);
   }
   /* When there is more then a single file open in the currently open editor. */
   if (!CLIST_SINGLE(openeditor->openfile)) {

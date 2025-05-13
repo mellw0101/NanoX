@@ -5,19 +5,16 @@
 
 /* Add an item to the circular list of openfile structs. */
 void make_new_buffer(void) _NOTHROW {
-  openfilestruct *newnode = (openfilestruct *)nmalloc(sizeof(openfilestruct));
+  openfilestruct *newnode;
+  MALLOC_STRUCT(newnode);
   if (!openfile) {
     /* Make the first buffer the only element in the list. */
-    newnode->prev = newnode;
-    newnode->next = newnode;
-    startfile     = newnode;
+    CLIST_INIT(newnode);
+    startfile = newnode;
   }
   else {
     /* Add the new buffer after the current one in the list. */
-    newnode->prev        = openfile;
-    newnode->next        = openfile->next;
-    openfile->next->prev = newnode;
-    openfile->next       = newnode;
+    CLIST_INSERT_AFTER(newnode, openfile);
     /* There is more than one buffer: show "Close" in help lines. */
     exitfunc->tag = close_tag;
     more_than_one = (!inhelp || more_than_one);
@@ -60,7 +57,7 @@ static char *crop_to_fit(const char *name, Ulong room) _NOTHROW {
     return copy_of("_");
   }
   clipped = display_string(name, (breadth(name) - room + 3), room, FALSE, FALSE);
-  clipped = arealloc(clipped, (strlen(clipped) + 4));
+  clipped = (char *)xrealloc(clipped, (strlen(clipped) + 4));
   memmove((clipped + 3), clipped, (strlen(clipped) + 1));
   clipped[0] = '.';
   clipped[1] = '.';
@@ -71,7 +68,14 @@ static char *crop_to_fit(const char *name, Ulong room) _NOTHROW {
 /* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
 bool delete_lockfile(const char *lockfilename) _NOTHROW {
   if (unlink(lockfilename) < 0 && errno != ENOENT) {
-    statusline(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
+    /* Show the status message using the cli statusline. */
+    if (!ISSET(USING_GUI)) {
+      statusline(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
+    }
+    /* Show the status message using the gui status line. */
+    else {
+      show_statusmsg(MILD, 2, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
+    }
     return FALSE;
   }
   return TRUE;
@@ -83,8 +87,7 @@ bool delete_lockfile(const char *lockfilename) _NOTHROW {
 #define locking_prefix "."
 #define locking_suffix ".swp"
 
-/* Write a lock file, under the given lockfilename.  This always annihilates an
- * existing version of that file.  Return TRUE on success; FALSE otherwise. */
+/* Write a lock file, under the given lockfilename.  This always annihilates an existing version of that file.  Return TRUE on success; FALSE otherwise. */
 static bool write_lockfile(const char *lockfilename, const char *filename, bool modified) _NOTHROW {
   int     mypid   = getpid();
   uid_t   myuid   = geteuid();
@@ -121,7 +124,7 @@ static bool write_lockfile(const char *lockfilename, const char *filename, bool 
     }
     return FALSE;
   }
-  lockdata = (char *)nmalloc(LOCKSIZE);
+  lockdata = (char *)xmalloc(LOCKSIZE);
   memset(lockdata, 0, LOCKSIZE);
   /* This is the lock data we will store (other bytes remain 0x00):
    *
@@ -159,9 +162,8 @@ static bool write_lockfile(const char *lockfilename, const char *filename, bool 
   return TRUE;
 }
 
-/* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask
- * whether to open the corresponding file anyway.  Return SKIPTHISFILE when the user
- * answers "No", return the name of the lock file on success, and return NULL on failure. */
+/* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask whether to open the corresponding file
+ * anyway.  Return SKIPTHISFILE when the user answers "No", return the name of the lock file on success, and return NULL on failure. */
 static char *do_lockfile(const char *filename, bool ask_the_user) {
   char *namecopy     = copy_of(filename);
   char *secondcopy   = copy_of(filename);

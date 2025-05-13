@@ -127,7 +127,7 @@ linestruct *line_from_mouse_y(texture_font_t *font, float offset) {
 linestruct *line_and_index_from_mousepos(texture_font_t *const font, Ulong *const index) {
   /* When debugging is enabled, assert everything we use. */
   ASSERT(openeditor->openfile->edittop);
-  ASSERT(openeditor->text);
+  // ASSERT(openeditor->text);
   ASSERT(font);
   ASSERT(index);
   linestruct *line = line_from_cursor_pos(openeditor);

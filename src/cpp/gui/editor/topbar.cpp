@@ -25,14 +25,14 @@
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
 
-/* `Internal` structure that represent's the context menu for a `EditorTopbar` structure. */
+/* `Internal` structure that represent's the context menu for a `EditorTb` structure. */
 typedef struct {
   guielement *clicked;
   Menu *button_menu;
   Menu *topbar_menu;
-} EditorTopbarContextMenu;
+} EtbContextMenu;
 
-struct EditorTopbar {
+struct EditorTb {
   /* Boolian flags. */
   bool active_refresh_needed  : 1;
   bool text_refresh_needed    : 1;
@@ -42,14 +42,14 @@ struct EditorTopbar {
   guieditor       *editor;
   guielement      *element;
 
-  EditorTopbarContextMenu *context;
+  EtbContextMenu *context;
 };
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
-static void gui_editor_topbar_refresh_active(EditorTopbar *const etb) {
+static void gui_etb_refresh_active(EditorTb *const etb) {
   ASSERT_ETB;
   if (etb->active_refresh_needed) {
     GUI_ELEMENT_CHILDREN_ITER(etb->element, i, button,
@@ -61,20 +61,24 @@ static void gui_editor_topbar_refresh_active(EditorTopbar *const etb) {
   }
 }
 
-static void gui_editor_topbar_refresh_text(EditorTopbar *const etb) {
+static void gui_etb_refresh_text(EditorTb *const etb) {
   ASSERT_ETB;
+  vec2 pen;
   if (etb->text_refresh_needed) {
     vertex_buffer_clear(etb->buffer);
     GUI_ELEMENT_CHILDREN_ITER(etb->element, i, child,
       if (gui_element_has_file_data(child)) {
-        vertex_buffer_add_element_lable_offset(child, gui_font_get_font(gui->uifont), etb->buffer, vec2(pixbreadth(gui->uifont, " "), 0));
+        pen = child->pos;
+        pen.x += pixbreadth(gui->uifont, " ");
+        pen.y += gui_font_row_baseline(gui->uifont, 0);
+        vertex_buffer_add_string(etb->buffer, child->lable, child->lablelen, " ", gui_font_get_font(gui->uifont), child->textcolor, &pen);
       }
     );
     etb->text_refresh_needed = FALSE;
   }
 }
 
-static void gui_editor_topbar_delete_entries(EditorTopbar *const etb) {
+static void gui_etb_delete_entries(EditorTb *const etb) {
   ASSERT_ETB;
   GUI_ELEMENT_CHILDREN_ITER(etb->element, i, child,
     if (gui_element_has_file_data(child)) {
@@ -84,7 +88,7 @@ static void gui_editor_topbar_delete_entries(EditorTopbar *const etb) {
   );
 }
 
-static void gui_editor_topbar_create_button(EditorTopbar *const etb, openfilestruct *const f, vec2 *const pos) {
+static void gui_etb_create_button(EditorTb *const etb, openfilestruct *const f, vec2 *const pos) {
   ASSERT_ETB;
   ASSERT(f);
   ASSERT(pos);
@@ -108,23 +112,23 @@ static void gui_editor_topbar_create_button(EditorTopbar *const etb, openfilestr
   pos->x += button->size.w;
 }
 
-static void gui_editor_topbar_refresh_entries(EditorTopbar *const etb) {
+static void gui_etb_refresh_entries(EditorTb *const etb) {
   ASSERT_ETB;
   vec2 pos;
   if (etb->entries_refresh_needed) {
-    gui_editor_topbar_delete_entries(etb);
+    gui_etb_delete_entries(etb);
     /* Start at the same position as the topbar element. */
     pos = etb->element->pos;
     /* Iterate over all files open in the editor. */
     CLIST_ITER(etb->editor->startfile, f,
-      gui_editor_topbar_create_button(etb, f, &pos);
+      gui_etb_create_button(etb, f, &pos);
     );
     etb->entries_refresh_needed = FALSE;
     etb->text_refresh_needed = TRUE;
   }
 }
 
-static void gui_editor_topbar_draw_entries(EditorTopbar *const etb) {
+static void gui_etb_draw_entries(EditorTb *const etb) {
   ASSERT_ETB;
   GUI_ELEMENT_CHILDREN_ITER(etb->element, i, child,
     if (gui_element_has_file_data(child)) {
@@ -136,17 +140,17 @@ static void gui_editor_topbar_draw_entries(EditorTopbar *const etb) {
 /* ----------------------------- Context menu ----------------------------- */
 
 /* The position routine for the button context menu of the editor topbar. */
-static void gui_editor_topbar_button_context_menu_pos(void *arg, vec2 size, vec2 *pos) {
+static void gui_etb_button_context_menu_pos(void *arg, vec2 size, vec2 *pos) {
   ASSERT(arg);
   ASSERT(pos);
   *pos = mousepos;
 }
 
 /* The accept routine for the button context menu of the editor topbar. */
-static void gui_editor_topbar_button_context_menu_accept(void *arg, const char *const restrict entry_string, int index) {
+static void gui_etb_button_context_menu_accept(void *arg, const char *const restrict entry_string, int index) {
   ASSERT(arg);
   ASSERT(entry_string);
-  EditorTopbar *etb = (__TYPE(etb))arg;
+  EditorTb *etb = (__TYPE(etb))arg;
   ASSERT_ETB;
   openfilestruct *file;
   /* Ensure this only perfoms any action when the clicked element is a button of the topbar. */
@@ -174,17 +178,17 @@ static void gui_editor_topbar_button_context_menu_accept(void *arg, const char *
 }
 
 /* The position routine for the context menu of the editor topbar. */
-static void gui_editor_topbar_context_menu_pos(void *arg, vec2 size, vec2 *pos) {
+static void gui_etb_context_menu_pos(void *arg, vec2 size, vec2 *pos) {
   ASSERT(arg);
   ASSERT(pos);
   *pos = mousepos;
 }
 
 /* The accept routine for the context menu of the editor topbar. */
-static void gui_editor_topbar_context_menu_accept(void *arg, const char *const restrict entry_string, int index) {
+static void gui_etb_context_menu_accept(void *arg, const char *const restrict entry_string, int index) {
   ASSERT(arg);
   ASSERT(entry_string);
-  EditorTopbar *etb = (__TYPE(etb))arg;
+  EditorTb *etb = (__TYPE(etb))arg;
   ASSERT_ETB;
   /* Ensure this only perfoms any action when the clicked element is a button of the topbar. */
   if (etb->context->clicked && etb->context->clicked == etb->element && gui_element_has_editor_data(etb->context->clicked)) {
@@ -199,23 +203,23 @@ static void gui_editor_topbar_context_menu_accept(void *arg, const char *const r
   }
 }
 
-static void gui_editor_topbar_context_menu_create(EditorTopbar *const etb) {
+static void gui_etb_context_menu_create(EditorTb *const etb) {
   ASSERT(etb);
   ASSERT(etb->buffer);
   ASSERT(etb->editor);
   ASSERT(etb->element);
   MALLOC_STRUCT(etb->context);
   etb->context->clicked = NULL;
-  etb->context->button_menu = gui_menu_create(etb->element, gui->uifont, etb, gui_editor_topbar_button_context_menu_pos, gui_editor_topbar_button_context_menu_accept);
+  etb->context->button_menu = gui_menu_create(etb->element, gui->uifont, etb, gui_etb_button_context_menu_pos, gui_etb_button_context_menu_accept);
   gui_menu_push_back(etb->context->button_menu, "Close");
   gui_menu_push_back(etb->context->button_menu, "Close Others");
   gui_menu_push_back(etb->context->button_menu, "Close All");
-  etb->context->topbar_menu = gui_menu_create(etb->element, gui->uifont, etb, gui_editor_topbar_context_menu_pos, gui_editor_topbar_context_menu_accept);
+  etb->context->topbar_menu = gui_menu_create(etb->element, gui->uifont, etb, gui_etb_context_menu_pos, gui_etb_context_menu_accept);
   gui_menu_push_back(etb->context->topbar_menu, "New Text File");
 }
 
 /* Free the editor topbar context menu's. */
-static void gui_editor_topbar_context_menu_free(EditorTopbar *const etb) {
+static void gui_etb_context_menu_free(EditorTb *const etb) {
   ASSERT_ETB;
   gui_menu_free(etb->context->button_menu);
   gui_menu_free(etb->context->topbar_menu);
@@ -226,12 +230,12 @@ static void gui_editor_topbar_context_menu_free(EditorTopbar *const etb) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-EditorTopbar *gui_editor_topbar_create(guieditor *const editor) {
+EditorTb *gui_etb_create(guieditor *const editor) {
   ASSERT(gui);
   ASSERT(gui->uifont);
   ASSERT(editor);
   ASSERT(editor->main);
-  EditorTopbar *etb;
+  EditorTb *etb;
   MALLOC_STRUCT(etb);
   /* editor->topbar = et; */
   /* Boolian flags. */
@@ -247,27 +251,27 @@ EditorTopbar *gui_editor_topbar_create(guieditor *const editor) {
   etb->element->relative_size = 0;
   gui_element_move_resize(etb->element, etb->editor->main->pos, vec2(etb->editor->main->size.w, gui_font_height(gui->uifont)));
   gui_element_set_editor_data(etb->element, etb->editor);
-  gui_editor_topbar_context_menu_create(etb);
+  gui_etb_context_menu_create(etb);
   return etb;
 }
 
-void gui_editor_topbar_free(EditorTopbar *const etb) {
+void gui_etb_free(EditorTb *const etb) {
   /* Make this function `NO-OP`. */
   if (!etb) {
     return;
   }
   vertex_buffer_delete(etb->buffer);
-  gui_editor_topbar_context_menu_free(etb);
+  gui_etb_context_menu_free(etb);
   free(etb);
 }
 
-void gui_editor_topbar_draw(EditorTopbar *const etb) {
+void gui_etb_draw(EditorTb *const etb) {
   ASSERT_ETB;
   gui_element_draw(etb->element);
-  gui_editor_topbar_refresh_active(etb);
-  gui_editor_topbar_refresh_entries(etb);
-  gui_editor_topbar_refresh_text(etb);
-  gui_editor_topbar_draw_entries(etb);
+  gui_etb_refresh_active(etb);
+  gui_etb_refresh_entries(etb);
+  gui_etb_refresh_text(etb);
+  gui_etb_draw_entries(etb);
   upload_texture_atlas(gui_font_get_atlas(gui->uifont));
   render_vertex_buffer(gui->font_shader, etb->buffer);
   gui_menu_draw(etb->context->button_menu);
@@ -275,18 +279,24 @@ void gui_editor_topbar_draw(EditorTopbar *const etb) {
 }
 
 /* When the open file of the topbar has changed, this should be called to just update the currently active entry in the topbar. */
-void gui_editor_topbar_active_refresh_needed(EditorTopbar *const etb) {
+void gui_etb_active_refresh_needed(EditorTb *const etb) {
   ASSERT_ETB;
   etb->active_refresh_needed = TRUE;
 }
 
+/* When the position has changed so the text needs to be re-input into the vertex buffer. */
+void gui_etb_text_refresh_needed(EditorTb *const etb) {
+  ASSERT_ETB;
+  etb->text_refresh_needed = TRUE;
+}
+
 /* When rebuilding the entire topbar is requiered. */
-void gui_editor_topbar_entries_refresh_needed(EditorTopbar *const etb) {
+void gui_etb_entries_refresh_needed(EditorTb *const etb) {
   ASSERT_ETB;
   etb->entries_refresh_needed = TRUE;
 }
 
-void gui_editor_topbar_show_context_menu(EditorTopbar *const etb, guielement *const from_element, bool show) {
+void gui_etb_show_context_menu(EditorTb *const etb, guielement *const from_element, bool show) {
   ASSERT_ETB;
   /* Null passed. */
   if (!from_element) {
@@ -325,14 +335,14 @@ void gui_editor_topbar_show_context_menu(EditorTopbar *const etb, guielement *co
 }
 
 /* Return's `TRUE` when `e` is the main element of `etb`. */
-bool gui_editor_topbar_element_is_main(EditorTopbar *const etb, guielement *const e) {
+bool gui_etb_element_is_main(EditorTb *const etb, guielement *const e) {
   ASSERT_ETB;
   ASSERT(e);
   return (etb->element == e);
 }
 
 /* Return's `TRUE` when `e` is the main element of `etb` or related to the main element of `etb`. */
-bool gui_editor_topbar_owns_element(EditorTopbar *const etb, guielement *const e) {
+bool gui_etb_owns_element(EditorTb *const etb, guielement *const e) {
   ASSERT_ETB;
   return is_ancestor(e, etb->element);
 }

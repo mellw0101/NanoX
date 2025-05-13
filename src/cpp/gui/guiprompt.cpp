@@ -97,15 +97,6 @@ long prompt_index_from_mouse(bool allow_outside) {
   return ret;
 }
 
-_UNUSED static GuiPromptMenuEntry *gui_promptmenu_entry_create(GuiPromptMenuEntry *const prev) {
-  GuiPromptMenuEntry *entry;
-  MALLOC_STRUCT(entry);
-  entry->description = NULL;
-  entry->next = NULL;
-  entry->prev = prev;
-  return entry;
-}
-
 
 /* ---------------------------------------------------------- PromptMenu static function's ---------------------------------------------------------- */
 
@@ -470,7 +461,7 @@ _UNUSED static bool gui_promptmenu_selected_is_above_screen(void) {
 }
 
 _UNUSED static bool gui_promptmenu_selected_is_below_screen(void) {
-  return (gui->promptmenu->selected < gui->promptmenu->viewtop);
+  return (gui->promptmenu->selected > (gui->promptmenu->viewtop + gui->promptmenu->rows));
 }
 
 /* Move the currently selected promptmenu entry up once or when at the very top move it to the bottom.  This also ensures that viewtop moves as well when moving from the top of it. */
@@ -546,7 +537,7 @@ void gui_promptmenu_enter_action(void) {
           /* Free the openfile filename, and assign answer to it. */
           openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
           // gui_editor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-          gui_editor_topbar_entries_refresh_needed(gui_editor_from_file(openfile)->etb);
+          gui_etb_entries_refresh_needed(gui_editor_from_file(openfile)->etb);
           /* Then save the file. */
           if (write_it_out(FALSE, FALSE) == 2) {
             logE("Failed to save file, this needs fixing and the reason needs to be found out.");

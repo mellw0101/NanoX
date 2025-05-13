@@ -54,7 +54,8 @@ static void draw_marked(guieditor *const editor, linestruct *const line, const c
       if (paintlen == -1) {
         paintlen = strlen(thetext);
       }
-      rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(gui->font)) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui_font_get_font(gui->font)) : 0));
+      // rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(gui->font)) + (ISSET(LINE_NUMBERS) ? get_line_number_pixel_offset(line, gui_font_get_font(gui->font)) : 0));
+      rect.x = (string_pixel_offset(line->data, NULL, startcol, gui_font_get_font(gui->font)) + editor->text->pos.x);
       /* Calculate the width of the marked region in pixels. */
       rect.width = string_pixel_offset(thetext, ((convert == thetext) ? NULL : &convert[(thetext - convert) - 1]), paintlen, gui_font_get_font(gui->font));
       /* Get the y offset for the given line. */
@@ -97,6 +98,17 @@ void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
   }
 }
 
+static void gui_draw_row_linenum(linestruct *const line, guieditor *const editor) {
+  char linenobuffer[margin + 1];
+  vec2 pen;
+  if (refresh_needed && ISSET(LINE_NUMBERS)) {
+    pen = editor->gutter->pos;
+    pen.y += gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno));
+    sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
+    vertex_buffer_add_string(editor->buffer, linenobuffer, margin, NULL, gui_font_get_font(gui->font), vec4(1.0f), &pen);
+  }
+}
+
 /* Draw one row onto the gui window. */
 static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   /* When debugging is enabled, assert everything we will use. */
@@ -105,14 +117,10 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
   ASSERT(drawpos);
   SyntaxObject *obj;
   const char *prev_char = NULL;
-  char linenobuffer[margin + 1], *converted;
+  char /* linenobuffer[margin + 1], */ *converted;
   Ulong from_col, converted_len;
-  /* If line numbers are turned on, draw them.  But only when a refresh is needed. */
-  if (refresh_needed && ISSET(LINE_NUMBERS)) {
-    sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
-    vertex_buffer_add_string(editor->buffer, linenobuffer, margin, prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
-    prev_char = " ";
-  }
+  /* Draw the number of this line. */
+  gui_draw_row_linenum(line, editor);
   /* Return early if the line is empty. */
   if (!*line->data) {
     return;
@@ -343,13 +351,14 @@ void draw_editor(guieditor *editor) {
   ASSERT(gui);
   ASSERT(gui->font);
   ASSERT(gui->uifont);
+  vec2 pen = 0;
+  int row = 0;
+  /* Start at the top of the text window. */
+  linestruct *line = editor->openfile->edittop;
   /* When the editor is hidden, just return. */
   if (editor->flag.is_set<GUIEDITOR_HIDDEN>()) {
     return;
   }
-  /* Start at the top of the text window. */
-  int row = 0;
-  linestruct *line = editor->openfile->edittop;
   /* Draw the text editor element. */
   gui_element_draw(editor->text);
   /* Draw the gutter element of the editor. */
@@ -358,25 +367,32 @@ void draw_editor(guieditor *editor) {
   if (refresh_needed) {
     vertex_buffer_clear(editor->buffer);
     while (line && row++ < (int)editor->rows) {
-      editor->pen.x = 0;
-      editor->pen.y = (gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->pos.y);
-      gui_draw_row(line, editor, &editor->pen);
+      pen.x = editor->text->pos.x;
+      pen.y = (gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno)) + editor->text->pos.y);
+      gui_draw_row(line, editor, &pen);
       line = line->next;
     }
     if (!gui->flag.is_set<GUI_PROMPT>() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
-      line_add_cursor((editor->openfile->current->lineno - editor->openfile->edittop->lineno), gui->font, editor->buffer, vec4(1), cursor_pixel_x_pos(gui_font_get_font(gui->font)), editor->text->pos.y);
+      line_add_cursor(
+        (editor->openfile->current->lineno - editor->openfile->edittop->lineno),
+        gui->font,
+        editor->buffer,
+        vec4(1),
+        gui_editor_cursor_x_pos(editor, editor->openfile->current, editor->openfile->current_x),
+        // cursor_pixel_x_pos(gui_font_get_font(gui->font)),
+        editor->text->pos.y);
     }
   }
   else {
     while (line && row++ < (int)editor->rows) {
-      gui_draw_row(line, editor, &editor->pen);
+      gui_draw_row(line, editor, &pen);
       line = line->next;
     }
   }
   upload_texture_atlas(gui_font_get_atlas(gui->font));
   render_vertex_buffer(gui->font_shader, editor->buffer);
   /* Draw the top bar for the editor.  Where the open buffer names are displayd. */
-  gui_editor_topbar_draw(editor->etb);
+  gui_etb_draw(editor->etb);
   gui_scrollbar_draw(editor->sb);
 }
 
