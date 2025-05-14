@@ -19,6 +19,8 @@
   ASSERT(gui->promptmenu->completions);  \
   ASSERT(gui->promptmenu->sb)
 
+#define FONT_DIR_PATH  "/usr/share/fonts"
+
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
@@ -57,6 +59,9 @@ void gui_promptmode_leave(void) {
   gui->flag.unset<GUI_PROMPT>();
   gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
   cvec_clear(gui->promptmenu->completions);
+  cvec_clear(gui->promptmenu->search_vec);
+  gui->promptmenu->selected = 0;
+  gui->promptmenu->viewtop  = 0;
   refresh_needed = TRUE;
 }
 
@@ -181,7 +186,7 @@ static inline void gui_promptmenu_add_prompt_line_text(void) {
   ASSERT(gui->promptmenu);
   ASSERT(gui->promptmenu->element);
   ASSERT(gui->promptmenu->buffer);
-  vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (/* row_baseline_pixel(0, gui->uifont) */ gui_font_row_baseline(gui->uifont, 0) + gui->promptmenu->element->pos.y));
+  vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (gui_font_row_baseline(gui->uifont, 0) + gui->promptmenu->element->pos.y));
   vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui_font_get_font(gui->uifont), vec4(1), &penpos);
   vertex_buffer_add_string(gui->promptmenu->buffer, answer, strlen(answer), " ", gui_font_get_font(gui->uifont), vec4(1), &penpos);
 }
@@ -297,7 +302,6 @@ static void gui_promptmenu_open_file_enter_action(void) {
 /* ----------------------------- Set font ----------------------------- */
 
 static void gui_promptmenu_set_font_search(void) {
-# define FONT_DIR_PATH  "/usr/share/fonts"
   directory_t dir;
   cvec_clear(*answer ? gui->promptmenu->search_vec : gui->promptmenu->completions);
   /* If the font dir does not exist, just return. */
@@ -323,6 +327,32 @@ static void gui_promptmenu_set_font_search(void) {
   else {
     cvec_qsort(gui->promptmenu->completions, qsort_strlen);
   }
+}
+
+static void gui_promptmenu_set_font_enter_action(void) {
+  Uint size       = gui_font_get_size(gui->font);
+  Uint atlas_size = gui_font_get_atlas_size(gui->font);
+  directory_t dir;
+  char *path;
+  if (!dir_exists(FONT_DIR_PATH) || !*answer) {
+    return;
+  }
+  path = copy_of(answer);
+  directory_data_init(&dir);
+  ALWAYS_ASSERT(directory_get_recurse(FONT_DIR_PATH, &dir) != -1);
+  DIRECTORY_ITER(dir, i, entry,
+    if (entry->ext && strcmp(entry->ext, "ttf") == 0 && strcmp(answer, entry->clean_name) == 0) {
+      path = free_and_assign(path, copy_of(entry->path));
+    }
+  );
+  directory_data_free(&dir);
+  gui_font_load(gui->font, path, size, atlas_size);
+  free(path);
+  CLIST_ITER(starteditor, editor,
+    gui_editor_rows_cols(editor);
+  );
+  refresh_needed = TRUE;
+  gui_promptmode_leave();
 }
 
 /* ----------------------------- Scroll bar ----------------------------- */
@@ -431,7 +461,6 @@ void gui_promptmenu_draw_text(void) {
     gui_promptmenu_add_completions_text();
     gui->promptmenu->text_refresh_needed = FALSE;
   }
-  // upload_texture_atlas(gui->uiatlas);
   upload_texture_atlas(gui_font_get_atlas(gui->uifont));
   render_vertex_buffer(gui->font_shader, gui->promptmenu->buffer);
 }
@@ -515,6 +544,7 @@ void gui_promptmenu_enter_action(void) {
   if (cvec_len(gui->promptmenu->completions)) {
     answer = free_and_assign(answer, copy_of((char *)cvec_get(gui->promptmenu->completions, gui->promptmenu->selected)));
     typing_x = strlen(answer);
+    gui->promptmenu->text_refresh_needed = TRUE;
   }
   switch (gui_prompt_type) {
     case GUI_PROMPT_SAVEFILE: {
@@ -564,6 +594,10 @@ void gui_promptmenu_enter_action(void) {
     }
     case GUI_PROMPT_OPEN_FILE: {
       gui_promptmenu_open_file_enter_action();
+      break;
+    }
+    case GUI_PROMPT_FONT: {
+      gui_promptmenu_set_font_enter_action();
       break;
     }
   }

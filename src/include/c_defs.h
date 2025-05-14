@@ -32,8 +32,13 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 
+/* ftgl */
 #include <ftgl/freetype-gl.h>
 #include <ftgl/matrix4x4.h>
+
+/* freetype */
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 /* gl */
 #include "../lib/include/GL/glew.h"
@@ -245,3 +250,6 @@ typedef struct {
   directory_t *dir;
 } directory_thread_data_t;
 
+/* ----------------------------- font.c ----------------------------- */
+
+typedef struct Font  Font;

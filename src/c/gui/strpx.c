@@ -76,3 +76,15 @@ Ulong strpx_array_index(float *const array, Ulong len, float rawx) {
   return index;
 }
 
+/* Return's the index of `rawx` in `string` where `normx` is the start position of the string. */
+Ulong strpx_str_index(texture_font_t *const font, const char *const restrict string, Ulong len, float rawx, float normx) {
+  ASSERT(font);
+  ASSERT(string);
+  float *array;
+  Ulong arraylen;
+  Ulong ret;
+  array = strpx_array(string, len, normx, &arraylen, font);
+  ret   = strpx_array_index(array, arraylen, rawx);
+  free(array);
+  return ret;
+}

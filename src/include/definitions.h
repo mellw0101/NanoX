@@ -408,6 +408,11 @@ using std::vector;
     }                                                                      \
   )
 
+#define GUI_FONT_ROW_INVALID  (-1)
+#define GUI_FONT_ROW_OK       (0)
+#define GUI_FONT_ROW_LOW      (1)
+#define GUI_FONT_ROW_HIGH     (2)
+
 
 /* Enumeration types. */
 
@@ -740,7 +745,6 @@ typedef struct guieditor     guieditor;
 
 /* Forward declarations of fully opaque structures. */
 typedef struct GuiScrollbar  GuiScrollbar;
-typedef struct GuiFont       GuiFont;
 typedef struct Menu          Menu;
 typedef struct ContextMenu   ContextMenu;
 
@@ -1239,8 +1243,8 @@ typedef struct completionstruct {
     vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
     matrix4x4       *projection;             /* The projection to pass to the shaders. */
     Uint             font_shader;            /* The font shader. */
-    GuiFont         *uifont;
-    GuiFont         *font;
+    Font            *uifont;
+    Font            *font;
     Uint             rect_shader;            /* The rect shader. */
     GuiPromptMenu   *promptmenu;
     int              current_cursor_type;    /* The currently active cursor type. */

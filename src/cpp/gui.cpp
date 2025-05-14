@@ -87,8 +87,8 @@ static void setup_font_shader(void) {
     die("Failed to create font shader.\n");
   }
   /* Load the font and uifont. */
-  gui_font_load(gui->font, FALLBACK_FONT_PATH, 17, 512);
-  gui_font_load(gui->uifont, FALLBACK_FONT_PATH, 15, 512);
+  gui_font_load(gui->font, FALLBACK_FONT_PATH, 17, 4096);
+  gui_font_load(gui->uifont, FALLBACK_FONT_PATH, 15, 2048);
   // set_gui_font(FALLBACK_FONT_PATH, gui->font_size);
   // set_gui_uifont(FALLBACK_FONT_PATH, gui->uifont_size);
 }

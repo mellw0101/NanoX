@@ -142,7 +142,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
             obj = (SyntaxObject *)hashmap_get(sf->objects, node->str);
             if (obj) {
               if (obj->color == SYNTAX_COLOR_BLUE) {
-                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+                vertex_buffer_add_mbstr(editor->buffer, (converted + index), (node->start - index), prev_char, gui->font, vec4(1.0f), drawpos);
                 vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), VEC4_8BIT(36, 114, 200, 1), drawpos);
                 index = node->end;
                 free_node(node);
@@ -272,12 +272,13 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
           else {
             vec2 origin = *drawpos;
             origin.x += string_pixel_offset(converted, (ISSET(LINE_NUMBERS) ? " " : NULL), (comment - converted), gui_font_get_font(gui->font));
-            vertex_buffer_add_string(
+            vertex_buffer_add_mbstr(
               editor->buffer,
               (converted + (comment - converted)),
               (converted_len - (comment - converted)),
               ((comment - converted) ? &converted[(comment - converted) - 1] : NULL),
-              gui_font_get_font(gui->font),
+              // gui_font_get_font(gui->font),
+              gui->font,
               GUI_DEFAULT_COMMENT_COLOR,
               &origin
             );
@@ -285,12 +286,12 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
         }
         /* If the comment is not the first char. */
         if (!comment || (comment - converted)) {
-          vertex_buffer_add_string(
+          vertex_buffer_add_mbstr(
             editor->buffer,
             converted,
             (comment ? (comment - converted) : converted_len),
             (ISSET(LINE_NUMBERS) ? " " : NULL),
-            gui_font_get_font(gui->font),
+            gui->font,
             GUI_WHITE_COLOR,
             drawpos
           );

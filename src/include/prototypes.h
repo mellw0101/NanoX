@@ -550,7 +550,7 @@ void       *nmalloc(const Ulong howmuch) _NOTHROW _RETURNS_NONNULL;
 void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
 #define     arealloc(ptr, howmuch) (__TYPE(ptr))xrealloc(ptr, howmuch)
 char       *mallocstrcpy(char *dest, const char *src) _NOTHROW;
-char       *free_and_assign(char *dest, char *src) _NOTHROW;
+// char       *free_and_assign(char *dest, char *src) _NOTHROW;
 Ulong       get_page_start(Ulong column) _NOTHROW;
 Ulong       xplustabs(void) _NOTHROW _NODISCARD;
 Ulong       actual_x(const char *text, Ulong column) _NOTHROW _NODISCARD _NONNULL(1);
@@ -863,6 +863,7 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   float cursor_pixel_y_pos(texture_font_t *font);
   void  add_glyph(const char *current, const char *previous, vertex_buffer_t *buffer, texture_font_t *font, vec4 color, vec2 *pen);
   void  vertex_buffer_add_string(vertex_buffer_t *buffer, const char *string, Ulong slen, const char *previous, texture_font_t *font, vec4 color, vec2 *pen);
+  void  vertex_buffer_add_mbstr(vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Font *const font, vec4 color, vec2 *penpos);
   void  add_openfile_cursor(texture_font_t *font, vertex_buffer_t *buffer, vec4 color);
   void  add_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color, vec2 at);
   void  update_projection_uniform(Uint shader);
@@ -976,34 +977,38 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui/guieditor.cpp ---------------------------------------------------------- */
   
   
-  void       gui_editor_refresh_topbar(guieditor *const editor);
-  void       gui_editor_update_active_topbar(guieditor *editor);
-  void       make_new_editor(bool new_buffer);
-  void       gui_editor_free(guieditor *const editor);
-  void       gui_editor_close(void);
-  void       gui_editor_close(guieditor *const editor);
-  void       gui_editor_hide(guieditor *const editor, bool hide);
-  void       gui_editor_switch_to_prev(void);
-  void       gui_editor_switch_to_next(void);
-  void       gui_editor_switch_openfile_to_prev(void);
-  void       gui_editor_switch_openfile_to_next(void);
-  void       gui_editor_set_open(guieditor *const editor);
-  guieditor *gui_editor_from_element(guielement *e);
-  guieditor *gui_editor_from_file(openfilestruct *file);
-  void       gui_editor_calculate_rows(guieditor *const editor);
-  void       gui_editor_resize(guieditor *const editor);
-  void       gui_editor_redecorate(guieditor *const editor);
-  void       gui_editor_open_new_empty_buffer(void);
-  void       gui_editor_close_open_buffer(void);
-  void       gui_editor_close_a_open_buffer(openfilestruct *const file);
-  void       gui_editor_open_buffer(const char *const restrict path);
-  void       gui_editor_update_all(void);
-  Ulong      gui_editor_num_of_open_files(guieditor *const editor);
-  void       gui_editor_check_should_close(void);
-  void       gui_editor_close_single(openfilestruct *const file);
-  void       gui_editor_close_other_files(openfilestruct *const file);
-  void       gui_editor_close_all_files(openfilestruct *const file);
-  float      gui_editor_cursor_x_pos(guieditor *const editor, linestruct *const line, Ulong index);
+  void        gui_editor_refresh_topbar(guieditor *const editor);
+  void        gui_editor_update_active_topbar(guieditor *editor);
+  void        make_new_editor(bool new_buffer);
+  void        gui_editor_free(guieditor *const editor);
+  void        gui_editor_close(void);
+  void        gui_editor_close(guieditor *const editor);
+  void        gui_editor_hide(guieditor *const editor, bool hide);
+  void        gui_editor_switch_to_prev(void);
+  void        gui_editor_switch_to_next(void);
+  void        gui_editor_switch_openfile_to_prev(void);
+  void        gui_editor_switch_openfile_to_next(void);
+  void        gui_editor_set_open(guieditor *const editor);
+  guieditor  *gui_editor_from_element(guielement *e);
+  guieditor  *gui_editor_from_file(openfilestruct *file);
+  void        gui_editor_calculate_rows(guieditor *const editor);
+  void        gui_editor_rows_cols(guieditor *const editor);
+  void        gui_editor_resize(guieditor *const editor);
+  void        gui_editor_redecorate(guieditor *const editor);
+  void        gui_editor_open_new_empty_buffer(void);
+  void        gui_editor_close_open_buffer(void);
+  void        gui_editor_close_a_open_buffer(openfilestruct *const file);
+  void        gui_editor_open_buffer(const char *const restrict path);
+  void        gui_editor_update_all(void);
+  Ulong       gui_editor_num_of_open_files(guieditor *const editor);
+  void        gui_editor_check_should_close(void);
+  void        gui_editor_close_single(openfilestruct *const file);
+  void        gui_editor_close_other_files(openfilestruct *const file);
+  void        gui_editor_close_all_files(openfilestruct *const file);
+  float       gui_editor_cursor_x_pos(guieditor *const editor, linestruct *const line, Ulong index);
+  linestruct *gui_editor_get_text_line(guieditor *const editor, float y_pos);
+  Ulong       gui_editor_get_text_index(guieditor *const editor, linestruct *const line, float x_pos);
+  void        gui_editor_get_text_line_index(guieditor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex);
 
   
   /* ---------------------------------------------------------- gui/guigrid.cpp ---------------------------------------------------------- */
@@ -1039,47 +1044,12 @@ Ulong  append_to(char **dst, const char *src) _NOTHROW _NONNULL(1, 2);
 char **split_string_nano(const char *string, const char delim, Ulong *n) _NOTHROW _NODISCARD _NONNULL(1, 3);
 
 
-/* ---------------------------------------------------------- gui/font/loading.cpp ---------------------------------------------------------- */
-
-
-/* ----------------------------- Gui font ----------------------------- */
-
-GuiFont         *gui_font_create(void);
-void             gui_font_free(GuiFont *const f);
-void             gui_font_load(GuiFont *const f, const char *const restrict path, Uint size, Uint atlas_size);
-texture_font_t  *gui_font_get_font(GuiFont *const f);
-texture_atlas_t *gui_font_get_atlas(GuiFont *const f);
-texture_glyph_t *gui_font_get_glyph(GuiFont *const f, const char *const restrict codepoint);
-Uint             gui_font_get_size(GuiFont *const f);
-long             gui_font_get_line_height(GuiFont *const f);
-bool             gui_font_is_mono(GuiFont *const f);
-float            gui_font_height(GuiFont *const f);
-float            gui_font_row_baseline(GuiFont *const f, long row);
-void             gui_font_row_top_bot(GuiFont *const f, long row, float *const top, float *const bot);
-void             gui_font_change_size(GuiFont *const f, Uint new_size);
-void             gui_font_increase_size(GuiFont *const f);
-void             gui_font_decrease_size(GuiFont *const f);
-void             gui_font_decrease_line_height(GuiFont *const f);
-void             gui_font_increase_line_height(GuiFont *const f);
-bool             gui_font_row_from_pos(GuiFont *const f, float y_top, float y_bot, float y_pos, long *outrow);
-
-/* ----------------------------- General ----------------------------- */
-
-void free_atlas(texture_atlas_t *atlas);
-// void free_gui_font(bool uifont);
-// void set_gui_font(const char *const restrict path, Uint size);
-// void set_gui_uifont(const char *const restrict path, Uint size);
-// void set_all_gui_fonts(const char *const restrict path, Uint size, Uint uisize);
-// void change_gui_font_size(Uint size);
-void list_available_fonts(void);
-
-
 /* ---------------------------------------------------------- gui/font/utils.cpp ---------------------------------------------------------- */
 
 
 // float row_baseline_pixel(long lineno, texture_font_t *const font);
 // void row_top_bot_pixel(long lineno, texture_font_t *const font, float *const top, float *const bot);
-void line_add_cursor(long lineno, GuiFont *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset);
+void line_add_cursor(long lineno, Font *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset);
 vertex_buffer_t *make_new_font_buffer(void) _NODISCARD;
 
 
@@ -1089,7 +1059,7 @@ vertex_buffer_t *make_new_font_buffer(void) _NODISCARD;
 float pixnbreadth_prev(const char *const restrict string, long len, const char *const restrict prev_char);
 float pixnbreadth(const char *const restrict string, long len);
 float pixbreadth(texture_font_t *const font, const char *const restrict string);
-float pixbreadth(GuiFont *const font, const char *const restrict string);
+float pixbreadth(Font *const font, const char *const restrict string);
 
 
 /* ---------------------------------------------------------- gui/cursor/cursor.cpp ---------------------------------------------------------- */
@@ -1119,7 +1089,7 @@ void          gui_scrollbar_show(GuiScrollbar *const sb, bool show);
 /* ---------------------------------------------------------- gui/menu.cpp ---------------------------------------------------------- */
 
 
-Menu    *gui_menu_create(guielement *const parent, GuiFont *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine);
+Menu    *gui_menu_create(guielement *const parent, Font *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine);
 Menu    *gui_menu_create_submenu(Menu *const parent, const char *const restrict lable, void *data, MenuAcceptFunc accept_routine);
 void     gui_menu_free(Menu *const menu);
 void     gui_menu_draw(Menu *const menu);
@@ -1146,7 +1116,7 @@ bool     gui_menu_should_accept_on_tab(Menu *const menu);
 bool     gui_menu_allows_arrow_navigation(Menu *const menu);
 bool     gui_menu_is_ancestor(Menu *const menu, Menu *const ancestor);
 bool     gui_menu_is_shown(Menu *const menu);
-GuiFont *gui_menu_get_font(Menu *const menu);
+Font *gui_menu_get_font(Menu *const menu);
 int      gui_menu_len(Menu *const menu);
 
 /* ----------------------------- Menu qsort callback's ----------------------------- */

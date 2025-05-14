@@ -23,7 +23,7 @@
 //   ASSIGN_IF_VALID(bot, (baseline - font->descender));
 // }
 
-void line_add_cursor(long lineno, GuiFont *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset) {
+void line_add_cursor(long lineno, Font *const font, vertex_buffer_t *const buf, vec4 color, float xpos, float yoffset) {
   ASSERT(font);
   float top, bot, x0, x1, y0, y1;
   /* Use the NULL texture as the cursor texture, so just a rectangle. */

@@ -231,6 +231,21 @@ void vertex_buffer_add_string(vertex_buffer_t *buf, const char *string, Ulong sl
   }
 }
 
+void vertex_buffer_add_mbstr(vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Font *const font, vec4 color, vec2 *penpos) {
+  ASSERT(buf);
+  ASSERT(string);
+  ASSERT(font);
+  ASSERT(penpos);
+  const char *cur = string;
+  const char *prev = previous;
+  while (*cur && cur < (string + len)) {
+    add_glyph(cur, prev, buf, gui_font_get_font(font), color, penpos);
+    prev = cur;
+    cur += char_length(cur);
+  }
+}
+
+
 /* Add a cursor in `buf` using the NULL texture from `font` in the color of `color`, at `at`. */
 void add_cursor(texture_font_t *font, vertex_buffer_t *buf, vec4 color, vec2 at) {
   ASSERT(font);

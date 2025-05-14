@@ -38,7 +38,7 @@ float pixbreadth(texture_font_t *const font, const char *const restrict string) 
   return ret;
 }
 
-float pixbreadth(GuiFont *const font, const char *const restrict string) {
+float pixbreadth(Font *const font, const char *const restrict string) {
   ASSERT(font);
   ASSERT(string);
   float ret = 0;

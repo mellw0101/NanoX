@@ -336,6 +336,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
             gui_element_move_resize(openeditor->main, vec2(((float)gui->width / 2), openeditor->main->pos.y), vec2(((float)gui->width / 2), openeditor->main->size.h));
+            gui_editor_rows_cols(openeditor);
             gui_etb_text_refresh_needed(openeditor->etb);
             refresh_needed = TRUE;
             // if (begpar(openfile->current, 0)) {
@@ -1020,16 +1021,17 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       mouse_flag.set<LEFT_MOUSE_BUTTON_HELD>();
       /* When in prompt-mode. */
       if (gui->flag.is_set<GUI_PROMPT>()) {
-        /* Get the index in the prompt. */
-        long index = prompt_index_from_mouse(FALSE);
-        /* If the mouse press was on anything other then inside the top-bar, exit prompt-mode. */
-        if (index == -1) {
-          gui_promptmode_leave();
+        long row;
+        /* When the mouse y position is inside the gui promptmenu element. */
+        if (gui_font_row_from_pos(gui->uifont, gui->promptmenu->element->pos.y, (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h), mousepos.y, &row)) {
+          if (row == 0) {
+            typing_x = gui_font_index_from_pos(gui->uifont, answer, strlen(answer), mousepos.x, (gui->promptmenu->element->pos.x + pixbreadth(gui->uifont, " ") + pixbreadth(gui->uifont, prompt)));
+            gui->promptmenu->text_refresh_needed = TRUE;
+          }
         }
-        /* Otherwise, set prompt x pos. */
+        /* Otherwise, when outside the promptmenu element, we should leave promptmode. */
         else {
-          typing_x = index;
-          gui->promptmenu->text_refresh_needed = TRUE;
+          gui_promptmode_leave();
         }
       }
       element = gui_element_from_mousepos();
@@ -1190,9 +1192,11 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     /* If the clicked element is a part of an editor. */
     else if (gui_element_has_editor_data(gui->clicked)) {
       /* If the clicked element is a editor's text element. */
-      if (gui->clicked == gui->clicked->data.editor->text) {
+      if (gui->clicked == gui->clicked->ed_editor->text) {
         Ulong index;
-        linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
+        linestruct *line;
+        gui_editor_get_text_line_index(gui->clicked->ed_editor, mousepos.x, mousepos.y, &line, &index);
+        // linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
         openfile->current   = line;
         openfile->current_x = index;
         /* If the left press was a tripple press, adjust the mark based on the current cursor line. */

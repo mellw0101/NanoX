@@ -157,12 +157,39 @@ void findnextchar(SyntaxFileLine **const outline, const char **const outdata);
 float strpx_glyphlen(const char *const restrict current, const char *const restrict previous, texture_font_t *const font);
 float *strpx_array(const char *const restrict str, Ulong len, float normx, Ulong *const outlen, texture_font_t *const font);
 Ulong strpx_array_index(float *const array, Ulong len, float rawx);
+Ulong strpx_str_index(texture_font_t *const font, const char *const restrict string, Ulong len, float rawx, float normx);
 
 
 /* ---------------------------------------------------------- gui/cursor.c ---------------------------------------------------------- */
 
 
 void set_cursor_type(GLFWwindow *const window, int type) _NONNULL(1);
+
+
+/* ---------------------------------------------------------- gui/font.c ---------------------------------------------------------- */
+
+
+Font            *gui_font_create(void);
+void             gui_font_free(Font *const f);
+void             gui_font_load(Font *const f, const char *const restrict path, Uint size, Uint atlas_size);
+texture_font_t  *gui_font_get_font(Font *const f);
+texture_atlas_t *gui_font_get_atlas(Font *const f);
+texture_glyph_t *gui_font_get_glyph(Font *const f, const char *const restrict codepoint);
+Uint             gui_font_get_size(Font *const f);
+Uint             gui_font_get_atlas_size(Font *const f);
+long             gui_font_get_line_height(Font *const f);
+bool             gui_font_is_mono(Font *const f);
+float            gui_font_height(Font *const f);
+float            gui_font_row_baseline(Font *const f, long row);
+void             gui_font_row_top_bot(Font *const f, long row, float *const top, float *const bot);
+void             gui_font_change_size(Font *const f, Uint new_size);
+void             gui_font_increase_size(Font *const f);
+void             gui_font_decrease_size(Font *const f);
+void             gui_font_decrease_line_height(Font *const f);
+void             gui_font_increase_line_height(Font *const f);
+void             gui_font_rows_cols(Font *const f, float width, float height, int *const outrows, int *const outcols);
+bool             gui_font_row_from_pos(Font *const f, float y_top, float y_bot, float y_pos, long *outrow);
+Ulong            gui_font_index_from_pos(Font *const f, const char *const restrict string, Ulong len, float rawx, float normx);
 
 
 _END_C_LINKAGE

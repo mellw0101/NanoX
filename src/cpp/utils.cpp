@@ -302,7 +302,7 @@ char *mallocstrcpy(char *dest, const char *src) _NOTHROW {
   return dest;
 }
 
-// /* Return an allocated copy of the first count characters of the given string, and 'null-terminate' the copy. */
+/* Return an allocated copy of the first count characters of the given string, and 'null-terminate' the copy. */
 // char *measured_copy(const char *string, const Ulong count) _NOTHROW {
 //   char *thecopy = (char *)nmalloc(count + 1);
 //   memcpy(thecopy, string, count);
@@ -310,16 +310,16 @@ char *mallocstrcpy(char *dest, const char *src) _NOTHROW {
 //   return thecopy;
 // }
 
-// /* Return an allocated copy of the given string. */
+/* Return an allocated copy of the given string. */
 // char *copy_of(const char *string) _NOTHROW {
 //   return measured_copy(string, strlen(string));
 // }
 
 /* Free the string at dest and return the string at src. */
-char *free_and_assign(char *dest, char *src) _NOTHROW {
-  free(dest);
-  return src;
-}
+// char *free_and_assign(char *dest, char *src) _NOTHROW {
+//   free(dest);
+//   return src;
+// }
 
 /* When not softwrapping, nano scrolls the current line horizontally by
  * chunks ("pages").  Return the column number of the first character

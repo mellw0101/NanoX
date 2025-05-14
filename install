@@ -33,5 +33,5 @@ if [ -f build/bin/NanoX ]; then
   sudo cp build/bin/NanoX /usr/bin/nanox
 fi
 
-mkdir -p ~/.config/nanox/fonts/
-cp fonts/unifont.ttf ~/.config/nanox/fonts/unifont.ttf
+sudo mkdir -p /etc/nanox/fonts/
+sudo cp fonts/unifont.ttf /etc/nanox/fonts/unifont.ttf

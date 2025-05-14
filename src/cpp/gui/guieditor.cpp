@@ -333,6 +333,19 @@ static void guieditor_set_gutter_width(guieditor *const editor) {
   free(linenostr);
 }
 
+void gui_editor_rows_cols(guieditor *const editor) {
+  ASSERT(editor);
+  int rows;
+  int cols;
+  gui_font_rows_cols(gui->font, editor->text->size.w, editor->text->size.h, &rows, &cols);
+  editor->rows = rows;
+  editor->cols = cols;
+  if (editor == openeditor) {
+    editwinrows = rows;
+    editwincols = cols;
+  }
+}
+
 /* Resize `editor` to the size of the gui, this needs to be changed later when we add a grid to hold editors. */
 void gui_editor_resize(guieditor *const editor) {
   ASSERT(gui);
@@ -562,4 +575,28 @@ float gui_editor_cursor_x_pos(guieditor *const editor, linestruct *const line, U
   float ret = (string_pixel_offset(converted, NULL, (wideness(line->data, index) - from_col), gui_font_get_font(gui->font)) + editor->text->pos.x);
   free(converted);
   return ret;
+}
+
+linestruct *gui_editor_get_text_line(guieditor *const editor, float y_pos) {
+  ASSERT(editor);
+  ASSERT(editor->text);
+  ASSERT(editor->openfile);
+  ASSERT(editor->openfile->edittop);
+  long row;
+  gui_font_row_from_pos(gui->font, editor->text->pos.y, (editor->text->pos.y + editor->text->size.h), y_pos, &row);
+  return gui_line_from_number(editor, lclamp((editor->openfile->edittop->lineno + row), editor->openfile->edittop->lineno, editor->openfile->filebot->lineno));
+}
+
+Ulong gui_editor_get_text_index(guieditor *const editor, linestruct *const line, float x_pos) {
+  ASSERT(editor);
+  ASSERT(line);
+  return gui_font_index_from_pos(gui->font, line->data, strlen(line->data), x_pos, editor->text->pos.x);
+}
+
+void gui_editor_get_text_line_index(guieditor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex) {
+  ASSERT(editor);
+  ASSERT(outline);
+  ASSERT(outindex);
+  (*outline)  = gui_editor_get_text_line(editor, y_pos);
+  (*outindex) = gui_editor_get_text_index(editor, (*outline), x_pos);
 }

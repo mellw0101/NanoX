@@ -55,7 +55,7 @@ struct Menu {
   int              maxrows;
   int              rows;
   GuiScrollbar    *sb;
-  GuiFont         *font;
+  Font         *font;
 
   /* Used when this menu is a `submenu`, otherwise always `NULL`. */
   Menu *parent;
@@ -427,7 +427,7 @@ static void gui_menu_exit_submenu_internal(Menu *const menu) {
 
 
 /* Create a allocated `Menu`. */
-Menu *gui_menu_create(guielement *const parent, GuiFont *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine) {
+Menu *gui_menu_create(guielement *const parent, Font *const font, void *data, MenuPosFunc position_routine, MenuAcceptFunc accept_routine) {
   ASSERT(parent);
   ASSERT(font);
   ASSERT(data);
@@ -766,7 +766,7 @@ bool gui_menu_is_shown(Menu *const menu) {
 
 /* ----------------------------- Getter function's ----------------------------- */
 
-GuiFont *gui_menu_get_font(Menu *const menu) {
+Font *gui_menu_get_font(Menu *const menu) {
   ASSERT_GUI_MENU;
   return menu->font;
 }

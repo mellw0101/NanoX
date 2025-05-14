@@ -106,8 +106,7 @@ static bool _NODISCARD is_punct_char(const char *const c) _NOTHROW {
   return iswpunct(wc);
 }
 
-// Return 'TRUE' when the given character is word-forming (it is alphanumeric or
-// specified in 'wordchars', or it is punctuation when allow_punct is TRUE).
+/* Return 'TRUE' when the given character is word-forming (it is alphanumeric or specified in 'wordchars', or it is punctuation when allow_punct is TRUE). */
 bool is_word_char(const char *const c, bool allow_punct) _NOTHROW {
   if (!*c) {
     return FALSE;
