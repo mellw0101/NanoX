@@ -13,33 +13,33 @@ static void *terminate_work(void *) _NOTHROW {
 
 // Either lock or unlock the threadpools mutex, with full error reporting.  We will
 // not interviene on fail as I want to see for now atleast what it takes to crash.
-// void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NOTHROW {
-//   int result = (lock == TRUE) ? pthread_mutex_lock(mutex) : pthread_mutex_unlock(mutex);
-//   if (result == 0) {
-//     return;
-//   }
-//   switch (result) {
-//     case EAGAIN : {
-//       logE("Mutex: 'task_queue->mutex' exceeded the maximum number of recursive locks.");
-//       break;
-//     }
-//     case EDEADLK : {
-//       logE("Mutex: 'task_queue->mutex' caused a deadlock or was already owned by this thread.");
-//       break;
-//     }
-//     case EINVAL : {
-//       logE("Mutex: 'task_queue->mutex' is not valid, indicating a fatal error.");
-//       break;
-//     }
-//     case EPERM : {
-//       logE("Mutex: 'task_queue->mutex' was locked by another thread, or not at all.");
-//       break;
-//     }
-//     default : {
-//       logE("Mutex: 'task_queue->mutex' encountered an unexpected error code: %d.", result);
-//     }
-//   }
-// }
+void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NOTHROW {
+  int result = (lock == TRUE) ? pthread_mutex_lock(mutex) : pthread_mutex_unlock(mutex);
+  if (result == 0) {
+    return;
+  }
+  switch (result) {
+    case EAGAIN : {
+      logE("Mutex: 'task_queue->mutex' exceeded the maximum number of recursive locks.");
+      break;
+    }
+    case EDEADLK : {
+      logE("Mutex: 'task_queue->mutex' caused a deadlock or was already owned by this thread.");
+      break;
+    }
+    case EINVAL : {
+      logE("Mutex: 'task_queue->mutex' is not valid, indicating a fatal error.");
+      break;
+    }
+    case EPERM : {
+      logE("Mutex: 'task_queue->mutex' was locked by another thread, or not at all.");
+      break;
+    }
+    default : {
+      logE("Mutex: 'task_queue->mutex' encountered an unexpected error code: %d.", result);
+    }
+  }
+}
 
 /* This is a helper function to easily lock the threadpool mutex. */
 static inline void lock_threadpool_mutex(bool lock) _NOTHROW {
