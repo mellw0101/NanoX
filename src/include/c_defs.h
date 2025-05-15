@@ -253,3 +253,69 @@ typedef struct {
 /* ----------------------------- font.c ----------------------------- */
 
 typedef struct Font  Font;
+
+/* ----------------------------- element_gridmap.c ----------------------------- */
+
+typedef struct {
+  int x;
+  int y;
+} ElementGridpos;
+
+typedef struct ElementGrid  ElementGrid;
+
+/* ----------------------------- color.c ----------------------------- */
+
+typedef struct {
+  float r;
+  float g;
+  float b;
+  float a;
+} Color;
+
+/* ----------------------------- element.c ----------------------------- */
+
+typedef struct Element  Element;
+
+struct Element {
+  /* Boolian flags. */
+  bool hidden                     : 1;
+  bool has_lable                  : 1;
+  bool has_relative_pos           : 1;
+  bool has_relative_x_pos         : 1;
+  bool has_relative_y_pos         : 1;
+  bool has_reverse_relative_pos   : 1;
+  bool has_reverse_relative_x_pos : 1;
+  bool has_reverse_relative_y_pos : 1;
+  bool has_relative_width         : 1;
+  bool has_relative_height        : 1;
+  bool is_border                  : 1;
+  bool has_borders                : 1;
+  bool not_in_gridmap             : 1;
+  bool has_raw_data               : 1;
+  bool has_file_data              : 1;
+  bool has_editor_data            : 1;
+  bool has_sb_data                : 1;
+  bool has_menu_data              : 1;
+  bool is_above                   : 1;
+
+  float x;
+  float y;
+  float relative_x;
+  float relative_y;
+  float width;
+  float height;
+  float relative_width;
+  float relative_height;
+
+  Color *color;
+  Color *text_color;
+
+  char *lable;
+  Ulong lable_len;
+
+  Element *parent;
+  CVec *children;
+
+  int cursor;
+};
+

@@ -335,9 +335,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             syntaxfile_test_read();
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) {
-            gui_element_move_resize(openeditor->main, vec2(((float)gui->width / 2), openeditor->main->pos.y), vec2(((float)gui->width / 2), openeditor->main->size.h));
-            gui_editor_rows_cols(openeditor);
-            gui_etb_text_refresh_needed(openeditor->etb);
+            // gui_element_move_resize(openeditor->main, vec2(((float)gui->width / 2), openeditor->main->pos.y), vec2(((float)gui->width / 2), openeditor->main->size.h));
+            // gui_editor_rows_cols(openeditor);
+            // gui_etb_text_refresh_needed(openeditor->etb);
+            element_move_resize(test_element, 100, 100, 50, 50);
             refresh_needed = TRUE;
             // if (begpar(openfile->current, 0)) {
             //   writef("Line is begpar.\n");
@@ -996,6 +997,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   static double last_time     = 0.0;
   static int    last_button   = 0;
   static vec2   last_mousepos = 0.0f;
+  Element *test;
   guielement *element;
   /* Determen if this was a double or tripple click. */
   if (action == GLFW_PRESS) {
@@ -1033,6 +1035,10 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         else {
           gui_promptmode_leave();
         }
+      }
+      test = element_from_pos(mousepos.x, mousepos.y);
+      if (test) {
+        writef("Hello\n");
       }
       element = gui_element_from_mousepos();
       if (element) {

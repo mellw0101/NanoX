@@ -12,6 +12,9 @@
 
 extern long tabsize;
 
+extern ElementGrid *element_grid;
+extern Element *test_element;
+extern Uint element_rect_shader;
 
 _BEGIN_C_LINKAGE
 
@@ -190,6 +193,36 @@ void             gui_font_increase_line_height(Font *const f);
 void             gui_font_rows_cols(Font *const f, float width, float height, int *const outrows, int *const outcols);
 bool             gui_font_row_from_pos(Font *const f, float y_top, float y_bot, float y_pos, long *outrow);
 Ulong            gui_font_index_from_pos(Font *const f, const char *const restrict string, Ulong len, float rawx, float normx);
+
+
+/* ---------------------------------------------------------- gui/element_grid.c ---------------------------------------------------------- */
+
+
+ElementGrid *element_grid_create(int cell_size);
+void element_grid_free(ElementGrid *const grid);
+void element_grid_set(ElementGrid *const grid, Element *const e);
+void element_grid_remove(ElementGrid *const grid, Element *const e);
+Element *element_grid_get(ElementGrid *const grid, float x, float y);
+bool element_grid_contains(ElementGrid *const grid, float x, float y);
+
+
+/* ---------------------------------------------------------- gui/color.c ---------------------------------------------------------- */
+
+
+Color *color_create(float r, float g, float b, float a);
+
+
+/* ---------------------------------------------------------- gui/element.c ---------------------------------------------------------- */
+
+
+Element *element_create(float x, float y, float width, float height, bool in_gridmap);
+void element_free(Element *const e);
+void element_set_parent(Element *const e, Element *const parent);
+void element_draw(Element *const e);
+Element *element_from_pos(float x, float y);
+void element_move(Element *const e, float x, float y);
+void element_resize(Element *const e, float width, float height);
+void element_move_resize(Element *const e, float x, float y, float width, float height);
 
 
 _END_C_LINKAGE

@@ -21,6 +21,8 @@ guieditor *starteditor = NULL;
 /* The main structure that holds all the data the gui needs. */
 guistruct *gui = NULL;
 
+Element *test_element = NULL;
+
 // #define FALLBACK_FONT_PATH "/usr/share/root/fonts/monotype.ttf"
 #define FALLBACK_FONT_PATH  "/usr/share/fonts/TTF/Hack-Regular.ttf"
 #define FALLBACK_FONT  "fallback"
@@ -134,6 +136,7 @@ static void setup_rect_shader(void) {
   vertices_ssbo.init(vertices);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertices_ssbo.ssbo());
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indices_ssbo.ssbo());
+  element_rect_shader = gui->rect_shader;
 }
 
 /* Setup the bottom bar for the gui. */
@@ -267,6 +270,8 @@ static void delete_guistruct(void) {
 static void cleanup(void) { 
   gui_editor_free(openeditor);
   delete_guistruct();
+  element_free(test_element);
+  element_grid_free(element_grid);
 }
 
 /* Init glew and check for errors.  Terminates on fail to init glew. */
@@ -289,6 +294,12 @@ void init_gui(void) {
   if (!glfwInit()) {
     die("Failed to init glfw.\n");
   }
+  element_grid = element_grid_create(GRIDMAP_GRIDSIZE);
+  test_element = element_create(20, 20, 200, 200, TRUE);
+  test_element->color->r = 1;
+  test_element->color->g = 1;
+  test_element->color->b = 1;
+  test_element->color->a = 1;
   /* Init the main gui structure. */
   init_guistruct("NanoX", 1400, 800, glfw_get_framerate(), 17, 15);
   /* Init glew. */
@@ -350,6 +361,7 @@ void glfw_loop(void) {
     /* Draw the status bar, if there is any status messages. */
     draw_statusbar();
     context_menu_draw(gui->context_menu);
+    element_draw(test_element);
     /* If refresh was needed it has been done so set it to FALSE. */
     refresh_needed = FALSE;
     glfwSwapBuffers(gui->window);

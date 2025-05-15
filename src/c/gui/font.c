@@ -283,7 +283,7 @@ void gui_font_rows_cols(Font *const f, float width, float height, int *const out
       cols = (width / glyph->advance_x);
     }
     else {
-      cols = (width / (FONT_WIDTH(f->font) * 0.9f));
+      cols = ((width / FONT_WIDTH(f->font)) * 0.9f);
     }
     *outcols = cols;
   }

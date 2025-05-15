@@ -1293,7 +1293,7 @@ struct local_var_t {
 typedef struct pause_sub_threads_guard_t pause_sub_threads_guard_t;
 
 /* This is from file: 'threadpool.cpp'. */
-void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NOTHROW;
+// void lock_pthread_mutex(pthread_mutex_t *mutex, bool lock) _NOTHROW;
 /* RAII complient way to lock a pthread mutex.  This struct will lock
  * the mutex apon its creation, and unlock it when it goes out of scope. */
 struct pthread_mutex_guard_t {
@@ -1303,12 +1303,14 @@ struct pthread_mutex_guard_t {
       logE("A 'NULL' was passed to 'pthread_mutex_guard_t'.");
     }
     else {
-      lock_pthread_mutex(mutex, TRUE);
+      // lock_pthread_mutex(mutex, TRUE);
+      mutex_lock(mutex);
     }
   }
   ~pthread_mutex_guard_t(void) _NOTHROW {
     if (mutex) {
-      lock_pthread_mutex(mutex, FALSE);
+      mutex_unlock(mutex);
+      // lock_pthread_mutex(mutex, FALSE);
     }
   }
   DELETE_COPY_AND_MOVE_CONSTRUCTORS(pthread_mutex_guard_t);
