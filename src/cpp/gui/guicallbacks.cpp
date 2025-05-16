@@ -338,7 +338,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             // gui_element_move_resize(openeditor->main, vec2(((float)gui->width / 2), openeditor->main->pos.y), vec2(((float)gui->width / 2), openeditor->main->size.h));
             // gui_editor_rows_cols(openeditor);
             // gui_etb_text_refresh_needed(openeditor->etb);
-            element_move_resize(test_element, 100, 100, 50, 50);
+            static int times = 0;
+            if (times++ % 2) {
+              element_move_resize(test_element, 0, 0, 400, 50);
+            }
+            else {
+              element_move_resize(test_element, 10, 10, gui->width, gui->height);
+            }
             refresh_needed = TRUE;
             // if (begpar(openfile->current, 0)) {
             //   writef("Line is begpar.\n");

@@ -271,7 +271,7 @@ static void cleanup(void) {
   gui_editor_free(openeditor);
   delete_guistruct();
   element_free(test_element);
-  element_grid_free(element_grid);
+  element_grid_free();
 }
 
 /* Init glew and check for errors.  Terminates on fail to init glew. */
@@ -288,18 +288,22 @@ static void init_glew(void) {
   writef("Using GLEW %s\n", glewGetString(GLEW_VERSION));
 }
 
+static void make_test_element(void) {
+  test_element = element_create(20, 20, 200, 200, TRUE);
+  color_set_white(test_element->color);
+  Color border_color;
+  color_set_black(&border_color);
+  element_set_borders(test_element, 10, 10, 10, 10, &border_color);
+}
+
 /* Init glfw. */
 void init_gui(void) {
   /* Init glfw. */
   if (!glfwInit()) {
     die("Failed to init glfw.\n");
   }
-  element_grid = element_grid_create(GRIDMAP_GRIDSIZE);
-  test_element = element_create(20, 20, 200, 200, TRUE);
-  test_element->color->r = 1;
-  test_element->color->g = 1;
-  test_element->color->b = 1;
-  test_element->color->a = 1;
+  element_grid_create(GRIDMAP_GRIDSIZE);
+  make_test_element();
   /* Init the main gui structure. */
   init_guistruct("NanoX", 1400, 800, glfw_get_framerate(), 17, 15);
   /* Init glew. */

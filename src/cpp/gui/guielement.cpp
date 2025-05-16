@@ -110,9 +110,8 @@ guielement *gui_element_from_mousepos(void) {
 
 /* Ensure all children that has relative position or size gets updated. */
 static void guielement_check_children_relative_pos_size(guielement *const e) {
-  /* For the most efficient loop, get the size of the vector, and the internal ptr of the data in the vector. */
   guielement *child;
-  /* Then check all children. */
+  /* Check all children. */
   for (Ulong i = 0; i < e->children.size(); ++i) {
     child = e->children[i];
     /* If this child uses relative based positioning the adjust the child position based on the parent. */
@@ -200,7 +199,7 @@ void gui_element_delete_borders(guielement *const e) {
   for (Ulong i=0; i<e->children.size(); ++i) {
     if (e->children[i]->flag.is_set<GUIELEMENT_IS_BORDER>()) {
       gui_element_free(e->children[i]);
-      e->children.erase_at(i);
+      // e->children.erase_at(i);
       --i;
     }
   }

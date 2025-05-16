@@ -198,31 +198,37 @@ Ulong            gui_font_index_from_pos(Font *const f, const char *const restri
 /* ---------------------------------------------------------- gui/element_grid.c ---------------------------------------------------------- */
 
 
-ElementGrid *element_grid_create(int cell_size);
-void element_grid_free(ElementGrid *const grid);
-void element_grid_set(ElementGrid *const grid, Element *const e);
-void element_grid_remove(ElementGrid *const grid, Element *const e);
-Element *element_grid_get(ElementGrid *const grid, float x, float y);
-bool element_grid_contains(ElementGrid *const grid, float x, float y);
+void element_grid_create(int cell_size);
+void element_grid_free(void);
+void element_grid_set(Element *const e);
+void element_grid_remove(Element *const e);
+Element *element_grid_get(float x, float y);
+bool element_grid_contains(float x, float y);
 
 
 /* ---------------------------------------------------------- gui/color.c ---------------------------------------------------------- */
 
 
 Color *color_create(float r, float g, float b, float a);
+void   color_copy(Color *const dst, const Color *const src);
+void  color_set_white(Color *const color);
+void  color_set_black(Color *const color);
 
 
 /* ---------------------------------------------------------- gui/element.c ---------------------------------------------------------- */
 
 
 Element *element_create(float x, float y, float width, float height, bool in_gridmap);
-void element_free(Element *const e);
-void element_set_parent(Element *const e, Element *const parent);
-void element_draw(Element *const e);
+void     element_free(Element *const e);
+void     element_set_parent(Element *const e, Element *const parent);
+void     element_draw(Element *const e);
 Element *element_from_pos(float x, float y);
-void element_move(Element *const e, float x, float y);
-void element_resize(Element *const e, float width, float height);
-void element_move_resize(Element *const e, float x, float y, float width, float height);
+void     element_move(Element *const e, float x, float y);
+void     element_resize(Element *const e, float width, float height);
+void     element_move_resize(Element *const e, float x, float y, float width, float height);
+void     element_move_y_clamp(Element *const e, float y, float min, float max);
+void     element_delete_borders(Element *const e);
+void     element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Color *color);
 
 
 _END_C_LINKAGE

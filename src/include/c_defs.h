@@ -66,6 +66,15 @@
     } \
   )
 
+#define ELEMENT_CHILDREN_ITER(element, iter, name, ...)                \
+  /* Iterate thrue all children of `element`.  And perform any action. */  \
+  DO_WHILE(                                                                \
+    for (int iter=0; iter<cvec_len((element)->children); ++i) {               \
+      Element *name = cvec_get((element)->children, i);                             \
+      DO_WHILE(__VA_ARGS__);                                               \
+    }                                                                      \
+  )
+
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
 

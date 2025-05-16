@@ -55,7 +55,7 @@ struct Menu {
   int              maxrows;
   int              rows;
   GuiScrollbar    *sb;
-  Font         *font;
+  Font            *font;
 
   /* Used when this menu is a `submenu`, otherwise always `NULL`. */
   Menu *parent;
