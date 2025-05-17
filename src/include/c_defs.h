@@ -75,6 +75,11 @@
     }                                                                      \
   )
 
+/* ----------------------------- element.c ----------------------------- */
+
+#define dp_raw /* Shorthand to access the `void *` inside an `Element` structure. */ data_ptr.raw
+#define dp_sb /* Shorthand to access the `Scrollbar *` inside an `Element` structure. */ data_ptr.sb
+
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
 
@@ -92,6 +97,11 @@ typedef struct nevhandler nevhandler;
 
 /* `Opaque`  Structure to listen to file events. */
 typedef struct nfdlistener  nfdlistener;
+
+/* ----------------------------- scrollbar.c ----------------------------- */
+
+typedef void (*ScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *end, Uint *visible, Uint *current, float *top_offset, float *right_offset);
+typedef void (*ScrollbarMovingFunc)(void *, long);
 
 
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
@@ -281,6 +291,10 @@ typedef struct {
   float a;
 } Color;
 
+/* ----------------------------- scrollbar.c ----------------------------- */
+
+typedef struct Scrollbar  Scrollbar;
+
 /* ----------------------------- element.c ----------------------------- */
 
 typedef struct Element  Element;
@@ -307,6 +321,8 @@ struct Element {
   bool has_menu_data              : 1;
   bool is_above                   : 1;
 
+  Ushort layer;
+
   float x;
   float y;
   float relative_x;
@@ -326,5 +342,10 @@ struct Element {
   CVec *children;
 
   int cursor;
+
+  union {
+    void      *raw;
+    Scrollbar *sb;
+  } data_ptr;
 };
 

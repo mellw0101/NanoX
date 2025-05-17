@@ -122,7 +122,7 @@ long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endi
   /* Clamp the y position to within the valid range (0 - (editor->text->size.h - height)). */
   ypos = fclamp(ypos, 0.0f, max_ypos);
   /* Calculate the ratio of the max y position that should be used to calculate
-  * the line number.  We also clamp the line number to ensure correctness. */
+   * the line number.  We also clamp the line number to ensure correctness. */
   ratio = fclamp((ypos / max_ypos), 0.0f, 1.0f);
   /* First we get the most likely index.  Note that this will sometimes be inacurret. */
   index = lclamp((long)(ratio * (endidx - startidx)), 0, (endidx - startidx));
@@ -137,37 +137,6 @@ long index_from_scrollbar_pos(float total_pixel_length, Uint startidx, Uint endi
 
 /* ----------------------------- GuiScrollbar ----------------------------- */
 
-/* At the surface this seams to be much better to use then then directly handleing the logic in inside the main function,
- * mainly because we would not need any checking of the element as only this element would have this callback.  But be that
- * as it may i find the structure of the whole becomes mush worse to manage and to implement complext things that relay on
- * much more context that would be mush easier to design as a whole not as scattered callbacks.  At least for now. */
-_UNUSED static void gui_scrollbar_callback(guielement *e, guielement_callback_type type) {
-  ASSERT(e);
-  switch (type) {
-    case GUIELEMENT_ENTER_CALLBACK: {
-      if (!gui->clicked) {
-        e->color = GUISB_ACTIVE_THUMB_COLOR;
-      }
-      break;
-    }
-    case GUIELEMENT_LEAVE_CALLBACK: {
-      if (!gui->clicked) {
-        e->color = GUISB_THUMB_COLOR;
-      }
-      break;
-    }
-    case GUIELEMENT_LEFT_MOUSE_UNCLICK: {
-      if (e != gui_element_from_mousepos()) {
-        e->color = GUISB_THUMB_COLOR;
-      }
-      e->data.sb->refresh_needed = TRUE;
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-}
 
 /* Create a scrollbar that will be on the left side of `parent` and use `data` as the parameter when running all callbacks. */
 GuiScrollbar *gui_scrollbar_create(guielement *const parent, void *const data, GuiScrollbarUpdateFunc update_routine, GuiScrollbarMoveFunc moving_routine) __THROW {

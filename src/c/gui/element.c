@@ -59,6 +59,8 @@ static Element *element_create_internal(void) {
   e->children = cvec_create();
   /* Cursor. */
   e->cursor = GLFW_ARROW_CURSOR;
+  /* Layer. */
+  e->layer = 0;
   return e;
 }
 
@@ -169,6 +171,7 @@ void element_set_parent(Element *const e, Element *const parent) {
   ASSERT(parent);
   e->parent = parent;
   cvec_push(parent->children, e);
+  element_set_layer(parent, parent->layer);
 }
 
 // void element_set_color(Element *const e, float r, float g, float b, float a) {
@@ -303,3 +306,48 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
   b->relative_y                 = bsize;
 }
 
+/* Set the event layer of `e`.  Note that this does not change drawing layer as that depends on the order of drawing. */
+void element_set_layer(Element *const e, Ushort layer) {
+  ASSERT(e);
+  if (e->parent) {
+    e->layer = (e->parent->layer + 1);
+  }
+  else {
+    e->layer = layer;
+  }
+  ELEMENT_CHILDREN_ITER(e, i, child,
+    element_set_layer(child, 0);
+  );
+}
+
+/* This one is experimental. */
+void element_set_flag(Element *const e, Uint field_number) {
+  ASSERT(e);
+  ((Uchar *)e)[(field_number) / (sizeof(Uchar) * 8)] |= ((Uchar)1 << (field_number % (sizeof(Uchar) * 8)));
+}
+
+void element_set_flag_recurse(Element *const e, Uint field_number) {
+  ASSERT(e);
+  element_set_flag(e, field_number);
+  ELEMENT_CHILDREN_ITER(e, i, child,
+    element_set_flag_recurse(child, field_number);
+  );
+}
+
+/* ----------------------------- Internal data ptr set function's ----------------------------- */
+
+void element_set_raw_data(Element *const e, void *const data) {
+  ASSERT(e);
+  ASSERT(data);
+  e->has_raw_data = TRUE;
+  e->has_sb_data  = FALSE;
+  e->dp_raw       = data;
+}
+
+void element_set_sb_data(Element *const e, Scrollbar *const data) {
+  ASSERT(e);
+  ASSERT(data);
+  e->has_raw_data = FALSE;
+  e->has_sb_data  = TRUE;
+  e->dp_sb        = data;
+}

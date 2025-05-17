@@ -198,12 +198,12 @@ Ulong            gui_font_index_from_pos(Font *const f, const char *const restri
 /* ---------------------------------------------------------- gui/element_grid.c ---------------------------------------------------------- */
 
 
-void element_grid_create(int cell_size);
-void element_grid_free(void);
-void element_grid_set(Element *const e);
-void element_grid_remove(Element *const e);
+void     element_grid_create(int cell_size);
+void     element_grid_free(void);
+void     element_grid_set(Element *const e);
+void     element_grid_remove(Element *const e);
 Element *element_grid_get(float x, float y);
-bool element_grid_contains(float x, float y);
+bool     element_grid_contains(float x, float y);
 
 
 /* ---------------------------------------------------------- gui/color.c ---------------------------------------------------------- */
@@ -211,8 +211,9 @@ bool element_grid_contains(float x, float y);
 
 Color *color_create(float r, float g, float b, float a);
 void   color_copy(Color *const dst, const Color *const src);
-void  color_set_white(Color *const color);
-void  color_set_black(Color *const color);
+void   color_set_rgba(Color *const color, float r, float g, float b, float a);
+void   color_set_white(Color *const color);
+void   color_set_black(Color *const color);
 
 
 /* ---------------------------------------------------------- gui/element.c ---------------------------------------------------------- */
@@ -229,7 +230,10 @@ void     element_move_resize(Element *const e, float x, float y, float width, fl
 void     element_move_y_clamp(Element *const e, float y, float min, float max);
 void     element_delete_borders(Element *const e);
 void     element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Color *color);
-
+void     element_set_layer(Element *const e, Ushort layer);
+void     element_set_flag_recurse(Element *const e, Uint field_number);
+void     element_set_raw_data(Element *const e, void *const data);
+void     element_set_sb_data(Element *const e, Scrollbar *const data);
 
 _END_C_LINKAGE
 

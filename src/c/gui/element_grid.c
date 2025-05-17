@@ -67,9 +67,12 @@ static inline void element_grid_get_action(Ulong _UNUSED key, void *value, void 
   }
   p = data;
   if (p->x >= e->x && p->x <= (e->x + e->width) && p->y >= e->y && p->y <= (e->y + e->height)) {
-    if ((p->ret && e->is_above) || !p->ret) {
+    if (!p->ret || (p->ret && (p->ret->layer < e->layer || (p->ret->layer == e->layer && !p->ret->is_above && e->is_above)))) {
       p->ret = e;
     }
+    // if ((p->ret && e->is_above) || !p->ret) {
+    //   p->ret = e;
+    // }
   }
 }
 
@@ -155,9 +158,9 @@ Element *element_grid_get(float x, float y) {
     return NULL;
   }
   p = xmalloc(sizeof(*p));
+  p->x   = x;
+  p->y   = y;
   p->ret = NULL;
-  p->x = x;
-  p->y = y;
   hashmapnum_forall_wdata(cellmap, element_grid_get_action, p);
   ret = p->ret;
   free(p);
