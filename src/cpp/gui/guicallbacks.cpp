@@ -203,7 +203,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* Shift+Ctrl+A.  Enclose marked region. */
           if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
             /* When the file type is c based allow for creating block comment around the marked region. */
-            if (openfile->type.is_set<C_CPP>() || openfile->type.is_set<GLSL>()) {
+            if (openfile->is_c_file || openfile->is_cxx_file || openfile->is_glsl_file /* openfile->type.is_set<C_CPP>() || openfile->type.is_set<GLSL>() */) {
               function = do_block_comment;
             }
           }
@@ -490,6 +490,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           if (gui->active_menu) {
             gui_menu_show(gui->active_menu, FALSE);
           }
+          if (menu_get_active()) {
+            menu_show(menu_get_active(), FALSE);
+          }
           break;
         }
         case GLFW_KEY_RIGHT: {
@@ -497,6 +500,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             switch (mods) {
               case 0: {
                 gui_menu_enter_submenu(gui->active_menu);
+                return;
+              }
+            }
+          }
+          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active())) {
+            switch (mods) {
+              case 0: {
+                menu_enter_submenu(menu_get_active());
                 return;
               }
             }
@@ -539,6 +550,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             switch (mods) {
               case 0: {
                 gui_menu_exit_submenu(gui->active_menu);
+                return;
+              }
+            }
+          }
+          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active())) {
+            switch (mods) {
+              case 0: {
+                menu_exit_submenu(menu_get_active());
                 return;
               }
             }
@@ -590,6 +609,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               }
             }
           }
+          if (menu_get_active()) {
+            switch (mods) {
+              case 0: {
+                menu_selected_up(menu_get_active());
+                return;
+              }
+            }
+          }
           /* Otherwise, handle normaly. */
           switch (mods) {
             /* Move line or lines up. */
@@ -625,6 +652,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             switch (mods) {
               case 0: {
                 gui_menu_selected_down(gui->active_menu);
+                return;
+              }
+            }
+          }
+          if (menu_get_active()) {
+            switch (mods) {
+              case 0: {
+                menu_selected_down(menu_get_active());
                 return;
               }
             }
@@ -691,6 +726,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               }
             }
           }
+          if (menu_get_active()) {
+            switch (mods) {
+              case 0: {
+                menu_accept_action(menu_get_active());
+                return;
+              }
+            }
+          }
           /* Simple enter. */
           if (!mods) {
             function = do_enter;
@@ -711,6 +754,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             switch (mods) {
               case 0: {
                 gui_menu_accept_action(gui->active_menu);
+                return;
+              }
+            }
+          }
+          /* If there is an active menu, and that menu accepts on tab. */
+          if (menu_get_active() && menu_should_accept_on_tab(menu_get_active())) {
+            switch (mods) {
+              case 0: {
+                menu_accept_action(menu_get_active());
                 return;
               }
             }
@@ -963,7 +1015,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
         ;
       }
       /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
-      else if (input == '<' && openfile->current->data[indentlen(openfile->current->data)] != '#' && openfile->type.is_set<C_CPP>()) {
+      else if (input == '<' && openfile->current->data[indentlen(openfile->current->data)] != '#' && (openfile->is_c_file || openfile->is_cxx_file) /* openfile->type.is_set<C_CPP>() */) {
         ;
       }
       else {
@@ -1044,7 +1096,13 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       }
       test = element_from_pos(mousepos.x, mousepos.y);
       if (test) {
-        writef("Hello\n");
+        gui->clicked_element = test;
+        if (menu_get_active() && !menu_owns_element(menu_get_active(), test)) {
+          menu_show(menu_get_active(), FALSE);
+        }
+        else if (menu_get_active() && test->has_menu_data && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
+          menu_click_action(test->dp_menu, mousepos.x, mousepos.y);
+        }
       }
       element = gui_element_from_mousepos();
       if (element) {
@@ -1119,7 +1177,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       if (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) {
         openfile->mark = NULL;
       }
-      if (gui->clicked) {  
+      if (gui->clicked) {
         /* If the clicked element is any part of any scrollbar. */
         if (gui_element_has_sb_data(gui->clicked)) {
           /* Only reset the given element is the scrollbar's thumb and is not the currently hovered element. */
@@ -1129,7 +1187,14 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           gui_scrollbar_refresh_needed(gui->clicked->ed_sb);
         }
       }
+      if (gui->clicked_element && gui->clicked_element->has_sb_data) {
+        if (scrollbar_element_is_thumb(gui->clicked_element->dp_sb, gui->clicked_element) && gui->clicked_element != element_from_pos(mousepos.x, mousepos.y)) {
+          scrollbar_set_thumb_color(gui->clicked_element->dp_sb, FALSE);
+        }
+        scrollbar_refresh_needed(gui->clicked_element->dp_sb);
+      }
       gui->clicked = NULL;
+      gui->clicked_element = NULL;
     }
   }
   /* Right mouse button. */
@@ -1189,6 +1254,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 void mouse_pos_callback(GLFWwindow *window, double x, double y) {
   static vec2 last_mousepos = mousepos;
   guielement *element;
+  Element *test;
   /* Set the global mouse position. */
   mousepos = vec2(x, y);
   /* If the left mouse button is being held. */
@@ -1268,8 +1334,17 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     if (gui_element_has_sb_data(gui->clicked) && gui_scrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && (mousepos.y != last_mousepos.y)) {
       gui_scrollbar_move(gui->clicked->data.sb, (mousepos.y - last_mousepos.y));
     }
+    if (gui->clicked_element && gui->clicked_element->has_sb_data) {
+      scrollbar_mouse_pos_routine(gui->clicked_element->dp_sb, gui->clicked_element, last_mousepos.y, mousepos.y);
+    }
   }
   else {
+    test = element_from_pos(mousepos.x, mousepos.y);
+    if (test) {
+      if (!gui->clicked_element && menu_get_active() && test->has_menu_data && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
+        menu_hover_action(test->dp_menu, mousepos.x, mousepos.y);
+      }
+    }
     /* Get the element that the mouse is on. */
     element = gui_element_from_mousepos();
     if (element) {
@@ -1342,9 +1417,15 @@ void window_enter_callback(GLFWwindow *window, int entered) {
 /* Scroll callback. */
 void scroll_callback(GLFWwindow *window, double x, double y) {
   guielement *element = gui_element_from_mousepos();
+  Element *test = element_from_pos(mousepos.x, mousepos.y);
   Ulong index;
   linestruct *line;
-  if (element) {
+  if (test) {
+    if (menu_get_active() && test->has_menu_data && menu_is_ancestor(test->dp_menu, menu_get_active()) && menu_element_is_main(test->dp_menu, test)) {
+      menu_scroll_action(test->dp_menu, ((y > 0) ? BACKWARD : FORWARD), mousepos.x, mousepos.y);
+    }
+  }
+  else if (element) {
     /* Check if the element belongs to a editor. */
     if (gui_element_has_editor_data(element)) {
       /* If the scroll happend where the text is then adjust that editor, even if not the currently focused one. */

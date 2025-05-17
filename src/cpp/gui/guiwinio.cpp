@@ -132,7 +132,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
     converted_len = strlen(converted);
     /* For c/cpp files. */
     if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
-      if (editor->openfile->type.is_set<C_CPP>()) {
+      if ((editor->openfile->is_c_file || editor->openfile->is_cxx_file) /* editor->openfile->type.is_set<C_CPP>() */) {
         Ulong index = 0;
         line_word_t *head = get_line_words(converted, converted_len);
         while (head) {
@@ -198,7 +198,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
         vertex_buffer_add_string(editor->buffer, (converted + index), (converted_len - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
       }
       /* AT&T asm syntax. */
-      else if (editor->openfile->type.is_set<ATNT_ASM>()) {
+      else if (editor->openfile->is_atnt_asm_file /* editor->openfile->type.is_set<ATNT_ASM>() */) {
         vec4 color;
         Ulong index = 0;
         line_word_t *head, *node;
@@ -233,7 +233,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
         }
       }
       /* Nasm syntax. */
-      else if (openfile->type.is_set<ASM>()) {
+      else if (openfile->is_nasm_file /* openfile->type.is_set<ASM>() */) {
         const char *comment = strchr(converted, ';');
         if (comment) {
           vec2 origin = *drawpos;
@@ -262,7 +262,7 @@ static void gui_draw_row(linestruct *line, guieditor *editor, vec2 *drawpos) {
         }
       }
       /* Bash syntax. */
-      else if (editor->openfile->type.is_set<BASH>()) {
+      else if (openfile->is_bash_file /* editor->openfile->type.is_set<BASH>() */) {
         const char *comment = strchr(converted, '#');
         /* When there is a comment on this line. */
         if (comment) {

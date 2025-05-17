@@ -132,8 +132,6 @@ using std::vector;
 #define CALCULATE_MS_TIME(start_time) (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
 
 /* Some other define`s. */
-#define BACKWARD          FALSE
-#define FORWARD           TRUE
 #define YESORNO           FALSE
 #define YESORALLORNO      TRUE
 #define BLIND             FALSE
@@ -869,6 +867,16 @@ typedef struct poshiststruct {
 } poshiststruct;
 
 typedef struct openfilestruct {
+  /* Boolian flags. */
+  bool is_c_file        : 1;
+  bool is_cxx_file      : 1;
+  bool is_nasm_file     : 1;
+  bool is_atnt_asm_file : 1;
+  bool is_bash_file     : 1;
+  bool is_glsl_file     : 1;
+  bool is_systemd_file  : 1;
+  bool is_nanox_file    : 1;
+
   char *filename;             /* The file's name. */
   linestruct *filetop;        /* The file's first line. */
   linestruct *filebot;        /* The file's last line. */
@@ -895,7 +903,7 @@ typedef struct openfilestruct {
   char *errormessage;         /* The ALERT message (if any) that occurred when opening the file. */
 
   /* What type of file this is, in terms of syntax and family of language. */
-  bit_flag_t<FILE_TYPE_SIZE> type;
+  // bit_flag_t<FILE_TYPE_SIZE> type;
 
   openfilestruct *next;       /* The next open file, if any. */
   openfilestruct *prev;       /* The preceding open file, if any. */
@@ -980,12 +988,6 @@ typedef struct completionstruct {
 
 /* Gui specific structs. */
 #ifdef HAVE_GLFW
-  typedef struct {
-    float x, y, z;    /* Position. */
-    float s, t;       /* Tex. */
-    float r, g, b, a; /* Color. */
-  } vertex_t;
-
   typedef union {
     void           *raw;      /* A `raw` data ptr, this can be anything but it means casting every time we use. */
     openfilestruct *file;     /* A ptr to a `openfilestruct` structure. */
@@ -1238,7 +1240,10 @@ typedef struct completionstruct {
     guielement      *botbar;                 /* The `bottom-bar` for the ui. */ 
     guielement      *statusbar;              /* The `statusbar` for the ui. */
     guielement      *entered;                /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
+
     guielement      *clicked;                /* The element that was last clicked. */
+    Element         *clicked_element;
+
     vertex_buffer_t *botbuf;                 /* The text buffer for `botbar`. */
     vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
     matrix4x4       *projection;             /* The projection to pass to the shaders. */

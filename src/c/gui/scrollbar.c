@@ -24,6 +24,14 @@
 #define SB_WIDTH  (10.0f)
 
 
+
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
+
+static Color sb_thumb_color        = {1.0f, 1.0f, 1.0f, 0.3f};
+static Color sb_active_thumb_color = {1.0f, 1.0f, 1.0f, 0.7f};
+
+
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
 
@@ -148,7 +156,15 @@ static void scrollbar_calc_routine(Scrollbar *const sb) {
     sb->thumb->hidden = TRUE;
   }
   else {
-
+    /* Thumb. */
+    sb->thumb->hidden     = FALSE;
+    sb->thumb->relative_y = y_pos;
+    element_resize(sb->thumb, sb->thumb->width, length);
+    /* Base. */
+    sb->base->hidden     = FALSE;
+    sb->base->relative_x = (sb->base->width + r_offset);
+    sb->base->relative_y = t_offset;
+    element_resize(sb->base, sb->base->width, total_length);
   }
 }
 
@@ -175,6 +191,8 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   sb->thumb = element_create(sb->base->x, sb->base->y, SB_WIDTH, 10, TRUE);
   element_set_parent(sb->base, parent);
   element_set_parent(sb->thumb, sb->base);
+  element_set_sb_data(sb->base, sb);
+  element_set_sb_data(sb->thumb, sb);
   color_set_rgba(sb->base->color, 0.05f, 0.05f, 0.05f, 0.3f);
   color_set_rgba(sb->thumb->color, 1.0f, 1.0f, 1.0f, 0.3f);
   /* Base. */
@@ -191,4 +209,82 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   /* Moving routine. */
   sb->moving = moving;
   return sb;
+}
+
+void scrollbar_move(Scrollbar *const sb, float change) {
+  ASSERT_SCROLLBAR;
+  float total_length;
+  Uint start;
+  Uint end;
+  Uint visible;
+  sb->update(sb->data, &total_length, &start, &end, &visible, NULL, NULL, NULL);
+  element_move_y_clamp(sb->thumb, (sb->thumb->y + change), sb->base->y, (sb->base->y + sb->base->height - sb->thumb->height));
+  sb->moving(sb->data, scrollbar_index(total_length, start, end, visible, (sb->thumb->y - sb->base->y)));
+}
+
+void scrollbar_draw(Scrollbar *const sb) {
+  ASSERT_SCROLLBAR;
+  if (sb->refresh_needed) {
+    scrollbar_calc_routine(sb);
+    sb->refresh_needed = FALSE;
+    if (sb->base->hidden) {
+      return;
+    }
+  }
+  element_draw(sb->base);
+  element_draw(sb->thumb);
+}
+
+void scrollbar_refresh_needed(Scrollbar *const sb) {
+  ASSERT_SCROLLBAR;
+  sb->refresh_needed = TRUE;
+}
+
+/* Return's `TRUE` when `e` is the `base` element of `sb`. */
+bool scrollbar_element_is_base(Scrollbar *const sb, Element *const e) {
+  ASSERT_SCROLLBAR;
+  ASSERT(e);
+  return (e == sb->base);
+}
+
+/* Return's `TRUE` when `e` is the `thumb` element of `sb`. */
+bool scrollbar_element_is_thumb(Scrollbar *const sb, Element *const e) {
+  ASSERT_SCROLLBAR;
+  ASSERT(e);
+  return (e == sb->thumb);
+}
+
+void scrollbar_mouse_pos_routine(Scrollbar *const sb, Element *const e, float was_y_pos, float y_pos) {
+  ASSERT_SCROLLBAR;
+  ASSERT(e);
+  if (e == sb->thumb && y_pos != was_y_pos) {
+    scrollbar_move(sb, (y_pos - was_y_pos));
+  }
+}
+
+float scrollbar_width(Scrollbar *const sb) {
+  ASSERT_SCROLLBAR;
+  return sb->base->width;
+}
+
+void scrollbar_show(Scrollbar *const sb, bool show) {
+  ASSERT_SCROLLBAR;
+  if (show) {
+    sb->base->hidden  = FALSE;
+    sb->thumb->hidden = FALSE;
+  }
+  else {
+    sb->base->hidden  = TRUE;
+    sb->thumb->hidden = TRUE;
+  }
+}
+
+void scrollbar_set_thumb_color(Scrollbar *const sb, bool active) {
+  ASSERT_SCROLLBAR;
+  if (!active) {
+    color_copy(sb->thumb->color, &sb_thumb_color);
+  }
+  else {
+    color_copy(sb->thumb->color, &sb_active_thumb_color);
+  }
 }

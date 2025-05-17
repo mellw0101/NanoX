@@ -176,10 +176,7 @@ void element_set_parent(Element *const e, Element *const parent) {
 
 // void element_set_color(Element *const e, float r, float g, float b, float a) {
 //   ASSERT(e);
-//   e->color->r = r;
-//   e->color->g = g;
-//   e->color->b = b;
-//   e->color->a = a;
+//   color_set_rgba(e->color, r, g, b, a);
 // }
 
 /* Draw a `Element` structure using its internal values. */
@@ -208,48 +205,41 @@ Element *element_from_pos(float x, float y) {
 
 void element_move(Element *const e, float x, float y) {
   ASSERT(e);
-  if (x != e->x || y != e->y) {
-    element_grid_remove(e);
-    e->x = x;
-    e->y = y;
-    element_grid_remove(e);
-  }
+  element_grid_remove(e);
+  e->x = x;
+  e->y = y;
+  element_children_relative_pos(e);
+  element_grid_remove(e);
 }
 
 void element_resize(Element *const e, float width, float height) {
   ASSERT(e);
-  if (width != e->width || height != e->height) {
-    element_grid_remove(e);
-    e->width  = width;
-    e->height = height;
-    element_children_relative_pos(e);
-    element_grid_set(e);
-  }
+  element_grid_remove(e);
+  e->width  = width;
+  e->height = height;
+  element_children_relative_pos(e);
+  element_grid_set(e);
 }
 
 void element_move_resize(Element *const e, float x, float y, float width, float height) {
   ASSERT(e);
-  if (x != e->x || y != e->y || width != e->width || height != e->height) {
-    element_grid_remove(e);
-    e->x      = x;
-    e->y      = y;
-    e->width  = width;
-    e->height = height;
-    element_children_relative_pos(e);
-    element_grid_set(e);
-  }
+  element_grid_remove(e);
+  e->x      = x;
+  e->y      = y;
+  e->width  = width;
+  e->height = height;
+  element_children_relative_pos(e);
+  element_grid_set(e);
 }
 
 /* Move `e` to a new y position `y` while clamping it so it can be no less then `min` and no more then `max`. */
 void element_move_y_clamp(Element *const e, float y, float min, float max) {
   ASSERT(e);
   /* Only perform any action when the passed y value is not the same as the current. */
-  if (y != e->y) {
-    element_grid_remove(e);
-    e->y = fclamp(y, min, max);
-    element_children_relative_pos(e);
-    element_grid_set(e);
-  }
+  element_grid_remove(e);
+  e->y = fclamp(y, min, max);
+  element_children_relative_pos(e);
+  element_grid_set(e);
 }
 
 /* Delete the borders of `e`.  If any exests. */
@@ -320,18 +310,21 @@ void element_set_layer(Element *const e, Ushort layer) {
   );
 }
 
-/* This one is experimental. */
-void element_set_flag(Element *const e, Uint field_number) {
-  ASSERT(e);
-  ((Uchar *)e)[(field_number) / (sizeof(Uchar) * 8)] |= ((Uchar)1 << (field_number % (sizeof(Uchar) * 8)));
-}
+/* ----------------------------- Boolian function's ----------------------------- */
 
-void element_set_flag_recurse(Element *const e, Uint field_number) {
-  ASSERT(e);
-  element_set_flag(e, field_number);
-  ELEMENT_CHILDREN_ITER(e, i, child,
-    element_set_flag_recurse(child, field_number);
-  );
+/* Returns 'TRUE' when 'ancestor' is an ancestor to e or is e itself. */
+bool element_is_ancestor(Element *const e, Element *const ancestor) {
+  if (!e || !ancestor) {
+    return FALSE;
+  }
+  Element *element = e;
+  while (element) {
+    if (element == ancestor) {
+      return TRUE;
+    }
+    element = element->parent;
+  }
+  return FALSE;
 }
 
 /* ----------------------------- Internal data ptr set function's ----------------------------- */
@@ -339,15 +332,26 @@ void element_set_flag_recurse(Element *const e, Uint field_number) {
 void element_set_raw_data(Element *const e, void *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data = TRUE;
-  e->has_sb_data  = FALSE;
-  e->dp_raw       = data;
+  e->has_raw_data  = TRUE;
+  e->has_sb_data   = FALSE;
+  e->has_menu_data = FALSE;
+  e->dp_raw        = data;
 }
 
 void element_set_sb_data(Element *const e, Scrollbar *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data = FALSE;
-  e->has_sb_data  = TRUE;
-  e->dp_sb        = data;
+  e->has_raw_data  = FALSE;
+  e->has_sb_data   = TRUE;
+  e->has_menu_data = FALSE;
+  e->dp_sb         = data;
+}
+
+void element_set_menu_data(Element *const e, CMenu *const data) {
+  ASSERT(e);
+  ASSERT(data);
+  e->has_raw_data  = FALSE;
+  e->has_sb_data   = FALSE;
+  e->has_menu_data = TRUE;
+  e->dp_menu       = data;
 }

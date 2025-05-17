@@ -49,3 +49,4 @@ void color_set_rgba(Color *const color, float r, float g, float b, float a) {
 
 STATIC_COLOR_SET_DECL(white, 1, 1, 1, 1)
 STATIC_COLOR_SET_DECL(black, 0, 0, 0, 1)
+STATIC_COLOR_SET_DECL(default_borders, 0.5f, 0.5f, 0.5f, 1)

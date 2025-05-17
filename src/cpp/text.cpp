@@ -331,13 +331,13 @@ void do_comment(void) _NOTHROW {
   if (openfile->syntax) {
     comment_seq = openfile->syntax->comment;
   }
-  else if (openfile->type.is_set<C_CPP>() || openfile->type.is_set<NANOX_CONFIG>()) {
+  else if (/* openfile->type.is_set<C_CPP>() */ openfile->is_c_file || openfile->is_cxx_file || openfile->is_nanox_file /* openfile->type.is_set<NANOX_CONFIG>() */) {
     comment_seq = "//";
   }
-  else if (openfile->type.is_set<ASM>()) {
+  else if (/* openfile->type.is_set<ASM>() */ openfile->is_nasm_file) {
     comment_seq = ";";
   }
-  else if (openfile->type.is_set<BASH>() || openfile->type.is_set<ATNT_ASM>()) {
+  else if (/* openfile->type.is_set<BASH>() */ openfile->is_bash_file || openfile->is_atnt_asm_file /* openfile->type.is_set<ATNT_ASM>() */) {
     comment_seq = "#";
   }
   /* This is when 'openfile->syntax' says comments are foridden. */

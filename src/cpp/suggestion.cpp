@@ -26,7 +26,7 @@ static completionstruct *list_of_completions = NULL;
 void do_suggestion(void) {
   PROFILE_FUNCTION;
   /* For now only c/cpp is supported. */
-  if (!openfile->type.is_set<C_CPP>()) {
+  if (/* !openfile->type.is_set<C_CPP>() */ !openfile->is_c_file && !openfile->is_cxx_file) {
     return;
   }
   suggest_str = NULL;

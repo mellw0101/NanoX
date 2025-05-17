@@ -1243,7 +1243,7 @@ static void process_a_keystroke(void) {
           ;
         }
         /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
-        else if (input == '<' && openfile->current->data[indent_length(openfile->current->data)] != '#' && openfile->type.is_set<C_CPP>()) {
+        else if (input == '<' && openfile->current->data[indent_length(openfile->current->data)] != '#' && /* openfile->type.is_set<C_CPP>() */ (openfile->is_c_file || openfile->is_cxx_file)) {
           ;
         }
         else {

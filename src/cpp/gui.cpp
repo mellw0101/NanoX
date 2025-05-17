@@ -88,6 +88,7 @@ static void setup_font_shader(void) {
     glfwTerminate();
     die("Failed to create font shader.\n");
   }
+  font_shader = gui->font_shader;
   /* Load the font and uifont. */
   gui_font_load(gui->font, FALLBACK_FONT_PATH, 17, 4096);
   gui_font_load(gui->uifont, FALLBACK_FONT_PATH, 15, 2048);
@@ -189,6 +190,7 @@ static void make_guistruct(void) {
   gui->statusbar             = NULL;
   gui->entered               = NULL;
   gui->clicked               = NULL;
+  gui->clicked_element       = NULL;
   gui->botbuf                = NULL;
   gui->statusbuf             = NULL;
   gui->projection            = NULL;

@@ -48,7 +48,12 @@
 /* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
 
 
-#define Schar   signed   char
+/* ----------------------------- General ----------------------------- */
+
+#define BACKWARD  FALSE
+#define FORWARD   TRUE
+
+#define Schar   signed char
 #define BOOL    Uchar
 #define wchar   wchar_t
 
@@ -79,6 +84,7 @@
 
 #define dp_raw /* Shorthand to access the `void *` inside an `Element` structure. */ data_ptr.raw
 #define dp_sb /* Shorthand to access the `Scrollbar *` inside an `Element` structure. */ data_ptr.sb
+#define dp_menu /* Shorthand to access the `Menu *` inside an `Element` structure. */ data_ptr.menu
 
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
@@ -102,6 +108,11 @@ typedef struct nfdlistener  nfdlistener;
 
 typedef void (*ScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *end, Uint *visible, Uint *current, float *top_offset, float *right_offset);
 typedef void (*ScrollbarMovingFunc)(void *, long);
+
+/* ----------------------------- menu.c ----------------------------- */
+
+typedef void (*MenuPositionFunc)(void *, float width, float height, float *const x, float *const y);
+typedef void (*MenuAcceptFunc)(void *, const char *const restrict lable, int index);
 
 
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
@@ -139,6 +150,14 @@ typedef enum {
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
 
+
+/* ----------------------------- General ----------------------------- */
+
+typedef struct {
+  float x, y, z;    /* Position. */
+  float s, t;       /* Tex. */
+  float r, g, b, a; /* Color. */
+} vertex_t;
 
 /* ----------------------------- nfdlistener.c ----------------------------- */
 
@@ -295,6 +314,10 @@ typedef struct {
 
 typedef struct Scrollbar  Scrollbar;
 
+/* ----------------------------- menu.c ----------------------------- */
+
+typedef struct CMenu  CMenu;
+
 /* ----------------------------- element.c ----------------------------- */
 
 typedef struct Element  Element;
@@ -346,6 +369,7 @@ struct Element {
   union {
     void      *raw;
     Scrollbar *sb;
+    CMenu     *menu;
   } data_ptr;
 };
 

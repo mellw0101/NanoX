@@ -345,3 +345,79 @@ Ulong gui_font_index_from_pos(Font *const f, const char *const restrict string, 
   ASSERT_GUI_FONT;
   return strpx_str_index(f->font, string, len, rawx, normx);
 }
+
+float font_breadth(Font *const f, const char *const restrict string) {
+  ASSERT_GUI_FONT;
+  ASSERT(string);
+  float ret = 0;
+  for (const char *ch=string, *prev=NULL; *ch; ++ch) {
+    ret += strpx_glyphlen(ch, prev, f->font);
+    prev = ch;
+  }
+  return ret;
+}
+
+/* Add one glyph to 'buffer' to be rendered.  At position pen. */
+void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Color *const color, float *const pen_x, float *const pen_y) {
+  ASSERT_GUI_FONT;
+  ASSERT(current);
+  ASSERT(buf);
+  float x0, x1, y0, y1;
+  Uint indices[] = { 0, 1, 2, 0, 2, 3 };
+  vertex_t vertices[4];
+  texture_glyph_t *glyph = gui_font_get_glyph(f, current);
+  ALWAYS_ASSERT(glyph);
+  if (prev) {
+    (*pen_x) += texture_glyph_get_kerning(glyph, prev);
+  }
+  x0 = (int)((*pen_x) + glyph->offset_x);
+  y0 = (int)((*pen_y) - glyph->offset_y);
+  x1 = (int)(x0 + glyph->width);
+  y1 = (int)(y0 + glyph->height);
+  vertices[0] = (vertex_t){ x0,y0,0, glyph->s0,glyph->t0, color->r,color->g,color->b,color->a };
+  vertices[1] = (vertex_t){ x0,y1,0, glyph->s0,glyph->t1, color->r,color->g,color->b,color->a };
+  vertices[2] = (vertex_t){ x1,y1,0, glyph->s1,glyph->t1, color->r,color->g,color->b,color->a };
+  vertices[3] = (vertex_t){ x1,y0,0, glyph->s1,glyph->t0, color->r,color->g,color->b,color->a };
+  vertex_buffer_push_back(buf, vertices, 4, indices, 6);
+  (*pen_x) += glyph->advance_x;
+}
+
+// void vertex_buffer_add_string(vertex_buffer_t *buf, const char *string, Ulong slen, const char *previous, texture_font_t *font, vec4 color, vec2 *penpos) {
+//   ASSERT(buf);
+//   ASSERT(string);
+//   ASSERT(font);
+//   ASSERT(penpos);
+//   const char *cur;
+//   const char *prev = previous;
+//   for (Ulong i = 0; i < slen; ++i) {
+//     cur = &string[i];
+//     add_glyph(cur, prev, buf, font, color, penpos);
+//     prev = cur;
+//   }
+// }
+
+void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Color *const color, float *const pen_x, float *const pen_y) {
+  ASSERT_GUI_FONT;
+  ASSERT(buf);
+  ASSERT(string);
+  ASSERT(pen_x);
+  ASSERT(pen_y);
+  const char *cur = string;
+  const char *prev = previous;
+  while (*cur && cur < (string + len)) {
+    font_add_glyph(f, buf, cur, prev, color, pen_x, pen_y);
+    prev = cur;
+    cur += charlen(cur);
+  }
+}
+
+/* Upload a atlas texture. */
+void font_upload_texture_atlas(Font *const f) {
+  ASSERT_GUI_FONT;
+  glBindTexture(GL_TEXTURE_2D, f->atlas->id);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, f->atlas->width, f->atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, f->atlas->data);
+}

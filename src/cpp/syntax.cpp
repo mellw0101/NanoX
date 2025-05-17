@@ -75,7 +75,15 @@ static void syntax_map_add(file_type type, const char *const restrict key, vec4 
 
 /* Configure color map with base c/cpp syntax. */
 static void set_c_cpp_synx(openfilestruct *const file) {
-  file->type.clear_and_set<C_CPP>();
+  // file->type.clear_and_set<C_CPP>();
+  file->is_c_file        = TRUE;
+  file->is_cxx_file      = FALSE;
+  file->is_nasm_file     = FALSE;
+  file->is_atnt_asm_file = FALSE;
+  file->is_bash_file     = FALSE;
+  file->is_glsl_file     = FALSE;
+  file->is_systemd_file  = FALSE;
+  file->is_nanox_file    = FALSE;
   /* Types. */
   test_map["bool"]      = {FG_VS_CODE_BLUE};
   test_map["char"]      = {FG_VS_CODE_BLUE};
@@ -134,7 +142,15 @@ static void set_c_cpp_synx(openfilestruct *const file) {
 /* Set the `AT&T asm` syntax in `syntax_map` as well as setting the type flag in `file` to `ATNT_ASM`. */
 static void set_atnt_asm_syntax(openfilestruct *const file) {
   ASSERT(file);
-  file->type.clear_and_set<ATNT_ASM>();
+  // file->type.clear_and_set<ATNT_ASM>();
+  file->is_c_file        = FALSE;
+  file->is_cxx_file      = FALSE;
+  file->is_nasm_file     = FALSE;
+  file->is_atnt_asm_file = TRUE;
+  file->is_bash_file     = FALSE;
+  file->is_glsl_file     = FALSE;
+  file->is_systemd_file  = FALSE;
+  file->is_nanox_file    = FALSE;
   /* Instruction's */
   syntax_map_add(ATNT_ASM, "movb", VEC4_VS_CODE_BLUE);
   syntax_map_add(ATNT_ASM, "movw", VEC4_VS_CODE_BLUE);
@@ -224,7 +240,15 @@ static void set_atnt_asm_syntax(openfilestruct *const file) {
 
 /* Configure color map with base asm syntax. */
 static void set_asm_synx(openfilestruct *const file) {
-  file->type.clear_and_set<ASM>();
+  // file->type.clear_and_set<ASM>();
+  file->is_c_file        = FALSE;
+  file->is_cxx_file      = FALSE;
+  file->is_nasm_file     = TRUE;
+  file->is_atnt_asm_file = FALSE;
+  file->is_bash_file     = FALSE;
+  file->is_glsl_file     = FALSE;
+  file->is_systemd_file  = FALSE;
+  file->is_nanox_file    = FALSE;
   /* 64-bit registers. */
   test_map["rax"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
   test_map["rbx"] = {FG_VS_CODE_GREEN, -1, -1, ASM_REG};
@@ -312,7 +336,15 @@ static void set_asm_synx(openfilestruct *const file) {
 /* Configure color map with base bash syntax. */
 static void set_bash_synx(openfilestruct *const file) {
   ASSERT(file);
-  file->type.clear_and_set<BASH>();
+  // file->type.clear_and_set<BASH>();
+  file->is_c_file        = FALSE;
+  file->is_cxx_file      = FALSE;
+  file->is_nasm_file     = FALSE;
+  file->is_atnt_asm_file = FALSE;
+  file->is_bash_file     = TRUE;
+  file->is_glsl_file     = FALSE;
+  file->is_systemd_file  = FALSE;
+  file->is_nanox_file    = FALSE;
   test_map["if"]    = {FG_VS_CODE_BRIGHT_MAGENTA};
   test_map["elif"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
   test_map["else"]  = {FG_VS_CODE_BRIGHT_MAGENTA};
@@ -330,7 +362,15 @@ static void set_bash_synx(openfilestruct *const file) {
 
 /* Configure color map with base systemd service syntax. */
 static void set_systemd_service_synx(openfilestruct *file) {
-  file->type.clear_and_set<SYSTEMD_SERVICE>();
+  // file->type.clear_and_set<SYSTEMD_SERVICE>();
+  file->is_c_file        = FALSE;
+  file->is_cxx_file      = FALSE;
+  file->is_nasm_file     = FALSE;
+  file->is_atnt_asm_file = FALSE;
+  file->is_bash_file     = FALSE;
+  file->is_glsl_file     = FALSE;
+  file->is_systemd_file  = FALSE;
+  file->is_nanox_file    = FALSE;
   /* Groups. */
   test_map["Unit"]    = {FG_VS_CODE_BRIGHT_CYAN};
   test_map["Service"] = {FG_VS_CODE_BRIGHT_CYAN};
@@ -364,7 +404,14 @@ static void set_systemd_service_synx(openfilestruct *file) {
 
 /* Function to check syntax for a open buffer. */
 void syntax_check_file(openfilestruct *file) {
-  file->type.clear();
+  // file->type.clear();
+  file->is_c_file        = FALSE;
+  file->is_cxx_file      = FALSE;
+  file->is_nasm_file     = FALSE;
+  file->is_atnt_asm_file = FALSE;
+  file->is_glsl_file     = FALSE;
+  file->is_systemd_file  = FALSE;
+  file->is_nanox_file    = FALSE;
   const char *file_ext;
   if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
     file_ext = ext(file->filename);
@@ -384,7 +431,8 @@ void syntax_check_file(openfilestruct *file) {
         set_bash_synx(file);
       }
       else if (strcmp(file_ext, "glsl") == 0) {
-        file->type.clear_and_set<GLSL>();
+        // file->type.clear_and_set<GLSL>();
+        file->is_glsl_file     = TRUE;
         /* Standard types. */
         test_map["mat4"]  = {FG_VS_CODE_BLUE};
         test_map["mat3"]  = {FG_VS_CODE_BLUE};
@@ -403,7 +451,8 @@ void syntax_check_file(openfilestruct *file) {
         set_systemd_service_synx(file);
       }
       else if (strcmp(file_ext, "nxcfg") == 0) {
-        file->type.clear_and_set<NANOX_CONFIG>();
+        // file->type.clear_and_set<NANOX_CONFIG>();
+        file->is_nanox_file = TRUE;
       }
     }
     /* TODO: Check that this is fully safe. */
