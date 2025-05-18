@@ -24,8 +24,8 @@ extern nwindow *tui_footwin;
 
 extern syntaxtype *syntaxes;
 
-extern openfilestruct *openfile;
-extern openfilestruct *startfile;
+// extern openfilestruct *openfile;
+// extern openfilestruct *startfile;
 
 extern message_type lastmessage;
 
@@ -43,7 +43,7 @@ extern linestruct *cutbottom;
 extern linestruct *pletion_line;
 
 // extern unsigned flags[4];
-extern Ulong flags[1];
+// extern Ulong flags[1];
 
 extern long fill;
 
@@ -67,52 +67,52 @@ extern int shiftaltup, shiftaltdown;
 extern int mousefocusin, mousefocusout;
 extern int controlbsp;
 
-extern int editwinrows;
-extern int editwincols;
-extern int margin;
-extern int sidebar;
+// extern int editwinrows;
+// extern int editwincols;
+// extern int margin;
+// extern int sidebar;
 extern int cycling_aim;
 
 extern int *bardata;
-extern int  whitelen[2];
+// extern int  whitelen[2];
 
-extern Ulong from_x;
-extern Ulong till_x;
+// extern Ulong from_x;
+// extern Ulong till_x;
 
 extern char *title;
 extern char *answer;
 extern char *last_search;
 extern char *present_path;
 extern char *matchbrackets;
-extern char *whitespace;
+// extern char *whitespace;
 extern char *punct;
 extern char *brackets;
 extern char *quotestr;
-extern char *word_chars;
+// extern char *word_chars;
 extern char *backup_dir;
 extern char *operating_dir;
 extern char *alt_speller;
 extern char *syntaxstr;
 
-extern const char *exit_tag;
-extern const char *close_tag;
+// extern const char *exit_tag;
+// extern const char *close_tag;
 extern const char *term;
 extern const char *term_program;
 
-extern bool on_a_vt;
+// extern bool on_a_vt;
 extern bool shifted_metas;
 extern bool meta_key;
-extern bool shift_held;
+// extern bool shift_held;
 extern bool keep_mark;
 extern bool mute_modifiers;
 extern bool bracketed_paste;
 extern bool we_are_running;
-extern bool more_than_one;
+// extern bool more_than_one;
 extern bool report_size;
 extern bool ran_a_tool;
-extern bool inhelp;
-extern bool focusing;
-extern bool as_an_at;
+// extern bool inhelp;
+// extern bool focusing;
+// extern bool as_an_at;
 extern bool control_C_was_pressed;
 extern bool also_the_last;
 extern bool keep_cutbuffer;
@@ -120,8 +120,8 @@ extern bool have_palette;
 extern bool rescind_colors;
 extern bool perturbed;
 extern bool recook;
-extern bool refresh_needed;
-extern bool is_shorter;
+// extern bool refresh_needed;
+// extern bool is_shorter;
 
 extern bool  suggest_on;
 extern char  suggest_buf[1024];
@@ -135,10 +135,10 @@ extern long tabsize;
 
 extern regex_t quotereg;
 
-extern int         currmenu;
+// extern int         currmenu;
 extern keystruct  *sclist;
-extern funcstruct *allfuncs;
-extern funcstruct *exitfunc;
+// extern funcstruct *allfuncs;
+// extern funcstruct *exitfunc;
 
 extern regex_t    search_regexp;
 extern regmatch_t regmatches[10];
@@ -180,15 +180,15 @@ extern Ulong typing_x;
 
 extern SyntaxFile *sf;
 
-typedef void (*functionptrtype)(void);
+// typedef void (*functionptrtype)(void);
 
 #ifdef HAVE_GLFW
   extern guielement *file_menu_element;
   /* The bottom bar. */
   extern frametimerclass frametimer;
   extern vec2 mousepos;
-  extern guieditor *openeditor;
-  extern guieditor *starteditor;
+  // extern guieditor *openeditor;
+  // extern guieditor *starteditor;
   extern guistruct *gui;
   extern uigridmapclass gridmap;
   /* guiprompt.cpp */
@@ -210,56 +210,56 @@ void  to_last_file(void) _NOTHROW;
 char *browse_in(const char *inpath);
 
 /* Most functions in 'chars.cpp'. */
-void  utf8_init(void) _NOTHROW;
-bool  using_utf8(void) _NOTHROW _NODISCARD;
-bool  is_language_word_char(const char *pointer, Ulong index) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_cursor_language_word_char(void) _NOTHROW _NODISCARD;
-bool  is_enclose_char(const char ch) _NOTHROW _NODISCARD;
-bool  is_alpha_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_alnum_char(const char *const c) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_blank_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_prev_blank_char(const char *pointer, Ulong index) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_prev_cursor_blank_char(void) _NOTHROW _NODISCARD;
-bool  is_cursor_blank_char(void) _NOTHROW _NODISCARD;
-bool  is_cntrl_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_word_char(const char *c, bool allow_punct) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_cursor_word_char(bool allow_punct) _NOTHROW _NODISCARD;
-bool  is_prev_word_char(const char *pointer, Ulong index, bool allow_punct = FALSE) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_prev_cursor_word_char(bool allow_punct = FALSE) _NOTHROW _NODISCARD;
-bool  is_prev_char(const char *pointer, Ulong index, const char ch) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_prev_cursor_char(const char ch) _NOTHROW _NODISCARD;
-bool  is_prev_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW _NODISCARD _NONNULL(1, 3);
-bool  is_prev_cursor_char_one_of(const char *chars) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_cursor_char(const char ch) _NOTHROW _NODISCARD;
-bool  is_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW _NODISCARD _NONNULL(1, 3);
-bool  is_cursor_char_one_of(const char *chars) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_cursor_between_chars(const char pre_ch, const char post_ch) _NOTHROW _NODISCARD;
-char  control_mbrep(const char *c, bool isdata) _NOTHROW _NODISCARD _NONNULL(1);
-int   mbtowide(wchar_t *wc, const char *c) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_doublewidth(const char *ch) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_zerowidth(const char *ch) _NOTHROW _NODISCARD _NONNULL(1);
-bool  is_cursor_zerowidth(void) _NOTHROW _NODISCARD;
-int   char_length(const char *const &pointer) _NOTHROW _NODISCARD;
-Ulong mbstrlen(const char *pointer) _NOTHROW;
-int   collect_char(const char *string, char *thechar) _NOTHROW;
-int   advance_over(const char *string, Ulong &column) _NOTHROW;
-Ulong step_left(const char *const buf, Ulong pos) _NOTHROW;
-Ulong step_right(const char *const buf, Ulong pos) _NOTHROW;
-int   mbstrcasecmp(const char *s1, const char *s2) _NOTHROW;
-int   mbstrncasecmp(const char *s1, const char *s2, Ulong n) _NOTHROW;
-char *mbstrcasestr(const char *haystack, const char *needle) _NOTHROW;
-char *revstrstr(const char *haystack, const char *needle, const char *pointer) _NOTHROW;
-char *mbrevstrcasestr(const char *haystack, const char *needle, const char *pointer) _NOTHROW;
-char *mbstrchr(const char *string, const char *chr) _NOTHROW;
-char *mbstrpbrk(const char *string, const char *accept) _NOTHROW;
-char *mbrevstrpbrk(const char *head, const char *accept, const char *pointer) _NOTHROW;
-bool  has_blank_char(const char *string) _NOTHROW;
-bool  white_string(const char *string) _NOTHROW;
-void  strip_leading_blanks_from(char *str) _NOTHROW;
-void  strip_leading_chars_from(char *str, const char ch) _NOTHROW;
+// void  utf8_init(void) _NOTHROW;
+// bool  using_utf8(void) _NOTHROW _NODISCARD;
+// bool  is_language_word_char(const char *pointer, Ulong index) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_cursor_language_word_char(void) _NOTHROW _NODISCARD;
+// bool  is_enclose_char(const char ch) _NOTHROW _NODISCARD;
+// bool  is_alpha_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_alnum_char(const char *const c) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_blank_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_prev_blank_char(const char *pointer, Ulong index) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_prev_cursor_blank_char(void) _NOTHROW _NODISCARD;
+// bool  is_cursor_blank_char(void) _NOTHROW _NODISCARD;
+// bool  is_cntrl_char(const char *c) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_word_char(const char *c, bool allow_punct) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_cursor_word_char(bool allow_punct) _NOTHROW _NODISCARD;
+// bool  is_prev_word_char(const char *pointer, Ulong index, bool allow_punct = FALSE) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_prev_cursor_word_char(bool allow_punct = FALSE) _NOTHROW _NODISCARD;
+// bool  is_prev_char(const char *pointer, Ulong index, const char ch) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_prev_cursor_char(const char ch) _NOTHROW _NODISCARD;
+// bool  is_prev_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW _NODISCARD _NONNULL(1, 3);
+// bool  is_prev_cursor_char_one_of(const char *chars) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_cursor_char(const char ch) _NOTHROW _NODISCARD;
+// bool  is_char_one_of(const char *pointer, Ulong index, const char *chars) _NOTHROW _NODISCARD _NONNULL(1, 3);
+// bool  is_cursor_char_one_of(const char *chars) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_cursor_between_chars(const char pre_ch, const char post_ch) _NOTHROW _NODISCARD;
+// char  control_mbrep(const char *c, bool isdata) _NOTHROW _NODISCARD _NONNULL(1);
+// int   mbtowide(wchar_t *wc, const char *c) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_doublewidth(const char *ch) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_zerowidth(const char *ch) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  is_cursor_zerowidth(void) _NOTHROW _NODISCARD;
+// int   char_length(const char *const pointer) _NOTHROW _NODISCARD;
+// Ulong mbstrlen(const char *pointer) _NOTHROW;
+// int   collect_char(const char *string, char *thechar) _NOTHROW;
+// int   advance_over(const char *string, Ulong *column) _NOTHROW;
+// Ulong step_left(const char *const buf, Ulong pos) _NOTHROW;
+// Ulong step_right(const char *const buf, Ulong pos) _NOTHROW;
+// int   mbstrcasecmp(const char *s1, const char *s2) _NOTHROW;
+// int   mbstrncasecmp(const char *s1, const char *s2, Ulong n) _NOTHROW;
+// char *mbstrcasestr(const char *haystack, const char *needle) _NOTHROW;
+// char *revstrstr(const char *haystack, const char *needle, const char *pointer) _NOTHROW;
+// char *mbrevstrcasestr(const char *haystack, const char *needle, const char *pointer) _NOTHROW;
+// char *mbstrchr(const char *string, const char *chr) _NOTHROW;
+// char *mbstrpbrk(const char *string, const char *accept) _NOTHROW;
+// char *mbrevstrpbrk(const char *head, const char *accept, const char *pointer) _NOTHROW;
+// bool  has_blank_char(const char *string) _NOTHROW;
+// bool  white_string(const char *string) _NOTHROW;
+// void  strip_leading_blanks_from(char *str) _NOTHROW;
+// void  strip_leading_chars_from(char *str, const char ch) _NOTHROW;
 
-const char *_NODISCARD nstrchr_ccpp(const char *__s __no_null(), const char __c) noexcept;
+// const char *_NODISCARD nstrchr_ccpp(const char *__s __no_null(), const char __c) noexcept;
 
 /* Most functions in 'color.cpp'. */
 void  set_interface_colorpairs(void);
@@ -292,10 +292,10 @@ void copy_text(void);
 void paste_text(void);
 
 /* Most functions in 'files.cpp'. */
-void   make_new_buffer(void) _NOTHROW;
-bool   delete_lockfile(const char *lockfilename) _NOTHROW;
+// void   make_new_buffer(void) _NOTHROW;
+// bool   delete_lockfile(const char *lockfilename);
 bool   has_valid_path(const char *filename) _NOTHROW;
-bool   open_buffer(const char *filename, bool new_one);
+// bool   open_buffer(const char *filename, bool new_one);
 void   open_buffer_browser(void);
 void   open_new_empty_buffer(void);
 void   set_modified(void) _NOTHROW;
@@ -303,8 +303,8 @@ void   prepare_for_display(void) _NOTHROW;
 void   mention_name_and_linecount(void) _NOTHROW;
 void   switch_to_prev_buffer(void) _NOTHROW;
 void   switch_to_next_buffer(void) _NOTHROW;
-void   free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) _NOTHROW;
-void   close_buffer(void) _NOTHROW;
+// void   free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) _NOTHROW;
+// void   close_buffer(void) _NOTHROW;
 char  *encode_data(char *text, Ulong length) _NOTHROW;
 void   read_file(FILE *f, int fd, const char *filename, bool undoable);
 int    open_file(const char *filename, bool new_one, FILE **f);
@@ -384,11 +384,11 @@ void do_left(void);
 void do_right(void);
 
 /* Most functions in 'nano.cpp'. */
-linestruct *make_new_node(linestruct *prevnode) _NOTHROW;
-void        splice_node(linestruct *afterthis, linestruct *newnode) _NOTHROW;
-void        delete_node(linestruct *line) _NOTHROW;
-void        unlink_node(linestruct *line) _NOTHROW;
-void        free_lines(linestruct *src) _NOTHROW;
+// linestruct *make_new_node(linestruct *prevnode) _NOTHROW;
+// void        splice_node(linestruct *afterthis, linestruct *newnode) _NOTHROW;
+// void        delete_node(linestruct *line) _NOTHROW;
+// void        unlink_node(linestruct *line) _NOTHROW;
+// void        free_lines(linestruct *src) _NOTHROW;
 linestruct *copy_node(const linestruct *src) _NOTHROW _NODISCARD _NONNULL(1);
 linestruct *copy_buffer(const linestruct *src) _NOTHROW _NODISCARD;
 void        renumber_from(linestruct *line) _NOTHROW;
@@ -416,7 +416,7 @@ void        enable_kb_interrupt(void) _NOTHROW;
 void        disable_flow_control(void) _NOTHROW;
 void        enable_flow_control(void) _NOTHROW;
 void        terminal_init(void) _NOTHROW;
-void        confirm_margin(void) _NOTHROW;
+// void        confirm_margin(void) _NOTHROW;
 void        unbound_key(int code) _NOTHROW;
 bool        wanted_to_move(functionptrtype f);
 bool        changes_something(functionptrtype f);
@@ -508,8 +508,8 @@ void  do_insert_empty_line_below(void) _NOTHROW;
 void  do_undo(void);
 void  do_redo(void);
 void  do_enter(void);
-void  discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
-void  discard_until(const undostruct *thisitem) _NOTHROW;
+// void  discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
+// void  discard_until(const undostruct *thisitem) _NOTHROW;
 void  add_undo(undo_type action, const char *message) _NOTHROW;
 void  update_multiline_undo(long lineno, char *indentation) _NOTHROW;
 void  update_undo(undo_type action) _NOTHROW;
@@ -539,11 +539,11 @@ char      **get_env_paths(Ulong *npaths) _NOTHROW _NODISCARD _NONNULL(1);
 char       *concatenate(const char *path, const char *name) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 char       *concatenate_path(const char *prefix, const char *suffix) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 const char *concat_path(const char *s1, const char *s2) _NOTHROW _NONNULL(1, 2);
-int         digits(long n) _NOTHROW _NODISCARD;
+// int         digits(long n) _NOTHROW _NODISCARD;
 bool        parse_line_column(const char *str, long *line, long *column) _NOTHROW _NONNULL(1, 2, 3);
 void        recode_NUL_to_LF(char *string, Ulong length) _NOTHROW _NONNULL(1);
 Ulong       recode_LF_to_NUL(char *string) _NOTHROW _NONNULL(1);
-void        free_chararray(char **array, Ulong len) _NOTHROW;
+// void        free_chararray(char **array, Ulong len) _NOTHROW;
 void        append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NOTHROW _NONNULL(1, 2, 3);
 bool        is_separate_word(Ulong position, Ulong length, const char *buf) _NOTHROW;
 void       *nmalloc(const Ulong howmuch) _NOTHROW _RETURNS_NONNULL;
@@ -551,10 +551,10 @@ void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _
 #define     arealloc(ptr, howmuch) (__TYPE(ptr))xrealloc(ptr, howmuch)
 char       *mallocstrcpy(char *dest, const char *src) _NOTHROW;
 // char       *free_and_assign(char *dest, char *src) _NOTHROW;
-Ulong       get_page_start(Ulong column) _NOTHROW;
+// Ulong       get_page_start(Ulong column) _NOTHROW;
 Ulong       xplustabs(void) _NOTHROW _NODISCARD;
-Ulong       actual_x(const char *text, Ulong column) _NOTHROW _NODISCARD _NONNULL(1);
-Ulong       wideness(const char *text, Ulong maxlen) _NOTHROW _NODISCARD _NONNULL(1);
+// Ulong       actual_x(const char *text, Ulong column) _NOTHROW _NODISCARD _NONNULL(1);
+// Ulong       wideness(const char *text, Ulong maxlen) _NOTHROW _NODISCARD _NONNULL(1);
 Ulong       breadth(const char *text) _NOTHROW _NODISCARD _NONNULL(1);
 void        new_magicline(void) _NOTHROW;
 void        remove_magicline(void) _NOTHROW;
@@ -588,14 +588,14 @@ int   get_input(WINDOW *win);
 int   convert_CSI_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW;
 int   get_kbinput(WINDOW *win, bool showcursor);
 char *get_verbatim_kbinput(WINDOW *win, Ulong *count) _NOTHROW;
-int   get_mouseinput(int *mouse_y, int *mouse_x, bool allow_shortcuts) _NOTHROW;
+int   get_mouseinput(int *my, int *mx, bool allow_shortcuts) _NOTHROW;
 void  blank_edit(void) _NOTHROW;
 void  blank_statusbar(void) _NOTHROW;
 void  wipe_statusbar(void) _NOTHROW;
 void  blank_bottombars(void) _NOTHROW;
 void  blank_it_when_expired(void) _NOTHROW;
 void  set_blankdelay_to_one(void) _NOTHROW;
-char *display_string(const char *buf, Ulong column, Ulong span, bool isdata, bool isprompt) _NOTHROW;
+// char *display_string(const char *buf, Ulong column, Ulong span, bool isdata, bool isprompt) _NOTHROW;
 void  titlebar(const char *path) _NOTHROW;
 void  minibar(void) _NOTHROW;
 void  statusline(message_type importance, const char *msg, ...) _NOTHROW;
@@ -612,12 +612,12 @@ int   go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
 int   go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
 bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW _NODISCARD;
 void  edit_scroll(bool direction);
-Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NOTHROW;
-Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NOTHROW _NONNULL(2);
-Ulong chunk_for(Ulong column, linestruct *line) _NOTHROW;
-Ulong leftedge_for(Ulong column, linestruct *line) _NOTHROW;
-Ulong extra_chunks_in(linestruct *line) _NOTHROW _NODISCARD _NONNULL(1);
-void  ensure_firstcolumn_is_aligned(void) _NOTHROW;
+// Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NOTHROW;
+// Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NOTHROW _NONNULL(2);
+// Ulong chunk_for(Ulong column, linestruct *line) _NOTHROW;
+// Ulong leftedge_for(Ulong column, linestruct *line) _NOTHROW;
+// Ulong extra_chunks_in(linestruct *line) _NOTHROW _NODISCARD _NONNULL(1);
+// void  ensure_firstcolumn_is_aligned(void) _NOTHROW;
 Ulong actual_last_column(Ulong leftedge, Ulong column) _NOTHROW;
 bool  current_is_offscreen(void) _NOTHROW;
 void  edit_redraw(linestruct *old_current, update_type manner);
@@ -896,7 +896,8 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   void render_vertex_buffer(Uint shader, vertex_buffer_t *buf);
   void show_statusmsg(message_type type, float seconds, const char *format, ...);
   void show_toggle_statusmsg(int flag);
-  void draw_editor(guieditor *editor);
+  // void draw_editor(guieditor *editor);
+  void draw_editor(Editor *editor);
   void draw_topbar(void);
   void draw_suggestmenu(void);
   void draw_botbar(void);
@@ -938,10 +939,10 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
   /* ---------------------------------------------------------- gui/guifiles.cpp ---------------------------------------------------------- */
   
   
-  void gui_switch_to_prev_buffer(void);
-  void gui_switch_to_next_buffer(void);
-  void gui_close_buffer(void);
-  bool gui_close_and_go(void);
+  // void gui_switch_to_prev_buffer(void);
+  // void gui_switch_to_next_buffer(void);
+  // void gui_close_buffer(void);
+  // bool gui_close_and_go(void);
   
   
   /* ---------------------------------------------------------- gui/guielement.cpp ---------------------------------------------------------- */
@@ -975,40 +976,38 @@ char *fetch_bracket_body(linestruct *from, Ulong index);
 
   
   /* ---------------------------------------------------------- gui/guieditor.cpp ---------------------------------------------------------- */
-  
-  
-  void        gui_editor_refresh_topbar(guieditor *const editor);
-  void        gui_editor_update_active_topbar(guieditor *editor);
-  void        make_new_editor(bool new_buffer);
-  void        gui_editor_free(guieditor *const editor);
-  void        gui_editor_close(void);
-  void        gui_editor_close(guieditor *const editor);
-  void        gui_editor_hide(guieditor *const editor, bool hide);
-  void        gui_editor_switch_to_prev(void);
-  void        gui_editor_switch_to_next(void);
-  void        gui_editor_switch_openfile_to_prev(void);
-  void        gui_editor_switch_openfile_to_next(void);
-  void        gui_editor_set_open(guieditor *const editor);
-  guieditor  *gui_editor_from_element(guielement *e);
-  guieditor  *gui_editor_from_file(openfilestruct *file);
-  void        gui_editor_calculate_rows(guieditor *const editor);
-  void        gui_editor_rows_cols(guieditor *const editor);
-  void        gui_editor_resize(guieditor *const editor);
-  void        gui_editor_redecorate(guieditor *const editor);
-  void        gui_editor_open_new_empty_buffer(void);
-  void        gui_editor_close_open_buffer(void);
-  void        gui_editor_close_a_open_buffer(openfilestruct *const file);
-  void        gui_editor_open_buffer(const char *const restrict path);
-  void        gui_editor_update_all(void);
-  Ulong       gui_editor_num_of_open_files(guieditor *const editor);
-  void        gui_editor_check_should_close(void);
-  void        gui_editor_close_single(openfilestruct *const file);
-  void        gui_editor_close_other_files(openfilestruct *const file);
-  void        gui_editor_close_all_files(openfilestruct *const file);
-  float       gui_editor_cursor_x_pos(guieditor *const editor, linestruct *const line, Ulong index);
-  linestruct *gui_editor_get_text_line(guieditor *const editor, float y_pos);
-  Ulong       gui_editor_get_text_index(guieditor *const editor, linestruct *const line, float x_pos);
-  void        gui_editor_get_text_line_index(guieditor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex);
+
+
+  // void        make_new_editor(bool new_buffer);
+  // void        gui_editor_free(guieditor *const editor);
+  // void        gui_editor_close(void);
+  // void        gui_editor_close(guieditor *const editor);
+  // void        gui_editor_hide(guieditor *const editor, bool hide);
+  // void        gui_editor_switch_to_prev(void);
+  // void        gui_editor_switch_to_next(void);
+  // void        gui_editor_switch_openfile_to_prev(void);
+  // void        gui_editor_switch_openfile_to_next(void);
+  // void        gui_editor_set_open(guieditor *const editor);
+  // guieditor  *gui_editor_from_element(guielement *e);
+  // guieditor  *gui_editor_from_file(openfilestruct *file);
+  // void        gui_editor_calculate_rows(guieditor *const editor);
+  // void        gui_editor_rows_cols(guieditor *const editor);
+  // void        gui_editor_resize(guieditor *const editor);
+  // void        gui_editor_redecorate(guieditor *const editor);
+  // void        gui_editor_open_new_empty_buffer(void);
+  // void        gui_editor_close_open_buffer(void);
+  // void        gui_editor_close_a_open_buffer(openfilestruct *const file);
+  // void        gui_editor_open_buffer(const char *const restrict path);
+  // void        gui_editor_update_all(void);
+  // Ulong       gui_editor_num_of_open_files(guieditor *const editor);
+  // void        gui_editor_check_should_close(void);
+  // void        gui_editor_close_single(openfilestruct *const file);
+  // void        gui_editor_close_other_files(openfilestruct *const file);
+  // void        gui_editor_close_all_files(openfilestruct *const file);
+  // float       gui_editor_cursor_x_pos(guieditor *const editor, linestruct *const line, Ulong index);
+  // linestruct *gui_editor_get_text_line(guieditor *const editor, float y_pos);
+  // Ulong       gui_editor_get_text_index(guieditor *const editor, linestruct *const line, float x_pos);
+  // void        gui_editor_get_text_line_index(guieditor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex);
 
   
   /* ---------------------------------------------------------- gui/guigrid.cpp ---------------------------------------------------------- */
@@ -1065,7 +1064,8 @@ float pixbreadth(Font *const font, const char *const restrict string);
 /* ---------------------------------------------------------- gui/cursor/cursor.cpp ---------------------------------------------------------- */
 
 
-linestruct *line_from_cursor_pos(guieditor *const editor) _RETURNS_NONNULL;
+// linestruct *line_from_cursor_pos(guieditor *const editor) _RETURNS_NONNULL;
+linestruct *line_from_cursor_pos(Editor *const editor) _RETURNS_NONNULL;
 float *pixpositions(const char *const restrict string, float normx, Ulong *outlen, texture_font_t *const font);
 Ulong closest_index(float *array, Ulong len, float rawx, texture_font_t *const font);
 Ulong index_from_pix_xpos(const char *const restrict string, float rawx, float normx, texture_font_t *const font);
@@ -1131,15 +1131,15 @@ void gui_menu_qsort(Menu *const menu, CmpFuncPtr cmp_func);
 /* ---------------------------------------------------------- gui/editor/topbar.cpp ---------------------------------------------------------- */
 
 
-EditorTb *gui_etb_create(guieditor *const editor);
-void gui_etb_free(EditorTb *const etb);
-void gui_etb_draw(EditorTb *const etb);
-void gui_etb_active_refresh_needed(EditorTb *const etb);
-void gui_etb_text_refresh_needed(EditorTb *const etb);
-void gui_etb_entries_refresh_needed(EditorTb *const etb);
-void gui_etb_show_context_menu(EditorTb *const etb, guielement *const from_element, bool show);
-bool gui_etb_element_is_main(EditorTb *const etb, guielement *const e);
-bool gui_etb_owns_element(EditorTb *const etb, guielement *const e);
+// EditorTb *gui_etb_create(guieditor *const editor);
+// void gui_etb_free(EditorTb *const etb);
+// void gui_etb_draw(EditorTb *const etb);
+// void gui_etb_active_refresh_needed(EditorTb *const etb);
+// void gui_etb_text_refresh_needed(EditorTb *const etb);
+// void gui_etb_entries_refresh_needed(EditorTb *const etb);
+// void gui_etb_show_context_menu(EditorTb *const etb, guielement *const from_element, bool show);
+// bool gui_etb_element_is_main(EditorTb *const etb, guielement *const e);
+// bool gui_etb_owns_element(EditorTb *const etb, guielement *const e);
 
 
 /* ---------------------------------------------------------- gui/editor/text.cpp ---------------------------------------------------------- */

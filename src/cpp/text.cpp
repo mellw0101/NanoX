@@ -1482,53 +1482,53 @@ void do_enter(void) {
 }
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
-void discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem) {
-  undostruct  *dropit = buffer->undotop;
-  groupstruct *group, *next;
-  while (dropit && dropit != thisitem) {
-    buffer->undotop = dropit->next;
-    free(dropit->strdata);
-    free(dropit->cutbuffer);
-    group = dropit->grouping;
-    while (group) {
-      next = group->next;
-      free_chararray(group->indentations, (group->bottom_line - group->top_line + 1));
-      free(group);
-      group = next;
-    }
-    free(dropit);
-    dropit = buffer->undotop;
-  }
-  /* Adjust the pointer to the top of the undo struct. */
-  buffer->current_undo = (undostruct *)thisitem;
-  /* Prevent a chain of edition actions from continuing. */
-  buffer->last_action = OTHER;
-}
+// void discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem) {
+//   undostruct  *dropit = buffer->undotop;
+//   groupstruct *group, *next;
+//   while (dropit && dropit != thisitem) {
+//     buffer->undotop = dropit->next;
+//     free(dropit->strdata);
+//     free(dropit->cutbuffer);
+//     group = dropit->grouping;
+//     while (group) {
+//       next = group->next;
+//       free_chararray(group->indentations, (group->bottom_line - group->top_line + 1));
+//       free(group);
+//       group = next;
+//     }
+//     free(dropit);
+//     dropit = buffer->undotop;
+//   }
+//   /* Adjust the pointer to the top of the undo struct. */
+//   buffer->current_undo = (undostruct *)thisitem;
+//   /* Prevent a chain of edition actions from continuing. */
+//   buffer->last_action = OTHER;
+// }
 
 /* Discard undo items that are newer than the given one, or all if NULL. */
-void discard_until(const undostruct *thisitem) _NOTHROW {
-  // undostruct  *dropit = openfile->undotop;
-  // groupstruct *group;
-  // while (dropit && dropit != thisitem) {
-  //   openfile->undotop = dropit->next;
-  //   free(dropit->strdata);
-  //   free_lines(dropit->cutbuffer);
-  //   group = dropit->grouping;
-  //   while (group) {
-  //     groupstruct *next = group->next;
-  //     free_chararray(group->indentations, (group->bottom_line - group->top_line + 1));
-  //     free(group);
-  //     group = next;
-  //   }
-  //   free(dropit);
-  //   dropit = openfile->undotop;
-  // }
-  // /* Adjust the pointer to the top of the undo stack. */
-  // openfile->current_undo = (undostruct *)thisitem;
-  // /* Prevent a chain of editing actions from continuing. */
-  // openfile->last_action = OTHER;
-  discard_until_in_buffer(openfile, thisitem);
-}
+// void discard_until(const undostruct *thisitem) _NOTHROW {
+//   // undostruct  *dropit = openfile->undotop;
+//   // groupstruct *group;
+//   // while (dropit && dropit != thisitem) {
+//   //   openfile->undotop = dropit->next;
+//   //   free(dropit->strdata);
+//   //   free_lines(dropit->cutbuffer);
+//   //   group = dropit->grouping;
+//   //   while (group) {
+//   //     groupstruct *next = group->next;
+//   //     free_chararray(group->indentations, (group->bottom_line - group->top_line + 1));
+//   //     free(group);
+//   //     group = next;
+//   //   }
+//   //   free(dropit);
+//   //   dropit = openfile->undotop;
+//   // }
+//   // /* Adjust the pointer to the top of the undo stack. */
+//   // openfile->current_undo = (undostruct *)thisitem;
+//   // /* Prevent a chain of editing actions from continuing. */
+//   // openfile->last_action = OTHER;
+//   discard_until_in_buffer(openfile, thisitem);
+// }
 
 /* Add a new undo item of the given type to the top of the current pile. */
 void add_undo(undo_type action, const char *message) _NOTHROW {
@@ -2026,7 +2026,7 @@ long break_line(const char *textstart, long goal, bool snap_at_nl) _NOTHROW {
   Ulong column = 0;
   /* Skip over leading whitespace, where a line should never be broken. */
   while (*pointer && is_blank_char(pointer)) {
-    pointer += advance_over(pointer, column);
+    pointer += advance_over(pointer, &column);
   }
   /* Find the last blank that does not overshoot the target column.
    * When treating a help text, do not break in the keystrokes area. */
@@ -2038,7 +2038,7 @@ long break_line(const char *textstart, long goal, bool snap_at_nl) _NOTHROW {
       lastblank = pointer;
       break;
     }
-    pointer += advance_over(pointer, column);
+    pointer += advance_over(pointer, &column);
   }
   /* If the whole line displays shorter than goal, we're done. */
   if ((long)column <= goal) {

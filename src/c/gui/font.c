@@ -350,7 +350,18 @@ float font_breadth(Font *const f, const char *const restrict string) {
   ASSERT_GUI_FONT;
   ASSERT(string);
   float ret = 0;
-  for (const char *ch=string, *prev=NULL; *ch; ++ch) {
+  for (const char *ch=string, *prev=NULL; *ch; ch += char_length(ch)) {
+    ret += strpx_glyphlen(ch, prev, f->font);
+    prev = ch;
+  }
+  return ret;
+}
+
+float font_wideness(Font *const f, const char *const restrict string, Ulong maxlen) {
+  ASSERT_GUI_FONT;
+  ASSERT(string);
+  float ret = 0;
+  for (const char *ch=string, *prev=NULL; *ch && ch<(string + maxlen); ch += char_length(ch)) {
     ret += strpx_glyphlen(ch, prev, f->font);
     prev = ch;
   }

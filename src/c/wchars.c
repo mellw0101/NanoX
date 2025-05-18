@@ -12,51 +12,52 @@
 static bool utf8_enabled = TRUE;
 
 
-int ctowc(wchar *const wc, const char *const c) {
-  /* Insure valid params. */
-  ASSERT(wc);
-  ASSERT(c);
-  Uchar v0, v1, v2, v3;
-  /* When utf8 is enabled. */
-  if ((Schar)*c < 0 && utf8_enabled) {
-    v0 = (Uchar)c[0];
-    v1 = ((Uchar)c[1] ^ 0x80);
-    if (v1 > 0x3F || v0 < 0xC2) {
-      return -1;
-    }
-    else if (v0 < 0xE0) {
-      *wc = (((Uint)(v0 & 0x1F) << 6) | (Uint)v1);
-      return 2;
-    }
-    v2 = ((Uchar)c[2] ^ 0x80);
-    if (v2 > 0x3F) {
-      return -1;
-    }
-    else if (v0 < 0xF0) {
-      if ((v0 > 0xE0 || v1 >= 0x20) && (v0 != 0xED || v1 < 0x20)) {
-        *wc = (((Uint)(v0 & 0x0F) << 12) | ((Uint)v1 << 6) | (Uint)v2);
-        return 3;
-      }
-      else {
-        return -1;
-      }
-    }
-    v3 = ((Uchar)c[3] ^ 0x80);
-    if (v3 > 0x3f || v0 > 0xf4) {
-      return -1;
-    }
-    else if ((v0 > 0xF0 || v1 >= 0x10) && (v0 != 0xF4 || v1 < 0x10)) {
-      *wc = (((Uint)(v0 & 0x07) << 18) | ((Uint)v1 << 12) | ((Uint)v2 << 6) | (Uint)v3);
-      return 4;
-    }
-    else {
-      return -1;
-    }
-  }
-  /* Otherwise, just return one. */
-  *wc = (Uint)*c;
-  return 1;
-}
+// int ctowc(wchar *const wc, const char *const c) {
+//   /* Insure valid params. */
+//   ASSERT(wc);
+//   ASSERT(c);
+//   Uchar v0, v1, v2, v3;
+//   /* When utf8 is enabled. */
+//   if ((Schar)*c < 0 && utf8_enabled) {
+//     v0 = (Uchar)c[0];
+//     v1 = ((Uchar)c[1] ^ 0x80);
+//     if (v1 > 0x3F || v0 < 0xC2) {
+//       return -1;
+//     }
+//     else if (v0 < 0xE0) {
+//       *wc = (((Uint)(v0 & 0x1F) << 6) | (Uint)v1);
+//       return 2;
+//     }
+//     v2 = ((Uchar)c[2] ^ 0x80);
+//     if (v2 > 0x3F) {
+//       return -1;
+//     }
+//     else if (v0 < 0xF0) {
+//       if ((v0 > 0xE0 || v1 >= 0x20) && (v0 != 0xED || v1 < 0x20)) {
+//         *wc = (((Uint)(v0 & 0x0F) << 12) | ((Uint)v1 << 6) | (Uint)v2);
+//         return 3;
+//       }
+//       else {
+//         return -1;
+//       }
+//     }
+//     v3 = ((Uchar)c[3] ^ 0x80);
+//     if (v3 > 0x3f || v0 > 0xf4) {
+//       return -1;
+//     }
+//     else if ((v0 > 0xF0 || v1 >= 0x10) && (v0 != 0xF4 || v1 < 0x10)) {
+//       *wc = (((Uint)(v0 & 0x07) << 18) | ((Uint)v1 << 12) | ((Uint)v2 << 6) | (Uint)v3);
+//       return 4;
+//     }
+//     else {
+//       return -1;
+//     }
+//   }
+//   /* Otherwise, just return one. */
+//   *wc = (Uint)*c;
+//   return 1;
+// }
+
 
 // /* Return's the number of bytes in the char that starts at `*c`. */
 // int charlen(const char *const c) {
@@ -205,47 +206,47 @@ char *stripleadblanks(char *string, Ulong *const moveno) {
 }
 
 /* Returns the index in `string` of the beginning of the multibyte char before the one at pos. */
-Ulong step_left(const char *const restrict string, Ulong pos) {
-  /* Ensure input string is valid. */
-  ASSERT(string);
-  const char *ptr;
-  Ulong before, clen=0;
-  /* When utf8 is enabled, ensure correctness with multibyte chars. */
-  if (utf8_enabled) {
-    if (pos < 4) {
-      before = 0;
-    }
-    else {
-      ptr = (string + pos);
-      /* Probe for a valid starter byte in the preciding four bytes. */
-      if ((Schar)*--ptr > -65) {
-        before = (pos - 1);
-      }
-      else if ((Schar)*--ptr > -65) {
-        before = (pos - 2);
-      }
-      else if ((Schar)*--ptr > -65) {
-        before = (pos - 3);
-      }
-      else if ((Schar)*--ptr > -65) {
-        before = (pos - 4);
-      }
-      else {
-        before = (pos - 1);
-      }
-    }
-    /* Move forward until we reach the original char, so we know the length of its preceding char. */
-    while (before < pos) {
-      clen = charlen(string + before);
-      before += clen;
-    }
-    return (before - clen);
-  }
-  /* Otherwise, unless pos is zero return 'pos - 1'. */
-  else {
-    return (!pos ? 0 : (pos - 1));
-  }
-}
+// Ulong step_left(const char *const restrict string, Ulong pos) {
+//   /* Ensure input string is valid. */
+//   ASSERT(string);
+//   const char *ptr;
+//   Ulong before, clen=0;
+//   /* When utf8 is enabled, ensure correctness with multibyte chars. */
+//   if (utf8_enabled) {
+//     if (pos < 4) {
+//       before = 0;
+//     }
+//     else {
+//       ptr = (string + pos);
+//       /* Probe for a valid starter byte in the preciding four bytes. */
+//       if ((Schar)*--ptr > -65) {
+//         before = (pos - 1);
+//       }
+//       else if ((Schar)*--ptr > -65) {
+//         before = (pos - 2);
+//       }
+//       else if ((Schar)*--ptr > -65) {
+//         before = (pos - 3);
+//       }
+//       else if ((Schar)*--ptr > -65) {
+//         before = (pos - 4);
+//       }
+//       else {
+//         before = (pos - 1);
+//       }
+//     }
+//     /* Move forward until we reach the original char, so we know the length of its preceding char. */
+//     while (before < pos) {
+//       clen = charlen(string + before);
+//       before += clen;
+//     }
+//     return (before - clen);
+//   }
+//   /* Otherwise, unless pos is zero return 'pos - 1'. */
+//   else {
+//     return (!pos ? 0 : (pos - 1));
+//   }
+// }
 
 /* Move `steps` to the left in a utf8 safe mannor. */
 Ulong step_nleft(const char *const restrict string, Ulong pos, Ulong steps) {
@@ -260,9 +261,9 @@ Ulong step_nleft(const char *const restrict string, Ulong pos, Ulong steps) {
 }
 
 /* Return's the index in `string` of the beginning of the multibyte char after the one at pos. */
-Ulong step_right(const char *const restrict string, Ulong pos) {
-  return (pos + charlen(string + pos));
-}
+// Ulong step_right(const char *const restrict string, Ulong pos) {
+//   return (pos + charlen(string + pos));
+// }
 
 /* Move `steps` to the left in a utf8 safe mannor. */
 Ulong step_nright(const char *const restrict string, Ulong pos, Ulong steps) {

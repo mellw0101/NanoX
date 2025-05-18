@@ -263,7 +263,7 @@ static void gui_suggestmenu_pos_routine(void *arg, vec2 size, vec2 *pos) {
   /* Calculate the correct position for the suggestmenu window. */
   pos->x = cursor_pixel_x_pos(gui_font_get_font(gui_menu_get_font(sm->menu)));
   gui_font_row_top_bot(gui->font, (openfile->current->lineno - openfile->edittop->lineno), NULL, &pos->y);
-  pos->y += (openeditor->main->pos.y + gui_font_height(gui->uifont));
+  pos->y += (openeditor->main->y + gui_font_height(gui->uifont));
 }
 
 static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict lable, int index) {

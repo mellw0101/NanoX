@@ -73,44 +73,44 @@ const char *concat_path(const char *s1, const char *s2) _NOTHROW {
 }
 
 /* Return the number of digits that the given integer n takes up. */
-int digits(const long n) _NOTHROW {
-  if (n < 100000) {
-    if (n < 1000) {
-      if (n < 100) {
-        return 2;
-      }
-      else {
-        return 3;
-      }
-    }
-    else {
-      if (n < 10000) {
-        return 4;
-      }
-      else {
-        return 5;
-      }
-    }
-  }
-  else {
-    if (n < 10000000) {
-      if (n < 1000000) {
-        return 6;
-      }
-      else {
-        return 7;
-      }
-    }
-    else {
-      if (n < 100000000) {
-        return 8;
-      }
-      else {
-        return 9;
-      }
-    }
-  }
-}
+// int digits(const long n) _NOTHROW {
+//   if (n < 100000) {
+//     if (n < 1000) {
+//       if (n < 100) {
+//         return 2;
+//       }
+//       else {
+//         return 3;
+//       }
+//     }
+//     else {
+//       if (n < 10000) {
+//         return 4;
+//       }
+//       else {
+//         return 5;
+//       }
+//     }
+//   }
+//   else {
+//     if (n < 10000000) {
+//       if (n < 1000000) {
+//         return 6;
+//       }
+//       else {
+//         return 7;
+//       }
+//     }
+//     else {
+//       if (n < 100000000) {
+//         return 8;
+//       }
+//       else {
+//         return 9;
+//       }
+//     }
+//   }
+// }
 
 /* Read an integer from the given string.  If it parses okay, store it in *result and return TRUE; otherwise, return FALSE. */
 // bool parse_num(const char *string, long *result) _NOTHROW {
@@ -175,15 +175,15 @@ Ulong recode_LF_to_NUL(char *string) _NOTHROW {
 }
 
 /* Free the memory of the given array, which should contain len elements. */
-void free_chararray(char **array, Ulong len) _NOTHROW {
-  if (!array) {
-    return;
-  }
-  while (len > 0) {
-    free(array[--len]);
-  }
-  free(array);
-}
+// void free_chararray(char **array, Ulong len) _NOTHROW {
+//   if (!array) {
+//     return;
+//   }
+//   while (len > 0) {
+//     free(array[--len]);
+//   }
+//   free(array);
+// }
 
 /* Append an array onto 'array'.  Free 'append' but not any elements in it after call. */
 void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NOTHROW {
@@ -324,17 +324,17 @@ char *mallocstrcpy(char *dest, const char *src) _NOTHROW {
 /* When not softwrapping, nano scrolls the current line horizontally by
  * chunks ("pages").  Return the column number of the first character
  * displayed in the edit window when the cursor is at the given column. */
-Ulong get_page_start(const Ulong column) _NOTHROW {
-  if (!column || (int)(column + 2) < editwincols || ISSET(SOFTWRAP)) {
-    return 0;
-  }
-  else if (editwincols > 8) {
-    return (column - 6 - (column - 6) % (editwincols - 8));
-  }
-  else {
-    return (column - (editwincols - 2));
-  }
-}
+// Ulong get_page_start(const Ulong column) _NOTHROW {
+//   if (!column || (int)(column + 2) < editwincols || ISSET(SOFTWRAP)) {
+//     return 0;
+//   }
+//   else if (editwincols > 8) {
+//     return (column - 6 - (column - 6) % (editwincols - 8));
+//   }
+//   else {
+//     return (column - (editwincols - 2));
+//   }
+// }
 
 /* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
 Ulong xplustabs(void) _NOTHROW {
@@ -342,37 +342,37 @@ Ulong xplustabs(void) _NOTHROW {
 }
 
 /* Return the index in text of the character that (when displayed) will not overshoot the given column. */
-Ulong actual_x(const char *text, Ulong column) _NOTHROW {
-  /* From where we start walking through the text. */
-  const char *start = text;
-  /* The current accumulated span, in columns. */
-  Ulong width = 0;
-  /* Calculated length of the current char. */
-  int charlen;
-  while (*text) {
-    charlen = advance_over(text, width);
-    if (width > column) {
-      break;
-    }
-    text += charlen;
-  }
-  return (text - start);
-}
+// Ulong actual_x(const char *text, Ulong column) _NOTHROW {
+//   /* From where we start walking through the text. */
+//   const char *start = text;
+//   /* The current accumulated span, in columns. */
+//   Ulong width = 0;
+//   /* Calculated length of the current char. */
+//   int charlen;
+//   while (*text) {
+//     charlen = advance_over(text, &width);
+//     if (width > column) {
+//       break;
+//     }
+//     text += charlen;
+//   }
+//   return (text - start);
+// }
 
 /* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
-Ulong wideness(const char *text, Ulong maxlen) _NOTHROW {
-  Ulong width = 0;
-  if (!maxlen) {
-    return 0;
-  }
-  for (Ulong charlen; *text && (maxlen > (charlen = advance_over(text, width))); maxlen -= charlen, text += charlen);
-  return width;
-}
+// Ulong wideness(const char *text, Ulong maxlen) _NOTHROW {
+//   Ulong width = 0;
+//   if (!maxlen) {
+//     return 0;
+//   }
+//   for (Ulong charlen; *text && (maxlen > (charlen = advance_over(text, &width))); maxlen -= charlen, text += charlen);
+//   return width;
+// }
 
 /* Return the number of columns that the given text occupies. */
 Ulong breadth(const char *text) _NOTHROW {
   Ulong span = 0;
-  for (; *text; text += advance_over(text, span));
+  for (; *text; text += advance_over(text, &span));
   return span;
 }
 

@@ -166,19 +166,6 @@ void element_free(Element *const e) {
   free(e);
 }
 
-void element_set_parent(Element *const e, Element *const parent) {
-  ASSERT(e);
-  ASSERT(parent);
-  e->parent = parent;
-  cvec_push(parent->children, e);
-  element_set_layer(parent, parent->layer);
-}
-
-// void element_set_color(Element *const e, float r, float g, float b, float a) {
-//   ASSERT(e);
-//   color_set_rgba(e->color, r, g, b, a);
-// }
-
 /* Draw a `Element` structure using its internal values. */
 void element_draw(Element *const e) {
   ASSERT(e);
@@ -194,13 +181,6 @@ void element_draw(Element *const e) {
       );
     }
   }
-}
-
-Element *element_from_pos(float x, float y) {
-  if (element_grid_contains(x, y)) {
-    return element_grid_get(x, y);
-  }
-  return NULL;
 }
 
 void element_move(Element *const e, float x, float y) {
@@ -251,6 +231,36 @@ void element_delete_borders(Element *const e) {
       --i;
     }
   );
+}
+
+/* ----------------------------- Boolian function's ----------------------------- */
+
+/* Returns 'TRUE' when 'ancestor' is an ancestor to e or is e itself. */
+bool element_is_ancestor(Element *const e, Element *const ancestor) {
+  if (!e || !ancestor) {
+    return FALSE;
+  }
+  Element *element = e;
+  while (element) {
+    if (element == ancestor) {
+      return TRUE;
+    }
+    element = element->parent;
+  }
+  return FALSE;
+}
+
+/* ----------------------------- Internal data set function's ----------------------------- */
+
+void element_set_lable(Element *const e, const char *const restrict lable, Ulong len) {
+  ASSERT(e);
+  ASSERT(lable);
+  if (e->has_lable) {
+    free(e->lable);
+  }
+  e->lable_len = len;
+  e->lable     = measured_copy(lable, len);
+  e->has_lable = TRUE;
 }
 
 void element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Color *color) {
@@ -310,48 +320,71 @@ void element_set_layer(Element *const e, Ushort layer) {
   );
 }
 
-/* ----------------------------- Boolian function's ----------------------------- */
-
-/* Returns 'TRUE' when 'ancestor' is an ancestor to e or is e itself. */
-bool element_is_ancestor(Element *const e, Element *const ancestor) {
-  if (!e || !ancestor) {
-    return FALSE;
-  }
-  Element *element = e;
-  while (element) {
-    if (element == ancestor) {
-      return TRUE;
-    }
-    element = element->parent;
-  }
-  return FALSE;
+/* Set the parent of `e` to `p`, as well as adding `e` to the children vector of `p`. */
+void element_set_parent(Element *const e, Element *const p) {
+  ASSERT(e);
+  ASSERT(p);
+  e->parent = p;
+  cvec_push(p->children, e);
+  element_set_layer(p, p->layer);
 }
 
-/* ----------------------------- Internal data ptr set function's ----------------------------- */
-
+/* Set the internal data ptr of `e` to `void *` data.  Note that this should be the only way of setting the internal data of a element. */
 void element_set_raw_data(Element *const e, void *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data  = TRUE;
-  e->has_sb_data   = FALSE;
-  e->has_menu_data = FALSE;
-  e->dp_raw        = data;
+  e->has_raw_data    = TRUE;
+  e->has_sb_data     = FALSE;
+  e->has_menu_data   = FALSE;
+  e->has_file_data   = FALSE;
+  e->has_editor_data = FALSE;
+  e->dp_raw          = data;
 }
 
+/* Set the internal data ptr of `e` to `Scrollbar *` data.  Note that this should be the only way of setting the internal data of a element. */
 void element_set_sb_data(Element *const e, Scrollbar *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data  = FALSE;
-  e->has_sb_data   = TRUE;
-  e->has_menu_data = FALSE;
-  e->dp_sb         = data;
+  e->has_raw_data    = FALSE;
+  e->has_sb_data     = TRUE;
+  e->has_menu_data   = FALSE;
+  e->has_file_data   = FALSE;
+  e->has_editor_data = FALSE;
+  e->dp_sb           = data;
 }
 
+/* Set the internal data ptr of `e` to `CMenu *` data.  Note that this should be the only way of setting the internal data of a element. */
 void element_set_menu_data(Element *const e, CMenu *const data) {
   ASSERT(e);
   ASSERT(data);
-  e->has_raw_data  = FALSE;
-  e->has_sb_data   = FALSE;
-  e->has_menu_data = TRUE;
-  e->dp_menu       = data;
+  e->has_raw_data    = FALSE;
+  e->has_sb_data     = FALSE;
+  e->has_menu_data   = TRUE;
+  e->has_file_data   = FALSE;
+  e->has_editor_data = FALSE;
+  e->dp_menu         = data;
+}
+
+/* Set the internal data ptr of `e` to `openfilestruct *` data.  Note that this should be the only way of setting the internal data of a element. */
+void element_set_file_data(Element *const e, openfilestruct *const data) {
+  ASSERT(e);
+  ASSERT(data);
+  e->has_raw_data    = FALSE;
+  e->has_sb_data     = FALSE;
+  e->has_menu_data   = FALSE;
+  e->has_file_data   = TRUE;
+  e->has_editor_data = FALSE;
+  e->dp_file         = data;
+}
+
+/* Set the internal data ptr of `e` to `Editor *` data.  Note that this should be the only way of setting the internal data of a element. */
+void element_set_editor_data(Element *const e, Editor *const data) {
+  ASSERT(e);
+  ASSERT(data);
+  e->has_raw_data    = FALSE;
+  e->has_sb_data     = FALSE;
+  e->has_menu_data   = FALSE;
+  e->has_file_data   = FALSE;
+  e->has_editor_data = TRUE;
+  e->dp_editor       = data;
 }

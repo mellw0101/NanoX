@@ -14,9 +14,9 @@ guielement *file_menu_element = NULL;
 guielement *open_file_element = NULL;
 
 /* The list of all `gui-editors`. */
-guieditor *openeditor = NULL;
+// guieditor *openeditor = NULL;
 /* The first open `gui-editor`. */
-guieditor *starteditor = NULL;
+// guieditor *starteditor = NULL;
 
 /* The main structure that holds all the data the gui needs. */
 guistruct *gui = NULL;
@@ -92,6 +92,8 @@ static void setup_font_shader(void) {
   /* Load the font and uifont. */
   gui_font_load(gui->font, FALLBACK_FONT_PATH, 17, 4096);
   gui_font_load(gui->uifont, FALLBACK_FONT_PATH, 15, 2048);
+  textfont = gui->font;
+  uifont   = gui->uifont;
   // set_gui_font(FALLBACK_FONT_PATH, gui->font_size);
   // set_gui_uifont(FALLBACK_FONT_PATH, gui->uifont_size);
 }
@@ -172,7 +174,8 @@ static void setup_edit_element(void) {
   /* Confirm the margin first to determen how wide the gutter has to be. */
   confirm_margin();
   /* Create the editor circular list. */
-  make_new_editor(FALSE);
+  // make_new_editor(FALSE);
+  editor_create(FALSE);
 }
 
 /* Create the main guistruct, completely blank. */
@@ -213,6 +216,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   gui->title      = copy_of(win_title);
   gui->width      = win_width;
   gui->height     = win_height;
+  gui_width  = win_width;
+  gui_height = win_height;
   gui->projection = matrix4x4_new();
   /* Then create the glfw window. */
   gui->window = glfwCreateWindow(gui->width, gui->height, gui->title, NULL, NULL);
@@ -220,6 +225,7 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
     glfwTerminate();
     die("Failed to create glfw window.\n");
   }
+  gui_window = gui->window;
   glfwMakeContextCurrent(gui->window);
   frametimer.fps = ((fps == -1) ? 240 : fps);
   /* Create and start the event handler. */
@@ -270,7 +276,8 @@ static void delete_guistruct(void) {
 
 /* Cleanup before exit. */
 static void cleanup(void) { 
-  gui_editor_free(openeditor);
+  // gui_editor_free(openeditor);
+  editor_free(openeditor);
   delete_guistruct();
   element_free(test_element);
   element_grid_free();
@@ -353,7 +360,8 @@ void glfw_loop(void) {
     place_the_cursor();
     glClear(GL_COLOR_BUFFER_BIT);
     /* Check if any editor's has it's `should_close` flag set, and if so close them. */
-    gui_editor_check_should_close();
+    // gui_editor_check_should_close();
+    editor_check_should_close();
     /* Draw the editors. */
     CLIST_ITER(starteditor, editor,
       draw_editor(editor);
@@ -391,9 +399,12 @@ bool gui_quit(void) {
   }
   /* When there is more then a single file open in the currently open editor. */
   if (!CLIST_SINGLE(openeditor->openfile)) {
-    gui_editor_close_open_buffer();
-    gui_editor_redecorate(openeditor);
-    gui_editor_resize(openeditor);
+    // gui_editor_close_open_buffer();
+    // gui_editor_redecorate(openeditor);
+    // gui_editor_resize(openeditor);
+    editor_close_open_buffer();
+    editor_redecorate(openeditor);
+    editor_resize(openeditor);
     return FALSE;
   }
   else {
@@ -404,10 +415,14 @@ bool gui_quit(void) {
     }
     else {
       // gui_editor_close();
-      gui_editor_close(openeditor);
-      gui_editor_hide(openeditor, FALSE);
-      gui_editor_redecorate(openeditor);
-      gui_editor_resize(openeditor);
+      // gui_editor_close(openeditor);
+      // gui_editor_hide(openeditor, FALSE);
+      // gui_editor_redecorate(openeditor);
+      // gui_editor_resize(openeditor);
+      editor_close(openeditor);
+      editor_hide(openeditor, FALSE);
+      editor_redecorate(openeditor);
+      editor_resize(openeditor);
       return FALSE;
     }
   }

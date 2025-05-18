@@ -165,10 +165,10 @@ void do_parse(void) {
 }
 
 void do_test(void) {
-  const char *found = nstrchr_ccpp(openfile->current->data + openfile->current_x, ';');
-  if (found) {
-    unix_socket_debug("found: '%s' in '%s'.\n", found, openfile->current->data);
-  }
+  // const char *found = nstrchr_ccpp(openfile->current->data + openfile->current_x, ';');
+  // if (found) {
+  //   unix_socket_debug("found: '%s' in '%s'.\n", found, openfile->current->data);
+  // }
 }
 
 void do_test_window(void) {

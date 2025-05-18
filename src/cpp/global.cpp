@@ -5,13 +5,13 @@
 /* Set to 'TRUE' by the handler whenever a SIGWINCH occurs. */
 volatile sig_atomic_t the_window_resized = FALSE;
 /* Whether we're running on a Linux console (a VT). */
-bool on_a_vt = FALSE;
+// bool on_a_vt = FALSE;
 /* Whether any Sh-M-<letter> combo has been bound. */
 bool shifted_metas = FALSE;
 /* Whether the current keystroke is a Meta key. */
 bool meta_key;
 /* Whether Shift was being held together with a movement key. */
-bool shift_held;
+// bool shift_held;
 /* Whether to keep mark when normaly we wouldent. */
 bool keep_mark = FALSE;
 /* Whether to ignore modifier keys while running a macro or string bind. */
@@ -21,23 +21,23 @@ bool bracketed_paste = FALSE;
 /* Becomes TRUE as soon as all options and files have been read. */
 bool we_are_running = FALSE;
 /* Whether more than one buffer is or has been open. */
-bool more_than_one = FALSE;
+// bool more_than_one = FALSE;
 /* Whether to show the number of lines when the minibar is used. */
 bool report_size = TRUE;
 /* Whether a tool has been run at the Execute-Command prompt. */
 bool ran_a_tool = FALSE;
 /* Whether we are in the help viewer. */
-bool inhelp = FALSE;
+// bool inhelp = FALSE;
 /* When not NULL: the title of the current help text. */
 char *title = NULL;
 /* Did a command mangle enough of the buffer that we should repaint the screen? */
-bool refresh_needed = FALSE;
+// bool refresh_needed = FALSE;
 /* If we should refresh the suggest window. */
 bool suggest_on = FALSE;
 /* Whether an update of the edit window should center the cursor. */
-bool focusing = TRUE;
+// bool focusing = TRUE;
 /* Whether a 0x0A byte should be shown as a ^@ instead of a ^J. */
-bool as_an_at = TRUE;
+// bool as_an_at = TRUE;
 /* Whether Ctrl+C was pressed (when a keyboard interrupt is enabled). */
 bool control_C_was_pressed = FALSE;
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
@@ -55,7 +55,7 @@ int didfind = 0;
 /* The current browser directory when trying to do tab completion. */
 char *present_path = NULL;
 /* Our flags array, containing the states of all global options. */
-Ulong flags[1] = {0};
+// Ulong flags[1] = {0};
 
 int controlleft, controlright, controlup, controldown;
 int controlhome, controlend;
@@ -86,13 +86,13 @@ nwindow *tui_footwin = NULL;
 /* Test window for sugestions. */
 WINDOW *suggestwin = NULL;
 /* How many rows does the edit window take up? */
-int editwinrows = 0;
+// int editwinrows = 0;
 /* The number of usable columns in the edit window: COLS - margin. */
-int editwincols = -1;
+// int editwincols = -1;
 /* The amount of space reserved at the left for line numbers. */
-int margin = 0;
+// int margin = 0;
 /* Becomes 1 when the indicator "scroll bar" must be shown. */
-int sidebar = 0;
+// int sidebar = 0;
 /* An array of characters that together depict the scrollbar. */
 int *bardata = NULL;
 /* The column at which a vertical bar will be drawn. */
@@ -106,15 +106,15 @@ linestruct *cutbottom = NULL;
 /* Whether to add to the cutbuffer instead of clearing it first. */
 bool keep_cutbuffer = FALSE;
 /* The list of all open file buffers. */
-openfilestruct *openfile = NULL;
+// openfilestruct *openfile = NULL;
 /* The first open buffer. */
-openfilestruct *startfile = NULL;
+// openfilestruct *startfile = NULL;
 /* The opening and closing brackets that bracket searches can find. */
 char *matchbrackets = NULL;
 /* The characters used when visibly showing tabs and spaces. */
-char *whitespace = NULL;
+// char *whitespace = NULL;
 /* The length in bytes of these characters. */
-int whitelen[2];
+// int whitelen[2];
 /* The closing punctuation that can end sentences. */
 char *punct = NULL;
 /* The closing brackets that can follow closing punctuation and can end
@@ -125,7 +125,7 @@ char *quotestr = NULL;
 /* The compiled regular expression from the quoting string. */
 regex_t quotereg;
 /* Nonalphanumeric characters that also form words. */
-char *word_chars = NULL;
+// char *word_chars = NULL;
 /* The directory where we store backup files. */
 char *backup_dir = NULL;
 /* The path to our confining "operating" directory, when given. */
@@ -145,15 +145,15 @@ bool perturbed = FALSE;
 /* Whether the multidata should be recalculated. */
 bool recook = FALSE;
 /* The currently active menu, initialized to a dummy value. */
-int currmenu = MMOST;
+// int currmenu = MMOST;
 /* The start of the shortcuts list. */
 keystruct *sclist = NULL;
 /* The start of the functions list. */
-funcstruct *allfuncs = NULL;
+// funcstruct *allfuncs = NULL;
 /* The last function in the list. */
-funcstruct *tailfunc;
+// funcstruct *tailfunc;
 /* A pointer to the special Exit/Close item. */
-funcstruct *exitfunc;
+// funcstruct *exitfunc;
 /* The current item in the list of strings that were searched for. */
 linestruct *search_history = NULL;
 /* The current item in the list of replace strings. */
@@ -501,8 +501,8 @@ functionptrtype interpret(const int keycode) {
 
 /* These two tags are used elsewhere too, so they are global.
  * TRANSLATORS: Try to keep the next two strings at most 10 characters. */
-const char *exit_tag  = N_("Exit");
-const char *close_tag = N_("Close");
+// const char *exit_tag  = N_("Exit");
+// const char *close_tag = N_("Close");
 
 /* Initialize the list of functions and the list of shortcuts.
  * This is the place where all the functions and shortcuts are defined. */

@@ -3,6 +3,7 @@
 /* clang-format off */
 
 #include <Mlib/constexpr.hpp>
+#include "c_proto.h"
 
 using std::string_view;
 
@@ -108,123 +109,123 @@ constexpr Uchar retriveSyntaxOptionFromStr(string_view str) {
   return 0;
 }
 
-/* Identifiers for the different flags. */
-typedef enum {
-  /* This flag is not used as this is part of a bitfield and 0 is not a unique
-  * value, in terms of bitwise operations as the default all non set value is 0. */
-  DONTUSE,
-  #define DONTUSE DONTUSE
-  CASE_SENSITIVE,
-  #define CASE_SENSITIVE CASE_SENSITIVE
-  CONSTANT_SHOW,
-  #define CONSTANT_SHOW CONSTANT_SHOW
-  NO_HELP,
-  #define NO_HELP NO_HELP
-  NO_WRAP,
-  #define NO_WRAP NO_WRAP
-  AUTOINDENT,
-  #define AUTOINDENT AUTOINDENT
-  VIEW_MODE,
-  #define VIEW_MODE VIEW_MODE
-  USE_MOUSE,
-  #define USE_MOUSE USE_MOUSE
-  USE_REGEXP,
-  #define USE_REGEXP USE_REGEXP
-  SAVE_ON_EXIT,
-  #define SAVE_ON_EXIT SAVE_ON_EXIT
-  CUT_FROM_CURSOR,
-  #define CUT_FROM_CURSOR CUT_FROM_CURSOR
-  BACKWARDS_SEARCH,
-  #define BACKWARDS_SEARCH BACKWARDS_SEARCH
-  MULTIBUFFER,
-  #define MULTIBUFFER MULTIBUFFER
-  REBIND_DELETE,
-  #define REBIND_DELETE REBIND_DELETE
-  RAW_SEQUENCES,
-  #define RAW_SEQUENCES RAW_SEQUENCES
-  NO_CONVERT,
-  #define NO_CONVERT NO_CONVERT
-  MAKE_BACKUP,
-  #define MAKE_BACKUP MAKE_BACKUP
-  INSECURE_BACKUP,
-  #define INSECURE_BACKUP INSECURE_BACKUP
-  NO_SYNTAX,
-  #define NO_SYNTAX NO_SYNTAX
-  PRESERVE,
-  #define PRESERVE PRESERVE
-  HISTORYLOG,
-  #define HISTORYLOG HISTORYLOG
-  RESTRICTED,
-  #define RESTRICTED RESTRICTED
-  SMART_HOME,
-  #define SMART_HOME SMART_HOME
-  WHITESPACE_DISPLAY,
-  #define WHITESPACE_DISPLAY WHITESPACE_DISPLAY
-  TABS_TO_SPACES,
-  #define TABS_TO_SPACES TABS_TO_SPACES
-  QUICK_BLANK,
-  #define QUICK_BLANK QUICK_BLANK
-  WORD_BOUNDS,
-  #define WORD_BOUNDS WORD_BOUNDS
-  NO_NEWLINES,
-  #define NO_NEWLINES NO_NEWLINES
-  BOLD_TEXT,
-  #define BOLD_TEXT BOLD_TEXT
-  SOFTWRAP,
-  #define SOFTWRAP SOFTWRAP
-  POSITIONLOG,
-  #define POSITIONLOG POSITIONLOG
-  LOCKING,
-  #define LOCKING LOCKING
-  NOREAD_MODE,
-  #define NOREAD_MODE NOREAD_MODE
-  MAKE_IT_UNIX,
-  #define MAKE_IT_UNIX MAKE_IT_UNIX
-  TRIM_BLANKS,
-  #define TRIM_BLANKS TRIM_BLANKS
-  SHOW_CURSOR,
-  #define SHOW_CURSOR SHOW_CURSOR
-  LINE_NUMBERS,
-  #define LINE_NUMBERS LINE_NUMBERS
-  AT_BLANKS,
-  #define AT_BLANKS AT_BLANKS
-  AFTER_ENDS,
-  #define AFTER_ENDS AFTER_ENDS
-  LET_THEM_ZAP,
-  #define LET_THEM_ZAP LET_THEM_ZAP
-  BREAK_LONG_LINES,
-  #define BREAK_LONG_LINES BREAK_LONG_LINES
-  JUMPY_SCROLLING,
-  #define JUMPY_SCROLLING JUMPY_SCROLLING
-  EMPTY_LINE,
-  #define EMPTY_LINE EMPTY_LINE
-  INDICATOR,
-  #define INDICATOR INDICATOR
-  BOOKSTYLE,
-  #define BOOKSTYLE BOOKSTYLE
-  COLON_PARSING,
-  #define COLON_PARSING COLON_PARSING
-  STATEFLAGS,
-  #define STATEFLAGS STATEFLAGS
-  USE_MAGIC,
-  #define USE_MAGIC USE_MAGIC
-  MINIBAR,
-  #define MINIBAR MINIBAR
-  ZERO,
-  #define ZERO ZERO
-  MODERN_BINDINGS,
-  #define MODERN_BINDINGS MODERN_BINDINGS
-  EXPERIMENTAL_FAST_LIVE_SYNTAX,
-  #define EXPERIMENTAL_FAST_LIVE_SYNTAX EXPERIMENTAL_FAST_LIVE_SYNTAX
-  SUGGEST,
-  #define SUGGEST SUGGEST
-  SUGGEST_INLINE,
-  #define SUGGEST_INLINE SUGGEST_INLINE
-  USING_GUI,
-  #define USING_GUI USING_GUI
-  NO_NCURSES,
-  #define NO_NCURSES NO_NCURSES
-} flag_type;
+// /* Identifiers for the different flags. */
+// typedef enum {
+//   /* This flag is not used as this is part of a bitfield and 0 is not a unique
+//   * value, in terms of bitwise operations as the default all non set value is 0. */
+//   DONTUSE,
+//   #define DONTUSE DONTUSE
+//   CASE_SENSITIVE,
+//   #define CASE_SENSITIVE CASE_SENSITIVE
+//   CONSTANT_SHOW,
+//   #define CONSTANT_SHOW CONSTANT_SHOW
+//   NO_HELP,
+//   #define NO_HELP NO_HELP
+//   NO_WRAP,
+//   #define NO_WRAP NO_WRAP
+//   AUTOINDENT,
+//   #define AUTOINDENT AUTOINDENT
+//   VIEW_MODE,
+//   #define VIEW_MODE VIEW_MODE
+//   USE_MOUSE,
+//   #define USE_MOUSE USE_MOUSE
+//   USE_REGEXP,
+//   #define USE_REGEXP USE_REGEXP
+//   SAVE_ON_EXIT,
+//   #define SAVE_ON_EXIT SAVE_ON_EXIT
+//   CUT_FROM_CURSOR,
+//   #define CUT_FROM_CURSOR CUT_FROM_CURSOR
+//   BACKWARDS_SEARCH,
+//   #define BACKWARDS_SEARCH BACKWARDS_SEARCH
+//   MULTIBUFFER,
+//   #define MULTIBUFFER MULTIBUFFER
+//   REBIND_DELETE,
+//   #define REBIND_DELETE REBIND_DELETE
+//   RAW_SEQUENCES,
+//   #define RAW_SEQUENCES RAW_SEQUENCES
+//   NO_CONVERT,
+//   #define NO_CONVERT NO_CONVERT
+//   MAKE_BACKUP,
+//   #define MAKE_BACKUP MAKE_BACKUP
+//   INSECURE_BACKUP,
+//   #define INSECURE_BACKUP INSECURE_BACKUP
+//   NO_SYNTAX,
+//   #define NO_SYNTAX NO_SYNTAX
+//   PRESERVE,
+//   #define PRESERVE PRESERVE
+//   HISTORYLOG,
+//   #define HISTORYLOG HISTORYLOG
+//   RESTRICTED,
+//   #define RESTRICTED RESTRICTED
+//   SMART_HOME,
+//   #define SMART_HOME SMART_HOME
+//   WHITESPACE_DISPLAY,
+//   #define WHITESPACE_DISPLAY WHITESPACE_DISPLAY
+//   TABS_TO_SPACES,
+//   #define TABS_TO_SPACES TABS_TO_SPACES
+//   QUICK_BLANK,
+//   #define QUICK_BLANK QUICK_BLANK
+//   WORD_BOUNDS,
+//   #define WORD_BOUNDS WORD_BOUNDS
+//   NO_NEWLINES,
+//   #define NO_NEWLINES NO_NEWLINES
+//   BOLD_TEXT,
+//   #define BOLD_TEXT BOLD_TEXT
+//   SOFTWRAP,
+//   #define SOFTWRAP SOFTWRAP
+//   POSITIONLOG,
+//   #define POSITIONLOG POSITIONLOG
+//   LOCKING,
+//   #define LOCKING LOCKING
+//   NOREAD_MODE,
+//   #define NOREAD_MODE NOREAD_MODE
+//   MAKE_IT_UNIX,
+//   #define MAKE_IT_UNIX MAKE_IT_UNIX
+//   TRIM_BLANKS,
+//   #define TRIM_BLANKS TRIM_BLANKS
+//   SHOW_CURSOR,
+//   #define SHOW_CURSOR SHOW_CURSOR
+//   LINE_NUMBERS,
+//   #define LINE_NUMBERS LINE_NUMBERS
+//   AT_BLANKS,
+//   #define AT_BLANKS AT_BLANKS
+//   AFTER_ENDS,
+//   #define AFTER_ENDS AFTER_ENDS
+//   LET_THEM_ZAP,
+//   #define LET_THEM_ZAP LET_THEM_ZAP
+//   BREAK_LONG_LINES,
+//   #define BREAK_LONG_LINES BREAK_LONG_LINES
+//   JUMPY_SCROLLING,
+//   #define JUMPY_SCROLLING JUMPY_SCROLLING
+//   EMPTY_LINE,
+//   #define EMPTY_LINE EMPTY_LINE
+//   INDICATOR,
+//   #define INDICATOR INDICATOR
+//   BOOKSTYLE,
+//   #define BOOKSTYLE BOOKSTYLE
+//   COLON_PARSING,
+//   #define COLON_PARSING COLON_PARSING
+//   STATEFLAGS,
+//   #define STATEFLAGS STATEFLAGS
+//   USE_MAGIC,
+//   #define USE_MAGIC USE_MAGIC
+//   MINIBAR,
+//   #define MINIBAR MINIBAR
+//   ZERO,
+//   #define ZERO ZERO
+//   MODERN_BINDINGS,
+//   #define MODERN_BINDINGS MODERN_BINDINGS
+//   EXPERIMENTAL_FAST_LIVE_SYNTAX,
+//   #define EXPERIMENTAL_FAST_LIVE_SYNTAX EXPERIMENTAL_FAST_LIVE_SYNTAX
+//   SUGGEST,
+//   #define SUGGEST SUGGEST
+//   SUGGEST_INLINE,
+//   #define SUGGEST_INLINE SUGGEST_INLINE
+//   USING_GUI,
+//   #define USING_GUI USING_GUI
+//   NO_NCURSES,
+//   #define NO_NCURSES NO_NCURSES
+// } flag_type;
 /* The flag map. */
 constexpr_map<string_view, Uchar, 94> flagOptionsMap = {{
   {               "-A", SMART_HOME      },
@@ -459,44 +460,44 @@ constexpr const char *epithet_of_flag(const Uint flag) {
 }
 
 /* Identifiers for the different menus. */
-typedef enum {
-  MMAIN = (1 << 0),
-  #define MMAIN MMAIN
-  MWHEREIS = (1 << 1),
-  #define MWHEREIS MWHEREIS
-  MREPLACE = (1 << 2),
-  #define MREPLACE MREPLACE
-  MREPLACEWITH = (1 << 3),
-  #define MREPLACEWITH MREPLACEWITH
-  MGOTOLINE = (1 << 4),
-  #define MGOTOLINE MGOTOLINE
-  MWRITEFILE = (1 << 5),
-  #define MWRITEFILE MWRITEFILE
-  MINSERTFILE = (1 << 6),
-  #define MINSERTFILE MINSERTFILE
-  MEXECUTE = (1 << 7),
-  #define MEXECUTE MEXECUTE
-  MHELP = (1 << 8),
-  #define MHELP MHELP
-  MSPELL = (1 << 9),
-  #define MSPELL MSPELL
-  MBROWSER = (1 << 10),
-  #define MBROWSER MBROWSER
-  MWHEREISFILE = (1 << 11),
-  #define MWHEREISFILE MWHEREISFILE
-  MGOTODIR = (1 << 12),
-  #define MGOTODIR MGOTODIR
-  MYESNO = (1 << 13),
-  #define MYESNO MYESNO
-  MLINTER = (1 << 14),
-  #define MLINTER MLINTER
-  MFINDINHELP = (1 << 15),
-  #define MFINDINHELP MFINDINHELP
-  MMOST = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER),
-  #define MMOST MMOST
-  MSOME = (MMOST | MBROWSER)
-  #define MSOME MSOME
-} menu_type;
+// typedef enum {
+//   MMAIN = (1 << 0),
+//   #define MMAIN MMAIN
+//   MWHEREIS = (1 << 1),
+//   #define MWHEREIS MWHEREIS
+//   MREPLACE = (1 << 2),
+//   #define MREPLACE MREPLACE
+//   MREPLACEWITH = (1 << 3),
+//   #define MREPLACEWITH MREPLACEWITH
+//   MGOTOLINE = (1 << 4),
+//   #define MGOTOLINE MGOTOLINE
+//   MWRITEFILE = (1 << 5),
+//   #define MWRITEFILE MWRITEFILE
+//   MINSERTFILE = (1 << 6),
+//   #define MINSERTFILE MINSERTFILE
+//   MEXECUTE = (1 << 7),
+//   #define MEXECUTE MEXECUTE
+//   MHELP = (1 << 8),
+//   #define MHELP MHELP
+//   MSPELL = (1 << 9),
+//   #define MSPELL MSPELL
+//   MBROWSER = (1 << 10),
+//   #define MBROWSER MBROWSER
+//   MWHEREISFILE = (1 << 11),
+//   #define MWHEREISFILE MWHEREISFILE
+//   MGOTODIR = (1 << 12),
+//   #define MGOTODIR MGOTODIR
+//   MYESNO = (1 << 13),
+//   #define MYESNO MYESNO
+//   MLINTER = (1 << 14),
+//   #define MLINTER MLINTER
+//   MFINDINHELP = (1 << 15),
+//   #define MFINDINHELP MFINDINHELP
+//   MMOST = (MMAIN | MWHEREIS | MREPLACE | MREPLACEWITH | MGOTOLINE | MWRITEFILE | MINSERTFILE | MEXECUTE | MWHEREISFILE | MGOTODIR | MFINDINHELP | MSPELL | MLINTER),
+//   #define MMOST MMOST
+//   MSOME = (MMOST | MBROWSER)
+//   #define MSOME MSOME
+// } menu_type;
 /* The menus map. */
 constexpr_map<string_view, Ushort, 16> menu_name_map = {{
   {        "main", MMAIN                               },

@@ -66,14 +66,17 @@ static inline void element_grid_get_action(Ulong _UNUSED key, void *value, void 
     return;
   }
   p = data;
-  if (p->x >= e->x && p->x <= (e->x + e->width) && p->y >= e->y && p->y <= (e->y + e->height)) {
-    if (!p->ret || (p->ret && (p->ret->layer < e->layer || (p->ret->layer == e->layer && !p->ret->is_above && e->is_above)))) {
-      p->ret = e;
-    }
-    // if ((p->ret && e->is_above) || !p->ret) {
-    //   p->ret = e;
-    // }
+  /* Ensure the given position actually falls inside the element. */
+  if ((p->x >= e->x && p->x <= (e->x + e->width) && p->y >= e->y && p->y <= (e->y + e->height))
+   /* Also, ensure the layers are respected. */
+   && (!p->ret || (p->ret->layer < e->layer || (p->ret->layer == e->layer && !p->ret->is_above && e->is_above)))) {
+    p->ret = e;
   }
+  // if (p->x >= e->x && p->x <= (e->x + e->width) && p->y >= e->y && p->y <= (e->y + e->height)) {
+  //   if (!p->ret || (p->ret && (p->ret->layer < e->layer || (p->ret->layer == e->layer && !p->ret->is_above && e->is_above)))) {
+  //     p->ret = e;
+  //   }
+  // }
 }
 
 

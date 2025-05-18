@@ -46,7 +46,7 @@ static void csyntaxmacro_expantion(SyntaxFile *const sf, CSyntaxMacro *const mac
   /* The string we will construct. */
   char *expanded = COPY_OF("");
   /* The length of blank chars. */
-  Ulong whitelen;
+  Ulong white_len;
   /* Set the start position of this macro exantion inside the `SyntaxFile` structure. */
   syntaxfilepos_set(macro->expandstart, line->lineno, (start - line->data));
   /* Iter until we reach eol. */
@@ -62,9 +62,9 @@ static void csyntaxmacro_expantion(SyntaxFile *const sf, CSyntaxMacro *const mac
       /* Advance to the next line. */
       line = line->next;
       /* Get the indent length of the new line data. */
-      whitelen = indentlen(line->data);
+      white_len = indentlen(line->data);
       /* And when its greater then zero, place the start ptr and one blank char before the data. */
-      start = (line->data + (whitelen ? (whitelen - 1) : 0));
+      start = (line->data + (white_len ? (white_len - 1) : 0));
       end = start;
     }
   }

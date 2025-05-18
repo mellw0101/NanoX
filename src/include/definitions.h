@@ -90,21 +90,21 @@ using std::to_string;
 using std::unordered_map;
 using std::vector;
 
-/* Native language support. */
-#ifdef ENABLE_NLS
-#  ifdef HAVE_LIBINTL_H
-#    include <libintl.h>
-#  endif
-#  define _(string)                    gettext(string)
-#  define P_(singular, plural, number) ngettext(singular, plural, number)
-#else
-#  define _(string)                    (char *)(string)
-#  define P_(singular, plural, number) (number == 1 ? singular : plural)
-#endif
+// /* Native language support. */
+// #ifdef ENABLE_NLS
+// #  ifdef HAVE_LIBINTL_H
+// #    include <libintl.h>
+// #  endif
+// #  define _(string)                    gettext(string)
+// #  define P_(singular, plural, number) ngettext(singular, plural, number)
+// #else
+// #  define _(string)                    (char *)(string)
+// #  define P_(singular, plural, number) (number == 1 ? singular : plural)
+// #endif
 
-/* For marking a string on which gettext() will be called later. */
-#define gettext_noop(string) (string)
-#define N_(string)           gettext_noop(string)
+// /* For marking a string on which gettext() will be called later. */
+// #define gettext_noop(string) (string)
+// #define N_(string)           gettext_noop(string)
 
 /* If we aren't using an ncurses with mouse support, then exclude the mouse routines, as they are useless then. */
 #ifndef NCURSES_MOUSE_VERSION
@@ -121,13 +121,13 @@ using std::vector;
     if (call) {}                 \
   } while (0)
 
-/* Macros for flags, indexing each bit in a small array. */
-#define FLAGS(flag)    flags[((flag) / (sizeof(Ulong) * 8))]
-#define FLAGMASK(flag) ((Ulong)1 << ((flag) % (sizeof(Ulong) * 8)))
-#define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
-#define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
-#define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-#define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
+// /* Macros for flags, indexing each bit in a small array. */
+// #define FLAGS(flag)    flags[((flag) / (sizeof(Ulong) * 8))]
+// #define FLAGMASK(flag) ((Ulong)1 << ((flag) % (sizeof(Ulong) * 8)))
+// #define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
+// #define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
+// #define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+// #define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
 
 #define CALCULATE_MS_TIME(start_time) (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
 
@@ -151,20 +151,20 @@ using std::vector;
 #define PRUNE_DUPLICATE   TRUE
 #define IGNORE_DUPLICATES FALSE
 
-#define MAXCHARLEN                4
-/* The default width of a tab in spaces. */
-#define WIDTH_OF_TAB              2
-/* The default number of columns from end of line where wrapping occurs. */
-#define COLUMNS_FROM_EOL          8
-/* The default comment character when a syntax does not specify any. */
-#define GENERAL_COMMENT_CHARACTER "#"
-/* The maximum number of search/replace history strings saved. */
-#define MAX_SEARCH_HISTORY        100
-/* The largest Ulong number that doesn't have the high bit set. */
-#define HIGHEST_POSITIVE          ((~(Ulong)0) >> 1)
+// #define MAXCHARLEN                4
+// /* The default width of a tab in spaces. */
+// #define WIDTH_OF_TAB              2
+// /* The default number of columns from end of line where wrapping occurs. */
+// #define COLUMNS_FROM_EOL          8
+// /* The default comment character when a syntax does not specify any. */
+// #define GENERAL_COMMENT_CHARACTER "#"
+// /* The maximum number of search/replace history strings saved. */
+// #define MAX_SEARCH_HISTORY        100
+// /* The largest Ulong number that doesn't have the high bit set. */
+// #define HIGHEST_POSITIVE          ((~(Ulong)0) >> 1)
 
-#define THE_DEFAULT -1
-#define BAD_COLOR   -2
+// #define THE_DEFAULT -1
+// #define BAD_COLOR   -2
 
 /* Flags for indicating how a multiline regex pair apply to a line. */
 
@@ -179,9 +179,9 @@ using std::vector;
 /* Both the start and end regexes match within this line. */
 #define JUSTONTHIS (1 << 5)
 
-/* Basic control codes. */
-#define ESC_CODE 0x1B
-#define DEL_CODE 0x7F
+// /* Basic control codes. */
+// #define ESC_CODE 0x1B
+// #define DEL_CODE 0x7F
 
 /* Codes for "modified" Arrow keys, beyond KEY_MAX of ncurses. */
 #define CONTROL_LEFT         0x401
@@ -231,21 +231,21 @@ using std::vector;
 #define MOD_KEY_ALT   1
 #define MOD_KEY_CTRL  2
 
-// Special keycodes for when a string bind has been partially implanted
-// or has an unpaired opening brace, or when a function in a string bind
-// needs execution or a specified function name is invalid.
-#define MORE_PLANTS                   0x4EA
-#define MISSING_BRACE                 0x4EB
-#define PLANTED_A_COMMAND             0x4EC
-#define NO_SUCH_FUNCTION              0x4EF
-/* A special keycode to signal the beginning and end of a bracketed paste. */
-#define BRACKETED_PASTE_MARKER        0x4FB
-/* A special keycode for when a key produces an unknown escape sequence. */
-#define FOREIGN_SEQUENCE              0x4FC
-/* A special keycode for plugging into the input stream after a suspension. */
-#define KEY_FRESH                     0x4FE
-/* A special keycode for when we get a SIGWINCH (a window resize). */
-#define KEY_WINCH                     -2
+// // Special keycodes for when a string bind has been partially implanted
+// // or has an unpaired opening brace, or when a function in a string bind
+// // needs execution or a specified function name is invalid.
+// #define MORE_PLANTS                   0x4EA
+// #define MISSING_BRACE                 0x4EB
+// #define PLANTED_A_COMMAND             0x4EC
+// #define NO_SUCH_FUNCTION              0x4EF
+// /* A special keycode to signal the beginning and end of a bracketed paste. */
+// #define BRACKETED_PASTE_MARKER        0x4FB
+// /* A special keycode for when a key produces an unknown escape sequence. */
+// #define FOREIGN_SEQUENCE              0x4FC
+// /* A special keycode for plugging into the input stream after a suspension. */
+// #define KEY_FRESH                     0x4FE
+// /* A special keycode for when we get a SIGWINCH (a window resize). */
+// #define KEY_WINCH                     -2
 
 #define TASK_STRUCT(name, ...) \
   typedef struct {             \
@@ -494,24 +494,24 @@ typedef enum {
 //   #define MAC_FILE MAC_FILE
 // } format_type;
 
-typedef enum {
-  VACUUM,
-  #define VACUUM VACUUM
-  HUSH,
-  #define HUSH HUSH
-  REMARK,
-  #define REMARK REMARK
-  INFO,
-  #define INFO INFO
-  NOTICE,
-  #define NOTICE NOTICE
-  AHEM,
-  #define AHEM AHEM
-  MILD,
-  #define MILD MILD
-  ALERT
-  #define ALERT ALERT
-} message_type;
+// typedef enum {
+//   VACUUM,
+//   #define VACUUM VACUUM
+//   HUSH,
+//   #define HUSH HUSH
+//   REMARK,
+//   #define REMARK REMARK
+//   INFO,
+//   #define INFO INFO
+//   NOTICE,
+//   #define NOTICE NOTICE
+//   AHEM,
+//   #define AHEM AHEM
+//   MILD,
+//   #define MILD MILD
+//   ALERT
+//   #define ALERT ALERT
+// } message_type;
 
 typedef enum {
   OVERWRITE,
@@ -948,25 +948,25 @@ typedef struct rcoption {
   long flag;        /* The flag associated with it, if any. */
 } rcoption;
 
-typedef struct keystruct {
-  const char *keystr; /* The string that describes the keystroke, like "^C" or "M-R". */
-  int keycode;        /* The integer that, together with meta, identifies the keystroke. */
-  int menus;          /* The menus in which this keystroke is bound. */
-  void (*func)(void); /* The function to which this keystroke is bound. */
-  int toggle;         /* If a toggle, what we're toggling. */
-  int ordinal;        /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
-  char *expansion;    /* The string of keycodes to which this shortcut is expanded. */
-  keystruct *next;    /* Next in the list. */
-} keystruct;
+// typedef struct keystruct {
+//   const char *keystr; /* The string that describes the keystroke, like "^C" or "M-R". */
+//   int keycode;        /* The integer that, together with meta, identifies the keystroke. */
+//   int menus;          /* The menus in which this keystroke is bound. */
+//   void (*func)(void); /* The function to which this keystroke is bound. */
+//   int toggle;         /* If a toggle, what we're toggling. */
+//   int ordinal;        /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
+//   char *expansion;    /* The string of keycodes to which this shortcut is expanded. */
+//   keystruct *next;    /* Next in the list. */
+// } keystruct;
 
-typedef struct funcstruct {
-  void (*func)(void); /* The actual function to call. */
-  const char *tag;    /* The function's help-line label, for example "Where Is". */
-  const char *phrase; /* The function's description for in the help viewer. */
-  bool blank_after;   /* Whether to distance this function from the next in the help viewer. */
-  int menus;          /* In what menus this function applies. */
-  funcstruct *next;   /* Next item in the list. */
-} funcstruct;
+// typedef struct funcstruct {
+//   void (*func)(void); /* The actual function to call. */
+//   const char *tag;    /* The function's help-line label, for example "Where Is". */
+//   const char *phrase; /* The function's description for in the help viewer. */
+//   bool blank_after;   /* Whether to distance this function from the next in the help viewer. */
+//   int menus;          /* In what menus this function applies. */
+//   funcstruct *next;   /* Next item in the list. */
+// } funcstruct;
 
 typedef struct completionstruct {
   char *word;

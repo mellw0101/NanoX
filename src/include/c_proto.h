@@ -10,13 +10,68 @@
 /* ---------------------------------------------------------- Extern variable's ---------------------------------------------------------- */
 
 
+/* ----------------------------- global.c ----------------------------- */
+
 extern long tabsize;
+
+extern openfilestruct *openfile;
+extern openfilestruct *startfile;
+
+extern Font *uifont;
+extern Font *textfont;
+
+extern float mouse_x;
+extern float mouse_y;
+
+extern float gui_width;
+extern float gui_height;
+
+extern Editor *openeditor;
+extern Editor *starteditor;
+
+extern funcstruct *allfuncs;
+extern funcstruct *exitfunc;
+extern funcstruct *tailfunc;
+
+extern const char *exit_tag;
+extern const char *close_tag;
+
+extern bool more_than_one;
+extern bool inhelp;
+extern bool as_an_at;
+extern bool focusing;
+extern bool refresh_needed;
+extern bool shift_held;
+extern bool on_a_vt;
+extern bool is_shorter;
+
+extern char *word_chars;
+extern char *whitespace;
+
+extern int editwinrows;
+extern int editwincols;
+extern int margin;
+extern int sidebar;
+extern int currmenu;
+
+extern Ulong from_x;
+extern Ulong till_x;
+
+extern int  whitelen[2];
+
+extern Ulong flags[1];
+
+extern GLFWwindow *gui_window;
+
+/* ----------------------------- General ----------------------------- */
 
 extern ElementGrid *element_grid;
 extern Element *test_element;
-extern Uint element_rect_shader;
 
+extern Uint element_rect_shader;
 extern Uint font_shader;
+
+/* ----------------------------- Other ----------------------------- */
 
 _BEGIN_C_LINKAGE
 
@@ -50,7 +105,12 @@ char **split_string_nano(const char *const string, const char delim, bool allow_
   void      die(const char *format, ...);
   thread_t *get_nthreads(Ulong howmeny);
 #endif
-void free_nulltermchararray(char **const argv);
+void        free_nulltermchararray(char **const argv);
+linestruct *file_line_from_number(openfilestruct *const file, long number);
+void        free_chararray(char **array, Ulong len);
+Ulong       get_page_start(const Ulong column);
+Ulong       wideness(const char *text, Ulong maxlen) _NODISCARD _NONNULL(1);
+Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
 
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
@@ -125,6 +185,8 @@ int  nanox_socket_client(void);
 
 
 Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
+void discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
+void discard_until(const undostruct *thisitem);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -196,6 +258,7 @@ void             gui_font_rows_cols(Font *const f, float width, float height, in
 bool             gui_font_row_from_pos(Font *const f, float y_top, float y_bot, float y_pos, long *outrow);
 Ulong            gui_font_index_from_pos(Font *const f, const char *const restrict string, Ulong len, float rawx, float normx);
 float            font_breadth(Font *const f, const char *const restrict string);
+float            font_wideness(Font *const f, const char *const restrict string, Ulong maxlen);
 void             font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Color *const color, float *const pen_x, float *const pen_y);
 void             font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Color *const color, float *const pen_x, float *const pen_y);
 void             font_upload_texture_atlas(Font *const f);
@@ -221,26 +284,29 @@ void   color_set_rgba(Color *const color, float r, float g, float b, float a);
 void   color_set_white(Color *const color);
 void   color_set_black(Color *const color);
 void   color_set_default_borders(Color *const color);
+void   color_set_edit_background(Color *const color);
 
 /* ---------------------------------------------------------- gui/element.c ---------------------------------------------------------- */
 
 
 Element *element_create(float x, float y, float width, float height, bool in_gridmap);
 void     element_free(Element *const e);
-void     element_set_parent(Element *const e, Element *const parent);
 void     element_draw(Element *const e);
-Element *element_from_pos(float x, float y);
 void     element_move(Element *const e, float x, float y);
 void     element_resize(Element *const e, float width, float height);
 void     element_move_resize(Element *const e, float x, float y, float width, float height);
 void     element_move_y_clamp(Element *const e, float y, float min, float max);
 void     element_delete_borders(Element *const e);
+bool     element_is_ancestor(Element *const e, Element *const ancestor);
+void     element_set_lable(Element *const e, const char *const restrict lable, Ulong len);
 void     element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Color *color);
 void     element_set_layer(Element *const e, Ushort layer);
-bool     element_is_ancestor(Element *const e, Element *const ancestor);
+void     element_set_parent(Element *const e, Element *const parent);
 void     element_set_raw_data(Element *const e, void *const data);
 void     element_set_sb_data(Element *const e, Scrollbar *const data);
 void     element_set_menu_data(Element *const e, CMenu *const data);
+void     element_set_file_data(Element *const e, openfilestruct *const data);
+void     element_set_editor_data(Element *const e, Editor *const data);
 
 
 /* ---------------------------------------------------------- gui/scrollbar.c ---------------------------------------------------------- */
@@ -301,6 +367,138 @@ Font  *menu_get_font(CMenu *const menu);
 int    menu_len(CMenu *const menu);
 int    menu_entry_qsort_strlen_cb(const void *a, const void *b);
 void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
+
+
+/* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
+
+
+bool delete_lockfile(const char *lockfilename);
+void make_new_buffer(void);
+void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
+void close_buffer(void);
+bool open_buffer(const char *filename, bool new_one);
+
+
+/* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */
+
+
+void utf8_init(void);
+bool using_utf8(void);
+bool is_language_word_char(const char *pointer, Ulong index);
+bool is_cursor_language_word_char(void);
+bool is_enclose_char(const char ch);
+bool is_alpha_char(const char *const c);
+bool is_alnum_char(const char *const c);
+bool is_blank_char(const char *const c);
+bool is_prev_blank_char(const char *pointer, Ulong index);
+bool is_prev_cursor_blank_char(void);
+bool is_cursor_blank_char(void);
+bool is_cntrl_char(const char *const c);
+bool is_word_char(const char *const c, bool allow_punct);
+bool is_cursor_word_char(bool allow_punct);
+bool is_prev_word_char(const char *pointer, Ulong index, bool allow_punct);
+bool is_prev_cursor_word_char(bool allow_punct);
+bool is_prev_char(const char *pointer, Ulong index, const char ch);
+bool is_prev_cursor_char(const char ch);
+bool is_prev_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool is_prev_cursor_char_one_of(const char *chars);
+bool is_cursor_char(const char ch);
+bool is_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool is_cursor_char_one_of(const char *chars);
+bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch);
+bool is_cursor_between_chars(const char pre_ch, const char post_ch);
+char control_mbrep(const char *const c, bool isdata);
+int  mbtowide(wchar_t *wc, const char *const c);
+bool is_doublewidth(const char *const ch);
+bool is_zerowidth(const char *ch);
+bool is_cursor_zerowidth(void);
+int  char_length(const char *const pointer);
+Ulong mbstrlen(const char *pointer);
+int  collect_char(const char *const str, char *c);
+int advance_over(const char *const str, Ulong *column);
+Ulong step_left(const char *const buf, const Ulong pos);
+Ulong step_right(const char *const buf, const Ulong pos);
+int   mbstrcasecmp(const char *s1, const char *s2);
+int  mbstrncasecmp(const char *s1, const char *s2, Ulong n);
+char *mbstrcasestr(const char *haystack, const char *const needle);
+char *revstrstr(const char *const haystack, const char *const needle, const char *pointer);
+char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer);
+char *mbstrchr(const char *string, const char *const chr);
+char *mbstrpbrk(const char *str, const char *accept);
+char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer);
+bool has_blank_char(const char *str);
+bool white_string(const char *str);
+void strip_leading_blanks_from(char *str);
+void strip_leading_chars_from(char *str, const char ch);
+bool is_char_one_of(const char *pointer, Ulong index, const char *chars);
+
+
+/* ---------------------------------------------------------- winio.c ---------------------------------------------------------- */
+
+
+bool  get_has_more(void);
+Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line);
+Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge);
+Ulong extra_chunks_in(linestruct *line);
+Ulong chunk_for(Ulong column, linestruct *line);
+Ulong leftedge_for(Ulong column, linestruct *line);
+void  ensure_firstcolumn_is_aligned_for(openfilestruct *const file);
+void  ensure_firstcolumn_is_aligned(void);
+char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt);
+
+
+/* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
+
+
+EditorTb *etb_create(Editor *const editor);
+void etb_free(EditorTb *const etb);
+void etb_draw(EditorTb *const etb);
+void etb_active_refresh_needed(EditorTb *const etb);
+void etb_text_refresh_needed(EditorTb *const etb);
+void etb_entries_refresh_needed(EditorTb *const etb);
+void etb_show_context_menu(EditorTb *const etb, Element *const from_element, bool show);
+bool etb_element_is_main(EditorTb *const etb, Element *const e);
+bool etb_owns_element(EditorTb *const etb, Element *const e);
+
+
+/* ---------------------------------------------------------- gui/editor/editor.c ---------------------------------------------------------- */
+
+
+void editor_create(bool new_buffer);
+void editor_free(Editor *const editor);
+void editor_set_rows_cols(Editor *const editor);
+Editor *editor_from_file(openfilestruct *const file);
+void editor_hide(Editor *const editor, bool hide);
+void editor_close(Editor *const editor);
+void editor_resize(Editor *const editor);
+void editor_redecorate(Editor *const editor);
+void editor_switch_to_prev(void);
+void editor_switch_to_next(void);
+void editor_switch_openfile_to_prev(void);
+void editor_switch_openfile_to_next(void);
+void editor_set_open(Editor *const editor);
+void editor_check_should_close(void);
+void editor_close_open_buffer(void);
+void editor_open_new_empty_buffer(void);
+void editor_update_all(void);
+Ulong editor_get_page_start(Editor *const editor, const Ulong column);
+float editor_cursor_x_pos(Editor *const editor, linestruct *const line, Ulong index);
+linestruct *editor_get_text_line(Editor *const editor, float y_pos);
+Ulong editor_get_text_index(Editor *const editor, linestruct *const line, float x_pos);
+void editor_get_text_line_index(Editor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex);
+void editor_open_buffer(const char *const restrict path);
+void editor_close_a_open_buffer(openfilestruct *const file);
+
+
+/* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
+
+
+linestruct *make_new_node(linestruct *prevnode);
+void splice_node(linestruct *afterthis, linestruct *newnode);
+void delete_node(linestruct *line);
+void unlink_node(linestruct *line);
+void free_lines(linestruct *src);
+void confirm_margin(void);
 
 
 _END_C_LINKAGE

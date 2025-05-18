@@ -108,7 +108,7 @@ static void get_row_y_pixel_region(texture_font_t *font, Uint row, Uint *top_y, 
 linestruct *line_from_mouse_y(texture_font_t *font, float offset) {
   ASSERT(font);
   /* The current row. */
-  Uint row = 0;
+  int row = 0;
   /* The range in pixels that the row occupies. */
   Uint top_y, bot_y;
   /* The current line corresponding to the current row. */
@@ -131,7 +131,7 @@ linestruct *line_and_index_from_mousepos(texture_font_t *const font, Ulong *cons
   ASSERT(font);
   ASSERT(index);
   linestruct *line = line_from_cursor_pos(openeditor);
-  *index = index_from_pix_xpos(line->data, mousepos.x, openeditor->text->pos.x, font);
+  *index = index_from_pix_xpos(line->data, mousepos.x, openeditor->text->x, font);
   return line;
 }
 
@@ -183,7 +183,7 @@ float line_y_pixel_offset(linestruct *line, texture_font_t *font) {
   else if (relative_row > openeditor->rows) {
     return gui->height;
   }
-  return ((relative_row * FONT_HEIGHT(font)) + openeditor->text->pos.y);
+  return ((relative_row * FONT_HEIGHT(font)) + openeditor->text->y);
 }
 
 /* Calculates cursor y position for the gui. */

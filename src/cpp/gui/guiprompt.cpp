@@ -288,10 +288,10 @@ static void gui_promptmenu_open_file_enter_action(void) {
       pwd = getpwd();
       pwdlen = strlen(pwd);
       if (strncmp(answer, pwd, pwdlen) == 0 && file_exists(answer + pwdlen + 1)) {
-        gui_editor_open_buffer(answer + pwdlen + 1);
+        editor_open_buffer(answer + pwdlen + 1);
       }
       else {
-        gui_editor_open_buffer(answer);
+        editor_open_buffer(answer);
       }
       free(pwd);
     }
@@ -349,7 +349,7 @@ static void gui_promptmenu_set_font_enter_action(void) {
   gui_font_load(gui->font, path, size, atlas_size);
   free(path);
   CLIST_ITER(starteditor, editor,
-    gui_editor_rows_cols(editor);
+    editor_set_rows_cols(editor);
   );
   refresh_needed = TRUE;
   gui_promptmode_leave();
@@ -567,7 +567,8 @@ void gui_promptmenu_enter_action(void) {
           /* Free the openfile filename, and assign answer to it. */
           openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
           // gui_editor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-          gui_etb_entries_refresh_needed(gui_editor_from_file(openfile)->etb);
+          // gui_etb_entries_refresh_needed(gui_editor_from_file(openfile)->etb);
+          etb_entries_refresh_needed(editor_from_file(openfile)->tb);
           /* Then save the file. */
           if (write_it_out(FALSE, FALSE) == 2) {
             logE("Failed to save file, this needs fixing and the reason needs to be found out.");
@@ -681,7 +682,7 @@ void gui_promptmenu_char_action(char input) {
   if (gui_prompt_type == GUI_PROMPT_EXIT_NO_SAVE) {
     ALWAYS_ASSERT(gui->promptmenu->closing_file);
     if (isconeof(input, "Yy")) {
-      gui_editor_close_a_open_buffer(gui->promptmenu->closing_file);
+      editor_close_a_open_buffer(gui->promptmenu->closing_file);
       gui->promptmenu->closing_file = NULL;
       gui_promptmode_leave();
     }
@@ -691,28 +692,28 @@ void gui_promptmenu_char_action(char input) {
     }
   }
   else if (gui_prompt_type == GUI_PROMPT_EXIT_OTHERS_NO_SAVE) {
-    ALWAYS_ASSERT(gui->promptmenu->closing_file);
-    if (isconeof(input, "Yy")) {
-      gui_editor_close_a_open_buffer(gui->promptmenu->closing_file->next);
-      gui_promptmode_leave();
-      gui_editor_close_other_files(gui->promptmenu->closing_file);
-    }
-    else if (isconeof(input, "Nn")) {
-      gui->promptmenu->closing_file = NULL;
-      gui_promptmode_leave();
-    }
+    // ALWAYS_ASSERT(gui->promptmenu->closing_file);
+    // if (isconeof(input, "Yy")) {
+    //   editor_close_a_open_buffer(gui->promptmenu->closing_file->next);
+    //   gui_promptmode_leave();
+    //   gui_editor_close_other_files(gui->promptmenu->closing_file);
+    // }
+    // else if (isconeof(input, "Nn")) {
+    //   gui->promptmenu->closing_file = NULL;
+    //   gui_promptmode_leave();
+    // }
   }
   else if (gui_prompt_type == GUI_PROMPT_EXIT_ALL_NO_SAVE) {
-    ALWAYS_ASSERT(gui->promptmenu->closing_file);
-    if (isconeof(input, "Yy")) {
-      gui_editor_close_a_open_buffer(gui->promptmenu->closing_file->next);
-      gui_promptmode_leave();
-      gui_editor_close_all_files(gui->promptmenu->closing_file);
-    }
-    else if (isconeof(input, "Nn")) {
-      gui->promptmenu->closing_file = NULL;
-      gui_promptmode_leave();
-    }
+    // ALWAYS_ASSERT(gui->promptmenu->closing_file);
+    // if (isconeof(input, "Yy")) {
+    //   gui_editor_close_a_open_buffer(gui->promptmenu->closing_file->next);
+    //   gui_promptmode_leave();
+    //   gui_editor_close_all_files(gui->promptmenu->closing_file);
+    // }
+    // else if (isconeof(input, "Nn")) {
+    //   gui->promptmenu->closing_file = NULL;
+    //   gui_promptmode_leave();
+    // }
   }
   else {
     inject_into_answer(&input, 1);
