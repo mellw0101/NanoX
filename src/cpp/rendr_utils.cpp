@@ -151,10 +151,11 @@ local_var_t parse_local_var(linestruct *line) {
       int lvl       = 0;
       var.decl_line = line->lineno;
       for (linestruct *l = line; l; l = l->next) {
-        if ((l->flags.is_set(BRACKET_START))) {
+        // if ((l->flags.is_set(BRACKET_START))) {
+        if ((l->is_bracket_start)) {
           lvl += 1;
         }
-        if ((l->flags.is_set(BRACKET_END))) {
+        if ((l->is_bracket_end)) {
           if (lvl == 0) {
             var.scope_end = l->lineno;
             break;

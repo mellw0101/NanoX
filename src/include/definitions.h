@@ -809,6 +809,18 @@ typedef struct lintstruct {
 
 /* More structure types. */
 typedef struct linestruct {
+  bool is_block_comment_start   : 1;
+  bool is_block_comment_end     : 1;
+  bool is_in_block_comment      : 1;
+  bool is_single_block_comment  : 1;
+  bool is_hidden                : 1;
+  bool is_bracket_start         : 1;
+  bool is_in_bracket            : 1;
+  bool is_bracket_end           : 1;
+  bool is_function_open_bracket : 1;
+  bool is_dont_preprocess_line  : 1;
+  bool is_pp_line               : 1;
+  
   linestruct *next; /* Next node. */
   linestruct *prev; /* Previous node. */
   char *data;       /* The text of this line. */
@@ -816,7 +828,7 @@ typedef struct linestruct {
   short *multidata; /* Array of which multi-line regexes apply to this line. */
   bool has_anchor;  /* Whether the user has placed an anchor at this line. */
   /* The state of the line. */
-  bit_flag_t<LINE_BIT_FLAG_SIZE> flags;
+  // bit_flag_t<LINE_BIT_FLAG_SIZE> flags;
   /* Some short-hands to simplyfiy linestruct loop`s. */
   #define FOR_EACH_LINE_NEXT(name, start) for (linestruct *name = start; name; name = name->next)
   #define FOR_EACH_LINE_PREV(name, start) for (linestruct *name = start; name; name = name->prev)
@@ -907,27 +919,6 @@ typedef struct openfilestruct {
 
   openfilestruct *next;       /* The next open file, if any. */
   openfilestruct *prev;       /* The preceding open file, if any. */
-
-  /* Itherate over all files in the circular linked list once per file.
-   * Never modify the ptr 'name' under any conditions.  Its handled by
-   * the macro, if one wants to continue inside the action, just do that
-   * and nothing else. */
-  #define ITER_OVER_ALL_OPENFILES(startfile, name, ...)  \
-    DO_WHILE(                                            \
-      if (startfile && startfile->next) {                \
-        openfilestruct *name = startfile;                \
-        bool changed_file = TRUE;                        \
-        do {                                             \
-          if (!changed_file) {                           \
-            file = file->next;                           \
-          }                                              \
-          changed_file = FALSE;                          \
-          DO_WHILE(__VA_ARGS__);                         \
-          name = name->next;                             \
-          changed_file = TRUE;                           \
-        } while (name != startfile);                     \
-      }                                                  \
-    )
 } openfilestruct;
 
 typedef struct coloroption {

@@ -159,6 +159,7 @@ typedef struct {
   float r, g, b, a; /* Color. */
 } vertex_t;
 
+
 /* ----------------------------- nfdlistener.c ----------------------------- */
 
 /* Structure that represents the event that the callback gets. */

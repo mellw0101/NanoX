@@ -8,7 +8,8 @@ int LanguageServer::find_endif(linestruct *from) {
   const char *start = NULL;
   const char *end   = NULL;
   FOR_EACH_LINE_NEXT(line, from) {
-    if (!(line->flags.is_set(DONT_PREPROSSES_LINE))) {
+    // if (!(line->flags.is_set(DONT_PREPROSSES_LINE))) {
+    if (!(line->is_dont_preprocess_line)) {
       found = strchr(line->data, '#');
       if (found) {
         start = found + 1;
@@ -187,14 +188,17 @@ void LanguageServer::check(IndexFile *idfile) {
   linestruct * from = idfile->top() ? idfile->top() : openfile->filetop;
   FOR_EACH_LINE_NEXT(line, from) {
     Parse::comment(line);
-    if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
-        line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
+    // if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>() ||
+    //     line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
+    if (line->is_block_comment_start || line->is_block_comment_end || line->is_in_block_comment || line->is_pp_line) {
       continue;
     }
-    if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
+    // if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
+    if (!(line->is_dont_preprocess_line)) {
       do_preprossesor(line, idfile->name());
     }
-    if (line->flags.is_set<PP_LINE>()) {
+    // if (line->flags.is_set<PP_LINE>()) {
+    if (line->is_pp_line) {
       continue;
     }
     // do_parse(&line, idfile->file);
@@ -237,14 +241,17 @@ int LanguageServer::index_file(const char *path, bool reindex) {
   FOR_EACH_LINE_NEXT(line, idfile.top()) {
     if (/* openfile->type.is_set<C_CPP>() */ openfile->is_c_file || openfile->is_cxx_file) {
       Parse::comment(line);
-      if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>()
-       || line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
+      // if (line->flags.is_set<BLOCK_COMMENT_START>() || line->flags.is_set<BLOCK_COMMENT_END>()
+      // || line->flags.is_set<IN_BLOCK_COMMENT>() || line->flags.is_set<PP_LINE>()) {
+      if (line->is_block_comment_start || line->is_block_comment_end || line->is_in_block_comment || line->is_pp_line) {
         continue;
       }
-      if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
+      // if (!(line->flags.is_set<DONT_PREPROSSES_LINE>())) {
+      if (!(line->is_dont_preprocess_line)) {
         do_preprossesor(line, idfile.name());
       }
-      if (line->flags.is_set<PP_LINE>()) {
+      // if (line->flags.is_set<PP_LINE>()) {
+      if (line->is_pp_line) {
         continue;
       }
       do_parse(&line, idfile.name());

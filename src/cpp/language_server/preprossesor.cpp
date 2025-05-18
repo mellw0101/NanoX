@@ -114,7 +114,8 @@ inline namespace LSP_utils {
     const char *start = *ptr;
     const char *end   = start;
     FOR_EACH_LINE_NEXT(line, from) {
-      line->flags.set<PP_LINE>();
+      // line->flags.set<PP_LINE>();
+      line->is_pp_line = TRUE;
       /* Advance pointer 'end' to 'EOL' or a backslash ('\'), indicating a continued line. */
       do {
         ADV_PTR(end, (*end != '\\' && *end != '\'' && *end != '"'));
@@ -298,7 +299,8 @@ void do_if(linestruct *line, const char **ptr) {
             if (!was_correct) {
               int endif = LSP->find_endif(line->next);
               for (linestruct *l = line->next; l && l->lineno != endif; l = l->next) {
-                l->flags.set(DONT_PREPROSSES_LINE);
+                // l->flags.set(DONT_PREPROSSES_LINE);
+                l->is_dont_preprocess_line = TRUE;
               }
             }
           }
@@ -306,7 +308,8 @@ void do_if(linestruct *line, const char **ptr) {
             if (!define_is_equl_or_greater(string(start, (end - start)))) {
               int endif = LSP->find_endif(line->next);
               for (linestruct *l = line->next; l && l->lineno != endif; l = l->next) {
-                l->flags.set(DONT_PREPROSSES_LINE);
+                // l->flags.set(DONT_PREPROSSES_LINE);
+                l->is_dont_preprocess_line = TRUE;
               }
               return;
             }
@@ -374,7 +377,8 @@ void do_if(linestruct *line, const char **ptr) {
         if (nrule == "&&") {
           int endif = LSP->find_endif(line->next);
           for (linestruct *l = line->next; l && l->lineno != endif; l = l->next) {
-            l->flags.set(DONT_PREPROSSES_LINE);
+            // l->flags.set(DONT_PREPROSSES_LINE);
+            l->is_dont_preprocess_line = TRUE;
           }
         }
       }
@@ -437,7 +441,8 @@ void do_ifndef(const string &define, linestruct *current_line) {
   }
   int endif = LSP->find_endif(current_line->next);
   for (linestruct *line = current_line->next; line != NULL && (line->lineno != endif); line = line->next) {
-    line->flags.set(DONT_PREPROSSES_LINE);
+    // line->flags.set(DONT_PREPROSSES_LINE);
+    line->is_dont_preprocess_line = TRUE;
   }
 }
 
@@ -447,7 +452,8 @@ void do_ifdef(const string &define, linestruct *current_line) {
   }
   int endif = LSP->find_endif(current_line->next);
   for (linestruct *line = current_line->next; line != NULL && (line->lineno != endif); line = line->next) {
-    line->flags.set<DONT_PREPROSSES_LINE>();
+    // line->flags.set<DONT_PREPROSSES_LINE>();
+    line->is_dont_preprocess_line = TRUE;
   }
 }
 
@@ -483,7 +489,8 @@ void do_preprossesor(linestruct *line, const char *current_file) {
       free(word);
       return;
     }
-    line->flags.set<PP_LINE>();
+    // line->flags.set<PP_LINE>();
+    line->is_pp_line = TRUE;
     if (strcmp(word, "include") == 0) {
       do_include(line, current_file, &found);
     }

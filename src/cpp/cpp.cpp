@@ -118,9 +118,9 @@ void all_brackets_pos(void) {
 void do_close_bracket(void) {
   // find_current_function(openfile->current);
   remove_local_vars_from(openfile->current);
-  LOG_FLAG(openfile->current, IN_BRACKET);
-  LOG_FLAG(openfile->current, BRACKET_START);
-  LOG_FLAG(openfile->current, BRACKET_END);
+  // LOG_FLAG(openfile->current, IN_BRACKET);
+  // LOG_FLAG(openfile->current, BRACKET_START);
+  // LOG_FLAG(openfile->current, BRACKET_END);
   char *type, *name, *value;
   parse_variable(&openfile->current->data[indent_char_len(openfile->current)], &type, &name, &value);
   if (type) {
@@ -510,23 +510,33 @@ void flag_all_brackets(void) {
     const char *end   = strrchr(line->data, '}');
     /* Start bracket line was found. */
     if (start && !end) {
-      line->flags.set(BRACKET_START);
-      if (line->prev && ((line->prev->flags.is_set(IN_BRACKET)) || (line->prev->flags.is_set(BRACKET_START)))) {
-        line->flags.set(IN_BRACKET);
+      // line->flags.set(BRACKET_START);
+      // if (line->prev && ((line->prev->flags.is_set(IN_BRACKET)) || (line->prev->flags.is_set(BRACKET_START)))) {
+      //   line->flags.set(IN_BRACKET);
+      // }
+      line->is_bracket_start = TRUE;
+      if (line->prev && ((line->prev->is_in_bracket) || (line->prev->is_bracket_start))) {
+        line->is_in_bracket = TRUE;
       }
     }
     /* End bracket line was found. */
     else if (!start && end) {
-      line->flags.set(BRACKET_END);
-      line->flags.unset(BRACKET_START);
+      // line->flags.set(BRACKET_END);
+      // line->flags.unset(BRACKET_START);
+      line->is_bracket_end   = TRUE;
+      line->is_bracket_start = FALSE;
       for (linestruct *t_line = line->prev; t_line; t_line = t_line->prev) {
-        if ((t_line->flags.is_set(BRACKET_START))) {
+        // if ((t_line->flags.is_set(BRACKET_START))) {
+        if ((t_line->is_bracket_start)) {
           if (line_indent(line) == line_indent(t_line)) {
-            if (t_line->prev && (t_line->prev->flags.is_set(IN_BRACKET))) {
-              line->flags.set(IN_BRACKET);
+            // if (t_line->prev && (t_line->prev->flags.is_set(IN_BRACKET))) {
+            if (t_line->prev && (t_line->prev->is_in_bracket)) {
+              // line->flags.set(IN_BRACKET);
+              line->is_in_bracket = TRUE;;
             }
             else {
-              line->flags.unset(IN_BRACKET);
+              // line->flags.unset(IN_BRACKET);
+              line->is_in_bracket = FALSE;
             }
             break;
           }
@@ -535,11 +545,17 @@ void flag_all_brackets(void) {
     }
     /* Was not found. */
     else if ((start == NULL && end == NULL) || (start != NULL && end != NULL)) {
-      if (line->prev && ((line->prev->flags.is_set(IN_BRACKET)) || (line->prev->flags.is_set(BRACKET_START)))) {
-        line->flags.set(IN_BRACKET);
+      // if (line->prev && ((line->prev->flags.is_set(IN_BRACKET)) || (line->prev->flags.is_set(BRACKET_START)))) {
+      //   line->flags.set(IN_BRACKET);
+      // }
+      // else {
+      //   line->flags.unset(IN_BRACKET);
+      // }
+      if (line->prev && ((line->is_in_bracket) || (line->is_bracket_start))) {
+        line->is_in_bracket = TRUE;
       }
       else {
-        line->flags.unset(IN_BRACKET);
+        line->is_in_bracket = FALSE;;
       }
     }
   }
@@ -557,45 +573,70 @@ void flag_all_block_comments(linestruct *from) {
        * we adjust the start and end pos.  We also make sure to unset
        * 'BLOCK_COMMENT_START' for the line. */
       if (found_slash != NULL && found_slash < found_start) {
-        line->flags.unset(BLOCK_COMMENT_START);
+        // line->flags.unset(BLOCK_COMMENT_START);
+        line->is_block_comment_start = FALSE;
       }
       else {
-        line->flags.set(BLOCK_COMMENT_START);
+        // line->flags.set(BLOCK_COMMENT_START);
+        line->is_block_comment_start = TRUE;
       }
-      line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
-      line->flags.unset(IN_BLOCK_COMMENT);
-      line->flags.unset(BLOCK_COMMENT_END);
+      // line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+      // line->flags.unset(IN_BLOCK_COMMENT);
+      // line->flags.unset(BLOCK_COMMENT_END);
+      line->is_single_block_comment = FALSE;
+      line->is_in_block_comment     = FALSE;
+      line->is_block_comment_end    = FALSE;
     }
     /* Either inside of a block comment or not a block comment at all. */
     else if (found_start == NULL && found_end == NULL) {
-      if (line->prev &&
-          ((line->prev->flags.is_set(IN_BLOCK_COMMENT)) || (line->prev->flags.is_set(BLOCK_COMMENT_START))) &&
-          !(line->prev->flags.is_set(SINGLE_LINE_BLOCK_COMMENT))) {
-        line->flags.set(IN_BLOCK_COMMENT);
-        line->flags.unset(BLOCK_COMMENT_START);
-        line->flags.unset(BLOCK_COMMENT_END);
-        line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+      // if (line->prev &&
+      //     ((line->prev->flags.is_set(IN_BLOCK_COMMENT)) || (line->prev->flags.is_set(BLOCK_COMMENT_START))) &&
+      //     !(line->prev->flags.is_set(SINGLE_LINE_BLOCK_COMMENT))) {
+      //   line->flags.set(IN_BLOCK_COMMENT);
+      //   line->flags.unset(BLOCK_COMMENT_START);
+      //   line->flags.unset(BLOCK_COMMENT_END);
+      //   line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+      // }
+      // /* If the prev line is not in a block comment or the
+      //  * start block line we are not inside a comment block. */
+      // else {
+      //   line->flags.unset(IN_BLOCK_COMMENT);
+      //   line->flags.unset(BLOCK_COMMENT_START);
+      //   line->flags.unset(BLOCK_COMMENT_END);
+      //   line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+      // }
+      if (line->prev && ((line->prev->is_in_block_comment) || (line->prev->is_block_comment_start)) && !(line->prev->is_single_block_comment)) {
+        line->is_in_block_comment     = TRUE;
+        line->is_block_comment_start  = FALSE;
+        line->is_block_comment_end    = FALSE;
+        line->is_single_block_comment = FALSE;
       }
       /* If the prev line is not in a block comment or the
        * start block line we are not inside a comment block. */
       else {
-        line->flags.unset(IN_BLOCK_COMMENT);
-        line->flags.unset(BLOCK_COMMENT_START);
-        line->flags.unset(BLOCK_COMMENT_END);
-        line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+        line->is_in_block_comment     = FALSE;
+        line->is_block_comment_start  = FALSE;
+        line->is_block_comment_end    = FALSE;
+        line->is_single_block_comment = FALSE;
       }
     }
     /* End of a block comment. */
     else if (found_start == NULL && found_end != NULL) {
       /* If last line is in a comment block or is the start of the block.
        */
-      if (line->prev &&
-          ((line->prev->flags.is_set(IN_BLOCK_COMMENT)) || (line->prev->flags.is_set(BLOCK_COMMENT_START))) &&
-          !(line->prev->flags.is_set(SINGLE_LINE_BLOCK_COMMENT))) {
-        line->flags.set(BLOCK_COMMENT_END);
-        line->flags.unset(IN_BLOCK_COMMENT);
-        line->flags.unset(BLOCK_COMMENT_START);
-        line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+      // if (line->prev &&
+      //     ((line->prev->flags.is_set(IN_BLOCK_COMMENT)) || (line->prev->flags.is_set(BLOCK_COMMENT_START))) &&
+      //     !(line->prev->flags.is_set(SINGLE_LINE_BLOCK_COMMENT))) {
+      //   line->flags.set(BLOCK_COMMENT_END);
+      //   line->flags.unset(IN_BLOCK_COMMENT);
+      //   line->flags.unset(BLOCK_COMMENT_START);
+      //   line->flags.unset(SINGLE_LINE_BLOCK_COMMENT);
+      // }
+      if (line->prev && ((line->prev->is_in_block_comment) || (line->prev->is_block_comment_start)) && !(line->prev->is_single_block_comment)) {
+        line->is_block_comment_end    = TRUE;
+        line->is_in_block_comment     = FALSE;
+        line->is_block_comment_start  = FALSE;
+        line->is_single_block_comment = FALSE;
       }
     }
   }
@@ -633,7 +674,8 @@ remove_local_vars_from(linestruct *line)
 } */
 
 void remove_local_vars_from(linestruct *line) {
-  if (!(line->flags.is_set(IN_BRACKET))) {
+  // if (!(line->flags.is_set(IN_BRACKET))) {
+  if (!(line->is_in_bracket)) {
     return;
   }
   for (auto it = test_map.begin(); it != test_map.end();) {

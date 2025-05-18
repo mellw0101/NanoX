@@ -47,7 +47,7 @@ void debug_define(const DefineEntry &de) {
 
 void netlog_openfiles(void) {
   NETLOG("%s: Listing all files.\n", __func__);
-  ITER_OVER_ALL_OPENFILES(startfile, file,
+  CLIST_ITER(startfile, file,
     NETLOG("%s\n", file->filename);
     file = file->next;
   );

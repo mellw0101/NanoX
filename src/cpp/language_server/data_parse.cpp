@@ -211,44 +211,63 @@ namespace Parse {
       /* If a slash comment is found and it is before the block start, we adjust the start
        * and end pos.  We also make sure to unset 'BLOCK_COMMENT_START' for the line. */
       if (slash && slash < start) {
-        line->flags.unset<BLOCK_COMMENT_START>();
+        // line->flags.unset<BLOCK_COMMENT_START>();
+        line->is_block_comment_start = FALSE;
       }
       else {
-        line->flags.set<BLOCK_COMMENT_START>();
+        // line->flags.set<BLOCK_COMMENT_START>();
+        line->is_block_comment_start = TRUE;
       }
-      line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
-      line->flags.unset<IN_BLOCK_COMMENT>();
-      line->flags.unset<BLOCK_COMMENT_END>();
+      // line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+      // line->flags.unset<IN_BLOCK_COMMENT>();
+      // line->flags.unset<BLOCK_COMMENT_END>();
+      line->is_single_block_comment = FALSE;
+      line->is_in_block_comment     = FALSE;
+      line->is_block_comment_end    = FALSE;
     }
     /* Either inside of a block comment or not a block comment at all. */
     else if (!start && !end) {
-      if (line->prev &&
-          ((line->prev->flags.is_set<IN_BLOCK_COMMENT>()) || (line->prev->flags.is_set<BLOCK_COMMENT_START>())) &&
-          !(line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>())) {
-        line->flags.set<IN_BLOCK_COMMENT>();
-        line->flags.unset<BLOCK_COMMENT_START>();
-        line->flags.unset<BLOCK_COMMENT_END>();
-        line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+      // if (line->prev &&
+      //     ((line->prev->flags.is_set<IN_BLOCK_COMMENT>()) || (line->prev->flags.is_set<BLOCK_COMMENT_START>())) &&
+      //     !(line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>())) {
+      if (line->prev && ((line->prev->is_in_block_comment) || (line->prev->is_block_comment_start)) && !(line->prev->is_single_block_comment)) {
+        // line->flags.set<IN_BLOCK_COMMENT>();
+        // line->flags.unset<BLOCK_COMMENT_START>();
+        // line->flags.unset<BLOCK_COMMENT_END>();
+        // line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+        line->is_in_block_comment     = TRUE;
+        line->is_block_comment_start  = FALSE;
+        line->is_block_comment_end    = FALSE;
+        line->is_single_block_comment = FALSE;
       }
       /* If the prev line is not in a block comment or the
        * start block line we are not inside a comment block. */
       else {
-        line->flags.unset<IN_BLOCK_COMMENT>();
-        line->flags.unset<BLOCK_COMMENT_START>();
-        line->flags.unset<BLOCK_COMMENT_END>();
-        line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+        // line->flags.unset<IN_BLOCK_COMMENT>();
+        line->is_in_block_comment = FALSE;
+        // line->flags.unset<BLOCK_COMMENT_START>();
+        line->is_block_comment_start = FALSE;
+        // line->flags.unset<BLOCK_COMMENT_END>();
+        line->is_block_comment_end = FALSE;
+        // line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+        line->is_single_block_comment = FALSE;
       }
     }
     /* End of a block comment. */
     else if (!start && end) {
       /* If last line is in a comment block or is the start of the block. */
-      if (line->prev &&
-          ((line->prev->flags.is_set<IN_BLOCK_COMMENT>()) || (line->prev->flags.is_set<BLOCK_COMMENT_START>())) &&
-          !(line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>())) {
-        line->flags.set<BLOCK_COMMENT_END>();
-        line->flags.unset<IN_BLOCK_COMMENT>();
-        line->flags.unset<BLOCK_COMMENT_START>();
-        line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+      // if (line->prev &&
+      //     ((line->prev->flags.is_set<IN_BLOCK_COMMENT>()) || (line->prev->flags.is_set<BLOCK_COMMENT_START>())) &&
+      //     !(line->prev->flags.is_set<SINGLE_LINE_BLOCK_COMMENT>())) {
+      if (line->prev && ((line->prev->is_in_block_comment) || (line->prev->is_block_comment_start)) && !(line->prev->is_single_block_comment)) {
+        // line->flags.set<BLOCK_COMMENT_END>();
+        line->is_block_comment_end = TRUE;
+        // line->flags.unset<IN_BLOCK_COMMENT>();
+        line->is_in_block_comment = FALSE;
+        // line->flags.unset<BLOCK_COMMENT_START>();
+        line->is_block_comment_start = FALSE;
+        // line->flags.unset<SINGLE_LINE_BLOCK_COMMENT>();
+        line->is_single_block_comment = FALSE;
       }
     }
   }

@@ -26,12 +26,25 @@ linestruct *make_new_node(linestruct *prevnode) _NOTHROW {
   newnode->multidata  = NULL;
   newnode->lineno     = ((prevnode) ? (prevnode->lineno + 1) : 1);
   newnode->has_anchor = FALSE;
-  newnode->flags.clear();
+  // newnode->flags.clear();
+  newnode->is_block_comment_start   = FALSE;
+  newnode->is_block_comment_end     = FALSE;
+  newnode->is_in_block_comment      = FALSE;
+  newnode->is_single_block_comment  = FALSE;
+  newnode->is_hidden                = FALSE;
+  newnode->is_bracket_start         = FALSE;
+  newnode->is_in_bracket            = FALSE;
+  newnode->is_bracket_end           = FALSE;
+  newnode->is_function_open_bracket = FALSE;
+  newnode->is_dont_preprocess_line  = FALSE;
+  newnode->is_pp_line               = FALSE;
   if (prevnode) {
-    (prevnode->flags.is_set(IN_BLOCK_COMMENT) || prevnode->flags.is_set(BLOCK_COMMENT_START))
-      ? newnode->flags.set(IN_BLOCK_COMMENT) : newnode->flags.unset(IN_BLOCK_COMMENT);
-    (prevnode->flags.is_set(IN_BRACKET) || prevnode->flags.is_set(BRACKET_START))
-      ? newnode->flags.set(IN_BRACKET) : (void)0;
+    (prevnode->is_in_block_comment || prevnode->is_block_comment_start) ? (newnode->is_in_block_comment = TRUE) : ((int)0);
+    (prevnode->is_in_bracket || prevnode->is_bracket_start) ? (newnode->is_in_bracket = TRUE) : ((int)0);
+    // (prevnode->flags.is_set(IN_BLOCK_COMMENT) || prevnode->flags.is_set(BLOCK_COMMENT_START))
+    //   ? newnode->flags.set(IN_BLOCK_COMMENT) : newnode->flags.unset(IN_BLOCK_COMMENT);
+    // (prevnode->flags.is_set(IN_BRACKET) || prevnode->flags.is_set(BRACKET_START))
+    //   ? newnode->flags.set(IN_BRACKET) : (void)0;
   }
   return newnode;
 }

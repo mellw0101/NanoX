@@ -148,13 +148,22 @@ void erase_in_line(linestruct *line, Ulong at, Ulong len) {
 linestruct *find_next_bracket(bool up, linestruct *from_line) {
   if (up) {
     for (linestruct *line = from_line; line; line = line->prev) {
-      if (!(line->flags.is_set(IN_BRACKET))) {
+      // if (!(line->flags.is_set(IN_BRACKET))) {
+      //   return NULL;
+      // }
+      // else if ((line->flags.is_set(BRACKET_END))) {
+      //   return line;
+      // }
+      // else if ((line->flags.is_set(BRACKET_START))) {
+      //   return line;
+      // }
+      if (!(line->is_in_bracket)) {
         return NULL;
       }
-      else if ((line->flags.is_set(BRACKET_END))) {
+      else if ((line->is_bracket_end)) {
         return line;
       }
-      else if ((line->flags.is_set(BRACKET_START))) {
+      else if ((line->is_bracket_start)) {
         return line;
       }
     }
