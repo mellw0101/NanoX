@@ -6,12 +6,12 @@
 static glSsbo<vec2, 0> vertices_ssbo;
 static glSsbo<Uint, 1> indices_ssbo;
 /* Hash based grid map for elements. */
-uigridmapclass gridmap(GRIDMAP_GRIDSIZE);
+// uigridmapclass gridmap(GRIDMAP_GRIDSIZE);
 /* Frame timer to keep a frame rate. */
 frametimerclass frametimer;
 /* The file menu button element. */
-guielement *file_menu_element = NULL;
-guielement *open_file_element = NULL;
+// guielement *file_menu_element = NULL;
+// guielement *open_file_element = NULL;
 
 /* The list of all `gui-editors`. */
 // guieditor *openeditor = NULL;
@@ -21,7 +21,7 @@ guielement *open_file_element = NULL;
 /* The main structure that holds all the data the gui needs. */
 guistruct *gui = NULL;
 
-Element *test_element = NULL;
+// Element *test_element = NULL;
 
 // #define FALLBACK_FONT_PATH "/usr/share/root/fonts/monotype.ttf"
 #define FALLBACK_FONT_PATH  "/usr/share/fonts/TTF/Hack-Regular.ttf"
@@ -145,28 +145,38 @@ static void setup_rect_shader(void) {
 /* Setup the bottom bar for the gui. */
 static void setup_botbar(void) {
   gui->botbuf = make_new_font_buffer();
-  gui->botbar = gui_element_create(gui->root, FALSE);
-  gui_element_move_resize(
-    gui->botbar,
-    vec2(0, (gui->height - FONT_HEIGHT(gui_font_get_font(gui->font)))),
-    vec2(gui->width, FONT_HEIGHT(gui_font_get_font(gui->font)))
-  );
-  gui->botbar->color = GUI_BLACK_COLOR;
-  gui->botbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_Y_POS>();
-  gui->botbar->relative_pos = vec2(0, gui->botbar->size.h);
-  gui->botbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
-  gui->botbar->relative_size = 0;
+  // gui->botbar = gui_element_create(gui->root, FALSE);
+  // gui_element_move_resize(
+  //   gui->botbar,
+  //   vec2(0, (gui->height - FONT_HEIGHT(gui_font_get_font(gui->font)))),
+  //   vec2(gui->width, FONT_HEIGHT(gui_font_get_font(gui->font)))
+  // );
+  // gui->botbar->color = GUI_BLACK_COLOR;
+  // gui->botbar->flag.set<GUIELEMENT_REVERSE_RELATIVE_Y_POS>();
+  // gui->botbar->relative_pos = vec2(0, gui->botbar->size.h);
+  // gui->botbar->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
+  // gui->botbar->relative_size = 0;
+  gui->botbar = element_create(0, (gui_height - gui_font_height(uifont)), gui_width, gui_font_height(uifont), TRUE);
+  element_set_parent(gui->botbar, gui->root);
+  color_set_black(gui->botbar->color);
+  gui->botbar->has_reverse_relative_y_pos = TRUE;
+  gui->botbar->has_relative_width         = TRUE;
+  gui->botbar->relative_y                 = gui->botbar->height;
 }
 
 /* Set up the bottom bar. */
 static void setup_statusbar(void) {
   gui->statusbuf = make_new_font_buffer();
-  gui->statusbar = gui_element_create(
-    vec2(0, gui->height),
-    vec2(gui->width, gui_font_height(gui->uifont)),
-    color_idx_to_vec4(FG_VS_CODE_RED)
-  );
-  gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
+  // gui->statusbar = gui_element_create(
+  //   vec2(0, gui->height),
+  //   vec2(gui->width, gui_font_height(gui->uifont)),
+  //   color_idx_to_vec4(FG_VS_CODE_RED)
+  // );
+  // gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
+  gui->statusbar = element_create(0, gui_height, gui_width, gui_font_height(uifont), FALSE);
+  color_copy(gui->statusbar->color, &color_vs_code_red);
+  element_set_parent(gui->statusbar, gui->root);
+  gui->statusbar->hidden = TRUE;
 }
 
 /* Allocate and init the edit element. */
@@ -193,7 +203,6 @@ static void make_guistruct(void) {
   gui->statusbar             = NULL;
   gui->entered               = NULL;
   gui->clicked               = NULL;
-  gui->clicked_element       = NULL;
   gui->botbuf                = NULL;
   gui->statusbuf             = NULL;
   gui->projection            = NULL;
@@ -204,7 +213,6 @@ static void make_guistruct(void) {
   gui->promptmenu            = NULL;
   gui->current_cursor_type   = GLFW_ARROW_CURSOR;
   gui->suggestmenu           = NULL;
-  gui->active_menu           = NULL;
   gui->context_menu          = NULL;
 }
 
@@ -233,7 +241,8 @@ static void init_guistruct(const char *win_title, Uint win_width, Uint win_heigh
   nevhandler_start(gui->handler, TRUE);
   gui->font   = gui_font_create();
   gui->uifont = gui_font_create();
-  gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, FALSE);
+  // gui->root = gui_element_create(0, vec2(gui->height, gui->width), 0, FALSE);
+  gui->root = element_create(0, 0, gui_width, gui_height, FALSE);
 }
 
 /* Delete the gui struct. */
@@ -250,8 +259,9 @@ static void delete_guistruct(void) {
     glDeleteProgram(gui->rect_shader);
   }
   /* Delete all elements used by 'gui'. */
-  gui_element_free(gui->root);
-  gui_element_free(gui->statusbar);
+  // gui_element_free(gui->root);
+  // gui_element_free(gui->statusbar);
+  element_free(gui->root);
   /* Free the main font and the uifont. */
   gui_font_free(gui->font);
   gui_font_free(gui->uifont);
@@ -279,7 +289,6 @@ static void cleanup(void) {
   // gui_editor_free(openeditor);
   editor_free(openeditor);
   delete_guistruct();
-  element_free(test_element);
   element_grid_free();
 }
 
@@ -297,14 +306,6 @@ static void init_glew(void) {
   writef("Using GLEW %s\n", glewGetString(GLEW_VERSION));
 }
 
-static void make_test_element(void) {
-  test_element = element_create(20, 20, 200, 200, TRUE);
-  color_set_white(test_element->color);
-  Color border_color;
-  color_set_black(&border_color);
-  element_set_borders(test_element, 10, 10, 10, 10, &border_color);
-}
-
 /* Init glfw. */
 void init_gui(void) {
   /* Init glfw. */
@@ -312,7 +313,6 @@ void init_gui(void) {
     die("Failed to init glfw.\n");
   }
   element_grid_create(GRIDMAP_GRIDSIZE);
-  make_test_element();
   /* Init the main gui structure. */
   init_guistruct("NanoX", 1400, 800, glfw_get_framerate(), 17, 15);
   /* Init glew. */
@@ -350,13 +350,16 @@ void init_gui(void) {
   glEnable(GL_BLEND);
   /* Set the window size. */
   window_resize_callback(gui->window, gui->width, gui->height);
+  editor_confirm_margin(openeditor);
+  editor_redecorate(openeditor);
+  editor_resize(openeditor);
 }
 
 /* Main gui loop. */
 void glfw_loop(void) {
   while (!glfwWindowShouldClose(gui->window)) {
     frametimer.start();
-    confirm_margin();
+    // confirm_margin();
     place_the_cursor();
     glClear(GL_COLOR_BUFFER_BIT);
     /* Check if any editor's has it's `should_close` flag set, and if so close them. */
@@ -364,8 +367,10 @@ void glfw_loop(void) {
     editor_check_should_close();
     /* Draw the editors. */
     CLIST_ITER(starteditor, editor,
+      editor_confirm_margin(editor);
       draw_editor(editor);
     );
+    writef("hello\n");
     /* Draw the suggestmenu. */
     draw_suggestmenu();
     /* Draw the top menu bar. */
@@ -375,7 +380,6 @@ void glfw_loop(void) {
     /* Draw the status bar, if there is any status messages. */
     draw_statusbar();
     context_menu_draw(gui->context_menu);
-    element_draw(test_element);
     /* If refresh was needed it has been done so set it to FALSE. */
     refresh_needed = FALSE;
     glfwSwapBuffers(gui->window);

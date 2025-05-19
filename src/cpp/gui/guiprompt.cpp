@@ -43,7 +43,8 @@ void gui_promptmode_enter(void) {
   ASSERT(gui->promptmenu->element);
   statusbar_discard_all_undo_redo();
   gui->flag.set<GUI_PROMPT>();
-  gui->promptmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
+  // gui->promptmenu->element->flag.unset<GUIELEMENT_HIDDEN>();
+  gui->promptmenu->element->hidden     = FALSE;
   gui->promptmenu->text_refresh_needed = TRUE;
   gui->promptmenu->size_refresh_needed = TRUE;
   refresh_needed = TRUE;
@@ -57,7 +58,8 @@ void gui_promptmode_leave(void) {
   ASSERT(gui->promptmenu->completions);
   statusbar_discard_all_undo_redo();
   gui->flag.unset<GUI_PROMPT>();
-  gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+  // gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+  gui->promptmenu->element->hidden = TRUE;
   cvec_clear(gui->promptmenu->completions);
   cvec_clear(gui->promptmenu->search_vec);
   gui->promptmenu->selected = 0;
@@ -89,13 +91,13 @@ long prompt_index_from_mouse(bool allow_outside) {
   long ret = 0;
   /* When we dont allow a valid return value when outside the confinement of top-bar, just return -1. 
    * This is usefull for when we are tracking a hold after the user has pressed inside the top-bar, then drags outside it. */
-  if (!allow_outside && (mousepos.y < gui->promptmenu->element->pos.y || mousepos.y > (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h))) {
+  if (!allow_outside && (mousepos.y < gui->promptmenu->element->y || mousepos.y > (gui->promptmenu->element->y + gui->promptmenu->element->height))) {
     return -1;
   }
   if (no_linenums) {
     SET(LINE_NUMBERS);
   }
-  ret = index_from_mouse_x(answer, gui_font_get_font(gui->uifont), (gui->promptmenu->element->pos.x + (pixbreadth(gui_font_get_font(gui->uifont), " ") / 2) + pixbreadth(gui_font_get_font(gui->uifont), prompt)));
+  ret = index_from_mouse_x(answer, gui_font_get_font(gui->uifont), (gui->promptmenu->element->x + (font_breadth(uifont, " ") / 2) + font_breadth(uifont, prompt)));
   if (no_linenums) {
     UNSET(LINE_NUMBERS);
   }
@@ -172,8 +174,8 @@ static inline void gui_promptmenu_add_cursor(void) {
     gui->uifont,
     gui->promptmenu->buffer,
     1,
-    (gui->promptmenu->element->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ") + pixbreadth(gui_font_get_font(gui->uifont), prompt) + string_pixel_offset(answer, " ", typing_x, gui_font_get_font(gui->uifont))),
-    gui->promptmenu->element->pos.y
+    (gui->promptmenu->element->x + pixbreadth(gui_font_get_font(gui->uifont), " ") + pixbreadth(gui_font_get_font(gui->uifont), prompt) + string_pixel_offset(answer, " ", typing_x, gui_font_get_font(gui->uifont))),
+    gui->promptmenu->element->y
   );
 }
 
@@ -186,7 +188,7 @@ static inline void gui_promptmenu_add_prompt_line_text(void) {
   ASSERT(gui->promptmenu);
   ASSERT(gui->promptmenu->element);
   ASSERT(gui->promptmenu->buffer);
-  vec2 penpos((gui->promptmenu->element->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (gui_font_row_baseline(gui->uifont, 0) + gui->promptmenu->element->pos.y));
+  vec2 penpos((gui->promptmenu->element->x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (gui_font_row_baseline(gui->uifont, 0) + gui->promptmenu->element->y));
   vertex_buffer_add_string(gui->promptmenu->buffer, prompt, strlen(prompt), NULL, gui_font_get_font(gui->uifont), vec4(1), &penpos);
   vertex_buffer_add_string(gui->promptmenu->buffer, answer, strlen(answer), " ", gui_font_get_font(gui->uifont), vec4(1), &penpos);
 }
@@ -207,8 +209,8 @@ static inline void gui_promptmenu_add_completions_text(void) {
       while (row < gui->promptmenu->rows) {
         text = (char *)cvec_get(gui->promptmenu->completions, (gui->promptmenu->viewtop + row));
         textpen = vec2(
-          (gui->promptmenu->element->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")),
-          (gui_font_row_baseline(gui->uifont, (row + 1)) + gui->promptmenu->element->pos.y)
+          (gui->promptmenu->element->x + pixbreadth(gui_font_get_font(gui->uifont), " ")),
+          (gui_font_row_baseline(gui->uifont, (row + 1)) + gui->promptmenu->element->y)
           // (row_baseline_pixel((row + 1), gui->uifont) + gui->promptmenu->element->pos.y)
         );
         vertex_buffer_add_string(gui->promptmenu->buffer, text, strlen(text), NULL, gui_font_get_font(gui->uifont), 1, &textpen);
@@ -256,7 +258,7 @@ static void gui_promptmenu_open_file_search(void) {
     }
     directory_data_free(&dir);
   }
-  gui_scrollbar_refresh_needed(gui->promptmenu->sb);
+  scrollbar_refresh_needed(gui->promptmenu->sb);
   gui->promptmenu->size_refresh_needed = TRUE;
 }
 
@@ -361,7 +363,7 @@ static void gui_promptmenu_set_font_enter_action(void) {
 static void gui_promptmenu_scrollbar_update_routine(void *arg, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset) {
   ASSERT(arg);
   GuiPromptMenu *pm = (__TYPE(pm))arg;
-  ASSIGN_IF_VALID(total_length, (pm->element->size.h - gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */));
+  ASSIGN_IF_VALID(total_length, (pm->element->height - gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */));
   ASSIGN_IF_VALID(start, 0);
   ASSIGN_IF_VALID(total, (cvec_len(pm->completions) - pm->rows));
   ASSIGN_IF_VALID(visible, pm->rows);
@@ -382,7 +384,7 @@ static void gui_promptmenu_scrollbar_moving_routine(void *arg, long index) {
 static void gui_promptmenu_scrollbar_create(void) {
   ASSERT(gui);
   ASSERT(gui->promptmenu);
-  gui->promptmenu->sb = gui_scrollbar_create(gui->promptmenu->element, gui->promptmenu, gui_promptmenu_scrollbar_update_routine, gui_promptmenu_scrollbar_moving_routine);
+  gui->promptmenu->sb = scrollbar_create(gui->promptmenu->element, gui->promptmenu, gui_promptmenu_scrollbar_update_routine, gui_promptmenu_scrollbar_moving_routine);
 }
 
 
@@ -396,17 +398,22 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->text_refresh_needed = FALSE;
   gui->promptmenu->size_refresh_needed = FALSE;
   gui->promptmenu->buffer  = make_new_font_buffer();
-  gui->promptmenu->element = gui_element_create(gui->root);
-  gui_element_move_resize(
-    gui->promptmenu->element,
-    0.0f,
-    vec2(gui->width, gui_font_height(gui->uifont))
-  );
-  gui->promptmenu->element->color = VEC4_VS_CODE_RED;
-  gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
-  gui->promptmenu->element->relative_size = 0;
-  gui->promptmenu->element->flag.set<GUIELEMENT_ABOVE>();
-  gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+  // gui->promptmenu->element = gui_element_create(gui->root);
+  // gui_element_move_resize(
+  //   gui->promptmenu->element,
+  //   0.0f,
+  //   vec2(gui->width, gui_font_height(gui->uifont))
+  // );
+  gui->promptmenu->element = element_create(0, 0, gui_width, gui_font_height(uifont), TRUE);
+  // gui->promptmenu->element->color = VEC4_VS_CODE_RED;
+  element_set_parent(gui->promptmenu->element, gui->root);
+  color_copy(gui->promptmenu->element->color, &color_vs_code_red);
+  // gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
+  gui->promptmenu->element->has_relative_width = TRUE;
+  // gui->promptmenu->element->relative_size = 0;
+  // gui->promptmenu->element->flag.set<GUIELEMENT_ABOVE>();
+  // gui->promptmenu->element->flag.set<GUIELEMENT_HIDDEN>();
+  gui->promptmenu->element->hidden = TRUE;
   gui->promptmenu->search_vec  = cvec_create_setfree(free);
   gui->promptmenu->completions = cvec_create_setfree(free);
   gui->promptmenu->maxrows  = 8;
@@ -432,7 +439,9 @@ void gui_promptmenu_resize(void) {
   ASSERT(gui);
   ASSERT(gui->promptmenu);
   ASSERT(gui->promptmenu->completions);
-  vec2 size;
+  // vec2 size;
+  float width;
+  float height;
   int len;
   if (gui->promptmenu->size_refresh_needed) {
     len = cvec_len(gui->promptmenu->completions);
@@ -442,9 +451,10 @@ void gui_promptmenu_resize(void) {
     else {
       gui->promptmenu->rows = len;
     }
-    size.w = gui->promptmenu->element->size.w;
-    size.h = ((gui->promptmenu->rows + 1) * gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */);
-    gui_element_resize(gui->promptmenu->element, size);
+    width  = gui->promptmenu->element->width;
+    height = ((gui->promptmenu->rows + 1) * gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */);
+    // gui_element_resize(gui->promptmenu->element, size);
+    element_resize(gui->promptmenu->element, width, height);
     gui->promptmenu->size_refresh_needed = FALSE;
   }
 }
@@ -475,11 +485,11 @@ void gui_promptmenu_draw_selected(void) {
   if (cvec_len(gui->promptmenu->completions)) {
     selected_row = (gui->promptmenu->selected - gui->promptmenu->viewtop);
     if (selected_row >= 0 && selected_row < gui->promptmenu->rows) {
-      pos.x = gui->promptmenu->element->pos.x;
-      size.w = gui->promptmenu->element->size.w;
+      pos.x = gui->promptmenu->element->x;
+      size.w = gui->promptmenu->element->width;
       gui_font_row_top_bot(gui->uifont, (selected_row + 1), &pos.y, &size.h);
       size.h -= pos.y;
-      pos.y  += gui->promptmenu->element->pos.y;
+      pos.y  += gui->promptmenu->element->y;
       draw_rect(pos, size, vec4(vec3(1.0f), 0.4f));
     }
   }
@@ -513,7 +523,7 @@ void gui_promptmenu_selected_up(void) {
       }
       --gui->promptmenu->selected;
     }
-    gui_scrollbar_refresh_needed(gui->promptmenu->sb);
+    scrollbar_refresh_needed(gui->promptmenu->sb);
   }
 }
 
@@ -534,7 +544,7 @@ void gui_promptmenu_selected_down(void) {
       }
       ++gui->promptmenu->selected;
     }
-    gui_scrollbar_refresh_needed(gui->promptmenu->sb);
+    scrollbar_refresh_needed(gui->promptmenu->sb);
   }
 }
 
@@ -615,7 +625,7 @@ void gui_promptmenu_completions_search(void) {
       break;
     }
   } 
-  gui_scrollbar_refresh_needed(gui->promptmenu->sb);
+  scrollbar_refresh_needed(gui->promptmenu->sb);
   gui->promptmenu->size_refresh_needed = TRUE;
 }
 
@@ -630,9 +640,9 @@ void gui_promptmenu_hover_action(float y_pos) {
   float bot;
   if (cvec_len(gui->promptmenu->completions)) {
     /* Top of the completions menu. */
-    top = (gui->promptmenu->element->pos.y + gui_font_height(gui->uifont));
+    top = (gui->promptmenu->element->y + gui_font_height(gui->uifont));
     /* Bottom of the completions menu. */
-    bot = (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h);
+    bot = (gui->promptmenu->element->y + gui->promptmenu->element->height);
     /* If `y_pos` relates to a valid row in the promptmenu completion menu, then adjust the selected to that row. */
     if (gui_font_row_from_pos(gui->uifont, top, bot, y_pos, &row)) {
       gui->promptmenu->selected = lclamp((gui->promptmenu->viewtop + row), gui->promptmenu->viewtop, (gui->promptmenu->viewtop + gui->promptmenu->rows));
@@ -653,7 +663,7 @@ void gui_promptmenu_scroll_action(bool direction, float y_pos) {
       gui->promptmenu->text_refresh_needed = TRUE;
       /* Ensure that the currently selected entry gets correctly set based on where the mouse is. */
       gui_promptmenu_hover_action(y_pos);
-      gui_scrollbar_refresh_needed(gui->promptmenu->sb);
+      scrollbar_refresh_needed(gui->promptmenu->sb);
     }
   }
 }
@@ -666,8 +676,8 @@ void gui_promptmenu_click_action(float y_pos) {
   float bot;
   /* Only perform any action when there are completions available. */
   if (cvec_len(gui->promptmenu->completions)) {
-    top = (gui->promptmenu->element->pos.y + gui_font_height(gui->uifont));
-    bot = (gui->promptmenu->element->pos.y + gui->promptmenu->element->size.h);
+    top = (gui->promptmenu->element->y + gui_font_height(gui->uifont));
+    bot = (gui->promptmenu->element->y + gui->promptmenu->element->height);
     if (y_pos >= top && y_pos <= bot) {
       gui_promptmenu_hover_action(y_pos);
       gui_promptmenu_enter_action();

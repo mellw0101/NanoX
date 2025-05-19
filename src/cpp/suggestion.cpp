@@ -256,20 +256,21 @@ static char *gui_suggestmenu_copy_completion(char *const restrict text) {
   return measured_copy(text, len);
 }
 
-static void gui_suggestmenu_pos_routine(void *arg, vec2 size, vec2 *pos) {
+static void gui_suggestmenu_pos_routine(void *arg, float width, float height, float *const x, float *const y) {
   ASSERT(arg);
-  ASSERT(pos);
-  GuiSuggestMenu *sm = (__TYPE(sm))arg;
+  ASSERT(x);
+  ASSERT(y);
+  SuggestMenu *sm = (__TYPE(sm))arg;
   /* Calculate the correct position for the suggestmenu window. */
-  pos->x = cursor_pixel_x_pos(gui_font_get_font(gui_menu_get_font(sm->menu)));
-  gui_font_row_top_bot(gui->font, (openfile->current->lineno - openfile->edittop->lineno), NULL, &pos->y);
-  pos->y += (openeditor->main->y + gui_font_height(gui->uifont));
+  (*x) = cursor_pixel_x_pos(gui_font_get_font(menu_get_font(sm->menu)));
+  gui_font_row_top_bot(gui->font, (openfile->current->lineno - openfile->edittop->lineno), NULL, y);
+  (*y) += (openeditor->main->y + gui_font_height(uifont));
 }
 
 static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict lable, int index) {
   ASSERT(arg);
   ASSERT(lable);
-  GuiSuggestMenu *sm = (__TYPE(sm))arg;
+  SuggestMenu *sm = (__TYPE(sm))arg;
   char *str = copy_of(lable);
   openfile->last_action = OTHER;
   inject((str + sm->len), (strlen(str) - sm->len));
@@ -284,9 +285,9 @@ static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict
 void gui_suggestmenu_create(void) {
   ASSERT(gui);
   MALLOC_STRUCT(gui->suggestmenu);
-  gui->suggestmenu->menu = gui_menu_create(gui->root, gui->font, gui->suggestmenu, gui_suggestmenu_pos_routine, gui_suggestmenu_accept_routine);
-  gui_menu_set_tab_accept_behavior(gui->suggestmenu->menu, TRUE);
-  gui_menu_set_arrow_depth_navigation(gui->suggestmenu->menu, FALSE);
+  gui->suggestmenu->menu = menu_create(gui->root, gui->font, gui->suggestmenu, gui_suggestmenu_pos_routine, gui_suggestmenu_accept_routine);
+  menu_set_tab_accept_behavior(gui->suggestmenu->menu, TRUE);
+  menu_set_arrow_depth_navigation(gui->suggestmenu->menu, FALSE);
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len    = 0;
 }
@@ -294,7 +295,7 @@ void gui_suggestmenu_create(void) {
 /* Free the suggestmenu substructure. */
 void gui_suggestmenu_free(void) {
   ASSERT_SUGGEST_MENU;
-  gui_menu_free(gui->suggestmenu->menu);
+  menu_free(gui->suggestmenu->menu);
   free(gui->suggestmenu);
 }
 
@@ -303,8 +304,8 @@ void gui_suggestmenu_clear(void) {
   ASSERT_SUGGEST_MENU;
   gui->suggestmenu->buf[0] = '\0';
   gui->suggestmenu->len = 0;
-  gui_menu_clear_entries(gui->suggestmenu->menu);
-  gui_menu_show(gui->suggestmenu->menu, FALSE);
+  menu_clear_entries(gui->suggestmenu->menu);
+  menu_show(gui->suggestmenu->menu, FALSE);
 }
 
 /* Load the word cursor is currently on into the suggestmenu buffer, from the cursor to the beginning of the word, if any. */
@@ -335,7 +336,7 @@ void gui_suggestmenu_find(void) {
   long threshhold;
   char *completion;
   Ulong i, j;
-  gui_menu_clear_entries(gui->suggestmenu->menu);
+  menu_clear_entries(gui->suggestmenu->menu);
   if (!gui->suggestmenu->len) {
     return;
   }
@@ -381,7 +382,7 @@ void gui_suggestmenu_find(void) {
       }
       /* Add to the hashmap, using the ptr to the word as it will live longer then this hashmap. */
       hashmap_insert(hash_map, completion, (void *)completion);
-      gui_menu_push_back(gui->suggestmenu->menu, completion);
+      menu_push_back(gui->suggestmenu->menu, completion);
       search_x = ++i;
     }
     search_line = search_line->next;
@@ -392,7 +393,7 @@ void gui_suggestmenu_find(void) {
     }
   }
   hashmap_free(hash_map);
-  gui_menu_qsort(gui->suggestmenu->menu, gui_menu_entry_qsort_strlen_cb);
+  menu_qsort(gui->suggestmenu->menu, menu_entry_qsort_strlen_cb);
   TIMER_END(timer, ms);
   TIMER_PRINT(ms);
 }
@@ -401,10 +402,10 @@ void gui_suggestmenu_run(void) {
   ASSERT_SUGGEST_MENU;
   gui_suggestmenu_load_str();
   gui_suggestmenu_find();
-  if (gui_menu_len(gui->suggestmenu->menu)) {
-    gui_menu_show(gui->suggestmenu->menu, TRUE);
+  if (menu_len(gui->suggestmenu->menu)) {
+    menu_show(gui->suggestmenu->menu, TRUE);
   }
   else {
-    gui_menu_show(gui->suggestmenu->menu, FALSE);
+    menu_show(gui->suggestmenu->menu, FALSE);
   }
 }

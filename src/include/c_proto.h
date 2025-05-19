@@ -2,6 +2,7 @@
 #define _C_PROTO__H
 
 #include "c_defs.h"
+#include "c/wchars.h"
 #include "c/nfdreader.h"
 #include "c/nevhandler.h"
 #include "c/nfdlistener.h"
@@ -63,10 +64,15 @@ extern Ulong flags[1];
 
 extern GLFWwindow *gui_window;
 
+/* ----------------------------- color.c ----------------------------- */
+
+extern Color color_vs_code_red;
+extern Color color_white;
+
 /* ----------------------------- General ----------------------------- */
 
 extern ElementGrid *element_grid;
-extern Element *test_element;
+// extern Element *test_element;
 
 extern Uint element_rect_shader;
 extern Uint font_shader;
@@ -466,6 +472,7 @@ bool etb_owns_element(EditorTb *const etb, Element *const e);
 
 void editor_create(bool new_buffer);
 void editor_free(Editor *const editor);
+void editor_confirm_margin(Editor *const editor);
 void editor_set_rows_cols(Editor *const editor);
 Editor *editor_from_file(openfilestruct *const file);
 void editor_hide(Editor *const editor, bool hide);

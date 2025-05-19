@@ -172,14 +172,14 @@ void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
 
 static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
   static Color text_color = {1, 1, 1, 1};
-  char linenobuffer[margin + 1];
+  char linenobuffer[editor->margin + 1];
   float x;
   float y;
   if (refresh_needed && ISSET(LINE_NUMBERS)) {
     x = editor->gutter->x;
     y = (gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno)) + editor->gutter->y);
-    sprintf(linenobuffer, "%*lu ", (margin - 1), line->lineno);
-    font_vertbuf_add_mbstr(textfont, editor->buffer, linenobuffer, margin, NULL, &text_color, &x, &y);
+    sprintf(linenobuffer, "%*lu ", (editor->margin - 1), line->lineno);
+    font_vertbuf_add_mbstr(textfont, editor->buffer, linenobuffer, editor->margin, NULL, &text_color, &x, &y);
   }
 }
 
@@ -386,6 +386,7 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 // }
 
 static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
+  writef("%s: start\n", __func__);
   /* When debugging is enabled, assert everything we will use. */
   ASSERT(line);
   ASSERT(editor);
@@ -400,8 +401,11 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
   if (!*line->data) {
     return;
   }
-  from_col  = get_page_start(wideness(line->data, ((line == editor->openfile->current) ? editor->openfile->current_x : 0)));
+  from_col  = editor_get_page_start(editor, wideness(line->data, ((line == editor->openfile->current) ? editor->openfile->current_x : 0)));
   converted = display_string(line->data, from_col, editor->cols, TRUE, FALSE);
+  if (!converted || !*converted) {
+    return;
+  }
   drawpos->x = editor->text->x;
   if (refresh_needed) {
     converted_len = strlen(converted);
@@ -410,6 +414,7 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
       if ((editor->openfile->is_c_file || editor->openfile->is_cxx_file) /* editor->openfile->type.is_set<C_CPP>() */) {
         Ulong index = 0;
         line_word_t *head = get_line_words(converted, converted_len);
+        writef("%s: hello\n", __func__);
         while (head) {
           line_word_t *node = head;
           head = node->next;
@@ -417,7 +422,7 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
             obj = (SyntaxObject *)hashmap_get(sf->objects, node->str);
             if (obj) {
               if (obj->color == SYNTAX_COLOR_BLUE) {
-                vertex_buffer_add_mbstr(editor->buffer, (converted + index), (node->start - index), prev_char, gui->font, vec4(1.0f), drawpos);
+                vertex_buffer_add_string(editor->buffer, (converted + index), (node->start - index), prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
                 vertex_buffer_add_string(editor->buffer, (converted + node->start), node->len, prev_char, gui_font_get_font(gui->font), VEC4_8BIT(36, 114, 200, 1), drawpos);
                 index = node->end;
                 free_node(node);
@@ -706,6 +711,7 @@ void draw_editor(Editor *editor) {
       gui_draw_row(line, editor, &pen);
       line = line->next;
     }
+    writef("%s: hello\n", __func__);
     if (!gui->flag.is_set<GUI_PROMPT>() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
       line_add_cursor(
         (editor->openfile->current->lineno - editor->openfile->edittop->lineno),
@@ -714,7 +720,8 @@ void draw_editor(Editor *editor) {
         vec4(1),
         editor_cursor_x_pos(editor, editor->openfile->current, editor->openfile->current_x),
         // cursor_pixel_x_pos(gui_font_get_font(gui->font)),
-        editor->text->y);
+        editor->text->y
+      );
     }
   }
   else {
@@ -735,9 +742,11 @@ void draw_editor(Editor *editor) {
 void draw_topbar(void) {
   if (gui->flag.is_set<GUI_PROMPT>()) {
     gui_promptmenu_resize();
-    gui_element_draw(gui->promptmenu->element);
+    // gui_element_draw(gui->promptmenu->element);
+    element_draw(gui->promptmenu->element);
     gui_promptmenu_draw_selected();
-    gui_scrollbar_draw(gui->promptmenu->sb);
+    // gui_scrollbar_draw(gui->promptmenu->sb);
+    scrollbar_draw(gui->promptmenu->sb);
     gui_promptmenu_draw_text();
   }
 }
@@ -747,38 +756,46 @@ void draw_suggestmenu(void) {
   ASSERT(gui);
   ASSERT(gui->suggestmenu);
   ASSERT(gui->suggestmenu->menu);
-  gui_menu_draw(gui->suggestmenu->menu);
+  menu_draw(gui->suggestmenu->menu);
 }
 
 /* Draw the bottom bar of the gui. */
 void draw_botbar(void) {
-  gui_element_draw(gui->botbar);
+  element_draw(gui->botbar);
 }
 
 /* Draw the status bar for the gui. */
 void draw_statusbar(void) {
+  float msg_width;
+  float x;
+  float y;
   if (statustype != VACUUM) {
     /* Check it the message has been shown for the set time. */
     statustime -= (1.0f / frametimer.fps);
     if (statustime < 0) {
       /* If the set time has elapsed, then reset the status element. */
       statustype = VACUUM;
-      gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
+      // gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
+      gui->statusbar->hidden = TRUE;
       return;
     }
     if (refresh_needed) {
-      gui->statusbar->flag.unset<GUIELEMENT_HIDDEN>();
-      float msgwidth = (pixbreadth(gui_font_get_font(gui->uifont), statusmsg) + pixbreadth(gui_font_get_font(gui->uifont), "  "));
+      // gui->statusbar->flag.unset<GUIELEMENT_HIDDEN>();
+      gui->statusbar->hidden = FALSE;
+      msg_width = (font_breadth(uifont, statusmsg) + font_breadth(uifont, "  "));
       vertex_buffer_clear(gui->statusbuf);
-      gui_element_move_resize(
-        gui->statusbar,
-        vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - gui->botbar->size.h - gui->statusbar->size.h)),
-        vec2(msgwidth, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */)
-      );
-      vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (/* row_baseline_pixel(0, gui->uifont) */ gui_font_row_baseline(gui->uifont, 0) + gui->statusbar->pos.y));
-      vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui_font_get_font(gui->uifont), 1, &penpos);
+      // gui_element_move_resize(
+      //   gui->statusbar,
+      //   vec2((((float)gui->width / 2) - (msgwidth / 2)), (gui->height - gui->botbar->size.h - gui->statusbar->size.h)),
+      //   vec2(msgwidth, gui_font_height(gui->uifont) /* FONT_HEIGHT(gui->uifont) */)
+      // );
+      // vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (/* row_baseline_pixel(0, gui->uifont) */ gui_font_row_baseline(gui->uifont, 0) + gui->statusbar->pos.y));
+      element_move_resize(gui->statusbar, ((gui_width / 2) - (msg_width / 2)), (gui_height - gui->botbar->height - gui->statusbar->height), msg_width, gui_font_height(uifont));
+      // vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui_font_get_font(gui->uifont), 1, &penpos);
+      font_vertbuf_add_mbstr(uifont, gui->statusbuf, statusmsg, strlen(statusmsg), " ", &color_white, &x, &y);
     }
-    gui_element_draw(gui->statusbar);
+    // gui_element_draw(gui->statusbar);
+    element_draw(gui->statusbar);
     upload_texture_atlas(gui_font_get_atlas(gui->uifont));
     render_vertex_buffer(gui->font_shader, gui->statusbuf);
   }

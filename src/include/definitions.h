@@ -738,19 +738,19 @@ typedef enum {
 #endif
 
 /* Some forward declarations. */
-typedef struct guielement    guielement;
-typedef struct guieditor     guieditor;
+// typedef struct guielement    guielement;
+// typedef struct guieditor     guieditor;
 
 /* Forward declarations of fully opaque structures. */
-typedef struct GuiScrollbar  GuiScrollbar;
-typedef struct Menu          Menu;
+// typedef struct GuiScrollbar  GuiScrollbar;
+// typedef struct Menu          Menu;
 typedef struct ContextMenu   ContextMenu;
 
 typedef struct EditorTb      EditorTb;
 typedef struct EditorText    EditorText;
 
 /* Some typedefs. */
-typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
+// typedef void (*guielement_callback)(guielement *self, guielement_callback_type type);
 typedef void (*GuiScrollbarUpdateFunc)(void *, float *total_length, Uint *start, Uint *total, Uint *visible, Uint *current, float *top_offset, float *right_offset);
 typedef void (*GuiScrollbarMoveFunc)(void *, long);
 typedef void (*MenuPosFunc)(void *, vec2, vec2 *);
@@ -975,134 +975,123 @@ typedef struct completionstruct {
 
 /* Gui specific structs. */
 #ifdef HAVE_GLFW
-  typedef union {
-    void           *raw;      /* A `raw` data ptr, this can be anything but it means casting every time we use. */
-    openfilestruct *file;     /* A ptr to a `openfilestruct` structure. */
-    guieditor      *editor;   /* A ptr to a `guieditor` structure. */
-    GuiScrollbar   *sb;       /* A ptr to a `GuiScrollbar` structure. */
-    Menu           *menu;     /* A ptr to a `Menu` structure. */
-    /* Some shorthand's to access the element data type. */
-  # define ed_raw /* Shorthand to access the `void *` data of a element. */ data.raw
-  # define ed_file /* Shorthand to access the `openfilestruct *` data of a element. */ data.file
-  # define ed_editor /* Shorthand to access the `guieditor *` data of a element. */ data.editor
-  # define ed_sb /* Shorthand to access the `GuiScrollbar *` data of a element. */ data.sb
-  # define ed_menu /* Shorthand to access the `Menu *` data of a element. */ data.menu
-  } guielement_data_type;
+  // typedef union {
+  //   void           *raw;      /* A `raw` data ptr, this can be anything but it means casting every time we use. */
+  //   openfilestruct *file;     /* A ptr to a `openfilestruct` structure. */
+  //   // guieditor      *editor;   /* A ptr to a `guieditor` structure. */
+  //   // GuiScrollbar   *sb;       /* A ptr to a `GuiScrollbar` structure. */
+  //   // Menu           *menu;     /* A ptr to a `Menu` structure. */
+  //   /* Some shorthand's to access the element data type. */
+  // # define ed_raw /* Shorthand to access the `void *` data of a element. */ data.raw
+  // # define ed_file /* Shorthand to access the `openfilestruct *` data of a element. */ data.file
+  // # define ed_editor /* Shorthand to access the `guieditor *` data of a element. */ data.editor
+  // # define ed_sb /* Shorthand to access the `GuiScrollbar *` data of a element. */ data.sb
+  // # define ed_menu /* Shorthand to access the `Menu *` data of a element. */ data.menu
+  // } guielement_data_type;
 
-  typedef struct guielement {
-    vec2 pos;           /* Where in the window this element has (x,y). */
-    vec2 relative_pos;  /* When relative position is used, this is the position relative to `parent`. */
-    vec2 size;          /* The size of this element. */
-    
-    /* When relative width or height is enabled this is the offset
-     * from the right-bottom of parent to resize this element to. */
-    vec2 relative_size;
+  // typedef struct guielement {
+  //   vec2 pos;           /* Where in the window this element has (x,y). */
+  //   vec2 relative_pos;  /* When relative position is used, this is the position relative to `parent`. */
+  //   vec2 size;          /* The size of this element. */
+  //   /* When relative width or height is enabled this is the offset
+  //    * from the right-bottom of parent to resize this element to. */
+  //   vec2 relative_size;
+  //   /* Custom data this element needs, this is a union of only
+  //    * ptr types, this helps to not have to cast everything. */
+  //   guielement_data_type data;
+  //   vec4                  color;            /* Color this element should be. */
+  //   vec4                  textcolor;        /* Color that text draw in this element should be. */
+  //   char                 *lable;            /* If this ui element is a button or has static text. */
+  //   Uint                  lablelen;         /* The length of the static text.  If any. */
+  //   bit_flag_t<GUIELEMENT_FLAG_SIZE> flag;  /* Flags for the element. */
+  //   guielement           *parent;           /* This element`s parent, or NULL when there is none. */
+  //   MVector<guielement *> children;         /* This elements children, for menus and such. */
+  //   int cursor_type;                        /* The cursor type this element should display on hover. */
+  // } guielement;
 
-    /* Custom data this element needs, this is a union of only
-     * ptr types, this helps to not have to cast everything. */
-    guielement_data_type data;
-    
-    vec4                  color;            /* Color this element should be. */
-    vec4                  textcolor;        /* Color that text draw in this element should be. */
-    char                 *lable;            /* If this ui element is a button or has static text. */
-    Uint                  lablelen;         /* The length of the static text.  If any. */
-    bit_flag_t<GUIELEMENT_FLAG_SIZE> flag;  /* Flags for the element. */
-    guielement           *parent;           /* This element`s parent, or NULL when there is none. */
-    MVector<guielement *> children;         /* This elements children, for menus and such. */
-
-    int cursor_type;                        /* The cursor type this element should display on hover. */
-  } guielement;
-
-  class uigridmapclass {
-   private:
-    struct cordinathash {
-      /* The hashing function to we use for the map. */
-      Ulong operator()(const ivec2 &coord) const {
-        Ulong hash_x = std::hash<int>()(coord.x);
-        Ulong hash_y = std::hash<int>()(coord.y);
-        return (hash_x ^ (hash_y * 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2)));
-      }
-    };
-
-    int cell_size;
-    std::unordered_map<ivec2, MVector<guielement *>, cordinathash> grid;
-
-    ivec2 to_grid_pos(const ivec2 &pos) const _NOTHROW {
-      return ivec2(pos / cell_size);
-    }
-
-   public:
-    uigridmapclass(int cell_size) : cell_size(cell_size) {};
-
-    /* Set all grids that an element encompuses. */
-    void set(guielement *e) {
-      /* If this element should never be in the gridmap, just exit. */
-      if (e->flag.is_set<GUIELEMENT_NOT_IN_GRIDMAP>()) {
-        return;
-      }
-      ivec2 start = to_grid_pos(e->pos);
-      ivec2 end   = to_grid_pos(e->pos + e->size);
-      for (int x=start.x; x<=end.x; ++x) {
-        for (int y=start.y; y<=end.y; ++y) {
-          grid[ivec2(x, y)].emplace_back(e);
-        }
-      }
-    }
-
-    /* Remove all entries for a given element, at all grids based on its size. */
-    void remove(guielement *e) {
-      /* If this element should never be in the gridmap, just exit. */
-      if (e->flag.is_set<GUIELEMENT_NOT_IN_GRIDMAP>()) {
-        return;
-      }
-      ivec2 start = to_grid_pos(e->pos);
-      ivec2 end   = to_grid_pos(e->pos + e->size);
-      for (int x = start.x; x <= end.x; ++x) {
-        for (int y = start.y; y <= end.y; ++y) {
-          ivec2 at_pos(x, y);
-          auto &vector = grid.at(at_pos);
-          for (Uint i = 0; i < vector.size(); ++i) {
-            if (vector[i] == e) {
-              vector.erase(&vector[i--]);
-            }
-          }
-          if (vector.empty()) {
-            grid.erase(at_pos);
-          }
-        }
-      }
-    }
-
-    guielement *get(const ivec2 &pos) const {
-      auto it = grid.find(to_grid_pos(pos));
-      if (it == grid.end()) {
-        return NULL;
-      }
-      guielement *ret = NULL;
-      for (Uint i = 0; i < it->second.size(); ++i) {
-        if (it->second[i]->flag.is_set<GUIELEMENT_HIDDEN>()) {
-          continue;
-        }
-        if (pos.x >= it->second[i]->pos.x && pos.x <= (it->second[i]->pos.x + it->second[i]->size.x)
-         && pos.y >= it->second[i]->pos.y && pos.y <= (it->second[i]->pos.y + it->second[i]->size.y)) {
-          if (ret && it->second[i]->flag.is_set<GUIELEMENT_ABOVE>()) {
-            ret = it->second[i];
-          }
-          else if (ret) {
-            ;
-          }
-          else  {
-            ret = it->second[i];
-          }
-        }
-      }
-      return ret;
-    }
-
-    bool contains(const ivec2 &pos) const {
-      return (grid.find(to_grid_pos(pos)) != grid.end());
-    }
-  };
+  // class uigridmapclass {
+  //  private:
+  //   struct cordinathash {
+  //     /* The hashing function to we use for the map. */
+  //     Ulong operator()(const ivec2 &coord) const {
+  //       Ulong hash_x = std::hash<int>()(coord.x);
+  //       Ulong hash_y = std::hash<int>()(coord.y);
+  //       return (hash_x ^ (hash_y * 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2)));
+  //     }
+  //   };
+  //   int cell_size;
+  //   std::unordered_map<ivec2, MVector<guielement *>, cordinathash> grid;
+  //   ivec2 to_grid_pos(const ivec2 &pos) const _NOTHROW {
+  //     return ivec2(pos / cell_size);
+  //   }
+  //  public:
+  //   uigridmapclass(int cell_size) : cell_size(cell_size) {};
+  //   /* Set all grids that an element encompuses. */
+  //   void set(guielement *e) {
+  //     /* If this element should never be in the gridmap, just exit. */
+  //     if (e->flag.is_set<GUIELEMENT_NOT_IN_GRIDMAP>()) {
+  //       return;
+  //     }
+  //     ivec2 start = to_grid_pos(e->pos);
+  //     ivec2 end   = to_grid_pos(e->pos + e->size);
+  //     for (int x=start.x; x<=end.x; ++x) {
+  //       for (int y=start.y; y<=end.y; ++y) {
+  //         grid[ivec2(x, y)].emplace_back(e);
+  //       }
+  //     }
+  //   }
+  //   /* Remove all entries for a given element, at all grids based on its size. */
+  //   void remove(guielement *e) {
+  //     /* If this element should never be in the gridmap, just exit. */
+  //     if (e->flag.is_set<GUIELEMENT_NOT_IN_GRIDMAP>()) {
+  //       return;
+  //     }
+  //     ivec2 start = to_grid_pos(e->pos);
+  //     ivec2 end   = to_grid_pos(e->pos + e->size);
+  //     for (int x = start.x; x <= end.x; ++x) {
+  //       for (int y = start.y; y <= end.y; ++y) {
+  //         ivec2 at_pos(x, y);
+  //         auto &vector = grid.at(at_pos);
+  //         for (Uint i = 0; i < vector.size(); ++i) {
+  //           if (vector[i] == e) {
+  //             vector.erase(&vector[i--]);
+  //           }
+  //         }
+  //         if (vector.empty()) {
+  //           grid.erase(at_pos);
+  //         }
+  //       }
+  //     }
+  //   }
+  //   guielement *get(const ivec2 &pos) const {
+  //     auto it = grid.find(to_grid_pos(pos));
+  //     if (it == grid.end()) {
+  //       return NULL;
+  //     }
+  //     guielement *ret = NULL;
+  //     for (Uint i = 0; i < it->second.size(); ++i) {
+  //       if (it->second[i]->flag.is_set<GUIELEMENT_HIDDEN>()) {
+  //         continue;
+  //       }
+  //       if (pos.x >= it->second[i]->pos.x && pos.x <= (it->second[i]->pos.x + it->second[i]->size.x)
+  //        && pos.y >= it->second[i]->pos.y && pos.y <= (it->second[i]->pos.y + it->second[i]->size.y)) {
+  //         if (ret && it->second[i]->flag.is_set<GUIELEMENT_ABOVE>()) {
+  //           ret = it->second[i];
+  //         }
+  //         else if (ret) {
+  //           ;
+  //         }
+  //         else  {
+  //           ret = it->second[i];
+  //         }
+  //       }
+  //     }
+  //     return ret;
+  //   }
+  //   bool contains(const ivec2 &pos) const {
+  //     return (grid.find(to_grid_pos(pos)) != grid.end());
+  //   }
+  // };
 
   class frametimerclass {
    private:
@@ -1127,39 +1116,30 @@ typedef struct completionstruct {
     }
   };
 
-  typedef struct guieditor {
-    bool should_close : 1;  /* This should be set to indecate that this editor should close. */
-
-    vertex_buffer_t *buffer;    /* The buffer that holds all this editors text data to be drawn. */
-    
-    openfilestruct  *openfile;  /* The currently open file. */
-    openfilestruct  *startfile; /* The first file in the circular list. */
-    
-    /* The `main` element of this `guieditor`, all other elements are children of this element.
-     * This means we just need to set up the children using relative positioning, making resizing,
-     * and other things related to the management alot simpler. */
-    guielement *main;
-    
-    guielement *gutter; /* The `gutter` element, this holds the line numbers. */
-    guielement *text;   /* The `text` element, this holds the editors text for the currently open file. */
-
-    /* The scrollbar for this editor. */
-    GuiScrollbar *sb;
-
-    EditorTb *etb;
-
-    Uint rows; /* How meny rows this `guieditor` can fit in its current size. */
-    Uint cols; /* How meny columns this guieditor's text element can fit in its current size. */
-    
-    /* Flags to keep track of the state of the `editor`. */
-    bit_flag_t<GUIEDITOR_FLAGSIZE> flag;
-    
-    guieditor *next; /* Pointer to the next editor in the circular linked list. */
-    guieditor *prev; /* Pointer to the previous editor in the circular linked list. */
-  } guieditor;
+  // typedef struct guieditor {
+  //   bool should_close : 1;  /* This should be set to indecate that this editor should close. */
+  //   vertex_buffer_t *buffer;    /* The buffer that holds all this editors text data to be drawn. */
+  //   openfilestruct  *openfile;  /* The currently open file. */
+  //   openfilestruct  *startfile; /* The first file in the circular list. */
+  //   /* The `main` element of this `guieditor`, all other elements are children of this element.
+  //    * This means we just need to set up the children using relative positioning, making resizing,
+  //    * and other things related to the management alot simpler. */
+  //   guielement *main;
+  //   guielement *gutter; /* The `gutter` element, this holds the line numbers. */
+  //   guielement *text;   /* The `text` element, this holds the editors text for the currently open file. */
+  //   /* The scrollbar for this editor. */
+  //   GuiScrollbar *sb;
+  //   EditorTb *etb;
+  //   Uint rows; /* How meny rows this `guieditor` can fit in its current size. */
+  //   Uint cols; /* How meny columns this guieditor's text element can fit in its current size. */
+  //   /* Flags to keep track of the state of the `editor`. */
+  //   bit_flag_t<GUIEDITOR_FLAGSIZE> flag;
+  //   guieditor *next; /* Pointer to the next editor in the circular linked list. */
+  //   guieditor *prev; /* Pointer to the previous editor in the circular linked list. */
+  // } guieditor;
 
   typedef struct {
-    guieditor **array;
+    // guieditor **array;
     Ulong len;
     Ulong cap;
   } guigridsection;
@@ -1171,8 +1151,8 @@ typedef struct completionstruct {
   } guigrid;
 
   typedef struct guiscreen {
-    guieditor *starteditor;  /* The first editor in the circular linked list. */
-    guieditor *openeditor;   /* The editor currently in focus. */
+    // guieditor *starteditor;  /* The first editor in the circular linked list. */
+    // guieditor *openeditor;   /* The editor currently in focus. */
     guigrid   *grid;         /* Visual representation of th */
     guiscreen *next;
     guiscreen *prev;
@@ -1183,7 +1163,7 @@ typedef struct completionstruct {
     bool size_refresh_needed : 1;
 
     vertex_buffer_t *buffer;
-    guielement      *element;
+    Element      *element;
 
     CVec *search_vec;
     CVec *completions;
@@ -1192,7 +1172,7 @@ typedef struct completionstruct {
     int maxrows;
     int rows;
 
-    GuiScrollbar *sb;
+    Scrollbar *sb;
 
     openfilestruct *closing_file;
   } GuiPromptMenu;
@@ -1209,12 +1189,12 @@ typedef struct completionstruct {
     guielement      *element;
   } GuiStatusbar; */
 
-  typedef struct {
-    Menu *menu;
-    /* The current string used to search, and its length. */
-    char  buf[128];
-    int   len;
-  } GuiSuggestMenu;
+  // typedef struct {
+  //   Menu *menu;
+  //   /* The current string used to search, and its length. */
+  //   char  buf[128];
+  //   int   len;
+  // } GuiSuggestMenu;
 
   typedef struct {
     char            *title;                  /* The window title. */
@@ -1223,13 +1203,12 @@ typedef struct completionstruct {
     GLFWwindow      *window;                 /* The glfw window. */
     bit_flag_t<8>    flag;                   /* Flags to track the state of the gui. */
     nevhandler      *handler;                /* Threaded event handler, to enqueue tasks to. */
-    guielement      *root;                   /* The main element of the gui. */
-    guielement      *botbar;                 /* The `bottom-bar` for the ui. */ 
-    guielement      *statusbar;              /* The `statusbar` for the ui. */
-    guielement      *entered;                /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
+    Element         *root;                   /* The main element of the gui. */
+    Element         *botbar;                 /* The `bottom-bar` for the ui. */ 
+    Element         *statusbar;              /* The `statusbar` for the ui. */
+    Element         *entered;                /* The element that was last entered and triggered an enter event, if any, can be `NULL`. */
 
-    guielement      *clicked;                /* The element that was last clicked. */
-    Element         *clicked_element;
+    Element *clicked;  /* The element that was last clicked. */
 
     vertex_buffer_t *botbuf;                 /* The text buffer for `botbar`. */
     vertex_buffer_t *statusbuf;              /* The text buffer for `statusbar`. */
@@ -1240,9 +1219,9 @@ typedef struct completionstruct {
     Uint             rect_shader;            /* The rect shader. */
     GuiPromptMenu   *promptmenu;
     int              current_cursor_type;    /* The currently active cursor type. */
-    GuiSuggestMenu  *suggestmenu;
+    SuggestMenu     *suggestmenu;
 
-    Menu *active_menu;
+    // Menu *active_menu;
 
     /* The context menu for the gui. */
     ContextMenu *context_menu;

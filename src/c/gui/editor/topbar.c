@@ -116,7 +116,7 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   /* Set the relative position to the main element of the topbar. */
   button->relative_x = (button->x - etb->element->x);
   /* When there is only a single file open or when at the last file, all borders should be uniform.  Otherwise, the it should not have a right border. */
-  element_set_borders(button, 1, ((CLIST_SINGLE(f) || f->next == etb->editor->startfile) ? 1 : 0), 1, 1, &etb_border_color);
+  element_set_borders(button, 1, 1, ((CLIST_SINGLE(f) || f->next == etb->editor->startfile) ? 1 : 0), 1, &etb_border_color);
   (*pos_x) += button->width;
 }
 

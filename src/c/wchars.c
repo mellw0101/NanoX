@@ -12,51 +12,51 @@
 static bool utf8_enabled = TRUE;
 
 
-// int ctowc(wchar *const wc, const char *const c) {
-//   /* Insure valid params. */
-//   ASSERT(wc);
-//   ASSERT(c);
-//   Uchar v0, v1, v2, v3;
-//   /* When utf8 is enabled. */
-//   if ((Schar)*c < 0 && utf8_enabled) {
-//     v0 = (Uchar)c[0];
-//     v1 = ((Uchar)c[1] ^ 0x80);
-//     if (v1 > 0x3F || v0 < 0xC2) {
-//       return -1;
-//     }
-//     else if (v0 < 0xE0) {
-//       *wc = (((Uint)(v0 & 0x1F) << 6) | (Uint)v1);
-//       return 2;
-//     }
-//     v2 = ((Uchar)c[2] ^ 0x80);
-//     if (v2 > 0x3F) {
-//       return -1;
-//     }
-//     else if (v0 < 0xF0) {
-//       if ((v0 > 0xE0 || v1 >= 0x20) && (v0 != 0xED || v1 < 0x20)) {
-//         *wc = (((Uint)(v0 & 0x0F) << 12) | ((Uint)v1 << 6) | (Uint)v2);
-//         return 3;
-//       }
-//       else {
-//         return -1;
-//       }
-//     }
-//     v3 = ((Uchar)c[3] ^ 0x80);
-//     if (v3 > 0x3f || v0 > 0xf4) {
-//       return -1;
-//     }
-//     else if ((v0 > 0xF0 || v1 >= 0x10) && (v0 != 0xF4 || v1 < 0x10)) {
-//       *wc = (((Uint)(v0 & 0x07) << 18) | ((Uint)v1 << 12) | ((Uint)v2 << 6) | (Uint)v3);
-//       return 4;
-//     }
-//     else {
-//       return -1;
-//     }
-//   }
-//   /* Otherwise, just return one. */
-//   *wc = (Uint)*c;
-//   return 1;
-// }
+int ctowc(wchar *const wc, const char *const c) {
+  /* Insure valid params. */
+  ASSERT(wc);
+  ASSERT(c);
+  Uchar v0, v1, v2, v3;
+  /* When utf8 is enabled. */
+  if ((Schar)*c < 0 && utf8_enabled) {
+    v0 = (Uchar)c[0];
+    v1 = ((Uchar)c[1] ^ 0x80);
+    if (v1 > 0x3F || v0 < 0xC2) {
+      return -1;
+    }
+    else if (v0 < 0xE0) {
+      *wc = (((Uint)(v0 & 0x1F) << 6) | (Uint)v1);
+      return 2;
+    }
+    v2 = ((Uchar)c[2] ^ 0x80);
+    if (v2 > 0x3F) {
+      return -1;
+    }
+    else if (v0 < 0xF0) {
+      if ((v0 > 0xE0 || v1 >= 0x20) && (v0 != 0xED || v1 < 0x20)) {
+        *wc = (((Uint)(v0 & 0x0F) << 12) | ((Uint)v1 << 6) | (Uint)v2);
+        return 3;
+      }
+      else {
+        return -1;
+      }
+    }
+    v3 = ((Uchar)c[3] ^ 0x80);
+    if (v3 > 0x3f || v0 > 0xf4) {
+      return -1;
+    }
+    else if ((v0 > 0xF0 || v1 >= 0x10) && (v0 != 0xF4 || v1 < 0x10)) {
+      *wc = (((Uint)(v0 & 0x07) << 18) | ((Uint)v1 << 12) | ((Uint)v2 << 6) | (Uint)v3);
+      return 4;
+    }
+    else {
+      return -1;
+    }
+  }
+  /* Otherwise, just return one. */
+  *wc = (Uint)*c;
+  return 1;
+}
 
 
 // /* Return's the number of bytes in the char that starts at `*c`. */

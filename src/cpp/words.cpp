@@ -100,7 +100,6 @@ line_word_t *line_word_list(const char *str, Ulong slen) {
 
 /* Get the words in a line.  New and improved version of line_word_list(), that also is mush safer. */
 line_word_t *get_line_words(const char *string, Ulong slen) {
-  PROFILE_FUNCTION;
   line_word_t *head = NULL; /* The head of the linked list of words. */
   line_word_t *tail = NULL; /* The tail of the linked list of words. */
   Ulong index    = 0; /* The start of the current word. */
@@ -115,7 +114,7 @@ line_word_t *get_line_words(const char *string, Ulong slen) {
       break;
     }
     word_end = get_current_word_end_index(string, index, TRUE);
-    line_word_t *node = (line_word_t *)nmalloc(sizeof(*node));
+    line_word_t *node = (line_word_t *)xmalloc(sizeof(*node));
     node->len   = (word_end - index);
     node->start = index;
     node->end   = word_end;

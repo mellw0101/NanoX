@@ -39,23 +39,6 @@ static Editor *editor_create_internal(void) {
   return editor;
 }
 
-static void editor_confirm_margin(Editor *const editor) {
-  ASSERT(editor);
-  bool keep_focus;
-  int needed_margin = (digits(editor->openfile->filebot->lineno) + 1);
-  if (!ISSET(LINE_NUMBERS)) {
-    needed_margin = 0;
-  }
-  if (needed_margin != editor->margin) {
-    keep_focus     = ((editor->margin > 0) && focusing);
-    editor->margin = needed_margin;
-    /* Ensure a proper starting column for the first screen row. */
-    ensure_firstcolumn_is_aligned_for(editor->openfile);
-    focusing = keep_focus;
-    refresh_needed = TRUE;
-  }
-}
-
 static float editor_get_gutter_width(Editor *const editor) {
   ASSERT(editor);
   char *linenostr;
@@ -161,6 +144,23 @@ void editor_free(Editor *const editor) {
   free(editor);
 }
 
+void editor_confirm_margin(Editor *const editor) {
+  ASSERT(editor);
+  bool keep_focus;
+  int needed_margin = (digits(editor->openfile->filebot->lineno) + 1);
+  if (!ISSET(LINE_NUMBERS)) {
+    needed_margin = 0;
+  }
+  if (needed_margin != editor->margin) {
+    keep_focus     = ((editor->margin > 0) && focusing);
+    editor->margin = needed_margin;
+    /* Ensure a proper starting column for the first screen row. */
+    ensure_firstcolumn_is_aligned_for(editor->openfile);
+    focusing = keep_focus;
+    refresh_needed = TRUE;
+  }
+}
+
 /* Calculate the row's and column's of a `editor` based on the size of it's text element. */
 void editor_set_rows_cols(Editor *const editor) {
   ASSERT(editor);
@@ -220,6 +220,7 @@ void editor_close(Editor *const editor) {
 
 void editor_resize(Editor *const editor) {
   ASSERT(editor);
+  editor_confirm_margin(editor);
   editor->gutter->width    = editor_get_gutter_width(editor);
   editor->text->relative_x = editor->gutter->width;
   if (!editor->gutter->width) {

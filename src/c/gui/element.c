@@ -117,17 +117,18 @@ static void element_children_relative_pos(Element *const e) {
 }
 
 static inline void element_draw_rect(Element *const e) {
-  static int c_loc = 0;
-  static int p_loc = 0;
-  static int s_loc = 0;
-  glUseProgram(element_rect_shader);
-  !c_loc ? (c_loc = glGetUniformLocation(element_rect_shader, "rectcolor")) : ((int)0);
-  !p_loc ? (p_loc = glGetUniformLocation(element_rect_shader, "elempos"))   : ((int)0);
-  !s_loc ? (s_loc = glGetUniformLocation(element_rect_shader, "elemsize"))  : ((int)0);
-  glUniform4fv(c_loc, 1, (void *)e->color);
-  glUniform2fv(p_loc, 1, (void *)STRUCT_FIELD_PTR(e, x));
-  glUniform2fv(s_loc, 1, (void *)STRUCT_FIELD_PTR(e, width));
-  glDrawArrays(GL_TRIANGLES, 0, 6);
+  // static int c_loc = 0;
+  // static int p_loc = 0;
+  // static int s_loc = 0;
+  // glUseProgram(element_rect_shader);
+  // !c_loc ? (c_loc = glGetUniformLocation(element_rect_shader, "rectcolor")) : ((int)0);
+  // !p_loc ? (p_loc = glGetUniformLocation(element_rect_shader, "elempos"))   : ((int)0);
+  // !s_loc ? (s_loc = glGetUniformLocation(element_rect_shader, "elemsize"))  : ((int)0);
+  // glUniform4fv(c_loc, 1, (void *)e->color);
+  // glUniform2fv(p_loc, 1, (void *)STRUCT_FIELD_PTR(e, x));
+  // glUniform2fv(s_loc, 1, (void *)STRUCT_FIELD_PTR(e, width));
+  // glDrawArrays(GL_TRIANGLES, 0, 6);
+  draw_rect_rgba(e->x, e->y, e->width, e->height, e->color->r, e->color->g, e->color->b, e->color->a);
 }
 
 

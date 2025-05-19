@@ -1609,6 +1609,10 @@ int main(int argc, char **argv) {
   /* If setting the locale is successful and it uses UTF-8, we will need to use the multibyte functions for text processing. */
   if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0) {
     utf8_init();
+    writef("Using utf8\n");
+  }
+  else {
+    writef("Not using utf8\n");
   }
   setlocale(LC_ALL, "");
   bindtextdomain(PACKAGE, LOCALEDIR);

@@ -418,7 +418,7 @@ void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *str
   while (*cur && cur < (string + len)) {
     font_add_glyph(f, buf, cur, prev, color, pen_x, pen_y);
     prev = cur;
-    cur += charlen(cur);
+    cur += char_length(cur);
   }
 }
 

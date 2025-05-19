@@ -285,42 +285,42 @@ void update_projection_uniform(Uint shader) {
 }
 
 /* Add a ui element`s lable to the vertex-buffer. */
-void vertex_buffer_add_element_lable(guielement *element, texture_font_t *font, vertex_buffer_t *buf) {
-  ASSERT(element);
-  ASSERT(font);
-  ASSERT(buf);
-  ASSERT(element->flag.is_set<GUIELEMENT_HAS_LABLE>());
-  ASSERT(element->lable);
-  vec2 pos(element->pos.x, (element->pos.y + FONT_HEIGHT(font) + font->descender));
-  vertex_buffer_add_string(buf, element->lable, element->lablelen, NULL, font, element->textcolor, &pos);
-}
+// void vertex_buffer_add_element_lable(guielement *element, texture_font_t *font, vertex_buffer_t *buf) {
+//   ASSERT(element);
+//   ASSERT(font);
+//   ASSERT(buf);
+//   ASSERT(element->flag.is_set<GUIELEMENT_HAS_LABLE>());
+//   ASSERT(element->lable);
+//   vec2 pos(element->pos.x, (element->pos.y + FONT_HEIGHT(font) + font->descender));
+//   vertex_buffer_add_string(buf, element->lable, element->lablelen, NULL, font, element->textcolor, &pos);
+// }
 
-/* Add a ui element`s lable to the vertex-buffer, offset by `offset`. */
-void vertex_buffer_add_element_lable_offset(guielement *element, texture_font_t *font, vertex_buffer_t *buf, vec2 offset) {
-  ASSERT(element);
-  ASSERT(font);
-  ASSERT(buf);
-  ASSERT(element->flag.is_set<GUIELEMENT_HAS_LABLE>());
-  ASSERT(element->lable);
-  vec2 pos(element->pos.x, (element->pos.y + FONT_HEIGHT(font) + font->descender));
-  pos += offset;
-  vertex_buffer_add_string(buf, element->lable, element->lablelen, NULL, font, element->textcolor, &pos);
-}
+// /* Add a ui element`s lable to the vertex-buffer, offset by `offset`. */
+// void vertex_buffer_add_element_lable_offset(guielement *element, texture_font_t *font, vertex_buffer_t *buf, vec2 offset) {
+//   ASSERT(element);
+//   ASSERT(font);
+//   ASSERT(buf);
+//   ASSERT(element->flag.is_set<GUIELEMENT_HAS_LABLE>());
+//   ASSERT(element->lable);
+//   vec2 pos(element->pos.x, (element->pos.y + FONT_HEIGHT(font) + font->descender));
+//   pos += offset;
+//   vertex_buffer_add_string(buf, element->lable, element->lablelen, NULL, font, element->textcolor, &pos);
+// }
 
-/* Returns 'TRUE' when 'ancestor' is an ancestor to e or is e itself. */
-bool is_ancestor(guielement *e, guielement *ancestor) {
-  if (!e || !ancestor) {
-    return FALSE;
-  }
-  guielement *element = e;
-  while (element) {
-    if (element == ancestor) {
-      return TRUE;
-    }
-    element = element->parent;
-  }
-  return FALSE;
-}
+// /* Returns 'TRUE' when 'ancestor' is an ancestor to e or is e itself. */
+// bool is_ancestor(guielement *e, guielement *ancestor) {
+//   if (!e || !ancestor) {
+//     return FALSE;
+//   }
+//   guielement *element = e;
+//   while (element) {
+//     if (element == ancestor) {
+//       return TRUE;
+//     }
+//     element = element->parent;
+//   }
+//   return FALSE;
+// }
 
 /* Return's a `vec4` of the values that a color index used for terminal use represents. */
 vec4 color_idx_to_vec4(int index) _NOTHROW {
@@ -380,41 +380,41 @@ vec4 color_idx_to_vec4(int index) _NOTHROW {
   3. From file end.
   Chooses shortest path to target line.
  */
-linestruct *gui_line_from_number(guieditor *editor, long number) {
-  ASSERT(editor);
-  ASSERT(editor->openfile->current);
-  ASSERT(editor->openfile->filetop);
-  ASSERT(editor->openfile->filebot);
-  /* Always assert that number is a valid number in the context of the open file. */
-  ALWAYS_ASSERT(number >= 0 && number <= editor->openfile->filebot->lineno);
-  /* Set the starting line to the cursor line of the currently active file in editor. */
-  linestruct *line = editor->openfile->current;
-  /* Get the distance from the start and end line as well as from the cursor. */
-  long dist_from_current = labs(line->lineno - number);
-  long dist_from_end     = (editor->openfile->filebot->lineno - number);
-  /* Start from the closest line to number. */
-  if (number < dist_from_current && number < dist_from_end) {
-    line = editor->openfile->filetop;
-  }
-  else if (dist_from_end < dist_from_current) {
-    line = editor->openfile->filebot;
-  }
-  /* Move the line ptr to the correct line. */
-  while (line->lineno > number) {
-    line = line->prev;
-  }
-  while (line->lineno < number) {
-    line = line->next;
-  }
-  return line;
-}
+// linestruct *gui_line_from_number(guieditor *editor, long number) {
+//   ASSERT(editor);
+//   ASSERT(editor->openfile->current);
+//   ASSERT(editor->openfile->filetop);
+//   ASSERT(editor->openfile->filebot);
+//   /* Always assert that number is a valid number in the context of the open file. */
+//   ALWAYS_ASSERT(number >= 0 && number <= editor->openfile->filebot->lineno);
+//   /* Set the starting line to the cursor line of the currently active file in editor. */
+//   linestruct *line = editor->openfile->current;
+//   /* Get the distance from the start and end line as well as from the cursor. */
+//   long dist_from_current = labs(line->lineno - number);
+//   long dist_from_end     = (editor->openfile->filebot->lineno - number);
+//   /* Start from the closest line to number. */
+//   if (number < dist_from_current && number < dist_from_end) {
+//     line = editor->openfile->filetop;
+//   }
+//   else if (dist_from_end < dist_from_current) {
+//     line = editor->openfile->filebot;
+//   }
+//   /* Move the line ptr to the correct line. */
+//   while (line->lineno > number) {
+//     line = line->prev;
+//   }
+//   while (line->lineno < number) {
+//     line = line->next;
+//   }
+//   return line;
+// }
 
 /* Get the line number coresponding to the relative `ypos` in `editor` text element. */
-long get_lineno_from_scrollbar_position(guieditor *editor, float ypos) {
-  ASSERT(editor);
-  ASSERT(editor->openfile->filebot);
-  ASSERT(editor->text);
-  return index_from_scrollbar_pos(editor->text->size.h, editor->openfile->filetop->lineno, editor->openfile->filebot->lineno, editor->rows, ypos);
-}
+// long get_lineno_from_scrollbar_position(guieditor *editor, float ypos) {
+//   ASSERT(editor);
+//   ASSERT(editor->openfile->filebot);
+//   ASSERT(editor->text);
+//   return index_from_scrollbar_pos(editor->text->size.h, editor->openfile->filetop->lineno, editor->openfile->filebot->lineno, editor->rows, ypos);
+// }
 
 #endif

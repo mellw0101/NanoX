@@ -208,7 +208,9 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
     syntaxfile_adderror(sf, line->lineno, (data - line->data), "Macro must have a name");
   }
   else {
+    writef("data:%s\n", data);
     endidx = wordendindex(data, 0, TRUE);
+    writef("endidx: %lu\n", endidx);
     /* The macro's name is invalid. */
     if (!endidx) {
       syntaxfile_adderror(sf, line->lineno, (data - line->data), "Macro name is invalid");
@@ -223,6 +225,7 @@ static void csyntaxmacro_parse(SyntaxFile *const sf, SyntaxFileLine **const outl
       /* Allocate the name, so we can add it to the object map. */
       ptr = measured_copy(data, endidx);
       syntaxfile_addobject(sf, ptr, obj);
+      writef("name: %s\n", ptr);
       free(ptr);
       /* Adv data ptr. */
       data += endidx;

@@ -361,21 +361,21 @@ bool open_buffer(const char *filename, bool new_one) {
     find_and_prime_applicable_syntax();
     syntax_check_file(openfile);
     // if (openfile->type.is_set<C_CPP>() || openfile->type.is_set<BASH>()) {
-    if (openfile->is_c_file || openfile->is_cxx_file || openfile->is_bash_file) {
-      /* Add a new file listener, so we can reindex when the file is saved. */
-      file_listener_t *listener = file_listener.add_listener(openfile->filename);
-      /* Pass the ptr to the filename. */
-      listener->set_event_callback(IN_CLOSE_WRITE, openfile->filename, [](void *arg) {
-        char *filename = (char *)arg;
-        /* When the event is detected, enqueue a callback to the main thread to reindex and pass the filename ptr. */
-        enqueue_callback([](void *arg) {
-          char *filename = (char *)arg;
-          LSP->index_file(filename, TRUE);
-        }, filename);
-      });
-      listener->start_listening();
-      LSP->index_file(openfile->filename);
-    }
+    // if (openfile->is_c_file || openfile->is_cxx_file || openfile->is_bash_file) {
+    //   /* Add a new file listener, so we can reindex when the file is saved. */
+    //   file_listener_t *listener = file_listener.add_listener(openfile->filename);
+    //   /* Pass the ptr to the filename. */
+    //   listener->set_event_callback(IN_CLOSE_WRITE, openfile->filename, [](void *arg) {
+    //     char *filename = (char *)arg;
+    //     /* When the event is detected, enqueue a callback to the main thread to reindex and pass the filename ptr. */
+    //     enqueue_callback([](void *arg) {
+    //       char *filename = (char *)arg;
+    //       LSP->index_file(filename, TRUE);
+    //     }, filename);
+    //   });
+    //   listener->start_listening();
+    //   LSP->index_file(openfile->filename);
+    // }
   }
   free(realname);
   return TRUE;
