@@ -19,7 +19,7 @@ bool mute_modifiers = FALSE;
 /* Whether text is being pasted into nano from outside. */
 bool bracketed_paste = FALSE;
 /* Becomes TRUE as soon as all options and files have been read. */
-bool we_are_running = FALSE;
+// bool we_are_running = FALSE;
 /* Whether more than one buffer is or has been open. */
 // bool more_than_one = FALSE;
 /* Whether to show the number of lines when the minibar is used. */
@@ -41,7 +41,7 @@ bool suggest_on = FALSE;
 /* Whether Ctrl+C was pressed (when a keyboard interrupt is enabled). */
 bool control_C_was_pressed = FALSE;
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
-message_type lastmessage = VACUUM;
+// message_type lastmessage = VACUUM;
 /* The line where the last completion was found, if any. */
 linestruct *pletion_line = NULL;
 /* Whether indenting/commenting should include the last line of the marked region. */
@@ -75,13 +75,13 @@ long fill = -COLUMNS_FROM_EOL;
 /* The actual column where we will wrap lines, based on fill. */
 Ulong wrap_at = 0;
 /* The top portion of the screen, showing the version number of nano, the name of the file, and whether the buffer was modified. */
-WINDOW *topwin = NULL;
+// WINDOW *topwin = NULL;
 nwindow *tui_topwin = NULL;
 /* The middle portion of the screen: the edit window, showing the contents of the current buffer, the file we are editing. */
-WINDOW *midwin = NULL;
+// WINDOW *midwin = NULL;
 nwindow *tui_midwin = NULL;
 /* The bottom portion of the screen, where status-bar messages, the status-bar prompt, and a list of shortcuts are shown. */
-WINDOW *footwin = NULL;
+// WINDOW *footwin = NULL;
 nwindow *tui_footwin = NULL;
 /* Test window for sugestions. */
 WINDOW *suggestwin = NULL;
@@ -178,7 +178,7 @@ int hilite_attribute = A_REVERSE;
 /* The color combinations for interface elements given in the rcfile. */
 colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
 /* The processed color pairs for the interface elements. */
-int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
+// int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 /* The user's home directory, from $HOME or /etc/passwd. */
 char *homedir = NULL;
 /* The directory for nano's history files. */

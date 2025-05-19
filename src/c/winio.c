@@ -15,7 +15,10 @@ Ulong till_x = 0;
 static bool has_more = FALSE;
 /* Whether a row's text is narrower than the screen's width. */
 bool is_shorter = TRUE;
-
+/* The number of key codes waiting in the keystroke buffer. */
+Ulong waiting_codes = 0;
+/* The number of keystrokes left before we blank the status bar. */
+int countdown = 0;
 
 bool get_has_more(void) {
   return has_more;
@@ -305,4 +308,104 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   from_x = start_x;
   till_x = (text - origin);
   return converted;
+}
+
+/* ----------------------------- Curses ----------------------------- */
+
+void blank_row_curses(WINDOW *const window, int row) {
+  ASSERT(window);
+  ASSERT(row >= 0);
+  wmove(window, row, 0);
+  wclrtoeol(window);
+}
+
+void blank_statusbar_curses(void) {
+  blank_row_curses(footwin, 0);
+}
+
+void statusline_curses(message_type type, const char *const restrict msg, ...) {
+  static Ulong start_col = 0;
+  bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
+  char *compound;
+  char *message;
+  bool bracketed;
+  int color;
+  va_list ap;
+  if (type >= AHEM) {
+    waiting_codes = 0;
+  }
+  if (type < lastmessage && lastmessage > NOTICE) {
+    return;
+  }
+  /* Construct the message from the arguments. */
+  compound = xmalloc(MAXCHARLEN * COLS + 1);
+  va_start(ap, msg);
+  vsnprintf(compound, (MAXCHARLEN * COLS + 1), msg, ap);
+  va_end(ap);
+  if (isendwin()) {
+    writeferr("%s\n", compound);
+    free(compound);
+  }
+  else {
+    if (!we_are_running && type == ALERT && openfile && !openfile->fmt && !openfile->errormessage && !CLIST_SINGLE(openfile)) {
+      openfile->errormessage = copy_of(compound);
+    }
+    /* On a one row terminal, ensure any changes in the edit window are written first, to prevent them from overwriting the message. */
+    if (LINES == 1 && type < INFO) {
+      wnoutrefresh(midwin);
+    }
+    /* If there are multiple alert messages, add trailng dot's first. */
+    if (lastmessage == ALERT) {
+      if (start_col > 4) {
+        wmove(footwin, 0, (COLS + 2 - start_col));
+        wattron(footwin, interface_color_pair[ERROR_MESSAGE]);
+        waddnstr(footwin, S__LEN("..."));
+        wattroff(footwin, interface_color_pair[ERROR_MESSAGE]);
+        wnoutrefresh(footwin);
+        start_col = 0;
+        napms(100);
+        beep();
+      }
+      free(compound);
+      return;
+    }
+    else if (type > NOTICE) {
+      if (type == ALERT) {
+        beep();
+      }
+      color = ERROR_MESSAGE;
+    }
+    else if (type == NOTICE) {
+      color = SELECTED_TEXT;
+    }
+    else {
+      color = STATUS_BAR;
+    }
+    lastmessage = type;
+    blank_statusbar_curses();
+    UNSET(WHITESPACE_DISPLAY);
+    message = display_string(compound, 0, COLS, FALSE, FALSE);
+    if (showed_whitespace) {
+      SET(WHITESPACE_DISPLAY);
+    }
+    start_col = ((COLS - breadth(message)) / 2);
+    bracketed = (start_col > 1);
+    wmove(footwin, 0, (bracketed ? (start_col - 2) : start_col));
+    wattron(footwin, interface_color_pair[color]);
+    if (bracketed) {
+      waddnstr(footwin, S__LEN("[ "));
+      waddstr(footwin, message);
+      waddnstr(footwin, S__LEN(" ]"));
+    }
+    else {
+      waddstr(footwin, message);
+    }
+    wattroff(footwin, interface_color_pair[color]);
+    /* Tell `footwin` to refresh. */
+    wrefresh(footwin);
+    free(compound);
+    free(message);
+    /* When requested, wipe the statusbar after just one keystroke, otherwise wipe after 20. */
+    countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
+  }
 }

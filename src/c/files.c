@@ -6,6 +6,17 @@
  */
 #include "../include/c_proto.h"
 
+
+/* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
+
+
+#define LOCKSIZE    (1024)
+#define RW_FOR_ALL  (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
+
+
+/* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
+
+
 /* Add an item to the circular list of openfile structs. */
 void make_new_buffer(void) {
   openfilestruct *newnode;
@@ -50,6 +61,117 @@ void make_new_buffer(void) {
   openfile->syntax        = NULL;
 }
 
+/* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
+bool delete_lockfile(const char *const restrict lockfilename) {
+  if (unlink(lockfilename) < 0 && errno != ENOENT) {
+    print_status(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/* Write a lock file, under the given lockfilename.  This always annihilates an existing version of that file.  Return TRUE on success; FALSE otherwise. */
+bool write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified) {
+  ASSERT(lockfilename);
+  ASSERT(filename);
+  int  pid = getpid();
+  Uint uid = getuid();
+  struct passwd *pwuid = getpwuid(uid);
+  char hostname[32];
+  int fd;
+  char *lockdata;
+  long len;
+  long written = 0;
+  /* We failed to get the current user data. */
+  if (!pwuid) {
+    if (ISSET(USING_GUI)) {
+      statusbar_msg(MILD, _("Couldn't determine user for lock file"));
+    }
+    else if (!ISSET(NO_NCURSES)) {
+      statusline_curses(MILD, _("Couldn't determine user for lock file"));
+    }
+    return FALSE;
+  }
+  else if (gethostname(hostname, 31) < 0 && errno != ENAMETOOLONG) {
+    if (ISSET(USING_GUI)) {
+      statusbar_msg(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
+    }
+    else if (!ISSET(NO_NCURSES)) {
+      statusline_curses(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
+    }
+    return FALSE;
+  }
+  else {
+    hostname[31] = '\0';
+  }
+  /* First make sure to remove an existing lock file. */
+  if (!delete_lockfile(lockfilename)) {
+    return FALSE;
+  }
+  /* Open the lockfile file-descriptor. */
+  if ((fd = open(lockfilename, (O_WRONLY | O_CREAT | O_EXCL), RW_FOR_ALL)) == -1) {
+    if (ISSET(USING_GUI)) {
+      statusbar_msg(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
+    }
+    else if (!ISSET(NO_NCURSES)) {
+      statusline_curses(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
+    }
+    return FALSE;
+  }
+  /* Create the lock data we will write. */
+  lockdata = xmalloc(LOCKSIZE);
+  /* And fully clear it. */
+  memset(lockdata, 0, LOCKSIZE);
+  /*
+   * This is the lock data we will store (other bytes remain 0x00):
+   *
+   *     bytes 0-1     - 0x62 0x30
+   *     bytes 2-11    - name of program that created the lock
+   *     bytes 24-27   - PID (little endian) of creator process
+   *     bytes 28-43   - username of the user who created the lock
+   *     bytes 68-99   - hostname of machine from where the lock was created
+   *     bytes 108-876 - filename that the lock is for
+   *     byte 1007     - 0x55 if file is modified
+   *
+   * Nano does not write the page size (bytes 12-15), nor the modification
+   * time (bytes 16-19), nor the inode of the relevant file (bytes 20-23).
+   * Nano also does not use all available space for user name (40 bytes),
+   * host name (40 bytes), and file name (890 bytes).  Nor does nano write
+   * some byte-order-checking numbers (bytes 1008-1022).
+  */
+  lockdata[0] = 0x62;
+  lockdata[1] = 0x30;
+  /* It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway. */
+  snprintf(&lockdata[2], 11, "nanox %s", VERSION);
+  lockdata[24] = (pid % 256);
+  lockdata[25] = ((pid / 256) % 256);
+  lockdata[26] = ((pid / (256 * 256)) % 256);
+  lockdata[27] = (pid / (256 * 256 * 256));
+  strncpy(&lockdata[28], pwuid->pw_name, 16);
+  strncpy(&lockdata[68], hostname, 32);
+  strncpy(&lockdata[108], filename, 768);
+  lockdata[1007] = (modified ? 0x55 : 0x00);
+  /* Write to the file-descriptor while we hold a write-lock for it.  */
+  fdlock_action(fd, F_WRLCK,
+    /* Write until  */
+    while ((len = write(fd, (lockdata + written), (LOCKSIZE - written))) > 0) {
+      written += len;
+    }
+  );
+  free(lockdata);
+  close(fd);
+  if (len == -1 || written < LOCKSIZE) {
+    if (ISSET(USING_GUI)) {
+      statusbar_msg(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
+    }
+    else if (!ISSET(NO_NCURSES)) {
+      statusline_curses(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
+    }
+    return FALSE;
+  }
+  return TRUE;
+}
+
 void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) {
   /* If the buffer to free is the start buffer, advance the start buffer. */
   if (orphan == *start) {
@@ -68,7 +190,7 @@ void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestru
   free(orphan->errormessage);
   /* If the buffer to free is the open buffer, decrament it once. */
   if (orphan == *open) {
-    *open = (*open)->prev;
+    CLIST_ADV_PREV(*open);
     /* If the buffer to free was the singular and only buffer in the list, set open and start to NULL. */
     if (orphan == *open) {
       *open  = NULL;
@@ -89,9 +211,6 @@ void close_buffer(void) {
     startfile = startfile->next;
   }
   CLIST_UNLINK(orphan);
-  // if (/* orphan->type.is_set<C_CPP>() || orphan->type.is_set<BASH>() */ orphan->is_c_file || orphan->is_cxx_file || orphan->is_bash_file) {
-  //   file_listener.stop_listener(orphan->filename);
-  // }
   free(orphan->filename);
   free_lines(orphan->filetop);
   free(orphan->statinfo);

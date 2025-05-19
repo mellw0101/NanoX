@@ -9,14 +9,24 @@
 
 /* The width of a tab in spaces.  The default is set in main(). */
 long tabsize = -1;
+
+/* The top portion of the screen, showing the version number of nano, the name of the file, and whether the buffer was modified. */
+WINDOW *topwin = NULL;
+/* The middle portion of the screen: the edit window, showing the contents of the current buffer, the file we are editing. */
+WINDOW *midwin = NULL;
+/* The bottom portion of the screen, where status-bar messages, the status-bar prompt, and a list of shortcuts are shown. */
+WINDOW *footwin = NULL;
+
 /* The list of all open file buffers. */
 openfilestruct *openfile = NULL;
 /* The first open buffer. */
 openfilestruct *startfile = NULL;
+
 /* The ui font the gui uses. */
 Font *uifont = NULL;
 /* The text font the gui uses. */
 Font *textfont = NULL;
+
 /* The mouse x position, this is used for the gui. */
 float mouse_x = 0;
 /* The mouse y position, this is used for the gui. */
@@ -25,10 +35,12 @@ float mouse_y = 0;
 float gui_width = 0;
 /* The current height of the gui. */
 float gui_height = 0;
+
 /* The list of all open editor's */
 Editor *openeditor = NULL;
 /* The first open editor. */
 Editor *starteditor = NULL;
+
 /* The start of the functions list. */
 funcstruct *allfuncs = NULL;
 /* The last function in the list. */
@@ -50,6 +62,8 @@ bool refresh_needed = FALSE;
 bool shift_held;
 /* Whether we're running on a Linux console (a VT). */
 bool on_a_vt = FALSE;
+/* Becomes TRUE as soon as all options and files have been read. */
+bool we_are_running = FALSE;
 
 /* These two tags are used elsewhere too, so they are global.
  * TRANSLATORS: Try to keep the next two strings at most 10 characters. */
@@ -79,3 +93,9 @@ int whitelen[2];
 Ulong flags[1] = {0};
 
 GLFWwindow *gui_window = NULL;
+
+/* Messages of type HUSH should not overwrite type MILD nor ALERT. */
+message_type lastmessage = VACUUM;
+
+/* The processed color pairs for the interface elements. */
+int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};

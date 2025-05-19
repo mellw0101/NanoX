@@ -15,7 +15,7 @@ static int *nextcodes = NULL;
 /* The size of the keystroke buffer; gets doubled whenever needed. */
 static Ulong capacity = 32;
 /* The number of key codes waiting in the keystroke buffer. */
-static Ulong waiting_codes = 0;
+// static Ulong waiting_codes = 0;
 /* Points into the expansion string for the current implantation. */
 static const char *plants_pointer = NULL;
 /* How many digits of a three-digit character code we've eaten. */
@@ -25,7 +25,7 @@ static bool reveal_cursor = FALSE;
 /* Whether to give ncurses some time to get the next code. */
 static bool linger_after_escape = FALSE;
 /* The number of keystrokes left before we blank the status bar. */
-static int countdown = 0;
+// static int countdown = 0;
 /* From where in the relevant line the current row is drawn. */
 // Ulong from_x = 0;
 /* Until where in the relevant line the current row is drawn. */

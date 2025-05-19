@@ -66,20 +66,20 @@ static char *crop_to_fit(const char *name, Ulong room) _NOTHROW {
 }
 
 /* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
-bool delete_lockfile(const char *lockfilename) {
-  if (unlink(lockfilename) < 0 && errno != ENOENT) {
-    /* Show the status message using the cli statusline. */
-    if (!ISSET(USING_GUI)) {
-      statusline(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
-    }
-    /* Show the status message using the gui status line. */
-    else {
-      show_statusmsg(MILD, 2, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
-    }
-    return FALSE;
-  }
-  return TRUE;
-}
+// bool delete_lockfile(const char *lockfilename) {
+//   if (unlink(lockfilename) < 0 && errno != ENOENT) {
+//     /* Show the status message using the cli statusline. */
+//     if (!ISSET(USING_GUI)) {
+//       statusline(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
+//     }
+//     /* Show the status message using the gui status line. */
+//     else {
+//       show_statusmsg(MILD, 2, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
+//     }
+//     return FALSE;
+//   }
+//   return TRUE;
+// }
 
 #define LOCKSIZE 1024
 #define SKIPTHISFILE ((char *)-1)
@@ -88,86 +88,86 @@ bool delete_lockfile(const char *lockfilename) {
 #define locking_suffix ".swp"
 
 /* Write a lock file, under the given lockfilename.  This always annihilates an existing version of that file.  Return TRUE on success; FALSE otherwise. */
-static bool write_lockfile(const char *lockfilename, const char *filename, bool modified) _NOTHROW {
-  int     mypid   = getpid();
-  uid_t   myuid   = geteuid();
-  passwd *mypwuid = getpwuid(myuid);
-  char    myhostname[32];
-  int     fd;
-  FILE   *filestream = NULL;
-  char   *lockdata;
-  Ulong   wroteamt;
-  if (!mypwuid) {
-    /* TRANSLATORS: Keep the next seven messages at most 76 characters. */
-    statusline(MILD, _("Couldn't determine my identity for lock file"));
-    return FALSE;
-  }
-  if (gethostname(myhostname, 31) < 0 && errno != ENAMETOOLONG) {
-    statusline(MILD, _("Couldn't determine hostname: %s"), strerror(errno));
-    return FALSE;
-  }
-  else {
-    myhostname[31] = '\0';
-  }
-  /* First make sure to remove an existing lock file. */
-  if (!delete_lockfile(lockfilename)) {
-    return FALSE;
-  }
-  /* Create the lock file -- do not accept an existing one. */
-  if ((fd = open(lockfilename, O_WRONLY | O_CREAT | O_EXCL, RW_FOR_ALL)) > 0) {
-    filestream = fdopen(fd, "wb");
-  }
-  if (!filestream) {
-    statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
-    if (fd > 0) {
-      close(fd);
-    }
-    return FALSE;
-  }
-  lockdata = (char *)xmalloc(LOCKSIZE);
-  memset(lockdata, 0, LOCKSIZE);
-  /* This is the lock data we will store (other bytes remain 0x00):
-   *
-   *     bytes 0-1     - 0x62 0x30
-   *     bytes 2-11    - name of program that created the lock
-   *     bytes 24-27   - PID (little endian) of creator process
-   *     bytes 28-43   - username of the user who created the lock
-   *     bytes 68-99   - hostname of machine from where the lock was created
-   *     bytes 108-876 - filename that the lock is for
-   *     byte 1007     - 0x55 if file is modified
-   *
-   * Nano does not write the page size (bytes 12-15), nor the modification
-   * time (bytes 16-19), nor the inode of the relevant file (bytes 20-23).
-   * Nano also does not use all available space for user name (40 bytes),
-   * host name (40 bytes), and file name (890 bytes).  Nor does nano write
-   * some byte-order-checking numbers (bytes 1008-1022). */
-  lockdata[0] = 0x62;
-  lockdata[1] = 0x30;
-  /* It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway. */
-  snprintf(&lockdata[2], 11, "nano %s", VERSION);
-  lockdata[24] = (mypid % 256);
-  lockdata[25] = ((mypid / 256) % 256);
-  lockdata[26] = ((mypid / (256 * 256)) % 256);
-  lockdata[27] = (mypid / (256 * 256 * 256));
-  strncpy(&lockdata[28], mypwuid->pw_name, 16);
-  strncpy(&lockdata[68], myhostname, 32);
-  strncpy(&lockdata[108], filename, 768);
-  lockdata[1007] = (modified) ? 0x55 : 0x00;
-  wroteamt = fwrite(lockdata, 1, LOCKSIZE, filestream);
-  free(lockdata);
-  if (fclose(filestream) == EOF || wroteamt < LOCKSIZE) {
-    statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
-    return FALSE;
-  }
-  return TRUE;
-}
+// static bool write_lockfile(const char *lockfilename, const char *filename, bool modified) _NOTHROW {
+//   int     mypid   = getpid();
+//   uid_t   myuid   = geteuid();
+//   passwd *mypwuid = getpwuid(myuid);
+//   char    myhostname[32];
+//   int     fd;
+//   FILE   *filestream = NULL;
+//   char   *lockdata;
+//   Ulong   wroteamt;
+//   if (!mypwuid) {
+//     /* TRANSLATORS: Keep the next seven messages at most 76 characters. */
+//     statusline(MILD, _("Couldn't determine my identity for lock file"));
+//     return FALSE;
+//   }
+//   if (gethostname(myhostname, 31) < 0 && errno != ENAMETOOLONG) {
+//     statusline(MILD, _("Couldn't determine hostname: %s"), strerror(errno));
+//     return FALSE;
+//   }
+//   else {
+//     myhostname[31] = '\0';
+//   }
+//   /* First make sure to remove an existing lock file. */
+//   if (!delete_lockfile(lockfilename)) {
+//     return FALSE;
+//   }
+//   /* Create the lock file -- do not accept an existing one. */
+//   if ((fd = open(lockfilename, O_WRONLY | O_CREAT | O_EXCL, RW_FOR_ALL)) > 0) {
+//     filestream = fdopen(fd, "wb");
+//   }
+//   if (!filestream) {
+//     statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
+//     if (fd > 0) {
+//       close(fd);
+//     }
+//     return FALSE;
+//   }
+//   lockdata = (char *)xmalloc(LOCKSIZE);
+//   memset(lockdata, 0, LOCKSIZE);
+//   /* This is the lock data we will store (other bytes remain 0x00):
+//    *
+//    *     bytes 0-1     - 0x62 0x30
+//    *     bytes 2-11    - name of program that created the lock
+//    *     bytes 24-27   - PID (little endian) of creator process
+//    *     bytes 28-43   - username of the user who created the lock
+//    *     bytes 68-99   - hostname of machine from where the lock was created
+//    *     bytes 108-876 - filename that the lock is for
+//    *     byte 1007     - 0x55 if file is modified
+//    *
+//    * Nano does not write the page size (bytes 12-15), nor the modification
+//    * time (bytes 16-19), nor the inode of the relevant file (bytes 20-23).
+//    * Nano also does not use all available space for user name (40 bytes),
+//    * host name (40 bytes), and file name (890 bytes).  Nor does nano write
+//    * some byte-order-checking numbers (bytes 1008-1022). */
+//   lockdata[0] = 0x62;
+//   lockdata[1] = 0x30;
+//   /* It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway. */
+//   snprintf(&lockdata[2], 11, "nano %s", VERSION);
+//   lockdata[24] = (mypid % 256);
+//   lockdata[25] = ((mypid / 256) % 256);
+//   lockdata[26] = ((mypid / (256 * 256)) % 256);
+//   lockdata[27] = (mypid / (256 * 256 * 256));
+//   strncpy(&lockdata[28], mypwuid->pw_name, 16);
+//   strncpy(&lockdata[68], myhostname, 32);
+//   strncpy(&lockdata[108], filename, 768);
+//   lockdata[1007] = (modified) ? 0x55 : 0x00;
+//   wroteamt = fwrite(lockdata, 1, LOCKSIZE, filestream);
+//   free(lockdata);
+//   if (fclose(filestream) == EOF || wroteamt < LOCKSIZE) {
+//     statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
+//     return FALSE;
+//   }
+//   return TRUE;
+// }
 
 /* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask whether to open the corresponding file
  * anyway.  Return SKIPTHISFILE when the user answers "No", return the name of the lock file on success, and return NULL on failure. */
 static char *do_lockfile(const char *filename, bool ask_the_user) {
   char *namecopy     = copy_of(filename);
   char *secondcopy   = copy_of(filename);
-  Ulong locknamesize = (strlen(filename) + STRLTRLEN(locking_prefix) + STRLTRLEN(locking_suffix) + 3);
+  Ulong locknamesize = (strlen(filename) + STRLEN(locking_prefix) + STRLEN(locking_suffix) + 3);
   char *lockfilename = (char *)nmalloc(locknamesize);
   struct stat fileinfo;
   snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy), locking_suffix);

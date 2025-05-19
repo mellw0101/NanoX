@@ -13,6 +13,7 @@
 // #include "c/nassert.h"
 
 /* stdlib */
+#include <pwd.h>
 #include <signal.h>
 #include <ctype.h>
 #include <regex.h>
@@ -240,6 +241,10 @@ typedef struct EditorTb   EditorTb;
 /* ----------------------------- gui/suggestmenu.c ----------------------------- */
 
 typedef struct SuggestMenu  SuggestMenu;
+
+/* ----------------------------- gui/statusbar.c ----------------------------- */
+
+typedef struct Statusbar  Statusbar;
 
 
 /* ---------------------------------------------------------- Enum's ---------------------------------------------------------- */
@@ -529,6 +534,34 @@ typedef enum {
   NO_NCURSES,
   #define NO_NCURSES NO_NCURSES
 } flag_type;
+
+typedef enum {
+  TITLE_BAR = 0,
+  LINE_NUMBER,
+  GUIDE_STRIPE,
+  SCROLL_BAR,
+  SELECTED_TEXT,
+  SPOTLIGHTED,
+  MINI_INFOBAR,
+  PROMPT_BAR,
+  STATUS_BAR,
+  ERROR_MESSAGE,
+  KEY_COMBO,
+  FUNCTION_TAG,
+  /* Identifiers for color options. */
+# define TITLE_BAR      TITLE_BAR
+# define LINE_NUMBER    LINE_NUMBER
+# define GUIDE_STRIPE   GUIDE_STRIPE
+# define SCROLL_BAR     SCROLL_BAR
+# define SELECTED_TEXT  SELECTED_TEXT
+# define SPOTLIGHTED    SPOTLIGHTED
+# define MINI_INFOBAR   MINI_INFOBAR
+# define PROMPT_BAR     PROMPT_BAR
+# define STATUS_BAR     STATUS_BAR
+# define ERROR_MESSAGE  ERROR_MESSAGE
+# define KEY_COMBO      KEY_COMBO
+# define FUNCTION_TAG   FUNCTION_TAG
+} color_option;
 
 /* ----------------------------- synx.c ----------------------------- */
 
@@ -986,4 +1019,19 @@ struct SuggestMenu {
   /* The current string used to search, and its length. */
   char  buf[128];
   int   len;
+};
+
+/* ----------------------------- gui/statusbar.c ----------------------------- */
+
+struct Statusbar {
+  /* Boolian flags. */
+  bool text_refresh_needed : 1;
+
+  char *msg;
+  float time;
+  message_type type;
+
+  vertex_buffer_t *buffer;
+
+  Element *element;
 };

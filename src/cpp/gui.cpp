@@ -288,6 +288,7 @@ static void delete_guistruct(void) {
 static void cleanup(void) { 
   // gui_editor_free(openeditor);
   editor_free(openeditor);
+  statusbar_free();
   delete_guistruct();
   element_grid_free();
 }
@@ -330,6 +331,7 @@ void init_gui(void) {
   setup_botbar();
   /* Init the bottom bar, that will be used for status updates, among other thing. */
   setup_statusbar();
+  statusbar_init(gui->root);
   /* Init the edit element. */
   setup_edit_element();
   /* Set some callbacks. */
@@ -370,7 +372,6 @@ void glfw_loop(void) {
       editor_confirm_margin(editor);
       draw_editor(editor);
     );
-    writef("hello\n");
     /* Draw the suggestmenu. */
     draw_suggestmenu();
     /* Draw the top menu bar. */
@@ -379,6 +380,7 @@ void glfw_loop(void) {
     draw_botbar();
     /* Draw the status bar, if there is any status messages. */
     draw_statusbar();
+    statusbar_draw(frametimer.fps);
     context_menu_draw(gui->context_menu);
     /* If refresh was needed it has been done so set it to FALSE. */
     refresh_needed = FALSE;

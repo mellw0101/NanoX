@@ -13,9 +13,9 @@
 
 extern volatile sig_atomic_t the_window_resized;
 
-extern WINDOW *topwin;
-extern WINDOW *midwin;
-extern WINDOW *footwin;
+// extern WINDOW *topwin;
+// extern WINDOW *midwin;
+// extern WINDOW *footwin;
 extern WINDOW *suggestwin;
 
 extern nwindow *tui_topwin;
@@ -27,7 +27,7 @@ extern syntaxtype *syntaxes;
 // extern openfilestruct *openfile;
 // extern openfilestruct *startfile;
 
-extern message_type lastmessage;
+// extern message_type lastmessage;
 
 extern linestruct *search_history;
 extern linestruct *replace_history;
@@ -106,7 +106,7 @@ extern bool meta_key;
 extern bool keep_mark;
 extern bool mute_modifiers;
 extern bool bracketed_paste;
-extern bool we_are_running;
+// extern bool we_are_running;
 // extern bool more_than_one;
 extern bool report_size;
 extern bool ran_a_tool;
@@ -144,7 +144,7 @@ extern regex_t    search_regexp;
 extern regmatch_t regmatches[10];
 
 extern int   hilite_attribute;
-extern int   interface_color_pair[NUMBER_OF_ELEMENTS];
+// extern int   interface_color_pair[NUMBER_OF_ELEMENTS];
 extern char *homedir;
 extern char *statedir;
 extern char *startup_problem;
@@ -555,7 +555,7 @@ char       *mallocstrcpy(char *dest, const char *src) _NOTHROW;
 Ulong       xplustabs(void) _NOTHROW _NODISCARD;
 // Ulong       actual_x(const char *text, Ulong column) _NOTHROW _NODISCARD _NONNULL(1);
 // Ulong       wideness(const char *text, Ulong maxlen) _NOTHROW _NODISCARD _NONNULL(1);
-Ulong       breadth(const char *text) _NOTHROW _NODISCARD _NONNULL(1);
+// Ulong       breadth(const char *text) _NOTHROW _NODISCARD _NONNULL(1);
 void        new_magicline(void) _NOTHROW;
 void        remove_magicline(void) _NOTHROW;
 bool        mark_is_before_cursor(void) _NOTHROW;

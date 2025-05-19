@@ -255,7 +255,7 @@ void editor_switch_to_prev(void) {
   ASSERT(openeditor);
   /* If there is only one editor open, just print a message and return. */
   if (CLIST_SINGLE(openeditor)) {
-    // show_statusmsg(MILD, 2, "Only one editor open");
+    print_status(MILD, "Only one editor open");
     return;
   }
   CLIST_ADV_PREV(openeditor);

@@ -8,18 +8,18 @@
 using std::string_view;
 
 /* Identifiers for color options. */
-#define TITLE_BAR     0
-#define LINE_NUMBER   1
-#define GUIDE_STRIPE  2
-#define SCROLL_BAR    3
-#define SELECTED_TEXT 4
-#define SPOTLIGHTED   5
-#define MINI_INFOBAR  6
-#define PROMPT_BAR    7
-#define STATUS_BAR    8
-#define ERROR_MESSAGE 9
-#define KEY_COMBO     10
-#define FUNCTION_TAG  11
+// #define TITLE_BAR     0
+// #define LINE_NUMBER   1
+// #define GUIDE_STRIPE  2
+// #define SCROLL_BAR    3
+// #define SELECTED_TEXT 4
+// #define SPOTLIGHTED   5
+// #define MINI_INFOBAR  6
+// #define PROMPT_BAR    7
+// #define STATUS_BAR    8
+// #define ERROR_MESSAGE 9
+// #define KEY_COMBO     10
+// #define FUNCTION_TAG  11
 /* The color options map. */
 constexpr_map<string_view, Uchar, 12> color_option_map = {
   {{"titlecolor", TITLE_BAR},

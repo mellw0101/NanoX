@@ -377,7 +377,6 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
   Uint indices[] = { 0, 1, 2, 0, 2, 3 };
   vertex_t vertices[4];
   texture_glyph_t *glyph = gui_font_get_glyph(f, current);
-  ALWAYS_ASSERT(glyph);
   if (prev) {
     (*pen_x) += texture_glyph_get_kerning(glyph, prev);
   }

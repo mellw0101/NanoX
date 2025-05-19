@@ -15,6 +15,10 @@
 
 extern long tabsize;
 
+extern WINDOW *topwin;
+extern WINDOW *midwin;
+extern WINDOW *footwin;
+
 extern openfilestruct *openfile;
 extern openfilestruct *startfile;
 
@@ -45,6 +49,7 @@ extern bool refresh_needed;
 extern bool shift_held;
 extern bool on_a_vt;
 extern bool is_shorter;
+extern bool we_are_running;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -64,10 +69,20 @@ extern Ulong flags[1];
 
 extern GLFWwindow *gui_window;
 
+extern message_type lastmessage;
+
+extern int   interface_color_pair[NUMBER_OF_ELEMENTS];
+
 /* ----------------------------- color.c ----------------------------- */
 
 extern Color color_vs_code_red;
 extern Color color_white;
+
+/* ----------------------------- winio.c ----------------------------- */
+
+extern Ulong waiting_codes;
+
+extern int countdown;
 
 /* ----------------------------- General ----------------------------- */
 
@@ -117,6 +132,9 @@ void        free_chararray(char **array, Ulong len);
 Ulong       get_page_start(const Ulong column);
 Ulong       wideness(const char *text, Ulong maxlen) _NODISCARD _NONNULL(1);
 Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
+Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
+void        print_status(message_type type, const char *const restrict format, ...);
+
 
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
@@ -378,7 +396,8 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
 
 
-bool delete_lockfile(const char *lockfilename);
+bool delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
+bool write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
 void make_new_buffer(void);
 void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
 void close_buffer(void);
@@ -452,6 +471,12 @@ void  ensure_firstcolumn_is_aligned_for(openfilestruct *const file);
 void  ensure_firstcolumn_is_aligned(void);
 char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt);
 
+/* ----------------------------- Curses ----------------------------- */
+
+void blank_row_curses(WINDOW *const window, int row);
+void blank_statusbar_curses(void);
+void statusline_curses(message_type type, const char *const restrict msg, ...);
+
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
 
@@ -495,6 +520,16 @@ Ulong editor_get_text_index(Editor *const editor, linestruct *const line, float 
 void editor_get_text_line_index(Editor *const editor, float x_pos, float y_pos, linestruct **const outline, Ulong *const outindex);
 void editor_open_buffer(const char *const restrict path);
 void editor_close_a_open_buffer(openfilestruct *const file);
+
+
+/* ---------------------------------------------------------- gui/statusbar.c ---------------------------------------------------------- */
+
+
+void statusbar_init(Element *const parent);
+void statusbar_free(void);
+void statusbar_timed_msg(message_type type, float seconds, const char *format, ...);
+void statusbar_msg(message_type type, const char *format, ...);
+void statusbar_draw(float fps);
 
 
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */

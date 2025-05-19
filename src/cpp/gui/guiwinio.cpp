@@ -386,7 +386,6 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
 // }
 
 static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
-  writef("%s: start\n", __func__);
   /* When debugging is enabled, assert everything we will use. */
   ASSERT(line);
   ASSERT(editor);
@@ -413,8 +412,8 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
     if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
       if ((editor->openfile->is_c_file || editor->openfile->is_cxx_file) /* editor->openfile->type.is_set<C_CPP>() */) {
         Ulong index = 0;
+        /* For some wierd reason this causes a crash on startup sometimes witch is wierd as this runs alot and never crashes otherwise. */
         line_word_t *head = get_line_words(converted, converted_len);
-        writef("%s: hello\n", __func__);
         while (head) {
           line_word_t *node = head;
           head = node->next;
@@ -711,7 +710,6 @@ void draw_editor(Editor *editor) {
       gui_draw_row(line, editor, &pen);
       line = line->next;
     }
-    writef("%s: hello\n", __func__);
     if (!gui->flag.is_set<GUI_PROMPT>() && ((editor->openfile->current->lineno - editor->openfile->edittop->lineno) >= 0)) {
       line_add_cursor(
         (editor->openfile->current->lineno - editor->openfile->edittop->lineno),

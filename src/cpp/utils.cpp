@@ -370,11 +370,11 @@ Ulong xplustabs(void) _NOTHROW {
 // }
 
 /* Return the number of columns that the given text occupies. */
-Ulong breadth(const char *text) _NOTHROW {
-  Ulong span = 0;
-  for (; *text; text += advance_over(text, &span));
-  return span;
-}
+// Ulong breadth(const char *text) _NOTHROW {
+//   Ulong span = 0;
+//   for (; *text; text += advance_over(text, &span));
+//   return span;
+// }
 
 /* Append a new magic line to the end of the buffer. */
 void new_magicline(void) _NOTHROW {

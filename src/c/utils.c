@@ -21,7 +21,7 @@ void die(const char *format, ...) {
   }
 }
 
-// /* Return a ptr to the last part of a path, if there are no '/' in the path, just return `path`. */
+/* Return a ptr to the last part of a path, if there are no '/' in the path, just return `path`. */
 // const char *tail(const char *const path) {
 //   ASSERT(path);
 //   const char *slash = strrchr(path, '/');
@@ -33,7 +33,7 @@ void die(const char *format, ...) {
 //   }
 // }
 
-// /* Return the extention of `path`, if any.  Otherwise, return NULL. */
+/* Return the extention of `path`, if any.  Otherwise, return NULL. */
 // const char *ext(const char *const path) {
 //   ASSERT(path);
 //   const char *pathtail = tail(path);
@@ -150,4 +150,28 @@ Ulong actual_x(const char *text, Ulong column) {
     text += charlen;
   }
   return (text - start);
+}
+
+/* Return the number of columns that the given text occupies. */
+Ulong breadth(const char *text) {
+  Ulong span = 0;
+  for (; *text; text += advance_over(text, &span));
+  return span;
+}
+
+/* For functions that are used by the tui and gui, this prints a status message correctly. */
+void print_status(message_type type, const char *const restrict format, ...) {
+  ASSERT(format);
+  char *msg;
+  va_list ap;
+  va_start(ap, format);
+  msg = valstr(format, ap, NULL);
+  va_end(ap);
+  if (ISSET(USING_GUI)) {
+    statusbar_msg(type, "%s", msg);
+  }
+  else if (!ISSET(NO_NCURSES)) {
+    statusline_curses(type, "%s", msg);
+  }
+  free(msg);
 }
