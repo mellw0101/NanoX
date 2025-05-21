@@ -427,12 +427,12 @@ read_directory_contents:
       old_selected = selected;
       kbinput      = get_kbinput(midwin, ISSET(SHOW_CURSOR));
       if (kbinput == KEY_MOUSE) {
-        int mouse_x, mouse_y;
+        int mx, my;
         /* When the user clicked in the file list, select a filename. */
-        if (get_mouseinput(&mouse_y, &mouse_x, TRUE) == 0 && wmouse_trafo(midwin, &mouse_y, &mouse_x, FALSE)) {
-          selected = (selected - selected % (usable_rows * piles) + (mouse_y * piles) + (mouse_x / (gauge + 2)));
+        if (get_mouseinput(&my, &mx, TRUE) == 0 && wmouse_trafo(midwin, &my, &mx, FALSE)) {
+          selected = (selected - selected % (usable_rows * piles) + (my * piles) + (mx / (gauge + 2)));
           /* When beyond end-of-row, select the preceding filename. */
-          if (mouse_x > piles * (gauge + 2)) {
+          if (mx > piles * (gauge + 2)) {
             --selected;
           }
           /* When beyond end-of-list, select the last filename. */
@@ -463,7 +463,12 @@ read_directory_contents:
       }
       else if (function == do_toggle && get_shortcut(kbinput)->toggle == NO_HELP) {
         TOGGLE(NO_HELP);
-        window_init();
+        if (ISSET(NO_NCURSES)) {
+          window_init();
+        }
+        else {
+          window_init_curses();
+        }
         kbinput = KEY_WINCH;
       }
       else if (function == do_search_backward) {

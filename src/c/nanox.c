@@ -11,7 +11,8 @@
 
 
 /* Containers for the original and the temporary handler for SIGINT. */
-static struct sigaction oldaction, newaction;
+static struct sigaction oldaction;
+static struct sigaction newaction;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -114,6 +115,57 @@ void free_lines(linestruct *src) {
   delete_node(src);
 }
 
+/* Make a copy of a linestruct node. */
+linestruct *copy_node(const linestruct *src) {
+  linestruct *dst = xmalloc(sizeof(*dst));
+  dst->data       = copy_of(src->data);
+  dst->multidata  = NULL;
+  dst->lineno     = src->lineno;
+  dst->has_anchor = src->has_anchor;
+  return dst;
+}
+
+/* Duplicate an entire linked list of linestructs. */
+linestruct *copy_buffer(const linestruct *src) {
+  linestruct *head, *item;
+  head       = copy_node(src);
+  head->prev = NULL;
+  item       = head;
+  src        = src->next;
+  while (src) {
+    item->next       = copy_node(src);
+    item->next->prev = item;
+    item             = item->next;
+    src              = src->next;
+  }
+  item->next = NULL;
+  return head;
+}
+
+/* Renumber the lines in a buffer, from the given line onwards. */
+void renumber_from(linestruct *line) {
+  long number = (!line->prev ? 0 : line->prev->lineno);
+  while (line) {
+    line->lineno = ++number;
+    line = line->next;
+  }
+}
+
+/* Display a warning about a key disabled in view mode. */
+void print_view_warning(void) {
+  print_status(AHEM, _("Key is invalid in view mode"));
+}
+
+/* When in restricted mode, show a warning and return 'TRUE'. */
+bool in_restricted_mode(void) {
+  if (ISSET(RESTRICTED)) {
+    print_status(AHEM, _("This function is disabled in restricted mode"));
+    beep();
+    return TRUE;
+  }
+  return FALSE;
+}
+
 void confirm_margin_for(openfilestruct *const file, int *const out_margin) {
   ASSERT(file);
   bool keep_focus;
@@ -182,4 +234,60 @@ void install_handler_for_Ctrl_C(void) {
 void restore_handler_for_Ctrl_C(void) {
   sigaction(SIGINT, &oldaction, NULL);
   disable_kb_interrupt();
+}
+
+/* ----------------------------- Curses ----------------------------- */
+
+/* Initialize the three window portions nano uses.  Ncurses verion. */
+void window_init_curses(void) {
+  int min;
+  int toprows;
+  int bottomrows;
+  if (midwin) {
+    if (topwin) {
+      delwin(topwin);
+    }
+    delwin(midwin);
+    delwin(footwin);
+  }
+  topwin = NULL;
+  /* If the terminal is very flat, don't set up a title bar. */
+  if (LINES < 3) {
+    editwinrows = (ISSET(ZERO) ? LINES : 1);
+    /* Set up two subwindows.  If the terminal is just one line, edit window and status-bar window will cover each other. */
+    midwin  = newwin(editwinrows, COLS, 0, 0);
+    footwin = newwin(1, COLS, (LINES - 1), 0);
+  }
+  else {
+    min        = (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5));
+    toprows    = ((ISSET(EMPTY_LINE) && LINES > min) ? 2 : 1);
+    bottomrows = ((ISSET(NO_HELP) || LINES < min) ? 1 : 3);
+    if (ISSET(MINIBAR) || ISSET(ZERO)) {
+      toprows = 0;
+    }
+    editwinrows = (LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0));
+    /* Set up the normal three subwindow's. */
+    if (toprows > 0) {
+      topwin = newwin(toprows, COLS, 0, 0);
+    }
+    midwin  = newwin(editwinrows, COLS, toprows, 0);
+    footwin = newwin(bottomrows, COLS, (LINES - bottomrows), 0);
+  }
+  /* In case the terminal shrunk, make sure the status line is clear. */
+  wnoutrefresh(footwin);
+  /* When not disabled, turn escape-sequence translation on. */
+  if (!ISSET(RAW_SEQUENCES)) {
+    keypad(midwin, TRUE);
+    keypad(footwin, TRUE);
+  }
+  /* Set up the wrapping point, accounting for the screen width when negative. */
+  if ((COLS + fill) < 0) {
+    wrap_at = 0;
+  }
+  else if (fill <= 0) {
+    wrap_at = (COLS + fill);
+  }
+  else {
+    wrap_at = fill;
+  }
 }

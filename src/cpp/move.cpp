@@ -1,24 +1,24 @@
 #include "../include/prototypes.h"
 
 /* Move to the first line of the file. */
-void to_first_line(void) _NOTHROW {
-  openfile->current     = openfile->filetop;
-  openfile->current_x   = 0;
-  openfile->placewewant = 0;
-  refresh_needed        = TRUE;
-}
+// void to_first_line(void) _NOTHROW {
+//   openfile->current     = openfile->filetop;
+//   openfile->current_x   = 0;
+//   openfile->placewewant = 0;
+//   refresh_needed        = TRUE;
+// }
 
 /* Move to the last line of the file. */
-void to_last_line(void) _NOTHROW {
-  openfile->current     = openfile->filebot;
-  openfile->current_x   = (inhelp) ? 0 : strlen(openfile->filebot->data);
-  openfile->placewewant = xplustabs();
-  /* Set the last line of the screen as the target for the cursor. */
-  openfile->cursor_row = editwinrows - 1;
-  refresh_needed       = TRUE;
-  recook |= perturbed;
-  focusing = FALSE;
-}
+// void to_last_line(void) _NOTHROW {
+//   openfile->current     = openfile->filebot;
+//   openfile->current_x   = (inhelp) ? 0 : strlen(openfile->filebot->data);
+//   openfile->placewewant = xplustabs();
+//   /* Set the last line of the screen as the target for the cursor. */
+//   openfile->cursor_row = editwinrows - 1;
+//   refresh_needed       = TRUE;
+//   recook |= perturbed;
+//   focusing = FALSE;
+// }
 
 /* Determine the actual current chunk and the target column. */
 void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {

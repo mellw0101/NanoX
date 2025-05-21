@@ -138,16 +138,21 @@ void free_chararray(char **array, Ulong len) {
 /* When not softwrapping, nano scrolls the current line horizontally by
  * chunks ("pages").  Return the column number of the first character
  * displayed in the edit window when the cursor is at the given column. */
-Ulong get_page_start(const Ulong column) {
+Ulong get_page_start(Ulong column) {
   if (!column || (int)(column + 2) < editwincols || ISSET(SOFTWRAP)) {
     return 0;
   }
   else if (editwincols > 8) {
-    return (column - 6 - (column - 6) % (editwincols - 8));
+    return (column - 6 - ((column - 6) % (editwincols - 8)));
   }
   else {
     return (column - (editwincols - 2));
   }
+}
+
+/* Return the placewewant associated with `file->current_x`, i.e. the zero-based column position of the cursor. */
+Ulong xplustabs_for(openfilestruct *const file) {
+  return wideness(file->current->data, file->current_x);
 }
 
 /* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */

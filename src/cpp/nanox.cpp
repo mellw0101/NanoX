@@ -106,55 +106,55 @@ main_thread_t *main_thread = NULL;
 // }
 
 /* Make a copy of a linestruct node. */
-linestruct *copy_node(const linestruct *src) _NOTHROW {
-  linestruct *dst = (linestruct *)nmalloc(sizeof(*dst));
-  dst->data       = copy_of(src->data);
-  dst->multidata  = NULL;
-  dst->lineno     = src->lineno;
-  dst->has_anchor = src->has_anchor;
-  return dst;
-}
+// linestruct *copy_node(const linestruct *src) _NOTHROW {
+//   linestruct *dst = (linestruct *)nmalloc(sizeof(*dst));
+//   dst->data       = copy_of(src->data);
+//   dst->multidata  = NULL;
+//   dst->lineno     = src->lineno;
+//   dst->has_anchor = src->has_anchor;
+//   return dst;
+// }
 
 /* Duplicate an entire linked list of linestructs. */
-linestruct *copy_buffer(const linestruct *src) _NOTHROW {
-  linestruct *head, *item;
-  head       = copy_node(src);
-  head->prev = NULL;
-  item       = head;
-  src        = src->next;
-  while (src) {
-    item->next       = copy_node(src);
-    item->next->prev = item;
-    item             = item->next;
-    src              = src->next;
-  }
-  item->next = NULL;
-  return head;
-}
+// linestruct *copy_buffer(const linestruct *src) _NOTHROW {
+//   linestruct *head, *item;
+//   head       = copy_node(src);
+//   head->prev = NULL;
+//   item       = head;
+//   src        = src->next;
+//   while (src) {
+//     item->next       = copy_node(src);
+//     item->next->prev = item;
+//     item             = item->next;
+//     src              = src->next;
+//   }
+//   item->next = NULL;
+//   return head;
+// }
 
 /* Renumber the lines in a buffer, from the given line onwards. */
-void renumber_from(linestruct *line) _NOTHROW {
-  long number = (!line->prev ? 0 : line->prev->lineno);
-  while (line) {
-    line->lineno = ++number;
-    line = line->next;
-  }
-}
+// void renumber_from(linestruct *line) _NOTHROW {
+//   long number = (!line->prev ? 0 : line->prev->lineno);
+//   while (line) {
+//     line->lineno = ++number;
+//     line = line->next;
+//   }
+// }
 
 /* Display a warning about a key disabled in view mode. */
-void print_view_warning(void) _NOTHROW {
-  statusline(AHEM, _("Key is invalid in view mode"));
-}
+// void print_view_warning(void) _NOTHROW {
+//   statusline(AHEM, _("Key is invalid in view mode"));
+// }
 
 /* When in restricted mode, show a warning and return 'TRUE'. */
-bool in_restricted_mode(void) _NOTHROW {
-  if (ISSET(RESTRICTED)) {
-    statusline(AHEM, _("This function is disabled in restricted mode"));
-    beep();
-    return TRUE;
-  }
-  return FALSE;
-}
+// bool in_restricted_mode(void) _NOTHROW {
+//   if (ISSET(RESTRICTED)) {
+//     statusline(AHEM, _("This function is disabled in restricted mode"));
+//     beep();
+//     return TRUE;
+//   }
+//   return FALSE;
+// }
 
 /* Say how the user can achieve suspension (when they typed ^Z). */
 void suggest_ctrlT_ctrlZ(void) _NOTHROW {
@@ -176,7 +176,7 @@ static void restore_terminal(void) _NOTHROW {
   else {
     curs_set(1);
     endwin();
-    STRLTR_WRITE(STDOUT_FILENO, "\x1B[?2004l");
+    printf("\x1B[?2004l");
   }
   tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
@@ -753,7 +753,12 @@ void regenerate_screen(void) {
   editwincols = (COLS - margin - sidebar);
   /* Put the terminal in the desired state again, and recreate the subwindows with their (new) sizes. */
   terminal_init();
-  window_init();
+  if (ISSET(NO_NCURSES)) {
+    window_init();
+  }
+  else {
+    window_init_curses();
+  }
   /* If we have an open buffer, redraw the contents of the subwindows. */
   if (openfile) {
     ensure_firstcolumn_is_aligned();
@@ -768,7 +773,12 @@ static void toggle_this(const int flag) {
   focusing = FALSE;
   switch (flag) {
     case ZERO : {
-      window_init();
+      if (ISSET(NO_NCURSES)) {
+        window_init();
+      }
+      else {
+        window_init_curses();
+      }
       draw_all_subwindows();
       return;
     }
@@ -778,7 +788,12 @@ static void toggle_this(const int flag) {
         TOGGLE(flag);
         return;
       }
-      window_init();
+      if (ISSET(NO_NCURSES)) {
+        window_init();
+      }
+      else {
+        window_init_curses();
+      }
       draw_all_subwindows();
       break;
     }
@@ -1609,10 +1624,6 @@ int main(int argc, char **argv) {
   /* If setting the locale is successful and it uses UTF-8, we will need to use the multibyte functions for text processing. */
   if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0) {
     utf8_init();
-    writef("Using utf8\n");
-  }
-  else {
-    writef("Not using utf8\n");
   }
   setlocale(LC_ALL, "");
   bindtextdomain(PACKAGE, LOCALEDIR);
@@ -1920,7 +1931,12 @@ int main(int argc, char **argv) {
   /* Set up the terminal state. */
   terminal_init();
   /* Create the three subwindows, based on the current screen dimensions. */
-  window_init();
+  if (ISSET(NO_NCURSES)) {
+    window_init();
+  }
+  else {
+    window_init_curses();
+  }
   nanox_curs_set(0);
   sidebar = ((ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0);
   bardata = arealloc(bardata, (LINES * sizeof(int)));
@@ -2157,7 +2173,12 @@ int main(int argc, char **argv) {
       mute_modifiers = FALSE;
     }
     if (currmenu != MMAIN) {
-      bottombars(MMAIN);
+      if (ISSET(NO_NCURSES)) {
+        bottombars(MMAIN);
+      }
+      else {
+        bottombars_curses(MMAIN);
+      }
     }
     if (ISSET(MINIBAR) && !ISSET(ZERO) && (LINES > 1) && (lastmessage < REMARK)) {
       if (ISSET(NO_NCURSES)) {

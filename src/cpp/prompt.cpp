@@ -737,7 +737,12 @@ static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct *
         }
         else if (function == do_toggle && shortcut->toggle == NO_HELP) {
           TOGGLE(NO_HELP);
-          window_init();
+          if (ISSET(NO_NCURSES)) {
+            window_init();
+          }
+          else {
+            window_init_curses();
+          }
           focusing = FALSE;
           refresh_func();
           bottombars(currmenu);
@@ -849,17 +854,32 @@ int ask_user(bool withall, const char *question) {
       /* Now show the ones for "Yes", "No", "Cancel" and maybe "All". */
       sprintf(shortstr, " %c", yesstr[0]);
       wmove(footwin, 1, 0);
-      post_one_key(shortstr, _("Yes"), width);
-      shortstr[1] = nostr[0];
-      wmove(footwin, 2, 0);
-      post_one_key(shortstr, _("No"), width);
-      if (withall) {
-        shortstr[1] = allstr[0];
-        wmove(footwin, 1, width);
-        post_one_key(shortstr, _("All"), width);
+      if (ISSET(NO_NCURSES)) {
+        post_one_key(shortstr, _("Yes"), width);
+        shortstr[1] = nostr[0];
+        wmove(footwin, 2, 0);
+        post_one_key(shortstr, _("No"), width);
+        if (withall) {
+          shortstr[1] = allstr[0];
+          wmove(footwin, 1, width);
+          post_one_key(shortstr, _("All"), width);
+        }
+        wmove(footwin, 2, width);
+        post_one_key(cancelshortcut->keystr, _("Cancel"), width);
       }
-      wmove(footwin, 2, width);
-      post_one_key(cancelshortcut->keystr, _("Cancel"), width);
+      else {
+        post_one_key_curses(shortstr, _("Yes"), width);
+        shortstr[1] = nostr[0];
+        wmove(footwin, 2, 0);
+        post_one_key_curses(shortstr, _("No"), width);
+        if (withall) {
+          shortstr[1] = allstr[0];
+          wmove(footwin, 1, width);
+          post_one_key_curses(shortstr, _("All"), width);
+        }
+        wmove(footwin, 2, width);
+        post_one_key_curses(cancelshortcut->keystr, _("Cancel"), width);
+      }
     }
     /* Color the prompt bar over its full width and display the question. */
     wattron(footwin, interface_color_pair[PROMPT_BAR]);
@@ -923,7 +943,12 @@ int ask_user(bool withall, const char *question) {
     }
     else if (function == do_toggle && shortcut->toggle == NO_HELP) {
       TOGGLE(NO_HELP);
-      window_init();
+      if (ISSET(NO_NCURSES)) {
+        window_init();
+      }
+      else {
+        window_init_curses();
+      }
       titlebar(NULL);
       focusing = FALSE;
       edit_refresh();
@@ -938,11 +963,11 @@ int ask_user(bool withall, const char *question) {
       choice = YES;
     }
     else if (kbinput == KEY_MOUSE) {
-      int mouse_x, mouse_y;
+      int mx, my;
       /* We can click on the Yes/No/All shortcuts to select an answer. */
-      if (get_mouseinput(&mouse_y, &mouse_x, FALSE) == 0 && wmouse_trafo(footwin, &mouse_y, &mouse_x, FALSE) && mouse_x < (width * 2) && mouse_y > 0) {
-        int x = mouse_x / width;
-        int y = mouse_y - 1;
+      if (get_mouseinput(&my, &mx, FALSE) == 0 && wmouse_trafo(footwin, &my, &mx, FALSE) && mx < (width * 2) && my > 0) {
+        int x = (mx / width);
+        int y = (my - 1);
         /* x == 0 means Yes or No, y == 0 means Yes or All. */
         choice = (-2 * x * y + x - y + 1);
         if (choice == ALL && !withall) {

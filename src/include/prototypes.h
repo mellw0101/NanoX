@@ -11,7 +11,7 @@
 
 /* All external variables.  See global.c for their descriptions. */
 
-extern volatile sig_atomic_t the_window_resized;
+// extern volatile sig_atomic_t the_window_resized;
 
 // extern WINDOW *topwin;
 // extern WINDOW *midwin;
@@ -45,7 +45,7 @@ extern linestruct *pletion_line;
 // extern unsigned flags[4];
 // extern Ulong flags[1];
 
-extern long fill;
+// extern long fill;
 
 extern int didfind;
 extern int controlleft, controlright;
@@ -100,8 +100,8 @@ extern const char *term;
 extern const char *term_program;
 
 // extern bool on_a_vt;
-extern bool shifted_metas;
-extern bool meta_key;
+// extern bool shifted_metas;
+// extern bool meta_key;
 // extern bool shift_held;
 extern bool keep_mark;
 extern bool mute_modifiers;
@@ -118,8 +118,8 @@ extern bool also_the_last;
 extern bool keep_cutbuffer;
 extern bool have_palette;
 extern bool rescind_colors;
-extern bool perturbed;
-extern bool recook;
+// extern bool perturbed;
+// extern bool recook;
 // extern bool refresh_needed;
 // extern bool is_shorter;
 
@@ -128,7 +128,7 @@ extern char  suggest_buf[1024];
 extern char *suggest_str;
 extern int   suggest_len;
 
-extern Ulong wrap_at;
+// extern Ulong wrap_at;
 
 extern long stripe_column;
 extern long tabsize;
@@ -136,11 +136,11 @@ extern long tabsize;
 extern regex_t quotereg;
 
 // extern int         currmenu;
-extern keystruct  *sclist;
+// extern keystruct  *sclist;
 // extern funcstruct *allfuncs;
 // extern funcstruct *exitfunc;
 
-extern regex_t    search_regexp;
+// extern regex_t    search_regexp;
 extern regmatch_t regmatches[10];
 
 extern int   hilite_attribute;
@@ -294,11 +294,11 @@ void paste_text(void);
 /* Most functions in 'files.cpp'. */
 // void   make_new_buffer(void) _NOTHROW;
 // bool   delete_lockfile(const char *lockfilename);
-bool   has_valid_path(const char *filename) _NOTHROW;
+// bool   has_valid_path(const char *filename) _NOTHROW;
 // bool   open_buffer(const char *filename, bool new_one);
 void   open_buffer_browser(void);
 void   open_new_empty_buffer(void);
-void   set_modified(void) _NOTHROW;
+// void   set_modified(void) _NOTHROW;
 void   prepare_for_display(void) _NOTHROW;
 void   mention_name_and_linecount(void) _NOTHROW;
 void   switch_to_prev_buffer(void) _NOTHROW;
@@ -330,11 +330,11 @@ void   do_savefile(void);
 char  *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *listed);
 
 /* Some functions in 'global.cpp'. */
-int              keycode_from_string(const char *keystring) _NOTHROW;
-const keystruct *first_sc_for(const int menu, void (*function)(void)) _NOTHROW;
-Ulong            shown_entries_for(int menu) _NOTHROW;
-const keystruct *get_shortcut(const int keycode) _NOTHROW;
-functionptrtype  func_from_key(const int keycode) _NOTHROW;
+// int              keycode_from_string(const char *keystring) _NOTHROW;
+// const keystruct *first_sc_for(const int menu, void (*function)(void)) _NOTHROW;
+// Ulong            shown_entries_for(int menu) _NOTHROW;
+const keystruct *get_shortcut(const int keycode);
+functionptrtype  func_from_key(const int keycode);
 functionptrtype  interpret(const int keycode);
 void             shortcut_init(void);
 
@@ -355,8 +355,8 @@ void  update_poshistory(void);
 bool  has_old_position(const char *file, long *line, long *column);
 
 /* Most functions in 'move.cpp'. */
-void to_first_line(void) _NOTHROW;
-void to_last_line(void) _NOTHROW;
+// void to_first_line(void) _NOTHROW;
+// void to_last_line(void) _NOTHROW;
 void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW;
 void do_page_up(void) _NOTHROW;
 void do_page_down(void) _NOTHROW;
@@ -389,11 +389,11 @@ void do_right(void);
 // void        delete_node(linestruct *line) _NOTHROW;
 // void        unlink_node(linestruct *line) _NOTHROW;
 // void        free_lines(linestruct *src) _NOTHROW;
-linestruct *copy_node(const linestruct *src) _NOTHROW _NODISCARD _NONNULL(1);
-linestruct *copy_buffer(const linestruct *src) _NOTHROW _NODISCARD;
-void        renumber_from(linestruct *line) _NOTHROW;
-void        print_view_warning(void) _NOTHROW;
-bool        in_restricted_mode(void) _NOTHROW;
+// linestruct *copy_node(const linestruct *src) _NOTHROW _NODISCARD _NONNULL(1);
+// linestruct *copy_buffer(const linestruct *src) _NOTHROW _NODISCARD;
+// void        renumber_from(linestruct *line) _NOTHROW;
+// void        print_view_warning(void) _NOTHROW;
+// bool        in_restricted_mode(void) _NOTHROW;
 void        suggest_ctrlT_ctrlZ(void) _NOTHROW;
 void        finish(void) _NOTHROW _NO_RETURN;
 void        close_and_go(void);
@@ -469,8 +469,8 @@ void       do_rcfiles(void);
 /* ---------------------------------------------------------- search.cpp ---------------------------------------------------------- */
 
 
-bool  regexp_init(const char *regexp);
-void  tidy_up_after_search(void);
+// bool  regexp_init(const char *regexp);
+// void  tidy_up_after_search(void);
 int   findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x);
 void  do_search_forward(void);
 void  do_search_backward(void);
@@ -607,10 +607,10 @@ void  place_the_cursor(void) _NOTHROW;
 void  draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col);
 int   update_line(linestruct *line, Ulong index, int offset = 0);
 int   update_softwrapped_line(linestruct *line);
-bool  line_needs_update(const Ulong old_column, const Ulong new_column) _NOTHROW;
-int   go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
-int   go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
-bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW _NODISCARD;
+// bool  line_needs_update(const Ulong old_column, const Ulong new_column) _NOTHROW;
+// int   go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
+// int   go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
+// bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW _NODISCARD;
 void  edit_scroll(bool direction);
 // Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NOTHROW;
 // Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NOTHROW _NONNULL(2);
@@ -618,11 +618,11 @@ void  edit_scroll(bool direction);
 // Ulong leftedge_for(Ulong column, linestruct *line) _NOTHROW;
 // Ulong extra_chunks_in(linestruct *line) _NOTHROW _NODISCARD _NONNULL(1);
 // void  ensure_firstcolumn_is_aligned(void) _NOTHROW;
-Ulong actual_last_column(Ulong leftedge, Ulong column) _NOTHROW;
-bool  current_is_offscreen(void) _NOTHROW;
+// Ulong actual_last_column(Ulong leftedge, Ulong column) _NOTHROW;
+// bool  current_is_offscreen(void) _NOTHROW;
 void  edit_redraw(linestruct *old_current, update_type manner);
 void  edit_refresh(void);
-void  adjust_viewport(update_type manner) _NOTHROW;
+// void  adjust_viewport(update_type manner) _NOTHROW;
 void  full_refresh(void) _NOTHROW;
 void  draw_all_subwindows(void);
 void  report_cursor_position(void) _NOTHROW;
@@ -651,8 +651,9 @@ void flip_execute(void);
 void flip_pipe(void);
 void flip_convert(void);
 void flip_newbuffer(void);
-void discard_buffer(void);
+// void discard_buffer(void);
 void do_cancel(void);
+// int keycode_from_string(const char *keystring) _NOTHROW;
 
 /* All functions in 'cpp.cpp'. */
 bool   isCppSyntaxChar(const char c);

@@ -3156,7 +3156,12 @@ void do_linter(void) {
   }
   if (helpless && LINES > 5) {
     UNSET(NO_HELP);
-    window_init();
+    if (ISSET(NO_NCURSES)) {
+      window_init();
+    }
+    else {
+      window_init_curses();
+    }
   }
   /* Show that we are in the linter now. */
   titlebar(NULL);
@@ -3291,7 +3296,12 @@ void do_linter(void) {
   }
   if (helpless) {
     SET(NO_HELP);
-    window_init();
+    if (ISSET(NO_NCURSES)) {
+      window_init();
+    }
+    else {
+      window_init_curses();
+    }
     refresh_needed = TRUE;
   }
   lastmessage = VACUUM;

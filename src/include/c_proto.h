@@ -13,7 +13,12 @@
 
 /* ----------------------------- global.c ----------------------------- */
 
+extern volatile sig_atomic_t the_window_resized;
+
 extern long tabsize;
+extern long fill;
+
+extern Ulong wrap_at;
 
 extern WINDOW *topwin;
 extern WINDOW *midwin;
@@ -34,9 +39,13 @@ extern float gui_height;
 extern Editor *openeditor;
 extern Editor *starteditor;
 
+extern keystruct  *sclist;
+
 extern funcstruct *allfuncs;
 extern funcstruct *exitfunc;
 extern funcstruct *tailfunc;
+
+extern regex_t search_regexp;
 
 extern const char *exit_tag;
 extern const char *close_tag;
@@ -52,6 +61,10 @@ extern bool is_shorter;
 extern bool we_are_running;
 extern bool control_C_was_pressed;
 extern bool report_size;
+extern bool shifted_metas;
+extern bool perturbed;
+extern bool recook;
+extern bool meta_key;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -139,7 +152,8 @@ char       *mallocstrcpy(char *dest, const char *src) __THROW _RETURNS_NONNULL _
 void        get_homedir(void);
 linestruct *file_line_from_number(openfilestruct *const file, long number);
 void        free_chararray(char **array, Ulong len);
-Ulong       get_page_start(const Ulong column);
+Ulong       get_page_start(Ulong column);
+Ulong       xplustabs_for(openfilestruct *const file);
 Ulong       xplustabs(void) _NODISCARD;
 Ulong       wideness(const char *text, Ulong maxlen) _NODISCARD _NONNULL(1);
 Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
@@ -412,6 +426,7 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 
 bool  delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
 bool  write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
+bool  has_valid_path(const char *const restrict filename);
 void  make_new_buffer(void);
 void  free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
 void  close_buffer(void);
@@ -420,6 +435,8 @@ bool  is_dir(const char *const path) _NODISCARD _NONNULL(1);
 char *get_full_path(const char *const restrict origpath);
 char *check_writable_directory(const char *path);
 int   diralphasort(const void *va, const void *vb);
+void  set_modified_for(openfilestruct *const file);
+void  set_modified(void);
 bool open_buffer(const char *filename, bool new_one);
 
 
@@ -486,19 +503,68 @@ Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge);
 Ulong extra_chunks_in(linestruct *line);
 Ulong chunk_for(Ulong column, linestruct *line);
 Ulong leftedge_for(Ulong column, linestruct *line);
+int   go_back_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge);
+int   go_back_chunks(int nrows, linestruct **const line, Ulong *const leftedge);
+int   go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge);
+int   go_forward_chunks(int nrows, linestruct **const line, Ulong *const leftedge);
 void  ensure_firstcolumn_is_aligned_for(openfilestruct *const file);
 void  ensure_firstcolumn_is_aligned(void);
 char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt);
+bool  line_needs_update_for(openfilestruct *const file, Ulong old_column, Ulong new_column);
+bool  line_needs_update(Ulong old_column, Ulong new_column);
+bool  less_than_a_screenful_for(openfilestruct *const file, Ulong was_lineno, Ulong was_leftedge);
+bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge);
+Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong column);
+Ulong actual_last_column(Ulong leftedge, Ulong column);
+bool current_is_above_screen_for(openfilestruct *const file);
+bool current_is_above_screen(void);
+bool current_is_below_screen_for(openfilestruct *const file);
+bool current_is_below_screen(void);
+bool current_is_offscreen_for(openfilestruct *const file);
+bool current_is_offscreen(void);
+void adjust_viewport_for(openfilestruct *const file, update_type manner);
+void adjust_viewport(update_type manner);
 
 /* ----------------------------- Curses ----------------------------- */
 
 void blank_row_curses(WINDOW *const window, int row);
 void blank_titlebar_curses(void);
 void blank_statusbar_curses(void);
+void blank_bottombars_curses(void);
 void statusline_curses_va(message_type type, const char *const restrict format, va_list ap);
-void statusline_curses(message_type type, const char *const restrict msg, ...);
+void statusline_curses(message_type type, const char *const restrict msg, ...) _PRINTFLIKE(2, 3);
 void titlebar_curses(const char *path);
 void minibar_curses(void);
+void post_one_key_curses(const char *const restrict keystroke, const char *const restrict tag, int width);
+void bottombars_curses(int menu);
+void place_the_cursor_for_curses(openfilestruct *const file);
+void place_the_cursor_curses(void);
+void warn_and_briefly_pause_curses(const char *const restrict message);
+
+
+/* ---------------------------------------------------------- global.c ---------------------------------------------------------- */
+
+
+void discard_buffer(void);
+int keycode_from_string(const char *keystring);
+const keystruct *first_sc_for(const int menu, functionptrtype function);
+Ulong shown_entries_for(int menu);
+
+
+/* ---------------------------------------------------------- search.c ---------------------------------------------------------- */
+
+
+bool regexp_init(const char *regexp);
+void tidy_up_after_search(void);
+
+
+/* ---------------------------------------------------------- move.c ---------------------------------------------------------- */
+
+
+void to_first_line_for(openfilestruct *const file);
+void to_first_line(void);
+void to_last_line_for(openfilestruct *const file);
+void to_last_line(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
@@ -560,16 +626,25 @@ void statusbar_draw(float fps);
 
 
 linestruct *make_new_node(linestruct *prevnode);
-void splice_node(linestruct *afterthis, linestruct *newnode);
-void delete_node(linestruct *line);
-void unlink_node(linestruct *line);
-void free_lines(linestruct *src);
-void confirm_margin_for(openfilestruct *const file, int *const out_margin);
-void confirm_margin(void);
-void disable_kb_interrupt(void);
-void enable_kb_interrupt(void);
-void install_handler_for_Ctrl_C(void);
-void restore_handler_for_Ctrl_C(void);
+void        splice_node(linestruct *afterthis, linestruct *newnode);
+void        delete_node(linestruct *line);
+void        unlink_node(linestruct *line);
+void        free_lines(linestruct *src);
+linestruct *copy_node(const linestruct *src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);
+linestruct *copy_buffer(const linestruct *src);
+void        renumber_from(linestruct *line);
+void        print_view_warning(void);
+bool        in_restricted_mode(void);
+void        confirm_margin_for(openfilestruct *const file, int *const out_margin);
+void        confirm_margin(void);
+void        disable_kb_interrupt(void);
+void        enable_kb_interrupt(void);
+void        install_handler_for_Ctrl_C(void);
+void        restore_handler_for_Ctrl_C(void);
+
+/* ----------------------------- Curses ----------------------------- */
+
+void window_init_curses(void);
 
 
 _END_C_LINKAGE

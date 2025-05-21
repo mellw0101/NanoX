@@ -28,6 +28,7 @@
 #include <wchar.h>
 #include <wctype.h>
 #include <math.h>
+#include <libgen.h>
 
 /* Linux */
 #include <sys/cdefs.h>

@@ -3,13 +3,13 @@
 /* Global variables. */
 
 /* Set to 'TRUE' by the handler whenever a SIGWINCH occurs. */
-volatile sig_atomic_t the_window_resized = FALSE;
+// volatile sig_atomic_t the_window_resized = FALSE;
 /* Whether we're running on a Linux console (a VT). */
 // bool on_a_vt = FALSE;
 /* Whether any Sh-M-<letter> combo has been bound. */
-bool shifted_metas = FALSE;
+// bool shifted_metas = FALSE;
 /* Whether the current keystroke is a Meta key. */
-bool meta_key;
+// bool meta_key;
 /* Whether Shift was being held together with a movement key. */
 // bool shift_held;
 /* Whether to keep mark when normaly we wouldent. */
@@ -71,9 +71,9 @@ int mousefocusin, mousefocusout;
 int controlbsp;
 
 /* The relative column where we will wrap lines. */
-long fill = -COLUMNS_FROM_EOL;
+// long fill = -COLUMNS_FROM_EOL;
 /* The actual column where we will wrap lines, based on fill. */
-Ulong wrap_at = 0;
+// Ulong wrap_at = 0;
 /* The top portion of the screen, showing the version number of nano, the name of the file, and whether the buffer was modified. */
 // WINDOW *topwin = NULL;
 nwindow *tui_topwin = NULL;
@@ -141,13 +141,13 @@ bool have_palette = FALSE;
 /* Becomes TRUE when NO_COLOR is set in the environment. */
 bool rescind_colors = FALSE;
 /* Whether the multiline-coloring situation has changed. */
-bool perturbed = FALSE;
+// bool perturbed = FALSE;
 /* Whether the multidata should be recalculated. */
-bool recook = FALSE;
+// bool recook = FALSE;
 /* The currently active menu, initialized to a dummy value. */
 // int currmenu = MMOST;
 /* The start of the shortcuts list. */
-keystruct *sclist = NULL;
+// keystruct *sclist = NULL;
 /* The start of the functions list. */
 // funcstruct *allfuncs = NULL;
 /* The last function in the list. */
@@ -169,7 +169,7 @@ linestruct *replacebot = NULL;
 linestruct *executetop = NULL;
 linestruct *executebot = NULL;
 /* The compiled regular expression to use in searches. */
-regex_t search_regexp;
+// regex_t search_regexp;
 /* The match positions for parenthetical subexpressions,
  * 10 maximum, used in regular expression searches. */
 regmatch_t regmatches[10];
@@ -295,16 +295,16 @@ void flip_newbuffer(void) {
   ;
 }
 
-void discard_buffer(void) {
-  ;
-}
+// void discard_buffer(void) {
+//   ;
+// }
 
 void do_cancel(void) {
   ;
 }
 
 /* Add a function to the linked list of functions. */
-static void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) _NOTHROW {
+static void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) {
   funcstruct *f = (funcstruct *)nmalloc(sizeof(funcstruct));
   !allfuncs ? (allfuncs = f) : (tailfunc->next = f);
   tailfunc       = f;
@@ -317,68 +317,68 @@ static void add_to_funcs(functionptrtype function, const int menus, const char *
 }
 
 /* Parse the given keystring and return the corresponding keycode, or return -1 when the string is invalid. */
-int keycode_from_string(const char *keystring) _NOTHROW {
-  if (keystring[0] == '^') {
-    if (keystring[2] == '\0') {
-      if (keystring[1] == '/' || keystring[1] == '-') {
-        return 31;
-      }
-      if (keystring[1] <= '_') {
-        return keystring[1] - 64;
-      }
-      if (keystring[1] == '`') {
-        return 0;
-      }
-      else {
-        return -1;
-      }
-    }
-    else if (constexpr_strcasecmp(keystring, "^Space") == 0) {
-      return 0;
-    }
-    else {
-      return -1;
-    }
-  }
-  else if (keystring[0] == 'M') {
-    if (keystring[1] == '-' && keystring[3] == '\0') {
-      return constexpr_tolower((Uchar)keystring[2]);
-    }
-    if (constexpr_strcasecmp(keystring, "M-Space") == 0) {
-      return (int)' ';
-    }
-    else {
-      return -1;
-    }
-  }
-  else if (constexpr_strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) && (keystring[5] | 0x20) <= 'z' && keystring[6] == '\0') {
-    shifted_metas = TRUE;
-    return (keystring[5] & 0x5F);
-  }
-  else if (keystring[0] == 'F') {
-    int fn = atoi(&keystring[1]);
-    if (fn < 1 || fn > 24) {
-      return -1;
-    }
-    return (KEY_F0 + fn);
-  }
-  else if (constexpr_strcasecmp(keystring, "Ins") == 0) {
-    return KEY_IC;
-  }
-  else if (constexpr_strcasecmp(keystring, "Del") == 0) {
-    return KEY_DC;
-  }
-  else {
-    return -1;
-  }
-}
+// int keycode_from_string(const char *keystring) _NOTHROW {
+//   if (keystring[0] == '^') {
+//     if (keystring[2] == '\0') {
+//       if (keystring[1] == '/' || keystring[1] == '-') {
+//         return 31;
+//       }
+//       if (keystring[1] <= '_') {
+//         return keystring[1] - 64;
+//       }
+//       if (keystring[1] == '`') {
+//         return 0;
+//       }
+//       else {
+//         return -1;
+//       }
+//     }
+//     else if (constexpr_strcasecmp(keystring, "^Space") == 0) {
+//       return 0;
+//     }
+//     else {
+//       return -1;
+//     }
+//   }
+//   else if (keystring[0] == 'M') {
+//     if (keystring[1] == '-' && keystring[3] == '\0') {
+//       return constexpr_tolower((Uchar)keystring[2]);
+//     }
+//     if (constexpr_strcasecmp(keystring, "M-Space") == 0) {
+//       return (int)' ';
+//     }
+//     else {
+//       return -1;
+//     }
+//   }
+//   else if (constexpr_strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) && (keystring[5] | 0x20) <= 'z' && keystring[6] == '\0') {
+//     shifted_metas = TRUE;
+//     return (keystring[5] & 0x5F);
+//   }
+//   else if (keystring[0] == 'F') {
+//     int fn = atoi(&keystring[1]);
+//     if (fn < 1 || fn > 24) {
+//       return -1;
+//     }
+//     return (KEY_F0 + fn);
+//   }
+//   else if (constexpr_strcasecmp(keystring, "Ins") == 0) {
+//     return KEY_IC;
+//   }
+//   else if (constexpr_strcasecmp(keystring, "Del") == 0) {
+//     return KEY_DC;
+//   }
+//   else {
+//     return -1;
+//   }
+// }
 
 static void show_curses_version(void) _NOTHROW {
   statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
 
 /* Add a key combo to the linked list of shortcuts. */
-static void add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function, const int toggle) _NOTHROW {
+static void add_to_sclist(const int menus, const char *scstring, const int keycode, functionptrtype function, const int toggle) {
   static keystruct *tailsc;
   static int counter = 0;
   keystruct *sc = (keystruct *)nmalloc(sizeof(keystruct));
@@ -399,35 +399,35 @@ static void add_to_sclist(const int menus, const char *scstring, const int keyco
 }
 
 /* Return the first shortcut in the list of shortcuts that, matches the given function in the given menu. */
-const keystruct *first_sc_for(const int menu, functionptrtype function) _NOTHROW {
-  for (keystruct *sc = sclist; sc; sc = sc->next) {
-    if ((sc->menus & menu) && sc->func == function && sc->keystr[0]) {
-      return sc;
-    }
-  }
-  return NULL;
-}
+// const keystruct *first_sc_for(const int menu, functionptrtype function) _NOTHROW {
+//   for (keystruct *sc = sclist; sc; sc = sc->next) {
+//     if ((sc->menus & menu) && sc->func == function && sc->keystr[0]) {
+//       return sc;
+//     }
+//   }
+//   return NULL;
+// }
 
 /* Return the number of entries that can be shown in the given menu. */
-Ulong shown_entries_for(const int menu) _NOTHROW {
-  funcstruct *item = allfuncs;
-  Ulong maximum = (((COLS + 40) / 20) * 2);
-  Ulong count = 0;
-  while (count < maximum && item) {
-    if (item->menus & menu) {
-      ++count;
-    }
-    item = item->next;
-  }
-  /* When --saveonexit is not used, widen the grid of the WriteOut menu. */
-  if (menu == MWRITEFILE && !item && !first_sc_for(menu, discard_buffer)) {
-    --count;
-  }
-  return count;
-}
+// Ulong shown_entries_for(const int menu) _NOTHROW {
+//   funcstruct *item = allfuncs;
+//   Ulong maximum = (((COLS + 40) / 20) * 2);
+//   Ulong count = 0;
+//   while (count < maximum && item) {
+//     if (item->menus & menu) {
+//       ++count;
+//     }
+//     item = item->next;
+//   }
+//   /* When --saveonexit is not used, widen the grid of the WriteOut menu. */
+//   if (menu == MWRITEFILE && !item && !first_sc_for(menu, discard_buffer)) {
+//     --count;
+//   }
+//   return count;
+// }
 
 /* Return the first shortcut in the current menu that matches the given input. */
-const keystruct *get_shortcut(const int keycode) _NOTHROW {
+const keystruct *get_shortcut(const int keycode) {
   /* Plain characters and upper control codes cannot be shortcuts. */
   if (!meta_key && 0x20 <= keycode && keycode <= 0xFF) {
     return NULL;
@@ -452,7 +452,7 @@ const keystruct *get_shortcut(const int keycode) _NOTHROW {
 }
 
 /* Return a pointer to the function that is bound to the given key. */
-functionptrtype func_from_key(const int keycode) _NOTHROW {
+functionptrtype func_from_key(const int keycode) {
   const keystruct *sc = get_shortcut(keycode);
   return (sc ? sc->func : NULL);
 }

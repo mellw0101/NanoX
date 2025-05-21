@@ -19,7 +19,7 @@ static Ulong location;
 // The function key list is built by iterating over all functions,
 // and for each function, iterating over all shortcuts.
 // The function key descriptions are built by iterating over all functions. 
-void help_init(void) {
+static void help_init(void) {
   Ulong allocsize = 0;
   /* Space needed for help_text. */
   const char *htx[3];
@@ -355,7 +355,7 @@ void wrap_help_text_into_buffer(void) {
 }
 
 /* Assemble a help text, display it, and allow scrolling through it.  TODO: (show_help) : Change to NanoX help text. */
-void show_help(void) {
+static void show_help(void) {
   int kbinput = ERR;
   /* The function of the key the user typed in. */
   functionptrtype function;
@@ -377,6 +377,11 @@ void show_help(void) {
     UNSET(NO_HELP);
     UNSET(ZERO);
     window_init();
+    // if (ISSET(NO_NCURSES)) {
+    // }
+    // else {
+    //   window_init_curses();
+    // }
   }
   else {
     blank_statusbar();
@@ -484,6 +489,11 @@ void show_help(void) {
   curs_set(0);
   if (ISSET(NO_HELP) || ISSET(ZERO)) {
     window_init();
+    // if (ISSET(NO_NCURSES)) {
+    // }
+    // else {
+    //   window_init_curses();
+    // }
   }
   else {
     blank_statusbar();

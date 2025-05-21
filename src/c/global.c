@@ -7,8 +7,19 @@
 #include "../include/c_proto.h"
 
 
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
+
+/* Set to 'TRUE' by the handler whenever a SIGWINCH occurs. */
+volatile sig_atomic_t the_window_resized = FALSE;
+
 /* The width of a tab in spaces.  The default is set in main(). */
 long tabsize = -1;
+/* The relative column where we will wrap lines. */
+long fill = -COLUMNS_FROM_EOL;
+
+/* The actual column where we will wrap lines, based on fill. */
+Ulong wrap_at = 0;
 
 /* The top portion of the screen, showing the version number of nano, the name of the file, and whether the buffer was modified. */
 WINDOW *topwin = NULL;
@@ -41,12 +52,18 @@ Editor *openeditor = NULL;
 /* The first open editor. */
 Editor *starteditor = NULL;
 
+/* The start of the shortcuts list. */
+keystruct *sclist = NULL;
+
 /* The start of the functions list. */
 funcstruct *allfuncs = NULL;
 /* The last function in the list. */
 funcstruct *tailfunc;
 /* A pointer to the special Exit/Close item. */
 funcstruct *exitfunc;
+
+/* The compiled regular expression to use in searches. */
+regex_t search_regexp;
 
 /* Whether more than one buffer is or has been open. */
 bool more_than_one = FALSE;
@@ -68,6 +85,14 @@ bool we_are_running = FALSE;
 bool control_C_was_pressed = FALSE;
 /* Whether to show the number of lines when the minibar is used. */
 bool report_size = TRUE;
+/* Whether any Sh-M-<letter> combo has been bound. */
+bool shifted_metas = FALSE;
+/* Whether the multiline-coloring situation has changed. */
+bool perturbed = FALSE;
+/* Whether the multidata should be recalculated. */
+bool recook = FALSE;
+/* Whether the current keystroke is a Meta key. */
+bool meta_key;
 
 /* These two tags are used elsewhere too, so they are global.
  * TRANSLATORS: Try to keep the next two strings at most 10 characters. */
@@ -110,3 +135,99 @@ int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 
 /* Global config to store data retrieved from config file. */
 configstruct *config = NULL;
+
+
+/* ---------------------------------------------------------- Function's ---------------------------------------------------------- */
+
+
+/* Empty functions, for the most part corresponding to toggles. */
+
+void discard_buffer(void) {
+  ;
+}
+
+/* Parse the given keystring and return the corresponding keycode, or return -1 when the string is invalid. */
+int keycode_from_string(const char *keystring) {
+  int fn;
+  if (keystring[0] == '^') {
+    if (keystring[2] == '\0') {
+      if (keystring[1] == '/' || keystring[1] == '-') {
+        return 31;
+      }
+      if (keystring[1] <= '_') {
+        return keystring[1] - 64;
+      }
+      if (keystring[1] == '`') {
+        return 0;
+      }
+      else {
+        return -1;
+      }
+    }
+    else if (strcasecmp(keystring, "^Space") == 0) {
+      return 0;
+    }
+    else {
+      return -1;
+    }
+  }
+  else if (keystring[0] == 'M') {
+    if (keystring[1] == '-' && keystring[3] == '\0') {
+      return tolower((Uchar)keystring[2]);
+    }
+    if (strcasecmp(keystring, "M-Space") == 0) {
+      return (int)' ';
+    }
+    else {
+      return -1;
+    }
+  }
+  else if (strncasecmp(keystring, "Sh-M-", 5) == 0 && 'a' <= (keystring[5] | 0x20) && (keystring[5] | 0x20) <= 'z' && keystring[6] == '\0') {
+    shifted_metas = TRUE;
+    return (keystring[5] & 0x5F);
+  }
+  else if (keystring[0] == 'F') {
+    fn = atoi(&keystring[1]);
+    if (fn < 1 || fn > 24) {
+      return -1;
+    }
+    return (KEY_F0 + fn);
+  }
+  else if (strcasecmp(keystring, "Ins") == 0) {
+    return KEY_IC;
+  }
+  else if (strcasecmp(keystring, "Del") == 0) {
+    return KEY_DC;
+  }
+  else {
+    return -1;
+  }
+}
+
+/* Return the first shortcut in the list of shortcuts that, matches the given function in the given menu. */
+const keystruct *first_sc_for(const int menu, functionptrtype function) {
+  for (keystruct *sc = sclist; sc; sc = sc->next) {
+    if ((sc->menus & menu) && sc->func == function && sc->keystr[0]) {
+      return sc;
+    }
+  }
+  return NULL;
+}
+
+/* Return the number of entries that can be shown in the given menu. */
+Ulong shown_entries_for(int menu) {
+  funcstruct *item = allfuncs;
+  Ulong maximum = (((COLS + 40) / 20) * 2);
+  Ulong count = 0;
+  while (count < maximum && item) {
+    if (item->menus & menu) {
+      ++count;
+    }
+    item = item->next;
+  }
+  /* When --saveonexit is not used, widen the grid of the WriteOut menu. */
+  if (menu == MWRITEFILE && !item && !first_sc_for(menu, discard_buffer)) {
+    --count;
+  }
+  return count;
+}

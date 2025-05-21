@@ -2821,101 +2821,101 @@ int update_softwrapped_line(linestruct *line) {
 
 /* Check whether the mark is on, or whether old_column and new_column are on different "pages"
  * (in softwrap mode, only the former applies), which means that the relevant line needs to be redrawn. */
-bool line_needs_update(const Ulong old_column, const Ulong new_column) _NOTHROW {
-  if (openfile->mark) {
-    return TRUE;
-  }
-  else {
-    return (get_page_start(old_column) != get_page_start(new_column));
-  }
-}
+// bool line_needs_update(const Ulong old_column, const Ulong new_column) _NOTHROW {
+//   if (openfile->mark) {
+//     return TRUE;
+//   }
+//   else {
+//     return (get_page_start(old_column) != get_page_start(new_column));
+//   }
+// }
 
 /* Try to move up nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move up, which will be zero if we completely succeeded. */
-int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW {
-  int i;
-  Ulong chunk;
-  if (ISSET(SOFTWRAP)) {
-    /* Recede through the requested number of chunks. */
-    for (i = nrows; i > 0; --i) {
-      chunk     = chunk_for(*leftedge, *line);
-      *leftedge = 0;
-      if ((int)chunk >= i) {
-        return go_forward_chunks((chunk - i), line, leftedge);
-      }
-      if (*line == openfile->filetop) {
-        break;
-      }
-      i -= chunk;
-      *line     = (*line)->prev;
-      *leftedge = HIGHEST_POSITIVE;
-    }
-    if (*leftedge == HIGHEST_POSITIVE) {
-      *leftedge = leftedge_for(*leftedge, *line);
-    }
-  }
-  else {
-    for (i = nrows; i > 0 && (*line)->prev; --i) {
-      *line = (*line)->prev;
-    }
-  }
-  return i;
-}
+// int go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW {
+//   int i;
+//   Ulong chunk;
+//   if (ISSET(SOFTWRAP)) {
+//     /* Recede through the requested number of chunks. */
+//     for (i = nrows; i > 0; --i) {
+//       chunk     = chunk_for(*leftedge, *line);
+//       *leftedge = 0;
+//       if ((int)chunk >= i) {
+//         return go_forward_chunks((chunk - i), line, leftedge);
+//       }
+//       if (*line == openfile->filetop) {
+//         break;
+//       }
+//       i -= chunk;
+//       *line     = (*line)->prev;
+//       *leftedge = HIGHEST_POSITIVE;
+//     }
+//     if (*leftedge == HIGHEST_POSITIVE) {
+//       *leftedge = leftedge_for(*leftedge, *line);
+//     }
+//   }
+//   else {
+//     for (i = nrows; i > 0 && (*line)->prev; --i) {
+//       *line = (*line)->prev;
+//     }
+//   }
+//   return i;
+// }
 
 /* Try to move down nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move down, which will be zero if we completely succeeded. */
-int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW {
-  int   i;
-  Ulong current_leftedge;
-  bool  kickoff, end_of_line;
-  if (ISSET(SOFTWRAP)) {
-    current_leftedge = *leftedge;
-    kickoff          = TRUE;
-    /* Advance through the requested number of chunks. */
-    for (i = nrows; i > 0; --i) {
-      end_of_line = FALSE;
-      current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
-      if (!end_of_line) {
-        continue;
-      }
-      if (*line == openfile->filebot) {
-        break;
-      }
-      *line = (*line)->next;
-      current_leftedge = 0;
-      kickoff = TRUE;
-    }
-    /* Only change leftedge when we actually could move. */
-    if (i < nrows) {
-      *leftedge = current_leftedge;
-    }
-  }
-  else {
-    for (i = nrows; i > 0 && (*line)->next; --i) {
-      *line = (*line)->next;
-    }
-  }
-  return i;
-}
+// int go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW {
+//   int   i;
+//   Ulong current_leftedge;
+//   bool  kickoff, end_of_line;
+//   if (ISSET(SOFTWRAP)) {
+//     current_leftedge = *leftedge;
+//     kickoff          = TRUE;
+//     /* Advance through the requested number of chunks. */
+//     for (i = nrows; i > 0; --i) {
+//       end_of_line = FALSE;
+//       current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &end_of_line);
+//       if (!end_of_line) {
+//         continue;
+//       }
+//       if (*line == openfile->filebot) {
+//         break;
+//       }
+//       *line = (*line)->next;
+//       current_leftedge = 0;
+//       kickoff = TRUE;
+//     }
+//     /* Only change leftedge when we actually could move. */
+//     if (i < nrows) {
+//       *leftedge = current_leftedge;
+//     }
+//   }
+//   else {
+//     for (i = nrows; i > 0 && (*line)->next; --i) {
+//       *line = (*line)->next;
+//     }
+//   }
+//   return i;
+// }
 
 /* Return 'TRUE' if there are fewer than a screen's worth of lines between the line at line number
  * was_lineno (and column was_leftedge, if we're in softwrap mode) and the line at current[current_x]. */
-bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW {
-  int rows_left;
-  Ulong leftedge;
-  linestruct *line;
-  if (ISSET(SOFTWRAP)) {
-    line = openfile->current;
-    leftedge  = leftedge_for(xplustabs(), openfile->current);
-    rows_left = go_back_chunks((editwinrows - 1), &line, &leftedge);
-    return (rows_left > 0 || line->lineno < (long)was_lineno || (line->lineno == (long)was_lineno && leftedge <= was_leftedge));
-  }
-  else {
-    return ((int)(openfile->current->lineno - was_lineno) < editwinrows);
-  }
-}
+// bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW {
+//   int rows_left;
+//   Ulong leftedge;
+//   linestruct *line;
+//   if (ISSET(SOFTWRAP)) {
+//     line = openfile->current;
+//     leftedge  = leftedge_for(xplustabs(), openfile->current);
+//     rows_left = go_back_chunks((editwinrows - 1), &line, &leftedge);
+//     return (rows_left > 0 || line->lineno < (long)was_lineno || (line->lineno == (long)was_lineno && leftedge <= was_leftedge));
+//   }
+//   else {
+//     return ((int)(openfile->current->lineno - was_lineno) < editwinrows);
+//   }
+// }
 
 /* Draw a `scroll bar` on the righthand side of the edit window. */
 static void draw_scrollbar(void) _NOTHROW {
@@ -3120,51 +3120,51 @@ void edit_scroll(bool direction) {
 /* When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
  * chunk, shift it back to the last column before the breakpoint.  The given column is relative
  * to the given leftedge in current.  The returned column is relative to the start of the text. */
-Ulong actual_last_column(Ulong leftedge, Ulong column) _NOTHROW {
-  bool  kickoff, last_chunk;
-  Ulong end_col;
-  if (ISSET(SOFTWRAP)) {
-    kickoff    = TRUE;
-    last_chunk = FALSE;
-    end_col    = (get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge);
-    /* If we're not on the last chunk, we're one column past the end of the row.  Shifting back one column
-     * might put us in the middle of a multi-column character, but 'actual_x()' will fix that later. */
-    if (!last_chunk) {
-      --end_col;
-    }
-    if (column > end_col) {
-      column = end_col;
-    }
-  }
-  return (leftedge + column);
-}
+// Ulong actual_last_column(Ulong leftedge, Ulong column) _NOTHROW {
+//   bool  kickoff, last_chunk;
+//   Ulong end_col;
+//   if (ISSET(SOFTWRAP)) {
+//     kickoff    = TRUE;
+//     last_chunk = FALSE;
+//     end_col    = (get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk) - leftedge);
+//     /* If we're not on the last chunk, we're one column past the end of the row.  Shifting back one column
+//      * might put us in the middle of a multi-column character, but 'actual_x()' will fix that later. */
+//     if (!last_chunk) {
+//       --end_col;
+//     }
+//     if (column > end_col) {
+//       column = end_col;
+//     }
+//   }
+//   return (leftedge + column);
+// }
 
 /* Return TRUE if current[current_x] is before the viewport. */
-static bool current_is_above_screen(void) _NOTHROW {
-  if (ISSET(SOFTWRAP)) {
-    return (openfile->current->lineno < openfile->edittop->lineno || (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
-  }
-  return (openfile->current->lineno < openfile->edittop->lineno);
-}
+// static bool current_is_above_screen(void) _NOTHROW {
+//   if (ISSET(SOFTWRAP)) {
+//     return (openfile->current->lineno < openfile->edittop->lineno || (openfile->current->lineno == openfile->edittop->lineno && xplustabs() < openfile->firstcolumn));
+//   }
+//   return (openfile->current->lineno < openfile->edittop->lineno);
+// }
 
 #define SHIM (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
 
 /* Return TRUE if current[current_x] is beyond the viewport. */
-static bool current_is_below_screen(void) _NOTHROW {
-  if (ISSET(SOFTWRAP)) {
-    linestruct *line     = openfile->edittop;
-    Ulong       leftedge = openfile->firstcolumn;
-    /* If current[current_x] is more than a screen's worth of lines after edittop at column firstcolumn, it's below the screen. */
-    return (go_forward_chunks((editwinrows - 1 - SHIM), &line, &leftedge) == 0 && (line->lineno < openfile->current->lineno
-     || (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
-  }
-  return (openfile->current->lineno >= (openfile->edittop->lineno + editwinrows - SHIM));
-}
+// static bool current_is_below_screen(void) _NOTHROW {
+//   if (ISSET(SOFTWRAP)) {
+//     linestruct *line     = openfile->edittop;
+//     Ulong       leftedge = openfile->firstcolumn;
+//     /* If current[current_x] is more than a screen's worth of lines after edittop at column firstcolumn, it's below the screen. */
+//     return (go_forward_chunks((editwinrows - 1 - SHIM), &line, &leftedge) == 0 && (line->lineno < openfile->current->lineno
+//      || (line->lineno == openfile->current->lineno && leftedge < leftedge_for(xplustabs(), openfile->current))));
+//   }
+//   return (openfile->current->lineno >= (openfile->edittop->lineno + editwinrows - SHIM));
+// }
 
 /* Return TRUE if current[current_x] is outside the viewport. */
-bool current_is_offscreen(void) _NOTHROW {
-  return (current_is_above_screen() || current_is_below_screen());
-}
+// bool current_is_offscreen(void) _NOTHROW {
+//   return (current_is_above_screen() || current_is_below_screen());
+// }
 
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
 void edit_redraw(linestruct *old_current, update_type manner) {
@@ -3257,24 +3257,24 @@ void edit_refresh(void) {
  * CENTERING means that current should end up in the middle of the screen,
  * and FLOWING means that it should scroll no more than needed to bring
  * current into view. */
-void adjust_viewport(update_type manner) _NOTHROW {
-  int goal = 0;
-  if (manner == STATIONARY) {
-    goal = openfile->cursor_row;
-  }
-  else if (manner == CENTERING) {
-    goal = (editwinrows / 2);
-  }
-  else if (!current_is_above_screen()) {
-    goal = (editwinrows - 1 - SHIM);
-  }
-  openfile->edittop = openfile->current;
-  if (ISSET(SOFTWRAP)) {
-    openfile->firstcolumn = leftedge_for(xplustabs(), openfile->current);
-  }
-  /* Move edittop back goal rows, starting at current[current_x]. */
-  go_back_chunks(goal, &openfile->edittop, &openfile->firstcolumn);
-}
+// void adjust_viewport(update_type manner) _NOTHROW {
+//   int goal = 0;
+//   if (manner == STATIONARY) {
+//     goal = openfile->cursor_row;
+//   }
+//   else if (manner == CENTERING) {
+//     goal = (editwinrows / 2);
+//   }
+//   else if (!current_is_above_screen()) {
+//     goal = (editwinrows - 1 - SHIM);
+//   }
+//   openfile->edittop = openfile->current;
+//   if (ISSET(SOFTWRAP)) {
+//     openfile->firstcolumn = leftedge_for(xplustabs(), openfile->current);
+//   }
+//   /* Move edittop back goal rows, starting at current[current_x]. */
+//   go_back_chunks(goal, &openfile->edittop, &openfile->firstcolumn);
+// }
 
 /* Tell curses to unconditionally redraw whatever was on the screen. */
 void full_refresh(void) _NOTHROW {
@@ -3451,7 +3451,12 @@ void do_credits(void) {
   if (with_interface || with_help) {
     SET(ZERO);
     SET(NO_HELP);
-    window_init();
+    if (ISSET(NO_NCURSES)) {
+      window_init();
+    }
+    else {
+      window_init_curses();
+    }
   }
   nodelay(midwin, TRUE);
   scrollok(midwin, TRUE);
@@ -3486,7 +3491,12 @@ void do_credits(void) {
   if (with_help) {
     UNSET(NO_HELP);
   }
-  window_init();
+  if (ISSET(NO_NCURSES)) {
+    window_init();
+  }
+  else {
+    window_init_curses();
+  }
   scrollok(midwin, FALSE);
   nodelay(midwin, FALSE);
   draw_all_subwindows();

@@ -246,44 +246,44 @@ static void stat_with_alloc(const char *filename, struct stat **pstat) _NOTHROW 
 }
 
 /* Verify that the containing directory of the given filename exists. */
-bool has_valid_path(const char *filename) _NOTHROW {
-  char *namecopy  = copy_of(filename);
-  char *parentdir = dirname(namecopy);
-  bool  validity  = FALSE;
-  bool  gone      = FALSE;
-  struct stat parentinfo;
-  if (strcmp(parentdir, ".") == 0) {
-    char *currentdir = realpath(".", NULL);
-    gone = (currentdir == NULL && errno == ENOENT);
-    free(currentdir);
-  }
-  if (gone) {
-    statusline(ALERT, _("The working directory has disappeared"));
-  }
-  else if (stat(parentdir, &parentinfo) == -1) {
-    if (errno == ENOENT) {
-      /* TRANSLATORS: Keep the next ten messages at most 76 characters. */
-      statusline(ALERT, _("Directory '%s' does not exist"), parentdir);
-    }
-    else {
-      statusline(ALERT, _("Path '%s': %s"), parentdir, strerror(errno));
-    }
-  }
-  else if (!S_ISDIR(parentinfo.st_mode)) {
-    statusline(ALERT, _("Path '%s' is not a directory"), parentdir);
-  }
-  else if (access(parentdir, X_OK) == -1) {
-    statusline(ALERT, _("Path '%s' is not accessible"), parentdir);
-  }
-  else if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && access(parentdir, W_OK) < 0) {
-    statusline(MILD, _("Directory '%s' is not writable"), parentdir);
-  }
-  else {
-    validity = TRUE;
-  }
-  free(namecopy);
-  return validity;
-}
+// bool has_valid_path(const char *filename) _NOTHROW {
+//   char *namecopy  = copy_of(filename);
+//   char *parentdir = dirname(namecopy);
+//   bool  validity  = FALSE;
+//   bool  gone      = FALSE;
+//   struct stat parentinfo;
+//   if (strcmp(parentdir, ".") == 0) {
+//     char *currentdir = realpath(".", NULL);
+//     gone = (currentdir == NULL && errno == ENOENT);
+//     free(currentdir);
+//   }
+//   if (gone) {
+//     statusline(ALERT, _("The working directory has disappeared"));
+//   }
+//   else if (stat(parentdir, &parentinfo) == -1) {
+//     if (errno == ENOENT) {
+//       /* TRANSLATORS: Keep the next ten messages at most 76 characters. */
+//       statusline(ALERT, _("Directory '%s' does not exist"), parentdir);
+//     }
+//     else {
+//       statusline(ALERT, _("Path '%s': %s"), parentdir, strerror(errno));
+//     }
+//   }
+//   else if (!S_ISDIR(parentinfo.st_mode)) {
+//     statusline(ALERT, _("Path '%s' is not a directory"), parentdir);
+//   }
+//   else if (access(parentdir, X_OK) == -1) {
+//     statusline(ALERT, _("Path '%s' is not accessible"), parentdir);
+//   }
+//   else if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && access(parentdir, W_OK) < 0) {
+//     statusline(MILD, _("Directory '%s' is not writable"), parentdir);
+//   }
+//   else {
+//     validity = TRUE;
+//   }
+//   free(namecopy);
+//   return validity;
+// }
 
 /* This does one of three things.  If the filename is "", it just creates
  * a new empty buffer.  When the filename is not empty, it reads that file
@@ -383,6 +383,7 @@ bool open_buffer(const char *filename, bool new_one) {
 
 /* Open a file using the browser. */
 void open_buffer_browser(void) {
+  int was_menu = currmenu;
   char *path = copy_of(openfile->filename[0] ? openfile->filename : "./");
   char *file_to_open = browse_in(path);
   free(path);
@@ -403,6 +404,8 @@ void open_buffer_browser(void) {
     }
     edit_refresh();
   }
+  currmenu       = was_menu;
+  refresh_needed = TRUE;
 }
 
 /* Open a new and empty buffer. */
@@ -412,16 +415,16 @@ void open_new_empty_buffer(void) {
 }
 
 /* Mark the current buffer as modified if it isn't already, and then update the title bar to display the buffer's new status. */
-void set_modified(void) _NOTHROW {
-  if (openfile->modified) {
-    return;
-  }
-  openfile->modified = TRUE;
-  titlebar(NULL);
-  if (openfile->lock_filename) {
-    write_lockfile(openfile->lock_filename, openfile->filename, TRUE);
-  }
-}
+// void set_modified(void) _NOTHROW {
+//   if (openfile->modified) {
+//     return;
+//   }
+//   openfile->modified = TRUE;
+//   titlebar(NULL);
+//   if (openfile->lock_filename) {
+//     write_lockfile(openfile->lock_filename, openfile->filename, TRUE);
+//   }
+// }
 
 /* Update the title bar and the multiline cache to match the current buffer. */
 void prepare_for_display(void) _NOTHROW {

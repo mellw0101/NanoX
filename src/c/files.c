@@ -157,6 +157,47 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   return TRUE;
 }
 
+/* Verify that the containing directory of the given filename exists. */
+bool has_valid_path(const char *const restrict filename) {
+  char *namecopy  = copy_of(filename);
+  char *parentdir = dirname(namecopy);
+  bool  validity  = FALSE;
+  bool  gone      = FALSE;
+  struct stat parentinfo;
+  char *currentdir;
+  if (strcmp(parentdir, ".") == 0) {
+    currentdir = realpath(".", NULL);
+    gone = (currentdir == NULL && errno == ENOENT);
+    free(currentdir);
+  }
+  if (gone) {
+    print_status(ALERT, _("The working directory has disappeared"));
+  }
+  else if (stat(parentdir, &parentinfo) == -1) {
+    if (errno == ENOENT) {
+      /* TRANSLATORS: Keep the next ten messages at most 76 characters. */
+      print_status(ALERT, _("Directory '%s' does not exist"), parentdir);
+    }
+    else {
+      print_status(ALERT, _("Path '%s': %s"), parentdir, strerror(errno));
+    }
+  }
+  else if (!S_ISDIR(parentinfo.st_mode)) {
+    print_status(ALERT, _("Path '%s' is not a directory"), parentdir);
+  }
+  else if (access(parentdir, X_OK) == -1) {
+    print_status(ALERT, _("Path '%s' is not accessible"), parentdir);
+  }
+  else if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && access(parentdir, W_OK) < 0) {
+    print_status(MILD, _("Directory '%s' is not writable"), parentdir);
+  }
+  else {
+    validity = TRUE;
+  }
+  free(namecopy);
+  return validity;
+}
+
 void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) {
   /* If the buffer to free is the start buffer, advance the start buffer. */
   if (orphan == *start) {
@@ -209,7 +250,7 @@ void close_buffer(void) {
   }
   free(orphan);
   /* When just one buffer remains open, show "Exit" in the help lines. */
-  if (openfile && openfile == openfile->next) {
+  if (openfile && CLIST_SINGLE(openfile)) {
     exitfunc->tag = exit_tag;
   }
 }
@@ -320,6 +361,26 @@ int diralphasort(const void *va, const void *vb) {
   else {
     return difference;
   }
+}
+
+/* Mark `file` as modified if it isn't already, and then update the title bar to display the buffer's new status.  As well as re-writing the lockfile it there is one. */
+void set_modified_for(openfilestruct *const file) {
+  ASSERT(file);
+  if (file->modified) {
+    return;
+  }
+  file->modified = TRUE;
+  if (!ISSET(NO_NCURSES)) {
+    titlebar_curses(NULL);
+  }
+  if (file->lock_filename) {
+    write_lockfile(file->lock_filename, file->filename, TRUE);
+  }
+}
+
+/* Mark the `openfile` buffer as modified if it isn't already, and then update the title bar to display the buffer's new status. */
+void set_modified(void) {
+  set_modified_for(openfile);
 }
 
 /* Update title bar and such after switching to another buffer. */
