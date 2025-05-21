@@ -23,7 +23,7 @@ bool bracketed_paste = FALSE;
 /* Whether more than one buffer is or has been open. */
 // bool more_than_one = FALSE;
 /* Whether to show the number of lines when the minibar is used. */
-bool report_size = TRUE;
+// bool report_size = TRUE;
 /* Whether a tool has been run at the Execute-Command prompt. */
 bool ran_a_tool = FALSE;
 /* Whether we are in the help viewer. */
@@ -39,7 +39,7 @@ bool suggest_on = FALSE;
 /* Whether a 0x0A byte should be shown as a ^@ instead of a ^J. */
 // bool as_an_at = TRUE;
 /* Whether Ctrl+C was pressed (when a keyboard interrupt is enabled). */
-bool control_C_was_pressed = FALSE;
+// bool control_C_was_pressed = FALSE;
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
 // message_type lastmessage = VACUUM;
 /* The line where the last completion was found, if any. */
@@ -129,7 +129,7 @@ regex_t quotereg;
 /* The directory where we store backup files. */
 char *backup_dir = NULL;
 /* The path to our confining "operating" directory, when given. */
-char *operating_dir = NULL;
+// char *operating_dir = NULL;
 /* The command to use for the alternate spell checker. */
 char *alt_speller = NULL;
 /* The global list of color syntaxes. */
@@ -180,7 +180,7 @@ colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
 /* The processed color pairs for the interface elements. */
 // int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 /* The user's home directory, from $HOME or /etc/passwd. */
-char *homedir = NULL;
+// char *homedir = NULL;
 /* The directory for nano's history files. */
 char *statedir = NULL;
 /* An error message (if any) about nanorc files or history files. */

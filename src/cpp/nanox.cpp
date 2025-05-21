@@ -13,7 +13,7 @@ static int oldinterval = -1;
 /* The original settings of the user's terminal. */
 static termios original_state;
 /* Containers for the original and the temporary handler for SIGINT. */
-static struct sigaction oldaction, newaction;
+// static struct sigaction oldaction, newaction;
 
 main_thread_t *main_thread = NULL;
 
@@ -570,25 +570,25 @@ static void list_syntax_names(void) _NOTHROW {
 }
 
 /* Register that Ctrl+C was pressed during some system call. */
-static void make_a_note(int signal) _NOTHROW {
-  control_C_was_pressed = TRUE;
-}
+// static void make_a_note(int signal) _NOTHROW {
+//   control_C_was_pressed = TRUE;
+// }
 
 /* Make ^C interrupt a system call and set a flag. */
-void install_handler_for_Ctrl_C(void) _NOTHROW {
-  /* Enable the generation of a SIGINT when ^C is pressed. */
-  enable_kb_interrupt();
-  /* Set up a signal handler so that pressing ^C will set a flag. */
-  newaction.sa_handler = make_a_note;
-  newaction.sa_flags   = 0;
-  sigaction(SIGINT, &newaction, &oldaction);
-}
+// void install_handler_for_Ctrl_C(void) _NOTHROW {
+//   /* Enable the generation of a SIGINT when ^C is pressed. */
+//   enable_kb_interrupt();
+//   /* Set up a signal handler so that pressing ^C will set a flag. */
+//   newaction.sa_handler = make_a_note;
+//   newaction.sa_flags   = 0;
+//   sigaction(SIGINT, &newaction, &oldaction);
+// }
 
 /* Go back to ignoring ^C. */
-void restore_handler_for_Ctrl_C(void) _NOTHROW {
-  sigaction(SIGINT, &oldaction, NULL);
-  disable_kb_interrupt();
-}
+// void restore_handler_for_Ctrl_C(void) _NOTHROW {
+//   sigaction(SIGINT, &oldaction, NULL);
+//   disable_kb_interrupt();
+// }
 
 /* Reconnect standard input to the tty, and store its state. */
 void reconnect_and_store_state(void) _NOTHROW {
@@ -861,20 +861,20 @@ static void disable_extended_io(void) _NOTHROW {
 }
 
 /* Stop ^C from generating a SIGINT. */
-void disable_kb_interrupt(void) _NOTHROW {
-  termios settings = {};
-  tcgetattr(0, &settings);
-  settings.c_lflag &= ~ISIG;
-  tcsetattr(0, TCSANOW, &settings);
-}
+// void disable_kb_interrupt(void) _NOTHROW {
+//   termios settings = {};
+//   tcgetattr(0, &settings);
+//   settings.c_lflag &= ~ISIG;
+//   tcsetattr(0, TCSANOW, &settings);
+// }
 
 /* Make ^C generate a SIGINT. */
-void enable_kb_interrupt(void) _NOTHROW {
-  termios settings = {};
-  tcgetattr(0, &settings);
-  settings.c_lflag |= ISIG;
-  tcsetattr(0, TCSANOW, &settings);
-}
+// void enable_kb_interrupt(void) _NOTHROW {
+//   termios settings = {};
+//   tcgetattr(0, &settings);
+//   settings.c_lflag |= ISIG;
+//   tcsetattr(0, TCSANOW, &settings);
+// }
 
 /* Disable the terminal's XON/XOFF flow-control characters. */
 void disable_flow_control(void) _NOTHROW {
@@ -2160,7 +2160,12 @@ int main(int argc, char **argv) {
       bottombars(MMAIN);
     }
     if (ISSET(MINIBAR) && !ISSET(ZERO) && (LINES > 1) && (lastmessage < REMARK)) {
-      minibar();
+      if (ISSET(NO_NCURSES)) {
+        minibar();
+      }
+      else {
+        minibar_curses();
+      }
       if (suggest_on) {
         edit_refresh();
         do_suggestion();

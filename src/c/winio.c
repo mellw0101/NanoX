@@ -7,6 +7,15 @@
 #include "../include/c_proto.h"
 
 
+/* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
+
+
+#define BRANDING  PACKAGE_STRING
+
+
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
+
 /* From where in the relevant line the current row is drawn. */
 Ulong from_x = 0;
 /* Until where in the relevant line the current row is drawn. */
@@ -19,6 +28,41 @@ bool is_shorter = TRUE;
 Ulong waiting_codes = 0;
 /* The number of keystrokes left before we blank the status bar. */
 int countdown = 0;
+/* Whether we are in the process of recording a macro. */
+bool recording = FALSE;
+
+
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
+
+
+/* Determine the sequence number of the given buffer in the circular list. */
+static int buffer_number(openfilestruct *buffer) {
+  int count = 1;
+  while (buffer != startfile) {
+    buffer = buffer->prev;
+    ++count;
+  }
+  return count;
+}
+
+/* ----------------------------- Curses ----------------------------- */
+
+static void show_state_at_curses(WINDOW *const window) {
+  ASSERT(window);
+  waddnstr(window, (ISSET(AUTOINDENT) ? "I" : " "), 1);
+  waddnstr(window, (openfile->mark ? "M" : " "), 1);
+  waddnstr(window, (ISSET(BREAK_LONG_LINES) ? "L" : " "), 1);
+  waddnstr(window, (recording ? "R" : " "), 1);
+  waddnstr(window, (ISSET(SOFTWRAP) ? "S" : " "), 1);
+}
+
+_UNUSED static inline int mvwaddnstr_curses(WINDOW *const window, int row, int column, const char *const restrict string, int len) {
+  return mvwaddnstr(window, row, column, string, len);
+}
+
+
+/* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
+
 
 bool get_has_more(void) {
   return has_more;
@@ -319,18 +363,23 @@ void blank_row_curses(WINDOW *const window, int row) {
   wclrtoeol(window);
 }
 
+/* Blank the first line of the top portion of the screen.  Using ncurses. */
+void blank_titlebar_curses(void) {
+  mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
+}
+
 void blank_statusbar_curses(void) {
   blank_row_curses(footwin, 0);
 }
 
-void statusline_curses(message_type type, const char *const restrict msg, ...) {
+void statusline_curses_va(message_type type, const char *const restrict format, va_list ap) {
   static Ulong start_col = 0;
   bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
   char *compound;
   char *message;
   bool bracketed;
   int color;
-  va_list ap;
+  va_list copy;
   if (type >= AHEM) {
     waiting_codes = 0;
   }
@@ -339,9 +388,9 @@ void statusline_curses(message_type type, const char *const restrict msg, ...) {
   }
   /* Construct the message from the arguments. */
   compound = xmalloc(MAXCHARLEN * COLS + 1);
-  va_start(ap, msg);
-  vsnprintf(compound, (MAXCHARLEN * COLS + 1), msg, ap);
-  va_end(ap);
+  va_copy(copy, ap);
+  vsnprintf(compound, (MAXCHARLEN * COLS + 1), format, copy);
+  va_end(copy);
   if (isendwin()) {
     writeferr("%s\n", compound);
     free(compound);
@@ -408,4 +457,296 @@ void statusline_curses(message_type type, const char *const restrict msg, ...) {
     /* When requested, wipe the statusbar after just one keystroke, otherwise wipe after 20. */
     countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
   }
+}
+
+void statusline_curses(message_type type, const char *const restrict msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+  statusline_curses_va(type, msg, ap);
+  va_end(ap);
+}
+
+/* If path is NULL, we're in normal editing mode, so display the current
+ * version of nano, the current filename, and whether the current file
+ * has been modified on the title bar.  If path isn't NULL, we're either
+ * in the file browser or the help viewer, so show either the current
+ * directory or the title of help text, that is: whatever is in path. */
+void titlebar_curses(const char *path) {
+  /* The width of the diffrent title-bar elements, in columns. */
+  Ulong verlen;
+  Ulong prefixlen;
+  Ulong pathlen;
+  Ulong statelen;
+  /* The width of the `Modified` would take up. */
+  Ulong pluglen = 0;
+  /* The position at witch the center part of the title-bar starts. */
+  Ulong offset = 0;
+  /* What is shown in the top left corner. */
+  const char *upperleft = "";
+  /* What is shown before the path -- `DIR:` or nothing. */
+  const char *prefix = "";
+  /* The state of the current buffer -- `Modified`, `View` or ``. */
+  const char *state = "";
+  /* The presentable for of the pathname. */
+  char *caption;
+  /* The buffer sequence number plus the total buffer count. */
+  char *ranking = NULL;
+  /* If the screen is to small, there is no title bar. */
+  if (!topwin) {
+    return;
+  }
+  wattron(topwin, interface_color_pair[TITLE_BAR]);
+  blank_titlebar_curses();
+  as_an_at = FALSE;
+  /**
+   * Do as Pico:
+   *   if there is not enough width available for all items,
+   *   first sacrifice the version string, then eat up the side spaces,
+   *   then sacrifice the prefix, and only then start dottifying.
+   */
+  /* Figure out the path, prefix and state strings. */
+  if (currmenu == MLINTER) {
+    prefix = _("Linting --");
+    path = openfile->filename;
+  }
+  else {
+    if (!inhelp && path) {
+      prefix = _("DIR:");
+    }
+    else {
+      if (!inhelp) {
+        /* If there are/were multiple buffers, show witch out of how meny. */
+        if (more_than_one) {
+          ranking = xmalloc(24);
+          sprintf(ranking, "[%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
+          upperleft = ranking;
+        }
+        else {
+          upperleft = BRANDING;
+        }
+        if (!*openfile->filename) {
+          path = _("New buffer");
+        }
+        else {
+          path = openfile->filename;
+        }
+        if (ISSET(VIEW_MODE)) {
+          state = _("View");
+        }
+        else if (ISSET(STATEFLAGS)) {
+          state = _("+.xxxxx");
+        }
+        else if (ISSET(RESTRICTED)) {
+          state = _("Restricted");
+        }
+        else {
+          pluglen = (breadth(_("Modified")) + 1);
+        }
+      }
+    }
+  }
+  /* Determine the width of the four elements, including their padding. */
+  verlen    = (breadth(upperleft) + 3);
+  prefixlen = breadth(prefix);
+  if (prefixlen > 0) {
+    ++prefixlen;
+  }
+  pathlen  = breadth(path);
+  statelen = (breadth(state) + 2);
+  if (statelen > 2) {
+    ++pathlen;
+  }
+  /* Only print the version message when there is room for it. */
+  if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
+    mvwaddstr(topwin, 0, 2, upperleft);
+  }
+  else {
+    verlen = 2;
+    /* If things don't fit yet, give up the placeholder. */
+    if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
+      pluglen = 0;
+    }
+    /* If things still don't fit, give up the side spaces. */
+    if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
+      verlen    = 0;
+      statelen -= 2;
+    }
+  }
+  free(ranking);
+  /* If we have side spaces left, center the path name. */
+  if (verlen > 0) {
+    offset = (verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2);
+  }
+  /* Only print the prefix when there is room for it. */
+  if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
+    mvwaddstr(topwin, 0, offset, prefix);
+    if (prefixlen > 0) {
+      waddnstr(topwin, S__LEN(" "));
+    }
+  }
+  else {
+    wmove(topwin, 0, offset);
+  }
+  /* Print the full path if there's room, otherwise, dottify it. */
+  if ((int)(pathlen + pluglen + statelen) <= COLS) {
+    caption = display_string(path, 0, pathlen, FALSE, FALSE);
+    waddstr(topwin, caption);
+    free(caption);
+  }
+  else if ((int)(5 + statelen) <= COLS) {
+    waddnstr(topwin, S__LEN("..."));
+    caption = display_string(path, (3 + pathlen - COLS + statelen), (COLS - statelen), FALSE, FALSE);
+    waddstr(topwin, caption);
+    free(caption);
+  }
+  /* When requested, show on the title-bar, the state of three options and the state of the mark and whether a macro is beeing recorded.  */
+  if (*state && ISSET(STATEFLAGS) && !ISSET(VIEW_MODE)) {
+    if (openfile->modified && COLS > 1) {
+      waddnstr(topwin, S__LEN(" *"));
+    }
+    if ((int)statelen < COLS) {
+      wmove(topwin, 0, (COLS + 2 - statelen));
+      show_state_at_curses(topwin);
+    }
+  }
+  else {
+    /* If there's room, right-align the state word, otherwise, clip it. */
+    if (statelen > 0 && (int)statelen <= COLS) {
+      mvwaddstr(topwin, 0, (COLS - statelen), state);
+    }
+    else {
+      mvwaddnstr(topwin, 0, 0, state, actual_x(state, COLS));
+    }
+  }
+  wattroff(topwin, interface_color_pair[TITLE_BAR]);
+  wrefresh(topwin);
+}
+
+/* Draw a bar at the bottom with some minimal state information. */
+void minibar_curses(void) {
+  char *thename         = NULL;
+  char *shortname;
+  char *position;
+  char *number_of_lines = NULL;
+  char *ranking         = NULL;
+  char *successor       = NULL;
+  char *location        = xmalloc(44);
+  char *hexadecimal     = xmalloc(9);
+  Ulong namewidth;
+  Ulong placewidth;
+  Ulong count;
+  Ulong tallywidth = 0;
+  Ulong padding    = 2;
+  wchar widecode;
+  /* Draw the colored bar over the full width of the screen. */
+  wattron(footwin, interface_color_pair[config->minibar_color]);
+  mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
+  if (*openfile->filename) {
+    as_an_at = FALSE;
+    thename = display_string(openfile->filename, 0, COLS, FALSE, FALSE);
+  }
+  else {
+    thename = copy_of(_("(nameless)"));
+  }
+  sprintf(location, "%zi,%zi", openfile->current->lineno, (xplustabs() + 1));
+  placewidth = strlen(location);
+  namewidth  = breadth(thename);
+  /* If the file name is relativly long drop the side spaces. */
+  if ((int)(namewidth + 19) > COLS) {
+    padding = 0;
+  }
+  /* Display the name of the current file (dottifying it if it doesn't fit), plus a star when the file has been modified. */
+  if (COLS > 4) {
+    if ((int)namewidth > (COLS - 2)) {
+      shortname = display_string(thename, (namewidth - COLS + 5), (COLS - 5), FALSE, FALSE);
+      wmove(footwin, 0, 0);
+      waddnstr(footwin, S__LEN("..."));
+      waddstr(footwin, shortname);
+      free(shortname);
+    }
+    else {
+      mvwaddstr(footwin, 0, padding, thename);
+    }
+    waddnstr(footwin, (openfile->modified ? " *": "  "), 2);
+  }
+  /* Right after reading or writing a file, display its number of lines.  Otherwise, when there are multiple buffers, display an [x/n] counter. */
+  if (report_size && COLS > 35) {
+    count           = (openfile->filebot->lineno - !*openfile->filebot->data);
+    number_of_lines = xmalloc(49);
+    if (openfile->fmt == NIX_FILE || openfile->fmt == UNSPECIFIED) {
+      sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
+    }
+    else {
+      sprintf(number_of_lines, P_(" (%zu line, %s)", " (%zu lines, %s)", count), count, ((openfile->fmt == DOS_FILE) ? "DOS" : "Mac"));
+    }
+    tallywidth = breadth(number_of_lines);
+    if ((int)(namewidth + tallywidth + 11) < COLS) {
+      waddstr(footwin, number_of_lines);
+    }
+    else {
+      tallywidth = 0;
+    }
+    report_size = FALSE;
+  }
+  else if (!CLIST_SINGLE(openfile) && COLS > 35) {
+    ranking = xmalloc(24);
+    sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
+    if ((int)(namewidth + placewidth + breadth(ranking) + 32) < COLS) {
+      waddstr(footwin, ranking);
+    }
+  }
+  /* Display the line/column position of the cursor. */
+  if (ISSET(CONSTANT_SHOW) && (int)(namewidth + tallywidth + placewidth + 32) < COLS) {
+    mvwaddstr(footwin, 0, (COLS - 27 - placewidth), location);
+  }
+  /* Display the hexadecimal code of the character under the cursor, plus the code of up to two succeeding zero-width characters. */
+  if (ISSET(CONSTANT_SHOW) && (int)(namewidth + tallywidth + 28) < COLS) {
+    position = (openfile->current->data + openfile->current_x);
+    if (!*position) {
+      sprintf(hexadecimal, (openfile->current->next ? using_utf8() ? "U+000A" : "  0x0A" : "  ----"));
+    }
+    else if (*position == NL) {
+      sprintf(hexadecimal, "  0x00");
+    }
+    else if ((Uchar)*position < 0x80 && using_utf8()) {
+      sprintf(hexadecimal, "U+%04X", (Uchar)*position);
+    }
+    else if (using_utf8() && mbtowide(&widecode, position) > 0) {
+      sprintf(hexadecimal, "U+%04X", (int)widecode);
+    }
+    else {
+      sprintf(hexadecimal, "  0x%02X", (Uchar)*position);
+    }
+    mvwaddstr(footwin, 0, (COLS - 23), hexadecimal);
+    successor = (position + char_length(position));
+    if (*position && *successor && is_zerowidth(successor) && mbtowide(&widecode, successor) > 0) {
+      sprintf(hexadecimal, "|%04X", (int)widecode);
+      waddstr(footwin, hexadecimal);
+      successor += char_length(successor);
+      if (*successor && is_zerowidth(successor) && mbtowide(&widecode, successor) > 0) {
+        sprintf(hexadecimal, "|%04X", (int)widecode);
+        waddstr(footwin, hexadecimal);
+      }
+    }
+    else {
+      successor = NULL;
+    }
+  }
+  /* Display the state of three flags, and the state of the macro and mark. */
+  if (ISSET(STATEFLAGS) && !successor && (int)(namewidth + tallywidth + 14 + 2 * padding) < COLS) {
+    wmove(footwin, 0, (COLS - 11 - padding));
+    show_state_at_curses(footwin);
+  }
+  /* Display how meny precent the current line is into the file. */
+  if ((int)(namewidth + 6) < COLS) {
+    sprintf(location, "%3zi%%", (100 * (openfile->current->lineno / openfile->filebot->lineno)));
+    mvwaddstr(footwin, 0, (COLS - 4 - padding), location);
+  }
+  wattroff(footwin, interface_color_pair[config->minibar_color]);
+  wrefresh(footwin);
+  free(number_of_lines);
+  free(hexadecimal);
+  free(location);
+  free(thename);
+  free(ranking);
 }

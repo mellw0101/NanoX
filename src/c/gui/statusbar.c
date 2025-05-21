@@ -83,6 +83,14 @@ void statusbar_timed_msg(message_type type, float seconds, const char *format, .
   va_end(ap);
 }
 
+void statusbar_msg_va(message_type type, const char *const restrict format, va_list ap) {
+  ASSERT(format);
+  va_list copy;
+  va_copy(copy, ap);
+  statusbar_timed_msg_internal(type, 2, format, copy);
+  va_end(copy);
+}
+
 /* Show a status message of `type`, for the default of `2 seconds`.  Note that the type will determen
  * if the message will be shown, depending if there is a more urgent message already being shown. */
 void statusbar_msg(message_type type, const char *format, ...) {

@@ -63,13 +63,39 @@ void free_nulltermchararray(char **const argv) {
   free(argv);
 }
 
-/**
-  Return's line pointer by number using optimized traversal.
-  1. From current position.
-  2. From file start.
-  3. From file end.
-  Chooses shortest path to target line.
- */
+/* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
+char *mallocstrcpy(char *dest, const char *src) {
+  const Ulong count = (strlen(src) + 1);
+  dest = xrealloc(dest, count);
+  strncpy(dest, src, count);
+  return dest;
+}
+
+/* Return the user's home directory.  We use $HOME, and if that fails, we fall back on the home directory of the effective user ID. */
+void get_homedir(void) {
+  const char *homenv;
+  const struct passwd *userage;
+  if (!homedir) {
+    homenv = getenv("HOME");
+    /* When HOME isn't set,or when we're root, get the home directory from the password file instead. */
+    if (!homenv || geteuid() == ROOT_UID) {
+      userage = getpwuid(geteuid());
+      if (userage) {
+        homenv = userage->pw_dir;
+      }
+    }
+    /* Only set homedir if some home directory could be determined, otherwise keep homedir 'NULL'. */
+    if (homenv && *homenv) {
+      homedir = copy_of(homenv);
+    }
+  }
+}
+
+/* Return's line pointer by number using optimized traversal.
+ *  1. From current position.
+ *  2. From file start.
+ *  3. From file end.
+ * Chooses shortest path to target line. */
 linestruct *file_line_from_number(openfilestruct *const file, long number) {
   ASSERT(file->current);
   ASSERT(file->filetop);
@@ -124,6 +150,11 @@ Ulong get_page_start(const Ulong column) {
   }
 }
 
+/* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
+Ulong xplustabs(void) {
+  return wideness(openfile->current->data, openfile->current_x);
+}
+
 /* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
 Ulong wideness(const char *text, Ulong maxlen) {
   Ulong width = 0;
@@ -162,16 +193,39 @@ Ulong breadth(const char *text) {
 /* For functions that are used by the tui and gui, this prints a status message correctly. */
 void print_status(message_type type, const char *const restrict format, ...) {
   ASSERT(format);
-  char *msg;
   va_list ap;
   va_start(ap, format);
-  msg = valstr(format, ap, NULL);
-  va_end(ap);
   if (ISSET(USING_GUI)) {
-    statusbar_msg(type, "%s", msg);
+    statusbar_msg_va(type, format, ap);
   }
   else if (!ISSET(NO_NCURSES)) {
-    statusline_curses(type, "%s", msg);
+    statusline_curses_va(type, format, ap);
   }
-  free(msg);
+  va_end(ap);
+}
+
+/* Append a new magic line to the end of the buffer. */
+void new_magicline(void) {
+  openfile->filebot->next = make_new_node(openfile->filebot);
+  openfile->filebot->next->data = COPY_OF("");
+  openfile->filebot = openfile->filebot->next;
+  ++openfile->totsize;
+}
+
+/* Remove the magic line from the end of the buffer, if there is one and it isn't the only line in the file. */
+void remove_magicline(void) {
+  if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
+    if (openfile->current == openfile->filebot) {
+      openfile->current = openfile->current->prev;
+    }
+    openfile->filebot = openfile->filebot->prev;
+    delete_node(openfile->filebot->next);
+    openfile->filebot->next = NULL;
+    --openfile->totsize;
+  }
+}
+
+/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
+bool mark_is_before_cursor(void) {
+  return (openfile->mark->lineno < openfile->current->lineno || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
 }

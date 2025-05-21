@@ -50,9 +50,13 @@ extern bool shift_held;
 extern bool on_a_vt;
 extern bool is_shorter;
 extern bool we_are_running;
+extern bool control_C_was_pressed;
+extern bool report_size;
 
 extern char *word_chars;
 extern char *whitespace;
+extern char *operating_dir;
+extern char *homedir;
 
 extern int editwinrows;
 extern int editwincols;
@@ -71,7 +75,9 @@ extern GLFWwindow *gui_window;
 
 extern message_type lastmessage;
 
-extern int   interface_color_pair[NUMBER_OF_ELEMENTS];
+extern int interface_color_pair[NUMBER_OF_ELEMENTS];
+
+extern configstruct *config;
 
 /* ----------------------------- color.c ----------------------------- */
 
@@ -83,6 +89,8 @@ extern Color color_white;
 extern Ulong waiting_codes;
 
 extern int countdown;
+
+extern bool recording;
 
 /* ----------------------------- General ----------------------------- */
 
@@ -127,13 +135,19 @@ char **split_string_nano(const char *const string, const char delim, bool allow_
   thread_t *get_nthreads(Ulong howmeny);
 #endif
 void        free_nulltermchararray(char **const argv);
+char       *mallocstrcpy(char *dest, const char *src) __THROW _RETURNS_NONNULL _NONNULL(1, 2);
+void        get_homedir(void);
 linestruct *file_line_from_number(openfilestruct *const file, long number);
 void        free_chararray(char **array, Ulong len);
 Ulong       get_page_start(const Ulong column);
+Ulong       xplustabs(void) _NODISCARD;
 Ulong       wideness(const char *text, Ulong maxlen) _NODISCARD _NONNULL(1);
 Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
 Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
 void        print_status(message_type type, const char *const restrict format, ...);
+void        new_magicline(void);
+void        remove_magicline(void);
+bool        mark_is_before_cursor(void) _NODISCARD;
 
 
 
@@ -396,11 +410,16 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
 
 
-bool delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
-bool write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
-void make_new_buffer(void);
-void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
-void close_buffer(void);
+bool  delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
+bool  write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
+void  make_new_buffer(void);
+void  free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
+void  close_buffer(void);
+char *real_dir_from_tilde(const char *const restrict path) _RETURNS_NONNULL _NONNULL(1);
+bool  is_dir(const char *const path) _NODISCARD _NONNULL(1);
+char *get_full_path(const char *const restrict origpath);
+char *check_writable_directory(const char *path);
+int   diralphasort(const void *va, const void *vb);
 bool open_buffer(const char *filename, bool new_one);
 
 
@@ -474,8 +493,12 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
 /* ----------------------------- Curses ----------------------------- */
 
 void blank_row_curses(WINDOW *const window, int row);
+void blank_titlebar_curses(void);
 void blank_statusbar_curses(void);
+void statusline_curses_va(message_type type, const char *const restrict format, va_list ap);
 void statusline_curses(message_type type, const char *const restrict msg, ...);
+void titlebar_curses(const char *path);
+void minibar_curses(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
@@ -528,6 +551,7 @@ void editor_close_a_open_buffer(openfilestruct *const file);
 void statusbar_init(Element *const parent);
 void statusbar_free(void);
 void statusbar_timed_msg(message_type type, float seconds, const char *format, ...);
+void statusbar_msg_va(message_type type, const char *const restrict format, va_list ap);
 void statusbar_msg(message_type type, const char *format, ...);
 void statusbar_draw(float fps);
 
@@ -540,7 +564,12 @@ void splice_node(linestruct *afterthis, linestruct *newnode);
 void delete_node(linestruct *line);
 void unlink_node(linestruct *line);
 void free_lines(linestruct *src);
+void confirm_margin_for(openfilestruct *const file, int *const out_margin);
 void confirm_margin(void);
+void disable_kb_interrupt(void);
+void enable_kb_interrupt(void);
+void install_handler_for_Ctrl_C(void);
+void restore_handler_for_Ctrl_C(void);
 
 
 _END_C_LINKAGE

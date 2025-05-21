@@ -22,7 +22,7 @@ static char *configdir = NULL;
 /* Holds data gathered from the config file. */
 static configfilestruct *configfile = NULL;
 /* Global config to store data retrieved from config file. */
-configstruct *config = NULL;
+// configstruct *config = NULL;
 
 /* Open a fd for file_path. */
 static int open_fd(const char *file_path, int fdflags, bool on_failure, mode_t permissions)  {

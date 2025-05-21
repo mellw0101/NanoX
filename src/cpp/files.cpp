@@ -1169,33 +1169,33 @@ void do_execute(void) {
 
 /* For the given bare path (or path plus filename), return the canonical,
  * absolute path (plus filename) when the path exists, and 'NULL' when not. */
-char *get_full_path(const char *origpath) _NOTHROW {
-  char *untilded, *target, *slash;
-  struct stat fileinfo;
-  if (!origpath) {
-    return NULL;
-  }
-  untilded = real_dir_from_tilde(origpath);
-  target   = realpath(untilded, NULL);
-  slash    = strrchr(untilded, '/');
-  /* If realpath() returned NULL, try without the last component, as this can be a file that does not exist yet. */
-  if (!target && slash && slash[1]) {
-    *slash = '\0';
-    target = realpath(untilded, NULL);
-    /* Upon success, re-add the last component of the original path. */
-    if (target) {
-      target = arealloc(target, (strlen(target) + strlen(slash + 1) + 1));
-      strcat(target, (slash + 1));
-    }
-  }
-  /* Ensure that a non-apex directory path ends with a slash. */
-  if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode)) {
-    target = arealloc(target, (strlen(target) + 2));
-    strcat(target, "/");
-  }
-  free(untilded);
-  return target;
-}
+// char *get_full_path(const char *origpath) _NOTHROW {
+//   char *untilded, *target, *slash;
+//   struct stat fileinfo;
+//   if (!origpath) {
+//     return NULL;
+//   }
+//   untilded = real_dir_from_tilde(origpath);
+//   target   = realpath(untilded, NULL);
+//   slash    = strrchr(untilded, '/');
+//   /* If realpath() returned NULL, try without the last component, as this can be a file that does not exist yet. */
+//   if (!target && slash && slash[1]) {
+//     *slash = '\0';
+//     target = realpath(untilded, NULL);
+//     /* Upon success, re-add the last component of the original path. */
+//     if (target) {
+//       target = arealloc(target, (strlen(target) + strlen(slash + 1) + 1));
+//       strcat(target, (slash + 1));
+//     }
+//   }
+//   /* Ensure that a non-apex directory path ends with a slash. */
+//   if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode)) {
+//     target = arealloc(target, (strlen(target) + 2));
+//     strcat(target, "/");
+//   }
+//   free(untilded);
+//   return target;
+// }
 
 /* Returns a normalized path.  IE: Removes all /../ correctly. */
 char *normalized_path(const char *path) _NOTHROW {
@@ -1232,17 +1232,17 @@ char *abs_path(const char *path) _NOTHROW {
 
 /* Check whether the given path refers to a directory that is writable.
  * Return the absolute form of the path on success, and 'NULL' on failure. */
-static char *check_writable_directory(const char *path) _NOTHROW {
-  char *full_path = get_full_path(path);
-  if (!full_path) {
-    return NULL;
-  }
-  if (full_path[strlen(full_path) - 1] != '/' || access(full_path, W_OK) != 0) {
-    free(full_path);
-    return NULL;
-  }
-  return full_path;
-}
+// static char *check_writable_directory(const char *path) _NOTHROW {
+//   char *full_path = get_full_path(path);
+//   if (!full_path) {
+//     return NULL;
+//   }
+//   if (full_path[strlen(full_path) - 1] != '/' || access(full_path, W_OK) != 0) {
+//     free(full_path);
+//     return NULL;
+//   }
+//   return full_path;
+// }
 
 /* Create, safely, a temporary file in the standard temp directory.
  * On success, return the malloc()ed filename, plus the corresponding
@@ -1989,68 +1989,68 @@ void do_savefile(void) {
 }
 
 /* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
-char *real_dir_from_tilde(const char *path) _NOTHROW {
-  char *tilded, *retval;
-  Ulong i = 1;
-  if (*path != '~') {
-    return copy_of(path);
-  }
-  /* Figure out how much of the string we need to compare. */
-  while (path[i] != '/' && path[i]) {
-    ++i;
-  }
-  if (i == 1) {
-    get_homedir();
-    tilded = copy_of(homedir);
-  }
-  else {
-    const passwd *userdata;
-    tilded = measured_copy(path, i);
-    do {
-      userdata = getpwent();
-    } while (userdata && strcmp(userdata->pw_name, tilded + 1) != 0);
-    endpwent();
-    if (userdata) {
-      tilded = mallocstrcpy(tilded, userdata->pw_dir);
-    }
-  }
-  retval = (char *)xmalloc(strlen(tilded) + strlen(path + i) + 1);
-  sprintf(retval, "%s%s", tilded, (path + i));
-  free(tilded);
-  return retval;
-}
+// char *real_dir_from_tilde(const char *path) _NOTHROW {
+//   char *tilded, *retval;
+//   Ulong i = 1;
+//   if (*path != '~') {
+//     return copy_of(path);
+//   }
+//   /* Figure out how much of the string we need to compare. */
+//   while (path[i] != '/' && path[i]) {
+//     ++i;
+//   }
+//   if (i == 1) {
+//     get_homedir();
+//     tilded = copy_of(homedir);
+//   }
+//   else {
+//     const passwd *userdata;
+//     tilded = measured_copy(path, i);
+//     do {
+//       userdata = getpwent();
+//     } while (userdata && strcmp(userdata->pw_name, tilded + 1) != 0);
+//     endpwent();
+//     if (userdata) {
+//       tilded = mallocstrcpy(tilded, userdata->pw_dir);
+//     }
+//   }
+//   retval = (char *)xmalloc(strlen(tilded) + strlen(path + i) + 1);
+//   sprintf(retval, "%s%s", tilded, (path + i));
+//   free(tilded);
+//   return retval;
+// }
 
 /* Our sort routine for file listings.  Sort alphabetically and case-insensitively, and sort directories before filenames. */
-int diralphasort(const void *va, const void *vb) {
-  struct stat fileinfo;
-  const char *a = *(const char *const *)va;
-  const char *b = *(const char *const *)vb;
-  bool aisdir = (stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
-  bool bisdir = (stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
-  if (aisdir && !bisdir) {
-    return -1;
-  }
-  if (!aisdir && bisdir) {
-    return 1;
-  }
-  int difference = mbstrcasecmp(a, b);
-  /* If two names are equivalent when ignoring case, compare them bytewise. */
-  if (!difference) {
-    return strcmp(a, b);
-  }
-  else {
-    return difference;
-  }
-}
+// int diralphasort(const void *va, const void *vb) {
+//   struct stat fileinfo;
+//   const char *a = *(const char *const *)va;
+//   const char *b = *(const char *const *)vb;
+//   bool aisdir = (stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
+//   bool bisdir = (stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
+//   if (aisdir && !bisdir) {
+//     return -1;
+//   }
+//   if (!aisdir && bisdir) {
+//     return 1;
+//   }
+//   int difference = mbstrcasecmp(a, b);
+//   /* If two names are equivalent when ignoring case, compare them bytewise. */
+//   if (!difference) {
+//     return strcmp(a, b);
+//   }
+//   else {
+//     return difference;
+//   }
+// }
 
 /* Return 'TRUE' when the given path is a directory. */
-bool is_dir(const char *const path) {
-  char *thepath = real_dir_from_tilde(path);
-  struct stat fileinfo;
-  bool retval = (stat(thepath, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
-  free(thepath);
-  return retval;
-}
+// bool is_dir(const char *const path) {
+//   char *thepath = real_dir_from_tilde(path);
+//   struct stat fileinfo;
+//   bool retval = (stat(thepath, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
+//   free(thepath);
+//   return retval;
+// }
 
 /* Try to complete the given fragment of given length to a username. */
 static char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)  {

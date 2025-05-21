@@ -37,7 +37,7 @@ static bool linger_after_escape = FALSE;
 /* The starting column of the next chunk when softwrapping. */
 static Ulong sequel_column = 0;
 /* Whether we are in the process of recording a macro. */
-static bool recording = FALSE;
+// static bool recording = FALSE;
 /* A buffer where the recorded key codes are stored. */
 static int *macro_buffer = NULL;
 /* The current length of the macro. */
@@ -2270,7 +2270,7 @@ void minibar(void) _NOTHROW {
     report_size = FALSE;
   }
   else if (openfile->next != openfile && COLS > 35) {
-    ranking = ranking = (char *)nmalloc(24);
+    ranking = (char *)nmalloc(24);
     sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
     if ((int)(namewidth + placewidth + breadth(ranking) + 32) < COLS) {
       nanox_waddstr(footwin, ranking);

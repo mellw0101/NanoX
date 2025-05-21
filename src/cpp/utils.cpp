@@ -2,22 +2,22 @@
 #include "../include/prototypes.h"
 
 /* Return the user's home directory.  We use $HOME, and if that fails, we fall back on the home directory of the effective user ID. */
-void get_homedir(void) _NOTHROW {
-  if (!homedir) {
-    const char *homenv = getenv("HOME");
-    /* When HOME isn't set,or when we're root, get the home directory from the password file instead. */
-    if (!homenv || geteuid() == ROOT_UID) {
-      const passwd *userage = getpwuid(geteuid());
-      if (userage) {
-        homenv = userage->pw_dir;
-      }
-    }
-    /* Only set homedir if some home directory could be determined, otherwise keep homedir 'NULL'. */
-    if (homenv && *homenv) {
-      homedir = copy_of(homenv);
-    }
-  }
-}
+// void get_homedir(void) _NOTHROW {
+//   if (!homedir) {
+//     const char *homenv = getenv("HOME");
+//     /* When HOME isn't set,or when we're root, get the home directory from the password file instead. */
+//     if (!homenv || geteuid() == ROOT_UID) {
+//       const passwd *userage = getpwuid(geteuid());
+//       if (userage) {
+//         homenv = userage->pw_dir;
+//       }
+//     }
+//     /* Only set homedir if some home directory could be determined, otherwise keep homedir 'NULL'. */
+//     if (homenv && *homenv) {
+//       homedir = copy_of(homenv);
+//     }
+//   }
+// }
 
 /* Return a malloc`ed 'char **' with malloc`ed 'char *' strings containing all paths in the env var 'PATH'.  Return`s NULL on failure. */
 char **get_env_paths(Ulong *npaths) _NOTHROW {
@@ -295,12 +295,12 @@ void *nrealloc(void *section, const Ulong howmuch) _NOTHROW {
 }
 
 /* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
-char *mallocstrcpy(char *dest, const char *src) _NOTHROW {
-  const Ulong count = (strlen(src) + 1);
-  dest = arealloc(dest, count);
-  constexpr_strncpy(dest, src, count);
-  return dest;
-}
+// char *mallocstrcpy(char *dest, const char *src) _NOTHROW {
+//   const Ulong count = (strlen(src) + 1);
+//   dest = arealloc(dest, count);
+//   constexpr_strncpy(dest, src, count);
+//   return dest;
+// }
 
 /* Return an allocated copy of the first count characters of the given string, and 'null-terminate' the copy. */
 // char *measured_copy(const char *string, const Ulong count) _NOTHROW {
@@ -337,9 +337,9 @@ char *mallocstrcpy(char *dest, const char *src) _NOTHROW {
 // }
 
 /* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
-Ulong xplustabs(void) _NOTHROW {
-  return wideness(openfile->current->data, openfile->current_x);
-}
+// Ulong xplustabs(void) _NOTHROW {
+//   return wideness(openfile->current->data, openfile->current_x);
+// }
 
 /* Return the index in text of the character that (when displayed) will not overshoot the given column. */
 // Ulong actual_x(const char *text, Ulong column) _NOTHROW {
@@ -377,30 +377,30 @@ Ulong xplustabs(void) _NOTHROW {
 // }
 
 /* Append a new magic line to the end of the buffer. */
-void new_magicline(void) _NOTHROW {
-  openfile->filebot->next = make_new_node(openfile->filebot);
-  openfile->filebot->next->data = STRLTR_COPY_OF("");
-  openfile->filebot = openfile->filebot->next;
-  ++openfile->totsize;
-}
+// void new_magicline(void) _NOTHROW {
+//   openfile->filebot->next = make_new_node(openfile->filebot);
+//   openfile->filebot->next->data = STRLTR_COPY_OF("");
+//   openfile->filebot = openfile->filebot->next;
+//   ++openfile->totsize;
+// }
 
 /* Remove the magic line from the end of the buffer, if there is one and it isn't the only line in the file. */
-void remove_magicline(void) _NOTHROW {
-  if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
-    if (openfile->current == openfile->filebot) {
-      openfile->current = openfile->current->prev;
-    }
-    openfile->filebot = openfile->filebot->prev;
-    delete_node(openfile->filebot->next);
-    openfile->filebot->next = NULL;
-    --openfile->totsize;
-  }
-}
+// void remove_magicline(void) _NOTHROW {
+//   if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
+//     if (openfile->current == openfile->filebot) {
+//       openfile->current = openfile->current->prev;
+//     }
+//     openfile->filebot = openfile->filebot->prev;
+//     delete_node(openfile->filebot->next);
+//     openfile->filebot->next = NULL;
+//     --openfile->totsize;
+//   }
+// }
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
-bool mark_is_before_cursor(void) _NOTHROW {
-  return (openfile->mark->lineno < openfile->current->lineno || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
-}
+// bool mark_is_before_cursor(void) _NOTHROW {
+//   return (openfile->mark->lineno < openfile->current->lineno || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
+// }
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
 void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NOTHROW {

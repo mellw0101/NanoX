@@ -90,7 +90,7 @@ extern char *brackets;
 extern char *quotestr;
 // extern char *word_chars;
 extern char *backup_dir;
-extern char *operating_dir;
+// extern char *operating_dir;
 extern char *alt_speller;
 extern char *syntaxstr;
 
@@ -108,12 +108,12 @@ extern bool mute_modifiers;
 extern bool bracketed_paste;
 // extern bool we_are_running;
 // extern bool more_than_one;
-extern bool report_size;
+// extern bool report_size;
 extern bool ran_a_tool;
 // extern bool inhelp;
 // extern bool focusing;
 // extern bool as_an_at;
-extern bool control_C_was_pressed;
+// extern bool control_C_was_pressed;
 extern bool also_the_last;
 extern bool keep_cutbuffer;
 extern bool have_palette;
@@ -145,7 +145,7 @@ extern regmatch_t regmatches[10];
 
 extern int   hilite_attribute;
 // extern int   interface_color_pair[NUMBER_OF_ELEMENTS];
-extern char *homedir;
+// extern char *homedir;
 extern char *statedir;
 extern char *startup_problem;
 extern char *custom_nanorc;
@@ -170,7 +170,7 @@ extern unordered_map<string, syntax_data_t> test_map;
 
 extern file_listener_handler_t file_listener;
 
-extern configstruct *config;
+// extern configstruct *config;
 
 extern HashMap *test_hashmap;
 
@@ -311,7 +311,7 @@ int    open_file(const char *filename, bool new_one, FILE **f);
 char  *get_next_filename(const char *name, const char *suffix) _NOTHROW;
 void   do_insertfile(void);
 void   do_execute(void);
-char  *get_full_path(const char *origpath) _NOTHROW;
+// char  *get_full_path(const char *origpath) _NOTHROW;
 char  *normalized_path(const char *path) _NOTHROW;
 char  *abs_path(const char *path) _NOTHROW;
 char  *safe_tempfile(FILE **stream);
@@ -324,9 +324,9 @@ bool   write_region_to_file(const char *name, FILE *stream, bool normal, kind_of
 int    write_it_out(bool exiting, bool withprompt);
 void   do_writeout(void);
 void   do_savefile(void);
-char  *real_dir_from_tilde(const char *path) _NOTHROW;
-int    diralphasort(const void *va, const void *vb);
-bool   is_dir(const char *const path);
+// char  *real_dir_from_tilde(const char *path) _NOTHROW;
+// int    diralphasort(const void *va, const void *vb);
+// bool   is_dir(const char *const path);
 char  *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *listed);
 
 /* Some functions in 'global.cpp'. */
@@ -400,8 +400,8 @@ void        close_and_go(void);
 void        do_exit(void);
 void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
 void        window_init(void) _NOTHROW;
-void        install_handler_for_Ctrl_C(void) _NOTHROW;
-void        restore_handler_for_Ctrl_C(void) _NOTHROW;
+// void        install_handler_for_Ctrl_C(void) _NOTHROW;
+// void        restore_handler_for_Ctrl_C(void) _NOTHROW;
 void        reconnect_and_store_state(void) _NOTHROW;
 void        handle_hupterm(int signal) _NO_RETURN;
 void        handle_crash(int signal) _NO_RETURN;
@@ -411,8 +411,8 @@ void        continue_nano(int signal);
 void        block_sigwinch(bool blockit);
 void        handle_sigwinch(int signal);
 void        regenerate_screen(void);
-void        disable_kb_interrupt(void) _NOTHROW;
-void        enable_kb_interrupt(void) _NOTHROW;
+// void        disable_kb_interrupt(void) _NOTHROW;
+// void        enable_kb_interrupt(void) _NOTHROW;
 void        disable_flow_control(void) _NOTHROW;
 void        enable_flow_control(void) _NOTHROW;
 void        terminal_init(void) _NOTHROW;
@@ -534,7 +534,7 @@ char *lower_case_word(const char *str);
 /* ---------------------------------------------------------- utils.cpp ---------------------------------------------------------- */
 
 
-void        get_homedir(void) _NOTHROW;
+// void        get_homedir(void) _NOTHROW;
 char      **get_env_paths(Ulong *npaths) _NOTHROW _NODISCARD _NONNULL(1);
 char       *concatenate(const char *path, const char *name) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 char       *concatenate_path(const char *prefix, const char *suffix) _NOTHROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
@@ -549,16 +549,16 @@ bool        is_separate_word(Ulong position, Ulong length, const char *buf) _NOT
 void       *nmalloc(const Ulong howmuch) _NOTHROW _RETURNS_NONNULL;
 void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
 #define     arealloc(ptr, howmuch) (__TYPE(ptr))xrealloc(ptr, howmuch)
-char       *mallocstrcpy(char *dest, const char *src) _NOTHROW;
+// char       *mallocstrcpy(char *dest, const char *src) _NOTHROW;
 // char       *free_and_assign(char *dest, char *src) _NOTHROW;
 // Ulong       get_page_start(Ulong column) _NOTHROW;
-Ulong       xplustabs(void) _NOTHROW _NODISCARD;
+// Ulong       xplustabs(void) _NOTHROW _NODISCARD;
 // Ulong       actual_x(const char *text, Ulong column) _NOTHROW _NODISCARD _NONNULL(1);
 // Ulong       wideness(const char *text, Ulong maxlen) _NOTHROW _NODISCARD _NONNULL(1);
 // Ulong       breadth(const char *text) _NOTHROW _NODISCARD _NONNULL(1);
-void        new_magicline(void) _NOTHROW;
-void        remove_magicline(void) _NOTHROW;
-bool        mark_is_before_cursor(void) _NOTHROW;
+// void        new_magicline(void) _NOTHROW;
+// void        remove_magicline(void) _NOTHROW;
+// bool        mark_is_before_cursor(void) _NOTHROW;
 void        get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NOTHROW;
 void        get_range(linestruct **top, linestruct **bot) _NOTHROW;
 linestruct *line_from_number(long number) _NOTHROW;

@@ -12,7 +12,7 @@
 #  define _DEFAULT_SOURCE 1
 #endif
 
-#define ROOT_UID 0
+// #define ROOT_UID 0
 
 // We are using limits instead of limits.h,
 // because limits.h is for c and limits is for c++
@@ -328,7 +328,7 @@ using std::vector;
   (ISSET(NO_NCURSES) ? nwindow_add_nstr(tui_##window, string, len) : (void)waddnstr(window, string, len))
 
 #define nanox_mvwaddnstr(window, row, column, string, len) \
-  (ISSET(NO_NCURSES) ? nwindow_move_add_nstr(tui_##window, row, column, string, len) : (void)mvwaddstr(window, row, column, string))
+  (ISSET(NO_NCURSES) ? nwindow_move_add_nstr(tui_##window, row, column, string, len) : (void)mvwaddnstr(window, row, column, string, len))
 
 #define nanox_mvwaddstr(window, row, column, string) \
   (ISSET(NO_NCURSES) ? nwindow_move_add_str(tui_##window, row, column, string) : (void)mvwaddstr(window, row, column, string))
@@ -513,25 +513,25 @@ typedef enum {
 //   #define ALERT ALERT
 // } message_type;
 
-typedef enum {
-  OVERWRITE,
-  #define OVERWRITE OVERWRITE
-  APPEND,
-  #define APPEND APPEND
-  PREPEND,
-  #define PREPEND PREPEND
-  EMERGENCY
-  #define EMERGENCY EMERGENCY
-} kind_of_writing_type;
+// typedef enum {
+//   OVERWRITE,
+//   #define OVERWRITE OVERWRITE
+//   APPEND,
+//   #define APPEND APPEND
+//   PREPEND,
+//   #define PREPEND PREPEND
+//   EMERGENCY
+//   #define EMERGENCY EMERGENCY
+// } kind_of_writing_type;
 
-typedef enum {
-  CENTERING,
-  #define CENTERING CENTERING
-  FLOWING,
-  #define FLOWING FLOWING
-  STATIONARY
-  #define STATIONARY STATIONARY
-} update_type;
+// typedef enum {
+//   CENTERING,
+//   #define CENTERING CENTERING
+//   FLOWING,
+//   #define FLOWING FLOWING
+//   STATIONARY
+//   #define STATIONARY STATIONARY
+// } update_type;
 
 // /* The kinds of undo actions.  ADD...REPLACE must come first. */
 // typedef enum {
@@ -917,36 +917,36 @@ typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
 //   openfilestruct *prev;       /* The preceding open file, if any. */
 // } openfilestruct;
 
-typedef struct coloroption {
-  const char *name; /* Name of the option. */
-  int name_len;     /* Length of the name. */
-  int color_index;  /* Index of the color. */
-} coloroption;
+// typedef struct coloroption {
+//   const char *name; /* Name of the option. */
+//   int name_len;     /* Length of the name. */
+//   int color_index;  /* Index of the color. */
+// } coloroption;
 
-typedef struct configstruct {
-  struct {
-    int color;            /* Line number color. */
-    int attr;             /* Line number attribute. */
-    int barcolor;         /* If verticalbar or fullverticalbar is set then this is the color of that bar. */
-    bool verticalbar;     /* TRUE if user wants vertical bar next to linenumbers. */
-    bool fullverticalbar; /* TRUE if user wants vertican bar next to linenumbers no matter the current amount off lines. */
-  } linenumber;
-  struct {
-    int color; /* Prompt bar color. */
-  } prompt;
-  int minibar_color;            /* Minibar color. */
-  int selectedtext_color;       /* Selected text color. */
-} configstruct;
+// typedef struct configstruct {
+//   struct {
+//     int color;            /* Line number color. */
+//     int attr;             /* Line number attribute. */
+//     int barcolor;         /* If verticalbar or fullverticalbar is set then this is the color of that bar. */
+//     bool verticalbar;     /* TRUE if user wants vertical bar next to linenumbers. */
+//     bool fullverticalbar; /* TRUE if user wants vertican bar next to linenumbers no matter the current amount off lines. */
+//   } linenumber;
+//   struct {
+//     int color; /* Prompt bar color. */
+//   } prompt;
+//   int minibar_color;            /* Minibar color. */
+//   int selectedtext_color;       /* Selected text color. */
+// } configstruct;
 
-typedef struct configfilestruct {
-  char *filepath;    /* Full path to the config file. */
-  configstruct data; /* Holds data while reading the config file. */
-} configfilestruct;
+// typedef struct configfilestruct {
+//   char *filepath;    /* Full path to the config file. */
+//   configstruct data; /* Holds data while reading the config file. */
+// } configfilestruct;
 
-typedef struct rcoption {
-  const char *name; /* The name of the rcfile option. */
-  long flag;        /* The flag associated with it, if any. */
-} rcoption;
+// typedef struct rcoption {
+//   const char *name; /* The name of the rcfile option. */
+//   long flag;        /* The flag associated with it, if any. */
+// } rcoption;
 
 // typedef struct keystruct {
 //   const char *keystr; /* The string that describes the keystroke, like "^C" or "M-R". */

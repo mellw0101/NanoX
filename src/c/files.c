@@ -93,12 +93,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
     return FALSE;
   }
   else if (gethostname(hostname, 31) < 0 && errno != ENAMETOOLONG) {
-    if (ISSET(USING_GUI)) {
-      statusbar_msg(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
-    }
-    else if (!ISSET(NO_NCURSES)) {
-      statusline_curses(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
-    }
+    print_status(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
     return FALSE;
   }
   else {
@@ -110,12 +105,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   }
   /* Open the lockfile file-descriptor. */
   if ((fd = open(lockfilename, (O_WRONLY | O_CREAT | O_EXCL), RW_FOR_ALL)) == -1) {
-    if (ISSET(USING_GUI)) {
-      statusbar_msg(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
-    }
-    else if (!ISSET(NO_NCURSES)) {
-      statusline_curses(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
-    }
+    print_status(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
   /* Create the lock data we will write. */
@@ -161,12 +151,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   free(lockdata);
   close(fd);
   if (len == -1 || written < LOCKSIZE) {
-    if (ISSET(USING_GUI)) {
-      statusbar_msg(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
-    }
-    else if (!ISSET(NO_NCURSES)) {
-      statusline_curses(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
-    }
+    print_status(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
   return TRUE;
@@ -228,3 +213,144 @@ void close_buffer(void) {
     exitfunc->tag = exit_tag;
   }
 }
+
+/* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
+char *real_dir_from_tilde(const char *const restrict path) {
+  char *tilded;
+  char *ret;
+  Ulong i = 1;
+  const struct passwd *userdata;
+  if (*path != '~') {
+    return copy_of(path);
+  }
+  while (path[i] != '/' && path[i]) {
+    ++i;
+  }
+  if (i == 1) {
+    get_homedir();
+    tilded = copy_of(homedir);
+  }
+  else {
+    tilded = measured_copy(path, i);
+    do {
+      userdata = getpwent();
+    } while (userdata && strcmp(userdata->pw_name, (tilded + 1)) != 0);
+    endpwent();
+    if (userdata) {
+      tilded = mallocstrcpy(tilded, userdata->pw_dir);
+    }
+  }
+  ret = xmalloc(strlen(tilded) + strlen(path + i) + 1);
+  sprintf(ret, "%s%s", tilded, (path + i));
+  free(tilded);
+  return ret;
+}
+
+/* Return 'TRUE' when the given path is a directory. */
+bool is_dir(const char *const path) {
+  char *thepath = real_dir_from_tilde(path);
+  struct stat fileinfo;
+  bool retval = (stat(thepath, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
+  free(thepath);
+  return retval;
+}
+
+/* For the given bare path (or path plus filename), return the canonical,
+ * absolute path (plus filename) when the path exists, and 'NULL' when not. */
+char *get_full_path(const char *const restrict origpath) {
+  char *untilded, *target, *slash;
+  struct stat fileinfo;
+  if (!origpath) {
+    return NULL;
+  }
+  untilded = real_dir_from_tilde(origpath);
+  target   = realpath(untilded, NULL);
+  slash    = strrchr(untilded, '/');
+  /* If realpath() returned NULL, try without the last component, as this can be a file that does not exist yet. */
+  if (!target && slash && slash[1]) {
+    *slash = '\0';
+    target = realpath(untilded, NULL);
+    /* Upon success, re-add the last component of the original path. */
+    if (target) {
+      target = xrealloc(target, (strlen(target) + strlen(slash + 1) + 1));
+      strcat(target, (slash + 1));
+    }
+  }
+  /* Ensure that a non-apex directory path ends with a slash. */
+  if (target && target[1] && stat(target, &fileinfo) == 0 && S_ISDIR(fileinfo.st_mode)) {
+    target = xrealloc(target, (strlen(target) + 2));
+    strcat(target, "/");
+  }
+  free(untilded);
+  return target;
+}
+
+/* Check whether the given path refers to a directory that is writable.
+ * Return the absolute form of the path on success, and 'NULL' on failure. */
+char *check_writable_directory(const char *path) {
+  char *full_path = get_full_path(path);
+  if (!full_path) {
+    return NULL;
+  }
+  if (full_path[strlen(full_path) - 1] != '/' || access(full_path, W_OK) != 0) {
+    free(full_path);
+    return NULL;
+  }
+  return full_path;
+}
+
+/* Our sort routine for file listings.  Sort alphabetically and case-insensitively, and sort directories before filenames. */
+int diralphasort(const void *va, const void *vb) {
+  struct stat fileinfo;
+  const char *a = *(const char *const *)va;
+  const char *b = *(const char *const *)vb;
+  bool aisdir = (stat(a, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
+  bool bisdir = (stat(b, &fileinfo) != -1 && S_ISDIR(fileinfo.st_mode));
+  if (aisdir && !bisdir) {
+    return -1;
+  }
+  if (!aisdir && bisdir) {
+    return 1;
+  }
+  int difference = mbstrcasecmp(a, b);
+  /* If two names are equivalent when ignoring case, compare them bytewise. */
+  if (!difference) {
+    return strcmp(a, b);
+  }
+  else {
+    return difference;
+  }
+}
+
+/* Update title bar and such after switching to another buffer. */
+// static void redecorate_after_switch(void) {
+//   /* If only one file buffer is open, there is nothing to update. */
+//   if (openfile == openfile->next) {
+//     print_status(AHEM, _("No more open file buffers"));
+//     return;
+//   }
+//   /* While in a different buffer, the width of the screen may have changed,
+//    * so make sure that the starting column for the first row is fitting. */
+//   ensure_firstcolumn_is_aligned();
+//   /* Update title bar and multiline info to match the current buffer. */
+//   prepare_for_display();
+//   /* Ensure that the main loop will redraw the help lines. */
+//   currmenu = MMOST;
+//   /* Prevent a possible Shift selection from getting cancelled. */
+//   shift_held = TRUE;
+//   /* If the switched-to buffer gave an error during opening, show the message
+//    * once; otherwise, indicate on the status bar which file we switched to. */
+//   if (openfile->errormessage) {
+//     print_status(ALERT, openfile->errormessage);
+//     free(openfile->errormessage);
+//     openfile->errormessage = NULL;
+//   }
+//   else {
+//     mention_name_and_linecount();
+//   }
+// }
+
+// void switch_to_prev_buffer(void) {
+//   CLIST_ADV_PREV(openfile);
+
+// }

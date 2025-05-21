@@ -7,6 +7,25 @@
 #include "../include/c_proto.h"
 
 
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
+
+/* Containers for the original and the temporary handler for SIGINT. */
+static struct sigaction oldaction, newaction;
+
+
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
+
+
+/* Register that Ctrl+C was pressed during some system call. */
+static void make_a_note(int _UNUSED signal) {
+  control_C_was_pressed = TRUE;
+}
+
+
+/* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
+
+
 /* Create a new linestruct node.  Note that we do NOT set 'prevnode->next'. */
 linestruct *make_new_node(linestruct *prevnode)  {
   linestruct *newnode = xmalloc(sizeof(*newnode));
@@ -131,4 +150,36 @@ void confirm_margin(void) {
     /* The margin has changed -- schedule a full refresh. */
     refresh_needed = TRUE;
   }
+}
+
+/* Stop ^C from generating a SIGINT. */
+void disable_kb_interrupt(void) {
+  struct termios settings = {0};
+  tcgetattr(0, &settings);
+  settings.c_lflag &= ~ISIG;
+  tcsetattr(0, TCSANOW, &settings);
+}
+
+/* Make ^C generate a SIGINT. */
+void enable_kb_interrupt(void) {
+  struct termios settings = {0};
+  tcgetattr(0, &settings);
+  settings.c_lflag |= ISIG;
+  tcsetattr(0, TCSANOW, &settings);
+}
+
+/* Make ^C interrupt a system call and set a flag. */
+void install_handler_for_Ctrl_C(void) {
+  /* Enable the generation of a SIGINT when ^C is pressed. */
+  enable_kb_interrupt();
+  /* Set up a signal handler so that pressing ^C will set a flag. */
+  newaction.sa_handler = make_a_note;
+  newaction.sa_flags   = 0;
+  sigaction(SIGINT, &newaction, &oldaction);
+}
+
+/* Go back to ignoring ^C. */
+void restore_handler_for_Ctrl_C(void) {
+  sigaction(SIGINT, &oldaction, NULL);
+  disable_kb_interrupt();
 }

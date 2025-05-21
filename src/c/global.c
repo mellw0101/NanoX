@@ -64,6 +64,10 @@ bool shift_held;
 bool on_a_vt = FALSE;
 /* Becomes TRUE as soon as all options and files have been read. */
 bool we_are_running = FALSE;
+/* Whether Ctrl+C was pressed (when a keyboard interrupt is enabled). */
+bool control_C_was_pressed = FALSE;
+/* Whether to show the number of lines when the minibar is used. */
+bool report_size = TRUE;
 
 /* These two tags are used elsewhere too, so they are global.
  * TRANSLATORS: Try to keep the next two strings at most 10 characters. */
@@ -74,6 +78,10 @@ const char *close_tag = N_("Close");
 char *word_chars = NULL;
 /* The characters used when visibly showing tabs and spaces. */
 char *whitespace = NULL;
+/* The path to our confining "operating" directory, when given. */
+char *operating_dir = NULL;
+/* The user's home directory, from $HOME or /etc/passwd. */
+char *homedir = NULL;
 
 /* How many rows does the edit window take up? */
 int editwinrows = 0;
@@ -99,3 +107,6 @@ message_type lastmessage = VACUUM;
 
 /* The processed color pairs for the interface elements. */
 int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
+
+/* Global config to store data retrieved from config file. */
+configstruct *config = NULL;

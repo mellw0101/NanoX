@@ -61,6 +61,8 @@
 
 /* ----------------------------- General ----------------------------- */
 
+#define ROOT_UID  (0)
+
 /* Macros for flags, indexing each bit in a small array. */
 #define FLAGS(flag)    flags[((flag) / (sizeof(Ulong) * 8))]
 #define FLAGMASK(flag) ((Ulong)1 << ((flag) % (sizeof(Ulong) * 8)))
@@ -207,6 +209,10 @@ typedef struct undostruct            undostruct;
 typedef struct statusbar_undostruct  statusbar_undostruct;
 typedef struct poshiststruct         poshiststruct;
 typedef struct openfilestruct        openfilestruct;
+typedef struct coloroption           coloroption;
+typedef struct configstruct          configstruct;
+typedef struct configfilestruct      configfilestruct;
+typedef struct rcoption              rcoption;
 typedef struct keystruct             keystruct;
 typedef struct funcstruct            funcstruct;
 
@@ -563,6 +569,26 @@ typedef enum {
 # define FUNCTION_TAG   FUNCTION_TAG
 } color_option;
 
+typedef enum {
+  OVERWRITE,
+  APPEND,
+  PREPEND,
+  EMERGENCY
+  #define OVERWRITE  OVERWRITE
+  #define APPEND     APPEND
+  #define PREPEND    PREPEND
+  #define EMERGENCY  EMERGENCY
+} kind_of_writing_type;
+
+typedef enum {
+  CENTERING,
+  FLOWING,
+  STATIONARY
+  #define CENTERING   CENTERING
+  #define FLOWING     FLOWING
+  #define STATIONARY  STATIONARY
+} update_type;
+
 /* ----------------------------- synx.c ----------------------------- */
 
 typedef enum {
@@ -764,6 +790,37 @@ struct openfilestruct {
 
   openfilestruct *next;       /* The next open file, if any. */
   openfilestruct *prev;       /* The preceding open file, if any. */
+};
+
+struct coloroption {
+  const char *name;  /* Name of the option. */
+  int name_len;      /* Length of the name. */
+  int color_index;   /* Index of the color. */
+};
+
+struct configstruct {
+  struct {
+    int color;            /* Line number color. */
+    int attr;             /* Line number attribute. */
+    int barcolor;         /* If verticalbar or fullverticalbar is set then this is the color of that bar. */
+    bool verticalbar;     /* TRUE if user wants vertical bar next to linenumbers. */
+    bool fullverticalbar; /* TRUE if user wants vertican bar next to linenumbers no matter the current amount off lines. */
+  } linenumber;
+  struct {
+    int color; /* Prompt bar color. */
+  } prompt;
+  int minibar_color;            /* Minibar color. */
+  int selectedtext_color;       /* Selected text color. */
+};
+
+struct configfilestruct {
+  char *filepath;     /* Full path to the config file. */
+  configstruct data;  /* Holds data while reading the config file. */
+};
+
+struct rcoption {
+  const char *name;  /* The name of the rcfile option. */
+  long flag;         /* The flag associated with it, if any. */
 };
 
 struct keystruct {
