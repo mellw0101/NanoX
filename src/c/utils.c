@@ -231,6 +231,35 @@ void remove_magicline(void) {
 }
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
+bool mark_is_before_cursor_for(openfilestruct *const file) {
+  ASSERT(file);
+  return (file->mark->lineno < file->current->lineno || (file->mark == file->current && file->mark_x <= file->current_x));
+}
+
+/* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
 bool mark_is_before_cursor(void) {
-  return (openfile->mark->lineno < openfile->current->lineno || (openfile->mark == openfile->current && openfile->mark_x <= openfile->current_x));
+  return mark_is_before_cursor_for(openfile);
+}
+
+/* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
+void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
+  ASSERT(file);
+  ASSERT(top || top_x || bot || bot_x);
+  if (mark_is_before_cursor_for(file)) {
+    ASSIGN_IF_VALID(top,   file->mark);
+    ASSIGN_IF_VALID(top_x, file->mark_x);
+    ASSIGN_IF_VALID(bot,   file->current);
+    ASSIGN_IF_VALID(bot_x, file->current_x);
+  }
+  else {
+    ASSIGN_IF_VALID(bot,   file->mark);
+    ASSIGN_IF_VALID(bot_x, file->mark_x);
+    ASSIGN_IF_VALID(top,   file->current);
+    ASSIGN_IF_VALID(top_x, file->current_x);
+  }
+}
+
+/* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
+void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
+  get_region_for(openfile, top, top_x, bot, bot_x);
 }

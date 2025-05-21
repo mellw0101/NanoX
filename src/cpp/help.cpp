@@ -376,12 +376,12 @@ static void show_help(void) {
   if (ISSET(NO_HELP) || ISSET(ZERO)) {
     UNSET(NO_HELP);
     UNSET(ZERO);
-    window_init();
-    // if (ISSET(NO_NCURSES)) {
-    // }
-    // else {
-    //   window_init_curses();
-    // }
+    if (ISSET(NO_NCURSES)) {
+      window_init();
+    }
+    else {
+      window_init_curses();
+    }
   }
   else {
     blank_statusbar();
@@ -488,12 +488,12 @@ static void show_help(void) {
   inhelp = FALSE;
   curs_set(0);
   if (ISSET(NO_HELP) || ISSET(ZERO)) {
-    window_init();
-    // if (ISSET(NO_NCURSES)) {
-    // }
-    // else {
-    //   window_init_curses();
-    // }
+    if (ISSET(NO_NCURSES)) {
+      window_init();
+    }
+    else {
+      window_init_curses();
+    }
   }
   else {
     blank_statusbar();

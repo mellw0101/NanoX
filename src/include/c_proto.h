@@ -161,7 +161,10 @@ Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
 void        print_status(message_type type, const char *const restrict format, ...);
 void        new_magicline(void);
 void        remove_magicline(void);
+bool        mark_is_before_cursor_for(openfilestruct *const file);
 bool        mark_is_before_cursor(void) _NODISCARD;
+void        get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
+void        get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
 
 
 
@@ -540,6 +543,15 @@ void bottombars_curses(int menu);
 void place_the_cursor_for_curses(openfilestruct *const file);
 void place_the_cursor_curses(void);
 void warn_and_briefly_pause_curses(const char *const restrict message);
+void draw_row_marked_region_for_curses(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
+void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
+
+
+/* ---------------------------------------------------------- line.c ---------------------------------------------------------- */
+
+
+bool line_in_marked_region_for(openfilestruct *const file, linestruct *const line);
+bool line_in_marked_region(linestruct *const line);
 
 
 /* ---------------------------------------------------------- global.c ---------------------------------------------------------- */

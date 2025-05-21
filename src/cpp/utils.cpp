@@ -403,20 +403,20 @@ void *nrealloc(void *section, const Ulong howmuch) _NOTHROW {
 // }
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
-void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NOTHROW {
-  if (mark_is_before_cursor()) {
-    *top   = openfile->mark;
-    *top_x = openfile->mark_x;
-    *bot   = openfile->current;
-    *bot_x = openfile->current_x;
-  }
-  else {
-    *bot   = openfile->mark;
-    *bot_x = openfile->mark_x;
-    *top   = openfile->current;
-    *top_x = openfile->current_x;
-  }
-}
+// void get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NOTHROW {
+//   if (mark_is_before_cursor()) {
+//     *top   = openfile->mark;
+//     *top_x = openfile->mark_x;
+//     *bot   = openfile->current;
+//     *bot_x = openfile->current_x;
+//   }
+//   else {
+//     *bot   = openfile->mark;
+//     *bot_x = openfile->mark_x;
+//     *top   = openfile->current;
+//     *top_x = openfile->current_x;
+//   }
+// }
 
 /* Get the set of lines to work on -- either just the current line, or the
  * first to last lines of the marked region.  When the cursor (or mark) is

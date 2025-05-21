@@ -1019,6 +1019,8 @@ void bottombars_curses(int menu) {
   const keystruct *s;
   funcstruct *f;
   /* Set the global variable to the given menu. */
+  currmenu = menu;
+  /* Set the global variable to the given menu. */
   if (ISSET(NO_HELP) || LINES < (ISSET(ZERO) ? 3 : ISSET(MINIBAR) ? 4 : 5)) {
     return;
   }
@@ -1098,4 +1100,56 @@ void warn_and_briefly_pause_curses(const char *const restrict message) {
   statusline_curses(ALERT, "%s", message);
   lastmessage = VACUUM;
   napms(1500);
+}
+
+/* Draw the marked region of `row`. */
+void draw_row_marked_region_for_curses(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
+  ASSERT(file);
+  ASSERT(row >= 0 && row < editwinrows);
+  /* The lines where the marked region begins and ends. */
+  linestruct *top;
+  linestruct *bot;
+  /* The x positions where the marked region begins and ends. */
+  Ulong top_x;
+  Ulong bot_x;
+  /* The column where the painting starts.  Zero-based. */
+  int start_col;
+  /* The place in `converted` from where painting starts. */
+  const char *thetext;
+  /* The number of characters to paint.  Negative means all. */
+  int paintlen = -1;
+  Ulong endcol;
+  /* If the line is at least partialy selected, paint the marked part. */
+  if (line_in_marked_region_for(file, line)) {
+    /* Get the full region of the mark. */
+    get_region_for(file, &top, &top_x, &bot, &bot_x);
+    /* If the marked region is from the start of this line. */
+    if (top->lineno < line->lineno || top_x < from_x) {
+      top_x = from_x;
+    }
+    /* If the marked region is below the end of this line. */
+    if (bot->lineno > line->lineno || bot_x > till_x) {
+      bot_x = till_x;
+    }
+    /* Only paint if the marked part of the line is on this page. */
+    if (top_x < till_x && bot_x > from_x) {
+      /* Compute on witch screen column to start painting. */
+      start_col = (wideness(line->data, top_x) - from_col);
+      CLAMP_MIN(start_col, 0);
+      thetext = (converted + actual_x(converted, start_col));
+      /* If the end of the mark if onscreen, compute how menu characters to paint.  Otherwise, just paint all. */
+      if (bot_x < till_x) {
+        endcol = (wideness(line->data, bot_x) - from_col);
+        paintlen = actual_x(thetext, (endcol - start_col));
+      }
+      wattron(midwin, interface_color_pair[config->selectedtext_color]);
+      mvwaddnstr(midwin, row, (margin + start_col), thetext, paintlen);
+      wattroff(midwin, interface_color_pair[config->selectedtext_color]);
+    }
+  }
+}
+
+/* Draw the marked region of `row`. */
+void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
+  draw_row_marked_region_for_curses(openfile, row, converted, line, from_col);
 }

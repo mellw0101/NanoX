@@ -559,7 +559,7 @@ void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _
 // void        new_magicline(void) _NOTHROW;
 // void        remove_magicline(void) _NOTHROW;
 // bool        mark_is_before_cursor(void) _NOTHROW;
-void        get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NOTHROW;
+// void        get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NOTHROW;
 void        get_range(linestruct **top, linestruct **bot) _NOTHROW;
 linestruct *line_from_number(long number) _NOTHROW;
 Ulong       number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW _NONNULL(1, 2);
@@ -727,7 +727,7 @@ void  move_lines_down(void) _NOTHROW;
 void  erase_in_line(linestruct *line, Ulong at, Ulong len);
 Uint  total_tabs(linestruct *line);
 int   get_editwin_row(linestruct *line);
-bool  line_in_marked_region(linestruct *line) _NOTHROW _NODISCARD _NONNULL(1);
+// bool  line_in_marked_region(linestruct *line) _NOTHROW _NODISCARD _NONNULL(1);
 
 
 /* ---------------------------------------------------------- threadpool.cpp ---------------------------------------------------------- */
