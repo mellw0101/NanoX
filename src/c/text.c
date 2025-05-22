@@ -6,14 +6,42 @@
  */
 #include "../include/c_proto.h"
 
-#include "../include/c/wchars.h"
+
+/* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
+
+
+/* Toggle the mark for `file`. */
+void do_mark_for(openfilestruct *const file) {
+  ASSERT(file);
+  if (!file->mark) {
+    file->mark     = file->current;
+    file->mark_x   = file->current_x;
+    file->softmark = FALSE;
+    statusbar_all(_("Mark Set"));
+  }
+  else {
+    file->mark = NULL;
+    statusbar_all(_("Mark Unset"));
+    refresh_needed = TRUE;
+  }
+}
+
+/* Toggle the mark for the currently open file. */
+void do_mark(void) {
+  if (ISSET(USING_GUI)) {
+    do_mark_for(openeditor->openfile);
+  }
+  else {
+    do_mark_for(openfile);
+  }
+}
 
 /* Return's the length of whilespace until first non blank char in `string`. */
 Ulong indentlen(const char *const restrict string) {
   ASSERT(string);
   const char *ptr = string;
-  while (*ptr && isblankc(ptr)) {
-    ptr += charlen(ptr);
+  while (*ptr && is_blank_char(ptr)) {
+    ptr += char_length(ptr);
   }
   return (ptr - string);
 }

@@ -92,6 +92,9 @@ void editor_create(bool new_buffer) {
     starteditor       = node;
     node->openfile  = openfile;
     node->startfile = startfile;
+    editor_set_rows_cols(node, gui_width, gui_height);
+    editwinrows = node->rows;
+    editwincols = node->cols;
   }
   else {
     CLIST_INSERT_AFTER(node, openeditor);
@@ -155,18 +158,18 @@ void editor_confirm_margin(Editor *const editor) {
     keep_focus     = ((editor->margin > 0) && focusing);
     editor->margin = needed_margin;
     /* Ensure a proper starting column for the first screen row. */
-    ensure_firstcolumn_is_aligned_for(editor->openfile);
+    ensure_firstcolumn_is_aligned_for(editor->openfile, editor->cols);
     focusing = keep_focus;
     refresh_needed = TRUE;
   }
 }
 
 /* Calculate the row's and column's of a `editor` based on the size of it's text element. */
-void editor_set_rows_cols(Editor *const editor) {
+void editor_set_rows_cols(Editor *const editor, float width, float height) {
   ASSERT(editor);
   int rows;
   int cols;
-  gui_font_rows_cols(textfont, editor->text->width, editor->text->height, &rows, &cols);
+  gui_font_rows_cols(textfont, width, height, &rows, &cols);
   editor->rows = rows;
   editor->cols = cols;
   if (editor == openeditor) {
@@ -220,6 +223,7 @@ void editor_close(Editor *const editor) {
 
 void editor_resize(Editor *const editor) {
   ASSERT(editor);
+  ASSERT(editor->text);
   editor_confirm_margin(editor);
   editor->gutter->width    = editor_get_gutter_width(editor);
   editor->text->relative_x = editor->gutter->width;
@@ -227,7 +231,7 @@ void editor_resize(Editor *const editor) {
     editor->gutter->hidden = TRUE;
   }
   element_move_resize(editor->main, 0, 0, gui_width, (gui_height - gui_font_height(uifont)));
-  editor_set_rows_cols(editor);
+  editor_set_rows_cols(editor, editor->text->width, editor->text->height);
   etb_text_refresh_needed(editor->tb);
   scrollbar_refresh_needed(editor->sb);
 }
@@ -243,7 +247,7 @@ void editor_redecorate(Editor *const editor) {
     free(editor->openfile->errormessage);
     editor->openfile->errormessage = NULL;
   }
-  ensure_firstcolumn_is_aligned_for(editor->openfile);
+  ensure_firstcolumn_is_aligned_for(editor->openfile, editor->cols);
   currmenu       = MMOST;
   shift_held     = TRUE;
   refresh_needed = TRUE;
@@ -255,7 +259,7 @@ void editor_switch_to_prev(void) {
   ASSERT(openeditor);
   /* If there is only one editor open, just print a message and return. */
   if (CLIST_SINGLE(openeditor)) {
-    print_status(MILD, "Only one editor open");
+    statusline_all(MILD, "Only one editor open");
     return;
   }
   CLIST_ADV_PREV(openeditor);

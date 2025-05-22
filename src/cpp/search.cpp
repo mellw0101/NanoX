@@ -671,7 +671,7 @@ void goto_line_and_column(long line, long column, bool retain_answer, bool inter
   else {
     if (ISSET(SOFTWRAP)) {
       currentline    = openfile->current;
-      leftedge       = leftedge_for(xplustabs(), openfile->current);
+      leftedge       = leftedge_for(xplustabs(), openfile->current, editwincols);
       rows_from_tail = ((editwinrows / 2) - go_forward_chunks((editwinrows / 2), &currentline, &leftedge));
     }
     else {
@@ -853,63 +853,63 @@ void to_next_anchor(void) {
   go_to_and_confirm(line);
 }
 
-static bool search_file_in_dir(const char *file, const char *dir) {
-  DIR *d = opendir(dir);
-  dirent *e;
-  if (!d) {
-    return FALSE;
-  }
-  while ((e = readdir(d))) {
-    if (strcmp(file, e->d_name) == 0) {
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
+// static bool search_file_in_dir(const char *file, const char *dir) {
+//   DIR *d = opendir(dir);
+//   dirent *e;
+//   if (!d) {
+//     return FALSE;
+//   }
+//   while ((e = readdir(d))) {
+//     if (strcmp(file, e->d_name) == 0) {
+//       return TRUE;
+//     }
+//   }
+//   return FALSE;
+// }
 
 /* Find a global header and return the full path. */
-char *find_global_header(const char *str) {
-  PROFILE_FUNCTION;
-  const char *end = tail(str);
-  if (end != str) {
-    const char *subpath     = substr(str, (end - str));
-    const char *search_path = concat_path("/usr/include/", subpath);
-    if (search_file_in_dir(end, search_path)) {
-      char *data = memmove_concat(search_path, end);
-      return data;
-    }
-  }
-  else if (search_file_in_dir(str, "/usr/include/")) {
-    Ulong slen = strlen(str);
-    char *data = (char *)nmalloc("/usr/include/"_sllen + slen + 1);
-    memmove(data, "/usr/include/", "/usr/include/"_sllen);
-    memmove(data + "/usr/include/"_sllen, str, slen);
-    data["/usr/include/"_sllen + slen] = '\0';
-    nlog("found %s\n", data);
-    return data;
-  }
-  return NULL;
-}
+// char *find_global_header(const char *str) {
+//   PROFILE_FUNCTION;
+//   const char *end = tail(str);
+//   if (end != str) {
+//     const char *subpath     = substr(str, (end - str));
+//     const char *search_path = concat_path("/usr/include/", subpath);
+//     if (search_file_in_dir(end, search_path)) {
+//       char *data = memmove_concat(search_path, end);
+//       return data;
+//     }
+//   }
+//   else if (search_file_in_dir(str, "/usr/include/")) {
+//     Ulong slen = strlen(str);
+//     char *data = (char *)nmalloc("/usr/include/"_sllen + slen + 1);
+//     memmove(data, "/usr/include/", "/usr/include/"_sllen);
+//     memmove(data + "/usr/include/"_sllen, str, slen);
+//     data["/usr/include/"_sllen + slen] = '\0';
+//     nlog("found %s\n", data);
+//     return data;
+//   }
+//   return NULL;
+// }
 
-char *find_local_header(const char *str) {
-  const char *current_dir = NULL, *tail_end = NULL;
-  char        buf[PATH_MAX];
-  memset(buf, 0, sizeof(buf));
-  current_dir = getenv("PWD");
-  tail_end    = tail(openfile->filename);
-  if (!current_dir || !tail_end) {
-    return NULL;
-  }
-  current_dir = concat_path(current_dir, substr(openfile->filename, (tail_end - openfile->filename) - 1));
-  memmove(buf, current_dir, strlen(current_dir));
-  const char *prev = strstr(str, "..");
-  while (prev != NULL) {
-    buf[(tail(buf) - buf) - 1] = '\0';
-    prev += 3;
-    prev = strstr(prev, "..");
-    str += 3;
-  }
-  strcat(buf, "/");
-  strcat(buf, str);
-  return measured_copy(buf, strlen(buf));
-}
+// char *find_local_header(const char *str) {
+//   const char *current_dir = NULL, *tail_end = NULL;
+//   char        buf[PATH_MAX];
+//   memset(buf, 0, sizeof(buf));
+//   current_dir = getenv("PWD");
+//   tail_end    = tail(openfile->filename);
+//   if (!current_dir || !tail_end) {
+//     return NULL;
+//   }
+//   current_dir = concat_path(current_dir, substr(openfile->filename, (tail_end - openfile->filename) - 1));
+//   memmove(buf, current_dir, strlen(current_dir));
+//   const char *prev = strstr(str, "..");
+//   while (prev != NULL) {
+//     buf[(tail(buf) - buf) - 1] = '\0';
+//     prev += 3;
+//     prev = strstr(prev, "..");
+//     str += 3;
+//   }
+//   strcat(buf, "/");
+//   strcat(buf, str);
+//   return measured_copy(buf, strlen(buf));
+// }

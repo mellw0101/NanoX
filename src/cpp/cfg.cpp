@@ -284,7 +284,7 @@ void init_cfg(void) {
     mkdir(configdir, 0755);
   }
   configfile = (configfilestruct *)xmalloc(sizeof(*configfile));
-  configfile->filepath = concatenate_path(configdir, COLORFILE_NAME);
+  configfile->filepath = concatpath(configdir, COLORFILE_NAME);
   load_colorfile();
   file_listener_t *colorfile_listener = file_listener.add_listener(configfile->filepath);
   colorfile_listener->set_event_callback(IN_CLOSE_WRITE, NULL, FL_ACTION(

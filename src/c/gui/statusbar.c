@@ -74,7 +74,7 @@ void statusbar_free(void) {
 
 /* Show a status message of `type`, for `seconds`.  Note that the type will determen if the
  * message will be shown, depending if there is a more urgent message already being shown. */
-void statusbar_timed_msg(message_type type, float seconds, const char *format, ...) {
+void statusline_gui_timed(message_type type, float seconds, const char *format, ...) {
   ASSERT(seconds);
   ASSERT(format);
   va_list ap;
@@ -83,7 +83,7 @@ void statusbar_timed_msg(message_type type, float seconds, const char *format, .
   va_end(ap);
 }
 
-void statusbar_msg_va(message_type type, const char *const restrict format, va_list ap) {
+void statusline_gui_va(message_type type, const char *const restrict format, va_list ap) {
   ASSERT(format);
   va_list copy;
   va_copy(copy, ap);
@@ -93,12 +93,16 @@ void statusbar_msg_va(message_type type, const char *const restrict format, va_l
 
 /* Show a status message of `type`, for the default of `2 seconds`.  Note that the type will determen
  * if the message will be shown, depending if there is a more urgent message already being shown. */
-void statusbar_msg(message_type type, const char *format, ...) {
+void statusline_gui(message_type type, const char *format, ...) {
   ASSERT(format);
   va_list ap;
   va_start(ap, format);
   statusbar_timed_msg_internal(type, 2, format, ap);
   va_end(ap);
+}
+
+void statusbar_gui(const char *const restrict msg) {
+  statusline_gui(HUSH, "%s", msg);
 }
 
 /* Draw the status bar for the gui. */

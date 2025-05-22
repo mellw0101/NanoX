@@ -63,6 +63,33 @@ _UNUSED static inline int mvwaddnstr_curses(WINDOW *const window, int row, int c
   return mvwaddnstr(window, row, column, string, len);
 }
 
+static void place_the_cursor_for_internal(openfilestruct *const file, Ulong *const out_column, int total_cols) {
+  ASSERT(file);
+  ASSERT(out_column);
+  long row = 0;
+  Ulong column = xplustabs_for(file);
+  linestruct *line;
+  Ulong leftedge;
+  if (ISSET(SOFTWRAP)) {
+    line = file->filetop;
+    row -= chunk_for(file->firstcolumn, file->edittop, total_cols);
+    /* Calculate how meny rows from edittop the current line is. */
+    while (line && line != file->edittop) {
+      row += (1 + extra_chunks_in(line, total_cols));
+      CLIST_ADV_NEXT(line);
+    }
+    /* Add the number of wraps in the current line before the cursor. */
+    row    += get_chunk_and_edge(column, file->current, &leftedge, total_cols);
+    column -= leftedge;
+  }
+  else {
+    row     = (file->current->lineno - file->edittop->lineno);
+    column -= get_page_start(column, total_cols);
+  }
+  file->cursor_row = row;
+  *out_column = column;
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -72,17 +99,17 @@ bool get_has_more(void) {
 }
 
 /* Get the column number after leftedge where we can break the given linedata,
- * and return it.  (This will always be at most editwincols after leftedge)
+ * and return it.  (This will always be at most `total_cols` after leftedge)
  * When kickoff is TRUE, start at the beginning of the linedata; otherwise,
  * continue from where the previous call left off.  Set end_of_line to TRUE
  * when end-of-line is reached while searching for a possible breakpoint. */
-Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) {
+Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line, int total_cols) {
   /* Pointer at the current character in this line's data. */
   static const char *text;
   /* Column position that corresponds to the above pointer. */
   static Ulong column;
   /* The place at or before which text must be broken. */
-  Ulong rightside = (leftedge + editwincols);
+  Ulong rightside = (leftedge + total_cols);
   /* The column where text can be broken, when there's no better. */
   Ulong breaking_col = rightside;
   /* The column position of the last seen whitespace character. */
@@ -131,19 +158,19 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
     }
   }
   /* Otherwise, break at the last character that doesn't overshoot. */
-  return ((editwincols > 1) ? breaking_col : (column - 1));
+  return ((total_cols > 1) ? breaking_col : (column - 1));
 }
 
 /* Return the row number of the softwrapped chunk in the given line that the given column is on, relative
  * to the first row (zero-based).  If leftedge isn't NULL, return in it the leftmost column of the chunk. */
-Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) {
+Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge, int total_cols) {
   Ulong end_col;
   Ulong current_chunk = 0;
   Ulong start_col     = 0;
   bool end_of_line    = FALSE;
   bool kickoff        = TRUE;
   while (TRUE) {
-    end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line);
+    end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line, total_cols);
     /* When the column is in range or we reached end-of-line, we're done. */
     if (end_of_line || (start_col <= column && column < end_col)) {
       if (leftedge) {
@@ -157,35 +184,35 @@ Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) {
 }
 
 /* Return how many extra rows the given line needs when softwrapping. */
-Ulong extra_chunks_in(linestruct *line) {
-  return get_chunk_and_edge((Ulong)-1, line, NULL);
+Ulong extra_chunks_in(linestruct *const line, int total_cols) {
+  return get_chunk_and_edge((Ulong)-1, line, NULL, total_cols);
 }
 
 /* Return the row of the softwrapped chunk of the given line that column is on, relative to the first row (zero-based). */
-Ulong chunk_for(Ulong column, linestruct *line) {
-  return get_chunk_and_edge(column, line, NULL);
+Ulong chunk_for(Ulong column, linestruct *const line, int total_cols) {
+  return get_chunk_and_edge(column, line, NULL, total_cols);
 }
 
 /* Return the leftmost column of the softwrapped chunk of the given line that the given column is on. */
-Ulong leftedge_for(Ulong column, linestruct *line) {
+Ulong leftedge_for(Ulong column, linestruct *const line, int total_cols) {
   Ulong leftedge;
-  get_chunk_and_edge(column, line, &leftedge);
+  get_chunk_and_edge(column, line, &leftedge, total_cols);
   return leftedge;
 }
 
 /* Try to move up nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move up, which will be zero if we completely succeeded. */
-int go_back_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge) {
+int go_back_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge, int total_cols) {
   int i;
   Ulong chunk;
   if (ISSET(SOFTWRAP)) {
     /* Recede through the requested number of chunks. */
     for (i=nrows; i>0; --i) {
-      chunk       = chunk_for((*leftedge), (*line));
+      chunk       = chunk_for((*leftedge), (*line), total_cols);
       (*leftedge) = 0;
       if ((int)chunk >= i) {
-        return go_forward_chunks_for(file, (chunk - i), line, leftedge);
+        return go_forward_chunks_for(file, (chunk - i), line, leftedge, total_cols);
       }
       else if ((*line) == file->filetop) {
         break;
@@ -195,7 +222,7 @@ int go_back_chunks_for(openfilestruct *const file, int nrows, linestruct **const
       (*leftedge) = HIGHEST_POSITIVE;
     }
     if ((*leftedge) == HIGHEST_POSITIVE) {
-      (*leftedge) = leftedge_for((*leftedge), (*line));
+      (*leftedge) = leftedge_for((*leftedge), (*line), total_cols);
     }
   }
   else {
@@ -210,13 +237,18 @@ int go_back_chunks_for(openfilestruct *const file, int nrows, linestruct **const
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move up, which will be zero if we completely succeeded. */
 int go_back_chunks(int nrows, linestruct **const line, Ulong *const leftedge) {
-  return go_back_chunks_for(openfile, nrows, line, leftedge);
+  if (ISSET(USING_GUI)) {
+    return go_back_chunks_for(openeditor->openfile, nrows, line, leftedge, openeditor->cols);
+  }
+  else {
+    return go_back_chunks_for(openfile, nrows, line, leftedge, editwincols);
+  }
 }
 
 /* Try to move down nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move down, which will be zero if we completely succeeded. */
-int go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge) {
+int go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge, int total_cols) {
   int i;
   Ulong current_leftedge;
   bool kickoff;
@@ -227,7 +259,7 @@ int go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **co
     /* Advance thrue the requested number of chunks. */
     for (i=nrows; i>0; --i) {
       eol = FALSE;
-      current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &eol);
+      current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &eol, total_cols);
       if (!eol) {
         continue;
       }
@@ -255,13 +287,18 @@ int go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **co
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move down, which will be zero if we completely succeeded. */
 int go_forward_chunks(int nrows, linestruct **const line, Ulong *const leftedge) {
-  return go_forward_chunks_for(openfile, nrows, line, leftedge);
+  if (ISSET(USING_GUI)) { 
+    return go_forward_chunks_for(openeditor->openfile, nrows, line, leftedge, openeditor->cols);
+  }
+  else {
+    return go_forward_chunks_for(openfile, nrows, line, leftedge, editwincols);
+  }
 }
 
-void ensure_firstcolumn_is_aligned_for(openfilestruct *const file) {
+void ensure_firstcolumn_is_aligned_for(openfilestruct *const file, int total_cols) {
   ASSERT(file);
   if (ISSET(SOFTWRAP)) {
-    file->firstcolumn = leftedge_for(file->firstcolumn, file->edittop);
+    file->firstcolumn = leftedge_for(file->firstcolumn, file->edittop, total_cols);
   }
   else {
     file->firstcolumn = 0;
@@ -274,15 +311,12 @@ void ensure_firstcolumn_is_aligned_for(openfilestruct *const file) {
  * it's on.  We need to do this when the number of columns of the edit window
  * has changed, because then the width of softwrapped chunks has changed. */
 void ensure_firstcolumn_is_aligned(void) {
-  // if (ISSET(SOFTWRAP)) {
-  //   openfile->firstcolumn = leftedge_for(openfile->firstcolumn, openfile->edittop);
-  // }
-  // else {
-  //   openfile->firstcolumn = 0;
-  // }
-  // /* If smooth scrolling is on, make sure the viewport doesn't center. */
-  // focusing = FALSE;
-  ensure_firstcolumn_is_aligned_for(openfile);
+  if (ISSET(USING_GUI)) {
+    ensure_firstcolumn_is_aligned_for(openeditor->openfile, openeditor->cols);
+  }
+  else {
+    ensure_firstcolumn_is_aligned_for(openfile, editwincols);
+  }
 }
 
 /* Convert text into a string that can be displayed on screen.
@@ -301,7 +335,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   /* The number of zero-width characters for which to reserve space. */
   Ulong stowaways = 20;
   /* The amount of memory to reserve for the displayable string. */
-  Ulong allocsize = (((ISSET(USING_GUI) ? (editwincols) : COLS) + stowaways) * MAXCHARLEN + 1);
+  Ulong allocsize = (((ISSET(USING_GUI) ? (span + 20) : COLS) + stowaways) * MAXCHARLEN + 1);
   /* The displayable string we will return. */
   char *converted = xmalloc(allocsize);
   /* Current position in converted. */
@@ -441,55 +475,65 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
 
 /* Check whether the mark is on, or whether old_column and new_column are on different "pages"
  * (in softwrap mode, only the former applies), which means that the relevant line needs to be redrawn. */
-bool line_needs_update_for(openfilestruct *const file, Ulong old_column, Ulong new_column) {
+bool line_needs_update_for(openfilestruct *const file, Ulong old_column, Ulong new_column, int total_cols) {
   if (file->mark) {
     return TRUE;
   }
   else {
-    return (get_page_start(old_column) != get_page_start(new_column));
+    return (get_page_start(old_column, total_cols) != get_page_start(new_column, total_cols));
   }
 }
 
 /* Check whether the mark is on, or whether old_column and new_column are on different "pages"
  * (in softwrap mode, only the former applies), which means that the relevant line needs to be redrawn. */
 bool line_needs_update(Ulong old_column, Ulong new_column) {
-  return line_needs_update_for(openfile, old_column, new_column);
+  if (ISSET(USING_GUI)) {
+    return line_needs_update_for(openeditor->openfile, old_column, new_column, openeditor->cols);
+  }
+  else {
+    return line_needs_update_for(openfile, old_column, new_column, editwincols);
+  }
 }
 
 /* Return 'TRUE' if there are fewer than a screen's worth of lines between the line at line number
  * was_lineno (and column was_leftedge, if we're in softwrap mode) and the line at current[current_x]. */
-bool less_than_a_screenful_for(openfilestruct *const file, Ulong was_lineno, Ulong was_leftedge) {
+bool less_than_a_screenful_for(openfilestruct *const file, Ulong was_lineno, Ulong was_leftedge, int total_rows, int total_cols) {
   int rows_left;
   Ulong leftedge;
   linestruct *line;
   if (ISSET(SOFTWRAP)) {
     line = file->current;
-    leftedge  = leftedge_for(xplustabs_for(file), file->current);
-    rows_left = go_back_chunks_for(file, (editwinrows - 1), &line, &leftedge);
+    leftedge  = leftedge_for(xplustabs_for(file), file->current, total_cols);
+    rows_left = go_back_chunks_for(file, (total_rows - 1), &line, &leftedge, total_cols);
     return (rows_left > 0 || line->lineno < (long)was_lineno || (line->lineno == (long)was_lineno && leftedge <= was_leftedge));
   }
   else {
-    return ((int)(file->current->lineno - was_lineno) < editwinrows);
+    return ((int)(file->current->lineno - was_lineno) < total_rows);
   }
 }
 
 /* Return 'TRUE' if there are fewer than a screen's worth of lines between the line at line number was_lineno
  * (and column was_leftedge, if we're in softwrap mode) and the line at `openfile->current[openfile->current_x]`. */
 bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
-  return less_than_a_screenful_for(openfile, was_lineno, was_leftedge);
+  if (ISSET(USING_GUI)) {
+    return less_than_a_screenful_for(openeditor->openfile, was_lineno, was_leftedge, openeditor->rows, openeditor->cols);
+  }
+  else {
+    return less_than_a_screenful_for(openfile, was_lineno, was_leftedge, editwinrows, editwincols);
+  }
 }
 
 /* When in softwrap mode, and the given column is on or after the breakpoint of a softwrapped
  * chunk, shift it back to the last column before the breakpoint.  The given column is relative
  * to the given leftedge in current.  The returned column is relative to the start of the text. */
-Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong column) {
+Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong column, int total_cols) {
   ASSERT(file);
   bool  kickoff, last_chunk;
   Ulong end_col;
   if (ISSET(SOFTWRAP)) {
     kickoff    = TRUE;
     last_chunk = FALSE;
-    end_col    = (get_softwrap_breakpoint(file->current->data, leftedge, &kickoff, &last_chunk) - leftedge);
+    end_col    = (get_softwrap_breakpoint(file->current->data, leftedge, &kickoff, &last_chunk, total_cols) - leftedge);
     /* If we're not on the last chunk, we're one column past the end of the row.  Shifting back one column
      * might put us in the middle of a multi-column character, but 'actual_x()' will fix that later. */
     if (!last_chunk) {
@@ -506,7 +550,12 @@ Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong c
  * chunk, shift it back to the last column before the breakpoint.  The given column is relative
  * to the given leftedge in current.  The returned column is relative to the start of the text. */
 Ulong actual_last_column(Ulong leftedge, Ulong column) {
-  return actual_last_column_for(openfile, leftedge, column);
+  if (ISSET(USING_GUI)) {
+    return actual_last_column_for(openeditor->openfile, leftedge, column, openeditor->cols);
+  }
+  else {
+    return actual_last_column_for(openfile, leftedge, column, editwincols);
+  }
 }
 
 /* Return TRUE if current[current_x] is before the viewport. */
@@ -520,11 +569,16 @@ bool current_is_above_screen_for(openfilestruct *const file) {
 
 /* Return TRUE if current[current_x] is before the viewport. */
 bool current_is_above_screen(void) {
-  return current_is_above_screen_for(openfile);
+  if (ISSET(USING_GUI)) {
+    return current_is_above_screen_for(openeditor->openfile);
+  }
+  else {
+    return current_is_above_screen_for(openfile);
+  }
 }
 
 /* Return `TRUE` if `file->current[file->current_x]` is beyond the viewport. */
-bool current_is_below_screen_for(openfilestruct *const file) {
+bool current_is_below_screen_for(openfilestruct *const file, int total_rows, int total_cols) {
   ASSERT(file);
   linestruct *line;
   Ulong leftedge;
@@ -532,60 +586,94 @@ bool current_is_below_screen_for(openfilestruct *const file) {
     line     = file->edittop;
     leftedge = file->firstcolumn;
     /* If current[current_x] is more than a screen's worth of lines after edittop at column firstcolumn, it's below the screen. */
-    return (go_forward_chunks_for(file, (editwinrows - 1 - SHIM), &line, &leftedge) == 0 && (line->lineno < file->current->lineno
-     || (line->lineno == file->current->lineno && leftedge < leftedge_for(xplustabs_for(file), file->current))));
+    return (go_forward_chunks_for(file, (total_rows - 1 - SHIM), &line, &leftedge, total_cols) == 0 && (line->lineno < file->current->lineno
+     || (line->lineno == file->current->lineno && leftedge < leftedge_for(xplustabs_for(file), file->current, total_cols))));
   }
-  return (file->current->lineno >= (file->edittop->lineno + editwinrows - SHIM));
+  return (file->current->lineno >= (file->edittop->lineno + total_rows - SHIM));
 }
 
 /* Return `TRUE` if `openfile->current[openfile->current_x]` is beyond the viewport. */
 bool current_is_below_screen(void) {
-  return current_is_above_screen_for(openfile);
+  if (ISSET(USING_GUI)) {
+    return current_is_below_screen_for(openeditor->openfile, openeditor->rows, openeditor->cols);
+  }
+  else {
+    return current_is_below_screen_for(openfile, editwinrows, editwincols);
+  }
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */
-bool current_is_offscreen_for(openfilestruct *const file) {
+bool current_is_offscreen_for(openfilestruct *const file, int total_rows, int total_cols) {
   ASSERT(file);
-  return (current_is_above_screen_for(file) || current_is_below_screen_for(file));
+  return (current_is_above_screen_for(file) || current_is_below_screen_for(file, total_rows, total_cols));
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */
 bool current_is_offscreen(void) {
-  return current_is_offscreen_for(openfile);
+  if (ISSET(USING_GUI)) {
+    return current_is_offscreen_for(openeditor->openfile, openeditor->rows, openeditor->cols);
+  }
+  else {
+    return current_is_offscreen_for(openfile, editwinrows, editwincols);
+  }
 }
 
-/* Move edittop so that current is on the screen.  manner says how:
- * STATIONARY means that the cursor should stay on the same screen row,
- * CENTERING means that current should end up in the middle of the screen,
- * and FLOWING means that it should scroll no more than needed to bring
- * current into view. */
-void adjust_viewport_for(openfilestruct *const file, update_type manner) {
+/* Move edittop so that current is on the screen.  manner says how:  STATIONARY means that the cursor
+ * should stay on the same screen row, CENTERING means that current should end up in the middle of the
+ * screen, and FLOWING means that it should scroll no more than needed to bring current into view. */
+void adjust_viewport_for(openfilestruct *const file, update_type manner, int total_rows, int total_cols) {
   ASSERT(file);
   int goal = 0;
   if (manner == STATIONARY) {
     goal = file->cursor_row;
   }
   else if (manner == CENTERING) {
-    goal = (editwinrows / 2);
+    goal = (total_rows / 2);
   }
   else if (!current_is_above_screen_for(file)) {
-    goal = (editwinrows - 1 - SHIM);
+    goal = (total_rows - 1 - SHIM);
   }
   file->edittop = file->current;
   if (ISSET(SOFTWRAP)) {
-    file->firstcolumn = leftedge_for(xplustabs_for(file), file->current);
+    file->firstcolumn = leftedge_for(xplustabs_for(file), file->current, total_cols);
   }
   /* Move edittop back goal rows, starting at current[current_x]. */
-  go_back_chunks_for(file, goal, &file->edittop, &file->firstcolumn);
+  go_back_chunks_for(file, goal, &file->edittop, &file->firstcolumn, total_cols);
 }
 
-/* Move edittop so that current is on the screen.  manner says how:
- * STATIONARY means that the cursor should stay on the same screen row,
- * CENTERING means that current should end up in the middle of the screen,
- * and FLOWING means that it should scroll no more than needed to bring
- * current into view. */
+/* Move edittop so that current is on the screen.  manner says how:  STATIONARY means that the cursor
+ * should stay on the same screen row, CENTERING means that current should end up in the middle of the
+ * screen, and FLOWING means that it should scroll no more than needed to bring current into view. */
 void adjust_viewport(update_type manner) {
-  adjust_viewport_for(openfile, manner);
+  if (ISSET(USING_GUI)) {
+    adjust_viewport_for(openeditor->openfile, manner, openeditor->rows, openeditor->cols);
+  }
+  else {
+    adjust_viewport_for(openfile, manner, editwinrows, editwincols);
+  }
+}
+
+/* Redetermine `cursor_row` from the position of current relative to edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
+void place_the_cursor_for(openfilestruct *const file) {
+  ASSERT(file);
+  Ulong column;
+  if (ISSET(USING_GUI)) {
+    place_the_cursor_for_internal(file, &column, editor_from_file(file)->cols);
+  }
+  else if (!ISSET(NO_NCURSES)) {
+    place_the_cursor_curses_for(openfile);
+  }
+}
+
+/* Redetermine `cursor_row` from the position of current relative to edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
+void place_the_cursor(void) {
+  Ulong column;
+  if (ISSET(USING_GUI)) {
+    place_the_cursor_for_internal(openeditor->openfile, &column, openeditor->cols);
+  }
+  else if (!ISSET(NO_NCURSES)) {
+    place_the_cursor_curses_for(openfile);
+  }
 }
 
 /* ----------------------------- Curses ----------------------------- */
@@ -614,6 +702,7 @@ void blank_bottombars_curses(void) {
   }
 }
 
+/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
 void statusline_curses_va(message_type type, const char *const restrict format, va_list ap) {
   static Ulong start_col = 0;
   bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
@@ -701,11 +790,17 @@ void statusline_curses_va(message_type type, const char *const restrict format, 
   }
 }
 
+/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
 void statusline_curses(message_type type, const char *const restrict msg, ...) {
   va_list ap;
   va_start(ap, msg);
   statusline_curses_va(type, msg, ap);
   va_end(ap);
+}
+
+/* Display a normal message on the status bar, quietly.  Ncurses version. */
+void statusbar_curses(const char *const restrict msg) {
+  statusline_curses(HUSH, "%s", msg);
 }
 
 /* If path is NULL, we're in normal editing mode, so display the current
@@ -1055,29 +1150,12 @@ void bottombars_curses(int menu) {
 }
 
 /* Redetermine `file->cursor_row` form the current position relative to `file->edittop`, and put the cursor in the edit window at (`file->cursor_row`, `file->current_x`) */
-void place_the_cursor_for_curses(openfilestruct *const file) {
-  long        row = 0;
-  Ulong       column = xplustabs_for(file);
-  linestruct *line;
-  Ulong       leftedge;
-  if (ISSET(SOFTWRAP)) {
-    line = file->edittop;
-    row -= chunk_for(file->firstcolumn, file->edittop);
-    /* Calculate how meny rows from edittop to current use. */
-    while (line && line != file->current) {
-      row += (1 + extra_chunks_in(line));
-      line = line->next;
-    }
-    /* Add the number of wraps in the current line before the cursor. */
-    row    += get_chunk_and_edge(column, file->current, &leftedge);
-    column -= leftedge;
-  }
-  else {
-    row = (file->current->lineno - file->edittop->lineno);
-    column -= get_page_start(column);
-  }
-  if (row < editwinrows) {
-    wmove(midwin, row, (margin + column));
+void place_the_cursor_curses_for(openfilestruct *const file) {
+  ASSERT(file);
+  Ulong column;
+  place_the_cursor_for_internal(file, &column, editwincols);
+  if (file->cursor_row < editwinrows) {
+    wmove(midwin, file->cursor_row, (margin + column));
   }
   else {
     statusline_curses(ALERT, "Misplaced cursor -- please report a bug");
@@ -1086,12 +1164,6 @@ void place_the_cursor_for_curses(openfilestruct *const file) {
 # ifdef _CURSES_H_
   wnoutrefresh(midwin);
 # endif
-  file->cursor_row = row;
-}
-
-/* Redetermine `openfile->cursor_row` form the current position relative to `openfile->edittop`, and put the cursor in the edit window at (`openfile->cursor_row`, `openfile->current_x`) */
-void place_the_cursor_curses(void) {
-  place_the_cursor_for_curses(openfile);
 }
 
 /* Warn the user on the status bar and pause for a moment, so that the message can be noticed and read.  Ncurses version. */
@@ -1152,4 +1224,9 @@ void draw_row_marked_region_for_curses(openfilestruct *const file, int row, cons
 /* Draw the marked region of `row`. */
 void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
   draw_row_marked_region_for_curses(openfile, row, converted, line, from_col);
+}
+
+/* Tell curses to unconditionally redraw whatever was on the screen. */
+void full_refresh_curses(void) {
+  wrefresh(curscr);
 }

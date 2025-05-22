@@ -93,6 +93,8 @@ bool perturbed = FALSE;
 bool recook = FALSE;
 /* Whether the current keystroke is a Meta key. */
 bool meta_key;
+/* Whether indenting/commenting should include the last line of the marked region. */
+bool also_the_last = FALSE;
 
 /* These two tags are used elsewhere too, so they are global.
  * TRANSLATORS: Try to keep the next two strings at most 10 characters. */

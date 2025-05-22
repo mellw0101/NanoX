@@ -65,6 +65,7 @@ extern bool shifted_metas;
 extern bool perturbed;
 extern bool recook;
 extern bool meta_key;
+extern bool also_the_last;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -146,25 +147,33 @@ char **split_string_nano(const char *const string, const char delim, bool allow_
 #if !defined(__cplusplus)
   void      die(const char *format, ...);
   thread_t *get_nthreads(Ulong howmeny);
-#endif
+  #endif
+char       *concatenate(const char *path, const char *name);
 void        free_nulltermchararray(char **const argv);
+void        append_chararray(char ***const array, Ulong *const len, char **const append, Ulong append_len);
 char       *mallocstrcpy(char *dest, const char *src) __THROW _RETURNS_NONNULL _NONNULL(1, 2);
 void        get_homedir(void);
 linestruct *file_line_from_number(openfilestruct *const file, long number);
 void        free_chararray(char **array, Ulong len);
-Ulong       get_page_start(Ulong column);
+void        recode_NUL_to_LF(char *string, Ulong length);
+Ulong       recode_LF_to_NUL(char *string);
+Ulong       get_page_start(Ulong column, int total_cols);
 Ulong       xplustabs_for(openfilestruct *const file);
 Ulong       xplustabs(void) _NODISCARD;
 Ulong       wideness(const char *text, Ulong maxlen) _NODISCARD _NONNULL(1);
 Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
 Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
-void        print_status(message_type type, const char *const restrict format, ...);
+void        statusline_all(message_type type, const char *const restrict format, ...);
+void        statusbar_all(const char *const restrict msg);
 void        new_magicline(void);
 void        remove_magicline(void);
 bool        mark_is_before_cursor_for(openfilestruct *const file);
 bool        mark_is_before_cursor(void) _NODISCARD;
 void        get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
 void        get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
+void        get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
+void        get_range(linestruct **const top, linestruct **const bot);
+bool        parse_line_column(const char *string, long *const line, long *const column);
 
 
 
@@ -239,9 +248,11 @@ int  nanox_socket_client(void);
 /* ----------------------------------------------- text.c ----------------------------------------------- */
 
 
+void  do_mark_for(openfilestruct *const file);
+void  do_mark(void);
 Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
-void discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
-void discard_until(const undostruct *thisitem);
+void  discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
+void  discard_until(const undostruct *thisitem);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -440,6 +451,8 @@ char *check_writable_directory(const char *path);
 int   diralphasort(const void *va, const void *vb);
 void  set_modified_for(openfilestruct *const file);
 void  set_modified(void);
+char *encode_data(char *text, Ulong length);
+
 bool open_buffer(const char *filename, bool new_one);
 
 
@@ -501,32 +514,34 @@ bool is_char_one_of(const char *pointer, Ulong index, const char *chars);
 
 
 bool  get_has_more(void);
-Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line);
-Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge);
-Ulong extra_chunks_in(linestruct *line);
-Ulong chunk_for(Ulong column, linestruct *line);
-Ulong leftedge_for(Ulong column, linestruct *line);
-int   go_back_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge);
+Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line, int total_cols);
+Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge, int toal_cols);
+Ulong extra_chunks_in(linestruct *const line, int total_cols);
+Ulong chunk_for(Ulong column, linestruct *const line, int total_cols);
+Ulong leftedge_for(Ulong column, linestruct *const line, int total_cols);
+int   go_back_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge, int total_cols);
 int   go_back_chunks(int nrows, linestruct **const line, Ulong *const leftedge);
-int   go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge);
+int   go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge, int total_cols);
 int   go_forward_chunks(int nrows, linestruct **const line, Ulong *const leftedge);
-void  ensure_firstcolumn_is_aligned_for(openfilestruct *const file);
+void  ensure_firstcolumn_is_aligned_for(openfilestruct *const file, int total_cols);
 void  ensure_firstcolumn_is_aligned(void);
 char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt);
-bool  line_needs_update_for(openfilestruct *const file, Ulong old_column, Ulong new_column);
+bool  line_needs_update_for(openfilestruct *const file, Ulong old_column, Ulong new_column, int total_cols);
 bool  line_needs_update(Ulong old_column, Ulong new_column);
-bool  less_than_a_screenful_for(openfilestruct *const file, Ulong was_lineno, Ulong was_leftedge);
+bool  less_than_a_screenful_for(openfilestruct *const file, Ulong was_lineno, Ulong was_leftedge, int total_rows, int total_cols);
 bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge);
-Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong column);
+Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong column, int total_cols);
 Ulong actual_last_column(Ulong leftedge, Ulong column);
 bool current_is_above_screen_for(openfilestruct *const file);
 bool current_is_above_screen(void);
-bool current_is_below_screen_for(openfilestruct *const file);
+bool current_is_below_screen_for(openfilestruct *const file, int total_rows, int total_cols);
 bool current_is_below_screen(void);
-bool current_is_offscreen_for(openfilestruct *const file);
+bool current_is_offscreen_for(openfilestruct *const file, int total_rows, int total_cols);
 bool current_is_offscreen(void);
-void adjust_viewport_for(openfilestruct *const file, update_type manner);
+void adjust_viewport_for(openfilestruct *const file, update_type manner, int total_rows, int total_cols);
 void adjust_viewport(update_type manner);
+void place_the_cursor_for(openfilestruct *const file);
+void place_the_cursor(void);
 
 /* ----------------------------- Curses ----------------------------- */
 
@@ -536,15 +551,16 @@ void blank_statusbar_curses(void);
 void blank_bottombars_curses(void);
 void statusline_curses_va(message_type type, const char *const restrict format, va_list ap);
 void statusline_curses(message_type type, const char *const restrict msg, ...) _PRINTFLIKE(2, 3);
+void statusbar_curses(const char *const restrict msg);
 void titlebar_curses(const char *path);
 void minibar_curses(void);
 void post_one_key_curses(const char *const restrict keystroke, const char *const restrict tag, int width);
 void bottombars_curses(int menu);
-void place_the_cursor_for_curses(openfilestruct *const file);
-void place_the_cursor_curses(void);
+void place_the_cursor_curses_for(openfilestruct *const file);
 void warn_and_briefly_pause_curses(const char *const restrict message);
 void draw_row_marked_region_for_curses(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
+void full_refresh_curses(void);
 
 
 /* ---------------------------------------------------------- line.c ---------------------------------------------------------- */
@@ -575,8 +591,18 @@ void tidy_up_after_search(void);
 
 void to_first_line_for(openfilestruct *const file);
 void to_first_line(void);
-void to_last_line_for(openfilestruct *const file);
+void to_last_line_for(openfilestruct *const file, int total_rows);
 void to_last_line(void);
+void get_edge_and_target_for(openfilestruct *const file, Ulong *const leftedge, Ulong *target_column, int total_cols);
+void get_edge_and_target(Ulong *const leftedge, Ulong *target_column);
+void do_page_up_for(openfilestruct *const file, int total_rows, int total_cols);
+void do_page_up(void);
+void do_page_down_for(openfilestruct *const file, int total_rows, int total_cols);
+void do_page_down(void);
+void to_top_row_for(openfilestruct *const file, int total_cols);
+void to_top_row(void);
+void to_bottom_row_for(openfilestruct *const file, int total_rows, int total_cols);
+void to_bottom_row(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
@@ -599,7 +625,7 @@ bool etb_owns_element(EditorTb *const etb, Element *const e);
 void editor_create(bool new_buffer);
 void editor_free(Editor *const editor);
 void editor_confirm_margin(Editor *const editor);
-void editor_set_rows_cols(Editor *const editor);
+void editor_set_rows_cols(Editor *const editor, float width, float heighr);
 Editor *editor_from_file(openfilestruct *const file);
 void editor_hide(Editor *const editor, bool hide);
 void editor_close(Editor *const editor);
@@ -628,9 +654,10 @@ void editor_close_a_open_buffer(openfilestruct *const file);
 
 void statusbar_init(Element *const parent);
 void statusbar_free(void);
-void statusbar_timed_msg(message_type type, float seconds, const char *format, ...);
-void statusbar_msg_va(message_type type, const char *const restrict format, va_list ap);
-void statusbar_msg(message_type type, const char *format, ...);
+void statusline_gui_timed(message_type type, float seconds, const char *format, ...);
+void statusline_gui_va(message_type type, const char *const restrict format, va_list ap);
+void statusline_gui(message_type type, const char *format, ...);
+void statusbar_gui(const char *const restrict msg);
 void statusbar_draw(float fps);
 
 
@@ -647,7 +674,6 @@ linestruct *copy_buffer(const linestruct *src);
 void        renumber_from(linestruct *line);
 void        print_view_warning(void);
 bool        in_restricted_mode(void);
-void        confirm_margin_for(openfilestruct *const file, int *const out_margin);
 void        confirm_margin(void);
 void        disable_kb_interrupt(void);
 void        enable_kb_interrupt(void);

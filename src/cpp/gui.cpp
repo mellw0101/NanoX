@@ -182,7 +182,8 @@ static void setup_statusbar(void) {
 /* Allocate and init the edit element. */
 static void setup_edit_element(void) {
   /* Confirm the margin first to determen how wide the gutter has to be. */
-  confirm_margin();
+  // confirm_margin();
+  // writef("%s: hello\n", __func__);
   /* Create the editor circular list. */
   // make_new_editor(FALSE);
   editor_create(FALSE);

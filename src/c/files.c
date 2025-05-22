@@ -64,7 +64,7 @@ void make_new_buffer(void) {
 /* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
 bool delete_lockfile(const char *const restrict lockfilename) {
   if (unlink(lockfilename) < 0 && errno != ENOENT) {
-    print_status(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
+    statusline_all(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
   return TRUE;
@@ -85,7 +85,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   /* We failed to get the current user data. */
   if (!pwuid) {
     if (ISSET(USING_GUI)) {
-      statusbar_msg(MILD, _("Couldn't determine user for lock file"));
+      statusline_gui(MILD, _("Couldn't determine user for lock file"));
     }
     else if (!ISSET(NO_NCURSES)) {
       statusline_curses(MILD, _("Couldn't determine user for lock file"));
@@ -93,7 +93,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
     return FALSE;
   }
   else if (gethostname(hostname, 31) < 0 && errno != ENAMETOOLONG) {
-    print_status(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
+    statusline_all(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
     return FALSE;
   }
   else {
@@ -105,7 +105,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   }
   /* Open the lockfile file-descriptor. */
   if ((fd = open(lockfilename, (O_WRONLY | O_CREAT | O_EXCL), RW_FOR_ALL)) == -1) {
-    print_status(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
+    statusline_all(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
   /* Create the lock data we will write. */
@@ -151,7 +151,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   free(lockdata);
   close(fd);
   if (len == -1 || written < LOCKSIZE) {
-    print_status(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
+    statusline_all(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
   return TRUE;
@@ -171,25 +171,25 @@ bool has_valid_path(const char *const restrict filename) {
     free(currentdir);
   }
   if (gone) {
-    print_status(ALERT, _("The working directory has disappeared"));
+    statusline_all(ALERT, _("The working directory has disappeared"));
   }
   else if (stat(parentdir, &parentinfo) == -1) {
     if (errno == ENOENT) {
       /* TRANSLATORS: Keep the next ten messages at most 76 characters. */
-      print_status(ALERT, _("Directory '%s' does not exist"), parentdir);
+      statusline_all(ALERT, _("Directory '%s' does not exist"), parentdir);
     }
     else {
-      print_status(ALERT, _("Path '%s': %s"), parentdir, strerror(errno));
+      statusline_all(ALERT, _("Path '%s': %s"), parentdir, strerror(errno));
     }
   }
   else if (!S_ISDIR(parentinfo.st_mode)) {
-    print_status(ALERT, _("Path '%s' is not a directory"), parentdir);
+    statusline_all(ALERT, _("Path '%s' is not a directory"), parentdir);
   }
   else if (access(parentdir, X_OK) == -1) {
-    print_status(ALERT, _("Path '%s' is not accessible"), parentdir);
+    statusline_all(ALERT, _("Path '%s' is not accessible"), parentdir);
   }
   else if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && access(parentdir, W_OK) < 0) {
-    print_status(MILD, _("Directory '%s' is not writable"), parentdir);
+    statusline_all(MILD, _("Directory '%s' is not writable"), parentdir);
   }
   else {
     validity = TRUE;
@@ -383,35 +383,9 @@ void set_modified(void) {
   set_modified_for(openfile);
 }
 
-/* Update title bar and such after switching to another buffer. */
-// static void redecorate_after_switch(void) {
-//   /* If only one file buffer is open, there is nothing to update. */
-//   if (openfile == openfile->next) {
-//     print_status(AHEM, _("No more open file buffers"));
-//     return;
-//   }
-//   /* While in a different buffer, the width of the screen may have changed,
-//    * so make sure that the starting column for the first row is fitting. */
-//   ensure_firstcolumn_is_aligned();
-//   /* Update title bar and multiline info to match the current buffer. */
-//   prepare_for_display();
-//   /* Ensure that the main loop will redraw the help lines. */
-//   currmenu = MMOST;
-//   /* Prevent a possible Shift selection from getting cancelled. */
-//   shift_held = TRUE;
-//   /* If the switched-to buffer gave an error during opening, show the message
-//    * once; otherwise, indicate on the status bar which file we switched to. */
-//   if (openfile->errormessage) {
-//     print_status(ALERT, openfile->errormessage);
-//     free(openfile->errormessage);
-//     openfile->errormessage = NULL;
-//   }
-//   else {
-//     mention_name_and_linecount();
-//   }
-// }
-
-// void switch_to_prev_buffer(void) {
-//   CLIST_ADV_PREV(openfile);
-
-// }
+/* Encode any NUL bytes in the given line of text (of the given length), and return a dynamically allocated copy of the resultant string. */
+char *encode_data(char *text, Ulong length) {
+  recode_NUL_to_LF(text, length);
+  text[length] = '\0';
+  return copy_of(text);
+}

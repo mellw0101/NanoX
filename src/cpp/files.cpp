@@ -563,11 +563,11 @@ void switch_to_next_buffer(void) _NOTHROW {
 // }
 
 /* Encode any NUL bytes in the given line of text (of the given length), and return a dynamically allocated copy of the resultant string. */
-char *encode_data(char *text, Ulong length) _NOTHROW {
-  recode_NUL_to_LF(text, length);
-  text[length] = '\0';
-  return copy_of(text);
-}
+// char *encode_data(char *text, Ulong length) _NOTHROW {
+//   recode_NUL_to_LF(text, length);
+//   text[length] = '\0';
+//   return copy_of(text);
+// }
 
 /* The number of bytes by which we expand the line buffer while reading. */
 #define LUMPSIZE 120
@@ -607,7 +607,7 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
     add_undo(INSERT, NULL);
   }
   if (ISSET(SOFTWRAP)) {
-    was_leftedge = leftedge_for(xplustabs(), openfile->current);
+    was_leftedge = leftedge_for(xplustabs(), openfile->current, editwincols);
   }
   /* Create an empty buffer. */
   topline    = make_new_node(NULL);

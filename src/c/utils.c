@@ -49,6 +49,15 @@ thread_t *get_nthreads(Ulong howmeny) {
   return xmalloc(sizeof(thread_t) * howmeny);
 }
 
+/* Return a copy of the two given strings, welded together. */
+char *concatenate(const char *path, const char *name) {
+  Ulong pathlen = strlen(path);
+  char *joined  = xmalloc(pathlen + strlen(name) + 1);
+  strcpy(joined, path);
+  strcpy((joined + pathlen), name);
+  return joined;
+}
+
 /* Free's a `NULL-TERMINATED` char array. */
 void free_nulltermchararray(char **const argv) {
   char **copy = argv;
@@ -61,6 +70,20 @@ void free_nulltermchararray(char **const argv) {
     ++copy;
   }
   free(argv);
+}
+
+/* Append an `char * array` onto `array`.  Free `append` but not any elements in it after the call. */
+void append_chararray(char ***const array, Ulong *const len, char **const append, Ulong append_len) {
+  ASSERT(array);
+  ASSERT(len);
+  ASSERT(append);
+  Ulong new_len = ((*len) + append_len);
+  (*array) = xrealloc((*array), (_PTRSIZE * (new_len + 1)));
+  for (Ulong i=0; i<append_len; ++i) {
+    (*array)[(*len) + i] = append[i];
+  }
+  (*array)[new_len] = NULL;
+  (*len) = new_len;
 }
 
 /* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
@@ -135,18 +158,41 @@ void free_chararray(char **array, Ulong len) {
   free(array);
 }
 
+/* In the given string, recode each embedded NUL as a newline. */
+void recode_NUL_to_LF(char *string, Ulong length) {
+  while (length > 0) {
+    if (!*string) {
+      *string = '\n';
+    }
+    --length;
+    ++string;
+  }
+}
+
+/* In the given string, recode each embedded newline as a NUL, and return the number of bytes in the string. */
+Ulong recode_LF_to_NUL(char *string) {
+  char *beginning = string;
+  while (*string) {
+    if (*string == '\n') {
+      *string = '\0';
+    }
+    ++string;
+  }
+  return (string - beginning);
+}
+
 /* When not softwrapping, nano scrolls the current line horizontally by
  * chunks ("pages").  Return the column number of the first character
  * displayed in the edit window when the cursor is at the given column. */
-Ulong get_page_start(Ulong column) {
-  if (!column || (int)(column + 2) < editwincols || ISSET(SOFTWRAP)) {
+Ulong get_page_start(Ulong column, int total_cols) {
+  if (!column || (int)(column + 2) < total_cols || ISSET(SOFTWRAP)) {
     return 0;
   }
-  else if (editwincols > 8) {
-    return (column - 6 - ((column - 6) % (editwincols - 8)));
+  else if (total_cols > 8) {
+    return (column - 6 - ((column - 6) % (total_cols - 8)));
   }
   else {
-    return (column - (editwincols - 2));
+    return (column - (total_cols - 2));
   }
 }
 
@@ -196,17 +242,27 @@ Ulong breadth(const char *text) {
 }
 
 /* For functions that are used by the tui and gui, this prints a status message correctly. */
-void print_status(message_type type, const char *const restrict format, ...) {
+void statusline_all(message_type type, const char *const restrict format, ...) {
   ASSERT(format);
   va_list ap;
   va_start(ap, format);
   if (ISSET(USING_GUI)) {
-    statusbar_msg_va(type, format, ap);
+    statusline_gui_va(type, format, ap);
   }
   else if (!ISSET(NO_NCURSES)) {
     statusline_curses_va(type, format, ap);
   }
   va_end(ap);
+}
+
+/* Print a normal `msg`, that conforms to the current contex, tui or gui. */
+void statusbar_all(const char *const restrict msg) {
+  if (ISSET(USING_GUI)) {
+    statusbar_gui(msg);
+  }
+  else if (!ISSET(NO_NCURSES)) {
+    statusbar_curses(msg);
+  }
 }
 
 /* Append a new magic line to the end of the buffer. */
@@ -262,4 +318,61 @@ void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *c
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
 void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
   get_region_for(openfile, top, top_x, bot, bot_x);
+}
+
+/* Get the set of lines to work on -- either just the current line, or the first to last lines of the marked
+ * region.  When the cursor (or mark) is at the start of the last line of the region, exclude that line. */
+void get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot) {
+  ASSERT(file);
+  ASSERT(top);
+  ASSERT(bot);
+  Ulong top_x;
+  Ulong bot_x;
+  /* No mark is set. */
+  if (!openfile->mark) {
+    (*top) = openfile->current;
+    (*bot) = openfile->current;
+  }
+  else {
+    get_region_for(file, top, &top_x, bot, &bot_x);
+    if (bot_x == 0 && bot != top && !also_the_last) {
+      (*bot) = (*bot)->prev;
+    }
+    else {
+      also_the_last = TRUE;
+    }
+  }
+}
+
+/* Get the set of lines to work on -- either just the current line, or the first to last lines of the marked
+ * region.  When the cursor (or mark) is at the start of the last line of the region, exclude that line. */
+void get_range(linestruct **const top, linestruct **const bot) {
+  get_range_for(openfile, top, bot);
+}
+
+/* Read one number (or two numbers separated by comma, period, or colon) from the given string and store
+ * the number(s) in *line (and *column).  Return 'FALSE' on a failed parsing, and 'TRUE' otherwise. */
+bool parse_line_column(const char *string, long *const line, long *const column) {
+  ASSERT(string);
+  ASSERT(line);
+  ASSERT(column);
+  const char *comma;
+  char *firstpart;
+  bool retval;
+  while (*string == ' ') {
+    ++string;
+  }
+  comma = strpbrk(string, ",.:");
+  if (!comma) {
+    return parse_num(string, line);
+  }
+  retval = parse_num((comma + 1), column);
+  if (comma == string) {
+    return retval;
+  }
+  firstpart = copy_of(string);
+  firstpart[comma - string] = '\0';
+  retval = (parse_num(firstpart, line) && retval);
+  free(firstpart);
+  return retval;
 }

@@ -2492,42 +2492,42 @@ void bottombars(const int menu) _NOTHROW {
 }
 
 /* Redetermine `cursor_row` from the position of current relative to edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
-void place_the_cursor(void) _NOTHROW {
-  long  row    = 0;
-  Ulong column = xplustabs();
-  if (ISSET(SOFTWRAP)) {
-    linestruct *line = openfile->edittop;
-    Ulong leftedge;
-    row -= chunk_for(openfile->firstcolumn, openfile->edittop);
-    /* Calculate how many rows the lines from edittop to current use. */
-    while (line && line != openfile->current) {
-      row += (1 + extra_chunks_in(line));
-      line = line->next;
-    }
-    /* Add the number of wraps in the current line before the cursor. */
-    row += get_chunk_and_edge(column, openfile->current, &leftedge);
-    column -= leftedge;
-  }
-  else {
-    row = (openfile->current->lineno - openfile->edittop->lineno);
-    column -= get_page_start(column);
-  }
-  if (row < editwinrows) {
-    if (!ISSET(USING_GUI)) {
-      nanox_wmove(midwin, row, (margin + column));
-    }
-  }
-  else {
-    if (!ISSET(USING_GUI)) {
-      statusline(ALERT, "Misplaced cursor -- please report a bug");
-    }
-  }
-#ifdef _CURSES_H_
-  /* Only needed for NetBSD curses. */
-  wnoutrefresh(midwin);
-#endif
-  openfile->cursor_row = row;
-}
+// void place_the_cursor(void) _NOTHROW {
+//   long  row    = 0;
+//   Ulong column = xplustabs();
+//   if (ISSET(SOFTWRAP)) {
+//     linestruct *line = openfile->edittop;
+//     Ulong leftedge;
+//     row -= chunk_for(openfile->firstcolumn, openfile->edittop, editwincols);
+//     /* Calculate how many rows the lines from edittop to current use. */
+//     while (line && line != openfile->current) {
+//       row += (1 + extra_chunks_in(line, editwincols));
+//       line = line->next;
+//     }
+//     /* Add the number of wraps in the current line before the cursor. */
+//     row += get_chunk_and_edge(column, openfile->current, &leftedge, editwincols);
+//     column -= leftedge;
+//   }
+//   else {
+//     row = (openfile->current->lineno - openfile->edittop->lineno);
+//     column -= get_page_start(column, editwincols);
+//   }
+//   if (row < editwinrows) {
+//     if (!ISSET(USING_GUI)) {
+//       nanox_wmove(midwin, row, (margin + column));
+//     }
+//   }
+//   else {
+//     if (!ISSET(USING_GUI)) {
+//       statusline(ALERT, "Misplaced cursor -- please report a bug");
+//     }
+//   }
+// #ifdef _CURSES_H_
+//   /* Only needed for NetBSD curses. */
+//   wnoutrefresh(midwin);
+// #endif
+//   openfile->cursor_row = row;
+// }
 
 /* The number of bytes after which to stop painting, to avoid major slowdowns. */
 #define PAINT_LIMIT 2000
@@ -2693,48 +2693,49 @@ void draw_row(const int row, const char *converted, linestruct *line, const Ulon
       mv_add_nstr_color(midwin, row, (margin + target_column), striped_char, charlen, GUIDE_STRIPE);
     }
   }
+  draw_row_marked_region_curses(row, converted, line, from_col);
   /* If the line is at least partially selected, paint the marked part. */
-  if (line_in_marked_region(line)) {
-    /* The lines where the marked region begins and ends. */
-    linestruct *top, *bot;
-    /* The x positions where the marked region begins and ends. */
-    Ulong top_x, bot_x;
-    /* The column where painting starts.  Zero-based. */
-    int start_col;
-    /* The place in converted from where painting starts. */
-    const char *thetext;
-    /* The number of characters to paint.  Negative means "all". */
-    int paintlen = -1;
-    get_region(&top, &top_x, &bot, &bot_x);
-    if (top->lineno < line->lineno || top_x < from_x) {
-      top_x = from_x;
-    }
-    if (bot->lineno > line->lineno || bot_x > till_x) {
-      bot_x = till_x;
-    }
-    /* Only paint if the marked part of the line is on this page. */
-    if (top_x < till_x && bot_x > from_x) {
-      /* Compute on which screen column to start painting. */
-      start_col = (wideness(line->data, top_x) - from_col);
-      if (start_col < 0) {
-        start_col = 0;
-      }
-      thetext = (converted + actual_x(converted, start_col));
-      /* If the end of the mark is onscreen, compute how many characters to paint.  Otherwise, just paint all. */
-      if (bot_x < till_x) {
-        const Ulong end_col = (wideness(line->data, bot_x) - from_col);
-        paintlen = actual_x(thetext, (end_col - start_col));
-      }
-      if (ISSET(NO_NCURSES)) {
-        nwindow_set_rgb(tui_midwin, encoded_idx_color[config->selectedtext_color][0], encoded_idx_color[config->selectedtext_color][1]);
-        nwindow_move_add_nstr(tui_midwin, row, (margin + start_col), thetext, paintlen);
-        nwindow_set_rgb(tui_midwin, -1, -1);
-      }
-      else {
-        mv_add_nstr_color(midwin, row, (margin + start_col), thetext, paintlen, config->selectedtext_color);
-      }
-    }
-  }
+  // if (line_in_marked_region(line)) {
+  //   /* The lines where the marked region begins and ends. */
+  //   linestruct *top, *bot;
+  //   /* The x positions where the marked region begins and ends. */
+  //   Ulong top_x, bot_x;
+  //   /* The column where painting starts.  Zero-based. */
+  //   int start_col;
+  //   /* The place in converted from where painting starts. */
+  //   const char *thetext;
+  //   /* The number of characters to paint.  Negative means "all". */
+  //   int paintlen = -1;
+  //   get_region(&top, &top_x, &bot, &bot_x);
+  //   if (top->lineno < line->lineno || top_x < from_x) {
+  //     top_x = from_x;
+  //   }
+  //   if (bot->lineno > line->lineno || bot_x > till_x) {
+  //     bot_x = till_x;
+  //   }
+  //   /* Only paint if the marked part of the line is on this page. */
+  //   if (top_x < till_x && bot_x > from_x) {
+  //     /* Compute on which screen column to start painting. */
+  //     start_col = (wideness(line->data, top_x) - from_col);
+  //     if (start_col < 0) {
+  //       start_col = 0;
+  //     }
+  //     thetext = (converted + actual_x(converted, start_col));
+  //     /* If the end of the mark is onscreen, compute how many characters to paint.  Otherwise, just paint all. */
+  //     if (bot_x < till_x) {
+  //       const Ulong end_col = (wideness(line->data, bot_x) - from_col);
+  //       paintlen = actual_x(thetext, (end_col - start_col));
+  //     }
+  //     if (ISSET(NO_NCURSES)) {
+  //       nwindow_set_rgb(tui_midwin, encoded_idx_color[config->selectedtext_color][0], encoded_idx_color[config->selectedtext_color][1]);
+  //       nwindow_move_add_nstr(tui_midwin, row, (margin + start_col), thetext, paintlen);
+  //       nwindow_set_rgb(tui_midwin, -1, -1);
+  //     }
+  //     else {
+  //       mv_add_nstr_color(midwin, row, (margin + start_col), thetext, paintlen, config->selectedtext_color);
+  //     }
+  //   }
+  // }
 }
 
 /* Redraw the given line so that the character at the given index is visible -- if necessary, scroll the line
@@ -2749,7 +2750,7 @@ int update_line(linestruct *line, const Ulong index, int offset) {
   }
   sequel_column = 0;
   row = (line->lineno - openfile->edittop->lineno - offset);
-  from_col = get_page_start(wideness(line->data, index));
+  from_col = get_page_start(wideness(line->data, index), editwincols);
   /* Expand the piece to be drawn to its representable form, and draw it. */
   converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
   draw_row(row, converted, line, from_col);
@@ -2792,11 +2793,11 @@ int update_softwrapped_line(linestruct *line) {
     from_col = openfile->firstcolumn;
   }
   else {
-    row -= chunk_for(openfile->firstcolumn, openfile->edittop);
+    row -= chunk_for(openfile->firstcolumn, openfile->edittop, editwincols);
   }
   /* Find out on which screen row the target line should be shown. */
   while (someline != line && someline) {
-    row += (1 + extra_chunks_in(someline));
+    row += (1 + extra_chunks_in(someline, editwincols));
     someline = someline->next;
   }
   /* If the first chunk is offscreen, don't even try to display it. */
@@ -2805,7 +2806,7 @@ int update_softwrapped_line(linestruct *line) {
   }
   starting_row = row;
   while (!end_of_line && row < editwinrows) {
-    to_col = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line);
+    to_col = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line, editwincols);
     sequel_column = (end_of_line ? 0 : to_col);
     /* Convert the chunk to its displayable form and draw it. */
     converted = display_string(line->data, from_col, (to_col - from_col), TRUE, FALSE);
@@ -2926,10 +2927,10 @@ static void draw_scrollbar(void) _NOTHROW {
   int lowest, highest, extras;
   if (ISSET(SOFTWRAP)) {
     line = openfile->edittop;
-    extras = (extra_chunks_in(line) - chunk_for(openfile->firstcolumn, line));
+    extras = (extra_chunks_in(line, editwincols) - chunk_for(openfile->firstcolumn, line, editwincols));
     while ((line->lineno + extras) < (fromline + editwinrows) && line->next) {
       line = line->next;
-      extras += extra_chunks_in(line);
+      extras += extra_chunks_in(line, editwincols);
     }
     coveredlines = (line->lineno - fromline);
   }
@@ -2988,10 +2989,10 @@ void edit_scroll(bool direction) {
   }
   if (ISSET(SOFTWRAP)) {
     /* Compensate for the earlier chunks of a softwrapped line. */
-    nrows += chunk_for(leftedge, line);
+    nrows += chunk_for(leftedge, line, editwincols);
     /* Don't compensate for the chunks that are offscreen. */
     if (line == openfile->edittop) {
-      nrows -= chunk_for(openfile->firstcolumn, line);
+      nrows -= chunk_for(openfile->firstcolumn, line, editwincols);
     }
   }
   /* Draw new content on the blank row (and on the bordering row too when it was deemed necessary). */
@@ -3191,12 +3192,12 @@ void edit_redraw(linestruct *old_current, update_type manner) {
   }
   else {
     /* Otherwise, update old_current only if it differs from current and was horizontally scrolled. */
-    if (old_current != openfile->current && get_page_start(was_pww) > 0) {
+    if (old_current != openfile->current && get_page_start(was_pww, editwincols) > 0) {
       update_line(old_current, 0);
     }
   }
   /* Update current if the mark is on or it has changed "page", or if it differs from old_current and needs to be horizontally scrolled. */
-  if (line_needs_update(was_pww, openfile->placewewant) || (old_current != openfile->current && get_page_start(openfile->placewewant) > 0)) {
+  if (line_needs_update(was_pww, openfile->placewewant) || (old_current != openfile->current && get_page_start(openfile->placewewant, editwincols) > 0)) {
     update_line(openfile->current, openfile->current_x);
   }
 }
@@ -3316,7 +3317,7 @@ void report_cursor_position(void) _NOTHROW {
 
 /* Highlight the text between the given two columns on the current line. */
 void spotlight(Ulong from_col, Ulong to_col) _NOTHROW {
-  Ulong right_edge = (get_page_start(from_col) + editwincols);
+  Ulong right_edge = (get_page_start(from_col, editwincols) + editwincols);
   bool  overshoots = (to_col > right_edge);
   char *word;
   place_the_cursor();
@@ -3344,7 +3345,7 @@ void spotlight(Ulong from_col, Ulong to_col) _NOTHROW {
 /* Highlight the text between the given two columns on the current line. */
 void spotlight_softwrapped(Ulong from_col, Ulong to_col) _NOTHROW {
   long  row;
-  Ulong leftedge = leftedge_for(from_col, openfile->current);
+  Ulong leftedge = leftedge_for(from_col, openfile->current, editwincols);
   Ulong break_col;
   bool  end_of_line = FALSE;
   bool  kickoff     = TRUE;
@@ -3352,7 +3353,7 @@ void spotlight_softwrapped(Ulong from_col, Ulong to_col) _NOTHROW {
   place_the_cursor();
   row = openfile->cursor_row;
   while (row < editwinrows) {
-    break_col = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &end_of_line);
+    break_col = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &end_of_line, editwincols);
     /* If the highlighting ends on this chunk, we can stop after it. */
     if (break_col >= to_col) {
       end_of_line = TRUE;

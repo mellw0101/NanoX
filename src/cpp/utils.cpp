@@ -30,47 +30,47 @@ char **get_env_paths(Ulong *npaths) _NOTHROW {
 }
 
 /* Return a copy of the two given strings, welded together. */
-char *concatenate(const char *path, const char *name) _NOTHROW {
-  Ulong pathlen = strlen(path);
-  char *joined  = (char *)nmalloc(pathlen + strlen(name) + 1);
-  strcpy(joined, path);
-  strcpy((joined + pathlen), name);
-  return joined;
-}
+// char *concatenate(const char *path, const char *name) _NOTHROW {
+//   Ulong pathlen = strlen(path);
+//   char *joined  = (char *)nmalloc(pathlen + strlen(name) + 1);
+//   strcpy(joined, path);
+//   strcpy((joined + pathlen), name);
+//   return joined;
+// }
 
 /* Return a path copy of two strings, appending '/' to the prefix if needed. */
-char *concatenate_path(const char *prefix, const char *suffix) _NOTHROW {
-  Ulong prefix_len = strlen(prefix);
-  char *ret = NULL;
-  /* Either the prefix ends with / or suffix starts with /. */
-  if ((prefix[prefix_len - 1] == '/' && *suffix != '/') || (prefix[prefix_len - 1] != '/' && *suffix == '/')) {
-    ret = (char *)nmalloc(prefix_len + strlen(suffix) + 1);
-    sprintf(ret, "%s%s", prefix, suffix);
-  }
-  /* Both prefix and suffix has / at end and start. */
-  else if (prefix[prefix_len - 1] == '/' && *suffix == '/') {
-    ret = (char *)nmalloc(prefix_len + strlen(suffix));
-    sprintf(ret, "%s%s", prefix, (suffix + 1));
-  }
-  /* None have delimiter /. */
-  else {
-    ret = (char *)nmalloc(prefix_len + strlen(suffix) + 2);
-    sprintf(ret, "%s%s%s", prefix, "/", suffix);
-  }
-  return ret;
-}
+// char *concatenate_path(const char *prefix, const char *suffix) _NOTHROW {
+//   Ulong prefix_len = strlen(prefix);
+//   char *ret = NULL;
+//   /* Either the prefix ends with / or suffix starts with /. */
+//   if ((prefix[prefix_len - 1] == '/' && *suffix != '/') || (prefix[prefix_len - 1] != '/' && *suffix == '/')) {
+//     ret = (char *)nmalloc(prefix_len + strlen(suffix) + 1);
+//     sprintf(ret, "%s%s", prefix, suffix);
+//   }
+//   /* Both prefix and suffix has / at end and start. */
+//   else if (prefix[prefix_len - 1] == '/' && *suffix == '/') {
+//     ret = (char *)nmalloc(prefix_len + strlen(suffix));
+//     sprintf(ret, "%s%s", prefix, (suffix + 1));
+//   }
+//   /* None have delimiter /. */
+//   else {
+//     ret = (char *)nmalloc(prefix_len + strlen(suffix) + 2);
+//     sprintf(ret, "%s%s%s", prefix, "/", suffix);
+//   }
+//   return ret;
+// }
 
 /* Return a path copy of two strings, appending '/' to the prefix if needed. */
-const char *concat_path(const char *s1, const char *s2) _NOTHROW {
-  static char buf[PATH_MAX];
-  if (s1[strlen(s1) - 1] == '/') {
-    snprintf(buf, sizeof(buf), "%s%s", s1, s2);
-  }
-  else {
-    snprintf(buf, sizeof(buf), "%s%s%s", s1, "/", s2);
-  }
-  return buf;
-}
+// const char *concat_path(const char *s1, const char *s2) _NOTHROW {
+//   static char buf[PATH_MAX];
+//   if (s1[strlen(s1) - 1] == '/') {
+//     snprintf(buf, sizeof(buf), "%s%s", s1, s2);
+//   }
+//   else {
+//     snprintf(buf, sizeof(buf), "%s%s%s", s1, "/", s2);
+//   }
+//   return buf;
+// }
 
 /* Return the number of digits that the given integer n takes up. */
 // int digits(const long n) _NOTHROW {
@@ -129,50 +129,50 @@ const char *concat_path(const char *s1, const char *s2) _NOTHROW {
 /* Read one number (or two numbers separated by comma, period, or colon)
  * from the given string and store the number(s) in *line (and *column).
  * Return 'FALSE' on a failed parsing, and 'TRUE' otherwise. */
-bool parse_line_column(const char *string, long *line, long *column) _NOTHROW {
-  const char *comma;
-  char *firstpart;
-  bool retval;
-  while (*string == ' ') {
-    ++string;
-  }
-  comma = strpbrk(string, ",.:");
-  if (!comma) {
-    return parse_num(string, line);
-  }
-  retval = parse_num((comma + 1), column);
-  if (comma == string) {
-    return retval;
-  }
-  firstpart = copy_of(string);
-  firstpart[comma - string] = '\0';
-  retval = (parse_num(firstpart, line) && retval);
-  free(firstpart);
-  return retval;
-}
+// bool parse_line_column(const char *string, long *line, long *column) _NOTHROW {
+//   const char *comma;
+//   char *firstpart;
+//   bool retval;
+//   while (*string == ' ') {
+//     ++string;
+//   }
+//   comma = strpbrk(string, ",.:");
+//   if (!comma) {
+//     return parse_num(string, line);
+//   }
+//   retval = parse_num((comma + 1), column);
+//   if (comma == string) {
+//     return retval;
+//   }
+//   firstpart = copy_of(string);
+//   firstpart[comma - string] = '\0';
+//   retval = (parse_num(firstpart, line) && retval);
+//   free(firstpart);
+//   return retval;
+// }
 
 /* In the given string, recode each embedded NUL as a newline. */
-void recode_NUL_to_LF(char *string, Ulong length) _NOTHROW {
-  while (length > 0) {
-    if (!*string) {
-      *string = '\n';
-    }
-    --length;
-    ++string;
-  }
-}
+// void recode_NUL_to_LF(char *string, Ulong length) _NOTHROW {
+//   while (length > 0) {
+//     if (!*string) {
+//       *string = '\n';
+//     }
+//     --length;
+//     ++string;
+//   }
+// }
 
 /* In the given string, recode each embedded newline as a NUL, and return the number of bytes in the string. */
-Ulong recode_LF_to_NUL(char *string) _NOTHROW {
-  char *beginning = string;
-  while (*string) {
-    if (*string == '\n') {
-      *string = '\0';
-    }
-    ++string;
-  }
-  return (Ulong)(string - beginning);
-}
+// Ulong recode_LF_to_NUL(char *string) _NOTHROW {
+//   char *beginning = string;
+//   while (*string) {
+//     if (*string == '\n') {
+//       *string = '\0';
+//     }
+//     ++string;
+//   }
+//   return (Ulong)(string - beginning);
+// }
 
 /* Free the memory of the given array, which should contain len elements. */
 // void free_chararray(char **array, Ulong len) _NOTHROW {
@@ -186,15 +186,15 @@ Ulong recode_LF_to_NUL(char *string) _NOTHROW {
 // }
 
 /* Append an array onto 'array'.  Free 'append' but not any elements in it after call. */
-void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NOTHROW {
-  Ulong new_len = ((*len) + append_len);
-  *array = (char **)nrealloc(*array, (sizeof(char *) * (new_len + 1)));
-  for (Ulong i = 0; i < append_len; ++i) {
-    (*array)[(*len) + i] = append[i];
-  }
-  *len = new_len;
-  (*array)[*len] = NULL;
-}
+// void append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NOTHROW {
+//   Ulong new_len = ((*len) + append_len);
+//   *array = (char **)nrealloc(*array, (sizeof(char *) * (new_len + 1)));
+//   for (Ulong i = 0; i < append_len; ++i) {
+//     (*array)[(*len) + i] = append[i];
+//   }
+//   *len = new_len;
+//   (*array)[*len] = NULL;
+// }
 
 /* Is the word starting at the given position in 'text' and of the given
  * length a separate word?  That is: is it not part of a longer word? */
@@ -421,22 +421,22 @@ void *nrealloc(void *section, const Ulong howmuch) _NOTHROW {
 /* Get the set of lines to work on -- either just the current line, or the
  * first to last lines of the marked region.  When the cursor (or mark) is
  * at the start of the last line of the region, exclude that line. */
-void get_range(linestruct **top, linestruct **bot) _NOTHROW {
-  Ulong top_x, bot_x;
-  if (!openfile->mark) {
-    *top = openfile->current;
-    *bot = openfile->current;
-  }
-  else {
-    get_region(top, &top_x, bot, &bot_x);
-    if (bot_x == 0 && bot != top && !also_the_last) {
-      *bot = (*bot)->prev;
-    }
-    else {
-      also_the_last = TRUE;
-    }
-  }
-}
+// void get_range(linestruct **top, linestruct **bot) _NOTHROW {
+//   Ulong top_x, bot_x;
+//   if (!openfile->mark) {
+//     *top = openfile->current;
+//     *bot = openfile->current;
+//   }
+//   else {
+//     get_region(top, &top_x, bot, &bot_x);
+//     if (bot_x == 0 && bot != top && !also_the_last) {
+//       *bot = (*bot)->prev;
+//     }
+//     else {
+//       also_the_last = TRUE;
+//     }
+//   }
+// }
 
 /* Return a pointer to the line that has the given line number. */
 linestruct *line_from_number(long number) _NOTHROW {

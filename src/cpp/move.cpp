@@ -21,22 +21,21 @@
 // }
 
 /* Determine the actual current chunk and the target column. */
-void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
-  if (ISSET(SOFTWRAP)) {
-    Ulong shim     = (editwincols * (1 + (tabsize / editwincols)));
-    *leftedge      = leftedge_for(xplustabs(), openfile->current);
-    *target_column = ((openfile->placewewant + shim - *leftedge) % editwincols);
-  }
-  else {
-    *leftedge      = 0;
-    *target_column = openfile->placewewant;
-  }
-}
+// void get_edge_and_target(Ulong *leftedge, Ulong *target_column) _NOTHROW {
+//   if (ISSET(SOFTWRAP)) {
+//     Ulong shim     = (editwincols * (1 + (tabsize / editwincols)));
+//     *leftedge      = leftedge_for(xplustabs(), openfile->current);
+//     *target_column = ((openfile->placewewant + shim - *leftedge) % editwincols);
+//   }
+//   else {
+//     *leftedge      = 0;
+//     *target_column = openfile->placewewant;
+//   }
+// }
 
-/* Return the index in line->data that corresponds to the given column on the
- * chunk that starts at the given leftedge.  If the target column has landed
- * on a tab, prevent the cursor from falling back a row when moving forward,
- * or from skipping a row when moving backward, by incrementing the index. */
+/* Return the index in line->data that corresponds to the given column on the chunk that starts at the
+ * given leftedge.  If the target column has landed on a tab, prevent the cursor from falling back a
+ * row when moving forward, or from skipping a row when moving backward, by incrementing the index. */
 static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _NOTHROW {
   Ulong index = actual_x(line->data, column);
   if (ISSET(SOFTWRAP) && line->data[index] == '\t' && ((forward && wideness(line->data, index) < *leftedge)
@@ -47,7 +46,7 @@ static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong col
     }
   }
   if (ISSET(SOFTWRAP)) {
-    *leftedge = leftedge_for(wideness(line->data, index), line);
+    *leftedge = leftedge_for(wideness(line->data, index), line, editwincols);
   }
   return index;
 }
@@ -65,75 +64,75 @@ static void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward
 }
 
 /* Move up almost one screenful. */
-void do_page_up(void) _NOTHROW {
-  int   mustmove = ((editwinrows < 3) ? 1 : editwinrows - 2);
-  Ulong leftedge, target_column;
-  /* If we're not in smooth scrolling mode, put the cursor at the beginning of the top line of the edit window, as Pico does. */
-  if (ISSET(JUMPY_SCROLLING)) {
-    openfile->current    = openfile->edittop;
-    leftedge             = openfile->firstcolumn;
-    openfile->cursor_row = 0;
-    target_column        = 0;
-  }
-  else {
-    get_edge_and_target(&leftedge, &target_column);
-  }
-  /* Move up the required number of lines or chunks.  If we can't, we're at the top of the file, so put the cursor there and get out. */
-  if (go_back_chunks(mustmove, &openfile->current, &leftedge) > 0) {
-    to_first_line();
-    return;
-  }
-  set_proper_index_and_pww(&leftedge, target_column, FALSE);
-  /* Move the viewport so that the cursor stays immobile, if possible. */
-  adjust_viewport(STATIONARY);
-  refresh_needed = TRUE;
-}
+// void do_page_up(void) _NOTHROW {
+//   int   mustmove = ((editwinrows < 3) ? 1 : editwinrows - 2);
+//   Ulong leftedge, target_column;
+//   /* If we're not in smooth scrolling mode, put the cursor at the beginning of the top line of the edit window, as Pico does. */
+//   if (ISSET(JUMPY_SCROLLING)) {
+//     openfile->current    = openfile->edittop;
+//     leftedge             = openfile->firstcolumn;
+//     openfile->cursor_row = 0;
+//     target_column        = 0;
+//   }
+//   else {
+//     get_edge_and_target(&leftedge, &target_column);
+//   }
+//   /* Move up the required number of lines or chunks.  If we can't, we're at the top of the file, so put the cursor there and get out. */
+//   if (go_back_chunks(mustmove, &openfile->current, &leftedge) > 0) {
+//     to_first_line();
+//     return;
+//   }
+//   set_proper_index_and_pww(&leftedge, target_column, FALSE);
+//   /* Move the viewport so that the cursor stays immobile, if possible. */
+//   adjust_viewport(STATIONARY);
+//   refresh_needed = TRUE;
+// }
 
 /* Move down almost one screenful. */
-void do_page_down(void) _NOTHROW {
-  int   mustmove = ((editwinrows < 3) ? 1 : (editwinrows - 2));
-  Ulong leftedge, target_column;
-  /* If we're not in smooth scrolling mode, put the cursor at the beginning of the top line of the edit window, as Pico does. */
-  if (ISSET(JUMPY_SCROLLING)) {
-    openfile->current    = openfile->edittop;
-    leftedge             = openfile->firstcolumn;
-    openfile->cursor_row = 0;
-    target_column        = 0;
-  }
-  else {
-    get_edge_and_target(&leftedge, &target_column);
-  }
-  /* Move down the required number of lines or chunks.  If we can't, we're at the bottom of the file, so put the cursor there and get out. */
-  if (go_forward_chunks(mustmove, &openfile->current, &leftedge) > 0) {
-    to_last_line();
-    return;
-  }
-  set_proper_index_and_pww(&leftedge, target_column, TRUE);
-  /* Move the viewport so that the cursor stays immobile, if possible. */
-  adjust_viewport(STATIONARY);
-  refresh_needed = TRUE;
-}
+// void do_page_down(void) _NOTHROW {
+//   int   mustmove = ((editwinrows < 3) ? 1 : (editwinrows - 2));
+//   Ulong leftedge, target_column;
+//   /* If we're not in smooth scrolling mode, put the cursor at the beginning of the top line of the edit window, as Pico does. */
+//   if (ISSET(JUMPY_SCROLLING)) {
+//     openfile->current    = openfile->edittop;
+//     leftedge             = openfile->firstcolumn;
+//     openfile->cursor_row = 0;
+//     target_column        = 0;
+//   }
+//   else {
+//     get_edge_and_target(&leftedge, &target_column);
+//   }
+//   /* Move down the required number of lines or chunks.  If we can't, we're at the bottom of the file, so put the cursor there and get out. */
+//   if (go_forward_chunks(mustmove, &openfile->current, &leftedge) > 0) {
+//     to_last_line();
+//     return;
+//   }
+//   set_proper_index_and_pww(&leftedge, target_column, TRUE);
+//   /* Move the viewport so that the cursor stays immobile, if possible. */
+//   adjust_viewport(STATIONARY);
+//   refresh_needed = TRUE;
+// }
 
 /* Place the cursor on the first row in the viewport. */
-void to_top_row(void) _NOTHROW {
-  Ulong leftedge, offset;
-  get_edge_and_target(&leftedge, &offset);
-  openfile->current = openfile->edittop;
-  leftedge          = openfile->firstcolumn;
-  set_proper_index_and_pww(&leftedge, offset, FALSE);
-  place_the_cursor();
-}
+// void to_top_row(void) _NOTHROW {
+//   Ulong leftedge, offset;
+//   get_edge_and_target(&leftedge, &offset);
+//   openfile->current = openfile->edittop;
+//   leftedge          = openfile->firstcolumn;
+//   set_proper_index_and_pww(&leftedge, offset, FALSE);
+//   place_the_cursor();
+// }
 
 /* Place the cursor on the last row in the viewport, when possible. */
-void to_bottom_row(void) _NOTHROW {
-  Ulong leftedge, offset;
-  get_edge_and_target(&leftedge, &offset);
-  openfile->current = openfile->edittop;
-  leftedge          = openfile->firstcolumn;
-  go_forward_chunks(editwinrows - 1, &openfile->current, &leftedge);
-  set_proper_index_and_pww(&leftedge, offset, TRUE);
-  place_the_cursor();
-}
+// void to_bottom_row(void) _NOTHROW {
+//   Ulong leftedge, offset;
+//   get_edge_and_target(&leftedge, &offset);
+//   openfile->current = openfile->edittop;
+//   leftedge          = openfile->firstcolumn;
+//   go_forward_chunks(editwinrows - 1, &openfile->current, &leftedge);
+//   set_proper_index_and_pww(&leftedge, offset, TRUE);
+//   place_the_cursor();
+// }
 
 /* Put the cursor line at the center, then the top, then the bottom. */
 void do_cycle(void) {
@@ -450,7 +449,7 @@ void do_home(void) {
   /* Save current indent of line. */
   cur_indent = indent_length(openfile->current->data);
   if (ISSET(SOFTWRAP)) {
-    leftedge = leftedge_for(was_column, openfile->current);
+    leftedge = leftedge_for(was_column, openfile->current, editwincols);
     left_x   = proper_x(openfile->current, &leftedge, FALSE, leftedge, NULL);
   }
   if (ISSET(SMART_HOME)) {
@@ -517,8 +516,8 @@ void do_end(void) {
   if (ISSET(SOFTWRAP)) {
     kickoff    = TRUE;
     last_chunk = FALSE;
-    leftedge   = leftedge_for(was_column, openfile->current);
-    rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk);
+    leftedge   = leftedge_for(was_column, openfile->current, editwincols);
+    rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk, editwincols);
     /* If we're on the last chunk, we're already at the end of the line.  Otherwise, we're one column past the end of the line.
      * Shifting backwards one column might put us in the middle of a multi-column character, but actual_x() will fix that. */
     if (!last_chunk) {
@@ -614,7 +613,7 @@ void do_scroll_down(void) {
     do_down();
   }
   if (editwinrows > 1
-   && (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) > chunk_for(openfile->firstcolumn, openfile->edittop))))) {
+   && (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop, editwincols) > chunk_for(openfile->firstcolumn, openfile->edittop, editwincols))))) {
     edit_scroll(FORWARD);
   }
 }

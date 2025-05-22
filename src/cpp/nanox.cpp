@@ -1034,10 +1034,10 @@ static int do_mouse(void) {
     row_count = (click_row - openfile->cursor_row);
     was_x     = openfile->current_x;
     if (ISSET(SOFTWRAP)) {
-      leftedge = leftedge_for(xplustabs(), openfile->current);
+      leftedge = leftedge_for(xplustabs(), openfile->current, editwincols);
     }
     else {
-      leftedge = get_page_start(xplustabs());
+      leftedge = get_page_start(xplustabs(), editwincols);
     }
     /* Move current up or down to the row that was clicked on. */
     if (row_count < 0) {
@@ -1122,9 +1122,9 @@ void inject(char *burst, Ulong count) {
   Ulong old_amount = 0;
   if (ISSET(SOFTWRAP)) {
     if (openfile->cursor_row == (editwinrows - 1)) {
-      original_row = chunk_for(xplustabs(), thisline);
+      original_row = chunk_for(xplustabs(), thisline, editwincols);
     }
-    old_amount = extra_chunks_in(thisline);
+    old_amount = extra_chunks_in(thisline, editwincols);
   }
   /* Encode an embedded NUL byte as 0x0A. */
   for (Ulong index=0; index<count; ++index) {
@@ -1169,8 +1169,8 @@ void inject(char *burst, Ulong count) {
   openfile->placewewant = xplustabs();
   /* When softwrapping and the number of chunks in the current line changed, or we were
    * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
-  if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current) != old_amount
-   || (openfile->cursor_row == (editwinrows - 1) && chunk_for(openfile->placewewant, openfile->current) > original_row))) {
+  if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current, editwincols) != old_amount
+   || (openfile->cursor_row == (editwinrows - 1) && chunk_for(openfile->placewewant, openfile->current, editwincols) > original_row))) {
     refresh_needed = TRUE;
     focusing = FALSE;
   }

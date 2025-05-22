@@ -25,7 +25,7 @@ bool regexp_init(const char *regexp) {
     Ulong len = regerror(value, &search_regexp, NULL, 0);
     char *str = xmalloc(len);
     regerror(value, &search_regexp, str, len);
-    print_status(AHEM, _("Bad regex \"%s\": %s"), regexp, str);
+    statusline_all(AHEM, _("Bad regex \"%s\": %s"), regexp, str);
     free(str);
     return FALSE;
   }

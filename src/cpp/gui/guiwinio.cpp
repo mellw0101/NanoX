@@ -400,7 +400,7 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
   if (!*line->data) {
     return;
   }
-  from_col  = editor_get_page_start(editor, wideness(line->data, ((line == editor->openfile->current) ? editor->openfile->current_x : 0)));
+  from_col  = get_page_start(wideness(line->data, ((line == editor->openfile->current) ? editor->openfile->current_x : 0)), editor->cols);
   converted = display_string(line->data, from_col, editor->cols, TRUE, FALSE);
   if (!converted || !*converted) {
     return;

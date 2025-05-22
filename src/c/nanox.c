@@ -153,36 +153,36 @@ void renumber_from(linestruct *line) {
 
 /* Display a warning about a key disabled in view mode. */
 void print_view_warning(void) {
-  print_status(AHEM, _("Key is invalid in view mode"));
+  statusline_all(AHEM, _("Key is invalid in view mode"));
 }
 
 /* When in restricted mode, show a warning and return 'TRUE'. */
 bool in_restricted_mode(void) {
   if (ISSET(RESTRICTED)) {
-    print_status(AHEM, _("This function is disabled in restricted mode"));
+    statusline_all(AHEM, _("This function is disabled in restricted mode"));
     beep();
     return TRUE;
   }
   return FALSE;
 }
 
-void confirm_margin_for(openfilestruct *const file, int *const out_margin) {
-  ASSERT(file);
-  bool keep_focus;
-  int needed_margin = (digits(file->filebot->lineno) + 1);
-  /* When not requested, supress line numbers. */
-  if (!ISSET(LINE_NUMBERS)) {
-    needed_margin = 0;
-  }
-  if (needed_margin != (*out_margin)) {
-    keep_focus    = (((*out_margin) > 0) && focusing);
-    (*out_margin) = needed_margin;
-    /* Ensure a proper starting column for the first screen row. */
-    ensure_firstcolumn_is_aligned_for(file);
-    focusing = keep_focus;
-    refresh_needed = TRUE;
-  }
-}
+// void confirm_margin_for(openfilestruct *const file, int *const out_margin, int total_cols) {
+//   ASSERT(file);
+//   bool keep_focus;
+//   int needed_margin = (digits(file->filebot->lineno) + 1);
+//   /* When not requested, supress line numbers. */
+//   if (!ISSET(LINE_NUMBERS)) {
+//     needed_margin = 0;
+//   }
+//   if (needed_margin != (*out_margin)) {
+//     keep_focus    = (((*out_margin) > 0) && focusing);
+//     (*out_margin) = needed_margin;
+//     /* Ensure a proper starting column for the first screen row. */
+//     ensure_firstcolumn_is_aligned_for(file, total_cols);
+//     focusing = keep_focus;
+//     refresh_needed = TRUE;
+//   }
+// }
 
 /* Ensure that the margin can accommodate the buffer's highest line number. */
 void confirm_margin(void) {

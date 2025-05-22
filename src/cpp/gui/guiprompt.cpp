@@ -351,7 +351,7 @@ static void gui_promptmenu_set_font_enter_action(void) {
   gui_font_load(gui->font, path, size, atlas_size);
   free(path);
   CLIST_ITER(starteditor, editor,
-    editor_set_rows_cols(editor);
+    editor_set_rows_cols(editor, editor->text->width, editor->text->height);
   );
   refresh_needed = TRUE;
   gui_promptmode_leave();

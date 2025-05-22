@@ -2,19 +2,19 @@
 #include "../include/prototypes.h"
 
 /* Toggle the mark. */
-void do_mark(void) _NOTHROW {
-  if (!openfile->mark) {
-    openfile->mark     = openfile->current;
-    openfile->mark_x   = openfile->current_x;
-    openfile->softmark = FALSE;
-    statusbar(_("Mark Set"));
-  }
-  else {
-    openfile->mark = NULL;
-    statusbar(_("Mark Unset"));
-    refresh_needed = TRUE;
-  }
-}
+// void do_mark(void) _NOTHROW {
+//   if (!openfile->mark) {
+//     openfile->mark     = openfile->current;
+//     openfile->mark_x   = openfile->current_x;
+//     openfile->softmark = FALSE;
+//     statusbar(_("Mark Set"));
+//   }
+//   else {
+//     openfile->mark = NULL;
+//     statusbar(_("Mark Unset"));
+//     refresh_needed = TRUE;
+//   }
+// }
 
 /* Insert a tab.  Or, if --tabstospaces is in effect, insert the number of spaces that a tab would normally take up at this position. */
 void do_tab(void) {

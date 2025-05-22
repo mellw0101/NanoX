@@ -68,7 +68,7 @@ void RendrEngine::whole_editwin(void) {
   linestruct *line = openfile->edittop;
   while (row < editwinrows && line) {
     char *converted = display_string(line->data, 0, editwincols, true, false);
-    Ulong from_col = get_page_start(wideness(line->data, (line == openfile->current) ? openfile->current_x : 0));
+    Ulong from_col = get_page_start(wideness(line->data, (line == openfile->current) ? openfile->current_x : 0), editwincols);
     render_line_text(row, converted, line, from_col);
     free(converted);
     line = line->next;

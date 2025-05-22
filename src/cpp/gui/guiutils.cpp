@@ -150,7 +150,7 @@ float line_pixel_x_pos(linestruct *line, Ulong index, texture_font_t *font) {
   ASSERT(font);
   float ret = 0;
   /* Convert the line data into a display string. */
-  Ulong from_col  = get_page_start(wideness(line->data, index));
+  Ulong from_col  = get_page_start(wideness(line->data, index), openeditor->cols);
   char *converted = display_string(line->data, from_col, openeditor->cols, TRUE, FALSE);
   /* When line numbers are turned on we calculate the combined length of the lineno, seperator and current line data. */
   if (ISSET(LINE_NUMBERS)) {
