@@ -114,17 +114,17 @@ void get_homedir(void) {
   }
 }
 
-/* Return's line pointer by number using optimized traversal.
+/* Returns a line pointer by number using optimized traversal.
  *  1. From current position.
  *  2. From file start.
  *  3. From file end.
  * Chooses shortest path to target line. */
-linestruct *file_line_from_number(openfilestruct *const file, long number) {
+linestruct *line_from_number_for(openfilestruct *const file, long number) {
   ASSERT(file->current);
   ASSERT(file->filetop);
   ASSERT(file->filebot);
   /* Always assert that number is a valid number in the context of the open file. */
-  ALWAYS_ASSERT(number >= 0 && number <= file->filebot->lineno);
+  ALWAYS_ASSERT(number >= file->filetop->lineno && number <= file->filebot->lineno);
   /* Set the starting line to the cursor line of the currently active file in editor. */
   linestruct *line = file->current;
   /* Get the distance from the start and end line as well as from the cursor. */
@@ -145,6 +145,16 @@ linestruct *file_line_from_number(openfilestruct *const file, long number) {
     line = line->next;
   }
   return line;
+}
+
+/* Returns a `linestruct` pointer from the currently open file, while also ensuring context correct operation. */
+linestruct *line_from_number(long number) {
+  if (ISSET(USING_GUI)) {
+    return line_from_number_for(openeditor->openfile, number);
+  }
+  else {
+    return line_from_number_for(openfile, number);
+  }
 }
 
 /* Free the memory of the given array, which should contain len elements. */
@@ -375,4 +385,25 @@ bool parse_line_column(const char *string, long *const line, long *const column)
   retval = (parse_num(firstpart, line) && retval);
   free(firstpart);
   return retval;
+}
+
+/* Returns an allocated string of spaces that completes the current tab stop in `file->current->data`,
+ * up to one `tabsize` in length.  The number of spaces is calculated based on `file->current_x` so
+ * that when injecting the string into `file->current->data` we end up at the next tab boundary. */
+char *tab_space_string_for(openfilestruct *const file, Ulong *length) {
+  ASSERT(file);
+  ASSERT(length);
+  (*length) = (tabsize - (xplustabs_for(file) % tabsize));
+  return fmtstr("%*s", (int)(*length), " ");
+}
+
+/* Almost exactly like `tab_space_string_for()`, but correctly passes either
+ * `openeditor->openfile` or `openfile` depending on the current context. */
+char *tab_space_string(Ulong *length) {
+  if (ISSET(USING_GUI)) {
+    return tab_space_string_for(openeditor->openfile, length);
+  }
+  else {
+    return tab_space_string_for(openfile, length);
+  }
 }

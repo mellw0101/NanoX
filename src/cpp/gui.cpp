@@ -373,8 +373,6 @@ void glfw_loop(void) {
       editor_confirm_margin(editor);
       draw_editor(editor);
     );
-    /* Draw the suggestmenu. */
-    draw_suggestmenu();
     /* Draw the top menu bar. */
     draw_topbar();
     /* Draw the bottom bar. */
@@ -383,6 +381,8 @@ void glfw_loop(void) {
     draw_statusbar();
     statusbar_draw(frametimer.fps);
     context_menu_draw(gui->context_menu);
+    /* Draw the suggestmenu. */
+    draw_suggestmenu();
     /* If refresh was needed it has been done so set it to FALSE. */
     refresh_needed = FALSE;
     glfwSwapBuffers(gui->window);

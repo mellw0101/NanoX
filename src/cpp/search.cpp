@@ -583,20 +583,20 @@ void ask_for_and_do_replacements(void) {
 }
 
 /* Go to the specified line and x position. */
-void goto_line_posx(long linenumber, Ulong pos_x) _NOTHROW {
-  if (linenumber > (openfile->edittop->lineno + editwinrows) || (ISSET(SOFTWRAP) && linenumber > openfile->current->lineno)) {
-    recook |= perturbed;
-  }
-  if (linenumber < openfile->filebot->lineno) {
-    openfile->current = line_from_number(linenumber);
-  }
-  else {
-    openfile->current = openfile->filebot;
-  }
-  openfile->current_x   = pos_x;
-  openfile->placewewant = xplustabs();
-  refresh_needed = TRUE;
-}
+// void goto_line_posx(long linenumber, Ulong pos_x) _NOTHROW {
+//   if (linenumber > (openfile->edittop->lineno + editwinrows) || (ISSET(SOFTWRAP) && linenumber > openfile->current->lineno)) {
+//     recook |= perturbed;
+//   }
+//   if (linenumber < openfile->filebot->lineno) {
+//     openfile->current = line_from_number(linenumber);
+//   }
+//   else {
+//     openfile->current = openfile->filebot;
+//   }
+//   openfile->current_x   = pos_x;
+//   openfile->placewewant = xplustabs();
+//   refresh_needed = TRUE;
+// }
 
 /* Go to the specified line and column, or ask for them if interactive is TRUE.  In the latter case also
  * update the screen afterwards.  Note that both the line and column number should be one-based. */

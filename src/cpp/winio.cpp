@@ -1851,9 +1851,9 @@ void blank_it_when_expired(void) _NOTHROW {
 }
 
 /* Ensure that the status bar will be wiped upon the next keystroke. */
-void set_blankdelay_to_one(void) _NOTHROW {
-  countdown = 1;
-}
+// void set_blankdelay_to_one(void) _NOTHROW {
+//   countdown = 1;
+// }
 
 #define ISO8859_CHAR   FALSE
 #define ZEROWIDTH_CHAR (is_zerowidth(text))

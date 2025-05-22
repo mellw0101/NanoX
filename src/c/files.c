@@ -299,7 +299,9 @@ bool is_dir(const char *const path) {
 /* For the given bare path (or path plus filename), return the canonical,
  * absolute path (plus filename) when the path exists, and 'NULL' when not. */
 char *get_full_path(const char *const restrict origpath) {
-  char *untilded, *target, *slash;
+  char *untilded;
+  char *target;
+  char *slash;
   struct stat fileinfo;
   if (!origpath) {
     return NULL;
@@ -388,4 +390,37 @@ char *encode_data(char *text, Ulong length) {
   recode_NUL_to_LF(text, length);
   text[length] = '\0';
   return copy_of(text);
+}
+
+/* Change to the specified operating directory, when its valid. */
+void init_operating_dir(void) {
+  char *target = get_full_path(operating_dir);
+  if (!target || chdir(target) == -1) {
+    die(_("Invalid operating directory: %s\n"), operating_dir);
+  }
+}
+
+/* Check whether the given path is outside of the operating directory.
+ * Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
+ * incomplete names that can grow into matches for the operating directory
+ * are considered to be inside, so that tab completion will work. */
+bool outside_of_confinement(const char *const restrict somepath, bool tabbing) {
+  bool is_inside;
+  bool begins_to_be;
+  char *fullpath;
+  if (!operating_dir) {
+    return FALSE;
+  }
+  fullpath = get_full_path(somepath);
+  /* When we can't get an absolute path, it means some directory in the path doesn't exist or is unreadable.  When
+   * not doing tab completion, somepath is what the user typed somewhere.  We don't want to report a non-existent
+   * directory as being outside the operating directory, so we return FALSE.  When the user is doing tab
+   * completion, then somepath exists but is not executable.  So we say it is outside the operating directory. */
+  if (!fullpath) {
+    return tabbing;
+  }
+  is_inside = (strstr(fullpath, operating_dir) == fullpath);
+  begins_to_be = (tabbing && (strstr(operating_dir, fullpath) == operating_dir));
+  free(fullpath);
+  return (!is_inside && !begins_to_be);
 }

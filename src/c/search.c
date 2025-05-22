@@ -45,3 +45,23 @@ void tidy_up_after_search(void) {
   }
   recook |= perturbed;
 }
+
+void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int total_rows) {
+  ASSERT(file);
+  if (lineno > (file->edittop->lineno + total_rows) || (ISSET(SOFTWRAP) && lineno > file->current->lineno)) {
+    recook |= perturbed;
+  }
+  file->current     = line_from_number_for(file, lineno);
+  file->current_x   = x;
+  file->placewewant = xplustabs_for(file);
+  refresh_needed    = TRUE;
+}
+
+void goto_line_posx(long lineno, Ulong x) {
+  if (ISSET(USING_GUI)) {
+    goto_line_posx_for(openeditor->openfile, lineno, x, openeditor->rows);
+  }
+  else {
+    goto_line_posx_for(openfile, lineno, x, editwinrows);
+  }
+}

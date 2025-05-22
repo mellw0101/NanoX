@@ -1285,40 +1285,40 @@ char *safe_tempfile(FILE **stream) {
 }
 
 /* Change to the specified operating directory, when it's valid. */
-void init_operating_dir(void) _NOTHROW {
-  char *target = get_full_path(operating_dir);
-  /* If the operating directory is inaccessible, fail. */
-  if (!target || chdir(target) == -1) {
-    die(_("Invalid operating directory: %s\n"), operating_dir);
-  }
-  free(operating_dir);
-  operating_dir = arealloc(target, (strlen(target) + 1));
-}
+// void init_operating_dir(void) _NOTHROW {
+//   char *target = get_full_path(operating_dir);
+//   /* If the operating directory is inaccessible, fail. */
+//   if (!target || chdir(target) == -1) {
+//     die(_("Invalid operating directory: %s\n"), operating_dir);
+//   }
+//   free(operating_dir);
+//   operating_dir = arealloc(target, (strlen(target) + 1));
+// }
 
 /* Check whether the given path is outside of the operating directory.
  * Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
  * incomplete names that can grow into matches for the operating directory
  * are considered to be inside, so that tab completion will work. */
-bool outside_of_confinement(const char *somepath, bool tabbing) _NOTHROW {
-  bool  is_inside, begins_to_be;
-  char *fullpath;
-  /* If no operating directory is set, there is nothing to check. */
-  if (!operating_dir) {
-    return FALSE;
-  }
-  fullpath = get_full_path(somepath);
-  /* When we can't get an absolute path, it means some directory in the path doesn't exist or is unreadable.  When
-   * not doing tab completion, somepath is what the user typed somewhere.  We don't want to report a non-existent
-   * directory as being outside the operating directory, so we return FALSE.  When the user is doing tab
-   * completion, then somepath exists but is not executable.  So we say it is outside the operating directory. */
-  if (!fullpath) {
-    return tabbing;
-  }
-  is_inside = (strstr(fullpath, operating_dir) == fullpath);
-  begins_to_be = (tabbing && strstr(operating_dir, fullpath) == operating_dir);
-  free(fullpath);
-  return (!is_inside && !begins_to_be);
-}
+// bool outside_of_confinement(const char *somepath, bool tabbing) _NOTHROW {
+//   bool  is_inside, begins_to_be;
+//   char *fullpath;
+//   /* If no operating directory is set, there is nothing to check. */
+//   if (!operating_dir) {
+//     return FALSE;
+//   }
+//   fullpath = get_full_path(somepath);
+//   /* When we can't get an absolute path, it means some directory in the path doesn't exist or is unreadable.  When
+//    * not doing tab completion, somepath is what the user typed somewhere.  We don't want to report a non-existent
+//    * directory as being outside the operating directory, so we return FALSE.  When the user is doing tab
+//    * completion, then somepath exists but is not executable.  So we say it is outside the operating directory. */
+//   if (!fullpath) {
+//     return tabbing;
+//   }
+//   is_inside = (strstr(fullpath, operating_dir) == fullpath);
+//   begins_to_be = (tabbing && strstr(operating_dir, fullpath) == operating_dir);
+//   free(fullpath);
+//   return (!is_inside && !begins_to_be);
+// }
 
 /* Transform the specified backup directory to an absolute path, and verify that it is usable. */
 void init_backup_dir(void) {

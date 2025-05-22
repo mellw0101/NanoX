@@ -439,20 +439,20 @@ void *nrealloc(void *section, const Ulong howmuch) _NOTHROW {
 // }
 
 /* Return a pointer to the line that has the given line number. */
-linestruct *line_from_number(long number) _NOTHROW {
-  linestruct *line = openfile->current;
-  if (line->lineno > number) {
-    while (line->lineno != number) {
-      line = line->prev;
-    }
-  }
-  else {
-    while (line->lineno != number) {
-      line = line->next;
-    }
-  }
-  return line;
-}
+// linestruct *line_from_number(long number) _NOTHROW {
+//   linestruct *line = openfile->current;
+//   if (line->lineno > number) {
+//     while (line->lineno != number) {
+//       line = line->prev;
+//     }
+//   }
+//   else {
+//     while (line->lineno != number) {
+//       line = line->next;
+//     }
+//   }
+//   return line;
+// }
 
 /* Count the number of characters from begin to end, and return it. */
 Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW {

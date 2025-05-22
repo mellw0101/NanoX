@@ -153,7 +153,8 @@ void        free_nulltermchararray(char **const argv);
 void        append_chararray(char ***const array, Ulong *const len, char **const append, Ulong append_len);
 char       *mallocstrcpy(char *dest, const char *src) __THROW _RETURNS_NONNULL _NONNULL(1, 2);
 void        get_homedir(void);
-linestruct *file_line_from_number(openfilestruct *const file, long number);
+linestruct *line_from_number_for(openfilestruct *const file, long number);
+linestruct *line_from_number(long number);
 void        free_chararray(char **array, Ulong len);
 void        recode_NUL_to_LF(char *string, Ulong length);
 Ulong       recode_LF_to_NUL(char *string);
@@ -174,7 +175,8 @@ void        get_region(linestruct **const top, Ulong *const top_x, linestruct **
 void        get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
 void        get_range(linestruct **const top, linestruct **const bot);
 bool        parse_line_column(const char *string, long *const line, long *const column);
-
+char       *tab_space_string_for(openfilestruct *const file, Ulong *length);
+char       *tab_space_string(Ulong *length);
 
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
@@ -315,6 +317,8 @@ bool             gui_font_is_mono(Font *const f);
 float            gui_font_height(Font *const f);
 float            gui_font_row_baseline(Font *const f, long row);
 void             gui_font_row_top_bot(Font *const f, long row, float *const top, float *const bot);
+float            font_row_top_pix(Font *const f, long row) _NODISCARD _NONNULL(1);
+float            font_row_bottom_pix(Font *const f, long row) _NODISCARD _NONNULL(1);
 void             gui_font_change_size(Font *const f, Uint new_size);
 void             gui_font_increase_size(Font *const f);
 void             gui_font_decrease_size(Font *const f);
@@ -324,7 +328,7 @@ void             gui_font_rows_cols(Font *const f, float width, float height, in
 bool             gui_font_row_from_pos(Font *const f, float y_top, float y_bot, float y_pos, long *outrow);
 Ulong            gui_font_index_from_pos(Font *const f, const char *const restrict string, Ulong len, float rawx, float normx);
 float            font_breadth(Font *const f, const char *const restrict string);
-float            font_wideness(Font *const f, const char *const restrict string, Ulong maxlen);
+float            font_wideness(Font *const f, const char *const restrict string, Ulong to_index);
 void             font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Color *const color, float *const pen_x, float *const pen_y);
 void             font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Color *const color, float *const pen_x, float *const pen_y);
 void             font_upload_texture_atlas(Font *const f);
@@ -452,6 +456,8 @@ int   diralphasort(const void *va, const void *vb);
 void  set_modified_for(openfilestruct *const file);
 void  set_modified(void);
 char *encode_data(char *text, Ulong length);
+void  init_operating_dir(void);
+bool  outside_of_confinement(const char *const restrict somepath, bool tabbing);
 
 bool open_buffer(const char *filename, bool new_one);
 
@@ -542,6 +548,7 @@ void adjust_viewport_for(openfilestruct *const file, update_type manner, int tot
 void adjust_viewport(update_type manner);
 void place_the_cursor_for(openfilestruct *const file);
 void place_the_cursor(void);
+void set_blankdelay_to_one(void);
 
 /* ----------------------------- Curses ----------------------------- */
 
@@ -561,6 +568,7 @@ void warn_and_briefly_pause_curses(const char *const restrict message);
 void draw_row_marked_region_for_curses(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void full_refresh_curses(void);
+void wipe_statusbar_curses(void);
 
 
 /* ---------------------------------------------------------- line.c ---------------------------------------------------------- */
@@ -584,6 +592,8 @@ Ulong shown_entries_for(int menu);
 
 bool regexp_init(const char *regexp);
 void tidy_up_after_search(void);
+void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int total_rows);
+void goto_line_posx(long lineno, Ulong x);
 
 
 /* ---------------------------------------------------------- move.c ---------------------------------------------------------- */

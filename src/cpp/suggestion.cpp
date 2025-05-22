@@ -249,7 +249,7 @@ void accept_suggestion(void) {
 static char *gui_suggestmenu_copy_completion(char *const restrict text) {
   Ulong len = 0;
   /* Find the end of the word to get the length. */
-  while (iswordc(&text[len], FALSE, "_")) {
+  while (is_word_char(&text[len], FALSE) || text[len] == '_') {
     len = step_right(text, len);
   }
   /* Return a copy of the word. */
@@ -262,9 +262,8 @@ static void gui_suggestmenu_pos_routine(void *arg, float width, float height, fl
   ASSERT(y);
   SuggestMenu *sm = (__TYPE(sm))arg;
   /* Calculate the correct position for the suggestmenu window. */
-  (*x) = cursor_pixel_x_pos(gui_font_get_font(menu_get_font(sm->menu)));
-  gui_font_row_top_bot(gui->font, (openfile->current->lineno - openfile->edittop->lineno), NULL, y);
-  (*y) += (openeditor->main->y + gui_font_height(uifont));
+  (*x) = (openeditor->text->x + font_wideness(menu_get_font(sm->menu), openeditor->openfile->current->data, openeditor->openfile->current_x));
+  (*y) = (openeditor->text->y + font_row_bottom_pix(menu_get_font(sm->menu), (openeditor->openfile->current->lineno - openeditor->openfile->edittop->lineno)));
 }
 
 static void gui_suggestmenu_accept_routine(void *arg, const char *const restrict lable, int index) {
@@ -314,11 +313,11 @@ void gui_suggestmenu_load_str(void) {
   Ulong pos;
   /* Ensure we clear the buffer every time. */
   gui->suggestmenu->buf[0] = '\0';
-  if (openfile->current_x > 0 && openfile->current_x < 128) {
+  if (openeditor->openfile->current_x > 0 && openeditor->openfile->current_x < 128) {
     gui->suggestmenu->len = 0;
     pos = get_prev_cursor_word_start_index(TRUE);
-    while (pos < openfile->current_x) {
-      gui->suggestmenu->buf[gui->suggestmenu->len++] = openfile->current->data[pos++];
+    while (pos < openeditor->openfile->current_x) {
+      gui->suggestmenu->buf[gui->suggestmenu->len++] = openeditor->openfile->current->data[pos++];
     }
     gui->suggestmenu->buf[gui->suggestmenu->len] = '\0';
   }
@@ -408,4 +407,6 @@ void gui_suggestmenu_run(void) {
   else {
     menu_show(gui->suggestmenu->menu, FALSE);
   }
+  writef("suggestmenu len: %i\n", menu_len(gui->suggestmenu->menu));
+  writef("suggestmenu shown: %s\n", (menu_is_shown(gui->suggestmenu->menu) ? "TRUE" : "FALSE"));
 }

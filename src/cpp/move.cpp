@@ -140,10 +140,10 @@ void do_cycle(void) {
     adjust_viewport(CENTERING);
   }
   else {
-    openfile->cursor_row = ((cycling_aim == 1) ? 0 : editwinrows - 1);
+    openfile->cursor_row = ((cycling_aim == 1) ? 0 : (editwinrows - 1));
     adjust_viewport(STATIONARY);
   }
-  cycling_aim = (cycling_aim + 1) % 3;
+  cycling_aim = ((cycling_aim + 1) % 3);
   draw_all_subwindows();
   full_refresh();
 }

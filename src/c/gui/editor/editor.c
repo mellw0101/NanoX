@@ -71,7 +71,7 @@ static void editor_scrollbar_moving_routine(void *arg, long index) {
   Editor *editor = arg;
   ASSERT(editor->openfile);
   ASSERT(editor->openfile->edittop);
-  editor->openfile->edittop = file_line_from_number(editor->openfile, index);
+  editor->openfile->edittop = line_from_number_for(editor->openfile, index);
 }
 
 /* Create the editor scrollbar. */
@@ -421,7 +421,7 @@ linestruct *editor_get_text_line(Editor *const editor, float y_pos) {
   ASSERT(editor->openfile->edittop);
   long row;
   gui_font_row_from_pos(textfont, editor->text->y, (editor->text->y + editor->text->height), y_pos, &row);
-  return file_line_from_number(editor->openfile, lclamp((editor->openfile->edittop->lineno + row), editor->openfile->edittop->lineno, editor->openfile->filebot->lineno));
+  return line_from_number_for(editor->openfile, lclamp((editor->openfile->edittop->lineno + row), editor->openfile->edittop->lineno, editor->openfile->filebot->lineno));
 }
 
 Ulong editor_get_text_index(Editor *const editor, linestruct *const line, float x_pos) {

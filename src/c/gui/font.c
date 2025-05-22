@@ -239,6 +239,20 @@ void gui_font_row_top_bot(Font *const f, long row, float *const top, float *cons
   ASSIGN_IF_VALID(bot, GF_ROW_BOT(row));
 }
 
+/* Return's the top pixel position of a given row.  Note that this always gives the
+ * same result on the same row and offsetting needs to be done by the caller. */
+float font_row_top_pix(Font *const f, long row) {
+  ASSERT_GUI_FONT;
+  return GF_ROW_TOP(row);
+}
+
+/* Return's the bottom pixel position of a given row.  Note that this always gives
+ * the same result on the same row and offsetting needs to be done by the caller. */
+float font_row_bottom_pix(Font *const f, long row) {
+  ASSERT_GUI_FONT;
+  return GF_ROW_BOT(row);
+}
+
 void gui_font_change_size(Font *const f, Uint new_size) {
   ASSERT_GUI_FONT;
   if (f->size == new_size) {
@@ -357,11 +371,11 @@ float font_breadth(Font *const f, const char *const restrict string) {
   return ret;
 }
 
-float font_wideness(Font *const f, const char *const restrict string, Ulong maxlen) {
+float font_wideness(Font *const f, const char *const restrict string, Ulong to_index) {
   ASSERT_GUI_FONT;
   ASSERT(string);
   float ret = 0;
-  for (const char *ch=string, *prev=NULL; *ch && ch<(string + maxlen); ch += char_length(ch)) {
+  for (const char *ch=string, *prev=NULL; *ch && ch<(string + to_index); ch += char_length(ch)) {
     ret += strpx_glyphlen(ch, prev, f->font);
     prev = ch;
   }

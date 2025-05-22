@@ -676,6 +676,11 @@ void place_the_cursor(void) {
   }
 }
 
+/* Ensure that the status bar will be wiped upon the next keystroke. */
+void set_blankdelay_to_one(void) {
+  countdown = 1;
+}
+
 /* ----------------------------- Curses ----------------------------- */
 
 void blank_row_curses(WINDOW *const window, int row) {
@@ -1229,4 +1234,14 @@ void draw_row_marked_region_curses(int row, const char *const restrict converted
 /* Tell curses to unconditionally redraw whatever was on the screen. */
 void full_refresh_curses(void) {
   wrefresh(curscr);
+}
+
+/* Wipe the status bar clean and include this in the next screen update. */
+void wipe_statusbar_curses(void) {
+  lastmessage = VACUUM;
+  if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN) {
+    return;
+  }
+  blank_row_curses(footwin, 0);
+  wnoutrefresh(footwin);
 }

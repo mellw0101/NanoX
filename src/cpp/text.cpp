@@ -30,10 +30,8 @@ void do_tab(void) {
     inject(openfile->syntax->tabstring, strlen(openfile->syntax->tabstring));
   }
   else if (ISSET(TABS_TO_SPACES)) {
-    char *spaces = (char *)nmalloc(tabsize + 1);
-    Ulong length = (tabsize - (xplustabs() % tabsize));
-    memset(spaces, ' ', length);
-    spaces[length] = '\0';
+    Ulong length;
+    char *spaces = tab_space_string(&length);
     inject(spaces, length);
     free(spaces);
   }
