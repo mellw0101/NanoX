@@ -263,6 +263,7 @@ int  nanox_socket_client(void);
 
 
 Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
+long  break_line(const char *textstart, long goal, bool snap_at_nl);
 void  do_mark_for(openfilestruct *const file);
 void  do_mark(void);
 void  discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);

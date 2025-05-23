@@ -515,7 +515,7 @@ void  add_undo(undo_type action, const char *message) _NOTHROW;
 void  update_multiline_undo(long lineno, char *indentation) _NOTHROW;
 void  update_undo(undo_type action) _NOTHROW;
 void  do_wrap(void);
-long  break_line(const char *textstart, long goal, bool snap_at_nl) _NOTHROW;
+// long  break_line(const char *textstart, long goal, bool snap_at_nl) _NOTHROW;
 Ulong indent_length(const char *line) _NOTHROW;
 Ulong quote_length(const char *line) _NOTHROW;
 bool  begpar(const linestruct *const line, int depth) _NOTHROW;

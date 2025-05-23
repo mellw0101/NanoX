@@ -20,6 +20,61 @@ Ulong indentlen(const char *const restrict string) {
   return (ptr - string);
 }
 
+/* Find the last blank in the given piece of text such that the display width to that point is at most
+ * (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
+ * blank in that group of blanks. When snap_at_nl is TRUE, a newline character counts as a blank too. */
+long break_line(const char *textstart, long goal, bool snap_at_nl) {
+  /* The point where the last blank was found, if any. */
+  const char *lastblank = NULL;
+  /* An iterator through the given line of text. */
+  const char *pointer = textstart;
+  /* The column number that corresponds to the position of the pointer. */
+  Ulong column = 0;
+  /* Skip over leading whitespace, where a line should never be broken. */
+  while (*pointer && is_blank_char(pointer)) {
+    pointer += advance_over(pointer, &column);
+  }
+  /* Find the last blank that does not overshoot the target column.
+   * When treating a help text, do not break in the keystrokes area. */
+  while (*pointer && (long)column <= goal) {
+    if (is_blank_char(pointer) && (!inhelp || column > 17 || goal < 40)) {
+      lastblank = pointer;
+    }
+    else if (snap_at_nl && *pointer == '\n') {
+      lastblank = pointer;
+      break;
+    }
+    pointer += advance_over(pointer, &column);
+  }
+  /* If the whole line displays shorter than goal, we're done. */
+  if ((long)column <= goal) {
+    return (long)(pointer - textstart);
+  }
+  /* When wrapping a help text and no blank was found, force a line break. */
+  if (snap_at_nl && !lastblank) {
+    return (long)step_left(textstart, (pointer - textstart));
+  }
+  /* If no blank was found within the goal width, seek one after it. */
+  while (!lastblank) {
+    if (!*pointer) {
+      return -1;
+    }
+    if (is_blank_char(pointer)) {
+      lastblank = pointer;
+    }
+    else {
+      pointer += char_length(pointer);
+    }
+  }
+  pointer = (lastblank + char_length(lastblank));
+  /* Skip any consecutive blanks after the last blank. */
+  while (*pointer && is_blank_char(pointer)) {
+    lastblank = pointer;
+    pointer += char_length(pointer);
+  }
+  return (long)(lastblank - textstart);
+}
+
 /* Toggle the mark for `file`. */
 void do_mark_for(openfilestruct *const file) {
   ASSERT(file);
