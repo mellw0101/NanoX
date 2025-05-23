@@ -1250,39 +1250,39 @@ char *abs_path(const char *path) _NOTHROW {
 /* Create, safely, a temporary file in the standard temp directory.
  * On success, return the malloc()ed filename, plus the corresponding
  * file stream opened in read-write mode.  On error, return 'NULL'. */
-char *safe_tempfile(FILE **stream) {
-  const char *env_dir = getenv("TMPDIR");
-  char *tempdir = NULL, *tempfile_name = NULL;
-  char *extension;
-  int descriptor;
-  /* Get the absolute path for the first directory among $TMPDIR and P_tmpdir that is writable, otherwise use /tmp/. */
-  if (env_dir) {
-    tempdir = check_writable_directory(env_dir);
-  }
-  if (!tempdir) {
-    tempdir = check_writable_directory(P_tmpdir);
-  }
-  if (!tempdir) {
-    tempdir = STRLTR_COPY_OF("/tmp/");
-  }
-  extension = strrchr(openfile->filename, '.');
-  if (!extension || strchr(extension, '/')) {
-    extension = openfile->filename + strlen(openfile->filename);
-  }
-  tempfile_name = arealloc(tempdir, (strlen(tempdir) + 12 + strlen(extension)));
-  strcat(tempfile_name, "nano.XXXXXX");
-  strcat(tempfile_name, extension);
-  descriptor = mkstemps(tempfile_name, strlen(extension));
-  *stream = ((descriptor > 0) ? fdopen(descriptor, "r+b") : NULL);
-  if (!(*stream)) {
-    if (descriptor > 0) {
-      close(descriptor);
-    }
-    free(tempfile_name);
-    return NULL;
-  }
-  return tempfile_name;
-}
+// char *safe_tempfile(FILE **stream) {
+//   const char *env_dir = getenv("TMPDIR");
+//   char *tempdir = NULL, *tempfile_name = NULL;
+//   char *extension;
+//   int descriptor;
+//   /* Get the absolute path for the first directory among $TMPDIR and P_tmpdir that is writable, otherwise use /tmp/. */
+//   if (env_dir) {
+//     tempdir = check_writable_directory(env_dir);
+//   }
+//   if (!tempdir) {
+//     tempdir = check_writable_directory(P_tmpdir);
+//   }
+//   if (!tempdir) {
+//     tempdir = STRLTR_COPY_OF("/tmp/");
+//   }
+//   extension = strrchr(openfile->filename, '.');
+//   if (!extension || strchr(extension, '/')) {
+//     extension = openfile->filename + strlen(openfile->filename);
+//   }
+//   tempfile_name = arealloc(tempdir, (strlen(tempdir) + 12 + strlen(extension)));
+//   strcat(tempfile_name, "nano.XXXXXX");
+//   strcat(tempfile_name, extension);
+//   descriptor = mkstemps(tempfile_name, strlen(extension));
+//   *stream = ((descriptor > 0) ? fdopen(descriptor, "r+b") : NULL);
+//   if (!(*stream)) {
+//     if (descriptor > 0) {
+//       close(descriptor);
+//     }
+//     free(tempfile_name);
+//     return NULL;
+//   }
+//   return tempfile_name;
+// }
 
 /* Change to the specified operating directory, when it's valid. */
 // void init_operating_dir(void) _NOTHROW {
@@ -1321,44 +1321,44 @@ char *safe_tempfile(FILE **stream) {
 // }
 
 /* Transform the specified backup directory to an absolute path, and verify that it is usable. */
-void init_backup_dir(void) {
-  char *target = get_full_path(backup_dir);
-  /* If we can't get an absolute path (which means it doesn't exist or isn't accessible), or it's not a directory, fail. */
-  if (!target || target[strlen(target) - 1] != '/') {
-    die(_("Invalid backup directory: %s\n"), backup_dir);
-  }
-  free(backup_dir);
-  backup_dir = arealloc(target, (strlen(target) + 1));
-}
+// void init_backup_dir(void) {
+//   char *target = get_full_path(backup_dir);
+//   /* If we can't get an absolute path (which means it doesn't exist or isn't accessible), or it's not a directory, fail. */
+//   if (!target || target[strlen(target) - 1] != '/') {
+//     die(_("Invalid backup directory: %s\n"), backup_dir);
+//   }
+//   free(backup_dir);
+//   backup_dir = arealloc(target, (strlen(target) + 1));
+// }
 
 /* Read all data from inn, and write it to out.  File inn must be open for
  * reading, and out for writing.  Return 0 on success, a negative number on
  * read error, and a positive number on write error.  File inn is always
  * closed by this function, out is closed  only if close_out is TRUE. */
-int copy_file(FILE *inn, FILE *out, bool close_out) {
-  int   retval = 0;
-  char  buf[BUFSIZ];
-  Ulong charsread;
-  int (*flush_out_fnc)(FILE *) = ((close_out) ? fclose : fflush);
-  do {
-    charsread = fread(buf, 1, BUFSIZ, inn);
-    if (charsread == 0 && ferror(inn)) {
-      retval = -1;
-      break;
-    }
-    if (fwrite(buf, 1, charsread, out) < charsread) {
-      retval = 2;
-      break;
-    }
-  } while (charsread > 0);
-  if (fclose(inn) == EOF) {
-    retval = -3;
-  }
-  if (flush_out_fnc(out) == EOF) {
-    retval = 4;
-  }
-  return retval;
-}
+// int copy_file(FILE *inn, FILE *out, bool close_out) {
+//   int   retval = 0;
+//   char  buf[BUFSIZ];
+//   Ulong charsread;
+//   int (*flush_out_fnc)(FILE *) = ((close_out) ? fclose : fflush);
+//   do {
+//     charsread = fread(buf, 1, BUFSIZ, inn);
+//     if (charsread == 0 && ferror(inn)) {
+//       retval = -1;
+//       break;
+//     }
+//     if (fwrite(buf, 1, charsread, out) < charsread) {
+//       retval = 2;
+//       break;
+//     }
+//   } while (charsread > 0);
+//   if (fclose(inn) == EOF) {
+//     retval = -3;
+//   }
+//   if (flush_out_fnc(out) == EOF) {
+//     retval = 4;
+//   }
+//   return retval;
+// }
 
 /* Create a backup of an existing file.  If the user did not request backups,
  * make a temporary one.  (trying first in the directory of the original file,

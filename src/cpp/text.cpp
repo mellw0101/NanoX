@@ -340,19 +340,14 @@ void do_comment(void) _NOTHROW {
   }
   /* This is when 'openfile->syntax' says comments are foridden. */
   if (!*comment_seq) {
-    statusline(AHEM, _("Commenting is not supported for this file type"));
+    statusline_all(AHEM, _("Commenting is not supported for this file type"));
     return;
   }
   /* Determine which lines to work on. */
   get_range(&top, &bot);
   /* If only the magic line is selected, don't do anything. */
   if (top == bot && bot == openfile->filebot && !ISSET(NO_NEWLINES)) {
-    if (ISSET(USING_GUI)) {
-      show_statusmsg(AHEM, 2, _("Cannot comment past end of file"));
-    }
-    else {
-      statusline(AHEM, _("Cannot comment past end of file"));
-    }
+    statusline_all(AHEM, _("Cannot comment past end of file"));
     return;
   }
   /* Figure out whether to comment or uncomment the selected line or lines. */

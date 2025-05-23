@@ -23,7 +23,7 @@
 
 #define GUI_MENU_DEFAULT_BORDER_SIZE   1
 #define GUI_MENU_DEFAULT_MAX_ROWS      8
-#define GUI_MENU_DEFAULT_BORDER_COLOR  vec4(vec3(0.5f), 1.0f)
+#define GUI_MENU_DEFAULT_BORDER_COLOR  PACKED_UINT_FLOAT(0.5f, 0.5f, 0.5f, 1.0f)  /* vec4(vec3(0.5f), 1.0f) */
 
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
@@ -312,7 +312,7 @@ static void menu_draw_selected(CMenu *const menu) {
 static void menu_draw_text(CMenu *const menu) {
   ASSERT_MENU;
   static int was_viewtop = -1;
-  static Color color = {1, 1, 1, 1};
+  // static Color color = {1, 1, 1, 1};
   int row = 0;
   char *str;
   float pen_x;
@@ -324,7 +324,7 @@ static void menu_draw_text(CMenu *const menu) {
       str   = menu_get_entry_lable(menu, (menu->viewtop + row));
       pen_x = (menu->element->x + menu->border_size + 1);
       pen_y = (gui_font_row_baseline(menu->font, row) + menu->element->y + menu->border_size + 1);
-      font_vertbuf_add_mbstr(menu->font, menu->buffer, str, strlen(str), NULL, &color, &pen_x, &pen_y);
+      font_vertbuf_add_mbstr(menu->font, menu->buffer, str, strlen(str), NULL, PACKED_UINT(255, 255, 255, 255), &pen_x, &pen_y);
       ++row;
     }
     was_viewtop = menu->viewtop;
@@ -446,9 +446,9 @@ CMenu *menu_create(Element *const parent, Font *const font, void *data, MenuPosi
   ASSERT(data);
   ASSERT(position_routine);
   ASSERT(accept_routine);
-  Color border_color;
+  // Color border_color;
   CMenu *menu = xmalloc(sizeof(*menu));
-  color_set_default_borders(&border_color);
+  // color_set_default_borders(&border_color);
   /* Boolian flags. */
   menu->text_refresh_needed    = TRUE;
   menu->pos_refresh_needed     = TRUE;
@@ -464,14 +464,15 @@ CMenu *menu_create(Element *const parent, Font *const font, void *data, MenuPosi
   menu->entries = cvec_create_setfree(menu_entry_free);
   /* Create the element of the menu. */
   menu->element = element_create(100, 100, 100, 100, TRUE);
-  color_set_black(menu->element->color);
+  // color_set_black(menu->element->color);
+  menu->element->color = PACKED_UINT(0, 0, 0, 255);
   element_set_parent(menu->element, parent);
   // menu->element->color = GUI_BLACK_COLOR;  /* The default background color for menu's is black. */
   // menu->element->flag.set<GUIELEMENT_ABOVE>();
   // menu->element->flag.set<GUIELEMENT_HIDDEN>();
   menu->element->hidden = TRUE;
   /* As default all menus should have borders, to create a uniform look.  Note that this can be configured.  TODO: Implement the config of borders. */
-  element_set_borders(menu->element, menu->border_size, menu->border_size, menu->border_size, menu->border_size, &border_color);
+  element_set_borders(menu->element, menu->border_size, menu->border_size, menu->border_size, menu->border_size, PACKED_UINT_DEFAULT_BORDERS);
   element_set_menu_data(menu->element, menu);
   /* Row init. */
   menu->viewtop  = 0;

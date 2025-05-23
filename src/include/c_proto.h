@@ -19,6 +19,7 @@ extern long tabsize;
 extern long fill;
 
 extern Ulong wrap_at;
+extern Ulong nanox_rc_lineno;
 
 extern WINDOW *topwin;
 extern WINDOW *midwin;
@@ -32,7 +33,6 @@ extern Font *textfont;
 
 extern float mouse_x;
 extern float mouse_y;
-
 extern float gui_width;
 extern float gui_height;
 
@@ -71,6 +71,9 @@ extern char *word_chars;
 extern char *whitespace;
 extern char *operating_dir;
 extern char *homedir;
+extern char *startup_problem;
+extern char *nanox_rc_path;
+extern char *backup_dir;
 
 extern int editwinrows;
 extern int editwincols;
@@ -95,8 +98,8 @@ extern configstruct *config;
 
 /* ----------------------------- color.c ----------------------------- */
 
-extern Color color_vs_code_red;
-extern Color color_white;
+// extern Color color_vs_code_red;
+// extern Color color_white;
 
 /* ----------------------------- winio.c ----------------------------- */
 
@@ -329,8 +332,8 @@ bool             gui_font_row_from_pos(Font *const f, float y_top, float y_bot, 
 Ulong            gui_font_index_from_pos(Font *const f, const char *const restrict string, Ulong len, float rawx, float normx);
 float            font_breadth(Font *const f, const char *const restrict string);
 float            font_wideness(Font *const f, const char *const restrict string, Ulong to_index);
-void             font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Color *const color, float *const pen_x, float *const pen_y);
-void             font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Color *const color, float *const pen_x, float *const pen_y);
+void             font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y);
+void             font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y);
 void             font_upload_texture_atlas(Font *const f);
 
 
@@ -348,13 +351,13 @@ bool     element_grid_contains(float x, float y);
 /* ---------------------------------------------------------- gui/color.c ---------------------------------------------------------- */
 
 
-Color *color_create(float r, float g, float b, float a);
-void   color_copy(Color *const dst, const Color *const src);
-void   color_set_rgba(Color *const color, float r, float g, float b, float a);
-void   color_set_white(Color *const color);
-void   color_set_black(Color *const color);
-void   color_set_default_borders(Color *const color);
-void   color_set_edit_background(Color *const color);
+// Color *color_create(float r, float g, float b, float a);
+// void   color_copy(Color *const dst, const Color *const src);
+// void   color_set_rgba(Color *const color, float r, float g, float b, float a);
+// void   color_set_white(Color *const color);
+// void   color_set_black(Color *const color);
+// void   color_set_default_borders(Color *const color);
+// void   color_set_edit_background(Color *const color);
 
 /* ---------------------------------------------------------- gui/element.c ---------------------------------------------------------- */
 
@@ -369,7 +372,7 @@ void     element_move_y_clamp(Element *const e, float y, float min, float max);
 void     element_delete_borders(Element *const e);
 bool     element_is_ancestor(Element *const e, Element *const ancestor);
 void     element_set_lable(Element *const e, const char *const restrict lable, Ulong len);
-void     element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Color *color);
+void     element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color /* Color *color */);
 void     element_set_layer(Element *const e, Ushort layer);
 void     element_set_parent(Element *const e, Element *const parent);
 void     element_set_raw_data(Element *const e, void *const data);
@@ -458,6 +461,9 @@ void  set_modified(void);
 char *encode_data(char *text, Ulong length);
 void  init_operating_dir(void);
 bool  outside_of_confinement(const char *const restrict somepath, bool tabbing);
+void  init_backup_dir(void);
+int   copy_file(FILE *inn, FILE *out, bool close_out);
+char *safe_tempfile(FILE **stream);
 
 bool open_buffer(const char *filename, bool new_one);
 
@@ -582,6 +588,7 @@ bool line_in_marked_region(linestruct *const line);
 
 
 void discard_buffer(void);
+void do_cancel(void);
 int keycode_from_string(const char *keystring);
 const keystruct *first_sc_for(const int menu, functionptrtype function);
 Ulong shown_entries_for(int menu);
@@ -613,6 +620,13 @@ void to_top_row_for(openfilestruct *const file, int total_cols);
 void to_top_row(void);
 void to_bottom_row_for(openfilestruct *const file, int total_rows, int total_cols);
 void to_bottom_row(void);
+
+/* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
+
+
+void  display_rcfile_errors(void);
+void  jot_error(const char *const restrict format, ...);
+char *parse_next_word(char *ptr);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

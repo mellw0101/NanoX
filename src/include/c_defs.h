@@ -29,6 +29,9 @@
 #include <wctype.h>
 #include <math.h>
 #include <libgen.h>
+#if (defined(ENABLE_NLS) && defined(HAVE_LIBINTL_H))
+# include <libintl.h>
+#endif
 
 /* Linux */
 #include <sys/cdefs.h>
@@ -84,47 +87,44 @@
 /* The largest Ulong number that doesn't have the high bit set. */
 #define HIGHEST_POSITIVE          ((~(Ulong)0) >> 1)
 
-// Special keycodes for when a string bind has been partially implanted
-// or has an unpaired opening brace, or when a function in a string bind
-// needs execution or a specified function name is invalid.
-#define MORE_PLANTS                   0x4EA
-#define MISSING_BRACE                 0x4EB
-#define PLANTED_A_COMMAND             0x4EC
-#define NO_SUCH_FUNCTION              0x4EF
+/* Special keycodes for when a string bind has been partially implanted
+ * or has an unpaired opening brace, or when a function in a string bind
+ * needs execution or a specified function name is invalid. */
+#define MORE_PLANTS        0x4EA
+#define MISSING_BRACE      0x4EB
+#define PLANTED_A_COMMAND  0x4EC
+#define NO_SUCH_FUNCTION   0x4EF
 /* A special keycode to signal the beginning and end of a bracketed paste. */
-#define BRACKETED_PASTE_MARKER        0x4FB
+#define BRACKETED_PASTE_MARKER  0x4FB
 /* A special keycode for when a key produces an unknown escape sequence. */
-#define FOREIGN_SEQUENCE              0x4FC
+#define FOREIGN_SEQUENCE  0x4FC
 /* A special keycode for plugging into the input stream after a suspension. */
-#define KEY_FRESH                     0x4FE
+#define KEY_FRESH  0x4FE
 /* A special keycode for when we get a SIGWINCH (a window resize). */
-#define KEY_WINCH                     -2
+#define KEY_WINCH  -2
 
 /* Basic control codes. */
-#define ESC_CODE 0x1B
-#define DEL_CODE 0x7F
+#define ESC_CODE  (0x1B)
+#define DEL_CODE  (0x7F)
 
 /* Total elements. */
-#define NUMBER_OF_ELEMENTS  41
+#define NUMBER_OF_ELEMENTS  (41)
 
-#define THE_DEFAULT -1
-#define BAD_COLOR   -2
+#define THE_DEFAULT  (-1)
+#define BAD_COLOR    (-2)
 
 /* Native language support. */
 #ifdef ENABLE_NLS
-#  ifdef HAVE_LIBINTL_H
-#    include <libintl.h>
-#  endif
-#  define _(string)                    gettext(string)
-#  define P_(singular, plural, number) ngettext(singular, plural, number)
+# define _(string)                     gettext(string)
+# define P_(singular, plural, number)  ngettext(singular, plural, number)
 #else
-#  define _(string)                    (char *)(string)
-#  define P_(singular, plural, number) (number == 1 ? singular : plural)
+# define _(string)                     (char *)(string)
+# define P_(singular, plural, number)  (number == 1 ? singular : plural)
 #endif
 
 /* For marking a string on which gettext() will be called later. */
-#define gettext_noop(string) (string)
-#define N_(string)           gettext_noop(string)
+#define gettext_noop(string)  (string)
+#define N_(string)            gettext_noop(string)
 
 #define BACKWARD  FALSE
 #define FORWARD   TRUE
@@ -163,6 +163,12 @@
 #define dp_menu /* Shorthand to access the `Menu *` inside an `Element` structure. */ data_ptr.menu
 #define dp_file /* Shorthand to access the `openfilestruct *` inside an `Element` structure. */ data_ptr.file
 #define dp_editor /* Shorthand to access the `openfilestruct *` inside an `Element` structure. */ data_ptr.editor
+
+/* ----------------------------- color.c ----------------------------- */
+
+#define PACKED_UINT_VS_CODE_RED      PACKED_UINT(205, 49, 49, 255)
+#define PACKED_UINT_EDIT_BACKGROUND  PACKED_UINT_FLOAT(0.1f, 0.1f, 0.1f, 1.0f)
+#define PACKED_UINT_DEFAULT_BORDERS  PACKED_UINT_FLOAT(0.5f, 0.5f, 0.5f, 1.0f)
 
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
@@ -982,12 +988,12 @@ typedef struct {
 
 /* ----------------------------- color.c ----------------------------- */
 
-typedef struct {
-  float r;
-  float g;
-  float b;
-  float a;
-} Color;
+// typedef struct {
+//   float r;
+//   float g;
+//   float b;
+//   float a;
+// } Color;
 
 /* ----------------------------- element.c ----------------------------- */
 
@@ -1024,8 +1030,8 @@ struct Element {
   float relative_width;
   float relative_height;
 
-  Color *color;
-  Color *text_color;
+  Uint color;
+  Uint text_color;
 
   char *lable;
   Ulong lable_len;

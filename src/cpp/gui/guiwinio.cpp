@@ -171,7 +171,7 @@ void render_vertex_buffer(Uint shader, vertex_buffer_t *buf) {
 // }
 
 static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
-  static Color text_color = {1, 1, 1, 1};
+  // static Color text_color = {1, 1, 1, 1};
   char linenobuffer[editor->margin + 1];
   float x;
   float y;
@@ -179,7 +179,7 @@ static void gui_draw_row_linenum(linestruct *const line, Editor *const editor) {
     x = editor->gutter->x;
     y = (gui_font_row_baseline(gui->font, (line->lineno - editor->openfile->edittop->lineno)) + editor->gutter->y);
     sprintf(linenobuffer, "%*lu ", (editor->margin - 1), line->lineno);
-    font_vertbuf_add_mbstr(textfont, editor->buffer, linenobuffer, editor->margin, NULL, &text_color, &x, &y);
+    font_vertbuf_add_mbstr(textfont, editor->buffer, linenobuffer, editor->margin, NULL, PACKED_UINT(255, 255, 255, 255), &x, &y);
   }
 }
 
@@ -790,7 +790,7 @@ void draw_statusbar(void) {
       // vec2 penpos((gui->statusbar->pos.x + pixbreadth(gui_font_get_font(gui->uifont), " ")), (/* row_baseline_pixel(0, gui->uifont) */ gui_font_row_baseline(gui->uifont, 0) + gui->statusbar->pos.y));
       element_move_resize(gui->statusbar, ((gui_width / 2) - (msg_width / 2)), (gui_height - gui->botbar->height - gui->statusbar->height), msg_width, gui_font_height(uifont));
       // vertex_buffer_add_string(gui->statusbuf, statusmsg, strlen(statusmsg), " ", gui_font_get_font(gui->uifont), 1, &penpos);
-      font_vertbuf_add_mbstr(uifont, gui->statusbuf, statusmsg, strlen(statusmsg), " ", &color_white, &x, &y);
+      font_vertbuf_add_mbstr(uifont, gui->statusbuf, statusmsg, strlen(statusmsg), " ", PACKED_UINT(255, 255, 255, 255), &x, &y);
     }
     // gui_element_draw(gui->statusbar);
     element_draw(gui->statusbar);

@@ -127,7 +127,7 @@ regex_t quotereg;
 /* Nonalphanumeric characters that also form words. */
 // char *word_chars = NULL;
 /* The directory where we store backup files. */
-char *backup_dir = NULL;
+// char *backup_dir = NULL;
 /* The path to our confining "operating" directory, when given. */
 // char *operating_dir = NULL;
 /* The command to use for the alternate spell checker. */
@@ -184,7 +184,7 @@ colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
 /* The directory for nano's history files. */
 char *statedir = NULL;
 /* An error message (if any) about nanorc files or history files. */
-char *startup_problem = NULL;
+// char *startup_problem = NULL;
 /* The argument of the --rcfile option, when given. */
 char *custom_nanorc = NULL;
 /* The name (of a function) between braces in a string bind. */
@@ -299,9 +299,9 @@ void flip_newbuffer(void) {
 //   ;
 // }
 
-void do_cancel(void) {
-  ;
-}
+// void do_cancel(void) {
+//   ;
+// }
 
 /* Add a function to the linked list of functions. */
 static void add_to_funcs(functionptrtype function, const int menus, const char *tag, const char *phrase, bool blank_after) {

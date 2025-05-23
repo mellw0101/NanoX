@@ -78,10 +78,6 @@ static const rcoption rcopts[] = {
   {        "functioncolor",                0},
   {                   NULL,                0}
 };
-/* The line number of the last encountered error. */
-static Ulong lineno = 0;
-/* The path to the rcfile we're parsing. */
-static char *nanorc = NULL;
 /* Whether we're allowed to add to the last syntax.  When a file ends,
  * or when a new syntax command is seen, this bool becomes 'FALSE'. */
 static bool opensyntax = FALSE;
@@ -92,49 +88,49 @@ static bool seen_color_command = FALSE;
 /* The end of the color list for the current syntax. */
 static colortype *lastcolor = NULL;
 /* Beginning and end of a list of errors in rcfiles, if any. */
-static linestruct *errors_head = NULL;
-static linestruct *errors_tail = NULL;
+// static linestruct *errors_head = NULL;
+// static linestruct *errors_tail = NULL;
 
 /* Send the gathered error messages (if any) to the terminal. */
-void display_rcfile_errors(void) _NOTHROW {
-  for (linestruct *error = errors_head; error; error = error->next) {
-    fprintf(stderr, "%s\n", error->data);
-  }
-}
+// void display_rcfile_errors(void) _NOTHROW {
+//   for (linestruct *error = errors_head; error; error = error->next) {
+//     fprintf(stderr, "%s\n", error->data);
+//   }
+// }
 
 #define MAXSIZE (PATH_MAX + 200)
 
 /* Store the given error message in a linked list, to be printed upon exit. */
-void jot_error(const char *msg, ...) _NOTHROW {
-  linestruct *error = make_new_node(errors_tail);
-  va_list     ap;
-  char        textbuf[MAXSIZE];
-  int         length = 0;
-  if (!errors_head) {
-    errors_head = error;
-  }
-  else {
-    errors_tail->next = error;
-  }
-  errors_tail = error;
-  if (!startup_problem) {
-    if (nanorc) {
-      snprintf(textbuf, MAXSIZE, _("Mistakes in '%s'"), nanorc);
-      startup_problem = copy_of(textbuf);
-    }
-    else {
-      startup_problem = copy_of(_("Problems with history file"));
-    }
-  }
-  if (lineno > 0) {
-    length = snprintf(textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanorc, lineno);
-  }
-  va_start(ap, msg);
-  length += vsnprintf((textbuf + length), (MAXSIZE - length), _(msg), ap);
-  va_end(ap);
-  error->data = (char *)nmalloc(length + 1);
-  sprintf(error->data, "%s", textbuf);
-}
+// void jot_error(const char *msg, ...) _NOTHROW {
+//   linestruct *error = make_new_node(errors_tail);
+//   va_list     ap;
+//   char        textbuf[MAXSIZE];
+//   int         length = 0;
+//   if (!errors_head) {
+//     errors_head = error;
+//   }
+//   else {
+//     errors_tail->next = error;
+//   }
+//   errors_tail = error;
+//   if (!startup_problem) {
+//     if (nanox_rc_path) {
+//       snprintf(textbuf, MAXSIZE, _("Mistakes in '%s'"), nanox_rc_path);
+//       startup_problem = copy_of(textbuf);
+//     }
+//     else {
+//       startup_problem = copy_of(_("Problems with history file"));
+//     }
+//   }
+//   if (nanox_rc_lineno > 0) {
+//     length = snprintf(textbuf, MAXSIZE, _("Error in %s on line %zu: "), nanox_rc_path, nanox_rc_lineno);
+//   }
+//   va_start(ap, msg);
+//   length += vsnprintf((textbuf + length), (MAXSIZE - length), _(msg), ap);
+//   va_end(ap);
+//   error->data = (char *)nmalloc(length + 1);
+//   sprintf(error->data, "%s", textbuf);
+// }
 
 /* Staticly define the number of elements in the map as a constexpr. */
 #define FUNCTION_MAP_COUNT 104
@@ -278,20 +274,20 @@ keystruct *strtosc(const char *input) {
 
 /* Parse the next word from the string, null-terminate it, and return a pointer to the first character
  * after the null terminator.  The returned pointer will point to '\0' if we hit the end of the line. */
-char *parse_next_word(char *ptr) _NOTHROW {
-  while (!isblank((Uchar)*ptr) && *ptr) {
-    ++ptr;
-  }
-  if (!*ptr) {
-    return ptr;
-  }
-  /* Null-terminate and advance ptr. */
-  *ptr++ = '\0';
-  while (isblank((Uchar)*ptr)) {
-    ++ptr;
-  }
-  return ptr;
-}
+// char *parse_next_word(char *ptr) _NOTHROW {
+//   while (!isblank((Uchar)*ptr) && *ptr) {
+//     ++ptr;
+//   }
+//   if (!*ptr) {
+//     return ptr;
+//   }
+//   /* Null-terminate and advance ptr. */
+//   *ptr++ = '\0';
+//   while (isblank((Uchar)*ptr)) {
+//     ++ptr;
+//   }
+//   return ptr;
+// }
 
 /* Parse an argument, with optional quotes, after a keyword that takes one.  If the
  * next word starts with a ", we say that it ends with the last " of the line.
@@ -395,8 +391,8 @@ void begin_new_syntax(char *ptr) {
   /* Initialize a new syntax struct. */
   live_syntax                = (syntaxtype *)nmalloc(sizeof(syntaxtype));
   live_syntax->name          = copy_of(nameptr);
-  live_syntax->filename      = copy_of(nanorc);
-  live_syntax->lineno        = lineno;
+  live_syntax->filename      = copy_of(nanox_rc_path);
+  live_syntax->lineno        = nanox_rc_lineno;
   live_syntax->augmentations = NULL;
   live_syntax->extensions    = NULL;
   live_syntax->headers       = NULL;
@@ -426,10 +422,10 @@ void begin_new_syntax(char *ptr) {
 /* Verify that a syntax definition contains at least one color command. */
 static void check_for_nonempty_syntax(void) {
   if (opensyntax && !seen_color_command) {
-    Ulong current_lineno = lineno;
-    lineno               = live_syntax->lineno;
+    Ulong current_lineno = nanox_rc_lineno;
+    nanox_rc_lineno               = live_syntax->lineno;
     jot_error(N_("Syntax \"%s\" has no color commands"), live_syntax->name);
-    lineno = current_lineno;
+    nanox_rc_lineno = current_lineno;
   }
   opensyntax = FALSE;
 }
@@ -599,8 +595,8 @@ bool is_good_file(char *file) _NOTHROW {
 
 /* Partially parse the syntaxes in the given file, or (when syntax is not NULL) fully parse one specific syntax from the file. */
 void parse_one_include(char *file, syntaxtype *syntax) {
-  char          *was_nanorc = nanorc;
-  Ulong          was_lineno = lineno;
+  char          *was_nanorc = nanox_rc_path;
+  Ulong          was_lineno = nanox_rc_lineno;
   FILE          *rcstream;
   augmentstruct *extra;
   /* Don't open directories, character files, or block files. */
@@ -613,13 +609,13 @@ void parse_one_include(char *file, syntaxtype *syntax) {
     return;
   }
   /* Use the name and line number position of the included syntax file while parsing it, so we can know where any errors in it are. */
-  nanorc = file;
-  lineno = 0;
+  nanox_rc_path = file;
+  nanox_rc_lineno = 0;
   /* If this is the first pass, parse only the prologue. */
   if (!syntax) {
     parse_rcfile(rcstream, TRUE, TRUE);
-    nanorc = was_nanorc;
-    lineno = was_lineno;
+    nanox_rc_path = was_nanorc;
+    nanox_rc_lineno = was_lineno;
     return;
   }
   live_syntax = syntax;
@@ -631,8 +627,8 @@ void parse_one_include(char *file, syntaxtype *syntax) {
   while (extra) {
     char *keyword = extra->data;
     char *therest = parse_next_word(extra->data);
-    nanorc        = extra->filename;
-    lineno        = extra->lineno;
+    nanox_rc_path        = extra->filename;
+    nanox_rc_lineno        = extra->lineno;
     if (!parse_syntax_commands(keyword, therest)) {
       jot_error(N_("Command \"%s\" not understood"), keyword);
     }
@@ -640,8 +636,8 @@ void parse_one_include(char *file, syntaxtype *syntax) {
   }
   free(syntax->filename);
   syntax->filename = NULL;
-  nanorc           = was_nanorc;
-  lineno           = was_lineno;
+  nanox_rc_path           = was_nanorc;
+  nanox_rc_lineno           = was_lineno;
 }
 
 /* Expand globs in the passed name, and parse the resultant files. */
@@ -1053,9 +1049,9 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
     bool  drop_open = FALSE;
     int   set       = 0;
     Ulong i;
-    lineno++;
+    nanox_rc_lineno++;
     /* If doing a full parse, skip to after the 'syntax' command. */
-    if (just_syntax && !intros_only && lineno <= live_syntax->lineno) {
+    if (just_syntax && !intros_only && nanox_rc_lineno <= live_syntax->lineno) {
       continue;
     }
     /* Strip the terminating newline and possibly a carriage return. */
@@ -1105,8 +1101,8 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
       }
       else {
         newitem           = (augmentstruct *)nmalloc(sizeof(augmentstruct));
-        newitem->filename = copy_of(nanorc);
-        newitem->lineno   = lineno;
+        newitem->filename = copy_of(nanox_rc_path);
+        newitem->lineno   = nanox_rc_lineno;
         newitem->data     = argument;
         newitem->next     = NULL;
         if (sntx->augmentations) {
@@ -1322,18 +1318,18 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
   }
   fclose(rcstream);
   free(buffer);
-  lineno = 0;
+  nanox_rc_lineno = 0;
 }
 
 /* Read and interpret one of the two nanorc files. */
 static void parse_one_nanorc(void) {
-  FILE *rcstream = fopen(nanorc, "rb");
+  FILE *rcstream = fopen(nanox_rc_path, "rb");
   /* If opening the file succeeded, parse it.  Otherwise, only complain if the file actually exists. */
   if (rcstream) {
     parse_rcfile(rcstream, FALSE, TRUE);
   }
   else if (errno != ENOENT) {
-    jot_error(N_("Error reading %s: %s"), nanorc, strerror(errno));
+    jot_error(N_("Error reading %s: %s"), nanox_rc_path, strerror(errno));
   }
 }
 
@@ -1341,24 +1337,24 @@ static bool have_nanorc(const char *path, const char *name) {
   if (!path) {
     return FALSE;
   }
-  free(nanorc);
-  nanorc = concatenate(path, name);
-  return is_good_file(nanorc);
+  free(nanox_rc_path);
+  nanox_rc_path = concatenate(path, name);
+  return is_good_file(nanox_rc_path);
 }
 
 /* Process the nanorc file that was specified on the command line (if any),
  * and otherwise the system-wide rcfile followed by the user's rcfile. */
 void do_rcfiles(void) {
   if (custom_nanorc) {
-    nanorc = get_full_path(custom_nanorc);
-    if (!nanorc || access(nanorc, F_OK) != 0) {
+    nanox_rc_path = get_full_path(custom_nanorc);
+    if (!nanox_rc_path || access(nanox_rc_path, F_OK) != 0) {
       die(_("Specified rcfile does not exist\n"));
     }
   }
   else {
-    nanorc = mallocstrcpy(nanorc, SYSCONFDIR "/nanorc");
+    nanox_rc_path = mallocstrcpy(nanox_rc_path, SYSCONFDIR "/nanorc");
   }
-  if (is_good_file(nanorc)) {
+  if (is_good_file(nanox_rc_path)) {
     parse_one_nanorc();
   }
   if (!custom_nanorc) {
@@ -1375,6 +1371,6 @@ void do_rcfiles(void) {
     }
   }
   check_vitals_mapped();
-  free(nanorc);
-  nanorc = NULL;
+  free(nanox_rc_path);
+  nanox_rc_path = NULL;
 }

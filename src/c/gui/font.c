@@ -383,7 +383,7 @@ float font_wideness(Font *const f, const char *const restrict string, Ulong to_i
 }
 
 /* Add one glyph to 'buffer' to be rendered.  At position pen. */
-void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Color *const color, float *const pen_x, float *const pen_y) {
+void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const restrict current, const char *const restrict prev, Uint color, float *const pen_x, float *const pen_y) {
   ASSERT_GUI_FONT;
   ASSERT(current);
   ASSERT(buf);
@@ -398,10 +398,10 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
   y0 = (int)((*pen_y) - glyph->offset_y);
   x1 = (int)(x0 + glyph->width);
   y1 = (int)(y0 + glyph->height);
-  vertices[0] = (vertex_t){ x0,y0,0, glyph->s0,glyph->t0, color->r,color->g,color->b,color->a };
-  vertices[1] = (vertex_t){ x0,y1,0, glyph->s0,glyph->t1, color->r,color->g,color->b,color->a };
-  vertices[2] = (vertex_t){ x1,y1,0, glyph->s1,glyph->t1, color->r,color->g,color->b,color->a };
-  vertices[3] = (vertex_t){ x1,y0,0, glyph->s1,glyph->t0, color->r,color->g,color->b,color->a };
+  vertices[0] = (vertex_t){ x0,y0,0, glyph->s0,glyph->t0, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
+  vertices[1] = (vertex_t){ x0,y1,0, glyph->s0,glyph->t1, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
+  vertices[2] = (vertex_t){ x1,y1,0, glyph->s1,glyph->t1, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
+  vertices[3] = (vertex_t){ x1,y0,0, glyph->s1,glyph->t0, UNPACK_UINT_FLOAT(color, 0),UNPACK_UINT_FLOAT(color, 1), UNPACK_UINT_FLOAT(color, 2), UNPACK_UINT_FLOAT(color, 3) };
   vertex_buffer_push_back(buf, vertices, 4, indices, 6);
   (*pen_x) += glyph->advance_x;
 }
@@ -420,7 +420,7 @@ void font_add_glyph(Font *const f, vertex_buffer_t *const buf, const char *const
 //   }
 // }
 
-void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Color *const color, float *const pen_x, float *const pen_y) {
+void font_vertbuf_add_mbstr(Font *const f, vertex_buffer_t *buf, const char *string, Ulong len, const char *previous, Uint color, float *const pen_x, float *const pen_y) {
   ASSERT_GUI_FONT;
   ASSERT(buf);
   ASSERT(string);

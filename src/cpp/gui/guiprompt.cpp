@@ -407,7 +407,8 @@ void gui_promptmenu_create(void) {
   gui->promptmenu->element = element_create(0, 0, gui_width, gui_font_height(uifont), TRUE);
   // gui->promptmenu->element->color = VEC4_VS_CODE_RED;
   element_set_parent(gui->promptmenu->element, gui->root);
-  color_copy(gui->promptmenu->element->color, &color_vs_code_red);
+  // color_copy(gui->promptmenu->element->color, &color_vs_code_red);
+  gui->promptmenu->element->color = PACKED_UINT_VS_CODE_RED;
   // gui->promptmenu->element->flag.set<GUIELEMENT_RELATIVE_WIDTH>();
   gui->promptmenu->element->has_relative_width = TRUE;
   // gui->promptmenu->element->relative_size = 0;

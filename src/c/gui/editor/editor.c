@@ -114,7 +114,8 @@ void editor_create(bool new_buffer) {
   openeditor->gutter = element_create(openeditor->main->x, (openeditor->main->y + gui_font_height(uifont)), editor_get_gutter_width(openeditor), (openeditor->main->height - gui_font_height(uifont)), TRUE);
   element_set_parent(openeditor->gutter, openeditor->main);
   element_set_editor_data(openeditor->gutter, openeditor);
-  color_set_edit_background(openeditor->gutter->color);
+  // color_set_edit_background(openeditor->gutter->color);
+  openeditor->gutter->color = PACKED_UINT_EDIT_BACKGROUND;
   openeditor->gutter->has_relative_pos    = TRUE;
   openeditor->gutter->has_relative_height = TRUE;
   openeditor->gutter->relative_y          = gui_font_height(uifont);
@@ -122,7 +123,8 @@ void editor_create(bool new_buffer) {
   openeditor->text = element_create((openeditor->main->x + openeditor->gutter->width), (openeditor->main->y + gui_font_height(uifont)), (openeditor->main->width - openeditor->gutter->width), (openeditor->main->height - gui_font_height(uifont)), TRUE);
   element_set_parent(openeditor->text, openeditor->main);
   element_set_editor_data(openeditor->text, openeditor);
-  color_set_edit_background(openeditor->text->color);
+  // color_set_edit_background(openeditor->text->color);
+  openeditor->text->color = PACKED_UINT_EDIT_BACKGROUND;
   openeditor->text->has_relative_pos    = TRUE;
   openeditor->text->has_relative_width  = TRUE;
   openeditor->text->has_relative_height = TRUE;

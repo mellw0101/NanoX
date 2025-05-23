@@ -49,8 +49,8 @@ static Element *element_create_internal(void) {
   e->relative_width  = 0;
   e->relative_height = 0;
   /* Color. */
-  e->color      = color_create(0, 0, 0, 0);
-  e->text_color = color_create(0, 0, 0, 0);
+  e->color      = 0/* color_create(0, 0, 0, 0) */;
+  e->text_color = 0/* color_create(0, 0, 0, 0) */;
   /* Lable. */
   e->lable     = NULL;
   e->lable_len = 0;
@@ -128,7 +128,7 @@ static inline void element_draw_rect(Element *const e) {
   // glUniform2fv(p_loc, 1, (void *)STRUCT_FIELD_PTR(e, x));
   // glUniform2fv(s_loc, 1, (void *)STRUCT_FIELD_PTR(e, width));
   // glDrawArrays(GL_TRIANGLES, 0, 6);
-  draw_rect_rgba(e->x, e->y, e->width, e->height, e->color->r, e->color->g, e->color->b, e->color->a);
+  draw_rect_rgba(e->x, e->y, e->width, e->height, UNPACK_UINT_FLOAT(e->color, 0), UNPACK_UINT_FLOAT(e->color, 1), UNPACK_UINT_FLOAT(e->color, 2), UNPACK_UINT_FLOAT(e->color, 3));
 }
 
 
@@ -161,8 +161,6 @@ void element_free(Element *const e) {
     element_free(cvec_get(e->children, 0));
   }
   element_grid_remove(e);
-  free(e->color);
-  free(e->text_color);
   free(e->lable);
   free(e);
 }
@@ -264,7 +262,7 @@ void element_set_lable(Element *const e, const char *const restrict lable, Ulong
   e->has_lable = TRUE;
 }
 
-void element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Color *color) {
+void element_set_borders(Element *const e, float lsize, float tsize, float rsize, float bsize, Uint color) {
   ASSERT(e);
   ASSERT(color);
   /* Create all element's. */
@@ -281,10 +279,14 @@ void element_set_borders(Element *const e, float lsize, float tsize, float rsize
   element_set_parent(r, e);
   element_set_parent(b, e);
   /* Set the color of all borders. */
-  color_copy(l->color, color);
-  color_copy(t->color, color);
-  color_copy(r->color, color);
-  color_copy(b->color, color);
+  // color_copy(l->color, color);
+  // color_copy(t->color, color);
+  // color_copy(r->color, color);
+  // color_copy(b->color, color);
+  l->color = color;
+  t->color = color;
+  r->color = color;
+  b->color = color;
   /* Left. */
   l->is_border           = TRUE;
   l->has_relative_pos    = TRUE;

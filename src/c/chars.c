@@ -61,7 +61,7 @@ bool is_alnum_char(const char *const c) {
 bool is_blank_char(const char *const c) {
   wchar_t wc;
   if ((Schar)*c >= 0) {
-    return (*c == ' ' || *c == '\t');
+    return ASCII_ISWHITE(*c);
   }
   if (mbtowide(&wc, c) < 0) {
     return FALSE;
@@ -315,17 +315,19 @@ bool is_cursor_zerowidth(void) {
 }
 
 /* Return the number of bytes in the character that starts at *pointer. */
-int char_length(const char *const pointer) {
-  if ((Uchar)*pointer > 0xC1 && use_utf8) {
-    const Uchar c1 = (Uchar)pointer[0];
-    const Uchar c2 = (Uchar)pointer[1];
+int char_length(const char *const ptr) {
+  Uchar c1;
+  Uchar c2;
+  if ((Uchar)*ptr > 0xC1 && use_utf8) {
+    c1 = (Uchar)ptr[0];
+    c2 = (Uchar)ptr[1];
     if ((c2 ^ 0x80) > 0x3F) {
       return 1;
     }
     if (c1 < 0xE0) {
       return 2;
     }
-    if (((Uchar)pointer[2] ^ 0x80) > 0x3F) {
+    if (((Uchar)ptr[2] ^ 0x80) > 0x3F) {
       return 1;
     }
     if (c1 < 0xF0) {
@@ -336,7 +338,7 @@ int char_length(const char *const pointer) {
         return 1;
       }
     }
-    if (((Uchar)pointer[3] ^ 0x80) > 0x3F) {
+    if (((Uchar)ptr[3] ^ 0x80) > 0x3F) {
       return 1;
     }
     if (c1 > 0xF4) {

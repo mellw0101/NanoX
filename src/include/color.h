@@ -96,7 +96,8 @@ static constexpr short VS_CODE_BRIGHT_CYAN_GRAYSCALE    = xterm_grayscale_color_
 #define BG_VS_CODE_BLUE                      39
 #define BG_VS_CODE_GREEN                     40
 /* Total elements. */
-#define NUMBER_OF_ELEMENTS                   41
+#define NUMBER_OF_ELEMENTS  (41)
+
 
 /* Some gui colors, these will not be counted as 'elements'. */
 #define EDITOR_TOPBAR_BUTTON_ENTER     1003

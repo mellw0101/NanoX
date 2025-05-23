@@ -10,60 +10,12 @@
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
+/* ----------------------------- sig_atomic_t ----------------------------- */
+
 /* Set to 'TRUE' by the handler whenever a SIGWINCH occurs. */
 volatile sig_atomic_t the_window_resized = FALSE;
 
-/* The width of a tab in spaces.  The default is set in main(). */
-long tabsize = -1;
-/* The relative column where we will wrap lines. */
-long fill = -COLUMNS_FROM_EOL;
-
-/* The actual column where we will wrap lines, based on fill. */
-Ulong wrap_at = 0;
-
-/* The top portion of the screen, showing the version number of nano, the name of the file, and whether the buffer was modified. */
-WINDOW *topwin = NULL;
-/* The middle portion of the screen: the edit window, showing the contents of the current buffer, the file we are editing. */
-WINDOW *midwin = NULL;
-/* The bottom portion of the screen, where status-bar messages, the status-bar prompt, and a list of shortcuts are shown. */
-WINDOW *footwin = NULL;
-
-/* The list of all open file buffers. */
-openfilestruct *openfile = NULL;
-/* The first open buffer. */
-openfilestruct *startfile = NULL;
-
-/* The ui font the gui uses. */
-Font *uifont = NULL;
-/* The text font the gui uses. */
-Font *textfont = NULL;
-
-/* The mouse x position, this is used for the gui. */
-float mouse_x = 0;
-/* The mouse y position, this is used for the gui. */
-float mouse_y = 0;
-/* The current width of the gui. */
-float gui_width = 0;
-/* The current height of the gui. */
-float gui_height = 0;
-
-/* The list of all open editor's */
-Editor *openeditor = NULL;
-/* The first open editor. */
-Editor *starteditor = NULL;
-
-/* The start of the shortcuts list. */
-keystruct *sclist = NULL;
-
-/* The start of the functions list. */
-funcstruct *allfuncs = NULL;
-/* The last function in the list. */
-funcstruct *tailfunc;
-/* A pointer to the special Exit/Close item. */
-funcstruct *exitfunc;
-
-/* The compiled regular expression to use in searches. */
-regex_t search_regexp;
+/* ----------------------------- bool ----------------------------- */
 
 /* Whether more than one buffer is or has been open. */
 bool more_than_one = FALSE;
@@ -96,10 +48,7 @@ bool meta_key;
 /* Whether indenting/commenting should include the last line of the marked region. */
 bool also_the_last = FALSE;
 
-/* These two tags are used elsewhere too, so they are global.
- * TRANSLATORS: Try to keep the next two strings at most 10 characters. */
-const char *exit_tag  = N_("Exit");
-const char *close_tag = N_("Close");
+/* ----------------------------- char * ----------------------------- */
 
 /* Nonalphanumeric characters that also form words. */
 char *word_chars = NULL;
@@ -109,6 +58,21 @@ char *whitespace = NULL;
 char *operating_dir = NULL;
 /* The user's home directory, from $HOME or /etc/passwd. */
 char *homedir = NULL;
+/* An error message (if any) about nanorc files or history files. */
+char *startup_problem = NULL;
+/* The path to the rcfile we're parsing. */
+char *nanox_rc_path = NULL;
+/* The directory where we store backup files. */
+char *backup_dir = NULL;
+
+/* ----------------------------- const char ----------------------------- */
+
+/* These two tags are used elsewhere too, so they are global.
+ * TRANSLATORS: Try to keep the next two strings at most 10 characters. */
+const char *exit_tag  = N_("Exit");
+const char *close_tag = N_("Close");
+
+/* ----------------------------- int ----------------------------- */
 
 /* How many rows does the edit window take up? */
 int editwinrows = 0;
@@ -121,19 +85,102 @@ int sidebar = 0;
 /* The currently active menu, initialized to a dummy value. */
 int currmenu = MMOST;
 
+/* ----------------------------- int[] ----------------------------- */
+
 /* The length in bytes of these characters. */
 int whitelen[2];
+/* The processed color pairs for the interface elements. */
+int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
+
+/* ----------------------------- float ----------------------------- */
+
+/* The mouse x position, this is used for the gui. */
+float mouse_x = 0;
+/* The mouse y position, this is used for the gui. */
+float mouse_y = 0;
+/* The current width of the gui. */
+float gui_width = 0;
+/* The current height of the gui. */
+float gui_height = 0;
+
+/* ----------------------------- long ----------------------------- */
+
+/* The width of a tab in spaces.  The default is set in main(). */
+long tabsize = -1;
+/* The relative column where we will wrap lines. */
+long fill = -COLUMNS_FROM_EOL;
+
+/* ----------------------------- Ulong ----------------------------- */
+
+/* The actual column where we will wrap lines, based on fill. */
+Ulong wrap_at = 0;
+/* The line number of the last encountered error when parsing an rc file. */
+Ulong nanox_rc_lineno = 0;
+
+/* ----------------------------- Ulong[] ----------------------------- */
 
 /* Our flags array, containing the states of all global options. */
 Ulong flags[1] = {0};
 
+/* ----------------------------- WINDOW ----------------------------- */
+
+/* The top portion of the screen, showing the version number of nano, the name of the file, and whether the buffer was modified. */
+WINDOW *topwin = NULL;
+/* The middle portion of the screen: the edit window, showing the contents of the current buffer, the file we are editing. */
+WINDOW *midwin = NULL;
+/* The bottom portion of the screen, where status-bar messages, the status-bar prompt, and a list of shortcuts are shown. */
+WINDOW *footwin = NULL;
+
+/* ----------------------------- openfilestruct ----------------------------- */
+
+/* The list of all open file buffers. */
+openfilestruct *openfile = NULL;
+/* The first open buffer. */
+openfilestruct *startfile = NULL;
+
+/* ----------------------------- Font ----------------------------- */
+
+/* The ui font the gui uses. */
+Font *uifont = NULL;
+/* The text font the gui uses. */
+Font *textfont = NULL;
+
+/* ----------------------------- Editor ----------------------------- */
+
+/* The list of all open editor's */
+Editor *openeditor = NULL;
+/* The first open editor. */
+Editor *starteditor = NULL;
+
+/* ----------------------------- keystruct ----------------------------- */
+
+/* The start of the shortcuts list. */
+keystruct *sclist = NULL;
+
+/* ----------------------------- funcstruct ----------------------------- */
+
+/* The start of the functions list. */
+funcstruct *allfuncs = NULL;
+/* The last function in the list. */
+funcstruct *tailfunc;
+/* A pointer to the special Exit/Close item. */
+funcstruct *exitfunc;
+
+/* ----------------------------- regex_t ----------------------------- */
+
+/* The compiled regular expression to use in searches. */
+regex_t search_regexp;
+
+/* ----------------------------- GLFWwindow ----------------------------- */
+
 GLFWwindow *gui_window = NULL;
+
+/* ----------------------------- message_type ----------------------------- */
 
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
 message_type lastmessage = VACUUM;
 
-/* The processed color pairs for the interface elements. */
-int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
+/* ----------------------------- configstruct ----------------------------- */
 
 /* Global config to store data retrieved from config file. */
 configstruct *config = NULL;
@@ -145,6 +192,10 @@ configstruct *config = NULL;
 /* Empty functions, for the most part corresponding to toggles. */
 
 void discard_buffer(void) {
+  ;
+}
+
+void do_cancel(void) {
   ;
 }
 

@@ -54,7 +54,8 @@ void statusbar_init(Element *const parent) {
   statusbar->buffer              = vertbuf_create();
   statusbar->element             = element_create(0, 0, gui_width, gui_height, FALSE);
   element_set_parent(statusbar->element, parent);
-  color_copy(statusbar->element->color, &color_vs_code_red);
+  // color_copy(statusbar->element->color, &color_vs_code_red);
+  statusbar->element->color = PACKED_UINT_VS_CODE_RED;
   statusbar->element->hidden                     = TRUE;
   statusbar->element->has_reverse_relative_y_pos = TRUE;
   statusbar->element->has_relative_x_pos         = TRUE;
@@ -126,7 +127,7 @@ void statusbar_draw(float fps) {
       element_move_resize(statusbar->element, ((gui_width / 2) - (msg_width / 2)), (gui_height - (gui_font_height(uifont) * 2)), msg_width, gui_font_height(uifont));
       x = (statusbar->element->x + font_breadth(uifont, " "));
       y = (statusbar->element->y + gui_font_row_baseline(uifont, 0));
-      font_vertbuf_add_mbstr(uifont, statusbar->buffer, statusbar->msg, strlen(statusbar->msg), " ", &color_white, &x, &y);
+      font_vertbuf_add_mbstr(uifont, statusbar->buffer, statusbar->msg, strlen(statusbar->msg), " ", PACKED_UINT(255, 255, 255, 255), &x, &y);
     }
     element_draw(statusbar->element);
     render_vertbuf(uifont, statusbar->buffer);

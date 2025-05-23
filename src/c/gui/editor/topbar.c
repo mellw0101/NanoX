@@ -17,17 +17,20 @@
   ASSERT(etb->element); \
   ASSERT(etb->context)
 
-#define ETB_BORDER_COLOR    vec4(vec3(0.5f),  1.0f)
-#define ETB_ACTIVE_COLOR    vec4(vec3(0.25f), 1.0f)
-#define ETB_INACTIVE_COLOR  vec4(vec3(0.08f), 1.0f)
+// #define ETB_BORDER_COLOR    vec4(vec3(0.5f),  1.0f)
+// #define ETB_ACTIVE_COLOR    vec4(vec3(0.25f), 1.0f)
+// #define ETB_INACTIVE_COLOR  vec4(vec3(0.08f), 1.0f)
 
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
-static Color etb_border_color = {0.5f, 0.5f, 0.5f, 1};
-static Color etb_active_color = {0.25f, 0.25f, 0.25f, 1};
-static Color etb_button_color = {0.08f, 0.08f, 0.08f, 1};
+#define ETB_BORDER_COLOR  PACKED_UINT_FLOAT(0.5f, 0.5f, 0.5f, 1.0f)
+#define ETB_ACTIVE_COLOR  PACKED_UINT_FLOAT(0.25f, 0.25f, 0.25f, 1.0f)
+#define ETB_BUTTON_COLOR  PACKED_UINT_FLOAT(0.08f, 0.08f, 0.08f, 1.0f)
+// static Color etb_border_color = {0.5f, 0.5f, 0.5f, 1};
+// static Color etb_active_color = {0.25f, 0.25f, 0.25f, 1};
+// static Color etb_button_color = {0.08f, 0.08f, 0.08f, 1};
 
 
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
@@ -62,7 +65,8 @@ static void etb_refresh_active(EditorTb *const etb) {
   if (etb->active_refresh_needed) {
     ELEMENT_CHILDREN_ITER(etb->element, i, button,
       if (button->has_file_data) {
-        color_copy(button->color, ((button->dp_file == etb->editor->openfile) ? &etb_active_color : &etb_button_color));
+        button->color = ((button->dp_file == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
+        // color_copy(button->color, ((button->dp_file == etb->editor->openfile) ? &etb_active_color : &etb_button_color));
       }
     );
     etb->active_refresh_needed = FALSE;
@@ -111,12 +115,14 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   element_set_lable(button, lable, strlen(lable));
   element_set_file_data(button, f);
   /* Set the correct color for the button based on if it's the currently open file in the editor. */
-  color_copy(button->color, ((f == etb->editor->openfile) ? &etb_active_color : &etb_button_color));
-  color_set_white(button->text_color);
+  // color_copy(button->color, ((f == etb->editor->openfile) ? &etb_active_color : &etb_button_color));
+  button->color = ((f == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
+  // color_set_white(button->text_color);
+  button->text_color = PACKED_UINT(255, 255, 255, 255);
   /* Set the relative position to the main element of the topbar. */
   button->relative_x = (button->x - etb->element->x);
   /* When there is only a single file open or when at the last file, all borders should be uniform.  Otherwise, the it should not have a right border. */
-  element_set_borders(button, 1, 1, ((CLIST_SINGLE(f) || f->next == etb->editor->startfile) ? 1 : 0), 1, &etb_border_color);
+  element_set_borders(button, 1, 1, ((CLIST_SINGLE(f) || f->next == etb->editor->startfile) ? 1 : 0), 1, ETB_BORDER_COLOR);
   (*pos_x) += button->width;
 }
 
@@ -263,7 +269,8 @@ EditorTb *etb_create(Editor *const editor) {
   // etb->element->relative_size = 0;
   etb->element = element_create(etb->editor->main->x, etb->editor->main->y, etb->editor->main->width, gui_font_height(uifont), TRUE);
   element_set_parent(etb->element, etb->editor->main);
-  color_set_edit_background(etb->element->color);
+  // color_set_edit_background(etb->element->color);
+  etb->element->color = PACKED_UINT_EDIT_BACKGROUND;
   etb->element->has_relative_pos = TRUE;
   etb->element->has_relative_width = TRUE;
   // gui_element_move_resize(etb->element, etb->editor->main->pos, vec2(etb->editor->main->size.w, gui_font_height(gui->uifont)));

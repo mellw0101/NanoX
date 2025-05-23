@@ -1,11 +1,11 @@
 #include "../include/prototypes.h"
 
 #ifndef SEARCH_HISTORY
-  #define SEARCH_HISTORY "search_history"
+# define SEARCH_HISTORY "search_history"
 #endif
 
 #ifndef POSITION_HISTORY
-  #define POSITION_HISTORY "filepos_history"
+# define POSITION_HISTORY "filepos_history"
 #endif
 
 /* Whether any of the history lists has changed. */

@@ -158,7 +158,7 @@ static void setup_botbar(void) {
   // gui->botbar->relative_size = 0;
   gui->botbar = element_create(0, (gui_height - gui_font_height(uifont)), gui_width, gui_font_height(uifont), TRUE);
   element_set_parent(gui->botbar, gui->root);
-  color_set_black(gui->botbar->color);
+  gui->botbar->color = PACKED_UINT(0, 0, 0, 255);
   gui->botbar->has_reverse_relative_y_pos = TRUE;
   gui->botbar->has_relative_width         = TRUE;
   gui->botbar->relative_y                 = gui->botbar->height;
@@ -174,7 +174,8 @@ static void setup_statusbar(void) {
   // );
   // gui->statusbar->flag.set<GUIELEMENT_HIDDEN>();
   gui->statusbar = element_create(0, gui_height, gui_width, gui_font_height(uifont), FALSE);
-  color_copy(gui->statusbar->color, &color_vs_code_red);
+  gui->statusbar->color = PACKED_UINT_VS_CODE_RED;
+  // color_copy(gui->statusbar->color, &color_vs_code_red);
   element_set_parent(gui->statusbar, gui->root);
   gui->statusbar->hidden = TRUE;
 }

@@ -419,8 +419,85 @@ bool outside_of_confinement(const char *const restrict somepath, bool tabbing) {
   if (!fullpath) {
     return tabbing;
   }
-  is_inside = (strstr(fullpath, operating_dir) == fullpath);
+  is_inside    = (strstr(fullpath, operating_dir) == fullpath);
   begins_to_be = (tabbing && (strstr(operating_dir, fullpath) == operating_dir));
   free(fullpath);
   return (!is_inside && !begins_to_be);
+}
+
+/* Transform the specified backup directory to an absolute path, and verify that it is usable. */
+void init_backup_dir(void) {
+  char *target = get_full_path(backup_dir);
+  /* If we can't get an absolute path (which means it doesn't exist or isn't accessible), or it's not a directory, fail. */
+  if (!target || target[strlen(target) - 1] != '/') {
+    die(_("Invalid backup directory: %s\n"), backup_dir);
+  }
+  free(backup_dir);
+  backup_dir = xrealloc(target, (strlen(target) + 1));
+}
+
+/* Read all data from inn, and write it to out.  File inn must be open for
+ * reading, and out for writing.  Return 0 on success, a negative number on
+ * read error, and a positive number on write error.  File inn is always
+ * closed by this function, out is closed  only if close_out is TRUE. */
+int copy_file(FILE *inn, FILE *out, bool close_out) {
+  int   retval = 0;
+  char  buf[BUFSIZ];
+  Ulong charsread;
+  int (*flush_out_fnc)(FILE *) = ((close_out) ? fclose : fflush);
+  do {
+    charsread = fread(buf, 1, BUFSIZ, inn);
+    if (charsread == 0 && ferror(inn)) {
+      retval = -1;
+      break;
+    }
+    if (fwrite(buf, 1, charsread, out) < charsread) {
+      retval = 2;
+      break;
+    }
+  } while (charsread > 0);
+  if (fclose(inn) == EOF) {
+    retval = -3;
+  }
+  if (flush_out_fnc(out) == EOF) {
+    retval = 4;
+  }
+  return retval;
+}
+
+/* Create, safely, a temporary file in the standard temp directory.
+ * On success, return the malloc()ed filename, plus the corresponding
+ * file stream opened in read-write mode.  On error, return 'NULL'. */
+char *safe_tempfile(FILE **stream) {
+  const char *env_dir = getenv("TMPDIR");
+  char *tempdir = NULL, *tempfile_name = NULL;
+  char *extension;
+  int descriptor;
+  /* Get the absolute path for the first directory among $TMPDIR and P_tmpdir that is writable, otherwise use /tmp/. */
+  if (env_dir) {
+    tempdir = check_writable_directory(env_dir);
+  }
+  if (!tempdir) {
+    tempdir = check_writable_directory(P_tmpdir);
+  }
+  if (!tempdir) {
+    tempdir = COPY_OF("/tmp/");
+  }
+  extension = strrchr(openfile->filename, '.');
+  if (!extension || strchr(extension, '/')) {
+    extension = openfile->filename + strlen(openfile->filename);
+  }
+  tempfile_name = xrealloc(tempdir, (strlen(tempdir) + 12 + strlen(extension)));
+  strcat(tempfile_name, "nano.XXXXXX");
+  strcat(tempfile_name, extension);
+  descriptor = mkstemps(tempfile_name, strlen(extension));
+  *stream = ((descriptor > 0) ? fdopen(descriptor, "r+b") : NULL);
+  if (!(*stream)) {
+    if (descriptor > 0) {
+      close(descriptor);
+    }
+    free(tempfile_name);
+    return NULL;
+  }
+  return tempfile_name;
 }

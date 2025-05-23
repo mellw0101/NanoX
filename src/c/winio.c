@@ -344,8 +344,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   Ulong beyond = (column + span);
   text += start_x;
   if (span > HIGHEST_POSITIVE) {
-    // logE("Span has underflowed.");
-    // statusline(ALERT, "Span has underflowed -- please report a bug");
+    statusline_all(ALERT, "Span has underflowed -- please report a bug");
     converted[0] = '\0';
     return converted;
   }
@@ -393,7 +392,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
     /* Show a tab as a visible character plus spaces, or as just spaces. */
     if (*text == '\t') {
       if (ISSET(WHITESPACE_DISPLAY) && (index > 0 || !isdata || !ISSET(SOFTWRAP) || column % tabsize == 0 || column == start_col)) {
-        for (int i = 0; i < whitelen[0];) {
+        for (int i=0; i<whitelen[0];) {
           converted[index++] = whitespace[i++];
         }
       }
@@ -402,7 +401,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
       }
       ++column;
       /* Fill the tab up with the required number of spaces. */
-      while (column % tabsize != 0 && column < beyond) {
+      while ((column % tabsize) != 0 && column < beyond) {
         converted[index++] = ' ';
         ++column;
       }
@@ -418,7 +417,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
       continue;
     }
     int charlength, charwidth;
-    wchar_t wc;
+    wchar wc;
     /* Convert a multibyte character to a single code. */
     charlength = mbtowide(&wc, text);
     /* Represent an invalid character with the Replacement Character. */
