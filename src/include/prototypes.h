@@ -117,7 +117,7 @@ extern bool ran_a_tool;
 // extern bool also_the_last;
 extern bool keep_cutbuffer;
 // extern bool have_palette;
-extern bool rescind_colors;
+// extern bool rescind_colors;
 // extern bool perturbed;
 // extern bool recook;
 // extern bool refresh_needed;
@@ -143,7 +143,7 @@ extern regex_t quotereg;
 // extern regex_t    search_regexp;
 extern regmatch_t regmatches[10];
 
-extern int   hilite_attribute;
+// extern int   hilite_attribute;
 // extern int   interface_color_pair[NUMBER_OF_ELEMENTS];
 // extern char *homedir;
 extern char *statedir;
@@ -157,7 +157,7 @@ extern Ulong light_to_col;
 extern bool last_key_was_bracket;
 extern char last_bracket_char;
 
-extern colortype *color_combo[NUMBER_OF_ELEMENTS];
+// extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 extern keystruct *planted_shortcut;
 
 extern task_queue_t          *task_queue;
@@ -262,11 +262,11 @@ char *browse_in(const char *inpath);
 // const char *_NODISCARD nstrchr_ccpp(const char *__s __no_null(), const char __c) noexcept;
 
 /* Most functions in 'color.cpp'. */
-void  set_interface_colorpairs(void);
-void  set_syntax_colorpairs(syntaxtype *sntx);
+// void  set_interface_colorpairs(void);
+// void  set_syntax_colorpairs(syntaxtype *sntx);
 // void  prepare_palette(void);
 void  find_and_prime_applicable_syntax(void);
-void  check_the_multis(linestruct *line) _NOTHROW;
+// void  check_the_multis(linestruct *line) _NOTHROW;
 void  precalc_multicolorinfo(void) _NOTHROW;
 bool  str_equal_to_rgx(const char *str, const regex_t *rgx);
 short rgb_to_ncurses(Uchar value);
@@ -447,22 +447,22 @@ int   ask_user(bool withall, const char *question);
 /* ---------------------------------------------------------- rcfile.cpp ---------------------------------------------------------- */
 
 
-short      color_to_short(const char *colorname, bool &vivid, bool &thick);
+// short      color_to_short(const char *colorname, bool &vivid, bool &thick);
 // char      *parse_next_word(char *ptr) _NOTHROW;
-void       parse_rule(char *ptr, int rex_flags);
-bool       compile(const char *expression, int rex_flags, regex_t **packed);
+// void       parse_rule(char *ptr, int rex_flags);
+// bool       compile(const char *expression, int rex_flags, regex_t **packed);
 void       begin_new_syntax(char *ptr);
-bool       parse_combination(char *combotext, short *fg, short *bg, int *attributes);
-void       set_interface_color(const u_char element, char *combotext);
+// bool       parse_combination(char *combotext, short *fg, short *bg, int *attributes);
+// void       set_interface_color(const u_char element, char *combotext);
 // void       display_rcfile_errors(void) _NOTHROW;
 // void       jot_error(const char *msg, ...) _NOTHROW;
 keystruct *strtosc(const char *input);
 // char      *parse_next_word(char *ptr) _NOTHROW;
 bool       is_good_file(char *file) _NOTHROW;
 void       parse_one_include(char *file, syntaxtype *syntax);
-short      closest_index_color(short red, short green, short blue);
-void       grab_and_store(const char *kind, char *ptr, regexlisttype **storage);
-bool       parse_syntax_commands(const char *keyword, char *ptr);
+// short      closest_index_color(short red, short green, short blue);
+// void       grab_and_store(const char *kind, char *ptr, regexlisttype **storage);
+// bool       parse_syntax_commands(const char *keyword, char *ptr);
 void       parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
 void       do_rcfiles(void);
 

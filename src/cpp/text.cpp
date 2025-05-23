@@ -65,30 +65,30 @@ static void restore_undo_posx_and_mark(undostruct *u) _NOTHROW {
 }
 
 /* Add an indent to the given line. */
-static void indent_a_line(linestruct *line, char *indentation) _NOTHROW {
-  Ulong length, indent_len;
-  length     = strlen(line->data);
-  indent_len = strlen(indentation);
-  /* If the requested indentation is empty, don't change the line. */
-  if (!indent_len) {
-    return;
-  }
-  /* Add the fabricated indentation to the beginning of the line. */
-  line->data = (char *)xrealloc(line->data, (length + indent_len + 1));
-  /* Move the data already on the line forwards. */
-  memmove((line->data + indent_len), line->data, (length + 1));
-  /* Insert the indentation at the start of the line. */
-  memcpy(line->data, indentation, indent_len);
-  openfile->totsize += indent_len;
-  /* Compensate for the change in the current line. */
-  if (line == openfile->mark && openfile->mark_x > 0) {
-    openfile->mark_x += indent_len;
-  }
-  if (line == openfile->current && openfile->current_x > 0) {
-    openfile->current_x += indent_len;
-    openfile->placewewant = xplustabs();
-  }
-}
+// static void indent_a_line(linestruct *line, char *indentation) _NOTHROW {
+//   Ulong length, indent_len;
+//   length     = strlen(line->data);
+//   indent_len = strlen(indentation);
+//   /* If the requested indentation is empty, don't change the line. */
+//   if (!indent_len) {
+//     return;
+//   }
+//   /* Add the fabricated indentation to the beginning of the line. */
+//   line->data = (char *)xrealloc(line->data, (length + indent_len + 1));
+//   /* Move the data already on the line forwards. */
+//   memmove((line->data + indent_len), line->data, (length + 1));
+//   /* Insert the indentation at the start of the line. */
+//   memcpy(line->data, indentation, indent_len);
+//   openfile->totsize += indent_len;
+//   /* Compensate for the change in the current line. */
+//   if (line == openfile->mark && openfile->mark_x > 0) {
+//     openfile->mark_x += indent_len;
+//   }
+//   if (line == openfile->current && openfile->current_x > 0) {
+//     openfile->current_x += indent_len;
+//     openfile->placewewant = xplustabs();
+//   }
+// }
 
 /* Indent the current line (or the marked lines) by tabsize columns.  This inserts either a
  * tab character or a tab's worth of spaces, depending on whether --tabstospaces is in effect. */
@@ -108,7 +108,7 @@ void do_indent(void) _NOTHROW {
   /* Allocate the tabsize plus the 'NULL-Terminator', as that is the maximum we will use. */
   indentation = (char *)xmalloc(tabsize + 1);
   if (openfile->syntax && openfile->syntax->tabstring) {
-    indentation = mallocstrcpy(indentation, openfile->syntax->tabstring);
+    indentation = realloc_strcpy(indentation, openfile->syntax->tabstring);
   }
   else {
     /* When `TABS_TO_SPACES` is enabled, we only insert a tabsize worth of spaces. */

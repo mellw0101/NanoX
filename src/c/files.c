@@ -278,7 +278,7 @@ char *real_dir_from_tilde(const char *const restrict path) {
     } while (userdata && strcmp(userdata->pw_name, (tilded + 1)) != 0);
     endpwent();
     if (userdata) {
-      tilded = mallocstrcpy(tilded, userdata->pw_dir);
+      tilded = realloc_strcpy(tilded, userdata->pw_dir);
     }
   }
   ret = xmalloc(strlen(tilded) + strlen(path + i) + 1);

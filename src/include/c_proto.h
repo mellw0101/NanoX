@@ -32,6 +32,9 @@ extern bool recook;
 extern bool meta_key;
 extern bool also_the_last;
 extern bool have_palette;
+extern bool rescind_colors;
+extern bool nanox_rc_opensyntax;
+extern bool nanox_rc_seen_color_command;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -49,6 +52,7 @@ extern int editwincols;
 extern int margin;
 extern int sidebar;
 extern int currmenu;
+extern int hilite_attribute;
 
 extern int whitelen[2];
 extern int interface_color_pair[NUMBER_OF_ELEMENTS];
@@ -79,6 +83,10 @@ extern Font *textfont;
 extern Editor *openeditor;
 extern Editor *starteditor;
 
+extern colortype *nanox_rc_lastcolor;
+
+extern colortype *color_combo[NUMBER_OF_ELEMENTS];
+
 extern keystruct  *sclist;
 
 extern funcstruct *allfuncs;
@@ -92,6 +100,8 @@ extern GLFWwindow *gui_window;
 extern message_type lastmessage;
 
 extern configstruct *config;
+
+extern syntaxtype *nanox_rc_live_syntax;
 
 /* ----------------------------- winio.c ----------------------------- */
 
@@ -151,7 +161,8 @@ char **split_string_nano(const char *const string, const char delim, bool allow_
 char       *concatenate(const char *path, const char *name);
 void        free_nulltermchararray(char **const argv);
 void        append_chararray(char ***const array, Ulong *const len, char **const append, Ulong append_len);
-char       *mallocstrcpy(char *dest, const char *src) __THROW _RETURNS_NONNULL _NONNULL(1, 2);
+char       *realloc_strncpy(char *dest, const char *const restrict src, Ulong length) __THROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
+char       *realloc_strcpy(char *dest, const char *const restrict src) __THROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 void        get_homedir(void);
 linestruct *line_from_number_for(openfilestruct *const file, long number);
 linestruct *line_from_number(long number);
@@ -177,6 +188,7 @@ void        get_range(linestruct **const top, linestruct **const bot);
 bool        parse_line_column(const char *string, long *const line, long *const column);
 char       *tab_space_string_for(openfilestruct *const file, Ulong *length);
 char       *tab_space_string(Ulong *length);
+char       *construct_full_tab_string(Ulong *length);
 
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
@@ -250,11 +262,13 @@ int  nanox_socket_client(void);
 /* ----------------------------------------------- text.c ----------------------------------------------- */
 
 
+Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
 void  do_mark_for(openfilestruct *const file);
 void  do_mark(void);
-Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
 void  discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
 void  discard_until(const undostruct *thisitem);
+void  indent_a_line_for(openfilestruct *const file, linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2, 3);
+void  indent_a_line(linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -624,7 +638,17 @@ void to_bottom_row(void);
 
 void  display_rcfile_errors(void);
 void  jot_error(const char *const restrict format, ...);
+void  set_interface_color(int element, char *combotext);
 char *parse_next_word(char *ptr);
+char *parse_argument(char *ptr);
+bool  compile(const char *const restrict expression, int rex_flags, regex_t **const packed);
+short closest_index_color(short red, short green, short blue);
+short color_to_short(const char *colorname, bool *vivid, bool *thick);
+Uint  syntax_opt_type_from_str(const char *const restrict key);
+bool  parse_combination(char *combotext, short *fg, short *bg, int *attributes);
+void  grab_and_store(const char *const restrict kind, char *ptr, regexlisttype **const storage);
+bool  parse_syntax_commands(const char *keyword, char *ptr);
+void  parse_rule(char *ptr, int rex_flags);
 
 
 /* ---------------------------------------------------------- color.c ---------------------------------------------------------- */
@@ -632,6 +656,10 @@ char *parse_next_word(char *ptr);
 
 void prepare_palette_for(openfilestruct *const file);
 void prepare_palette(void);
+void check_the_multis_for(openfilestruct *const file, linestruct *const line);
+void check_the_multis(linestruct *const line);
+void set_interface_colorpairs(void);
+void set_syntax_colorpairs(syntaxtype *sntx);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

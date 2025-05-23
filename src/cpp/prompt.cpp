@@ -709,12 +709,12 @@ static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct *
         }
         /* When moving up from the bottom, remember the current answer. */
         if (!(*history_list)->next) {
-          stored_string = mallocstrcpy(stored_string, answer);
+          stored_string = realloc_strcpy(stored_string, answer);
         }
         /* If there is an older item, move to it and copy its string. */
         if ((*history_list)->prev) {
           *history_list = (*history_list)->prev;
-          answer        = mallocstrcpy(answer, (*history_list)->data);
+          answer        = realloc_strcpy(answer, (*history_list)->data);
           typing_x      = strlen(answer);
         }
       }
@@ -722,12 +722,12 @@ static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct *
         /* If there is a newer item, move to it and copy its string. */
         if ((*history_list)->next) {
           *history_list = (*history_list)->next;
-          answer        = mallocstrcpy(answer, (*history_list)->data);
+          answer        = realloc_strcpy(answer, (*history_list)->data);
           typing_x      = strlen(answer);
         }
         /* When at the bottom of the history list, restore the old answer. */
         if (!(*history_list)->next && stored_string && !*answer) {
-          answer   = mallocstrcpy(answer, stored_string);
+          answer   = realloc_strcpy(answer, stored_string);
           typing_x = strlen(answer);
         }
       }
@@ -788,7 +788,7 @@ int do_prompt(int menu, const char *provided, linestruct **history_list, functio
   char *saved_prompt = prompt;
   bottombars(menu);
   if (answer != provided) {
-    answer = mallocstrcpy(answer, provided);
+    answer = realloc_strcpy(answer, provided);
   }
 redo_theprompt:
   prompt = (char *)nmalloc((COLS * MAXCHARLEN) + 1);

@@ -82,7 +82,7 @@ static void search_init(bool replacing, bool retain_answer) {
     if (response == 0 || response == -2) {
       /* If an actual answer was typed, remember it. */
       if (*answer) {
-        last_search = mallocstrcpy(last_search, answer);
+        last_search = realloc_strcpy(last_search, answer);
         update_history(&search_history, answer, PRUNE_DUPLICATE);
       }
       if (ISSET(USE_REGEXP) && !regexp_init(last_search)) {
@@ -290,7 +290,7 @@ void do_search_backward(void) {
 static void do_research(void) {
   /* If nothing was searched for yet during this run of nano, but there is a search history, take the most recent item. */
   if (!*last_search && searchbot->prev) {
-    last_search = mallocstrcpy(last_search, searchbot->prev->data);
+    last_search = realloc_strcpy(last_search, searchbot->prev->data);
   }
   if (!*last_search) {
     statusline(AHEM, _("No current search pattern"));

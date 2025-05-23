@@ -351,7 +351,7 @@ bool open_buffer(const char *filename, bool new_one) {
   }
   /* For a new buffer, store filename and put cursor at start of buffer. */
   if (descriptor >= 0 && new_one) {
-    openfile->filename    = mallocstrcpy(openfile->filename, realname);
+    openfile->filename    = realloc_strcpy(openfile->filename, realname);
     openfile->current     = openfile->filetop;
     openfile->current_x   = 0;
     openfile->placewewant = 0;
@@ -758,7 +758,7 @@ int open_file(const char *filename, bool new_one, FILE **f) {
   struct stat fileinfo;
   /* If the absolute path is unusable (due to some component's permissions), try the given path instead (as it is probably relative). */
   if (!full_filename || stat(full_filename, &fileinfo) == -1) {
-    full_filename = mallocstrcpy(full_filename, filename);
+    full_filename = realloc_strcpy(full_filename, filename);
   }
   if (stat(full_filename, &fileinfo) == -1) {
     free(full_filename);
@@ -1048,7 +1048,7 @@ static void insert_a_file_or(bool execute) {
         }
       }
     }
-    present_path = mallocstrcpy(present_path, "./");
+    present_path = realloc_strcpy(present_path, "./");
     response = do_prompt((execute ? MEXECUTE : MINSERTFILE), given, (execute ? &execute_history : NULL), edit_refresh, msg, (operating_dir ? operating_dir : "./"));
     /* If we're in multibuffer mode and the filename or command is blank, open a new buffer instead of canceling. */
     if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER))) {
@@ -1059,7 +1059,7 @@ static void insert_a_file_or(bool execute) {
       long  was_current_lineno = openfile->current->lineno;
       Ulong was_current_x      = openfile->current_x;
       functionptrtype function = func_from_key(response);
-      given = mallocstrcpy(given, answer);
+      given = realloc_strcpy(given, answer);
       if (ran_a_tool) {
         break;
       }
@@ -1083,7 +1083,7 @@ static void insert_a_file_or(bool execute) {
       }
       if (function == flip_pipe) {
         add_or_remove_pipe_symbol_from_answer();
-        given = mallocstrcpy(given, answer);
+        given = realloc_strcpy(given, answer);
         continue;
       }
       if (function == to_files) {
@@ -1710,7 +1710,7 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
       if (ISSET(LOCKING)) {
         openfile->lock_filename = do_lockfile(realname, FALSE);
       }
-      openfile->filename = mallocstrcpy(openfile->filename, realname);
+      openfile->filename = realloc_strcpy(openfile->filename, realname);
       const char *oldname, *newname;
       oldname = openfile->syntax ? openfile->syntax->name : "";
       find_and_prime_applicable_syntax();
@@ -1818,10 +1818,10 @@ int write_it_out(bool exiting, bool withprompt) {
     else {
       msg = _("File Name to Write");
     }
-    present_path = mallocstrcpy(present_path, "./");
+    present_path = realloc_strcpy(present_path, "./");
     /* When we shouldn't prompt, use the existing filename.  Otherwise, ask for (confirmation of) the filename. */
     if ((!withprompt || (ISSET(SAVE_ON_EXIT) && exiting)) && openfile->filename[0]) {
-      answer = mallocstrcpy(answer, openfile->filename);
+      answer = realloc_strcpy(answer, openfile->filename);
     }
     else {
       response = do_prompt(MWRITEFILE, given, NULL, edit_refresh, "%s%s%s", msg, formatstr, backupstr);
@@ -1837,7 +1837,7 @@ int write_it_out(bool exiting, bool withprompt) {
       free(given);
       return 2;
     }
-    given = mallocstrcpy(given, answer);
+    given = realloc_strcpy(given, answer);
     if (function == to_files && !ISSET(RESTRICTED)) {
       char *chosen = browse_in(answer);
       if (!chosen) {

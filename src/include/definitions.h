@@ -169,15 +169,15 @@ using std::vector;
 /* Flags for indicating how a multiline regex pair apply to a line. */
 
 /* The start/end regexes don't cover this line at all. */
-#define NOTHING    (1 << 1)
+// #define NOTHING    (1 << 1)
 /* The start regex matches on this line, the end regex on a later one. */
-#define STARTSHERE (1 << 2)
+// #define STARTSHERE (1 << 2)
 /* The start regex matches on an earlier line, the end regex on a later one. */
-#define WHOLELINE  (1 << 3)
+// #define WHOLELINE  (1 << 3)
 /* The start regex matches on an earlier line, the end regex on this one. */
-#define ENDSHERE   (1 << 4)
+// #define ENDSHERE   (1 << 4)
 /* Both the start and end regexes match within this line. */
-#define JUSTONTHIS (1 << 5)
+// #define JUSTONTHIS (1 << 5)
 
 // /* Basic control codes. */
 // #define ESC_CODE 0x1B
@@ -385,7 +385,7 @@ using std::vector;
 #define MIN(x, min) (((x) < (min)) ? (min) : (x))
 #define MAX(x, max) (((x) > (max)) ? (max) : (x))
 
-#define VEC4_8BIT(r, g, b, a) vec4(MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1))
+// #define VEC4_8BIT(r, g, b, a) vec4(MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1))
 
 #define GUISB_BASE_COLOR          vec4(0.05f, 0.05f, 0.05f, 0.3f)
 #define GUISB_THUMB_COLOR         vec4(1.0f, 1.0f, 1.0f, 0.3f)

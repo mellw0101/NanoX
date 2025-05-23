@@ -49,6 +49,13 @@ bool meta_key;
 bool also_the_last = FALSE;
 /* Whether the colors for the current syntax have been initialized. */
 bool have_palette = FALSE;
+/* Becomes TRUE when NO_COLOR is set in the environment. */
+bool rescind_colors = FALSE;
+/* Whether we're allowed to add to the last syntax.  When a file ends,
+ * or when a new syntax command is seen, this bool becomes 'FALSE'. */
+bool nanox_rc_opensyntax = FALSE;
+/* Whether a syntax definition contains any color commands. */
+bool nanox_rc_seen_color_command = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 
@@ -86,6 +93,8 @@ int margin = 0;
 int sidebar = 0;
 /* The currently active menu, initialized to a dummy value. */
 int currmenu = MMOST;
+/* The curses attribute we use to highlight something. */
+int hilite_attribute = A_REVERSE;
 
 /* ----------------------------- int[] ----------------------------- */
 
@@ -154,6 +163,16 @@ Editor *openeditor = NULL;
 /* The first open editor. */
 Editor *starteditor = NULL;
 
+/* ----------------------------- colortype ----------------------------- */
+
+/* The end of the color list for the current syntax. */
+colortype *nanox_rc_lastcolor = NULL;
+
+/* ----------------------------- colortype[] ----------------------------- */
+
+/* The color combinations for interface elements given in the rcfile. */
+colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
+
 /* ----------------------------- keystruct ----------------------------- */
 
 /* The start of the shortcuts list. */
@@ -186,6 +205,11 @@ message_type lastmessage = VACUUM;
 
 /* Global config to store data retrieved from config file. */
 configstruct *config = NULL;
+
+/* ----------------------------- syntaxtype ----------------------------- */
+
+/* The syntax that is currently being parsed. */
+syntaxtype *nanox_rc_live_syntax = NULL;
 
 
 /* ---------------------------------------------------------- Function's ---------------------------------------------------------- */

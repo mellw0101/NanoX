@@ -80,13 +80,13 @@ static const rcoption rcopts[] = {
 };
 /* Whether we're allowed to add to the last syntax.  When a file ends,
  * or when a new syntax command is seen, this bool becomes 'FALSE'. */
-static bool opensyntax = FALSE;
+// static bool nanox_rc_opensyntax = FALSE;
 /* The syntax that is currently being parsed. */
-static syntaxtype *live_syntax;
+// static syntaxtype *nanox_rc_live_syntax;
 /* Whether a syntax definition contains any color commands. */
-static bool seen_color_command = FALSE;
+// static bool nanox_rc_seen_color_command = FALSE;
 /* The end of the color list for the current syntax. */
-static colortype *lastcolor = NULL;
+// static colortype *nanox_rc_lastcolor = NULL;
 /* Beginning and end of a list of errors in rcfiles, if any. */
 // static linestruct *errors_head = NULL;
 // static linestruct *errors_tail = NULL;
@@ -292,76 +292,76 @@ keystruct *strtosc(const char *input) {
 /* Parse an argument, with optional quotes, after a keyword that takes one.  If the
  * next word starts with a ", we say that it ends with the last " of the line.
  * Otherwise, we interpret it as usual, so that the arguments can contain "'s too. */
-static char *parse_argument(char *ptr) _NOTHROW {
-  const char *ptr_save   = ptr;
-  char       *last_quote = NULL;
-  if (*ptr != '"') {
-    return parse_next_word(ptr);
-  }
-  while (*ptr) {
-    if (*++ptr == '"') {
-      last_quote = ptr;
-    }
-  }
-  if (!last_quote) {
-    jot_error(N_("Argument '%s' has an unterminated \""), ptr_save);
-    return NULL;
-  }
-  *last_quote = '\0';
-  ptr         = (last_quote + 1);
-  while (isblank((Uchar)*ptr)) {
-    ptr++;
-  }
-  return ptr;
-}
+// static char *parse_argument(char *ptr) _NOTHROW {
+//   const char *ptr_save   = ptr;
+//   char       *last_quote = NULL;
+//   if (*ptr != '"') {
+//     return parse_next_word(ptr);
+//   }
+//   while (*ptr) {
+//     if (*++ptr == '"') {
+//       last_quote = ptr;
+//     }
+//   }
+//   if (!last_quote) {
+//     jot_error(N_("Argument '%s' has an unterminated \""), ptr_save);
+//     return NULL;
+//   }
+//   *last_quote = '\0';
+//   ptr         = (last_quote + 1);
+//   while (isblank((Uchar)*ptr)) {
+//     ptr++;
+//   }
+//   return ptr;
+// }
 
 /* Advance over one regular expression in the line starting at ptr, null-terminate it, and return a pointer to the succeeding text. */
-static char *parse_next_regex(char *ptr) {
-  char *starting_point = ptr;
-  if (*(ptr - 1) != '"') {
-    jot_error(N_("Regex strings must begin and end with a \" character"));
-    return NULL;
-  }
-  /* Continue until the end of the line, or until a double quote followed by
-   * end-of-line or a blank. */
-  while (*ptr && (*ptr != '"' || (ptr[1] && !isblank((Uchar)ptr[1])))) {
-    ptr++;
-  }
-  if (!*ptr) {
-    jot_error(N_("Regex strings must begin and end with a \" character"));
-    return NULL;
-  }
-  if (ptr == starting_point) {
-    jot_error(N_("Empty regex string"));
-    return NULL;
-  }
-  /* Null-terminate the regex and skip until the next non-blank. */
-  *ptr++ = '\0';
-  while (isblank((Uchar)*ptr)) {
-    ptr++;
-  }
-  return ptr;
-}
+// static char *parse_next_regex(char *ptr) {
+//   char *starting_point = ptr;
+//   if (*(ptr - 1) != '"') {
+//     jot_error(N_("Regex strings must begin and end with a \" character"));
+//     return NULL;
+//   }
+//   /* Continue until the end of the line, or until a double quote followed by
+//    * end-of-line or a blank. */
+//   while (*ptr && (*ptr != '"' || (ptr[1] && !isblank((Uchar)ptr[1])))) {
+//     ptr++;
+//   }
+//   if (!*ptr) {
+//     jot_error(N_("Regex strings must begin and end with a \" character"));
+//     return NULL;
+//   }
+//   if (ptr == starting_point) {
+//     jot_error(N_("Empty regex string"));
+//     return NULL;
+//   }
+//   /* Null-terminate the regex and skip until the next non-blank. */
+//   *ptr++ = '\0';
+//   while (isblank((Uchar)*ptr)) {
+//     ptr++;
+//   }
+//   return ptr;
+// }
 
 /* Compile the given regular expression and store the result in packed
  * (when this pointer is not NULL).  Return TRUE when the expression is valid. */
-bool compile(const char *expression, int rex_flags, regex_t **packed) {
-  regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
-  int      outcome  = regcomp(compiled, expression, rex_flags);
-  if (outcome != 0) {
-    Ulong length  = regerror(outcome, compiled, NULL, 0);
-    char *message = (char *)nmalloc(length);
-    regerror(outcome, compiled, message, length);
-    jot_error(N_("Bad regex \"%s\": %s"), expression, message);
-    free(message);
-    regfree(compiled);
-    free(compiled);
-  }
-  else {
-    *packed = compiled;
-  }
-  return (outcome == 0);
-}
+// bool compile(const char *expression, int rex_flags, regex_t **packed) {
+//   regex_t *compiled = (regex_t *)nmalloc(sizeof(regex_t));
+//   int      outcome  = regcomp(compiled, expression, rex_flags);
+//   if (outcome != 0) {
+//     Ulong length  = regerror(outcome, compiled, NULL, 0);
+//     char *message = (char *)nmalloc(length);
+//     regerror(outcome, compiled, message, length);
+//     jot_error(N_("Bad regex \"%s\": %s"), expression, message);
+//     free(message);
+//     regfree(compiled);
+//     free(compiled);
+//   }
+//   else {
+//     *packed = compiled;
+//   }
+//   return (outcome == 0);
+// }
 
 /* Parse the next syntax name and its possible extension regexes from the
  * line at ptr, and add it to the global linked list of color syntaxes. */
@@ -389,45 +389,45 @@ void begin_new_syntax(char *ptr) {
     return;
   }
   /* Initialize a new syntax struct. */
-  live_syntax                = (syntaxtype *)nmalloc(sizeof(syntaxtype));
-  live_syntax->name          = copy_of(nameptr);
-  live_syntax->filename      = copy_of(nanox_rc_path);
-  live_syntax->lineno        = nanox_rc_lineno;
-  live_syntax->augmentations = NULL;
-  live_syntax->extensions    = NULL;
-  live_syntax->headers       = NULL;
-  live_syntax->magics        = NULL;
-  live_syntax->linter        = NULL;
-  live_syntax->formatter     = NULL;
-  live_syntax->tabstring     = NULL;
-  live_syntax->comment       = copy_of(GENERAL_COMMENT_CHARACTER);
-  live_syntax->color         = NULL;
-  live_syntax->multiscore    = 0;
+  nanox_rc_live_syntax                = (syntaxtype *)nmalloc(sizeof(syntaxtype));
+  nanox_rc_live_syntax->name          = copy_of(nameptr);
+  nanox_rc_live_syntax->filename      = copy_of(nanox_rc_path);
+  nanox_rc_live_syntax->lineno        = nanox_rc_lineno;
+  nanox_rc_live_syntax->augmentations = NULL;
+  nanox_rc_live_syntax->extensions    = NULL;
+  nanox_rc_live_syntax->headers       = NULL;
+  nanox_rc_live_syntax->magics        = NULL;
+  nanox_rc_live_syntax->linter        = NULL;
+  nanox_rc_live_syntax->formatter     = NULL;
+  nanox_rc_live_syntax->tabstring     = NULL;
+  nanox_rc_live_syntax->comment       = copy_of(GENERAL_COMMENT_CHARACTER);
+  nanox_rc_live_syntax->color         = NULL;
+  nanox_rc_live_syntax->multiscore    = 0;
   /* Hook the new syntax in at the top of the list. */
-  live_syntax->next  = syntaxes;
-  syntaxes           = live_syntax;
-  opensyntax         = TRUE;
-  seen_color_command = FALSE;
+  nanox_rc_live_syntax->next  = syntaxes;
+  syntaxes           = nanox_rc_live_syntax;
+  nanox_rc_opensyntax         = TRUE;
+  nanox_rc_seen_color_command = FALSE;
   /* The default syntax should have no associated extensions. */
-  if (strcmp(live_syntax->name, "default") == 0 && *ptr) {
+  if (strcmp(nanox_rc_live_syntax->name, "default") == 0 && *ptr) {
     jot_error(N_("The \"default\" syntax does not accept extensions"));
     return;
   }
   /* If there seem to be extension regexes, pick them up. */
   if (*ptr) {
-    grab_and_store("extension", ptr, &live_syntax->extensions);
+    grab_and_store("extension", ptr, &nanox_rc_live_syntax->extensions);
   }
 }
 
 /* Verify that a syntax definition contains at least one color command. */
 static void check_for_nonempty_syntax(void) {
-  if (opensyntax && !seen_color_command) {
+  if (nanox_rc_opensyntax && !nanox_rc_seen_color_command) {
     Ulong current_lineno = nanox_rc_lineno;
-    nanox_rc_lineno               = live_syntax->lineno;
-    jot_error(N_("Syntax \"%s\" has no color commands"), live_syntax->name);
+    nanox_rc_lineno               = nanox_rc_live_syntax->lineno;
+    jot_error(N_("Syntax \"%s\" has no color commands"), nanox_rc_live_syntax->name);
     nanox_rc_lineno = current_lineno;
   }
-  opensyntax = FALSE;
+  nanox_rc_opensyntax = FALSE;
 }
 
 /* Return TRUE when the given function is present in almost all menus. */
@@ -618,8 +618,8 @@ void parse_one_include(char *file, syntaxtype *syntax) {
     nanox_rc_lineno = was_lineno;
     return;
   }
-  live_syntax = syntax;
-  lastcolor   = NULL;
+  nanox_rc_live_syntax = syntax;
+  nanox_rc_lastcolor   = NULL;
   /* Fully parse the given syntax (as it is about to be used). */
   parse_rcfile(rcstream, TRUE, FALSE);
   extra = syntax->augmentations;
@@ -674,349 +674,349 @@ static void parse_includes(char *ptr) {
 
 /* Return the index of the color that is closest to the given RGB levels, assuming that the terminal uses the
  * 6x6x6 color cube of xterm-256color. When red == green == blue, return an index in the xterm gray scale. */
-short closest_index_color(short red, short green, short blue) {
-  /* Translation table, from 16 intended color levels to 6 available levels. */
-  static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
-  /* Translation table, from 14 intended gray levels to 24 available levels. */
-  static const short gray[] = {1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 21, 23};
-  if (COLORS != 256) {
-    return THE_DEFAULT;
-  }
-  else if (red == green && green == blue && 0 < red && red < 0xF) {
-    return (232 + gray[red - 1]);
-  }
-  else {
-    return (36 * level[red] + 6 * level[green] + level[blue] + 16);
-  }
-}
+// short closest_index_color(short red, short green, short blue) {
+//   /* Translation table, from 16 intended color levels to 6 available levels. */
+//   static const short level[] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
+//   /* Translation table, from 14 intended gray levels to 24 available levels. */
+//   static const short gray[] = {1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 21, 23};
+//   if (COLORS != 256) {
+//     return THE_DEFAULT;
+//   }
+//   else if (red == green && green == blue && 0 < red && red < 0xF) {
+//     return (232 + gray[red - 1]);
+//   }
+//   else {
+//     return (36 * level[red] + 6 * level[green] + level[blue] + 16);
+//   }
+// }
 
 #define COLORCOUNT 34
-constexpr_map<string_view, short, COLORCOUNT> huesIndiecesMap = {
-  {{"red", COLOR_RED},
-   {"green", COLOR_GREEN},
-   {"blue", COLOR_BLUE},
-   {"yellow", COLOR_YELLOW},
-   {"cyan", COLOR_CYAN},
-   {"magenta", COLOR_MAGENTA},
-   {"white", COLOR_WHITE},
-   {"black", COLOR_BLACK},
-   {"normal", THE_DEFAULT},
-   {"pink", COLOR_PINK},
-   {"purple", COLOR_PURPLE},
-   {"mauve", COLOR_MAUVE},
-   {"lagoon", COLOR_LAGOON},
-   {"mint", COLOR_MINT},
-   {"lime", 148},
-   {"peach", 215},
-   {"orange", 208},
-   {"latte", 137},
-   {"rosy", 175},
-   {"beet", 127},
-   {"plum", 98},
-   {"sea", 32},
-   {"sky", 111},
-   {"slate", 66},
-   {"teal", COLOR_TEAL},
-   {"sage", 107},
-   {"brown", 100},
-   {"ocher", 142},
-   /* 'sand' Should be used for func`s and num`s. */
-   {"sand", 186},
-   {"tawny", 136},
-   {"brick", 166},
-   {"crimson", 161},
-   {"grey", COLOR_BLACK + 8},
-   {"gray", COLOR_BLACK + 8}}
-};
+// constexpr_map<string_view, short, COLORCOUNT> huesIndiecesMap = {
+//   {{"red", COLOR_RED},
+//    {"green", COLOR_GREEN},
+//    {"blue", COLOR_BLUE},
+//    {"yellow", COLOR_YELLOW},
+//    {"cyan", COLOR_CYAN},
+//    {"magenta", COLOR_MAGENTA},
+//    {"white", COLOR_WHITE},
+//    {"black", COLOR_BLACK},
+//    {"normal", THE_DEFAULT},
+//    {"pink", COLOR_PINK},
+//    {"purple", COLOR_PURPLE},
+//    {"mauve", COLOR_MAUVE},
+//    {"lagoon", COLOR_LAGOON},
+//    {"mint", COLOR_MINT},
+//    {"lime", 148},
+//    {"peach", 215},
+//    {"orange", 208},
+//    {"latte", 137},
+//    {"rosy", 175},
+//    {"beet", 127},
+//    {"plum", 98},
+//    {"sea", 32},
+//    {"sky", 111},
+//    {"slate", 66},
+//    {"teal", COLOR_TEAL},
+//    {"sage", 107},
+//    {"brown", 100},
+//    {"ocher", 142},
+//    /* 'sand' Should be used for func`s and num`s. */
+//    {"sand", 186},
+//    {"tawny", 136},
+//    {"brick", 166},
+//    {"crimson", 161},
+//    {"grey", COLOR_BLACK + 8},
+//    {"gray", COLOR_BLACK + 8}}
+// };
 
 /* Return the short value corresponding to the given color name, and set
  * vivid to TRUE for a lighter color, and thick for a heavier typeface. */
-short color_to_short(const char *colorname, bool &vivid, bool &thick) {
-  if (strncmp(colorname, "bright", 6) == 0 && colorname[6]) {
-    thick = TRUE;
-    vivid = TRUE;
-    colorname += 6;
-  }
-  else if (strncmp(colorname, "light", 5) == 0 && colorname[5]) {
-    vivid = TRUE;
-    thick = FALSE;
-    colorname += 5;
-  }
-  else {
-    vivid = FALSE;
-    thick = FALSE;
-  }
-  if (colorname[0] == '#' && strlen(colorname) == 4) {
-    Ushort r, g, b;
-    if (vivid) {
-      jot_error(N_("Color '%s' takes no prefix"), colorname);
-      return BAD_COLOR;
-    }
-    if (sscanf(colorname, "#%1hX%1hX%1hX", &r, &g, &b) == 3) {
-      return closest_index_color(r, g, b);
-    }
-  }
-  for (int index = 0; index < COLORCOUNT; ++index) {
-    if (strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0) {
-      if (index > 7 && vivid) {
-        jot_error(N_("Color '%s' takes no prefix"), colorname);
-        return BAD_COLOR;
-      }
-      else if (index > 8 && COLORS < 255) {
-        return THE_DEFAULT;
-      }
-      else {
-        return huesIndiecesMap[index].value;
-      }
-    }
-  }
-  jot_error(N_("Color \"%s\" not understood"), colorname);
-  return BAD_COLOR;
-}
+// short color_to_short(const char *colorname, bool &vivid, bool &thick) {
+//   if (strncmp(colorname, "bright", 6) == 0 && colorname[6]) {
+//     thick = TRUE;
+//     vivid = TRUE;
+//     colorname += 6;
+//   }
+//   else if (strncmp(colorname, "light", 5) == 0 && colorname[5]) {
+//     vivid = TRUE;
+//     thick = FALSE;
+//     colorname += 5;
+//   }
+//   else {
+//     vivid = FALSE;
+//     thick = FALSE;
+//   }
+//   if (colorname[0] == '#' && strlen(colorname) == 4) {
+//     Ushort r, g, b;
+//     if (vivid) {
+//       jot_error(N_("Color '%s' takes no prefix"), colorname);
+//       return BAD_COLOR;
+//     }
+//     if (sscanf(colorname, "#%1hX%1hX%1hX", &r, &g, &b) == 3) {
+//       return closest_index_color(r, g, b);
+//     }
+//   }
+//   for (int index = 0; index < COLORCOUNT; ++index) {
+//     if (strcmp(colorname, &huesIndiecesMap[index].key[0]) == 0) {
+//       if (index > 7 && vivid) {
+//         jot_error(N_("Color '%s' takes no prefix"), colorname);
+//         return BAD_COLOR;
+//       }
+//       else if (index > 8 && COLORS < 255) {
+//         return THE_DEFAULT;
+//       }
+//       else {
+//         return huesIndiecesMap[index].value;
+//       }
+//     }
+//   }
+//   jot_error(N_("Color \"%s\" not understood"), colorname);
+//   return BAD_COLOR;
+// }
 
 /* Parse the color name (or pair of color names) in the given string.
  * Return 'FALSE' when any color name is invalid; otherwise return 'TRUE'. */
-bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
-  bool  vivid;
-  bool  thick;
-  char *comma;
-  *attributes = A_NORMAL;
-  if (strncmp(combotext, "bold", 4) == 0) {
-    *attributes |= A_BOLD;
-    if (combotext[4] != ',') {
-      jot_error(N_("An attribute requires a subsequent comma"));
-      return FALSE;
-    }
-    combotext += 5;
-  }
-  if (strncmp(combotext, "italic", 6) == 0) {
-    *attributes |= A_ITALIC;
-    if (combotext[6] != ',') {
-      jot_error(N_("An attribute requires a subsequent comma"));
-      return FALSE;
-    }
-    combotext += 7;
-  }
-  comma = strchr(combotext, ',');
-  if (comma) {
-    *comma = '\0';
-  }
-  if (!comma || comma > combotext) {
-    *fg = color_to_short(combotext, vivid, thick);
-    if (*fg == BAD_COLOR) {
-      return FALSE;
-    }
-    if (vivid && !thick && COLORS > 8) {
-      fg += 8;
-    }
-    else if (vivid) {
-      *attributes |= A_BOLD;
-    }
-  }
-  else {
-    *fg = THE_DEFAULT;
-  }
-  if (comma) {
-    *bg = color_to_short(comma + 1, vivid, thick);
-    if (*bg == BAD_COLOR) {
-      return FALSE;
-    }
-    if (vivid && COLORS > 8) {
-      bg += 8;
-    }
-  }
-  else {
-    *bg = THE_DEFAULT;
-  }
-  return TRUE;
-}
+// bool parse_combination(char *combotext, short *fg, short *bg, int *attributes) {
+//   bool  vivid;
+//   bool  thick;
+//   char *comma;
+//   *attributes = A_NORMAL;
+//   if (strncmp(combotext, "bold", 4) == 0) {
+//     *attributes |= A_BOLD;
+//     if (combotext[4] != ',') {
+//       jot_error(N_("An attribute requires a subsequent comma"));
+//       return FALSE;
+//     }
+//     combotext += 5;
+//   }
+//   if (strncmp(combotext, "italic", 6) == 0) {
+//     *attributes |= A_ITALIC;
+//     if (combotext[6] != ',') {
+//       jot_error(N_("An attribute requires a subsequent comma"));
+//       return FALSE;
+//     }
+//     combotext += 7;
+//   }
+//   comma = strchr(combotext, ',');
+//   if (comma) {
+//     *comma = '\0';
+//   }
+//   if (!comma || comma > combotext) {
+//     *fg = color_to_short(combotext, vivid, thick);
+//     if (*fg == BAD_COLOR) {
+//       return FALSE;
+//     }
+//     if (vivid && !thick && COLORS > 8) {
+//       fg += 8;
+//     }
+//     else if (vivid) {
+//       *attributes |= A_BOLD;
+//     }
+//   }
+//   else {
+//     *fg = THE_DEFAULT;
+//   }
+//   if (comma) {
+//     *bg = color_to_short(comma + 1, vivid, thick);
+//     if (*bg == BAD_COLOR) {
+//       return FALSE;
+//     }
+//     if (vivid && COLORS > 8) {
+//       bg += 8;
+//     }
+//   }
+//   else {
+//     *bg = THE_DEFAULT;
+//   }
+//   return TRUE;
+// }
 
 /* Parse the color specification that starts at ptr, and then the one or more regexes that
  * follow it.  For each valid regex (or start=/end= regex pair), add a rule to the current syntax. */
-void parse_rule(char *ptr, int rex_flags) {
-  char *names;
-  char *regexstring;
-  short fg;
-  short bg;
-  int   attributes;
-  if (!*ptr) {
-    jot_error(N_("Missing color name"));
-    return;
-  }
-  names = ptr;
-  ptr   = parse_next_word(ptr);
-  if (!parse_combination(names, &fg, &bg, &attributes)) {
-    return;
-  }
-  if (!*ptr) {
-    jot_error(N_("Missing regex string after '%s' command"), "color");
-    return;
-  }
-  while (*ptr) {
-    /* Intermediate storage for compiled regular expressions. */
-    regex_t *start_rgx = NULL;
-    regex_t *end_rgx   = NULL;
-    /* Container for compiled regex (pair) and the color it paints. */
-    colortype *newcolor = NULL;
-    /* Whether it is a start=/end= regex pair. */
-    bool expectend = FALSE;
-    if (constexpr_strncmp(ptr, "start=", 6) == 0) {
-      ptr += 6;
-      expectend = TRUE;
-    }
-    regexstring = ++ptr;
-    ptr         = parse_next_regex(ptr);
-    /* When there is no regex, or it is invalid, skip this line. */
-    if (!ptr || !compile(regexstring, rex_flags, &start_rgx)) {
-      return;
-    }
-    if (expectend) {
-      if (constexpr_strncmp(ptr, "end=", 4) != 0) {
-        jot_error(N_("\"start=\" requires a corresponding \"end=\""));
-        regfree(start_rgx);
-        free(start_rgx);
-        return;
-      }
-      regexstring = ptr + 5;
-      ptr         = parse_next_regex(ptr + 5);
-      /* When there is no valid end= regex, abandon the rule. */
-      if (!ptr || !compile(regexstring, rex_flags, &end_rgx)) {
-        regfree(start_rgx);
-        free(start_rgx);
-        return;
-      }
-    }
-    /* Allocate a rule, fill in the data, and link it into the list. */
-    newcolor             = (colortype *)nmalloc(sizeof(colortype));
-    newcolor->start      = start_rgx;
-    newcolor->end        = end_rgx;
-    newcolor->fg         = fg;
-    newcolor->bg         = bg;
-    newcolor->attributes = attributes;
-    if (!lastcolor) {
-      live_syntax->color = newcolor;
-    }
-    else {
-      lastcolor->next = newcolor;
-    }
-    newcolor->next = NULL;
-    lastcolor      = newcolor;
-    /* For a multiline rule, give it a number and increase the count. */
-    if (expectend) {
-      newcolor->id = live_syntax->multiscore;
-      ++live_syntax->multiscore;
-    }
-  }
-}
+// void parse_rule(char *ptr, int rex_flags) {
+//   char *names;
+//   char *regexstring;
+//   short fg;
+//   short bg;
+//   int   attributes;
+//   if (!*ptr) {
+//     jot_error(N_("Missing color name"));
+//     return;
+//   }
+//   names = ptr;
+//   ptr   = parse_next_word(ptr);
+//   if (!parse_combination(names, &fg, &bg, &attributes)) {
+//     return;
+//   }
+//   if (!*ptr) {
+//     jot_error(N_("Missing regex string after '%s' command"), "color");
+//     return;
+//   }
+//   while (*ptr) {
+//     /* Intermediate storage for compiled regular expressions. */
+//     regex_t *start_rgx = NULL;
+//     regex_t *end_rgx   = NULL;
+//     /* Container for compiled regex (pair) and the color it paints. */
+//     colortype *newcolor = NULL;
+//     /* Whether it is a start=/end= regex pair. */
+//     bool expectend = FALSE;
+//     if (constexpr_strncmp(ptr, "start=", 6) == 0) {
+//       ptr += 6;
+//       expectend = TRUE;
+//     }
+//     regexstring = ++ptr;
+//     ptr         = parse_next_regex(ptr);
+//     /* When there is no regex, or it is invalid, skip this line. */
+//     if (!ptr || !compile(regexstring, rex_flags, &start_rgx)) {
+//       return;
+//     }
+//     if (expectend) {
+//       if (constexpr_strncmp(ptr, "end=", 4) != 0) {
+//         jot_error(N_("\"start=\" requires a corresponding \"end=\""));
+//         regfree(start_rgx);
+//         free(start_rgx);
+//         return;
+//       }
+//       regexstring = ptr + 5;
+//       ptr         = parse_next_regex(ptr + 5);
+//       /* When there is no valid end= regex, abandon the rule. */
+//       if (!ptr || !compile(regexstring, rex_flags, &end_rgx)) {
+//         regfree(start_rgx);
+//         free(start_rgx);
+//         return;
+//       }
+//     }
+//     /* Allocate a rule, fill in the data, and link it into the list. */
+//     newcolor             = (colortype *)nmalloc(sizeof(colortype));
+//     newcolor->start      = start_rgx;
+//     newcolor->end        = end_rgx;
+//     newcolor->fg         = fg;
+//     newcolor->bg         = bg;
+//     newcolor->attributes = attributes;
+//     if (!nanox_rc_lastcolor) {
+//       nanox_rc_live_syntax->color = newcolor;
+//     }
+//     else {
+//       nanox_rc_lastcolor->next = newcolor;
+//     }
+//     newcolor->next = NULL;
+//     nanox_rc_lastcolor      = newcolor;
+//     /* For a multiline rule, give it a number and increase the count. */
+//     if (expectend) {
+//       newcolor->id = nanox_rc_live_syntax->multiscore;
+//       ++nanox_rc_live_syntax->multiscore;
+//     }
+//   }
+// }
 
 /* Set the colors for the given interface element to the given combination. */
-void set_interface_color(const Uchar element, char *combotext) {
-  /* Sanity check. */
-  if (element >= NUMBER_OF_ELEMENTS) {
-    return;
-  }
-  colortype *trio = (colortype *)nmalloc(sizeof(colortype));
-  if (parse_combination(combotext, &trio->fg, &trio->bg, &trio->attributes)) {
-    free(color_combo[element]);
-    color_combo[element] = trio;
-  }
-  else {
-    free(trio);
-  }
-}
+// void set_interface_color(const Uchar element, char *combotext) {
+//   /* Sanity check. */
+//   if (element >= NUMBER_OF_ELEMENTS) {
+//     return;
+//   }
+//   colortype *trio = (colortype *)nmalloc(sizeof(colortype));
+//   if (parse_combination(combotext, &trio->fg, &trio->bg, &trio->attributes)) {
+//     free(color_combo[element]);
+//     color_combo[element] = trio;
+//   }
+//   else {
+//     free(trio);
+//   }
+// }
 
 /* Read regex strings enclosed in double quotes from the line pointed
  * at by ptr, and store them quoteless in the passed storage place. */
-void grab_and_store(const char *kind, char *ptr, regexlisttype **storage) {
-  regexlisttype *lastthing, *newthing;
-  const char    *regexstring;
-  if (!opensyntax) {
-    jot_error(N_("A '%s' command requires a preceding 'syntax' command"), kind);
-    return;
-  }
-  /* The default syntax doesn't take any file matching stuff. */
-  if (strcmp(live_syntax->name, "default") == 0 && *ptr != '\0') {
-    jot_error(N_("The \"default\" syntax does not accept '%s' regexes"), kind);
-    return;
-  }
-  if (!*ptr) {
-    jot_error(N_("Missing regex string after '%s' command"), kind);
-    return;
-  }
-  lastthing = *storage;
-  /* If there was an earlier command, go to the last of those regexes. */
-  while (lastthing && lastthing->next) {
-    lastthing = lastthing->next;
-  }
-  /* Now gather any valid regexes and add them to the linked list. */
-  while (*ptr) {
-    regex_t *packed_rgx = NULL;
-    regexstring         = ++ptr;
-    if (!(ptr = parse_next_regex(ptr))) {
-      return;
-    }
-    /* If the regex string is malformed, skip it. */
-    if (!compile(regexstring, (NANO_REG_EXTENDED | REG_NOSUB), &packed_rgx)) {
-      continue;
-    }
-    /* Copy the regex into a struct, and hook this in at the end. */
-    newthing          = (regexlisttype *)nmalloc(sizeof(regexlisttype));
-    newthing->one_rgx = packed_rgx;
-    newthing->next    = NULL;
-    !lastthing ? *storage = newthing : lastthing->next = newthing;
-    lastthing = newthing;
-  }
-}
+// void grab_and_store(const char *kind, char *ptr, regexlisttype **storage) {
+//   regexlisttype *lastthing, *newthing;
+//   const char    *regexstring;
+//   if (!nanox_rc_opensyntax) {
+//     jot_error(N_("A '%s' command requires a preceding 'syntax' command"), kind);
+//     return;
+//   }
+//   /* The default syntax doesn't take any file matching stuff. */
+//   if (strcmp(nanox_rc_live_syntax->name, "default") == 0 && *ptr != '\0') {
+//     jot_error(N_("The \"default\" syntax does not accept '%s' regexes"), kind);
+//     return;
+//   }
+//   if (!*ptr) {
+//     jot_error(N_("Missing regex string after '%s' command"), kind);
+//     return;
+//   }
+//   lastthing = *storage;
+//   /* If there was an earlier command, go to the last of those regexes. */
+//   while (lastthing && lastthing->next) {
+//     lastthing = lastthing->next;
+//   }
+//   /* Now gather any valid regexes and add them to the linked list. */
+//   while (*ptr) {
+//     regex_t *packed_rgx = NULL;
+//     regexstring         = ++ptr;
+//     if (!(ptr = parse_next_regex(ptr))) {
+//       return;
+//     }
+//     /* If the regex string is malformed, skip it. */
+//     if (!compile(regexstring, (NANO_REG_EXTENDED | REG_NOSUB), &packed_rgx)) {
+//       continue;
+//     }
+//     /* Copy the regex into a struct, and hook this in at the end. */
+//     newthing          = (regexlisttype *)nmalloc(sizeof(regexlisttype));
+//     newthing->one_rgx = packed_rgx;
+//     newthing->next    = NULL;
+//     !lastthing ? *storage = newthing : lastthing->next = newthing;
+//     lastthing = newthing;
+//   }
+// }
 
 /* Gather and store the string after a comment/linter command. */
-static void pick_up_name(const char *kind, char *ptr, char **storage) {
-  if (!*ptr) {
-    jot_error(N_("Missing argument after '%s'"), kind);
-    return;
-  }
-  /* If the argument starts with a quote, find the terminating quote. */
-  if (*ptr == '"') {
-    char *look = ptr + strlen(ptr);
-    while (*look != '"') {
-      if (--look == ptr) {
-        jot_error(N_("Argument of '%s' lacks closing \""), kind);
-        return;
-      }
-    }
-    *look = '\0';
-    ptr++;
-  }
-  *storage = mallocstrcpy(*storage, ptr);
-}
+// static void pick_up_name(const char *kind, char *ptr, char **storage) {
+//   if (!*ptr) {
+//     jot_error(N_("Missing argument after '%s'"), kind);
+//     return;
+//   }
+//   /* If the argument starts with a quote, find the terminating quote. */
+//   if (*ptr == '"') {
+//     char *look = ptr + strlen(ptr);
+//     while (*look != '"') {
+//       if (--look == ptr) {
+//         jot_error(N_("Argument of '%s' lacks closing \""), kind);
+//         return;
+//       }
+//     }
+//     *look = '\0';
+//     ptr++;
+//   }
+//   *storage = mallocstrcpy(*storage, ptr);
+// }
 
 /* Parse the syntax command in the given string, and set the syntax options accordingly. */
-bool parse_syntax_commands(const char *keyword, char *ptr) {
-  Uint syntax_opt = retriveSyntaxOptionFromStr(keyword);
-  if (!syntax_opt) {
-    return FALSE;
-  }
-  if (syntax_opt & SYNTAX_OPT_COLOR) {
-    parse_rule(ptr, NANO_REG_EXTENDED);
-  }
-  else if (syntax_opt & SYNTAX_OPT_ICOLOR) {
-    parse_rule(ptr, NANO_REG_EXTENDED | REG_ICASE);
-  }
-  else if (syntax_opt & SYNTAX_OPT_COMMENT) {
-    pick_up_name("comment", ptr, &live_syntax->comment);
-  }
-  else if (syntax_opt & SYNTAX_OPT_TABGIVES) {
-    pick_up_name("tabgives", ptr, &live_syntax->tabstring);
-  }
-  else if (syntax_opt & SYNTAX_OPT_LINTER) {
-    pick_up_name("linter", ptr, &live_syntax->linter);
-    strip_leading_blanks_from(live_syntax->linter);
-  }
-  else if (syntax_opt & SYNTAX_OPT_FORMATTER) {
-    pick_up_name("formatter", ptr, &live_syntax->formatter);
-    strip_leading_blanks_from(live_syntax->formatter);
-  }
-  return TRUE;
-}
+// bool parse_syntax_commands(const char *keyword, char *ptr) {
+//   Uint syntax_opt = retriveSyntaxOptionFromStr(keyword);
+//   if (!syntax_opt) {
+//     return FALSE;
+//   }
+//   if (syntax_opt & SYNTAX_OPT_COLOR) {
+//     parse_rule(ptr, NANO_REG_EXTENDED);
+//   }
+//   else if (syntax_opt & SYNTAX_OPT_ICOLOR) {
+//     parse_rule(ptr, NANO_REG_EXTENDED | REG_ICASE);
+//   }
+//   else if (syntax_opt & SYNTAX_OPT_COMMENT) {
+//     pick_up_name("comment", ptr, &nanox_rc_live_syntax->comment);
+//   }
+//   else if (syntax_opt & SYNTAX_OPT_TABGIVES) {
+//     pick_up_name("tabgives", ptr, &nanox_rc_live_syntax->tabstring);
+//   }
+//   else if (syntax_opt & SYNTAX_OPT_LINTER) {
+//     pick_up_name("linter", ptr, &nanox_rc_live_syntax->linter);
+//     strip_leading_blanks_from(nanox_rc_live_syntax->linter);
+//   }
+//   else if (syntax_opt & SYNTAX_OPT_FORMATTER) {
+//     pick_up_name("formatter", ptr, &nanox_rc_live_syntax->formatter);
+//     strip_leading_blanks_from(nanox_rc_live_syntax->formatter);
+//   }
+//   return TRUE;
+// }
 
 #define VITALS 4
 /* Verify that the user has not unmapped every shortcut for a function that we consider 'vital' (such as 'do_exit'). */
@@ -1051,7 +1051,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
     Ulong i;
     nanox_rc_lineno++;
     /* If doing a full parse, skip to after the 'syntax' command. */
-    if (just_syntax && !intros_only && nanox_rc_lineno <= live_syntax->lineno) {
+    if (just_syntax && !intros_only && nanox_rc_lineno <= nanox_rc_live_syntax->lineno) {
       continue;
     }
     /* Strip the terminating newline and possibly a carriage return. */
@@ -1095,8 +1095,8 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
        * other commands are stored for possible later processing. */
       if (strcmp(keyword, "header") == 0 || strcmp(keyword, "magic") == 0) {
         free(argument);
-        live_syntax = sntx;
-        opensyntax  = TRUE;
+        nanox_rc_live_syntax = sntx;
+        nanox_rc_opensyntax  = TRUE;
         drop_open   = TRUE;
       }
       else {
@@ -1130,7 +1130,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
     }
     else if (strcmp(keyword, "header") == 0) {
       if (intros_only) {
-        grab_and_store("header", ptr, &live_syntax->headers);
+        grab_and_store("header", ptr, &nanox_rc_live_syntax->headers);
       }
     }
     else if (strcmp(keyword, "magic") == 0) {
@@ -1153,11 +1153,11 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
     else if (intros_only && (strcmp(keyword, "color") == 0 || strcmp(keyword, "icolor") == 0 ||
                              strcmp(keyword, "comment") == 0 || strcmp(keyword, "tabgives") == 0 ||
                              strcmp(keyword, "linter") == 0 || strcmp(keyword, "formatter") == 0)) {
-      if (!opensyntax) {
+      if (!nanox_rc_opensyntax) {
         jot_error(N_("A '%s' command requires a preceding 'syntax' command"), keyword);
       }
       if (strstr("icolor", keyword)) {
-        seen_color_command = TRUE;
+        nanox_rc_seen_color_command = TRUE;
       }
       continue;
     }
@@ -1185,7 +1185,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
       }
     }
     if (drop_open) {
-      opensyntax = FALSE;
+      nanox_rc_opensyntax = FALSE;
     }
     if (set == 0) {
       continue;
@@ -1243,7 +1243,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
       ;
     }
     else if (configOption & OPERATINGDIR) {
-      operating_dir = mallocstrcpy(operating_dir, argument);
+      operating_dir = realloc_strcpy(operating_dir, argument);
     }
     else if (configOption & FILL) {
       if (!parse_num(argument, &fill)) {
@@ -1259,7 +1259,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
         jot_error(N_("Even number of characters required"));
       }
       else {
-        matchbrackets = mallocstrcpy(matchbrackets, argument);
+        matchbrackets = realloc_strcpy(matchbrackets, argument);
       }
     }
     else if (configOption & WHITESPACE) {
@@ -1267,7 +1267,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
         jot_error(N_("Two single-column characters required"));
       }
       else {
-        whitespace  = mallocstrcpy(whitespace, argument);
+        whitespace  = realloc_strcpy(whitespace, argument);
         whitelen[0] = char_length(whitespace);
         whitelen[1] = char_length(whitespace + whitelen[0]);
       }
@@ -1277,7 +1277,7 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
         jot_error(N_("Non-blank characters required"));
       }
       else {
-        punct = mallocstrcpy(punct, argument);
+        punct = realloc_strcpy(punct, argument);
       }
     }
     else if (configOption & BRACKETS) {
@@ -1285,20 +1285,20 @@ void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
         jot_error(N_("Non-blank characters required"));
       }
       else {
-        brackets = mallocstrcpy(brackets, argument);
+        brackets = realloc_strcpy(brackets, argument);
       }
     }
     else if (configOption & QUOTESTR) {
-      quotestr = mallocstrcpy(quotestr, argument);
+      quotestr = realloc_strcpy(quotestr, argument);
     }
     else if (configOption & SPELLER) {
-      alt_speller = mallocstrcpy(alt_speller, argument);
+      alt_speller = realloc_strcpy(alt_speller, argument);
     }
     else if (configOption & BACKUPDIR) {
-      backup_dir = mallocstrcpy(backup_dir, argument);
+      backup_dir = realloc_strcpy(backup_dir, argument);
     }
     else if (configOption & WORDCHARS) {
-      word_chars = mallocstrcpy(word_chars, argument);
+      word_chars = realloc_strcpy(word_chars, argument);
     }
     else if (configOption & GUIDESTRIPE) {
       if (!parse_num(argument, &stripe_column) || stripe_column <= 0) {
@@ -1352,7 +1352,7 @@ void do_rcfiles(void) {
     }
   }
   else {
-    nanox_rc_path = mallocstrcpy(nanox_rc_path, SYSCONFDIR "/nanorc");
+    nanox_rc_path = realloc_strcpy(nanox_rc_path, SYSCONFDIR "/nanorc");
   }
   if (is_good_file(nanox_rc_path)) {
     parse_one_nanorc();

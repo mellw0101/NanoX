@@ -176,7 +176,7 @@ void browser_refresh(void) {
       }
       else {
         /* TRANSLATORS: Anything more than 7 cells gets clipped.  If necessary, you can leave out the parentheses. */
-        info = mallocstrcpy(info, _("(huge)"));
+        info = realloc_strcpy(info, _("(huge)"));
       }
       /* Only check further color coding when not selected. */
       if (index != selected) {
@@ -317,7 +317,7 @@ static void search_filename(bool forwards) {
   }
   /* If the user typed an answer, remember it. */
   if (*answer) {
-    last_search = mallocstrcpy(last_search, answer);
+    last_search = realloc_strcpy(last_search, answer);
     update_history(&search_history, answer, PRUNE_DUPLICATE);
   }
   if (!response || response == -2) {
@@ -329,7 +329,7 @@ static void search_filename(bool forwards) {
 static void research_filename(bool forwards) _NOTHROW {
   /* If nothing was searched for yet, take the last item from history. */
   if (!*last_search && searchbot->prev) {
-    last_search = mallocstrcpy(last_search, searchbot->prev->data);
+    last_search = realloc_strcpy(last_search, searchbot->prev->data);
   }
   if (!*last_search) {
     statusbar(_("No current search pattern"));
@@ -389,8 +389,8 @@ read_directory_contents:
       napms(1200);
       return NULL;
     }
-    path         = mallocstrcpy(path, present_path);
-    present_name = mallocstrcpy(present_name, filelist[selected]);
+    path         = realloc_strcpy(path, present_path);
+    present_name = realloc_strcpy(present_name, filelist[selected]);
   }
   if (dir) {
     /* Get the file list, and set gauge and piles in the process. */
@@ -408,7 +408,7 @@ read_directory_contents:
     selected = 0;
   }
   old_selected = (Ulong)-1;
-  present_path = mallocstrcpy(present_path, path);
+  present_path = realloc_strcpy(present_path, path);
   titlebar(path);
   if (list_length == 0) {
     statusline(ALERT, _("No entries"));
@@ -567,7 +567,7 @@ read_directory_contents:
         /* This refers to the confining effect of the option '--operatingdir', not of '--restricted'. */
         if (outside_of_confinement(path, FALSE)) {
           statusline(ALERT, _("Can't go outside of %s"), operating_dir);
-          path = mallocstrcpy(path, present_path);
+          path = realloc_strcpy(path, present_path);
           continue;
         }
         /* Snip any trailing slashes, so the name can be compared. */
@@ -613,7 +613,7 @@ read_directory_contents:
           present_name = strip_last_component(filelist[selected]);
         }
         /* Try opening and reading the selected directory. */
-        path = mallocstrcpy(path, filelist[selected]);
+        path = realloc_strcpy(path, filelist[selected]);
         goto read_directory_contents;
       }
       else if (function == (functionptrtype)implant) {
@@ -666,7 +666,7 @@ char *browse_in(const char *inpath) {
   }
   /* If the resulting path isn't in the operating directory, use the operating directory instead. */
   if (outside_of_confinement(path, FALSE)) {
-    path = mallocstrcpy(path, operating_dir);
+    path = realloc_strcpy(path, operating_dir);
   }
   return browse(path);
 }

@@ -83,13 +83,13 @@ constexpr int retriveConfigOptionFromStr(string_view str) {
   return 0;
 }
 
-/* Identifiers for the different syntax options. */
-#define SYNTAX_OPT_COLOR     (1 << 0)
-#define SYNTAX_OPT_ICOLOR    (1 << 1)
-#define SYNTAX_OPT_COMMENT   (1 << 2)
-#define SYNTAX_OPT_TABGIVES  (1 << 3)
-#define SYNTAX_OPT_LINTER    (1 << 4)
-#define SYNTAX_OPT_FORMATTER (1 << 5)
+// /* Identifiers for the different syntax options. */
+// #define SYNTAX_OPT_COLOR     (1 << 0)
+// #define SYNTAX_OPT_ICOLOR    (1 << 1)
+// #define SYNTAX_OPT_COMMENT   (1 << 2)
+// #define SYNTAX_OPT_TABGIVES  (1 << 3)
+// #define SYNTAX_OPT_LINTER    (1 << 4)
+// #define SYNTAX_OPT_FORMATTER (1 << 5)
 /* The syntax options map. */
 constexpr_map<string_view, Uchar, 6> syntax_option_map = {{
   {     "color", SYNTAX_OPT_COLOR     },

@@ -1658,16 +1658,16 @@ int main(int argc, char **argv) {
     cliCmd &CLI_OPT_VERSION ? version() : void();
     cliCmd &CLI_OPT_HELP ? usage() : void();
     cliCmd &CLI_OPT_IGNORERCFILE ? ignore_rcfiles = TRUE : 0;
-    cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = mallocstrcpy(backup_dir, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = mallocstrcpy(word_chars, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = mallocstrcpy(custom_nanorc, argv[i]) : 0 : 0;
+    cliCmd &CLI_OPT_BACKUPDIR ? (i++ < argc) ? backup_dir = realloc_strcpy(backup_dir, argv[i]) : 0 : 0;
+    cliCmd &CLI_OPT_WORDCHARS ? (i++ < argc) ? word_chars = realloc_strcpy(word_chars, argv[i]) : 0 : 0;
+    cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = realloc_strcpy(syntaxstr, argv[i]) : 0 : 0;
+    cliCmd &CLI_OPT_RCFILE ? (i++ < argc) ? custom_nanorc = realloc_strcpy(custom_nanorc, argv[i]) : 0 : 0;
     cliCmd &CLI_OPT_BREAKLONGLINES ? hardwrap = 1 : 0;
-    cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = mallocstrcpy(alt_speller, argv[i]) : 0 : 0;
-    cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = mallocstrcpy(syntaxstr, argv[i]) : 0 : 0;
+    cliCmd &CLI_OPT_SPELLER ? (i++ < argc) ? alt_speller = realloc_strcpy(alt_speller, argv[i]) : 0 : 0;
+    cliCmd &CLI_OPT_SYNTAX ? (i++ < argc) ? syntaxstr = realloc_strcpy(syntaxstr, argv[i]) : 0 : 0;
     if (cliCmd & CLI_OPT_OPERATINGDIR) {
       if (++i < argc) {
-        operating_dir = mallocstrcpy(operating_dir, argv[i]);
+        operating_dir = realloc_strcpy(operating_dir, argv[i]);
       }
     }
     if (cliCmd & CLI_OPT_LISTSYNTAX) {

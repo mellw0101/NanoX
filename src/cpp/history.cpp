@@ -98,7 +98,7 @@ void update_history(linestruct **item, const char *text, bool avoid_duplicates) 
     renumber_from(*htop);
   }
   /* Store the fresh string in the last item, then create a new item. */
-  (*hbot)->data = mallocstrcpy((*hbot)->data, text);
+  (*hbot)->data = realloc_strcpy((*hbot)->data, text);
   splice_node(*hbot, make_new_node(*hbot));
   *hbot = (*hbot)->next;
   (*hbot)->data = STRLTR_COPY_OF("");
@@ -135,7 +135,7 @@ char *get_history_completion(linestruct **here, char *string, Ulong len) _NOTHRO
   }
   if (item) {
     *here = item;
-    return mallocstrcpy(string, item->data);
+    return realloc_strcpy(string, item->data);
   }
   /* Now search from the bottom of the list to the original position. */
   item = find_in_history(hbot, *here, string, len);
@@ -144,7 +144,7 @@ char *get_history_completion(linestruct **here, char *string, Ulong len) _NOTHRO
   }
   if (item) {
     *here = item;
-    return mallocstrcpy(string, item->data);
+    return realloc_strcpy(string, item->data);
   }
   /* When no useful match was found, simply return the given string. */
   return string;

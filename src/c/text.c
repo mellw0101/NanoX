@@ -10,6 +10,16 @@
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* Return's the length of whilespace until first non blank char in `string`. */
+Ulong indentlen(const char *const restrict string) {
+  ASSERT(string);
+  const char *ptr = string;
+  while (is_blank_char(ptr)) {
+    ptr += char_length(ptr);
+  }
+  return (ptr - string);
+}
+
 /* Toggle the mark for `file`. */
 void do_mark_for(openfilestruct *const file) {
   ASSERT(file);
@@ -34,16 +44,6 @@ void do_mark(void) {
   else {
     do_mark_for(openfile);
   }
-}
-
-/* Return's the length of whilespace until first non blank char in `string`. */
-Ulong indentlen(const char *const restrict string) {
-  ASSERT(string);
-  const char *ptr = string;
-  while (*ptr && is_blank_char(ptr)) {
-    ptr += char_length(ptr);
-  }
-  return (ptr - string);
 }
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
@@ -73,4 +73,36 @@ void discard_until_in_buffer(openfilestruct *const buffer, const undostruct *con
 /* Discard undo items that are newer than the given one, or all if NULL. */
 void discard_until(const undostruct *thisitem) {
   discard_until_in_buffer(openfile, thisitem);
+}
+
+/* ----------------------------- Indent ----------------------------- */
+
+/* Add an indent to the given line.  TODO: Make the mark and curren x positions move exactly like vs-code. */
+void indent_a_line_for(openfilestruct *const file, linestruct *const line, const char *const restrict indentation) {
+  ASSERT(file);
+  ASSERT(line);
+  ASSERT(indentation);
+  Ulong length     = strlen(line->data);
+  Ulong indent_len = strlen(indentation);
+  /* If the requested indentation is empty, don't change the line. */
+  if (!indent_len) {
+    return;
+  }
+  /* Inject the indentation at the begining of the line. */
+  line->data = xnstrninj(line->data, length, indentation, indent_len, 0);
+  /* Then increase the total size of the file by the indent length added. */
+  file->totsize += indent_len;
+  /* When `line` is the mark as well ensure the mark only  */
+  if (line == file->mark && file->mark_x > 0) {
+    file->mark_x += indent_len;
+  }
+  if (line == file->current && file->current_x > 0) {
+    file->current_x  += indent_len;
+    file->placewewant = xplustabs_for(file);
+  }
+}
+
+/* Add an indent to the given line. */
+void indent_a_line(linestruct *const line, const char *const restrict indentation) { 
+  indent_a_line_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), line, indentation);
 }

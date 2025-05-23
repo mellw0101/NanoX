@@ -2,8 +2,9 @@
 
 #include <stdbool.h>
 #include "../../../config.h"
+#include <fcio/proto.h>
 
-#define CTRL(x) (x&037)
+// #define CTRL(x) (x&037)
 
 #define NUL     '\000'
 #define BELL    '\007'
@@ -31,12 +32,12 @@ static inline bool _CONST _ALWAYS_INLINE ascii_isdigit(int c) {
   return (c >= '0' && c <= '9');
 }
 
-#define ASCII_TOUPPER(c)  (((c) < 'a' || (c) > 'z') ? (c) : ((c) - ('a' - 'A')))
-#define ASCII_TOLOWER(c)  (((c) < 'A' || (c) > 'Z') ? (c) : ((c) + ('a' - 'A')))
-#define ASCII_ISLOWER(c)  ((unsigned)(c) >= 'a' && (unsigned)(c) <= 'z')
-#define ASCII_ISUPPER(c)  ((unsigned)(c) >= 'A' && (unsigned)(c) <= 'Z')
-#define ASCII_ISALPHA(c)  (ASCII_ISUPPER(c) || ASCII_ISLOWER(c))
-#define ASCII_ISALNUM(c)  (ASCII_ISALPHA(c) || ascii_isdigit(c))
+// #define ASCII_TOUPPER(c)  (((c) < 'a' || (c) > 'z') ? (c) : ((c) - ('a' - 'A')))
+// #define ASCII_TOLOWER(c)  (((c) < 'A' || (c) > 'Z') ? (c) : ((c) + ('a' - 'A')))
+// #define ASCII_ISLOWER(c)  ((unsigned)(c) >= 'a' && (unsigned)(c) <= 'z')
+// #define ASCII_ISUPPER(c)  ((unsigned)(c) >= 'A' && (unsigned)(c) <= 'Z')
+// #define ASCII_ISALPHA(c)  (ASCII_ISUPPER(c) || ASCII_ISLOWER(c))
+// #define ASCII_ISALNUM(c)  (ASCII_ISALPHA(c) || ascii_isdigit(c))
 
 static inline bool _CONST _ALWAYS_INLINE ascii_iswhite(int c) {
   return (c == ' ' || c == '\t');

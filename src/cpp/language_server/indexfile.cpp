@@ -6,7 +6,7 @@ int IndexFile::open_file(FILE **f) {
   char *full_filename = get_full_path(filename);
   struct stat fileinfo;
   if (!full_filename || stat(full_filename, &fileinfo) == -1) {
-    full_filename = mallocstrcpy(full_filename, filename);
+    full_filename = realloc_strcpy(full_filename, filename);
   }
   if (stat(full_filename, &fileinfo) == -1) {
     free(full_filename);

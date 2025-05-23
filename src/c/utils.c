@@ -86,12 +86,19 @@ void append_chararray(char ***const array, Ulong *const len, char **const append
   (*len) = new_len;
 }
 
-/* Return an appropriately reallocated dest string holding a copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
-char *mallocstrcpy(char *dest, const char *src) {
-  const Ulong count = (strlen(src) + 1);
-  dest = xrealloc(dest, count);
-  strncpy(dest, src, count);
+/* Return an appropriately reallocated dest string holding a copy of
+ * `src`.  Usage: "dest = mallocstrcpy(dest, src, strlen(src));". */
+char *realloc_strncpy(char *dest, const char *const restrict src, Ulong length) {
+  dest = xrealloc(dest, (length + 1));
+  memcpy(dest, src, length);
+  dest[length] = '\0';
   return dest;
+}
+
+/* Return an appropriately reallocated dest string holding a
+ * copy of src.  Usage: "dest = mallocstrcpy(dest, src);". */
+char *realloc_strcpy(char *dest, const char *const restrict src) {
+  return realloc_strncpy(dest, src, strlen(src));
 }
 
 /* Return the user's home directory.  We use $HOME, and if that fails, we fall back on the home directory of the effective user ID. */
@@ -405,5 +412,18 @@ char *tab_space_string(Ulong *length) {
   }
   else {
     return tab_space_string_for(openfile, length);
+  }
+}
+
+/* Returns an allocated string containing either a string of just ' ' chars with the
+ * length `tabsize` if `TABS_TO_SPACES` is set or a string just contaning a '\t' char. */
+char *construct_full_tab_string(Ulong *length) {
+  if (ISSET(TABS_TO_SPACES)) {
+    ASSIGN_IF_VALID(length, tabsize);
+    return fmtstr("%*s", (int)tabsize, " ");
+  }
+  else {
+    ASSIGN_IF_VALID(length, STRLEN("\t"));
+    return COPY_OF("\t");
   }
 }

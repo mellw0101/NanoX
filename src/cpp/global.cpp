@@ -139,7 +139,7 @@ char *syntaxstr = NULL;
 /* Whether the colors for the current syntax have been initialized. */
 // bool have_palette = FALSE;
 /* Becomes TRUE when NO_COLOR is set in the environment. */
-bool rescind_colors = FALSE;
+// bool rescind_colors = FALSE;
 /* Whether the multiline-coloring situation has changed. */
 // bool perturbed = FALSE;
 /* Whether the multidata should be recalculated. */
@@ -174,9 +174,9 @@ linestruct *executebot = NULL;
  * 10 maximum, used in regular expression searches. */
 regmatch_t regmatches[10];
 /* The curses attribute we use to highlight something. */
-int hilite_attribute = A_REVERSE;
+// int hilite_attribute = A_REVERSE;
 /* The color combinations for interface elements given in the rcfile. */
-colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
+// colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
 /* The processed color pairs for the interface elements. */
 // int interface_color_pair[NUMBER_OF_ELEMENTS] = {0};
 /* The user's home directory, from $HOME or /etc/passwd. */
