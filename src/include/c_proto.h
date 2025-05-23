@@ -15,41 +15,6 @@
 
 extern volatile sig_atomic_t the_window_resized;
 
-extern long tabsize;
-extern long fill;
-
-extern Ulong wrap_at;
-extern Ulong nanox_rc_lineno;
-
-extern WINDOW *topwin;
-extern WINDOW *midwin;
-extern WINDOW *footwin;
-
-extern openfilestruct *openfile;
-extern openfilestruct *startfile;
-
-extern Font *uifont;
-extern Font *textfont;
-
-extern float mouse_x;
-extern float mouse_y;
-extern float gui_width;
-extern float gui_height;
-
-extern Editor *openeditor;
-extern Editor *starteditor;
-
-extern keystruct  *sclist;
-
-extern funcstruct *allfuncs;
-extern funcstruct *exitfunc;
-extern funcstruct *tailfunc;
-
-extern regex_t search_regexp;
-
-extern const char *exit_tag;
-extern const char *close_tag;
-
 extern bool more_than_one;
 extern bool inhelp;
 extern bool as_an_at;
@@ -66,6 +31,7 @@ extern bool perturbed;
 extern bool recook;
 extern bool meta_key;
 extern bool also_the_last;
+extern bool have_palette;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -75,31 +41,62 @@ extern char *startup_problem;
 extern char *nanox_rc_path;
 extern char *backup_dir;
 
+extern const char *exit_tag;
+extern const char *close_tag;
+
 extern int editwinrows;
 extern int editwincols;
 extern int margin;
 extern int sidebar;
 extern int currmenu;
 
-extern Ulong from_x;
-extern Ulong till_x;
+extern int whitelen[2];
+extern int interface_color_pair[NUMBER_OF_ELEMENTS];
 
-extern int  whitelen[2];
+extern float mouse_x;
+extern float mouse_y;
+extern float gui_width;
+extern float gui_height;
+
+extern long tabsize;
+extern long fill;
+
+extern Ulong wrap_at;
+extern Ulong nanox_rc_lineno;
 
 extern Ulong flags[1];
+
+extern WINDOW *topwin;
+extern WINDOW *midwin;
+extern WINDOW *footwin;
+
+extern openfilestruct *openfile;
+extern openfilestruct *startfile;
+
+extern Font *uifont;
+extern Font *textfont;
+
+extern Editor *openeditor;
+extern Editor *starteditor;
+
+extern keystruct  *sclist;
+
+extern funcstruct *allfuncs;
+extern funcstruct *exitfunc;
+extern funcstruct *tailfunc;
+
+extern regex_t search_regexp;
 
 extern GLFWwindow *gui_window;
 
 extern message_type lastmessage;
 
-extern int interface_color_pair[NUMBER_OF_ELEMENTS];
-
 extern configstruct *config;
 
-/* ----------------------------- color.c ----------------------------- */
+/* ----------------------------- winio.c ----------------------------- */
 
-// extern Color color_vs_code_red;
-// extern Color color_white;
+extern Ulong from_x;
+extern Ulong till_x;
 
 /* ----------------------------- winio.c ----------------------------- */
 
@@ -621,12 +618,20 @@ void to_top_row(void);
 void to_bottom_row_for(openfilestruct *const file, int total_rows, int total_cols);
 void to_bottom_row(void);
 
+
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
 
 
 void  display_rcfile_errors(void);
 void  jot_error(const char *const restrict format, ...);
 char *parse_next_word(char *ptr);
+
+
+/* ---------------------------------------------------------- color.c ---------------------------------------------------------- */
+
+
+void prepare_palette_for(openfilestruct *const file);
+void prepare_palette(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

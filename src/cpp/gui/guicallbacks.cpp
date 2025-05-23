@@ -281,9 +281,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* Line numbers toggle. */
           if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
             TOGGLE(LINE_NUMBERS);
-            confirm_margin();
-            window_resize_callback(window, gui->width, gui->height);
             show_toggle_statusmsg(LINE_NUMBERS);
+            editor_update_all();
           }
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
             // make_new_editor(TRUE);

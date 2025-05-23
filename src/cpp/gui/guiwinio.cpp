@@ -615,7 +615,7 @@ void show_statusmsg(message_type type, float seconds, const char *format, ...) {
 
 /* Show the correct message when we toggle a flag. */
 void show_toggle_statusmsg(int flag) {
-  show_statusmsg(REMARK, 2, "%s %s", epithet_of_flag(flag), (ISSET(flag) ? "enabled" : "disabled"));
+  statusline_gui_timed(REMARK, 2, "%s %s", epithet_of_flag(flag), (ISSET(flag) ? "enabled" : "disabled"));
 }
 
 /* Draw a editor. */

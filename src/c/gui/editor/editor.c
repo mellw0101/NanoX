@@ -229,9 +229,7 @@ void editor_resize(Editor *const editor) {
   editor_confirm_margin(editor);
   editor->gutter->width    = editor_get_gutter_width(editor);
   editor->text->relative_x = editor->gutter->width;
-  if (!editor->gutter->width) {
-    editor->gutter->hidden = TRUE;
-  }
+  editor->gutter->hidden   = !editor->gutter->width;
   element_move_resize(editor->main, 0, 0, gui_width, (gui_height - gui_font_height(uifont)));
   editor_set_rows_cols(editor, editor->text->width, editor->text->height);
   etb_text_refresh_needed(editor->tb);

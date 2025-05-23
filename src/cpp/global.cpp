@@ -137,7 +137,7 @@ syntaxtype *syntaxes = NULL;
 /* The color syntax name specified on the command line. */
 char *syntaxstr = NULL;
 /* Whether the colors for the current syntax have been initialized. */
-bool have_palette = FALSE;
+// bool have_palette = FALSE;
 /* Becomes TRUE when NO_COLOR is set in the environment. */
 bool rescind_colors = FALSE;
 /* Whether the multiline-coloring situation has changed. */

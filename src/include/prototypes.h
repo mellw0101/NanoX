@@ -116,7 +116,7 @@ extern bool ran_a_tool;
 // extern bool control_C_was_pressed;
 // extern bool also_the_last;
 extern bool keep_cutbuffer;
-extern bool have_palette;
+// extern bool have_palette;
 extern bool rescind_colors;
 // extern bool perturbed;
 // extern bool recook;
@@ -264,7 +264,7 @@ char *browse_in(const char *inpath);
 /* Most functions in 'color.cpp'. */
 void  set_interface_colorpairs(void);
 void  set_syntax_colorpairs(syntaxtype *sntx);
-void  prepare_palette(void);
+// void  prepare_palette(void);
 void  find_and_prime_applicable_syntax(void);
 void  check_the_multis(linestruct *line) _NOTHROW;
 void  precalc_multicolorinfo(void) _NOTHROW;

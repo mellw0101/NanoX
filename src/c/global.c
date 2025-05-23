@@ -47,6 +47,8 @@ bool recook = FALSE;
 bool meta_key;
 /* Whether indenting/commenting should include the last line of the marked region. */
 bool also_the_last = FALSE;
+/* Whether the colors for the current syntax have been initialized. */
+bool have_palette = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 

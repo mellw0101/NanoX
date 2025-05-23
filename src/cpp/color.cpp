@@ -158,17 +158,17 @@ void set_syntax_colorpairs(syntaxtype *sntx) {
 }
 
 /* Initialize the color pairs for the current syntax. */
-void prepare_palette(void) {
-  short number = NUMBER_OF_ELEMENTS;
-  /* For each unique pair number, tell ncurses the combination of colors. */
-  for (colortype *ink = openfile->syntax->color; ink; ink = ink->next) {
-    if (ink->pairnum > number) {
-      init_pair(ink->pairnum, ink->fg, ink->bg);
-      number = ink->pairnum;
-    }
-  }
-  have_palette = TRUE;
-}
+// void prepare_palette(void) {
+//   short number = NUMBER_OF_ELEMENTS;
+//   /* For each unique pair number, tell ncurses the combination of colors. */
+//   for (colortype *ink = openfile->syntax->color; ink; ink = ink->next) {
+//     if (ink->pairnum > number) {
+//       init_pair(ink->pairnum, ink->fg, ink->bg);
+//       number = ink->pairnum;
+//     }
+//   }
+//   have_palette = TRUE;
+// }
 
 /* Try to match the given shibboleth string with, one of the regexes in the list starting at head.  Return 'TRUE' upon success. */
 static bool found_in_list(regexlisttype *head, const char *shibboleth) _GL_ATTRIBUTE_NOTHROW {

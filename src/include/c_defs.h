@@ -986,16 +986,7 @@ typedef struct {
   int y;
 } ElementGridpos;
 
-/* ----------------------------- color.c ----------------------------- */
-
-// typedef struct {
-//   float r;
-//   float g;
-//   float b;
-//   float a;
-// } Color;
-
-/* ----------------------------- element.c ----------------------------- */
+/* ----------------------------- gui/element.c ----------------------------- */
 
 struct Element {
   /* Boolian flags. */
