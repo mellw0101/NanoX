@@ -562,39 +562,39 @@ static void do_auto_bracket(void) _NOTHROW {
 }
 
 /* Insert a new empty line, either `above` or `below` `line`.  */
-void insert_empty_line(linestruct *line, bool above, bool autoindent) _NOTHROW {
-  linestruct *topline, *newline;
-  if (above) {
-    if (!line->prev) {
-      newline = make_new_node(NULL);
-      newline->next = line;
-      line->prev = newline;
-      if (line == openfile->filetop) {
-        openfile->filetop = newline;
-      }
-      if (line == openfile->edittop) {
-        openfile->edittop = newline;
-      }
-    }
-    else {
-      topline = line->prev;
-      newline = make_new_node(topline);
-      splice_node(topline, newline);
-    }
-  }
-  else {
-    topline = line;
-    newline = make_new_node(topline);
-    splice_node(topline, newline);
-  }
-  renumber_from(newline);
-  if (!autoindent) {
-    newline->data = STRLTR_COPY_OF("");
-  }
-  else {
-    newline->data = measured_copy(line->data, indent_length(line->data));
-  }
-}
+// void insert_empty_line(linestruct *line, bool above, bool autoindent) _NOTHROW {
+//   linestruct *topline, *newline;
+//   if (above) {
+//     if (!line->prev) {
+//       newline = make_new_node(NULL);
+//       newline->next = line;
+//       line->prev = newline;
+//       if (line == openfile->filetop) {
+//         openfile->filetop = newline;
+//       }
+//       if (line == openfile->edittop) {
+//         openfile->edittop = newline;
+//       }
+//     }
+//     else {
+//       topline = line->prev;
+//       newline = make_new_node(topline);
+//       splice_node(topline, newline);
+//     }
+//   }
+//   else {
+//     topline = line;
+//     newline = make_new_node(topline);
+//     splice_node(topline, newline);
+//   }
+//   renumber_from(newline);
+//   if (!autoindent) {
+//     newline->data = STRLTR_COPY_OF("");
+//   }
+//   else {
+//     newline->data = measured_copy(line->data, indent_length(line->data));
+//   }
+// }
 
 /* Insert a new empty line above `openfile->current`, and add an undo-item to the undo-stack. */
 void do_insert_empty_line_above(void) _NOTHROW {
@@ -1729,29 +1729,29 @@ void do_enter(void) {
 
 /* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
  * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
-void update_multiline_undo(long lineno, char *indentation) _NOTHROW {
-  undostruct *u = openfile->current_undo;
-  groupstruct *born;
-  Ulong number_of_lines;
-  /* If there already is a group and the current line is contiguous with it, extend the group; otherwise, create a new group. */
-  if (u->grouping && (u->grouping->bottom_line + 1) == lineno) {
-    number_of_lines           = (lineno - u->grouping->top_line + 1);
-    u->grouping->bottom_line  = lineno;
-    u->grouping->indentations = (char **)xrealloc(u->grouping->indentations, (number_of_lines * _PTRSIZE));
-    u->grouping->indentations[number_of_lines - 1] = copy_of(indentation);
-  }
-  else {
-    born                  = (groupstruct *)xmalloc(sizeof(*born));
-    born->top_line        = lineno;
-    born->bottom_line     = lineno;
-    born->indentations    = (char **)xmalloc(_PTRSIZE);
-    born->indentations[0] = copy_of(indentation);
-    born->next            = u->grouping;
-    u->grouping           = born;
-  }
-  /* Store the file size after the change, to be used when redoing. */
-  u->newsize = openfile->totsize;
-}
+// void update_multiline_undo(long lineno, char *indentation) _NOTHROW {
+//   undostruct *u = openfile->current_undo;
+//   groupstruct *born;
+//   Ulong number_of_lines;
+//   /* If there already is a group and the current line is contiguous with it, extend the group; otherwise, create a new group. */
+//   if (u->grouping && (u->grouping->bottom_line + 1) == lineno) {
+//     number_of_lines           = (lineno - u->grouping->top_line + 1);
+//     u->grouping->bottom_line  = lineno;
+//     u->grouping->indentations = (char **)xrealloc(u->grouping->indentations, (number_of_lines * _PTRSIZE));
+//     u->grouping->indentations[number_of_lines - 1] = copy_of(indentation);
+//   }
+//   else {
+//     born                  = (groupstruct *)xmalloc(sizeof(*born));
+//     born->top_line        = lineno;
+//     born->bottom_line     = lineno;
+//     born->indentations    = (char **)xmalloc(_PTRSIZE);
+//     born->indentations[0] = copy_of(indentation);
+//     born->next            = u->grouping;
+//     u->grouping           = born;
+//   }
+//   /* Store the file size after the change, to be used when redoing. */
+//   u->newsize = openfile->totsize;
+// }
 
 /* Update an undo item with (among other things) the file size and cursor position after the given action. */
 void update_undo(undo_type action) _NOTHROW {
@@ -2233,7 +2233,7 @@ static void squeeze(linestruct *line, Ulong skip) _NOTHROW {
   }
   /* If there are spaces at the end of the line, remove them. */
   while (to > start && *(to - 1) == ' ') {
-    to--;
+    --to;
   }
   *to = '\0';
 }

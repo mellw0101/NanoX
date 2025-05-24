@@ -279,6 +279,41 @@ void add_undo(undo_type action, const char *const restrict message) {
   add_undo_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), action, message);
 }
 
+/* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
+ * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
+void update_multiline_undo_for(openfilestruct *const file, long lineno, const char *const restrict indentation) {
+  ASSERT(file);
+  ASSERT(indentation);
+  undostruct *u = file->current_undo;
+  groupstruct *born;
+  /* The number of lines. */
+  Ulong nol;
+  /* If there already is a group and the current line is contiguous with it, extend the group; otherwise, create a new group. */
+  if (u->grouping && (u->grouping->bottom_line + 1) == lineno) {
+    nol                                = (lineno - u->grouping->top_line + 1);
+    u->grouping->bottom_line           = lineno;
+    u->grouping->indentations          = xrealloc(u->grouping->indentations, (nol * _PTRSIZE));
+    u->grouping->indentations[nol - 1] = copy_of(indentation);
+  }
+  else {
+    born                  = xmalloc(sizeof(*born));
+    born->top_line        = lineno;
+    born->bottom_line     = lineno;
+    born->indentations    = xmalloc(_PTRSIZE);
+    born->indentations[0] = copy_of(indentation);
+    born->next            = u->grouping;
+    u->grouping           = born;
+  }
+  /* Store the file size after the change, to be used when redoing. */
+  u->newsize = file->totsize;
+}
+
+/* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
+ * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
+void update_multiline_undo(long lineno, const char *const restrict indentation) {
+  update_multiline_undo_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), lineno, indentation);
+}
+
 /* Find the last blank in the given piece of text such that the display width to that point is at most
  * (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
  * blank in that group of blanks. When snap_at_nl is TRUE, a newline character counts as a blank too. */
@@ -430,6 +465,41 @@ bool inpar(const linestruct *const line) {
   Ulong quot_len   = quote_length(line->data);
   Ulong indent_len = indent_length(line->data + quot_len);
   return (line->data[quot_len + indent_len]);
+}
+
+/* Insert a new empty line, either `above` or `below` `line`.  */
+void insert_empty_line(linestruct *line, bool above, bool autoindent) {
+  linestruct *topline, *newline;
+  if (above) {
+    if (!line->prev) {
+      newline = make_new_node(NULL);
+      newline->next = line;
+      line->prev = newline;
+      if (line == openfile->filetop) {
+        openfile->filetop = newline;
+      }
+      if (line == openfile->edittop) {
+        openfile->edittop = newline;
+      }
+    }
+    else {
+      topline = line->prev;
+      newline = make_new_node(topline);
+      splice_node(topline, newline);
+    }
+  }
+  else {
+    topline = line;
+    newline = make_new_node(topline);
+    splice_node(topline, newline);
+  }
+  renumber_from(newline);
+  if (!autoindent) {
+    newline->data = COPY_OF("");
+  }
+  else {
+    newline->data = measured_copy(line->data, indent_length(line->data));
+  }
 }
 
 /* ----------------------------- Indent ----------------------------- */

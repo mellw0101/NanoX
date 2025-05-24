@@ -281,6 +281,8 @@ Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NO
 Ulong quote_length(const char *const restrict line);
 void  add_undo_for(openfilestruct *const file, undo_type action, const char *const restrict message);
 void  add_undo(undo_type action, const char *const restrict message);
+void  update_multiline_undo_for(openfilestruct *const file, long lineno, const char *const restrict indentation);
+void  update_multiline_undo(long lineno, const char *const restrict indentation);
 long  break_line(const char *textstart, long goal, bool snap_at_nl);
 void  do_mark_for(openfilestruct *const file);
 void  do_mark(void);
@@ -288,6 +290,7 @@ void  discard_until_for(openfilestruct *const buffer, const undostruct *const th
 void  discard_until(const undostruct *thisitem);
 bool begpar(const linestruct *const line, int depth);
 bool inpar(const linestruct *const line);
+void insert_empty_line(linestruct *line, bool above, bool autoindent);
 
 /* ----------------------------- Indent ----------------------------- */
 
