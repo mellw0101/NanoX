@@ -351,7 +351,7 @@ int char_length(const char *const ptr) {
   return 1;
 }
 
-/* Return the number of (multibyte) characters in the given string. */
+/* Return the number of (multibyte and singlebyte) characters in the given string. */
 Ulong mbstrlen(const char *pointer) {
   Ulong count = 0;
   while (*pointer) {

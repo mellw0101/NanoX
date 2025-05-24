@@ -5,6 +5,21 @@
 
  */
 #include "../include/c_proto.h"
+#ifdef HAVE_MAGIC_H
+# include <magic.h>
+#endif
+
+
+/* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
+
+
+#ifdef HAVE_MAGIC_H
+# ifdef DEBUG
+#   define MAGIC_FLAGS  (MAGIC_SYMLINK | MAGIC_DEBUG | MAGIC_CHECK | MAGIC_ERROR)
+# else
+#   define MAGIC_FLAGS  (MAGIC_SYMLINK | MAGIC_ERROR)
+# endif
+#endif
 
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
@@ -12,6 +27,20 @@
 
 /* Whether ncurses accepts -1 to mean "default color". */
 static bool defaults_allowed = FALSE;
+
+
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
+
+
+/* Try to match the given shibboleth string with, one of the regexes in the list starting at head.  Return 'TRUE' upon success. */
+static bool found_in_list(const regexlisttype *const head, const char *const restrict shibboleth) {
+  DLIST_FOR_NEXT(head, item) {
+    if (regexec(item->one_rgx, shibboleth, 0, NULL, 0) == 0) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
@@ -37,10 +66,9 @@ void prepare_palette_for(openfilestruct *const file) {
 
 /* Initialize the color pairs for the currently open file. */
 void prepare_palette(void) {
-  if (ISSET(USING_GUI)) {
-    return;
+  if (!ISSET(USING_GUI)) {
+    prepare_palette_for(openfile);
   }
-  prepare_palette_for(openfile);
 }
 
 /* Determine whether the matches of multiline regexes are still the same, and if not, schedule a screen refresh, so things will be repainted. */
@@ -105,10 +133,9 @@ void check_the_multis_for(openfilestruct *const file, linestruct *const line) {
 
 /* Determine whether the matches of multiline regexes are still the same, and if not, schedule a screen refresh, so things will be repainted. */
 void check_the_multis(linestruct *const line) {
-  if (ISSET(USING_GUI)) {
-    return;
+  if (!ISSET(USING_GUI)) {
+    check_the_multis_for(openfile, line);
   }
-  check_the_multis_for(openfile, line);
 }
 
 /* Initialize the color pairs for nano's interface.  Ask ncurses to allow -1 to
@@ -244,12 +271,177 @@ void set_syntax_colorpairs(syntaxtype *const sntx) {
   }
 }
 
-/* Try to match the given shibboleth string with, one of the regexes in the list starting at head.  Return 'TRUE' upon success. */
-_UNUSED static bool found_in_list(const regexlisttype *const head, const char *const restrict shibboleth) {
-  DLIST_FOR_NEXT(head, item) {
-    if (regexec(item->one_rgx, shibboleth, 0, NULL, 0) == 0) {
-      return TRUE;
+/* Find a syntax that applies to `file`, based upon filename or buffer content, and load and prime this syntax when needed. */
+void find_and_prime_applicable_syntax_for(openfilestruct *const file) {
+  ASSERT(file);
+  syntaxtype *sntx = NULL;
+  char *fullname;
+# ifdef HAVE_LIBMAGIC
+  struct stat  fileinfo;
+  magic_t      cookie      = NULL;
+  const char * magicstring = NULL;
+# endif
+  /* If the rcfiles were not read, or contained no syntaxes, get out. */
+  if (ISSET(USING_GUI) || !syntaxes) {
+    return;
+  }
+  /* If we specified a syntax-override string, use it. */
+  if (syntaxstr) {
+    /* An override of "none" is like having no syntax at all. */
+    if (strcmp(syntaxstr, "none") == 0) {
+      return;
+    }
+    DLIST_ND_FOR_NEXT(syntaxes, sntx) {
+      if (strcmp(sntx->name, syntaxstr) == 0) {
+        break;
+      }
+    }
+    if (!sntx && !inhelp) {
+      statusline_curses(ALERT, _("Unknown syntax name: %s"), syntaxstr);
     }
   }
-  return FALSE;
+  /* If no syntax-override string was specified, or it didn't match,
+   * try finding a syntax based on the filename (extension). */
+  if (!sntx && !inhelp) {
+    fullname = get_full_path(file->filename);
+    if (!fullname) {
+      fullname = realloc_strcpy(fullname, file->filename);
+    }
+    DLIST_ND_FOR_NEXT(syntaxes, sntx) {
+      if (found_in_list(sntx->extensions, fullname)) {
+        break;
+      }
+    }
+    free(fullname);
+  }
+  /* If the filename didn't match anything, try the first line. */
+  if (!sntx && !inhelp) {
+    for (sntx = syntaxes; sntx; sntx = sntx->next) {
+      if (found_in_list(sntx->headers, file->filetop->data)) {
+        break;
+      }
+    }
+  }
+// #define HAVE_LIBMAGIC
+#ifdef HAVE_LIBMAGIC
+  /* If we still don't have an answer, try using magic (when requested). */
+  if (!sntx && !inhelp && ISSET(USE_MAGIC)) {
+    if (stat(file->filename, &fileinfo) == 0) {
+      /* Open the magic database and get a diagnosis of the file. */
+      cookie = magic_open(MAGIC_FLAGS);
+      if (!cookie || magic_load(cookie, NULL) < 0) {
+        statusline(ALERT, _("magic_load() failed: %s"), strerror(errno));
+      }
+      else {
+        magicstring = magic_file(cookie, file->filename);
+        if (!magicstring) {
+          statusline_curses(ALERT, _("magic_file(%s) failed: %s"), file->filename, magic_error(cookie));
+        }
+      }
+    }
+    /* Now try and find a syntax that matches the magic string. */
+    if (magicstring) {
+      DLIST_ND_FOR_NEXT(syntaxes, sntx) {
+        if (found_in_list(sntx->magics, magicstring)) {
+          break;
+        }
+      }
+    }
+    if (!stat(file->filename, &fileinfo)) {
+      magic_close(cookie);
+    }
+  }
+#endif
+  /* If nothing at all matched, see if there is a default syntax. */
+  if (!sntx && !inhelp) {
+    DLIST_ND_FOR_NEXT(syntaxes, sntx) {
+      if (strcmp(sntx->name, "default") == 0) {
+        break;
+      }
+    }
+  }
+  /* When the syntax isn't loaded yet, parse it and initialize its colors. */
+  if (sntx && sntx->filename) {
+    parse_one_include(sntx->filename, sntx);
+    set_syntax_colorpairs(sntx);
+  }
+  file->syntax = sntx;
+}
+
+/* Find a syntax that applies to the current buffer, based upon filename or buffer content, and load and prime this syntax when needed. */
+void find_and_prime_applicable_syntax(void) {
+  if (!ISSET(USING_GUI)) {
+    find_and_prime_applicable_syntax_for(openfile);
+  }
+}
+
+/* Precalculate the multi-line start and end regex info so we can speed up rendering (with any hope at all...). */
+void precalc_multicolorinfo_for(openfilestruct *const file) {
+  ASSERT(file);
+  const colortype *ink;
+  regmatch_t startmatch, endmatch;
+  linestruct *line, *tailline;
+  if (ISSET(USING_GUI) || ISSET(NO_SYNTAX) || !file->syntax || !file->syntax->multiscore) {
+    return;
+  }
+  /* For each line, allocate cache space for the multiline-regex info. */
+  for (line = file->filetop; line; line = line->next) {
+    if (!line->multidata) {
+      line->multidata = xmalloc(file->syntax->multiscore * sizeof(short));
+    }
+  }
+  for (ink=file->syntax->color; ink; ink=ink->next) {
+    /* If this is not a multi-line regex, skip it. */
+    if (!ink->end) {
+      continue;
+    }
+    for (line=file->filetop; line; line=line->next) {
+      int index = 0;
+      /* Assume nothing applies until proven otherwise below. */
+      line->multidata[ink->id] = NOTHING;
+      /* When the line contains a start match, look for an end, and if found, mark all the lines that are affected. */
+      while (regexec(ink->start, (line->data + index), 1, &startmatch, ((index == 0) ? 0 : REG_NOTBOL)) == 0) {
+        /* Begin looking for an end match after the start match. */
+        index += startmatch.rm_eo;
+        /* If there is an end match on this same line, mark the line, but continue looking for other starts after it. */
+        if (regexec(ink->end, (line->data + index), 1, &endmatch, ((index == 0) ? 0 : REG_NOTBOL)) == 0) {
+          line->multidata[ink->id] = JUSTONTHIS;
+          index += endmatch.rm_eo;
+          /* If the total match has zero length, force an advance. */
+          if ((startmatch.rm_eo - startmatch.rm_so + endmatch.rm_eo) == 0) {
+            /* When at end-of-line, there is no other start. */
+            if (!line->data[index]) {
+              break;
+            }
+            index = step_right(line->data, index);
+          }
+          continue;
+        }
+        /* Look for an end match on later lines. */
+        tailline = line->next;
+        while (tailline && regexec(ink->end, tailline->data, 1, &endmatch, 0) != 0) {
+          tailline = tailline->next;
+        }
+        line->multidata[ink->id] = STARTSHERE;
+        /* Note that this also advances the line in the main loop. */
+        for (line = line->next; line != tailline; line = line->next) {
+          line->multidata[ink->id] = WHOLELINE;
+        }
+        if (!tailline) {
+          line = file->filebot;
+          break;
+        }
+        tailline->multidata[ink->id] = ENDSHERE;
+        /* Look for a possible new start after the end match. */
+        index = endmatch.rm_eo;
+      }
+    }
+  }
+}
+
+/* Precalculate the multi-line start and end regex info so we can speed up rendering (with any hope at all...). */
+void precalc_multicolorinfo(void) {
+  if (!ISSET(USING_GUI)) {
+    precalc_multicolorinfo_for(openfile);
+  }
 }

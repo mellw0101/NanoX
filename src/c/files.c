@@ -212,7 +212,7 @@ void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestru
   free(orphan->statinfo);
   free(orphan->lock_filename);
   /* Free the undo stack for the orphan file. */
-  discard_until_in_buffer(orphan, NULL);
+  discard_until_for(orphan, NULL);
   free(orphan->errormessage);
   /* If the buffer to free is the open buffer, decrament it once. */
   if (orphan == *open) {

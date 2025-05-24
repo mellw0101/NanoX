@@ -237,3 +237,25 @@ void to_bottom_row(void) {
     to_bottom_row_for(openfile, editwinrows, editwincols);
   }
 }
+
+/* Move to the first beginning of a paragraph before the current line. */
+void do_para_begin(linestruct **const line) {
+  ASSERT(line);
+  if ((*line)->prev) {
+    CLIST_ADV_PREV(*line);
+  }
+  while (!begpar(*line, 0)) {
+    CLIST_ADV_PREV(*line);
+  }
+}
+
+/* Move down to the last line of the first found paragraph. */
+void do_para_end(linestruct **const line) {
+  ASSERT(line);
+  while ((*line)->next && !inpar(*line)) {
+    CLIST_ADV_NEXT(*line);
+  }
+  while ((*line)->next && inpar((*line)->next) && !begpar((*line)->next, 0)) {
+    CLIST_ADV_NEXT(*line);
+  } 
+}

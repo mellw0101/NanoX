@@ -47,7 +47,7 @@ linestruct *pletion_line = NULL;
 /* Whether indenting/commenting should include the last line of the marked region. */
 // bool also_the_last = FALSE;
 /* The answer string used by the status-bar prompt. */
-char *answer = NULL;
+// char *answer = NULL;
 /* The last string we searched for. */
 char *last_search = NULL;
 /* Whether the last search found something. */
@@ -96,11 +96,11 @@ WINDOW *suggestwin = NULL;
 /* An array of characters that together depict the scrollbar. */
 int *bardata = NULL;
 /* The column at which a vertical bar will be drawn. */
-long stripe_column = 0;
+// long stripe_column = 0;
 /* Whether to center the line with the cursor (0), push it to the top of the viewport (1), or to the bottom (2). */
 int cycling_aim = 0;
 /* The buffer where we store cut text. */
-linestruct *cutbuffer = NULL;
+// linestruct *cutbuffer = NULL;
 /* The last line in the cutbuffer. */
 linestruct *cutbottom = NULL;
 /* Whether to add to the cutbuffer instead of clearing it first. */
@@ -110,20 +110,19 @@ bool keep_cutbuffer = FALSE;
 /* The first open buffer. */
 // openfilestruct *startfile = NULL;
 /* The opening and closing brackets that bracket searches can find. */
-char *matchbrackets = NULL;
+// char *matchbrackets = NULL;
 /* The characters used when visibly showing tabs and spaces. */
 // char *whitespace = NULL;
 /* The length in bytes of these characters. */
 // int whitelen[2];
 /* The closing punctuation that can end sentences. */
-char *punct = NULL;
-/* The closing brackets that can follow closing punctuation and can end
- * sentences. */
-char *brackets = NULL;
+// char *punct = NULL;
+/* The closing brackets that can follow closing punctuation and can end sentences. */
+// char *brackets = NULL;
 /* The quoting string.  The default value is set in main(). */
-char *quotestr = NULL;
+// char *quotestr = NULL;
 /* The compiled regular expression from the quoting string. */
-regex_t quotereg;
+// regex_t quotereg;
 /* Nonalphanumeric characters that also form words. */
 // char *word_chars = NULL;
 /* The directory where we store backup files. */
@@ -131,11 +130,11 @@ regex_t quotereg;
 /* The path to our confining "operating" directory, when given. */
 // char *operating_dir = NULL;
 /* The command to use for the alternate spell checker. */
-char *alt_speller = NULL;
+// char *alt_speller = NULL;
 /* The global list of color syntaxes. */
-syntaxtype *syntaxes = NULL;
+// syntaxtype *syntaxes = NULL;
 /* The color syntax name specified on the command line. */
-char *syntaxstr = NULL;
+// char *syntaxstr = NULL;
 /* Whether the colors for the current syntax have been initialized. */
 // bool have_palette = FALSE;
 /* Becomes TRUE when NO_COLOR is set in the environment. */
@@ -186,7 +185,7 @@ char *statedir = NULL;
 /* An error message (if any) about nanorc files or history files. */
 // char *startup_problem = NULL;
 /* The argument of the --rcfile option, when given. */
-char *custom_nanorc = NULL;
+// char *custom_nanorc = NULL;
 /* The name (of a function) between braces in a string bind. */
 char *commandname = NULL;
 /* The function that the above name resolves to, if any. */
@@ -215,85 +214,85 @@ HashMap *test_hashmap = NULL;
 
 /* Empty functions, for the most part corresponding to toggles. */
 
-void case_sens_void(void) {
-  ;
-}
+// void case_sens_void(void) {
+//   ;
+// }
 
-void regexp_void(void) {
-  ;
-}
+// void regexp_void(void) {
+//   ;
+// }
 
-void backwards_void(void) {
-  ;
-}
+// void backwards_void(void) {
+//   ;
+// }
 
-void get_older_item(void) {
-  ;
-}
+// void get_older_item(void) {
+//   ;
+// }
 
-void get_newer_item(void) {
-  ;
-}
+// void get_newer_item(void) {
+//   ;
+// }
 
-void flip_replace(void) {
-  ;
-}
+// void flip_replace(void) {
+//   ;
+// }
 
-void flip_goto(void) {
-  ;
-}
+// void flip_goto(void) {
+//   ;
+// }
 
-void to_files(void) {
-  ;
-}
+// void to_files(void) {
+//   ;
+// }
 
-void goto_dir(void) {
-  ;
-}
+// void goto_dir(void) {
+//   ;
+// }
 
-void do_nothing(void) {
-  ;
-}
+// void do_nothing(void) {
+//   ;
+// }
 
-void do_toggle(void) {
-  ;
-}
+// void do_toggle(void) {
+//   ;
+// }
 
-void dos_format(void) {
-  ;
-}
+// void dos_format(void) {
+//   ;
+// }
 
-void mac_format(void) {
-  ;
-}
+// void mac_format(void) {
+//   ;
+// }
 
-void append_it(void) {
-  ;
-}
+// void append_it(void) {
+//   ;
+// }
 
-void prepend_it(void) {
-  ;
-}
+// void prepend_it(void) {
+//   ;
+// }
 
-void back_it_up(void) {
-  ;
-}
+// void back_it_up(void) {
+//   ;
+// }
 
-void flip_execute(void) {
-  ;
-}
+// void flip_execute(void) {
+//   ;
+// }
 
-void flip_pipe(void) {
-  ;
-}
+// void flip_pipe(void) {
+//   ;
+// }
 
-void flip_convert(void) {
-  ;
-}
+// void flip_convert(void) {
+//   ;
+// }
 
-void flip_newbuffer(void) {
-  ;
-}
+// void flip_newbuffer(void) {
+//   ;
+// }
 
 // void discard_buffer(void) {
 //   ;

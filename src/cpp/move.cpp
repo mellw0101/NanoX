@@ -155,24 +155,24 @@ void do_center(void) {
 }
 
 /* Move to the first beginning of a paragraph before the current line. */
-void do_para_begin(linestruct **line) _NOTHROW {
-  if ((*line)->prev) {
-    *line = (*line)->prev;
-  }
-  while (!begpar(*line, 0)) {
-    *line = (*line)->prev;
-  }
-}
+// void do_para_begin(linestruct **line) _NOTHROW {
+//   if ((*line)->prev) {
+//     *line = (*line)->prev;
+//   }
+//   while (!begpar(*line, 0)) {
+//     *line = (*line)->prev;
+//   }
+// }
 
 /* Move down to the last line of the first found paragraph. */
-void do_para_end(linestruct **line) _NOTHROW {
-  while ((*line)->next && !inpar(*line)) {
-    *line = (*line)->next;
-  }
-  while ((*line)->next && inpar((*line)->next) && !begpar((*line)->next, 0)) {
-    *line = (*line)->next;
-  }
-}
+// void do_para_end(linestruct **line) _NOTHROW {
+//   while ((*line)->next && !inpar(*line)) {
+//     *line = (*line)->next;
+//   }
+//   while ((*line)->next && inpar((*line)->next) && !begpar((*line)->next, 0)) {
+//     *line = (*line)->next;
+//   }
+// }
 
 /* Move up to first start of a paragraph before the current line. */
 void to_para_begin(void) {

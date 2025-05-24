@@ -8,76 +8,76 @@
 # define HOME_RC_NAME RCFILE_NAME
 #endif
 
-static const rcoption rcopts[] = {
-  {             "boldtext",        BOLD_TEXT},
-  {             "brackets",                0},
-  {       "breaklonglines", BREAK_LONG_LINES},
-  {        "casesensitive",   CASE_SENSITIVE},
-  {         "constantshow",    CONSTANT_SHOW},
-  {                 "fill",                0},
-  {           "historylog",       HISTORYLOG},
-  {          "linenumbers",     LINE_NUMBERS},
-  {                "magic",        USE_MAGIC},
-  {                "mouse",        USE_MOUSE},
-  {          "multibuffer",      MULTIBUFFER},
-  {               "nohelp",          NO_HELP},
-  {           "nonewlines",      NO_NEWLINES},
-  {               "nowrap",          NO_WRAP}, /* Deprecated; remove in 2027. */
-  {         "operatingdir",                0},
-  {          "positionlog",      POSITIONLOG},
-  {             "preserve",         PRESERVE},
-  {                "punct",                0},
-  {             "quotestr",                0},
-  {           "quickblank",      QUICK_BLANK},
-  {         "rawsequences",    RAW_SEQUENCES},
-  {         "rebinddelete",    REBIND_DELETE},
-  {               "regexp",       USE_REGEXP},
-  {           "saveonexit",     SAVE_ON_EXIT},
-  {              "speller",                0},
-  {            "afterends",       AFTER_ENDS},
-  {"allow_insecure_backup",  INSECURE_BACKUP},
-  {             "atblanks",        AT_BLANKS},
-  {           "autoindent",       AUTOINDENT},
-  {               "backup",      MAKE_BACKUP},
-  {            "backupdir",                0},
-  {            "bookstyle",        BOOKSTYLE},
-  {         "colonparsing",    COLON_PARSING},
-  {        "cutfromcursor",  CUT_FROM_CURSOR},
-  {            "emptyline",       EMPTY_LINE},
-  {          "guidestripe",                0},
-  {            "indicator",        INDICATOR},
-  {       "jumpyscrolling",  JUMPY_SCROLLING},
-  {              "locking",          LOCKING},
-  {        "matchbrackets",                0},
-  {              "minibar",          MINIBAR},
-  {            "noconvert",       NO_CONVERT},
-  {           "showcursor",      SHOW_CURSOR},
-  {            "smarthome",       SMART_HOME},
-  {             "softwrap",         SOFTWRAP},
-  {           "stateflags",       STATEFLAGS},
-  {              "tabsize",                0},
-  {         "tabstospaces",   TABS_TO_SPACES},
-  {           "trimblanks",      TRIM_BLANKS},
-  {                 "unix",     MAKE_IT_UNIX},
-  {           "whitespace",                0},
-  {           "wordbounds",      WORD_BOUNDS},
-  {            "wordchars",                0},
-  {                  "zap",     LET_THEM_ZAP},
-  {                 "zero",             ZERO},
-  {           "titlecolor",                0},
-  {          "numbercolor",                0},
-  {          "stripecolor",                0},
-  {        "scrollercolor",                0},
-  {        "selectedcolor",                0},
-  {       "spotlightcolor",                0},
-  {            "minicolor",                0},
-  {          "promptcolor",                0},
-  {          "statuscolor",                0},
-  {           "errorcolor",                0},
-  {             "keycolor",                0},
-  {        "functioncolor",                0},
-  {                   NULL,                0}
-};
+// static const rcoption rcopts[] = {
+//   {             "boldtext",        BOLD_TEXT},
+//   {             "brackets",                0},
+//   {       "breaklonglines", BREAK_LONG_LINES},
+//   {        "casesensitive",   CASE_SENSITIVE},
+//   {         "constantshow",    CONSTANT_SHOW},
+//   {                 "fill",                0},
+//   {           "historylog",       HISTORYLOG},
+//   {          "linenumbers",     LINE_NUMBERS},
+//   {                "magic",        USE_MAGIC},
+//   {                "mouse",        USE_MOUSE},
+//   {          "multibuffer",      MULTIBUFFER},
+//   {               "nohelp",          NO_HELP},
+//   {           "nonewlines",      NO_NEWLINES},
+//   {               "nowrap",          NO_WRAP}, /* Deprecated; remove in 2027. */
+//   {         "operatingdir",                0},
+//   {          "positionlog",      POSITIONLOG},
+//   {             "preserve",         PRESERVE},
+//   {                "punct",                0},
+//   {             "quotestr",                0},
+//   {           "quickblank",      QUICK_BLANK},
+//   {         "rawsequences",    RAW_SEQUENCES},
+//   {         "rebinddelete",    REBIND_DELETE},
+//   {               "regexp",       USE_REGEXP},
+//   {           "saveonexit",     SAVE_ON_EXIT},
+//   {              "speller",                0},
+//   {            "afterends",       AFTER_ENDS},
+//   {"allow_insecure_backup",  INSECURE_BACKUP},
+//   {             "atblanks",        AT_BLANKS},
+//   {           "autoindent",       AUTOINDENT},
+//   {               "backup",      MAKE_BACKUP},
+//   {            "backupdir",                0},
+//   {            "bookstyle",        BOOKSTYLE},
+//   {         "colonparsing",    COLON_PARSING},
+//   {        "cutfromcursor",  CUT_FROM_CURSOR},
+//   {            "emptyline",       EMPTY_LINE},
+//   {          "guidestripe",                0},
+//   {            "indicator",        INDICATOR},
+//   {       "jumpyscrolling",  JUMPY_SCROLLING},
+//   {              "locking",          LOCKING},
+//   {        "matchbrackets",                0},
+//   {              "minibar",          MINIBAR},
+//   {            "noconvert",       NO_CONVERT},
+//   {           "showcursor",      SHOW_CURSOR},
+//   {            "smarthome",       SMART_HOME},
+//   {             "softwrap",         SOFTWRAP},
+//   {           "stateflags",       STATEFLAGS},
+//   {              "tabsize",                0},
+//   {         "tabstospaces",   TABS_TO_SPACES},
+//   {           "trimblanks",      TRIM_BLANKS},
+//   {                 "unix",     MAKE_IT_UNIX},
+//   {           "whitespace",                0},
+//   {           "wordbounds",      WORD_BOUNDS},
+//   {            "wordchars",                0},
+//   {                  "zap",     LET_THEM_ZAP},
+//   {                 "zero",             ZERO},
+//   {           "titlecolor",                0},
+//   {          "numbercolor",                0},
+//   {          "stripecolor",                0},
+//   {        "scrollercolor",                0},
+//   {        "selectedcolor",                0},
+//   {       "spotlightcolor",                0},
+//   {            "minicolor",                0},
+//   {          "promptcolor",                0},
+//   {          "statuscolor",                0},
+//   {           "errorcolor",                0},
+//   {             "keycolor",                0},
+//   {        "functioncolor",                0},
+//   {                   NULL,                0}
+// };
 /* Whether we're allowed to add to the last syntax.  When a file ends,
  * or when a new syntax command is seen, this bool becomes 'FALSE'. */
 // static bool nanox_rc_opensyntax = FALSE;
@@ -365,70 +365,70 @@ keystruct *strtosc(const char *input) {
 
 /* Parse the next syntax name and its possible extension regexes from the
  * line at ptr, and add it to the global linked list of color syntaxes. */
-void begin_new_syntax(char *ptr) {
-  char *nameptr = ptr;
-  /* Check that the syntax name is not empty. */
-  if (!*ptr || (*ptr == '"' && !(*(ptr + 1) || *(ptr + 1) == '"'))) {
-    jot_error(N_("Missing syntax name"));
-    return;
-  }
-  ptr = parse_next_word(ptr);
-  /* Check that quotes around the name are either paired or absent. */
-  if ((*nameptr == '\x22') ^ (nameptr[strlen(nameptr) - 1] == '\x22')) {
-    jot_error(N_("Unpaired quote in syntax name"));
-    return;
-  }
-  /* If the name is quoted, strip the quotes. */
-  if (*nameptr == '\x22') {
-    nameptr++;
-    nameptr[strlen(nameptr) - 1] = '\0';
-  }
-  /* Redefining the "none" syntax is not allowed. */
-  if (strcmp(nameptr, "none") == 0) {
-    jot_error(N_("The \"none\" syntax is reserved"));
-    return;
-  }
-  /* Initialize a new syntax struct. */
-  nanox_rc_live_syntax                = (syntaxtype *)nmalloc(sizeof(syntaxtype));
-  nanox_rc_live_syntax->name          = copy_of(nameptr);
-  nanox_rc_live_syntax->filename      = copy_of(nanox_rc_path);
-  nanox_rc_live_syntax->lineno        = nanox_rc_lineno;
-  nanox_rc_live_syntax->augmentations = NULL;
-  nanox_rc_live_syntax->extensions    = NULL;
-  nanox_rc_live_syntax->headers       = NULL;
-  nanox_rc_live_syntax->magics        = NULL;
-  nanox_rc_live_syntax->linter        = NULL;
-  nanox_rc_live_syntax->formatter     = NULL;
-  nanox_rc_live_syntax->tabstring     = NULL;
-  nanox_rc_live_syntax->comment       = copy_of(GENERAL_COMMENT_CHARACTER);
-  nanox_rc_live_syntax->color         = NULL;
-  nanox_rc_live_syntax->multiscore    = 0;
-  /* Hook the new syntax in at the top of the list. */
-  nanox_rc_live_syntax->next  = syntaxes;
-  syntaxes           = nanox_rc_live_syntax;
-  nanox_rc_opensyntax         = TRUE;
-  nanox_rc_seen_color_command = FALSE;
-  /* The default syntax should have no associated extensions. */
-  if (strcmp(nanox_rc_live_syntax->name, "default") == 0 && *ptr) {
-    jot_error(N_("The \"default\" syntax does not accept extensions"));
-    return;
-  }
-  /* If there seem to be extension regexes, pick them up. */
-  if (*ptr) {
-    grab_and_store("extension", ptr, &nanox_rc_live_syntax->extensions);
-  }
-}
+// void begin_new_syntax(char *ptr) {
+//   char *nameptr = ptr;
+//   /* Check that the syntax name is not empty. */
+//   if (!*ptr || (*ptr == '"' && !(*(ptr + 1) || *(ptr + 1) == '"'))) {
+//     jot_error(N_("Missing syntax name"));
+//     return;
+//   }
+//   ptr = parse_next_word(ptr);
+//   /* Check that quotes around the name are either paired or absent. */
+//   if ((*nameptr == '\x22') ^ (nameptr[strlen(nameptr) - 1] == '\x22')) {
+//     jot_error(N_("Unpaired quote in syntax name"));
+//     return;
+//   }
+//   /* If the name is quoted, strip the quotes. */
+//   if (*nameptr == '\x22') {
+//     nameptr++;
+//     nameptr[strlen(nameptr) - 1] = '\0';
+//   }
+//   /* Redefining the "none" syntax is not allowed. */
+//   if (strcmp(nameptr, "none") == 0) {
+//     jot_error(N_("The \"none\" syntax is reserved"));
+//     return;
+//   }
+//   /* Initialize a new syntax struct. */
+//   nanox_rc_live_syntax                = (syntaxtype *)nmalloc(sizeof(syntaxtype));
+//   nanox_rc_live_syntax->name          = copy_of(nameptr);
+//   nanox_rc_live_syntax->filename      = copy_of(nanox_rc_path);
+//   nanox_rc_live_syntax->lineno        = nanox_rc_lineno;
+//   nanox_rc_live_syntax->augmentations = NULL;
+//   nanox_rc_live_syntax->extensions    = NULL;
+//   nanox_rc_live_syntax->headers       = NULL;
+//   nanox_rc_live_syntax->magics        = NULL;
+//   nanox_rc_live_syntax->linter        = NULL;
+//   nanox_rc_live_syntax->formatter     = NULL;
+//   nanox_rc_live_syntax->tabstring     = NULL;
+//   nanox_rc_live_syntax->comment       = copy_of(GENERAL_COMMENT_CHARACTER);
+//   nanox_rc_live_syntax->color         = NULL;
+//   nanox_rc_live_syntax->multiscore    = 0;
+//   /* Hook the new syntax in at the top of the list. */
+//   nanox_rc_live_syntax->next  = syntaxes;
+//   syntaxes           = nanox_rc_live_syntax;
+//   nanox_rc_opensyntax         = TRUE;
+//   nanox_rc_seen_color_command = FALSE;
+//   /* The default syntax should have no associated extensions. */
+//   if (strcmp(nanox_rc_live_syntax->name, "default") == 0 && *ptr) {
+//     jot_error(N_("The \"default\" syntax does not accept extensions"));
+//     return;
+//   }
+//   /* If there seem to be extension regexes, pick them up. */
+//   if (*ptr) {
+//     grab_and_store("extension", ptr, &nanox_rc_live_syntax->extensions);
+//   }
+// }
 
 /* Verify that a syntax definition contains at least one color command. */
-static void check_for_nonempty_syntax(void) {
-  if (nanox_rc_opensyntax && !nanox_rc_seen_color_command) {
-    Ulong current_lineno = nanox_rc_lineno;
-    nanox_rc_lineno               = nanox_rc_live_syntax->lineno;
-    jot_error(N_("Syntax \"%s\" has no color commands"), nanox_rc_live_syntax->name);
-    nanox_rc_lineno = current_lineno;
-  }
-  nanox_rc_opensyntax = FALSE;
-}
+// static void check_for_nonempty_syntax(void) {
+//   if (nanox_rc_opensyntax && !nanox_rc_seen_color_command) {
+//     Ulong current_lineno = nanox_rc_lineno;
+//     nanox_rc_lineno      = nanox_rc_live_syntax->lineno;
+//     jot_error(N_("Syntax \"%s\" has no color commands"), nanox_rc_live_syntax->name);
+//     nanox_rc_lineno = current_lineno;
+//   }
+//   nanox_rc_opensyntax = FALSE;
+// }
 
 /* Return TRUE when the given function is present in almost all menus. */
 static bool is_universal(void (*f)(void)) {
@@ -437,7 +437,7 @@ static bool is_universal(void (*f)(void)) {
 }
 
 /* Bind or unbind a key combo, to or from a function. */
-static void parse_binding(char *ptr, bool dobind) {
+void parse_binding(char *ptr, bool dobind) {
   char      *keyptr  = NULL;
   char      *keycopy = NULL;
   char      *funcptr = NULL;
@@ -579,98 +579,98 @@ static void parse_binding(char *ptr, bool dobind) {
 }
 
 /* Verify that the given file exists, is not a folder nor a device. */
-bool is_good_file(char *file) _NOTHROW {
-  struct stat rcinfo;
-  /* First check that the file exists and is readable. */
-  if (access(file, R_OK) != 0) {
-    return FALSE;
-  }
-  /* If the thing exists, it may be neither a directory nor a device. */
-  if (stat(file, &rcinfo) != -1 && (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode))) {
-    jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
-    return FALSE;
-  }
-  return TRUE;
-}
+// bool is_good_file(char *file) _NOTHROW {
+//   struct stat rcinfo;
+//   /* First check that the file exists and is readable. */
+//   if (access(file, R_OK) != 0) {
+//     return FALSE;
+//   }
+//   /* If the thing exists, it may be neither a directory nor a device. */
+//   if (stat(file, &rcinfo) != -1 && (S_ISDIR(rcinfo.st_mode) || S_ISCHR(rcinfo.st_mode) || S_ISBLK(rcinfo.st_mode))) {
+//     jot_error(S_ISDIR(rcinfo.st_mode) ? N_("\"%s\" is a directory") : N_("\"%s\" is a device file"), file);
+//     return FALSE;
+//   }
+//   return TRUE;
+// }
 
 /* Partially parse the syntaxes in the given file, or (when syntax is not NULL) fully parse one specific syntax from the file. */
-void parse_one_include(char *file, syntaxtype *syntax) {
-  char          *was_nanorc = nanox_rc_path;
-  Ulong          was_lineno = nanox_rc_lineno;
-  FILE          *rcstream;
-  augmentstruct *extra;
-  /* Don't open directories, character files, or block files. */
-  if (access(file, R_OK) == 0 && !is_good_file(file)) {
-    return;
-  }
-  rcstream = fopen(file, "rb");
-  if (!rcstream) {
-    jot_error(N_("Error reading %s: %s"), file, strerror(errno));
-    return;
-  }
-  /* Use the name and line number position of the included syntax file while parsing it, so we can know where any errors in it are. */
-  nanox_rc_path = file;
-  nanox_rc_lineno = 0;
-  /* If this is the first pass, parse only the prologue. */
-  if (!syntax) {
-    parse_rcfile(rcstream, TRUE, TRUE);
-    nanox_rc_path = was_nanorc;
-    nanox_rc_lineno = was_lineno;
-    return;
-  }
-  nanox_rc_live_syntax = syntax;
-  nanox_rc_lastcolor   = NULL;
-  /* Fully parse the given syntax (as it is about to be used). */
-  parse_rcfile(rcstream, TRUE, FALSE);
-  extra = syntax->augmentations;
-  /* Apply any stored extendsyntax commands. */
-  while (extra) {
-    char *keyword = extra->data;
-    char *therest = parse_next_word(extra->data);
-    nanox_rc_path        = extra->filename;
-    nanox_rc_lineno        = extra->lineno;
-    if (!parse_syntax_commands(keyword, therest)) {
-      jot_error(N_("Command \"%s\" not understood"), keyword);
-    }
-    extra = extra->next;
-  }
-  free(syntax->filename);
-  syntax->filename = NULL;
-  nanox_rc_path           = was_nanorc;
-  nanox_rc_lineno           = was_lineno;
-}
+// void parse_one_include(char *file, syntaxtype *syntax) {
+//   char          *was_nanorc = nanox_rc_path;
+//   Ulong          was_lineno = nanox_rc_lineno;
+//   FILE          *rcstream;
+//   augmentstruct *extra;
+//   /* Don't open directories, character files, or block files. */
+//   if (access(file, R_OK) == 0 && !is_good_file(file)) {
+//     return;
+//   }
+//   rcstream = fopen(file, "rb");
+//   if (!rcstream) {
+//     jot_error(N_("Error reading %s: %s"), file, strerror(errno));
+//     return;
+//   }
+//   /* Use the name and line number position of the included syntax file while parsing it, so we can know where any errors in it are. */
+//   nanox_rc_path = file;
+//   nanox_rc_lineno = 0;
+//   /* If this is the first pass, parse only the prologue. */
+//   if (!syntax) {
+//     parse_rcfile(rcstream, TRUE, TRUE);
+//     nanox_rc_path = was_nanorc;
+//     nanox_rc_lineno = was_lineno;
+//     return;
+//   }
+//   nanox_rc_live_syntax = syntax;
+//   nanox_rc_lastcolor   = NULL;
+//   /* Fully parse the given syntax (as it is about to be used). */
+//   parse_rcfile(rcstream, TRUE, FALSE);
+//   extra = syntax->augmentations;
+//   /* Apply any stored extendsyntax commands. */
+//   while (extra) {
+//     char *keyword = extra->data;
+//     char *therest = parse_next_word(extra->data);
+//     nanox_rc_path        = extra->filename;
+//     nanox_rc_lineno        = extra->lineno;
+//     if (!parse_syntax_commands(keyword, therest)) {
+//       jot_error(N_("Command \"%s\" not understood"), keyword);
+//     }
+//     extra = extra->next;
+//   }
+//   free(syntax->filename);
+//   syntax->filename = NULL;
+//   nanox_rc_path    = was_nanorc;
+//   nanox_rc_lineno  = was_lineno;
+// }
 
 /* Expand globs in the passed name, and parse the resultant files. */
-static void parse_includes(char *ptr) {
-  char  *pattern;
-  char  *expanded;
-  glob_t files;
-  int    result;
-  check_for_nonempty_syntax();
-  pattern = ptr;
-  if (*pattern == '"') {
-    pattern++;
-  }
-  ptr = parse_argument(ptr);
-  if (strlen(pattern) > PATH_MAX) {
-    jot_error(N_("Path is too long"));
-    return;
-  }
-  /* Expand a tilde first, then try to match the globbing pattern. */
-  expanded = real_dir_from_tilde(pattern);
-  result   = glob(expanded, GLOB_ERR | GLOB_NOCHECK, NULL, &files);
-  /* If there are matches, process each of them. Otherwise, only report an error if it's something other than zero matches. */
-  if (!result) {
-    for (Ulong i = 0; i < files.gl_pathc; ++i) {
-      parse_one_include(files.gl_pathv[i], NULL);
-    }
-  }
-  else if (result != GLOB_NOMATCH) {
-    jot_error(N_("Error expanding %s: %s"), pattern, strerror(errno));
-  }
-  globfree(&files);
-  free(expanded);
-}
+// static void parse_includes(char *ptr) {
+//   char  *pattern;
+//   char  *expanded;
+//   glob_t files;
+//   int    result;
+//   check_for_nonempty_syntax();
+//   pattern = ptr;
+//   if (*pattern == '"') {
+//     pattern++;
+//   }
+//   ptr = parse_argument(ptr);
+//   if (strlen(pattern) > PATH_MAX) {
+//     jot_error(N_("Path is too long"));
+//     return;
+//   }
+//   /* Expand a tilde first, then try to match the globbing pattern. */
+//   expanded = real_dir_from_tilde(pattern);
+//   result   = glob(expanded, GLOB_ERR | GLOB_NOCHECK, NULL, &files);
+//   /* If there are matches, process each of them. Otherwise, only report an error if it's something other than zero matches. */
+//   if (!result) {
+//     for (Ulong i = 0; i < files.gl_pathc; ++i) {
+//       parse_one_include(files.gl_pathv[i], NULL);
+//     }
+//   }
+//   else if (result != GLOB_NOMATCH) {
+//     jot_error(N_("Error expanding %s: %s"), pattern, strerror(errno));
+//   }
+//   globfree(&files);
+//   free(expanded);
+// }
 
 /* Return the index of the color that is closest to the given RGB levels, assuming that the terminal uses the
  * 6x6x6 color cube of xterm-256color. When red == green == blue, return an index in the xterm gray scale. */
@@ -1020,7 +1020,7 @@ static void parse_includes(char *ptr) {
 
 #define VITALS 4
 /* Verify that the user has not unmapped every shortcut for a function that we consider 'vital' (such as 'do_exit'). */
-static void check_vitals_mapped(void) {
+void check_vitals_mapped(void) {
   void (*vitals[VITALS])() = { do_exit, do_exit, do_exit, do_cancel };
   int inmenus[VITALS]      = { MMAIN, MBROWSER, MHELP, MYESNO };
   for (Uint v = 0; v < VITALS; ++v) {
@@ -1040,337 +1040,335 @@ static void check_vitals_mapped(void) {
 
 /* Parse the rcfile, once it has been opened successfully at rcstream, and close it afterwards.
  * If just_syntax is TRUE, allow the file to to contain only color syntax commands. */
-void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
-  char *buffer = NULL;
-  Ulong size   = 0;
-  long  length = 0;
-  while ((length = getline(&buffer, &size, rcstream)) > 0) {
-    char *ptr, *keyword, *option, *argument;
-    bool  drop_open = FALSE;
-    int   set       = 0;
-    Ulong i;
-    nanox_rc_lineno++;
-    /* If doing a full parse, skip to after the 'syntax' command. */
-    if (just_syntax && !intros_only && nanox_rc_lineno <= nanox_rc_live_syntax->lineno) {
-      continue;
-    }
-    /* Strip the terminating newline and possibly a carriage return. */
-    if (buffer[length - 1] == '\n') {
-      buffer[--length] = '\0';
-    }
-    if (length > 0 && buffer[length - 1] == '\r') {
-      buffer[--length] = '\0';
-    }
-    ptr = buffer;
-    while (isblank((Uchar)*ptr)) {
-      ptr++;
-    }
-    /* If the line is empty or a comment, skip to next line. */
-    if (!*ptr || *ptr == '#') {
-      continue;
-    }
-    /* Otherwise, skip to the next space. */
-    keyword = ptr;
-    ptr     = parse_next_word(ptr);
-    /* Handle extending first... */
-    if (!just_syntax && strcmp(keyword, "extendsyntax") == 0) {
-      augmentstruct *newitem, *extra;
-      char          *syntaxname = ptr;
-      syntaxtype    *sntx;
-      check_for_nonempty_syntax();
-      ptr = parse_next_word(ptr);
-      for (sntx = syntaxes; sntx; sntx = sntx->next) {
-        if (strcmp(sntx->name, syntaxname) == 0) {
-          break;
-        }
-      }
-      if (!sntx) {
-        jot_error(N_("Could not find syntax \"%s\" to extend"), syntaxname);
-        continue;
-      }
-      keyword  = ptr;
-      argument = copy_of(ptr);
-      ptr      = parse_next_word(ptr);
-      /* File-matching commands need to be processed immediately;
-       * other commands are stored for possible later processing. */
-      if (strcmp(keyword, "header") == 0 || strcmp(keyword, "magic") == 0) {
-        free(argument);
-        nanox_rc_live_syntax = sntx;
-        nanox_rc_opensyntax  = TRUE;
-        drop_open   = TRUE;
-      }
-      else {
-        newitem           = (augmentstruct *)nmalloc(sizeof(augmentstruct));
-        newitem->filename = copy_of(nanox_rc_path);
-        newitem->lineno   = nanox_rc_lineno;
-        newitem->data     = argument;
-        newitem->next     = NULL;
-        if (sntx->augmentations) {
-          extra = sntx->augmentations;
-          while (extra->next) {
-            extra = extra->next;
-          }
-          extra->next = newitem;
-        }
-        else {
-          sntx->augmentations = newitem;
-        }
-        continue;
-      }
-    }
-    /* Try to parse the keyword. */
-    if (strcmp(keyword, "syntax") == 0) {
-      if (intros_only) {
-        check_for_nonempty_syntax();
-        begin_new_syntax(ptr);
-      }
-      else {
-        break;
-      }
-    }
-    else if (strcmp(keyword, "header") == 0) {
-      if (intros_only) {
-        grab_and_store("header", ptr, &nanox_rc_live_syntax->headers);
-      }
-    }
-    else if (strcmp(keyword, "magic") == 0) {
-#ifdef HAVE_LIBMAGIC
-      if (intros_only) {
-        grab_and_store("magic", ptr, &live_syntax->magics);
-      }
-#endif
-    }
-    else if (just_syntax && (strcmp(keyword, "set") == 0 || strcmp(keyword, "unset") == 0 ||
-                             strcmp(keyword, "bind") == 0 || strcmp(keyword, "unbind") == 0 ||
-                             strcmp(keyword, "include") == 0 || strcmp(keyword, "extendsyntax") == 0)) {
-      if (intros_only) {
-        jot_error(N_("Command \"%s\" not allowed in included file"), keyword);
-      }
-      else {
-        break;
-      }
-    }
-    else if (intros_only && (strcmp(keyword, "color") == 0 || strcmp(keyword, "icolor") == 0 ||
-                             strcmp(keyword, "comment") == 0 || strcmp(keyword, "tabgives") == 0 ||
-                             strcmp(keyword, "linter") == 0 || strcmp(keyword, "formatter") == 0)) {
-      if (!nanox_rc_opensyntax) {
-        jot_error(N_("A '%s' command requires a preceding 'syntax' command"), keyword);
-      }
-      if (strstr("icolor", keyword)) {
-        nanox_rc_seen_color_command = TRUE;
-      }
-      continue;
-    }
-    else if (parse_syntax_commands(keyword, ptr)) {
-      ;
-    }
-    else if (strcmp(keyword, "include") == 0) {
-      parse_includes(ptr);
-    }
-    else {
-      if (strcmp(keyword, "set") == 0) {
-        set = 1;
-      }
-      else if (strcmp(keyword, "unset") == 0) {
-        set = -1;
-      }
-      else if (strcmp(keyword, "bind") == 0) {
-        parse_binding(ptr, TRUE);
-      }
-      else if (strcmp(keyword, "unbind") == 0) {
-        parse_binding(ptr, FALSE);
-      }
-      else if (intros_only) {
-        jot_error(N_("Command \"%s\" not understood"), keyword);
-      }
-    }
-    if (drop_open) {
-      nanox_rc_opensyntax = FALSE;
-    }
-    if (set == 0) {
-      continue;
-    }
-    check_for_nonempty_syntax();
-    if (*ptr == '\0') {
-      jot_error(N_("Missing option"));
-      continue;
-    }
-    option = ptr;
-    ptr    = parse_next_word(ptr);
-    /* Find the just parsed option name among the existing names. */
-    for (i = 0; rcopts[i].name; i++) {
-      if (strcmp(option, rcopts[i].name) == 0) {
-        break;
-      }
-    }
-    if (!rcopts[i].name) {
-      jot_error(N_("Unknown option: %s"), option);
-      continue;
-    }
-    /* If the option has a flag, set it or unset it, as requested. */
-    if (rcopts[i].flag) {
-      if (set == 1) {
-        SET(rcopts[i].flag);
-      }
-      else {
-        UNSET(rcopts[i].flag);
-      }
-      continue;
-    }
-    /* An option that takes an argument cannot be unset. */
-    if (set == -1) {
-      jot_error(N_("Cannot unset option \"%s\""), option);
-      continue;
-    }
-    if (*ptr == '\0') {
-      jot_error(N_("Option \"%s\" requires an argument"), option);
-      continue;
-    }
-    argument = ptr;
-    if (*argument == '"') {
-      argument++;
-    }
-    ptr = parse_argument(ptr);
-    /* When in a UTF-8 locale, ignore arguments with invalid sequences. */
-    if (using_utf8() && mbstowcs(NULL, argument, 0) == (Ulong)-1) {
-      jot_error(N_("Argument is not a valid multibyte string"));
-      continue;
-    }
-    const int colorOption = retriveColorOptionFromStr(option);
-    (colorOption != (Uint)-1) ? set_interface_color(colorOption, argument) : void();
-    const Uint configOption = retriveConfigOptionFromStr(option);
-    if (!configOption) {
-      ;
-    }
-    else if (configOption & OPERATINGDIR) {
-      operating_dir = realloc_strcpy(operating_dir, argument);
-    }
-    else if (configOption & FILL) {
-      if (!parse_num(argument, &fill)) {
-        jot_error(N_("Requested fill size \"%s\" is invalid"), argument);
-        fill = -COLUMNS_FROM_EOL;
-      }
-    }
-    else if (configOption & MATCHBRACKETS) {
-      if (has_blank_char(argument)) {
-        jot_error(N_("Non-blank characters required"));
-      }
-      else if (mbstrlen(argument) % 2 != 0) {
-        jot_error(N_("Even number of characters required"));
-      }
-      else {
-        matchbrackets = realloc_strcpy(matchbrackets, argument);
-      }
-    }
-    else if (configOption & WHITESPACE) {
-      if (mbstrlen(argument) != 2 || breadth(argument) != 2) {
-        jot_error(N_("Two single-column characters required"));
-      }
-      else {
-        whitespace  = realloc_strcpy(whitespace, argument);
-        whitelen[0] = char_length(whitespace);
-        whitelen[1] = char_length(whitespace + whitelen[0]);
-      }
-    }
-    else if (configOption & PUNCT) {
-      if (has_blank_char(argument)) {
-        jot_error(N_("Non-blank characters required"));
-      }
-      else {
-        punct = realloc_strcpy(punct, argument);
-      }
-    }
-    else if (configOption & BRACKETS) {
-      if (has_blank_char(argument)) {
-        jot_error(N_("Non-blank characters required"));
-      }
-      else {
-        brackets = realloc_strcpy(brackets, argument);
-      }
-    }
-    else if (configOption & QUOTESTR) {
-      quotestr = realloc_strcpy(quotestr, argument);
-    }
-    else if (configOption & SPELLER) {
-      alt_speller = realloc_strcpy(alt_speller, argument);
-    }
-    else if (configOption & BACKUPDIR) {
-      backup_dir = realloc_strcpy(backup_dir, argument);
-    }
-    else if (configOption & WORDCHARS) {
-      word_chars = realloc_strcpy(word_chars, argument);
-    }
-    else if (configOption & GUIDESTRIPE) {
-      if (!parse_num(argument, &stripe_column) || stripe_column <= 0) {
-        jot_error(N_("Guide column \"%s\" is invalid"), argument);
-        stripe_column = 0;
-      }
-    }
-    else if (configOption & CONF_OPT_TABSIZE) {
-      if (!parse_num(argument, &tabsize) || tabsize <= 0) {
-        jot_error(N_("Requested tab size \"%s\" is invalid"), argument);
-        tabsize = -1;
-      }
-    }
-  }
-  if (intros_only) {
-    check_for_nonempty_syntax();
-  }
-  fclose(rcstream);
-  free(buffer);
-  nanox_rc_lineno = 0;
-}
+// void parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only) {
+//   char *buffer = NULL;
+//   Ulong size   = 0;
+//   long  length = 0;
+//   while ((length = getline(&buffer, &size, rcstream)) > 0) {
+//     char *ptr, *keyword, *option, *argument;
+//     bool  drop_open = FALSE;
+//     int   set       = 0;
+//     Ulong i;
+//     nanox_rc_lineno++;
+//     /* If doing a full parse, skip to after the 'syntax' command. */
+//     if (just_syntax && !intros_only && nanox_rc_lineno <= nanox_rc_live_syntax->lineno) {
+//       continue;
+//     }
+//     /* Strip the terminating newline and possibly a carriage return. */
+//     if (buffer[length - 1] == '\n') {
+//       buffer[--length] = '\0';
+//     }
+//     if (length > 0 && buffer[length - 1] == '\r') {
+//       buffer[--length] = '\0';
+//     }
+//     ptr = buffer;
+//     while (isblank((Uchar)*ptr)) {
+//       ptr++;
+//     }
+//     /* If the line is empty or a comment, skip to next line. */
+//     if (!*ptr || *ptr == '#') {
+//       continue;
+//     }
+//     /* Otherwise, skip to the next space. */
+//     keyword = ptr;
+//     ptr     = parse_next_word(ptr);
+//     /* Handle extending first... */
+//     if (!just_syntax && strcmp(keyword, "extendsyntax") == 0) {
+//       augmentstruct *newitem, *extra;
+//       char          *syntaxname = ptr;
+//       syntaxtype    *sntx;
+//       check_for_nonempty_syntax();
+//       ptr = parse_next_word(ptr);
+//       for (sntx = syntaxes; sntx; sntx = sntx->next) {
+//         if (strcmp(sntx->name, syntaxname) == 0) {
+//           break;
+//         }
+//       }
+//       if (!sntx) {
+//         jot_error(N_("Could not find syntax \"%s\" to extend"), syntaxname);
+//         continue;
+//       }
+//       keyword  = ptr;
+//       argument = copy_of(ptr);
+//       ptr      = parse_next_word(ptr);
+//       /* File-matching commands need to be processed immediately;
+//        * other commands are stored for possible later processing. */
+//       if (strcmp(keyword, "header") == 0 || strcmp(keyword, "magic") == 0) {
+//         free(argument);
+//         nanox_rc_live_syntax = sntx;
+//         nanox_rc_opensyntax  = TRUE;
+//         drop_open   = TRUE;
+//       }
+//       else {
+//         newitem           = (augmentstruct *)nmalloc(sizeof(augmentstruct));
+//         newitem->filename = copy_of(nanox_rc_path);
+//         newitem->lineno   = nanox_rc_lineno;
+//         newitem->data     = argument;
+//         newitem->next     = NULL;
+//         if (sntx->augmentations) {
+//           extra = sntx->augmentations;
+//           while (extra->next) {
+//             extra = extra->next;
+//           }
+//           extra->next = newitem;
+//         }
+//         else {
+//           sntx->augmentations = newitem;
+//         }
+//         continue;
+//       }
+//     }
+//     /* Try to parse the keyword. */
+//     if (strcmp(keyword, "syntax") == 0) {
+//       if (intros_only) {
+//         check_for_nonempty_syntax();
+//         begin_new_syntax(ptr);
+//       }
+//       else {
+//         break;
+//       }
+//     }
+//     else if (strcmp(keyword, "header") == 0) {
+//       if (intros_only) {
+//         grab_and_store("header", ptr, &nanox_rc_live_syntax->headers);
+//       }
+//     }
+//     else if (strcmp(keyword, "magic") == 0) {
+// #ifdef HAVE_LIBMAGIC
+//       if (intros_only) {
+//         grab_and_store("magic", ptr, &live_syntax->magics);
+//       }
+// #endif
+//     }
+//     else if (just_syntax && (strcmp(keyword, "set") == 0 || strcmp(keyword, "unset") == 0 ||
+//                              strcmp(keyword, "bind") == 0 || strcmp(keyword, "unbind") == 0 ||
+//                              strcmp(keyword, "include") == 0 || strcmp(keyword, "extendsyntax") == 0)) {
+//       if (intros_only) {
+//         jot_error(N_("Command \"%s\" not allowed in included file"), keyword);
+//       }
+//       else {
+//         break;
+//       }
+//     }
+//     else if (intros_only && (strcmp(keyword, "color") == 0 || strcmp(keyword, "icolor") == 0 ||
+//                              strcmp(keyword, "comment") == 0 || strcmp(keyword, "tabgives") == 0 ||
+//                              strcmp(keyword, "linter") == 0 || strcmp(keyword, "formatter") == 0)) {
+//       if (!nanox_rc_opensyntax) {
+//         jot_error(N_("A '%s' command requires a preceding 'syntax' command"), keyword);
+//       }
+//       if (strstr("icolor", keyword)) {
+//         nanox_rc_seen_color_command = TRUE;
+//       }
+//       continue;
+//     }
+//     else if (parse_syntax_commands(keyword, ptr)) {
+//       ;
+//     }
+//     else if (strcmp(keyword, "include") == 0) {
+//       parse_includes(ptr);
+//     }
+//     else {
+//       if (strcmp(keyword, "set") == 0) {
+//         set = 1;
+//       }
+//       else if (strcmp(keyword, "unset") == 0) {
+//         set = -1;
+//       }
+//       else if (strcmp(keyword, "bind") == 0) {
+//         parse_binding(ptr, TRUE);
+//       }
+//       else if (strcmp(keyword, "unbind") == 0) {
+//         parse_binding(ptr, FALSE);
+//       }
+//       else if (intros_only) {
+//         jot_error(N_("Command \"%s\" not understood"), keyword);
+//       }
+//     }
+//     if (drop_open) {
+//       nanox_rc_opensyntax = FALSE;
+//     }
+//     if (set == 0) {
+//       continue;
+//     }
+//     check_for_nonempty_syntax();
+//     if (*ptr == '\0') {
+//       jot_error(N_("Missing option"));
+//       continue;
+//     }
+//     option = ptr;
+//     ptr    = parse_next_word(ptr);
+//     /* Find the just parsed option name among the existing names. */
+//     for (i = 0; rcopts[i].name; i++) {
+//       if (strcmp(option, rcopts[i].name) == 0) {
+//         break;
+//       }
+//     }
+//     if (!rcopts[i].name) {
+//       jot_error(N_("Unknown option: %s"), option);
+//       continue;
+//     }
+//     /* If the option has a flag, set it or unset it, as requested. */
+//     if (rcopts[i].flag) {
+//       if (set == 1) {
+//         SET(rcopts[i].flag);
+//       }
+//       else {
+//         UNSET(rcopts[i].flag);
+//       }
+//       continue;
+//     }
+//     /* An option that takes an argument cannot be unset. */
+//     if (set == -1) {
+//       jot_error(N_("Cannot unset option \"%s\""), option);
+//       continue;
+//     }
+//     if (*ptr == '\0') {
+//       jot_error(N_("Option \"%s\" requires an argument"), option);
+//       continue;
+//     }
+//     argument = ptr;
+//     if (*argument == '"') {
+//       argument++;
+//     }
+//     ptr = parse_argument(ptr);
+//     /* When in a UTF-8 locale, ignore arguments with invalid sequences. */
+//     if (using_utf8() && mbstowcs(NULL, argument, 0) == (Ulong)-1) {
+//       jot_error(N_("Argument is not a valid multibyte string"));
+//       continue;
+//     }
+//     const int colorOption = retriveColorOptionFromStr(option);
+//     (colorOption != (Uint)-1) ? set_interface_color(colorOption, argument) : void();
+//     const Uint configOption = retriveConfigOptionFromStr(option);
+//     if (!configOption) {
+//       ;
+//     }
+//     else if (configOption & OPERATINGDIR) {
+//       operating_dir = realloc_strcpy(operating_dir, argument);
+//     }
+//     else if (configOption & FILL) {
+//       if (!parse_num(argument, &fill)) {
+//         jot_error(N_("Requested fill size \"%s\" is invalid"), argument);
+//         fill = -COLUMNS_FROM_EOL;
+//       }
+//     }
+//     else if (configOption & MATCHBRACKETS) {
+//       if (has_blank_char(argument)) {
+//         jot_error(N_("Non-blank characters required"));
+//       }
+//       else if (mbstrlen(argument) % 2 != 0) {
+//         jot_error(N_("Even number of characters required"));
+//       }
+//       else {
+//         matchbrackets = realloc_strcpy(matchbrackets, argument);
+//       }
+//     }
+//     else if (configOption & WHITESPACE) {
+//       if (mbstrlen(argument) != 2 || breadth(argument) != 2) {
+//         jot_error(N_("Two single-column characters required"));
+//       }
+//       else {
+//         whitespace  = realloc_strcpy(whitespace, argument);
+//         whitelen[0] = char_length(whitespace);
+//         whitelen[1] = char_length(whitespace + whitelen[0]);
+//       }
+//     }
+//     else if (configOption & PUNCT) {
+//       if (has_blank_char(argument)) {
+//         jot_error(N_("Non-blank characters required"));
+//       }
+//       else {
+//         punct = realloc_strcpy(punct, argument);
+//       }
+//     }
+//     else if (configOption & BRACKETS) {
+//       if (has_blank_char(argument)) {
+//         jot_error(N_("Non-blank characters required"));
+//       }
+//       else {
+//         brackets = realloc_strcpy(brackets, argument);
+//       }
+//     }
+//     else if (configOption & QUOTESTR) {
+//       quotestr = realloc_strcpy(quotestr, argument);
+//     }
+//     else if (configOption & SPELLER) {
+//       alt_speller = realloc_strcpy(alt_speller, argument);
+//     }
+//     else if (configOption & BACKUPDIR) {
+//       backup_dir = realloc_strcpy(backup_dir, argument);
+//     }
+//     else if (configOption & WORDCHARS) {
+//       word_chars = realloc_strcpy(word_chars, argument);
+//     }
+//     else if (configOption & GUIDESTRIPE) {
+//       if (!parse_num(argument, &stripe_column) || stripe_column <= 0) {
+//         jot_error(N_("Guide column \"%s\" is invalid"), argument);
+//         stripe_column = 0;
+//       }
+//     }
+//     else if (configOption & CONF_OPT_TABSIZE) {
+//       if (!parse_num(argument, &tabsize) || tabsize <= 0) {
+//         jot_error(N_("Requested tab size \"%s\" is invalid"), argument);
+//         tabsize = -1;
+//       }
+//     }
+//   }
+//   if (intros_only) {
+//     check_for_nonempty_syntax();
+//   }
+//   fclose(rcstream);
+//   free(buffer);
+//   nanox_rc_lineno = 0;
+// }
 
 /* Read and interpret one of the two nanorc files. */
-static void parse_one_nanorc(void) {
-  FILE *rcstream = fopen(nanox_rc_path, "rb");
-  /* If opening the file succeeded, parse it.  Otherwise, only complain if the file actually exists. */
-  if (rcstream) {
-    parse_rcfile(rcstream, FALSE, TRUE);
-  }
-  else if (errno != ENOENT) {
-    jot_error(N_("Error reading %s: %s"), nanox_rc_path, strerror(errno));
-  }
-}
+// static void parse_one_nanorc(void) {
+//   FILE *rcstream = fopen(nanox_rc_path, "rb");
+//   /* If opening the file succeeded, parse it.  Otherwise, only complain if the file actually exists. */
+//   if (rcstream) {
+//     parse_rcfile(rcstream, FALSE, TRUE);
+//   }
+//   else if (errno != ENOENT) {
+//     jot_error(N_("Error reading %s: %s"), nanox_rc_path, strerror(errno));
+//   }
+// }
 
-static bool have_nanorc(const char *path, const char *name) {
-  if (!path) {
-    return FALSE;
-  }
-  free(nanox_rc_path);
-  nanox_rc_path = concatenate(path, name);
-  return is_good_file(nanox_rc_path);
-}
+// static bool have_nanorc(const char *path, const char *name) {
+//   if (!path) {
+//     return FALSE;
+//   }
+//   free(nanox_rc_path);
+//   nanox_rc_path = concatenate(path, name);
+//   return is_good_file(nanox_rc_path);
+// }
 
 /* Process the nanorc file that was specified on the command line (if any),
  * and otherwise the system-wide rcfile followed by the user's rcfile. */
-void do_rcfiles(void) {
-  if (custom_nanorc) {
-    nanox_rc_path = get_full_path(custom_nanorc);
-    if (!nanox_rc_path || access(nanox_rc_path, F_OK) != 0) {
-      die(_("Specified rcfile does not exist\n"));
-    }
-  }
-  else {
-    nanox_rc_path = realloc_strcpy(nanox_rc_path, SYSCONFDIR "/nanorc");
-  }
-  if (is_good_file(nanox_rc_path)) {
-    parse_one_nanorc();
-  }
-  if (!custom_nanorc) {
-    const char *xdgconfdir = getenv("XDG_CONFIG_HOME");
-    get_homedir();
-    /* Now try to find a nanorc file in the user's home directory or in the
-     * XDG configuration directories, and process the first one found. */
-    if (have_nanorc(homedir, "/" HOME_RC_NAME) || have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) ||
-        have_nanorc(homedir, "/.config/nano/" RCFILE_NAME)) {
-      parse_one_nanorc();
-    }
-    else if (!homedir && !xdgconfdir) {
-      jot_error(N_("I can't find my home directory!  Wah!"));
-    }
-  }
-  check_vitals_mapped();
-  free(nanox_rc_path);
-  nanox_rc_path = NULL;
-}
+// void do_rcfiles(void) {
+//   if (custom_nanorc) {
+//     nanox_rc_path = get_full_path(custom_nanorc);
+//     if (!nanox_rc_path || access(nanox_rc_path, F_OK) != 0) {
+//       die(_("Specified rcfile does not exist\n"));
+//     }
+//   }
+//   else {
+//     nanox_rc_path = realloc_strcpy(nanox_rc_path, SYSCONFDIR "/nanorc");
+//   }
+//   if (is_good_file(nanox_rc_path)) {
+//     parse_one_nanorc();
+//   }
+//   if (!custom_nanorc) {
+//     const char *xdgconfdir = getenv("XDG_CONFIG_HOME");
+//     get_homedir();
+//     /* Now try to find a nanorc file in the user's home directory or in the XDG configuration directories, and process the first one found. */
+//     if (have_nanorc(homedir, "/" HOME_RC_NAME) || have_nanorc(xdgconfdir, "/nano/" RCFILE_NAME) || have_nanorc(homedir, "/.config/nano/" RCFILE_NAME)) {
+//       parse_one_nanorc();
+//     }
+//     else if (!homedir && !xdgconfdir) {
+//       jot_error(N_("I can't find my home directory!  Wah!"));
+//     }
+//   }
+//   check_vitals_mapped();
+//   free(nanox_rc_path);
+//   nanox_rc_path = NULL;
+// }

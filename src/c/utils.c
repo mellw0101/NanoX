@@ -282,25 +282,50 @@ void statusbar_all(const char *const restrict msg) {
   }
 }
 
-/* Append a new magic line to the end of the buffer. */
-void new_magicline(void) {
-  openfile->filebot->next = make_new_node(openfile->filebot);
-  openfile->filebot->next->data = COPY_OF("");
-  openfile->filebot = openfile->filebot->next;
-  ++openfile->totsize;
+/* Append a new magic line to the end of `file`. */
+void new_magicline_for(openfilestruct *const file) {
+  ASSERT(file);
+  file->filebot->next = make_new_node(file->filebot);
+  file->filebot->next->data = COPY_OF("");
+  CLIST_ADV_NEXT(file->filebot);
+  ++file->totsize;
 }
 
-/* Remove the magic line from the end of the buffer, if there is one and it isn't the only line in the file. */
-void remove_magicline(void) {
-  if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
-    if (openfile->current == openfile->filebot) {
-      openfile->current = openfile->current->prev;
+/* Append a new magic line to the end of the buffer. */
+void new_magicline(void) {
+  new_magicline_for(ISSET(USING_GUI) ? openeditor->openfile : openfile);
+  // openfile->filebot->next = make_new_node(openfile->filebot);
+  // openfile->filebot->next->data = COPY_OF("");
+  // openfile->filebot = openfile->filebot->next;
+  // ++openfile->totsize;
+}
+
+/* Remove the magic line from the end of `file`, if there is one and it isn't the only line in `file`. */
+void remove_magicline_for(openfilestruct *const file) {
+  ASSERT(file);
+  if (!*file->current->data && file->filebot != file->filetop) {
+    if (file->current == file->filebot) {
+      CLIST_ADV_PREV(file->current);
     }
-    openfile->filebot = openfile->filebot->prev;
-    delete_node(openfile->filebot->next);
-    openfile->filebot->next = NULL;
-    --openfile->totsize;
+    CLIST_ADV_PREV(file->filebot);
+    delete_node(file->filebot->next);
+    file->filebot->next = NULL;
+    --file->totsize;
   }
+}
+
+/* Remove the magic line from the end of the currently open file, if there is one and it isn't the only line in it. */
+void remove_magicline(void) {
+  remove_magicline_for(ISSET(USING_GUI) ? openeditor->openfile : openfile);
+  // if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
+  //   if (openfile->current == openfile->filebot) {
+  //     openfile->current = openfile->current->prev;
+  //   }
+  //   openfile->filebot = openfile->filebot->prev;
+  //   delete_node(openfile->filebot->next);
+  //   openfile->filebot->next = NULL;
+  //   --openfile->totsize;
+  // }
 }
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */

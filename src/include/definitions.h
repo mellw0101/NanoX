@@ -266,7 +266,7 @@ using std::vector;
 #endif
 
 /* Used to encode both parts when enclosing a region. */
-#define ENCLOSE_DELIM ":;:"
+// #define ENCLOSE_DELIM ":;:"
 
 #ifdef HAVE_GLFW 
   #define FONT_WIDTH(font)  (font->face->max_advance_width >> 6)

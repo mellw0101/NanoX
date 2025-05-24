@@ -447,62 +447,63 @@ static void redo_cut(undostruct *const u) _NOTHROW {
 }
 
 /* Return`s a malloc`ed str encoded with enclose delimiter. */
-static char *encode_enclose_str(const char *s1, const char *s2) _NOTHROW {
-  return fmtstr("%s" ENCLOSE_DELIM "%s", s1, s2);
-}
+// static char *encode_enclose_str(const char *s1, const char *s2) _NOTHROW {
+//   return fmtstr("%s" ENCLOSE_DELIM "%s", s1, s2);
+// }
 
 /* Decode s1 and s2 from a encoded enclose str. */
-static void decode_enclose_str(const char *str, char **s1, char **s2) _NOTHROW {
-  const char *enclose_delim = strstr(str, ENCLOSE_DELIM);
-  if (!enclose_delim) {
-    die("%s: str ('%s') was not encoded properly.  Could not find ENCLOSE_DELIM '%s'.\n", __func__, str, ENCLOSE_DELIM);
-  }
-  *s1 = measured_copy(str, (enclose_delim - str));
-  *s2 = copy_of(enclose_delim + STRLEN(ENCLOSE_DELIM));
-}
+// static void decode_enclose_str(const char *str, char **s1, char **s2) _NOTHROW {
+//   const char *enclose_delim = strstr(str, ENCLOSE_DELIM);
+//   if (!enclose_delim) {
+//     die("%s: str ('%s') was not encoded properly.  Could not find ENCLOSE_DELIM '%s'.\n", __func__, str, ENCLOSE_DELIM);
+//   }
+//   *s1 = measured_copy(str, (enclose_delim - str));
+//   *s2 = copy_of(enclose_delim + STRLEN(ENCLOSE_DELIM));
+// }
 
 /* If an area is marked then plase the 'str' at mark and current_x, thereby enclosing the marked area. */
-void enclose_marked_region(const char *s1, const char *s2) _NOTHROW {
-  ASSERT(s1);
-  ASSERT(s2);
-  char *part;
-  Ulong s1_len;
-  /* Return early if there is no mark. */
-  if (!openfile->mark) {
-    return;
-  }
-  part = encode_enclose_str(s1, s2);
-  add_undo(ENCLOSE, part);
-  free(part);
-  s1_len = strlen(s1);
-  if (mark_is_before_cursor()) {
-    inject_in(&openfile->mark->data, s1, s1_len, openfile->mark_x);
-    openfile->mark_x += s1_len;
-    if (openfile->mark == openfile->current) {
-      openfile->current_x += s1_len;
-    }
-    inject_in(&openfile->current->data, s2, openfile->current_x);
-    if (openfile->current == openfile->filebot && !ISSET(NO_NEWLINES)) {
-      new_magicline();
-    }
-  }
-  else {
-    inject_in(&openfile->current->data, s1, s1_len, openfile->current_x);
-    openfile->current_x += s1_len;
-    if (openfile->current == openfile->mark) {
-      openfile->mark_x += s1_len;
-    }
-    inject_in(&openfile->mark->data, s2, openfile->mark_x);
-    if (openfile->mark == openfile->filebot && !ISSET(NO_NEWLINES)) {
-      new_magicline();
-    }
-  }
-  /* Calculate the new file size and add it to the undo. */
-  openfile->totsize += (mbstrlen(s1) + mbstrlen(s2));
-  openfile->undotop->newsize = openfile->totsize;
-  set_modified();
-  refresh_needed = TRUE;
-}
+// void enclose_marked_region(const char *s1, const char *s2) _NOTHROW {
+//   ASSERT(s1);
+//   ASSERT(s2);
+//   char *part;
+//   Ulong s1_len;
+//   /* Return early if there is no mark. */
+//   if (!openfile->mark) {
+//     return;
+//   }
+//   // part = encode_enclose_str(s1, s2);
+//   part = enclose_str_encode(s1, s2);
+//   add_undo(ENCLOSE, part);
+//   free(part);
+//   s1_len = strlen(s1);
+//   if (mark_is_before_cursor()) {
+//     inject_in(&openfile->mark->data, s1, s1_len, openfile->mark_x);
+//     openfile->mark_x += s1_len;
+//     if (openfile->mark == openfile->current) {
+//       openfile->current_x += s1_len;
+//     }
+//     inject_in(&openfile->current->data, s2, openfile->current_x);
+//     if (openfile->current == openfile->filebot && !ISSET(NO_NEWLINES)) {
+//       new_magicline();
+//     }
+//   }
+//   else {
+//     inject_in(&openfile->current->data, s1, s1_len, openfile->current_x);
+//     openfile->current_x += s1_len;
+//     if (openfile->current == openfile->mark) {
+//       openfile->mark_x += s1_len;
+//     }
+//     inject_in(&openfile->mark->data, s2, openfile->mark_x);
+//     if (openfile->mark == openfile->filebot && !ISSET(NO_NEWLINES)) {
+//       new_magicline();
+//     }
+//   }
+//   /* Calculate the new file size and add it to the undo. */
+//   openfile->totsize += (mbstrlen(s1) + mbstrlen(s2));
+//   openfile->undotop->newsize = openfile->totsize;
+//   set_modified();
+//   refresh_needed = TRUE;
+// }
 
 /* This is a shortcut to make marked area a block comment. */
 void do_block_comment(void) _NOTHROW {
@@ -883,7 +884,8 @@ void do_undo(void) {
         remove_magicline();
       }
       char *s1, *s2;
-      decode_enclose_str(u->strdata, &s1, &s2);
+      // decode_enclose_str(u->strdata, &s1, &s2);
+      enclose_str_decode(u->strdata, &s1, &s2);
       linestruct *head = line_from_number(u->head_lineno);
       linestruct *tail = line_from_number(u->tail_lineno);
       erase_in(&head->data, u->head_x, strlen(s1));
@@ -1266,7 +1268,8 @@ void do_redo(void) {
         new_magicline();
       }
       char *s1, *s2;
-      decode_enclose_str(u->strdata, &s1, &s2);
+      // decode_enclose_str(u->strdata, &s1, &s2);
+      enclose_str_decode(u->strdata, &s1, &s2);
       const Ulong s1_len = strlen(s1);
       linestruct *head = line_from_number(u->head_lineno);
       linestruct *tail = line_from_number(u->tail_lineno);
@@ -1524,205 +1527,205 @@ void do_enter(void) {
 // }
 
 /* Add a new undo item of the given type to the top of the current pile. */
-void add_undo(undo_type action, const char *message) _NOTHROW {
-  undostruct *u = (undostruct *)nmalloc(sizeof(undostruct));
-  linestruct *thisline = openfile->current;
-  /* Initialize the newly allocated undo item. */
-  u->type        = action;
-  u->strdata     = NULL;
-  u->cutbuffer   = NULL;
-  u->head_lineno = thisline->lineno;
-  u->head_x      = openfile->current_x;
-  u->tail_lineno = thisline->lineno;
-  u->tail_x      = openfile->current_x;
-  u->wassize     = openfile->totsize;
-  u->newsize     = openfile->totsize;
-  u->grouping    = NULL;
-  u->xflags      = 0;
-  /* Blow away any undone items. */
-  discard_until(openfile->current_undo);
-  /* If some action caused automatic long-line wrapping, insert the SPLIT_BEGIN item underneath
-   * that action's undo item.  Otherwise, just add the new item to the top of the undo stack. */
-  if (u->type == SPLIT_BEGIN) {
-    action     = openfile->undotop->type;
-    u->wassize = openfile->undotop->wassize;
-    u->next    = openfile->undotop->next;
-    openfile->undotop->next = u;
-  }
-  else {
-    u->next = openfile->undotop;
-    openfile->undotop      = u;
-    openfile->current_undo = u;
-  }
-  /* Record the info needed to be able to undo each possible action. */
-  switch (u->type) {
-    case ADD: {
-      /* If a new magic line will be added, an undo should remove it. */
-      if (thisline == openfile->filebot) {
-        u->xflags |= INCLUDED_LAST_LINE;
-      }
-      break;
-    }
-    case ENTER: {
-      break;
-    }
-    case BACK: {
-      /* If the next line is the magic line, don't ever undo this backspace, as it won't actually have deleted anything. */
-      if (thisline->next == openfile->filebot && thisline->data[0]) {
-        u->xflags |= WAS_BACKSPACE_AT_EOF;
-      }
-      /* Fall-through. */
-      _FALLTHROUGH;
-    }
-    case DEL: {
-      /* When not at the end of a line, store the deleted character. */
-      if (thisline->data[openfile->current_x]) {
-        int charlen = char_length(thisline->data + u->head_x);
-        u->strdata  = measured_copy((thisline->data + u->head_x), charlen);
-        if (u->type == BACK) {
-          u->tail_x += charlen;
-        }
-        break;
-      }
-      /* Otherwise, morph the undo item into a line join. */
-      action = JOIN;
-      if (thisline->next) {
-        if (u->type == BACK) {
-          u->head_lineno = thisline->next->lineno;
-          u->head_x      = 0;
-        }
-        u->strdata = copy_of(thisline->next->data);
-      }
-      u->type = JOIN;
-      break;
-    }
-    case REPLACE: {
-      u->strdata = copy_of(thisline->data);
-      if (thisline == openfile->filebot && answer[0]) {
-        u->xflags |= INCLUDED_LAST_LINE;
-      }
-      break;
-    }
-    case SPLIT_BEGIN:
-    case SPLIT_END: {
-      break;
-    }
-    case CUT_TO_EOF: {
-      u->xflags |= (INCLUDED_LAST_LINE | CURSOR_WAS_AT_HEAD);
-      if (openfile->current->has_anchor) {
-        u->xflags |= HAD_ANCHOR_AT_START;
-      }
-      break;
-    }
-    case ZAP:
-    case CUT: {
-      if (openfile->mark) {
-        if (mark_is_before_cursor()) {
-          u->head_lineno = openfile->mark->lineno;
-          u->head_x      = openfile->mark_x;
-          u->xflags |= MARK_WAS_SET;
-        }
-        else {
-          u->tail_lineno = openfile->mark->lineno;
-          u->tail_x      = openfile->mark_x;
-          u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
-        }
-        if (u->tail_lineno == openfile->filebot->lineno) {
-          u->xflags |= INCLUDED_LAST_LINE;
-        }
-      }
-      else if (!ISSET(CUT_FROM_CURSOR)) {
-        /* The entire line is being cut regardless of the cursor position. */
-        u->xflags |= (WAS_WHOLE_LINE | CURSOR_WAS_AT_HEAD);
-        u->tail_x = 0;
-      }
-      else {
-        u->xflags |= CURSOR_WAS_AT_HEAD;
-      }
-      if ((openfile->mark && mark_is_before_cursor() && openfile->mark->has_anchor)
-       || ((!openfile->mark || !mark_is_before_cursor()) && openfile->current->has_anchor)) {
-        u->xflags |= HAD_ANCHOR_AT_START;
-      }
-      break;
-    }
-    case PASTE: {
-      u->cutbuffer = copy_buffer(cutbuffer);
-      /* Fall-through. */
-      _FALLTHROUGH;
-    }
-    case INSERT: {
-      if (thisline == openfile->filebot) {
-        u->xflags |= INCLUDED_LAST_LINE;
-      }
-      break;
-    }
-    case COUPLE_BEGIN: {
-      u->tail_lineno = openfile->cursor_row;
-      /* Fall-through. */
-      _FALLTHROUGH;
-    }
-    case COUPLE_END: {
-      u->strdata = copy_of(_(message));
-      break;
-    }
-    case ZAP_REPLACE: {
-      if (!openfile->mark) {
-        die("ZAP_REPLACE should only be done when there is a marked region.\n");
-      }
-      u->strdata = copy_of(message);
-      _FALLTHROUGH;
-    }
-    case INDENT:
-    case UNINDENT:
-    case COMMENT:
-    case UNCOMMENT:
-    case MOVE_LINE_UP:
-    case MOVE_LINE_DOWN:
-    case INSERT_EMPTY_LINE: {
-      if (openfile->mark) {
-        if (mark_is_before_cursor()) {
-          u->head_lineno = openfile->mark->lineno;
-          u->head_x      = openfile->mark_x;
-          u->xflags |= MARK_WAS_SET;
-        }
-        else {
-          u->tail_lineno = openfile->mark->lineno;
-          u->tail_x      = openfile->mark_x;
-          u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
-        }
-      }
-      break;
-    }
-    case ENCLOSE: {
-      if (mark_is_before_cursor()) {
-        u->head_lineno = openfile->mark->lineno;
-        u->head_x      = openfile->mark_x;
-        u->xflags |= MARK_WAS_SET;
-        if (openfile->current == openfile->filebot) {
-          u->xflags |= INCLUDED_LAST_LINE;
-        }
-      }
-      else {
-        u->tail_lineno = openfile->mark->lineno;
-        u->tail_x      = openfile->mark_x;
-        u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
-        if (openfile->mark == openfile->filebot) {
-          u->xflags |= INCLUDED_LAST_LINE;
-        }
-      }
-      u->strdata = copy_of(message);
-      break;
-    }
-    case AUTO_BRACKET: {
-      u->strdata = copy_of(openfile->current->data + openfile->current_x);
-      break;
-    }
-    default : {
-      die("Bad undo type -- please report a bug\n");
-    }
-  }
-  openfile->last_action = action;
-}
+// void add_undo(undo_type action, const char *message) _NOTHROW {
+//   undostruct *u = (undostruct *)nmalloc(sizeof(undostruct));
+//   linestruct *thisline = openfile->current;
+//   /* Initialize the newly allocated undo item. */
+//   u->type        = action;
+//   u->strdata     = NULL;
+//   u->cutbuffer   = NULL;
+//   u->head_lineno = thisline->lineno;
+//   u->head_x      = openfile->current_x;
+//   u->tail_lineno = thisline->lineno;
+//   u->tail_x      = openfile->current_x;
+//   u->wassize     = openfile->totsize;
+//   u->newsize     = openfile->totsize;
+//   u->grouping    = NULL;
+//   u->xflags      = 0;
+//   /* Blow away any undone items. */
+//   discard_until(openfile->current_undo);
+//   /* If some action caused automatic long-line wrapping, insert the SPLIT_BEGIN item underneath
+//    * that action's undo item.  Otherwise, just add the new item to the top of the undo stack. */
+//   if (u->type == SPLIT_BEGIN) {
+//     action     = openfile->undotop->type;
+//     u->wassize = openfile->undotop->wassize;
+//     u->next    = openfile->undotop->next;
+//     openfile->undotop->next = u;
+//   }
+//   else {
+//     u->next = openfile->undotop;
+//     openfile->undotop      = u;
+//     openfile->current_undo = u;
+//   }
+//   /* Record the info needed to be able to undo each possible action. */
+//   switch (u->type) {
+//     case ADD: {
+//       /* If a new magic line will be added, an undo should remove it. */
+//       if (thisline == openfile->filebot) {
+//         u->xflags |= INCLUDED_LAST_LINE;
+//       }
+//       break;
+//     }
+//     case ENTER: {
+//       break;
+//     }
+//     case BACK: {
+//       /* If the next line is the magic line, don't ever undo this backspace, as it won't actually have deleted anything. */
+//       if (thisline->next == openfile->filebot && thisline->data[0]) {
+//         u->xflags |= WAS_BACKSPACE_AT_EOF;
+//       }
+//       /* Fall-through. */
+//       _FALLTHROUGH;
+//     }
+//     case DEL: {
+//       /* When not at the end of a line, store the deleted character. */
+//       if (thisline->data[openfile->current_x]) {
+//         int charlen = char_length(thisline->data + u->head_x);
+//         u->strdata  = measured_copy((thisline->data + u->head_x), charlen);
+//         if (u->type == BACK) {
+//           u->tail_x += charlen;
+//         }
+//         break;
+//       }
+//       /* Otherwise, morph the undo item into a line join. */
+//       action = JOIN;
+//       if (thisline->next) {
+//         if (u->type == BACK) {
+//           u->head_lineno = thisline->next->lineno;
+//           u->head_x      = 0;
+//         }
+//         u->strdata = copy_of(thisline->next->data);
+//       }
+//       u->type = JOIN;
+//       break;
+//     }
+//     case REPLACE: {
+//       u->strdata = copy_of(thisline->data);
+//       if (thisline == openfile->filebot && answer[0]) {
+//         u->xflags |= INCLUDED_LAST_LINE;
+//       }
+//       break;
+//     }
+//     case SPLIT_BEGIN:
+//     case SPLIT_END: {
+//       break;
+//     }
+//     case CUT_TO_EOF: {
+//       u->xflags |= (INCLUDED_LAST_LINE | CURSOR_WAS_AT_HEAD);
+//       if (openfile->current->has_anchor) {
+//         u->xflags |= HAD_ANCHOR_AT_START;
+//       }
+//       break;
+//     }
+//     case ZAP:
+//     case CUT: {
+//       if (openfile->mark) {
+//         if (mark_is_before_cursor()) {
+//           u->head_lineno = openfile->mark->lineno;
+//           u->head_x      = openfile->mark_x;
+//           u->xflags |= MARK_WAS_SET;
+//         }
+//         else {
+//           u->tail_lineno = openfile->mark->lineno;
+//           u->tail_x      = openfile->mark_x;
+//           u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
+//         }
+//         if (u->tail_lineno == openfile->filebot->lineno) {
+//           u->xflags |= INCLUDED_LAST_LINE;
+//         }
+//       }
+//       else if (!ISSET(CUT_FROM_CURSOR)) {
+//         /* The entire line is being cut regardless of the cursor position. */
+//         u->xflags |= (WAS_WHOLE_LINE | CURSOR_WAS_AT_HEAD);
+//         u->tail_x = 0;
+//       }
+//       else {
+//         u->xflags |= CURSOR_WAS_AT_HEAD;
+//       }
+//       if ((openfile->mark && mark_is_before_cursor() && openfile->mark->has_anchor)
+//        || ((!openfile->mark || !mark_is_before_cursor()) && openfile->current->has_anchor)) {
+//         u->xflags |= HAD_ANCHOR_AT_START;
+//       }
+//       break;
+//     }
+//     case PASTE: {
+//       u->cutbuffer = copy_buffer(cutbuffer);
+//       /* Fall-through. */
+//       _FALLTHROUGH;
+//     }
+//     case INSERT: {
+//       if (thisline == openfile->filebot) {
+//         u->xflags |= INCLUDED_LAST_LINE;
+//       }
+//       break;
+//     }
+//     case COUPLE_BEGIN: {
+//       u->tail_lineno = openfile->cursor_row;
+//       /* Fall-through. */
+//       _FALLTHROUGH;
+//     }
+//     case COUPLE_END: {
+//       u->strdata = copy_of(_(message));
+//       break;
+//     }
+//     case ZAP_REPLACE: {
+//       if (!openfile->mark) {
+//         die("ZAP_REPLACE should only be done when there is a marked region.\n");
+//       }
+//       u->strdata = copy_of(message);
+//       _FALLTHROUGH;
+//     }
+//     case INDENT:
+//     case UNINDENT:
+//     case COMMENT:
+//     case UNCOMMENT:
+//     case MOVE_LINE_UP:
+//     case MOVE_LINE_DOWN:
+//     case INSERT_EMPTY_LINE: {
+//       if (openfile->mark) {
+//         if (mark_is_before_cursor()) {
+//           u->head_lineno = openfile->mark->lineno;
+//           u->head_x      = openfile->mark_x;
+//           u->xflags |= MARK_WAS_SET;
+//         }
+//         else {
+//           u->tail_lineno = openfile->mark->lineno;
+//           u->tail_x      = openfile->mark_x;
+//           u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
+//         }
+//       }
+//       break;
+//     }
+//     case ENCLOSE: {
+//       if (mark_is_before_cursor()) {
+//         u->head_lineno = openfile->mark->lineno;
+//         u->head_x      = openfile->mark_x;
+//         u->xflags |= MARK_WAS_SET;
+//         if (openfile->current == openfile->filebot) {
+//           u->xflags |= INCLUDED_LAST_LINE;
+//         }
+//       }
+//       else {
+//         u->tail_lineno = openfile->mark->lineno;
+//         u->tail_x      = openfile->mark_x;
+//         u->xflags |= (MARK_WAS_SET | CURSOR_WAS_AT_HEAD);
+//         if (openfile->mark == openfile->filebot) {
+//           u->xflags |= INCLUDED_LAST_LINE;
+//         }
+//       }
+//       u->strdata = copy_of(message);
+//       break;
+//     }
+//     case AUTO_BRACKET: {
+//       u->strdata = copy_of(openfile->current->data + openfile->current_x);
+//       break;
+//     }
+//     default : {
+//       die("Bad undo type -- please report a bug\n");
+//     }
+//   }
+//   openfile->last_action = action;
+// }
 
 /* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
  * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
@@ -2063,75 +2066,75 @@ void do_wrap(void) {
 // }
 
 /* Return the length of the indentation part of the given line.  The "indentation" of a line is the leading consecutive whitespace. */
-Ulong indent_length(const char *line) _NOTHROW {
-  const char *start = line;
-  while (*line && is_blank_char(line)) {
-    line += char_length(line);
-  }
-  return (Ulong)(line - start);
-}
+// Ulong indent_length(const char *line) _NOTHROW {
+//   const char *start = line;
+//   while (*line && is_blank_char(line)) {
+//     line += char_length(line);
+//   }
+//   return (line - start);
+// }
 
 /* Return the length of the quote part of the given line.  The 'quote part'
  * of a line is the largest initial substring matching the quoting regex. */
-Ulong quote_length(const char *line) _NOTHROW {
-  regmatch_t matches;
-  int rc = regexec(&quotereg, line, 1, &matches, 0);
-  if (rc == REG_NOMATCH || matches.rm_so == (regoff_t)-1) {
-    return 0;
-  }
-  return matches.rm_eo;
-}
+// Ulong quote_length(const char *line) _NOTHROW {
+//   regmatch_t matches;
+//   int rc = regexec(&quotereg, line, 1, &matches, 0);
+//   if (rc == REG_NOMATCH || matches.rm_so == (regoff_t)-1) {
+//     return 0;
+//   }
+//   return matches.rm_eo;
+// }
 
 /* The maximum depth of recursion.  Note that this MUST be an even number. */
 #define RECURSION_LIMIT 222
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
-bool begpar(const linestruct *const line, int depth) _NOTHROW {
-  Ulong quot_len      = 0;
-  Ulong indent_len    = 0;
-  Ulong prev_dent_len = 0;
-  /* The very first line counts as a BOP, even when it contains no text. */
-  if (!line->prev) {
-    return TRUE;
-  }
-  /* If recursion is going too deep, just say it's not a BOP. */
-  if (depth > RECURSION_LIMIT) {
-    return FALSE;
-  }
-  quot_len   = quote_length(line->data);
-  indent_len = indent_length(line->data + quot_len);
-  /* If this line contains no text, it is not a BOP. */
-  if (!line->data[quot_len + indent_len]) {
-    return FALSE;
-  }
-  /* When requested, treat a line that starts with whitespace as a BOP. */
-  if (ISSET(BOOKSTYLE) && !ISSET(AUTOINDENT) && is_blank_char(line->data)) {
-    return TRUE;
-  }
-  /* If the quote part of the preceding line differs, this is a BOP. */
-  if (quot_len != quote_length(line->prev->data) || strncmp(line->data, line->prev->data, quot_len) != 0) {
-    return TRUE;
-  }
-  prev_dent_len = indent_length(line->prev->data + quot_len);
-  /* If the preceding line contains no text, this is a BOP. */
-  if (!line->prev->data[quot_len + prev_dent_len]) {
-    return TRUE;
-  }
-  /* If indentation of this and preceding line are equal, this is not a BOP. */
-  if (wideness(line->prev->data, (quot_len + prev_dent_len)) == wideness(line->data, (quot_len + indent_len))) {
-    return FALSE;
-  }
-  /* Otherwise, this is a BOP if the preceding line is not. */
-  return !begpar(line->prev, (depth + 1));
-}
+// bool begpar(const linestruct *const line, int depth) _NOTHROW {
+//   Ulong quot_len      = 0;
+//   Ulong indent_len    = 0;
+//   Ulong prev_dent_len = 0;
+//   /* The very first line counts as a BOP, even when it contains no text. */
+//   if (!line->prev) {
+//     return TRUE;
+//   }
+//   /* If recursion is going too deep, just say it's not a BOP. */
+//   if (depth > RECURSION_LIMIT) {
+//     return FALSE;
+//   }
+//   quot_len   = quote_length(line->data);
+//   indent_len = indent_length(line->data + quot_len);
+//   /* If this line contains no text, it is not a BOP. */
+//   if (!line->data[quot_len + indent_len]) {
+//     return FALSE;
+//   }
+//   /* When requested, treat a line that starts with whitespace as a BOP. */
+//   if (ISSET(BOOKSTYLE) && !ISSET(AUTOINDENT) && is_blank_char(line->data)) {
+//     return TRUE;
+//   }
+//   /* If the quote part of the preceding line differs, this is a BOP. */
+//   if (quot_len != quote_length(line->prev->data) || strncmp(line->data, line->prev->data, quot_len) != 0) {
+//     return TRUE;
+//   }
+//   prev_dent_len = indent_length(line->prev->data + quot_len);
+//   /* If the preceding line contains no text, this is a BOP. */
+//   if (!line->prev->data[quot_len + prev_dent_len]) {
+//     return TRUE;
+//   }
+//   /* If indentation of this and preceding line are equal, this is not a BOP. */
+//   if (wideness(line->prev->data, (quot_len + prev_dent_len)) == wideness(line->data, (quot_len + indent_len))) {
+//     return FALSE;
+//   }
+//   /* Otherwise, this is a BOP if the preceding line is not. */
+//   return !begpar(line->prev, (depth + 1));
+// }
 
 /* Return TRUE when the given line is part of a paragraph.  A line is part of a
  * paragraph if it contains something more than quoting and leading whitespace. */
-bool inpar(const linestruct *const line) _NOTHROW {
-  Ulong quot_len   = quote_length(line->data);
-  Ulong indent_len = indent_length(line->data + quot_len);
-  return (line->data[quot_len + indent_len]);
-}
+// bool inpar(const linestruct *const line) _NOTHROW {
+//   Ulong quot_len   = quote_length(line->data);
+//   Ulong indent_len = indent_length(line->data + quot_len);
+//   return (line->data[quot_len + indent_len]);
+// }
 
 /* Find the first occurring paragraph in the forward direction.  Return 'TRUE' when a paragraph was found,
  * and 'FALSE' otherwise.  Furthermore, return the first line and the number of lines of the paragraph. */

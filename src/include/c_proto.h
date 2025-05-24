@@ -43,6 +43,14 @@ extern char *homedir;
 extern char *startup_problem;
 extern char *nanox_rc_path;
 extern char *backup_dir;
+extern char *answer;
+extern char *matchbrackets;
+extern char *punct;
+extern char *brackets;
+extern char *quotestr;
+extern char *alt_speller;
+extern char *custom_nanorc;
+extern char *syntaxstr;
 
 extern const char *exit_tag;
 extern const char *close_tag;
@@ -64,6 +72,7 @@ extern float gui_height;
 
 extern long tabsize;
 extern long fill;
+extern long stripe_column;
 
 extern Ulong wrap_at;
 extern Ulong nanox_rc_lineno;
@@ -73,6 +82,8 @@ extern Ulong flags[1];
 extern WINDOW *topwin;
 extern WINDOW *midwin;
 extern WINDOW *footwin;
+
+extern linestruct *cutbuffer;
 
 extern openfilestruct *openfile;
 extern openfilestruct *startfile;
@@ -94,6 +105,7 @@ extern funcstruct *exitfunc;
 extern funcstruct *tailfunc;
 
 extern regex_t search_regexp;
+extern regex_t quotereg;
 
 extern GLFWwindow *gui_window;
 
@@ -102,6 +114,7 @@ extern message_type lastmessage;
 extern configstruct *config;
 
 extern syntaxtype *nanox_rc_live_syntax;
+extern syntaxtype *syntaxes;
 
 /* ----------------------------- winio.c ----------------------------- */
 
@@ -177,7 +190,9 @@ Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
 Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
 void        statusline_all(message_type type, const char *const restrict format, ...);
 void        statusbar_all(const char *const restrict msg);
+void        new_magicline_for(openfilestruct *const file) _NONNULL(1);
 void        new_magicline(void);
+void        remove_magicline_for(openfilestruct *const file);
 void        remove_magicline(void);
 bool        mark_is_before_cursor_for(openfilestruct *const file);
 bool        mark_is_before_cursor(void) _NODISCARD;
@@ -263,13 +278,29 @@ int  nanox_socket_client(void);
 
 
 Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
+Ulong quote_length(const char *const restrict line);
+void  add_undo_for(openfilestruct *const file, undo_type action, const char *const restrict message);
+void  add_undo(undo_type action, const char *const restrict message);
 long  break_line(const char *textstart, long goal, bool snap_at_nl);
 void  do_mark_for(openfilestruct *const file);
 void  do_mark(void);
-void  discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
+void  discard_until_for(openfilestruct *const buffer, const undostruct *const thisitem);
 void  discard_until(const undostruct *thisitem);
+bool begpar(const linestruct *const line, int depth);
+bool inpar(const linestruct *const line);
+
+/* ----------------------------- Indent ----------------------------- */
+
+Ulong indent_length(const char *const restrict line);
 void  indent_a_line_for(openfilestruct *const file, linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2, 3);
 void  indent_a_line(linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2);
+
+/* ----------------------------- Enclose marked region ----------------------------- */
+
+char *enclose_str_encode(const char *const restrict p1, const char *const restrict p2);
+void  enclose_str_decode(const char *const restrict str, char **const p1, char **const p2);
+void enclose_marked_region_for(openfilestruct *const file, const char *const restrict p1, const char *const restrict p2);
+void enclose_marked_region(const char *const restrict p1, const char *const restrict p2);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -598,7 +629,26 @@ bool line_in_marked_region(linestruct *const line);
 
 /* ---------------------------------------------------------- global.c ---------------------------------------------------------- */
 
-
+void case_sens_void(void);
+void regexp_void(void);
+void backwards_void(void);
+void get_older_item(void);
+void get_newer_item(void);
+void flip_replace(void);
+void flip_goto(void);
+void to_files(void);
+void goto_dir(void);
+void do_nothing(void);
+void do_toggle(void);
+void dos_format(void);
+void mac_format(void);
+void append_it(void);
+void prepend_it(void);
+void back_it_up(void);
+void flip_execute(void);
+void flip_pipe(void);
+void flip_convert(void);
+void flip_newbuffer(void);
 void discard_buffer(void);
 void do_cancel(void);
 int keycode_from_string(const char *keystring);
@@ -632,6 +682,8 @@ void to_top_row_for(openfilestruct *const file, int total_cols);
 void to_top_row(void);
 void to_bottom_row_for(openfilestruct *const file, int total_rows, int total_cols);
 void to_bottom_row(void);
+void do_para_begin(linestruct **const line);
+void do_para_end(linestruct **const line);
 
 
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
@@ -639,17 +691,26 @@ void to_bottom_row(void);
 
 void  display_rcfile_errors(void);
 void  jot_error(const char *const restrict format, ...);
+void  check_for_nonempty_syntax(void);
 void  set_interface_color(int element, char *combotext);
 char *parse_next_word(char *ptr);
 char *parse_argument(char *ptr);
 bool  compile(const char *const restrict expression, int rex_flags, regex_t **const packed);
+void  begin_new_syntax(char *ptr);
 short closest_index_color(short red, short green, short blue);
 short color_to_short(const char *colorname, bool *vivid, bool *thick);
-Uint  syntax_opt_type_from_str(const char *const restrict key);
+// Uint  syntax_opt_type_from_str(const char *const restrict key);
 bool  parse_combination(char *combotext, short *fg, short *bg, int *attributes);
 void  grab_and_store(const char *const restrict kind, char *ptr, regexlisttype **const storage);
 bool  parse_syntax_commands(const char *keyword, char *ptr);
 void  parse_rule(char *ptr, int rex_flags);
+bool  is_good_file(const char *const restrict file);
+void  parse_one_include(char *file, syntaxtype *syntax);
+void  parse_rcfile(FILE *rcstream, bool just_syntax, bool intros_only);
+void  do_rcfiles(void);
+
+void check_vitals_mapped(void);
+void parse_binding(char *ptr, bool dobind);
 
 
 /* ---------------------------------------------------------- color.c ---------------------------------------------------------- */
@@ -661,6 +722,10 @@ void check_the_multis_for(openfilestruct *const file, linestruct *const line);
 void check_the_multis(linestruct *const line);
 void set_interface_colorpairs(void);
 void set_syntax_colorpairs(syntaxtype *sntx);
+void find_and_prime_applicable_syntax_for(openfilestruct *const file);
+void find_and_prime_applicable_syntax(void);
+void precalc_multicolorinfo_for(openfilestruct *const file);
+void precalc_multicolorinfo(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

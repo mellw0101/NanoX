@@ -103,6 +103,20 @@
 /* Both the start and end regexes match within this line. */
 #define JUSTONTHIS (1 << 5)
 
+/* Identifiers for the different configuration options. */
+#define OPERATINGDIR     (1 << 0)
+#define FILL             (1 << 1)
+#define MATCHBRACKETS    (1 << 2)
+#define WHITESPACE       (1 << 3)
+#define PUNCT            (1 << 4)
+#define BRACKETS         (1 << 5)
+#define QUOTESTR         (1 << 6)
+#define SPELLER          (1 << 7)
+#define BACKUPDIR        (1 << 8)
+#define WORDCHARS        (1 << 9)
+#define GUIDESTRIPE      (1 << 10)
+#define CONF_OPT_TABSIZE (1 << 11)
+
 /* Special keycodes for when a string bind has been partially implanted
  * or has an unpaired opening brace, or when a function in a string bind
  * needs execution or a specified function name is invalid. */
@@ -128,6 +142,9 @@
 
 #define THE_DEFAULT  (-1)
 #define BAD_COLOR    (-2)
+
+/* Used to encode both parts when enclosing a region. */
+#define ENCLOSE_DELIM ":;:"
 
 /* Native language support. */
 #ifdef ENABLE_NLS

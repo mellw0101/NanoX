@@ -46,18 +46,18 @@ constexpr int retriveColorOptionFromStr(string_view str) {
 }
 
 /* Identifiers for the different configuration options. */
-#define OPERATINGDIR     (1 << 0)
-#define FILL             (1 << 1)
-#define MATCHBRACKETS    (1 << 2)
-#define WHITESPACE       (1 << 3)
-#define PUNCT            (1 << 4)
-#define BRACKETS         (1 << 5)
-#define QUOTESTR         (1 << 6)
-#define SPELLER          (1 << 7)
-#define BACKUPDIR        (1 << 8)
-#define WORDCHARS        (1 << 9)
-#define GUIDESTRIPE      (1 << 10)
-#define CONF_OPT_TABSIZE (1 << 11)
+// #define OPERATINGDIR     (1 << 0)
+// #define FILL             (1 << 1)
+// #define MATCHBRACKETS    (1 << 2)
+// #define WHITESPACE       (1 << 3)
+// #define PUNCT            (1 << 4)
+// #define BRACKETS         (1 << 5)
+// #define QUOTESTR         (1 << 6)
+// #define SPELLER          (1 << 7)
+// #define BACKUPDIR        (1 << 8)
+// #define WORDCHARS        (1 << 9)
+// #define GUIDESTRIPE      (1 << 10)
+// #define CONF_OPT_TABSIZE (1 << 11)
 /* The configuration options map. */
 constexpr_map<string_view, Ushort, 12> config_option_map = {{
   {  "operatingdir", OPERATINGDIR     },

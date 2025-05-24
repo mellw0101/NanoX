@@ -73,8 +73,24 @@ char *startup_problem = NULL;
 char *nanox_rc_path = NULL;
 /* The directory where we store backup files. */
 char *backup_dir = NULL;
+/* The answer string used by the status-bar prompt. */
+char *answer = NULL;
+/* The opening and closing brackets that bracket searches can find. */
+char *matchbrackets = NULL;
+/* The closing punctuation that can end sentences. */
+char *punct = NULL;
+/* The closing brackets that can follow closing punctuation and can end sentences. */
+char *brackets = NULL;
+/* The quoting string.  The default value is set in main(). */
+char *quotestr = NULL;
+/* The command to use for the alternate spell checker. */
+char *alt_speller = NULL;
+/* The argument of the --rcfile option, when given. */
+char *custom_nanorc = NULL;
+/* The color syntax name specified on the command line. */
+char *syntaxstr = NULL;
 
-/* ----------------------------- const char ----------------------------- */
+/* ----------------------------- const char * ----------------------------- */
 
 /* These two tags are used elsewhere too, so they are global.
  * TRANSLATORS: Try to keep the next two strings at most 10 characters. */
@@ -120,6 +136,8 @@ float gui_height = 0;
 long tabsize = -1;
 /* The relative column where we will wrap lines. */
 long fill = -COLUMNS_FROM_EOL;
+/* The column at which a vertical bar will be drawn. */
+long stripe_column = 0;
 
 /* ----------------------------- Ulong ----------------------------- */
 
@@ -133,7 +151,7 @@ Ulong nanox_rc_lineno = 0;
 /* Our flags array, containing the states of all global options. */
 Ulong flags[1] = {0};
 
-/* ----------------------------- WINDOW ----------------------------- */
+/* ----------------------------- WINDOW * ----------------------------- */
 
 /* The top portion of the screen, showing the version number of nano, the name of the file, and whether the buffer was modified. */
 WINDOW *topwin = NULL;
@@ -142,43 +160,48 @@ WINDOW *midwin = NULL;
 /* The bottom portion of the screen, where status-bar messages, the status-bar prompt, and a list of shortcuts are shown. */
 WINDOW *footwin = NULL;
 
-/* ----------------------------- openfilestruct ----------------------------- */
+/* ----------------------------- linestruct * ----------------------------- */
+
+/* The buffer where we store cut text. */
+linestruct *cutbuffer = NULL;
+
+/* ----------------------------- openfilestruct * ----------------------------- */
 
 /* The list of all open file buffers. */
 openfilestruct *openfile = NULL;
 /* The first open buffer. */
 openfilestruct *startfile = NULL;
 
-/* ----------------------------- Font ----------------------------- */
+/* ----------------------------- Font * ----------------------------- */
 
 /* The ui font the gui uses. */
 Font *uifont = NULL;
 /* The text font the gui uses. */
 Font *textfont = NULL;
 
-/* ----------------------------- Editor ----------------------------- */
+/* ----------------------------- Editor * ----------------------------- */
 
 /* The list of all open editor's */
 Editor *openeditor = NULL;
 /* The first open editor. */
 Editor *starteditor = NULL;
 
-/* ----------------------------- colortype ----------------------------- */
+/* ----------------------------- colortype * ----------------------------- */
 
 /* The end of the color list for the current syntax. */
 colortype *nanox_rc_lastcolor = NULL;
 
-/* ----------------------------- colortype[] ----------------------------- */
+/* ----------------------------- colortype *[] ----------------------------- */
 
 /* The color combinations for interface elements given in the rcfile. */
 colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
 
-/* ----------------------------- keystruct ----------------------------- */
+/* ----------------------------- keystruct * ----------------------------- */
 
 /* The start of the shortcuts list. */
 keystruct *sclist = NULL;
 
-/* ----------------------------- funcstruct ----------------------------- */
+/* ----------------------------- funcstruct * ----------------------------- */
 
 /* The start of the functions list. */
 funcstruct *allfuncs = NULL;
@@ -191,8 +214,10 @@ funcstruct *exitfunc;
 
 /* The compiled regular expression to use in searches. */
 regex_t search_regexp;
+/* The compiled regular expression from the quoting string. */
+regex_t quotereg;
 
-/* ----------------------------- GLFWwindow ----------------------------- */
+/* ----------------------------- GLFWwindow * ----------------------------- */
 
 GLFWwindow *gui_window = NULL;
 
@@ -201,21 +226,103 @@ GLFWwindow *gui_window = NULL;
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
 message_type lastmessage = VACUUM;
 
-/* ----------------------------- configstruct ----------------------------- */
+/* ----------------------------- configstruct * ----------------------------- */
 
 /* Global config to store data retrieved from config file. */
 configstruct *config = NULL;
 
-/* ----------------------------- syntaxtype ----------------------------- */
+/* ----------------------------- syntaxtype * ----------------------------- */
 
 /* The syntax that is currently being parsed. */
 syntaxtype *nanox_rc_live_syntax = NULL;
+/* The global list of color syntaxes. */
+syntaxtype *syntaxes = NULL;
 
 
 /* ---------------------------------------------------------- Function's ---------------------------------------------------------- */
 
 
 /* Empty functions, for the most part corresponding to toggles. */
+
+void case_sens_void(void) {
+  ;
+}
+
+void regexp_void(void) {
+  ;
+}
+
+void backwards_void(void) {
+  ;
+}
+
+void get_older_item(void) {
+  ;
+}
+
+void get_newer_item(void) {
+  ;
+}
+
+void flip_replace(void) {
+  ;
+}
+
+void flip_goto(void) {
+  ;
+}
+
+void to_files(void) {
+  ;
+}
+
+void goto_dir(void) {
+  ;
+}
+
+void do_nothing(void) {
+  ;
+}
+
+void do_toggle(void) {
+  ;
+}
+
+void dos_format(void) {
+  ;
+}
+
+void mac_format(void) {
+  ;
+}
+
+void append_it(void) {
+  ;
+}
+
+void prepend_it(void) {
+  ;
+}
+
+void back_it_up(void) {
+  ;
+}
+
+void flip_execute(void) {
+  ;
+}
+
+void flip_pipe(void) {
+  ;
+}
+
+void flip_convert(void) {
+  ;
+}
+
+void flip_newbuffer(void) {
+  ;
+}
 
 void discard_buffer(void) {
   ;
