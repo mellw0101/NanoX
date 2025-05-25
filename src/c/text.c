@@ -502,6 +502,15 @@ void insert_empty_line(linestruct *line, bool above, bool autoindent) {
   }
 }
 
+bool cursor_is_between_brackets_for(openfilestruct *const file) {
+# ifdef IS_BETWEEN
+#   undef IS_BETWEEN
+# endif
+# define IS_BW(c1, c2)  (is_between_chars(file->current->data, file->current_x, (c1), (c2)))
+  ASSERT(file);
+  return (IS_BW('[', ']') || IS_BW('{', '}'));
+}
+
 /* ----------------------------- Indent ----------------------------- */
 
 /* Return the length of the indentation part of the given line.  The "indentation" of a line is the leading consecutive whitespace. */

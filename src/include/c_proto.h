@@ -491,10 +491,15 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
 
 
+void  make_new_buffer(void);
+char *crop_to_fit(const char *const restrict name, Ulong room) ;
+void  stat_with_alloc(const char *filename, struct stat **pstat);
+void  prepare_for_display(void);
+void  mention_name_and_linecount(void);
+void  mention_name_and_linecount_for(openfilestruct *const file);
 bool  delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
 bool  write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
 bool  has_valid_path(const char *const restrict filename);
-void  make_new_buffer(void);
 void  free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
 void  close_buffer(void);
 char *real_dir_from_tilde(const char *const restrict path) _RETURNS_NONNULL _NONNULL(1);
@@ -510,6 +515,9 @@ bool  outside_of_confinement(const char *const restrict somepath, bool tabbing);
 void  init_backup_dir(void);
 int   copy_file(FILE *inn, FILE *out, bool close_out);
 char *safe_tempfile(FILE **stream);
+void  redecorate_after_switch(void);
+void  switch_to_prev_buffer(void);
+void  switch_to_next_buffer(void);
 
 bool open_buffer(const char *filename, bool new_one);
 

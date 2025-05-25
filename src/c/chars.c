@@ -195,6 +195,15 @@ bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const
   return FALSE;
 }
 
+bool is_curs_between_chars_for(openfilestruct *const file, char a, char b) {
+  ASSERT(file);
+  return is_between_chars(file->current->data, file->current_x, a, b);
+}
+
+bool is_curs_between_chars(char a, char b) {
+  return is_curs_between_chars_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), a, b);
+}
+
 /* Return 'TRUE' when char before cursor is equal to 'pre_ch' and char at cursor is equal to 'post_ch'. */
 bool is_cursor_between_chars(const char pre_ch, const char post_ch) {
   return is_between_chars(openfile->current->data, openfile->current_x, pre_ch, post_ch);

@@ -10,8 +10,24 @@
 /* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
 
 
+#ifdef LOCKSIZE
+# undef LOCKSIZE
+#endif
+#ifdef RW_FOR_ALL
+# undef RW_FOR_ALL
+#endif
+#ifdef LOCKING_PREFIX
+# undef LOCKING_PREFIX
+#endif
+#ifdef LOCKING_SUFFIX
+# undef LOCKING_SUFFIX
+#endif
+
 #define LOCKSIZE    (1024)
 #define RW_FOR_ALL  (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
+
+#define LOCKING_PREFIX  "."
+#define LOCKING_SUFFIX  ".swp"
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
@@ -59,6 +75,80 @@ void make_new_buffer(void) {
   openfile->lock_filename = NULL;
   openfile->errormessage  = NULL;
   openfile->syntax        = NULL;
+}
+
+/* Return the given file name in a way that fits within the given space. */
+char *crop_to_fit(const char *const restrict name, Ulong room) {
+  char *clipped;
+  if (breadth(name) <= room) {
+    return display_string(name, 0, room, FALSE, FALSE);
+  }
+  if (room < 4) {
+    return copy_of("_");
+  }
+  clipped = display_string(name, (breadth(name) - room + 3), room, FALSE, FALSE);
+  clipped = xrealloc(clipped, (strlen(clipped) + 4));
+  memmove((clipped + 3), clipped, (strlen(clipped) + 1));
+  clipped[0] = '.';
+  clipped[1] = '.';
+  clipped[2] = '.';
+  return clipped;
+}
+
+/* Perform a stat call on the given filename, allocating a stat struct if necessary. On success,
+ * '*pstat' points to the stat's result.  On failure, '*pstat' is freed and made 'NULL'. */
+void stat_with_alloc(const char *filename, struct stat **pstat) {
+  !*pstat ? (*pstat = malloc(sizeof(**pstat))) : 0;
+  if (stat(filename, *pstat)) {
+    free(*pstat);
+    *pstat = NULL;
+  }
+}
+
+/* Update the title bar and the multiline cache to match the current buffer. */
+void prepare_for_display(void) {
+  /* When using the gui make this function a `No-op` function. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
+  /* Update the title bar, since the filename may have changed. */
+  if (!inhelp) {
+    titlebar_curses(NULL);
+  }
+  /* Precalculate the data for any multiline coloring regexes. */
+  if (!openfile->filetop->multidata) {
+    precalc_multicolorinfo();
+  }
+  have_palette   = FALSE;
+  refresh_needed = TRUE;
+}
+
+/* Show name of current buffer and its number of lines on the status bar. */
+void mention_name_and_linecount_for(openfilestruct *const file) {
+  ASSERT(file);
+  Ulong count = (file->filebot->lineno - !*file->filebot->data);
+  if (ISSET(MINIBAR)) {
+    report_size = TRUE;
+    return;
+  }
+  else if (ISSET(ZERO)) {
+    return;
+  }
+  if (file->fmt > NIX_FILE) {
+    /* TRANSLATORS: First %s is file name, second %s is file format. */
+    statusline_all(
+      HUSH, P_("%s -- %zu line (%s)", "%s -- %zu lines (%s)", count),
+      ((!*file->filename) ? _("New Buffer") : tail(file->filename)),
+      count, ((file->fmt == DOS_FILE) ? _("DOS") : _("Mac")));
+  }
+  else {
+    statusline_all(HUSH, P_("%s -- %zu line", "%s -- %zu lines", count), ((file->filename[0] == '\0') ? _("New Buffer") : tail(file->filename)), count);
+  }
+}
+
+/* Show name of the current buffer and its number of lines on the statusbar. */
+void mention_name_and_linecount(void) {
+  mention_name_and_linecount_for(ISSET(USING_GUI) ? openeditor->openfile : openfile);
 }
 
 /* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
@@ -500,4 +590,44 @@ char *safe_tempfile(FILE **stream) {
     return NULL;
   }
   return tempfile_name;
+}
+
+/* Update title bar and such after switching to another buffer. */
+void redecorate_after_switch(void) {
+  /* If only one file buffer is open, there is nothing to update. */
+  if (openfile == openfile->next) {
+    statusline_curses(AHEM, _("No more open file buffers"));
+    return;
+  }
+  /* While in a different buffer, the width of the screen may have changed,
+   * so make sure that the starting column for the first row is fitting. */
+  ensure_firstcolumn_is_aligned();
+  /* Update title bar and multiline info to match the current buffer. */
+  prepare_for_display();
+  /* Ensure that the main loop will redraw the help lines. */
+  currmenu = MMOST;
+  /* Prevent a possible Shift selection from getting cancelled. */
+  shift_held = TRUE;
+  /* If the switched-to buffer gave an error during opening, show the message
+   * once; otherwise, indicate on the status bar which file we switched to. */
+  if (openfile->errormessage) {
+    statusline_curses(ALERT, "%s", openfile->errormessage);
+    free(openfile->errormessage);
+    openfile->errormessage = NULL;
+  }
+  else {
+    mention_name_and_linecount();
+  }
+}
+
+/* Switch to the previous entry in the circular list of buffers. */
+void switch_to_prev_buffer(void) {
+  openfile = openfile->prev;
+  redecorate_after_switch();
+}
+
+/* Switch to the next entry in the circular list of buffers. */
+void switch_to_next_buffer(void) {
+  openfile = openfile->next;
+  redecorate_after_switch();
 }
