@@ -21,18 +21,18 @@ char **split_into_words(const char *str, const Uint len, Uint *word_count) {
 }
 
 /* Assigns the number of white char`s to the prev/next word to 'nchars'.  Return`s 'true' when word is more then 2 white`s away. */
-bool word_more_than_one_white_away(const char *string, Ulong index, bool forward, Ulong *nsteps) _NOTHROW {
-  Ulong i = index, chars = 0;
-  if (!forward) {
-    --i;
-    for (; i != (Ulong)-1 && is_blank_char(&string[i]); --i, ++chars);
-  }
-  else {
-    for (; string[i] && is_blank_char(&string[i]); ++i, ++chars);
-  }
-  (chars > 1) ? *nsteps = chars : 0;
-  return (chars > 1);
-}
+// bool word_more_than_one_white_away(const char *string, Ulong index, bool forward, Ulong *nsteps) _NOTHROW {
+//   Ulong i = index, chars = 0;
+//   if (!forward) {
+//     --i;
+//     for (; i != (Ulong)-1 && is_blank_char(&string[i]); --i, ++chars);
+//   }
+//   else {
+//     for (; string[i] && is_blank_char(&string[i]); ++i, ++chars);
+//   }
+//   (chars > 1) ? *nsteps = chars : 0;
+//   return (chars > 1);
+// }
 
 /* Assigns the number of white char`s to the prev/next word to 'nchars'.  Return`s 'true' when word at the current cursor position is more then 2 white`s away. */
 bool cursor_word_more_than_one_white_away(bool forward, Ulong *nsteps) _NOTHROW {

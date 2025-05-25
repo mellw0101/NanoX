@@ -2,8 +2,62 @@
 #include "../include/c_proto.h"
 
 
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
+
 /* Whether we've enabled UTF-8 support.  Initially set to 'FALSE', and then set to 'TRUE' by utf8_init(). */
 static bool use_utf8 = FALSE;
+
+
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
+
+
+/* Return the visible representation of control character c. */
+_NODISCARD
+static char control_rep(Schar c) {
+  if (c == DEL_CODE) {
+    return '?';
+  }
+  else if (c == -97) {
+    return '=';
+  }
+  else if (c < 0) {
+    return (c + 224);
+  }
+  else {
+    return (c + 64);
+  }
+}
+
+/* Return `TRUE` when the given character is a punctuation character. */
+_NODISCARD _NONNULL(1)
+static bool is_punct_char(const char *const c) {
+  wchar_t wc;
+  if (mbtowide(&wc, c) < 0) {
+    return FALSE;
+  }
+  return iswpunct(wc);
+}
+
+/* This function is equivalent to strcasestr(), except in that it scans the string in reverse, starting at pointer. */
+_NODISCARD _NONNULL(1, 2, 3)
+static char * revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)  {
+  const Ulong needle_len = strlen(needle);
+  const Ulong tail_len   = strlen(pointer);
+  if (tail_len < needle_len) {
+    pointer -= (needle_len - tail_len);
+  }
+  while (pointer >= haystack) {
+    if (strncasecmp(pointer, needle, needle_len) == 0) {
+      return (char *)pointer;
+    }
+    pointer--;
+  }
+  return NULL;
+}
+
+
+/* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
 /* Enable UTF-8 support.  Set the 'use_utf8' variable to 'TRUE'. */
@@ -19,11 +73,11 @@ bool using_utf8(void) {
 /* Return 'TRUE' when for the openfile language this char represents a stopping point when doing prev/next word. */
 bool is_language_word_char(const char *pointer, Ulong index) {
   /* C/C++ */
-  if (/* openfile->type.is_set<C_CPP>() */ (openfile->is_c_file || openfile->is_cxx_file) && is_char_one_of(pointer, index, "{}=|&!/")) {
+  if ((openfile->is_c_file || openfile->is_cxx_file) && is_char_one_of(pointer, index, "{}=|&!/")) {
     return TRUE;
   }
   /* AT&T Asm. */
-  else if (/* openfile->type.is_set<ATNT_ASM>() */ openfile->is_atnt_asm_file && is_char_one_of(pointer, index, "#")) {
+  else if (openfile->is_atnt_asm_file && is_char_one_of(pointer, index, "#")) {
     return TRUE;
   }
   return FALSE;
@@ -35,7 +89,7 @@ bool is_cursor_language_word_char(void) {
 }
 
 /* Return 'TRUE' when 'ch' is a opening enclose char.  Meaning it`s a char that can be enclosed, for example: '"{(< */
-bool is_enclose_char(const char ch) {
+bool is_enclose_char(char ch) {
   return (ch == '"' || ch == '\'' || ch == '(' || ch == '{' || ch == '[' || ch == '<');
 }
 
@@ -95,15 +149,6 @@ bool is_cntrl_char(const char *const c) {
   else {
     return (!(*c & 0x60) || *c == DEL_CODE);
   }
-}
-
-/* Return `TRUE` when the given character is a punctuation character. */
-static bool _NODISCARD is_punct_char(const char *const c) {
-  wchar_t wc;
-  if (mbtowide(&wc, c) < 0) {
-    return FALSE;
-  }
-  return iswpunct(wc);
 }
 
 /* Return 'TRUE' when the given character is word-forming (it is alphanumeric or specified in 'wordchars', or it is punctuation when allow_punct is TRUE). */
@@ -187,6 +232,8 @@ bool is_cursor_char_one_of(const char *chars) {
   return is_char_one_of(openfile->current->data, openfile->current_x, chars);
 }
 
+/* ----------------------------- Is between chars ----------------------------- */
+
 /* Return 'TRUE' when pointer+index-1 is equal to 'pre_ch' and 'pointer+index' is equal to 'post_ch'. */
 bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch) {
   if (index && *(pointer + index - 1) == pre_ch && *(pointer + index) == post_ch) {
@@ -195,34 +242,55 @@ bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const
   return FALSE;
 }
 
-bool is_curs_between_chars_for(openfilestruct *const file, char a, char b) {
+/* Returns `TRUE` when `file->current->data[file->current_x - 1]` == `a` and `file->current->data[file->current_x]` == `b`. */
+bool is_curs_between_chars_for(openfilestruct *const restrict file, char a, char b) {
   ASSERT(file);
   return is_between_chars(file->current->data, file->current_x, a, b);
 }
 
+/* Returns `TRUE` when `openfile->current->data[openfile->current_x - 1]` == `a` and
+ * `openfile->current->data[openfile->current_x]` == `b`.  Note that this correctly
+ * handles the current context and is fully safe to use for the tui and the gui. */
 bool is_curs_between_chars(char a, char b) {
   return is_curs_between_chars_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), a, b);
+}
+
+/* ----------------------------- Is between any char pair ----------------------------- */
+
+/* Returns `TRUE` if `ptr[index - 1]` and `ptr[index]` are the same as any pair in `pairs`. */
+bool is_between_any_char_pair(const char *const restrict ptr, Ulong index, const char **const restrict pairs, Ulong *const restrict out_index) {
+  ASSERT(ptr);
+  ASSERT(pairs);
+  /* If the passed index is zero just return `FALSE`, there is nothing to check. */
+  if (!index) {
+    return FALSE;
+  }
+  for (const char **pair=pairs; *pair; ++pair) {
+    /* If `ptr[index - 1]` == `(*pair)[0]` and `ptr[index]` == `(*pair)[1]`, return `TRUE`. */
+    if (is_between_chars(ptr, index, (*pair)[0], (*pair)[1])) {
+      /* If the caller wants the index of the correct pair, then assign it to out_index. */
+      ASSIGN_IF_VALID(out_index, (pair - pairs));
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/* Returns `TRUE` if `file->current->data[file->current_x - 1]` and `file->current->data[file->current_x]` match any of the pairs first and second char. */
+bool is_curs_between_any_pair_for(openfilestruct *const restrict file, const char **const restrict pairs, Ulong *const restrict out_index) {
+  ASSERT(file);
+  return is_between_any_char_pair(file->current->data, file->current_x, pairs, out_index);
+}
+
+/* Returns `TRUE` if `openfile->current->data[openfile->current_x - 1]` and `openfile->current->data[openfile->current_x]`
+ * match any of the pairs first and second char.  Note that this is context safe and can be called from the `tui` and `gui`. */
+bool is_curs_between_any_pair(const char **const restrict pairs, Ulong *const restrict out_index) {
+  return is_curs_between_any_pair_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), pairs, out_index);
 }
 
 /* Return 'TRUE' when char before cursor is equal to 'pre_ch' and char at cursor is equal to 'post_ch'. */
 bool is_cursor_between_chars(const char pre_ch, const char post_ch) {
   return is_between_chars(openfile->current->data, openfile->current_x, pre_ch, post_ch);
-}
-
-/* Return the visible representation of control character c. */
-static char _NODISCARD control_rep(const signed char c) {
-  if (c == DEL_CODE) {
-    return '?';
-  }
-  else if (c == -97) {
-    return '=';
-  }
-  else if (c < 0) {
-    return (c + 224);
-  }
-  else {
-    return (c + 64);
-  }
 }
 
 /* Return the visible representation of multibyte control character 'c'. */
@@ -246,14 +314,14 @@ char control_mbrep(const char *const c, bool isdata) {
 
 /* Convert the given multibyte sequence c to wide character wc, and return
  * the number of bytes in the sequence, or -1 for an invalid sequence. */
-int mbtowide(wchar_t *wc, const char *const c) {
+int mbtowide(wchar *const restrict wc, const char *const restrict c) {
   if ((Schar)*c < 0 && use_utf8) {
     Uchar v1 = (Uchar)c[0];
     Uchar v2 = (Uchar)c[1] ^ 0x80;
     if (v2 > 0x3F || v1 < 0xC2) {
       return -1;
     }
-    if (v1 < 0xE0) {
+    else if (v1 < 0xE0) {
       *wc = (((Uint)(v1 & 0x1F) << 6) | (Uint)v2);
       return 2;
     }
@@ -261,7 +329,7 @@ int mbtowide(wchar_t *wc, const char *const c) {
     if (v3 > 0x3F) {
       return -1;
     }
-    if (v1 < 0xF0) {
+    else if (v1 < 0xF0) {
       if ((v1 > 0xE0 || v2 >= 0x20) && (v1 != 0xED || v2 < 0x20)) {
         *wc = (((Uint)(v1 & 0x0F) << 12) | ((Uint)v2 << 6) | (Uint)v3);
         return 3;
@@ -274,7 +342,7 @@ int mbtowide(wchar_t *wc, const char *const c) {
     if (v4 > 0x3F || v1 > 0xF4) {
       return -1;
     }
-    if ((v1 > 0xF0 || v2 >= 0x10) && (v1 != 0xF4 || v2 < 0x10)) {
+    else if ((v1 > 0xF0 || v2 >= 0x10) && (v1 != 0xF4 || v2 < 0x10)) {
       *wc = (((Uint)(v1 & 0x07) << 18) | ((Uint)v2 << 12) | ((Uint)v3 << 6) | (Uint)v4);
       return 4;
     }
@@ -282,8 +350,10 @@ int mbtowide(wchar_t *wc, const char *const c) {
       return -1;
     }
   }
-  *wc = (Uint)*c;
-  return 1;
+  else {
+    *wc = (Uint)*c;
+    return 1;
+  }
 }
 
 /* Return 'TRUE' when the given character occupies two cells. */
@@ -420,26 +490,30 @@ int advance_over(const char *const str, Ulong *column) {
   return 1;
 }
 
+/* ----------------------------- Step ----------------------------- */
+
 /* Return the index in buf of the beginning of the multibyte character before the one at pos. */
 Ulong step_left(const char *const buf, const Ulong pos) {
+  Ulong before;
+  Ulong charlen;
   if (use_utf8) {
-    Ulong before, charlen = 0;
+    charlen = 0;
     if (pos < 4) {
       before = 0;
     }
     else {
       const char *ptr = (buf + pos);
       /* Probe for a valid starter byte in the preceding four bytes. */
-      if ((signed char)*--ptr > -65) {
+      if ((Schar)*--ptr > -65) {
         before = (pos - 1);
       }
-      else if ((signed char)*--ptr > -65) {
+      else if ((Schar)*--ptr > -65) {
         before = (pos - 2);
       }
-      else if ((signed char)*--ptr > -65) {
+      else if ((Schar)*--ptr > -65) {
         before = (pos - 3);
       }
-      else if ((signed char)*--ptr > -65) {
+      else if ((Schar)*--ptr > -65) {
         before = (pos - 4);
       }
       else {
@@ -541,8 +615,8 @@ char *mbstrcasestr(const char *haystack, const char *const needle) {
 
 /* This function is equivalent to strstr(), except in that it scans the string in reverse, starting at pointer. */
 char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) {
-  const Ulong needle_len = strlen(needle);
-  const Ulong tail_len   = strlen(pointer);
+  Ulong needle_len = strlen(needle);
+  Ulong tail_len   = strlen(pointer);
   if (tail_len < needle_len) {
     pointer -= (needle_len - tail_len);
   }
@@ -554,22 +628,6 @@ char *revstrstr(const char *const haystack, const char *const needle, const char
   }
   return NULL;
 }
-
-/* This function is equivalent to strcasestr(), except in that it scans the string in reverse, starting at pointer. */
-static char *_NODISCARD revstrcasestr(const char *const haystack, const char *const needle, const char *pointer)  {
-  const Ulong needle_len = strlen(needle);
-  const Ulong tail_len   = strlen(pointer);
-  if (tail_len < needle_len) {
-    pointer -= (needle_len - tail_len);
-  }
-  while (pointer >= haystack) {
-    if (strncasecmp(pointer, needle, needle_len) == 0) {
-      return (char *)pointer;
-    }
-    pointer--;
-  }
-  return NULL;
-} __nonnull((1, 2, 3))
 
 /* This function is equivalent to strcasestr() for multibyte strings, except in that it scans the string in reverse, starting at pointer. */
 char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) {
@@ -692,11 +750,13 @@ bool white_string(const char *str) {
   }
  */
 /* Remove leading whitespace from a given string */
-void strip_leading_blanks_from(char *str) {
-  char *start = str;
-  for (; start && (*start == '\t' || *start == ' '); ++start)
-    ;
-  (start != str) ? memmove(str, start, (strlen(start) + 1)) : 0;
+void strip_leading_blanks_from(char *const str) {
+  const char *start = str;
+  for (; start && is_blank_char(start); ++start);
+  if (start != str) {
+    memmove(str, start, (strlen(start) - 1));
+  }
+  // (start != str) ? memmove(str, start, (strlen(start) + 1)) : ((void *)0);
 }
 
 void strip_leading_chars_from(char *str, const char ch) {

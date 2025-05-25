@@ -51,3 +51,39 @@ Ulong wordendindex(const char *const restrict string, Ulong pos, bool allow_unde
   }
   return index;
 }
+
+/* Assigns the number of white char`s to the prev/next word to 'nchars'.  Return`s 'true' when word is more then 2 white`s away. */
+bool word_more_than_one_white_away(const char *const restrict string, Ulong index, bool forward, Ulong *const restrict nsteps) {
+  ASSERT(string);
+  ASSERT(nsteps);
+  /* The current index we are checking. */
+  Ulong i = index;
+  /* The number of blank chars we have found. */
+  Ulong chars = 0;
+  /* Backwards. */
+  if (!forward) {
+    i = step_left(string, i);
+    while (is_blank_char(string + i)) {
+      ++chars;
+      if (!i) {
+        break;
+      }
+      i = step_left(string, i);
+    }
+  }
+  /* Forwards. */
+  else {
+    /* Iterate as long as the char at `string + i` is a blank one. */
+    for (; is_blank_char(string + i); i += char_length(string), ++chars);
+  }
+  /* If there was more then one blank char in a row, set `*nsteps` to `chars`, and return `TRUE`. */
+  if (chars > 1) {
+    *nsteps = chars;
+    return TRUE;
+  }
+  /* Otherwise, set `*nsteps` to zero, and return `FALSE`. */
+  else {
+    *nsteps = 0;
+    return FALSE;
+  }
+}

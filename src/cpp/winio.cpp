@@ -252,9 +252,9 @@ static void read_keys_from(WINDOW *frame) {
 }
 
 /* Return the number of key codes waiting in the keystroke buffer. */
-Ulong waiting_keycodes(void) _NOTHROW {
-  return waiting_codes;
-}
+// Ulong waiting_keycodes(void) _NOTHROW {
+//   return waiting_codes;
+// }
 
 /* Add the given keycode to the front of the keystroke buffer. */
 static void put_back(int keycode) _NOTHROW {

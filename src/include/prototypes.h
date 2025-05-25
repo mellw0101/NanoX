@@ -103,7 +103,7 @@ extern const char *term_program;
 // extern bool shifted_metas;
 // extern bool meta_key;
 // extern bool shift_held;
-extern bool keep_mark;
+// extern bool keep_mark;
 extern bool mute_modifiers;
 extern bool bracketed_paste;
 // extern bool we_are_running;
@@ -175,8 +175,8 @@ extern file_listener_handler_t file_listener;
 extern HashMap *test_hashmap;
 
 /* Some prompt decl's. */
-extern char *prompt;
-extern Ulong typing_x;
+// extern char *prompt;
+// extern Ulong typing_x;
 
 extern SyntaxFile *sf;
 
@@ -423,23 +423,23 @@ bool        changes_something(functionptrtype f);
 void        inject(char *burst, Ulong count);
 
 /* Most functions in 'prompt.cpp'. */
-void  statusbar_discard_all_undo_redo(void) _NOTHROW;
-void  do_statusbar_undo(void) _NOTHROW;
-void  do_statusbar_redo(void) _NOTHROW;
-void  do_statusbar_home(void) _NOTHROW;
-void  do_statusbar_end(void) _NOTHROW;
-void  do_statusbar_prev_word(void) _NOTHROW;
-void  do_statusbar_next_word(void) _NOTHROW;
-void  do_statusbar_left(void) _NOTHROW;
-void  do_statusbar_right(void) _NOTHROW;
-void  do_statusbar_backspace(bool with_undo) _NOTHROW;
-void  do_statusbar_delete(void) _NOTHROW;
-void  inject_into_answer(char *burst, Ulong count) _NOTHROW;
-void  do_statusbar_chop_next_word(void) _NOTHROW;
-void  do_statusbar_chop_prev_word(void) _NOTHROW;
-Ulong get_statusbar_page_start(Ulong base, Ulong column) _NOTHROW;
-void  put_cursor_at_end_of_answer(void) _NOTHROW;
-void  add_or_remove_pipe_symbol_from_answer(void) _NOTHROW;
+// void  statusbar_discard_all_undo_redo(void) _NOTHROW;
+// void  do_statusbar_undo(void) _NOTHROW;
+// void  do_statusbar_redo(void) _NOTHROW;
+// void  do_statusbar_home(void) _NOTHROW;
+// void  do_statusbar_end(void) _NOTHROW;
+// void  do_statusbar_prev_word(void) _NOTHROW;
+// void  do_statusbar_next_word(void) _NOTHROW;
+// void  do_statusbar_left(void) _NOTHROW;
+// void  do_statusbar_right(void) _NOTHROW;
+// void  do_statusbar_backspace(bool with_undo) _NOTHROW;
+// void  do_statusbar_delete(void) _NOTHROW;
+// void  inject_into_answer(char *burst, Ulong count) _NOTHROW;
+// void  do_statusbar_chop_next_word(void) _NOTHROW;
+// void  do_statusbar_chop_prev_word(void) _NOTHROW;
+// Ulong get_statusbar_page_start(Ulong base, Ulong column) _NOTHROW;
+// void  put_cursor_at_end_of_answer(void) _NOTHROW;
+// void  add_or_remove_pipe_symbol_from_answer(void) _NOTHROW;
 int   do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg, ...);
 int   ask_user(bool withall, const char *question);
 
@@ -513,7 +513,7 @@ void  do_enter(void);
 // void  discard_until(const undostruct *thisitem) _NOTHROW;
 // void  add_undo(undo_type action, const char *message) _NOTHROW;
 // void  update_multiline_undo(long lineno, char *indentation) _NOTHROW;
-void  update_undo(undo_type action) _NOTHROW;
+// void  update_undo(undo_type action) _NOTHROW;
 void  do_wrap(void);
 // long  break_line(const char *textstart, long goal, bool snap_at_nl) _NOTHROW;
 // Ulong indent_length(const char *line) _NOTHROW;
@@ -583,7 +583,7 @@ int         qsort_strlen(const void *a, const void *b);
 void  record_macro(void) _NOTHROW;
 void  run_macro(void) _NOTHROW;
 void  reserve_space_for(Ulong newsize) _NOTHROW;
-Ulong waiting_keycodes(void) _NOTHROW;
+// Ulong waiting_keycodes(void) _NOTHROW;
 void  implant(const char *string) _NOTHROW;
 int   get_input(WINDOW *win);
 int   convert_CSI_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW;
@@ -660,7 +660,7 @@ void flip_newbuffer(void);
 bool   isCppSyntaxChar(const char c);
 void   get_line_indent(linestruct *line, Ushort *tabs, Ushort *spaces, Ushort *t_char, Ushort *t_tabs) _NONNULL(1, 2, 3, 4, 5);
 Ushort indent_char_len(linestruct *line);
-void   do_block_comment(void) _NOTHROW;
+// void   do_block_comment(void) _NOTHROW;
 bool   enter_with_bracket(void);
 void   all_brackets_pos(void);
 void   do_close_bracket(void);
@@ -699,7 +699,7 @@ void netlog_openfiles(void);
 
 
 char       **split_into_words(const char *str, const u_int len, u_int *word_count);
-bool         word_more_than_one_white_away(const char *string, Ulong index, bool forward, Ulong *nsteps) _NOTHROW _NODISCARD _NONNULL(1, 4);
+// bool         word_more_than_one_white_away(const char *string, Ulong index, bool forward, Ulong *nsteps) _NOTHROW _NODISCARD _NONNULL(1, 4);
 bool         cursor_word_more_than_one_white_away(bool forward, Ulong *nsteps) _NOTHROW;
 bool         char_is_in_word(const char *word, const char ch, Ulong *at);
 char        *retrieve_word_from_cursor_pos(bool forward);

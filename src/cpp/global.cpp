@@ -13,7 +13,7 @@
 /* Whether Shift was being held together with a movement key. */
 // bool shift_held;
 /* Whether to keep mark when normaly we wouldent. */
-bool keep_mark = FALSE;
+// bool keep_mark = FALSE;
 /* Whether to ignore modifier keys while running a macro or string bind. */
 bool mute_modifiers = FALSE;
 /* Whether text is being pasted into nano from outside. */

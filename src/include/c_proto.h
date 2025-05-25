@@ -35,6 +35,7 @@ extern bool have_palette;
 extern bool rescind_colors;
 extern bool nanox_rc_opensyntax;
 extern bool nanox_rc_seen_color_command;
+extern bool keep_mark;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -128,6 +129,12 @@ extern Ulong waiting_codes;
 extern int countdown;
 
 extern bool recording;
+
+/* ----------------------------- prompt.c ----------------------------- */
+
+extern char *prompt;
+
+extern Ulong typing_x;
 
 /* ----------------------------- General ----------------------------- */
 
@@ -281,6 +288,8 @@ Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NO
 Ulong quote_length(const char *const restrict line);
 void  add_undo_for(openfilestruct *const file, undo_type action, const char *const restrict message);
 void  add_undo(undo_type action, const char *const restrict message);
+void  update_undo_for(openfilestruct *const restrict file, undo_type action);
+void  update_undo(undo_type action);
 void  update_multiline_undo_for(openfilestruct *const file, long lineno, const char *const restrict indentation);
 void  update_multiline_undo(long lineno, const char *const restrict indentation);
 long  break_line(const char *textstart, long goal, bool snap_at_nl);
@@ -288,9 +297,12 @@ void  do_mark_for(openfilestruct *const file);
 void  do_mark(void);
 void  discard_until_for(openfilestruct *const buffer, const undostruct *const thisitem);
 void  discard_until(const undostruct *thisitem);
-bool begpar(const linestruct *const line, int depth);
-bool inpar(const linestruct *const line);
-void insert_empty_line(linestruct *line, bool above, bool autoindent);
+bool  begpar(const linestruct *const line, int depth);
+bool  inpar(const linestruct *const line);
+void  insert_empty_line(linestruct *line, bool above, bool autoindent);
+void  do_block_comment(void);
+bool  cursor_is_between_brackets_for(openfilestruct *const file);
+bool  cursor_is_between_brackets(void);
 
 /* ----------------------------- Indent ----------------------------- */
 
@@ -302,8 +314,8 @@ void  indent_a_line(linestruct *const line, const char *const restrict indentati
 
 char *enclose_str_encode(const char *const restrict p1, const char *const restrict p2);
 void  enclose_str_decode(const char *const restrict str, char **const p1, char **const p2);
-void enclose_marked_region_for(openfilestruct *const file, const char *const restrict p1, const char *const restrict p2);
-void enclose_marked_region(const char *const restrict p1, const char *const restrict p2);
+void  enclose_marked_region_for(openfilestruct *const file, const char *const restrict p1, const char *const restrict p2);
+void  enclose_marked_region(const char *const restrict p1, const char *const restrict p2);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -324,6 +336,7 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf);
 
 Ulong wordstartindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 Ulong wordendindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
+bool word_more_than_one_white_away(const char *const restrict string, Ulong index, bool forward, Ulong *const restrict nsteps);
 
 
 /* ----------------------------------------------- bracket.c ----------------------------------------------- */
@@ -393,17 +406,6 @@ void     element_grid_remove(Element *const e);
 Element *element_grid_get(float x, float y);
 bool     element_grid_contains(float x, float y);
 
-
-/* ---------------------------------------------------------- gui/color.c ---------------------------------------------------------- */
-
-
-// Color *color_create(float r, float g, float b, float a);
-// void   color_copy(Color *const dst, const Color *const src);
-// void   color_set_rgba(Color *const color, float r, float g, float b, float a);
-// void   color_set_white(Color *const color);
-// void   color_set_black(Color *const color);
-// void   color_set_default_borders(Color *const color);
-// void   color_set_edit_background(Color *const color);
 
 /* ---------------------------------------------------------- gui/element.c ---------------------------------------------------------- */
 
@@ -525,55 +527,60 @@ bool open_buffer(const char *filename, bool new_one);
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */
 
 
-void utf8_init(void);
-bool using_utf8(void);
-bool is_language_word_char(const char *pointer, Ulong index);
-bool is_cursor_language_word_char(void);
-bool is_enclose_char(const char ch);
-bool is_alpha_char(const char *const c);
-bool is_alnum_char(const char *const c);
-bool is_blank_char(const char *const c);
-bool is_prev_blank_char(const char *pointer, Ulong index);
-bool is_prev_cursor_blank_char(void);
-bool is_cursor_blank_char(void);
-bool is_cntrl_char(const char *const c);
-bool is_word_char(const char *const c, bool allow_punct);
-bool is_cursor_word_char(bool allow_punct);
-bool is_prev_word_char(const char *pointer, Ulong index, bool allow_punct);
-bool is_prev_cursor_word_char(bool allow_punct);
-bool is_prev_char(const char *pointer, Ulong index, const char ch);
-bool is_prev_cursor_char(const char ch);
-bool is_prev_char_one_of(const char *pointer, Ulong index, const char *chars);
-bool is_prev_cursor_char_one_of(const char *chars);
-bool is_cursor_char(const char ch);
-bool is_char_one_of(const char *pointer, Ulong index, const char *chars);
-bool is_cursor_char_one_of(const char *chars);
-bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch);
-bool is_cursor_between_chars(const char pre_ch, const char post_ch);
-char control_mbrep(const char *const c, bool isdata);
-int  mbtowide(wchar_t *wc, const char *const c);
-bool is_doublewidth(const char *const ch);
-bool is_zerowidth(const char *ch);
-bool is_cursor_zerowidth(void);
-int  char_length(const char *const pointer);
+void  utf8_init(void);
+bool  using_utf8(void);
+bool  is_language_word_char(const char *pointer, Ulong index);
+bool  is_cursor_language_word_char(void);
+bool  is_enclose_char(char ch);
+bool  is_alpha_char(const char *const c);
+bool  is_alnum_char(const char *const c);
+bool  is_blank_char(const char *const c);
+bool  is_prev_blank_char(const char *pointer, Ulong index);
+bool  is_prev_cursor_blank_char(void);
+bool  is_cursor_blank_char(void);
+bool  is_cntrl_char(const char *const c);
+bool  is_word_char(const char *const c, bool allow_punct);
+bool  is_cursor_word_char(bool allow_punct);
+bool  is_prev_word_char(const char *pointer, Ulong index, bool allow_punct);
+bool  is_prev_cursor_word_char(bool allow_punct);
+bool  is_prev_char(const char *pointer, Ulong index, const char ch);
+bool  is_prev_cursor_char(const char ch);
+bool  is_prev_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool  is_prev_cursor_char_one_of(const char *chars);
+bool  is_cursor_char(const char ch);
+bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool  is_cursor_char_one_of(const char *chars);
+bool  is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch);
+bool  is_curs_between_chars_for(openfilestruct *const restrict file, char a, char b);
+bool  is_curs_between_chars(char a, char b);
+bool  is_between_any_char_pair(const char *const restrict ptr, Ulong index, const char **const restrict pairs, Ulong *const restrict out_index);
+bool  is_curs_between_any_pair_for(openfilestruct *const restrict file, const char **const restrict pairs, Ulong *const restrict out_index);
+bool  is_curs_between_any_pair(const char **const restrict pairs, Ulong *const restrict out_index);
+bool  is_cursor_between_chars(const char pre_ch, const char post_ch);
+char  control_mbrep(const char *const c, bool isdata);
+int   mbtowide(wchar *const restrict wc, const char *const restrict c) __THROW _NODISCARD _NONNULL(1, 2);
+bool  is_doublewidth(const char *const ch);
+bool  is_zerowidth(const char *ch);
+bool  is_cursor_zerowidth(void);
+int   char_length(const char *const pointer);
 Ulong mbstrlen(const char *pointer);
-int  collect_char(const char *const str, char *c);
-int advance_over(const char *const str, Ulong *column);
+int   collect_char(const char *const str, char *c);
+int   advance_over(const char *const str, Ulong *column);
 Ulong step_left(const char *const buf, const Ulong pos);
 Ulong step_right(const char *const buf, const Ulong pos);
 int   mbstrcasecmp(const char *s1, const char *s2);
-int  mbstrncasecmp(const char *s1, const char *s2, Ulong n);
+int   mbstrncasecmp(const char *s1, const char *s2, Ulong n);
 char *mbstrcasestr(const char *haystack, const char *const needle);
 char *revstrstr(const char *const haystack, const char *const needle, const char *pointer);
 char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer);
 char *mbstrchr(const char *string, const char *const chr);
 char *mbstrpbrk(const char *str, const char *accept);
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer);
-bool has_blank_char(const char *str);
-bool white_string(const char *str);
-void strip_leading_blanks_from(char *str);
-void strip_leading_chars_from(char *str, const char ch);
-bool is_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool  has_blank_char(const char *str);
+bool  white_string(const char *str);
+void  strip_leading_blanks_from(char *const str);
+void  strip_leading_chars_from(char *str, const char ch);
+bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
 
 
 /* ---------------------------------------------------------- winio.c ---------------------------------------------------------- */
@@ -609,6 +616,7 @@ void adjust_viewport(update_type manner);
 void place_the_cursor_for(openfilestruct *const file);
 void place_the_cursor(void);
 void set_blankdelay_to_one(void);
+Ulong waiting_keycodes(void);
 
 /* ----------------------------- Curses ----------------------------- */
 
@@ -739,6 +747,32 @@ void precalc_multicolorinfo_for(openfilestruct *const file);
 void precalc_multicolorinfo(void);
 
 
+/* ---------------------------------------------------------- prompt.c ---------------------------------------------------------- */
+
+
+void  lop_the_answer(void);
+void  copy_the_answer(void);
+void  paste_into_answer(void);
+void  absorb_character(int input, functionptrtype function);
+void  statusbar_discard_all_undo_redo(void);
+void  do_statusbar_undo(void);
+void  do_statusbar_redo(void);
+void  do_statusbar_home(void);
+void  do_statusbar_end(void);
+void  do_statusbar_prev_word(void);
+void  do_statusbar_next_word(void);
+void  do_statusbar_left(void);
+void  do_statusbar_right(void);
+void  do_statusbar_backspace(bool with_undo);
+void  do_statusbar_delete(void);
+void  inject_into_answer(char *burst, Ulong count);
+void  do_statusbar_chop_next_word(void);
+void  do_statusbar_chop_prev_word(void);
+Ulong get_statusbar_page_start(Ulong base, Ulong column);
+void  put_cursor_at_end_of_answer(void);
+void  add_or_remove_pipe_symbol_from_answer(void);
+
+
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
 
 
@@ -799,8 +833,16 @@ void statusbar_draw(float fps);
 
 
 linestruct *make_new_node(linestruct *prevnode);
-void        splice_node(linestruct *afterthis, linestruct *newnode);
-void        delete_node(linestruct *line);
+
+/* ----------------------------- Splice node ----------------------------- */
+
+void splice_node_for(openfilestruct *const file, linestruct *const after, linestruct *const node);
+void splice_node(linestruct *afterthis, linestruct *newnode);
+
+/* ----------------------------- Delete node ----------------------------- */
+
+void delete_node_for(openfilestruct *const file, linestruct *const node);
+void delete_node(linestruct *line);
 void        unlink_node(linestruct *line);
 void        free_lines(linestruct *src);
 linestruct *copy_node(const linestruct *src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);

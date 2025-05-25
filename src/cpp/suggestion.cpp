@@ -407,6 +407,4 @@ void gui_suggestmenu_run(void) {
   else {
     menu_show(gui->suggestmenu->menu, FALSE);
   }
-  writef("suggestmenu len: %i\n", menu_len(gui->suggestmenu->menu));
-  writef("suggestmenu shown: %s\n", (menu_is_shown(gui->suggestmenu->menu) ? "TRUE" : "FALSE"));
 }

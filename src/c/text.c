@@ -279,6 +279,156 @@ void add_undo(undo_type action, const char *const restrict message) {
   add_undo_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), action, message);
 }
 
+/* Update an undo item with (among other things) the file size and cursor position after the given action. */
+void update_undo_for(openfilestruct *const restrict file, undo_type action) {
+  ASSERT(file);
+  undostruct *u = file->undotop;
+  Ulong datalen;
+  Ulong newlen;
+  char *textposition;
+  int charlen;
+  if (u->type != action) {
+    die("Mismatching undo type -- please report a bug\n");
+  }
+  u->newsize = file->totsize;
+  switch (u->type) {
+    case ADD: {
+      newlen = (file->current_x - u->head_x);
+      u->strdata = xrealloc(u->strdata, (newlen + 1));
+      strncpy(u->strdata, (file->current->data + u->head_x), newlen);
+      u->strdata[newlen] = '\0';
+      u->tail_x = file->current_x;
+      break;
+    }
+    case ENTER: {
+      u->strdata = copy_of(file->current->data);
+      u->tail_x  = file->current_x;
+      break;
+    }
+    case BACK:
+    case DEL: {
+      textposition = (file->current->data + file->current_x);
+      charlen = char_length(textposition);
+      datalen = strlen(u->strdata);
+      /* They deleted more: add removed character after earlier stuff. */
+      if (file->current_x == u->head_x) {
+        u->strdata = xrealloc(u->strdata, (datalen + charlen + 1));
+        strncpy((u->strdata + datalen), textposition, charlen);
+        u->strdata[datalen + charlen] = '\0';
+        u->tail_x = file->current_x;
+      }
+      /* They backspaced further: add removed character before earlier. */
+      else if (file->current_x == (u->head_x - charlen)) {
+        u->strdata = xrealloc(u->strdata, (datalen + charlen + 1));
+        memmove((u->strdata + charlen), u->strdata, (datalen + 1));
+        strncpy(u->strdata, textposition, charlen);
+        u->head_x = file->current_x;
+      }
+      /* They deleted *elsewhere* on the line: start a new undo item. */
+      else {
+        add_undo_for(file, u->type, NULL);
+      }
+      break;
+    }
+    case REPLACE: {
+      break;
+    }
+    case SPLIT_BEGIN:
+    case SPLIT_END: {
+      break;
+    }
+    case ZAP:
+    case CUT_TO_EOF:
+    case CUT: {
+      if (u->type == ZAP) {
+        u->cutbuffer = cutbuffer;
+      }
+      else if (cutbuffer) {
+        free_lines(u->cutbuffer);
+        u->cutbuffer = copy_buffer(cutbuffer);
+      }
+      else {
+        break;
+      }
+      if (!(u->xflags & MARK_WAS_SET)) {
+        linestruct *bottomline = u->cutbuffer;
+        Ulong count = 0;
+        /* Find the end of the cut for the undo/redo, using our copy. */
+        while (bottomline->next) {
+          bottomline = bottomline->next;
+          ++count;
+        }
+        u->tail_lineno = (u->head_lineno + count);
+        if (ISSET(CUT_FROM_CURSOR) || u->type == CUT_TO_EOF) {
+          u->tail_x = strlen(bottomline->data);
+          if (!count) {
+            u->tail_x += u->head_x;
+          }
+        }
+        else if (file->current == file->filebot && ISSET(NO_NEWLINES)) {
+          u->tail_x = strlen(bottomline->data);
+        }
+      }
+      break;
+    }
+    case COUPLE_BEGIN: {
+      break;
+    }
+    case COUPLE_END:
+    case PASTE:
+    case INSERT: {
+      u->tail_lineno = file->current->lineno;
+      u->tail_x      = file->current_x;
+      break;
+    }
+    case INSERT_EMPTY_LINE: {
+      /* If the mark was set then check the one that represents where the cursor was.  When inserting a line above cursor. */
+      if (((u->xflags & MARK_WAS_SET) && file->current->lineno == ((u->xflags & CURSOR_WAS_AT_HEAD) ? u->head_lineno : u->tail_lineno))
+       /* Otherwise, just check the head. */
+       || (file->current->lineno == u->head_lineno)) {
+        u->xflags |= INSERT_WAS_ABOVE;
+        /* If the mark was set. */
+        if ((u->xflags & MARK_WAS_SET)) {
+          /* And cursor was at head.  Then the mark must be after, so increment it to, to compensate for the newly inserted line above. */
+          if (u->xflags & CURSOR_WAS_AT_HEAD) {
+            ++u->head_lineno;
+            ++u->tail_lineno;
+          }
+          /* Otherwise, if the mark is before the cursor.  Check if its on the same line as cursor.
+           * If so, increment the mark to to compensate for the newly inserted line above. */
+          else {
+            if (u->head_lineno == u->tail_lineno) {
+              ++u->head_lineno;
+            }
+            ++u->tail_lineno;
+          }
+        }
+        /* Otherwise just increment the cursor line, to compensate for the inserted line above. */
+        else {
+          ++u->head_lineno;
+        }
+      }
+      /* If the mark was set then check if the cursor is below where the cursor was, this means this was a insertion below the cursor. */
+      else if ((u->xflags & MARK_WAS_SET) && (u->xflags & CURSOR_WAS_AT_HEAD) && file->current->lineno <= u->tail_lineno) {
+        ++u->tail_lineno;
+      }
+      break;
+    }
+    case ZAP_REPLACE: {
+      u->cutbuffer = cutbuffer;
+      break;
+    }
+    default: {
+      die("Bad undo type -- please report a bug\n");
+    }
+  }
+}
+
+/* Update an undo item with (among other things) the file size and cursor position after the given action. */
+void update_undo(undo_type action) {
+  update_undo_for(CONTEXT_OPENFILE, action);
+}
+
 /* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
  * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
 void update_multiline_undo_for(openfilestruct *const file, long lineno, const char *const restrict indentation) {
@@ -311,7 +461,7 @@ void update_multiline_undo_for(openfilestruct *const file, long lineno, const ch
 /* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
  * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
 void update_multiline_undo(long lineno, const char *const restrict indentation) {
-  update_multiline_undo_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), lineno, indentation);
+  update_multiline_undo_for(CONTEXT_OPENFILE, lineno, indentation);
 }
 
 /* Find the last blank in the given piece of text such that the display width to that point is at most
@@ -502,13 +652,23 @@ void insert_empty_line(linestruct *line, bool above, bool autoindent) {
   }
 }
 
+/* This is a shortcut to make marked area a block comment. */
+void do_block_comment(void) {
+  enclose_marked_region("/* ", " */");
+  keep_mark = TRUE;
+}
+
+/* ----------------------------- Cursor is between brackets ----------------------------- */
+
+/* Returns `TRUE` when `file->current->data[file->current_x]` is between a bracket pair, `{}`, `[]` or `()`. */
 bool cursor_is_between_brackets_for(openfilestruct *const file) {
-# ifdef IS_BETWEEN
-#   undef IS_BETWEEN
-# endif
-# define IS_BW(c1, c2)  (is_between_chars(file->current->data, file->current_x, (c1), (c2)))
-  ASSERT(file);
-  return (IS_BW('[', ']') || IS_BW('{', '}'));
+  return is_curs_between_any_pair_for(file, (const char *[]){"{}", "[]", "()", NULL}, NULL);
+}
+
+/* Returns `TRUE` when `openfile->current->data[openfile->current_x]` is between a bracket pair,
+ * `{}`, `[]` or `()`.  Note that this is context safe and can be called from the `tui` or `gui`. */
+bool cursor_is_between_brackets(void) {
+  return cursor_is_between_brackets_for(ISSET(USING_GUI) ? openeditor->openfile : openfile);
 }
 
 /* ----------------------------- Indent ----------------------------- */

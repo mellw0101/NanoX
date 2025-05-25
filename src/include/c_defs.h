@@ -68,6 +68,8 @@
 
 /* ----------------------------- General ----------------------------- */
 
+#define CONTEXT_OPENFILE  ((ISSET(USING_GUI) && openeditor) ? openeditor->openfile : openfile)
+
 #define ROOT_UID  (0)
 
 /* Macros for flags, indexing each bit in a small array. */

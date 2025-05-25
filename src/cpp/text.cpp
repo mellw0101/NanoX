@@ -506,15 +506,15 @@ static void redo_cut(undostruct *const u) _NOTHROW {
 // }
 
 /* This is a shortcut to make marked area a block comment. */
-void do_block_comment(void) _NOTHROW {
-  enclose_marked_region("/* ", " */");
-  keep_mark = TRUE;
-}
+// void do_block_comment(void) _NOTHROW {
+//   enclose_marked_region("/* ", " */");
+//   keep_mark = TRUE;
+// }
 
 /* Return TRUE when cursor is after '{' and directly at '}'. */
-static bool is_between_brackets(const char *line, const Ulong posx) _NOTHROW {
-  return (is_between_chars(line, posx, '{', '}') || is_between_chars(line, posx, '[', ']') || is_between_chars(line, posx, '(', ')'));
-}
+// static bool is_between_brackets(const char *line, const Ulong posx) _NOTHROW {
+//   return (is_between_chars(line, posx, '{', '}') || is_between_chars(line, posx, '[', ']') || is_between_chars(line, posx, '(', ')'));
+// }
 
 /* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
 static void auto_bracket(linestruct *line, const Ulong posx) _NOTHROW {
@@ -1296,7 +1296,8 @@ void do_redo(void) {
     case AUTO_BRACKET: {
       line = line_from_number(u->head_lineno);
       /* Ensure that undo-redo correctness is maintained. */
-      if (!is_between_brackets(line->data, u->head_x)) {
+      // if (!is_between_brackets(line->data, u->head_x)) {
+      if (!cursor_is_between_brackets()) {
         die("Undo-redo stack is not correct.\n");
       }
       auto_bracket(line, u->head_x);
@@ -1403,7 +1404,7 @@ void do_enter(void) {
     return;
   }
   /* Check if cursor is between two brackets. */
-  else if (is_between_brackets(openfile->current->data, openfile->current_x)) {
+  else if (cursor_is_between_brackets()) {
     do_auto_bracket();
     return;
   }
@@ -1754,147 +1755,147 @@ void do_enter(void) {
 // }
 
 /* Update an undo item with (among other things) the file size and cursor position after the given action. */
-void update_undo(undo_type action) _NOTHROW {
-  undostruct *u = openfile->undotop;
-  Ulong datalen, newlen;
-  char *textposition;
-  int   charlen;
-  if (u->type != action) {
-    die("Mismatching undo type -- please report a bug\n");
-  }
-  u->newsize = openfile->totsize;
-  switch (u->type) {
-    case ADD: {
-      newlen = (openfile->current_x - u->head_x);
-      u->strdata = arealloc(u->strdata, (newlen + 1));
-      strncpy(u->strdata, (openfile->current->data + u->head_x), newlen);
-      u->strdata[newlen] = '\0';
-      u->tail_x = openfile->current_x;
-      break;
-    }
-    case ENTER: {
-      u->strdata = copy_of(openfile->current->data);
-      u->tail_x  = openfile->current_x;
-      break;
-    }
-    case BACK:
-    case DEL: {
-      textposition = (openfile->current->data + openfile->current_x);
-      charlen = char_length(textposition);
-      datalen = strlen(u->strdata);
-      /* They deleted more: add removed character after earlier stuff. */
-      if (openfile->current_x == u->head_x) {
-        u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
-        strncpy((u->strdata + datalen), textposition, charlen);
-        u->strdata[datalen + charlen] = '\0';
-        u->tail_x = openfile->current_x;
-      }
-      /* They backspaced further: add removed character before earlier. */
-      else if (openfile->current_x == (u->head_x - charlen)) {
-        u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
-        memmove((u->strdata + charlen), u->strdata, (datalen + 1));
-        strncpy(u->strdata, textposition, charlen);
-        u->head_x = openfile->current_x;
-      }
-      /* They deleted *elsewhere* on the line: start a new undo item. */
-      else {
-        add_undo(u->type, NULL);
-      }
-      break;
-    }
-    case REPLACE: {
-      break;
-    }
-    case SPLIT_BEGIN:
-    case SPLIT_END: {
-      break;
-    }
-    case ZAP:
-    case CUT_TO_EOF:
-    case CUT: {
-      if (u->type == ZAP) {
-        u->cutbuffer = cutbuffer;
-      }
-      else if (cutbuffer) {
-        free_lines(u->cutbuffer);
-        u->cutbuffer = copy_buffer(cutbuffer);
-      }
-      else {
-        break;
-      }
-      if (!(u->xflags & MARK_WAS_SET)) {
-        linestruct *bottomline = u->cutbuffer;
-        Ulong count = 0;
-        /* Find the end of the cut for the undo/redo, using our copy. */
-        while (bottomline->next) {
-          bottomline = bottomline->next;
-          ++count;
-        }
-        u->tail_lineno = (u->head_lineno + count);
-        if (ISSET(CUT_FROM_CURSOR) || u->type == CUT_TO_EOF) {
-          u->tail_x = strlen(bottomline->data);
-          if (!count) {
-            u->tail_x += u->head_x;
-          }
-        }
-        else if (openfile->current == openfile->filebot && ISSET(NO_NEWLINES)) {
-          u->tail_x = strlen(bottomline->data);
-        }
-      }
-      break;
-    }
-    case COUPLE_BEGIN: {
-      break;
-    }
-    case COUPLE_END:
-    case PASTE:
-    case INSERT: {
-      u->tail_lineno = openfile->current->lineno;
-      u->tail_x      = openfile->current_x;
-      break;
-    }
-    case INSERT_EMPTY_LINE: {
-      /* If the mark was set then check the one that represents where the cursor was.  When inserting a line above cursor. */
-      if (((u->xflags & MARK_WAS_SET) && openfile->current->lineno == ((u->xflags & CURSOR_WAS_AT_HEAD) ? u->head_lineno : u->tail_lineno))
-       /* Otherwise, just check the head. */
-       || (openfile->current->lineno == u->head_lineno)) {
-        u->xflags |= INSERT_WAS_ABOVE;
-        /* If the mark was set. */
-        if ((u->xflags & MARK_WAS_SET)) {
-          /* And cursor was at head.  Then the mark must be after, so increment it to, to compensate for the newly inserted line above. */
-          if (u->xflags & CURSOR_WAS_AT_HEAD) {
-            ++u->head_lineno;
-            ++u->tail_lineno;
-          }
-          /* Otherwise, if the mark is before the cursor.  Check if its on the same line as cursor.
-           * If so, increment the mark to to compensate for the newly inserted line above. */
-          else {
-            if (u->head_lineno == u->tail_lineno) {
-              ++u->head_lineno;
-            }
-            ++u->tail_lineno;
-          }
-        }
-        /* Otherwise just increment the cursor line, to compensate for the inserted line above. */
-        else {
-          ++u->head_lineno;
-        }
-      }
-      /* If the mark was set then check if the cursor is below where the cursor was, this means this was a insertion below the cursor. */
-      else if ((u->xflags & MARK_WAS_SET) && (u->xflags & CURSOR_WAS_AT_HEAD) && openfile->current->lineno <= u->tail_lineno) {
-        ++u->tail_lineno;
-      }
-      break;
-    }
-    case ZAP_REPLACE: {
-      u->cutbuffer = cutbuffer;
-      break;
-    }
-    default: {
-      die("Bad undo type -- please report a bug\n");
-    }
-  }
-}
+// void update_undo(undo_type action) _NOTHROW {
+//   undostruct *u = openfile->undotop;
+//   Ulong datalen, newlen;
+//   char *textposition;
+//   int   charlen;
+//   if (u->type != action) {
+//     die("Mismatching undo type -- please report a bug\n");
+//   }
+//   u->newsize = openfile->totsize;
+//   switch (u->type) {
+//     case ADD: {
+//       newlen = (openfile->current_x - u->head_x);
+//       u->strdata = arealloc(u->strdata, (newlen + 1));
+//       strncpy(u->strdata, (openfile->current->data + u->head_x), newlen);
+//       u->strdata[newlen] = '\0';
+//       u->tail_x = openfile->current_x;
+//       break;
+//     }
+//     case ENTER: {
+//       u->strdata = copy_of(openfile->current->data);
+//       u->tail_x  = openfile->current_x;
+//       break;
+//     }
+//     case BACK:
+//     case DEL: {
+//       textposition = (openfile->current->data + openfile->current_x);
+//       charlen = char_length(textposition);
+//       datalen = strlen(u->strdata);
+//       /* They deleted more: add removed character after earlier stuff. */
+//       if (openfile->current_x == u->head_x) {
+//         u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
+//         strncpy((u->strdata + datalen), textposition, charlen);
+//         u->strdata[datalen + charlen] = '\0';
+//         u->tail_x = openfile->current_x;
+//       }
+//       /* They backspaced further: add removed character before earlier. */
+//       else if (openfile->current_x == (u->head_x - charlen)) {
+//         u->strdata = arealloc(u->strdata, (datalen + charlen + 1));
+//         memmove((u->strdata + charlen), u->strdata, (datalen + 1));
+//         strncpy(u->strdata, textposition, charlen);
+//         u->head_x = openfile->current_x;
+//       }
+//       /* They deleted *elsewhere* on the line: start a new undo item. */
+//       else {
+//         add_undo(u->type, NULL);
+//       }
+//       break;
+//     }
+//     case REPLACE: {
+//       break;
+//     }
+//     case SPLIT_BEGIN:
+//     case SPLIT_END: {
+//       break;
+//     }
+//     case ZAP:
+//     case CUT_TO_EOF:
+//     case CUT: {
+//       if (u->type == ZAP) {
+//         u->cutbuffer = cutbuffer;
+//       }
+//       else if (cutbuffer) {
+//         free_lines(u->cutbuffer);
+//         u->cutbuffer = copy_buffer(cutbuffer);
+//       }
+//       else {
+//         break;
+//       }
+//       if (!(u->xflags & MARK_WAS_SET)) {
+//         linestruct *bottomline = u->cutbuffer;
+//         Ulong count = 0;
+//         /* Find the end of the cut for the undo/redo, using our copy. */
+//         while (bottomline->next) {
+//           bottomline = bottomline->next;
+//           ++count;
+//         }
+//         u->tail_lineno = (u->head_lineno + count);
+//         if (ISSET(CUT_FROM_CURSOR) || u->type == CUT_TO_EOF) {
+//           u->tail_x = strlen(bottomline->data);
+//           if (!count) {
+//             u->tail_x += u->head_x;
+//           }
+//         }
+//         else if (openfile->current == openfile->filebot && ISSET(NO_NEWLINES)) {
+//           u->tail_x = strlen(bottomline->data);
+//         }
+//       }
+//       break;
+//     }
+//     case COUPLE_BEGIN: {
+//       break;
+//     }
+//     case COUPLE_END:
+//     case PASTE:
+//     case INSERT: {
+//       u->tail_lineno = openfile->current->lineno;
+//       u->tail_x      = openfile->current_x;
+//       break;
+//     }
+//     case INSERT_EMPTY_LINE: {
+//       /* If the mark was set then check the one that represents where the cursor was.  When inserting a line above cursor. */
+//       if (((u->xflags & MARK_WAS_SET) && openfile->current->lineno == ((u->xflags & CURSOR_WAS_AT_HEAD) ? u->head_lineno : u->tail_lineno))
+//        /* Otherwise, just check the head. */
+//        || (openfile->current->lineno == u->head_lineno)) {
+//         u->xflags |= INSERT_WAS_ABOVE;
+//         /* If the mark was set. */
+//         if ((u->xflags & MARK_WAS_SET)) {
+//           /* And cursor was at head.  Then the mark must be after, so increment it to, to compensate for the newly inserted line above. */
+//           if (u->xflags & CURSOR_WAS_AT_HEAD) {
+//             ++u->head_lineno;
+//             ++u->tail_lineno;
+//           }
+//           /* Otherwise, if the mark is before the cursor.  Check if its on the same line as cursor.
+//            * If so, increment the mark to to compensate for the newly inserted line above. */
+//           else {
+//             if (u->head_lineno == u->tail_lineno) {
+//               ++u->head_lineno;
+//             }
+//             ++u->tail_lineno;
+//           }
+//         }
+//         /* Otherwise just increment the cursor line, to compensate for the inserted line above. */
+//         else {
+//           ++u->head_lineno;
+//         }
+//       }
+//       /* If the mark was set then check if the cursor is below where the cursor was, this means this was a insertion below the cursor. */
+//       else if ((u->xflags & MARK_WAS_SET) && (u->xflags & CURSOR_WAS_AT_HEAD) && openfile->current->lineno <= u->tail_lineno) {
+//         ++u->tail_lineno;
+//       }
+//       break;
+//     }
+//     case ZAP_REPLACE: {
+//       u->cutbuffer = cutbuffer;
+//       break;
+//     }
+//     default: {
+//       die("Bad undo type -- please report a bug\n");
+//     }
+//   }
+// }
 
 /* When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
  * and prepend the excess part to an "overflow" line (when it already exists, otherwise create one). */

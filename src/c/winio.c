@@ -680,6 +680,11 @@ void set_blankdelay_to_one(void) {
   countdown = 1;
 }
 
+/* Return the number of key codes waiting in the keystroke buffer. */
+Ulong waiting_keycodes(void) {
+  return waiting_codes;
+}
+
 /* ----------------------------- Curses ----------------------------- */
 
 void blank_row_curses(WINDOW *const window, int row) {

@@ -59,33 +59,69 @@ linestruct *make_new_node(linestruct *prevnode)  {
   return newnode;
 }
 
-/* Splice a new node into an existing linked list of linestructs. */
-void splice_node(linestruct *afterthis, linestruct *newnode) {
-  newnode->next = afterthis->next;
-  newnode->prev = afterthis;
-  if (afterthis->next) {
-    afterthis->next->prev = newnode;
-  }
-  afterthis->next = newnode;
-  /* Update filebot when inserting a node at the end of file. */
-  if (openfile && openfile->filebot == afterthis) {
-    openfile->filebot = newnode;
+/* ----------------------------- Splice node ----------------------------- */
+
+/* Splice a new node into an existing linked list of linestructs for `file`, or `NULL` when lines are not related to an `openfilestruct *`. */
+void splice_node_for(openfilestruct *const file, linestruct *const after, linestruct *const node) {
+  ASSERT(after);
+  ASSERT(node);
+  DLIST_INSERT_AFTER(after, node);
+  /* Update filebot when inserting a node at the end of `file`. */
+  if (file && file->filebot == after) {
+    file->filebot = node;
   }
 }
 
-/* Free the data structures in the given node */
-void delete_node(linestruct *line) {
+/* Splice a new node into an existing linked list of linestructs. */
+void splice_node(linestruct *afterthis, linestruct *newnode) {
+  // newnode->next = afterthis->next;
+  // newnode->prev = afterthis;
+  // if (afterthis->next) {
+  //   afterthis->next->prev = newnode;
+  // }
+  // afterthis->next = newnode;
+  // /* Update filebot when inserting a node at the end of file. */
+  // if (openfile && openfile->filebot == afterthis) {
+  //   openfile->filebot = newnode;
+  // }
+  splice_node_for(CONTEXT_OPENFILE, afterthis, newnode);
+}
+
+/* ----------------------------- Delete node ----------------------------- */
+
+/* Free the data structures in the given node, that is part of `file`.  TODO: Make sure always moving the edittop
+ * up is wise, as what happens when its the top of the file then its `NULL` when we could just move it down. */
+void delete_node_for(openfilestruct *const file, linestruct *const node) {
+  ASSERT(file);
   /* If the first line on the screen gets deleted, step one back. */
-  if (line == openfile->edittop) {
-    openfile->edittop = line->prev;
+  if (node == file->edittop) {
+    CLIST_ADV_PREV(file->edittop);
   }
   /* If the spill-over line for hard-wrapping is deleted... */
-  if (line == openfile->spillage_line) {
-    openfile->spillage_line = NULL;
+  if (node == file->spillage_line) {
+    file->spillage_line = NULL;
   }
-  free(line->data);
-  free(line->multidata);
-  free(line);
+  /* Free the node's internal data. */
+  free(node->data);
+  free(node->multidata);
+  /* Free the node itself. */
+  free(node);
+}
+
+/* Free the data structures in the given node. */
+void delete_node(linestruct *line) {
+  // /* If the first line on the screen gets deleted, step one back. */
+  // if (line == openfile->edittop) {
+  //   openfile->edittop = line->prev;
+  // }
+  // /* If the spill-over line for hard-wrapping is deleted... */
+  // if (line == openfile->spillage_line) {
+  //   openfile->spillage_line = NULL;
+  // }
+  // free(line->data);
+  // free(line->multidata);
+  // free(line);
+  delete_node_for(CONTEXT_OPENFILE, line);
 }
 
 /* Disconnect a node from a linked list of linestructs and delete it. */

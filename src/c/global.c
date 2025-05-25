@@ -56,6 +56,8 @@ bool rescind_colors = FALSE;
 bool nanox_rc_opensyntax = FALSE;
 /* Whether a syntax definition contains any color commands. */
 bool nanox_rc_seen_color_command = FALSE;
+/* Whether to keep mark when normaly we wouldent. */
+bool keep_mark = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 
