@@ -399,7 +399,6 @@ void do_statusbar_right(void) {
 void do_statusbar_backspace(bool with_undo) {
   int charlen;
   if (typing_x > 0) {
-    // Ulong was_x = typing_x;
     typing_x = step_left(answer, typing_x);
     if (with_undo) {
       /* Only add a new undo-object when the last undo-action was not 'STATUSBAR_BACK'. */
@@ -413,7 +412,6 @@ void do_statusbar_backspace(bool with_undo) {
     }
     charlen = char_length(answer + typing_x);
     answer = xstr_erase_norealloc(answer, typing_x, charlen);
-    // memmove((answer + typing_x), (answer + was_x), (strlen(answer) - was_x + 1));
   }
 }
 
@@ -433,18 +431,12 @@ void do_statusbar_delete(void) {
 /* Insert the given short burst of bytes into the answer. */
 void inject_into_answer(char *burst, Ulong count) {
   /* First encode any embedded NUL byte as 0x0A. */
-  for (Ulong index=0; index<count; ++index) {
-    if (!burst[index]) {
-      burst[index] = '\n';
-    }
-  }
+  recode_NUL_to_LF(burst, count);
   /* Only add a new undo-object if the last undo-action was not also 'STATUSBAR_ADD'. */
   if (statusbar_last_action != STATUSBAR_ADD || statusbar_current_undo->tail_x != typing_x) {
     statusbar_add_undo(STATUSBAR_ADD, NULL);
   }
-  answer = xrealloc(answer, (strlen(answer) + count + 1));
-  memmove((answer + typing_x + count), (answer + typing_x), (strlen(answer) - typing_x + 1));
-  strncpy((answer + typing_x), burst, count);
+  answer = xstrninj(answer, burst, count, typing_x);
   typing_x += count;
   statusbar_update_undo(STATUSBAR_ADD);
 }
@@ -453,6 +445,7 @@ void inject_into_answer(char *burst, Ulong count) {
 void do_statusbar_chop_next_word(void) {
   Ulong steps = 0;
   Ulong was_x;
+  char *cutting_section;
   /* If there is more then one whitespace to the next word, just delete the white chars until the next word. */
   if (word_more_than_one_white_away(answer, typing_x, FORWARD, &steps)) {
     ;
@@ -472,7 +465,7 @@ void do_statusbar_chop_next_word(void) {
   /* Only perform the cutting action when appropriet. */
   if (steps) {
     /* Save the text that will be cut, and pass it when adding the undo item. */
-    char *cutting_section = measured_copy((answer + typing_x), steps);
+    cutting_section = measured_copy((answer + typing_x), steps);
     statusbar_add_undo(STATUSBAR_CHOP_NEXT_WORD, cutting_section);
     free(cutting_section);
     /* Now perform the cutting. */
@@ -485,7 +478,7 @@ void do_statusbar_chop_next_word(void) {
 /* Chop prev word. */
 void do_statusbar_chop_prev_word(void) {
   Ulong steps = 0;
-  Ulong was_x = 0;
+  Ulong was_x;
   char *cutting_section;
   /* If there is more then one whitespace to the prev word, just delete all white chars until the prev word. */
   if (word_more_than_one_white_away(answer, typing_x, BACKWARD, &steps)) {

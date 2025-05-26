@@ -70,6 +70,16 @@
 
 #define CONTEXT_OPENFILE  ((ISSET(USING_GUI) && openeditor) ? openeditor->openfile : openfile)
 
+
+#define RECODE_NUL_TO_LF(string, count)  \
+  DO_WHILE( \
+    for (Ulong index=0; index<count; ++index) { \
+      if (!burst[index]) { \
+        burst[index] = '\n'; \
+      } \
+    } \
+  )
+
 #define ROOT_UID  (0)
 
 /* Macros for flags, indexing each bit in a small array. */

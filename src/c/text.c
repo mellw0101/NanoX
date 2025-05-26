@@ -276,7 +276,7 @@ void add_undo_for(openfilestruct *const file, undo_type action, const char *cons
 
 /* Add a new undo item of the given type to the top of the current pile for the currently open file.  Works for gui and tui context. */
 void add_undo(undo_type action, const char *const restrict message) {
-  add_undo_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), action, message);
+  add_undo_for(CONTEXT_OPENFILE, action, message);
 }
 
 /* Update an undo item with (among other things) the file size and cursor position after the given action. */
@@ -541,11 +541,12 @@ void do_mark(void) {
 }
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
-void discard_until_for(openfilestruct *const buffer, const undostruct *const thisitem) {
-  undostruct  *dropit = buffer->undotop;
+void discard_until_for(openfilestruct *const file, const undostruct *const thisitem) {
+  ASSERT(file);
+  undostruct  *dropit = file->undotop;
   groupstruct *group, *next;
   while (dropit && dropit != thisitem) {
-    buffer->undotop = dropit->next;
+    file->undotop = dropit->next;
     free(dropit->strdata);
     free(dropit->cutbuffer);
     group = dropit->grouping;
@@ -556,17 +557,17 @@ void discard_until_for(openfilestruct *const buffer, const undostruct *const thi
       group = next;
     }
     free(dropit);
-    dropit = buffer->undotop;
+    dropit = file->undotop;
   }
   /* Adjust the pointer to the top of the undo struct. */
-  buffer->current_undo = (undostruct *)thisitem;
+  file->current_undo = (undostruct *)thisitem;
   /* Prevent a chain of edition actions from continuing. */
-  buffer->last_action = OTHER;
+  file->last_action = OTHER;
 }
 
 /* Discard undo items that are newer than the given one, or all if NULL. */
 void discard_until(const undostruct *thisitem) {
-  discard_until_for(openfile, thisitem);
+  discard_until_for(CONTEXT_OPENFILE, thisitem);
 }
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
@@ -617,31 +618,44 @@ bool inpar(const linestruct *const line) {
   return (line->data[quot_len + indent_len]);
 }
 
+/* This is a shortcut to make marked area a block comment. */
+void do_block_comment(void) {
+  enclose_marked_region("/* ", " */");
+  keep_mark = TRUE;
+}
+
+/* ----------------------------- Insert empty line ----------------------------- */
+
 /* Insert a new empty line, either `above` or `below` `line`.  */
-void insert_empty_line(linestruct *line, bool above, bool autoindent) {
-  linestruct *topline, *newline;
+void insert_empty_line_for(openfilestruct *const file, linestruct *const line, bool above, bool autoindent) {
+  ASSERT(file);
+  ASSERT(line);
+  linestruct *topline;
+  linestruct *newline;
+  /* Inserting a empty line above. */
   if (above) {
     if (!line->prev) {
       newline = make_new_node(NULL);
       newline->next = line;
-      line->prev = newline;
-      if (line == openfile->filetop) {
-        openfile->filetop = newline;
+      line->prev    = newline;
+      if (line == file->filetop) {
+        file->filetop = newline;
       }
-      if (line == openfile->edittop) {
-        openfile->edittop = newline;
+      if (line == file->edittop) {
+        file->edittop = newline;
       }
     }
     else {
       topline = line->prev;
       newline = make_new_node(topline);
-      splice_node(topline, newline);
+      splice_node_for(file, topline, newline);
     }
   }
+  /* Inserting an empty line below. */
   else {
     topline = line;
     newline = make_new_node(topline);
-    splice_node(topline, newline);
+    splice_node_for(file, topline, newline);
   }
   renumber_from(newline);
   if (!autoindent) {
@@ -652,10 +666,43 @@ void insert_empty_line(linestruct *line, bool above, bool autoindent) {
   }
 }
 
-/* This is a shortcut to make marked area a block comment. */
-void do_block_comment(void) {
-  enclose_marked_region("/* ", " */");
-  keep_mark = TRUE;
+/* Insert a new empty line, either `above` or `below` `line`.  */
+void insert_empty_line(linestruct *const line, bool above, bool autoindent) {
+  insert_empty_line_for(CONTEXT_OPENFILE, line, above, autoindent);
+}
+
+/* Insert a new empty line above `file->current`, and add an undo-item to the undo-stack. */
+void do_insert_empty_line_above_for(openfilestruct *const file) {
+  ASSERT(file);
+  add_undo_for(file, INSERT_EMPTY_LINE, NULL);
+  insert_empty_line_for(file, file->current, TRUE, TRUE);
+  DLIST_ADV_PREV(file->current);
+  update_undo_for(file, INSERT_EMPTY_LINE);
+  set_cursor_to_eol_for(file);
+  refresh_needed = TRUE;
+}
+
+/* Insert a new empty line above `openfile->current`, and add an undo-item to the
+ * undo-stack. Note that this is context safe and works in both the gui and tui. */
+void do_insert_empty_line_above(void) {
+  do_insert_empty_line_above_for(CONTEXT_OPENFILE);
+}
+
+/* Insert a new empty line below `file->current`, and add an undo-item to the undo-stack. */
+void do_insert_empty_line_below_for(openfilestruct *const file) {
+  ASSERT(file);
+  add_undo_for(file, INSERT_EMPTY_LINE, NULL);
+  insert_empty_line_for(file, file->current, FALSE, TRUE);
+  DLIST_ADV_NEXT(file->current);
+  update_undo_for(file, INSERT_EMPTY_LINE);
+  set_cursor_to_eol_for(file);
+  refresh_needed = TRUE;
+}
+
+/* Insert a new empty line below `openfile->current`, and add an undo-item to the
+ * undo-stack.  Note that this is context safe and works for both the gui and tui. */
+void do_insert_empty_line_below(void) {
+  do_insert_empty_line_below_for(CONTEXT_OPENFILE);
 }
 
 /* ----------------------------- Cursor is between brackets ----------------------------- */

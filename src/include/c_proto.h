@@ -211,6 +211,10 @@ bool        parse_line_column(const char *string, long *const line, long *const 
 char       *tab_space_string_for(openfilestruct *const file, Ulong *length);
 char       *tab_space_string(Ulong *length);
 char       *construct_full_tab_string(Ulong *length);
+void        set_pww_for(openfilestruct *const file);
+void        set_pww(void);
+void        set_cursor_to_eol_for(openfilestruct *const file);
+void        set_cursor_to_eol(void);
 
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
@@ -299,10 +303,21 @@ void  discard_until_for(openfilestruct *const buffer, const undostruct *const th
 void  discard_until(const undostruct *thisitem);
 bool  begpar(const linestruct *const line, int depth);
 bool  inpar(const linestruct *const line);
-void  insert_empty_line(linestruct *line, bool above, bool autoindent);
 void  do_block_comment(void);
-bool  cursor_is_between_brackets_for(openfilestruct *const file);
-bool  cursor_is_between_brackets(void);
+
+/* ----------------------------- Insert empty line ----------------------------- */
+
+void insert_empty_line_for(openfilestruct *const file, linestruct *const line, bool above, bool autoindent);
+void insert_empty_line(linestruct *const line, bool above, bool autoindent);
+void do_insert_empty_line_above_for(openfilestruct *const file);
+void do_insert_empty_line_above(void);
+void do_insert_empty_line_below_for(openfilestruct *const file);
+void do_insert_empty_line_below(void);
+
+/* ----------------------------- Cursor is between brackets ----------------------------- */
+
+bool cursor_is_between_brackets_for(openfilestruct *const file);
+bool cursor_is_between_brackets(void);
 
 /* ----------------------------- Indent ----------------------------- */
 

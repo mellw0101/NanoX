@@ -597,26 +597,26 @@ static void do_auto_bracket(void) _NOTHROW {
 // }
 
 /* Insert a new empty line above `openfile->current`, and add an undo-item to the undo-stack. */
-void do_insert_empty_line_above(void) _NOTHROW {
-  add_undo(INSERT_EMPTY_LINE, NULL);
-  insert_empty_line(openfile->current, TRUE, TRUE);
-  openfile->current = openfile->current->prev;
-  update_undo(INSERT_EMPTY_LINE);
-  openfile->current_x   = strlen(openfile->current->data);
-  openfile->placewewant = xplustabs();
-  refresh_needed = TRUE;
-}
+// void do_insert_empty_line_above(void) _NOTHROW {
+//   add_undo(INSERT_EMPTY_LINE, NULL);
+//   insert_empty_line(openfile->current, TRUE, TRUE);
+//   openfile->current = openfile->current->prev;
+//   update_undo(INSERT_EMPTY_LINE);
+//   openfile->current_x   = strlen(openfile->current->data);
+//   openfile->placewewant = xplustabs();
+//   refresh_needed = TRUE;
+// }
 
 /* Insert a new empty line below `openfile->current`, and add an undo-item to the undo-stack. */
-void do_insert_empty_line_below(void) _NOTHROW {
-  add_undo(INSERT_EMPTY_LINE, NULL);
-  insert_empty_line(openfile->current, FALSE, TRUE);
-  openfile->current = openfile->current->next;
-  update_undo(INSERT_EMPTY_LINE);
-  openfile->current_x   = strlen(openfile->current->data);
-  openfile->placewewant = xplustabs();
-  refresh_needed = TRUE;
-}
+// void do_insert_empty_line_below(void) _NOTHROW {
+//   add_undo(INSERT_EMPTY_LINE, NULL);
+//   insert_empty_line(openfile->current, FALSE, TRUE);
+//   openfile->current = openfile->current->next;
+//   update_undo(INSERT_EMPTY_LINE);
+//   openfile->current_x   = strlen(openfile->current->data);
+//   openfile->placewewant = xplustabs();
+//   refresh_needed = TRUE;
+// }
 
 /* Undo the last thing(s) we did. */
 void do_undo(void) {

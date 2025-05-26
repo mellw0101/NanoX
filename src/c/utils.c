@@ -452,3 +452,28 @@ char *construct_full_tab_string(Ulong *length) {
     return COPY_OF("\t");
   }
 }
+
+/* Set `file->placewewant` to the visualy correct column based on `file->current_x` in `file->current->data`. */
+void set_pww_for(openfilestruct *const file) {
+  ASSERT(file);
+  file->placewewant = xplustabs_for(file);
+}
+
+/* Set `openfile->placewewant` to the visualy correct column based on `openfile->current_x` in
+ * `openfile->current->data`.  Note that this is context safe, and works for both the gui and tui. */
+void set_pww(void) {
+  set_pww_for(CONTEXT_OPENFILE);
+}
+
+/* Correctly sets `file->current_x` to the end of `file->current->data` and correctly sets `file->placewant` to ensure visual correctness. */
+void set_cursor_to_eol_for(openfilestruct *const file) {
+  ASSERT(file);
+  file->current_x = strlen(file->current->data);
+  set_pww_for(file);
+}
+
+/* Correctly sets `openfile->current_x` to the end of `openfile->current->data` and correctly sets `openfile->placewant`
+ * to ensure visual correctness.  Note that this is context safe, and works in both the gui and tui. */
+void set_cursor_to_eol(void) {
+  set_cursor_to_eol_for(CONTEXT_OPENFILE);
+}
