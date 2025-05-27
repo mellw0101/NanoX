@@ -68,16 +68,40 @@
 
 /* ----------------------------- General ----------------------------- */
 
-#define CONTEXT_OPENFILE  ((ISSET(USING_GUI) && openeditor) ? openeditor->openfile : openfile)
+#define IN_GUI_CONTEXT    (ISSET(USING_GUI) && openeditor)
+
+#define CONTEXT_OPENFILE  (IN_GUI_CONTEXT ? openeditor->openfile : openfile)
+#define CONTEXT_ROWS      (IN_GUI_CONTEXT ? openeditor->rows : editwinrows)
+#define CONTEXT_COLS      (IN_GUI_CONTEXT ? openeditor->cols : editwincols)
+
+#define TAB_BYTE_LEN                                      \
+  /* The length in bytes of a tab, this depends on if     \
+   * `TABS_TO_SPACES` is set, and if so the byte length   \
+   * is `tabsize`.  Otherwise, its 1 for a '\t' char. */  \
+  (ISSET(TABS_TO_SPACES) ? tabsize : 1)
+
+#define GET_CONTEXT_VARS(f, r, c)          \
+  DO_WHILE(                                         \
+    if (IN_GUI_CONTEXT) {                           \
+      ASSIGN_IF_VALID(f, openeditor->openfile);  \
+      ASSIGN_IF_VALID(r, openeditor->rows);      \
+      ASSIGN_IF_VALID(c, openeditor->cols);      \
+    }                                               \
+    else {                                          \
+      ASSIGN_IF_VALID(f, openfile);              \
+      ASSIGN_IF_VALID(r, editwinrows);           \
+      ASSIGN_IF_VALID(c, editwincols);           \
+    }                                               \
+  )
 
 
-#define RECODE_NUL_TO_LF(string, count)  \
-  DO_WHILE( \
-    for (Ulong index=0; index<count; ++index) { \
-      if (!burst[index]) { \
-        burst[index] = '\n'; \
-      } \
-    } \
+#define RECODE_NUL_TO_LF(string, count)          \
+  DO_WHILE(                                      \
+    for (Ulong index=0; index<count; ++index) {  \
+      if (!burst[index]) {                       \
+        burst[index] = '\n';                     \
+      }                                          \
+    }                                            \
   )
 
 #define ROOT_UID  (0)

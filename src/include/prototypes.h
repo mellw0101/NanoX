@@ -499,8 +499,8 @@ void  to_next_anchor(void);
 
 // void  do_mark(void) _NOTHROW;
 void  do_tab(void);
-void  do_indent(void) _NOTHROW;
-void  do_unindent(void) _NOTHROW;
+// void  do_indent(void) _NOTHROW;
+// void  do_unindent(void) _NOTHROW;
 void  do_comment(void) _NOTHROW;
 // void  enclose_marked_region(const char *s1, const char *s2) _NOTHROW;
 // void  insert_empty_line(linestruct *line, bool above, bool autoindent) _NOTHROW;
@@ -576,7 +576,7 @@ char      **retrieve_exec_output(const char *cmd, Uint *n_lines);
 const char *word_strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *strstr_array(const char *str, const char **substrs, Uint count, Uint *index);
 const char *string_strstr_array(const char *str, const vector<string> &substrs, Uint *index);
-void        set_mark(long lineno, Ulong pos_x) _NOTHROW;
+// void        set_mark(long lineno, Ulong pos_x) _NOTHROW;
 int         qsort_strlen(const void *a, const void *b);
 
 /* Most functions in 'winio.cpp'. */

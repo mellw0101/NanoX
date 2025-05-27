@@ -19,11 +19,13 @@ static bool have_compiled_regexp = FALSE;
 
 /* Compile the given regular expression and store it in search_regexp.  Return `TRUE` if the expression is valid, and `FALSE` otherwise. */
 bool regexp_init(const char *regexp) {
+  Ulong len;
+  char *str;
   int value = regcomp(&search_regexp, regexp, NANO_REG_EXTENDED | (ISSET(CASE_SENSITIVE) ? 0 : REG_ICASE));
   /* If regex compilation failed, show the error message. */
   if (value != 0) {
-    Ulong len = regerror(value, &search_regexp, NULL, 0);
-    char *str = xmalloc(len);
+    len = regerror(value, &search_regexp, NULL, 0);
+    str = xmalloc(len);
     regerror(value, &search_regexp, str, len);
     statusline_all(AHEM, _("Bad regex \"%s\": %s"), regexp, str);
     free(str);
@@ -53,12 +55,12 @@ void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int to
   }
   file->current     = line_from_number_for(file, lineno);
   file->current_x   = x;
-  file->placewewant = xplustabs_for(file);
+  set_pww_for(file);
   refresh_needed    = TRUE;
 }
 
 void goto_line_posx(long lineno, Ulong x) {
-  if (ISSET(USING_GUI)) {
+  if (ISSET(USING_GUI) && openeditor) {
     goto_line_posx_for(openeditor->openfile, lineno, x, openeditor->rows);
   }
   else {

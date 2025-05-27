@@ -631,15 +631,15 @@ const char *string_strstr_array(const char *str, const vector<string> &substrs, 
 // }
 
 /* Set the mark at specific line and column. */
-void set_mark(long lineno, Ulong pos_x) _NOTHROW {
-  if (lineno < openfile->filebot->lineno) {
-    openfile->mark = line_from_number(lineno);
-  }
-  else {
-    openfile->mark = openfile->filebot;
-  }
-  openfile->mark_x = pos_x;
-}
+// void set_mark(long lineno, Ulong pos_x) _NOTHROW {
+//   if (lineno < openfile->filebot->lineno) {
+//     openfile->mark = line_from_number(lineno);
+//   }
+//   else {
+//     openfile->mark = openfile->filebot;
+//   }
+//   openfile->mark_x = pos_x;
+// }
 
 /* Function used for sorting strings by length.  Note that this should be passed to `qsort()` */
 int qsort_strlen(const void *a, const void *b) {

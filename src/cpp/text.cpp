@@ -45,24 +45,24 @@ void do_tab(void) {
 }
 
 /* Restore the cursor and mark from a undostruct. */
-static void restore_undo_posx_and_mark(undostruct *u) _NOTHROW {
-  /* Restore the mark if it was set. */
-  if (u->xflags & MARK_WAS_SET) {
-    if (u->xflags & CURSOR_WAS_AT_HEAD) {
-      goto_line_posx(u->head_lineno, u->head_x);
-      set_mark(u->tail_lineno, u->tail_x);
-    }
-    else {
-      goto_line_posx(u->tail_lineno, u->tail_x);
-      set_mark(u->head_lineno, u->head_x);
-    }
-    keep_mark = TRUE;
-  }
-  /* Otherwise just restore the cursor. */
-  else {
-    goto_line_posx(u->head_lineno, u->head_x);
-  }
-}
+// static void restore_undo_posx_and_mark(undostruct *u) _NOTHROW {
+//   /* Restore the mark if it was set. */
+//   if (u->xflags & MARK_WAS_SET) {
+//     if (u->xflags & CURSOR_WAS_AT_HEAD) {
+//       goto_line_posx(u->head_lineno, u->head_x);
+//       set_mark(u->tail_lineno, u->tail_x);
+//     }
+//     else {
+//       goto_line_posx(u->tail_lineno, u->tail_x);
+//       set_mark(u->head_lineno, u->head_x);
+//     }
+//     keep_mark = TRUE;
+//   }
+//   /* Otherwise just restore the cursor. */
+//   else {
+//     goto_line_posx(u->head_lineno, u->head_x);
+//   }
+// }
 
 /* Add an indent to the given line. */
 // static void indent_a_line(linestruct *line, char *indentation) _NOTHROW {
@@ -92,138 +92,138 @@ static void restore_undo_posx_and_mark(undostruct *u) _NOTHROW {
 
 /* Indent the current line (or the marked lines) by tabsize columns.  This inserts either a
  * tab character or a tab's worth of spaces, depending on whether --tabstospaces is in effect. */
-void do_indent(void) _NOTHROW {
-  linestruct *top, *bot, *line;
-  char *indentation, *real_indent;
-  /* Use either all the marked lines or just the current line. */
-  get_range(&top, &bot);
-  /* Skip any leading empty lines. */
-  while (top != bot->next && !top->data[0]) {
-    top = top->next;
-  }
-  /* If all lines are empty, there is nothing to do. */
-  if (top == bot->next) {
-    return;
-  }
-  /* Allocate the tabsize plus the 'NULL-Terminator', as that is the maximum we will use. */
-  indentation = (char *)xmalloc(tabsize + 1);
-  if (openfile->syntax && openfile->syntax->tabstring) {
-    indentation = realloc_strcpy(indentation, openfile->syntax->tabstring);
-  }
-  else {
-    /* When `TABS_TO_SPACES` is enabled, we only insert a tabsize worth of spaces. */
-    if (ISSET(TABS_TO_SPACES)) {
-      memset(indentation, ' ', tabsize);
-      indentation[tabsize] = '\0';
-    }
-    /* Otherwise, we just insert a single tab char. */
-    else {
-      indentation[0] = '\t';
-      indentation[1] = '\0';
-    }
-  }
-  add_undo(INDENT, NULL);
-  /* Go through each of the lines, adding an indent to the non-empty ones, and recording whatever was added in the undo item. */
-  for (line = top; line != bot->next; line = line->next) {
-    real_indent = (!*line->data ? (char *)"" : indentation);
-    indent_a_line(line, real_indent);
-    update_multiline_undo(line->lineno, real_indent);
-  }
-  free(indentation);
-  set_modified();
-  ensure_firstcolumn_is_aligned();
-  refresh_needed = TRUE;
-  shift_held     = TRUE;
-}
+// void do_indent(void) _NOTHROW {
+//   linestruct *top, *bot, *line;
+//   char *indentation, *real_indent;
+//   /* Use either all the marked lines or just the current line. */
+//   get_range(&top, &bot);
+//   /* Skip any leading empty lines. */
+//   while (top != bot->next && !top->data[0]) {
+//     top = top->next;
+//   }
+//   /* If all lines are empty, there is nothing to do. */
+//   if (top == bot->next) {
+//     return;
+//   }
+//   /* Allocate the tabsize plus the 'NULL-Terminator', as that is the maximum we will use. */
+//   indentation = (char *)xmalloc(tabsize + 1);
+//   if (openfile->syntax && openfile->syntax->tabstring) {
+//     indentation = realloc_strcpy(indentation, openfile->syntax->tabstring);
+//   }
+//   else {
+//     /* When `TABS_TO_SPACES` is enabled, we only insert a tabsize worth of spaces. */
+//     if (ISSET(TABS_TO_SPACES)) {
+//       memset(indentation, ' ', tabsize);
+//       indentation[tabsize] = '\0';
+//     }
+//     /* Otherwise, we just insert a single tab char. */
+//     else {
+//       indentation[0] = '\t';
+//       indentation[1] = '\0';
+//     }
+//   }
+//   add_undo(INDENT, NULL);
+//   /* Go through each of the lines, adding an indent to the non-empty ones, and recording whatever was added in the undo item. */
+//   for (line = top; line != bot->next; line = line->next) {
+//     real_indent = (!*line->data ? (char *)"" : indentation);
+//     indent_a_line(line, real_indent);
+//     update_multiline_undo(line->lineno, real_indent);
+//   }
+//   free(indentation);
+//   set_modified();
+//   ensure_firstcolumn_is_aligned();
+//   refresh_needed = TRUE;
+//   shift_held     = TRUE;
+// }
 
 /* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
-static Ulong length_of_white(const char *text) _NOTHROW {
-  Ulong white_count=0, thelength;
-  if (openfile->syntax && openfile->syntax->tabstring) {
-    thelength = strlen(openfile->syntax->tabstring);
-    while (text[white_count] == openfile->syntax->tabstring[white_count]) {
-      if (++white_count == thelength) {
-        return thelength;
-      }
-    }
-    white_count = 0;
-  }
-  while (TRUE) {
-    if (*text == '\t') {
-      return (white_count + 1);
-    }
-    if (*text != ' ') {
-      return white_count;
-    }
-    if ((long)(++white_count) == tabsize) {
-      return tabsize;
-    }
-    ++text;
-  }
-} _NONNULL(1)
+// static Ulong length_of_white(const char *text) _NOTHROW {
+//   Ulong white_count=0, thelength;
+//   if (openfile->syntax && openfile->syntax->tabstring) {
+//     thelength = strlen(openfile->syntax->tabstring);
+//     while (text[white_count] == openfile->syntax->tabstring[white_count]) {
+//       if (++white_count == thelength) {
+//         return thelength;
+//       }
+//     }
+//     white_count = 0;
+//   }
+//   while (TRUE) {
+//     if (*text == '\t') {
+//       return (white_count + 1);
+//     }
+//     if (*text != ' ') {
+//       return white_count;
+//     }
+//     if ((long)(++white_count) == tabsize) {
+//       return tabsize;
+//     }
+//     ++text;
+//   }
+// }
 
 /* Adjust the positions of mark and cursor when they are on the given line. */
-static void compensate_leftward(linestruct *line, Ulong leftshift) _NOTHROW {
-  if (line == openfile->mark) {
-    if (openfile->mark_x < leftshift) {
-      openfile->mark_x = 0;
-    }
-    else {
-      openfile->mark_x -= leftshift;
-    }
-  }
-  if (line == openfile->current) {
-    if (openfile->current_x < leftshift) {
-      openfile->current_x = 0;
-    }
-    else {
-      openfile->current_x -= leftshift;
-    }
-    openfile->placewewant = xplustabs();
-  }
-} _NONNULL(1)
+// static void compensate_leftward(linestruct *line, Ulong leftshift) _NOTHROW {
+//   if (line == openfile->mark) {
+//     if (openfile->mark_x < leftshift) {
+//       openfile->mark_x = 0;
+//     }
+//     else {
+//       openfile->mark_x -= leftshift;
+//     }
+//   }
+//   if (line == openfile->current) {
+//     if (openfile->current_x < leftshift) {
+//       openfile->current_x = 0;
+//     }
+//     else {
+//       openfile->current_x -= leftshift;
+//     }
+//     openfile->placewewant = xplustabs();
+//   }
+// } _NONNULL(1)
 
 /* Remove an indent from the given line. */
-static void unindent_a_line(linestruct *line, Ulong indent_len) _NOTHROW {
-  Ulong length = strlen(line->data);
-  /* If the indent is empty, don't change the line. */
-  if (!indent_len) {
-    return;
-  }
-  /* Remove the first tab's worth of whitespace from this line. */
-  memmove(line->data, (line->data + indent_len), (length - indent_len + 1));
-  openfile->totsize -= indent_len;
-  /* Adjust the positions of mark and cursor, when they are affected. */
-  compensate_leftward(line, indent_len);
-}
+// static void unindent_a_line(linestruct *line, Ulong indent_len) _NOTHROW {
+//   Ulong length = strlen(line->data);
+//   /* If the indent is empty, don't change the line. */
+//   if (!indent_len) {
+//     return;
+//   }
+//   /* Remove the first tab's worth of whitespace from this line. */
+//   memmove(line->data, (line->data + indent_len), (length - indent_len + 1));
+//   openfile->totsize -= indent_len;
+//   /* Adjust the positions of mark and cursor, when they are affected. */
+//   compensate_leftward(line, indent_len);
+// }
 
 /* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
-void do_unindent(void) _NOTHROW {
-  linestruct *top, *bot, *line;
-  /* Use either all the marked lines or just the current line. */
-  get_range(&top, &bot);
-  /* Skip any leading lines that cannot be unindented. */
-  while (top != bot->next && !length_of_white(top->data)) {
-    top = top->next;
-  }
-  /* If none of the lines can be unindented, there is nothing to do. */
-  if (top == bot->next) {
-    return;
-  }
-  add_undo(UNINDENT, NULL);
-  /* Go through each of the lines, removing their leading indent where possible, and saving the removed whitespace in the undo item. */
-  for (line = top; line != bot->next; line = line->next) {
-    Ulong indent_len  = length_of_white(line->data);
-    char *indentation = measured_copy(line->data, indent_len);
-    unindent_a_line(line, indent_len);
-    update_multiline_undo(line->lineno, indentation);
-    free(indentation);
-  }
-  set_modified();
-  ensure_firstcolumn_is_aligned();
-  refresh_needed = TRUE;
-  shift_held     = TRUE;
-}
+// void do_unindent(void) _NOTHROW {
+//   linestruct *top, *bot, *line;
+//   /* Use either all the marked lines or just the current line. */
+//   get_range(&top, &bot);
+//   /* Skip any leading lines that cannot be unindented. */
+//   while (top != bot->next && !length_of_white(top->data)) {
+//     top = top->next;
+//   }
+//   /* If none of the lines can be unindented, there is nothing to do. */
+//   if (top == bot->next) {
+//     return;
+//   }
+//   add_undo(UNINDENT, NULL);
+//   /* Go through each of the lines, removing their leading indent where possible, and saving the removed whitespace in the undo item. */
+//   for (line = top; line != bot->next; line = line->next) {
+//     Ulong indent_len  = length_of_white(line->data);
+//     char *indentation = measured_copy(line->data, indent_len);
+//     unindent_a_line(line, indent_len);
+//     update_multiline_undo(line->lineno, indentation);
+//     free(indentation);
+//   }
+//   set_modified();
+//   ensure_firstcolumn_is_aligned();
+//   refresh_needed = TRUE;
+//   shift_held     = TRUE;
+// }
 
 /* Perform an undo or redo for an indent or unindent action. */
 static void handle_indent_action(undostruct *u, bool undoing, bool add_indent) _NOTHROW {
@@ -517,49 +517,49 @@ static void redo_cut(undostruct *const u) _NOTHROW {
 // }
 
 /* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
-static void auto_bracket(linestruct *line, const Ulong posx) _NOTHROW {
-  Ulong indentlen, lenleft;
-  linestruct *middle = make_new_node(line);
-  linestruct *end    = make_new_node(middle);
-  splice_node(line, middle);
-  splice_node(middle, end);
-  renumber_from(middle);
-  indentlen = indent_length(line->data);
-  lenleft   = strlen(line->data + posx);
-  middle->data = (char *)nmalloc(indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 1);
-  end->data    = (char *)nmalloc(indentlen + lenleft + 1);
-  /* Set up the middle line. */
-  memcpy(middle->data, line->data, indentlen);
-  if (ISSET(TABS_TO_SPACES)) {
-    memset((middle->data + indentlen), ' ', tabsize);
-    *(middle->data + indentlen + tabsize) = '\0';
-  }
-  else {
-    *(middle->data + indentlen)     = '\t';
-    *(middle->data + indentlen + 1) = '\0';
-  }
-  /* Set up end line. */
-  memcpy((end->data + indentlen), (line->data + posx), (lenleft + 1));
-  memcpy(end->data, line->data, indentlen);
-  /* Set up start line. */
-  line->data = (char *)xrealloc(line->data, (posx + 1));
-  *(line->data + posx) = '\0';
-  /* Set the cursor line and x pos to the middle line. */
-  openfile->current   = middle; 
-  openfile->current_x = (indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1));
-  openfile->placewewant = xplustabs();
-  refresh_needed = TRUE;
-}
+// static void auto_bracket(linestruct *line, const Ulong posx) _NOTHROW {
+//   Ulong indentlen, lenleft;
+//   linestruct *middle = make_new_node(line);
+//   linestruct *end    = make_new_node(middle);
+//   splice_node(line, middle);
+//   splice_node(middle, end);
+//   renumber_from(middle);
+//   indentlen = indent_length(line->data);
+//   lenleft   = strlen(line->data + posx);
+//   middle->data = (char *)nmalloc(indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 1);
+//   end->data    = (char *)nmalloc(indentlen + lenleft + 1);
+//   /* Set up the middle line. */
+//   memcpy(middle->data, line->data, indentlen);
+//   if (ISSET(TABS_TO_SPACES)) {
+//     memset((middle->data + indentlen), ' ', tabsize);
+//     *(middle->data + indentlen + tabsize) = '\0';
+//   }
+//   else {
+//     *(middle->data + indentlen)     = '\t';
+//     *(middle->data + indentlen + 1) = '\0';
+//   }
+//   /* Set up end line. */
+//   memcpy((end->data + indentlen), (line->data + posx), (lenleft + 1));
+//   memcpy(end->data, line->data, indentlen);
+//   /* Set up start line. */
+//   line->data = (char *)xrealloc(line->data, (posx + 1));
+//   *(line->data + posx) = '\0';
+//   /* Set the cursor line and x pos to the middle line. */
+//   openfile->current   = middle; 
+//   openfile->current_x = (indentlen + (ISSET(TABS_TO_SPACES) ? tabsize : 1));
+//   openfile->placewewant = xplustabs();
+//   refresh_needed = TRUE;
+// }
 
 /* Do auto bracket at current position. */
-static void do_auto_bracket(void) _NOTHROW {
-  add_undo(AUTO_BRACKET, NULL);
-  Ulong indentlen = indent_length(openfile->current->data);
-  auto_bracket(openfile->current, openfile->current_x);
-  openfile->totsize += ((indentlen * 2) + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 2);
-  openfile->undotop->newsize = openfile->totsize;
-  set_modified();
-}
+// static void do_auto_bracket(void) _NOTHROW {
+//   add_undo(AUTO_BRACKET, NULL);
+//   Ulong indentlen = indent_length(openfile->current->data);
+//   auto_bracket(openfile->current, openfile->current_x);
+//   openfile->totsize += ((indentlen * 2) + (ISSET(TABS_TO_SPACES) ? tabsize : 1) + 2);
+//   openfile->undotop->newsize = openfile->totsize;
+//   set_modified();
+// }
 
 /* Insert a new empty line, either `above` or `below` `line`.  */
 // void insert_empty_line(linestruct *line, bool above, bool autoindent) _NOTHROW {

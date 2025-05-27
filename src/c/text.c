@@ -624,6 +624,164 @@ void do_block_comment(void) {
   keep_mark = TRUE;
 }
 
+/* ----------------------------- Length of white ----------------------------- */
+
+/* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
+Ulong length_of_white_for(openfilestruct *const file, const char *text) {
+  ASSERT(file);
+  ASSERT(text);
+  Ulong white_count = 0;
+  Ulong thelength;
+  if (file->syntax && file->syntax->tabstring) {
+    thelength = strlen(file->syntax->tabstring);
+    while (text[white_count] == file->syntax->tabstring[white_count]) {
+      if (++white_count == thelength) {
+        return thelength;
+      }
+    }
+    white_count = 0;
+  }
+  while (TRUE) {
+    if (*text == '\t') {
+      return (white_count + 1);
+    }
+    else if (*text != ' ') {
+      return white_count;
+    }
+    else if ((long)(++white_count) == tabsize) {
+      return tabsize;
+    }
+    ++text;
+  }
+}
+
+/* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
+Ulong length_of_white(const char *text) {
+  return length_of_white_for(CONTEXT_OPENFILE, text);
+}
+
+/* ----------------------------- Compensate leftward ----------------------------- */
+
+/* Adjust the positions of mark and cursor of `file` when they are on the given `line`. */
+void compensate_leftward_for(openfilestruct *const file, linestruct *const line, Ulong leftshift) {
+  ASSERT(file);
+  ASSERT(line);
+  /* The file's mark is on line. */
+  if (line == file->mark) {
+    if (file->mark_x < leftshift) {
+      file->mark_x = 0;
+    }
+    else {
+      file->mark_x -= leftshift;
+    }
+  }
+  /* The file's cursor is on line. */
+  if (line == file->current) {
+    if (file->current_x < leftshift) {
+      file->current_x = 0;
+    }
+    else {
+      file->current_x -= leftshift;
+    }
+    /* Set placewewant for file. */
+    set_pww_for(file);
+  }
+}
+
+/* Adjust the positions of mark and cursor when they are on the given line. */
+void compensate_leftward(linestruct *const line, Ulong leftshift) {
+  compensate_leftward_for(CONTEXT_OPENFILE, line, leftshift);
+}
+
+/* ----------------------------- Unindent ----------------------------- */
+
+/* Remove an indent from the given line, in `file`. */
+void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulong indent_len) {
+  ASSERT(file);
+  ASSERT(line); 
+  /* If the indent is empty, don't change the line. */
+  if (!indent_len) {
+    return;
+  }
+  /* Remove the first tab's worth of whitespace from this line. */
+  line->data = xstr_erase_norealloc(line->data, 0, indent_len);
+  file->totsize -= indent_len;
+  /* Adjust the positions of mark and cursor, when they are affected. */
+  compensate_leftward_for(file, line, indent_len);
+}
+
+/* Remove an indent from the given line, in `file`. */
+void unindent_a_line(linestruct *const line, Ulong indent_len) {
+  unindent_a_line_for(CONTEXT_OPENFILE, line, indent_len);
+}
+
+/* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
+void do_unindent_for(openfilestruct *const file, int total_cols) {
+  ASSERT(file);
+  linestruct *top;
+  linestruct *bot;
+  Ulong indent_len;
+  char *indentation;
+  /* Use either all the marked lines or just the current line. */
+  get_range_for(file, &top, &bot);
+  /* Skip any leading lines that cannot be unindented. */
+  while (top != bot->next && !length_of_white_for(file, top->data)) {
+    top = top->next;
+  }
+  /* If none of the lines can be unindented, there is nothing to do. */
+  if (top == bot->next) {
+    return;
+  }
+  add_undo_for(file, UNINDENT, NULL);
+  /* Go through each of the lines, removing their leading indent where possible, and saving the removed whitespace in the undo item. */
+  DLIST_FOR_NEXT_END(top, bot->next, line) {
+    indent_len  = length_of_white_for(file, line->data);
+    indentation = measured_copy(line->data, indent_len);
+    unindent_a_line_for(file, line, indent_len);
+    update_multiline_undo_for(file, line->lineno, indentation);
+    free(indentation);
+  }
+  set_modified_for(file);
+  ensure_firstcolumn_is_aligned_for(file, total_cols);
+  refresh_needed = TRUE;
+  shift_held     = TRUE;
+}
+
+/* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
+void do_unindent(void) {
+  do_unindent_for(CONTEXT_OPENFILE, CONTEXT_COLS);
+}
+
+/* ----------------------------- Restore undo posx and mark ----------------------------- */
+
+/* Restore the cursor and mark in `file`, from a undostruct. */
+void restore_undo_posx_and_mark_for(openfilestruct *const file, undostruct *const u, int total_rows) {
+  ASSERT(file);
+  ASSERT(u);
+  /* Restore the mark if it was set. */
+  if (u->xflags & MARK_WAS_SET) {
+    if (u->xflags & CURSOR_WAS_AT_HEAD) {
+      goto_line_posx_for(file, u->head_lineno, u->head_x, total_rows);
+      set_mark_for(file, u->tail_lineno, u->tail_x);
+    }
+    else {
+      goto_line_posx_for(file, u->tail_lineno, u->tail_x, total_rows);
+      set_mark_for(file, u->head_lineno, u->head_x);
+    }
+    keep_mark = TRUE;
+  }
+  /* Otherwise just restore the cursor. */
+  else {
+    goto_line_posx_for(file, u->head_lineno, u->head_x, total_rows);
+  }
+}
+
+/* Restore the cursor and mark in the currently open file, from a undostruct. */
+void restore_undo_posx_and_mark(undostruct *const u) {
+  ASSERT(u);
+  restore_undo_posx_and_mark_for(CONTEXT_OPENFILE, u, CONTEXT_ROWS);
+}
+
 /* ----------------------------- Insert empty line ----------------------------- */
 
 /* Insert a new empty line, either `above` or `below` `line`.  */
@@ -683,12 +841,12 @@ void do_insert_empty_line_above_for(openfilestruct *const file) {
 }
 
 /* Insert a new empty line above `openfile->current`, and add an undo-item to the
- * undo-stack. Note that this is context safe and works in both the gui and tui. */
+ * `undo-stack`. Note that this is context safe and works in both the `gui` and `tui`. */
 void do_insert_empty_line_above(void) {
   do_insert_empty_line_above_for(CONTEXT_OPENFILE);
 }
 
-/* Insert a new empty line below `file->current`, and add an undo-item to the undo-stack. */
+/* Insert a new empty line below `file->current`, and add an undo-item to the `undo-stack`. */
 void do_insert_empty_line_below_for(openfilestruct *const file) {
   ASSERT(file);
   add_undo_for(file, INSERT_EMPTY_LINE, NULL);
@@ -700,7 +858,7 @@ void do_insert_empty_line_below_for(openfilestruct *const file) {
 }
 
 /* Insert a new empty line below `openfile->current`, and add an undo-item to the
- * undo-stack.  Note that this is context safe and works for both the gui and tui. */
+ * `undo-stack`.  Note that this is context safe and works for both the `gui` and `tui`. */
 void do_insert_empty_line_below(void) {
   do_insert_empty_line_below_for(CONTEXT_OPENFILE);
 }
@@ -715,7 +873,7 @@ bool cursor_is_between_brackets_for(openfilestruct *const file) {
 /* Returns `TRUE` when `openfile->current->data[openfile->current_x]` is between a bracket pair,
  * `{}`, `[]` or `()`.  Note that this is context safe and can be called from the `tui` or `gui`. */
 bool cursor_is_between_brackets(void) {
-  return cursor_is_between_brackets_for(ISSET(USING_GUI) ? openeditor->openfile : openfile);
+  return cursor_is_between_brackets_for(CONTEXT_OPENFILE);
 }
 
 /* ----------------------------- Indent ----------------------------- */
@@ -756,7 +914,58 @@ void indent_a_line_for(openfilestruct *const file, linestruct *const line, const
 
 /* Add an indent to the given line. */
 void indent_a_line(linestruct *const line, const char *const restrict indentation) { 
-  indent_a_line_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), line, indentation);
+  indent_a_line_for(CONTEXT_OPENFILE, line, indentation);
+}
+
+/* Indent the current line (or the marked lines) of `file` by tabsize columns.  This inserts either tab
+ * character or a tab's worth of spaces, depending on whether the `TABS_TO_SPACES` flag is in effect. */
+void do_indent_for(openfilestruct *const file, int total_cols) {
+  ASSERT(file);
+  linestruct *top; 
+  linestruct *bot;
+  char *indentation;
+  char *real_indent;
+  /* Use either all the marked lines or just the current line. */
+  get_range_for(file, &top, &bot);
+  /* Skip any leading empty lines. */
+  while (top != bot->next && !top->data[0]) {
+    top = top->next;
+  }
+  /* If all lines are empty, there is nothing to do. */
+  if (top == bot->next) {
+    return;
+  }
+  /* Allocate the tabsize plus the 'NULL-Terminator', as that is the maximum we will use. */
+  if (file->syntax && file->syntax->tabstring) {
+    indentation = copy_of(file->syntax->tabstring);
+  }
+  else {
+    indentation = construct_full_tab_string(NULL);
+  }
+  add_undo_for(file, INDENT, NULL);
+  /* Go through each of the lines, adding an indent to the non-empty ones, and recording whatever was added in the undo item. */
+  DLIST_FOR_NEXT_END(top, bot->next, line) {
+    real_indent = (!*line->data ? "" : indentation);
+    indent_a_line_for(file, line, real_indent);
+    update_multiline_undo_for(file, line->lineno, real_indent);
+  }
+  free(indentation);
+  set_modified_for(file);
+  ensure_firstcolumn_is_aligned_for(file, total_cols);
+  refresh_needed = TRUE;
+  shift_held     = TRUE;
+}
+
+/* Indent the current line (or the marked lines) of `openfile` by tabsize columns.  This inserts
+ * either a tab character or a tab's worth of spaces, depending on whether the `TABS_TO_SPACES`
+ * flag is in effect.  Note that this is context safe and works for both the gui and tui. */
+void do_indent(void) {
+  if (ISSET(USING_GUI) && openeditor) {
+    do_indent_for(openeditor->openfile, openeditor->cols);
+  }
+  else {
+    do_indent_for(openfile, editwincols);
+  }
 }
 
 /* ----------------------------- Enclose marked region ----------------------------- */
@@ -887,8 +1096,70 @@ void enclose_marked_region_for(openfilestruct *const file, const char *const res
   refresh_needed = TRUE;
 }
 
-/* If the currently open file currently has a marked region, enclose that region where `p1` will
- * be placed on the top/start and `p2` at the bottom/end of the marked region. */
+/* If the currently open file currently has a marked region, enclose that region where
+ * `p1` will be placed on the top/start and `p2` at the bottom/end of the marked region. */
 void enclose_marked_region(const char *const restrict p1, const char *const restrict p2) {
-  enclose_marked_region_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), p1, p2);
+  enclose_marked_region_for(CONTEXT_OPENFILE, p1, p2);
+}
+
+/* ----------------------------- Auto bracket. ----------------------------- */
+
+/* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
+void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong posx) {
+  ASSERT(file);
+  ASSERT(line);
+  Ulong indentlen;
+  Ulong lenleft;
+  linestruct *middle = make_new_node(line);
+  linestruct *end    = make_new_node(middle);
+  splice_node_for(file, line, middle);
+  splice_node_for(file, middle, end);
+  renumber_from(middle);
+  indentlen = indent_length(line->data);
+  lenleft   = strlen(line->data + posx);
+  middle->data = xmalloc(indentlen + TAB_BYTE_LEN + 1);
+  end->data    = xmalloc(indentlen + lenleft + 1);
+  /* Set up the middle line. */
+  memcpy(middle->data, line->data, indentlen);
+  if (ISSET(TABS_TO_SPACES)) {
+    memset((middle->data + indentlen), ' ', tabsize);
+    *(middle->data + indentlen + tabsize) = '\0';
+  }
+  else {
+    *(middle->data + indentlen)     = '\t';
+    *(middle->data + indentlen + 1) = '\0';
+  }
+  /* Set up end line. */
+  memcpy((end->data + indentlen), (line->data + posx), (lenleft + 1));
+  memcpy(end->data, line->data, indentlen);
+  /* Set up start line. */
+  line->data       = xrealloc(line->data, (posx + 1));
+  line->data[posx] = '\0';
+  /* Set the cursor line and x pos to the middle line. */
+  file->current   = middle; 
+  file->current_x = (indentlen + TAB_BYTE_LEN);
+  set_pww_for(file);
+  refresh_needed = TRUE;
+}
+
+/* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
+void auto_bracket(linestruct *const line, Ulong posx) {
+  auto_bracket_for(CONTEXT_OPENFILE, line, posx);
+}
+
+/* Do auto bracket at current position. */
+void do_auto_bracket_for(openfilestruct *const file) {
+  ASSERT(file);
+  Ulong indentlen;
+  add_undo_for(file, AUTO_BRACKET, NULL);
+  indentlen = indent_length(file->current->data);
+  auto_bracket_for(file, file->current, file->current_x);
+  file->totsize += ((indentlen * 2) + TAB_BYTE_LEN + 2);
+  file->undotop->newsize = file->totsize;
+  set_modified_for(file);
+}
+
+/* Do auto bracket at current position. */
+void do_auto_bracket(void) {
+  do_auto_bracket_for(CONTEXT_OPENFILE);
 }

@@ -197,24 +197,47 @@ Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
 Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
 void        statusline_all(message_type type, const char *const restrict format, ...);
 void        statusbar_all(const char *const restrict msg);
-void        new_magicline_for(openfilestruct *const file) _NONNULL(1);
-void        new_magicline(void);
-void        remove_magicline_for(openfilestruct *const file);
-void        remove_magicline(void);
-bool        mark_is_before_cursor_for(openfilestruct *const file);
-bool        mark_is_before_cursor(void) _NODISCARD;
-void        get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
-void        get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
-void        get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
-void        get_range(linestruct **const top, linestruct **const bot);
-bool        parse_line_column(const char *string, long *const line, long *const column);
-char       *tab_space_string_for(openfilestruct *const file, Ulong *length);
-char       *tab_space_string(Ulong *length);
-char       *construct_full_tab_string(Ulong *length);
-void        set_pww_for(openfilestruct *const file);
-void        set_pww(void);
-void        set_cursor_to_eol_for(openfilestruct *const file);
-void        set_cursor_to_eol(void);
+
+/* ----------------------------- Magicline ----------------------------- */
+
+void new_magicline_for(openfilestruct *const file) _NONNULL(1);
+void new_magicline(void);
+void remove_magicline_for(openfilestruct *const file);
+void remove_magicline(void);
+
+/* ----------------------------- Mark is before cursor ----------------------------- */
+
+bool mark_is_before_cursor_for(openfilestruct *const file);
+bool mark_is_before_cursor(void) _NODISCARD;
+
+/* ----------------------------- Get region ----------------------------- */
+
+void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
+void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
+
+/* ----------------------------- Get region ----------------------------- */
+
+void  get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
+void  get_range(linestruct **const top, linestruct **const bot);
+bool  parse_line_column(const char *string, long *const line, long *const column);
+char *tab_space_string_for(openfilestruct *const file, Ulong *length);
+char *tab_space_string(Ulong *length);
+char *construct_full_tab_string(Ulong *length);
+
+/* ----------------------------- Set placewewant ----------------------------- */
+
+void set_pww_for(openfilestruct *const file);
+void set_pww(void);
+
+/* ----------------------------- Set cursor to end of line ----------------------------- */
+
+void set_cursor_to_eol_for(openfilestruct *const file);
+void set_cursor_to_eol(void);
+
+/* ----------------------------- Set mark ----------------------------- */
+
+void set_mark_for(openfilestruct *const file, long lineno, Ulong x);
+void set_mark(long lineno, Ulong x);
 
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
@@ -305,6 +328,28 @@ bool  begpar(const linestruct *const line, int depth);
 bool  inpar(const linestruct *const line);
 void  do_block_comment(void);
 
+/* ----------------------------- Length of white ----------------------------- */
+
+Ulong length_of_white_for(openfilestruct *const file, const char *text);
+Ulong length_of_white(const char *text);
+
+/* ----------------------------- Compensate leftward ----------------------------- */
+
+void compensate_leftward_for(openfilestruct *const file, linestruct *const line, Ulong leftshift);
+void compensate_leftward(linestruct *const line, Ulong leftshift);
+
+/* ----------------------------- Unindent ----------------------------- */
+
+void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulong indent_len);
+void unindent_a_line(linestruct *const line, Ulong indent_len);
+void do_unindent_for(openfilestruct *const file, int total_cols);
+void do_unindent(void);
+
+/* ----------------------------- Restore undo posx and mark ----------------------------- */
+
+void restore_undo_posx_and_mark_for(openfilestruct *const file, undostruct *const u, int total_rows);
+void restore_undo_posx_and_mark(undostruct *const u);
+
 /* ----------------------------- Insert empty line ----------------------------- */
 
 void insert_empty_line_for(openfilestruct *const file, linestruct *const line, bool above, bool autoindent);
@@ -324,6 +369,8 @@ bool cursor_is_between_brackets(void);
 Ulong indent_length(const char *const restrict line);
 void  indent_a_line_for(openfilestruct *const file, linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2, 3);
 void  indent_a_line(linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2);
+void  do_indent_for(openfilestruct *const file, int total_cols);
+void  do_indent(void);
 
 /* ----------------------------- Enclose marked region ----------------------------- */
 
@@ -331,6 +378,13 @@ char *enclose_str_encode(const char *const restrict p1, const char *const restri
 void  enclose_str_decode(const char *const restrict str, char **const p1, char **const p2);
 void  enclose_marked_region_for(openfilestruct *const file, const char *const restrict p1, const char *const restrict p2);
 void  enclose_marked_region(const char *const restrict p1, const char *const restrict p2);
+
+/* ----------------------------- Auto bracket ----------------------------- */
+
+void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong posx);
+void auto_bracket(linestruct *const line, Ulong posx);
+void do_auto_bracket_for(openfilestruct *const file);
+void do_auto_bracket(void);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */

@@ -282,6 +282,8 @@ void statusbar_all(const char *const restrict msg) {
   }
 }
 
+/* ----------------------------- Magicline ----------------------------- */
+
 /* Append a new magic line to the end of `file`. */
 void new_magicline_for(openfilestruct *const file) {
   ASSERT(file);
@@ -328,6 +330,8 @@ void remove_magicline(void) {
   // }
 }
 
+/* ----------------------------- Mark is before cursor ----------------------------- */
+
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
 bool mark_is_before_cursor_for(openfilestruct *const file) {
   ASSERT(file);
@@ -338,6 +342,8 @@ bool mark_is_before_cursor_for(openfilestruct *const file) {
 bool mark_is_before_cursor(void) {
   return mark_is_before_cursor_for(openfile);
 }
+
+/* ----------------------------- Get region ----------------------------- */
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
 void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
@@ -361,6 +367,8 @@ void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *c
 void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
   get_region_for(openfile, top, top_x, bot, bot_x);
 }
+
+/* ----------------------------- Get range ----------------------------- */
 
 /* Get the set of lines to work on -- either just the current line, or the first to last lines of the marked
  * region.  When the cursor (or mark) is at the start of the last line of the region, exclude that line. */
@@ -453,6 +461,8 @@ char *construct_full_tab_string(Ulong *length) {
   }
 }
 
+/* ----------------------------- Set placewewant ----------------------------- */
+
 /* Set `file->placewewant` to the visualy correct column based on `file->current_x` in `file->current->data`. */
 void set_pww_for(openfilestruct *const file) {
   ASSERT(file);
@@ -465,6 +475,8 @@ void set_pww(void) {
   set_pww_for(CONTEXT_OPENFILE);
 }
 
+/* ----------------------------- Set cursor to end of line ----------------------------- */
+
 /* Correctly sets `file->current_x` to the end of `file->current->data` and correctly sets `file->placewant` to ensure visual correctness. */
 void set_cursor_to_eol_for(openfilestruct *const file) {
   ASSERT(file);
@@ -476,4 +488,18 @@ void set_cursor_to_eol_for(openfilestruct *const file) {
  * to ensure visual correctness.  Note that this is context safe, and works in both the gui and tui. */
 void set_cursor_to_eol(void) {
   set_cursor_to_eol_for(CONTEXT_OPENFILE);
+}
+
+/* ----------------------------- Set mark ----------------------------- */
+
+/* Set the mark at specific line and column for `file`. */
+void set_mark_for(openfilestruct *const file, long lineno, Ulong x) {
+  ASSERT(file);
+  file->mark   = line_from_number_for(file, lineno);
+  file->mark_x = x;
+}
+
+/* Set the mark at specific line and column for the currently open file.  Note that this is `context-safe`, and works in both the `gui` and `tui`. */
+void set_mark(long lineno, Ulong x) {
+  set_mark_for(CONTEXT_OPENFILE, lineno, x);
 }
