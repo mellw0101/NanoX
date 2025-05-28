@@ -631,3 +631,29 @@ void switch_to_next_buffer(void) {
   openfile = openfile->next;
   redecorate_after_switch();
 }
+
+/* This function will return the name of the first available extension of a filename
+ * (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
+ * or the return value.  If no writable extension exists, we return "". */
+char *get_next_filename(const char *const restrict name, const char *const restrict suffix) {
+  Ulong wholenamelen = (strlen(name) + strlen(suffix));
+  Ulong i = 0;
+  char *buf;
+  struct stat fs;
+  /* Reserve space for, the name plus the suffix plus a dot plus possibly five digits plus a null byte. */
+  buf = xmalloc(wholenamelen + 7);
+  sprintf(buf, "%s%s", name, suffix);
+  while (TRUE) {
+    if (stat(buf, &fs) == -1) {
+      return buf;
+    }
+    /* Limit the number of backup files to a hundred thousand. */
+    if (++i == 100000) {
+      break;
+    }
+    sprintf((buf + wholenamelen), ".%lu", i);
+  }
+  /* There is no possible save file: blank out the filename. */
+  *buf = '\0';
+  return buf;
+}

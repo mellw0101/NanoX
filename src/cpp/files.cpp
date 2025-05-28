@@ -807,28 +807,28 @@ int open_file(const char *filename, bool new_one, FILE **f) {
 /* This function will return the name of the first available extension of a filename
  * (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated
  * or the return value.  If no writable extension exists, we return "". */
-char *get_next_filename(const char *name, const char *suffix) _NOTHROW {
-  Ulong wholenamelen = (strlen(name) + strlen(suffix));
-  Ulong i = 0;
-  char *buf;
-  /* Reserve space for, the name plus the suffix plus a dot plus possibly five digits plus a null byte. */
-  buf = (char *)nmalloc(wholenamelen + 7);
-  sprintf(buf, "%s%s", name, suffix);
-  while (TRUE) {
-    struct stat fs;
-    if (stat(buf, &fs) == -1) {
-      return buf;
-    }
-    /* Limit the number of backup files to a hundred thousand. */
-    if (++i == 100000) {
-      break;
-    }
-    sprintf((buf + wholenamelen), ".%lu", i);
-  }
-  /* There is no possible save file: blank out the filename. */
-  *buf = '\0';
-  return buf;
-}
+// char *get_next_filename(const char *name, const char *suffix) _NOTHROW {
+//   Ulong wholenamelen = (strlen(name) + strlen(suffix));
+//   Ulong i = 0;
+//   char *buf;
+//   /* Reserve space for, the name plus the suffix plus a dot plus possibly five digits plus a null byte. */
+//   buf = (char *)nmalloc(wholenamelen + 7);
+//   sprintf(buf, "%s%s", name, suffix);
+//   while (TRUE) {
+//     struct stat fs;
+//     if (stat(buf, &fs) == -1) {
+//       return buf;
+//     }
+//     /* Limit the number of backup files to a hundred thousand. */
+//     if (++i == 100000) {
+//       break;
+//     }
+//     sprintf((buf + wholenamelen), ".%lu", i);
+//   }
+//   /* There is no possible save file: blank out the filename. */
+//   *buf = '\0';
+//   return buf;
+// }
 
 /* The PID of a forked process -- needed when wanting to abort it. */
 static pid_t pid_of_command = -1;
@@ -1385,7 +1385,7 @@ static bool make_backup_of(char *realname) {
     /* If we have a valid absolute path, replace each slash in this full path with an
      * exclamation mark.  Otherwise, just use the file-name portion of the given path. */
     if (thename) {
-      for (int i = 0; thename[i]; i++) {
+      for (int i=0; thename[i]; ++i) {
         if (thename[i] == '/') {
           thename[i] = '!';
         }
@@ -1411,9 +1411,9 @@ static bool make_backup_of(char *realname) {
   if (unlink(backupname) < 0 && errno != ENOENT && !ISSET(INSECURE_BACKUP)) {
     goto problem;
   }
-  creation_flags = O_WRONLY | O_CREAT | (ISSET(INSECURE_BACKUP) ? O_TRUNC : O_EXCL);
+  creation_flags = (O_WRONLY | O_CREAT | (ISSET(INSECURE_BACKUP) ? O_TRUNC : O_EXCL));
   /* Create the backup file (or truncate the existing one). */
-  descriptor = open(backupname, creation_flags, S_IRUSR | S_IWUSR);
+  descriptor = open(backupname, creation_flags, (S_IRUSR | S_IWUSR));
 retry:
   if (descriptor >= 0) {
     backup_file = fdopen(descriptor, "wb");
@@ -1421,15 +1421,13 @@ retry:
   if (!backup_file) {
     goto problem;
   }
-  /* Try to change owner and group to those of the original file;
-   * ignore permission errors, as a normal user cannot change the owner. */
+  /* Try to change owner and group to those of the original file; ignore permission errors, as a normal user cannot change the owner. */
   if (fchown(descriptor, openfile->statinfo->st_uid, openfile->statinfo->st_gid) < 0 && errno != EPERM) {
     fclose(backup_file);
     goto problem;
   }
-  /* Set the backup's permissions to those of the original file.
-   * It is not a security issue if this fails, as we have created
-   * the file with just read and write permission for the owner. */
+  /* Set the backup's permissions to those of the original file.  It is not a security issue if
+   * this fails, as we have created the file with just read and write permission for the owner. */
   if (fchmod(descriptor, openfile->statinfo->st_mode) < 0 && errno != EPERM) {
     fclose(backup_file);
     goto problem;

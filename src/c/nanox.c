@@ -73,18 +73,8 @@ void splice_node_for(openfilestruct *const file, linestruct *const after, linest
 }
 
 /* Splice a new node into an existing linked list of linestructs. */
-void splice_node(linestruct *afterthis, linestruct *newnode) {
-  // newnode->next = afterthis->next;
-  // newnode->prev = afterthis;
-  // if (afterthis->next) {
-  //   afterthis->next->prev = newnode;
-  // }
-  // afterthis->next = newnode;
-  // /* Update filebot when inserting a node at the end of file. */
-  // if (openfile && openfile->filebot == afterthis) {
-  //   openfile->filebot = newnode;
-  // }
-  splice_node_for(CONTEXT_OPENFILE, afterthis, newnode);
+void splice_node(linestruct *const after, linestruct *const node) {
+  splice_node_for(CONTEXT_OPENFILE, after, node);
 }
 
 /* ----------------------------- Delete node ----------------------------- */
@@ -92,14 +82,17 @@ void splice_node(linestruct *afterthis, linestruct *newnode) {
 /* Free the data structures in the given node, that is part of `file`.  TODO: Make sure always moving the edittop
  * up is wise, as what happens when its the top of the file then its `NULL` when we could just move it down. */
 void delete_node_for(openfilestruct *const file, linestruct *const node) {
-  ASSERT(file);
-  /* If the first line on the screen gets deleted, step one back. */
-  if (node == file->edittop) {
-    CLIST_ADV_PREV(file->edittop);
-  }
-  /* If the spill-over line for hard-wrapping is deleted... */
-  if (node == file->spillage_line) {
-    file->spillage_line = NULL;
+  ASSERT(node);
+  /* Make this function safe for lines not tied to a file. */
+  if (file) {
+    /* If the file's first line on the screen gets deleted, step one back. */
+    if (node == file->edittop) {
+      DLIST_ADV_PREV(file->edittop);
+    }
+    /* If the file's `spill-over` line for hard-wrapping is deleted... */
+    if (node == file->spillage_line) {
+      file->spillage_line = NULL;
+    }
   }
   /* Free the node's internal data. */
   free(node->data);
@@ -109,35 +102,29 @@ void delete_node_for(openfilestruct *const file, linestruct *const node) {
 }
 
 /* Free the data structures in the given node. */
-void delete_node(linestruct *line) {
-  // /* If the first line on the screen gets deleted, step one back. */
-  // if (line == openfile->edittop) {
-  //   openfile->edittop = line->prev;
-  // }
-  // /* If the spill-over line for hard-wrapping is deleted... */
-  // if (line == openfile->spillage_line) {
-  //   openfile->spillage_line = NULL;
-  // }
-  // free(line->data);
-  // free(line->multidata);
-  // free(line);
+void delete_node(linestruct *const line) {
   delete_node_for(CONTEXT_OPENFILE, line);
 }
 
+/* ----------------------------- Unlink node ----------------------------- */
+
 /* Disconnect a node from a linked list of linestructs and delete it. */
-void unlink_node(linestruct *line) {
-  if (line->prev) {
-    line->prev->next = line->next;
-  }
-  if (line->next) {
-    line->next->prev = line->prev;
-  }
+void unlink_node_for(openfilestruct *const file, linestruct *const node) {
+  ASSERT(node);
+  DLIST_UNLINK(node);
   /* Update filebot when removing a node at the end of file. */
-  if (openfile && openfile->filebot == line) {
-    openfile->filebot = line->prev;
+  if (file && file->filebot == node) {
+    DLIST_ADV_PREV(file->filebot);
   }
-  delete_node(line);
+  delete_node_for(file, node);
 }
+
+/* Disconnect a node from a linked list of linestructs and delete it. */
+void unlink_node(linestruct *const node) {
+  unlink_node_for(CONTEXT_OPENFILE, node);
+}
+
+/* ---------------------------------------------------------- */
 
 /* Free an entire linked list of linestructs. */
 void free_lines(linestruct *src) {
@@ -196,10 +183,38 @@ void print_view_warning(void) {
 bool in_restricted_mode(void) {
   if (ISSET(RESTRICTED)) {
     statusline_all(AHEM, _("This function is disabled in restricted mode"));
-    beep();
+    /* Only use `beep()`, when using the ncurses context. */
+    if (!ISSET(NO_NCURSES)) {
+      beep();
+    }
     return TRUE;
   }
   return FALSE;
+}
+
+/* Disable the terminal's XON/XOFF flow-control characters. */
+void disable_flow_control(void) {
+  struct termios settings;
+  tcgetattr(0, &settings);
+  settings.c_iflag &= ~IXON;
+  tcsetattr(0, TCSANOW, &settings);
+}
+
+/* Enable the terminal's XON/XOFF flow-control characters. */
+void enable_flow_control(void) {
+  struct termios settings;
+  tcgetattr(0, &settings);
+  settings.c_iflag |= IXON;
+  tcsetattr(0, TCSANOW, &settings);
+}
+
+/* Disable extended input and output processing in our terminal settings. */
+void disable_extended_io(void) {
+  struct termios settings = {0};
+  tcgetattr(0, &settings);
+  settings.c_lflag &= ~IEXTEN;
+  settings.c_oflag &= ~OPOST;
+  tcsetattr(0, TCSANOW, &settings);
 }
 
 // void confirm_margin_for(openfilestruct *const file, int *const out_margin, int total_cols) {

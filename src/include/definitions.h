@@ -116,10 +116,10 @@ using std::vector;
 #endif
 
 /* Suppress warnings for __attribute__((warn_unused_result)). */
-#define IGNORE_CALL_RESULT(call) \
-  do {                           \
-    if (call) {}                 \
-  } while (0)
+// #define IGNORE_CALL_RESULT(call) \
+//   do {                           \
+//     if (call) {}                 \
+//   } while (0)
 
 // /* Macros for flags, indexing each bit in a small array. */
 // #define FLAGS(flag)    flags[((flag) / (sizeof(Ulong) * 8))]

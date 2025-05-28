@@ -867,13 +867,13 @@ static void toggle_this(const int flag) {
 }
 
 /* Disable extended input and output processing in our terminal settings. */
-static void disable_extended_io(void) _NOTHROW {
-  termios settings = {};
-  tcgetattr(0, &settings);
-  settings.c_lflag &= ~IEXTEN;
-  settings.c_oflag &= ~OPOST;
-  tcsetattr(0, TCSANOW, &settings);
-}
+// static void disable_extended_io(void) _NOTHROW {
+//   termios settings = {};
+//   tcgetattr(0, &settings);
+//   settings.c_lflag &= ~IEXTEN;
+//   settings.c_oflag &= ~OPOST;
+//   tcsetattr(0, TCSANOW, &settings);
+// }
 
 /* Stop ^C from generating a SIGINT. */
 // void disable_kb_interrupt(void) _NOTHROW {
@@ -892,20 +892,20 @@ static void disable_extended_io(void) _NOTHROW {
 // }
 
 /* Disable the terminal's XON/XOFF flow-control characters. */
-void disable_flow_control(void) _NOTHROW {
-  termios settings;
-  tcgetattr(0, &settings);
-  settings.c_iflag &= ~IXON;
-  tcsetattr(0, TCSANOW, &settings);
-}
+// void disable_flow_control(void) _NOTHROW {
+//   termios settings;
+//   tcgetattr(0, &settings);
+//   settings.c_iflag &= ~IXON;
+//   tcsetattr(0, TCSANOW, &settings);
+// }
 
 /* Enable the terminal's XON/XOFF flow-control characters. */
-void enable_flow_control(void) _NOTHROW {
-  termios settings;
-  tcgetattr(0, &settings);
-  settings.c_iflag |= IXON;
-  tcsetattr(0, TCSANOW, &settings);
-}
+// void enable_flow_control(void) _NOTHROW {
+//   termios settings;
+//   tcgetattr(0, &settings);
+//   settings.c_iflag |= IXON;
+//   tcsetattr(0, TCSANOW, &settings);
+// }
 
 /* Set up the terminal state.  Put the terminal in raw mode
  * (read one character at a time, disable the special control keys, and disable
@@ -1858,9 +1858,12 @@ int main(int argc, char **argv) {
     init_operating_dir();
   }
   /* Set the default value for things that weren't specified. */
-  (!punct) ? punct = STRLTR_COPY_OF("!.?") : 0;
-  (!brackets) ? brackets = STRLTR_COPY_OF("\"')>]}") : 0;
-  (!quotestr) ? quotestr = STRLTR_COPY_OF("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
+  if (!punct) {
+    punct = COPY_OF("!.?");
+  }
+  // (!punct)    ? punct    = COPY_OF("!.?") : 0;
+  (!brackets) ? brackets = COPY_OF("\"')>]}") : 0;
+  (!quotestr) ? quotestr = COPY_OF("^([ \t]*([!#%:;>|}]|/{2}))+") : 0;
   /* Compile the quoting regex, and exit when it's invalid. */
   quoterc = regcomp(&quotereg, quotestr, NANO_REG_EXTENDED);
   if (quoterc) {
@@ -1888,14 +1891,12 @@ int main(int argc, char **argv) {
   /* If the whitespace option wasn't specified, set its default value. */
   if (!whitespace) {
     if (using_utf8()) {
-      logI("Using utf8.");
       /* A tab is shown as a Right-Pointing Double Angle Quotation Mark (U+00BB), and a space as a Middle Dot (U+00B7). */
       whitespace  = STRLTR_COPY_OF("\xC2\xBB\xC2\xB7");
       whitelen[0] = 2;
       whitelen[1] = 2;
     }
     else {
-      logI("Not using utf8.");
       whitespace  = STRLTR_COPY_OF(">.");
       whitelen[0] = 1;
       whitelen[1] = 1;

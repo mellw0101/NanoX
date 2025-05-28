@@ -220,7 +220,8 @@ Ulong xplustabs_for(openfilestruct *const file) {
 
 /* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
 Ulong xplustabs(void) {
-  return wideness(openfile->current->data, openfile->current_x);
+  // return wideness(openfile->current->data, openfile->current_x);
+  return xplustabs_for(CONTEXT_OPENFILE);
 }
 
 /* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
@@ -289,7 +290,7 @@ void new_magicline_for(openfilestruct *const file) {
   ASSERT(file);
   file->filebot->next = make_new_node(file->filebot);
   file->filebot->next->data = COPY_OF("");
-  CLIST_ADV_NEXT(file->filebot);
+  DLIST_ADV_NEXT(file->filebot);
   ++file->totsize;
 }
 
@@ -305,11 +306,11 @@ void new_magicline(void) {
 /* Remove the magic line from the end of `file`, if there is one and it isn't the only line in `file`. */
 void remove_magicline_for(openfilestruct *const file) {
   ASSERT(file);
-  if (!*file->current->data && file->filebot != file->filetop) {
+  if (!*file->filebot->data && file->filebot != file->filetop) {
     if (file->current == file->filebot) {
-      CLIST_ADV_PREV(file->current);
+      DLIST_ADV_PREV(file->current);
     }
-    CLIST_ADV_PREV(file->filebot);
+    DLIST_ADV_PREV(file->filebot);
     delete_node(file->filebot->next);
     file->filebot->next = NULL;
     --file->totsize;
@@ -318,16 +319,7 @@ void remove_magicline_for(openfilestruct *const file) {
 
 /* Remove the magic line from the end of the currently open file, if there is one and it isn't the only line in it. */
 void remove_magicline(void) {
-  remove_magicline_for(ISSET(USING_GUI) ? openeditor->openfile : openfile);
-  // if (!openfile->filebot->data[0] && openfile->filebot != openfile->filetop) {
-  //   if (openfile->current == openfile->filebot) {
-  //     openfile->current = openfile->current->prev;
-  //   }
-  //   openfile->filebot = openfile->filebot->prev;
-  //   delete_node(openfile->filebot->next);
-  //   openfile->filebot->next = NULL;
-  //   --openfile->totsize;
-  // }
+  remove_magicline_for(CONTEXT_OPENFILE);
 }
 
 /* ----------------------------- Mark is before cursor ----------------------------- */
@@ -502,4 +494,20 @@ void set_mark_for(openfilestruct *const file, long lineno, Ulong x) {
 /* Set the mark at specific line and column for the currently open file.  Note that this is `context-safe`, and works in both the `gui` and `tui`. */
 void set_mark(long lineno, Ulong x) {
   set_mark_for(CONTEXT_OPENFILE, lineno, x);
+}
+
+/* Returns an allocated string containing the the indent of string plus one tabs worth of  */
+char *indent_plus_tab(const char *const restrict string) {
+  ASSERT(string);
+  char *ret;
+  Ulong len;
+  if (!*string) {
+    return construct_full_tab_string(NULL);
+  }
+  len = indent_length(string);
+  ret = xmalloc(len + TAB_BYTE_LEN + 1);
+  memcpy(ret, string, len);
+  memset((ret + len), (ISSET(TABS_TO_SPACES) ? ' ' : '\t'), TAB_BYTE_LEN);
+  ret[len + TAB_BYTE_LEN] = '\0';
+  return ret;
 }

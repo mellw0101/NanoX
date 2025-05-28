@@ -239,6 +239,8 @@ void set_cursor_to_eol(void);
 void set_mark_for(openfilestruct *const file, long lineno, Ulong x);
 void set_mark(long lineno, Ulong x);
 
+char *indent_plus_tab(const char *const restrict string);
+
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
 
@@ -371,6 +373,8 @@ void  indent_a_line_for(openfilestruct *const file, linestruct *const line, cons
 void  indent_a_line(linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2);
 void  do_indent_for(openfilestruct *const file, int total_cols);
 void  do_indent(void);
+void  handle_indent_action_for(openfilestruct *const file, undostruct *const u, bool undoing, bool add_indent, int total_rows);
+void  handle_indent_action(undostruct *const u, bool undoing, bool add_indent);
 
 /* ----------------------------- Enclose marked region ----------------------------- */
 
@@ -385,6 +389,17 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
 void auto_bracket(linestruct *const line, Ulong posx);
 void do_auto_bracket_for(openfilestruct *const file);
 void do_auto_bracket(void);
+
+/* ----------------------------- Comment ----------------------------- */
+
+bool  comment_line_for(openfilestruct *const file, undo_type action, linestruct *const line, const char *const restrict comment_seq);
+bool  comment_line(undo_type action, linestruct *const line, const char *const restrict comment_seq);
+char *get_comment_seq_for(openfilestruct *const file);
+char *get_comment_seq(void);
+void  do_comment_for(openfilestruct *const file, int total_cols);
+void  do_comment(void);
+void  handle_comment_action_for(openfilestruct *const file, undostruct *const u, bool undoing, bool add_comment, int total_rows);
+void  handle_comment_action(undostruct *const u, bool undoing, bool add_comment);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -589,6 +604,7 @@ char *safe_tempfile(FILE **stream);
 void  redecorate_after_switch(void);
 void  switch_to_prev_buffer(void);
 void  switch_to_next_buffer(void);
+char *get_next_filename(const char *const restrict name, const char *const restrict suffix);
 
 bool open_buffer(const char *filename, bool new_one);
 
@@ -906,19 +922,25 @@ linestruct *make_new_node(linestruct *prevnode);
 /* ----------------------------- Splice node ----------------------------- */
 
 void splice_node_for(openfilestruct *const file, linestruct *const after, linestruct *const node);
-void splice_node(linestruct *afterthis, linestruct *newnode);
+void splice_node(linestruct *const after, linestruct *const node);
 
 /* ----------------------------- Delete node ----------------------------- */
 
 void delete_node_for(openfilestruct *const file, linestruct *const node);
-void delete_node(linestruct *line);
-void        unlink_node(linestruct *line);
+void delete_node(linestruct *const line);
+
+void unlink_node_for(openfilestruct *const file, linestruct *const node);
+void unlink_node(linestruct *const node);
+
 void        free_lines(linestruct *src);
 linestruct *copy_node(const linestruct *src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);
 linestruct *copy_buffer(const linestruct *src);
 void        renumber_from(linestruct *line);
 void        print_view_warning(void);
 bool        in_restricted_mode(void);
+void        disable_flow_control(void);
+void        enable_flow_control(void);
+void        disable_extended_io(void);
 void        confirm_margin(void);
 void        disable_kb_interrupt(void);
 void        enable_kb_interrupt(void);

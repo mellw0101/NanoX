@@ -104,6 +104,12 @@
     }                                            \
   )
 
+/* Suppress warnings for __attribute__((warn_unused_result)). */
+#define IGNORE_CALL_RESULT(call)  \
+  DO_WHILE(                       \
+    if (call) {}                  \
+  )
+
 #define ROOT_UID  (0)
 
 /* Macros for flags, indexing each bit in a small array. */
@@ -1057,23 +1063,23 @@ struct rcoption {
 };
 
 struct keystruct {
-  const char *keystr; /* The string that describes the keystroke, like "^C" or "M-R". */
-  int keycode;        /* The integer that, together with meta, identifies the keystroke. */
-  int menus;          /* The menus in which this keystroke is bound. */
-  void (*func)(void); /* The function to which this keystroke is bound. */
-  int toggle;         /* If a toggle, what we're toggling. */
-  int ordinal;        /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
-  char *expansion;    /* The string of keycodes to which this shortcut is expanded. */
-  keystruct *next;    /* Next in the list. */
+  const char *keystr;  /* The string that describes the keystroke, like "^C" or "M-R". */
+  int keycode;         /* The integer that, together with meta, identifies the keystroke. */
+  int menus;           /* The menus in which this keystroke is bound. */
+  void (*func)(void);  /* The function to which this keystroke is bound. */
+  int toggle;          /* If a toggle, what we're toggling. */
+  int ordinal;         /* The how-manieth toggle this is, in order to be able to keep them in sequence. */
+  char *expansion;     /* The string of keycodes to which this shortcut is expanded. */
+  keystruct *next;     /* Next in the list. */
 };
 
 struct funcstruct {
-  void (*func)(void); /* The actual function to call. */
-  const char *tag;    /* The function's help-line label, for example "Where Is". */
-  const char *phrase; /* The function's description for in the help viewer. */
-  bool blank_after;   /* Whether to distance this function from the next in the help viewer. */
-  int menus;          /* In what menus this function applies. */
-  funcstruct *next;   /* Next item in the list. */
+  void (*func)(void);  /* The actual function to call. */
+  const char *tag;     /* The function's help-line label, for example "Where Is". */
+  const char *phrase;  /* The function's description for in the help viewer. */
+  bool blank_after;    /* Whether to distance this function from the next in the help viewer. */
+  int menus;           /* In what menus this function applies. */
+  funcstruct *next;    /* Next item in the list. */
 };
 
 /* ----------------------------- nfdlistener.c ----------------------------- */

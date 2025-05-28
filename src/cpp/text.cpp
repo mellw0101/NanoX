@@ -226,180 +226,180 @@ void do_tab(void) {
 // }
 
 /* Perform an undo or redo for an indent or unindent action. */
-static void handle_indent_action(undostruct *u, bool undoing, bool add_indent) _NOTHROW {
-  groupstruct *group = u->grouping;
-  linestruct  *line  = line_from_number(group->top_line);
-  /* When redoing, reposition the cursor and let the indenter adjust it. */
-  if (!undoing) {
-    restore_undo_posx_and_mark(u);
-  }
-  /* For each line in the group, add or remove the individual indent. */
-  while (line && line->lineno <= group->bottom_line) {
-    char *blanks = group->indentations[line->lineno - group->top_line];
-    if (undoing ^ add_indent) {
-      indent_a_line(line, blanks);
-    }
-    else {
-      unindent_a_line(line, strlen(blanks));
-    }
-    line = line->next;
-  }
-  /* When undoing, reposition the cursor to the recorded location. */
-  if (undoing) {
-    restore_undo_posx_and_mark(u);
-  }
-  refresh_needed = TRUE;
-}
+// static void handle_indent_action(undostruct *u, bool undoing, bool add_indent) _NOTHROW {
+//   groupstruct *group = u->grouping;
+//   linestruct  *line  = line_from_number(group->top_line);
+//   /* When redoing, reposition the cursor and let the indenter adjust it. */
+//   if (!undoing) {
+//     restore_undo_posx_and_mark(u);
+//   }
+//   /* For each line in the group, add or remove the individual indent. */
+//   while (line && line->lineno <= group->bottom_line) {
+//     char *blanks = group->indentations[line->lineno - group->top_line];
+//     if (undoing ^ add_indent) {
+//       indent_a_line(line, blanks);
+//     }
+//     else {
+//       unindent_a_line(line, strlen(blanks));
+//     }
+//     line = line->next;
+//   }
+//   /* When undoing, reposition the cursor to the recorded location. */
+//   if (undoing) {
+//     restore_undo_posx_and_mark(u);
+//   }
+//   refresh_needed = TRUE;
+// }
 
 /* Test whether the given line can be uncommented, or add or remove a comment, depending on action.
  * Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
  * ADDED: Also takes indentation into account. */
-static bool comment_line(undo_type action, linestruct *line, const char *comment_seq) _NOTHROW {
-  bool space_existed;
-  Ulong comment_seq_len = strlen(comment_seq);
-  /* The postfix, if this is a bracketing type comment sequence. */
-  const char *post_seq = strchr(comment_seq, '|');
-  /* Length of prefix. */
-  Ulong pre_len = (post_seq ? (post_seq++ - comment_seq) : comment_seq_len);
-  /* Length of postfix. */
-  Ulong  post_len   = (post_seq ? (comment_seq_len - pre_len - 1) : 0);
-  Ulong  line_len   = strlen(line->data);
-  Ushort indent_len = indentlen(line->data);
-  if (!ISSET(NO_NEWLINES) && line == openfile->filebot) {
-    return FALSE;
-  }
-  if (action == COMMENT) {
-    /* Make room for the comment sequence(s), move the text right and copy them in. */
-    line->data = (char *)xrealloc(line->data, (line_len + pre_len + post_len + 1));
-    memmove((line->data + pre_len + indent_len), (line->data + indent_len), (line_len - indent_len + 1));
-    memmove((line->data + indent_len), comment_seq, pre_len);
-    inject_in(&line->data, " ", (indent_len + comment_seq_len));
-    if (post_len > 0) {
-      memmove((line->data + pre_len + line_len), post_seq, (post_len + 1));
-    }
-    openfile->totsize += (pre_len + post_len);
-    /* If needed, adjust the position of the mark and of the cursor. */
-    if (line == openfile->mark && openfile->mark_x >= indent_len) {
-      openfile->mark_x += (pre_len + 1);
-    }
-    if (line == openfile->current && openfile->current_x >= indent_len) {
-      openfile->current_x += (pre_len + 1);
-      openfile->placewewant = xplustabs();
-    }
-    return TRUE;
-  }
-  /* If the line is commented, report it as uncommentable, or uncomment it. */
-  if (strncmp((line->data + indent_len), comment_seq, pre_len) == 0 && (!post_len || strcmp((line->data + line_len - post_len), post_seq) == 0)) {
-    if (action == PREFLIGHT) {
-      return TRUE;
-    }
-    if (*(line->data + indent_len + pre_len) == ' ') {
-      space_existed = TRUE;
-      /* Erase the comment prefix by moving the non-comment part. */
-      memmove((line->data + indent_len), (line->data + indent_len + pre_len + 1), (line_len - pre_len - indent_len));
-    }
-    else {
-      space_existed = FALSE;
-      /* Erase the comment prefix by moving the non-comment part. */
-      memmove((line->data + indent_len), (line->data + indent_len + pre_len), (line_len - pre_len - indent_len));
-    }
-    /* Truncate the postfix if there was one. */
-    line->data[line_len - pre_len - post_len] = '\0';
-    openfile->totsize -= (pre_len + post_len);
-    /* Adjust the positions of the cursor, when it is behind the comment. */
-    if (line == openfile->current && openfile->current_x > indent_len) {
-      openfile->current_x -= (pre_len + space_existed);
-      openfile->placewewant = xplustabs();
-    }
-    /* Adjust the position of the mark when it is behind the comment. */
-    if (line == openfile->mark && openfile->mark_x > indent_len) {
-      openfile->mark_x -= (pre_len + space_existed);
-    }
-    return TRUE;
-  }
-  return FALSE;
-}
+// static bool comment_line(undo_type action, linestruct *line, const char *comment_seq) _NOTHROW {
+//   bool space_existed;
+//   Ulong comment_seq_len = strlen(comment_seq);
+//   /* The postfix, if this is a bracketing type comment sequence. */
+//   const char *post_seq = strchr(comment_seq, '|');
+//   /* Length of prefix. */
+//   Ulong pre_len = (post_seq ? (post_seq++ - comment_seq) : comment_seq_len);
+//   /* Length of postfix. */
+//   Ulong  post_len   = (post_seq ? (comment_seq_len - pre_len - 1) : 0);
+//   Ulong  line_len   = strlen(line->data);
+//   Ushort indent_len = indentlen(line->data);
+//   if (!ISSET(NO_NEWLINES) && line == openfile->filebot) {
+//     return FALSE;
+//   }
+//   if (action == COMMENT) {
+//     /* Make room for the comment sequence(s), move the text right and copy them in. */
+//     line->data = (char *)xrealloc(line->data, (line_len + pre_len + post_len + 1));
+//     memmove((line->data + pre_len + indent_len), (line->data + indent_len), (line_len - indent_len + 1));
+//     memmove((line->data + indent_len), comment_seq, pre_len);
+//     inject_in(&line->data, " ", (indent_len + comment_seq_len));
+//     if (post_len > 0) {
+//       memmove((line->data + pre_len + line_len), post_seq, (post_len + 1));
+//     }
+//     openfile->totsize += (pre_len + post_len);
+//     /* If needed, adjust the position of the mark and of the cursor. */
+//     if (line == openfile->mark && openfile->mark_x >= indent_len) {
+//       openfile->mark_x += (pre_len + 1);
+//     }
+//     if (line == openfile->current && openfile->current_x >= indent_len) {
+//       openfile->current_x += (pre_len + 1);
+//       openfile->placewewant = xplustabs();
+//     }
+//     return TRUE;
+//   }
+//   /* If the line is commented, report it as uncommentable, or uncomment it. */
+//   if (strncmp((line->data + indent_len), comment_seq, pre_len) == 0 && (!post_len || strcmp((line->data + line_len - post_len), post_seq) == 0)) {
+//     if (action == PREFLIGHT) {
+//       return TRUE;
+//     }
+//     if (*(line->data + indent_len + pre_len) == ' ') {
+//       space_existed = TRUE;
+//       /* Erase the comment prefix by moving the non-comment part. */
+//       memmove((line->data + indent_len), (line->data + indent_len + pre_len + 1), (line_len - pre_len - indent_len));
+//     }
+//     else {
+//       space_existed = FALSE;
+//       /* Erase the comment prefix by moving the non-comment part. */
+//       memmove((line->data + indent_len), (line->data + indent_len + pre_len), (line_len - pre_len - indent_len));
+//     }
+//     /* Truncate the postfix if there was one. */
+//     line->data[line_len - pre_len - post_len] = '\0';
+//     openfile->totsize -= (pre_len + post_len);
+//     /* Adjust the positions of the cursor, when it is behind the comment. */
+//     if (line == openfile->current && openfile->current_x > indent_len) {
+//       openfile->current_x -= (pre_len + space_existed);
+//       openfile->placewewant = xplustabs();
+//     }
+//     /* Adjust the position of the mark when it is behind the comment. */
+//     if (line == openfile->mark && openfile->mark_x > indent_len) {
+//       openfile->mark_x -= (pre_len + space_existed);
+//     }
+//     return TRUE;
+//   }
+//   return FALSE;
+// }
 
 /* Comment or uncomment the current line or the marked lines. */
-void do_comment(void) _NOTHROW {
-  const char *comment_seq = GENERAL_COMMENT_CHARACTER;
-  undo_type action = UNCOMMENT;
-  linestruct *top, *bot, *line;
-  bool empty, all_empty = TRUE;
-  if (openfile->syntax) {
-    comment_seq = openfile->syntax->comment;
-  }
-  else if (/* openfile->type.is_set<C_CPP>() */ openfile->is_c_file || openfile->is_cxx_file || openfile->is_nanox_file /* openfile->type.is_set<NANOX_CONFIG>() */) {
-    comment_seq = "//";
-  }
-  else if (/* openfile->type.is_set<ASM>() */ openfile->is_nasm_file) {
-    comment_seq = ";";
-  }
-  else if (/* openfile->type.is_set<BASH>() */ openfile->is_bash_file || openfile->is_atnt_asm_file /* openfile->type.is_set<ATNT_ASM>() */) {
-    comment_seq = "#";
-  }
-  /* This is when 'openfile->syntax' says comments are foridden. */
-  if (!*comment_seq) {
-    statusline_all(AHEM, _("Commenting is not supported for this file type"));
-    return;
-  }
-  /* Determine which lines to work on. */
-  get_range(&top, &bot);
-  /* If only the magic line is selected, don't do anything. */
-  if (top == bot && bot == openfile->filebot && !ISSET(NO_NEWLINES)) {
-    statusline_all(AHEM, _("Cannot comment past end of file"));
-    return;
-  }
-  /* Figure out whether to comment or uncomment the selected line or lines. */
-  for (line = top; line != bot->next; line = line->next) {
-    empty = white_string(line->data);
-    /* If this line is not blank and not commented, we comment all. */
-    if (!empty && !comment_line(PREFLIGHT, line, comment_seq)) {
-      action = COMMENT;
-      break;
-    }
-    all_empty = (all_empty && empty);
-  }
-  /* If all selected lines are blank, we comment them. */
-  action = (all_empty ? COMMENT : action);
-  add_undo(action, NULL);
-  /* Store the comment sequence used for the operation, because it could change when the file name changes; we need to know what it was. */
-  openfile->current_undo->strdata = copy_of(comment_seq);
-  /* Comment/uncomment each of the selected lines when possible, and store undo data when a line changed. */
-  for (line = top; line != bot->next; line = line->next) {
-    if (comment_line(action, line, comment_seq)) {
-      update_multiline_undo(line->lineno, _(""));
-    }
-  }
-  set_modified();
-  ensure_firstcolumn_is_aligned();
-  refresh_needed = TRUE;
-  shift_held     = TRUE;
-}
+// void do_comment(void) _NOTHROW {
+//   const char *comment_seq = GENERAL_COMMENT_CHARACTER;
+//   undo_type action = UNCOMMENT;
+//   linestruct *top, *bot, *line;
+//   bool empty, all_empty = TRUE;
+//   if (openfile->syntax) {
+//     comment_seq = openfile->syntax->comment;
+//   }
+//   else if (/* openfile->type.is_set<C_CPP>() */ openfile->is_c_file || openfile->is_cxx_file || openfile->is_nanox_file /* openfile->type.is_set<NANOX_CONFIG>() */) {
+//     comment_seq = "//";
+//   }
+//   else if (/* openfile->type.is_set<ASM>() */ openfile->is_nasm_file) {
+//     comment_seq = ";";
+//   }
+//   else if (/* openfile->type.is_set<BASH>() */ openfile->is_bash_file || openfile->is_atnt_asm_file /* openfile->type.is_set<ATNT_ASM>() */) {
+//     comment_seq = "#";
+//   }
+//   /* This is when 'openfile->syntax' says comments are foridden. */
+//   if (!*comment_seq) {
+//     statusline_all(AHEM, _("Commenting is not supported for this file type"));
+//     return;
+//   }
+//   /* Determine which lines to work on. */
+//   get_range(&top, &bot);
+//   /* If only the magic line is selected, don't do anything. */
+//   if (top == bot && bot == openfile->filebot && !ISSET(NO_NEWLINES)) {
+//     statusline_all(AHEM, _("Cannot comment past end of file"));
+//     return;
+//   }
+//   /* Figure out whether to comment or uncomment the selected line or lines. */
+//   for (line = top; line != bot->next; line = line->next) {
+//     empty = white_string(line->data);
+//     /* If this line is not blank and not commented, we comment all. */
+//     if (!empty && !comment_line(PREFLIGHT, line, comment_seq)) {
+//       action = COMMENT;
+//       break;
+//     }
+//     all_empty = (all_empty && empty);
+//   }
+//   /* If all selected lines are blank, we comment them. */
+//   action = (all_empty ? COMMENT : action);
+//   add_undo(action, NULL);
+//   /* Store the comment sequence used for the operation, because it could change when the file name changes; we need to know what it was. */
+//   openfile->current_undo->strdata = copy_of(comment_seq);
+//   /* Comment/uncomment each of the selected lines when possible, and store undo data when a line changed. */
+//   for (line = top; line != bot->next; line = line->next) {
+//     if (comment_line(action, line, comment_seq)) {
+//       update_multiline_undo(line->lineno, _(""));
+//     }
+//   }
+//   set_modified();
+//   ensure_firstcolumn_is_aligned();
+//   refresh_needed = TRUE;
+//   shift_held     = TRUE;
+// }
 
 /* Perform an undo or redo for a comment or uncomment action. */
-static void handle_comment_action(undostruct *const u, bool undoing, bool add_comment) _NOTHROW {
-  ASSERT(u);
-  groupstruct *group = u->grouping;
-  linestruct *line;
-  /* When redoing, reposition the cursor and let the commenter adjust it. */
-  if (!undoing) {
-    restore_undo_posx_and_mark(u);
-  }
-  while (group) {
-    line = line_from_number(group->top_line);
-    while (line && line->lineno <= group->bottom_line) {
-      comment_line(((undoing ^ add_comment) ? COMMENT : UNCOMMENT), line, u->strdata);
-      line = line->next;
-    }
-    group = group->next;
-  }
-  /* When undoing, reposition the cursor to the recorded location. */
-  if (undoing) {
-    restore_undo_posx_and_mark(u);
-  }
-  refresh_needed = TRUE;
-}
+// static void handle_comment_action(undostruct *const u, bool undoing, bool add_comment) _NOTHROW {
+//   ASSERT(u);
+//   groupstruct *group = u->grouping;
+//   linestruct *line;
+//   /* When redoing, reposition the cursor and let the commenter adjust it. */
+//   if (!undoing) {
+//     restore_undo_posx_and_mark(u);
+//   }
+//   while (group) {
+//     line = line_from_number(group->top_line);
+//     while (line && line->lineno <= group->bottom_line) {
+//       comment_line(((undoing ^ add_comment) ? COMMENT : UNCOMMENT), line, u->strdata);
+//       line = line->next;
+//     }
+//     group = group->next;
+//   }
+//   /* When undoing, reposition the cursor to the recorded location. */
+//   if (undoing) {
+//     restore_undo_posx_and_mark(u);
+//   }
+//   refresh_needed = TRUE;
+// }
 
 #define redo_paste undo_cut
 #define undo_paste redo_cut
