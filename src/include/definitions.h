@@ -76,8 +76,8 @@
 #include "c/wchars.h"
 
 #ifdef HAVE_GLFW
-  #include "../lib/include/GL/glew.h"
-  #include "../lib/include/GLFW/glfw3.h"
+  #include <GL/glew.h>
+  #include <GLFW/glfw3.h>
   #include <Mlib/openGL/shader.h>
   #include <ft2build.h>
   #include FT_FREETYPE_H
