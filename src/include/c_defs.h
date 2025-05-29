@@ -52,8 +52,8 @@
 #include FT_FREETYPE_H
 
 /* gl */
-#include "../lib/include/GL/glew.h"
-#include "../lib/include/GLFW/glfw3.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 /* ncurses */
 #include <ncursesw/ncurses.h>

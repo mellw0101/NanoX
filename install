@@ -29,7 +29,7 @@ fi
 
 AmakeCpp --test
 sudo AmakeCpp --link --bin -lGLEW -lGL -lfreetype -lunibilium\
- /usr/lib/Mlib.a /usr/lib/libftgl.a /usr/lib/libfcio.a src/lib/bin/libglfw3.a /usr/lib/libz.a src/lib/bin/libGLEW.a
+ /usr/lib/Mlib.a /usr/lib/libftgl.a /usr/lib/libfcio.a /usr/lib/libz.a
 if [ -f build/bin/NanoX ]; then
   sudo cp build/bin/NanoX /usr/bin/nanox
 fi
