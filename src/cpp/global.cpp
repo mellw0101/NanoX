@@ -154,19 +154,19 @@ bool keep_cutbuffer = FALSE;
 /* A pointer to the special Exit/Close item. */
 // funcstruct *exitfunc;
 /* The current item in the list of strings that were searched for. */
-linestruct *search_history = NULL;
+// linestruct *search_history = NULL;
 /* The current item in the list of replace strings. */
-linestruct *replace_history = NULL;
+// linestruct *replace_history = NULL;
 /* The current item in the list of commands that were run with ^T. */
-linestruct *execute_history = NULL;
+// linestruct *execute_history = NULL;
 /* The oldest item in the list of search strings. */
-linestruct *searchtop = NULL;
+// linestruct *searchtop = NULL;
 /* The empty item at the end of the list of search strings. */
-linestruct *searchbot  = NULL;
-linestruct *replacetop = NULL;
-linestruct *replacebot = NULL;
-linestruct *executetop = NULL;
-linestruct *executebot = NULL;
+// linestruct *searchbot  = NULL;
+// linestruct *replacetop = NULL;
+// linestruct *replacebot = NULL;
+// linestruct *executetop = NULL;
+// linestruct *executebot = NULL;
 /* The compiled regular expression to use in searches. */
 // regex_t search_regexp;
 /* The match positions for parenthetical subexpressions,
@@ -181,7 +181,7 @@ regmatch_t regmatches[10];
 /* The user's home directory, from $HOME or /etc/passwd. */
 // char *homedir = NULL;
 /* The directory for nano's history files. */
-char *statedir = NULL;
+// char *statedir = NULL;
 /* An error message (if any) about nanorc files or history files. */
 // char *startup_problem = NULL;
 /* The argument of the --rcfile option, when given. */

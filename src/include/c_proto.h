@@ -52,6 +52,7 @@ extern char *quotestr;
 extern char *alt_speller;
 extern char *custom_nanorc;
 extern char *syntaxstr;
+extern char *statedir;
 
 extern const char *exit_tag;
 extern const char *close_tag;
@@ -85,6 +86,15 @@ extern WINDOW *midwin;
 extern WINDOW *footwin;
 
 extern linestruct *cutbuffer;
+extern linestruct *search_history;
+extern linestruct *replace_history;
+extern linestruct *execute_history;
+extern linestruct *searchtop;
+extern linestruct *searchbot;
+extern linestruct *replacetop;
+extern linestruct *replacebot;
+extern linestruct *executetop;
+extern linestruct *executebot;
 
 extern openfilestruct *openfile;
 extern openfilestruct *startfile;
@@ -856,6 +866,22 @@ void  do_statusbar_chop_prev_word(void);
 Ulong get_statusbar_page_start(Ulong base, Ulong column);
 void  put_cursor_at_end_of_answer(void);
 void  add_or_remove_pipe_symbol_from_answer(void);
+
+
+/* ---------------------------------------------------------- history.c ---------------------------------------------------------- */
+
+
+void  history_init(void);
+void  reset_history_pointer_for(const linestruct *const item);
+void  update_history(linestruct **const item, const char *text, bool avoid_duplicates);
+char *get_history_completion(linestruct **const here, char *string, Ulong len);
+bool  have_statedir(void);
+void  load_history(void);
+void  save_history(void);
+void  load_poshistory(void);
+void  update_poshistory_for(openfilestruct *const file);
+void  update_poshistory(void);
+bool  has_old_position(const char *const restrict file, long *const line, long *const column);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

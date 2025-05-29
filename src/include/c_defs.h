@@ -80,21 +80,6 @@
    * is `tabsize`.  Otherwise, its 1 for a '\t' char. */  \
   (ISSET(TABS_TO_SPACES) ? tabsize : 1)
 
-#define GET_CONTEXT_VARS(f, r, c)          \
-  DO_WHILE(                                         \
-    if (IN_GUI_CONTEXT) {                           \
-      ASSIGN_IF_VALID(f, openeditor->openfile);  \
-      ASSIGN_IF_VALID(r, openeditor->rows);      \
-      ASSIGN_IF_VALID(c, openeditor->cols);      \
-    }                                               \
-    else {                                          \
-      ASSIGN_IF_VALID(f, openfile);              \
-      ASSIGN_IF_VALID(r, editwinrows);           \
-      ASSIGN_IF_VALID(c, editwincols);           \
-    }                                               \
-  )
-
-
 #define RECODE_NUL_TO_LF(string, count)          \
   DO_WHILE(                                      \
     for (Ulong index=0; index<count; ++index) {  \
@@ -174,6 +159,26 @@
 #define KEY_FRESH  0x4FE
 /* A special keycode for when we get a SIGWINCH (a window resize). */
 #define KEY_WINCH  -2
+
+/* Some other define`s. */
+#define YESORNO           FALSE
+#define YESORALLORNO      TRUE
+#define BLIND             FALSE
+#define VISIBLE           TRUE
+#define YES               1
+#define ALL               2
+#define NO                0
+#define CANCEL           -1
+#define JUSTFIND          0
+#define REPLACING         1
+#define INREGION          2
+#define NORMAL            TRUE
+#define SPECIAL           FALSE
+#define TEMPORARY         FALSE
+#define ANNOTATE          TRUE
+#define NONOTES           FALSE
+#define PRUNE_DUPLICATE   TRUE
+#define IGNORE_DUPLICATES FALSE
 
 /* Basic control codes. */
 #define ESC_CODE  (0x1B)

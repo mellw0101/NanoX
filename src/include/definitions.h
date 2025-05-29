@@ -132,24 +132,24 @@ using std::vector;
 #define CALCULATE_MS_TIME(start_time) (1000 * (double)(clock() - start_time) / CLOCKS_PER_SEC)
 
 /* Some other define`s. */
-#define YESORNO           FALSE
-#define YESORALLORNO      TRUE
-#define BLIND             FALSE
-#define VISIBLE           TRUE
-#define YES               1
-#define ALL               2
-#define NO                0
-#define CANCEL           -1
-#define JUSTFIND          0
-#define REPLACING         1
-#define INREGION          2
-#define NORMAL            TRUE
-#define SPECIAL           FALSE
-#define TEMPORARY         FALSE
-#define ANNOTATE          TRUE
-#define NONOTES           FALSE
-#define PRUNE_DUPLICATE   TRUE
-#define IGNORE_DUPLICATES FALSE
+// #define YESORNO           FALSE
+// #define YESORALLORNO      TRUE
+// #define BLIND             FALSE
+// #define VISIBLE           TRUE
+// #define YES               1
+// #define ALL               2
+// #define NO                0
+// #define CANCEL           -1
+// #define JUSTFIND          0
+// #define REPLACING         1
+// #define INREGION          2
+// #define NORMAL            TRUE
+// #define SPECIAL           FALSE
+// #define TEMPORARY         FALSE
+// #define ANNOTATE          TRUE
+// #define NONOTES           FALSE
+// #define PRUNE_DUPLICATE   TRUE
+// #define IGNORE_DUPLICATES FALSE
 
 // #define MAXCHARLEN                4
 // /* The default width of a tab in spaces. */

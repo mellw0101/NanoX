@@ -91,6 +91,8 @@ char *alt_speller = NULL;
 char *custom_nanorc = NULL;
 /* The color syntax name specified on the command line. */
 char *syntaxstr = NULL;
+/* The directory for nano's history files. */
+char *statedir = NULL;
 
 /* ----------------------------- const char * ----------------------------- */
 
@@ -166,6 +168,24 @@ WINDOW *footwin = NULL;
 
 /* The buffer where we store cut text. */
 linestruct *cutbuffer = NULL;
+/* The current item in the list of strings that were searched for. */
+linestruct *search_history = NULL;
+/* The current item in the list of replace strings. */
+linestruct *replace_history = NULL;
+/* The current item in the list of commands that were run with ^T. */
+linestruct *execute_history = NULL;
+/* The oldest item in the list of search strings. */
+linestruct *searchtop = NULL;
+/* The empty item at the end of the list of search strings. */
+linestruct *searchbot  = NULL;
+/* The oldest item in the list of replace strings. */
+linestruct *replacetop = NULL;
+/* The empty item at the end of the list of replace strings. */
+linestruct *replacebot = NULL;
+/* The oldest item in the list of execution strings. */
+linestruct *executetop = NULL;
+/* The empty item at the end of the list of execution strings. */
+linestruct *executebot = NULL;
 
 /* ----------------------------- openfilestruct * ----------------------------- */
 

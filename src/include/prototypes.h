@@ -29,11 +29,11 @@ extern nwindow *tui_footwin;
 
 // extern message_type lastmessage;
 
-extern linestruct *search_history;
-extern linestruct *replace_history;
-extern linestruct *execute_history;
-extern linestruct *searchtop;
-extern linestruct *searchbot;
+// extern linestruct *search_history;
+// extern linestruct *replace_history;
+// extern linestruct *execute_history;
+// extern linestruct *searchtop;
+// extern linestruct *searchbot;
 extern linestruct *replacetop;
 extern linestruct *replacebot;
 extern linestruct *executetop;
@@ -343,16 +343,16 @@ void wrap_help_text_into_buffer(void);
 void do_help(void);
 
 /* Most functions in 'history.cpp'. */
-void  history_init(void) _NOTHROW;
-void  reset_history_pointer_for(const linestruct *list) _NOTHROW;
-void  update_history(linestruct **item, const char *text, bool avoid_duplicates) _NOTHROW;
-char *get_history_completion(linestruct **h, char *s, Ulong len) _NOTHROW;
-bool  have_statedir(void);
-void  load_history(void);
-void  save_history(void);
-void  load_poshistory(void);
-void  update_poshistory(void);
-bool  has_old_position(const char *file, long *line, long *column);
+// void  history_init(void) _NOTHROW;
+// void  reset_history_pointer_for(const linestruct *list) _NOTHROW;
+// void  update_history(linestruct **item, const char *text, bool avoid_duplicates) _NOTHROW;
+// char *get_history_completion(linestruct **h, char *s, Ulong len) _NOTHROW;
+// bool  have_statedir(void);
+// void  load_history(void);
+// void  save_history(void);
+// void  load_poshistory(void);
+// void  update_poshistory(void);
+// bool  has_old_position(const char *file, long *line, long *column);
 
 /* Most functions in 'move.cpp'. */
 // void to_first_line(void) _NOTHROW;

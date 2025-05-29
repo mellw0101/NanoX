@@ -381,7 +381,6 @@ Add full multithreding support and a async way to operate things.
 
 ('17').
 Create a rendering engine.
-
     NOTES:
         I have just created the first part of the rendering engine, the main
         function to render the text in a line.  I will begin to split up the
@@ -851,22 +850,34 @@ Implement a filetype for 'NanoX' configuration.  As well as real-time syntax for
 
 ('26').
 Implement CTRL+ENTER so that it goes to newline from the end of the line and, CTRL+SHIFT+ENTER goes to newline from start of line then moves up once.  Like in vs-code.
+  NOTES:
+    This has mostly been completed, i will have to do some edge case testing and sush before i can call this completly done.
 
-    NOTES:
-        This has mostly been completed, i will have to do some edge case testing and sush before i can call this completly done.
-
-	STATUS:
-		Mostly DONE.
+    STATUS:
+        Mostly DONE.
 
 ('27').
 Make it so that when a section is selected and something i typed it replaces the section and adds the typed text.
-
-    STATUS:
-        Not DONE.
+  STATUS:
+    Not DONE.
 
 ('28').
 Implement a scroll bar into the gui.
+  NOTES:
+    [29-5-2025]:
+      The core of the scrollbar is fully implemented, and the look of it doesn't matter right now as
+      that will be changed when we (imrove the shader / change to vulkan), but that is for later.
 
-    STATUS:
-        Not DONE.
+  STATUS:
+    [29-5-2025]:
+      DONE.
 
+('29').
+Add a binary search routine for the gui scrollbar step index position from raw position.
+  NOTES:
+    [29-5-2025]:
+      Added this todo item.
+
+  STATUS:
+    [29-5-2025]:
+      Not started yet.
