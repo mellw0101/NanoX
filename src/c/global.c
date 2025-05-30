@@ -58,6 +58,8 @@ bool nanox_rc_opensyntax = FALSE;
 bool nanox_rc_seen_color_command = FALSE;
 /* Whether to keep mark when normally we wouldn't. */
 bool keep_mark = FALSE;
+/* If we should refresh the suggest window. */
+bool suggest_on = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 
@@ -93,6 +95,13 @@ char *custom_nanorc = NULL;
 char *syntaxstr = NULL;
 /* The directory for nano's history files. */
 char *statedir = NULL;
+/* A ptr to the full suggested string. */
+char *suggest_str = NULL;
+
+/* ----------------------------- char [] ----------------------------- */
+
+/* The buffer holding the current completion search string.  Note that this is for the `tui`. */
+char  suggest_buf[1024] = "";
 
 /* ----------------------------- const char * ----------------------------- */
 
@@ -115,8 +124,10 @@ int sidebar = 0;
 int currmenu = MMOST;
 /* The curses attribute we use to highlight something. */
 int hilite_attribute = A_REVERSE;
+/* The current length of the string used to search for completions. */
+int suggest_len = 0;
 
-/* ----------------------------- int[] ----------------------------- */
+/* ----------------------------- int [] ----------------------------- */
 
 /* The length in bytes of these characters. */
 int whitelen[2];
@@ -150,7 +161,7 @@ Ulong wrap_at = 0;
 /* The line number of the last encountered error when parsing an rc file. */
 Ulong nanox_rc_lineno = 0;
 
-/* ----------------------------- Ulong[] ----------------------------- */
+/* ----------------------------- Ulong [] ----------------------------- */
 
 /* Our flags array, containing the states of all global options. */
 Ulong flags[1] = {0};
@@ -163,6 +174,8 @@ WINDOW *topwin = NULL;
 WINDOW *midwin = NULL;
 /* The bottom portion of the screen, where status-bar messages, the status-bar prompt, and a list of shortcuts are shown. */
 WINDOW *footwin = NULL;
+/* Test window for sugestions. */
+WINDOW *suggestwin = NULL;
 
 /* ----------------------------- linestruct * ----------------------------- */
 

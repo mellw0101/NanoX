@@ -1,6 +1,6 @@
 #pragma once
 
-#include "definitions.h"
+// #include "definitions.h"
 
 #define rgb_8bit_in_xterm_color(r, g, b) \
   xterm_byte_scale(r) * 4 - 1, xterm_byte_scale(g) * 4 - 1, xterm_byte_scale(b) * 4 - 1

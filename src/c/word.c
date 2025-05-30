@@ -21,9 +21,10 @@ Ulong wordstartindex(const char *const restrict string, Ulong pos, bool allow_un
   // }
   // return idx;
   Ulong start_index = pos;
+  Ulong oneleft;
   while (start_index > 0) {
-    Ulong oneleft = step_left(string, start_index);
-    if (!is_word_char(&string[oneleft], FALSE) && (!allow_underscore || string[oneleft] != '_')) {
+    oneleft = step_left(string, start_index);
+    if (!is_word_char((string + oneleft), FALSE) && (!allow_underscore || string[oneleft] != '_')) {
       break;
     }
     start_index = oneleft;

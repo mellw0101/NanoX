@@ -210,8 +210,15 @@ bool is_prev_char_one_of(const char *pointer, Ulong index, const char *chars) {
 }
 
 /* Return 'TRUE' when any of the char`s is 'chars' matches the previus char at cursor. */
+bool is_prev_cursor_char_one_of_for(openfilestruct *const file, const char *chars) {
+  ASSERT(file);
+  return is_prev_char_one_of(file->current->data, file->current_x, chars);
+}
+
+/* Return 'TRUE' when any of the char`s is 'chars' matches the previus char at cursor. */
 bool is_prev_cursor_char_one_of(const char *chars) {
-  return is_prev_char_one_of(openfile->current->data, openfile->current_x, chars);
+  // return is_prev_char_one_of(openfile->current->data, openfile->current_x, chars);
+  return is_prev_cursor_char_one_of_for(CONTEXT_OPENFILE, chars);
 }
 
 /* Return 'TRUE' when char at current cursor pos is 'ch'. */

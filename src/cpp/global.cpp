@@ -33,7 +33,7 @@ char *title = NULL;
 /* Did a command mangle enough of the buffer that we should repaint the screen? */
 // bool refresh_needed = FALSE;
 /* If we should refresh the suggest window. */
-bool suggest_on = FALSE;
+// bool suggest_on = FALSE;
 /* Whether an update of the edit window should center the cursor. */
 // bool focusing = TRUE;
 /* Whether a 0x0A byte should be shown as a ^@ instead of a ^J. */
@@ -84,7 +84,7 @@ nwindow *tui_midwin = NULL;
 // WINDOW *footwin = NULL;
 nwindow *tui_footwin = NULL;
 /* Test window for sugestions. */
-WINDOW *suggestwin = NULL;
+// WINDOW *suggestwin = NULL;
 /* How many rows does the edit window take up? */
 // int editwinrows = 0;
 /* The number of usable columns in the edit window: COLS - margin. */

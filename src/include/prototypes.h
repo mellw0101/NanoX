@@ -16,7 +16,7 @@
 // extern WINDOW *topwin;
 // extern WINDOW *midwin;
 // extern WINDOW *footwin;
-extern WINDOW *suggestwin;
+// extern WINDOW *suggestwin;
 
 extern nwindow *tui_topwin;
 extern nwindow *tui_midwin;
@@ -123,10 +123,10 @@ extern bool keep_cutbuffer;
 // extern bool refresh_needed;
 // extern bool is_shorter;
 
-extern bool  suggest_on;
-extern char  suggest_buf[1024];
-extern char *suggest_str;
-extern int   suggest_len;
+// extern bool  suggest_on;
+// extern char  suggest_buf[1024];
+// extern char *suggest_str;
+// extern int   suggest_len;
 
 // extern Ulong wrap_at;
 
@@ -508,7 +508,7 @@ void  do_tab(void);
 // void  do_insert_empty_line_below(void) _NOTHROW;
 void  do_undo(void);
 void  do_redo(void);
-void  do_enter(void);
+// void  do_enter(void);
 // void  discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem);
 // void  discard_until(const undostruct *thisitem) _NOTHROW;
 // void  add_undo(undo_type action, const char *message) _NOTHROW;
@@ -527,7 +527,7 @@ void  do_linter(void);
 void  do_formatter(void);
 void  count_lines_words_and_characters(void);
 void  do_verbatim_input(void);
-char *copy_completion(char *text);
+// char *copy_completion(char *text);
 void  complete_a_word(void);
 char *lower_case_word(const char *str);
 
@@ -795,12 +795,12 @@ void        add_rm_color_map(string str, syntax_data_t data);
 /* ---------------------------------------------------------- suggestion.cpp ---------------------------------------------------------- */
 
 
-void do_suggestion(void);
-void find_suggestion(void);
-void clear_suggestion(void);
-void add_char_to_suggest_buf(void);
-void draw_suggest_win(void);
-void accept_suggestion(void);
+// void do_suggestion(void);
+// void find_suggestion(void);
+// void clear_suggestion(void);
+// void add_char_to_suggest_buf(void);
+// void draw_suggest_win(void);
+// void accept_suggestion(void);
 
 /* ----------------------------- Gui suggestmenu ----------------------------- */
 

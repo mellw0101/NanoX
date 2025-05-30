@@ -593,37 +593,37 @@ static bool handle_editing(functionptrtype f) _NOTHROW {
 // }
 
 /* Redraw the prompt bar and place the cursor at the right spot. */
-static void draw_the_promptbar(void) _NOTHROW {
-  Ulong base   = (breadth(prompt) + 2);
-  Ulong column = (base + wideness(answer, typing_x));
-  Ulong the_page, end_page;
-  char *expanded;
-  the_page = get_statusbar_page_start(base, column);
-  end_page = get_statusbar_page_start(base, (base + breadth(answer) - 1));
-  /* Color the prompt bar over its full width. */
-  wattron(footwin, interface_color_pair[config->prompt.color]);
-  mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
-  mvwaddstr(footwin, 0, 0, prompt);
-  waddch(footwin, ':');
-  waddch(footwin, (the_page == 0) ? ' ' : '<');
-  expanded = display_string(answer, the_page, (COLS - base), FALSE, TRUE);
-  waddstr(footwin, expanded);
-  free(expanded);
-  if (the_page < end_page && (int)(base + breadth(answer) - the_page) > COLS) {
-    mvwaddch(footwin, 0, (COLS - 1), '>');
-  }
-  wattroff(footwin, interface_color_pair[config->prompt.color]);
-#if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20210220)
-  /* Work around a cursor-misplacement bug -- https://sv.gnu.org/bugs/?59808. */
-  if (ISSET(NO_HELP)) {
-    wmove(footwin, 0, 0);
-    wrefresh(footwin);
-  }
-#endif
-  /* Place the cursor at the right spot. */
-  wmove(footwin, 0, (column - the_page));
-  wnoutrefresh(footwin);
-}
+// static void draw_the_promptbar(void) _NOTHROW {
+//   Ulong base   = (breadth(prompt) + 2);
+//   Ulong column = (base + wideness(answer, typing_x));
+//   Ulong the_page, end_page;
+//   char *expanded;
+//   the_page = get_statusbar_page_start(base, column);
+//   end_page = get_statusbar_page_start(base, (base + breadth(answer) - 1));
+//   /* Color the prompt bar over its full width. */
+//   wattron(footwin, interface_color_pair[config->prompt.color]);
+//   mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
+//   mvwaddstr(footwin, 0, 0, prompt);
+//   waddch(footwin, ':');
+//   waddch(footwin, (the_page == 0) ? ' ' : '<');
+//   expanded = display_string(answer, the_page, (COLS - base), FALSE, TRUE);
+//   waddstr(footwin, expanded);
+//   free(expanded);
+//   if (the_page < end_page && (int)(base + breadth(answer) - the_page) > COLS) {
+//     mvwaddch(footwin, 0, (COLS - 1), '>');
+//   }
+//   wattroff(footwin, interface_color_pair[config->prompt.color]);
+// #if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20210220)
+//   /* Work around a cursor-misplacement bug -- https://sv.gnu.org/bugs/?59808. */
+//   if (ISSET(NO_HELP)) {
+//     wmove(footwin, 0, 0);
+//     wrefresh(footwin);
+//   }
+// #endif
+//   /* Place the cursor at the right spot. */
+//   wmove(footwin, 0, (column - the_page));
+//   wnoutrefresh(footwin);
+// }
 
 /* Remove or add the pipe character at the answer's head. */
 // void add_or_remove_pipe_symbol_from_answer(void) _NOTHROW {

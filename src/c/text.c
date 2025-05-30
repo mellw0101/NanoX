@@ -537,7 +537,7 @@ void do_mark_for(openfilestruct *const file) {
 
 /* Toggle the mark for the currently open file. */
 void do_mark(void) {
-  do_mark_for(ISSET(USING_GUI) ? openeditor->openfile : openfile);
+  do_mark_for(CONTEXT_OPENFILE);
 }
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
@@ -960,12 +960,13 @@ void do_indent_for(openfilestruct *const file, int total_cols) {
  * either a tab character or a tab's worth of spaces, depending on whether the `TABS_TO_SPACES`
  * flag is in effect.  Note that this is context safe and works for both the gui and tui. */
 void do_indent(void) {
-  if (ISSET(USING_GUI) && openeditor) {
-    do_indent_for(openeditor->openfile, openeditor->cols);
-  }
-  else {
-    do_indent_for(openfile, editwincols);
-  }
+  do_indent_for(CONTEXT_OPENFILE, CONTEXT_COLS);
+  // if (ISSET(USING_GUI) && openeditor) {
+  //   do_indent_for(openeditor->openfile, openeditor->cols);
+  // }
+  // else {
+  //   do_indent_for(openfile, editwincols);
+  // }
 }
 
 /* Perform an undo or redo for an indent or unindent action. */
@@ -1397,4 +1398,107 @@ void handle_comment_action_for(openfilestruct *const file, undostruct *const u, 
 /* Perform an undo or redo for a comment or uncomment action. */
 void handle_comment_action(undostruct *const u, bool undoing, bool add_comment) {
   handle_comment_action_for(CONTEXT_OPENFILE, u, undoing, add_comment, CONTEXT_ROWS);
+}
+
+/* Return a copy of the found completion candidate. */
+char *copy_completion(const char *restrict text) {
+  char *word;
+  Ulong length = 0, index = 0;
+  /* Find the end of the candidate word to get its length. */
+  while (is_word_char((text + length), FALSE)) {
+    length = step_right(text, length);
+  }
+  /* Now copy this candidate to a new string. */
+  word = xmalloc(length + 1);
+  while (index < length) {
+    word[index++] = *(text++);
+  }
+  word[index] = '\0';
+  return word;
+}
+
+/* ----------------------------- Enter ----------------------------- */
+
+/* Break the current line at the cursor position. */
+void do_enter_for(openfilestruct *const file) {
+  ASSERT(file);
+  bool do_another_indent;
+  bool allblanks = FALSE;
+  linestruct *newnode;
+  linestruct *sampleline = file->current;
+  Ulong extra = 0;
+  // if (suggest_on && suggest_str) {
+  //   accept_suggestion();
+  //   return;
+  // }
+  // else
+  /* Check if cursor is between two brackets. */
+  if (cursor_is_between_brackets_for(file)) {
+    do_auto_bracket_for(file);
+    return;
+  }
+  /* If the prev char is one of the usual section start chars, or a lable, we should indent once more. */
+  do_another_indent = is_prev_cursor_char_one_of_for(file, "{:");
+  newnode    = make_new_node(file->current);
+  if (ISSET(AUTOINDENT)) {
+    /* When doing automatic long-line wrapping and the next line is in this same paragraph, use its indentation as the model. */
+    if (ISSET(BREAK_LONG_LINES) && sampleline->next && inpar(sampleline->next) && !begpar(sampleline->next, 0)) {
+      DLIST_ADV_NEXT(sampleline);
+    }
+    extra = indent_length(sampleline->data);
+    /* When breaking in the indentation, limit the automatic one. */
+    if (extra > file->current_x) {
+      extra = file->current_x;
+    }
+    else if (extra == file->current_x) {
+      allblanks = (indent_length(file->current->data) == extra);
+    }
+  }
+  newnode->data = xmalloc(strlen(file->current->data + file->current_x) + extra + 1);
+  strcpy(&newnode->data[extra], (file->current->data + file->current_x));
+  /* Adjust the mark if it is on the current line after the cursor. */
+  if (file->mark == file->current && file->mark_x > file->current_x) {
+    file->mark    = newnode;
+    file->mark_x += (extra - file->current_x);
+  }
+  if (ISSET(AUTOINDENT)) {
+    /* Copy the whitespace from the sample line to the new one. */
+    memcpy(newnode->data, sampleline->data, extra);
+    /* If there were only blanks before the cursor, trim them. */
+    if (allblanks) {
+      file->current_x = 0;
+    }
+  }
+  /* Make the current line end at the cursor position. */
+  file->current->data[file->current_x] = '\0';
+  add_undo_for(file, ENTER, NULL);
+  /* Insert the newly created line after the current one and renumber. */
+  splice_node_for(file, file->current, newnode);
+  renumber_from(newnode);
+  /* Put the cursor on the new line, after any automatic whitespace. */
+  file->current     = newnode;
+  file->current_x   = extra;
+  ++file->totsize;
+  set_pww_for(file);
+  set_modified_for(file);
+  if (ISSET(AUTOINDENT) && !allblanks) {
+    file->totsize += extra;
+  }
+  /* When approptiet, add another indent. */
+  if (do_another_indent) {
+    /* If the indent of the new line is the same as the line we came from.  I.E: Autoindent is turned on. */
+    if (line_indent(file->current) == line_indent(file->current->prev)) {
+      file->current->data = fmtstrcat(file->current->data, "%*s", (int)TAB_BYTE_LEN, (ISSET(TABS_TO_SPACES) ? " " : "\t"));
+      file->current_x    += TAB_BYTE_LEN;
+      file->totsize      += TAB_BYTE_LEN;
+    }
+  }
+  update_undo_for(file, ENTER);
+  refresh_needed = TRUE;
+  focusing       = FALSE;
+}
+
+/* Break the current line at the cursor position. */
+void do_enter(void) {
+  do_enter_for(CONTEXT_OPENFILE);
 }

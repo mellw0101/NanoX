@@ -968,10 +968,10 @@ typedef void (*MenuHoverFunc)(void *, const char *const restrict, int index);
 //   funcstruct *next;   /* Next item in the list. */
 // } funcstruct;
 
-typedef struct completionstruct {
-  char *word;
-  completionstruct *next;
-} completionstruct;
+// typedef struct completionstruct {
+//   char *word;
+//   completionstruct *next;
+// } completionstruct;
 
 /* Gui specific structs. */
 #ifdef HAVE_GLFW

@@ -1395,88 +1395,88 @@ void do_redo(void) {
 }
 
 /* Break the current line at the cursor position. */
-void do_enter(void) {
-  bool do_another_indent, allblanks=FALSE;
-  linestruct *newnode, *sampleline=openfile->current;
-  Ulong extra = 0;
-  if (suggest_on && suggest_str) {
-    accept_suggestion();
-    return;
-  }
-  /* Check if cursor is between two brackets. */
-  else if (cursor_is_between_brackets()) {
-    do_auto_bracket();
-    return;
-  }
-  /* If the prev char is one of the usual section start chars, or a lable, we should indent once more. */
-  do_another_indent = is_prev_cursor_char_one_of("{:");
-  newnode    = make_new_node(openfile->current);
-  if (ISSET(AUTOINDENT)) {
-    /* When doing automatic long-line wrapping and the next line is in this same paragraph, use its indentation as the model. */
-    if (ISSET(BREAK_LONG_LINES) && sampleline->next && inpar(sampleline->next) && !begpar(sampleline->next, 0)) {
-      sampleline = sampleline->next;
-    }
-    extra = indent_length(sampleline->data);
-    /* When breaking in the indentation, limit the automatic one. */
-    if (extra > openfile->current_x) {
-      extra = openfile->current_x;
-    }
-    else if (extra == openfile->current_x) {
-      allblanks = (indent_length(openfile->current->data) == extra);
-    }
-  }
-  newnode->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
-  strcpy(&newnode->data[extra], (openfile->current->data + openfile->current_x));
-  /* Adjust the mark if it is on the current line after the cursor. */
-  if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
-    openfile->mark = newnode;
-    openfile->mark_x += (extra - openfile->current_x);
-  }
-  if (ISSET(AUTOINDENT)) {
-    /* Copy the whitespace from the sample line to the new one. */
-    memcpy(newnode->data, sampleline->data, extra);
-    /* If there were only blanks before the cursor, trim them. */
-    if (allblanks) {
-      openfile->current_x = 0;
-    }
-  }
-  /* Make the current line end at the cursor position. */
-  openfile->current->data[openfile->current_x] = '\0';
-  add_undo(ENTER, NULL);
-  /* Insert the newly created line after the current one and renumber. */
-  splice_node(openfile->current, newnode);
-  renumber_from(newnode);
-  /* Put the cursor on the new line, after any automatic whitespace. */
-  openfile->current     = newnode;
-  openfile->current_x   = extra;
-  openfile->placewewant = xplustabs();
-  ++openfile->totsize;
-  set_modified();
-  if (ISSET(AUTOINDENT) && !allblanks) {
-    openfile->totsize += extra;
-  }
-  /* When approptiet, add another indent. */
-  if (do_another_indent) {
-    /* If the indent of the new line is the same as the line we came from.  I.E: Autoindent is turned on. */
-    if (line_indent(openfile->current) == line_indent(openfile->current->prev)) {
-      if (ISSET(TABS_TO_SPACES)) {
-        char *apstr = fmtstr("%*s", (int)tabsize, " ");
-        append_to(&openfile->current->data, apstr);
-        free(apstr);
-        openfile->current_x += tabsize;
-        openfile->totsize   += tabsize;
-      }
-      else {
-        append_to(&openfile->current->data, S__LEN("\t"));
-        ++openfile->current_x;
-        ++openfile->totsize;
-      }
-    }
-  }
-  update_undo(ENTER);
-  refresh_needed = TRUE;
-  focusing       = FALSE;
-}
+// void do_enter(void) {
+//   bool do_another_indent, allblanks=FALSE;
+//   linestruct *newnode, *sampleline=openfile->current;
+//   Ulong extra = 0;
+//   if (suggest_on && suggest_str) {
+//     accept_suggestion();
+//     return;
+//   }
+//   /* Check if cursor is between two brackets. */
+//   else if (cursor_is_between_brackets()) {
+//     do_auto_bracket();
+//     return;
+//   }
+//   /* If the prev char is one of the usual section start chars, or a lable, we should indent once more. */
+//   do_another_indent = is_prev_cursor_char_one_of("{:");
+//   newnode    = make_new_node(openfile->current);
+//   if (ISSET(AUTOINDENT)) {
+//     /* When doing automatic long-line wrapping and the next line is in this same paragraph, use its indentation as the model. */
+//     if (ISSET(BREAK_LONG_LINES) && sampleline->next && inpar(sampleline->next) && !begpar(sampleline->next, 0)) {
+//       sampleline = sampleline->next;
+//     }
+//     extra = indent_length(sampleline->data);
+//     /* When breaking in the indentation, limit the automatic one. */
+//     if (extra > openfile->current_x) {
+//       extra = openfile->current_x;
+//     }
+//     else if (extra == openfile->current_x) {
+//       allblanks = (indent_length(openfile->current->data) == extra);
+//     }
+//   }
+//   newnode->data = (char *)nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
+//   strcpy(&newnode->data[extra], (openfile->current->data + openfile->current_x));
+//   /* Adjust the mark if it is on the current line after the cursor. */
+//   if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
+//     openfile->mark = newnode;
+//     openfile->mark_x += (extra - openfile->current_x);
+//   }
+//   if (ISSET(AUTOINDENT)) {
+//     /* Copy the whitespace from the sample line to the new one. */
+//     memcpy(newnode->data, sampleline->data, extra);
+//     /* If there were only blanks before the cursor, trim them. */
+//     if (allblanks) {
+//       openfile->current_x = 0;
+//     }
+//   }
+//   /* Make the current line end at the cursor position. */
+//   openfile->current->data[openfile->current_x] = '\0';
+//   add_undo(ENTER, NULL);
+//   /* Insert the newly created line after the current one and renumber. */
+//   splice_node(openfile->current, newnode);
+//   renumber_from(newnode);
+//   /* Put the cursor on the new line, after any automatic whitespace. */
+//   openfile->current     = newnode;
+//   openfile->current_x   = extra;
+//   openfile->placewewant = xplustabs();
+//   ++openfile->totsize;
+//   set_modified();
+//   if (ISSET(AUTOINDENT) && !allblanks) {
+//     openfile->totsize += extra;
+//   }
+//   /* When approptiet, add another indent. */
+//   if (do_another_indent) {
+//     /* If the indent of the new line is the same as the line we came from.  I.E: Autoindent is turned on. */
+//     if (line_indent(openfile->current) == line_indent(openfile->current->prev)) {
+//       if (ISSET(TABS_TO_SPACES)) {
+//         char *apstr = fmtstr("%*s", (int)tabsize, " ");
+//         append_to(&openfile->current->data, apstr);
+//         free(apstr);
+//         openfile->current_x += tabsize;
+//         openfile->totsize   += tabsize;
+//       }
+//       else {
+//         append_to(&openfile->current->data, S__LEN("\t"));
+//         ++openfile->current_x;
+//         ++openfile->totsize;
+//       }
+//     }
+//   }
+//   update_undo(ENTER);
+//   refresh_needed = TRUE;
+//   focusing       = FALSE;
+// }
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
 // void discard_until_in_buffer(openfilestruct *const buffer, const undostruct *const thisitem) {
@@ -3423,21 +3423,21 @@ void do_verbatim_input(void) {
 }
 
 /* Return a copy of the found completion candidate. */
-char *copy_completion(char *text) {
-  char *word;
-  Ulong length = 0, index = 0;
-  /* Find the end of the candidate word to get its length. */
-  while (is_word_char(&text[length], FALSE)) {
-    length = step_right(text, length);
-  }
-  /* Now copy this candidate to a new string. */
-  word = (char *)nmalloc(length + 1);
-  while (index < length) {
-    word[index++] = *(text++);
-  }
-  word[index] = '\0';
-  return word;
-}
+// char *copy_completion(char *text) {
+//   char *word;
+//   Ulong length = 0, index = 0;
+//   /* Find the end of the candidate word to get its length. */
+//   while (is_word_char(&text[length], FALSE)) {
+//     length = step_right(text, length);
+//   }
+//   /* Now copy this candidate to a new string. */
+//   word = (char *)nmalloc(length + 1);
+//   while (index < length) {
+//     word[index++] = *(text++);
+//   }
+//   word[index] = '\0';
+//   return word;
+// }
 
 /* Look at the fragment the user has typed, then search all buffers for the first word that starts with this fragment,
  * and tentatively complete the fragment.  If the user hits 'Complete' again, search and paste the next possible completion. */

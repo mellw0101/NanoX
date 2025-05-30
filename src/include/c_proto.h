@@ -36,6 +36,7 @@ extern bool rescind_colors;
 extern bool nanox_rc_opensyntax;
 extern bool nanox_rc_seen_color_command;
 extern bool keep_mark;
+extern bool suggest_on;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -53,6 +54,9 @@ extern char *alt_speller;
 extern char *custom_nanorc;
 extern char *syntaxstr;
 extern char *statedir;
+extern char *suggest_str;
+
+extern char suggest_buf[1024];
 
 extern const char *exit_tag;
 extern const char *close_tag;
@@ -63,6 +67,7 @@ extern int margin;
 extern int sidebar;
 extern int currmenu;
 extern int hilite_attribute;
+extern int suggest_len;
 
 extern int whitelen[2];
 extern int interface_color_pair[NUMBER_OF_ELEMENTS];
@@ -84,6 +89,7 @@ extern Ulong flags[1];
 extern WINDOW *topwin;
 extern WINDOW *midwin;
 extern WINDOW *footwin;
+extern WINDOW *suggestwin;
 
 extern linestruct *cutbuffer;
 extern linestruct *search_history;
@@ -410,6 +416,20 @@ void  do_comment_for(openfilestruct *const file, int total_cols);
 void  do_comment(void);
 void  handle_comment_action_for(openfilestruct *const file, undostruct *const u, bool undoing, bool add_comment, int total_rows);
 void  handle_comment_action(undostruct *const u, bool undoing, bool add_comment);
+char *copy_completion(const char *restrict text);
+void  do_enter_for(openfilestruct *const file);
+void  do_enter(void);
+
+
+/* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */
+
+
+void do_suggestion(void);
+void find_suggestion(void);
+void clear_suggestion(void);
+void add_char_to_suggest_buf(void);
+void draw_suggest_win(void);
+void accept_suggestion(void);
 
 
 /* ----------------------------------------------- csyntax.c ----------------------------------------------- */
@@ -641,6 +661,7 @@ bool  is_prev_cursor_word_char(bool allow_punct);
 bool  is_prev_char(const char *pointer, Ulong index, const char ch);
 bool  is_prev_cursor_char(const char ch);
 bool  is_prev_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool  is_prev_cursor_char_one_of_for(openfilestruct *const file, const char *chars);
 bool  is_prev_cursor_char_one_of(const char *chars);
 bool  is_cursor_char(const char ch);
 bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
@@ -866,6 +887,7 @@ void  do_statusbar_chop_prev_word(void);
 Ulong get_statusbar_page_start(Ulong base, Ulong column);
 void  put_cursor_at_end_of_answer(void);
 void  add_or_remove_pipe_symbol_from_answer(void);
+void draw_the_promptbar(void);
 
 
 /* ---------------------------------------------------------- history.c ---------------------------------------------------------- */
@@ -976,6 +998,10 @@ void        restore_handler_for_Ctrl_C(void);
 /* ----------------------------- Curses ----------------------------- */
 
 void window_init_curses(void);
+
+/* ----------------------------- Defined in c++ ----------------------------- */
+
+void inject(char *burst, Ulong count);
 
 
 _END_C_LINKAGE
