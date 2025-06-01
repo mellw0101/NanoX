@@ -37,6 +37,7 @@ extern bool nanox_rc_opensyntax;
 extern bool nanox_rc_seen_color_command;
 extern bool keep_mark;
 extern bool suggest_on;
+extern bool spotlighted;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -69,6 +70,8 @@ extern int currmenu;
 extern int hilite_attribute;
 extern int suggest_len;
 
+extern int *bardata;
+
 extern int whitelen[2];
 extern int interface_color_pair[NUMBER_OF_ELEMENTS];
 
@@ -83,6 +86,8 @@ extern long stripe_column;
 
 extern Ulong wrap_at;
 extern Ulong nanox_rc_lineno;
+extern Ulong light_from_col;
+extern Ulong light_to_col;
 
 extern Ulong flags[1];
 
@@ -236,6 +241,7 @@ void get_region(linestruct **const top, Ulong *const top_x, linestruct **const b
 void  get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
 void  get_range(linestruct **const top, linestruct **const bot);
 bool  parse_line_column(const char *string, long *const line, long *const column);
+Ulong tabstop_length(const char *const restrict string, Ulong index);
 char *tab_space_string_for(openfilestruct *const file, Ulong *length);
 char *tab_space_string(Ulong *length);
 char *construct_full_tab_string(Ulong *length);
@@ -665,6 +671,7 @@ bool  is_prev_cursor_char_one_of_for(openfilestruct *const file, const char *cha
 bool  is_prev_cursor_char_one_of(const char *chars);
 bool  is_cursor_char(const char ch);
 bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool  is_end_char_one_of(const char *const restrict ptr, const char *const restrict chars);
 bool  is_cursor_char_one_of(const char *chars);
 bool  is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch);
 bool  is_curs_between_chars_for(openfilestruct *const restrict file, char a, char b);
@@ -721,18 +728,20 @@ bool  less_than_a_screenful_for(openfilestruct *const file, Ulong was_lineno, Ul
 bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge);
 Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong column, int total_cols);
 Ulong actual_last_column(Ulong leftedge, Ulong column);
-bool current_is_above_screen_for(openfilestruct *const file);
-bool current_is_above_screen(void);
-bool current_is_below_screen_for(openfilestruct *const file, int total_rows, int total_cols);
-bool current_is_below_screen(void);
-bool current_is_offscreen_for(openfilestruct *const file, int total_rows, int total_cols);
-bool current_is_offscreen(void);
-void adjust_viewport_for(openfilestruct *const file, update_type manner, int total_rows, int total_cols);
-void adjust_viewport(update_type manner);
-void place_the_cursor_for(openfilestruct *const file);
-void place_the_cursor(void);
-void set_blankdelay_to_one(void);
+bool  current_is_above_screen_for(openfilestruct *const file);
+bool  current_is_above_screen(void);
+bool  current_is_below_screen_for(openfilestruct *const file, int total_rows, int total_cols);
+bool  current_is_below_screen(void);
+bool  current_is_offscreen_for(openfilestruct *const file, int total_rows, int total_cols);
+bool  current_is_offscreen(void);
+void  adjust_viewport_for(openfilestruct *const file, update_type manner, int total_rows, int total_cols);
+void  adjust_viewport(update_type manner);
+void  place_the_cursor_for(openfilestruct *const file);
+void  place_the_cursor(void);
+void  set_blankdelay_to_one(void);
 Ulong waiting_keycodes(void);
+void  edit_scroll_for(openfilestruct *const file, bool direction);
+void  edit_scroll(bool direction);
 
 /* ----------------------------- Curses ----------------------------- */
 
@@ -753,6 +762,13 @@ void draw_row_marked_region_for_curses(openfilestruct *const file, int row, cons
 void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void full_refresh_curses(void);
 void wipe_statusbar_curses(void);
+void draw_row_curses_for(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
+void draw_row_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
+int  update_line_curses(linestruct *const line, Ulong index);
+int  update_softwrapped_line_curses(linestruct *const line);
+void spotlight_curses(Ulong from_col, Ulong to_col);
+void spotlight_softwrapped_curses_for(openfilestruct *const file, Ulong from_col, Ulong to_col);
+void spotlight_softwrapped_curses(Ulong from_col, Ulong to_col);
 
 
 /* ---------------------------------------------------------- line.c ---------------------------------------------------------- */
@@ -760,6 +776,7 @@ void wipe_statusbar_curses(void);
 
 bool line_in_marked_region_for(openfilestruct *const file, linestruct *const line);
 bool line_in_marked_region(linestruct *const line);
+char *line_last_mbchr(const linestruct *const line);
 
 
 /* ---------------------------------------------------------- global.c ---------------------------------------------------------- */
@@ -1002,6 +1019,8 @@ void window_init_curses(void);
 /* ----------------------------- Defined in c++ ----------------------------- */
 
 void inject(char *burst, Ulong count);
+void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) __THROW;
+void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 
 
 _END_C_LINKAGE

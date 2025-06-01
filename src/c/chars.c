@@ -239,6 +239,13 @@ bool is_cursor_char_one_of(const char *chars) {
   return is_char_one_of(openfile->current->data, openfile->current_x, chars);
 }
 
+/* Returns true is the last char stop in ptr points to any char in chars. */
+bool is_end_char_one_of(const char *const restrict ptr, const char *const restrict chars) {
+  ASSERT(ptr);
+  ASSERT(chars);
+  return is_char_one_of(ptr, step_left(ptr, strlen(ptr)), chars);
+}
+
 /* ----------------------------- Is between chars ----------------------------- */
 
 /* Return 'TRUE' when pointer+index-1 is equal to 'pre_ch' and 'pointer+index' is equal to 'post_ch'. */

@@ -60,6 +60,8 @@ bool nanox_rc_seen_color_command = FALSE;
 bool keep_mark = FALSE;
 /* If we should refresh the suggest window. */
 bool suggest_on = FALSE;
+/* Whether any text is spotlighted. */
+bool spotlighted = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 
@@ -127,6 +129,11 @@ int hilite_attribute = A_REVERSE;
 /* The current length of the string used to search for completions. */
 int suggest_len = 0;
 
+/* ----------------------------- int * ----------------------------- */
+
+/* An array of characters that together depict the scrollbar. */
+int *bardata = NULL;
+
 /* ----------------------------- int [] ----------------------------- */
 
 /* The length in bytes of these characters. */
@@ -160,6 +167,10 @@ long stripe_column = 0;
 Ulong wrap_at = 0;
 /* The line number of the last encountered error when parsing an rc file. */
 Ulong nanox_rc_lineno = 0;
+/* Where the spotlighted text starts. */
+Ulong light_from_col = 0;
+/* Where the spotlighted text ends. */
+Ulong light_to_col = 0;
 
 /* ----------------------------- Ulong [] ----------------------------- */
 

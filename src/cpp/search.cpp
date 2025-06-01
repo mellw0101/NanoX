@@ -806,7 +806,7 @@ void do_find_bracket(void) _NOTHROW {
 /* Place an anchor at the current line when none exists, otherwise remove it. */
 void put_or_lift_anchor(void) {
   openfile->current->has_anchor = !openfile->current->has_anchor;
-  update_line(openfile->current, openfile->current_x);
+  update_line_curses(openfile->current, openfile->current_x);
   if (openfile->current->has_anchor) {
     statusline(REMARK, _("Placed anchor"));
   }

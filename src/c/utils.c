@@ -6,6 +6,10 @@
  */
 #include "../include/c_proto.h"
 
+
+/* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
+
+
 void die(const char *format, ...) {
   char *msg;
   va_list ap;
@@ -220,7 +224,6 @@ Ulong xplustabs_for(openfilestruct *const file) {
 
 /* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
 Ulong xplustabs(void) {
-  // return wideness(openfile->current->data, openfile->current_x);
   return xplustabs_for(CONTEXT_OPENFILE);
 }
 
@@ -296,11 +299,7 @@ void new_magicline_for(openfilestruct *const file) {
 
 /* Append a new magic line to the end of the buffer. */
 void new_magicline(void) {
-  new_magicline_for(ISSET(USING_GUI) ? openeditor->openfile : openfile);
-  // openfile->filebot->next = make_new_node(openfile->filebot);
-  // openfile->filebot->next->data = COPY_OF("");
-  // openfile->filebot = openfile->filebot->next;
-  // ++openfile->totsize;
+  new_magicline_for(CONTEXT_OPENFILE);
 }
 
 /* Remove the magic line from the end of `file`, if there is one and it isn't the only line in `file`. */
@@ -357,7 +356,7 @@ void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *c
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
 void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
-  get_region_for(openfile, top, top_x, bot, bot_x);
+  get_region_for(CONTEXT_OPENFILE, top, top_x, bot, bot_x);
 }
 
 /* ----------------------------- Get range ----------------------------- */
@@ -389,7 +388,7 @@ void get_range_for(openfilestruct *const file, linestruct **const top, linestruc
 /* Get the set of lines to work on -- either just the current line, or the first to last lines of the marked
  * region.  When the cursor (or mark) is at the start of the last line of the region, exclude that line. */
 void get_range(linestruct **const top, linestruct **const bot) {
-  get_range_for(openfile, top, bot);
+  get_range_for(CONTEXT_OPENFILE, top, bot);
 }
 
 /* Read one number (or two numbers separated by comma, period, or colon) from the given string and store
@@ -419,6 +418,18 @@ bool parse_line_column(const char *string, long *const line, long *const column)
   return retval;
 }
 
+/* Returns the number of spaces the next tabstop is from `index` in `string`. */
+Ulong tabstop_length(const char *const restrict string, Ulong index) {
+  return (tabsize - (wideness(string, index) % tabsize));
+}
+
+// char *next_tabstop_space_str(const char *const restrict str, Ulong index, Ulong *const restrict len) {
+//   ASSERT(str);
+//   ASSERT(len);
+//   (*len) = (tabsize - (wideness(str, index) % tabsize));
+//   return fmtstr("%*s", (int)(*len), " ");
+// }
+
 /* Returns an allocated string of spaces that completes the current tab stop in `file->current->data`,
  * up to one `tabsize` in length.  The number of spaces is calculated based on `file->current_x` so
  * that when injecting the string into `file->current->data` we end up at the next tab boundary. */
@@ -432,12 +443,7 @@ char *tab_space_string_for(openfilestruct *const file, Ulong *length) {
 /* Almost exactly like `tab_space_string_for()`, but correctly passes either
  * `openeditor->openfile` or `openfile` depending on the current context. */
 char *tab_space_string(Ulong *length) {
-  if (ISSET(USING_GUI)) {
-    return tab_space_string_for(openeditor->openfile, length);
-  }
-  else {
-    return tab_space_string_for(openfile, length);
-  }
+  return tab_space_string_for(CONTEXT_OPENFILE, length);
 }
 
 /* Returns an allocated string containing either a string of just ' ' chars with the
@@ -496,18 +502,26 @@ void set_mark(long lineno, Ulong x) {
   set_mark_for(CONTEXT_OPENFILE, lineno, x);
 }
 
-/* Returns an allocated string containing the the indent of string plus one tabs worth of  */
+/* Returns an allocated string containing the the indent of string plus one tabs worth of spaces at most, depending on how far away from the next tabstop. */
 char *indent_plus_tab(const char *const restrict string) {
   ASSERT(string);
   char *ret;
-  Ulong len;
+  Ulong indentlen;
+  Ulong tablen;
   if (!*string) {
     return construct_full_tab_string(NULL);
   }
-  len = indent_length(string);
-  ret = xmalloc(len + TAB_BYTE_LEN + 1);
-  memcpy(ret, string, len);
-  memset((ret + len), (ISSET(TABS_TO_SPACES) ? ' ' : '\t'), TAB_BYTE_LEN);
-  ret[len + TAB_BYTE_LEN] = '\0';
+  indentlen = indent_length(string);
+  tablen    = tabstop_length(string, indentlen);
+  ret       = xmalloc(indentlen + tablen + 1);
+  memcpy(ret, string, indentlen);
+  if (ISSET(TABS_TO_SPACES)) {
+    memset((ret + indentlen), ' ', tablen);
+    ret[indentlen + tablen] = '\0';
+  }
+  else {
+    ret[indentlen]     = '\t';
+    ret[indentlen + 1] = '\0';
+  }
   return ret;
 }

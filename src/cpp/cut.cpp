@@ -60,7 +60,7 @@ void expunge(undo_type action) {
     check_the_multis(openfile->current);
   }
   if (!refresh_needed && !ISSET(USING_GUI)) {
-    update_line(openfile->current, openfile->current_x);
+    update_line_curses(openfile->current, openfile->current_x);
   }
   /* Adjust the file size, and remember it for a possible redo. */
   --openfile->totsize;

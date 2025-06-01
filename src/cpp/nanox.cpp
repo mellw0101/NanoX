@@ -1158,7 +1158,7 @@ void inject(char *burst, Ulong count) {
     new_magicline();
     if (margin || (openfile->syntax && openfile->syntax->multiscore)) {
       if (margin && openfile->cursor_row < (editwinrows - 1)) {
-        update_line(thisline->next, 0);
+        update_line_curses(thisline->next, 0);
       }
     }
   }
@@ -1178,7 +1178,7 @@ void inject(char *burst, Ulong count) {
     check_the_multis(openfile->current);
   }
   if (!refresh_needed && !ISSET(USING_GUI)) {
-    update_line(openfile->current, openfile->current_x);
+    update_line_curses(openfile->current, openfile->current_x);
   }
 }
 

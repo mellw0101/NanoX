@@ -790,6 +790,7 @@ void insert_empty_line_for(openfilestruct *const file, linestruct *const line, b
   ASSERT(line);
   linestruct *topline;
   linestruct *newline;
+  Ulong indent_len;
   /* Inserting a empty line above. */
   if (above) {
     if (!line->prev) {
@@ -820,7 +821,17 @@ void insert_empty_line_for(openfilestruct *const file, linestruct *const line, b
     newline->data = COPY_OF("");
   }
   else {
-    newline->data = measured_copy(line->data, indent_length(line->data));
+    indent_len    = indent_length(line->data);
+    newline->data = measured_copy(line->data, indent_len);
+    /* If the last char of the line we were on was a opening char, then we sould add another indent. */
+    if (!above && is_end_char_one_of(newline->prev->data, "{:")) {
+      if (ISSET(TABS_TO_SPACES)) {
+        newline->data = fmtstrcat(newline->data, "%*s", (int)tabstop_length(newline->data, indent_len), " ");
+      }
+      else {
+        newline->data = xstrncat(newline->data, S__LEN("\t"));
+      }
+    }
   }
 }
 
@@ -1145,6 +1156,8 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
   ASSERT(file);
   ASSERT(line);
   Ulong indentlen;
+  /* Number of chars to next tabstop when `TABS_TO_SPACES` is set. */
+  Ulong tablen;
   Ulong lenleft;
   linestruct *middle = make_new_node(line);
   linestruct *end    = make_new_node(middle);
@@ -1152,18 +1165,21 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
   splice_node_for(file, middle, end);
   renumber_from(middle);
   indentlen = indent_length(line->data);
+  tablen    = tabstop_length(line->data, indentlen);
   lenleft   = strlen(line->data + posx);
-  middle->data = xmalloc(indentlen + TAB_BYTE_LEN + 1);
+  middle->data = xmalloc(indentlen + tablen + 1);
   end->data    = xmalloc(indentlen + lenleft + 1);
   /* Set up the middle line. */
   memcpy(middle->data, line->data, indentlen);
   if (ISSET(TABS_TO_SPACES)) {
-    memset((middle->data + indentlen), ' ', tabsize);
-    *(middle->data + indentlen + tabsize) = '\0';
+    memset((middle->data + indentlen), ' ', tablen);
+    middle->data[indentlen + tablen] = '\0';
+    file->totsize += tablen;
   }
   else {
-    *(middle->data + indentlen)     = '\t';
-    *(middle->data + indentlen + 1) = '\0';
+    middle->data[indentlen]     = '\t';
+    middle->data[indentlen + 1] = '\0';
+    ++file->totsize;
   }
   /* Set up end line. */
   memcpy((end->data + indentlen), (line->data + posx), (lenleft + 1));
@@ -1173,7 +1189,7 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
   line->data[posx] = '\0';
   /* Set the cursor line and x pos to the middle line. */
   file->current   = middle; 
-  file->current_x = (indentlen + TAB_BYTE_LEN);
+  file->current_x = (indentlen + tablen);
   set_pww_for(file);
   refresh_needed = TRUE;
 }
@@ -1427,11 +1443,6 @@ void do_enter_for(openfilestruct *const file) {
   linestruct *newnode;
   linestruct *sampleline = file->current;
   Ulong extra = 0;
-  // if (suggest_on && suggest_str) {
-  //   accept_suggestion();
-  //   return;
-  // }
-  // else
   /* Check if cursor is between two brackets. */
   if (cursor_is_between_brackets_for(file)) {
     do_auto_bracket_for(file);
@@ -1455,7 +1466,7 @@ void do_enter_for(openfilestruct *const file) {
     }
   }
   newnode->data = xmalloc(strlen(file->current->data + file->current_x) + extra + 1);
-  strcpy(&newnode->data[extra], (file->current->data + file->current_x));
+  strcpy((newnode->data + extra), (file->current->data + file->current_x));
   /* Adjust the mark if it is on the current line after the cursor. */
   if (file->mark == file->current && file->mark_x > file->current_x) {
     file->mark    = newnode;

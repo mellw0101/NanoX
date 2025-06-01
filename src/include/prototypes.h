@@ -150,9 +150,9 @@ extern char *statedir;
 // extern char *startup_problem;
 // extern char *custom_nanorc;
 extern char *commandname;
-extern bool  spotlighted;
-extern Ulong light_from_col;
-extern Ulong light_to_col;
+// extern bool  spotlighted;
+// extern Ulong light_from_col;
+// extern Ulong light_to_col;
 
 extern bool last_key_was_bracket;
 extern char last_bracket_char;
@@ -605,14 +605,14 @@ void  warn_and_briefly_pause(const char *msg) _NOTHROW _NONNULL(1);
 void  bottombars(int menu) _NOTHROW;
 void  post_one_key(const char *keystroke, const char *tag, int width) _NOTHROW;
 // void  place_the_cursor(void) _NOTHROW;
-void  draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col);
-int   update_line(linestruct *line, Ulong index, int offset = 0);
-int   update_softwrapped_line(linestruct *line);
+// void  draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col);
+// int   update_line(linestruct *line, Ulong index, int offset = 0);
+// int   update_softwrapped_line(linestruct *line);
 // bool  line_needs_update(const Ulong old_column, const Ulong new_column) _NOTHROW;
 // int   go_back_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
 // int   go_forward_chunks(int nrows, linestruct **line, Ulong *leftedge) _NOTHROW;
 // bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) _NOTHROW _NODISCARD;
-void  edit_scroll(bool direction);
+// void  edit_scroll(bool direction);
 // Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) _NOTHROW;
 // Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge) _NOTHROW _NONNULL(2);
 // Ulong chunk_for(Ulong column, linestruct *line) _NOTHROW;
@@ -627,8 +627,8 @@ void  edit_refresh(void);
 void  full_refresh(void) _NOTHROW;
 void  draw_all_subwindows(void);
 void  report_cursor_position(void) _NOTHROW;
-void  spotlight(Ulong from_col, Ulong to_col) _NOTHROW;
-void  spotlight_softwrapped(Ulong from_col, Ulong to_col) _NOTHROW;
+// void  spotlight(Ulong from_col, Ulong to_col) _NOTHROW;
+// void  spotlight_softwrapped(Ulong from_col, Ulong to_col) _NOTHROW;
 void  do_credits(void);
 
 /* These are just name definitions. */
@@ -775,8 +775,8 @@ void block_pthread_sig(int sig, bool block) _NOTHROW;
 /* ---------------------------------------------------------- render.cpp ---------------------------------------------------------- */
 
 
-void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) _NOTHROW;
-void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
+// void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) _NOTHROW;
+// void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 
 
 /* ---------------------------------------------------------- render_utils.cpp ---------------------------------------------------------- */

@@ -500,7 +500,7 @@ void do_home(void) {
     edit_redraw(was_current, FLOWING);
   }
   else if (line_needs_update(was_column, openfile->placewewant)) {
-    update_line(openfile->current, openfile->current_x);
+    update_line_curses(openfile->current, openfile->current_x);
   }
 }
 
@@ -549,7 +549,7 @@ void do_end(void) {
     edit_redraw(was_current, FLOWING);
   }
   else if (line_needs_update(was_column, openfile->placewewant)) {
-    update_line(openfile->current, openfile->current_x);
+    update_line_curses(openfile->current, openfile->current_x);
   }
 }
 

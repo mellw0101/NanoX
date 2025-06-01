@@ -20,3 +20,8 @@ bool line_in_marked_region_for(openfilestruct *const file, linestruct *const lin
 bool line_in_marked_region(linestruct *const line) {
   return line_in_marked_region_for(openfile, line);
 }
+
+char *line_last_mbchr(const linestruct *const line) {
+  ASSERT(line);
+  return (line->data + step_left(line->data, strlen(line->data)));
+}

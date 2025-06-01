@@ -15,6 +15,8 @@
 #define ZEROWIDTH_CHAR  (is_zerowidth(text))
 #define SHIM            (ISSET(ZERO) && (currmenu == MREPLACEWITH || currmenu == MYESNO) ? 1 : 0)
 
+/* The number of bytes after which to stop painting, to avoid major slowdowns.  Note that this is only for the regex based painting system nano had. */
+#define PAINT_LIMIT 2000
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
@@ -23,8 +25,6 @@
 Ulong from_x = 0;
 /* Until where in the relevant line the current row is drawn. */
 Ulong till_x = 0;
-/* Whether the current line has more text after the displayed part. */
-static bool has_more = FALSE;
 /* Whether a row's text is narrower than the screen's width. */
 bool is_shorter = TRUE;
 /* The number of key codes waiting in the keystroke buffer. */
@@ -33,6 +33,11 @@ Ulong waiting_codes = 0;
 int countdown = 0;
 /* Whether we are in the process of recording a macro. */
 bool recording = FALSE;
+
+/* Whether the current line has more text after the displayed part. */
+static bool has_more = FALSE;
+/* The starting column of the next chunk when softwrapping. */
+static Ulong sequel_column = 0;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -88,6 +93,35 @@ static void place_the_cursor_for_internal(openfilestruct *const file, Ulong *con
   }
   file->cursor_row = row;
   *out_column = column;
+}
+
+/* Draw a `scroll bar` on the righthand side of the edit window. */
+static void draw_scrollbar_curses(void) {
+  int fromline     = (openfile->edittop->lineno - 1);
+  int totallines   = openfile->filebot->lineno;
+  int coveredlines = editwinrows;
+  linestruct *line;
+  int lowest, highest, extras;
+  if (ISSET(SOFTWRAP)) {
+    line = openfile->edittop;
+    extras = (extra_chunks_in(line, editwincols) - chunk_for(openfile->firstcolumn, line, editwincols));
+    while ((line->lineno + extras) < (fromline + editwinrows) && line->next) {
+      line = line->next;
+      extras += extra_chunks_in(line, editwincols);
+    }
+    coveredlines = (line->lineno - fromline);
+  }
+  lowest  = ((fromline * editwinrows) / totallines);
+  highest = (lowest + (editwinrows * coveredlines) / totallines);
+  if (editwinrows > totallines && !ISSET(SOFTWRAP)) {
+    highest = editwinrows;
+  }
+  for (int row=0; row<editwinrows; ++row) {
+    if (!ISSET(NO_NCURSES)) {
+      bardata[row] = (' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE));
+      mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+    }
+  }
 }
 
 
@@ -685,6 +719,64 @@ Ulong waiting_keycodes(void) {
   return waiting_codes;
 }
 
+/* Scroll the edit window one row in the given direction, and draw the relevant content on the resultant blank row. */
+void edit_scroll_for(openfilestruct *const file, bool direction) {
+  ASSERT(file);
+  linestruct *line;
+  Ulong leftedge;
+  int nrows = 1;
+  /* Move the top line of the edit window one row up or down. */
+  if (direction == BACKWARD) {
+    go_back_chunks(1, &file->edittop, &file->firstcolumn);
+  }
+  else {
+    go_forward_chunks(1, &file->edittop, &file->firstcolumn);
+  }
+  /* If using the gui, return early. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
+  else if (!ISSET(NO_NCURSES)) {
+    /* Actually scroll the text of the edit window one row up or down. */
+    scrollok(midwin, TRUE);
+    wscrl(midwin, ((direction == BACKWARD) ? -1 : 1));
+    scrollok(midwin, FALSE);
+  }
+  /* If we're not on the first "page" (when not softwrapping), or the mark
+   * is on, the row next to the scrolled region needs to be redrawn too. */
+  if (line_needs_update_for(file, file->placewewant, 0, editwincols) && nrows < editwinrows) {
+    ++nrows;
+  }
+  /* If we scrolled backward, the top row needs to be redrawn. */
+  line     = file->edittop;
+  leftedge = file->firstcolumn;
+  /* If we scrolled forward, the bottom row needs to be redrawn. */
+  if (direction == FORWARD) {
+    go_forward_chunks_for(file, (editwinrows - nrows), &line, &leftedge, editwincols);
+  }
+  if (sidebar) {
+    draw_scrollbar_curses();
+  }
+  if (ISSET(SOFTWRAP)) {
+    /* Compensate for the earlier chunks of a softwrapped line. */
+    nrows += chunk_for(leftedge, line, editwincols);
+    /* Don't compensate for the chunks that are offscreen. */
+    if (line == file->edittop) {
+      nrows -= chunk_for(file->firstcolumn, line, editwincols);
+    }
+  }
+  /* Draw new content on the blank row (and on the bordering row too when it was deemed necessary). */
+  while (nrows > 0 && line) {
+    nrows -= update_line_curses(line, ((line == file->current) ? file->current_x : 0));
+    line = line->next;
+  }
+}
+
+/* Scroll the edit window one row in the given direction, and draw the relevant content on the resultant blank row. */
+void edit_scroll(bool direction) {
+  edit_scroll_for(CONTEXT_OPENFILE, direction);
+}
+
 /* ----------------------------- Curses ----------------------------- */
 
 void blank_row_curses(WINDOW *const window, int row) {
@@ -1248,4 +1340,334 @@ void wipe_statusbar_curses(void) {
   }
   blank_row_curses(footwin, 0);
   wnoutrefresh(footwin);
+}
+
+/* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
+ * is the actual string to be written with tabs and control characters replaced by strings of regular
+ * characters.  'from_col' is the column number of the first character of this "page". */
+void draw_row_curses_for(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
+  ASSERT(file);
+  render_line_text(row, converted, line, from_col);
+  if (ISSET(EXPERIMENTAL_FAST_LIVE_SYNTAX)) {
+    apply_syntax_to_line(row, converted, line, from_col);
+  }
+  /* If there are color rules (and coloring is turned on), apply them. */
+  else if (file->syntax && !ISSET(NO_SYNTAX)) {
+    const colortype *varnish = file->syntax->color;
+    /* If there are multiline regexes, make sure this line has a cache. */
+    if (file->syntax->multiscore > 0 && !line->multidata) {
+      line->multidata = xmalloc(file->syntax->multiscore * sizeof(short));
+    }
+    /* Iterate through all the coloring regexes. */
+    for (; varnish; varnish = varnish->next) {
+      /* Where in the line we currently begin looking for a match. */
+      Ulong index = 0;
+      /* The starting column of a piece to paint.  Zero-based. */
+      int start_col = 0;
+      /* The number of characters to paint. */
+      int paintlen = 0;
+      /* The place in converted from where painting starts. */
+      const char *thetext;
+      /* The match positions of a single-line regex. */
+      regmatch_t match;
+      /* The first line before line that matches 'start'. */
+      const linestruct *start_line = line->prev;
+      /* The match positions of the start and end regexes. */
+      regmatch_t startmatch, endmatch;
+      /* First case: varnish is a single-line expression. */
+      if (!varnish->end) {
+        while (index < PAINT_LIMIT && index < till_x) {
+          /* If there is no match, go on to the next line. */
+          if (regexec(varnish->start, &line->data[index], 1, &match, (index == 0) ? 0 : REG_NOTBOL) != 0) {
+            break;
+          }
+          /* Translate the match to the beginning of the line. */
+          match.rm_so += index;
+          match.rm_eo += index;
+          index = match.rm_eo;
+          /* If the match is offscreen to the right, this rule is
+           * done. */
+          if (match.rm_so >= (int)till_x) {
+            break;
+          }
+          /* If the match has length zero, advance over it. */
+          if (match.rm_so == match.rm_eo) {
+            if (line->data[index] == '\0') {
+              break;
+            }
+            index = step_right(line->data, index);
+            continue;
+          }
+          /* If the match is offscreen to the left, skip to next. */
+          if (match.rm_eo <= (int)from_x) {
+            continue;
+          }
+          if (match.rm_so > (int)from_x) {
+            start_col = wideness(line->data, match.rm_so) - from_col;
+          }
+          thetext  = converted + actual_x(converted, start_col);
+          paintlen = actual_x(thetext, wideness(line->data, match.rm_eo) - from_col - start_col);
+          midwin_mv_add_nstr_wattr(row, (margin + start_col), thetext, paintlen, varnish->attributes);
+        }
+        continue;
+      }
+      /* Second case: varnish is a multiline expression.  Assume nothing gets painted until proven otherwise below. */
+      line->multidata[varnish->id] = NOTHING;
+      if (start_line && !start_line->multidata) {
+        statusline_all(ALERT, "Missing multidata -- please report a bug");
+      }
+      else {
+        /* If there is an unterminated start match before the current line, we need to look for an end match first. */
+        if (start_line && (start_line->multidata[varnish->id] == WHOLELINE || start_line->multidata[varnish->id] == STARTSHERE)) {
+          /* If there is no end on this line, paint whole line, and be done. */
+          if (regexec(varnish->end, line->data, 1, &endmatch, 0) == REG_NOMATCH) {
+            midwin_mv_add_nstr_wattr(row, margin, converted, -1, varnish->attributes);
+            line->multidata[varnish->id] = WHOLELINE;
+            continue;
+          }
+          /* Only if it is visible, paint the part to be coloured. */
+          if (endmatch.rm_eo > (int)from_x) {
+            paintlen = actual_x(converted, wideness(line->data, endmatch.rm_eo) - from_col);
+            midwin_mv_add_nstr_wattr(row, margin, converted, paintlen, varnish->attributes);
+          }
+          line->multidata[varnish->id] = ENDSHERE;
+        }
+      }
+      /* Second step: look for starts on this line, but begin looking only after an end match, if there is one. */
+      index = (paintlen == 0) ? 0 : endmatch.rm_eo;
+      while (index < PAINT_LIMIT && regexec(varnish->start, line->data + index, 1, &startmatch, (index == 0) ? 0 : REG_NOTBOL) == 0) {
+        /* Make the match relative to the beginning of the line. */
+        startmatch.rm_so += index;
+        startmatch.rm_eo += index;
+        if (startmatch.rm_so > (int)from_x) {
+          start_col = wideness(line->data, startmatch.rm_so) - from_col;
+        }
+        thetext = converted + actual_x(converted, start_col);
+        if (regexec(varnish->end, line->data + startmatch.rm_eo, 1, &endmatch, (startmatch.rm_eo == 0) ? 0 : REG_NOTBOL) == 0) {
+          /* Make the match relative to the beginning of the line. */
+          endmatch.rm_so += startmatch.rm_eo;
+          endmatch.rm_eo += startmatch.rm_eo;
+          /* Only paint the match if it is visible on screen and it is more than zero characters long. */
+          if (endmatch.rm_eo > (int)from_x && endmatch.rm_eo > startmatch.rm_so) {
+            paintlen = actual_x(thetext, wideness(line->data, endmatch.rm_eo) - from_col - start_col);
+            midwin_mv_add_nstr_wattr(row, margin + start_col, thetext, paintlen, varnish->attributes);
+            line->multidata[varnish->id] = JUSTONTHIS;
+          }
+          index = endmatch.rm_eo;
+          /* If both start and end match are anchors, advance. */
+          if (startmatch.rm_so == startmatch.rm_eo && endmatch.rm_so == endmatch.rm_eo) {
+            if (!line->data[index]) {
+              break;
+            }
+            index = step_right(line->data, index);
+          }
+          continue;
+        }
+        /* Paint the rest of the line, and we're done. */
+        midwin_mv_add_nstr_wattr(row, margin + start_col, thetext, -1, varnish->attributes);
+        line->multidata[varnish->id] = STARTSHERE;
+        break;
+      }
+    }
+  }
+  if (stripe_column > (long)from_col && !inhelp && (!sequel_column || stripe_column <= (long)sequel_column) && stripe_column <= (long)(from_col + editwincols)) {
+    long  target_column = (stripe_column - from_col - 1);
+    Ulong target_x      = actual_x(converted, target_column);
+    char  striped_char[MAXCHARLEN];
+    Ulong charlen = 1;
+    if (*(converted + target_x)) {
+      charlen       = collect_char((converted + target_x), striped_char);
+      target_column = wideness(converted, target_x);
+#ifdef USING_OLDER_LIBVTE
+    }
+    else if ((target_column + 1) == editwincols) {
+      /* Defeat a VTE bug -- see https://sv.gnu.org/bugs/?55896. */
+# ifdef ENABLE_UTF8
+      if (using_utf8()) {
+        striped_char[0] = '\xC2';
+        striped_char[1] = '\xA0';
+        charlen         = 2;
+      }
+    else
+# endif
+      striped_char[0] = '.';
+#endif
+    }
+    else {
+      striped_char[0] = ' ';
+    }
+    if (ISSET(NO_NCURSES)) {
+      
+    }
+    else {
+      mv_add_nstr_color(midwin, row, (margin + target_column), striped_char, charlen, GUIDE_STRIPE);
+    }
+  }
+  draw_row_marked_region_curses(row, converted, line, from_col);
+}
+
+/* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
+ * is the actual string to be written with tabs and control characters replaced by strings of regular
+ * characters.  'from_col' is the column number of the first character of this "page". */
+void draw_row_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
+  draw_row_curses_for(openfile, row, converted, line, from_col);
+}
+
+/* Redraw the given line so that the character at the given index is visible -- if necessary, scroll the line
+ * horizontally (when not softwrapping). Return the number of rows "consumed" (relevant when softwrapping). */
+int update_line_curses(linestruct *const line, Ulong index) {
+  ASSERT(line);
+  /* The row in the edit window we will be updating. */
+  int row;
+  /* The data of the line with tabs and control characters expanded. */
+  char *converted;
+  /* From which column a horizontally scrolled line is displayed. */
+  Ulong from_col;
+  if (ISSET(SOFTWRAP)) {
+    return update_softwrapped_line_curses(line);
+  }
+  sequel_column = 0;
+  row = (line->lineno - openfile->edittop->lineno);
+  from_col = get_page_start(wideness(line->data, index), editwincols);
+  /* Expand the piece to be drawn to its representable form, and draw it. */
+  converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
+  draw_row_curses(row, converted, line, from_col);
+  free(converted);
+  if (!ISSET(NO_NCURSES)) {
+    if (from_col > 0) {
+      mvwaddchwattr(midwin, row, margin, '<', hilite_attribute);
+    }
+    if (has_more) {
+      mvwaddchwattr(midwin, row, (COLS - 1), '>', hilite_attribute);
+    }
+  }
+  if (spotlighted && line == openfile->current) {
+    spotlight_curses(light_from_col, light_to_col);
+  }
+  return 1;
+}
+
+/* Redraw all the chunks of the given line (as far as they fit onscreen), unless it's edittop,
+ * which will be displayed from column firstcolumn.  Return the number of rows that were "consumed". */
+int update_softwrapped_line_curses(linestruct *const line) {
+  /* The first row in the edit window that gets updated. */
+  int starting_row;
+  /* The row in the edit window we will write to. */
+  int row = 0;
+  /* An iterator needed to find the relevent row. */
+  linestruct *someline = openfile->edittop;
+  /* The starting column of the current chunk. */
+  Ulong from_col = 0;
+  /* The end column of the current_chunk. */
+  Ulong to_col = 0;
+  /* The data of the chunk with tabs and controll chars expanded. */
+  char *converted;
+  /* This tells the softwrapping rutine to start at begining-of-line. */
+  bool kickoff = TRUE;
+  /* Becomes 'TRUE' when the last chunk of the line has been reached. */
+  bool end_of_line = FALSE;
+  if (line == openfile->edittop) {
+    from_col = openfile->firstcolumn;
+  }
+  else {
+    row -= chunk_for(openfile->firstcolumn, openfile->edittop, editwincols);
+  }
+  /* Find out on which screen row the target line should be shown. */
+  while (someline != line && someline) {
+    row += (1 + extra_chunks_in(someline, editwincols));
+    someline = someline->next;
+  }
+  /* If the first chunk is offscreen, don't even try to display it. */
+  if (row < 0 || row >= editwinrows) {
+    return 0;
+  }
+  starting_row = row;
+  while (!end_of_line && row < editwinrows) {
+    to_col = get_softwrap_breakpoint(line->data, from_col, &kickoff, &end_of_line, editwincols);
+    sequel_column = (end_of_line ? 0 : to_col);
+    /* Convert the chunk to its displayable form and draw it. */
+    converted = display_string(line->data, from_col, (to_col - from_col), TRUE, FALSE);
+    draw_row_curses(row++, converted, line, from_col);
+    free(converted);
+    from_col = to_col;
+  }
+  if (spotlighted && line == openfile->current) {
+    spotlight_softwrapped_curses(light_from_col, light_to_col);
+  }
+  return (row - starting_row);
+}
+
+/* Highlight the text between the given two columns on the current line. */
+void spotlight_curses(Ulong from_col, Ulong to_col) {
+  Ulong right_edge = (get_page_start(from_col, editwincols) + editwincols);
+  bool  overshoots = (to_col > right_edge);
+  char *word;
+  place_the_cursor();
+  /* Limit the end column to the edge of the screen. */
+  if (overshoots) {
+    to_col = right_edge;
+  }
+  /* If the target text is of zero length, highlight a space instead. */
+  if (to_col == from_col) {
+    word = COPY_OF(" ");
+    ++to_col;
+  }
+  else {
+    word = display_string(openfile->current->data, from_col, (to_col - from_col), FALSE, overshoots);
+  }
+  // nanox_wcoloron(midwin, SPOTLIGHTED);
+  wattron(midwin, interface_color_pair[SPOTLIGHTED]);
+  // nanox_waddnstr(midwin, word, actual_x(word, to_col));
+  waddnstr(midwin, word, actual_x(word, to_col));
+  if (overshoots) {
+    // nanox_mvwaddch(midwin, openfile->cursor_row, (COLS - 1 - sidebar), '>');
+    mvwaddch(midwin, openfile->cursor_row, (COLS - 1 - sidebar), '>');
+  }
+  // nanox_wcoloroff(midwin, SPOTLIGHTED);
+  wattroff(midwin, interface_color_pair[SPOTLIGHTED]);
+  free(word);
+}
+
+/* Highlight the text between the given two columns on the current line. */
+void spotlight_softwrapped_curses_for(openfilestruct *const file, Ulong from_col, Ulong to_col) {
+  ASSERT(file);
+  long  row;
+  Ulong leftedge = leftedge_for(from_col, file->current, editwincols);
+  Ulong break_col;
+  bool  end_of_line = FALSE;
+  bool  kickoff     = TRUE;
+  char *word;
+  place_the_cursor_curses_for(file);
+  row = file->cursor_row;
+  while (row < editwinrows) {
+    break_col = get_softwrap_breakpoint(file->current->data, leftedge, &kickoff, &end_of_line, editwincols);
+    /* If the highlighting ends on this chunk, we can stop after it. */
+    if (break_col >= to_col) {
+      end_of_line = TRUE;
+      break_col   = to_col;
+    }
+    /* If the target text is of zero length, highlight a space instead. */
+    if (break_col == from_col) {
+      word = COPY_OF(" ");
+      break_col++;
+    }
+    else {
+      word = display_string(file->current->data, from_col, (break_col - from_col), FALSE, FALSE);
+    }
+    wattron(midwin, interface_color_pair[SPOTLIGHTED]);
+    waddnstr(midwin, word, actual_x(word, break_col));
+    wattroff(midwin, interface_color_pair[SPOTLIGHTED]);
+    free(word);
+    if (end_of_line) {
+      break;
+    }
+    wmove(midwin, ++row, margin);
+    leftedge = break_col;
+    from_col = break_col;
+  }
+}
+
+/* Highlight the text between the given two columns on the current line. */
+void spotlight_softwrapped_curses(Ulong from_col, Ulong to_col) {
+  spotlight_softwrapped_curses_for(openfile, from_col, to_col);
 }

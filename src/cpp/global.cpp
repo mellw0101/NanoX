@@ -94,7 +94,7 @@ nwindow *tui_footwin = NULL;
 /* Becomes 1 when the indicator "scroll bar" must be shown. */
 // int sidebar = 0;
 /* An array of characters that together depict the scrollbar. */
-int *bardata = NULL;
+// int *bardata = NULL;
 /* The column at which a vertical bar will be drawn. */
 // long stripe_column = 0;
 /* Whether to center the line with the cursor (0), push it to the top of the viewport (1), or to the bottom (2). */
@@ -191,11 +191,11 @@ char *commandname = NULL;
 /* The function that the above name resolves to, if any. */
 keystruct *planted_shortcut = NULL;
 /* Whether any text is spotlighted. */
-bool spotlighted = FALSE;
+// bool spotlighted = FALSE;
 /* Where the spotlighted text starts. */
-Ulong light_from_col = 0;
+// Ulong light_from_col = 0;
 /* Where the spotlighted text ends. */
-Ulong light_to_col = 0;
+// Ulong light_to_col = 0;
 /* To make the functions and shortcuts lists clearer. */
 #define BLANKAFTER TRUE
 #define TOGETHER   FALSE
