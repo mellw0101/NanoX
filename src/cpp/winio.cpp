@@ -1801,16 +1801,16 @@ static void tui_blank_row(nwindow *window, short row) {
 #define nanox_blank_row(window, row) (ISSET(NO_NCURSES) ? tui_blank_row(tui_##window, row) : blank_row(window, row))
 
 /* Blank the first line of the top portion of the screen. */
-static void blank_titlebar(void) _NOTHROW {
-  nanox_mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
-}
+// static void blank_titlebar(void) _NOTHROW {
+//   nanox_mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
+// }
 
 /* Blank all lines of the middle portion of the screen (the edit window). */
-void blank_edit(void) _NOTHROW {
-  for (int row = 0; row < editwinrows; ++row) {
-    nanox_blank_row(midwin, row);
-  }
-}
+// void blank_edit(void) _NOTHROW {
+//   for (int row = 0; row < editwinrows; ++row) {
+//     nanox_blank_row(midwin, row);
+//   }
+// }
 
 /* Blank the first line of the bottom portion of the screen. */
 void blank_statusbar(void) _NOTHROW {
@@ -2054,157 +2054,157 @@ static void tui_show_states_at(nwindow *window) _NOTHROW {
  * has been modified on the title bar.  If path isn't NULL, we're either
  * in the file browser or the help viewer, so show either the current
  * directory or the title of help text, that is: whatever is in path. */
-void titlebar(const char *path) _NOTHROW {
-  /* The width of the different title-bar elements, in columns. */
-  Ulong verlen, prefixlen, pathlen, statelen;
-  /* The width that "Modified" would take up. */
-  Ulong pluglen = 0;
-  /* The position at which the center part of the title bar starts. */
-  Ulong offset = 0;
-  /* What is shown in the top left corner. */
-  const char *upperleft = "";
-  /* What is shown before the path -- "DIR:" or nothing. */
-  const char *prefix = "";
-  /* The state of the current buffer -- "Modified", "View", or "". */
-  const char *state = "";
-  /* The presentable form of the pathname. */
-  char *caption;
-  /* The buffer sequence number plus the total buffer count. */
-  char *ranking = NULL;
-  /* If the screen is too small, there is no title bar. */
-  if (ISSET(NO_NCURSES) ? !tui_topwin : !topwin) {
-    return;
-  }
-  nanox_wcoloron(topwin, TITLE_BAR);
-  blank_titlebar();
-  as_an_at = FALSE;
-  /**
-   * Do as Pico:
-   *   if there is not enough width available for all items,
-   *   first sacrifice the version string, then eat up the side spaces,
-   *   then sacrifice the prefix, and only then start dottifying.
-   */
-  /* Figure out the path, prefix and state strings. */
-  if (currmenu == MLINTER) {
-    /* TRANSLATORS: The next five are "labels" in the title bar. */
-    prefix = _("Linting --");
-    path   = openfile->filename;
-  }
-  else {
-    if (!inhelp && path) {
-      prefix = _("DIR:");
-    }
-    else {
-      if (!inhelp) {
-        /* If there are/were multiple buffers, show which out of how many. */
-        if (more_than_one) {
-          ranking = (char *)nmalloc(24);
-          sprintf(ranking, "[%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
-          upperleft = ranking;
-        }
-        else {
-          upperleft = BRANDING;
-        }
-        if (!openfile->filename[0]) {
-          path = _("New Buffer");
-        }
-        else {
-          path = openfile->filename;
-        }
-        if (ISSET(VIEW_MODE)) {
-          state = _("View");
-        }
-        else if (ISSET(STATEFLAGS)) {
-          state = "+.xxxxx";
-        }
-        else if (openfile->modified) {
-          state = _("Modified");
-        }
-        else if (ISSET(RESTRICTED)) {
-          state = _("Restricted");
-        }
-        else {
-          pluglen = (breadth(_("Modified")) + 1);
-        }
-      }
-    }
-  }
-  /* Determine the widths of the four elements, including their padding. */
-  verlen = (breadth(upperleft) + 3);
-  prefixlen = breadth(prefix);
-  if (prefixlen > 0) {
-    ++prefixlen;
-  }
-  pathlen  = breadth(path);
-  statelen = (breadth(state) + 2);
-  if (statelen > 2) {
-    ++pathlen;
-  }
-  /* Only print the version message when there is room for it. */
-  if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
-    nanox_mvwaddstr(topwin, 0, 2, upperleft);
-  }
-  else {
-    verlen = 2;
-    /* If things don't fit yet, give up the placeholder. */
-    if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
-      pluglen = 0;
-    }
-    /* If things still don't fit, give up the side spaces. */
-    if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
-      verlen = 0;
-      statelen -= 2;
-    }
-  }
-  free(ranking);
-  /* If we have side spaces left, center the path name. */
-  if (verlen > 0) {
-    offset = (verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2);
-  }
-  /* Only print the prefix when there is room for it. */
-  if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
-    nanox_mvwaddstr(topwin, 0, offset, prefix);
-    if (prefixlen > 0) {
-      nanox_waddstr(topwin, " ");
-    }
-  }
-  else {
-    nanox_wmove(topwin, 0, offset);
-  }
-  /* Print the full path if there's room; otherwise, dottify it. */
-  if ((int)(pathlen + pluglen + statelen) <= COLS) {
-    caption = display_string(path, 0, pathlen, FALSE, FALSE);
-    nanox_waddstr(topwin, caption);
-    free(caption);
-  }
-  else if ((int)(5 + statelen) <= COLS) {
-    nanox_waddstr(topwin, "...");
-    caption = display_string(path, (3 + pathlen - COLS + statelen), (COLS - statelen), FALSE, FALSE);
-    nanox_waddstr(topwin, caption);
-    free(caption);
-  }
-  /* When requested, show on the title bar the state of three options and the state of the mark and whether a macro is being recorded. */
-  if (*state && ISSET(STATEFLAGS) && !ISSET(VIEW_MODE)) {
-    if (openfile->modified && COLS > 1) {
-      nanox_waddstr(topwin, " *");
-    }
-    if ((int)statelen < COLS) {
-      nanox_wmove(topwin, 0, (COLS + 2 - statelen));
-      nanox_show_states_at(topwin);
-    }
-  }
-  else {
-    /* If there's room, right-align the state word; otherwise, clip it. */
-    if (statelen > 0 && (int)statelen <= COLS) {
-      nanox_mvwaddstr(topwin, 0, (COLS - statelen), state);
-    }
-    else if (statelen > 0) {
-      nanox_mvwaddnstr(topwin, 0, 0, state, actual_x(state, COLS));
-    }
-  }
-  nanox_wcoloroff(topwin, TITLE_BAR);
-  nanox_wrefresh(topwin);
-}
+// void titlebar(const char *path) _NOTHROW {
+//   /* The width of the different title-bar elements, in columns. */
+//   Ulong verlen, prefixlen, pathlen, statelen;
+//   /* The width that "Modified" would take up. */
+//   Ulong pluglen = 0;
+//   /* The position at which the center part of the title bar starts. */
+//   Ulong offset = 0;
+//   /* What is shown in the top left corner. */
+//   const char *upperleft = "";
+//   /* What is shown before the path -- "DIR:" or nothing. */
+//   const char *prefix = "";
+//   /* The state of the current buffer -- "Modified", "View", or "". */
+//   const char *state = "";
+//   /* The presentable form of the pathname. */
+//   char *caption;
+//   /* The buffer sequence number plus the total buffer count. */
+//   char *ranking = NULL;
+//   /* If the screen is too small, there is no title bar. */
+//   if (ISSET(NO_NCURSES) ? !tui_topwin : !topwin) {
+//     return;
+//   }
+//   nanox_wcoloron(topwin, TITLE_BAR);
+//   blank_titlebar();
+//   as_an_at = FALSE;
+//   /**
+//    * Do as Pico:
+//    *   if there is not enough width available for all items,
+//    *   first sacrifice the version string, then eat up the side spaces,
+//    *   then sacrifice the prefix, and only then start dottifying.
+//    */
+//   /* Figure out the path, prefix and state strings. */
+//   if (currmenu == MLINTER) {
+//     /* TRANSLATORS: The next five are "labels" in the title bar. */
+//     prefix = _("Linting --");
+//     path   = openfile->filename;
+//   }
+//   else {
+//     if (!inhelp && path) {
+//       prefix = _("DIR:");
+//     }
+//     else {
+//       if (!inhelp) {
+//         /* If there are/were multiple buffers, show which out of how many. */
+//         if (more_than_one) {
+//           ranking = (char *)nmalloc(24);
+//           sprintf(ranking, "[%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
+//           upperleft = ranking;
+//         }
+//         else {
+//           upperleft = BRANDING;
+//         }
+//         if (!openfile->filename[0]) {
+//           path = _("New Buffer");
+//         }
+//         else {
+//           path = openfile->filename;
+//         }
+//         if (ISSET(VIEW_MODE)) {
+//           state = _("View");
+//         }
+//         else if (ISSET(STATEFLAGS)) {
+//           state = "+.xxxxx";
+//         }
+//         else if (openfile->modified) {
+//           state = _("Modified");
+//         }
+//         else if (ISSET(RESTRICTED)) {
+//           state = _("Restricted");
+//         }
+//         else {
+//           pluglen = (breadth(_("Modified")) + 1);
+//         }
+//       }
+//     }
+//   }
+//   /* Determine the widths of the four elements, including their padding. */
+//   verlen = (breadth(upperleft) + 3);
+//   prefixlen = breadth(prefix);
+//   if (prefixlen > 0) {
+//     ++prefixlen;
+//   }
+//   pathlen  = breadth(path);
+//   statelen = (breadth(state) + 2);
+//   if (statelen > 2) {
+//     ++pathlen;
+//   }
+//   /* Only print the version message when there is room for it. */
+//   if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
+//     nanox_mvwaddstr(topwin, 0, 2, upperleft);
+//   }
+//   else {
+//     verlen = 2;
+//     /* If things don't fit yet, give up the placeholder. */
+//     if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
+//       pluglen = 0;
+//     }
+//     /* If things still don't fit, give up the side spaces. */
+//     if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) > COLS) {
+//       verlen = 0;
+//       statelen -= 2;
+//     }
+//   }
+//   free(ranking);
+//   /* If we have side spaces left, center the path name. */
+//   if (verlen > 0) {
+//     offset = (verlen + (COLS - (verlen + pluglen + statelen) - (prefixlen + pathlen)) / 2);
+//   }
+//   /* Only print the prefix when there is room for it. */
+//   if ((int)(verlen + prefixlen + pathlen + pluglen + statelen) <= COLS) {
+//     nanox_mvwaddstr(topwin, 0, offset, prefix);
+//     if (prefixlen > 0) {
+//       nanox_waddstr(topwin, " ");
+//     }
+//   }
+//   else {
+//     nanox_wmove(topwin, 0, offset);
+//   }
+//   /* Print the full path if there's room; otherwise, dottify it. */
+//   if ((int)(pathlen + pluglen + statelen) <= COLS) {
+//     caption = display_string(path, 0, pathlen, FALSE, FALSE);
+//     nanox_waddstr(topwin, caption);
+//     free(caption);
+//   }
+//   else if ((int)(5 + statelen) <= COLS) {
+//     nanox_waddstr(topwin, "...");
+//     caption = display_string(path, (3 + pathlen - COLS + statelen), (COLS - statelen), FALSE, FALSE);
+//     nanox_waddstr(topwin, caption);
+//     free(caption);
+//   }
+//   /* When requested, show on the title bar the state of three options and the state of the mark and whether a macro is being recorded. */
+//   if (*state && ISSET(STATEFLAGS) && !ISSET(VIEW_MODE)) {
+//     if (openfile->modified && COLS > 1) {
+//       nanox_waddstr(topwin, " *");
+//     }
+//     if ((int)statelen < COLS) {
+//       nanox_wmove(topwin, 0, (COLS + 2 - statelen));
+//       nanox_show_states_at(topwin);
+//     }
+//   }
+//   else {
+//     /* If there's room, right-align the state word; otherwise, clip it. */
+//     if (statelen > 0 && (int)statelen <= COLS) {
+//       nanox_mvwaddstr(topwin, 0, (COLS - statelen), state);
+//     }
+//     else if (statelen > 0) {
+//       nanox_mvwaddnstr(topwin, 0, 0, state, actual_x(state, COLS));
+//     }
+//   }
+//   nanox_wcoloroff(topwin, TITLE_BAR);
+//   nanox_wrefresh(topwin);
+// }
 
 /* Draw a bar at the bottom with some minimal state information. */
 void minibar(void) _NOTHROW {
@@ -2918,33 +2918,33 @@ void bottombars(const int menu) _NOTHROW {
 // }
 
 /* Draw a `scroll bar` on the righthand side of the edit window. */
-static void draw_scrollbar(void) _NOTHROW {
-  int fromline     = (openfile->edittop->lineno - 1);
-  int totallines   = openfile->filebot->lineno;
-  int coveredlines = editwinrows;
-  linestruct *line;
-  int lowest, highest, extras;
-  if (ISSET(SOFTWRAP)) {
-    line = openfile->edittop;
-    extras = (extra_chunks_in(line, editwincols) - chunk_for(openfile->firstcolumn, line, editwincols));
-    while ((line->lineno + extras) < (fromline + editwinrows) && line->next) {
-      line = line->next;
-      extras += extra_chunks_in(line, editwincols);
-    }
-    coveredlines = (line->lineno - fromline);
-  }
-  lowest  = ((fromline * editwinrows) / totallines);
-  highest = (lowest + (editwinrows * coveredlines) / totallines);
-  if (editwinrows > totallines && !ISSET(SOFTWRAP)) {
-    highest = editwinrows;
-  }
-  for (int row=0; row<editwinrows; ++row) {
-    if (!ISSET(NO_NCURSES)) {
-      bardata[row] = (' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE));
-      mvwaddch(midwin, row, (COLS - 1), bardata[row]);
-    }
-  }
-}
+// static void draw_scrollbar(void) _NOTHROW {
+//   int fromline     = (openfile->edittop->lineno - 1);
+//   int totallines   = openfile->filebot->lineno;
+//   int coveredlines = editwinrows;
+//   linestruct *line;
+//   int lowest, highest, extras;
+//   if (ISSET(SOFTWRAP)) {
+//     line = openfile->edittop;
+//     extras = (extra_chunks_in(line, editwincols) - chunk_for(openfile->firstcolumn, line, editwincols));
+//     while ((line->lineno + extras) < (fromline + editwinrows) && line->next) {
+//       line = line->next;
+//       extras += extra_chunks_in(line, editwincols);
+//     }
+//     coveredlines = (line->lineno - fromline);
+//   }
+//   lowest  = ((fromline * editwinrows) / totallines);
+//   highest = (lowest + (editwinrows * coveredlines) / totallines);
+//   if (editwinrows > totallines && !ISSET(SOFTWRAP)) {
+//     highest = editwinrows;
+//   }
+//   for (int row=0; row<editwinrows; ++row) {
+//     if (!ISSET(NO_NCURSES)) {
+//       bardata[row] = (' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE));
+//       mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+//     }
+//   }
+// }
 
 /* Scroll the edit window one row in the given direction, and draw the relevant content on the resultant blank row. */
 // void edit_scroll(bool direction) {
@@ -3167,85 +3167,85 @@ static void draw_scrollbar(void) _NOTHROW {
 // }
 
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
-void edit_redraw(linestruct *old_current, update_type manner) {
-  PROFILE_FUNCTION;
-  Ulong was_pww = openfile->placewewant;
-  openfile->placewewant = xplustabs();
-  /* If the current line is offscreen, scroll until it's onscreen. */
-  if (current_is_offscreen()) {
-    adjust_viewport(ISSET(JUMPY_SCROLLING) ? CENTERING : manner);
-    refresh_needed = TRUE;
-    return;
-  }
-  /* Return early if running in gui mode. */
-  if (ISSET(USING_GUI)) {
-    return;
-  }
-  /* If the mark is on, update all lines between old_current and current. */
-  if (openfile->mark) {
-    linestruct *line = old_current;
-    while (line != openfile->current) {
-      update_line_curses(line, 0);
-      line = ((line->lineno > openfile->current->lineno) ? line->prev : line->next);
-    }
-  }
-  else {
-    /* Otherwise, update old_current only if it differs from current and was horizontally scrolled. */
-    if (old_current != openfile->current && get_page_start(was_pww, editwincols) > 0) {
-      update_line_curses(old_current, 0);
-    }
-  }
-  /* Update current if the mark is on or it has changed "page", or if it differs from old_current and needs to be horizontally scrolled. */
-  if (line_needs_update(was_pww, openfile->placewewant) || (old_current != openfile->current && get_page_start(openfile->placewewant, editwincols) > 0)) {
-    update_line_curses(openfile->current, openfile->current_x);
-  }
-}
+// void edit_redraw(linestruct *old_current, update_type manner) {
+//   PROFILE_FUNCTION;
+//   Ulong was_pww = openfile->placewewant;
+//   openfile->placewewant = xplustabs();
+//   /* If the current line is offscreen, scroll until it's onscreen. */
+//   if (current_is_offscreen()) {
+//     adjust_viewport(ISSET(JUMPY_SCROLLING) ? CENTERING : manner);
+//     refresh_needed = TRUE;
+//     return;
+//   }
+//   /* Return early if running in gui mode. */
+//   if (ISSET(USING_GUI)) {
+//     return;
+//   }
+//   /* If the mark is on, update all lines between old_current and current. */
+//   if (openfile->mark) {
+//     linestruct *line = old_current;
+//     while (line != openfile->current) {
+//       update_line_curses(line, 0);
+//       line = ((line->lineno > openfile->current->lineno) ? line->prev : line->next);
+//     }
+//   }
+//   else {
+//     /* Otherwise, update old_current only if it differs from current and was horizontally scrolled. */
+//     if (old_current != openfile->current && get_page_start(was_pww, editwincols) > 0) {
+//       update_line_curses(old_current, 0);
+//     }
+//   }
+//   /* Update current if the mark is on or it has changed "page", or if it differs from old_current and needs to be horizontally scrolled. */
+//   if (line_needs_update(was_pww, openfile->placewewant) || (old_current != openfile->current && get_page_start(openfile->placewewant, editwincols) > 0)) {
+//     update_line_curses(openfile->current, openfile->current_x);
+//   }
+// }
 
 /* Refresh the screen without changing the position of lines.  Use this if we've moved and changed text. */
-void edit_refresh(void) {
-  PROFILE_FUNCTION;
-  linestruct *line;
-  int row = 0;
-  /* If the current line is out of view, get it back on screen. */
-  if (current_is_offscreen()) {
-    adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
-  }
-  /* When needed and useful, initialize the colors for the current syntax. */
-  if (!ISSET(NO_NCURSES) && openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
-    prepare_palette();
-  }
-  /* When the line above the viewport does not have multidata, recalculate all. */
-  recook |= (ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata);
-  if (recook) {
-    precalc_multicolorinfo();
-    perturbed = FALSE;
-    recook    = FALSE;
-  }
-  /* Only draw sidebar when approptiet, i.e: when there is more then one ROWS worth of data. */
-  if (sidebar && openfile->filebot->lineno > editwinrows) {
-    draw_scrollbar();
-  }
-  line = openfile->edittop;
-  while (row < editwinrows && line) {
-    row += update_line_curses(line, ((line == openfile->current) ? openfile->current_x : 0));
-    line = line->next;
-  }
-  while (row < editwinrows) {
-    nanox_blank_row(midwin, row);
-    /* If full linenumber bar is enabled, then draw it. */
-    if (config->linenumber.fullverticalbar) {
-      mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumber.barcolor);
-    }
-    /* Only draw sidebar when on and when the file is longer then editwin rows. */
-    if (sidebar && openfile->filebot->lineno > editwinrows) {
-      mvwaddch(midwin, row, (COLS - 1), bardata[row]);
-    }
-    ++row;
-  }
-  place_the_cursor();
-  nanox_wnoutrefresh(midwin);
-  refresh_needed = FALSE;
-}
+// void edit_refresh(void) {
+//   PROFILE_FUNCTION;
+//   linestruct *line;
+//   int row = 0;
+//   /* If the current line is out of view, get it back on screen. */
+//   if (current_is_offscreen()) {
+//     adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
+//   }
+//   /* When needed and useful, initialize the colors for the current syntax. */
+//   if (!ISSET(NO_NCURSES) && openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
+//     prepare_palette();
+//   }
+//   /* When the line above the viewport does not have multidata, recalculate all. */
+//   recook |= (ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata);
+//   if (recook) {
+//     precalc_multicolorinfo();
+//     perturbed = FALSE;
+//     recook    = FALSE;
+//   }
+//   /* Only draw sidebar when approptiet, i.e: when there is more then one ROWS worth of data. */
+//   if (sidebar && openfile->filebot->lineno > editwinrows) {
+//     draw_scrollbar();
+//   }
+//   line = openfile->edittop;
+//   while (row < editwinrows && line) {
+//     row += update_line_curses(line, ((line == openfile->current) ? openfile->current_x : 0));
+//     line = line->next;
+//   }
+//   while (row < editwinrows) {
+//     nanox_blank_row(midwin, row);
+//     /* If full linenumber bar is enabled, then draw it. */
+//     if (config->linenumber.fullverticalbar) {
+//       mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumber.barcolor);
+//     }
+//     /* Only draw sidebar when on and when the file is longer then editwin rows. */
+//     if (sidebar && openfile->filebot->lineno > editwinrows) {
+//       mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+//     }
+//     ++row;
+//   }
+//   place_the_cursor();
+//   nanox_wnoutrefresh(midwin);
+//   refresh_needed = FALSE;
+// }
 
 /* Move edittop so that current is on the screen.  manner says how:
  * STATIONARY means that the cursor should stay on the same screen row,

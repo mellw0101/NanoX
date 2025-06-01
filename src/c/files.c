@@ -113,7 +113,7 @@ void prepare_for_display(void) {
   }
   /* Update the title bar, since the filename may have changed. */
   if (!inhelp) {
-    titlebar_curses(NULL);
+    titlebar(NULL);
   }
   /* Precalculate the data for any multiline coloring regexes. */
   if (!openfile->filetop->multidata) {
@@ -463,7 +463,7 @@ void set_modified_for(openfilestruct *const file) {
   }
   file->modified = TRUE;
   if (!ISSET(NO_NCURSES)) {
-    titlebar_curses(NULL);
+    titlebar(NULL);
   }
   if (file->lock_filename) {
     write_lockfile(file->lock_filename, file->filename, TRUE);

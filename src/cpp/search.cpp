@@ -323,12 +323,12 @@ void do_findnext(void) {
 }
 
 /* Report on the status bar that the given string was not found. */
-void not_found_msg(const char *str) _NOTHROW {
-  char *disp     = display_string(str, 0, ((COLS / 2) + 1), FALSE, FALSE);
-  Ulong numchars = actual_x(disp, wideness(disp, (COLS / 2)));
-  statusline(AHEM, _("\"%.*s%s\" not found"), numchars, disp, (disp[numchars] == '\0') ? "" : "...");
-  free(disp);
-}
+// void not_found_msg(const char *str) _NOTHROW {
+//   char *disp     = display_string(str, 0, ((COLS / 2) + 1), FALSE, FALSE);
+//   Ulong numchars = actual_x(disp, wideness(disp, (COLS / 2)));
+//   statusline(AHEM, _("\"%.*s%s\" not found"), numchars, disp, (disp[numchars] == '\0') ? "" : "...");
+//   free(disp);
+// }
 
 /* Search for the global string 'last_search'.  Inform the user when the string occurs only once. */
 void go_looking(void) {

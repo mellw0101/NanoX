@@ -49,11 +49,11 @@ linestruct *pletion_line = NULL;
 /* The answer string used by the status-bar prompt. */
 // char *answer = NULL;
 /* The last string we searched for. */
-char *last_search = NULL;
+// char *last_search = NULL;
 /* Whether the last search found something. */
 int didfind = 0;
 /* The current browser directory when trying to do tab completion. */
-char *present_path = NULL;
+// char *present_path = NULL;
 /* Our flags array, containing the states of all global options. */
 // Ulong flags[1] = {0};
 

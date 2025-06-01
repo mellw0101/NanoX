@@ -48,6 +48,7 @@ void tidy_up_after_search(void) {
   recook |= perturbed;
 }
 
+/* Go to the specified `line-number` and `x` position, in `file`. */
 void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int total_rows) {
   ASSERT(file);
   if (lineno > (file->edittop->lineno + total_rows) || (ISSET(SOFTWRAP) && lineno > file->current->lineno)) {
@@ -59,11 +60,15 @@ void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int to
   refresh_needed    = TRUE;
 }
 
+/* Go to the specified `line-number` and `x` position, in the currently open buffer. */
 void goto_line_posx(long lineno, Ulong x) {
-  if (ISSET(USING_GUI) && openeditor) {
-    goto_line_posx_for(openeditor->openfile, lineno, x, openeditor->rows);
-  }
-  else {
-    goto_line_posx_for(openfile, lineno, x, editwinrows);
-  }
+  goto_line_posx_for(CONTEXT_OPENFILE, lineno, x, CONTEXT_ROWS);
+}
+
+/* Report on the status bar that the given string was not found. */
+void not_found_msg(const char *const restrict str) {
+  char *disp     = display_string(str, 0, ((COLS / 2) + 1), FALSE, FALSE);
+  Ulong numchars = actual_x(disp, wideness(disp, (COLS / 2)));
+  statusline_all(AHEM, _("\"%.*s%s\" not found"), numchars, disp, (disp[numchars] == '\0') ? "" : "...");
+  free(disp);
 }

@@ -777,131 +777,84 @@ void edit_scroll(bool direction) {
   edit_scroll_for(CONTEXT_OPENFILE, direction);
 }
 
-/* ----------------------------- Curses ----------------------------- */
-
-void blank_row_curses(WINDOW *const window, int row) {
-  ASSERT(window);
-  ASSERT(row >= 0);
-  wmove(window, row, 0);
-  wclrtoeol(window);
-}
-
-/* Blank the first line of the top portion of the screen.  Using ncurses. */
-void blank_titlebar_curses(void) {
-  mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
-}
-
-void blank_statusbar_curses(void) {
-  blank_row_curses(footwin, 0);
-}
-
-/* Blank out the two help lines (when they are present).  Ncurses version. */
-void blank_bottombars_curses(void) {
-  if (!ISSET(NO_HELP) && LINES > 5) {
-    blank_row_curses(footwin, 1);
-    blank_row_curses(footwin, 2);
-  }
-}
-
-/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
-void statusline_curses_va(message_type type, const char *const restrict format, va_list ap) {
-  static Ulong start_col = 0;
-  bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
-  char *compound;
-  char *message;
-  bool bracketed;
-  int color;
-  va_list copy;
-  if (type >= AHEM) {
-    waiting_codes = 0;
-  }
-  if (type < lastmessage && lastmessage > NOTICE) {
+/* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
+void edit_redraw(linestruct *const old_current, update_type manner) {
+  ASSERT(old_current);
+  Ulong was_pww = openfile->placewewant;
+  openfile->placewewant = xplustabs();
+  /* If the current line is offscreen, scroll until it's onscreen. */
+  if (current_is_offscreen()) {
+    adjust_viewport(ISSET(JUMPY_SCROLLING) ? CENTERING : manner);
+    refresh_needed = TRUE;
     return;
   }
-  /* Construct the message from the arguments. */
-  compound = xmalloc(MAXCHARLEN * COLS + 1);
-  va_copy(copy, ap);
-  vsnprintf(compound, (MAXCHARLEN * COLS + 1), format, copy);
-  va_end(copy);
-  if (isendwin()) {
-    writeferr("%s\n", compound);
-    free(compound);
+  /* Return early if running in gui mode. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
+  /* If the mark is on, update all lines between old_current and current. */
+  if (openfile->mark) {
+    linestruct *line = old_current;
+    while (line != openfile->current) {
+      update_line_curses(line, 0);
+      line = ((line->lineno > openfile->current->lineno) ? line->prev : line->next);
+    }
   }
   else {
-    if (!we_are_running && type == ALERT && openfile && !openfile->fmt && !openfile->errormessage && !CLIST_SINGLE(openfile)) {
-      openfile->errormessage = copy_of(compound);
+    /* Otherwise, update old_current only if it differs from current and was horizontally scrolled. */
+    if (old_current != openfile->current && get_page_start(was_pww, editwincols) > 0) {
+      update_line_curses(old_current, 0);
     }
-    /* On a one row terminal, ensure any changes in the edit window are written first, to prevent them from overwriting the message. */
-    if (LINES == 1 && type < INFO) {
-      wnoutrefresh(midwin);
-    }
-    /* If there are multiple alert messages, add trailng dot's first. */
-    if (lastmessage == ALERT) {
-      if (start_col > 4) {
-        wmove(footwin, 0, (COLS + 2 - start_col));
-        wattron(footwin, interface_color_pair[ERROR_MESSAGE]);
-        waddnstr(footwin, S__LEN("..."));
-        wattroff(footwin, interface_color_pair[ERROR_MESSAGE]);
-        wnoutrefresh(footwin);
-        start_col = 0;
-        napms(100);
-        beep();
-      }
-      free(compound);
-      return;
-    }
-    else if (type > NOTICE) {
-      if (type == ALERT) {
-        beep();
-      }
-      color = ERROR_MESSAGE;
-    }
-    else if (type == NOTICE) {
-      color = SELECTED_TEXT;
-    }
-    else {
-      color = STATUS_BAR;
-    }
-    lastmessage = type;
-    blank_statusbar_curses();
-    UNSET(WHITESPACE_DISPLAY);
-    message = display_string(compound, 0, COLS, FALSE, FALSE);
-    if (showed_whitespace) {
-      SET(WHITESPACE_DISPLAY);
-    }
-    start_col = ((COLS - breadth(message)) / 2);
-    bracketed = (start_col > 1);
-    wmove(footwin, 0, (bracketed ? (start_col - 2) : start_col));
-    wattron(footwin, interface_color_pair[color]);
-    if (bracketed) {
-      waddnstr(footwin, S__LEN("[ "));
-      waddstr(footwin, message);
-      waddnstr(footwin, S__LEN(" ]"));
-    }
-    else {
-      waddstr(footwin, message);
-    }
-    wattroff(footwin, interface_color_pair[color]);
-    /* Tell `footwin` to refresh. */
-    wrefresh(footwin);
-    free(compound);
-    free(message);
-    /* When requested, wipe the statusbar after just one keystroke, otherwise wipe after 20. */
-    countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
+  }
+  /* Update current if the mark is on or it has changed "page", or if it differs from old_current and needs to be horizontally scrolled. */
+  if (line_needs_update(was_pww, openfile->placewewant) || (old_current != openfile->current && get_page_start(openfile->placewewant, editwincols) > 0)) {
+    update_line_curses(openfile->current, openfile->current_x);
   }
 }
 
-/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
-void statusline_curses(message_type type, const char *const restrict msg, ...) {
-  va_list ap;
-  va_start(ap, msg);
-  statusline_curses_va(type, msg, ap);
-  va_end(ap);
-}
-
-/* Display a normal message on the status bar, quietly.  Ncurses version. */
-void statusbar_curses(const char *const restrict msg) {
-  statusline_curses(HUSH, "%s", msg);
+/* Refresh the screen without changing the position of lines.  Use this if we've moved and changed text. */
+void edit_refresh(void) {
+  linestruct *line;
+  int row = 0;
+  /* If the current line is out of view, get it back on screen. */
+  if (current_is_offscreen()) {
+    adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
+  }
+  /* When needed and useful, initialize the colors for the current syntax. */
+  if (!ISSET(NO_NCURSES) && openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
+    prepare_palette();
+  }
+  /* When the line above the viewport does not have multidata, recalculate all. */
+  recook |= (ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata);
+  if (recook) {
+    precalc_multicolorinfo();
+    perturbed = FALSE;
+    recook    = FALSE;
+  }
+  /* Only draw sidebar when approptiet, i.e: when there is more then one ROWS worth of data. */
+  if (sidebar && openfile->filebot->lineno > editwinrows) {
+    draw_scrollbar_curses();
+  }
+  line = openfile->edittop;
+  while (row < editwinrows && line) {
+    row += update_line_curses(line, ((line == openfile->current) ? openfile->current_x : 0));
+    line = line->next;
+  }
+  while (row < editwinrows) {
+    blank_row_curses(midwin, row);
+    /* If full linenumber bar is enabled, then draw it. */
+    if (config->linenumber.fullverticalbar) {
+      mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumber.barcolor);
+    }
+    /* Only draw sidebar when on and when the openfile is longer then editwin rows. */
+    if (sidebar && openfile->filebot->lineno > editwinrows) {
+      mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+    }
+    ++row;
+  }
+  place_the_cursor();
+  wnoutrefresh(midwin);
+  refresh_needed = FALSE;
 }
 
 /* If path is NULL, we're in normal editing mode, so display the current
@@ -909,7 +862,7 @@ void statusbar_curses(const char *const restrict msg) {
  * has been modified on the title bar.  If path isn't NULL, we're either
  * in the file browser or the help viewer, so show either the current
  * directory or the title of help text, that is: whatever is in path. */
-void titlebar_curses(const char *path) {
+void titlebar(const char *path) {
   /* The width of the diffrent title-bar elements, in columns. */
   Ulong verlen;
   Ulong prefixlen;
@@ -1058,6 +1011,143 @@ void titlebar_curses(const char *path) {
   }
   wattroff(topwin, interface_color_pair[TITLE_BAR]);
   wrefresh(topwin);
+}
+
+/* Blank all lines of the middle portion of the screen (the edit window). */
+void blank_edit(void) {
+  /* Only perform any action when in ncurses mode for now. */
+  if (!ISSET(NO_NCURSES)) {
+    for (int row=0; row<editwinrows; ++row) {
+      blank_row_curses(midwin, row);
+    }
+  }
+}
+
+/* ----------------------------- Curses ----------------------------- */
+
+void blank_row_curses(WINDOW *const window, int row) {
+  ASSERT(window);
+  ASSERT(row >= 0);
+  wmove(window, row, 0);
+  wclrtoeol(window);
+}
+
+/* Blank the first line of the top portion of the screen.  Using ncurses. */
+void blank_titlebar_curses(void) {
+  mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
+}
+
+void blank_statusbar_curses(void) {
+  blank_row_curses(footwin, 0);
+}
+
+/* Blank out the two help lines (when they are present).  Ncurses version. */
+void blank_bottombars_curses(void) {
+  if (!ISSET(NO_HELP) && LINES > 5) {
+    blank_row_curses(footwin, 1);
+    blank_row_curses(footwin, 2);
+  }
+}
+
+/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
+void statusline_curses_va(message_type type, const char *const restrict format, va_list ap) {
+  static Ulong start_col = 0;
+  bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
+  char *compound;
+  char *message;
+  bool bracketed;
+  int color;
+  va_list copy;
+  if (type >= AHEM) {
+    waiting_codes = 0;
+  }
+  if (type < lastmessage && lastmessage > NOTICE) {
+    return;
+  }
+  /* Construct the message from the arguments. */
+  compound = xmalloc(MAXCHARLEN * COLS + 1);
+  va_copy(copy, ap);
+  vsnprintf(compound, (MAXCHARLEN * COLS + 1), format, copy);
+  va_end(copy);
+  if (isendwin()) {
+    writeferr("%s\n", compound);
+    free(compound);
+  }
+  else {
+    if (!we_are_running && type == ALERT && openfile && !openfile->fmt && !openfile->errormessage && !CLIST_SINGLE(openfile)) {
+      openfile->errormessage = copy_of(compound);
+    }
+    /* On a one row terminal, ensure any changes in the edit window are written first, to prevent them from overwriting the message. */
+    if (LINES == 1 && type < INFO) {
+      wnoutrefresh(midwin);
+    }
+    /* If there are multiple alert messages, add trailng dot's first. */
+    if (lastmessage == ALERT) {
+      if (start_col > 4) {
+        wmove(footwin, 0, (COLS + 2 - start_col));
+        wattron(footwin, interface_color_pair[ERROR_MESSAGE]);
+        waddnstr(footwin, S__LEN("..."));
+        wattroff(footwin, interface_color_pair[ERROR_MESSAGE]);
+        wnoutrefresh(footwin);
+        start_col = 0;
+        napms(100);
+        beep();
+      }
+      free(compound);
+      return;
+    }
+    else if (type > NOTICE) {
+      if (type == ALERT) {
+        beep();
+      }
+      color = ERROR_MESSAGE;
+    }
+    else if (type == NOTICE) {
+      color = SELECTED_TEXT;
+    }
+    else {
+      color = STATUS_BAR;
+    }
+    lastmessage = type;
+    blank_statusbar_curses();
+    UNSET(WHITESPACE_DISPLAY);
+    message = display_string(compound, 0, COLS, FALSE, FALSE);
+    if (showed_whitespace) {
+      SET(WHITESPACE_DISPLAY);
+    }
+    start_col = ((COLS - breadth(message)) / 2);
+    bracketed = (start_col > 1);
+    wmove(footwin, 0, (bracketed ? (start_col - 2) : start_col));
+    wattron(footwin, interface_color_pair[color]);
+    if (bracketed) {
+      waddnstr(footwin, S__LEN("[ "));
+      waddstr(footwin, message);
+      waddnstr(footwin, S__LEN(" ]"));
+    }
+    else {
+      waddstr(footwin, message);
+    }
+    wattroff(footwin, interface_color_pair[color]);
+    /* Tell `footwin` to refresh. */
+    wrefresh(footwin);
+    free(compound);
+    free(message);
+    /* When requested, wipe the statusbar after just one keystroke, otherwise wipe after 20. */
+    countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
+  }
+}
+
+/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
+void statusline_curses(message_type type, const char *const restrict msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+  statusline_curses_va(type, msg, ap);
+  va_end(ap);
+}
+
+/* Display a normal message on the status bar, quietly.  Ncurses version. */
+void statusbar_curses(const char *const restrict msg) {
+  statusline_curses(HUSH, "%s", msg);
 }
 
 /* Draw a bar at the bottom with some minimal state information. */
@@ -1515,7 +1605,8 @@ void draw_row_curses(int row, const char *const restrict converted, linestruct *
 
 /* Redraw the given line so that the character at the given index is visible -- if necessary, scroll the line
  * horizontally (when not softwrapping). Return the number of rows "consumed" (relevant when softwrapping). */
-int update_line_curses(linestruct *const line, Ulong index) {
+int update_line_curses_for(openfilestruct *const file, linestruct *const line, Ulong index) {
+  ASSERT(file);
   ASSERT(line);
   /* The row in the edit window we will be updating. */
   int row;
@@ -1524,14 +1615,14 @@ int update_line_curses(linestruct *const line, Ulong index) {
   /* From which column a horizontally scrolled line is displayed. */
   Ulong from_col;
   if (ISSET(SOFTWRAP)) {
-    return update_softwrapped_line_curses(line);
+    return update_softwrapped_line_curses_for(file, line);
   }
   sequel_column = 0;
-  row = (line->lineno - openfile->edittop->lineno);
+  row = (line->lineno - file->edittop->lineno);
   from_col = get_page_start(wideness(line->data, index), editwincols);
   /* Expand the piece to be drawn to its representable form, and draw it. */
   converted = display_string(line->data, from_col, editwincols, TRUE, FALSE);
-  draw_row_curses(row, converted, line, from_col);
+  draw_row_curses_for(file, row, converted, line, from_col);
   free(converted);
   if (!ISSET(NO_NCURSES)) {
     if (from_col > 0) {
@@ -1541,21 +1632,29 @@ int update_line_curses(linestruct *const line, Ulong index) {
       mvwaddchwattr(midwin, row, (COLS - 1), '>', hilite_attribute);
     }
   }
-  if (spotlighted && line == openfile->current) {
-    spotlight_curses(light_from_col, light_to_col);
+  if (spotlighted && line == file->current) {
+    spotlight_curses_for(file, light_from_col, light_to_col);
   }
   return 1;
 }
 
+/* Redraw the given line so that the character at the given index is visible -- if necessary, scroll the line
+ * horizontally (when not softwrapping). Return the number of rows "consumed" (relevant when softwrapping). */
+int update_line_curses(linestruct *const line, Ulong index) {
+  return update_line_curses_for(openfile, line, index);
+}
+
 /* Redraw all the chunks of the given line (as far as they fit onscreen), unless it's edittop,
  * which will be displayed from column firstcolumn.  Return the number of rows that were "consumed". */
-int update_softwrapped_line_curses(linestruct *const line) {
+int update_softwrapped_line_curses_for(openfilestruct *const file, linestruct *const line) {
+  ASSERT(file);
+  ASSERT(line);
   /* The first row in the edit window that gets updated. */
   int starting_row;
   /* The row in the edit window we will write to. */
   int row = 0;
   /* An iterator needed to find the relevent row. */
-  linestruct *someline = openfile->edittop;
+  linestruct *someline = file->edittop;
   /* The starting column of the current chunk. */
   Ulong from_col = 0;
   /* The end column of the current_chunk. */
@@ -1566,11 +1665,11 @@ int update_softwrapped_line_curses(linestruct *const line) {
   bool kickoff = TRUE;
   /* Becomes 'TRUE' when the last chunk of the line has been reached. */
   bool end_of_line = FALSE;
-  if (line == openfile->edittop) {
-    from_col = openfile->firstcolumn;
+  if (line == file->edittop) {
+    from_col = file->firstcolumn;
   }
   else {
-    row -= chunk_for(openfile->firstcolumn, openfile->edittop, editwincols);
+    row -= chunk_for(file->firstcolumn, file->edittop, editwincols);
   }
   /* Find out on which screen row the target line should be shown. */
   while (someline != line && someline) {
@@ -1587,22 +1686,31 @@ int update_softwrapped_line_curses(linestruct *const line) {
     sequel_column = (end_of_line ? 0 : to_col);
     /* Convert the chunk to its displayable form and draw it. */
     converted = display_string(line->data, from_col, (to_col - from_col), TRUE, FALSE);
-    draw_row_curses(row++, converted, line, from_col);
+    draw_row_curses_for(file, row++, converted, line, from_col);
     free(converted);
     from_col = to_col;
   }
-  if (spotlighted && line == openfile->current) {
+  if (spotlighted && line == file->current) {
     spotlight_softwrapped_curses(light_from_col, light_to_col);
   }
   return (row - starting_row);
 }
 
+/* Redraw all the chunks of the given line (as far as they fit onscreen), unless it's edittop,
+ * which will be displayed from column firstcolumn.  Return the number of rows that were "consumed". */
+int update_softwrapped_line_curses(linestruct *const line) {
+  return update_softwrapped_line_curses_for(openfile, line);
+}
+
+/* ----------------------------- Spotlight curses ----------------------------- */
+
 /* Highlight the text between the given two columns on the current line. */
-void spotlight_curses(Ulong from_col, Ulong to_col) {
+void spotlight_curses_for(openfilestruct *const file, Ulong from_col, Ulong to_col) {
+  ASSERT(file);
   Ulong right_edge = (get_page_start(from_col, editwincols) + editwincols);
   bool  overshoots = (to_col > right_edge);
   char *word;
-  place_the_cursor();
+  place_the_cursor_curses_for(file);
   /* Limit the end column to the edge of the screen. */
   if (overshoots) {
     to_col = right_edge;
@@ -1613,20 +1721,23 @@ void spotlight_curses(Ulong from_col, Ulong to_col) {
     ++to_col;
   }
   else {
-    word = display_string(openfile->current->data, from_col, (to_col - from_col), FALSE, overshoots);
+    word = display_string(file->current->data, from_col, (to_col - from_col), FALSE, overshoots);
   }
-  // nanox_wcoloron(midwin, SPOTLIGHTED);
   wattron(midwin, interface_color_pair[SPOTLIGHTED]);
-  // nanox_waddnstr(midwin, word, actual_x(word, to_col));
   waddnstr(midwin, word, actual_x(word, to_col));
   if (overshoots) {
-    // nanox_mvwaddch(midwin, openfile->cursor_row, (COLS - 1 - sidebar), '>');
-    mvwaddch(midwin, openfile->cursor_row, (COLS - 1 - sidebar), '>');
+    mvwaddch(midwin, file->cursor_row, (COLS - 1 - sidebar), '>');
   }
-  // nanox_wcoloroff(midwin, SPOTLIGHTED);
   wattroff(midwin, interface_color_pair[SPOTLIGHTED]);
   free(word);
 }
+
+/* Highlight the text between the given two columns on the current line. */
+void spotlight_curses(Ulong from_col, Ulong to_col) {
+  spotlight_curses_for(openfile, from_col, to_col);
+}
+
+/* ----------------------------- Spotlight softwrapped curses ----------------------------- */
 
 /* Highlight the text between the given two columns on the current line. */
 void spotlight_softwrapped_curses_for(openfilestruct *const file, Ulong from_col, Ulong to_col) {

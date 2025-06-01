@@ -99,6 +99,10 @@ char *syntaxstr = NULL;
 char *statedir = NULL;
 /* A ptr to the full suggested string. */
 char *suggest_str = NULL;
+/* The current browser directory when trying to do tab completion. */
+char *present_path = NULL;
+/* The last string we searched for. */
+char *last_search = NULL;
 
 /* ----------------------------- char [] ----------------------------- */
 

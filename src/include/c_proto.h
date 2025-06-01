@@ -56,6 +56,8 @@ extern char *custom_nanorc;
 extern char *syntaxstr;
 extern char *statedir;
 extern char *suggest_str;
+extern char *present_path;
+extern char *last_search;
 
 extern char suggest_buf[1024];
 
@@ -742,6 +744,10 @@ void  set_blankdelay_to_one(void);
 Ulong waiting_keycodes(void);
 void  edit_scroll_for(openfilestruct *const file, bool direction);
 void  edit_scroll(bool direction);
+void  edit_redraw(linestruct *const old_current, update_type manner);
+void  edit_refresh(void);
+void  titlebar(const char *path);
+void  blank_edit(void);
 
 /* ----------------------------- Curses ----------------------------- */
 
@@ -752,7 +758,6 @@ void blank_bottombars_curses(void);
 void statusline_curses_va(message_type type, const char *const restrict format, va_list ap);
 void statusline_curses(message_type type, const char *const restrict msg, ...) _PRINTFLIKE(2, 3);
 void statusbar_curses(const char *const restrict msg);
-void titlebar_curses(const char *path);
 void minibar_curses(void);
 void post_one_key_curses(const char *const restrict keystroke, const char *const restrict tag, int width);
 void bottombars_curses(int menu);
@@ -764,9 +769,18 @@ void full_refresh_curses(void);
 void wipe_statusbar_curses(void);
 void draw_row_curses_for(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void draw_row_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
+int  update_line_curses_for(openfilestruct *const file, linestruct *const line, Ulong index);
 int  update_line_curses(linestruct *const line, Ulong index);
+int  update_softwrapped_line_curses_for(openfilestruct *const file, linestruct *const line);
 int  update_softwrapped_line_curses(linestruct *const line);
+
+/* ----------------------------- Spotlight curses ----------------------------- */
+
+void spotlight_curses_for(openfilestruct *const file, Ulong from_col, Ulong to_col);
 void spotlight_curses(Ulong from_col, Ulong to_col);
+
+/* ----------------------------- Spotlight softwrapped curses ----------------------------- */
+
 void spotlight_softwrapped_curses_for(openfilestruct *const file, Ulong from_col, Ulong to_col);
 void spotlight_softwrapped_curses(Ulong from_col, Ulong to_col);
 
@@ -815,6 +829,7 @@ bool regexp_init(const char *regexp);
 void tidy_up_after_search(void);
 void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int total_rows);
 void goto_line_posx(long lineno, Ulong x);
+void not_found_msg(const char *const restrict str);
 
 
 /* ---------------------------------------------------------- move.c ---------------------------------------------------------- */
