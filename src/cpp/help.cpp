@@ -4,21 +4,21 @@
 /* The text displayed in the help window. */
 static char *help_text = NULL;
 /* The point in the help text just after the title. */
-static const char *start_of_body = NULL;
+// static const char *start_of_help_body = NULL;
 /* The point in the help text where the shortcut descriptions begin. */
-static char *end_of_intro = NULL;
+// static char *end_of_help_intro = NULL;
 /* The offset (in bytes) of the topleft of the shown help text. */
-static Ulong location;
+// static Ulong help_location;
 
-// Allocate space for the help text for the current menu,
-// and concatenate the different pieces of text into it.
-// The help text is divided into three parts:
-// - The untranslated introduction,
-// - The untranslated function key list, and
-// - The untranslated function key descriptions.
-// The function key list is built by iterating over all functions,
-// and for each function, iterating over all shortcuts.
-// The function key descriptions are built by iterating over all functions. 
+/* Allocate space for the help text for the current menu,
+ * and concatenate the different pieces of text into it.
+ * The help text is divided into three parts:
+ * - The untranslated introduction,
+ * - The untranslated function key list, and
+ * - The untranslated function key descriptions.
+ * The function key list is built by iterating over all functions,
+ * and for each function, iterating over all shortcuts.
+ * The function key descriptions are built by iterating over all functions.  */
 static void help_init(void) {
   Ulong allocsize = 0;
   /* Space needed for help_text. */
@@ -234,8 +234,8 @@ static void help_init(void) {
     strcat(help_text, htx[2]);
   }
   /* Remember this end-of-introduction, start-of-shortcuts. */
-  end_of_intro = (help_text + strlen(help_text));
-  ptr = end_of_intro;
+  end_of_help_intro = (help_text + strlen(help_text));
+  ptr = end_of_help_intro;
   /* Now add the shortcuts and their descriptions. */
   for (f = allfuncs; f; f = f->next) {
     int tally = 0;
@@ -295,64 +295,64 @@ static void help_init(void) {
 }
 
 /* Hard-wrap the concatenated help text, and write it into a new buffer. */
-void wrap_help_text_into_buffer(void) {
-  /* Avoid overtight and overwide paragraphs in the introductory text. */
-  const char *ptr = start_of_body;
-  Ulong wrapping_point = (((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar);
-  Ulong sum = 0;
-  make_new_buffer();
-  /* Ensure there is a blank line at the top of the text, for esthetics. */
-  if ((ISSET(MINIBAR) || !ISSET(EMPTY_LINE)) && LINES > 6) {
-    openfile->current->data = realloc_strcpy(openfile->current->data, " ");
-    openfile->current->next = make_new_node(openfile->current);
-    openfile->current       = openfile->current->next;
-  }
-  /* Copy the help text into the just-created new buffer. */
-  while (*ptr) {
-    int   length, shim;
-    char *oneline;
-    if (ptr == end_of_intro) {
-      wrapping_point = (((COLS < 40) ? 40 : COLS) - sidebar);
-    }
-    if (ptr < end_of_intro || *(ptr - 1) == '\n') {
-      length  = break_line(ptr, wrapping_point, TRUE);
-      oneline = (char *)nmalloc(length + 1);
-      shim    = ((*(ptr + length - 1) == ' ') ? 0 : 1);
-      snprintf(oneline, (length + shim), "%s", ptr);
-    }
-    else {
-      length  = break_line(ptr, (((COLS < 40) ? 22 : (COLS - 18)) - sidebar), TRUE);
-      oneline = (char *)nmalloc(length + 5);
-      snprintf(oneline, (length + 5), "\t\t  %s", ptr);
-    }
-    free(openfile->current->data);
-    openfile->current->data = oneline;
-    ptr += length;
-    if (*ptr != '\n') {
-      --ptr;
-    }
-    /* Create a new line, and then one more for each extra \n. */
-    do {
-      openfile->current->next = make_new_node(openfile->current);
-      openfile->current       = openfile->current->next;
-      openfile->current->data = STRLTR_COPY_OF("");
-    } while (*(++ptr) == '\n');
-  }
-  openfile->filebot = openfile->current;
-  openfile->current = openfile->filetop;
-  remove_magicline();
-  find_and_prime_applicable_syntax();
-  prepare_for_display();
-  /* Move to the position in the file where we were before. */
-  while (TRUE) {
-    sum += strlen(openfile->current->data);
-    if (sum > location) {
-      break;
-    }
-    openfile->current = openfile->current->next;
-  }
-  openfile->edittop = openfile->current;
-}
+// void wrap_help_text_into_buffer(void) {
+//   /* Avoid overtight and overwide paragraphs in the introductory text. */
+//   const char *ptr = start_of_help_body;
+//   Ulong wrapping_point = (((COLS < 40) ? 40 : (COLS > 74) ? 74 : COLS) - sidebar);
+//   Ulong sum = 0;
+//   make_new_buffer();
+//   /* Ensure there is a blank line at the top of the text, for esthetics. */
+//   if ((ISSET(MINIBAR) || !ISSET(EMPTY_LINE)) && LINES > 6) {
+//     openfile->current->data = realloc_strcpy(openfile->current->data, " ");
+//     openfile->current->next = make_new_node(openfile->current);
+//     openfile->current       = openfile->current->next;
+//   }
+//   /* Copy the help text into the just-created new buffer. */
+//   while (*ptr) {
+//     int   length, shim;
+//     char *oneline;
+//     if (ptr == end_of_help_intro) {
+//       wrapping_point = (((COLS < 40) ? 40 : COLS) - sidebar);
+//     }
+//     if (ptr < end_of_help_intro || *(ptr - 1) == '\n') {
+//       length  = break_line(ptr, wrapping_point, TRUE);
+//       oneline = (char *)nmalloc(length + 1);
+//       shim    = ((*(ptr + length - 1) == ' ') ? 0 : 1);
+//       snprintf(oneline, (length + shim), "%s", ptr);
+//     }
+//     else {
+//       length  = break_line(ptr, (((COLS < 40) ? 22 : (COLS - 18)) - sidebar), TRUE);
+//       oneline = (char *)nmalloc(length + 5);
+//       snprintf(oneline, (length + 5), "\t\t  %s", ptr);
+//     }
+//     free(openfile->current->data);
+//     openfile->current->data = oneline;
+//     ptr += length;
+//     if (*ptr != '\n') {
+//       --ptr;
+//     }
+//     /* Create a new line, and then one more for each extra \n. */
+//     do {
+//       openfile->current->next = make_new_node(openfile->current);
+//       openfile->current       = openfile->current->next;
+//       openfile->current->data = STRLTR_COPY_OF("");
+//     } while (*(++ptr) == '\n');
+//   }
+//   openfile->filebot = openfile->current;
+//   openfile->current = openfile->filetop;
+//   remove_magicline();
+//   find_and_prime_applicable_syntax();
+//   prepare_for_display();
+//   /* Move to the position in the file where we were before. */
+//   while (TRUE) {
+//     sum += strlen(openfile->current->data);
+//     if (sum > help_location) {
+//       break;
+//     }
+//     openfile->current = openfile->current->next;
+//   }
+//   openfile->edittop = openfile->current;
+// }
 
 /* Assemble a help text, display it, and allow scrolling through it.  TODO: (show_help) : Change to NanoX help text. */
 static void show_help(void) {
@@ -376,12 +376,7 @@ static void show_help(void) {
   if (ISSET(NO_HELP) || ISSET(ZERO)) {
     UNSET(NO_HELP);
     UNSET(ZERO);
-    if (ISSET(NO_NCURSES)) {
-      window_init();
-    }
-    else {
-      window_init_curses();
-    }
+    window_init();
   }
   else {
     blank_statusbar();
@@ -399,7 +394,7 @@ static void show_help(void) {
   /* Compose the help text from all the relevant pieces. */
   help_init();
   inhelp   = TRUE;
-  location = 0;
+  help_location = 0;
   didfind  = 0;
   bottombars(MHELP);
   /* Extract the title from the head of the help text. */
@@ -407,9 +402,9 @@ static void show_help(void) {
   title  = measured_copy(help_text, length);
   titlebar(title);
   /* Skip over the title to point at the start of the body text. */
-  start_of_body = (help_text + length);
-  while (*start_of_body == '\n') {
-    ++start_of_body;
+  start_of_help_body = (help_text + length);
+  while (*start_of_help_body == '\n') {
+    ++start_of_help_body;
   }
   wrap_help_text_into_buffer();
   edit_refresh();
@@ -463,11 +458,11 @@ static void show_help(void) {
       unbound_key(kbinput);
     }
     edit_refresh();
-    location = 0;
+    help_location = 0;
     line     = openfile->filetop;
     /* Count how far (in bytes) edittop is into the file. */
     while (line != openfile->edittop) {
-      location += strlen(line->data);
+      help_location += strlen(line->data);
       line = line->next;
     }
   }
@@ -492,7 +487,7 @@ static void show_help(void) {
       window_init();
     }
     else {
-      window_init_curses();
+      window_init();
     }
   }
   else {

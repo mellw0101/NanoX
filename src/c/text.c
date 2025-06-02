@@ -1342,7 +1342,7 @@ void do_comment_for(openfilestruct *const file, int total_cols) {
   bool all_empty = TRUE;
   /* This is when 'file->syntax' says comments are foridden. */
   if (!*comment_seq) {
-    statusline_all(AHEM, _("Commenting is not supported for this file type"));
+    statusline(AHEM, _("Commenting is not supported for this file type"));
     free(comment_seq);
     return;
   }
@@ -1350,7 +1350,7 @@ void do_comment_for(openfilestruct *const file, int total_cols) {
   get_range_for(file, &top, &bot);
   /* If only the magic line is selected, don't do anything. */
   if (top == bot && bot == file->filebot && !ISSET(NO_NEWLINES)) {
-    statusline_all(AHEM, _("Cannot comment past end of file"));
+    statusline(AHEM, _("Cannot comment past end of file"));
     free(comment_seq);
     return;
   }

@@ -14,6 +14,9 @@
 static struct sigaction oldaction;
 static struct sigaction newaction;
 
+/* The original settings of the user's terminal. */
+struct termios original_state;
+
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
@@ -176,13 +179,13 @@ void renumber_from(linestruct *line) {
 
 /* Display a warning about a key disabled in view mode. */
 void print_view_warning(void) {
-  statusline_all(AHEM, _("Key is invalid in view mode"));
+  statusline(AHEM, _("Key is invalid in view mode"));
 }
 
 /* When in restricted mode, show a warning and return 'TRUE'. */
 bool in_restricted_mode(void) {
   if (ISSET(RESTRICTED)) {
-    statusline_all(AHEM, _("This function is disabled in restricted mode"));
+    statusline(AHEM, _("This function is disabled in restricted mode"));
     /* Only use `beep()`, when using the ncurses context. */
     if (!ISSET(NO_NCURSES)) {
       beep();
@@ -287,58 +290,116 @@ void restore_handler_for_Ctrl_C(void) {
   disable_kb_interrupt();
 }
 
-/* ----------------------------- Curses ----------------------------- */
+/* Set up the terminal state.  Put the terminal in raw mode
+ * (read one character at a time, disable the special control keys, and disable
+ * the flow control characters), disable translation of carriage return (^M)
+ * into newline (^J), so that we can tell the difference between the Enter key
+ * and Ctrl-J, and disable echoing of characters as they're typed. Finally,
+ * disable extended input and output processing, and, if we're not in preserve
+ * mode, reenable interpretation of the flow control characters. */
+void terminal_init(void) {
+  /* Running in ncurses context. */
+  if (!ISSET(NO_NCURSES)) {
+    raw();
+    nonl();
+    noecho();
+    disable_extended_io();
+    if (ISSET(PRESERVE)) {
+      enable_flow_control();
+    }
+    disable_kb_interrupt();
+    /* Tell the terminal to enable bracketed pastes. */
+    printf("\x1B[?2004h");
+    fflush(stdout);
+  }
+  /* Running using our tui, this is relevent after we have rebuilt the tui. */
+  else {
+    // struct termios raw;
+    // raw = original_state;
+    // raw.c_lflag &= ~(ECHO | ICANON | ISIG);
+    // raw.c_oflag &= ~ONLCR;
+    // raw.c_iflag &= ~(IXON | ICRNL | INLCR);
+    // raw.c_iflag |= IGNBRK;
+    // tcsetattr(STDIN_FILENO, TCSANOW, &raw);
+    // disable_extended_io();
+    // tui_enable_bracketed_pastes();
+  }
+}
 
-/* Initialize the three window portions nano uses.  Ncurses verion. */
-void window_init_curses(void) {
+/* Initialize the three window portions nano uses.  For the tui. */
+void window_init(void) {
   int min;
   int toprows;
   int bottomrows;
-  if (midwin) {
-    if (topwin) {
-      delwin(topwin);
+  /* When inside curses mode. */
+  if (!ISSET(NO_NCURSES)) {
+    if (midwin) {
+      if (topwin) {
+        delwin(topwin);
+      }
+      delwin(midwin);
+      delwin(footwin);
     }
-    delwin(midwin);
-    delwin(footwin);
-  }
-  topwin = NULL;
-  /* If the terminal is very flat, don't set up a title bar. */
-  if (LINES < 3) {
-    editwinrows = (ISSET(ZERO) ? LINES : 1);
-    /* Set up two subwindows.  If the terminal is just one line, edit window and status-bar window will cover each other. */
-    midwin  = newwin(editwinrows, COLS, 0, 0);
-    footwin = newwin(1, COLS, (LINES - 1), 0);
-  }
-  else {
-    min        = (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5));
-    toprows    = ((ISSET(EMPTY_LINE) && LINES > min) ? 2 : 1);
-    bottomrows = ((ISSET(NO_HELP) || LINES < min) ? 1 : 3);
-    if (ISSET(MINIBAR) || ISSET(ZERO)) {
-      toprows = 0;
+    topwin = NULL;
+    /* If the terminal is very flat, don't set up a title bar. */
+    if (LINES < 3) {
+      editwinrows = (ISSET(ZERO) ? LINES : 1);
+      /* Set up two subwindows.  If the terminal is just one line, edit window and status-bar window will cover each other. */
+      midwin  = newwin(editwinrows, COLS, 0, 0);
+      footwin = newwin(1, COLS, (LINES - 1), 0);
     }
-    editwinrows = (LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0));
-    /* Set up the normal three subwindow's. */
-    if (toprows > 0) {
-      topwin = newwin(toprows, COLS, 0, 0);
+    else {
+      min        = (ISSET(ZERO) ? 3 : (ISSET(MINIBAR) ? 4 : 5));
+      toprows    = ((ISSET(EMPTY_LINE) && LINES > min) ? 2 : 1);
+      bottomrows = ((ISSET(NO_HELP) || LINES < min) ? 1 : 3);
+      if (ISSET(MINIBAR) || ISSET(ZERO)) {
+        toprows = 0;
+      }
+      editwinrows = (LINES - toprows - bottomrows + (ISSET(ZERO) ? 1 : 0));
+      /* Set up the normal three subwindow's. */
+      if (toprows > 0) {
+        topwin = newwin(toprows, COLS, 0, 0);
+      }
+      midwin  = newwin(editwinrows, COLS, toprows, 0);
+      footwin = newwin(bottomrows, COLS, (LINES - bottomrows), 0);
     }
-    midwin  = newwin(editwinrows, COLS, toprows, 0);
-    footwin = newwin(bottomrows, COLS, (LINES - bottomrows), 0);
+    /* In case the terminal shrunk, make sure the status line is clear. */
+    wnoutrefresh(footwin);
+    /* When not disabled, turn escape-sequence translation on. */
+    if (!ISSET(RAW_SEQUENCES)) {
+      keypad(midwin, TRUE);
+      keypad(footwin, TRUE);
+    }
+    /* Set up the wrapping point, accounting for the screen width when negative. */
+    if ((COLS + fill) < 0) {
+      wrap_at = 0;
+    }
+    else if (fill <= 0) {
+      wrap_at = (COLS + fill);
+    }
+    else {
+      wrap_at = fill;
+    }
   }
-  /* In case the terminal shrunk, make sure the status line is clear. */
-  wnoutrefresh(footwin);
-  /* When not disabled, turn escape-sequence translation on. */
-  if (!ISSET(RAW_SEQUENCES)) {
-    keypad(midwin, TRUE);
-    keypad(footwin, TRUE);
-  }
-  /* Set up the wrapping point, accounting for the screen width when negative. */
-  if ((COLS + fill) < 0) {
-    wrap_at = 0;
-  }
-  else if (fill <= 0) {
-    wrap_at = (COLS + fill);
-  }
-  else {
-    wrap_at = fill;
+  /* Add our tui here once we have redone it. */
+}
+
+/* Reinitialize and redraw the screen completely. */
+void regenerate_screen(void) {
+  /* Reset the trigger. */
+  the_window_resized = FALSE;
+  /* Leave and immediately reenter curses mode, so that ncurses notices the new screen dimensions and sets LINES and COLS accordingly. */
+  endwin();
+  refresh();
+  sidebar     = ((ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0);
+  bardata     = xrealloc(bardata, (LINES * sizeof(int)));
+  editwincols = (COLS - margin - sidebar);
+  /* Put the terminal in the desired state again, and recreate the subwindows with their (new) sizes. */
+  terminal_init();
+  window_init();
+  /* If we have an open buffer, redraw the contents of the subwindows. */
+  if (openfile) {
+    ensure_firstcolumn_is_aligned();
+    draw_all_subwindows();
   }
 }

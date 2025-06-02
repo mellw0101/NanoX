@@ -262,28 +262,17 @@ Ulong breadth(const char *text) {
   return span;
 }
 
-/* For functions that are used by the tui and gui, this prints a status message correctly. */
-void statusline_all(message_type type, const char *const restrict format, ...) {
-  ASSERT(format);
-  va_list ap;
-  va_start(ap, format);
-  if (ISSET(USING_GUI)) {
-    statusline_gui_va(type, format, ap);
+/* Count the number of characters from begin to end, and return it. */
+Ulong number_of_characters_in(const linestruct *const begin, const linestruct *const end) {
+  ASSERT(begin);
+  ASSERT(end);
+  Ulong count = 0;
+  /* Sum the number of characters (plus a newline) in each line. */
+  DLIST_FOR_NEXT_END(begin, end->next, line) {
+    count += (mbstrlen(line->data) + 1);
   }
-  else if (!ISSET(NO_NCURSES)) {
-    statusline_curses_va(type, format, ap);
-  }
-  va_end(ap);
-}
-
-/* Print a normal `msg`, that conforms to the current contex, tui or gui. */
-void statusbar_all(const char *const restrict msg) {
-  if (ISSET(USING_GUI)) {
-    statusbar_gui(msg);
-  }
-  else if (!ISSET(NO_NCURSES)) {
-    statusbar_curses(msg);
-  }
+  /* Do not count the final newline. */
+  return (count - 1);
 }
 
 /* ----------------------------- Magicline ----------------------------- */

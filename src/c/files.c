@@ -136,13 +136,13 @@ void mention_name_and_linecount_for(openfilestruct *const file) {
   }
   if (file->fmt > NIX_FILE) {
     /* TRANSLATORS: First %s is file name, second %s is file format. */
-    statusline_all(
+    statusline(
       HUSH, P_("%s -- %zu line (%s)", "%s -- %zu lines (%s)", count),
       ((!*file->filename) ? _("New Buffer") : tail(file->filename)),
       count, ((file->fmt == DOS_FILE) ? _("DOS") : _("Mac")));
   }
   else {
-    statusline_all(HUSH, P_("%s -- %zu line", "%s -- %zu lines", count), ((file->filename[0] == '\0') ? _("New Buffer") : tail(file->filename)), count);
+    statusline(HUSH, P_("%s -- %zu line", "%s -- %zu lines", count), ((file->filename[0] == '\0') ? _("New Buffer") : tail(file->filename)), count);
   }
 }
 
@@ -154,7 +154,7 @@ void mention_name_and_linecount(void) {
 /* Delete the lock file.  Return TRUE on success, and FALSE otherwise. */
 bool delete_lockfile(const char *const restrict lockfilename) {
   if (unlink(lockfilename) < 0 && errno != ENOENT) {
-    statusline_all(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
+    statusline(MILD, _("Error deleting lock file %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
   return TRUE;
@@ -183,7 +183,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
     return FALSE;
   }
   else if (gethostname(hostname, 31) < 0 && errno != ENAMETOOLONG) {
-    statusline_all(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
+    statusline(MILD, _("Couldn't determin hostname: %s"), strerror(errno));
     return FALSE;
   }
   else {
@@ -195,7 +195,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   }
   /* Open the lockfile file-descriptor. */
   if ((fd = open(lockfilename, (O_WRONLY | O_CREAT | O_EXCL), RW_FOR_ALL)) == -1) {
-    statusline_all(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
+    statusline(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
   /* Create the lock data we will write. */
@@ -241,7 +241,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   free(lockdata);
   close(fd);
   if (len == -1 || written < LOCKSIZE) {
-    statusline_all(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
+    statusline(MILD, _("Error writing lock file %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
   return TRUE;
@@ -261,25 +261,25 @@ bool has_valid_path(const char *const restrict filename) {
     free(currentdir);
   }
   if (gone) {
-    statusline_all(ALERT, _("The working directory has disappeared"));
+    statusline(ALERT, _("The working directory has disappeared"));
   }
   else if (stat(parentdir, &parentinfo) == -1) {
     if (errno == ENOENT) {
       /* TRANSLATORS: Keep the next ten messages at most 76 characters. */
-      statusline_all(ALERT, _("Directory '%s' does not exist"), parentdir);
+      statusline(ALERT, _("Directory '%s' does not exist"), parentdir);
     }
     else {
-      statusline_all(ALERT, _("Path '%s': %s"), parentdir, strerror(errno));
+      statusline(ALERT, _("Path '%s': %s"), parentdir, strerror(errno));
     }
   }
   else if (!S_ISDIR(parentinfo.st_mode)) {
-    statusline_all(ALERT, _("Path '%s' is not a directory"), parentdir);
+    statusline(ALERT, _("Path '%s' is not a directory"), parentdir);
   }
   else if (access(parentdir, X_OK) == -1) {
-    statusline_all(ALERT, _("Path '%s' is not accessible"), parentdir);
+    statusline(ALERT, _("Path '%s' is not accessible"), parentdir);
   }
   else if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && access(parentdir, W_OK) < 0) {
-    statusline_all(MILD, _("Directory '%s' is not writable"), parentdir);
+    statusline(MILD, _("Directory '%s' is not writable"), parentdir);
   }
   else {
     validity = TRUE;

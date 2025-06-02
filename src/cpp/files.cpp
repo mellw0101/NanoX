@@ -772,7 +772,7 @@ int open_file(const char *filename, bool new_one, FILE **f) {
     }
   }
   if (S_ISFIFO(fileinfo.st_mode)) {
-    statusbar(_("Reading from FIFO..."));
+    statusbar_all(_("Reading from FIFO..."));
   }
   block_sigwinch(TRUE);
   install_handler_for_Ctrl_C();
@@ -797,7 +797,7 @@ int open_file(const char *filename, bool new_one, FILE **f) {
       fd = -1;
     }
     else if (!ISSET(ZERO) || we_are_running) {
-      statusbar(_("Reading..."));
+      statusbar_all(_("Reading..."));
     }
   }
   free(full_filename);
@@ -917,7 +917,7 @@ static void execute_command(const char *command) {
     close(from_fd[0]);
     return;
   }
-  statusbar(_("Executing..."));
+  statusbar_all(_("Executing..."));
   /* If the command starts with "|", pipe buffer or region to the command. */
   if (should_pipe) {
     linestruct *was_cutbuffer = cutbuffer;
@@ -1052,7 +1052,7 @@ static void insert_a_file_or(bool execute) {
     response = do_prompt((execute ? MEXECUTE : MINSERTFILE), given, (execute ? &execute_history : NULL), edit_refresh, msg, (operating_dir ? operating_dir : "./"));
     /* If we're in multibuffer mode and the filename or command is blank, open a new buffer instead of canceling. */
     if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER))) {
-      statusbar(_("Cancelled"));
+      statusbar_all(_("Cancelled"));
       break;
     }
     else {
@@ -1373,7 +1373,7 @@ static bool make_backup_of(char *realname) {
   /* Remember the original file's access and modification times. */
   filetime[0].tv_sec = openfile->statinfo->st_atime;
   filetime[1].tv_sec = openfile->statinfo->st_mtime;
-  statusbar(_("Making backup..."));
+  statusbar_all(_("Making backup..."));
   /* If no backup directory was specified, we make a simple backup by appending a tilde to the
    * original file name. Otherwise, we create a numbered backup in the specified directory. */
   if (!backup_dir) {
@@ -1568,7 +1568,7 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
     }
   }
   if (is_existing_file && S_ISFIFO(fileinfo.st_mode)) {
-    statusbar(_("Writing to FIFO..."));
+    statusbar_all(_("Writing to FIFO..."));
   }
   /* When it's not a temporary file, this is where we open or create it.  For an emergency file, access is restricted to just the owner. */
   if (!thefile) {
@@ -1605,7 +1605,7 @@ bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_ty
   }
   if (normal) {
     if (!ISSET(MINIBAR)) {
-      statusbar(_("Writing..."));
+      statusbar_all(_("Writing..."));
     }
   }
   while (TRUE) {
@@ -1825,7 +1825,7 @@ int write_it_out(bool exiting, bool withprompt) {
       response = do_prompt(MWRITEFILE, given, NULL, edit_refresh, "%s%s%s", msg, formatstr, backupstr);
     }
     if (response < 0) {
-      statusbar(_("Cancelled"));
+      statusbar_all(_("Cancelled"));
       free(given);
       return 0;
     }

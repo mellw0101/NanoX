@@ -11,6 +11,10 @@
 /* ---------------------------------------------------------- Extern variable's ---------------------------------------------------------- */
 
 
+/* ----------------------------- nanox.c ----------------------------- */
+
+extern struct termios original_state;
+
 /* ----------------------------- global.c ----------------------------- */
 
 extern volatile sig_atomic_t the_window_resized;
@@ -58,6 +62,7 @@ extern char *statedir;
 extern char *suggest_str;
 extern char *present_path;
 extern char *last_search;
+extern char *title;
 
 extern char suggest_buf[1024];
 
@@ -159,6 +164,23 @@ extern char *prompt;
 
 extern Ulong typing_x;
 
+/* ----------------------------- browser.c ----------------------------- */
+
+extern char **filelist;
+extern Ulong list_length;
+extern Ulong usable_rows;
+extern int piles;
+extern int gauge;
+extern Ulong selected;
+
+/* ----------------------------- help.c ----------------------------- */
+
+extern char *end_of_help_intro;
+
+extern const char *start_of_help_body;
+
+extern Ulong help_location;
+
 /* ----------------------------- General ----------------------------- */
 
 extern ElementGrid *element_grid;
@@ -218,8 +240,7 @@ Ulong       xplustabs(void) _NODISCARD;
 Ulong       wideness(const char *text, Ulong maxlen) _NODISCARD _NONNULL(1);
 Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
 Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
-void        statusline_all(message_type type, const char *const restrict format, ...);
-void        statusbar_all(const char *const restrict msg);
+Ulong       number_of_characters_in(const linestruct *const begin, const linestruct *const end) _NODISCARD _NONNULL(1, 2);
 
 /* ----------------------------- Magicline ----------------------------- */
 
@@ -748,17 +769,26 @@ void  edit_redraw(linestruct *const old_current, update_type manner);
 void  edit_refresh(void);
 void  titlebar(const char *path);
 void  blank_edit(void);
+void  draw_all_subwindows(void);
+void  blank_statusbar(void);
+void  blank_titlebar(void);
+void  blank_bottombars(void);
+void  wipe_statusbar(void);
+void  post_one_key(const char *const restrict keystroke, const char *const restrict tag, int width);
+void  bottombars(int menu);
+void  warn_and_briefly_pause(const char *const restrict message);
+void  statusline(message_type type, const char *const restrict format, ...);
+void  statusbar_all(const char *const restrict msg);
+void  report_cursor_position_for(openfilestruct *const file);
+void  report_cursor_position(void);
 
 /* ----------------------------- Curses ----------------------------- */
 
 void blank_row_curses(WINDOW *const window, int row);
-void blank_titlebar_curses(void);
-void blank_statusbar_curses(void);
-void blank_bottombars_curses(void);
 void statusline_curses_va(message_type type, const char *const restrict format, va_list ap);
 void statusline_curses(message_type type, const char *const restrict msg, ...) _PRINTFLIKE(2, 3);
 void statusbar_curses(const char *const restrict msg);
-void minibar_curses(void);
+void minibar(void);
 void post_one_key_curses(const char *const restrict keystroke, const char *const restrict tag, int width);
 void bottombars_curses(int menu);
 void place_the_cursor_curses_for(openfilestruct *const file);
@@ -766,7 +796,6 @@ void warn_and_briefly_pause_curses(const char *const restrict message);
 void draw_row_marked_region_for_curses(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void full_refresh_curses(void);
-void wipe_statusbar_curses(void);
 void draw_row_curses_for(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void draw_row_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 int  update_line_curses_for(openfilestruct *const file, linestruct *const line, Ulong index);
@@ -938,6 +967,25 @@ void  update_poshistory(void);
 bool  has_old_position(const char *const restrict file, long *const line, long *const column);
 
 
+/* ---------------------------------------------------------- browser.c ---------------------------------------------------------- */
+
+
+void  read_the_list(const char *path, DIR *dir);
+void  reselect(const char *const name);
+void  browser_refresh(void);
+void  findfile(const char *needle, bool forwards);
+void  to_first_file(void);
+void  to_last_file(void);
+void  research_filename(bool forwards);
+char *strip_last_component(const char *const restrict path);
+
+
+/* ---------------------------------------------------------- help.c ---------------------------------------------------------- */
+
+
+void wrap_help_text_into_buffer(void);
+
+
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
 
 
@@ -1026,10 +1074,9 @@ void        disable_kb_interrupt(void);
 void        enable_kb_interrupt(void);
 void        install_handler_for_Ctrl_C(void);
 void        restore_handler_for_Ctrl_C(void);
-
-/* ----------------------------- Curses ----------------------------- */
-
-void window_init_curses(void);
+void        terminal_init(void);
+void        window_init(void);
+void        regenerate_screen(void);
 
 /* ----------------------------- Defined in c++ ----------------------------- */
 

@@ -113,7 +113,7 @@ static bool is_cuttable(bool test_cliff) _NOTHROW {
   if ((!openfile->current->next && !openfile->current->data[from] && !openfile->mark)
    || (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x)
    || (from > 0 && !ISSET(NO_NEWLINES) && !openfile->current->data[from] && openfile->current->next == openfile->filebot)) {
-    statusbar(_("Nothing was cut"));
+    statusbar_all(_("Nothing was cut"));
     openfile->mark = NULL;
     return FALSE;
   }
@@ -181,7 +181,7 @@ static void chop_word(bool forward) _NOTHROW {
 /* Delete a word leftward. */
 void chop_previous_word(void) _NOTHROW {
   if (!openfile->current->prev && !openfile->current_x) {
-    statusbar(_("Nothing was cut"));
+    statusbar_all(_("Nothing was cut"));
   }
   else {
     chop_word(BACKWARD);
@@ -440,7 +440,7 @@ void cut_till_eof(void) _NOTHROW {
   ran_a_tool = TRUE;
   if (!openfile->current->data[openfile->current_x]
    && (!openfile->current->next || (!ISSET(NO_NEWLINES) && openfile->current_x > 0 && openfile->current->next == openfile->filebot))) {
-    statusbar(_("Nothing was cut"));
+    statusbar_all(_("Nothing was cut"));
     return;
   }
   add_undo(CUT_TO_EOF, NULL);
@@ -503,7 +503,7 @@ void copy_marked_region(void) {
   keep_cutbuffer = FALSE;
   refresh_needed = TRUE;
   if (topline == botline && top_x == bot_x) {
-    statusbar(_("Copied nothing"));
+    statusbar_all(_("Copied nothing"));
     return;
   }
   /* Make the area that was marked look like a separate buffer. */
@@ -542,7 +542,7 @@ void copy_text(void) {
   }
   /* When at the very end of the buffer, there is nothing to do. */
   if (!openfile->current->next && at_eol && (ISSET(CUT_FROM_CURSOR) || !openfile->current_x || cutbuffer)) {
-    statusbar(_("Copied nothing"));
+    statusbar_all(_("Copied nothing"));
     return;
   }
   addition       = make_new_node(NULL);

@@ -75,7 +75,7 @@ static void search_init(bool replacing, bool retain_answer) {
     );
     /* If the search was cancelled, or we have a blank answer and nothing was searched for yet during this session, get out. */
     if (response == -1 || (response == -2 && !*last_search)) {
-      statusbar(_("Cancelled"));
+      statusbar_all(_("Cancelled"));
       break;
     }
     /* If Enter was pressed, prepare to do a replace or a search. */
@@ -187,7 +187,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
     if (the_window_resized) {
       regenerate_screen();
       nodelay(midwin, TRUE);
-      statusbar(_("Searching..."));
+      statusbar_all(_("Searching..."));
       feedback = 1;
     }
     /* If we're back at the beginning, then there is no needle. */
@@ -235,7 +235,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
           if (the_window_resized) {
             regenerate_screen();
           }
-          statusbar(_("Cancelled"));
+          statusbar_all(_("Cancelled"));
           /* Clear out the key buffer (in case a macro is running). */
           while (input != ERR) {
             input = get_input(NULL);
@@ -247,7 +247,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *matc
       }
       if (++feedback > 0) {
         /* TRANSLATORS: This is shown when searching takes more than half a second. */
-        statusbar(_("Searching..."));
+        statusbar_all(_("Searching..."));
       }
     }
   }
@@ -564,7 +564,7 @@ void ask_for_and_do_replacements(void) {
   }
   /* When cancelled, or when a function was run, get out. */
   if (response == -1) {
-    statusbar(_("Cancelled"));
+    statusbar_all(_("Cancelled"));
     return;
   }
   else if (response > 0) {
@@ -609,7 +609,7 @@ void goto_line_and_column(long line, long column, bool retain_answer, bool inter
     response = do_prompt(MGOTOLINE, retain_answer ? answer : "", NULL, edit_refresh, _("Enter line number, column number"));
     /* If the user cancelled or gave a blank answer, get out. */
     if (response < 0) {
-      statusbar(_("Cancelled"));
+      statusbar_all(_("Cancelled"));
       return;
     }
     if (func_from_key(response) == flip_goto) {
@@ -825,7 +825,7 @@ static void go_to_and_confirm(linestruct *line) {
       recook |= perturbed;
     }
     edit_redraw(was_current, CENTERING);
-    statusbar(_("Jumped to anchor"));
+    statusbar_all(_("Jumped to anchor"));
   }
   else if (openfile->current->has_anchor) {
     statusline(REMARK, _("This is the only anchor"));

@@ -455,16 +455,16 @@ void *nrealloc(void *section, const Ulong howmuch) _NOTHROW {
 // }
 
 /* Count the number of characters from begin to end, and return it. */
-Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW {
-  const linestruct *line;
-  Ulong count = 0;
-  /* Sum the number of characters (plus a newline) in each line. */
-  for (line = begin; line != end->next; line = line->next) {
-    count += (mbstrlen(line->data) + 1);
-  }
-  /* Do not count the final newline. */
-  return (count - 1);
-}
+// Ulong number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW {
+//   const linestruct *line;
+//   Ulong count = 0;
+//   /* Sum the number of characters (plus a newline) in each line. */
+//   for (line = begin; line != end->next; line = line->next) {
+//     count += (mbstrlen(line->data) + 1);
+//   }
+//   /* Do not count the final newline. */
+//   return (count - 1);
+// }
 
 /* Return`s malloc`ed str containing pwd. */
 char *alloced_pwd(void) {

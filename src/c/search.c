@@ -27,7 +27,7 @@ bool regexp_init(const char *regexp) {
     len = regerror(value, &search_regexp, NULL, 0);
     str = xmalloc(len);
     regerror(value, &search_regexp, str, len);
-    statusline_all(AHEM, _("Bad regex \"%s\": %s"), regexp, str);
+    statusline(AHEM, _("Bad regex \"%s\": %s"), regexp, str);
     free(str);
     return FALSE;
   }
@@ -69,6 +69,6 @@ void goto_line_posx(long lineno, Ulong x) {
 void not_found_msg(const char *const restrict str) {
   char *disp     = display_string(str, 0, ((COLS / 2) + 1), FALSE, FALSE);
   Ulong numchars = actual_x(disp, wideness(disp, (COLS / 2)));
-  statusline_all(AHEM, _("\"%.*s%s\" not found"), numchars, disp, (disp[numchars] == '\0') ? "" : "...");
+  statusline(AHEM, _("\"%.*s%s\" not found"), numchars, disp, (disp[numchars] == '\0') ? "" : "...");
   free(disp);
 }

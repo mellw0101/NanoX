@@ -2535,7 +2535,7 @@ static void justify_text(bool whole_buffer) {
     statusline(REMARK, _("Justified file"));
   }
   else {
-    statusbar(_("Justified paragraph"));
+    statusbar_all(_("Justified paragraph"));
   }
   /* We're done justifying.  Restore the cutbuffer. */
   cutbuffer = was_cutbuffer;
@@ -2634,7 +2634,7 @@ static void treat(char *tempfile_name, char *theprogram, bool spelling) {
     endwin();
   }
   else {
-    statusbar(_("Invoking formatter..."));
+    statusbar_all(_("Invoking formatter..."));
   }
   construct_argument_list(&arguments, theprogram, tempfile_name);
   /* Fork a child process and run the given program in it. */
@@ -2770,7 +2770,7 @@ static bool fix_spello(const char *word) {
     if (proceed && strcmp(word, answer) != 0) {
       do_replace_loop(word, TRUE, was_current, &was_x);
       /* TRANSLATORS: Shown after fixing misspellings in one word. */
-      statusbar(_("Next word..."));
+      statusbar_all(_("Next word..."));
       napms(400);
     }
   }
@@ -2813,7 +2813,7 @@ static void do_int_speller(const char *const tempfile_name) {
     statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
     return;
   }
-  statusbar(_("Invoking spell checker..."));
+  statusbar_all(_("Invoking spell checker..."));
   /* Fork a process to run spell in. */
   if ((pid_spell = fork()) == 0) {
     /* Child: open the temporary file that holds the text to be checked. */
@@ -3024,7 +3024,7 @@ void do_linter(void) {
   if (openfile->modified) {
     int choice = ask_user(YESORNO, _("Save modified buffer before linting?"));
     if (choice == CANCEL) {
-      statusbar(_("Cancelled"));
+      statusbar_all(_("Cancelled"));
       return;
     }
     else if (choice == YES && (write_it_out(FALSE, FALSE) != 1)) {
@@ -3038,7 +3038,7 @@ void do_linter(void) {
   }
   blank_bottombars();
   currmenu = MLINTER;
-  statusbar(_("Invoking linter..."));
+  statusbar_all(_("Invoking linter..."));
   /* Fork a process to run the linter in. */
   if ((pid_lint = fork()) == 0) {
     char **lintargs = NULL;
@@ -3157,7 +3157,7 @@ void do_linter(void) {
       window_init();
     }
     else {
-      window_init_curses();
+      window_init();
     }
   }
   /* Show that we are in the linter now. */
@@ -3182,7 +3182,7 @@ void do_linter(void) {
         free(msg);
         currmenu = MLINTER;
         if (choice == CANCEL) {
-          statusbar(_("Cancelled"));
+          statusbar_all(_("Cancelled"));
           break;
         }
         else if (choice == YES) {
@@ -3261,7 +3261,7 @@ void do_linter(void) {
         curlint = curlint->prev;
       }
       else if (last_wait != time(NULL)) {
-        statusbar(_("At first message"));
+        statusbar_all(_("At first message"));
         beep();
         napms(600);
         last_wait = time(NULL);
@@ -3273,7 +3273,7 @@ void do_linter(void) {
         curlint = curlint->next;
       }
       else if (last_wait != time(NULL)) {
-        statusbar(_("At last message"));
+        statusbar_all(_("At last message"));
         beep();
         napms(600);
         last_wait = time(NULL);
@@ -3297,7 +3297,7 @@ void do_linter(void) {
       window_init();
     }
     else {
-      window_init_curses();
+      window_init();
     }
     refresh_needed = TRUE;
   }

@@ -19,6 +19,10 @@ static Statusbar *statusbar = NULL;
 static void statusbar_timed_msg_internal(message_type type, float seconds, const char *const restrict format, va_list ap) {
   ASSERT(seconds);
   ASSERT(format);
+  /* If the statusbar has not been init yet just leave. */
+  if (!statusbar) {
+    return;
+  }
   char *msg;
   va_list copy;
   int len;

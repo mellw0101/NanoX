@@ -740,7 +740,7 @@ static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct *
             window_init();
           }
           else {
-            window_init_curses();
+            window_init();
           }
           focusing = FALSE;
           refresh_func();
@@ -946,7 +946,7 @@ int ask_user(bool withall, const char *question) {
         window_init();
       }
       else {
-        window_init_curses();
+        window_init();
       }
       titlebar(NULL);
       focusing = FALSE;

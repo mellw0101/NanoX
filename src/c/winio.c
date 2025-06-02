@@ -378,7 +378,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   Ulong beyond = (column + span);
   text += start_x;
   if (span > HIGHEST_POSITIVE) {
-    statusline_all(ALERT, "Span has underflowed -- please report a bug");
+    statusline(ALERT, "Span has underflowed -- please report a bug");
     converted[0] = '\0';
     return converted;
   }
@@ -887,7 +887,7 @@ void titlebar(const char *path) {
     return;
   }
   wattron(topwin, interface_color_pair[TITLE_BAR]);
-  blank_titlebar_curses();
+  blank_titlebar();
   as_an_at = FALSE;
   /**
    * Do as Pico:
@@ -1013,146 +1013,9 @@ void titlebar(const char *path) {
   wrefresh(topwin);
 }
 
-/* Blank all lines of the middle portion of the screen (the edit window). */
-void blank_edit(void) {
-  /* Only perform any action when in ncurses mode for now. */
-  if (!ISSET(NO_NCURSES)) {
-    for (int row=0; row<editwinrows; ++row) {
-      blank_row_curses(midwin, row);
-    }
-  }
-}
-
-/* ----------------------------- Curses ----------------------------- */
-
-void blank_row_curses(WINDOW *const window, int row) {
-  ASSERT(window);
-  ASSERT(row >= 0);
-  wmove(window, row, 0);
-  wclrtoeol(window);
-}
-
-/* Blank the first line of the top portion of the screen.  Using ncurses. */
-void blank_titlebar_curses(void) {
-  mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
-}
-
-void blank_statusbar_curses(void) {
-  blank_row_curses(footwin, 0);
-}
-
-/* Blank out the two help lines (when they are present).  Ncurses version. */
-void blank_bottombars_curses(void) {
-  if (!ISSET(NO_HELP) && LINES > 5) {
-    blank_row_curses(footwin, 1);
-    blank_row_curses(footwin, 2);
-  }
-}
-
-/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
-void statusline_curses_va(message_type type, const char *const restrict format, va_list ap) {
-  static Ulong start_col = 0;
-  bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
-  char *compound;
-  char *message;
-  bool bracketed;
-  int color;
-  va_list copy;
-  if (type >= AHEM) {
-    waiting_codes = 0;
-  }
-  if (type < lastmessage && lastmessage > NOTICE) {
-    return;
-  }
-  /* Construct the message from the arguments. */
-  compound = xmalloc(MAXCHARLEN * COLS + 1);
-  va_copy(copy, ap);
-  vsnprintf(compound, (MAXCHARLEN * COLS + 1), format, copy);
-  va_end(copy);
-  if (isendwin()) {
-    writeferr("%s\n", compound);
-    free(compound);
-  }
-  else {
-    if (!we_are_running && type == ALERT && openfile && !openfile->fmt && !openfile->errormessage && !CLIST_SINGLE(openfile)) {
-      openfile->errormessage = copy_of(compound);
-    }
-    /* On a one row terminal, ensure any changes in the edit window are written first, to prevent them from overwriting the message. */
-    if (LINES == 1 && type < INFO) {
-      wnoutrefresh(midwin);
-    }
-    /* If there are multiple alert messages, add trailng dot's first. */
-    if (lastmessage == ALERT) {
-      if (start_col > 4) {
-        wmove(footwin, 0, (COLS + 2 - start_col));
-        wattron(footwin, interface_color_pair[ERROR_MESSAGE]);
-        waddnstr(footwin, S__LEN("..."));
-        wattroff(footwin, interface_color_pair[ERROR_MESSAGE]);
-        wnoutrefresh(footwin);
-        start_col = 0;
-        napms(100);
-        beep();
-      }
-      free(compound);
-      return;
-    }
-    else if (type > NOTICE) {
-      if (type == ALERT) {
-        beep();
-      }
-      color = ERROR_MESSAGE;
-    }
-    else if (type == NOTICE) {
-      color = SELECTED_TEXT;
-    }
-    else {
-      color = STATUS_BAR;
-    }
-    lastmessage = type;
-    blank_statusbar_curses();
-    UNSET(WHITESPACE_DISPLAY);
-    message = display_string(compound, 0, COLS, FALSE, FALSE);
-    if (showed_whitespace) {
-      SET(WHITESPACE_DISPLAY);
-    }
-    start_col = ((COLS - breadth(message)) / 2);
-    bracketed = (start_col > 1);
-    wmove(footwin, 0, (bracketed ? (start_col - 2) : start_col));
-    wattron(footwin, interface_color_pair[color]);
-    if (bracketed) {
-      waddnstr(footwin, S__LEN("[ "));
-      waddstr(footwin, message);
-      waddnstr(footwin, S__LEN(" ]"));
-    }
-    else {
-      waddstr(footwin, message);
-    }
-    wattroff(footwin, interface_color_pair[color]);
-    /* Tell `footwin` to refresh. */
-    wrefresh(footwin);
-    free(compound);
-    free(message);
-    /* When requested, wipe the statusbar after just one keystroke, otherwise wipe after 20. */
-    countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
-  }
-}
-
-/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
-void statusline_curses(message_type type, const char *const restrict msg, ...) {
-  va_list ap;
-  va_start(ap, msg);
-  statusline_curses_va(type, msg, ap);
-  va_end(ap);
-}
-
-/* Display a normal message on the status bar, quietly.  Ncurses version. */
-void statusbar_curses(const char *const restrict msg) {
-  statusline_curses(HUSH, "%s", msg);
-}
-
 /* Draw a bar at the bottom with some minimal state information. */
-void minibar_curses(void) {
-  char *thename         = NULL;
+void minibar(void) {
+  char *thename = NULL;
   char *shortname;
   char *position;
   char *number_of_lines = NULL;
@@ -1279,9 +1142,263 @@ void minibar_curses(void) {
   free(ranking);
 }
 
+/* Blank all lines of the middle portion of the screen (the edit window). */
+void blank_edit(void) {
+  /* Only perform any action when in ncurses mode for now. */
+  if (!ISSET(NO_NCURSES)) {
+    for (int row=0; row<editwinrows; ++row) {
+      blank_row_curses(midwin, row);
+    }
+  }
+}
+
+/* Draw all elements of the screen.  That is: the title bar plus the content of the edit window (when not in the file browser), and the bottom bars. */
+void draw_all_subwindows(void) {
+  if (currmenu & ~(MBROWSER | MWHEREISFILE | MGOTODIR)) {
+    titlebar(title);
+  }
+  if (inhelp) {
+    close_buffer();
+    wrap_help_text_into_buffer();
+  }
+  else if (currmenu & ~(MBROWSER | MWHEREISFILE | MGOTODIR)) {
+    edit_refresh();
+  }
+  bottombars_curses(currmenu);
+}
+
+/* Blank the first line of the bottom portion of the screen. */
+void blank_statusbar(void) {
+  /* When running in ncurses context. */
+  if (!ISSET(NO_NCURSES)) {
+    blank_row_curses(footwin, 0);
+  }
+}
+
+/* Blank the first line of the top portion of the screen.  Using ncurses. */
+void blank_titlebar(void) {
+  if (!ISSET(NO_NCURSES)) {
+    mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
+  }
+}
+
+/* Blank out the two help lines (when they are present).  Ncurses version. */
+void blank_bottombars(void) {
+  if (!ISSET(NO_NCURSES)) {
+    if (!ISSET(NO_HELP) && LINES > 5) {
+      blank_row_curses(footwin, 1);
+      blank_row_curses(footwin, 2);
+    }
+  }
+}
+
+/* Wipe the status bar clean and include this in the next screen update. */
+void wipe_statusbar(void) {
+  lastmessage = VACUUM;
+  if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN) {
+    return;
+  }
+  if (!ISSET(NO_NCURSES)) {
+    blank_row_curses(footwin, 0);
+    wnoutrefresh(footwin);
+  }
+}
+
+/* Write a key's representation plus a minute description of its function to the screen.  For example,
+ * the key could be "^C" and its tag "Cancel". Key plus tag may occupy at most width columns. */
+void post_one_key(const char *const restrict keystroke, const char *const restrict tag, int width) {
+  if (!ISSET(NO_NCURSES)) {
+    post_one_key_curses(keystroke, tag, width);
+  }
+}
+
+/* Display the shortcut list corresponding to the menu on the last to rows of the bottom portion of the window.  The shortcuts are shown in pairs. */
+void bottombars(int menu) {
+  /* Running in curses mode. */
+  if (!ISSET(NO_NCURSES)) {
+    bottombars_curses(menu);
+  }
+  /* Running in tui mode.  Note that this will be added when tui has been redesigned. */
+}
+
+/* Warn the user on the status bar and pause for a moment, so that the message can be noticed and read. */
+void warn_and_briefly_pause(const char *const restrict message) {
+  /* Running in curses mode. */
+  if (!ISSET(NO_NCURSES)) {
+    warn_and_briefly_pause_curses(message);
+  }
+  /* Running in tui mode.  Note that this will be added when tui has been redesigned. */
+}
+
+/* For functions that are used by the tui and gui, this prints a status message correctly. */
+void statusline(message_type type, const char *const restrict format, ...) {
+  ASSERT(format);
+  va_list ap;
+  va_start(ap, format);
+  if (ISSET(USING_GUI)) {
+    statusline_gui_va(type, format, ap);
+  }
+  else if (!ISSET(NO_NCURSES)) {
+    statusline_curses_va(type, format, ap);
+  }
+  va_end(ap);
+}
+
+/* Print a normal `msg`, that conforms to the current contex, tui or gui. */
+void statusbar_all(const char *const restrict msg) {
+  if (ISSET(USING_GUI)) {
+    if (openeditor) {
+      statusbar_gui(msg);
+    }
+  }
+  else if (!ISSET(NO_NCURSES)) {
+    statusbar_curses(msg);
+  }
+}
+
+/* Display on the status bar details about the current cursor position in `file`. */
+void report_cursor_position_for(openfilestruct *const file) {
+  ASSERT(file);
+  int linepct;
+  int colpct;
+  int charpct;
+  Ulong fullwidth = (breadth(file->current->data) + 1);
+  Ulong column = (xplustabs_for(file) + 1);
+  Ulong sum;
+  char saved_byte = file->current->data[file->current_x];
+  file->current->data[file->current_x] = '\0';
+  /* Determine the size of the file up to the cursor. */
+  sum = number_of_characters_in(file->filetop, file->current);
+  file->current->data[file->current_x] = saved_byte;
+  /* Calculate the percentages. */
+  linepct = (100 * file->current->lineno / file->filebot->lineno);
+  colpct  = (100 * column / fullwidth);
+  charpct = ((file->totsize == 0) ? 0 : (100 * sum / file->totsize));
+  statusline(INFO, _("line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu (%2d%%)"), digits(file->filebot->lineno),
+    file->current->lineno, file->filebot->lineno, linepct, column, fullwidth, colpct, digits(file->totsize), sum, file->totsize, charpct);
+}
+
+/* Display on the status bar details about the current cursor position in the currently open buffer.  Note that this is context safe. */
+void report_cursor_position(void) {
+  report_cursor_position_for(CONTEXT_OPENFILE);
+}
+
+/* ----------------------------- Curses ----------------------------- */
+
+/* Blank a row of window. */
+void blank_row_curses(WINDOW *const window, int row) {
+  ASSERT(window);
+  ASSERT(row >= 0);
+  wmove(window, row, 0);
+  wclrtoeol(window);
+}
+
+/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
+void statusline_curses_va(message_type type, const char *const restrict format, va_list ap) {
+  static Ulong start_col = 0;
+  bool showed_whitespace = ISSET(WHITESPACE_DISPLAY);
+  char *compound;
+  char *message;
+  bool bracketed;
+  int color;
+  va_list copy;
+  if (type >= AHEM) {
+    waiting_codes = 0;
+  }
+  if (type < lastmessage && lastmessage > NOTICE) {
+    return;
+  }
+  /* Construct the message from the arguments. */
+  compound = xmalloc(MAXCHARLEN * COLS + 1);
+  va_copy(copy, ap);
+  vsnprintf(compound, (MAXCHARLEN * COLS + 1), format, copy);
+  va_end(copy);
+  if (isendwin()) {
+    writeferr("%s\n", compound);
+    free(compound);
+  }
+  else {
+    if (!we_are_running && type == ALERT && openfile && !openfile->fmt && !openfile->errormessage && !CLIST_SINGLE(openfile)) {
+      openfile->errormessage = copy_of(compound);
+    }
+    /* On a one row terminal, ensure any changes in the edit window are written first, to prevent them from overwriting the message. */
+    if (LINES == 1 && type < INFO) {
+      wnoutrefresh(midwin);
+    }
+    /* If there are multiple alert messages, add trailng dot's first. */
+    if (lastmessage == ALERT) {
+      if (start_col > 4) {
+        wmove(footwin, 0, (COLS + 2 - start_col));
+        wattron(footwin, interface_color_pair[ERROR_MESSAGE]);
+        waddnstr(footwin, S__LEN("..."));
+        wattroff(footwin, interface_color_pair[ERROR_MESSAGE]);
+        wnoutrefresh(footwin);
+        start_col = 0;
+        napms(100);
+        beep();
+      }
+      free(compound);
+      return;
+    }
+    else if (type > NOTICE) {
+      if (type == ALERT) {
+        beep();
+      }
+      color = ERROR_MESSAGE;
+    }
+    else if (type == NOTICE) {
+      color = SELECTED_TEXT;
+    }
+    else {
+      color = STATUS_BAR;
+    }
+    lastmessage = type;
+    blank_statusbar();
+    UNSET(WHITESPACE_DISPLAY);
+    message = display_string(compound, 0, COLS, FALSE, FALSE);
+    if (showed_whitespace) {
+      SET(WHITESPACE_DISPLAY);
+    }
+    start_col = ((COLS - breadth(message)) / 2);
+    bracketed = (start_col > 1);
+    wmove(footwin, 0, (bracketed ? (start_col - 2) : start_col));
+    wattron(footwin, interface_color_pair[color]);
+    if (bracketed) {
+      waddnstr(footwin, S__LEN("[ "));
+      waddstr(footwin, message);
+      waddnstr(footwin, S__LEN(" ]"));
+    }
+    else {
+      waddstr(footwin, message);
+    }
+    wattroff(footwin, interface_color_pair[color]);
+    /* Tell `footwin` to refresh. */
+    wrefresh(footwin);
+    free(compound);
+    free(message);
+    /* When requested, wipe the statusbar after just one keystroke, otherwise wipe after 20. */
+    countdown = (ISSET(QUICK_BLANK) ? 1 : 20);
+  }
+}
+
+/* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
+void statusline_curses(message_type type, const char *const restrict msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+  statusline_curses_va(type, msg, ap);
+  va_end(ap);
+}
+
+/* Display a normal message on the status bar, quietly.  Ncurses version. */
+void statusbar_curses(const char *const restrict msg) {
+  statusline_curses(HUSH, "%s", msg);
+}
+
 /* Write a key's representation plus a minute description of its function to the screen.  For example,
  * the key could be "^C" and its tag "Cancel". Key plus tag may occupy at most width columns. */
 void post_one_key_curses(const char *const restrict keystroke, const char *const restrict tag, int width) {
+  ASSERT(keystroke);
+  ASSERT(tag);
   wattron(footwin, interface_color_pair[KEY_COMBO]);
   waddnstr(footwin, keystroke, actual_x(keystroke, width));
   wattroff(footwin, interface_color_pair[KEY_COMBO]);
@@ -1318,7 +1435,7 @@ void bottombars_curses(int menu) {
   if (!itemwidth) {
     return;
   }
-  blank_bottombars_curses();
+  blank_bottombars();
   /* Display the first number of shortcuts in the given menu that have a key combination assigned to them. */
   for (f=allfuncs, index=0; index<number; f=f->next) {
     width = itemwidth;
@@ -1359,7 +1476,8 @@ void place_the_cursor_curses_for(openfilestruct *const file) {
 
 /* Warn the user on the status bar and pause for a moment, so that the message can be noticed and read.  Ncurses version. */
 void warn_and_briefly_pause_curses(const char *const restrict message) {
-  blank_bottombars_curses();
+  ASSERT(message);
+  blank_bottombars();
   statusline_curses(ALERT, "%s", message);
   lastmessage = VACUUM;
   napms(1500);
@@ -1420,16 +1538,6 @@ void draw_row_marked_region_curses(int row, const char *const restrict converted
 /* Tell curses to unconditionally redraw whatever was on the screen. */
 void full_refresh_curses(void) {
   wrefresh(curscr);
-}
-
-/* Wipe the status bar clean and include this in the next screen update. */
-void wipe_statusbar_curses(void) {
-  lastmessage = VACUUM;
-  if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN) {
-    return;
-  }
-  blank_row_curses(footwin, 0);
-  wnoutrefresh(footwin);
 }
 
 /* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
@@ -1504,7 +1612,7 @@ void draw_row_curses_for(openfilestruct *const file, int row, const char *const 
       /* Second case: varnish is a multiline expression.  Assume nothing gets painted until proven otherwise below. */
       line->multidata[varnish->id] = NOTHING;
       if (start_line && !start_line->multidata) {
-        statusline_all(ALERT, "Missing multidata -- please report a bug");
+        statusline(ALERT, "Missing multidata -- please report a bug");
       }
       else {
         /* If there is an unterminated start match before the current line, we need to look for an end match first. */

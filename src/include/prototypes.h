@@ -79,7 +79,7 @@ extern int *bardata;
 // extern Ulong from_x;
 // extern Ulong till_x;
 
-extern char *title;
+// extern char *title;
 // extern char *answer;
 // extern char *last_search;
 // extern char *present_path;
@@ -204,9 +204,9 @@ ASM_FUNCTION(void) asm_atomic_sub(int *ptr, int value);
 ASM_FUNCTION(int)  asm_atomic_xchg(int *ptr, int value);
 
 /* The two needed functions from 'browser.cpp'. */
-void  browser_refresh(void);
-void  to_first_file(void) _NOTHROW;
-void  to_last_file(void) _NOTHROW;
+// void  browser_refresh(void);
+// void  to_first_file(void) _NOTHROW;
+// void  to_last_file(void) _NOTHROW;
 char *browse_in(const char *inpath);
 
 /* Most functions in 'chars.cpp'. */
@@ -339,7 +339,7 @@ functionptrtype  interpret(const int keycode);
 void             shortcut_init(void);
 
 /* Some functions in 'help.cpp'. */
-void wrap_help_text_into_buffer(void);
+// void wrap_help_text_into_buffer(void);
 void do_help(void);
 
 /* Most functions in 'history.cpp'. */
@@ -399,7 +399,7 @@ void        finish(void) _NOTHROW _NO_RETURN;
 void        close_and_go(void);
 void        do_exit(void);
 void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
-void        window_init(void) _NOTHROW;
+// void        window_init(void) _NOTHROW;
 // void        install_handler_for_Ctrl_C(void) _NOTHROW;
 // void        restore_handler_for_Ctrl_C(void) _NOTHROW;
 void        reconnect_and_store_state(void) _NOTHROW;
@@ -410,12 +410,12 @@ void        do_suspend(void);
 void        continue_nano(int signal);
 void        block_sigwinch(bool blockit);
 void        handle_sigwinch(int signal);
-void        regenerate_screen(void);
+// void        regenerate_screen(void);
 // void        disable_kb_interrupt(void) _NOTHROW;
 // void        enable_kb_interrupt(void) _NOTHROW;
 // void        disable_flow_control(void) _NOTHROW;
 // void        enable_flow_control(void) _NOTHROW;
-void        terminal_init(void) _NOTHROW;
+// void        terminal_init(void) _NOTHROW;
 // void        confirm_margin(void) _NOTHROW;
 void        unbound_key(int code) _NOTHROW;
 bool        wanted_to_move(functionptrtype f);
@@ -563,7 +563,7 @@ void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _
 // void        get_region(linestruct **top, Ulong *top_x, linestruct **bot, Ulong *bot_x) _NOTHROW;
 // void        get_range(linestruct **top, linestruct **bot) _NOTHROW;
 // linestruct *line_from_number(long number) _NOTHROW;
-Ulong       number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW _NONNULL(1, 2);
+// Ulong       number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW _NONNULL(1, 2);
 const char *strstrwrapper(const char *haystack, const char *needle, const char *start) _NOTHROW _NONNULL(1);
 char       *alloced_pwd(void);
 char       *alloc_str_free_substrs(char *str_1, char *str_2) _NOTHROW _NONNULL(1, 2);
@@ -591,19 +591,19 @@ int   get_kbinput(WINDOW *win, bool showcursor);
 char *get_verbatim_kbinput(WINDOW *win, Ulong *count) _NOTHROW;
 int   get_mouseinput(int *my, int *mx, bool allow_shortcuts) _NOTHROW;
 // void  blank_edit(void) _NOTHROW;
-void  blank_statusbar(void) _NOTHROW;
-void  wipe_statusbar(void) _NOTHROW;
-void  blank_bottombars(void) _NOTHROW;
+// void  blank_statusbar(void) _NOTHROW;
+// void  wipe_statusbar(void) _NOTHROW;
+// void  blank_bottombars(void) _NOTHROW;
 void  blank_it_when_expired(void) _NOTHROW;
 // void  set_blankdelay_to_one(void) _NOTHROW;
 // char *display_string(const char *buf, Ulong column, Ulong span, bool isdata, bool isprompt) _NOTHROW;
 // void  titlebar(const char *path) _NOTHROW;
-void  minibar(void) _NOTHROW;
-void  statusline(message_type importance, const char *msg, ...) _NOTHROW;
-void  statusbar(const char *msg) _NOTHROW;
-void  warn_and_briefly_pause(const char *msg) _NOTHROW _NONNULL(1);
-void  bottombars(int menu) _NOTHROW;
-void  post_one_key(const char *keystroke, const char *tag, int width) _NOTHROW;
+// void  minibar(void) _NOTHROW;
+// void  statusline(message_type importance, const char *msg, ...) _NOTHROW;
+// void  statusbar(const char *msg) _NOTHROW;
+// void  warn_and_briefly_pause(const char *msg) _NOTHROW _NONNULL(1);
+// void  bottombars(int menu) _NOTHROW;
+// void  post_one_key(const char *keystroke, const char *tag, int width) _NOTHROW;
 // void  place_the_cursor(void) _NOTHROW;
 // void  draw_row(const int row, const char *converted, linestruct *line, const Ulong from_col);
 // int   update_line(linestruct *line, Ulong index, int offset = 0);
@@ -625,8 +625,8 @@ void  post_one_key(const char *keystroke, const char *tag, int width) _NOTHROW;
 // void  edit_refresh(void);
 // void  adjust_viewport(update_type manner) _NOTHROW;
 void  full_refresh(void) _NOTHROW;
-void  draw_all_subwindows(void);
-void  report_cursor_position(void) _NOTHROW;
+// void  draw_all_subwindows(void);
+// void  report_cursor_position(void) _NOTHROW;
 // void  spotlight(Ulong from_col, Ulong to_col) _NOTHROW;
 // void  spotlight_softwrapped(Ulong from_col, Ulong to_col) _NOTHROW;
 void  do_credits(void);

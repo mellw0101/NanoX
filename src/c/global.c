@@ -103,6 +103,8 @@ char *suggest_str = NULL;
 char *present_path = NULL;
 /* The last string we searched for. */
 char *last_search = NULL;
+/* When not NULL: the title of the current help text. */
+char *title = NULL;
 
 /* ----------------------------- char [] ----------------------------- */
 

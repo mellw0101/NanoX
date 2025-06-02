@@ -29,7 +29,7 @@ bool ran_a_tool = FALSE;
 /* Whether we are in the help viewer. */
 // bool inhelp = FALSE;
 /* When not NULL: the title of the current help text. */
-char *title = NULL;
+// char *title = NULL;
 /* Did a command mangle enough of the buffer that we should repaint the screen? */
 // bool refresh_needed = FALSE;
 /* If we should refresh the suggest window. */
