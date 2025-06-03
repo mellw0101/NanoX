@@ -42,6 +42,7 @@ extern bool nanox_rc_seen_color_command;
 extern bool keep_mark;
 extern bool suggest_on;
 extern bool spotlighted;
+extern bool mute_modifiers;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -63,6 +64,7 @@ extern char *suggest_str;
 extern char *present_path;
 extern char *last_search;
 extern char *title;
+extern char *commandname;
 
 extern char suggest_buf[1024];
 
@@ -127,7 +129,8 @@ extern colortype *nanox_rc_lastcolor;
 
 extern colortype *color_combo[NUMBER_OF_ELEMENTS];
 
-extern keystruct  *sclist;
+extern keystruct *sclist;
+extern keystruct *planted_shortcut;
 
 extern funcstruct *allfuncs;
 extern funcstruct *exitfunc;
@@ -157,6 +160,16 @@ extern Ulong waiting_codes;
 extern int countdown;
 
 extern bool recording;
+
+extern int *key_buffer;
+extern int *nextcodes;
+extern Ulong key_capacity;
+extern int *macro_buffer;
+extern Ulong macro_length;
+extern Ulong milestone;
+extern bool reveal_cursor;
+extern bool linger_after_escape;
+extern const char *plants_pointer;
 
 /* ----------------------------- prompt.c ----------------------------- */
 
@@ -732,7 +745,18 @@ bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
 /* ---------------------------------------------------------- winio.c ---------------------------------------------------------- */
 
 
-bool  get_has_more(void);
+/* static */ void add_to_macrobuffer(int code);
+/* static */ void read_keys_from(WINDOW *const frame);
+/* static */ void put_back(int keycode);
+/* static */ int  get_code_from_plantation(void);
+/* static */ int  arrow_from_ABCD(int letter);
+/* static */ int  convert_SS3_sequence(const int *const seq, Ulong length, int *const consumed);
+
+void  record_macro(void);
+void  run_macro(void);
+void  reserve_space_for(Ulong newsize);
+void  implant(const char *const string);
+int   get_input(WINDOW *const frame);
 Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line, int total_cols);
 Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge, int toal_cols);
 Ulong extra_chunks_in(linestruct *const line, int total_cols);
@@ -1078,11 +1102,14 @@ void        terminal_init(void);
 void        window_init(void);
 void        regenerate_screen(void);
 
-/* ----------------------------- Defined in c++ ----------------------------- */
+
+/* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */
+
 
 void inject(char *burst, Ulong count);
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) __THROW;
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
+keystruct *strtosc(const char *input);
 
 
 _END_C_LINKAGE

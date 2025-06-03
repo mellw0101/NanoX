@@ -15,7 +15,7 @@
 /* Whether to keep mark when normaly we wouldent. */
 // bool keep_mark = FALSE;
 /* Whether to ignore modifier keys while running a macro or string bind. */
-bool mute_modifiers = FALSE;
+// bool mute_modifiers = FALSE;
 /* Whether text is being pasted into nano from outside. */
 bool bracketed_paste = FALSE;
 /* Becomes TRUE as soon as all options and files have been read. */
@@ -187,9 +187,9 @@ regmatch_t regmatches[10];
 /* The argument of the --rcfile option, when given. */
 // char *custom_nanorc = NULL;
 /* The name (of a function) between braces in a string bind. */
-char *commandname = NULL;
+// char *commandname = NULL;
 /* The function that the above name resolves to, if any. */
-keystruct *planted_shortcut = NULL;
+// keystruct *planted_shortcut = NULL;
 /* Whether any text is spotlighted. */
 // bool spotlighted = FALSE;
 /* Where the spotlighted text starts. */

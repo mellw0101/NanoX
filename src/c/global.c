@@ -62,6 +62,8 @@ bool keep_mark = FALSE;
 bool suggest_on = FALSE;
 /* Whether any text is spotlighted. */
 bool spotlighted = FALSE;
+/* Whether to ignore modifier keys while running a macro or string bind. */
+bool mute_modifiers = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 
@@ -105,6 +107,8 @@ char *present_path = NULL;
 char *last_search = NULL;
 /* When not NULL: the title of the current help text. */
 char *title = NULL;
+/* The name (of a function) between braces in a string bind. */
+char *commandname = NULL;
 
 /* ----------------------------- char [] ----------------------------- */
 
@@ -252,6 +256,8 @@ colortype *color_combo[NUMBER_OF_ELEMENTS] = {NULL};
 
 /* The start of the shortcuts list. */
 keystruct *sclist = NULL;
+/* The function that the above name resolves to, if any. */
+keystruct *planted_shortcut = NULL;
 
 /* ----------------------------- funcstruct * ----------------------------- */
 

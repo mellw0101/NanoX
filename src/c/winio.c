@@ -34,6 +34,27 @@ int countdown = 0;
 /* Whether we are in the process of recording a macro. */
 bool recording = FALSE;
 
+/* Make these static later. */
+
+/* A buffer for the keystrokes that haven't been handled. */
+/* static */ int *key_buffer = NULL;
+/* A pointer pointing at the next keycode in the keystroke buffer. */
+/* static */ int *nextcodes = NULL;
+/* The size of the keystroke buffer; gets doubled whenever needed. */
+/* static */ Ulong key_capacity = 32;
+/* A buffer where the recorded key codes are stored. */
+/* static */ int *macro_buffer = NULL;
+/* The current length of the macro. */
+/* static */ Ulong macro_length = 0;
+/* Where the last burst of recorded keystrokes started. */
+/* static */ Ulong milestone = 0;
+/* Whether the cursor should be shown when waiting for input. */
+/* static */ bool reveal_cursor = FALSE;
+/* Whether to give ncurses some time to get the next code. */
+/* static */ bool linger_after_escape = FALSE;
+/* Points into the expansion string for the current implantation. */
+/* static */ const char *plants_pointer = NULL;
+
 /* Whether the current line has more text after the displayed part. */
 static bool has_more = FALSE;
 /* The starting column of the next chunk when softwrapping. */
@@ -51,6 +72,401 @@ static int buffer_number(openfilestruct *buffer) {
     ++count;
   }
   return count;
+}
+
+/* Add the given code to the macro buffer. */
+/* static */ void add_to_macrobuffer(int code) {
+  ++macro_length;
+  macro_buffer = xrealloc(macro_buffer, (macro_length * sizeof(int)));
+  macro_buffer[macro_length - 1] = code;
+}
+
+/**
+ * Control character compatibility:
+ *
+ *   Ctrl-H is Backspace under ASCII, ANSI, VT100, and VT220.
+ *   Ctrl-I is Tab under ASCII, ANSI, VT100, VT220, and VT320.
+ *   Ctrl-M is Enter under ASCII, ANSI, VT100, VT220, and VT320.
+ *   Ctrl-Q is XON under ASCII, ANSI, VT100, VT220, and VT320.
+ *   Ctrl-S is XOFF under ASCII, ANSI, VT100, VT220, and VT320.
+ *   Ctrl-? is Delete under ASCII, ANSI, VT100, and VT220, but is Backspace under VT320.
+ *
+ * Note: the VT220 and VT320 also generate Esc [ 3 ~ for Delete.  By default,
+ * xterm assumes it's running on a VT320 and generates Ctrl-? for Backspace
+ * and Esc [ 3 ~ for Delete.  This causes problems for VT100-derived terminals
+ * such as the FreeBSD console, which expect Ctrl-H for Backspace and Ctrl-?
+ * for Delete, and on which ncurses translates the VT320 sequences to KEY_DC
+ * and [nothing].  We work around this conflict via the REBIND_DELETE flag:
+ * if it's set, we assume VT100 compatibility, and VT320 otherwise.
+ *
+ * Escape sequence compatibility:
+ *
+ * We support escape sequences for ANSI, VT100, VT220, VT320, the Linux
+ * console, the FreeBSD console, the Mach console, xterm, and Terminal,
+ * and some for Konsole, rxvt, Eterm, and iTerm2.  Among these sequences,
+ * there are some conflicts:
+ *
+ * - PageUp on FreeBSD console == Tab on ANSI; the latter is omitted.
+ *   (Ctrl-I is also Tab on ANSI, which we already support.)
+ * - PageDown on FreeBSD console == Center (5) on numeric keypad with
+ *   NumLock off on Linux console; the latter is useless and omitted.
+ * - F1 on FreeBSD console == the mouse sequence on xterm/rxvt/Eterm;
+ *   the latter is omitted.  (Mouse input works only when KEY_MOUSE
+ *   is generated on mouse events, not with the raw escape sequence.)
+ * - F9 on FreeBSD console == PageDown on Mach console; the former is
+ *   omitted.  (Moving the cursor is more important than a function key.)
+ * - F10 on FreeBSD console == PageUp on Mach console; the former is
+ *   omitted.  (Same as above.)
+ */
+/* Read in at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
+/* static */ void read_keys_from(WINDOW *const frame) {
+  int   input    = ERR;
+  Ulong errcount = 0;
+  bool  timed    = FALSE;
+  /* Before reading the first keycode, display any pending screen updates. */
+  doupdate();
+  if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) && (LINES > 1 || lastmessage <= HUSH)) {
+    curs_set(1);
+  }
+  if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH && lastmessage < ALERT && lastmessage != INFO) || spotlighted)) {
+    timed = TRUE;
+    halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
+    /* Counteract a side effect of half-delay mode. */
+    disable_kb_interrupt();
+  }
+  /* Read in the first keycode, waiting for it to arrive. */
+  while (input == ERR) {
+    input = wgetch(frame);
+    if (the_window_resized) {
+      regenerate_screen();
+      input = KEY_WINCH;
+    }
+    if (timed) {
+      timed = FALSE;
+      /* Leave half-delay mode. */
+      raw();
+      if (input == ERR) {
+        if (spotlighted || ISSET(ZERO) || LINES == 1) {
+          if (ISSET(ZERO) && lastmessage > VACUUM) {
+            wredrawln(midwin, (editwinrows - 1), 1);
+          }
+          lastmessage = VACUUM;
+          spotlighted = FALSE;
+          update_line_curses(openfile->current, openfile->current_x);
+          wnoutrefresh(midwin);
+          curs_set(1);
+        }
+        if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1) {
+          minibar();
+        }
+        as_an_at = TRUE;
+        place_the_cursor();
+        doupdate();
+        continue;
+      }
+    }
+    /* When we've failed to get a keycode millions of times in a row, assume our input source
+     * is gone and die gracefully.  We could check if errno is set to EIO ("Input/output error")
+     * and die in that case, but it's not always set properly.  Argh. */
+    if (input == ERR && ++errcount == 12345678) {
+      die(_("Too many errors from stdin\n"));
+    }
+  }
+  curs_set(0);
+  /* When there is no keystroke buffer yet, allocate one. */
+  if (!key_buffer) {
+    reserve_space_for(key_capacity);
+  }
+  key_buffer[0] = input;
+  nextcodes     = key_buffer;
+  waiting_codes = 1;
+  /* Cancel the highlighting of a search match, if there still is one. */
+  if (currmenu == MMAIN) {
+    refresh_needed |= spotlighted;
+    spotlighted = FALSE;
+  }
+  /* If we got a SIGWINCH, get out as the frame argument is no longer valid. */
+  if (input == KEY_WINCH) {
+    return;
+  }
+  /* Remember where the recording of this keystroke (or burst of them) started. */
+  milestone = macro_length;
+  /* Read in any remaining key codes using non-blocking input. */
+  nodelay(frame, TRUE);
+  /* After an ESC, when ncurses does not translate escape sequences, give the keyboard some time to bring the next code to ncurses. */
+  if (input == ESC_CODE && (linger_after_escape || ISSET(RAW_SEQUENCES))) {
+    napms(20);
+  }
+  while (TRUE) {
+    if (recording) {
+      add_to_macrobuffer(input);
+    }
+    input = wgetch(frame);
+    /* If there aren't any more characters, stop reading. */
+    if (input == ERR) {
+      break;
+    }
+    /* When the keystroke buffer is full, extend it. */
+    if (waiting_codes == key_capacity) {
+      reserve_space_for(2 * key_capacity);
+    }
+    key_buffer[waiting_codes++] = input;
+  }
+  /* Restore blocking-input mode. */
+  nodelay(frame, FALSE);
+#ifdef DEBUG
+  fprintf(stderr, "\nSequence of hex codes:");
+  for (Ulong i=0; i<waiting_codes; ++i) {
+    fprintf(stderr, " %3x", key_buffer[i]);
+  }
+  fprintf(stderr, "\n");
+#endif
+}
+
+/* Add the given keycode to the front of the keystroke buffer. */
+/* static */ void put_back(int keycode) {
+  /* If there is no room at the head of the keystroke buffer, make room. */
+  if (nextcodes == key_buffer) {
+    if (waiting_codes == key_capacity) {
+      reserve_space_for(2 * key_capacity);
+    }
+    memmove((key_buffer + 1), key_buffer, (waiting_codes * sizeof(int)));
+  }
+  else {
+    --nextcodes;
+  }
+  *nextcodes = keycode;
+  ++waiting_codes;
+}
+
+/* Continue processing an expansion string.  Returns either an error code, a plain character byte, or a placeholder for a command shortcut. */
+/* static */ int get_code_from_plantation(void) {
+  char *closing;
+  char *opening;
+  Uchar firstbyte;
+  int length;
+  if (*plants_pointer == '{') {
+    closing = strchr((plants_pointer + 1), '}');
+    if (!closing) {
+      return MISSING_BRACE;
+    }
+    if (plants_pointer[1] == '{' && plants_pointer[2] == '}') {
+      plants_pointer += 3;
+      if (*plants_pointer) {
+        put_back(MORE_PLANTS);
+      }
+      return '{';
+    }
+    free(commandname);
+    free(planted_shortcut);
+    commandname      = measured_copy((plants_pointer + 1), (closing - plants_pointer - 1));
+    planted_shortcut = strtosc(commandname);
+    if (!planted_shortcut) {
+      return NO_SUCH_FUNCTION;
+    }
+    plants_pointer = (closing + 1);
+    if (*plants_pointer) {
+      put_back(MORE_PLANTS);
+    }
+    return PLANTED_A_COMMAND;
+  }
+  else {
+    opening = _(strchr(plants_pointer, '{'));
+    firstbyte = *plants_pointer;
+    if (opening) {
+      length = (opening - plants_pointer);
+      put_back(MORE_PLANTS);
+    }
+    else {
+      length = strlen(plants_pointer);
+    }
+    for (int index = (length - 1); index > 0; --index) {
+      put_back((Uchar)plants_pointer[index]);
+    }
+    plants_pointer += length;
+    return ((firstbyte) ? firstbyte : ERR);
+  }
+}
+
+/* Return the arrow-key code that corresponds to the given letter.  (This mapping is common to a handful of escape sequences). */
+/* static */ int arrow_from_ABCD(int letter) {
+  /* This is how it was done before.
+   *
+   * if (letter < 'C') {
+   *   return ((letter == 'A') ? KEY_UP : KEY_DOWN);
+   * }
+   * return ((letter == 'D') ? KEY_LEFT : KEY_RIGHT);
+   *
+   * And this is the new way we are doing this. */
+  return ((letter < 'C') ? ((letter == 'A') ? KEY_UP : KEY_DOWN) : ((letter == 'D') ? KEY_LEFT : KEY_RIGHT));
+}
+
+/* Translate a sequence that began with "Esc O" to its corresponding key code. */
+/* static */ int convert_SS3_sequence(const int *const seq, Ulong length, int *const consumed) {
+  switch (seq[0]) {
+    case '1': {
+      if (length > 3 && seq[1] == ';') {
+        *consumed = 4;
+        switch (seq[2]) {
+          case '2': { /* Shift */
+            if ('A' <= seq[3] && seq[3] <= 'D') {
+              /* 'Esc O 1 ; 2 A' == Shift-Up    on old Terminal.
+               * 'Esc O 1 ; 2 B' == Shift-Down  on old Terminal.
+               * 'Esc O 1 ; 2 C' == Shift-Right on old Terminal.
+               * 'Esc O 1 ; 2 D' == Shift-Left  on old Terminal. */
+              shift_held = TRUE;
+              return arrow_from_ABCD(seq[3]);
+            }
+            break;
+          }
+          case '5': { /* Ctrl */
+            switch (seq[3]) {
+              case 'A': { /* 'Esc O 1 ; 5 A' == 'Ctrl-Up' on old Terminal. */ 
+                return CONTROL_UP;
+              }
+              case 'B': { /* 'Esc O 1 ; 5 B' == 'Ctrl-Down' on old Terminal. */ 
+                return CONTROL_DOWN;
+              }
+              case 'C': { /* 'Esc O 1 ; 5 C' == 'Ctrl-Right' on old Terminal. */
+                return CONTROL_RIGHT;
+              }
+              case 'D': { /* 'Esc O 1 ; 5 D' == 'Ctrl-Left' on old Terminal. */
+                return CONTROL_LEFT;
+              }
+            }
+            break;
+          }
+        }
+      }
+      break;
+    }
+    case '2':   /* Shift */
+    case '3':   /* Alt */
+    case '4':   /* Shift+Alt */
+    case '5':   /* Ctrl */
+    case '6':   /* Shift+Ctrl */
+    case '7':   /* Alt+Ctrl */
+    case '8': { /* Shift+Alt+Ctrl */
+      if (length > 1) {
+        *consumed = 2;
+        /* Do not accept multiple modifiers. */
+        if (seq[0] == '4' || seq[0] > '5') {
+          return FOREIGN_SEQUENCE;
+        }
+        switch (seq[1]) {
+          case 'A': { /* Esc O 5 A == Ctrl-Up on Haiku. */
+            return CONTROL_UP;
+          }
+          case 'B': { /* Esc O 5 B == Ctrl-Down on Haiku. */
+            return CONTROL_DOWN;
+          }
+          case 'C': { /* Esc O 5 C == Ctrl-Right on Haiku. */
+            return CONTROL_RIGHT;
+          }
+          case 'D': { /* Esc O 5 D == Ctrl-Left on Haiku. */
+            return CONTROL_LEFT;
+          }
+        }
+        /* Translate 'Shift+digit' on the keypad to the digit (Esc O 2 p == Shift-0, ...),
+         * 'modifier+operator' to the operator, and 'modifier+Enter' to CR. */
+        return (seq[1] - 0x40);
+      }
+      break;
+    }
+    case 'A': { /* 'Esc O A' == 'Up'    on 'VT100/VT320'. */
+      return KEY_UP;
+    }
+    case 'B': { /* 'Esc O B' == 'Down'  on 'VT100/VT320'. */
+      return KEY_DOWN;
+    }
+    case 'C': { /* 'Esc O C' == 'Right' on 'VT100/VT320'. */
+      return KEY_RIGHT;
+    }
+    case 'D': { /* 'Esc O D' == 'Left'  on 'VT100/VT320'. */
+      return KEY_LEFT;
+    }
+    case 'F': { /* 'Esc O F' == 'End'   on 'old xterm'. */
+      return KEY_END;
+    }
+    case 'H': { /* 'Esc O H' == 'Home'  on 'old xterm'. */
+      return KEY_HOME;
+    }
+    case 'M': { /* 'Esc O M' == 'Enter' on numeric keypad with NumLock off on 'VT100/VT220/VT320'. */
+      return KEY_ENTER;
+    }
+    case 'P':   /* 'Esc O P' == 'F1' on 'VT100/VT220/VT320/xterm/Mach' console. */
+    case 'Q':   /* 'Esc O Q' == 'F2' on 'VT100/VT220/VT320/xterm/Mach' console. */
+    case 'R':   /* 'Esc O R' == 'F3' on 'VT100/VT220/VT320/xterm/Mach' console. */
+    case 'S': { /* 'Esc O S' == 'F4' on 'VT100/VT220/VT320/xterm/Mach' console. */
+      return KEY_F(seq[0] - 'O');
+    }
+    case 'T':   /* 'Esc O T' == 'F5'  on 'Mach' console. */
+    case 'U':   /* 'Esc O U' == 'F6'  on 'Mach' console. */
+    case 'V':   /* 'Esc O V' == 'F7'  on 'Mach' console. */
+    case 'W':   /* 'Esc O W' == 'F8'  on 'Mach' console. */
+    case 'X':   /* 'Esc O X' == 'F9'  on 'Mach' console. */
+    case 'Y': { /* 'Esc O Y' == 'F10' on 'Mach' console. */ 
+      return KEY_F(seq[0] - 'O');
+    }
+    case 'a': { /* 'Esc O a' == 'Ctrl-Up'    on 'rxvt/Eterm'. */
+      return CONTROL_UP;
+    }
+    case 'b': { /* 'Esc O b' == 'Ctrl-Down'  on 'rxvt/Eterm'. */
+      return CONTROL_DOWN;
+    }
+    case 'c': { /* 'Esc O c' == 'Ctrl-Right' on 'rxvt/Eterm'. */
+      return CONTROL_RIGHT;
+    }
+    case 'd': { /* 'Esc O d' == 'Ctrl-Left'  on 'rxvt/Eterm'. */
+      return CONTROL_LEFT;
+    }
+    case 'j': { /* 'Esc O j' == '*' on numeric keypad with NumLock off on 'xterm/rxvt/Eterm'. */
+      return '*';
+    }
+    case 'k': { /* 'Esc O k' == '+' on the same. */
+      return '+';
+    }
+    case 'l': { /* 'Esc O l' == ',' on VT100/VT220/VT320. */
+      return ',';
+    }
+    case 'm': { /* 'Esc O m' == '-' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
+      return '-';
+    }
+    case 'n': { /* 'Esc O n' == Delete (.) on numeric keypad with NumLock off on rxvt/Eterm. */
+      return KEY_DC;
+    }
+    case 'o': { /* 'Esc O o' == '/' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
+      return '/';
+    }
+    case 'p': { /* 'Esc O p' == Insert (0) on numeric keypad with NumLock off on rxvt/Eterm. */
+      return KEY_IC;
+    }
+    case 'q': { /* 'Esc O q' == End (1) on the same. */
+      return KEY_END;
+    }
+    case 'r': { /* 'Esc O r' == Down (2) on the same. */
+      return KEY_DOWN;
+    }
+    case 's': { /* 'Esc O s' == PageDown (3) on the same. */
+      return KEY_NPAGE;
+    }
+    case 't': { /* 'Esc O t' == Left (4) on the same. */
+      return KEY_LEFT;
+    }
+    case 'v': { /* 'Esc O v' == Right (6) on the same. */
+      return KEY_RIGHT;
+    }
+    case 'w': { /* 'Esc O w' == Home (7) on the same. */
+      return KEY_HOME;
+    }
+    case 'x': { /* 'Esc O x' == Up (8) on the same. */
+      return KEY_UP;
+    }
+    case 'y': { /* 'Esc O y' == PageUp (9) on the same. */
+      return KEY_PPAGE;
+    }
+  }
+  return FOREIGN_SEQUENCE;
 }
 
 /* ----------------------------- Curses ----------------------------- */
@@ -128,8 +544,83 @@ static void draw_scrollbar_curses(void) {
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-bool get_has_more(void) {
-  return has_more;
+/* Start or stop the recording of keystrokes. */
+void record_macro(void) { 
+  recording = !recording;
+  if (recording) {
+    macro_length = 0;
+    statusline(REMARK, _("Recording a macro..."));
+  }
+  else {
+    /* Snip the keystroke that invoked this function. */
+    macro_length = milestone;
+    statusline(REMARK, _("Stopped recording"));
+  }
+  if (ISSET(STATEFLAGS)) {
+    titlebar(NULL);
+  }
+}
+
+/* Copy the stored sequence of codes into the regular key buffer, so they will be "executed" again. */
+void run_macro(void) {
+  if (recording) {
+    statusline(AHEM, _("Cannot run macro while recording"));
+    macro_length = milestone;
+    return;
+  }
+  if (!macro_length) {
+    statusline(AHEM, _("Macro is empty"));
+    return;
+  }
+  if (macro_length > key_capacity) {
+    reserve_space_for(macro_length);
+  }
+  for (Ulong i = 0; i < macro_length; ++i) {
+    key_buffer[i] = macro_buffer[i];
+  }
+  waiting_codes  = macro_length;
+  nextcodes      = key_buffer;
+  mute_modifiers = TRUE;
+}
+
+/* Allocate the requested space for the keystroke. */
+void reserve_space_for(Ulong newsize) {
+  if (newsize < key_capacity) {
+    die(_("Too much input at once\n"));
+  }
+  key_buffer   = xrealloc(key_buffer, (newsize * sizeof(int)));
+  nextcodes    = key_buffer;
+  key_capacity = newsize;
+}
+
+/* Set up the given expansion string to be ingested by the keyboard routines. */
+void implant(const char *const string) {
+  plants_pointer = string;
+  put_back(MORE_PLANTS);
+  mute_modifiers = TRUE;
+}
+
+/* Return one code from the keystroke buffer.  If the buffer is empty but frame is given, first read more codes from the keyboard. */
+int get_input(WINDOW *const frame) {
+  if (waiting_codes) {
+    spotlighted = FALSE;
+  }
+  else if (frame) {
+    read_keys_from(frame);
+  }
+  if (waiting_codes) {
+    --waiting_codes;
+    if (*nextcodes == MORE_PLANTS) {
+      ++nextcodes;
+      return get_code_from_plantation();
+    }
+    else {
+      return *(nextcodes++);
+    }
+  }
+  else {
+    return ERR;
+  }
 }
 
 /* Get the column number after leftedge where we can break the given linedata,

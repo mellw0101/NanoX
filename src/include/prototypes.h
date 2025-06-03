@@ -104,7 +104,7 @@ extern const char *term_program;
 // extern bool meta_key;
 // extern bool shift_held;
 // extern bool keep_mark;
-extern bool mute_modifiers;
+// extern bool mute_modifiers;
 extern bool bracketed_paste;
 // extern bool we_are_running;
 // extern bool more_than_one;
@@ -149,7 +149,7 @@ extern regmatch_t regmatches[10];
 extern char *statedir;
 // extern char *startup_problem;
 // extern char *custom_nanorc;
-extern char *commandname;
+// extern char *commandname;
 // extern bool  spotlighted;
 // extern Ulong light_from_col;
 // extern Ulong light_to_col;
@@ -158,7 +158,7 @@ extern bool last_key_was_bracket;
 extern char last_bracket_char;
 
 // extern colortype *color_combo[NUMBER_OF_ELEMENTS];
-extern keystruct *planted_shortcut;
+// extern keystruct *planted_shortcut;
 
 extern task_queue_t          *task_queue;
 extern pthread_t             *threads;
@@ -456,7 +456,7 @@ int   ask_user(bool withall, const char *question);
 // void       set_interface_color(const u_char element, char *combotext);
 // void       display_rcfile_errors(void) _NOTHROW;
 // void       jot_error(const char *msg, ...) _NOTHROW;
-keystruct *strtosc(const char *input);
+// keystruct *strtosc(const char *input);
 // char      *parse_next_word(char *ptr) _NOTHROW;
 // bool       is_good_file(char *file) _NOTHROW;
 // void       parse_one_include(char *file, syntaxtype *syntax);
@@ -580,12 +580,12 @@ const char *string_strstr_array(const char *str, const vector<string> &substrs, 
 int         qsort_strlen(const void *a, const void *b);
 
 /* Most functions in 'winio.cpp'. */
-void  record_macro(void) _NOTHROW;
-void  run_macro(void) _NOTHROW;
-void  reserve_space_for(Ulong newsize) _NOTHROW;
+// void  record_macro(void) _NOTHROW;
+// void  run_macro(void) _NOTHROW;
+// void  reserve_space_for(Ulong newsize) _NOTHROW;
 // Ulong waiting_keycodes(void) _NOTHROW;
-void  implant(const char *string) _NOTHROW;
-int   get_input(WINDOW *win);
+// void  implant(const char *string) _NOTHROW;
+// int   get_input(WINDOW *win);
 int   convert_CSI_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW;
 int   get_kbinput(WINDOW *win, bool showcursor);
 char *get_verbatim_kbinput(WINDOW *win, Ulong *count) _NOTHROW;

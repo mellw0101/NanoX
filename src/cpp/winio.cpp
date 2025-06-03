@@ -9,21 +9,21 @@
 #endif
 
 /* A buffer for the keystrokes that haven't been handled. */
-static int *key_buffer = NULL;
+// static int *key_buffer = NULL;
 /* A pointer pointing at the next keycode in the keystroke buffer. */
-static int *nextcodes = NULL;
+// static int *nextcodes = NULL;
 /* The size of the keystroke buffer; gets doubled whenever needed. */
-static Ulong capacity = 32;
+// static Ulong key_capacity = 32;
 /* The number of key codes waiting in the keystroke buffer. */
 // static Ulong waiting_codes = 0;
 /* Points into the expansion string for the current implantation. */
-static const char *plants_pointer = NULL;
+// static const char *plants_pointer = NULL;
 /* How many digits of a three-digit character code we've eaten. */
 static int digit_count = 0;
 /* Whether the cursor should be shown when waiting for input. */
-static bool reveal_cursor = FALSE;
+// static bool reveal_cursor = FALSE;
 /* Whether to give ncurses some time to get the next code. */
-static bool linger_after_escape = FALSE;
+// static bool linger_after_escape = FALSE;
 /* The number of keystrokes left before we blank the status bar. */
 // static int countdown = 0;
 /* From where in the relevant line the current row is drawn. */
@@ -39,67 +39,67 @@ static bool linger_after_escape = FALSE;
 /* Whether we are in the process of recording a macro. */
 // static bool recording = FALSE;
 /* A buffer where the recorded key codes are stored. */
-static int *macro_buffer = NULL;
+// static int *macro_buffer = NULL;
 /* The current length of the macro. */
-static Ulong macro_length = 0;
+// static Ulong macro_length = 0;
 /* Where the last burst of recorded keystrokes started. */
-static Ulong milestone = 0;
+// static Ulong milestone = 0;
 
 /* Add the given code to the macro buffer. */
-static void add_to_macrobuffer(int code) _NOTHROW {
-  ++macro_length;
-  macro_buffer = arealloc(macro_buffer, (macro_length * sizeof(int)));
-  macro_buffer[macro_length - 1] = code;
-}
+// static void add_to_macrobuffer(int code) _NOTHROW {
+//   ++macro_length;
+//   macro_buffer = arealloc(macro_buffer, (macro_length * sizeof(int)));
+//   macro_buffer[macro_length - 1] = code;
+// }
 
 /* Start or stop the recording of keystrokes. */
-void record_macro(void) _NOTHROW { 
-  recording = !recording;
-  if (recording) {
-    macro_length = 0;
-    statusline(REMARK, _("Recording a macro..."));
-  }
-  else {
-    /* Snip the keystroke that invoked this function. */
-    macro_length = milestone;
-    statusline(REMARK, _("Stopped recording"));
-  }
-  if (ISSET(STATEFLAGS)) {
-    titlebar(NULL);
-  }
-}
+// void record_macro(void) _NOTHROW { 
+//   recording = !recording;
+//   if (recording) {
+//     macro_length = 0;
+//     statusline(REMARK, _("Recording a macro..."));
+//   }
+//   else {
+//     /* Snip the keystroke that invoked this function. */
+//     macro_length = milestone;
+//     statusline(REMARK, _("Stopped recording"));
+//   }
+//   if (ISSET(STATEFLAGS)) {
+//     titlebar(NULL);
+//   }
+// }
 
 /* Copy the stored sequence of codes into the regular key buffer, so they will be "executed" again. */
-void run_macro(void) _NOTHROW {
-  if (recording) {
-    statusline(AHEM, _("Cannot run macro while recording"));
-    macro_length = milestone;
-    return;
-  }
-  if (!macro_length) {
-    statusline(AHEM, _("Macro is empty"));
-    return;
-  }
-  if (macro_length > capacity) {
-    reserve_space_for(macro_length);
-  }
-  for (Ulong i = 0; i < macro_length; ++i) {
-    key_buffer[i] = macro_buffer[i];
-  }
-  waiting_codes  = macro_length;
-  nextcodes      = key_buffer;
-  mute_modifiers = TRUE;
-}
+// void run_macro(void) _NOTHROW {
+//   if (recording) {
+//     statusline(AHEM, _("Cannot run macro while recording"));
+//     macro_length = milestone;
+//     return;
+//   }
+//   if (!macro_length) {
+//     statusline(AHEM, _("Macro is empty"));
+//     return;
+//   }
+//   if (macro_length > key_capacity) {
+//     reserve_space_for(macro_length);
+//   }
+//   for (Ulong i = 0; i < macro_length; ++i) {
+//     key_buffer[i] = macro_buffer[i];
+//   }
+//   waiting_codes  = macro_length;
+//   nextcodes      = key_buffer;
+//   mute_modifiers = TRUE;
+// }
 
 /* Allocate the requested space for the keystroke. */
-void reserve_space_for(Ulong newsize) _NOTHROW {
-  if (newsize < capacity) {
-    die(_("Too much input at once\n"));
-  }
-  key_buffer = arealloc(key_buffer, (newsize * sizeof(int)));
-  nextcodes  = key_buffer;
-  capacity   = newsize;
-}
+// void reserve_space_for(Ulong newsize) _NOTHROW {
+//   if (newsize < key_capacity) {
+//     die(_("Too much input at once\n"));
+//   }
+//   key_buffer   = arealloc(key_buffer, (newsize * sizeof(int)));
+//   nextcodes    = key_buffer;
+//   key_capacity = newsize;
+// }
 
 /**
  * Control character compatibility:
@@ -139,117 +139,117 @@ void reserve_space_for(Ulong newsize) _NOTHROW {
  *   omitted.  (Same as above.)
  */
 /* Read in at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
-static void read_keys_from(WINDOW *frame) {
-  NETLOG_FUNC_ST;
-  int   input    = ERR;
-  Ulong errcount = 0;
-  bool  timed    = FALSE;
-  /* Before reading the first keycode, display any pending screen updates. */
-  doupdate();
-  if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) && (LINES > 1 || lastmessage <= HUSH)) {
-    curs_set(1);
-  }
-  if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH && lastmessage < ALERT && lastmessage != INFO) || spotlighted)) {
-    NETLOG("Turning on halfdelay mode.\n");
-    timed = TRUE;
-    halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
-    /* Counteract a side effect of half-delay mode. */
-    disable_kb_interrupt();
-  }
-  /* Read in the first keycode, waiting for it to arrive. */
-  while (input == ERR) {
-    input = wgetch(frame);
-    if (the_window_resized) {
-      regenerate_screen();
-      input = KEY_WINCH;
-    }
-    if (timed) {
-      timed = FALSE;
-      /* Leave half-delay mode. */
-      raw();
-      if (input == ERR) {
-        if (spotlighted || ISSET(ZERO) || LINES == 1) {
-          if (ISSET(ZERO) && lastmessage > VACUUM) {
-            wredrawln(midwin, (editwinrows - 1), 1);
-          }
-          lastmessage = VACUUM;
-          spotlighted = FALSE;
-          update_line_curses(openfile->current, openfile->current_x);
-          wnoutrefresh(midwin);
-          curs_set(1);
-        }
-        if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1) {
-          minibar();
-        }
-        as_an_at = TRUE;
-        place_the_cursor();
-        doupdate();
-        continue;
-      }
-    }
-    /* When we've failed to get a keycode millions of times in a row, assume our input source
-     * is gone and die gracefully.  We could check if errno is set to EIO ("Input/output error")
-     * and die in that case, but it's not always set properly.  Argh. */
-    if (input == ERR && ++errcount == 12345678) {
-      die(_("Too many errors from stdin\n"));
-    }
-  }
-  curs_set(0);
-  /* When there is no keystroke buffer yet, allocate one. */
-  if (!key_buffer) {
-    reserve_space_for(capacity);
-  }
-  key_buffer[0] = input;
-  nextcodes     = key_buffer;
-  waiting_codes = 1;
-  /* Cancel the highlighting of a search match, if there still is one. */
-  if (currmenu == MMAIN) {
-    refresh_needed |= spotlighted;
-    spotlighted = FALSE;
-  }
-  /* If we got a SIGWINCH, get out as the frame argument is no longer valid. */
-  if (input == KEY_WINCH) {
-    return;
-  }
-  /* Remember where the recording of this keystroke (or burst of them) started. */
-  milestone = macro_length;
-  /* Read in any remaining key codes using non-blocking input. */
-  nodelay(frame, TRUE);
-  /* After an ESC, when ncurses does not translate escape sequences, give the keyboard some time to bring the next code to ncurses. */
-  if (input == ESC_CODE && (linger_after_escape || ISSET(RAW_SEQUENCES))) {
-    napms(20);
-  }
-  while (TRUE) {
-    if (recording) {
-      add_to_macrobuffer(input);
-    }
-    input = wgetch(frame);
-    /* If there aren't any more characters, stop reading. */
-    if (input == ERR) {
-      break;
-    }
-    /* When the keystroke buffer is full, extend it. */
-    if (waiting_codes == capacity) {
-      reserve_space_for(2 * capacity);
-    }
-    key_buffer[waiting_codes++] = input;
-  }
-  /* Restore blocking-input mode. */
-  nodelay(frame, FALSE);
-  /* Netlog the raw keycodes. */
-  NETLOG("\nSequence of hex codes:");
-  for (Ulong i = 0; i < waiting_codes; ++i) {
-    NETLOG(" %3x", key_buffer[i]);
-  }
-  NETLOG("\n");
-#ifdef DEBUG
-  fprintf(stderr, "\nSequence of hex codes:");
-  for (Ulong i = 0; i < waiting_codes; i++) {
-    fprintf(stderr, " %3x", key_buffer[i]);
-  }
-  fprintf(stderr, "\n");
-#endif
-}
+// static void read_keys_from(WINDOW *frame) {
+//   NETLOG_FUNC_ST;
+//   int   input    = ERR;
+//   Ulong errcount = 0;
+//   bool  timed    = FALSE;
+//   /* Before reading the first keycode, display any pending screen updates. */
+//   doupdate();
+//   if (reveal_cursor && (!spotlighted || ISSET(SHOW_CURSOR) || currmenu == MSPELL) && (LINES > 1 || lastmessage <= HUSH)) {
+//     curs_set(1);
+//   }
+//   if (currmenu == MMAIN && (((ISSET(MINIBAR) || ISSET(ZERO) || LINES == 1) && lastmessage > HUSH && lastmessage < ALERT && lastmessage != INFO) || spotlighted)) {
+//     NETLOG("Turning on halfdelay mode.\n");
+//     timed = TRUE;
+//     halfdelay(ISSET(QUICK_BLANK) ? 8 : 15);
+//     /* Counteract a side effect of half-delay mode. */
+//     disable_kb_interrupt();
+//   }
+//   /* Read in the first keycode, waiting for it to arrive. */
+//   while (input == ERR) {
+//     input = wgetch(frame);
+//     if (the_window_resized) {
+//       regenerate_screen();
+//       input = KEY_WINCH;
+//     }
+//     if (timed) {
+//       timed = FALSE;
+//       /* Leave half-delay mode. */
+//       raw();
+//       if (input == ERR) {
+//         if (spotlighted || ISSET(ZERO) || LINES == 1) {
+//           if (ISSET(ZERO) && lastmessage > VACUUM) {
+//             wredrawln(midwin, (editwinrows - 1), 1);
+//           }
+//           lastmessage = VACUUM;
+//           spotlighted = FALSE;
+//           update_line_curses(openfile->current, openfile->current_x);
+//           wnoutrefresh(midwin);
+//           curs_set(1);
+//         }
+//         if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1) {
+//           minibar();
+//         }
+//         as_an_at = TRUE;
+//         place_the_cursor();
+//         doupdate();
+//         continue;
+//       }
+//     }
+//     /* When we've failed to get a keycode millions of times in a row, assume our input source
+//      * is gone and die gracefully.  We could check if errno is set to EIO ("Input/output error")
+//      * and die in that case, but it's not always set properly.  Argh. */
+//     if (input == ERR && ++errcount == 12345678) {
+//       die(_("Too many errors from stdin\n"));
+//     }
+//   }
+//   curs_set(0);
+//   /* When there is no keystroke buffer yet, allocate one. */
+//   if (!key_buffer) {
+//     reserve_space_for(key_capacity);
+//   }
+//   key_buffer[0] = input;
+//   nextcodes     = key_buffer;
+//   waiting_codes = 1;
+//   /* Cancel the highlighting of a search match, if there still is one. */
+//   if (currmenu == MMAIN) {
+//     refresh_needed |= spotlighted;
+//     spotlighted = FALSE;
+//   }
+//   /* If we got a SIGWINCH, get out as the frame argument is no longer valid. */
+//   if (input == KEY_WINCH) {
+//     return;
+//   }
+//   /* Remember where the recording of this keystroke (or burst of them) started. */
+//   milestone = macro_length;
+//   /* Read in any remaining key codes using non-blocking input. */
+//   nodelay(frame, TRUE);
+//   /* After an ESC, when ncurses does not translate escape sequences, give the keyboard some time to bring the next code to ncurses. */
+//   if (input == ESC_CODE && (linger_after_escape || ISSET(RAW_SEQUENCES))) {
+//     napms(20);
+//   }
+//   while (TRUE) {
+//     if (recording) {
+//       add_to_macrobuffer(input);
+//     }
+//     input = wgetch(frame);
+//     /* If there aren't any more characters, stop reading. */
+//     if (input == ERR) {
+//       break;
+//     }
+//     /* When the keystroke buffer is full, extend it. */
+//     if (waiting_codes == key_capacity) {
+//       reserve_space_for(2 * key_capacity);
+//     }
+//     key_buffer[waiting_codes++] = input;
+//   }
+//   /* Restore blocking-input mode. */
+//   nodelay(frame, FALSE);
+//   /* Netlog the raw keycodes. */
+//   NETLOG("\nSequence of hex codes:");
+//   for (Ulong i = 0; i < waiting_codes; ++i) {
+//     NETLOG(" %3x", key_buffer[i]);
+//   }
+//   NETLOG("\n");
+// #ifdef DEBUG
+//   fprintf(stderr, "\nSequence of hex codes:");
+//   for (Ulong i = 0; i < waiting_codes; i++) {
+//     fprintf(stderr, " %3x", key_buffer[i]);
+//   }
+//   fprintf(stderr, "\n");
+// #endif
+// }
 
 /* Return the number of key codes waiting in the keystroke buffer. */
 // Ulong waiting_keycodes(void) _NOTHROW {
@@ -257,269 +257,269 @@ static void read_keys_from(WINDOW *frame) {
 // }
 
 /* Add the given keycode to the front of the keystroke buffer. */
-static void put_back(int keycode) _NOTHROW {
-  /* If there is no room at the head of the keystroke buffer, make room. */
-  if (nextcodes == key_buffer) {
-    if (waiting_codes == capacity) {
-      reserve_space_for(2 * capacity);
-    }
-    memmove((key_buffer + 1), key_buffer, (waiting_codes * sizeof(int)));
-  }
-  else {
-    --nextcodes;
-  }
-  *nextcodes = keycode;
-  ++waiting_codes;
-}
+// static void put_back(int keycode) _NOTHROW {
+//   /* If there is no room at the head of the keystroke buffer, make room. */
+//   if (nextcodes == key_buffer) {
+//     if (waiting_codes == key_capacity) {
+//       reserve_space_for(2 * key_capacity);
+//     }
+//     memmove((key_buffer + 1), key_buffer, (waiting_codes * sizeof(int)));
+//   }
+//   else {
+//     --nextcodes;
+//   }
+//   *nextcodes = keycode;
+//   ++waiting_codes;
+// }
 
 /* Set up the given expansion string to be ingested by the keyboard routines. */
-void implant(const char *string) _NOTHROW {
-  plants_pointer = string;
-  put_back(MORE_PLANTS);
-  mute_modifiers = TRUE;
-}
+// void implant(const char *string) _NOTHROW {
+//   plants_pointer = string;
+//   put_back(MORE_PLANTS);
+//   mute_modifiers = TRUE;
+// }
 
 /* Continue processing an expansion string.  Returns either an error code, a plain character byte, or a placeholder for a command shortcut. */
-static int get_code_from_plantation(void) {
-  PROFILE_FUNCTION;
-  if (*plants_pointer == '{') {
-    char *closing = (char *)constexpr_strchr((plants_pointer + 1), '}');
-    if (!closing) {
-      return MISSING_BRACE;
-    }
-    if (plants_pointer[1] == '{' && plants_pointer[2] == '}') {
-      plants_pointer += 3;
-      if (*plants_pointer) {
-        put_back(MORE_PLANTS);
-      }
-      return '{';
-    }
-    free(commandname);
-    free(planted_shortcut);
-    commandname      = measured_copy((plants_pointer + 1), (closing - plants_pointer - 1));
-    planted_shortcut = strtosc(commandname);
-    if (!planted_shortcut) {
-      return NO_SUCH_FUNCTION;
-    }
-    plants_pointer = (closing + 1);
-    if (*plants_pointer) {
-      put_back(MORE_PLANTS);
-    }
-    return PLANTED_A_COMMAND;
-  }
-  else {
-    char *opening   = _(strchr(plants_pointer, '{'));
-    Uchar firstbyte = *plants_pointer;
-    int   length;
-    if (opening) {
-      length = (opening - plants_pointer);
-      put_back(MORE_PLANTS);
-    }
-    else {
-      length = strlen(plants_pointer);
-    }
-    for (int index = (length - 1); index > 0; --index) {
-      put_back((Uchar)plants_pointer[index]);
-    }
-    plants_pointer += length;
-    return ((firstbyte) ? firstbyte : ERR);
-  }
-}
+// static int get_code_from_plantation(void) {
+//   PROFILE_FUNCTION;
+//   if (*plants_pointer == '{') {
+//     char *closing = (char *)constexpr_strchr((plants_pointer + 1), '}');
+//     if (!closing) {
+//       return MISSING_BRACE;
+//     }
+//     if (plants_pointer[1] == '{' && plants_pointer[2] == '}') {
+//       plants_pointer += 3;
+//       if (*plants_pointer) {
+//         put_back(MORE_PLANTS);
+//       }
+//       return '{';
+//     }
+//     free(commandname);
+//     free(planted_shortcut);
+//     commandname      = measured_copy((plants_pointer + 1), (closing - plants_pointer - 1));
+//     planted_shortcut = strtosc(commandname);
+//     if (!planted_shortcut) {
+//       return NO_SUCH_FUNCTION;
+//     }
+//     plants_pointer = (closing + 1);
+//     if (*plants_pointer) {
+//       put_back(MORE_PLANTS);
+//     }
+//     return PLANTED_A_COMMAND;
+//   }
+//   else {
+//     char *opening   = _(strchr(plants_pointer, '{'));
+//     Uchar firstbyte = *plants_pointer;
+//     int   length;
+//     if (opening) {
+//       length = (opening - plants_pointer);
+//       put_back(MORE_PLANTS);
+//     }
+//     else {
+//       length = strlen(plants_pointer);
+//     }
+//     for (int index = (length - 1); index > 0; --index) {
+//       put_back((Uchar)plants_pointer[index]);
+//     }
+//     plants_pointer += length;
+//     return ((firstbyte) ? firstbyte : ERR);
+//   }
+// }
 
 /* Return one code from the keystroke buffer.  If the buffer is empty but frame is given, first read more codes from the keyboard. */
-int get_input(WINDOW *frame) {
-  NETLOG_FUNC_ST;
-  if (waiting_codes) {
-    spotlighted = FALSE;
-  }
-  else if (frame) {
-    read_keys_from(frame);
-  }
-  if (waiting_codes) {
-    --waiting_codes;
-    if (*nextcodes == MORE_PLANTS) {
-      ++nextcodes;
-      return get_code_from_plantation();
-    }
-    else {
-      return *(nextcodes++);
-    }
-  }
-  else {
-    return ERR;
-  }
-}
+// int get_input(WINDOW *frame) {
+//   NETLOG_FUNC_ST;
+//   if (waiting_codes) {
+//     spotlighted = FALSE;
+//   }
+//   else if (frame) {
+//     read_keys_from(frame);
+//   }
+//   if (waiting_codes) {
+//     --waiting_codes;
+//     if (*nextcodes == MORE_PLANTS) {
+//       ++nextcodes;
+//       return get_code_from_plantation();
+//     }
+//     else {
+//       return *(nextcodes++);
+//     }
+//   }
+//   else {
+//     return ERR;
+//   }
+// }
 
 /* Return the arrow-key code that corresponds to the given letter.
  * (This mapping is common to a handful of escape sequences). */
-static int arrow_from_ABCD(const int letter) _NOTHROW {
-  if (letter < 'C') {
-    return ((letter == 'A') ? KEY_UP : KEY_DOWN);
-  }
-  return ((letter == 'D') ? KEY_LEFT : KEY_RIGHT);
-}
+// static int arrow_from_ABCD(const int letter) _NOTHROW {
+//   if (letter < 'C') {
+//     return ((letter == 'A') ? KEY_UP : KEY_DOWN);
+//   }
+//   return ((letter == 'D') ? KEY_LEFT : KEY_RIGHT);
+// }
 
 /* Translate a sequence that began with "Esc O" to its corresponding key code. */
-static int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW {
-  switch (seq[0]) {
-    case '1' : {
-      if (length > 3 && seq[1] == ';') {
-        *consumed = 4;
-        switch (seq[2]) {
-          case '2' : /* Shift */ {
-            if ('A' <= seq[3] && seq[3] <= 'D') {
-              /* Esc O 1 ; 2 A == Shift-Up    on old Terminal.
-               * Esc O 1 ; 2 B == Shift-Down  on old Terminal.
-               * Esc O 1 ; 2 C == Shift-Right on old Terminal.
-               * Esc O 1 ; 2 D == Shift-Left  on old Terminal. */
-              shift_held = TRUE;
-              return arrow_from_ABCD(seq[3]);
-            }
-            break;
-          }
-          case '5' : /* Ctrl */ {
-            switch (seq[3]) {
-              case 'A' : /* Esc O 1 ; 5 A == Ctrl-Up on old Terminal. */ {
-                return CONTROL_UP;
-              }
-              case 'B' : /* Esc O 1 ; 5 B == Ctrl-Down on old Terminal. */ {
-                return CONTROL_DOWN;
-              }
-              case 'C' : /* Esc O 1 ; 5 C == Ctrl-Right on old Terminal. */ {
-                return CONTROL_RIGHT;
-              }
-              case 'D' : /* Esc O 1 ; 5 D == Ctrl-Left on old Terminal. */ {
-                return CONTROL_LEFT;
-              }
-            }
-            break;
-          }
-        }
-      }
-      break;
-    }
-    case '2' : /* Shift */
-    case '3' : /* Alt */
-    case '4' : /* Shift+Alt */
-    case '5' : /* Ctrl */
-    case '6' : /* Shift+Ctrl */
-    case '7' : /* Alt+Ctrl */
-    case '8' : /* Shift+Alt+Ctrl */ {
-      if (length > 1) {
-        *consumed = 2;
-        /* Do not accept multiple modifiers. */
-        if (seq[0] == '4' || seq[0] > '5') {
-          return FOREIGN_SEQUENCE;
-        }
-        switch (seq[1]) {
-          case 'A' : /* Esc O 5 A == Ctrl-Up on Haiku. */ {
-            return CONTROL_UP;
-          }
-          case 'B' : /* Esc O 5 B == Ctrl-Down on Haiku. */ {
-            return CONTROL_DOWN;
-          }
-          case 'C' : /* Esc O 5 C == Ctrl-Right on Haiku. */ {
-            return CONTROL_RIGHT;
-          }
-          case 'D' : /* Esc O 5 D == Ctrl-Left on Haiku. */ {
-            return CONTROL_LEFT;
-          }
-        }
-        /* Translate 'Shift+digit' on the keypad to the digit (Esc O 2 p == Shift-0, ...),
-         * 'modifier+operator' to the operator, and 'modifier+Enter' to CR. */
-        return (seq[1] - 0x40);
-      }
-      break;
-    }
-    case 'A' :   /* Esc O A == Up on VT100/VT320. */
-    case 'B' :   /* Esc O B == Down on VT100/VT320. */
-    case 'C' :   /* Esc O C == Right on VT100/VT320. */
-    case 'D' : { /* Esc O D == Left on VT100/VT320. */
-      return arrow_from_ABCD(seq[0]);
-    }
-    case 'F' : { /* Esc O F == End on old xterm. */
-      return KEY_END;
-    }
-    case 'H' : { /* Esc O H == Home on old xterm. */
-      return KEY_HOME;
-    }
-    case 'M' : { /* Esc O  M == Enter on numeric keypad with NumLock off on VT100/VT220/VT320. */
-      return KEY_ENTER;
-    }
-    case 'P' :   /* Esc O P == F1 on VT100/VT220/VT320/xterm/Mach console. */
-    case 'Q' :   /* Esc O Q == F2 on VT100/VT220/VT320/xterm/Mach console. */
-    case 'R' :   /* Esc O R == F3 on VT100/VT220/VT320/xterm/Mach console. */
-    case 'S' : { /* Esc O S == F4 on VT100/VT220/VT320/xterm/Mach console. */
-      return KEY_F(seq[0] - 'O');
-    }
-    case 'T' : /* Esc O T == F5 on Mach console. */
-    case 'U' : /* Esc O U == F6 on Mach console. */
-    case 'V' : /* Esc O V == F7 on Mach console. */
-    case 'W' : /* Esc O W == F8 on Mach console. */
-    case 'X' : /* Esc O X == F9 on Mach console. */
-    case 'Y' : /* Esc O Y == F10 on Mach console. */ {
-      return KEY_F(seq[0] - 'O');
-    }
-    case 'a' : /* Esc O a == Ctrl-Up on rxvt/Eterm. */ {
-      return CONTROL_UP;
-    }
-    case 'b' : /* Esc O b == Ctrl-Down on rxvt/Eterm. */ {
-      return CONTROL_DOWN;
-    }
-    case 'c' : /* Esc O c == Ctrl-Right on rxvt/Eterm. */ {
-      return CONTROL_RIGHT;
-    }
-    case 'd' : /* Esc O d == Ctrl-Left on rxvt/Eterm. */ {
-      return CONTROL_LEFT;
-    }
-    case 'j' : { /* Esc O j == '*' on numeric keypad with NumLock off on xterm/rxvt/Eterm. */
-      return '*';
-    }
-    case 'k' : { /* Esc O k == '+' on the same. */
-      return '+';
-    }
-    case 'l' : { /* Esc O l == ',' on VT100/VT220/VT320. */
-      return ',';
-    }
-    case 'm' : { /* Esc O m == '-' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
-      return '-';
-    }
-    case 'n' : { /* Esc O n == Delete (.) on numeric keypad with NumLock off on rxvt/Eterm. */
-      return KEY_DC;
-    }
-    case 'o' : { /* Esc O o == '/' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
-      return '/';
-    }
-    case 'p' : { /* Esc O p == Insert (0) on numeric keypad with NumLock off on rxvt/Eterm. */
-      return KEY_IC;
-    }
-    case 'q' : { /* Esc O q == End (1) on the same. */
-      return KEY_END;
-    }
-    case 'r' : { /* Esc O r == Down (2) on the same. */
-      return KEY_DOWN;
-    }
-    case 's' : { /* Esc O s == PageDown (3) on the same. */
-      return KEY_NPAGE;
-    }
-    case 't' : { /* Esc O t == Left (4) on the same. */
-      return KEY_LEFT;
-    }
-    case 'v' : { /* Esc O v == Right (6) on the same. */
-      return KEY_RIGHT;
-    }
-    case 'w' : { /* Esc O w == Home (7) on the same. */
-      return KEY_HOME;
-    }
-    case 'x' : { /* Esc O x == Up (8) on the same. */
-      return KEY_UP;
-    }
-    case 'y' : { /* Esc O y == PageUp (9) on the same. */
-      return KEY_PPAGE;
-    }
-  }
-  return FOREIGN_SEQUENCE;
-}
+// static int convert_SS3_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW {
+//   switch (seq[0]) {
+//     case '1' : {
+//       if (length > 3 && seq[1] == ';') {
+//         *consumed = 4;
+//         switch (seq[2]) {
+//           case '2' : /* Shift */ {
+//             if ('A' <= seq[3] && seq[3] <= 'D') {
+//               /* Esc O 1 ; 2 A == Shift-Up    on old Terminal.
+//                * Esc O 1 ; 2 B == Shift-Down  on old Terminal.
+//                * Esc O 1 ; 2 C == Shift-Right on old Terminal.
+//                * Esc O 1 ; 2 D == Shift-Left  on old Terminal. */
+//               shift_held = TRUE;
+//               return arrow_from_ABCD(seq[3]);
+//             }
+//             break;
+//           }
+//           case '5' : /* Ctrl */ {
+//             switch (seq[3]) {
+//               case 'A' : /* Esc O 1 ; 5 A == Ctrl-Up on old Terminal. */ {
+//                 return CONTROL_UP;
+//               }
+//               case 'B' : /* Esc O 1 ; 5 B == Ctrl-Down on old Terminal. */ {
+//                 return CONTROL_DOWN;
+//               }
+//               case 'C' : /* Esc O 1 ; 5 C == Ctrl-Right on old Terminal. */ {
+//                 return CONTROL_RIGHT;
+//               }
+//               case 'D' : /* Esc O 1 ; 5 D == Ctrl-Left on old Terminal. */ {
+//                 return CONTROL_LEFT;
+//               }
+//             }
+//             break;
+//           }
+//         }
+//       }
+//       break;
+//     }
+//     case '2' : /* Shift */
+//     case '3' : /* Alt */
+//     case '4' : /* Shift+Alt */
+//     case '5' : /* Ctrl */
+//     case '6' : /* Shift+Ctrl */
+//     case '7' : /* Alt+Ctrl */
+//     case '8' : /* Shift+Alt+Ctrl */ {
+//       if (length > 1) {
+//         *consumed = 2;
+//         /* Do not accept multiple modifiers. */
+//         if (seq[0] == '4' || seq[0] > '5') {
+//           return FOREIGN_SEQUENCE;
+//         }
+//         switch (seq[1]) {
+//           case 'A' : /* Esc O 5 A == Ctrl-Up on Haiku. */ {
+//             return CONTROL_UP;
+//           }
+//           case 'B' : /* Esc O 5 B == Ctrl-Down on Haiku. */ {
+//             return CONTROL_DOWN;
+//           }
+//           case 'C' : /* Esc O 5 C == Ctrl-Right on Haiku. */ {
+//             return CONTROL_RIGHT;
+//           }
+//           case 'D' : /* Esc O 5 D == Ctrl-Left on Haiku. */ {
+//             return CONTROL_LEFT;
+//           }
+//         }
+//         /* Translate 'Shift+digit' on the keypad to the digit (Esc O 2 p == Shift-0, ...),
+//          * 'modifier+operator' to the operator, and 'modifier+Enter' to CR. */
+//         return (seq[1] - 0x40);
+//       }
+//       break;
+//     }
+//     case 'A' :   /* Esc O A == Up on VT100/VT320. */
+//     case 'B' :   /* Esc O B == Down on VT100/VT320. */
+//     case 'C' :   /* Esc O C == Right on VT100/VT320. */
+//     case 'D' : { /* Esc O D == Left on VT100/VT320. */
+//       return arrow_from_ABCD(seq[0]);
+//     }
+//     case 'F' : { /* Esc O F == End on old xterm. */
+//       return KEY_END;
+//     }
+//     case 'H' : { /* Esc O H == Home on old xterm. */
+//       return KEY_HOME;
+//     }
+//     case 'M' : { /* Esc O  M == Enter on numeric keypad with NumLock off on VT100/VT220/VT320. */
+//       return KEY_ENTER;
+//     }
+//     case 'P' :   /* Esc O P == F1 on VT100/VT220/VT320/xterm/Mach console. */
+//     case 'Q' :   /* Esc O Q == F2 on VT100/VT220/VT320/xterm/Mach console. */
+//     case 'R' :   /* Esc O R == F3 on VT100/VT220/VT320/xterm/Mach console. */
+//     case 'S' : { /* Esc O S == F4 on VT100/VT220/VT320/xterm/Mach console. */
+//       return KEY_F(seq[0] - 'O');
+//     }
+//     case 'T' : /* Esc O T == F5 on Mach console. */
+//     case 'U' : /* Esc O U == F6 on Mach console. */
+//     case 'V' : /* Esc O V == F7 on Mach console. */
+//     case 'W' : /* Esc O W == F8 on Mach console. */
+//     case 'X' : /* Esc O X == F9 on Mach console. */
+//     case 'Y' : /* Esc O Y == F10 on Mach console. */ {
+//       return KEY_F(seq[0] - 'O');
+//     }
+//     case 'a' : /* Esc O a == Ctrl-Up on rxvt/Eterm. */ {
+//       return CONTROL_UP;
+//     }
+//     case 'b' : /* Esc O b == Ctrl-Down on rxvt/Eterm. */ {
+//       return CONTROL_DOWN;
+//     }
+//     case 'c' : /* Esc O c == Ctrl-Right on rxvt/Eterm. */ {
+//       return CONTROL_RIGHT;
+//     }
+//     case 'd' : /* Esc O d == Ctrl-Left on rxvt/Eterm. */ {
+//       return CONTROL_LEFT;
+//     }
+//     case 'j' : { /* Esc O j == '*' on numeric keypad with NumLock off on xterm/rxvt/Eterm. */
+//       return '*';
+//     }
+//     case 'k' : { /* Esc O k == '+' on the same. */
+//       return '+';
+//     }
+//     case 'l' : { /* Esc O l == ',' on VT100/VT220/VT320. */
+//       return ',';
+//     }
+//     case 'm' : { /* Esc O m == '-' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
+//       return '-';
+//     }
+//     case 'n' : { /* Esc O n == Delete (.) on numeric keypad with NumLock off on rxvt/Eterm. */
+//       return KEY_DC;
+//     }
+//     case 'o' : { /* Esc O o == '/' on numeric keypad with NumLock off on VTnnn/xterm/rxvt/Eterm. */
+//       return '/';
+//     }
+//     case 'p' : { /* Esc O p == Insert (0) on numeric keypad with NumLock off on rxvt/Eterm. */
+//       return KEY_IC;
+//     }
+//     case 'q' : { /* Esc O q == End (1) on the same. */
+//       return KEY_END;
+//     }
+//     case 'r' : { /* Esc O r == Down (2) on the same. */
+//       return KEY_DOWN;
+//     }
+//     case 's' : { /* Esc O s == PageDown (3) on the same. */
+//       return KEY_NPAGE;
+//     }
+//     case 't' : { /* Esc O t == Left (4) on the same. */
+//       return KEY_LEFT;
+//     }
+//     case 'v' : { /* Esc O v == Right (6) on the same. */
+//       return KEY_RIGHT;
+//     }
+//     case 'w' : { /* Esc O w == Home (7) on the same. */
+//       return KEY_HOME;
+//     }
+//     case 'x' : { /* Esc O x == Up (8) on the same. */
+//       return KEY_UP;
+//     }
+//     case 'y' : { /* Esc O y == PageUp (9) on the same. */
+//       return KEY_PPAGE;
+//     }
+//   }
+//   return FOREIGN_SEQUENCE;
+// }
 
 /* Translate a sequence that began with "Esc [" to its corresponding key code. */
 int convert_CSI_sequence(const int *seq, Ulong length, int *consumed) _NOTHROW {
@@ -1643,7 +1643,7 @@ char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) _NOTHROW {
     keypad(frame, FALSE);
   }
   /* Turn bracketed-paste mode off. */
-  printf(ESC_CODE_TURN_OFF_BRACKETED_PASTE);
+  printf("\033[?2004l");
   fflush(stdout);
   linger_after_escape = TRUE;
   /* Read in a single byte or two escapes. */
@@ -1660,7 +1660,7 @@ char *get_verbatim_kbinput(WINDOW *frame, Ulong *count) _NOTHROW {
   }
   linger_after_escape = FALSE;
   /* Turn bracketed-paste mode back on. */
-  printf(ESC_CODE_TURN_ON_BRACKETED_PASTE);
+  printf("\033[?2004h");
   fflush(stdout);
   /* Turn flow control characters back on if necessary and turn the keypad back on if necessary now that we're done. */
   if (ISSET(PRESERVE)) {
