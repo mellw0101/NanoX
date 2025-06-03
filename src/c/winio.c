@@ -18,6 +18,9 @@
 /* The number of bytes after which to stop painting, to avoid major slowdowns.  Note that this is only for the regex based painting system nano had. */
 #define PAINT_LIMIT 2000
 
+#define PROCEED -44
+
+
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
@@ -54,6 +57,8 @@ bool recording = FALSE;
 /* static */ bool linger_after_escape = FALSE;
 /* Points into the expansion string for the current implantation. */
 /* static */ const char *plants_pointer = NULL;
+/* How many digits of a three-digit character code we've eaten. */
+/* static */ int digit_count = 0;
 
 /* Whether the current line has more text after the displayed part. */
 static bool has_more = FALSE;
@@ -469,6 +474,581 @@ static int buffer_number(openfilestruct *buffer) {
   return FOREIGN_SEQUENCE;
 }
 
+/* Interpret an escape sequence that has the given post-ESC starter byte and with the rest of the sequence still in the keystroke buffer. */
+/* static */ int parse_escape_sequence(int starter) {
+  int consumed = 1;
+  int keycode  = 0;
+  if (starter == 'O') {
+    keycode = convert_SS3_sequence(nextcodes, waiting_codes, &consumed);
+  }
+  else if (starter == '[') {
+    keycode = convert_CSI_sequence(nextcodes, waiting_codes, &consumed);
+  }
+  /* Skip the consumed sequence elements. */
+  waiting_codes -= consumed;
+  nextcodes += consumed;
+  return keycode;
+}
+
+/* For each consecutive call, gather the given digit into a three-digit decimal byte
+ * code (from 000 to 255).  Return the assembled code when it is complete, but until
+ * then return PROCEED when the given digit is valid, and the given digit itself otherwise. */
+/* static */ int assemble_byte_code(int keycode) {
+  static int byte = 0;
+  digit_count++;
+  /* The first digit is either 0, 1, or 2 (checked before the call). */
+  if (digit_count == 1) {
+    byte = (keycode - '0') * 100;
+    return PROCEED;
+  }
+  /* The second digit may be at most 5 if the first was 2. */
+  if (digit_count == 2) {
+    if (byte < 200 || keycode <= '5') {
+      byte += (keycode - '0') * 10;
+      return PROCEED;
+    }
+    else {
+      return keycode;
+    }
+  }
+  /* The third digit may be at most 5 if the first two were 2 and 5. */
+  if (byte < 250 || keycode <= '5') {
+    return (byte + keycode - '0');
+  }
+  else {
+    return keycode;
+  }
+}
+
+/* Translate a normal ASCII character into its corresponding control code.
+ * The following groups of control keystrokes are EQUVILENT:
+ * - Ctrl-2 == Ctrl-@ == Ctrl-` == Ctrl-Space
+ * - Ctrl-3 == Ctrl-[ == <Esc>
+ * - Ctrl-4 == Ctrl-\ == Ctrl-|
+ * - Ctrl-5 == Ctrl-]
+ * - Ctrl-6 == Ctrl-^ == Ctrl-~
+ * - Ctrl-7 == Ctrl-/ == Ctrl-_
+ * - Ctrl-8 == Ctrl-? */
+/* static */ int convert_to_control(int kbinput) {
+  if ('@' <= kbinput && kbinput <= '_') {
+    return kbinput - '@';
+  }
+  if ('`' <= kbinput && kbinput <= '~') {
+    return kbinput - '`';
+  }
+  if ('3' <= kbinput && kbinput <= '7') {
+    return kbinput - 24;
+  }
+  if (kbinput == '?' || kbinput == '8') {
+    return DEL_CODE;
+  }
+  if (kbinput == ' ' || kbinput == '2') {
+    return 0;
+  }
+  if (kbinput == '/') {
+    return 31;
+  }
+  return kbinput;
+}
+
+/* Extract one keystroke from the input stream.  Translate escape sequences and possibly keypad codes into
+ * their corresponding values. Set meta_key to TRUE when appropriate. Supported keypad keystrokes are:
+ *   The arrow keys, Insert, Delete, Home, End, PageUp, PageDown, Enter, and Backspace.
+ * (Many of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or Shift+Alt). The function keys
+ * (F1-F12), and the numeric keypad with NumLock off. The function also handles UTF-8 sequences, and
+ * converts them to Unicode.  The function returns the corresponding value for the given keystroke. */
+/* static */ int parse_kbinput(WINDOW *frame) {
+  static bool first_escape_was_alone = FALSE;
+  static bool last_escape_was_alone  = FALSE;
+  static int  escapes = 0;
+  int keycode;
+  meta_key   = FALSE;
+  shift_held = FALSE;
+  /* Get one code from the input stream. */
+  keycode = get_input(frame);
+# ifdef KEY_DEBUG
+    // NETLOG("%d\n", keycode);
+# endif
+  /* Check for '^Bsp'. */
+  if (term) {
+    /* First we check if we are running in xterm.  And if so then check if the appropriet key was pressed. */
+    if (strcmp(term, "xterm") == 0) {
+      if (ISSET(REBIND_DELETE) && keycode == DEL_CODE) {
+        return CONTROL_BSP;
+      }
+      else if (!ISSET(REBIND_DELETE) && keycode == KEY_BACKSPACE) {
+        return CONTROL_BSP;
+      }
+      else if (keycode == 8) {
+        return KEY_BACKSPACE;
+      }
+    }
+    else {
+      if (term_program && (strcmp(term_program, "vscode") == 0) && (keycode == 23)) {
+        return CONTROL_BSP;
+      }
+      else if (keycode == 8) {
+        return CONTROL_BSP;
+      }
+    }
+  }
+  /* For an Esc, remember whether the last two arrived by themselves.  Then increment the counter, rolling around on three escapes. */
+  if (keycode == ESC_CODE) {
+    first_escape_was_alone = last_escape_was_alone;
+    last_escape_was_alone  = (waiting_codes == 0);
+    if (digit_count > 0) {
+      digit_count = 0;
+      escapes     = 1;
+    }
+    else if (++escapes > 2) {
+      escapes = (last_escape_was_alone ? 0 : 1);
+    }
+    return ERR;
+  }
+  else if (keycode == ERR) {
+    return ERR;
+  }
+  if (!escapes) {
+    /* Most key codes in byte range cannot be special keys. */
+    if (keycode < 0xFF && keycode != '\t' && keycode != DEL_CODE) {
+      return keycode;
+    }
+  }
+  else if (escapes == 1) {
+    escapes = 0;
+    /* Codes out of ASCII printable range cannot form an escape sequence. */
+    if (keycode < 0x20 || 0x7E < keycode) {
+      if (keycode == '\t') {
+        return SHIFT_TAB;
+      }
+      else if (keycode == KEY_BACKSPACE || keycode == '\b' || keycode == DEL_CODE) {
+        return CONTROL_SHIFT_DELETE;
+      }
+      else if (0xC0 <= keycode && keycode <= 0xFF && using_utf8()) {
+        while (waiting_codes && 0x80 <= nextcodes[0] && nextcodes[0] <= 0xBF) {
+          get_input(NULL);
+        }
+        return FOREIGN_SEQUENCE;
+      }
+      else if (keycode < 0x20 && !last_escape_was_alone) {
+        meta_key = TRUE;
+      }
+    }
+    else if (!waiting_codes || nextcodes[0] == ESC_CODE || (keycode != 'O' && keycode != '[')) {
+      if (!shifted_metas) {
+        keycode = tolower(keycode);
+      }
+      meta_key = TRUE;
+    }
+    else {
+      keycode = parse_escape_sequence(keycode);
+    }
+  }
+  else {
+    escapes = 0;
+    if (keycode == '[' && waiting_codes && (('A' <= nextcodes[0] && nextcodes[0] <= 'D') || ('a' <= nextcodes[0] && nextcodes[0] <= 'd'))) {
+      /* An iTerm2/Eterm/rxvt double-escape sequence: Esc Esc [ X for Option+arrow, or Esc Esc [ x for Shift+Alt+arrow. */
+      switch (get_input(NULL)) {
+        case 'A' : {
+          return KEY_HOME;
+        }
+        case 'B' : {
+          return KEY_END;
+        }
+        case 'C' : {
+          return CONTROL_RIGHT;
+        }
+        case 'D' : {
+          return CONTROL_LEFT;
+        }
+        case 'a' : {
+          shift_held = TRUE;
+          return KEY_PPAGE;
+        }
+        case 'b' : {
+          shift_held = TRUE;
+          return KEY_NPAGE;
+        }
+        case 'c' : {
+          shift_held = TRUE;
+          return KEY_HOME;
+        }
+        case 'd' : {
+          shift_held = TRUE;
+          return KEY_END;
+        }
+      }
+    }
+    else if (waiting_codes && nextcodes[0] != ESC_CODE && (keycode == '[' || keycode == 'O')) {
+      keycode  = parse_escape_sequence(keycode);
+      meta_key = TRUE;
+    }
+    else if ('0' <= keycode && (keycode <= '2' || (keycode <= '9' && digit_count > 0))) {
+      /* Two escapes followed by one digit: byte sequence mode. */
+      int byte = assemble_byte_code(keycode);
+      /* If the decimal byte value is not yet complete, return nothing. */
+      if (byte == PROCEED) {
+        escapes = 2;
+        return ERR;
+      }
+      else if (byte > 0x7F && using_utf8()) {
+        /* Convert the code to the corresponding Unicode, and
+         * put the second byte back into the keyboard buffer. */
+        if (byte < 0xC0) {
+          put_back((Uchar)byte);
+          return 0xC2;
+        }
+        else {
+          put_back((Uchar)(byte - 0x40));
+          return 0xC3;
+        }
+      }
+      else if (byte == '\t' || byte == DEL_CODE) {
+        keycode = byte;
+      }
+      else {
+        return byte;
+      }
+    }
+    else if (!digit_count) {
+      /* If the first escape arrived alone but not the second, then it is a Meta keystroke; otherwise, it is an "Esc Esc control". */
+      if (first_escape_was_alone && !last_escape_was_alone) {
+        if (!shifted_metas) {
+          keycode = tolower(keycode);
+        }
+        meta_key = TRUE;
+      }
+      else {
+        keycode = convert_to_control(keycode);
+      }
+    }
+  }
+  if (keycode == controlleft) {
+    return CONTROL_LEFT;
+  }
+  else if (keycode == controlright) {
+    return CONTROL_RIGHT;
+  }
+  else if (keycode == controlup) {
+    return CONTROL_UP;
+  }
+  else if (keycode == controldown) {
+    return CONTROL_DOWN;
+  }
+  else if (keycode == controlhome) {
+    return CONTROL_HOME;
+  }
+  else if (keycode == controlend) {
+    return CONTROL_END;
+  }
+  else if (keycode == controldelete) {
+    return CONTROL_DELETE;
+  }
+  else if (keycode == controlshiftdelete) {
+    return CONTROL_SHIFT_DELETE;
+  }
+  else if (keycode == shiftup) {
+    shift_held = TRUE;
+    return KEY_UP;
+  }
+  else if (keycode == shiftdown) {
+    shift_held = TRUE;
+    return KEY_DOWN;
+  }
+  else if (keycode == shiftcontrolleft) {
+    shift_held = TRUE;
+    return CONTROL_LEFT;
+  }
+  else if (keycode == shiftcontrolright) {
+    shift_held = TRUE;
+    return CONTROL_RIGHT;
+  }
+  else if (keycode == shiftcontrolup) {
+    shift_held = TRUE;
+    return CONTROL_UP;
+  }
+  else if (keycode == shiftcontroldown) {
+    shift_held = TRUE;
+    return CONTROL_DOWN;
+  }
+  else if (keycode == shiftcontrolhome) {
+    shift_held = TRUE;
+    return CONTROL_HOME;
+  }
+  else if (keycode == shiftcontrolend) {
+    shift_held = TRUE;
+    return CONTROL_END;
+  }
+  else if (keycode == altleft) {
+    return ALT_LEFT;
+  }
+  else if (keycode == altright) {
+    return ALT_RIGHT;
+  }
+  else if (keycode == altup) {
+    return ALT_UP;
+  }
+  else if (keycode == altdown) {
+    return ALT_DOWN;
+  }
+  else if (keycode == althome) {
+    return ALT_HOME;
+  }
+  else if (keycode == altend) {
+    return ALT_END;
+  }
+  else if (keycode == altpageup) {
+    return ALT_PAGEUP;
+  }
+  else if (keycode == altpagedown) {
+    return ALT_PAGEDOWN;
+  }
+  else if (keycode == altinsert) {
+    return ALT_INSERT;
+  }
+  else if (keycode == altdelete) {
+    return ALT_DELETE;
+  }
+  else if (keycode == shiftaltleft) {
+    shift_held = TRUE;
+    return KEY_HOME;
+  }
+  else if (keycode == shiftaltright) {
+    shift_held = TRUE;
+    return KEY_END;
+  }
+  else if (keycode == shiftaltup) {
+    shift_held = TRUE;
+    return KEY_PPAGE;
+  }
+  else if (keycode == shiftaltdown) {
+    shift_held = TRUE;
+    return KEY_NPAGE;
+  }
+  else if ((KEY_F0 + 24) < keycode && keycode < (KEY_F0 + 64)) {
+    return FOREIGN_SEQUENCE;
+  }
+#ifdef __linux__
+  /* When not running under X, check for the bare arrow keys whether Shift/Ctrl/Alt are being held together with them. */
+  Uchar modifiers = 6;
+  /* Modifiers are: Alt (8), Ctrl (4), Shift (1). */
+  if (on_a_vt && !mute_modifiers && ioctl(0, TIOCLINUX, &modifiers) >= 0) {
+    /* Is Shift being held? */
+    if (modifiers & 0x01) {
+      if (keycode == '\t') {
+        return SHIFT_TAB;
+      }
+      if (keycode == KEY_DC && modifiers == 0x01) {
+        return SHIFT_DELETE;
+        #ifdef KEY_DEBUG
+          NETLOG("keycode == KEY_DC && modifiers == 0x01\n");
+        #endif
+      }
+      if (keycode == KEY_DC && modifiers == 0x05) {
+        return CONTROL_SHIFT_DELETE;
+        #ifdef KEY_DEBUG
+          NETLOG("keycode == KEY_DC && modifiers == 0x05\n");
+        #endif
+      }
+      if (!meta_key) {
+        shift_held = TRUE;
+      }
+    }
+    /* Is only Alt being held? */
+    if (modifiers == 0x08) {
+      switch (keycode) {
+        case KEY_UP : {
+          return ALT_UP;
+        }
+        case KEY_DOWN : {
+          return ALT_DOWN;
+        }
+        case KEY_HOME : {
+          return ALT_HOME;
+        }
+        case KEY_END : {
+          return ALT_END;
+        }
+        case KEY_PPAGE : {
+          return ALT_PAGEUP;
+        }
+        case KEY_NPAGE : {
+          return ALT_PAGEDOWN;
+        }
+        case KEY_DC : {
+          return ALT_DELETE;
+        }
+        case KEY_IC : {
+          return ALT_INSERT;
+        }
+      }
+    }
+    /* Is Ctrl being held? */
+    if (modifiers & 0x04) {
+      switch (keycode) {
+        case KEY_UP : {
+          return CONTROL_UP;
+        }
+        case KEY_DOWN : {
+          return CONTROL_DOWN;
+        }
+        case KEY_LEFT : {
+          return CONTROL_LEFT;
+        }
+        case KEY_RIGHT : {
+          return CONTROL_RIGHT;
+        }
+        case KEY_HOME : {
+          return CONTROL_HOME;
+        }
+        case KEY_END : {
+          return CONTROL_END;
+        }
+        case KEY_DC : {
+          return CONTROL_DELETE;
+        }
+        case KEY_BACKSPACE : /* ADDED: TESTING */ {
+          return CONTROL_BSP;
+        }
+      }
+    }
+    /* Are both Shift and Alt being held? */
+    if ((modifiers & 0x09) == 0x09) {
+      switch (keycode) {
+        case KEY_UP : {
+          return KEY_PPAGE;
+        }
+        case KEY_DOWN : {
+          return KEY_NPAGE;
+        }
+        case KEY_LEFT : {
+          return KEY_HOME;
+        }
+        case KEY_RIGHT : {
+          return KEY_END;
+        }
+      }
+    }
+  }
+#endif
+  /* Spurious codes from VTE -- see https://sv.gnu.org/bugs/?64578. */
+  if (keycode == mousefocusin || keycode == mousefocusout) {
+    return ERR;
+  }
+  switch (keycode) {
+    case KEY_SLEFT : {
+      shift_held = TRUE;
+      return KEY_LEFT;
+    }
+    case KEY_SRIGHT : {
+      shift_held = TRUE;
+      return KEY_RIGHT;
+    }
+#ifdef KEY_SR
+#  ifdef KEY_SUP    /* Ncurses doesn't know Shift+Up. */
+    case KEY_SUP :
+#  endif
+    case KEY_SR : { /* Scroll backward, on Xfce4-terminal. */
+      shift_held = TRUE;
+      return KEY_UP;
+    }
+#endif
+#ifdef KEY_SF
+#  ifdef KEY_SDOWN  /* Ncurses doesn't know Shift+Down. */
+    case KEY_SDOWN :
+#  endif
+    case KEY_SF : { /* Scroll forward, on Xfce4-terminal. */
+      shift_held = TRUE;
+      return KEY_DOWN;
+    }
+#endif
+#ifdef KEY_SHOME /* HP-UX 10-11 doesn't know Shift+Home. */
+    case KEY_SHOME :
+#endif
+    case SHIFT_HOME : {
+      shift_held = TRUE;
+      _FALLTHROUGH;
+    }
+    case KEY_A1 : { /* Home (7) on keypad with NumLock off. */
+      return KEY_HOME;
+    }
+#ifdef KEY_SEND     /* HP-UX 10-11 doesn't know Shift+End. */
+    case KEY_SEND :
+#endif
+    case SHIFT_END : {
+      shift_held = TRUE;
+      _FALLTHROUGH;
+    }
+    case KEY_C1 : { /* End (1) on keypad with NumLock off. */
+      return KEY_END;
+    }
+#ifdef KEY_EOL
+    case KEY_EOL : { /* Ctrl+End on rxvt-unicode. */
+      return CONTROL_END;
+    }
+#endif
+#ifdef KEY_SPREVIOUS
+    case KEY_SPREVIOUS :
+#endif
+    case SHIFT_PAGEUP : { /* Fake key, from Shift+Alt+Up. */
+      shift_held = TRUE;
+      _FALLTHROUGH;
+    }
+    case KEY_A3 : {       /* PageUp (9) on keypad with NumLock off. */
+      return KEY_PPAGE;
+    }
+#ifdef KEY_SNEXT
+    case KEY_SNEXT :
+#endif
+    case SHIFT_PAGEDOWN : { /* Fake key, from Shift+Alt+Down. */
+      shift_held = TRUE;
+      _FALLTHROUGH;
+    }
+    case KEY_C3 : {         /* PageDown (3) on keypad with NumLock off. */
+      return KEY_NPAGE;
+    }
+    /* When requested, swap meanings of keycodes for <Bsp> and <Del>. */
+    case DEL_CODE :
+    case KEY_BACKSPACE : {
+      return (ISSET(REBIND_DELETE) ? KEY_DC : KEY_BACKSPACE);
+    }
+    case KEY_DC : {
+      return (ISSET(REBIND_DELETE) ? KEY_BACKSPACE : KEY_DC);
+    }
+    case KEY_SDC : {
+      return SHIFT_DELETE;
+    }
+    case KEY_SCANCEL : {
+      return KEY_CANCEL;
+    }
+    case KEY_SSUSPEND :
+    case KEY_SUSPEND : {
+      return 0x1A; /* The ASCII code for Ctrl+Z. */
+    }
+    case KEY_BTAB : {
+      return SHIFT_TAB;
+    }
+    case KEY_SBEG :
+    case KEY_BEG :
+    case KEY_B2 : /* Center (5) on keypad with NumLock off. */
+#ifdef PDCURSES   /* TODO: (PDCURSES) - Find out if this can be used. */
+    case KEY_SHIFT_L :
+    case KEY_SHIFT_R :
+    case KEY_CONTROL_L :
+    case KEY_CONTROL_R :
+    case KEY_ALT_L :
+    case KEY_ALT_R :
+#endif
+#ifdef KEY_RESIZE /* SunOS 5.7-5.9 doesn't know KEY_RESIZE. */
+    case KEY_RESIZE :
+#endif
+    case KEY_FRESH : {
+      return ERR; /* Ignore this keystroke. */
+    }
+  }
+  return keycode;
+}
+
 /* ----------------------------- Curses ----------------------------- */
 
 static void show_state_at_curses(WINDOW *const window) {
@@ -621,6 +1201,409 @@ int get_input(WINDOW *const frame) {
   else {
     return ERR;
   }
+}
+
+/* Translate a sequence that began with "Esc [" to its corresponding key code. */
+int convert_CSI_sequence(const int *const seq, Ulong length, int *const consumed) {
+  if (seq[0] < '9' && length > 1) {
+    *consumed = 2;
+  }
+  switch (seq[0]) {
+    case '1': {
+      /* Esc [ 1 ~ == Home on VT320/Linux console. */
+      if (length > 1 && seq[1] == '~') {
+        return KEY_HOME;
+      }
+      else if (length > 2 && seq[2] == '~') {
+        *consumed = 3;
+        switch (seq[1]) {
+          case '1':   /* 'Esc [ 1 1 ~' == 'F1' on 'rxvt/Eterm'. */
+          case '2':   /* 'Esc [ 1 2 ~' == 'F2' on 'rxvt/Eterm'. */
+          case '3':   /* 'Esc [ 1 3 ~' == 'F3' on 'rxvt/Eterm'. */
+          case '4':   /* 'Esc [ 1 4 ~' == 'F4' on 'rxvt/Eterm'. */
+          case '5': { /* 'Esc [ 1 5 ~' == 'F5' on 'xterm/rxvt/Eterm'. */
+            return KEY_F(seq[1] - '0');
+          }
+          case '7':   /* 'Esc [ 1 7 ~' == 'F6' on 'VT220/VT320/Linux-console/xterm/rxvt/Eterm'. */
+          case '8':   /* 'Esc [ 1 8 ~' == 'F7' on 'VT220/VT320/Linux-console/xterm/rxvt/Eterm'. */
+          case '9': { /* 'Esc [ 1 9 ~' == 'F8' on 'VT220/VT320/Linux-console/xterm/rxvt/Eterm'. */
+            return KEY_F(seq[1] - '1');
+          }
+        }
+      }
+      else if (length > 3 && seq[1] == ';') {
+        *consumed = 4;
+        switch (seq[2]) {
+          case '2': { /* Shift */
+            switch (seq[3]) {
+              case 'A':   /* 'Esc [ 1 ; 2 A' == 'Shift-Up'    on 'xterm'. */
+              case 'B':   /* 'Esc [ 1 ; 2 B' == 'Shift-Down'  on 'xterm'. */
+              case 'C':   /* 'Esc [ 1 ; 2 C' == 'Shift-Right' on 'xterm'. */
+              case 'D': { /* 'Esc [ 1 ; 2 D' == 'Shift-Left'  on 'xterm'. */
+                shift_held = TRUE;
+                return arrow_from_ABCD(seq[3]);
+              }
+              case 'F': { /* 'Esc [ 1 ; 2 F' == 'Shift-End'   on 'xterm'. */
+                return SHIFT_END;
+              }
+              case 'H': { /* 'Esc [ 1 ; 2 H' == 'Shift-Home'  on 'xterm'. */
+                return SHIFT_HOME;
+              }
+            }
+            break;
+          }
+          case '9':   /* To accommodate iTerm2 in "xterm mode". */
+          case '3': { /* Alt */
+            switch (seq[3]) {
+              case 'A': { /* 'Esc [ 1 ; 3 A' == 'Alt-Up'    on 'xterm'. */
+                return ALT_UP;
+              }
+              case 'B': { /* 'Esc [ 1 ; 3 B' == 'Alt-Down'  on 'xterm'. */
+                return ALT_DOWN;
+              }
+              case 'C': { /* 'Esc [ 1 ; 3 C' == 'Alt-Right' on 'xterm'. */
+                return ALT_RIGHT;
+              }
+              case 'D': { /* 'Esc [ 1 ; 3 D' == 'Alt-Left'  on 'xterm'. */
+                return ALT_LEFT;
+              }
+              case 'F': { /* 'Esc [ 1 ; 3 F' == 'Alt-End'   on 'xterm'. */
+                return ALT_END;
+              }
+              case 'H': { /* 'Esc [ 1 ; 3 H' == 'Alt-Home'  on 'xterm'. */
+                return ALT_HOME;
+              }
+            }
+            break;
+          }
+          case '4': { /* When the arrow keys are held together with Shift+Meta, act as if they are Home/End/PgUp/PgDown with Shift. */
+            switch (seq[3]) {
+              case 'A': { /* 'Esc [ 1 ; 4 A' == 'Shift-Alt-Up'    on 'xterm'. */
+                return SHIFT_PAGEUP;
+              }
+              case 'B': { /* 'Esc [ 1 ; 4 B' == 'Shift-Alt-Down'  on 'xterm'. */
+                return SHIFT_PAGEDOWN;
+              }
+              case 'C': { /* 'Esc [ 1 ; 4 C' == 'Shift-Alt-Right' on 'xterm'. */
+                return SHIFT_END;
+              }
+              case 'D': { /* 'Esc [ 1 ; 4 D' == 'Shift-Alt-Left'  on 'xterm'. */
+                return SHIFT_HOME;
+              }
+            }
+            break;
+          }
+          case '5': {
+            switch (seq[3]) {
+              case 'A': { /* 'Esc [ 1 ; 5 A' == 'Ctrl-Up'    on 'xterm'. */
+                return CONTROL_UP;
+              }
+              case 'B': { /* 'Esc [ 1 ; 5 B' == 'Ctrl-Down'  on 'xterm'. */
+                return CONTROL_DOWN;
+              }
+              case 'C': { /* 'Esc [ 1 ; 5 C' == 'Ctrl-Right' on 'xterm'. */
+                return CONTROL_RIGHT;
+              }
+              case 'D': { /* 'Esc [ 1 ; 5 D' == 'Ctrl-Left'  on 'xterm'. */
+                return CONTROL_LEFT;
+              }
+              case 'F': { /* 'Esc [ 1 ; 5 F' == 'Ctrl-End'   on 'xterm'. */
+                return CONTROL_END;
+              }
+              case 'H': { /* 'Esc [ 1 ; 5 H' == 'Ctrl-Home'  on 'xterm'. */
+                return CONTROL_HOME;
+              }
+            }
+            break;
+          }
+          case '6': {
+            switch (seq[3]) {
+              case 'A' : { /* 'Esc [ 1 ; 6 A' == 'Shift-Ctrl-Up'    on 'xterm'. */
+                return shiftcontrolup;
+              }
+              case 'B' : { /* 'Esc [ 1 ; 6 B' == 'Shift-Ctrl-Down'  on 'xterm'. */
+                return shiftcontroldown;
+              }
+              case 'C' : { /* 'Esc [ 1 ; 6 C' == 'Shift-Ctrl-Right' on 'xterm'. */
+                return shiftcontrolright;
+              }
+              case 'D' : { /* 'Esc [ 1 ; 6 D' == 'Shift-Ctrl-Left'  on 'xterm'. */
+                return shiftcontrolleft;
+              }
+              case 'F' : { /* 'Esc [ 1 ; 6 F' == 'Shift-Ctrl-End'   on 'xterm'. */
+                return shiftcontrolend;
+              }
+              case 'H' : { /* 'Esc [ 1 ; 6 H' == 'Shift-Ctrl-Home'  on 'xterm'. */
+                return shiftcontrolhome;
+              }
+            }
+            break;
+          }
+        }
+      }
+      /* 'Esc [ 1 n ; 2 ~' == 'F17...F20' on some terminals. */
+      else if (length > 4 && seq[2] == ';' && seq[4] == '~') {
+        *consumed = 5;
+      }
+      break;
+    }
+    case '2': {
+      if (length > 2 && seq[2] == '~') {
+        *consumed = 3;
+        switch (seq[1]) {
+          case '0': { /* Esc [ 2 0 ~ == F9 on VT220/VT320/Linux console/xterm/rxvt/Eterm. */
+            return KEY_F(9);
+          }
+          case '1': { /* Esc [ 2 1 ~ == F10 on the same. */
+            return KEY_F(10);
+          }
+          case '3': { /* Esc [ 2 3 ~ == F11 on the same. */
+            return KEY_F(11);
+          }
+          case '4': { /* Esc [ 2 4 ~ == F12 on the same. */
+            return KEY_F(12);
+          }
+          case '5': { /* Esc [ 2 5 ~ == F13 on the same. */
+            return KEY_F(13);
+          }
+          case '6': { /* Esc [ 2 6 ~ == F14 on the same. */
+            return KEY_F(14);
+          }
+          case '8': { /* Esc [ 2 8 ~ == F15 on the same. */
+            return KEY_F(15);
+          }
+          case '9': { /* Esc [ 2 9 ~ == F16 on the same. */
+            return KEY_F(16);
+          }
+        }
+      }
+      /* Esc [ 2 ~ == Insert on VT220/VT320/Linux console/xterm/Terminal. */
+      else if (length > 1 && seq[1] == '~') {
+        return KEY_IC;
+      }
+      /* Esc [ 2 ; x ~ == modified Insert on xterm. */
+      else if (length > 3 && seq[1] == ';' && seq[3] == '~') {
+        *consumed = 4;
+        if (seq[2] == '3') {
+          return ALT_INSERT;
+        }
+      }
+      /* Esc [ 2 n ; 2 ~ == F21...F24 on some terminals. */
+      else if (length > 4 && seq[2] == ';' && seq[4] == '~') {
+        *consumed = 5;
+      }
+      /* Esc [ 2 0 0 ~ == start of a bracketed paste, Esc [ 2 0 1 ~ == end of a bracketed paste. */
+      else if (length > 3 && seq[1] == '0' && seq[3] == '~') {
+        *consumed = 4;
+        if (seq[2] == '0') {
+          bracketed_paste = TRUE;
+          return BRACKETED_PASTE_MARKER;
+        }
+        else if (seq[2] == '1') {
+          bracketed_paste = FALSE;
+          return BRACKETED_PASTE_MARKER;
+        }
+      }
+      /* When invalid, assume it's a truncated end-of-paste sequence,
+       * in order to avoid a hang -- https://sv.gnu.org/bugs/?64996. */
+      else {
+        bracketed_paste = FALSE;
+        *consumed       = length;
+        return ERR;
+      }
+      break;
+    }
+    case '3': { /* Esc [ 3 ~ == Delete on VT220/VT320/Linux console/xterm/Terminal. */
+      if (length > 1 && seq[1] == '~') {
+        return KEY_DC;
+      }
+      if (length > 3 && seq[1] == ';' && seq[3] == '~') {
+        *consumed = 4;
+        /* Esc [ 3 ; 2 ~ == Shift-Delete on xterm/Terminal. */
+        if (seq[2] == '2') {
+          return SHIFT_DELETE;
+        }
+        /* Esc [ 3 ; 3 ~ == Alt-Delete on xterm/rxvt/Eterm/Terminal. */
+        if (seq[2] == '3') {
+          return ALT_DELETE;
+        }
+        /* Esc [ 3 ; 5 ~ == Ctrl-Delete on xterm. */
+        if (seq[2] == '5') {
+          return CONTROL_DELETE;
+        }
+        /* Esc [ 3 ; 6 ~ == Ctrl-Shift-Delete on xterm. */
+        if (seq[2] == '6') {
+          return controlshiftdelete;
+        }
+      }
+      /* Esc [ 3 $ == Shift-Delete on urxvt. */
+      if (length > 1 && seq[1] == '$') {
+        return SHIFT_DELETE;
+      }
+      /* Esc [ 3 ^ == Ctrl-Delete on urxvt. */
+      if (length > 1 && seq[1] == '^') {
+        return CONTROL_DELETE;
+      }
+      /* Esc [ 3 @ == Ctrl-Shift-Delete on urxvt. */
+      if (length > 1 && seq[1] == '@') {
+        return controlshiftdelete;
+      }
+      /* Esc [ 3 n ~ == F17...F20 on some terminals. */
+      if (length > 2 && seq[2] == '~') {
+        *consumed = 3;
+      }
+      break;
+    }
+    case '4': { /* Esc [ 4 ~ == End on VT220/VT320/Linux console/xterm. */
+      if (length > 1 && seq[1] == '~') {
+        return KEY_END;
+      }
+      break;
+    }
+    case '5': { /* Esc [ 5 ~ == PageUp on VT220/VT320/Linux console/xterm/Eterm/urxvt/Terminal */
+      if (length > 1 && seq[1] == '~') {
+        return KEY_PPAGE;
+      }
+      else if (length > 3 && seq[1] == ';' && seq[3] == '~') {
+        *consumed = 4;
+        if (seq[2] == '2') {
+          return shiftaltup;
+        }
+        if (seq[2] == '3') {
+          return ALT_PAGEUP;
+        }
+      }
+      break;
+    }
+    case '6': { /* Esc [ 6 ~ == PageDown on VT220/VT320/Linux console/xterm/Eterm/urxvt/Terminal. */
+      if (length > 1 && seq[1] == '~') {
+        return KEY_NPAGE;
+      }
+      else if (length > 3 && seq[1] == ';' && seq[3] == '~') {
+        *consumed = 4;
+        if (seq[2] == '2') {
+          return shiftaltdown;
+        }
+        if (seq[2] == '3') {
+          return ALT_PAGEDOWN;
+        }
+      }
+      break;
+    }
+    case '7': {
+      if (length > 1 && seq[1] == '~') { /* Esc [ 7 ~ == Home on Eterm/rxvt; */
+        return KEY_HOME;
+      }
+      else if (length > 1 && seq[1] == '$') { /* Esc [ 7 $ == Shift-Home on Eterm/rxvt; */
+        return SHIFT_HOME;
+      }
+      else if (length > 1 && seq[1] == '^') { /* Esc [ 7 ^ == Control-Home on Eterm/rxvt; */
+        return CONTROL_HOME;
+      }
+      else if (length > 1 && seq[1] == '@') { /* Esc [ 7 @ == Shift-Control-Home on same. */
+        return shiftcontrolhome;
+      }
+      break;
+    }
+    case '8': {
+      /* Esc [ 8 ~ == End on Eterm/rxvt; */
+      if (length > 1 && seq[1] == '~') {
+        return KEY_END;
+      }
+      /* Esc [ 8 $ == Shift-End on Eterm/rxvt; */
+      else if (length > 1 && seq[1] == '$') {
+        return SHIFT_END;
+      }
+      /* Esc [ 8 ^ == Control-End on Eterm/rxvt; */
+      else if (length > 1 && seq[1] == '^') {
+        return CONTROL_END;
+      }
+      /* Esc [ 8 @ == Shift-Control-End on same. */
+      else if (length > 1 && seq[1] == '@') {
+        return shiftcontrolend;
+      }
+      break;
+    }
+    case '9': { /* Esc [ 9 == Delete on Mach console. */
+      return KEY_DC;
+    }
+    case '@': { /* Esc [ @ == Insert on Mach console. */
+      return KEY_IC;
+    }
+    case 'A':   /* Esc [ A == Up on ANSI/VT220/Linux console/
+                  * FreeBSD console/Mach console/xterm/Eterm/
+                  * urxvt/Gnome and Xfce Terminal. */
+    case 'B':   /* Esc [ B == Down on the same. */
+    case 'C':   /* Esc [ C == Right on the same. */
+    case 'D': { /* Esc [ D == Left on the same. */
+      return arrow_from_ABCD(seq[0]);
+    }
+    case 'F': { /* Esc [ F == End on FreeBSD console/Eterm. */
+      return KEY_END;
+    }
+    case 'G': { /* Esc [ G == PageDown on FreeBSD console. */
+      return KEY_NPAGE;
+    }
+    case 'H': { /* Esc [ H == Home on ANSI/VT220/FreeBSD console/Mach console/Eterm. */
+      return KEY_HOME;
+    }
+    case 'I': { /* Esc [ I == PageUp on FreeBSD console. */
+      return KEY_PPAGE;
+    }
+    case 'L': { /* Esc [ L == Insert on ANSI/FreeBSD console. */
+      return KEY_IC;
+    }
+    case 'M':   /* Esc [ M == F1 on FreeBSD console. */
+    case 'N':   /* Esc [ N == F2 on FreeBSD console. */
+    case 'O':   /* Esc [ O == F3 on FreeBSD console. */
+    case 'P':   /* Esc [ P == F4 on FreeBSD console. */
+    case 'Q':   /* Esc [ Q == F5 on FreeBSD console. */
+    case 'R':   /* Esc [ R == F6 on FreeBSD console. */
+    case 'S':   /* Esc [ S == F7 on FreeBSD console. */
+    case 'T': { /* Esc [ T == F8 on FreeBSD console. */
+      return KEY_F(seq[0] - 'L');
+    }
+    case 'U': { /* Esc [ U == PageDown on Mach console. */
+      return KEY_NPAGE;
+    }
+    case 'V': { /* Esc [ V == PageUp on Mach console. */
+      return KEY_PPAGE;
+    }
+    case 'W': { /* Esc [ W == F11 on FreeBSD console. */
+      return KEY_F(11);
+    }
+    case 'X': { /* Esc [ X == F12 on FreeBSD console. */
+      return KEY_F(12);
+    }
+    case 'Y': { /* Esc [ Y == End on Mach console. */
+      return KEY_END;
+    }
+    case 'Z': { /* Esc [ Z == Shift-Tab on ANSI/Linux console/ FreeBSD console/xterm/rxvt/Terminal. */
+      return SHIFT_TAB;
+    }
+    case 'a':   /* Esc [ a == Shift-Up on rxvt/Eterm. */
+    case 'b':   /* Esc [ b == Shift-Down on rxvt/Eterm. */
+    case 'c':   /* Esc [ c == Shift-Right on rxvt/Eterm. */
+    case 'd': { /* Esc [ d == Shift-Left on rxvt/Eterm. */
+      shift_held = TRUE;
+      return arrow_from_ABCD(seq[0] - 0x20);
+    }
+    case '[': {
+      if (length > 1) {
+        *consumed = 2;
+        if ('@' < seq[1] && seq[1] < 'F') {
+          /* 'Esc [ [ A' == 'F1' on 'Linux-console'.
+           * 'Esc [ [ B' == 'F2' on 'Linux-console'.
+           * 'Esc [ [ C' == 'F3' on 'Linux-console'.
+           * 'Esc [ [ D' == 'F4' on 'Linux-console'.
+           * 'Esc [ [ E' == 'F5' on 'Linux-console'. */
+          return KEY_F(seq[1] - '@');
+        }
+      }
+      break;
+    }
+  }
+  return FOREIGN_SEQUENCE;
 }
 
 /* Get the column number after leftedge where we can break the given linedata,
@@ -1679,6 +2662,24 @@ void blank_bottombars(void) {
     if (!ISSET(NO_HELP) && LINES > 5) {
       blank_row_curses(footwin, 1);
       blank_row_curses(footwin, 2);
+    }
+  }
+}
+
+/* When some number of keystrokes has been reached, wipe the status bar. */
+void blank_it_when_expired(void) {
+  if (countdown == 0) {
+    return;
+  }
+  else if (--countdown == 0) {
+    wipe_statusbar();
+  }
+  /* When windows overlap, make sure to show the edit window now. */
+  if (currmenu == MMAIN && (ISSET(ZERO) || LINES == 1)) {
+    /* Running in curses context. */
+    if (!ISSET(NO_NCURSES)) {
+      wredrawln(midwin, (editwinrows - 1), 1);
+      wnoutrefresh(midwin);
     }
   }
 }

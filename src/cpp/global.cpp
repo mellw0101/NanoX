@@ -17,7 +17,7 @@
 /* Whether to ignore modifier keys while running a macro or string bind. */
 // bool mute_modifiers = FALSE;
 /* Whether text is being pasted into nano from outside. */
-bool bracketed_paste = FALSE;
+// bool bracketed_paste = FALSE;
 /* Becomes TRUE as soon as all options and files have been read. */
 // bool we_are_running = FALSE;
 /* Whether more than one buffer is or has been open. */
@@ -57,17 +57,17 @@ int didfind = 0;
 /* Our flags array, containing the states of all global options. */
 // Ulong flags[1] = {0};
 
-int controlleft, controlright, controlup, controldown;
-int controlhome, controlend;
-int controldelete, controlshiftdelete;
-int shiftleft, shiftright, shiftup, shiftdown;
-int shiftcontrolleft, shiftcontrolright, shiftcontrolup, shiftcontroldown;
-int shiftcontrolhome, shiftcontrolend;
-int altleft, altright, altup, altdown;
-int althome, altend, altpageup, altpagedown;
-int altinsert, altdelete;
-int shiftaltleft, shiftaltright, shiftaltup, shiftaltdown;
-int mousefocusin, mousefocusout;
+// int controlleft, controlright, controlup, controldown;
+// int controlhome, controlend;
+// int controldelete, controlshiftdelete;
+// int shiftleft, shiftright, shiftup, shiftdown;
+// int shiftcontrolleft, shiftcontrolright, shiftcontrolup, shiftcontroldown;
+// int shiftcontrolhome, shiftcontrolend;
+// int altleft, altright, altup, altdown;
+// int althome, altend, altpageup, altpagedown;
+// int altinsert, altdelete;
+// int shiftaltleft, shiftaltright, shiftaltup, shiftaltdown;
+// int mousefocusin, mousefocusout;
 int controlbsp;
 
 /* The relative column where we will wrap lines. */
@@ -205,8 +205,8 @@ char        last_bracket_char    = '\0';
 colortype  *last_c_color         = NULL;
 syntaxtype *c_syntaxtype         = NULL;
 
-const char *term = NULL;
-const char *term_program = NULL;
+// const char *term = NULL;
+// const char *term_program = NULL;
 
 file_listener_handler_t file_listener;
 

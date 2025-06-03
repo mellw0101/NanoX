@@ -64,6 +64,8 @@ bool suggest_on = FALSE;
 bool spotlighted = FALSE;
 /* Whether to ignore modifier keys while running a macro or string bind. */
 bool mute_modifiers = FALSE;
+/* Whether text is being pasted into nano from outside. */
+bool bracketed_paste = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 
@@ -121,6 +123,10 @@ char  suggest_buf[1024] = "";
  * TRANSLATORS: Try to keep the next two strings at most 10 characters. */
 const char *exit_tag  = N_("Exit");
 const char *close_tag = N_("Close");
+/* Holds the `TERM` environment variable, when it exists.  Otherwise `NULL`. */
+const char *term = NULL;
+/* Holds the `TERM_PROGRAM` environment variable, when it exists.  Otherwise `NULL`. */
+const char *term_program = NULL;
 
 /* ----------------------------- int ----------------------------- */
 
@@ -138,6 +144,74 @@ int currmenu = MMOST;
 int hilite_attribute = A_REVERSE;
 /* The current length of the string used to search for completions. */
 int suggest_len = 0;
+/* Extended ncurses key code for `Ctrl+Left`. */
+int controlleft;
+/* Extended ncurses key code for `Ctrl+Right`. */
+int controlright;
+/* Extended ncurses key code for `Ctrl+Up`. */
+int controlup;
+/* Extended ncurses key code for `Ctrl+Down`. */
+int controldown;
+/* Extended ncurses key code for `Ctrl+Home`. */
+int controlhome;
+/* Extended ncurses key code for `Ctrl+End`. */
+int controlend;
+/* Extended ncurses key code for `Ctrl+Delete`. */
+int controldelete;
+/* Extended ncurses key code for `Ctrl+Shift+Delete`. */
+int controlshiftdelete;
+/* Extended ncurses key code for `Shift+Left`. */
+int shiftleft;
+/* Extended ncurses key code for `Shift+Right`. */
+int shiftright;
+/* Extended ncurses key code for `Shift+Up`. */
+int shiftup;
+/* Extended ncurses key code for `Shift+Down`. */
+int shiftdown;
+/* Extended ncurses key code for `Shift+Ctrl+Left`. */
+int shiftcontrolleft;
+/* Extended ncurses key code for `Shift+Ctrl+Right`. */
+int shiftcontrolright;
+/* Extended ncurses key code for `Shift+Ctrl+Up`. */
+int shiftcontrolup;
+/* Extended ncurses key code for `Shift+Ctrl+Down`. */
+int shiftcontroldown;
+/* Extended ncurses key code for `Shift+Ctrl+Home`. */
+int shiftcontrolhome;
+/* Extended ncurses key code for `Shift+Ctrl+End`. */
+int shiftcontrolend;
+/* Extended ncurses key code for `Alt+Left`. */
+int altleft;
+/* Extended ncurses key code for `Alt+Right`. */
+int altright;
+/* Extended ncurses key code for `Alt+Up`. */
+int altup;
+/* Extended ncurses key code for `Alt+Down`. */
+int altdown;
+/* Extended ncurses key code for `Alt+Home`. */
+int althome;
+/* Extended ncurses key code for `Alt+End`. */
+int altend;
+/* Extended ncurses key code for `Alt+PageUp`. */
+int altpageup;
+/* Extended ncurses key code for `Alt+PageDown`. */
+int altpagedown;
+/* Extended ncurses key code for `Alt+Insert`. */
+int altinsert;
+/* Extended ncurses key code for `Alt+Delete`. */
+int altdelete;
+/* Extended ncurses key code for `Shift+Alt+Left`. */
+int shiftaltleft;
+/* Extended ncurses key code for `Shift+Alt+Right`. */
+int shiftaltright;
+/* Extended ncurses key code for `Shift+Alt+Up`. */
+int shiftaltup;
+/* Extended ncurses key code for `Shift+Alt+Down`. */
+int shiftaltdown;
+/* Extended ncurses key code for mouse focus in. */
+int mousefocusin;
+/* Extended ncurses key code for mouse focus out. */
+int mousefocusout;
 
 /* ----------------------------- int * ----------------------------- */
 

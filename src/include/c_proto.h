@@ -43,6 +43,7 @@ extern bool keep_mark;
 extern bool suggest_on;
 extern bool spotlighted;
 extern bool mute_modifiers;
+extern bool bracketed_paste;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -70,6 +71,8 @@ extern char suggest_buf[1024];
 
 extern const char *exit_tag;
 extern const char *close_tag;
+extern const char *term;
+extern const char *term_program;
 
 extern int editwinrows;
 extern int editwincols;
@@ -78,6 +81,40 @@ extern int sidebar;
 extern int currmenu;
 extern int hilite_attribute;
 extern int suggest_len;
+extern int controlleft;
+extern int controlright;
+extern int controlup;
+extern int controldown;
+extern int controlhome;
+extern int controlend;
+extern int controldelete;
+extern int controlshiftdelete;
+extern int shiftleft;
+extern int shiftright;
+extern int shiftup;
+extern int shiftdown;
+extern int shiftcontrolleft;
+extern int shiftcontrolright;
+extern int shiftcontrolup;
+extern int shiftcontroldown;
+extern int shiftcontrolhome;
+extern int shiftcontrolend;
+extern int altleft;
+extern int altright;
+extern int altup;
+extern int altdown;
+extern int althome;
+extern int altend;
+extern int altpageup;
+extern int altpagedown;
+extern int altinsert;
+extern int altdelete;
+extern int shiftaltleft;
+extern int shiftaltright;
+extern int shiftaltup;
+extern int shiftaltdown;
+extern int mousefocusin;
+extern int mousefocusout;
 
 extern int *bardata;
 
@@ -170,6 +207,7 @@ extern Ulong milestone;
 extern bool reveal_cursor;
 extern bool linger_after_escape;
 extern const char *plants_pointer;
+extern int digit_count;
 
 /* ----------------------------- prompt.c ----------------------------- */
 
@@ -751,12 +789,17 @@ bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
 /* static */ int  get_code_from_plantation(void);
 /* static */ int  arrow_from_ABCD(int letter);
 /* static */ int  convert_SS3_sequence(const int *const seq, Ulong length, int *const consumed);
+/* static */ int  parse_escape_sequence(int starter);
+/* static */ int  assemble_byte_code(int keycode);
+/* static */ int  convert_to_control(int kbinput);
+/* static */ int  parse_kbinput(WINDOW *frame);
 
 void  record_macro(void);
 void  run_macro(void);
 void  reserve_space_for(Ulong newsize);
 void  implant(const char *const string);
 int   get_input(WINDOW *const frame);
+int   convert_CSI_sequence(const int *const seq, Ulong length, int *const consumed);
 Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line, int total_cols);
 Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge, int toal_cols);
 Ulong extra_chunks_in(linestruct *const line, int total_cols);
@@ -797,6 +840,7 @@ void  draw_all_subwindows(void);
 void  blank_statusbar(void);
 void  blank_titlebar(void);
 void  blank_bottombars(void);
+void  blank_it_when_expired(void);
 void  wipe_statusbar(void);
 void  post_one_key(const char *const restrict keystroke, const char *const restrict tag, int width);
 void  bottombars(int menu);
