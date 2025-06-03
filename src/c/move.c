@@ -238,14 +238,34 @@ void to_bottom_row(void) {
   }
 }
 
+/* Put the cursor line at the center, then the top, then the bottom in `file`. */
+void do_cycle_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  if (cycling_aim == 0) {
+    adjust_viewport_for(file, CENTERING, rows, cols);
+  }
+  else {
+    file->cursor_row = ((cycling_aim == 1) ? 0 : (rows - 1));
+    adjust_viewport_for(file, STATIONARY, rows, cols);
+  }
+  cycling_aim = ((cycling_aim + 1) % 3);
+  draw_all_subwindows();
+  full_refresh();
+}
+
+/* Put the cursor line at the center, then the top, then the bottom. */
+void do_cycle(void) {
+  do_cycle_for(CONTEXT_OPENFILE, CONTEXT_ROWS, CONTEXT_COLS);
+}
+
 /* Move to the first beginning of a paragraph before the current line. */
 void do_para_begin(linestruct **const line) {
   ASSERT(line);
   if ((*line)->prev) {
-    CLIST_ADV_PREV(*line);
+    DLIST_ADV_PREV(*line);
   }
   while (!begpar(*line, 0)) {
-    CLIST_ADV_PREV(*line);
+    DLIST_ADV_PREV(*line);
   }
 }
 
@@ -253,9 +273,9 @@ void do_para_begin(linestruct **const line) {
 void do_para_end(linestruct **const line) {
   ASSERT(line);
   while ((*line)->next && !inpar(*line)) {
-    CLIST_ADV_NEXT(*line);
+    DLIST_ADV_NEXT(*line);
   }
   while ((*line)->next && inpar((*line)->next) && !begpar((*line)->next, 0)) {
-    CLIST_ADV_NEXT(*line);
+    DLIST_ADV_NEXT(*line);
   } 
 }

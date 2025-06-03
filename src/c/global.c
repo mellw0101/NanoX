@@ -144,6 +144,8 @@ int currmenu = MMOST;
 int hilite_attribute = A_REVERSE;
 /* The current length of the string used to search for completions. */
 int suggest_len = 0;
+/* Whether to center the line with the cursor (0), push it to the top of the viewport (1), or to the bottom (2). */
+int cycling_aim = 0;
 /* Extended ncurses key code for `Ctrl+Left`. */
 int controlleft;
 /* Extended ncurses key code for `Ctrl+Right`. */

@@ -135,18 +135,18 @@ static void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward
 // }
 
 /* Put the cursor line at the center, then the top, then the bottom. */
-void do_cycle(void) {
-  if (cycling_aim == 0) {
-    adjust_viewport(CENTERING);
-  }
-  else {
-    openfile->cursor_row = ((cycling_aim == 1) ? 0 : (editwinrows - 1));
-    adjust_viewport(STATIONARY);
-  }
-  cycling_aim = ((cycling_aim + 1) % 3);
-  draw_all_subwindows();
-  full_refresh();
-}
+// void do_cycle(void) {
+//   if (cycling_aim == 0) {
+//     adjust_viewport(CENTERING);
+//   }
+//   else {
+//     openfile->cursor_row = ((cycling_aim == 1) ? 0 : (editwinrows - 1));
+//     adjust_viewport(STATIONARY);
+//   }
+//   cycling_aim = ((cycling_aim + 1) % 3);
+//   draw_all_subwindows();
+//   full_refresh();
+// }
 
 /* Scroll the line with the cursor to the center of the screen. */
 void do_center(void) {

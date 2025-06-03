@@ -98,7 +98,7 @@ nwindow *tui_footwin = NULL;
 /* The column at which a vertical bar will be drawn. */
 // long stripe_column = 0;
 /* Whether to center the line with the cursor (0), push it to the top of the viewport (1), or to the bottom (2). */
-int cycling_aim = 0;
+// int cycling_aim = 0;
 /* The buffer where we store cut text. */
 // linestruct *cutbuffer = NULL;
 /* The last line in the cutbuffer. */

@@ -20,6 +20,8 @@
 
 #define PROCEED -44
 
+#define INVALID_DIGIT -77
+
 
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
@@ -1049,6 +1051,114 @@ static int buffer_number(openfilestruct *buffer) {
   return keycode;
 }
 
+/* For each consecutive call, gather the given symbol into a Unicode code point.  When it's complete
+ * (with six digits, or when Space or Enter is typed), return the assembled code. Until then, return
+ * PROCEED when the symbol is valid, or an error code for anything other than hexadecimal, Space, and Enter. */
+/* static */ long assemble_unicode(int symbol) {
+  static long unicode = 0;
+  static int  digits  = 0;
+  int outcome = PROCEED;
+  char partial[7];
+  if ('0' <= symbol && symbol <= '9') {
+    unicode = ((unicode << 4) + symbol - '0');
+  }
+  else if ('a' <= (symbol | 0x20) && (symbol | 0x20) <= 'f') {
+    unicode = ((unicode << 4) + (symbol | 0x20) - 'a' + 10);
+  }
+  else if (symbol == '\r' || symbol == ' ') {
+    outcome = unicode;
+  }
+  else {
+    outcome = INVALID_DIGIT;
+  }
+  /* If also the sixth digit was a valid hexadecimal value, then the Unicode sequence is complete, so return it (when it's valid). */
+  if (++digits == 6 && outcome == PROCEED) {
+    outcome = (unicode < 0x110000) ? unicode : INVALID_DIGIT;
+  }
+  /* Show feedback only when editing, not when at a prompt. */
+  if (outcome == PROCEED && currmenu == MMAIN) {
+    // char partial[7] = "      ";
+    memcpy(partial, "      ", 7);
+    sprintf((partial + 6 - digits), "%0*lX", digits, unicode);
+    /* TRANSLATORS: This is shown while a six-digit hexadecimal Unicode character code (%s) is being typed in. */
+    statusline(INFO, _("Unicode Input: %s"), partial);
+  }
+  /* If we have an end result, reset the value and the counter. */
+  if (outcome != PROCEED) {
+    unicode = 0;
+    digits  = 0;
+  }
+  return outcome;
+}
+
+/* Read in one control character (or an iTerm/Eterm/rxvt double Escape), or convert a series of six digits into a Unicode codepoint.
+ * Return in count either 1 (for a control character or the first byte of a multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
+/* static */ int *parse_verbatim_kbinput(WINDOW *const frame, Ulong *const count) {
+  int keycode;
+  int *yield;
+  long unicode;
+  char multibyte[MB_CUR_MAX];
+  reveal_cursor = TRUE;
+  keycode       = get_input(frame);
+  /* When the window was resized, abort and return nothing. */
+  if (keycode == KEY_WINCH) {
+    *count = 999;
+    return NULL;
+  }
+  /* Reserve ample space for the possible result. */
+  yield = xmalloc(6 * sizeof(int));
+  /* If the key code is a hexadecimal digit, commence Unicode input. */
+  if (using_utf8() && isxdigit(keycode)) {
+    unicode = assemble_unicode(keycode);
+    reveal_cursor = FALSE;
+    /* Gather at most six hexadecimal digits. */
+    while (unicode == PROCEED) {
+      keycode = get_input(frame);
+      unicode = assemble_unicode(keycode);
+    }
+    if (keycode == KEY_WINCH) {
+      *count = 999;
+      free(yield);
+      return NULL;
+    }
+    /* For an invalid keystroke, discard its possible continuation bytes. */
+    if (unicode == INVALID_DIGIT) {
+      if (keycode == ESC_CODE && waiting_codes) {
+        get_input(NULL);
+        while (waiting_codes && 0x1F < nextcodes[0] && nextcodes[0] < 0x40) {
+          get_input(NULL);
+        }
+        if (waiting_codes && 0x3F < nextcodes[0] && nextcodes[0] < 0x7F) {
+          get_input(NULL);
+        }
+      }
+      else if (0xC0 <= keycode && keycode <= 0xFF) {
+        while (waiting_codes && 0x7F < nextcodes[0] && nextcodes[0] < 0xC0) {
+          get_input(NULL);
+        }
+      }
+    }
+    /* Convert the Unicode value to a multibyte sequence. */
+    *count = wctomb(multibyte, unicode);
+    if (*count > MAXCHARLEN) {
+      *count = 0;
+    }
+    /* Change the multibyte character into a series of integers. */
+    for (Ulong i=0; i<(*count); ++i) {
+      yield[i] = (int)multibyte[i];
+    }
+    return yield;
+  }
+  yield[0] = keycode;
+  /* In case of an escape, take also a second code, as it might be another
+   * escape (on iTerm2/rxvt) or a control code (for M-Bsp and M-Enter). */
+  if (keycode == ESC_CODE && waiting_codes) {
+    yield[1] = get_input(NULL);
+    *count   = 2;
+  }
+  return yield;
+}
+
 /* ----------------------------- Curses ----------------------------- */
 
 static void show_state_at_curses(WINDOW *const window) {
@@ -1604,6 +1714,191 @@ int convert_CSI_sequence(const int *const seq, Ulong length, int *const consumed
     }
   }
   return FOREIGN_SEQUENCE;
+}
+
+/* Read in a single keystroke, ignoring any that are invalid. */
+int get_kbinput(WINDOW *const frame, bool showcursor) {
+  int kbinput   = ERR;
+  reveal_cursor = showcursor;
+  /* Extract one keystroke from the input stream. */
+  while (kbinput == ERR) {
+    kbinput = parse_kbinput(frame);
+    #ifdef KEY_DEBUG
+      // NETLOG("kbinput: %d\n", kbinput);
+    #endif
+  }
+  /* If we read from the edit window, blank the status bar when it's time. */
+  if (frame == midwin) {
+    blank_it_when_expired();
+  }
+  return kbinput;
+}
+
+/* Read in one control code, one character byte, or the leading escapes of
+ * an escape sequence, and return the resulting number of bytes in count. */
+char *get_verbatim_kbinput(WINDOW *const frame, Ulong *const count) {
+  char *bytes = xmalloc(MAXCHARLEN + 2);
+  int  *input;
+  /* Turn off flow control characters if necessary so that we can type them in verbatim,
+   * and turn the keypad off if necessary so that we don't get extended keypad values. */
+  if (ISSET(PRESERVE)) {
+    disable_flow_control();
+  }
+  if (!ISSET(RAW_SEQUENCES)) {
+    keypad(frame, FALSE);
+  }
+  /* Turn bracketed-paste mode off. */
+  printf("\033[?2004l");
+  fflush(stdout);
+  linger_after_escape = TRUE;
+  /* Read in a single byte or two escapes. */
+  input = parse_verbatim_kbinput(frame, count);
+  /* If the byte is invalid in the current mode, discard it; if it is an incomplete Unicode sequence, stuff it back. */
+  if (input && *count) {
+    if (*input >= 0x80 && *count == 1) {
+      put_back(*input);
+      *count = 999;
+    }
+    else if ((*input == '\n' && as_an_at) || (!*input && !as_an_at)) {
+      *count = 0;
+    }
+  }
+  linger_after_escape = FALSE;
+  /* Turn bracketed-paste mode back on. */
+  printf("\033[?2004h");
+  fflush(stdout);
+  /* Turn flow control characters back on if necessary and turn the keypad back on if necessary now that we're done. */
+  if (ISSET(PRESERVE)) {
+    enable_flow_control();
+  }
+  /* Use the global window pointers, because a resize may have freed the data that the frame parameter points to. */
+  if (!ISSET(RAW_SEQUENCES)) {
+    keypad(midwin, TRUE);
+    keypad(footwin, TRUE);
+  }
+  if (*count < 999) {
+    for (Ulong i=0; i<(*count); ++i) {
+      bytes[i] = (char)input[i];
+    }
+    bytes[*count] = '\0';
+  }
+  free(input);
+  return bytes;
+}
+
+/* Handle any mouse event that may have occurred.  We currently handle
+ * releases/clicks of the first mouse button.  If allow_shortcuts is
+ * 'TRUE', releasing/clicking on a visible shortcut will put back the
+ * keystroke associated with that shortcut.  If ncurses supports them,
+ * we also handle presses of the fourth mouse button (upward rolls of
+ * the mouse wheel) by putting back keystrokes to scroll up, and presses
+ * of the fifth mouse button (downward rolls of the mouse wheel) by
+ * putting back keystrokes to scroll down.  We also store the coordinates
+ * of a mouse event that needs further handling in mouse_x and mouse_y.
+ * Return -1 on error, 0 if the mouse event needs to be handled, 1 if it's
+ * been handled by putting back keystrokes, or 2 if it's been ignored. */
+int get_mouseinput(int *const my, int *const mx, bool allow_shortcuts) {
+  ASSERT(my);
+  ASSERT(mx);
+  bool in_middle;
+  bool in_footer;
+  MEVENT event;
+  const keystruct *shortcut;
+  /* The width of each shortcut item, except the last two. */
+  int width;
+  /* The calculated index of the clicked item. */
+  int index;
+  /* The number of shortcut items that get displayed. */
+  Ulong number;
+  /* First, get the actual mouse event. */
+  if (getmouse(&event) == ERR) {
+    return -1;
+  }
+  in_middle = wenclose(midwin, event.y, event.x);
+  in_footer = wenclose(footwin, event.y, event.x);
+  /* Copy (and possibly adjust) the coordinates of the mouse event. */
+  *mx = (event.x - (in_middle ? margin : 0));
+  *my = event.y;
+  /* Handle releases/clicks of the first mouse button. */
+  if (event.bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED)) {
+    /* If we're allowing shortcuts, and the current shortcut list is being displayed on the last two
+     * lines of the screen, and the first mouse button was released on/clicked inside it, we need to
+     * figure out which shortcut was released on/clicked and put back the equivalent keystroke(s) for it. */
+    if (allow_shortcuts && !ISSET(NO_HELP) && in_footer) {
+      /* Shift the coordinates to be relative to the bottom window. */
+      wmouse_trafo(footwin, my, mx, FALSE);
+      /* Clicks on the status bar are handled elsewhere, so restore the untranslated mouse-event coordinates. */
+      if (!*my) {
+        *mx = event.x;
+        *my = event.y;
+        return 0;
+      }
+      /* Determine how many shortcuts are being shown. */
+      number = shown_entries_for(currmenu);
+      /* Calculate the clickable width of each menu item. */
+      if (number < 5) {
+        width = (COLS / 2);
+      }
+      else {
+        width = (COLS / ((number + 1) / 2));
+      }
+      /* Calculate the one-based index in the shortcut list. */
+      index = ((*mx / width) * 2 + *my);
+      /* Adjust the index if we hit the last two wider ones. */
+      if ((index > (int)number) && (*mx % width < COLS % width)) {
+        index -= 2;
+      }
+      /* Ignore clicks beyond the last shortcut. */
+      if (index > (int)number) {
+        return 2;
+      }
+      /* Search through the list of functions to determine which shortcut in the current menu
+       * the user clicked on; then put the corresponding keystroke into the keyboard buffer. */
+      for (funcstruct *f = allfuncs; f; f = f->next) {
+        if (!(f->menus & currmenu)) {
+          continue;
+        }
+        if (!first_sc_for(currmenu, f->func)) {
+          continue;
+        }
+        if (--index == 0) {
+          shortcut = first_sc_for(currmenu, f->func);
+          put_back(shortcut->keycode);
+          if (0x20 <= shortcut->keycode && shortcut->keycode <= 0x7E) {
+            put_back(ESC_CODE);
+          }
+          break;
+        }
+      }
+      return 1;
+    }
+    else {
+      /* Clicks outside of the bottom window are handled elsewhere. */
+      return 0;
+    }
+  }
+# if NCURSES_MOUSE_VERSION >= 2
+  /* Handle "presses" of the fourth and fifth mouse buttons (upward and downward rolls of the mouse wheel). */
+  else if (event.bstate & (BUTTON4_PRESSED | BUTTON5_PRESSED)) {
+    if (in_footer) {
+      /* Shift the coordinates to be relative to the bottom window. */
+      wmouse_trafo(footwin, my, mx, FALSE);
+    }
+    if (in_middle || (in_footer && *my == 0)) {
+      int keycode = ((event.bstate & BUTTON4_PRESSED) ? ALT_UP : ALT_DOWN);
+      /* One bump of the mouse wheel should scroll two lines. */
+      put_back(keycode);
+      put_back(keycode);
+      return 1;
+    }
+    else {
+      /* Ignore "presses" of the fourth and fifth mouse buttons that aren't on the edit window or the status bar. */
+      return 2;
+    }
+  }
+# endif
+  /* Ignore all other mouse events. */
+  return 2;
 }
 
 /* Get the column number after leftedge where we can break the given linedata,
@@ -2775,6 +3070,14 @@ void report_cursor_position(void) {
   report_cursor_position_for(CONTEXT_OPENFILE);
 }
 
+/* Tell curses to unconditionally redraw whatever was on the screen. */
+void full_refresh(void) {
+  /* Only perform any action when using the curses context. */
+  if (!ISSET(NO_NCURSES)) {
+    wrefresh(curscr);
+  }
+}
+
 /* ----------------------------- Curses ----------------------------- */
 
 /* Blank a row of window. */
@@ -3025,11 +3328,6 @@ void draw_row_marked_region_for_curses(openfilestruct *const file, int row, cons
 /* Draw the marked region of `row`. */
 void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col) {
   draw_row_marked_region_for_curses(openfile, row, converted, line, from_col);
-}
-
-/* Tell curses to unconditionally redraw whatever was on the screen. */
-void full_refresh_curses(void) {
-  wrefresh(curscr);
 }
 
 /* Draw the given text on the given row of the edit window.  line is the line to be drawn, and converted
