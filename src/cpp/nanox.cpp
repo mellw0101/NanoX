@@ -1556,8 +1556,8 @@ int main(int argc, char **argv) {
   Mlib::Profile::setupReportGeneration("/home/mellw/.NanoX.profile");
   LOUTPTR->setOutputFile("/home/mellw/.NanoX.log");
   logI("Starting NanoX");
-  term         = getenv("TERM");
-  term_program = getenv("TERM_PROGRAM");
+  term_env_var         = getenv("TERM");
+  term_program_env_var = getenv("TERM_PROGRAM");
   const char *netlogger = getenv("NETLOGGER");
   if (netlogger) {
     NETLOGGERPTR->enable();

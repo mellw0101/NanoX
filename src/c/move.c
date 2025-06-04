@@ -258,6 +258,12 @@ void do_cycle(void) {
   do_cycle_for(CONTEXT_OPENFILE, CONTEXT_ROWS, CONTEXT_COLS);
 }
 
+/* Scroll the line with the cursor to the center of the screen. */
+void do_center(void) {
+  /* The main loop has set 'cycling_aim' to zero. */
+  do_cycle();
+}
+
 /* Move to the first beginning of a paragraph before the current line. */
 void do_para_begin(linestruct **const line) {
   ASSERT(line);
@@ -278,4 +284,118 @@ void do_para_end(linestruct **const line) {
   while ((*line)->next && inpar((*line)->next) && !begpar((*line)->next, 0)) {
     DLIST_ADV_NEXT(*line);
   } 
+}
+
+/* Move up to first start of a paragraph before the current line. */
+void to_para_begin_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  do_para_begin(&file->current);
+  file->current_x = 0;
+  edit_redraw_for(file, rows, cols, was_current, CENTERING);
+}
+
+/* Move up to first start of a paragraph before the current line. */
+void to_para_begin(void) {
+  if (IN_GUI_CONTEXT) {
+    to_para_begin_for(GUI_CONTEXT);
+  }
+  else {
+    to_para_begin_for(TUI_CONTEXT);
+  }
+}
+
+/* Move down to just after the first found end of a paragraph. */
+void to_para_end_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  do_para_end(&file->current);
+  /* Step beyond the last line of the paragraph, if possible.  Otherwise, move to the end of the line. */
+  if (file->current->next) {
+    DLIST_ADV_NEXT(file->current);
+    file->current_x = 0;
+  }
+  else {
+    file->current_x = strlen(file->current->data);
+  }
+  edit_redraw_for(file, rows, cols, was_current, FLOWING);
+  recook |= perturbed;
+}
+
+/* Move down to just after the first found end of a paragraph. */
+void to_para_end(void) {
+  if (IN_GUI_CONTEXT) {
+    to_para_end_for(GUI_CONTEXT);
+  }
+  else {
+    to_para_end_for(TUI_CONTEXT);
+  }
+}
+
+/* Move to the preceding block of text. */
+void to_prev_block_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  int cur_indent;
+  int was_indent = -1;
+  bool is_text   = FALSE;
+  bool seen_text = FALSE;
+  /* Skip backward until first blank line after some nonblank line(s). */
+  while (file->current->prev && (!seen_text || is_text)) {
+    /* Current line is empty. */
+    if (!*file->current->data) {
+      /* Find first line that is not empty. */
+      for (; file->current->prev && !*file->current->data; file->current = file->current->prev)
+        ;
+      file->current_x = indent_length(file->current->data);
+      edit_redraw_for(file, rows, cols, was_current, FLOWING);
+      return;
+    }
+    else if (strncmp((file->current->data + indent_length(file->current->data)), S__LEN("//")) == 0) {
+      /* If not on the first line of a '//' comment block. */
+      if (file->current != was_current) {
+        /* Iterate to the top of the comment. */
+        for (; file->current->prev && strncmp((file->current->data + indent_length(file->current->data)), S__LEN("//")) == 0; file->current = file->current->prev)
+          ;
+        /* Back down one line. */
+        DLIST_ADV_NEXT(file->current);
+        file->current_x = indent_length(file->current->data);
+        edit_redraw_for(file, rows, cols, was_current, FLOWING);
+        return;
+      }
+    }
+    cur_indent = line_indent(file->current);
+    if (was_indent == -1) {
+      was_indent = cur_indent;
+    }
+    /* Line indentation has changed. */
+    else if (was_indent != cur_indent) {
+      /* Place cursor at top of current indent block, unless called from it. */
+      if (file->current != was_current->prev) {
+        DLIST_ADV_NEXT(file->current);
+      }
+      file->current_x = indent_length(file->current->data);
+      edit_redraw_for(file, rows, cols, was_current, FLOWING);
+      return;
+    }
+    DLIST_ADV_PREV(file->current);
+    is_text   = !white_string(file->current->data);
+    seen_text = (seen_text || is_text);
+  }
+  /* Step forward one line again if we passed text but this line is blank. */
+  if (seen_text && file->current->next && white_string(file->current->data)) {
+    DLIST_ADV_NEXT(file->current);
+  }
+  file->current_x = indent_length(file->current->data);
+  edit_redraw_for(file, rows, cols, was_current, FLOWING);
+}
+
+/* Move to the preceding block of text. */
+void to_prev_block(void) {
+  if (IN_GUI_CONTEXT) {
+    to_prev_block_for(GUI_CONTEXT);
+  }
+  else {
+    to_prev_block_for(TUI_CONTEXT);
+  }
 }

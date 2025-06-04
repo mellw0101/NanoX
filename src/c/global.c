@@ -124,9 +124,9 @@ char  suggest_buf[1024] = "";
 const char *exit_tag  = N_("Exit");
 const char *close_tag = N_("Close");
 /* Holds the `TERM` environment variable, when it exists.  Otherwise `NULL`. */
-const char *term = NULL;
+const char *term_env_var = NULL;
 /* Holds the `TERM_PROGRAM` environment variable, when it exists.  Otherwise `NULL`. */
-const char *term_program = NULL;
+const char *term_program_env_var = NULL;
 
 /* ----------------------------- int ----------------------------- */
 

@@ -2,71 +2,71 @@
 #include "../include/prototypes.h"
 
 /* Delete the character at the current position, and add or update an undo item for the given action. */
-void expunge(undo_type action) {
-  openfile->placewewant = xplustabs();
-  /* When in the middle of a line, delete the current character. */
-  if (openfile->current->data[openfile->current_x]) {
-    int charlen = char_length(openfile->current->data + openfile->current_x);
-    Ulong line_len   = strlen(openfile->current->data + openfile->current_x);
-    Ulong old_amount = (ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current, editwincols) : 0);
-    /* If the type of action changed or the cursor moved to a different line, create a new undo item, otherwise update the existing item. */
-    if (action != openfile->last_action || openfile->current->lineno != openfile->current_undo->head_lineno) {
-      add_undo(action, NULL);
-    }
-    else {
-      update_undo(action);
-    }
-    /* Move the remainder of the line "in", over the current character. */
-    memmove(&openfile->current->data[openfile->current_x], &openfile->current->data[openfile->current_x + charlen], (line_len - charlen + 1));
-    /* When softwrapping, a changed number of chunks requires a refresh. */
-    if (ISSET(SOFTWRAP) && extra_chunks_in(openfile->current, editwincols) != old_amount) {
-      refresh_needed = TRUE;
-    }
-    /* Adjust the mark if it is after the cursor on the current line. */
-    if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
-      openfile->mark_x -= charlen;
-    }
-  }
-  /* Otherwise, when not at end of buffer, join this line with the next. */
-  else if (openfile->current != openfile->filebot) {
-    linestruct *joining = openfile->current->next;
-    /* If there is a magic line, and we're before it: don't eat it. */
-    if (joining == openfile->filebot && openfile->current_x && !ISSET(NO_NEWLINES)) {
-      if (action == BACK) {
-        add_undo(BACK, NULL);
-      }
-      return;
-    }
-    add_undo(action, NULL);
-    /* Adjust the mark if it is on the line that will be "eaten". */
-    if (openfile->mark == joining) {
-      openfile->mark = openfile->current;
-      openfile->mark_x += openfile->current_x;
-    }
-    openfile->current->has_anchor |= joining->has_anchor;
-    /* Add the content of the next line to that of the current one. */
-    openfile->current->data = arealloc(openfile->current->data, (strlen(openfile->current->data) + strlen(joining->data) + 1));
-    constexpr_strcat(openfile->current->data, joining->data);
-    unlink_node(joining);
-    /* Two lines were joined, so do a renumbering and refresh the screen. */
-    renumber_from(openfile->current);
-    refresh_needed = TRUE;
-  }
-  /* We're at the end-of-file: nothing to do. */
-  else {
-    return;
-  }
-  if (!refresh_needed) {
-    check_the_multis(openfile->current);
-  }
-  if (!refresh_needed && !ISSET(USING_GUI)) {
-    update_line_curses(openfile->current, openfile->current_x);
-  }
-  /* Adjust the file size, and remember it for a possible redo. */
-  --openfile->totsize;
-  openfile->current_undo->newsize = openfile->totsize;
-  set_modified();
-}
+// void expunge(undo_type action) {
+//   openfile->placewewant = xplustabs();
+//   /* When in the middle of a line, delete the current character. */
+//   if (openfile->current->data[openfile->current_x]) {
+//     int charlen = char_length(openfile->current->data + openfile->current_x);
+//     Ulong line_len   = strlen(openfile->current->data + openfile->current_x);
+//     Ulong old_amount = (ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current, editwincols) : 0);
+//     /* If the type of action changed or the cursor moved to a different line, create a new undo item, otherwise update the existing item. */
+//     if (action != openfile->last_action || openfile->current->lineno != openfile->current_undo->head_lineno) {
+//       add_undo(action, NULL);
+//     }
+//     else {
+//       update_undo(action);
+//     }
+//     /* Move the remainder of the line "in", over the current character. */
+//     memmove(&openfile->current->data[openfile->current_x], &openfile->current->data[openfile->current_x + charlen], (line_len - charlen + 1));
+//     /* When softwrapping, a changed number of chunks requires a refresh. */
+//     if (ISSET(SOFTWRAP) && extra_chunks_in(openfile->current, editwincols) != old_amount) {
+//       refresh_needed = TRUE;
+//     }
+//     /* Adjust the mark if it is after the cursor on the current line. */
+//     if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
+//       openfile->mark_x -= charlen;
+//     }
+//   }
+//   /* Otherwise, when not at end of buffer, join this line with the next. */
+//   else if (openfile->current != openfile->filebot) {
+//     linestruct *joining = openfile->current->next;
+//     /* If there is a magic line, and we're before it: don't eat it. */
+//     if (joining == openfile->filebot && openfile->current_x && !ISSET(NO_NEWLINES)) {
+//       if (action == BACK) {
+//         add_undo(BACK, NULL);
+//       }
+//       return;
+//     }
+//     add_undo(action, NULL);
+//     /* Adjust the mark if it is on the line that will be "eaten". */
+//     if (openfile->mark == joining) {
+//       openfile->mark = openfile->current;
+//       openfile->mark_x += openfile->current_x;
+//     }
+//     openfile->current->has_anchor |= joining->has_anchor;
+//     /* Add the content of the next line to that of the current one. */
+//     openfile->current->data = arealloc(openfile->current->data, (strlen(openfile->current->data) + strlen(joining->data) + 1));
+//     constexpr_strcat(openfile->current->data, joining->data);
+//     unlink_node(joining);
+//     /* Two lines were joined, so do a renumbering and refresh the screen. */
+//     renumber_from(openfile->current);
+//     refresh_needed = TRUE;
+//   }
+//   /* We're at the end-of-file: nothing to do. */
+//   else {
+//     return;
+//   }
+//   if (!refresh_needed) {
+//     check_the_multis(openfile->current);
+//   }
+//   if (!refresh_needed && !ISSET(USING_GUI)) {
+//     update_line_curses(openfile->current, openfile->current_x);
+//   }
+//   /* Adjust the file size, and remember it for a possible redo. */
+//   --openfile->totsize;
+//   openfile->current_undo->newsize = openfile->totsize;
+//   set_modified();
+// }
 
 /* Delete the character under the cursor plus any succeeding zero-widths, or, when the mark is on and --zap is active, delete the marked region. */
 void do_delete(void) {

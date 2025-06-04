@@ -75,6 +75,10 @@
 #define CONTEXT_ROWS      (IN_GUI_CONTEXT ? openeditor->rows : editwinrows)
 #define CONTEXT_COLS      (IN_GUI_CONTEXT ? openeditor->cols : editwincols)
 
+#define GUI_CONTEXT  (openeditor->openfile), (openeditor->rows), (openeditor->cols)
+
+#define TUI_CONTEXT  (openfile), (editwinrows), (editwincols)
+
 #define TAB_BYTE_LEN                                      \
   /* The length in bytes of a tab, this depends on if     \
    * `TABS_TO_SPACES` is set, and if so the byte length   \

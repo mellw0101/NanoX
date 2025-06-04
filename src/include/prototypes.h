@@ -273,7 +273,7 @@ short rgb_to_ncurses(Uchar value);
 void  attr_idx_int_code(int idx, int *fg, int *bg);
 
 /* Most functions in 'cut.cpp'. */
-void expunge(undo_type action);
+// void expunge(undo_type action);
 void do_delete(void);
 void do_backspace(void);
 void chop_previous_word(void) _NOTHROW;
@@ -363,12 +363,12 @@ void do_help(void);
 // void to_top_row(void) _NOTHROW;
 // void to_bottom_row(void) _NOTHROW;
 // void do_cycle(void);
-void do_center(void);
+// void do_center(void);
 // void do_para_begin(linestruct **line) _NOTHROW;
 // void do_para_end(linestruct **line) _NOTHROW;
-void to_para_begin(void);
-void to_para_end(void);
-void to_prev_block(void);
+// void to_para_begin(void);
+// void to_para_end(void);
+// void to_prev_block(void);
 void to_next_block(void);
 void do_prev_word(void) _NOTHROW;
 bool do_next_word(bool after_ends) _NOTHROW;

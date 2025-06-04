@@ -71,8 +71,8 @@ extern char suggest_buf[1024];
 
 extern const char *exit_tag;
 extern const char *close_tag;
-extern const char *term;
-extern const char *term_program;
+extern const char *term_env_var;
+extern const char *term_program_env_var;
 
 extern int editwinrows;
 extern int editwincols;
@@ -838,6 +838,7 @@ void  set_blankdelay_to_one(void);
 Ulong waiting_keycodes(void);
 void  edit_scroll_for(openfilestruct *const file, bool direction);
 void  edit_scroll(bool direction);
+void  edit_redraw_for(openfilestruct *const file, int rows, int cols, linestruct *const old_current, update_type manner);
 void  edit_redraw(linestruct *const old_current, update_type manner);
 void  edit_refresh(void);
 void  titlebar(const char *path);
@@ -954,8 +955,15 @@ void to_bottom_row_for(openfilestruct *const file, int total_rows, int total_col
 void to_bottom_row(void);
 void do_cycle_for(openfilestruct *const file, int rows, int cols);
 void do_cycle(void);
+void do_center(void);
 void do_para_begin(linestruct **const line);
 void do_para_end(linestruct **const line);
+void to_para_begin_for(openfilestruct *const file, int rows, int cols);
+void to_para_begin(void);
+void to_para_end_for(openfilestruct *const file, int rows, int cols);
+void to_para_end(void);
+void to_prev_block_for(openfilestruct *const file, int rows, int cols);
+void to_prev_block(void);
 
 
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
@@ -1060,6 +1068,13 @@ char *strip_last_component(const char *const restrict path);
 
 
 void wrap_help_text_into_buffer(void);
+
+
+/* ---------------------------------------------------------- cut.c ---------------------------------------------------------- */
+
+
+void expunge_for(openfilestruct *const file, int cols, undo_type action);
+void expunge(undo_type action);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

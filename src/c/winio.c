@@ -572,9 +572,9 @@ static int buffer_number(openfilestruct *buffer) {
     // NETLOG("%d\n", keycode);
 # endif
   /* Check for '^Bsp'. */
-  if (term) {
+  if (term_env_var) {
     /* First we check if we are running in xterm.  And if so then check if the appropriet key was pressed. */
-    if (strcmp(term, "xterm") == 0) {
+    if (strcmp(term_env_var, "xterm") == 0) {
       if (ISSET(REBIND_DELETE) && keycode == DEL_CODE) {
         return CONTROL_BSP;
       }
@@ -586,7 +586,7 @@ static int buffer_number(openfilestruct *buffer) {
       }
     }
     else {
-      if (term_program && (strcmp(term_program, "vscode") == 0) && (keycode == 23)) {
+      if (term_program_env_var && (strcmp(term_program_env_var, "vscode") == 0) && (keycode == 23)) {
         return CONTROL_BSP;
       }
       else if (keycode == 8) {
@@ -2547,13 +2547,15 @@ void edit_scroll(bool direction) {
 }
 
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
-void edit_redraw(linestruct *const old_current, update_type manner) {
+void edit_redraw_for(openfilestruct *const file, int rows, int cols, linestruct *const old_current, update_type manner) {
+  ASSERT(file);
   ASSERT(old_current);
-  Ulong was_pww = openfile->placewewant;
-  openfile->placewewant = xplustabs();
+  linestruct *line;
+  Ulong was_pww = file->placewewant;
+  set_pww_for(file);
   /* If the current line is offscreen, scroll until it's onscreen. */
-  if (current_is_offscreen()) {
-    adjust_viewport(ISSET(JUMPY_SCROLLING) ? CENTERING : manner);
+  if (current_is_offscreen_for(file, rows, cols)) {
+    adjust_viewport_for(file, (ISSET(JUMPY_SCROLLING) ? CENTERING : manner), rows, cols);
     refresh_needed = TRUE;
     return;
   }
@@ -2562,22 +2564,32 @@ void edit_redraw(linestruct *const old_current, update_type manner) {
     return;
   }
   /* If the mark is on, update all lines between old_current and current. */
-  if (openfile->mark) {
-    linestruct *line = old_current;
-    while (line != openfile->current) {
-      update_line_curses(line, 0);
-      line = ((line->lineno > openfile->current->lineno) ? line->prev : line->next);
+  if (file->mark) {
+    line = old_current;
+    while (line != file->current) {
+      update_line_curses_for(file, line, 0);
+      line = ((line->lineno > file->current->lineno) ? line->prev : line->next);
     }
   }
   else {
     /* Otherwise, update old_current only if it differs from current and was horizontally scrolled. */
-    if (old_current != openfile->current && get_page_start(was_pww, editwincols) > 0) {
-      update_line_curses(old_current, 0);
+    if (old_current != file->current && get_page_start(was_pww, cols) > 0) {
+      update_line_curses_for(file, old_current, 0);
     }
   }
   /* Update current if the mark is on or it has changed "page", or if it differs from old_current and needs to be horizontally scrolled. */
-  if (line_needs_update(was_pww, openfile->placewewant) || (old_current != openfile->current && get_page_start(openfile->placewewant, editwincols) > 0)) {
-    update_line_curses(openfile->current, openfile->current_x);
+  if (line_needs_update_for(file, was_pww, file->placewewant, cols) || (old_current != file->current && get_page_start(file->placewewant, cols) > 0)) {
+    update_line_curses_for(file, file->current, file->current_x);
+  }
+}
+
+/* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
+void edit_redraw(linestruct *const old_current, update_type manner) {
+  if (IN_GUI_CONTEXT) {
+    edit_redraw_for(GUI_CONTEXT, old_current, manner);
+  }
+  else { 
+    edit_redraw_for(TUI_CONTEXT, old_current, manner);
   }
 }
 
