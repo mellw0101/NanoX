@@ -44,6 +44,8 @@ extern bool suggest_on;
 extern bool spotlighted;
 extern bool mute_modifiers;
 extern bool bracketed_paste;
+extern bool keep_cutbuffer;
+extern bool ran_a_tool;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -144,6 +146,7 @@ extern WINDOW *footwin;
 extern WINDOW *suggestwin;
 
 extern linestruct *cutbuffer;
+extern linestruct *cutbottom;
 extern linestruct *search_history;
 extern linestruct *replace_history;
 extern linestruct *execute_history;
@@ -419,6 +422,8 @@ void  update_undo(undo_type action);
 void  update_multiline_undo_for(openfilestruct *const file, long lineno, const char *const restrict indentation);
 void  update_multiline_undo(long lineno, const char *const restrict indentation);
 long  break_line(const char *textstart, long goal, bool snap_at_nl);
+void  do_wrap_for(openfilestruct *const file, int cols);
+void  do_wrap(void);
 void  do_mark_for(openfilestruct *const file);
 void  do_mark(void);
 void  discard_until_for(openfilestruct *const buffer, const undostruct *const thisitem);
@@ -1075,6 +1080,18 @@ void wrap_help_text_into_buffer(void);
 
 void expunge_for(openfilestruct *const file, int cols, undo_type action);
 void expunge(undo_type action);
+void extract_segment_for(openfilestruct *const file, int rows, int cols, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x);
+void extract_segment(linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x);
+void cut_marked_region_for(openfilestruct *const file, int rows, int cols);
+void cut_marked_region(void);
+void do_snip_for(openfilestruct *const file, int rows, int cols, bool marked, bool until_eof, bool append);
+void do_snip(bool marked, bool until_eof, bool append);
+void cut_text_for(openfilestruct *const file, int rows, int cols);
+void cut_text(void);
+void cut_till_eof_for(openfilestruct *const file, int rows, int cols);
+void cut_till_eof(void);
+void zap_text_for(openfilestruct *const file, int rows, int cols);
+void zap_text(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

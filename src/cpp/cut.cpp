@@ -197,95 +197,95 @@ void chop_next_word(void) _NOTHROW {
 }
 
 /* Excise the text between the given two points and add it to the cutbuffer. */
-void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x) _NOTHROW {
-  linestruct *taken, *last;
-  bool edittop_inside = (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
-  bool same_line      = (openfile->mark == top);
-  bool post_marked    = (openfile->mark && (openfile->mark->lineno > top->lineno || (same_line && openfile->mark_x > top_x)));
-  bool had_anchor     = top->has_anchor;
-  static bool inherited_anchor = FALSE;
-  if (top == bot && top_x == bot_x) {
-    return;
-  }
-  if (top != bot) {
-    for (linestruct *line = top->next; line != bot->next; line = line->next) {
-      had_anchor |= line->has_anchor;
-    }
-  }
-  if (top == bot) {
-    taken       = make_new_node(NULL);
-    taken->data = measured_copy((top->data + top_x), (bot_x - top_x));
-    memmove((top->data + top_x), (top->data + bot_x), (strlen(top->data + bot_x) + 1));
-    last = taken;
-  }
-  else if (!top_x && !bot_x) {
-    taken            = top;
-    last             = make_new_node(NULL);
-    last->data       = STRLTR_COPY_OF("");
-    last->has_anchor = bot->has_anchor;
-    last->prev       = bot->prev;
-    bot->prev->next  = last;
-    last->next       = NULL;
-    bot->prev        = top->prev;
-    (top->prev) ? top->prev->next = bot : openfile->filetop = bot;
-    openfile->current = bot;
-  }
-  else {
-    taken           = make_new_node(NULL);
-    taken->data     = copy_of(top->data + top_x);
-    taken->next     = top->next;
-    top->next->prev = taken;
-    top->next       = bot->next;
-    (bot->next) ? bot->next->prev = top : 0;
-    top->data = arealloc(top->data, (top_x + strlen(bot->data + bot_x) + 1));
-    strcpy((top->data + top_x), (bot->data + bot_x));
-    last              = bot;
-    last->data[bot_x] = '\0';
-    last->next        = NULL;
-    openfile->current = top;
-  }
-  /* Subtract the size of the excised text from the buffer size. */
-  openfile->totsize -= number_of_characters_in(taken, last);
-  /* If the cutbuffer is currently empty, just move all the text directly into it; otherwise, append the text to what is already there. */
-  if (!cutbuffer) {
-    cutbuffer        = taken;
-    cutbottom        = last;
-    inherited_anchor = taken->has_anchor;
-  }
-  else {
-    cutbottom->data = arealloc(cutbottom->data, (strlen(cutbottom->data) + strlen(taken->data) + 1));
-    strcat(cutbottom->data, taken->data);
-    cutbottom->has_anchor = taken->has_anchor && !inherited_anchor;
-    inherited_anchor |= taken->has_anchor;
-    cutbottom->next = taken->next;
-    delete_node(taken);
-    if (cutbottom->next) {
-      cutbottom->next->prev = cutbottom;
-      cutbottom = last;
-    }
-  }
-  openfile->current_x = top_x;
-  openfile->current->has_anchor = had_anchor;
-  if (post_marked || same_line) {
-    openfile->mark = openfile->current;
-  }
-  if (post_marked) {
-    openfile->mark_x = openfile->current_x;
-  }
-  if (openfile->filebot == bot) {
-    openfile->filebot = openfile->current;
-  }
-  renumber_from(openfile->current);
-  /* When the beginning of the viewport was inside the excision, adjust. */
-  if (edittop_inside) {
-    adjust_viewport(STATIONARY);
-    refresh_needed = TRUE;
-  }
-  /* If the text doesn't end with a newline, and it should, add one. */
-  if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0]) {
-    new_magicline();
-  }
-}
+// void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x) _NOTHROW {
+//   linestruct *taken, *last;
+//   bool edittop_inside = (openfile->edittop->lineno >= top->lineno && openfile->edittop->lineno <= bot->lineno);
+//   bool same_line      = (openfile->mark == top);
+//   bool post_marked    = (openfile->mark && (openfile->mark->lineno > top->lineno || (same_line && openfile->mark_x > top_x)));
+//   bool had_anchor     = top->has_anchor;
+//   static bool inherited_anchor = FALSE;
+//   if (top == bot && top_x == bot_x) {
+//     return;
+//   }
+//   if (top != bot) {
+//     for (linestruct *line = top->next; line != bot->next; line = line->next) {
+//       had_anchor |= line->has_anchor;
+//     }
+//   }
+//   if (top == bot) {
+//     taken       = make_new_node(NULL);
+//     taken->data = measured_copy((top->data + top_x), (bot_x - top_x));
+//     memmove((top->data + top_x), (top->data + bot_x), (strlen(top->data + bot_x) + 1));
+//     last = taken;
+//   }
+//   else if (!top_x && !bot_x) {
+//     taken            = top;
+//     last             = make_new_node(NULL);
+//     last->data       = STRLTR_COPY_OF("");
+//     last->has_anchor = bot->has_anchor;
+//     last->prev       = bot->prev;
+//     bot->prev->next  = last;
+//     last->next       = NULL;
+//     bot->prev        = top->prev;
+//     (top->prev) ? top->prev->next = bot : openfile->filetop = bot;
+//     openfile->current = bot;
+//   }
+//   else {
+//     taken           = make_new_node(NULL);
+//     taken->data     = copy_of(top->data + top_x);
+//     taken->next     = top->next;
+//     top->next->prev = taken;
+//     top->next       = bot->next;
+//     (bot->next) ? bot->next->prev = top : 0;
+//     top->data = arealloc(top->data, (top_x + strlen(bot->data + bot_x) + 1));
+//     strcpy((top->data + top_x), (bot->data + bot_x));
+//     last              = bot;
+//     last->data[bot_x] = '\0';
+//     last->next        = NULL;
+//     openfile->current = top;
+//   }
+//   /* Subtract the size of the excised text from the buffer size. */
+//   openfile->totsize -= number_of_characters_in(taken, last);
+//   /* If the cutbuffer is currently empty, just move all the text directly into it; otherwise, append the text to what is already there. */
+//   if (!cutbuffer) {
+//     cutbuffer        = taken;
+//     cutbottom        = last;
+//     inherited_anchor = taken->has_anchor;
+//   }
+//   else {
+//     cutbottom->data = arealloc(cutbottom->data, (strlen(cutbottom->data) + strlen(taken->data) + 1));
+//     strcat(cutbottom->data, taken->data);
+//     cutbottom->has_anchor = taken->has_anchor && !inherited_anchor;
+//     inherited_anchor |= taken->has_anchor;
+//     cutbottom->next = taken->next;
+//     delete_node(taken);
+//     if (cutbottom->next) {
+//       cutbottom->next->prev = cutbottom;
+//       cutbottom = last;
+//     }
+//   }
+//   openfile->current_x = top_x;
+//   openfile->current->has_anchor = had_anchor;
+//   if (post_marked || same_line) {
+//     openfile->mark = openfile->current;
+//   }
+//   if (post_marked) {
+//     openfile->mark_x = openfile->current_x;
+//   }
+//   if (openfile->filebot == bot) {
+//     openfile->filebot = openfile->current;
+//   }
+//   renumber_from(openfile->current);
+//   /* When the beginning of the viewport was inside the excision, adjust. */
+//   if (edittop_inside) {
+//     adjust_viewport(STATIONARY);
+//     refresh_needed = TRUE;
+//   }
+//   /* If the text doesn't end with a newline, and it should, add one. */
+//   if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0]) {
+//     new_magicline();
+//   }
+// }
 
 /* Meld the buffer that starts at topline into the current file buffer at the current cursor position. */
 void ingraft_buffer(linestruct *topline) _NOTHROW {
@@ -366,108 +366,108 @@ void copy_from_buffer(linestruct *somebuffer) _NOTHROW {
 }
 
 /* Move all marked text from the current buffer into the cutbuffer. */
-void cut_marked_region(void) _NOTHROW {
-  linestruct *top, *bot;
-  Ulong top_x, bot_x;
-  get_region(&top, &top_x, &bot, &bot_x);
-  extract_segment(top, top_x, bot, bot_x);
-  openfile->placewewant = xplustabs();
-}
+// void cut_marked_region(void) _NOTHROW {
+//   linestruct *top, *bot;
+//   Ulong top_x, bot_x;
+//   get_region(&top, &top_x, &bot, &bot_x);
+//   extract_segment(top, top_x, bot, bot_x);
+//   openfile->placewewant = xplustabs();
+// }
 
 /* Move text from the current buffer into the cutbuffer.  If until_eof is 'TRUE', move all text from the current cursor position
  * to the end of the file into the cutbuffer.  If append is 'TRUE' (when zapping), always append the cut to the cutbuffer. */
-void do_snip(bool marked, bool until_eof, bool append) _NOTHROW {
-  linestruct *line = openfile->current;
-  keep_cutbuffer &= (openfile->last_action != COPY);
-  /* If cuts were not continuous, or when cutting a region, clear the slate. */
-  if ((marked || until_eof || !keep_cutbuffer) && !append) {
-    free_lines(cutbuffer);
-    cutbuffer = NULL;
-  }
-  /* Now move the relevant piece of text into the cutbuffer. */
-  if (until_eof) {
-    extract_segment(openfile->current, openfile->current_x, openfile->filebot, strlen(openfile->filebot->data));
-  }
-  else if (openfile->mark) {
-    cut_marked_region();
-    openfile->mark = NULL;
-  }
-  else if (ISSET(CUT_FROM_CURSOR)) {
-    /* When not at the end of a line, move the rest of this line into the cutbuffer.  Otherwise,
-     * when not at the end of the buffer, move just the "line separator" into the cutbuffer. */
-    if (line->data[openfile->current_x]) {
-      extract_segment(line, openfile->current_x, line, strlen(line->data));
-    }
-    else if (openfile->current != openfile->filebot) {
-      extract_segment(line, openfile->current_x, line->next, 0);
-      openfile->placewewant = xplustabs();
-    }
-  }
-  else {
-    /* When not at end-of-buffer, move one full line into the cutbuffer; otherwise, move all text until end-of-line into the cutbuffer. */
-    if (openfile->current != openfile->filebot) {
-      extract_segment(line, 0, line->next, 0);
-    }
-    else {
-      extract_segment(line, 0, line, strlen(line->data));
-    }
-    openfile->placewewant = 0;
-  }
-  /* After a line operation, future ones should add to the cutbuffer. */
-  keep_cutbuffer = (!marked && !until_eof);
-  set_modified();
-  refresh_needed = TRUE;
-  perturbed      = TRUE;
-}
+// void do_snip(bool marked, bool until_eof, bool append) _NOTHROW {
+//   linestruct *line = openfile->current;
+//   keep_cutbuffer &= (openfile->last_action != COPY);
+//   /* If cuts were not continuous, or when cutting a region, clear the slate. */
+//   if ((marked || until_eof || !keep_cutbuffer) && !append) {
+//     free_lines(cutbuffer);
+//     cutbuffer = NULL;
+//   }
+//   /* Now move the relevant piece of text into the cutbuffer. */
+//   if (until_eof) {
+//     extract_segment(openfile->current, openfile->current_x, openfile->filebot, strlen(openfile->filebot->data));
+//   }
+//   else if (openfile->mark) {
+//     cut_marked_region();
+//     openfile->mark = NULL;
+//   }
+//   else if (ISSET(CUT_FROM_CURSOR)) {
+//     /* When not at the end of a line, move the rest of this line into the cutbuffer.  Otherwise,
+//      * when not at the end of the buffer, move just the "line separator" into the cutbuffer. */
+//     if (line->data[openfile->current_x]) {
+//       extract_segment(line, openfile->current_x, line, strlen(line->data));
+//     }
+//     else if (openfile->current != openfile->filebot) {
+//       extract_segment(line, openfile->current_x, line->next, 0);
+//       openfile->placewewant = xplustabs();
+//     }
+//   }
+//   else {
+//     /* When not at end-of-buffer, move one full line into the cutbuffer; otherwise, move all text until end-of-line into the cutbuffer. */
+//     if (openfile->current != openfile->filebot) {
+//       extract_segment(line, 0, line->next, 0);
+//     }
+//     else {
+//       extract_segment(line, 0, line, strlen(line->data));
+//     }
+//     openfile->placewewant = 0;
+//   }
+//   /* After a line operation, future ones should add to the cutbuffer. */
+//   keep_cutbuffer = (!marked && !until_eof);
+//   set_modified();
+//   refresh_needed = TRUE;
+//   perturbed      = TRUE;
+// }
 
 /* Move text from the current buffer into the cutbuffer. */
-void cut_text(void) _NOTHROW {
-  if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && !openfile->mark)) {
-    return;
-  }
-  /* Only add a new undo item when the current item is not a CUT or when the current cut is not contiguous with the previous cutting. */
-  if (openfile->last_action != CUT || !keep_cutbuffer) {
-    keep_cutbuffer = FALSE;
-    add_undo(CUT, NULL);
-  }
-  do_snip((openfile->mark != NULL), FALSE, FALSE);
-  update_undo(CUT);
-  wipe_statusbar();
-}
+// void cut_text(void) _NOTHROW {
+//   if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && !openfile->mark)) {
+//     return;
+//   }
+//   /* Only add a new undo item when the current item is not a CUT or when the current cut is not contiguous with the previous cutting. */
+//   if (openfile->last_action != CUT || !keep_cutbuffer) {
+//     keep_cutbuffer = FALSE;
+//     add_undo(CUT, NULL);
+//   }
+//   do_snip((openfile->mark != NULL), FALSE, FALSE);
+//   update_undo(CUT);
+//   wipe_statusbar();
+// }
 
 /* Cut from the current cursor position to the end of the file. */
-void cut_till_eof(void) _NOTHROW {
-  ran_a_tool = TRUE;
-  if (!openfile->current->data[openfile->current_x]
-   && (!openfile->current->next || (!ISSET(NO_NEWLINES) && openfile->current_x > 0 && openfile->current->next == openfile->filebot))) {
-    statusbar_all(_("Nothing was cut"));
-    return;
-  }
-  add_undo(CUT_TO_EOF, NULL);
-  do_snip(FALSE, TRUE, FALSE);
-  update_undo(CUT_TO_EOF);
-  wipe_statusbar();
-}
+// void cut_till_eof(void) _NOTHROW {
+//   ran_a_tool = TRUE;
+//   if (!openfile->current->data[openfile->current_x]
+//    && (!openfile->current->next || (!ISSET(NO_NEWLINES) && openfile->current_x > 0 && openfile->current->next == openfile->filebot))) {
+//     statusbar_all(_("Nothing was cut"));
+//     return;
+//   }
+//   add_undo(CUT_TO_EOF, NULL);
+//   do_snip(FALSE, TRUE, FALSE);
+//   update_undo(CUT_TO_EOF);
+//   wipe_statusbar();
+// }
 
 /* Erase text (current line or marked region), sending it into oblivion. */
-void zap_text(void) _NOTHROW {
-  /* Remember the current cutbuffer so it can be restored after the zap. */
-  linestruct *was_cutbuffer = cutbuffer;
-  if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && !openfile->mark)) {
-    return;
-  }
-  /* Add a new undo item only when the current item is not a ZAP or when
-   * the current zap is not contiguous with the previous zapping. */
-  if (openfile->last_action != ZAP || !keep_cutbuffer) {
-    add_undo(ZAP, NULL);
-  }
-  /* Use the cutbuffer from the ZAP undo item, so the cut can be undone. */
-  cutbuffer = openfile->current_undo->cutbuffer;
-  do_snip((openfile->mark != NULL), FALSE, TRUE);
-  update_undo(ZAP);
-  wipe_statusbar();
-  cutbuffer = was_cutbuffer;
-}
+// void zap_text(void) _NOTHROW {
+//   /* Remember the current cutbuffer so it can be restored after the zap. */
+//   linestruct *was_cutbuffer = cutbuffer;
+//   if (!is_cuttable(ISSET(CUT_FROM_CURSOR) && !openfile->mark)) {
+//     return;
+//   }
+//   /* Add a new undo item only when the current item is not a ZAP or when
+//    * the current zap is not contiguous with the previous zapping. */
+//   if (openfile->last_action != ZAP || !keep_cutbuffer) {
+//     add_undo(ZAP, NULL);
+//   }
+//   /* Use the cutbuffer from the ZAP undo item, so the cut can be undone. */
+//   cutbuffer = openfile->current_undo->cutbuffer;
+//   do_snip((openfile->mark != NULL), FALSE, TRUE);
+//   update_undo(ZAP);
+//   wipe_statusbar();
+//   cutbuffer = was_cutbuffer;
+// }
 
 /* Erase currently marked region, and replace it with `replacewith`. */
 void zap_replace_text(const char *replacewith, Ulong len) _NOTHROW {

@@ -1899,117 +1899,117 @@ void do_redo(void) {
 
 /* When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
  * and prepend the excess part to an "overflow" line (when it already exists, otherwise create one). */
-void do_wrap(void) {
-  /* The line to be wrapped, if needed and possible. */
-  linestruct *line = openfile->current;
-  /* The length of this line. */
-  Ulong line_len = strlen(line->data);
-  /* The length of the quoting part of this line. */
-  Ulong quot_len = quote_length(line->data);
-  /* The length of the quoting part plus subsequent whitespace. */
-  Ulong lead_len = (quot_len + indent_length(line->data + quot_len));
-  /* The current cursor position, for comparison with the wrap point. */
-  Ulong cursor_x = openfile->current_x;
-  /* The position in the line's text where we wrap. */
-  long wrap_loc;
-  /* The text after the wrap point. */
-  const char *remainder;
-  /* The length of the remainder. */
-  Ulong rest_length;
-  /* First find the last blank character where we can break the line. */
-  wrap_loc = break_line((line->data + lead_len), (wrap_at - wideness(line->data, lead_len)), FALSE);
-  /* If no wrapping point was found before end-of-line, we don't wrap. */
-  if (wrap_loc < 0 || (lead_len + wrap_loc) == line_len) {
-    return;
-  }
-  /* Adjust the wrap location to its position in the full line, and step forward to the character just after the blank. */
-  wrap_loc = (lead_len + step_right((line->data + lead_len), wrap_loc));
-  /* When now at end-of-line, no need to wrap. */
-  if (!line->data[wrap_loc]) {
-    return;
-  }
-  add_undo(SPLIT_BEGIN, NULL);
-  bool autowhite = ISSET(AUTOINDENT);
-  if (quot_len > 0) {
-    UNSET(AUTOINDENT);
-  }
-  /* The remainder is the text that will be wrapped to the next line. */
-  remainder   = (line->data + wrap_loc);
-  rest_length = (line_len - wrap_loc);
-  /* When prepending and the remainder of this line will not make the next line too long, then join the two
-   * lines, so that, after the line wrap, the remainder will effectively have been prefixed to the next line. */
-  if (openfile->spillage_line && openfile->spillage_line == line->next && (rest_length + breadth(line->next->data)) <= wrap_at) {
-    /* Go to the end of this line. */
-    openfile->current_x = line_len;
-    /* If the remainder doesn't end in a blank, add a space. */
-    if (!is_blank_char(remainder + step_left(remainder, rest_length))) {
-      add_undo(ADD, NULL);
-      line->data = (char *)xrealloc(line->data, (line_len + 2));
-      line->data[line_len] = ' ';
-      line->data[line_len + 1] = '\0';
-      ++rest_length;
-      ++openfile->totsize;
-      ++openfile->current_x;
-      update_undo(ADD);
-    }
-    /* Join the next line to this one. */
-    expunge(DEL);
-    /* If the leading part of the current line equals the leading part of what was the next line, then strip this second leading part. */
-    if (strncmp(line->data, (line->data + openfile->current_x), lead_len) == 0) {
-      for (Ulong i=lead_len; i>0; --i) {
-        expunge(DEL);
-      }
-    }
-    /* Remove any extra blanks. */
-    while (is_blank_char(&line->data[openfile->current_x])) {
-      expunge(DEL);
-    }
-  }
-  /* Go to the wrap location. */
-  openfile->current_x = wrap_loc;
-  /* When requested, snip trailing blanks off the wrapped line. */
-  if (ISSET(TRIM_BLANKS)) {
-    Ulong rear_x  = step_left(line->data, wrap_loc);
-    Ulong typed_x = step_left(line->data, cursor_x);
-    while ((rear_x != typed_x || (long)cursor_x >= wrap_loc) && is_blank_char(line->data + rear_x)) {
-      openfile->current_x = rear_x;
-      expunge(DEL);
-      rear_x = step_left(line->data, rear_x);
-    }
-  }
-  /* Now split the line. */
-  do_enter();
-  /* When wrapping a partially visible line, adjust start-of-screen. */
-  if (openfile->edittop == line && openfile->firstcolumn > 0 && (long)cursor_x >= wrap_loc) {
-    go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
-  }
-  /* If the original line has quoting, copy it to the spillage line. */
-  if (quot_len > 0) {
-    line       = line->next;
-    line_len   = strlen(line->data);
-    line->data = (char *)xrealloc(line->data, (lead_len + line_len + 1));
-    memmove((line->data + lead_len), line->data, (line_len + 1));
-    strncpy(line->data, line->prev->data, lead_len);
-    openfile->current_x += lead_len;
-    openfile->totsize   += lead_len;
-    free(openfile->undotop->strdata);
-    update_undo(ENTER);
-    if (autowhite) {
-      SET(AUTOINDENT);
-    }
-  }
-  openfile->spillage_line = openfile->current;
-  if ((long)cursor_x < wrap_loc) {
-    openfile->current   = openfile->current->prev;
-    openfile->current_x = cursor_x;
-  }
-  else {
-    openfile->current_x += (cursor_x - wrap_loc);
-  }
-  openfile->placewewant = xplustabs();
-  add_undo(SPLIT_END, NULL);
-  refresh_needed = TRUE;
-}
+// void do_wrap(void) {
+//   /* The line to be wrapped, if needed and possible. */
+//   linestruct *line = openfile->current;
+//   /* The length of this line. */
+//   Ulong line_len = strlen(line->data);
+//   /* The length of the quoting part of this line. */
+//   Ulong quot_len = quote_length(line->data);
+//   /* The length of the quoting part plus subsequent whitespace. */
+//   Ulong lead_len = (quot_len + indent_length(line->data + quot_len));
+//   /* The current cursor position, for comparison with the wrap point. */
+//   Ulong cursor_x = openfile->current_x;
+//   /* The position in the line's text where we wrap. */
+//   long wrap_loc;
+//   /* The text after the wrap point. */
+//   const char *remainder;
+//   /* The length of the remainder. */
+//   Ulong rest_length;
+//   /* First find the last blank character where we can break the line. */
+//   wrap_loc = break_line((line->data + lead_len), (wrap_at - wideness(line->data, lead_len)), FALSE);
+//   /* If no wrapping point was found before end-of-line, we don't wrap. */
+//   if (wrap_loc < 0 || (lead_len + wrap_loc) == line_len) {
+//     return;
+//   }
+//   /* Adjust the wrap location to its position in the full line, and step forward to the character just after the blank. */
+//   wrap_loc = (lead_len + step_right((line->data + lead_len), wrap_loc));
+//   /* When now at end-of-line, no need to wrap. */
+//   if (!line->data[wrap_loc]) {
+//     return;
+//   }
+//   add_undo(SPLIT_BEGIN, NULL);
+//   bool autowhite = ISSET(AUTOINDENT);
+//   if (quot_len > 0) {
+//     UNSET(AUTOINDENT);
+//   }
+//   /* The remainder is the text that will be wrapped to the next line. */
+//   remainder   = (line->data + wrap_loc);
+//   rest_length = (line_len - wrap_loc);
+//   /* When prepending and the remainder of this line will not make the next line too long, then join the two
+//    * lines, so that, after the line wrap, the remainder will effectively have been prefixed to the next line. */
+//   if (openfile->spillage_line && openfile->spillage_line == line->next && (rest_length + breadth(line->next->data)) <= wrap_at) {
+//     /* Go to the end of this line. */
+//     openfile->current_x = line_len;
+//     /* If the remainder doesn't end in a blank, add a space. */
+//     if (!is_blank_char(remainder + step_left(remainder, rest_length))) {
+//       add_undo(ADD, NULL);
+//       line->data = (char *)xrealloc(line->data, (line_len + 2));
+//       line->data[line_len] = ' ';
+//       line->data[line_len + 1] = '\0';
+//       ++rest_length;
+//       ++openfile->totsize;
+//       ++openfile->current_x;
+//       update_undo(ADD);
+//     }
+//     /* Join the next line to this one. */
+//     expunge(DEL);
+//     /* If the leading part of the current line equals the leading part of what was the next line, then strip this second leading part. */
+//     if (strncmp(line->data, (line->data + openfile->current_x), lead_len) == 0) {
+//       for (Ulong i=lead_len; i>0; --i) {
+//         expunge(DEL);
+//       }
+//     }
+//     /* Remove any extra blanks. */
+//     while (is_blank_char(&line->data[openfile->current_x])) {
+//       expunge(DEL);
+//     }
+//   }
+//   /* Go to the wrap location. */
+//   openfile->current_x = wrap_loc;
+//   /* When requested, snip trailing blanks off the wrapped line. */
+//   if (ISSET(TRIM_BLANKS)) {
+//     Ulong rear_x  = step_left(line->data, wrap_loc);
+//     Ulong typed_x = step_left(line->data, cursor_x);
+//     while ((rear_x != typed_x || (long)cursor_x >= wrap_loc) && is_blank_char(line->data + rear_x)) {
+//       openfile->current_x = rear_x;
+//       expunge(DEL);
+//       rear_x = step_left(line->data, rear_x);
+//     }
+//   }
+//   /* Now split the line. */
+//   do_enter();
+//   /* When wrapping a partially visible line, adjust start-of-screen. */
+//   if (openfile->edittop == line && openfile->firstcolumn > 0 && (long)cursor_x >= wrap_loc) {
+//     go_forward_chunks(1, &openfile->edittop, &openfile->firstcolumn);
+//   }
+//   /* If the original line has quoting, copy it to the spillage line. */
+//   if (quot_len > 0) {
+//     line       = line->next;
+//     line_len   = strlen(line->data);
+//     line->data = (char *)xrealloc(line->data, (lead_len + line_len + 1));
+//     memmove((line->data + lead_len), line->data, (line_len + 1));
+//     strncpy(line->data, line->prev->data, lead_len);
+//     openfile->current_x += lead_len;
+//     openfile->totsize   += lead_len;
+//     free(openfile->undotop->strdata);
+//     update_undo(ENTER);
+//     if (autowhite) {
+//       SET(AUTOINDENT);
+//     }
+//   }
+//   openfile->spillage_line = openfile->current;
+//   if ((long)cursor_x < wrap_loc) {
+//     openfile->current   = openfile->current->prev;
+//     openfile->current_x = cursor_x;
+//   }
+//   else {
+//     openfile->current_x += (cursor_x - wrap_loc);
+//   }
+//   openfile->placewewant = xplustabs();
+//   add_undo(SPLIT_END, NULL);
+//   refresh_needed = TRUE;
+// }
 
 /* Find the last blank in the given piece of text such that the display width to that point is at most
  * (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last

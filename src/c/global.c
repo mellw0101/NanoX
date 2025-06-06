@@ -66,6 +66,10 @@ bool spotlighted = FALSE;
 bool mute_modifiers = FALSE;
 /* Whether text is being pasted into nano from outside. */
 bool bracketed_paste = FALSE;
+/* Whether to add to the cutbuffer instead of clearing it first. */
+bool keep_cutbuffer = FALSE;
+/* Whether a tool has been run at the Execute-Command prompt. */
+bool ran_a_tool = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 
@@ -278,6 +282,8 @@ WINDOW *suggestwin = NULL;
 
 /* The buffer where we store cut text. */
 linestruct *cutbuffer = NULL;
+/* The last line in the cutbuffer. */
+linestruct *cutbottom = NULL;
 /* The current item in the list of strings that were searched for. */
 linestruct *search_history = NULL;
 /* The current item in the list of replace strings. */

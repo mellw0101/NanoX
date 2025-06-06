@@ -25,7 +25,7 @@
 /* Whether to show the number of lines when the minibar is used. */
 // bool report_size = TRUE;
 /* Whether a tool has been run at the Execute-Command prompt. */
-bool ran_a_tool = FALSE;
+// bool ran_a_tool = FALSE;
 /* Whether we are in the help viewer. */
 // bool inhelp = FALSE;
 /* When not NULL: the title of the current help text. */
@@ -102,9 +102,9 @@ nwindow *tui_footwin = NULL;
 /* The buffer where we store cut text. */
 // linestruct *cutbuffer = NULL;
 /* The last line in the cutbuffer. */
-linestruct *cutbottom = NULL;
+// linestruct *cutbottom = NULL;
 /* Whether to add to the cutbuffer instead of clearing it first. */
-bool keep_cutbuffer = FALSE;
+// bool keep_cutbuffer = FALSE;
 /* The list of all open file buffers. */
 // openfilestruct *openfile = NULL;
 /* The first open buffer. */

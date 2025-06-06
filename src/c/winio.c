@@ -2138,7 +2138,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   /* The number of zero-width characters for which to reserve space. */
   Ulong stowaways = 20;
   /* The amount of memory to reserve for the displayable string. */
-  Ulong allocsize = (((ISSET(USING_GUI) ? (span + 20) : COLS) + stowaways) * MAXCHARLEN + 1);
+  Ulong allocsize = (((ISSET(USING_GUI) ? (span + 30) : COLS) + stowaways) * MAXCHARLEN + 1);
   /* The displayable string we will return. */
   char *converted = xmalloc(allocsize);
   /* Current position in converted. */
@@ -2317,7 +2317,7 @@ bool less_than_a_screenful_for(openfilestruct *const file, Ulong was_lineno, Ulo
 /* Return 'TRUE' if there are fewer than a screen's worth of lines between the line at line number was_lineno
  * (and column was_leftedge, if we're in softwrap mode) and the line at `openfile->current[openfile->current_x]`. */
 bool less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     return less_than_a_screenful_for(openeditor->openfile, was_lineno, was_leftedge, openeditor->rows, openeditor->cols);
   }
   else {
@@ -2447,7 +2447,7 @@ void adjust_viewport_for(openfilestruct *const file, update_type manner, int tot
  * should stay on the same screen row, CENTERING means that current should end up in the middle of the
  * screen, and FLOWING means that it should scroll no more than needed to bring current into view. */
 void adjust_viewport(update_type manner) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     adjust_viewport_for(openeditor->openfile, manner, openeditor->rows, openeditor->cols);
   }
   else {
@@ -2994,7 +2994,7 @@ void blank_it_when_expired(void) {
 /* Wipe the status bar clean and include this in the next screen update. */
 void wipe_statusbar(void) {
   lastmessage = VACUUM;
-  if ((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN) {
+  if (((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN)) {
     return;
   }
   if (!ISSET(NO_NCURSES)) {
