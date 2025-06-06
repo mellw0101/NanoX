@@ -403,3 +403,85 @@ void regenerate_screen(void) {
     draw_all_subwindows();
   }
 }
+
+/* ----------------------------- Inject ----------------------------- */
+
+/* Insert the given `burst` of `count` bytes into `file`. */
+void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *burst, Ulong count) {
+  ASSERT(file);
+  linestruct *line   = file->current;
+  Ulong datalen      = strlen(line->data);
+  Ulong original_row = 0;
+  Ulong old_amount   = 0;
+  if (ISSET(SOFTWRAP)) {
+    if (file->cursor_row == (rows - 1)) {
+      original_row = chunk_for(xplustabs_for(file), line, cols);
+    }
+    old_amount = extra_chunks_in(line, cols);
+  }
+  /* Encode an embedded `NUL` byte as `0x0A`. */
+  RECODE_NUL_TO_LF(burst, count);
+  /* Only add a new undo item when the current item is not an `ADD` or when the current typing is not contignous with the previous typing. */
+  if (file->last_action != ADD || file->current_undo->tail_lineno != line->lineno || file->current_undo->tail_x != file->current_x) {
+    add_undo_for(file, ADD, NULL);
+  }
+  /* Inject the burst into the cursor line of `file`. */
+  file->current->data = xnstrninj(file->current->data, datalen, burst, count, file->current_x);
+  /* When the cursor is on the top row and not on the first chunk of a line, adding text
+   * there might change the preceding chunk and thus require an adjustment of firstcolumn. */
+  if (line == file->edittop && file->firstcolumn > 0) {
+    ensure_firstcolumn_is_aligned_for(file, cols);
+    refresh_needed = TRUE;
+  }
+  /* When the mark is to the right of the cursor compensate its position. */
+  if (line == file->mark && file->current_x < file->mark_x) {
+    file->mark_x += count;
+  }
+  file->current_x += count;
+  file->totsize += mbstrlen(burst);
+  set_modified_for(file);
+  /* If text was added to the magic line, create a new magic line. */
+  if (line == file->filebot && !ISSET(NO_NEWLINES)) {
+    new_magicline_for(file);
+    /* Original code from nano, this is stupid and there is no reason to have the first if statement. 
+     *
+     * if (margin || (openfile->syntax && openfile->syntax->multiscore)) {
+     *   if (margin && openfile->cursor_row < (editwinrows - 1)) {
+     *     update_line_curses(thisline->next, 0);
+     *   }
+     * }
+     *
+     * I will just use the second statement. */
+    if (margin && file->cursor_row < (rows - 1)) {
+      update_line_curses_for(file, line, 0);
+    }
+  }
+  update_undo_for(file, ADD);
+  if (ISSET(BREAK_LONG_LINES)) {
+    do_wrap_for(file, cols);
+  }
+  set_pww_for(file);
+  /* When softwrapping and the number of chunks in the current line changed, or we were
+   * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
+  if (ISSET(SOFTWRAP) && (extra_chunks_in(file->current, cols) != old_amount
+   || (file->cursor_row == (rows - 1) && chunk_for(file->placewewant, file->current, cols) > original_row))) {
+    refresh_needed = TRUE;
+    focusing       = FALSE;
+  }
+  if (!refresh_needed) {
+    check_the_multis_for(file, file->current);
+  }
+  if (!refresh_needed) {
+    update_line_curses_for(file, file->current, file->current_x);
+  }
+}
+
+/* Insert the given `burst` of `count` bytes into the currently open file.  Note that this is context safe. */
+void inject(char *burst, Ulong count) {
+  if (IN_GUI_CONTEXT) {
+    inject_into_buffer(GUI_CONTEXT, burst, count);
+  }
+  else {
+    inject_into_buffer(TUI_CONTEXT, burst, count);
+  }
+}

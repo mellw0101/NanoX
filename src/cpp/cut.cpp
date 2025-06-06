@@ -69,17 +69,17 @@
 // }
 
 /* Delete the character under the cursor plus any succeeding zero-widths, or, when the mark is on and --zap is active, delete the marked region. */
-void do_delete(void) {
-  if (openfile->mark && ISSET(LET_THEM_ZAP)) {
-    zap_text();
-  }
-  else {
-    expunge(DEL);
-    while (openfile->current->data[openfile->current_x] && is_zerowidth(openfile->current->data + openfile->current_x)) {
-      expunge(DEL);
-    }
-  }
-}
+// void do_delete(void) {
+//   if (openfile->mark && ISSET(LET_THEM_ZAP)) {
+//     zap_text();
+//   }
+//   else {
+//     expunge(DEL);
+//     while (openfile->current->data[openfile->current_x] && is_zerowidth(openfile->current->data + openfile->current_x)) {
+//       expunge(DEL);
+//     }
+//   }
+// }
 
 /* Backspace over one character.  That is, move the cursor left one character, and then delete the
  * character under the cursor.  Or, when mark is on and --zap is active, delete the marked region. */

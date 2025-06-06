@@ -1110,72 +1110,72 @@ static void suck_up_input_and_paste_it(void) {
 }
 
 /* Insert the given short burst of bytes into the edit buffer. */
-void inject(char *burst, Ulong count) {
-  linestruct *thisline = openfile->current;
-  Ulong datalen = strlen(thisline->data);
-  Ulong original_row = 0;
-  Ulong old_amount = 0;
-  if (ISSET(SOFTWRAP)) {
-    if (openfile->cursor_row == (editwinrows - 1)) {
-      original_row = chunk_for(xplustabs(), thisline, editwincols);
-    }
-    old_amount = extra_chunks_in(thisline, editwincols);
-  }
-  /* Encode an embedded NUL byte as 0x0A. */
-  for (Ulong index=0; index<count; ++index) {
-    if (!burst[index]) {
-      burst[index] = '\n';
-    }
-  }
-  /* Only add a new undo item when the current item is not an ADD or when the current typing is not contiguous with the previous typing. */
-  if (openfile->last_action != ADD || openfile->current_undo->tail_lineno != thisline->lineno || openfile->current_undo->tail_x != openfile->current_x) {
-    add_undo(ADD, NULL);
-  }
-  /* Make room for the new bytes and copy them into the line. */
-  thisline->data = arealloc(thisline->data, (datalen + count + 1));
-  memmove((thisline->data + openfile->current_x + count), (thisline->data + openfile->current_x), (datalen - openfile->current_x + 1));
-  strncpy((thisline->data + openfile->current_x), burst, count);
-  /* When the cursor is on the top row and not on the first chunk of a line, adding text
-   * there might change the preceding chunk and thus require an adjustment of firstcolumn. */
-  if (thisline == openfile->edittop && openfile->firstcolumn > 0) {
-    ensure_firstcolumn_is_aligned();
-    refresh_needed = TRUE;
-  }
-  /* When the mark is to the right of the cursor, compensate its position. */
-  if (thisline == openfile->mark && openfile->current_x < openfile->mark_x) {
-    openfile->mark_x += count;
-  }
-  openfile->current_x += count;
-  openfile->totsize += mbstrlen(burst);
-  set_modified();
-  /* If text was added to the magic line, create a new magic line. */
-  if (thisline == openfile->filebot && !ISSET(NO_NEWLINES)) {
-    new_magicline();
-    if (margin || (openfile->syntax && openfile->syntax->multiscore)) {
-      if (margin && openfile->cursor_row < (editwinrows - 1)) {
-        update_line_curses(thisline->next, 0);
-      }
-    }
-  }
-  update_undo(ADD);
-  if (ISSET(BREAK_LONG_LINES)) {
-    do_wrap();
-  }
-  openfile->placewewant = xplustabs();
-  /* When softwrapping and the number of chunks in the current line changed, or we were
-   * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
-  if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current, editwincols) != old_amount
-   || (openfile->cursor_row == (editwinrows - 1) && chunk_for(openfile->placewewant, openfile->current, editwincols) > original_row))) {
-    refresh_needed = TRUE;
-    focusing = FALSE;
-  }
-  if (!refresh_needed) {
-    check_the_multis(openfile->current);
-  }
-  if (!refresh_needed && !ISSET(USING_GUI)) {
-    update_line_curses(openfile->current, openfile->current_x);
-  }
-}
+// void inject(char *burst, Ulong count) {
+//   linestruct *thisline = openfile->current;
+//   Ulong datalen = strlen(thisline->data);
+//   Ulong original_row = 0;
+//   Ulong old_amount = 0;
+//   if (ISSET(SOFTWRAP)) {
+//     if (openfile->cursor_row == (editwinrows - 1)) {
+//       original_row = chunk_for(xplustabs(), thisline, editwincols);
+//     }
+//     old_amount = extra_chunks_in(thisline, editwincols);
+//   }
+//   /* Encode an embedded NUL byte as 0x0A. */
+//   for (Ulong index=0; index<count; ++index) {
+//     if (!burst[index]) {
+//       burst[index] = '\n';
+//     }
+//   }
+//   /* Only add a new undo item when the current item is not an ADD or when the current typing is not contiguous with the previous typing. */
+//   if (openfile->last_action != ADD || openfile->current_undo->tail_lineno != thisline->lineno || openfile->current_undo->tail_x != openfile->current_x) {
+//     add_undo(ADD, NULL);
+//   }
+//   /* Make room for the new bytes and copy them into the line. */
+//   thisline->data = arealloc(thisline->data, (datalen + count + 1));
+//   memmove((thisline->data + openfile->current_x + count), (thisline->data + openfile->current_x), (datalen - openfile->current_x + 1));
+//   strncpy((thisline->data + openfile->current_x), burst, count);
+//   /* When the cursor is on the top row and not on the first chunk of a line, adding text
+//    * there might change the preceding chunk and thus require an adjustment of firstcolumn. */
+//   if (thisline == openfile->edittop && openfile->firstcolumn > 0) {
+//     ensure_firstcolumn_is_aligned();
+//     refresh_needed = TRUE;
+//   }
+//   /* When the mark is to the right of the cursor, compensate its position. */
+//   if (thisline == openfile->mark && openfile->current_x < openfile->mark_x) {
+//     openfile->mark_x += count;
+//   }
+//   openfile->current_x += count;
+//   openfile->totsize += mbstrlen(burst);
+//   set_modified();
+//   /* If text was added to the magic line, create a new magic line. */
+//   if (thisline == openfile->filebot && !ISSET(NO_NEWLINES)) {
+//     new_magicline();
+//     if (margin || (openfile->syntax && openfile->syntax->multiscore)) {
+//       if (margin && openfile->cursor_row < (editwinrows - 1)) {
+//         update_line_curses(thisline->next, 0);
+//       }
+//     }
+//   }
+//   update_undo(ADD);
+//   if (ISSET(BREAK_LONG_LINES)) {
+//     do_wrap();
+//   }
+//   openfile->placewewant = xplustabs();
+//   /* When softwrapping and the number of chunks in the current line changed, or we were
+//    * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
+//   if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current, editwincols) != old_amount
+//    || (openfile->cursor_row == (editwinrows - 1) && chunk_for(openfile->placewewant, openfile->current, editwincols) > original_row))) {
+//     refresh_needed = TRUE;
+//     focusing = FALSE;
+//   }
+//   if (!refresh_needed) {
+//     check_the_multis(openfile->current);
+//   }
+//   if (!refresh_needed && !ISSET(USING_GUI)) {
+//     update_line_curses(openfile->current, openfile->current_x);
+//   }
+// }
 
 /* Read in a keystroke, and execute its command or insert it into the buffer. */
 static void process_a_keystroke(void) {

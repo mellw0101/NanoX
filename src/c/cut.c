@@ -397,3 +397,31 @@ void zap_text(void) {
     zap_text_for(TUI_CONTEXT);
   }
 }
+
+/* ----------------------------- Do delete ----------------------------- */
+
+/* Delete the character under the cursor plus any succeeding zero-width chars, or,
+ * when the mark is on and `LET_THEM_ZAP/--zap` is active, delete the marked region. */
+void do_delete_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  if (file->mark && ISSET(LET_THEM_ZAP)) {
+    zap_text_for(file, rows, cols);
+  }
+  else {
+    expunge_for(file, cols, DEL);
+    while (file->current->data[file->current_x] && is_zerowidth(file->current->data + file->current_x)) {
+      expunge_for(file, cols, DEL);
+    }
+  }
+}
+
+/* Delete the character under the cursor plus any succeeding zero-width chars, or,
+ * when the mark is on and `LET_THEM_ZAP/--zap` is active, delete the marked region. */
+void do_delete(void) {
+  if (IN_GUI_CONTEXT) {
+    do_delete_for(GUI_CONTEXT);
+  }
+  else {
+    do_delete_for(TUI_CONTEXT);
+  }
+}

@@ -274,7 +274,7 @@ void  attr_idx_int_code(int idx, int *fg, int *bg);
 
 /* Most functions in 'cut.cpp'. */
 // void expunge(undo_type action);
-void do_delete(void);
+// void do_delete(void);
 void do_backspace(void);
 void chop_previous_word(void) _NOTHROW;
 void chop_next_word(void) _NOTHROW;
@@ -369,7 +369,7 @@ void do_help(void);
 // void to_para_begin(void);
 // void to_para_end(void);
 // void to_prev_block(void);
-void to_next_block(void);
+// void to_next_block(void);
 void do_prev_word(void) _NOTHROW;
 bool do_next_word(bool after_ends) _NOTHROW;
 void to_prev_word(void);
@@ -420,7 +420,7 @@ void        handle_sigwinch(int signal);
 void        unbound_key(int code) _NOTHROW;
 bool        wanted_to_move(functionptrtype f);
 bool        changes_something(functionptrtype f);
-void        inject(char *burst, Ulong count);
+// void        inject(char *burst, Ulong count);
 
 /* Most functions in 'prompt.cpp'. */
 // void  statusbar_discard_all_undo_redo(void) _NOTHROW;

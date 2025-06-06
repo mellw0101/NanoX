@@ -3524,7 +3524,11 @@ int update_line_curses_for(openfilestruct *const file, linestruct *const line, U
   char *converted;
   /* From which column a horizontally scrolled line is displayed. */
   Ulong from_col;
-  if (ISSET(SOFTWRAP)) {
+  /* Just return early when running in gui mode. */
+  if (ISSET(USING_GUI)) {
+    return 0;
+  }
+  else if (ISSET(SOFTWRAP)) {
     return update_softwrapped_line_curses_for(file, line);
   }
   sequel_column = 0;

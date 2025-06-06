@@ -254,63 +254,63 @@ static void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward
 // }
 
 /* Move to the next block of text. */
-void to_next_block(void) {
-  linestruct *was_current = openfile->current;
-  int cur_indent, was_indent = -1;
-  bool is_white   = white_string(openfile->current->data);
-  bool seen_white = is_white;
-  /* Skip forward until first nonblank line after some blank line(s). */
-  while (openfile->current->next && (!seen_white || is_white)) {
-    /* Current line is empty and is not starting line. */
-    if (!openfile->current->data[0] && openfile->current != was_current) {
-      /* When line after calling line is comment. */
-      if (openfile->current == was_current->next) {
-        /* Find first not empty line. */
-        for (; openfile->current->next && !openfile->current->data[0]; openfile->current = openfile->current->next);
-      }
-      /* Stop at the end of text block when we see the first empty line. */
-      else {
-        openfile->current = openfile->current->prev;
-      }
-      openfile->current_x = indent_length(openfile->current->data);
-      edit_redraw(was_current, FLOWING);
-      recook |= perturbed;
-      return;
-    }
-    else if (is_line_comment(openfile->current)) {
-      if (openfile->current != was_current) {
-        for (; openfile->next && is_line_comment(openfile->current); openfile->current = openfile->current->next)
-          ;
-        openfile->current   = openfile->current->prev;
-        openfile->current_x = indent_length(openfile->current->data);
-        edit_redraw(was_current, FLOWING);
-        recook |= perturbed;
-        return;
-      }
-    }
-    cur_indent = line_indent(openfile->current);
-    if (was_indent == -1) {
-      was_indent = cur_indent;
-    }
-    /* Line indentation has changed. */
-    else if (was_indent != cur_indent) {
-      /* Place cursor at bottom of indent block, unless called from it. */
-      if (openfile->current != was_current->next) {
-        openfile->current = openfile->current->prev;
-      }
-      openfile->current_x = indent_length(openfile->current->data);
-      edit_redraw(was_current, FLOWING);
-      recook |= perturbed;
-      return;
-    }
-    openfile->current = openfile->current->next;
-    is_white   = white_string(openfile->current->data);
-    seen_white = seen_white || is_white;
-  }
-  openfile->current_x = indent_length(openfile->current->data);
-  edit_redraw(was_current, FLOWING);
-  recook |= perturbed;
-}
+// void to_next_block(void) {
+//   linestruct *was_current = openfile->current;
+//   int cur_indent, was_indent = -1;
+//   bool is_white   = white_string(openfile->current->data);
+//   bool seen_white = is_white;
+//   /* Skip forward until first nonblank line after some blank line(s). */
+//   while (openfile->current->next && (!seen_white || is_white)) {
+//     /* Current line is empty and is not starting line. */
+//     if (!openfile->current->data[0] && openfile->current != was_current) {
+//       /* When line after calling line is comment. */
+//       if (openfile->current == was_current->next) {
+//         /* Find first not empty line. */
+//         for (; openfile->current->next && !openfile->current->data[0]; openfile->current = openfile->current->next);
+//       }
+//       /* Stop at the end of text block when we see the first empty line. */
+//       else {
+//         openfile->current = openfile->current->prev;
+//       }
+//       openfile->current_x = indent_length(openfile->current->data);
+//       edit_redraw(was_current, FLOWING);
+//       recook |= perturbed;
+//       return;
+//     }
+//     else if (is_line_comment(openfile->current)) {
+//       if (openfile->current != was_current) {
+//         for (; openfile->next && is_line_comment(openfile->current); openfile->current = openfile->current->next)
+//           ;
+//         openfile->current   = openfile->current->prev;
+//         openfile->current_x = indent_length(openfile->current->data);
+//         edit_redraw(was_current, FLOWING);
+//         recook |= perturbed;
+//         return;
+//       }
+//     }
+//     cur_indent = line_indent(openfile->current);
+//     if (was_indent == -1) {
+//       was_indent = cur_indent;
+//     }
+//     /* Line indentation has changed. */
+//     else if (was_indent != cur_indent) {
+//       /* Place cursor at bottom of indent block, unless called from it. */
+//       if (openfile->current != was_current->next) {
+//         openfile->current = openfile->current->prev;
+//       }
+//       openfile->current_x = indent_length(openfile->current->data);
+//       edit_redraw(was_current, FLOWING);
+//       recook |= perturbed;
+//       return;
+//     }
+//     openfile->current = openfile->current->next;
+//     is_white   = white_string(openfile->current->data);
+//     seen_white = seen_white || is_white;
+//   }
+//   openfile->current_x = indent_length(openfile->current->data);
+//   edit_redraw(was_current, FLOWING);
+//   recook |= perturbed;
+// }
 
 /* Move to the previous word. */
 void do_prev_word(void) _NOTHROW {

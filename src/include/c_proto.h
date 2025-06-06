@@ -969,6 +969,8 @@ void to_para_end_for(openfilestruct *const file, int rows, int cols);
 void to_para_end(void);
 void to_prev_block_for(openfilestruct *const file, int rows, int cols);
 void to_prev_block(void);
+void to_next_block_for(openfilestruct *const file, int rows, int cols);
+void to_next_block(void);
 
 
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
@@ -1092,6 +1094,8 @@ void cut_till_eof_for(openfilestruct *const file, int rows, int cols);
 void cut_till_eof(void);
 void zap_text_for(openfilestruct *const file, int rows, int cols);
 void zap_text(void);
+void do_delete_for(openfilestruct *const file, int rows, int cols);
+void do_delete(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
@@ -1165,6 +1169,8 @@ void splice_node(linestruct *const after, linestruct *const node);
 void delete_node_for(openfilestruct *const file, linestruct *const node);
 void delete_node(linestruct *const line);
 
+/* ----------------------------- Unlink node ----------------------------- */
+
 void unlink_node_for(openfilestruct *const file, linestruct *const node);
 void unlink_node(linestruct *const node);
 
@@ -1186,11 +1192,16 @@ void        terminal_init(void);
 void        window_init(void);
 void        regenerate_screen(void);
 
+/* ----------------------------- Inject ----------------------------- */
+
+void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *burst, Ulong count);
+void inject(char *burst, Ulong count);
+
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */
 
 
-void inject(char *burst, Ulong count);
+// void inject(char *burst, Ulong count);
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) __THROW;
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 keystruct *strtosc(const char *input);

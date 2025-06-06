@@ -88,8 +88,8 @@
 #define RECODE_NUL_TO_LF(string, count)          \
   DO_WHILE(                                      \
     for (Ulong index=0; index<count; ++index) {  \
-      if (!burst[index]) {                       \
-        burst[index] = '\n';                     \
+      if (!string[index]) {                       \
+        string[index] = '\n';                     \
       }                                          \
     }                                            \
   )

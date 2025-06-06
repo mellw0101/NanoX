@@ -335,59 +335,44 @@ void to_para_end(void) {
 /* Move to the preceding block of text. */
 void to_prev_block_for(openfilestruct *const file, int rows, int cols) {
   ASSERT(file);
-  linestruct *was_current = file->current;
+  linestruct *const was_current = file->current;
   int cur_indent;
-  int was_indent = -1;
-  bool is_text   = FALSE;
-  bool seen_text = FALSE;
-  /* Skip backward until first blank line after some nonblank line(s). */
-  while (file->current->prev && (!seen_text || is_text)) {
-    /* Current line is empty. */
-    if (!*file->current->data) {
-      /* Find first line that is not empty. */
-      for (; file->current->prev && !*file->current->data; file->current = file->current->prev)
-        ;
-      file->current_x = indent_length(file->current->data);
-      edit_redraw_for(file, rows, cols, was_current, FLOWING);
-      return;
-    }
-    else if (strncmp((file->current->data + indent_length(file->current->data)), S__LEN("//")) == 0) {
-      /* If not on the first line of a '//' comment block. */
-      if (file->current != was_current) {
-        /* Iterate to the top of the comment. */
-        for (; file->current->prev && strncmp((file->current->data + indent_length(file->current->data)), S__LEN("//")) == 0; file->current = file->current->prev)
-          ;
-        /* Back down one line. */
-        DLIST_ADV_NEXT(file->current);
-        file->current_x = indent_length(file->current->data);
-        edit_redraw_for(file, rows, cols, was_current, FLOWING);
-        return;
+  int was_indent = line_indent(was_current);
+  /* Skip backward until first nonblank line after some blank line(s). */
+  while (file->current->prev) {
+    /* Current line is not starting line. */
+    if (file->current != was_current) {
+      /* Get the indent of the current line in terms of visible columns. */
+      cur_indent = line_indent(file->current);
+      /* Current line is empty or contains only blank chars. */
+      if (white_string(file->current->data)) {
+        /* When the current line is the one after the starting line. */
+        if (file->current == was_current->prev) {
+          /* Iterate until we find a non empty or blank only line. */
+          for (; file->current->prev && white_string(file->current->data); file->current = file->current->prev);
+        }
+        /* Otherwise, this is the first blank line after some amount of text
+         * lines.  So we stop at the previous line, the end of the text block. */
+        else {
+          DLIST_ADV_NEXT(file->current);
+        }
+        break;
+      }
+      /* Line indent differs from the starting line. */
+      if (cur_indent != was_indent) {
+        /* Place the cursor at the bottom of the indent block, unless called from the bottom. */
+        if (file->current != was_current->prev) {
+          DLIST_ADV_NEXT(file->current);
+        }
+        break;
       }
     }
-    cur_indent = line_indent(file->current);
-    if (was_indent == -1) {
-      was_indent = cur_indent;
-    }
-    /* Line indentation has changed. */
-    else if (was_indent != cur_indent) {
-      /* Place cursor at top of current indent block, unless called from it. */
-      if (file->current != was_current->prev) {
-        DLIST_ADV_NEXT(file->current);
-      }
-      file->current_x = indent_length(file->current->data);
-      edit_redraw_for(file, rows, cols, was_current, FLOWING);
-      return;
-    }
+    /* Advance to the next line. */
     DLIST_ADV_PREV(file->current);
-    is_text   = !white_string(file->current->data);
-    seen_text = (seen_text || is_text);
-  }
-  /* Step forward one line again if we passed text but this line is blank. */
-  if (seen_text && file->current->next && white_string(file->current->data)) {
-    DLIST_ADV_NEXT(file->current);
   }
   file->current_x = indent_length(file->current->data);
   edit_redraw_for(file, rows, cols, was_current, FLOWING);
+  recook |= perturbed;
 }
 
 /* Move to the preceding block of text. */
@@ -397,5 +382,58 @@ void to_prev_block(void) {
   }
   else {
     to_prev_block_for(TUI_CONTEXT);
+  }
+}
+
+/* Move to the next block of text inside `file`. */
+void to_next_block_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  linestruct *const was_current = file->current;
+  int cur_indent;
+  int was_indent = line_indent(was_current);
+  /* Skip forward until first nonblank line after some blank line(s). */
+  while (file->current->next) {
+    /* Current line is not starting line. */
+    if (file->current != was_current) {
+      /* Get the indent of the current line in terms of visible columns. */
+      cur_indent = line_indent(file->current);
+      /* Current line is empty or contains only blank chars. */
+      if (white_string(file->current->data)) {
+        /* When the current line is the one after the starting line. */
+        if (file->current == was_current->next) {
+          /* Iterate until we find a non empty or blank only line. */
+          for (; file->current->next && white_string(file->current->data); file->current = file->current->next);
+        }
+        /* Otherwise, this is the first blank line after some amount of text
+         * lines.  So we stop at the previous line, the end of the text block. */
+        else {
+          DLIST_ADV_PREV(file->current);
+        }
+        break;
+      }
+      /* Line indent differs from the starting line. */
+      if (cur_indent != was_indent) {
+        /* Place the cursor at the bottom of the indent block, unless called from the bottom. */
+        if (file->current != was_current->next) {
+          DLIST_ADV_PREV(file->current);
+        }
+        break;
+      }
+    }
+    /* Advance to the next line. */
+    DLIST_ADV_NEXT(file->current);
+  }
+  file->current_x = indent_length(file->current->data);
+  edit_redraw_for(file, rows, cols, was_current, FLOWING);
+  recook |= perturbed;
+}
+
+/* Move to the next block of text in the currently open file.  Note that this is context safe. */
+void to_next_block(void) {
+  if (IN_GUI_CONTEXT) {
+    to_next_block_for(GUI_CONTEXT);
+  }
+  else {
+    to_next_block_for(TUI_CONTEXT);
   }
 }
