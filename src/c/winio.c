@@ -2421,24 +2421,24 @@ bool current_is_offscreen(void) {
 /* Move edittop so that current is on the screen.  manner says how:  STATIONARY means that the cursor
  * should stay on the same screen row, CENTERING means that current should end up in the middle of the
  * screen, and FLOWING means that it should scroll no more than needed to bring current into view. */
-void adjust_viewport_for(openfilestruct *const file, update_type manner, int total_rows, int total_cols) {
+void adjust_viewport_for(openfilestruct *const file, update_type manner, int rows, int cols) {
   ASSERT(file);
   int goal = 0;
   if (manner == STATIONARY) {
     goal = file->cursor_row;
   }
   else if (manner == CENTERING) {
-    goal = (total_rows / 2);
+    goal = (rows / 2);
   }
   else if (!current_is_above_screen_for(file)) {
-    goal = (total_rows - 1 - SHIM);
+    goal = (rows - 1 - SHIM);
   }
   file->edittop = file->current;
   if (ISSET(SOFTWRAP)) {
-    file->firstcolumn = leftedge_for(xplustabs_for(file), file->current, total_cols);
+    file->firstcolumn = leftedge_for(xplustabs_for(file), file->current, cols);
   }
   /* Move edittop back goal rows, starting at current[current_x]. */
-  go_back_chunks_for(file, goal, &file->edittop, &file->firstcolumn, total_cols);
+  go_back_chunks_for(file, goal, &file->edittop, &file->firstcolumn, cols);
 }
 
 /* Move edittop so that current is on the screen.  manner says how:  STATIONARY means that the cursor
@@ -2457,7 +2457,7 @@ void adjust_viewport(update_type manner) {
 void place_the_cursor_for(openfilestruct *const file) {
   ASSERT(file);
   Ulong column;
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     place_the_cursor_for_internal(file, &column, editor_from_file(file)->cols);
   }
   else if (!ISSET(NO_NCURSES)) {
@@ -2468,7 +2468,7 @@ void place_the_cursor_for(openfilestruct *const file) {
 /* Redetermine `cursor_row` from the position of current relative to edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
 void place_the_cursor(void) {
   Ulong column;
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     place_the_cursor_for_internal(openeditor->openfile, &column, openeditor->cols);
   }
   else if (!ISSET(NO_NCURSES)) {

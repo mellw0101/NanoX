@@ -425,3 +425,75 @@ void do_delete(void) {
     do_delete_for(TUI_CONTEXT);
   }
 }
+
+/* ----------------------------- Ingraft buffer ----------------------------- */
+
+/* Meld the buffer that starts at topline into the current file buffer at the current cursor position in `file`. */
+void ingraft_buffer_into(openfilestruct *const file, linestruct *top, linestruct *bot) {
+  ASSERT(file);
+  ASSERT(top);
+  Ulong length      = strlen(file->current->data);
+  Ulong extralen    = strlen(top->data);
+  Ulong xpos        = file->current_x;
+  Ulong tail_len    = (length - xpos);
+  char *tailtext    = measured_copy((file->current->data + xpos), tail_len);
+  bool mark_follows = (file->mark == file->current && !mark_is_before_cursor_for(file));
+  /* When only the topline is passed. we need to get the bottom of the buffer. */
+  if (!bot) {
+    bot = top;
+    while (bot->next) {
+      DLIST_ADV_NEXT(bot);
+    }
+  }
+  ALWAYS_ASSERT(!bot->next);
+  /* Add the total number of valid `utf-8` chars of the text to be grafted to the buffer's total char size. */
+  file->totsize += number_of_characters_in(top, bot);
+  if (top != bot) {
+    length = xpos;
+  }
+  /* Insert the text of the topline at the current cursor position. */
+  if (extralen > 0) {
+    file->current->data = xnstrninj(file->current->data, length, top->data, extralen, xpos);
+  }
+  /* If the buffer to ingraft is more then one line long. */
+  if (top != bot) {
+    /* When inserting at end-of-file, update the relevant pointer. */
+    if (!file->current->next) {
+      file->filebot = bot;
+    }
+    /* Hook the grafted lines in after the current one. */
+    DLIST_INSERT_DLIST_AFTER(file->current, top->next, bot);
+    renumber_from(file->current);
+    /* Add the text after the cursor position at the end of bot. */
+    length    = strlen(bot->data);
+    bot->data = xnstrncat(bot->data, length, tailtext, tail_len);
+    /* Put the cursor at the end of the grafted text. */
+    file->current   = bot;
+    file->current_x = length;
+  }
+  /* Otherwise, when this is a single line ingraft, just advance the cursor x position by the length of the data. */
+  else {
+    file->current_x += extralen;
+  }
+  /* When needed, update the mark's pointer and position. */
+  if (mark_follows) {
+    if (top != bot) {
+      file->mark   = bot;
+      file->mark_x = (length - xpos);
+    }
+    else {
+      file->mark_x += extralen;
+    }
+  }
+  delete_node_for(NULL, top);
+  free(tailtext);
+  /* If the text doesn't end with a newline, and it should, add one. */
+  if (!ISSET(NO_NEWLINES) && *file->filebot->data) {
+    new_magicline_for(file);
+  }
+}
+
+/* Meld the buffer that starts at topline into the current file buffer at the current cursor position. */
+void ingraft_buffer(linestruct *topline) {
+  ingraft_buffer_into(CONTEXT_OPENFILE, topline, NULL);
+}

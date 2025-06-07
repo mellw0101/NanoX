@@ -720,3 +720,17 @@ int open_file(const char *const restrict path, bool new_one, FILE **const f) {
   free(full_path);
   return fd;
 }
+
+/* Read the given open file `f` into the buffer `file`.  filename should be
+ * set to the name of the file.  `undoable` means that undo records should be
+ * created and that the file does not need to be checked for writability. */
+// void read_file_into(openfilestruct *const file, FILE *const f, int fd, const char *const restrict filename, bool undoable) {
+//   ASSERT(file);
+//   ASSERT(f);
+//   ASSERT(filename);
+//   /* The line number where we start the insertion. */
+//   long was_lineno = file->current->lineno;
+//   /* The leftedge where we start the insertion. */
+//   Ulong was_leftedge = 0;
+//   /* The number of lines in the file. */
+// }

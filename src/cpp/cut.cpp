@@ -288,69 +288,69 @@ void chop_next_word(void) _NOTHROW {
 // }
 
 /* Meld the buffer that starts at topline into the current file buffer at the current cursor position. */
-void ingraft_buffer(linestruct *topline) _NOTHROW {
-  linestruct *line    = openfile->current;
-  linestruct *botline = topline;
-  Ulong length       = strlen(line->data);
-  Ulong extralen     = strlen(topline->data);
-  Ulong xpos         = openfile->current_x;
-  char *tailtext     = copy_of(line->data + xpos);
-  bool  mark_follows = (openfile->mark == line && !mark_is_before_cursor());
-  while (botline->next) {
-    botline = botline->next;
-  }
-  /* Add the size of the text to be grafted to the buffer size. */
-  openfile->totsize += number_of_characters_in(topline, botline);
-  if (topline != botline) {
-    length = xpos;
-  }
-  if (extralen > 0) {
-    /* Insert the text of topline at the current cursor position. */
-    line->data = arealloc(line->data, (length + extralen + 1));
-    memmove((line->data + xpos + extralen), (line->data + xpos), (length - xpos + 1));
-    strncpy(line->data + xpos, topline->data, extralen);
-  }
-  if (topline != botline) {
-    /* When inserting at end-of-buffer, update the relevant pointer. */
-    if (!line->next) {
-      openfile->filebot = botline;
-    }
-    line->data[xpos + extralen] = '\0';
-    /* Hook the grafted lines in after the current one. */
-    botline->next = openfile->current->next;
-    if (botline->next) {
-      botline->next->prev = botline;
-    }
-    openfile->current->next = topline->next;
-    topline->next->prev     = openfile->current;
-    /* Add the text after the cursor position at the end of botline. */
-    length   = strlen(botline->data);
-    extralen = strlen(tailtext);
-    botline->data = arealloc(botline->data, (length + extralen + 1));
-    strcpy((botline->data + length), tailtext);
-    /* Put the cursor at the end of the grafted text. */
-    openfile->current   = botline;
-    openfile->current_x = length;
-  }
-  else {
-    openfile->current_x += extralen;
-  }
-  /* When needed, update the mark's pointer and position. */
-  if (mark_follows && topline != botline) {
-    openfile->mark = botline;
-    openfile->mark_x += (length - xpos);
-  }
-  else if (mark_follows) {
-    openfile->mark_x += extralen;
-  }
-  delete_node(topline);
-  free(tailtext);
-  renumber_from(line);
-  /* If the text doesn't end with a newline, and it should, add one. */
-  if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0]) {
-    new_magicline();
-  }
-}
+// void ingraft_buffer(linestruct *topline) _NOTHROW {
+//   linestruct *line    = openfile->current;
+//   linestruct *botline = topline;
+//   Ulong length       = strlen(line->data);
+//   Ulong extralen     = strlen(topline->data);
+//   Ulong xpos         = openfile->current_x;
+//   char *tailtext     = copy_of(line->data + xpos);
+//   bool  mark_follows = (openfile->mark == line && !mark_is_before_cursor());
+//   while (botline->next) {
+//     botline = botline->next;
+//   }
+//   /* Add the size of the text to be grafted to the buffer size. */
+//   openfile->totsize += number_of_characters_in(topline, botline);
+//   if (topline != botline) {
+//     length = xpos;
+//   }
+//   if (extralen > 0) {
+//     /* Insert the text of topline at the current cursor position. */
+//     line->data = arealloc(line->data, (length + extralen + 1));
+//     memmove((line->data + xpos + extralen), (line->data + xpos), (length - xpos + 1));
+//     strncpy(line->data + xpos, topline->data, extralen);
+//   }
+//   if (topline != botline) {
+//     /* When inserting at end-of-buffer, update the relevant pointer. */
+//     if (!line->next) {
+//       openfile->filebot = botline;
+//     }
+//     line->data[xpos + extralen] = '\0';
+//     /* Hook the grafted lines in after the current one. */
+//     botline->next = openfile->current->next;
+//     if (botline->next) {
+//       botline->next->prev = botline;
+//     }
+//     openfile->current->next = topline->next;
+//     topline->next->prev     = openfile->current;
+//     /* Add the text after the cursor position at the end of botline. */
+//     length   = strlen(botline->data);
+//     extralen = strlen(tailtext);
+//     botline->data = arealloc(botline->data, (length + extralen + 1));
+//     strcpy((botline->data + length), tailtext);
+//     /* Put the cursor at the end of the grafted text. */
+//     openfile->current   = botline;
+//     openfile->current_x = length;
+//   }
+//   else {
+//     openfile->current_x += extralen;
+//   }
+//   /* When needed, update the mark's pointer and position. */
+//   if (mark_follows && topline != botline) {
+//     openfile->mark = botline;
+//     openfile->mark_x += (length - xpos);
+//   }
+//   else if (mark_follows) {
+//     openfile->mark_x += extralen;
+//   }
+//   delete_node(topline);
+//   free(tailtext);
+//   renumber_from(line);
+//   /* If the text doesn't end with a newline, and it should, add one. */
+//   if (!ISSET(NO_NEWLINES) && openfile->filebot->data[0]) {
+//     new_magicline();
+//   }
+// }
 
 /* Meld a copy of the given buffer into the current file buffer. */
 void copy_from_buffer(linestruct *somebuffer) _NOTHROW {

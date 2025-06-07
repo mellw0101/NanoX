@@ -815,7 +815,7 @@ bool  current_is_below_screen_for(openfilestruct *const file, int total_rows, in
 bool  current_is_below_screen(void);
 bool  current_is_offscreen_for(openfilestruct *const file, int total_rows, int total_cols);
 bool  current_is_offscreen(void);
-void  adjust_viewport_for(openfilestruct *const file, update_type manner, int total_rows, int total_cols);
+void  adjust_viewport_for(openfilestruct *const file, update_type manner, int rows, int cols);
 void  adjust_viewport(update_type manner);
 void  place_the_cursor_for(openfilestruct *const file);
 void  place_the_cursor(void);
@@ -1076,6 +1076,8 @@ void zap_text_for(openfilestruct *const file, int rows, int cols);
 void zap_text(void);
 void do_delete_for(openfilestruct *const file, int rows, int cols);
 void do_delete(void);
+void ingraft_buffer_into(openfilestruct *const file, linestruct *top, linestruct *bot);
+void ingraft_buffer(linestruct *topline);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
