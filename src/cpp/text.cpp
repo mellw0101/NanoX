@@ -17,32 +17,32 @@
 // }
 
 /* Insert a tab.  Or, if --tabstospaces is in effect, insert the number of spaces that a tab would normally take up at this position. */
-void do_tab(void) {
-  /* When <Tab> is pressed while a region is marked, indent the region. */
-  if (openfile->mark && openfile->mark != openfile->current) {
-    do_indent();
-  }
-  else if (openfile->syntax && openfile->syntax->tabstring) {
-    if (suggest_on) {
-      accept_suggestion();
-      return;
-    }
-    inject(openfile->syntax->tabstring, strlen(openfile->syntax->tabstring));
-  }
-  else if (ISSET(TABS_TO_SPACES)) {
-    Ulong length;
-    char *spaces = tab_space_string(&length);
-    inject(spaces, length);
-    free(spaces);
-  }
-  else {
-    if (suggest_on && suggest_str) {
-      accept_suggestion();
-      return;
-    }
-    inject((char *)"\t", 1);
-  }
-}
+// void do_tab(void) {
+//   /* When <Tab> is pressed while a region is marked, indent the region. */
+//   if (openfile->mark && openfile->mark != openfile->current) {
+//     do_indent();
+//   }
+//   else if (openfile->syntax && openfile->syntax->tabstring) {
+//     if (suggest_on) {
+//       accept_suggestion();
+//       return;
+//     }
+//     inject(openfile->syntax->tabstring, strlen(openfile->syntax->tabstring));
+//   }
+//   else if (ISSET(TABS_TO_SPACES)) {
+//     Ulong length;
+//     char *spaces = tab_space_string(&length);
+//     inject(spaces, length);
+//     free(spaces);
+//   }
+//   else {
+//     if (suggest_on && suggest_str) {
+//       accept_suggestion();
+//       return;
+//     }
+//     inject((char *)"\t", 1);
+//   }
+// }
 
 /* Restore the cursor and mark from a undostruct. */
 // static void restore_undo_posx_and_mark(undostruct *u) _NOTHROW {

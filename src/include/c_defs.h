@@ -33,6 +33,7 @@
 #include <wctype.h>
 #include <math.h>
 #include <libgen.h>
+#include <execinfo.h>
 #if (defined(ENABLE_NLS) && defined(HAVE_LIBINTL_H))
 # include <libintl.h>
 #endif

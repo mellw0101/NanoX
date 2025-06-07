@@ -9,7 +9,7 @@
 #endif
 
 /* Used to store the user's original mouse click interval. */
-static int oldinterval = -1;
+// static int oldinterval = -1;
 /* The original settings of the user's terminal. */
 // static termios original_state;
 /* Containers for the original and the temporary handler for SIGINT. */
@@ -414,28 +414,28 @@ void die(const char *msg, ...) {
 //   }
 // }
 
-static void disable_mouse_support(void) _NOTHROW {
-  mousemask(0, NULL);
-  mouseinterval(oldinterval);
-}
+// static void disable_mouse_support(void) _NOTHROW {
+//   mousemask(0, NULL);
+//   mouseinterval(oldinterval);
+// }
 
-static void enable_mouse_support(void) _NOTHROW {
-  mousemask(ALL_MOUSE_EVENTS, NULL);
-  oldinterval = mouseinterval(50);
-}
+// static void enable_mouse_support(void) _NOTHROW {
+//   mousemask(ALL_MOUSE_EVENTS, NULL);
+//   oldinterval = mouseinterval(50);
+// }
 
 /* Switch mouse support on or off, as needed. */
-static void mouse_init(void) _NOTHROW {
-  if (ISSET(NO_NCURSES)) {
-    return;
-  }
-  else if (ISSET(USE_MOUSE)) {
-    enable_mouse_support();
-  }
-  else {
-    disable_mouse_support();
-  }
-}
+// static void mouse_init(void) _NOTHROW {
+//   if (ISSET(NO_NCURSES)) {
+//     return;
+//   }
+//   else if (ISSET(USE_MOUSE)) {
+//     enable_mouse_support();
+//   }
+//   else {
+//     disable_mouse_support();
+//   }
+// }
 
 /* Print the usage line for the given option to the screen. */
 static void print_opt(const char *const shortflag, const char *const longflag, const char *const description) _NOTHROW {
@@ -591,17 +591,17 @@ static void list_syntax_names(void) _NOTHROW {
 // }
 
 /* Reconnect standard input to the tty, and store its state. */
-void reconnect_and_store_state(void) _NOTHROW {
-  int thetty = open("/dev/tty", O_RDONLY);
-  if (thetty < 0 || dup2(thetty, STDIN_FILENO) < 0) {
-    die(_("Could not reconnect stdin to keyboard\n"));
-  }
-  close(thetty);
-  /* If input was not cut short, store the current state of the terminal. */
-  if (!control_C_was_pressed) {
-    tcgetattr(STDIN_FILENO, &original_state);
-  }
-}
+// void reconnect_and_store_state(void) _NOTHROW {
+//   int thetty = open("/dev/tty", O_RDONLY);
+//   if (thetty < 0 || dup2(thetty, STDIN_FILENO) < 0) {
+//     die(_("Could not reconnect stdin to keyboard\n"));
+//   }
+//   close(thetty);
+//   /* If input was not cut short, store the current state of the terminal. */
+//   if (!control_C_was_pressed) {
+//     tcgetattr(STDIN_FILENO, &original_state);
+//   }
+// }
 
 /* Read whatever comes from standard input into a new buffer. */
 static bool scoop_stdin(void) {
@@ -669,77 +669,77 @@ static void signal_init(void) _NOTHROW {
 }
 
 /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
-void handle_hupterm(int signal) {
-  die(_("Received SIGHUP or SIGTERM\n"));
-}
+// void handle_hupterm(int signal) {
+//   die(_("Received SIGHUP or SIGTERM\n"));
+// }
 
 #if !defined(DEBUG)
 /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
-void handle_crash(int signal) {
-  void *buffer[256];
-  int size = backtrace(buffer, 256);
-  char **symbols = backtrace_symbols(buffer, size);
-  /* When we are dying from a signal, try to print the last ran functions. */
-  for (int i=0; i<size; ++i) {
-    fprintf(stderr, "%s\n", symbols[i]);
-  }
-  die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
-}
+// void handle_crash(int signal) {
+//   void *buffer[256];
+//   int size = backtrace(buffer, 256);
+//   char **symbols = backtrace_symbols(buffer, size);
+//   /* When we are dying from a signal, try to print the last ran functions. */
+//   for (int i=0; i<size; ++i) {
+//     fprintf(stderr, "%s\n", symbols[i]);
+//   }
+//   die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
+// }
 #endif
 
 /* Handler for SIGTSTP (suspend). */
-void suspend_nano(int signal) {
-  disable_mouse_support();
-  restore_terminal();
-  printf("\n\n");
-  /* Display our helpful message. */
-  printf(_("Use \"fg\" to return to nano.\n"));
-  fflush(stdout);
-  /* The suspend keystroke must not elicit cursor-position display. */
-  lastmessage = HUSH;
-  /* Do what mutt does: send ourselves a SIGSTOP. */
-  kill(0, SIGSTOP);
-}
+// void suspend_nano(int signal) {
+//   disable_mouse_support();
+//   restore_terminal();
+//   printf("\n\n");
+//   /* Display our helpful message. */
+//   printf(_("Use \"fg\" to return to nano.\n"));
+//   fflush(stdout);
+//   /* The suspend keystroke must not elicit cursor-position display. */
+//   lastmessage = HUSH;
+//   /* Do what mutt does: send ourselves a SIGSTOP. */
+//   kill(0, SIGSTOP);
+// }
 
 /* When permitted, put nano to sleep. */
-void do_suspend(void) {
-  if (in_restricted_mode()) {
-    return;
-  }
-  suspend_nano(0);
-  ran_a_tool = TRUE;
-}
+// void do_suspend(void) {
+//   if (in_restricted_mode()) {
+//     return;
+//   }
+//   suspend_nano(0);
+//   ran_a_tool = TRUE;
+// }
 
 /* Handler for SIGCONT (continue after suspend). */
-void continue_nano(int signal) {
-  if (ISSET(USE_MOUSE)) {
-    enable_mouse_support();
-  }
-  /* Seams wierd to me that we assume the window was resized
-   * instead of checking, but it's the original code.
-   * COMMENT: -> // Perhaps the user resized the window while we slept.
-   * TODO: Check if the window was resized instead. */
-  the_window_resized = TRUE;
-  /* Insert a fake keystroke, to neutralize a key-eating issue. */
-  ungetch(KEY_FRESH);
-}
+// void continue_nano(int signal) {
+//   if (ISSET(USE_MOUSE)) {
+//     enable_mouse_support();
+//   }
+//   /* Seams wierd to me that we assume the window was resized
+//    * instead of checking, but it's the original code.
+//    * COMMENT: -> // Perhaps the user resized the window while we slept.
+//    * TODO: Check if the window was resized instead. */
+//   the_window_resized = TRUE;
+//   /* Insert a fake keystroke, to neutralize a key-eating issue. */
+//   ungetch(KEY_FRESH);
+// }
 
 /* Block or unblock the SIGWINCH signal, depending on the blockit parameter. */
-void block_sigwinch(bool blockit) {
-  sigset_t winch;
-  sigemptyset(&winch);
-  sigaddset(&winch, SIGWINCH);
-  sigprocmask((blockit ? SIG_BLOCK : SIG_UNBLOCK), &winch, NULL);
-  if (the_window_resized) {
-    regenerate_screen();
-  }
-}
+// void block_sigwinch(bool blockit) {
+//   sigset_t winch;
+//   sigemptyset(&winch);
+//   sigaddset(&winch, SIGWINCH);
+//   sigprocmask((blockit ? SIG_BLOCK : SIG_UNBLOCK), &winch, NULL);
+//   if (the_window_resized) {
+//     regenerate_screen();
+//   }
+// }
 
 /* Handler for SIGWINCH (window size change). */
-void handle_sigwinch(int signal) {
-  /* Let the input routine know that a SIGWINCH has occurred. */
-  the_window_resized = TRUE;
-}
+// void handle_sigwinch(int signal) {
+//   /* Let the input routine know that a SIGWINCH has occurred. */
+//   the_window_resized = TRUE;
+// }
 
 /* Reinitialize and redraw the screen completely. */
 // void regenerate_screen(void) {
@@ -1722,83 +1722,86 @@ int main(int argc, char **argv) {
     putenv((char *)"TERM=vt220");
     setenv("TERM", "vt220", 1);
   }
-  /* When using our custom tui. */
-  if (ISSET(NO_NCURSES)) {
-    init_tui();
-  }
-  /* Enter into curses mode.  Abort if this fails. */
-  if (!ISSET(NO_NCURSES) && !initscr()) {
-    exit(1);
-  }
-  /* If the terminal can do colors, tell ncurses to switch them on. */
-  if (!ISSET(NO_NCURSES) && has_colors()) {
-    start_color();
-  }
   /* When requested, suppress the default spotlight and error colors. */
   rescind_colors = (getenv("NO_COLOR") != NULL);
-  /* When using ncurses, set up the shortcuts we use with it. */
-  if (!ISSET(NO_NCURSES)) {
-    /* Set up the function and shortcut lists.  This needs to be done before reading the rcfile, to be able to rebind/unbind keys. */
-    shortcut_init();
-    if (!ignore_rcfiles) {
-      /* Back up the command-line options that take an argument. */
-      long  fill_cmdline          = fill;
-      Ulong stripeclm_cmdline     = stripe_column;
-      long  tabsize_cmdline       = tabsize;
-      char *backup_dir_cmdline    = backup_dir;
-      char *word_chars_cmdline    = word_chars;
-      char *operating_dir_cmdline = operating_dir;
-      char *quotestr_cmdline      = quotestr;
-      char *alt_speller_cmdline   = alt_speller;
-      /* Back up the command-line flags. */
-      Ulong flags_cmdline[sizeof(flags) / sizeof(flags[0])];
-      memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
-      /* Clear the string options, to not overwrite the specified ones. */
-      backup_dir    = NULL;
-      word_chars    = NULL;
-      operating_dir = NULL;
-      quotestr      = NULL;
-      alt_speller   = NULL;
-      /* Now process the system's and the user's nanorc file, if any. */
-      do_rcfiles();
-      /* If the backed-up command-line options have a value, restore them. */
-      if (fill_used) {
-        fill = fill_cmdline;
+  /* When not running in gui mode. */
+  if (!ISSET(USING_GUI)) {
+    /* If we are using our tui. */
+    if (ISSET(NO_NCURSES)) {
+      init_tui();
+    }
+    /* Otherwise, we are using curses. */
+    else {
+      /* Enter into curses mode.  Abort if this fails. */
+      if (!initscr()) {
+        exit(1);
       }
-      if (backup_dir_cmdline) {
-        free(backup_dir);
-        backup_dir = backup_dir_cmdline;
+      /* If the terminal can do colors, tell ncurses to switch them on. */
+      if (has_colors()) {
+        start_color();
       }
-      if (word_chars_cmdline) {
-        free(word_chars);
-        word_chars = word_chars_cmdline;
-      }
-      if (stripeclm_cmdline > 0) {
-        stripe_column = stripeclm_cmdline;
-      }
-      if (tabsize_cmdline != -1) {
-        tabsize = tabsize_cmdline;
-      }
-      if (operating_dir_cmdline || ISSET(RESTRICTED)) {
-        free(operating_dir);
-        operating_dir = operating_dir_cmdline;
-      }
-      if (quotestr_cmdline) {
-        free(quotestr);
-        quotestr = quotestr_cmdline;
-      }
-      if (alt_speller_cmdline) {
-        free(alt_speller);
-        alt_speller = alt_speller_cmdline;
-      }
-      strip_leading_blanks_from(alt_speller);
-      /* If an rcfile undid the default setting, copy it to the new flag. */
-      if (!ISSET(NO_WRAP)) {
-        SET(BREAK_LONG_LINES);
-      }
-      /* Simply OR the boolean flags from rcfile and command line. */
-      for (Ulong i = 0; i < (sizeof(flags) / sizeof(flags[0])); ++i) {
-        flags[i] |= flags_cmdline[i];
+      /* Set up the function and shortcut lists.  This needs to be done before reading the rcfile, to be able to rebind/unbind keys. */
+      shortcut_init();
+      if (!ignore_rcfiles) {
+        /* Back up the command-line options that take an argument. */
+        long  fill_cmdline          = fill;
+        Ulong stripeclm_cmdline     = stripe_column;
+        long  tabsize_cmdline       = tabsize;
+        char *backup_dir_cmdline    = backup_dir;
+        char *word_chars_cmdline    = word_chars;
+        char *operating_dir_cmdline = operating_dir;
+        char *quotestr_cmdline      = quotestr;
+        char *alt_speller_cmdline   = alt_speller;
+        /* Back up the command-line flags. */
+        Ulong flags_cmdline[sizeof(flags) / sizeof(flags[0])];
+        memcpy(flags_cmdline, flags, sizeof(flags_cmdline));
+        /* Clear the string options, to not overwrite the specified ones. */
+        backup_dir    = NULL;
+        word_chars    = NULL;
+        operating_dir = NULL;
+        quotestr      = NULL;
+        alt_speller   = NULL;
+        /* Now process the system's and the user's nanorc file, if any. */
+        do_rcfiles();
+        /* If the backed-up command-line options have a value, restore them. */
+        if (fill_used) {
+          fill = fill_cmdline;
+        }
+        if (backup_dir_cmdline) {
+          free(backup_dir);
+          backup_dir = backup_dir_cmdline;
+        }
+        if (word_chars_cmdline) {
+          free(word_chars);
+          word_chars = word_chars_cmdline;
+        }
+        if (stripeclm_cmdline > 0) {
+          stripe_column = stripeclm_cmdline;
+        }
+        if (tabsize_cmdline != -1) {
+          tabsize = tabsize_cmdline;
+        }
+        if (operating_dir_cmdline || ISSET(RESTRICTED)) {
+          free(operating_dir);
+          operating_dir = operating_dir_cmdline;
+        }
+        if (quotestr_cmdline) {
+          free(quotestr);
+          quotestr = quotestr_cmdline;
+        }
+        if (alt_speller_cmdline) {
+          free(alt_speller);
+          alt_speller = alt_speller_cmdline;
+        }
+        strip_leading_blanks_from(alt_speller);
+        /* If an rcfile undid the default setting, copy it to the new flag. */
+        if (!ISSET(NO_WRAP)) {
+          SET(BREAK_LONG_LINES);
+        }
+        /* Simply OR the boolean flags from rcfile and command line. */
+        for (Ulong i = 0; i < (sizeof(flags) / sizeof(flags[0])); ++i) {
+          flags[i] |= flags_cmdline[i];
+        }
       }
     }
   }
@@ -1881,24 +1884,24 @@ int main(int argc, char **argv) {
   }
   /* If matchbrackets wasn't specified, set its default value. */
   if (!matchbrackets) {
-    matchbrackets = STRLTR_COPY_OF("(<[{)>]}");
+    matchbrackets = COPY_OF("(<[{)>]}");
   }
   /* If the whitespace option wasn't specified, set its default value. */
   if (!whitespace) {
     if (using_utf8()) {
       /* A tab is shown as a Right-Pointing Double Angle Quotation Mark (U+00BB), and a space as a Middle Dot (U+00B7). */
-      whitespace  = STRLTR_COPY_OF("\xC2\xBB\xC2\xB7");
+      whitespace  = COPY_OF("\xC2\xBB\xC2\xB7");
       whitelen[0] = 2;
       whitelen[1] = 2;
     }
     else {
-      whitespace  = STRLTR_COPY_OF(">.");
+      whitespace  = COPY_OF(">.");
       whitelen[0] = 1;
       whitelen[1] = 1;
     }
   }
   /* Initialize the search string. */
-  last_search = STRLTR_COPY_OF("");
+  last_search = COPY_OF("");
   UNSET(BACKWARDS_SEARCH);
   /* If tabsize wasn't specified, set its default value. */
   if (tabsize == -1) {

@@ -482,12 +482,14 @@ char *encode_data(char *text, Ulong length) {
   return copy_of(text);
 }
 
-/* Change to the specified operating directory, when its valid. */
+/* Change to the specified operating directory, when its valid.  TODO: Make sure this works correctly. */
 void init_operating_dir(void) {
   char *target = get_full_path(operating_dir);
+  /* If the operating directory is inaccessible, fail. */
   if (!target || chdir(target) == -1) {
     die(_("Invalid operating directory: %s\n"), operating_dir);
   }
+  operating_dir = free_and_assign(operating_dir, target);
 }
 
 /* Check whether the given path is outside of the operating directory.
@@ -656,4 +658,65 @@ char *get_next_filename(const char *const restrict name, const char *const restr
   /* There is no possible save file: blank out the filename. */
   *buf = '\0';
   return buf;
+}
+
+/* Open the file with the given name.  If the file does not exist, display
+ * "New File" if `new_one` is `TRUE`, and say "File not found" otherwise.
+ * Retrurns 0 if we say "New File", `-1` upon failure, and the obtained file
+ * descriptor otherwise.  The opened filestream is returned in `*f`. */
+int open_file(const char *const restrict path, bool new_one, FILE **const f) {
+  ASSERT(f);
+  int fd;
+  char *full_path = get_full_path(path);
+  struct stat info;
+  /* If the absolute path is unusable (due to some component's permissions), try the given path instead (as it's probebly relative). */
+  if (!full_path || stat(full_path, &info) == -1) {
+    full_path = realloc_strcpy(full_path, path);
+  }
+  if (stat(full_path, &info) == -1) {
+    free(full_path);
+    if (new_one) {
+      statusline(REMARK, _("New File"));
+      return 0;
+    }
+    else {
+      statusline(ALERT, _("File \"%s\" not found"), path);
+      return -1;
+    }
+  }
+  if (S_ISFIFO(info.st_mode)) {
+    statusbar_all(_("Reading from FIFO..."));
+  }
+  block_sigwinch(TRUE);
+  install_handler_for_Ctrl_C();
+  /* Try to open the file. */
+  fd = open(full_path, O_RDONLY);
+  restore_handler_for_Ctrl_C();
+  block_sigwinch(FALSE);
+  /* There was an error opening the file-descriptor. */
+  if (fd == -1) {
+    /* The errno either indecates an interuption caused the failed call to open, or that there is no error (errno == 0)
+     * (this shouldn't happen), but if it does, it likely means that the interuption ran something that succeded. */
+    if (errno == EINTR || !errno) {
+      statusline(ALERT, _("Interrupted"));
+    }
+    else {
+      statusline(ALERT, _("Error reading %s: %s"), path, strerror(errno));
+    }
+  }
+  /* Successfully opened the file-descriptor accisiated with `path`. */
+  else {
+    *f = fdopen(fd, "rb");
+    /* There was an error opening the `FILE *`. */
+    if (!*f) {
+      statusline(ALERT, _("Error reading %s: %s"), path, strerror(errno));
+      close(fd);
+      fd = -1;
+    }
+    else if (!ISSET(ZERO) || we_are_running) {
+      statusbar_all(_("Reading..."));
+    }
+  }
+  free(full_path);
+  return fd;
 }

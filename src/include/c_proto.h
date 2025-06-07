@@ -202,17 +202,6 @@ extern int countdown;
 
 extern bool recording;
 
-extern int *key_buffer;
-extern int *nextcodes;
-extern Ulong key_capacity;
-extern int *macro_buffer;
-extern Ulong macro_length;
-extern Ulong milestone;
-extern bool reveal_cursor;
-extern bool linger_after_escape;
-extern const char *plants_pointer;
-extern int digit_count;
-
 /* ----------------------------- prompt.c ----------------------------- */
 
 extern char *prompt;
@@ -413,6 +402,8 @@ int  nanox_socket_client(void);
 /* ----------------------------------------------- text.c ----------------------------------------------- */
 
 
+void  do_tab_for(openfilestruct *const file, int rows, int cols);
+void  do_tab(void);
 Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
 Ulong quote_length(const char *const restrict line);
 void  add_undo_for(openfilestruct *const file, undo_type action, const char *const restrict message);
@@ -721,6 +712,7 @@ void  redecorate_after_switch(void);
 void  switch_to_prev_buffer(void);
 void  switch_to_next_buffer(void);
 char *get_next_filename(const char *const restrict name, const char *const restrict suffix);
+int   open_file(const char *const restrict path, bool new_one, FILE **const f);
 
 bool open_buffer(const char *filename, bool new_one);
 
@@ -789,18 +781,6 @@ bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
 /* ---------------------------------------------------------- winio.c ---------------------------------------------------------- */
 
 
-/* static */ void add_to_macrobuffer(int code);
-/* static */ void read_keys_from(WINDOW *const frame);
-/* static */ void put_back(int keycode);
-/* static */ int  get_code_from_plantation(void);
-/* static */ int  arrow_from_ABCD(int letter);
-/* static */ int  convert_SS3_sequence(const int *const seq, Ulong length, int *const consumed);
-/* static */ int  parse_escape_sequence(int starter);
-/* static */ int  assemble_byte_code(int keycode);
-/* static */ int  convert_to_control(int kbinput);
-/* static */ int  parse_kbinput(WINDOW *frame);
-/* static */ long assemble_unicode(int symbol);
-/* static */ int *parse_verbatim_kbinput(WINDOW *const frame, Ulong *const count);
 
 void  record_macro(void);
 void  run_macro(void);
@@ -1157,6 +1137,8 @@ void statusbar_draw(float fps);
 /* ---------------------------------------------------------- nanox.c ---------------------------------------------------------- */
 
 
+/* static */ void mouse_init(void);
+
 linestruct *make_new_node(linestruct *prevnode);
 
 /* ----------------------------- Splice node ----------------------------- */
@@ -1191,6 +1173,19 @@ void        restore_handler_for_Ctrl_C(void);
 void        terminal_init(void);
 void        window_init(void);
 void        regenerate_screen(void);
+void        block_sigwinch(bool blockit);
+void        handle_sigwinch(int signal);
+void        suspend_nano(int _UNUSED signal);
+void        continue_nano(int _UNUSED signal);
+void        do_suspend(void);
+void        reconnect_and_store_state(void);
+void        handle_hupterm(int _UNUSED signal);
+
+#if !defined(DEBUG)
+  void handle_crash(int signal);
+#else
+  void handle_crash(int _UNUSED signal);
+#endif
 
 /* ----------------------------- Inject ----------------------------- */
 

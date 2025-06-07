@@ -52,6 +52,38 @@ static inline undostruct *undostruct_create_for(openfilestruct *const file, undo
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert the number of spaces that a tab would normally take up at this position. */
+void do_tab_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  Ulong len;
+  char *spaces;
+  /* When <Tab> is pressed while a region is marked, indent that region. */
+  if (file->mark && file->mark != file->current) {
+    do_indent_for(file, cols);
+  }
+  else if (file->syntax && file->syntax->tabstring) {
+    inject_into_buffer(file, rows, cols, file->syntax->tabstring, strlen(file->syntax->tabstring));
+  }
+  else if (ISSET(TABS_TO_SPACES)) {
+    spaces = tab_space_string_for(file, &len);
+    inject_into_buffer(file, rows, cols, spaces, len);
+    free(spaces);
+  }
+  else {
+    inject_into_buffer(file, rows, cols, "\t", 1);
+  }
+}
+
+/* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert the number of spaces that a tab would normally take up at this position. */
+void do_tab(void) {
+  if (IN_GUI_CONTEXT) {
+    do_tab_for(GUI_CONTEXT);
+  }
+  else {
+    do_tab_for(TUI_CONTEXT);
+  }
+}
+
 /* Return's the length of whilespace until first non blank char in `string`. */
 Ulong indentlen(const char *const restrict string) {
   ASSERT(string);

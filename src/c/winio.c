@@ -39,28 +39,26 @@ int countdown = 0;
 /* Whether we are in the process of recording a macro. */
 bool recording = FALSE;
 
-/* Make these static later. */
-
 /* A buffer for the keystrokes that haven't been handled. */
-/* static */ int *key_buffer = NULL;
+static int *key_buffer = NULL;
 /* A pointer pointing at the next keycode in the keystroke buffer. */
-/* static */ int *nextcodes = NULL;
+static int *nextcodes = NULL;
 /* The size of the keystroke buffer; gets doubled whenever needed. */
-/* static */ Ulong key_capacity = 32;
+static Ulong key_capacity = 32;
 /* A buffer where the recorded key codes are stored. */
-/* static */ int *macro_buffer = NULL;
+static int *macro_buffer = NULL;
 /* The current length of the macro. */
-/* static */ Ulong macro_length = 0;
+static Ulong macro_length = 0;
 /* Where the last burst of recorded keystrokes started. */
-/* static */ Ulong milestone = 0;
+static Ulong milestone = 0;
 /* Whether the cursor should be shown when waiting for input. */
-/* static */ bool reveal_cursor = FALSE;
+static bool reveal_cursor = FALSE;
 /* Whether to give ncurses some time to get the next code. */
-/* static */ bool linger_after_escape = FALSE;
+static bool linger_after_escape = FALSE;
 /* Points into the expansion string for the current implantation. */
-/* static */ const char *plants_pointer = NULL;
+static const char *plants_pointer = NULL;
 /* How many digits of a three-digit character code we've eaten. */
-/* static */ int digit_count = 0;
+static int digit_count = 0;
 
 /* Whether the current line has more text after the displayed part. */
 static bool has_more = FALSE;
@@ -82,7 +80,7 @@ static int buffer_number(openfilestruct *buffer) {
 }
 
 /* Add the given code to the macro buffer. */
-/* static */ void add_to_macrobuffer(int code) {
+static void add_to_macrobuffer(int code) {
   ++macro_length;
   macro_buffer = xrealloc(macro_buffer, (macro_length * sizeof(int)));
   macro_buffer[macro_length - 1] = code;
@@ -126,7 +124,7 @@ static int buffer_number(openfilestruct *buffer) {
  *   omitted.  (Same as above.)
  */
 /* Read in at least one keystroke from the given window and save it (or them) in the keystroke buffer. */
-/* static */ void read_keys_from(WINDOW *const frame) {
+static void read_keys_from(WINDOW *const frame) {
   int   input    = ERR;
   Ulong errcount = 0;
   bool  timed    = FALSE;
@@ -231,7 +229,7 @@ static int buffer_number(openfilestruct *buffer) {
 }
 
 /* Add the given keycode to the front of the keystroke buffer. */
-/* static */ void put_back(int keycode) {
+static void put_back(int keycode) {
   /* If there is no room at the head of the keystroke buffer, make room. */
   if (nextcodes == key_buffer) {
     if (waiting_codes == key_capacity) {
@@ -247,7 +245,7 @@ static int buffer_number(openfilestruct *buffer) {
 }
 
 /* Continue processing an expansion string.  Returns either an error code, a plain character byte, or a placeholder for a command shortcut. */
-/* static */ int get_code_from_plantation(void) {
+static int get_code_from_plantation(void) {
   char *closing;
   char *opening;
   Uchar firstbyte;
@@ -296,7 +294,7 @@ static int buffer_number(openfilestruct *buffer) {
 }
 
 /* Return the arrow-key code that corresponds to the given letter.  (This mapping is common to a handful of escape sequences). */
-/* static */ int arrow_from_ABCD(int letter) {
+static int arrow_from_ABCD(int letter) {
   /* This is how it was done before.
    *
    * if (letter < 'C') {
@@ -309,7 +307,7 @@ static int buffer_number(openfilestruct *buffer) {
 }
 
 /* Translate a sequence that began with "Esc O" to its corresponding key code. */
-/* static */ int convert_SS3_sequence(const int *const seq, Ulong length, int *const consumed) {
+static int convert_SS3_sequence(const int *const seq, Ulong length, int *const consumed) {
   switch (seq[0]) {
     case '1': {
       if (length > 3 && seq[1] == ';') {
@@ -477,7 +475,7 @@ static int buffer_number(openfilestruct *buffer) {
 }
 
 /* Interpret an escape sequence that has the given post-ESC starter byte and with the rest of the sequence still in the keystroke buffer. */
-/* static */ int parse_escape_sequence(int starter) {
+static int parse_escape_sequence(int starter) {
   int consumed = 1;
   int keycode  = 0;
   if (starter == 'O') {
@@ -495,7 +493,7 @@ static int buffer_number(openfilestruct *buffer) {
 /* For each consecutive call, gather the given digit into a three-digit decimal byte
  * code (from 000 to 255).  Return the assembled code when it is complete, but until
  * then return PROCEED when the given digit is valid, and the given digit itself otherwise. */
-/* static */ int assemble_byte_code(int keycode) {
+static int assemble_byte_code(int keycode) {
   static int byte = 0;
   digit_count++;
   /* The first digit is either 0, 1, or 2 (checked before the call). */
@@ -531,7 +529,7 @@ static int buffer_number(openfilestruct *buffer) {
  * - Ctrl-6 == Ctrl-^ == Ctrl-~
  * - Ctrl-7 == Ctrl-/ == Ctrl-_
  * - Ctrl-8 == Ctrl-? */
-/* static */ int convert_to_control(int kbinput) {
+static int convert_to_control(int kbinput) {
   if ('@' <= kbinput && kbinput <= '_') {
     return kbinput - '@';
   }
@@ -559,7 +557,7 @@ static int buffer_number(openfilestruct *buffer) {
  * (Many of them also when modified with Shift, Ctrl, Alt, Shift+Ctrl, or Shift+Alt). The function keys
  * (F1-F12), and the numeric keypad with NumLock off. The function also handles UTF-8 sequences, and
  * converts them to Unicode.  The function returns the corresponding value for the given keystroke. */
-/* static */ int parse_kbinput(WINDOW *frame) {
+static int parse_kbinput(WINDOW *frame) {
   static bool first_escape_was_alone = FALSE;
   static bool last_escape_was_alone  = FALSE;
   static int  escapes = 0;
@@ -1054,7 +1052,7 @@ static int buffer_number(openfilestruct *buffer) {
 /* For each consecutive call, gather the given symbol into a Unicode code point.  When it's complete
  * (with six digits, or when Space or Enter is typed), return the assembled code. Until then, return
  * PROCEED when the symbol is valid, or an error code for anything other than hexadecimal, Space, and Enter. */
-/* static */ long assemble_unicode(int symbol) {
+static long assemble_unicode(int symbol) {
   static long unicode = 0;
   static int  digits  = 0;
   int outcome = PROCEED;
@@ -1093,7 +1091,7 @@ static int buffer_number(openfilestruct *buffer) {
 
 /* Read in one control character (or an iTerm/Eterm/rxvt double Escape), or convert a series of six digits into a Unicode codepoint.
  * Return in count either 1 (for a control character or the first byte of a multibyte sequence), or 2 (for an iTerm/Eterm/rxvt double Escape). */
-/* static */ int *parse_verbatim_kbinput(WINDOW *const frame, Ulong *const count) {
+static int *parse_verbatim_kbinput(WINDOW *const frame, Ulong *const count) {
   int keycode;
   int *yield;
   long unicode;
@@ -2505,6 +2503,7 @@ void edit_scroll_for(openfilestruct *const file, bool direction) {
   if (ISSET(USING_GUI)) {
     return;
   }
+  /* Otherwise, when in curses mode, scroll. */
   else if (!ISSET(NO_NCURSES)) {
     /* Actually scroll the text of the edit window one row up or down. */
     scrollok(midwin, TRUE);
@@ -2601,6 +2600,10 @@ void edit_refresh(void) {
   if (current_is_offscreen()) {
     adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
   }
+  /* Return early whwn in gui mode. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
   /* When needed and useful, initialize the colors for the current syntax. */
   if (!ISSET(NO_NCURSES) && openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
     prepare_palette();
@@ -2664,7 +2667,7 @@ void titlebar(const char *path) {
   /* The buffer sequence number plus the total buffer count. */
   char *ranking = NULL;
   /* If the screen is to small, there is no title bar. */
-  if (!topwin) {
+  if (ISSET(USING_GUI) || ISSET(NO_NCURSES) || !topwin) {
     return;
   }
   wattron(topwin, interface_color_pair[TITLE_BAR]);
@@ -2925,8 +2928,12 @@ void minibar(void) {
 
 /* Blank all lines of the middle portion of the screen (the edit window). */
 void blank_edit(void) {
-  /* Only perform any action when in ncurses mode for now. */
-  if (!ISSET(NO_NCURSES)) {
+  /* Always return directly when running in gui mode. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
+  /* Only perform any action when in curses mode for now. */
+  else if (!ISSET(NO_NCURSES)) {
     for (int row=0; row<editwinrows; ++row) {
       blank_row_curses(midwin, row);
     }
@@ -2951,25 +2958,23 @@ void draw_all_subwindows(void) {
 /* Blank the first line of the bottom portion of the screen. */
 void blank_statusbar(void) {
   /* When running in ncurses context. */
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     blank_row_curses(footwin, 0);
   }
 }
 
 /* Blank the first line of the top portion of the screen.  Using ncurses. */
 void blank_titlebar(void) {
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     mvwprintw(topwin, 0, 0, "%*s", COLS, " ");
   }
 }
 
 /* Blank out the two help lines (when they are present).  Ncurses version. */
 void blank_bottombars(void) {
-  if (!ISSET(NO_NCURSES)) {
-    if (!ISSET(NO_HELP) && LINES > 5) {
-      blank_row_curses(footwin, 1);
-      blank_row_curses(footwin, 2);
-    }
+  if (!ISSET(NO_HELP) && LINES > 5) {
+    blank_row_curses(footwin, 1);
+    blank_row_curses(footwin, 2);
   }
 }
 
@@ -2984,7 +2989,7 @@ void blank_it_when_expired(void) {
   /* When windows overlap, make sure to show the edit window now. */
   if (currmenu == MMAIN && (ISSET(ZERO) || LINES == 1)) {
     /* Running in curses context. */
-    if (!ISSET(NO_NCURSES)) {
+    if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
       wredrawln(midwin, (editwinrows - 1), 1);
       wnoutrefresh(midwin);
     }
@@ -2997,7 +3002,7 @@ void wipe_statusbar(void) {
   if (((ISSET(ZERO) || ISSET(MINIBAR) || LINES == 1) && currmenu == MMAIN)) {
     return;
   }
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     blank_row_curses(footwin, 0);
     wnoutrefresh(footwin);
   }
@@ -3006,7 +3011,7 @@ void wipe_statusbar(void) {
 /* Write a key's representation plus a minute description of its function to the screen.  For example,
  * the key could be "^C" and its tag "Cancel". Key plus tag may occupy at most width columns. */
 void post_one_key(const char *const restrict keystroke, const char *const restrict tag, int width) {
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     post_one_key_curses(keystroke, tag, width);
   }
 }
@@ -3014,7 +3019,7 @@ void post_one_key(const char *const restrict keystroke, const char *const restri
 /* Display the shortcut list corresponding to the menu on the last to rows of the bottom portion of the window.  The shortcuts are shown in pairs. */
 void bottombars(int menu) {
   /* Running in curses mode. */
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     bottombars_curses(menu);
   }
   /* Running in tui mode.  Note that this will be added when tui has been redesigned. */
@@ -3023,7 +3028,7 @@ void bottombars(int menu) {
 /* Warn the user on the status bar and pause for a moment, so that the message can be noticed and read. */
 void warn_and_briefly_pause(const char *const restrict message) {
   /* Running in curses mode. */
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     warn_and_briefly_pause_curses(message);
   }
   /* Running in tui mode.  Note that this will be added when tui has been redesigned. */
@@ -3085,7 +3090,7 @@ void report_cursor_position(void) {
 /* Tell curses to unconditionally redraw whatever was on the screen. */
 void full_refresh(void) {
   /* Only perform any action when using the curses context. */
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     wrefresh(curscr);
   }
 }
@@ -3094,10 +3099,12 @@ void full_refresh(void) {
 
 /* Blank a row of window. */
 void blank_row_curses(WINDOW *const window, int row) {
-  ASSERT(window);
-  ASSERT(row >= 0);
-  wmove(window, row, 0);
-  wclrtoeol(window);
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+    ASSERT(window);
+    ASSERT(row >= 0);
+    wmove(window, row, 0);
+    wclrtoeol(window);
+  }
 }
 
 /* Display the given message on the status bar, but only if its importance is higher than that of a message that is already there.  Ncurses version. */
@@ -3120,6 +3127,7 @@ void statusline_curses_va(message_type type, const char *const restrict format, 
   va_copy(copy, ap);
   vsnprintf(compound, (MAXCHARLEN * COLS + 1), format, copy);
   va_end(copy);
+  /* When not in curses mode. */
   if (isendwin()) {
     writeferr("%s\n", compound);
     free(compound);

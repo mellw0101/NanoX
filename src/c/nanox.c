@@ -10,6 +10,9 @@
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
+/* Used to store the user's original mouse click interval. */
+static int oldinterval = -1;
+
 /* Containers for the original and the temporary handler for SIGINT. */
 static struct sigaction oldaction;
 static struct sigaction newaction;
@@ -24,6 +27,45 @@ struct termios original_state;
 /* Register that Ctrl+C was pressed during some system call. */
 static void make_a_note(int _UNUSED signal) {
   control_C_was_pressed = TRUE;
+}
+
+static void disable_mouse_support(void) {
+  if (!ISSET(NO_NCURSES)) {
+    mousemask(0, NULL);
+    mouseinterval(oldinterval);
+  }
+}
+
+static void enable_mouse_support(void) {
+  if (!ISSET(NO_NCURSES)) {
+    mousemask(ALL_MOUSE_EVENTS, NULL);
+    oldinterval = mouseinterval(50);
+  }
+}
+
+/* Switch mouse support on or off, as needed. */
+/* static */ void mouse_init(void) {
+  if (!ISSET(NO_NCURSES)) {
+    if (ISSET(USE_MOUSE)) {
+      enable_mouse_support();
+    }
+    else {
+      disable_mouse_support();
+    }
+  }
+}
+
+/* Make sure the cursor is visible, then exit from curses mode, disable
+ * bracketed-paste mode, and restore the original terminal settings. */
+static void restore_terminal(void) {
+  /* When in ncurses mode. */
+  if (!ISSET(NO_NCURSES)) {
+    curs_set(1);
+    endwin();
+    /* End bracketed paste. */
+    printf("\x1B[?2004l");
+  }
+  tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
 
@@ -313,17 +355,17 @@ void terminal_init(void) {
     fflush(stdout);
   }
   /* Running using our tui, this is relevent after we have rebuilt the tui. */
-  else {
-    // struct termios raw;
-    // raw = original_state;
-    // raw.c_lflag &= ~(ECHO | ICANON | ISIG);
-    // raw.c_oflag &= ~ONLCR;
-    // raw.c_iflag &= ~(IXON | ICRNL | INLCR);
-    // raw.c_iflag |= IGNBRK;
-    // tcsetattr(STDIN_FILENO, TCSANOW, &raw);
-    // disable_extended_io();
-    // tui_enable_bracketed_pastes();
-  }
+  // else {
+  //   struct termios raw;
+  //   raw = original_state;
+  //   raw.c_lflag &= ~(ECHO | ICANON | ISIG);
+  //   raw.c_oflag &= ~ONLCR;
+  //   raw.c_iflag &= ~(IXON | ICRNL | INLCR);
+  //   raw.c_iflag |= IGNBRK;
+  //   tcsetattr(STDIN_FILENO, TCSANOW, &raw);
+  //   disable_extended_io();
+  //   tui_enable_bracketed_pastes();
+  // }
 }
 
 /* Initialize the three window portions nano uses.  For the tui. */
@@ -403,6 +445,113 @@ void regenerate_screen(void) {
     draw_all_subwindows();
   }
 }
+
+/* Block or unblock the SIGWINCH signal, depending on the blockit parameter. */
+void block_sigwinch(bool blockit) {
+  sigset_t winch;
+  sigemptyset(&winch);
+  sigaddset(&winch, SIGWINCH);
+  sigprocmask((blockit ? SIG_BLOCK : SIG_UNBLOCK), &winch, NULL);
+  if (the_window_resized) {
+    regenerate_screen();
+  }
+}
+
+/* Handler for SIGWINCH (window size change). */
+void handle_sigwinch(int _UNUSED signal) {
+  /* Let the input routine know that a SIGWINCH has occurred. */
+  the_window_resized = TRUE;
+}
+
+/* Handler for SIGTSTP (suspend). */
+void suspend_nano(int _UNUSED signal) {
+  disable_mouse_support();
+  restore_terminal();
+  printf("\n\n");
+  /* Display our helpful message. */
+  printf(_("Use \"fg\" to return to nano.\n"));
+  fflush(stdout);
+  /* The suspend keystroke must not elicit cursor-position display. */
+  lastmessage = HUSH;
+  /* Do what mutt does: send ourselves a SIGSTOP. */
+  kill(0, SIGSTOP);
+}
+
+/* Handler for SIGCONT (continue after suspend). */
+void continue_nano(int _UNUSED signal) {
+  if (ISSET(USE_MOUSE)) {
+    enable_mouse_support();
+  }
+  /* Seams wierd to me that we assume the window was resized
+   * instead of checking, but it's the original code.
+   * COMMENT: -> // Perhaps the user resized the window while we slept.
+   * TODO: Check if the window was resized instead. */
+  the_window_resized = TRUE;
+  /* Insert a fake keystroke, to neutralize a key-eating issue. */
+  ungetch(KEY_FRESH);
+}
+
+/* When permitted, put nano to sleep. */
+void do_suspend(void) {
+  if (in_restricted_mode()) {
+    return;
+  }
+  suspend_nano(0);
+  ran_a_tool = TRUE;
+}
+
+/* Reconnect standard input to the tty, and store its state. */
+void reconnect_and_store_state(void) {
+  int tty;
+  /* Only perform this when in ncurses mode. */
+  if (!ISSET(NO_NCURSES)) {
+    tty = open("/dev/tty", O_RDONLY);
+    if (tty < 0 || dup2(tty, STDIN_FILENO) < 0) {
+      die(_("Could not reconnect stdin to keyboard"));
+    }
+    close(tty);
+    /* If input was not cut short, store the current state of the terminal. */
+    if (!control_C_was_pressed) {
+      tcgetattr(STDIN_FILENO, &original_state);
+    }
+  }
+}
+
+/* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
+void handle_hupterm(int _UNUSED signal) {
+  die(_("Received SIGHUP or SIGTERM\n"));
+}
+
+#if !defined(DEBUG)
+  /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
+  void handle_crash(int signal) {
+    void  *buffer[256];
+    int    size    = backtrace(buffer, ARRAY_SIZE(buffer));
+    char **symbols = backtrace_symbols(buffer, size);
+    /* When we are dying from a signal, try to print the last ran functions. */
+    for (int i=0; i<size; ++i) {
+      fprintf(stderr, "[%d]: %s\n", i, symbols[i]);
+    }
+    switch (signal) {
+      case SIGABRT: {
+        die(_("Sorry! Nano crashed! Code: '%d/SIGABRT' (abort).  Please report a bug.\n"), signal);
+        break;
+      }
+      case SIGSEGV: {
+        die(_("Sorry! Nano crashed! Code: '%d/SIGSEGV' (segfault).  Please report a bug.\n"), signal);
+        break;
+      }
+      default: {
+        die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
+        break;
+      }
+    }
+  }
+#else
+  void handle_crash(int _UNUSED signal) {
+    ;
+  }
+#endif
 
 /* ----------------------------- Inject ----------------------------- */
 

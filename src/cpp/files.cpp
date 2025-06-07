@@ -752,57 +752,57 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable) {
  * "New File" if new_one is TRUE, and say "File not found" otherwise.
  * Return 0 if we say "New File", -1 upon failure, and the obtained file
  * descriptor otherwise.  The opened filestream is returned in *f. */
-int open_file(const char *filename, bool new_one, FILE **f) {
-  int fd;
-  char *full_filename = get_full_path(filename);
-  struct stat fileinfo;
-  /* If the absolute path is unusable (due to some component's permissions), try the given path instead (as it is probably relative). */
-  if (!full_filename || stat(full_filename, &fileinfo) == -1) {
-    full_filename = realloc_strcpy(full_filename, filename);
-  }
-  if (stat(full_filename, &fileinfo) == -1) {
-    free(full_filename);
-    if (new_one) {
-      statusline(REMARK, _("New File"));
-      return 0;
-    }
-    else {
-      statusline(ALERT, _("File \"%s\" not found"), filename);
-      return -1;
-    }
-  }
-  if (S_ISFIFO(fileinfo.st_mode)) {
-    statusbar_all(_("Reading from FIFO..."));
-  }
-  block_sigwinch(TRUE);
-  install_handler_for_Ctrl_C();
-  /* Try opening the file. */
-  fd = open(full_filename, O_RDONLY);
-  restore_handler_for_Ctrl_C();
-  block_sigwinch(FALSE);
-  if (fd == -1) {
-    if (errno == EINTR || !errno) {
-      statusline(ALERT, _("Interrupted"));
-    }
-    else {
-      statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
-    }
-  }
-  else {
-    /* The file is A-OK.  Associate a stream with it. */
-    *f = fdopen(fd, "rb");
-    if (!*f) {
-      statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
-      close(fd);
-      fd = -1;
-    }
-    else if (!ISSET(ZERO) || we_are_running) {
-      statusbar_all(_("Reading..."));
-    }
-  }
-  free(full_filename);
-  return fd;
-}
+// int open_file(const char *filename, bool new_one, FILE **f) {
+//   int fd;
+//   char *full_filename = get_full_path(filename);
+//   struct stat fileinfo;
+//   /* If the absolute path is unusable (due to some component's permissions), try the given path instead (as it is probably relative). */
+//   if (!full_filename || stat(full_filename, &fileinfo) == -1) {
+//     full_filename = realloc_strcpy(full_filename, filename);
+//   }
+//   if (stat(full_filename, &fileinfo) == -1) {
+//     free(full_filename);
+//     if (new_one) {
+//       statusline(REMARK, _("New File"));
+//       return 0;
+//     }
+//     else {
+//       statusline(ALERT, _("File \"%s\" not found"), filename);
+//       return -1;
+//     }
+//   }
+//   if (S_ISFIFO(fileinfo.st_mode)) {
+//     statusbar_all(_("Reading from FIFO..."));
+//   }
+//   block_sigwinch(TRUE);
+//   install_handler_for_Ctrl_C();
+//   /* Try opening the file. */
+//   fd = open(full_filename, O_RDONLY);
+//   restore_handler_for_Ctrl_C();
+//   block_sigwinch(FALSE);
+//   if (fd == -1) {
+//     if (errno == EINTR || !errno) {
+//       statusline(ALERT, _("Interrupted"));
+//     }
+//     else {
+//       statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
+//     }
+//   }
+//   else {
+//     /* The file is A-OK.  Associate a stream with it. */
+//     *f = fdopen(fd, "rb");
+//     if (!*f) {
+//       statusline(ALERT, _("Error reading %s: %s"), filename, strerror(errno));
+//       close(fd);
+//       fd = -1;
+//     }
+//     else if (!ISSET(ZERO) || we_are_running) {
+//       statusbar_all(_("Reading..."));
+//     }
+//   }
+//   free(full_filename);
+//   return fd;
+// }
 
 /* This function will return the name of the first available extension of a filename
  * (starting with [name][suffix], then [name][suffix].1,etc.).  Memory is allocated

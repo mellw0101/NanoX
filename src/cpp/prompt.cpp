@@ -736,12 +736,7 @@ static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct *
         }
         else if (function == do_toggle && shortcut->toggle == NO_HELP) {
           TOGGLE(NO_HELP);
-          if (ISSET(NO_NCURSES)) {
-            window_init();
-          }
-          else {
-            window_init();
-          }
+          window_init();
           focusing = FALSE;
           refresh_func();
           bottombars(currmenu);
