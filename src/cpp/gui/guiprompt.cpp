@@ -78,7 +78,7 @@ void gui_ask_user(const char *question, guiprompt_type type) {
     *answer = '\0';
   }
   else {
-    answer = STRLTR_COPY_OF("");
+    answer = COPY_OF("");
   }
   typing_x = 0;
   /* Set the type so that we know what to do upon a responce. */

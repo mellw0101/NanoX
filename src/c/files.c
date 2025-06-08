@@ -33,48 +33,99 @@
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-/* Add an item to the circular list of openfile structs. */
-void make_new_buffer(void) {
-  openfilestruct *newnode;
-  MALLOC_STRUCT(newnode);
-  if (!openfile) {
+/* Add an item to the circular list of openfile structs ensuring correctness by passing a ptr to the start ptr in the list and the currently open one. */
+void make_new_buffer_for(openfilestruct **const start, openfilestruct **const open) {
+  ASSERT(start);
+  ASSERT(open);
+  openfilestruct *node = xmalloc(sizeof(*node));
+  if (!*open) {
     /* Make the first buffer the only element in the list. */
-    CLIST_INIT(newnode);
-    startfile = newnode;
+    CLIST_INIT(node);
+    (*start) = node;
   }
   else {
     /* Add the new buffer after the current one in the list. */
-    CLIST_INSERT_AFTER(newnode, openfile);
+    CLIST_INSERT_AFTER(node, *open);
     /* There is more than one buffer: show "Close" in help lines. */
-    exitfunc->tag = close_tag;
+    ASSIGN_FIELD_IF_VALID(exitfunc, tag, close_tag);
     more_than_one = (!inhelp || more_than_one);
   }
   /* Make the new buffer the current one, and start initializing it */
-  openfile                = newnode;
-  openfile->filename      = COPY_OF("");
-  openfile->filetop       = make_new_node(NULL);
-  openfile->filetop->data = COPY_OF("");
-  openfile->filebot       = openfile->filetop;
-  openfile->current       = openfile->filetop;
-  openfile->current_x     = 0;
-  openfile->placewewant   = 0;
-  openfile->cursor_row    = 0;
-  openfile->edittop       = openfile->filetop;
-  openfile->firstcolumn   = 0;
-  openfile->totsize       = 0;
-  openfile->modified      = FALSE;
-  openfile->spillage_line = NULL;
-  openfile->mark          = NULL;
-  openfile->softmark      = FALSE;
-  openfile->fmt           = UNSPECIFIED;
-  openfile->undotop       = NULL;
-  openfile->current_undo  = NULL;
-  openfile->last_saved    = NULL;
-  openfile->last_action   = OTHER;
-  openfile->statinfo      = NULL;
-  openfile->lock_filename = NULL;
-  openfile->errormessage  = NULL;
-  openfile->syntax        = NULL;
+  (*open)                = node;
+  (*open)->filename      = COPY_OF("");
+  (*open)->filetop       = make_new_node(NULL);
+  (*open)->filetop->data = COPY_OF("");
+  (*open)->filebot       = (*open)->filetop;
+  (*open)->current       = (*open)->filetop;
+  (*open)->current_x     = 0;
+  (*open)->placewewant   = 0;
+  (*open)->cursor_row    = 0;
+  (*open)->edittop       = (*open)->filetop;
+  (*open)->firstcolumn   = 0;
+  (*open)->totsize       = 0;
+  (*open)->modified      = FALSE;
+  (*open)->spillage_line = NULL;
+  (*open)->mark          = NULL;
+  (*open)->softmark      = FALSE;
+  (*open)->fmt           = UNSPECIFIED;
+  (*open)->undotop       = NULL;
+  (*open)->current_undo  = NULL;
+  (*open)->last_saved    = NULL;
+  (*open)->last_action   = OTHER;
+  (*open)->statinfo      = NULL;
+  (*open)->lock_filename = NULL;
+  (*open)->errormessage  = NULL;
+  (*open)->syntax        = NULL;
+}
+
+/* Add an item to the circular list of openfile structs. */
+void make_new_buffer(void) {
+  if (IN_GUI_CONTEXT) {
+    make_new_buffer_for(&openeditor->startfile, &openeditor->openfile);
+  }
+  else {
+    make_new_buffer_for(&startfile, &openfile);
+  }
+  // openfilestruct *newnode = xmalloc(sizeof(*newnode));
+  // if (!openfile) {
+  //   /* Make the first buffer the only element in the list. */
+  //   CLIST_INIT(newnode);
+  //   startfile = newnode;
+  // }
+  // else {
+  //   writef("%s: hello\n", __func__);
+  //   /* Add the new buffer after the current one in the list. */
+  //   CLIST_INSERT_AFTER(newnode, openfile);
+  //   /* There is more than one buffer: show "Close" in help lines. */
+  //   exitfunc->tag = close_tag;
+  //   more_than_one = (!inhelp || more_than_one);
+  // }
+  // /* Make the new buffer the current one, and start initializing it */
+  // openfile                = newnode;
+  // openfile->filename      = COPY_OF("");
+  // openfile->filetop       = make_new_node(NULL);
+  // openfile->filetop->data = COPY_OF("");
+  // openfile->filebot       = openfile->filetop;
+  // openfile->current       = openfile->filetop;
+  // openfile->current_x     = 0;
+  // openfile->placewewant   = 0;
+  // openfile->cursor_row    = 0;
+  // openfile->edittop       = openfile->filetop;
+  // openfile->firstcolumn   = 0;
+  // openfile->totsize       = 0;
+  // openfile->modified      = FALSE;
+  // openfile->spillage_line = NULL;
+  // openfile->mark          = NULL;
+  // openfile->softmark      = FALSE;
+  // openfile->fmt           = UNSPECIFIED;
+  // openfile->undotop       = NULL;
+  // openfile->current_undo  = NULL;
+  // openfile->last_saved    = NULL;
+  // openfile->last_action   = OTHER;
+  // openfile->statinfo      = NULL;
+  // openfile->lock_filename = NULL;
+  // openfile->errormessage  = NULL;
+  // openfile->syntax        = NULL;
 }
 
 /* Return the given file name in a way that fits within the given space. */
@@ -291,14 +342,11 @@ bool has_valid_path(const char *const restrict filename) {
 void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) {
   /* If the buffer to free is the start buffer, advance the start buffer. */
   if (orphan == *start) {
-    *start = (*start)->next;
+    CLIST_ADV_NEXT(*start);
   }
   CLIST_UNLINK(orphan);
-  // if (/* orphan->type.is_set<C_CPP>() || orphan->type.is_set<BASH>() */ orphan->is_c_file || orphan->is_cxx_file || orphan->is_bash_file) {
-  //   file_listener.stop_listener(orphan->filename);
-  // }
   free(orphan->filename);
-  free_lines(orphan->filetop);
+  free_lines_for(NULL, orphan->filetop);
   free(orphan->statinfo);
   free(orphan->lock_filename);
   /* Free the undo stack for the orphan file. */
@@ -315,8 +363,8 @@ void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestru
   }
   free(orphan);
   /* When just one buffer ramains, set the legacy help bar text for the exit function. */
-  if (*open && *open == (*open)->next) {
-    exitfunc->tag = exit_tag;
+  if (*open && CLIST_SINGLE(*open)) {
+    ASSIGN_FIELD_IF_VALID(exitfunc, tag, exit_tag);
   }
 }
 
@@ -341,7 +389,7 @@ void close_buffer(void) {
   free(orphan);
   /* When just one buffer remains open, show "Exit" in the help lines. */
   if (openfile && CLIST_SINGLE(openfile)) {
-    exitfunc->tag = exit_tag;
+    ASSIGN_FIELD_IF_VALID(exitfunc, tag, exit_tag);
   }
 }
 
@@ -462,7 +510,7 @@ void set_modified_for(openfilestruct *const file) {
     return;
   }
   file->modified = TRUE;
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     titlebar(NULL);
   }
   if (file->lock_filename) {

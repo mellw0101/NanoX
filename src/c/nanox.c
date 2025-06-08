@@ -30,14 +30,14 @@ static void make_a_note(int _UNUSED signal) {
 }
 
 static void disable_mouse_support(void) {
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     mousemask(0, NULL);
     mouseinterval(oldinterval);
   }
 }
 
 static void enable_mouse_support(void) {
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     mousemask(ALL_MOUSE_EVENTS, NULL);
     oldinterval = mouseinterval(50);
   }
@@ -45,7 +45,7 @@ static void enable_mouse_support(void) {
 
 /* Switch mouse support on or off, as needed. */
 /* static */ void mouse_init(void) {
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     if (ISSET(USE_MOUSE)) {
       enable_mouse_support();
     }
@@ -58,7 +58,10 @@ static void enable_mouse_support(void) {
 /* Make sure the cursor is visible, then exit from curses mode, disable
  * bracketed-paste mode, and restore the original terminal settings. */
 static void restore_terminal(void) {
-  /* When in ncurses mode. */
+  if (ISSET(USING_GUI)) {
+    return;
+  }
+  /* When in curses mode. */
   if (!ISSET(NO_NCURSES)) {
     curs_set(1);
     endwin();
@@ -169,18 +172,24 @@ void unlink_node(linestruct *const node) {
   unlink_node_for(CONTEXT_OPENFILE, node);
 }
 
-/* ---------------------------------------------------------- */
+/* ----------------------------- Free lines ----------------------------- */
 
 /* Free an entire linked list of linestructs. */
-void free_lines(linestruct *src) {
+void free_lines_for(openfilestruct *const file, linestruct *src) {
+  /* Make this function a `no-op` function passed `NULL` list head. */
   if (!src) {
     return;
   }
   while (src->next) {
     src = src->next;
-    delete_node(src->prev);
+    delete_node_for(file, src->prev);
   }
-  delete_node(src);
+  delete_node_for(file, src);
+}
+
+/* Free an entire linked list of linestructs. */
+void free_lines(linestruct *const head) {
+  free_lines_for(CONTEXT_OPENFILE, head);
 }
 
 /* Make a copy of a linestruct node. */
@@ -229,7 +238,7 @@ bool in_restricted_mode(void) {
   if (ISSET(RESTRICTED)) {
     statusline(AHEM, _("This function is disabled in restricted mode"));
     /* Only use `beep()`, when using the ncurses context. */
-    if (!ISSET(NO_NCURSES)) {
+    if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
       beep();
     }
     return TRUE;
@@ -341,7 +350,7 @@ void restore_handler_for_Ctrl_C(void) {
  * mode, reenable interpretation of the flow control characters. */
 void terminal_init(void) {
   /* Running in ncurses context. */
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     raw();
     nonl();
     noecho();
@@ -374,7 +383,7 @@ void window_init(void) {
   int toprows;
   int bottomrows;
   /* When inside curses mode. */
-  if (!ISSET(NO_NCURSES)) {
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
     if (midwin) {
       if (topwin) {
         delwin(topwin);

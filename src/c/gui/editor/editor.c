@@ -12,7 +12,7 @@
 
 
 static Editor *editor_create_internal(void) {
-  Editor *editor       = xmalloc(sizeof(*editor));
+  Editor *editor = xmalloc(sizeof(*editor));
   /* Boolian flags. */
   editor->should_close = FALSE;
   editor->hidden       = FALSE;
@@ -89,7 +89,7 @@ void editor_create(bool new_buffer) {
   Editor *node = editor_create_internal();
   if (!openeditor) {
     CLIST_INIT(node);
-    starteditor       = node;
+    starteditor     = node;
     node->openfile  = openfile;
     node->startfile = startfile;
     editor_set_rows_cols(node, gui_width, gui_height);
@@ -99,9 +99,9 @@ void editor_create(bool new_buffer) {
   else {
     CLIST_INSERT_AFTER(node, openeditor);
     if (new_buffer) {
-      openfile  = NULL;
-      startfile = NULL;
-      make_new_buffer();
+      make_new_buffer_for(&node->startfile, &node->openfile);
+      startfile = node->startfile;
+      openfile  = node->openfile;
     }
     node->openfile  = openfile;
     node->startfile = startfile;
@@ -362,9 +362,10 @@ void editor_check_should_close(void) {
 void editor_close_open_buffer(void) {
   ASSERT(openeditor);
   ASSERT(openeditor->openfile);
-  close_buffer();
-  openeditor->openfile  = openfile;
-  openeditor->startfile = startfile;
+  free_one_buffer(openeditor->openfile, &openeditor->openfile, &openeditor->startfile);
+  // close_buffer();
+  // openeditor->openfile  = openfile;
+  // openeditor->startfile = startfile;
   etb_entries_refresh_needed(openeditor->tb);
 }
 
@@ -372,10 +373,8 @@ void editor_close_open_buffer(void) {
 void editor_open_new_empty_buffer(void) {
   ASSERT(openeditor);
   ASSERT(openeditor->openfile);
-  /* Make a new buffer related to the global pointer. */
+  /* Make a new buffer for the currently open editor. */
   make_new_buffer();
-  /* Set the open editor's currently open file to the global ptr. */
-  openeditor->openfile = openfile;
   editor_redecorate(openeditor);
   editor_resize(openeditor);
   etb_entries_refresh_needed(openeditor->tb);

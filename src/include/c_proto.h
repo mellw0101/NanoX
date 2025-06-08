@@ -174,8 +174,8 @@ extern keystruct *sclist;
 extern keystruct *planted_shortcut;
 
 extern funcstruct *allfuncs;
-extern funcstruct *exitfunc;
 extern funcstruct *tailfunc;
+extern funcstruct *exitfunc;
 
 extern regex_t search_regexp;
 extern regex_t quotereg;
@@ -685,6 +685,7 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 
 
 void  make_new_buffer(void);
+void  make_new_buffer_for(openfilestruct **const start, openfilestruct **const open);
 char *crop_to_fit(const char *const restrict name, Ulong room) ;
 void  stat_with_alloc(const char *filename, struct stat **pstat);
 void  prepare_for_display(void);
@@ -1158,7 +1159,11 @@ void delete_node(linestruct *const line);
 void unlink_node_for(openfilestruct *const file, linestruct *const node);
 void unlink_node(linestruct *const node);
 
-void        free_lines(linestruct *src);
+/* ----------------------------- Free lines ----------------------------- */
+
+void free_lines_for(openfilestruct *const file, linestruct *src);
+void free_lines(linestruct *const head);
+
 linestruct *copy_node(const linestruct *src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);
 linestruct *copy_buffer(const linestruct *src);
 void        renumber_from(linestruct *line);
