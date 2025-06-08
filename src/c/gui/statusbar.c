@@ -25,17 +25,13 @@ static void statusbar_timed_msg_internal(message_type type, float seconds, const
   }
   char *msg;
   va_list copy;
-  int len;
   /* Ignore updates when the type of this message is lower then the currently displayed message. */
   if ((type < statusbar->type) && (statusbar->type > NOTICE)) {
     return;
   }
   va_copy(copy, ap);
-  msg = valstr(format, ap, &len);
-  va_end(ap);
-  if (len > editwincols) {
-    len = editwincols;
-  }
+  msg = valstr(format, copy, NULL);
+  va_end(copy);
   statusbar->type = type;
   statusbar->msg  = free_and_assign(statusbar->msg, msg);
   statusbar->time = seconds;

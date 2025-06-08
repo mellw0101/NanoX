@@ -42,9 +42,9 @@ static void set_proper_index_and_pww_for(openfilestruct *const file, Ulong *cons
 }
 
 /* Adjust the values for `openfile->current_x` and `openfile->placewewant` in case we have landed in the middle of a tab that crosses a row boundary. */
-_UNUSED static inline void set_proper_index_and_pww(Ulong *const leftedge, Ulong target, bool forward) {
-  set_proper_index_and_pww_for(openfile, leftedge, target, forward, editwincols);
-}
+// _UNUSED static inline void set_proper_index_and_pww(Ulong *const leftedge, Ulong target, bool forward) {
+//   set_proper_index_and_pww_for(openfile, leftedge, target, forward, editwincols);
+// }
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
@@ -61,7 +61,7 @@ void to_first_line_for(openfilestruct *const file) {
 
 /* Move to the first line of the currently open file. */
 void to_first_line(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     to_first_line_for(openeditor->openfile);
   }
   else {
@@ -84,7 +84,7 @@ void to_last_line_for(openfilestruct *const file, int total_rows) {
 
 /* Move to the last line of the file. */
 void to_last_line(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     to_last_line_for(openeditor->openfile, openeditor->rows);
   }
   else {
@@ -111,7 +111,7 @@ void get_edge_and_target_for(openfilestruct *const file, Ulong *const leftedge, 
 
 /* Determine the actual chunk and the target column, for the currently open file.. */
 void get_edge_and_target(Ulong *const leftedge, Ulong *target_column) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     get_edge_and_target_for(openeditor->openfile, leftedge, target_column, openeditor->cols);
   }
   else { 
@@ -148,7 +148,7 @@ void do_page_up_for(openfilestruct *const file, int total_rows, int total_cols) 
 
 /* Move up almost one screen-full for `openfile`, where the biggest possible move is `editwinrows - 2`. */
 void do_page_up(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     do_page_up_for(openeditor->openfile, openeditor->rows, openeditor->cols);
   }
   else {
@@ -185,11 +185,11 @@ void do_page_down_for(openfilestruct *const file, int total_rows, int total_cols
 
 /* Move down almost one screen-full for `openfile`, where the biggest possible move is `editwinrows - 2`. */
 void do_page_down(void) {
-  if (ISSET(USING_GUI)) {
-    do_page_down_for(openeditor->openfile, openeditor->rows, openeditor->cols);
+  if (IN_GUI_CONTEXT) {
+    do_page_down_for(GUI_CONTEXT);
   }
   else {
-    do_page_down_for(openfile, editwinrows, editwincols);
+    do_page_down_for(TUI_CONTEXT);
   }
 }
 
@@ -207,7 +207,7 @@ void to_top_row_for(openfilestruct *const file, int total_cols) {
 
 /* Place the cursor on the first row in the viewport. */
 void to_top_row(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     to_top_row_for(openeditor->openfile, openeditor->cols);
   }
   else {
@@ -230,7 +230,7 @@ void to_bottom_row_for(openfilestruct *const file, int total_rows, int total_col
 
 /* Place the cursor on the last row in the viewport, when possible. */
 void to_bottom_row(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     to_bottom_row_for(openeditor->openfile, openeditor->rows, openeditor->cols);
   }
   else {
@@ -255,7 +255,13 @@ void do_cycle_for(openfilestruct *const file, int rows, int cols) {
 
 /* Put the cursor line at the center, then the top, then the bottom. */
 void do_cycle(void) {
-  do_cycle_for(CONTEXT_OPENFILE, CONTEXT_ROWS, CONTEXT_COLS);
+  if (IN_GUI_CONTEXT) {
+    do_cycle_for(GUI_CONTEXT);
+  }
+  else {
+    do_cycle_for(TUI_CONTEXT);
+  }
+  // do_cycle_for(CONTEXT_OPENFILE, CONTEXT_ROWS, CONTEXT_COLS);
 }
 
 /* Scroll the line with the cursor to the center of the screen. */

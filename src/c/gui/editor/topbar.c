@@ -66,7 +66,6 @@ static void etb_refresh_active(EditorTb *const etb) {
     ELEMENT_CHILDREN_ITER(etb->element, i, button,
       if (button->has_file_data) {
         button->color = ((button->dp_file == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
-        // color_copy(button->color, ((button->dp_file == etb->editor->openfile) ? &etb_active_color : &etb_button_color));
       }
     );
     etb->active_refresh_needed = FALSE;
@@ -115,9 +114,7 @@ static void etb_create_button(EditorTb *const etb, openfilestruct *const f, floa
   element_set_lable(button, lable, strlen(lable));
   element_set_file_data(button, f);
   /* Set the correct color for the button based on if it's the currently open file in the editor. */
-  // color_copy(button->color, ((f == etb->editor->openfile) ? &etb_active_color : &etb_button_color));
   button->color = ((f == etb->editor->openfile) ? ETB_ACTIVE_COLOR : ETB_BUTTON_COLOR);
-  // color_set_white(button->text_color);
   button->text_color = PACKED_UINT(255, 255, 255, 255);
   /* Set the relative position to the main element of the topbar. */
   button->relative_x = (button->x - etb->element->x);

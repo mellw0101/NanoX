@@ -696,6 +696,7 @@ bool  write_lockfile(const char *const restrict lockfilename, const char *const 
 bool  has_valid_path(const char *const restrict filename);
 void  free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
 void  close_buffer(void);
+void  close_buffer_for(openfilestruct *const orphan, openfilestruct **const start, openfilestruct **const open);
 char *real_dir_from_tilde(const char *const restrict path) _RETURNS_NONNULL _NONNULL(1);
 bool  is_dir(const char *const path) _NODISCARD _NONNULL(1);
 char *get_full_path(const char *const restrict origpath);

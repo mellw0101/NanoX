@@ -160,7 +160,7 @@ linestruct *line_from_number_for(openfilestruct *const file, long number) {
 
 /* Returns a `linestruct` pointer from the currently open file, while also ensuring context correct operation. */
 linestruct *line_from_number(long number) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     return line_from_number_for(openeditor->openfile, number);
   }
   else {
@@ -320,7 +320,7 @@ bool mark_is_before_cursor_for(openfilestruct *const file) {
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
 bool mark_is_before_cursor(void) {
-  return mark_is_before_cursor_for(openfile);
+  return mark_is_before_cursor_for(CONTEXT_OPENFILE);
 }
 
 /* ----------------------------- Get region ----------------------------- */

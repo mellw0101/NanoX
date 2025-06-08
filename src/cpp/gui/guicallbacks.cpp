@@ -399,17 +399,17 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_Q: {
           /* If CTRL+Q is pressed, quit. */
           if (mods == GLFW_MOD_CONTROL) {
-            if (!openfile->modified || ISSET(VIEW_MODE)) {
+            if (!openeditor->openfile->modified || ISSET(VIEW_MODE)) {
               gui_quit();
             }
-            else if (ISSET(SAVE_ON_EXIT) && *openfile->filename) {
+            else if (ISSET(SAVE_ON_EXIT) && *openeditor->openfile->filename) {
               ;
             }
             else {
-              char *question = fmtstr("Close [%s] without saving?", (*openfile->filename ? openfile->filename : "Nameless"));
+              char *question = fmtstr("Close [%s] without saving?", (*openeditor->openfile->filename ? openeditor->openfile->filename : "Nameless"));
               gui_ask_user(question, GUI_PROMPT_EXIT_NO_SAVE);
               free(question);
-              gui->promptmenu->closing_file = openfile;
+              gui->promptmenu->closing_file = openeditor->openfile;
             }
           }
           break;

@@ -93,8 +93,6 @@ void editor_create(bool new_buffer) {
     node->openfile  = openfile;
     node->startfile = startfile;
     editor_set_rows_cols(node, gui_width, gui_height);
-    editwinrows = node->rows;
-    editwincols = node->cols;
   }
   else {
     CLIST_INSERT_AFTER(node, openeditor);
@@ -150,7 +148,7 @@ void editor_free(Editor *const editor) {
 }
 
 void editor_confirm_margin(Editor *const editor) {
-  ASSERT(editor);
+  ASSERT_EDITOR(editor);
   bool keep_focus;
   int needed_margin = (digits(editor->openfile->filebot->lineno) + 1);
   if (!ISSET(LINE_NUMBERS)) {
@@ -174,10 +172,10 @@ void editor_set_rows_cols(Editor *const editor, float width, float height) {
   gui_font_rows_cols(textfont, width, height, &rows, &cols);
   editor->rows = rows;
   editor->cols = cols;
-  if (editor == openeditor) {
-    editwinrows = rows;
-    editwincols = cols;
-  }
+  // if (editor == openeditor) {
+  //   editwinrows = rows;
+  //   editwincols = cols;
+  // }
 }
 
 /* Get the editor that `file` belongs to. */
@@ -238,8 +236,7 @@ void editor_resize(Editor *const editor) {
 
 /* Used to ensure the correct state of an editor after we have switched to a new one or changed the currently open file. */
 void editor_redecorate(Editor *const editor) {
-  ASSERT(editor);
-  ASSERT(editor->openfile);
+  ASSERT_EDITOR(editor);
   /* If there is a error with the currently opened file, show it in the statusbar and log it. */
   if (editor->openfile->errormessage) {
     // show_statusmsg(ALERT, 2, editor->openfile->errormessage);
@@ -256,10 +253,10 @@ void editor_redecorate(Editor *const editor) {
 
 /* Switch to the previous editor.  */
 void editor_switch_to_prev(void) {
-  ASSERT(openeditor);
+  ASSERT_EDITOR(openeditor);
   /* If there is only one editor open, just print a message and return. */
   if (CLIST_SINGLE(openeditor)) {
-    statusline(MILD, "Only one editor open");
+    statusline(AHEM, _("Only one editor open"));
     return;
   }
   CLIST_ADV_PREV(openeditor);
@@ -274,10 +271,10 @@ void editor_switch_to_prev(void) {
 
 /* Switch to the next editor. */
 void editor_switch_to_next(void) {
-  ASSERT(openeditor);
+  ASSERT_EDITOR(openeditor);
   /* When there is only a single open editor, just tell the user and return. */
   if (CLIST_SINGLE(openeditor)) {
-    // show_statusmsg(MILD, 2, "Only one editor open");
+    statusline(AHEM, _("Only one editor open"));
     return;
   }
   CLIST_ADV_NEXT(openeditor);
@@ -292,16 +289,15 @@ void editor_switch_to_next(void) {
 
 /* Within the currently open editor, switch to the prev buffer. */
 void editor_switch_openfile_to_prev(void) {
-  ASSERT(openeditor);
-  ASSERT(openeditor->openfile);
-  ASSERT(openeditor->tb);
+  ASSERT_EDITOR(openeditor);
   /* If there is only one open buffer in the currently open editor, there is nothing to do. */
   if (CLIST_SINGLE(openeditor->openfile)) {
-    // show_statusmsg(AHEM, 2, "No more open file buffers in the current editor");
+    statusline(AHEM, _("No more open file buffers in the current editor"));
     return;
   }
   CLIST_ADV_PREV(openeditor->openfile);
-  openfile = openeditor->openfile;
+  openfile  = openeditor->openfile;
+  startfile = openeditor->startfile;
   editor_redecorate(openeditor);
   editor_resize(openeditor);
   etb_active_refresh_needed(openeditor->tb);
@@ -309,12 +305,11 @@ void editor_switch_openfile_to_prev(void) {
 
 /* Within the currently open editor, switch to the prev buffer. */
 void editor_switch_openfile_to_next(void) {
-  ASSERT(openeditor);
-  ASSERT(openeditor->openfile);
+  ASSERT_EDITOR(openeditor);
   ASSERT(openeditor->tb);
   /* If there is only one open file in the currently active editor, print a msg telling the user and return. */
   if (CLIST_SINGLE(openeditor->openfile)) {
-    // show_statusmsg(AHEM, 2, "No more open file buffers in the current editor");
+    statusline(AHEM, _("No more open file buffers in the current editor"));
     return;
   }
   CLIST_ADV_NEXT(openeditor->openfile);
@@ -326,8 +321,8 @@ void editor_switch_openfile_to_next(void) {
 
 /* Set `openedit` to editor, if its not already. */
 void editor_set_open(Editor *const editor) {
-  ASSERT(openeditor);
-  ASSERT(editor);
+  ASSERT_EDITOR(openeditor);
+  ASSERT_EDITOR(editor);
   /* Return early if editor is already the open editor. */
   if (editor == openeditor) {
     return;
@@ -344,6 +339,7 @@ void editor_set_open(Editor *const editor) {
 void editor_check_should_close(void) {
   bool close_starteditor = FALSE;
   CLIST_ITER(starteditor, editor,
+    ASSERT_EDITOR(editor);
     if (editor->should_close) {
       if (editor == starteditor) {
         close_starteditor = TRUE;
@@ -360,10 +356,9 @@ void editor_check_should_close(void) {
 
 /* Close the currently open editor's currently open buffer. */
 void editor_close_open_buffer(void) {
-  ASSERT(openeditor);
-  ASSERT(openeditor->openfile);
-  free_one_buffer(openeditor->openfile, &openeditor->openfile, &openeditor->startfile);
-  // close_buffer();
+  ASSERT_EDITOR(openeditor);
+  // free_one_buffer(openeditor->openfile, &openeditor->openfile, &openeditor->startfile);
+  close_buffer();
   // openeditor->openfile  = openfile;
   // openeditor->startfile = startfile;
   etb_entries_refresh_needed(openeditor->tb);
@@ -371,8 +366,7 @@ void editor_close_open_buffer(void) {
 
 /* Open a new empty `openfilestruct *` in the currently open editor. */
 void editor_open_new_empty_buffer(void) {
-  ASSERT(openeditor);
-  ASSERT(openeditor->openfile);
+  ASSERT_EDITOR(openeditor);
   /* Make a new buffer for the currently open editor. */
   make_new_buffer();
   editor_redecorate(openeditor);
@@ -442,12 +436,13 @@ void editor_open_buffer(const char *const restrict path) {
   ASSERT(openeditor);
   ASSERT(openeditor->openfile);
   ASSERT(path);
-  openfilestruct *was_openfile = openfile;
+  openfilestruct *was_openfile = openeditor->openfile;
   openfilestruct *new_openfile;
   /* In this case we should always terminate apon the file not existing as this function
    * should never be called in this case.  Note that this should be handeled before
    * the call to this function, because this function has one job, to open a file. */
   ALWAYS_ASSERT(file_exists(path));
+  openfile = openeditor->openfile;
   if (!open_buffer(path, TRUE)) {
     return;
   }
@@ -472,7 +467,7 @@ void editor_close_a_open_buffer(openfilestruct *const file) {
     delete_lockfile(file->lock_filename);
   }
   if (!CLIST_SINGLE(file)) {
-    free_one_buffer(file, &editor->openfile, &editor->startfile);
+    close_buffer_for(file, &editor->startfile, &editor->openfile);
     if (editor == openeditor) {
       openfile = editor->openfile;
       startfile = editor->startfile;

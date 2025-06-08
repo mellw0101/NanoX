@@ -912,7 +912,13 @@ void do_unindent_for(openfilestruct *const file, int total_cols) {
 
 /* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
 void do_unindent(void) {
-  do_unindent_for(CONTEXT_OPENFILE, CONTEXT_COLS);
+  if (IN_GUI_CONTEXT) {
+    do_unindent_for(openeditor->openfile, openeditor->cols);
+  }
+  else {
+    do_unindent_for(openfile, editwincols);
+  }
+  // do_unindent_for(CONTEXT_OPENFILE, CONTEXT_COLS);
 }
 
 /* ----------------------------- Restore undo posx and mark ----------------------------- */
@@ -941,8 +947,13 @@ void restore_undo_posx_and_mark_for(openfilestruct *const file, undostruct *cons
 
 /* Restore the cursor and mark in the currently open file, from a undostruct. */
 void restore_undo_posx_and_mark(undostruct *const u) {
-  ASSERT(u);
-  restore_undo_posx_and_mark_for(CONTEXT_OPENFILE, u, CONTEXT_ROWS);
+  if (IN_GUI_CONTEXT) {
+    restore_undo_posx_and_mark_for(openeditor->openfile, u, openeditor->rows);
+  }
+  else {
+    restore_undo_posx_and_mark_for(openfile, u, editwinrows);
+  }
+  // restore_undo_posx_and_mark_for(CONTEXT_OPENFILE, u, CONTEXT_ROWS);
 }
 
 /* ----------------------------- Insert empty line ----------------------------- */
@@ -1545,7 +1556,13 @@ void do_comment_for(openfilestruct *const file, int total_cols) {
 
 /* Comment or uncomment the current line or the marked lines. */
 void do_comment(void) {
-  do_comment_for(CONTEXT_OPENFILE, CONTEXT_COLS);
+  if (IN_GUI_CONTEXT) {
+    do_comment_for(openeditor->openfile, openeditor->cols);
+  }
+  else {
+    do_comment_for(openfile, editwincols);
+  }
+  // do_comment_for(CONTEXT_OPENFILE, CONTEXT_COLS);
 }
 
 /* Perform an undo or redo for a comment or uncomment action. */
@@ -1575,7 +1592,13 @@ void handle_comment_action_for(openfilestruct *const file, undostruct *const u, 
 
 /* Perform an undo or redo for a comment or uncomment action. */
 void handle_comment_action(undostruct *const u, bool undoing, bool add_comment) {
-  handle_comment_action_for(CONTEXT_OPENFILE, u, undoing, add_comment, CONTEXT_ROWS);
+  if (IN_GUI_CONTEXT) {
+    handle_comment_action_for(openeditor->openfile, u, undoing, add_comment, openeditor->rows);
+  }
+  else {
+    handle_comment_action_for(openfile, u, undoing, add_comment, editwinrows);
+  }
+  // handle_comment_action_for(CONTEXT_OPENFILE, u, undoing, add_comment, CONTEXT_ROWS);
 }
 
 /* Return a copy of the found completion candidate. */
@@ -1612,7 +1635,7 @@ void do_enter_for(openfilestruct *const file) {
   }
   /* If the prev char is one of the usual section start chars, or a lable, we should indent once more. */
   do_another_indent = is_prev_cursor_char_one_of_for(file, "{:");
-  newnode    = make_new_node(file->current);
+  newnode = make_new_node(file->current);
   if (ISSET(AUTOINDENT)) {
     /* When doing automatic long-line wrapping and the next line is in this same paragraph, use its indentation as the model. */
     if (ISSET(BREAK_LONG_LINES) && sampleline->next && inpar(sampleline->next) && !begpar(sampleline->next, 0)) {

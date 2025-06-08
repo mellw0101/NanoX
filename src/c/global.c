@@ -346,9 +346,9 @@ keystruct *planted_shortcut = NULL;
 /* The start of the functions list. */
 funcstruct *allfuncs = NULL;
 /* The last function in the list. */
-funcstruct *tailfunc;
+funcstruct *tailfunc = NULL;
 /* A pointer to the special Exit/Close item. */
-funcstruct *exitfunc;
+funcstruct *exitfunc = NULL;
 
 /* ----------------------------- regex_t ----------------------------- */
 

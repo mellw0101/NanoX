@@ -399,8 +399,7 @@ void glfw_loop(void) {
  * Also this function is designed so that when it tells glfw that we should close the window there should be one editor and one buffer in that 
  * editor open this is to ensure that from start to termination there is always an active editor and openeditor. */
 bool gui_quit(void) {
-  ASSERT(openeditor);
-  ASSERT(openeditor->openfile);
+  ASSERT_EDITOR(openeditor);
   /* If the buffer has a lock file, delete it. */
   if (openeditor->openfile->lock_filename) {
     delete_lockfile(openeditor->openfile->lock_filename);

@@ -2112,7 +2112,7 @@ void ensure_firstcolumn_is_aligned_for(openfilestruct *const file, int total_col
  * it's on.  We need to do this when the number of columns of the edit window
  * has changed, because then the width of softwrapped chunks has changed. */
 void ensure_firstcolumn_is_aligned(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     ensure_firstcolumn_is_aligned_for(openeditor->openfile, openeditor->cols);
   }
   else {
@@ -2136,7 +2136,7 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
   /* The number of zero-width characters for which to reserve space. */
   Ulong stowaways = 20;
   /* The amount of memory to reserve for the displayable string. */
-  Ulong allocsize = (((ISSET(USING_GUI) ? (span + 30) : COLS) + stowaways) * MAXCHARLEN + 1);
+  Ulong allocsize = (((IN_GUI_CONTEXT ? (span + 30) : COLS) + stowaways) * MAXCHARLEN + 1);
   /* The displayable string we will return. */
   char *converted = xmalloc(allocsize);
   /* Current position in converted. */
@@ -2287,7 +2287,7 @@ bool line_needs_update_for(openfilestruct *const file, Ulong old_column, Ulong n
 /* Check whether the mark is on, or whether old_column and new_column are on different "pages"
  * (in softwrap mode, only the former applies), which means that the relevant line needs to be redrawn. */
 bool line_needs_update(Ulong old_column, Ulong new_column) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     return line_needs_update_for(openeditor->openfile, old_column, new_column, openeditor->cols);
   }
   else {
@@ -2350,7 +2350,7 @@ Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong c
  * chunk, shift it back to the last column before the breakpoint.  The given column is relative
  * to the given leftedge in current.  The returned column is relative to the start of the text. */
 Ulong actual_last_column(Ulong leftedge, Ulong column) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     return actual_last_column_for(openeditor->openfile, leftedge, column, openeditor->cols);
   }
   else {
@@ -2369,7 +2369,7 @@ bool current_is_above_screen_for(openfilestruct *const file) {
 
 /* Return TRUE if current[current_x] is before the viewport. */
 bool current_is_above_screen(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     return current_is_above_screen_for(openeditor->openfile);
   }
   else {
@@ -2394,7 +2394,7 @@ bool current_is_below_screen_for(openfilestruct *const file, int total_rows, int
 
 /* Return `TRUE` if `openfile->current[openfile->current_x]` is beyond the viewport. */
 bool current_is_below_screen(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     return current_is_below_screen_for(openeditor->openfile, openeditor->rows, openeditor->cols);
   }
   else {
@@ -2410,7 +2410,7 @@ bool current_is_offscreen_for(openfilestruct *const file, int total_rows, int to
 
 /* Return TRUE if current[current_x] is outside the viewport. */
 bool current_is_offscreen(void) {
-  if (ISSET(USING_GUI)) {
+  if (IN_GUI_CONTEXT) {
     return current_is_offscreen_for(openeditor->openfile, openeditor->rows, openeditor->cols);
   }
   else {
@@ -3050,10 +3050,8 @@ void statusline(message_type type, const char *const restrict format, ...) {
 
 /* Print a normal `msg`, that conforms to the current contex, tui or gui. */
 void statusbar_all(const char *const restrict msg) {
-  if (ISSET(USING_GUI)) {
-    if (openeditor) {
-      statusbar_gui(msg);
-    }
+  if (IN_GUI_CONTEXT) {
+    statusbar_gui(msg);
   }
   else if (!ISSET(NO_NCURSES)) {
     statusbar_curses(msg);

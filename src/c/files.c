@@ -22,12 +22,18 @@
 #ifdef LOCKING_SUFFIX
 # undef LOCKING_SUFFIX
 #endif
+#ifdef LUMPSIZE
+# undef LUMPSIZE
+#endif
 
 #define LOCKSIZE    (1024)
 #define RW_FOR_ALL  (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 #define LOCKING_PREFIX  "."
 #define LOCKING_SUFFIX  ".swp"
+
+/* The number of bytes by which we expand the line buffer while reading. */
+#define LUMPSIZE  (120)
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
@@ -368,29 +374,64 @@ void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestru
   }
 }
 
-/* Remove the current buffer from the circular list of buffers.  When just one buffer remains open, show "Exit" in the help lines. */
-void close_buffer(void) {
-  openfilestruct *orphan = openfile;
-  if (orphan == startfile) {
-    startfile = startfile->next;
+void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start, openfilestruct **const open) {
+  /* If the buffer to free is the start buffer, advance the start buffer. */
+  if (orphan == *start) {
+    CLIST_ADV_NEXT(*start);
   }
   CLIST_UNLINK(orphan);
   free(orphan->filename);
-  free_lines(orphan->filetop);
+  free_lines_for(NULL, orphan->filetop);
   free(orphan->statinfo);
   free(orphan->lock_filename);
-  /* Free the undo stack. */
-  discard_until(NULL);
+  /* Free the undo stack for the orphan file. */
+  discard_until_for(orphan, NULL);
   free(orphan->errormessage);
-  openfile = orphan->prev;
-  if (openfile == orphan) {
-    openfile = NULL;
+  /* If the buffer to free is the open buffer, decrament it once. */
+  if (orphan == *open) {
+    CLIST_ADV_PREV(*open);
+    /* If the buffer to free was the singular and only buffer in the list, set open and start to NULL. */
+    if (orphan == *open) {
+      *open  = NULL;
+      *start = NULL;
+    }
   }
   free(orphan);
-  /* When just one buffer remains open, show "Exit" in the help lines. */
-  if (openfile && CLIST_SINGLE(openfile)) {
+  /* When just one buffer ramains, set the legacy help bar text for the exit function. */
+  if (*open && CLIST_SINGLE(*open)) {
     ASSIGN_FIELD_IF_VALID(exitfunc, tag, exit_tag);
   }
+}
+
+/* Remove the current buffer from the circular list of buffers.  When just one buffer remains open, show "Exit" in the help lines. */
+void close_buffer(void) {
+  if (IN_GUI_CONTEXT) {
+    close_buffer_for(openeditor->openfile, &openeditor->startfile, &openeditor->openfile);
+  }
+  else {
+    close_buffer_for(openfile, &startfile, &openfile);
+  }
+  // openfilestruct *orphan = openfile;
+  // if (orphan == startfile) {
+  //   startfile = startfile->next;
+  // }
+  // CLIST_UNLINK(orphan);
+  // free(orphan->filename);
+  // free_lines(orphan->filetop);
+  // free(orphan->statinfo);
+  // free(orphan->lock_filename);
+  // /* Free the undo stack. */
+  // discard_until(NULL);
+  // free(orphan->errormessage);
+  // openfile = orphan->prev;
+  // if (openfile == orphan) {
+  //   openfile = NULL;
+  // }
+  // free(orphan);
+  // /* When just one buffer remains open, show "Exit" in the help lines. */
+  // if (openfile && CLIST_SINGLE(openfile)) {
+  //   ASSIGN_FIELD_IF_VALID(exitfunc, tag, exit_tag);
+  // }
 }
 
 /* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
@@ -776,9 +817,27 @@ int open_file(const char *const restrict path, bool new_one, FILE **const f) {
 //   ASSERT(file);
 //   ASSERT(f);
 //   ASSERT(filename);
+//   ASSERT(fd >= 0);
 //   /* The line number where we start the insertion. */
 //   long was_lineno = file->current->lineno;
 //   /* The leftedge where we start the insertion. */
 //   Ulong was_leftedge = 0;
 //   /* The number of lines in the file. */
+//   Ulong num_lines = 0;
+//   /* The length of the current line of the file. */
+//   Ulong len = 0;
+//   /* The size of the line buffer.  Will be increased as needed. */
+//   Ulong bufsize = LUMPSIZE;
+//   /* The buffer in which we assemble each line of the file. */
+//   char *buf = xmalloc(bufsize);
+//   /* The top of the new buffer where we store the read file. */
+//   linestruct *topline;
+//   /* The bottom line of the new buffer. */
+//   linestruct *botline;
+//   /* The current value we read from the file, either a byte or `EOF`. */
+//   int value;
+//   /* The error code, in case an error occured during reading. */
+//   int errornum;
+//   /* Whether the file is writable (in case we care (What...?)). */
+//   bool writable = TRUE;
 // }

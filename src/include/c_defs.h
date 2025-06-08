@@ -80,6 +80,11 @@
 
 #define TUI_CONTEXT  (openfile), (editwinrows), (editwincols)
 
+#define ASSERT_EDITOR(editor)  \
+  ASSERT(editor);              \
+  ASSERT(editor->openfile);    \
+  ASSERT(editor->startfile);
+
 #define TAB_BYTE_LEN                                      \
   /* The length in bytes of a tab, this depends on if     \
    * `TABS_TO_SPACES` is set, and if so the byte length   \
