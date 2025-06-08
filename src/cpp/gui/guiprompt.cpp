@@ -280,11 +280,11 @@ static void gui_promptmenu_open_file_enter_action(void) {
     }
     /* Path is a block device. */
     else if (blkdev_exists(answer)) {
-      show_statusmsg(AHEM, 2, "'%s' is a block device", answer);
+      statusline(AHEM, "'%s' is a block device", answer);
     }
     /* If there is no file at the given path. */
     else if (!file_exists(answer)) {
-      show_statusmsg(AHEM, 2, "'%s' does not exist", answer);
+      statusline(AHEM, "'%s' does not exist", answer);
     }
     else {
       pwd = getpwd();
@@ -563,7 +563,7 @@ void gui_promptmenu_enter_action(void) {
         /* Get the full path to of the answer. */
         full_path = get_full_path(answer);
         /* If the currently open file has a name, and that name does not match the answer. */
-        if (*openfile->filename && strcmp(answer, openfile->filename) != 0) {
+        if (*openeditor->openfile->filename && strcmp(answer, openeditor->openfile->filename) != 0) {
           /* When the given path does not exist. */
           if (!full_path) {
             NETLOG("Save file using diffrent name?\n");
@@ -576,7 +576,7 @@ void gui_promptmenu_enter_action(void) {
         else {
           show_statusmsg(INFO, 5, "Saving file: %s", answer);
           /* Free the openfile filename, and assign answer to it. */
-          openfile->filename = free_and_assign(openfile->filename, copy_of(answer));
+          openeditor->openfile->filename = free_and_assign(openeditor->openfile->filename, copy_of(answer));
           // gui_editor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
           // gui_etb_entries_refresh_needed(gui_editor_from_file(openfile)->etb);
           etb_entries_refresh_needed(editor_from_file(openfile)->tb);

@@ -433,8 +433,7 @@ void editor_get_text_line_index(Editor *const editor, float x_pos, float y_pos, 
 
 /* Open a new buffer in the currently open editor using `path`. */
 void editor_open_buffer(const char *const restrict path) {
-  ASSERT(openeditor);
-  ASSERT(openeditor->openfile);
+  ASSERT_EDITOR(openeditor);
   ASSERT(path);
   openfilestruct *was_openfile = openeditor->openfile;
   openfilestruct *new_openfile;

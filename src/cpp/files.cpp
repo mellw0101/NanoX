@@ -575,178 +575,178 @@ void open_new_empty_buffer(void) {
 /* Read the given open file f into the current buffer.  filename should be
  * set to the name of the file.  undoable means that undo records should be
  * created and that the file does not need to be checked for writability. */
-void read_file(FILE *f, int fd, const char *filename, bool undoable) {
-  /* The line number where we start the insertion. */
-  long was_lineno = openfile->current->lineno;
-  /* The leftedge where we start the insertion. */
-  Ulong was_leftedge = 0;
-  /* The number of lines in the file. */
-  Ulong num_lines = 0;
-  /* The length of the current line of the file. */
-  Ulong len = 0;
-  /* The size of the line buffer; increased as needed. */
-  Ulong bufsize = LUMPSIZE;
-  /* The buffer in which we assemble each line of the file. */
-  char *buf = (char *)xmalloc(bufsize);
-  /* The top of the new buffer where we store the read file. */
-  linestruct *topline;
-  /* The bottom of the new buffer. */
-  linestruct *bottomline;
-  /* The current value we read from the file, either a byte or EOF. */
-  int onevalue;
-  /* The error code, in case an error occurred during reading. */
-  int errornumber;
-  /* Whether the file is writable (in case we care). */
-  bool writable = TRUE;
-  /* The type of line ending the file uses: Unix, DOS, or Mac. */
-  format_type format = NIX_FILE;
-  /* The char we are currently processing. */
-  char input;
-  /* When the caller knows we can write to this file. */
-  if (undoable) {
-    add_undo(INSERT, NULL);
-  }
-  if (ISSET(SOFTWRAP)) {
-    was_leftedge = leftedge_for(xplustabs(), openfile->current, editwincols);
-  }
-  /* Create an empty buffer. */
-  topline    = make_new_node(NULL);
-  bottomline = topline;
-  block_sigwinch(TRUE);
-  /* Lock the file before starting to read it, to avoid the overhead of locking it for each single byte that we read from it. */
-  flockfile(f);
-  control_C_was_pressed = FALSE;
-  /* Read in the entire file, byte by byte, line by line. */
-  while ((onevalue = getc_unlocked(f)) != EOF) {
-    input = (char)onevalue;
-    if (control_C_was_pressed) {
-      break;
-    }
-    /* When the byte before the current one is a CR and automatic format conversion has not
-     * been switched off, then strip this CR when it's before a LF OR when the file is in Mac
-     * format. Also, when this is the first line break, make a note of the format. */
-    if (input == '\n') {
-      if (len > 0 && buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
-        if (num_lines == 0) {
-          format = DOS_FILE;
-        }
-        --len;
-      }
-    }
-    else if ((num_lines == 0 || format == MAC_FILE) && len > 0 && buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
-      format = MAC_FILE;
-      --len;
-    }
-    else {
-      /* Store the byte. */
-      buf[len] = input;
-      /* Keep track of the total length of the line.  It might have NUL bytes in it, so we can't just use strlen() later. */
-      ++len;
-      /* When needed, increase the line-buffer size.  Don't bother decreasing it -- it gets freed when reading is finished. */
-      if (len == bufsize) {
-        bufsize += LUMPSIZE;
-        buf = arealloc(buf, bufsize);
-      }
-      continue;
-    }
-    /* Store the data and make a new line. */
-    bottomline->data = encode_data(buf, len);
-    bottomline->next = make_new_node(bottomline);
-    bottomline = bottomline->next;
-    ++num_lines;
-    /* Reset the length in preparation for the next line. */
-    len = 0;
-    /* If it was a Mac line, then store the byte after the \r as the first byte of the next line. */
-    if (input != '\n') {
-      buf[len++] = input;
-    }
-  }
-  errornumber = errno;
-  /* We are done with the file, unlock it. */
-  funlockfile(f);
-  block_sigwinch(FALSE);
-  /* When reading from stdin, restore the terminal and reenter curses mode. */
-  if (!ISSET(USING_GUI) && isendwin()) {
-    if (!isatty(STDIN_FILENO)) {
-      reconnect_and_store_state();
-    }
-    terminal_init();
-    doupdate();
-  }
-  /* If there was a real error during the reading, let the user know. */
-  if (ferror(f) && errornumber != EINTR && errornumber != 0) {
-    statusline(ALERT, strerror(errornumber));
-  }
-  if (control_C_was_pressed) {
-    statusline(ALERT, _("Interrupted"));
-  }
-  fclose(f);
-  if (fd > 0 && !undoable && !ISSET(VIEW_MODE)) {
-    writable = (access(filename, W_OK) == 0);
-  }
-  /* If the file ended with a newline, or it was entirely empty, make the last line blank.  Otherwise, put the last read data in. */
-  if (len == 0) {
-    bottomline->data = STRLTR_COPY_OF("");
-  }
-  else {
-    bool mac_line_needs_newline = FALSE;
-    /* If the final character is a CR and file conversion isn't disabled, strip this CR and indicate that an extra blank line is needed. */
-    if (buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
-      if (num_lines == 0) {
-        format = MAC_FILE;
-      }
-      buf[--len] = '\0';
-      mac_line_needs_newline = TRUE;
-    }
-    /* Store the data of the final line. */
-    bottomline->data = encode_data(buf, len);
-    ++num_lines;
-    if (mac_line_needs_newline) {
-      bottomline->next = make_new_node(bottomline);
-      bottomline       = bottomline->next;
-      bottomline->data = STRLTR_COPY_OF("");
-    }
-  }
-  free(buf);
-  /* Insert the just read buffer into the current one. */
-  ingraft_buffer(topline);
-  /* Set the desired x position at the end of what was inserted. */
-  openfile->placewewant = xplustabs();
-  if (!writable) {
-    statusline(ALERT, _("File '%s' is unwritable"), filename);
-  }
-  else if ((ISSET(ZERO) || ISSET(MINIBAR)) && !(we_are_running && undoable)) {
-    ; /* No blurb for new buffers with --zero or --mini. */
-  }
-  /* TRANSLATORS: Keep the next three messages at most 78 characters. */
-  else if (format == MAC_FILE) {
-    statusline(REMARK, P_("Read %zu line (converted from Mac format)", "Read %zu lines (converted from Mac format)", num_lines), num_lines);
-  }
-  else if (format == DOS_FILE) {
-    statusline(REMARK, P_("Read %zu line (converted from DOS format)", "Read %zu lines (converted from DOS format)", num_lines), num_lines);
-  }
-  else {
-    statusline(REMARK, P_("Read %zu line", "Read %zu lines", num_lines), num_lines);
-  }
-  report_size = TRUE;
-  /* If we inserted less than a screenful, don't center the cursor. */
-  if (undoable && less_than_a_screenful(was_lineno, was_leftedge)) {
-    focusing  = FALSE;
-    perturbed = TRUE;
-  }
-  else if (undoable) {
-    recook = TRUE;
-  }
-  if (undoable) {
-    update_undo(INSERT);
-  }
-  if (ISSET(MAKE_IT_UNIX)) {
-    openfile->fmt = NIX_FILE;
-  }
-  else if (openfile->fmt == UNSPECIFIED) {
-    openfile->fmt = format;
-  }
-}
+// void read_file(FILE *f, int fd, const char *filename, bool undoable) {
+//   /* The line number where we start the insertion. */
+//   long was_lineno = openfile->current->lineno;
+//   /* The leftedge where we start the insertion. */
+//   Ulong was_leftedge = 0;
+//   /* The number of lines in the file. */
+//   Ulong num_lines = 0;
+//   /* The length of the current line of the file. */
+//   Ulong len = 0;
+//   /* The size of the line buffer; increased as needed. */
+//   Ulong bufsize = LUMPSIZE;
+//   /* The buffer in which we assemble each line of the file. */
+//   char *buf = (char *)xmalloc(bufsize);
+//   /* The top of the new buffer where we store the read file. */
+//   linestruct *topline;
+//   /* The bottom of the new buffer. */
+//   linestruct *bottomline;
+//   /* The current value we read from the file, either a byte or EOF. */
+//   int onevalue;
+//   /* The error code, in case an error occurred during reading. */
+//   int errornumber;
+//   /* Whether the file is writable (in case we care). */
+//   bool writable = TRUE;
+//   /* The type of line ending the file uses: Unix, DOS, or Mac. */
+//   format_type format = NIX_FILE;
+//   /* The char we are currently processing. */
+//   char input;
+//   /* When the caller knows we can write to this file. */
+//   if (undoable) {
+//     add_undo(INSERT, NULL);
+//   }
+//   if (ISSET(SOFTWRAP)) {
+//     was_leftedge = leftedge_for(xplustabs(), openfile->current, editwincols);
+//   }
+//   /* Create an empty buffer. */
+//   topline    = make_new_node(NULL);
+//   bottomline = topline;
+//   block_sigwinch(TRUE);
+//   /* Lock the file before starting to read it, to avoid the overhead of locking it for each single byte that we read from it. */
+//   flockfile(f);
+//   control_C_was_pressed = FALSE;
+//   /* Read in the entire file, byte by byte, line by line. */
+//   while ((onevalue = getc_unlocked(f)) != EOF) {
+//     input = (char)onevalue;
+//     if (control_C_was_pressed) {
+//       break;
+//     }
+//     /* When the byte before the current one is a CR and automatic format conversion has not
+//      * been switched off, then strip this CR when it's before a LF OR when the file is in Mac
+//      * format. Also, when this is the first line break, make a note of the format. */
+//     if (input == '\n') {
+//       if (len > 0 && buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
+//         if (num_lines == 0) {
+//           format = DOS_FILE;
+//         }
+//         --len;
+//       }
+//     }
+//     else if ((num_lines == 0 || format == MAC_FILE) && len > 0 && buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
+//       format = MAC_FILE;
+//       --len;
+//     }
+//     else {
+//       /* Store the byte. */
+//       buf[len] = input;
+//       /* Keep track of the total length of the line.  It might have NUL bytes in it, so we can't just use strlen() later. */
+//       ++len;
+//       /* When needed, increase the line-buffer size.  Don't bother decreasing it -- it gets freed when reading is finished. */
+//       if (len == bufsize) {
+//         bufsize += LUMPSIZE;
+//         buf = arealloc(buf, bufsize);
+//       }
+//       continue;
+//     }
+//     /* Store the data and make a new line. */
+//     bottomline->data = encode_data(buf, len);
+//     bottomline->next = make_new_node(bottomline);
+//     bottomline = bottomline->next;
+//     ++num_lines;
+//     /* Reset the length in preparation for the next line. */
+//     len = 0;
+//     /* If it was a Mac line, then store the byte after the \r as the first byte of the next line. */
+//     if (input != '\n') {
+//       buf[len++] = input;
+//     }
+//   }
+//   errornumber = errno;
+//   /* We are done with the file, unlock it. */
+//   funlockfile(f);
+//   block_sigwinch(FALSE);
+//   /* When reading from stdin, restore the terminal and reenter curses mode. */
+//   if (!ISSET(USING_GUI) && isendwin()) {
+//     if (!isatty(STDIN_FILENO)) {
+//       reconnect_and_store_state();
+//     }
+//     terminal_init();
+//     doupdate();
+//   }
+//   /* If there was a real error during the reading, let the user know. */
+//   if (ferror(f) && errornumber != EINTR && errornumber != 0) {
+//     statusline(ALERT, strerror(errornumber));
+//   }
+//   if (control_C_was_pressed) {
+//     statusline(ALERT, _("Interrupted"));
+//   }
+//   fclose(f);
+//   if (fd > 0 && !undoable && !ISSET(VIEW_MODE)) {
+//     writable = (access(filename, W_OK) == 0);
+//   }
+//   /* If the file ended with a newline, or it was entirely empty, make the last line blank.  Otherwise, put the last read data in. */
+//   if (len == 0) {
+//     bottomline->data = STRLTR_COPY_OF("");
+//   }
+//   else {
+//     bool mac_line_needs_newline = FALSE;
+//     /* If the final character is a CR and file conversion isn't disabled, strip this CR and indicate that an extra blank line is needed. */
+//     if (buf[len - 1] == '\r' && !ISSET(NO_CONVERT)) {
+//       if (num_lines == 0) {
+//         format = MAC_FILE;
+//       }
+//       buf[--len] = '\0';
+//       mac_line_needs_newline = TRUE;
+//     }
+//     /* Store the data of the final line. */
+//     bottomline->data = encode_data(buf, len);
+//     ++num_lines;
+//     if (mac_line_needs_newline) {
+//       bottomline->next = make_new_node(bottomline);
+//       bottomline       = bottomline->next;
+//       bottomline->data = STRLTR_COPY_OF("");
+//     }
+//   }
+//   free(buf);
+//   /* Insert the just read buffer into the current one. */
+//   ingraft_buffer(topline);
+//   /* Set the desired x position at the end of what was inserted. */
+//   openfile->placewewant = xplustabs();
+//   if (!writable) {
+//     statusline(ALERT, _("File '%s' is unwritable"), filename);
+//   }
+//   else if ((ISSET(ZERO) || ISSET(MINIBAR)) && !(we_are_running && undoable)) {
+//     ; /* No blurb for new buffers with --zero or --mini. */
+//   }
+//   /* TRANSLATORS: Keep the next three messages at most 78 characters. */
+//   else if (format == MAC_FILE) {
+//     statusline(REMARK, P_("Read %zu line (converted from Mac format)", "Read %zu lines (converted from Mac format)", num_lines), num_lines);
+//   }
+//   else if (format == DOS_FILE) {
+//     statusline(REMARK, P_("Read %zu line (converted from DOS format)", "Read %zu lines (converted from DOS format)", num_lines), num_lines);
+//   }
+//   else {
+//     statusline(REMARK, P_("Read %zu line", "Read %zu lines", num_lines), num_lines);
+//   }
+//   report_size = TRUE;
+//   /* If we inserted less than a screenful, don't center the cursor. */
+//   if (undoable && less_than_a_screenful(was_lineno, was_leftedge)) {
+//     focusing  = FALSE;
+//     perturbed = TRUE;
+//   }
+//   else if (undoable) {
+//     recook = TRUE;
+//   }
+//   if (undoable) {
+//     update_undo(INSERT);
+//   }
+//   if (ISSET(MAKE_IT_UNIX)) {
+//     openfile->fmt = NIX_FILE;
+//   }
+//   else if (openfile->fmt == UNSPECIFIED) {
+//     openfile->fmt = format;
+//   }
+// }
 
 /* Open the file with the given name.  If the file does not exist, display
  * "New File" if new_one is TRUE, and say "File not found" otherwise.

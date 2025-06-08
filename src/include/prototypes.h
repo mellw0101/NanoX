@@ -306,7 +306,7 @@ void   open_new_empty_buffer(void);
 // void   free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start) _NOTHROW;
 // void   close_buffer(void) _NOTHROW;
 // char  *encode_data(char *text, Ulong length) _NOTHROW;
-void   read_file(FILE *f, int fd, const char *filename, bool undoable);
+// void   read_file(FILE *f, int fd, const char *filename, bool undoable);
 // int    open_file(const char *filename, bool new_one, FILE **f);
 // char  *get_next_filename(const char *name, const char *suffix) _NOTHROW;
 void   do_insertfile(void);
