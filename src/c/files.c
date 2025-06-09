@@ -26,14 +26,106 @@
 # undef LUMPSIZE
 #endif
 
-#define LOCKSIZE    (1024)
 #define RW_FOR_ALL  (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
+
+#define LOCKSIZE    (1024)
+#define SKIPTHISFILE ((char *)-1)
 
 #define LOCKING_PREFIX  "."
 #define LOCKING_SUFFIX  ".swp"
 
 /* The number of bytes by which we expand the line buffer while reading. */
 #define LUMPSIZE  (120)
+
+
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
+
+
+/* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask whether to open the corresponding file
+ * anyway.  Return SKIPTHISFILE when the user answers "No", return the name of the lock file on success, and return NULL on failure. */
+/* static */ char *do_lockfile(const char *const restrict filename, bool ask_the_user) {
+  char *namecopy     = copy_of(filename);
+  char *secondcopy   = copy_of(filename);
+  Ulong locknamelen  = (strlen(filename) + STRLEN(LOCKING_PREFIX) + STRLEN(LOCKING_SUFFIX));
+  char *lockfilename = xmalloc(locknamelen);
+  char lockprog[11];
+  char lockuser[17];
+  char *lockbuf;
+  char *question;
+  char *pidstring;
+  char *postedname;
+  char *promptstr;
+  int lockfd;
+  int lockpid;
+  int choice;
+  long readamt;
+  struct stat info;
+  snprintf(lockfilename, locknamelen, "%s/%s%s%s", dirname(namecopy), LOCKING_PREFIX, basename(secondcopy), LOCKING_SUFFIX);
+  free(secondcopy);
+  free(namecopy);
+  if ((ISSET(USING_GUI) || !ask_the_user) && stat(lockfilename, &info) != -1) {
+    if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+      blank_bottombars();
+      statusline(ALERT, _("Someone else is also editing this file"));
+      napms(1200);
+    }
+    else {
+      statusline(ALERT, _("Someone else is also editing this file"));
+    }
+  }
+  else if (stat(lockfilename, &info) != -1) {
+    if ((lockfd = open(lockfilename, O_RDONLY)) < 0) {
+      statusline(ALERT, _("Error opening lock file %s: %s"), lockfilename, strerror(errno));
+      free(lockfilename);
+      return NULL;
+    }
+    lockbuf = xmalloc(LOCKSIZE);
+    readamt = read(lockfd, lockbuf, LOCKSIZE);
+    close(lockfd);
+    /* If not enough data has been read to show the needed things, or the two magic bytes are not there, skip the lock file. */
+    if (readamt < 68 || lockbuf[0] != 0x62 || lockbuf[1] != 0x30) {
+      statusline(ALERT, _("Bad lock file is ignored: %s"), lockfilename);
+      free(lockfilename);
+      free(lockbuf);
+      return NULL;
+    }
+    memcpy(lockprog, &lockbuf[2], 10);
+    lockprog[10] = '\0';
+    lockpid = ((((Uchar)lockbuf[27] * 256 + (Uchar)lockbuf[26]) * 256 + (Uchar)lockbuf[25]) * 256 + (Uchar)lockbuf[24]);
+    memcpy(lockuser, &lockbuf[28], 16);
+    lockuser[16] = '\0';
+    free(lockbuf);
+    pidstring = xmalloc(11);
+    snprintf(pidstring, 11, "%u", (Uint)lockpid);
+    /* Display newlines in filenames as ^J. */
+    as_an_at = FALSE;
+    /* TRANSLATORS: The second %s is the name of the user, the third that of the editor. */
+    question   = _("File %s is beeing edited by %s (with %s, PID %s); open anyway?");
+    postedname = crop_to_fit(filename, (COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) - breadth(pidstring) + 7));
+    /* Allow extra space for username (14), program name (8), PID (8), and terminating '\0' (1), minus the %s (2) for the filename.  Total (29). */
+    promptstr = xmalloc(strlen(question) + 29 + strlen(postedname));
+    /* TODO: Change this to snprintf. */
+    sprintf(promptstr, question, postedname, lockuser, lockprog, pidstring);
+    free(postedname);
+    free(pidstring);
+    choice = ask_user(YESORNO, promptstr);
+    free(promptstr);
+    /* When the user cancelled while we're still starting up, quit. */
+    if (choice == CANCEL && !we_are_running) {
+      finish();
+    }
+    if (choice != YES) {
+      free(lockfilename);
+      wipe_statusbar();
+      return SKIPTHISFILE;
+    }
+  }
+  if (write_lockfile(lockfilename, filename, FALSE)) {
+    return lockfilename;
+  }
+  free(lockfilename);
+  return NULL;
+}
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
@@ -1016,3 +1108,51 @@ void read_file(FILE *f, int fd, const char *const restrict filename, bool undoab
     read_file_into(TUI_CONTEXT, f, fd, filename, undoable);
   }
 }
+
+/* This does one of three things.  If the filename is "", it just creates
+ * a new empty buffer.  When the filename is not empty, it reads that file
+ * into a new buffer when requested, otherwise into the existing buffer. */
+// bool open_buffer_for(openfilestruct **const start, openfilestruct **const open, const char *const restrict path, bool new_one) {
+//   ASSERT(start);
+//   ASSERT(open);
+//   /* The filename after tilde expansion. */
+//   char *full_path;
+//   /* The filename of the lockfile. */
+//   char *lock_path;
+//   struct stat info;
+//   /* Code 0 means a new file, -1 means failure, and else its the fd. */
+//   int fd = 0;
+//   FILE *f;
+//   /* Display newlines in filenames as ^J. */
+//   as_an_at = FALSE;
+//   if (outside_of_confinement(path, FALSE)) {
+//     statusline(ALERT, _("Can't read file from outside of %s"), operating_dir);
+//     return FALSE;
+//   }
+//   full_path = real_dir_from_tilde(path);
+//   /* Dont try to open directories, character files, or block files. */
+//   if (*path && stat(full_path, &info) == 0) {
+//     /* Directory. */
+//     if (S_ISDIR(info.st_mode)) {
+//       statusline(ALERT, _("\"%s\" is a directory"), full_path);
+//       free(full_path);
+//       return FALSE;
+//     }
+//     /* Device. */
+//     else if (S_ISCHR(info.st_mode) || S_ISBLK(info.st_mode)) {
+//       statusline(ALERT, _("\"%s\" is a device file"), full_path);
+//       free(full_path);
+//       return FALSE;
+//     }
+//     /* Read-Only. */
+//     else if (new_one && !(info.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && getuid() == ROOT_UID) {
+//       statusline(ALERT, _("\"%s\" is meant to be read-only"), full_path);
+//     }
+//   }
+//   /* When loading in a new buffer, first check the file's path is valid, and then (if requested and possible) create a lock file for it. */
+//   if (new_one) {
+//     make_new_buffer_for(start, open);
+//     if (has_valid_path(full_path)) {
+//     }
+//   }
+// }

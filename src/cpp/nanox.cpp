@@ -1930,12 +1930,7 @@ int main(int argc, char **argv) {
   /* Set up the terminal state. */
   terminal_init();
   /* Create the three subwindows, based on the current screen dimensions. */
-  if (ISSET(NO_NCURSES)) {
-    window_init();
-  }
-  else {
-    window_init();
-  }
+  window_init();
   nanox_curs_set(0);
   sidebar = ((ISSET(INDICATOR) && LINES > 5 && COLS > 9) ? 1 : 0);
   bardata = arealloc(bardata, (LINES * sizeof(int)));
@@ -1980,11 +1975,11 @@ int main(int argc, char **argv) {
     mousefocusout      = get_keycode("kxOUT", FOCUS_OUT);
     /* Disable the type-ahead checking that ncurses normally does. */
     typeahead(-1);
-#ifdef HAVE_SET_ESCDELAY
-    logI("Changing escdelay from %d to 50.", ESCDELAY);
-    /* Tell ncurses to pass the Esc key quickly. */
-    set_escdelay(50);
-#endif
+#   ifdef HAVE_SET_ESCDELAY
+      logI("Changing escdelay from %d to 50.", ESCDELAY);
+      /* Tell ncurses to pass the Esc key quickly. */
+      set_escdelay(50);
+#   endif
   }
   /* Read the files mentioned on the command line into new buffers. */
   while (optind < argc && (!openfile || TRUE)) {

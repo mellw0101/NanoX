@@ -531,8 +531,8 @@ int keycode_from_string(const char *keystring) {
 }
 
 /* Return the first shortcut in the list of shortcuts that, matches the given function in the given menu. */
-const keystruct *first_sc_for(const int menu, functionptrtype function) {
-  for (keystruct *sc = sclist; sc; sc = sc->next) {
+const keystruct *first_sc_for(int menu, functionptrtype function) {
+  DLIST_FOR_NEXT(sclist, sc) {
     if ((sc->menus & menu) && sc->func == function && sc->keystr[0]) {
       return sc;
     }
@@ -556,4 +556,33 @@ Ulong shown_entries_for(int menu) {
     --count;
   }
   return count;
+}
+
+/* Return the first shortcut in the current menu that matches the given input. */
+const keystruct *get_shortcut(int keycode) {
+  /* When in gui mode, always return `NULL`. */
+  if (ISSET(USING_GUI)) {
+    return NULL;
+  }
+  /* Plain characters and upper control codes cannot be shortcuts. */
+  if (!meta_key && 0x20 <= keycode && keycode <= 0xFF) {
+    return NULL;
+  }
+  /* Lower control codes with Meta cannot be shortcuts either. */
+  if (meta_key && keycode < 0x20) {
+    return NULL;
+  }
+  /* During a paste at a prompt, ignore all command keycodes. */
+  if (bracketed_paste && keycode != BRACKETED_PASTE_MARKER) {
+    return NULL;
+  }
+  if (keycode == PLANTED_A_COMMAND) {
+    return planted_shortcut;
+  }
+  DLIST_FOR_NEXT(sclist, sc) {
+    if ((sc->menus & currmenu) && keycode == sc->keycode) {
+      return sc;
+    }
+  }
+  return NULL;
 }

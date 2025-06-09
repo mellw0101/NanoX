@@ -426,29 +426,29 @@ static void add_to_sclist(const int menus, const char *scstring, const int keyco
 // }
 
 /* Return the first shortcut in the current menu that matches the given input. */
-const keystruct *get_shortcut(const int keycode) {
-  /* Plain characters and upper control codes cannot be shortcuts. */
-  if (!meta_key && 0x20 <= keycode && keycode <= 0xFF) {
-    return NULL;
-  }
-  /* Lower control codes with Meta cannot be shortcuts either. */
-  if (meta_key && keycode < 0x20) {
-    return NULL;
-  }
-  /* During a paste at a prompt, ignore all command keycodes. */
-  if (bracketed_paste && keycode != BRACKETED_PASTE_MARKER) {
-    return NULL;
-  }
-  if (keycode == PLANTED_A_COMMAND) {
-    return planted_shortcut;
-  }
-  for (const keystruct *sc = sclist; sc; sc = sc->next) {
-    if ((sc->menus & currmenu) && keycode == sc->keycode) {
-      return sc;
-    }
-  }
-  return NULL;
-}
+// const keystruct *get_shortcut(const int keycode) {
+//   /* Plain characters and upper control codes cannot be shortcuts. */
+//   if (!meta_key && 0x20 <= keycode && keycode <= 0xFF) {
+//     return NULL;
+//   }
+//   /* Lower control codes with Meta cannot be shortcuts either. */
+//   if (meta_key && keycode < 0x20) {
+//     return NULL;
+//   }
+//   /* During a paste at a prompt, ignore all command keycodes. */
+//   if (bracketed_paste && keycode != BRACKETED_PASTE_MARKER) {
+//     return NULL;
+//   }
+//   if (keycode == PLANTED_A_COMMAND) {
+//     return planted_shortcut;
+//   }
+//   for (const keystruct *sc = sclist; sc; sc = sc->next) {
+//     if ((sc->menus & currmenu) && keycode == sc->keycode) {
+//       return sc;
+//     }
+//   }
+//   return NULL;
+// }
 
 /* Return a pointer to the function that is bound to the given key. */
 functionptrtype func_from_key(const int keycode) {

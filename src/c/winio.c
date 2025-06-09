@@ -1716,18 +1716,21 @@ int convert_CSI_sequence(const int *const seq, Ulong length, int *const consumed
 
 /* Read in a single keystroke, ignoring any that are invalid. */
 int get_kbinput(WINDOW *const frame, bool showcursor) {
-  int kbinput   = ERR;
-  reveal_cursor = showcursor;
-  /* Extract one keystroke from the input stream. */
-  while (kbinput == ERR) {
-    kbinput = parse_kbinput(frame);
-    #ifdef KEY_DEBUG
+  int kbinput = ERR;
+  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+    ASSERT(frame);
+    reveal_cursor = showcursor;
+    /* Extract one keystroke from the input stream. */
+    while (kbinput == ERR) {
+      kbinput = parse_kbinput(frame);
+      #ifdef KEY_DEBUG
       // NETLOG("kbinput: %d\n", kbinput);
-    #endif
-  }
-  /* If we read from the edit window, blank the status bar when it's time. */
-  if (frame == midwin) {
-    blank_it_when_expired();
+      #endif
+    }
+    /* If we read from the edit window, blank the status bar when it's time. */
+    if (frame == midwin) {
+      blank_it_when_expired();
+    }
   }
   return kbinput;
 }
@@ -2813,6 +2816,12 @@ void minibar(void) {
   Ulong tallywidth = 0;
   Ulong padding    = 2;
   wchar widecode;
+  /* Make this function a `no-op` function when in gui mode. */
+  if (ISSET(USING_GUI)) {
+    free(location);
+    free(hexadecimal);  
+    return;
+  }
   /* Draw the colored bar over the full width of the screen. */
   wattron(footwin, interface_color_pair[config->minibar_color]);
   mvwprintw(footwin, 0, 0, "%*s", COLS, " ");

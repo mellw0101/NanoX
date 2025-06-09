@@ -684,8 +684,10 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 /* ---------------------------------------------------------- files.c ---------------------------------------------------------- */
 
 
-void  make_new_buffer(void);
+/* static */ char *do_lockfile(const char *const restrict filename, bool ask_the_user);
+
 void  make_new_buffer_for(openfilestruct **const start, openfilestruct **const open);
+void  make_new_buffer(void);
 char *crop_to_fit(const char *const restrict name, Ulong room) ;
 void  stat_with_alloc(const char *filename, struct stat **pstat);
 void  prepare_for_display(void);
@@ -911,8 +913,9 @@ void flip_newbuffer(void);
 void discard_buffer(void);
 void do_cancel(void);
 int keycode_from_string(const char *keystring);
-const keystruct *first_sc_for(const int menu, functionptrtype function);
+const keystruct *first_sc_for(int menu, functionptrtype function);
 Ulong shown_entries_for(int menu);
+const keystruct *get_shortcut(int keycode);
 
 
 /* ---------------------------------------------------------- search.c ---------------------------------------------------------- */
@@ -1023,7 +1026,8 @@ void  do_statusbar_chop_prev_word(void);
 Ulong get_statusbar_page_start(Ulong base, Ulong column);
 void  put_cursor_at_end_of_answer(void);
 void  add_or_remove_pipe_symbol_from_answer(void);
-void draw_the_promptbar(void);
+void  draw_the_promptbar(void);
+int   ask_user(bool withall, const char *const restrict question);
 
 
 /* ---------------------------------------------------------- history.c ---------------------------------------------------------- */
@@ -1210,6 +1214,7 @@ void inject(char *burst, Ulong count);
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) __THROW;
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 keystruct *strtosc(const char *input);
+void finish(void) __THROW _NO_RETURN;
 
 
 _END_C_LINKAGE

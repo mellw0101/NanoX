@@ -7,6 +7,12 @@
 #include "../include/c_proto.h"
 
 
+/* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
+
+
+#define UNDECIDED  (-2)
+
+
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
@@ -573,4 +579,162 @@ void draw_the_promptbar(void) {
   /* Place the cursor at the right spot. */
   wmove(footwin, 0, (column - the_page));
   wnoutrefresh(footwin);
+}
+
+/* Ask a simple `Yes/No (and optionally All)` question on the status bar and return the choice --
+ * either `YES`, `NO`, `ALL`, or `CANCEL`.  Note that this always returns `NO` when in `gui` mode. */
+int ask_user(bool withall, const char *const restrict question) {
+  int choice = UNDECIDED;
+  int width  = 16;
+  int extras;
+  int mx;
+  int my;
+  int x;
+  int y;
+  char letter[MAXCHARLEN + 1];
+  /* Temporary string for (translated) " Y", " N" and " A". */
+  char shortstr[MAXCHARLEN + 2];
+  int index = 0;
+  int kbinput;
+  /* The keystroke that is bound to the Cancel function. */
+  const keystruct *cancelshortcut;
+  /* TRANSLATOR: For the next three strings, specify the starting letters of the translations for "Yes"/"No"/"All".
+   * The first letter of each of these strings MUST be a single-byte letter; others my be multi-byte. */
+  const char *yesstr = _("Yy");
+  const char *nostr  = _("Nn");
+  const char *allstr = _("Aa");
+  const keystruct *shortcut;
+  functionptrtype function;
+  /* When in gui mode, always return `NO`. */
+  if (ISSET(USING_GUI)) {
+    return NO;
+  }
+  /* When in curses mode. */
+  else if (!ISSET(NO_NCURSES)) {
+    while (choice == UNDECIDED) {
+      index = 0;
+      if (!ISSET(NO_HELP)) {
+        cancelshortcut = first_sc_for(MYESNO, do_cancel);
+        if (COLS < 32) {
+          width = (COLS / 2);
+        }
+        /* Clear the shortcut list from the bottom of the screen. */
+        blank_bottombars();
+        /* Now show the ones for "Yes", "No", "Cancel" and maybe "All". */
+        sprintf(shortstr, " %c", yesstr[0]);
+        wmove(footwin, 1, 0);
+        post_one_key(shortstr, _("Yes"), width);
+        shortstr[1] = nostr[0];
+        wmove(footwin, 2, 0);
+        post_one_key(shortstr, _("No"), width);
+        /* If `ALL` is an option. */
+        if (withall) {
+          shortstr[1] = allstr[0];
+          wmove(footwin, 1, width);
+          post_one_key(shortstr, _("All"), width);
+        }
+        wmove(footwin, 2, width);
+        post_one_key(cancelshortcut->keystr, _("Cancel"), width);
+      }
+      /* Color the prompt bar color over its full width and display the question. */
+      wattron(footwin, interface_color_pair[PROMPT_BAR]);
+      mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
+      mvwaddnstr(footwin, 0, 0, question, actual_x(question, (COLS - 1)));
+      wattroff(footwin, interface_color_pair[PROMPT_BAR]);
+      wnoutrefresh(footwin);
+      currmenu = MYESNO;
+      /* When not replacing, show the cursor while waiting for a key. */
+      kbinput = get_kbinput(footwin, !withall);
+      if (kbinput == KEY_WINCH) {
+        continue;
+      }
+      /* Accept first character of an external paste and ignore the rest. */
+      if (bracketed_paste) {
+        kbinput = get_kbinput(footwin, BLIND);
+        while (bracketed_paste) {
+          get_kbinput(footwin, BLIND);   
+        }
+      }
+      letter[index++] = (Uchar)kbinput;
+      /* If the received code is a `UTF-8` starter byte, get also the continuation bytes and assemble them into one letter. */
+      if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7) {
+        extras = ((kbinput / 16) % 4 + (kbinput <= 0xCF));
+        while (extras <= (int)waiting_keycodes() && extras-- > 0) {
+          letter[index++] = (Uchar)get_kbinput(footwin, !withall);
+        }
+      }
+      letter[index] = '\0';
+      /* Yes */
+      if (strstr(yesstr, letter)) {
+        choice = YES;
+      }
+      /* No */
+      else if (strstr(nostr, letter)) {
+        choice = NO;
+      }
+      /* All */
+      else if (withall && strstr(allstr, letter)) {
+        choice = ALL;
+      }
+      /* Check just the one char from `get_kbinput()`. */
+      else {
+        /* Yes */
+        if (strchr("Yy", kbinput)) {
+          choice = YES;
+        }
+        /* No */
+        else if (strchr("Nn", kbinput)) {
+          choice = NO;
+        }
+        /* All */
+        else if (withall && strchr("Aa", kbinput)) {
+          choice = ALL;
+        }
+      }
+      /* If we got an answer, just break here. */
+      if (choice != UNDECIDED) {
+        break;
+      }
+      shortcut = get_shortcut(kbinput);
+      function = (shortcut ? shortcut->func : NULL);
+      if (function == do_cancel) {
+        choice = CANCEL;
+      }
+      else if (function == full_refresh) {
+        full_refresh();
+      }
+      else if (function == do_toggle && shortcut->toggle == NO_HELP) {
+        TOGGLE(NO_HELP);
+        window_init();
+        titlebar(NULL);
+        focusing = FALSE;
+        edit_refresh();
+        focusing = TRUE;
+      }
+      /* Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too. */
+      else if (kbinput == '\x0E' || kbinput == (ISSET(MODERN_BINDINGS) ? '\x18' : '\x11')) {
+        choice = NO;
+      }
+      /* And interpret ^Y as "Yes". */
+      else if (kbinput == '\x19') {
+        choice = YES;
+      }
+      else if (kbinput == KEY_MOUSE) {
+        /* We can click on "Yes"/"No"/"All" shortcuts to select an answer. */
+        if (get_mouseinput(&my, &mx, FALSE) == 0 && wmouse_trafo(footwin, &my, &mx, FALSE) && mx < (width * 2) && my > 0) {
+          x = (mx / width);
+          y = (my - 1);
+          /* x == 0 means Yes or No, y == 0 means Yes or All. */ 
+          choice = (-2 * x * y + x - y + 1);
+          if (choice == ALL && !withall) {
+            choice = UNDECIDED;
+          }
+        }
+      }
+      else {
+        beep();
+      }
+    }
+  }
+  return choice;
 }

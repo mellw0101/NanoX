@@ -333,7 +333,7 @@ char  *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *list
 // int              keycode_from_string(const char *keystring) _NOTHROW;
 // const keystruct *first_sc_for(const int menu, void (*function)(void)) _NOTHROW;
 // Ulong            shown_entries_for(int menu) _NOTHROW;
-const keystruct *get_shortcut(const int keycode);
+// const keystruct *get_shortcut(const int keycode);
 functionptrtype  func_from_key(const int keycode);
 functionptrtype  interpret(const int keycode);
 void             shortcut_init(void);
@@ -395,7 +395,7 @@ void do_right(void);
 // void        print_view_warning(void) _NOTHROW;
 // bool        in_restricted_mode(void) _NOTHROW;
 void        suggest_ctrlT_ctrlZ(void) _NOTHROW;
-void        finish(void) _NOTHROW _NO_RETURN;
+// void        finish(void) _NOTHROW _NO_RETURN;
 void        close_and_go(void);
 void        do_exit(void);
 void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
@@ -441,7 +441,7 @@ bool        changes_something(functionptrtype f);
 // void  put_cursor_at_end_of_answer(void) _NOTHROW;
 // void  add_or_remove_pipe_symbol_from_answer(void) _NOTHROW;
 int   do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg, ...);
-int   ask_user(bool withall, const char *question);
+// int   ask_user(bool withall, const char *question);
 
 
 /* ---------------------------------------------------------- rcfile.cpp ---------------------------------------------------------- */

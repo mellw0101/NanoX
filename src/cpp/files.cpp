@@ -164,76 +164,76 @@
 
 /* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask whether to open the corresponding file
  * anyway.  Return SKIPTHISFILE when the user answers "No", return the name of the lock file on success, and return NULL on failure. */
-static char *do_lockfile(const char *filename, bool ask_the_user) {
-  char *namecopy     = copy_of(filename);
-  char *secondcopy   = copy_of(filename);
-  Ulong locknamesize = (strlen(filename) + STRLEN(locking_prefix) + STRLEN(locking_suffix) + 3);
-  char *lockfilename = (char *)nmalloc(locknamesize);
-  struct stat fileinfo;
-  snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy), locking_suffix);
-  free(secondcopy);
-  free(namecopy);
-  if (!ask_the_user && stat(lockfilename, &fileinfo) != -1) {
-    blank_bottombars();
-    statusline(ALERT, _("Someone else is also editing this file"));
-    napms(1200);
-  }
-  else if (stat(lockfilename, &fileinfo) != -1) {
-    static char lockprog[11], lockuser[17];
-    char *lockbuf, *question, *pidstring, *postedname, *promptstr;
-    int lockfd, lockpid, choice;
-    long readamt;
-    if ((lockfd = open(lockfilename, O_RDONLY)) < 0) {
-      statusline(ALERT, _("Error opening lock file %s: %s"), lockfilename, strerror(errno));
-      free(lockfilename);
-      return NULL;
-    }
-    lockbuf = (char *)nmalloc(LOCKSIZE);
-    readamt = read(lockfd, lockbuf, LOCKSIZE);
-    close(lockfd);
-    /* If not enough data has been read to show the needed things, or the two magic bytes are not there, skip the lock file. */
-    if (readamt < 68 || lockbuf[0] != 0x62 || lockbuf[1] != 0x30) {
-      statusline(ALERT, _("Bad lock file is ignored: %s"), lockfilename);
-      free(lockfilename);
-      free(lockbuf);
-      return NULL;
-    }
-    strncpy(lockprog, &lockbuf[2], 10);
-    lockprog[10] = '\0';
-    lockpid = (((Uchar)lockbuf[27] * 256 + (Uchar)lockbuf[26]) * 256 + (Uchar)lockbuf[25]) * 256 + (Uchar)lockbuf[24];
-    strncpy(lockuser, &lockbuf[28], 16);
-    lockuser[16] = '\0';
-    free(lockbuf);
-    pidstring = (char *)nmalloc(11);
-    sprintf(pidstring, "%u", (Uint)lockpid);
-    /* Display newlines in filenames as ^J. */
-    as_an_at = FALSE;
-    /* TRANSLATORS: The second %s is the name of the user, the third that of the editor. */
-    question = (char *)_("File %s is being edited by %s (with %s, PID %s); open anyway?");
-    postedname = crop_to_fit(filename, (COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) - breadth(pidstring) + 7));
-    /* Allow extra space for username (14), program name (8), PID (8), and terminating \0 (1), minus the %s (2) for the file name. */
-    promptstr = (char *)nmalloc(strlen(question) + 29 + strlen(postedname));
-    sprintf(promptstr, question, postedname, lockuser, lockprog, pidstring);
-    free(postedname);
-    free(pidstring);
-    choice = ask_user(YESORNO, promptstr);
-    free(promptstr);
-    /* When the user cancelled while we're still starting up, quit. */
-    if (choice == CANCEL && !we_are_running) {
-      finish();
-    }
-    if (choice != YES) {
-      free(lockfilename);
-      wipe_statusbar();
-      return SKIPTHISFILE;
-    }
-  }
-  if (write_lockfile(lockfilename, filename, FALSE)) {
-    return lockfilename;
-  }
-  free(lockfilename);
-  return NULL;
-}
+// static char *do_lockfile(const char *filename, bool ask_the_user) {
+//   char *namecopy     = copy_of(filename);
+//   char *secondcopy   = copy_of(filename);
+//   Ulong locknamesize = (strlen(filename) + STRLEN(locking_prefix) + STRLEN(locking_suffix) + 3);
+//   char *lockfilename = (char *)nmalloc(locknamesize);
+//   struct stat fileinfo;
+//   snprintf(lockfilename, locknamesize, "%s/%s%s%s", dirname(namecopy), locking_prefix, basename(secondcopy), locking_suffix);
+//   free(secondcopy);
+//   free(namecopy);
+//   if (!ask_the_user && stat(lockfilename, &fileinfo) != -1) {
+//     blank_bottombars();
+//     statusline(ALERT, _("Someone else is also editing this file"));
+//     napms(1200);
+//   }
+//   else if (stat(lockfilename, &fileinfo) != -1) {
+//     static char lockprog[11], lockuser[17];
+//     char *lockbuf, *question, *pidstring, *postedname, *promptstr;
+//     int lockfd, lockpid, choice;
+//     long readamt;
+//     if ((lockfd = open(lockfilename, O_RDONLY)) < 0) {
+//       statusline(ALERT, _("Error opening lock file %s: %s"), lockfilename, strerror(errno));
+//       free(lockfilename);
+//       return NULL;
+//     }
+//     lockbuf = (char *)nmalloc(LOCKSIZE);
+//     readamt = read(lockfd, lockbuf, LOCKSIZE);
+//     close(lockfd);
+//     /* If not enough data has been read to show the needed things, or the two magic bytes are not there, skip the lock file. */
+//     if (readamt < 68 || lockbuf[0] != 0x62 || lockbuf[1] != 0x30) {
+//       statusline(ALERT, _("Bad lock file is ignored: %s"), lockfilename);
+//       free(lockfilename);
+//       free(lockbuf);
+//       return NULL;
+//     }
+//     strncpy(lockprog, &lockbuf[2], 10);
+//     lockprog[10] = '\0';
+//     lockpid = (((Uchar)lockbuf[27] * 256 + (Uchar)lockbuf[26]) * 256 + (Uchar)lockbuf[25]) * 256 + (Uchar)lockbuf[24];
+//     strncpy(lockuser, &lockbuf[28], 16);
+//     lockuser[16] = '\0';
+//     free(lockbuf);
+//     pidstring = (char *)nmalloc(11);
+//     sprintf(pidstring, "%u", (Uint)lockpid);
+//     /* Display newlines in filenames as ^J. */
+//     as_an_at = FALSE;
+//     /* TRANSLATORS: The second %s is the name of the user, the third that of the editor. */
+//     question = (char *)_("File %s is being edited by %s (with %s, PID %s); open anyway?");
+//     postedname = crop_to_fit(filename, (COLS - breadth(question) - breadth(lockuser) - breadth(lockprog) - breadth(pidstring) + 7));
+//     /* Allow extra space for username (14), program name (8), PID (8), and terminating \0 (1), minus the %s (2) for the file name. */
+//     promptstr = (char *)nmalloc(strlen(question) + 29 + strlen(postedname));
+//     sprintf(promptstr, question, postedname, lockuser, lockprog, pidstring);
+//     free(postedname);
+//     free(pidstring);
+//     choice = ask_user(YESORNO, promptstr);
+//     free(promptstr);
+//     /* When the user cancelled while we're still starting up, quit. */
+//     if (choice == CANCEL && !we_are_running) {
+//       finish();
+//     }
+//     if (choice != YES) {
+//       free(lockfilename);
+//       wipe_statusbar();
+//       return SKIPTHISFILE;
+//     }
+//   }
+//   if (write_lockfile(lockfilename, filename, FALSE)) {
+//     return lockfilename;
+//   }
+//   free(lockfilename);
+//   return NULL;
+// }
 
 /* Perform a stat call on the given filename, allocating a stat struct if necessary. On success,
  * '*pstat' points to the stat's result.  On failure, '*pstat' is freed and made 'NULL'. */

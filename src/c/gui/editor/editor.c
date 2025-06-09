@@ -40,7 +40,7 @@ static Editor *editor_create_internal(void) {
 }
 
 static float editor_get_gutter_width(Editor *const editor) {
-  ASSERT(editor);
+  ASSERT_EDITOR(editor);
   char *linenostr;
   float ret = 0;
   editor_confirm_margin(editor);
@@ -93,6 +93,8 @@ void editor_create(bool new_buffer) {
     node->openfile  = openfile;
     node->startfile = startfile;
     editor_set_rows_cols(node, gui_width, gui_height);
+    editwinrows = node->rows;
+    editwincols = node->cols;
   }
   else {
     CLIST_INSERT_AFTER(node, openeditor);
@@ -112,8 +114,7 @@ void editor_create(bool new_buffer) {
   openeditor->gutter = element_create(openeditor->main->x, (openeditor->main->y + gui_font_height(uifont)), editor_get_gutter_width(openeditor), (openeditor->main->height - gui_font_height(uifont)), TRUE);
   element_set_parent(openeditor->gutter, openeditor->main);
   element_set_editor_data(openeditor->gutter, openeditor);
-  // color_set_edit_background(openeditor->gutter->color);
-  openeditor->gutter->color = PACKED_UINT_EDIT_BACKGROUND;
+  openeditor->gutter->color               = PACKED_UINT_EDIT_BACKGROUND;
   openeditor->gutter->has_relative_pos    = TRUE;
   openeditor->gutter->has_relative_height = TRUE;
   openeditor->gutter->relative_y          = gui_font_height(uifont);
@@ -121,8 +122,7 @@ void editor_create(bool new_buffer) {
   openeditor->text = element_create((openeditor->main->x + openeditor->gutter->width), (openeditor->main->y + gui_font_height(uifont)), (openeditor->main->width - openeditor->gutter->width), (openeditor->main->height - gui_font_height(uifont)), TRUE);
   element_set_parent(openeditor->text, openeditor->main);
   element_set_editor_data(openeditor->text, openeditor);
-  // color_set_edit_background(openeditor->text->color);
-  openeditor->text->color = PACKED_UINT_EDIT_BACKGROUND;
+  openeditor->text->color               = PACKED_UINT_EDIT_BACKGROUND;
   openeditor->text->has_relative_pos    = TRUE;
   openeditor->text->has_relative_width  = TRUE;
   openeditor->text->has_relative_height = TRUE;
@@ -172,10 +172,6 @@ void editor_set_rows_cols(Editor *const editor, float width, float height) {
   gui_font_rows_cols(textfont, width, height, &rows, &cols);
   editor->rows = rows;
   editor->cols = cols;
-  // if (editor == openeditor) {
-  //   editwinrows = rows;
-  //   editwincols = cols;
-  // }
 }
 
 /* Get the editor that `file` belongs to. */
