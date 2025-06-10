@@ -70,6 +70,8 @@ bool bracketed_paste = FALSE;
 bool keep_cutbuffer = FALSE;
 /* Whether a tool has been run at the Execute-Command prompt. */
 bool ran_a_tool = FALSE;
+/* If closing bracket char was printed then this is TRUE until another key input has been prossesed. */
+bool last_key_was_bracket = FALSE;
 
 /* ----------------------------- char * ----------------------------- */
 

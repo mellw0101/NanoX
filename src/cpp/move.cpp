@@ -619,29 +619,29 @@ void do_scroll_down(void) {
 }
 
 /* Move left one character. */
-void do_left(void) {
-  linestruct *was_current = openfile->current;
-  /* If a section is highlighted and shift is not held, then place the cursor at the left side of the marked area. */
-  if (openfile->mark && !shift_held) {
-    if (mark_is_before_cursor()) {
-      openfile->current   = openfile->mark;
-      openfile->current_x = openfile->mark_x;
-    }
-  }
-  else {
-    if (openfile->current_x > 0) {
-      openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-      while (openfile->current_x > 0 && is_zerowidth(openfile->current->data + openfile->current_x)) {
-        openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-      }
-    }
-    else if (openfile->current != openfile->filetop) {
-      openfile->current   = openfile->current->prev;
-      openfile->current_x = strlen(openfile->current->data);
-    }
-  }
-  edit_redraw(was_current, FLOWING);
-}
+// void do_left(void) {
+//   linestruct *was_current = openfile->current;
+//   /* If a section is highlighted and shift is not held, then place the cursor at the left side of the marked area. */
+//   if (openfile->mark && !shift_held) {
+//     if (mark_is_before_cursor()) {
+//       openfile->current   = openfile->mark;
+//       openfile->current_x = openfile->mark_x;
+//     }
+//   }
+//   else {
+//     if (openfile->current_x > 0) {
+//       openfile->current_x = step_left(openfile->current->data, openfile->current_x);
+//       while (openfile->current_x > 0 && is_zerowidth(openfile->current->data + openfile->current_x)) {
+//         openfile->current_x = step_left(openfile->current->data, openfile->current_x);
+//       }
+//     }
+//     else if (openfile->current != openfile->filetop) {
+//       openfile->current   = openfile->current->prev;
+//       openfile->current_x = strlen(openfile->current->data);
+//     }
+//   }
+//   edit_redraw(was_current, FLOWING);
+// }
 
 /* Move right one character. */
 void do_right(void) {

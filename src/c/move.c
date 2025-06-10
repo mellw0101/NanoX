@@ -50,6 +50,8 @@ static void set_proper_index_and_pww_for(openfilestruct *const file, Ulong *cons
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- To first line ----------------------------- */
+
 /* Set `file->current` to `file->filetop`. */
 void to_first_line_for(openfilestruct *const file) {
   ASSERT(file);
@@ -68,6 +70,8 @@ void to_first_line(void) {
     to_first_line_for(openfile);
   }
 }
+
+/* ----------------------------- To last line ----------------------------- */
 
 /* Set `file->current` to `file->filebot`. */
 void to_last_line_for(openfilestruct *const file, int total_rows) {
@@ -91,6 +95,8 @@ void to_last_line(void) {
     to_last_line_for(openfile, editwinrows);
   }
 }
+
+/* ----------------------------- Get edge and target ----------------------------- */
 
 /* Determine the actual chunk and the target column. */
 void get_edge_and_target_for(openfilestruct *const file, Ulong *const leftedge, Ulong *target_column, int total_cols) {
@@ -118,6 +124,8 @@ void get_edge_and_target(Ulong *const leftedge, Ulong *target_column) {
     get_edge_and_target_for(openfile, leftedge, target_column, editwincols);
   }
 }
+
+/* ----------------------------- Do page up ----------------------------- */
 
 /* Move up almost one screen-full in `file`, where the biggest possible move is `total_rows - 2`. */
 void do_page_up_for(openfilestruct *const file, int total_rows, int total_cols) {
@@ -156,6 +164,8 @@ void do_page_up(void) {
   }
 }
 
+/* ----------------------------- Do page down ----------------------------- */
+
 /* Move down almost one screen-full in `file`, where the biggest possible move is `total_rows - 2`. */
 void do_page_down_for(openfilestruct *const file, int total_rows, int total_cols) {
   ASSERT(file);
@@ -193,6 +203,8 @@ void do_page_down(void) {
   }
 }
 
+/* ----------------------------- To top row ----------------------------- */
+
 /* Place the cursor on the first row in the viewport. */
 void to_top_row_for(openfilestruct *const file, int total_cols) {
   ASSERT(file);
@@ -214,6 +226,8 @@ void to_top_row(void) {
     to_top_row_for(openfile, editwincols);
   }
 }
+
+/* ----------------------------- To bottom row ----------------------------- */
 
 /* Place the cursor on the last row in the viewport, when possible. */
 void to_bottom_row_for(openfilestruct *const file, int total_rows, int total_cols) {
@@ -237,6 +251,8 @@ void to_bottom_row(void) {
     to_bottom_row_for(openfile, editwinrows, editwincols);
   }
 }
+
+/* ----------------------------- Do cycle ----------------------------- */
 
 /* Put the cursor line at the center, then the top, then the bottom in `file`. */
 void do_cycle_for(openfilestruct *const file, int rows, int cols) {
@@ -264,11 +280,15 @@ void do_cycle(void) {
   // do_cycle_for(CONTEXT_OPENFILE, CONTEXT_ROWS, CONTEXT_COLS);
 }
 
+/* ----------------------------- Do center ----------------------------- */
+
 /* Scroll the line with the cursor to the center of the screen. */
 void do_center(void) {
   /* The main loop has set 'cycling_aim' to zero. */
   do_cycle();
 }
+
+/* ----------------------------- Do para begin ----------------------------- */
 
 /* Move to the first beginning of a paragraph before the current line. */
 void do_para_begin(linestruct **const line) {
@@ -281,6 +301,8 @@ void do_para_begin(linestruct **const line) {
   }
 }
 
+/* ----------------------------- Do para end ----------------------------- */
+
 /* Move down to the last line of the first found paragraph. */
 void do_para_end(linestruct **const line) {
   ASSERT(line);
@@ -291,6 +313,8 @@ void do_para_end(linestruct **const line) {
     DLIST_ADV_NEXT(*line);
   } 
 }
+
+/* ----------------------------- To para begin ----------------------------- */
 
 /* Move up to first start of a paragraph before the current line. */
 void to_para_begin_for(openfilestruct *const file, int rows, int cols) {
@@ -310,6 +334,8 @@ void to_para_begin(void) {
     to_para_begin_for(TUI_CONTEXT);
   }
 }
+
+/* ----------------------------- To para end ----------------------------- */
 
 /* Move down to just after the first found end of a paragraph. */
 void to_para_end_for(openfilestruct *const file, int rows, int cols) {
@@ -337,6 +363,8 @@ void to_para_end(void) {
     to_para_end_for(TUI_CONTEXT);
   }
 }
+
+/* ----------------------------- To prev block ----------------------------- */
 
 /* Move to the preceding block of text. */
 void to_prev_block_for(openfilestruct *const file, int rows, int cols) {
@@ -391,6 +419,8 @@ void to_prev_block(void) {
   }
 }
 
+/* ----------------------------- To next block ----------------------------- */
+
 /* Move to the next block of text inside `file`. */
 void to_next_block_for(openfilestruct *const file, int rows, int cols) {
   ASSERT(file);
@@ -441,5 +471,46 @@ void to_next_block(void) {
   }
   else {
     to_next_block_for(TUI_CONTEXT);
+  }
+}
+
+/* ----------------------------- Do left ----------------------------- */
+
+/* Move the cursor of `file` left one character. */
+void do_left_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  /* If a section is highlighted and shift is not held, then place the cursor at the left side of the marked area. */
+  if (file->mark && file->softmark && !shift_held) {
+    /* Only adjust the cursor when the mark is the `left` one.  Otherwise, the cursor already is.  */
+    if (mark_is_before_cursor_for(file)) {
+      file->current   = file->mark;
+      file->current_x = file->mark_x;
+    }
+  }
+  else {
+    /* When not at the start of the current line. */
+    if (file->current_x > 0) {
+      file->current_x = step_left(file->current->data, file->current_x);
+      while (file->current_x > 0 && is_zerowidth(file->current->data + file->current_x)) {
+        file->current_x = step_left(file->current->data, file->current_x);
+      }
+    }
+    /* Otherwise, when at the start of the current line, move one line up when possible. */
+    else if (file->current != file->filetop) {
+      DLIST_ADV_PREV(file->current);
+      file->current_x = strlen(file->current->data);
+    }
+  }
+  edit_redraw_for(STACK_CONTEXT, was_current, FLOWING);
+}
+
+/* Move left one character.  Note that this is context safe. */
+void do_left(void) {
+  if (IN_GUI_CONTEXT) {
+    do_left_for(GUI_CONTEXT);
+  }
+  else {
+    do_left_for(TUI_CONTEXT);
   }
 }

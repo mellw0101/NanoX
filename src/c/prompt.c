@@ -146,6 +146,23 @@ static void statusbar_delete(void) {
   }
 }
 
+/* Handle a mouse click on the status-bar prompt or the shortcut list. */
+/* static */ int do_statusbar_mouse(void) {
+  int row;
+  int col;
+  int ret;
+  int start;
+  /* We can click on the status-bar window text to move the cursor. */
+  if ((ret = get_mouseinput(&row, &col, TRUE)) == 0 && wmouse_trafo(footwin, &row, &col, FALSE)) {
+    start = (breadth(prompt) + 2);
+    /* Move to where the click occurred. */
+    if (row == 0 && col >= start) {
+      typing_x = actual_x(answer, get_statusbar_page_start(start, (wideness(answer, typing_x) + col)));
+    }
+  }
+  return ret;
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -712,11 +729,11 @@ int ask_user(bool withall, const char *const restrict question) {
         focusing = TRUE;
       }
       /* Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too. */
-      else if (kbinput == '\x0E' || kbinput == (ISSET(MODERN_BINDINGS) ? '\x18' : '\x11')) {
+      else if (kbinput == '\x0E' || kbinput == (ISSET(MODERN_BINDINGS) ? CTRL('x') : CTRL('q'))) {
         choice = NO;
       }
       /* And interpret ^Y as "Yes". */
-      else if (kbinput == '\x19') {
+      else if (kbinput == CTRL('y')) {
         choice = YES;
       }
       else if (kbinput == KEY_MOUSE) {

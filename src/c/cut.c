@@ -497,3 +497,41 @@ void ingraft_buffer_into(openfilestruct *const file, linestruct *top, linestruct
 void ingraft_buffer(linestruct *topline) {
   ingraft_buffer_into(CONTEXT_OPENFILE, topline, NULL);
 }
+
+/* ----------------------------- Do backspace ----------------------------- */
+
+/* Backspace over one character.  That is, move the cursor left one character, and then delete the character
+ * under the cursor.  Or, when mark is on and `LET_THEM_ZAP/--zap` is active, delete the marked region. */
+void do_backspace_for(openfilestruct *const file, int rows, int cols) {
+  ASSERT(file);
+  /* When there is a marked region. */
+  if (file->mark && ISSET(LET_THEM_ZAP)) {
+    zap_text_for(STACK_CONTEXT);
+  }
+  /* Not currently at the base of the current line. */
+  else if (file->current_x > 0) {
+    /* If the last char injected was a open bracket char, this means that a
+     * closing bracket was placed next to it, so we should delete both. */
+    if (last_key_was_bracket) {
+      expunge_for(file, cols, BACK);
+    }
+    file->current_x = step_left(file->current->data, file->current_x);
+    expunge_for(file, cols, BACK);
+  }
+  /* When at the base of the current line and not on the first line. */
+  else if (file->current != file->filetop) {
+    do_left_for(STACK_CONTEXT);
+    expunge_for(file, cols, BACK);
+  }
+}
+
+/* Backspace over one character.  That is, move the cursor left one character, and then delete the character
+ * under the cursor.  Or, when mark is on and `LET_THEM_ZAP/--zap` is active, delete the marked region. */
+void do_backspace(void) {
+  if (IN_GUI_CONTEXT) {
+    do_backspace_for(GUI_CONTEXT);
+  }
+  else {
+    do_backspace_for(TUI_CONTEXT);
+  }
+}

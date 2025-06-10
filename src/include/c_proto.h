@@ -46,6 +46,7 @@ extern bool mute_modifiers;
 extern bool bracketed_paste;
 extern bool keep_cutbuffer;
 extern bool ran_a_tool;
+extern bool last_key_was_bracket;
 
 extern char *word_chars;
 extern char *whitespace;
@@ -685,6 +686,7 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 
 
 /* static */ char *do_lockfile(const char *const restrict filename, bool ask_the_user);
+/* static */ char **filename_completion(const char *const restrict morsel, Ulong *const num_matches) ;
 
 void  make_new_buffer_for(openfilestruct **const start, openfilestruct **const open);
 void  make_new_buffer(void);
@@ -717,8 +719,14 @@ void  switch_to_prev_buffer(void);
 void  switch_to_next_buffer(void);
 char *get_next_filename(const char *const restrict name, const char *const restrict suffix);
 int   open_file(const char *const restrict path, bool new_one, FILE **const f);
+
+/* ----------------------------- Read file ----------------------------- */
+
 void  read_file_into(openfilestruct *const file, int rows, int cols, FILE *const f, int fd, const char *const restrict filename, bool undoable);
 void  read_file(FILE *f, int fd, const char *const restrict filename, bool undoable);
+
+/* ----------------------------- Open buffer ----------------------------- */
+
 bool  open_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols, const char *const restrict path, bool new_one);
 bool  open_buffer(const char *const restrict path, bool new_one);
 
@@ -958,7 +966,8 @@ void to_prev_block_for(openfilestruct *const file, int rows, int cols);
 void to_prev_block(void);
 void to_next_block_for(openfilestruct *const file, int rows, int cols);
 void to_next_block(void);
-
+void do_left_for(openfilestruct *const file, int rows, int cols);
+void do_left(void);
 
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
 
@@ -1004,6 +1013,8 @@ void precalc_multicolorinfo(void);
 
 /* ---------------------------------------------------------- prompt.c ---------------------------------------------------------- */
 
+
+/* static */ int do_statusbar_mouse(void);
 
 void  lop_the_answer(void);
 void  copy_the_answer(void);
@@ -1086,6 +1097,8 @@ void do_delete_for(openfilestruct *const file, int rows, int cols);
 void do_delete(void);
 void ingraft_buffer_into(openfilestruct *const file, linestruct *top, linestruct *bot);
 void ingraft_buffer(linestruct *topline);
+void do_backspace_for(openfilestruct *const file, int rows, int cols);
+void do_backspace(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

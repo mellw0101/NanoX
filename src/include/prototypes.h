@@ -154,7 +154,7 @@ extern char *statedir;
 // extern Ulong light_from_col;
 // extern Ulong light_to_col;
 
-extern bool last_key_was_bracket;
+// extern bool last_key_was_bracket;
 extern char last_bracket_char;
 
 // extern colortype *color_combo[NUMBER_OF_ELEMENTS];
@@ -275,7 +275,7 @@ void  attr_idx_int_code(int idx, int *fg, int *bg);
 /* Most functions in 'cut.cpp'. */
 // void expunge(undo_type action);
 // void do_delete(void);
-void do_backspace(void);
+// void do_backspace(void);
 void chop_previous_word(void) _NOTHROW;
 void chop_next_word(void) _NOTHROW;
 // void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x) _NOTHROW;
@@ -380,7 +380,7 @@ void do_up(void);
 void do_down(void);
 void do_scroll_up(void);
 void do_scroll_down(void);
-void do_left(void);
+// void do_left(void);
 void do_right(void);
 
 /* Most functions in 'nano.cpp'. */

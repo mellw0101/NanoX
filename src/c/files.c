@@ -127,6 +127,74 @@
   return NULL;
 }
 
+/* Try to complete the given fragment to an existing filename.  Note remember to set `present_path` for relative paths. */
+/* static */ char **filename_completion(const char *const restrict morsel, Ulong *const num_matches) {
+  ASSERT(morsel);
+  char *dirname = copy_of(morsel);
+  char *slash   = strrchr(dirname, '/');
+  char *filename;
+  char *wasdirname;
+  char **matches = NULL;
+  Ulong size = 0;
+  Ulong cap  = 10;
+  Ulong filenamelen;
+  directory_t dir;
+  /* If there's a '/' in the name, split out the filename and directory parts. */
+  if (slash) {
+    wasdirname = dirname;
+    filename   = copy_of(++slash);
+    /* Cut of the the filename part after the slash. */
+    *slash = '\0';
+    dirname = real_dir_from_tilde(dirname);
+    /* A non-absolute path is relative to the current browser directory. */
+    if (*dirname != '/') {
+      dirname = xrealloc(dirname, (strlen(present_path) + strlen(wasdirname) + 1));
+      sprintf(dirname, "%s%s", present_path, wasdirname);
+    }
+    free(wasdirname);
+  }
+  else {
+    filename = dirname;
+    dirname  = copy_of(present_path);
+  }
+  directory_data_init(&dir);
+  if (directory_get(dirname, &dir) == -1) {
+    if (IN_CURSES_CONTEXT) {
+      beep();
+    }
+    directory_data_free(&dir);
+    free(filename);
+    free(dirname);
+    return NULL;
+  }
+  filenamelen = strlen(filename);
+  /* Allocate the array. */
+  matches = xmalloc(_PTRSIZE * cap);
+  /* Iterate through the filenames in the directory, and add each fitting one to the list of matches. */
+  DIRECTORY_ITER(dir, i, entry,
+    if (strncmp(entry->name, filename, filenamelen) == 0) {
+      if (outside_of_confinement(entry->path, TRUE) || (currmenu == MGOTODIR && entry->type != DT_DIR)) {
+        continue;
+      }
+      ENSURE_PTR_ARRAY_SIZE(matches, cap, size);
+      matches[size++] = measured_copy(entry->name, entry->namelen);
+    }
+  );
+  directory_data_free(&dir);
+  free(dirname);
+  free(filename);
+  if (!size) {
+    free(matches);
+    matches = NULL;
+  }
+  else {
+    TRIM_PTR_ARRAY(matches, cap, size);
+    matches[size] = NULL;
+    ASSIGN_IF_VALID(num_matches, size);
+  }
+  return matches;
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -309,7 +377,8 @@ bool delete_lockfile(const char *const restrict lockfilename) {
   return TRUE;
 }
 
-/* Write a lock file, under the given lockfilename.  This always annihilates an existing version of that file.  Return TRUE on success; FALSE otherwise. */
+/* Write a lock file, under the given lockfilename.  This always annihilates an
+ * existing version of that file.  Return TRUE on success; FALSE otherwise. */
 bool write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified) {
   ASSERT(lockfilename);
   ASSERT(filename);
@@ -636,7 +705,8 @@ int diralphasort(const void *va, const void *vb) {
   }
 }
 
-/* Mark `file` as modified if it isn't already, and then update the title bar to display the buffer's new status.  As well as re-writing the lockfile it there is one. */
+/* Mark `file` as modified if it isn't already, and then update the title-bar to
+ * display the buffer's new status.  As well as re-writing the lockfile it there is one. */
 void set_modified_for(openfilestruct *const file) {
   ASSERT(file);
   if (file->modified) {
@@ -714,8 +784,8 @@ void init_backup_dir(void) {
  * read error, and a positive number on write error.  File inn is always
  * closed by this function, out is closed  only if close_out is TRUE. */
 int copy_file(FILE *inn, FILE *out, bool close_out) {
-  int   retval = 0;
-  char  buf[BUFSIZ];
+  int retval = 0;
+  char buf[BUFSIZ];
   Ulong charsread;
   int (*flush_out_fnc)(FILE *) = ((close_out) ? fclose : fflush);
   do {

@@ -366,20 +366,20 @@
 // }
 
 /* Handle a mouse click on the status-bar prompt or the shortcut list. */
-static int do_statusbar_mouse(void) _NOTHROW {
-  int click_row = 0;
-  int click_col = 0;
-  int retval    = get_mouseinput(&click_row, &click_col, TRUE);
-  /* We can click on the status-bar window text to move the cursor. */
-  if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, FALSE)) {
-    Ulong start_col = (breadth(prompt) + 2);
-    /* Move to where the click occurred. */
-    if (click_row == 0 && click_col >= (int)start_col) {
-      typing_x = actual_x(answer, get_statusbar_page_start(start_col, ((start_col + wideness(answer, typing_x)) + click_col - start_col)));
-    }
-  }
-  return retval;
-}
+// static int do_statusbar_mouse(void) _NOTHROW {
+//   int click_row = 0;
+//   int click_col = 0;
+//   int retval    = get_mouseinput(&click_row, &click_col, TRUE);
+//   /* We can click on the status-bar window text to move the cursor. */
+//   if (retval == 0 && wmouse_trafo(footwin, &click_row, &click_col, FALSE)) {
+//     Ulong start_col = (breadth(prompt) + 2);
+//     /* Move to where the click occurred. */
+//     if (click_row == 0 && click_col >= (int)start_col) {
+//       typing_x = actual_x(answer, get_statusbar_page_start(start_col, ((start_col + wideness(answer, typing_x)) + click_col - start_col)));
+//     }
+//   }
+//   return retval;
+// }
 
 /* Insert the given short burst of bytes into the answer. */
 // void inject_into_answer(char *burst, Ulong count) _NOTHROW {

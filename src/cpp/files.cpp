@@ -383,7 +383,6 @@
 
 /* Open a file using the browser. */
 void open_buffer_browser(void) {
-  int was_menu = currmenu;
   char *path = copy_of(openfile->filename[0] ? openfile->filename : "./");
   char *file_to_open = browse_in(path);
   free(path);
@@ -404,7 +403,6 @@ void open_buffer_browser(void) {
     }
     edit_refresh();
   }
-  currmenu       = was_menu;
   refresh_needed = TRUE;
 }
 
@@ -2064,7 +2062,7 @@ static char **username_completion(const char *morsel, Ulong length, Ulong &num_m
       if (outside_of_confinement(userdata->pw_dir, TRUE)) {
         continue;
       }
-      matches              = (char **)nrealloc(matches, (num_matches + 1) * sizeof(char *));
+      matches = (char **)nrealloc(matches, (num_matches + 1) * sizeof(char *));
       matches[num_matches] = (char *)nmalloc(strlen(userdata->pw_name) + 2);
       sprintf(matches[num_matches], "~%s", userdata->pw_name);
       ++num_matches;
@@ -2090,63 +2088,63 @@ static char **username_completion(const char *morsel, Ulong length, Ulong &num_m
   This code may safely be consumed by a BSD or GPL license.
  */
 /* Try to complete the given fragment to an existing filename. */
-static char **filename_completion(const char *morsel, Ulong *num_matches) {
-  char  *dirname = copy_of(morsel);
-  char  *slash, *filename;
-  Ulong filenamelen;
-  char  *fullname = NULL;
-  char  **matches = NULL;
-  DIR   *dir;
-  const dirent *entry;
-  /* If there's a '/' in the name, split out filename and directory parts. */
-  slash = strrchr(dirname, '/');
-  if (slash) {
-    char *wasdirname = dirname;
-    filename = copy_of(++slash);
-    /* Cut off the filename part after the slash. */
-    *slash  = '\0';
-    dirname = real_dir_from_tilde(dirname);
-    /* A non-absolute path is relative to the current browser directory. */
-    if (dirname[0] != '/') {
-      dirname = arealloc(dirname, (strlen(present_path) + strlen(wasdirname) + 1));
-      sprintf(dirname, "%s%s", present_path, wasdirname);
-    }
-    free(wasdirname);
-  }
-  else {
-    filename = dirname;
-    dirname  = copy_of(present_path);
-  }
-  dir = opendir(dirname);
-  if (!dir) {
-    beep();
-    free(filename);
-    free(dirname);
-    return NULL;
-  }
-  filenamelen = strlen(filename);
-  /* Iterate through the filenames in the directory, and add each fitting one to the list of matches. */
-  while ((entry = readdir(dir))) {
-    if (strncmp(entry->d_name, filename, filenamelen) == 0 && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
-      fullname = arealloc(fullname, (strlen(dirname) + _D_ALLOC_NAMLEN(entry)));
-      sprintf(fullname, "%s%s", dirname, entry->d_name);
-      if (outside_of_confinement(fullname, TRUE)) {
-        continue;
-      }
-      if (currmenu == MGOTODIR && !is_dir(fullname)) {
-        continue;
-      }
-      matches = arealloc(matches, (*num_matches + 1) * sizeof(char *));
-      matches[*num_matches] = measured_copy(entry->d_name, (_D_ALLOC_NAMLEN(entry) - 1));
-      ++(*num_matches);
-    }
-  }
-  closedir(dir);
-  free(dirname);
-  free(filename);
-  free(fullname);
-  return matches;
-}
+// static char **filename_completion(const char *morsel, Ulong *num_matches) {
+//   char  *dirname = copy_of(morsel);
+//   char  *slash, *filename;
+//   Ulong filenamelen;
+//   char  *fullname = NULL;
+//   char  **matches = NULL;
+//   DIR   *dir;
+//   const dirent *entry;
+//   /* If there's a '/' in the name, split out filename and directory parts. */
+//   slash = strrchr(dirname, '/');
+//   if (slash) {
+//     char *wasdirname = dirname;
+//     filename = copy_of(++slash);
+//     /* Cut off the filename part after the slash. */
+//     *slash  = '\0';
+//     dirname = real_dir_from_tilde(dirname);
+//     /* A non-absolute path is relative to the current browser directory. */
+//     if (dirname[0] != '/') {
+//       dirname = arealloc(dirname, (strlen(present_path) + strlen(wasdirname) + 1));
+//       sprintf(dirname, "%s%s", present_path, wasdirname);
+//     }
+//     free(wasdirname);
+//   }
+//   else {
+//     filename = dirname;
+//     dirname  = copy_of(present_path);
+//   }
+//   dir = opendir(dirname);
+//   if (!dir) {
+//     beep();
+//     free(filename);
+//     free(dirname);
+//     return NULL;
+//   }
+//   filenamelen = strlen(filename);
+//   /* Iterate through the filenames in the directory, and add each fitting one to the list of matches. */
+//   while ((entry = readdir(dir))) {
+//     if (strncmp(entry->d_name, filename, filenamelen) == 0 && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+//       fullname = arealloc(fullname, (strlen(dirname) + _D_ALLOC_NAMLEN(entry)));
+//       sprintf(fullname, "%s%s", dirname, entry->d_name);
+//       if (outside_of_confinement(fullname, TRUE)) {
+//         continue;
+//       }
+//       if (currmenu == MGOTODIR && !is_dir(fullname)) {
+//         continue;
+//       }
+//       matches = arealloc(matches, (*num_matches + 1) * sizeof(char *));
+//       matches[*num_matches] = measured_copy(entry->d_name, (_D_ALLOC_NAMLEN(entry) - 1));
+//       ++(*num_matches);
+//     }
+//   }
+//   closedir(dir);
+//   free(dirname);
+//   free(filename);
+//   free(fullname);
+//   return matches;
+// }
 
 /* Do tab completion.  'place' is the position of the status-bar cursor, and 'refresh_func' is the function to be called to refresh the edit window. */
 char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *listed) {

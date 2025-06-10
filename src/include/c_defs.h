@@ -70,7 +70,8 @@
 
 /* ----------------------------- General ----------------------------- */
 
-#define IN_GUI_CONTEXT    (ISSET(USING_GUI) && openeditor)
+#define IN_GUI_CONTEXT     (ISSET(USING_GUI) && openeditor)
+#define IN_CURSES_CONTEXT  (!ISSET(USING_GUI) && !ISSET(NO_NCURSES))
 
 #define CONTEXT_OPENFILE  (IN_GUI_CONTEXT ? openeditor->openfile : openfile)
 #define CONTEXT_ROWS      (IN_GUI_CONTEXT ? openeditor->rows : editwinrows)
@@ -87,6 +88,10 @@
 /* For use when the open buffer pointer and total edit rows and cols are needed. */
 #define GUI_CONTEXT  GUI_OF, GUI_RC
 #define TUI_CONTEXT  TUI_OF, TUI_RC
+
+#define STACK_CONTEXT  file, rows, cols
+
+#define CONTEXT_PARAMS  openfilestruct *const file, int rows, int cols
 
 /* For use when modifying the state of the context. */
 #define FULL_GUI_CONTEXT  &GUI_SF, &GUI_OF, GUI_RC
@@ -493,6 +498,7 @@ static const short bg_vs_code_color_array[] = {
 
 typedef void (*FreeFuncPtr)(void *);
 typedef void (*functionptrtype)(void);
+typedef void (*funcptr)(void);
 
 /* ----------------------------- nevhandler.c ----------------------------- */
 
