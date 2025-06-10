@@ -719,8 +719,8 @@ char *get_next_filename(const char *const restrict name, const char *const restr
 int   open_file(const char *const restrict path, bool new_one, FILE **const f);
 void  read_file_into(openfilestruct *const file, int rows, int cols, FILE *const f, int fd, const char *const restrict filename, bool undoable);
 void  read_file(FILE *f, int fd, const char *const restrict filename, bool undoable);
-
-bool open_buffer(const char *filename, bool new_one);
+bool  open_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols, const char *const restrict path, bool new_one);
+bool  open_buffer(const char *const restrict path, bool new_one);
 
 
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */
@@ -1215,7 +1215,7 @@ void render_line_text(int row, const char *str, linestruct *line, Ulong from_col
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 keystruct *strtosc(const char *input);
 void finish(void) __THROW _NO_RETURN;
-
+void syntax_check_file(openfilestruct *file);
 
 _END_C_LINKAGE
 

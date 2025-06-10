@@ -681,7 +681,7 @@ void   remove_from_color_map(linestruct *line, int color, int type);
 /* ---------------------------------------------------------- syntax.cpp ---------------------------------------------------------- */
 
 
-void   syntax_check_file(openfilestruct *file);
+// void   syntax_check_file(openfilestruct *file);
 bool   syntax_map_exists(file_type type, const char *const restrict key, vec4 *const color);
 
 

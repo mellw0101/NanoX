@@ -288,98 +288,98 @@
 /* This does one of three things.  If the filename is "", it just creates
  * a new empty buffer.  When the filename is not empty, it reads that file
  * into a new buffer when requested, otherwise into the existing buffer. */
-bool open_buffer(const char *filename, bool new_one) {
-  /* The filename after tilde expansion. */
-  char *realname;
-  struct stat fileinfo;
-  /* Code 0 means new file, -1 means failure, and else it's the fd. */
-  int descriptor = 0;
-  FILE *f;
-  /* Display newlines in filenames as ^J. */
-  as_an_at = FALSE;
-  if (outside_of_confinement(filename, FALSE)) {
-    statusline(ALERT, _("Can't read file from outside of %s"), operating_dir);
-    return FALSE;
-  }
-  realname = real_dir_from_tilde(filename);
-  /* Don't try to open directories, character files, or block files. */
-  if (*filename && stat(realname, &fileinfo) == 0) {
-    if (S_ISDIR(fileinfo.st_mode)) {
-      statusline(ALERT, _("\"%s\" is a directory"), realname);
-      free(realname);
-      return FALSE;
-    }
-    if (S_ISCHR(fileinfo.st_mode) || S_ISBLK(fileinfo.st_mode)) {
-      statusline(ALERT, _("\"%s\" is a device file"), realname);
-      free(realname);
-      return FALSE;
-    }
-    if (new_one && !(fileinfo.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && geteuid() == ROOT_UID) {
-      statusline(ALERT, _("%s is meant to be read-only"), realname);
-    }
-  }
-  /* When loading into a new buffer, first check the file's path is valid, and then (if requested and possible) create a lock file for it. */
-  if (new_one) {
-    make_new_buffer();
-    if (has_valid_path(realname)) {
-      if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && filename[0]) {
-        char *thelocksname = do_lockfile(realname, TRUE);
-        /* When not overriding an existing lock, discard the buffer. */
-        if (thelocksname == SKIPTHISFILE) {
-          close_buffer();
-          free(realname);
-          return FALSE;
-        }
-        else {
-          openfile->lock_filename = thelocksname;
-        }
-      }
-    }
-  }
-  /* If we have a filename and are not in NOREAD mode, open the file. */
-  if (filename[0] && !ISSET(NOREAD_MODE)) {
-    descriptor = open_file(realname, new_one, &f);
-  }
-  /* If we've successfully opened an existing file, read it in. */
-  if (descriptor > 0) {
-    install_handler_for_Ctrl_C();
-    read_file(f, descriptor, realname, !new_one);
-    restore_handler_for_Ctrl_C();
-    if (!openfile->statinfo) {
-      stat_with_alloc(realname, &openfile->statinfo);
-    }
-  }
-  /* For a new buffer, store filename and put cursor at start of buffer. */
-  if (descriptor >= 0 && new_one) {
-    openfile->filename    = realloc_strcpy(openfile->filename, realname);
-    openfile->current     = openfile->filetop;
-    openfile->current_x   = 0;
-    openfile->placewewant = 0;
-  }
-  /* If a new buffer was opened, check whether a syntax can be applied. */
-  if (new_one) {
-    find_and_prime_applicable_syntax();
-    syntax_check_file(openfile);
-    // if (openfile->type.is_set<C_CPP>() || openfile->type.is_set<BASH>()) {
-    // if (openfile->is_c_file || openfile->is_cxx_file || openfile->is_bash_file) {
-    //   /* Add a new file listener, so we can reindex when the file is saved. */
-    //   file_listener_t *listener = file_listener.add_listener(openfile->filename);
-    //   /* Pass the ptr to the filename. */
-    //   listener->set_event_callback(IN_CLOSE_WRITE, openfile->filename, [](void *arg) {
-    //     char *filename = (char *)arg;
-    //     /* When the event is detected, enqueue a callback to the main thread to reindex and pass the filename ptr. */
-    //     enqueue_callback([](void *arg) {
-    //       char *filename = (char *)arg;
-    //       LSP->index_file(filename, TRUE);
-    //     }, filename);
-    //   });
-    //   listener->start_listening();
-    //   LSP->index_file(openfile->filename);
-    // }
-  }
-  free(realname);
-  return TRUE;
-}
+// bool open_buffer(const char *filename, bool new_one) {
+//   /* The filename after tilde expansion. */
+//   char *realname;
+//   struct stat fileinfo;
+//   /* Code 0 means new file, -1 means failure, and else it's the fd. */
+//   int descriptor = 0;
+//   FILE *f;
+//   /* Display newlines in filenames as ^J. */
+//   as_an_at = FALSE;
+//   if (outside_of_confinement(filename, FALSE)) {
+//     statusline(ALERT, _("Can't read file from outside of %s"), operating_dir);
+//     return FALSE;
+//   }
+//   realname = real_dir_from_tilde(filename);
+//   /* Don't try to open directories, character files, or block files. */
+//   if (*filename && stat(realname, &fileinfo) == 0) {
+//     if (S_ISDIR(fileinfo.st_mode)) {
+//       statusline(ALERT, _("\"%s\" is a directory"), realname);
+//       free(realname);
+//       return FALSE;
+//     }
+//     if (S_ISCHR(fileinfo.st_mode) || S_ISBLK(fileinfo.st_mode)) {
+//       statusline(ALERT, _("\"%s\" is a device file"), realname);
+//       free(realname);
+//       return FALSE;
+//     }
+//     if (new_one && !(fileinfo.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && geteuid() == ROOT_UID) {
+//       statusline(ALERT, _("%s is meant to be read-only"), realname);
+//     }
+//   }
+//   /* When loading into a new buffer, first check the file's path is valid, and then (if requested and possible) create a lock file for it. */
+//   if (new_one) {
+//     make_new_buffer();
+//     if (has_valid_path(realname)) {
+//       if (ISSET(LOCKING) && !ISSET(VIEW_MODE) && filename[0]) {
+//         char *thelocksname = do_lockfile(realname, TRUE);
+//         /* When not overriding an existing lock, discard the buffer. */
+//         if (thelocksname == SKIPTHISFILE) {
+//           close_buffer();
+//           free(realname);
+//           return FALSE;
+//         }
+//         else {
+//           openfile->lock_filename = thelocksname;
+//         }
+//       }
+//     }
+//   }
+//   /* If we have a filename and are not in NOREAD mode, open the file. */
+//   if (filename[0] && !ISSET(NOREAD_MODE)) {
+//     descriptor = open_file(realname, new_one, &f);
+//   }
+//   /* If we've successfully opened an existing file, read it in. */
+//   if (descriptor > 0) {
+//     install_handler_for_Ctrl_C();
+//     read_file(f, descriptor, realname, !new_one);
+//     restore_handler_for_Ctrl_C();
+//     if (!openfile->statinfo) {
+//       stat_with_alloc(realname, &openfile->statinfo);
+//     }
+//   }
+//   /* For a new buffer, store filename and put cursor at start of buffer. */
+//   if (descriptor >= 0 && new_one) {
+//     openfile->filename    = realloc_strcpy(openfile->filename, realname);
+//     openfile->current     = openfile->filetop;
+//     openfile->current_x   = 0;
+//     openfile->placewewant = 0;
+//   }
+//   /* If a new buffer was opened, check whether a syntax can be applied. */
+//   if (new_one) {
+//     find_and_prime_applicable_syntax();
+//     syntax_check_file(openfile);
+//     // if (openfile->type.is_set<C_CPP>() || openfile->type.is_set<BASH>()) {
+//     // if (openfile->is_c_file || openfile->is_cxx_file || openfile->is_bash_file) {
+//     //   /* Add a new file listener, so we can reindex when the file is saved. */
+//     //   file_listener_t *listener = file_listener.add_listener(openfile->filename);
+//     //   /* Pass the ptr to the filename. */
+//     //   listener->set_event_callback(IN_CLOSE_WRITE, openfile->filename, [](void *arg) {
+//     //     char *filename = (char *)arg;
+//     //     /* When the event is detected, enqueue a callback to the main thread to reindex and pass the filename ptr. */
+//     //     enqueue_callback([](void *arg) {
+//     //       char *filename = (char *)arg;
+//     //       LSP->index_file(filename, TRUE);
+//     //     }, filename);
+//     //   });
+//     //   listener->start_listening();
+//     //   LSP->index_file(openfile->filename);
+//     // }
+//   }
+//   free(realname);
+//   return TRUE;
+// }
 
 /* Open a file using the browser. */
 void open_buffer_browser(void) {

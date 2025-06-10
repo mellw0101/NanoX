@@ -76,9 +76,21 @@
 #define CONTEXT_ROWS      (IN_GUI_CONTEXT ? openeditor->rows : editwinrows)
 #define CONTEXT_COLS      (IN_GUI_CONTEXT ? openeditor->cols : editwincols)
 
-#define GUI_CONTEXT  (openeditor->openfile), (openeditor->rows), (openeditor->cols)
+#define GUI_SF  (openeditor->startfile)
+#define GUI_OF  (openeditor->openfile)
+#define GUI_RC  (openeditor->rows), (openeditor->cols)
 
-#define TUI_CONTEXT  (openfile), (editwinrows), (editwincols)
+#define TUI_SF  (startfile)
+#define TUI_OF  (openfile)
+#define TUI_RC  (editwinrows), (editwincols)
+
+/* For use when the open buffer pointer and total edit rows and cols are needed. */
+#define GUI_CONTEXT  GUI_OF, GUI_RC
+#define TUI_CONTEXT  TUI_OF, TUI_RC
+
+/* For use when modifying the state of the context. */
+#define FULL_GUI_CONTEXT  &GUI_SF, &GUI_OF, GUI_RC
+#define FULL_TUI_CONTEXT  &TUI_SF, &TUI_OF, TUI_RC
 
 #define ASSERT_EDITOR(editor)  \
   ASSERT(editor);              \

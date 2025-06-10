@@ -778,7 +778,7 @@ char *safe_tempfile(FILE **stream) {
 /* Update title bar and such after switching to another buffer. */
 void redecorate_after_switch(void) {
   /* If only one file buffer is open, there is nothing to update. */
-  if (openfile == openfile->next) {
+  if (CLIST_SINGLE(openfile)) {
     statusline_curses(AHEM, _("No more open file buffers"));
     return;
   }
@@ -901,6 +901,8 @@ int open_file(const char *const restrict path, bool new_one, FILE **const f) {
   free(full_path);
   return fd;
 }
+
+/* ----------------------------- Read file ----------------------------- */
 
 /* Read the given open file `f` into the buffer `file`.  filename should be
  * set to the name of the file.  `undoable` means that undo records should be
@@ -1109,50 +1111,101 @@ void read_file(FILE *f, int fd, const char *const restrict filename, bool undoab
   }
 }
 
-/* This does one of three things.  If the filename is "", it just creates
- * a new empty buffer.  When the filename is not empty, it reads that file
- * into a new buffer when requested, otherwise into the existing buffer. */
-// bool open_buffer_for(openfilestruct **const start, openfilestruct **const open, const char *const restrict path, bool new_one) {
-//   ASSERT(start);
-//   ASSERT(open);
-//   /* The filename after tilde expansion. */
-//   char *full_path;
-//   /* The filename of the lockfile. */
-//   char *lock_path;
-//   struct stat info;
-//   /* Code 0 means a new file, -1 means failure, and else its the fd. */
-//   int fd = 0;
-//   FILE *f;
-//   /* Display newlines in filenames as ^J. */
-//   as_an_at = FALSE;
-//   if (outside_of_confinement(path, FALSE)) {
-//     statusline(ALERT, _("Can't read file from outside of %s"), operating_dir);
-//     return FALSE;
-//   }
-//   full_path = real_dir_from_tilde(path);
-//   /* Dont try to open directories, character files, or block files. */
-//   if (*path && stat(full_path, &info) == 0) {
-//     /* Directory. */
-//     if (S_ISDIR(info.st_mode)) {
-//       statusline(ALERT, _("\"%s\" is a directory"), full_path);
-//       free(full_path);
-//       return FALSE;
-//     }
-//     /* Device. */
-//     else if (S_ISCHR(info.st_mode) || S_ISBLK(info.st_mode)) {
-//       statusline(ALERT, _("\"%s\" is a device file"), full_path);
-//       free(full_path);
-//       return FALSE;
-//     }
-//     /* Read-Only. */
-//     else if (new_one && !(info.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && getuid() == ROOT_UID) {
-//       statusline(ALERT, _("\"%s\" is meant to be read-only"), full_path);
-//     }
-//   }
-//   /* When loading in a new buffer, first check the file's path is valid, and then (if requested and possible) create a lock file for it. */
-//   if (new_one) {
-//     make_new_buffer_for(start, open);
-//     if (has_valid_path(full_path)) {
-//     }
-//   }
-// }
+/* ----------------------------- Open buffer ----------------------------- */
+
+/* This does one of three things.  If the filename is "", it just creates a new empty buffer.  When the filename
+ * is not empty, it reads that file into a new buffer when requested, otherwise into the existing buffer. */
+bool open_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols, const char *const restrict path, bool new_one) {
+  ASSERT(start);
+  ASSERT(open);
+  /* The filename after tilde expansion. */
+  char *full_path;
+  /* The filename of the lockfile. */
+  char *lock_path;
+  struct stat info;
+  /* Code 0 means a new file, -1 means failure, and else its the fd. */
+  int fd = 0;
+  FILE *f;
+  /* Display newlines in filenames as ^J. */
+  as_an_at = FALSE;
+  if (outside_of_confinement(path, FALSE)) {
+    statusline(ALERT, _("Can't read file from outside of %s"), operating_dir);
+    return FALSE;
+  }
+  full_path = real_dir_from_tilde(path);
+  /* Dont try to open directories, character files, or block files. */
+  if (*path && stat(full_path, &info) == 0) {
+    /* Directory */
+    if (S_ISDIR(info.st_mode)) {
+      statusline(ALERT, _("\"%s\" is a directory"), full_path);
+      free(full_path);
+      return FALSE;
+    }
+    /* Device */
+    else if (S_ISCHR(info.st_mode) || S_ISBLK(info.st_mode)) {
+      statusline(ALERT, _("\"%s\" is a device file"), full_path);
+      free(full_path);
+      return FALSE;
+    }
+    /* Read-Only */
+    else if (new_one && !(info.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && getuid() == ROOT_UID) {
+      statusline(ALERT, _("\"%s\" is meant to be read-only"), full_path);
+    }
+  }
+  /* When loading in a new buffer, first check the file's path is valid, and then (if requested and possible) create a lock file for it. */
+  if (new_one) {
+    make_new_buffer_for(start, open);
+    if (has_valid_path(full_path) && ISSET(LOCKING) && !ISSET(VIEW_MODE) && *path) {
+      lock_path = do_lockfile(full_path, TRUE);
+      /* When not overriding an existing lock, discard the buffer.  TODO: This needs to be prompted for the gui as well, witch we can do but is
+       * a bit more involved, also i will remake the gui prompt pipeline, and create a response function that gets called when a `Y/N` is needed. */
+      if (lock_path == SKIPTHISFILE) {
+        close_buffer_for(*open, start, open);
+        free(full_path);
+        return FALSE;
+      }
+      else {
+        (*open)->lock_filename = lock_path;
+      }
+    }
+  }
+  /* If we have a path and are not in `NOREAD_MODE`, open the file. */
+  if (*path && !ISSET(NOREAD_MODE)) {
+    fd = open_file(full_path, new_one, &f);
+  }
+  /* If we've successfully opened an existing file, read it in. */
+  if (fd > 0) {
+    install_handler_for_Ctrl_C();
+    read_file_into(*open, rows, cols, f, fd, full_path, !new_one);
+    restore_handler_for_Ctrl_C();
+    /* If the currently open buffer does not have the allocated stat struct for `full_path`, then allocate it. */
+    if (!(*open)->statinfo) {
+      stat_with_alloc(full_path, &(*open)->statinfo);
+    }
+  }
+  /* For a new buffer, store filename and put cursor at start of buffer. */
+  if (fd >= 0 && new_one) {
+    (*open)->filename    = realloc_strcpy((*open)->filename, full_path);
+    (*open)->current     = (*open)->filetop;
+    (*open)->current_x   = 0;
+    (*open)->placewewant = 0;
+  }
+  /* If a new buffer was opened, check wether a syntax can be applied. */
+  if (new_one) {
+    find_and_prime_applicable_syntax_for(*open);
+    syntax_check_file(*open);
+  }
+  free(full_path);
+  return TRUE;
+}
+
+/* This does one of three things.  If the filename is "", it just creates a new empty buffer.  When the filename
+ * is not empty, it reads that file into a new buffer when requested, otherwise into the existing buffer. */
+bool open_buffer(const char *const restrict path, bool new_one) {
+  if (IN_GUI_CONTEXT) {
+    return open_buffer_for(FULL_GUI_CONTEXT, path, new_one);
+  }
+  else {
+    return open_buffer_for(FULL_TUI_CONTEXT, path, new_one);
+  }
+}
