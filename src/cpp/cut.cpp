@@ -353,17 +353,17 @@ void chop_next_word(void) _NOTHROW {
 // }
 
 /* Meld a copy of the given buffer into the current file buffer. */
-void copy_from_buffer(linestruct *somebuffer) _NOTHROW {
-  long threshold = (openfile->edittop->lineno + editwinrows - 1);
-  linestruct *the_copy = copy_buffer(somebuffer);
-  ingraft_buffer(the_copy);
-  if (openfile->current->lineno > threshold || ISSET(SOFTWRAP)) {
-    recook = TRUE;
-  }
-  else {
-    perturbed = TRUE;
-  }
-}
+// void copy_from_buffer(linestruct *somebuffer) _NOTHROW {
+//   long threshold = (openfile->edittop->lineno + editwinrows - 1);
+//   linestruct *the_copy = copy_buffer(somebuffer);
+//   ingraft_buffer(the_copy);
+//   if (openfile->current->lineno > threshold || ISSET(SOFTWRAP)) {
+//     recook = TRUE;
+//   }
+//   else {
+//     perturbed = TRUE;
+//   }
+// }
 
 /* Move all marked text from the current buffer into the cutbuffer. */
 // void cut_marked_region(void) _NOTHROW {

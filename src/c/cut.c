@@ -535,3 +535,56 @@ void do_backspace(void) {
     do_backspace_for(TUI_CONTEXT);
   }
 }
+
+/* ----------------------------- Copy from buffer ----------------------------- */
+
+/* Meld a copy of the given buffer into `file`. */
+void copy_from_buffer_for(openfilestruct *const file, int rows, linestruct *const head) {
+  ASSERT(file);
+  ASSERT(head);
+  long threshold = (file->edittop->lineno + rows - 1);
+  linestruct *copy_top;
+  linestruct *copy_bot;
+  copy_buffer_top_bot(head, &copy_top, &copy_bot);
+  ingraft_buffer_into(file, copy_top, copy_bot);
+  if (file->current->lineno > threshold || ISSET(SOFTWRAP)) {
+    recook = TRUE;
+  }
+  else {
+    perturbed = TRUE;
+  }
+}
+
+/* Meld a copy of the given buffer into the currently open buffer.  Note that this is context safe. */
+void copy_from_buffer(linestruct *const head) {
+  if (IN_GUI_CONTEXT) {
+    copy_from_buffer_for(GUI_OF, GUI_ROWS, head);
+  }
+  else {
+    copy_from_buffer_for(TUI_OF, TUI_ROWS, head);
+  }
+}
+
+/* ----------------------------- Copy text ----------------------------- */
+
+/* Copy text from `file` into the cutbuffer.  The text is either the marked region, the whole line, the text
+ * from the cursor to `eol`, just the line break, or nothing, depending on the mode and cursor position. */
+// void copy_text_for(openfilestruct *const file) {
+//   ASSERT(file);
+//   bool  at_eol       = !file->current->data[file->current_x];
+//   bool  sans_newline = (ISSET(NO_NEWLINES) && !file->current->next);
+//   Ulong start_x      = (ISSET(CUT_FROM_CURSOR) ? file->current_x : 0);
+//   linestruct *was_current = file->current;
+//   linestruct *addition;
+//   if (file->mark || file->last_action != COPY) {
+//     keep_cutbuffer = FALSE;
+//   }
+//   if (!keep_cutbuffer) {
+//     free_lines_for(NULL, cutbuffer);
+//     cutbuffer = NULL;
+//   }
+//   wipe_statusbar();
+//   if (file->mark) {
+    
+//   }
+// }

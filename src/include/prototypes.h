@@ -280,7 +280,7 @@ void chop_previous_word(void) _NOTHROW;
 void chop_next_word(void) _NOTHROW;
 // void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x) _NOTHROW;
 // void ingraft_buffer(linestruct *topline) _NOTHROW;
-void copy_from_buffer(linestruct *somebuffer) _NOTHROW;
+// void copy_from_buffer(linestruct *somebuffer) _NOTHROW;
 // void cut_marked_region(void) _NOTHROW;
 // void do_snip(bool marked, bool until_eof, bool append) _NOTHROW;
 // void cut_text(void) _NOTHROW;

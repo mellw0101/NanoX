@@ -193,7 +193,8 @@ void free_lines(linestruct *const head) {
 }
 
 /* Make a copy of a linestruct node. */
-linestruct *copy_node(const linestruct *src) {
+linestruct *copy_node(const linestruct *const src) {
+  ASSERT(src);
   linestruct *dst = xmalloc(sizeof(*dst));
   dst->data       = copy_of(src->data);
   dst->multidata  = NULL;
@@ -202,18 +203,38 @@ linestruct *copy_node(const linestruct *src) {
   return dst;
 }
 
-/* Duplicate an entire linked list of linestructs. */
-linestruct *copy_buffer(const linestruct *src) {
-  linestruct *head, *item;
-  head       = copy_node(src);
-  head->prev = NULL;
-  item       = head;
-  src        = src->next;
+/* Duplicate an entire linked list of linestructs, and assign the head to `*top` and when the caller wants the tail to `*bot`. */
+void copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestruct **const bot) {
+  ASSERT(src);
+  ASSERT(top);
+  linestruct *item;
+  (*top)       = copy_node(src);
+  (*top)->prev = NULL;
+  item         = (*top);
+  DLIST_ADV_NEXT(src);
   while (src) {
     item->next       = copy_node(src);
     item->next->prev = item;
-    item             = item->next;
-    src              = src->next;
+    DLIST_ADV_NEXT(item);
+    DLIST_ADV_NEXT(src);
+  }
+  item->next = NULL;
+  ASSIGN_IF_VALID(bot, item);
+}
+
+/* Duplicate an entire linked list of linestructs. */
+linestruct *copy_buffer(const linestruct *src) {
+  linestruct *head;
+  linestruct *item;
+  head       = copy_node(src);
+  head->prev = NULL;
+  item       = head;
+  DLIST_ADV_NEXT(src);
+  while (src) {
+    item->next       = copy_node(src);
+    item->next->prev = item;
+    DLIST_ADV_NEXT(item);
+    DLIST_ADV_NEXT(src);
   }
   item->next = NULL;
   return head;

@@ -1099,6 +1099,8 @@ void ingraft_buffer_into(openfilestruct *const file, linestruct *top, linestruct
 void ingraft_buffer(linestruct *topline);
 void do_backspace_for(openfilestruct *const file, int rows, int cols);
 void do_backspace(void);
+void copy_from_buffer_for(openfilestruct *const file, int rows, linestruct *const head);
+void copy_from_buffer(linestruct *const head);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
@@ -1184,7 +1186,8 @@ void unlink_node(linestruct *const node);
 void free_lines_for(openfilestruct *const file, linestruct *src);
 void free_lines(linestruct *const head);
 
-linestruct *copy_node(const linestruct *src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);
+linestruct *copy_node(const linestruct *const src) _NODISCARD _RETURNS_NONNULL _NONNULL(1);
+void        copy_buffer_top_bot(const linestruct *src, linestruct **const top, linestruct **const bot);
 linestruct *copy_buffer(const linestruct *src);
 void        renumber_from(linestruct *line);
 void        print_view_warning(void);
