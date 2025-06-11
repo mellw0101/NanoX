@@ -73,29 +73,39 @@
 #define IN_GUI_CONTEXT     (ISSET(USING_GUI) && openeditor)
 #define IN_CURSES_CONTEXT  (!ISSET(USING_GUI) && !ISSET(NO_NCURSES))
 
+#define IN_GUI_CTX     (ISSET(USING_GUI) && openeditor)
+#define IN_CURSES_CTX  (!ISSET(USING_GUI) && !ISSET(NO_NCURSES))
+
 #define CONTEXT_OPENFILE  (IN_GUI_CONTEXT ? openeditor->openfile : openfile)
 #define CONTEXT_ROWS      (IN_GUI_CONTEXT ? openeditor->rows : editwinrows)
 #define CONTEXT_COLS      (IN_GUI_CONTEXT ? openeditor->cols : editwincols)
 
-#define GUI_SF   (openeditor->startfile)
-#define GUI_OF   (openeditor->openfile)
-#define GUI_ROWS (openeditor->rows)
-#define GUI_COLS (openeditor->cols)
-#define GUI_RC   (openeditor->rows), (openeditor->cols)
+#define GUI_SF    (openeditor->startfile)
+#define GUI_OF    (openeditor->openfile)
+#define GUI_ROWS  (openeditor->rows)
+#define GUI_COLS  (openeditor->cols)
+#define GUI_RC    (openeditor->rows), (openeditor->cols)
 
-#define TUI_SF   (startfile)
-#define TUI_OF   (openfile)
-#define TUI_ROWS (editwinrows)
-#define TUI_COLS (editwincols)
-#define TUI_RC   (editwinrows), (editwincols)
+#define TUI_SF    (startfile)
+#define TUI_OF    (openfile)
+#define TUI_ROWS  (editwinrows)
+#define TUI_COLS  (editwincols)
+#define TUI_RC    (editwinrows), (editwincols)
+
+#define CTX_OF  (IN_GUI_CONTEXT ? GUI_OF : TUI_OF)
 
 /* For use when the open buffer pointer and total edit rows and cols are needed. */
 #define GUI_CONTEXT  GUI_OF, GUI_RC
 #define TUI_CONTEXT  TUI_OF, TUI_RC
 
+#define GUI_CTX  GUI_OF, GUI_RC
+#define TUI_CTX  TUI_OF, TUI_RC
+
 #define STACK_CONTEXT  file, rows, cols
+#define STACK_CTX      file, rows, cols
 
 #define CONTEXT_PARAMS  openfilestruct *const file, int rows, int cols
+#define CTX_PARAMS      openfilestruct *const file, int rows, int cols
 
 /* For use when modifying the state of the context. */
 #define FULL_GUI_CONTEXT  &GUI_SF, &GUI_OF, GUI_RC
@@ -771,120 +781,129 @@ typedef enum {
 
 /* Identifiers for the different flags. */
 typedef enum {
-  /* This flag is not used as this is part of a bitfield and 0 is not a unique
-  * value, in terms of bitwise operations as the default all non set value is 0. */
+  /* Originaly from nano. 
+   *
+   * "This flag is not used as this is part of a bitfield and 0 is not a unique
+   *  value, in terms of bitwise operations as the default all non set value is 0."
+   *
+   * Funnily enough, it is correct that 0 as an absolute value has no value for
+   * bitwise operations, as 0 means nothing for bits but the fact of the matter
+   * is that these flags are not used as absolute values i.e (int & flag), but
+   * rather as part of the expression (int & (1 << flag)), where 0 absolutely
+   * is a valid flag, as (1 << 0) is not 0 --- it cannot be.  As setting the 0
+   * bit to 1 results in a unique bitwise value and an absolute value of 1. */
   DONTUSE,
-  #define DONTUSE DONTUSE
   CASE_SENSITIVE,
-  #define CASE_SENSITIVE CASE_SENSITIVE
   CONSTANT_SHOW,
-  #define CONSTANT_SHOW CONSTANT_SHOW
   NO_HELP,
-  #define NO_HELP NO_HELP
   NO_WRAP,
-  #define NO_WRAP NO_WRAP
   AUTOINDENT,
-  #define AUTOINDENT AUTOINDENT
   VIEW_MODE,
-  #define VIEW_MODE VIEW_MODE
   USE_MOUSE,
-  #define USE_MOUSE USE_MOUSE
   USE_REGEXP,
-  #define USE_REGEXP USE_REGEXP
   SAVE_ON_EXIT,
-  #define SAVE_ON_EXIT SAVE_ON_EXIT
   CUT_FROM_CURSOR,
-  #define CUT_FROM_CURSOR CUT_FROM_CURSOR
   BACKWARDS_SEARCH,
-  #define BACKWARDS_SEARCH BACKWARDS_SEARCH
   MULTIBUFFER,
-  #define MULTIBUFFER MULTIBUFFER
   REBIND_DELETE,
-  #define REBIND_DELETE REBIND_DELETE
   RAW_SEQUENCES,
-  #define RAW_SEQUENCES RAW_SEQUENCES
   NO_CONVERT,
-  #define NO_CONVERT NO_CONVERT
   MAKE_BACKUP,
-  #define MAKE_BACKUP MAKE_BACKUP
   INSECURE_BACKUP,
-  #define INSECURE_BACKUP INSECURE_BACKUP
   NO_SYNTAX,
-  #define NO_SYNTAX NO_SYNTAX
   PRESERVE,
-  #define PRESERVE PRESERVE
   HISTORYLOG,
-  #define HISTORYLOG HISTORYLOG
   RESTRICTED,
-  #define RESTRICTED RESTRICTED
   SMART_HOME,
-  #define SMART_HOME SMART_HOME
   WHITESPACE_DISPLAY,
-  #define WHITESPACE_DISPLAY WHITESPACE_DISPLAY
   TABS_TO_SPACES,
-  #define TABS_TO_SPACES TABS_TO_SPACES
   QUICK_BLANK,
-  #define QUICK_BLANK QUICK_BLANK
   WORD_BOUNDS,
-  #define WORD_BOUNDS WORD_BOUNDS
   NO_NEWLINES,
-  #define NO_NEWLINES NO_NEWLINES
   BOLD_TEXT,
-  #define BOLD_TEXT BOLD_TEXT
   SOFTWRAP,
-  #define SOFTWRAP SOFTWRAP
   POSITIONLOG,
-  #define POSITIONLOG POSITIONLOG
   LOCKING,
-  #define LOCKING LOCKING
   NOREAD_MODE,
-  #define NOREAD_MODE NOREAD_MODE
   MAKE_IT_UNIX,
-  #define MAKE_IT_UNIX MAKE_IT_UNIX
   TRIM_BLANKS,
-  #define TRIM_BLANKS TRIM_BLANKS
   SHOW_CURSOR,
-  #define SHOW_CURSOR SHOW_CURSOR
   LINE_NUMBERS,
-  #define LINE_NUMBERS LINE_NUMBERS
   AT_BLANKS,
-  #define AT_BLANKS AT_BLANKS
   AFTER_ENDS,
-  #define AFTER_ENDS AFTER_ENDS
   LET_THEM_ZAP,
-  #define LET_THEM_ZAP LET_THEM_ZAP
   BREAK_LONG_LINES,
-  #define BREAK_LONG_LINES BREAK_LONG_LINES
   JUMPY_SCROLLING,
-  #define JUMPY_SCROLLING JUMPY_SCROLLING
   EMPTY_LINE,
-  #define EMPTY_LINE EMPTY_LINE
   INDICATOR,
-  #define INDICATOR INDICATOR
   BOOKSTYLE,
-  #define BOOKSTYLE BOOKSTYLE
   COLON_PARSING,
-  #define COLON_PARSING COLON_PARSING
   STATEFLAGS,
-  #define STATEFLAGS STATEFLAGS
   USE_MAGIC,
-  #define USE_MAGIC USE_MAGIC
   MINIBAR,
-  #define MINIBAR MINIBAR
   ZERO,
-  #define ZERO ZERO
   MODERN_BINDINGS,
-  #define MODERN_BINDINGS MODERN_BINDINGS
   EXPERIMENTAL_FAST_LIVE_SYNTAX,
-  #define EXPERIMENTAL_FAST_LIVE_SYNTAX EXPERIMENTAL_FAST_LIVE_SYNTAX
   SUGGEST,
-  #define SUGGEST SUGGEST
   SUGGEST_INLINE,
-  #define SUGGEST_INLINE SUGGEST_INLINE
   USING_GUI,
-  #define USING_GUI USING_GUI
   NO_NCURSES,
-  #define NO_NCURSES NO_NCURSES
+# define DONTUSE                        DONTUSE
+# define CASE_SENSITIVE                 CASE_SENSITIVE
+# define CONSTANT_SHOW                  CONSTANT_SHOW
+# define NO_HELP                        NO_HELP
+# define NO_WRAP                        NO_WRAP
+# define AUTOINDENT                     AUTOINDENT
+# define VIEW_MODE                      VIEW_MODE
+# define USE_MOUSE                      USE_MOUSE
+# define USE_REGEXP                     USE_REGEXP
+# define SAVE_ON_EXIT                   SAVE_ON_EXIT
+# define CUT_FROM_CURSOR                CUT_FROM_CURSOR
+# define BACKWARDS_SEARCH               BACKWARDS_SEARCH
+# define MULTIBUFFER                    MULTIBUFFER
+# define REBIND_DELETE                  REBIND_DELETE
+# define RAW_SEQUENCES                  RAW_SEQUENCES
+# define NO_CONVERT                     NO_CONVERT
+# define MAKE_BACKUP                    MAKE_BACKUP
+# define INSECURE_BACKUP                INSECURE_BACKUP
+# define NO_SYNTAX                      NO_SYNTAX
+# define PRESERVE                       PRESERVE
+# define HISTORYLOG                     HISTORYLOG
+# define RESTRICTED                     RESTRICTED
+# define SMART_HOME                     SMART_HOME
+# define WHITESPACE_DISPLAY             WHITESPACE_DISPLAY
+# define TABS_TO_SPACES                 TABS_TO_SPACES
+# define QUICK_BLANK                    QUICK_BLANK
+# define WORD_BOUNDS                    WORD_BOUNDS
+# define NO_NEWLINES                    NO_NEWLINES
+# define BOLD_TEXT                      BOLD_TEXT
+# define SOFTWRAP                       SOFTWRAP
+# define POSITIONLOG                    POSITIONLOG
+# define LOCKING                        LOCKING
+# define NOREAD_MODE                    NOREAD_MODE
+# define MAKE_IT_UNIX                   MAKE_IT_UNIX
+# define TRIM_BLANKS                    TRIM_BLANKS
+# define SHOW_CURSOR                    SHOW_CURSOR
+# define LINE_NUMBERS                   LINE_NUMBERS
+# define AT_BLANKS                      AT_BLANKS
+# define AFTER_ENDS                     AFTER_ENDS
+# define LET_THEM_ZAP                   LET_THEM_ZAP
+# define BREAK_LONG_LINES               BREAK_LONG_LINES
+# define JUMPY_SCROLLING                JUMPY_SCROLLING
+# define EMPTY_LINE                     EMPTY_LINE
+# define INDICATOR                      INDICATOR
+# define BOOKSTYLE                      BOOKSTYLE
+# define COLON_PARSING                  COLON_PARSING
+# define STATEFLAGS                     STATEFLAGS
+# define USE_MAGIC                      USE_MAGIC
+# define MINIBAR                        MINIBAR
+# define ZERO                           ZERO
+# define MODERN_BINDINGS                MODERN_BINDINGS
+# define EXPERIMENTAL_FAST_LIVE_SYNTAX  EXPERIMENTAL_FAST_LIVE_SYNTAX
+# define SUGGEST                        SUGGEST
+# define SUGGEST_INLINE                 SUGGEST_INLINE
+# define USING_GUI                      USING_GUI
+# define NO_NCURSES                     NO_NCURSES
 } flag_type;
 
 typedef enum {

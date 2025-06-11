@@ -438,12 +438,12 @@ void compensate_leftward(linestruct *const line, Ulong leftshift);
 
 void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulong indent_len);
 void unindent_a_line(linestruct *const line, Ulong indent_len);
-void do_unindent_for(openfilestruct *const file, int total_cols);
+void do_unindent_for(openfilestruct *const file, int cols);
 void do_unindent(void);
 
 /* ----------------------------- Restore undo posx and mark ----------------------------- */
 
-void restore_undo_posx_and_mark_for(openfilestruct *const file, undostruct *const u, int total_rows);
+void restore_undo_posx_and_mark_for(openfilestruct *const file, int rows, undostruct *const u);
 void restore_undo_posx_and_mark(undostruct *const u);
 
 /* ----------------------------- Insert empty line ----------------------------- */
@@ -465,9 +465,9 @@ bool cursor_is_between_brackets(void);
 Ulong indent_length(const char *const restrict line);
 void  indent_a_line_for(openfilestruct *const file, linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2, 3);
 void  indent_a_line(linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2);
-void  do_indent_for(openfilestruct *const file, int total_cols);
+void  do_indent_for(openfilestruct *const file, int cols);
 void  do_indent(void);
-void  handle_indent_action_for(openfilestruct *const file, undostruct *const u, bool undoing, bool add_indent, int total_rows);
+void  handle_indent_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_indent);
 void  handle_indent_action(undostruct *const u, bool undoing, bool add_indent);
 
 /* ----------------------------- Enclose marked region ----------------------------- */
@@ -492,7 +492,7 @@ char *get_comment_seq_for(openfilestruct *const file);
 char *get_comment_seq(void);
 void  do_comment_for(openfilestruct *const file, int total_cols);
 void  do_comment(void);
-void  handle_comment_action_for(openfilestruct *const file, undostruct *const u, bool undoing, bool add_comment, int total_rows);
+void  handle_comment_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_comment);
 void  handle_comment_action(undostruct *const u, bool undoing, bool add_comment);
 char *copy_completion(const char *restrict text);
 void  do_enter_for(openfilestruct *const file);
@@ -809,27 +809,27 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
 Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge, int toal_cols);
 Ulong extra_chunks_in(linestruct *const line, int total_cols);
 Ulong chunk_for(Ulong column, linestruct *const line, int total_cols);
-Ulong leftedge_for(Ulong column, linestruct *const line, int total_cols);
-int   go_back_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge, int total_cols);
+Ulong leftedge_for(int cols, Ulong column, linestruct *const line);
+int   go_back_chunks_for(openfilestruct *const file, int cols, int nrows, linestruct **const line, Ulong *const leftedge);
 int   go_back_chunks(int nrows, linestruct **const line, Ulong *const leftedge);
 int   go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge, int total_cols);
 int   go_forward_chunks(int nrows, linestruct **const line, Ulong *const leftedge);
 void  ensure_firstcolumn_is_aligned_for(openfilestruct *const file, int total_cols);
 void  ensure_firstcolumn_is_aligned(void);
 char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt);
-bool  line_needs_update_for(openfilestruct *const file, Ulong old_column, Ulong new_column, int total_cols);
+bool  line_needs_update_for(openfilestruct *const file, int cols, Ulong old_column, Ulong new_column);
 bool  line_needs_update(Ulong old_column, Ulong new_column);
-bool  less_than_a_screenful_for(openfilestruct *const file, Ulong was_lineno, Ulong was_leftedge, int total_rows, int total_cols);
+bool  less_than_a_screenful_for(openfilestruct *const file, int rows, int cols, Ulong was_lineno, Ulong was_leftedge);
 bool  less_than_a_screenful(Ulong was_lineno, Ulong was_leftedge);
-Ulong actual_last_column_for(openfilestruct *const file, Ulong leftedge, Ulong column, int total_cols);
+Ulong actual_last_column_for(openfilestruct *const file, int cols, Ulong leftedge, Ulong column);
 Ulong actual_last_column(Ulong leftedge, Ulong column);
 bool  current_is_above_screen_for(openfilestruct *const file);
 bool  current_is_above_screen(void);
 bool  current_is_below_screen_for(openfilestruct *const file, int total_rows, int total_cols);
 bool  current_is_below_screen(void);
-bool  current_is_offscreen_for(openfilestruct *const file, int total_rows, int total_cols);
+bool  current_is_offscreen_for(openfilestruct *const file, int rows, int cols);
 bool  current_is_offscreen(void);
-void  adjust_viewport_for(openfilestruct *const file, update_type manner, int rows, int cols);
+void  adjust_viewport_for(openfilestruct *const file, int rows, int cols, update_type manner);
 void  adjust_viewport(update_type manner);
 void  place_the_cursor_for(openfilestruct *const file);
 void  place_the_cursor(void);
@@ -931,7 +931,7 @@ const keystruct *get_shortcut(int keycode);
 
 bool regexp_init(const char *regexp);
 void tidy_up_after_search(void);
-void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int total_rows);
+void goto_line_posx_for(openfilestruct *const file, int rows, long lineno, Ulong x);
 void goto_line_posx(long lineno, Ulong x);
 void not_found_msg(const char *const restrict str);
 
@@ -941,11 +941,11 @@ void not_found_msg(const char *const restrict str);
 
 void to_first_line_for(openfilestruct *const file);
 void to_first_line(void);
-void to_last_line_for(openfilestruct *const file, int total_rows);
+void to_last_line_for(openfilestruct *const file, int rows);
 void to_last_line(void);
-void get_edge_and_target_for(openfilestruct *const file, Ulong *const leftedge, Ulong *target_column, int total_cols);
+void get_edge_and_target_for(openfilestruct *const file, int cols, Ulong *const leftedge, Ulong *const target_column);
 void get_edge_and_target(Ulong *const leftedge, Ulong *target_column);
-void do_page_up_for(openfilestruct *const file, int total_rows, int total_cols);
+void do_page_up_for(openfilestruct *const file, int rows, int cols);
 void do_page_up(void);
 void do_page_down_for(openfilestruct *const file, int total_rows, int total_cols);
 void do_page_down(void);
@@ -966,8 +966,13 @@ void to_prev_block_for(openfilestruct *const file, int rows, int cols);
 void to_prev_block(void);
 void to_next_block_for(openfilestruct *const file, int rows, int cols);
 void to_next_block(void);
+void do_up_for(CTX_PARAMS);
+void do_up(void);
+void do_down_for(CTX_PARAMS);
+void do_down(void);
 void do_left_for(openfilestruct *const file, int rows, int cols);
 void do_left(void);
+
 
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
 
@@ -1101,6 +1106,12 @@ void do_backspace_for(openfilestruct *const file, int rows, int cols);
 void do_backspace(void);
 void copy_from_buffer_for(openfilestruct *const file, int rows, linestruct *const head);
 void copy_from_buffer(linestruct *const head);
+void copy_marked_region_for(openfilestruct *const file);
+void copy_marked_region(void);
+void copy_text_for(openfilestruct *const file, int rows, int cols);
+void copy_text(void);
+void paste_text_for(CTX_PARAMS);
+void paste_text(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

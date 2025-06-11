@@ -46,22 +46,22 @@ static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong col
     }
   }
   if (ISSET(SOFTWRAP)) {
-    *leftedge = leftedge_for(wideness(line->data, index), line, editwincols);
+    *leftedge = leftedge_for(editwincols, wideness(line->data, index), line);
   }
   return index;
 }
 
 /* Adjust the values for current_x and placewewant in case we have landed in the middle of a tab that crosses a row boundary. */
-static void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _NOTHROW {
-  Ulong was_edge = *leftedge;
-  bool  shifted  = FALSE;
-  openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
-  /* If the index was incremented, try going to the target column. */
-  if (shifted || *leftedge < was_edge) {
-    openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
-  }
-  openfile->placewewant = *leftedge + target;
-}
+// static void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _NOTHROW {
+//   Ulong was_edge = *leftedge;
+//   bool  shifted  = FALSE;
+//   openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
+//   /* If the index was incremented, try going to the target column. */
+//   if (shifted || *leftedge < was_edge) {
+//     openfile->current_x = proper_x(openfile->current, leftedge, forward, actual_last_column(*leftedge, target), &shifted);
+//   }
+//   openfile->placewewant = *leftedge + target;
+// }
 
 /* Move up almost one screenful. */
 // void do_page_up(void) _NOTHROW {
@@ -449,7 +449,7 @@ void do_home(void) {
   /* Save current indent of line. */
   cur_indent = indent_length(openfile->current->data);
   if (ISSET(SOFTWRAP)) {
-    leftedge = leftedge_for(was_column, openfile->current, editwincols);
+    leftedge = leftedge_for(editwincols, was_column, openfile->current);
     left_x   = proper_x(openfile->current, &leftedge, FALSE, leftedge, NULL);
   }
   if (ISSET(SMART_HOME)) {
@@ -516,7 +516,7 @@ void do_end(void) {
   if (ISSET(SOFTWRAP)) {
     kickoff    = TRUE;
     last_chunk = FALSE;
-    leftedge   = leftedge_for(was_column, openfile->current, editwincols);
+    leftedge   = leftedge_for(editwincols, was_column, openfile->current);
     rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk, editwincols);
     /* If we're on the last chunk, we're already at the end of the line.  Otherwise, we're one column past the end of the line.
      * Shifting backwards one column might put us in the middle of a multi-column character, but actual_x() will fix that. */
@@ -554,44 +554,44 @@ void do_end(void) {
 }
 
 /* Move the cursor to the preceding line or chunk. */
-void do_up(void) {
-  linestruct *was_current = openfile->current;
-  Ulong leftedge, target_column;
-  get_edge_and_target(&leftedge, &target_column);
-  /* If we can't move up one line or chunk, we're at top of file. */
-  if (go_back_chunks(1, &openfile->current, &leftedge) > 0) {
-    return;
-  }
-  set_proper_index_and_pww(&leftedge, target_column, FALSE);
-  if (!openfile->cursor_row && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
-    edit_scroll(BACKWARD);
-  }
-  else {
-    edit_redraw(was_current, FLOWING);
-  }
-  /* <Up> should not change placewewant, so restore it. */
-  openfile->placewewant = (leftedge + target_column);
-}
+// void do_up(void) {
+//   linestruct *was_current = openfile->current;
+//   Ulong leftedge, target_column;
+//   get_edge_and_target(&leftedge, &target_column);
+//   /* If we can't move up one line or chunk, we're at top of file. */
+//   if (go_back_chunks(1, &openfile->current, &leftedge) > 0) {
+//     return;
+//   }
+//   set_proper_index_and_pww(&leftedge, target_column, FALSE);
+//   if (!openfile->cursor_row && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
+//     edit_scroll(BACKWARD);
+//   }
+//   else {
+//     edit_redraw(was_current, FLOWING);
+//   }
+//   /* <Up> should not change placewewant, so restore it. */
+//   openfile->placewewant = (leftedge + target_column);
+// }
 
 /* Move the cursor to next line or chunk. */
-void do_down(void) {
-  linestruct *was_current = openfile->current;
-  Ulong leftedge, target_column;
-  get_edge_and_target(&leftedge, &target_column);
-  /* If we can't move down one line or chunk, we're at bottom of file. */
-  if (go_forward_chunks(1, &openfile->current, &leftedge) > 0) {
-    return;
-  }
-  set_proper_index_and_pww(&leftedge, target_column, TRUE);
-  if (openfile->cursor_row == (editwinrows - 1) && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
-    edit_scroll(FORWARD);
-  }
-  else {
-    edit_redraw(was_current, FLOWING);
-  }
-  /* <Down> should not change placewewant, so restore it. */
-  openfile->placewewant = (leftedge + target_column);
-}
+// void do_down(void) {
+//   linestruct *was_current = openfile->current;
+//   Ulong leftedge, target_column;
+//   get_edge_and_target(&leftedge, &target_column);
+//   /* If we can't move down one line or chunk, we're at bottom of file. */
+//   if (go_forward_chunks(1, &openfile->current, &leftedge) > 0) {
+//     return;
+//   }
+//   set_proper_index_and_pww(&leftedge, target_column, TRUE);
+//   if (openfile->cursor_row == (editwinrows - 1) && !ISSET(JUMPY_SCROLLING) && (tabsize < editwincols || !ISSET(SOFTWRAP))) {
+//     edit_scroll(FORWARD);
+//   }
+//   else {
+//     edit_redraw(was_current, FLOWING);
+//   }
+//   /* <Down> should not change placewewant, so restore it. */
+//   openfile->placewewant = (leftedge + target_column);
+// }
 
 /* Scroll up one line or chunk without moving the cursor textwise. */
 void do_scroll_up(void) {

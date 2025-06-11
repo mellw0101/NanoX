@@ -1029,7 +1029,7 @@ static int do_mouse(void) {
     row_count = (click_row - openfile->cursor_row);
     was_x     = openfile->current_x;
     if (ISSET(SOFTWRAP)) {
-      leftedge = leftedge_for(xplustabs(), openfile->current, editwincols);
+      leftedge = leftedge_for(editwincols, xplustabs(), openfile->current);
     }
     else {
       leftedge = get_page_start(xplustabs(), editwincols);

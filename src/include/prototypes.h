@@ -287,9 +287,9 @@ void chop_next_word(void) _NOTHROW;
 // void cut_till_eof(void) _NOTHROW;
 // void zap_text(void) _NOTHROW;
 void zap_replace_text(const char *replacewith, Ulong len) _NOTHROW;
-void copy_marked_region(void);
-void copy_text(void);
-void paste_text(void);
+// void copy_marked_region(void);
+// void copy_text(void);
+// void paste_text(void);
 
 /* Most functions in 'files.cpp'. */
 // void   make_new_buffer(void) _NOTHROW;
@@ -376,8 +376,8 @@ void to_prev_word(void);
 void to_next_word(void);
 void do_home(void);
 void do_end(void);
-void do_up(void);
-void do_down(void);
+// void do_up(void);
+// void do_down(void);
 void do_scroll_up(void);
 void do_scroll_down(void);
 // void do_left(void);

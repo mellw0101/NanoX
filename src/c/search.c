@@ -49,9 +49,9 @@ void tidy_up_after_search(void) {
 }
 
 /* Go to the specified `line-number` and `x` position, in `file`. */
-void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int total_rows) {
+void goto_line_posx_for(openfilestruct *const file, int rows, long lineno, Ulong x) {
   ASSERT(file);
-  if (lineno > (file->edittop->lineno + total_rows) || (ISSET(SOFTWRAP) && lineno > file->current->lineno)) {
+  if (lineno > (file->edittop->lineno + rows) || (ISSET(SOFTWRAP) && lineno > file->current->lineno)) {
     recook |= perturbed;
   }
   file->current     = line_from_number_for(file, lineno);
@@ -62,7 +62,12 @@ void goto_line_posx_for(openfilestruct *const file, long lineno, Ulong x, int to
 
 /* Go to the specified `line-number` and `x` position, in the currently open buffer. */
 void goto_line_posx(long lineno, Ulong x) {
-  goto_line_posx_for(CONTEXT_OPENFILE, lineno, x, CONTEXT_ROWS);
+  if (IN_GUI_CTX) {
+    goto_line_posx_for(GUI_OF, GUI_ROWS, lineno, x);
+  }
+  else {
+    goto_line_posx_for(TUI_OF, TUI_ROWS, lineno, x);
+  }
 }
 
 /* Report on the status bar that the given string was not found. */

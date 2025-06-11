@@ -671,7 +671,7 @@ void goto_line_and_column(long line, long column, bool retain_answer, bool inter
   else {
     if (ISSET(SOFTWRAP)) {
       currentline    = openfile->current;
-      leftedge       = leftedge_for(xplustabs(), openfile->current, editwincols);
+      leftedge       = leftedge_for(editwincols, xplustabs(), openfile->current);
       rows_from_tail = ((editwinrows / 2) - go_forward_chunks((editwinrows / 2), &currentline, &leftedge));
     }
     else {

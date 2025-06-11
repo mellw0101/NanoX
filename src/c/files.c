@@ -246,11 +246,11 @@ void make_new_buffer_for(openfilestruct **const start, openfilestruct **const op
 
 /* Add an item to the circular list of openfile structs. */
 void make_new_buffer(void) {
-  if (IN_GUI_CONTEXT) {
-    make_new_buffer_for(&openeditor->startfile, &openeditor->openfile);
+  if (IN_GUI_CTX) {
+    make_new_buffer_for(&GUI_SF, &GUI_OF);
   }
   else {
-    make_new_buffer_for(&startfile, &openfile);
+    make_new_buffer_for(&TUI_SF, &TUI_OF);
   }
   // openfilestruct *newnode = xmalloc(sizeof(*newnode));
   // if (!openfile) {
@@ -566,11 +566,11 @@ void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start
 
 /* Remove the current buffer from the circular list of buffers.  When just one buffer remains open, show "Exit" in the help lines. */
 void close_buffer(void) {
-  if (IN_GUI_CONTEXT) {
-    close_buffer_for(openeditor->openfile, &openeditor->startfile, &openeditor->openfile);
+  if (IN_GUI_CTX) {
+    close_buffer_for(GUI_OF, &GUI_SF, &GUI_OF);
   }
   else {
-    close_buffer_for(openfile, &startfile, &openfile);
+    close_buffer_for(TUI_OF, &TUI_SF, &GUI_OF);
   }
   // openfilestruct *orphan = openfile;
   // if (orphan == startfile) {
@@ -713,7 +713,7 @@ void set_modified_for(openfilestruct *const file) {
     return;
   }
   file->modified = TRUE;
-  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+  if (IN_CURSES_CTX) {
     titlebar(NULL);
   }
   if (file->lock_filename) {
@@ -723,7 +723,7 @@ void set_modified_for(openfilestruct *const file) {
 
 /* Mark the `openfile` buffer as modified if it isn't already, and then update the title bar to display the buffer's new status. */
 void set_modified(void) {
-  set_modified_for(openfile);
+  set_modified_for(CTX_OF);
 }
 
 /* Encode any NUL bytes in the given line of text (of the given length), and return a dynamically allocated copy of the resultant string. */
@@ -1014,7 +1014,7 @@ void read_file_into(openfilestruct *const file, int rows, int cols, FILE *const 
   }
   /* If soft-wrapping is enabled. */
   if (ISSET(SOFTWRAP)) {
-    was_leftedge = leftedge_for(xplustabs_for(file), file->current, cols);
+    was_leftedge = leftedge_for(cols, xplustabs_for(file), file->current);
   }
   /* Create an empty buffer. */
   top = make_new_node(NULL);
@@ -1152,7 +1152,7 @@ void read_file_into(openfilestruct *const file, int rows, int cols, FILE *const 
   report_size = TRUE;
   if (undoable) {
     /* If we inserted less then a screenful, don't center the cursor. */
-    if (less_than_a_screenful_for(file, was_lineno, was_leftedge, rows, cols)) {
+    if (less_than_a_screenful_for(STACK_CTX, was_lineno, was_leftedge)) {
       focusing = FALSE;
       perturbed = TRUE;
     }
@@ -1173,11 +1173,11 @@ void read_file_into(openfilestruct *const file, int rows, int cols, FILE *const 
  * set to the name of the file.  undoable means that undo records should be
  * created and that the file does not need to be checked for writability. */
 void read_file(FILE *f, int fd, const char *const restrict filename, bool undoable) {
-  if (IN_GUI_CONTEXT) {
-    read_file_into(GUI_CONTEXT, f, fd, filename, undoable);
+  if (IN_GUI_CTX) {
+    read_file_into(GUI_CTX, f, fd, filename, undoable);
   }
   else {
-    read_file_into(TUI_CONTEXT, f, fd, filename, undoable);
+    read_file_into(TUI_CTX, f, fd, filename, undoable);
   }
 }
 
@@ -1272,7 +1272,7 @@ bool open_buffer_for(openfilestruct **const start, openfilestruct **const open, 
 /* This does one of three things.  If the filename is "", it just creates a new empty buffer.  When the filename
  * is not empty, it reads that file into a new buffer when requested, otherwise into the existing buffer. */
 bool open_buffer(const char *const restrict path, bool new_one) {
-  if (IN_GUI_CONTEXT) {
+  if (IN_GUI_CTX) {
     return open_buffer_for(FULL_GUI_CONTEXT, path, new_one);
   }
   else {

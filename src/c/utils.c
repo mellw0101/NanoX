@@ -224,7 +224,7 @@ Ulong xplustabs_for(openfilestruct *const file) {
 
 /* Return the placewewant associated with current_x, i.e. the zero-based column position of the cursor. */
 Ulong xplustabs(void) {
-  return xplustabs_for(CONTEXT_OPENFILE);
+  return xplustabs_for(CTX_OF);
 }
 
 /* A strnlen() with tabs and multicolumn characters factored in: how many columns wide are the first maxlen bytes of text? */
@@ -288,7 +288,7 @@ void new_magicline_for(openfilestruct *const file) {
 
 /* Append a new magic line to the end of the buffer. */
 void new_magicline(void) {
-  new_magicline_for(CONTEXT_OPENFILE);
+  new_magicline_for(CTX_OF);
 }
 
 /* Remove the magic line from the end of `file`, if there is one and it isn't the only line in `file`. */
@@ -307,7 +307,7 @@ void remove_magicline_for(openfilestruct *const file) {
 
 /* Remove the magic line from the end of the currently open file, if there is one and it isn't the only line in it. */
 void remove_magicline(void) {
-  remove_magicline_for(CONTEXT_OPENFILE);
+  remove_magicline_for(CTX_OF);
 }
 
 /* ----------------------------- Mark is before cursor ----------------------------- */
@@ -320,7 +320,7 @@ bool mark_is_before_cursor_for(openfilestruct *const file) {
 
 /* Return 'TRUE' when the mark is before or at the cursor, and FALSE otherwise. */
 bool mark_is_before_cursor(void) {
-  return mark_is_before_cursor_for(CONTEXT_OPENFILE);
+  return mark_is_before_cursor_for(CTX_OF);
 }
 
 /* ----------------------------- Get region ----------------------------- */
@@ -345,7 +345,7 @@ void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *c
 
 /* Return in (top, top_x) and (bot, bot_x) the start and end "coordinates" of the marked region. */
 void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x) {
-  get_region_for(CONTEXT_OPENFILE, top, top_x, bot, bot_x);
+  get_region_for(CTX_OF, top, top_x, bot, bot_x);
 }
 
 /* ----------------------------- Get range ----------------------------- */
@@ -377,7 +377,7 @@ void get_range_for(openfilestruct *const file, linestruct **const top, linestruc
 /* Get the set of lines to work on -- either just the current line, or the first to last lines of the marked
  * region.  When the cursor (or mark) is at the start of the last line of the region, exclude that line. */
 void get_range(linestruct **const top, linestruct **const bot) {
-  get_range_for(CONTEXT_OPENFILE, top, bot);
+  get_range_for(CTX_OF, top, bot);
 }
 
 /* Read one number (or two numbers separated by comma, period, or colon) from the given string and store
@@ -432,7 +432,7 @@ char *tab_space_string_for(openfilestruct *const file, Ulong *length) {
 /* Almost exactly like `tab_space_string_for()`, but correctly passes either
  * `openeditor->openfile` or `openfile` depending on the current context. */
 char *tab_space_string(Ulong *length) {
-  return tab_space_string_for(CONTEXT_OPENFILE, length);
+  return tab_space_string_for(CTX_OF, length);
 }
 
 /* Returns an allocated string containing either a string of just ' ' chars with the
@@ -459,7 +459,7 @@ void set_pww_for(openfilestruct *const file) {
 /* Set `openfile->placewewant` to the visualy correct column based on `openfile->current_x` in
  * `openfile->current->data`.  Note that this is context safe, and works for both the gui and tui. */
 void set_pww(void) {
-  set_pww_for(CONTEXT_OPENFILE);
+  set_pww_for(CTX_OF);
 }
 
 /* ----------------------------- Set cursor to end of line ----------------------------- */
@@ -474,7 +474,7 @@ void set_cursor_to_eol_for(openfilestruct *const file) {
 /* Correctly sets `openfile->current_x` to the end of `openfile->current->data` and correctly sets `openfile->placewant`
  * to ensure visual correctness.  Note that this is context safe, and works in both the gui and tui. */
 void set_cursor_to_eol(void) {
-  set_cursor_to_eol_for(CONTEXT_OPENFILE);
+  set_cursor_to_eol_for(CTX_OF);
 }
 
 /* ----------------------------- Set mark ----------------------------- */
@@ -488,7 +488,7 @@ void set_mark_for(openfilestruct *const file, long lineno, Ulong x) {
 
 /* Set the mark at specific line and column for the currently open file.  Note that this is `context-safe`, and works in both the `gui` and `tui`. */
 void set_mark(long lineno, Ulong x) {
-  set_mark_for(CONTEXT_OPENFILE, lineno, x);
+  set_mark_for(CTX_OF, lineno, x);
 }
 
 /* Returns an allocated string containing the the indent of string plus one tabs worth of spaces at most, depending on how far away from the next tabstop. */

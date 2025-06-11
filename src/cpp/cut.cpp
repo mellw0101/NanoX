@@ -494,140 +494,140 @@ void zap_replace_text(const char *replacewith, Ulong len) _NOTHROW {
 }
 
 /* Make a copy of the marked region, putting it in the cutbuffer. */
-void copy_marked_region(void) {
-  linestruct *topline, *botline, *afterline;
-  char       *was_datastart, saved_byte;
-  Ulong       top_x, bot_x;
-  get_region(&topline, &top_x, &botline, &bot_x);
-  openfile->last_action = OTHER;
-  keep_cutbuffer = FALSE;
-  refresh_needed = TRUE;
-  if (topline == botline && top_x == bot_x) {
-    statusbar_all(_("Copied nothing"));
-    return;
-  }
-  /* Make the area that was marked look like a separate buffer. */
-  afterline            = botline->next;
-  botline->next        = NULL;
-  saved_byte           = botline->data[bot_x];
-  botline->data[bot_x] = '\0';
-  was_datastart        = topline->data;
-  topline->data += top_x;
-  cutbuffer = copy_buffer(topline);
-  /* Restore the proper state of the buffer. */
-  topline->data        = was_datastart;
-  botline->data[bot_x] = saved_byte;
-  botline->next        = afterline;
-}
+// void copy_marked_region(void) {
+//   linestruct *topline, *botline, *afterline;
+//   char       *was_datastart, saved_byte;
+//   Ulong       top_x, bot_x;
+//   get_region(&topline, &top_x, &botline, &bot_x);
+//   openfile->last_action = OTHER;
+//   keep_cutbuffer = FALSE;
+//   refresh_needed = TRUE;
+//   if (topline == botline && top_x == bot_x) {
+//     statusbar_all(_("Copied nothing"));
+//     return;
+//   }
+//   /* Make the area that was marked look like a separate buffer. */
+//   afterline            = botline->next;
+//   botline->next        = NULL;
+//   saved_byte           = botline->data[bot_x];
+//   botline->data[bot_x] = '\0';
+//   was_datastart        = topline->data;
+//   topline->data += top_x;
+//   cutbuffer = copy_buffer(topline);
+//   /* Restore the proper state of the buffer. */
+//   topline->data        = was_datastart;
+//   botline->data[bot_x] = saved_byte;
+//   botline->next        = afterline;
+// }
 
 /* Copy text from the current buffer into the cutbuffer.  The text is either the marked region, the whole line,
  * the text from cursor to end-of-line, just the line break, or nothing, depending on mode and cursor position. */
-void copy_text(void) {
-  bool  at_eol = !openfile->current->data[openfile->current_x];
-  Ulong start_x = ((ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0);
-  bool  sans_newline = (ISSET(NO_NEWLINES) && !openfile->current->next);
-  linestruct *was_current = openfile->current;
-  linestruct *addition;
-  if (openfile->mark || openfile->last_action != COPY) {
-    keep_cutbuffer = FALSE;
-  }
-  if (!keep_cutbuffer) {
-    free_lines(cutbuffer);
-    cutbuffer = NULL;
-  }
-  wipe_statusbar();
-  if (openfile->mark) {
-    copy_marked_region();
-    return;
-  }
-  /* When at the very end of the buffer, there is nothing to do. */
-  if (!openfile->current->next && at_eol && (ISSET(CUT_FROM_CURSOR) || !openfile->current_x || cutbuffer)) {
-    statusbar_all(_("Copied nothing"));
-    return;
-  }
-  addition       = make_new_node(NULL);
-  addition->data = copy_of(openfile->current->data + start_x);
-  if (ISSET(CUT_FROM_CURSOR)) {
-    sans_newline = !at_eol;
-  }
-  /* Create the cutbuffer OR add to it, depending on the mode, the position of the cursor, and whether or not the cutbuffer is currently empty. */
-  if (!cutbuffer && sans_newline) {
-    cutbuffer = addition;
-    cutbottom = addition;
-  }
-  else if (!cutbuffer) {
-    cutbuffer       = addition;
-    cutbottom       = make_new_node(cutbuffer);
-    cutbottom->data = STRLTR_COPY_OF("");
-    cutbuffer->next = cutbottom;
-  }
-  else if (sans_newline) {
-    addition->prev       = cutbottom->prev;
-    addition->prev->next = addition;
-    delete_node(cutbottom);
-    cutbottom = addition;
-  }
-  else if (ISSET(CUT_FROM_CURSOR)) {
-    addition->prev  = cutbottom;
-    cutbottom->next = addition;
-    cutbottom       = addition;
-  }
-  else {
-    addition->prev       = cutbottom->prev;
-    addition->prev->next = addition;
-    addition->next       = cutbottom;
-    cutbottom->prev      = addition;
-  }
-  // /* When needed and possible, move the cursor to the next line. */
-  // if ((!ISSET(CUT_FROM_CURSOR) || at_eol) && openfile->current->next) {
-  //   openfile->current   = openfile->current->next;
-  //   openfile->current_x = 0;
-  // }
-  // else {
-  //   openfile->current_x = strlen(openfile->current->data);
-  // }
-  edit_redraw(was_current, FLOWING);
-  openfile->last_action = COPY;
-  // keep_cutbuffer        = TRUE;
-}
+// void copy_text(void) {
+//   bool  at_eol = !openfile->current->data[openfile->current_x];
+//   Ulong start_x = ((ISSET(CUT_FROM_CURSOR)) ? openfile->current_x : 0);
+//   bool  sans_newline = (ISSET(NO_NEWLINES) && !openfile->current->next);
+//   linestruct *was_current = openfile->current;
+//   linestruct *addition;
+//   if (openfile->mark || openfile->last_action != COPY) {
+//     keep_cutbuffer = FALSE;
+//   }
+//   if (!keep_cutbuffer) {
+//     free_lines(cutbuffer);
+//     cutbuffer = NULL;
+//   }
+//   wipe_statusbar();
+//   if (openfile->mark) {
+//     copy_marked_region();
+//     return;
+//   }
+//   /* When at the very end of the buffer, there is nothing to do. */
+//   if (!openfile->current->next && at_eol && (ISSET(CUT_FROM_CURSOR) || !openfile->current_x || cutbuffer)) {
+//     statusbar_all(_("Copied nothing"));
+//     return;
+//   }
+//   addition       = make_new_node(NULL);
+//   addition->data = copy_of(openfile->current->data + start_x);
+//   if (ISSET(CUT_FROM_CURSOR)) {
+//     sans_newline = !at_eol;
+//   }
+//   /* Create the cutbuffer OR add to it, depending on the mode, the position of the cursor, and whether or not the cutbuffer is currently empty. */
+//   if (!cutbuffer && sans_newline) {
+//     cutbuffer = addition;
+//     cutbottom = addition;
+//   }
+//   else if (!cutbuffer) {
+//     cutbuffer       = addition;
+//     cutbottom       = make_new_node(cutbuffer);
+//     cutbottom->data = STRLTR_COPY_OF("");
+//     cutbuffer->next = cutbottom;
+//   }
+//   else if (sans_newline) {
+//     addition->prev       = cutbottom->prev;
+//     addition->prev->next = addition;
+//     delete_node(cutbottom);
+//     cutbottom = addition;
+//   }
+//   else if (ISSET(CUT_FROM_CURSOR)) {
+//     addition->prev  = cutbottom;
+//     cutbottom->next = addition;
+//     cutbottom       = addition;
+//   }
+//   else {
+//     addition->prev       = cutbottom->prev;
+//     addition->prev->next = addition;
+//     addition->next       = cutbottom;
+//     cutbottom->prev      = addition;
+//   }
+//   // /* When needed and possible, move the cursor to the next line. */
+//   // if ((!ISSET(CUT_FROM_CURSOR) || at_eol) && openfile->current->next) {
+//   //   openfile->current   = openfile->current->next;
+//   //   openfile->current_x = 0;
+//   // }
+//   // else {
+//   //   openfile->current_x = strlen(openfile->current->data);
+//   // }
+//   edit_redraw(was_current, FLOWING);
+//   openfile->last_action = COPY;
+//   // keep_cutbuffer        = TRUE;
+// }
 
 /* Copy text from the cutbuffer into the current buffer. */
-void paste_text(void) {
-  /* Remember where the paste started. */
-  linestruct *was_current  = openfile->current;
-  bool        had_anchor   = was_current->has_anchor;
-  long        was_lineno   = openfile->current->lineno;
-  Ulong       was_leftedge = 0;
-  if (!cutbuffer) {
-    statusline(AHEM, _("Cutbuffer is empty"));
-    return;
-  }
-  add_undo(PASTE, NULL);
-  if (ISSET(SOFTWRAP)) {
-    was_leftedge = leftedge_for(xplustabs(), openfile->current, editwincols);
-  }
-  /* Add a copy of the text in the cutbuffer to the current buffer at the current cursor position. */
-  copy_from_buffer(cutbuffer);
-  /* Wipe any anchors in the pasted text, so that they don't proliferate. */
-  for (linestruct *line = was_current; line != openfile->current->next; line = line->next) {
-    line->has_anchor = FALSE;
-  }
-  was_current->has_anchor = had_anchor;
-  update_undo(PASTE);
-  /* When still on the same line and doing hard-wrapping, limit the width. */
-  if (openfile->current == was_current && ISSET(BREAK_LONG_LINES)) {
-    do_wrap();
-  }
-  /* If we pasted less than a screenful, don't center the cursor. */
-  if (less_than_a_screenful(was_lineno, was_leftedge)) {
-    focusing = FALSE;
-  }
-  else {
-    precalc_multicolorinfo();
-  }
-  /* Set the desired x position to where the pasted text ends. */
-  openfile->placewewant = xplustabs();
-  set_modified();
-  wipe_statusbar();
-  refresh_needed = TRUE;
-}
+// void paste_text(void) {
+//   /* Remember where the paste started. */
+//   linestruct *was_current  = openfile->current;
+//   bool        had_anchor   = was_current->has_anchor;
+//   long        was_lineno   = openfile->current->lineno;
+//   Ulong       was_leftedge = 0;
+//   if (!cutbuffer) {
+//     statusline(AHEM, _("Cutbuffer is empty"));
+//     return;
+//   }
+//   add_undo(PASTE, NULL);
+//   if (ISSET(SOFTWRAP)) {
+//     was_leftedge = leftedge_for(xplustabs(), openfile->current, editwincols);
+//   }
+//   /* Add a copy of the text in the cutbuffer to the current buffer at the current cursor position. */
+//   copy_from_buffer(cutbuffer);
+//   /* Wipe any anchors in the pasted text, so that they don't proliferate. */
+//   for (linestruct *line = was_current; line != openfile->current->next; line = line->next) {
+//     line->has_anchor = FALSE;
+//   }
+//   was_current->has_anchor = had_anchor;
+//   update_undo(PASTE);
+//   /* When still on the same line and doing hard-wrapping, limit the width. */
+//   if (openfile->current == was_current && ISSET(BREAK_LONG_LINES)) {
+//     do_wrap();
+//   }
+//   /* If we pasted less than a screenful, don't center the cursor. */
+//   if (less_than_a_screenful(was_lineno, was_leftedge)) {
+//     focusing = FALSE;
+//   }
+//   else {
+//     precalc_multicolorinfo();
+//   }
+//   /* Set the desired x position to where the pasted text ends. */
+//   openfile->placewewant = xplustabs();
+//   set_modified();
+//   wipe_statusbar();
+//   refresh_needed = TRUE;
+// }

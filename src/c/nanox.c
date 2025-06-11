@@ -122,7 +122,7 @@ void splice_node_for(openfilestruct *const file, linestruct *const after, linest
 
 /* Splice a new node into an existing linked list of linestructs. */
 void splice_node(linestruct *const after, linestruct *const node) {
-  splice_node_for(CONTEXT_OPENFILE, after, node);
+  splice_node_for(CTX_OF, after, node);
 }
 
 /* ----------------------------- Delete node ----------------------------- */
@@ -151,7 +151,7 @@ void delete_node_for(openfilestruct *const file, linestruct *const node) {
 
 /* Free the data structures in the given node. */
 void delete_node(linestruct *const line) {
-  delete_node_for(CONTEXT_OPENFILE, line);
+  delete_node_for(CTX_OF, line);
 }
 
 /* ----------------------------- Unlink node ----------------------------- */
@@ -169,7 +169,7 @@ void unlink_node_for(openfilestruct *const file, linestruct *const node) {
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
 void unlink_node(linestruct *const node) {
-  unlink_node_for(CONTEXT_OPENFILE, node);
+  unlink_node_for(CTX_OF, node);
 }
 
 /* ----------------------------- Free lines ----------------------------- */
@@ -189,7 +189,7 @@ void free_lines_for(openfilestruct *const file, linestruct *src) {
 
 /* Free an entire linked list of linestructs. */
 void free_lines(linestruct *const head) {
-  free_lines_for(CONTEXT_OPENFILE, head);
+  free_lines_for(CTX_OF, head);
 }
 
 /* Make a copy of a linestruct node. */
@@ -259,7 +259,7 @@ bool in_restricted_mode(void) {
   if (ISSET(RESTRICTED)) {
     statusline(AHEM, _("This function is disabled in restricted mode"));
     /* Only use `beep()`, when using the ncurses context. */
-    if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+    if (IN_CURSES_CTX) {
       beep();
     }
     return TRUE;
@@ -371,7 +371,7 @@ void restore_handler_for_Ctrl_C(void) {
  * mode, reenable interpretation of the flow control characters. */
 void terminal_init(void) {
   /* Running in ncurses context. */
-  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+  if (IN_CURSES_CTX) {
     raw();
     nonl();
     noecho();
@@ -404,7 +404,7 @@ void window_init(void) {
   int toprows;
   int bottomrows;
   /* When inside curses mode. */
-  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+  if (IN_CURSES_CTX) {
     if (midwin) {
       if (topwin) {
         delwin(topwin);
@@ -458,6 +458,9 @@ void window_init(void) {
 
 /* Reinitialize and redraw the screen completely. */
 void regenerate_screen(void) {
+  if (!IN_CURSES_CTX) {
+    return;
+  }
   /* Reset the trigger. */
   the_window_resized = FALSE;
   /* Leave and immediately reenter curses mode, so that ncurses notices the new screen dimensions and sets LINES and COLS accordingly. */
@@ -534,7 +537,7 @@ void do_suspend(void) {
 void reconnect_and_store_state(void) {
   int tty;
   /* Only perform this when in ncurses mode. */
-  if (!ISSET(NO_NCURSES)) {
+  if (IN_CURSES_CTX) {
     tty = open("/dev/tty", O_RDONLY);
     if (tty < 0 || dup2(tty, STDIN_FILENO) < 0) {
       die(_("Could not reconnect stdin to keyboard"));
@@ -657,10 +660,10 @@ void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *bu
 
 /* Insert the given `burst` of `count` bytes into the currently open file.  Note that this is context safe. */
 void inject(char *burst, Ulong count) {
-  if (IN_GUI_CONTEXT) {
-    inject_into_buffer(GUI_CONTEXT, burst, count);
+  if (IN_GUI_CTX) {
+    inject_into_buffer(GUI_CTX, burst, count);
   }
   else {
-    inject_into_buffer(TUI_CONTEXT, burst, count);
+    inject_into_buffer(TUI_CTX, burst, count);
   }
 }

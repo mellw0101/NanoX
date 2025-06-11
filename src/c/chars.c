@@ -266,7 +266,7 @@ bool is_curs_between_chars_for(openfilestruct *const restrict file, char a, char
  * `openfile->current->data[openfile->current_x]` == `b`.  Note that this correctly
  * handles the current context and is fully safe to use for the tui and the gui. */
 bool is_curs_between_chars(char a, char b) {
-  return is_curs_between_chars_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), a, b);
+  return is_curs_between_chars_for(CTX_OF, a, b);
 }
 
 /* ----------------------------- Is between any char pair ----------------------------- */
@@ -299,7 +299,7 @@ bool is_curs_between_any_pair_for(openfilestruct *const restrict file, const cha
 /* Returns `TRUE` if `openfile->current->data[openfile->current_x - 1]` and `openfile->current->data[openfile->current_x]`
  * match any of the pairs first and second char.  Note that this is context safe and can be called from the `tui` and `gui`. */
 bool is_curs_between_any_pair(const char **const restrict pairs, Ulong *const restrict out_index) {
-  return is_curs_between_any_pair_for((ISSET(USING_GUI) ? openeditor->openfile : openfile), pairs, out_index);
+  return is_curs_between_any_pair_for(CTX_OF, pairs, out_index);
 }
 
 /* Return 'TRUE' when char before cursor is equal to 'pre_ch' and char at cursor is equal to 'post_ch'. */

@@ -431,24 +431,18 @@ void editor_get_text_line_index(Editor *const editor, float x_pos, float y_pos, 
 void editor_open_buffer(const char *const restrict path) {
   ASSERT_EDITOR(openeditor);
   ASSERT(path);
-  openfilestruct *was_openfile = openeditor->openfile;
-  openfilestruct *new_openfile;
+  openfilestruct *was_openfile = GUI_OF;
   /* In this case we should always terminate apon the file not existing as this function
    * should never be called in this case.  Note that this should be handeled before
    * the call to this function, because this function has one job, to open a file. */
   ALWAYS_ASSERT(file_exists(path));
-  openfile = openeditor->openfile;
-  if (!open_buffer(path, TRUE)) {
+  if (!open_buffer_for(&GUI_SF, &GUI_OF, GUI_RC, path, TRUE)) {
     return;
   }
   /* If the buffer this was called from is empty, then the newly opened one should replace it. */
   if (!*was_openfile->filename && !was_openfile->totsize) {
-    new_openfile = openfile;
-    free_one_buffer(was_openfile, &openeditor->openfile, &openeditor->startfile);
-    /* Make the new buffer the currently open one. */
-    openfile = new_openfile;
+    close_buffer_for(was_openfile, &GUI_SF, &GUI_OF);
   }
-  openeditor->openfile = openfile;
   editor_redecorate(openeditor);
   editor_resize(openeditor);
   etb_entries_refresh_needed(openeditor->tb);

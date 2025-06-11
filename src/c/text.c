@@ -62,25 +62,25 @@ void do_tab_for(openfilestruct *const file, int rows, int cols) {
     do_indent_for(file, cols);
   }
   else if (file->syntax && file->syntax->tabstring) {
-    inject_into_buffer(file, rows, cols, file->syntax->tabstring, strlen(file->syntax->tabstring));
+    inject_into_buffer(STACK_CTX, file->syntax->tabstring, strlen(file->syntax->tabstring));
   }
   else if (ISSET(TABS_TO_SPACES)) {
     spaces = tab_space_string_for(file, &len);
-    inject_into_buffer(file, rows, cols, spaces, len);
+    inject_into_buffer(STACK_CTX, spaces, len);
     free(spaces);
   }
   else {
-    inject_into_buffer(file, rows, cols, "\t", 1);
+    inject_into_buffer(STACK_CTX, "\t", 1);
   }
 }
 
 /* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert the number of spaces that a tab would normally take up at this position. */
 void do_tab(void) {
-  if (IN_GUI_CONTEXT) {
-    do_tab_for(GUI_CONTEXT);
+  if (IN_GUI_CTX) {
+    do_tab_for(GUI_CTX);
   }
   else {
-    do_tab_for(TUI_CONTEXT);
+    do_tab_for(TUI_CTX);
   }
 }
 
@@ -307,7 +307,7 @@ void add_undo_for(openfilestruct *const file, undo_type action, const char *cons
 
 /* Add a new undo item of the given type to the top of the current pile for the currently open file.  Works for gui and tui context. */
 void add_undo(undo_type action, const char *const restrict message) {
-  add_undo_for(CONTEXT_OPENFILE, action, message);
+  add_undo_for(CTX_OF, action, message);
 }
 
 /* Update an undo item with (among other things) the file size and cursor position after the given action. */
@@ -458,7 +458,7 @@ void update_undo_for(openfilestruct *const restrict file, undo_type action) {
 
 /* Update an undo item with (among other things) the file size and cursor position after the given action. */
 void update_undo(undo_type action) {
-  update_undo_for(CONTEXT_OPENFILE, action);
+  update_undo_for(CTX_OF, action);
 }
 
 /* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
@@ -493,7 +493,7 @@ void update_multiline_undo_for(openfilestruct *const file, long lineno, const ch
 /* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
  * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
 void update_multiline_undo(long lineno, const char *const restrict indentation) {
-  update_multiline_undo_for(CONTEXT_OPENFILE, lineno, indentation);
+  update_multiline_undo_for(CTX_OF, lineno, indentation);
 }
 
 /* Find the last blank in the given piece of text such that the display width to that point is at most
@@ -674,11 +674,11 @@ void do_wrap_for(openfilestruct *const file, int cols) {
 /* When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
  * and prepend the excess part to an "overflow" line (when it already exists, otherwise create one). */
 void do_wrap(void) {
-  if (IN_GUI_CONTEXT) {
-    do_wrap_for(openeditor->openfile, openeditor->cols);
+  if (IN_GUI_CTX) {
+    do_wrap_for(GUI_OF, GUI_COLS);
   }
   else {
-    do_wrap_for(openfile, editwincols);
+    do_wrap_for(TUI_OF, TUI_COLS);
   }
 }
 
@@ -700,7 +700,7 @@ void do_mark_for(openfilestruct *const file) {
 
 /* Toggle the mark for the currently open file. */
 void do_mark(void) {
-  do_mark_for(CONTEXT_OPENFILE);
+  do_mark_for(CTX_OF);
 }
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
@@ -730,7 +730,7 @@ void discard_until_for(openfilestruct *const file, const undostruct *const thisi
 
 /* Discard undo items that are newer than the given one, or all if NULL. */
 void discard_until(const undostruct *thisitem) {
-  discard_until_for(CONTEXT_OPENFILE, thisitem);
+  discard_until_for(CTX_OF, thisitem);
 }
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
@@ -820,7 +820,7 @@ Ulong length_of_white_for(openfilestruct *const file, const char *text) {
 
 /* Return the number of bytes of whitespace at the start of the given text, but at most a tab's worth. */
 Ulong length_of_white(const char *text) {
-  return length_of_white_for(CONTEXT_OPENFILE, text);
+  return length_of_white_for(CTX_OF, text);
 }
 
 /* ----------------------------- Compensate leftward ----------------------------- */
@@ -853,7 +853,7 @@ void compensate_leftward_for(openfilestruct *const file, linestruct *const line,
 
 /* Adjust the positions of mark and cursor when they are on the given line. */
 void compensate_leftward(linestruct *const line, Ulong leftshift) {
-  compensate_leftward_for(CONTEXT_OPENFILE, line, leftshift);
+  compensate_leftward_for(CTX_OF, line, leftshift);
 }
 
 /* ----------------------------- Unindent ----------------------------- */
@@ -875,11 +875,11 @@ void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulo
 
 /* Remove an indent from the given line, in `file`. */
 void unindent_a_line(linestruct *const line, Ulong indent_len) {
-  unindent_a_line_for(CONTEXT_OPENFILE, line, indent_len);
+  unindent_a_line_for(CTX_OF, line, indent_len);
 }
 
 /* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
-void do_unindent_for(openfilestruct *const file, int total_cols) {
+void do_unindent_for(openfilestruct *const file, int cols) {
   ASSERT(file);
   linestruct *top;
   linestruct *bot;
@@ -905,55 +905,53 @@ void do_unindent_for(openfilestruct *const file, int total_cols) {
     free(indentation);
   }
   set_modified_for(file);
-  ensure_firstcolumn_is_aligned_for(file, total_cols);
+  ensure_firstcolumn_is_aligned_for(file, cols);
   refresh_needed = TRUE;
   shift_held     = TRUE;
 }
 
 /* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
 void do_unindent(void) {
-  if (IN_GUI_CONTEXT) {
-    do_unindent_for(openeditor->openfile, openeditor->cols);
+  if (IN_GUI_CTX) {
+    do_unindent_for(GUI_OF, GUI_COLS);
   }
   else {
-    do_unindent_for(openfile, editwincols);
+    do_unindent_for(TUI_OF, TUI_COLS);
   }
-  // do_unindent_for(CONTEXT_OPENFILE, CONTEXT_COLS);
 }
 
 /* ----------------------------- Restore undo posx and mark ----------------------------- */
 
 /* Restore the cursor and mark in `file`, from a undostruct. */
-void restore_undo_posx_and_mark_for(openfilestruct *const file, undostruct *const u, int total_rows) {
+void restore_undo_posx_and_mark_for(openfilestruct *const file, int rows, undostruct *const u) {
   ASSERT(file);
   ASSERT(u);
   /* Restore the mark if it was set. */
   if (u->xflags & MARK_WAS_SET) {
     if (u->xflags & CURSOR_WAS_AT_HEAD) {
-      goto_line_posx_for(file, u->head_lineno, u->head_x, total_rows);
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
       set_mark_for(file, u->tail_lineno, u->tail_x);
     }
     else {
-      goto_line_posx_for(file, u->tail_lineno, u->tail_x, total_rows);
+      goto_line_posx_for(file, rows, u->tail_lineno, u->tail_x);
       set_mark_for(file, u->head_lineno, u->head_x);
     }
     keep_mark = TRUE;
   }
   /* Otherwise just restore the cursor. */
   else {
-    goto_line_posx_for(file, u->head_lineno, u->head_x, total_rows);
+    goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
   }
 }
 
 /* Restore the cursor and mark in the currently open file, from a undostruct. */
 void restore_undo_posx_and_mark(undostruct *const u) {
-  if (IN_GUI_CONTEXT) {
-    restore_undo_posx_and_mark_for(openeditor->openfile, u, openeditor->rows);
+  if (IN_GUI_CTX) {
+    restore_undo_posx_and_mark_for(GUI_OF, GUI_ROWS, u);
   }
   else {
-    restore_undo_posx_and_mark_for(openfile, u, editwinrows);
+    restore_undo_posx_and_mark_for(TUI_OF, TUI_ROWS, u);
   }
-  // restore_undo_posx_and_mark_for(CONTEXT_OPENFILE, u, CONTEXT_ROWS);
 }
 
 /* ----------------------------- Insert empty line ----------------------------- */
@@ -1011,7 +1009,7 @@ void insert_empty_line_for(openfilestruct *const file, linestruct *const line, b
 
 /* Insert a new empty line, either `above` or `below` `line`.  */
 void insert_empty_line(linestruct *const line, bool above, bool autoindent) {
-  insert_empty_line_for(CONTEXT_OPENFILE, line, above, autoindent);
+  insert_empty_line_for(CTX_OF, line, above, autoindent);
 }
 
 /* Insert a new empty line above `file->current`, and add an undo-item to the undo-stack. */
@@ -1028,7 +1026,7 @@ void do_insert_empty_line_above_for(openfilestruct *const file) {
 /* Insert a new empty line above `openfile->current`, and add an undo-item to the
  * `undo-stack`. Note that this is context safe and works in both the `gui` and `tui`. */
 void do_insert_empty_line_above(void) {
-  do_insert_empty_line_above_for(CONTEXT_OPENFILE);
+  do_insert_empty_line_above_for(CTX_OF);
 }
 
 /* Insert a new empty line below `file->current`, and add an undo-item to the `undo-stack`. */
@@ -1045,7 +1043,7 @@ void do_insert_empty_line_below_for(openfilestruct *const file) {
 /* Insert a new empty line below `openfile->current`, and add an undo-item to the
  * `undo-stack`.  Note that this is context safe and works for both the `gui` and `tui`. */
 void do_insert_empty_line_below(void) {
-  do_insert_empty_line_below_for(CONTEXT_OPENFILE);
+  do_insert_empty_line_below_for(CTX_OF);
 }
 
 /* ----------------------------- Cursor is between brackets ----------------------------- */
@@ -1058,7 +1056,7 @@ bool cursor_is_between_brackets_for(openfilestruct *const file) {
 /* Returns `TRUE` when `openfile->current->data[openfile->current_x]` is between a bracket pair,
  * `{}`, `[]` or `()`.  Note that this is context safe and can be called from the `tui` or `gui`. */
 bool cursor_is_between_brackets(void) {
-  return cursor_is_between_brackets_for(CONTEXT_OPENFILE);
+  return cursor_is_between_brackets_for(CTX_OF);
 }
 
 /* ----------------------------- Indent ----------------------------- */
@@ -1099,12 +1097,12 @@ void indent_a_line_for(openfilestruct *const file, linestruct *const line, const
 
 /* Add an indent to the given line. */
 void indent_a_line(linestruct *const line, const char *const restrict indentation) { 
-  indent_a_line_for(CONTEXT_OPENFILE, line, indentation);
+  indent_a_line_for(CTX_OF, line, indentation);
 }
 
 /* Indent the current line (or the marked lines) of `file` by tabsize columns.  This inserts either tab
  * character or a tab's worth of spaces, depending on whether the `TABS_TO_SPACES` flag is in effect. */
-void do_indent_for(openfilestruct *const file, int total_cols) {
+void do_indent_for(openfilestruct *const file, int cols) {
   ASSERT(file);
   linestruct *top; 
   linestruct *bot;
@@ -1136,7 +1134,7 @@ void do_indent_for(openfilestruct *const file, int total_cols) {
   }
   free(indentation);
   set_modified_for(file);
-  ensure_firstcolumn_is_aligned_for(file, total_cols);
+  ensure_firstcolumn_is_aligned_for(file, cols);
   refresh_needed = TRUE;
   shift_held     = TRUE;
 }
@@ -1145,23 +1143,23 @@ void do_indent_for(openfilestruct *const file, int total_cols) {
  * either a tab character or a tab's worth of spaces, depending on whether the `TABS_TO_SPACES`
  * flag is in effect.  Note that this is context safe and works for both the gui and tui. */
 void do_indent(void) {
-  if (IN_GUI_CONTEXT) {
-    do_indent_for(openeditor->openfile, openeditor->cols);
+  if (IN_GUI_CTX) {
+    do_indent_for(GUI_OF, GUI_COLS);
   }
   else {
-    do_indent_for(openfile, editwincols);
+    do_indent_for(TUI_OF, TUI_COLS);
   }
 }
 
 /* Perform an undo or redo for an indent or unindent action. */
-void handle_indent_action_for(openfilestruct *const file, undostruct *const u, bool undoing, bool add_indent, int total_rows) {
+void handle_indent_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_indent) {
   ASSERT(file);
   char *blanks;
   groupstruct *group = u->grouping;
   linestruct  *line  = line_from_number_for(file, group->top_line);
   /* When redoing, reposition the cursor and let the indenter adjust it. */
   if (!undoing) {
-    restore_undo_posx_and_mark_for(file, u, total_rows);
+    restore_undo_posx_and_mark_for(file, rows, u);
   }
   /* For each line in the group, add or remove the individual indent. */
   while (line && line->lineno <= group->bottom_line) {
@@ -1176,14 +1174,19 @@ void handle_indent_action_for(openfilestruct *const file, undostruct *const u, b
   }
   /* When undoing, reposition the cursor to the recorded location. */
   if (undoing) {
-    restore_undo_posx_and_mark_for(file, u, total_rows);
+    restore_undo_posx_and_mark_for(file, rows, u);
   }
   refresh_needed = TRUE;
 }
 
 /* Perform an undo or redo for an indent or unindent action. */
 void handle_indent_action(undostruct *const u, bool undoing, bool add_indent) {
-  handle_indent_action_for(CONTEXT_OPENFILE, u, undoing, add_indent, CONTEXT_ROWS);
+  if (IN_GUI_CTX) { 
+    handle_indent_action_for(GUI_OF, GUI_ROWS, u, undoing, add_indent);
+  }
+  else {
+    handle_indent_action_for(TUI_OF, TUI_ROWS, u, undoing, add_indent);
+  }
 }
 
 /* ----------------------------- Enclose marked region ----------------------------- */
@@ -1319,7 +1322,7 @@ void enclose_marked_region_for(openfilestruct *const file, const char *const res
 /* If the currently open file currently has a marked region, enclose that region where
  * `p1` will be placed on the top/start and `p2` at the bottom/end of the marked region. */
 void enclose_marked_region(const char *const restrict p1, const char *const restrict p2) {
-  enclose_marked_region_for(CONTEXT_OPENFILE, p1, p2);
+  enclose_marked_region_for(CTX_OF, p1, p2);
 }
 
 /* ----------------------------- Auto bracket ----------------------------- */
@@ -1369,7 +1372,7 @@ void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong 
 
 /* Auto insert a empty line between '{' and '}', as well as indenting the line once and setting openfile->current to it. */
 void auto_bracket(linestruct *const line, Ulong posx) {
-  auto_bracket_for(CONTEXT_OPENFILE, line, posx);
+  auto_bracket_for(CTX_OF, line, posx);
 }
 
 /* Do auto bracket at current position. */
@@ -1386,7 +1389,7 @@ void do_auto_bracket_for(openfilestruct *const file) {
 
 /* Do auto bracket at current position.  TODO: Implement this so that it correctly indents to the next `tab-stop` when using `TABS_TO_SPACES` and not. */
 void do_auto_bracket(void) {
-  do_auto_bracket_for(CONTEXT_OPENFILE);
+  do_auto_bracket_for(CTX_OF);
 }
 
 /* ----------------------------- Comment ----------------------------- */
@@ -1471,7 +1474,7 @@ bool comment_line_for(openfilestruct *const file, undo_type action, linestruct *
  * Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
  * ADDED: Also takes indentation into account. */
 bool comment_line(undo_type action, linestruct *const line, const char *const restrict comment_seq) {
-  return comment_line_for(CONTEXT_OPENFILE, action, line, comment_seq);
+  return comment_line_for(CTX_OF, action, line, comment_seq);
 }
 
 /* Returns an allocated string containing the correct comment sequence based on `file`. */
@@ -1498,7 +1501,7 @@ char *get_comment_seq_for(openfilestruct *const file) {
 /* Returns an allocated string containing the correct comment sequence based on the currently
  * open file.  Note that this is context safe and works in both the `gui` and `tui`. */
 char *get_comment_seq(void) {
-  return get_comment_seq_for(CONTEXT_OPENFILE);
+  return get_comment_seq_for(CTX_OF);
 }
 
 /* Comment or uncomment the current line or the marked lines. */
@@ -1556,24 +1559,23 @@ void do_comment_for(openfilestruct *const file, int total_cols) {
 
 /* Comment or uncomment the current line or the marked lines. */
 void do_comment(void) {
-  if (IN_GUI_CONTEXT) {
+  if (IN_GUI_CTX) {
     do_comment_for(openeditor->openfile, openeditor->cols);
   }
   else {
     do_comment_for(openfile, editwincols);
   }
-  // do_comment_for(CONTEXT_OPENFILE, CONTEXT_COLS);
 }
 
 /* Perform an undo or redo for a comment or uncomment action. */
-void handle_comment_action_for(openfilestruct *const file, undostruct *const u, bool undoing, bool add_comment, int total_rows) {
+void handle_comment_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_comment) {
   ASSERT(file);
   ASSERT(u);
   groupstruct *group = u->grouping;
   linestruct *line;
   /* When redoing, reposition the cursor and let the commenter adjust it. */
   if (!undoing) {
-    restore_undo_posx_and_mark_for(file, u, total_rows);
+    restore_undo_posx_and_mark_for(file, rows, u);
   }
   while (group) {
     line = line_from_number_for(file, group->top_line);
@@ -1585,20 +1587,19 @@ void handle_comment_action_for(openfilestruct *const file, undostruct *const u, 
   }
   /* When undoing, reposition the cursor to the recorded location. */
   if (undoing) {
-    restore_undo_posx_and_mark_for(file, u, total_rows);
+    restore_undo_posx_and_mark_for(file, rows, u);
   }
   refresh_needed = TRUE;
 }
 
 /* Perform an undo or redo for a comment or uncomment action. */
 void handle_comment_action(undostruct *const u, bool undoing, bool add_comment) {
-  if (IN_GUI_CONTEXT) {
-    handle_comment_action_for(openeditor->openfile, u, undoing, add_comment, openeditor->rows);
+  if (IN_GUI_CTX) {
+    handle_comment_action_for(GUI_OF, GUI_ROWS, u, undoing, add_comment);
   }
   else {
-    handle_comment_action_for(openfile, u, undoing, add_comment, editwinrows);
+    handle_comment_action_for(TUI_OF, TUI_ROWS, u, undoing, add_comment);
   }
-  // handle_comment_action_for(CONTEXT_OPENFILE, u, undoing, add_comment, CONTEXT_ROWS);
 }
 
 /* Return a copy of the found completion candidate. */
@@ -1618,7 +1619,7 @@ char *copy_completion(const char *restrict text) {
   return word;
 }
 
-/* ----------------------------- Enter ----------------------------- */
+/* ----------------------------- Do enter ----------------------------- */
 
 /* Break the current line at the cursor position. */
 void do_enter_for(openfilestruct *const file) {
@@ -1696,5 +1697,5 @@ void do_enter_for(openfilestruct *const file) {
 
 /* Break the current line at the cursor position. */
 void do_enter(void) {
-  do_enter_for(CONTEXT_OPENFILE);
+  do_enter_for(CTX_OF);
 }
