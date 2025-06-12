@@ -570,7 +570,7 @@ void close_buffer(void) {
     close_buffer_for(GUI_OF, &GUI_SF, &GUI_OF);
   }
   else {
-    close_buffer_for(TUI_OF, &TUI_SF, &GUI_OF);
+    close_buffer_for(TUI_OF, &TUI_SF, &TUI_OF);
   }
   // openfilestruct *orphan = openfile;
   // if (orphan == startfile) {
@@ -1078,14 +1078,12 @@ void read_file_into(openfilestruct *const file, int rows, int cols, FILE *const 
   funlockfile(f);
   block_sigwinch(FALSE);
   /* When reading from stdin, restore the terminal and reenter curses mode. */
-  if (!ISSET(USING_GUI) && !isendwin()) {
+  if (IN_CURSES_CTX && !isendwin()) {
     if (!isatty(STDIN_FILENO)) {
       reconnect_and_store_state();
     }
     terminal_init();
-    if (!ISSET(NO_NCURSES)) {
-      doupdate();
-    }
+    doupdate();
   }
   /* If there was a real error during the reading, let the user know. */
   if (ferror(f) && errornum != EINTR && errornum) {
@@ -1273,9 +1271,9 @@ bool open_buffer_for(openfilestruct **const start, openfilestruct **const open, 
  * is not empty, it reads that file into a new buffer when requested, otherwise into the existing buffer. */
 bool open_buffer(const char *const restrict path, bool new_one) {
   if (IN_GUI_CTX) {
-    return open_buffer_for(FULL_GUI_CONTEXT, path, new_one);
+    return open_buffer_for(FULL_GUI_CTX, path, new_one);
   }
   else {
-    return open_buffer_for(FULL_TUI_CONTEXT, path, new_one);
+    return open_buffer_for(FULL_TUI_CTX, path, new_one);
   }
 }

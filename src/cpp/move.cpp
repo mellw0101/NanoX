@@ -313,45 +313,45 @@ static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong col
 // }
 
 /* Move to the previous word. */
-void do_prev_word(void) _NOTHROW {
-  bool punctuation_as_letters = ISSET(WORD_BOUNDS);
-  bool seen_a_word  = FALSE;
-  bool step_forward = FALSE;
-  /* Move backward until we pass over the start of a word. */
-  while (TRUE) {
-    /* If at the head of a line, move to the end of the preceding one. */
-    if (!openfile->current_x) {
-      /* If we are at the first line, do nothing. */
-      if (!openfile->current->prev) {
-        break;
-      }
-      openfile->current   = openfile->current->prev;
-      openfile->current_x = strlen(openfile->current->data);
-      break;
-    }
-    /* Step back one character. */
-    openfile->current_x = step_left(openfile->current->data, openfile->current_x);
-    if (is_cursor_word_char(punctuation_as_letters) || is_cursor_language_word_char()) {
-      seen_a_word = TRUE;
-      /* If at the head of a line now, this surely is a word start. */
-      if (!openfile->current_x) {
-        break;
-      }
-    }
-    else if (is_cursor_zerowidth()) {
-      ; /* Do nothing. */
-    }
-    else if (seen_a_word) {
-      /* This is space now: we've overshot the start of the word. */
-      step_forward = TRUE;
-      break;
-    }
-  }
-  if (step_forward) {
-    /* Move one character forward again to sit on the start of the word. */
-    openfile->current_x = step_right(openfile->current->data, openfile->current_x);
-  }
-}
+// void do_prev_word(void) _NOTHROW {
+//   bool punctuation_as_letters = ISSET(WORD_BOUNDS);
+//   bool seen_a_word  = FALSE;
+//   bool step_forward = FALSE;
+//   /* Move backward until we pass over the start of a word. */
+//   while (TRUE) {
+//     /* If at the head of a line, move to the end of the preceding one. */
+//     if (!openfile->current_x) {
+//       /* If we are at the first line, do nothing. */
+//       if (!openfile->current->prev) {
+//         break;
+//       }
+//       openfile->current   = openfile->current->prev;
+//       openfile->current_x = strlen(openfile->current->data);
+//       break;
+//     }
+//     /* Step back one character. */
+//     openfile->current_x = step_left(openfile->current->data, openfile->current_x);
+//     if (is_cursor_word_char(punctuation_as_letters) || is_cursor_language_word_char()) {
+//       seen_a_word = TRUE;
+//       /* If at the head of a line now, this surely is a word start. */
+//       if (!openfile->current_x) {
+//         break;
+//       }
+//     }
+//     else if (is_cursor_zerowidth()) {
+//       ; /* Do nothing. */
+//     }
+//     else if (seen_a_word) {
+//       /* This is space now: we've overshot the start of the word. */
+//       step_forward = TRUE;
+//       break;
+//     }
+//   }
+//   if (step_forward) {
+//     /* Move one character forward again to sit on the start of the word. */
+//     openfile->current_x = step_right(openfile->current->data, openfile->current_x);
+//   }
+// }
 
 /* Move to the next word.  If after_ends is 'TRUE', stop at the ends of words
  * instead of at their beginnings.  If 'after_ends' is 'TRUE', stop at the ends
@@ -423,11 +423,11 @@ bool do_next_word(bool after_ends) _NOTHROW {
 }
 
 /* Move to the previous word in the file, and update the screen afterwards. */
-void to_prev_word(void) {
-  linestruct *was_current = openfile->current;
-  do_prev_word();
-  edit_redraw(was_current, FLOWING);
-}
+// void to_prev_word(void) {
+//   linestruct *was_current = openfile->current;
+//   do_prev_word();
+//   edit_redraw(was_current, FLOWING);
+// }
 
 /* Move to the next word in the file. If the AFTER_ENDS flag is set, stop at word ends instead of beginnings.  Update the screen afterwards. */
 void to_next_word(void) {
@@ -517,7 +517,7 @@ void do_end(void) {
     kickoff    = TRUE;
     last_chunk = FALSE;
     leftedge   = leftedge_for(editwincols, was_column, openfile->current);
-    rightedge  = get_softwrap_breakpoint(openfile->current->data, leftedge, &kickoff, &last_chunk, editwincols);
+    rightedge  = get_softwrap_breakpoint(editwincols, openfile->current->data, leftedge, &kickoff, &last_chunk);
     /* If we're on the last chunk, we're already at the end of the line.  Otherwise, we're one column past the end of the line.
      * Shifting backwards one column might put us in the middle of a multi-column character, but actual_x() will fix that. */
     if (!last_chunk) {
@@ -613,7 +613,7 @@ void do_scroll_down(void) {
     do_down();
   }
   if (editwinrows > 1
-   && (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop, editwincols) > chunk_for(openfile->firstcolumn, openfile->edittop, editwincols))))) {
+   && (openfile->edittop->next != NULL || (ISSET(SOFTWRAP) && (extra_chunks_in(editwincols, openfile->edittop) > chunk_for(editwincols, openfile->firstcolumn, openfile->edittop))))) {
     edit_scroll(FORWARD);
   }
 }
@@ -644,26 +644,26 @@ void do_scroll_down(void) {
 // }
 
 /* Move right one character. */
-void do_right(void) {
-  linestruct *was_current = openfile->current;
-  /* If a section is highlighted and shift is not held, then place the cursor at the right side of the marked area. */
-  if (openfile->mark && !shift_held) {
-    if (!mark_is_before_cursor()) {
-      openfile->current   = openfile->mark;
-      openfile->current_x = openfile->mark_x;
-    }
-  }
-  else {
-    if (openfile->current->data[openfile->current_x]) {
-      openfile->current_x = step_right(openfile->current->data, openfile->current_x);
-      while (openfile->current->data[openfile->current_x] && is_zerowidth(openfile->current->data + openfile->current_x)) {
-        openfile->current_x = step_right(openfile->current->data, openfile->current_x);
-      }
-    }
-    else if (openfile->current != openfile->filebot) {
-      openfile->current   = openfile->current->next;
-      openfile->current_x = 0;
-    }
-  }
-  edit_redraw(was_current, FLOWING);
-}
+// void do_right(void) {
+//   linestruct *was_current = openfile->current;
+//   /* If a section is highlighted and shift is not held, then place the cursor at the right side of the marked area. */
+//   if (openfile->mark && !shift_held) {
+//     if (!mark_is_before_cursor()) {
+//       openfile->current   = openfile->mark;
+//       openfile->current_x = openfile->mark_x;
+//     }
+//   }
+//   else {
+//     if (openfile->current->data[openfile->current_x]) {
+//       openfile->current_x = step_right(openfile->current->data, openfile->current_x);
+//       while (openfile->current->data[openfile->current_x] && is_zerowidth(openfile->current->data + openfile->current_x)) {
+//         openfile->current_x = step_right(openfile->current->data, openfile->current_x);
+//       }
+//     }
+//     else if (openfile->current != openfile->filebot) {
+//       openfile->current   = openfile->current->next;
+//       openfile->current_x = 0;
+//     }
+//   }
+//   edit_redraw(was_current, FLOWING);
+// }

@@ -597,9 +597,9 @@ void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *bu
   Ulong old_amount   = 0;
   if (ISSET(SOFTWRAP)) {
     if (file->cursor_row == (rows - 1)) {
-      original_row = chunk_for(xplustabs_for(file), line, cols);
+      original_row = chunk_for(cols, xplustabs_for(file), line);
     }
-    old_amount = extra_chunks_in(line, cols);
+    old_amount = extra_chunks_in(cols, line);
   }
   /* Encode an embedded `NUL` byte as `0x0A`. */
   RECODE_NUL_TO_LF(burst, count);
@@ -645,8 +645,8 @@ void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *bu
   set_pww_for(file);
   /* When softwrapping and the number of chunks in the current line changed, or we were
    * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
-  if (ISSET(SOFTWRAP) && (extra_chunks_in(file->current, cols) != old_amount
-   || (file->cursor_row == (rows - 1) && chunk_for(file->placewewant, file->current, cols) > original_row))) {
+  if (ISSET(SOFTWRAP) && (extra_chunks_in(cols, file->current) != old_amount
+   || (file->cursor_row == (rows - 1) && chunk_for(cols, file->placewewant, file->current) > original_row))) {
     refresh_needed = TRUE;
     focusing       = FALSE;
   }

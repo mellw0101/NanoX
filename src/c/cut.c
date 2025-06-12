@@ -29,7 +29,8 @@ static bool is_cuttable_for(openfilestruct *const file, bool test_cliff) {
 
 /* Returns `FALSE` when a cut command would not actually cut anything: when on an empty line at EOF, or when
  * the mark covers zero characters, or (when `test_cliff` is `TRUE`) when the magic line would be cut. */
-_UNUSED static bool is_cuttable(bool test_cliff) {
+_UNUSED
+static bool is_cuttable(bool test_cliff) {
   return is_cuttable_for(CTX_OF, test_cliff);
 }
 
@@ -51,7 +52,7 @@ void expunge_for(openfilestruct *const file, int cols, undo_type action) {
   if (file->current->data[file->current_x]) {
     charlen    = char_length(file->current->data + file->current_x);
     line_len   = strlen(file->current->data + file->current_x);
-    old_amount = (ISSET(SOFTWRAP) ? extra_chunks_in(file->current, cols) : 0);
+    old_amount = (ISSET(SOFTWRAP) ? extra_chunks_in(cols, file->current) : 0);
     /* If the type of action changed or the cursor moved to a different line, create a new undo item, otherwise update the existing item. */
     if (action != file->last_action || file->current->lineno != file->current_undo->head_lineno) {
       add_undo_for(file, action, NULL);
@@ -62,7 +63,7 @@ void expunge_for(openfilestruct *const file, int cols, undo_type action) {
     /* Move the remainder of the line "in", over the current character. */
     memmove(&file->current->data[file->current_x], &file->current->data[file->current_x + charlen], (line_len - charlen + 1));
     /* When softwrapping, a changed number of chunks requires a refresh. */
-    if (ISSET(SOFTWRAP) && extra_chunks_in(file->current, cols) != old_amount) {
+    if (ISSET(SOFTWRAP) && extra_chunks_in(cols, file->current) != old_amount) {
       refresh_needed = TRUE;
     }
     /* Adjust the mark if it is after the cursor on the current line. */

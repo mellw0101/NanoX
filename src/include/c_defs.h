@@ -108,8 +108,9 @@
 #define CTX_PARAMS      openfilestruct *const file, int rows, int cols
 
 /* For use when modifying the state of the context. */
-#define FULL_GUI_CONTEXT  &GUI_SF, &GUI_OF, GUI_RC
-#define FULL_TUI_CONTEXT  &TUI_SF, &TUI_OF, TUI_RC
+#define FULL_GUI_CTX  &GUI_SF, &GUI_OF, GUI_RC
+#define FULL_TUI_CTX  &TUI_SF, &TUI_OF, TUI_RC
+
 
 #define ASSERT_EDITOR(editor)  \
   ASSERT(editor);              \
@@ -209,26 +210,25 @@
 #define rendr(opt, ...) PP_CAT(opt##_, PP_NARG(__VA_ARGS__))(__VA_ARGS__)
 #define RENDR(opt, ...) PP_CAT(opt##_, PP_NARG(__VA_ARGS__))(__VA_ARGS__)
 
-
 /* Macros for flags, indexing each bit in a small array. */
-#define FLAGS(flag)    flags[((flag) / (sizeof(Ulong) * 8))]
-#define FLAGMASK(flag) ((Ulong)1 << ((flag) % (sizeof(Ulong) * 8)))
-#define SET(flag)      FLAGS(flag) |= FLAGMASK(flag)
-#define UNSET(flag)    FLAGS(flag) &= ~FLAGMASK(flag)
-#define ISSET(flag)    ((FLAGS(flag) & FLAGMASK(flag)) != 0)
-#define TOGGLE(flag)   FLAGS(flag) ^= FLAGMASK(flag)
+#define FLAGS(flag)     flags[((flag) / (sizeof(Ulong) * 8))]
+#define FLAGMASK(flag)  ((Ulong)1 << ((flag) % (sizeof(Ulong) * 8)))
+#define SET(flag)       FLAGS(flag) |= FLAGMASK(flag)
+#define UNSET(flag)     FLAGS(flag) &= ~FLAGMASK(flag)
+#define ISSET(flag)     ((FLAGS(flag) & FLAGMASK(flag)) != 0)
+#define TOGGLE(flag)    FLAGS(flag) ^= FLAGMASK(flag)
 
-#define MAXCHARLEN                4
+#define MAXCHARLEN  4
 /* The default width of a tab in spaces. */
-#define WIDTH_OF_TAB              2
+#define WIDTH_OF_TAB  2
 /* The default number of columns from end of line where wrapping occurs. */
-#define COLUMNS_FROM_EOL          8
+#define COLUMNS_FROM_EOL  8
 /* The default comment character when a syntax does not specify any. */
-#define GENERAL_COMMENT_CHARACTER "#"
+#define GENERAL_COMMENT_CHARACTER  "#"
 /* The maximum number of search/replace history strings saved. */
-#define MAX_SEARCH_HISTORY        100
+#define MAX_SEARCH_HISTORY  100
 /* The largest Ulong number that doesn't have the high bit set. */
-#define HIGHEST_POSITIVE          ((~(Ulong)0) >> 1)
+#define HIGHEST_POSITIVE  ((~(Ulong)0) >> 1)
 
 /* Flags for indicating how a multiline regex pair apply to a line. */
 
@@ -504,6 +504,23 @@ static const short bg_vs_code_color_array[] = {
 
 #define XTERM_DIRECT_SOFT_BLUE 24464
 
+/* ----------------------------- chars.c ----------------------------- */
+
+#define IS_ZEROWIDTH(file)                                            \
+  /* A `no-cost` wrapper for calling `is_zerowidth()` on a buffer */  \
+  is_zerowidth((file)->current->data + (file)->current_x)
+
+#define IS_WORD_CHAR(file, allow_punct)                                     \
+  /* A `no-cost` wrapper for calling `is_word_char()` on a buffer. */       \
+  is_word_char(((file)->current->data + (file)->current_x), (allow_punct))
+
+#define STEP_LEFT(file)                                                      \
+  /* A `no-cost` wrapper for calling `step_left()` on a buffer. */           \
+  ((file)->current_x = step_left((file)->current->data, (file)->current_x))
+
+#define STEP_RIGHT(file)                                                      \
+  /* A `no-cost` wrapper for calling `step_right()` on a buffer. */           \
+  ((file)->current_x = step_right((file)->current->data, (file)->current_x))
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
 

@@ -8,7 +8,7 @@
 //   if (openfile->current->data[openfile->current_x]) {
 //     int charlen = char_length(openfile->current->data + openfile->current_x);
 //     Ulong line_len   = strlen(openfile->current->data + openfile->current_x);
-//     Ulong old_amount = (ISSET(SOFTWRAP) ? extra_chunks_in(openfile->current, editwincols) : 0);
+//     Ulong old_amount = (ISSET(SOFTWRAP) ? extra_chunks_in(editwincols, openfile->current) : 0);
 //     /* If the type of action changed or the cursor moved to a different line, create a new undo item, otherwise update the existing item. */
 //     if (action != openfile->last_action || openfile->current->lineno != openfile->current_undo->head_lineno) {
 //       add_undo(action, NULL);
@@ -19,7 +19,7 @@
 //     /* Move the remainder of the line "in", over the current character. */
 //     memmove(&openfile->current->data[openfile->current_x], &openfile->current->data[openfile->current_x + charlen], (line_len - charlen + 1));
 //     /* When softwrapping, a changed number of chunks requires a refresh. */
-//     if (ISSET(SOFTWRAP) && extra_chunks_in(openfile->current, editwincols) != old_amount) {
+//     if (ISSET(SOFTWRAP) && extra_chunks_in(editwincols, openfile->current) != old_amount) {
 //       refresh_needed = TRUE;
 //     }
 //     /* Adjust the mark if it is after the cursor on the current line. */

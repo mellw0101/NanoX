@@ -370,9 +370,9 @@ void do_help(void);
 // void to_para_end(void);
 // void to_prev_block(void);
 // void to_next_block(void);
-void do_prev_word(void) _NOTHROW;
+// void do_prev_word(void) _NOTHROW;
 bool do_next_word(bool after_ends) _NOTHROW;
-void to_prev_word(void);
+// void to_prev_word(void);
 void to_next_word(void);
 void do_home(void);
 void do_end(void);
@@ -381,7 +381,7 @@ void do_end(void);
 void do_scroll_up(void);
 void do_scroll_down(void);
 // void do_left(void);
-void do_right(void);
+// void do_right(void);
 
 /* Most functions in 'nano.cpp'. */
 // linestruct *make_new_node(linestruct *prevnode) _NOTHROW;

@@ -1,4 +1,4 @@
-/** @file chars.cpp */
+/** @file chars.c */
 #include "../include/c_proto.h"
 
 
@@ -68,6 +68,22 @@ void utf8_init(void) {
 /* Checks if UTF-8 support has been enabled. */
 bool using_utf8(void) {
   return use_utf8;
+}
+
+/* ----------------------------- Is lang word char ----------------------------- */
+
+/* TODO: When we have remade the filetype into a enum then remove `file` dependency and add a codepoint and a filetype param. */
+bool is_lang_word_char(openfilestruct *const file) {
+  ASSERT(file);
+  /* C/C++ */
+  if ((openfile->is_c_file || openfile->is_cxx_file) && strchr("{}=|&!/", file->current->data[file->current_x])) {
+    return TRUE;
+  }
+  /* AT&T Asm. */
+  else if (openfile->is_atnt_asm_file && strchr("#", file->current->data[file->current_x])) {
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /* Return 'TRUE' when for the openfile language this char represents a stopping point when doing prev/next word. */
@@ -151,8 +167,12 @@ bool is_cntrl_char(const char *const c) {
   }
 }
 
+/* ----------------------------- Is word char ----------------------------- */
+
 /* Return 'TRUE' when the given character is word-forming (it is alphanumeric or specified in 'wordchars', or it is punctuation when allow_punct is TRUE). */
 bool is_word_char(const char *const c, bool allow_punct) {
+  char symbol[MAXCHARLEN + 1];
+  int symlen;
   if (!*c) {
     return FALSE;
   }
@@ -163,8 +183,7 @@ bool is_word_char(const char *const c, bool allow_punct) {
     return TRUE;
   }
   if (word_chars && *word_chars) {
-    char symbol[MAXCHARLEN + 1];
-    const int symlen = collect_char(c, symbol);
+    symlen = collect_char(c, symbol);
     symbol[symlen] = '\0';
     return strstr(word_chars, symbol);
   }
@@ -370,7 +389,7 @@ int mbtowide(wchar *const restrict wc, const char *const restrict c) {
   }
 }
 
-/* Return 'TRUE' when the given character occupies two cells. */
+/* Return `TRUE` when the given character occupies two cells. */
 bool is_doublewidth(const char *const ch) {
   wchar_t wc;
   /* Only from U+1100 can code points have double width. */
@@ -383,9 +402,9 @@ bool is_doublewidth(const char *const ch) {
   return (wcwidth(wc) == 2);
 }
 
-/* Return 'TRUE' when the given character occupies zero cells. */
+/* Return `TRUE` when the given character occupies zero cells. */
 bool is_zerowidth(const char *ch) {
-  wchar_t wc;
+  wchar wc;
   /* Only from U+0300 can code points have zero width. */
   if ((Uchar)*ch < 0xCC || !use_utf8) {
     return FALSE;
@@ -393,12 +412,12 @@ bool is_zerowidth(const char *ch) {
   if (mbtowide(&wc, ch) < 0) {
     return FALSE;
   }
-#if defined(__OpenBSD__)
+# if defined(__OpenBSD__)
   /* Work around an OpenBSD bug -- see https://sv.gnu.org/bugs/?60393. */
   if (wc >= 0xF0000) {
     return FALSE;
   }
-#endif
+# endif
   return (wcwidth(wc) == 0);
 }
 
@@ -456,8 +475,8 @@ Ulong mbstrlen(const char *pointer) {
 
 /* Return the length (in bytes) of the character at the start of the given string, and return a copy of this character in *thechar. */
 int collect_char(const char *const str, char *c) {
-  const int charlen = char_length(str);
-  for (int i = 0; i < charlen; ++i) {
+  int charlen = char_length(str);
+  for (int i=0; i<charlen; ++i) {
     c[i] = str[i];
   }
   return charlen;
@@ -479,11 +498,11 @@ int advance_over(const char *const str, Ulong *column) {
         return 1;
       }
       const int width = wcwidth(wc);
-#if defined(__OpenBSD__)
+#     if defined(__OpenBSD__)
       *(*column) += ((width < 0 || wc >= 0xF0000) ? 1 : width);
-#else
+#     else
       (*column) += ((width < 0) ? 1 : width);
-#endif
+#     endif
       return charlen;
     }
   }
@@ -504,7 +523,7 @@ int advance_over(const char *const str, Ulong *column) {
   return 1;
 }
 
-/* ----------------------------- Step ----------------------------- */
+/* ----------------------------- Step left ----------------------------- */
 
 /* Return the index in buf of the beginning of the multibyte character before the one at pos. */
 Ulong step_left(const char *const buf, const Ulong pos) {
@@ -546,9 +565,39 @@ Ulong step_left(const char *const buf, const Ulong pos) {
   }
 }
 
+/* Move `file->current_x` one step to the left, while also ensuring we pass all preceding zerowidth characters. */
+void step_cursor_left(openfilestruct *const file) {
+  ASSERT(file);
+  /* Only perform any action when not already at the start of the current line. */
+  if (file->current_x > 0) {
+    /* Move one char to the left. */
+    STEP_LEFT(file);
+    /* Then advance over any zero-width chars. */
+    while (file->current_x > 0 && IS_ZEROWIDTH(file)) {
+      STEP_LEFT(file);
+    }
+  }
+}
+
+/* ----------------------------- Step right ----------------------------- */
+
 /* Return the index in buf of the beginning of the multibyte character after the one at pos. */
 Ulong step_right(const char *const buf, const Ulong pos) {
   return (pos + char_length(buf + pos));
+}
+
+/* Move `file->current_x` one step to the right, while also ensuring we pass all following zerowidth characters. */
+void step_cursor_right(openfilestruct *const file) {
+  ASSERT(file);
+  /* Only perform any action when not already at the end of the current line. */
+  if (file->current->data[file->current_x]) {
+    /* Move one step right. */
+    STEP_RIGHT(file);
+    /* Then advance over any zero-width chars. */
+    while (file->current->data[file->current_x] && IS_ZEROWIDTH(file)) {
+      STEP_RIGHT(file);
+    }
+  }
 }
 
 /* This function is equivalent to strcasecmp() for multibyte strings. */

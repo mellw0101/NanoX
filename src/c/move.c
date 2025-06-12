@@ -176,7 +176,7 @@ void do_page_down_for(openfilestruct *const file, int rows, int cols) {
     get_edge_and_target_for(file, cols, &leftedge, &target_column);
   }
   /* Move down the required number of lines or chunks.  If we can't, we're at the bottom of the file, so put the cursor there and get out. */
-  if (go_forward_chunks_for(file, mustmove, &file->current, &leftedge, cols) > 0) {
+  if (go_forward_chunks_for(file, cols, mustmove, &file->current, &leftedge) > 0) {
     to_last_line_for(file, rows);
     return;
   }
@@ -230,7 +230,7 @@ void to_bottom_row_for(openfilestruct *const file, int rows, int cols) {
   get_edge_and_target_for(file, cols, &leftedge, &target_column);
   file->current = file->edittop;
   leftedge      = file->firstcolumn;
-  go_forward_chunks_for(file, (rows - 1), &file->current, &leftedge, cols);
+  go_forward_chunks_for(file, cols, (rows - 1), &file->current, &leftedge);
   set_proper_index_and_pww_for(file, cols, &leftedge, target_column, FORWARD);
   place_the_cursor_for(file);
 }
@@ -510,7 +510,7 @@ void do_down_for(CTX_PARAMS) {
   Ulong target;
   get_edge_and_target_for(file, cols, &edge, &target);
   /* If we can't move down one line or chunk, we're at the bottom of the file. */
-  if (go_forward_chunks_for(file, 1, &file->current, &edge, cols) > 0) {
+  if (go_forward_chunks_for(file, cols, 1, &file->current, &edge) > 0) {
     return;
   }
   set_proper_index_and_pww_for(file, cols, &edge, target, FORWARD);
@@ -536,10 +536,10 @@ void do_down(void) {
 
 /* ----------------------------- Do left ----------------------------- */
 
-/* Move left one character in `file`. */
+/* Either, move left one character in `file`.  Or when `file` has a marked region, place the cursor at the start of that region. */
 void do_left_for(openfilestruct *const file, int rows, int cols) {
   ASSERT(file);
-  linestruct *was_current = file->current;
+  linestruct *const was_current = file->current;
   /* If a section is highlighted and shift is not held, then place the cursor at the left side of the marked area. */
   if (file->mark && file->softmark && !shift_held) {
     /* Only adjust the cursor when the mark is the `left` one.  Otherwise, the cursor already is.  */
@@ -551,10 +551,7 @@ void do_left_for(openfilestruct *const file, int rows, int cols) {
   else {
     /* When not at the start of the current line. */
     if (file->current_x > 0) {
-      file->current_x = step_left(file->current->data, file->current_x);
-      while (file->current_x > 0 && is_zerowidth(file->current->data + file->current_x)) {
-        file->current_x = step_left(file->current->data, file->current_x);
-      }
+      step_cursor_left(file);
     }
     /* Otherwise, when at the start of the current line, move one line up when possible. */
     else if (file->current != file->filetop) {
@@ -565,12 +562,114 @@ void do_left_for(openfilestruct *const file, int rows, int cols) {
   edit_redraw_for(STACK_CTX, was_current, FLOWING);
 }
 
-/* Move left one character in the currently open buffer.  Note that this is `context-safe`. */
+/* Either, move left one character in the currently open buffer.  Or when that buffer has a
+ * marked region, place the cursor at the start of that region.  Note that this is `context-safe`. */
 void do_left(void) {
   if (IN_GUI_CTX) {
     do_left_for(GUI_CTX);
   }
   else {
     do_left_for(TUI_CTX);
+  }
+}
+
+/* ----------------------------- Do right ----------------------------- */
+
+/* Either, move right one character in `file`.  Or when `file` has a marked region, place the cursor at the end of that region. */
+void do_right_for(CTX_PARAMS) {
+  ASSERT(file);
+  linestruct *const was_current = file->current;
+  /* If a section is highlighted and shift is not held, then place the cursor at the end of the marked region. */
+  if (file->mark && file->softmark && !shift_held) {
+    /* Only adjust the cursor when the mark is after the cursor.  Otherwise, the cursor is already in the correct position. */
+    if (!mark_is_before_cursor_for(file)) {
+      file->current   = file->mark;
+      file->current_x = file->mark_x;
+    }
+  }
+  else {
+    /* When not already at the end of the current line. */
+    if (file->current->data[file->current_x]) {
+      step_cursor_right(file);
+    }
+    /* Otherwise, when at the end of the current line, move one line down when possible. */
+    else if (file->current != file->filebot) {
+      DLIST_ADV_NEXT(file->current);
+      file->current_x = 0;
+    }
+  }
+  edit_redraw_for(STACK_CTX, was_current, FLOWING);
+}
+
+/* Either, move right one character in the currently open buffer.  Or when that buffer has a
+ * marked region, place the cursor at the end of that region.  Note that this is `context-safe`. */
+void do_right(void) {
+  if (IN_GUI_CTX) {
+    do_right_for(GUI_CTX);
+  }
+  else {
+    do_right_for(TUI_CTX);
+  }
+}
+
+/* ----------------------------- Do prev word ----------------------------- */
+
+/* Move to the previous word in `file`. */
+void do_prev_word_for(openfilestruct *const file, bool allow_punct) {
+  ASSERT(file);
+  bool seen_a_word  = FALSE;
+  /* Move backward until we pass over the start of a word. */
+  while (TRUE) {
+    /* At the start of the current line. */
+    if (!file->current_x) {
+      /* Move to the end of the preceeding line, if possible. */
+      if (file->current != file->filetop) {
+        DLIST_ADV_PREV(file->current);
+        file->current_x = strlen(file->current->data);
+      }
+      break;
+    }
+    /* Step one true step left, meaning we will take one step
+     * left, and then advance over all zero-width chars. */
+    step_cursor_left(file);
+    /* The current char under the cursor is either, a general word char, or language specific word char. */
+    if (IS_WORD_CHAR(file, allow_punct) || is_lang_word_char(file)) {
+      seen_a_word = TRUE;
+      if (!file->current_x) {
+        break;
+      }
+    }
+    /* We are now at a non word char, in other words we found the start of
+     * a word, so move right once so we end up at the start of the word. */
+    else if (seen_a_word) {
+      step_cursor_right(file);
+      break;
+    }
+  }
+}
+
+/* Move to the start of the previous word in the currently open buffer.  Note that this is `context-saft` */
+void do_prev_word(void) {
+  do_prev_word_for(CTX_OF, ISSET(WORD_BOUNDS));
+}
+
+/* ----------------------------- To prev word ----------------------------- */
+
+/* Move to the previous word in `file`, and update the screen afterwards. */
+void to_prev_word_for(CTX_PARAMS) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  do_prev_word_for(file, ISSET(WORD_BOUNDS));
+  edit_redraw_for(STACK_CTX, was_current, FLOWING);
+}
+
+/* Move to the previous word in the currently open buffer, and
+ * update the screen afterwards.  Note that this is `context-safe`. */
+void to_prev_word(void) {
+  if (IN_GUI_CTX) {
+    to_prev_word_for(GUI_CTX);
+  }
+  else {
+    to_prev_word_for(TUI_CTX);
   }
 }

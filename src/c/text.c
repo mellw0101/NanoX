@@ -640,7 +640,7 @@ void do_wrap_for(openfilestruct *const file, int cols) {
   do_enter_for(file);
   /* When wrapping a partially visible line, adjust start-of-screen. */
   if (file->edittop == line && file->firstcolumn > 0 && (long)cursor_x >= wrap_loc) {
-    go_forward_chunks_for(file, 1, &file->edittop, &file->firstcolumn, cols);
+    go_forward_chunks_for(file, cols, 1, &file->edittop, &file->firstcolumn);
   }
   /* If the original line has quoting, copy it to the spillage line. */
   if (quot_len > 0) {

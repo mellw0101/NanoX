@@ -1119,7 +1119,7 @@ static void suck_up_input_and_paste_it(void) {
 //     if (openfile->cursor_row == (editwinrows - 1)) {
 //       original_row = chunk_for(xplustabs(), thisline, editwincols);
 //     }
-//     old_amount = extra_chunks_in(thisline, editwincols);
+//     old_amount = extra_chunks_in(editwincols, thisline);
 //   }
 //   /* Encode an embedded NUL byte as 0x0A. */
 //   for (Ulong index=0; index<count; ++index) {
@@ -1164,7 +1164,7 @@ static void suck_up_input_and_paste_it(void) {
 //   openfile->placewewant = xplustabs();
 //   /* When softwrapping and the number of chunks in the current line changed, or we were
 //    * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
-//   if (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->current, editwincols) != old_amount
+//   if (ISSET(SOFTWRAP) && (extra_chunks_in(editwincols, openfile->current) != old_amount
 //    || (openfile->cursor_row == (editwinrows - 1) && chunk_for(openfile->placewewant, openfile->current, editwincols) > original_row))) {
 //     refresh_needed = TRUE;
 //     focusing = FALSE;

@@ -1172,7 +1172,7 @@ _UNUSED static inline int mvwaddnstr_curses(WINDOW *const window, int row, int c
   return mvwaddnstr(window, row, column, string, len);
 }
 
-static void place_the_cursor_for_internal(openfilestruct *const file, Ulong *const out_column, int total_cols) {
+static void place_the_cursor_for_internal(openfilestruct *const file, int cols, Ulong *const out_column) {
   ASSERT(file);
   ASSERT(out_column);
   long row = 0;
@@ -1181,19 +1181,19 @@ static void place_the_cursor_for_internal(openfilestruct *const file, Ulong *con
   Ulong leftedge;
   if (ISSET(SOFTWRAP)) {
     line = file->filetop;
-    row -= chunk_for(file->firstcolumn, file->edittop, total_cols);
+    row -= chunk_for(cols, file->firstcolumn, file->edittop);
     /* Calculate how meny rows from edittop the current line is. */
     while (line && line != file->edittop) {
-      row += (1 + extra_chunks_in(line, total_cols));
+      row += (1 + extra_chunks_in(cols, line));
       CLIST_ADV_NEXT(line);
     }
     /* Add the number of wraps in the current line before the cursor. */
-    row    += get_chunk_and_edge(column, file->current, &leftedge, total_cols);
+    row    += get_chunk_and_edge(cols, column, file->current, &leftedge);
     column -= leftedge;
   }
   else {
     row     = (file->current->lineno - file->edittop->lineno);
-    column -= get_page_start(column, total_cols);
+    column -= get_page_start(column, cols);
   }
   file->cursor_row = row;
   *out_column = column;
@@ -1201,17 +1201,25 @@ static void place_the_cursor_for_internal(openfilestruct *const file, Ulong *con
 
 /* Draw a `scroll bar` on the righthand side of the edit window. */
 static void draw_scrollbar_curses(void) {
-  int fromline     = (openfile->edittop->lineno - 1);
-  int totallines   = openfile->filebot->lineno;
-  int coveredlines = editwinrows;
+  int fromline;
+  int totallines;
+  int coveredlines;
   linestruct *line;
-  int lowest, highest, extras;
+  int lowest;
+  int highest;
+  int extras;
+  if (!IN_CURSES_CTX) {
+    return;
+  }
+  fromline     = (openfile->edittop->lineno - 1);
+  totallines   = openfile->filebot->lineno;
+  coveredlines = editwinrows;
   if (ISSET(SOFTWRAP)) {
     line = openfile->edittop;
-    extras = (extra_chunks_in(line, editwincols) - chunk_for(openfile->firstcolumn, line, editwincols));
+    extras = (extra_chunks_in(editwincols, line) - chunk_for(editwincols, openfile->firstcolumn, line));
     while ((line->lineno + extras) < (fromline + editwinrows) && line->next) {
       line = line->next;
-      extras += extra_chunks_in(line, editwincols);
+      extras += extra_chunks_in(editwincols, line);
     }
     coveredlines = (line->lineno - fromline);
   }
@@ -1221,10 +1229,8 @@ static void draw_scrollbar_curses(void) {
     highest = editwinrows;
   }
   for (int row=0; row<editwinrows; ++row) {
-    if (!ISSET(NO_NCURSES)) {
-      bardata[row] = (' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE));
-      mvwaddch(midwin, row, (COLS - 1), bardata[row]);
-    }
+    bardata[row] = (' ' | interface_color_pair[SCROLL_BAR] | ((row < lowest || row > highest) ? A_NORMAL : A_REVERSE));
+    mvwaddch(midwin, row, (COLS - 1), bardata[row]);
   }
 }
 
@@ -1907,13 +1913,13 @@ int get_mouseinput(int *const my, int *const mx, bool allow_shortcuts) {
  * When kickoff is TRUE, start at the beginning of the linedata; otherwise,
  * continue from where the previous call left off.  Set end_of_line to TRUE
  * when end-of-line is reached while searching for a possible breakpoint. */
-Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickoff, bool *end_of_line, int total_cols) {
+Ulong get_softwrap_breakpoint(int cols, const char *const restrict linedata, Ulong leftedge, bool *kickoff, bool *end_of_line) {
   /* Pointer at the current character in this line's data. */
   static const char *text;
   /* Column position that corresponds to the above pointer. */
   static Ulong column;
   /* The place at or before which text must be broken. */
-  Ulong rightside = (leftedge + total_cols);
+  Ulong rightside = (leftedge + cols);
   /* The column where text can be broken, when there's no better. */
   Ulong breaking_col = rightside;
   /* The column position of the last seen whitespace character. */
@@ -1962,19 +1968,19 @@ Ulong get_softwrap_breakpoint(const char *linedata, Ulong leftedge, bool *kickof
     }
   }
   /* Otherwise, break at the last character that doesn't overshoot. */
-  return ((total_cols > 1) ? breaking_col : (column - 1));
+  return ((cols > 1) ? breaking_col : (column - 1));
 }
 
 /* Return the row number of the softwrapped chunk in the given line that the given column is on, relative
  * to the first row (zero-based).  If leftedge isn't NULL, return in it the leftmost column of the chunk. */
-Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge, int total_cols) {
+Ulong get_chunk_and_edge(int cols, Ulong column, linestruct *line, Ulong *leftedge) {
   Ulong end_col;
   Ulong current_chunk = 0;
   Ulong start_col     = 0;
   bool end_of_line    = FALSE;
   bool kickoff        = TRUE;
   while (TRUE) {
-    end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line, total_cols);
+    end_col = get_softwrap_breakpoint(line->data, start_col, &kickoff, &end_of_line, cols);
     /* When the column is in range or we reached end-of-line, we're done. */
     if (end_of_line || (start_col <= column && column < end_col)) {
       if (leftedge) {
@@ -1988,19 +1994,19 @@ Ulong get_chunk_and_edge(Ulong column, linestruct *line, Ulong *leftedge, int to
 }
 
 /* Return how many extra rows the given line needs when softwrapping. */
-Ulong extra_chunks_in(linestruct *const line, int total_cols) {
-  return get_chunk_and_edge((Ulong)-1, line, NULL, total_cols);
+Ulong extra_chunks_in(int cols, linestruct *const line) {
+  return get_chunk_and_edge(cols, (Ulong)-1, line, NULL);
 }
 
 /* Return the row of the softwrapped chunk of the given line that column is on, relative to the first row (zero-based). */
-Ulong chunk_for(Ulong column, linestruct *const line, int total_cols) {
-  return get_chunk_and_edge(column, line, NULL, total_cols);
+Ulong chunk_for(int cols, Ulong column, linestruct *const line) {
+  return get_chunk_and_edge(cols, column, line, NULL);
 }
 
 /* Return the leftmost column of the softwrapped chunk of the given line that the given column is on. */
 Ulong leftedge_for(int cols, Ulong column, linestruct *const line) {
   Ulong leftedge;
-  get_chunk_and_edge(column, line, &leftedge, cols);
+  get_chunk_and_edge(cols, column, line, &leftedge);
   return leftedge;
 }
 
@@ -2015,10 +2021,10 @@ int go_back_chunks_for(openfilestruct *const file, int cols, int nrows, linestru
   if (ISSET(SOFTWRAP)) {
     /* Recede through the requested number of chunks. */
     for (i=nrows; i>0; --i) {
-      chunk       = chunk_for((*leftedge), (*line), cols);
+      chunk = chunk_for(cols, (*leftedge), (*line));
       (*leftedge) = 0;
       if ((int)chunk >= i) {
-        return go_forward_chunks_for(file, (chunk - i), line, leftedge, cols);
+        return go_forward_chunks_for(file, cols, (chunk - i), line, leftedge);
       }
       else if ((*line) == file->filetop) {
         break;
@@ -2056,7 +2062,7 @@ int go_back_chunks(int nrows, linestruct **const line, Ulong *const leftedge) {
 /* Try to move down nrows softwrapped chunks from the given line and the given column (leftedge).
  * After moving, leftedge will be set to the starting column of the current chunk.  Return the
  * number of chunks we couldn't move down, which will be zero if we completely succeeded. */
-int go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **const line, Ulong *const leftedge, int total_cols) {
+int go_forward_chunks_for(openfilestruct *const file, int cols, int nrows, linestruct **const line, Ulong *const leftedge) {
   int i;
   Ulong current_leftedge;
   bool kickoff;
@@ -2067,7 +2073,7 @@ int go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **co
     /* Advance thrue the requested number of chunks. */
     for (i=nrows; i>0; --i) {
       eol = FALSE;
-      current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &eol, total_cols);
+      current_leftedge = get_softwrap_breakpoint((*line)->data, current_leftedge, &kickoff, &eol, cols);
       if (!eol) {
         continue;
       }
@@ -2096,10 +2102,10 @@ int go_forward_chunks_for(openfilestruct *const file, int nrows, linestruct **co
  * number of chunks we couldn't move down, which will be zero if we completely succeeded. */
 int go_forward_chunks(int nrows, linestruct **const line, Ulong *const leftedge) {
   if (IN_GUI_CTX) { 
-    return go_forward_chunks_for(GUI_OF, nrows, line, leftedge, openeditor->cols);
+    return go_forward_chunks_for(GUI_OF, GUI_COLS, nrows, line, leftedge);
   }
   else {
-    return go_forward_chunks_for(openfile, nrows, line, leftedge, editwincols);
+    return go_forward_chunks_for(TUI_OF, TUI_COLS, nrows, line, leftedge);
   }
 }
 
@@ -2389,7 +2395,7 @@ bool current_is_below_screen_for(openfilestruct *const file, int rows, int cols)
     line     = file->edittop;
     leftedge = file->firstcolumn;
     /* If current[current_x] is more than a screen's worth of lines after edittop at column firstcolumn, it's below the screen. */
-    return (go_forward_chunks_for(file, (rows - 1 - SHIM), &line, &leftedge, cols) == 0 && (line->lineno < file->current->lineno
+    return (go_forward_chunks_for(file, cols, (rows - 1 - SHIM), &line, &leftedge) == 0 && (line->lineno < file->current->lineno
      || (line->lineno == file->current->lineno && leftedge < leftedge_for(cols, xplustabs_for(file), file->current))));
   }
   return (file->current->lineno >= (file->edittop->lineno + rows - SHIM));
@@ -2461,7 +2467,7 @@ void place_the_cursor_for(openfilestruct *const file) {
   ASSERT(file);
   Ulong column;
   if (IN_GUI_CTX) {
-    place_the_cursor_for_internal(file, &column, editor_from_file(file)->cols);
+    place_the_cursor_for_internal(file, editor_from_file(file)->cols, &column);
   }
   else if (IN_CURSES_CTX) {
     place_the_cursor_curses_for(openfile);
@@ -2472,10 +2478,10 @@ void place_the_cursor_for(openfilestruct *const file) {
 void place_the_cursor(void) {
   Ulong column;
   if (IN_GUI_CTX) {
-    place_the_cursor_for_internal(GUI_OF, &column, openeditor->cols);
+    place_the_cursor_for_internal(GUI_OF, GUI_COLS, &column);
   }
-  else if (!ISSET(NO_NCURSES)) {
-    place_the_cursor_curses_for(openfile);
+  else if (IN_CURSES_CTX) {
+    place_the_cursor_curses_for(TUI_OF);
   }
 }
 
@@ -2523,17 +2529,17 @@ void edit_scroll_for(openfilestruct *const file, bool direction) {
   leftedge = file->firstcolumn;
   /* If we scrolled forward, the bottom row needs to be redrawn. */
   if (direction == FORWARD) {
-    go_forward_chunks_for(file, (editwinrows - nrows), &line, &leftedge, editwincols);
+    go_forward_chunks_for(file, editwincols, (editwinrows - nrows), &line, &leftedge);
   }
   if (sidebar) {
     draw_scrollbar_curses();
   }
   if (ISSET(SOFTWRAP)) {
     /* Compensate for the earlier chunks of a softwrapped line. */
-    nrows += chunk_for(leftedge, line, editwincols);
+    nrows += chunk_for(editwincols, leftedge, line);
     /* Don't compensate for the chunks that are offscreen. */
     if (line == file->edittop) {
-      nrows -= chunk_for(file->firstcolumn, line, editwincols);
+      nrows -= chunk_for(editwincols, file->firstcolumn, line);
     }
   }
   /* Draw new content on the blank row (and on the bordering row too when it was deemed necessary). */
@@ -3283,7 +3289,7 @@ void bottombars_curses(int menu) {
 void place_the_cursor_curses_for(openfilestruct *const file) {
   ASSERT(file);
   Ulong column;
-  place_the_cursor_for_internal(file, &column, editwincols);
+  place_the_cursor_for_internal(file, editwincols, &column);
   if (file->cursor_row < editwinrows) {
     wmove(midwin, file->cursor_row, (margin + column));
   }
@@ -3598,11 +3604,11 @@ int update_softwrapped_line_curses_for(openfilestruct *const file, linestruct *c
     from_col = file->firstcolumn;
   }
   else {
-    row -= chunk_for(file->firstcolumn, file->edittop, editwincols);
+    row -= chunk_for(editwincols, file->firstcolumn, file->edittop);
   }
   /* Find out on which screen row the target line should be shown. */
   while (someline != line && someline) {
-    row += (1 + extra_chunks_in(someline, editwincols));
+    row += (1 + extra_chunks_in(editwincols, someline));
     someline = someline->next;
   }
   /* If the first chunk is offscreen, don't even try to display it. */

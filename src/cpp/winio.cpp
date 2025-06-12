@@ -2498,10 +2498,10 @@
 //   if (ISSET(SOFTWRAP)) {
 //     linestruct *line = openfile->edittop;
 //     Ulong leftedge;
-//     row -= chunk_for(openfile->firstcolumn, openfile->edittop, editwincols);
+//     row -= chunk_for(editwincols, openfile->firstcolumn, openfile->edittop);
 //     /* Calculate how many rows the lines from edittop to current use. */
 //     while (line && line != openfile->current) {
-//       row += (1 + extra_chunks_in(line, editwincols));
+//       row += (1 + extra_chunks_in(editwincols, line));
 //       line = line->next;
 //     }
 //     /* Add the number of wraps in the current line before the cursor. */
@@ -2792,11 +2792,11 @@
 //     from_col = openfile->firstcolumn;
 //   }
 //   else {
-//     row -= chunk_for(openfile->firstcolumn, openfile->edittop, editwincols);
+//     row -= chunk_for(editwincols, openfile->firstcolumn, openfile->edittop);
 //   }
 //   /* Find out on which screen row the target line should be shown. */
 //   while (someline != line && someline) {
-//     row += (1 + extra_chunks_in(someline, editwincols));
+//     row += (1 + extra_chunks_in(editwincols, someline));
 //     someline = someline->next;
 //   }
 //   /* If the first chunk is offscreen, don't even try to display it. */
@@ -2926,10 +2926,10 @@
 //   int lowest, highest, extras;
 //   if (ISSET(SOFTWRAP)) {
 //     line = openfile->edittop;
-//     extras = (extra_chunks_in(line, editwincols) - chunk_for(openfile->firstcolumn, line, editwincols));
+//     extras = (extra_chunks_in(editwincols, line) - chunk_for(editwincols, openfile->firstcolumn, line));
 //     while ((line->lineno + extras) < (fromline + editwinrows) && line->next) {
 //       line = line->next;
-//       extras += extra_chunks_in(line, editwincols);
+//       extras += extra_chunks_in(editwincols, line);
 //     }
 //     coveredlines = (line->lineno - fromline);
 //   }
@@ -2988,10 +2988,10 @@
 //   }
 //   if (ISSET(SOFTWRAP)) {
 //     /* Compensate for the earlier chunks of a softwrapped line. */
-//     nrows += chunk_for(leftedge, line, editwincols);
+//     nrows += chunk_for(editwincols, leftedge, line);
 //     /* Don't compensate for the chunks that are offscreen. */
 //     if (line == openfile->edittop) {
-//       nrows -= chunk_for(openfile->firstcolumn, line, editwincols);
+//       nrows -= chunk_for(editwincols, openfile->firstcolumn, line);
 //     }
 //   }
 //   /* Draw new content on the blank row (and on the bordering row too when it was deemed necessary). */
