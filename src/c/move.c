@@ -667,9 +667,9 @@ void to_prev_word_for(CTX_PARAMS, bool allow_punct) {
  * update the screen afterwards.  Note that this is `context-safe`. */
 void to_prev_word(void) {
   if (IN_GUI_CTX) {
-    to_prev_word_for(GUI_CTX);
+    to_prev_word_for(GUI_CTX, ISSET(WORD_BOUNDS));
   }
   else {
-    to_prev_word_for(TUI_CTX);
+    to_prev_word_for(TUI_CTX, ISSET(WORD_BOUNDS));
   }
 }
