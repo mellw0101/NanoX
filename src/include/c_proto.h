@@ -979,7 +979,7 @@ void do_right_for(CTX_PARAMS);
 void do_right(void);
 void do_prev_word_for(openfilestruct *const file, bool allow_punct);
 void do_prev_word(void);
-void to_prev_word_for(CTX_PARAMS);
+void to_prev_word_for(CTX_PARAMS, bool allow_punct);
 void to_prev_word(void);
 
 

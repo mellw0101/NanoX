@@ -656,10 +656,10 @@ void do_prev_word(void) {
 /* ----------------------------- To prev word ----------------------------- */
 
 /* Move to the previous word in `file`, and update the screen afterwards. */
-void to_prev_word_for(CTX_PARAMS) {
+void to_prev_word_for(CTX_PARAMS, bool allow_punct) {
   ASSERT(file);
   linestruct *was_current = file->current;
-  do_prev_word_for(file, ISSET(WORD_BOUNDS));
+  do_prev_word_for(file, allow_punct);
   edit_redraw_for(STACK_CTX, was_current, FLOWING);
 }
 
