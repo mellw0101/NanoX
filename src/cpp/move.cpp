@@ -356,71 +356,71 @@ static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong col
 /* Move to the next word.  If after_ends is 'TRUE', stop at the ends of words
  * instead of at their beginnings.  If 'after_ends' is 'TRUE', stop at the ends
  * of words instead of at their beginnings. Return 'TRUE' if we started on a word. */
-bool do_next_word(bool after_ends) _NOTHROW {
-  bool punct_as_letters = ISSET(WORD_BOUNDS);
-  bool started_on_word  = (is_cursor_word_char(punct_as_letters) || is_cursor_language_word_char());
-  bool seen_space       = !started_on_word;
-  bool seen_word        = started_on_word;
-  Uint i = 0;
-  /* Move forward until we reach the start of a word. */
-  while (TRUE) {
-    /* If at the end of a line, move to the beginning of the next one. */
-    if (!openfile->current->data[openfile->current_x]) {
-      /* If not called starting at eof, stop here. */
-      if (i != 0) {
-        break;
-      }
-      /* When at end of file, stop. */
-      if (!openfile->current->next) {
-        break;
-      }
-      openfile->current   = openfile->current->next;
-      openfile->current_x = 0;
-      if (after_ends) {
-        /* If we stop after the end of words then then the first iter will be at 0 were we reach '\0'. */
-        if (i == 0) {
-          openfile->current_x = indent_length(openfile->current->data);
-          break;
-        }
-      }
-      seen_space = TRUE;
-    }
-    else {
-      /* Step forward one character. */
-      openfile->current_x = step_right(openfile->current->data, openfile->current_x);
-    }
-    if (after_ends) {
-      /* If this is a word character, continue. */
-      if (is_cursor_word_char(punct_as_letters) || is_cursor_language_word_char()) {
-        seen_word = TRUE;
-      }
-      else if (is_cursor_zerowidth()) {
-        ; /* Skip */
-      }
-      /* Else, it's a separator, and if we've already seen a word, then it's a word end. */
-      else if (seen_word) {
-        break;
-      }
-    }
-    else {
-      if (is_cursor_zerowidth()) {
-        ;
-      }
-      else {
-        /* If this is not a word character, then it's a separator. */
-        if (!is_cursor_word_char(punct_as_letters)) {
-          seen_space = TRUE;
-        }
-        /* Else, if we've already seen a separator, then it's a word start. */
-        else if (seen_space) {
-          break;
-        }
-      }
-    }
-    ++i;
-  }
-  return started_on_word;
-}
+// bool do_next_word(bool after_ends) _NOTHROW {
+//   bool punct_as_letters = ISSET(WORD_BOUNDS);
+//   bool started_on_word  = (is_cursor_word_char(punct_as_letters) || is_cursor_language_word_char());
+//   bool seen_space       = !started_on_word;
+//   bool seen_word        = started_on_word;
+//   Uint i = 0;
+//   /* Move forward until we reach the start of a word. */
+//   while (TRUE) {
+//     /* If at the end of a line, move to the beginning of the next one. */
+//     if (!openfile->current->data[openfile->current_x]) {
+//       /* If not called starting at eof, stop here. */
+//       if (i != 0) {
+//         break;
+//       }
+//       /* When at end of file, stop. */
+//       if (!openfile->current->next) {
+//         break;
+//       }
+//       openfile->current   = openfile->current->next;
+//       openfile->current_x = 0;
+//       if (after_ends) {
+//         /* If we stop after the end of words then then the first iter will be at 0 were we reach '\0'. */
+//         if (i == 0) {
+//           openfile->current_x = indent_length(openfile->current->data);
+//           break;
+//         }
+//       }
+//       seen_space = TRUE;
+//     }
+//     else {
+//       /* Step forward one character. */
+//       openfile->current_x = step_right(openfile->current->data, openfile->current_x);
+//     }
+//     if (after_ends) {
+//       /* If this is a word character, continue. */
+//       if (is_cursor_word_char(punct_as_letters) || is_cursor_language_word_char()) {
+//         seen_word = TRUE;
+//       }
+//       else if (is_cursor_zerowidth()) {
+//         ; /* Skip */
+//       }
+//       /* Else, it's a separator, and if we've already seen a word, then it's a word end. */
+//       else if (seen_word) {
+//         break;
+//       }
+//     }
+//     else {
+//       if (is_cursor_zerowidth()) {
+//         ;
+//       }
+//       else {
+//         /* If this is not a word character, then it's a separator. */
+//         if (!is_cursor_word_char(punct_as_letters)) {
+//           seen_space = TRUE;
+//         }
+//         /* Else, if we've already seen a separator, then it's a word start. */
+//         else if (seen_space) {
+//           break;
+//         }
+//       }
+//     }
+//     ++i;
+//   }
+//   return started_on_word;
+// }
 
 /* Move to the previous word in the file, and update the screen afterwards. */
 // void to_prev_word(void) {
@@ -430,11 +430,11 @@ bool do_next_word(bool after_ends) _NOTHROW {
 // }
 
 /* Move to the next word in the file. If the AFTER_ENDS flag is set, stop at word ends instead of beginnings.  Update the screen afterwards. */
-void to_next_word(void) {
-  linestruct *was_current = openfile->current;
-  do_next_word(ISSET(AFTER_ENDS));
-  edit_redraw(was_current, FLOWING);
-}
+// void to_next_word(void) {
+//   linestruct *was_current = openfile->current;
+//   do_next_word(ISSET(AFTER_ENDS));
+//   edit_redraw(was_current, FLOWING);
+// }
 
 /* Move to the beginning of the current line (or softwrapped chunk).  When enabled, do a smart home.
  * When softwrapping, go the beginning of the full line when already at the start of a chunk. */

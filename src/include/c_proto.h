@@ -981,6 +981,10 @@ void do_prev_word_for(openfilestruct *const file, bool allow_punct);
 void do_prev_word(void);
 void to_prev_word_for(CTX_PARAMS, bool allow_punct);
 void to_prev_word(void);
+bool do_next_word_for(openfilestruct *const file, bool after_ends, bool allow_punct);
+bool do_next_word(bool after_ends);
+void to_next_word_for(CTX_PARAMS, bool after_ends, bool allow_punct);
+void to_next_word(void);
 
 
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */

@@ -111,6 +111,25 @@
 #define FULL_GUI_CTX  &GUI_SF, &GUI_OF, GUI_RC
 #define FULL_TUI_CTX  &TUI_SF, &TUI_OF, TUI_RC
 
+#define CTX_CALL(func)  \
+  DO_WHILE(             \
+    if (IN_GUI_CTX) {   \
+      (func)(GUI_CTX);  \
+    }                   \
+    else {              \
+      (func)(TUI_CTX);  \
+    }                   \
+  )
+
+#define CTX_CALL_WARGS(func, ...)    \
+  DO_WHILE(                          \
+    if (IN_GUI_CTX) {                \
+      (func)(GUI_CTX, __VA_ARGS__);  \
+    }                                \
+    else {                           \
+      (func)(TUI_CTX, __VA_ARGS__);  \
+    }                                \
+  )
 
 #define ASSERT_EDITOR(editor)  \
   ASSERT(editor);              \

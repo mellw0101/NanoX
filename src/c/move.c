@@ -617,24 +617,44 @@ void do_right(void) {
 /* Move to the previous word in `file`. */
 void do_prev_word_for(openfilestruct *const file, bool allow_punct) {
   ASSERT(file);
-  bool seen_a_word  = FALSE;
+  /* The indent length of the current line. */
+  Ulong indentlen = indent_length(file->current->data);
+  /* The x position we started at. */
+  Ulong start_x = file->current_x;
+  /* Is set to true every time we see a word char. */
+  bool seen_a_word = FALSE;
+  /* If we started at the beginning of the current line. */
+  bool started_at_zero = !start_x;
   /* Move backward until we pass over the start of a word. */
   while (TRUE) {
-    /* At the start of the current line. */
+    /* We are at the beginning of the current line. */
     if (!file->current_x) {
-      /* Move to the end of the preceeding line, if possible. */
-      if (file->current != file->filetop) {
+      /* When we started at the beggining of the current line, move to the end of the preceeding line, if possible. */
+      if (started_at_zero && file->current->prev) {
         DLIST_ADV_PREV(file->current);
         file->current_x = strlen(file->current->data);
+        /* Set the starting x position to the new x position. */
+        start_x = file->current_x;
+        /* Update `indentlen` to reflect the new current line's indent length. */
+        indentlen = indent_length(file->current->data);
+        /* Set started at zero to `FALSE`. */
+        started_at_zero = FALSE;
       }
+      /* Otherwise, when we did not start at the beginning, we stop at the beginning. */
+      else {
+        break;
+      }
+    }
+    /* Else, when we are at the indent length of the current line, and we did not start here. */
+    else if (file->current_x == indentlen && start_x != indentlen) {
       break;
     }
-    /* Step one true step left, meaning we will take one step
-     * left, and then advance over all zero-width chars. */
+    /* Step one true step left, meaning we will take one step left, and then advance over all zero-width chars. */
     step_cursor_left(file);
     /* The current char under the cursor is either, a general word char, or language specific word char. */
     if (IS_WORD_CHAR(file, allow_punct) || is_lang_word_char(file)) {
       seen_a_word = TRUE;
+      /* If we are at the start of the line, and the char under the cursor is a word char, we must be at the word start. */
       if (!file->current_x) {
         break;
       }
@@ -666,10 +686,85 @@ void to_prev_word_for(CTX_PARAMS, bool allow_punct) {
 /* Move to the previous word in the currently open buffer, and
  * update the screen afterwards.  Note that this is `context-safe`. */
 void to_prev_word(void) {
-  if (IN_GUI_CTX) {
-    to_prev_word_for(GUI_CTX, ISSET(WORD_BOUNDS));
+  CTX_CALL_WARGS(to_prev_word_for, ISSET(WORD_BOUNDS));
+}
+
+/* ----------------------------- Do next word ----------------------------- */
+
+/* Move to the next word in `file`.  If `after_ends` is `TRUE`, stop at the ends
+ * of words instead of at their beginnings.  Returns `TRUE` if we started at a word.
+ * And if `allow_punct` is `TRUE`, then punctuations are considered word chars. */
+bool do_next_word_for(openfilestruct *const file, bool after_ends, bool allow_punct) {
+  ASSERT(file);
+  bool started_on_word = (IS_WORD_CHAR(file, allow_punct) || is_lang_word_char(file));
+  bool seen_space      = !started_on_word;
+  bool seen_word       =  started_on_word;
+  bool started_at_eol  = !file->current->data[file->current_x];
+  /* Move forward until we reach the start, or end of a word.  Depending on `after_ends`. */
+  while (TRUE) {
+    /* We are at the end of the current line. */
+    if (!file->current->data[file->current_x]) {
+      /* When we started at the end of the current line and the current line is not the
+       * last line in the file, move to the start of the first word at the next line. */
+      if (started_at_eol && file->current->next) {
+        DLIST_ADV_NEXT(file->current);
+        file->current_x = indent_length(file->current->data);
+        started_at_eol = FALSE;
+      }
+      else {
+        break;
+      }
+    }
+    /* Step one true step right, meaning step one char to the right
+     * in file, then advance over all following zero-width chars. */
+    step_cursor_right(file);
+    /* Stopping after words. */
+    if (after_ends) {
+      /* The current char under the cursor is either, a general word char, or language specific word char. */
+      if (IS_WORD_CHAR(file, allow_punct) || is_lang_word_char(file)) {
+        seen_word = TRUE;
+      }
+      /* We are now at a non word char, in other words we found the start of
+       * a word, so move right once so we end up at the start of the word. */ 
+      else if (seen_word) {
+        break;
+      }
+    }
+    /* Stopping at the start of words. */
+    else {
+      /* The current char under the cursur in neither a word char, nor a language specific word char. */
+      if (!IS_WORD_CHAR(file, allow_punct) && !is_lang_word_char(file)) {
+        seen_space = TRUE;
+      }
+      /* We are now at a word char, or a language specific word char. */
+      else if (seen_space) {
+        break;
+      }
+    }
   }
-  else {
-    to_prev_word_for(TUI_CTX, ISSET(WORD_BOUNDS));
-  }
+  return started_on_word;
+}
+
+/* Move to the next word in the currently open file.  If `after_ends` is `TRUE`, stop at
+ * the ends of words instead of at their beginnings.  Returns `TRUE` if we started at a
+ * word.  And if `allow_punct` is `TRUE`, then punctuations are considered word chars. */
+bool do_next_word(bool after_ends) {
+  return do_next_word_for(CTX_OF, after_ends, ISSET(WORD_BOUNDS));
+}
+
+/* ----------------------------- To next word ----------------------------- */
+
+/* Move to the next word in `file`.  If the `AFTER_ENDS` flag is set, stop at
+ * the end of words instead of at the beginning.  Update the screen afterwards. */
+void to_next_word_for(CTX_PARAMS, bool after_ends, bool allow_punct) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  do_next_word_for(file, after_ends, allow_punct);
+  edit_redraw_for(STACK_CTX, was_current, FLOWING);
+}
+
+/* Move to the next word in the currently open buffer.  If the `AFTER_ENDS` flag is set,
+ * stop at the end of words instead of at the beginning.  Update the screen_afterwards. */
+void to_next_word(void) {
+  CTX_CALL_WARGS(to_next_word_for, ISSET(AFTER_ENDS), ISSET(WORD_BOUNDS));
 }

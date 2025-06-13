@@ -75,13 +75,20 @@ bool using_utf8(void) {
 /* TODO: When we have remade the filetype into a enum then remove `file` dependency and add a codepoint and a filetype param. */
 bool is_lang_word_char(openfilestruct *const file) {
   ASSERT(file);
-  /* C/C++ */
-  if ((openfile->is_c_file || openfile->is_cxx_file) && strchr("{}=|&!/", file->current->data[file->current_x])) {
-    return TRUE;
-  }
-  /* AT&T Asm. */
-  else if (openfile->is_atnt_asm_file && strchr("#", file->current->data[file->current_x])) {
-    return TRUE;
+  char symbol[MAXCHARLEN + 1];
+  int  symlen;
+  /* Do not allow checking if the char under the cursor is '\0', as this would always be true. */
+  if (file->current->data[file->current_x]) {
+    symlen = collect_char((file->current->data + file->current_x), symbol);
+    symbol[symlen] = '\0';
+    /* C/C++ */
+    if ((file->is_c_file || file->is_cxx_file) && strstr("{}=|&!/", symbol)) {
+      return TRUE;
+    }
+    /* AT&T Asm. */
+    else if (file->is_atnt_asm_file && strstr("#", symbol)) {
+      return TRUE;
+    }
   }
   return FALSE;
 }
@@ -472,6 +479,8 @@ Ulong mbstrlen(const char *pointer) {
   }
   return count;
 }
+
+/* ----------------------------- Collect char ----------------------------- */
 
 /* Return the length (in bytes) of the character at the start of the given string, and return a copy of this character in *thechar. */
 int collect_char(const char *const str, char *c) {
