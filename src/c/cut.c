@@ -167,7 +167,7 @@ void extract_segment_for(openfilestruct *const file, int rows, int cols, linestr
     taken->next     = top->next;
     top->next->prev = taken;
     top->next       = bot->next;
-    (bot->next) ? bot->next->prev = top : 0;
+    (bot->next) ? (bot->next->prev = top) : 0;
     top->data = xrealloc(top->data, (top_x + strlen(bot->data + bot_x) + 1));
     strcpy((top->data + top_x), (bot->data + bot_x));
     last              = bot;
@@ -295,7 +295,8 @@ void do_snip_for(openfilestruct *const file, int rows, int cols, bool marked, bo
     file->placewewant = 0;
   }
   /* After a line operation, future ones should add to the cutbuffer. */
-  keep_cutbuffer = (!marked && !until_eof);
+  // keep_cutbuffer = (!marked && !until_eof);
+  keep_cutbuffer = FALSE;
   set_modified_for(file);
   refresh_needed = TRUE;
   perturbed      = TRUE;
@@ -462,6 +463,7 @@ void ingraft_buffer_into(openfilestruct *const file, linestruct *top, linestruct
     if (!file->current->next) {
       file->filebot = bot;
     }
+    file->current->data[xpos + extralen] = '\0';
     /* Hook the grafted lines in after the current one. */
     DLIST_INSERT_DLIST_AFTER(file->current, top->next, bot);
     renumber_from(file->current);

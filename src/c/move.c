@@ -627,6 +627,8 @@ void do_prev_word_for(openfilestruct *const file, bool allow_punct) {
   bool started_at_zero = !start_x;
   /* Move backward until we pass over the start of a word. */
   while (TRUE) {
+    /* Step one true step left, meaning we will take one step left, and then advance over all zero-width chars. */
+    step_cursor_left(file);
     /* We are at the beginning of the current line. */
     if (!file->current_x) {
       /* When we started at the beggining of the current line, move to the end of the preceeding line, if possible. */
@@ -649,8 +651,6 @@ void do_prev_word_for(openfilestruct *const file, bool allow_punct) {
     else if (file->current_x == indentlen && start_x != indentlen) {
       break;
     }
-    /* Step one true step left, meaning we will take one step left, and then advance over all zero-width chars. */
-    step_cursor_left(file);
     /* The current char under the cursor is either, a general word char, or language specific word char. */
     if (IS_WORD_CHAR(file, allow_punct) || is_lang_word_char(file)) {
       seen_a_word = TRUE;
@@ -702,6 +702,9 @@ bool do_next_word_for(openfilestruct *const file, bool after_ends, bool allow_pu
   bool started_at_eol  = !file->current->data[file->current_x];
   /* Move forward until we reach the start, or end of a word.  Depending on `after_ends`. */
   while (TRUE) {
+    /* Step one true step right, meaning step one char to the right
+     * in file, then advance over all following zero-width chars. */
+    step_cursor_right(file);
     /* We are at the end of the current line. */
     if (!file->current->data[file->current_x]) {
       /* When we started at the end of the current line and the current line is not the
@@ -715,9 +718,6 @@ bool do_next_word_for(openfilestruct *const file, bool after_ends, bool allow_pu
         break;
       }
     }
-    /* Step one true step right, meaning step one char to the right
-     * in file, then advance over all following zero-width chars. */
-    step_cursor_right(file);
     /* Stopping after words. */
     if (after_ends) {
       /* The current char under the cursor is either, a general word char, or language specific word char. */
