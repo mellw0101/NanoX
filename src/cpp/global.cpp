@@ -43,7 +43,7 @@
 /* Messages of type HUSH should not overwrite type MILD nor ALERT. */
 // message_type lastmessage = VACUUM;
 /* The line where the last completion was found, if any. */
-linestruct *pletion_line = NULL;
+// linestruct *pletion_line = NULL;
 /* Whether indenting/commenting should include the last line of the marked region. */
 // bool also_the_last = FALSE;
 /* The answer string used by the status-bar prompt. */

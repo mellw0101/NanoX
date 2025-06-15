@@ -341,6 +341,9 @@
 #define BACKWARD  FALSE
 #define FORWARD   TRUE
 
+#define UP    TRUE
+#define DOWN  FALSE
+
 #define Schar   signed char
 #define BOOL    Uchar
 #define wchar   wchar_t
@@ -1042,9 +1045,12 @@ typedef enum {
 /* ----------------------------- General ----------------------------- */
 
 typedef struct {
-  float x, y, z;    /* Position. */
-  float s, t;       /* Tex. */
-  float r, g, b, a; /* Color. */
+  /* Position */
+  float x, y, z;
+  /* Tex */
+  float s, t;
+  /* Color */
+  float r, g, b, a;
 } vertex_t;
 
 struct colortype {
@@ -1097,6 +1103,7 @@ struct lintstruct {
 };
 
 struct linestruct {
+  /* TODO: Remove these and make this a simple int, and use an enum for flags. */
   bool is_block_comment_start   : 1;
   bool is_block_comment_end     : 1;
   bool is_in_block_comment      : 1;
@@ -1109,12 +1116,22 @@ struct linestruct {
   bool is_dont_preprocess_line  : 1;
   bool is_pp_line               : 1;
   
-  linestruct *next; /* Next node. */
-  linestruct *prev; /* Previous node. */
-  char *data;       /* The text of this line. */
-  long lineno;      /* The number of this line. */
-  short *multidata; /* Array of which multi-line regexes apply to this line. */
-  bool has_anchor;  /* Whether the user has placed an anchor at this line. */
+  /* Next node. */
+  linestruct *next; 
+  /* Previous node. */
+  linestruct *prev;
+
+  /* The text of this line. */
+  char *data;
+  /* The number of this line. */
+  long lineno;
+  /* Array of which multi-line regexes apply to this line. */
+  short *multidata;
+  /* Whether the user has placed an anchor at this line. */
+  bool has_anchor;
+  /* TODO: Add `data_length`, `indent_length` and `alloc_length` and
+   * strictly enforce these to stop dooing unessesary operations. */
+
   /* The state of the line. */
   // bit_flag_t<LINE_BIT_FLAG_SIZE> flags;
   /* Some short-hands to simplyfiy linestruct loop`s. */

@@ -304,6 +304,8 @@ linestruct *replacebot = NULL;
 linestruct *executetop = NULL;
 /* The empty item at the end of the list of execution strings. */
 linestruct *executebot = NULL;
+/* The line where the last completion was found, if any. */
+linestruct *pletion_line = NULL;
 
 /* ----------------------------- openfilestruct * ----------------------------- */
 

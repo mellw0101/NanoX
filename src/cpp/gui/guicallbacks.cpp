@@ -220,17 +220,17 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* Shift+Ctrl+A.  Enclose marked region. */
           if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
             /* When the file type is c based allow for creating block comment around the marked region. */
-            if (openfile->is_c_file || openfile->is_cxx_file || openfile->is_glsl_file /* openfile->type.is_set<C_CPP>() || openfile->type.is_set<GLSL>() */) {
+            if (GUI_OF->is_c_file || GUI_OF->is_cxx_file || GUI_OF->is_glsl_file /* GUI_OF->type.is_set<C_CPP>() || GUI_OF->type.is_set<GLSL>() */) {
               function = do_block_comment;
             }
           }
           /* Ctrl+A.  Mark the entire file. */
           else if (mods == GLFW_MOD_CONTROL) {
-            openfile->mark      = openfile->filetop;
-            openfile->mark_x    = 0;
-            openfile->current   = openfile->filebot;
-            openfile->current_x = strlen(openfile->filebot->data);
-            openfile->softmark  = TRUE;
+            GUI_OF->mark      = GUI_OF->filetop;
+            GUI_OF->mark_x    = 0;
+            GUI_OF->current   = GUI_OF->filebot;
+            GUI_OF->current_x = strlen(GUI_OF->filebot->data);
+            GUI_OF->softmark  = TRUE;
             refresh_needed      = TRUE;
           }
           break;
@@ -238,7 +238,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_C: {
           /* Copy action.  TODO: Make this more complete. */
           if (mods == GLFW_MOD_CONTROL) {
-            if (openfile->mark) {
+            if (GUI_OF->mark) {
               copy_marked_region();
               linestruct *bottom = cutbuffer;
               while (bottom->next) {
@@ -264,7 +264,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             }
             /* When there is not a marked region, just copy the data on the current line. */
             else {
-              char *string = fmtstr("%s\n", openfile->current->data);
+              char *string = fmtstr("%s\n", GUI_OF->current->data);
               glfwSetClipboardString(window, string);
               free(string);
             }
@@ -311,7 +311,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               syntaxfile_free(sf);
             }
             sf = syntaxfile_create();
-            syntaxfile_read(sf, openfile->filename);
+            syntaxfile_read(sf, GUI_OF->filename);
             syntaxfile_parse_csyntax(sf);
             for (SyntaxFileError *err = sf->errtop; err; err = err->next) {
               printf("%s:[%d:%d]: %s\n", err->file, err->pos->row, err->pos->column, err->msg);
@@ -399,17 +399,17 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         case GLFW_KEY_Q: {
           /* If CTRL+Q is pressed, quit. */
           if (mods == GLFW_MOD_CONTROL) {
-            if (!openeditor->openfile->modified || ISSET(VIEW_MODE)) {
+            if (!GUI_OF->modified || ISSET(VIEW_MODE)) {
               gui_quit();
             }
-            else if (ISSET(SAVE_ON_EXIT) && *openeditor->openfile->filename) {
+            else if (ISSET(SAVE_ON_EXIT) && *GUI_OF->filename) {
               ;
             }
             else {
-              char *question = fmtstr("Close [%s] without saving?", (*openeditor->openfile->filename ? openeditor->openfile->filename : "Nameless"));
+              char *question = fmtstr("Close [%s] without saving?", (*GUI_OF->filename ? GUI_OF->filename : "Nameless"));
               gui_ask_user(question, GUI_PROMPT_EXIT_NO_SAVE);
               free(question);
-              gui->promptmenu->closing_file = openeditor->openfile;
+              gui->promptmenu->closing_file = GUI_OF;
             }
           }
           break;
@@ -418,9 +418,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* Saving action. */
           if (mods == GLFW_MOD_CONTROL) {
             /* True if the current file has a name. */
-            bool has_name = *openfile->filename;
+            bool has_name = *GUI_OF->filename;
             /* If the openfile has a name, and if the file already exists. */
-            if (has_name && file_exists(openfile->filename)) {
+            if (has_name && file_exists(GUI_OF->filename)) {
               function = do_savefile;
             }
             /* Otherwise, ask if the user wants to save the file. */
@@ -428,7 +428,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
               gui_ask_user("Save file", GUI_PROMPT_SAVEFILE);
               /* If the file has a name but is not a file yet then add that name to the answer. */
               if (has_name) {
-                answer   = free_and_assign(answer, copy_of(openfile->filename));
+                answer   = free_and_assign(answer, copy_of(GUI_OF->filename));
                 typing_x = strlen(answer);
               }
               return;
@@ -438,7 +438,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           else if (action == GLFW_PRESS && mods == GLFW_MOD_ALT) {
             TOGGLE(SOFTWRAP);
             if (!ISSET(SOFTWRAP)) {
-              openfile->firstcolumn = 0;
+              GUI_OF->firstcolumn = 0;
             }
             show_toggle_statusmsg(SOFTWRAP);
             refresh_needed = TRUE;
@@ -711,7 +711,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             /* Move down. */
             case 0: {
               function = do_down;
-              if (openeditor->openfile->cursor_row == (openeditor->rows - 1)) {
+              if (GUI_OF->cursor_row == (openeditor->rows - 1)) {
                 scrollbar_refresh_needed(openeditor->sb);
               }
             }
@@ -923,19 +923,19 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     if (function != complete_a_word) {
       pletion_line = NULL;
     }
-    linestruct *was_current = openfile->current;
-    Ulong was_x = openfile->current_x;
+    linestruct *was_current = GUI_OF->current;
+    Ulong was_x = GUI_OF->current_x;
     /* If shifted movement occurs, set the mark. */
-    if (shift_held && !openfile->mark) {
-      openfile->mark     = openfile->current;
-      openfile->mark_x   = openfile->current_x;
-      openfile->softmark = TRUE;
+    if (shift_held && !GUI_OF->mark) {
+      GUI_OF->mark     = GUI_OF->current;
+      GUI_OF->mark_x   = GUI_OF->current_x;
+      GUI_OF->softmark = TRUE;
     }
     /* Execute the function. */
     function();
     /* When the marked region changes without Shift being held, discard a soft mark. And when the set of lines changes, reset the "last line too" flag. */
-    if (openfile->mark && openfile->softmark && !shift_held && (openfile->current != was_current || openfile->current_x != was_x || wanted_to_move(function)) && !keep_mark) {
-      openfile->mark = NULL;
+    if (GUI_OF->mark && GUI_OF->softmark && !shift_held && (GUI_OF->current != was_current || GUI_OF->current_x != was_x || wanted_to_move(function)) && !keep_mark) {
+      GUI_OF->mark = NULL;
     }
     /* Adjust the viewport if we move to the last or first line. */
     if (function == to_first_line || function == to_last_line) {
@@ -943,7 +943,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
       }
     }
-    else if (openfile->current != was_current) {
+    else if (GUI_OF->current != was_current) {
       also_the_last = FALSE;
     }
     /* When we have moved or changed something, tell the openeditor it needs to update the scrollbar. */
@@ -996,19 +996,19 @@ void char_callback(GLFWwindow *window, Uint ch) {
     }
     input = (char)ch;
     /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
-    if (openfile->mark && is_enclose_char((char)ch)) {
+    if (GUI_OF->mark && is_enclose_char((char)ch)) {
       const char *s1, *s2;
       input == '"' ? s1 = "\"", s2 = s1 : input == '\'' ? s1 = "'", s2 = s1 : input == '(' ? s1 = "(", s2 = ")" :
       input == '{' ? s1 = "{", s2 = "}" : input == '[' ? s1 = "[", s2 = "]" : input == '<' ? s1 = "<", s2 = ">" : 0;
       enclose_marked_region(s1, s2);
       return;
     }
-    else if (openfile->mark && openfile->softmark) {
+    else if (GUI_OF->mark && GUI_OF->softmark) {
       zap_replace_text(&input, 1);
       keep_mark            = FALSE;
       last_key_was_bracket = FALSE;
       last_bracket_char    = '\0';
-      openfile->mark       = NULL;
+      GUI_OF->mark       = NULL;
       return;
     }
     /* If a enclose char is pressed without a having a marked region, we simply enclose in place. */
@@ -1046,7 +1046,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
         ;
       }
       /* If '<' is pressed without being in a c/cpp file and at an include line, we simply do nothing. */
-      else if (input == '<' && openfile->current->data[indentlen(openfile->current->data)] != '#' && (openfile->is_c_file || openfile->is_cxx_file) /* openfile->type.is_set<C_CPP>() */) {
+      else if (input == '<' && GUI_OF->current->data[indentlen(GUI_OF->current->data)] != '#' && (GUI_OF->is_c_file || GUI_OF->is_cxx_file) /* GUI_OF->type.is_set<C_CPP>() */) {
         ;
       }
       else {
@@ -1058,12 +1058,12 @@ void char_callback(GLFWwindow *window, Uint ch) {
         input == '['  ? s1 = "[",  s2 = "]" :
         input == '<'  ? s1 = "<",  s2 = ">" : 0;
         /* 'Set' the mark, so that 'enclose_marked_region()' dosent exit because there is no marked region. */
-        openfile->mark = openfile->current;
-        openfile->mark_x = openfile->current_x;
+        GUI_OF->mark = GUI_OF->current;
+        GUI_OF->mark_x = GUI_OF->current_x;
         enclose_marked_region(s1, s2);
         /* Set the flag in the undo struct just created, marking an exception for future undo-redo actions. */
-        openfile->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
-        openfile->mark = NULL;
+        GUI_OF->undotop->xflags |= SHOULD_NOT_KEEP_MARK;
+        GUI_OF->mark = NULL;
         keep_mark      = FALSE;
         /* This flag ensures that if backspace is the next key that is pressed it will erase both of the enclose char`s. */
         last_key_was_bracket = TRUE;
@@ -1140,42 +1140,41 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
           /* Get the line and index from the mouse position. */
           Ulong index;
           linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
-          openfile->current     = line;
-          openfile->mark        = line;
-          openfile->current_x   = index;
-          openfile->mark_x      = index;
-          openfile->softmark    = TRUE;
-          openfile->placewewant = xplustabs();
+          GUI_OF->current     = line;
+          GUI_OF->mark        = line;
+          GUI_OF->current_x   = index;
+          GUI_OF->mark_x      = index;
+          GUI_OF->softmark    = TRUE;
+          GUI_OF->placewewant = xplustabs();
           /* If this was a double click then select the current word, if any. */
           if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
             Ulong st, end;
             st  = get_prev_cursor_word_start_index(TRUE);
             end = get_current_cursor_word_end_index(TRUE);
             /* If the double click was inside of a word. */
-            if (st != openfile->current_x && end != openfile->current_x) {
-              openfile->mark_x    = st;
-              openfile->current_x = end;
+            if (st != GUI_OF->current_x && end != GUI_OF->current_x) {
+              GUI_OF->mark_x    = st;
+              GUI_OF->current_x = end;
             }
             /* The double click was done at the end of the word.  So we select that word. */
-            else if (st != openfile->current_x && end == openfile->current_x) {
-              openfile->mark_x = st;
+            else if (st != GUI_OF->current_x && end == GUI_OF->current_x) {
+              GUI_OF->mark_x = st;
             }
             /* The double click was done at the begining of the word.  So we select that word. */
-            else if (st == openfile->current_x && end != openfile->current_x) {
-              openfile->mark_x    = st;
-              openfile->current_x = end;
+            else if (st == GUI_OF->current_x && end != GUI_OF->current_x) {
+              GUI_OF->mark_x    = st;
+              GUI_OF->current_x = end;
             }
           }
           /* Otherwise, if this was a tripple click then select the whole line. */
           else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
-            openfile->mark_x = 0;
-            openfile->current_x = strlen(openfile->current->data);
+            GUI_OF->mark_x = 0;
+            GUI_OF->current_x = strlen(GUI_OF->current->data);
           }
         }
         else if (test->has_file_data && test->parent && test->parent->has_editor_data && etb_element_is_main(test->parent->dp_editor->tb, test->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
           if (test->dp_file && test->dp_file != test->parent->dp_editor->openfile) {
             test->parent->dp_editor->openfile = test->dp_file;
-            openfile = test->parent->dp_editor->openfile;
             editor_redecorate(test->parent->dp_editor);
             editor_resize(test->parent->dp_editor);
             etb_active_refresh_needed(test->parent->dp_editor->tb);
@@ -1260,8 +1259,8 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     else if (action == GLFW_RELEASE) {
       mouse_flag.unset<LEFT_MOUSE_BUTTON_HELD>();
       /* If when the left mouse button is relesed without moving, set the mark to NULL. */
-      if (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x) {
-        openfile->mark = NULL;
+      if (GUI_OF->mark == GUI_OF->current && GUI_OF->mark_x == GUI_OF->current_x) {
+        GUI_OF->mark = NULL;
       }
       // if (gui->clicked) {
       //   /* If the clicked element is any part of any scrollbar. */
@@ -1444,58 +1443,58 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         linestruct *line;
         editor_get_text_line_index(gui->clicked->dp_editor, mousepos.x, mousepos.y, &line, &index);
         // linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
-        openfile->current   = line;
-        openfile->current_x = index;
+        GUI_OF->current   = line;
+        GUI_OF->current_x = index;
         /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
         if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
           Ulong st, end;
           st  = 0;
-          end = strlen(openfile->mark->data);
+          end = strlen(GUI_OF->mark->data);
           /* If the current cursor line is the same as mark, mark the entire line no matter the cursor pos inside it. */
-          if (openfile->current == openfile->mark) {
-            openfile->mark_x    = st;
-            openfile->current_x = end;
+          if (GUI_OF->current == GUI_OF->mark) {
+            GUI_OF->mark_x    = st;
+            GUI_OF->current_x = end;
           }
           /* If the current line is above the line where the mark was placed, set the mark index at the end of the line. */
-          if (openfile->current->lineno < openfile->mark->lineno) {
-            openfile->mark_x = end;
+          if (GUI_OF->current->lineno < GUI_OF->mark->lineno) {
+            GUI_OF->mark_x = end;
           }
           /* Otherwise, place it at the start. */
           else {
-            openfile->mark_x = st;
+            GUI_OF->mark_x = st;
           }
         }
         /* If the left press was a double press. */
         else if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
           /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
           Ulong st, end;
-          st  = get_prev_word_start_index(openfile->mark->data, openfile->mark_x, TRUE);
-          end = get_current_word_end_index(openfile->mark->data, openfile->mark_x, TRUE);
+          st  = get_prev_word_start_index(GUI_OF->mark->data, GUI_OF->mark_x, TRUE);
+          end = get_current_word_end_index(GUI_OF->mark->data, GUI_OF->mark_x, TRUE);
           /* If the current line is the same as the mark line. */
-          if (openfile->current == openfile->mark) {
+          if (GUI_OF->current == GUI_OF->mark) {
             /* When the current cursor pos is inside the the word, just mark the entire word. */
-            if (openfile->current_x >= st && openfile->current_x <= end) {
-              openfile->mark_x    = st;
-              openfile->current_x = end;
+            if (GUI_OF->current_x >= st && GUI_OF->current_x <= end) {
+              GUI_OF->mark_x    = st;
+              GUI_OF->current_x = end;
             }
             /* Or, when the cursor if before the word, set the mark at the end of the word. */
-            else if (openfile->current_x < st) {
-              openfile->mark_x = end;
+            else if (GUI_OF->current_x < st) {
+              GUI_OF->mark_x = end;
             }
             /* And when the cursor is after the word, place the mark at the start. */
-            else if (openfile->current_x > end) {
-              openfile->mark_x = st;
+            else if (GUI_OF->current_x > end) {
+              GUI_OF->mark_x = st;
             }
           }
           /* Otherwise, when the cursor line is above the mark, place the mark at the end of the word. */
-          else if (openfile->current->lineno < openfile->mark->lineno) {
-            openfile->mark_x = end;
+          else if (GUI_OF->current->lineno < GUI_OF->mark->lineno) {
+            GUI_OF->mark_x = end;
           }
           /* And when the cursor line is below the mark line, place the mark at the start of the word. */
           else {
-            openfile->mark_x = st;
+            GUI_OF->mark_x = st;
           }
-          openfile->placewewant = xplustabs();
+          GUI_OF->placewewant = xplustabs();
         }
       }
     }

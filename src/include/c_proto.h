@@ -157,6 +157,7 @@ extern linestruct *replacetop;
 extern linestruct *replacebot;
 extern linestruct *executetop;
 extern linestruct *executebot;
+extern linestruct *pletion_line;
 
 extern openfilestruct *openfile;
 extern openfilestruct *startfile;
@@ -403,6 +404,7 @@ int  nanox_socket_client(void);
 /* ----------------------------------------------- text.c ----------------------------------------------- */
 
 
+void set_marked_region_for(openfilestruct *const file, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x, bool cursor_at_head);
 void  do_tab_for(openfilestruct *const file, int rows, int cols);
 void  do_tab(void);
 Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
@@ -490,13 +492,17 @@ bool  comment_line_for(openfilestruct *const file, undo_type action, linestruct 
 bool  comment_line(undo_type action, linestruct *const line, const char *const restrict comment_seq);
 char *get_comment_seq_for(openfilestruct *const file);
 char *get_comment_seq(void);
-void  do_comment_for(openfilestruct *const file, int total_cols);
+void  do_comment_for(openfilestruct *const file, int cols);
 void  do_comment(void);
 void  handle_comment_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_comment);
 void  handle_comment_action(undostruct *const u, bool undoing, bool add_comment);
 char *copy_completion(const char *restrict text);
 void  do_enter_for(openfilestruct *const file);
 void  do_enter(void);
+void  do_undo_for(CTX_PARAMS);
+void  do_undo(void);
+void  do_redo_for(CTX_PARAMS);
+void  do_redo(void);
 
 
 /* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */
@@ -817,7 +823,7 @@ int   go_back_chunks_for(openfilestruct *const file, int cols, int nrows, linest
 int   go_back_chunks(int nrows, linestruct **const line, Ulong *const leftedge);
 int   go_forward_chunks_for(openfilestruct *const file, int cols, int nrows, linestruct **const line, Ulong *const leftedge);
 int   go_forward_chunks(int nrows, linestruct **const line, Ulong *const leftedge);
-void  ensure_firstcolumn_is_aligned_for(openfilestruct *const file, int total_cols);
+void  ensure_firstcolumn_is_aligned_for(openfilestruct *const file, int cols);
 void  ensure_firstcolumn_is_aligned(void);
 char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bool isprompt);
 bool  line_needs_update_for(openfilestruct *const file, int cols, Ulong old_column, Ulong new_column);
@@ -897,6 +903,11 @@ void spotlight_softwrapped_curses(Ulong from_col, Ulong to_col);
 bool line_in_marked_region_for(openfilestruct *const file, linestruct *const line);
 bool line_in_marked_region(linestruct *const line);
 char *line_last_mbchr(const linestruct *const line);
+void move_line_data(linestruct *const line, bool up);
+void move_lines_up_for(openfilestruct *const file);
+void move_lines_up(void);
+void move_lines_down_for(openfilestruct *const file);
+void move_lines_down(void);
 
 
 /* ---------------------------------------------------------- global.c ---------------------------------------------------------- */

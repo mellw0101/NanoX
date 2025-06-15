@@ -207,6 +207,8 @@ void editor_close(Editor *const editor) {
     if (editor == openeditor) {
       openeditor  = NULL;
       starteditor = NULL;
+      openfile   = NULL;
+      startfile  = NULL;
     }
     else {
       openfile  = openeditor->openfile;

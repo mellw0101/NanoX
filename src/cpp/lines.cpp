@@ -63,74 +63,74 @@ void move_line(linestruct *line, bool up) _NOTHROW {
 }
 
 /* Function to move line/lines up shortcut. */
-void move_lines_up(void) _NOTHROW {
-  /* Multi line move. */
-  if (openfile->mark && openfile->mark != openfile->current) {
-    bool mark_top = mark_is_before_cursor();
-    linestruct *top = (mark_top ? openfile->mark : openfile->current);
-    linestruct *bot = (mark_top ? openfile->current : openfile->mark);
-    if (top->lineno == 1) {
-      return;
-    }
-    add_undo(MOVE_LINE_UP, NULL);
-    Ulong end_line = bot->lineno;
-    for (linestruct *line = top->prev; line->lineno != end_line; line = line->next) {
-      move_line(line, FALSE);
-    }
-    openfile->current = openfile->current->prev;
-    openfile->mark    = openfile->mark->prev;
-    keep_mark = TRUE;
-  }
-  /* Single line move. */
-  else {
-    /* We cannot move the first line up. */
-    if (openfile->current->lineno == 1) {
-      return;
-    }
-    add_undo(MOVE_LINE_UP, NULL);
-    move_line(openfile->current, TRUE);
-    openfile->current = openfile->current->prev;
-    if (openfile->mark) {
-      openfile->mark = openfile->current;
-      keep_mark = TRUE;
-    }
-  }
-}
+// void move_lines_up(void) _NOTHROW {
+//   /* Multi line move. */
+//   if (openfile->mark && openfile->mark != openfile->current) {
+//     bool mark_top = mark_is_before_cursor();
+//     linestruct *top = (mark_top ? openfile->mark : openfile->current);
+//     linestruct *bot = (mark_top ? openfile->current : openfile->mark);
+//     if (top->lineno == 1) {
+//       return;
+//     }
+//     add_undo(MOVE_LINE_UP, NULL);
+//     Ulong end_line = bot->lineno;
+//     for (linestruct *line = top->prev; line->lineno != end_line; line = line->next) {
+//       move_line(line, FALSE);
+//     }
+//     openfile->current = openfile->current->prev;
+//     openfile->mark    = openfile->mark->prev;
+//     keep_mark = TRUE;
+//   }
+//   /* Single line move. */
+//   else {
+//     /* We cannot move the first line up. */
+//     if (openfile->current->lineno == 1) {
+//       return;
+//     }
+//     add_undo(MOVE_LINE_UP, NULL);
+//     move_line(openfile->current, TRUE);
+//     openfile->current = openfile->current->prev;
+//     if (openfile->mark) {
+//       openfile->mark = openfile->current;
+//       keep_mark = TRUE;
+//     }
+//   }
+// }
 
 /* Function to move line/lines down shortcut. */
-void move_lines_down(void) _NOTHROW {
-  /* Multi line move. */
-  if (openfile->mark && openfile->mark != openfile->current) {
-    bool mark_top = mark_is_before_cursor();
-    linestruct *top = (mark_top ? openfile->mark : openfile->current);
-    linestruct *bot = (mark_top ? openfile->current : openfile->mark);
-    if (!bot->next) {
-      return;
-    }
-    add_undo(MOVE_LINE_DOWN, NULL);
-    Ulong end_line = top->lineno;
-    for (linestruct *line = bot->next; line->lineno != end_line; line = line->prev) {
-      move_line(line, TRUE);
-    }
-    openfile->current = openfile->current->next;
-    openfile->mark    = openfile->mark->next;
-    keep_mark = TRUE;
-  }
-  /* Single line move. */
-  else {
-    /* We cannot move the last line down. */
-    if (!openfile->current->next) {
-      return;
-    }
-    add_undo(MOVE_LINE_DOWN, NULL);
-    move_line(openfile->current, FALSE);
-    openfile->current = openfile->current->next;
-    if (openfile->mark) {
-      openfile->mark = openfile->current;
-      keep_mark = TRUE;
-    }
-  }
-}
+// void move_lines_down(void) _NOTHROW {
+//   /* Multi line move. */
+//   if (openfile->mark && openfile->mark != openfile->current) {
+//     bool mark_top = mark_is_before_cursor();
+//     linestruct *top = (mark_top ? openfile->mark : openfile->current);
+//     linestruct *bot = (mark_top ? openfile->current : openfile->mark);
+//     if (!bot->next) {
+//       return;
+//     }
+//     add_undo(MOVE_LINE_DOWN, NULL);
+//     Ulong end_line = top->lineno;
+//     for (linestruct *line = bot->next; line->lineno != end_line; line = line->prev) {
+//       move_line(line, TRUE);
+//     }
+//     openfile->current = openfile->current->next;
+//     openfile->mark    = openfile->mark->next;
+//     keep_mark = TRUE;
+//   }
+//   /* Single line move. */
+//   else {
+//     /* We cannot move the last line down. */
+//     if (!openfile->current->next) {
+//       return;
+//     }
+//     add_undo(MOVE_LINE_DOWN, NULL);
+//     move_line(openfile->current, FALSE);
+//     openfile->current = openfile->current->next;
+//     if (openfile->mark) {
+//       openfile->mark = openfile->current;
+//       keep_mark = TRUE;
+//     }
+//   }
+// }
 
 /* Remove 'len' of char`s 'at' pos in line. */
 void erase_in_line(linestruct *line, Ulong at, Ulong len) {

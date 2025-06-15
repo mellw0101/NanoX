@@ -13,6 +13,10 @@
 /* The maximum depth of recursion.  Note that this MUST be an even number. */
 #define RECURSION_LIMIT 222
 
+/* Create callable paste names that correctly describe there task. */
+#define redo_paste_for  undo_cut_for
+#define undo_paste_for  redo_cut_for
+
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
@@ -48,9 +52,374 @@ static inline undostruct *undostruct_create_for(openfilestruct *const file, undo
   return u;
 }
 
+/* ----------------------------- Undo cut ----------------------------- */
+
+/* Undo a cut, or redo a paste. */
+static void undo_cut_for(openfilestruct *const file, int rows, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  goto_line_posx_for(file, rows, u->head_lineno, ((u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x));
+  /* Clear an inherited anchor but not a user-placed one. */
+  if (!(u->xflags & HAD_ANCHOR_AT_START)) {
+    file->current->has_anchor = FALSE;
+  }
+  /* If the undo-cutbuffer contains data, copy the data from it. */
+  if (u->cutbuffer) {
+    copy_from_buffer_for(file, rows, u->cutbuffer);
+  }
+  /* If originally the last line was cut too, remove the extra magic line. */
+  if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES) && file->current->next && !*file->filebot->prev->data) {
+    remove_magicline();
+  }
+  /* If the action was a `ZAP`, then restore the mark as well as the cursor. */
+  if (u->type == ZAP) {
+    restore_undo_posx_and_mark_for(file, rows, u);
+  }
+  /* Otherwise, just restore the cursor to where it was. */
+  else {
+    /* Head */
+    if (u->xflags & CURSOR_WAS_AT_HEAD) {
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+    }
+    /* Tail */
+    else {
+      goto_line_posx_for(file, rows, u->tail_lineno, u->tail_x);
+    }
+  }
+}
+
+/* ----------------------------- Redo cut ----------------------------- */
+
+/* Redo a cut, or undo a paste. */
+static void redo_cut_for(CTX_PARAMS, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  /* Save the cutbuffer. */
+  linestruct *was_cutbuffer = cutbuffer;
+  cutbuffer = NULL;
+  /* Set the mark at the head, and cursor at the tail. */
+  set_mark_for(file, u->head_lineno, ((u->xflags & WAS_WHOLE_LINE) ? 0 : u->head_x));
+  goto_line_posx_for(file, rows, u->tail_lineno, u->tail_x);
+  /* Perform the cut.  Then discard the cut lines. */
+  do_snip_for(STACK_CTX, TRUE, FALSE, (u->type == ZAP));
+  free_lines_for(NULL, cutbuffer);
+  /* Restore the cutbuffer. */
+  cutbuffer = was_cutbuffer;
+}
+
+/* ----------------------------- Undo move line ----------------------------- */
+
+/* Undo a move_line(s)_(up/down). */
+_UNUSED
+static void undo_move_line_for(openfilestruct *const file, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  linestruct *top;
+  linestruct *bot;
+  /* Single-line move. */
+  if (u->head_lineno == u->tail_lineno) {
+    file->current = line_from_number_for(file, u->head_lineno);
+    move_line_data(file->current, ((u->type == MOVE_LINE_UP) ? UP : DOWN));
+    /* Restore the mark, if it was set. */
+    if (u->xflags & MARK_WAS_SET) {
+      set_marked_region_for(file, file->current, u->head_x, file->current, u->tail_x, (u->xflags & CURSOR_WAS_AT_HEAD));
+      /* Indecate the mark should not be removed. */
+      keep_mark = TRUE;
+    }
+    /* Otherwise, just set the cursor position. */
+    else {
+      file->current_x = u->head_x;
+    }
+  }
+  /* Multi-line move. */
+  else {
+    top = line_from_number_for(file, u->head_lineno);
+    bot = line_from_number_for(file, u->tail_lineno);
+    if (u->type == MOVE_LINE_UP) {
+      DLIST_FOR_PREV_END(bot, top->prev, line) {
+        move_line_data(line, UP);
+      }
+    }
+    else {
+      DLIST_FOR_NEXT_END(top, bot->next, line) {
+        move_line_data(line, DOWN);
+      }
+    }
+    /* Restore the mark. */
+    set_marked_region_for(file, top, u->head_x, bot, u->tail_x, (u->xflags & CURSOR_WAS_AT_HEAD));
+    /* Indecate that the mark should not be removed. */
+    keep_mark = TRUE;
+  }
+  refresh_needed = TRUE;
+}
+
+/* ----------------------------- Redo move line ----------------------------- */
+
+/* Redo a move_line(s)_(up/down). */
+_UNUSED
+static void redo_move_line_for(openfilestruct *const file, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  linestruct *top;
+  linestruct *bot;
+  int offset = ((u->type == MOVE_LINE_UP) ? -1 : 1);
+  /* Single-line move. */
+  if (u->head_lineno == u->tail_lineno) {
+    file->current = line_from_number_for(file, (u->head_lineno + offset));
+    move_line_data(file->current, ((u->type == MOVE_LINE_UP) ? DOWN : UP));
+    /* Restore the mark, if it was set. */
+    if (u->xflags & MARK_WAS_SET) {
+      set_marked_region_for(file, file->current, u->head_x, file->current, u->tail_x, (u->xflags & CURSOR_WAS_AT_HEAD));
+      /* Indecate the mark should not be removed. */
+      keep_mark = TRUE;
+    }
+    /* Otherwise, just set the cursor position. */
+    else {
+      file->current_x = u->head_x;
+    }
+  }
+  /* Multi-line move. */
+  else {
+    top = line_from_number_for(file, (u->head_lineno + offset));
+    bot = line_from_number_for(file, (u->tail_lineno + offset));
+    if (u->type == MOVE_LINE_UP) {
+      DLIST_FOR_NEXT_END(top, bot->next, line) {
+        move_line_data(line, DOWN);
+      }
+    }
+    else {
+      DLIST_FOR_PREV_END(bot, top->prev, line) {
+        move_line_data(line, UP);
+      }
+    }
+    /* Restore the mark. */
+    set_marked_region_for(file, top, u->head_x, bot, u->tail_x, (u->xflags & CURSOR_WAS_AT_HEAD));
+    /* Indecate the mark should not be removed. */
+    keep_mark = TRUE;
+  }
+  refresh_needed = TRUE;
+}
+
+
+/* Undo a move_line(s)_(up/down). */
+static void handle_move_line_action_for(openfilestruct *const file, undostruct *const u, bool undoing) {
+  ASSERT(file);
+  ASSERT(u);
+  linestruct *top;
+  linestruct *bot;
+  int offset = (undoing ? 0 : ((u->type == MOVE_LINE_UP) ? -1 : 1));
+  bool direction = ((undoing ^ (u->type == MOVE_LINE_UP)) ? DOWN : UP);
+  /* Single-line move. */
+  if (u->head_lineno == u->tail_lineno) {
+    file->current = line_from_number_for(file, (u->head_lineno + offset));
+    move_line_data(file->current, direction);
+    /* Restore the mark, if it was set. */
+    if (u->xflags & MARK_WAS_SET) {
+      set_marked_region_for(file, file->current, u->head_x, file->current, u->tail_x, (u->xflags & CURSOR_WAS_AT_HEAD));
+      /* Indecate the mark should not be removed. */
+      keep_mark = TRUE;
+    }
+    /* Otherwise, just set the cursor position. */
+    else {
+      file->current_x = u->head_x;
+    }
+  }
+  /* Multi-line move. */
+  else {
+    top = line_from_number_for(file, (u->head_lineno + offset));
+    bot = line_from_number_for(file, (u->tail_lineno + offset));
+    if (direction == UP) {
+      DLIST_FOR_PREV_END(bot, top->prev, line) {
+        move_line_data(line, UP);
+      }
+    }
+    else {
+      DLIST_FOR_NEXT_END(top, bot->next, line) {
+        move_line_data(line, DOWN);
+      }
+    }
+    /* Restore the mark. */
+    set_marked_region_for(file, top, u->head_x, bot, u->tail_x, (u->xflags & CURSOR_WAS_AT_HEAD));
+    /* Indecate that the mark should not be removed. */
+    keep_mark = TRUE;
+  }
+  refresh_needed = TRUE;
+}
+
+/* ----------------------------- Undo enclose ----------------------------- */
+
+/* Undo a enclose. */
+static void undo_enclose_for(openfilestruct *const file, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  char *s1;
+  char *s2;
+  /* Get the top and bottom line from the undo-object. */
+  linestruct *top = line_from_number_for(file, u->head_lineno);
+  linestruct *bot = line_from_number_for(file, u->tail_lineno);
+  /* Decode the data to get the starting and ending enclose strings. */
+  enclose_str_decode(u->strdata, &s1, &s2);
+  /* Then erase the lengths of the decoded strings in both lines. */
+  xstr_erase_norealloc(top->data, u->head_x, strlen(s1));
+  xstr_erase_norealloc(bot->data, u->tail_x, strlen(s2));
+  free(s1);
+  free(s2);
+  /* Restore the marked region. */
+  set_marked_region_for(file, top, u->head_x, bot, u->tail_x, (u->xflags & CURSOR_WAS_AT_HEAD));
+  /* If the enclose involved the last line, remove it. */
+  if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
+    remove_magicline_for(file);
+  }
+  keep_mark      = TRUE;
+  refresh_needed = TRUE;
+}
+
+/* Redo a enclose. */
+static void redo_enclose_for(openfilestruct *const file, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  char *s1;
+  char *s2;
+  Ulong len;
+  Ulong head_x;
+  Ulong tail_x;
+  linestruct *top = line_from_number_for(file, u->head_lineno);
+  linestruct *bot = line_from_number_for(file, u->tail_lineno);
+  /* If the enclose involved the last line, add another magic line. */
+  if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
+    new_magicline_for(file);
+  }
+  /* Decode the undo-string to get the start and end enclose strings. */
+  enclose_str_decode(u->strdata, &s1, &s2);
+  len = strlen(s1);
+  /* Calculate where the head and tail x position will be after the enclose. */
+  head_x = (u->head_x + len);
+  tail_x = (u->tail_x + ((top == bot) ? len : 0));
+  /* Inject the beginning and end enclose strings into the top and bottom lines. */
+  top->data = xstrninj(top->data, s1, len, u->head_x);
+  bot->data = xstrinj(bot->data, s2, tail_x);
+  free(s1);
+  free(s2);
+  /* Restore the mark. */
+  set_marked_region_for(file, top, head_x, bot, tail_x, (u->xflags & CURSOR_WAS_AT_HEAD));
+  /* Indecate the mark should not be removed. */
+  keep_mark = TRUE;
+  refresh_needed = TRUE;
+}
+
+/* ----------------------------- Undo auto bracket ----------------------------- */
+
+/* Undo a auto bracket. */
+static void undo_auto_bracket_for(openfilestruct *const file, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  /* Restore the state of the cursor. */
+  file->current   = line_from_number_for(file, u->head_lineno);
+  file->current_x = u->head_x;
+  /* Unlink the next line twice, to remove both added lines. */
+  unlink_node_for(file, file->current->next);
+  unlink_node_for(file, file->current->next);
+  /* Append the data at the cursor position. */
+  file->current->data = xnstrcat(file->current->data, file->current_x, u->strdata);
+  /* Renumber the lines after. */
+  renumber_from(file->current);
+  set_pww_for(file);
+  refresh_needed = TRUE;
+}
+
+/* ----------------------------- Undo zap replace ----------------------------- */
+
+/* Undo a zap replace. */
+static void undo_zap_replace_for(openfilestruct *const file, int rows, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  /* Get the length of the data. */
+  Ulong len = strlen(u->strdata);
+  /* Set the cursor line and x at the head. */
+  goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+  /* Ensure the data currently at the cursor matches the undo-object string data. */
+  ALWAYS_ASSERT_MSG((strncmp((file->current->data + file->current_x), u->strdata, len) == 0), "Data does not match for `ZAP_REPLACE` undo.");
+  /* Erase the inserted data.  And restore the cut data. */
+  xstr_erase_norealloc(file->current->data, file->current_x, len);
+  copy_from_buffer_for(file, rows, u->cutbuffer);
+  /* Restrore the cursor and mark, as they were before this event. */
+  restore_undo_posx_and_mark_for(file, rows, u);
+}
+
+/* Redo a zap replace. */
+static void redo_zap_replace_for(CTX_PARAMS, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  linestruct *was_cutbuffer;
+  set_marked_region_for(
+    file,
+    line_from_number_for(file, u->head_lineno), u->head_x,
+    line_from_number_for(file, u->tail_lineno), u->tail_x,
+    (u->xflags & CURSOR_WAS_AT_HEAD)
+  );
+  /* Save the cutbuffer. */
+  was_cutbuffer = cutbuffer;
+  cutbuffer     = NULL;
+  /* Perform the cut. */
+  cut_marked_region_for(STACK_CTX);
+  u->cutbuffer = cutbuffer;
+  /* Restore the original cutbuffer. */
+  cutbuffer = was_cutbuffer;
+  /* Inject the text. */
+  file->current->data = xstrinj(file->current->data, u->strdata, file->current_x);
+}
+
+/* ----------------------------- Undo insert empty line ----------------------------- */
+
+/* Undo a insert empty line. */
+static void undo_insert_empty_line_for(openfilestruct *const file, int rows, undostruct *const u) {
+  ASSERT(file);
+  ASSERT(u);
+  /* Restore the cursor and mark in `file`. */
+  restore_undo_posx_and_mark_for(file, rows, u);
+  /* Ensure filetop and/or edittop gets changed if they are currently the line we will delete. */
+  if ((u->xflags & INSERT_WAS_ABOVE)) {
+    if (file->current->prev == file->filetop) {
+      file->filetop = file->current;
+    }
+    if (file->current->prev == file->edittop) {
+      file->edittop = file->current;
+    }
+  }
+  /* Remove the line that was inserted. */
+  unlink_node_for(file, ((u->xflags & INSERT_WAS_ABOVE) ? file->current->prev : file->current->next));
+  renumber_from(file->current);
+  refresh_needed = TRUE;
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
+
+/* ----------------------------- Set marked region ----------------------------- */
+
+/* Set the cursor and mark of file, using ptrs. */
+void set_marked_region_for(openfilestruct *const file, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x, bool cursor_at_head) {
+  ASSERT(file);
+  ASSERT(top);
+  ASSERT(bot);
+  /* Cursor is `top`. */
+  if (cursor_at_head) {
+    file->current   = top;
+    file->mark      = bot;
+    file->current_x = top_x;
+    file->mark_x    = bot_x;
+  }
+  /* Cursor is `bot`. */
+  else {
+    file->current   = bot;
+    file->mark      = top;
+    file->current_x = bot_x;
+    file->mark_x    = top_x;
+  }
+}
+
+/* ----------------------------- Do tab ----------------------------- */
 
 /* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert the number of spaces that a tab would normally take up at this position. */
 void do_tab_for(openfilestruct *const file, int rows, int cols) {
@@ -76,13 +445,10 @@ void do_tab_for(openfilestruct *const file, int rows, int cols) {
 
 /* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert the number of spaces that a tab would normally take up at this position. */
 void do_tab(void) {
-  if (IN_GUI_CTX) {
-    do_tab_for(GUI_CTX);
-  }
-  else {
-    do_tab_for(TUI_CTX);
-  }
+  CTX_CALL(do_tab_for);
 }
+
+/* ----------------------------- Indentlen ----------------------------- */
 
 /* Return's the length of whilespace until first non blank char in `string`. */
 Ulong indentlen(const char *const restrict string) {
@@ -94,6 +460,8 @@ Ulong indentlen(const char *const restrict string) {
   return (ptr - string);
 }
 
+/* ----------------------------- Quote length ----------------------------- */
+
 /* Return the length of the quote part of the given line.  The 'quote part'
  * of a line is the largest initial substring matching the quoting regex. */
 Ulong quote_length(const char *const restrict line) {
@@ -104,6 +472,8 @@ Ulong quote_length(const char *const restrict line) {
   }
   return matches.rm_eo;
 }
+
+/* ----------------------------- Add undo ----------------------------- */
 
 /* Add a new undo item of the given type to the top of the current pile for `file`. */
 void add_undo_for(openfilestruct *const file, undo_type action, const char *const restrict message) {
@@ -310,6 +680,8 @@ void add_undo(undo_type action, const char *const restrict message) {
   add_undo_for(CTX_OF, action, message);
 }
 
+/* ----------------------------- Update undo ----------------------------- */
+
 /* Update an undo item with (among other things) the file size and cursor position after the given action. */
 void update_undo_for(openfilestruct *const restrict file, undo_type action) {
   ASSERT(file);
@@ -461,6 +833,8 @@ void update_undo(undo_type action) {
   update_undo_for(CTX_OF, action);
 }
 
+/* ----------------------------- Update multiline undo ----------------------------- */
+
 /* Update a multiline undo item.  This should be called once for each line, affected by a multiple-line-altering
  * feature.  The indentation that is added or removed is saved, separately for each line in the undo item. */
 void update_multiline_undo_for(openfilestruct *const file, long lineno, const char *const restrict indentation) {
@@ -495,6 +869,8 @@ void update_multiline_undo_for(openfilestruct *const file, long lineno, const ch
 void update_multiline_undo(long lineno, const char *const restrict indentation) {
   update_multiline_undo_for(CTX_OF, lineno, indentation);
 }
+
+/* ----------------------------- Break line ----------------------------- */
 
 /* Find the last blank in the given piece of text such that the display width to that point is at most
  * (goal + 1).  When there is no such blank, then find the first blank.  Return the index of the last
@@ -550,6 +926,8 @@ long break_line(const char *textstart, long goal, bool snap_at_nl) {
   }
   return (long)(lastblank - textstart);
 }
+
+/* ----------------------------- Do wrap ----------------------------- */
 
 /* When the current line is overlong, hard-wrap it at the furthest possible whitespace character,
  * and prepend the excess part to an "overflow" line (when it already exists, otherwise create one). */
@@ -682,6 +1060,8 @@ void do_wrap(void) {
   }
 }
 
+/* ----------------------------- Do mark ----------------------------- */
+
 /* Toggle the mark for `file`. */
 void do_mark_for(openfilestruct *const file) {
   ASSERT(file);
@@ -702,6 +1082,8 @@ void do_mark_for(openfilestruct *const file) {
 void do_mark(void) {
   do_mark_for(CTX_OF);
 }
+
+/* ----------------------------- Discard until ----------------------------- */
 
 /* Discard `undo-items` that are newer then `thisitem` in `buffer`, or all if `thisitem` is `NULL`. */
 void discard_until_for(openfilestruct *const file, const undostruct *const thisitem) {
@@ -732,6 +1114,8 @@ void discard_until_for(openfilestruct *const file, const undostruct *const thisi
 void discard_until(const undostruct *thisitem) {
   discard_until_for(CTX_OF, thisitem);
 }
+
+/* ----------------------------- Begpar ----------------------------- */
 
 /* Return TRUE when the given line is the beginning of a paragraph (BOP). */
 bool begpar(const linestruct *const line, int depth) {
@@ -773,6 +1157,8 @@ bool begpar(const linestruct *const line, int depth) {
   return !begpar(line->prev, (depth + 1));
 }
 
+/* ----------------------------- Inpar ----------------------------- */
+
 /* Return TRUE when the given line is part of a paragraph.  A line is part of a
  * paragraph if it contains something more than quoting and leading whitespace. */
 bool inpar(const linestruct *const line) {
@@ -780,6 +1166,8 @@ bool inpar(const linestruct *const line) {
   Ulong indent_len = indent_length(line->data + quot_len);
   return (line->data[quot_len + indent_len]);
 }
+
+/* ----------------------------- Do block comment ----------------------------- */
 
 /* This is a shortcut to make marked area a block comment. */
 void do_block_comment(void) {
@@ -856,7 +1244,7 @@ void compensate_leftward(linestruct *const line, Ulong leftshift) {
   compensate_leftward_for(CTX_OF, line, leftshift);
 }
 
-/* ----------------------------- Unindent ----------------------------- */
+/* ----------------------------- Unindent a line ----------------------------- */
 
 /* Remove an indent from the given line, in `file`. */
 void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulong indent_len) {
@@ -877,6 +1265,8 @@ void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulo
 void unindent_a_line(linestruct *const line, Ulong indent_len) {
   unindent_a_line_for(CTX_OF, line, indent_len);
 }
+
+/* ----------------------------- Do unindent ----------------------------- */
 
 /* Unindent the current line (or the marked lines) by tabsize columns.  The removed indent can be a mixture of spaces plus at most one tab. */
 void do_unindent_for(openfilestruct *const file, int cols) {
@@ -1012,6 +1402,8 @@ void insert_empty_line(linestruct *const line, bool above, bool autoindent) {
   insert_empty_line_for(CTX_OF, line, above, autoindent);
 }
 
+/* ----------------------------- Do insert empty line above ----------------------------- */
+
 /* Insert a new empty line above `file->current`, and add an undo-item to the undo-stack. */
 void do_insert_empty_line_above_for(openfilestruct *const file) {
   ASSERT(file);
@@ -1028,6 +1420,8 @@ void do_insert_empty_line_above_for(openfilestruct *const file) {
 void do_insert_empty_line_above(void) {
   do_insert_empty_line_above_for(CTX_OF);
 }
+
+/* ----------------------------- Do insert empty line below ----------------------------- */
 
 /* Insert a new empty line below `file->current`, and add an undo-item to the `undo-stack`. */
 void do_insert_empty_line_below_for(openfilestruct *const file) {
@@ -1059,7 +1453,7 @@ bool cursor_is_between_brackets(void) {
   return cursor_is_between_brackets_for(CTX_OF);
 }
 
-/* ----------------------------- Indent ----------------------------- */
+/* ----------------------------- Indent length ----------------------------- */
 
 /* Return the length of the indentation part of the given line.  The "indentation" of a line is the leading consecutive whitespace. */
 Ulong indent_length(const char *const restrict line) {
@@ -1069,6 +1463,8 @@ Ulong indent_length(const char *const restrict line) {
   }
   return (ptr - line);
 }
+
+/* ----------------------------- Indent a line ----------------------------- */
 
 /* Add an indent to the given line.  TODO: Make the mark and curren x positions move exactly like vs-code. */
 void indent_a_line_for(openfilestruct *const file, linestruct *const line, const char *const restrict indentation) {
@@ -1099,6 +1495,8 @@ void indent_a_line_for(openfilestruct *const file, linestruct *const line, const
 void indent_a_line(linestruct *const line, const char *const restrict indentation) { 
   indent_a_line_for(CTX_OF, line, indentation);
 }
+
+/* ----------------------------- Do indent ----------------------------- */
 
 /* Indent the current line (or the marked lines) of `file` by tabsize columns.  This inserts either tab
  * character or a tab's worth of spaces, depending on whether the `TABS_TO_SPACES` flag is in effect. */
@@ -1150,6 +1548,8 @@ void do_indent(void) {
     do_indent_for(TUI_OF, TUI_COLS);
   }
 }
+
+/* ----------------------------- Handle indent action ----------------------------- */
 
 /* Perform an undo or redo for an indent or unindent action. */
 void handle_indent_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_indent) {
@@ -1375,6 +1775,8 @@ void auto_bracket(linestruct *const line, Ulong posx) {
   auto_bracket_for(CTX_OF, line, posx);
 }
 
+/* ----------------------------- Do auto bracket for ----------------------------- */
+
 /* Do auto bracket at current position. */
 void do_auto_bracket_for(openfilestruct *const file) {
   ASSERT(file);
@@ -1392,7 +1794,7 @@ void do_auto_bracket(void) {
   do_auto_bracket_for(CTX_OF);
 }
 
-/* ----------------------------- Comment ----------------------------- */
+/* ----------------------------- Comment line ----------------------------- */
 
 /* Test whether the given line can be uncommented, or add or remove a comment, depending on action.
  * Return TRUE if the line is uncommentable, or when anything was added or removed; FALSE otherwise.
@@ -1477,6 +1879,8 @@ bool comment_line(undo_type action, linestruct *const line, const char *const re
   return comment_line_for(CTX_OF, action, line, comment_seq);
 }
 
+/* ----------------------------- Get comment seq ----------------------------- */
+
 /* Returns an allocated string containing the correct comment sequence based on `file`. */
 char *get_comment_seq_for(openfilestruct *const file) {
   ASSERT(file);
@@ -1504,8 +1908,10 @@ char *get_comment_seq(void) {
   return get_comment_seq_for(CTX_OF);
 }
 
+/* ----------------------------- Do comment ----------------------------- */
+
 /* Comment or uncomment the current line or the marked lines. */
-void do_comment_for(openfilestruct *const file, int total_cols) {
+void do_comment_for(openfilestruct *const file, int cols) {
   ASSERT(file);
   char *comment_seq = get_comment_seq_for(file);
   undo_type action = UNCOMMENT;
@@ -1552,7 +1958,7 @@ void do_comment_for(openfilestruct *const file, int total_cols) {
     }
   }
   set_modified_for(file);
-  ensure_firstcolumn_is_aligned_for(file, total_cols);
+  ensure_firstcolumn_is_aligned_for(file, cols);
   refresh_needed = TRUE;
   shift_held     = TRUE;
 }
@@ -1560,12 +1966,14 @@ void do_comment_for(openfilestruct *const file, int total_cols) {
 /* Comment or uncomment the current line or the marked lines. */
 void do_comment(void) {
   if (IN_GUI_CTX) {
-    do_comment_for(openeditor->openfile, openeditor->cols);
+    do_comment_for(GUI_OF, GUI_COLS);
   }
   else {
-    do_comment_for(openfile, editwincols);
+    do_comment_for(TUI_OF, TUI_COLS);
   }
 }
+
+/* ----------------------------- Handle comment action ----------------------------- */
 
 /* Perform an undo or redo for a comment or uncomment action. */
 void handle_comment_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_comment) {
@@ -1601,6 +2009,8 @@ void handle_comment_action(undostruct *const u, bool undoing, bool add_comment) 
     handle_comment_action_for(TUI_OF, TUI_ROWS, u, undoing, add_comment);
   }
 }
+
+/* ----------------------------- Copy completion ----------------------------- */
 
 /* Return a copy of the found completion candidate. */
 char *copy_completion(const char *restrict text) {
@@ -1698,4 +2108,475 @@ void do_enter_for(openfilestruct *const file) {
 /* Break the current line at the cursor position. */
 void do_enter(void) {
   do_enter_for(CTX_OF);
+}
+
+/* ----------------------------- Do undo ----------------------------- */
+
+/* Undo the last thing(s) we did in `file`. */
+void do_undo_for(CTX_PARAMS) {
+  ASSERT(file);
+  undostruct *u = file->current_undo;
+  linestruct *was_cutbuffer;
+  linestruct *intruder;
+  linestruct *line = NULL;
+  Ulong data_len;
+  Ulong original_x;
+  Ulong regain_from_x;
+  char *undidmsg = NULL;
+  char *data;
+  /* When there exists no undo stack, tell the user and return. */
+  if (!u) {
+    statusline(AHEM, _("Nothing to undo"));
+    return;
+  }
+  if (u->type <= REPLACE) {
+    line = line_from_number_for(file, u->tail_lineno);
+  }
+  /* Handle the undo.  TRANSLATORS: The next thirteen strings describe actions that are undone or redone.  They are all nouns, not verbs. */
+  switch (u->type) {
+    case ADD: {
+      undidmsg = _("addition");
+      /* When this undo event included the last line, and `NO_NEWLINES` is not
+       * set, remove the magicline that was created when this action was done. */
+      if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
+        remove_magicline_for(file);
+      }
+      /* Erase the length of all the added data, at the starting position. */
+      xstr_erase_norealloc(line->data, u->head_x, strlen(u->strdata));
+      /* Move the file current line and x to that starting position. */
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      break;
+    }
+    case ENTER: {
+      undidmsg = _("line break");
+      /* An <Enter> at the end of leading whitespace while autoindenting has deleted the whitespace, and stored
+       * an x position of zero.  In that case, adjust the position to return to, and to snoop data from. */
+      original_x    = (!u->head_x ? u->tail_x : u->head_x);
+      regain_from_x = (!u->head_x ? u->head_x : u->tail_x);
+      /* Append the data to the line. */
+      line->data = xstrcat(line->data, (u->strdata + regain_from_x));
+      /* Make line inheret the anchor of the absorbed line. */
+      line->has_anchor |= line->next->has_anchor;
+      /* Remove the absorbed line from the line list. */
+      unlink_node_for(file, line->next);
+      /* Restore the state of the file. */
+      renumber_from(line);
+      file->current = line;
+      goto_line_posx_for(file, rows, u->head_lineno, original_x);
+      break;
+    }
+    case BACK:
+    case DEL: {
+      undidmsg = _("deletion");
+      /* Save the length of the undo string data. */
+      data_len = strlen(u->strdata);
+      data     = xmalloc(strlen(line->data) + data_len + 1);
+      memcpy(data, line->data, u->head_x);
+      memcpy((data + u->head_x), u->strdata, data_len);
+      strcpy((data + u->head_x + data_len), (line->data + u->head_x));
+      free(line->data);
+      line->data = data;
+      goto_line_posx_for(file, rows, u->tail_lineno, u->tail_x);
+      break;
+    }
+    case JOIN: {
+      undidmsg = _("line join");
+      /* When the join was done by a <Backspace> at the tail of the file, and the `NO_NEWLINES` flag
+       * isn't set, do not re-add a newline that wasn't actually deleted.  Just position the cursor. */
+      if ((u->xflags & WAS_BACKSPACE_AT_EOF) && !ISSET(NO_NEWLINES)) {
+        goto_line_posx_for(file, rows, file->filebot->lineno, 0);
+        focusing = FALSE;
+      }
+      else {
+        line->data[u->tail_x] = '\0';
+        intruder       = make_new_node(line);
+        intruder->data = copy_of(u->strdata);
+        splice_node_for(file, line, intruder);
+        renumber_from(intruder);
+        goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      }
+      break;
+    }
+    case REPLACE: {
+      undidmsg = _("replacement");
+      if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
+        remove_magicline_for(file);
+      }
+      /* Store the undo string data ptr. */
+      data = u->strdata;
+      /* Swap `u->strdata` and `line->data`. */
+      u->strdata = line->data;
+      line->data = data;
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      break;
+    }
+    case SPLIT_BEGIN: {
+      undidmsg = _("addition");
+      break;
+    }
+    case SPLIT_END: {
+      /* Advance the current file undo-object once. */
+      DLIST_ADV_NEXT(file->current_undo);
+      /* Then perform all actions until we reach the beginning of this split. */
+      while (file->current_undo->type != SPLIT_BEGIN) {
+        do_undo_for(STACK_CTX);
+      }
+      /* Now to ensure correct undo stack structure, set `u` to the current file undo-object. */
+      u = file->current_undo;
+      break;
+    }
+    case ZAP:
+    case CUT_TO_EOF:
+    case CUT: {
+      undidmsg = _((u->type == ZAP) ? "erasure" : "cut");
+      undo_cut_for(file, rows, u);
+      break;
+    }
+    case PASTE: {
+      undidmsg = _("paste");
+      undo_paste_for(STACK_CTX, u);
+      break;
+    }
+    case INSERT: {
+      undidmsg = _("insertion");
+      /* Save the cutbuffer. */
+      was_cutbuffer = cutbuffer;
+      cutbuffer     = NULL;
+      /* Set the cursor at the head, and the mark at the tail. */
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      set_mark_for(file, u->tail_lineno, u->tail_x);
+      cut_marked_region_for(STACK_CTX);
+      u->cutbuffer = cutbuffer;
+      /* Restore the cutbuffer. */
+      cutbuffer = was_cutbuffer;
+      if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES) && file->current->next) {
+        remove_magicline_for(file);
+      }
+      break;
+    }
+    case COUPLE_BEGIN: {
+      undidmsg = u->strdata;
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      file->cursor_row = u->tail_lineno;
+      adjust_viewport_for(STACK_CTX, STATIONARY);
+      break;
+    }
+    case COUPLE_END: {
+      /* Remember the row of the cursor for a possible redo. */
+      file->current_undo->head_lineno = file->cursor_row;
+      /* Advance to the next undo-object in file. */
+      DLIST_ADV_NEXT(file->current_undo);
+      do_undo_for(STACK_CTX);
+      do_undo_for(STACK_CTX);
+      do_undo_for(STACK_CTX);
+      return;
+    }
+    case INDENT: {
+      handle_indent_action_for(file, rows, u, TRUE, TRUE);
+      undidmsg = _("indent");
+      break;
+    }
+    case UNINDENT: {
+      handle_indent_action_for(file, rows, u, TRUE, FALSE);
+      undidmsg = _("unindent");
+      break;
+    }
+    case COMMENT: {
+      handle_comment_action_for(file, rows, u, TRUE, TRUE);
+      undidmsg = _("comment");
+      break;
+    }
+    case UNCOMMENT: {
+      handle_comment_action_for(file, rows, u, TRUE, TRUE);
+      undidmsg = _("uncomment");
+      break;
+    }
+    case MOVE_LINE_UP:
+    case MOVE_LINE_DOWN: {
+      handle_move_line_action_for(file, u, TRUE);
+      break;
+    }
+    case ENCLOSE: {
+      undo_enclose_for(file, u);
+      break;
+    }
+    case AUTO_BRACKET: {
+      undo_auto_bracket_for(file, u);
+      break;
+    }
+    case ZAP_REPLACE: {
+      undo_zap_replace_for(file, rows, u);
+      break;
+    }
+    case INSERT_EMPTY_LINE: {
+      undo_insert_empty_line_for(file, rows, u);
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  if (undidmsg && !ISSET(ZERO) && !pletion_line) {
+    statusline(HUSH, _("Undid %s"), undidmsg);
+  }
+  DLIST_ADV_NEXT(file->current_undo);
+  file->last_action = OTHER;
+  /* If `keep_mark` has not been explicitly set, or when it
+   * has been set but this is an exception, remove the mark. */
+  if (!keep_mark || (u->xflags & SHOULD_NOT_KEEP_MARK)) {
+    file->mark = NULL;
+    keep_mark  = FALSE;
+  }
+  set_pww_for(file);
+  file->totsize = u->wassize;
+  if (u->type <= REPLACE) {
+    check_the_multis_for(file, file->current);
+  }
+  else if (u->type == INSERT || u->type == COUPLE_BEGIN) {
+    recook = TRUE;
+  }
+  /* When at the point where the `file` was last saved, unset `file->modified`. */
+  if (file->current_undo == file->last_saved) {
+    file->modified = FALSE;
+    if (IN_CURSES_CTX) {
+      titlebar(NULL);
+    }
+  }
+  else {
+    set_modified_for(file);
+  }
+}
+
+/* Undo the last thing(s) we did in the currently open buffer.  Note that this is `context-safe`. */
+void do_undo(void) {
+  CTX_CALL(do_undo_for);
+}
+
+/* ----------------------------- Do redo ----------------------------- */
+
+/* Redo the last thing(s) we undid in `file`. */
+void do_redo_for(CTX_PARAMS) {
+  ASSERT(file);
+  undostruct *u = file->undotop;
+  linestruct *line = NULL;
+  linestruct *intruder;
+  bool suppress_modification = FALSE;
+  char *redidmsg = NULL;
+  char *data;
+  Ulong data_len;
+  int offset;
+  /* If there has been no undo(s) done, or we have reached the end. */
+  if (!u || u == file->current_undo) {
+    statusline(AHEM, _("Nothing to redo"));
+    return;
+  }
+  /* Find the item before the current one in the undo-stack. */
+  while (u->next != file->current_undo) {
+    DLIST_ADV_NEXT(u);
+  }
+  if (u->type <= REPLACE) {
+    line = line_from_number_for(file, u->tail_lineno);
+  }
+  /* Handle the redo-action. */
+  switch (u->type) {
+    case ADD: {
+      redidmsg = _("addition");
+      if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
+        new_magicline_for(file);
+      }
+      data_len = strlen(u->strdata);
+      data = xmalloc(strlen(line->data) + data_len + 1);
+      memcpy(data, line->data, u->head_x);
+      memcpy((data + u->head_x), u->strdata, data_len);
+      strcpy((data + u->head_x + data_len), (line->data + u->head_x));
+      free(line->data);
+      line->data = data;
+      goto_line_posx_for(file, rows, u->tail_lineno, u->tail_x);
+      break;
+    }
+    case ENTER: {
+      redidmsg              = _("line break");
+      line->data[u->head_x] = '\0';
+      intruder              = make_new_node(line);
+      intruder->data        = copy_of(u->strdata);
+      splice_node_for(file, line, intruder);
+      renumber_from(intruder);
+      goto_line_posx_for(file, rows, (u->head_lineno + 1), u->tail_x);
+      break;
+    }
+    case BACK:
+    case DEL: {
+      redidmsg = _("deletion");
+      data_len = strlen(u->strdata);
+      memmove((line->data + u->head_x), (line->data + u->head_x + data_len), (strlen(line->data + u->head_x) + data_len + 1));
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      break;
+    }
+    case JOIN: {
+      redidmsg = _("line join");
+      /* When the join was done by a <Backspace> at the tail of the file, and the `NO_NEWLINES` flag
+       * isn't set, do not join anything, as nothing was actually deleted.  Just position the cursor. */
+      if ((u->xflags & WAS_BACKSPACE_AT_EOF) && !ISSET(NO_NEWLINES)) {
+        goto_line_posx_for(file, rows, u->tail_lineno, u->tail_x);
+        break;
+      }
+      line->data = xstrcat(line->data, u->strdata);
+      unlink_node_for(file, line->next);
+      renumber_from(line);
+      file->current = line;
+      goto_line_posx_for(file, rows, u->tail_lineno, u->tail_x);
+      break;
+    }
+    case REPLACE: {
+      redidmsg = _("replacement");
+      if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
+        new_magicline_for(file);
+      }
+      SWAP_PTR(u->strdata, line->data);
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      break;
+    }
+    case SPLIT_BEGIN: {
+      file->current_undo = u;
+      while (file->current_undo->type != SPLIT_END) {
+        do_redo_for(STACK_CTX);
+      }
+      u = file->current_undo;
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      ensure_firstcolumn_is_aligned_for(file, cols);
+      break;
+    }
+    case SPLIT_END: {
+      redidmsg = _("addition");
+      break;
+    }
+    case ZAP:
+    case CUT_TO_EOF:
+    case CUT: {
+      redidmsg = _((u->type == ZAP) ? "erasure" : "cut");
+      redo_cut_for(STACK_CTX, u);
+      break;
+    }
+    case PASTE: {
+      redidmsg = _("paste");
+      redo_paste_for(file, rows, u);
+      break;
+    }
+    case INSERT: {
+      redidmsg = _("insertion");
+      goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+      if (u->cutbuffer) {
+        copy_from_buffer_for(file, rows, u->cutbuffer);
+      }
+      else {
+        suppress_modification = TRUE;
+      }
+      free_lines_for(file, u->cutbuffer);
+      u->cutbuffer = NULL;
+      break;
+    }
+    case COUPLE_BEGIN: {
+      file->current_undo = u;
+      do_redo_for(STACK_CTX);
+      do_redo_for(STACK_CTX);
+      do_redo_for(STACK_CTX);
+      return;
+    }
+    case COUPLE_END: {
+      redidmsg = u->strdata;
+      goto_line_posx_for(file, rows, u->tail_lineno, u->tail_x);
+      file->cursor_row = u->head_lineno;
+      adjust_viewport_for(STACK_CTX, STATIONARY);
+      break;
+    }
+    case INDENT: {
+      handle_indent_action_for(file, rows, u, FALSE, TRUE);
+      redidmsg = _("indent");
+      break;
+    }
+    case UNINDENT: {
+      handle_indent_action_for(file, rows, u, FALSE, FALSE);
+      redidmsg = _("unindent");
+      break;
+    }
+    case COMMENT: {
+      handle_comment_action_for(file, rows, u, FALSE, TRUE);
+      redidmsg = _("comment");
+      break;
+    }
+    case UNCOMMENT: {
+      handle_comment_action_for(file, rows, u, FALSE, FALSE);
+      redidmsg = _("uncomment");
+      break;
+    }
+    case MOVE_LINE_UP:
+    case MOVE_LINE_DOWN: {
+      handle_move_line_action_for(file, u, FALSE);
+      break;
+    }
+    case ENCLOSE: {
+      redo_enclose_for(file, u);
+      break;
+    }
+    case AUTO_BRACKET: {
+      file->current   = line_from_number_for(file, u->head_lineno);
+      file->current_x = u->head_x;
+      /* Ensure the undo-redo correctness is enforced. */
+      ALWAYS_ASSERT_MSG(cursor_is_between_brackets_for(file), "Undo-redo stack is not correct");
+      auto_bracket_for(file, file->current, file->current_x);
+      break;
+    }
+    case INSERT_EMPTY_LINE: {
+      offset = ((u->xflags & INSERT_WAS_ABOVE) ? -1 : 0);
+      file->current = line_from_number_for(file, ((((u->xflags & MARK_WAS_SET) && !(u->xflags & CURSOR_WAS_AT_HEAD)) ? u->tail_lineno : u->head_lineno) + offset));
+      insert_empty_line_for(file, file->current, !!offset, TRUE);
+      if (!offset) {
+        DLIST_ADV_NEXT(file->current);
+      }
+      else {
+        DLIST_ADV_PREV(file->current);
+      }
+      refresh_needed = TRUE;
+      break;
+    }
+    case ZAP_REPLACE: {
+      redo_zap_replace_for(STACK_CTX, u);
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  if (redidmsg && !ISSET(ZERO)) {
+    statusline(HUSH, _("Redid %s"), redidmsg);
+  }
+  file->current_undo = u;
+  file->last_action  = OTHER;
+  if (!keep_mark || (u->xflags & SHOULD_NOT_KEEP_MARK)) {
+    file->mark = NULL;
+    keep_mark  = FALSE;
+  }
+  set_pww_for(file);
+  file->totsize = u->newsize;
+  if (u->type <= REPLACE) {
+    check_the_multis_for(file, file->current);
+  }
+  else if (u->type == INSERT || u->type == COUPLE_END) {
+    recook = TRUE;
+  }
+  /* When at the point where the `file` was last saved, unset `file->modified`. */
+  if (file->current_undo == file->last_saved) {
+    file->modified = FALSE;
+    if (IN_CURSES_CTX) {
+      titlebar(NULL);
+    }
+  }
+  else if (!suppress_modification) {
+    set_modified_for(file);
+  }
+}
+
+/* Redo the last thing(s) we undid in the currently open buffer.  Note that this is `context-safe`. */
+void do_redo(void) {
+  CTX_CALL(do_redo_for);
 }
