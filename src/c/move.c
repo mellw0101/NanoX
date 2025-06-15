@@ -8,9 +8,9 @@
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
-/* Return the index in line->data that corresponds to the given column on the chunk that starts at the given leftedge.  If the target column has
- * landed on a tab, prevent the cursor from falling back a row when moving forward, or from skipping a row when moving backward, by incrementing the
- * index. */
+/* Return the index in line->data that corresponds to the given column on the chunk that starts at the
+ * given leftedge.  If the target column has landed on a tab, prevent the cursor from falling back
+ * a row when moving forward, or from skipping a row when moving backward, by incrementing the index. */
 static Ulong proper_x(linestruct *const line, int cols, Ulong *const leftedge, bool forward, Ulong column, bool *const shifted) {
   ASSERT(line);
   ASSERT(leftedge);
@@ -41,10 +41,6 @@ static void set_proper_index_and_pww_for(openfilestruct *const file, int cols, U
   file->placewewant = ((*leftedge) + target);
 }
 
-/* Adjust the values for `openfile->current_x` and `openfile->placewewant` in case we have landed in the middle of a tab that crosses a row boundary. */
-// _UNUSED static inline void set_proper_index_and_pww(Ulong *const leftedge, Ulong target, bool forward) {
-//   set_proper_index_and_pww_for(openfile, leftedge, target, forward, editwincols);
-// }
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -769,7 +765,7 @@ void to_next_word(void) {
   CTX_CALL_WARGS(to_next_word_for, ISSET(AFTER_ENDS), ISSET(WORD_BOUNDS));
 }
 
-/* ----------------------------- Do homw ----------------------------- */ /* TODO: Remove smart-home as a flag and make it the default behavior. */
+/* ----------------------------- Do home ----------------------------- */
 
 /* Move to the beginning of the current line (or soft-wrapped chunk).  When enabled, do smart-home. 
  * When soft-wrapping, go to the beginning of the full line when already at the start of the chunk. */
@@ -818,7 +814,7 @@ void do_home_for(CTX_PARAMS) {
     }
     else {
       /* If column and indent is the same, move to the beginning. */
-      if (file->current_x == indent_len) {
+      if (file->current_x == indent_len || !file->current->data[indent_len]) {
         file->current_x = 0;
       }
       else {
@@ -845,4 +841,106 @@ void do_home_for(CTX_PARAMS) {
  * When soft-wrapping, go to the beginning of the full line when already at the start of the chunk. */
 void do_home(void) {
   CTX_CALL(do_home_for);
+}
+
+/* ----------------------------- Do end ----------------------------- */
+
+/* Move to the end of the current line (or soft-wrapped chunk) in `file`.  When
+ * soft-wrapping and already at the end of a `chunk`, go to the end of the full line. */
+void do_end_for(CTX_PARAMS) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  bool moved_off_chunk = TRUE;
+  bool kickoff         = TRUE;
+  bool last_chunk      = FALSE;
+  Ulong was_column = xplustabs_for(file);
+  Ulong line_len   = strlen(file->current->data);
+  Ulong leftedge;
+  Ulong rightedge;
+  Ulong right_x;
+  if (ISSET(SOFTWRAP)) {
+    leftedge   = leftedge_for(cols, was_column, file->current);
+    rightedge  = get_softwrap_breakpoint(cols, file->current->data, leftedge, &kickoff, &last_chunk);
+    /* If we're on the last chunk, we're already at the end of the line.  Otherwise, we're one culumn past the end of the line.
+     * Shifting backwards one column might put us in the middle of a milti-column character, but `actual_x()` will fix that.
+     * Why even do this?  This can be solved easily by `step_left()`? */
+    if (!last_chunk) {
+      --rightedge;
+    }
+    right_x = actual_x(file->current->data, rightedge);
+    /* If already at the right edge of the screen, move fully to the end of the line.  Otherwise, move to the right edge. */
+    if (file->current_x == right_x) {
+      file->current_x = line_len;
+    }
+    else {
+      file->current_x   = right_x;
+      file->placewewant = rightedge;
+      moved_off_chunk   = FALSE;
+    }
+  }
+  else {
+    file->current_x = line_len;
+  }
+  if (moved_off_chunk) {
+    set_pww_for(file);
+  }
+  /* When running in curses-mode, ensure these updates are updated visualy. */
+  if (IN_CURSES_CTX) {
+    /* If we changed chunk, we might be offscreen.  Otherwise, update current if the mark is on or we changed `page`. */
+    if (ISSET(SOFTWRAP) && moved_off_chunk) {
+      edit_redraw_for(STACK_CTX, was_current, FLOWING);
+    }
+    else if (line_needs_update_for(file, cols, was_column, file->placewewant)) {
+      update_line_curses_for(file, file->current, file->current_x);
+    }
+  }
+}
+
+/* Move to the end of the current line (or soft-wrapped chunk) in `file`.  When
+ * soft-wrapping and already at the end of a `chunk`, go to the end of the full line. */
+void do_end(void) {
+  CTX_CALL(do_end_for);
+}
+
+/* ----------------------------- Do scroll up ----------------------------- */
+
+/* Scroll up one line or chunk without moving the cursor textwise.  This is not true...? */
+void do_scroll_up_for(CTX_PARAMS) {
+  ASSERT(file);
+  /* When the top of the file is onscreen, we can't scroll. */
+  if (!file->edittop->prev && !file->firstcolumn) {
+    return;
+  }
+  /* For now this drags the cursor at the bottom of the screen, and this will be
+   * changed to support an offscreen cursor, like any editor as this is anoying. */
+  if (file->cursor_row == (rows - 1)) {
+    do_up_for(STACK_CTX);
+  }
+  if (rows > 1) {
+    edit_scroll_for(file, BACKWARD);
+  }
+}
+
+/* Scroll up one line or chunk without moving the cursor textwise.  This is not true...?  Note that this is `context-safe`. */
+void do_scroll_up(void) {
+  CTX_CALL(do_scroll_up_for);
+}
+
+/* ----------------------------- Do scroll down ----------------------------- */
+
+/* Scroll down one line or chunk without moving the cursor textwise.  This is not true...? */
+void do_scroll_down_for(CTX_PARAMS) {
+  ASSERT(file);
+  if (!file->cursor_row) {
+    do_down_for(STACK_CTX);
+  }
+  if (rows > 1 && (file->edittop->next || (ISSET(SOFTWRAP)
+   && (extra_chunks_in(cols, file->edittop) > chunk_for(cols, file->firstcolumn, file->edittop))))) {
+    edit_scroll_for(file, FORWARD);
+  }
+}
+
+/* Scroll down one line or chunk without moving the cursor textwise.  This is not true...?  Note that this is `context-safe`. */
+void do_scroll_down(void) {
+  CTX_CALL(do_scroll_down_for);
 }

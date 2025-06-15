@@ -50,25 +50,22 @@ static bool found_in_list(const regexlisttype *const head, const char *const res
 void prepare_palette_for(openfilestruct *const file) {
   ASSERT(file);
   short number;
-  if (ISSET(USING_GUI)) {
-    return;
-  }
-  number = NUMBER_OF_ELEMENTS;
-  /* For each unique pair number, tell ncurses to combination of colors. */
-  for (colortype *ink=file->syntax->color; ink; ink=ink->next) {
-    if (ink->pairnum > number) {
-      init_pair(ink->pairnum, ink->fg, ink->bg);
-      number = ink->pairnum;
+  if (IN_CURSES_CTX) {
+    number = NUMBER_OF_ELEMENTS;
+    /* For each unique pair number, tell ncurses to combination of colors. */
+    for (colortype *ink=file->syntax->color; ink; ink=ink->next) {
+      if (ink->pairnum > number) {
+        init_pair(ink->pairnum, ink->fg, ink->bg);
+        number = ink->pairnum;
+      }
     }
+    have_palette = TRUE;
   }
-  have_palette = TRUE;
 }
 
 /* Initialize the color pairs for the currently open file. */
 void prepare_palette(void) {
-  if (!ISSET(USING_GUI)) {
-    prepare_palette_for(openfile);
-  }
+  prepare_palette_for(CTX_OF);
 }
 
 /* Determine whether the matches of multiline regexes are still the same, and if not, schedule a screen refresh, so things will be repainted. */
@@ -82,7 +79,7 @@ void check_the_multis_for(openfilestruct *const file, linestruct *const line) {
   bool  anend;
   char *afterstart;
   /* If there is no syntax or no multiline regex, there is nothing to do. */
-  if (ISSET(USING_GUI) || !file->syntax || !file->syntax->multiscore) {
+  if (!IN_CURSES_CTX || !file->syntax || !file->syntax->multiscore) {
     return;
   }
   if (!line->multidata) {
@@ -133,14 +130,15 @@ void check_the_multis_for(openfilestruct *const file, linestruct *const line) {
 
 /* Determine whether the matches of multiline regexes are still the same, and if not, schedule a screen refresh, so things will be repainted. */
 void check_the_multis(linestruct *const line) {
-  if (!ISSET(USING_GUI)) {
-    check_the_multis_for(openfile, line);
-  }
+  check_the_multis_for(CTX_OF, line);
 }
 
 /* Initialize the color pairs for nano's interface.  Ask ncurses to allow -1 to
  * mean "default color".  Initialize the color pairs for nano's interface elements. */
 void set_interface_colorpairs(void) {
+  if (!IN_CURSES_CTX) {
+    return;
+  }
   /* Ask ncurses to allow -1 to mean "default color". */
   defaults_allowed = (use_default_colors() == OK);
   /* Initialize the color pairs for nano's interface elements. */
@@ -249,7 +247,7 @@ void set_interface_colorpairs(void) {
 void set_syntax_colorpairs(syntaxtype *const sntx) {
   short number;
   colortype *older;
-  if (ISSET(USING_GUI)) {
+  if (!IN_CURSES_CTX) {
     return;
   }
   number = NUMBER_OF_ELEMENTS;
@@ -282,7 +280,7 @@ void find_and_prime_applicable_syntax_for(openfilestruct *const file) {
   const char * magicstring = NULL;
 # endif
   /* If the rcfiles were not read, or contained no syntaxes, get out. */
-  if (ISSET(USING_GUI) || !syntaxes) {
+  if (!IN_CURSES_CTX || !syntaxes) {
     return;
   }
   /* If we specified a syntax-override string, use it. */
@@ -322,8 +320,8 @@ void find_and_prime_applicable_syntax_for(openfilestruct *const file) {
       }
     }
   }
-// #define HAVE_LIBMAGIC
-#ifdef HAVE_LIBMAGIC
+// # define HAVE_LIBMAGIC
+# ifdef HAVE_LIBMAGIC
   /* If we still don't have an answer, try using magic (when requested). */
   if (!sntx && !inhelp && ISSET(USE_MAGIC)) {
     if (stat(file->filename, &fileinfo) == 0) {
@@ -351,7 +349,7 @@ void find_and_prime_applicable_syntax_for(openfilestruct *const file) {
       magic_close(cookie);
     }
   }
-#endif
+# endif
   /* If nothing at all matched, see if there is a default syntax. */
   if (!sntx && !inhelp) {
     DLIST_ND_FOR_NEXT(syntaxes, sntx) {
@@ -370,9 +368,7 @@ void find_and_prime_applicable_syntax_for(openfilestruct *const file) {
 
 /* Find a syntax that applies to the current buffer, based upon filename or buffer content, and load and prime this syntax when needed. */
 void find_and_prime_applicable_syntax(void) {
-  if (!ISSET(USING_GUI)) {
-    find_and_prime_applicable_syntax_for(openfile);
-  }
+  find_and_prime_applicable_syntax_for(CTX_OF);
 }
 
 /* Precalculate the multi-line start and end regex info so we can speed up rendering (with any hope at all...). */
@@ -381,7 +377,7 @@ void precalc_multicolorinfo_for(openfilestruct *const file) {
   const colortype *ink;
   regmatch_t startmatch, endmatch;
   linestruct *line, *tailline;
-  if (ISSET(USING_GUI) || ISSET(NO_SYNTAX) || !file->syntax || !file->syntax->multiscore) {
+  if (!IN_CURSES_CTX || ISSET(NO_SYNTAX) || !file->syntax || !file->syntax->multiscore) {
     return;
   }
   /* For each line, allocate cache space for the multiline-regex info. */
@@ -441,7 +437,5 @@ void precalc_multicolorinfo_for(openfilestruct *const file) {
 
 /* Precalculate the multi-line start and end regex info so we can speed up rendering (with any hope at all...). */
 void precalc_multicolorinfo(void) {
-  if (!ISSET(USING_GUI)) {
-    precalc_multicolorinfo_for(openfile);
-  }
+  precalc_multicolorinfo_for(CTX_OF);
 }

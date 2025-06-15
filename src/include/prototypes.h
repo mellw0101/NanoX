@@ -375,11 +375,11 @@ void do_help(void);
 // void to_prev_word(void);
 // void to_next_word(void);
 // void do_home(void);
-void do_end(void);
+// void do_end(void);
 // void do_up(void);
 // void do_down(void);
-void do_scroll_up(void);
-void do_scroll_down(void);
+// void do_scroll_up(void);
+// void do_scroll_down(void);
 // void do_left(void);
 // void do_right(void);
 

@@ -998,6 +998,12 @@ void to_next_word_for(CTX_PARAMS, bool after_ends, bool allow_punct);
 void to_next_word(void);
 void do_home_for(CTX_PARAMS);
 void do_home(void);
+void do_end_for(CTX_PARAMS);
+void do_end(void);
+void do_scroll_up_for(CTX_PARAMS);
+void do_scroll_up(void);
+void do_scroll_down_for(CTX_PARAMS);
+void do_scroll_down(void);
 
 
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */
