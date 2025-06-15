@@ -36,20 +36,20 @@
 /* Return the index in line->data that corresponds to the given column on the chunk that starts at the
  * given leftedge.  If the target column has landed on a tab, prevent the cursor from falling back a
  * row when moving forward, or from skipping a row when moving backward, by incrementing the index. */
-static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _NOTHROW {
-  Ulong index = actual_x(line->data, column);
-  if (ISSET(SOFTWRAP) && line->data[index] == '\t' && ((forward && wideness(line->data, index) < *leftedge)
-   || (!forward && (column / tabsize) == ((*leftedge - 1) / tabsize) && (column / tabsize) < ((*leftedge + editwincols - 1) / tabsize)))) {
-    ++index;
-    if (shifted) {
-      *shifted = TRUE;
-    }
-  }
-  if (ISSET(SOFTWRAP)) {
-    *leftedge = leftedge_for(editwincols, wideness(line->data, index), line);
-  }
-  return index;
-}
+// static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong column, bool *shifted) _NOTHROW {
+//   Ulong index = actual_x(line->data, column);
+//   if (ISSET(SOFTWRAP) && line->data[index] == '\t' && ((forward && wideness(line->data, index) < *leftedge)
+//    || (!forward && (column / tabsize) == ((*leftedge - 1) / tabsize) && (column / tabsize) < ((*leftedge + editwincols - 1) / tabsize)))) {
+//     ++index;
+//     if (shifted) {
+//       *shifted = TRUE;
+//     }
+//   }
+//   if (ISSET(SOFTWRAP)) {
+//     *leftedge = leftedge_for(editwincols, wideness(line->data, index), line);
+//   }
+//   return index;
+// }
 
 /* Adjust the values for current_x and placewewant in case we have landed in the middle of a tab that crosses a row boundary. */
 // static void set_proper_index_and_pww(Ulong *leftedge, Ulong target, bool forward) _NOTHROW {
@@ -438,71 +438,71 @@ static Ulong proper_x(linestruct *line, Ulong *leftedge, bool forward, Ulong col
 
 /* Move to the beginning of the current line (or softwrapped chunk).  When enabled, do a smart home.
  * When softwrapping, go the beginning of the full line when already at the start of a chunk. */
-void do_home(void) {
-  linestruct *was_current = openfile->current;
-  bool moved_off_chunk, moved;
-  Ulong was_column, leftedge, left_x, cur_indent;
-  moved_off_chunk = TRUE;
-  moved           = FALSE;
-  /* Save current column position. */
-  was_column = xplustabs();
-  /* Save current indent of line. */
-  cur_indent = indent_length(openfile->current->data);
-  if (ISSET(SOFTWRAP)) {
-    leftedge = leftedge_for(editwincols, was_column, openfile->current);
-    left_x   = proper_x(openfile->current, &leftedge, FALSE, leftedge, NULL);
-  }
-  if (ISSET(SMART_HOME)) {
-    Ulong indent_x = indent_length(openfile->current->data);
-    if (openfile->current->data[indent_x]) {
-      /* If we're exactly on the indent, move fully home.  Otherwise, when not softwrapping
-       * or not after the first nonblank chunk, move to the first nonblank character. */
-      if (openfile->current_x == indent_x) {
-        openfile->current_x = 0;
-        moved               = TRUE;
-      }
-      else if (left_x <= indent_x) {
-        openfile->current_x = indent_x;
-        moved               = TRUE;
-      }
-    }
-  }
-  if (!moved && ISSET(SOFTWRAP)) {
-    /* If already at the left edge of the screen, move fully home. Otherwise, move to the left edge. */
-    if (openfile->current_x == left_x) {
-      openfile->current_x = 0;
-    }
-    else {
-      openfile->current_x   = left_x;
-      openfile->placewewant = leftedge;
-      moved_off_chunk       = FALSE;
-    }
-  }
-  else if (!moved) {
-    /* If column and indent is the same move to begining. */
-    if (openfile->current_x == cur_indent) {
-      openfile->current_x = 0;
-    }
-    /* Else move to (indent/first char after indent) of line. */
-    else {
-      openfile->current_x = cur_indent;
-    }
-  }
-  if (moved_off_chunk) {
-    openfile->placewewant = xplustabs();
-  }
-  /* Return early here when using the gui. */
-  if (ISSET(USING_GUI)) {
-    return;
-  }
-  /* If we changed chunk, we might be offscreen.  Otherwise, update current if the mark is on or we changed 'page'. */
-  if (ISSET(SOFTWRAP) && moved_off_chunk) {
-    edit_redraw(was_current, FLOWING);
-  }
-  else if (line_needs_update(was_column, openfile->placewewant)) {
-    update_line_curses(openfile->current, openfile->current_x);
-  }
-}
+// void do_home(void) {
+//   linestruct *was_current = openfile->current;
+//   bool moved_off_chunk, moved;
+//   Ulong was_column, leftedge, left_x, cur_indent;
+//   moved_off_chunk = TRUE;
+//   moved           = FALSE;
+//   /* Save current column position. */
+//   was_column = xplustabs();
+//   /* Save current indent of line. */
+//   cur_indent = indent_length(openfile->current->data);
+//   if (ISSET(SOFTWRAP)) {
+//     leftedge = leftedge_for(editwincols, was_column, openfile->current);
+//     left_x   = proper_x(openfile->current, &leftedge, FALSE, leftedge, NULL);
+//   }
+//   if (ISSET(SMART_HOME)) {
+//     Ulong indent_x = indent_length(openfile->current->data);
+//     if (openfile->current->data[indent_x]) {
+//       /* If we're exactly on the indent, move fully home.  Otherwise, when not softwrapping
+//        * or not after the first nonblank chunk, move to the first nonblank character. */
+//       if (openfile->current_x == indent_x) {
+//         openfile->current_x = 0;
+//         moved               = TRUE;
+//       }
+//       else if (left_x <= indent_x) {
+//         openfile->current_x = indent_x;
+//         moved               = TRUE;
+//       }
+//     }
+//   }
+//   if (!moved && ISSET(SOFTWRAP)) {
+//     /* If already at the left edge of the screen, move fully home. Otherwise, move to the left edge. */
+//     if (openfile->current_x == left_x) {
+//       openfile->current_x = 0;
+//     }
+//     else {
+//       openfile->current_x   = left_x;
+//       openfile->placewewant = leftedge;
+//       moved_off_chunk       = FALSE;
+//     }
+//   }
+//   else if (!moved) {
+//     /* If column and indent is the same move to begining. */
+//     if (openfile->current_x == cur_indent) {
+//       openfile->current_x = 0;
+//     }
+//     /* Else move to (indent/first char after indent) of line. */
+//     else {
+//       openfile->current_x = cur_indent;
+//     }
+//   }
+//   if (moved_off_chunk) {
+//     openfile->placewewant = xplustabs();
+//   }
+//   /* Return early here when using the gui. */
+//   if (ISSET(USING_GUI)) {
+//     return;
+//   }
+//   /* If we changed chunk, we might be offscreen.  Otherwise, update current if the mark is on or we changed 'page'. */
+//   if (ISSET(SOFTWRAP) && moved_off_chunk) {
+//     edit_redraw(was_current, FLOWING);
+//   }
+//   else if (line_needs_update(was_column, openfile->placewewant)) {
+//     update_line_curses(openfile->current, openfile->current_x);
+//   }
+// }
 
 /* Move to the end of the current line (or softwrapped 'chunk').  When softwrapping and already at the end of a 'chunk', go to the end of the full line. */
 void do_end(void) {

@@ -996,6 +996,8 @@ bool do_next_word_for(openfilestruct *const file, bool after_ends, bool allow_pu
 bool do_next_word(bool after_ends);
 void to_next_word_for(CTX_PARAMS, bool after_ends, bool allow_punct);
 void to_next_word(void);
+void do_home_for(CTX_PARAMS);
+void do_home(void);
 
 
 /* ---------------------------------------------------------- rcfile.c ---------------------------------------------------------- */

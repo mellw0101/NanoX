@@ -3576,7 +3576,7 @@ int update_line_curses_for(openfilestruct *const file, linestruct *const line, U
 /* Redraw the given line so that the character at the given index is visible -- if necessary, scroll the line
  * horizontally (when not softwrapping). Return the number of rows "consumed" (relevant when softwrapping). */
 int update_line_curses(linestruct *const line, Ulong index) {
-  return update_line_curses_for(openfile, line, index);
+  return update_line_curses_for(CTX_OF, line, index);
 }
 
 /* Redraw all the chunks of the given line (as far as they fit onscreen), unless it's edittop,

@@ -374,7 +374,7 @@ void do_help(void);
 // bool do_next_word(bool after_ends) _NOTHROW;
 // void to_prev_word(void);
 // void to_next_word(void);
-void do_home(void);
+// void do_home(void);
 void do_end(void);
 // void do_up(void);
 // void do_down(void);

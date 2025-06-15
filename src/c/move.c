@@ -416,9 +416,9 @@ void to_prev_block(void) {
 /* Move to the next block of text inside `file`. */
 void to_next_block_for(openfilestruct *const file, int rows, int cols) {
   ASSERT(file);
-  linestruct *const was_current = file->current;
-  int               cur_indent;
-  int               was_indent = line_indent(was_current);
+  linestruct *was_current = file->current;
+  int cur_indent;
+  int was_indent = line_indent(was_current);
   /* Skip forward until first nonblank line after some blank line(s). */
   while (file->current->next) {
     /* Current line is not starting line. */
@@ -767,4 +767,82 @@ void to_next_word_for(CTX_PARAMS, bool after_ends, bool allow_punct) {
  * stop at the end of words instead of at the beginning.  Update the screen_afterwards. */
 void to_next_word(void) {
   CTX_CALL_WARGS(to_next_word_for, ISSET(AFTER_ENDS), ISSET(WORD_BOUNDS));
+}
+
+/* ----------------------------- Do homw ----------------------------- */ /* TODO: Remove smart-home as a flag and make it the default behavior. */
+
+/* Move to the beginning of the current line (or soft-wrapped chunk).  When enabled, do smart-home. 
+ * When soft-wrapping, go to the beginning of the full line when already at the start of the chunk. */
+void do_home_for(CTX_PARAMS) {
+  ASSERT(file);
+  bool moved_off_chunk = TRUE;
+  bool moved           = FALSE;
+  Ulong leftedge = 0;
+  Ulong left_x   = 0;
+  /* Save the current line in `file`. */
+  linestruct *was_current = file->current;
+  /* Save the current column position in `file`. */
+  Ulong was_column = xplustabs_for(file);
+  /* Save the indent length of the current line. */
+  Ulong indent_len = indent_length(file->current->data);
+  /* Softwrapping is enabled. */
+  if (ISSET(SOFTWRAP)) {
+    leftedge = leftedge_for(cols, was_column, file->current);
+    left_x   = proper_x(file->current, cols, &leftedge, BACKWARD, leftedge, NULL);
+  }  
+  /* Smart-home is enabled. */
+  if (ISSET(SMART_HOME) && file->current->data[indent_len]) {
+    /* If we're exactly on the indent, move fully home.  Otherwise, when not softwrapping
+     * or not after the first nonblank chunk, move to the first nonblank character. */
+    if (file->current_x == indent_len) {
+      file->current_x = 0;
+      moved           = TRUE;
+    }
+    else if (left_x <= indent_len) {
+      file->current_x = indent_len;
+      moved           = TRUE;
+    }
+  }
+  /* If we haven't moved. */
+  if (!moved) {
+    if (ISSET(SOFTWRAP)) {
+      /* If already at the left edge of the screen, move fully home.  Otherwise, move to the left edge. */
+      if (file->current_x == left_x) {
+        file->current_x = 0;
+      }
+      else {
+        file->current_x   = left_x;
+        file->placewewant = leftedge;
+        moved_off_chunk   = FALSE;
+      }
+    }
+    else {
+      /* If column and indent is the same, move to the beginning. */
+      if (file->current_x == indent_len) {
+        file->current_x = 0;
+      }
+      else {
+        file->current_x = indent_len;
+      }
+    }
+  }
+  if (moved_off_chunk) {
+    set_pww_for(file);
+  }
+  /* When in curses mode, ensure the visual state is updated. */
+  if (IN_CURSES_CTX) {
+    /* If we changed chunk, we might be offscreen.  Otherwise, update current if the mark is on or we changed `page`. */
+    if (ISSET(SOFTWRAP) && moved_off_chunk) {
+      edit_redraw_for(STACK_CTX, was_current, FLOWING);
+    }
+    else if (line_needs_update_for(file, cols, was_column, file->placewewant)) {
+      update_line_curses_for(file, file->current, file->current_x);
+    }
+  }
+}
+
+/* Move to the beginning of the current line (or soft-wrapped chunk).  When enabled, do smart-home. 
+ * When soft-wrapping, go to the beginning of the full line when already at the start of the chunk. */
+void do_home(void) {
+  CTX_CALL(do_home_for);
 }

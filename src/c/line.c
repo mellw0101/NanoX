@@ -18,7 +18,7 @@ bool line_in_marked_region_for(openfilestruct *const file, linestruct *const lin
 
 /* Return 'TRUE' when 'line' is part of the marked region. */
 bool line_in_marked_region(linestruct *const line) {
-  return line_in_marked_region_for(openfile, line);
+  return line_in_marked_region_for(CTX_OF, line);
 }
 
 char *line_last_mbchr(const linestruct *const line) {
@@ -31,18 +31,13 @@ char *line_last_mbchr(const linestruct *const line) {
 /* Move a single line up/down by simply swapping data ptrs. */
 void move_line_data(linestruct *const line, bool up) {
   ASSERT(line);
-  char *data;
   /* Up */
   if (up && line->prev) {
-    data             = line->prev->data;
-    line->prev->data = line->data;
-    line->data       = data;
+    DLIST_SWAP_FIELD_PREV(line, data);
   }
   /* Down */
   else if (!up && line->next) {
-    data             = line->next->data;
-    line->next->data = line->data;
-    line->data       = data;
+    DLIST_SWAP_FIELD_NEXT(line, data);
   }
 }
 
