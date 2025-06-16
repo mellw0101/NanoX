@@ -286,7 +286,7 @@ void chop_next_word(void) _NOTHROW;
 // void cut_text(void) _NOTHROW;
 // void cut_till_eof(void) _NOTHROW;
 // void zap_text(void) _NOTHROW;
-void zap_replace_text(const char *replacewith, Ulong len) _NOTHROW;
+// void zap_replace_text(const char *replacewith, Ulong len) _NOTHROW;
 // void copy_marked_region(void);
 // void copy_text(void);
 // void paste_text(void);

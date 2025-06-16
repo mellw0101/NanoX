@@ -1148,6 +1148,8 @@ void copy_text_for(openfilestruct *const file, int rows, int cols);
 void copy_text(void);
 void paste_text_for(CTX_PARAMS);
 void paste_text(void);
+void zap_replace_text_for(CTX_PARAMS, const char *const restrict replace_with, Ulong len);
+void zap_replace_text(const char *const restrict replace_with, Ulong len);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */

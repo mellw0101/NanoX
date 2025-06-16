@@ -470,28 +470,28 @@ void chop_next_word(void) _NOTHROW {
 // }
 
 /* Erase currently marked region, and replace it with `replacewith`. */
-void zap_replace_text(const char *replacewith, Ulong len) _NOTHROW {
-  /* This should never happen when there is no marked region. */
-  if (!openfile->mark) {
-    return;
-  }
-  /* Save the current cutbuffer, so we can restore it. */
-  linestruct *was_cutbuffer = cutbuffer;
-  cutbuffer = NULL;
-  /* Create a new string to pass to the undo object. */
-  char *newdata = measured_copy(replacewith, len);
-  add_undo(ZAP_REPLACE, newdata);
-  free(newdata);
-  /* Now cut the marked region. */
-  cut_marked_region();
-  /* Then inject the data and adjust the cursor position and total size. */
-  inject_in_cursor(replacewith, len, TRUE);
-  /* Update the undo-object after we have injected the data. */
-  update_undo(ZAP_REPLACE);
-  /* Restore the cutbuffer. */
-  cutbuffer = was_cutbuffer;
-  refresh_needed = TRUE;
-}
+// void zap_replace_text(const char *replacewith, Ulong len) _NOTHROW {
+//   /* This should never happen when there is no marked region. */
+//   if (!openfile->mark) {
+//     return;
+//   }
+//   /* Save the current cutbuffer, so we can restore it. */
+//   linestruct *was_cutbuffer = cutbuffer;
+//   cutbuffer = NULL;
+//   /* Create a new string to pass to the undo object. */
+//   char *newdata = measured_copy(replacewith, len);
+//   add_undo(ZAP_REPLACE, newdata);
+//   free(newdata);
+//   /* Now cut the marked region. */
+//   cut_marked_region();
+//   /* Then inject the data and adjust the cursor position and total size. */
+//   inject_in_cursor(replacewith, len, TRUE);
+//   /* Update the undo-object after we have injected the data. */
+//   update_undo(ZAP_REPLACE);
+//   /* Restore the cutbuffer. */
+//   cutbuffer = was_cutbuffer;
+//   refresh_needed = TRUE;
+// }
 
 /* Make a copy of the marked region, putting it in the cutbuffer. */
 // void copy_marked_region(void) {

@@ -744,3 +744,36 @@ void paste_text(void) {
     paste_text_for(TUI_CTX);
   }
 }
+
+/* ----------------------------- Zap replace text ----------------------------- */
+
+/* Erase the currently marked region in `file`, then replace it with `replacewith`.  TODO: Make
+ * this take a `linestruct *` so one can replace the marked region with the cutbuffer for instance. */
+void zap_replace_text_for(CTX_PARAMS, const char *const restrict replace_with, Ulong len) {
+  ASSERT(file);
+  ASSERT(replace_with);
+  /* Save the cutbuffer. */
+  linestruct *was_cutbuffer = cutbuffer;
+  char *data;
+  /* This should never be called when there is no marked region. */
+  if (!file->mark) {
+    return;
+  }
+  cutbuffer = NULL;
+  /* Add a new undo-object, with the replacement string. */
+  data = measured_copy(replace_with, len);
+  add_undo_for(file, ZAP_REPLACE, data);
+  free(data);
+  /* Cut the marked region.  And inject the replacement string, at the cursor. */
+  cut_marked_region_for(STACK_CTX);
+  file->current->data = xstrninj(file->current->data, replace_with, len, file->current_x);
+  update_undo_for(file, ZAP_REPLACE);
+  /* Restore the cutbuffer. */
+  cutbuffer      = was_cutbuffer;
+  refresh_needed = TRUE;
+}
+
+/* Erase the currently marked region in the currently open buffer, then replace it with `replacewith`.  Note that this is `context-safe`. */
+void zap_replace_text(const char *const restrict replace_with, Ulong len) {
+  CTX_CALL_WARGS(zap_replace_text_for, replace_with, len);
+}
