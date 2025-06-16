@@ -25,7 +25,6 @@ typedef enum {
 /* Flags to represent what the mouse is currently doing, across callback functions. */
 static bit_flag_t<MOUSEFLAG_SIZE> mouse_flag;
 /* The element that was last entered, and witch element just ran its enter callback. */
-// static guielement *entered_element = NULL;
 static Element *entered_element = NULL;
 /* The mouse position. */
 vec2 mousepos;
@@ -51,19 +50,6 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
     update_projection_uniform(gui->font_shader);
     update_projection_uniform(gui->rect_shader);
     /* Calculate the rows for all editors. */
-    // CLIST_ITER(starteditor, editor,
-    //   if (texture_font_is_mono(gui_font_get_font(gui->font))) {
-    //     texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(gui->font), " ");
-    //     if (!glyph) {
-    //       die("%s: Atlas is to small.\n", __func__);
-    //     }
-    //     editor->cols = (editor->text->size.w / glyph->advance_x);
-    //   }
-    //   else {
-    //     editor->cols = ((editor->text->size.w / FONT_WIDTH(gui_font_get_font(gui->font))) * 0.9f);
-    //   }
-    //   gui_editor_resize(editor);
-    // );
     CLIST_ITER(starteditor, editor,
       if (texture_font_is_mono(gui_font_get_font(gui->font))) {
         texture_glyph_t *glyph = texture_font_get_glyph(gui_font_get_font(gui->font), " ");
@@ -77,7 +63,6 @@ void window_resize_callback(GLFWwindow *window, int width, int height) {
       }
       editor_resize(editor);
     );
-    // gui_element_resize(gui->root, vec2(gui->width, gui->height));
     element_resize(gui->root, gui->width, gui->height);
     refresh_needed = TRUE;
   }
@@ -284,16 +269,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             show_toggle_statusmsg(LINE_NUMBERS);
             editor_update_all();
           }
+          /* Open a new editor. */
           else if (mods == (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
-            // make_new_editor(TRUE);
-            // gui_editor_redecorate(openeditor);
-            // gui_editor_resize(openeditor);
             editor_create(TRUE);
             editor_redecorate(openeditor);
             editor_resize(openeditor);
           }
+          /* Open a new empty buffer in the currently open editor. */
           else if (mods == GLFW_MOD_CONTROL) {
-            // gui_editor_open_new_empty_buffer();
             editor_open_new_empty_buffer();
           }
           break;
@@ -400,7 +383,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* If CTRL+Q is pressed, quit. */
           if (mods == GLFW_MOD_CONTROL) {
             if (!GUI_OF->modified || ISSET(VIEW_MODE)) {
-              gui_quit();
+              if (gui_quit()) {
+                return;
+              }
             }
             else if (ISSET(SAVE_ON_EXIT) && *GUI_OF->filename) {
               ;
@@ -505,42 +490,24 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_ESCAPE: {
-          /* If there is an active menu, escape should exit that menu and not show it anymore. */
-          // if (gui->active_menu) {
-          //   gui_menu_show(gui->active_menu, FALSE);
-          // }
           if (menu_get_active()) {
             menu_show(menu_get_active(), FALSE);
           }
           break;
         }
         case GLFW_KEY_RIGHT: {
-          // if (gui->active_menu && gui_menu_allows_arrow_navigation(gui->active_menu)) {
-          //   switch (mods) {
-          //     case 0: {
-          //       gui_menu_enter_submenu(gui->active_menu);
-          //       return;
-          //     }
-          //   }
-          // }
-          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active())) {
-            switch (mods) {
-              case 0: {
-                menu_enter_submenu(menu_get_active());
-                return;
-              }
-            }
+          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active()) && !mods) {
+            menu_enter_submenu(menu_get_active());
+            return;
           }
           switch (mods) {
             /* Alt+Shift+Right.  Switch to the next editor. */
             case (GLFW_MOD_ALT | GLFW_MOD_SHIFT): {
-              // function = gui_editor_switch_to_next;
               function = editor_switch_to_next;
               break;
             }
             /* Alt+Right.  Switch to the next buffer inside this editor. */
             case GLFW_MOD_ALT: {
-              // function = gui_editor_switch_openfile_to_next;
               function = editor_switch_openfile_to_next;
               break;
             }
@@ -567,32 +534,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_LEFT: {
-          // if (gui->active_menu && gui_menu_allows_arrow_navigation(gui->active_menu)) {
-          //   switch (mods) {
-          //     case 0: {
-          //       gui_menu_exit_submenu(gui->active_menu);
-          //       return;
-          //     }
-          //   }
-          // }
-          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active())) {
-            switch (mods) {
-              case 0: {
-                menu_exit_submenu(menu_get_active());
-                return;
-              }
-            }
+          if (menu_get_active() && menu_allows_arrow_navigation(menu_get_active()) && !mods) {
+            menu_exit_submenu(menu_get_active());
+            return;
           }
           switch (mods) {
             /* Alt+Shift+Left.  Switch to the previous editor. */
             case (GLFW_MOD_ALT | GLFW_MOD_SHIFT): {
-              // function = gui_editor_switch_to_prev;
               function = editor_switch_to_prev;
               break;
             }
             /* Alt+Left.  Switch to the previous buffer inside this editor. */
             case GLFW_MOD_ALT: {
-              // function = gui_editor_switch_openfile_to_prev;
               function = editor_switch_openfile_to_prev;
               break;
             }
@@ -619,26 +572,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_UP: {
-          // if (cvec_len(gui->suggestmenu->completions)) {
-          //   gui_suggestmenu_selected_up();
-          //   return;
-          // }
-          /* If there is an active menu. */
-          // if (gui->active_menu) {
-          //   switch (mods) {
-          //     case 0: {
-          //       gui_menu_selected_up(gui->active_menu);
-          //       return;
-          //     }
-          //   }
-          // }
-          if (menu_get_active()) {
-            switch (mods) {
-              case 0: {
-                menu_selected_up(menu_get_active());
-                return;
-              }
-            }
+          if (menu_get_active() && !mods) {
+            menu_selected_up(menu_get_active());
+            return;
           }
           /* Otherwise, handle normaly. */
           switch (mods) {
@@ -671,14 +607,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
         case GLFW_KEY_DOWN: {
           /* If there is an active menu. */
-          // if (gui->active_menu) {
-          //   switch (mods) {
-          //     case 0: {
-          //       gui_menu_selected_down(gui->active_menu);
-          //       return;
-          //     }
-          //   }
-          // }
           if (menu_get_active()) {
             switch (mods) {
               case 0: {
@@ -741,14 +669,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_ENTER: {
-          // if (gui->active_menu) {
-          //   switch (mods) {
-          //     case 0: {
-          //       gui_menu_accept_action(gui->active_menu);
-          //       return;
-          //     }
-          //   }
-          // }
           if (menu_get_active()) {
             switch (mods) {
               case 0: {
@@ -772,15 +692,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           break;
         }
         case GLFW_KEY_TAB: {
-          /* If there is an active menu, and that menu accepts on tab. */
-          // if (gui->active_menu && gui_menu_should_accept_on_tab(gui->active_menu)) {
-          //   switch (mods) {
-          //     case 0: {
-          //       gui_menu_accept_action(gui->active_menu);
-          //       return;
-          //     }
-          //   }
-          // }
           /* If there is an active menu, and that menu accepts on tab. */
           if (menu_get_active() && menu_should_accept_on_tab(menu_get_active())) {
             switch (mods) {
@@ -859,16 +770,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* Decrease the font size. */
           if (mods == GLFW_MOD_CONTROL) {
             gui_font_decrease_size(gui->font);
-            show_statusmsg(AHEM, 2, "Font size: %u", gui_font_get_size(gui->font));
-            // gui_editor_update_all();
+            statusline(AHEM, "Font size: %u", gui_font_get_size(gui->font));
             editor_update_all();
             refresh_needed = TRUE;
           }
           /* Decrease the font line height. */
           else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
             gui_font_decrease_line_height(gui->font);
-            show_statusmsg(AHEM, 2, "Font line height: %ld", gui_font_get_line_height(gui->font));
-            // gui_editor_update_all();
+            statusline(AHEM, "Font line height: %ld", gui_font_get_line_height(gui->font));
             editor_update_all();
             refresh_needed = TRUE;
           }
@@ -878,16 +787,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
           /* increase the font size. */
           if (mods == GLFW_MOD_CONTROL) {
             gui_font_increase_size(gui->font);
-            show_statusmsg(AHEM, 2, "Font size: %u", gui_font_get_size(gui->font));
-            // gui_editor_update_all();
+            statusline(AHEM, "Font size: %u", gui_font_get_size(gui->font));
             editor_update_all();
             refresh_needed = TRUE;
           }
           /* increase the font line height. */
           else if (mods == (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
             gui_font_increase_line_height(gui->font);
-            show_statusmsg(AHEM, 2, "Font line height: %ld", gui_font_get_line_height(gui->font));
-            // gui_editor_update_all();
+            statusline(AHEM, "Font line height: %ld", gui_font_get_line_height(gui->font));
             editor_update_all();
             refresh_needed = TRUE;
           }
@@ -963,6 +870,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 /* Char input callback. */
 void char_callback(GLFWwindow *window, Uint ch) {
+  int len;
+  char mb[MAXCHARLEN + 1];
   char input;
   /* When in the gui prompt mode. */
   if (gui->flag.is_set<GUI_PROMPT>()) {
@@ -974,10 +883,6 @@ void char_callback(GLFWwindow *window, Uint ch) {
     input = (char)ch;
     /* Open a new seperate editor. */
     if (is_char_one_of(&input, 0, "Nn")) {
-      // make_new_editor(TRUE);
-      // gui_editor_hide(openeditor->prev, TRUE);
-      // gui_editor_redecorate(openeditor);
-      // gui_editor_resize(openeditor);
       editor_create(TRUE);
       editor_hide(openeditor->prev, TRUE);
       editor_redecorate(openeditor);
@@ -986,6 +891,18 @@ void char_callback(GLFWwindow *window, Uint ch) {
     gui->flag.unset<GUI_EDITOR_MODE_KEY>();
   }
   else {
+    /* Not a valid utf-8 codepoint. */
+    if (!(len = widetomb(ch, mb))) {
+      return;
+    }
+    /* Non ascii codepoint. */
+    else if (len != 1) {
+      inject_into_buffer(GUI_CTX, mb, len);
+      return;
+    }
+    else {
+      input = *mb;
+    }
     /* Adjust the viewport if the cursor is offscreen. */
     if (current_is_offscreen()) {
       adjust_viewport(CENTERING);
@@ -994,7 +911,6 @@ void char_callback(GLFWwindow *window, Uint ch) {
     if (ISSET(VIEW_MODE)) {
       return;
     }
-    input = (char)ch;
     /* If region is marked, and 'input' is an enclose char, then we enclose the marked region with that char. */
     if (GUI_OF->mark && is_enclose_char((char)ch)) {
       const char *s1, *s2;
@@ -1008,7 +924,7 @@ void char_callback(GLFWwindow *window, Uint ch) {
       keep_mark            = FALSE;
       last_key_was_bracket = FALSE;
       last_bracket_char    = '\0';
-      GUI_OF->mark       = NULL;
+      GUI_OF->mark         = NULL;
       return;
     }
     /* If a enclose char is pressed without a having a marked region, we simply enclose in place. */
@@ -1087,7 +1003,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   static int    last_button   = 0;
   static vec2   last_mousepos = 0.0f;
   Element *test;
-  // guielement *element;
   /* Determen if this was a double or tripple click. */
   if (action == GLFW_PRESS) {
     /* Give some wiggle room for the position of the mouse click as it is represented as while numbers only. */
@@ -1178,83 +1093,12 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
             editor_redecorate(test->parent->dp_editor);
             editor_resize(test->parent->dp_editor);
             etb_active_refresh_needed(test->parent->dp_editor->tb);
-            // element->parent->ed_editor->openfile = element->ed_file;
-            // openfile = element->parent->ed_editor->openfile;
-            // gui_editor_redecorate(element->parent->ed_editor);
-            // gui_editor_resize(element->parent->ed_editor);
-            // gui_etb_active_refresh_needed(element->parent->ed_editor->etb);
           }
         }
         else if (test == gui->promptmenu->element) {
           gui_promptmenu_click_action(mousepos.y);
         }
       }
-      // element = gui_element_from_mousepos();
-      // if (element) {
-        /* Save the element that was clicked. */
-        // gui->clicked = element;
-        /* If there is an active menu and the clicked element is not part of that menu, stop showing the menu. */
-        // if (gui->active_menu && !gui_menu_owns_element(gui->active_menu, element)) {
-        //   gui_menu_show(gui->active_menu, FALSE);
-        // }
-        /* Otherwise, if there is an acive menu, and the clicked element is the main element. */
-        // else if (gui->active_menu && gui_element_has_menu_data(element) && gui_menu_is_ancestor(element->data.menu, gui->active_menu) && gui_menu_element_is_main(element->data.menu, element)) {
-        //   gui_menu_click_action(element->data.menu, mousepos.x, mousepos.y);
-        // }
-        /* When the mouse is pressed in the text element of a editor. */
-        // else if (gui_element_has_editor_data(element) && element == element->data.editor->text) {
-        //   /* When a click occurs in the text element of a editor, make that editor the currently active editor. */
-        //   gui_editor_set_open(element->data.editor);
-        //   /* Get the line and index from the mouse position. */
-        //   Ulong index;
-        //   linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
-        //   openfile->current     = line;
-        //   openfile->mark        = line;
-        //   openfile->current_x   = index;
-        //   openfile->mark_x      = index;
-        //   openfile->softmark    = TRUE;
-        //   openfile->placewewant = xplustabs();
-        //   /* If this was a double click then select the current word, if any. */
-        //   if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
-        //     Ulong st, end;
-        //     st  = get_prev_cursor_word_start_index(TRUE);
-        //     end = get_current_cursor_word_end_index(TRUE);
-        //     /* If the double click was inside of a word. */
-        //     if (st != openfile->current_x && end != openfile->current_x) {
-        //       openfile->mark_x    = st;
-        //       openfile->current_x = end;
-        //     }
-        //     /* The double click was done at the end of the word.  So we select that word. */
-        //     else if (st != openfile->current_x && end == openfile->current_x) {
-        //       openfile->mark_x = st;
-        //     }
-        //     /* The double click was done at the begining of the word.  So we select that word. */
-        //     else if (st == openfile->current_x && end != openfile->current_x) {
-        //       openfile->mark_x    = st;
-        //       openfile->current_x = end;
-        //     }
-        //   }
-        //   /* Otherwise, if this was a tripple click then select the whole line. */
-        //   else if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
-        //     openfile->mark_x = 0;
-        //     openfile->current_x = strlen(openfile->current->data);
-        //   }
-        // }
-        /* Otherwise, if the element is part of the topbar of an editor. */
-        // else if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent)
-        //  && gui_etb_element_is_main(element->parent->ed_editor->etb, element->parent) && !gui->flag.is_set<GUI_PROMPT>()) {
-        //   if (element->data.file && element->data.file != element->parent->ed_editor->openfile) {
-        //     element->parent->ed_editor->openfile = element->ed_file;
-        //     openfile = element->parent->ed_editor->openfile;
-        //     gui_editor_redecorate(element->parent->ed_editor);
-        //     gui_editor_resize(element->parent->ed_editor);
-        //     gui_etb_active_refresh_needed(element->parent->ed_editor->etb);
-        //   }
-        // }
-        // else if (element == gui->promptmenu->element) {
-        //   gui_promptmenu_click_action(mousepos.y);
-        // }
-      // }
     }
     else if (action == GLFW_RELEASE) {
       mouse_flag.unset<LEFT_MOUSE_BUTTON_HELD>();
@@ -1262,16 +1106,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
       if (GUI_OF->mark == GUI_OF->current && GUI_OF->mark_x == GUI_OF->current_x) {
         GUI_OF->mark = NULL;
       }
-      // if (gui->clicked) {
-      //   /* If the clicked element is any part of any scrollbar. */
-      //   if (gui_element_has_sb_data(gui->clicked)) {
-      //     /* Only reset the given element is the scrollbar's thumb and is not the currently hovered element. */
-      //     if (gui_scrollbar_element_is_thumb(gui->clicked->ed_sb, gui->clicked) && gui->clicked != gui_element_from_mousepos()) {
-      //       gui->clicked->color = GUISB_THUMB_COLOR;
-      //     }
-      //     gui_scrollbar_refresh_needed(gui->clicked->ed_sb);
-      //   }
-      // }
       if (gui->clicked && gui->clicked->has_sb_data) {
         if (scrollbar_element_is_thumb(gui->clicked->dp_sb, gui->clicked) && gui->clicked != element_grid_get(mousepos.x, mousepos.y)) {
           scrollbar_set_thumb_color(gui->clicked->dp_sb, FALSE);
@@ -1285,22 +1119,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
   else if (button == GLFW_MOUSE_BUTTON_2) {
     if (action == GLFW_PRESS) {
       mouse_flag.set<RIGHT_MOUSE_BUTTON_HELD>();
-      // element = gui_element_from_mousepos();
-      /* If the clicked element is a child of any editor's topbar, open the editor topbar context menu. */
-      // if (gui_element_has_file_data(element) && gui_element_has_editor_data(element->parent) && gui_etb_element_is_main(element->parent->ed_editor->etb, element->parent)) {
-      //   gui_etb_show_context_menu(element->parent->ed_editor->etb, element, TRUE);
-      // }
-      /* The clicked element is the main element itself of any editor's topbar. */
-      // else if (gui_element_has_editor_data(element) && gui_etb_element_is_main(element->ed_editor->etb, element)) {
-      //   gui_etb_show_context_menu(element->ed_editor->etb, element, TRUE);
-      // }
-      // else
-      // if (gui_element_has_menu_data(element)) {
-      //   gui_menu_show(element->ed_menu, FALSE);
-      // }
-      // else {
-      //   context_menu_show(gui->context_menu, TRUE);
-      // }
       test = element_grid_get(mouse_x, mouse_y);
       if (test && test->has_file_data && test->parent && test->parent->has_editor_data && etb_element_is_main(test->parent->dp_editor->tb, test->parent)) {
         etb_show_context_menu(test->parent->dp_editor->tb, test, TRUE);
@@ -1367,82 +1185,16 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         gui->promptmenu->text_refresh_needed = TRUE;
       }
     }
-    /* If the clicked element is a part of an editor. */
-    // else if (gui_element_has_editor_data(gui->clicked)) {
-    //   /* If the clicked element is a editor's text element. */
-    //   if (gui->clicked == gui->clicked->ed_editor->text) {
-    //     Ulong index;
-    //     linestruct *line;
-    //     gui_editor_get_text_line_index(gui->clicked->ed_editor, mousepos.x, mousepos.y, &line, &index);
-    //     // linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
-    //     openfile->current   = line;
-    //     openfile->current_x = index;
-    //     /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
-    //     if (mouse_flag.is_set<WAS_MOUSE_TRIPPLE_PRESS>()) {
-    //       Ulong st, end;
-    //       st  = 0;
-    //       end = strlen(openfile->mark->data);
-    //       /* If the current cursor line is the same as mark, mark the entire line no matter the cursor pos inside it. */
-    //       if (openfile->current == openfile->mark) {
-    //         openfile->mark_x    = st;
-    //         openfile->current_x = end;
-    //       }
-    //       /* If the current line is above the line where the mark was placed, set the mark index at the end of the line. */
-    //       if (openfile->current->lineno < openfile->mark->lineno) {
-    //         openfile->mark_x = end;
-    //       }
-    //       /* Otherwise, place it at the start. */
-    //       else {
-    //         openfile->mark_x = st;
-    //       }
-    //     }
-    //     /* If the left press was a double press. */
-    //     else if (mouse_flag.is_set<WAS_MOUSE_DOUBLE_PRESS>()) {
-    //       /* Get the start and end of the word that has been marked.  It does not matter is the mark is currently at start or end of that word. */
-    //       Ulong st, end;
-    //       st  = get_prev_word_start_index(openfile->mark->data, openfile->mark_x, TRUE);
-    //       end = get_current_word_end_index(openfile->mark->data, openfile->mark_x, TRUE);
-    //       /* If the current line is the same as the mark line. */
-    //       if (openfile->current == openfile->mark) {
-    //         /* When the current cursor pos is inside the the word, just mark the entire word. */
-    //         if (openfile->current_x >= st && openfile->current_x <= end) {
-    //           openfile->mark_x    = st;
-    //           openfile->current_x = end;
-    //         }
-    //         /* Or, when the cursor if before the word, set the mark at the end of the word. */
-    //         else if (openfile->current_x < st) {
-    //           openfile->mark_x = end;
-    //         }
-    //         /* And when the cursor is after the word, place the mark at the start. */
-    //         else if (openfile->current_x > end) {
-    //           openfile->mark_x = st;
-    //         }
-    //       }
-    //       /* Otherwise, when the cursor line is above the mark, place the mark at the end of the word. */
-    //       else if (openfile->current->lineno < openfile->mark->lineno) {
-    //         openfile->mark_x = end;
-    //       }
-    //       /* And when the cursor line is below the mark line, place the mark at the start of the word. */
-    //       else {
-    //         openfile->mark_x = st;
-    //       }
-    //       openfile->placewewant = xplustabs();
-    //     }
-    //   }
-    // }
-    /* The clicked element is a part of some scrollbar. */
-    // if (gui_element_has_sb_data(gui->clicked) && gui_scrollbar_element_is_thumb(gui->clicked->data.sb, gui->clicked) && (mousepos.y != last_mousepos.y)) {
-    //   gui_scrollbar_move(gui->clicked->data.sb, (mousepos.y - last_mousepos.y));
-    // }
     if (gui->clicked) {
+      /* Scrollbar */
       if (gui->clicked->has_sb_data) {
         scrollbar_mouse_pos_routine(gui->clicked->dp_sb, gui->clicked, last_mousepos.y, mousepos.y);
       }
+      /* Editor-Text */
       else if (gui->clicked->has_editor_data && gui->clicked == gui->clicked->dp_editor->text) {
         Ulong index;
         linestruct *line;
         editor_get_text_line_index(gui->clicked->dp_editor, mousepos.x, mousepos.y, &line, &index);
-        // linestruct *line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
         GUI_OF->current   = line;
         GUI_OF->current_x = index;
         /* If the left press was a tripple press, adjust the mark based on the current cursor line. */
@@ -1500,6 +1252,7 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
     }
   }
   else {
+    /* Get the element that the mouse is on. */
     test = element_grid_get(mousepos.x, mousepos.y);
     if (test) {
       /* If the element currently hovered on has a diffrent cursor then the active one, change it. */
@@ -1528,38 +1281,6 @@ void mouse_pos_callback(GLFWwindow *window, double x, double y) {
         entered_element = test;
       }
     }
-    /* Get the element that the mouse is on. */
-    // element = gui_element_from_mousepos();
-    // if (element) {
-      /* If the element currently hovered on has a diffrent cursor then the active one, change it. */
-      // if (element->cursor_type != gui->current_cursor_type) {
-      //   set_cursor_type(window, element->cursor_type);
-      //   gui->current_cursor_type = element->cursor_type;
-      // }
-      /* When we hover over an element that is related to the active menu, correctly hover in that menu or any of its submenus. */
-      // if (!gui->clicked && gui->active_menu && gui_element_has_menu_data(element) && gui_menu_is_ancestor(element->data.menu, gui->active_menu) && gui_menu_element_is_main(element->data.menu, element)) {
-      //   gui_menu_hover_action(element->data.menu, mousepos.x, mousepos.y);
-      // }
-      /* If this is the main promptmenu element. */
-      // else if (!gui->clicked && element == gui->promptmenu->element) {
-      //   gui_promptmenu_hover_action(mousepos.y);
-      // }
-      /* If the current mouse element is not the current entered element. */
-      // if (!entered_element || element != entered_element) {
-      //   /* If there is no clicked element currently and the newly entered element is the thumb of any scrollbar, highlight the color of it. */
-      //   if (!gui->clicked && gui_element_has_sb_data(element) && gui_scrollbar_element_is_thumb(element->data.sb, element)) {
-      //     element->color = GUISB_ACTIVE_THUMB_COLOR;
-      //   }
-      //   /* If the old entered element was not NULL. */
-      //   if (entered_element) {
-      //     /* If there is no clicked element currently and the recently left element is the thumb of any scrollbar, reset the color of it. */
-      //     if (!gui->clicked && gui_element_has_sb_data(entered_element) && gui_scrollbar_element_is_thumb(entered_element->data.sb, entered_element)) {
-      //       entered_element->color = GUISB_THUMB_COLOR;
-      //     }
-      //   }
-      //   entered_element = element;
-      // }
-    // }
     /* In all other cases reset the cursor type to the arrow when its not the current cursor. */
     else if (gui->current_cursor_type != GLFW_ARROW_CURSOR) {
       set_cursor_type(window, GLFW_ARROW_CURSOR);
@@ -1589,9 +1310,6 @@ void window_enter_callback(GLFWwindow *window, int entered) {
     /* If there is a currently entered element, call its leave callback.  If it has one. */
     if (entered_element) {
       /* Reset the color of any scrollbar if it was the last element the mouse was on and its not currently clicked. */
-      // if (!gui->clicked && gui_element_has_sb_data(entered_element) && gui_scrollbar_element_is_thumb(entered_element->data.sb, entered_element)) {
-      //   entered_element->color = GUISB_THUMB_COLOR;
-      // }
       if (!gui->clicked && entered_element->has_sb_data && scrollbar_element_is_thumb(entered_element->dp_sb, entered_element)) {
         scrollbar_set_thumb_color(entered_element->dp_sb, FALSE);
       }
@@ -1602,7 +1320,6 @@ void window_enter_callback(GLFWwindow *window, int entered) {
 
 /* Scroll callback. */
 void scroll_callback(GLFWwindow *window, double x, double y) {
-  // guielement *element = gui_element_from_mousepos();
   Element *test = element_grid_get(mousepos.x, mousepos.y);
   Ulong index;
   linestruct *line;
@@ -1632,44 +1349,6 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
       gui_promptmenu_scroll_action(((y > 0) ? BACKWARD : FORWARD), mousepos.y);
     }
   }
-  // else if (element) {
-  //   /* Check if the element belongs to a editor. */
-  //   if (gui_element_has_editor_data(element)) {
-  //     /* If the scroll happend where the text is then adjust that editor, even if not the currently focused one. */
-  //     if (element == element->ed_editor->text) {
-  //       /* If the mouse left mouse button is held while scrolling, update the cursor pos so that the marked region gets updated. */
-  //       if (mouse_flag.is_set<LEFT_MOUSE_BUTTON_HELD>()) {
-  //         line = line_and_index_from_mousepos(gui_font_get_font(gui->font), &index);
-  //         element->ed_editor->openfile->current   = line;
-  //         element->ed_editor->openfile->current_x = index;
-  //       }
-  //       /* Up and down scroll. */
-  //       edit_scroll((y > 0.0) ? BACKWARD : FORWARD);
-  //     }
-  //     /* Right and left scroll. */
-  //     if (x < 0.0) {
-  //       NETLOG("scroll right.\n");
-  //     }
-  //     else if (x > 0.0) {
-  //       NETLOG("scroll left.\n");
-  //     }
-  //     refresh_needed = TRUE;
-  //     gui_scrollbar_refresh_needed(element->ed_editor->sb);
-  //     /* If the suggestmenu is active then make sure it updates the position and text. */
-  //     if (menu_len(gui->suggestmenu->menu)) {
-  //       menu_text_refresh_needed(gui->suggestmenu->menu);
-  //       menu_pos_refresh_needed(gui->suggestmenu->menu);
-  //     }
-  //   }
-  //   /* If this is the main element of a menu.  Then call it's scroll function. */
-  //   else if (gui->active_menu && gui_element_has_menu_data(element) && gui_menu_is_ancestor(element->data.menu, gui->active_menu) && gui_menu_element_is_main(element->data.menu, element)) {
-  //     gui_menu_scroll_action(element->data.menu, ((y > 0) ? BACKWARD : FORWARD), mousepos.x, mousepos.y);
-  //   }
-  //   /* If this element is the gui promptmenu main element.  Then call the scroll function. */
-  //   else if (element == gui->promptmenu->element) {
-  //     gui_promptmenu_scroll_action(((y > 0) ? BACKWARD : FORWARD), mousepos.y);
-  //   }
-  // }
 }
 
 #endif

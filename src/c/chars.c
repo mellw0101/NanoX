@@ -396,6 +396,52 @@ int mbtowide(wchar *const restrict wc, const char *const restrict c) {
   }
 }
 
+/* ----------------------------- Encode multi byte from wide ----------------------------- */
+
+/* Returns the length (not including the null-terminator) of wc when reprecented as
+ * a multi-byte char string.  Ensure `mb` has a size of at least `MAXCHARLEN + 1`. */
+int widetomb(Uint wc, char *const restrict mb) {
+  ASSERT(mb);
+  /* Ascii */
+  if (wc <= 0x7F) {
+    mb[0] = wc;
+    mb[1] = NUL;
+    return 1;
+  }
+  /* 2-byte */
+  else if (wc <= 0x7FF) {
+    mb[0] = (0xC0 | (wc >> 6));
+    mb[1] = (0x80 | (wc & 0x3F));
+    mb[2] = NUL;
+    return 2;
+  }
+  /* 2-byte-pair */
+  else if (wc >= 0xD800 && wc <= 0xDFFF) {
+    mb[0] = NUL;
+    return 0;
+  }
+  /* 3-byte */
+  else if (wc <= 0xFFFF) {
+    mb[0] = (0xE0 |  (wc >> 12));
+    mb[1] = (0x80 | ((wc >>  6) & 0x3F));
+    mb[2] = (0x80 |  (wc & 0x3F));
+    mb[3] = NUL;
+    return 3;
+  }
+  /* 4-byte */
+  else if (wc <= 0x10FFFF) {
+    mb[0] = (0xF0 |  (wc >> 18));
+    mb[1] = (0x80 | ((wc >> 12) & 0x3F));
+    mb[2] = (0x80 | ((wc >>  6) & 0x3F));
+    mb[3] = (0x80 |  (wc & 0x3F));
+    mb[4] = NUL;
+    return 4;
+  }
+  /* Not a valid ascii, or utf-8 char. */
+  mb[0] = NUL;
+  return 0;
+}
+
 /* Return `TRUE` when the given character occupies two cells. */
 bool is_doublewidth(const char *const ch) {
   wchar_t wc;

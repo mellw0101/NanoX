@@ -363,11 +363,9 @@ void init_gui(void) {
 void glfw_loop(void) {
   while (!glfwWindowShouldClose(gui->window)) {
     frametimer.start();
-    // confirm_margin();
     place_the_cursor();
     glClear(GL_COLOR_BUFFER_BIT);
     /* Check if any editor's has it's `should_close` flag set, and if so close them. */
-    // gui_editor_check_should_close();
     editor_check_should_close();
     /* Draw the editors. */
     CLIST_ITER(starteditor, editor,
@@ -406,9 +404,6 @@ bool gui_quit(void) {
   }
   /* When there is more then a single file open in the currently open editor. */
   if (!CLIST_SINGLE(openeditor->openfile)) {
-    // gui_editor_close_open_buffer();
-    // gui_editor_redecorate(openeditor);
-    // gui_editor_resize(openeditor);
     editor_close_open_buffer();
     editor_redecorate(openeditor);
     editor_resize(openeditor);
@@ -421,11 +416,6 @@ bool gui_quit(void) {
       return TRUE;
     }
     else {
-      // gui_editor_close();
-      // gui_editor_close(openeditor);
-      // gui_editor_hide(openeditor, FALSE);
-      // gui_editor_redecorate(openeditor);
-      // gui_editor_resize(openeditor);
       editor_close(openeditor);
       editor_hide(openeditor, FALSE);
       editor_redecorate(openeditor);

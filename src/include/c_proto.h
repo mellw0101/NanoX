@@ -775,6 +775,10 @@ bool  is_curs_between_any_pair(const char **const restrict pairs, Ulong *const r
 bool  is_cursor_between_chars(const char pre_ch, const char post_ch);
 char  control_mbrep(const char *const c, bool isdata);
 int   mbtowide(wchar *const restrict wc, const char *const restrict c) __THROW _NODISCARD _NONNULL(1, 2);
+
+/* ----------------------------- Encode multi byte from wide ----------------------------- */
+int widetomb(Uint wc, char *const restrict mb);
+
 bool  is_doublewidth(const char *const ch);
 bool  is_zerowidth(const char *ch);
 bool  is_cursor_zerowidth(void);
