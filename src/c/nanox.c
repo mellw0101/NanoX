@@ -157,7 +157,7 @@ void delete_node(linestruct *const line) {
 /* ----------------------------- Unlink node ----------------------------- */
 
 /* Disconnect a node from a linked list of linestructs and delete it. */
-void unlink_node_for(openfilestruct *const file, linestruct *const node) {
+void unlink_node_for(CTX_ARG_OF, linestruct *const node) {
   ASSERT(node);
   DLIST_UNLINK(node);
   /* Update filebot when removing a node at the end of file. */
@@ -555,36 +555,34 @@ void handle_hupterm(int _UNUSED signal) {
   die(_("Received SIGHUP or SIGTERM\n"));
 }
 
-#if !defined(DEBUG)
-  /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
-  void handle_crash(int signal) {
-    void  *buffer[256];
-    int    size    = backtrace(buffer, ARRAY_SIZE(buffer));
-    char **symbols = backtrace_symbols(buffer, size);
-    /* When we are dying from a signal, try to print the last ran functions. */
-    for (int i=0; i<size; ++i) {
-      fprintf(stderr, "[%d]: %s\n", i, symbols[i]);
+/* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
+void handle_crash(int _UNUSED signal) {
+# if !defined(DEBUG)
+  void  *buffer[256];
+  int    size    = backtrace(buffer, ARRAY_SIZE(buffer));
+  char **symbols = backtrace_symbols(buffer, size);
+  /* When we are dying from a signal, try to print the last ran functions. */
+  for (int i=0; i<size; ++i) {
+    fprintf(stderr, "[%d]: %s\n", i, symbols[i]);
+  }
+  switch (signal) {
+    case SIGABRT: {
+      die(_("Sorry! Nano crashed! Code: '%d/SIGABRT' (abort).  Please report a bug.\n"), signal);
+      break;
     }
-    switch (signal) {
-      case SIGABRT: {
-        die(_("Sorry! Nano crashed! Code: '%d/SIGABRT' (abort).  Please report a bug.\n"), signal);
-        break;
-      }
-      case SIGSEGV: {
-        die(_("Sorry! Nano crashed! Code: '%d/SIGSEGV' (segfault).  Please report a bug.\n"), signal);
-        break;
-      }
-      default: {
-        die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
-        break;
-      }
+    case SIGSEGV: {
+      die(_("Sorry! Nano crashed! Code: '%d/SIGSEGV' (segfault).  Please report a bug.\n"), signal);
+      break;
+    }
+    default: {
+      die(_("Sorry! Nano crashed! Code: %d.  Please report a bug.\n"), signal);
+      break;
     }
   }
-#else
-  void handle_crash(int _UNUSED signal) {
-    ;
-  }
-#endif
+# else
+  ;
+# endif
+}
 
 /* ----------------------------- Inject ----------------------------- */
 

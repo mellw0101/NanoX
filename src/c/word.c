@@ -54,7 +54,7 @@ Ulong wordendindex(const char *const restrict string, Ulong pos, bool allow_unde
 }
 
 /* Assigns the number of white char`s to the prev/next word to 'nchars'.  Return`s 'true' when word is more then 2 white`s away. */
-bool word_more_than_one_white_away(const char *const restrict string, Ulong index, bool forward, Ulong *const restrict nsteps) {
+bool more_than_a_blank_away(const char *const restrict string, Ulong index, bool forward, Ulong *const restrict nsteps) {
   ASSERT(string);
   ASSERT(nsteps);
   /* The current index we are checking. */

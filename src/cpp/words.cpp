@@ -36,7 +36,7 @@ char **split_into_words(const char *str, const Uint len, Uint *word_count) {
 
 /* Assigns the number of white char`s to the prev/next word to 'nchars'.  Return`s 'true' when word at the current cursor position is more then 2 white`s away. */
 bool cursor_word_more_than_one_white_away(bool forward, Ulong *nsteps) _NOTHROW {
-  return word_more_than_one_white_away(openfile->current->data, openfile->current_x, forward, nsteps);
+  return more_than_a_blank_away(openfile->current->data, openfile->current_x, forward, nsteps);
 }
 
 /* Return`s 'true' when 'ch' is found in 'word', and 'FALSE' otherwise. */
@@ -48,7 +48,7 @@ bool char_is_in_word(const char *word, const char ch, Ulong *at) {
 
 char *retrieve_word_from_cursor_pos(bool forward) {
   const Ulong slen = strlen(openfile->current->data);
-  Ulong       i;
+  Ulong i;
   for (i = openfile->current_x; i < slen; i++) {
     if (!is_word_char(openfile->current->data + i, FALSE)) {
       if (openfile->current->data[i] != '_') {

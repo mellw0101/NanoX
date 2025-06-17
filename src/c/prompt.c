@@ -470,7 +470,7 @@ void do_statusbar_chop_next_word(void) {
   Ulong was_x;
   char *cutting_section;
   /* If there is more then one whitespace to the next word, just delete the white chars until the next word. */
-  if (word_more_than_one_white_away(answer, typing_x, FORWARD, &steps)) {
+  if (more_than_a_blank_away(answer, typing_x, FORWARD, &steps)) {
     ;
   }
   /* Otherwise, delete the next word. */
@@ -504,7 +504,7 @@ void do_statusbar_chop_prev_word(void) {
   Ulong was_x;
   char *cutting_section;
   /* If there is more then one whitespace to the prev word, just delete all white chars until the prev word. */
-  if (word_more_than_one_white_away(answer, typing_x, BACKWARD, &steps)) {
+  if (more_than_a_blank_away(answer, typing_x, BACKWARD, &steps)) {
     typing_x -= steps;
   }
   else {

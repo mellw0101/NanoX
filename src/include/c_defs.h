@@ -84,28 +84,37 @@
 #define GUI_OF    (openeditor->openfile)
 #define GUI_ROWS  (openeditor->rows)
 #define GUI_COLS  (openeditor->cols)
-#define GUI_RC    (openeditor->rows), (openeditor->cols)
+#define GUI_RC    GUI_ROWS, GUI_COLS
 
 #define TUI_SF    (startfile)
 #define TUI_OF    (openfile)
 #define TUI_ROWS  (editwinrows)
 #define TUI_COLS  (editwincols)
-#define TUI_RC    (editwinrows), (editwincols)
+#define TUI_RC    TUI_ROWS, TUI_COLS
 
 #define CTX_OF  (IN_GUI_CONTEXT ? GUI_OF : TUI_OF)
 
 /* For use when the open buffer pointer and total edit rows and cols are needed. */
-#define GUI_CONTEXT  GUI_OF, GUI_RC
-#define TUI_CONTEXT  TUI_OF, TUI_RC
-
 #define GUI_CTX  GUI_OF, GUI_RC
 #define TUI_CTX  TUI_OF, TUI_RC
 
-#define STACK_CONTEXT  file, rows, cols
-#define STACK_CTX      file, rows, cols
+/* Used internaly by context-less functions, to call others. */
+#define STACK_CTX  file, rows, cols
 
-#define CONTEXT_PARAMS  openfilestruct *const file, int rows, int cols
-#define CTX_PARAMS      openfilestruct *const file, int rows, int cols
+#define STACK_OF    file
+#define STACK_ROWS  rows
+#define STACK_COLS  cols
+
+/* These are used when building context-less functions, as these
+ * ensure there is no confusion about the use of the parameters */
+
+#define CTX_ARG_OF    openfilestruct *const file
+#define CTX_ARG_ROWS  int rows
+#define CTX_ARG_COLS  int cols
+
+/* The full context parameters.  So the file, the total text and rows available. */
+#define CTX_ARGS      CTX_ARG_OF, CTX_ARG_ROWS, CTX_ARG_COLS
+#define CTX_PARAMS    CTX_ARG_OF, CTX_ARG_ROWS, CTX_ARG_COLS
 
 /* For use when modifying the state of the context. */
 #define FULL_GUI_CTX  &GUI_SF, &GUI_OF, GUI_RC
@@ -543,6 +552,23 @@ static const short bg_vs_code_color_array[] = {
 #define STEP_RIGHT(file)                                                      \
   /* A `no-cost` wrapper for calling `step_right()` on a buffer. */           \
   ((file)->current_x = step_right((file)->current->data, (file)->current_x))
+
+/* ----------------------------- word.c ----------------------------- */
+
+#define MORE_THAN_A_BLANK_AWAY(file, forward, nsteps)                                    \
+  /* A `no-cost` wrapper for calling `more_than_a_blank_away()` on a buffer. */          \
+  more_than_a_blank_away((file)->current->data, (file)->current_x, (forward), (nsteps))
+
+/* ----------------------------- utils.c ----------------------------- */
+
+#define SET_PWW(file)                                          \
+  /* A simple way to correctly set placewewant for `file`. */  \
+  DO_WHILE((file)->placewewant = xplustabs_for(file);)
+
+#define SET_CURSOR_TO_EOL(file)                                                    \
+  /* A simple way to set the cursor at the end of the current line for `file`. */  \
+  DO_WHILE((file)->current_x = strlen((file)->current->data);)
+
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
 

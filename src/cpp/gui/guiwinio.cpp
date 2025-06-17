@@ -578,7 +578,8 @@ static void gui_draw_row(linestruct *line, Editor *editor, vec2 *drawpos) {
       }
       /* Otherwise just draw white text. */
       else {
-        vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+        // vertex_buffer_add_string(editor->buffer, converted, converted_len, prev_char, gui_font_get_font(gui->font), vec4(1.0f), drawpos);
+        font_vertbuf_add_mbstr(textfont, editor->buffer, converted, converted_len, prev_char, PACKED_UINT_FLOAT(1, 1, 1, 1), &drawpos->x, &drawpos->y);
       }
     }
     /* Otherwise just draw white text. */

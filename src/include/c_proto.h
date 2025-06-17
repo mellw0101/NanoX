@@ -503,6 +503,7 @@ void  do_undo_for(CTX_PARAMS);
 void  do_undo(void);
 void  do_redo_for(CTX_PARAMS);
 void  do_redo(void);
+bool  find_paragraph(linestruct **const first, Ulong *const count);
 
 
 /* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */
@@ -534,7 +535,7 @@ void syntaxfile_parse_csyntax(SyntaxFile *const sf);
 
 Ulong wordstartindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
 Ulong wordendindex(const char *const restrict string, Ulong pos, bool allowunderscore) __THROW _NODISCARD _NONNULL(1);
-bool word_more_than_one_white_away(const char *const restrict string, Ulong index, bool forward, Ulong *const restrict nsteps);
+bool more_than_a_blank_away(const char *const restrict string, Ulong index, bool forward, Ulong *const restrict nsteps);
 
 
 /* ----------------------------------------------- bracket.c ----------------------------------------------- */
@@ -1150,6 +1151,10 @@ void paste_text_for(CTX_PARAMS);
 void paste_text(void);
 void zap_replace_text_for(CTX_PARAMS, const char *const restrict replace_with, Ulong len);
 void zap_replace_text(const char *const restrict replace_with, Ulong len);
+void chop_previous_word_for(CTX_PARAMS);
+void chop_previous_word(void);
+void chop_next_word_for(CTX_PARAMS);
+void chop_next_word(void);
 
 
 /* ---------------------------------------------------------- gui/editor/topbar.c ---------------------------------------------------------- */
@@ -1259,12 +1264,7 @@ void        continue_nano(int _UNUSED signal);
 void        do_suspend(void);
 void        reconnect_and_store_state(void);
 void        handle_hupterm(int _UNUSED signal);
-
-#if !defined(DEBUG)
-  void handle_crash(int signal);
-#else
-  void handle_crash(int _UNUSED signal);
-#endif
+void        handle_crash(int _UNUSED signal);
 
 /* ----------------------------- Inject ----------------------------- */
 

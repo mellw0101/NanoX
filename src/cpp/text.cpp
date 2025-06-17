@@ -2139,23 +2139,23 @@
 
 /* Find the first occurring paragraph in the forward direction.  Return 'TRUE' when a paragraph was found,
  * and 'FALSE' otherwise.  Furthermore, return the first line and the number of lines of the paragraph. */
-static bool find_paragraph(linestruct **firstline, Ulong *linecount) _NOTHROW {
-  linestruct *line = *firstline;
-  /* When not currently in a paragraph, move forward to a line that is. */
-  while (!inpar(line) && line->next) {
-    line = line->next;
-  }
-  *firstline = line;
-  /* Move down to the last line of the paragraph (if any). */
-  do_para_end(&line);
-  /* When not in a paragraph now, there aren't any paragraphs left. */
-  if (!inpar(line)) {
-    return FALSE;
-  }
-  /* We found a paragraph.  Now we determine its number of lines. */
-  *linecount = (line->lineno - (*firstline)->lineno + 1);
-  return TRUE;
-}
+// static bool find_paragraph(linestruct **firstline, Ulong *linecount) _NOTHROW {
+//   linestruct *line = *firstline;
+//   /* When not currently in a paragraph, move forward to a line that is. */
+//   while (!inpar(line) && line->next) {
+//     line = line->next;
+//   }
+//   *firstline = line;
+//   /* Move down to the last line of the paragraph (if any). */
+//   do_para_end(&line);
+//   /* When not in a paragraph now, there aren't any paragraphs left. */
+//   if (!inpar(line)) {
+//     return FALSE;
+//   }
+//   /* We found a paragraph.  Now we determine its number of lines. */
+//   *linecount = (line->lineno - (*firstline)->lineno + 1);
+//   return TRUE;
+// }
 
 /* Concatenate into a single line all the lines of the paragraph that starts at 'line' and
  * consists of 'count' lines, skipping the quoting and indentation on all lines after the first. */

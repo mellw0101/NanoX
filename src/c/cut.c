@@ -34,6 +34,61 @@ static bool is_cuttable(bool test_cliff) {
   return is_cuttable_for(CTX_OF, test_cliff);
 }
 
+/* ----------------------------- Chop word ----------------------------- */
+
+/* Either delete all blanks until the first non blank, when more then one blank away from the next
+ * non blank.  Or, depending on `direction` either remove text until the previous word start or end.
+ * Note that when moving forward the cutting also depends on if `AFTER_ENDS` is set or not. */
+static void chop_word_for(CTX_PARAMS, bool direction) {
+  ASSERT(file);
+  /* Save the cursor line. */
+  linestruct *was_current = file->current;
+  /* Save the cursor x position. */
+  Ulong was_x = file->current_x;
+  Ulong steps;
+  /* Save the cutbuffer. */
+  linestruct *was_cutbuffer = cutbuffer;
+  cutbuffer = NULL;
+  /* When there is more then one blank to the next non blank char, just cut the blanks. */
+  if (MORE_THAN_A_BLANK_AWAY(file, direction, &steps)) {
+    file->current_x += ((direction == BACKWARD) ? -steps : steps);
+  }
+  /* Backward */
+  else if (direction == BACKWARD) {
+    do_prev_word_for(file, ISSET(WORD_BOUNDS));
+    /* We moved to the previous line. */
+    if (file->current != was_current) {
+      /* Only allow line joining when we began at 0. */
+      if (!was_x) {
+        SET_CURSOR_TO_EOL(file);
+      }
+      /* Otherwise, cut to the start of the original line. */
+      else {
+        file->current   = was_current;
+        file->current_x = 0;
+      }
+    }
+  }
+  /* Forward */
+  else {
+    do_next_word_for(file, ISSET(AFTER_ENDS), ISSET(WORD_BOUNDS));
+    /* If we moved down a line when not at eol, then only cut to eol. */ 
+    if (file->current != was_current && was_current->data[was_x]) {
+      file->current = was_current;
+      SET_CURSOR_TO_EOL(file);
+    }
+  }
+  /* Restore the cursor and set the mark where the cursor ended up. */
+  set_marked_region_for(file, was_current, was_x, file->current, file->current_x, TRUE);
+  /* Do the cut. */
+  add_undo_for(file, CUT, NULL);
+  do_snip_for(STACK_CTX, TRUE, FALSE, FALSE);
+  update_undo_for(file, CUT);
+  /* Free the cut lines, and restore the cutbuffer. */
+  free_lines(cutbuffer);
+  cutbuffer = was_cutbuffer;
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -124,7 +179,7 @@ void expunge(undo_type action) {
 /* ----------------------------- Extract segment ----------------------------- */
 
 /* Excise the text between the given two points and add it to the cutbuffer. */
-void extract_segment_for(openfilestruct *const file, int rows, int cols, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x) {
+void extract_segment_for(CTX_ARGS, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x) {
   ASSERT(file);
   ASSERT(top);
   ASSERT(bot);
@@ -231,7 +286,7 @@ void extract_segment(linestruct *const top, Ulong top_x, linestruct *const bot, 
 /* ----------------------------- Cut marked region ----------------------------- */
 
 /* Move all marked text from the current buffer into the cutbuffer. */
-void cut_marked_region_for(openfilestruct *const file, int rows, int cols) {
+void cut_marked_region_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *top;
   linestruct *bot;
@@ -256,7 +311,7 @@ void cut_marked_region(void) {
 
 /* Move text from the current buffer into the cutbuffer.  If until_eof is 'TRUE', move all text from the current cursor position
  * to the end of the file into the cutbuffer.  If append is 'TRUE' (when zapping), always append the cut to the cutbuffer. */
-void do_snip_for(openfilestruct *const file, int rows, int cols, bool marked, bool until_eof, bool append) {
+void do_snip_for(CTX_ARGS, bool marked, bool until_eof, bool append) {
   ASSERT(file);
   linestruct *line = file->current;
   keep_cutbuffer &= (file->last_action != COPY);
@@ -316,7 +371,7 @@ void do_snip(bool marked, bool until_eof, bool append) {
 /* ----------------------------- Cut text ----------------------------- */
 
 /* Move text from the current buffer into the cutbuffer. */
-void cut_text_for(openfilestruct *const file, int rows, int cols) {
+void cut_text_for(CTX_ARGS) {
   ASSERT(file);
   if (!is_cuttable_for(file, (ISSET(CUT_FROM_CURSOR) && !file->mark))) {
     return;
@@ -370,7 +425,7 @@ void cut_till_eof(void) {
 /* ----------------------------- Zap text ----------------------------- */
 
 /* Erase text (current line or marked region), sending it into oblivion. */
-void zap_text_for(openfilestruct *const file, int rows, int cols) {
+void zap_text_for(CTX_ARGS) {
   ASSERT(file);
   /* Remember the current cutbuffer so it can be restored after the zap. */
   linestruct *was_cutbuffer = cutbuffer;
@@ -404,10 +459,10 @@ void zap_text(void) {
 
 /* Delete the character under the cursor plus any succeeding zero-width chars, or,
  * when the mark is on and `LET_THEM_ZAP/--zap` is active, delete the marked region. */
-void do_delete_for(openfilestruct *const file, int rows, int cols) {
+void do_delete_for(CTX_ARGS) {
   ASSERT(file);
   if (file->mark && ISSET(LET_THEM_ZAP)) {
-    zap_text_for(file, rows, cols);
+    zap_text_for(STACK_CTX);
   }
   else {
     expunge_for(file, cols, DEL);
@@ -420,12 +475,7 @@ void do_delete_for(openfilestruct *const file, int rows, int cols) {
 /* Delete the character under the cursor plus any succeeding zero-width chars, or,
  * when the mark is on and `LET_THEM_ZAP/--zap` is active, delete the marked region. */
 void do_delete(void) {
-  if (IN_GUI_CTX) {
-    do_delete_for(GUI_CTX);
-  }
-  else {
-    do_delete_for(TUI_CTX);
-  }
+  CTX_CALL(do_delete_for);
 }
 
 /* ----------------------------- Ingraft buffer ----------------------------- */
@@ -505,7 +555,7 @@ void ingraft_buffer(linestruct *topline) {
 
 /* Backspace over one character.  That is, move the cursor left one character, and then delete the character
  * under the cursor.  Or, when mark is on and `LET_THEM_ZAP/--zap` is active, delete the marked region. */
-void do_backspace_for(openfilestruct *const file, int rows, int cols) {
+void do_backspace_for(CTX_ARGS) {
   ASSERT(file);
   /* When there is a marked region. */
   if (file->mark && ISSET(LET_THEM_ZAP)) {
@@ -612,7 +662,7 @@ void copy_marked_region(void) {
 
 /* Copy text from `file` into the `cutbuffer`.  The text is either the marked region, the whole line, the text
  * from the cursor to `eol`, just the line break, or nothing, depending on the mode and cursor position. */
-void copy_text_for(openfilestruct *const file, int rows, int cols) {
+void copy_text_for(CTX_ARGS) {
   ASSERT(file);
   bool  at_eol       = !file->current->data[file->current_x];
   bool  sans_newline = (ISSET(NO_NEWLINES) && !file->current->next);
@@ -776,4 +826,39 @@ void zap_replace_text_for(CTX_PARAMS, const char *const restrict replace_with, U
 /* Erase the currently marked region in the currently open buffer, then replace it with `replacewith`.  Note that this is `context-safe`. */
 void zap_replace_text(const char *const restrict replace_with, Ulong len) {
   CTX_CALL_WARGS(zap_replace_text_for, replace_with, len);
+}
+
+/* ----------------------------- Chop previous word ----------------------------- */
+
+/* Delete a word left-ward in `file`. */
+void chop_previous_word_for(CTX_PARAMS) {
+  ASSERT(file);
+  /* When at the top line of the file at position 0. */
+  if (!file->current->prev && !file->current_x) {
+    statusbar_all(_("Nothing was cut"));
+  }
+  else {
+    chop_word_for(STACK_CTX, BACKWARD);
+  }
+}
+
+/* Delete a word left-ward in the currently open buffer.  Note that this is `context-safe`. */
+void chop_previous_word(void) {
+  CTX_CALL(chop_previous_word_for);
+}
+
+/* ----------------------------- Chop next word ----------------------------- */
+
+/* Delete a word right-ward in `file`. */
+void chop_next_word_for(CTX_PARAMS) {
+  ASSERT(file);
+  file->mark = NULL;
+  if (is_cuttable_for(file, TRUE)) {
+    chop_word_for(STACK_CTX, FORWARD);
+  }
+}
+
+/* Delete a word right-ward in the currently open buffer.  Note that this is `context-safe`. */
+void chop_next_word(void) {
+  CTX_CALL(chop_next_word_for);
 }

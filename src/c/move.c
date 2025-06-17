@@ -117,7 +117,7 @@ void get_edge_and_target(Ulong *const leftedge, Ulong *target_column) {
 /* ----------------------------- Do page up ----------------------------- */
 
 /* Move up almost one screen-full in `file`, where the biggest possible move is `total_rows - 2`. */
-void do_page_up_for(openfilestruct *const file, int rows, int cols) {
+void do_page_up_for(CTX_ARGS) {
   ASSERT(file);
   int   mustmove = ((rows < 3) ? 1 : (rows - 2));
   Ulong leftedge;
@@ -156,7 +156,7 @@ void do_page_up(void) {
 /* ----------------------------- Do page down ----------------------------- */
 
 /* Move down almost one screen-full in `file`, where the biggest possible move is `total_rows - 2`. */
-void do_page_down_for(openfilestruct *const file, int rows, int cols) {
+void do_page_down_for(CTX_ARGS) {
   ASSERT(file);
   int   mustmove = ((rows < 3) ? 1 : (rows - 2));
   Ulong leftedge;
@@ -219,7 +219,7 @@ void to_top_row(void) {
 /* ----------------------------- To bottom row ----------------------------- */
 
 /* Place the cursor on the last row in the viewport, when possible. */
-void to_bottom_row_for(openfilestruct *const file, int rows, int cols) {
+void to_bottom_row_for(CTX_ARGS) {
   ASSERT(file);
   Ulong leftedge;
   Ulong target_column;
@@ -244,7 +244,7 @@ void to_bottom_row(void) {
 /* ----------------------------- Do cycle ----------------------------- */
 
 /* Put the cursor line at the center, then the top, then the bottom in `file`. */
-void do_cycle_for(openfilestruct *const file, int rows, int cols) {
+void do_cycle_for(CTX_ARGS) {
   ASSERT(file);
   if (cycling_aim == 0) {
     adjust_viewport_for(STACK_CTX, CENTERING);
@@ -305,7 +305,7 @@ void do_para_end(linestruct **const line) {
 /* ----------------------------- To para begin ----------------------------- */
 
 /* Move up to first start of a paragraph before the current line. */
-void to_para_begin_for(openfilestruct *const file, int rows, int cols) {
+void to_para_begin_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *was_current = file->current;
   do_para_begin(&file->current);
@@ -326,7 +326,7 @@ void to_para_begin(void) {
 /* ----------------------------- To para end ----------------------------- */
 
 /* Move down to just after the first found end of a paragraph. */
-void to_para_end_for(openfilestruct *const file, int rows, int cols) {
+void to_para_end_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *was_current = file->current;
   do_para_end(&file->current);
@@ -355,7 +355,7 @@ void to_para_end(void) {
 /* ----------------------------- To prev block ----------------------------- */
 
 /* Move to the preceding block of text. */
-void to_prev_block_for(openfilestruct *const file, int rows, int cols) {
+void to_prev_block_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *const was_current = file->current;
   int               cur_indent;
@@ -410,7 +410,7 @@ void to_prev_block(void) {
 /* ----------------------------- To next block ----------------------------- */
 
 /* Move to the next block of text inside `file`. */
-void to_next_block_for(openfilestruct *const file, int rows, int cols) {
+void to_next_block_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *was_current = file->current;
   int cur_indent;
@@ -465,7 +465,7 @@ void to_next_block(void) {
 /* ----------------------------- Do Up ----------------------------- */
 
 /* Move the cursor to the preseding line or chunk, in `file`. */
-void do_up_for(CTX_PARAMS) {
+void do_up_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *was_current = file->current;
   Ulong       edge;
@@ -499,7 +499,7 @@ void do_up(void) {
 /* ----------------------------- Do down ----------------------------- */
 
 /* Move the cursor to the next line or chunk, in `file`. */
-void do_down_for(CTX_PARAMS) {
+void do_down_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *was_current = file->current;
   Ulong edge;
@@ -533,7 +533,7 @@ void do_down(void) {
 /* ----------------------------- Do left ----------------------------- */
 
 /* Either, move left one character in `file`.  Or when `file` has a marked region, place the cursor at the start of that region. */
-void do_left_for(openfilestruct *const file, int rows, int cols) {
+void do_left_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *const was_current = file->current;
   /* If a section is highlighted and shift is not held, then place the cursor at the left side of the marked area. */
@@ -572,7 +572,7 @@ void do_left(void) {
 /* ----------------------------- Do right ----------------------------- */
 
 /* Either, move right one character in `file`.  Or when `file` has a marked region, place the cursor at the end of that region. */
-void do_right_for(CTX_PARAMS) {
+void do_right_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *const was_current = file->current;
   /* If a section is highlighted and shift is not held, then place the cursor at the end of the marked region. */
@@ -672,7 +672,7 @@ void do_prev_word(void) {
 /* ----------------------------- To prev word ----------------------------- */
 
 /* Move to the previous word in `file`, and update the screen afterwards. */
-void to_prev_word_for(CTX_PARAMS, bool allow_punct) {
+void to_prev_word_for(CTX_ARGS, bool allow_punct) {
   ASSERT(file);
   linestruct *was_current = file->current;
   do_prev_word_for(file, allow_punct);
@@ -690,7 +690,7 @@ void to_prev_word(void) {
 /* Move to the next word in `file`.  If `after_ends` is `TRUE`, stop at the ends
  * of words instead of at their beginnings.  Returns `TRUE` if we started at a word.
  * And if `allow_punct` is `TRUE`, then punctuations are considered word chars. */
-bool do_next_word_for(openfilestruct *const file, bool after_ends, bool allow_punct) {
+bool do_next_word_for(CTX_ARG_OF, bool after_ends, bool allow_punct) {
   ASSERT(file);
   bool started_on_word = (IS_WORD_CHAR(file, allow_punct) || is_lang_word_char(file));
   bool seen_space      = !started_on_word;
@@ -752,7 +752,7 @@ bool do_next_word(bool after_ends) {
 
 /* Move to the next word in `file`.  If the `AFTER_ENDS` flag is set, stop at
  * the end of words instead of at the beginning.  Update the screen afterwards. */
-void to_next_word_for(CTX_PARAMS, bool after_ends, bool allow_punct) {
+void to_next_word_for(CTX_ARGS, bool after_ends, bool allow_punct) {
   ASSERT(file);
   linestruct *was_current = file->current;
   do_next_word_for(file, after_ends, allow_punct);
@@ -769,7 +769,7 @@ void to_next_word(void) {
 
 /* Move to the beginning of the current line (or soft-wrapped chunk).  When enabled, do smart-home. 
  * When soft-wrapping, go to the beginning of the full line when already at the start of the chunk. */
-void do_home_for(CTX_PARAMS) {
+void do_home_for(CTX_ARGS) {
   ASSERT(file);
   bool moved_off_chunk = TRUE;
   bool moved           = FALSE;
@@ -847,7 +847,7 @@ void do_home(void) {
 
 /* Move to the end of the current line (or soft-wrapped chunk) in `file`.  When
  * soft-wrapping and already at the end of a `chunk`, go to the end of the full line. */
-void do_end_for(CTX_PARAMS) {
+void do_end_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *was_current = file->current;
   bool moved_off_chunk = TRUE;
@@ -905,7 +905,7 @@ void do_end(void) {
 /* ----------------------------- Do scroll up ----------------------------- */
 
 /* Scroll up one line or chunk without moving the cursor textwise.  This is not true...? */
-void do_scroll_up_for(CTX_PARAMS) {
+void do_scroll_up_for(CTX_ARGS) {
   ASSERT(file);
   /* When the top of the file is onscreen, we can't scroll. */
   if (!file->edittop->prev && !file->firstcolumn) {
@@ -929,7 +929,7 @@ void do_scroll_up(void) {
 /* ----------------------------- Do scroll down ----------------------------- */
 
 /* Scroll down one line or chunk without moving the cursor textwise.  This is not true...? */
-void do_scroll_down_for(CTX_PARAMS) {
+void do_scroll_down_for(CTX_ARGS) {
   ASSERT(file);
   if (!file->cursor_row) {
     do_down_for(STACK_CTX);

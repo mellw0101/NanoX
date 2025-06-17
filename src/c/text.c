@@ -200,7 +200,6 @@ static void redo_move_line_for(openfilestruct *const file, undostruct *const u) 
   refresh_needed = TRUE;
 }
 
-
 /* Undo a move_line(s)_(up/down). */
 static void handle_move_line_action_for(openfilestruct *const file, undostruct *const u, bool undoing) {
   ASSERT(file);
@@ -327,46 +326,47 @@ static void undo_auto_bracket_for(openfilestruct *const file, undostruct *const 
   refresh_needed = TRUE;
 }
 
-/* ----------------------------- Undo zap replace ----------------------------- */
+/* ----------------------------- Handle zap replace action ----------------------------- */
 
-/* Undo a zap replace. */
-static void undo_zap_replace_for(openfilestruct *const file, int rows, undostruct *const u) {
-  ASSERT(file);
-  ASSERT(u);
-  /* Get the length of the data. */
-  Ulong len = strlen(u->strdata);
-  /* Set the cursor line and x at the head. */
-  goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
-  /* Ensure the data currently at the cursor matches the undo-object string data. */
-  ALWAYS_ASSERT_MSG((strncmp((file->current->data + file->current_x), u->strdata, len) == 0), "Data does not match for `ZAP_REPLACE` undo.");
-  /* Erase the inserted data.  And restore the cut data. */
-  xstr_erase_norealloc(file->current->data, file->current_x, len);
-  copy_from_buffer_for(file, rows, u->cutbuffer);
-  /* Restrore the cursor and mark, as they were before this event. */
-  restore_undo_posx_and_mark_for(file, rows, u);
-}
-
-/* Redo a zap replace. */
-static void redo_zap_replace_for(CTX_PARAMS, undostruct *const u) {
+/* Hande a zap-replace undo-redo action. */
+static void handle_zap_replace_action(CTX_ARGS, undostruct *const u, bool undoing) {
   ASSERT(file);
   ASSERT(u);
   linestruct *was_cutbuffer;
-  set_marked_region_for(
-    file,
-    line_from_number_for(file, u->head_lineno), u->head_x,
-    line_from_number_for(file, u->tail_lineno), u->tail_x,
-    (u->xflags & CURSOR_WAS_AT_HEAD)
-  );
-  /* Save the cutbuffer. */
-  was_cutbuffer = cutbuffer;
-  cutbuffer     = NULL;
-  /* Perform the cut. */
-  cut_marked_region_for(STACK_CTX);
-  u->cutbuffer = cutbuffer;
-  /* Restore the original cutbuffer. */
-  cutbuffer = was_cutbuffer;
-  /* Inject the text. */
-  file->current->data = xstrinj(file->current->data, u->strdata, file->current_x);
+  Ulong len;
+  /* Undo */
+  if (undoing) {
+    /* Get the length of the data. */
+    len = strlen(u->strdata);
+    /* Set the cursor line and x at the head. */
+    goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
+    /* Ensure the data currently at the cursor matches the undo-object string data. */
+    ALWAYS_ASSERT_MSG((strncmp((file->current->data + file->current_x), u->strdata, len) == 0), "Data does not match for `ZAP_REPLACE` undo.");
+    /* Erase the inserted data.  And restore the cut data. */
+    xstr_erase_norealloc(file->current->data, file->current_x, len);
+    copy_from_buffer_for(file, rows, u->cutbuffer);
+    /* Restrore the cursor and mark, as they were before this event. */
+    restore_undo_posx_and_mark_for(file, rows, u);
+  }
+  /* Redo */
+  else {
+    set_marked_region_for(
+      file,
+      line_from_number_for(file, u->head_lineno), u->head_x,
+      line_from_number_for(file, u->tail_lineno), u->tail_x,
+      (u->xflags & CURSOR_WAS_AT_HEAD)
+    );
+    /* Save the cutbuffer. */
+    was_cutbuffer = cutbuffer;
+    cutbuffer     = NULL;
+    /* Perform the cut. */
+    cut_marked_region_for(STACK_CTX);
+    u->cutbuffer = cutbuffer;
+    /* Restore the original cutbuffer. */
+    cutbuffer = was_cutbuffer;
+    /* Inject the text. */
+    file->current->data = xstrinj(file->current->data, u->strdata, file->current_x);
+  }
 }
 
 /* ----------------------------- Undo insert empty line ----------------------------- */
@@ -2305,7 +2305,7 @@ void do_undo_for(CTX_PARAMS) {
       break;
     }
     case ZAP_REPLACE: {
-      undo_zap_replace_for(file, rows, u);
+      handle_zap_replace_action(STACK_CTX, u, TRUE);
       break;
     }
     case INSERT_EMPTY_LINE: {
@@ -2540,7 +2540,7 @@ void do_redo_for(CTX_PARAMS) {
       break;
     }
     case ZAP_REPLACE: {
-      redo_zap_replace_for(STACK_CTX, u);
+      handle_zap_replace_action(STACK_CTX, u, FALSE);
       break;
     }
     default: {
@@ -2579,4 +2579,30 @@ void do_redo_for(CTX_PARAMS) {
 /* Redo the last thing(s) we undid in the currently open buffer.  Note that this is `context-safe`. */
 void do_redo(void) {
   CTX_CALL(do_redo_for);
+}
+
+/* ----------------------------- Find paragraph ----------------------------- */
+
+/* Find the first occurring paragraph in the forward direction.  Return `TRUE` when a paragraph was found,
+ * and `FALSE` otherwise.  Furthermore, return the first line and the number of lines of the paragraph. */
+bool find_paragraph(linestruct **const first, Ulong *const count) {
+  ASSERT(first);
+  ASSERT(count);
+  linestruct *line = (*first);
+  /* When not currently in a paragraph, move forward until that is. */
+  while (!inpar(line) && line->next) {
+    DLIST_ADV_NEXT(line);
+  }
+  (*first) = line;
+  /* Move down to the last line of the paragraph (if any). */
+  do_para_end(&line);
+  /* When not in a paragraph now, there aren't any paragraphs left. */
+  if (!inpar(line)) {
+    return FALSE;
+  }
+  /* We found a paragraph.  Now we determine it's number of lines. */
+  else {
+    (*count) = (line->lineno - (*first)->lineno + 1);
+    return TRUE;
+  }
 }

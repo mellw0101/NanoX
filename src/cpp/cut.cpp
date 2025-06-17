@@ -108,93 +108,93 @@
 
 /* Return 'FALSE' when a cut command would not actually cut anything: when on an empty line at EOF, or when
  * the mark covers zero characters, or (when test_cliff is 'TRUE') when the magic line would be cut. */
-static bool is_cuttable(bool test_cliff) _NOTHROW {
-  Ulong from = ((test_cliff) ? openfile->current_x : 0);
-  if ((!openfile->current->next && !openfile->current->data[from] && !openfile->mark)
-   || (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x)
-   || (from > 0 && !ISSET(NO_NEWLINES) && !openfile->current->data[from] && openfile->current->next == openfile->filebot)) {
-    statusbar_all(_("Nothing was cut"));
-    openfile->mark = NULL;
-    return FALSE;
-  }
-  else {
-    return TRUE;
-  }
-}
+// static bool is_cuttable(bool test_cliff) _NOTHROW {
+//   Ulong from = ((test_cliff) ? openfile->current_x : 0);
+//   if ((!openfile->current->next && !openfile->current->data[from] && !openfile->mark)
+//    || (openfile->mark == openfile->current && openfile->mark_x == openfile->current_x)
+//    || (from > 0 && !ISSET(NO_NEWLINES) && !openfile->current->data[from] && openfile->current->next == openfile->filebot)) {
+//     statusbar_all(_("Nothing was cut"));
+//     openfile->mark = NULL;
+//     return FALSE;
+//   }
+//   else {
+//     return TRUE;
+//   }
+// }
 
 /* Delete text from the cursor until the first start of a word to the left, or to the right when forward is 'TRUE'. */
-static void chop_word(bool forward) _NOTHROW {
-  /* Remember the current cursor position. */
-  linestruct *is_current   = openfile->current;
-  Ulong       is_current_x = openfile->current_x, steps;
-  /* Remember where the cutbuffer is, then make it seem blank. */
-  linestruct *is_cutbuffer = cutbuffer;
-  cutbuffer                = NULL;
-  /* Move the cursor to a word start, to the left or to the right.  If that word is on another line
-   * and the cursor was not already on the edge of the original line, then put the cursor on that
-   * edge instead, so that lines will not be joined unexpectedly.  I also made it so that if next
-   * word is more than one 'tab/space' away, then just put put the cursor to remove the 'tabs/spaces'. */
-  if (!forward) {
-    if (cursor_word_more_than_one_white_away(FALSE, &steps)) {
-      openfile->current_x -= steps;
-    }
-    else {
-      do_prev_word();
-      if (openfile->current != is_current) {
-        if (is_current_x > 0) {
-          openfile->current   = is_current;
-          openfile->current_x = 0;
-        }
-        else {
-          openfile->current_x = strlen(openfile->current->data);
-        }
-      }
-    }
-  }
-  else {
-    if (cursor_word_more_than_one_white_away(TRUE, &steps)) {
-      openfile->current_x += steps;
-    }
-    else {
-      do_next_word(ISSET(AFTER_ENDS));
-      if (openfile->current != is_current && is_current->data[is_current_x]) {
-        openfile->current   = is_current;
-        openfile->current_x = strlen(is_current->data);
-      }
-    }
-  }
-  /* Set the mark at the start of that word. */
-  openfile->mark   = openfile->current;
-  openfile->mark_x = openfile->current_x;
-  /* Put the cursor back where it was, so an undo will put it there too. */
-  openfile->current   = is_current;
-  openfile->current_x = is_current_x;
-  /* Now kill the marked region and a word is gone. */
-  add_undo(CUT, NULL);
-  do_snip(TRUE, FALSE, FALSE);
-  update_undo(CUT);
-  /* Discard the cut word and restore the cutbuffer. */
-  free_lines(cutbuffer);
-  cutbuffer = is_cutbuffer;
-}
+// static void chop_word(bool forward) _NOTHROW {
+//   /* Remember the current cursor position. */
+//   linestruct *is_current   = openfile->current;
+//   Ulong       is_current_x = openfile->current_x, steps;
+//   /* Remember where the cutbuffer is, then make it seem blank. */
+//   linestruct *is_cutbuffer = cutbuffer;
+//   cutbuffer                = NULL;
+//   /* Move the cursor to a word start, to the left or to the right.  If that word is on another line
+//    * and the cursor was not already on the edge of the original line, then put the cursor on that
+//    * edge instead, so that lines will not be joined unexpectedly.  I also made it so that if next
+//    * word is more than one 'tab/space' away, then just put put the cursor to remove the 'tabs/spaces'. */
+//   if (!forward) {
+//     if (cursor_word_more_than_one_white_away(FALSE, &steps)) {
+//       openfile->current_x -= steps;
+//     }
+//     else {
+//       do_prev_word();
+//       if (openfile->current != is_current) {
+//         if (is_current_x > 0) {
+//           openfile->current   = is_current;
+//           openfile->current_x = 0;
+//         }
+//         else {
+//           openfile->current_x = strlen(openfile->current->data);
+//         }
+//       }
+//     }
+//   }
+//   else {
+//     if (cursor_word_more_than_one_white_away(TRUE, &steps)) {
+//       openfile->current_x += steps;
+//     }
+//     else {
+//       do_next_word(ISSET(AFTER_ENDS));
+//       if (openfile->current != is_current && is_current->data[is_current_x]) {
+//         openfile->current   = is_current;
+//         openfile->current_x = strlen(is_current->data);
+//       }
+//     }
+//   }
+//   /* Set the mark at the start of that word. */
+//   openfile->mark   = openfile->current;
+//   openfile->mark_x = openfile->current_x;
+//   /* Put the cursor back where it was, so an undo will put it there too. */
+//   openfile->current   = is_current;
+//   openfile->current_x = is_current_x;
+//   /* Now kill the marked region and a word is gone. */
+//   add_undo(CUT, NULL);
+//   do_snip(TRUE, FALSE, FALSE);
+//   update_undo(CUT);
+//   /* Discard the cut word and restore the cutbuffer. */
+//   free_lines(cutbuffer);
+//   cutbuffer = is_cutbuffer;
+// }
 
 /* Delete a word leftward. */
-void chop_previous_word(void) _NOTHROW {
-  if (!openfile->current->prev && !openfile->current_x) {
-    statusbar_all(_("Nothing was cut"));
-  }
-  else {
-    chop_word(BACKWARD);
-  }
-}
+// void chop_previous_word(void) _NOTHROW {
+//   if (!openfile->current->prev && !openfile->current_x) {
+//     statusbar_all(_("Nothing was cut"));
+//   }
+//   else {
+//     chop_word(BACKWARD);
+//   }
+// }
 
 /* Delete a word rightward. */
-void chop_next_word(void) _NOTHROW {
-  openfile->mark = NULL;
-  if (is_cuttable(TRUE)) {
-    chop_word(FORWARD);
-  }
-}
+// void chop_next_word(void) _NOTHROW {
+//   openfile->mark = NULL;
+//   if (is_cuttable(TRUE)) {
+//     chop_word(FORWARD);
+//   }
+// }
 
 /* Excise the text between the given two points and add it to the cutbuffer. */
 // void extract_segment(linestruct *top, Ulong top_x, linestruct *bot, Ulong bot_x) _NOTHROW {

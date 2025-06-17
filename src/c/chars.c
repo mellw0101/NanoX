@@ -620,6 +620,23 @@ Ulong step_left(const char *const buf, const Ulong pos) {
   }
 }
 
+/* Returns the index in `mbstr` of the visual beginning of the multi-byte character
+ * before the one at pos, meaning that it will advance past all zerowidth chars. */
+Ulong visual_step_left(const char *const restrict mbstr, Ulong pos) {
+  ASSERT(mbstr);
+  Ulong ret = pos;
+  /* Only perform any action when not already at the beginning of the string. */
+  if (ret > 0) {
+    /* Move one utf-8 char to the left. */
+    ret = step_left(mbstr, ret);
+    /* Then advance over any zero width chars. */
+    while (ret > 0 && is_zerowidth(mbstr + pos)) {
+      ret = step_left(mbstr, ret);
+    }
+  }
+  return ret;
+}
+
 /* Move `file->current_x` one step to the left, while also ensuring we pass all preceding zerowidth characters. */
 void step_cursor_left(openfilestruct *const file) {
   ASSERT(file);
