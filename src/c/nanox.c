@@ -587,7 +587,7 @@ void handle_crash(int _UNUSED signal) {
 /* ----------------------------- Inject ----------------------------- */
 
 /* Insert the given `burst` of `count` bytes into `file`. */
-void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *burst, Ulong count) {
+void inject_into_buffer(CTX_ARGS, char *burst, Ulong count) {
   ASSERT(file);
   linestruct *line   = file->current;
   Ulong datalen      = strlen(line->data);
@@ -658,10 +658,5 @@ void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *bu
 
 /* Insert the given `burst` of `count` bytes into the currently open file.  Note that this is context safe. */
 void inject(char *burst, Ulong count) {
-  if (IN_GUI_CTX) {
-    inject_into_buffer(GUI_CTX, burst, count);
-  }
-  else {
-    inject_into_buffer(TUI_CTX, burst, count);
-  }
+  CTX_CALL_WARGS(inject_into_buffer, burst, count);
 }

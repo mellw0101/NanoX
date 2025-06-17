@@ -600,12 +600,7 @@ void do_right_for(CTX_ARGS) {
 /* Either, move right one character in the currently open buffer.  Or when that buffer has a
  * marked region, place the cursor at the end of that region.  Note that this is `context-safe`. */
 void do_right(void) {
-  if (IN_GUI_CTX) {
-    do_right_for(GUI_CTX);
-  }
-  else {
-    do_right_for(TUI_CTX);
-  }
+  CTX_CALL(do_right_for);
 }
 
 /* ----------------------------- Do prev word ----------------------------- */

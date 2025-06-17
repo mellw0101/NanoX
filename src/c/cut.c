@@ -294,17 +294,12 @@ void cut_marked_region_for(CTX_ARGS) {
   Ulong bot_x;
   get_region_for(file, &top, &top_x, &bot, &bot_x);
   extract_segment_for(STACK_CTX, top, top_x, bot, bot_x);
-  set_pww_for(file);
+  SET_PWW(file);
 }
 
 /* Move all marked text from the current buffer into the cutbuffer. */
 void cut_marked_region(void) {
-  if (IN_GUI_CTX) {
-    cut_marked_region_for(GUI_CTX);
-  }
-  else {
-    cut_marked_region_for(TUI_CTX);
-  }
+  CTX_CALL(cut_marked_region_for);
 }
 
 /* ----------------------------- Do snip ----------------------------- */
@@ -548,7 +543,7 @@ void ingraft_buffer_into(openfilestruct *const file, linestruct *top, linestruct
 
 /* Meld the buffer that starts at topline into the current file buffer at the current cursor position. */
 void ingraft_buffer(linestruct *topline) {
-  ingraft_buffer_into(CONTEXT_OPENFILE, topline, NULL);
+  ingraft_buffer_into(CTX_OF, topline, NULL);
 }
 
 /* ----------------------------- Do backspace ----------------------------- */

@@ -2021,25 +2021,25 @@ int go_back_chunks_for(openfilestruct *const file, int cols, int nrows, linestru
   if (ISSET(SOFTWRAP)) {
     /* Recede through the requested number of chunks. */
     for (i=nrows; i>0; --i) {
-      chunk = chunk_for(cols, (*leftedge), (*line));
-      (*leftedge) = 0;
-      if ((int)chunk >= i) {
+      chunk = chunk_for(cols, *leftedge, *line);
+      *leftedge = 0;
+      if (GE(chunk, i)) {
         return go_forward_chunks_for(file, cols, (chunk - i), line, leftedge);
       }
-      else if ((*line) == file->filetop) {
+      else if (*line == file->filetop) {
         break;
       }
       i -= chunk;
-      CLIST_ADV_PREV(*line);
-      (*leftedge) = HIGHEST_POSITIVE;
+      DLIST_ADV_PREV(*line);
+      *leftedge = HIGHEST_POSITIVE;
     }
-    if ((*leftedge) == HIGHEST_POSITIVE) {
-      (*leftedge) = leftedge_for(cols, (*leftedge), (*line));
+    if (*leftedge == HIGHEST_POSITIVE) {
+      *leftedge = leftedge_for(cols, *leftedge, *line);
     }
   }
   else {
     for (i=nrows; i>0 && (*line)->prev; --i) {
-      CLIST_ADV_PREV(*line);
+      DLIST_ADV_PREV(*line);
     }
   }
   return i;
@@ -2311,7 +2311,7 @@ bool line_needs_update(Ulong old_column, Ulong new_column) {
 
 /* Return 'TRUE' if there are fewer than a screen's worth of lines between the line at line number
  * was_lineno (and column was_leftedge, if we're in softwrap mode) and the line at current[current_x]. */
-bool less_than_a_screenful_for(openfilestruct *const file, int rows, int cols, Ulong was_lineno, Ulong was_leftedge) {
+bool less_than_a_screenful_for(CTX_ARGS, Ulong was_lineno, Ulong was_leftedge) {
   int rows_left;
   Ulong leftedge;
   linestruct *line;
@@ -2387,7 +2387,7 @@ bool current_is_above_screen(void) {
 }
 
 /* Return `TRUE` if `file->current[file->current_x]` is beyond the viewport. */
-bool current_is_below_screen_for(openfilestruct *const file, int rows, int cols) {
+bool current_is_below_screen_for(CTX_ARGS) {
   ASSERT(file);
   linestruct *line;
   Ulong leftedge;
@@ -2412,7 +2412,7 @@ bool current_is_below_screen(void) {
 }
 
 /* Return TRUE if current[current_x] is outside the viewport. */
-bool current_is_offscreen_for(openfilestruct *const file, int rows, int cols) {
+bool current_is_offscreen_for(CTX_ARGS) {
   ASSERT(file);
   return (current_is_above_screen_for(file) || current_is_below_screen_for(STACK_CTX));
 }
@@ -2430,7 +2430,7 @@ bool current_is_offscreen(void) {
 /* Move edittop so that current is on the screen.  manner says how:  STATIONARY means that the cursor
  * should stay on the same screen row, CENTERING means that current should end up in the middle of the
  * screen, and FLOWING means that it should scroll no more than needed to bring current into view. */
-void adjust_viewport_for(openfilestruct *const file, int rows, int cols, update_type manner) {
+void adjust_viewport_for(CTX_ARGS, update_type manner) {
   ASSERT(file);
   int goal = 0;
   if (manner == STATIONARY) {
@@ -2454,12 +2454,7 @@ void adjust_viewport_for(openfilestruct *const file, int rows, int cols, update_
  * should stay on the same screen row, CENTERING means that current should end up in the middle of the
  * screen, and FLOWING means that it should scroll no more than needed to bring current into view. */
 void adjust_viewport(update_type manner) {
-  if (IN_GUI_CTX) {
-    adjust_viewport_for(GUI_CTX, manner);
-  }
-  else {
-    adjust_viewport_for(TUI_CTX, manner);
-  }
+  CTX_CALL_WARGS(adjust_viewport_for, manner);
 }
 
 /* Redetermine `cursor_row` from the position of current relative to edittop, and put the cursor in the edit window at (cursor_row, "current_x"). */
@@ -2555,7 +2550,7 @@ void edit_scroll(bool direction) {
 }
 
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
-void edit_redraw_for(openfilestruct *const file, int rows, int cols, linestruct *const old_current, update_type manner) {
+void edit_redraw_for(CTX_ARGS, linestruct *const old_current, update_type manner) {
   ASSERT(file);
   ASSERT(old_current);
   linestruct *line;

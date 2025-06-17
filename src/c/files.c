@@ -828,29 +828,32 @@ char *safe_tempfile(FILE **stream) {
 
 /* Update title bar and such after switching to another buffer. */
 void redecorate_after_switch(void) {
-  /* If only one file buffer is open, there is nothing to update. */
-  if (CLIST_SINGLE(openfile)) {
-    statusline_curses(AHEM, _("No more open file buffers"));
-    return;
-  }
-  /* While in a different buffer, the width of the screen may have changed,
-   * so make sure that the starting column for the first row is fitting. */
-  ensure_firstcolumn_is_aligned();
-  /* Update title bar and multiline info to match the current buffer. */
-  prepare_for_display();
-  /* Ensure that the main loop will redraw the help lines. */
-  currmenu = MMOST;
-  /* Prevent a possible Shift selection from getting cancelled. */
-  shift_held = TRUE;
-  /* If the switched-to buffer gave an error during opening, show the message
-   * once; otherwise, indicate on the status bar which file we switched to. */
-  if (openfile->errormessage) {
-    statusline_curses(ALERT, "%s", openfile->errormessage);
-    free(openfile->errormessage);
-    openfile->errormessage = NULL;
-  }
-  else {
-    mention_name_and_linecount();
+  /* Only perform any action when in curses mode. */
+  if (IN_CURSES_CTX) {
+    /* If only one file buffer is open, there is nothing to update. */
+    if (CLIST_SINGLE(openfile)) {
+      statusline_curses(AHEM, _("No more open file buffers"));
+      return;
+    }
+    /* While in a different buffer, the width of the screen may have changed,
+    * so make sure that the starting column for the first row is fitting. */
+    ensure_firstcolumn_is_aligned();
+    /* Update title bar and multiline info to match the current buffer. */
+    prepare_for_display();
+    /* Ensure that the main loop will redraw the help lines. */
+    currmenu = MMOST;
+    /* Prevent a possible Shift selection from getting cancelled. */
+    shift_held = TRUE;
+    /* If the switched-to buffer gave an error during opening, show the message
+    * once; otherwise, indicate on the status bar which file we switched to. */
+    if (openfile->errormessage) {
+      statusline_curses(ALERT, "%s", openfile->errormessage);
+      free(openfile->errormessage);
+      openfile->errormessage = NULL;
+    }
+    else {
+      mention_name_and_linecount();
+    }
   }
 }
 
@@ -958,7 +961,7 @@ int open_file(const char *const restrict path, bool new_one, FILE **const f) {
 /* Read the given open file `f` into the buffer `file`.  filename should be
  * set to the name of the file.  `undoable` means that undo records should be
  * created and that the file does not need to be checked for writability. */
-void read_file_into(openfilestruct *const file, int rows, int cols, FILE *const f, int fd, const char *const restrict filename, bool undoable) {
+void read_file_into(CTX_ARGS, FILE *const f, int fd, const char *const restrict filename, bool undoable) {
   ASSERT(file);
   ASSERT(f);
   ASSERT(filename);
@@ -1152,12 +1155,7 @@ void read_file_into(openfilestruct *const file, int rows, int cols, FILE *const 
  * set to the name of the file.  undoable means that undo records should be
  * created and that the file does not need to be checked for writability. */
 void read_file(FILE *f, int fd, const char *const restrict filename, bool undoable) {
-  if (IN_GUI_CTX) {
-    read_file_into(GUI_CTX, f, fd, filename, undoable);
-  }
-  else {
-    read_file_into(TUI_CTX, f, fd, filename, undoable);
-  }
+  CTX_CALL_WARGS(read_file_into, f, fd, filename, undoable);
 }
 
 /* ----------------------------- Open buffer ----------------------------- */
@@ -1398,7 +1396,7 @@ char *input_tab(char *morsel, Ulong *const place, functionptrtype refresh_func, 
     /* The columns of names will be seperated by two spaces, but the last column will have just one space after it. */
     ncols = ((COLS + 1) / (longest_name + 2));
     nrows = ((num_matches + ncols - 1) / ncols);
-    row   = ((nrows < (Ulong)lastrow) ? (lastrow - nrows) : 0);
+    row   = (LT(ncols, lastrow) ? (lastrow - nrows) : 0);
     /* Blank the edit window and hide the cursor. */
     blank_edit();
     curs_set(FALSE);
