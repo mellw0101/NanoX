@@ -569,10 +569,9 @@ void add_or_remove_pipe_symbol_from_answer(void) {
 void draw_the_promptbar(void) {
   Ulong base   = (breadth(prompt) + 2);
   Ulong column = (base + wideness(answer, typing_x));
-  Ulong the_page, end_page;
+  Ulong the_page = get_statusbar_page_start(base, column);
+  Ulong end_page = get_statusbar_page_start(base, (base + breadth(answer) - 1));
   char *expanded;
-  the_page = get_statusbar_page_start(base, column);
-  end_page = get_statusbar_page_start(base, (base + breadth(answer) - 1));
   /* Color the prompt bar over its full width. */
   wattron(footwin, interface_color_pair[config->prompt.color]);
   mvwprintw(footwin, 0, 0, "%*s", COLS, " ");

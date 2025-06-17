@@ -327,7 +327,7 @@ void   do_savefile(void);
 // char  *real_dir_from_tilde(const char *path) _NOTHROW;
 // int    diralphasort(const void *va, const void *vb);
 // bool   is_dir(const char *const path);
-char  *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *listed);
+// char  *input_tab(char *buf, Ulong *place, void (*refresh_func)(void), bool *listed);
 
 /* Some functions in 'global.cpp'. */
 // int              keycode_from_string(const char *keystring) _NOTHROW;

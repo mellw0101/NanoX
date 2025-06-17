@@ -726,16 +726,16 @@ void  switch_to_prev_buffer(void);
 void  switch_to_next_buffer(void);
 char *get_next_filename(const char *const restrict name, const char *const restrict suffix);
 int   open_file(const char *const restrict path, bool new_one, FILE **const f);
-
 /* ----------------------------- Read file ----------------------------- */
-
 void  read_file_into(openfilestruct *const file, int rows, int cols, FILE *const f, int fd, const char *const restrict filename, bool undoable);
 void  read_file(FILE *f, int fd, const char *const restrict filename, bool undoable);
-
 /* ----------------------------- Open buffer ----------------------------- */
+bool open_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols, const char *const restrict path, bool new_one);
+bool open_buffer(const char *const restrict path, bool new_one);
 
-bool  open_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols, const char *const restrict path, bool new_one);
-bool  open_buffer(const char *const restrict path, bool new_one);
+char **username_completion(const char *const restrict morsel, Ulong length, Ulong *const num_matches);
+
+char *input_tab(char *morsel, Ulong *const place, functionptrtype refresh_func, bool *const listed);
 
 
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */

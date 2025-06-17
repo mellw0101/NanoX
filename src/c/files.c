@@ -416,9 +416,8 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
     statusline(MILD, _("Error opening file-descriptor: %s: %s"), lockfilename, strerror(errno));
     return FALSE;
   }
-  /* Create the lock data we will write. */
+  /* Create the lock data we will write.  And fully clear it. */
   lockdata = xmalloc(LOCKSIZE);
-  /* And fully clear it. */
   memset(lockdata, 0, LOCKSIZE);
   /*
    * This is the lock data we will store (other bytes remain 0x00):
@@ -436,7 +435,7 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
    * Nano also does not use all available space for user name (40 bytes),
    * host name (40 bytes), and file name (890 bytes).  Nor does nano write
    * some byte-order-checking numbers (bytes 1008-1022).
-  */
+   */
   lockdata[0] = 0x62;
   lockdata[1] = 0x30;
   /* It's fine to overwrite byte 12 with the \0 as it is 0x00 anyway. */
@@ -536,6 +535,9 @@ void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestru
 }
 
 void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start, openfilestruct **const open) {
+  ASSERT(orphan);
+  ASSERT(start);
+  ASSERT(open);
   /* If the buffer to free is the start buffer, advance the start buffer. */
   if (orphan == *start) {
     CLIST_ADV_NEXT(*start);
@@ -572,27 +574,6 @@ void close_buffer(void) {
   else {
     close_buffer_for(TUI_OF, &TUI_SF, &TUI_OF);
   }
-  // openfilestruct *orphan = openfile;
-  // if (orphan == startfile) {
-  //   startfile = startfile->next;
-  // }
-  // CLIST_UNLINK(orphan);
-  // free(orphan->filename);
-  // free_lines(orphan->filetop);
-  // free(orphan->statinfo);
-  // free(orphan->lock_filename);
-  // /* Free the undo stack. */
-  // discard_until(NULL);
-  // free(orphan->errormessage);
-  // openfile = orphan->prev;
-  // if (openfile == orphan) {
-  //   openfile = NULL;
-  // }
-  // free(orphan);
-  // /* When just one buffer remains open, show "Exit" in the help lines. */
-  // if (openfile && CLIST_SINGLE(openfile)) {
-  //   ASSIGN_FIELD_IF_VALID(exitfunc, tag, exit_tag);
-  // }
 }
 
 /* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
@@ -1276,4 +1257,170 @@ bool open_buffer(const char *const restrict path, bool new_one) {
   else {
     return open_buffer_for(FULL_TUI_CTX, path, new_one);
   }
+}
+
+/* ----------------------------- Username completion ----------------------------- */
+
+/* Try to complete the given fragment of given length to a username. */
+char **username_completion(const char *const restrict morsel, Ulong length, Ulong *const num_matches) {
+  ASSERT(morsel);
+  ASSERT(num_matches);
+  Ulong cap  = 4;
+  Ulong size = 0;
+  char **matches = xmalloc(_PTRSIZE * cap);
+  struct passwd *user;
+  /* Iterate through the entries in the passwd file, and add each fitting username to the list of matches. */
+  while ((user = getpwent())) {
+    /* Only add matching names of users that are inside the confinement. */
+    if (strncmp(user->pw_name, (morsel + 1), (length - 1)) == 0 && !outside_of_confinement(user->pw_dir, TRUE)) {
+      ENSURE_PTR_ARRAY_SIZE(matches, cap, size);
+      matches[size++] = fmtstr("~%s", user->pw_name);
+    }
+  }
+  endpwent();
+  /* When no matches were found, return a NULL ptr. */
+  if (!size) {
+    free(matches);
+    return NULL;
+  }
+  /* Otherwise, trim and null-terminate the array. */
+  else {
+    TRIM_PTR_ARRAY(matches, cap, size);
+    matches[size] = NULL;
+    *num_matches = size;
+    return matches;
+  }
+}
+
+/* ----------------------------- Input tab ----------------------------- */
+
+/* Do tab completion.  `place` is the position of the status-bar cursor, and `refresh_func` is the function to be called to refresh the edit window. */
+char *input_tab(char *morsel, Ulong *const place, functionptrtype refresh_func, bool *const listed) {
+  ASSERT(morsel);
+  Ulong num_matches = 0;
+  char **matches = NULL;
+  const char *lastslash;
+  Ulong length_of_path;
+  Ulong match;
+  Ulong common_len = 0;
+  Ulong longest_name = 0;
+  Ulong nrows;
+  Ulong ncols;
+  Ulong namelen;
+  char *shared;
+  char *glued;
+  char *disp;
+  char c1[MAXCHARLEN];
+  char c2[MAXCHARLEN];
+  int l1;
+  int l2;
+  int lastrow;
+  int row;
+  /* If the cursor is not at the end of the fragment, do nothing. */
+  if (morsel[*place]) {
+    if (IN_CURSES_CTX) {
+      beep();
+    }
+    return morsel;
+  }
+  /* If the fragment starts with a tilde(~) and contains no slash, then try completing it as a username. */
+  if (*morsel == '~' && !strchr((morsel + 1), '/')) { 
+    matches = username_completion(morsel, *place, &num_matches);
+  }
+  /* If there was no username matches found. try matching against filenames. */
+  if (!matches) {
+    matches = filename_completion(morsel, &num_matches);
+  }
+  /* If possible completions were listed before buf none will be listed now... */
+  if (refresh_func && listed && num_matches < 2) {
+    refresh_func();
+    *listed = FALSE;
+  }
+  /* We found no match, just return. */
+  if (!matches) {
+    if (IN_CURSES_CTX) {
+      beep();
+    }
+    return morsel;
+  }
+  lastslash = revstrstr(morsel, "/", (morsel + (*place)));
+  length_of_path = (!lastslash ? 0 : (lastslash - morsel + 1));
+  /* Determine the number of characters that all matches have in common. */
+  while (TRUE) {
+    l1 = collect_char((*matches + common_len), c1);
+    for (match=1; match<num_matches; ++match) {
+      l2 = collect_char((matches[match] + common_len), c2);
+      if (l1 != l2 || strncmp(c1, c2, l2) != 0) {
+        break;
+      }
+    }
+    if (match < num_matches || !(*matches)[common_len]) {
+      break;
+    }
+    common_len += l1;
+  }
+  shared = xmalloc(length_of_path + common_len + 1);
+  memcpy(shared, morsel, length_of_path);
+  memcpy((shared + length_of_path), *matches, common_len);
+  common_len += length_of_path;
+  shared[common_len] = '\0';
+  /* Cover also the case of the user specifying a relative path. */
+  glued = fmtstr("%s%s", present_path, shared);
+  /* When we have a single match, and it is a directory, set the last char as '/'. */
+  if (num_matches == 1 && (is_dir(shared) || is_dir(glued))) {
+    shared[common_len++] = '/';
+  }
+  /* If the matches have something in common, copy that path. */
+  if (common_len != *place) {
+    morsel = xstrncpy(morsel, shared, common_len);
+    *place = common_len;
+  }
+  else if (num_matches == 1 && IN_CURSES_CTX) {
+    beep();
+  }
+  /* If there is more then one possible completion, show a
+   * sorted list.  For now we only support this in curses mode. */
+  if (num_matches > 1 && IN_CURSES_CTX) {
+    lastrow = (editwinrows - 1 - (ISSET(ZERO) && LINES > 1));
+    if (!listed) {
+      beep();
+    }
+    qsort(matches, num_matches, _PTRSIZE, diralphasort);
+    /* Find the length of the longest name among the matches. */
+    for (match=0; match<num_matches; ++match) {
+      namelen = breadth(matches[match]);
+      if (namelen > longest_name) {
+        longest_name = namelen;
+      }
+    }
+    /* Only allow a length of the total terminal columns. */
+    CLAMP_MAX(longest_name, (COLS - 1));
+    /* The columns of names will be seperated by two spaces, but the last column will have just one space after it. */
+    ncols = ((COLS + 1) / (longest_name + 2));
+    nrows = ((num_matches + ncols - 1) / ncols);
+    row   = ((nrows < (Ulong)lastrow) ? (lastrow - nrows) : 0);
+    /* Blank the edit window and hide the cursor. */
+    blank_edit();
+    curs_set(FALSE);
+    /* Now print the list of matches out there. */
+    for (match=0; match<num_matches; ++match) {
+      wmove(midwin, row, ((longest_name + 2) * (match % ncols)));
+      if (row == lastrow && ((match + 1) % ncols) == 0 && (match + 1) < num_matches) {
+        waddstr(midwin, _("(more)"));
+        break;
+      }
+      disp = display_string(matches[match], 0, longest_name, FALSE, FALSE);
+      waddstr(midwin, disp);
+      free(disp);
+      if (((match + 1) % ncols) == 0) {
+        ++row;
+      }
+    }
+    wnoutrefresh(midwin);
+    *listed = TRUE;
+  }
+  free_chararray(matches, num_matches);
+  free(glued);
+  free(shared);
+  return morsel;
 }

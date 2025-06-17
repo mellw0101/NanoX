@@ -2247,9 +2247,9 @@ char *display_string(const char *text, Ulong column, Ulong span, bool isdata, bo
     charwidth = wcwidth(wc);
     /* Watch the number of zero-widths, to keep ample memory reserved. */
     if (charwidth == 0 && --stowaways == 0) {
-      stowaways = 40;
-      allocsize += stowaways * MAXCHARLEN;
-      converted = xrealloc(converted, allocsize);
+      stowaways  = 40;
+      allocsize += (stowaways * MAXCHARLEN);
+      converted  = xrealloc(converted, allocsize);
     }
     /* On a Linux console, skip zero-width characters, as it would show them WITH a width, thus messing up the display.  See bug #52954. */
     if (on_a_vt && charwidth == 0) {

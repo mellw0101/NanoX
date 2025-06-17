@@ -1411,7 +1411,8 @@ void do_insert_empty_line_above_for(openfilestruct *const file) {
   insert_empty_line_for(file, file->current, TRUE, TRUE);
   DLIST_ADV_PREV(file->current);
   update_undo_for(file, INSERT_EMPTY_LINE);
-  set_cursor_to_eol_for(file);
+  SET_CURSOR_TO_EOL(file);
+  SET_PWW(file);
   refresh_needed = TRUE;
 }
 

@@ -27,15 +27,7 @@
 #define SB_ACTIVE_THUMB_COLOR   PACKED_UINT_FLOAT(1.0f, 1.0f, 1.0f, 0.7f)
 
 
-/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
-
-
-// static Color sb_thumb_color        = {1.0f, 1.0f, 1.0f, 0.3f};
-// static Color sb_active_thumb_color = {1.0f, 1.0f, 1.0f, 0.7f};
-
-
 /* ---------------------------------------------------------- Struct's ---------------------------------------------------------- */
-
 
 
 struct Scrollbar {
@@ -195,9 +187,7 @@ Scrollbar *scrollbar_create(Element *const parent, void *const data, ScrollbarUp
   element_set_parent(sb->thumb, sb->base);
   element_set_sb_data(sb->base, sb);
   element_set_sb_data(sb->thumb, sb);
-  // color_set_rgba(sb->base->color, 0.05f, 0.05f, 0.05f, 0.3f);
-  sb->base->color = PACKED_UINT_FLOAT(0.05f, 0.05f, 0.05f, 0.3f);
-  // color_set_rgba(sb->thumb->color, 1.0f, 1.0f, 1.0f, 0.3f);
+  sb->base->color  = PACKED_UINT_FLOAT(0.05f, 0.05f, 0.05f, 0.3f);
   sb->thumb->color = PACKED_UINT_FLOAT(1.0f, 1.0f, 1.0f, 0.3f);
   /* Base. */
   sb->base->has_reverse_relative_x_pos = TRUE;
@@ -286,11 +276,9 @@ void scrollbar_show(Scrollbar *const sb, bool show) {
 void scrollbar_set_thumb_color(Scrollbar *const sb, bool active) {
   ASSERT_SCROLLBAR;
   if (!active) {
-    // color_copy(sb->thumb->color, &sb_thumb_color);
     sb->thumb->color = SB_THUMB_COLOR;
   }
   else {
-    // color_copy(sb->thumb->color, &sb_active_thumb_color);
     sb->thumb->color = SB_ACTIVE_THUMB_COLOR;
   }
 }

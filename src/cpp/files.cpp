@@ -2052,25 +2052,25 @@ void do_savefile(void) {
 // }
 
 /* Try to complete the given fragment of given length to a username. */
-static char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)  {
-  char **matches = NULL;
-  const passwd *userdata;
-  /* Iterate through the entries in the passwd file, and add each fitting username to the list of matches. */
-  while ((userdata = getpwent())) {
-    if (strncmp(userdata->pw_name, morsel + 1, length - 1) == 0) {
-      /* Skip directories that are outside of the allowed area. */
-      if (outside_of_confinement(userdata->pw_dir, TRUE)) {
-        continue;
-      }
-      matches = (char **)nrealloc(matches, (num_matches + 1) * sizeof(char *));
-      matches[num_matches] = (char *)nmalloc(strlen(userdata->pw_name) + 2);
-      sprintf(matches[num_matches], "~%s", userdata->pw_name);
-      ++num_matches;
-    }
-  }
-  endpwent();
-  return matches;
-}
+// static char **username_completion(const char *morsel, Ulong length, Ulong &num_matches)  {
+//   char **matches = NULL;
+//   const passwd *userdata;
+//   /* Iterate through the entries in the passwd file, and add each fitting username to the list of matches. */
+//   while ((userdata = getpwent())) {
+//     if (strncmp(userdata->pw_name, morsel + 1, length - 1) == 0) {
+//       /* Skip directories that are outside of the allowed area. */
+//       if (outside_of_confinement(userdata->pw_dir, TRUE)) {
+//         continue;
+//       }
+//       matches = (char **)nrealloc(matches, (num_matches + 1) * sizeof(char *));
+//       matches[num_matches] = (char *)nmalloc(strlen(userdata->pw_name) + 2);
+//       sprintf(matches[num_matches], "~%s", userdata->pw_name);
+//       ++num_matches;
+//     }
+//   }
+//   endpwent();
+//   return matches;
+// }
 
 /**
   The next two functions were adapted from busybox 0.46 (cmdedit.c).
@@ -2147,120 +2147,120 @@ static char **username_completion(const char *morsel, Ulong length, Ulong &num_m
 // }
 
 /* Do tab completion.  'place' is the position of the status-bar cursor, and 'refresh_func' is the function to be called to refresh the edit window. */
-char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *listed) {
-  Ulong  num_matches = 0;
-  char **matches     = NULL;
-  /* If the cursor is not at the end of the fragment, do nothing. */
-  if (morsel[*place]) {
-    beep();
-    return morsel;
-  }
-  /* If the fragment starts with a tilde and contains no slash, then try completing it as a username. */
-  if (morsel[0] == '~' && !strchr(morsel, '/')) {
-    matches = username_completion(morsel, *place, num_matches);
-  }
-  /* If there are no matches yet, try matching against filenames. */
-  if (!matches) {
-    matches = filename_completion(morsel, &num_matches);
-  }
-  /* If possible completions were listed before but none will be listed now... */
-  if (listed && num_matches < 2) {
-    refresh_func();
-    *listed = FALSE;
-  }
-  if (!matches) {
-    beep();
-    return morsel;
-  }
-  const char *lastslash = revstrstr(morsel, "/", morsel + *place);
-  Ulong length_of_path = (!lastslash ? 0 : (lastslash - morsel + 1));
-  Ulong match, common_len = 0;
-  char *shared, *glued;
-  char  char1[MAXCHARLEN], char2[MAXCHARLEN];
-  int   len1, len2;
-  /* Determine the number of characters that all matches have in common. */
-  while (TRUE) {
-    len1 = collect_char((matches[0] + common_len), char1);
-    for (match = 1; match < num_matches; ++match) {
-      len2 = collect_char((matches[match] + common_len), char2);
-      if (len1 != len2 || strncmp(char1, char2, len2) != 0) {
-        break;
-      }
-    }
-    if (match < num_matches || !matches[0][common_len]) {
-      break;
-    }
-    common_len += len1;
-  }
-  shared = (char *)nmalloc(length_of_path + common_len + 1);
-  strncpy(shared, morsel, length_of_path);
-  strncpy(shared + length_of_path, matches[0], common_len);
-  common_len += length_of_path;
-  shared[common_len] = '\0';
-  /* Cover also the case of the user specifying a relative path. */
-  glued = (char *)nmalloc(strlen(present_path) + common_len + 1);
-  sprintf(glued, "%s%s", present_path, shared);
-  if (num_matches == 1 && (is_dir(shared) || is_dir(glued))) {
-    shared[common_len++] = '/';
-  }
-  /* If the matches have something in common, copy that part. */
-  if (common_len != *place) {
-    morsel = (char *)nrealloc(morsel, (common_len + 1));
-    strncpy(morsel, shared, common_len);
-    morsel[common_len] = '\0';
-    *place = common_len;
-  }
-  else if (num_matches == 1) {
-    beep();
-  }
-  /* If there is more than one possible completion, show a sorted list. */
-  if (num_matches > 1) {
-    int lastrow = (editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0));
-    Ulong longest_name = 0;
-    Ulong nrows, ncols;
-    int row;
-    if (!listed) {
-      beep();
-    }
-    qsort(matches, num_matches, sizeof(char *), diralphasort);
-    /* Find the length of the longest name among the matches. */
-    for (match = 0; match < num_matches; match++) {
-      Ulong namelen = breadth(matches[match]);
-      if (namelen > longest_name) {
-        longest_name = namelen;
-      }
-    }
-    if (longest_name > (Ulong)(COLS - 1)) {
-      longest_name = (COLS - 1);
-    }
-    /* The columns of names will be separated by two spaces,
-     * but the last column will have just one space after it. */
-    ncols = (COLS + 1) / (longest_name + 2);
-    nrows = ((num_matches + ncols - 1) / ncols);
-    row   = ((nrows < (Ulong)lastrow) ? lastrow - nrows : 0);
-    /* Blank the edit window and hide the cursor. */
-    blank_edit();
-    curs_set(0);
-    /* Now print the list of matches out there. */
-    for (match = 0; match < num_matches; match++) {
-      char *disp;
-      wmove(midwin, row, (longest_name + 2) * (match % ncols));
-      if (row == lastrow && (match + 1) % ncols == 0 && match + 1 < num_matches) {
-        waddstr(midwin, _("(more)"));
-        break;
-      }
-      disp = display_string(matches[match], 0, longest_name, FALSE, FALSE);
-      waddstr(midwin, disp);
-      free(disp);
-      if ((match + 1) % ncols == 0) {
-        ++row;
-      }
-    }
-    wnoutrefresh(midwin);
-    *listed = TRUE;
-  }
-  free_chararray(matches, num_matches);
-  free(glued);
-  free(shared);
-  return morsel;
-}
+// char *input_tab(char *morsel, Ulong *place, functionptrtype refresh_func, bool *listed) {
+//   Ulong  num_matches = 0;
+//   char **matches     = NULL;
+//   /* If the cursor is not at the end of the fragment, do nothing. */
+//   if (morsel[*place]) {
+//     beep();
+//     return morsel;
+//   }
+//   /* If the fragment starts with a tilde and contains no slash, then try completing it as a username. */
+//   if (morsel[0] == '~' && !strchr(morsel, '/')) {
+//     matches = username_completion(morsel, *place, &num_matches);
+//   }
+//   /* If there are no matches yet, try matching against filenames. */
+//   if (!matches) {
+//     matches = filename_completion(morsel, &num_matches);
+//   }
+//   /* If possible completions were listed before but none will be listed now... */
+//   if (listed && num_matches < 2) {
+//     refresh_func();
+//     *listed = FALSE;
+//   }
+//   if (!matches) {
+//     beep();
+//     return morsel;
+//   }
+//   const char *lastslash = revstrstr(morsel, "/", morsel + *place);
+//   Ulong length_of_path = (!lastslash ? 0 : (lastslash - morsel + 1));
+//   Ulong match, common_len = 0;
+//   char *shared, *glued;
+//   char  char1[MAXCHARLEN], char2[MAXCHARLEN];
+//   int   len1, len2;
+//   /* Determine the number of characters that all matches have in common. */
+//   while (TRUE) {
+//     len1 = collect_char((matches[0] + common_len), char1);
+//     for (match = 1; match < num_matches; ++match) {
+//       len2 = collect_char((matches[match] + common_len), char2);
+//       if (len1 != len2 || strncmp(char1, char2, len2) != 0) {
+//         break;
+//       }
+//     }
+//     if (match < num_matches || !matches[0][common_len]) {
+//       break;
+//     }
+//     common_len += len1;
+//   }
+//   shared = (char *)nmalloc(length_of_path + common_len + 1);
+//   strncpy(shared, morsel, length_of_path);
+//   strncpy(shared + length_of_path, matches[0], common_len);
+//   common_len += length_of_path;
+//   shared[common_len] = '\0';
+//   /* Cover also the case of the user specifying a relative path. */
+//   glued = (char *)nmalloc(strlen(present_path) + common_len + 1);
+//   sprintf(glued, "%s%s", present_path, shared);
+//   if (num_matches == 1 && (is_dir(shared) || is_dir(glued))) {
+//     shared[common_len++] = '/';
+//   }
+//   /* If the matches have something in common, copy that part. */
+//   if (common_len != *place) {
+//     morsel = (char *)nrealloc(morsel, (common_len + 1));
+//     strncpy(morsel, shared, common_len);
+//     morsel[common_len] = '\0';
+//     *place = common_len;
+//   }
+//   else if (num_matches == 1) {
+//     beep();
+//   }
+//   /* If there is more than one possible completion, show a sorted list. */
+//   if (num_matches > 1) {
+//     int lastrow = (editwinrows - 1 - (ISSET(ZERO) && LINES > 1 ? 1 : 0));
+//     Ulong longest_name = 0;
+//     Ulong nrows, ncols;
+//     int row;
+//     if (!listed) {
+//       beep();
+//     }
+//     qsort(matches, num_matches, sizeof(char *), diralphasort);
+//     /* Find the length of the longest name among the matches. */
+//     for (match = 0; match < num_matches; match++) {
+//       Ulong namelen = breadth(matches[match]);
+//       if (namelen > longest_name) {
+//         longest_name = namelen;
+//       }
+//     }
+//     if (longest_name > (Ulong)(COLS - 1)) {
+//       longest_name = (COLS - 1);
+//     }
+//     /* The columns of names will be separated by two spaces,
+//      * but the last column will have just one space after it. */
+//     ncols = (COLS + 1) / (longest_name + 2);
+//     nrows = ((num_matches + ncols - 1) / ncols);
+//     row   = ((nrows < (Ulong)lastrow) ? lastrow - nrows : 0);
+//     /* Blank the edit window and hide the cursor. */
+//     blank_edit();
+//     curs_set(0);
+//     /* Now print the list of matches out there. */
+//     for (match = 0; match < num_matches; match++) {
+//       char *disp;
+//       wmove(midwin, row, (longest_name + 2) * (match % ncols));
+//       if (row == lastrow && (match + 1) % ncols == 0 && match + 1 < num_matches) {
+//         waddstr(midwin, _("(more)"));
+//         break;
+//       }
+//       disp = display_string(matches[match], 0, longest_name, FALSE, FALSE);
+//       waddstr(midwin, disp);
+//       free(disp);
+//       if ((match + 1) % ncols == 0) {
+//         ++row;
+//       }
+//     }
+//     wnoutrefresh(midwin);
+//     *listed = TRUE;
+//   }
+//   free_chararray(matches, num_matches);
+//   free(glued);
+//   free(shared);
+//   return morsel;
+// }
