@@ -182,6 +182,8 @@ extern funcstruct *exitfunc;
 extern regex_t search_regexp;
 extern regex_t quotereg;
 
+extern regmatch_t regmatches[10];
+
 extern GLFWwindow *gui_window;
 
 extern message_type lastmessage;
@@ -287,26 +289,18 @@ Ulong       wideness(const char *text, Ulong maxlen) _NODISCARD _NONNULL(1);
 Ulong       actual_x(const char *text, Ulong column) _NODISCARD _NONNULL(1);
 Ulong       breadth(const char *text) __THROW _NODISCARD _NONNULL(1);
 Ulong       number_of_characters_in(const linestruct *const begin, const linestruct *const end) _NODISCARD _NONNULL(1, 2);
-
 /* ----------------------------- Magicline ----------------------------- */
-
 void new_magicline_for(openfilestruct *const file) _NONNULL(1);
 void new_magicline(void);
 void remove_magicline_for(openfilestruct *const file);
 void remove_magicline(void);
-
 /* ----------------------------- Mark is before cursor ----------------------------- */
-
 bool mark_is_before_cursor_for(openfilestruct *const file);
 bool mark_is_before_cursor(void) _NODISCARD;
-
 /* ----------------------------- Get region ----------------------------- */
-
 void get_region_for(openfilestruct *const file, linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
 void get_region(linestruct **const top, Ulong *const top_x, linestruct **const bot, Ulong *const bot_x);
-
-/* ----------------------------- Get region ----------------------------- */
-
+/* ----------------------------- Get range ----------------------------- */
 void  get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
 void  get_range(linestruct **const top, linestruct **const bot);
 bool  parse_line_column(const char *string, long *const line, long *const column);
@@ -314,23 +308,21 @@ Ulong tabstop_length(const char *const restrict string, Ulong index);
 char *tab_space_string_for(openfilestruct *const file, Ulong *length);
 char *tab_space_string(Ulong *length);
 char *construct_full_tab_string(Ulong *length);
-
 /* ----------------------------- Set placewewant ----------------------------- */
-
 void set_pww_for(openfilestruct *const file);
 void set_pww(void);
-
 /* ----------------------------- Set cursor to end of line ----------------------------- */
-
 void set_cursor_to_eol_for(openfilestruct *const file);
 void set_cursor_to_eol(void);
-
 /* ----------------------------- Set mark ----------------------------- */
-
 void set_mark_for(openfilestruct *const file, long lineno, Ulong x);
 void set_mark(long lineno, Ulong x);
 
 char *indent_plus_tab(const char *const restrict string);
+
+bool is_separate_word(Ulong position, Ulong length, const char *const restrict text);
+
+const char *strstrwrapper(const char *const haystack, const char *const needle, const char *const start);
 
 
 /* ----------------------------------------------- syntax/synx.c ----------------------------------------------- */
@@ -795,8 +787,8 @@ void  step_cursor_right(openfilestruct *const file);
 int   mbstrcasecmp(const char *s1, const char *s2);
 int   mbstrncasecmp(const char *s1, const char *s2, Ulong n);
 char *mbstrcasestr(const char *haystack, const char *const needle);
-char *revstrstr(const char *const haystack, const char *const needle, const char *pointer);
-char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer);
+char *revstrstr(const char *const haystack, const char *const needle, const char *pointer) __THROW _NODISCARD _NONNULL(1, 2, 3);
+char *mbrevstrcasestr(const char *const haystack, const char *const needle, const char *pointer) _NODISCARD;
 char *mbstrchr(const char *string, const char *const chr);
 char *mbstrpbrk(const char *str, const char *accept);
 char *mbrevstrpbrk(const char *const head, const char *const accept, const char *pointer);
@@ -944,6 +936,8 @@ int keycode_from_string(const char *keystring);
 const keystruct *first_sc_for(int menu, functionptrtype function);
 Ulong shown_entries_for(int menu);
 const keystruct *get_shortcut(int keycode);
+/* ----------------------------- Func from key ----------------------------- */
+functionptrtype func_from_key(int keycode);
 
 
 /* ---------------------------------------------------------- search.c ---------------------------------------------------------- */

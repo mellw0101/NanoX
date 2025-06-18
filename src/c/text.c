@@ -2433,7 +2433,7 @@ void do_redo_for(CTX_PARAMS) {
       if ((u->xflags & INCLUDED_LAST_LINE) && !ISSET(NO_NEWLINES)) {
         new_magicline_for(file);
       }
-      SWAP_PTR(u->strdata, line->data);
+      SWAP(u->strdata, line->data);
       goto_line_posx_for(file, rows, u->head_lineno, u->head_x);
       break;
     }

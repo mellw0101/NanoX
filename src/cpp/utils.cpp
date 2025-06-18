@@ -198,83 +198,83 @@ char **get_env_paths(Ulong *npaths) _NOTHROW {
 
 /* Is the word starting at the given position in 'text' and of the given
  * length a separate word?  That is: is it not part of a longer word? */
-bool is_separate_word(Ulong position, Ulong length, const char *text) _NOTHROW {
-  const char *before = text + step_left(text, position);
-  const char *after  = text + position + length;
-  /* If the word starts at the beginning of the line OR the character before the word isn't a letter, and if
-   * the word ends at the end of the line OR the character after the word isn't a letter, we have a whole word. */
-  return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
-}
+// bool is_separate_word(Ulong position, Ulong length, const char *text) _NOTHROW {
+//   const char *before = text + step_left(text, position);
+//   const char *after  = text + position + length;
+//   /* If the word starts at the beginning of the line OR the character before the word isn't a letter, and if
+//    * the word ends at the end of the line OR the character after the word isn't a letter, we have a whole word. */
+//   return ((position == 0 || !is_alpha_char(before)) && (*after == '\0' || !is_alpha_char(after)));
+// }
 
 /* Return the position of the needle in the haystack, or NULL if not found.
  * When searching backwards, we will find the last match that starts no later
  * than the given start; otherwise, we find the first match starting no earlier
  * than start.  If we are doing a regexp search, and we find a match, we fill
  * in the global variable regmatches with at most 9 subexpression matches. */
-const char *strstrwrapper(const char *const haystack, const char *const needle, const char *const start) _NOTHROW {
-  if (ISSET(USE_REGEXP)) {
-    if (ISSET(BACKWARDS_SEARCH)) {
-      Ulong last_find, ceiling, far_end, floor, next_rung;
-      /* The start of the search range, and the next start. */
-      floor = 0, next_rung = 0;
-      if (regexec(&search_regexp, haystack, 1, regmatches, 0)) {
-        return NULL;
-      }
-      far_end   = strlen(haystack);
-      ceiling   = (start - haystack);
-      last_find = regmatches[0].rm_so;
-      /* A result beyond the search range also means: no match. */
-      if (last_find > ceiling) {
-        return NULL;
-      }
-      /* Move the start-of-range forward until there is no more match; then the last match found is the first match backwards. */
-      while (regmatches[0].rm_so <= (int)ceiling) {
-        floor     = next_rung;
-        last_find = regmatches[0].rm_so;
-        /* If this is the last possible match, don't try to advance. */
-        if (last_find == ceiling) {
-          break;
-        }
-        next_rung = step_right(haystack, last_find);
-        regmatches[0].rm_so = next_rung;
-        regmatches[0].rm_eo = far_end;
-        if (regexec(&search_regexp, haystack, 1, regmatches, REG_STARTEND)) {
-          break;
-        }
-      }
-      /* Find the last match again, to get possible submatches. */
-      regmatches[0].rm_so = floor;
-      regmatches[0].rm_eo = far_end;
-      if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
-        return NULL;
-      }
-      return (haystack + regmatches[0].rm_so);
-    }
-    /* Do a forward regex search from the starting point. */
-    regmatches[0].rm_so = (start - haystack);
-    regmatches[0].rm_eo = strlen(haystack);
-    if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
-      return NULL;
-    }
-    else {
-      return (haystack + regmatches[0].rm_so);
-    }
-  }
-  if (ISSET(CASE_SENSITIVE)) {
-    if (ISSET(BACKWARDS_SEARCH)) {
-      return revstrstr(haystack, needle, start);
-    }
-    else {
-      return strstr(start, needle);
-    }
-  }
-  if (ISSET(BACKWARDS_SEARCH)) {
-    return mbrevstrcasestr(haystack, needle, start);
-  }
-  else {
-    return mbstrcasestr(start, needle);
-  }
-}
+// const char *strstrwrapper(const char *const haystack, const char *const needle, const char *const start) _NOTHROW {
+//   if (ISSET(USE_REGEXP)) {
+//     if (ISSET(BACKWARDS_SEARCH)) {
+//       Ulong last_find, ceiling, far_end, floor, next_rung;
+//       /* The start of the search range, and the next start. */
+//       floor = 0, next_rung = 0;
+//       if (regexec(&search_regexp, haystack, 1, regmatches, 0)) {
+//         return NULL;
+//       }
+//       far_end   = strlen(haystack);
+//       ceiling   = (start - haystack);
+//       last_find = regmatches[0].rm_so;
+//       /* A result beyond the search range also means: no match. */
+//       if (last_find > ceiling) {
+//         return NULL;
+//       }
+//       /* Move the start-of-range forward until there is no more match; then the last match found is the first match backwards. */
+//       while (regmatches[0].rm_so <= (int)ceiling) {
+//         floor     = next_rung;
+//         last_find = regmatches[0].rm_so;
+//         /* If this is the last possible match, don't try to advance. */
+//         if (last_find == ceiling) {
+//           break;
+//         }
+//         next_rung = step_right(haystack, last_find);
+//         regmatches[0].rm_so = next_rung;
+//         regmatches[0].rm_eo = far_end;
+//         if (regexec(&search_regexp, haystack, 1, regmatches, REG_STARTEND)) {
+//           break;
+//         }
+//       }
+//       /* Find the last match again, to get possible submatches. */
+//       regmatches[0].rm_so = floor;
+//       regmatches[0].rm_eo = far_end;
+//       if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
+//         return NULL;
+//       }
+//       return (haystack + regmatches[0].rm_so);
+//     }
+//     /* Do a forward regex search from the starting point. */
+//     regmatches[0].rm_so = (start - haystack);
+//     regmatches[0].rm_eo = strlen(haystack);
+//     if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND)) {
+//       return NULL;
+//     }
+//     else {
+//       return (haystack + regmatches[0].rm_so);
+//     }
+//   }
+//   if (ISSET(CASE_SENSITIVE)) {
+//     if (ISSET(BACKWARDS_SEARCH)) {
+//       return revstrstr(haystack, needle, start);
+//     }
+//     else {
+//       return strstr(start, needle);
+//     }
+//   }
+//   if (ISSET(BACKWARDS_SEARCH)) {
+//     return mbrevstrcasestr(haystack, needle, start);
+//   }
+//   else {
+//     return mbstrcasestr(start, needle);
+//   }
+// }
 
 /* Allocate the given amount of memory and return a pointer to it. */
 void *nmalloc(Ulong howmuch) _NOTHROW {

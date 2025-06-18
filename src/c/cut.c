@@ -10,14 +10,16 @@
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Is cuttable ----------------------------- */
+
 /* Return `FALSE` when a cut command would not actually cut anything: when on an empty line at EOF, or when
  * the mark covers zero characters, or (when `test_cliff` is `TRUE`) when the magic line would be cut. */
-static bool is_cuttable_for(openfilestruct *const file, bool test_cliff) {
+static bool is_cuttable(openfilestruct *const file, bool test_cliff) {
   ASSERT(file);
   Ulong from = ((test_cliff) ? file->current_x : 0);
   if ((!file->current->next && !file->current->data[from] && !file->mark)
-   || (file->mark == file->current && file->mark_x == file->current_x)
-   || (from > 0 && !ISSET(NO_NEWLINES) && !file->current->data[from] && file->current->next == file->filebot)) {
+  ||  (file->mark == file->current && file->mark_x == file->current_x)
+  ||  (from > 0 && !ISSET(NO_NEWLINES) && !file->current->data[from] && file->current->next == file->filebot)) {
     statusbar_all(_("Nothing was cut"));
     file->mark = NULL;
     return FALSE;
@@ -25,13 +27,6 @@ static bool is_cuttable_for(openfilestruct *const file, bool test_cliff) {
   else {
     return TRUE;
   }
-}
-
-/* Returns `FALSE` when a cut command would not actually cut anything: when on an empty line at EOF, or when
- * the mark covers zero characters, or (when `test_cliff` is `TRUE`) when the magic line would be cut. */
-_UNUSED
-static bool is_cuttable(bool test_cliff) {
-  return is_cuttable_for(CTX_OF, test_cliff);
 }
 
 /* ----------------------------- Chop word ----------------------------- */
@@ -195,6 +190,7 @@ void extract_segment_for(CTX_ARGS, linestruct *const top, Ulong top_x, linestruc
   }
   if (top != bot) {
     DLIST_FOR_NEXT_END(top->next, bot->next, line) {
+      PREFETCH(line->next, 0, 1);
       had_anchor |= line->has_anchor;
     }
   }
@@ -368,7 +364,7 @@ void do_snip(bool marked, bool until_eof, bool append) {
 /* Move text from the current buffer into the cutbuffer. */
 void cut_text_for(CTX_ARGS) {
   ASSERT(file);
-  if (!is_cuttable_for(file, (ISSET(CUT_FROM_CURSOR) && !file->mark))) {
+  if (!is_cuttable(file, (ISSET(CUT_FROM_CURSOR) && !file->mark))) {
     return;
   }
   /* Only add a new undo item when the current item is not a `CUT` or when the current cut is not contiguonus with the previous cutting. */
@@ -424,7 +420,7 @@ void zap_text_for(CTX_ARGS) {
   ASSERT(file);
   /* Remember the current cutbuffer so it can be restored after the zap. */
   linestruct *was_cutbuffer = cutbuffer;
-  if (!is_cuttable_for(file, (ISSET(CUT_FROM_CURSOR) && !file->mark))) {
+  if (!is_cuttable(file, (ISSET(CUT_FROM_CURSOR) && !file->mark))) {
     return;
   }
   /* Add a new undo item only when the current item is not a ZAP or when
@@ -848,7 +844,7 @@ void chop_previous_word(void) {
 void chop_next_word_for(CTX_PARAMS) {
   ASSERT(file);
   file->mark = NULL;
-  if (is_cuttable_for(file, TRUE)) {
+  if (is_cuttable(file, TRUE)) {
     chop_word_for(STACK_CTX, FORWARD);
   }
 }

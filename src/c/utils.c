@@ -514,3 +514,110 @@ char *indent_plus_tab(const char *const restrict string) {
   }
   return ret;
 }
+
+/* ----------------------------- Is separate word ----------------------------- */
+
+/* Is the word starting at the given position in `text` and of the given
+ * length a separate word?  That is: is it not part of a longer word? */
+bool is_separate_word(Ulong position, Ulong length, const char *const restrict text) {
+  ASSERT(text);
+  const char *before = (text + step_left(text, position));
+  const char *after  = (text + position + length);
+  /* If the word starts at the beginning of the line, or the character before the word isn't a letter, and if
+   * the word ends at the end of the line, or the character after the word isn't a letter, we have a whole word. */
+  return ((!position || !is_alpha_char(before)) && (!*after || !is_alpha_char(after)));
+}
+
+/* ----------------------------- strstr() Wrapper ----------------------------- */
+
+/* Returns the position of the `needle` in the `haystack`, or `NULL` if not found.
+ * When searching backwards, we will find the last match that starts no later
+ * then the given start.  Otherwise, we find the first match starting no earlier
+ * then start.  If we are doing a regexp search, and we find a match, we will fill
+ * in the global variable regmatches with at most 9 subexpression matches. */
+const char *strstrwrapper(const char *const haystack, const char *const needle, const char *const start) {
+  ASSERT(haystack);
+  ASSERT(needle);
+  ASSERT(start);
+  Ulong last_find;
+  Ulong ceiling;
+  /* The very end of the haystack (it's total length). */
+  Ulong far_end;
+  /* The start of the search range. */
+  Ulong floor = 0;
+  /* The start of the next search range */
+  Ulong next_rung = 0;
+  /* Using regex to search. */
+  if (ISSET(USE_REGEXP)) {
+    /* Backward */
+    if (ISSET(BACKWARDS_SEARCH)) {
+      if (regexec(&search_regexp, haystack, 1, regmatches, 0) != 0) {
+        return NULL;
+      }
+      far_end   = strlen(haystack);
+      ceiling   = (start - haystack);
+      last_find = regmatches[0].rm_so;
+      /* A result beyond the search range, also means no match. */
+      if (last_find > ceiling) {
+        return NULL;
+      }
+      /* Move the start-of-range forward until there is no more match, then the last match found is the first match backwards. */
+      while (LE(regmatches[0].rm_so, ceiling)) {
+        floor     = next_rung;
+        last_find = regmatches[0].rm_so;
+        /* If this is the last possible match, don't try to advance. */
+        if (last_find == ceiling) {
+          break;
+        }
+        next_rung = step_right(haystack, last_find);
+        regmatches[0].rm_so = next_rung;
+        regmatches[0].rm_eo = far_end;
+        if (regexec(&search_regexp, haystack, 1, regmatches, REG_STARTEND) != 0) {
+          break;
+        }
+      }
+      /* Find the last match again, to get possible submatches. */
+      regmatches[0].rm_so = floor;
+      regmatches[0].rm_eo = far_end;
+      if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND) != 0) {
+        return NULL;
+      }
+      else {
+        return (haystack + regmatches[0].rm_so);
+      }
+    }
+    /* Forward */
+    else {
+      /* Do a forward regex search from the starting point. */
+      regmatches[0].rm_so = (start - haystack);
+      regmatches[0].rm_eo = strlen(haystack);
+      if (regexec(&search_regexp, haystack, 10, regmatches, REG_STARTEND) != 0) {
+        return NULL;
+      }
+      else {
+        return (haystack + regmatches[0].rm_so);
+      }
+    }
+  }
+  /* Case sensitive search. */
+  else if (ISSET(CASE_SENSITIVE)) {
+    /* Backward. */
+    if (ISSET(BACKWARDS_SEARCH)) {
+      return revstrstr(haystack, needle, start);
+    }
+    else {
+      return strstr(start, needle);
+    }    
+  }
+  /* Multi-byte case ignoring search. */
+  else {
+    /* Backward */
+    if (ISSET(BACKWARDS_SEARCH)) {
+      return mbrevstrcasestr(haystack, needle, start);
+    }
+    /* Forward */
+    else {
+      return mbstrcasestr(start, needle);
+    }
+  }
+}

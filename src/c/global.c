@@ -361,6 +361,11 @@ regex_t search_regexp;
 /* The compiled regular expression from the quoting string. */
 regex_t quotereg;
 
+/* ----------------------------- regmatch_t [] ----------------------------- */
+
+/* The match positions for parenthetical subexpressions, 10 maximum, used in regular expression searches. */
+regmatch_t regmatches[10];
+
 /* ----------------------------- GLFWwindow * ----------------------------- */
 
 GLFWwindow *gui_window = NULL;
@@ -550,6 +555,7 @@ Ulong shown_entries_for(int menu) {
   Ulong maximum = (((COLS + 40) / 20) * 2);
   Ulong count = 0;
   while (count < maximum && item) {
+    PREFETCH(item->next);
     if (item->menus & menu) {
       ++count;
     }
@@ -584,9 +590,18 @@ const keystruct *get_shortcut(int keycode) {
     return planted_shortcut;
   }
   DLIST_FOR_NEXT(sclist, sc) {
+    PREFETCH(sc->next);
     if ((sc->menus & currmenu) && keycode == sc->keycode) {
       return sc;
     }
   }
   return NULL;
+}
+
+/* ----------------------------- Func from key ----------------------------- */
+
+/* Returns a pointer to the function that is bound to the given key. */
+functionptrtype func_from_key(int keycode) {
+  const keystruct *sc = get_shortcut(keycode);
+  return (sc ? sc->func : NULL);
 }

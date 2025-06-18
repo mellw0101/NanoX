@@ -633,18 +633,18 @@ void inject_into_buffer(CTX_ARGS, char *burst, Ulong count) {
      *
      * I will just use the second statement. */
     if (margin && file->cursor_row < (rows - 1)) {
-      update_line_curses_for(file, line, 0);
+      update_line_curses_for(file, line->next, 0);
     }
   }
   update_undo_for(file, ADD);
   if (ISSET(BREAK_LONG_LINES)) {
     do_wrap_for(file, cols);
   }
-  set_pww_for(file);
+  SET_PWW(file);
   /* When softwrapping and the number of chunks in the current line changed, or we were
    * on the last row of the edit window and moved to a new chunk, we need a full refresh. */
   if (ISSET(SOFTWRAP) && (extra_chunks_in(cols, file->current) != old_amount
-   || (file->cursor_row == (rows - 1) && chunk_for(cols, file->placewewant, file->current) > original_row))) {
+  || (file->cursor_row == (rows - 1) && chunk_for(cols, file->placewewant, file->current) > original_row))) {
     refresh_needed = TRUE;
     focusing       = FALSE;
   }

@@ -141,7 +141,7 @@ extern long tabsize;
 // extern funcstruct *exitfunc;
 
 // extern regex_t    search_regexp;
-extern regmatch_t regmatches[10];
+// extern regmatch_t regmatches[10];
 
 // extern int   hilite_attribute;
 // extern int   interface_color_pair[NUMBER_OF_ELEMENTS];
@@ -334,7 +334,7 @@ void   do_savefile(void);
 // const keystruct *first_sc_for(const int menu, void (*function)(void)) _NOTHROW;
 // Ulong            shown_entries_for(int menu) _NOTHROW;
 // const keystruct *get_shortcut(const int keycode);
-functionptrtype  func_from_key(const int keycode);
+// functionptrtype  func_from_key(const int keycode);
 functionptrtype  interpret(const int keycode);
 void             shortcut_init(void);
 
@@ -546,7 +546,7 @@ char      **get_env_paths(Ulong *npaths) _NOTHROW _NODISCARD _NONNULL(1);
 // Ulong       recode_LF_to_NUL(char *string) _NOTHROW _NONNULL(1);
 // void        free_chararray(char **array, Ulong len) _NOTHROW;
 // void        append_chararray(char ***array, Ulong *len, char **append, Ulong append_len) _NOTHROW _NONNULL(1, 2, 3);
-bool        is_separate_word(Ulong position, Ulong length, const char *buf) _NOTHROW;
+// bool        is_separate_word(Ulong position, Ulong length, const char *buf) _NOTHROW;
 void       *nmalloc(const Ulong howmuch) _NOTHROW _RETURNS_NONNULL;
 void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _NONNULL(1);
 #define     arealloc(ptr, howmuch) (__TYPE(ptr))xrealloc(ptr, howmuch)
@@ -564,7 +564,7 @@ void       *nrealloc(void *ptr, const Ulong howmuch) _NOTHROW _RETURNS_NONNULL _
 // void        get_range(linestruct **top, linestruct **bot) _NOTHROW;
 // linestruct *line_from_number(long number) _NOTHROW;
 // Ulong       number_of_characters_in(const linestruct *begin, const linestruct *end) _NOTHROW _NONNULL(1, 2);
-const char *strstrwrapper(const char *haystack, const char *needle, const char *start) _NOTHROW _NONNULL(1);
+// const char *strstrwrapper(const char *haystack, const char *needle, const char *start) _NOTHROW _NONNULL(1);
 char       *alloced_pwd(void);
 char       *alloc_str_free_substrs(char *str_1, char *str_2) _NOTHROW _NONNULL(1, 2);
 void        append_str(char **str, const char *appen_str);

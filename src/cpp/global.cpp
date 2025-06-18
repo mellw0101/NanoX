@@ -169,9 +169,8 @@ nwindow *tui_footwin = NULL;
 // linestruct *executebot = NULL;
 /* The compiled regular expression to use in searches. */
 // regex_t search_regexp;
-/* The match positions for parenthetical subexpressions,
- * 10 maximum, used in regular expression searches. */
-regmatch_t regmatches[10];
+/* The match positions for parenthetical subexpressions, 10 maximum, used in regular expression searches. */
+// regmatch_t regmatches[10];
 /* The curses attribute we use to highlight something. */
 // int hilite_attribute = A_REVERSE;
 /* The color combinations for interface elements given in the rcfile. */
@@ -451,10 +450,10 @@ static void add_to_sclist(const int menus, const char *scstring, const int keyco
 // }
 
 /* Return a pointer to the function that is bound to the given key. */
-functionptrtype func_from_key(const int keycode) {
-  const keystruct *sc = get_shortcut(keycode);
-  return (sc ? sc->func : NULL);
-}
+// functionptrtype func_from_key(const int keycode) {
+//   const keystruct *sc = get_shortcut(keycode);
+//   return (sc ? sc->func : NULL);
+// }
 
 /* Return the function that is bound to the given key in the file browser or
  * the help viewer.  Accept also certain plain characters, for compatibility
