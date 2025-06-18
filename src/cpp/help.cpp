@@ -483,12 +483,7 @@ static void show_help(void) {
   inhelp = FALSE;
   curs_set(0);
   if (ISSET(NO_HELP) || ISSET(ZERO)) {
-    if (ISSET(NO_NCURSES)) {
-      window_init();
-    }
-    else {
-      window_init();
-    }
+    window_init();
   }
   else {
     blank_statusbar();
@@ -505,14 +500,14 @@ static void show_help(void) {
 
 /* Start the help viewer, or indicate that there is no help. */
 void do_help(void) {
-#ifdef ENABLE_HELP
+# ifdef ENABLE_HELP
   show_help();
-#else
+# else
   if (currmenu & (MMAIN | MBROWSER)) {
-    statusbar(_("^W = Ctrl+W    M-W = Alt+W"));
+    statusbar_all(_("^W = Ctrl+W    M-W = Alt+W"));
   }
   else {
     beep();
   }
-#endif
+# endif
 }

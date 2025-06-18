@@ -504,6 +504,7 @@ void  do_undo(void);
 void  do_redo_for(CTX_PARAMS);
 void  do_redo(void);
 bool  find_paragraph(linestruct **const first, Ulong *const count);
+void  do_verbatim_input(void);
 
 
 /* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */
@@ -1082,6 +1083,10 @@ void  add_or_remove_pipe_symbol_from_answer(void);
 void  draw_the_promptbar(void);
 int   ask_user(bool withall, const char *const restrict question);
 
+int do_prompt(
+  int menu, const char *const provided, linestruct **const histlist,
+  functionptrtype refresh_func, const char *const format, ...);
+
 
 /* ---------------------------------------------------------- history.c ---------------------------------------------------------- */
 
@@ -1116,6 +1121,7 @@ char *strip_last_component(const char *const restrict path);
 
 
 void wrap_help_text_into_buffer(void);
+void do_help(void);
 
 
 /* ---------------------------------------------------------- cut.c ---------------------------------------------------------- */
@@ -1281,6 +1287,9 @@ void apply_syntax_to_line(const int row, const char *converted, linestruct *line
 keystruct *strtosc(const char *input);
 void finish(void) __THROW _NO_RETURN;
 void syntax_check_file(openfilestruct *file);
+
+bool wanted_to_move(functionptrtype f);
+bool changes_something(functionptrtype f);
 
 _END_C_LINKAGE
 

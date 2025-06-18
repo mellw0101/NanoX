@@ -145,12 +145,7 @@ void do_page_up_for(CTX_ARGS) {
 
 /* Move up almost one screen-full for `openfile`, where the biggest possible move is `editwinrows - 2`. */
 void do_page_up(void) {
-  if (IN_GUI_CTX) {
-    do_page_up_for(GUI_CTX);
-  }
-  else {
-    do_page_up_for(TUI_CTX);
-  }
+  CTX_CALL(do_page_up_for);
 }
 
 /* ----------------------------- Do page down ----------------------------- */
@@ -184,12 +179,7 @@ void do_page_down_for(CTX_ARGS) {
 
 /* Move down almost one screen-full for `openfile`, where the biggest possible move is `editwinrows - 2`. */
 void do_page_down(void) {
-  if (IN_GUI_CTX) {
-    do_page_down_for(GUI_CTX);
-  }
-  else {
-    do_page_down_for(TUI_CTX);
-  }
+  CTX_CALL(do_page_down_for);
 }
 
 /* ----------------------------- To top row ----------------------------- */
@@ -233,12 +223,7 @@ void to_bottom_row_for(CTX_ARGS) {
 
 /* Place the cursor on the last row in the viewport, when possible. */
 void to_bottom_row(void) {
-  if (IN_GUI_CTX) {
-    to_bottom_row_for(GUI_CTX);
-  }
-  else {
-    to_bottom_row_for(TUI_CTX);
-  }
+  CTX_CALL(to_bottom_row_for);
 }
 
 /* ----------------------------- Do cycle ----------------------------- */
@@ -260,12 +245,7 @@ void do_cycle_for(CTX_ARGS) {
 
 /* Put the cursor line at the center, then the top, then the bottom. */
 void do_cycle(void) {
-  if (IN_GUI_CTX) {
-    do_cycle_for(GUI_CTX);
-  }
-  else {
-    do_cycle_for(TUI_CTX);
-  }
+  CTX_CALL(do_cycle_for);
 }
 
 /* ----------------------------- Do center ----------------------------- */
@@ -315,12 +295,7 @@ void to_para_begin_for(CTX_ARGS) {
 
 /* Move up to first start of a paragraph before the current line. */
 void to_para_begin(void) {
-  if (IN_GUI_CTX) {
-    to_para_begin_for(GUI_CTX);
-  }
-  else {
-    to_para_begin_for(TUI_CTX);
-  }
+  CTX_CALL(to_para_begin_for);
 }
 
 /* ----------------------------- To para end ----------------------------- */
@@ -344,12 +319,7 @@ void to_para_end_for(CTX_ARGS) {
 
 /* Move down to just after the first found end of a paragraph. */
 void to_para_end(void) {
-  if (IN_GUI_CTX) {
-    to_para_end_for(GUI_CTX);
-  }
-  else {
-    to_para_end_for(TUI_CTX);
-  }
+  CTX_CALL(to_para_end_for);
 }
 
 /* ----------------------------- To prev block ----------------------------- */
@@ -357,9 +327,9 @@ void to_para_end(void) {
 /* Move to the preceding block of text. */
 void to_prev_block_for(CTX_ARGS) {
   ASSERT(file);
-  linestruct *const was_current = file->current;
-  int               cur_indent;
-  int               was_indent = line_indent(was_current);
+  linestruct *was_current = file->current;
+  int cur_indent;
+  int was_indent = line_indent(was_current);
   /* Skip backward until first nonblank line after some blank line(s). */
   while (file->current->prev) {
     /* Current line is not starting line. */
@@ -399,12 +369,7 @@ void to_prev_block_for(CTX_ARGS) {
 
 /* Move to the preceding block of text. */
 void to_prev_block(void) {
-  if (IN_GUI_CTX) {
-    to_prev_block_for(GUI_CTX);
-  }
-  else {
-    to_prev_block_for(TUI_CTX);
-  }
+  CTX_CALL(to_prev_block_for);
 }
 
 /* ----------------------------- To next block ----------------------------- */
@@ -454,12 +419,7 @@ void to_next_block_for(CTX_ARGS) {
 
 /* Move to the next block of text in the currently open file.  Note that this is context safe. */
 void to_next_block(void) {
-  if (IN_GUI_CTX) {
-    to_next_block_for(GUI_CTX);
-  }
-  else {
-    to_next_block_for(TUI_CTX);
-  }
+  CTX_CALL(to_next_block_for);
 }
 
 /* ----------------------------- Do Up ----------------------------- */
@@ -488,12 +448,7 @@ void do_up_for(CTX_ARGS) {
 
 /* Move the cursor to the preceding line or chunk, in the currently open buffer.  Note that this is `context-safe`. */
 void do_up(void) {
-  if (IN_GUI_CTX) {
-    do_up_for(GUI_CTX);
-  }
-  else {
-    do_up_for(TUI_CTX);
-  }
+  CTX_CALL(do_up_for);
 }
 
 /* ----------------------------- Do down ----------------------------- */
@@ -522,12 +477,7 @@ void do_down_for(CTX_ARGS) {
 
 /* Move the cursor to the next line or chunk, in the currently open buffer.  Note that this is `context-safe`. */
 void do_down(void) {
-  if (IN_GUI_CTX) {
-    do_down_for(GUI_CTX);
-  }
-  else {
-    do_down_for(TUI_CTX);
-  }
+  CTX_CALL(do_down_for);
 }
 
 /* ----------------------------- Do left ----------------------------- */
@@ -561,12 +511,7 @@ void do_left_for(CTX_ARGS) {
 /* Either, move left one character in the currently open buffer.  Or when that buffer has a
  * marked region, place the cursor at the start of that region.  Note that this is `context-safe`. */
 void do_left(void) {
-  if (IN_GUI_CTX) {
-    do_left_for(GUI_CTX);
-  }
-  else {
-    do_left_for(TUI_CTX);
-  }
+  CTX_CALL(do_left_for);
 }
 
 /* ----------------------------- Do right ----------------------------- */
@@ -574,7 +519,7 @@ void do_left(void) {
 /* Either, move right one character in `file`.  Or when `file` has a marked region, place the cursor at the end of that region. */
 void do_right_for(CTX_ARGS) {
   ASSERT(file);
-  linestruct *const was_current = file->current;
+  linestruct *was_current = file->current;
   /* If a section is highlighted and shift is not held, then place the cursor at the end of the marked region. */
   if (file->mark && file->softmark && !shift_held) {
     /* Only adjust the cursor when the mark is after the cursor.  Otherwise, the cursor is already in the correct position. */

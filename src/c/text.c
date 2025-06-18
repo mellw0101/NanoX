@@ -2607,3 +2607,47 @@ bool find_paragraph(linestruct **const first, Ulong *const count) {
     return TRUE;
   }
 }
+
+/* ----------------------------- Do verbatim input ----------------------------- */
+
+/* Get verbatim input.  This is used to insert a Unicode character by it's hexadecimal code, which is typed
+ * in by the user.  The function returns the butes that were typed in, and the number of bytes that were read.  No..? */
+void do_verbatim_input(void) {
+  Ulong count = 1;
+  char *bytes;
+  /* Only perform any action when in curses mode. */
+  if (IN_CURSES_CTX) {
+    /* When barless and with cursor on the bottom row, make room for the feedback. */
+    if (ISSET(ZERO) && openfile->cursor_row == (editwinrows - 1) && LINES > 1) {
+      edit_scroll_for(openfile, FORWARD);
+      edit_refresh();
+    }
+    /* TRANSLATORS: Shown when the next keystroke will be inserted verbatim. */
+    statusline_curses(INFO, _("Verbatim Input"));
+    place_the_cursor_curses_for(openfile);
+    /* Read in the first one or two bytes of the next keystroke. */
+    bytes = get_verbatim_kbinput(midwin, &count);
+    /* When something valid was obtained, unsuppress cursor-position display,
+     * insert the bytes into the edit buffer, and blank the status-bar. */
+    if (count > 0) {
+      if (ISSET(CONSTANT_SHOW) || ISSET(MINIBAR)) {
+        lastmessage = VACUUM;
+      }
+      if (count < 999) {
+        inject(bytes, count);
+      }
+      /* Ensure that the feedback will be overwritten, or clear it. */
+      if (ISSET(ZERO) && currmenu == MMAIN) {
+        wredrawln(midwin, (editwinrows - 1), 1);
+      }
+      else {
+        wipe_statusbar();
+      }
+    }
+    else {
+      /* TRANSLATORS: An invalid verbatim Unicode code was typed. */
+      statusline_curses(AHEM, _("Invalid code"));
+    }
+    free(bytes);
+  }
+}

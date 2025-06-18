@@ -401,18 +401,18 @@
 // }
 
 /* Get a verbatim keystroke and insert it into the answer. */
-static void do_statusbar_verbatim_input(void) _NOTHROW {
-  Ulong count = 1;
-  char *bytes;
-  bytes = get_verbatim_kbinput(footwin, &count);
-  if (0 < count && count < 999) {
-    inject_into_answer(bytes, count);
-  }
-  else if (!count) {
-    beep();
-  }
-  free(bytes);
-}
+// static void do_statusbar_verbatim_input(void) _NOTHROW {
+//   Ulong count = 1;
+//   char *bytes;
+//   bytes = get_verbatim_kbinput(footwin, &count);
+//   if (0 < count && count < 999) {
+//     inject_into_answer(bytes, count);
+//   }
+//   else if (!count) {
+//     beep();
+//   }
+//   free(bytes);
+// }
 
 /* Add the given input to the input buffer when it's a normal byte, and inject the gathered bytes into the answer when ready. */
 // static void absorb_character(int input, functionptrtype function) _NOTHROW {
@@ -511,67 +511,67 @@ static void do_statusbar_verbatim_input(void) _NOTHROW {
 // }
 
 /* Handle any editing shortcut, and return TRUE when handled. */
-static bool handle_editing(functionptrtype f) _NOTHROW {
-  if (f == chop_next_word) {
-    do_statusbar_chop_next_word();
-  }
-  else if (f == chop_previous_word) {
-    do_statusbar_chop_prev_word();
-  }
-  else if (f == do_undo) {
-    do_statusbar_undo();
-  }
-  else if (f == do_redo) {
-    do_statusbar_redo();
-  }
-  else if (f == do_left) {
-    do_statusbar_left();
-  }
-  else if (f == do_right) {
-    do_statusbar_right();
-  }
-  else if (f == to_prev_word) {
-    do_statusbar_prev_word();
-  }
-  else if (f == to_next_word) {
-    do_statusbar_next_word();
-  }
-  else if (f == do_home) {
-    do_statusbar_home();
-  }
-  else if (f == do_end) {
-    do_statusbar_end();
-  }
-  /* When in restricted mode at the "Write File" prompt and the filename isn't blank, disallow any input and deletion. */
-  else if (ISSET(RESTRICTED) && currmenu == MWRITEFILE && *openfile->filename && (f == do_verbatim_input || f == do_delete || f == do_backspace || f == cut_text || f == paste_text)) {
-    ;
-  }
-  else if (f == do_verbatim_input) {
-    do_statusbar_verbatim_input();
-  }
-  else if (f == do_delete) {
-    do_statusbar_delete();
-  }
-  else if (f == do_backspace) {
-    do_statusbar_backspace(TRUE);
-  }
-  else if (f == cut_text) {
-    lop_the_answer();
-  }
-  else if (f == copy_text) {
-    copy_the_answer();
-  }
-  else if (f == paste_text) {
-    if (cutbuffer) {
-      paste_into_answer();
-    }
-  }
-  else {
-    return FALSE;
-  }
-  /* Don't handle any handled function again. */
-  return TRUE;
-}
+// static bool handle_editing(functionptrtype f) _NOTHROW {
+//   if (f == chop_next_word) {
+//     do_statusbar_chop_next_word();
+//   }
+//   else if (f == chop_previous_word) {
+//     do_statusbar_chop_prev_word();
+//   }
+//   else if (f == do_undo) {
+//     do_statusbar_undo();
+//   }
+//   else if (f == do_redo) {
+//     do_statusbar_redo();
+//   }
+//   else if (f == do_left) {
+//     do_statusbar_left();
+//   }
+//   else if (f == do_right) {
+//     do_statusbar_right();
+//   }
+//   else if (f == to_prev_word) {
+//     do_statusbar_prev_word();
+//   }
+//   else if (f == to_next_word) {
+//     do_statusbar_next_word();
+//   }
+//   else if (f == do_home) {
+//     do_statusbar_home();
+//   }
+//   else if (f == do_end) {
+//     do_statusbar_end();
+//   }
+//   /* When in restricted mode at the "Write File" prompt and the filename isn't blank, disallow any input and deletion. */
+//   else if (ISSET(RESTRICTED) && currmenu == MWRITEFILE && *openfile->filename && (f == do_verbatim_input || f == do_delete || f == do_backspace || f == cut_text || f == paste_text)) {
+//     ;
+//   }
+//   else if (f == do_verbatim_input) {
+//     do_statusbar_verbatim_input();
+//   }
+//   else if (f == do_delete) {
+//     do_statusbar_delete();
+//   }
+//   else if (f == do_backspace) {
+//     do_statusbar_backspace(TRUE);
+//   }
+//   else if (f == cut_text) {
+//     lop_the_answer();
+//   }
+//   else if (f == copy_text) {
+//     copy_the_answer();
+//   }
+//   else if (f == paste_text) {
+//     if (cutbuffer) {
+//       paste_into_answer();
+//     }
+//   }
+//   else {
+//     return FALSE;
+//   }
+//   /* Don't handle any handled function again. */
+//   return TRUE;
+// }
 
 /* Return the column number of the first character of the answer that is displayed in the status bar when the cursor is at the given
  * column, with the available room for the answer starting at base.  Note that (0 <= column - get_statusbar_page_start(column) < COLS). */
@@ -642,182 +642,182 @@ static bool handle_editing(functionptrtype f) _NOTHROW {
 // }
 
 /* Get a string of input at the status-bar prompt. */
-static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **history_list, functionptrtype refresh_func) {
-  /* Whatever the answer was before the user foraged into history. */
-  char *stored_string = NULL;
-  /* Whether the previous keystroke was an attempt at tab completion. */
-  bool previous_was_tab = FALSE;
-  /* The length of the fragment that the user tries to tab complete. */
-  Ulong fragment_length = 0;
-  const keystruct *shortcut;
-  functionptrtype  function;
-  int input;
-  if (typing_x > strlen(answer)) {
-    typing_x = strlen(answer);
-  }
-  while (TRUE) {
-    draw_the_promptbar();
-    /* Read in one keystroke. */
-    input = get_kbinput(footwin, VISIBLE);
-    /* If the window size changed, go reformat the prompt string. */
-    if (input == KEY_WINCH) {
-      /* Only needed when in file browser. */
-      refresh_func();
-      *actual = KEY_WINCH;
-      free(stored_string);
-      return NULL;
-    }
-    /* For a click on a shortcut, read in the resulting keycode. */
-    if (input == KEY_MOUSE && do_statusbar_mouse() == 1) {
-      input = get_kbinput(footwin, BLIND);
-    }
-    if (input == KEY_MOUSE) {
-      continue;
-    }
-    /* Check for a shortcut in the current list. */
-    shortcut = get_shortcut(input);
-    function = (shortcut ? shortcut->func : NULL);
-    /* When it's a normal character, add it to the answer. */
-    absorb_character(input, function);
-    if (function == do_cancel || function == do_enter) {
-      statusbar_discard_all_undo_redo();
-      break;
-    }
-    if (function == do_tab) {
-      if (history_list) {
-        if (!previous_was_tab) {
-          fragment_length = strlen(answer);
-        }
-        if (fragment_length > 0) {
-          answer   = get_history_completion(history_list, answer, fragment_length);
-          typing_x = strlen(answer);
-        }
-      }
-      else {
-        /* Allow tab completion of filenames, but not in restricted mode. */
-        if ((currmenu & (MINSERTFILE | MWRITEFILE | MGOTODIR)) && !ISSET(RESTRICTED)) {
-          answer = input_tab(answer, &typing_x, refresh_func, listed);
-        }
-      }
-    }
-    else {
-      if (function == get_older_item && history_list) {
-        /* If this is the first step into history, start at the bottom. */
-        if (!stored_string) {
-          reset_history_pointer_for(*history_list);
-        }
-        /* When moving up from the bottom, remember the current answer. */
-        if (!(*history_list)->next) {
-          stored_string = realloc_strcpy(stored_string, answer);
-        }
-        /* If there is an older item, move to it and copy its string. */
-        if ((*history_list)->prev) {
-          *history_list = (*history_list)->prev;
-          answer        = realloc_strcpy(answer, (*history_list)->data);
-          typing_x      = strlen(answer);
-        }
-      }
-      else if (function == get_newer_item && history_list) {
-        /* If there is a newer item, move to it and copy its string. */
-        if ((*history_list)->next) {
-          *history_list = (*history_list)->next;
-          answer        = realloc_strcpy(answer, (*history_list)->data);
-          typing_x      = strlen(answer);
-        }
-        /* When at the bottom of the history list, restore the old answer. */
-        if (!(*history_list)->next && stored_string && !*answer) {
-          answer   = realloc_strcpy(answer, stored_string);
-          typing_x = strlen(answer);
-        }
-      }
-      else {
-        if (function == do_help || function == full_refresh) {
-          function();
-        }
-        else if (function == do_toggle && shortcut->toggle == NO_HELP) {
-          TOGGLE(NO_HELP);
-          window_init();
-          focusing = FALSE;
-          refresh_func();
-          bottombars(currmenu);
-        }
-        else if (function == do_nothing) {
-          ;
-        }
-        else if (function == (functionptrtype)implant) {
-          implant(shortcut->expansion);
-        }
-        else if (function && !handle_editing(function)) {
-          /* When it's a permissible shortcut, run it and done. */
-          if (!ISSET(VIEW_MODE) || !changes_something(function)) {
-            function();
-            break;
-          }
-          else {
-            beep();
-          }
-        }
-      }
-      previous_was_tab = (function == do_tab);
-    }
-  }
-  /* If the history pointer was moved, point it at the bottom again. */
-  if (stored_string) {
-    reset_history_pointer_for(*history_list);
-    free(stored_string);
-  }
-  *actual = input;
-  return function;
-}
+// static functionptrtype acquire_an_answer(int *actual, bool *listed, linestruct **history_list, functionptrtype refresh_func) {
+//   /* Whatever the answer was before the user foraged into history. */
+//   char *stored_string = NULL;
+//   /* Whether the previous keystroke was an attempt at tab completion. */
+//   bool previous_was_tab = FALSE;
+//   /* The length of the fragment that the user tries to tab complete. */
+//   Ulong fragment_length = 0;
+//   const keystruct *shortcut;
+//   functionptrtype  function;
+//   int input;
+//   if (typing_x > strlen(answer)) {
+//     typing_x = strlen(answer);
+//   }
+//   while (TRUE) {
+//     draw_the_promptbar();
+//     /* Read in one keystroke. */
+//     input = get_kbinput(footwin, VISIBLE);
+//     /* If the window size changed, go reformat the prompt string. */
+//     if (input == KEY_WINCH) {
+//       /* Only needed when in file browser. */
+//       refresh_func();
+//       *actual = KEY_WINCH;
+//       free(stored_string);
+//       return NULL;
+//     }
+//     /* For a click on a shortcut, read in the resulting keycode. */
+//     if (input == KEY_MOUSE && do_statusbar_mouse() == 1) {
+//       input = get_kbinput(footwin, BLIND);
+//     }
+//     if (input == KEY_MOUSE) {
+//       continue;
+//     }
+//     /* Check for a shortcut in the current list. */
+//     shortcut = get_shortcut(input);
+//     function = (shortcut ? shortcut->func : NULL);
+//     /* When it's a normal character, add it to the answer. */
+//     absorb_character(input, function);
+//     if (function == do_cancel || function == do_enter) {
+//       statusbar_discard_all_undo_redo();
+//       break;
+//     }
+//     if (function == do_tab) {
+//       if (history_list) {
+//         if (!previous_was_tab) {
+//           fragment_length = strlen(answer);
+//         }
+//         if (fragment_length > 0) {
+//           answer   = get_history_completion(history_list, answer, fragment_length);
+//           typing_x = strlen(answer);
+//         }
+//       }
+//       else {
+//         /* Allow tab completion of filenames, but not in restricted mode. */
+//         if ((currmenu & (MINSERTFILE | MWRITEFILE | MGOTODIR)) && !ISSET(RESTRICTED)) {
+//           answer = input_tab(answer, &typing_x, refresh_func, listed);
+//         }
+//       }
+//     }
+//     else {
+//       if (function == get_older_item && history_list) {
+//         /* If this is the first step into history, start at the bottom. */
+//         if (!stored_string) {
+//           reset_history_pointer_for(*history_list);
+//         }
+//         /* When moving up from the bottom, remember the current answer. */
+//         if (!(*history_list)->next) {
+//           stored_string = realloc_strcpy(stored_string, answer);
+//         }
+//         /* If there is an older item, move to it and copy its string. */
+//         if ((*history_list)->prev) {
+//           *history_list = (*history_list)->prev;
+//           answer        = realloc_strcpy(answer, (*history_list)->data);
+//           typing_x      = strlen(answer);
+//         }
+//       }
+//       else if (function == get_newer_item && history_list) {
+//         /* If there is a newer item, move to it and copy its string. */
+//         if ((*history_list)->next) {
+//           *history_list = (*history_list)->next;
+//           answer        = realloc_strcpy(answer, (*history_list)->data);
+//           typing_x      = strlen(answer);
+//         }
+//         /* When at the bottom of the history list, restore the old answer. */
+//         if (!(*history_list)->next && stored_string && !*answer) {
+//           answer   = realloc_strcpy(answer, stored_string);
+//           typing_x = strlen(answer);
+//         }
+//       }
+//       else {
+//         if (function == do_help || function == full_refresh) {
+//           function();
+//         }
+//         else if (function == do_toggle && shortcut->toggle == NO_HELP) {
+//           TOGGLE(NO_HELP);
+//           window_init();
+//           focusing = FALSE;
+//           refresh_func();
+//           bottombars(currmenu);
+//         }
+//         else if (function == do_nothing) {
+//           ;
+//         }
+//         else if (function == (functionptrtype)implant) {
+//           implant(shortcut->expansion);
+//         }
+//         else if (function && !handle_editing(function)) {
+//           /* When it's a permissible shortcut, run it and done. */
+//           if (!ISSET(VIEW_MODE) || !changes_something(function)) {
+//             function();
+//             break;
+//           }
+//           else {
+//             beep();
+//           }
+//         }
+//       }
+//       previous_was_tab = (function == do_tab);
+//     }
+//   }
+//   /* If the history pointer was moved, point it at the bottom again. */
+//   if (stored_string) {
+//     reset_history_pointer_for(*history_list);
+//     free(stored_string);
+//   }
+//   *actual = input;
+//   return function;
+// }
 
 /* Ask a question on the status bar.  Return 0 when text was entered, -1 for a cancelled entry, -2 for a blank string, and the relevant
  * keycode when a valid shortcut key was pressed.  The 'provided' parameter is the default answer for when simply Enter is typed. */
-int do_prompt(int menu, const char *provided, linestruct **history_list, functionptrtype refresh_func, const char *msg, ...) {
-  functionptrtype function = NULL;
-  va_list ap;
-  bool listed = FALSE;
-  int retval;
-  /* Save a possible current status-bar x position and prompt. */
-  Ulong was_typing_x = typing_x;
-  char *saved_prompt = prompt;
-  bottombars(menu);
-  if (answer != provided) {
-    answer = realloc_strcpy(answer, provided);
-  }
-redo_theprompt:
-  prompt = (char *)nmalloc((COLS * MAXCHARLEN) + 1);
-  va_start(ap, msg);
-  vsnprintf(prompt, (COLS * MAXCHARLEN), msg, ap);
-  va_end(ap);
-  /* Reserve five columns for colon plus angles plus answer, ":<aa>". */
-  prompt[actual_x(prompt, ((COLS < 5) ? 0 : (COLS - 5)))] = '\0';
-  lastmessage = VACUUM;
-  function    = acquire_an_answer(&retval, &listed, history_list, refresh_func);
-  free(prompt);
-  if (retval == KEY_WINCH) {
-    goto redo_theprompt;
-  }
-  /* Restore a possible previous prompt and maybe the typing position. */
-  prompt = saved_prompt;
-  if (function == do_cancel || function == do_enter || function == to_first_file || function == to_last_file || function == to_first_line || function == to_last_line) {
-    typing_x = was_typing_x;
-  }
-  /* Set the proper return value for Cancel and Enter. */
-  if (function == do_cancel) {
-    retval = -1;
-  }
-  else if (function == do_enter) {
-    retval = ((*answer == '\0') ? -2 : 0);
-  }
-  if (lastmessage == VACUUM) {
-    wipe_statusbar();
-  }
-  /* If possible filename completions are still listed, clear them off. */
-  if (listed) {
-    refresh_func();
-  }
-  return retval;
-}
+// int do_prompt(int menu, const char *provided, linestruct **history_list, functionptrtype refresh_func, const char *msg, ...) {
+//   functionptrtype function = NULL;
+//   va_list ap;
+//   bool listed = FALSE;
+//   int retval;
+//   /* Save a possible current status-bar x position and prompt. */
+//   Ulong was_typing_x = typing_x;
+//   char *saved_prompt = prompt;
+//   bottombars(menu);
+//   if (answer != provided) {
+//     answer = realloc_strcpy(answer, provided);
+//   }
+// redo_theprompt:
+//   prompt = (char *)nmalloc((COLS * MAXCHARLEN) + 1);
+//   va_start(ap, msg);
+//   vsnprintf(prompt, (COLS * MAXCHARLEN), msg, ap);
+//   va_end(ap);
+//   /* Reserve five columns for colon plus angles plus answer, ":<aa>". */
+//   prompt[actual_x(prompt, ((COLS < 5) ? 0 : (COLS - 5)))] = '\0';
+//   lastmessage = VACUUM;
+//   function    = acquire_an_answer(&retval, &listed, history_list, refresh_func);
+//   free(prompt);
+//   if (retval == KEY_WINCH) {
+//     goto redo_theprompt;
+//   }
+//   /* Restore a possible previous prompt and maybe the typing position. */
+//   prompt = saved_prompt;
+//   if (function == do_cancel || function == do_enter || function == to_first_file || function == to_last_file || function == to_first_line || function == to_last_line) {
+//     typing_x = was_typing_x;
+//   }
+//   /* Set the proper return value for Cancel and Enter. */
+//   if (function == do_cancel) {
+//     retval = -1;
+//   }
+//   else if (function == do_enter) {
+//     retval = ((*answer == '\0') ? -2 : 0);
+//   }
+//   if (lastmessage == VACUUM) {
+//     wipe_statusbar();
+//   }
+//   /* If possible filename completions are still listed, clear them off. */
+//   if (listed) {
+//     refresh_func();
+//   }
+//   return retval;
+// }
 
 #define UNDECIDED -2
 /* Ask a simple Yes/No (and optionally All) question on the status bar and return the choice -- either YES or NO or ALL or CANCEL. */

@@ -340,7 +340,7 @@ void             shortcut_init(void);
 
 /* Some functions in 'help.cpp'. */
 // void wrap_help_text_into_buffer(void);
-void do_help(void);
+// void do_help(void);
 
 /* Most functions in 'history.cpp'. */
 // void  history_init(void) _NOTHROW;
@@ -418,8 +418,8 @@ void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
 // void        terminal_init(void) _NOTHROW;
 // void        confirm_margin(void) _NOTHROW;
 void        unbound_key(int code) _NOTHROW;
-bool        wanted_to_move(functionptrtype f);
-bool        changes_something(functionptrtype f);
+// bool        wanted_to_move(functionptrtype f);
+// bool        changes_something(functionptrtype f);
 // void        inject(char *burst, Ulong count);
 
 /* Most functions in 'prompt.cpp'. */
@@ -440,7 +440,7 @@ bool        changes_something(functionptrtype f);
 // Ulong get_statusbar_page_start(Ulong base, Ulong column) _NOTHROW;
 // void  put_cursor_at_end_of_answer(void) _NOTHROW;
 // void  add_or_remove_pipe_symbol_from_answer(void) _NOTHROW;
-int   do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg, ...);
+// int   do_prompt(int menu, const char *provided, linestruct **history_list, void (*refresh_func)(void), const char *msg, ...);
 // int   ask_user(bool withall, const char *question);
 
 
@@ -526,7 +526,7 @@ void  do_spell(void);
 void  do_linter(void);
 void  do_formatter(void);
 void  count_lines_words_and_characters(void);
-void  do_verbatim_input(void);
+// void  do_verbatim_input(void);
 // char *copy_completion(char *text);
 void  complete_a_word(void);
 char *lower_case_word(const char *str);
