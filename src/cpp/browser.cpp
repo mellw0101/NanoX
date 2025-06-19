@@ -292,38 +292,38 @@
 
 /* Prepare the prompt and ask the user what to search for; then search for it.
  * If forwards is TRUE, search forward in the list; otherwise, search backward. */
-static void search_filename(bool forwards) {
-  char *thedefault;
-  int   response;
-  /* If something was searched for before, show it between square brackets. */
-  if (*last_search) {
-    char *disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
-    thedefault = (char *)nmalloc(strlen(disp) + 7);
-    /* We use (COLS / 3) here because we need to see more on the line. */
-    sprintf(thedefault, " [%s%s]", disp, (((long)breadth(last_search) > (COLS / 3)) ? "..." : ""));
-    free(disp);
-  }
-  else {
-    thedefault = STRLTR_COPY_OF("");
-  }
-  /* Now ask what to search for. */
-  response = do_prompt(MWHEREISFILE, "", &search_history, browser_refresh, "%s%s%s",
-    _("Search"), /* TRANSLATORS: A modifier of the Search prompt. */ (!forwards ? _(" [Backwards]") : "", thedefault));
-  free(thedefault);
-  /* If the user cancelled, or typed <Enter> on a blank answer and nothing was searched for yet during this session, get out. */
-  if (response == -1 || (response == -2 && !*last_search)) {
-    statusbar_all(_("Cancelled"));
-    return;
-  }
-  /* If the user typed an answer, remember it. */
-  if (*answer) {
-    last_search = realloc_strcpy(last_search, answer);
-    update_history(&search_history, answer, PRUNE_DUPLICATE);
-  }
-  if (!response || response == -2) {
-    findfile(last_search, forwards);
-  }
-}
+// static void search_filename(bool forwards) {
+//   char *thedefault;
+//   int   response;
+//   /* If something was searched for before, show it between square brackets. */
+//   if (*last_search) {
+//     char *disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
+//     thedefault = (char *)nmalloc(strlen(disp) + 7);
+//     /* We use (COLS / 3) here because we need to see more on the line. */
+//     sprintf(thedefault, " [%s%s]", disp, (((long)breadth(last_search) > (COLS / 3)) ? "..." : ""));
+//     free(disp);
+//   }
+//   else {
+//     thedefault = STRLTR_COPY_OF("");
+//   }
+//   /* Now ask what to search for. */
+//   response = do_prompt(MWHEREISFILE, "", &search_history, browser_refresh, "%s%s%s",
+//     _("Search"), /* TRANSLATORS: A modifier of the Search prompt. */ (!forwards ? _(" [Backwards]") : ""), thedefault);
+//   free(thedefault);
+//   /* If the user cancelled, or typed <Enter> on a blank answer and nothing was searched for yet during this session, get out. */
+//   if (response == -1 || (response == -2 && !*last_search)) {
+//     statusbar_all(_("Cancelled"));
+//     return;
+//   }
+//   /* If the user typed an answer, remember it. */
+//   if (*answer) {
+//     last_search = realloc_strcpy(last_search, answer);
+//     update_history(&search_history, answer, PRUNE_DUPLICATE);
+//   }
+//   if (!response || response == -2) {
+//     findfile(last_search, forwards);
+//   }
+// }
 
 /* Search again without prompting for the last given search string, either forwards or backwards. */
 // static void research_filename(bool forwards) _NOTHROW {

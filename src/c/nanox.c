@@ -30,14 +30,14 @@ static void make_a_note(int _UNUSED signal) {
 }
 
 static void disable_mouse_support(void) {
-  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+  if (IN_CURSES_CTX) {
     mousemask(0, NULL);
     mouseinterval(oldinterval);
   }
 }
 
 static void enable_mouse_support(void) {
-  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+  if (IN_CURSES_CTX) {
     mousemask(ALL_MOUSE_EVENTS, NULL);
     oldinterval = mouseinterval(50);
   }
@@ -45,10 +45,13 @@ static void enable_mouse_support(void) {
 
 /* Switch mouse support on or off, as needed. */
 /* static */ void mouse_init(void) {
-  if (!ISSET(USING_GUI) && !ISSET(NO_NCURSES)) {
+  /* Only perform any action when in curses mode. */
+  if (IN_CURSES_CTX) {
+    /* Enable */
     if (ISSET(USE_MOUSE)) {
       enable_mouse_support();
     }
+    /* Disable */
     else {
       disable_mouse_support();
     }
@@ -58,17 +61,15 @@ static void enable_mouse_support(void) {
 /* Make sure the cursor is visible, then exit from curses mode, disable
  * bracketed-paste mode, and restore the original terminal settings. */
 static void restore_terminal(void) {
-  if (ISSET(USING_GUI)) {
-    return;
-  }
-  /* When in curses mode. */
-  if (!ISSET(NO_NCURSES)) {
-    curs_set(1);
+  /* For now we only perform any action when in curses mode, as we will probebly also
+   * take control of the terminal later when in tui mode to create a debugging interface. */
+  if (IN_CURSES_CTX) {
+    curs_set(TRUE);
     endwin();
     /* End bracketed paste. */
     printf("\x1B[?2004l");
+    tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
   }
-  tcsetattr(STDIN_FILENO, TCSANOW, &original_state);
 }
 
 

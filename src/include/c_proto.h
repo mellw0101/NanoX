@@ -1101,6 +1101,8 @@ bool  has_old_position(const char *const restrict file, long *const line, long *
 /* ---------------------------------------------------------- browser.c ---------------------------------------------------------- */
 
 
+/* static */ void search_filename(bool forward);
+
 void  read_the_list(const char *path, DIR *dir);
 void  reselect(const char *const name);
 void  browser_refresh(void);

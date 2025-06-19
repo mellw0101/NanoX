@@ -26,6 +26,48 @@ int gauge = 0;
 Ulong selected = 0;
 
 
+/* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
+
+
+/* Prepare the prompt and ask the user what to search for, then search for it.
+ * If `forward` is `TRUE`, search forward in the list, otherwise, search backward. */
+/* static */ void search_filename(bool forward) {
+  char *the_default;
+  char *disp;
+  int response;
+  Ulong disp_breadth;
+  /* If something was searched before, show it between squere brackets. */
+  if (last_search && *last_search) {
+    disp         = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
+    disp_breadth = breadth(disp);
+    the_default  = xmalloc(strlen(disp) + 7);
+    /* We use (COLS / 3) here because we need to see more then the line.  What...? */
+    sprintf(the_default, " [%s%s]", disp, (GT(disp_breadth, (COLS / 3)) ? "..." : ""));
+    free(disp);
+  }
+  else {
+    the_default = COPY_OF("");
+  }
+  /* Now ask what to search for. */
+  response = do_prompt(MWHEREISFILE, "", &search_history, browser_refresh, "%s%s%s", _("Search"),
+    /* TRANSLATORS: A modifier of the search prompt. */ (!forward ? _(" [Backwards]") : ""), the_default);
+  free(the_default);
+  /* If the user cancelled, or typed <Enter> on a blank answer and nothing was searched for yet during this session, just leave. */
+  if (response == -1 || (response == -2 || !last_search || !*last_search)) {
+    statusbar_all(_("Cancelled"));
+    return;
+  }
+  /* If the user typed an answer, remember it. */
+  if (answer && *answer) {
+    last_search = xstrcpy(last_search, answer);
+    update_history(&search_history, answer, PRUNE_DUPLICATE);
+  }
+  if (!response || response == -2) {
+    findfile(last_search, forward);
+  }
+}
+
+
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 

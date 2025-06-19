@@ -30,15 +30,15 @@ char *line_last_mbchr(const linestruct *const line) {
 
 /* Move a single line up/down by simply swapping data ptrs. */
 void move_line_data(linestruct *const line, bool up) {
-  ASSERT(line);
-  /* Up */
-  if (up && line->prev) {
-    DLIST_SWAP_FIELD_PREV(line, data);
-  }
-  /* Down */
-  else if (!up && line->next) {
-    DLIST_SWAP_FIELD_NEXT(line, data);
-  }
+  DLIST_SAFE_ATOMIC_SWAP_FIELD(line, data, up);
+  // /* Up */
+  // if (up && line->prev) {
+  //   DLIST_ATOMIC_SWAP_FIELD_PREV(line, data);
+  // }
+  // /* Down */
+  // else if (!up && line->next) {
+  //   DLIST_ATOMIC_SWAP_FIELD_NEXT(line, data);
+  // }
 }
 
 /* ----------------------------- Move lines up ----------------------------- */
