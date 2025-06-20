@@ -952,6 +952,12 @@ functionptrtype func_from_key(int keycode);
 /* ----------------------------- Do research ----------------------------- */
 /* static */ void do_research_for(CTX_ARGS);
 /* static */ void do_research(void);
+/* ----------------------------- Replace regexp ----------------------------- */
+/* static */ int replace_regexp_for(openfilestruct *const file, char *string, bool create);
+/* static */ int replace_regexp(char *string, bool create);
+/* ----------------------------- Replace line ----------------------------- */
+/* static */ char *replace_line_for(openfilestruct *const file, const char *const restrict needle);
+/* static */ char *replace_line(const char *const restrict needle);
 
 /* ----------------------------- Regular expression init ----------------------------- */
 bool regexp_init(const char *regexp);
@@ -1108,7 +1114,7 @@ int   ask_user(bool withall, const char *const restrict question);
 
 int do_prompt(
   int menu, const char *const provided, linestruct **const histlist,
-  functionptrtype refresh_func, const char *const format, ...);
+  functionptrtype refresh_func, const char *const format, ...) _PRINTFLIKE(5, 6);
 
 
 /* ---------------------------------------------------------- history.c ---------------------------------------------------------- */

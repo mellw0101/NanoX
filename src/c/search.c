@@ -51,6 +51,89 @@ static bool have_compiled_regexp = FALSE;
   CTX_CALL(do_research_for);
 }
 
+/* ----------------------------- Replace regexp ----------------------------- */
+
+/* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into
+ * account. Returns the replacement text in the passed string only when `create` is `TRUE`. */
+/* static */ int replace_regexp_for(openfilestruct *const file, char *string, bool create) {
+  ASSERT(file);
+  Ulong replacement_size = 0;
+  Ulong i;
+  const char *c = answer;
+  int num;
+  /* Iterate through the replacement text to handle expressions replacement using \1, \2, \3, etc. */
+  while (*c) {
+    num = (*(c + 1) - '0');
+    if (*c != '\\' || num < 1 || num > 9 || GT(num, search_regexp.re_nsub)) {
+      if (create) {
+        *(string++) = *c;
+      }
+      ++c;
+      ++replacement_size;
+    }
+    else {
+      i = (regmatches[num].rm_eo - regmatches[num].rm_so);
+      /* Skip over the replacement expression. */
+      c += 2;
+      /* But add the length of the subexpression to `new_size`. */
+      replacement_size += i;
+      /* And if create is `TRUE`, append the result of the subexpression match to the new line. */
+      if (create) {
+        memcpy(string, (file->current->data + regmatches[num].rm_so), i);
+        string += i;
+      }
+    }
+  }
+  if (create) {
+    *string = '\0';
+  }
+  return replacement_size;
+}
+
+/* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into
+ * account. Returns the replacement text in the passed string only when `create` is `TRUE`. */
+/* static */ int replace_regexp(char *string, bool create) {
+  return replace_regexp_for(CTX_OF, string, create);
+}
+
+/* ----------------------------- Replace line ----------------------------- */
+
+/* Returns a copy of the current line with one needle replaced. */
+/* static */ char *replace_line_for(openfilestruct *const file, const char *const restrict needle) {
+  ASSERT(file);
+  ASSERT(needle);
+  Ulong new_size = (strlen(file->current->data) + 1);
+  Ulong match_len;
+  char *copy;
+  /* First adjust the size of the new line for the change. */
+  if (ISSET(USE_REGEXP)) {
+    match_len = (regmatches[0].rm_eo - regmatches[0].rm_so);
+    new_size += (replace_regexp(NULL, FALSE) - match_len);
+  }
+  else {
+    match_len = strlen(needle);
+    new_size += (strlen(answer) - match_len);
+  }
+  copy = xmalloc(new_size);
+  /* Copy the head of the original line. */
+  memcpy(copy, file->current->data, file->current_x);
+  /* Add the replacement text. */
+  if (ISSET(USE_REGEXP)) {
+    replace_regexp((copy + file->current_x), TRUE);
+  }
+  else {
+    strcpy((copy + file->current_x), answer);
+  }
+  /* Copy the tail of the original line. */
+  xstrcat_norealloc(copy, (file->current->data + file->current_x + match_len));
+  return copy;
+}
+
+/* Returns a copy of the current line with one needle replaced. */
+/* static */ char *replace_line(const char *const restrict needle) {
+  return replace_line_for(CTX_OF, needle);
+}
+
 /* ----------------------------- Search init ----------------------------- */
 
 /* Prepare the prompt and ask the user what to search for.  Keep looping
@@ -81,7 +164,32 @@ static bool have_compiled_regexp = FALSE;
 //       &search_history,
 //       edit_refresh,
 //       /* TRANSLATORS: This is the main search prompt. */
-//     )
+//       "%s%s%s%s%s%s", _("Search"),
+//       (ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : ""),
+//       (ISSET(USE_REGEXP) ? _(" [Regexp]") : ""),
+//       (ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : ""),
+//       (replacing ? (file->mark ? _(" (to replace) in selection") : _(" (to replace)")) : ""),
+//       the_default
+//     );
+//     /* If the search was cancelled, or we have a blank answer and nothing was searched for yet during this session, get out. */
+//     if (response == -1 || (response == -2 && !*last_search)) {
+//       statusbar_all(_("Cancelled"));
+//       break;
+//     }
+//     /* If <Enter> was pressed, prepare to do a replace or a search. */
+//     if (!response || response == -2) {
+//       /* If an actual answer was typed, remember it. */
+//       if (*answer) {
+//         last_search = xstrcpy(last_search, answer);
+//         update_history(&search_history, answer, PRUNE_DUPLICATE);
+//       }
+//       if (ISSET(USE_REGEXP) && !regexp_init(last_search)) {
+//         break;
+//       }
+//       if (replacing) {
+//         ask_for_and_do_replacements()
+//       }
+//     }
 //   }
 // }
 
@@ -422,3 +530,95 @@ void do_findnext_for(CTX_ARGS) {
 void do_findnext(void) {
   CTX_CALL(do_findnext_for);
 }
+
+/* ----------------------------- Do replace loop ----------------------------- */
+
+/* Step through each occurrence of the search string and prompt the user before replacing it.  We seek for needle,
+ * and replace it with the answer.  The parameters `real_current` and `real_current_x` are needed in order to allow
+ * the cursor position to be updated when a word before the cursor is replaced by a shorter word.  Returns `-1` if
+ * needle isn't found, `-2` if the seeking is aborted, else the number of replacements performed. */
+// long do_replace_loop_for(CTX_ARGS, const char *const restrict needle, bool whole_word_only, const linestruct *const real_current, Ulong *const real_current_x) {
+//   ASSERT(file);
+//   ASSERT(real_current);
+//   ASSERT(real_current_x);
+//   linestruct *was_mark = file->mark;
+//   linestruct *top;
+//   linestruct *bot;
+//   char *altered;
+//   Ulong top_x;
+//   Ulong bot_x;
+//   Ulong match_len;
+//   Ulong length_change;
+//   bool skipone       = ISSET(BACKWARDS_SEARCH);
+//   bool replaceall    = FALSE;
+//   bool right_side_up = (file->mark && mark_is_before_cursor_for(file));
+//   long numreplaced   = -1;
+//   int modus          = REPLACING;
+//   int choice;
+//   int result;
+//   /* The mark in file is set. */
+//   if (file->mark) {
+//     /* Get the marked region in file, then set the mark in file to NULL. */
+//     get_region_for(file, &top, &top_x, &bot, &bot_x);
+//     file->mark = NULL;
+//     /* Also set the mode to `INREGION`. */
+//     modus = INREGION;
+//     /* When forwards searching, start at the top of the marked region. */
+//     if (!ISSET(BACKWARDS_SEARCH)) {
+//       file->current   = top;
+//       file->current_x = top_x;
+//     }
+//     /* Otherwise, when backwards searching, start at the bottom. */
+//     else {
+//       file->current   = bot;
+//       file->current_x = bot_x;
+//     }
+//   }
+//   came_full_circle = FALSE;
+//   while (TRUE) {
+//     choice = NO;
+//     result = findnextstr_for(file, needle, whole_word_only, modus, &match_len, skipone, real_current, *real_current_x);
+//     /* If nothing more was found, or the user aborted, stop looping. */
+//     if (result < 1) {
+//       if (result < 0) {
+//         /* It's a <Cancel> instead of <Not found>. */
+//         numreplaced = -2;
+//       }
+//       break;
+//     }
+//     /* An occurrence outside of the marked region means we're done. */
+//     if (was_mark && (file->current->lineno > bot->lineno || file->current->lineno < top->lineno
+//     || (file->current == bot && (file->current_x + match_len) > bot_x) || (file->current == top && file->current_x < top_x))) {
+//       break;
+//     }
+//     /* Indecate that we found the search string. */
+//     if (numreplaced == -1) {
+//       numreplaced = 0;
+//     }
+//     /* When we are not replacing everything in one go. */
+//     if (!replaceall) {
+//       spotlighted = TRUE;
+//       light_from_col = xplustabs_for(file);
+//       light_to_col   = wideness(file->current->data, (file->current_x + match_len));
+//       /* Refresh the edit window, scrolling it if nessesary. */
+//       edit_refresh_for(STACK_CTX);
+//       /* TRANSLATORS: This is a prompt. */
+//       choice = ask_user(YESORALLORNO, _("Replace this instance?"));
+//       spotlighted = FALSE;
+//       if (choice == CANCEL) {
+//         break;
+//       }
+//       replaceall = (choice == ALL);
+//       /* When "No" or moving backwards, the search routine should first move one character further before continuing. */
+//       skipone = (!choice || ISSET(BACKWARDS_SEARCH));
+//     }
+//     if (choice == YES || replaceall) {
+//       altered = replace_line()
+//     }
+//   }
+// }
+
+/* ----------------------------- Ask for and do replacement ----------------------------- */
+
+/* Ask the user what to replace the search string with, and do the replacements */
+// void ask_for_and_do_replacements_for()

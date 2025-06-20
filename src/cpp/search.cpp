@@ -357,63 +357,63 @@ void do_search_backward(void) {
 
 /* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into account.
  * Return the replacement text in the passed string only when create is TRUE. */
-static int replace_regexp(char *string, bool create) _NOTHROW {
-  Ulong replacement_size=0, i;
-  const char *c = answer;
-  int num;
-  /* Iterate through the replacement text to handle subexpression replacement using \1, \2, \3, etc. */
-  while (*c) {
-    num = (*(c + 1) - '0');
-    if (*c != '\\' || num < 1 || num > 9 || num > (long)search_regexp.re_nsub) {
-      create ? *string++ = *c : 0;
-      ++c;
-      ++replacement_size;
-    }
-    else {
-      i = (regmatches[num].rm_eo - regmatches[num].rm_so);
-      /* Skip over the replacement expression. */
-      c += 2;
-      /* But add the length of the subexpression to new_size. */
-      replacement_size += i;
-      /* And if create is TRUE, append the result of the subexpression match to the new line. */
-      if (create) {
-        strncpy(string, (openfile->current->data + regmatches[num].rm_so), i);
-        string += i;
-      }
-    }
-  }
-  create ? (*string = '\0') : 0;
-  return replacement_size;
-}
+// static int replace_regexp(char *string, bool create) _NOTHROW {
+//   Ulong replacement_size=0, i;
+//   const char *c = answer;
+//   int num;
+//   /* Iterate through the replacement text to handle subexpression replacement using \1, \2, \3, etc. */
+//   while (*c) {
+//     num = (*(c + 1) - '0');
+//     if (*c != '\\' || num < 1 || num > 9 || num > (long)search_regexp.re_nsub) {
+//       create ? *string++ = *c : 0;
+//       ++c;
+//       ++replacement_size;
+//     }
+//     else {
+//       i = (regmatches[num].rm_eo - regmatches[num].rm_so);
+//       /* Skip over the replacement expression. */
+//       c += 2;
+//       /* But add the length of the subexpression to new_size. */
+//       replacement_size += i;
+//       /* And if create is TRUE, append the result of the subexpression match to the new line. */
+//       if (create) {
+//         strncpy(string, (openfile->current->data + regmatches[num].rm_so), i);
+//         string += i;
+//       }
+//     }
+//   }
+//   create ? (*string = '\0') : 0;
+//   return replacement_size;
+// }
 
 /* Return a copy of the current line with one needle replaced. */
-static char *replace_line(const char *needle) {
-  Ulong new_size = (strlen(openfile->current->data) + 1);
-  Ulong match_len;
-  char *copy;
-  /* First adjust the size of the new line for the change. */
-  if (ISSET(USE_REGEXP)) {
-    match_len = (regmatches[0].rm_eo - regmatches[0].rm_so);
-    new_size += (replace_regexp(NULL, FALSE) - match_len);
-  }
-  else {
-    match_len = strlen(needle);
-    new_size += (strlen(answer) - match_len);
-  }
-  copy = (char *)xmalloc(new_size);
-  /* Copy the head of the original line. */
-  strncpy(copy, openfile->current->data, openfile->current_x);
-  /* Add the replacement text. */
-  if (ISSET(USE_REGEXP)) {
-    replace_regexp((copy + openfile->current_x), TRUE);
-  }
-  else {
-    strcpy((copy + openfile->current_x), answer);
-  }
-  /* Copy the tail of the original line. */
-  strcat(copy, (openfile->current->data + openfile->current_x + match_len));
-  return copy;
-}
+// static char *replace_line(const char *needle) {
+//   Ulong new_size = (strlen(openfile->current->data) + 1);
+//   Ulong match_len;
+//   char *copy;
+//   /* First adjust the size of the new line for the change. */
+//   if (ISSET(USE_REGEXP)) {
+//     match_len = (regmatches[0].rm_eo - regmatches[0].rm_so);
+//     new_size += (replace_regexp(NULL, FALSE) - match_len);
+//   }
+//   else {
+//     match_len = strlen(needle);
+//     new_size += (strlen(answer) - match_len);
+//   }
+//   copy = (char *)xmalloc(new_size);
+//   /* Copy the head of the original line. */
+//   strncpy(copy, openfile->current->data, openfile->current_x);
+//   /* Add the replacement text. */
+//   if (ISSET(USE_REGEXP)) {
+//     replace_regexp((copy + openfile->current_x), TRUE);
+//   }
+//   else {
+//     strcpy((copy + openfile->current_x), answer);
+//   }
+//   /* Copy the tail of the original line. */
+//   strcat(copy, (openfile->current->data + openfile->current_x + match_len));
+//   return copy;
+// }
 
 /* Step through each occurrence of the search string and prompt the user before replacing it.  We seek for needle,
  * and replace it with answer.  The parameters real_current and real_current_x are needed in order to allow the
