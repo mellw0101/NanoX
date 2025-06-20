@@ -67,6 +67,116 @@ Ulong selected = 0;
   }
 }
 
+/* ----------------------------- Browse ----------------------------- */
+
+/* Allow the user to browse through the directories in the filesystem, starting at the
+ * given path.  The user can select a file, which will be returned.  The user can also
+ * select a directory, which will be entered.  The user can also cancel the browsing. */
+// /* static */ char *browse(char *path) {
+//   /* The name of the currently selected file, or of the directory we were in before backing up to "...". */
+//   char *present_name = NULL;
+//   /* The number of the selected file before the current selected file. */
+//   Ulong old_selected;
+//   /* The directory whose contents we are showing. */
+//   DIR *dir;
+//   /* The name of the file that the user picked, or NULL if none. */
+//   char *chosen = NULL;
+//   functionptrtype function;
+//   int kbinput;
+//   int mx;
+//   int my;
+//   /* When not in curses-mode, just return NULL. */
+//   if (!IN_CURSES_CTX) {
+//     return NULL;
+//   }
+//   /* We come here when the user refreshes or selects a new directory. */
+//   read_directory_contets: {
+//     path = free_and_assign(path, get_full_path(path));
+//     if (path) {
+//       dir = opendir(path);
+//     }
+//     if (!path || !dir) {
+//       statusline(ALERT, _("Cannot open directory: %s"), strerror(errno));
+//       /* If we don't have a file list, there is nothing to show. */
+//       if (!filelist) {
+//         lastmessage = VACUUM;
+//         free(present_path);
+//         free(path);
+//         napms(1200);
+//         return NULL;
+//       }
+//       path         = xstrcpy(path, present_path);
+//       present_name = xstrcpy(present_name, filelist[selected]);
+//     }
+//     if (dir) {
+//       /* Get the file list, and set gauge and piles in the process. */
+//       read_the_list(path, dir);
+//       closedir(dir);
+//       dir = NULL;
+//     }
+//     /* If something was selected before, reselect it. */
+//     if (present_name) {
+//       reselect(present_name);
+//       free(present_name);
+//       present_name = NULL;
+//     }
+//     /* Otherwise, just select the first item (..). */
+//     else {
+//       selected = 0;
+//     }
+//     old_selected = (Ulong)-1;
+//     present_path = xstrcpy(present_path, path);
+//     titlebar(path);
+//     if (!list_length) {
+//       statusline(ALERT, _("No entries"));
+//       napms(1200);
+//     }
+//     else {
+//       while (TRUE) {
+//         lastmessage = VACUUM;
+//         bottombars(MBROWSER);
+//         /* Display (or redisplay) the file list if the list itself or the selected file has changed. */
+//         if (old_selected != selected || ISSET(SHOW_CURSOR)) {
+//           browser_refresh();
+//         }
+//         old_selected = selected;
+//         kbinput      = get_kbinput(midwin, ISSET(SHOW_CURSOR));
+//         /* Handle mouse events. */
+//         if (kbinput == KEY_MOUSE) {
+//           /* When the user clicked in the file list, select a filename. */
+//           if (get_mouseinput(&my, &mx, TRUE) == 0 && wmouse_trafo(midwin, &my, &mx, FALSE)) {
+//             selected = (selected - selected % (usable_rows * piles) + (my * piles) + (mx / (gauge + 2)));
+//             /* When beyond the end-of-row, select the preceding filename.  Well
+//              * -- this might not make for the most responsive feeling interface. */
+//             if (mx > (piles * (gauge + 2))) {
+//               --selected;
+//             }
+//             /* When beyond the end-of-list, select the last filename.  Again... */
+//             if (selected > (list_length - 1)) {
+//               selected = (list_length - 1);
+//             }
+//             /* When a filename is clicked a second time, choose it. */
+//             if (old_selected == selected) {
+//               kbinput = KEY_ENTER;
+//             }
+//           }
+//           if (kbinput == KEY_MOUSE) {
+//             continue;
+//           }
+//         }
+//         while (bracketed_paste) {
+//           kbinput = get_kbinput(midwin, BLIND);
+//         }
+//         if (kbinput == BRACKETED_PASTE_MARKER) {
+//           beep();
+//           continue;
+//         }
+//         // function = 
+//       }
+//     }
+//   }
+// }
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -381,3 +491,4 @@ char *strip_last_component(const char *const restrict path) {
   }
   return copy;
 }
+

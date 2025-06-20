@@ -85,6 +85,7 @@ extern int currmenu;
 extern int hilite_attribute;
 extern int suggest_len;
 extern int cycling_aim;
+extern int didfind;
 extern int controlleft;
 extern int controlright;
 extern int controlup;
@@ -192,6 +193,10 @@ extern configstruct *config;
 
 extern syntaxtype *nanox_rc_live_syntax;
 extern syntaxtype *syntaxes;
+
+/* ----------------------------- search.c ----------------------------- */
+
+extern bool came_full_circle;
 
 /* ----------------------------- winio.c ----------------------------- */
 
@@ -846,6 +851,7 @@ void  edit_scroll_for(openfilestruct *const file, bool direction);
 void  edit_scroll(bool direction);
 void  edit_redraw_for(openfilestruct *const file, int rows, int cols, linestruct *const old_current, update_type manner);
 void  edit_redraw(linestruct *const old_current, update_type manner);
+void  edit_refresh_for(CTX_ARGS);
 void  edit_refresh(void);
 void  titlebar(const char *path);
 void  blank_edit(void);
@@ -943,11 +949,34 @@ functionptrtype func_from_key(int keycode);
 /* ---------------------------------------------------------- search.c ---------------------------------------------------------- */
 
 
+/* ----------------------------- Do research ----------------------------- */
+/* static */ void do_research_for(CTX_ARGS);
+/* static */ void do_research(void);
+
+/* ----------------------------- Regular expression init ----------------------------- */
 bool regexp_init(const char *regexp);
+/* ----------------------------- Tidy up after search ----------------------------- */
+void tidy_up_after_search_for(openfilestruct *const file);
 void tidy_up_after_search(void);
+/* ----------------------------- Goto line posx ----------------------------- */
 void goto_line_posx_for(openfilestruct *const file, int rows, long lineno, Ulong x);
 void goto_line_posx(long lineno, Ulong x);
+/* ----------------------------- Not found msg ----------------------------- */
 void not_found_msg(const char *const restrict str);
+/* ----------------------------- Find next str ----------------------------- */
+int findnextstr_for(openfilestruct *const file, const char *const restrict needle, bool whole_word_only,
+  int modus, Ulong *const match_len, bool skipone, const linestruct *const begin, Ulong begin_x);
+int findnextstr(const char *const restrict needle, bool whole_word_only, int modus,
+  Ulong *const match_len, bool skipone, const linestruct *const begin, Ulong begin_x);
+/* ----------------------------- Go looking ----------------------------- */
+void go_looking_for(CTX_ARGS);
+void go_looking(void);
+/* ----------------------------- Do findprevious ----------------------------- */
+void do_findprevious_for(CTX_ARGS);
+void do_findprevious(void);
+/* ----------------------------- Do findnext ----------------------------- */
+void do_findnext_for(CTX_ARGS);
+void do_findnext(void);
 
 
 /* ---------------------------------------------------------- move.c ---------------------------------------------------------- */

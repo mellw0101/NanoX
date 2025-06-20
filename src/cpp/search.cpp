@@ -3,7 +3,7 @@
 
 
 /* Have we reached the starting line again while searching? */
-static bool came_full_circle = FALSE;
+// static bool came_full_circle = FALSE;
 /* Whether we have compiled a regular expression for the search. */
 // static bool have_compiled_regexp = FALSE;
 
@@ -134,145 +134,145 @@ static void search_init(bool replacing, bool retain_answer) {
 /* Look for needle, starting at (current, current_x).  Begin is the line where we first started searching,
  * at column begin_x.  Return 1 when we found something, 0 when nothing, and -2 on cancel.  When match_len is
  * not NULL, set it to the length of the found string, if any.  TODO: (findnextstr) - This can be usefull. */
-int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x) {
-  /* The length of a match -- will be recomputed for a regex. */
-  Ulong found_len = strlen(needle);
-  /* When bigger than zero, show and wipe the "Searching..." message. */
-  int feedback = 0;
-  /* The line that we will search through now. */
-  linestruct *line = openfile->current;
-  /* The point in the line from where we start searching. */
-  const char *from = (line->data + openfile->current_x);
-  /* A pointer to the location of the match, if any. */
-  const char *found = NULL;
-  /* The x coordinate of a found occurrence. */
-  Ulong found_x;
-  /* The time we last looked at the keyboard. */
-  time_t lastkbcheck = time(NULL);
-  /* Set non-blocking input so that we can just peek for a Cancel. */
-  nodelay(midwin, TRUE);
-  !begin ? (came_full_circle = FALSE) : 0;
-  while (TRUE) {
-    /* When starting a new search, skip the first character, then (in either case) search for the needle in the current line. */
-    if (skipone) {
-      skipone = FALSE;
-      if (ISSET(BACKWARDS_SEARCH) && from != line->data) {
-        from  = (line->data + step_left(line->data, (from - line->data)));
-        found = strstrwrapper(line->data, needle, from);
-      }
-      else if (!ISSET(BACKWARDS_SEARCH) && *from) {
-        from += char_length(from);
-        found = strstrwrapper(line->data, needle, from);
-      }
-    }
-    else {
-      found = strstrwrapper(line->data, needle, from);
-    }
-    if (found) {
-      /* When doing a regex search, compute the length of the match. */
-      if (ISSET(USE_REGEXP)) {
-        found_len = (regmatches[0].rm_eo - regmatches[0].rm_so);
-      }
-      /* When we're spell checking, a match should be a separate word;
-       * if it's not, continue looking in the rest of the line. */
-      if (whole_word_only && !is_separate_word((found - line->data), found_len, line->data)) {
-        from = (found + char_length(found));
-        continue;
-      }
-      /* When not on the magic line, the match is valid. */
-      if (line->next || line->data[0]) {
-        break;
-      }
-    }
-    if (the_window_resized) {
-      regenerate_screen();
-      nodelay(midwin, TRUE);
-      statusbar_all(_("Searching..."));
-      feedback = 1;
-    }
-    /* If we're back at the beginning, then there is no needle. */
-    if (came_full_circle) {
-      nodelay(midwin, FALSE);
-      return 0;
-    }
-    /* Move to the previous or next line in the file. */
-    line = (ISSET(BACKWARDS_SEARCH) ? line->prev : line->next);
-    /* If we've reached the start or end of the buffer, wrap around; but stop when spell-checking or replacing in a region. */
-    if (!line) {
-      if (whole_word_only || modus == INREGION) {
-        nodelay(midwin, FALSE);
-        return 0;
-      }
-      line = (ISSET(BACKWARDS_SEARCH) ? openfile->filebot : openfile->filetop);
-      if (modus == JUSTFIND) {
-        statusline(REMARK, _("Search Wrapped"));
-        /* Delay the "Searching..." message for at least two seconds. */
-        feedback = -2;
-      }
-    }
-    /* If we've reached the original starting line, take note. */
-    (line == begin) ? (came_full_circle = TRUE) : 0;
-    /* Set the starting x to the start or end of the line. */
-    from = line->data;
-    if (ISSET(BACKWARDS_SEARCH)) {
-      from += strlen(line->data);
-    }
-    /* Glance at the keyboard once every second, to check for a Cancel. */
-    if ((time(NULL) - lastkbcheck) > 0) {
-      int input   = wgetch(midwin);
-      lastkbcheck = time(NULL);
-      /* Consume any queued-up keystrokes, until a Cancel or nothing. */
-      while (input != ERR) {
-        if (input == ESC_CODE) {
-          napms(20);
-          input = wgetch(midwin);
-          meta_key = TRUE;
-        }
-        else {
-          meta_key = FALSE;
-        }
-        if (func_from_key(input) == do_cancel) {
-          if (the_window_resized) {
-            regenerate_screen();
-          }
-          statusbar_all(_("Cancelled"));
-          /* Clear out the key buffer (in case a macro is running). */
-          while (input != ERR) {
-            input = get_input(NULL);
-          }
-          nodelay(midwin, FALSE);
-          return -2;
-        }
-        input = wgetch(midwin);
-      }
-      if (++feedback > 0) {
-        /* TRANSLATORS: This is shown when searching takes more than half a second. */
-        statusbar_all(_("Searching..."));
-      }
-    }
-  }
-  found_x = (found - line->data);
-  nodelay(midwin, FALSE);
-  /* Ensure that the found occurrence is not beyond the starting x. */
-  if (came_full_circle && ((!ISSET(BACKWARDS_SEARCH) && (found_x > begin_x || (modus == REPLACING && found_x == begin_x))) || (ISSET(BACKWARDS_SEARCH) && found_x < begin_x))) {
-    return 0;
-  }
-  /* Set the current position to point at what we found. */
-  openfile->current   = line;
-  openfile->current_x = found_x;
-  /* When requested, pass back the length of the match. */
-  match_len ? (*match_len = found_len) : 0;
-  if (modus == JUSTFIND && (!openfile->mark || openfile->softmark)) {
-    spotlighted    = TRUE;
-    light_from_col = xplustabs();
-    light_to_col   = wideness(line->data, (found_x + found_len));
-    refresh_needed = TRUE;
-  }
-  if (feedback > 0) {
-    wipe_statusbar();
-  }
-  return 1;
-}
+// int findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x) {
+//   /* The length of a match -- will be recomputed for a regex. */
+//   Ulong found_len = strlen(needle);
+//   /* When bigger than zero, show and wipe the "Searching..." message. */
+//   int feedback = 0;
+//   /* The line that we will search through now. */
+//   linestruct *line = openfile->current;
+//   /* The point in the line from where we start searching. */
+//   const char *from = (line->data + openfile->current_x);
+//   /* A pointer to the location of the match, if any. */
+//   const char *found = NULL;
+//   /* The x coordinate of a found occurrence. */
+//   Ulong found_x;
+//   /* The time we last looked at the keyboard. */
+//   time_t lastkbcheck = time(NULL);
+//   /* Set non-blocking input so that we can just peek for a Cancel. */
+//   nodelay(midwin, TRUE);
+//   !begin ? (came_full_circle = FALSE) : 0;
+//   while (TRUE) {
+//     /* When starting a new search, skip the first character, then (in either case) search for the needle in the current line. */
+//     if (skipone) {
+//       skipone = FALSE;
+//       if (ISSET(BACKWARDS_SEARCH) && from != line->data) {
+//         from  = (line->data + step_left(line->data, (from - line->data)));
+//         found = strstrwrapper(line->data, needle, from);
+//       }
+//       else if (!ISSET(BACKWARDS_SEARCH) && *from) {
+//         from += char_length(from);
+//         found = strstrwrapper(line->data, needle, from);
+//       }
+//     }
+//     else {
+//       found = strstrwrapper(line->data, needle, from);
+//     }
+//     if (found) {
+//       /* When doing a regex search, compute the length of the match. */
+//       if (ISSET(USE_REGEXP)) {
+//         found_len = (regmatches[0].rm_eo - regmatches[0].rm_so);
+//       }
+//       /* When we're spell checking, a match should be a separate word;
+//        * if it's not, continue looking in the rest of the line. */
+//       if (whole_word_only && !is_separate_word((found - line->data), found_len, line->data)) {
+//         from = (found + char_length(found));
+//         continue;
+//       }
+//       /* When not on the magic line, the match is valid. */
+//       if (line->next || line->data[0]) {
+//         break;
+//       }
+//     }
+//     if (the_window_resized) {
+//       regenerate_screen();
+//       nodelay(midwin, TRUE);
+//       statusbar_all(_("Searching..."));
+//       feedback = 1;
+//     }
+//     /* If we're back at the beginning, then there is no needle. */
+//     if (came_full_circle) {
+//       nodelay(midwin, FALSE);
+//       return 0;
+//     }
+//     /* Move to the previous or next line in the file. */
+//     line = (ISSET(BACKWARDS_SEARCH) ? line->prev : line->next);
+//     /* If we've reached the start or end of the buffer, wrap around; but stop when spell-checking or replacing in a region. */
+//     if (!line) {
+//       if (whole_word_only || modus == INREGION) {
+//         nodelay(midwin, FALSE);
+//         return 0;
+//       }
+//       line = (ISSET(BACKWARDS_SEARCH) ? openfile->filebot : openfile->filetop);
+//       if (modus == JUSTFIND) {
+//         statusline(REMARK, _("Search Wrapped"));
+//         /* Delay the "Searching..." message for at least two seconds. */
+//         feedback = -2;
+//       }
+//     }
+//     /* If we've reached the original starting line, take note. */
+//     (line == begin) ? (came_full_circle = TRUE) : 0;
+//     /* Set the starting x to the start or end of the line. */
+//     from = line->data;
+//     if (ISSET(BACKWARDS_SEARCH)) {
+//       from += strlen(line->data);
+//     }
+//     /* Glance at the keyboard once every second, to check for a Cancel. */
+//     if ((time(NULL) - lastkbcheck) > 0) {
+//       int input   = wgetch(midwin);
+//       lastkbcheck = time(NULL);
+//       /* Consume any queued-up keystrokes, until a Cancel or nothing. */
+//       while (input != ERR) {
+//         if (input == ESC_CODE) {
+//           napms(20);
+//           input = wgetch(midwin);
+//           meta_key = TRUE;
+//         }
+//         else {
+//           meta_key = FALSE;
+//         }
+//         if (func_from_key(input) == do_cancel) {
+//           if (the_window_resized) {
+//             regenerate_screen();
+//           }
+//           statusbar_all(_("Cancelled"));
+//           /* Clear out the key buffer (in case a macro is running). */
+//           while (input != ERR) {
+//             input = get_input(NULL);
+//           }
+//           nodelay(midwin, FALSE);
+//           return -2;
+//         }
+//         input = wgetch(midwin);
+//       }
+//       if (++feedback > 0) {
+//         /* TRANSLATORS: This is shown when searching takes more than half a second. */
+//         statusbar_all(_("Searching..."));
+//       }
+//     }
+//   }
+//   found_x = (found - line->data);
+//   nodelay(midwin, FALSE);
+//   /* Ensure that the found occurrence is not beyond the starting x. */
+//   if (came_full_circle && ((!ISSET(BACKWARDS_SEARCH) && (found_x > begin_x || (modus == REPLACING && found_x == begin_x))) || (ISSET(BACKWARDS_SEARCH) && found_x < begin_x))) {
+//     return 0;
+//   }
+//   /* Set the current position to point at what we found. */
+//   openfile->current   = line;
+//   openfile->current_x = found_x;
+//   /* When requested, pass back the length of the match. */
+//   match_len ? (*match_len = found_len) : 0;
+//   if (modus == JUSTFIND && (!openfile->mark || openfile->softmark)) {
+//     spotlighted    = TRUE;
+//     light_from_col = xplustabs();
+//     light_to_col   = wideness(line->data, (found_x + found_len));
+//     refresh_needed = TRUE;
+//   }
+//   if (feedback > 0) {
+//     wipe_statusbar();
+//   }
+//   return 1;
+// }
 
 /* Ask for a string and then search forward for it. */
 void do_search_forward(void) {
@@ -287,40 +287,40 @@ void do_search_backward(void) {
 }
 
 /* Search for the last string without prompting. */
-static void do_research(void) {
-  /* If nothing was searched for yet during this run of nano, but there is a search history, take the most recent item. */
-  if (!*last_search && searchbot->prev) {
-    last_search = realloc_strcpy(last_search, searchbot->prev->data);
-  }
-  if (!*last_search) {
-    statusline(AHEM, _("No current search pattern"));
-    return;
-  }
-  if (ISSET(USE_REGEXP) && !regexp_init(last_search)) {
-    return;
-  }
-  /* Use the search-menu key bindings, to allow cancelling. */
-  currmenu = MWHEREIS;
-  if (LINES > 1) {
-    wipe_statusbar();
-  }
-  go_looking();
-  if (!inhelp) {
-    tidy_up_after_search();
-  }
-}
+// static void do_research(void) {
+//   /* If nothing was searched for yet during this run of nano, but there is a search history, take the most recent item. */
+//   if (!*last_search && searchbot->prev) {
+//     last_search = realloc_strcpy(last_search, searchbot->prev->data);
+//   }
+//   if (!*last_search) {
+//     statusline(AHEM, _("No current search pattern"));
+//     return;
+//   }
+//   if (ISSET(USE_REGEXP) && !regexp_init(last_search)) {
+//     return;
+//   }
+//   /* Use the search-menu key bindings, to allow cancelling. */
+//   currmenu = MWHEREIS;
+//   if (LINES > 1) {
+//     wipe_statusbar();
+//   }
+//   go_looking();
+//   if (!inhelp) {
+//     tidy_up_after_search();
+//   }
+// }
 
 /* Search in the backward direction for the next occurrence. */
-void do_findprevious(void) {
-  SET(BACKWARDS_SEARCH);
-  do_research();
-}
+// void do_findprevious(void) {
+//   SET(BACKWARDS_SEARCH);
+//   do_research();
+// }
 
 /* Search in the forward direction for the next occurrence. */
-void do_findnext(void) {
-  UNSET(BACKWARDS_SEARCH);
-  do_research();
-}
+// void do_findnext(void) {
+//   UNSET(BACKWARDS_SEARCH);
+//   do_research();
+// }
 
 /* Report on the status bar that the given string was not found. */
 // void not_found_msg(const char *str) _NOTHROW {
@@ -331,29 +331,29 @@ void do_findnext(void) {
 // }
 
 /* Search for the global string 'last_search'.  Inform the user when the string occurs only once. */
-void go_looking(void) {
-  linestruct *was_current   = openfile->current;
-  Ulong       was_current_x = openfile->current_x;
-/* #define TIMEIT 12 */
-#ifdef TIMEIT
-#  include <ctime>
-  clock_t start = clock();
-#endif
-  came_full_circle = FALSE;
-  didfind          = findnextstr(last_search, FALSE, JUSTFIND, NULL, TRUE, openfile->current, openfile->current_x);
-  /* If we found something, and we're back at the exact same spot
-   * where we started searching, then this is the only occurrence. */
-  if (didfind == 1 && openfile->current == was_current && openfile->current_x == was_current_x) {
-    statusline(REMARK, _("This is the only occurrence"));
-  }
-  else if (!didfind) {
-    not_found_msg(last_search);
-  }
-#ifdef TIMEIT
-  statusline(INFO, "Took: %.2f", static_cast<f64>(clock() - start) / CLOCKS_PER_SEC);
-#endif
-  edit_redraw(was_current, CENTERING);
-}
+// void go_looking(void) {
+//   linestruct *was_current   = openfile->current;
+//   Ulong       was_current_x = openfile->current_x;
+// /* #define TIMEIT 12 */
+// #ifdef TIMEIT
+// #  include <ctime>
+//   clock_t start = clock();
+// #endif
+//   came_full_circle = FALSE;
+//   didfind          = findnextstr(last_search, FALSE, JUSTFIND, NULL, TRUE, openfile->current, openfile->current_x);
+//   /* If we found something, and we're back at the exact same spot
+//    * where we started searching, then this is the only occurrence. */
+//   if (didfind == 1 && openfile->current == was_current && openfile->current_x == was_current_x) {
+//     statusline(REMARK, _("This is the only occurrence"));
+//   }
+//   else if (!didfind) {
+//     not_found_msg(last_search);
+//   }
+// #ifdef TIMEIT
+//   statusline(INFO, "Took: %.2f", static_cast<f64>(clock() - start) / CLOCKS_PER_SEC);
+// #endif
+//   edit_redraw(was_current, CENTERING);
+// }
 
 /* Calculate the size of the replacement text, taking possible subexpressions \1 to \9 into account.
  * Return the replacement text in the passed string only when create is TRUE. */

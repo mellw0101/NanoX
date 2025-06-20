@@ -2549,6 +2549,8 @@ void edit_scroll(bool direction) {
   edit_scroll_for(CTX_OF, direction);
 }
 
+/* ----------------------------- Edit redraw ----------------------------- */
+
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
 void edit_redraw_for(CTX_ARGS, linestruct *const old_current, update_type manner) {
   ASSERT(file);
@@ -2596,53 +2598,104 @@ void edit_redraw(linestruct *const old_current, update_type manner) {
   }
 }
 
+/* ----------------------------- Edit refresh ----------------------------- */
+
 /* Refresh the screen without changing the position of lines.  Use this if we've moved and changed text. */
-void edit_refresh(void) {
+void edit_refresh_for(CTX_ARGS) {
+  ASSERT(file);
   linestruct *line;
   int row = 0;
-  /* If the current line is out of view, get it back on screen. */
-  if (current_is_offscreen()) {
-    adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
+  /* If the current line in file is out of view, get it back on screen. */
+  if (current_is_offscreen_for(STACK_CTX)) {
+    adjust_viewport_for(STACK_CTX, ((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING));
   }
-  /* Return early whwn in gui mode. */
-  if (ISSET(USING_GUI)) {
-    return;
-  }
-  /* When needed and useful, initialize the colors for the current syntax. */
-  if (!ISSET(NO_NCURSES) && openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
-    prepare_palette();
-  }
-  /* When the line above the viewport does not have multidata, recalculate all. */
-  recook |= (ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata);
-  if (recook) {
-    precalc_multicolorinfo();
-    perturbed = FALSE;
-    recook    = FALSE;
-  }
-  /* Only draw sidebar when approptiet, i.e: when there is more then one ROWS worth of data. */
-  if (sidebar && openfile->filebot->lineno > editwinrows) {
-    draw_scrollbar_curses();
-  }
-  line = openfile->edittop;
-  while (row < editwinrows && line) {
-    row += update_line_curses(line, ((line == openfile->current) ? openfile->current_x : 0));
-    line = line->next;
-  }
-  while (row < editwinrows) {
-    blank_row_curses(midwin, row);
-    /* If full linenumber bar is enabled, then draw it. */
-    if (config->linenumber.fullverticalbar) {
-      mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumber.barcolor);
+  if (IN_CURSES_CTX) {
+    /* When needed and usefull, initialize the colors for the current syntax. */
+    if (!ISSET(NO_SYNTAX) && file->syntax && !have_palette && has_colors()) {
+      prepare_palette();
     }
-    /* Only draw sidebar when on and when the openfile is longer then editwin rows. */
-    if (sidebar && openfile->filebot->lineno > editwinrows) {
-      mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+    /* When the line above the viewport does not have multidata, recalculate it. */
+    recook |= (ISSET(SOFTWRAP) && file->edittop->prev && !file->edittop->prev->multidata);
+    if (recook) {
+      precalc_multicolorinfo_for(file);
+      perturbed = FALSE;
+      recook    = FALSE;
     }
-    ++row;
+    /* Only draw sidebar when appropriet, ie: When there is more then one rows worth of data. */
+    if (sidebar && file->filebot->lineno > rows) {
+      /* TODO: Make this file specific. */
+      draw_scrollbar_curses();
+    }
+    line = file->edittop;
+    while (row < rows && line) {
+      row += update_line_curses_for(file, line, ((line == file->current) ? file->current_x : 0));
+      DLIST_ADV_NEXT(line);
+    }
+    while (row < rows) {
+      blank_row_curses(midwin, row);
+      /* If full linenumber bar is enabled, then draw it. */
+      /* if (config->linenumber.fullverticalbar) {
+        mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumber.barcolor);
+      } */
+      /* Only draw sidebar when on and when the file is longer then rows. */
+      if (sidebar && file->filebot->lineno > rows) {
+        mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+      }
+    }
+    place_the_cursor_curses_for(file);
+    wnoutrefresh(midwin);
+    refresh_needed = FALSE; 
   }
-  place_the_cursor();
-  wnoutrefresh(midwin);
-  refresh_needed = FALSE;
+}
+
+/* Refresh the screen without changing the position of lines.  Use this if we've moved and changed text. */
+void edit_refresh(void) {
+  CTX_CALL(edit_refresh_for);
+  // linestruct *line;
+  // int row = 0;
+  // /* If the current line is out of view, get it back on screen. */
+  // if (current_is_offscreen()) {
+  //   adjust_viewport((focusing || ISSET(JUMPY_SCROLLING)) ? CENTERING : FLOWING);
+  // }
+  // /* Return early whwn in gui mode. */
+  // if (ISSET(USING_GUI)) {
+  //   return;
+  // }
+  // /* When needed and useful, initialize the colors for the current syntax. */
+  // if (!ISSET(NO_NCURSES) && openfile->syntax && !have_palette && !ISSET(NO_SYNTAX) && has_colors()) {
+  //   prepare_palette();
+  // }
+  // /* When the line above the viewport does not have multidata, recalculate all. */
+  // recook |= (ISSET(SOFTWRAP) && openfile->edittop->prev && !openfile->edittop->prev->multidata);
+  // if (recook) {
+  //   precalc_multicolorinfo();
+  //   perturbed = FALSE;
+  //   recook    = FALSE;
+  // }
+  // /* Only draw sidebar when approptiet, i.e: when there is more then one ROWS worth of data. */
+  // if (sidebar && openfile->filebot->lineno > editwinrows) {
+  //   draw_scrollbar_curses();
+  // }
+  // line = openfile->edittop;
+  // while (row < editwinrows && line) {
+  //   row += update_line_curses(line, ((line == openfile->current) ? openfile->current_x : 0));
+  //   line = line->next;
+  // }
+  // while (row < editwinrows) {
+  //   blank_row_curses(midwin, row);
+  //   /* If full linenumber bar is enabled, then draw it. */
+  //   if (config->linenumber.fullverticalbar) {
+  //     mvwaddchcolor(midwin, row, (margin - 1), ACS_VLINE, config->linenumber.barcolor);
+  //   }
+  //   /* Only draw sidebar when on and when the openfile is longer then editwin rows. */
+  //   if (sidebar && openfile->filebot->lineno > editwinrows) {
+  //     mvwaddch(midwin, row, (COLS - 1), bardata[row]);
+  //   }
+  //   ++row;
+  // }
+  // place_the_cursor();
+  // wnoutrefresh(midwin);
+  // refresh_needed = FALSE;
 }
 
 /* If path is NULL, we're in normal editing mode, so display the current

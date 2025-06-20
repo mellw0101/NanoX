@@ -47,7 +47,7 @@ extern linestruct *executebot;
 
 // extern long fill;
 
-extern int didfind;
+// extern int didfind;
 // extern int controlleft, controlright;
 // extern int controlup, controldown;
 // extern int controlhome, controlend;
@@ -472,13 +472,13 @@ void        unbound_key(int code) _NOTHROW;
 
 // bool  regexp_init(const char *regexp);
 // void  tidy_up_after_search(void);
-int   findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x);
+// int   findnextstr(const char *needle, bool whole_word_only, int modus, Ulong *match_len, bool skipone, const linestruct *begin, Ulong begin_x);
 void  do_search_forward(void);
 void  do_search_backward(void);
-void  do_findprevious(void);
-void  do_findnext(void);
+// void  do_findprevious(void);
+// void  do_findnext(void);
 // void  not_found_msg(const char *str) _NOTHROW;
-void  go_looking(void);
+// void  go_looking(void);
 long  do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, Ulong *real_current_x);
 void  do_replace(void);
 void  ask_for_and_do_replacements(void);

@@ -51,7 +51,7 @@
 /* The last string we searched for. */
 // char *last_search = NULL;
 /* Whether the last search found something. */
-int didfind = 0;
+// int didfind = 0;
 /* The current browser directory when trying to do tab completion. */
 // char *present_path = NULL;
 /* Our flags array, containing the states of all global options. */

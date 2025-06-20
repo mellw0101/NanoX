@@ -463,12 +463,7 @@ read_directory_contents:
       }
       else if (function == do_toggle && get_shortcut(kbinput)->toggle == NO_HELP) {
         TOGGLE(NO_HELP);
-        if (ISSET(NO_NCURSES)) {
-          window_init();
-        }
-        else {
-          window_init();
-        }
+        window_init();
         kbinput = KEY_WINCH;
       }
       else if (function == do_search_backward) {

@@ -152,6 +152,8 @@ int hilite_attribute = A_REVERSE;
 int suggest_len = 0;
 /* Whether to center the line with the cursor (0), push it to the top of the viewport (1), or to the bottom (2). */
 int cycling_aim = 0;
+/* Whether the last search found something. */
+int didfind = 0;
 /* Extended ncurses key code for `Ctrl+Left`. */
 int controlleft;
 /* Extended ncurses key code for `Ctrl+Right`. */
@@ -605,3 +607,33 @@ functionptrtype func_from_key(int keycode) {
   const keystruct *sc = get_shortcut(keycode);
   return (sc ? sc->func : NULL);
 }
+
+/* ----------------------------- Interpret ----------------------------- */
+
+/* Returns the function that is bound to the given key in the file browser
+ * or the help viewer.  Accept also certain plain characters, for
+ * compatibility with Pico or to mimic `less` and similar text viewers. */
+// functionptrtype interpret(int keycode) {
+//   if (!meta_key) {
+//     if (keycode == 'N') {
+//       return do_findprevious;
+//     }
+//     else if (keycode == 'n') {
+//       return do_findnext;
+//     }
+//     switch (tolower(keycode)) {
+//       case 'b':
+//       case '-': {
+//         return do_page_up;
+//       }
+//       case ' ': {
+//         return do_page_down;
+//       }
+//       case 'w':
+//       case '/': {
+//         return do_search_forward;
+//       }
+//     }
+//   }
+//   return func_from_key(keycode);
+// }
