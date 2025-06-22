@@ -944,11 +944,11 @@ static int get_keycode(const char *const keyname, const int standard) _NOTHROW {
   if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue)) {
     return key_defined(keyvalue);
   }
-#ifdef DEBUG
+# ifdef DEBUG
   if (!ISSET(RAW_SEQUENCES)) {
     fprintf(stderr, "Using fallback keycode for %s\n", keyname);
   }
-#endif
+# endif
   return standard;
 }
 

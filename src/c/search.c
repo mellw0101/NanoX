@@ -235,6 +235,29 @@ void search_init(bool replacing, bool retain_answer) {
   CTX_CALL_WARGS(search_init_for, replacing, retain_answer);
 }
 
+/* ----------------------------- Go to and confirm ----------------------------- */
+
+/* Make the given line the current line, or report anchoredness. */
+static void go_to_and_confirm_for(CTX_ARGS, linestruct *const line) {
+  ASSERT(file);
+  linestruct *was_current = file->current;
+  if (line != file->current) {
+    file->current   = line;
+    file->current_x = 0;
+    if (line->lineno > (file->edittop->lineno + rows) || (ISSET(SOFTWRAP) && line->lineno > was_current->lineno)) {
+      recook |= perturbed;
+    }
+    edit_redraw_for(STACK_CTX, was_current, CENTERING);
+    statusbar_all(_("Jumped to anchor"));
+  }
+  else if (file->current->has_anchor) {
+    statusline(REMARK, _("This it the only anchor"));
+  }
+  else {
+    statusline(AHEM, _("There are no anchors"));
+  }
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -953,4 +976,38 @@ void put_or_lift_anchor_for(openfilestruct *const file) {
 /* Place an anchor at the current line in the currently open buffer when none exists, otherwise remove it. */
 void put_or_lift_anchor(void) {
   put_or_lift_anchor_for(CTX_OF);
+}
+
+/* ----------------------------- To prev anchor ----------------------------- */
+
+/* Jump to the first anchor before the current line in `file`.  Wrap around at the top. */
+void to_prev_anchor_for(CTX_ARGS) {
+  ASSERT(file);
+  linestruct *line = file->current;
+  do {
+    line = (line->prev ? line->prev : file->filebot);
+  } while (!line->has_anchor && line != file->current);
+  go_to_and_confirm_for(STACK_CTX, line);
+}
+
+/* Jump to the first anchor before the current line in the currently open buffer.  Wrap around at the top. */
+void to_prev_anchor(void) {
+  CTX_CALL(to_prev_anchor_for);
+}
+
+/* ----------------------------- To next anchor ----------------------------- */
+
+/* Jump to the first anchor after the current line in `file`.  Wrap around at the bottom. */
+void to_next_anchor_for(CTX_ARGS) {
+  ASSERT(file);
+  linestruct *line = file->current;
+  do {
+    line = (line->next ? line->next : file->filetop);
+  } while (!line->has_anchor && line != file->current);
+  go_to_and_confirm_for(STACK_CTX, line);
+}
+
+/* Jump to the first anchor after the current line in the currently open buffer.  Wrap around at to bottom. */
+void to_next_anchor(void) {
+  CTX_CALL(to_next_anchor_for);
 }

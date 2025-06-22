@@ -505,9 +505,11 @@ static char *browse(char *path) {
 /* Display at most a screenful of filenames from the gleaned filelist. */
 void browser_refresh(void) {
   /* The current row and column while the list is getting displayed. */
-  int row=0, col=0;
+  int row = 0;
+  int col = 0;
   /* The row and column of the selected item. */
-  int the_row=0, the_column=0;
+  int the_row    = 0;
+  int the_column = 0;
   /* The additional information that we'll display about a file. */
   char *info;
   titlebar(present_path);
@@ -603,15 +605,15 @@ void browser_refresh(void) {
             apply_color = FG_VS_CODE_BRIGHT_GREEN;
             did_apply_color = TRUE;
           }
-          if (strcmp(file_ext, "h") == 0 || strcmp(file_ext, "hpp") == 0) {
+          else if (strcmp(file_ext, "h") == 0 || strcmp(file_ext, "hpp") == 0) {
             apply_color = FG_VS_CODE_MAGENTA;
             did_apply_color = TRUE;
           }
-          if (strcmp(file_ext, "tar") == 0 || strcmp(file_ext, "gz") == 0) {
+          else if (strcmp(file_ext, "tar") == 0 || strcmp(file_ext, "gz") == 0) {
             apply_color = FG_VS_CODE_RED;
             did_apply_color = TRUE;
           }
-          if (strcmp(file_ext, "conf") == 0 || strcmp(file_ext, "cfg") == 0) {
+          else if (strcmp(file_ext, "conf") == 0 || strcmp(file_ext, "cfg") == 0) {
             apply_color = FG_VS_CODE_BRIGHT_MAGENTA;
             did_apply_color = TRUE;
           }
@@ -669,7 +671,7 @@ void browser_refresh(void) {
   /* If requested, put the cursor on the selected item and switch it on. */
   if (ISSET(SHOW_CURSOR)) {
     wmove(midwin, the_row, the_column);
-    curs_set(1);
+    curs_set(TRUE);
   }
   wnoutrefresh(midwin);
 }

@@ -488,8 +488,8 @@ void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
 bool  find_a_bracket(bool reverse, const char *bracket_pair) _NOTHROW;
 void  do_find_bracket(void) _NOTHROW;
 // void  put_or_lift_anchor(void);
-void  to_prev_anchor(void);
-void  to_next_anchor(void);
+// void  to_prev_anchor(void);
+// void  to_next_anchor(void);
 // char *find_global_header(const char *str);
 // char *find_local_header(const char *str);
 

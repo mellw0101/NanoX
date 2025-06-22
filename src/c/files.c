@@ -895,6 +895,8 @@ char *get_next_filename(const char *const restrict name, const char *const restr
   return buf;
 }
 
+/* ----------------------------- Open file ----------------------------- */
+
 /* Open the file with the given name.  If the file does not exist, display
  * "New File" if `new_one` is `TRUE`, and say "File not found" otherwise.
  * Retrurns 0 if we say "New File", `-1` upon failure, and the obtained file

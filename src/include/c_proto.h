@@ -691,16 +691,17 @@ void  redecorate_after_switch(void);
 void  switch_to_prev_buffer(void);
 void  switch_to_next_buffer(void);
 char *get_next_filename(const char *const restrict name, const char *const restrict suffix);
-int   open_file(const char *const restrict path, bool new_one, FILE **const f);
+/* ----------------------------- Open file ----------------------------- */
+int open_file(const char *const restrict path, bool new_one, FILE **const f);
 /* ----------------------------- Read file ----------------------------- */
-void  read_file_into(openfilestruct *const file, int rows, int cols, FILE *const f, int fd, const char *const restrict filename, bool undoable);
-void  read_file(FILE *f, int fd, const char *const restrict filename, bool undoable);
+void read_file_into(openfilestruct *const file, int rows, int cols, FILE *const f, int fd, const char *const restrict filename, bool undoable);
+void read_file(FILE *f, int fd, const char *const restrict filename, bool undoable);
 /* ----------------------------- Open buffer ----------------------------- */
 bool open_buffer_for(openfilestruct **const start, openfilestruct **const open, int rows, int cols, const char *const restrict path, bool new_one);
 bool open_buffer(const char *const restrict path, bool new_one);
-
+/* ----------------------------- Username completion ----------------------------- */
 char **username_completion(const char *const restrict morsel, Ulong length, Ulong *const num_matches);
-
+/* ----------------------------- Input tab ----------------------------- */
 char *input_tab(char *morsel, Ulong *const place, functionptrtype refresh_func, bool *const listed);
 
 
@@ -982,6 +983,12 @@ void do_replace(void);
 /* ----------------------------- Put or lift anchor ----------------------------- */
 void put_or_lift_anchor_for(openfilestruct *const file);
 void put_or_lift_anchor(void);
+/* ----------------------------- To prev anchor ----------------------------- */
+void to_prev_anchor_for(CTX_ARGS);
+void to_prev_anchor(void);
+/* ----------------------------- To next anchor ----------------------------- */
+void to_next_anchor_for(CTX_ARGS);
+void to_next_anchor(void);
 
 
 /* ---------------------------------------------------------- move.c ---------------------------------------------------------- */

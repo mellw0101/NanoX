@@ -816,42 +816,42 @@ void do_find_bracket(void) _NOTHROW {
 // }
 
 /* Make the given line the current line, or report the anchoredness. */
-static void go_to_and_confirm(linestruct *line) {
-  linestruct *was_current = openfile->current;
-  if (line != openfile->current) {
-    openfile->current   = line;
-    openfile->current_x = 0;
-    if (line->lineno > openfile->edittop->lineno + editwinrows || (ISSET(SOFTWRAP) && line->lineno > was_current->lineno)) {
-      recook |= perturbed;
-    }
-    edit_redraw(was_current, CENTERING);
-    statusbar_all(_("Jumped to anchor"));
-  }
-  else if (openfile->current->has_anchor) {
-    statusline(REMARK, _("This is the only anchor"));
-  }
-  else {
-    statusline(AHEM, _("There are no anchors"));
-  }
-}
+// static void go_to_and_confirm(linestruct *line) {
+//   linestruct *was_current = openfile->current;
+//   if (line != openfile->current) {
+//     openfile->current   = line;
+//     openfile->current_x = 0;
+//     if (line->lineno > openfile->edittop->lineno + editwinrows || (ISSET(SOFTWRAP) && line->lineno > was_current->lineno)) {
+//       recook |= perturbed;
+//     }
+//     edit_redraw(was_current, CENTERING);
+//     statusbar_all(_("Jumped to anchor"));
+//   }
+//   else if (openfile->current->has_anchor) {
+//     statusline(REMARK, _("This is the only anchor"));
+//   }
+//   else {
+//     statusline(AHEM, _("There are no anchors"));
+//   }
+// }
 
 /* Jump to the first anchor before the current line; wrap around at the top. */
-void to_prev_anchor(void) {
-  linestruct *line = openfile->current;
-  do {
-    line = (line->prev ? line->prev : openfile->filebot);
-  } while (!line->has_anchor && line != openfile->current);
-  go_to_and_confirm(line);
-}
+// void to_prev_anchor(void) {
+//   linestruct *line = openfile->current;
+//   do {
+//     line = (line->prev ? line->prev : openfile->filebot);
+//   } while (!line->has_anchor && line != openfile->current);
+//   go_to_and_confirm(line);
+// }
 
 /* Jump to the first anchor after the current line; wrap around at the bottom. */
-void to_next_anchor(void) {
-  linestruct *line = openfile->current;
-  do {
-    line = (line->next ? line->next : openfile->filetop);
-  } while (!line->has_anchor && line != openfile->current);
-  go_to_and_confirm(line);
-}
+// void to_next_anchor(void) {
+//   linestruct *line = openfile->current;
+//   do {
+//     line = (line->next ? line->next : openfile->filetop);
+//   } while (!line->has_anchor && line != openfile->current);
+//   go_to_and_confirm(line);
+// }
 
 // static bool search_file_in_dir(const char *file, const char *dir) {
 //   DIR *d = opendir(dir);

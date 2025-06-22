@@ -974,8 +974,7 @@ int ask_user(bool withall, const char *const restrict question) {
 /* Ask a question on the status-bar.  Returns 0 when text was entered, -1 for a cancelled
  * entry, -2 for a blank string, and the relevent keycode when a valid shortcut key was
  * pressed.  The `provided` parameter is the default answer for when simply <Enter> is typed. */
-int do_prompt(
-  int menu, const char *const provided, linestruct **const histlist,
+int do_prompt(int menu, const char *const provided, linestruct **const histlist,
   functionptrtype refresh_func, const char *const format, ...)
 {
   functionptrtype function = NULL;

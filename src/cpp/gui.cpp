@@ -287,8 +287,10 @@ static void delete_guistruct(void) {
 }
 
 /* Cleanup before exit. */
-static void cleanup(void) { 
-  // gui_editor_free(openeditor);
+static void cleanup(void) {
+  /* Temporaty fix. */
+  TUI_SF = GUI_SF;
+  TUI_OF = GUI_OF;
   editor_free(openeditor);
   statusbar_free();
   delete_guistruct();

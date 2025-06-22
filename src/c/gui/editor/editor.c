@@ -196,7 +196,7 @@ void editor_hide(Editor *const editor, bool hide) {
 }
 
 void editor_close(Editor *const editor) {
-  ASSERT(editor);
+  ASSERT_EDITOR(editor);
   if (editor == starteditor) {
     CLIST_ADV_NEXT(starteditor);
   }
