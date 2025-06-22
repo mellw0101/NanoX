@@ -661,3 +661,50 @@ void inject_into_buffer(CTX_ARGS, char *burst, Ulong count) {
 void inject(char *burst, Ulong count) {
   CTX_CALL_WARGS(inject_into_buffer, burst, count);
 }
+
+/* ----------------------------- Unbound key ----------------------------- */
+
+/* Say that an unbound key was struck, and if possible which one. */
+void unbound_key(int code) {
+  /* Only perform any action when in `curses-mode`. */
+  if (IN_CURSES_CTX) {
+    if (code == FOREIGN_SEQUENCE) {
+      /* TRANSLATORS: This refers to a sequnce of escape codes (from the keyboard) that nano does not recognize. */
+      statusline(AHEM, _("Unknown sequence"));
+    }
+    else if (code == NO_SUCH_FUNCTION) {
+      statusline(AHEM, _("Unknown function"), commandname);
+    }
+    else if (code == MISSING_BRACE) {
+      statusline(AHEM, _("Missing }"));
+    }
+    else if (code > KEY_F0 && code < (KEY_F0 + 25)) {
+      /* TRANSLATORS: this refers to an unbound function key. */
+      statusline(AHEM, _("Unbound key: F%i"), (code - KEY_F0));
+    }
+    else if (code > 0x7F) {
+      statusline(AHEM, _("Unbound key"));
+    }
+    else if (meta_key) {
+      if (code < 0x20) {
+        statusline(AHEM, _("Unbindable key: M-^%c"), (code + 0x40));
+      }
+      else if (shifted_metas && 'A' <= code && code <= 'Z') {
+        statusline(AHEM, _("Unbound key: Sh-M-%c"), code);
+      }
+      else {
+        statusline(AHEM, _("Unbound key: M-%c"), toupper(code));
+      }
+    }
+    else if (code == ESC_CODE) {
+      statusline(AHEM, _("Unbindable key: ^["));
+    }
+    else if (code < 0x20) {
+      statusline(AHEM, _("Unbound key: ^%c"), (code + 0x40));
+    }
+    else {
+      statusline(AHEM, _("Unbound key: %c"), code);
+    }
+    set_blankdelay_to_one();
+  }
+}

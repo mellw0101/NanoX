@@ -40,96 +40,96 @@
 /* Prepare the prompt and ask the user what to search for.  Keep looping
  * as long as the user presses a toggle, and only take action and exit
  * when <Enter> is pressed or a non-toggle shortcut was executed. */
-static void search_init(bool replacing, bool retain_answer) {
-  functionptrtype function;
-  char *disp;
-  int response;
-  /* What will be searched for when the user types just <Enter>. */
-  char *thedefault;
-  /* If something was searched for earlier, include it in the prompt. */
-  if (*last_search) {
-    disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
-    thedefault = (char *)nmalloc(strlen(disp) + 7);
-    /* We use (COLS / 3) here because we need to see more on the line. */
-    sprintf(thedefault, " [%s%s]", disp, ((long)breadth(last_search) > (COLS / 3)) ? "..." : "");
-    free(disp);
-  }
-  else {
-    thedefault = STRLTR_COPY_OF("");
-  }
-  while (TRUE) {
-    /* Ask the user what to search for (or replace). */
-    response = do_prompt(
-      (inhelp ? MFINDINHELP : (replacing ? MREPLACE : MWHEREIS)),
-      (retain_answer ? answer : ""),
-      &search_history,
-      edit_refresh,
-      /* TRANSLATORS: This is the main search prompt. */
-      "%s%s%s%s%s%s", _("Search"),
-      /* TRANSLATORS: The next four modify the search prompt. */
-      (ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : ""),
-      (ISSET(USE_REGEXP) ? _(" [Regexp]") : ""),
-      (ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : ""),
-      (replacing ? openfile->mark ? _(" (to replace) in selection") : _(" (to replace)") : ""),
-      thedefault
-    );
-    /* If the search was cancelled, or we have a blank answer and nothing was searched for yet during this session, get out. */
-    if (response == -1 || (response == -2 && !*last_search)) {
-      statusbar_all(_("Cancelled"));
-      break;
-    }
-    /* If Enter was pressed, prepare to do a replace or a search. */
-    if (response == 0 || response == -2) {
-      /* If an actual answer was typed, remember it. */
-      if (*answer) {
-        last_search = realloc_strcpy(last_search, answer);
-        update_history(&search_history, answer, PRUNE_DUPLICATE);
-      }
-      if (ISSET(USE_REGEXP) && !regexp_init(last_search)) {
-        break;
-      }
-      if (replacing) {
-        ask_for_and_do_replacements();
-      }
-      else {
-        go_looking();
-      }
-      break;
-    }
-    retain_answer = TRUE;
-    function      = func_from_key(response);
-    /* If we're here, one of the five toggles was pressed, or a shortcut was executed. */
-    if (function == case_sens_void) {
-      TOGGLE(CASE_SENSITIVE);
-    }
-    else if (function == backwards_void) {
-      TOGGLE(BACKWARDS_SEARCH);
-    }
-    else if (function == regexp_void) {
-      TOGGLE(USE_REGEXP);
-    }
-    else if (function == flip_replace) {
-      if (ISSET(VIEW_MODE)) {
-        print_view_warning();
-        napms(600);
-      }
-      else {
-        replacing = !replacing;
-      }
-    }
-    else if (function == flip_goto) {
-      goto_line_and_column(openfile->current->lineno, (openfile->placewewant + 1), TRUE, TRUE);
-      break;
-    }
-    else {
-      break;
-    }
-  }
-  if (!inhelp) {
-    tidy_up_after_search();
-  }
-  free(thedefault);
-}
+// static void search_init(bool replacing, bool retain_answer) {
+//   functionptrtype function;
+//   char *disp;
+//   int response;
+//   /* What will be searched for when the user types just <Enter>. */
+//   char *thedefault;
+//   /* If something was searched for earlier, include it in the prompt. */
+//   if (*last_search) {
+//     disp = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
+//     thedefault = (char *)nmalloc(strlen(disp) + 7);
+//     /* We use (COLS / 3) here because we need to see more on the line. */
+//     sprintf(thedefault, " [%s%s]", disp, ((long)breadth(last_search) > (COLS / 3)) ? "..." : "");
+//     free(disp);
+//   }
+//   else {
+//     thedefault = STRLTR_COPY_OF("");
+//   }
+//   while (TRUE) {
+//     /* Ask the user what to search for (or replace). */
+//     response = do_prompt(
+//       (inhelp ? MFINDINHELP : (replacing ? MREPLACE : MWHEREIS)),
+//       (retain_answer ? answer : ""),
+//       &search_history,
+//       edit_refresh,
+//       /* TRANSLATORS: This is the main search prompt. */
+//       "%s%s%s%s%s%s", _("Search"),
+//       /* TRANSLATORS: The next four modify the search prompt. */
+//       (ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : ""),
+//       (ISSET(USE_REGEXP) ? _(" [Regexp]") : ""),
+//       (ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : ""),
+//       (replacing ? openfile->mark ? _(" (to replace) in selection") : _(" (to replace)") : ""),
+//       thedefault
+//     );
+//     /* If the search was cancelled, or we have a blank answer and nothing was searched for yet during this session, get out. */
+//     if (response == -1 || (response == -2 && !*last_search)) {
+//       statusbar_all(_("Cancelled"));
+//       break;
+//     }
+//     /* If Enter was pressed, prepare to do a replace or a search. */
+//     if (response == 0 || response == -2) {
+//       /* If an actual answer was typed, remember it. */
+//       if (*answer) {
+//         last_search = realloc_strcpy(last_search, answer);
+//         update_history(&search_history, answer, PRUNE_DUPLICATE);
+//       }
+//       if (ISSET(USE_REGEXP) && !regexp_init(last_search)) {
+//         break;
+//       }
+//       if (replacing) {
+//         ask_for_and_do_replacements();
+//       }
+//       else {
+//         go_looking();
+//       }
+//       break;
+//     }
+//     retain_answer = TRUE;
+//     function      = func_from_key(response);
+//     /* If we're here, one of the five toggles was pressed, or a shortcut was executed. */
+//     if (function == case_sens_void) {
+//       TOGGLE(CASE_SENSITIVE);
+//     }
+//     else if (function == backwards_void) {
+//       TOGGLE(BACKWARDS_SEARCH);
+//     }
+//     else if (function == regexp_void) {
+//       TOGGLE(USE_REGEXP);
+//     }
+//     else if (function == flip_replace) {
+//       if (ISSET(VIEW_MODE)) {
+//         print_view_warning();
+//         napms(600);
+//       }
+//       else {
+//         replacing = !replacing;
+//       }
+//     }
+//     else if (function == flip_goto) {
+//       goto_line_and_column(openfile->current->lineno, (openfile->placewewant + 1), TRUE, TRUE);
+//       break;
+//     }
+//     else {
+//       break;
+//     }
+//   }
+//   if (!inhelp) {
+//     tidy_up_after_search();
+//   }
+//   free(thedefault);
+// }
 
 /* Look for needle, starting at (current, current_x).  Begin is the line where we first started searching,
  * at column begin_x.  Return 1 when we found something, 0 when nothing, and -2 on cancel.  When match_len is
@@ -275,16 +275,16 @@ static void search_init(bool replacing, bool retain_answer) {
 // }
 
 /* Ask for a string and then search forward for it. */
-void do_search_forward(void) {
-  UNSET(BACKWARDS_SEARCH);
-  search_init(FALSE, FALSE);
-}
+// void do_search_forward(void) {
+//   UNSET(BACKWARDS_SEARCH);
+//   search_init(FALSE, FALSE);
+// }
 
 /* Ask for a string and then search backwards for it. */
-void do_search_backward(void) {
-  SET(BACKWARDS_SEARCH);
-  search_init(FALSE, FALSE);
-}
+// void do_search_backward(void) {
+//   SET(BACKWARDS_SEARCH);
+//   search_init(FALSE, FALSE);
+// }
 
 /* Search for the last string without prompting. */
 // static void do_research(void) {
@@ -419,121 +419,121 @@ void do_search_backward(void) {
  * and replace it with answer.  The parameters real_current and real_current_x are needed in order to allow the
  * cursor position to be updated when a word before the cursor is replaced by a shorter word.  Return -1 if needle
  * isn't found, -2 if the seeking is aborted, else the number of replacements performed. */
-long do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, Ulong *real_current_x) {
-  linestruct *was_mark = openfile->mark;
-  linestruct *top, *bot;
-  Ulong top_x, bot_x;
-  bool  skipone       = ISSET(BACKWARDS_SEARCH);
-  bool  replaceall    = FALSE;
-  int   modus         = REPLACING;
-  bool  right_side_up = (openfile->mark && mark_is_before_cursor());
-  long  numreplaced   = -1;
-  Ulong match_len;
-  /* If the mark is on, frame the region, and turn the mark off. */
-  if (openfile->mark) {
-    get_region(&top, &top_x, &bot, &bot_x);
-    openfile->mark = NULL;
-    modus = INREGION;
-    /* Start either at the top or the bottom of the marked region. */
-    if (!ISSET(BACKWARDS_SEARCH)) {
-      openfile->current   = top;
-      openfile->current_x = top_x;
-    }
-    else {
-      openfile->current   = bot;
-      openfile->current_x = bot_x;
-    }
-  }
-  came_full_circle = FALSE;
-  while (TRUE) {
-    int choice = NO;
-    int result = findnextstr(needle, whole_word_only, modus, &match_len, skipone, real_current, *real_current_x);
-    /* If nothing more was found, or the user aborted, stop looping. */
-    if (result < 1) {
-      if (result < 0) {
-        /* It's a Cancel instead of Not found. */
-        numreplaced = -2;
-      }
-      break;
-    }
-    /* An occurrence outside of the marked region means we're done. */
-    if (was_mark && (openfile->current->lineno > bot->lineno || openfile->current->lineno < top->lineno
-     || (openfile->current == bot && (openfile->current_x + match_len) > bot_x) || (openfile->current == top && openfile->current_x < top_x))) {
-      break;
-    }
-    /* Indicate that we found the search string. */
-    if (numreplaced == -1) {
-      numreplaced = 0;
-    }
-    if (!replaceall) {
-      spotlighted    = TRUE;
-      light_from_col = xplustabs();
-      light_to_col   = wideness(openfile->current->data, (openfile->current_x + match_len));
-      /* Refresh the edit window, scrolling it if necessary. */
-      edit_refresh();
-      /* TRANSLATORS: This is a prompt. */
-      choice = ask_user(YESORALLORNO, _("Replace this instance?"));
-      spotlighted = FALSE;
-      if (choice == CANCEL) {
-        break;
-      }
-      replaceall = (choice == ALL);
-      /* When "No" or moving backwards, the search routine should first move one character further before continuing. */
-      skipone = (!choice || ISSET(BACKWARDS_SEARCH));
-    }
-    if (choice == YES || replaceall) {
-      Ulong length_change;
-      char *altered;
-      altered = replace_line(needle);
-      length_change = (strlen(altered) - strlen(openfile->current->data));
-      add_undo(REPLACE, NULL);
-      /* If the mark was on and it was located after the cursor, then adjust its x position for any text length changes. */
-      if (was_mark && !right_side_up) {
-        if (openfile->current == was_mark && openfile->mark_x > openfile->current_x) {
-          if (openfile->mark_x < (openfile->current_x + match_len)) {
-            openfile->mark_x = openfile->current_x;
-          }
-          else {
-            openfile->mark_x += length_change;
-          }
-          bot_x = openfile->mark_x;
-        }
-      }
-      /* If the mark was not on or it was before the cursor, then adjust the cursor's x position for any text length changes. */
-      if (!was_mark || right_side_up) {
-        if (openfile->current == real_current && openfile->current_x < *real_current_x) {
-          if (*real_current_x < (openfile->current_x + match_len)) {
-            *real_current_x = (openfile->current_x + match_len);
-          }
-          *real_current_x += length_change;
-          bot_x = *real_current_x;
-        }
-      }
-      /* Don't find the same zero-length or BOL match again. */
-      if (!match_len || (*needle == '^' && ISSET(USE_REGEXP))) {
-        skipone = TRUE;
-      }
-      /* When moving forward, put the cursor just after the replacement text, so that searching will continue there. */
-      if (!ISSET(BACKWARDS_SEARCH)) {
-        openfile->current_x += (match_len + length_change);
-      }
-      /* Update the file size, and put the changed line into place. */
-      openfile->totsize += (mbstrlen(altered) - mbstrlen(openfile->current->data));
-      free(openfile->current->data);
-      openfile->current->data = altered;
-      check_the_multis(openfile->current);
-      refresh_needed = FALSE;
-      set_modified();
-      as_an_at = TRUE;
-      ++numreplaced;
-    }
-  }
-  if (numreplaced == -1) {
-    not_found_msg(needle);
-  }
-  openfile->mark = was_mark;
-  return numreplaced;
-}
+// long do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, Ulong *real_current_x) {
+//   linestruct *was_mark = openfile->mark;
+//   linestruct *top, *bot;
+//   Ulong top_x, bot_x;
+//   bool  skipone       = ISSET(BACKWARDS_SEARCH);
+//   bool  replaceall    = FALSE;
+//   int   modus         = REPLACING;
+//   bool  right_side_up = (openfile->mark && mark_is_before_cursor());
+//   long  numreplaced   = -1;
+//   Ulong match_len;
+//   /* If the mark is on, frame the region, and turn the mark off. */
+//   if (openfile->mark) {
+//     get_region(&top, &top_x, &bot, &bot_x);
+//     openfile->mark = NULL;
+//     modus = INREGION;
+//     /* Start either at the top or the bottom of the marked region. */
+//     if (!ISSET(BACKWARDS_SEARCH)) {
+//       openfile->current   = top;
+//       openfile->current_x = top_x;
+//     }
+//     else {
+//       openfile->current   = bot;
+//       openfile->current_x = bot_x;
+//     }
+//   }
+//   came_full_circle = FALSE;
+//   while (TRUE) {
+//     int choice = NO;
+//     int result = findnextstr(needle, whole_word_only, modus, &match_len, skipone, real_current, *real_current_x);
+//     /* If nothing more was found, or the user aborted, stop looping. */
+//     if (result < 1) {
+//       if (result < 0) {
+//         /* It's a Cancel instead of Not found. */
+//         numreplaced = -2;
+//       }
+//       break;
+//     }
+//     /* An occurrence outside of the marked region means we're done. */
+//     if (was_mark && (openfile->current->lineno > bot->lineno || openfile->current->lineno < top->lineno
+//      || (openfile->current == bot && (openfile->current_x + match_len) > bot_x) || (openfile->current == top && openfile->current_x < top_x))) {
+//       break;
+//     }
+//     /* Indicate that we found the search string. */
+//     if (numreplaced == -1) {
+//       numreplaced = 0;
+//     }
+//     if (!replaceall) {
+//       spotlighted    = TRUE;
+//       light_from_col = xplustabs();
+//       light_to_col   = wideness(openfile->current->data, (openfile->current_x + match_len));
+//       /* Refresh the edit window, scrolling it if necessary. */
+//       edit_refresh();
+//       /* TRANSLATORS: This is a prompt. */
+//       choice = ask_user(YESORALLORNO, _("Replace this instance?"));
+//       spotlighted = FALSE;
+//       if (choice == CANCEL) {
+//         break;
+//       }
+//       replaceall = (choice == ALL);
+//       /* When "No" or moving backwards, the search routine should first move one character further before continuing. */
+//       skipone = (!choice || ISSET(BACKWARDS_SEARCH));
+//     }
+//     if (choice == YES || replaceall) {
+//       Ulong length_change;
+//       char *altered;
+//       altered = replace_line(needle);
+//       length_change = (strlen(altered) - strlen(openfile->current->data));
+//       add_undo(REPLACE, NULL);
+//       /* If the mark was on and it was located after the cursor, then adjust its x position for any text length changes. */
+//       if (was_mark && !right_side_up) {
+//         if (openfile->current == was_mark && openfile->mark_x > openfile->current_x) {
+//           if (openfile->mark_x < (openfile->current_x + match_len)) {
+//             openfile->mark_x = openfile->current_x;
+//           }
+//           else {
+//             openfile->mark_x += length_change;
+//           }
+//           bot_x = openfile->mark_x;
+//         }
+//       }
+//       /* If the mark was not on or it was before the cursor, then adjust the cursor's x position for any text length changes. */
+//       if (!was_mark || right_side_up) {
+//         if (openfile->current == real_current && openfile->current_x < *real_current_x) {
+//           if (*real_current_x < (openfile->current_x + match_len)) {
+//             *real_current_x = (openfile->current_x + match_len);
+//           }
+//           *real_current_x += length_change;
+//           bot_x = *real_current_x;
+//         }
+//       }
+//       /* Don't find the same zero-length or BOL match again. */
+//       if (!match_len || (*needle == '^' && ISSET(USE_REGEXP))) {
+//         skipone = TRUE;
+//       }
+//       /* When moving forward, put the cursor just after the replacement text, so that searching will continue there. */
+//       if (!ISSET(BACKWARDS_SEARCH)) {
+//         openfile->current_x += (match_len + length_change);
+//       }
+//       /* Update the file size, and put the changed line into place. */
+//       openfile->totsize += (mbstrlen(altered) - mbstrlen(openfile->current->data));
+//       free(openfile->current->data);
+//       openfile->current->data = altered;
+//       check_the_multis(openfile->current);
+//       refresh_needed = FALSE;
+//       set_modified();
+//       as_an_at = TRUE;
+//       ++numreplaced;
+//     }
+//   }
+//   if (numreplaced == -1) {
+//     not_found_msg(needle);
+//   }
+//   openfile->mark = was_mark;
+//   return numreplaced;
+// }
 
 /* Replace a string. */
 void do_replace(void) {
@@ -547,40 +547,40 @@ void do_replace(void) {
 }
 
 /* Ask the user what to replace the search string with, and do the replacements. */
-void ask_for_and_do_replacements(void) {
-  linestruct *was_edittop = openfile->edittop;
-  linestruct *beginline   = openfile->current;
-  Ulong was_firstcolumn = openfile->firstcolumn;
-  Ulong begin_x         = openfile->current_x;
-  char *replacee        = copy_of(last_search);
-  long  numreplaced;
-  int   response = do_prompt(MREPLACEWITH, "", &replace_history, /* TRANSLATORS: This is a prompt. */ edit_refresh, _("Replace with"));
-  /* Set the string to be searched, as it might have changed at the prompt. */
-  free(last_search);
-  last_search = replacee;
-  /* When not "", add the replace string to the replace history list. */
-  if (response == 0) {
-    update_history(&replace_history, answer, PRUNE_DUPLICATE);
-  }
-  /* When cancelled, or when a function was run, get out. */
-  if (response == -1) {
-    statusbar_all(_("Cancelled"));
-    return;
-  }
-  else if (response > 0) {
-    return;
-  }
-  numreplaced = do_replace_loop(last_search, FALSE, beginline, &begin_x);
-  /* Restore where we were. */
-  openfile->edittop     = was_edittop;
-  openfile->firstcolumn = was_firstcolumn;
-  openfile->current     = beginline;
-  openfile->current_x   = begin_x;
-  refresh_needed        = TRUE;
-  if (numreplaced >= 0) {
-    statusline(REMARK, P_("Replaced %zd occurrence", "Replaced %zd occurrences", numreplaced), numreplaced);
-  }
-}
+// void ask_for_and_do_replacements(void) {
+//   linestruct *was_edittop = openfile->edittop;
+//   linestruct *beginline   = openfile->current;
+//   Ulong was_firstcolumn = openfile->firstcolumn;
+//   Ulong begin_x         = openfile->current_x;
+//   char *replacee        = copy_of(last_search);
+//   long  numreplaced;
+//   int   response = do_prompt(MREPLACEWITH, "", &replace_history, /* TRANSLATORS: This is a prompt. */ edit_refresh, _("Replace with"));
+//   /* Set the string to be searched, as it might have changed at the prompt. */
+//   free(last_search);
+//   last_search = replacee;
+//   /* When not "", add the replace string to the replace history list. */
+//   if (response == 0) {
+//     update_history(&replace_history, answer, PRUNE_DUPLICATE);
+//   }
+//   /* When cancelled, or when a function was run, get out. */
+//   if (response == -1) {
+//     statusbar_all(_("Cancelled"));
+//     return;
+//   }
+//   else if (response > 0) {
+//     return;
+//   }
+//   numreplaced = do_replace_loop(last_search, FALSE, beginline, &begin_x);
+//   /* Restore where we were. */
+//   openfile->edittop     = was_edittop;
+//   openfile->firstcolumn = was_firstcolumn;
+//   openfile->current     = beginline;
+//   openfile->current_x   = begin_x;
+//   refresh_needed        = TRUE;
+//   if (numreplaced >= 0) {
+//     statusline(REMARK, P_("Replaced %zd occurrence", "Replaced %zd occurrences", numreplaced), numreplaced);
+//   }
+// }
 
 /* Go to the specified line and x position. */
 // void goto_line_posx(long linenumber, Ulong pos_x) _NOTHROW {
@@ -600,99 +600,99 @@ void ask_for_and_do_replacements(void) {
 
 /* Go to the specified line and column, or ask for them if interactive is TRUE.  In the latter case also
  * update the screen afterwards.  Note that both the line and column number should be one-based. */
-void goto_line_and_column(long line, long column, bool retain_answer, bool interactive) {
-  int response, rows_from_tail;
-  linestruct *currentline;
-  Ulong leftedge;
-  if (interactive) {
-    /* Ask for the line and column.  TRANSLATOR: This is a prompt. */
-    response = do_prompt(MGOTOLINE, retain_answer ? answer : "", NULL, edit_refresh, _("Enter line number, column number"));
-    /* If the user cancelled or gave a blank answer, get out. */
-    if (response < 0) {
-      statusbar_all(_("Cancelled"));
-      return;
-    }
-    if (func_from_key(response) == flip_goto) {
-      UNSET(BACKWARDS_SEARCH);
-      /* Switch to searching but retain what the user typed so far. */
-      search_init(FALSE, TRUE);
-      return;
-    }
-    /* If a function was executed, we're done here. */
-    if (response > 0) {
-      return;
-    }
-    /* Try to extract one or two numbers from the user's response. */
-    if (!parse_line_column(answer, &line, &column)) {
-      statusline(AHEM, _("Invalid line or column number"));
-      return;
-    }
-  }
-  else {
-    if (!line) {
-      line = openfile->current->lineno;
-    }
-    if (!column) {
-      column = (openfile->placewewant + 1);
-    }
-  }
-  /* Take a negative line number to mean: from the end of the file. */
-  if (line < 0) {
-    line = (openfile->filebot->lineno + line + 1);
-  }
-  if (line < 1) {
-    line = 1;
-  }
-  if (line > (openfile->edittop->lineno + editwinrows) || (ISSET(SOFTWRAP) && line > openfile->current->lineno)) {
-    recook |= perturbed;
-  }
-  /* Iterate to the requested line. */
-  for (openfile->current = openfile->filetop; line > 1 && openfile->current != openfile->filebot; line--) {
-    openfile->current = openfile->current->next;
-  }
-  /* Take a negative column number to mean: from the end of the line. */
-  if (column < 0) {
-    column = breadth(openfile->current->data) + column + 2;
-  }
-  if (column < 1) {
-    column = 1;
-  }
-  /* Set the x position that corresponds to the requested column. */
-  openfile->current_x   = actual_x(openfile->current->data, (column - 1));
-  openfile->placewewant = (column - 1);
-  if (ISSET(SOFTWRAP) && (openfile->placewewant / editwincols) > (breadth(openfile->current->data) / editwincols)) {
-    openfile->placewewant = breadth(openfile->current->data);
-  }
-  /* When a line number was manually given, center the target line. */
-  if (interactive) {
-    adjust_viewport((*answer == ',') ? STATIONARY : CENTERING);
-    refresh_needed = TRUE;
-  }
-  else {
-    if (ISSET(SOFTWRAP)) {
-      currentline    = openfile->current;
-      leftedge       = leftedge_for(editwincols, xplustabs(), openfile->current);
-      rows_from_tail = ((editwinrows / 2) - go_forward_chunks((editwinrows / 2), &currentline, &leftedge));
-    }
-    else {
-      rows_from_tail = (openfile->filebot->lineno - openfile->current->lineno);
-    }
-    /* If the target line is close to the tail of the file, put the last line or chunk
-     * on the bottom line of the screen; otherwise, just center the target line. */
-    if (rows_from_tail < editwinrows / 2 && !ISSET(JUMPY_SCROLLING)) {
-      openfile->cursor_row = (editwinrows - 1 - rows_from_tail);
-      adjust_viewport(STATIONARY);
-    }
-    else {
-      adjust_viewport(CENTERING);
-    }
-  }
-}
+// void goto_line_and_column(long line, long column, bool retain_answer, bool interactive) {
+//   int response, rows_from_tail;
+//   linestruct *currentline;
+//   Ulong leftedge;
+//   if (interactive) {
+//     /* Ask for the line and column.  TRANSLATOR: This is a prompt. */
+//     response = do_prompt(MGOTOLINE, retain_answer ? answer : "", NULL, edit_refresh, _("Enter line number, column number"));
+//     /* If the user cancelled or gave a blank answer, get out. */
+//     if (response < 0) {
+//       statusbar_all(_("Cancelled"));
+//       return;
+//     }
+//     if (func_from_key(response) == flip_goto) {
+//       UNSET(BACKWARDS_SEARCH);
+//       /* Switch to searching but retain what the user typed so far. */
+//       search_init(FALSE, TRUE);
+//       return;
+//     }
+//     /* If a function was executed, we're done here. */
+//     if (response > 0) {
+//       return;
+//     }
+//     /* Try to extract one or two numbers from the user's response. */
+//     if (!parse_line_column(answer, &line, &column)) {
+//       statusline(AHEM, _("Invalid line or column number"));
+//       return;
+//     }
+//   }
+//   else {
+//     if (!line) {
+//       line = openfile->current->lineno;
+//     }
+//     if (!column) {
+//       column = (openfile->placewewant + 1);
+//     }
+//   }
+//   /* Take a negative line number to mean: from the end of the file. */
+//   if (line < 0) {
+//     line = (openfile->filebot->lineno + line + 1);
+//   }
+//   if (line < 1) {
+//     line = 1;
+//   }
+//   if (line > (openfile->edittop->lineno + editwinrows) || (ISSET(SOFTWRAP) && line > openfile->current->lineno)) {
+//     recook |= perturbed;
+//   }
+//   /* Iterate to the requested line. */
+//   for (openfile->current = openfile->filetop; line > 1 && openfile->current != openfile->filebot; line--) {
+//     openfile->current = openfile->current->next;
+//   }
+//   /* Take a negative column number to mean: from the end of the line. */
+//   if (column < 0) {
+//     column = breadth(openfile->current->data) + column + 2;
+//   }
+//   if (column < 1) {
+//     column = 1;
+//   }
+//   /* Set the x position that corresponds to the requested column. */
+//   openfile->current_x   = actual_x(openfile->current->data, (column - 1));
+//   openfile->placewewant = (column - 1);
+//   if (ISSET(SOFTWRAP) && (openfile->placewewant / editwincols) > (breadth(openfile->current->data) / editwincols)) {
+//     openfile->placewewant = breadth(openfile->current->data);
+//   }
+//   /* When a line number was manually given, center the target line. */
+//   if (interactive) {
+//     adjust_viewport((*answer == ',') ? STATIONARY : CENTERING);
+//     refresh_needed = TRUE;
+//   }
+//   else {
+//     if (ISSET(SOFTWRAP)) {
+//       currentline    = openfile->current;
+//       leftedge       = leftedge_for(editwincols, xplustabs(), openfile->current);
+//       rows_from_tail = ((editwinrows / 2) - go_forward_chunks((editwinrows / 2), &currentline, &leftedge));
+//     }
+//     else {
+//       rows_from_tail = (openfile->filebot->lineno - openfile->current->lineno);
+//     }
+//     /* If the target line is close to the tail of the file, put the last line or chunk
+//      * on the bottom line of the screen; otherwise, just center the target line. */
+//     if (rows_from_tail < editwinrows / 2 && !ISSET(JUMPY_SCROLLING)) {
+//       openfile->cursor_row = (editwinrows - 1 - rows_from_tail);
+//       adjust_viewport(STATIONARY);
+//     }
+//     else {
+//       adjust_viewport(CENTERING);
+//     }
+//   }
+// }
 
 /* Go to the specified line and column, asking for them beforehand. */
-void do_gotolinecolumn(void) {
-  goto_line_and_column(openfile->current->lineno, (openfile->placewewant + 1), FALSE, TRUE);
-}
+// void do_gotolinecolumn(void) {
+//   goto_line_and_column(openfile->current->lineno, (openfile->placewewant + 1), FALSE, TRUE);
+// }
 
 /* Search, starting from the current position, for any of the two characters in bracket_pair.  If reverse is TRUE,
  * search backwards, otherwise forwards.  Return TRUE when one of the brackets was found, and FALSE otherwise. */

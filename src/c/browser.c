@@ -72,110 +72,293 @@ Ulong selected = 0;
 /* Allow the user to browse through the directories in the filesystem, starting at the
  * given path.  The user can select a file, which will be returned.  The user can also
  * select a directory, which will be entered.  The user can also cancel the browsing. */
-// /* static */ char *browse(char *path) {
-//   /* The name of the currently selected file, or of the directory we were in before backing up to "...". */
-//   char *present_name = NULL;
-//   /* The number of the selected file before the current selected file. */
-//   Ulong old_selected;
-//   /* The directory whose contents we are showing. */
-//   DIR *dir;
-//   /* The name of the file that the user picked, or NULL if none. */
-//   char *chosen = NULL;
-//   functionptrtype function;
-//   int kbinput;
-//   int mx;
-//   int my;
-//   /* When not in curses-mode, just return NULL. */
-//   if (!IN_CURSES_CTX) {
-//     return NULL;
-//   }
-//   /* We come here when the user refreshes or selects a new directory. */
-//   read_directory_contets: {
-//     path = free_and_assign(path, get_full_path(path));
-//     if (path) {
-//       dir = opendir(path);
-//     }
-//     if (!path || !dir) {
-//       statusline(ALERT, _("Cannot open directory: %s"), strerror(errno));
-//       /* If we don't have a file list, there is nothing to show. */
-//       if (!filelist) {
-//         lastmessage = VACUUM;
-//         free(present_path);
-//         free(path);
-//         napms(1200);
-//         return NULL;
-//       }
-//       path         = xstrcpy(path, present_path);
-//       present_name = xstrcpy(present_name, filelist[selected]);
-//     }
-//     if (dir) {
-//       /* Get the file list, and set gauge and piles in the process. */
-//       read_the_list(path, dir);
-//       closedir(dir);
-//       dir = NULL;
-//     }
-//     /* If something was selected before, reselect it. */
-//     if (present_name) {
-//       reselect(present_name);
-//       free(present_name);
-//       present_name = NULL;
-//     }
-//     /* Otherwise, just select the first item (..). */
-//     else {
-//       selected = 0;
-//     }
-//     old_selected = (Ulong)-1;
-//     present_path = xstrcpy(present_path, path);
-//     titlebar(path);
-//     if (!list_length) {
-//       statusline(ALERT, _("No entries"));
-//       napms(1200);
-//     }
-//     else {
-//       while (TRUE) {
-//         lastmessage = VACUUM;
-//         bottombars(MBROWSER);
-//         /* Display (or redisplay) the file list if the list itself or the selected file has changed. */
-//         if (old_selected != selected || ISSET(SHOW_CURSOR)) {
-//           browser_refresh();
-//         }
-//         old_selected = selected;
-//         kbinput      = get_kbinput(midwin, ISSET(SHOW_CURSOR));
-//         /* Handle mouse events. */
-//         if (kbinput == KEY_MOUSE) {
-//           /* When the user clicked in the file list, select a filename. */
-//           if (get_mouseinput(&my, &mx, TRUE) == 0 && wmouse_trafo(midwin, &my, &mx, FALSE)) {
-//             selected = (selected - selected % (usable_rows * piles) + (my * piles) + (mx / (gauge + 2)));
-//             /* When beyond the end-of-row, select the preceding filename.  Well
-//              * -- this might not make for the most responsive feeling interface. */
-//             if (mx > (piles * (gauge + 2))) {
-//               --selected;
-//             }
-//             /* When beyond the end-of-list, select the last filename.  Again... */
-//             if (selected > (list_length - 1)) {
-//               selected = (list_length - 1);
-//             }
-//             /* When a filename is clicked a second time, choose it. */
-//             if (old_selected == selected) {
-//               kbinput = KEY_ENTER;
-//             }
-//           }
-//           if (kbinput == KEY_MOUSE) {
-//             continue;
-//           }
-//         }
-//         while (bracketed_paste) {
-//           kbinput = get_kbinput(midwin, BLIND);
-//         }
-//         if (kbinput == BRACKETED_PASTE_MARKER) {
-//           beep();
-//           continue;
-//         }
-//         // function = 
-//       }
-//     }
-//   }
-// }
+/* static */ char *browse(char *path) {
+  /* The name of the currently selected file, or of the directory we were in before backing up to "...". */
+  char *present_name = NULL;
+  /* The number of the selected file before the current selected file. */
+  Ulong old_selected;
+  /* The directory whose contents we are showing. */
+  DIR *dir;
+  /* The name of the file that the user picked, or NULL if none. */
+  char *chosen = NULL;
+  functionptrtype function;
+  int kbinput;
+  int mx;
+  int my;
+  struct stat st;
+  /* When not in curses-mode, just return NULL. */
+  if (!IN_CURSES_CTX) {
+    return NULL;
+  }
+  /* We come here when the user refreshes or selects a new directory. */
+  read_directory_contents: {
+    path = free_and_assign(path, get_full_path(path));
+    if (path) {
+      dir = opendir(path);
+    }
+    if (!path || !dir) {
+      statusline(ALERT, _("Cannot open directory: %s"), strerror(errno));
+      /* If we don't have a file list, there is nothing to show. */
+      if (!filelist) {
+        lastmessage = VACUUM;
+        free(present_path);
+        free(path);
+        napms(1200);
+        return NULL;
+      }
+      path         = xstrcpy(path, present_path);
+      present_name = xstrcpy(present_name, filelist[selected]);
+    }
+    if (dir) {
+      /* Get the file list, and set gauge and piles in the process. */
+      read_the_list(path, dir);
+      closedir(dir);
+      dir = NULL;
+    }
+    /* If something was selected before, reselect it. */
+    if (present_name) {
+      reselect(present_name);
+      free(present_name);
+      present_name = NULL;
+    }
+    /* Otherwise, just select the first item (..). */
+    else {
+      selected = 0;
+    }
+    old_selected = (Ulong)-1;
+    present_path = xstrcpy(present_path, path);
+    titlebar(path);
+    if (!list_length) {
+      statusline(ALERT, _("No entries"));
+      napms(1200);
+    }
+    else {
+      while (TRUE) {
+        lastmessage = VACUUM;
+        bottombars(MBROWSER);
+        /* Display (or redisplay) the file list if the list itself or the selected file has changed. */
+        if (old_selected != selected || ISSET(SHOW_CURSOR)) {
+          browser_refresh();
+        }
+        old_selected = selected;
+        kbinput      = get_kbinput(midwin, ISSET(SHOW_CURSOR));
+        /* Handle mouse events. */
+        if (kbinput == KEY_MOUSE) {
+          /* When the user clicked in the file list, select a filename. */
+          if (get_mouseinput(&my, &mx, TRUE) == 0 && wmouse_trafo(midwin, &my, &mx, FALSE)) {
+            selected = (selected - selected % (usable_rows * piles) + (my * piles) + (mx / (gauge + 2)));
+            /* When beyond the end-of-row, select the preceding filename.  Well
+             * -- this might not make for the most responsive feeling interface. */
+            if (mx > (piles * (gauge + 2))) {
+              --selected;
+            }
+            /* When beyond the end-of-list, select the last filename.  Again... */
+            if (selected > (list_length - 1)) {
+              selected = (list_length - 1);
+            }
+            /* When a filename is clicked a second time, choose it. */
+            if (old_selected == selected) {
+              kbinput = KEY_ENTER;
+            }
+          }
+          if (kbinput == KEY_MOUSE) {
+            continue;
+          }
+        }
+        while (bracketed_paste) {
+          kbinput = get_kbinput(midwin, BLIND);
+        }
+        if (kbinput == BRACKETED_PASTE_MARKER) {
+          beep();
+          continue;
+        }
+        function = interpret(kbinput);
+        if (function == full_refresh || function == do_help) {
+          function();
+          /* Simulate a terminal resize to force a directory reload, or because the terminal dimensions might have changed */
+          kbinput = KEY_WINCH;
+        }
+        else if (function == do_toggle) {
+          if (get_shortcut(kbinput)->toggle == NO_HELP) {
+            TOGGLE(NO_HELP);
+            window_init();
+            kbinput = KEY_WINCH;
+          }
+        }
+        else if (function == do_search_backward) {
+          search_filename(BACKWARD);
+        }
+        else if (function == do_search_forward) {
+          search_filename(FORWARD);
+        }
+        else if (function == do_findprevious) {
+          research_filename(BACKWARD);
+        }
+        else if (function == do_findnext) {
+          research_filename(FORWARD);
+        }
+        else if (function == do_left) {
+          if (selected > 0) {
+            --selected;
+          }
+        }
+        else if (function == do_right) {
+          if (selected < (list_length - 1)) {
+            ++selected;
+          }
+        }
+        else if (function == to_prev_word) {
+          selected -= (selected % piles);
+        }
+        else if (function == to_next_word) {
+          selected += (piles - 1 - (selected % piles));
+          if (selected >= list_length) {
+            selected = (list_length - 1);
+          }
+        }
+        else if (function == do_up) {
+          if (GE(selected, piles)) {
+            selected -= piles;
+          }
+        }
+        else if (function == do_down) {
+          if ((selected + piles) <= (list_length - 1)) {
+            selected += piles;
+          }
+        }
+        else if (function == to_prev_block) {
+          selected = (((selected / (usable_rows * piles)) * usable_rows * piles) + selected % piles);
+        }
+        else if (function == to_next_block) {
+          /* TODO: This seams wastfull, figure out what is needed. */
+          selected = (((selected / (usable_rows * piles)) * usable_rows * piles) + selected % piles + usable_rows * piles - piles);
+          if (selected >= list_length) {
+            selected = ((list_length / piles) * piles + selected % piles);
+          }
+          if (selected >= list_length) {
+            selected -= piles;
+          }
+        }
+        else if (function == do_page_up) {
+          if (LT(selected, piles)) {
+            selected = 0;
+          }
+          else if (selected < (usable_rows * piles)) {
+            selected = (selected % piles);
+          }
+          else {
+            selected -= (usable_rows * piles);
+          }
+        }
+        else if (function == do_page_down) {
+          if ((selected + piles) >= (list_length - 1)) {
+            selected = (list_length - 1);
+          }
+          else if ((selected + usable_rows * piles) >= list_length) {
+            selected = ((selected + usable_rows * piles - list_length) % piles + list_length - piles);
+          }
+          else {
+            selected += (usable_rows * piles);
+          }
+        }
+        else if (function == to_first_file) {
+          selected = 0;
+        }
+        else if (function == to_last_file) {
+          selected = (list_length - 1);
+        }
+        else if (function == goto_dir) {
+          /* Ask for a directory to go to. */
+          if (do_prompt(MGOTODIR, "", NULL, /* TRANSLATORS: This is a prompt. */ browser_refresh, _("Go to directory")) < 0) {
+            statusbar_all(_("Cancelled"));
+            continue;
+          }
+          path = free_and_assign(path, real_dir_from_tilde(answer));
+          /* If the given path is relative, join it with the current path. */
+          if (*path != '/') {
+            path = xrealloc(path, (strlen(present_path) + strlen(answer) + 1));
+            sprintf(path, "%s%s", present_path, answer);
+          }
+          /* This refers to the confining effects of the option `--operatingdir`, not of `--restricted`. */
+          if (outside_of_confinement(path, FALSE)) {
+            statusline(ALERT, _("Can't go outside of %s"), operating_dir);
+            path = xstrcpy(path, present_path);
+            continue;
+          }
+          /* Snip any trailing slashes, so the name can be compared. */
+          while (strlen(path) > 1 && path[strlen(path) - 1] == '/') {
+            path[strlen(path) - 1] = '\0';
+          }
+          /* In case the specified directory cannot be entered, select it
+           * (if it's in the current list) so it will be highlighted. */
+          for (Ulong j=0; j<list_length; ++j) {
+            if (strcmp(filelist[j], path) == 0) {
+              selected = j;
+            }
+          }
+          /* Try opening and reading the specified directory. */
+          goto read_directory_contents;
+        }
+        else if (function == do_enter) {
+          /* It isn't possible to move up from the root directory. */
+          if (strcmp(filelist[selected], "/..") == 0) {
+            statusline(ALERT, _("Can't move up a directory"));
+            continue;
+          }
+          /* Note: The selected file can be outside the operating directory if it's ".."
+           * or if it's a symlink to a directory outside the operating directory. */
+          if (outside_of_confinement(filelist[selected], FALSE)) {
+            statusline(ALERT, _("Can't go outside of %s"), operating_dir);
+            continue;
+          }
+          /* If for some reason the file is inaccessible, complain. */
+          if (stat(filelist[selected], &st) == -1) {
+            statusline(ALERT, _("Error reading %s: %s"), filelist[selected], strerror(errno));
+            continue;
+          }
+          /* If it isn't a directory, a file was selected -- we're done. */
+          if (!S_ISDIR(st.st_mode)) {
+            chosen = copy_of(filelist[selected]);
+            break;
+          }
+          /* If we are moving up one level, remember where we came from,
+           * so this directory can be highlighted and easily reentered. */
+          if (strcmp(tail(filelist[selected]), "..") == 0) {
+            present_path = strip_last_component(filelist[selected]);
+          }
+          /* Try opening and reading the selected directory. */
+          path = xstrcpy(path, filelist[selected]);
+          goto read_directory_contents;
+        }
+        else if (function == (functionptrtype)implant) {
+          implant(first_sc_for(MBROWSER, function)->expansion);
+        }
+        else if (kbinput == KEY_WINCH) {
+          ; /* Gets handled below. */
+        }
+        else if (function == do_exit) {
+          break;
+        }
+        else {
+          unbound_key(kbinput);
+        }
+        /* If the terminal resized (or might have), refresh the file list. */
+        if (kbinput == KEY_WINCH) {
+          /* Remember the selected file, to be able to reselect it. */
+          present_path = copy_of(filelist[selected]);
+          goto read_directory_contents;
+        }
+      }
+    }
+  }
+  titlebar(NULL);
+  edit_refresh();
+  free(path);
+  free_chararray(filelist, list_length);
+  filelist    = NULL;
+  list_length = 0;
+  return chosen;
+}
 
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */

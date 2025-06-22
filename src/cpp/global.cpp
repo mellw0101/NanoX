@@ -458,44 +458,44 @@ static void add_to_sclist(const int menus, const char *scstring, const int keyco
 /* Return the function that is bound to the given key in the file browser or
  * the help viewer.  Accept also certain plain characters, for compatibility
  * with Pico or to mimic 'less' and similar text viewers. */
-functionptrtype interpret(const int keycode) {
-  if (!meta_key) {
-    if (keycode == 'N') {
-      return do_findprevious;
-    }
-    if (keycode == 'n') {
-      return do_findnext;
-    }
-    switch (constexpr_tolower(keycode)) {
-      case 'b' :
-      case '-' : {
-        return do_page_up;
-      }
-      case ' ' : {
-        return do_page_down;
-      }
-      case 'w' :
-      case '/' : {
-        return do_search_forward;
-      }
-      case 'g' : {
-        return goto_dir;
-      }
-      case '?' : {
-        return do_help;
-      }
-      case 's' : {
-        return do_enter;
-      }
-      case 'e' :
-      case 'q' :
-      case 'x' : {
-        return do_exit;
-      }
-    }
-  }
-  return func_from_key(keycode);
-}
+// functionptrtype interpret(const int keycode) {
+//   if (!meta_key) {
+//     if (keycode == 'N') {
+//       return do_findprevious;
+//     }
+//     if (keycode == 'n') {
+//       return do_findnext;
+//     }
+//     switch (constexpr_tolower(keycode)) {
+//       case 'b' :
+//       case '-' : {
+//         return do_page_up;
+//       }
+//       case ' ' : {
+//         return do_page_down;
+//       }
+//       case 'w' :
+//       case '/' : {
+//         return do_search_forward;
+//       }
+//       case 'g' : {
+//         return goto_dir;
+//       }
+//       case '?' : {
+//         return do_help;
+//       }
+//       case 's' : {
+//         return do_enter;
+//       }
+//       case 'e' :
+//       case 'q' :
+//       case 'x' : {
+//         return do_exit;
+//       }
+//     }
+//   }
+//   return func_from_key(keycode);
+// }
 
 /* These two tags are used elsewhere too, so they are global.
  * TRANSLATORS: Try to keep the next two strings at most 10 characters. */

@@ -140,6 +140,26 @@
     }                                \
   )
 
+#define RET_CTX_CALL(func)     \
+  DO_WHILE(                    \
+    if (IN_GUI_CTX) {          \
+      return (func)(GUI_CTX);  \
+    }                          \
+    else {                     \
+      return (func)(TUI_CTX);  \
+    }                          \
+  )
+
+#define RET_CTX_CALL_WARGS(func, ...)       \
+  DO_WHILE(                                 \
+    if (IN_GUI_CTX) {                       \
+      return (func)(GUI_CTX, __VA_ARGS__);  \
+    }                                       \
+    else {                                  \
+      return (func)(TUI_CTX, __VA_ARGS__);  \
+    }                                       \
+  )
+
 #define ASSERT_EDITOR(editor)  \
   ASSERT(editor);              \
   ASSERT(editor->openfile);    \

@@ -282,6 +282,7 @@ void        append_chararray(char ***const array, Ulong *const len, char **const
 char       *realloc_strncpy(char *dest, const char *const restrict src, Ulong length) __THROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 char       *realloc_strcpy(char *dest, const char *const restrict src) __THROW _NODISCARD _RETURNS_NONNULL _NONNULL(1, 2);
 void        get_homedir(void);
+/* ----------------------------- Line from number ----------------------------- */
 linestruct *line_from_number_for(openfilestruct *const file, long number);
 linestruct *line_from_number(long number);
 void        free_chararray(char **array, Ulong len);
@@ -308,6 +309,7 @@ void get_region(linestruct **const top, Ulong *const top_x, linestruct **const b
 /* ----------------------------- Get range ----------------------------- */
 void  get_range_for(openfilestruct *const file, linestruct **const top, linestruct **const bot);
 void  get_range(linestruct **const top, linestruct **const bot);
+/* ----------------------------- Parse line column ----------------------------- */
 bool  parse_line_column(const char *string, long *const line, long *const column);
 Ulong tabstop_length(const char *const restrict string, Ulong index);
 char *tab_space_string_for(openfilestruct *const file, Ulong *length);
@@ -422,45 +424,31 @@ void  discard_until(const undostruct *thisitem);
 bool  begpar(const linestruct *const line, int depth);
 bool  inpar(const linestruct *const line);
 void  do_block_comment(void);
-
 /* ----------------------------- Length of white ----------------------------- */
-
 Ulong length_of_white_for(openfilestruct *const file, const char *text);
 Ulong length_of_white(const char *text);
-
 /* ----------------------------- Compensate leftward ----------------------------- */
-
 void compensate_leftward_for(openfilestruct *const file, linestruct *const line, Ulong leftshift);
 void compensate_leftward(linestruct *const line, Ulong leftshift);
-
 /* ----------------------------- Unindent ----------------------------- */
-
 void unindent_a_line_for(openfilestruct *const file, linestruct *const line, Ulong indent_len);
 void unindent_a_line(linestruct *const line, Ulong indent_len);
 void do_unindent_for(openfilestruct *const file, int cols);
 void do_unindent(void);
-
 /* ----------------------------- Restore undo posx and mark ----------------------------- */
-
 void restore_undo_posx_and_mark_for(openfilestruct *const file, int rows, undostruct *const u);
 void restore_undo_posx_and_mark(undostruct *const u);
-
 /* ----------------------------- Insert empty line ----------------------------- */
-
 void insert_empty_line_for(openfilestruct *const file, linestruct *const line, bool above, bool autoindent);
 void insert_empty_line(linestruct *const line, bool above, bool autoindent);
 void do_insert_empty_line_above_for(openfilestruct *const file);
 void do_insert_empty_line_above(void);
 void do_insert_empty_line_below_for(openfilestruct *const file);
 void do_insert_empty_line_below(void);
-
 /* ----------------------------- Cursor is between brackets ----------------------------- */
-
 bool cursor_is_between_brackets_for(openfilestruct *const file);
 bool cursor_is_between_brackets(void);
-
 /* ----------------------------- Indent ----------------------------- */
-
 Ulong indent_length(const char *const restrict line);
 void  indent_a_line_for(openfilestruct *const file, linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2, 3);
 void  indent_a_line(linestruct *const line, const char *const restrict indentation) _NONNULL(1, 2);
@@ -468,23 +456,17 @@ void  do_indent_for(openfilestruct *const file, int cols);
 void  do_indent(void);
 void  handle_indent_action_for(openfilestruct *const file, int rows, undostruct *const u, bool undoing, bool add_indent);
 void  handle_indent_action(undostruct *const u, bool undoing, bool add_indent);
-
 /* ----------------------------- Enclose marked region ----------------------------- */
-
 char *enclose_str_encode(const char *const restrict p1, const char *const restrict p2);
 void  enclose_str_decode(const char *const restrict str, char **const p1, char **const p2);
 void  enclose_marked_region_for(openfilestruct *const file, const char *const restrict p1, const char *const restrict p2);
 void  enclose_marked_region(const char *const restrict p1, const char *const restrict p2);
-
 /* ----------------------------- Auto bracket ----------------------------- */
-
 void auto_bracket_for(openfilestruct *const file, linestruct *const line, Ulong posx);
 void auto_bracket(linestruct *const line, Ulong posx);
 void do_auto_bracket_for(openfilestruct *const file);
 void do_auto_bracket(void);
-
 /* ----------------------------- Comment ----------------------------- */
-
 bool  comment_line_for(openfilestruct *const file, undo_type action, linestruct *const line, const char *const restrict comment_seq);
 bool  comment_line(undo_type action, linestruct *const line, const char *const restrict comment_seq);
 char *get_comment_seq_for(openfilestruct *const file);
@@ -944,6 +926,8 @@ Ulong shown_entries_for(int menu);
 const keystruct *get_shortcut(int keycode);
 /* ----------------------------- Func from key ----------------------------- */
 functionptrtype func_from_key(int keycode);
+/* ----------------------------- Interpret ----------------------------- */
+functionptrtype interpret(int keycode);
 
 
 /* ---------------------------------------------------------- search.c ---------------------------------------------------------- */
@@ -958,6 +942,9 @@ functionptrtype func_from_key(int keycode);
 /* ----------------------------- Replace line ----------------------------- */
 /* static */ char *replace_line_for(openfilestruct *const file, const char *const restrict needle);
 /* static */ char *replace_line(const char *const restrict needle);
+/* ----------------------------- Search init ----------------------------- */
+/* static */ void search_init_for(CTX_ARGS, bool replacing, bool retain_answer);
+/* Remove */ void search_init(bool replacing, bool retain_answer);
 
 /* ----------------------------- Regular expression init ----------------------------- */
 bool regexp_init(const char *regexp);
@@ -983,6 +970,26 @@ void do_findprevious(void);
 /* ----------------------------- Do findnext ----------------------------- */
 void do_findnext_for(CTX_ARGS);
 void do_findnext(void);
+/* ----------------------------- Do replace loop ----------------------------- */
+long do_replace_loop_for(CTX_ARGS, const char *const restrict needle,
+  bool whole_word_only, const linestruct *const real_current, Ulong *const real_current_x);
+long do_replace_loop(const char *const restrict needle,
+  bool whole_word_only, const linestruct *const real_current, Ulong *const real_current_x);
+/* ----------------------------- Ask for and do replacement ----------------------------- */  
+void ask_for_and_do_replacements_for(CTX_ARGS);
+void ask_for_and_do_replacements(void);
+/* ----------------------------- Goto line and column ----------------------------- */
+void goto_line_and_column_for(CTX_ARGS, long line, long column, bool retain_answer, bool interactive);
+void goto_line_and_column(long line, long column, bool retain_answer, bool interactive);
+/* ----------------------------- Do gotolinecolumn ----------------------------- */
+void do_gotolinecolumn_for(CTX_ARGS);
+void do_gotolinecolumn(void);
+/* ----------------------------- Do search forward ----------------------------- */
+void do_search_forward_for(CTX_ARGS);
+void do_search_forward(void);
+/* ----------------------------- Do search backward ----------------------------- */
+void do_search_backward_for(CTX_ARGS);
+void do_search_backward(void);
 
 
 /* ---------------------------------------------------------- move.c ---------------------------------------------------------- */
@@ -1137,6 +1144,7 @@ bool  has_old_position(const char *const restrict file, long *const line, long *
 
 
 /* static */ void search_filename(bool forward);
+/* static */ char *browse(char *path);
 
 void  read_the_list(const char *path, DIR *dir);
 void  reselect(const char *const name);
@@ -1256,24 +1264,16 @@ void statusbar_draw(float fps);
 /* static */ void mouse_init(void);
 
 linestruct *make_new_node(linestruct *prevnode);
-
 /* ----------------------------- Splice node ----------------------------- */
-
 void splice_node_for(openfilestruct *const file, linestruct *const after, linestruct *const node);
 void splice_node(linestruct *const after, linestruct *const node);
-
 /* ----------------------------- Delete node ----------------------------- */
-
 void delete_node_for(openfilestruct *const file, linestruct *const node);
 void delete_node(linestruct *const line);
-
 /* ----------------------------- Unlink node ----------------------------- */
-
 void unlink_node_for(openfilestruct *const file, linestruct *const node);
 void unlink_node(linestruct *const node);
-
 /* ----------------------------- Free lines ----------------------------- */
-
 void free_lines_for(openfilestruct *const file, linestruct *src);
 void free_lines(linestruct *const head);
 
@@ -1302,17 +1302,16 @@ void        do_suspend(void);
 void        reconnect_and_store_state(void);
 void        handle_hupterm(int _UNUSED signal);
 void        handle_crash(int _UNUSED signal);
-
 /* ----------------------------- Inject ----------------------------- */
-
 void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *burst, Ulong count);
 void inject(char *burst, Ulong count);
+/* ----------------------------- Unbound key ----------------------------- */
+void unbound_key(int code);
 
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */
 
 
-// void inject(char *burst, Ulong count);
 void render_line_text(int row, const char *str, linestruct *line, Ulong from_col) __THROW;
 void apply_syntax_to_line(const int row, const char *converted, linestruct *line, Ulong from_col);
 keystruct *strtosc(const char *input);
@@ -1321,6 +1320,8 @@ void syntax_check_file(openfilestruct *file);
 
 bool wanted_to_move(functionptrtype f);
 bool changes_something(functionptrtype f);
+void do_exit(void);
+
 
 _END_C_LINKAGE
 

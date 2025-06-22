@@ -973,46 +973,46 @@ static int get_keycode(const char *const keyname, const int standard) _NOTHROW {
 // }
 
 /* Say that an unbound key was struck, and if possible which one. */
-void unbound_key(int code) _NOTHROW {
-  if (code == FOREIGN_SEQUENCE) {
-    /* TRANSLATORS: This refers to a sequence of escape codes (from the keyboard) that nano does not recognize. */
-    statusline(AHEM, _("Unknown sequence"));
-  }
-  else if (code == NO_SUCH_FUNCTION) {
-    statusline(AHEM, _("Unknown function: %s"), commandname);
-  }
-  else if (code == MISSING_BRACE) {
-    statusline(AHEM, _("Missing }"));
-  }
-  else if (code > KEY_F0 && code < (KEY_F0 + 25)) {
-    /* TRANSLATORS : This refers to an unbound function key. */
-    statusline(AHEM, _("Unbound key: F%i"), (code - KEY_F0));
-  }
-  else if (code > 0x7F) {
-    statusline(AHEM, _("Unbound key"));
-  }
-  else if (meta_key) {
-    if (code < 0x20) {
-      statusline(AHEM, _("Unbindable key: M-^%c"), (code + 0x40));
-    }
-    else if (shifted_metas && 'A' <= code && code <= 'Z') {
-      statusline(AHEM, _("Unbound key: %s%c"), "Sh-M-", code);
-    }
-    else {
-      statusline(AHEM, _("Unbound key: %s%c"), "M-", toupper(code));
-    }
-  }
-  else if (code == ESC_CODE) {
-    statusline(AHEM, _("Unbindable key: ^["));
-  }
-  else if (code < 0x20) {
-    statusline(AHEM, _("Unbound key: %s%c"), "^", (code + 0x40));
-  }
-  else {
-    statusline(AHEM, _("Unbound key: %s%c"), "", code);
-  }
-  set_blankdelay_to_one();
-}
+// void unbound_key(int code) _NOTHROW {
+//   if (code == FOREIGN_SEQUENCE) {
+//     /* TRANSLATORS: This refers to a sequence of escape codes (from the keyboard) that nano does not recognize. */
+//     statusline(AHEM, _("Unknown sequence"));
+//   }
+//   else if (code == NO_SUCH_FUNCTION) {
+//     statusline(AHEM, _("Unknown function: %s"), commandname);
+//   }
+//   else if (code == MISSING_BRACE) {
+//     statusline(AHEM, _("Missing }"));
+//   }
+//   else if (code > KEY_F0 && code < (KEY_F0 + 25)) {
+//     /* TRANSLATORS : This refers to an unbound function key. */
+//     statusline(AHEM, _("Unbound key: F%i"), (code - KEY_F0));
+//   }
+//   else if (code > 0x7F) {
+//     statusline(AHEM, _("Unbound key"));
+//   }
+//   else if (meta_key) {
+//     if (code < 0x20) {
+//       statusline(AHEM, _("Unbindable key: M-^%c"), (code + 0x40));
+//     }
+//     else if (shifted_metas && 'A' <= code && code <= 'Z') {
+//       statusline(AHEM, _("Unbound key: %s%c"), "Sh-M-", code);
+//     }
+//     else {
+//       statusline(AHEM, _("Unbound key: %s%c"), "M-", toupper(code));
+//     }
+//   }
+//   else if (code == ESC_CODE) {
+//     statusline(AHEM, _("Unbindable key: ^["));
+//   }
+//   else if (code < 0x20) {
+//     statusline(AHEM, _("Unbound key: %s%c"), "^", (code + 0x40));
+//   }
+//   else {
+//     statusline(AHEM, _("Unbound key: %s%c"), "", code);
+//   }
+//   set_blankdelay_to_one();
+// }
 
 /* Handle a mouse click on the edit window or the shortcut list. */
 static int do_mouse(void) {

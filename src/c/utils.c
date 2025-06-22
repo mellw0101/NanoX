@@ -125,6 +125,8 @@ void get_homedir(void) {
   }
 }
 
+/* ----------------------------- Line from number ----------------------------- */
+
 /* Returns a line pointer by number using optimized traversal.
  *  1. From current position.
  *  2. From file start.
@@ -379,6 +381,8 @@ void get_range_for(openfilestruct *const file, linestruct **const top, linestruc
 void get_range(linestruct **const top, linestruct **const bot) {
   get_range_for(CTX_OF, top, bot);
 }
+
+/* ----------------------------- Parse line column ----------------------------- */
 
 /* Read one number (or two numbers separated by comma, period, or colon) from the given string and store
  * the number(s) in *line (and *column).  Return 'FALSE' on a failed parsing, and 'TRUE' otherwise. */
