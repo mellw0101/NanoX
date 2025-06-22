@@ -644,24 +644,24 @@
  * directory, otherwise in the current directory.  If the path is not a directory, try to strip
  * a filename from it; if then still not a directory, use the current working directory instead.
  * If the resulting path isn't in the operating directory, use the operating directory instead. */
-char *browse_in(const char *inpath) {
-  char *path = real_dir_from_tilde(inpath);
-  struct stat fileinfo;
-  /* If path is not a directory, try to strip a filename from it; if then still not a directory, use the current working directory instead. */
-  if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode)) {
-    path = free_and_assign(path, strip_last_component(path));
-    if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode)) {
-      path = free_and_assign(path, realpath(".", NULL));
-      if (!path) {
-        statusline(ALERT, _("The working directory has disappeared"));
-        napms(1200);
-        return NULL;
-      }
-    }
-  }
-  /* If the resulting path isn't in the operating directory, use the operating directory instead. */
-  if (outside_of_confinement(path, FALSE)) {
-    path = realloc_strcpy(path, operating_dir);
-  }
-  return browse(path);
-}
+// char *browse_in(const char *inpath) {
+//   char *path = real_dir_from_tilde(inpath);
+//   struct stat fileinfo;
+//   /* If path is not a directory, try to strip a filename from it; if then still not a directory, use the current working directory instead. */
+//   if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode)) {
+//     path = free_and_assign(path, strip_last_component(path));
+//     if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode)) {
+//       path = free_and_assign(path, realpath(".", NULL));
+//       if (!path) {
+//         statusline(ALERT, _("The working directory has disappeared"));
+//         napms(1200);
+//         return NULL;
+//       }
+//     }
+//   }
+//   /* If the resulting path isn't in the operating directory, use the operating directory instead. */
+//   if (outside_of_confinement(path, FALSE)) {
+//     path = realloc_strcpy(path, operating_dir);
+//   }
+//   return browse(path);
+// }

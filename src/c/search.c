@@ -911,3 +911,46 @@ void do_search_backward_for(CTX_ARGS) {
 void do_search_backward(void) {
   CTX_CALL(do_search_backward_for);
 }
+
+/* ----------------------------- Do replace ----------------------------- */
+
+/* Replace a string in `file`. */
+void do_replace_for(CTX_ARGS) {
+  ASSERT(file);
+  if (ISSET(VIEW_MODE)) {
+    print_view_warning();
+  }
+  else {
+    UNSET(BACKWARDS_SEARCH);
+    search_init_for(STACK_CTX, TRUE, FALSE);
+  }
+}
+
+/* Replace a string in the currently open buffer. */
+void do_replace(void) {
+  CTX_CALL(do_replace_for);
+}
+
+/* ----------------------------- Put or lift anchor ----------------------------- */
+
+/* Place an anchor at the current line in `file` when none exists, otherwise remove it. */
+void put_or_lift_anchor_for(openfilestruct *const file) {
+  ASSERT(file);
+  file->current->has_anchor = !file->current->has_anchor;
+  /* When in `curses-mode` update the visual state of the line. */
+  if (IN_CURSES_CTX) {
+    update_line_curses_for(file, file->current, file->current_x);
+  }
+  /* Inform the user what we did. */
+  if (file->current->has_anchor) {
+    statusline(REMARK, _("Placed anchor"));
+  }
+  else {
+    statusline(REMARK, _("Removed anchor"));
+  }
+}
+
+/* Place an anchor at the current line in the currently open buffer when none exists, otherwise remove it. */
+void put_or_lift_anchor(void) {
+  put_or_lift_anchor_for(CTX_OF);
+}

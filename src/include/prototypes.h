@@ -207,7 +207,7 @@ ASM_FUNCTION(int)  asm_atomic_xchg(int *ptr, int value);
 // void  browser_refresh(void);
 // void  to_first_file(void) _NOTHROW;
 // void  to_last_file(void) _NOTHROW;
-char *browse_in(const char *inpath);
+// char *browse_in(const char *inpath);
 
 /* Most functions in 'chars.cpp'. */
 // void  utf8_init(void) _NOTHROW;
@@ -480,14 +480,14 @@ void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
 // void  not_found_msg(const char *str) _NOTHROW;
 // void  go_looking(void);
 // long  do_replace_loop(const char *needle, bool whole_word_only, const linestruct *real_current, Ulong *real_current_x);
-void  do_replace(void);
+// void  do_replace(void);
 // void  ask_for_and_do_replacements(void);
 // void  goto_line_posx(long line, Ulong pos_x) _NOTHROW;
 // void  goto_line_and_column(long line, long column, bool retain_answer, bool interactive);
 // void  do_gotolinecolumn(void);
 bool  find_a_bracket(bool reverse, const char *bracket_pair) _NOTHROW;
 void  do_find_bracket(void) _NOTHROW;
-void  put_or_lift_anchor(void);
+// void  put_or_lift_anchor(void);
 void  to_prev_anchor(void);
 void  to_next_anchor(void);
 // char *find_global_header(const char *str);

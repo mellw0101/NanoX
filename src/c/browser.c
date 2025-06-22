@@ -10,40 +10,146 @@
 /* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
 
 
-/* These will be made static later. */
-
 /* The list of files to display in the file browser. */
-char **filelist = NULL;
+static char **filelist = NULL;
 /* The number of files in the list. */
-Ulong list_length = 0;
+static Ulong list_length = 0;
 /* The number of screen rows we can use to display the list. */
-Ulong usable_rows = 0;
+static Ulong usable_rows = 0;
 /* The number of files that we can display per screen row. */
-int piles = 0;
+static int piles = 0;
 /* The width of a 'pile' -- the widest filename plus ten. */
-int gauge = 0;
+static int gauge = 0;
 /* The currently selected filename in the list; zero-based. */
-Ulong selected = 0;
+static Ulong selected = 0;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Read the list ----------------------------- */
+
+/* Fill 'filelist' with the names of the files in the given directory, set 'list_length' to the
+ * number of names in that list, set 'gauge' to the width of the widest filename plus ten, and
+ * set 'piles' to the number of files that can be displayed per screen row.  And sort the list too. */
+static void read_the_list(const char *path, DIR *dir) {
+  Ulong path_len = strlen(path);
+  Ulong widest = 0;
+  Ulong index  = 0;
+  const struct dirent *entry;
+  /* Find the width of the widest filename in the current folder. */
+  while ((entry = readdir(dir))) {
+    Ulong span = breadth(entry->d_name);
+    if (span > widest) {
+      widest = span;
+    }
+    ++index;
+  }
+  /* Reserve ten columns for blanks plus file size. */
+  gauge = (widest + 10);
+  /* If needed, make room for ".. (parent dir)". */
+  if (gauge < 15) {
+    gauge = 15;
+  }
+  /* Make sure we're not wider than the window. */
+  if (gauge > COLS) {
+    gauge = COLS;
+  }
+  rewinddir(dir);
+  free_chararray(filelist, list_length);
+  list_length = index;
+  index = 0;
+  filelist = xmalloc(list_length * sizeof(char *));
+  while ((entry = readdir(dir)) && index < list_length) {
+    /* Don't show the useless dot item. */
+    if (strcmp(entry->d_name, ".") == 0) {
+      continue;
+    }
+    filelist[index] = xmalloc(path_len + _D_ALLOC_NAMLEN(entry));
+    sprintf(filelist[index], "%s%s", path, entry->d_name);
+    ++index;
+  }
+  /* Maybe the number of files in the directory decreased between the first time we scanned and the second time. */
+  list_length = index;
+  /* Sort the list of names. */
+  qsort(filelist, list_length, sizeof(char *), diralphasort);
+  /* Calculate how many files fit on a line -- feigning room for two spaces
+   * beyond the right edge, and adding two spaces of padding between columns. */
+  piles = ((COLS + 2) / (gauge + 2));
+  usable_rows = (editwinrows - (ISSET(ZERO) && (LINES > 1) ? 1 : 0));
+}
+
+/* ----------------------------- Reselect ----------------------------- */
+
+/* Reselect the given file or directory name, if it still exists.  Note: Make static later. */
+static void reselect(const char *const name) {
+  Ulong looking_at = 0;
+  while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0) {
+    ++looking_at;
+  }
+  /* If the sought name was found, select it; otherwise, just move the highlight so that the
+   * changed selection will be noticed, but make sure to stay within the current available range. */
+  if (looking_at < list_length) {
+    selected = looking_at;
+  }
+  else if (selected > list_length) {
+    selected = (list_length - 1);
+  }
+  else {
+    --selected;
+  }
+}
+
+/* ----------------------------- Findfile ----------------------------- */
+
+/* Look for the given needle in the list of files, forwards or backwards. Note: Make static later.  */
+static void findfile(const char *needle, bool forwards) {
+  Ulong began_at = selected;
+  /* Iterate through the list of filenames, until a match is found or
+   * we've come back to the point where we started. */
+  while (TRUE) {
+    if (forwards) {
+      if (selected++ == (list_length - 1)) {
+        selected = 0;
+        statusbar_all(_("Search Wrapped"));
+      }
+    }
+    else {
+      if (selected-- == 0) {
+        selected = (list_length - 1);
+        statusbar_all(_("Search Wrapped"));
+      }
+    }
+    /* When the needle occurs in the basename of the file, we have a match. */
+    if (mbstrcasestr(tail(filelist[selected]), needle)) {
+      if (selected == began_at) {
+        statusbar_all(_("This is the only occurrence"));
+      }
+      return;
+    }
+    /* When we're back at the starting point without any match... */
+    if (selected == began_at) {
+      not_found_msg(needle);
+      return;
+    }
+  }
+}
+
+/* ----------------------------- Search filename ----------------------------- */
+
 /* Prepare the prompt and ask the user what to search for, then search for it.
  * If `forward` is `TRUE`, search forward in the list, otherwise, search backward. */
-/* static */ void search_filename(bool forward) {
+static void search_filename(bool forward) {
   char *the_default;
   char *disp;
   int response;
   Ulong disp_breadth;
   /* If something was searched before, show it between squere brackets. */
-  if (last_search && *last_search) {
+  if (*last_search) {
     disp         = display_string(last_search, 0, (COLS / 3), FALSE, FALSE);
     disp_breadth = breadth(disp);
-    the_default  = xmalloc(strlen(disp) + 7);
     /* We use (COLS / 3) here because we need to see more then the line.  What...? */
-    sprintf(the_default, " [%s%s]", disp, (GT(disp_breadth, (COLS / 3)) ? "..." : ""));
-    free(disp);
+    the_default = free_and_assign(disp, fmtstr(" [%s%s]", disp, (GT(disp_breadth, (COLS / 3)) ? "..." : "")));
   }
   else {
     the_default = COPY_OF("");
@@ -53,12 +159,12 @@ Ulong selected = 0;
     /* TRANSLATORS: A modifier of the search prompt. */ (!forward ? _(" [Backwards]") : ""), the_default);
   free(the_default);
   /* If the user cancelled, or typed <Enter> on a blank answer and nothing was searched for yet during this session, just leave. */
-  if (response == -1 || (response == -2 || !last_search || !*last_search)) {
+  if (response == -1 || (response == -2 && !*last_search)) {
     statusbar_all(_("Cancelled"));
     return;
   }
   /* If the user typed an answer, remember it. */
-  if (answer && *answer) {
+  if (*answer) {
     last_search = xstrcpy(last_search, answer);
     update_history(&search_history, answer, PRUNE_DUPLICATE);
   }
@@ -67,12 +173,42 @@ Ulong selected = 0;
   }
 }
 
+/* ----------------------------- Research filename ----------------------------- */
+
+/* Search again without prompting for the last given search string, either forwards or backwards. */
+static void research_filename(bool forwards) {
+  /* If nothing was searched for yet, take the last item from history. */
+  if (!*last_search && searchbot->prev) {
+    last_search = realloc_strcpy(last_search, searchbot->prev->data);
+  }
+  if (!*last_search) {
+    statusbar_all(_("No current search pattern"));
+  }
+  else {
+    wipe_statusbar();
+    findfile(last_search, forwards);
+  }
+}
+
+/* ----------------------------- Strip last component ----------------------------- */
+
+/* Strip one element from the end of path, and return the stripped path.
+ * The returned string is dynamically allocated, and should be freed. */
+static char *strip_last_component(const char *const restrict path) {
+  char *copy = copy_of(path);
+  char *last_slash = strrchr(copy, '/');
+  if (last_slash) {
+    *last_slash = '\0';
+  }
+  return copy;
+}
+
 /* ----------------------------- Browse ----------------------------- */
 
 /* Allow the user to browse through the directories in the filesystem, starting at the
  * given path.  The user can select a file, which will be returned.  The user can also
  * select a directory, which will be entered.  The user can also cancel the browsing. */
-/* static */ char *browse(char *path) {
+static char *browse(char *path) {
   /* The name of the currently selected file, or of the directory we were in before backing up to "...". */
   char *present_name = NULL;
   /* The number of the selected file before the current selected file. */
@@ -364,75 +500,7 @@ Ulong selected = 0;
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-/* Fill 'filelist' with the names of the files in the given directory, set 'list_length' to the
- * number of names in that list, set 'gauge' to the width of the widest filename plus ten, and
- * set 'piles' to the number of files that can be displayed per screen row.  And sort the list too. 
- * Note: Make static later. */
-void read_the_list(const char *path, DIR *dir) {
-  Ulong path_len = strlen(path);
-  Ulong widest = 0;
-  Ulong index  = 0;
-  const struct dirent *entry;
-  /* Find the width of the widest filename in the current folder. */
-  while ((entry = readdir(dir))) {
-    Ulong span = breadth(entry->d_name);
-    if (span > widest) {
-      widest = span;
-    }
-    ++index;
-  }
-  /* Reserve ten columns for blanks plus file size. */
-  gauge = (widest + 10);
-  /* If needed, make room for ".. (parent dir)". */
-  if (gauge < 15) {
-    gauge = 15;
-  }
-  /* Make sure we're not wider than the window. */
-  if (gauge > COLS) {
-    gauge = COLS;
-  }
-  rewinddir(dir);
-  free_chararray(filelist, list_length);
-  list_length = index;
-  index = 0;
-  filelist = xmalloc(list_length * sizeof(char *));
-  while ((entry = readdir(dir)) && index < list_length) {
-    /* Don't show the useless dot item. */
-    if (strcmp(entry->d_name, ".") == 0) {
-      continue;
-    }
-    filelist[index] = xmalloc(path_len + _D_ALLOC_NAMLEN(entry));
-    sprintf(filelist[index], "%s%s", path, entry->d_name);
-    ++index;
-  }
-  /* Maybe the number of files in the directory decreased between the first time we scanned and the second time. */
-  list_length = index;
-  /* Sort the list of names. */
-  qsort(filelist, list_length, sizeof(char *), diralphasort);
-  /* Calculate how many files fit on a line -- feigning room for two spaces
-   * beyond the right edge, and adding two spaces of padding between columns. */
-  piles = ((COLS + 2) / (gauge + 2));
-  usable_rows = (editwinrows - (ISSET(ZERO) && (LINES > 1) ? 1 : 0));
-}
-
-/* Reselect the given file or directory name, if it still exists.  Note: Make static later. */
-void reselect(const char *const name) {
-  Ulong looking_at = 0;
-  while (looking_at < list_length && strcmp(filelist[looking_at], name) != 0) {
-    ++looking_at;
-  }
-  /* If the sought name was found, select it; otherwise, just move the highlight so that the
-   * changed selection will be noticed, but make sure to stay within the current available range. */
-  if (looking_at < list_length) {
-    selected = looking_at;
-  }
-  else if (selected > list_length) {
-    selected = (list_length - 1);
-  }
-  else {
-    --selected;
-  }
-}
+/* ----------------------------- Browser refresh ----------------------------- */
 
 /* Display at most a screenful of filenames from the gleaned filelist. */
 void browser_refresh(void) {
@@ -606,72 +674,54 @@ void browser_refresh(void) {
   wnoutrefresh(midwin);
 }
 
-/* Look for the given needle in the list of files, forwards or backwards. Note: Make static later.  */
-void findfile(const char *needle, bool forwards) {
-  Ulong began_at = selected;
-  /* Iterate through the list of filenames, until a match is found or
-   * we've come back to the point where we started. */
-  while (TRUE) {
-    if (forwards) {
-      if (selected++ == (list_length - 1)) {
-        selected = 0;
-        statusbar_all(_("Search Wrapped"));
-      }
-    }
-    else {
-      if (selected-- == 0) {
-        selected = (list_length - 1);
-        statusbar_all(_("Search Wrapped"));
-      }
-    }
-    /* When the needle occurs in the basename of the file, we have a match. */
-    if (mbstrcasestr(tail(filelist[selected]), needle)) {
-      if (selected == began_at) {
-        statusbar_all(_("This is the only occurrence"));
-      }
-      return;
-    }
-    /* When we're back at the starting point without any match... */
-    if (selected == began_at) {
-      not_found_msg(needle);
-      return;
-    }
-  }
-}
+/* ----------------------------- To first file ----------------------------- */
 
 /* Select the first file in the list -- called by ^W^Y. */
 void to_first_file(void) {
   selected = 0;
 }
 
+/* ----------------------------- To last file ----------------------------- */
+
 /* Select the last file in the list -- called by ^W^V. */
 void to_last_file(void) {
   selected = (list_length - 1);
 }
 
-/* Search again without prompting for the last given search string, either forwards or backwards. */
-void research_filename(bool forwards) {
-  /* If nothing was searched for yet, take the last item from history. */
-  if (!*last_search && searchbot->prev) {
-    last_search = realloc_strcpy(last_search, searchbot->prev->data);
-  }
-  if (!*last_search) {
-    statusbar_all(_("No current search pattern"));
-  }
-  else {
-    wipe_statusbar();
-    findfile(last_search, forwards);
-  }
-}
+/* ----------------------------- Browse in ----------------------------- */
 
-/* Strip one element from the end of path, and return the stripped path.
- * The returned string is dynamically allocated, and should be freed. */
-char *strip_last_component(const char *const restrict path) {
-  char *copy = copy_of(path);
-  char *last_slash = strrchr(copy, '/');
-  if (last_slash) {
-    *last_slash = '\0';
+/* Prepare to start browsing.  If the given path has a directory part, start browsing in that
+ * directory, otherwise in the current directory.  If the path is not a directory, try to strip
+ * a filename from it.  If then still not a directory, use the current working directory instead.
+ * If the resulting path isn't in the operating directory, use the operating directory instead. */
+char *browse_in(const char *const restrict inpath) {
+  ASSERT(inpath);
+  char *path;
+  struct stat info;
+  /* When not in `curses-mode`, always return NULL. */
+  if (!IN_CURSES_CTX) {
+    return NULL;
   }
-  return copy;
+  path = real_dir_from_tilde(inpath);
+  /* If the path is not a directory. */
+  if (stat(path, &info) == -1 || !S_ISDIR(info.st_mode)) {
+    /* Try to strip a filename from the path. */
+    path = free_and_assign(path, strip_last_component(path));
+    /* Still not a directory. */
+    if (stat(path, &info) == -1 || !S_ISDIR(info.st_mode)) {
+      /* Try to use the current working directory. */
+      path = free_and_assign(path, realpath(".", NULL));
+      /* If this also fails, tell the user and return NULL. */
+      if (!path) {
+        statusline(ALERT, _("The working directory has disappeared"));
+        napms(1200);
+        return NULL;
+      }
+    }
+  }
+  /* If the resulting path isn't in the operating directory, use the operating directory instead. */
+  if (outside_of_confinement(path, FALSE)) {
+    path = xstrcpy(path, operating_dir);
+  }
+  return browse(path);
 }
-

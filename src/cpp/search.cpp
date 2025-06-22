@@ -536,15 +536,15 @@
 // }
 
 /* Replace a string. */
-void do_replace(void) {
-  if (ISSET(VIEW_MODE)) {
-    print_view_warning();
-  }
-  else {
-    UNSET(BACKWARDS_SEARCH);
-    search_init(TRUE, FALSE);
-  }
-}
+// void do_replace(void) {
+//   if (ISSET(VIEW_MODE)) {
+//     print_view_warning();
+//   }
+//   else {
+//     UNSET(BACKWARDS_SEARCH);
+//     search_init(TRUE, FALSE);
+//   }
+// }
 
 /* Ask the user what to replace the search string with, and do the replacements. */
 // void ask_for_and_do_replacements(void) {
@@ -804,16 +804,16 @@ void do_find_bracket(void) _NOTHROW {
 }
 
 /* Place an anchor at the current line when none exists, otherwise remove it. */
-void put_or_lift_anchor(void) {
-  openfile->current->has_anchor = !openfile->current->has_anchor;
-  update_line_curses(openfile->current, openfile->current_x);
-  if (openfile->current->has_anchor) {
-    statusline(REMARK, _("Placed anchor"));
-  }
-  else {
-    statusline(REMARK, _("Removed anchor"));
-  }
-}
+// void put_or_lift_anchor(void) {
+//   openfile->current->has_anchor = !openfile->current->has_anchor;
+//   update_line_curses(openfile->current, openfile->current_x);
+//   if (openfile->current->has_anchor) {
+//     statusline(REMARK, _("Placed anchor"));
+//   }
+//   else {
+//     statusline(REMARK, _("Removed anchor"));
+//   }
+// }
 
 /* Make the given line the current line, or report the anchoredness. */
 static void go_to_and_confirm(linestruct *line) {

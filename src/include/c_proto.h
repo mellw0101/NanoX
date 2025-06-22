@@ -205,34 +205,20 @@ extern Ulong till_x;
 
 /* ----------------------------- winio.c ----------------------------- */
 
+extern bool  recording;
+extern int   countdown;
 extern Ulong waiting_codes;
-
-extern int countdown;
-
-extern bool recording;
 
 /* ----------------------------- prompt.c ----------------------------- */
 
 extern char *prompt;
-
 extern Ulong typing_x;
-
-/* ----------------------------- browser.c ----------------------------- */
-
-extern char **filelist;
-extern Ulong list_length;
-extern Ulong usable_rows;
-extern int piles;
-extern int gauge;
-extern Ulong selected;
 
 /* ----------------------------- help.c ----------------------------- */
 
-extern char *end_of_help_intro;
-
+extern char       *end_of_help_intro;
 extern const char *start_of_help_body;
-
-extern Ulong help_location;
+extern Ulong       help_location;
 
 /* ----------------------------- General ----------------------------- */
 
@@ -990,6 +976,12 @@ void do_search_forward(void);
 /* ----------------------------- Do search backward ----------------------------- */
 void do_search_backward_for(CTX_ARGS);
 void do_search_backward(void);
+/* ----------------------------- Do replace ----------------------------- */
+void do_replace_for(CTX_ARGS);
+void do_replace(void);
+/* ----------------------------- Put or lift anchor ----------------------------- */
+void put_or_lift_anchor_for(openfilestruct *const file);
+void put_or_lift_anchor(void);
 
 
 /* ---------------------------------------------------------- move.c ---------------------------------------------------------- */
@@ -1143,17 +1135,14 @@ bool  has_old_position(const char *const restrict file, long *const line, long *
 /* ---------------------------------------------------------- browser.c ---------------------------------------------------------- */
 
 
-/* static */ void search_filename(bool forward);
-/* static */ char *browse(char *path);
-
-void  read_the_list(const char *path, DIR *dir);
-void  reselect(const char *const name);
-void  browser_refresh(void);
-void  findfile(const char *needle, bool forwards);
-void  to_first_file(void);
-void  to_last_file(void);
-void  research_filename(bool forwards);
-char *strip_last_component(const char *const restrict path);
+/* ----------------------------- Browser refresh ----------------------------- */
+void browser_refresh(void);
+/* ----------------------------- To first file ----------------------------- */
+void to_first_file(void);
+/* ----------------------------- To last file ----------------------------- */
+void to_last_file(void);
+/* ----------------------------- Browse in ----------------------------- */
+char *browse_in(const char *const restrict inpath);
 
 
 /* ---------------------------------------------------------- help.c ---------------------------------------------------------- */
