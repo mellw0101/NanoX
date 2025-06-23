@@ -1635,6 +1635,7 @@ int main(int argc, char **argv) {
   SET(INDICATOR);
   SET(AFTER_ENDS);
   SET(TABS_TO_SPACES);
+  // SET(MAKE_BACKUP);
   // SET(RAW_SEQUENCES);
   SET(LINE_NUMBERS);
   // SET(SUGGEST);

@@ -1361,135 +1361,135 @@ char *abs_path(const char *path) _NOTHROW {
 /* Create a backup of an existing file.  If the user did not request backups,
  * make a temporary one.  (trying first in the directory of the original file,
  * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
-static bool make_backup_of(char *realname) {
-  static timespec filetime[2];
-  FILE *original = NULL, *backup_file = NULL;
-  int   creation_flags, descriptor;
-  bool  second_attempt = FALSE;
-  char *backupname     = NULL;
-  int   verdict        = 0;
-  /* Remember the original file's access and modification times. */
-  filetime[0].tv_sec = openfile->statinfo->st_atime;
-  filetime[1].tv_sec = openfile->statinfo->st_mtime;
-  statusbar_all(_("Making backup..."));
-  /* If no backup directory was specified, we make a simple backup by appending a tilde to the
-   * original file name. Otherwise, we create a numbered backup in the specified directory. */
-  if (!backup_dir) {
-    backupname = (char *)nmalloc(strlen(realname) + 2);
-    sprintf(backupname, "%s~", realname);
-  }
-  else {
-    char *thename = get_full_path(realname);
-    /* If we have a valid absolute path, replace each slash in this full path with an
-     * exclamation mark.  Otherwise, just use the file-name portion of the given path. */
-    if (thename) {
-      for (int i=0; thename[i]; ++i) {
-        if (thename[i] == '/') {
-          thename[i] = '!';
-        }
-      }
-    }
-    else {
-      thename = copy_of(tail(realname));
-    }
-    backupname = (char *)nmalloc(strlen(backup_dir) + strlen(thename) + 1);
-    sprintf(backupname, "%s%s", backup_dir, thename);
-    free(thename);
-    thename = get_next_filename(backupname, "~");
-    free(backupname);
-    backupname = thename;
-    /* If all numbered backup names are taken, the user must be fond of backups.  Thus, without one, do not go on. */
-    if (!*backupname) {
-      statusline(ALERT, _("Too many existing backup files"));
-      free(backupname);
-      return FALSE;
-    }
-  }
-  /* Now first try to delete an existing backup file. */
-  if (unlink(backupname) < 0 && errno != ENOENT && !ISSET(INSECURE_BACKUP)) {
-    goto problem;
-  }
-  creation_flags = (O_WRONLY | O_CREAT | (ISSET(INSECURE_BACKUP) ? O_TRUNC : O_EXCL));
-  /* Create the backup file (or truncate the existing one). */
-  descriptor = open(backupname, creation_flags, (S_IRUSR | S_IWUSR));
-retry:
-  if (descriptor >= 0) {
-    backup_file = fdopen(descriptor, "wb");
-  }
-  if (!backup_file) {
-    goto problem;
-  }
-  /* Try to change owner and group to those of the original file; ignore permission errors, as a normal user cannot change the owner. */
-  if (fchown(descriptor, openfile->statinfo->st_uid, openfile->statinfo->st_gid) < 0 && errno != EPERM) {
-    fclose(backup_file);
-    goto problem;
-  }
-  /* Set the backup's permissions to those of the original file.  It is not a security issue if
-   * this fails, as we have created the file with just read and write permission for the owner. */
-  if (fchmod(descriptor, openfile->statinfo->st_mode) < 0 && errno != EPERM) {
-    fclose(backup_file);
-    goto problem;
-  }
-  original = fopen(realname, "rb");
-  /* If opening succeeded, copy the existing file to the backup. */
-  if (original) {
-    verdict = copy_file(original, backup_file, FALSE);
-  }
-  if (!original || verdict < 0) {
-    warn_and_briefly_pause(_("Cannot read original file"));
-    fclose(backup_file);
-    goto failure;
-  }
-  else if (verdict > 0) {
-    fclose(backup_file);
-    goto problem;
-  }
-  /* Since this backup is a newly created file, explicitly sync it to
-   * permanent storage before starting to write out the actual file. */
-  if (fflush(backup_file) != 0 || fsync(fileno(backup_file)) != 0) {
-    fclose(backup_file);
-    goto problem;
-  }
-  /* Set the backup's timestamps to those of the original file.
-   * Failure is unimportant: saving the file apparently worked. */
-  IGNORE_CALL_RESULT(futimens(descriptor, filetime));
-  if (fclose(backup_file) == 0) {
-    free(backupname);
-    return TRUE;
-  }
-problem:
-  get_homedir();
-  /* If the first attempt of copying the file failed, try again to HOME. */
-  if (!second_attempt && homedir) {
-    unlink(backupname);
-    free(backupname);
-    warn_and_briefly_pause(_("Cannot make regular backup"));
-    warn_and_briefly_pause(_("Trying again in your home directory"));
-    currmenu   = MMOST;
-    backupname = (char *)nmalloc(strlen(homedir) + strlen(tail(realname)) + 9);
-    sprintf(backupname, "%s/%s~XXXXXX", homedir, tail(realname));
-    descriptor     = mkstemp(backupname);
-    backup_file    = NULL;
-    second_attempt = TRUE;
-    goto retry;
-  }
-  else {
-    warn_and_briefly_pause(_("Cannot make backup"));
-  }
-failure:
-  warn_and_briefly_pause(strerror(errno));
-  currmenu = MMOST;
-  free(backupname);
-  /* If both attempts failed, and it isn't because of lack of disk space, ask the user what to do,
-   * because if something goes wrong during the save of the file itself, its contents may be lost. */
-  /* TRANSLATORS : Try to keep this message at most 76 characters. */
-  if (errno != ENOSPC && ask_user(YESORNO, _("Cannot make backup; continue and save actual file? ")) == YES) {
-    return TRUE;
-  }
-  /* TRANSLATORS: The %s is the reason of failure. */
-  statusline(HUSH, _("Cannot make backup: %s"), strerror(errno));
-  return FALSE;
-}
+// static bool make_backup_of(char *realname) {
+//   static timespec filetime[2];
+//   FILE *original = NULL, *backup_file = NULL;
+//   int   creation_flags, descriptor;
+//   bool  second_attempt = FALSE;
+//   char *backupname     = NULL;
+//   int   verdict        = 0;
+//   /* Remember the original file's access and modification times. */
+//   filetime[0].tv_sec = openfile->statinfo->st_atime;
+//   filetime[1].tv_sec = openfile->statinfo->st_mtime;
+//   statusbar_all(_("Making backup..."));
+//   /* If no backup directory was specified, we make a simple backup by appending a tilde to the
+//    * original file name. Otherwise, we create a numbered backup in the specified directory. */
+//   if (!backup_dir) {
+//     backupname = (char *)nmalloc(strlen(realname) + 2);
+//     sprintf(backupname, "%s~", realname);
+//   }
+//   else {
+//     char *thename = get_full_path(realname);
+//     /* If we have a valid absolute path, replace each slash in this full path with an
+//      * exclamation mark.  Otherwise, just use the file-name portion of the given path. */
+//     if (thename) {
+//       for (int i=0; thename[i]; ++i) {
+//         if (thename[i] == '/') {
+//           thename[i] = '!';
+//         }
+//       }
+//     }
+//     else {
+//       thename = copy_of(tail(realname));
+//     }
+//     backupname = (char *)nmalloc(strlen(backup_dir) + strlen(thename) + 1);
+//     sprintf(backupname, "%s%s", backup_dir, thename);
+//     free(thename);
+//     thename = get_next_filename(backupname, "~");
+//     free(backupname);
+//     backupname = thename;
+//     /* If all numbered backup names are taken, the user must be fond of backups.  Thus, without one, do not go on. */
+//     if (!*backupname) {
+//       statusline(ALERT, _("Too many existing backup files"));
+//       free(backupname);
+//       return FALSE;
+//     }
+//   }
+//   /* Now first try to delete an existing backup file. */
+//   if (unlink(backupname) < 0 && errno != ENOENT && !ISSET(INSECURE_BACKUP)) {
+//     goto problem;
+//   }
+//   creation_flags = (O_WRONLY | O_CREAT | (ISSET(INSECURE_BACKUP) ? O_TRUNC : O_EXCL));
+//   /* Create the backup file (or truncate the existing one). */
+//   descriptor = open(backupname, creation_flags, (S_IRUSR | S_IWUSR));
+// retry:
+//   if (descriptor >= 0) {
+//     backup_file = fdopen(descriptor, "wb");
+//   }
+//   if (!backup_file) {
+//     goto problem;
+//   }
+//   /* Try to change owner and group to those of the original file; ignore permission errors, as a normal user cannot change the owner. */
+//   if (fchown(descriptor, openfile->statinfo->st_uid, openfile->statinfo->st_gid) < 0 && errno != EPERM) {
+//     fclose(backup_file);
+//     goto problem;
+//   }
+//   /* Set the backup's permissions to those of the original file.  It is not a security issue if
+//    * this fails, as we have created the file with just read and write permission for the owner. */
+//   if (fchmod(descriptor, openfile->statinfo->st_mode) < 0 && errno != EPERM) {
+//     fclose(backup_file);
+//     goto problem;
+//   }
+//   original = fopen(realname, "rb");
+//   /* If opening succeeded, copy the existing file to the backup. */
+//   if (original) {
+//     verdict = copy_file(original, backup_file, FALSE);
+//   }
+//   if (!original || verdict < 0) {
+//     warn_and_briefly_pause(_("Cannot read original file"));
+//     fclose(backup_file);
+//     goto failure;
+//   }
+//   else if (verdict > 0) {
+//     fclose(backup_file);
+//     goto problem;
+//   }
+//   /* Since this backup is a newly created file, explicitly sync it to
+//    * permanent storage before starting to write out the actual file. */
+//   if (fflush(backup_file) != 0 || fsync(fileno(backup_file)) != 0) {
+//     fclose(backup_file);
+//     goto problem;
+//   }
+//   /* Set the backup's timestamps to those of the original file.
+//    * Failure is unimportant: saving the file apparently worked. */
+//   IGNORE_CALL_RESULT(futimens(descriptor, filetime));
+//   if (fclose(backup_file) == 0) {
+//     free(backupname);
+//     return TRUE;
+//   }
+// problem:
+//   get_homedir();
+//   /* If the first attempt of copying the file failed, try again to HOME. */
+//   if (!second_attempt && homedir) {
+//     unlink(backupname);
+//     free(backupname);
+//     warn_and_briefly_pause(_("Cannot make regular backup"));
+//     warn_and_briefly_pause(_("Trying again in your home directory"));
+//     currmenu   = MMOST;
+//     backupname = (char *)nmalloc(strlen(homedir) + strlen(tail(realname)) + 9);
+//     sprintf(backupname, "%s/%s~XXXXXX", homedir, tail(realname));
+//     descriptor     = mkstemp(backupname);
+//     backup_file    = NULL;
+//     second_attempt = TRUE;
+//     goto retry;
+//   }
+//   else {
+//     warn_and_briefly_pause(_("Cannot make backup"));
+//   }
+// failure:
+//   warn_and_briefly_pause(strerror(errno));
+//   currmenu = MMOST;
+//   free(backupname);
+//   /* If both attempts failed, and it isn't because of lack of disk space, ask the user what to do,
+//    * because if something goes wrong during the save of the file itself, its contents may be lost. */
+//   /* TRANSLATORS : Try to keep this message at most 76 characters. */
+//   if (errno != ENOSPC && ask_user(YESORNO, _("Cannot make backup; continue and save actual file? ")) == YES) {
+//     return TRUE;
+//   }
+//   /* TRANSLATORS: The %s is the reason of failure. */
+//   statusline(HUSH, _("Cannot make backup: %s"), strerror(errno));
+//   return FALSE;
+// }
 
 /* Write the current buffer to disk.  If thefile isn't NULL, we write to a temporary file that is already open.
  * If normal is 'FALSE' (for a spellcheck or an emergency save, for example), we don't make a backup and don't

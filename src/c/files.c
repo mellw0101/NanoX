@@ -41,6 +41,8 @@
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Do lockfile ----------------------------- */
+
 /* First check if a lock file already exists.  If so, and ask_the_user is TRUE, then ask whether to open the corresponding file
  * anyway.  Return SKIPTHISFILE when the user answers "No", return the name of the lock file on success, and return NULL on failure. */
 /* static */ char *do_lockfile(const char *const restrict filename, bool ask_the_user) {
@@ -127,6 +129,8 @@
   return NULL;
 }
 
+/* ----------------------------- Filename completion ----------------------------- */
+
 /* Try to complete the given fragment to an existing filename.  Note remember to set `present_path` for relative paths. */
 /* static */ char **filename_completion(const char *const restrict morsel, Ulong *const num_matches) {
   ASSERT(morsel);
@@ -193,6 +197,177 @@
     ASSIGN_IF_VALID(num_matches, size);
   }
   return matches;
+}
+
+/* ----------------------------- Make backup of ----------------------------- */
+
+/* Create a backup of an existing file.  If the user did not request backups,
+ * make a temporary one.  (trying first in the directory of the original file,
+ * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
+/* static */ bool make_backup_of_for(openfilestruct *const file, char *realname) {
+  ASSERT(file);
+  ASSERT(realname);
+  struct timespec filetime[2];
+  FILE *original    = NULL;
+  FILE *backup_file = NULL;
+  int creation_flags;
+  int descriptor;
+  int verdict;
+  bool second_attempt = FALSE;
+  char *backupname = NULL;
+  char *thename;
+  /* Remember the original file's access and modification times. */
+  filetime[0].tv_sec = file->statinfo->st_atime;
+  filetime[1].tv_sec = file->statinfo->st_mtime;
+  statusbar_all(_("Making backup..."));
+  /* If no backup directory was specified, we make a simple backup by appending a tilde to the original file name. */
+  if (!backup_dir) {
+    backupname = fmtstr("%s~", realname);
+  }
+  /* Otherwise, we create a numbered backup in the specified directory. */
+  else {
+    thename = get_full_path(realname);
+    /* If we have a valid absolute path, replace each slash in this full path with an exclamation mark. */
+    if (thename) {
+      for (Ulong i=0; thename[i]; ++i) {
+        if (thename[i] == '/') {
+          thename[i] = '!';
+        }
+      }
+    }
+    /* Otherwise, just use the file-name portion of the given path. */
+    else {
+      thename = copy_of(tail(realname));
+    }
+    backupname = free_and_assign(thename, fmtstr("%s%s", backup_dir, thename));
+    backupname = free_and_assign(backupname, get_next_filename(backupname, "~"));
+    /* If all numbered backup names are taken, the use must be fond of backups.  Thus, without one, fo not go on. */
+    if (!*backupname) {
+      statusline(ALERT, _("To meny existing backup files"));
+      free(backupname);
+      return FALSE;
+    }
+  }
+  /* Now first try to delete an existing backup file. */
+  if (unlink(backupname) < 0 && errno != ENOENT && !ISSET(INSECURE_BACKUP)) {
+    goto problem;
+  }
+  creation_flags = (O_WRONLY | O_CREAT | (ISSET(INSECURE_BACKUP) ? O_TRUNC : O_EXCL));
+  /* Create the backup file (or truncate the existing one). */
+  descriptor = open(backupname, creation_flags, (S_IRUSR | S_IWUSR));
+  retry: {
+    if (descriptor >= 0) {
+      backup_file = fdopen(descriptor, "wb");
+    }
+    if (!backup_file) {
+      goto problem;
+    }
+    /* Try to change owner and group to those of the original file.  Ignore
+     * permission errors, as a normal user cannot change the owner.  What...? */
+    if (fchown(descriptor, file->statinfo->st_uid, file->statinfo->st_gid) < 0 && errno != EPERM) {
+      fclose(backup_file);
+      goto problem;
+    }
+    /* Set the backup's permissions to those of the original file.  It's not a security issue if
+     * this fails, as we have created the file with just read and write permission for the owner. */
+    if (fchmod(descriptor, file->statinfo->st_mode) < 0 && errno != EPERM) {
+      fclose(backup_file);
+      goto problem;
+    }
+    original = fopen(realname, "rb");
+    /* If opening succeeded, copy the existion file to the backup. */
+    if (original) {
+      verdict = copy_file(original, backup_file, FALSE);
+    }
+    /* We failed read the original file. */
+    if (!original || verdict < 0) {
+      /* We are in curses-mode. */
+      if (IN_CURSES_CTX) {
+        warn_and_briefly_pause_curses(_("Cannot read the original file"));
+      }
+      /* We are in gui-mode. */
+      else if (IN_GUI_CTX) {
+        statusline_gui(ALERT, _("Cannot read the original file"));
+      }
+      fclose(backup_file);
+      goto failure;
+    }
+    /* We failed to write to the backup file. */
+    else if (verdict > 0) {
+      fclose(backup_file);
+      goto problem;
+    }
+    /* Since this backup is a newly created file, explicitly sync it to
+     * permanent storage before starting to write out the actual file. */
+    if (fflush(backup_file) != 0 || fsync(fileno(backup_file)) != 0) {
+      fclose(backup_file);
+      goto problem;
+    }
+    /* Set the backup's timestamps to those of the original file.
+     * Failure is unimportant.  Saving the file apparently worked. */
+    IGNORE_CALL_RESULT(futimens(descriptor, filetime));
+    if (fclose(backup_file) == 0) {
+      free(backupname);
+      return TRUE;
+    }
+  }
+  problem: {
+    get_homedir();
+    /* If the first attempt of copying the file failed, try again to $HOME. */
+    if (!second_attempt && homedir) {
+      unlink(backupname);
+      free(backupname);
+      if (IN_CURSES_CTX) {
+        warn_and_briefly_pause_curses(_("Cannot make regular backup"));
+        warn_and_briefly_pause_curses(_("Trying again in your home directory"));
+      }
+      else if (IN_GUI_CTX) {
+        statusline_gui(ALERT, _("Cannot make regular backup  Trying again in your home directory"));
+      }
+      currmenu       = MMOST;
+      backupname     = fmtstr("%s/%s~XXXXXX", homedir, tail(realname));
+      descriptor     = mkstemp(backupname);
+      backup_file    = NULL;
+      second_attempt = TRUE;
+      goto retry;
+    }
+    /* Otherwise, just inform the user of our failure. */
+    else {
+      if (IN_GUI_CTX) {
+        warn_and_briefly_pause_curses(_("Cannot make backup"));
+      }
+      else if (IN_GUI_CTX) {
+        statusline_gui(ALERT, _("Cannot make backup"));
+      }
+    }
+  }
+  failure: {
+    if (IN_CURSES_CTX) {
+      warn_and_briefly_pause_curses(strerror(errno));
+    }
+    else if (IN_GUI_CTX) {
+      statusline_gui(ALERT, "%s", strerror(errno));
+    }
+    currmenu = MMOST;
+    free(backupname);
+    /* If both attempts failed, and it isn't because of lack of disk space, ask the user what to do
+     * because if something goes wrong during the save of the file itself, its contents may be lost.
+     * TRANSLATORS: Try to keep this message at most 76 characters.  TODO: Figure out how to handle
+     * this when in gui-mode, as `ask_user()` will always return NO in gui mode as we cannot block. */
+    if (errno != ENOSPC && ask_user(YESORNO, _("Cannot make backup; continue and save actual file? ")) == YES) {
+      return TRUE;
+    }
+    /* TRANSLATORS: The %s is the reason of failure. */
+    statusline(HUSH, _("Cannot make backup: %s"), strerror(errno));
+    return FALSE;
+  }
+}
+
+/* Create a backup of an existing file.  If the user did not request backups,
+ * make a temporary one.  (trying first in the directory of the original file,
+ * then in the user's home directory).  Return 'TRUE' if the save can proceed. */
+/* static */ bool make_backup_of(char *realname) {
+  return make_backup_of_for(CTX_OF, realname);
 }
 
 
@@ -534,6 +709,8 @@ void free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestru
   }
 }
 
+/* ----------------------------- Close buffer ----------------------------- */
+
 void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start, openfilestruct **const open) {
   ASSERT(orphan);
   ASSERT(start);
@@ -575,6 +752,8 @@ void close_buffer(void) {
     close_buffer_for(TUI_OF, &TUI_SF, &TUI_OF);
   }
 }
+
+/* ----------------------------- Real dir from tilde ----------------------------- */
 
 /* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
 char *real_dir_from_tilde(const char *const restrict path) {

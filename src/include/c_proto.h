@@ -660,6 +660,8 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 
 /* static */ char *do_lockfile(const char *const restrict filename, bool ask_the_user);
 /* static */ char **filename_completion(const char *const restrict morsel, Ulong *const num_matches) ;
+/* static */ bool make_backup_of_for(openfilestruct *const file, char *realname);
+/* static */ bool make_backup_of(char *realname);
 
 void  make_new_buffer_for(openfilestruct **const start, openfilestruct **const open);
 void  make_new_buffer(void);
@@ -672,8 +674,10 @@ bool  delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
 bool  write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
 bool  has_valid_path(const char *const restrict filename);
 void  free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
-void  close_buffer(void);
-void  close_buffer_for(openfilestruct *const orphan, openfilestruct **const start, openfilestruct **const open);
+/* ----------------------------- Close buffer ----------------------------- */
+void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start, openfilestruct **const open);
+void close_buffer(void);
+/* ----------------------------- Real dir from tilde ----------------------------- */
 char *real_dir_from_tilde(const char *const restrict path) _RETURNS_NONNULL _NONNULL(1);
 bool  is_dir(const char *const path) _NODISCARD _NONNULL(1);
 char *get_full_path(const char *const restrict origpath);
@@ -1249,7 +1253,7 @@ void statusbar_init(Element *const parent);
 void statusbar_free(void);
 void statusline_gui_timed(message_type type, float seconds, const char *format, ...);
 void statusline_gui_va(message_type type, const char *const restrict format, va_list ap);
-void statusline_gui(message_type type, const char *format, ...);
+void statusline_gui(message_type type, const char *format, ...) _PRINTFLIKE(2, 3);
 void statusbar_gui(const char *const restrict msg);
 void statusbar_draw(float fps);
 
