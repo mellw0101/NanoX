@@ -589,6 +589,17 @@ static const short bg_vs_code_color_array[] = {
   /* A simple way to set the cursor at the end of the current line for `file`. */  \
   DO_WHILE((file)->current_x = strlen((file)->current->data);)
 
+/* ----------------------------- nanox.c ----------------------------- */
+
+#define CTRL_C_HANDLER_ACTION(...)        \
+  DO_WHILE(                               \
+    /* Perform some action while we       \
+     * control how SIGINT is handled. */  \
+    install_handler_for_Ctrl_C();         \
+    DO_WHILE(__VA_ARGS__);                \
+    restore_handler_for_Ctrl_C();         \
+  )
+
 
 /* ---------------------------------------------------------- Typedef's ---------------------------------------------------------- */
 

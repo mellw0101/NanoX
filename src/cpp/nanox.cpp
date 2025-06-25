@@ -1977,9 +1977,9 @@ int main(int argc, char **argv) {
     /* Disable the type-ahead checking that ncurses normally does. */
     typeahead(-1);
 #   ifdef HAVE_SET_ESCDELAY
-      logI("Changing escdelay from %d to 50.", ESCDELAY);
-      /* Tell ncurses to pass the Esc key quickly. */
-      set_escdelay(50);
+    logI("Changing escdelay from %d to 50.", ESCDELAY);
+    /* Tell ncurses to pass the Esc key quickly. */
+    set_escdelay(50);
 #   endif
   }
   /* Read the files mentioned on the command line into new buffers. */

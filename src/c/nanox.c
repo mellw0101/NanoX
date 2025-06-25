@@ -673,7 +673,7 @@ void unbound_key(int code) {
       statusline(AHEM, _("Unknown sequence"));
     }
     else if (code == NO_SUCH_FUNCTION) {
-      statusline(AHEM, _("Unknown function"), commandname);
+      statusline(AHEM, _("Unknown function: %s"), commandname);
     }
     else if (code == MISSING_BRACE) {
       statusline(AHEM, _("Missing }"));

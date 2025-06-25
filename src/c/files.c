@@ -552,6 +552,8 @@ bool delete_lockfile(const char *const restrict lockfilename) {
   return TRUE;
 }
 
+/* ----------------------------- Write lockfile ----------------------------- */
+
 /* Write a lock file, under the given lockfilename.  This always annihilates an
  * existing version of that file.  Return TRUE on success; FALSE otherwise. */
 bool write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified) {
@@ -638,6 +640,8 @@ bool write_lockfile(const char *const restrict lockfilename, const char *const r
   }
   return TRUE;
 }
+
+/* ----------------------------- Has valid path ----------------------------- */
 
 /* Verify that the containing directory of the given filename exists. */
 bool has_valid_path(const char *const restrict filename) {
@@ -1252,7 +1256,7 @@ void read_file_into(CTX_ARGS, FILE *const f, int fd, const char *const restrict 
   }
   /* If there was a real error during the reading, let the user know. */
   if (ferror(f) && errornum != EINTR && errornum) {
-    statusline(ALERT, strerror(errornum));
+    statusline(ALERT, "%s", strerror(errornum));
   }
   /* The reading of this file was interupted by the user. */
   if (control_C_was_pressed) {
@@ -1603,3 +1607,152 @@ char *input_tab(char *morsel, Ulong *const place, functionptrtype refresh_func, 
   free(shared);
   return morsel;
 }
+
+
+/* ----------------------------- Write file ----------------------------- */
+
+// bool write_file_for(openfilestruct *const file, const char *const restrict name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate) {
+//   ASSERT(file);
+//   /* Becomes TRUE when the file is non-temporary and exists. */
+//   bool is_existing_file;
+//   /* The status fields filled in by stating the file. */
+//   struct stat info;
+//   /* The filename after tilde expansion. */
+//   char *realname = real_dir_from_tilde(name);
+//   /* The descriptor that gets assigned when opening the file. */
+//   int descriptor = 0;
+//   /* The name of the temprorary file we use when prepending. */
+//   char *tempname = NULL;
+//   /* An iterator for moving through the lines of the buffer. */
+//   linestruct *line = file->filetop;
+//   /* The number of lines written, for feedback on the status-bar. */
+//   Ulong lineswritten = 0;
+//   Ulong data_len;
+//   Ulong wrote;
+//   FILE *source;
+//   FILE *target;
+//   int verdict;
+//   mode_t permissions;
+//   /* The flag we will use to open the file.  Use O_EXCL for an emergency file. */
+//   int open_flag = (O_WRONLY | O_CREAT | ((method == APPEND) ? O_APPEND : (normal ? O_TRUNC : O_EXCL)));
+//   /* If we're writing a temporary file, we're probebly going outside
+//    * the operating directory, so skip the operating directory test. */
+//   if (normal && outside_of_confinement(realname, FALSE)) {
+//     statusline(ALERT, _("Can't write outside of %s"), operating_dir);
+//     goto cleanup_and_exit;
+//   }
+//   /* Check whether the file (at the end of a symnlink) exists. */
+//   is_existing_file = (normal && (stat(realname, &info) != -1));
+//   /* If we haven't stated this file before (say, the user just specified it interactivly), stat and save
+//    * the value now, or else we will chase NULL-pointers when we do modtime checks and such during backup. */
+//   if (!file->statinfo && is_existing_file) {
+//     stat_with_alloc(realname, &file->statinfo);
+//   }
+//   /* When the user requested a backup, we do this only if the file exists and isn't temporary and the file has
+//    * not been modified by someone else since we opened it (or we are appending/prepending or writing a selection). */
+//   if (ISSET(MAKE_BACKUP) && is_existing_file && !S_ISFIFO(info.st_mode) && file->statinfo
+//   && (file->statinfo->st_mtime == info.st_mtime || method != OVERWRITE || file->mark)) {
+//     if (!make_backup_of(realname)) {
+//       goto cleanup_and_exit;
+//     }
+//   }
+//   /* When prepending, first copy the existing file to a temporary file. */
+//   if (method == PREPEND) {
+//     if (is_existing_file && S_ISFIFO(info.st_mode)) {
+//       statusline(ALERT, _("Error writing %s: FIFO"), realname);
+//       goto cleanup_and_exit;
+//     }
+//     source = fopen(realname, "rb");
+//     if (!source) {
+//       statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
+//       goto cleanup_and_exit;
+//     }
+//     tempname = safe_tempfile(&target);
+//     if (!tempname) {
+//       statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+//       fclose(source);
+//       goto cleanup_and_exit;
+//     }
+//     verdict = copy_file(source, target, TRUE);
+//     /* We failed to read. */
+//     if (verdict < 0) {
+//       statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
+//       unlink(tempname);
+//       goto cleanup_and_exit;
+//     }
+//     /* We failed to write. */
+//     else if (verdict > 0) {
+//       statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+//       unlink(tempname);
+//       goto cleanup_and_exit;
+//     }
+//   }
+//   /* If the file already exists and is a FIFO, then inform the user of this. */
+//   if (is_existing_file && S_ISFIFO(info.st_mode)) {
+//     statusbar_all(_("Writing to FIFO..."));
+//   }
+//   /* When it's not a temporary file, this is where we open or create
+//    * it.  For an emergency file, access is restricted to just the owner. */
+//   if (!thefile) {
+//     permissions = (normal ? RW_FOR_ALL : (S_IRUSR | S_IWUSR));
+//     block_sigwinch(TRUE);
+//     /* Open the file-desctiptor. */
+//     if (normal) {
+//       CTRL_C_HANDLER_ACTION(
+//         descriptor = open(realname, open_flag, permissions);
+//       );
+//     }
+//     else {
+//       descriptor = open(realname, open_flag, permissions);
+//     }
+//     block_sigwinch(FALSE);
+//     /* If we couldn't open the file, just give up. */
+//     if (descriptor < 0) {
+//       /* We were interupted. */
+//       if (errno == EINTR || !errno) {
+//         statusline(ALERT, _("Interrupted"));
+//       }
+//       /* Some other problem caused the issue. */
+//       else {
+//         statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//       }
+//       /* If we made a temp-file, delete it. */
+//       if (tempname) {
+//         unlink(tempname);
+//       }
+//       goto cleanup_and_exit;
+//     }
+//     /* Try to open the file. */
+//     thefile = fdopen(descriptor, ((method == APPEND) ? "ab" : "wb"));
+//     /* We failed. */
+//     if (!thefile) {
+//       statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//       close(descriptor);
+//       goto cleanup_and_exit;
+//     }
+//   }
+//   /* When normaly writing the file, and the minibar is not active, tell the user we are writing. */
+//   if (normal && !ISSET(MINIBAR)) {
+//     statusbar_all(_("Writing"));
+//   }
+//   /* Now we do the writing. */
+//   while (TRUE) {
+//     /* Decode LF's as the NUL's that they are, before writing to disk. */
+//     data_len = recode_LF_to_NUL;
+//     /* Write the data to disk.  TODO: Either remake this into a fully fd based
+//      * loop, or make another function that performs this task, that is fd based. */
+//     wrote = fwrite(line->data, 1, data_len, thefile);
+//     /* Re-encode any embedded NUL's as LF's. */
+//     recode_NUL_to_LF(line->data, data_len);
+//     /* If there was any missmatch when writing, something is very wrong... */
+//     if (wrote < data_len) {
+//       statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//       fclose(thefile);
+//       goto cleanup_and_exit;
+//     }
+//     /* If we've reached the last line of the buffer, don't write a new-line character after it.  If this last
+//      * line is empty, it means zero bytes are written for it, and we don't count it in the number of lines. */
+//     if (!line->next) {
+//     }
+//   }
+// }

@@ -671,8 +671,10 @@ void  prepare_for_display(void);
 void  mention_name_and_linecount(void);
 void  mention_name_and_linecount_for(openfilestruct *const file);
 bool  delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
-bool  write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
-bool  has_valid_path(const char *const restrict filename);
+/* ----------------------------- Write lockfile ----------------------------- */
+bool write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
+/* ----------------------------- Has valid path ----------------------------- */
+bool has_valid_path(const char *const restrict filename);
 void  free_one_buffer(openfilestruct *orphan, openfilestruct **open, openfilestruct **start);
 /* ----------------------------- Close buffer ----------------------------- */
 void close_buffer_for(openfilestruct *const orphan, openfilestruct **const start, openfilestruct **const open);
@@ -837,7 +839,7 @@ void  wipe_statusbar(void);
 void  post_one_key(const char *const restrict keystroke, const char *const restrict tag, int width);
 void  bottombars(int menu);
 void  warn_and_briefly_pause(const char *const restrict message);
-void  statusline(message_type type, const char *const restrict format, ...);
+void  statusline(message_type type, const char *const restrict format, ...) _PRINTFLIKE(2, 3);
 void  statusbar_all(const char *const restrict msg);
 void  report_cursor_position_for(openfilestruct *const file);
 void  report_cursor_position(void);

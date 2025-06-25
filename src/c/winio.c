@@ -1180,10 +1180,10 @@ static void place_the_cursor_for_internal(openfilestruct *const file, int cols, 
   linestruct *line;
   Ulong leftedge;
   if (ISSET(SOFTWRAP)) {
-    line = file->filetop;
+    line = file->edittop;
     row -= chunk_for(cols, file->firstcolumn, file->edittop);
     /* Calculate how meny rows from edittop the current line is. */
-    while (line && line != file->edittop) {
+    while (line && line != file->current) {
       row += (1 + extra_chunks_in(cols, line));
       CLIST_ADV_NEXT(line);
     }
@@ -2465,7 +2465,7 @@ void place_the_cursor_for(openfilestruct *const file) {
     place_the_cursor_for_internal(file, editor_from_file(file)->cols, &column);
   }
   else if (IN_CURSES_CTX) {
-    place_the_cursor_curses_for(openfile);
+    place_the_cursor_curses_for(file);
   }
 }
 
@@ -2590,12 +2590,7 @@ void edit_redraw_for(CTX_ARGS, linestruct *const old_current, update_type manner
 
 /* Update any lines between old_current and current that need to be updated.  Use this if we've moved without changing any text. */
 void edit_redraw(linestruct *const old_current, update_type manner) {
-  if (IN_GUI_CTX) {
-    edit_redraw_for(GUI_CTX, old_current, manner);
-  }
-  else { 
-    edit_redraw_for(TUI_CTX, old_current, manner);
-  }
+  CTX_CALL_WARGS(edit_redraw_for, old_current, manner);
 }
 
 /* ----------------------------- Edit refresh ----------------------------- */
@@ -2641,10 +2636,11 @@ void edit_refresh_for(CTX_ARGS) {
       if (sidebar && file->filebot->lineno > rows) {
         mvwaddch(midwin, row, (COLS - 1), bardata[row]);
       }
+      ++row;
     }
     place_the_cursor_curses_for(file);
     wnoutrefresh(midwin);
-    refresh_needed = FALSE; 
+    refresh_needed = FALSE;
   }
 }
 

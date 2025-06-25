@@ -372,7 +372,7 @@ static void add_to_funcs(functionptrtype function, const int menus, const char *
 // }
 
 static void show_curses_version(void) _NOTHROW {
-  statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
+  statusline(INFO, "ncurses-%i.%i, patch %i", NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
 
 /* Add a key combo to the linked list of shortcuts. */
