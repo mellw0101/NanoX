@@ -319,7 +319,7 @@ char  *abs_path(const char *path) _NOTHROW;
 // bool   outside_of_confinement(const char *currpath, bool allow_tabcomp) _NOTHROW;
 // void   init_backup_dir(void);
 // int    copy_file(FILE *inn, FILE *out, bool close_out);
-bool   write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
+// bool   write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
 bool   write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
 int    write_it_out(bool exiting, bool withprompt);
 void   do_writeout(void);

@@ -1496,252 +1496,252 @@ char *abs_path(const char *path) _NOTHROW {
  * give feedback.  If method is 'APPEND' or 'PREPEND', it means we will be appending or prepending instead of
  * overwriting the given file. If annotate is 'TRUE' and when writing a normal file, we set the current filename
  * and stat info. Return 'TRUE' on success, and 'FALSE' otherwise. */
-bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate) {
-  PROFILE_FUNCTION;
-  /* Becomes TRUE when the file is non-temporary and exists. */
-  bool is_existing_file;
-  /* The status fields filled in by statting the file. */
-  struct stat fileinfo;
-  /* The filename after tilde expansion. */
-  char *realname = real_dir_from_tilde(name);
-  /* The descriptor that gets assigned when opening the file. */
-  int descriptor = 0;
-  /* The name of the temporary file we use when prepending. */
-  char *tempname = NULL;
-  /* An iterator for moving through the lines of the buffer. */
-  linestruct *line = openfile->filetop;
-  /* The number of lines written, for feedback on the status bar. */
-  Ulong lineswritten = 0;
-  /* If we're writing a temporary file, we're probably going outside
-   * the operating directory, so skip the operating directory test. */
-  if (normal && outside_of_confinement(realname, FALSE)) {
-    statusline(ALERT, _("Can't write outside of %s"), operating_dir);
-    goto cleanup_and_exit;
-  }
-  /* Check whether the file (at the end of the symlink) exists. */
-  is_existing_file = (normal && (stat(realname, &fileinfo) != -1));
-  /* If we haven't statted this file before (say, the user just specified it interactively), stat and save
-   * the value now, or else we will chase null pointers when we do modtime checks and such during backup. */
-  if (!openfile->statinfo && is_existing_file) {
-    stat_with_alloc(realname, &openfile->statinfo);
-  }
-  /* When the user requested a backup, we do this only if the file exists and isn't temporary AND the file has
-   * not been modified by someone else since we opened it (or we are appending/prepending or writing a selection). */
-  if (ISSET(MAKE_BACKUP) && is_existing_file && !S_ISFIFO(fileinfo.st_mode) && openfile->statinfo
-   && (openfile->statinfo->st_mtime == fileinfo.st_mtime || method != OVERWRITE || openfile->mark)) {
-    if (!make_backup_of(realname)) {
-      goto cleanup_and_exit;
-    }
-  }
-  /* When prepending, first copy the existing file to a temporary file. */
-  if (method == PREPEND) {
-    FILE *source = NULL;
-    FILE *target = NULL;
-    int verdict;
-    if (is_existing_file && S_ISFIFO(fileinfo.st_mode)) {
-      statusline(ALERT, _("Error writing %s: %s"), realname, "FIFO");
-      goto cleanup_and_exit;
-    }
-    source = fopen(realname, "rb");
-    if (!source) {
-      statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
-      goto cleanup_and_exit;
-    }
-    tempname = safe_tempfile(&target);
-    if (!tempname) {
-      statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
-      fclose(source);
-      goto cleanup_and_exit;
-    }
-    verdict = copy_file(source, target, TRUE);
-    if (verdict < 0) {
-      statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
-      unlink(tempname);
-      goto cleanup_and_exit;
-    }
-    else if (verdict > 0) {
-      statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
-      unlink(tempname);
-      goto cleanup_and_exit;
-    }
-  }
-  if (is_existing_file && S_ISFIFO(fileinfo.st_mode)) {
-    statusbar_all(_("Writing to FIFO..."));
-  }
-  /* When it's not a temporary file, this is where we open or create it.  For an emergency file, access is restricted to just the owner. */
-  if (!thefile) {
-    mode_t permissions = (normal ? RW_FOR_ALL : (S_IRUSR | S_IWUSR));
-    block_sigwinch(TRUE);
-    if (normal) {
-      install_handler_for_Ctrl_C();
-    }
-    /* Now open the file.  Use O_EXCL for an emergency file. */
-    descriptor = open(realname, O_WRONLY | O_CREAT | ((method == APPEND) ? O_APPEND : (normal ? O_TRUNC : O_EXCL)), permissions);
-    if (normal) {
-      restore_handler_for_Ctrl_C();
-    }
-    block_sigwinch(FALSE);
-    /* If we couldn't open the file, give up. */
-    if (descriptor < 0) {
-      if (errno == EINTR || errno == 0) {
-        statusline(ALERT, _("Interrupted"));
-      }
-      else {
-        statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-      }
-      if (tempname) {
-        unlink(tempname);
-      }
-      goto cleanup_and_exit;
-    }
-    thefile = fdopen(descriptor, (method == APPEND) ? "ab" : "wb");
-    if (!thefile) {
-      statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-      close(descriptor);
-      goto cleanup_and_exit;
-    }
-  }
-  if (normal) {
-    if (!ISSET(MINIBAR)) {
-      statusbar_all(_("Writing..."));
-    }
-  }
-  while (TRUE) {
-    Ulong data_len, wrote;
-    /* Decode LFs as the NULs that they are, before writing to disk. */
-    data_len = recode_LF_to_NUL(line->data);
-    wrote = fwrite(line->data, 1, data_len, thefile);
-    /* Re-encode any embedded NULs as LFs. */
-    recode_NUL_to_LF(line->data, data_len);
-    if (wrote < data_len) {
-      statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-      fclose(thefile);
-      goto cleanup_and_exit;
-    }
-    /* If we've reached the last line of the buffer, don't write a newline character after it.  If this last
-     * line is empty, it means zero bytes are written for it, and we don't count it in the number of lines. */
-    if (!line->next) {
-      if (line->data[0]) {
-        ++lineswritten;
-      }
-      break;
-    }
-    if (openfile->fmt == DOS_FILE || openfile->fmt == MAC_FILE) {
-      if (putc('\r', thefile) == EOF) {
-        statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-        fclose(thefile);
-        goto cleanup_and_exit;
-      }
-    }
-    if (openfile->fmt != MAC_FILE) {
-      if (putc('\n', thefile) == EOF) {
-        statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-        fclose(thefile);
-        goto cleanup_and_exit;
-      }
-    }
-    line = line->next;
-    ++lineswritten;
-  }
-  /* When prepending, append the temporary file to what we wrote above. */
-  if (method == PREPEND) {
-    FILE *source = fopen(tempname, "rb");
-    if (!source) {
-      statusline(ALERT, _("Error reading temp file: %s"), strerror(errno));
-      fclose(thefile);
-      goto cleanup_and_exit;
-    }
-    int verdict = copy_file(source, thefile, FALSE);
-    if (verdict < 0) {
-      statusline(ALERT, _("Error reading temp file: %s"), strerror(errno));
-      fclose(thefile);
-      goto cleanup_and_exit;
-    }
-    else if (verdict > 0) {
-      statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-      fclose(thefile);
-      goto cleanup_and_exit;
-    }
-    unlink(tempname);
-  }
-  if (!is_existing_file || !S_ISFIFO(fileinfo.st_mode)) {
-    /* Ensure the data has reached the disk before reporting it as written. */
-    if (fflush(thefile) != 0 || fsync(fileno(thefile)) != 0) {
-      statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-      fclose(thefile);
-      goto cleanup_and_exit;
-    }
-  }
-  /* Change permissions and owner of an emergency save file to the values of the original file, but ignore any failure as we are in a hurry. */
-  if (method == EMERGENCY && descriptor && openfile->statinfo) {
-    IGNORE_CALL_RESULT(fchmod(descriptor, openfile->statinfo->st_mode));
-    IGNORE_CALL_RESULT(fchown(descriptor, openfile->statinfo->st_uid, openfile->statinfo->st_gid));
-  }
-  if (fclose(thefile) != 0) {
-    statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
-  cleanup_and_exit:
-    if (errno == ENOSPC && normal) {
-      napms(3200);
-      lastmessage = VACUUM;
-      /* TRANSLATORS: This warns for data loss when the disk is full. */
-      statusline(ALERT, _("File on disk has been truncated!"));
-      napms(3200);
-      lastmessage = VACUUM;
-      /* TRANSLATORS: This is a suggestion to the user, where "resume" means resuming from suspension.  Try to keep this at most 76 characters. */
-      statusline(ALERT, _("Maybe ^T^Z, make room on disk, resume, then ^S^X"));
-      stat_with_alloc(realname, &openfile->statinfo);
-    }
-    free(tempname);
-    free(realname);
-    return FALSE;
-  }
-  /* When having written an entire buffer, update some administrivia. */
-  if (annotate && method == OVERWRITE) {
-    /* If the filename was changed, write a new lockfile when needed, and check whether it means a different syntax gets used. */
-    if (strcmp(openfile->filename, realname) != 0) {
-      if (openfile->lock_filename) {
-        delete_lockfile(openfile->lock_filename);
-        free(openfile->lock_filename);
-      }
-      if (ISSET(LOCKING)) {
-        openfile->lock_filename = do_lockfile(realname, FALSE);
-      }
-      openfile->filename = realloc_strcpy(openfile->filename, realname);
-      const char *oldname, *newname;
-      oldname = openfile->syntax ? openfile->syntax->name : "";
-      find_and_prime_applicable_syntax();
-      newname = openfile->syntax ? openfile->syntax->name : "";
-      /* If the syntax changed, discard and recompute the multidata. */
-      if (strcmp(oldname, newname) != 0) {
-        for (line = openfile->filetop; line != NULL; line = line->next) {
-          free(line->multidata);
-          line->multidata = NULL;
-        }
-        precalc_multicolorinfo();
-        have_palette   = FALSE;
-        refresh_needed = TRUE;
-      }
-    }
-    /* Get or update the stat info to reflect the current state. */
-    stat_with_alloc(realname, &openfile->statinfo);
-    /* Record at which point in the undo stack the buffer was saved. */
-    openfile->last_saved  = openfile->current_undo;
-    openfile->last_action = OTHER;
-    openfile->modified    = FALSE;
-    titlebar(NULL);
-  }
-  if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1 && annotate) {
-    report_size = TRUE;
-  }
-  else {
-    if (normal) {
-      statusline(REMARK, P_("Wrote %zu line", "Wrote %zu lines", lineswritten), lineswritten);
-    }
-    free(tempname);
-    free(realname);
-  }
-  return TRUE;
-}
+// bool write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate) {
+//   PROFILE_FUNCTION;
+//   /* Becomes TRUE when the file is non-temporary and exists. */
+//   bool is_existing_file;
+//   /* The status fields filled in by statting the file. */
+//   struct stat fileinfo;
+//   /* The filename after tilde expansion. */
+//   char *realname = real_dir_from_tilde(name);
+//   /* The descriptor that gets assigned when opening the file. */
+//   int descriptor = 0;
+//   /* The name of the temporary file we use when prepending. */
+//   char *tempname = NULL;
+//   /* An iterator for moving through the lines of the buffer. */
+//   linestruct *line = openfile->filetop;
+//   /* The number of lines written, for feedback on the status bar. */
+//   Ulong lineswritten = 0;
+//   /* If we're writing a temporary file, we're probably going outside
+//    * the operating directory, so skip the operating directory test. */
+//   if (normal && outside_of_confinement(realname, FALSE)) {
+//     statusline(ALERT, _("Can't write outside of %s"), operating_dir);
+//     goto cleanup_and_exit;
+//   }
+//   /* Check whether the file (at the end of the symlink) exists. */
+//   is_existing_file = (normal && (stat(realname, &fileinfo) != -1));
+//   /* If we haven't statted this file before (say, the user just specified it interactively), stat and save
+//    * the value now, or else we will chase null pointers when we do modtime checks and such during backup. */
+//   if (!openfile->statinfo && is_existing_file) {
+//     stat_with_alloc(realname, &openfile->statinfo);
+//   }
+//   /* When the user requested a backup, we do this only if the file exists and isn't temporary AND the file has
+//    * not been modified by someone else since we opened it (or we are appending/prepending or writing a selection). */
+//   if (ISSET(MAKE_BACKUP) && is_existing_file && !S_ISFIFO(fileinfo.st_mode) && openfile->statinfo
+//    && (openfile->statinfo->st_mtime == fileinfo.st_mtime || method != OVERWRITE || openfile->mark)) {
+//     if (!make_backup_of(realname)) {
+//       goto cleanup_and_exit;
+//     }
+//   }
+//   /* When prepending, first copy the existing file to a temporary file. */
+//   if (method == PREPEND) {
+//     FILE *source = NULL;
+//     FILE *target = NULL;
+//     int verdict;
+//     if (is_existing_file && S_ISFIFO(fileinfo.st_mode)) {
+//       statusline(ALERT, _("Error writing %s: %s"), realname, "FIFO");
+//       goto cleanup_and_exit;
+//     }
+//     source = fopen(realname, "rb");
+//     if (!source) {
+//       statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
+//       goto cleanup_and_exit;
+//     }
+//     tempname = safe_tempfile(&target);
+//     if (!tempname) {
+//       statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+//       fclose(source);
+//       goto cleanup_and_exit;
+//     }
+//     verdict = copy_file(source, target, TRUE);
+//     if (verdict < 0) {
+//       statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
+//       unlink(tempname);
+//       goto cleanup_and_exit;
+//     }
+//     else if (verdict > 0) {
+//       statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+//       unlink(tempname);
+//       goto cleanup_and_exit;
+//     }
+//   }
+//   if (is_existing_file && S_ISFIFO(fileinfo.st_mode)) {
+//     statusbar_all(_("Writing to FIFO..."));
+//   }
+//   /* When it's not a temporary file, this is where we open or create it.  For an emergency file, access is restricted to just the owner. */
+//   if (!thefile) {
+//     mode_t permissions = (normal ? RW_FOR_ALL : (S_IRUSR | S_IWUSR));
+//     block_sigwinch(TRUE);
+//     if (normal) {
+//       install_handler_for_Ctrl_C();
+//     }
+//     /* Now open the file.  Use O_EXCL for an emergency file. */
+//     descriptor = open(realname, O_WRONLY | O_CREAT | ((method == APPEND) ? O_APPEND : (normal ? O_TRUNC : O_EXCL)), permissions);
+//     if (normal) {
+//       restore_handler_for_Ctrl_C();
+//     }
+//     block_sigwinch(FALSE);
+//     /* If we couldn't open the file, give up. */
+//     if (descriptor < 0) {
+//       if (errno == EINTR || errno == 0) {
+//         statusline(ALERT, _("Interrupted"));
+//       }
+//       else {
+//         statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//       }
+//       if (tempname) {
+//         unlink(tempname);
+//       }
+//       goto cleanup_and_exit;
+//     }
+//     thefile = fdopen(descriptor, (method == APPEND) ? "ab" : "wb");
+//     if (!thefile) {
+//       statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//       close(descriptor);
+//       goto cleanup_and_exit;
+//     }
+//   }
+//   if (normal) {
+//     if (!ISSET(MINIBAR)) {
+//       statusbar_all(_("Writing..."));
+//     }
+//   }
+//   while (TRUE) {
+//     Ulong data_len, wrote;
+//     /* Decode LFs as the NULs that they are, before writing to disk. */
+//     data_len = recode_LF_to_NUL(line->data);
+//     wrote = fwrite(line->data, 1, data_len, thefile);
+//     /* Re-encode any embedded NULs as LFs. */
+//     recode_NUL_to_LF(line->data, data_len);
+//     if (wrote < data_len) {
+//       statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//       fclose(thefile);
+//       goto cleanup_and_exit;
+//     }
+//     /* If we've reached the last line of the buffer, don't write a newline character after it.  If this last
+//      * line is empty, it means zero bytes are written for it, and we don't count it in the number of lines. */
+//     if (!line->next) {
+//       if (line->data[0]) {
+//         ++lineswritten;
+//       }
+//       break;
+//     }
+//     if (openfile->fmt == DOS_FILE || openfile->fmt == MAC_FILE) {
+//       if (putc('\r', thefile) == EOF) {
+//         statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//         fclose(thefile);
+//         goto cleanup_and_exit;
+//       }
+//     }
+//     if (openfile->fmt != MAC_FILE) {
+//       if (putc('\n', thefile) == EOF) {
+//         statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//         fclose(thefile);
+//         goto cleanup_and_exit;
+//       }
+//     }
+//     line = line->next;
+//     ++lineswritten;
+//   }
+//   /* When prepending, append the temporary file to what we wrote above. */
+//   if (method == PREPEND) {
+//     FILE *source = fopen(tempname, "rb");
+//     if (!source) {
+//       statusline(ALERT, _("Error reading temp file: %s"), strerror(errno));
+//       fclose(thefile);
+//       goto cleanup_and_exit;
+//     }
+//     int verdict = copy_file(source, thefile, FALSE);
+//     if (verdict < 0) {
+//       statusline(ALERT, _("Error reading temp file: %s"), strerror(errno));
+//       fclose(thefile);
+//       goto cleanup_and_exit;
+//     }
+//     else if (verdict > 0) {
+//       statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//       fclose(thefile);
+//       goto cleanup_and_exit;
+//     }
+//     unlink(tempname);
+//   }
+//   if (!is_existing_file || !S_ISFIFO(fileinfo.st_mode)) {
+//     /* Ensure the data has reached the disk before reporting it as written. */
+//     if (fflush(thefile) != 0 || fsync(fileno(thefile)) != 0) {
+//       statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//       fclose(thefile);
+//       goto cleanup_and_exit;
+//     }
+//   }
+//   /* Change permissions and owner of an emergency save file to the values of the original file, but ignore any failure as we are in a hurry. */
+//   if (method == EMERGENCY && descriptor && openfile->statinfo) {
+//     IGNORE_CALL_RESULT(fchmod(descriptor, openfile->statinfo->st_mode));
+//     IGNORE_CALL_RESULT(fchown(descriptor, openfile->statinfo->st_uid, openfile->statinfo->st_gid));
+//   }
+//   if (fclose(thefile) != 0) {
+//     statusline(ALERT, _("Error writing %s: %s"), realname, strerror(errno));
+//   cleanup_and_exit:
+//     if (errno == ENOSPC && normal) {
+//       napms(3200);
+//       lastmessage = VACUUM;
+//       /* TRANSLATORS: This warns for data loss when the disk is full. */
+//       statusline(ALERT, _("File on disk has been truncated!"));
+//       napms(3200);
+//       lastmessage = VACUUM;
+//       /* TRANSLATORS: This is a suggestion to the user, where "resume" means resuming from suspension.  Try to keep this at most 76 characters. */
+//       statusline(ALERT, _("Maybe ^T^Z, make room on disk, resume, then ^S^X"));
+//       stat_with_alloc(realname, &openfile->statinfo);
+//     }
+//     free(tempname);
+//     free(realname);
+//     return FALSE;
+//   }
+//   /* When having written an entire buffer, update some administrivia. */
+//   if (annotate && method == OVERWRITE) {
+//     /* If the filename was changed, write a new lockfile when needed, and check whether it means a different syntax gets used. */
+//     if (strcmp(openfile->filename, realname) != 0) {
+//       if (openfile->lock_filename) {
+//         delete_lockfile(openfile->lock_filename);
+//         free(openfile->lock_filename);
+//       }
+//       if (ISSET(LOCKING)) {
+//         openfile->lock_filename = do_lockfile(realname, FALSE);
+//       }
+//       openfile->filename = realloc_strcpy(openfile->filename, realname);
+//       const char *oldname, *newname;
+//       oldname = openfile->syntax ? openfile->syntax->name : "";
+//       find_and_prime_applicable_syntax();
+//       newname = openfile->syntax ? openfile->syntax->name : "";
+//       /* If the syntax changed, discard and recompute the multidata. */
+//       if (strcmp(oldname, newname) != 0) {
+//         for (line = openfile->filetop; line != NULL; line = line->next) {
+//           free(line->multidata);
+//           line->multidata = NULL;
+//         }
+//         precalc_multicolorinfo();
+//         have_palette   = FALSE;
+//         refresh_needed = TRUE;
+//       }
+//     }
+//     /* Get or update the stat info to reflect the current state. */
+//     stat_with_alloc(realname, &openfile->statinfo);
+//     /* Record at which point in the undo stack the buffer was saved. */
+//     openfile->last_saved  = openfile->current_undo;
+//     openfile->last_action = OTHER;
+//     openfile->modified    = FALSE;
+//     titlebar(NULL);
+//   }
+//   if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1 && annotate) {
+//     report_size = TRUE;
+//   }
+//   else {
+//     if (normal) {
+//       statusline(REMARK, P_("Wrote %zu line", "Wrote %zu lines", lineswritten), lineswritten);
+//     }
+//     free(tempname);
+//     free(realname);
+//   }
+//   return TRUE;
+// }
 
 /* Write the marked region of the current buffer out to disk.  Return 'TRUE' on success and 'FALSE' on error. */
 bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method) {

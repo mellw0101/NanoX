@@ -663,14 +663,20 @@ void   menu_qsort(CMenu *const menu, CmpFuncPtr cmp_func);
 /* static */ bool make_backup_of_for(openfilestruct *const file, char *realname);
 /* static */ bool make_backup_of(char *realname);
 
-void  make_new_buffer_for(openfilestruct **const start, openfilestruct **const open);
-void  make_new_buffer(void);
-char *crop_to_fit(const char *const restrict name, Ulong room) ;
-void  stat_with_alloc(const char *filename, struct stat **pstat);
-void  prepare_for_display(void);
-void  mention_name_and_linecount(void);
-void  mention_name_and_linecount_for(openfilestruct *const file);
-bool  delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
+/* ----------------------------- Make new buffer ----------------------------- */
+void make_new_buffer_for(openfilestruct **const start, openfilestruct **const open);
+void make_new_buffer(void);
+/* ----------------------------- Crop to fit ----------------------------- */
+char *crop_to_fit(const char *const restrict name, Ulong room);
+/* ----------------------------- Stat with alloc ----------------------------- */
+void stat_with_alloc(const char *filename, struct stat **pstat);
+/* ----------------------------- Prepare for display ----------------------------- */
+void prepare_for_display(void);
+/* ----------------------------- Mention name and linecount ----------------------------- */
+void mention_name_and_linecount_for(openfilestruct *const file);
+void mention_name_and_linecount(void);
+/* ----------------------------- Delete lockfile ----------------------------- */
+bool delete_lockfile(const char *const restrict lockfilename) _NONNULL(1);
 /* ----------------------------- Write lockfile ----------------------------- */
 bool write_lockfile(const char *const restrict lockfilename, const char *const restrict filename, bool modified);
 /* ----------------------------- Has valid path ----------------------------- */
@@ -709,6 +715,10 @@ bool open_buffer(const char *const restrict path, bool new_one);
 char **username_completion(const char *const restrict morsel, Ulong length, Ulong *const num_matches);
 /* ----------------------------- Input tab ----------------------------- */
 char *input_tab(char *morsel, Ulong *const place, functionptrtype refresh_func, bool *const listed);
+/* ----------------------------- Write file ----------------------------- */
+bool write_file_for(openfilestruct *const file, const char *const restrict name,
+  FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
+bool write_file(const char *const restrict name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
 
 
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */
