@@ -698,10 +698,15 @@ void  init_operating_dir(void);
 bool  outside_of_confinement(const char *const restrict somepath, bool tabbing);
 void  init_backup_dir(void);
 int   copy_file(FILE *inn, FILE *out, bool close_out);
+/* ----------------------------- Safe tempfile ----------------------------- */
 char *safe_tempfile(FILE **stream);
-void  redecorate_after_switch(void);
-void  switch_to_prev_buffer(void);
-void  switch_to_next_buffer(void);
+/* ----------------------------- Redecorate after switch ----------------------------- */
+void redecorate_after_switch(void);
+/* ----------------------------- Switch to prev buffer ----------------------------- */
+void switch_to_prev_buffer(void);
+/* ----------------------------- Switch to next buffer ----------------------------- */
+void switch_to_next_buffer(void);
+/* ----------------------------- Get next filename ----------------------------- */
 char *get_next_filename(const char *const restrict name, const char *const restrict suffix);
 /* ----------------------------- Open file ----------------------------- */
 int open_file(const char *const restrict path, bool new_one, FILE **const f);
@@ -719,46 +724,52 @@ char *input_tab(char *morsel, Ulong *const place, functionptrtype refresh_func, 
 bool write_file_for(openfilestruct *const file, const char *const restrict name,
   FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
 bool write_file(const char *const restrict name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
+/* ----------------------------- Write region to file ----------------------------- */
+bool write_region_to_file_for(openfilestruct *const file, const char *const restrict name, FILE *stream, bool normal, kind_of_writing_type method);
+bool write_region_to_file(const char *const restrict name, FILE *stream, bool normal, kind_of_writing_type method);
+/* ----------------------------- Write it out ----------------------------- */
+int write_it_out_for(openfilestruct *const file, bool exiting, bool withprompt);
+int write_it_out(bool exiting, bool withprompt);
 
 
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */
 
 
-void  utf8_init(void);
-bool  using_utf8(void);
-bool  is_language_word_char(const char *pointer, Ulong index);
-bool  is_lang_word_char(openfilestruct *const file);
-bool  is_cursor_language_word_char(void);
-bool  is_enclose_char(char ch);
-bool  is_alpha_char(const char *const c);
-bool  is_alnum_char(const char *const c);
-bool  is_blank_char(const char *const c);
-bool  is_prev_blank_char(const char *pointer, Ulong index);
-bool  is_prev_cursor_blank_char(void);
-bool  is_cursor_blank_char(void);
-bool  is_cntrl_char(const char *const c);
-bool  is_word_char(const char *const c, bool allow_punct);
-bool  is_cursor_word_char(bool allow_punct);
-bool  is_prev_word_char(const char *pointer, Ulong index, bool allow_punct);
-bool  is_prev_cursor_word_char(bool allow_punct);
-bool  is_prev_char(const char *pointer, Ulong index, const char ch);
-bool  is_prev_cursor_char(const char ch);
-bool  is_prev_char_one_of(const char *pointer, Ulong index, const char *chars);
-bool  is_prev_cursor_char_one_of_for(openfilestruct *const file, const char *chars);
-bool  is_prev_cursor_char_one_of(const char *chars);
-bool  is_cursor_char(const char ch);
-bool  is_char_one_of(const char *pointer, Ulong index, const char *chars);
-bool  is_end_char_one_of(const char *const restrict ptr, const char *const restrict chars);
-bool  is_cursor_char_one_of(const char *chars);
-bool  is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch);
-bool  is_curs_between_chars_for(openfilestruct *const restrict file, char a, char b);
-bool  is_curs_between_chars(char a, char b);
-bool  is_between_any_char_pair(const char *const restrict ptr, Ulong index, const char **const restrict pairs, Ulong *const restrict out_index);
-bool  is_curs_between_any_pair_for(openfilestruct *const restrict file, const char **const restrict pairs, Ulong *const restrict out_index);
-bool  is_curs_between_any_pair(const char **const restrict pairs, Ulong *const restrict out_index);
-bool  is_cursor_between_chars(const char pre_ch, const char post_ch);
-char  control_mbrep(const char *const c, bool isdata);
-int   mbtowide(wchar *const restrict wc, const char *const restrict c) __THROW _NODISCARD _NONNULL(1, 2);
+void utf8_init(void);
+bool using_utf8(void);
+bool is_language_word_char(const char *pointer, Ulong index);
+bool is_lang_word_char(openfilestruct *const file);
+bool is_cursor_language_word_char(void);
+bool is_enclose_char(char ch);
+bool is_alpha_char(const char *const c);
+bool is_alnum_char(const char *const c);
+bool is_blank_char(const char *const c);
+bool is_prev_blank_char(const char *pointer, Ulong index);
+bool is_prev_cursor_blank_char(void);
+bool is_cursor_blank_char(void);
+bool is_cntrl_char(const char *const c);
+bool is_word_char(const char *const c, bool allow_punct);
+bool is_cursor_word_char(bool allow_punct);
+bool is_prev_word_char(const char *pointer, Ulong index, bool allow_punct);
+bool is_prev_cursor_word_char(bool allow_punct);
+bool is_prev_char(const char *pointer, Ulong index, const char ch);
+bool is_prev_cursor_char(const char ch);
+bool is_prev_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool is_prev_cursor_char_one_of_for(openfilestruct *const file, const char *chars);
+bool is_prev_cursor_char_one_of(const char *chars);
+bool is_cursor_char(const char ch);
+bool is_char_one_of(const char *pointer, Ulong index, const char *chars);
+bool is_end_char_one_of(const char *const restrict ptr, const char *const restrict chars);
+bool is_cursor_char_one_of(const char *chars);
+bool is_between_chars(const char *pointer, Ulong index, const char pre_ch, const char post_ch);
+bool is_curs_between_chars_for(openfilestruct *const restrict file, char a, char b);
+bool is_curs_between_chars(char a, char b);
+bool is_between_any_char_pair(const char *const restrict ptr, Ulong index, const char **const restrict pairs, Ulong *const restrict out_index);
+bool is_curs_between_any_pair_for(openfilestruct *const restrict file, const char **const restrict pairs, Ulong *const restrict out_index);
+bool is_curs_between_any_pair(const char **const restrict pairs, Ulong *const restrict out_index);
+bool is_cursor_between_chars(const char pre_ch, const char post_ch);
+char control_mbrep(const char *const c, bool isdata);
+int  mbtowide(wchar *const restrict wc, const char *const restrict c) __THROW _NODISCARD _NONNULL(1, 2);
 
 /* ----------------------------- Encode multi byte from wide ----------------------------- */
 int widetomb(Uint wc, char *const restrict mb);
@@ -868,6 +879,7 @@ void warn_and_briefly_pause_curses(const char *const restrict message);
 void draw_row_marked_region_for_curses(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void draw_row_marked_region_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void full_refresh(void);
+void do_credits(void);
 void draw_row_curses_for(openfilestruct *const file, int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 void draw_row_curses(int row, const char *const restrict converted, linestruct *const line, Ulong from_col);
 int  update_line_curses_for(openfilestruct *const file, linestruct *const line, Ulong index);

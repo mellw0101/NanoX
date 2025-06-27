@@ -1744,233 +1744,233 @@ char *abs_path(const char *path) _NOTHROW {
 // }
 
 /* Write the marked region of the current buffer out to disk.  Return 'TRUE' on success and 'FALSE' on error. */
-bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method) {
-  linestruct *birthline, *topline, *botline, *stopper, *afterline;
-  char *was_datastart, saved_byte;
-  Ulong top_x, bot_x;
-  bool  retval;
-  get_region(&topline, &top_x, &botline, &bot_x);
-  /* When needed, prepare a magic end line for the region. */
-  if (normal && (bot_x > 0) && !ISSET(NO_NEWLINES)) {
-    stopper = make_new_node(botline);
-    stopper->data = STRLTR_COPY_OF("");
-  }
-  else {
-    stopper = NULL;
-  }
-  /* Make the marked area look like a separate buffer. */
-  afterline            = botline->next;
-  botline->next        = stopper;
-  saved_byte           = botline->data[bot_x];
-  botline->data[bot_x] = '\0';
-  was_datastart        = topline->data;
-  topline->data       += top_x;
-  birthline            = openfile->filetop;
-  openfile->filetop    = topline;
-  retval               = write_file(name, stream, normal, method, NONOTES);
-  /* Restore the proper state of the buffer. */
-  openfile->filetop    = birthline;
-  topline->data        = was_datastart;
-  botline->data[bot_x] = saved_byte;
-  botline->next        = afterline;
-  if (stopper) {
-    delete_node(stopper);
-  }
-  return retval;
-}
+// bool write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method) {
+//   linestruct *birthline, *topline, *botline, *stopper, *afterline;
+//   char *was_datastart, saved_byte;
+//   Ulong top_x, bot_x;
+//   bool  retval;
+//   get_region(&topline, &top_x, &botline, &bot_x);
+//   /* When needed, prepare a magic end line for the region. */
+//   if (normal && (bot_x > 0) && !ISSET(NO_NEWLINES)) {
+//     stopper = make_new_node(botline);
+//     stopper->data = STRLTR_COPY_OF("");
+//   }
+//   else {
+//     stopper = NULL;
+//   }
+//   /* Make the marked area look like a separate buffer. */
+//   afterline            = botline->next;
+//   botline->next        = stopper;
+//   saved_byte           = botline->data[bot_x];
+//   botline->data[bot_x] = '\0';
+//   was_datastart        = topline->data;
+//   topline->data       += top_x;
+//   birthline            = openfile->filetop;
+//   openfile->filetop    = topline;
+//   retval               = write_file(name, stream, normal, method, NONOTES);
+//   /* Restore the proper state of the buffer. */
+//   openfile->filetop    = birthline;
+//   topline->data        = was_datastart;
+//   botline->data[bot_x] = saved_byte;
+//   botline->next        = afterline;
+//   if (stopper) {
+//     delete_node(stopper);
+//   }
+//   return retval;
+// }
 
 /* Write the current buffer (or marked region) to disk.  'exiting' Indicates whether the program is exiting.
  * If exiting is 'TRUE', write the entire buffer regardless of whether the mark is on. Do not ask for a name
  * when 'withprompt' is 'FALSE'. Nor when doing save-on-exit and the buffer already has a name.  If 'withprompt'
  * is 'TRUE' then ask for (confirmation of) the filename.  And if 'FALSE' then do not ask for a the filename.
  * Return`s '0' if the operation is cancelled, '1' if the buffer is saved and '2' if the buffer is discarded. */
-int write_it_out(bool exiting, bool withprompt) {
-  /* The filename we offer, or what the user typed so far. */
-  char *given;
-  /* Whether it's okay to save the buffer under a different name. */
-  bool maychange = (openfile->filename[0] == '\0');
-  kind_of_writing_type method = OVERWRITE;
-  static bool did_credits = FALSE;
-  /* Display newlines in filenames as ^J. */
-  as_an_at = FALSE;
-  given = copy_of((openfile->mark && !exiting) ? "" : openfile->filename);
-  while (TRUE) {
-    functionptrtype function;
-    int response = 0, choice = NO;
-    const char *msg;
-    const char *formatstr = ((openfile->fmt == DOS_FILE) ? _(" [DOS Format]") : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]") : "");
-    const char *backupstr = (ISSET(MAKE_BACKUP) ? _(" [Backup]") : "");
-    /* When the mark is on, offer to write the selection to disk, but not when in restricted
-     * mode, because it would allow writing to a file not specified on the command line. */
-    if (openfile->mark && !exiting && !ISSET(RESTRICTED)) {
-      /* TRANSLATORS : The next six strings are prompts. */
-      msg = (method == PREPEND) ? _("Prepend Selection to File")
-          : (method == APPEND)  ? _("Append Selection to File")
-                                : _("Write Selection to File");
-    }
-    else if (method != OVERWRITE) {
-      msg = ((method == PREPEND) ? _("File Name to Prepend to") : _("File Name to Append to"));
-    }
-    else {
-      msg = _("File Name to Write");
-    }
-    present_path = realloc_strcpy(present_path, "./");
-    /* When we shouldn't prompt, use the existing filename.  Otherwise, ask for (confirmation of) the filename. */
-    if ((!withprompt || (ISSET(SAVE_ON_EXIT) && exiting)) && openfile->filename[0]) {
-      answer = realloc_strcpy(answer, openfile->filename);
-    }
-    else {
-      response = do_prompt(MWRITEFILE, given, NULL, edit_refresh, "%s%s%s", msg, formatstr, backupstr);
-    }
-    if (response < 0) {
-      statusbar_all(_("Cancelled"));
-      free(given);
-      return 0;
-    }
-    function = func_from_key(response);
-    /* Upon request, abandon the buffer. */
-    if (function == discard_buffer) {
-      free(given);
-      return 2;
-    }
-    given = realloc_strcpy(given, answer);
-    if (function == to_files && !ISSET(RESTRICTED)) {
-      char *chosen = browse_in(answer);
-      if (!chosen) {
-        continue;
-      }
-      free(answer);
-      answer = chosen;
-    }
-    else if (function == dos_format) {
-      openfile->fmt = (openfile->fmt == DOS_FILE) ? NIX_FILE : DOS_FILE;
-      continue;
-    }
-    else if (function == mac_format) {
-      openfile->fmt = (openfile->fmt == MAC_FILE) ? NIX_FILE : MAC_FILE;
-      continue;
-    }
-    else if (function == back_it_up && !ISSET(RESTRICTED)) {
-      TOGGLE(MAKE_BACKUP);
-      continue;
-    }
-    else if ((function == prepend_it || function == append_it) && !ISSET(RESTRICTED)) {
-      if (function == prepend_it) {
-        method = (method == PREPEND) ? OVERWRITE : PREPEND;
-      }
-      else {
-        method = (method == APPEND) ? OVERWRITE : APPEND;
-      }
-      if (constexpr_strcmp(answer, openfile->filename) == 0) {
-        given[0] = '\0';
-      }
-      continue;
-    }
-    else {
-      if (function == do_help) {
-        continue;
-      }
-      /* If the user pressed Ctrl-X in the edit window, and answered 'Y' at the "Save modified buffer?"
-       * prompt, and entered "zzy" as filename, and this is the first time around, show an Easter egg. */
-      if (exiting && !ISSET(SAVE_ON_EXIT) && openfile->filename[0] == '\0' && constexpr_strcmp(answer, "zzy") == 0 && !did_credits) {
-        if (LINES > 5 && COLS > 31) {
-          do_credits();
-          did_credits = TRUE;
-        }
-        else {
-          /* TRANSLATORS: Concisely say the screen is too small. */
-          statusline(AHEM, _("Too tiny"));
-        }
-        free(given);
-        return 0;
-      }
-      if (method == OVERWRITE) {
-        struct stat fileinfo;
-        bool  name_exists,  do_warning;
-        char *full_answer, *full_filename;
-        full_answer   = get_full_path(answer);
-        full_filename = get_full_path(openfile->filename);
-        name_exists   = (stat((!full_answer) ? answer : full_answer, &fileinfo) != -1);
-        if (!openfile->filename[0]) {
-          do_warning = name_exists;
-        }
-        else {
-          do_warning = (strcmp((!full_answer) ? answer : full_answer, (!full_filename) ? openfile->filename : full_filename) != 0);
-        }
-        free(full_filename);
-        free(full_answer);
-        if (do_warning) {
-          /* When in restricted mode, we aren't allowed to overwrite an existing file with the
-           * current buffer, nor to change the name of the current buffer if it already has one. */
-          if (ISSET(RESTRICTED)) {
-            /* TRANSLATORS: Restricted mode forbids overwriting. */
-            warn_and_briefly_pause(_("File exists -- cannot overwrite"));
-            continue;
-          }
-          if (!maychange) {
-            if (exiting || !openfile->mark) {
-              if (ask_user(YESORNO, _("Save file under DIFFERENT NAME? ")) != YES) {
-                continue;
-              }
-              maychange = TRUE;
-            }
-          }
-          if (name_exists) {
-            char *question = _("File \"%s\" exists; OVERWRITE? ");
-            char *name     = crop_to_fit(answer, (COLS - breadth(question) + 1));
-            char *message  = (char *)nmalloc(strlen(question) + strlen(name) + 1);
-            sprintf(message, question, name);
-            choice = ask_user(YESORNO, message);
-            free(message);
-            free(name);
-            if (choice != YES) {
-              continue;
-            }
-          }
-        }
-        /* Complain if the file exists, the name hasn't changed, and the stat information we had before does not match what we have now. */
-        else if (name_exists && openfile->statinfo
-         && (openfile->statinfo->st_mtime < fileinfo.st_mtime || openfile->statinfo->st_dev != fileinfo.st_dev || openfile->statinfo->st_ino != fileinfo.st_ino)) {
-          warn_and_briefly_pause(_("File on disk has changed"));
-          /* TRANSLATORS: Try to keep this at most 76 characters. */
-          choice = ask_user(YESORNO, _("File was modified since you opened it; continue saving? "));
-          wipe_statusbar();
-          /* When in tool mode and not called by 'savefile', overwrite the file right here when requested. */
-          if (ISSET(SAVE_ON_EXIT) && withprompt) {
-            free(given);
-            if (choice == YES) {
-              return write_file(openfile->filename, NULL, NORMAL, OVERWRITE, NONOTES);
-            }
-            /* Discard buffer */
-            else if (choice == NO) {
-              return 2;
-            }
-            else {
-              return 0;
-            }
-          }
-          else if (choice == CANCEL && exiting) {
-            continue;
-          }
-          else if (choice != YES) {
-            free(given);
-            return 1;
-          }
-        }
-      }
-      free(given);
-      break;
-    }
-  }
-  /* When the mark is on (and we've prompted for a name and we're not exiting and we're not in
-   * restricted mode), then write out the marked region; otherwise, write out the whole buffer. */
-  if (openfile->mark && withprompt && !exiting && !ISSET(RESTRICTED)) {
-    return write_region_to_file(answer, NULL, NORMAL, method);
-  }
-  else {
-    return write_file(answer, NULL, NORMAL, method, ANNOTATE);
-  }
-}
+// int write_it_out(bool exiting, bool withprompt) {
+//   /* The filename we offer, or what the user typed so far. */
+//   char *given;
+//   /* Whether it's okay to save the buffer under a different name. */
+//   bool maychange = (openfile->filename[0] == '\0');
+//   kind_of_writing_type method = OVERWRITE;
+//   static bool did_credits = FALSE;
+//   /* Display newlines in filenames as ^J. */
+//   as_an_at = FALSE;
+//   given = copy_of((openfile->mark && !exiting) ? "" : openfile->filename);
+//   while (TRUE) {
+//     functionptrtype function;
+//     int response = 0, choice = NO;
+//     const char *msg;
+//     const char *formatstr = ((openfile->fmt == DOS_FILE) ? _(" [DOS Format]") : (openfile->fmt == MAC_FILE) ? _(" [Mac Format]") : "");
+//     const char *backupstr = (ISSET(MAKE_BACKUP) ? _(" [Backup]") : "");
+//     /* When the mark is on, offer to write the selection to disk, but not when in restricted
+//      * mode, because it would allow writing to a file not specified on the command line. */
+//     if (openfile->mark && !exiting && !ISSET(RESTRICTED)) {
+//       /* TRANSLATORS : The next six strings are prompts. */
+//       msg = (method == PREPEND) ? _("Prepend Selection to File")
+//           : (method == APPEND)  ? _("Append Selection to File")
+//                                 : _("Write Selection to File");
+//     }
+//     else if (method != OVERWRITE) {
+//       msg = ((method == PREPEND) ? _("File Name to Prepend to") : _("File Name to Append to"));
+//     }
+//     else {
+//       msg = _("File Name to Write");
+//     }
+//     present_path = realloc_strcpy(present_path, "./");
+//     /* When we shouldn't prompt, use the existing filename.  Otherwise, ask for (confirmation of) the filename. */
+//     if ((!withprompt || (ISSET(SAVE_ON_EXIT) && exiting)) && openfile->filename[0]) {
+//       answer = realloc_strcpy(answer, openfile->filename);
+//     }
+//     else {
+//       response = do_prompt(MWRITEFILE, given, NULL, edit_refresh, "%s%s%s", msg, formatstr, backupstr);
+//     }
+//     if (response < 0) {
+//       statusbar_all(_("Cancelled"));
+//       free(given);
+//       return 0;
+//     }
+//     function = func_from_key(response);
+//     /* Upon request, abandon the buffer. */
+//     if (function == discard_buffer) {
+//       free(given);
+//       return 2;
+//     }
+//     given = realloc_strcpy(given, answer);
+//     if (function == to_files && !ISSET(RESTRICTED)) {
+//       char *chosen = browse_in(answer);
+//       if (!chosen) {
+//         continue;
+//       }
+//       free(answer);
+//       answer = chosen;
+//     }
+//     else if (function == dos_format) {
+//       openfile->fmt = (openfile->fmt == DOS_FILE) ? NIX_FILE : DOS_FILE;
+//       continue;
+//     }
+//     else if (function == mac_format) {
+//       openfile->fmt = (openfile->fmt == MAC_FILE) ? NIX_FILE : MAC_FILE;
+//       continue;
+//     }
+//     else if (function == back_it_up && !ISSET(RESTRICTED)) {
+//       TOGGLE(MAKE_BACKUP);
+//       continue;
+//     }
+//     else if ((function == prepend_it || function == append_it) && !ISSET(RESTRICTED)) {
+//       if (function == prepend_it) {
+//         method = (method == PREPEND) ? OVERWRITE : PREPEND;
+//       }
+//       else {
+//         method = (method == APPEND) ? OVERWRITE : APPEND;
+//       }
+//       if (constexpr_strcmp(answer, openfile->filename) == 0) {
+//         given[0] = '\0';
+//       }
+//       continue;
+//     }
+//     else {
+//       if (function == do_help) {
+//         continue;
+//       }
+//       /* If the user pressed Ctrl-X in the edit window, and answered 'Y' at the "Save modified buffer?"
+//        * prompt, and entered "zzy" as filename, and this is the first time around, show an Easter egg. */
+//       if (exiting && !ISSET(SAVE_ON_EXIT) && openfile->filename[0] == '\0' && constexpr_strcmp(answer, "zzy") == 0 && !did_credits) {
+//         if (LINES > 5 && COLS > 31) {
+//           do_credits();
+//           did_credits = TRUE;
+//         }
+//         else {
+//           /* TRANSLATORS: Concisely say the screen is too small. */
+//           statusline(AHEM, _("Too tiny"));
+//         }
+//         free(given);
+//         return 0;
+//       }
+//       if (method == OVERWRITE) {
+//         struct stat fileinfo;
+//         bool  name_exists,  do_warning;
+//         char *full_answer, *full_filename;
+//         full_answer   = get_full_path(answer);
+//         full_filename = get_full_path(openfile->filename);
+//         name_exists   = (stat((!full_answer) ? answer : full_answer, &fileinfo) != -1);
+//         if (!openfile->filename[0]) {
+//           do_warning = name_exists;
+//         }
+//         else {
+//           do_warning = (strcmp((!full_answer) ? answer : full_answer, (!full_filename) ? openfile->filename : full_filename) != 0);
+//         }
+//         free(full_filename);
+//         free(full_answer);
+//         if (do_warning) {
+//           /* When in restricted mode, we aren't allowed to overwrite an existing file with the
+//            * current buffer, nor to change the name of the current buffer if it already has one. */
+//           if (ISSET(RESTRICTED)) {
+//             /* TRANSLATORS: Restricted mode forbids overwriting. */
+//             warn_and_briefly_pause(_("File exists -- cannot overwrite"));
+//             continue;
+//           }
+//           if (!maychange) {
+//             if (exiting || !openfile->mark) {
+//               if (ask_user(YESORNO, _("Save file under DIFFERENT NAME? ")) != YES) {
+//                 continue;
+//               }
+//               maychange = TRUE;
+//             }
+//           }
+//           if (name_exists) {
+//             char *question = _("File \"%s\" exists; OVERWRITE? ");
+//             char *name     = crop_to_fit(answer, (COLS - breadth(question) + 1));
+//             char *message  = (char *)nmalloc(strlen(question) + strlen(name) + 1);
+//             sprintf(message, question, name);
+//             choice = ask_user(YESORNO, message);
+//             free(message);
+//             free(name);
+//             if (choice != YES) {
+//               continue;
+//             }
+//           }
+//         }
+//         /* Complain if the file exists, the name hasn't changed, and the stat information we had before does not match what we have now. */
+//         else if (name_exists && openfile->statinfo
+//          && (openfile->statinfo->st_mtime < fileinfo.st_mtime || openfile->statinfo->st_dev != fileinfo.st_dev || openfile->statinfo->st_ino != fileinfo.st_ino)) {
+//           warn_and_briefly_pause(_("File on disk has changed"));
+//           /* TRANSLATORS: Try to keep this at most 76 characters. */
+//           choice = ask_user(YESORNO, _("File was modified since you opened it; continue saving? "));
+//           wipe_statusbar();
+//           /* When in tool mode and not called by 'savefile', overwrite the file right here when requested. */
+//           if (ISSET(SAVE_ON_EXIT) && withprompt) {
+//             free(given);
+//             if (choice == YES) {
+//               return write_file(openfile->filename, NULL, NORMAL, OVERWRITE, NONOTES);
+//             }
+//             /* Discard buffer */
+//             else if (choice == NO) {
+//               return 2;
+//             }
+//             else {
+//               return 0;
+//             }
+//           }
+//           else if (choice == CANCEL && exiting) {
+//             continue;
+//           }
+//           else if (choice != YES) {
+//             free(given);
+//             return 1;
+//           }
+//         }
+//       }
+//       free(given);
+//       break;
+//     }
+//   }
+//   /* When the mark is on (and we've prompted for a name and we're not exiting and we're not in
+//    * restricted mode), then write out the marked region; otherwise, write out the whole buffer. */
+//   if (openfile->mark && withprompt && !exiting && !ISSET(RESTRICTED)) {
+//     return write_region_to_file(answer, NULL, NORMAL, method);
+//   }
+//   else {
+//     return write_file(answer, NULL, NORMAL, method, ANNOTATE);
+//   }
+// }
 
 /* Write the current buffer to disk, or discard it. */
 void do_writeout(void) {

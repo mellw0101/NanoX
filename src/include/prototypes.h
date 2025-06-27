@@ -320,8 +320,8 @@ char  *abs_path(const char *path) _NOTHROW;
 // void   init_backup_dir(void);
 // int    copy_file(FILE *inn, FILE *out, bool close_out);
 // bool   write_file(const char *name, FILE *thefile, bool normal, kind_of_writing_type method, bool annotate);
-bool   write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
-int    write_it_out(bool exiting, bool withprompt);
+// bool   write_region_to_file(const char *name, FILE *stream, bool normal, kind_of_writing_type method);
+// int    write_it_out(bool exiting, bool withprompt);
 void   do_writeout(void);
 void   do_savefile(void);
 // char  *real_dir_from_tilde(const char *path) _NOTHROW;
@@ -629,7 +629,7 @@ int         qsort_strlen(const void *a, const void *b);
 // void  report_cursor_position(void) _NOTHROW;
 // void  spotlight(Ulong from_col, Ulong to_col) _NOTHROW;
 // void  spotlight_softwrapped(Ulong from_col, Ulong to_col) _NOTHROW;
-void  do_credits(void);
+// void  do_credits(void);
 
 /* These are just name definitions. */
 // void case_sens_void(void);
