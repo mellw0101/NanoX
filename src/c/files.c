@@ -506,22 +506,41 @@ void stat_with_alloc(const char *filename, struct stat **pstat) {
 
 /* ----------------------------- Prepare for display ----------------------------- */
 
+/* Update the title-bar and multiline cache to match `file`. */
+void prepare_for_display_for(openfilestruct *const file) {
+  ASSERT(file);
+  /* Only perform any action when in curses-mode. */
+  if (IN_CURSES_CTX) {
+    /* Update the title-bar, since the filename may have changed. */
+    if (!inhelp) {
+      titlebar(NULL);
+    }
+    /* Precalculate the data for any multiline coloring regexes. */
+    if (!file->filetop->multidata) {
+      precalc_multicolorinfo_for(file);
+    }
+    have_palette   = FALSE;
+    refresh_needed = TRUE;
+  }
+}
+
 /* Update the title bar and the multiline cache to match the current buffer. */
 void prepare_for_display(void) {
-  /* When using the gui make this function a `No-op` function. */
-  if (ISSET(USING_GUI)) {
-    return;
-  }
-  /* Update the title bar, since the filename may have changed. */
-  if (!inhelp) {
-    titlebar(NULL);
-  }
-  /* Precalculate the data for any multiline coloring regexes. */
-  if (!openfile->filetop->multidata) {
-    precalc_multicolorinfo();
-  }
-  have_palette   = FALSE;
-  refresh_needed = TRUE;
+  prepare_for_display_for(CTX_OF);
+  // /* When using the gui make this function a `No-op` function. */
+  // if (ISSET(USING_GUI)) {
+  //   return;
+  // }
+  // /* Update the title bar, since the filename may have changed. */
+  // if (!inhelp) {
+  //   titlebar(NULL);
+  // }
+  // /* Precalculate the data for any multiline coloring regexes. */
+  // if (!openfile->filetop->multidata) {
+  //   precalc_multicolorinfo();
+  // }
+  // have_palette   = FALSE;
+  // refresh_needed = TRUE;
 }
 
 /* ----------------------------- Mention name and linecount ----------------------------- */
@@ -991,87 +1010,208 @@ int copy_file(FILE *inn, FILE *out, bool close_out) {
 /* Create, safely, a temporary file in the standard temp directory.
  * On success, return the malloc()ed filename, plus the corresponding
  * file stream opened in read-write mode.  On error, return 'NULL'. */
-char *safe_tempfile(FILE **stream) {
-  const char *env_dir = getenv("TMPDIR");
-  char *tempdir = NULL, *tempfile_name = NULL;
-  char *extension;
-  int descriptor;
-  /* Get the absolute path for the first directory among $TMPDIR and P_tmpdir that is writable, otherwise use /tmp/. */
-  if (env_dir) {
-    tempdir = check_writable_directory(env_dir);
+char *safe_tempfile_for(openfilestruct *const file, FILE **const stream) {
+  ASSERT(file);
+  ASSERT(stream);
+  const char *envdir = getenv("TMPDIR");
+  char *tmpdir  = NULL;
+  char *tmpfile = NULL;
+  char *ext;
+  int fd;
+  /* First check if the environment variable `$TMPDIR` is set. */
+  if (envdir) {
+    /* Now check for the writability of the directory `$TMPDIR` points at. */
+    tmpdir = check_writable_directory(envdir);
   }
-  if (!tempdir) {
-    tempdir = check_writable_directory(P_tmpdir);
+  /* If we still dont have a directory, check `P_tmpdir`. */
+  if (!tmpdir) {
+    tmpdir = check_writable_directory(P_tmpdir);
   }
-  if (!tempdir) {
-    tempdir = COPY_OF("/tmp/");
+  /* We still do not have a directory.  As a last resort we will use `/tmp/`. */
+  if (!tmpdir) {
+    tmpdir = COPY_OF("/tmp/");
   }
-  extension = strrchr(openfile->filename, '.');
-  if (!extension || strchr(extension, '/')) {
-    extension = openfile->filename + strlen(openfile->filename);
+  /* Get the extention of the filename. */
+  ext = strrchr(file->filename, '.');
+  if (!ext || strchr(ext, '/')) {
+    ext = (file->filename + strlen(file->filename));
   }
-  tempfile_name = xrealloc(tempdir, (strlen(tempdir) + 12 + strlen(extension)));
-  strcat(tempfile_name, "nano.XXXXXX");
-  strcat(tempfile_name, extension);
-  descriptor = mkstemps(tempfile_name, strlen(extension));
-  *stream = ((descriptor > 0) ? fdopen(descriptor, "r+b") : NULL);
-  if (!(*stream)) {
-    if (descriptor > 0) {
-      close(descriptor);
+  /* Create the temp-file-path based on the temp-dir we got. */
+  tmpfile = fmtstrcat(tmpdir, "nano.XXXXXX%s", ext);
+  fd = mkstemps(tmpfile, strlen(ext));
+  /* If we sucessfully open the file-descriptor. */
+  if (fd > 0) {
+    *stream = fdopen(fd, "r+b");
+    /* And also successfully open the FILE * stream, then return the path of the newly created temp-file. */
+    if (*stream) {
+      return tmpfile;
     }
-    free(tempfile_name);
-    return NULL;
+    close(fd);
   }
-  return tempfile_name;
+  free(tmpfile);
+  return NULL;
+}
+
+/* Create, safely, a temporary file in the standard temp directory.
+ * On success, return the malloc()ed filename, plus the corresponding
+ * file stream opened in read-write mode.  On error, return 'NULL'. */
+char *safe_tempfile(FILE **const stream) {
+  return safe_tempfile_for(CTX_OF, stream);
+  // const char *env_dir = getenv("TMPDIR");
+  // char *tempdir       = NULL;
+  // char *tempfile_name = NULL;
+  // char *extension;
+  // int descriptor;
+  // /* First check the environment variable `$TMPDIR`. */
+  // if (env_dir) {
+  //   tempdir = check_writable_directory(env_dir);
+  // }
+  // /* When no environment variable was set, check `P_tmpdir`. */
+  // if (!tempdir) {
+  //   tempdir = check_writable_directory(P_tmpdir);
+  // }
+  // /* As a last resort, use `/tmp/`. */
+  // if (!tempdir) {
+  //   tempdir = COPY_OF("/tmp/");
+  // }
+  // extension = strrchr(openfile->filename, '.');
+  // if (!extension || strchr(extension, '/')) {
+  //   extension = openfile->filename + strlen(openfile->filename);
+  // }
+  // tempfile_name = xrealloc(tempdir, (strlen(tempdir) + 12 + strlen(extension)));
+  // strcat(tempfile_name, "nano.XXXXXX");
+  // strcat(tempfile_name, extension);
+  // descriptor = mkstemps(tempfile_name, strlen(extension));
+  // *stream = ((descriptor > 0) ? fdopen(descriptor, "r+b") : NULL);
+  // if (!*stream) {
+  //   if (descriptor > 0) {
+  //     close(descriptor);
+  //   }
+  //   free(tempfile_name);
+  //   return NULL;
+  // }
+  // return tempfile_name;
 }
 
 /* ----------------------------- Redecorate after switch ----------------------------- */
 
-/* Update title bar and such after switching to another buffer. */
-void redecorate_after_switch(void) {
-  /* Only perform any action when in curses mode. */
+/* Update title-bar and such after switching to another buffer. */
+void redecorate_after_switch_for(openfilestruct *const file, int cols) {
+  ASSERT(file);
+  /* Only perform any action when in curses-mode. */
   if (IN_CURSES_CTX) {
     /* If only one file buffer is open, there is nothing to update. */
-    if (CLIST_SINGLE(openfile)) {
+    if (CLIST_SINGLE(file)) {
       statusline_curses(AHEM, _("No more open file buffers"));
       return;
     }
-    /* While in a different buffer, the width of the screen may have changed,
-    * so make sure that the starting column for the first row is fitting. */
-    ensure_firstcolumn_is_aligned();
-    /* Update title bar and multiline info to match the current buffer. */
-    prepare_for_display();
-    /* Ensure that the main loop will redraw the help lines. */
+    /* While in a diffrent buffer, the width of the screen may have changed,
+     * so make sure that the starting column for the first row is fitting. */
+    ensure_firstcolumn_is_aligned_for(file, cols);
+    /* Update the title-bar and multiline-info to match the file. */
+    prepare_for_display_for(file);
+    /* Ensure thet the main loop will redraw the help lines. */
     currmenu = MMOST;
-    /* Prevent a possible Shift selection from getting cancelled. */
+    /* Prevent a possible shift selection from getting cancelled. */
     shift_held = TRUE;
-    /* If the switched-to buffer gave an error during opening, show the message
-    * once; otherwise, indicate on the status bar which file we switched to. */
-    if (openfile->errormessage) {
-      statusline_curses(ALERT, "%s", openfile->errormessage);
-      free(openfile->errormessage);
-      openfile->errormessage = NULL;
+    /* If the switched-to buffer gave an error during opening, show the message once. */
+    if (file->errormessage) {
+      statusline_curses(ALERT, "%s", file->errormessage);
+      free(file->errormessage);
+      file->errormessage = NULL;
     }
+    /* Otherwise, indecate on the status-bar witch file we switched to. */
     else {
-      mention_name_and_linecount();
+      mention_name_and_linecount_for(file);
     }
   }
 }
 
+/* Update title-bar and such after switching to another buffer. */
+void redecorate_after_switch(void) {
+  if (IN_CURSES_CTX) {
+    redecorate_after_switch_for(TUI_OF, TUI_COLS);
+  }
+  // /* Only perform any action when in curses mode. */
+  // if (IN_CURSES_CTX) {
+  //   /* If only one file buffer is open, there is nothing to update. */
+  //   if (CLIST_SINGLE(TUI_OF)) {
+  //     statusline_curses(AHEM, _("No more open file buffers"));
+  //     return;
+  //   }
+  //   /* While in a different buffer, the width of the screen may have changed,
+  //    * so make sure that the starting column for the first row is fitting. */
+  //   ensure_firstcolumn_is_aligned();
+  //   /* Update title bar and multiline info to match the current buffer. */
+  //   prepare_for_display();
+  //   /* Ensure that the main loop will redraw the help lines. */
+  //   currmenu = MMOST;
+  //   /* Prevent a possible Shift selection from getting cancelled. */
+  //   shift_held = TRUE;
+  //   /* If the switched-to buffer gave an error during opening, show the message
+  //    * once; otherwise, indicate on the status bar which file we switched to. */
+  //   if (TUI_OF->errormessage) {
+  //     statusline_curses(ALERT, "%s", TUI_OF->errormessage);
+  //     free(TUI_OF->errormessage);
+  //     TUI_OF->errormessage = NULL;
+  //   }
+  //   else {
+  //     mention_name_and_linecount();
+  //   }
+  // }
+}
+
 /* ----------------------------- Switch to prev buffer ----------------------------- */
+
+/* Switch `*file` to the previous entry in the circular list of
+ * buffers.  TODO: Implement the redecorating for the editor as well. */
+void switch_to_prev_buffer_for(openfilestruct **const open, int cols) {
+  ASSERT(open);
+  ASSERT(*open);
+  DLIST_ADV_PREV(*open);
+  if (IN_CURSES_CTX) {
+    redecorate_after_switch_for(*open, cols);
+  }
+}
 
 /* Switch to the previous entry in the circular list of buffers. */
 void switch_to_prev_buffer(void) {
-  openfile = openfile->prev;
-  redecorate_after_switch();
+  if (IN_GUI_CTX) {
+    switch_to_prev_buffer_for(&GUI_OF, GUI_COLS);
+  }
+  else {
+    switch_to_prev_buffer_for(&TUI_OF, TUI_COLS);
+  }
+  // if (IN_CURSES_CTX) {
+  //   openfile = openfile->prev;
+  //   redecorate_after_switch();
+  // }
 }
 
 /* ----------------------------- Switch to next buffer ----------------------------- */
 
+/* Switch `*file` to the next entry in the circular list of buffers.  TODO: Implement the redecorating for the editor as well. */
+void switch_to_next_buffer_for(openfilestruct **const open, int cols) {
+  ASSERT(open);
+  ASSERT(*open);
+  DLIST_ADV_NEXT(*open);
+  if (IN_CURSES_CTX) {
+    redecorate_after_switch_for(*open, cols);
+  }
+}
+
 /* Switch to the next entry in the circular list of buffers. */
 void switch_to_next_buffer(void) {
-  openfile = openfile->next;
-  redecorate_after_switch();
+  if (IN_GUI_CTX) {
+    switch_to_next_buffer_for(&GUI_OF, GUI_COLS);
+  }
+  else {
+    switch_to_next_buffer_for(&TUI_OF, TUI_COLS);
+  }
+  // if (IN_CURSES_CTX) {
+  //   openfile = openfile->next;
+  //   redecorate_after_switch();
+  // }
 }
 
 /* ----------------------------- Get next filename ----------------------------- */
@@ -1702,7 +1842,7 @@ bool write_file_for(openfilestruct *const file, const char *const restrict name,
       statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
       goto cleanup_and_exit;
     }
-    tempname = safe_tempfile(&target);
+    tempname = safe_tempfile_for(file, &target);
     if (!tempname) {
       statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
       fclose(source);
@@ -1985,6 +2125,11 @@ bool write_region_to_file(const char *const restrict name, FILE *stream, bool no
 
 /* ----------------------------- Write it out ----------------------------- */
 
+/* Write `file` (or marked region in `file`) to disk.  `exiting` Indecates whether the program is
+ * exiting.  If `exiting` is `TRUE`, write the entire buffer regardless of whether the mark is on.
+ * Do not ask for a name when `withprompt` is `FALSE`.  Nor when doing a save-on-exit and the buffer
+ * already has a name. If `withprompt` is `TRUE`, then ask for (confirmation of) the filename.  Returns
+ * `0` if the operation is cancelled, `1` if the buffer is saved and `2` if the buffer is discarded. */
 int write_it_out_for(openfilestruct *const file, bool exiting, bool withprompt) {
   ASSERT(file);
   /* The filename we offer, or what the user typed so far. */
@@ -2207,6 +2352,22 @@ int write_it_out_for(openfilestruct *const file, bool exiting, bool withprompt) 
   }
 }
 
+/* Write the `currently open buffer` (or marked region in the `currently open buffer`) to disk.  `exiting`
+ * Indecates whether the program is exiting.  If `exiting` is `TRUE`, write the entire buffer regardless
+ * of whether the mark is on. Do not ask for a name when `withprompt` is `FALSE`.  Nor when doing a save-on-exit
+ * and the buffer already has a name. If `withprompt` is `TRUE`, then ask for (confirmation of) the filename.
+ * Returns `0` if the operation is cancelled, `1` if the buffer is saved and `2` if the buffer is discarded. */
 int write_it_out(bool exiting, bool withprompt) {
   return write_it_out_for(CTX_OF, exiting, withprompt);
 }
+
+/* ----------------------------- Do writeout ----------------------------- */
+
+/* Write `file` to disk, or discard it. */
+// void do_writeout_for(openfilestruct *const file) {
+//   ASSERT(file);
+//   /* If the user chose to discard the buffer, close it. */
+//   if (write_it_out_for(file, FALSE, TRUE) == 2) {
+    
+//   }
+// }

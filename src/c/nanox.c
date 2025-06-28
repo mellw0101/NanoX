@@ -314,20 +314,24 @@ void disable_extended_io(void) {
 /* Ensure that the margin can accommodate the buffer's highest line number. */
 void confirm_margin(void) {
   bool keep_focus;
-  int needed_margin = (digits(openfile->filebot->lineno) + 1);
-  /* When not requested or space is too tight, suppress line numbers. */
-  if (!ISSET(LINE_NUMBERS) || needed_margin > (COLS - 4)) {
-    needed_margin = 0;
-  }
-  if (needed_margin != margin) {
-    keep_focus  = ((margin > 0) && focusing);
-    margin      = needed_margin;
-    editwincols = (COLS - margin - sidebar);
-    /* Ensure a proper starting column for the first screen row. */
-    ensure_firstcolumn_is_aligned();
-    focusing = keep_focus;
-    /* The margin has changed -- schedule a full refresh. */
-    refresh_needed = TRUE;
+  int needed_margin;
+  /* Only perform any action when in curses-mode. */
+  if (IN_CURSES_CTX) {
+    needed_margin = (digits(openfile->filebot->lineno) + 1);
+    /* When not requested or space is too tight, suppress line numbers. */
+    if (!ISSET(LINE_NUMBERS) || needed_margin > (COLS - 4)) {
+      needed_margin = 0;
+    }
+    if (needed_margin != margin) {
+      keep_focus  = ((margin > 0) && focusing);
+      margin      = needed_margin;
+      editwincols = (COLS - margin - sidebar);
+      /* Ensure a proper starting column for the first screen row. */
+      ensure_firstcolumn_is_aligned();
+      focusing = keep_focus;
+      /* The margin has changed -- schedule a full refresh. */
+      refresh_needed = TRUE;
+    }
   }
 }
 
@@ -706,5 +710,23 @@ void unbound_key(int code) {
       statusline(AHEM, _("Unbound key: %c"), code);
     }
     set_blankdelay_to_one();
+  }
+}
+
+/* ----------------------------- Close and go ----------------------------- */
+
+void close_and_go_for(openfilestruct *const file) {
+  ASSERT(file);
+  if (file->lock_filename) {
+    delete_lockfile(file->lock_filename);
+    file->lock_filename = NULL;
+  }
+  /* When position history is enabled, save it. */
+  if (ISSET(POSITIONLOG)) {
+    update_poshistory_for(file);
+  }
+  /* If there is another buffer, close this one. */
+  if (!CLIST_SINGLE(file)) {
+    // switch_to_
   }
 }

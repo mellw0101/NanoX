@@ -67,7 +67,6 @@ static bool write_list(const linestruct *const head, FILE *const histfile) {
 static void save_poshistory(void) {
   FILE *histfile = fopen(poshistname, "wb");
   struct stat fileinfo;
-  // poshiststruct *item;
   char *path_and_place;
   Ulong length;
   if (!histfile) {
@@ -445,12 +444,6 @@ void update_poshistory_for(openfilestruct *const file) {
     }
     previous = item;
   }
-  // for (item = position_history; item; item = item->next) {
-  //   if (!strcmp(item->filename, fullpath)) {
-  //     break;
-  //   }
-  //   previous = item;
-  // }
   /* Don't record files that have the default cursor position. */
   if (file->current->lineno == 1 && !file->current_x) {
     if (item) {

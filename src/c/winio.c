@@ -2705,7 +2705,8 @@ void edit_refresh(void) {
  * version of nano, the current filename, and whether the current file
  * has been modified on the title bar.  If path isn't NULL, we're either
  * in the file browser or the help viewer, so show either the current
- * directory or the title of help text, that is: whatever is in path. */
+ * directory or the title of help text, that is: whatever is in path.
+ * TODO: Make another version of this that is context-less. */
 void titlebar(const char *path) {
   /* The width of the diffrent title-bar elements, in columns. */
   Ulong verlen;

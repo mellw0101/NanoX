@@ -671,6 +671,7 @@ char *crop_to_fit(const char *const restrict name, Ulong room);
 /* ----------------------------- Stat with alloc ----------------------------- */
 void stat_with_alloc(const char *filename, struct stat **pstat);
 /* ----------------------------- Prepare for display ----------------------------- */
+void prepare_for_display_for(openfilestruct *const file);
 void prepare_for_display(void);
 /* ----------------------------- Mention name and linecount ----------------------------- */
 void mention_name_and_linecount_for(openfilestruct *const file);
@@ -699,12 +700,16 @@ bool  outside_of_confinement(const char *const restrict somepath, bool tabbing);
 void  init_backup_dir(void);
 int   copy_file(FILE *inn, FILE *out, bool close_out);
 /* ----------------------------- Safe tempfile ----------------------------- */
-char *safe_tempfile(FILE **stream);
+char *safe_tempfile_for(openfilestruct *const file, FILE **const stream);
+char *safe_tempfile(FILE **const stream);
 /* ----------------------------- Redecorate after switch ----------------------------- */
+void redecorate_after_switch_for(openfilestruct *const file, int cols);
 void redecorate_after_switch(void);
 /* ----------------------------- Switch to prev buffer ----------------------------- */
+void switch_to_prev_buffer_for(openfilestruct **const open, int cols);
 void switch_to_prev_buffer(void);
 /* ----------------------------- Switch to next buffer ----------------------------- */
+void switch_to_next_buffer_for(openfilestruct **const open, int cols);
 void switch_to_next_buffer(void);
 /* ----------------------------- Get next filename ----------------------------- */
 char *get_next_filename(const char *const restrict name, const char *const restrict suffix);
