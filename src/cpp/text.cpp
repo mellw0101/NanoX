@@ -2573,7 +2573,9 @@ static void construct_argument_list(char ***arguments, char *command, char *file
 }
 
 /* Open the specified file, and if that succeeds, remove the text of the marked
- * region or of the entire buffer and read the file contents into its place. */
+ * region or of the entire buffer and read the file contents into its place.
+ * TODO: Split this up, or make subfunctonality from this available, so that
+ * we can implement replace marked region in a mush better way and also meny more things. */
 static bool replace_buffer(const char *filename, undo_type action, const char *operation) {
   linestruct *was_cutbuffer = cutbuffer;
   int descriptor;

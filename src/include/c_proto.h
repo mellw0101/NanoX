@@ -1336,6 +1336,9 @@ void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *bu
 void inject(char *burst, Ulong count);
 /* ----------------------------- Unbound key ----------------------------- */
 void unbound_key(int code);
+/* ----------------------------- Close and go ----------------------------- */
+void close_and_go_for(openfilestruct **const start, openfilestruct **const open, int cols);
+void close_and_go(void);
 
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */

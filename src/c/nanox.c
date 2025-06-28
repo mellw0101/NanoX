@@ -661,7 +661,7 @@ void inject_into_buffer(CTX_ARGS, char *burst, Ulong count) {
   }
 }
 
-/* Insert the given `burst` of `count` bytes into the currently open file.  Note that this is context safe. */
+/* Insert the given `burst` of `count` bytes into the currently open file.  Note that this is `context-safe`. */
 void inject(char *burst, Ulong count) {
   CTX_CALL_WARGS(inject_into_buffer, burst, count);
 }
@@ -715,18 +715,48 @@ void unbound_key(int code) {
 
 /* ----------------------------- Close and go ----------------------------- */
 
-void close_and_go_for(openfilestruct *const file) {
-  ASSERT(file);
-  if (file->lock_filename) {
-    delete_lockfile(file->lock_filename);
-    file->lock_filename = NULL;
+/* Close `*open`, freeing its memory.  Note that this is a context-less
+ * function, meaning it needs the given context's buffer pointers. */
+void close_and_go_for(openfilestruct **const start, openfilestruct **const open, int cols) {
+  ASSERT(start);
+  ASSERT(open);
+  ASSERT(*start);
+  ASSERT(*open);
+  if ((*open)->lock_filename) {
+    delete_lockfile((*open)->lock_filename);
+    (*open)->lock_filename = NULL;
   }
   /* When position history is enabled, save it. */
   if (ISSET(POSITIONLOG)) {
-    update_poshistory_for(file);
+    update_poshistory_for(*open);
   }
   /* If there is another buffer, close this one. */
-  if (!CLIST_SINGLE(file)) {
-    // switch_to_
+  if (!CLIST_SINGLE(*open)) {
+    switch_to_next_buffer_for(open, cols);
+    DLIST_ADV_PREV(*open);
+    close_buffer_for(*open, start, open);
+    DLIST_ADV_NEXT(*open);
+    /* When in curses-mode, adjust the count in the top-bar. */
+    if (IN_CURSES_CTX) {
+      titlebar(NULL);
+    }
+  }
+  /* Otherwise, just terminate. */
+  else {
+    if (ISSET(HISTORYLOG)) {
+      save_history();
+    }
+    /* TODO: Implement finish as a context-less solution. */
+    finish();
+  }
+}
+
+/* Close the `currently open buffer`, freeing it's memory.  Note that this is `context-safe`. */
+void close_and_go(void) {
+  if (IN_GUI_CTX) {
+    close_and_go_for(&GUI_SF, &GUI_OF, GUI_COLS);
+  }
+  else {
+    close_and_go_for(&TUI_SF, &TUI_OF, TUI_COLS);
   }
 }

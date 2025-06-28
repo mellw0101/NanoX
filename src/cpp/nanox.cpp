@@ -212,30 +212,30 @@ void finish(void) _NOTHROW {
 }
 
 /* Close the current buffer, freeing its memory. */
-void close_and_go(void) {
-  if (openfile->lock_filename) {
-    delete_lockfile(openfile->lock_filename);
-  }
-  if (ISSET(POSITIONLOG)) {
-    update_poshistory();
-  }
-  /* If there is another buffer, close this one. */
-  if (openfile != openfile->next) {
-    switch_to_next_buffer();
-    openfile = openfile->prev;
-    close_buffer();
-    openfile = openfile->next;
-    /* Adjust the count in the top bar. */
-    titlebar(NULL);
-  }
-  /* Otherwise just terminate. */
-  else {
-    if (ISSET(HISTORYLOG)) {
-      save_history();
-    }
-    finish();
-  }
-}
+// void close_and_go(void) {
+//   if (openfile->lock_filename) {
+//     delete_lockfile(openfile->lock_filename);
+//   }
+//   if (ISSET(POSITIONLOG)) {
+//     update_poshistory();
+//   }
+//   /* If there is another buffer, close this one. */
+//   if (openfile != openfile->next) {
+//     switch_to_next_buffer();
+//     openfile = openfile->prev;
+//     close_buffer();
+//     openfile = openfile->next;
+//     /* Adjust the count in the top bar. */
+//     titlebar(NULL);
+//   }
+//   /* Otherwise just terminate. */
+//   else {
+//     if (ISSET(HISTORYLOG)) {
+//       save_history();
+//     }
+//     finish();
+//   }
+// }
 
 /* Close the current buffer if it is unmodified.  Otherwise (when not doing automatic saving),
  * ask the user whether to save it, then close it and exit, or return when the user cancelled. */
