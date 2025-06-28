@@ -1973,19 +1973,19 @@ char *abs_path(const char *path) _NOTHROW {
 // }
 
 /* Write the current buffer to disk, or discard it. */
-void do_writeout(void) {
-  /* If the user chose to discard the buffer, close it. */
-  if (write_it_out(FALSE, TRUE) == 2) {
-    close_and_go();
-  }
-}
+// void do_writeout(void) {
+//   /* If the user chose to discard the buffer, close it. */
+//   if (write_it_out(FALSE, TRUE) == 2) {
+//     close_and_go();
+//   }
+// }
 
 /* If it has a name, write the current buffer to disk without prompting. */
-void do_savefile(void) {
-  if (write_it_out(FALSE, FALSE) == 2) {
-    close_and_go();
-  }
-}
+// void do_savefile(void) {
+//   if (write_it_out(FALSE, FALSE) == 2) {
+//     close_and_go();
+//   }
+// }
 
 /* Convert the tilde notation when the given path begins with ~/ or ~user/. Return an allocated string containing the expanded path. */
 // char *real_dir_from_tilde(const char *path) _NOTHROW {

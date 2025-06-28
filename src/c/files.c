@@ -901,6 +901,8 @@ int diralphasort(const void *va, const void *vb) {
   }
 }
 
+/* ----------------------------- Set modified ----------------------------- */
+
 /* Mark `file` as modified if it isn't already, and then update the title-bar to
  * display the buffer's new status.  As well as re-writing the lockfile it there is one. */
 void set_modified_for(openfilestruct *const file) {
@@ -922,6 +924,8 @@ void set_modified(void) {
   set_modified_for(CTX_OF);
 }
 
+/* ----------------------------- Encode data ----------------------------- */
+
 /* Encode any NUL bytes in the given line of text (of the given length),
  * and return a dynamically allocated copy of the resultant string. */
 char *encode_data(char *text, Ulong length) {
@@ -929,6 +933,8 @@ char *encode_data(char *text, Ulong length) {
   text[length] = '\0';
   return copy_of(text);
 }
+
+/* ----------------------------- Init operating dir ----------------------------- */
 
 /* Change to the specified operating directory, when its valid.  TODO: Make sure this works correctly. */
 void init_operating_dir(void) {
@@ -939,6 +945,8 @@ void init_operating_dir(void) {
   }
   operating_dir = free_and_assign(operating_dir, target);
 }
+
+/* ----------------------------- Outside of confinement ----------------------------- */
 
 /* Check whether the given path is outside of the operating directory.
  * Return TRUE if it is, and 'FALSE' otherwise.  If tabbing is TRUE,
@@ -965,6 +973,8 @@ bool outside_of_confinement(const char *const restrict somepath, bool tabbing) {
   return (!is_inside && !begins_to_be);
 }
 
+/* ----------------------------- Init backup dir ----------------------------- */
+
 /* Transform the specified backup directory to an absolute path, and verify that it is usable. */
 void init_backup_dir(void) {
   char *target = get_full_path(backup_dir);
@@ -975,6 +985,8 @@ void init_backup_dir(void) {
   free(backup_dir);
   backup_dir = xrealloc(target, (strlen(target) + 1));
 }
+
+/* ----------------------------- Copy file ----------------------------- */
 
 /* Read all data from inn, and write it to out.  File inn must be open for
  * reading, and out for writing.  Return 0 on success, a negative number on
@@ -2363,11 +2375,47 @@ int write_it_out(bool exiting, bool withprompt) {
 
 /* ----------------------------- Do writeout ----------------------------- */
 
-/* Write `file` to disk, or discard it. */
-// void do_writeout_for(openfilestruct *const file) {
-//   ASSERT(file);
-//   /* If the user chose to discard the buffer, close it. */
-//   if (write_it_out_for(file, FALSE, TRUE) == 2) {
-    
-//   }
-// }
+/* Write `*open` to disk, or discard it. */
+void do_writeout_for(openfilestruct **const start, openfilestruct **const open, int cols) {
+  ASSERT(start);
+  ASSERT(open);
+  ASSERT(*start);
+  ASSERT(*open);
+  /* If the user chose to discard the buffer, close it. */
+  if (write_it_out_for(*open, FALSE, TRUE) == 2) {
+    close_and_go_for(start, open, cols);
+  }
+}
+
+/* Write the `currently open buffer` to disk, or discard it. */
+void do_writeout(void) {
+  if (IN_GUI_CTX) {
+    do_writeout_for(&GUI_SF, &GUI_OF, GUI_COLS);
+  }
+  else {
+    do_writeout_for(&TUI_SF, &TUI_OF, TUI_COLS);
+  }
+}
+
+/* ----------------------------- Do savefile ----------------------------- */
+
+/* If it has a name, write `*open` to disk without prompting. */
+void do_savefile_for(openfilestruct **const start, openfilestruct **const open, int cols) {
+  ASSERT(start);
+  ASSERT(open);
+  ASSERT(*start);
+  ASSERT(*open);
+  if (write_it_out_for(*open, FALSE, FALSE) == 2) {
+    close_and_go_for(start, open, cols);
+  }
+}
+
+/* If it has a name, write the `currently open buffer` to disk without prompting.  Note that this is `context-safe`. */
+void do_savefile(void) {
+  if (IN_GUI_CTX) {
+    do_savefile_for(&GUI_SF, &GUI_OF, GUI_COLS);
+  }
+  else {
+    do_savefile_for(&TUI_SF, &TUI_OF, TUI_COLS);
+  }
+}

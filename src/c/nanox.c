@@ -58,6 +58,8 @@ static void enable_mouse_support(void) {
   }
 }
 
+/* ----------------------------- Restore terminal ----------------------------- */
+
 /* Make sure the cursor is visible, then exit from curses mode, disable
  * bracketed-paste mode, and restore the original terminal settings. */
 static void restore_terminal(void) {
@@ -95,6 +97,26 @@ static void restore_terminal(void) {
  * `.save`.  If needed, the name is further suffixed to be unique.  Note that this is `context-safe`. */
 /* static */ void emergency_save(const char *const restrict name) {
   emergency_save_for(CTX_OF, name);
+}
+
+/* ----------------------------- Print opt ----------------------------- */
+
+/* Print the usage line for the given option to the screen. */
+/* static */ void print_opt(const char *const restrict sflag, const char *const restrict lflag, const char *const restrict description) {
+  ASSERT(sflag);
+  ASSERT(lflag);
+  ASSERT(description);
+  int w1 = breadth(sflag);
+  int w2 = breadth(lflag);
+  writef(" %s", sflag);
+  if (w1 < 14) {
+    writef("%*s", (14 - w1), " ");
+  }
+  writef(" %s", lflag);
+  if (w2 < 24) {
+    writef("%*s", (24 - w2), " ");
+  }
+  writef("%s\n", _(description));
 }
 
 

@@ -735,6 +735,12 @@ bool write_region_to_file(const char *const restrict name, FILE *stream, bool no
 /* ----------------------------- Write it out ----------------------------- */
 int write_it_out_for(openfilestruct *const file, bool exiting, bool withprompt);
 int write_it_out(bool exiting, bool withprompt);
+/* ----------------------------- Do writeout ----------------------------- */
+void do_writeout_for(openfilestruct **const start, openfilestruct **const open, int cols);
+void do_writeout(void);
+/* ----------------------------- Do savefile ----------------------------- */
+void do_savefile_for(openfilestruct **const start, openfilestruct **const open, int cols);
+void do_savefile(void);
 
 
 /* ---------------------------------------------------------- chars.c ---------------------------------------------------------- */
@@ -1291,8 +1297,11 @@ void statusbar_draw(float fps);
 
 
 /* static */ void mouse_init(void);
+
 /* static */ void emergency_save_for(openfilestruct *const file, const char *const restrict name);
 /* static */ void emergency_save(const char *const restrict name);
+
+/* static */ void print_opt(const char *const restrict sflag, const char *const restrict lflag, const char *const restrict description);
 
 linestruct *make_new_node(linestruct *prevnode);
 /* ----------------------------- Splice node ----------------------------- */

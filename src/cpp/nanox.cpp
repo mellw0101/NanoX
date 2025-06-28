@@ -438,19 +438,19 @@ void die(const char *msg, ...) {
 // }
 
 /* Print the usage line for the given option to the screen. */
-static void print_opt(const char *const shortflag, const char *const longflag, const char *const description) _NOTHROW {
-  const int firstwidth  = breadth(shortflag);
-  const int secondwidth = breadth(longflag);
-  printf(" %s", shortflag);
-  if (firstwidth < 14) {
-    printf("%*s", (14 - firstwidth), " ");
-  }
-  printf(" %s", longflag);
-  if (secondwidth < 24) {
-    printf("%*s", (24 - secondwidth), " ");
-  }
-  printf("%s\n", _(description));
-}
+// static void print_opt(const char *const shortflag, const char *const longflag, const char *const description) _NOTHROW {
+//   const int firstwidth  = breadth(shortflag);
+//   const int secondwidth = breadth(longflag);
+//   printf(" %s", shortflag);
+//   if (firstwidth < 14) {
+//     printf("%*s", (14 - firstwidth), " ");
+//   }
+//   printf(" %s", longflag);
+//   if (secondwidth < 24) {
+//     printf("%*s", (24 - secondwidth), " ");
+//   }
+//   printf("%s\n", _(description));
+// }
 
 /* Explain how to properly use NanoX and its command-line options. */
 static void _NO_RETURN usage(void) {
@@ -488,8 +488,7 @@ static void _NO_RETURN usage(void) {
   if (!ISSET(RESTRICTED)) {
     print_opt("-P", "--positionlog", N_("Save & restore position of the cursor"));
   }
-  /* TRANSLATORS: This refers to email quoting, like the > in: > quoted text.
-   */
+  /* TRANSLATORS: This refers to email quoting, like the > in: > quoted text. */
   print_opt(_("-Q <regex>"), _("--quotestr=<regex>"), N_("Regular expression to match quoting"));
   if (!ISSET(RESTRICTED)) {
     print_opt("-R", "--restricted", N_("Restrict access to the filesystem"));
