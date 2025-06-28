@@ -267,25 +267,25 @@ void do_exit(void) {
 
 /* Save the current buffer under the given name (or "nano.<pid>" when nameless)
  * with suffix ".save". If needed, the name is further suffixed to be unique. */
-static void emergency_save(const char *filename) {
-  char *plainname, *targetname;
-  if (!*filename) {
-    plainname = (char *)nmalloc(28);
-    sprintf(plainname, "nano.%u", getpid());
-  }
-  else {
-    plainname = copy_of(filename);
-  }
-  targetname = get_next_filename(plainname, ".save");
-  if (!*targetname) {
-    fprintf(stderr, "\nToo meny .save files\n");
-  }
-  else if (write_file(targetname, NULL, SPECIAL, EMERGENCY, NONOTES)) {
-    fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
-  }
-  free(targetname);
-  free(plainname);
-}
+// static void emergency_save(const char *filename) {
+//   char *plainname, *targetname;
+//   if (!*filename) {
+//     plainname = (char *)nmalloc(28);
+//     sprintf(plainname, "nano.%u", getpid());
+//   }
+//   else {
+//     plainname = copy_of(filename);
+//   }
+//   targetname = get_next_filename(plainname, ".save");
+//   if (!*targetname) {
+//     fprintf(stderr, "\nToo meny .save files\n");
+//   }
+//   else if (write_file(targetname, NULL, SPECIAL, EMERGENCY, NONOTES)) {
+//     fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
+//   }
+//   free(targetname);
+//   free(plainname);
+// }
 
 /* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
 void die(const char *msg, ...) {

@@ -1291,6 +1291,8 @@ void statusbar_draw(float fps);
 
 
 /* static */ void mouse_init(void);
+/* static */ void emergency_save_for(openfilestruct *const file, const char *const restrict name);
+/* static */ void emergency_save(const char *const restrict name);
 
 linestruct *make_new_node(linestruct *prevnode);
 /* ----------------------------- Splice node ----------------------------- */
