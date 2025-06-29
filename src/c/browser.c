@@ -36,10 +36,11 @@ static void read_the_list(const char *path, DIR *dir) {
   Ulong path_len = strlen(path);
   Ulong widest = 0;
   Ulong index  = 0;
+  Ulong span;
   const struct dirent *entry;
   /* Find the width of the widest filename in the current folder. */
   while ((entry = readdir(dir))) {
-    Ulong span = breadth(entry->d_name);
+    span = breadth(entry->d_name);
     if (span > widest) {
       widest = span;
     }
@@ -59,7 +60,7 @@ static void read_the_list(const char *path, DIR *dir) {
   free_chararray(filelist, list_length);
   list_length = index;
   index = 0;
-  filelist = xmalloc(list_length * sizeof(char *));
+  filelist = xmalloc(list_length * _PTRSIZE);
   while ((entry = readdir(dir)) && index < list_length) {
     /* Don't show the useless dot item. */
     if (strcmp(entry->d_name, ".") == 0) {
@@ -72,7 +73,7 @@ static void read_the_list(const char *path, DIR *dir) {
   /* Maybe the number of files in the directory decreased between the first time we scanned and the second time. */
   list_length = index;
   /* Sort the list of names. */
-  qsort(filelist, list_length, sizeof(char *), diralphasort);
+  qsort(filelist, list_length, _PTRSIZE, diralphasort);
   /* Calculate how many files fit on a line -- feigning room for two spaces
    * beyond the right edge, and adding two spaces of padding between columns. */
   piles = ((COLS + 2) / (gauge + 2));

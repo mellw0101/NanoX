@@ -239,10 +239,10 @@ void unix_socket_debug(const char *format, ...);
 
 /* This callback will be called upon when a fatal error occurs.
  * That means this function should terminate the application. */
-static void (*die_cb)(const char *, ...) = NULL;
-static inline void set_c_die_callback(void (*cb)(const char *, ...)) {
-  die_cb = cb;
-}
+// static void (*die_cb)(const char *, ...) = NULL;
+// static inline void set_c_die_callback(void (*cb)(const char *, ...)) {
+//   die_cb = cb;
+// }
 
 
 /* ---------------------------------------------------------- xstring.c ---------------------------------------------------------- */
@@ -259,7 +259,7 @@ char **split_string_nano(const char *const string, const char delim, bool allow_
 
 
 #if !defined(__cplusplus)
-  void      die(const char *format, ...);
+  // void      die(const char *format, ...);
   thread_t *get_nthreads(Ulong howmeny);
   #endif
 char       *concatenate(const char *path, const char *name);
@@ -389,8 +389,13 @@ int  nanox_socket_client(void);
 /* ----------------------------------------------- text.c ----------------------------------------------- */
 
 
+/* static */ void copy_character(char **const from, char **const to);
+/* static */ void squeeze(linestruct *const line, Ulong skip);
+/* static */ void concat_paragraph_for(openfilestruct *const file, linestruct *const line, Ulong count);
+/* static */ void concat_paragraph(linestruct *const line, Ulong count);
+
 void set_marked_region_for(openfilestruct *const file, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x, bool cursor_at_head);
-void  do_tab_for(openfilestruct *const file, int rows, int cols);
+void  do_tab_for(CTX_ARGS);
 void  do_tab(void);
 Ulong indentlen(const char *const restrict string) __THROW _NODISCARD _CONST _NONNULL(1);
 Ulong quote_length(const char *const restrict line);
@@ -897,14 +902,10 @@ int  update_line_curses_for(openfilestruct *const file, linestruct *const line, 
 int  update_line_curses(linestruct *const line, Ulong index);
 int  update_softwrapped_line_curses_for(openfilestruct *const file, linestruct *const line);
 int  update_softwrapped_line_curses(linestruct *const line);
-
 /* ----------------------------- Spotlight curses ----------------------------- */
-
 void spotlight_curses_for(openfilestruct *const file, Ulong from_col, Ulong to_col);
 void spotlight_curses(Ulong from_col, Ulong to_col);
-
 /* ----------------------------- Spotlight softwrapped curses ----------------------------- */
-
 void spotlight_softwrapped_curses_for(openfilestruct *const file, Ulong from_col, Ulong to_col);
 void spotlight_softwrapped_curses(Ulong from_col, Ulong to_col);
 
@@ -1303,6 +1304,10 @@ void statusbar_draw(float fps);
 
 /* static */ void print_opt(const char *const restrict sflag, const char *const restrict lflag, const char *const restrict description);
 
+/* static */ void signal_init(void);
+
+/* static */ void suck_up_input_and_paste_it(void);
+
 linestruct *make_new_node(linestruct *prevnode);
 /* ----------------------------- Splice node ----------------------------- */
 void splice_node_for(openfilestruct *const file, linestruct *const after, linestruct *const node);
@@ -1340,8 +1345,10 @@ void        suspend_nano(int _UNUSED signal);
 void        continue_nano(int _UNUSED signal);
 void        do_suspend(void);
 void        reconnect_and_store_state(void);
-void        handle_hupterm(int _UNUSED signal);
-void        handle_crash(int _UNUSED signal);
+/* ----------------------------- Handle hupterm ----------------------------- */
+void handle_hupterm(int _UNUSED signal) _NO_RETURN;
+/* ----------------------------- Handle crash ----------------------------- */
+void handle_crash(int _UNUSED_IN_DEBUG signal) _NO_RETURN;
 /* ----------------------------- Inject ----------------------------- */
 void inject_into_buffer(openfilestruct *const file, int rows, int cols, char *burst, Ulong count);
 void inject(char *burst, Ulong count);
@@ -1350,6 +1357,8 @@ void unbound_key(int code);
 /* ----------------------------- Close and go ----------------------------- */
 void close_and_go_for(openfilestruct **const start, openfilestruct **const open, int cols);
 void close_and_go(void);
+/* ----------------------------- Die ----------------------------- */
+void die(const char *const restrict format, ...) _NO_RETURN;
 
 
 /* ---------------------------------------------------------- Defined in C++ ---------------------------------------------------------- */

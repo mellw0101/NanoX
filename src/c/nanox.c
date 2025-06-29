@@ -119,6 +119,149 @@ static void restore_terminal(void) {
   writef("%s\n", _(description));
 }
 
+/* ----------------------------- Signal init ----------------------------- */
+
+/* Register half a dozen signal handlers. */
+/* static */ void signal_init(void) {
+  struct sigaction deed = {0};
+  /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
+  deed.sa_handler = SIG_IGN;
+  sigaction(SIGINT, &deed, NULL);
+  sigaction(SIGQUIT, &deed, NULL);
+  /* Trap SIGHUP and SIGTERM because we want to write the file out...? */
+  deed.sa_handler = handle_hupterm;
+  sigaction(SIGHUP, &deed, NULL);
+  sigaction(SIGTERM, &deed, NULL);
+  /* Trap SIGWINCH because we want to handle resizes. */
+  deed.sa_handler = handle_sigwinch;
+  sigaction(SIGWINCH, &deed, NULL);
+  /* Prevent the suspend handler from getting interrupted. */
+  sigfillset(&deed.sa_mask);
+  deed.sa_handler = suspend_nano;
+  sigaction(SIGTSTP, &deed, NULL);
+  sigfillset(&deed.sa_mask);
+  deed.sa_handler = continue_nano;
+  sigaction(SIGCONT, &deed, NULL);
+# if !defined(DEBUG)
+  /* For now we keep this as NANO_NOCATCH. */
+  if (!getenv("NANO_NOCATCH")) {
+    /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset the terminal to a
+     * usable state.  Reset these handlers to their defaults as soon as their signal fires. */
+    deed.sa_handler = handle_crash;
+    deed.sa_flags |= SA_RESETHAND;
+    sigaction(SIGSEGV, &deed, NULL);
+    sigaction(SIGABRT, &deed, NULL);
+  }
+# endif
+}
+
+/* ----------------------------- Die gui ----------------------------- */
+
+/* Save all modified files in all editors.  Note that this should only ever be used when in `gui-mode`. */
+static void die_gui(void) {
+  Editor *first_editor = openeditor;
+  Editor *open_editor  = first_editor;
+  openfilestruct *first_file;
+  openfilestruct *open_file;
+  /* Go through all editors. */
+  while (open_editor) {
+    /* Start from the currently open buffer in the current editor. */
+    first_file = open_editor->openfile;
+    open_file  = first_file;
+    /* Now iterate over all files in the current editor. */
+    while (open_file) {
+      /* If the current buffer has a lock-file, remove it. */
+      if (open_file->lock_filename) {
+        delete_lockfile(open_file->lock_filename);
+      }
+      /* When not in restricted mode, and the current buffer has been modified, we perform an emergency save. */
+      if (!ISSET(RESTRICTED) && open_file->modified)  {
+        emergency_save_for(open_file, open_file->filename);
+      }
+      /* Move to the next buffer. */
+      CLIST_ADV_NEXT(open_file);
+      /* If we have reached the starting file, we stop here. */
+      if (open_file == first_file) {
+        break;
+      }
+    }
+    /* Move to the next editor. */
+    CLIST_ADV_NEXT(open_editor);
+    /* If we have reached the starting editor, we stop here. */
+    if (open_editor == first_editor) {
+      break;
+    }
+  }
+}
+
+/* ----------------------------- Die curses ----------------------------- */
+
+/* Save all modified buffers.  Note that this should only ever be used when in `curses-mode`. */
+static void die_curses(void) {
+  openfilestruct *first_file = openfile;
+  openfilestruct *open_file  = first_file;
+  /* Go through all files. */
+  while (open_file) {
+    /* If the current buffer has a lock-file, remove it. */
+    if (open_file->lock_filename) {
+      delete_lockfile(open_file->lock_filename);
+    }
+    /* When not in restricted mode, and the current buffer has been modified, we perform an emergency save. */
+    if (!ISSET(RESTRICTED) && open_file->modified) {
+      emergency_save_for(open_file, open_file->filename);
+    } 
+    /* Move to the next file in the circulare list. */
+    CLIST_ADV_NEXT(open_file);
+    /* If we have reached the first file, we stop here. */
+    if (open_file == first_file) {
+      break;
+    }
+  }
+}
+
+/* ----------------------------- Suck up input and paste it ----------------------------- */
+
+/* Read in all waiting input bytes and paste them into the buffer in one go. */
+/* static */ void suck_up_input_and_paste_it(void) {
+  linestruct *was_cutbuffer;
+  linestruct *line;
+  Ulong index;
+  int input;
+  /* Only perform any action when in `curses-mode`. */
+  if (IN_CURSES_CTX) {
+    was_cutbuffer = cutbuffer;
+    line          = make_new_node(NULL);
+    line->data    = COPY_OF("");
+    index         = 0;
+    cutbuffer     = line;
+    while (bracketed_paste) {
+      input = get_kbinput(midwin, BLIND);
+      if (input == '\r' || input == '\n') {
+        line->next = make_new_node(line);
+        DLIST_ADV_NEXT(line);
+        line->data = COPY_OF("");
+        index = 0;
+      }
+      else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
+        line->data = xrealloc(line->data, (index + 2));
+        line->data[index++] = input;
+        line->data[index]   = '\0';
+      }
+      else if (input != BRACKETED_PASTE_MARKER) {
+        beep();
+      }
+    }
+    if (ISSET(VIEW_MODE)) {
+      print_view_warning();
+    }
+    else {
+      paste_text();
+    }
+    free_lines(cutbuffer);
+    cutbuffer = was_cutbuffer;
+  }
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -602,16 +745,20 @@ void reconnect_and_store_state(void) {
   }
 }
 
+/* ----------------------------- Handle hupterm ----------------------------- */
+
 /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
 void handle_hupterm(int _UNUSED signal) {
   die(_("Received SIGHUP or SIGTERM\n"));
 }
 
+/* ----------------------------- Handle crash ----------------------------- */
+
 /* Handler for SIGSEGV (segfault) and SIGABRT (abort). */
-void handle_crash(int _UNUSED signal) {
+void handle_crash(int _UNUSED_IN_DEBUG signal) {
 # if !defined(DEBUG)
-  void  *buffer[256];
-  int    size    = backtrace(buffer, ARRAY_SIZE(buffer));
+  void *buffer[256];
+  int size = backtrace(buffer, ARRAY_SIZE(buffer));
   char **symbols = backtrace_symbols(buffer, size);
   /* When we are dying from a signal, try to print the last ran functions. */
   for (int i=0; i<size; ++i) {
@@ -806,4 +953,32 @@ void close_and_go(void) {
   else {
     close_and_go_for(&TUI_SF, &TUI_OF, TUI_COLS);
   }
+}
+
+/* ----------------------------- Die ----------------------------- */
+
+/* Die gracefully, by restoring the terminal state (when in `curses-mode`) and, saving any buffers that were modified. */
+void die(const char *const restrict format, ...) {
+  static int stabs = 0;
+  va_list ap;
+  /* When dying for a second time, just pull the plug. */
+  if (++stabs > 1) {
+    exit(11);
+  }
+  if (IN_CURSES_CTX) {
+    restore_terminal();
+  }
+  display_rcfile_errors();
+  va_start(ap, format);
+  /* Print the dying message to stderr. */
+  vfprintf(stderr, format, ap);
+  va_end(ap);
+  if (IN_GUI_CTX) {
+    die_gui();
+  }
+  else if (IN_CURSES_CTX) {
+    die_curses();
+  }
+  /* Abandon the building. */
+  exit(1);
 }

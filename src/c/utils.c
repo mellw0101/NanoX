@@ -10,20 +10,20 @@
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
-void die(const char *format, ...) {
-  char *msg;
-  va_list ap;
-  va_start(ap, format);
-  msg = valstr(format, ap, NULL);
-  va_end(ap);
-  if (die_cb) {
-    die_cb("%s", msg);
-  }
-  else {
-    fprintf(stderr, "%s", msg);
-    exit(1);
-  }
-}
+// void die(const char *format, ...) {
+//   char *msg;
+//   va_list ap;
+//   va_start(ap, format);
+//   msg = valstr(format, ap, NULL);
+//   va_end(ap);
+//   if (die_cb) {
+//     die_cb("%s", msg);
+//   }
+//   else {
+//     fprintf(stderr, "%s", msg);
+//     exit(1);
+//   }
+// }
 
 /* Return a ptr to the last part of a path, if there are no '/' in the path, just return `path`. */
 // const char *tail(const char *const path) {

@@ -2159,85 +2159,85 @@
 
 /* Concatenate into a single line all the lines of the paragraph that starts at 'line' and
  * consists of 'count' lines, skipping the quoting and indentation on all lines after the first. */
-static void concat_paragraph(linestruct *line, Ulong count) _NOTHROW {
-  while (count > 1) {
-    linestruct *next_line = line->next;
-    Ulong next_line_len = strlen(next_line->data);
-    Ulong next_quot_len = quote_length(next_line->data);
-    Ulong next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
-    Ulong line_len      = strlen(line->data);
-    /* We're just about to tack the next line onto this one.  If this line isn't empty, make sure it ends in a space. */
-    if (line_len > 0 && line->data[line_len - 1] != ' ') {
-      line->data = arealloc(line->data, (line_len + 2));
-      line->data[line_len++] = ' ';
-      line->data[line_len]   = '\0';
-    }
-    line->data = arealloc(line->data, (line_len + next_line_len - next_lead_len + 1));
-    strcat(line->data, (next_line->data + next_lead_len));
-    line->has_anchor |= next_line->has_anchor;
-    unlink_node(next_line);
-    --count;
-  }
-}
+// static void concat_paragraph(linestruct *line, Ulong count) _NOTHROW {
+//   while (count > 1) {
+//     linestruct *next_line = line->next;
+//     Ulong next_line_len = strlen(next_line->data);
+//     Ulong next_quot_len = quote_length(next_line->data);
+//     Ulong next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
+//     Ulong line_len      = strlen(line->data);
+//     /* We're just about to tack the next line onto this one.  If this line isn't empty, make sure it ends in a space. */
+//     if (line_len > 0 && line->data[line_len - 1] != ' ') {
+//       line->data = arealloc(line->data, (line_len + 2));
+//       line->data[line_len++] = ' ';
+//       line->data[line_len]   = '\0';
+//     }
+//     line->data = arealloc(line->data, (line_len + next_line_len - next_lead_len + 1));
+//     strcat(line->data, (next_line->data + next_lead_len));
+//     line->has_anchor |= next_line->has_anchor;
+//     unlink_node(next_line);
+//     --count;
+//   }
+// }
 
 /* Copy a character from one place to another. */
-static void copy_character(char **from, char **to) _NOTHROW {
-  int charlen = char_length(*from);
-  if (*from == *to) {
-    *from += charlen;
-    *to += charlen;
-  }
-  else {
-    while (--charlen >= 0) {
-      *((*to)++) = *((*from)++);
-    }
-  }
-}
+// static void copy_character(char **from, char **to) _NOTHROW {
+//   int charlen = char_length(*from);
+//   if (*from == *to) {
+//     *from += charlen;
+//     *to += charlen;
+//   }
+//   else {
+//     while (--charlen >= 0) {
+//       *((*to)++) = *((*from)++);
+//     }
+//   }
+// }
 
 /* In the given line, replace any series of blanks with a single space, but keep two
  * spaces (if there are two) after any closing punctuation, and remove all blanks from
  * the end of the line.  Leave the first skip number of characters untreated. */
-static void squeeze(linestruct *line, Ulong skip) _NOTHROW {
-  char *start = (line->data + skip);
-  char *from = start, *to = start;
-  /* For each character, 1) when a blank, change it to a space, and pass over all blanks after it;
-   * 2) if it is punctuation, copy it plus a possible tailing bracket, and change at most two subsequent
-   * blanks to spaces, and * pass over all blanks after these; 3) leave anything else unchanged. */
-  while (*from) {
-    if (is_blank_char(from)) {
-      from += char_length(from);
-      *(to++) = ' ';
-      while (*from && is_blank_char(from)) {
-        from += char_length(from);
-      }
-    }
-    else if (mbstrchr(punct, from)) {
-      copy_character(&from, &to);
-      if (*from && mbstrchr(brackets, from)) {
-        copy_character(&from, &to);
-      }
-      if (*from && is_blank_char(from)) {
-        from += char_length(from);
-        *(to++) = ' ';
-      }
-      if (*from && is_blank_char(from)) {
-        from += char_length(from);
-        *(to++) = ' ';
-      }
-      while (*from && is_blank_char(from)) {
-        from += char_length(from);
-      }
-    }
-    else {
-      copy_character(&from, &to);
-    }
-  }
-  /* If there are spaces at the end of the line, remove them. */
-  while (to > start && *(to - 1) == ' ') {
-    --to;
-  }
-  *to = '\0';
-}
+// static void squeeze(linestruct *line, Ulong skip) _NOTHROW {
+//   char *start = (line->data + skip);
+//   char *from = start, *to = start;
+//   /* For each character, 1) when a blank, change it to a space, and pass over all blanks after it;
+//    * 2) if it is punctuation, copy it plus a possible tailing bracket, and change at most two subsequent
+//    * blanks to spaces, and * pass over all blanks after these; 3) leave anything else unchanged. */
+//   while (*from) {
+//     if (is_blank_char(from)) {
+//       from += char_length(from);
+//       *(to++) = ' ';
+//       while (*from && is_blank_char(from)) {
+//         from += char_length(from);
+//       }
+//     }
+//     else if (mbstrchr(punct, from)) {
+//       copy_character(&from, &to);
+//       if (*from && mbstrchr(brackets, from)) {
+//         copy_character(&from, &to);
+//       }
+//       if (*from && is_blank_char(from)) {
+//         from += char_length(from);
+//         *(to++) = ' ';
+//       }
+//       if (*from && is_blank_char(from)) {
+//         from += char_length(from);
+//         *(to++) = ' ';
+//       }
+//       while (*from && is_blank_char(from)) {
+//         from += char_length(from);
+//       }
+//     }
+//     else {
+//       copy_character(&from, &to);
+//     }
+//   }
+//   /* If there are spaces at the end of the line, remove them. */
+//   while (to > start && *(to - 1) == ' ') {
+//     --to;
+//   }
+//   *to = '\0';
+// }
 
 /* Rewrap the given line (that starts with the given lead string which is of the given length), into lines that fit within the target width (wrap_at). */
 static void rewrap_paragraph(linestruct **line, char *lead_string, Ulong lead_len) _NOTHROW {

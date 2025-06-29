@@ -563,7 +563,7 @@ void gui_promptmenu_enter_action(void) {
         /* Get the full path to of the answer. */
         full_path = get_full_path(answer);
         /* If the currently open file has a name, and that name does not match the answer. */
-        if (*openeditor->openfile->filename && strcmp(answer, openeditor->openfile->filename) != 0) {
+        if (*GUI_OF->filename && strcmp(answer, GUI_OF->filename) != 0) {
           /* When the given path does not exist. */
           if (!full_path) {
             NETLOG("Save file using diffrent name?\n");
@@ -574,12 +574,10 @@ void gui_promptmenu_enter_action(void) {
         }
         /* Otherwise if the current file has no name, then just save using the answer. */
         else {
-          show_statusmsg(INFO, 5, "Saving file: %s", answer);
-          /* Free the openfile filename, and assign answer to it. */
-          openeditor->openfile->filename = free_and_assign(openeditor->openfile->filename, copy_of(answer));
-          // gui_editor_from_file(openfile)->flag.set<GUIEDITOR_TOPBAR_REFRESH_NEEDED>();
-          // gui_etb_entries_refresh_needed(gui_editor_from_file(openfile)->etb);
-          etb_entries_refresh_needed(editor_from_file(openfile)->tb);
+          statusline(INFO, "Saving file: %s", answer);
+          /* Copy the answer as the new filename. */
+          GUI_OF->filename = xstrcpy(GUI_OF->filename, answer);
+          etb_entries_refresh_needed(openeditor->tb);
           /* Then save the file. */
           if (write_it_out(FALSE, FALSE) == 2) {
             logE("Failed to save file, this needs fixing and the reason needs to be found out.");

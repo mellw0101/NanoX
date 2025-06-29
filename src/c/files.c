@@ -28,14 +28,25 @@
 
 #define RW_FOR_ALL  (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
-#define LOCKSIZE    (1024)
-#define SKIPTHISFILE ((char *)-1)
+#define LOCKSIZE      (1024)
+#define SKIPTHISFILE  ((char *)-1)
 
 #define LOCKING_PREFIX  "."
 #define LOCKING_SUFFIX  ".swp"
 
 /* The number of bytes by which we expand the line buffer while reading. */
 #define LUMPSIZE  (120)
+
+
+/* ---------------------------------------------------------- Variable's ---------------------------------------------------------- */
+
+
+/* The PID of a forked process -- needed when wanting to abort it. */
+// static pid_t pid_of_command = -1;
+/* The PID of the process that pipes data to the above process. */
+// static pid_t pid_of_sender = -1;
+/* Whether we are pipeing data to the external command. */
+// static bool should_pipe = FALSE;
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -2145,7 +2156,7 @@ bool write_region_to_file(const char *const restrict name, FILE *stream, bool no
 int write_it_out_for(openfilestruct *const file, bool exiting, bool withprompt) {
   ASSERT(file);
   /* The filename we offer, or what the user typed so far. */
-  char *given = copy_of((file->mark && !exiting) ? "" : file->filename);
+  char *given;
   /* Whether it's okey to save the buffer under a diffrent name. */
   bool maychange = !*file->filename;
   /* How we will write the file, this defaults to `OVERWRITE`. */
@@ -2171,6 +2182,7 @@ int write_it_out_for(openfilestruct *const file, bool exiting, bool withprompt) 
   as_an_at = FALSE;
   /* When in curses-mode.  TODO: As for the gui-mode, implement the same functionality. */
   if (IN_CURSES_CTX) {
+    given = copy_of((file->mark && !exiting) ? "" : file->filename);
     /* Do the loop... */
     while (TRUE) {
       response  = 0;
@@ -2351,8 +2363,12 @@ int write_it_out_for(openfilestruct *const file, bool exiting, bool withprompt) 
         break;
       }
     }
+    free(given);
   }
-  free(given);
+  /* For now, when in gui mode, we set answer to the filename of file. */
+  else if (IN_GUI_CTX) {
+    answer = xstrcpy(answer, file->filename);
+  }
   /* When the mark is on (and we've prompted for a name and we're not exiting
    * and we're not in restricted mode), then write out the marked region. */
   if (file->mark && withprompt && !exiting && !ISSET(RESTRICTED)) {

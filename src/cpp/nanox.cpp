@@ -288,37 +288,37 @@ void do_exit(void) {
 // }
 
 /* Die gracefully, by restoring the terminal state and, saving any buffers that were modified. */
-void die(const char *msg, ...) {
-  openfilestruct *firstone = openfile;
-  static int stabs = 0;
-  va_list ap;
-  /* When dying for a second time, just give up. */
-  if (++stabs > 1) {
-    exit(11);
-  }
-  restore_terminal();
-  display_rcfile_errors();
-  va_start(ap, msg);
-  /* Display the dying message */
-  vfprintf(stderr, msg, ap);
-  va_end(ap);
-  while (openfile) {
-    /* If the current buffer has a lock file, remove it. */
-    if (openfile->lock_filename) {
-      delete_lockfile(openfile->lock_filename);
-    }
-    /* When modified, save the current buffer when not when in restricted mode, as it would write a file not mentioned on the command line. */
-    if (openfile->modified && !ISSET(RESTRICTED)) {
-      emergency_save(openfile->filename);
-    }
-    openfile = openfile->next;
-    if (openfile == firstone) {
-      break;
-    }
-  }
-  /* Abandon the building. */
-  exit(1);
-}
+// void die(const char *msg, ...) {
+//   openfilestruct *firstone = openfile;
+//   static int stabs = 0;
+//   va_list ap;
+//   /* When dying for a second time, just give up. */
+//   if (++stabs > 1) {
+//     exit(11);
+//   }
+//   restore_terminal();
+//   display_rcfile_errors();
+//   va_start(ap, msg);
+//   /* Display the dying message */
+//   vfprintf(stderr, msg, ap);
+//   va_end(ap);
+//   while (openfile) {
+//     /* If the current buffer has a lock file, remove it. */
+//     if (openfile->lock_filename) {
+//       delete_lockfile(openfile->lock_filename);
+//     }
+//     /* When modified, save the current buffer when not when in restricted mode, as it would write a file not mentioned on the command line. */
+//     if (openfile->modified && !ISSET(RESTRICTED)) {
+//       emergency_save(openfile->filename);
+//     }
+//     openfile = openfile->next;
+//     if (openfile == firstone) {
+//       break;
+//     }
+//   }
+//   /* Abandon the building. */
+//   exit(1);
+// }
 
 /* Initialize the three window portions nano uses. */
 // void window_init(void) _NOTHROW {
@@ -634,38 +634,38 @@ static bool scoop_stdin(void) {
 }
 
 /* Register half a dozen signal handlers. */
-static void signal_init(void) _NOTHROW {
-  struct sigaction deed = {};
-  /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
-  deed.sa_handler = SIG_IGN;
-  sigaction(SIGINT, &deed, NULL);
-  sigaction(SIGQUIT, &deed, NULL);
-  /* Trap SIGHUP and SIGTERM because we want to write the file out. */
-  deed.sa_handler = handle_hupterm;
-  sigaction(SIGHUP, &deed, NULL);
-  sigaction(SIGTERM, &deed, NULL);
-  /* Trap SIGWINCH because we want to handle window resizes. */
-  deed.sa_handler = handle_sigwinch;
-  sigaction(SIGWINCH, &deed, NULL);
-  /* Prevent the suspend handler from getting interrupted. */
-  sigfillset(&deed.sa_mask);
-  deed.sa_handler = suspend_nano;
-  sigaction(SIGTSTP, &deed, NULL);
-  sigfillset(&deed.sa_mask);
-  deed.sa_handler = continue_nano;
-  sigaction(SIGCONT, &deed, NULL);
-#if !defined(DEBUG)
-  if (!getenv("NANO_NOCATCH")) {
-    /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
-    * the terminal to a usable state.  Reset these handlers to their
-    * defaults as soon as their signal fires. */
-    deed.sa_handler = handle_crash;
-    deed.sa_flags |= SA_RESETHAND;
-    sigaction(SIGSEGV, &deed, NULL);
-    sigaction(SIGABRT, &deed, NULL);
-  }
-#endif
-}
+// static void signal_init(void) _NOTHROW {
+//   struct sigaction deed = {};
+//   /* Trap SIGINT and SIGQUIT because we want them to do useful things. */
+//   deed.sa_handler = SIG_IGN;
+//   sigaction(SIGINT, &deed, NULL);
+//   sigaction(SIGQUIT, &deed, NULL);
+//   /* Trap SIGHUP and SIGTERM because we want to write the file out. */
+//   deed.sa_handler = handle_hupterm;
+//   sigaction(SIGHUP, &deed, NULL);
+//   sigaction(SIGTERM, &deed, NULL);
+//   /* Trap SIGWINCH because we want to handle window resizes. */
+//   deed.sa_handler = handle_sigwinch;
+//   sigaction(SIGWINCH, &deed, NULL);
+//   /* Prevent the suspend handler from getting interrupted. */
+//   sigfillset(&deed.sa_mask);
+//   deed.sa_handler = suspend_nano;
+//   sigaction(SIGTSTP, &deed, NULL);
+//   sigfillset(&deed.sa_mask);
+//   deed.sa_handler = continue_nano;
+//   sigaction(SIGCONT, &deed, NULL);
+// #if !defined(DEBUG)
+//   if (!getenv("NANO_NOCATCH")) {
+//     /* Trap SIGSEGV and SIGABRT to save any changed buffers and reset
+//     * the terminal to a usable state.  Reset these handlers to their
+//     * defaults as soon as their signal fires. */
+//     deed.sa_handler = handle_crash;
+//     deed.sa_flags |= SA_RESETHAND;
+//     sigaction(SIGSEGV, &deed, NULL);
+//     sigaction(SIGABRT, &deed, NULL);
+//   }
+// #endif
+// }
 
 /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
 // void handle_hupterm(int signal) {
@@ -1075,38 +1075,38 @@ bool changes_something(functionptrtype f) {
 }
 
 /* Read in all waiting input bytes and paste them into the buffer in one go. */
-static void suck_up_input_and_paste_it(void) {
-  linestruct *was_cutbuffer = cutbuffer;
-  linestruct *line = make_new_node(NULL);
-  Ulong index = 0;
-  line->data = STRLTR_COPY_OF("");
-  cutbuffer = line;
-  while (bracketed_paste) {
-    int input = get_kbinput(midwin, BLIND);
-    if (input == '\r' || input == '\n') {
-      line->next = make_new_node(line);
-      line       = line->next;
-      line->data = STRLTR_COPY_OF("");
-      index      = 0;
-    }
-    else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
-      line->data = arealloc(line->data, (index + 2));
-      line->data[index++] = (char)input;
-      line->data[index] = '\0';
-    }
-    else if (input != BRACKETED_PASTE_MARKER) {
-      beep();
-    }
-  }
-  if (ISSET(VIEW_MODE)) {
-    print_view_warning();
-  }
-  else {
-    paste_text();
-  }
-  free_lines(cutbuffer);
-  cutbuffer = was_cutbuffer;
-}
+// static void suck_up_input_and_paste_it(void) {
+//   linestruct *was_cutbuffer = cutbuffer;
+//   linestruct *line = make_new_node(NULL);
+//   Ulong index = 0;
+//   line->data = STRLTR_COPY_OF("");
+//   cutbuffer = line;
+//   while (bracketed_paste) {
+//     int input = get_kbinput(midwin, BLIND);
+//     if (input == '\r' || input == '\n') {
+//       line->next = make_new_node(line);
+//       line       = line->next;
+//       line->data = STRLTR_COPY_OF("");
+//       index      = 0;
+//     }
+//     else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
+//       line->data = arealloc(line->data, (index + 2));
+//       line->data[index++] = (char)input;
+//       line->data[index] = '\0';
+//     }
+//     else if (input != BRACKETED_PASTE_MARKER) {
+//       beep();
+//     }
+//   }
+//   if (ISSET(VIEW_MODE)) {
+//     print_view_warning();
+//   }
+//   else {
+//     paste_text();
+//   }
+//   free_lines(cutbuffer);
+//   cutbuffer = was_cutbuffer;
+// }
 
 /* Insert the given short burst of bytes into the edit buffer. */
 // void inject(char *burst, Ulong count) {
@@ -1599,7 +1599,7 @@ int main(int argc, char **argv) {
     (unix_socket_fd < 0) ? 0 : close(unix_socket_fd);
   });
   init_cfg();
-  set_c_die_callback(die);
+  // set_c_die_callback(die);
   int  stdin_flags;
   bool ignore_rcfiles = FALSE; /* Whether to ignore the nanorc files. */
   bool fill_used      = FALSE; /* Was the fill option used on the command line? */

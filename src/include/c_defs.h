@@ -64,6 +64,19 @@
 /* ---------------------------------------------------------- Define's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Debug ----------------------------- */
+
+#ifdef _UNUSED_IN_DEBUG
+# undef _UNUSED_IN_DEBUG
+#endif
+
+/* Used when something will be used normaly but not when in DEBUG is defined. */
+#if !defined(DEBUG)
+# define _UNUSED_IN_DEBUG
+#else
+# define _UNUSED_IN_DEBUG _UNUSED
+#endif
+
 /* ----------------------------- color.c ----------------------------- */
 
 #define COLOR_8BIT(r, g, b, a)  MAX((r / 255.0f), 1), MAX((g / 255.0f), 1), MAX((b / 255.0f), 1), MAX(a, 1)

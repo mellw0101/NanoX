@@ -28,7 +28,8 @@
 
 #define META(x)   ((x) | 0x80)
 
-static inline bool _CONST _ALWAYS_INLINE ascii_isdigit(int c) {
+_CONST _ALWAYS_INLINE
+static inline bool ascii_isdigit(int c) {
   return (c >= '0' && c <= '9');
 }
 
@@ -46,7 +47,6 @@ static inline bool _CONST _ALWAYS_INLINE ascii_iswhite(int c) {
 static inline bool _CONST _ALWAYS_INLINE ascii_iswhite_or_nul(int c) {
   return (ascii_iswhite(c) || c == NUL);
 }
-
 
 static inline bool _CONST _ALWAYS_INLINE ascii_ishexdigit(int c) {
   return (ascii_isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));

@@ -392,6 +392,108 @@ static void undo_insert_empty_line_for(openfilestruct *const file, int rows, und
   refresh_needed = TRUE;
 }
 
+/* ----------------------------- Copy character ----------------------------- */
+
+/* Copy a character form one place to another.  TODO: Make a macro
+ * that always performs the copy, thus we will inline when needed. */
+/* static */ void copy_character(char **const from, char **const to) {
+  ASSERT(from);
+  ASSERT(to);
+  int len = char_length(*from);
+  /* This just compares the ptrs...? */
+  if (*from == *to) {
+    *from += len;
+    *to   += len;
+  }
+  else {
+    while (--len >= 0) {
+      *((*to)++) = *((*from)++);
+    }
+  }
+}
+
+/* ----------------------------- Squeeze ----------------------------- */
+
+/* In the given `line`, replace any series of blanks with a single space, but keep two
+ * spaces (if if there are two) after any closing punctuation, and remove all blanks
+ * from the end of the line.  Leave the first skip number of characters untreated. */
+/* static */ void squeeze(linestruct *const line, Ulong skip) {
+  ASSERT(line);
+  char *start = (line->data + skip);
+  char *from  = start;
+  char *to    = start;
+  /* Go through each character. */
+  while (*from) {
+    /* When we are at a blank. */
+    if (is_blank_char(from)) {
+      from += char_length(from);
+      /* Add one space. */
+      *(to++) = ' ';
+      /* Then advance past all blank characters. */
+      while (*from && is_blank_char(from)) {
+        from += char_length(from);
+      }
+    }
+    /* We found a punctuation, copy it. */
+    else if (mbstrchr(punct, from)) {
+      copy_character(&from, &to);
+      /* If there is a trailing bracket, copy it to. */
+      if (*from && mbstrchr(brackets, from)) {
+        copy_character(&from, &to);
+      }
+      /* At most change two following blanks to spaces. */
+      if (*from && is_blank_char(from)) {
+        from += char_length(from);
+        *(to++) = ' ';
+      }
+      if (*from && is_blank_char(from)) {
+        from += char_length(from);
+        *(to++) = ' ';
+      }
+      /* Now advance past all following blanks. */
+      while (*from && is_blank_char(from)) {
+        from += char_length(from);
+      }
+    }
+    /* Otherwise, just do a straight copy. */
+    else {
+      copy_character(&from, &to);
+    }
+  }
+  /* If there are spaces at the end of the line, remove them. */
+  while (to > start && *(to - 1) == ' ') {
+    --to;
+  }
+  *to = '\0';
+}
+
+/* ----------------------------- Concat paragraph ----------------------------- */
+
+/* Concatenate into a single line all the lines of the paragraph that starts at `line` and
+ * consists of `count` lines, skipping the quoting and indentation of all lines after the first. */
+/* static */ void concat_paragraph_for(openfilestruct *const file, linestruct *const line, Ulong count) {
+  ASSERT(file);
+  ASSERT(line);
+  linestruct *next;
+  Ulong quot_len;
+  Ulong lead_len;
+  Ulong len;
+  while (count-- > 1) {
+    next     = line->next;
+    quot_len = quote_length(next->data);
+    lead_len = (quot_len + indent_length(next->data + quot_len));
+    len      = strlen(line->data);
+    /* We're just about to tack the next line onto the one.  If this line isn't empty, make sure it ends in a space. */
+    line->data = fmtstrncat(line->data, len, "%s%s", ((len && line->data[len - 1] != ' ') ? " " : ""), (next->data + lead_len));
+    line->has_anchor |= next->has_anchor;
+    unlink_node_for(file, next);
+  }
+}
+
+/* static */ void concat_paragraph(linestruct *const line, Ulong count) {
+  concat_paragraph_for(CTX_OF, line, count);
+}
+
 
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
@@ -399,7 +501,9 @@ static void undo_insert_empty_line_for(openfilestruct *const file, int rows, und
 /* ----------------------------- Set marked region ----------------------------- */
 
 /* Set the cursor and mark of file, using ptrs. */
-void set_marked_region_for(openfilestruct *const file, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x, bool cursor_at_head) {
+void set_marked_region_for(openfilestruct *const file, linestruct *const top,
+  Ulong top_x, linestruct *const bot, Ulong bot_x, bool cursor_at_head)
+{
   ASSERT(file);
   ASSERT(top);
   ASSERT(bot);
@@ -420,9 +524,16 @@ void set_marked_region_for(openfilestruct *const file, linestruct *const top, Ul
 }
 
 /* ----------------------------- Do tab ----------------------------- */
+/* TODO: Here we need to add the functionality where if on a line with
+ * only blanks and not at the end of the line, we put the cursor at eol.
+ * Or maybe when tab is done on a empty line, match the indent with the
+ * prev line, and when the prev char is a bracket open char, match the
+ * indent plus one indent.
+ */
 
-/* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert the number of spaces that a tab would normally take up at this position. */
-void do_tab_for(openfilestruct *const file, int rows, int cols) {
+/* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert
+ * the number of spaces that a tab would normally take up at this position. */
+void do_tab_for(CTX_ARGS) {
   ASSERT(file);
   Ulong len;
   char *spaces;
@@ -443,7 +554,8 @@ void do_tab_for(openfilestruct *const file, int rows, int cols) {
   }
 }
 
-/* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert the number of spaces that a tab would normally take up at this position. */
+/* Insert a tab.  Or if `TABS_TO_SPACES/--tabstospaces` is in effect, insert
+ * the number of spaces that a tab would normally take up at this position. */
 void do_tab(void) {
   CTX_CALL(do_tab_for);
 }

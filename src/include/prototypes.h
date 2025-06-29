@@ -398,7 +398,7 @@ void        suggest_ctrlT_ctrlZ(void) _NOTHROW;
 // void        finish(void) _NOTHROW _NO_RETURN;
 // void        close_and_go(void);
 // void        do_exit(void);
-void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
+// void        die(const char *msg, ...) _NO_RETURN _NONNULL(1);
 // void        window_init(void) _NOTHROW;
 // void        install_handler_for_Ctrl_C(void) _NOTHROW;
 // void        restore_handler_for_Ctrl_C(void) _NOTHROW;
