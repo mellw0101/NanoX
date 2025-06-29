@@ -11,11 +11,13 @@
 
 
 /* The maximum depth of recursion.  Note that this MUST be an even number. */
-#define RECURSION_LIMIT 222
+#define RECURSION_LIMIT  222
 
 /* Create callable paste names that correctly describe there task. */
 #define redo_paste_for  undo_cut_for
 #define undo_paste_for  redo_cut_for
+
+#define OPEN_BRACKETS  "{[("
 
 
 /* ---------------------------------------------------------- Static function's ---------------------------------------------------------- */
@@ -490,6 +492,8 @@ static void undo_insert_empty_line_for(openfilestruct *const file, int rows, und
   }
 }
 
+/* Concatenate into a single line all the lines of the paragraph that starts at `line` and
+ * consists of `count` lines, skipping the quoting and indentation of all lines after the first. */
 /* static */ void concat_paragraph(linestruct *const line, Ulong count) {
   concat_paragraph_for(CTX_OF, line, count);
 }
@@ -544,6 +548,9 @@ void do_tab_for(CTX_ARGS) {
   else if (file->syntax && file->syntax->tabstring) {
     inject_into_buffer(STACK_CTX, file->syntax->tabstring, strlen(file->syntax->tabstring));
   }
+  // else if (tab_helper(STACK_CTX)) {
+  //   ;
+  // }
   else if (ISSET(TABS_TO_SPACES)) {
     spaces = tab_space_string_for(file, &len);
     inject_into_buffer(STACK_CTX, spaces, len);
@@ -1694,7 +1701,7 @@ void handle_indent_action_for(openfilestruct *const file, int rows, undostruct *
 
 /* Perform an undo or redo for an indent or unindent action. */
 void handle_indent_action(undostruct *const u, bool undoing, bool add_indent) {
-  if (IN_GUI_CTX) { 
+  if (IN_GUI_CTX) {
     handle_indent_action_for(GUI_OF, GUI_ROWS, u, undoing, add_indent);
   }
   else {
@@ -2762,4 +2769,89 @@ void do_verbatim_input(void) {
     }
     free(bytes);
   }
+}
+
+/* ----------------------------- Get previous char ----------------------------- */
+
+/* Returns a pointer to the previous character (left of `xpos` in `line`) that is neither blank nor
+ * zero-width.  If `xpos` is at the start of `line`, move to the previous line and continue searching
+ * from its end.  Continue across lines until a non-blank, non-zero-width character is found, or return
+ * `NULL` at buffer start. The function advances `line` and `xpos` as needed to traverse backward. */
+char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos) {
+  ASSERT(line);
+  while (1) {
+    /* We are at the start of the line. */
+    if (!xpos) {
+      /* If we are at the very top of the linked list of lines, return NULL, there are no previous chars. */
+      if (!line->prev) {
+        return NULL;
+      }
+      /* Otherwise, Move to the line above, and place the position at the end of the line. */
+      else {
+        DLIST_ADV_PREV(line);
+        xpos = strlen(line->data);
+      }
+    }
+    /* Otherwise, we move once to the left. */
+    else {
+      xpos = step_left(line->data, xpos);
+      /* When we find the first non blank and non zerowidth char, return it. */
+      if (!is_blank_char(line->data + xpos) && !is_zerowidth(line->data + xpos)) {
+        /* If the caller want to know where we ended up, assign out final line and x position. */
+        ASSIGN_IF_VALID(outline, line);
+        ASSIGN_IF_VALID(outxpos, xpos);
+        return (line->data + xpos);
+      }
+    }
+  }
+}
+
+/* ----------------------------- Is previous char open bracket ----------------------------- */
+
+/* Returns true if the previous non-blank, non-zero-width character before position `xpos` in `line` is an
+ * open bracket ('{', '[', or '('). Returns false if no previous character exists or if the previous character
+ * is not an open bracket. Uses `get_previous_char()` to traverse backward across line boundaries as needed. */
+bool is_previous_char_open_bracket(linestruct *const line, Ulong xpos, linestruct **const outline, Ulong *const outxpos) {
+  ASSERT(line);
+  char *ch = get_previous_char(line, xpos, outline, outxpos);
+  return !(!ch || !mbstrchr("{[(", ch));
+}
+
+/* ----------------------------- Tab helper ----------------------------- */
+
+/* TODO: Make a undo type just for this which will place the cursor at the correct position. */
+bool tab_helper(CTX_ARGS) {
+  ASSERT(file);
+  linestruct *line;
+  Ulong indent_len;
+  Ulong line_len = strlen(file->current->data);
+  char *indent_str;
+  if (is_previous_char_open_bracket(file->current, file->current_x, &line, NULL) && line != file->current && !file->current->data[line_len]) {
+    if (!(indent_len = indent_length(line->data))) {
+      return FALSE;
+    }
+    indent_str = measured_copy(line->data, indent_len);
+    if (ISSET(TABS_TO_SPACES)) {
+      indent_str = fmtstrncat(indent_str, indent_len, "%*s", (int)tabsize, " ");
+      indent_len += tabsize;
+    }
+    else {
+      indent_str = xnstrncat(indent_str, indent_len++, S__LEN("\t"));
+    }
+    /* When the current line is fully empty, we can simply inject the formed string into the line. */
+    if (!*file->current->data) {
+      inject_into_buffer(STACK_CTX, indent_str, indent_len);
+    }
+    else {
+      file->current_x = line_len;
+      file->mark      = file->current;
+      file->mark_x    = 0;
+      zap_replace_text_for(STACK_CTX, indent_str, indent_len);
+      file->current_undo->xflags |= SHOULD_NOT_KEEP_MARK;
+      file->current_x = indent_len;
+      file->mark = NULL;
+    }
+    return TRUE;
+  }
+  return FALSE;
 }

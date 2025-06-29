@@ -475,6 +475,12 @@ void  do_redo_for(CTX_PARAMS);
 void  do_redo(void);
 bool  find_paragraph(linestruct **const first, Ulong *const count);
 void  do_verbatim_input(void);
+/* ----------------------------- Get previous char ----------------------------- */
+char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos);
+/* ----------------------------- Is previous char open bracket ----------------------------- */
+bool is_previous_char_open_bracket(linestruct *const line, Ulong xpos, linestruct **const outline, Ulong *const outxpos);
+/* ----------------------------- Tab helper ----------------------------- */
+bool tab_helper(CTX_ARGS);
 
 
 /* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */
