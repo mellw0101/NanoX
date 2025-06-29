@@ -93,7 +93,7 @@ static void undo_cut_for(openfilestruct *const file, int rows, undostruct *const
 /* ----------------------------- Redo cut ----------------------------- */
 
 /* Redo a cut, or undo a paste. */
-static void redo_cut_for(CTX_PARAMS, undostruct *const u) {
+static void redo_cut_for(CTX_ARGS, undostruct *const u) {
   ASSERT(file);
   ASSERT(u);
   /* Save the cutbuffer. */
@@ -394,6 +394,28 @@ static void undo_insert_empty_line_for(openfilestruct *const file, int rows, und
   refresh_needed = TRUE;
 }
 
+/* ----------------------------- Handle tab auto indent ----------------------------- */
+
+static void handle_tab_auto_indent(openfilestruct *const file, undostruct *const u, bool undoing) {
+  ASSERT(file);
+  ASSERT(u);
+  file->current = line_from_number_for(file, u->head_lineno);
+  /* Undo */
+  if (undoing) {
+    file->current->data = xstrcpy(file->current->data, u->strdata);
+    file->current_x     = u->head_x;
+  }
+  /* Redo */
+  else {
+    file->current->data = free_and_assign(
+      file->current->data,
+      line_indent_plus_tab(line_from_number_for(file, u->tail_lineno)->data, &file->current_x)
+    );
+  }
+  SET_PWW(file);
+  refresh_needed = TRUE;
+}
+
 /* ----------------------------- Copy character ----------------------------- */
 
 /* Copy a character form one place to another.  TODO: Make a macro
@@ -502,6 +524,28 @@ static void undo_insert_empty_line_for(openfilestruct *const file, int rows, und
 /* ---------------------------------------------------------- Global function's ---------------------------------------------------------- */
 
 
+/* ----------------------------- Line indent plus tab ----------------------------- */
+
+char *line_indent_plus_tab(const char *const restrict data, Ulong *const len) {
+  ASSERT(data);
+  ASSERT(len);
+  char *ret;
+  int tablen;
+  *len = indent_length(data);
+  /* Copy the indent from data. */
+  ret = measured_copy(data, *len);
+  if (ISSET(TABS_TO_SPACES)) {
+    tablen = tabstop_length(ret, *len);
+    ret = fmtstrncat(ret, *len, "%*s", tablen, " ");
+    *len += tablen;
+  }
+  else {
+    ret = xnstrncat(ret, *len, S__LEN("\t"));
+    ++(*len);
+  }
+  return ret;
+}
+
 /* ----------------------------- Set marked region ----------------------------- */
 
 /* Set the cursor and mark of file, using ptrs. */
@@ -548,9 +592,9 @@ void do_tab_for(CTX_ARGS) {
   else if (file->syntax && file->syntax->tabstring) {
     inject_into_buffer(STACK_CTX, file->syntax->tabstring, strlen(file->syntax->tabstring));
   }
-  // else if (tab_helper(STACK_CTX)) {
-  //   ;
-  // }
+  else if (tab_helper(file)) {
+    ;
+  }
   else if (ISSET(TABS_TO_SPACES)) {
     spaces = tab_space_string_for(file, &len);
     inject_into_buffer(STACK_CTX, spaces, len);
@@ -785,6 +829,11 @@ void add_undo_for(openfilestruct *const file, undo_type action, const char *cons
     }
     case AUTO_BRACKET: {
       u->strdata = copy_of(file->current->data + file->current_x);
+      break;
+    }
+    case TAB_AUTO_INDENT: {
+      /* Save the entire current line. */
+      u->strdata = copy_of(thisline->data);
       break;
     }
     default: {
@@ -2233,7 +2282,7 @@ void do_enter(void) {
 /* ----------------------------- Do undo ----------------------------- */
 
 /* Undo the last thing(s) we did in `file`. */
-void do_undo_for(CTX_PARAMS) {
+void do_undo_for(CTX_ARGS) {
   ASSERT(file);
   undostruct *u = file->current_undo;
   linestruct *was_cutbuffer;
@@ -2432,6 +2481,10 @@ void do_undo_for(CTX_PARAMS) {
       undo_insert_empty_line_for(file, rows, u);
       break;
     }
+    case TAB_AUTO_INDENT: {
+      handle_tab_auto_indent(file, u, TRUE);
+      break;
+    }
     default: {
       break;
     }
@@ -2475,7 +2528,7 @@ void do_undo(void) {
 /* ----------------------------- Do redo ----------------------------- */
 
 /* Redo the last thing(s) we undid in `file`. */
-void do_redo_for(CTX_PARAMS) {
+void do_redo_for(CTX_ARGS) {
   ASSERT(file);
   undostruct *u = file->undotop;
   linestruct *line = NULL;
@@ -2663,6 +2716,10 @@ void do_redo_for(CTX_PARAMS) {
       handle_zap_replace_action(STACK_CTX, u, FALSE);
       break;
     }
+    case TAB_AUTO_INDENT: {
+      handle_tab_auto_indent(file, u, FALSE);
+      break;
+    }
     default: {
       break;
     }
@@ -2808,49 +2865,41 @@ char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline
 
 /* ----------------------------- Is previous char open bracket ----------------------------- */
 
-/* Returns true if the previous non-blank, non-zero-width character before position `xpos` in `line` is an
- * open bracket ('{', '[', or '('). Returns false if no previous character exists or if the previous character
- * is not an open bracket. Uses `get_previous_char()` to traverse backward across line boundaries as needed. */
-bool is_previous_char_open_bracket(linestruct *const line, Ulong xpos, linestruct **const outline, Ulong *const outxpos) {
-  ASSERT(line);
+bool is_previous_char_one_of(linestruct *const line, Ulong xpos,
+  const char *const restrict matches, linestruct **const outline, Ulong *const outxpos)
+{
+  ASSERT(matches);
+  ASSERT(*matches);
   char *ch = get_previous_char(line, xpos, outline, outxpos);
-  return !(!ch || !mbstrchr("{[(", ch));
+  return !(!ch || !mbstrchr(matches, ch));
 }
 
 /* ----------------------------- Tab helper ----------------------------- */
 
-/* TODO: Make a undo type just for this which will place the cursor at the correct position. */
-bool tab_helper(CTX_ARGS) {
+bool tab_helper(openfilestruct *const file) {
   ASSERT(file);
   linestruct *line;
-  Ulong indent_len;
-  Ulong line_len = strlen(file->current->data);
-  char *indent_str;
-  if (is_previous_char_open_bracket(file->current, file->current_x, &line, NULL) && line != file->current && !file->current->data[line_len]) {
-    if (!(indent_len = indent_length(line->data))) {
+  Ulong indent;
+  Ulong full_length;
+  char *data;
+  if (is_previous_char_one_of(file->current, file->current_x, "{[(:", &line, NULL) 
+   && line != file->current && white_string(file->current->data))
+  {
+    indent = indent_length(line->data);
+    data   = line_indent_plus_tab(line->data, &full_length);
+    /* If there is no indent for the given line, or we are already past the full length, just return false. */
+    if (!indent || file->current_x >= full_length) {
+      free(data);
       return FALSE;
     }
-    indent_str = measured_copy(line->data, indent_len);
-    if (ISSET(TABS_TO_SPACES)) {
-      indent_str = fmtstrncat(indent_str, indent_len, "%*s", (int)tabsize, " ");
-      indent_len += tabsize;
-    }
-    else {
-      indent_str = xnstrncat(indent_str, indent_len++, S__LEN("\t"));
-    }
-    /* When the current line is fully empty, we can simply inject the formed string into the line. */
-    if (!*file->current->data) {
-      inject_into_buffer(STACK_CTX, indent_str, indent_len);
-    }
-    else {
-      file->current_x = line_len;
-      file->mark      = file->current;
-      file->mark_x    = 0;
-      zap_replace_text_for(STACK_CTX, indent_str, indent_len);
-      file->current_undo->xflags |= SHOULD_NOT_KEEP_MARK;
-      file->current_x = indent_len;
-      file->mark = NULL;
-    }
+    /* Add the undo-action. */
+    add_undo_for(file, TAB_AUTO_INDENT, NULL);
+    file->current_undo->tail_x      = indent;
+    file->current_undo->tail_lineno = line->lineno;
+    /* Now we remake the line. */
+    file->current->data = free_and_assign(file->current->data, data);
+    file->current_x     = full_length;
+    SET_PWW(file);
     return TRUE;
   }
   return FALSE;

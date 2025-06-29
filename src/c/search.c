@@ -322,7 +322,7 @@ void goto_line_posx_for(openfilestruct *const file, int rows, long lineno, Ulong
   }
   file->current     = line_from_number_for(file, lineno);
   file->current_x   = x;
-  set_pww_for(file);
+  SET_PWW(file);
   refresh_needed    = TRUE;
 }
 

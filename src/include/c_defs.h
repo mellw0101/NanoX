@@ -753,34 +753,36 @@ typedef enum {
   AUTO_BRACKET,
   ZAP_REPLACE,
   INSERT_EMPTY_LINE,
-  #define ADD                ADD
-  #define ENTER              ENTER
-  #define BACK               BACK
-  #define DEL                DEL
-  #define JOIN               JOIN
-  #define REPLACE            REPLACE
-  #define SPLIT_BEGIN        SPLIT_BEGIN
-  #define SPLIT_END          SPLIT_END
-  #define INDENT             INDENT
-  #define UNINDENT           UNINDENT
-  #define COMMENT            COMMENT
-  #define UNCOMMENT          UNCOMMENT
-  #define PREFLIGHT          PREFLIGHT
-  #define ZAP                ZAP
-  #define CUT                CUT
-  #define CUT_TO_EOF         CUT_TO_EOF
-  #define COPY               COPY
-  #define PASTE              PASTE
-  #define INSERT             INSERT
-  #define COUPLE_BEGIN       COUPLE_BEGIN
-  #define COUPLE_END         COUPLE_END
-  #define OTHER              OTHER
-  #define MOVE_LINE_UP       MOVE_LINE_UP
-  #define MOVE_LINE_DOWN     MOVE_LINE_DOWN
-  #define ENCLOSE            ENCLOSE
-  #define AUTO_BRACKET       AUTO_BRACKET
-  #define ZAP_REPLACE        ZAP_REPLACE
-  #define INSERT_EMPTY_LINE  INSERT_EMPTY_LINE
+  TAB_AUTO_INDENT,
+# define ADD                ADD
+# define ENTER              ENTER
+# define BACK               BACK
+# define DEL                DEL
+# define JOIN               JOIN
+# define REPLACE            REPLACE
+# define SPLIT_BEGIN        SPLIT_BEGIN
+# define SPLIT_END          SPLIT_END
+# define INDENT             INDENT
+# define UNINDENT           UNINDENT
+# define COMMENT            COMMENT
+# define UNCOMMENT          UNCOMMENT
+# define PREFLIGHT          PREFLIGHT
+# define ZAP                ZAP
+# define CUT                CUT
+# define CUT_TO_EOF         CUT_TO_EOF
+# define COPY               COPY
+# define PASTE              PASTE
+# define INSERT             INSERT
+# define COUPLE_BEGIN       COUPLE_BEGIN
+# define COUPLE_END         COUPLE_END
+# define OTHER              OTHER
+# define MOVE_LINE_UP       MOVE_LINE_UP
+# define MOVE_LINE_DOWN     MOVE_LINE_DOWN
+# define ENCLOSE            ENCLOSE
+# define AUTO_BRACKET       AUTO_BRACKET
+# define ZAP_REPLACE        ZAP_REPLACE
+# define INSERT_EMPTY_LINE  INSERT_EMPTY_LINE
+# define TAB_AUTO_INDENT    TAB_AUTO_INDENT
 } undo_type;
 
 typedef enum {

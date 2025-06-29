@@ -394,6 +394,7 @@ int  nanox_socket_client(void);
 /* static */ void concat_paragraph_for(openfilestruct *const file, linestruct *const line, Ulong count);
 /* static */ void concat_paragraph(linestruct *const line, Ulong count);
 
+char *line_indent_plus_tab(const char *const restrict data, Ulong *const len);
 void set_marked_region_for(openfilestruct *const file, linestruct *const top, Ulong top_x, linestruct *const bot, Ulong bot_x, bool cursor_at_head);
 void  do_tab_for(CTX_ARGS);
 void  do_tab(void);
@@ -477,10 +478,11 @@ bool  find_paragraph(linestruct **const first, Ulong *const count);
 void  do_verbatim_input(void);
 /* ----------------------------- Get previous char ----------------------------- */
 char *get_previous_char(linestruct *line, Ulong xpos, linestruct **const outline, Ulong *const outxpos);
-/* ----------------------------- Is previous char open bracket ----------------------------- */
-bool is_previous_char_open_bracket(linestruct *const line, Ulong xpos, linestruct **const outline, Ulong *const outxpos);
+/* ----------------------------- Is previous char one of ----------------------------- */
+bool is_previous_char_one_of(linestruct *const line, Ulong xpos,
+  const char *const restrict matches, linestruct **const outline, Ulong *const outxpos);
 /* ----------------------------- Tab helper ----------------------------- */
-bool tab_helper(CTX_ARGS);
+bool tab_helper(openfilestruct *const file);
 
 
 /* ---------------------------------------------------------- suggestion.c ---------------------------------------------------------- */
